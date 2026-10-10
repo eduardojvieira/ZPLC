@@ -1996,10 +1996,11 @@ function emitAssignment(state: CodeGenState, stmt: Assignment): void {
 
 /** The condition of IF, ELSIF, WHILE and UNTIL is a BOOL (CMP-005). */
 function emitCondition(state: CodeGenState, condition: Expression): void {
-    const type = meaningType(state, condition);
+    const type = conversionType(state, condition);
     if (type !== UNKNOWN_TYPE && type !== 'BOOL') {
         const named = type === LITERAL_INT ? 'INT' : type;
-        fail(condition, `Type mismatch: a condition is a BOOL and this is a ${named}; compare it, for example ${named === 'REAL' || named === 'LREAL' ? 'x > 0.0' : 'x <> 0'}`);
+        const text = parseStringType(type) !== null;
+        fail(condition, `Type mismatch: a condition is a BOOL and this is a ${named}; compare it, for example ${text ? 'LEN(x) > 0' : named === 'REAL' || named === 'LREAL' ? 'x > 0.0' : 'x <> 0'}`);
     }
     emitExpression(state, condition);
 }
@@ -2832,7 +2833,7 @@ function emitInstanceCall(state: CodeGenState, stmt: FBCallStatement, sym: Symbo
                 const memberType = stdlibMemberType(typeName, member);
                 if (memberType !== UNKNOWN_TYPE) {
                     const constant = foldConstant(state, param.value);
-                    const from = meaningType(state, param.value);
+                    const from = conversionType(state, param.value);
                     checkConvertible(from, memberType, param.value, constant);
                     warnNarrowing(state, param.value, from, memberType, constant);
                 }
@@ -2871,7 +2872,8 @@ function emitCopyOut(state: CodeGenState, source: Place, param: FBParameter): vo
         return;
     }
     // a scalar: converted and checked as an assignment of the output's value is
-    const from = numericTypeName(storedType(state, source.type));
+    const sourceType = storedType(state, source.type);
+    const from = isStringType(sourceType) ? String(sourceType) : numericTypeName(sourceType);
     const to = numericTypeName(type);
     checkConvertible(from, to, param.value, undefined);
     warnNarrowing(state, param.value, from, to, undefined);
@@ -3720,7 +3722,7 @@ function emitValueFor(state: CodeGenState, value: Expression, targetType: unknow
     const target = numericTypeName(targetType);
     if (target !== UNKNOWN_TYPE) {
         const constant = foldConstant(state, value);
-        const from = meaningType(state, value);
+        const from = conversionType(state, value);
         checkConvertible(from, target, value, constant);
         warnNarrowing(state, value, from, target, constant);
     }
@@ -3796,6 +3798,17 @@ function meaningType(state: CodeGenState, expr: Expression): string {
     return type;
 }
 
+/**
+ * The type a value has for the check of an implicit conversion (CMP-005): its elementary type, or STRING or
+ * WSTRING when it is text, which has no numeric type and converts to none.
+ */
+function conversionType(state: CodeGenState, value: Expression): string {
+    const numeric = meaningType(state, value);
+    if (numeric !== UNKNOWN_TYPE) return numeric;
+    const text = inferExpressionType(state, value);
+    return parseStringType(text) !== null ? text : numeric;
+}
+
 /** What kind of value a numeric elementary type holds, for the implicit conversions of IEC 61131-3. */
 type TypeKind = 'bool' | 'signed' | 'unsigned' | 'bits' | 'real' | 'time' | 'date' | 'datetime';
 
@@ -3819,8 +3832,9 @@ function typeKind(type: string): TypeKind | undefined {
  * not fit the destination keeps its low bits as CMP-016 states (a constant that does not fit is an error:
  * CMP-018), an integer converts to REAL and LREAL, and REAL to LREAL. Nothing else converts implicitly: REAL
  * to an integer, BOOL to or from a number, and TIME, DATE, TOD and DT to or from a number are errors that ask
- * for an explicit conversion function. A bare integer literal takes the integer, bit-string or real type it
- * is given to. UNKNOWN_TYPE converts: it is a type the generator cannot name.
+ * for an explicit conversion function. A STRING or WSTRING is text, not a number: it converts to no numeric,
+ * BOOL or time type, and none converts to it. A bare integer literal takes the integer, bit-string or real type
+ * it is given to. UNKNOWN_TYPE converts: it is a type the generator cannot name.
  *
  * ponytail: IEC 61131-3 itself widens only (SINT to INT, USINT to UINT, REAL to LREAL...); integer
  * narrowing stays implicit until the explicit <FROM>_TO_<TO> functions exist for every pair (CMP-057,
@@ -3828,6 +3842,11 @@ function typeKind(type: string): TypeKind | undefined {
  */
 function convertsImplicitly(from: string, to: string): boolean {
     if (from === UNKNOWN_TYPE || to === UNKNOWN_TYPE || from === to) return true;
+    // text and number are different kinds of value: neither converts to the other (the pair of texts is
+    // checked where a string is assigned)
+    const fromText = parseStringType(from) !== null;
+    const toText = parseStringType(to) !== null;
+    if (fromText !== toText && (fromText ? typeKind(to) !== undefined : typeKind(from) !== undefined || from === LITERAL_INT)) return false;
     const target = typeKind(to);
     if (target === undefined) return true;
     if (from === LITERAL_INT) return target === 'signed' || target === 'unsigned' || target === 'bits' || target === 'real';
@@ -3905,8 +3924,11 @@ function checkConvertible(from: string, to: string, at: { line: number; column: 
                           constant: bigint | undefined): void {
     if (!convertsImplicitly(from, to)) {
         const named = from === LITERAL_INT ? 'INT' : from;
+        const text = parseStringType(from) !== null || parseStringType(to) !== null;
         fail(at, `Type mismatch: a value of type ${named} cannot be used where ${to} is expected. `
-            + `IEC 61131-3 converts implicitly only to a wider type of the same kind; convert it explicitly, for example with ${named}_TO_${to}`);
+            + (text
+                ? `A STRING or WSTRING is text, and IEC 61131-3 converts a text to a number, a BOOL or a time, and back, only through a function`
+                : `IEC 61131-3 converts implicitly only to a wider type of the same kind; convert it explicitly, for example with ${named}_TO_${to}`));
     }
     const range = constant === undefined ? undefined : integerRange(to);
     if (range && constant !== undefined && (constant < range.low || constant > range.high)) {
@@ -4093,6 +4115,16 @@ function emitBinaryExpr(state: CodeGenState, expr: BinaryExpr, contextType?: str
     const leftIsString = isStringExpression(state, expr.left);
     const rightIsString = isStringExpression(state, expr.right);
 
+    if (leftIsString !== rightIsString) {
+        // a text meets a number, a BOOL or a time: they do not convert to each other (CMP-005)
+        const [text, other] = leftIsString ? [expr.left, expr.right] : [expr.right, expr.left];
+        const otherType = meaningType(state, other);
+        if (otherType === LITERAL_INT || typeKind(otherType) !== undefined) {
+            const named = otherType === LITERAL_INT ? 'INT' : otherType;
+            fail(other, `Type mismatch: a ${inferExpressionType(state, text)} cannot be used with a ${named} in an operation: IEC 61131-3 converts a text to a number, a BOOL or a time, and back, only through a function`);
+        }
+    }
+
     if (leftIsString || rightIsString) {
         if (parseStringType(inferExpressionType(state, expr.left))?.wide || parseStringType(inferExpressionType(state, expr.right))?.wide) {
             fail(expr, `A WSTRING cannot be compared yet`);
@@ -4274,7 +4306,7 @@ const STANDARD_PARAMETER_TYPE: Record<string, string> = {
 /** `value` as the argument of a parameter of `type`: checked, and a constant carries the type it is given to. */
 function typedArgument(state: CodeGenState, value: Expression, type: string): Expression {
     const constant = foldConstant(state, value);
-    const from = meaningType(state, value);
+    const from = conversionType(state, value);
     checkConvertible(from, type, value, constant);
     warnNarrowing(state, value, from, type, constant);
     if (constant === undefined) return value;

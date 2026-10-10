@@ -466,6 +466,13 @@ All notable changes are documented here.
   attach a map to a program that has another. Programs built before are refused:
   rebuild programs and reflash boards together. `restamp_artifacts.py` moved the
   committed artifacts, and `fuzz:seed` rebuilt the seed corpus.
+- A `STRING` or `WSTRING` no longer converts to a number, a `BOOL` or a time
+  (CMP-005): `n := text;`, a text as the argument of a numeric parameter or an
+  input of a function block, as the return value of a numeric function or as the
+  initial value of a number, a text compared with a number and a text used as a
+  condition built and were stored or compared as an address. Each is now a build
+  error that names both types. `LEN` and `FIND`, which give an `INT`, still go
+  to a number. No bundled project, example or conformance program used it.
 
 ## 2.0.0-rc.3 - 2026-09-01
 
