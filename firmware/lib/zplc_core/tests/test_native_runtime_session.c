@@ -2926,9 +2926,9 @@ static int store_record_absent(const char *root, const char *key)
 
 static void test_commit_rejects_unverified_durable_evidence(void)
 {
-    /* The records that say a program was ever published. A payload with none of them beside it is not evidence:
-     * the metadata is written after the payload, so it is what an interrupted first deploy leaves (RT-031) and
-     * the next deploy has to be able to go through (test_program_store: "a payload alone"). */
+    /* RT-031: a payload with none of the records that say a program was published beside it is not evidence.
+     * The metadata is written after the payload, so a payload alone is what an interrupted first deploy leaves
+     * and the next deploy has to be able to go through (test_program_store: "a payload alone"). */
     static const char *const v1_keys[] = {
         "program_v1_active", "program_v1_slot_a_meta", "program_v1_slot_b_meta"
     };
@@ -2988,9 +2988,10 @@ static void test_commit_rejects_unverified_durable_evidence(void)
     setenv("ZPLC_PERSIST_ROOT", test_persist_root, 1);
 }
 
-/* RT-028: the largest artifact the runtime accepts is the configured code size, and an artifact of exactly that
- * size is stored and restored through the host program store, which is the store the firmware uses (RT-032). The
- * artifact is a real one: the loader verifies it and the task rules of the runtime admit it. */
+/* RT-028, RT-032: an artifact of exactly the configured code size is stored and restored by the shared store.
+ * The largest artifact the runtime accepts is the configured code size, stored and restored through the host
+ * program store, which is the store the firmware uses. The artifact is a real one: the loader verifies it and the
+ * task rules of the runtime admit it. */
 static void test_largest_artifact_deploys_and_restores(void)
 {
     static uint8_t artifact[ZPLC_MEM_CODE_SIZE + 64U];

@@ -5,7 +5,7 @@
  * SPDX-License-Identifier: MIT
  *
  * The test supplies its own HAL (the four calls the core makes) so that creating and taking the mutex can fail on
- * demand. Before RT-030, zplc_core_init() kept going without a mutex and returned 0.
+ * demand. Before this was fixed, zplc_core_init() kept going without a mutex and returned 0.
  */
 
 #include <stdio.h>

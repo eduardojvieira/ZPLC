@@ -9,8 +9,8 @@
 static uint8_t process_image[4096];
 static zplc_tag_entry_t process_tags[1];
 
-/* The exchange the server reads and writes through (RT-010): a fake that records how it was used and keeps the
- * bytes of the one variable the tag maps (WORK base 0x2000). */
+/* RT-010: the exchange the server reads and writes through is a fake that records how it was used.
+ * It keeps the bytes of the one variable the tag maps (WORK base 0x2000). */
 static int exchange_begin_result;
 static uint8_t exchange_begin_calls;
 static uint8_t exchange_add_calls;

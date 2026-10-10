@@ -1,7 +1,7 @@
 /**
  * @file test_program_store.c
- * @brief The durable program store: the largest artifact, chunked payloads, and a power cut at every step (RT-028,
- *        RT-031, RT-032).
+ * @brief The durable program store (RT-028, RT-031, RT-032): the largest artifact and a power cut at every step.
+ *        The tests cover chunked payloads, every size up to the code size and a torn write.
  *
  * SPDX-License-Identifier: MIT
  *
@@ -187,6 +187,7 @@ static zplc_program_store_restore_t restore(size_t *size) {
 /* Tests                                                                       */
 /* ------------------------------------------------------------------------- */
 
+/* RT-028: artifacts of every size round-trip, up to the code size. */
 static void test_sizes_round_trip(void) {
   const size_t chunk = ZPLC_PROGRAM_STORE_CHUNK_SIZE;
   const size_t footer = ZPLC_PROGRAM_STORE_FOOTER_SIZE;
@@ -234,6 +235,7 @@ static void test_sizes_round_trip(void) {
         "the largest artifact is stored in chunks");
 }
 
+/* RT-028: the largest artifact the store accepts is the configured code size. */
 static void test_largest_artifact_is_the_code_size(void) {
   size_t restored = 0U;
 
@@ -347,6 +349,7 @@ static void test_a_to_b_and_back(void) {
   }
 }
 
+/* RT-031: a power cut at every operation of a first deploy leaves nothing or the program. */
 static void test_first_deploy_power_cut_sweep(void) {
   unsigned long operations;
   unsigned long cut;
@@ -389,6 +392,7 @@ static void test_first_deploy_power_cut_sweep(void) {
   CHECK(saw_empty && saw_program, "and both outcomes occur (before and after the active record)");
 }
 
+/* RT-031: a power cut at every operation of a redeploy leaves the old program or the new. */
 static void test_redeploy_power_cut_sweep(void) {
   unsigned long operations;
   unsigned long cut;
@@ -445,6 +449,7 @@ static void test_redeploy_power_cut_sweep(void) {
   CHECK(!went_back, "once a cut leaves the new program, every later cut does too");
 }
 
+/* RT-031: a write the power cut in the middle never leaves a mixture. */
 static void test_torn_write_sweep(void) {
   unsigned long operations;
   unsigned long at;
@@ -503,6 +508,7 @@ static void test_torn_write_sweep(void) {
  * in it next to the metadata of the older one. It is never restored: the test loses the other program as well, so
  * that the half-written slot is the only candidate left, and then it must be reported as unverifiable (or be exactly
  * one of the two programs, when the cut left it whole). */
+/* RT-031: a slot half rewritten is never restored, even when it is all that is left. */
 static void test_a_mixture_of_two_programs_is_never_restored(void) {
   const size_t sizes[3] = {2900U, 3300U, 4100U};
   unsigned long operations;

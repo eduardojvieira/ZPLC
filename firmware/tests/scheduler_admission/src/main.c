@@ -1672,8 +1672,9 @@ ZTEST(zplc_scheduler_admission, test_program_load_is_a_cold_start) {
   clear_scheduler();
 }
 
-/* RT-010 and RT-012: a write from outside the scan is queued and applied at an input latch, a read sees what the
- * last commit published, and neither waits for the scan. */
+/* RT-010, RT-012: an outside write waits for the input latch and never for the scan, and a read sees the last commit.
+ * A write from outside the scan is queued and applied at an input latch, a read sees what the last commit
+ * published, and neither waits for the scan. */
 ZTEST(zplc_scheduler_admission,
       test_external_access_waits_for_the_latch_and_never_for_the_scan) {
   uint8_t program[PROGRAM_CAPACITY];
@@ -1743,8 +1744,9 @@ ZTEST(zplc_scheduler_admission, test_image_lock_is_free_while_the_pins_are_writt
   zassert_ok(zplc_sched_stop(), "stop");
 }
 
-/* RT-010 and RT-030: with no scan there is no latch to wait for, so a write applies at once; a lock that cannot
- * be taken is an error the caller sees and the write is refused whole. */
+/* RT-010, RT-030: with no scan a write applies at once, and a lock that cannot be taken is reported.
+ * With no scan there is no latch to wait for; a lock that cannot be taken is an error the caller sees and the
+ * write is refused whole. */
 ZTEST(zplc_scheduler_admission,
       test_external_write_without_a_scan_applies_at_once_and_reports_a_lock_failure) {
   const uint16_t address = ZPLC_MEM_WORK_BASE + 0x44U;
