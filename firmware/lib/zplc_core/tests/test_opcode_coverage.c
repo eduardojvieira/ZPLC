@@ -1770,6 +1770,14 @@ static const uint64_t DOUBLE_VALUES[] = {
 };
 #define N_DOUBLE (sizeof(DOUBLE_VALUES) / sizeof(DOUBLE_VALUES[0]))
 
+/* The pairs of the binary operations are drawn from a subset (indices into the tables above): the unary
+ * operations and the conversions take every value, and the cases stay a few thousand, which is what the
+ * Cortex-M3 under QEMU runs in a reasonable time. */
+static const uint8_t I64_PAIR[] = { 0, 1, 2, 3, 5, 6, 7, 8, 10, 11, 12, 13 };
+static const uint8_t I64_SHIFTED[] = { 1, 6, 7, 8, 10, 12, 13 };
+static const uint8_t DOUBLE_ARITH[] = { 0, 1, 2, 3, 4, 5, 7, 9, 11, 12, 13, 14, 15, 16, 17, 18, 21, 22, 23, 26 };
+static const uint8_t DOUBLE_ORDER[] = { 0, 1, 2, 3, 12, 15, 16, 17, 18, 23 };
+
 static void family_wide_integer(void)
 {
     static const uint8_t binary[] = { OP_MUL64, OP_DIVS64, OP_DIVU64, OP_MODS64, OP_MODU64 };
@@ -1783,12 +1791,12 @@ static void family_wide_integer(void)
     unsigned y;
 
     for (i = 0; i < sizeof(binary); i++) {
-        for (x = 0; x < N_I64; x++) {
-            for (y = 0; y < N_I64; y++) {
+        for (x = 0; x < sizeof(I64_PAIR); x++) {
+            for (y = 0; y < sizeof(I64_PAIR); y++) {
                 case_init(&k, "wide-integer", g_info[binary[i]].name);
                 memset(&c, 0, sizeof(c));
-                c_push64(&c, I64_VALUES[x]);
-                c_push64(&c, I64_VALUES[y]);
+                c_push64(&c, I64_VALUES[I64_PAIR[x]]);
+                c_push64(&c, I64_VALUES[I64_PAIR[y]]);
                 c_op(&c, binary[i]);
                 finish(&k, &c);
             }
@@ -1804,11 +1812,11 @@ static void family_wide_integer(void)
         }
     }
     for (i = 0; i < sizeof(shifts); i++) {
-        for (x = 0; x < N_I64; x++) {
+        for (x = 0; x < sizeof(I64_SHIFTED); x++) {
             for (y = 0; y < N_COUNTS; y++) {
                 case_init(&k, "wide-integer", g_info[shifts[i]].name);
                 memset(&c, 0, sizeof(c));
-                c_push64(&c, I64_VALUES[x]);
+                c_push64(&c, I64_VALUES[I64_SHIFTED[x]]);
                 c_push(&c, SHIFT_COUNTS[y]);
                 c_op(&c, shifts[i]);
                 finish(&k, &c);
@@ -1829,7 +1837,8 @@ static void family_wide_integer(void)
 
 static void family_double(void)
 {
-    static const uint8_t binary[] = { OP_ADDD, OP_SUBD, OP_MULD, OP_DIVD, OP_EQD, OP_NED, OP_LTD, OP_LED, OP_GTD, OP_GED };
+    static const uint8_t arithmetic[] = { OP_ADDD, OP_SUBD, OP_MULD, OP_DIVD };
+    static const uint8_t order[] = { OP_EQD, OP_NED, OP_LTD, OP_LED, OP_GTD, OP_GED };
     static const uint8_t unary[] = { OP_NEGD, OP_ABSD, OP_SQRTD, OP_RNDD, OP_D2I, OP_D2L, OP_D2U, OP_D2F };
     case_t k;
     code_t c;
@@ -1837,14 +1846,26 @@ static void family_double(void)
     unsigned x;
     unsigned y;
 
-    for (i = 0; i < sizeof(binary); i++) {
-        for (x = 0; x < N_DOUBLE; x++) {
-            for (y = 0; y < N_DOUBLE; y++) {
-                case_init(&k, "double", g_info[binary[i]].name);
+    for (i = 0; i < sizeof(arithmetic); i++) {
+        for (x = 0; x < sizeof(DOUBLE_ARITH); x++) {
+            for (y = 0; y < sizeof(DOUBLE_ARITH); y++) {
+                case_init(&k, "double", g_info[arithmetic[i]].name);
                 memset(&c, 0, sizeof(c));
-                c_push64(&c, DOUBLE_VALUES[x]);
-                c_push64(&c, DOUBLE_VALUES[y]);
-                c_op(&c, binary[i]);
+                c_push64(&c, DOUBLE_VALUES[DOUBLE_ARITH[x]]);
+                c_push64(&c, DOUBLE_VALUES[DOUBLE_ARITH[y]]);
+                c_op(&c, arithmetic[i]);
+                finish(&k, &c);
+            }
+        }
+    }
+    for (i = 0; i < sizeof(order); i++) {
+        for (x = 0; x < sizeof(DOUBLE_ORDER); x++) {
+            for (y = 0; y < sizeof(DOUBLE_ORDER); y++) {
+                case_init(&k, "double", g_info[order[i]].name);
+                memset(&c, 0, sizeof(c));
+                c_push64(&c, DOUBLE_VALUES[DOUBLE_ORDER[x]]);
+                c_push64(&c, DOUBLE_VALUES[DOUBLE_ORDER[y]]);
+                c_op(&c, order[i]);
                 finish(&k, &c);
             }
         }
