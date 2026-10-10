@@ -128,6 +128,32 @@ if(ZPLC_BUILD_FUZZER)
 
     target_compile_options(fuzz_loader_verify PRIVATE ${ZPLC_FUZZ_FLAGS})
     target_link_options(fuzz_loader_verify PRIVATE ${ZPLC_FUZZ_FLAGS})
+
+    # VF-014: load accepted artifacts and run them. The scan budget is the documented override
+    # of ZPLC_VM_CYCLE_INSTRUCTION_BUDGET, so that a loop costs microseconds, not milliseconds.
+    add_executable(fuzz_run_program
+        tests/fuzz_run_program.c
+        src/core/zplc_core.c
+        src/core/zplc_loader.c
+        src/core/zplc_comm_dispatch.c
+        src/hal/posix/zplc_hal_posix.c
+    )
+
+    target_include_directories(fuzz_run_program PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/include
+    )
+
+    target_compile_definitions(fuzz_run_program PRIVATE
+        ZPLC_CORE_VERSION_STR="${ZPLC_CORE_VERSION_STR}"
+        ZPLC_VM_CYCLE_INSTRUCTION_BUDGET=4096U
+    )
+
+    target_compile_options(fuzz_run_program PRIVATE ${ZPLC_FUZZ_FLAGS})
+    target_link_options(fuzz_run_program PRIVATE ${ZPLC_FUZZ_FLAGS})
+
+    if(UNIX AND NOT APPLE)
+        target_link_libraries(fuzz_run_program PRIVATE rt)
+    endif()
 endif()
 
 enable_testing()
