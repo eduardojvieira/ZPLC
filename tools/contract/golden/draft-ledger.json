@@ -15,6 +15,11 @@
       "counter": 3,
       "fingerprint": "fbb3e48b03b53c22863e82c53e58dc67d1e00d80e807fd6925af2f2e1d2de8d9",
       "reason": "Double-precision and 64-bit integer operations (CMP-015): 34 opcodes are new, MUL64 to SAR64 (0x04 to 0x0D) and F2D to GED (0xA7 to 0xBE), and the operand-less range I2F to GED grows. Artifacts built before this draft are refused."
+    },
+    {
+      "counter": 4,
+      "fingerprint": "d350e9901cd5e56522063fc85a5badbd1f18fb67f39ead7fa114b3baf0d56d34",
+      "reason": "TASK call_depth field and BUILD segment: the compiler records the call depth of each task and a build identity that its debug map repeats (CMP-050, CMP-056)"
     }
   ]
 }

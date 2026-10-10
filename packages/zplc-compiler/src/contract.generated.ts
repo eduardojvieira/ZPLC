@@ -11,7 +11,7 @@
 export const ABI_VERSION = { major: 1, minor: 0 } as const;
 
 /** Draft contract counter (CMP-052): written in header word 28 of every artifact and compared by the loader. */
-export const DRAFT_COUNTER = 3 as const;
+export const DRAFT_COUNTER = 4 as const;
 
 /** Container (.zplc file) constants. */
 export const CONTAINER = {
@@ -22,6 +22,8 @@ export const CONTAINER = {
   iomapEntrySize: 8,
   tagEntrySize: 8,
   maxTasks: 16,
+  maxVerifiedDepth: 127,
+  buildEntrySize: 4,
   crcOffset: 12,
   crcSize: 4,
 } as const;
@@ -52,7 +54,11 @@ export const CONTAINER_LAYOUT = {
     interval_us: { offset: 4, size: 4 },
     entry_point: { offset: 8, size: 2 },
     stack_size: { offset: 10, size: 2 },
-    reserved: { offset: 12, size: 4 },
+    call_depth: { offset: 12, size: 2 },
+    reserved: { offset: 14, size: 2 },
+  },
+  build: {
+    build_id: { offset: 0, size: 4 },
   },
   iomap: {
     var_addr: { offset: 0, size: 2 },
@@ -80,6 +86,7 @@ export const SEGMENT_TYPE = {
   DEBUG: 0x11,
   TASK: 0x20,
   TAGS: 0x30,
+  BUILD: 0x40,
 } as const;
 
 /** Task trigger types. */

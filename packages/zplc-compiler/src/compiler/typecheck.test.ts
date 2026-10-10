@@ -290,3 +290,72 @@ END_PROGRAM
     ]);
   });
 });
+
+// CMP-005: a text and a number are different kinds of value: IEC 61131-3 converts neither to the other implicitly, so a
+// STRING or WSTRING value that goes into a numeric, BOOL or time place is a mismatch that names both types.
+describe('a STRING or WSTRING is not a number, a BOOL or a time (CMP-005)', () => {
+  const NUMERIC = ['SINT', 'INT', 'DINT', 'LINT', 'USINT', 'UINT', 'UDINT', 'ULINT', 'BYTE', 'WORD', 'DWORD', 'LWORD', 'REAL', 'LREAL', 'BOOL', 'TIME'];
+  const TEXT = ['STRING', 'STRING[20]', 'WSTRING', 'WSTRING[20]'];
+
+  test.each(TEXT.flatMap((from) => NUMERIC.map((to) => [from, to] as const)))('%s does not go to %s', (from, to) => {
+    const found = assign(from, to);
+    expect(found).toHaveLength(1);
+    expect(found[0]!.line).toBe(6);
+    expect(found[0]!.detail).toContain(from.startsWith('W') ? 'WSTRING' : 'STRING');
+    expect(found[0]!.detail).toContain(to);
+    expect(found[0]!.detail).toContain('Type mismatch');
+  });
+
+  test('a string literal does not go to a number', () => {
+    const found = errors("PROGRAM P\nVAR n : INT; END_VAR\n  n := 'abc';\nEND_PROGRAM\n");
+    expect(found.map((each) => `${each.line}:${each.column}`)).toEqual(['3:8']);
+    expect(found[0]!.detail).toContain('STRING');
+    expect(found[0]!.detail).toContain('INT');
+  });
+
+  test('the initial value of a number is not a string', () => {
+    const found = errors("PROGRAM P\nVAR n : INT := 'x'; END_VAR\nEND_PROGRAM\n");
+    expect(found).toHaveLength(1);
+    expect(found[0]!.line).toBe(2);
+    expect(found[0]!.detail).toContain('STRING');
+  });
+
+  test('an argument of a function and an input of a function block are not strings', () => {
+    const call = errors("FUNCTION F : INT\nVAR_INPUT x : INT; END_VAR\n  F := x;\nEND_FUNCTION\nPROGRAM P\nVAR n : INT; s : STRING; END_VAR\n  n := F(x := s);\nEND_PROGRAM\n");
+    expect(call.map((each) => each.line)).toEqual([7]);
+    const block = errors("FUNCTION_BLOCK B\nVAR_INPUT x : INT; END_VAR\nEND_FUNCTION_BLOCK\nPROGRAM P\nVAR b : B; s : STRING; END_VAR\n  b(x := s);\nEND_PROGRAM\n");
+    expect(block.map((each) => each.line)).toEqual([6]);
+    expect(block[0]!.detail).toContain('STRING');
+  });
+
+  test('the value a function returns is not a string when the function returns a number', () => {
+    const found = errors("FUNCTION F : INT\nVAR_INPUT s : STRING; END_VAR\n  F := s;\nEND_FUNCTION\nPROGRAM P\nVAR n : INT; END_VAR\n  n := F(s := 'a');\nEND_PROGRAM\n");
+    expect(found.map((each) => each.line)).toEqual([3]);
+  });
+
+  test('a member and an element are places like any other', () => {
+    const member = errors("TYPE T : STRUCT x : INT; END_STRUCT END_TYPE\nPROGRAM P\nVAR t : T; s : STRING; END_VAR\n  t.x := s;\nEND_PROGRAM\n");
+    expect(member.map((each) => each.line)).toEqual([4]);
+    const element = errors("PROGRAM P\nVAR a : ARRAY[0..1] OF INT; s : STRING; END_VAR\n  a[0] := s;\nEND_PROGRAM\n");
+    expect(element.map((each) => each.line)).toEqual([3]);
+  });
+
+  test('a function that returns text does not go to a number', () => {
+    const found = errors('PROGRAM P\nVAR n : INT; s : STRING; END_VAR\n  n := CONCAT(s, s);\nEND_PROGRAM\n');
+    expect(found.map((each) => each.line)).toEqual([3]);
+    expect(found[0]!.detail).toContain('STRING');
+  });
+
+  test('a comparison of a string with a number, and a string as a condition, are mismatches', () => {
+    const compare = errors('PROGRAM P\nVAR b : BOOL; n : INT; s : STRING; END_VAR\n  b := n = s;\nEND_PROGRAM\n');
+    expect(compare.map((each) => each.line)).toEqual([3]);
+    const condition = errors('PROGRAM P\nVAR n : INT; s : STRING; END_VAR\n  IF s THEN n := 1; END_IF;\nEND_PROGRAM\n');
+    expect(condition.map((each) => each.line)).toEqual([3]);
+  });
+
+  test('what takes a string and gives a number still builds, and a string goes to a string', () => {
+    expect(errors('PROGRAM P\nVAR n : INT; s : STRING; END_VAR\n  n := LEN(s);\n  n := FIND(s, s);\nEND_PROGRAM\n')).toEqual([]);
+    expect(errors("PROGRAM P\nVAR a : STRING; b : STRING[10]; END_VAR\n  a := b;\n  b := 'text';\n  a := CONCAT(a, b);\nEND_PROGRAM\n")).toEqual([]);
+    expect(errors("PROGRAM P\nVAR w : WSTRING; END_VAR\n  w := \"wide\";\nEND_PROGRAM\n")).toEqual([]);
+  });
+});

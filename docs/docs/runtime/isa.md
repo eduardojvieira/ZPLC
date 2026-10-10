@@ -174,8 +174,9 @@ the `REAL` conversions are.
 Until the contract is frozen (CMP-052), header word 28 of every `.zplc` artifact
 holds the draft counter (`ZPLC_DRAFT_COUNTER`) and the loader refuses an artifact
 that carries another value, with both numbers. Every change of an opcode, layout
-or size increases it. The counter is **3** since the 64-bit and double-precision
-opcodes: programs built before are refused and must be rebuilt. The
+or size increases it. The counter is **4** since the call depth of a task and the
+build identity: programs built before are refused and must be rebuilt (it was 3
+with the 64-bit and double-precision opcodes). The
 `tools/contract/restamp_artifacts.py` tool moves the artifacts committed to the
 repository to the current counter.
 
@@ -203,6 +204,7 @@ The `.zplc` binary format uses packed public structures from the same header:
 - `zplc_task_def_t`
 - `zplc_iomap_entry_t`
 - `zplc_tag_entry_t`
+- `zplc_build_info_t`
 
 Public segment identifiers defined today include:
 
@@ -215,6 +217,26 @@ Public segment identifiers defined today include:
 - `ZPLC_SEG_DEBUG`
 - `ZPLC_SEG_TASK`
 - `ZPLC_SEG_TAGS`
+- `ZPLC_SEG_BUILD`
+
+## Task depth and build identity
+
+The compiler measures what the loader will prove, and records it in the artifact
+(CMP-050, CMP-056):
+
+- `stack_size` of a task definition is the most values the task holds on the
+  evaluation stack at once, and `call_depth` the most call frames it has active
+  at once, its own body included (1 for a task that calls nothing; 0 means the
+  artifact does not declare it). The loader refuses a task that needs more than
+  it declares, and a task whose call depth is more than the call stack of the VM
+  plus its body. The compiler fails the build when a task needs a stack deeper
+  than `ZPLC_VERIFY_MAX_DEPTH` (127) or than the target holds, or calls nested
+  deeper than `ZPLC_CALL_STACK_MAX`.
+- The `ZPLC_SEG_BUILD` segment holds one 32-bit value, the build identity: the
+  CRC-32 of the CODE segment followed by the TASK segment as written, never 0.
+  The debug map of the same build records it as `buildId` in 8 hexadecimal
+  digits, so that a tool can tell a map that does not belong to the program that
+  runs. An artifact without the segment reads as not identified.
 
 ## Related pages
 

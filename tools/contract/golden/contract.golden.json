@@ -1,6 +1,6 @@
 {
   "asm": {
-    "draftCounter": 3,
+    "draftCounter": 4,
     "magic": 1129074778,
     "opcodes": {
       "ABS": 38,
@@ -540,6 +540,7 @@
       },
       "zplc_segment_type_t": {
         "ZPLC_SEG_BSS": 3,
+        "ZPLC_SEG_BUILD": 64,
         "ZPLC_SEG_CODE": 1,
         "ZPLC_SEG_DATA": 2,
         "ZPLC_SEG_DEBUG": 17,
@@ -581,8 +582,9 @@
       }
     },
     "macros": {
+      "ZPLC_BUILD_ENTRY_SIZE": 4,
       "ZPLC_CALL_STACK_MAX": 32,
-      "ZPLC_DRAFT_COUNTER": 3,
+      "ZPLC_DRAFT_COUNTER": 4,
       "ZPLC_FILE_HEADER_SIZE": 32,
       "ZPLC_IOMAP_ENTRY_SIZE": 8,
       "ZPLC_LOADER_ERR_COMM": -16,
@@ -634,6 +636,7 @@
       "ZPLC_SYS_UPTIME": 4084,
       "ZPLC_TAG_ENTRY_SIZE": 8,
       "ZPLC_TASK_DEF_SIZE": 16,
+      "ZPLC_VERIFY_MAX_DEPTH": 127,
       "ZPLC_VERSION_MAJOR": 1,
       "ZPLC_VERSION_MINOR": 0
     },
@@ -1920,6 +1923,12 @@
       }
     },
     "structs": {
+      "zplc_build_info_t": {
+        "offsets": {
+          "build_id": 0
+        },
+        "size": 4
+      },
       "zplc_file_header_t": {
         "offsets": {
           "code_size": 16,
@@ -1964,11 +1973,12 @@
       },
       "zplc_task_def_t": {
         "offsets": {
+          "call_depth": 12,
           "entry_point": 8,
           "id": 0,
           "interval_us": 4,
           "priority": 3,
-          "reserved": 12,
+          "reserved": 14,
           "stack_size": 10,
           "type": 2
         },
@@ -2812,13 +2822,17 @@
       "SPB_REBIRTH": 64
     },
     "constants": {
+      "BUILD_ENTRY_SIZE": 4,
+      "CALL_STACK_MAX": 32,
       "CODE_SIZE_MAX": 45056,
-      "DRAFT_COUNTER": 3,
+      "DRAFT_COUNTER": 4,
       "DRAFT_COUNTER_OFFSET": 28,
       "HEADER_SIZE": 32,
       "MAGIC": 1129074778,
       "MAX_TASKS": 16,
+      "MAX_VERIFIED_DEPTH": 127,
       "SEGMENT_ENTRY_SIZE": 8,
+      "SEGMENT_TYPE_BUILD": 64,
       "SEGMENT_TYPE_CODE": 1,
       "SEGMENT_TYPE_DATA": 2,
       "SEGMENT_TYPE_TAGS": 48,

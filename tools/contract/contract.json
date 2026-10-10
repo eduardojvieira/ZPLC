@@ -5,7 +5,7 @@
     "versionMajor": 1,
     "versionMinor": 0,
     "doc": "ISA and container version. The one final version integer of CMP-052 is assigned and frozen when the conformance matrix is closed; until then the draft counter below is what the loader and Studio compare.",
-    "draftCounter": 3,
+    "draftCounter": 4,
     "draftDoc": "Draft contract counter (CMP-052).\n\nIncreases by one with every change of an opcode, layout, size or code until the contract freeze. The compiler writes it in header word 28 of every artifact and the loader refuses an artifact whose counter differs from this value (ZPLC_LOADER_ERR_DRAFT). 0 is what an artifact built before the counter carries and is never accepted."
   },
   "container": {
@@ -15,6 +15,7 @@
     },
     "crc": {"offset": 12, "size": 4, "polynomial": "0xEDB88320", "doc": "CRC32 (IEEE 802.3) over the whole file except the 4 bytes of the crc32 field."},
     "maxTasks": {"value": 16, "doc": "Artifact-wide v1 admission limit for TASK segment entries (loader)."},
+    "maxVerifiedDepth": {"value": 127, "doc": "Deepest evaluation stack the loader proves for a task. A program that needs more is refused, whatever the target stack allows; the compiler fails the build above it (CMP-050)."},
     "structs": [
       {
         "name": "header",
@@ -66,7 +67,19 @@
           {"name": "interval_us", "type": "uint32_t", "doc": "Cycle time in microseconds"},
           {"name": "entry_point", "type": "uint16_t", "doc": "Code offset"},
           {"name": "stack_size", "type": "uint16_t", "doc": "Required stack depth"},
-          {"name": "reserved", "type": "uint32_t", "doc": "Reserved (must be 0)"}
+          {"name": "call_depth", "type": "uint16_t", "doc": "Call frames active at once, the task body included (1 for a task that calls nothing); 0 = not declared (CMP-050)"},
+          {"name": "reserved", "type": "uint16_t", "doc": "Reserved (must be 0)"}
+        ]
+      },
+      {
+        "name": "build",
+        "typedef": "zplc_build_info_t",
+        "sizeMacro": "ZPLC_BUILD_ENTRY_SIZE",
+        "size": 4,
+        "doc": "Build identity, the payload of the BUILD segment (4 bytes).\n\nA hash of the CODE segment followed by the TASK segment as written; the debug map of the build records the same value, so that a tool can tell a map that does not belong to the running program (CMP-056).",
+        "sizeDoc": "Expected size of the build identity",
+        "fields": [
+          {"name": "build_id", "type": "uint32_t", "doc": "CRC-32 of CODE then TASK; never 0 (0 = not identified)"}
         ]
       },
       {
@@ -129,7 +142,8 @@
           {"name": "SYMTAB", "value": "0x10", "doc": "Symbol table"},
           {"name": "DEBUG", "value": "0x11", "doc": "Debug information"},
           {"name": "TASK", "value": "0x20", "doc": "Task definitions"},
-          {"name": "TAGS", "value": "0x30", "doc": "Variable tags (networking metadata)"}
+          {"name": "TAGS", "value": "0x30", "doc": "Variable tags (networking metadata)"},
+          {"name": "BUILD", "value": "0x40", "doc": "Build identity of the artifact (CMP-056)"}
         ]
       },
       {

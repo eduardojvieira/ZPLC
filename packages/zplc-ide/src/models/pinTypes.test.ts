@@ -9,8 +9,6 @@ const ELEMENTARY = [
   'REAL', 'LREAL', 'TIME', 'STRING', 'WSTRING', 'DATE', 'TOD', 'DT',
 ];
 
-const isString = (type: string): boolean => type === 'STRING' || type === 'WSTRING';
-
 /** What the compiler says to `b := a;` for two declared variables: accepted, refused as a type error, or unsupported today. */
 function compilerVerdict(from: string, to: string): 'accepts' | 'refuses' | 'cannot say' {
   try {
@@ -30,9 +28,7 @@ describe('LNG-013 a pin takes what the compiler would take', () => {
     for (const from of ELEMENTARY) {
       for (const to of ELEMENTARY) {
         const verdict = compilerVerdict(from, to);
-        // A compiler that accepts a STRING where a number goes has a defect in its string check, not a rule of the language:
-        // a pin is refused it, and the pair is not a disagreement the table can settle. One that refuses it is compared.
-        if (verdict === 'cannot say' || (verdict === 'accepts' && isString(from) && !isString(to))) continue;
+        if (verdict === 'cannot say') continue;
         compared += 1;
         const problem = pinTypeProblem(from, to);
         if ((problem === undefined) !== (verdict === 'accepts')) disagreements.push(`${from} -> ${to}: compiler ${verdict}, pin ${problem === undefined ? 'accepts' : 'refuses'}`);
@@ -42,7 +38,7 @@ describe('LNG-013 a pin takes what the compiler would take', () => {
     expect(disagreements).toEqual([]);
   });
 
-  it('refuses a string where the compiler is lax: a string feeds only a string of its own kind', () => {
+  it('refuses a string for anything but a string of its own kind, as the compiler does', () => {
     for (const from of ['STRING', 'WSTRING']) {
       for (const to of ['BOOL', 'INT', 'REAL', 'TIME', 'DATE']) expect(pinTypeProblem(from, to)).toContain(from);
       expect(pinTypeProblem(from, from)).toBeUndefined();

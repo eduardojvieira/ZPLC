@@ -51,7 +51,7 @@ extern "C" {
  *
  * Increases by one with every change of an opcode, layout, size or code until the contract freeze. The compiler writes it in header word 28 of every artifact and the loader refuses an artifact whose counter differs from this value (ZPLC_LOADER_ERR_DRAFT). 0 is what an artifact built before the counter carries and is never accepted.
  */
-#define ZPLC_DRAFT_COUNTER 3U
+#define ZPLC_DRAFT_COUNTER 4U
 /* <<< END GENERATED: version <<< */
 
 /* ============================================================================
@@ -605,7 +605,8 @@ typedef enum {
   ZPLC_SEG_SYMTAB = 0x10, /**< Symbol table */
   ZPLC_SEG_DEBUG = 0x11, /**< Debug information */
   ZPLC_SEG_TASK = 0x20, /**< Task definitions */
-  ZPLC_SEG_TAGS = 0x30 /**< Variable tags (networking metadata) */
+  ZPLC_SEG_TAGS = 0x30, /**< Variable tags (networking metadata) */
+  ZPLC_SEG_BUILD = 0x40 /**< Build identity of the artifact (CMP-056) */
 } zplc_segment_type_t;
 
 /** @brief Task definition (16 bytes). */
@@ -616,7 +617,8 @@ typedef struct ZPLC_PACKED {
   uint32_t interval_us; /**< Cycle time in microseconds */
   uint16_t entry_point; /**< Code offset */
   uint16_t stack_size; /**< Required stack depth */
-  uint32_t reserved; /**< Reserved (must be 0) */
+  uint16_t call_depth; /**< Call frames active at once, the task body included (1 for a task that calls nothing); 0 = not declared (CMP-050) */
+  uint16_t reserved; /**< Reserved (must be 0) */
 } zplc_task_def_t;
 
 /** @brief Expected size of task definition */
@@ -630,7 +632,8 @@ enum { zplc_assert_offsetof_task_priority = 1 / (offsetof(zplc_task_def_t, prior
 enum { zplc_assert_offsetof_task_interval_us = 1 / (offsetof(zplc_task_def_t, interval_us) == 4U) };
 enum { zplc_assert_offsetof_task_entry_point = 1 / (offsetof(zplc_task_def_t, entry_point) == 8U) };
 enum { zplc_assert_offsetof_task_stack_size = 1 / (offsetof(zplc_task_def_t, stack_size) == 10U) };
-enum { zplc_assert_offsetof_task_reserved = 1 / (offsetof(zplc_task_def_t, reserved) == 12U) };
+enum { zplc_assert_offsetof_task_call_depth = 1 / (offsetof(zplc_task_def_t, call_depth) == 12U) };
+enum { zplc_assert_offsetof_task_reserved = 1 / (offsetof(zplc_task_def_t, reserved) == 14U) };
 
 /** @brief Task types. */
 typedef enum {
@@ -638,6 +641,22 @@ typedef enum {
   ZPLC_TASK_EVENT = 1, /**< Event-triggered */
   ZPLC_TASK_INIT = 2 /**< Run once at startup */
 } zplc_task_type_t;
+
+/**
+ * @brief Build identity, the payload of the BUILD segment (4 bytes).
+ *
+ * A hash of the CODE segment followed by the TASK segment as written; the debug map of the build records the same value, so that a tool can tell a map that does not belong to the running program (CMP-056).
+ */
+typedef struct ZPLC_PACKED {
+  uint32_t build_id; /**< CRC-32 of CODE then TASK; never 0 (0 = not identified) */
+} zplc_build_info_t;
+
+/** @brief Expected size of the build identity */
+#define ZPLC_BUILD_ENTRY_SIZE 4
+
+/* Layout check generated from the contract: dividing by zero in an enumerator breaks the build. */
+enum { zplc_assert_sizeof_build = 1 / (sizeof(zplc_build_info_t) == 4U) };
+enum { zplc_assert_offsetof_build_build_id = 1 / (offsetof(zplc_build_info_t, build_id) == 0U) };
 
 /** @brief I/O map entry (8 bytes). */
 typedef struct ZPLC_PACKED {

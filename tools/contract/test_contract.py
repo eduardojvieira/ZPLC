@@ -26,6 +26,7 @@ ROOT = HERE.parents[1]
 sys.path.insert(0, str(HERE))
 
 import crc_cross  # noqa: E402
+import depth_cross  # noqa: E402
 import generate  # noqa: E402
 import snapshot  # noqa: E402
 import zplc_contract as zc  # noqa: E402
@@ -434,6 +435,21 @@ class CrcAgreesBetweenCAndTypeScript(unittest.TestCase):
         draft = GOLDEN["c"]["macros"]["ZPLC_LOADER_ERR_DRAFT"]
         self.assertEqual(verdicts["other_draft_artifact"], draft)
         self.assertEqual(verdicts["no_counter_artifact"], draft)
+
+
+class DeclaredDepthIsTheLoadersMeasure(unittest.TestCase):
+    """CMP-050: the stack and call depth the compiler records in a task are exactly what the C loader measures."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.result = depth_cross.run()
+
+    def test_a_good_number_of_conformance_artifacts_are_looked_at(self):
+        self.assertGreater(self.result["artifacts"], 300)
+        self.assertGreater(self.result["lowered"], 300)
+
+    def test_the_loader_accepts_each_artifact_and_refuses_it_with_a_depth_one_lower(self):
+        self.assertEqual(self.result["wrong"], [])
 
 
 class ValidationRejectsADriftedSource(unittest.TestCase):

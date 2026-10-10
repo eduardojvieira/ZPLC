@@ -219,7 +219,7 @@ export const FIFO_FB: FunctionBlockDef = {
         ctx.emit(`    STOREI32`);
         // Stack: []
 
-        // Increment tail (simplified without modulo for now)
+        // Advance the tail, modulo the size
         ctx.emit(`    LOAD32 ${formatAddr(TAIL)}`);
         ctx.emit(`    PUSH8 1`);
         ctx.emit(`    ADD`);
