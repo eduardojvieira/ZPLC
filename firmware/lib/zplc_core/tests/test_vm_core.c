@@ -2864,6 +2864,45 @@ static void test_comm_status_reads_fb_status_word(void)
                    "COMM_STATUS pushes FB STATUS word");
 }
 
+/*
+ * The communication operand is 32 bits wide and the kind type is an enum. On a
+ * target compiled with -fshort-enums (arm-zephyr-eabi) the enum is one byte, so
+ * narrowing the operand before validating it turns 0x00000114 into the valid
+ * kind 0x14. The VM must reject the whole operand.
+ */
+static void test_comm_kind_operand_is_validated_before_narrowing(void)
+{
+    static const uint32_t wide_operands[] = {
+        0x00000100U | (uint32_t)ZPLC_COMM_FB_COMM_STATUS,
+        0x00010000U | (uint32_t)ZPLC_COMM_FB_COMM_STATUS,
+        0x80000000U | (uint32_t)ZPLC_COMM_FB_COMM_STATUS,
+    };
+    size_t index;
+
+    printf("\n=== Test: comm kind operand wider than the enum ===\n");
+
+    for (index = 0U; index < sizeof(wide_operands) / sizeof(wide_operands[0]);
+         index++) {
+        uint8_t code[16];
+        size_t len = 0;
+        const zplc_vm_state_t *state;
+
+        zplc_core_init();
+        len = emit_push16(code, len, ZPLC_MEM_IPI_BASE);
+        len = emit_comm32(code, len, OP_COMM_STATUS, wide_operands[index]);
+        len = emit_op(code, len, OP_HALT);
+
+        TEST_ASSERT_EQ(zplc_test_load_raw(code, len), 0,
+                       "Load wide comm kind probe");
+        (void)zplc_core_run(0);
+
+        state = zplc_core_get_state();
+        TEST_ASSERT_EQ(state->error, ZPLC_VM_INVALID_OPCODE,
+                       "Wide comm kind operand is rejected, not narrowed");
+        TEST_ASSERT_EQ(state->sp, 0, "Rejected comm operand pushes no STATUS");
+    }
+}
+
 static void test_bounded_vm_execution(void)
 {
     uint8_t loop[] = { OP_JMP, 0U, 0U };
@@ -3036,6 +3075,7 @@ int main(void)
 
     /* Communication opcode regression tests */
     test_comm_status_reads_fb_status_word();
+    test_comm_kind_operand_is_validated_before_narrowing();
     test_bounded_vm_execution();
     test_vm_stack_limit_defaults_and_hard_guard();
 

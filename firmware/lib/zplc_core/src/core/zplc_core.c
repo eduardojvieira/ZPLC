@@ -1926,15 +1926,19 @@ int zplc_vm_step(zplc_vm_t *vm) {
     VM_CHECK_STACK_UNDERFLOW(vm, 1);
     a = VM_POP(vm); /* FB base address inside memory regions */
     {
-      zplc_comm_fb_kind_t kind = (zplc_comm_fb_kind_t)operand32;
+      zplc_comm_fb_kind_t kind;
       uint16_t fb_base = (uint16_t)a;
 
-      /* Validate FB kind before dispatch */
-      if (kind == ZPLC_COMM_FB_NONE || kind >= ZPLC_COMM_FB_KIND_MAX) {
+      /* Validate the 32-bit operand before it is narrowed to the kind type.
+       * The enum is one byte on targets built with -fshort-enums, so casting
+       * first would turn 0x00000114 into the valid kind 0x14. */
+      if (operand32 == (uint32_t)ZPLC_COMM_FB_NONE ||
+          operand32 >= (uint32_t)ZPLC_COMM_FB_KIND_MAX) {
         vm->error = ZPLC_VM_INVALID_OPCODE;
         vm->halted = 1;
         return ZPLC_VM_INVALID_OPCODE;
       }
+      kind = (zplc_comm_fb_kind_t)operand32;
 
       /* First, determine the physical pointer to FB memory. Comm FBs are mostly
        * in WORK or RETAIN memory */
