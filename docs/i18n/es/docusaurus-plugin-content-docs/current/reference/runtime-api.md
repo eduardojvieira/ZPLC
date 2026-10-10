@@ -2518,3 +2518,511 @@ int zplc_sched_unlock(void);
 | `ZPLC_MAX_TASKS` | `8` | — |
 | `ZPLC_MIN_INTERVAL_US` | `1000` | Minimum task interval in microseconds (1ms) |
 | `ZPLC_MAX_INTERVAL_US` | `3600000000UL` | Maximum task interval in microseconds (1 hour) |
+
+## Tablas del contrato binario
+
+Estas tablas se generan desde `tools/contract/contract.json`, la fuente única de los opcodes, las constantes del contenedor, los códigos de error, las regiones de memoria y los layouts de los bloques de función de comunicación. Las cabeceras C, las tablas TypeScript del compilador y las herramientas Python se generan del mismo archivo, así que no pueden divergir.
+
+### Constantes del contenedor
+
+| Constante | Valor | Notas |
+| --- | --- | --- |
+| Número mágico | `0x434C505A` | `5A 50 4C 43` = "ZPLC" |
+| Versión del ISA (mayor.menor) | `1.0` |  |
+| Tamaño de la cabecera del archivo (bytes) | `32` |  |
+| Tamaño de la entrada de segmento (bytes) | `8` |  |
+| Tamaño de la definición de tarea (bytes) | `16` |  |
+| Tamaño de la entrada del mapa de E/S (bytes) | `8` |  |
+| Tamaño de la entrada de etiqueta (bytes) | `8` |  |
+| Máximo de tareas en un artefacto | `16` |  |
+| CRC32 | `0xEDB88320` | Polinomio IEEE 802.3 0xEDB88320, sobre todo el archivo salvo los 4 bytes en el offset 12. |
+
+### Layout de `zplc_file_header_t`
+
+| Offset | Campo | Tipo | Bytes | Descripción |
+| --- | --- | --- | --- | --- |
+| `0` | `magic` | `uint32_t` | 4 | Magic number: ZPLC_MAGIC |
+| `4` | `version_major` | `uint16_t` | 2 | Major version |
+| `6` | `version_minor` | `uint16_t` | 2 | Minor version |
+| `8` | `flags` | `uint32_t` | 4 | Feature flags |
+| `12` | `crc32` | `uint32_t` | 4 | CRC32 of file (excluding this field) |
+| `16` | `code_size` | `uint32_t` | 4 | Size of code segment (bytes) |
+| `20` | `data_size` | `uint32_t` | 4 | Size of data segment (bytes) |
+| `24` | `entry_point` | `uint16_t` | 2 | Code offset of main entry |
+| `26` | `segment_count` | `uint16_t` | 2 | Number of segments |
+| `28` | `reserved` | `uint32_t` | 4 | Reserved (must be 0) |
+
+### Layout de `zplc_segment_entry_t`
+
+| Offset | Campo | Tipo | Bytes | Descripción |
+| --- | --- | --- | --- | --- |
+| `0` | `type` | `uint16_t` | 2 | Segment type |
+| `2` | `flags` | `uint16_t` | 2 | Segment-specific flags |
+| `4` | `size` | `uint32_t` | 4 | Segment size (bytes) |
+
+### Layout de `zplc_task_def_t`
+
+| Offset | Campo | Tipo | Bytes | Descripción |
+| --- | --- | --- | --- | --- |
+| `0` | `id` | `uint16_t` | 2 | Task ID |
+| `2` | `type` | `uint8_t` | 1 | Task type (cyclic, event, init) |
+| `3` | `priority` | `uint8_t` | 1 | Priority (0=highest) |
+| `4` | `interval_us` | `uint32_t` | 4 | Cycle time in microseconds |
+| `8` | `entry_point` | `uint16_t` | 2 | Code offset |
+| `10` | `stack_size` | `uint16_t` | 2 | Required stack depth |
+| `12` | `reserved` | `uint32_t` | 4 | Reserved (must be 0) |
+
+### Layout de `zplc_iomap_entry_t`
+
+| Offset | Campo | Tipo | Bytes | Descripción |
+| --- | --- | --- | --- | --- |
+| `0` | `var_addr` | `uint16_t` | 2 | Variable address in memory |
+| `2` | `var_type` | `uint8_t` | 1 | Data type ID |
+| `3` | `direction` | `uint8_t` | 1 | 0=Input, 1=Output |
+| `4` | `channel` | `uint16_t` | 2 | Physical channel number |
+| `6` | `flags` | `uint16_t` | 2 | Bit offset, invert, etc. |
+
+### Layout de `zplc_tag_entry_t`
+
+| Offset | Campo | Tipo | Bytes | Descripción |
+| --- | --- | --- | --- | --- |
+| `0` | `var_addr` | `uint16_t` | 2 | Memory address of the variable |
+| `2` | `var_type` | `uint8_t` | 1 | Data type ID (zplc_data_type_t) |
+| `3` | `tag_id` | `uint8_t` | 1 | Protocol/Tag identifier (1=Publish, 2=Modbus, etc.) |
+| `4` | `value` | `uint32_t` | 4 | Parameter (Modbus address, or offset to string table) |
+
+### Flags de la cabecera
+
+| Nombre | Máscara | Descripción |
+| --- | --- | --- |
+| `ZPLC_FLAG_HAS_DEBUG` | `0x01` | Debug segment present |
+| `ZPLC_FLAG_HAS_SYMBOLS` | `0x02` | Symbol table present |
+| `ZPLC_FLAG_HAS_RETAIN` | `0x04` | Uses retentive memory |
+| `ZPLC_FLAG_SIGNED` | `0x08` | Cryptographic signature |
+
+### Tipos de segmento
+
+| Nombre | Valor | Descripción |
+| --- | --- | --- |
+| `ZPLC_SEG_CODE` | `0x01` | Executable bytecode |
+| `ZPLC_SEG_DATA` | `0x02` | Initialized data |
+| `ZPLC_SEG_BSS` | `0x03` | Uninitialized data |
+| `ZPLC_SEG_RETAIN` | `0x04` | Retentive variables |
+| `ZPLC_SEG_IOMAP` | `0x05` | I/O mapping table |
+| `ZPLC_SEG_SYMTAB` | `0x10` | Symbol table |
+| `ZPLC_SEG_DEBUG` | `0x11` | Debug information |
+| `ZPLC_SEG_TASK` | `0x20` | Task definitions |
+| `ZPLC_SEG_TAGS` | `0x30` | Variable tags (networking metadata) |
+
+### Tipos de tarea
+
+| Nombre | Valor | Descripción |
+| --- | --- | --- |
+| `ZPLC_TASK_CYCLIC` | `0x00` | Periodic execution |
+| `ZPLC_TASK_EVENT` | `0x01` | Event-triggered |
+| `ZPLC_TASK_INIT` | `0x02` | Run once at startup |
+
+### Direcciones de E/S
+
+| Nombre | Valor | Descripción |
+| --- | --- | --- |
+| `ZPLC_IO_INPUT` | `0x00` | Input (HAL -> VM) |
+| `ZPLC_IO_OUTPUT` | `0x01` | Output (VM -> HAL) |
+
+### Identificadores de etiqueta
+
+| Nombre | Valor | Descripción |
+| --- | --- | --- |
+| `ZPLC_TAG_NONE` | `0x00` |  |
+| `ZPLC_TAG_PUBLISH` | `0x01` | \{publish\} |
+| `ZPLC_TAG_MODBUS` | `0x02` | \{modbus:N\} |
+| `ZPLC_TAG_SUBSCRIBE` | `0x03` | \{subscribe\} |
+
+### Regiones de memoria
+
+| Región | Base | Tamaño por defecto | Override por Kconfig | Descripción |
+| --- | --- | --- | --- | --- |
+| `IPI` | `0x0000` | `0x1000` | — | Input Process Image |
+| `OPI` | `0x1000` | `0x1000` | — | Output Process Image |
+| `WORK` | `0x2000` | `0x2000` | `CONFIG_ZPLC_WORK_MEMORY_SIZE` | Work Memory |
+| `RETAIN` | `0x4000` | `0x1000` | `CONFIG_ZPLC_RETAIN_MEMORY_SIZE` | Retentive Memory |
+| `CODE` | `0x5000` | `0xB000` | `CONFIG_ZPLC_CODE_SIZE_MAX` | Code Segment |
+
+### Límites de ejecución
+
+| Límite | Valor | Override por Kconfig | Descripción |
+| --- | --- | --- | --- |
+| `ZPLC_MAX_TAGS` | `64` | — | Maximum number of variable tags supported |
+| `ZPLC_STACK_MAX_DEPTH` | `256` | `CONFIG_ZPLC_STACK_DEPTH` | Maximum evaluation stack depth (configurable via Kconfig) |
+| `ZPLC_CALL_STACK_MAX` | `32` | `CONFIG_ZPLC_CALL_STACK_DEPTH` | Maximum call stack depth (configurable via Kconfig) |
+| `ZPLC_MAX_BREAKPOINTS` | `16` | `CONFIG_ZPLC_MAX_BREAKPOINTS` | Maximum number of breakpoints (configurable via Kconfig) |
+
+### Registros del sistema (imagen de entrada)
+
+| Nombre | Dirección | Tipo | Bytes | Descripción |
+| --- | --- | --- | --- | --- |
+| `ZPLC_SYS_CYCLE_TIME` | `0x0FF0` | `DINT` | 4 | System register: Last cycle execution time in microseconds (DINT, 4 bytes) |
+| `ZPLC_SYS_UPTIME` | `0x0FF4` | `UDINT` | 4 | System register: System uptime in milliseconds (UDINT, 4 bytes) |
+| `ZPLC_SYS_TASK_ID` | `0x0FF8` | `BYTE` | 1 | System register: Current task ID (BYTE, 1 byte) |
+| `ZPLC_SYS_FLAGS` | `0x0FF9` | `BYTE` | 1 | System register: System flags (BYTE, 1 byte) |
+
+### Flags del sistema
+
+| Nombre | Valor | Descripción |
+| --- | --- | --- |
+| `ZPLC_SYS_FLAG_FIRST_SCAN` | `0x01` | System flags: First scan bit (set on first cycle after start) |
+| `ZPLC_SYS_FLAG_WDG_WARN` | `0x02` | Reserved system flag; not produced by current runtimes. |
+| `ZPLC_SYS_FLAG_RUNNING` | `0x04` | System flags: Scheduler is running |
+
+### Identificadores de tipo de dato
+
+| Nombre | Identificador | Bytes | Descripción |
+| --- | --- | --- | --- |
+| `NONE` | `0x00` | 0 | Invalid/unspecified |
+| `BOOL` | `0x01` | 1 | Boolean (1 byte) |
+| `SINT` | `0x02` | 1 | Signed 8-bit integer |
+| `INT` | `0x04` | 2 | Signed 16-bit integer |
+| `DINT` | `0x06` | 4 | Signed 32-bit integer |
+| `LINT` | `0x08` | 8 | Signed 64-bit integer |
+| `USINT` | `0x03` | 1 | Unsigned 8-bit integer |
+| `UINT` | `0x05` | 2 | Unsigned 16-bit integer |
+| `UDINT` | `0x07` | 4 | Unsigned 32-bit integer |
+| `ULINT` | `0x09` | 8 | Unsigned 64-bit integer |
+| `REAL` | `0x0A` | 4 | 32-bit IEEE 754 float |
+| `LREAL` | `0x0B` | 8 | 64-bit IEEE 754 double |
+| `TIME` | `0x0C` | 4 | Time duration (ms as DINT) |
+| `BYTE` | `0x10` | 1 | 8-bit bit string |
+| `WORD` | `0x11` | 2 | 16-bit bit string |
+| `DWORD` | `0x12` | 4 | 32-bit bit string |
+| `LWORD` | `0x13` | 8 | 64-bit bit string |
+| `STRING` | `0x20` | — | Variable-length string (IEC 61131-3) |
+
+### Layout de STRING
+
+Un STRING es `[longitud:2][capacidad:2][datos:capacidad+1]`, little-endian. La capacidad por defecto es de 80 caracteres (85 bytes) y la máxima de 255.
+
+### Opcodes
+
+El tamaño del operando sigue el rango del opcode (0x00-0x3F ninguno, 0x40-0x7F 8 bits, 0x80-0xBF 16 bits, 0xC0-0xFF 32 bits), salvo `RET` y las conversiones `I2F` a `ZEXT16`, que no llevan operando. Los efectos sobre la pila ponen el tope a la derecha.
+
+| Código | Mnemónico | Operando | Efecto en la pila | Flags | Descripción |
+| --- | --- | --- | --- | --- | --- |
+| `0x00` | `NOP` | 0 | `[] -> []` | — | No operation |
+| `0x01` | `HALT` | 0 | `[] -> []` | `terminates` | Stop execution |
+| `0x02` | `BREAK` | 0 | `[] -> []` | — | Debugger breakpoint |
+| `0x03` | `GET_TICKS` | 0 | `[] -> [ticks]` | — | Push system tick (ms) to stack |
+| `0x10` | `DUP` | 0 | `[a] -> [a a]` | — | Duplicate top of stack |
+| `0x11` | `DROP` | 0 | `[a] -> []` | — | Discard top of stack |
+| `0x12` | `SWAP` | 0 | `[a b] -> [b a]` | — | Swap top two elements |
+| `0x13` | `OVER` | 0 | `[a b] -> [a b a]` | — | Copy second element to top |
+| `0x14` | `ROT` | 0 | `[a b c] -> [b c a]` | — | Rotate top three elements |
+| `0x15` | `LOADI8` | 0 | `[addr] -> [value]` | — | Load 8-bit from address on stack |
+| `0x16` | `LOADI32` | 0 | `[addr] -> [value]` | — | Load 32-bit from address on stack |
+| `0x17` | `STOREI8` | 0 | `[addr value] -> []` | — | Store 8-bit to address on stack: [addr val] -> [] |
+| `0x18` | `STOREI32` | 0 | `[addr value] -> []` | — | Store 32-bit to address on stack: [addr val] -> [] |
+| `0x19` | `LOADI16` | 0 | `[addr] -> [value]` | — | Load 16-bit from address on stack |
+| `0x1A` | `STOREI16` | 0 | `[addr value] -> []` | — | Store 16-bit to address on stack: [addr val] -> [] |
+| `0x1B` | `STRLEN` | 0 | `[str] -> [len]` | — | Get string length: [str_addr] -> [length] |
+| `0x1C` | `STRCPY` | 0 | `[src dst] -> []` | — | Copy string: [src_addr dst_addr] -> [] (safe, bounds-checked) |
+| `0x1D` | `STRCAT` | 0 | `[src dst] -> []` | — | Concatenate: [src_addr dst_addr] -> [] (safe, bounds-checked) |
+| `0x1E` | `STRCMP` | 0 | `[a b] -> [cmp]` | — | Compare strings: [addr1 addr2] -> [result] (-1, 0, 1) |
+| `0x1F` | `STRCLR` | 0 | `[str] -> []` | — | Clear string: [str_addr] -> [] |
+| `0x20` | `ADD` | 0 | `[a b] -> [r]` | — | Integer addition |
+| `0x21` | `SUB` | 0 | `[a b] -> [r]` | — | Integer subtraction |
+| `0x22` | `MUL` | 0 | `[a b] -> [r]` | — | Integer multiplication |
+| `0x23` | `DIV` | 0 | `[a b] -> [r]` | — | Integer division |
+| `0x24` | `MOD` | 0 | `[a b] -> [r]` | — | Integer modulo |
+| `0x25` | `NEG` | 0 | `[a] -> [r]` | — | Integer negation |
+| `0x26` | `ABS` | 0 | `[a] -> [r]` | — | Absolute value |
+| `0x28` | `ADDF` | 0 | `[a b] -> [r]` | — | Float addition |
+| `0x29` | `SUBF` | 0 | `[a b] -> [r]` | — | Float subtraction |
+| `0x2A` | `MULF` | 0 | `[a b] -> [r]` | — | Float multiplication |
+| `0x2B` | `DIVF` | 0 | `[a b] -> [r]` | — | Float division |
+| `0x2C` | `NEGF` | 0 | `[a] -> [r]` | — | Float negation |
+| `0x2D` | `ABSF` | 0 | `[a] -> [r]` | — | Float absolute value |
+| `0x30` | `AND` | 0 | `[a b] -> [r]` | — | Bitwise AND |
+| `0x31` | `OR` | 0 | `[a b] -> [r]` | — | Bitwise OR |
+| `0x32` | `XOR` | 0 | `[a b] -> [r]` | — | Bitwise XOR |
+| `0x33` | `NOT` | 0 | `[a] -> [r]` | — | Bitwise NOT |
+| `0x34` | `SHL` | 0 | `[a b] -> [r]` | — | Shift left |
+| `0x35` | `SHR` | 0 | `[a b] -> [r]` | — | Shift right (logical) |
+| `0x36` | `SAR` | 0 | `[a b] -> [r]` | — | Shift right (arithmetic) |
+| `0x38` | `EQ` | 0 | `[a b] -> [flag]` | — | Equal |
+| `0x39` | `NE` | 0 | `[a b] -> [flag]` | — | Not equal |
+| `0x3A` | `LT` | 0 | `[a b] -> [flag]` | — | Less than (signed) |
+| `0x3B` | `LE` | 0 | `[a b] -> [flag]` | — | Less or equal (signed) |
+| `0x3C` | `GT` | 0 | `[a b] -> [flag]` | — | Greater than (signed) |
+| `0x3D` | `GE` | 0 | `[a b] -> [flag]` | — | Greater or equal (signed) |
+| `0x3E` | `LTU` | 0 | `[a b] -> [flag]` | — | Less than (unsigned) |
+| `0x3F` | `GTU` | 0 | `[a b] -> [flag]` | — | Greater than (unsigned) |
+| `0x40` | `PUSH8` | 1 | `[] -> [imm]` | — | Push 8-bit immediate (sign-extended) |
+| `0x41` | `PICK` | 1 | `[x_n .. x_0] -> [x_n .. x_0 x_n]` | — | Copy nth stack element to top: PICK n copies stack[sp-1-n] |
+| `0x50` | `JR` | 1 | `[] -> []` | `relative`, `terminates` | Relative jump (signed 8-bit offset) |
+| `0x51` | `JRZ` | 1 | `[cond] -> []` | `relative` | Relative jump if zero |
+| `0x52` | `JRNZ` | 1 | `[cond] -> []` | `relative` | Relative jump if not zero |
+| `0x80` | `LOAD8` | 2 | `[] -> [value]` | — | Load 8-bit from address |
+| `0x81` | `LOAD16` | 2 | `[] -> [value]` | — | Load 16-bit from address |
+| `0x82` | `LOAD32` | 2 | `[] -> [value]` | — | Load 32-bit from address |
+| `0x83` | `LOAD64` | 2 | `[] -> [low high]` | — | Load 64-bit from address |
+| `0x84` | `STORE8` | 2 | `[value] -> []` | — | Store 8-bit to address |
+| `0x85` | `STORE16` | 2 | `[value] -> []` | — | Store 16-bit to address |
+| `0x86` | `STORE32` | 2 | `[value] -> []` | — | Store 32-bit to address |
+| `0x87` | `STORE64` | 2 | `[low high] -> []` | — | Store 64-bit to address |
+| `0x88` | `PUSH16` | 2 | `[] -> [imm]` | — | Push 16-bit immediate (sign-extended) |
+| `0x90` | `JMP` | 2 | `[] -> []` | `absolute`, `terminates` | Unconditional jump |
+| `0x91` | `JZ` | 2 | `[cond] -> []` | `absolute` | Jump if zero (false) |
+| `0x92` | `JNZ` | 2 | `[cond] -> []` | `absolute` | Jump if not zero (true) |
+| `0x93` | `CALL` | 2 | `[] -> []` | `absolute`, `call` | Call subroutine |
+| `0x94` | `RET` | 0 | `[] -> []` | `terminates` | Return from subroutine |
+| `0xA0` | `I2F` | 0 | `[a] -> [r]` | — | Integer to float |
+| `0xA1` | `F2I` | 0 | `[a] -> [r]` | — | Float to integer |
+| `0xA2` | `I2B` | 0 | `[a] -> [r]` | — | Integer to boolean |
+| `0xA3` | `EXT8` | 0 | `[a] -> [r]` | — | Sign-extend 8-bit to 32-bit |
+| `0xA4` | `EXT16` | 0 | `[a] -> [r]` | — | Sign-extend 16-bit to 32-bit |
+| `0xA5` | `ZEXT8` | 0 | `[a] -> [r]` | — | Zero-extend 8-bit to 32-bit |
+| `0xA6` | `ZEXT16` | 0 | `[a] -> [r]` | — | Zero-extend 16-bit to 32-bit |
+| `0xC0` | `PUSH32` | 4 | `[] -> [imm]` | — | Push 32-bit immediate |
+| `0xD0` | `COMM_EXEC` | 4 | `[base] -> []` | `comm` | Execute/update Comm FB; pop base addr from stack |
+| `0xD1` | `COMM_STATUS` | 4 | `[base] -> [status]` | `comm` | Push status word for a kind to stack |
+| `0xD2` | `COMM_RESET` | 4 | `[base] -> []` | `comm` | Reset FSM for Comm FB; pop base addr from stack |
+
+### Códigos de error de la VM
+
+| Nombre | Código | Descripción |
+| --- | --- | --- |
+| `ZPLC_VM_OK` | `0x00` | No error |
+| `ZPLC_VM_STACK_OVERFLOW` | `0x01` | Evaluation stack full |
+| `ZPLC_VM_STACK_UNDERFLOW` | `0x02` | Pop from empty stack |
+| `ZPLC_VM_DIV_BY_ZERO` | `0x03` | Division by zero |
+| `ZPLC_VM_INVALID_OPCODE` | `0x04` | Unknown instruction |
+| `ZPLC_VM_OUT_OF_BOUNDS` | `0x05` | Memory access violation |
+| `ZPLC_VM_CALL_OVERFLOW` | `0x06` | Call stack full |
+| `ZPLC_VM_INVALID_JUMP` | `0x07` | Jump to invalid address |
+| `ZPLC_VM_WATCHDOG` | `0x08` | Execution time exceeded |
+| `ZPLC_VM_HALTED` | `0x09` | Execution stopped normally |
+| `ZPLC_VM_PAUSED` | `0x0A` | Paused at breakpoint (debugger) |
+
+### Códigos de error del loader
+
+| Nombre | Código | Descripción |
+| --- | --- | --- |
+| `ZPLC_LOADER_OK` | `0` | Verified |
+| `ZPLC_LOADER_ERR_MAGIC` | `-1` | Wrong magic number |
+| `ZPLC_LOADER_ERR_VERSION` | `-2` | ISA version differs from the loader version |
+| `ZPLC_LOADER_ERR_SIZE` | `-3` | A size or count field is inconsistent with the file, or a reserved word is not zero |
+| `ZPLC_LOADER_ERR_NO_CODE` | `-4` | No CODE segment |
+| `ZPLC_LOADER_ERR_CRC32` | `-6` | CRC32 mismatch |
+| `ZPLC_LOADER_ERR_FLAGS` | `-7` | Header flags are not supported |
+| `ZPLC_LOADER_ERR_SEGMENT` | `-8` | Segment table entry is invalid, repeated or of an unsupported type |
+| `ZPLC_LOADER_ERR_ENTRY_POINT` | `-9` | Entry point is not an instruction boundary |
+| `ZPLC_LOADER_ERR_WORKSPACE` | `-10` | Verifier workspace is missing or too small |
+| `ZPLC_LOADER_ERR_OPCODE` | `-11` | Unknown opcode or truncated instruction |
+| `ZPLC_LOADER_ERR_CONTROL_FLOW` | `-12` | Jump target is not an instruction boundary, or the code falls through its end |
+| `ZPLC_LOADER_ERR_MEMORY` | `-13` | Static memory access outside the writable regions |
+| `ZPLC_LOADER_ERR_TASK` | `-14` | Task definition is invalid or there are too many tasks |
+| `ZPLC_LOADER_ERR_TAGS` | `-15` | Tag entry is invalid |
+| `ZPLC_LOADER_ERR_COMM` | `-16` | Communication function-block kind is NONE or at or above the kind limit |
+
+### Bloques de función de comunicación
+
+Cada instancia de bloque de función es un bloque de bytes en memoria de trabajo o retentiva. Todos los bloques empiezan con el mismo handshake de 8 bytes. El core toma el tamaño de un bloque de esta tabla.
+
+| Nombre | Kind | Tamaño de la instancia (bytes) | Descripción |
+| --- | --- | --- | --- |
+| `MB_READ_HREG` | `0x0001` | 110 | Modbus read holding registers; COUNT registers requested, VALUE is the first register slot |
+| `MB_WRITE_HREG` | `0x0002` | 110 | Modbus write holding registers; VALUE is the first write slot |
+| `MB_READ_COIL` | `0x0003` | 110 | Modbus read coils |
+| `MB_WRITE_COIL` | `0x0004` | 110 | Modbus write coils |
+| `MQTT_CONNECT` | `0x000A` | 12 | MQTT connect |
+| `MQTT_PUBLISH` | `0x000B` | 190 | MQTT publish |
+| `MQTT_SUBSCRIBE` | `0x000C` | 190 | MQTT subscribe; PAYLOAD is an output |
+| `AZURE_C2D_RECV` | `0x0020` | 94 | Azure cloud-to-device receive |
+| `AZURE_DPS_PROV` | `0x0021` | 201 | Azure DPS provisioning |
+| `AZURE_EG_PUB` | `0x0022` | 266 | Azure Event Grid publish |
+| `AWS_FLEET_PROV` | `0x0030` | 137 | AWS fleet provisioning |
+| `SPB_REBIRTH` | `0x0040` | 8 | Sparkplug B rebirth; a rising EN triggers REBIRTH |
+
+El loader y el registro de handlers rechazan los kinds iguales o mayores que `0x00FF`.
+
+#### Layout de `MB_READ_HREG`
+
+| Offset | Miembro | Tipo | Dirección |
+| --- | --- | --- | --- |
+| 0 | `EN` | `BOOL` | entrada |
+| 1 | `BUSY` | `BOOL` | salida |
+| 2 | `DONE` | `BOOL` | salida |
+| 3 | `ERROR` | `BOOL` | salida |
+| 4 | `STATUS` | `DINT` | salida |
+| 8 | `PROTO` | `USINT` | entrada |
+| 9 | `SLAVE_ID` | `UINT` | entrada |
+| 11 | `ADDR` | `UINT` | entrada |
+| 13 | `COUNT` | `UINT` | entrada |
+| 15 | `VALUE` | `UINT` | salida |
+| 18 | `HOST` | `STRING` | entrada |
+| 103 | `PORT` | `UINT` | entrada |
+
+#### Layout de `MB_WRITE_HREG`
+
+| Offset | Miembro | Tipo | Dirección |
+| --- | --- | --- | --- |
+| 0 | `EN` | `BOOL` | entrada |
+| 1 | `BUSY` | `BOOL` | salida |
+| 2 | `DONE` | `BOOL` | salida |
+| 3 | `ERROR` | `BOOL` | salida |
+| 4 | `STATUS` | `DINT` | salida |
+| 8 | `PROTO` | `USINT` | entrada |
+| 9 | `SLAVE_ID` | `UINT` | entrada |
+| 11 | `ADDR` | `UINT` | entrada |
+| 13 | `COUNT` | `UINT` | entrada |
+| 15 | `VALUE` | `UINT` | entrada |
+| 18 | `HOST` | `STRING` | entrada |
+| 103 | `PORT` | `UINT` | entrada |
+
+#### Layout de `MB_READ_COIL`
+
+| Offset | Miembro | Tipo | Dirección |
+| --- | --- | --- | --- |
+| 0 | `EN` | `BOOL` | entrada |
+| 1 | `BUSY` | `BOOL` | salida |
+| 2 | `DONE` | `BOOL` | salida |
+| 3 | `ERROR` | `BOOL` | salida |
+| 4 | `STATUS` | `DINT` | salida |
+| 8 | `PROTO` | `USINT` | entrada |
+| 9 | `SLAVE_ID` | `UINT` | entrada |
+| 11 | `ADDR` | `UINT` | entrada |
+| 13 | `COUNT` | `UINT` | entrada |
+| 15 | `VALUE` | `BOOL` | salida |
+| 18 | `HOST` | `STRING` | entrada |
+| 103 | `PORT` | `UINT` | entrada |
+
+#### Layout de `MB_WRITE_COIL`
+
+| Offset | Miembro | Tipo | Dirección |
+| --- | --- | --- | --- |
+| 0 | `EN` | `BOOL` | entrada |
+| 1 | `BUSY` | `BOOL` | salida |
+| 2 | `DONE` | `BOOL` | salida |
+| 3 | `ERROR` | `BOOL` | salida |
+| 4 | `STATUS` | `DINT` | salida |
+| 8 | `PROTO` | `USINT` | entrada |
+| 9 | `SLAVE_ID` | `UINT` | entrada |
+| 11 | `ADDR` | `UINT` | entrada |
+| 13 | `COUNT` | `UINT` | entrada |
+| 15 | `VALUE` | `BOOL` | entrada |
+| 18 | `HOST` | `STRING` | entrada |
+| 103 | `PORT` | `UINT` | entrada |
+
+#### Layout de `MQTT_CONNECT`
+
+| Offset | Miembro | Tipo | Dirección |
+| --- | --- | --- | --- |
+| 0 | `EN` | `BOOL` | entrada |
+| 1 | `BUSY` | `BOOL` | salida |
+| 2 | `DONE` | `BOOL` | salida |
+| 3 | `ERROR` | `BOOL` | salida |
+| 4 | `STATUS` | `DINT` | salida |
+| 8 | `PROFILE` | `USINT` | entrada |
+| 9 | `CONNECTED` | `BOOL` | salida |
+
+#### Layout de `MQTT_PUBLISH`
+
+| Offset | Miembro | Tipo | Dirección |
+| --- | --- | --- | --- |
+| 0 | `EN` | `BOOL` | entrada |
+| 1 | `BUSY` | `BOOL` | salida |
+| 2 | `DONE` | `BOOL` | salida |
+| 3 | `ERROR` | `BOOL` | salida |
+| 4 | `STATUS` | `DINT` | salida |
+| 8 | `QOS` | `USINT` | entrada |
+| 9 | `RETAIN` | `BOOL` | entrada |
+| 12 | `TOPIC` | `STRING` | entrada |
+| 97 | `PAYLOAD` | `STRING` | entrada |
+
+#### Layout de `MQTT_SUBSCRIBE`
+
+| Offset | Miembro | Tipo | Dirección |
+| --- | --- | --- | --- |
+| 0 | `EN` | `BOOL` | entrada |
+| 1 | `BUSY` | `BOOL` | salida |
+| 2 | `DONE` | `BOOL` | salida |
+| 3 | `ERROR` | `BOOL` | salida |
+| 4 | `STATUS` | `DINT` | salida |
+| 8 | `QOS` | `USINT` | entrada |
+| 9 | `VALID` | `BOOL` | salida |
+| 12 | `TOPIC` | `STRING` | entrada |
+| 97 | `PAYLOAD` | `STRING` | salida |
+
+#### Layout de `AZURE_C2D_RECV`
+
+| Offset | Miembro | Tipo | Dirección |
+| --- | --- | --- | --- |
+| 0 | `EN` | `BOOL` | entrada |
+| 1 | `BUSY` | `BOOL` | salida |
+| 2 | `DONE` | `BOOL` | salida |
+| 3 | `ERROR` | `BOOL` | salida |
+| 4 | `STATUS` | `DINT` | salida |
+| 8 | `PAYLOAD` | `STRING` | salida |
+| 93 | `VALID` | `BOOL` | salida |
+
+#### Layout de `AZURE_DPS_PROV`
+
+| Offset | Miembro | Tipo | Dirección |
+| --- | --- | --- | --- |
+| 0 | `EN` | `BOOL` | entrada |
+| 1 | `BUSY` | `BOOL` | salida |
+| 2 | `DONE` | `BOOL` | salida |
+| 3 | `ERROR` | `BOOL` | salida |
+| 4 | `STATUS` | `DINT` | salida |
+| 8 | `DEVICE_ID` | `STRING` | entrada |
+| 73 | `ASSIGNED_HUB` | `STRING` | salida |
+
+#### Layout de `AZURE_EG_PUB`
+
+| Offset | Miembro | Tipo | Dirección |
+| --- | --- | --- | --- |
+| 0 | `EN` | `BOOL` | entrada |
+| 1 | `BUSY` | `BOOL` | salida |
+| 2 | `DONE` | `BOOL` | salida |
+| 3 | `ERROR` | `BOOL` | salida |
+| 4 | `STATUS` | `DINT` | salida |
+| 8 | `TOPIC` | `STRING` | entrada |
+| 73 | `EVENT_TYPE` | `STRING` | entrada |
+| 138 | `PAYLOAD` | `STRING` | entrada |
+
+#### Layout de `AWS_FLEET_PROV`
+
+| Offset | Miembro | Tipo | Dirección |
+| --- | --- | --- | --- |
+| 0 | `EN` | `BOOL` | entrada |
+| 1 | `BUSY` | `BOOL` | salida |
+| 2 | `DONE` | `BOOL` | salida |
+| 3 | `ERROR` | `BOOL` | salida |
+| 4 | `STATUS` | `DINT` | salida |
+| 8 | `TEMPLATE_NAME` | `STRING` | entrada |
+| 73 | `THING_NAME` | `STRING` | salida |
+
+#### Layout de `SPB_REBIRTH`
+
+| Offset | Miembro | Tipo | Dirección |
+| --- | --- | --- | --- |
+| 0 | `EN` | `BOOL` | entrada |
+| 1 | `BUSY` | `BOOL` | salida |
+| 2 | `DONE` | `BOOL` | salida |
+| 3 | `ERROR` | `BOOL` | salida |
+| 4 | `STATUS` | `DINT` | salida |
+
+### Códigos de estado de comunicación
+
+| Nombre | Código |
+| --- | --- |
+| `ZPLC_COMM_OK` | `0` |
+| `ZPLC_COMM_BUSY` | `1` |
+| `ZPLC_COMM_TIMEOUT` | `2` |
+| `ZPLC_COMM_NO_HANDLER` | `3` |
+| `ZPLC_COMM_NOT_CONNECTED` | `4` |
+| `ZPLC_COMM_QUEUE_FULL` | `5` |
+| `ZPLC_COMM_INVALID_ADDR` | `6` |
+| `ZPLC_COMM_STRING_OVERFLOW` | `7` |
+| `ZPLC_COMM_PROTO_ERROR` | `8` |
+| `ZPLC_COMM_AUTH_FAILED` | `9` |
+| `ZPLC_COMM_UNKNOWN` | `255` |

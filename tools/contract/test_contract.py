@@ -199,6 +199,34 @@ class CHeadersMatchGolden(unittest.TestCase):
         self.assertEqual(self.view["operand"], GOLDEN["c"]["operand"])
 
 
+class DocumentationTablesAreGenerated(unittest.TestCase):
+    """The runtime reference pages carry the tables generated from contract.json, in English and Spanish."""
+
+    PAGES = {
+        "en": ROOT / "docs/docs/reference/runtime-api.md",
+        "es": ROOT / "docs/i18n/es/docusaurus-plugin-content-docs/current/reference/runtime-api.md",
+    }
+
+    @staticmethod
+    def normal(text: str) -> str:
+        return "\n".join(line.rstrip() for line in text.splitlines())
+
+    def test_each_page_contains_the_rendered_tables(self):
+        for lang, path in self.PAGES.items():
+            self.assertIn(self.normal(generate.render_docs(CONTRACT, lang)).strip(), self.normal(path.read_text()), lang)
+
+    def test_every_opcode_and_function_block_has_a_row(self):
+        english = self.normal(generate.render_docs(CONTRACT, "en"))
+        for o in CONTRACT["opcodes"]:
+            self.assertRegex(english, rf"\| `0x{NUM(o['code']):02X}` \| `{o['name']}` \|", o["name"])
+        for b in CONTRACT["comm"]["blocks"]:
+            self.assertRegex(english, rf"\| `{b['name']}` \| `0x[0-9A-F]{{4}}` \| {b['size']} \|", b["name"])
+
+    def test_spanish_has_the_same_tables_as_english(self):
+        rows = lambda text: [line for line in text.splitlines() if line.startswith("|")]
+        self.assertEqual(len(rows(generate.render_docs(CONTRACT, "es"))), len(rows(generate.render_docs(CONTRACT, "en"))))
+
+
 class ValidationRejectsADriftedSource(unittest.TestCase):
     """The generator refuses a contract.json that contradicts itself."""
 
