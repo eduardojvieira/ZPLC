@@ -227,6 +227,27 @@ All notable changes are documented here.
   output never came on), ends its pulse at `PERIOD * DUTY` also when that is not
   a whole number of milliseconds (the comparison truncated 30.5 ms to 30 ms of
   difference), and a `PERIOD` of 0 is off instead of dividing by zero.
+- A task with `trigger: "event"` (or `"interrupt"`) fails the build at its
+  definition in `zplc.json`, naming the task, its `trigger` field and the
+  supported triggers; the build used to produce an artifact that only the
+  scheduler refused (RT-015).
+- The native simulation runs cyclic tasks of different intervals: each task is
+  released on its own interval from a common start, tasks released together
+  run by earlier release, then priority, then task id, and share one input
+  image per batch, and a scenario steps by the greatest common divisor of the
+  intervals. It refused such an artifact before (RT-015, CMP-051). A late
+  dispatch runs a task once and skips the releases it missed.
+- The native simulation counts deadline misses (RT-014). A task misses its
+  deadline when it ends more than its interval after the release of its batch;
+  a miss raises a warning and is counted, and `ZPLC_DEADLINE_MISS_LIMIT`
+  consecutive misses of one task (1 to 1000000, default 1, which is what the
+  Zephyr scheduler does today) latch the fault. `status.get` gains a `deadline`
+  object (`warning`, `misses`, `consecutive_misses`, `miss_limit`,
+  `last_overrun_us`) and a `fault` object (`reason`, `task_id`), and
+  `stats.overruns` and the per-task `overruns` carry the counts; a latched
+  fault is also a `runtime.error` event with the code `DEADLINE_MISS`. The
+  target scheduler does not report the warning, the last overrun or the reason
+  yet. The scheduler page lists what simulation does not match.
 
 ## 2.0.0-rc.3 - 2026-09-01
 
