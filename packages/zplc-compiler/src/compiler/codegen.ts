@@ -46,7 +46,6 @@ import type {
     DereferenceExpr,
     MethodCall,
     ThisExpr,
-    MethodDecl,
     DateLiteral,
     TODLiteral,
     DTLiteral,
@@ -57,7 +56,9 @@ import type {
     InitialValue,
     PointerType,
 } from './ast.ts';
-import { getArrayElementCount, isArrayType, NameMap, sameName, VarSection } from './ast.ts';
+import { argumentValue, getArrayElementCount, isArrayType, NameMap, sameName, VarSection } from './ast.ts';
+import { emitLine, emitLines } from './asm-line.ts';
+import type { AsmLine, Mnemonic } from './asm-line.ts';
 import { CodegenError, codegenErrorFrom, orderedUniqueErrors } from './diagnostics.ts';
 import type { CodegenWarning } from './diagnostics.ts';
 import {
@@ -126,6 +127,10 @@ export interface CompilerMemoryProfile {
     workSize: number;
     retainSize: number;
     codeSizeMax: number;
+    /** Deepest evaluation stack the target holds; omitted is the default of the contract (CMP-050). */
+    stackMaxDepth?: number;
+    /** Deepest call stack the target holds; omitted is the default of the contract (CMP-050). */
+    callStackMax?: number;
 }
 
 export const DEFAULT_COMPILER_MEMORY_PROFILE: CompilerMemoryProfile = {
@@ -147,6 +152,13 @@ export function validateCompilerMemoryProfile(profile: CompilerMemoryProfile): C
     ];
     if (capacities.some(([value, maximum]) => !Number.isSafeInteger(value) || value <= 0 || value > maximum)) {
         throw new TagAdmissionError('Invalid target memory profile', 0, 0);
+    }
+    const depths: Array<[number | undefined, number]> = [
+        [profile.stackMaxDepth, MEMORY_LIMIT.stackMaxDepth],
+        [profile.callStackMax, MEMORY_LIMIT.callStackMax],
+    ];
+    if (depths.some(([value, maximum]) => value !== undefined && (!Number.isSafeInteger(value) || value <= 0 || value > maximum))) {
+        throw new TagAdmissionError('Invalid target stack depth in the memory profile', 0, 0);
     }
     return profile;
 }
@@ -193,6 +205,13 @@ export interface CodeGenOptions {
      * stored in a narrower type: IMPLICIT_NARROWING). The build is not affected.
      */
     warnings?: CodegenWarning[];
+
+    /**
+     * An implicit narrowing (a wider integer in a narrower one, an LREAL in a REAL) is an error that names
+     * the value, instead of the IMPLICIT_NARROWING warning (project option `compiler.strictTypes`, CMP-059).
+     * Default: false.
+     */
+    strictTypes?: boolean;
 }
 
 // ============================================================================
@@ -233,7 +252,7 @@ interface FunctionInfo {
  */
 interface CodeGenState {
     symbols: SymbolTable;
-    output: string[];
+    output: AsmLine[];
     labelCounter: number;
     initFlagAddr: number;
     /** Pool of string literals allocated in work memory */
@@ -260,7 +279,7 @@ interface CodeGenState {
     /** Current FB instance being inlined */
     currentFBInstance: Symbol | null;
     /** Current method being inlined (for return value handling) */
-    currentMethod: MethodDecl | null;
+    currentMethod: MethodInfo | null;
     /**
      * The function block whose body or method is being inlined: the block that declares the code that runs, which
      * is not always the type of the instance. SUPER^ and the access specifiers are relative to it (CMP-041).
@@ -278,6 +297,8 @@ interface CodeGenState {
     arrayBoundsCheck: boolean;
     /** The warnings of the generation (see CodeGenOptions.warnings). */
     warnings: CodegenWarning[];
+    /** An implicit narrowing is an error (see CodeGenOptions.strictTypes). */
+    strictTypes: boolean;
     /** Work memory the code generator took after the symbols: string buffers and the cells of the string routines. */
     scratchStrings: Array<{ address: number; size: number }>;
     /**
@@ -299,7 +320,7 @@ interface CodeGenState {
     /** The last method call expression left one value on the stack (a call used as a statement drops it). */
     methodLeftResult: boolean;
     /** Routines that need work cells of their own, by label; appended after the main cycle. */
-    cellHelpers: Map<string, string[]>;
+    cellHelpers: Map<string, AsmLine[]>;
     /** The work cells the string routines share (none calls another). */
     stringCells: StringCells | null;
     /** A string the next function that returns a string writes its result into, instead of a work buffer. */
@@ -314,16 +335,9 @@ interface CodeGenState {
 function resolveSymbol(state: CodeGenState, name: string): Symbol | undefined {
     // 1. Check Method Scope (Inputs, Outputs, Locals)
     if (state.currentMethod) {
-        const method = state.currentMethod as any;
-        
-        // Helper to find var in lists
-        const findVar = (list: any[]) => list && list.find((v: any) => sameName(v.name, name));
-
-        const methodVar = findVar(method.inputs) ||
-                          findVar(method.outputs) ||
-                          findVar(method.locals);
-
-        if (methodVar && methodVar.mangledName) {
+        const method = state.currentMethod;
+        const methodVar = [...method.inputs, ...method.outputs, ...method.locals].find((variable) => sameName(variable.name, name));
+        if (methodVar?.mangledName) {
             return state.symbols.get(methodVar.mangledName);
         }
     }
@@ -483,6 +497,7 @@ function generateUnit(unit: CompilationUnit | Program, options: CodeGenOptions |
         errors,
         arrayBoundsCheck: options?.arrayBoundsCheck ?? true,
         warnings: options?.warnings ?? [],
+        strictTypes: options?.strictTypes ?? false,
         scratchStrings: [],
         stringBuffers: [],
         expressionDepth: 0,
@@ -614,7 +629,7 @@ function generateUnit(unit: CompilationUnit | Program, options: CodeGenOptions |
         if (shared) {
             emit(state, `    CALL _zplc_init`);
         } else {
-            state.output.push(...initialization);
+            emitLines(state.output, initialization);
         }
 
         emit(state, ``);
@@ -645,7 +660,7 @@ function generateUnit(unit: CompilationUnit | Program, options: CodeGenOptions |
         emit(state, ``);
         emit(state, `; --- Initialization of the unit (called by the entry of every program) ---`);
         emit(state, `_zplc_init:`);
-        state.output.push(...initialization);
+        emitLines(state.output, initialization);
         emit(state, `    RET`);
     }
 
@@ -657,12 +672,12 @@ function generateUnit(unit: CompilationUnit | Program, options: CodeGenOptions |
         if (!state.helpers.has(helper.name)) continue;
         emit(state, ``);
         emit(state, `; --- Helper: ${helper.title} ---`);
-        state.output.push(...helper.lines);
+        emitLines(state.output, helper.lines);
     }
     for (const [label, lines] of state.cellHelpers) {
         emit(state, ``);
         emit(state, `; --- Helper: ${label} ---`);
-        state.output.push(...lines);
+        emitLines(state.output, lines);
     }
 
     // the code of each program: from its entry to the next one; the first also holds what comes before it
@@ -680,8 +695,8 @@ function generateUnit(unit: CompilationUnit | Program, options: CodeGenOptions |
 // Helpers
 // ============================================================================
 
-function emit(state: CodeGenState, line: string): void {
-    state.output.push(line);
+function emit(state: CodeGenState, line: AsmLine): void {
+    emitLine(state.output, line);
 }
 
 /** The one error path of the generator: stop the build at `at`. */
@@ -971,7 +986,7 @@ function validateStringLiteralPool(state: CodeGenState, workMemoryBase: number, 
 /**
  * Map DataType string to numeric ID from zplc_isa.h
  */
-export function getDataTypeId(type: any): number {
+export function getDataTypeId(type: unknown): number {
     const typeStr = typeof type === 'string' ? type.toUpperCase() : 'UNKNOWN';
     return Object.hasOwn(DATA_TYPE_ID, typeStr) ? DATA_TYPE_ID[typeStr as keyof typeof DATA_TYPE_ID] : 0x00;
 }
@@ -1192,21 +1207,13 @@ function collectStringLiteralsInExpression(state: CodeGenState, expr: Expression
             break;
         case 'FunctionCall':
             for (const arg of expr.args) {
-                if ((arg as any).kind === 'NamedArgument') {
-                    collectStringLiteralsInExpression(state, (arg as any).value);
-                } else {
-                    collectStringLiteralsInExpression(state, arg as Expression);
-                }
+                collectStringLiteralsInExpression(state, argumentValue(arg));
             }
             break;
         case 'MethodCall':
             collectStringLiteralsInExpression(state, expr.object);
             for (const arg of expr.args) {
-                if ((arg as any).kind === 'NamedArgument') {
-                    collectStringLiteralsInExpression(state, (arg as any).value);
-                } else {
-                    collectStringLiteralsInExpression(state, arg as Expression);
-                }
+                collectStringLiteralsInExpression(state, argumentValue(arg));
             }
             break;
         case 'FBCall':
@@ -1767,8 +1774,7 @@ function generateFunctionDecl(state: CodeGenState, func: FunctionDecl): void {
     emit(state, `; --- FUNCTION ${func.name} ---`);
     emit(state, `${label}:`);
 
-    // Function parameters are on the stack in order A, B, C...
-    // We need to pop them into local addresses in REVERSE order
+    // The parameters are on the stack in order A, B, C...: they are popped into their addresses in reverse order
     for (let i = func.inputs.length - 1; i >= 0; i--) {
         const input = func.inputs[i];
         const sym = state.symbols.get(input.name);
@@ -1923,8 +1929,8 @@ function emitAssignment(state: CodeGenState, stmt: Assignment): void {
     }
 
     if (stmt.target.kind === 'Identifier') {
-        // Bug 2 fix: Standalone method call as statement uses '_' as dummy target
-        // Just emit the method call expression, skip the STORE
+        // A method call used as a statement has the dummy target '_': the call is emitted and its result
+        // is not stored
         if (stmt.target.name === '_') {
             if (stmt.value.kind === 'MethodCall') {
                 emit(state, `    ; (method call as statement, result discarded)`);
@@ -1960,9 +1966,8 @@ function emitAssignment(state: CodeGenState, stmt: Assignment): void {
             return;
         }
 
-        // IEC return syntax: MethodName := value (for METHOD - inline context)
-        // Bug 1 fix: When inside an inlined method, assignment to method name 
-        // should leave the value on stack (not store it)
+        // IEC return syntax, MethodName := value: inside an inlined method the assignment to the name of the
+        // method is its return value; it is kept for the caller, not stored under that name
         if (state.currentMethod && sameName(stmt.target.name, state.currentMethod.name)) {
             emit(state, `    ; METHOD RETURN: ${state.currentMethod.name} := ...`);
             if (state.methodResult) {
@@ -1970,7 +1975,7 @@ function emitAssignment(state: CodeGenState, stmt: Assignment): void {
                 emitAssignToPlace(state, state.methodResult, stmt.value, stmt.target);
                 return;
             }
-            emitValueFor(state, stmt.value, (state.currentMethod as any).returnType);
+            emitValueFor(state, stmt.value, state.currentMethod.returnType);
             // a method that returns a string or another value that does not fit a cell leaves it on the stack
             return;
         }
@@ -1991,10 +1996,11 @@ function emitAssignment(state: CodeGenState, stmt: Assignment): void {
 
 /** The condition of IF, ELSIF, WHILE and UNTIL is a BOOL (CMP-005). */
 function emitCondition(state: CodeGenState, condition: Expression): void {
-    const type = meaningType(state, condition);
+    const type = conversionType(state, condition);
     if (type !== UNKNOWN_TYPE && type !== 'BOOL') {
         const named = type === LITERAL_INT ? 'INT' : type;
-        fail(condition, `Type mismatch: a condition is a BOOL and this is a ${named}; compare it, for example ${named === 'REAL' || named === 'LREAL' ? 'x > 0.0' : 'x <> 0'}`);
+        const text = parseStringType(type) !== null;
+        fail(condition, `Type mismatch: a condition is a BOOL and this is a ${named}; compare it, for example ${text ? 'LEN(x) > 0' : named === 'REAL' || named === 'LREAL' ? 'x > 0.0' : 'x <> 0'}`);
     }
     emitExpression(state, condition);
 }
@@ -2827,7 +2833,7 @@ function emitInstanceCall(state: CodeGenState, stmt: FBCallStatement, sym: Symbo
                 const memberType = stdlibMemberType(typeName, member);
                 if (memberType !== UNKNOWN_TYPE) {
                     const constant = foldConstant(state, param.value);
-                    const from = meaningType(state, param.value);
+                    const from = conversionType(state, param.value);
                     checkConvertible(from, memberType, param.value, constant);
                     warnNarrowing(state, param.value, from, memberType, constant);
                 }
@@ -2866,7 +2872,8 @@ function emitCopyOut(state: CodeGenState, source: Place, param: FBParameter): vo
         return;
     }
     // a scalar: converted and checked as an assignment of the output's value is
-    const from = numericTypeName(storedType(state, source.type));
+    const sourceType = storedType(state, source.type);
+    const from = isStringType(sourceType) ? String(sourceType) : numericTypeName(sourceType);
     const to = numericTypeName(type);
     checkConvertible(from, to, param.value, undefined);
     warnNarrowing(state, param.value, from, to, undefined);
@@ -3075,7 +3082,7 @@ function emitIdentifier(state: CodeGenState, expr: Identifier): void {
 
     // Inline CONSTANT values (e.g. ENUMs, VAR CONSTANT)
     if (sym && sym.section === 'CONSTANT' && sym.initialValue) {
-        const initVal = sym.initialValue as any;
+        const initVal = sym.initialValue;
         if (initVal.kind === 'IntLiteral' || initVal.kind === 'BoolLiteral' || initVal.kind === 'RealLiteral') {
             emitValueFor(state, initVal, sym.dataType);
             return;
@@ -3147,7 +3154,7 @@ function emitUnaryExpr(state: CodeGenState, expr: UnaryExpr): void {
                 if (info.bits === 8 && !info.signed) emit(state, `    ZEXT8`);
                 else if (info.bits === 16 && !info.signed) emit(state, `    ZEXT16`);
             } else {
-                // For boolean NOT, we need to mask to get 0 or 1
+                // the complement of a boolean is masked to 0 or 1
                 emit(state, `    PUSH8 1`);
                 emit(state, `    AND`);
             }
@@ -3251,21 +3258,15 @@ function stringifyExpression(expr: Expression): string {
         case 'UnaryExpr':
             return `${expr.operator}(${stringifyExpression(expr.operand)})`;
         case 'FunctionCall':
-            const args = expr.args.map(arg => {
-                if ((arg as any).kind === 'NamedArgument') {
-                    return `${(arg as any).name} := ${stringifyExpression((arg as any).value)}`;
-                }
-                return stringifyExpression(arg as Expression);
-            }).join(', ');
+            const args = expr.args.map((arg) => arg.kind === 'NamedArgument'
+                ? `${arg.name} := ${stringifyExpression(arg.value)}`
+                : stringifyExpression(arg)).join(', ');
             return `${expr.name}(${args})`;
         case 'MethodCall':
-             const mArgs = (expr as any).args.map((arg: any) => {
-                if (arg.kind === 'NamedArgument') {
-                    return `${arg.name} := ${stringifyExpression(arg.value)}`;
-                }
-                return stringifyExpression(arg);
-            }).join(', ');
-            return `${stringifyExpression((expr as any).object)}.${(expr as any).methodName}(${mArgs})`;
+             const mArgs = expr.args.map((arg) => arg.kind === 'NamedArgument'
+                ? `${arg.name} := ${stringifyExpression(arg.value)}`
+                : stringifyExpression(arg)).join(', ');
+            return `${stringifyExpression(expr.object)}.${expr.methodName}(${mArgs})`;
         default:
             return '...';
     }
@@ -3318,7 +3319,7 @@ function functionResultType(state: CodeGenState, expr: FunctionCall): string {
     const userFn = state.functionTable.get(expr.name);
     if (userFn) return numericTypeName(userFn.returnType);
 
-    const args = expr.args.map((a) => ((a as any).kind === 'NamedArgument' ? (a as any).value : a) as Expression);
+    const args = expr.args.map(argumentValue);
     const common = (list: Expression[]): string =>
         list.map((a) => staticType(state, a)).reduce((acc, t) => commonType(acc, t), LITERAL_INT);
 
@@ -3421,7 +3422,7 @@ function methodResultType(state: CodeGenState, expr: MethodCall): string {
 }
 
 /** The instruction that restores the sign of an 8- or 16-bit signed value the VM zero-extended on load. */
-function signExtension(typeName: string): string | null {
+function signExtension(typeName: string): AsmLine | null {
     if (typeName === 'SINT') return '    EXT8';
     if (typeName === 'INT') return '    EXT16';
     return null;
@@ -3721,7 +3722,7 @@ function emitValueFor(state: CodeGenState, value: Expression, targetType: unknow
     const target = numericTypeName(targetType);
     if (target !== UNKNOWN_TYPE) {
         const constant = foldConstant(state, value);
-        const from = meaningType(state, value);
+        const from = conversionType(state, value);
         checkConvertible(from, target, value, constant);
         warnNarrowing(state, value, from, target, constant);
     }
@@ -3747,9 +3748,9 @@ function warnNarrowing(state: CodeGenState, value: Expression, from: string, to:
             line: value.line,
             column: value.column,
             ...(value.endLine === undefined ? {} : { endLine: value.endLine, endColumn: value.endColumn }),
+            ...(state.sourceRef === undefined ? {} : { sourceRef: state.sourceRef }),
         };
-        const seen = state.warnings.some((each) => each.line === warning.line && each.column === warning.column && each.message === warning.message);
-        if (!seen) state.warnings.push(warning);
+        reportNarrowing(state, warning, value);
         return;
     }
     if (!integerLike(source) || !integerLike(target)) return;
@@ -3771,7 +3772,16 @@ function warnNarrowing(state: CodeGenState, value: Expression, from: string, to:
         ...(value.endLine === undefined ? {} : { endLine: value.endLine, endColumn: value.endColumn }),
         ...(state.sourceRef === undefined ? {} : { sourceRef: state.sourceRef }),
     };
-    const seen = state.warnings.some((each) => each.line === warning.line && each.column === warning.column && each.message === warning.message && each.sourceRef === warning.sourceRef);
+    reportNarrowing(state, warning, value);
+}
+
+/** An implicit narrowing: the IMPLICIT_NARROWING warning, or an error under `compiler.strictTypes` (CMP-059). */
+function reportNarrowing(state: CodeGenState, warning: CodegenWarning, value: Expression): void {
+    if (state.strictTypes) {
+        fail(value, `${warning.message}. This is an error because compiler.strictTypes is on`);
+    }
+    const seen = state.warnings.some((each) => each.line === warning.line && each.column === warning.column
+        && each.message === warning.message && each.sourceRef === warning.sourceRef);
     if (!seen) state.warnings.push(warning);
 }
 
@@ -3786,6 +3796,17 @@ function meaningType(state: CodeGenState, expr: Expression): string {
         return 'TIME';
     }
     return type;
+}
+
+/**
+ * The type a value has for the check of an implicit conversion (CMP-005): its elementary type, or STRING or
+ * WSTRING when it is text, which has no numeric type and converts to none.
+ */
+function conversionType(state: CodeGenState, value: Expression): string {
+    const numeric = meaningType(state, value);
+    if (numeric !== UNKNOWN_TYPE) return numeric;
+    const text = inferExpressionType(state, value);
+    return parseStringType(text) !== null ? text : numeric;
 }
 
 /** What kind of value a numeric elementary type holds, for the implicit conversions of IEC 61131-3. */
@@ -3811,8 +3832,9 @@ function typeKind(type: string): TypeKind | undefined {
  * not fit the destination keeps its low bits as CMP-016 states (a constant that does not fit is an error:
  * CMP-018), an integer converts to REAL and LREAL, and REAL to LREAL. Nothing else converts implicitly: REAL
  * to an integer, BOOL to or from a number, and TIME, DATE, TOD and DT to or from a number are errors that ask
- * for an explicit conversion function. A bare integer literal takes the integer, bit-string or real type it
- * is given to. UNKNOWN_TYPE converts: it is a type the generator cannot name.
+ * for an explicit conversion function. A STRING or WSTRING is text, not a number: it converts to no numeric,
+ * BOOL or time type, and none converts to it. A bare integer literal takes the integer, bit-string or real type
+ * it is given to. UNKNOWN_TYPE converts: it is a type the generator cannot name.
  *
  * ponytail: IEC 61131-3 itself widens only (SINT to INT, USINT to UINT, REAL to LREAL...); integer
  * narrowing stays implicit until the explicit <FROM>_TO_<TO> functions exist for every pair (CMP-057,
@@ -3820,6 +3842,11 @@ function typeKind(type: string): TypeKind | undefined {
  */
 function convertsImplicitly(from: string, to: string): boolean {
     if (from === UNKNOWN_TYPE || to === UNKNOWN_TYPE || from === to) return true;
+    // text and number are different kinds of value: neither converts to the other (the pair of texts is
+    // checked where a string is assigned)
+    const fromText = parseStringType(from) !== null;
+    const toText = parseStringType(to) !== null;
+    if (fromText !== toText && (fromText ? typeKind(to) !== undefined : typeKind(from) !== undefined || from === LITERAL_INT)) return false;
     const target = typeKind(to);
     if (target === undefined) return true;
     if (from === LITERAL_INT) return target === 'signed' || target === 'unsigned' || target === 'bits' || target === 'real';
@@ -3897,8 +3924,11 @@ function checkConvertible(from: string, to: string, at: { line: number; column: 
                           constant: bigint | undefined): void {
     if (!convertsImplicitly(from, to)) {
         const named = from === LITERAL_INT ? 'INT' : from;
+        const text = parseStringType(from) !== null || parseStringType(to) !== null;
         fail(at, `Type mismatch: a value of type ${named} cannot be used where ${to} is expected. `
-            + `IEC 61131-3 converts implicitly only to a wider type of the same kind; convert it explicitly, for example with ${named}_TO_${to}`);
+            + (text
+                ? `A STRING or WSTRING is text, and IEC 61131-3 converts a text to a number, a BOOL or a time, and back, only through a function`
+                : `IEC 61131-3 converts implicitly only to a wider type of the same kind; convert it explicitly, for example with ${named}_TO_${to}`));
     }
     const range = constant === undefined ? undefined : integerRange(to);
     if (range && constant !== undefined && (constant < range.low || constant > range.high)) {
@@ -3906,11 +3936,14 @@ function checkConvertible(from: string, to: string, at: { line: number; column: 
     }
 }
 
+/** The instruction that compares two LREAL values for each operator. */
+const LREAL_COMPARE: Record<CompareOp, Mnemonic> = { EQ: 'EQD', NE: 'NED', LT: 'LTD', LE: 'LED', GT: 'GTD', GE: 'GED' };
+
 /** Emit the comparison `op` of the two values on the stack, read as `type`. */
 function emitCompare(state: CodeGenState, op: CompareOp, type: string): void {
     if (type === 'LREAL') {
         // one opcode for each operator: a NaN is unordered (false, except <>), -0.0 equals +0.0
-        emit(state, `    ${{ EQ: 'EQD', NE: 'NED', LT: 'LTD', LE: 'LED', GT: 'GTD', GE: 'GED' }[op]}`);
+        emit(state, `    ${LREAL_COMPARE[op]}`);
         return;
     }
     if (type === 'REAL') {
@@ -3992,7 +4025,7 @@ function stringCapacityOf(state: CodeGenState, expr: Expression): number {
         case 'FunctionCall': {
             const userFunction = state.functionTable.get(expr.name);
             if (userFunction) return parseStringType(userFunction.returnType)?.capacity ?? 80;
-            const args = expr.args.map((a) => ((a as any).kind === 'NamedArgument' ? (a as any).value : a) as Expression);
+            const args = expr.args.map(argumentValue);
             switch (expr.name.toUpperCase()) {
                 case 'LEFT': case 'RIGHT': case 'MID': {
                     // a constant count bounds the result
@@ -4052,7 +4085,7 @@ function makeCodeGenContext(
         baseAddress,
         instanceName,
         newLabel: (prefix: string) => newLabel(state, prefix),
-        emit: (line: string) => emit(state, line),
+        emit: (line: AsmLine) => emit(state, line),
         emitExpression: (e: Expression) => emitExpression(state, e),
         fail: (message: string) => fail(at, message),
         typeOf: (e: Expression) => {
@@ -4082,6 +4115,16 @@ function emitBinaryExpr(state: CodeGenState, expr: BinaryExpr, contextType?: str
     const leftIsString = isStringExpression(state, expr.left);
     const rightIsString = isStringExpression(state, expr.right);
 
+    if (leftIsString !== rightIsString) {
+        // a text meets a number, a BOOL or a time: they do not convert to each other (CMP-005)
+        const [text, other] = leftIsString ? [expr.left, expr.right] : [expr.right, expr.left];
+        const otherType = meaningType(state, other);
+        if (otherType === LITERAL_INT || typeKind(otherType) !== undefined) {
+            const named = otherType === LITERAL_INT ? 'INT' : otherType;
+            fail(other, `Type mismatch: a ${inferExpressionType(state, text)} cannot be used with a ${named} in an operation: IEC 61131-3 converts a text to a number, a BOOL or a time, and back, only through a function`);
+        }
+    }
+
     if (leftIsString || rightIsString) {
         if (parseStringType(inferExpressionType(state, expr.left))?.wide || parseStringType(inferExpressionType(state, expr.right))?.wide) {
             fail(expr, `A WSTRING cannot be compared yet`);
@@ -4097,12 +4140,8 @@ function emitBinaryExpr(state: CodeGenState, expr: BinaryExpr, contextType?: str
             return;
         }
 
-        // String concatenation: s1 + s2 is not standard IEC 61131-3
-        // but we can support it by calling CONCAT
+        // `s1 + s2` is not IEC 61131-3 and has no destination to write the result to: CONCAT has one
         if (expr.operator === 'ADD') {
-            emit(state, `    ; String concatenation (s1 + s2)`);
-            emit(state, `    ; NOTE: Use CONCAT() for proper string concatenation`);
-            // For now, emit an error comment - proper concatenation needs a destination
             fail(expr, `String + operator requires destination. Use CONCAT(s1, s2) instead.`);
         }
 
@@ -4267,7 +4306,7 @@ const STANDARD_PARAMETER_TYPE: Record<string, string> = {
 /** `value` as the argument of a parameter of `type`: checked, and a constant carries the type it is given to. */
 function typedArgument(state: CodeGenState, value: Expression, type: string): Expression {
     const constant = foldConstant(state, value);
-    const from = meaningType(state, value);
+    const from = conversionType(state, value);
     checkConvertible(from, type, value, constant);
     warnNarrowing(state, value, from, type, constant);
     if (constant === undefined) return value;
@@ -4375,7 +4414,7 @@ function emitFunctionCall(state: CodeGenState, expr: FunctionCall): void {
     // Most standard functions work on one cell per operand; the ones in WIDE_FUNCTIONS (and the conversions)
     // are written for two-cell values as well
     for (const arg of expr.args) {
-        const value = ((arg as any).kind === 'NamedArgument' ? (arg as any).value : arg) as Expression;
+        const value = argumentValue(arg);
         const argType = staticType(state, value);
         if (isWide(argType) && !WIDE_FUNCTIONS.has(expr.name.toUpperCase()) && conversionResultType(expr.name) === undefined) {
             fail(expr, `${expr.name} does not take a 64-bit or LREAL argument (CMP-015): use a conversion function first`);
@@ -4395,12 +4434,10 @@ function emitFunctionCall(state: CodeGenState, expr: FunctionCall): void {
     // (baseAddress is not used for stateless functions)
     const ctx = makeCodeGenContext(state, 0, expr.name, expr);
 
-    // Let the function generate its inline code
-    // Convert args to pure expressions (ignoring names for built-ins for now)
+    // A standard function takes its arguments by position: a named argument stands for its value
     const formal = STANDARD_PARAMETER_TYPE[expr.name.toUpperCase()];
-    const simpleArgs = expr.args.map(a => 
-        (a as any).kind === 'NamedArgument' ? (a as any).value : a
-    ).map((value: Expression) => formal === undefined ? value : typedArgument(state, value, formal)) as Expression[];
+    const simpleArgs = expr.args.map(argumentValue)
+        .map((value) => formal === undefined ? value : typedArgument(state, value, formal));
 
     fnDef.generateInline(ctx, simpleArgs);
     state.resultCapacity = null;
@@ -4534,10 +4571,9 @@ function identifierPlace(state: CodeGenState, expr: Identifier): Place {
 
     // 1. Inputs, outputs and locals of the method being inlined: statics with a mangled name
     if (state.currentMethod) {
-        const method = state.currentMethod as any;
-        const findVar = (list: any[]) => list && list.find((v: any) => sameName(v.name, name));
-        const methodVar = findVar(method.inputs) || findVar(method.outputs) || findVar(method.locals);
-        if (methodVar && methodVar.mangledName) {
+        const method = state.currentMethod;
+        const methodVar = [...method.inputs, ...method.outputs, ...method.locals].find((variable) => sameName(variable.name, name));
+        if (methodVar?.mangledName) {
             const sym = state.symbols.get(methodVar.mangledName);
             if (sym) return { addr: { k: 'const', a: sym.address }, type: sym.dataType, size: sym.size, sym, name };
         }
@@ -4777,7 +4813,7 @@ function emitLoadPlace(state: CodeGenState, place: Place, label?: string): void 
         emit(state, `    LOADI32`);
         return;
     }
-    emit(state, `    LOADI${width}${comment}`);
+    emit(state, label ? `    LOADI${width}   ; ${label}` : `    LOADI${width}`);
 }
 
 /**
@@ -4813,6 +4849,11 @@ function emitStorePlace(state: CodeGenState, place: Place, emitValue: () => void
     emit(state, `    STOREI${width}`);
 }
 
+/** The width, in bits, of the access that moves a chunk of 1, 2 or 4 bytes. */
+function chunkWidth(bytes: 1 | 2 | 4): '8' | '16' | '32' {
+    return bytes === 4 ? '32' : bytes === 2 ? '16' : '8';
+}
+
 /**
  * Copy `size` bytes: [dst src] -> []. Each side is the address of a place; a short copy
  * is unrolled in words, a long one calls the byte-copy routine.
@@ -4826,8 +4867,8 @@ function emitCopyBytes(state: CodeGenState, size: number, dst: Place | null, src
         let off = 0;
         while (off < size) {
             const chunk = size - off >= 4 ? 4 : size - off >= 2 ? 2 : 1;
-            emit(state, `    LOAD${chunk * 8} ${formatAddress(srcConst + off)}`);
-            emit(state, `    STORE${chunk * 8} ${formatAddress(dstConst + off)}`);
+            emit(state, `    LOAD${chunkWidth(chunk)} ${formatAddress(srcConst + off)}`);
+            emit(state, `    STORE${chunkWidth(chunk)} ${formatAddress(dstConst + off)}`);
             off += chunk;
         }
         return;
@@ -4847,8 +4888,8 @@ function emitCopyBytes(state: CodeGenState, size: number, dst: Place | null, src
         if (off) { emitPushInteger(state, off); emit(state, `    ADD`); }
         emit(state, `    PICK 1`);
         if (off) { emitPushInteger(state, off); emit(state, `    ADD`); }
-        emit(state, `    LOADI${chunk * 8}`);
-        emit(state, `    STOREI${chunk * 8}`);
+        emit(state, `    LOADI${chunkWidth(chunk)}`);
+        emit(state, `    STOREI${chunkWidth(chunk)}`);
         off += chunk;
     }
     emit(state, `    DROP`);
@@ -4867,7 +4908,7 @@ function emitZeroBytes(state: CodeGenState, address: number, size: number): void
     while (off < size) {
         const chunk = size - off >= 4 ? 4 : size - off >= 2 ? 2 : 1;
         emit(state, `    PUSH8 0`);
-        emit(state, `    STORE${chunk * 8} ${formatAddress(address + off)}`);
+        emit(state, `    STORE${chunkWidth(chunk)} ${formatAddress(address + off)}`);
         off += chunk;
     }
 }
@@ -4946,7 +4987,7 @@ function readRanges(state: CodeGenState, expr: Expression, out: Array<{ from: nu
         case 'FunctionCall': {
             if (state.functionTable.has(expr.name)) return false; // a function of the program may write any variable
             for (const arg of expr.args) {
-                const value = ((arg as any).kind === 'NamedArgument' ? (arg as any).value : arg) as Expression;
+                const value = argumentValue(arg);
                 if (!readRanges(state, value, out)) return false;
             }
             return true;
@@ -4982,7 +5023,7 @@ function emitStringFunctionInto(state: CodeGenState, place: Place, call: Functio
     const name = call.name.toUpperCase();
     if (state.functionTable.has(call.name)) return false;
     if (!['CONCAT', 'LEFT', 'RIGHT', 'MID', 'DELETE', 'INSERT', 'REPLACE'].includes(name)) return false;
-    const args = call.args.map((arg) => ((arg as any).kind === 'NamedArgument' ? (arg as any).value : arg) as Expression);
+    const args = call.args.map(argumentValue);
     if (place.addr.k !== 'const' || args.length === 0) return false;
     const text = parseStringType(storedType(state, place.type));
     if (!text || text.wide) return false;
@@ -5165,7 +5206,8 @@ function emitDereference(state: CodeGenState, expr: DereferenceExpr): void {
 /**
  * Emit a method call expression.
  * 
- * For now, methods are inlined at call sites (no dynamic dispatch).
+ * A method is inlined at each call site; the dispatch of a call through an interface is written out by
+ * the compiler (see Interfaces below).
  * Format: instance.MethodName(args)
  * 
  * The method body is executed with THIS bound to the instance.
@@ -5280,15 +5322,13 @@ function emitMethodInline(state: CodeGenState, expr: MethodCall, instanceSym: Sy
         for (const arg of expr.args) {
             let inputName: string;
             let argExpr: Expression;
-            let input: any;
+            let input: MethodInfo['inputs'][number] | undefined;
 
-            // Check if arg is NamedArgument or Expression
-            // We cast to any to access kind safely
-            if ((arg as any).kind === 'NamedArgument') {
-                inputName = (arg as any).name;
-                argExpr = (arg as any).value;
-                input = methodInfo.inputs.find((i: any) => sameName(i.name, inputName));
-                
+            if (arg.kind === 'NamedArgument') {
+                inputName = arg.name;
+                argExpr = arg.value;
+                input = methodInfo.inputs.find((candidate) => sameName(candidate.name, arg.name));
+
                 if (!input) {
                     fail(expr, `Unknown named argument '${inputName}' for method '${expr.methodName}'`);
                 }
@@ -5296,12 +5336,12 @@ function emitMethodInline(state: CodeGenState, expr: MethodCall, instanceSym: Sy
                 // Positional
                 if (positionalIndex >= methodInfo.inputs.length) {
                     emit(state, `    ; WARNING: Too many positional arguments`);
-                    emitExpression(state, arg as Expression);
+                    emitExpression(state, arg);
                     emit(state, `    DROP`);
                     continue;
                 }
-                input = methodInfo.inputs[positionalIndex];
-                argExpr = arg as Expression;
+                input = methodInfo.inputs[positionalIndex]!;
+                argExpr = arg;
                 inputName = input.name;
                 positionalIndex++;
             }
@@ -5326,12 +5366,11 @@ function emitMethodInline(state: CodeGenState, expr: MethodCall, instanceSym: Sy
     state.returnLabel = newLabel(state, 'method_return');
     state.currentFBInstance = instanceSym;
     state.currentBlock = methodInfo.owner;
-    // Cast MethodInfo to MethodDecl for compatibility (they share name/body which is what matters)
-    state.currentMethod = methodInfo as any;
+    state.currentMethod = methodInfo;
 
     // Initialize method locals (including VAR_TEMP)
     if (methodInfo.locals) {
-        for (const local of methodInfo.locals as any[]) {
+        for (const local of methodInfo.locals) {
             if (local.mangledName) {
                 const sym = state.symbols.get(local.mangledName);
                 if (sym) {
@@ -5642,7 +5681,7 @@ function emitWStringLiteral(state: CodeGenState, expr: WStringLiteral): void {
     }
 }
 
-import { DATA_TYPE_ID, MEMORY_REGION, STRING_LAYOUT, TAG_ID } from '../contract.generated.ts';
+import { DATA_TYPE_ID, MEMORY_LIMIT, MEMORY_REGION, STRING_LAYOUT, TAG_ID } from '../contract.generated.ts';
 
 // ============================================================================
 // Bit access and exponentiation (CMP-032)

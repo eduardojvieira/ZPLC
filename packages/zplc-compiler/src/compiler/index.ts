@@ -58,7 +58,8 @@ export type {
 // =============================================================================
 export { parse, parseWithDiagnostics, ParseError } from './parser.ts';
 export type { ParseOutcome } from './parser.ts';
-export type { SourceSpan, SourceWarning, SyntaxIssue } from './diagnostics.ts';
+export type { SourceSpan, SourceWarning, SyntaxIssue, WarningCode, WarningSelection } from './diagnostics.ts';
+export { WARNING_CODES, parseWarningSelection, selectWarnings } from './diagnostics.ts';
 
 // =============================================================================
 // Symbol table exports
@@ -81,8 +82,8 @@ export type { CodeGenOptions, CompilerMemoryProfile } from './codegen.ts';
 // =============================================================================
 // Assembler exports (ASM -> bytecode)
 // =============================================================================
-export { assemble, createZplcFile, createMultiTaskZplcFile, relocateBytecode, TASK_TYPE, AssemblerError, ZPLC_CONSTANTS } from '../assembler/index.ts';
-export type { AssemblyResult, TaskDef, TaskType, InstructionMapping, TagDef } from '../assembler/index.ts';
+export { assemble, createZplcFile, createMultiTaskZplcFile, relocateBytecode, readArtifact, buildIdOf, analyzeDepths, DepthError, TASK_TYPE, AssemblerError, ZPLC_CONSTANTS } from '../assembler/index.ts';
+export type { AssemblyResult, ArtifactInfo, TaskDef, TaskDepth, TaskType, InstructionMapping, TagDef } from '../assembler/index.ts';
 
 // =============================================================================
 // Binary contract (generated from tools/contract/contract.json)
@@ -106,6 +107,8 @@ export {
     getBreakpointLocations,
     buildDebugMap,
 } from './debug-map.ts';
+export { debugMapMatchesArtifact } from './build-id.ts';
+export type { BuildIdVerdict } from './build-id.ts';
 export type {
     MemoryRegion,
     DebugDataType,
@@ -126,11 +129,13 @@ import { parse, parseWithDiagnostics } from './parser.ts';
 import { ParseError } from './parser.ts';
 import { LexerError } from './lexer.ts';
 import { generate, generateProject, CodegenError, DEFAULT_COMPILER_MEMORY_PROFILE, validateCompilerMemoryProfile } from './codegen.ts';
-import type { CodegenWarning, SyntaxIssue } from './diagnostics.ts';
+import { selectWarnings } from './diagnostics.ts';
+import type { CodegenWarning, SyntaxIssue, WarningCode, WarningSelection } from './diagnostics.ts';
+import { analyzeUnit } from './warnings.ts';
 import type { GeneratedProject } from './codegen.ts';
 import type { CodeGenOptions, CompilerMemoryProfile } from './codegen.ts';
-import { assemble, createMultiTaskZplcFile, TASK_TYPE, ZPLC_CONSTANTS } from '../assembler/index.ts';
-import type { AssemblyResult, TaskDef, TaskType } from '../assembler/index.ts';
+import { DepthError, analyzeDepths, assemble, createMultiTaskZplcFile, readArtifact, TASK_TYPE, ZPLC_CONSTANTS } from '../assembler/index.ts';
+import type { AssemblyResult, TaskDef, TaskDepth, TaskType } from '../assembler/index.ts';
 import type { DebugMap, TypeResolver } from './debug-map.ts';
 import { buildUnitDebugMap } from './debug-map.ts';
 import type { UnitDebugFile } from './debug-map.ts';
@@ -252,6 +257,13 @@ export interface CompilationResult {
 export interface CompileOptions extends CodeGenOptions {
     /** Generate debug map for source-level debugging */
     generateDebugMap?: boolean;
+    /** Which warnings the build reports (project option `compiler.warnings`). Default: 'default'. */
+    reportWarnings?: WarningSelection;
+    /**
+     * Source-level debug information in the debug map: the statement ranges and line mappings that
+     * breakpoints and the current line need (project option `compiler.debug`). Default: true.
+     */
+    debug?: boolean;
 }
 
 function requireSingleProgram(ast: CompilationUnit, sourceRef?: string): Program {
@@ -426,7 +438,7 @@ export function compileToBinary(source: string, options?: CompileOptions): Compi
         throw first;
     }
     const ast = parsed.unit;
-    const warnings: CompilerWarning[] = parsed.warnings.map((warning) => ({ ...warning, code: 'NON_IEC_HEX_LITERAL' as const }));
+    const warnings: CompilerWarning[] = parsed.warnings.map((warning) => ({ ...warning }));
 
     if (ast.programs.length === 0) {
         throw new CompilerError('No program found in source', 1, 1, 'parser');
@@ -439,7 +451,7 @@ export function compileToBinary(source: string, options?: CompileOptions): Compi
     const generated: CodegenWarning[] = [];
     const codegenOptions: CodeGenOptions = {
         ...options,
-        emitSourceAnnotations: generateDebugMap,
+        emitSourceAnnotations: generateDebugMap && (options?.debug ?? true),
         warnings: generated,
     };
 
@@ -450,7 +462,7 @@ export function compileToBinary(source: string, options?: CompileOptions): Compi
         const project = generateProject(ast, codegenOptions);
         assembly = project.assembly;
         symbols = project.symbols;
-        warnings.push(...generated);
+        warnings.push(...generated, ...analyzeUnit(ast));
         warnings.sort((first, second) => first.line - second.line || first.column - second.column);
     } catch (e) {
         if (e instanceof CodegenError) {
@@ -470,6 +482,8 @@ export function compileToBinary(source: string, options?: CompileOptions): Compi
     if (asmResult.bytecode.length > memoryProfile.codeSizeMax) {
         throw new CompilerError('CODE exceeds the target memory profile', 0, 0, 'codegen');
     }
+    // a file of one program has no task table to record the depth in, and the loader proves the same limits
+    measureDepths(asmResult, [asmResult.entryPoint], memoryProfile, () => ({ label: `Program '${program.name}'`, line: program.line, column: program.column }));
 
     const result: CompilationResult = {
         assembly,
@@ -477,7 +491,7 @@ export function compileToBinary(source: string, options?: CompileOptions): Compi
         zplcFile: asmResult.zplcFile,
         entryPoint: asmResult.entryPoint,
         codeSize: asmResult.codeSize,
-        warnings,
+        warnings: selectWarnings(warnings, options?.reportWarnings),
     };
 
     // Build debug map if requested
@@ -494,6 +508,7 @@ export function compileToBinary(source: string, options?: CompileOptions): Compi
             memoryProfile: options?.memoryProfile,
             codeSize: asmResult.codeSize,
         });
+        result.debugMap.buildId = buildIdText(readArtifact(asmResult.zplcFile).buildId);
     }
 
     return result;
@@ -574,12 +589,67 @@ function attachSourceRef(error: CompilerError, sourceRef: string): CompilerError
     return error;
 }
 
+/** The build identity as the debug map writes it: 8 hexadecimal digits (CMP-056). */
+function buildIdText(id: number | undefined): string | undefined {
+    return id === undefined ? undefined : id.toString(16).padStart(8, '0');
+}
+
+/** The depth the target holds (CMP-050): its profile, the contract defaults where it says nothing. */
+function depthLimits(profile: CompilerMemoryProfile): { stack: number; calls: number } {
+    return {
+        // the loader proves no stack deeper than its own limit, whatever the target holds: a build above it
+        // would be an artifact the loader refuses (CMP-051)
+        stack: Math.min(profile.stackMaxDepth ?? ZPLC_CONSTANTS.TASK_STACK_MAX_DEPTH, ZPLC_CONSTANTS.MAX_VERIFIED_DEPTH),
+        calls: profile.callStackMax ?? ZPLC_CONSTANTS.CALL_STACK_MAX,
+    };
+}
+
+/**
+ * The evaluation-stack and call depth of the code that starts at each of `entries`, or the error that says
+ * which one cannot be given or is over the limit of the target. `describe` names an entry and where it is
+ * written, for the message.
+ */
+function measureDepths(
+    assembly: AssemblyResult,
+    entries: readonly number[],
+    profile: CompilerMemoryProfile,
+    describe: (index: number) => { label: string; ref?: string; line?: number; column?: number },
+): TaskDepth[] {
+    const limit = depthLimits(profile);
+    let depths: TaskDepth[];
+    try {
+        depths = analyzeDepths(assembly.instructions ?? [], entries);
+    } catch (error) {
+        if (!(error instanceof DepthError)) throw error;
+        // the parameter names the entry whose analysis failed when the error carries its address
+        const at = entries.findIndex((entry) => entry === error.address);
+        const where = describe(at >= 0 ? at : 0);
+        throw new CompilerError(`${where.label}: the stack depth cannot be determined: ${error.message}`, where.line ?? 0, where.column ?? 0, 'codegen', where.ref);
+    }
+    depths.forEach((depth, index) => {
+        const where = describe(index);
+        if (depth.stack > limit.stack) {
+            throw new CompilerError(
+                `${where.label} needs an evaluation stack of ${depth.stack} values and the target holds ${limit.stack}: split the largest expression, or move part of the program into a function`,
+                where.line ?? 0, where.column ?? 0, 'codegen', where.ref,
+            );
+        }
+        if (depth.frames - 1 > limit.calls) {
+            throw new CompilerError(
+                `${where.label} nests calls ${depth.frames - 1} deep and the target's call stack holds ${limit.calls}`,
+                where.line ?? 0, where.column ?? 0, 'codegen', where.ref,
+            );
+        }
+    });
+    return depths;
+}
+
 /**
  * Something the compiler accepted that the language reference does not define: the build succeeds (CMP-031).
  */
 export interface CompilerWarning {
     /** Stable identifier of the kind of warning. */
-    code: 'NON_IEC_HEX_LITERAL' | 'IMPLICIT_NARROWING';
+    code: WarningCode;
     message: string;
     line: number;
     column: number;
@@ -745,7 +815,7 @@ function admitPhysicalOutputOwners(
 export function compileMultiTaskProject(
     config: ProjectConfig,
     programSources: ProgramSource[],
-    options?: { memoryProfile?: CompilerMemoryProfile },
+    options?: Pick<CompileOptions, 'memoryProfile' | 'strictTypes' | 'reportWarnings' | 'debug'>,
 ): MultiTaskCompilationResult {
     if (!config.tasks || config.tasks.length === 0) {
         throw new CompilerError('No tasks defined in project configuration', 0, 0, 'codegen');
@@ -817,7 +887,7 @@ export function compileMultiTaskProject(
             // what this file is accepted with: the non-IEC forms the parser saw
             for (const warning of parsed.warnings) {
                 warnings.push({
-                    code: 'NON_IEC_HEX_LITERAL',
+                    code: warning.code,
                     message: warning.message,
                     line: warning.line,
                     column: warning.column,
@@ -872,16 +942,22 @@ export function compileMultiTaskProject(
     let project: GeneratedProject | undefined;
     if (merged.unit.programs.length > 0) {
         try {
-            project = generateProject(merged.unit, { memoryProfile, emitSourceAnnotations: true, warnings: generated });
+            project = generateProject(merged.unit, {
+                memoryProfile,
+                emitSourceAnnotations: options?.debug ?? true,
+                strictTypes: options?.strictTypes ?? false,
+                warnings: generated,
+            });
         } catch (e) {
             failures.push(...compilerErrorsOf(e, files[0]!.label, files[0]!.ref, merged.unit.programs[0]!));
         }
     }
     if (failures.length > 0 || project === undefined) throwFound();
     const built = project!;
-    for (const warning of generated) warnings.push({ ...warning });
+    for (const warning of [...generated, ...analyzeUnit(merged.unit)]) warnings.push({ ...warning });
     warnings.sort((first, second) => fileOrder(first.sourceRef) - fileOrder(second.sourceRef)
         || first.line - second.line || first.column - second.column);
+    const reported = selectWarnings(warnings, options?.reportWarnings);
 
     // Assemble to bytecode
     let asmResult: AssemblyResult;
@@ -959,6 +1035,19 @@ export function compileMultiTaskProject(
         });
     }
 
+    // The depth of each task, measured on the code and recorded in its definition (CMP-050); a task over the
+    // limit of the target fails the build, naming the task and the file of its program.
+    const depths = measureDepths(asmResult, taskDefs.map((task) => task.entryPoint), memoryProfile, (index) => {
+        const firstProgram = config.tasks[index]!.programs[0]!;
+        const file = files.find((each) => each.runs && (each.label === firstProgram || each.label.toLowerCase() === firstProgram.toLowerCase()));
+        const program = parsedFiles.find((each) => each.ref === file?.ref)?.program;
+        return { label: `Task '${config.tasks[index]!.name}'`, ref: file?.ref, line: program?.line, column: program?.column };
+    });
+    depths.forEach((depth, index) => {
+        taskDefs[index]!.stackSize = Math.max(1, depth.stack);
+        taskDefs[index]!.callDepth = depth.frames;
+    });
+
     // Generate .zplc file with TASK segment
     const zplcFile = createMultiTaskZplcFile(asmResult.bytecode, taskDefs, asmResult.tags ?? []);
 
@@ -990,9 +1079,10 @@ export function compileMultiTaskProject(
         typeResolver: createTypeResolver(built.symbols),
         memoryProfile,
     });
+    debugMap.buildId = buildIdText(readArtifact(zplcFile).buildId);
 
     return {
-        warnings,
+        warnings: reported,
         zplcFile,
         bytecode: asmResult.bytecode,
         tasks: taskDefs,

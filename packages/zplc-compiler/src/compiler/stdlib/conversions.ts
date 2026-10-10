@@ -33,6 +33,7 @@ import type { FunctionDef, CodeGenContext } from './types.ts';
 import type { Expression } from '../ast.ts';
 import { UNSIGNED_TO_REAL, isFloatType } from '../numeric.ts';
 import { CLAMPI_LABEL, D2U32_LABEL, F2U32_LABEL, ROUNDF_LABEL } from './routines.ts';
+import type { AsmLine } from '../asm-line.ts';
 
 interface Shape {
     bits: 8 | 16 | 32 | 64;
@@ -78,10 +79,10 @@ export function conversionResultType(functionName: string): string | undefined {
 }
 
 /** The shortest PUSH of a small integer constant. */
-function pushConstant(value: number): string {
-    if (value >= -128 && value <= 127) return `PUSH8 ${value}`;
-    if (value >= -32768 && value <= 32767) return `PUSH16 ${value}`;
-    return `PUSH32 ${value}`;
+function pushConstant(value: number): AsmLine {
+    if (value >= -128 && value <= 127) return `    PUSH8 ${value}`;
+    if (value >= -32768 && value <= 32767) return `    PUSH16 ${value}`;
+    return `    PUSH32 ${value}`;
 }
 
 function isInteger(type: string): boolean {
@@ -134,8 +135,8 @@ function emitConversion(ctx: CodeGenContext, from: string, to: string): void {
             ctx.emit(`    RNDD`);
             ctx.emit(`    D2I`);
             if (target.bits < 32) {
-                ctx.emit(`    ${pushConstant(target.lo)}`);
-                ctx.emit(`    ${pushConstant(target.hi)}`);
+                ctx.emit(pushConstant(target.lo));
+                ctx.emit(pushConstant(target.hi));
                 ctx.callRoutine(CLAMPI_LABEL);
             }
         }
@@ -188,8 +189,8 @@ function emitConversion(ctx: CodeGenContext, from: string, to: string): void {
         if (!ctx.callRoutine) ctx.fail('the conversion of a REAL to an integer needs the routine linker');
         ctx.callRoutine(ROUNDF_LABEL);
         if (target.bits < 32) {
-            ctx.emit(`    ${pushConstant(target.lo)}`);
-            ctx.emit(`    ${pushConstant(target.hi)}`);
+            ctx.emit(pushConstant(target.lo));
+            ctx.emit(pushConstant(target.hi));
             ctx.callRoutine(CLAMPI_LABEL);
         }
         return;

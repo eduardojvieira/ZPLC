@@ -40,11 +40,11 @@ MACRO_PREFIXES = (
     "ZPLC_MAGIC", "ZPLC_VERSION_", "ZPLC_DRAFT_", "ZPLC_MEM_", "ZPLC_SYS_", "ZPLC_MAX_TAGS",
     "ZPLC_STACK_MAX_DEPTH", "ZPLC_CALL_STACK_MAX", "ZPLC_MAX_BREAKPOINTS",
     "ZPLC_STRING_", "ZPLC_FILE_HEADER_SIZE", "ZPLC_SEGMENT_ENTRY_SIZE",
-    "ZPLC_TASK_DEF_SIZE", "ZPLC_IOMAP_ENTRY_SIZE", "ZPLC_TAG_ENTRY_SIZE",
-    "ZPLC_LOADER_",
+    "ZPLC_TASK_DEF_SIZE", "ZPLC_IOMAP_ENTRY_SIZE", "ZPLC_TAG_ENTRY_SIZE", "ZPLC_BUILD_ENTRY_SIZE",
+    "ZPLC_LOADER_", "ZPLC_VERIFY_MAX_DEPTH",
 )
 MACRO_SKIP = {"ZPLC_LOADER_H", "ZPLC_LOADER_VERIFY_WORKSPACE_SIZE"}
-STRUCTS = ["zplc_file_header_t", "zplc_segment_entry_t", "zplc_task_def_t", "zplc_iomap_entry_t", "zplc_tag_entry_t"]
+STRUCTS = ["zplc_file_header_t", "zplc_segment_entry_t", "zplc_task_def_t", "zplc_iomap_entry_t", "zplc_tag_entry_t", "zplc_build_info_t"]
 
 
 def strip_comments(text: str) -> str:

@@ -406,6 +406,76 @@ All notable changes are documented here.
   fault is also a `runtime.error` event with the code `DEADLINE_MISS`. The
   target scheduler does not report the warning, the last overrun or the reason
   yet. The scheduler page lists what simulation does not match.
+- The assembler checks every operand against its field (CMP-049): a value that
+  does not fit the 8, 16 or 32 bits of its opcode, a jump to an address outside
+  the code or to a label after the last instruction, an entry point or a tag
+  field that does not fit, and a relocation past 65535 are errors that name the
+  line, where they used to be truncated. `.DB` and `.BYTE` now emit their bytes
+  (they used to move the addresses and emit nothing) and `.ORG` fills the gap with
+  `NOP` and refuses to move backwards (CMP-060); the directives are described in
+  the compiler page. `tools/zplc_asm.py` applies the same rules.
+- The code generator cannot emit an instruction that is not in the generated
+  opcode table (CMP-048): the type of its output lines is built from the table,
+  and every line is checked when it is written, so a line with an unknown
+  mnemonic is an internal compiler error that names it and never reaches the
+  assembler. The conformance programs are checked line by line.
+- The compiler sources are typed and quiet (CMP-061): the 35 `any` casts of the
+  code generator, the parser and the symbol table are gone (a method in progress
+  is a `MethodInfo`, a named argument is read with `argumentValue`), and the
+  comments that thought aloud or recorded a fix by number say what the code does.
+  A test lints the sources of the compiler with `no-explicit-any` and a list of
+  words that do not belong in a comment.
+- The compiler warns about unused variables, unreachable statements and the
+  non-IEC spellings it accepts (CMP-008): `UNUSED_VARIABLE`,
+  `WRITE_ONLY_VARIABLE`, `UNREACHABLE_STATEMENT` and `NON_IEC_REAL_LITERAL`
+  (`1e3`, next to the `0x` form), each with a stable code, a position and its
+  file. `compiler.warnings` in `zplc.json` selects them: `none`, `default`
+  (everything but the write-only variables) or `all`. A `FUNCTION_BLOCK` member
+  that another unit reads as `instance.member`, a variable with a direct address
+  and one with a communication tag are never reported. The bundled project
+  `kitchen_sink`, which declares FIFO and LIFO blocks it never calls, sets
+  `warnings: "none"`.
+- Every build option of `zplc.json` has an effect and a test (CMP-059):
+  `compiler.strictTypes` makes an implicit narrowing an error; `compiler.debug`
+  (default `true`, it used to read `false` and do nothing) decides whether the
+  debug map carries statement ranges and line mappings; `build.generateDebugInfo`
+  makes the CLI write `<output>.map.json` beside the artifact; and
+  `compiler.optimization` has one code generator behind it, so `size` and
+  `speed` build the code `none` does and the build warns with `OPTION_IGNORED`.
+  The bundled projects that said `size` or `speed` say `none`. A value that is
+  not valid for an option is a project error that names the option.
+- A project names folders of source files as libraries (CMP-046):
+  `"libraries": ["lib/motors"]` in `zplc.json`. Their functions, function
+  blocks, types and globals are part of the project; a declaration made twice
+  names both files; a folder that is not listed is reported with
+  `SOURCE_NOT_COMPILED`. The Tool API lists a library file with its `library`.
+- **ABI:** the draft counter is now 4 (CMP-050, CMP-056). A task definition has a
+  `call_depth` (the call frames it has active at once, its body included; 0 is
+  not declared) in the half of the word that was reserved, and an artifact has a
+  `BUILD` segment of 4 bytes, the build identity. The compiler measures the
+  evaluation-stack depth and the call depth of every task on the generated code,
+  with the stack effects of the opcode table, and records them in the task
+  definition where it used to write a fixed 64; the loader proves both, and a
+  task that needs more than it declares is refused. A task that needs a stack
+  deeper than 127 values (the loader's proof limit) or than the target holds, or
+  calls nested deeper than the call stack of the target, fails the build and the
+  message names the task, the depth and the limit. The conformance suite checks on
+  every artifact that lowering a declared depth by one makes the loader refuse
+  it. The identity is the CRC-32 of CODE and TASK, so two builds of a project
+  have the same one; the debug map records it as `buildId`, and Studio refuses to
+  attach a map to a program that has another. Programs built before are refused:
+  rebuild programs and reflash boards together. `restamp_artifacts.py` moved the
+  committed artifacts, and `fuzz:seed` rebuilt the seed corpus.
+- A `STRING` or `WSTRING` no longer converts to a number, a `BOOL` or a time
+  (CMP-005): `n := text;`, a text as the argument of a numeric parameter or an
+  input of a function block, as the return value of a numeric function or as the
+  initial value of a number, a text compared with a number and a text used as a
+  condition built and were stored or compared as an address. Each is now a build
+  error that names both types. `LEN` and `FIND`, which give an `INT`, still go
+  to a number. No bundled project, example or conformance program used it.
+- The assembly listing of a build is a tested output of the CLI (CMP-060):
+  `zplc-cli compile <workspace|file> --emit asm` prints it, or writes it to
+  `--output`, and assembling it gives the bytecode of the artifact.
 
 ## 2.0.0-rc.3 - 2026-09-01
 

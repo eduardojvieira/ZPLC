@@ -153,6 +153,12 @@ export interface DebugMap {
     /** Version of the compiler package that generated this map */
     compilerVersion: string;
     /**
+     * The build identity of the artifact this map describes: 8 hexadecimal digits, the one the artifact carries
+     * in its BUILD segment (CMP-056). A tool that has the map and the artifact, or the identity of the running
+     * program, can tell a map that does not belong to it. Absent from the maps of builds that predate it.
+     */
+    buildId?: string;
+    /**
      * Not written by the compiler: a build is a function of its sources, so the same project gives the
      * same map byte for byte (CMP-053). Maps of older builds may carry the time of the build here.
      */

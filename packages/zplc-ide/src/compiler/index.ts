@@ -18,6 +18,7 @@ import {
     assertTaskProgramCardinality,
     compileToBinary,
     CompilerError,
+    debugMapMatchesArtifact,
     parse,
     ZPLC_CONSTANTS,
     type CompilationResult,
@@ -80,6 +81,9 @@ import type {
     CommunicationTagConfig,
 } from '../types/index.ts';
 import { getCompilerMemoryProfile } from '../config/boardProfiles.ts';
+import { buildOptionsOf } from '../project/buildOptions.ts';
+import type { BuildOptions } from '../project/buildOptions.ts';
+import { selectWarnings } from '@zplc/compiler';
 
 // =============================================================================
 // IDE-specific Types
@@ -125,6 +129,8 @@ export interface ProgramSource {
     language: PLCLanguage;
     /** Exact project-relative source path for diagnostics and debug provenance. */
     sourceRef?: string;
+    /** The library folder of the project the file belongs to (`libraries` of zplc.json, CMP-046). */
+    library?: string;
 }
 
 /**
@@ -275,6 +281,17 @@ export function compileProject(content: string, language: PLCLanguage, options?:
         intermediateSTSource,
         transpileErrors: transpileErrors.length > 0 ? transpileErrors : undefined,
     };
+}
+
+/**
+ * What to do with a debug map that is about to be attached to a program (CMP-056): `refuse` when it belongs to
+ * another build, `warn` when it or the program carries no identity so the pair cannot be told, nothing when it
+ * is the map of this program. The sentence is for the console.
+ */
+export function judgeDebugMapAttachment(map: DebugMap, program: Uint8Array): { action: 'attach' | 'warn' | 'refuse'; message?: string } {
+    const verdict = debugMapMatchesArtifact(map, program);
+    if (verdict.ok) return { action: 'attach' };
+    return { action: verdict.reason === 'different-build' ? 'refuse' : 'warn', message: verdict.message };
 }
 
 function escapeRegExp(input: string): string {
@@ -451,6 +468,22 @@ function collectProjectSymbols(sources: ProgramSource[]): ILProjectSymbols {
 }
 
 /**
+ * What the options of the project file say that the build cannot do: `compiler.optimization` has one code
+ * generator behind it, so 'size' and 'speed' produce the code 'none' does (CMP-059). The warning is placed at
+ * the project file.
+ */
+function optionWarnings(options: BuildOptions): CompilerWarning[] {
+    if (options.optimization === 'none') return [];
+    return [{
+        code: 'OPTION_IGNORED',
+        message: `compiler.optimization '${options.optimization}' changes nothing: the compiler has one code generator and builds the same code at every level; use 'none'`,
+        line: 0,
+        column: 0,
+        sourceRef: 'zplc.json',
+    }];
+}
+
+/**
  * Compile a multi-task project to a single .zplc file.
  *
  * @param config - Project configuration (from zplc.json)
@@ -536,6 +569,7 @@ export function compileMultiTaskProject(
         coreSources.push({ name: source.sourceRef ?? source.name, content: source.content, sourceRef: source.sourceRef });
     }
 
+    const options = buildOptionsOf(config);
     const coreConfig: CoreProjectConfig = {
         name: config.name,
         version: config.version,
@@ -551,9 +585,13 @@ export function compileMultiTaskProject(
     try {
         const result = compileCoreMultiTaskProject(coreConfig, coreSources, {
             memoryProfile: getCompilerMemoryProfile(config.target?.board),
+            strictTypes: options.strictTypes,
+            debug: options.debug,
+            reportWarnings: options.reportWarnings,
         });
         // a graphical source has no lines: its warnings would point into the generated Structured Text
-        return { ...result, warnings: result.warnings.filter((warning) => !warning.sourceRef || !visualSourceRefs.has(warning.sourceRef)) };
+        const found = result.warnings.filter((warning) => !warning.sourceRef || !visualSourceRefs.has(warning.sourceRef));
+        return { ...result, warnings: selectWarnings([...optionWarnings(options), ...found], options.reportWarnings) };
     } catch (error) {
         if (error instanceof CompilerError) {
             // The position is kept: the graphical models have no lines, so it names the generated Structured Text.

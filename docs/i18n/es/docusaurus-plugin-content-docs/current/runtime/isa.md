@@ -172,8 +172,9 @@ conversiones de `REAL`.
 Hasta que el contrato se congele (CMP-052), la palabra 28 del encabezado de cada artefacto
 `.zplc` guarda el contador de borrador (`ZPLC_DRAFT_COUNTER`) y el loader rechaza un artefacto
 con otro valor, mostrando ambos números. Cada cambio de un opcode, de un layout o de un tamaño
-lo incrementa. El contador es **3** desde los opcodes de 64 bits y de doble precisión: los
-programas compilados antes se rechazan y hay que recompilarlos. La herramienta
+lo incrementa. El contador es **4** desde la profundidad de llamadas de una tarea y la
+identidad de compilación: los programas compilados antes se rechazan y hay que recompilarlos
+(era 3 con los opcodes de 64 bits y de doble precisión). La herramienta
 `tools/contract/restamp_artifacts.py` lleva los artefactos versionados en el repositorio al
 contador actual.
 
@@ -201,6 +202,7 @@ El binario `.zplc` usa estructuras públicas empaquetadas en el mismo header:
 - `zplc_task_def_t`
 - `zplc_iomap_entry_t`
 - `zplc_tag_entry_t`
+- `zplc_build_info_t`
 
 Segmentos públicos definidos hoy:
 
@@ -213,6 +215,26 @@ Segmentos públicos definidos hoy:
 - `ZPLC_SEG_DEBUG`
 - `ZPLC_SEG_TASK`
 - `ZPLC_SEG_TAGS`
+- `ZPLC_SEG_BUILD`
+
+## Profundidad de las tareas e identidad de compilación
+
+El compilador mide lo que el loader va a demostrar y lo registra en el artefacto
+(CMP-050, CMP-056):
+
+- `stack_size` de la definición de una tarea es la mayor cantidad de valores que la tarea
+  tiene a la vez en el stack de evaluación, y `call_depth` la mayor cantidad de marcos de
+  llamada activos a la vez, con su propio cuerpo incluido (1 para una tarea que no llama a
+  nada; 0 significa que el artefacto no lo declara). El loader rechaza una tarea que necesita
+  más de lo que declara, y una tarea cuya profundidad de llamadas supera el stack de llamadas
+  de la VM más su cuerpo. El compilador falla la compilación cuando una tarea necesita un
+  stack más profundo que `ZPLC_VERIFY_MAX_DEPTH` (127) o que el que tiene el destino, o
+  llamadas anidadas más profundas que `ZPLC_CALL_STACK_MAX`.
+- El segmento `ZPLC_SEG_BUILD` guarda un valor de 32 bits, la identidad de compilación: el
+  CRC-32 del segmento CODE seguido del segmento TASK tal como se escribe, nunca 0. El mapa de
+  depuración de la misma compilación la registra como `buildId` en 8 dígitos hexadecimales,
+  para que una herramienta distinga un mapa que no pertenece al programa que se ejecuta. Un
+  artefacto sin el segmento se lee como no identificado.
 
 ## Páginas relacionadas
 
