@@ -616,8 +616,12 @@ static int verify_frames(const zplc_program_view_t *view, verifier_t *v) {
     const uint32_t limit =
         root == 0U ? (uint32_t)ZPLC_STACK_MAX_DEPTH
                    : zplc_get_u16_le(view->tasks + (size_t)(root - 1U) * ZPLC_TASK_DEF_SIZE + 10U);
-    const uint8_t *record = frame_at(v, frame_find(v, entry));
+    const uint32_t slot = frame_find(v, entry);
+    const uint8_t *record;
 
+    if (slot == UINT32_MAX) /* every root has a frame: created above */
+      return ZPLC_LOADER_ERR_STACK;
+    record = frame_at(v, slot);
     if (record[3] != 0U || record[4] > limit)
       return ZPLC_LOADER_ERR_STACK;
   }
