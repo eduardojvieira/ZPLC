@@ -2809,7 +2809,7 @@ function inferExpressionType(state: CodeGenState, expr: Expression): string {
             if (userFunction) return typeof userFunction.returnType === 'string' ? userFunction.returnType : 'UNKNOWN';
             // String functions return STRING
             const stringFunctions = ['CONCAT', 'LEFT', 'RIGHT', 'MID', 'INSERT', 'DELETE', 'REPLACE', 'COPY', 'CLEAR'];
-            if (stringFunctions.includes(expr.name)) {
+            if (stringFunctions.includes(expr.name.toUpperCase())) {
                 return 'STRING';
             }
             // Most other functions return numeric types

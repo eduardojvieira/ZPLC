@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test';
 
 import manifest from '../../package.json';
-import { COMPILER_VERSION } from './debug-map.ts';
+import { COMPILER_VERSION, findVariable } from './debug-map.ts';
 import { compileToBinary } from './index.ts';
 
 // CMP-053: a build is a function of its sources. CMP-055: a statement owns every instruction it generates.
@@ -106,5 +106,18 @@ END_PROGRAM
     expect(breakpoints.map((breakpoint) => breakpoint.line)).toEqual([6, 7, 8, 9, 11, 13]);
     const seven = ranges.filter((range) => range.line === 7);
     expect(breakpoints.find((breakpoint) => breakpoint.line === 7)!.pc).toBe(seven[0]!.pc);
+  });
+});
+
+describe('the variables of a function (CMP-034, CMP-054)', () => {
+  test('are listed under the name of their function, and found by that path', () => {
+    const source = 'FUNCTION Succ : INT\nVAR_INPUT a : INT; END_VAR\n  Succ := a + 1;\nEND_FUNCTION\nPROGRAM P\nVAR\n  a : INT;\n  r : INT;\nEND_VAR\n  r := Succ(a);\nEND_PROGRAM\n';
+    const { map } = build(source);
+    const own = findVariable(map, 'Succ.a');
+    const program = findVariable(map, 'a');
+    expect(own).not.toBeNull();
+    expect(program).not.toBeNull();
+    expect(own!.absoluteAddr).not.toBe(program!.absoluteAddr);
+    expect(findVariable(map, 'Succ.Succ')).not.toBeNull();
   });
 });

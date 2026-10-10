@@ -1,6 +1,8 @@
 import { describe, expect, test } from 'bun:test';
+import { readdirSync, readFileSync } from 'node:fs';
+import { join } from 'node:path';
 
-import { CompilerError, compileToBinary } from './index.ts';
+import { CompilerError, compileToBinary, tokenizeWithErrors, TokenType } from './index.ts';
 
 // Names and types: IEC 61131-3 matches names without regard to case (CMP-004), and a declaration that names no type
 // is an error that says which (CMP-003). PERSISTENT is left to 2.x and is rejected where it is written (CMP-006).
@@ -232,5 +234,50 @@ describe('PERSISTENT is rejected where it is written (CMP-006)', () => {
 
   test('a variable that happens to be named persistent is not a qualifier', () => {
     expect(() => build('PROGRAM P\nVAR\n  persistent : INT;\nEND_VAR\n  persistent := 1;\nEND_PROGRAM\n')).not.toThrow();
+  });
+});
+
+describe('the spelling of a name never changes the program (CMP-004)', () => {
+  /** `source` with every identifier written by `change`; keywords, literals and comments are left as they are. */
+  function recase(source: string, change: (text: string) => string): string {
+    const lines = source.split('\n');
+    const identifiers = tokenizeWithErrors(source).tokens
+      .filter((token) => token.type === TokenType.IDENTIFIER && token.line === token.endLine)
+      .sort((first, second) => second.line - first.line || second.column - first.column);
+    for (const token of identifiers) {
+      const line = lines[token.line - 1]!;
+      lines[token.line - 1] = line.slice(0, token.column - 1) + change(line.slice(token.column - 1, token.endColumn - 1)) + line.slice(token.endColumn - 1);
+    }
+    return lines.join('\n');
+  }
+
+  const root = join(import.meta.dir, '..', '..', '..', '..', 'conformance', 'cmp');
+  const bytes = (source: string): string | null => {
+    try {
+      return Buffer.from(compileToBinary(source).zplcFile).toString('hex');
+    } catch {
+      return null;
+    }
+  };
+
+  test('every conformance program that builds builds the same bytes in upper and in lower case', () => {
+    let compared = 0;
+    const differing: string[] = [];
+    for (const name of readdirSync(root).filter((file) => file.endsWith('.st')).sort()) {
+      const source = readFileSync(join(root, name), 'utf8');
+      const original = bytes(source);
+      if (original === null) continue;
+      compared += 1;
+      if (bytes(recase(source, (text) => text.toUpperCase())) !== original) differing.push(`${name} in upper case`);
+      if (bytes(recase(source, (text) => text.toLowerCase())) !== original) differing.push(`${name} in lower case`);
+    }
+    expect(compared).toBeGreaterThan(100);
+    expect(differing).toEqual([]);
+  });
+
+  test('a standard function is called without regard to case', () => {
+    const upper = compileToBinary('PROGRAM P\nVAR\n  a : STRING[8] := \'ab\';\n  b : STRING[8] := \'cd\';\n  r : STRING[16];\nEND_VAR\n  r := CONCAT(a, b);\nEND_PROGRAM\n');
+    const lower = compileToBinary('PROGRAM P\nVAR\n  a : STRING[8] := \'ab\';\n  b : STRING[8] := \'cd\';\n  r : STRING[16];\nEND_VAR\n  r := concat(a, b);\nEND_PROGRAM\n');
+    expect(Buffer.from(lower.zplcFile).equals(Buffer.from(upper.zplcFile))).toBe(true);
   });
 });

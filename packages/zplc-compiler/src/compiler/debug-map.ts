@@ -266,6 +266,10 @@ export function findVariable(
     
     // Search in all POUs
     for (const pouInfo of Object.values(map.pou)) {
+        // a variable of a function is declared as `Function.name` (CMP-034): the whole path may be its name
+        const declared = pouInfo.vars[path];
+        if (declared) return { varInfo: declared, absoluteAddr: declared.addr };
+
         const rootVar = pouInfo.vars[parts[0]];
         if (!rootVar) continue;
         

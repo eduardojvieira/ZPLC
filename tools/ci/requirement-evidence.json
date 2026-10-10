@@ -76,6 +76,7 @@
     {"kind":"conformance","ref":"conformance/cmp/cmp-004-user-names-case-insensitive.expect.json","test":"CMP-004 user functions, structure members, block members and enumeration values are matched without regard to case"},
     {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/names.test.ts","test":"direct addresses are matched without regard to case (CMP-004)"},
     {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/names.test.ts","test":"identifiers are matched without regard to case (CMP-004)"},
+    {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/names.test.ts","test":"the spelling of a name never changes the program (CMP-004)"},
     {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/names.test.ts","test":"type names are matched without regard to case (CMP-004)"}
   ],
   "CMP-005": [
@@ -511,9 +512,11 @@
     {"kind":"conformance","ref":"conformance/cmp/cmp-034-function-does-not-see-a-program-variable.expect.json","test":"CMP-034 a function does not see the variables of a program"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-034-function-locals-do-not-clash.expect.json","test":"CMP-034 locals and parameters of two functions have the same names, and none is the program variable of that name"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-034-function-reads-a-global.expect.json","test":"CMP-034 a function reads a VAR_GLOBAL through VAR_EXTERNAL"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-034-function-with-loops-and-locals-of-the-same-name.expect.json","test":"CMP-034 two functions with a loop counter and a total of the same names, and a program with the same names, keep their own"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-034-parameter-shadows-program-variable.expect.json","test":"CMP-034 a function parameter named like a program variable"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-034-same-parameter-name-two-functions.expect.json","test":"CMP-034 two functions with a parameter of the same name"},
-    {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/calls.test.ts","test":"scopes (CMP-034)"}
+    {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/calls.test.ts","test":"scopes (CMP-034)"},
+    {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/debug-map.test.ts","test":"the variables of a function (CMP-034, CMP-054)"}
   ],
   "CMP-035": [
     {"kind":"conformance","ref":"conformance/cmp/cmp-035-call-statement-runs-the-function.expect.json","test":"CMP-035 a function called as a statement runs, and its result is discarded"},
@@ -619,7 +622,8 @@
   "CMP-054": [
     {"kind":"conformance","ref":"conformance/cmp/cmp-054-debug-map-address-with-a-type.expect.json","test":"CMP-054 the debug map gives the address of a variable in a file with a TYPE"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-054-debug-map-lists-a-global.expect.json","test":"CMP-054 the debug map lists a global variable"},
-    {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/control-flow.test.ts","test":"debug map (CMP-054 stopgap)","partial":true}
+    {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/control-flow.test.ts","test":"debug map (CMP-054 stopgap)","partial":true},
+    {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/debug-map.test.ts","test":"the variables of a function (CMP-034, CMP-054)"}
   ],
   "CMP-055": [
     {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/debug-map.test.ts","test":"statement ranges (CMP-055)"},
