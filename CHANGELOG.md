@@ -51,6 +51,15 @@ All notable changes are documented here.
   `firmware/tests/inbound_authority` drives every Modbus function code and
   every write count through the product's framing and mapping in front of a
   core whose authority entries count their calls.
+- No MCP tool and no AI path opens the device link (COM-030).
+  `src/mcp/deviceLink.test.ts` enumerates the tools and resources of the live
+  server, builds the module graph of the MCP entry point and of the AI
+  provider and finds no serial, upload or socket module in them, and runs the
+  tools with a trap on every socket and serial entry point;
+  `electron/aiDeviceLink.test.ts` shows that an AI request carries only its
+  six fields. While writing it, `compiler_check` and `compiler_compile`
+  turned out to answer `MCP_INTERNAL_ERROR` for every real project: the
+  compiler summary gained `draftCounter` and the MCP result schema did not.
 - Three of the fifteen modules over the new size limit are split (IDE-014): the
   project settings are one module per section (2,181 lines to 213 and eleven
   files of at most 430), the Explorer's context menu and confirmations are

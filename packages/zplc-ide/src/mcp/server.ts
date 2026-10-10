@@ -91,7 +91,7 @@ const executionSchema = z.object({
   startedAt: z.string().datetime({ offset: false }),
   finishedAt: z.string().datetime({ offset: false }),
 }).strict();
-const compilerSummarySchema = z.object({ name: shortText, version: z.string().min(1).max(64), taskCount: z.number().int().nonnegative(), codeSize: z.number().int().nonnegative() }).strict();
+const compilerSummarySchema = z.object({ name: shortText, version: z.string().min(1).max(64), taskCount: z.number().int().nonnegative(), codeSize: z.number().int().nonnegative(), draftCounter: z.number().int().nonnegative().optional() }).strict();
 const testSummarySchema = z.object({ backend: z.literal('native-posix'), mode: z.literal('logical-cyclic-task-set-scan'), scenarios: z.array(z.object({ id: identifier, path: logicalPathSchema.refine((path) => path.startsWith('tests/')), passed: z.boolean(), traceSha256: z.string().regex(/^[0-9a-f]{64}$/), traceByteLength: z.number().int().nonnegative() }).strict()).max(8) }).strict();
 const savedInputSchema = z.object({ schemaVersion: z.literal(1), sha256: z.string().regex(/^[0-9a-f]{64}$/), fileCount: z.number().int().positive().max(Number.MAX_SAFE_INTEGER) }).strict();
 const boardSummarySchema = z.object({ boardId: z.string().max(64).regex(/^[a-z0-9][a-z0-9-]*$/), ideId: z.string().max(64).regex(/^[a-z0-9][a-z0-9_]*$/), zephyrBoard: z.string().max(128).regex(/^[a-z0-9][a-z0-9_/-]*$/), validationLevel: z.enum(['cross-build', 'human-hil']) }).strict();
