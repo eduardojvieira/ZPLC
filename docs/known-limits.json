@@ -92,11 +92,6 @@
     "en": "The statements of the debug map do not cover all their instructions: a statement ends before the next one starts, so some program counters resolve to no statement.",
     "es": "Las sentencias del mapa de depuración no cubren todas sus instrucciones: una sentencia termina antes de que empiece la siguiente, de modo que algunos contadores de programa no se resuelven a ninguna sentencia."
   },
-  "LNG-008": {
-    "page": "language",
-    "en": "An FBD block that is a user function block from another file is refused (`Invalid FBD connection … unknown destination input port`): the FBD transpiler does not know its ports.",
-    "es": "Un bloque FBD que es un bloque de función de usuario de otro archivo se rechaza (`Invalid FBD connection … unknown destination input port`): el transpilador FBD no conoce sus puertos."
-  },
   "RT-015": {
     "page": "language",
     "en": "A task with `trigger: event` is accepted by the compiler and refused later, and a program with two cyclic tasks of different intervals is refused by the native simulation.",

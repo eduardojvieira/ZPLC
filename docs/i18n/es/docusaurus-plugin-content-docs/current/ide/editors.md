@@ -13,6 +13,24 @@ lenguaje visual conserva su propio modelo.
 | FBD | Puertos con tipo, bloques, conexiones, deshacer y validación visual. | El ST generado es una salida de solo lectura. |
 | SFC | Pasos, transiciones, acciones, deshacer y validación visual. | El ST generado es una salida de solo lectura. |
 
+## Bloques del proyecto
+
+La paleta de bloques de FBD y LD muestra, además de los bloques estándar, un grupo **Project** con los bloques de
+función y las funciones que declaran los archivos Structured Text del proyecto (LNG-008). Un bloque del grupo tiene los
+puertos de su declaración: en un bloque de función, sus `VAR_INPUT` y `VAR_IN_OUT` son entradas y sus `VAR_OUTPUT` son
+salidas; en una función, sus entradas son las entradas y su resultado es la salida `OUT`. El Structured Text generado
+llama al bloque con argumentos por nombre, de modo que el orden en que se conectan las entradas no importa.
+
+- **FBD** coloca bloques de función (con un nombre de instancia) y funciones. Una función cuyo resultado nadie usa se
+  llama de todos modos.
+- **LD** coloca bloques de función en un rung, igual que un temporizador: el elemento nombra el tipo y la instancia, y
+  los parámetros nombran las entradas de la declaración. Una función no se coloca en un rung; llámela desde un archivo
+  FBD o ST.
+- Un bloque que ningún archivo declara se rechaza por su nombre al compilar el diagrama. Una declaración del proyecto
+  tiene prioridad sobre un bloque estándar del mismo nombre, como en el compilador.
+- La paleta lista los archivos que están cargados en el editor; la compilación lee todos los archivos Structured Text
+  del proyecto.
+
 ## Ruta de compilación
 
 Los modelos visuales se validan y se transpilan antes de la compilación

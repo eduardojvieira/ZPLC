@@ -70,6 +70,7 @@ import { transpileFBDToST } from './transpilers/fbd.ts';
 import { transpileSFCToST } from './transpilers/sfc.ts';
 import { transpileILToST } from './transpilers/il.ts';
 import { parseFBDModel } from '../models/fbd.ts';
+import { collectProjectBlocks, type ProjectBlock } from '../models/projectBlocks.ts';
 import { parseSFCModel } from '../models/sfc.ts';
 import { parseIL, ILParseError } from './il/parser.ts';
 import { ILLexerError } from './il/lexer.ts';
@@ -194,18 +195,18 @@ export interface SingleFileTaskResult extends ProjectCompilationResult {
  * @param language - Source language (LD, FBD, SFC, IL)
  * @returns TranspileResult with ST source code
  */
-export function transpileToST(content: string, language: PLCLanguage, symbols?: ILProjectSymbols): TranspileResult {
+export function transpileToST(content: string, language: PLCLanguage, symbols?: ILProjectSymbols, blocks?: readonly ProjectBlock[]): TranspileResult {
     switch (language) {
         case 'LD': {
             try {
-                return transpileLDToST(JSON.parse(content));
+                return transpileLDToST(JSON.parse(content), blocks);
             } catch (error) {
                 return { success: false, source: '', errors: [error instanceof Error ? error.message : String(error)] };
             }
         }
         case 'FBD': {
             try {
-                return transpileFBDToST(parseFBDModel(content));
+                return transpileFBDToST(parseFBDModel(content, blocks), blocks);
             } catch (error) {
                 return { success: false, source: '', errors: [error instanceof Error ? error.message : String(error)] };
             }
@@ -490,6 +491,9 @@ export function compileMultiTaskProject(
     // Globals and user function blocks that an IL operand may name, read from the project's ST sources
     let symbols: ILProjectSymbols | undefined;
     const projectSymbols = (): ILProjectSymbols => symbols ??= collectProjectSymbols(programSources);
+    // The function blocks and functions the project declares: a diagram places them like the standard ones (LNG-008)
+    let blocks: ProjectBlock[] | undefined;
+    const projectBlocks = (): ProjectBlock[] => blocks ??= collectProjectBlocks(programSources);
 
     const communicationTags = config.communication?.bindings || config.communication?.tags || [];
     const coreSources: CoreProgramSource[] = [];
@@ -510,7 +514,8 @@ export function compileMultiTaskProject(
 
             const transpiled: TranspileResult = source.language === 'ST'
                 ? { success: true, source: source.content, errors: [] }
-                : transpileToST(source.content, source.language, source.language === 'IL' ? projectSymbols() : undefined);
+                : transpileToST(source.content, source.language, source.language === 'IL' ? projectSymbols() : undefined,
+                    source.language === 'FBD' || source.language === 'LD' ? projectBlocks() : undefined);
             if (!transpiled.success) {
                 throw new CompilerError(`Transpilation of '${progName}' failed: ${transpiled.errors.join('; ')}`, transpiled.line ?? 0, 0, 'parser', source.sourceRef);
             }

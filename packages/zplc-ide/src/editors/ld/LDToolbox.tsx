@@ -9,6 +9,7 @@
  */
 
 import { getToolboxItems, type LDToolboxItem } from '../../models/ld';
+import { useProjectBlocks } from '../useProjectBlocks';
 import { DRAG_MIME_TYPE } from './ldDragData';
 
 // =============================================================================
@@ -96,7 +97,8 @@ function ToolboxSection({ title, items }: ToolboxSectionProps) {
 // =============================================================================
 
 export default function LDToolbox() {
-  const allItems = getToolboxItems();
+  // the function blocks of the project are placeable like the standard ones (LNG-008)
+  const allItems = getToolboxItems(useProjectBlocks());
 
   const contacts = allItems.filter(i => i.category === 'contact');
   const coils = allItems.filter(i => i.category === 'coil');

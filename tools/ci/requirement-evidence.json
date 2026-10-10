@@ -615,7 +615,8 @@
     {"kind":"conformance","ref":"conformance/cmp/cmp-041-super-call-runs-the-base-body.expect.json","test":"CMP-041 SUPER^() runs the body of the base block inside the body of the derived one"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-041-super-call-through-three-levels.expect.json","test":"CMP-041 SUPER^ in a method of each of three levels calls the level above it"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-041-super-call.expect.json","test":"CMP-041 SUPER^ calls the method of the base block"},
-    {"kind":"conformance","ref":"conformance/cmp/cmp-041-this-member-in-method.expect.json","test":"CMP-041 THIS.member inside a method"}
+    {"kind":"conformance","ref":"conformance/cmp/cmp-041-this-member-in-method.expect.json","test":"CMP-041 THIS.member inside a method"},
+    {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/oop.test.ts","test":"OOP: interfaces, ABSTRACT and FINAL blocks in the symbol table (CMP-041)"}
   ],
   "CMP-042": [
     {"kind":"conformance","ref":"conformance/cmp/cmp-042-function-block-declared-in-two-files-is-rejected.expect.json","test":"CMP-042 a function block declared in two files is an error at both declarations"},
@@ -783,7 +784,10 @@
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"7 Breakpoint stops execution","partial":true}
   ],
   "LNG-008": [
-    {"kind":"conformance","ref":"conformance/lng/lng-008-fbd-calls-a-user-function-block.expect.json","test":"LNG-008 an FBD block that is a user function block from another file runs"}
+    {"kind":"conformance","ref":"conformance/lng/lng-008-fbd-block-the-project-does-not-declare-is-rejected.expect.json","test":"LNG-008 an FBD block of a type that neither the library nor the project declares is rejected by name"},
+    {"kind":"conformance","ref":"conformance/lng/lng-008-fbd-calls-a-user-function-block.expect.json","test":"LNG-008 an FBD block that is a user function block from another file runs"},
+    {"kind":"conformance","ref":"conformance/lng/lng-008-fbd-calls-a-user-function.expect.json","test":"LNG-008 an FBD block that is a user function from another file is called with its inputs by name"},
+    {"kind":"conformance","ref":"conformance/lng/lng-008-ld-places-a-user-function-block.expect.json","test":"LNG-008 an LD rung places a function block of the project and takes its output"}
   ],
   "LNG-009": [
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"9 Undo after switching tabs"}

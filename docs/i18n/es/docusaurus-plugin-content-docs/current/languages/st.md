@@ -257,7 +257,6 @@ Esta sección lista lo que el compilador, el cargador y el mapa de depuración n
 |---|---|---|
 | CMP-015 | `LINT`, `ULINT` y `LWORD` no tienen `*`, `/`, `MOD`, `SHL`, `SHR`, `ROL`, `ROR`, `ABS`, conversión desde o hacia `REAL`, selector de `CASE` ni contador de `FOR`: cada uno es un error de compilación que nombra CMP-015. Un programa que asigna o calcula con un `LREAL` se compila y luego es rechazado por el cargador. | `LREAL keeps double precision` |
 | CMP-051 | El cargador rechaza el artefacto que el compilador genera para un programa con un `LREAL` y para dos tareas cíclicas con intervalos distintos. | `the loader accepts every artifact the compiler produced for a conformance case` |
-| LNG-008 | Un bloque FBD que es un bloque de función de usuario de otro archivo se rechaza (`Invalid FBD connection … unknown destination input port`): el transpilador FBD no conoce sus puertos. | `an FBD block that is a user function block from another file runs` |
 | RT-015 | Una tarea con `trigger: event` es aceptada por el compilador y rechazada después, y un programa con dos tareas cíclicas de intervalos distintos es rechazado por la simulación nativa. | `an event-triggered task is rejected by the build`<br />`two cyclic tasks with different intervals load in simulation and each runs at its own interval` |
 {/* <<< END GENERATED: known-limits-language <<< */}
 

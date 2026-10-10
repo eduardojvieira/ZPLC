@@ -38,6 +38,8 @@ import FBDToolbox from './FBDToolbox';
 import InstanceMonitor from './InstanceMonitor';
 import { useDebugValues } from '../../hooks/useDebugValue';
 import { useIDEStore } from '../../store/useIDEStore';
+import { findProjectBlock } from '../../models/projectBlocks';
+import { useProjectBlocks } from '../useProjectBlocks';
 
 // =============================================================================
 // Props
@@ -147,6 +149,7 @@ function FBDEditorInner({
   onOpenMonitor,
 }: FBDEditorInnerProps) {
   const { screenToFlowPosition } = useReactFlow();
+  const projectBlocks = useProjectBlocks();
 
   const updateNodeDataRef = useRef<((nodeId: string, data: Record<string, unknown>) => void) | undefined>(undefined);
   const [nodes, replaceNodes] = useReducer((_current: Node[], next: Node[]) => next, initialNodes.map((node) => ({
@@ -288,10 +291,12 @@ function FBDEditorInner({
           debugActive,
           liveValues,
           onOpenMonitor,
-          inputs: getDefaultPorts(blockType).inputs,
-          outputs: getDefaultPorts(blockType).outputs,
+          // a block the project declares has the ports of its declaration (LNG-008)
+          inputs: getDefaultPorts(blockType, projectBlocks).inputs,
+          outputs: getDefaultPorts(blockType, projectBlocks).outputs,
           variableName: blockType.startsWith('COMM_') ? `${blockType}_TAG` : undefined,
           instanceName: blockType.match(/^(TON|TOF|TP|CTU|CTD|CTUD|R_TRIG|F_TRIG|SR|RS)$/)
+            || findProjectBlock(projectBlocks, blockType)?.kind === 'FUNCTION_BLOCK'
             ? `${blockType}_${id}`
             : undefined,
         },
@@ -299,7 +304,7 @@ function FBDEditorInner({
 
       commitGraph([...nodesRef.current, newNode], edgesRef.current);
     },
-    [commitGraph, debugActive, liveValues, onOpenMonitor, readOnly, screenToFlowPosition]
+    [commitGraph, debugActive, liveValues, onOpenMonitor, projectBlocks, readOnly, screenToFlowPosition]
   );
 
   const onDragOver = useCallback((event: React.DragEvent) => {

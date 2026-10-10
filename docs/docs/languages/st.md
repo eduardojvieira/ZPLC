@@ -260,7 +260,6 @@ This section lists what the compiler, the loader and the debug map do not do as 
 |---|---|---|
 | CMP-015 | `LINT`, `ULINT` and `LWORD` have no `*`, `/`, `MOD`, `SHL`, `SHR`, `ROL`, `ROR`, `ABS`, conversion to or from `REAL`, `CASE` selector or `FOR` counter: each is a build error that names CMP-015. A program that assigns or computes with an `LREAL` builds and is then refused by the loader. | `LREAL keeps double precision` |
 | CMP-051 | The loader refuses the artifact that the compiler builds for a program with an `LREAL` and for two cyclic tasks with different intervals. | `the loader accepts every artifact the compiler produced for a conformance case` |
-| LNG-008 | An FBD block that is a user function block from another file is refused (`Invalid FBD connection … unknown destination input port`): the FBD transpiler does not know its ports. | `an FBD block that is a user function block from another file runs` |
 | RT-015 | A task with `trigger: event` is accepted by the compiler and refused later, and a program with two cyclic tasks of different intervals is refused by the native simulation. | `an event-triggered task is rejected by the build`<br />`two cyclic tasks with different intervals load in simulation and each runs at its own interval` |
 {/* <<< END GENERATED: known-limits-language <<< */}
 

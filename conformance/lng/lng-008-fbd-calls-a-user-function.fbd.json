@@ -1,0 +1,93 @@
+{
+  "name": "Scaling",
+  "variables": {
+    "local": [],
+    "inputs": [
+      {
+        "name": "Raw",
+        "type": "INT",
+        "address": "%IW0"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "Scaled",
+        "type": "INT",
+        "address": "%QW0"
+      }
+    ]
+  },
+  "blocks": [
+    {
+      "id": "raw",
+      "type": "input",
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "variableName": "Raw"
+    },
+    {
+      "id": "three",
+      "type": "constant",
+      "position": {
+        "x": 0,
+        "y": 1
+      },
+      "dataType": "INT",
+      "value": 3
+    },
+    {
+      "id": "scale",
+      "type": "Scale",
+      "position": {
+        "x": 1,
+        "y": 0
+      }
+    },
+    {
+      "id": "out",
+      "type": "output",
+      "position": {
+        "x": 2,
+        "y": 0
+      },
+      "variableName": "Scaled"
+    }
+  ],
+  "connections": [
+    {
+      "id": "w1",
+      "from": {
+        "block": "raw",
+        "port": "OUT"
+      },
+      "to": {
+        "block": "scale",
+        "port": "Value"
+      }
+    },
+    {
+      "id": "w2",
+      "from": {
+        "block": "three",
+        "port": "OUT"
+      },
+      "to": {
+        "block": "scale",
+        "port": "Gain"
+      }
+    },
+    {
+      "id": "w3",
+      "from": {
+        "block": "scale",
+        "port": "OUT"
+      },
+      "to": {
+        "block": "out",
+        "port": "IN"
+      }
+    }
+  ]
+}

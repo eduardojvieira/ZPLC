@@ -1,0 +1,73 @@
+{
+  "name": "Missing",
+  "variables": {
+    "local": [],
+    "inputs": [
+      {
+        "name": "Go",
+        "type": "BOOL",
+        "address": "%IX0.0"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "Done",
+        "type": "BOOL",
+        "address": "%QX0.0"
+      }
+    ]
+  },
+  "blocks": [
+    {
+      "id": "go",
+      "type": "input",
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "variableName": "Go"
+    },
+    {
+      "id": "nobody",
+      "type": "NoSuchBlock",
+      "position": {
+        "x": 1,
+        "y": 0
+      },
+      "instanceName": "Held"
+    },
+    {
+      "id": "out",
+      "type": "output",
+      "position": {
+        "x": 2,
+        "y": 0
+      },
+      "variableName": "Done"
+    }
+  ],
+  "connections": [
+    {
+      "id": "w1",
+      "from": {
+        "block": "go",
+        "port": "OUT"
+      },
+      "to": {
+        "block": "nobody",
+        "port": "IN"
+      }
+    },
+    {
+      "id": "w2",
+      "from": {
+        "block": "nobody",
+        "port": "OUT"
+      },
+      "to": {
+        "block": "out",
+        "port": "IN"
+      }
+    }
+  ]
+}

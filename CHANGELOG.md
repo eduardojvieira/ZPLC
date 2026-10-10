@@ -4,6 +4,14 @@ All notable changes are documented here.
 
 ## Unreleased
 
+- The function blocks and functions that the Structured Text files of a project
+  declare are blocks of the FBD and LD palettes (LNG-008): a diagram places one
+  with the ports of its declaration, and the generated Structured Text calls it
+  with named arguments (an FBD also places functions, with their result as
+  `OUT`; an LD rung places function blocks). A block that no file declares is
+  still refused, by name. `transpileToST`, `parseFBDModel`, `validateFBDModel`,
+  `getDefaultPorts`, `transpileFBDToST`, `transpileLDToST` and `getToolboxItems`
+  take the blocks of the project as an optional last argument.
 - Methods and inheritance work as IEC 61131-3 defines them (CMP-041).
   `SUPER^.Method()` calls the method of the base of the block that declares the
   code that runs, and `SUPER^();` runs the body of that base block; a block

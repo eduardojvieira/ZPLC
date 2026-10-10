@@ -5,6 +5,8 @@
  * Based on IEC 61131-3 FBD language specification.
  */
 
+import { findProjectBlock, type ProjectBlock } from './projectBlocks';
+
 // =============================================================================
 // Variable Definitions
 // =============================================================================
@@ -172,8 +174,8 @@ export interface FBDModel {
 /**
  * Parse a JSON string into an FBDModel
  */
-export function parseFBDModel(json: string): FBDModel {
-  return validateFBDModel(JSON.parse(json));
+export function parseFBDModel(json: string, projectBlocks?: readonly ProjectBlock[]): FBDModel {
+  return validateFBDModel(JSON.parse(json), projectBlocks);
 }
 
 function record(value: unknown, label: string): Record<string, unknown> {
@@ -209,8 +211,12 @@ function ports(value: unknown, label: string): FBDPort[] {
   });
 }
 
-/** Validate and normalize an untrusted FBD document before it reaches the transpiler. */
-export function validateFBDModel(value: unknown): FBDModel {
+/**
+ * Validate and normalize an untrusted FBD document before it reaches the transpiler. `blocks` are the function
+ * blocks and functions the project declares (`projectBlocks`): a block of one of them has the ports of its
+ * declaration (LNG-008).
+ */
+export function validateFBDModel(value: unknown, projectBlocks?: readonly ProjectBlock[]): FBDModel {
   const source = record(value, 'top-level object');
   const variables = record(source.variables, 'variables');
   for (const name of ['local', 'outputs'] as const) {
@@ -233,7 +239,7 @@ export function validateFBDModel(value: unknown): FBDModel {
     if (!Number.isFinite(position.x) || !Number.isFinite(position.y)) {
       throw new Error(`Invalid FBD blocks[${index}].position: coordinates must be finite`);
     }
-    const defaults = getDefaultPorts(type);
+    const defaults = getDefaultPorts(type, projectBlocks);
     return {
       ...block,
       id,
@@ -326,9 +332,17 @@ export function isMathOperator(type: string): boolean {
 }
 
 /**
- * Get the default ports for a block type
+ * Get the default ports for a block type: the ones of the declaration when the project declares a block of that
+ * name (it wins over a standard block, as it does in the compiler), else those of the standard block.
  */
-export function getDefaultPorts(type: string): { inputs: FBDPort[], outputs: FBDPort[] } {
+export function getDefaultPorts(type: string, blocks?: readonly ProjectBlock[]): { inputs: FBDPort[], outputs: FBDPort[] } {
+  const declared = findProjectBlock(blocks, type);
+  if (declared) {
+    return {
+      inputs: declared.inputs.map((port) => ({ name: port.name, type: port.type })),
+      outputs: declared.outputs.map((port) => ({ name: port.name, type: port.type })),
+    };
+  }
   switch (type) {
     case 'constant':
       return {
