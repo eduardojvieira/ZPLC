@@ -45,6 +45,14 @@
   "VF-016": [
     {"kind":"unit","ref":"tools/ci/ci-workflow.test.ts","test":"ci.yml triggers (VF-016)","partial":true,"note":"asserts the parsed workflow triggers; its own header says that a hosted run on the 2.0 branch is the only proof that GitHub honours them, and a green default branch and a recorded scheduled run are not shown by it"}
   ],
+  "VF-018": [
+    {"kind":"unit","ref":"tools/ci/test_run_clang_tidy.py","test":"HostUnits","partial":true,"note":"the host pass of clang-tidy runs in CI over the core, the POSIX HAL and the host application with warnings as errors; the Zephyr HAL and firmware/app are analysed only where a west build tree exists (run.sh tidy) and firmware/app carries a per-board baseline of findings; -Werror on the Zephyr library was applied without a Zephyr build"}
+  ],
+  "VF-020": [
+    {"kind":"unit","ref":"tools/ci/check-docs-samples.test.ts","test":"docs samples: expected results (VF-020)"},
+    {"kind":"unit","ref":"tools/ci/check-docs-samples.test.ts","test":"docs samples: the English page and its Spanish twin (VF-020)"},
+    {"kind":"unit","ref":"tools/ci/check-docs-samples.test.ts","test":"docs samples: the fence convention (VF-020)"}
+  ],
   "VF-022": [
     {"kind":"unit","ref":"tools/ci/test-inventory.test.ts","test":"checkInventory (VF-022)"}
   ],

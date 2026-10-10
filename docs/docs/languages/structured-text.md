@@ -13,7 +13,7 @@ Structured Text (ST) is a high-level, block-structured language with a syntax re
 
 ## Basic Syntax
 
-```pascal
+```pascal runnable expect="Counter=3 Output_LED=FALSE" scans=3 scan_ms=10
 PROGRAM Main
     VAR
         Counter: INT := 0;
@@ -31,6 +31,10 @@ PROGRAM Main
     END_IF;
 END_PROGRAM
 ```
+
+Each scan adds 1 to `Counter`, and `Output_LED` stays `FALSE` until `Counter` reaches `Threshold`.
+After three scans `Counter` is 3 and `Output_LED` is `FALSE`; CI runs the sample for three scans
+and checks both values.
 
 ## Data Types
 

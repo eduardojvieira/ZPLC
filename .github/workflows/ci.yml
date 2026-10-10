@@ -376,6 +376,19 @@ jobs:
       - name: Check the generated binary contract
         run: bun run contract:check
 
+      # VF-020: a documentation sample whose fence says `runnable` is compiled, and run on the native runtime when it
+      # states a result. The compiler package and the runtime are built here for it.
+      - name: Build the compiler and the native runtime for the documentation samples
+        run: |
+          bun run build:compiler
+          cmake -S firmware/lib/zplc_core -B "${RUNNER_TEMP}/zplc-docs-runtime" -DCMAKE_BUILD_TYPE=Release
+          cmake --build "${RUNNER_TEMP}/zplc-docs-runtime" --target zplc_runtime --parallel
+
+      - name: Check the runnable documentation samples
+        env:
+          ZPLC_NATIVE_SIM_BIN: ${{ runner.temp }}/zplc-docs-runtime/zplc_runtime
+        run: bun tools/ci/check-docs-samples.ts
+
       - name: Generate and validate documentation references
         run: |
           bun run docs:generate
