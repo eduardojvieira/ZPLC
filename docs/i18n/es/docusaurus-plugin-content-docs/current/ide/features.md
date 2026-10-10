@@ -20,6 +20,14 @@ Terminal en un solo panel inferior.
 3. Ejecute una prueba temporal o un escenario POSIX nativo y revise su trace.
 4. Verifique el origen de los resultados antes de sacar una conclusión.
 
+## Proyectos recientes y restauración de sesión
+
+La pantalla de bienvenida lista, en **Recent**, hasta diez carpetas que usted abrió antes, la más reciente primero, cada una con su nombre y la fecha de su última apertura. Al elegir una, se reabre sin diálogo de carpeta. Una carpeta que se movió, se borró o se reemplazó por un enlace aparece como no encontrada, con un botón **Forget** que la quita de la lista. Solo se recuerda una carpeta que usted eligió con el diálogo de carpetas del sistema.
+
+Para cada proyecto, Studio recuerda además las pestañas abiertas, la pestaña activa, la posición del cursor y del desplazamiento de cada archivo, y el tamaño de los paneles del editor y del panel inferior (y si el panel inferior estaba contraído). Los vuelve a poner la próxima vez que se abre esa carpeta, desde **Recent** o con **Open project**. Solo se guardan rutas y posiciones: las ediciones sin guardar no se restauran, y una pestaña cuyo archivo ya no existe se descarta sin avisar. La lista y las sesiones se guardan en el directorio privado de datos de usuario de Studio, nunca en la carpeta del proyecto, y la sesión de un proyecto que sale de la lista se borra la próxima vez que arranca Studio.
+
+Nivel de evidencia: host. Las pruebas unitarias del requisito IDE-008 (`packages/zplc-ide/electron/recentProjects.test.ts`, `sessionStore.test.ts`, `packages/zplc-ide/src/utils/sessionState.test.ts` y `packages/zplc-ide/src/store/sessionPersistence.test.ts`) cubren la lista y el formato de la sesión, y el recorrido 12 (restaurar la sesión) y el recorrido 14 (un proyecto reciente que ya no está) de `bun run test:journeys` manejan la aplicación real en una pantalla.
+
 ## Editores
 
 ST es la vía principal con servicio de lenguaje. LD, FBD y SFC abren, editan,
@@ -34,6 +42,20 @@ Requiere la aplicación de escritorio, que incluye el runtime nativo; en esta
 versión no hay un simulador WebAssembly en el navegador. Las acciones de hardware
 están separadas: compilar el firmware del runtime, grabarlo, desplegar un
 programa compilado y, después, ejecutar o depurar. Una persona inicia cada una.
+
+## Learn
+
+Learn es una pestaña del panel inferior. La acción **Learn** de la pantalla de bienvenida copia la primera lección en una carpeta que usted elige y abre esa pestaña. Esto es lo que ofrece hoy:
+
+- Diez lecciones, en español y en inglés (el selector está en el panel, y el español es el valor por defecto). Cada lección trae su propio proyecto de ejemplo: un archivo fuente en Structured Text y un archivo de escenario.
+- Cada lección recorre seis etapas (en inglés Objective, Predict, Edit, Run, Observe y Reflect), y el punto de control esperado de cada etapa permanece oculto hasta que usted lo pide.
+- Usted edita el proyecto copiado y ejecuta solo el escenario de esa lección desde **Tests**. El panel califica la ejecución registrada: una lección se da por completada cuando su escenario pasó con todas sus aserciones guardadas. Studio recuerda las lecciones completadas, y **Exportar progreso** e **Importar progreso** (**Export progress** e **Import progress** en inglés) las trasladan como un archivo pequeño.
+- Todas las lecciones están desbloqueadas y se pueden tomar en cualquier orden. Learn nunca inicia una operación física: solo copia un proyecto y abre **Tests**.
+- Un resultado es evidencia de host de la simulación nativa, no evidencia de hardware.
+
+Un curso con niveles, prerrequisitos y un orden fijo, una superficie de lección que permanece junto al editor y una vía para una placa de aprendizaje son trabajo futuro (los requisitos LRN). Nada de esta página los promete.
+
+Nivel de evidencia: host. `packages/zplc-ide/src/components/learnLesson.test.ts` y `LearnPanel.test.ts` cubren las lecciones y la calificación, y `packages/zplc-ide/src/learn/starterGrading.test.ts` ejecuta cada starter contra su escenario.
 
 ## Límite de la depuración
 
