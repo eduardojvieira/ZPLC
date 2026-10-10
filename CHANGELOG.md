@@ -4,6 +4,26 @@ All notable changes are documented here.
 
 ## Unreleased
 
+- The VM has 34 new opcodes for 64-bit integers and double precision (CMP-015),
+  all in the C core, so every runtime has them at once: `MUL64`, `DIVS64`,
+  `DIVU64`, `MODS64`, `MODU64`, `NEG64`, `ABS64`, `SHL64`, `SHR64` and `SAR64`
+  for `LINT`, `ULINT` and `LWORD`; `ADDD`, `SUBD`, `MULD`, `DIVD`, `NEGD`,
+  `ABSD`, `SQRTD`, `RNDD` and the comparisons `EQD` to `GED` for `LREAL`; and the
+  conversions `F2D`, `D2F`, `I2D`, `D2I`, `L2D`, `D2L`, `U2D`, `D2U`, `L2F` and
+  `U2F`. A two-word value has its low word deeper on the stack. The double
+  operations are computed in integer arithmetic, so a result is the same bit
+  pattern on the 64-bit host, on a 32-bit build and on every target, and every
+  NaN is `0x7FF8000000000000`. Division and modulo by zero fault like the 32-bit
+  ones, `INT64_MIN / -1` is `INT64_MIN`, a shift of 64 or more gives `0` (`-1` for
+  a negative `SAR64`) and a conversion to an integer truncates, saturates and
+  maps a NaN to `0`; the results are stated in the runtime ISA page. The opcodes
+  add about 4 KB of code on a Cortex-M3 at `-Os`.
+- **ABI:** the draft counter is now 3. Artifacts built before this draft are
+  refused by the loader, the native runtime, the firmware shell and Studio, with
+  both numbers: rebuild programs and reflash boards together.
+  `tools/contract/restamp_artifacts.py` rewrites the counter and the CRC of the
+  artifacts committed to the repository (examples, fixtures, fuzz findings), and
+  `bun run contract:check` fails when one is stale.
 - The loader refuses a program whose calls nest deeper than the call stack of
   the VM (`ZPLC_CALL_STACK_MAX`, 32 by default, 16 on the ESP32-S3 profile)
   with `ZPLC_LOADER_ERR_STACK`, instead of accepting it and ending the scan

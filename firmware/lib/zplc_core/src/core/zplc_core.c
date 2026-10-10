@@ -134,6 +134,26 @@ static zplc_force_entry_t force_entries[ZPLC_FORCE_MAX_ENTRIES];
 #define VM_PEEK(vm) ((vm)->stack[(vm)->sp - 1])
 
 /**
+ * @brief Pop a 64-bit value (the high word is on top) into a uint64_t.
+ */
+#define VM_POP64(vm, out)                                                      \
+  do {                                                                         \
+    const uint32_t pop64_high_ = VM_POP(vm);                                   \
+    const uint32_t pop64_low_ = VM_POP(vm);                                    \
+    (out) = ((uint64_t)pop64_high_ << 32) | pop64_low_;                        \
+  } while (0)
+
+/**
+ * @brief Push a 64-bit value: low word first, then the high word.
+ */
+#define VM_PUSH64(vm, val)                                                     \
+  do {                                                                         \
+    const uint64_t push64_value_ = (val);                                      \
+    VM_PUSH(vm, (uint32_t)(push64_value_ & 0xFFFFFFFFU));                      \
+    VM_PUSH(vm, (uint32_t)(push64_value_ >> 32));                              \
+  } while (0)
+
+/**
  * @brief Check that an instruction of n bytes (opcode and operand) lies inside
  *        the code of the task, before its operand is read.
  *
@@ -656,6 +676,506 @@ void zplc_pi_unlock(void) {
 }
 
 /* ============================================================================
+ * 64-bit integers and IEEE 754 double precision (CMP-015)
+ * ============================================================================
+ *
+ * A 64-bit value takes two stack words, the low word below the high word, as
+ * LOAD64 leaves it. The double-precision opcodes are implemented here in
+ * integer arithmetic only. A double is a uint64_t bit pattern and every
+ * operation is an exact IEEE 754 binary64 operation in round-to-nearest-even,
+ * so a result does not depend on the C library, on hardware floating point,
+ * on x87 extended precision, on contraction of expressions or on the
+ * floating-point environment: it is the same on the 64-bit host, on -m32 and
+ * on every target (RT-005, CMP-016).
+ *
+ * Results the language reference states:
+ *
+ *   Opcode        Operands                          Result
+ *   MUL64         any                               low 64 bits of the product
+ *   DIVS64        b == 0                            fault ZPLC_VM_DIV_BY_ZERO
+ *                 a == INT64_MIN and b == -1        INT64_MIN
+ *                 otherwise                         quotient truncated toward zero
+ *   DIVU64 MODU64 b == 0                            fault ZPLC_VM_DIV_BY_ZERO
+ *   MODS64        b == 0                            fault ZPLC_VM_DIV_BY_ZERO
+ *                 b == -1                           0
+ *                 otherwise                         remainder, sign of the dividend
+ *   NEG64 ABS64   INT64_MIN                         INT64_MIN
+ *   SHL64 SHR64   count >= 64 (count read as an unsigned 32-bit word) 0
+ *   SAR64         count >= 64                       -1 if the value is negative, else 0
+ *   ADDD SUBD MULD DIVD
+ *                 any                               the IEEE 754 result, rounded to
+ *                                                   nearest even; overflow is an infinity,
+ *                                                   underflow is gradual
+ *   DIVD          divisor is 0.0 or -0.0            fault ZPLC_VM_DIV_BY_ZERO
+ *   every NaN result of a double operation          0x7FF8000000000000 (REAL: 0x7FC00000)
+ *   NEGD ABSD     any                               flip or clear the sign bit; a NaN
+ *                                                   keeps its payload
+ *   SQRTD         a <= 0.0 (and -0.0)               +0.0
+ *                 NaN                               the quiet NaN
+ *                 otherwise                         the correctly rounded root
+ *   RNDD          any                               the nearest integral value, a tie to
+ *                                                   the even one; -0.4 is -0.0
+ *   EQD NED LTD LED GTD GED
+ *                 a NaN operand                     false, except NED which is true
+ *                 -0.0 and +0.0                     equal
+ *   F2D D2F       NaN                               the quiet NaN of the destination
+ *   D2I D2L D2U   NaN                               0
+ *                 out of range                      the nearest limit (D2U: a value below
+ *                                                   1.0 is 0)
+ *                 otherwise                         truncated toward zero
+ *   I2D L2D U2D L2F U2F                             one rounding, to nearest even
+ */
+
+#define ZPLC_D_SIGN 0x8000000000000000ULL
+#define ZPLC_D_EXP 0x7FF0000000000000ULL
+#define ZPLC_D_FRAC 0x000FFFFFFFFFFFFFULL
+#define ZPLC_D_HIDDEN 0x0010000000000000ULL
+#define ZPLC_D_QNAN 0x7FF8000000000000ULL
+#define ZPLC_F_QNAN 0x7FC00000U
+
+/** Layout of an IEEE 754 binary format the rounding routine packs into. */
+typedef struct {
+  int precision;   /* significand bits, hidden bit included */
+  int exp_bits;    /* width of the exponent field */
+  int emin;        /* unbiased exponent of the smallest normal number */
+  int emax;        /* unbiased exponent of the largest finite number */
+} zplc_fp_format_t;
+
+static const zplc_fp_format_t ZPLC_FP_DOUBLE = {53, 11, -1022, 1023};
+static const zplc_fp_format_t ZPLC_FP_SINGLE = {24, 8, -126, 127};
+
+static int wide_is_nan(uint64_t x) { return (x & ~ZPLC_D_SIGN) > ZPLC_D_EXP; }
+static int wide_is_inf(uint64_t x) { return (x & ~ZPLC_D_SIGN) == ZPLC_D_EXP; }
+static int wide_is_zero(uint64_t x) { return (x & ~ZPLC_D_SIGN) == 0U; }
+
+/** Number of significant bits of v: 0 for 0, 64 for a value with bit 63 set. */
+static int wide_bit_length(uint64_t v) {
+  int n = 0;
+  if ((v >> 32) != 0U) {
+    n += 32;
+    v >>= 32;
+  }
+  if ((v >> 16) != 0U) {
+    n += 16;
+    v >>= 16;
+  }
+  if ((v >> 8) != 0U) {
+    n += 8;
+    v >>= 8;
+  }
+  if ((v >> 4) != 0U) {
+    n += 4;
+    v >>= 4;
+  }
+  if ((v >> 2) != 0U) {
+    n += 2;
+    v >>= 2;
+  }
+  if ((v >> 1) != 0U) {
+    n += 1;
+    v >>= 1;
+  }
+  return n + (int)v;
+}
+
+/**
+ * Round sig * 2^exp2 (plus a positive amount below one unit of sig when
+ * `sticky` is set) to the nearest value of the format, a tie to the even
+ * one, and return its bit pattern. sig must not be 0. A caller that passes a
+ * sticky amount gives a sig of at least 61 bits, so that the normalisation
+ * below shifts it left by at most three bits and the amount stays a
+ * remainder, never reaching the rounding position.
+ */
+static uint64_t wide_round_pack(int sign, int exp2, uint64_t sig, int sticky,
+                                const zplc_fp_format_t *fmt) {
+  const int frac_bits = fmt->precision - 1;
+  const int sign_shift = frac_bits + fmt->exp_bits;
+  const uint64_t sign_bit = (uint64_t)(sign != 0 ? 1U : 0U) << sign_shift;
+  int drop = 64 - fmt->precision; /* bits of sig below the kept significand */
+  uint64_t mantissa, rest, half;
+  int e, subnormal = 0;
+
+  if (sig == 0U) {
+    return sign_bit;
+  }
+  {
+    const int shift = 64 - wide_bit_length(sig);
+    sig <<= shift;
+    exp2 -= shift;
+  }
+  e = exp2 + 63; /* exponent of the leading bit */
+  if (e < fmt->emin) {
+    drop += fmt->emin - e;
+    subnormal = 1;
+  }
+  if (drop > 64) {
+    /* below half of the smallest step: rounds to zero */
+    return sign_bit;
+  }
+  if (drop == 64) {
+    mantissa = 0U;
+    rest = sig;
+    half = 0x8000000000000000ULL;
+  } else {
+    mantissa = sig >> drop;
+    rest = sig & ((1ULL << drop) - 1U);
+    half = 1ULL << (drop - 1);
+  }
+  if (rest > half || (rest == half && (sticky != 0 || (mantissa & 1U) != 0U))) {
+    mantissa++;
+  }
+  if (subnormal != 0) {
+    /* a mantissa that rounded up to 2^frac_bits is the smallest normal number */
+    return sign_bit | mantissa;
+  }
+  if (mantissa == (1ULL << fmt->precision)) {
+    mantissa >>= 1;
+    e++;
+  }
+  if (e > fmt->emax) {
+    return sign_bit | ((uint64_t)((1U << fmt->exp_bits) - 1U) << frac_bits);
+  }
+  return sign_bit | ((uint64_t)(e + fmt->emax) << frac_bits) |
+         (mantissa & ((1ULL << frac_bits) - 1U));
+}
+
+/** A finite double as sign and m * 2^e, m below 2^53. */
+static void wide_unpack_d(uint64_t x, int *sign, int *e, uint64_t *m) {
+  const int field = (int)((x >> 52) & 0x7FFU);
+  *sign = (int)(x >> 63);
+  if (field == 0) {
+    *m = x & ZPLC_D_FRAC;
+    *e = -1074;
+  } else {
+    *m = (x & ZPLC_D_FRAC) | ZPLC_D_HIDDEN;
+    *e = field - 1075;
+  }
+}
+
+/** Shift m left until bit 52 is set, for the operands of a product or a quotient. */
+static void wide_normalize53(uint64_t *m, int *e) {
+  while ((*m & ZPLC_D_HIDDEN) == 0U) {
+    *m <<= 1;
+    (*e)--;
+  }
+}
+
+static uint64_t wide_add_d(uint64_t a, uint64_t b, int subtract) {
+  int sa, sb, ea, eb, d, sticky = 0, sign;
+  uint64_t ma, mb, wa, wb, sum;
+
+  if (wide_is_nan(a) || wide_is_nan(b)) {
+    return ZPLC_D_QNAN;
+  }
+  if (subtract != 0) {
+    b ^= ZPLC_D_SIGN;
+  }
+  if (wide_is_inf(a)) {
+    return (wide_is_inf(b) && ((a ^ b) & ZPLC_D_SIGN) != 0U) ? ZPLC_D_QNAN : a;
+  }
+  if (wide_is_inf(b)) {
+    return b;
+  }
+  if (wide_is_zero(a) && wide_is_zero(b)) {
+    return a & b & ZPLC_D_SIGN; /* only -0.0 + -0.0 is -0.0 */
+  }
+  if (wide_is_zero(a)) {
+    return b;
+  }
+  if (wide_is_zero(b)) {
+    return a;
+  }
+  wide_unpack_d(a, &sa, &ea, &ma);
+  wide_unpack_d(b, &sb, &eb, &mb);
+  if (ea < eb || (ea == eb && ma < mb)) {
+    int t;
+    uint64_t u;
+    t = sa; sa = sb; sb = t;
+    t = ea; ea = eb; eb = t;
+    u = ma; ma = mb; mb = u;
+  }
+  /* ten guard bits below each significand; b is then aligned, its lost bits are a sticky */
+  wa = ma << 10;
+  wb = mb << 10;
+  d = ea - eb;
+  if (d >= 64) {
+    sticky = 1;
+    wb = 0U;
+  } else if (d > 0) {
+    sticky = (wb & ((1ULL << d) - 1U)) != 0U;
+    wb >>= d;
+  }
+  if (sa == sb) {
+    sum = wa + wb;
+    sign = sa;
+  } else {
+    sum = wa - wb - (uint64_t)sticky;
+    sign = sa;
+    if (sum == 0U && sticky == 0) {
+      return 0U; /* x - x is +0.0 */
+    }
+  }
+  return wide_round_pack(sign, ea - 10, sum, sticky, &ZPLC_FP_DOUBLE);
+}
+
+static uint64_t wide_mul_d(uint64_t a, uint64_t b) {
+  const uint64_t sign = (a ^ b) & ZPLC_D_SIGN;
+  int sa, sb, ea, eb, shift;
+  uint64_t ma, mb, p00, p01, p10, p11, mid, low, high;
+
+  if (wide_is_nan(a) || wide_is_nan(b)) {
+    return ZPLC_D_QNAN;
+  }
+  if (wide_is_inf(a) || wide_is_inf(b)) {
+    return (wide_is_zero(a) || wide_is_zero(b)) ? ZPLC_D_QNAN : (sign | ZPLC_D_EXP);
+  }
+  if (wide_is_zero(a) || wide_is_zero(b)) {
+    return sign;
+  }
+  wide_unpack_d(a, &sa, &ea, &ma);
+  wide_unpack_d(b, &sb, &eb, &mb);
+  wide_normalize53(&ma, &ea);
+  wide_normalize53(&mb, &eb);
+  /* the 106-bit product from 32-bit limbs: ma and mb are below 2^53 */
+  p00 = (ma & 0xFFFFFFFFU) * (mb & 0xFFFFFFFFU);
+  p01 = (ma & 0xFFFFFFFFU) * (mb >> 32);
+  p10 = (ma >> 32) * (mb & 0xFFFFFFFFU);
+  p11 = (ma >> 32) * (mb >> 32);
+  mid = p01 + p10;
+  low = p00 + ((mid & 0xFFFFFFFFU) << 32);
+  high = p11 + (mid >> 32) + (low < p00 ? 1U : 0U);
+  /* bring the leading bit of (high:low) to bit 127; high holds 42 bits at most */
+  shift = 64 - wide_bit_length(high);
+  high = (high << shift) | (low >> (64 - shift));
+  low <<= shift;
+  return wide_round_pack((int)(sign >> 63), ea + eb + 64 - shift, high, low != 0U,
+                         &ZPLC_FP_DOUBLE);
+}
+
+/** a / b for a divisor that is not zero (the VM faults on a zero divisor before it gets here). */
+static uint64_t wide_div_d(uint64_t a, uint64_t b) {
+  const uint64_t sign = (a ^ b) & ZPLC_D_SIGN;
+  int sa, sb, ea, eb, i;
+  uint64_t ma, mb, remainder, quotient = 0U;
+
+  if (wide_is_nan(a) || wide_is_nan(b)) {
+    return ZPLC_D_QNAN;
+  }
+  if (wide_is_inf(a)) {
+    return wide_is_inf(b) ? ZPLC_D_QNAN : (sign | ZPLC_D_EXP);
+  }
+  if (wide_is_zero(b)) {
+    return ZPLC_D_QNAN; /* not reached: the VM faults on a zero divisor first */
+  }
+  if (wide_is_inf(b) || wide_is_zero(a)) {
+    return sign;
+  }
+  wide_unpack_d(a, &sa, &ea, &ma);
+  wide_unpack_d(b, &sb, &eb, &mb);
+  wide_normalize53(&ma, &ea);
+  wide_normalize53(&mb, &eb);
+  /* floor(ma * 2^62 / mb) by restoring division: one integer bit and 62 fraction bits */
+  remainder = ma;
+  for (i = 0; i < 63; i++) {
+    quotient <<= 1;
+    if (remainder >= mb) {
+      remainder -= mb;
+      quotient |= 1U;
+    }
+    remainder <<= 1;
+  }
+  return wide_round_pack((int)(sign >> 63), ea - eb - 62, quotient, remainder != 0U,
+                         &ZPLC_FP_DOUBLE);
+}
+
+/** Correctly rounded square root of a positive finite double. */
+static uint64_t wide_sqrt_d(uint64_t x) {
+  int sign, e, i;
+  uint64_t m, root = 0U, rem_hi = 0U, rem_lo = 0U;
+
+  wide_unpack_d(x, &sign, &e, &m);
+  wide_normalize53(&m, &e);
+  if ((e & 1) != 0) {
+    m <<= 1;
+    e--;
+  }
+  /* sqrt(m * 2^e) = isqrt(m * 2^72) * 2^((e - 72) / 2); n = (m << 8):0 as two words */
+  {
+    const uint64_t n_hi = m << 8;
+    for (i = 63; i >= 0; i--) {
+      uint64_t trial_hi, trial_lo, bits;
+
+      bits = (i >= 32) ? ((n_hi >> (2 * (i - 32))) & 3U) : 0U;
+      rem_hi = (rem_hi << 2) | (rem_lo >> 62);
+      rem_lo = (rem_lo << 2) | bits;
+      trial_hi = root >> 62;
+      trial_lo = (root << 2) | 1U;
+      root <<= 1;
+      if (rem_hi > trial_hi || (rem_hi == trial_hi && rem_lo >= trial_lo)) {
+        rem_hi -= trial_hi + (rem_lo < trial_lo ? 1U : 0U);
+        rem_lo -= trial_lo;
+        root |= 1U;
+      }
+    }
+  }
+  return wide_round_pack(0, (e - 72) / 2, root, (rem_hi | rem_lo) != 0U, &ZPLC_FP_DOUBLE);
+}
+
+/** -1, 0 or 1 for the order of two doubles, 2 when either is a NaN. */
+static int wide_compare_d(uint64_t a, uint64_t b) {
+  int64_t ka, kb;
+  if (wide_is_nan(a) || wide_is_nan(b)) {
+    return 2;
+  }
+  ka = (int64_t)(a & ~ZPLC_D_SIGN);
+  kb = (int64_t)(b & ~ZPLC_D_SIGN);
+  if ((a & ZPLC_D_SIGN) != 0U) {
+    ka = -ka;
+  }
+  if ((b & ZPLC_D_SIGN) != 0U) {
+    kb = -kb;
+  }
+  return ka < kb ? -1 : (ka > kb ? 1 : 0);
+}
+
+/** The double nearest to the integer sign * mag. */
+static uint64_t wide_from_integer(int sign, uint64_t mag) {
+  return mag == 0U ? 0U : wide_round_pack(sign, 0, mag, 0, &ZPLC_FP_DOUBLE);
+}
+
+/** The REAL pattern nearest to the integer sign * mag: one rounding. */
+static uint32_t wide_integer_to_f(int sign, uint64_t mag) {
+  return (uint32_t)wide_round_pack(sign, 0, mag, 0, &ZPLC_FP_SINGLE);
+}
+
+static uint64_t wide_f_to_d(uint32_t x) {
+  const int sign = (int)(x >> 31);
+  const int field = (int)((x >> 23) & 0xFFU);
+  const uint32_t frac = x & 0x7FFFFFU;
+  if (field == 0xFF) {
+    return frac != 0U ? ZPLC_D_QNAN
+                      : (((uint64_t)(unsigned)sign << 63) | ZPLC_D_EXP);
+  }
+  if (field == 0 && frac == 0U) {
+    return (uint64_t)(unsigned)sign << 63;
+  }
+  if (field == 0) {
+    return wide_round_pack(sign, -149, frac, 0, &ZPLC_FP_DOUBLE);
+  }
+  return wide_round_pack(sign, field - 150, frac | 0x800000U, 0, &ZPLC_FP_DOUBLE);
+}
+
+static uint32_t wide_d_to_f(uint64_t x) {
+  int sign, e;
+  uint64_t m;
+  if (wide_is_nan(x)) {
+    return ZPLC_F_QNAN;
+  }
+  sign = (int)(x >> 63);
+  if (wide_is_inf(x)) {
+    return ((uint32_t)sign << 31) | 0x7F800000U;
+  }
+  if (wide_is_zero(x)) {
+    return (uint32_t)sign << 31;
+  }
+  wide_unpack_d(x, &sign, &e, &m);
+  return (uint32_t)wide_round_pack(sign, e, m, 0, &ZPLC_FP_SINGLE);
+}
+
+/**
+ * The magnitude of a double truncated toward zero. *overflow is set when it is
+ * 2^64 or more (an infinity included); a NaN has none and gives 0.
+ */
+static uint64_t wide_truncate_d(uint64_t x, int *sign, int *overflow) {
+  int e;
+  uint64_t m;
+  *overflow = 0;
+  *sign = (int)(x >> 63);
+  if (wide_is_nan(x) || wide_is_zero(x)) {
+    return 0U;
+  }
+  if (wide_is_inf(x)) {
+    *overflow = 1;
+    return 0U;
+  }
+  wide_unpack_d(x, sign, &e, &m);
+  if (e >= 0) {
+    if (e > 11 || wide_bit_length(m) + e > 64) {
+      *overflow = 1;
+      return 0U;
+    }
+    return m << e;
+  }
+  return -e >= 64 ? 0U : m >> (-e);
+}
+
+/** D2L: the two's complement pattern of the truncated, saturated 64-bit integer. */
+static uint64_t wide_d_to_i64(uint64_t x) {
+  int sign, overflow;
+  uint64_t mag;
+  if (wide_is_nan(x)) {
+    return 0U;
+  }
+  mag = wide_truncate_d(x, &sign, &overflow);
+  if (sign == 0) {
+    return (overflow != 0 || mag > 0x7FFFFFFFFFFFFFFFULL) ? 0x7FFFFFFFFFFFFFFFULL : mag;
+  }
+  return (overflow != 0 || mag > 0x8000000000000000ULL) ? 0x8000000000000000ULL : 0U - mag;
+}
+
+static uint64_t wide_d_to_u64(uint64_t x) {
+  int sign, overflow;
+  uint64_t mag;
+  if (wide_is_nan(x)) {
+    return 0U;
+  }
+  mag = wide_truncate_d(x, &sign, &overflow);
+  if (sign != 0 && !wide_is_zero(x)) {
+    return 0U;
+  }
+  return overflow != 0 ? 0xFFFFFFFFFFFFFFFFULL : mag;
+}
+
+/** D2I: the 64-bit result narrowed with saturation to the signed 32-bit range. */
+static uint32_t wide_d_to_i32(uint64_t x) {
+  const uint64_t v = wide_d_to_i64(x);
+  if ((v >> 63) != 0U) {
+    return v < 0xFFFFFFFF80000000ULL ? 0x80000000U : (uint32_t)v;
+  }
+  return v > 0x7FFFFFFFU ? 0x7FFFFFFFU : (uint32_t)v;
+}
+
+/** RNDD: the nearest integral value, a tie to the even one, the sign of a zero kept. */
+static uint64_t wide_round_integral_d(uint64_t x) {
+  int sign, e, shift;
+  uint64_t m, whole, rest, half;
+  if (wide_is_nan(x)) {
+    return ZPLC_D_QNAN;
+  }
+  if (wide_is_inf(x) || wide_is_zero(x)) {
+    return x;
+  }
+  wide_unpack_d(x, &sign, &e, &m);
+  if (e >= 0) {
+    return x; /* every double with an exponent of 2^52 or more is integral */
+  }
+  shift = -e;
+  if (shift > 63) {
+    return x & ZPLC_D_SIGN; /* below 2^-10: rounds to zero */
+  }
+  whole = m >> shift;
+  rest = m & ((1ULL << shift) - 1U);
+  half = 1ULL << (shift - 1);
+  if (rest > half || (rest == half && (whole & 1U) != 0U)) {
+    whole++;
+  }
+  if (whole == 0U) {
+    return x & ZPLC_D_SIGN;
+  }
+  return wide_round_pack(sign, 0, whole, 0, &ZPLC_FP_DOUBLE);
+}
+
+/* ============================================================================
  * VM Instance API
  * ============================================================================
  */
@@ -778,6 +1298,7 @@ int zplc_vm_step(zplc_vm_t *vm) {
   uint16_t operand16;
   uint32_t operand32;
   uint32_t a, b, result;
+  uint64_t wa, wb, wr;
   int32_t sa, sb;
   int mem_result;
   const uint8_t *code;
@@ -1964,6 +2485,256 @@ int zplc_vm_step(zplc_vm_t *vm) {
     VM_CHECK_STACK_UNDERFLOW(vm, 1);
     a = VM_POP(vm);
     VM_PUSH(vm, a & 0xFFFF);
+    vm->pc++;
+    break;
+
+    /* ===== 64-bit integer arithmetic (CMP-015) =====
+     * The results are stated in the table above the helper routines. */
+
+  case OP_MUL64:
+  case OP_DIVS64:
+  case OP_DIVU64:
+  case OP_MODS64:
+  case OP_MODU64:
+    VM_CHECK_STACK_UNDERFLOW(vm, 4);
+    VM_POP64(vm, wb);
+    VM_POP64(vm, wa);
+    if (opcode != OP_MUL64 && wb == 0U) {
+      vm->error = ZPLC_VM_DIV_BY_ZERO;
+      vm->halted = 1;
+      return ZPLC_VM_DIV_BY_ZERO;
+    }
+    switch (opcode) {
+    case OP_MUL64:
+      wr = wa * wb;
+      break;
+    case OP_DIVU64:
+      wr = wa / wb;
+      break;
+    case OP_MODU64:
+      wr = wa % wb;
+      break;
+    case OP_DIVS64:
+      /* INT64_MIN / -1 does not fit: negate in unsigned arithmetic (INT64_MIN) */
+      wr = wb == 0xFFFFFFFFFFFFFFFFULL ? 0U - wa
+                                       : (uint64_t)((int64_t)wa / (int64_t)wb);
+      break;
+    default: /* OP_MODS64 */
+      wr = wb == 0xFFFFFFFFFFFFFFFFULL ? 0U
+                                       : (uint64_t)((int64_t)wa % (int64_t)wb);
+      break;
+    }
+    VM_PUSH64(vm, wr);
+    vm->pc++;
+    break;
+
+  case OP_NEG64:
+    VM_CHECK_STACK_UNDERFLOW(vm, 2);
+    VM_POP64(vm, wa);
+    VM_PUSH64(vm, 0U - wa);
+    vm->pc++;
+    break;
+
+  case OP_ABS64:
+    VM_CHECK_STACK_UNDERFLOW(vm, 2);
+    VM_POP64(vm, wa);
+    VM_PUSH64(vm, (wa >> 63) != 0U ? 0U - wa : wa);
+    vm->pc++;
+    break;
+
+  case OP_SHL64:
+  case OP_SHR64:
+  case OP_SAR64:
+    VM_CHECK_STACK_UNDERFLOW(vm, 3);
+    a = VM_POP(vm); /* the count, an unsigned 32-bit word */
+    VM_POP64(vm, wa);
+    if (opcode == OP_SHL64) {
+      wr = a >= 64U ? 0U : wa << a;
+    } else if (opcode == OP_SHR64 || (wa >> 63) == 0U) {
+      wr = a >= 64U ? 0U : wa >> a;
+    } else {
+      /* the complement form avoids the implementation-defined signed shift */
+      wr = a >= 64U ? 0xFFFFFFFFFFFFFFFFULL : ~(~wa >> a);
+    }
+    VM_PUSH64(vm, wr);
+    vm->pc++;
+    break;
+
+    /* ===== Double-precision arithmetic (CMP-015) ===== */
+
+  case OP_ADDD:
+  case OP_SUBD:
+  case OP_MULD:
+    VM_CHECK_STACK_UNDERFLOW(vm, 4);
+    VM_POP64(vm, wb);
+    VM_POP64(vm, wa);
+    wr = opcode == OP_MULD ? wide_mul_d(wa, wb)
+                           : wide_add_d(wa, wb, opcode == OP_SUBD);
+    VM_PUSH64(vm, wr);
+    vm->pc++;
+    break;
+
+  case OP_DIVD:
+    VM_CHECK_STACK_UNDERFLOW(vm, 4);
+    VM_POP64(vm, wb);
+    VM_POP64(vm, wa);
+    if (wide_is_zero(wb)) {
+      /* as DIVF: a divisor of 0.0 or -0.0 faults, whatever the dividend */
+      vm->error = ZPLC_VM_DIV_BY_ZERO;
+      vm->halted = 1;
+      return ZPLC_VM_DIV_BY_ZERO;
+    }
+    VM_PUSH64(vm, wide_div_d(wa, wb));
+    vm->pc++;
+    break;
+
+  case OP_NEGD:
+    VM_CHECK_STACK_UNDERFLOW(vm, 2);
+    VM_POP64(vm, wa);
+    VM_PUSH64(vm, wa ^ ZPLC_D_SIGN);
+    vm->pc++;
+    break;
+
+  case OP_ABSD:
+    VM_CHECK_STACK_UNDERFLOW(vm, 2);
+    VM_POP64(vm, wa);
+    VM_PUSH64(vm, wa & ~ZPLC_D_SIGN);
+    vm->pc++;
+    break;
+
+  case OP_SQRTD:
+    VM_CHECK_STACK_UNDERFLOW(vm, 2);
+    VM_POP64(vm, wa);
+    if (wide_is_nan(wa)) {
+      wr = ZPLC_D_QNAN;
+    } else if ((wa >> 63) != 0U || wide_is_zero(wa)) {
+      wr = 0U; /* the same rule as SQRT on a REAL: 0.0 for 0.0, -0.0 and below */
+    } else if (wide_is_inf(wa)) {
+      wr = wa;
+    } else {
+      wr = wide_sqrt_d(wa);
+    }
+    VM_PUSH64(vm, wr);
+    vm->pc++;
+    break;
+
+  case OP_RNDD:
+    VM_CHECK_STACK_UNDERFLOW(vm, 2);
+    VM_POP64(vm, wa);
+    VM_PUSH64(vm, wide_round_integral_d(wa));
+    vm->pc++;
+    break;
+
+  case OP_EQD:
+  case OP_NED:
+  case OP_LTD:
+  case OP_LED:
+  case OP_GTD:
+  case OP_GED:
+    VM_CHECK_STACK_UNDERFLOW(vm, 4);
+    VM_POP64(vm, wb);
+    VM_POP64(vm, wa);
+    {
+      const int order = wide_compare_d(wa, wb); /* 2: unordered */
+      int truth;
+      switch (opcode) {
+      case OP_EQD:
+        truth = order == 0;
+        break;
+      case OP_NED:
+        truth = order != 0;
+        break;
+      case OP_LTD:
+        truth = order == -1;
+        break;
+      case OP_LED:
+        truth = order == -1 || order == 0;
+        break;
+      case OP_GTD:
+        truth = order == 1;
+        break;
+      default: /* OP_GED */
+        truth = order == 1 || order == 0;
+        break;
+      }
+      VM_PUSH(vm, truth ? 1U : 0U);
+    }
+    vm->pc++;
+    break;
+
+    /* ===== 64-bit and double-precision conversions (CMP-015) ===== */
+
+  case OP_F2D:
+    VM_CHECK_STACK_UNDERFLOW(vm, 1);
+    a = VM_POP(vm);
+    VM_PUSH64(vm, wide_f_to_d(a));
+    vm->pc++;
+    break;
+
+  case OP_D2F:
+    VM_CHECK_STACK_UNDERFLOW(vm, 2);
+    VM_POP64(vm, wa);
+    VM_PUSH(vm, wide_d_to_f(wa));
+    vm->pc++;
+    break;
+
+  case OP_I2D:
+    VM_CHECK_STACK_UNDERFLOW(vm, 1);
+    a = VM_POP(vm);
+    VM_PUSH64(vm, wide_from_integer((a >> 31) != 0U, (a >> 31) != 0U
+                                                         ? (uint64_t)(0U - a)
+                                                         : (uint64_t)a));
+    vm->pc++;
+    break;
+
+  case OP_D2I:
+    VM_CHECK_STACK_UNDERFLOW(vm, 2);
+    VM_POP64(vm, wa);
+    VM_PUSH(vm, wide_d_to_i32(wa));
+    vm->pc++;
+    break;
+
+  case OP_L2D:
+  case OP_L2F:
+    VM_CHECK_STACK_UNDERFLOW(vm, 2);
+    VM_POP64(vm, wa);
+    {
+      const int negative = (wa >> 63) != 0U;
+      const uint64_t magnitude = negative ? 0U - wa : wa;
+      if (opcode == OP_L2D) {
+        VM_PUSH64(vm, wide_from_integer(negative, magnitude));
+      } else {
+        VM_PUSH(vm, wide_integer_to_f(negative, magnitude));
+      }
+    }
+    vm->pc++;
+    break;
+
+  case OP_U2D:
+    VM_CHECK_STACK_UNDERFLOW(vm, 2);
+    VM_POP64(vm, wa);
+    VM_PUSH64(vm, wide_from_integer(0, wa));
+    vm->pc++;
+    break;
+
+  case OP_U2F:
+    VM_CHECK_STACK_UNDERFLOW(vm, 2);
+    VM_POP64(vm, wa);
+    VM_PUSH(vm, wa == 0U ? 0U : wide_integer_to_f(0, wa));
+    vm->pc++;
+    break;
+
+  case OP_D2L:
+    VM_CHECK_STACK_UNDERFLOW(vm, 2);
+    VM_POP64(vm, wa);
+    VM_PUSH64(vm, wide_d_to_i64(wa));
+    vm->pc++;
+    break;
+
+  case OP_D2U:
+    VM_CHECK_STACK_UNDERFLOW(vm, 2);
+    VM_POP64(vm, wa);
+    VM_PUSH64(vm, wide_d_to_u64(wa));
     vm->pc++;
     break;
 

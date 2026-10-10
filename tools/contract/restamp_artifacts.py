@@ -252,10 +252,14 @@ def main(argv: list[str] | None = None) -> int:
 
     for artifact in stale:
         print(f"restamped {artifact.path} ({artifact.kind}, {artifact.where}): counter {artifact.counter} -> {current}")
+    left: dict[tuple[str, str, str], int] = {}
     for artifact in artifacts:
         if artifact.status in {"other", "crc"}:
             reason = "damaged CRC" if artifact.status == "crc" else f"counter {artifact.counter} is not a recorded draft below {current}"
-            print(f"left alone {artifact.path} ({artifact.kind}, {artifact.where}): {reason}")
+            key = (artifact.path, artifact.kind, reason)
+            left[key] = left.get(key, 0) + 1
+    for (path, kind, reason), count in left.items():
+        print(f"left alone {path} ({kind}, {count} artifact(s)): {reason}")
     print(f"restamp_artifacts: {len(artifacts)} artifact(s) found, {len(stale)} restamped (draft counter {current})")
     return 0
 

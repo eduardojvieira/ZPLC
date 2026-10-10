@@ -212,9 +212,11 @@ def validate(c: dict) -> None:
             raise ContractError(f"opcode {o['name']}: minDepth is below pops")
         if o["operand"] and "memory" in o and o["operand"] != 2:
             raise ContractError(f"opcode {o['name']}: memory opcodes carry a 16-bit address")
-    for name in ("RET", "I2F", "ZEXT16"):
-        if name not in {o["name"] for o in ops}:
-            raise ContractError(f"operandRanges names opcode {name}, which is not defined")
+    defined = {o["name"] for o in ops}
+    for exc in c["operandRanges"]["exceptions"]:
+        for name in (exc["from"], exc["to"]):
+            if name not in defined:
+                raise ContractError(f"operandRanges names opcode {name}, which is not defined")
 
     for s in c["container"]["structs"]:
         total = sum(size for _, _, size in struct_layout(s))
@@ -1217,7 +1219,7 @@ DOC_TEXT = {
         "limits": "Runtime limits", "limit": "Limit", "sysregs": "System registers (input image)", "address": "Address", "sysflags": "System flags",
         "types": "Data type identifiers", "id": "Identifier", "typeSize": "Bytes",
         "string": "STRING layout", "stringIntro": "A STRING is `[length:2][capacity:2][data:capacity+1]`, little-endian. The default capacity is {default} characters ({total} bytes) and the largest is {max}.",
-        "opcodes": "Opcodes", "opcodesIntro": "The operand size follows the opcode range (0x00-0x3F none, 0x40-0x7F 8-bit, 0x80-0xBF 16-bit, 0xC0-0xFF 32-bit), except `RET` and the conversions `I2F` to `ZEXT16`, which carry no operand. Stack effects list the top of the stack on the right.",
+        "opcodes": "Opcodes", "opcodesIntro": "The operand size follows the opcode range (0x00-0x3F none, 0x40-0x7F 8-bit, 0x80-0xBF 16-bit, 0xC0-0xFF 32-bit), except `RET` and the opcodes `I2F` to `GED` (conversions and double-precision arithmetic and comparison), which carry no operand. Stack effects list the top of the stack on the right.",
         "hex": "Code", "mnemonic": "Mnemonic", "operand": "Operand", "effect": "Stack effect", "flagsCol": "Flags", "none": "none",
         "vmErrors": "VM error codes", "loaderErrors": "Loader error codes", "code": "Code",
         "comm": "Communication function blocks", "commIntro": "Each function-block instance is a byte block in work or retentive memory. Every block starts with the same 8-byte handshake. The core takes the size of a block from this table.",
@@ -1243,7 +1245,7 @@ DOC_TEXT = {
         "limits": "Límites de ejecución", "limit": "Límite", "sysregs": "Registros del sistema (imagen de entrada)", "address": "Dirección", "sysflags": "Flags del sistema",
         "types": "Identificadores de tipo de dato", "id": "Identificador", "typeSize": "Bytes",
         "string": "Layout de STRING", "stringIntro": "Un STRING es `[longitud:2][capacidad:2][datos:capacidad+1]`, little-endian. La capacidad por defecto es de {default} caracteres ({total} bytes) y la máxima de {max}.",
-        "opcodes": "Opcodes", "opcodesIntro": "El tamaño del operando sigue el rango del opcode (0x00-0x3F ninguno, 0x40-0x7F 8 bits, 0x80-0xBF 16 bits, 0xC0-0xFF 32 bits), salvo `RET` y las conversiones `I2F` a `ZEXT16`, que no llevan operando. Los efectos sobre la pila ponen el tope a la derecha.",
+        "opcodes": "Opcodes", "opcodesIntro": "El tamaño del operando sigue el rango del opcode (0x00-0x3F ninguno, 0x40-0x7F 8 bits, 0x80-0xBF 16 bits, 0xC0-0xFF 32 bits), salvo `RET` y los opcodes de `I2F` a `GED` (conversiones, aritmética y comparación de doble precisión), que no llevan operando. Los efectos sobre la pila ponen el tope a la derecha.",
         "hex": "Código", "mnemonic": "Mnemónico", "operand": "Operando", "effect": "Efecto en la pila", "flagsCol": "Flags", "none": "ninguno",
         "vmErrors": "Códigos de error de la VM", "loaderErrors": "Códigos de error del loader", "code": "Código",
         "comm": "Bloques de función de comunicación", "commIntro": "Cada instancia de bloque de función es un bloque de bytes en memoria de trabajo o retentiva. Todos los bloques empiezan con el mismo handshake de 8 bytes. El core toma el tamaño de un bloque de esta tabla.",

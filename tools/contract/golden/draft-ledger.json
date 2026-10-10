@@ -10,6 +10,11 @@
       "counter": 2,
       "fingerprint": "f51f167827cda58f6c14d9968e11a958e2a44b07a1452dc45c86f655bd871a0e",
       "reason": "ZPLC_LOADER_ERR_STACK (-18) is new: the loader now verifies the stack effect of every entry and refuses code that can underflow or exceed its declared depth (RT-003), and ZPLC_LOADER_ERR_COMM also refuses a communication block that does not fit one memory region (RT-001, RT-002). Indirect addresses are no longer cut to 16 bits."
+    },
+    {
+      "counter": 3,
+      "fingerprint": "fbb3e48b03b53c22863e82c53e58dc67d1e00d80e807fd6925af2f2e1d2de8d9",
+      "reason": "Double-precision and 64-bit integer operations (CMP-015): 34 opcodes are new, MUL64 to SAR64 (0x04 to 0x0D) and F2D to GED (0xA7 to 0xBE), and the operand-less range I2F to GED grows. Artifacts built before this draft are refused."
     }
   ]
 }
