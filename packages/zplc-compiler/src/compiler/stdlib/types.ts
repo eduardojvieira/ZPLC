@@ -8,6 +8,7 @@
  */
 
 import type { Expression, FBParameter, STDataType } from '../ast.ts';
+import type { AsmLine } from '../asm-line.ts';
 import { STRING_LAYOUT } from '../../contract.generated.ts';
 
 export const MEMBER_SIZE = {
@@ -64,7 +65,7 @@ export interface CodeGenContext {
     /** Generate a unique label */
     newLabel: (prefix: string) => string;
     /** Emit a line of assembly */
-    emit: (line: string) => void;
+    emit: (line: AsmLine) => void;
     /** Emit an expression to the stack */
     emitExpression: (expr: Expression) => void;
     /** Fail the build at the call being generated; nothing is emitted in place of the error */
@@ -108,7 +109,7 @@ export interface Routine {
     /** Label of the entry point. */
     label: string;
     /** The routine, label line first. */
-    lines: string[];
+    lines: AsmLine[];
     /** Labels of the routines this one calls; they are linked with it. */
     needs: string[];
 }

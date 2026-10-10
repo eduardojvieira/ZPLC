@@ -414,6 +414,11 @@ All notable changes are documented here.
   (they used to move the addresses and emit nothing) and `.ORG` fills the gap with
   `NOP` and refuses to move backwards (CMP-060); the directives are described in
   the compiler page. `tools/zplc_asm.py` applies the same rules.
+- The code generator cannot emit an instruction that is not in the generated
+  opcode table (CMP-048): the type of its output lines is built from the table,
+  and every line is checked when it is written, so a line with an unknown
+  mnemonic is an internal compiler error that names it and never reaches the
+  assembler. The conformance programs are checked line by line.
 
 ## 2.0.0-rc.3 - 2026-09-01
 

@@ -58,6 +58,8 @@ import type {
     PointerType,
 } from './ast.ts';
 import { getArrayElementCount, isArrayType, NameMap, sameName, VarSection } from './ast.ts';
+import { emitLine, emitLines } from './asm-line.ts';
+import type { AsmLine, Mnemonic } from './asm-line.ts';
 import { CodegenError, codegenErrorFrom, orderedUniqueErrors } from './diagnostics.ts';
 import type { CodegenWarning } from './diagnostics.ts';
 import {
@@ -233,7 +235,7 @@ interface FunctionInfo {
  */
 interface CodeGenState {
     symbols: SymbolTable;
-    output: string[];
+    output: AsmLine[];
     labelCounter: number;
     initFlagAddr: number;
     /** Pool of string literals allocated in work memory */
@@ -299,7 +301,7 @@ interface CodeGenState {
     /** The last method call expression left one value on the stack (a call used as a statement drops it). */
     methodLeftResult: boolean;
     /** Routines that need work cells of their own, by label; appended after the main cycle. */
-    cellHelpers: Map<string, string[]>;
+    cellHelpers: Map<string, AsmLine[]>;
     /** The work cells the string routines share (none calls another). */
     stringCells: StringCells | null;
     /** A string the next function that returns a string writes its result into, instead of a work buffer. */
@@ -614,7 +616,7 @@ function generateUnit(unit: CompilationUnit | Program, options: CodeGenOptions |
         if (shared) {
             emit(state, `    CALL _zplc_init`);
         } else {
-            state.output.push(...initialization);
+            emitLines(state.output, initialization);
         }
 
         emit(state, ``);
@@ -645,7 +647,7 @@ function generateUnit(unit: CompilationUnit | Program, options: CodeGenOptions |
         emit(state, ``);
         emit(state, `; --- Initialization of the unit (called by the entry of every program) ---`);
         emit(state, `_zplc_init:`);
-        state.output.push(...initialization);
+        emitLines(state.output, initialization);
         emit(state, `    RET`);
     }
 
@@ -657,12 +659,12 @@ function generateUnit(unit: CompilationUnit | Program, options: CodeGenOptions |
         if (!state.helpers.has(helper.name)) continue;
         emit(state, ``);
         emit(state, `; --- Helper: ${helper.title} ---`);
-        state.output.push(...helper.lines);
+        emitLines(state.output, helper.lines);
     }
     for (const [label, lines] of state.cellHelpers) {
         emit(state, ``);
         emit(state, `; --- Helper: ${label} ---`);
-        state.output.push(...lines);
+        emitLines(state.output, lines);
     }
 
     // the code of each program: from its entry to the next one; the first also holds what comes before it
@@ -680,8 +682,8 @@ function generateUnit(unit: CompilationUnit | Program, options: CodeGenOptions |
 // Helpers
 // ============================================================================
 
-function emit(state: CodeGenState, line: string): void {
-    state.output.push(line);
+function emit(state: CodeGenState, line: AsmLine): void {
+    emitLine(state.output, line);
 }
 
 /** The one error path of the generator: stop the build at `at`. */
@@ -3421,7 +3423,7 @@ function methodResultType(state: CodeGenState, expr: MethodCall): string {
 }
 
 /** The instruction that restores the sign of an 8- or 16-bit signed value the VM zero-extended on load. */
-function signExtension(typeName: string): string | null {
+function signExtension(typeName: string): AsmLine | null {
     if (typeName === 'SINT') return '    EXT8';
     if (typeName === 'INT') return '    EXT16';
     return null;
@@ -3906,11 +3908,14 @@ function checkConvertible(from: string, to: string, at: { line: number; column: 
     }
 }
 
+/** The instruction that compares two LREAL values for each operator. */
+const LREAL_COMPARE: Record<CompareOp, Mnemonic> = { EQ: 'EQD', NE: 'NED', LT: 'LTD', LE: 'LED', GT: 'GTD', GE: 'GED' };
+
 /** Emit the comparison `op` of the two values on the stack, read as `type`. */
 function emitCompare(state: CodeGenState, op: CompareOp, type: string): void {
     if (type === 'LREAL') {
         // one opcode for each operator: a NaN is unordered (false, except <>), -0.0 equals +0.0
-        emit(state, `    ${{ EQ: 'EQD', NE: 'NED', LT: 'LTD', LE: 'LED', GT: 'GTD', GE: 'GED' }[op]}`);
+        emit(state, `    ${LREAL_COMPARE[op]}`);
         return;
     }
     if (type === 'REAL') {
@@ -4052,7 +4057,7 @@ function makeCodeGenContext(
         baseAddress,
         instanceName,
         newLabel: (prefix: string) => newLabel(state, prefix),
-        emit: (line: string) => emit(state, line),
+        emit: (line: AsmLine) => emit(state, line),
         emitExpression: (e: Expression) => emitExpression(state, e),
         fail: (message: string) => fail(at, message),
         typeOf: (e: Expression) => {
@@ -4777,7 +4782,7 @@ function emitLoadPlace(state: CodeGenState, place: Place, label?: string): void 
         emit(state, `    LOADI32`);
         return;
     }
-    emit(state, `    LOADI${width}${comment}`);
+    emit(state, label ? `    LOADI${width}   ; ${label}` : `    LOADI${width}`);
 }
 
 /**
@@ -4813,6 +4818,11 @@ function emitStorePlace(state: CodeGenState, place: Place, emitValue: () => void
     emit(state, `    STOREI${width}`);
 }
 
+/** The width, in bits, of the access that moves a chunk of 1, 2 or 4 bytes. */
+function chunkWidth(bytes: 1 | 2 | 4): '8' | '16' | '32' {
+    return bytes === 4 ? '32' : bytes === 2 ? '16' : '8';
+}
+
 /**
  * Copy `size` bytes: [dst src] -> []. Each side is the address of a place; a short copy
  * is unrolled in words, a long one calls the byte-copy routine.
@@ -4826,8 +4836,8 @@ function emitCopyBytes(state: CodeGenState, size: number, dst: Place | null, src
         let off = 0;
         while (off < size) {
             const chunk = size - off >= 4 ? 4 : size - off >= 2 ? 2 : 1;
-            emit(state, `    LOAD${chunk * 8} ${formatAddress(srcConst + off)}`);
-            emit(state, `    STORE${chunk * 8} ${formatAddress(dstConst + off)}`);
+            emit(state, `    LOAD${chunkWidth(chunk)} ${formatAddress(srcConst + off)}`);
+            emit(state, `    STORE${chunkWidth(chunk)} ${formatAddress(dstConst + off)}`);
             off += chunk;
         }
         return;
@@ -4847,8 +4857,8 @@ function emitCopyBytes(state: CodeGenState, size: number, dst: Place | null, src
         if (off) { emitPushInteger(state, off); emit(state, `    ADD`); }
         emit(state, `    PICK 1`);
         if (off) { emitPushInteger(state, off); emit(state, `    ADD`); }
-        emit(state, `    LOADI${chunk * 8}`);
-        emit(state, `    STOREI${chunk * 8}`);
+        emit(state, `    LOADI${chunkWidth(chunk)}`);
+        emit(state, `    STOREI${chunkWidth(chunk)}`);
         off += chunk;
     }
     emit(state, `    DROP`);
@@ -4867,7 +4877,7 @@ function emitZeroBytes(state: CodeGenState, address: number, size: number): void
     while (off < size) {
         const chunk = size - off >= 4 ? 4 : size - off >= 2 ? 2 : 1;
         emit(state, `    PUSH8 0`);
-        emit(state, `    STORE${chunk * 8} ${formatAddress(address + off)}`);
+        emit(state, `    STORE${chunkWidth(chunk)} ${formatAddress(address + off)}`);
         off += chunk;
     }
 }

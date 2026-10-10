@@ -59,6 +59,11 @@ is an entry point, a tag field or a relocated address that does not fit its
 field: `relocateBytecode` leaves the bytecode unchanged when one address would
 pass 65535.
 
+The code generator writes only instructions of the generated opcode table: the
+type of the lines it emits is built from that table, and every line is checked
+when it is written. A line that is not in the table is an internal compiler
+error that names it; it never reaches the assembler.
+
 | Directive | Effect on the output |
 |---|---|
 | `.ORG addr` | The next byte is at `addr`; the gap is filled with `NOP` bytes. Moving backwards is an error. |

@@ -63,6 +63,11 @@ salto relativo. También lo es un punto de entrada, un campo de etiqueta o una
 dirección reubicada que no cabe en su campo: `relocateBytecode` deja el bytecode
 sin cambios cuando una dirección pasaría de 65535.
 
+El generador de código escribe solamente instrucciones de la tabla de opcodes
+generada: el tipo de las líneas que emite se construye a partir de esa tabla y
+cada línea se comprueba al escribirla. Una línea que no está en la tabla es un
+error interno del compilador que la nombra; nunca llega al ensamblador.
+
 | Directiva | Efecto en la salida |
 |---|---|
 | `.ORG addr` | El siguiente byte queda en `addr`; el hueco se rellena con bytes `NOP`. Retroceder es un error. |
