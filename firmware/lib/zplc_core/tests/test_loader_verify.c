@@ -729,9 +729,9 @@ static void test_tag_semantics(void) {
       "MODBUS address outside the consumer's uint16 range is rejected");
 }
 
-/* CMP-052: the artifact records the draft of the contract it was built for and the
- * loader refuses any other, reporting both numbers. The counter is read from header
- * word 28 without trusting the magic, the CRC or any other field. */
+/* CMP-052: the loader refuses an artifact built for another draft of the contract or without a counter.
+ * The artifact records the draft in header word 28 and the loader reports both numbers: the artifact's
+ * through zplc_loader_artifact_draft_counter, which trusts neither the magic nor the CRC, and its own. */
 static void test_draft_counter(void) {
   uint8_t file[128];
   uint8_t code[1] = {OP_RET};

@@ -3528,8 +3528,8 @@ static void test_program_load_size_boundary(void)
 }
 
 /*
- * CMP-052: an artifact built for another draft of the contract is refused by program.load with
- * both numbers, and the runtime keeps what it had. An artifact without a counter says "none".
+ * CMP-052: program.load refuses an artifact built for another draft of the contract and shows both numbers.
+ * The runtime keeps what it had, and an artifact without a counter says "none".
  */
 static void test_program_load_refuses_another_draft(void)
 {
