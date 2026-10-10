@@ -18,34 +18,55 @@ if ZPLC
 config ZPLC_STACK_DEPTH
     int "Evaluation stack depth"
     default 256
+    range 8 4096
     help
       Maximum depth of the VM evaluation stack.
-      Each entry is 4 bytes (32-bit).
+      Each entry is 4 bytes (32-bit), and every registered task has its own
+      stack. The stack pointer is 16 bits wide; the upper end of the range is
+      a RAM limit long before it is a type limit.
 
 config ZPLC_CALL_STACK_DEPTH
     int "Call stack depth"
     default 32
+    range 1 255
     help
-      Maximum call nesting depth for subroutines.
+      Maximum call nesting depth for subroutines. The call depth is an
+      8-bit counter, so 255 is the largest value the VM can hold.
 
 config ZPLC_WORK_MEMORY_SIZE
     int "Work memory size (bytes)"
     default 8192
+    range 16 8192
     help
-      Size of the work memory region for temporary variables.
+      Size of the work memory region for temporary variables. The region
+      owns the 8 KB window 0x2000..0x3FFF of the PLC address space; a larger
+      value would only waste RAM and is refused.
 
 config ZPLC_RETAIN_MEMORY_SIZE
     int "Retentive memory size (bytes)"
     default 4096
+    range 16 4096
     help
-      Size of the retentive memory region.
-      This memory is persisted across power cycles.
+      Size of the retentive memory region. The region owns the 4 KB window
+      0x4000..0x4FFF of the PLC address space.
+      This memory is persisted across power cycles only when
+      ZPLC_RETAIN_PERSIST is enabled.
 
 config ZPLC_CODE_SIZE_MAX
     int "Maximum code size (bytes)"
     default 45056
+    range 128 45056
     help
-      Maximum size of the bytecode segment.
+      Largest artifact the runtime accepts, in bytes. This one value is the
+      code region of the VM, the largest artifact the program store keeps and
+      restores (RT-028), the size of the staging buffers and the size the
+      shell and the IDE handshake advertise. Program addresses are 16 bits
+      wide and the code region starts at 0x5000, so 45056 (0xB000) is the
+      largest value.
+
+      Two program slots of this size have to fit the storage partition of
+      the board together with the RETAIN records; the build fails when they
+      do not.
 
 config ZPLC_REQUIRED_GPIO_OUTPUT_MASK
     hex "Required logical digital-output mask"
@@ -73,6 +94,20 @@ config ZPLC_LOG_LEVEL
     help
       Log level for ZPLC runtime.
       0=OFF, 1=ERR, 2=WRN, 3=INF, 4=DBG
+
+config ZPLC_COMM_THREAD_PRIORITY
+    int "Priority of the communication threads"
+    default 8
+    range 1 14
+    help
+      Preemptible priority of every thread the application creates to talk
+      to the outside: the MQTT client, the Modbus TCP server, the Modbus
+      clients and the function-block workers. The scan coordinator (the
+      high-priority work queue, or the normal one when there is none) must
+      have a lower number, so that a communication thread never delays a
+      scan (RT-013); the build fails otherwise. Zephyr's shell and log
+      threads run at the lowest application priority unless the build
+      overrides them, and the same rule is checked against the override.
 
 # -----------------------------------------------------------------------------
 # Multitask Scheduler Configuration
@@ -122,6 +157,7 @@ config ZPLC_MAX_TASKS
 config ZPLC_SCHED_WORKQ_STACK_SIZE
     int "Scheduler work queue stack size"
     default 2048
+    range 1024 16384
     help
       Stack size for the scheduler work queue thread.
       Increase if tasks require deeper call stacks.
@@ -146,6 +182,7 @@ config ZPLC_SCHED_HIGH_PRIO_WORKQ
 config ZPLC_SCHED_HIGH_PRIO_STACK_SIZE
     int "High-priority work queue stack size"
     default 2048
+    range 1024 16384
     depends on ZPLC_SCHED_HIGH_PRIO_WORKQ
     help
       Stack size for the high-priority work queue thread.
@@ -157,7 +194,8 @@ config ZPLC_SCHED_HIGH_PRIO_PRIORITY
     depends on ZPLC_SCHED_HIGH_PRIO_WORKQ
     help
       Priority of the high-priority work queue thread.
-      Should be lower (higher priority) than ZPLC_SCHED_WORKQ_PRIORITY.
+      Must be lower (higher priority) than ZPLC_SCHED_WORKQ_PRIORITY; the
+      build fails otherwise.
 
 # -----------------------------------------------------------------------------
 # RETAIN persistence (RT-025, RT-026)

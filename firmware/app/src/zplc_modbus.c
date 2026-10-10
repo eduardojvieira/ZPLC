@@ -647,7 +647,8 @@ int zplc_modbus_init(void) {
                         K_THREAD_STACK_SIZEOF(modbus_stack_area),
                         modbus_server_thread,
                         NULL, NULL, NULL,
-                        K_PRIO_COOP(7), 0, K_NO_WAIT);
+                        K_PRIO_PREEMPT(ZPLC_COMM_THREAD_PRIORITY), 0,
+                        K_NO_WAIT);
         k_thread_name_set(&modbus_thread_data, "modbus_tcp");
 #else
         LOG_WRN("Modbus TCP disabled: NET_SOCKETS not enabled");

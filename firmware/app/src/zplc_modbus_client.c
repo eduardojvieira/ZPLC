@@ -604,7 +604,7 @@ int zplc_modbus_client_init(void)
             k_thread_create(&s_rtu_client_thread, s_rtu_client_stack,
                             K_THREAD_STACK_SIZEOF(s_rtu_client_stack),
                             modbus_rtu_client_thread, NULL, NULL, NULL,
-                            K_PRIO_PREEMPT(8), 0, K_NO_WAIT);
+                            K_PRIO_PREEMPT(ZPLC_COMM_THREAD_PRIORITY), 0, K_NO_WAIT);
             k_thread_name_set(&s_rtu_client_thread, "modbus_rtu_client");
         } else {
             LOG_WRN("Modbus RTU client init skipped");
@@ -616,7 +616,7 @@ int zplc_modbus_client_init(void)
         k_thread_create(&s_tcp_client_thread, s_tcp_client_stack,
                         K_THREAD_STACK_SIZEOF(s_tcp_client_stack),
                         modbus_tcp_client_thread, NULL, NULL, NULL,
-                        K_PRIO_PREEMPT(8), 0, K_NO_WAIT);
+                        K_PRIO_PREEMPT(ZPLC_COMM_THREAD_PRIORITY), 0, K_NO_WAIT);
         k_thread_name_set(&s_tcp_client_thread, "modbus_tcp_client");
 #else
         LOG_WRN("Modbus TCP client disabled: NET_SOCKETS not enabled");

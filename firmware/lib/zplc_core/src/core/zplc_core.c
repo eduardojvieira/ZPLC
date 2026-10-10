@@ -20,6 +20,7 @@
  */
 
 #include "zplc_comm_dispatch.h"
+#include "zplc_config_check.h"
 #include "zplc_mem_extent.h"
 #include <string.h>
 #include <zplc_core.h>

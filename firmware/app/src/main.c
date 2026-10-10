@@ -42,6 +42,19 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(zplc_main, LOG_LEVEL_INF);
 
+/* RT-013: the scan coordinator outranks every communication, logging and shell thread. The threads of this
+ * application and the shell and log overrides are checked by zplc_config_check.h; these are the two Zephyr
+ * subsystems whose default priority is cooperative and so outranks every preemptible thread. */
+#ifdef CONFIG_ZPLC_SCHEDULER
+BUILD_ASSERT(!IS_ENABLED(CONFIG_NETWORKING) ||
+                 IS_ENABLED(CONFIG_NET_TC_THREAD_PREEMPTIVE),
+             "the network RX/TX threads must be preemptible: a cooperative "
+             "thread outranks the scan coordinator (CONFIG_NET_TC_THREAD_PREEMPTIVE=y)");
+BUILD_ASSERT(CONFIG_SYSTEM_WORKQUEUE_PRIORITY > ZPLC_SCAN_COORDINATOR_PRIORITY,
+             "the system work queue must run below the scan coordinator "
+             "(CONFIG_SYSTEM_WORKQUEUE_PRIORITY)");
+#endif
+
 /* ============================================================================
  * Configuration
  * ============================================================================

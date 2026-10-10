@@ -42,6 +42,18 @@ extern "C" {
 #define ZPLC_MAX_TASKS 8
 #endif
 
+#ifdef CONFIG_ZPLC_SCHEDULER
+/**
+ * @brief Zephyr priority of the scan coordinator: the high-priority work queue when the build has one, the normal
+ *        queue otherwise. A lower number runs first (RT-013).
+ */
+#ifdef CONFIG_ZPLC_SCHED_HIGH_PRIO_WORKQ
+#define ZPLC_SCAN_COORDINATOR_PRIORITY CONFIG_ZPLC_SCHED_HIGH_PRIO_PRIORITY
+#else
+#define ZPLC_SCAN_COORDINATOR_PRIORITY CONFIG_ZPLC_SCHED_WORKQ_PRIORITY
+#endif
+#endif
+
 /** @brief Minimum task interval in microseconds (1ms) */
 #define ZPLC_MIN_INTERVAL_US 1000
 

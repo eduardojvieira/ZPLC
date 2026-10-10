@@ -2211,7 +2211,8 @@ int zplc_mqtt_init(void) {
 
   k_tid_t tid = k_thread_create(
       &s_mqtt_thread, s_mqtt_stack, K_THREAD_STACK_SIZEOF(s_mqtt_stack),
-      mqtt_client_thread, NULL, NULL, NULL, K_PRIO_COOP(8), 0, K_NO_WAIT);
+      mqtt_client_thread, NULL, NULL, NULL,
+      K_PRIO_PREEMPT(ZPLC_COMM_THREAD_PRIORITY), 0, K_NO_WAIT);
 
   if (!tid) {
     LOG_ERR("Failed to create MQTT thread");

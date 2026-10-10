@@ -82,6 +82,19 @@ target_include_directories(zplc_core PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
 
+# RT-029: the core compiles without a Zephyr header. Every file of src/core is compiled here, in a build whose
+# include path is include/ and nothing else, with the one Kconfig symbol that adds code to the core switched on
+# (CONFIG_ZPLC_HIL_DEBUG). A Zephyr header or a Zephyr type in src/core stops this target, which is part of the
+# default build, so it stops every host build and every ctest run. The glob means a new core file is covered
+# without an edit here.
+file(GLOB ZPLC_CORE_PORTABLE_SOURCES CONFIGURE_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/src/core/*.c)
+add_library(zplc_core_portable OBJECT ${ZPLC_CORE_PORTABLE_SOURCES})
+target_include_directories(zplc_core_portable PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
+target_compile_definitions(zplc_core_portable PRIVATE
+    ZPLC_CORE_VERSION_STR="${ZPLC_CORE_VERSION_STR}"
+    CONFIG_ZPLC_HIL_DEBUG=1
+)
+
 # =============================================================================
 # Target: zplc_runtime (POSIX Executable)
 # =============================================================================
@@ -213,6 +226,72 @@ target_include_directories(test_bytes_crc PRIVATE
 )
 
 add_test(NAME test_bytes_crc COMMAND test_bytes_crc)
+
+# Test: the HIL debug formatter runs on the host with a line sink (RT-029)
+add_executable(test_hil_debug
+    tests/test_hil_debug.c
+    src/core/zplc_debug.c
+)
+
+target_include_directories(test_hil_debug PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+)
+
+target_compile_definitions(test_hil_debug PRIVATE CONFIG_ZPLC_HIL_DEBUG=1)
+
+add_test(NAME test_hil_debug COMMAND test_hil_debug)
+
+# RT-029: the rules of src/core/zplc_config_check.h. Each rule is built once with a value that breaks it and the
+# build must stop with the name of the rule; the same rules built with every value at its limit must pass.
+function(zplc_config_rule_must_fail rule)
+    set(target zplc_cfg_${rule})
+    add_library(${target} OBJECT EXCLUDE_FROM_ALL tests/config_check_probe.c)
+    target_include_directories(${target} PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/include
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/core
+    )
+    target_compile_definitions(${target} PRIVATE ${ARGN})
+    add_test(NAME config_rule_${rule}
+             COMMAND ${CMAKE_COMMAND} --build ${CMAKE_BINARY_DIR} --target ${target})
+    set_tests_properties(config_rule_${rule} PROPERTIES
+        PASS_REGULAR_EXPRESSION "zplc_config_rule_${rule}")
+endfunction()
+
+set(ZPLC_SCHED_OK CONFIG_ZPLC_SCHEDULER=1 CONFIG_ZPLC_SCHED_HIGH_PRIO_WORKQ=1
+    CONFIG_ZPLC_SCHED_HIGH_PRIO_PRIORITY=2 CONFIG_ZPLC_SCHED_WORKQ_PRIORITY=5)
+
+zplc_config_rule_must_fail(code_region_ends_inside_the_16_bit_address_space CONFIG_ZPLC_CODE_SIZE_MAX=0xB001U)
+zplc_config_rule_must_fail(code_region_holds_a_container_header_and_a_program CONFIG_ZPLC_CODE_SIZE_MAX=32U)
+zplc_config_rule_must_fail(work_region_has_at_least_16_bytes CONFIG_ZPLC_WORK_MEMORY_SIZE=8U)
+zplc_config_rule_must_fail(retain_region_has_at_least_16_bytes CONFIG_ZPLC_RETAIN_MEMORY_SIZE=8U)
+zplc_config_rule_must_fail(evaluation_stack_depth_is_between_4_and_65535 CONFIG_ZPLC_STACK_DEPTH=65536)
+zplc_config_rule_must_fail(call_stack_depth_is_between_1_and_255 CONFIG_ZPLC_CALL_STACK_DEPTH=256)
+zplc_config_rule_must_fail(breakpoint_count_is_between_1_and_255 CONFIG_ZPLC_MAX_BREAKPOINTS=256)
+zplc_config_rule_must_fail(tag_count_is_between_1_and_65535 ZPLC_MAX_TAGS=0)
+zplc_config_rule_must_fail(task_slots_do_not_exceed_what_the_loader_admits CONFIG_ZPLC_MAX_TASKS=17)
+zplc_config_rule_must_fail(high_priority_queue_outranks_the_normal_queue
+    CONFIG_ZPLC_SCHEDULER=1 CONFIG_ZPLC_SCHED_HIGH_PRIO_WORKQ=1
+    CONFIG_ZPLC_SCHED_HIGH_PRIO_PRIORITY=6 CONFIG_ZPLC_SCHED_WORKQ_PRIORITY=5)
+zplc_config_rule_must_fail(scan_coordinator_outranks_every_communication_thread
+    ${ZPLC_SCHED_OK} CONFIG_ZPLC_COMM_THREAD_PRIORITY=2)
+zplc_config_rule_must_fail(scan_coordinator_outranks_the_shell_thread
+    ${ZPLC_SCHED_OK} CONFIG_SHELL_THREAD_PRIORITY_OVERRIDE=1 CONFIG_SHELL_THREAD_PRIORITY=1)
+zplc_config_rule_must_fail(scan_coordinator_outranks_the_log_thread
+    ${ZPLC_SCHED_OK} CONFIG_LOG_PROCESS_THREAD_CUSTOM_PRIORITY=1 CONFIG_LOG_PROCESS_THREAD_PRIORITY=0)
+
+# Every value at its limit, and a scheduler build with the priorities in order: part of the default build.
+add_library(zplc_cfg_limits OBJECT tests/config_check_probe.c)
+target_include_directories(zplc_cfg_limits PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/core
+)
+target_compile_definitions(zplc_cfg_limits PRIVATE
+    CONFIG_ZPLC_CODE_SIZE_MAX=0xB000U CONFIG_ZPLC_STACK_DEPTH=65535 CONFIG_ZPLC_CALL_STACK_DEPTH=255
+    CONFIG_ZPLC_MAX_BREAKPOINTS=255 ZPLC_MAX_TAGS=65535 CONFIG_ZPLC_MAX_TASKS=16
+    ${ZPLC_SCHED_OK} CONFIG_ZPLC_COMM_THREAD_PRIORITY=3
+    CONFIG_SHELL_THREAD_PRIORITY_OVERRIDE=1 CONFIG_SHELL_THREAD_PRIORITY=3
+    CONFIG_LOG_PROCESS_THREAD_CUSTOM_PRIORITY=1 CONFIG_LOG_PROCESS_THREAD_PRIORITY=14
+)
 
 # Test: VM Core Execution
 add_executable(test_vm_core
