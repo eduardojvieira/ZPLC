@@ -26,6 +26,8 @@ import LDRungGrid from './LDRungGrid';
 import { copyLDRungFragment, pasteLDRungFragment, type LDClipboardFragment } from './graphModel';
 import { useIDEStore } from '../../store/useIDEStore';
 import { useDebugValues } from '../../hooks/useDebugValue';
+import { useElementSelection } from '../elementSelection';
+import { parseElement, type SourceElementId } from '../../models/sourceElements';
 
 // =============================================================================
 // Props
@@ -366,6 +368,26 @@ export default function LDEditor({ model, onChange, readOnly = false }: LDEditor
     setSelectedElement(element);
     setSelectedRungId(rungId);
   }, []);
+
+  // Activating a problem of this diagram selects the rung and the cell it is about, and scrolls to the rung (LNG-003)
+  const selectSourceElement = useCallback((element: SourceElementId) => {
+    const parsed = parseElement(element);
+    if (!parsed || (parsed.kind !== 'rung' && parsed.kind !== 'cell' && parsed.kind !== 'element')) return;
+    const rungId = parsed.kind === 'rung' ? parsed.id : parsed.rung!;
+    // a rung that has no id is named by its place in the file: #3 is the third
+    const rung = rungId.startsWith('#') ? normalizedModel.rungs[Number(rungId.slice(1)) - 1] : normalizedModel.rungs.find((candidate) => candidate.id === rungId);
+    if (!rung) return;
+    let selected: LDElementType | null = null;
+    if (parsed.kind === 'cell') selected = rung.grid?.[parsed.row!]?.[parsed.col!]?.element ?? null;
+    if (parsed.kind === 'element') selected = rung.grid?.flat().find((cell) => cell.element?.id === parsed.id)?.element ?? null;
+    setSelectedElement(selected);
+    setSelectedRungId(rung.id);
+    requestAnimationFrame(() => {
+      [...document.querySelectorAll('[data-ld-rung-id]')].find((node) => node.getAttribute('data-ld-rung-id') === rung.id)
+        ?.scrollIntoView?.({ block: 'center' });
+    });
+  }, [normalizedModel]);
+  useElementSelection(selectSourceElement);
 
   // Handle element property update
   const handleElementUpdate = useCallback((updated: LDElementType) => {

@@ -52,6 +52,22 @@ not judged. So a `BOOL` output cannot feed a numeric input, a `REAL` cannot feed
 a number cannot feed a `TIME` input; convert it explicitly with a conversion function such as `REAL_TO_INT` first.
 An input has one source: a second wire into it is refused too. A wire may be started at either end.
 
+## Where a diagnostic points
+
+A diagnostic of a visual or IL file names the element it is about (LNG-003, LNG-026), not a line of the generated
+Structured Text that you never wrote. The build reports it in the `element` field next to `path`, and Studio's
+Problems panel selects it when you activate the problem:
+
+| Language | Element | Selected |
+| --- | --- | --- |
+| IL | `line:12`, a line of the IL source. A finding about the generated code is put on the IL line it came from. | The line. |
+| LD | `rung:rung_1`, or `rung:rung_1/cell:0,3` for the cell at row 0, column 3 (`rung:rung_1/element:c1` for a rung stored as a list of elements). | The rung and the element in the cell, scrolled into view. |
+| FBD | `block:and_1`, or `connection:w3` for a wire. A block that only reads a variable or holds a constant has no statement: a finding about its name is on the block that is written with it. | The block or the wire. |
+| SFC | `step:s1`, `transition:t1` (its condition) and `action:a1` (its body). | The step or the transition; an action is shown on the first step that uses it. |
+
+The line and column of a diagram diagnostic stay those of the generated Structured Text, and the message says so. A
+diagram that is not valid yields one diagnostic for each element that is wrong, not one for the whole file.
+
 ## Compile path
 
 Visual models are validated and transpiled before canonical compilation. Shared

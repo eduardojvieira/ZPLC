@@ -4,6 +4,15 @@ All notable changes are documented here.
 
 ## Unreleased
 
+- A diagnostic of an IL, LD, FBD or SFC file names the element it is about (LNG-003,
+  LNG-026): an IL line, a rung and its cell, a block or a wire, a step, the condition of
+  a transition, the body of an action. Each element that is wrong is its own diagnostic
+  (an IL file reported only its first line, and every other file one joined message),
+  the Tool API, the CLI and MCP carry it in an `element` field, and a finding of the
+  compiler in the generated Structured Text is put on the element it was generated
+  for (on the IL line, for IL). Activating the problem in Studio selects the element
+  in the editor. The transpilers return the map of the generated lines to elements
+  (`sourceMap`) that debugging uses (LNG-004).
 - The FBD canvas refuses a wire between pins whose types do not match and says why
   (LNG-013): a `BOOL` output into a numeric input, a `REAL` into a `BOOL` or integer
   input, a number into a `TIME` input, and a second wire into an input. The table of

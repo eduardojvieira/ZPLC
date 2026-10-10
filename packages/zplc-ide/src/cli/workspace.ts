@@ -4,7 +4,7 @@ import { join } from 'node:path';
 import { parseAndMigrateProject, type ProjectMigrationChange } from '../project/projectModel';
 import { getLanguageFromFilename, type PLCLanguage, type ZPLCProjectV2 } from '../types';
 
-export interface ToolDiagnostic { code: string; message: string; path?: string; phase?: 'lexer' | 'parser' | 'codegen' | 'assembler'; line?: number; column?: number; }
+export interface ToolDiagnostic { code: string; message: string; path?: string; phase?: 'lexer' | 'parser' | 'codegen' | 'assembler'; line?: number; column?: number; /** The element of a visual or IL source the diagnostic is about (LNG-003). */ element?: string; }
 export interface WorkspaceSource { name: string; path: string; content: string; language: PLCLanguage; bytes: Uint8Array; }
 export interface WorkspaceProject { root: string; project: ZPLCProjectV2; sourceSchemaVersion: 1 | 2; migrated: boolean; migrationChanges: ProjectMigrationChange[]; manifestBytes: Uint8Array; sources: WorkspaceSource[]; }
 export interface WorkspaceScenario { path: string; input: unknown; bytes: Uint8Array; }

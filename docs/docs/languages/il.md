@@ -20,6 +20,8 @@ flowchart LR
 
 This is a source-to-generated-ST workflow. Validate the generated result, diagnostics, and target capability profile; it does not establish an arbitrary IL/ST round trip or identical feature coverage with ST.
 
+A diagnostic of an IL file names the IL line it is about (`element: "line:12"`), also when the compiler finds it in the generated Structured Text, and each line that does not translate is its own diagnostic.
+
 ## Runtime and debugging limits
 
 IL uses the common compiler destination, but execution cost, standard-library availability, stepping, watches, breakpoints, and hardware behavior depend on the active runtime and profile. POSIX simulation is host-side logical evidence only. Use target or HIL evidence for claims about a physical device.

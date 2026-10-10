@@ -42,6 +42,8 @@ import { useDebugValues } from '../../hooks/useDebugValue';
 import { useIDEStore } from '../../store/useIDEStore';
 import { findProjectBlock } from '../../models/projectBlocks';
 import { useProjectBlocks } from '../useProjectBlocks';
+import { useElementSelection } from '../elementSelection';
+import { parseElement, type SourceElementId } from '../../models/sourceElements';
 
 // =============================================================================
 // Props
@@ -150,7 +152,7 @@ function FBDEditorInner({
   liveValues,
   onOpenMonitor,
 }: FBDEditorInnerProps) {
-  const { screenToFlowPosition } = useReactFlow();
+  const { screenToFlowPosition, fitView } = useReactFlow();
   const projectBlocks = useProjectBlocks();
 
   const updateNodeDataRef = useRef<((nodeId: string, data: Record<string, unknown>) => void) | undefined>(undefined);
@@ -223,6 +225,28 @@ function FBDEditorInner({
     edgesRef.current = nextEdges;
     replaceEdges(nextEdges);
   }, [debugActive, liveValues]);
+
+  // Activating a problem of this diagram selects the block or the wire it is about, and brings it into view (LNG-003)
+  const selectElement = useCallback((element: SourceElementId) => {
+    const parsed = parseElement(element);
+    if (parsed?.kind === 'block' && nodesRef.current.some((node) => node.id === parsed.id)) {
+      const nextNodes = nodesRef.current.map((node) => ({ ...node, selected: node.id === parsed.id }));
+      const nextEdges = edgesRef.current.map((edge) => edge.selected ? { ...edge, selected: false } : edge);
+      nodesRef.current = nextNodes;
+      edgesRef.current = nextEdges;
+      replaceNodes(nextNodes);
+      replaceEdges(nextEdges);
+      void fitView({ nodes: [{ id: parsed.id }], maxZoom: 1, duration: 200 });
+    } else if (parsed?.kind === 'connection' && edgesRef.current.some((edge) => edge.id === parsed.id)) {
+      const nextEdges = edgesRef.current.map((edge) => ({ ...edge, selected: edge.id === parsed.id }));
+      const nextNodes = nodesRef.current.map((node) => node.selected ? { ...node, selected: false } : node);
+      nodesRef.current = nextNodes;
+      edgesRef.current = nextEdges;
+      replaceNodes(nextNodes);
+      replaceEdges(nextEdges);
+    }
+  }, [fitView]);
+  useElementSelection(selectElement);
 
   // A wire between pins of types that do not match is refused, and the reason is shown (LNG-013)
   const [refusal, setRefusal] = useState<string | null>(null);

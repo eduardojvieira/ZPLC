@@ -57,6 +57,22 @@ alimentar una entrada `BOOL` ni entera, y un número no puede alimentar una entr
 explícita con una función de conversión como `REAL_TO_INT`. Una entrada tiene una sola fuente: un segundo cable hacia
 ella también se rechaza. Un cable puede iniciarse en cualquiera de sus dos extremos.
 
+## A dónde apunta un diagnóstico
+
+El diagnóstico de un archivo visual o IL nombra el elemento del que trata (LNG-003, LNG-026), no una línea del
+Structured Text generado que usted nunca escribió. La compilación lo informa en el campo `element`, junto a `path`, y
+el panel Problems de Studio lo selecciona cuando usted activa el problema:
+
+| Lenguaje | Elemento | Se selecciona |
+| --- | --- | --- |
+| IL | `line:12`, una línea de la fuente IL. Un hallazgo sobre el código generado se pone en la línea IL de la que salió. | La línea. |
+| LD | `rung:rung_1`, o `rung:rung_1/cell:0,3` para la celda de la fila 0, columna 3 (`rung:rung_1/element:c1` para un rung guardado como lista de elementos). | El rung y el elemento de la celda, desplazado a la vista. |
+| FBD | `block:and_1`, o `connection:w3` para un cable. Un bloque que solo lee una variable o tiene una constante no tiene sentencia: un hallazgo sobre su nombre queda en el bloque con el que se escribe. | El bloque o el cable. |
+| SFC | `step:s1`, `transition:t1` (su condición) y `action:a1` (su cuerpo). | El paso o la transición; una acción se muestra en el primer paso que la usa. |
+
+La línea y la columna de un diagnóstico de diagrama siguen siendo las del Structured Text generado, y el mensaje lo
+dice. Un diagrama que no es válido da un diagnóstico por cada elemento incorrecto, no uno para todo el archivo.
+
 ## Ruta de compilación
 
 Los modelos visuales se validan y se transpilan antes de la compilación

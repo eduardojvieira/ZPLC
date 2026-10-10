@@ -5,6 +5,7 @@
  * Based on IEC 61131-3 FBD language specification.
  */
 
+import { ElementError, blockElement, connectionElement } from './sourceElements';
 import { serializeVisualDocument } from './visualFileFormat';
 import { findProjectBlock, type ProjectBlock } from './projectBlocks';
 
@@ -234,11 +235,11 @@ export function validateFBDModel(value: unknown, projectBlocks?: readonly Projec
     const block = record(value, `blocks[${index}]`);
     const id = nonEmptyString(block.id, `blocks[${index}].id`);
     const type = nonEmptyString(block.type, `blocks[${index}].type`);
-    if (blockIds.has(id)) throw new Error(`Invalid FBD: duplicate block id '${id}'`);
+    if (blockIds.has(id)) throw new ElementError(`Invalid FBD: duplicate block id '${id}'`, blockElement(id));
     blockIds.add(id);
     const position = record(block.position, `blocks[${index}].position`);
     if (!Number.isFinite(position.x) || !Number.isFinite(position.y)) {
-      throw new Error(`Invalid FBD blocks[${index}].position: coordinates must be finite`);
+      throw new ElementError(`Invalid FBD blocks[${index}].position: coordinates must be finite`, blockElement(id));
     }
     const defaults = getDefaultPorts(type, projectBlocks);
     return {
@@ -257,7 +258,7 @@ export function validateFBDModel(value: unknown, projectBlocks?: readonly Projec
   const connections = source.connections.map((value, index) => {
     const connection = record(value, `connections[${index}]`);
     const id = nonEmptyString(connection.id, `connections[${index}].id`);
-    if (connectionIds.has(id)) throw new Error(`Invalid FBD: duplicate connection id '${id}'`);
+    if (connectionIds.has(id)) throw new ElementError(`Invalid FBD: duplicate connection id '${id}'`, connectionElement(id));
     connectionIds.add(id);
     const from = record(connection.from, `connections[${index}].from`);
     const to = record(connection.to, `connections[${index}].to`);
@@ -267,16 +268,17 @@ export function validateFBDModel(value: unknown, projectBlocks?: readonly Projec
     const toPort = nonEmptyString(to.port, `connections[${index}].to.port`);
     const sourceBlock = blocksById.get(fromBlock);
     const destinationBlock = blocksById.get(toBlock);
-    if (!sourceBlock) throw new Error(`Invalid FBD connection '${id}': unknown source block '${fromBlock}'`);
-    if (!destinationBlock) throw new Error(`Invalid FBD connection '${id}': unknown destination block '${toBlock}'`);
+    const at = connectionElement(id);
+    if (!sourceBlock) throw new ElementError(`Invalid FBD connection '${id}': unknown source block '${fromBlock}'`, at);
+    if (!destinationBlock) throw new ElementError(`Invalid FBD connection '${id}': unknown destination block '${toBlock}'`, at);
     if (!sourceBlock.outputs!.some((port) => port.name === fromPort)) {
-      throw new Error(`Invalid FBD connection '${id}': unknown source output port '${fromBlock}.${fromPort}'`);
+      throw new ElementError(`Invalid FBD connection '${id}': unknown source output port '${fromBlock}.${fromPort}'`, at);
     }
     if (!destinationBlock.inputs!.some((port) => port.name === toPort)) {
-      throw new Error(`Invalid FBD connection '${id}': unknown destination input port '${toBlock}.${toPort}'`);
+      throw new ElementError(`Invalid FBD connection '${id}': unknown destination input port '${toBlock}.${toPort}'`, at);
     }
     const destination = endpointKey(toBlock, toPort);
-    if (writtenInputs.has(destination)) throw new Error(`Invalid FBD connection '${id}': multiple writers for '${toBlock}.${toPort}'`);
+    if (writtenInputs.has(destination)) throw new ElementError(`Invalid FBD connection '${id}': multiple writers for '${toBlock}.${toPort}'`, at);
     writtenInputs.add(destination);
     return { ...connection, id, from: { block: fromBlock, port: fromPort }, to: { block: toBlock, port: toPort } } as FBDConnection;
   });

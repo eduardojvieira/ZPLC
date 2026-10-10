@@ -129,6 +129,17 @@ describe('local MCP adapter', () => {
     expect(toMcpToolResult('tests_run', { ok: true, summary: testSummary, evidence: evidence('test'), savedTestInputIdentity: { schemaVersion: 1, sha256: 'A'.repeat(64), fileCount: 0 } }).isError).toBe(true);
   });
 
+  test('LNG-003 carries the element a diagnostic is about, and only an element', () => {
+    const failed = (diagnostic: Record<string, unknown>) => toMcpToolResult('compiler_compile', { ok: false, evidence: { ...evidence('compile'), outcome: 'failed', artifacts: [], diagnostics: [{ code: 'COMPILATION_FAILED', message: 'Nope', path: 'src/main.ld.json', line: 4, column: 1, ...diagnostic }] } });
+    for (const element of ['rung:rung_1', 'rung:rung_1/cell:0,2', 'rung:r%201/element:c1', 'block:and_1', 'connection:w3', 'step:s1', 'transition:t1', 'action:a1', 'line:12']) {
+      expect(failed({ element }).structuredContent).toMatchObject({ ok: false, evidence: { diagnostics: [{ code: 'COMPILATION_FAILED', path: 'src/main.ld.json', line: 4, element }] } });
+    }
+    // an element is a short id of the source: a path, a command or free text is not one, and the result is refused whole
+    for (const element of ['/etc/passwd', '../x', 'rung 1', 'block:a b', '', 'x'.repeat(300), 'block:']) {
+      expect(failed({ element }).structuredContent).toEqual({ ok: false, error: 'MCP_INTERNAL_ERROR' });
+    }
+  });
+
   test('rejects all tool arguments except a bounded scenario selector', async () => {
     const root = await workspace(); const bound = await openMcpWorkspace(root); expect(bound).toBeDefined(); if (!bound) return;
     const dispatcher = createMcpDispatcher(bound, operations()); const signal = new AbortController().signal;

@@ -20,6 +20,8 @@ flowchart LR
 
 Es un flujo de fuente a ST generado. Validá el resultado generado, los diagnósticos y el perfil de capacidades de destino; no establece un round trip arbitrario IL/ST ni cobertura de funciones idéntica a ST.
 
+Un diagnóstico de un archivo IL nombra la línea IL de la que trata (`element: "line:12"`), también cuando el compilador lo encuentra en el Structured Text generado, y cada línea que no se traduce es un diagnóstico propio.
+
 ## Límites de runtime y depuración
 
 IL usa el destino común del compilador, pero el costo de ejecución, la disponibilidad de la biblioteca estándar, los pasos, watches, breakpoints y el comportamiento de hardware dependen del runtime y perfil activos. La simulación POSIX es evidencia lógica de host únicamente. Usá evidencia target o HIL para afirmar comportamiento de un dispositivo físico.

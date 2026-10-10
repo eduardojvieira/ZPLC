@@ -5,7 +5,7 @@ import { tmpdir } from 'node:os';
 import { isAbsolute, join, relative, resolve, sep, win32 } from 'node:path';
 import { load } from 'js-yaml';
 import { ZPLC_CONSTANTS } from '@zplc/compiler';
-import { CompilerError, assertTaskProgramCardinality, compileMultiTaskProject, compilerErrorsOf, parse, transpileToST, type CompilerWarning, type DebugMap, type DebugVarInfo, type Statement } from '../compiler';
+import { CompilerError, assertTaskProgramCardinality, compileMultiTaskProject, compilerErrorsOf, parse, transpileFailure, transpileToST, type CompilerWarning, type DebugMap, type DebugVarInfo, type Statement } from '../compiler';
 import type { ProjectMigrationChange } from '../project/projectModel';
 import { resolveProgramSource } from '../utils/programSourceResolution';
 import { compileScenario, findSignalVariable, runScenario, type CompiledScenario, type ScenarioKind, type ScenarioRunResult } from '../test-engine';
@@ -244,6 +244,7 @@ function compilerErrorDiagnostic(error: CompilerError): ToolDiagnostic {
     column: error.column,
     // ponytail: error.endLine and error.endColumn hold where the error ends; the MCP schema (src/mcp/server.ts) is strict, so they are not sent yet
     ...(error.sourceRef ? { path: error.sourceRef } : {}),
+    ...(error.element ? { element: error.element } : {}),
   };
 }
 /** What a build accepted that the language reference does not define, as diagnostics of a build that passed (CMP-031). */
@@ -450,7 +451,7 @@ function safetyLoopDiagnostics(workspace: WorkspaceProject): ToolDiagnostic[] {
     seenSourcePaths.add(path);
     const transpiled = source.language === 'ST' ? { success: true, source: source.content, errors: [] as string[], line: undefined } : transpileToST(source.content, source.language);
     // The same message as Build gives for the same source (CMP-010): it names the element that cannot be translated
-    if (!transpiled.success) throw new CompilerError(`Transpilation of '${source.name}' failed: ${transpiled.errors.join('; ')}`, transpiled.line ?? 0, 0, 'parser', path);
+    if (!transpiled.success) throw transpileFailure(transpiled, path);
     let unit: ReturnType<typeof parse>;
     try {
       unit = parse(transpiled.source);

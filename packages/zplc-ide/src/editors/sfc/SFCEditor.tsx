@@ -41,6 +41,8 @@ import { edgeTypes } from './edges';
 import SFCToolbox from './SFCToolbox';
 import { useIDEStore } from '../../store/useIDEStore';
 import { useDebugValues } from '../../hooks/useDebugValue';
+import { useElementSelection } from '../elementSelection';
+import { parseElement, type SourceElementId } from '../../models/sourceElements';
 
 // =============================================================================
 // Props
@@ -210,7 +212,7 @@ function SFCEditorInner({
   activeSteps,
 }: SFCEditorInnerProps) {
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
-  const { screenToFlowPosition } = useReactFlow();
+  const { screenToFlowPosition, fitView } = useReactFlow();
 
   const updateNodeDataRef = useRef<((nodeId: string, data: Record<string, unknown>) => void) | undefined>(undefined);
   const [nodes, replaceNodes] = useReducer((_current: Node[], next: Node[]) => next, initialNodes.map((node) => ({
@@ -316,6 +318,30 @@ function SFCEditorInner({
     edgesRef.current = nextEdges;
     replaceEdges(nextEdges);
   }, [debugActive, activeSteps]);
+
+  // Activating a problem of this chart selects the step or the transition it is about; an action is shown on the first
+  // step that uses it, because the editor draws the actions inside the steps (LNG-003, LNG-026)
+  const selectElement = useCallback((element: SourceElementId) => {
+    const parsed = parseElement(element);
+    if (!parsed) return;
+    let target: string | undefined;
+    if (parsed.kind === 'step' || parsed.kind === 'transition') {
+      target = parsed.id;
+    } else if (parsed.kind === 'action') {
+      const names = new Set([parsed.id, model.actions?.find((action) => action.id === parsed.id)?.name]);
+      target = nodesRef.current.find((node) => node.type === 'step'
+        && ((node.data as { actions?: Array<{ actionName: string }> }).actions ?? []).some((action) => names.has(action.actionName)))?.id;
+    }
+    if (!target || !nodesRef.current.some((node) => node.id === target)) return;
+    const nextNodes = nodesRef.current.map((node) => ({ ...node, selected: node.id === target }));
+    const nextEdges = edgesRef.current.map((edge) => edge.selected ? { ...edge, selected: false } : edge);
+    nodesRef.current = nextNodes;
+    edgesRef.current = nextEdges;
+    replaceNodes(nextNodes);
+    replaceEdges(nextEdges);
+    void fitView({ nodes: [{ id: target }], maxZoom: 1, duration: 200 });
+  }, [fitView, model.actions]);
+  useElementSelection(selectElement);
 
   // Handle new connections
   const onConnect: OnConnect = useCallback(

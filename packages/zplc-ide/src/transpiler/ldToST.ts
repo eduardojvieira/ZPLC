@@ -26,6 +26,10 @@ import { DataType, getFB, parseIOAddress, parseTimeLiteral, TokenType } from '@z
 import { getFunctionBlockNamesForVisualEditors } from '../catalog/blockCatalog';
 import { getDefaultPorts } from '../models/fbd';
 import { findProjectBlock, type ProjectBlock } from '../models/projectBlocks';
+import {
+  ElementError, Listing, Problems, cellElement, rungElement, rungItemElement,
+  type ElementDiagnostic, type SourceElementId, type SourceMapRange,
+} from '../models/sourceElements';
 
 // =============================================================================
 // Types
@@ -35,11 +39,15 @@ interface TranspileResult {
   success: boolean;
   source: string;
   errors: string[];
+  /** The errors with the element each is about (LNG-003). */
+  diagnostics?: ElementDiagnostic[];
+  /** For each element, the lines of `source` written for it (LNG-004). */
+  sourceMap?: SourceMapRange[];
 }
 
 type UnknownRecord = Record<string, unknown>;
 interface SymbolInfo { variable: UnknownRecord; section: 'local' | 'inputs' | 'outputs'; area?: 'I' | 'Q' | 'M'; }
-interface Writer { type: string; rung: number; }
+interface Writer { type: string; rung: number; element?: SourceElementId; }
 
 const IDENTIFIER = /^[A-Za-z_][A-Za-z0-9_]*$/;
 const MEMBER_REFERENCE = /^([A-Za-z_][A-Za-z0-9_]*)\.([A-Za-z_][A-Za-z0-9_]*)$/;
@@ -92,13 +100,13 @@ function isSupportedLDType(value: unknown): value is string {
   return isTypeName(value) && (SUPPORTED_DATA_TYPES.has(key(value)) || Boolean(getFB(value)) || Boolean(projectBlock(value)));
 }
 
-function validateComment(value: unknown, subject: string, errors: string[]): void {
+function validateComment(value: unknown, subject: string, errors: Problems): void {
   if (value !== undefined && (typeof value !== 'string' || value.includes('(*') || value.includes('*)'))) {
     errors.push(`${subject} comment must not contain ST comment delimiters`);
   }
 }
 
-function validateVariable(value: unknown, section: SymbolInfo['section'], symbols: Map<string, SymbolInfo>, errors: string[]): void {
+function validateVariable(value: unknown, section: SymbolInfo['section'], symbols: Map<string, SymbolInfo>, errors: Problems): void {
   if (!isRecord(value)) {
     errors.push(`${section} variable must be an object`);
     return;
@@ -137,7 +145,7 @@ function validateVariable(value: unknown, section: SymbolInfo['section'], symbol
   }
 }
 
-function validateInitialValue(value: unknown, type: string, subject: string, errors: string[]): void {
+function validateInitialValue(value: unknown, type: string, subject: string, errors: Problems): void {
   const normalized = type.toUpperCase();
   if (normalized === 'BOOL' && typeof value !== 'boolean') errors.push(`${subject} initialValue must be BOOL`);
   else if (['SINT', 'USINT', 'INT', 'UINT', 'DINT', 'UDINT', 'LINT', 'ULINT'].includes(normalized) && (!isInteger(value) || !integerFits(value, normalized))) errors.push(`${subject} initialValue is not representable as ${normalized}`);
@@ -159,7 +167,7 @@ function integerFits(value: number, type: string): boolean {
   return !bound || (value >= bound[0] && value <= bound[1]);
 }
 
-function resolveBoolReference(value: unknown, subject: string, symbols: Map<string, SymbolInfo>, errors: string[]): void {
+function resolveBoolReference(value: unknown, subject: string, symbols: Map<string, SymbolInfo>, errors: Problems): void {
   if (typeof value !== 'string') { errors.push(`${subject} must reference a declared BOOL variable`); return; }
   const member = value.match(MEMBER_REFERENCE);
   if (member) {
@@ -181,7 +189,7 @@ function resolveBoolReference(value: unknown, subject: string, symbols: Map<stri
   if (!variable || String(variable.variable.type).toUpperCase() !== 'BOOL') errors.push(`${subject} '${value}' must reference a declared BOOL variable`);
 }
 
-function resolveDestination(value: unknown, subject: string, symbols: Map<string, SymbolInfo>, errors: string[], requireBool = false): void {
+function resolveDestination(value: unknown, subject: string, symbols: Map<string, SymbolInfo>, errors: Problems, requireBool = false): void {
   const variable = isIdentifier(value) ? symbols.get(key(value)) : undefined;
   if (!variable) errors.push(`${subject} '${String(value)}' must reference a declared variable`);
   else if (variable.section === 'inputs') errors.push(`${subject} '${String(value)}' must not write a VAR_INPUT`);
@@ -194,7 +202,7 @@ function typesCompatible(actual: string, expected: string): boolean {
   return normalizedExpected === 'ANY' || (normalizedExpected === 'ANY_NUM' && ['SINT', 'USINT', 'INT', 'UINT', 'DINT', 'UDINT', 'LINT', 'ULINT', 'REAL', 'LREAL'].includes(normalizedActual)) || normalizedActual === normalizedExpected;
 }
 
-function validatePortValue(value: unknown, expectedType: string, subject: string, symbols: Map<string, SymbolInfo>, errors: string[]): void {
+function validatePortValue(value: unknown, expectedType: string, subject: string, symbols: Map<string, SymbolInfo>, errors: Problems): void {
   if (value === 'CONNECTED') {
     if (expectedType.toUpperCase() !== 'BOOL') errors.push(`${subject} CONNECTED is only supported for BOOL ports`);
     return;
@@ -218,7 +226,7 @@ function validatePortValue(value: unknown, expectedType: string, subject: string
   errors.push(`${subject} must be a ${expectedType} literal or matching symbol`);
 }
 
-function validateModbusHelper(element: UnknownRecord, rung: UnknownRecord, symbols: Map<string, SymbolInfo>, writers: Map<string, Writer[]>, errors: string[]): void {
+function validateModbusHelper(element: UnknownRecord, rung: UnknownRecord, symbols: Map<string, SymbolInfo>, writers: Map<string, Writer[]>, errors: Problems): void {
   const parameters = element.parameters;
   const outputs = element.outputs;
   if (!isRecord(parameters)) { errors.push(`Function block '${String(element.id)}' requires parameters.IN`); return; }
@@ -236,13 +244,13 @@ function validateModbusHelper(element: UnknownRecord, rung: UnknownRecord, symbo
     resolveDestination(destination, `Function block '${String(element.id)}' output '${port}'`, symbols, errors, port === 'STATUS');
     if (typeof destination === 'string' && isIdentifier(destination)) {
       const types = writers.get(key(destination)) ?? [];
-      types.push({ type: 'function_block', rung: Number(rung.number) });
+      types.push({ type: 'function_block', rung: Number(rung.number), element: errors.element });
       writers.set(key(destination), types);
     }
   }
 }
 
-function validateElement(value: unknown, rung: UnknownRecord, symbols: Map<string, SymbolInfo>, writers: Map<string, Writer[]>, elementIds: Set<string>, errors: string[]): void {
+function validateElement(value: unknown, rung: UnknownRecord, symbols: Map<string, SymbolInfo>, writers: Map<string, Writer[]>, elementIds: Set<string>, errors: Problems): void {
   if (!isRecord(value)) { errors.push(`Rung ${String(rung.number)} element must be an object`); return; }
   if (!isIdentifier(value.id)) errors.push(`Rung ${String(rung.number)} element id '${String(value.id)}' is not safe`);
   else if (elementIds.has(key(value.id))) errors.push(`Rung ${String(rung.number)} has duplicate element id '${value.id}'`);
@@ -258,7 +266,7 @@ function validateElement(value: unknown, rung: UnknownRecord, symbols: Map<strin
     if (typeof value.variable === 'string' && isIdentifier(value.variable)) {
       const output = key(value.variable);
       const writerTypes = writers.get(output) ?? [];
-      writerTypes.push({ type: value.type, rung: Number(rung.number) });
+      writerTypes.push({ type: value.type, rung: Number(rung.number), element: errors.element });
       writers.set(output, writerTypes);
     }
     return;
@@ -297,15 +305,20 @@ function validateElement(value: unknown, rung: UnknownRecord, symbols: Map<strin
     if (typeof destination === 'string' && isIdentifier(destination)) {
       const output = key(destination);
       const writerTypes = writers.get(output) ?? [];
-      writerTypes.push({ type: 'function_block', rung: Number(rung.number) });
+      writerTypes.push({ type: 'function_block', rung: Number(rung.number), element: errors.element });
       writers.set(output, writerTypes);
     }
   }
 }
 
-function validateLDForTranspilation(input: unknown): string[] {
-  const errors: string[] = [];
-  if (!isRecord(input)) return ['LD model must be an object'];
+/** The id a rung is known by in a diagnostic: its id, or its place in the file when it has none. */
+function rungKeyOf(rung: UnknownRecord, index: number): string {
+  return typeof rung.id === 'string' && rung.id !== '' ? rung.id : `#${index + 1}`;
+}
+
+function validateLDForTranspilation(input: unknown): Problems {
+  const errors = new Problems();
+  if (!isRecord(input)) { errors.push('LD model must be an object'); return errors; }
   if (!isIdentifier(input.name)) errors.push(`LD name '${String(input.name)}' is not a safe identifier`);
   if (!isRecord(input.variables)) errors.push('LD variables must be an object');
   if (!Array.isArray(input.rungs)) errors.push('LD rungs must be an array');
@@ -325,53 +338,62 @@ function validateLDForTranspilation(input: unknown): string[] {
   const writers = new Map<string, Writer[]>();
   const rungs = input.rungs as unknown[];
   rungs.forEach((value, index) => {
-    if (!isRecord(value)) { errors.push(`Rung ${index + 1} must be an object`); return; }
-    if (!isIdentifier(value.id)) errors.push(`Rung ${index + 1} id '${String(value.id)}' is not safe`);
-    else if (rungIds.has(key(value.id))) errors.push(`Duplicate rung id '${value.id}'`); else rungIds.add(key(value.id));
-    if (!Number.isInteger(value.number) || value.number !== index + 1) errors.push(`Rung '${String(value.id)}' number must be ${index + 1}`);
-    validateComment(value.comment, `Rung '${String(value.id)}'`, errors);
-    const hasGrid = value.grid !== undefined;
-    const hasLegacy = value.elements !== undefined;
-    if (hasGrid === hasLegacy) errors.push(`Rung '${String(value.id)}' must use exactly one of grid or legacy elements`);
-    if (value.connections !== undefined && !Array.isArray(value.connections)) errors.push(`Rung '${String(value.id)}' connections must be an array`);
-    if (Array.isArray(value.connections) && value.connections.length > 0) errors.push(`Rung '${String(value.id)}' legacy connections are unsupported`);
-    if (hasGrid) {
-      const gridConfig = isRecord(value.gridConfig) ? value.gridConfig : undefined;
-      const rows = gridConfig?.rows;
-      const cols = gridConfig?.cols;
-      const cellWidth = gridConfig?.cellWidth;
-      const cellHeight = gridConfig?.cellHeight;
-      if (!gridConfig || !isPositiveInteger(rows) || !isPositiveInteger(cols) || !isPositiveInteger(cellWidth) || !isPositiveInteger(cellHeight)) errors.push(`Rung '${String(value.id)}' gridConfig must contain positive integer dimensions`);
-      if (!Array.isArray(value.grid)) errors.push(`Rung '${String(value.id)}' grid must be an array`);
-      else {
-        if (value.grid.length !== rows) errors.push(`Rung '${String(value.id)}' grid row count must match gridConfig`);
-        const elementIds = new Set<string>();
-        value.grid.forEach((row, rowIndex) => {
-          if (!Array.isArray(row) || row.length !== cols) { errors.push(`Rung '${String(value.id)}' grid must be rectangular`); return; }
-          row.forEach((cell, colIndex) => {
-            if (!isRecord(cell) || !('element' in cell)) { errors.push(`Rung '${String(value.id)}' cell ${rowIndex},${colIndex} must contain element`); return; }
-            if (cell.element !== null) {
-              if (isRecord(cell.element) && (cell.element.row !== rowIndex || cell.element.col !== colIndex)) errors.push(`Rung '${String(value.id)}' element '${String(cell.element.id)}' coordinates must match its grid cell`);
-              validateElement(cell.element, value, symbols, writers, elementIds, errors);
-            }
+    if (!isRecord(value)) { errors.push(`Rung ${index + 1} must be an object`, rungElement(`#${index + 1}`)); return; }
+    const rungKey = rungKeyOf(value, index);
+    errors.within(rungElement(rungKey), () => {
+      if (!isIdentifier(value.id)) errors.push(`Rung ${index + 1} id '${String(value.id)}' is not safe`);
+      else if (rungIds.has(key(value.id))) errors.push(`Duplicate rung id '${value.id}'`); else rungIds.add(key(value.id));
+      if (!Number.isInteger(value.number) || value.number !== index + 1) errors.push(`Rung '${String(value.id)}' number must be ${index + 1}`);
+      validateComment(value.comment, `Rung '${String(value.id)}'`, errors);
+      const hasGrid = value.grid !== undefined;
+      const hasLegacy = value.elements !== undefined;
+      if (hasGrid === hasLegacy) errors.push(`Rung '${String(value.id)}' must use exactly one of grid or legacy elements`);
+      if (value.connections !== undefined && !Array.isArray(value.connections)) errors.push(`Rung '${String(value.id)}' connections must be an array`);
+      if (Array.isArray(value.connections) && value.connections.length > 0) errors.push(`Rung '${String(value.id)}' legacy connections are unsupported`);
+      if (hasGrid) {
+        const gridConfig = isRecord(value.gridConfig) ? value.gridConfig : undefined;
+        const rows = gridConfig?.rows;
+        const cols = gridConfig?.cols;
+        const cellWidth = gridConfig?.cellWidth;
+        const cellHeight = gridConfig?.cellHeight;
+        if (!gridConfig || !isPositiveInteger(rows) || !isPositiveInteger(cols) || !isPositiveInteger(cellWidth) || !isPositiveInteger(cellHeight)) errors.push(`Rung '${String(value.id)}' gridConfig must contain positive integer dimensions`);
+        if (!Array.isArray(value.grid)) errors.push(`Rung '${String(value.id)}' grid must be an array`);
+        else {
+          if (value.grid.length !== rows) errors.push(`Rung '${String(value.id)}' grid row count must match gridConfig`);
+          const elementIds = new Set<string>();
+          value.grid.forEach((row, rowIndex) => {
+            if (!Array.isArray(row) || row.length !== cols) { errors.push(`Rung '${String(value.id)}' grid must be rectangular`); return; }
+            row.forEach((cell, colIndex) => {
+              errors.within(cellElement(rungKey, rowIndex, colIndex), () => {
+                if (!isRecord(cell) || !('element' in cell)) { errors.push(`Rung '${String(value.id)}' cell ${rowIndex},${colIndex} must contain element`); return; }
+                if (cell.element !== null) {
+                  if (isRecord(cell.element) && (cell.element.row !== rowIndex || cell.element.col !== colIndex)) errors.push(`Rung '${String(value.id)}' element '${String(cell.element.id)}' coordinates must match its grid cell`);
+                  validateElement(cell.element, value, symbols, writers, elementIds, errors);
+                }
+              });
+            });
           });
-        });
-        validateGridPowerPath(value, errors);
+          validateGridPowerPath(value, errors, rungKey);
+        }
+        validateBranches(value, errors);
+      } else if (hasLegacy) {
+        if (!Array.isArray(value.elements)) errors.push(`Rung '${String(value.id)}' elements must be an array`);
+        else {
+          const elementIds = new Set<string>();
+          value.elements.forEach((element) => {
+            const at = isRecord(element) && typeof element.id === 'string' ? rungItemElement(rungKey, element.id) : rungElement(rungKey);
+            errors.within(at, () => validateElement(element, value, symbols, writers, elementIds, errors));
+          });
+        }
+        if (value.verticalLinks !== undefined && (!Array.isArray(value.verticalLinks) || value.verticalLinks.length > 0)) errors.push(`Rung '${String(value.id)}' verticalLinks require a grid and branches`);
       }
-      validateBranches(value, errors);
-    } else if (hasLegacy) {
-      if (!Array.isArray(value.elements)) errors.push(`Rung '${String(value.id)}' elements must be an array`);
-      else {
-        const elementIds = new Set<string>();
-        value.elements.forEach((element) => validateElement(element, value, symbols, writers, elementIds, errors));
-      }
-      if (value.verticalLinks !== undefined && (!Array.isArray(value.verticalLinks) || value.verticalLinks.length > 0)) errors.push(`Rung '${String(value.id)}' verticalLinks require a grid and branches`);
-    }
+    });
   });
   for (const [destination, writerTypes] of writers) {
     const types = writerTypes.map((writer) => writer.type);
     const allowedSetReset = writerTypes.length === 2 && new Set(types).size === 2 && types.includes('coil_set') && types.includes('coil_reset') && new Set(writerTypes.map((writer) => writer.rung)).size === 2;
-    if (writerTypes.length > 1 && !allowedSetReset) errors.push(`Multiple writers target '${destination}'`);
+    // the second writer is the one that is wrong: the first was there before it
+    if (writerTypes.length > 1 && !allowedSetReset) errors.push(`Multiple writers target '${destination}'`, writerTypes[1]!.element);
   }
   return errors;
 }
@@ -382,7 +404,7 @@ function branchRecords(rung: UnknownRecord): LDBranch[] {
     && isInteger(branch.startCol) && isInteger(branch.endCol));
 }
 
-function validateGridPowerPath(rung: UnknownRecord, errors: string[]): void {
+function validateGridPowerPath(rung: UnknownRecord, errors: Problems, rungKey: string): void {
   if (!Array.isArray(rung.grid) || !isRecord(rung.gridConfig) || !isInteger(rung.gridConfig.rows) || !isInteger(rung.gridConfig.cols)) return;
   const grid = rung.grid as unknown[];
   const cols = rung.gridConfig.cols as number;
@@ -396,16 +418,17 @@ function validateGridPowerPath(rung: UnknownRecord, errors: string[]): void {
     if (!Array.isArray(row)) { structural = false; return; }
     row.forEach((cell, colIndex) => {
       if (!isRecord(cell) || typeof cell.hasWire !== 'boolean') {
-        errors.push(`Rung '${String(rung.id)}' cell ${rowIndex},${colIndex} hasWire must be boolean`);
+        errors.push(`Rung '${String(rung.id)}' cell ${rowIndex},${colIndex} hasWire must be boolean`, cellElement(rungKey, rowIndex, colIndex));
         structural = false;
         return;
       }
       if (!isRecord(cell.element)) return;
-      if (cell.element.type === 'left_rail' || cell.element.type === 'right_rail') errors.push(`Rung '${String(rung.id)}' rails are not allowed in a grid`);
-      if (!cell.hasWire) errors.push(`Rung '${String(rung.id)}' element '${String(cell.element.id)}' must be on a wire`);
+      const here = cellElement(rungKey, rowIndex, colIndex);
+      if (cell.element.type === 'left_rail' || cell.element.type === 'right_rail') errors.push(`Rung '${String(rung.id)}' rails are not allowed in a grid`, here);
+      if (!cell.hasWire) errors.push(`Rung '${String(rung.id)}' element '${String(cell.element.id)}' must be on a wire`, here);
       if (rowIndex === 0) requiredEnd = Math.max(requiredEnd, colIndex);
       if (rowIndex > 0 && !branchAt(rowIndex, colIndex)) {
-        errors.push(`Rung '${String(rung.id)}' row ${rowIndex} element '${String(cell.element.id)}' must be inside a branch`);
+        errors.push(`Rung '${String(rung.id)}' row ${rowIndex} element '${String(cell.element.id)}' must be inside a branch`, here);
       }
     });
   });
@@ -444,7 +467,7 @@ function validateGridPowerPath(rung: UnknownRecord, errors: string[]): void {
     const row = grid[rowIndex];
     if (!Array.isArray(row)) continue;
     row.forEach((cell, colIndex) => {
-      if (isRecord(cell) && (cell.hasWire === true || cell.element !== null) && !branchAt(rowIndex, colIndex)) errors.push(`Rung '${String(rung.id)}' row ${rowIndex} has orphaned wiring at column ${colIndex}`);
+      if (isRecord(cell) && (cell.hasWire === true || cell.element !== null) && !branchAt(rowIndex, colIndex)) errors.push(`Rung '${String(rung.id)}' row ${rowIndex} has orphaned wiring at column ${colIndex}`, cellElement(rungKey, rowIndex, colIndex));
     });
   }
   // The power must reach every element: a branch has to start on a row that has power, and an element on
@@ -454,12 +477,12 @@ function validateGridPowerPath(rung: UnknownRecord, errors: string[]): void {
       rail: true,
       join: (values: boolean[]) => values.some(Boolean),
       element: (_element, _row, _col, power) => power,
-      unpowered: (what) => errors.push(`Rung '${String(rung.id)}' ${what}`),
+      unpowered: (what, row, col) => errors.push(`Rung '${String(rung.id)}' ${what}`, row === undefined || col === undefined ? undefined : cellElement(rungKey, row, col)),
     });
   }
 }
 
-function validateBranches(rung: UnknownRecord, errors: string[]): void {
+function validateBranches(rung: UnknownRecord, errors: Problems): void {
   const branches = rung.branches;
   if (rung.verticalLinks !== undefined && !Array.isArray(rung.verticalLinks)) errors.push(`Rung '${String(rung.id)}' verticalLinks must be an array`);
   if (Array.isArray(rung.verticalLinks) && rung.verticalLinks.length > 0 && (!Array.isArray(branches) || branches.length === 0)) errors.push(`Rung '${String(rung.id)}' verticalLinks require branches`);
@@ -526,8 +549,8 @@ interface WalkHooks<T> {
   join(values: T[]): T;
   /** An element on a row that has power: returns the power that leaves it. */
   element(element: LDElement, row: number, col: number, power: T): T;
-  /** Something that no power reaches (an element after its branch ended, a branch off a dead row). */
-  unpowered(what: string): void;
+  /** Something that no power reaches (an element after its branch ended, a branch off a dead row), and its cell when it is one. */
+  unpowered(what: string, row?: number, col?: number): void;
 }
 
 /**
@@ -561,7 +584,7 @@ function walkRung<T>(grid: LDCell[][], branches: LDBranch[], cols: number, hooks
       if (!element) continue;
       const incoming = power[row];
       if (incoming === undefined) {
-        hooks.unpowered(`element '${element.id}' (row ${row}, column ${col}) is on a path that no power reaches`);
+        hooks.unpowered(`element '${element.id}' (row ${row}, column ${col}) is on a path that no power reaches`, row, col);
         continue;
       }
       power[row] = hooks.element(element, row, col, incoming);
@@ -633,20 +656,19 @@ function or(values: Power[]): Power {
 // =============================================================================
 
 export function transpileLDToST(input: unknown, blocks: readonly ProjectBlock[] = []): TranspileResult {
-  const errors: string[] = [];
-  const lines: string[] = [];
+  const lines = new Listing();
   projectBlocks = blocks;
-  
+
   try {
-    const preflightErrors = validateLDForTranspilation(input);
-    if (preflightErrors.length > 0) return { success: false, source: '', errors: preflightErrors };
+    const problems = validateLDForTranspilation(input);
+    if (problems.length > 0) return { success: false, source: '', errors: problems.messages, diagnostics: problems.diagnostics };
     const model = input as LDModel;
     // The rungs are generated first: the state they need is declared with the program's variables
-    const rungCodes = model.rungs.map((rung) => generateRungCode(rung));
+    const rungCodes = model.rungs.map((rung, index) => generateRungCode(rung, rungKeyOf(rung as unknown as UnknownRecord, index)));
     // Generate program header
     lines.push(`PROGRAM ${model.name}`);
     lines.push('');
-    
+
     // Generate input variable declarations
     if (model.variables.inputs && model.variables.inputs.length > 0) {
       lines.push('VAR_INPUT');
@@ -658,16 +680,16 @@ export function transpileLDToST(input: unknown, blocks: readonly ProjectBlock[] 
       lines.push('END_VAR');
       lines.push('');
     }
-    
+
     // Generate local variable declarations
     lines.push('VAR');
-    
+
     // Local variables from model
     for (const v of model.variables.local) {
       const init = v.initialValue !== undefined ? ` := ${formatValue(v.initialValue, v.type)}` : '';
       const address = v.address ? ` AT ${v.address}` : '';
       const comment = v.comment ? ` (* ${v.comment} *)` : '';
-      
+
       // Special handling for FB types
       if (['TON', 'TOF', 'TP', 'CTU', 'CTD', 'CTUD', 'R_TRIG', 'F_TRIG', 'SR', 'RS'].includes(v.type)) {
         lines.push(`    ${v.name} : ${v.type};${comment}`);
@@ -675,17 +697,18 @@ export function transpileLDToST(input: unknown, blocks: readonly ProjectBlock[] 
         lines.push(`    ${v.name}${address} : ${v.type}${init};${comment}`);
       }
     }
-    
+
     // Generated state: the power of each rung, and the edge detectors of its edge elements
     rungCodes.forEach((code, index) => {
       const result = `_rung${model.rungs[index].number}_result`;
-      for (const name of new Set([result, ...code.stages])) lines.push(`    ${name} : BOOL;`);
-      for (const { name, type } of code.edges) lines.push(`    ${name} : ${type};`);
+      const at = rungElement(rungKeyOf(model.rungs[index] as unknown as UnknownRecord, index));
+      for (const name of new Set([result, ...code.stages])) lines.push(`    ${name} : BOOL;`, at);
+      for (const { name, type } of code.edges) lines.push(`    ${name} : ${type};`, at);
     });
-    
+
     lines.push('END_VAR');
     lines.push('');
-    
+
     // Output variables
     if (model.variables.outputs.length > 0) {
       lines.push('VAR_OUTPUT');
@@ -697,34 +720,28 @@ export function transpileLDToST(input: unknown, blocks: readonly ProjectBlock[] 
       lines.push('END_VAR');
       lines.push('');
     }
-    
+
     // Generate execution code
     lines.push('(* LD Execution - Auto-generated *)');
     lines.push('');
-    
+
     model.rungs.forEach((rung, index) => {
-      if (rung.comment) {
-        lines.push(`(* Rung ${rung.number}: ${rung.comment} *)`);
-      } else {
-        lines.push(`(* Rung ${rung.number} *)`);
-      }
-      lines.push(...rungCodes[index].lines);
+      const at = rungElement(rungKeyOf(rung as unknown as UnknownRecord, index));
+      lines.push(rung.comment ? `(* Rung ${rung.number}: ${rung.comment} *)` : `(* Rung ${rung.number} *)`, at);
+      lines.append(rungCodes[index].lines, at);
       lines.push('');
     });
-    
+
     lines.push('END_PROGRAM');
-    
-    return {
-      success: true,
-      source: lines.join('\n'),
-      errors: [],
-    };
+
+    return { success: true, source: lines.toString(), errors: [], sourceMap: lines.sourceMap() };
   } catch (e) {
-    errors.push(`Transpiler error: ${e instanceof Error ? e.message : String(e)}`);
+    const message = `Transpiler error: ${e instanceof Error ? e.message : String(e)}`;
     return {
       success: false,
       source: '',
-      errors,
+      errors: [message],
+      diagnostics: [e instanceof ElementError && e.element !== undefined ? { message, element: e.element } : { message }],
     };
   } finally {
     projectBlocks = [];
@@ -743,34 +760,37 @@ const MODBUS_HELPERS: Record<string, string> = {
 };
 
 interface RungCode {
-  lines: string[];
+  /** The statements of the rung, each with the element it is for. */
+  lines: Listing;
   /** State variables this rung needs: BOOL stages of the power flow, and the edge detectors. */
   stages: string[];
   edges: Array<{ name: string; type: 'R_TRIG' | 'F_TRIG' }>;
 }
 
-function generateRungCode(rung: LDRung): RungCode {
+function generateRungCode(rung: LDRung, rungKey: string): RungCode {
   // Convert to grid-based if necessary
   const gridRung = isGridBasedRung(rung) ? rung : convertToGridRung(rung);
   const grid = gridRung.grid ?? [];
   const cols = gridRung.gridConfig?.cols ?? Math.max(0, ...grid.map((row) => row.length));
 
-  const lines: string[] = [];
+  const lines = new Listing();
   const stages: string[] = [];
   const edges: RungCode['edges'] = [];
+  /** The element whose statements are being written. */
+  let current: SourceElementId = rungElement(rungKey);
 
   /** The power as a BOOL variable of its own, so what follows it sees the value that flowed. */
   const stage = (power: Power): string => {
     if (power.kind === 'atom' && stages.includes(power.text)) return power.text;
     const name = stages.length === 0 ? `_rung${rung.number}_result` : `_rung${rung.number}_result_${stages.length + 1}`;
     stages.push(name);
-    lines.push(`${name} := ${printPower(power)};`);
+    lines.push(`${name} := ${printPower(power)};`, current);
     return name;
   };
   const edge = (element: LDElement, type: 'R_TRIG' | 'F_TRIG', clock: string): string => {
     const name = `_edge_r${rung.number}_${element.id}`;
     edges.push({ name, type });
-    lines.push(`${name}(CLK := ${clock});`);
+    lines.push(`${name}(CLK := ${clock});`, current);
     return `${name}.Q`;
   };
 
@@ -781,10 +801,10 @@ function generateRungCode(rung: LDRung): RungCode {
       const flow = stage(power);
       const inputVar = fb.parameters!.IN;
       const addrVar = fb.parameters!.ADDR;
-      lines.push(`IF ${flow} THEN ${inputVar} := ${inputVar}; END_IF;`);
-      lines.push(`${helper}(${inputVar}, ${addrVar});`);
+      lines.push(`IF ${flow} THEN ${inputVar} := ${inputVar}; END_IF;`, current);
+      lines.push(`${helper}(${inputVar}, ${addrVar});`, current);
       for (const [port, variable] of Object.entries(fb.outputs ?? {})) {
-        lines.push(port === 'STATUS' ? `${variable} := ${flow};` : `${variable} := ${inputVar};`);
+        lines.push(port === 'STATUS' ? `${variable} := ${flow};` : `${variable} := ${inputVar};`, current);
       }
       return atom(flow);
     }
@@ -799,9 +819,9 @@ function generateRungCode(rung: LDRung): RungCode {
       params.push(`${name} := ${value === 'CONNECTED' ? flow : value}`);
     }
     if (powerInput) params.push(`${powerInput} := ${flow}`);
-    lines.push(`${fb.instance}(${params.join(', ')});`);
+    lines.push(`${fb.instance}(${params.join(', ')});`, current);
     for (const [port, variable] of Object.entries(fb.outputs ?? {})) {
-      lines.push(`${variable} := ${fb.instance}.${port};`);
+      lines.push(`${variable} := ${fb.instance}.${port};`, current);
     }
     // What follows the block gets its output; a block with no such output passes the power through
     const out = POWER_OUTPUT[fb.fbType.toUpperCase()];
@@ -811,8 +831,9 @@ function generateRungCode(rung: LDRung): RungCode {
   const output = walkRung(grid, gridRung.branches ?? [], cols, {
     rail: TRUE_POWER,
     join: or,
-    unpowered: (what) => { throw new Error(`Rung '${rung.id}' ${what}`); },
-    element: (element, _row, _col, power) => {
+    unpowered: (what, row, col) => { throw new ElementError(`Rung '${rung.id}' ${what}`, row === undefined || col === undefined ? rungElement(rungKey) : cellElement(rungKey, row, col)); },
+    element: (element, row, col, power) => {
+      current = cellElement(rungKey, row, col);
       switch (element.type) {
         case 'contact_no':
           return and(power, atom(element.variable!));
@@ -830,19 +851,19 @@ function generateRungCode(rung: LDRung): RungCode {
         case 'coil_n': {
           const flow = stage(power);
           switch (element.type) {
-            case 'coil': lines.push(`${element.variable} := ${flow};`); break;
-            case 'coil_negated': lines.push(`${element.variable} := NOT ${flow};`); break;
-            case 'coil_set': lines.push(`IF ${flow} THEN ${element.variable} := TRUE; END_IF;`); break;
-            case 'coil_reset': lines.push(`IF ${flow} THEN ${element.variable} := FALSE; END_IF;`); break;
-            case 'coil_p': lines.push(`${element.variable} := ${edge(element, 'R_TRIG', flow)};`); break;
-            case 'coil_n': lines.push(`${element.variable} := ${edge(element, 'F_TRIG', flow)};`); break;
+            case 'coil': lines.push(`${element.variable} := ${flow};`, current); break;
+            case 'coil_negated': lines.push(`${element.variable} := NOT ${flow};`, current); break;
+            case 'coil_set': lines.push(`IF ${flow} THEN ${element.variable} := TRUE; END_IF;`, current); break;
+            case 'coil_reset': lines.push(`IF ${flow} THEN ${element.variable} := FALSE; END_IF;`, current); break;
+            case 'coil_p': lines.push(`${element.variable} := ${edge(element, 'R_TRIG', flow)};`, current); break;
+            case 'coil_n': lines.push(`${element.variable} := ${edge(element, 'F_TRIG', flow)};`, current); break;
           }
           return atom(flow);
         }
         case 'function_block':
           return functionBlock(element, power);
         default:
-          throw new Error(`Rung '${rung.id}' element '${element.id}' has the unsupported type '${element.type}'`);
+          throw new ElementError(`Rung '${rung.id}' element '${element.id}' has the unsupported type '${element.type}'`, current);
       }
     },
   });
@@ -850,7 +871,7 @@ function generateRungCode(rung: LDRung): RungCode {
   // A rung whose power no element consumed still has its result, for the rung's state variable
   if (stages.length === 0) {
     stages.push(`_rung${rung.number}_result`);
-    lines.push(`_rung${rung.number}_result := ${printPower(output ?? TRUE_POWER)};`);
+    lines.push(`_rung${rung.number}_result := ${printPower(output ?? TRUE_POWER)};`, rungElement(rungKey));
   }
   return { lines, stages, edges };
 }

@@ -17,6 +17,10 @@ import { getFB, parseIOAddress } from '@zplc/compiler';
 import type { FBDModel, FBDBlock, FBDConnection } from '../models/fbd';
 import { isFunctionBlock, isLogicGate, isComparison, isMathOperator, validateFBDModel } from '../models/fbd';
 import { findProjectBlock, type ProjectBlock } from '../models/projectBlocks';
+import {
+  ElementError, Listing, Problems, blockElement,
+  type ElementDiagnostic, type SourceMapRange,
+} from '../models/sourceElements';
 
 // =============================================================================
 // Types
@@ -26,6 +30,10 @@ interface TranspileResult {
   success: boolean;
   source: string;
   errors: string[];
+  /** The errors with the element each is about (LNG-003). */
+  diagnostics?: ElementDiagnostic[];
+  /** For each element, the lines of `source` written for it (LNG-004). */
+  sourceMap?: SourceMapRange[];
 }
 
 interface BlockInput {
@@ -105,19 +113,27 @@ const NOT_BOOLEAN = [...REALS, 'TIME', 'LTIME', 'STRING'];
  * like the standard ones, and the call names the ports of the declaration.
  */
 export function transpileFBDToST(model: FBDModel, blocks?: readonly ProjectBlock[]): TranspileResult {
-  const errors: string[] = [];
-  const lines: string[] = [];
+  const errors = new Problems();
+  const lines = new Listing();
 
   try {
     const validatedModel = validateFBDModel(model, blocks);
     const blockMap = new Map(validatedModel.blocks.map((b) => [b.id, b]));
     const fail = (block: FBDBlock, message: string): void => {
-      errors.push(`FBD block '${block.id}' (${block.type}): ${message}`);
+      errors.push(`FBD block '${block.id}' (${block.type}): ${message}`, blockElement(block.id));
     };
-    const failed = (): TranspileResult => ({ success: false, source: '', errors: [...new Set(errors)] });
+    const failed = (): TranspileResult => {
+      // a message that was found twice is reported once
+      const seen = new Set<string>();
+      const diagnostics = errors.diagnostics.filter((diagnostic) => {
+        const key = `${diagnostic.element ?? ''}\0${diagnostic.message}`;
+        return seen.has(key) ? false : (seen.add(key), true);
+      });
+      return { success: false, source: '', errors: [...new Set(errors.messages)], diagnostics };
+    };
 
     // Names, comments and values reach the Structured Text as text: they have to be what they say
-    for (const message of validateText(validatedModel)) errors.push(message);
+    validateText(validatedModel, errors);
     if (errors.length > 0) return failed();
 
     // Every block has to be one the transpiler translates
@@ -426,7 +442,7 @@ export function transpileFBDToST(model: FBDModel, blocks?: readonly ProjectBlock
       const kind = kinds.get(block.id);
       if (block.instanceName && (kind === 'standard' || ((kind === 'registry' || kind === 'userblock') && !declared.has(block.instanceName.toUpperCase())))) {
         const comment = block.comment ? ` (* ${block.comment} *)` : '';
-        lines.push(`    ${block.instanceName} : ${block.type};${comment}`);
+        lines.push(`    ${block.instanceName} : ${block.type};${comment}`, blockElement(block.id));
       }
     }
 
@@ -434,7 +450,7 @@ export function transpileFBDToST(model: FBDModel, blocks?: readonly ProjectBlock
     for (const block of sortedBlocks) {
       for (const output of outputMap.get(block.id) ?? []) {
         const dataType = outTypes.get(endpointKey(block.id, output.port));
-        if (dataType) lines.push(`    ${output.tempVar} : ${dataType};`);
+        if (dataType) lines.push(`    ${output.tempVar} : ${dataType};`, blockElement(block.id));
       }
     }
 
@@ -462,9 +478,9 @@ export function transpileFBDToST(model: FBDModel, blocks?: readonly ProjectBlock
       if (code) {
         // Add block comment if present
         if (block.comment) {
-          lines.push(`(* ${block.comment} *)`);
+          lines.push(`(* ${block.comment} *)`, blockElement(block.id));
         }
-        lines.push(code);
+        lines.push(code, blockElement(block.id));
       }
     }
 
@@ -473,15 +489,17 @@ export function transpileFBDToST(model: FBDModel, blocks?: readonly ProjectBlock
 
     return {
       success: true,
-      source: lines.join('\n'),
+      source: lines.toString(),
       errors: [],
+      sourceMap: lines.sourceMap(),
     };
   } catch (e) {
-    errors.push(`Transpiler error: ${e instanceof Error ? e.message : String(e)}`);
+    const message = `Transpiler error: ${e instanceof Error ? e.message : String(e)}`;
     return {
       success: false,
       source: '',
-      errors,
+      errors: [...errors.messages, message],
+      diagnostics: [...errors.diagnostics, e instanceof ElementError && e.element !== undefined ? { message, element: e.element } : { message }],
     };
   }
 }
@@ -568,7 +586,7 @@ function buildOutputMap(
         const tempVar = `_${block.id}_${port.name}`.replace(/[^a-zA-Z0-9_]/g, '_');
         const owner = temporaryOwners.get(tempVar);
         if (owner && owner.key !== key) {
-          throw new Error(`FBD temporary name collision: '${owner.label}' and '${block.id}.${port.name}' both map to '${tempVar}'`);
+          throw new ElementError(`FBD temporary name collision: '${owner.label}' and '${block.id}.${port.name}' both map to '${tempVar}'`, blockElement(block.id));
         }
         temporaryOwners.set(tempVar, { key, label: `${block.id}.${port.name}` });
         outputs.push({
@@ -602,7 +620,7 @@ function topologicalSort(
   function visit(blockId: string) {
     if (visited.has(blockId)) return;
     if (visiting.has(blockId)) {
-      throw new Error(`Circular dependency detected involving block: ${blockId}`);
+      throw new ElementError(`Circular dependency detected involving block: ${blockId}`, blockElement(blockId));
     }
 
     visiting.add(blockId);
@@ -687,8 +705,7 @@ const TYPE_TEXT = /^[A-Za-z_][A-Za-z0-9_\s[\].,()]*$/;
 const COMMENT_DELIMITER = /\(\*|\*\)/;
 
 /** The model's names, types, comments and constants, as the problems that would make the source wrong. */
-function validateText(model: FBDModel): string[] {
-  const problems: string[] = [];
+function validateText(model: FBDModel, problems: Problems): void {
   const sections: Array<[string, FBDModel['variables']['local']]> = [
     ['local', model.variables.local], ['input', model.variables.inputs ?? []], ['output', model.variables.outputs],
   ];
@@ -705,12 +722,12 @@ function validateText(model: FBDModel): string[] {
   }
   for (const block of model.blocks) {
     const label = `FBD block '${block.id}' (${block.type})`;
-    if (block.comment !== undefined && (typeof block.comment !== 'string' || COMMENT_DELIMITER.test(block.comment))) problems.push(`${label}: the comment must not contain ST comment delimiters`);
-    if (block.instanceName !== undefined && (typeof block.instanceName !== 'string' || !IDENTIFIER.test(block.instanceName))) problems.push(`${label}: the instance name '${String(block.instanceName)}' is not an identifier`);
-    if (block.variableName !== undefined && (typeof block.variableName !== 'string' || !REFERENCE.test(block.variableName))) problems.push(`${label}: the variable name '${String(block.variableName)}' is not a variable`);
-    if (block.type === 'constant' && (block.value === undefined || block.value === null || typeof block.value === 'object')) problems.push(`${label}: it has no value`);
+    const at = blockElement(block.id);
+    if (block.comment !== undefined && (typeof block.comment !== 'string' || COMMENT_DELIMITER.test(block.comment))) problems.push(`${label}: the comment must not contain ST comment delimiters`, at);
+    if (block.instanceName !== undefined && (typeof block.instanceName !== 'string' || !IDENTIFIER.test(block.instanceName))) problems.push(`${label}: the instance name '${String(block.instanceName)}' is not an identifier`, at);
+    if (block.variableName !== undefined && (typeof block.variableName !== 'string' || !REFERENCE.test(block.variableName))) problems.push(`${label}: the variable name '${String(block.variableName)}' is not a variable`, at);
+    if (block.type === 'constant' && (block.value === undefined || block.value === null || typeof block.value === 'object')) problems.push(`${label}: it has no value`, at);
   }
-  return problems;
 }
 
 // =============================================================================
