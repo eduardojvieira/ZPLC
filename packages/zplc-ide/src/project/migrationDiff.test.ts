@@ -53,7 +53,7 @@ describe('changedHunks', () => {
   });
 });
 
-describe('describeMigration of a version 1 project', () => {
+describe('describeMigration of a version 1 project (IDE-022)', () => {
   const v1 = {
     name: 'Legacy', version: '1.0.0',
     tasks: [{ name: 'Main', type: 'CYCLIC', interval: 20, priority: 2, file: 'main.st', watchdog_ms: 100 }],

@@ -13,7 +13,7 @@ const summary = (manifest: string | null, files: string[] = ['zplc.json', 'src/M
 });
 const v2 = (extra: Record<string, unknown> = {}) => JSON.stringify({ schemaVersion: 2, name: 'Motor', version: '1.2.0', tasks: [{ name: 'Main', trigger: 'cyclic', interval_ms: 10, priority: 1, programs: ['Main.st'] }], ...extra }, null, 2);
 
-describe('reviewArchive', () => {
+describe('reviewArchive (IDE-022)', () => {
   it('names the project of a version 2 archive, with nothing to migrate', () => {
     const review = reviewArchive(summary(v2()));
     expect(review).toMatchObject({ openable: true, name: 'Motor', version: '1.2.0', schemaVersion: 2, difference: null, problem: null });

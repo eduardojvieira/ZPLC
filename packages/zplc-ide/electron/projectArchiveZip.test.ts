@@ -21,7 +21,7 @@ const refusal = (run: () => unknown): ZipRefusal | 'none' => {
 // A zip that Python's zipfile wrote: one deflated file, one stored file and one directory, 40-byte header names.
 const FOREIGN = Buffer.from('UEsDBBQAAAAIAIMYIlBEat7IKAAAACECAAALAAAAc3JjL01haW4uc3QLCPJ3D3L0VfBNzMzj0tBSSMvMyUktUtDSHOWM3DBw9XOJD4AkDC4AUEsDBBQAAAAAAIMYIlDuRqJAFAAAABQAAAAJAAAAenBsYy5qc29ueyJzY2hlbWFWZXJzaW9uIjoyfQpQSwMEFAAAAAAAgxgiUAAAAAAAAAAAAAAAAAYAAABlbXB0eS9QSwECFAMUAAAACACDGCJQRGreyCgAAAAhAgAACwAAAAAAAAAAAAAAgAEAAAAAc3JjL01haW4uc3RQSwECFAMUAAAAAACDGCJQ7kaiQBQAAAAUAAAACQAAAAAAAAAAAAAAgAFRAAAAenBsYy5qc29uUEsBAhQDFAAAAAAAgxgiUAAAAAAAAAAAAAAAAAYAAAAAAAAAAAAAAIABjAAAAGVtcHR5L1BLBQYAAAAAAwADAKQAAACwAAAAAAA=', 'base64');
 
-describe('writeZip', () => {
+describe('writeZip (IDE-022)', () => {
   it('gives the same bytes for the same files, whatever the order they are given in', () => {
     const files = [file('src/b.st', 'B'), file('zplc.json', '{}\n'), directory('empty/'), file('src/a.st', 'A')];
     expect(writeZip([...files].reverse())).toEqual(writeZip(files));
@@ -59,7 +59,7 @@ describe('writeZip', () => {
   });
 });
 
-describe('readZip of an archive another tool wrote', () => {
+describe('readZip of an archive another tool wrote (IDE-022)', () => {
   it('reads deflated and stored entries and directories', () => {
     const entries = readZip(FOREIGN);
     expect(entries.map((entry) => `${entry.kind}:${entry.path}`)).toEqual(['directory:empty/', 'file:src/Main.st', 'file:zplc.json']);
@@ -73,7 +73,7 @@ describe('readZip of an archive another tool wrote', () => {
   });
 });
 
-describe('readZip refusals', () => {
+describe('readZip refusals (IDE-022)', () => {
   /** An archive with entries named as given, through the writer's own layout (names are not validated when writing). */
   const named = (...paths: string[]) => writeZip(paths.map((path) => file(path, 'x')));
 

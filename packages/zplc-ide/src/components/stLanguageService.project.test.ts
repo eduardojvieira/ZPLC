@@ -28,7 +28,7 @@ const declarations = () => projectDeclarations([{ path: 'lib/Library.st', conten
 
 afterEach(() => setProjectDeclarations([]));
 
-describe('completion from the project', () => {
+describe('completion from the project (IDE-023)', () => {
   const MAIN = 'PROGRAM Main\nVAR\n  Local : BOOL;\nEND_VAR\n\nEND_PROGRAM\n';
 
   it('offers nothing of a library until the project has declarations', () => {
@@ -49,7 +49,7 @@ describe('completion from the project', () => {
   });
 });
 
-describe('hover over a name of the project', () => {
+describe('hover over a name of the project (IDE-023)', () => {
   it('says what it is and where it is declared', () => {
     setProjectDeclarations(declarations());
     const hover = getSTHover('PROGRAM Main\nEND_PROGRAM\n', 'Debounce', 1);

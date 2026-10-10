@@ -6,7 +6,7 @@ import { archiveFailureMessage, exportArchive, extractArchive, inspectArchive } 
 const SUMMARY = { archiveId: 'a1', fileName: 'motor.zip', fileCount: 2, folderCount: 1, bytes: 900, files: [{ path: 'zplc.json', size: 40 }], manifest: '{}' };
 const bridge = (methods: Record<string, unknown>) => methods as unknown as ProjectFilesBridge;
 
-describe('the renderer side of the project archives', () => {
+describe('the renderer side of the project archives (IDE-022)', () => {
   it('is unavailable where the host has no archive operations (a browser, an older preload)', async () => {
     expect(await exportArchive(undefined, 'r1')).toEqual({ status: 'unavailable' });
     expect(await inspectArchive(bridge({}))).toEqual({ status: 'unavailable' });

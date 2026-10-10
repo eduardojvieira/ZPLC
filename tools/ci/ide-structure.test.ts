@@ -10,7 +10,7 @@ const lines = (count: number): string => `${'export const x = 1;\n'.repeat(count
 const offender = (file: string, count: number): Offender => ({ file: `${IDE}${file}`, requirement: 'IDE-014', added: '2026-10-10', lines: count, reason: 'split it' });
 const check = (modules: SourceModule[], offenders: Offender[] = [], limit = 100) => checkIdeStructure(modules, { limit, offenders });
 
-describe('layering (IDE-033)', () => {
+describe('layering stopgap (IDE-033): one command-line import of electron/ is listed', () => {
   it('reports a store module that imports a component, naming both files', () => {
     const problems = check([
       mod('src/store/useThing.ts', "import { helper } from '../components/helper';\n"),
@@ -59,7 +59,7 @@ describe('ratchetOffenders', () => {
   });
 });
 
-describe('layering exceptions (IDE-033)', () => {
+describe('layering exceptions stopgap (IDE-033)', () => {
   const modules = [
     mod('src/cli/run.ts', "import { supervise } from '../../electron/supervisor';\n"),
     mod('electron/supervisor.ts', 'export const supervise = 1;\n'),
@@ -81,7 +81,7 @@ describe('layering exceptions (IDE-033)', () => {
   });
 });
 
-describe('import cycles (IDE-033)', () => {
+describe('import cycles stopgap (IDE-033)', () => {
   it('reports a cycle with its path, once', () => {
     const problems = check([
       mod('src/a.ts', "import { b } from './b';\nexport const a = b;\n"),
@@ -116,7 +116,7 @@ describe('import cycles (IDE-033)', () => {
   });
 });
 
-describe('module size (IDE-014)', () => {
+describe('module size stopgap (IDE-014): listed modules may stay above the limit until they are split', () => {
   it('reports a hand-written module above the limit that is not listed', () => {
     const problems = check([mod('src/big.ts', lines(101))]);
     expect(problems).toHaveLength(1);

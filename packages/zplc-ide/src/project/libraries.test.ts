@@ -16,7 +16,7 @@ const tree: FileTreeNode = folder('', [
   folder('docs', [file('docs/Example.st')]),
 ]);
 
-describe('configuredLibraries', () => {
+describe('configuredLibraries (IDE-023)', () => {
   it('reads the folders named in the configuration, normalised, without repeats', () => {
     expect(configuredLibraries({ name: 'P', version: '1.0.0', libraries: ['lib', './lib/', 'vendor/acme', 'lib'] })).toEqual(['lib', 'vendor/acme']);
   });
@@ -55,7 +55,7 @@ describe('addLibrary and removeLibrary', () => {
   });
 });
 
-describe('projectSourceFiles', () => {
+describe('projectSourceFiles (IDE-023)', () => {
   const paths = (nodes: FileTreeNode[]) => nodes.map((node) => node.path);
 
   it('is the Structured Text files the build reads, the ones in src', () => {

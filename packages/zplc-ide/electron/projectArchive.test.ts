@@ -56,7 +56,7 @@ beforeEach(() => {
 
 afterEach(() => rmSync(scratch, { recursive: true, force: true }));
 
-describe('exporting a project', () => {
+describe('exporting a project (IDE-022)', () => {
   it('writes one archive of the project files, and only those, with the folder name as the suggested file name', async () => {
     mkdirSync(join(project, '.git'));
     writeFileSync(join(project, '.git', 'HEAD'), 'ref');
@@ -108,7 +108,7 @@ describe('exporting a project', () => {
   });
 });
 
-describe('importing an archive', () => {
+describe('importing an archive (IDE-022)', () => {
   const exported = async () => {
     await archive().handle(OWNER, PROJECT_ARCHIVE_CHANNEL.exportArchive, [{ rootId: 'root-1' }]);
     return join(scratch, 'out.zip');

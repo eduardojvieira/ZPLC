@@ -18,7 +18,7 @@ function host(answers: { save?: string; open?: string; canceled?: boolean } = {}
   return { dialog, shown };
 }
 
-describe('the archive dialogs', () => {
+describe('the archive dialogs (IDE-022)', () => {
   it('ask the user in the window of the owner, for an archive file or for a folder', async () => {
     const { dialog, shown } = host({ save: '/home/u/motor.zip', open: '/home/u/in.zip' });
     const dialogs = createArchiveDialogs({ dialog, getWindow: () => WINDOW, isPackaged: true, env: {} });

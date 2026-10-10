@@ -34,7 +34,7 @@ TYPE Mode : (Idle, Run, Fault);
 END_TYPE
 `;
 
-describe('declarationsOf', () => {
+describe('declarationsOf (IDE-023)', () => {
   it('lists function blocks, functions and data types with the line they are declared on', () => {
     const found = declarationsOf('lib/Library.st', LIBRARY).map(({ name, kind, line }) => `${kind} ${name}@${line}`);
     expect(found).toEqual(['FUNCTION_BLOCK Debounce@1', 'FUNCTION Scale@10', 'STRUCT Point@17', 'ENUM Mode@24']);
@@ -55,7 +55,7 @@ describe('declarationsOf', () => {
   });
 });
 
-describe('projectDeclarations', () => {
+describe('projectDeclarations (IDE-023)', () => {
   it('groups by file in path order, leaves out files that declare nothing and files of other languages', () => {
     const groups = projectDeclarations([
       { path: 'src/Main.st', content: 'PROGRAM Main\nEND_PROGRAM\n', language: 'ST' },

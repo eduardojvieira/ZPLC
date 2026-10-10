@@ -16,7 +16,7 @@ const covered = (declared: ReturnType<typeof pair>[], uncovered: ReturnType<type
   { kind: uncovered.length > 0 ? 'uncovered' : 'covered', declared, covered: declared.filter((entry) => !uncovered.includes(entry)), uncovered, diagnostics: [] } as unknown as WorkspaceSafetyPresentation
 );
 
-describe('InterlockCoverage', () => {
+describe('InterlockCoverage (IDE-032)', () => {
   it('has its title, a check button and the claim it does not make', () => {
     const html = render();
     expect(html).toContain('Declared interlock coverage');

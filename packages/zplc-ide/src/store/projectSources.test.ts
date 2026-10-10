@@ -26,7 +26,7 @@ const reader = (reads: string[] = []) => async (node: FileTreeNode) => { reads.p
 
 afterEach(() => { setProjectDeclarations([]); useProjectSources.setState({ sources: [], declarations: [] }); });
 
-describe('readProjectSources', () => {
+describe('readProjectSources (IDE-023)', () => {
   it('reads the files of src and of the libraries from disk, and none of the others', async () => {
     const reads: string[] = [];
     const sources = await readProjectSources({ tree, libraries: ['lib'], loaded: new Map(), read: reader(reads) });
@@ -53,7 +53,7 @@ describe('readProjectSources', () => {
   });
 });
 
-describe('trackProjectSources', () => {
+describe('trackProjectSources (IDE-023)', () => {
   /** A store that holds what the tracker reads, and tells its subscribers what changed. */
   function fakeStore(initial: Partial<ReturnType<TrackedStore['getState']>>) {
     let state = { isProjectOpen: true, fileTree: tree, loadedFiles: new Map<string, ProjectFileWithHandle>(), projectConfig: { name: 'P', version: '1.0.0' } as { name: string; version: string; libraries?: string[] } | null, ...initial };
