@@ -107,15 +107,17 @@ run/debug. A person starts each of them.
 
 Learn is a tab of the bottom panel. The **Learn** action on the Welcome screen copies the first lesson into a folder that you choose and opens that tab. This is what it offers today:
 
-- Ten lessons, in Spanish and in English (the toggle is in the panel, and Spanish is the default). Each lesson comes with its own example project: a source file in Structured Text and a scenario file.
-- Every lesson goes through the stages Objective, Predict, Edit, Run, Observe and Reflect, and the expected checkpoint of each stage stays hidden until you ask for it.
-- You edit the copied project and run only the scenario of that lesson from **Tests**. The panel grades the recorded run: a lesson counts as completed when its scenario passed with all its assertions saved. Studio remembers the completed lessons, and **Export progress** and **Import progress** move them as a small file.
+- Ten lessons, in Spanish and in English (the toggle is in the panel, and Spanish is the default). Each lesson is a data package, `packages/zplc-ide/lessons/<id>/`, with its text in both languages, learning objectives, two levels of hint, a reference scenario with its content hash, and the example project you start from: a Structured Text file, or a Ladder file in lesson 5.
+- Every lesson goes through the stages Objective, Predict, Edit, Run, Observe and Reflect, the expected checkpoint of each stage stays hidden until you ask for it, and the two hints open on request.
+- You edit the copied project and run only the scenario of that lesson from **Tests**. The panel grades the recorded run: a lesson counts as completed when the run recorded the assertions of the lesson's own scenario, kind for kind, and all of them passed. A run that fails lists each failed assertion with its instant, the values expected and observed, and the address of that sample in the recorded trace.
+- The check that does not depend on your folder is the lesson check of the Tool API (`lessonCheck`): it runs your program against the scenario of the lesson package, identified by its content hash, and ignores the scenario files of your folder, so editing a scenario there never produces a pass. Its grade record holds the lesson id and version, the scenario hash, the program hash, the runtime version and the time. The panel does not call it yet.
+- Studio keeps your progress in one versioned file in its user-data directory: passed lessons with their grade record, lessons in progress, the last lesson, and the hints and solutions used. The progress file of an earlier release is migrated, and left where it was. **Export progress** and **Import progress** move the passed lessons as a small file; the progress store itself exports and imports the whole document, validates it, merges it with the newest grade first and keeps lessons it does not know.
 - All the lessons are unlocked and can be taken in any order. Learn never starts a physical operation: it only copies a project and opens **Tests**.
 - A result is host evidence from the native simulation, not hardware evidence.
 
-A course with levels, prerequisites and a fixed order, a lesson surface that stays beside the editor, and a track for a learner board are future work (the LRN requirements). Nothing on this page promises them.
+A course with levels, prerequisites and a fixed order, a lesson surface that stays beside the editor, and a track for a learner board are future work (the LRN requirements). Nothing on this page promises them. To add a lesson, see [Contributing](../contributing/index.md#adding-a-lesson).
 
-Evidence level: host. `packages/zplc-ide/src/components/learnLesson.test.ts` and `LearnPanel.test.ts` cover the lessons and the grading, and `packages/zplc-ide/src/learn/starterGrading.test.ts` runs every starter against its scenario.
+Evidence level: host. `packages/zplc-ide/src/learn/lessonCi.test.ts` runs every lesson package in both languages (the starter fails its scenario, the solution passes it, every time and value the text quotes is in the scenario), `packages/zplc-ide/src/learn/lessonCheck.test.ts` grades programs on the native runtime, and `packages/zplc-ide/src/components/learnLesson.test.ts` covers the lessons and the grading of a recorded run.
 
 ## Debugging boundary
 
