@@ -321,6 +321,15 @@
   "CMP-044": [
     {"kind":"conformance","ref":"conformance/cmp/cmp-044-located-memory-overlap.expect.json","test":"CMP-044 a variable that overlaps an AT %M variable is rejected"}
   ],
+  "CMP-052": [
+    {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/compiler.test.ts","test":"records the draft contract counter in the artifact of every entry point (CMP-052)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/cli/index.test.ts","test":"CLI build output states the draft contract counter (CMP-052)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/components/hardwareDeployConfirmation.test.ts","test":"refuses a board on another contract draft before confirmation and names both numbers (CMP-052)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/runtime/connectionManager.test.ts","test":"never starts a physical load for another contract draft, and says which two (CMP-052)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/runtime/draftCounter.test.ts","test":"draft contract counter helpers (CMP-052)"},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_loader_verify.c","test":"CMP-052: the loader refuses an artifact built for another draft of the contract or without a counter."},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_native_runtime_session.c","test":"CMP-052: program.load refuses an artifact built for another draft of the contract and shows both numbers."}
+  ],
   "CMP-053": [
     {"kind":"unit","ref":"packages/zplc-ide/src/conformance/conformance.test.ts","test":"CMP-053 the debug map records the version of the compiler package"},
     {"kind":"unit","ref":"packages/zplc-ide/src/conformance/conformance.test.ts","test":"CMP-053 two builds of one project produce the same bytecode"},
