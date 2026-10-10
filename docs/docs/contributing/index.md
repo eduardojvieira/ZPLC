@@ -65,6 +65,8 @@ the refusal shows both:
 An artifact built before the counter carries 0, and a firmware image that does
 not report one has none: both are refused, and the sentence says `none`. After
 an update that changes the counter, rebuild the programs and reflash the boards.
+A program that a board saved under another draft is rejected at boot and the
+runtime stays latched safe until a verified replacement is uploaded.
 The counter is not the product version: the one final version integer is
 assigned and frozen when the conformance matrix is closed.
 

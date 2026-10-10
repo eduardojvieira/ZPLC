@@ -65,7 +65,9 @@ Un número distinto se rechaza y el rechazo muestra los dos:
 Un artefacto construido antes del contador lleva 0, y una imagen de firmware
 que no lo informa no tiene ninguno: ambos se rechazan y la frase dice `none`.
 Después de una actualización que cambia el contador, reconstruí los programas y
-reflasheá las placas. El contador no es la versión del producto: el único
+reflasheá las placas. Un programa que una placa guardó bajo otro borrador se
+rechaza al arrancar y el runtime queda trabado en estado seguro hasta que se
+suba un reemplazo verificado. El contador no es la versión del producto: el único
 entero de versión final se asigna y congela al cerrar la matriz de conformidad.
 
 ### Para cambiar el contrato
