@@ -4,6 +4,7 @@ import { tmpdir } from 'node:os';
 import { basename, dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'bun:test';
+import { ZPLC_CONSTANTS } from '@zplc/compiler';
 import { firmwareBuildExitCode, isFirmwareBuildInvocation, isInterruptibleInvocation, main, testExitCode } from './index';
 import { itNative, nativeRuntimeBinary } from './nativeRuntimeGuard';
 
@@ -327,6 +328,33 @@ describe('CLI JSON boundary', () => {
       const artifact = join(root, 'artifact.zplc'); expect(await main(['compile', source, '--output', artifact], output())).toBe(0);
       const bytes = await readFile(artifact); const json = output(); expect(await main(['compile', source, '--json'], json)).toBe(0);
       expect(JSON.parse(json.lines[0])).toMatchObject({ evidence: { artifacts: [{ kind: 'zplc', sha256: createHash('sha256').update(bytes).digest('hex'), byteLength: bytes.byteLength }] } });
+    } finally { await rm(root, { recursive: true, force: true }); }
+  });
+});
+
+describe('CLI build output states the draft contract counter (CMP-052)', () => {
+  const draft = ZPLC_CONSTANTS.DRAFT_COUNTER;
+  const counterOf = (bytes: Uint8Array) => new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength).getUint32(ZPLC_CONSTANTS.DRAFT_COUNTER_OFFSET, true);
+
+  it('prints it for a single file, in the JSON summary of a workspace, and writes it in the artifact', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'zplc-cli-draft-'));
+    try {
+      const source = join(root, 'counter.ST'); const artifact = join(root, 'counter.zplc'); const built = join(root, 'demo.zplc');
+      await writeFile(source, 'PROGRAM Counter\nVAR\n Count : INT;\nEND_VAR\n Count := Count + 1;\nEND_PROGRAM');
+      const single = output(); expect(await main(['compile', source, '--output', artifact], single)).toBe(0);
+      const bytes = await readFile(artifact);
+      expect(single.lines).toHaveLength(1);
+      expect(single.lines[0]).toMatch(new RegExp(`^Compiled .*counter\\.ST \\(\\d+ bytes, contract draft ${draft}\\)$`));
+      expect(counterOf(bytes)).toBe(draft);
+
+      const workspace = output(); expect(await main(['compile', demo, '--output', built], workspace)).toBe(0);
+      expect(workspace.lines).toEqual([`compile passed (contract draft ${draft})`]);
+      expect(counterOf(await readFile(built))).toBe(draft);
+
+      const json = output(); expect(await main(['compile', demo, '--json'], json)).toBe(0);
+      expect(JSON.parse(json.lines[0]!)).toMatchObject({ ok: true, summary: { draftCounter: draft } });
+      const singleJson = output(); expect(await main(['compile', source, '--json'], singleJson)).toBe(0);
+      expect(JSON.parse(singleJson.lines[0]!)).toMatchObject({ ok: true, summary: { draftCounter: draft } });
     } finally { await rm(root, { recursive: true, force: true }); }
   });
 });

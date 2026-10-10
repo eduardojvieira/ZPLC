@@ -21,6 +21,7 @@ describe('SerialAdapter program control', () => {
     internals.sendJsonCommand = async () => ({
       board: 'rpi_pico', board_profile: 'rpi_pico/rp2040', zplc_version: '1.0.0', zephyr_version: '4.0.0',
       uptime_ms: 0, cpu_freq_mhz: 1, device_protocol_version: 1, bytecode_abi_major: 1, bytecode_abi_minor: 0,
+      draft_counter: 1,
       capabilities: { fpu: false, mpu: false, scheduler: true, max_tasks: 4 },
       memory: { work_size: 1, retain_size: 1, ipi_size: 1, opi_size: 1 },
     });

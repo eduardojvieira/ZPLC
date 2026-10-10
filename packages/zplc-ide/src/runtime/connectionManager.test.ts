@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'bun:test';
 
 import { ConnectionManager } from './connectionManager';
+import { DeviceAdmissionError } from './deviceHandshake';
 import { ZPLC_CONSTANTS } from '@zplc/compiler';
 
 function deferred<T>() {
@@ -39,17 +40,19 @@ function validSystemInfo() {
     board: 'stm32f746g_disco', board_profile: 'stm32f746g_disco/stm32f746xx',
     zplc_version: '1.0.0', zephyr_version: '4.0.0', uptime_ms: 0, cpu_freq_mhz: 216,
     device_protocol_version: 1, bytecode_abi_major: 1, bytecode_abi_minor: 0,
+    draft_counter: ZPLC_CONSTANTS.DRAFT_COUNTER,
     capabilities: { fpu: true, mpu: true, scheduler: true, max_tasks: 4 },
     memory: { work_size: 1, retain_size: 1, ipi_size: 1, opi_size: 1 },
   };
 }
 
-function validArtifact(): Uint8Array {
-  const bytes = new Uint8Array(8);
+function validArtifact(draft: number = ZPLC_CONSTANTS.DRAFT_COUNTER): Uint8Array {
+  const bytes = new Uint8Array(ZPLC_CONSTANTS.HEADER_SIZE);
   const view = new DataView(bytes.buffer);
   view.setUint32(0, ZPLC_CONSTANTS.MAGIC, true);
   view.setUint16(4, 1, true);
   view.setUint16(6, 0, true);
+  view.setUint32(ZPLC_CONSTANTS.DRAFT_COUNTER_OFFSET, draft, true);
   return bytes;
 }
 
@@ -76,6 +79,39 @@ describe('ConnectionManager lifecycle', () => {
       get: () => ++connectedChecks === 1,
     });
     await expect(manager.deployProgram(validArtifact(), 'stm32f746g_disco')).rejects.toThrow('ZPLC_DEVICE_PREFLIGHT_STALE');
+    expect(loads).toBe(0);
+  });
+
+  it('never starts a physical load for another contract draft, and says which two (CMP-052)', async () => {
+    let loads = 0;
+    const adapter = createAdapter({ connected: true, loadProgram: async () => { loads += 1; } });
+    const manager = readyManager(adapter);
+    const other = ZPLC_CONSTANTS.DRAFT_COUNTER + 2;
+
+    const built = await manager.deployProgram(validArtifact(other), 'stm32f746g_disco').catch((error: unknown) => error);
+    expect(built).toBeInstanceOf(DeviceAdmissionError);
+    expect((built as DeviceAdmissionError).code).toBe('ZPLC_DEVICE_BYTECODE_ABI_MISMATCH');
+    expect((built as DeviceAdmissionError).detail).toBe(
+      `Program was built for contract draft ${other}, this runtime is draft ${ZPLC_CONSTANTS.DRAFT_COUNTER}`,
+    );
+
+    // A board that was not reflashed after an update: its handshake carries another counter, or none.
+    for (const reported of [{ draft_counter: other }, {}] as const) {
+      const stale = createAdapter({
+        connected: true,
+        getSystemInfo: async () => {
+          // The board of an image that was not reflashed: no counter at all, or another one.
+          const withoutCounter: Record<string, unknown> = { ...validSystemInfo() };
+          delete withoutCounter.draft_counter;
+          return { ...withoutCounter, ...reported };
+        },
+        loadProgram: async () => { loads += 1; },
+      });
+      const board = await readyManager(stale).deployProgram(validArtifact(), 'stm32f746g_disco').catch((error: unknown) => error);
+      expect((board as DeviceAdmissionError).detail).toBe(
+        `Program was built for contract draft ${ZPLC_CONSTANTS.DRAFT_COUNTER}, this runtime is draft ${'draft_counter' in reported ? other : 'none'}`,
+      );
+    }
     expect(loads).toBe(0);
   });
 
