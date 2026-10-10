@@ -4,6 +4,11 @@ All notable changes are documented here.
 
 ## Unreleased
 
+- Studio shows the result of a build, a save, a deploy, a connection change and
+  a test run as a notification that opens the panel with its details, and shows a
+  long operation with progress and a **Cancel** action (IDE-021). A success goes by
+  itself after a few seconds; a failure, a warning and a cancellation stay until
+  dismissed. The messages of the Output panel are unchanged.
 - Compile, safety check, scenario tests and the candidate review run outside the
   main process and can be cancelled (IDE-012). Each request starts a worker
   process of its own (`electron/toolWorker.ts`, bundled with the Tool API); the

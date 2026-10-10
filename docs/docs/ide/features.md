@@ -88,6 +88,30 @@ If the editor, the lower panel or the toolbar throws an exception while it draws
 
 Evidence level: host. Journey 20 (a failing region does not blank the window) of `bun run test:journeys` makes each of the three regions fail in the real application, checks that the other two keep working and that Retry brings the failed one back; `packages/zplc-ide/src/components/ErrorBoundary.test.tsx` covers the region logic.
 
+## Notifications
+
+The result of a build, a save, a deploy, a connection change and a test run appears
+at the bottom right of the window as a notification. Each one says what happened and
+has **Details**, which opens the panel that holds the evidence: **Output** for a
+save, a successful build, a deploy and a connection, **Problems** for a failed
+build, **Tests** for a test run. A long operation (a build, a run of scenarios, a
+deploy, a connection) shows a progress bar while it runs, and a build and a test run
+also show **Cancel**: a cancelled build keeps no artifact, and a cancelled run
+stops its native runtime.
+
+A success goes by itself after a few seconds. A failure, a warning (for example a
+device that received an earlier build) and a cancellation stay until you dismiss
+them. The notification is a summary: every message that Studio wrote to the Output
+panel before is still there.
+
+Evidence level: host. `packages/zplc-ide/src/store/notifications.test.ts` covers the
+model (progress, the cancel action, how long each result stays, the bound on the
+list) and `src/components/NotificationsList.test.tsx` the drawing; journey 27 of
+`bun run test:journeys` saves, builds, connects, runs and cancels a long test run
+and breaks the build in the real application, and follows **Details** of each
+notification to its panel (requirement IDE-021). A deploy notification needs a
+device and is not covered by a journey.
+
 ## Editors
 
 ST is the primary language-service path. LD, FBD, and SFC open, edit, save,

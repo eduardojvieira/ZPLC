@@ -1324,4 +1324,78 @@ export const JOURNEYS: Journey[] = [
       assert(built.kind === 'built', `A build after a cancelled run should succeed: ${built.kind} ${built.message}`);
     },
   },
+
+  {
+    // IDE-021: the result of a save, a build, a connection change and a test run appears as a notification that opens the
+    // panel with its details, and a long operation shows progress with a Cancel action.
+    name: '27 Results appear as notifications that lead to their details', example: 'motor_start_stop', proves: ['IDE-021'], partly: [],
+    run: async (app, { project }) => {
+      const notification = (kind: string, status?: string) => css(`[data-notification="${kind}"]${status ? `[data-status="${status}"]` : ''}`);
+      const openDetails = css('[data-notification] [data-details]');
+      const textOf = (kind: string) => app.eval<string>(`document.querySelector('[data-notification="${kind}"]')?.innerText ?? ''`);
+      /** What every notification on screen says, for the failure message of a wait that ran out. */
+      const onScreen = () => app.eval<string>(`[...document.querySelectorAll('[data-notification]')].map((item) => item.getAttribute('data-notification') + '/' + item.getAttribute('data-status') + ': ' + item.innerText.replace(/\\s+/g, ' ')).join(' | ')`);
+      const waitFor = (description: string, kind: string, status: string, timeoutMs?: number) => app.until(description, async () => await app.visible(notification(kind, status)) || undefined, timeoutMs)
+        .catch(async (error: Error) => { throw new Error(`${error.message}; on screen: ${await onScreen()}`); });
+      const selectedPanel = () => app.eval<string | null>(`document.querySelector('[role="tab"][aria-selected="true"][id^="console-tab-"]')?.id ?? null`);
+      /** Click Details of the only notification on screen and say which panel opened. */
+      const followDetails = async (kind: string, otherTab: string) => {
+        await app.click(tab(otherTab));
+        await app.click(css(`[data-notification="${kind}"] [data-details]`), `Details of the ${kind} notification`);
+        return await app.until('a panel to open', async () => await selectedPanel() ?? undefined);
+      };
+      void openDetails;
+
+      await openFolder(app, project);
+      await openFile(app, 'src/Motor.st');
+      // A trailing comment on the last statement: valid Structured Text, so that the build below succeeds.
+      const statement = await lineWith(app, 'Reverse := FALSE;');
+      assert(statement > 0, 'Motor.st no longer has the statement Reverse := FALSE; the journey edits after it.');
+      await cursorAtEndOfLine(app, statement);
+      await app.type(EDIT);
+      await app.until('the typed text', async () => (await editorText(app)).includes(EDIT) || undefined);
+
+      // A save is a result: it names the file and leads to Output.
+      await app.click(saveButton);
+      await waitFor('the save notification', 'save', 'success');
+      assert((await textOf('save')).includes('Saved Motor.st'), `The save notification should name the file: ${await textOf('save')}`);
+      assert(await followDetails('save', 'Watch') === 'console-tab-output', 'Details of a save should open Output.');
+
+      // A build is a result too, with the project's own numbers.
+      await app.click(button('Build options'));
+      await app.click(menuItem('Compile'));
+      await waitFor('the build notification', 'build', 'success');
+      assert((await textOf('build')).includes('Build succeeded') && /\d+ bytes/.test(await textOf('build')), `The build notification should say it succeeded and how large the artifact is: ${await textOf('build')}`);
+      assert(await followDetails('build', 'Watch') === 'console-tab-output', 'Details of a successful build should open Output.');
+
+      // A connection change.
+      await app.click(button('Connect'));
+      await waitFor('the connection notification', 'connection', 'success');
+      assert((await textOf('connection')).includes('Simulator ready'), `The connection notification should say the simulator is ready: ${await textOf('connection')}`);
+
+      // A long operation shows progress and a Cancel action, and its end is a result.
+      for (const name of ['LongA', 'LongB', 'LongC']) {
+        const scenario = { schemaVersion: 1, id: name, tickMs: 10, durationMs: 99_990, events: [{ atMs: 0, set: { 'Motor.Start': true, 'Motor.Stop': false, 'Motor.EStop': false, 'Motor.Overload': false } }], expectations: [{ kind: 'AT', atMs: 0, condition: { 'Motor.Forward': false, 'Motor.Reverse': false } }] };
+        writeFileSync(join(project, 'tests', `${name}.scenario.json`), JSON.stringify(scenario));
+      }
+      await app.click(tab('Tests'));
+      await app.click(button('Run host scenarios'));
+      await app.until('the running notification with progress and Cancel', async () => await app.visible(css('[data-notification="tests"][data-status="running"] [role="progressbar"]')) && await app.visible(button('Cancel: Running host scenarios')) || undefined);
+      await app.click(button('Cancel: Running host scenarios'));
+      await waitFor('the cancelled notification', 'tests', 'cancelled', 10_000);
+      assert(await followDetails('tests', 'Watch') === 'console-tab-tests', 'Details of a test run should open Tests.');
+
+      // A failed build leads to Problems.
+      await openFile(app, 'src/Motor.st');
+      await cursorAtEndOfLine(app, await lineWith(app, 'Reverse := FALSE;'));
+      await app.press('Enter');
+      await app.type('UndefinedVariable := 1;');
+      await app.click(saveButton);
+      await app.until('the faulty file on disk', () => disk(join(project, 'src', 'Motor.st')).includes('UndefinedVariable') || undefined);
+      await app.click(button('Build options'));
+      await app.click(menuItem('Compile'));
+      await waitFor('the failed build notification', 'build', 'error');
+      assert(await followDetails('build', 'Watch') === 'console-tab-problems', 'Details of a failed build should open Problems.');
+    },
+  },
 ];

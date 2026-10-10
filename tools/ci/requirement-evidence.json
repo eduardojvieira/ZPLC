@@ -1149,6 +1149,12 @@
   "IDE-020": [
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"4 Build with an error, reach it from Problems","partial":true}
   ],
+  "IDE-021": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/components/NotificationsList.test.tsx","test":"the notification list (IDE-021)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/store/notifications.test.ts","test":"the notification model (IDE-021)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/store/notifications.test.ts","test":"the notification store (IDE-021)"},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"27 Results appear as notifications that lead to their details"}
+  ],
   "IDE-027": [
     {"kind":"unit","ref":"packages/zplc-ide/electron/ipcRegistry.test.ts","test":"toolchain inspection and firmware build (IDE-017, IDE-027)"}
   ],

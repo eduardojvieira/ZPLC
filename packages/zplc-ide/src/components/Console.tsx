@@ -33,6 +33,7 @@ import {
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { DiffEditor, type Monaco } from '@monaco-editor/react';
 import { shownProjectBridge } from '../ipc/shownProjectBridge';
+import { useNotifications, type NotificationResult } from '../store/notifications';
 import { useIDEStore } from '../store/useIDEStore';
 import type { ConsoleEntry, ConsoleTab } from '../types';
 import { TerminalTab } from './TerminalTab';
@@ -96,6 +97,18 @@ function SafetyCoverageReport({ presentation }: { presentation: WorkspaceSafetyP
 function SafetyDiagnostics({ diagnostics }: { diagnostics: WorkspaceSafetyPresentation['diagnostics'] }) {
   if (diagnostics.length === 0) return null;
   return <ul aria-label="Safety diagnostics" className="space-y-1 border-t border-[var(--color-surface-700)] pt-2 text-xs text-[var(--color-surface-200)]">{diagnostics.map((diagnostic, index) => <li key={`${diagnostic.code}-${index}`}><span className="font-mono">{diagnostic.code}</span>{diagnostic.path && <span className="text-[var(--color-surface-400)]"> · {diagnostic.path}{diagnostic.line ? `:${diagnostic.line}` : ''}{diagnostic.column ? `:${diagnostic.column}` : ''}</span>}</li>)}</ul>;
+}
+
+/** What the Tests panel concluded, as the notification of that run. */
+function workspaceTestNotification(presentation: WorkspaceTestPresentation): NotificationResult {
+  const detail = presentation.scenarioCount !== undefined ? `${presentation.scenarioCount} ${presentation.scenarioCount === 1 ? 'scenario' : 'scenarios'}` : undefined;
+  switch (presentation.kind) {
+    case 'passed': return { kind: 'tests', status: 'success', title: 'Host scenarios passed', ...(detail ? { detail } : {}), details: 'tests' };
+    case 'assertion-failed': return { kind: 'tests', status: 'error', title: 'A host scenario failed an assertion', detail: presentation.message, details: 'tests' };
+    case 'cancelled': return { kind: 'tests', status: 'cancelled', title: 'Host scenarios cancelled', details: 'tests' };
+    case 'timeout': return { kind: 'tests', status: 'error', title: 'Host scenarios timed out', details: 'tests' };
+    default: return { kind: 'tests', status: 'error', title: 'Host scenarios could not run', detail: presentation.message, details: 'tests' };
+  }
 }
 
 export function Console({ debugController }: ConsoleProps) {
@@ -333,18 +346,27 @@ export function Console({ debugController }: ConsoleProps) {
     const expectedCompilerRunId = current.compilerRunId;
     setWorkspaceTestBusy(true);
     setWorkspaceTestState('running');
+    // The run is a long operation (IDE-021): its notification shows progress and carries the same cancel as the Tests panel.
+    const notices = useNotifications.getState();
+    const operation = notices.begin({
+      kind: 'tests', title: scenarioId === undefined ? 'Running host scenarios' : `Running scenario ${scenarioId}`, details: 'tests',
+      cancel: () => { void workspaceTests.cancel().catch(() => undefined); },
+    });
     try {
       const request = { workspaceId, ...(scenarioId === undefined ? {} : { scenarioId }) };
       const result = await workspaceTests.run(request);
       const latest = useIDEStore.getState();
       if (isWorkspaceTestRunCurrent(latest, { projectSession: expectedProjectSession, compilerRunId: expectedCompilerRunId, workspaceId })) {
-        setWorkspaceTestState({ presentation: presentWorkspaceTestResult(result), projectSession: expectedProjectSession, compilerRunId: expectedCompilerRunId, workspaceId });
-      }
+        const presentation = presentWorkspaceTestResult(result);
+        setWorkspaceTestState({ presentation, projectSession: expectedProjectSession, compilerRunId: expectedCompilerRunId, workspaceId });
+        notices.finish(operation, workspaceTestNotification(presentation));
+      } else notices.dismiss(operation);
     } catch {
       const latest = useIDEStore.getState();
       if (isWorkspaceTestRunCurrent(latest, { projectSession: expectedProjectSession, compilerRunId: expectedCompilerRunId, workspaceId })) {
         setWorkspaceTestState('desktop-unavailable');
-      }
+        notices.finish(operation, { kind: 'tests', status: 'error', title: 'Host POSIX simulation is unavailable', details: 'tests' });
+      } else notices.dismiss(operation);
     } finally {
       setWorkspaceTestBusy(false);
       const latest = useIDEStore.getState();

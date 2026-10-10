@@ -88,6 +88,32 @@ Si el editor, el panel inferior o la barra de herramientas lanzan una excepción
 
 Nivel de evidencia: host. El recorrido 20 (una región que falla no deja la ventana en blanco) de `bun run test:journeys` hace fallar cada una de las tres regiones en la aplicación real, comprueba que las otras dos siguen funcionando y que Retry devuelve la región caída; `packages/zplc-ide/src/components/ErrorBoundary.test.tsx` cubre la lógica de la región.
 
+## Notificaciones
+
+El resultado de una compilación, un guardado, un despliegue, un cambio de conexión
+y una ejecución de pruebas aparece abajo a la derecha de la ventana como una
+notificación. Cada una dice qué pasó y tiene **Details**, que abre el panel con la
+evidencia: **Output** para un guardado, una compilación correcta, un despliegue y
+una conexión; **Problems** para una compilación fallida; **Tests** para una
+ejecución de pruebas. Una operación larga (una compilación, una ejecución de
+escenarios, un despliegue, una conexión) muestra una barra de progreso mientras
+corre, y una compilación y una ejecución de pruebas muestran además **Cancel**: una
+compilación cancelada no conserva ningún artefacto, y una ejecución cancelada
+detiene su runtime nativo.
+
+Un éxito se va solo tras unos segundos. Un fallo, una advertencia (por ejemplo un
+dispositivo que recibió una compilación anterior) y una cancelación permanecen
+hasta que usted las descarta. La notificación es un resumen: todos los mensajes que
+Studio escribía antes en el panel Output siguen ahí.
+
+Nivel de evidencia: host. `packages/zplc-ide/src/store/notifications.test.ts` cubre
+el modelo (progreso, la acción de cancelar, cuánto permanece cada resultado, el
+límite de la lista) y `src/components/NotificationsList.test.tsx` el dibujo; el
+recorrido 27 de `bun run test:journeys` guarda, compila, conecta, ejecuta y cancela
+una ejecución larga de pruebas y rompe la compilación en la aplicación real, y
+sigue **Details** de cada notificación hasta su panel (requisito IDE-021). Una
+notificación de despliegue necesita un dispositivo y no la cubre ningún recorrido.
+
 ## Editores
 
 ST es la vía principal con servicio de lenguaje. LD, FBD y SFC abren, editan,
