@@ -116,6 +116,8 @@ export interface BreakpointLocation {
     pc: number;
     /** True if this line is a valid breakpoint target */
     valid: boolean;
+    /** The element of the source the author edited that execution stops at, for a source translated by a front end (LNG-004). */
+    element?: string;
 }
 
 // ============================================================================

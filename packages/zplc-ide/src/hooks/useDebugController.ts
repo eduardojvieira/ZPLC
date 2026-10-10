@@ -30,6 +30,7 @@ import { connectionManager } from '../runtime/connectionManager';
 import type { DebugMap } from '../compiler';
 import type { SystemInfo } from '../runtime/serialAdapter';
 import { findVariable } from '../compiler';
+import { reconcileElementBreakpoints } from '../editors/elementBreakpoints';
 import type { UploadTraceEvent } from '../runtime/uploadTrace';
 import {
   resolveExecutionLocation,
@@ -1033,6 +1034,16 @@ export function useDebugController(): DebugController {
     setPolling,
     updateLiveValues,
   ]);
+
+  // =========================================================================
+  // Breakpoints on the elements of a diagram
+  // =========================================================================
+
+  // A build moves the generated lines that the rungs, blocks and steps stand on: the lines of their breakpoints are worked out
+  // again from the new debug map, and the sync below arms them (LNG-004).
+  useEffect(() => {
+    reconcileElementBreakpoints();
+  }, [debugMap]);
 
   // =========================================================================
   // Sync Breakpoints to Adapter

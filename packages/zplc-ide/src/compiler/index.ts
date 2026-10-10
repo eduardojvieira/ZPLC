@@ -80,6 +80,7 @@ import type {
     CommunicationTagConfig,
 } from '../types/index.ts';
 import { getCompilerMemoryProfile } from '../config/boardProfiles.ts';
+import { annotateDebugMapElements } from './debugElements.ts';
 import {
     ElementError,
     describeElement,
@@ -615,6 +616,8 @@ export function compileMultiTaskProject(
         const result = compileCoreMultiTaskProject(coreConfig, coreSources, {
             memoryProfile: getCompilerMemoryProfile(config.target?.board),
         });
+        // the map names what the author edited, not the generated lines (LNG-004)
+        annotateDebugMapElements(result.debugMap, translated);
         // a graphical source has no lines: its warnings would point into the generated Structured Text
         return { ...result, warnings: result.warnings.filter((warning) => !warning.sourceRef || !visualSourceRefs.has(warning.sourceRef)) };
     } catch (error) {

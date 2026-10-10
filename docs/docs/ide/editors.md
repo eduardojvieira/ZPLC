@@ -68,6 +68,23 @@ Problems panel selects it when you activate the problem:
 The line and column of a diagram diagnostic stay those of the generated Structured Text, and the message says so. A
 diagram that is not valid yields one diagnostic for each element that is wrong, not one for the whole file.
 
+## Breakpoints on a diagram
+
+After a build, a breakpoint can be set on the element of the diagram or the IL line you edited (LNG-004); the debug
+map relates each instruction range to that element, and the runtime stops at the first instruction of it.
+
+| Language | Where | How |
+| --- | --- | --- |
+| IL | The IL line. The map states lines of the IL source, as a text editor expects. | The gutter of the editor. |
+| LD | The rung: the first statement of its code. | The dot at the left of the rung, or F9 on the selected rung. |
+| FBD | The block: the first statement it generates. A constant or a variable read has none. | F9 on the selected block. |
+| SFC | A step stops where a transition enters it; a transition stops where it fires. A step that no transition enters has no place to stop. | F9 on the selected step or transition. |
+
+A breakpoint is kept on the element, not on a generated line, so it follows its rung, block or step when the diagram
+changes and is built again; one whose element was deleted is forgotten. The element that the paused program is at is
+outlined in yellow. Before a build there is nothing to stop at, so the dot is disabled. The program counters are the
+ones the runtime of the simulation and of a board take; stopping on a board has not been checked here.
+
 ## Compile path
 
 Visual models are validated and transpiled before canonical compilation. Shared

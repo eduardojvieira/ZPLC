@@ -27,7 +27,8 @@ import { copyLDRungFragment, pasteLDRungFragment, type LDClipboardFragment } fro
 import { useIDEStore } from '../../store/useIDEStore';
 import { useDebugValues } from '../../hooks/useDebugValue';
 import { useElementSelection } from '../elementSelection';
-import { parseElement, type SourceElementId } from '../../models/sourceElements';
+import { useElementBreakpoints } from '../elementBreakpoints';
+import { parseElement, rungElement, type SourceElementId } from '../../models/sourceElements';
 
 // =============================================================================
 // Props
@@ -178,6 +179,8 @@ export default function LDEditor({ model, onChange, readOnly = false }: LDEditor
 
   // Get debug mode from store
   const debugMode = useIDEStore((state) => state.debug.mode);
+  // Breakpoints on rungs: execution stops at the first statement of the rung's code (LNG-004)
+  const breakpoints = useElementBreakpoints();
 
   // Ensure all rungs are grid-based
   const normalizedModel = useMemo<LDModel>(() => ({
@@ -435,6 +438,12 @@ export default function LDEditor({ model, onChange, readOnly = false }: LDEditor
       setSelectedRungId(copiedRung?.id ?? null);
       return;
     }
+    if (e.key === 'F9') {
+      if (!selectedRungId) return;
+      breakpoints.toggle(rungElement(selectedRungId));
+      e.preventDefault();
+      return;
+    }
     if (e.key === 'Delete' || e.key === 'Backspace') {
       if (selectedElement && selectedRungId && !readOnly && onChange) {
         const rung = normalizedModel.rungs.find(r => r.id === selectedRungId);
@@ -452,7 +461,7 @@ export default function LDEditor({ model, onChange, readOnly = false }: LDEditor
       setSelectedRungId(null);
       e.preventDefault();
     }
-  }, [selectedElement, selectedRungId, normalizedModel, handleRungChange, readOnly, onChange]);
+  }, [selectedElement, selectedRungId, normalizedModel, handleRungChange, readOnly, onChange, breakpoints]);
 
   return (
     <div
@@ -509,8 +518,32 @@ export default function LDEditor({ model, onChange, readOnly = false }: LDEditor
             </div>
           ) : (
             <div className="space-y-4">
-              {normalizedModel.rungs.map((rung, idx) => (
-                <div key={rung.id} className="relative group" data-ld-rung-id={rung.id}>
+              {normalizedModel.rungs.map((rung, idx) => {
+                const at = rungElement(rung.id);
+                const paused = breakpoints.pausedAt !== undefined && (breakpoints.pausedAt === at || breakpoints.pausedAt.startsWith(`${at}/`));
+                const armed = breakpoints.isSet(at);
+                const settable = breakpoints.canSet(at);
+                return (
+                <div key={rung.id} className={`relative group${paused ? ' ring-2 ring-[var(--color-accent-yellow)] rounded' : ''}`} data-ld-rung-id={rung.id}>
+                  <button
+                    type="button"
+                    data-breakpoint-rung={rung.id}
+                    aria-pressed={armed}
+                    aria-label={`Breakpoint on rung ${rung.number}`}
+                    title={!breakpoints.built ? 'Build the project to set a breakpoint on this rung'
+                      : !settable ? 'This rung has no statement to stop at'
+                        : armed && breakpoints.inactiveReason ? `Breakpoint on rung ${rung.number} is not active: ${breakpoints.inactiveReason}`
+                          : `Toggle the breakpoint on rung ${rung.number} (F9 on the selected rung)`}
+                    disabled={!settable && !armed}
+                    onClick={() => breakpoints.toggle(at)}
+                    className={`absolute -left-3 top-2 z-10 h-3 w-3 rounded-full border transition-opacity disabled:opacity-30 ${
+                      armed
+                        ? breakpoints.inactiveReason
+                          ? 'border-[var(--color-surface-400)] bg-transparent'
+                          : 'border-[var(--color-accent-red)] bg-[var(--color-accent-red)]'
+                        : 'border-[var(--color-surface-500)] bg-transparent opacity-60 hover:opacity-100'
+                    }`}
+                  />
                   <LDRungGrid
                     rung={rung}
                     onChange={(updated) => handleRungChange(rung.id, updated)}
@@ -567,7 +600,8 @@ export default function LDEditor({ model, onChange, readOnly = false }: LDEditor
                     </div>
                   )}
                 </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>

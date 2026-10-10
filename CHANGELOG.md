@@ -4,6 +4,15 @@ All notable changes are documented here.
 
 ## Unreleased
 
+- A breakpoint can be set on an IL line, a Ladder rung, an FBD block and an SFC step or
+  transition, and the runtime stops there (LNG-004). The debug map relates each instruction
+  range to the element of the source that was edited (`element` on a source range and on a
+  breakpoint location): the lines of an IL file are the IL lines, those of a diagram stay the
+  generated lines and carry the element, a step is entered and a transition fires at the
+  statement nested in the test of the chart. The breakpoints of a diagram are kept on the
+  elements and worked out again from the debug map of each build, so they follow their
+  rung, block or step when the diagram changes. Executed on the native runtime for IL, LD,
+  FBD and SFC; not checked on a board.
 - A diagnostic of an IL, LD, FBD or SFC file names the element it is about (LNG-003,
   LNG-026): an IL line, a rung and its cell, a block or a wire, a step, the condition of
   a transition, the body of an action. Each element that is wrong is its own diagnostic

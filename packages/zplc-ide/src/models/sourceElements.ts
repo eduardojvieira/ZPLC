@@ -11,6 +11,8 @@
  *   FBD   block:and_1                  a block
  *         connection:w3                a wire
  *   SFC   step:s1  transition:t1       a step, a transition (and its condition)
+ *         step:s1/enter                the statement that makes the step active when a transition enters it
+ *         transition:t1/fire           the statement that deactivates the steps a transition leaves when it fires
  *         action:a1                    an action (and its body)
  *
  * Ids written by the author are percent-encoded where they hold `:`, `/` or `,`, so the form is unambiguous.
@@ -25,6 +27,8 @@ export interface ParsedElement {
   kind: 'line' | 'rung' | 'cell' | 'element' | 'block' | 'connection' | 'step' | 'transition' | 'action';
   /** The id the file gives it; the number of the line for an IL line. */
   id: string;
+  /** For a step or a transition: the statement of the chart that the id names (`enter`, `fire`), when it is not the whole. */
+  role?: 'enter' | 'fire';
   /** For a cell or an element of a rung: the rung. */
   rung?: string;
   row?: number;
@@ -59,6 +63,9 @@ export function parseElement(element: SourceElementId): ParsedElement | undefine
   const [kind, raw] = first;
   const id = decodeURIComponent(raw);
   if (tail === undefined) return { language: LANGUAGE_OF[kind]!, kind: kind as ParsedElement['kind'], id };
+  if ((kind === 'step' && tail === 'enter') || (kind === 'transition' && tail === 'fire')) {
+    return { language: 'SFC', kind, id, role: tail };
+  }
   const second = split(tail);
   if (kind !== 'rung' || !second) return undefined;
   if (second[0] === 'cell') {

@@ -235,7 +235,8 @@ export function transpileSFCToST(input: SFCModel): TranspileResult {
     }
     for (const transition of model.transitions) {
       for (const step of enters(transition).map((id) => stepById.get(id)!)) {
-        lines.push(`IF _F_${transition.id} THEN X_${step.id} := TRUE; END_IF;`, transitionElement(transition.id));
+        // entering a step is the step's: a breakpoint on the step stops when a transition enters it (LNG-004)
+        lines.push(`IF _F_${transition.id} THEN X_${step.id} := TRUE; END_IF;`, stepElement(step.id));
       }
     }
     lines.push('');

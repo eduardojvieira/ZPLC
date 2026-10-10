@@ -42,7 +42,9 @@ import SFCToolbox from './SFCToolbox';
 import { useIDEStore } from '../../store/useIDEStore';
 import { useDebugValues } from '../../hooks/useDebugValue';
 import { useElementSelection } from '../elementSelection';
-import { parseElement, type SourceElementId } from '../../models/sourceElements';
+import { useElementBreakpoints } from '../elementBreakpoints';
+import { markBreakpointNodes } from '../breakpointMarks';
+import { parseElement, stepElement, transitionElement, type SourceElementId } from '../../models/sourceElements';
 
 // =============================================================================
 // Props
@@ -319,6 +321,16 @@ function SFCEditorInner({
     replaceEdges(nextEdges);
   }, [debugActive, activeSteps]);
 
+  // Breakpoints on steps and transitions: a step stops where a transition enters it, a transition where it fires (LNG-004)
+  const breakpoints = useElementBreakpoints();
+  const elementOfNode = useCallback((node: Node): SourceElementId | undefined => (
+    node.type === 'step' ? stepElement(node.id) : node.type === 'transition' ? transitionElement(node.id) : undefined
+  ), []);
+  const markedNodes = useMemo(
+    () => markBreakpointNodes(nodes, elementOfNode, breakpoints),
+    [nodes, elementOfNode, breakpoints],
+  );
+
   // Activating a problem of this chart selects the step or the transition it is about; an action is shown on the first
   // step that uses it, because the editor draws the actions inside the steps (LNG-003, LNG-026)
   const selectElement = useCallback((element: SourceElementId) => {
@@ -477,6 +489,14 @@ function SFCEditorInner({
   }, []);
 
   const onKeyDown = useCallback((event: ReactKeyboardEvent<HTMLDivElement>) => {
+    if (event.key === 'F9') {
+      const selected = nodesRef.current.filter((node) => node.selected);
+      const elements = selected.map(elementOfNode).filter((element): element is SourceElementId => element !== undefined);
+      if (elements.length === 0) return;
+      for (const element of elements) breakpoints.toggle(element);
+      event.preventDefault();
+      return;
+    }
     if (readOnly || event.altKey || event.shiftKey || event.ctrlKey === event.metaKey) return;
     const target = event.target as HTMLElement;
     if (target.closest('input, textarea, select, [contenteditable="true"]')) return;
@@ -501,7 +521,7 @@ function SFCEditorInner({
     const nextEdges = [...edgesRef.current.map((edge) => ({ ...edge, selected: false })), ...pasted.edges.map((edge) => ({ ...edge, selected: false, style: { stroke: 'var(--visual-wire)', strokeWidth: 2 }, markerEnd: { type: MarkerType.ArrowClosed, width: 10, height: 10 } }))];
     event.preventDefault();
     commitGraph(nextNodes, nextEdges);
-  }, [commitGraph, debugActive, model, readOnly, stepDebugInfo, transitionDebugInfo]);
+  }, [breakpoints, commitGraph, debugActive, elementOfNode, model, readOnly, stepDebugInfo, transitionDebugInfo]);
 
   return (
     <div 
@@ -513,7 +533,7 @@ function SFCEditorInner({
       onKeyDown={onKeyDown}
     >
       <ReactFlow
-        nodes={nodes}
+        nodes={markedNodes}
         edges={edges}
         onNodesChange={handleNodesChange}
         onEdgesChange={handleEdgesChange}

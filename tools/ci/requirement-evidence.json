@@ -809,6 +809,13 @@
     {"kind":"unit","ref":"packages/zplc-ide/src/mcp/server.test.ts","test":"LNG-003 carries the element a diagnostic is about, and only an element"}
   ],
   "LNG-004": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/compiler/debugElements.test.ts","test":"LNG-004 the debug map of a Ladder diagram names rungs and cells"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/compiler/debugElements.test.ts","test":"LNG-004 the debug map of an FBD diagram names blocks"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/compiler/debugElements.test.ts","test":"LNG-004 the debug map of an IL program names IL lines"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/compiler/debugElements.test.ts","test":"LNG-004 the debug map of an SFC chart names steps and transitions"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/compiler/debugElementsRuntime.test.ts","test":"LNG-004 a breakpoint on an element stops the VM at the element"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/editors/elementBreakpoints.test.ts","test":"LNG-004 a breakpoint on an IL line is the line of the IL source"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/editors/elementBreakpoints.test.ts","test":"LNG-004 a breakpoint on an element is armed at the element and follows it from build to build"},
     {"kind":"unit","ref":"packages/zplc-ide/src/transpiler/sourceMap.test.ts","test":"LNG-004 and LNG-026 the SFC source map"},
     {"kind":"unit","ref":"packages/zplc-ide/src/transpiler/sourceMap.test.ts","test":"LNG-004 the FBD source map"},
     {"kind":"unit","ref":"packages/zplc-ide/src/transpiler/sourceMap.test.ts","test":"LNG-004 the IL source map"},

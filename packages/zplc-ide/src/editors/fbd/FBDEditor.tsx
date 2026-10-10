@@ -43,7 +43,9 @@ import { useIDEStore } from '../../store/useIDEStore';
 import { findProjectBlock } from '../../models/projectBlocks';
 import { useProjectBlocks } from '../useProjectBlocks';
 import { useElementSelection } from '../elementSelection';
-import { parseElement, type SourceElementId } from '../../models/sourceElements';
+import { useElementBreakpoints } from '../elementBreakpoints';
+import { markBreakpointNodes } from '../breakpointMarks';
+import { blockElement, parseElement, type SourceElementId } from '../../models/sourceElements';
 
 // =============================================================================
 // Props
@@ -226,6 +228,13 @@ function FBDEditorInner({
     replaceEdges(nextEdges);
   }, [debugActive, liveValues]);
 
+  // Breakpoints on blocks: execution stops at the first statement the block generates (LNG-004)
+  const breakpoints = useElementBreakpoints();
+  const markedNodes = useMemo(
+    () => markBreakpointNodes(nodes, (node) => blockElement(node.id), breakpoints),
+    [nodes, breakpoints],
+  );
+
   // Activating a problem of this diagram selects the block or the wire it is about, and brings it into view (LNG-003)
   const selectElement = useCallback((element: SourceElementId) => {
     const parsed = parseElement(element);
@@ -363,6 +372,13 @@ function FBDEditorInner({
   }, []);
 
   const onKeyDown = useCallback((event: ReactKeyboardEvent<HTMLDivElement>) => {
+    if (event.key === 'F9') {
+      const selected = nodesRef.current.filter((node) => node.selected);
+      if (selected.length === 0) return;
+      for (const node of selected) breakpoints.toggle(blockElement(node.id));
+      event.preventDefault();
+      return;
+    }
     if (readOnly || event.altKey || event.shiftKey || event.ctrlKey === event.metaKey) return;
     const target = event.target as HTMLElement;
     if (target.closest('input, textarea, select, [contenteditable="true"]')) return;
@@ -390,7 +406,7 @@ function FBDEditorInner({
     const nextEdges = [...edgesRef.current.map((edge) => ({ ...edge, selected: false })), ...connectionsToEdges(addedConnections, debugActive, liveValues)];
     event.preventDefault();
     commitGraph(nextNodes, nextEdges);
-  }, [commitGraph, debugActive, liveValues, model, onOpenMonitor, readOnly]);
+  }, [breakpoints, commitGraph, debugActive, liveValues, model, onOpenMonitor, readOnly]);
 
   return (
     <div
@@ -403,7 +419,7 @@ function FBDEditorInner({
       onKeyDown={onKeyDown}
     >
       <ReactFlow
-        nodes={nodes}
+        nodes={markedNodes}
         edges={edges}
         onNodesChange={handleNodesChange}
         onEdgesChange={handleEdgesChange}
