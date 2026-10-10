@@ -724,8 +724,10 @@ ZTEST(zplc_scheduler_admission, test_step_orders_batch_and_commits_once) {
   zassert_equal(zplc_sched_load(program, size), 3, "load ordered batch");
   zassert_ok(zplc_sched_get_stats(&before), "read batch baseline");
   zassert_ok(zplc_sched_step(), "step ordered batch");
-  zassert_equal(zplc_opi_read8(0U), 0U,
-                "single-step pause returns the process image to safe output");
+  /* RT-017: a step keeps the committed image and leaves the pins safe.
+   * The last ordered task wrote 0x11. */
+  zassert_equal(zplc_opi_read8(0U), 0x11U,
+                "single-step pause keeps the committed process image");
   zassert_ok(zplc_sched_get_stats(&after), "read batch result");
   zassert_equal(after.input_latch_count - before.input_latch_count, 1U,
                 "one process-image input latch");
@@ -757,8 +759,8 @@ ZTEST(zplc_scheduler_admission,
   zassert_ok(zplc_sched_step(), "step shared ordered artifact");
   zassert_equal(zplc_mem_get_region(ZPLC_MEM_WORK_BASE)[0], 0x11U,
                 "priority then task ID determines the final process image");
-  zassert_equal(zplc_opi_read8(0U), 0U,
-                "single-step teardown returns OPI to its safe state");
+  zassert_equal(zplc_opi_read8(0U), 0x11U,
+                "single-step pause keeps the ordered OPI like the POSIX host");
   zassert_ok(zplc_sched_get_stats(&after), "read ordered result");
   zassert_equal(after.input_latch_count - before.input_latch_count, 1U,
                 "one input latch for the shared ordered artifact");
@@ -1088,10 +1090,15 @@ ZTEST(zplc_scheduler_admission,
   zassert_equal(zplc_sched_load(program, size), 1, "load pause task");
   zassert_ok(zplc_sched_start(), "start pause task");
   k_msleep(10);
+  for (int waited_ms = 0; zplc_opi_read8(0U) != 0x5AU && waited_ms < 200;
+       waited_ms++) {
+    k_msleep(1);
+  }
   feeds_before = zplc_sched_test_watchdog_feed_count();
   disarms_before = zplc_sched_test_watchdog_disarm_count();
   zassert_ok(zplc_sched_pause(), "pause applies safe state");
-  zassert_equal(zplc_opi_read8(0U), 0U, "pause applies safe OPI");
+  /* RT-017: the physical outputs are safe; the image is not the safe state. */
+  zassert_equal(zplc_opi_read8(0U), 0x5AU, "pause keeps the output image");
   zassert_true(zplc_sched_test_watchdog_disarm_count() > disarms_before,
                "pause disarms hardware watchdog");
   k_msleep(10);

@@ -38,9 +38,11 @@ El subsistema `dbg` proporciona potestad cruda hacia el ruteo lógico asíncrono
 - `zplc dbg force clear_all` - Destruye todos los punteros virtualmente by-paseados del microcontrolador.
 
 ### Controles de Tiempo Real y Frecuencia Ejecutiva
-- `zplc dbg pause` - Interrumpe agresivamente la máquina secuencial paralizando cíclicamente tu proceso (Soft-Stop).
-- `zplc dbg resume` - Retorna su marcha cíclica normal.
-- `zplc dbg step` - Completa íntegramente exactamente una única pasada (scan cycle) lógica y retorna al freno (Stepping mode).
+- `zplc dbg pause` - Pausa el scheduler entre scans. Las salidas físicas pasan a su estado seguro; la imagen de salidas y la tabla de forzados se conservan.
+- `zplc dbg resume` - Reanuda. Un scan detenido en un breakpoint continúa desde donde se detuvo, y el primer commit de scan vuelve a energizar las salidas desde la imagen conservada.
+- `zplc dbg step` - Termina el scan detenido en un breakpoint, o ejecuta un scan completo, y se detiene en el siguiente límite de ciclo o en el siguiente breakpoint. La imagen muestra el scan ejecutado; las salidas quedan seguras.
+
+`zplc stop` no es una pausa: además pone a cero la imagen de salidas, borra la tabla de forzados y devuelve cada tarea a su punto de entrada. Ver [Pausa, reanudación, paso y parada](../runtime/scheduler.md#pausa-reanudación-paso-y-parada).
 
 ### Introspección Abstracta de Memoria
 - `zplc dbg info` - Despliega los parámetros y vigor total del estado base la MV, asignaciones actuales de tablas y contadores.
