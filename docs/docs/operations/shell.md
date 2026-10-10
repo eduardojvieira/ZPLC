@@ -30,7 +30,7 @@ Start every command with `zplc`.
 - `zplc start` - Starts the scheduler.
 - `zplc stop` - Stops the scheduler.
 - `zplc status` - Shows the runtime state.
-- `zplc reset` - Resets the virtual machine.
+- `zplc reset` - Reloads the loaded program from the program store and leaves the scheduler stopped. The store is the only resident copy of the program, so an upload in progress is cancelled. With no program loaded it only stops the scheduler and clears its tasks.
 - `zplc version` - Shows the version.
 
 ---
@@ -64,6 +64,11 @@ The `dbg` commands give you direct access to the execution state, memory and bre
 - `zplc dbg poke <addr> <value>` - Writes a value to a memory address.
 - `zplc dbg mem <ipi|opi|work|retain> [offset]` - Dumps one memory region to the console, starting at the optional offset.
 - `zplc dbg watch <addr> [type]` - Not implemented. The command only prints a message; use `mpeek`, or the Watch tab in Studio.
+
+Reads (`mpeek`, `mem`, `info`) come from the snapshot the scan published at its last commit, so a value is whole and
+from one scan, and a read never waits for a scan. A `poke` is queued and applied at the input latch of the next scan
+through the force-aware interface: a forced address keeps its forced value. While the runtime is stopped there is no
+scan and the write is applied at once.
 
 ### Ticks, Tasks and Timers
 - `zplc dbg ticks` - Prints the system tick count in milliseconds.
@@ -153,5 +158,5 @@ ZPLC can synchronize the clock over SNTP.
 
 These commands are available when the firmware is built with `CONFIG_ZPLC_SCHEDULER`.
 
-- `zplc sys info` - Shows the system information, including build and hardware details. `--json` also reports the `draft_counter` of the image; a program built for another draft is refused (see [Contributing](../contributing/index.md#draft-contract-counter)).
+- `zplc sys info` - Shows the system information, including build and hardware details. `--json` also reports the `draft_counter` of the image and, under `memory`, `code_size` and `max_artifact_size`, the largest program the board accepts (`CONFIG_ZPLC_CODE_SIZE_MAX`); a program built for another draft is refused (see [Contributing](../contributing/index.md#draft-contract-counter)).
 - `zplc sys reboot` - Reboots the board with a software reset.

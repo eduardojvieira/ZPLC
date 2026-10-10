@@ -30,7 +30,7 @@ Inicie cada comando con `zplc`.
 - `zplc start` - Inicia el planificador.
 - `zplc stop` - Detiene el planificador.
 - `zplc status` - Muestra el estado del runtime.
-- `zplc reset` - Reinicia la máquina virtual.
+- `zplc reset` - Recarga el programa cargado desde el program store y deja el scheduler detenido. El store es la única copia residente del programa, así que una carga en curso se cancela. Sin programa cargado solo detiene el scheduler y limpia sus tareas.
 - `zplc version` - Muestra la versión.
 
 ---
@@ -64,6 +64,11 @@ Los comandos `dbg` dan acceso directo al estado de ejecución, a la memoria y a 
 - `zplc dbg poke <addr> <value>` - Escribe un valor en una dirección de memoria.
 - `zplc dbg mem <ipi|opi|work|retain> [offset]` - Vuelca una región de memoria en la consola, a partir del offset opcional.
 - `zplc dbg watch <addr> [type]` - No implementado. El comando solo imprime un mensaje; use `mpeek` o la pestaña Watch de Studio.
+
+Las lecturas (`mpeek`, `mem`, `info`) salen del snapshot que el scan publicó en su último commit, de modo que un
+valor es entero y de un solo scan, y una lectura nunca espera a un scan. Un `poke` se encola y se aplica en el latch
+de entradas del siguiente scan por la interfaz que respeta los forces: una dirección forzada conserva su valor
+forzado. Mientras el runtime está detenido no hay scan y la escritura se aplica de inmediato.
 
 ### Ticks, tareas y temporizadores
 - `zplc dbg ticks` - Imprime el conteo de ticks del sistema, en milisegundos.
@@ -153,5 +158,5 @@ ZPLC puede sincronizar el reloj mediante SNTP.
 
 Estos comandos están disponibles cuando el firmware se compila con `CONFIG_ZPLC_SCHEDULER`.
 
-- `zplc sys info` - Muestra la información del sistema, incluidos datos de la compilación y del hardware. Con `--json` informa también el `draft_counter` de la imagen; un programa construido para otro borrador se rechaza (ver [Contribuir](../contributing/index.md#contador-de-borrador-del-contrato)).
+- `zplc sys info` - Muestra la información del sistema, incluidos datos de la compilación y del hardware. Con `--json` informa también el `draft_counter` de la imagen y, en `memory`, `code_size` y `max_artifact_size`, el mayor programa que acepta la placa (`CONFIG_ZPLC_CODE_SIZE_MAX`); un programa construido para otro borrador se rechaza (ver [Contribuir](../contributing/index.md#contador-de-borrador-del-contrato)).
 - `zplc sys reboot` - Reinicia la placa con un reinicio por software.

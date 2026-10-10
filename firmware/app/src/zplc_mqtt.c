@@ -34,6 +34,7 @@
 #include <zephyr/net/tls_credentials.h>
 #include <zephyr/net/websocket.h>
 #include <zplc_core.h>
+#include <zplc_exchange.h>
 #include <zplc_hal.h>
 #include <zplc_isa.h>
 
@@ -682,37 +683,33 @@ static int encode_sparkplug_payload(const zplc_tag_entry_t *tag,
     return -1;
   }
 
-  zplc_pi_lock();
+  /* The value comes from the snapshot the scan published at its last commit (RT-010): the tag is read whole,
+   * between two scans, and the read never waits for one. Its extent is checked by the exchange against the
+   * regions of PLC memory (RT-001). */
+  uint8_t raw[4] = {0U, 0U, 0U, 0U};
+  uint16_t value_size = 0U;
+  bool have_value = false;
 
-  uint16_t base = tag->var_addr & 0xF000U;
-  uint16_t offset = tag->var_addr & 0x0FFFU;
-
-  /* Normalise %QX/%MX region aliases */
-  if (base == 0x3000U) {
-    base = 0x2000U;
-  }
-
-  uint8_t *region = zplc_mem_get_region(base);
-
-  /* Determine the size of the resolved region for bounds validation */
-  uint32_t region_size;
-  switch (base) {
-  case ZPLC_MEM_IPI_BASE:
-    region_size = ZPLC_MEM_IPI_SIZE;
+  switch (tag->var_type) {
+  case ZPLC_TYPE_BOOL:
+    value_size = 1U;
     break;
-  case ZPLC_MEM_OPI_BASE:
-    region_size = ZPLC_MEM_OPI_SIZE;
+  case ZPLC_TYPE_INT:
+  case ZPLC_TYPE_UINT:
+  case ZPLC_TYPE_WORD:
+    value_size = 2U;
     break;
-  case ZPLC_MEM_WORK_BASE:
-    region_size = ZPLC_MEM_WORK_SIZE;
-    break;
-  case ZPLC_MEM_RETAIN_BASE:
-    region_size = ZPLC_MEM_RETAIN_SIZE;
+  case ZPLC_TYPE_REAL:
+    value_size = 4U;
     break;
   default:
-    LOG_ERR("Unknown memory region base 0x%04x", base);
-    zplc_pi_unlock();
-    return -1;
+    break;
+  }
+  if (value_size != 0U) {
+    have_value = zplc_exchange_read(tag->var_addr, raw, value_size) == 0;
+    if (!have_value) {
+      LOG_ERR("Tag %04x out of bounds", tag->var_addr);
+    }
   }
 
   /* Use the shared file-scope payload workspace (single MQTT thread, no
@@ -724,7 +721,7 @@ static int encode_sparkplug_payload(const zplc_tag_entry_t *tag,
   payload->seq = (uint64_t)s_spb_seq;
   s_spb_seq = (s_spb_seq + 1U) % SPB_SEQ_MAX;
 
-  if (region) {
+  {
     payload->metrics_count = 1U;
     org_eclipse_tahu_protobuf_Metric *m = &payload->metrics[0];
 
@@ -734,55 +731,43 @@ static int encode_sparkplug_payload(const zplc_tag_entry_t *tag,
     switch (tag->var_type) {
 
     case ZPLC_TYPE_BOOL:
-      /* Single byte — offset must be within region */
-      if ((uint32_t)offset + 1U > region_size) {
-        LOG_ERR("BOOL offset %u out of bounds", offset);
-        region = NULL;
+      if (!have_value) {
         break;
       }
       m->datatype = 11U; /* Sparkplug DataType_Boolean */
       m->which_value = org_eclipse_tahu_protobuf_Metric_boolean_value_tag;
-      m->value.boolean_value = (region[offset] != 0U);
+      m->value.boolean_value = (raw[0] != 0U);
       break;
 
     case ZPLC_TYPE_INT:
     case ZPLC_TYPE_UINT:
     case ZPLC_TYPE_WORD:
-      /* Two bytes — explicit bounds before read */
-      if ((uint32_t)offset + 2U > region_size) {
-        LOG_ERR("INT/WORD offset %u out of bounds", offset);
-        region = NULL;
+      if (!have_value) {
         break;
       }
       {
-        uint16_t raw =
-            (uint16_t)region[offset] | ((uint16_t)region[offset + 1U] << 8U);
+        uint16_t word = (uint16_t)raw[0] | ((uint16_t)raw[1] << 8U);
         m->datatype = 5U; /* Sparkplug DataType_Int32 */
         m->which_value = org_eclipse_tahu_protobuf_Metric_int_value_tag;
         /* Preserve sign for ZPLC_TYPE_INT */
         if (tag->var_type == ZPLC_TYPE_INT) {
-          m->value.int_value = (int32_t)(int16_t)raw;
+          m->value.int_value = (int32_t)(int16_t)word;
         } else {
-          m->value.int_value = (int32_t)raw;
+          m->value.int_value = (int32_t)word;
         }
       }
       break;
 
     case ZPLC_TYPE_REAL:
-      /* Four bytes */
-      if ((uint32_t)offset + 4U > region_size) {
-        LOG_ERR("REAL offset %u out of bounds", offset);
-        region = NULL;
+      if (!have_value) {
         break;
       }
       {
-        uint32_t raw = (uint32_t)region[offset] |
-                       ((uint32_t)region[offset + 1U] << 8U) |
-                       ((uint32_t)region[offset + 2U] << 16U) |
-                       ((uint32_t)region[offset + 3U] << 24U);
+        uint32_t bits = (uint32_t)raw[0] | ((uint32_t)raw[1] << 8U) |
+                        ((uint32_t)raw[2] << 16U) | ((uint32_t)raw[3] << 24U);
         float fval;
         /* Type-punning via memcpy — the only safe way in C99 */
-        memcpy(&fval, &raw, sizeof(float));
+        memcpy(&fval, &bits, sizeof(float));
         m->datatype = 9U; /* Sparkplug DataType_Float */
         m->which_value = org_eclipse_tahu_protobuf_Metric_float_value_tag;
         m->value.float_value = fval;
@@ -796,10 +781,8 @@ static int encode_sparkplug_payload(const zplc_tag_entry_t *tag,
     }
   }
 
-  zplc_pi_unlock();
-
-  if (!region && !payload->metrics[0].is_null) {
-    /* Region was invalidated by a bounds-check failure above */
+  if (value_size != 0U && !have_value) {
+    /* The extent was not inside PLC memory */
     payload->metrics[0].is_null = true;
   }
 
@@ -1171,16 +1154,34 @@ static int publish_ddata(struct mqtt_client *client) {
   }
 }
 
+/* Reads one tag of a telemetry payload from the snapshot. The caller holds the exchange read lock, so every tag of
+ * the payload is of one scan (RT-010). */
+static int read_tag_value(const zplc_tag_entry_t *tag, uint8_t raw[4]) {
+  uint16_t size;
+
+  switch (tag->var_type) {
+  case ZPLC_TYPE_BOOL:
+    size = 1U;
+    break;
+  case ZPLC_TYPE_INT:
+  case ZPLC_TYPE_UINT:
+  case ZPLC_TYPE_WORD:
+    size = 2U;
+    break;
+  case ZPLC_TYPE_REAL:
+    size = 4U;
+    break;
+  default:
+    return 0; /* published as null; nothing to read */
+  }
+  return zplc_exchange_read_locked(tag->var_addr, raw, size) == 0 ? 0 : -EINVAL;
+}
+
 static int append_json_tag(char *buf, size_t buf_len, size_t *used,
                            const zplc_tag_entry_t *tag, bool *first) {
-  uint16_t base = tag->var_addr & 0xF000U;
-  uint16_t offset = tag->var_addr & 0x0FFFU;
-  if (base == 0x3000U) {
-    base = 0x2000U;
-  }
+  uint8_t raw[4] = {0U, 0U, 0U, 0U};
 
-  uint8_t *region = zplc_mem_get_region(base);
-  if (!region) {
+  if (read_tag_value(tag, raw) != 0) {
     return -EINVAL;
   }
 
@@ -1195,26 +1196,23 @@ static int append_json_tag(char *buf, size_t buf_len, size_t *used,
   switch (tag->var_type) {
   case ZPLC_TYPE_BOOL:
     written = snprintf(buf + *used, buf_len - *used, "%s",
-                       region[offset] != 0U ? "true" : "false");
+                       raw[0] != 0U ? "true" : "false");
     break;
   case ZPLC_TYPE_INT:
     written = snprintf(buf + *used, buf_len - *used, "%d",
-                       (int)((int16_t)((uint16_t)region[offset] |
-                                       ((uint16_t)region[offset + 1U] << 8U))));
+                       (int)((int16_t)((uint16_t)raw[0] |
+                                       ((uint16_t)raw[1] << 8U))));
     break;
   case ZPLC_TYPE_UINT:
   case ZPLC_TYPE_WORD:
     written = snprintf(buf + *used, buf_len - *used, "%u",
-                       (unsigned)((uint16_t)region[offset] |
-                                  ((uint16_t)region[offset + 1U] << 8U)));
+                       (unsigned)((uint16_t)raw[0] | ((uint16_t)raw[1] << 8U)));
     break;
   case ZPLC_TYPE_REAL: {
-    uint32_t raw = (uint32_t)region[offset] |
-                   ((uint32_t)region[offset + 1U] << 8U) |
-                   ((uint32_t)region[offset + 2U] << 16U) |
-                   ((uint32_t)region[offset + 3U] << 24U);
+    uint32_t bits = (uint32_t)raw[0] | ((uint32_t)raw[1] << 8U) |
+                    ((uint32_t)raw[2] << 16U) | ((uint32_t)raw[3] << 24U);
     float f = 0.0f;
-    memcpy(&f, &raw, sizeof(f));
+    memcpy(&f, &bits, sizeof(f));
     written = snprintf(buf + *used, buf_len - *used, "%g", (double)f);
     break;
   }
@@ -1248,7 +1246,9 @@ static int publish_generic_telemetry(struct mqtt_client *client) {
   }
   used = (size_t)written;
 
-  zplc_pi_lock();
+  if (zplc_exchange_read_lock() != 0) {
+    return -EBUSY;
+  }
   uint16_t count = zplc_core_get_tag_count();
   for (uint16_t i = 0U; i < count; i++) {
     const zplc_tag_entry_t *tag = zplc_core_get_tag(i);
@@ -1258,11 +1258,11 @@ static int publish_generic_telemetry(struct mqtt_client *client) {
 
     if (append_json_tag((char *)s_payload_buf, sizeof(s_payload_buf), &used,
                         tag, &first) < 0) {
-      zplc_pi_unlock();
+      zplc_exchange_read_unlock();
       return -ENOSPC;
     }
   }
-  zplc_pi_unlock();
+  zplc_exchange_read_unlock();
 
   written = snprintf((char *)s_payload_buf + used, sizeof(s_payload_buf) - used,
                      "}}");
@@ -1391,13 +1391,8 @@ static int parse_payload_to_tag(const zplc_tag_entry_t *tag,
     return -EINVAL;
   }
 
-  rc = zplc_pi_lock();
-  if (rc != 0) {
-    return rc;
-  }
-  rc = zplc_force_write_bytes(tag->var_addr, bytes, (uint16_t)size);
-  zplc_pi_unlock();
-  return rc;
+  /* Queued whole and applied by the scan at its next input latch, force-aware (RT-010, RT-011). */
+  return zplc_exchange_write(tag->var_addr, bytes, (uint16_t)size);
 }
 
 static int abort_incoming_publish(struct mqtt_client *client, int error) {
@@ -2211,7 +2206,8 @@ int zplc_mqtt_init(void) {
 
   k_tid_t tid = k_thread_create(
       &s_mqtt_thread, s_mqtt_stack, K_THREAD_STACK_SIZEOF(s_mqtt_stack),
-      mqtt_client_thread, NULL, NULL, NULL, K_PRIO_COOP(8), 0, K_NO_WAIT);
+      mqtt_client_thread, NULL, NULL, NULL,
+      K_PRIO_PREEMPT(ZPLC_COMM_THREAD_PRIORITY), 0, K_NO_WAIT);
 
   if (!tid) {
     LOG_ERR("Failed to create MQTT thread");

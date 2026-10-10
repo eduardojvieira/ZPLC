@@ -19,6 +19,41 @@ find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 
 project(zplc_zephyr_app)
 
+# RT-028, RT-029: the sizes a board profile advertises to the IDE (supported-boards.v1.5.0.json) are the sizes the
+# build was configured with. The largest artifact the program store accepts is CONFIG_ZPLC_CODE_SIZE_MAX, and a
+# manifest that says another number would make the IDE offer a program the board refuses, or refuse one it holds.
+file(READ "${CMAKE_CURRENT_SOURCE_DIR}/boards/supported-boards.v1.5.0.json" ZPLC_BOARD_MANIFEST)
+string(JSON ZPLC_BOARD_COUNT LENGTH "${ZPLC_BOARD_MANIFEST}")
+if(ZPLC_BOARD_COUNT GREATER 0)
+  math(EXPR ZPLC_BOARD_LAST "${ZPLC_BOARD_COUNT} - 1")
+  foreach(ZPLC_BOARD_INDEX RANGE ${ZPLC_BOARD_LAST})
+    string(JSON ZPLC_BOARD_ENTRY GET "${ZPLC_BOARD_MANIFEST}" ${ZPLC_BOARD_INDEX})
+    string(JSON ZPLC_BOARD_TARGET GET "${ZPLC_BOARD_ENTRY}" zephyr_board)
+    if(ZPLC_BOARD_TARGET STREQUAL "${BOARD}${BOARD_QUALIFIERS}")
+      string(JSON ZPLC_BOARD_ID GET "${ZPLC_BOARD_ENTRY}" board_id)
+      string(JSON ZPLC_BOARD_MEMORY GET "${ZPLC_BOARD_ENTRY}" memory)
+      string(JSON ZPLC_BOARD_CODE GET "${ZPLC_BOARD_MEMORY}" code_size_max)
+      string(JSON ZPLC_BOARD_WORK GET "${ZPLC_BOARD_MEMORY}" work_size)
+      string(JSON ZPLC_BOARD_RETAIN GET "${ZPLC_BOARD_MEMORY}" retain_size)
+      foreach(ZPLC_PAIR
+              "code_size_max;${ZPLC_BOARD_CODE};${CONFIG_ZPLC_CODE_SIZE_MAX};CONFIG_ZPLC_CODE_SIZE_MAX"
+              "work_size;${ZPLC_BOARD_WORK};${CONFIG_ZPLC_WORK_MEMORY_SIZE};CONFIG_ZPLC_WORK_MEMORY_SIZE"
+              "retain_size;${ZPLC_BOARD_RETAIN};${CONFIG_ZPLC_RETAIN_MEMORY_SIZE};CONFIG_ZPLC_RETAIN_MEMORY_SIZE")
+        list(GET ZPLC_PAIR 0 ZPLC_KEY)
+        list(GET ZPLC_PAIR 1 ZPLC_ADVERTISED)
+        list(GET ZPLC_PAIR 2 ZPLC_CONFIGURED)
+        list(GET ZPLC_PAIR 3 ZPLC_SYMBOL)
+        if(NOT ZPLC_ADVERTISED EQUAL ZPLC_CONFIGURED)
+          message(FATAL_ERROR
+            "boards/supported-boards.v1.5.0.json advertises ${ZPLC_KEY}=${ZPLC_ADVERTISED} for ${ZPLC_BOARD_ID} "
+            "but the build is configured with ${ZPLC_SYMBOL}=${ZPLC_CONFIGURED}: the IDE would offer a program "
+            "size the board does not accept. Make the two agree.")
+        endif()
+      endforeach()
+    endif()
+  endforeach()
+endif()
+
 if(CONFIG_MQTT_LIB_WEBSOCKET)
   if(NOT TARGET subsys__net__lib__mqtt)
     message(FATAL_ERROR "Zephyr MQTT target subsys__net__lib__mqtt is required for the WebSocket net_log workaround")
@@ -31,6 +66,7 @@ target_sources(app PRIVATE
     src/program_boot_restore.c
     src/program_admission.c
     src/program_store.c
+    src/runtime_boot.c
     src/zplc_config.c
     src/zplc_time.c
 )

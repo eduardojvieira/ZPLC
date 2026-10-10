@@ -25,11 +25,7 @@
 #include "process_image_differential.h"
 
 /* Test-only hooks; production zplc_hal.h deliberately stays clean. */
-extern void zplc_hal_persist_test_fail_at(unsigned long operation);
-extern void zplc_hal_persist_test_fail_result(zplc_hal_result_t result);
-extern unsigned long zplc_hal_persist_test_operation_count(void);
-extern int zplc_hal_persist_test_failure_triggered(void);
-extern void zplc_hal_persist_test_parent_sync_fail_at(unsigned long attempt);
+#include <zplc_test_hooks.h>
 
 static int test_count = 0;
 static int fail_count = 0;
@@ -2930,9 +2926,11 @@ static int store_record_absent(const char *root, const char *key)
 
 static void test_commit_rejects_unverified_durable_evidence(void)
 {
+    /* RT-031: a payload with none of the records that say a program was published beside it is not evidence.
+     * The metadata is written after the payload, so a payload alone is what an interrupted first deploy leaves
+     * and the next deploy has to be able to go through (test_program_store: "a payload alone"). */
     static const char *const v1_keys[] = {
-        "program_v1_active", "program_v1_slot_a_meta", "program_v1_slot_a_payload",
-        "program_v1_slot_b_meta", "program_v1_slot_b_payload"
+        "program_v1_active", "program_v1_slot_a_meta", "program_v1_slot_b_meta"
     };
     static const char *const all_v1_keys[] = {
         "program_v1_active", "program_v1_slot_a_meta", "program_v1_slot_a_payload",
@@ -2981,12 +2979,54 @@ static void test_commit_rejects_unverified_durable_evidence(void)
                         "invalid legacy evidence remains byte-for-byte unchanged");
         }
         for (index = 0U; index < sizeof(all_v1_keys) / sizeof(all_v1_keys[0]); index++) {
-            if (scenario < sizeof(v1_keys) / sizeof(v1_keys[0]) && index == scenario) continue;
+            if (scenario < sizeof(v1_keys) / sizeof(v1_keys[0]) && strcmp(all_v1_keys[index], v1_keys[scenario]) == 0) continue;
             TEST_ASSERT(store_record_absent(root, all_v1_keys[index]), "unverified evidence creates no new v1 record");
         }
         zplc_native_runtime_session_shutdown(&session);
         remove_persist_root(root);
     }
+    setenv("ZPLC_PERSIST_ROOT", test_persist_root, 1);
+}
+
+/* RT-028, RT-032: an artifact of exactly the configured code size is stored and restored by the shared store.
+ * The largest artifact the runtime accepts is the configured code size, stored and restored through the host
+ * program store, which is the store the firmware uses. The artifact is a real one: the loader verifies it and the
+ * task rules of the runtime admit it. */
+static void test_largest_artifact_deploys_and_restores(void)
+{
+    static uint8_t artifact[ZPLC_MEM_CODE_SIZE + 64U];
+    static uint8_t restored[ZPLC_MEM_CODE_SIZE];
+    static uint8_t code[ZPLC_MEM_CODE_SIZE];
+    char root[] = "/tmp/zplc_store_largest_XXXXXX";
+    size_t restored_size = 0U;
+    size_t code_size;
+    size_t size;
+    uint32_t interval_ms = 0U;
+
+    printf("\n=== Test: an artifact of exactly the code size deploys and restores (RT-028) ===\n");
+    if (mkdtemp(root) == NULL) { TEST_ASSERT(0, "mkdtemp succeeds for the largest artifact"); return; }
+    setenv("ZPLC_PERSIST_ROOT", root, 1);
+
+    /* The container is the header, two segment entries, the code and one task: find the code length that makes
+     * the whole artifact exactly the code size of the build. */
+    memset(code, OP_NOP, sizeof(code));
+    code_size = ZPLC_MEM_CODE_SIZE - ZPLC_FILE_HEADER_SIZE - 2U * ZPLC_SEGMENT_ENTRY_SIZE - ZPLC_TASK_DEF_SIZE;
+    code[code_size - 1U] = OP_HALT;
+    size = build_task_zplc(artifact, sizeof(artifact), code, code_size, 10000U);
+    TEST_ASSERT(size == ZPLC_MEM_CODE_SIZE, "the artifact is exactly the code size");
+    TEST_ASSERT(zplc_native_program_validate(artifact, size, &interval_ms) == 0, "the runtime admits it");
+    TEST_ASSERT(zplc_native_program_store_commit(artifact, size) == ZPLC_NATIVE_PROGRAM_STORE_OK,
+                "it is stored");
+    TEST_ASSERT(zplc_native_program_store_restore(restored, sizeof(restored), &restored_size) == 0 &&
+                    restored_size == size && memcmp(restored, artifact, size) == 0,
+                "and restored, byte for byte");
+    TEST_ASSERT(zplc_native_program_store_commit(artifact, size) == ZPLC_NATIVE_PROGRAM_STORE_OK &&
+                    zplc_native_program_store_restore(restored, sizeof(restored), &restored_size) == 0 &&
+                    restored_size == size && memcmp(restored, artifact, size) == 0,
+                "a second deploy of it goes to the other slot and restores too");
+    TEST_ASSERT(zplc_native_program_store_commit(artifact, size + 1U) == ZPLC_NATIVE_PROGRAM_STORE_ERROR,
+                "one byte more is refused");
+    remove_persist_root(root);
     setenv("ZPLC_PERSIST_ROOT", test_persist_root, 1);
 }
 
@@ -4763,6 +4803,7 @@ int main(void)
     test_restore_preserves_non_ok_hal_status();
     test_restore_stages_invalid_legacy_data();
     test_commit_rejects_unverified_durable_evidence();
+    test_largest_artifact_deploys_and_restores();
     test_commit_fences_structural_prepared_generation();
     test_legacy_migrates_once();
     test_legacy_migration_persistence_failure();

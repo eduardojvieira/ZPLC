@@ -80,6 +80,58 @@ All notable changes are documented here.
   shell command, C name, IEC call or repository path that the source does not have; what is
   deliberately absent is listed with its reason in `docs/doc-claims-allowlist.json`. No editor
   screenshot is published yet: the language pages say so instead of showing a drawing.
+- Runtime hardening of the firmware and the host runtime (RT-010 to RT-034):
+  - Memory seen from outside the scan is whole and respects forces. The Modbus
+    server, MQTT and the shell debug commands read a snapshot that the scan
+    publishes at its commit, and they and the Modbus clients queue their
+    writes, which the scan applies at its next input latch through the
+    force-aware interface: a forced
+    variable keeps its forced value whatever a client writes, and a Modbus
+    write of the two registers of a 32-bit value sets only the half it
+    addresses. A write that does not fit the queue
+    (`CONFIG_ZPLC_EXCHANGE_QUEUE_BYTES`) is refused whole and a Modbus TCP
+    client gets exception 6.
+  - The process-image lock is no longer held while the physical outputs are
+    written, a line is printed or a call can block; the scan reads the inputs
+    before it takes the lock and writes the pins after it releases it. A lock
+    that cannot be created or taken is reported by every caller:
+    `zplc_core_init()` returns -1, a control call returns
+    `ZPLC_SCHED_ERR_LOCK`, and a scan that cannot take the lock drives the pins
+    safe and latches the fault.
+  - A program load is a cold start on every runtime: the variables and the
+    forces of the program it replaces never carry over
+    (`zplc_core_cold_start()` and `zplc_core_warm_start()`).
+  - The firmware starts the scheduler, the program store and the control link
+    before the network, time, fieldbus and cloud services, and a service that
+    fails to start no longer stops the runtime.
+  - The largest artifact is one number, `CONFIG_ZPLC_CODE_SIZE_MAX`: the program
+    store keeps and restores an artifact of that size (it is chunked under
+    `CONFIG_ZPLC_PROGRAM_STORE_CHUNK_SIZE`), the loader accepts it and the shell
+    and the IDE advertise it. **Behaviour change:** the Raspberry Pi Pico
+    profile now advertises 24576 bytes, the STM32F746G Discovery profile
+    16384 bytes and the Arduino Opta WiFi profile 32768 bytes, the largest
+    sizes their storage and RAM hold with three copies of the program in RAM;
+    the build fails when two slots of the configured size do not fit the
+    storage partition. The firmware keeps no resident copy of the program
+    beside the upload staging buffer: `zplc reset` reloads the loaded program
+    from the program store (and cancels an upload in progress), which saves
+    one program of RAM on every board.
+  - A power cut at any moment of a program deploy leaves the previous or the
+    complete new program; the store logic is one implementation shared by the
+    host runtime and the firmware, tested with a power cut and a torn write at
+    every operation.
+  - Every size, depth and priority has a Kconfig range and a build-time rule,
+    and the core compiles without Zephyr headers. The scan coordinator is
+    checked to outrank the communication, shell and log threads
+    (`CONFIG_ZPLC_COMM_THREAD_PRIORITY`), and the boards with a network stack
+    run its threads preemptible.
+  - One CRC-32 and one set of little-endian helpers (`zplc_crc32.h`,
+    `zplc_bytes.h`) replace the copies of the loader, the RETAIN records and
+    the program stores. The test-only entry points moved out of the public
+    headers into `firmware/lib/zplc_core/tests/include/zplc_test_hooks.h`.
+    `zplc_retain_config_t.lock` is now `int (*)(void)` so a lock failure can be
+    reported.
+
 - The palettes of LD, FBD and SFC offer only what their transpiler translates, and every
   element they offer is placed in a program and run in the virtual machine by a generated
   test (LNG-007). The Ladder palette offers the edge coils that the transpiler has

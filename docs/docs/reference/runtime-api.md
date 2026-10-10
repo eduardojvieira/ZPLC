@@ -16,15 +16,97 @@ tags: [reference, runtime, generated]
 
 ## Source headers
 
+- `firmware/lib/zplc_core/include/zplc_bytes.h`
 - `firmware/lib/zplc_core/include/zplc_comm_dispatch.h`
 - `firmware/lib/zplc_core/include/zplc_core.h`
+- `firmware/lib/zplc_core/include/zplc_crc32.h`
 - `firmware/lib/zplc_core/include/zplc_debug.h`
+- `firmware/lib/zplc_core/include/zplc_exchange.h`
 - `firmware/lib/zplc_core/include/zplc_hal.h`
 - `firmware/lib/zplc_core/include/zplc_hal_posix.h`
 - `firmware/lib/zplc_core/include/zplc_isa.h`
 - `firmware/lib/zplc_core/include/zplc_loader.h`
+- `firmware/lib/zplc_core/include/zplc_program_store.h`
 - `firmware/lib/zplc_core/include/zplc_retain.h`
 - `firmware/lib/zplc_core/include/zplc_scheduler.h`
+
+## `zplc_bytes.h`
+
+Little-endian reads and writes of bytes, with no alignment assumption (RT-004, RT-032).
+
+Every module of the runtime that reads or writes a multi-byte field of an artifact, a record or PLC memory uses these functions: they work at any address, on any byte order and on a core that traps on unaligned access. The host and the target share this one implementation.
+
+Source: `firmware/lib/zplc_core/include/zplc_bytes.h`
+
+### Functions
+
+#### `zplc_get_u16_le`
+
+```c
+static inline uint16_t zplc_get_u16_le(const uint8_t *p);
+```
+
+**Source summary:** No summary found in the header comment.
+
+**Parameters**
+
+| Name | Type | Source description |
+| --- | --- | --- |
+| `p` | `const uint8_t *` | — |
+
+#### `zplc_get_u32_le`
+
+```c
+static inline uint32_t zplc_get_u32_le(const uint8_t *p);
+```
+
+**Source summary:** No summary found in the header comment.
+
+**Parameters**
+
+| Name | Type | Source description |
+| --- | --- | --- |
+| `p` | `const uint8_t *` | — |
+
+#### `zplc_put_u16_le`
+
+```c
+static inline void zplc_put_u16_le(uint8_t *p, uint16_t value);
+```
+
+**Source summary:** No summary found in the header comment.
+
+**Parameters**
+
+| Name | Type | Source description |
+| --- | --- | --- |
+| `p` | `uint8_t *` | — |
+| `value` | `uint16_t` | — |
+
+#### `zplc_put_u32_le`
+
+```c
+static inline void zplc_put_u32_le(uint8_t *p, uint32_t value);
+```
+
+**Source summary:** No summary found in the header comment.
+
+**Parameters**
+
+| Name | Type | Source description |
+| --- | --- | --- |
+| `p` | `uint8_t *` | — |
+| `value` | `uint32_t` | — |
+
+### Types
+
+None.
+
+### Constants and macros
+
+| Name | Value | Source summary |
+| --- | --- | --- |
+| `ZPLC_BYTES_H` | `—` | — |
 
 ## `zplc_comm_dispatch.h`
 
@@ -854,7 +936,7 @@ int zplc_core_init(void);
 
 **Source summary:** Initialize the ZPLC core.
 
-Initializes shared memory and default VM instance.
+Initializes shared memory and default VM instance, and creates the process-image lock.
 
 **Parameters**
 
@@ -862,7 +944,39 @@ Initializes shared memory and default VM instance.
 | --- | --- | --- |
 | — | — | None. |
 
-**Source return value:** 0 on success
+**Source return value:** 0 on success, -1 when the process-image lock could not be created. In that case the memory and the VM are initialised but the runtime must not start: external threads cannot be synchronised with the scan. A later call tries again.
+
+#### `zplc_core_cold_start`
+
+```c
+void zplc_core_cold_start(void);
+```
+
+**Source summary:** Cold start: every variable of the program is initialised (RT-016).
+
+IPI, OPI, WORK and RETAIN are set to zero and the force table is emptied. The CODE region and the tags are the program and are not touched. A program load is a cold start: zplc_core_load() and zplc_core_load_tasks() call this before they publish the new program, so a new program never starts on the variables of the one it replaced, on any runtime. A runtime that has a stored RETAIN record restores it after the load.
+
+**Parameters**
+
+| Name | Type | Source description |
+| --- | --- | --- |
+| — | — | None. |
+
+#### `zplc_core_warm_start`
+
+```c
+void zplc_core_warm_start(void);
+```
+
+**Source summary:** Warm start: the retentive variables are kept and the rest is initialised (RT-016).
+
+IPI, OPI and WORK are set to zero and the force table is emptied; RETAIN keeps its bytes. For a runtime that restarts the program it already holds, after a reset, with its retained values valid.
+
+**Parameters**
+
+| Name | Type | Source description |
+| --- | --- | --- |
+| — | — | None. |
 
 #### `zplc_core_shutdown`
 
@@ -1199,6 +1313,59 @@ static inline uint8_t zplc_task_get_priority(const zplc_task_def_t *task);
 | `ZPLC_FORCE_MAX_ENTRIES` | `8U` | Maximum number of independent forced ranges. |
 | `ZPLC_FORCE_MAX_BYTES` | `260U` | Maximum byte length of one forced range. |
 
+## `zplc_crc32.h`
+
+The one CRC-32 of the runtime (RT-032).
+
+CRC-32/ISO-HDLC: reflected polynomial 0xEDB88320, initial value 0xFFFFFFFF, final exclusive-or 0xFFFFFFFF. It is the CRC of the artifact container (zplc_loader.c), of the RETAIN records (zplc_retain.c) and of the records of the program store on the host and on the target. It is a bitwise loop with no table: a few bytes of code and no RAM, which is what a 16 KB core can afford, and the artifact it checks is small and read once per load.
+
+Source: `firmware/lib/zplc_core/include/zplc_crc32.h`
+
+### Functions
+
+#### `zplc_crc32_update`
+
+```c
+static inline uint32_t zplc_crc32_update(uint32_t crc, const uint8_t *data, size_t length);
+```
+
+**Source summary:** Add bytes to a running CRC state.
+
+Start from 0xFFFFFFFF and exclusive-or the result with 0xFFFFFFFF when the last byte is in. The state is the register itself, so one value can be carried across several calls.
+
+**Parameters**
+
+| Name | Type | Source description |
+| --- | --- | --- |
+| `crc` | `uint32_t` | — |
+| `data` | `const uint8_t *` | — |
+| `length` | `size_t` | — |
+
+#### `zplc_crc32`
+
+```c
+static inline uint32_t zplc_crc32(const uint8_t *data, size_t length);
+```
+
+**Source summary:** CRC-32 of a buffer in one call.
+
+**Parameters**
+
+| Name | Type | Source description |
+| --- | --- | --- |
+| `data` | `const uint8_t *` | — |
+| `length` | `size_t` | — |
+
+### Types
+
+None.
+
+### Constants and macros
+
+| Name | Value | Source summary |
+| --- | --- | --- |
+| `ZPLC_CRC32_H` | `—` | — |
+
 ## `zplc_debug.h`
 
 ZPLC Hardware-in-the-Loop Debug API
@@ -1208,6 +1375,23 @@ This header declares the debug output API for HIL (Hardware-in-the-Loop) testing
 Source: `firmware/lib/zplc_core/include/zplc_debug.h`
 
 ### Functions
+
+#### `hil_set_sink`
+
+```c
+void hil_set_sink(hil_sink_fn sink, void *context);
+```
+
+**Source summary:** Set where the debug lines go; a NULL sink silences the output.
+
+The portable core only formats lines. A target registers the sink that writes them (the Zephyr shell binding is hil_set_shell).
+
+**Parameters**
+
+| Name | Type | Source description |
+| --- | --- | --- |
+| `sink` | `hil_sink_fn` | — |
+| `context` | `void *` | — |
 
 #### `hil_set_mode`
 
@@ -1245,9 +1429,9 @@ hil_mode_t hil_get_mode(void);
 void hil_set_shell(const struct shell *sh);
 ```
 
-**Source summary:** Set the shell instance for debug output.
+**Source summary:** Set the shell instance for debug output (Zephyr targets only).
 
-Must be called before any trace functions. Typically called by the `zplc hil mode` shell command.
+Registers a sink that prints each line with shell_print. Must be called before any trace functions. Typically called by the `zplc hil mode` shell command. Defined in src/hal/zephyr/zplc_hil_debug_zephyr.c.
 
 **Parameters**
 
@@ -1456,10 +1640,229 @@ const char *hil_error_name(uint8_t code);
 | Name | Kind | Source summary |
 | --- | --- | --- |
 | `hil_mode_t` | Enum | HIL debug output modes. |
+| `hil_sink_fn` | Typedef | Receives one finished JSON line, without a line terminator. |
 
 ### Constants and macros
 
 None.
+
+## `zplc_exchange.h`
+
+The exchange between the scan and everything outside it: a write queue and a published snapshot (RT-010, RT-011, RT-012).
+
+Fieldbus servers, MQTT and the debug link run on their own threads. They must never see a value the scan is in the middle of writing, never change one in the middle of a scan, and never make the scan wait for them. The exchange gives them two things, and nothing else touches the live regions from outside the scan: - a READ comes from the snapshot: a copy of IPI, OPI, WORK and RETAIN that the scan publishes once per scan, at the output commit, and after every control-plane change of the memory (stop, load, force). A multi-byte value in the snapshot is whole: it was copied between scans, and the copy and every read are made under one short lock; - a WRITE is queued, whole, and applied by the scan at the input latch of its next scan, through the force-aware interface of the core (zplc_force_write_bytes): a forced variable keeps its forced value. While no scan is running (STOP, pause, fault) there is no latch to wait for, and the write is applied at once, under the lock of the image, and published. The lock of the exchange is held for a bounded copy and for nothing else: not across hardware I/O, not across a log line, not across the execution of a task. Lock order, everywhere: image lock (the scheduler's), then exchange lock. The exchange never takes the image lock while it holds its own.
+
+Source: `firmware/lib/zplc_core/include/zplc_exchange.h`
+
+### Functions
+
+#### `zplc_exchange_init`
+
+```c
+int zplc_exchange_init(const zplc_exchange_hooks_t *hooks);
+```
+
+**Source summary:** Create the lock and empty the queue and the snapshot. Safe to call again: it resets.
+
+**Parameters**
+
+| Name | Type | Source description |
+| --- | --- | --- |
+| `hooks` | `const zplc_exchange_hooks_t *` | — |
+
+**Source return value:** 0, or ZPLC_EXCHANGE_ERR_LOCK when the lock could not be created.
+
+#### `zplc_exchange_write`
+
+```c
+int zplc_exchange_write(uint16_t addr, const uint8_t *bytes, uint16_t size);
+```
+
+**Source summary:** Write PLC memory from outside the scan.
+
+Queued for the next input latch while scans run; applied at once otherwise. The extent has to lie inside one region (see zplc_mem_extent.h); a write that does not is refused here and not later. A write is whole: it is queued with all its bytes or not at all.
+
+**Parameters**
+
+| Name | Type | Source description |
+| --- | --- | --- |
+| `addr` | `uint16_t` | — |
+| `bytes` | `const uint8_t *` | — |
+| `size` | `uint16_t` | — |
+
+**Source return value:** 0, ZPLC_EXCHANGE_ERR_RANGE, ZPLC_EXCHANGE_ERR_FULL or ZPLC_EXCHANGE_ERR_LOCK
+
+#### `zplc_exchange_write_begin`
+
+```c
+int zplc_exchange_write_begin(size_t records, size_t bytes);
+```
+
+**Source summary:** Several writes that succeed or fail together (a Modbus write of several registers).
+
+zplc_exchange_write_begin() reserves room for @p records writes of @p bytes bytes in all and takes the lock; zplc_exchange_write_add() queues one of them; zplc_exchange_write_end() releases the lock. A reservation that does not fit is refused with nothing queued, so the adds that follow cannot fail for lack of room. While no scan is running the adds apply at once (under the image lock the begin took).
+
+**Parameters**
+
+| Name | Type | Source description |
+| --- | --- | --- |
+| `records` | `size_t` | — |
+| `bytes` | `size_t` | — |
+
+**Source return value:** begin: 0, ZPLC_EXCHANGE_ERR_FULL or ZPLC_EXCHANGE_ERR_LOCK; add: 0 or ZPLC_EXCHANGE_ERR_RANGE
+
+#### `zplc_exchange_write_add`
+
+```c
+int zplc_exchange_write_add(uint16_t addr, const uint8_t *bytes, uint16_t size);
+```
+
+**Source summary:** No summary found in the header comment.
+
+**Parameters**
+
+| Name | Type | Source description |
+| --- | --- | --- |
+| `addr` | `uint16_t` | — |
+| `bytes` | `const uint8_t *` | — |
+| `size` | `uint16_t` | — |
+
+#### `zplc_exchange_write_end`
+
+```c
+void zplc_exchange_write_end(void);
+```
+
+**Source summary:** No summary found in the header comment.
+
+**Parameters**
+
+| Name | Type | Source description |
+| --- | --- | --- |
+| — | — | None. |
+
+#### `zplc_exchange_read`
+
+```c
+int zplc_exchange_read(uint16_t addr, uint8_t *out, uint16_t size);
+```
+
+**Source summary:** Read PLC memory from the snapshot published at the last commit.
+
+**Parameters**
+
+| Name | Type | Source description |
+| --- | --- | --- |
+| `addr` | `uint16_t` | — |
+| `out` | `uint8_t *` | — |
+| `size` | `uint16_t` | — |
+
+**Source return value:** 0, ZPLC_EXCHANGE_ERR_RANGE or ZPLC_EXCHANGE_ERR_LOCK
+
+#### `zplc_exchange_read_lock`
+
+```c
+int zplc_exchange_read_lock(void);
+```
+
+**Source summary:** Several reads of one publication (a Modbus read of several tags, an MQTT payload).
+
+Between lock and unlock no scan publishes, so every read is of the same scan. Do not call zplc_exchange_read() or a write inside the pair.
+
+**Parameters**
+
+| Name | Type | Source description |
+| --- | --- | --- |
+| — | — | None. |
+
+#### `zplc_exchange_read_locked`
+
+```c
+int zplc_exchange_read_locked(uint16_t addr, uint8_t *out, uint16_t size);
+```
+
+**Source summary:** No summary found in the header comment.
+
+**Parameters**
+
+| Name | Type | Source description |
+| --- | --- | --- |
+| `addr` | `uint16_t` | — |
+| `out` | `uint8_t *` | — |
+| `size` | `uint16_t` | — |
+
+#### `zplc_exchange_read_unlock`
+
+```c
+void zplc_exchange_read_unlock(void);
+```
+
+**Source summary:** No summary found in the header comment.
+
+**Parameters**
+
+| Name | Type | Source description |
+| --- | --- | --- |
+| — | — | None. |
+
+#### `zplc_exchange_latch`
+
+```c
+size_t zplc_exchange_latch(void);
+```
+
+**Source summary:** The scan's input latch: apply every queued write, in order, through the force-aware interface.
+
+Called by the scan with the image lock held, before the inputs of the cycle are written.
+
+**Parameters**
+
+| Name | Type | Source description |
+| --- | --- | --- |
+| — | — | None. |
+
+**Source return value:** number of writes applied
+
+#### `zplc_exchange_publish`
+
+```c
+void zplc_exchange_publish(void);
+```
+
+**Source summary:** Publish the live regions as the snapshot. Called with the image lock held, at the output commit and after a control-plane change of the memory.
+
+**Parameters**
+
+| Name | Type | Source description |
+| --- | --- | --- |
+| — | — | None. |
+
+#### `zplc_exchange_get_stats`
+
+```c
+void zplc_exchange_get_stats(zplc_exchange_stats_t *stats);
+```
+
+**Source summary:** No summary found in the header comment.
+
+**Parameters**
+
+| Name | Type | Source description |
+| --- | --- | --- |
+| `stats` | `zplc_exchange_stats_t *` | — |
+
+### Types
+
+| Name | Kind | Source summary |
+| --- | --- | --- |
+| `lock_image` | Struct | What the scheduler lends the exchange. All three are optional. |
+| `latched` | Struct | Writes applied at a latch, writes applied at once, and writes refused for lack of room, since init. |
+
+### Constants and macros
+
+| Name | Value | Source summary |
+| --- | --- | --- |
+| `ZPLC_EXCHANGE_H` | `—` | — |
 
 ## `zplc_hal.h`
 
@@ -2143,6 +2546,72 @@ Reads header word 28 and nothing else. The magic, the CRC and the rest of the ar
 | `ZPLC_VERIFY_STEPS_PER_BYTE` | `64U` | — |
 | `ZPLC_LOADER_VERIFY_WORKSPACE_SIZE` | `\\ (((ZPLC_MEM_CODE_SIZE + 7U) / 8U) + \\ 2U * ((ZPLC_MEM_CODE_SIZE + 127U) / 128U) + \\ 2U * ZPLC_VERIFY_MAX_LEADERS + (ZPLC_VERIFY_MAX_LEADERS + 7U) / 8U + \\ ZPLC_VERIFY_MAX_FRAMES * ZPLC_VERIFY_FRAME_BYTES)` | — |
 
+## `zplc_program_store.h`
+
+The durable store of the admitted program: two slots, one active pointer (RT-028, RT-031, RT-032).
+
+One implementation (zplc_pstore_commit, zplc_pstore_restore), used by the firmware (firmware/app/src/program_store.c) and by the host runtime (firmware/apps/posix_host/src/native_program_store.c). It sits on the HAL persistence calls, so it runs on NVS on a board and on files on the host, and it holds no state of its own: the caller supplies the buffers and serialises the calls. What is stored -------------- Two slots, A and B. A slot is a payload (the artifact, then an 8 byte footer "ZPE1" + length) and a 32 byte metadata record. A 16 byte active record names the slot that holds the program to run and its generation. All records carry a CRC-32 and the format version of the runtime. key                              content program_v1_slot_a_payload        payload of slot A, chunk 0 program_v1_slot_a_payload_N      chunk N (1, 2, ...) of the payload of slot A, when it is longer than one chunk program_v1_slot_a_meta           "ZPS1", slot, state (1 prepared, 2 committed), generation, length, header CRC (the same three for slot B) program_v1_active                "ZPA1", slot, generation code_len, code                   the single-key program of the first firmware, read and migrated, never written A payload is cut into chunks of ZPLC_PROGRAM_STORE_CHUNK_SIZE bytes, each stored under its own key, because a flash key-value store keeps an entry inside one erase sector (RT-028: an artifact as large as the code region, 45056 bytes by default, does not fit one 4 KB sector). A payload of at most one chunk is one key, which is exactly the layout of the first version of the store: a store written by it is read as it is. The commit ---------- The new program is written to the slot that is not active, read back and verified; its metadata is written as PREPARED and read back; then the active record is written, which is the single point at which the new program becomes the one to restore; last the metadata is rewritten as COMMITTED (best effort). A power cut at any step leaves the previous program restorable or the new one complete: - before the active record: restore finds the previous program through the active record, or, if that record is damaged, through the newest COMMITTED slot; - a half-written slot (some chunks new, some old) is never accepted: its metadata still describes the old program, the header CRC and the footer of the payload then disagree with it, and the artifact fails its own CRC-32 and the admission check; - a PREPARED slot that the active record does not name is not a program; - an active record that names a PREPARED slot is a deploy whose last metadata write was lost: the slot is complete (it was read back) and is restored. The first commit of a store that has never held a program can be interrupted too: nothing was published, and restore reports ZPLC_PROGRAM_STORE_EMPTY. Records that exist and verify as nothing are never mistaken for an empty store: restore reports ZPLC_PROGRAM_STORE_UNVERIFIABLE and commit refuses to write over them.
+
+Source: `firmware/lib/zplc_core/include/zplc_program_store.h`
+
+### Functions
+
+#### `zplc_pstore_commit`
+
+```c
+int zplc_pstore_commit(const zplc_pstore_config_t *config, uint8_t *workspace, size_t program_size, size_t workspace_capacity);
+```
+
+**Source summary:** Make an admitted artifact the program to restore.
+
+**Parameters**
+
+| Name | Type | Source description |
+| --- | --- | --- |
+| `config` | `const zplc_pstore_config_t *` | — |
+| `workspace` | `uint8_t *` | the artifact in its first @p program_size bytes, with at least ZPLC_PROGRAM_STORE_FOOTER_SIZE bytes after it; the store writes the footer and uses the buffer to read the payload back, so its content is not preserved |
+| `program_size` | `size_t` | 1 .. ZPLC_PROGRAM_STORE_MAX_ARTIFACT_SIZE |
+| `workspace_capacity` | `size_t` | bytes the buffer holds |
+
+**Source return value:** ZPLC_PROGRAM_STORE_COMMIT_OK, _ERROR (nothing was published), or _UNKNOWN
+
+#### `zplc_pstore_restore`
+
+```c
+zplc_program_store_restore_t zplc_pstore_restore( const zplc_pstore_config_t *config, uint8_t *workspace, size_t workspace_capacity, size_t *program_size);
+```
+
+**Source summary:** Find the program to run after a reset.
+
+**Parameters**
+
+| Name | Type | Source description |
+| --- | --- | --- |
+| `config` | `const zplc_pstore_config_t *` | — |
+| `workspace` | `uint8_t *` | receives the artifact; needs room for the footer after it |
+| `workspace_capacity` | `size_t` | bytes the buffer holds (an artifact of the largest size needs ZPLC_PROGRAM_STORE_MAX_ARTIFACT_SIZE + ZPLC_PROGRAM_STORE_FOOTER_SIZE) |
+| `program_size` | `size_t *` | receives the artifact length when the result is OK or LEGACY, otherwise 0 |
+
+### Types
+
+| Name | Kind | Source summary |
+| --- | --- | --- |
+| `zplc_program_store_restore_t` | Enum | — |
+| `zplc_program_store_commit_result_t` | Enum | — |
+| `zplc_pstore_admit_fn` | Typedef | Decides whether an artifact may be run: the loader's verification and the policy of the runtime. |
+| `admit` | Struct | What the store needs from the runtime that uses it. |
+
+### Constants and macros
+
+| Name | Value | Source summary |
+| --- | --- | --- |
+| `ZPLC_CORE_PROGRAM_STORE_H` | `—` | — |
+| `ZPLC_PROGRAM_STORE_FOOTER_SIZE` | `8U` | Bytes after the artifact in a payload: "ZPE1" and the artifact length. |
+| `ZPLC_PROGRAM_STORE_MAX_CHUNKS` | `\\ ((ZPLC_PROGRAM_STORE_MAX_ARTIFACT_SIZE + ZPLC_PROGRAM_STORE_FOOTER_SIZE + \\ ZPLC_PROGRAM_STORE_CHUNK_SIZE - 1U) / \\ ZPLC_PROGRAM_STORE_CHUNK_SIZE)` | Keys a payload of the largest artifact is stored under, per slot. |
+| `ZPLC_PROGRAM_STORE_ENTRY_OVERHEAD` | `64U` | Backend bytes one stored entry takes beyond its data: the entry header and the padding to the write block. An engineering estimate used by the build-time capacity rule of the Zephyr HAL. |
+| `ZPLC_PROGRAM_STORE_WORST_CASE_BYTES` | `\\ (2U * ((size_t)ZPLC_PROGRAM_STORE_MAX_CHUNKS * \\ (ZPLC_PROGRAM_STORE_CHUNK_SIZE + ZPLC_PROGRAM_STORE_ENTRY_OVERHEAD)) +\\ 3U * (32U + ZPLC_PROGRAM_STORE_ENTRY_OVERHEAD))` | Storage, in bytes, the two slots of the largest artifact and their records take, worst case. |
+| `ZPLC_PROGRAM_STORE_KEY_MAX` | `40U` | The longest key the store uses, with its terminator. |
+
 ## `zplc_retain.h`
 
 Persistence of the RETAIN region across power cycles (RT-025, RT-026, RT-027).
@@ -2702,6 +3171,8 @@ int zplc_sched_unlock(void);
 | --- | --- | --- |
 | `ZPLC_MAX_TASKS` | `CONFIG_ZPLC_MAX_TASKS` | — |
 | `ZPLC_MAX_TASKS` | `8` | — |
+| `ZPLC_SCAN_COORDINATOR_PRIORITY` | `CONFIG_ZPLC_SCHED_HIGH_PRIO_PRIORITY` | — |
+| `ZPLC_SCAN_COORDINATOR_PRIORITY` | `CONFIG_ZPLC_SCHED_WORKQ_PRIORITY` | — |
 | `ZPLC_MIN_INTERVAL_US` | `1000` | Minimum task interval in microseconds (1ms) |
 | `ZPLC_MAX_INTERVAL_US` | `3600000000UL` | Maximum task interval in microseconds (1 hour) |
 
