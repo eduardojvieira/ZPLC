@@ -34,7 +34,7 @@ END_PROGRAM
 
 ## Tipos de datos
 
-ZPLC soporta estos tipos elementales. [Structured Text (ST)](./st.md) da el ancho, el rango y el comportamiento en los límites de cada uno.
+ZPLC soporta estos tipos elementales. [Structured Text (ST)](./st.md#tipos-numéricos) da el ancho, el rango y el comportamiento en los límites de cada uno.
 
 *   `BOOL`
 *   `SINT`, `INT`, `DINT`, `LINT` (enteros con signo de 8, 16, 32 y 64 bits)

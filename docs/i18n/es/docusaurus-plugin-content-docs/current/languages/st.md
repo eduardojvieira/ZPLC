@@ -56,6 +56,66 @@ El compilador y la stdlib muestran uso de ST con:
 - funciones de string como `LEN`, `CONCAT`, `LEFT`, `RIGHT`, `MID`
 - llamadas a FBs de comunicación cuando el contrato compiler/runtime los respalda
 
+## Tipos numéricos
+
+El caso que figura junto a una fila o una regla es un programa de conformidad de `conformance/cmp/` que se ejecuta en el runtime nativo. Un caso marcado «falla hoy» está en la lista de fallos esperados de `tools/ci/expected-failures.json`.
+
+| Tipo | Bits | Rango | Se ordena como | Caso de conformidad |
+|---|---|---|---|---|
+| `BOOL` | 8 | `FALSE`, `TRUE` | sin orden | `harness/vf-001-bool-output-toggles` |
+| `SINT` | 8 | -128 a 127 | con signo | `cmp-011-sint-limits` |
+| `USINT` | 8 | 0 a 255 | sin signo | `cmp-012-usint-holds-0-to-255` |
+| `BYTE` | 8 | cadena de bits, 0 a 255 | sin signo | `cmp-014-not-byte` |
+| `INT` | 16 | -32768 a 32767 | con signo | `cmp-011-int-limits` |
+| `UINT` | 16 | 0 a 65535 | sin signo | `cmp-012-uint-65535` |
+| `WORD` | 16 | cadena de bits, 0 a 65535 | sin signo | `cmp-014-not-word` |
+| `DINT` | 32 | -2147483648 a 2147483647 | con signo | `cmp-011-dint-limits` |
+| `UDINT` | 32 | 0 a 4294967295 | sin signo | `cmp-012-udint-max` |
+| `DWORD` | 32 | cadena de bits, 0 a 4294967295 | sin signo | `cmp-014-not-dword` |
+| `LINT` | 64 | -9223372036854775808 a 9223372036854775807 | con signo | `cmp-015-lint-extreme-values` |
+| `ULINT` | 64 | 0 a 18446744073709551615 | sin signo | `cmp-015-ulint-compares-unsigned` |
+| `LWORD` | 64 | cadena de bits, 0 a 18446744073709551615 | sin signo | `cmp-015-ulint-compares-unsigned` |
+| `REAL` | 32 | IEEE 754 de precisión simple | orden IEEE, NaN sin orden | `cmp-013-real-nan-is-unordered` |
+| `LREAL` | 64 | IEEE 754 de precisión doble, solo declaración | no soportado | `cmp-015-lreal-double-precision` (falla hoy) |
+
+### Aritmética, desbordamiento y división
+
+- **Ancho de un cálculo.** Los operandos de 8 y 16 bits se amplían a 32 bits para la operación, y el resultado se recorta a su ancho solo cuando se guarda. Con `i : INT := 32767`, `i + 1` vale 32768 dentro de una expresión y -32768 una vez guardado en un `INT`; `UINT` 65535 más 1 guardado en un `UINT` es 0 (`cmp-012-uint-65535`), y `SINT`, `USINT` y `BYTE` se comportan igual.
+- **32 y 64 bits dan la vuelta en complemento a dos.** `DINT` 2147483647 más 1 es -2147483648, y la resta y la multiplicación dan la vuelta del mismo modo. El `DINT` más negativo, negado, pasado a `ABS` o dividido por -1, sigue siendo el `DINT` más negativo, y ese valor `MOD` -1 es 0 (`cmp-016-dint-add-wraps`, `cmp-016-dint-sub-wraps`, `cmp-016-dint-mul-wraps`, `cmp-016-dint-negate-min`, `cmp-016-dint-abs-min`, `cmp-016-dint-min-divided-by-minus-one`, `cmp-016-dint-min-modulo-minus-one`). La suma de `LINT` da la vuelta del mismo modo (`cmp-015-lint-extreme-values`).
+- **La división trunca hacia cero y `MOD` toma el signo del dividendo.** -8 / 2 es -4 (`cmp-011-int-divide-negative`) y -7 / 2 es -3, con -7 `MOD` 2 igual a -1, como en C. La división y el `MOD` de `UDINT` son sin signo en todo el rango (`cmp-012-udint-divide-and-modulo`).
+- **Una división o un `MOD` por cero termina el scan con la falla de VM `ZPLC_VM_DIV_BY_ZERO` (código 0x03).** Lo mismo ocurre con una división de `REAL` por cero. Las pruebas de la VM son `test_vm_arith_edges.c` y `test_vm_core.c` en `firmware/lib/zplc_core/tests/`; para saber qué hace una falla con las salidas, vea [Pausa, reanudación, paso y parada](../runtime/scheduler.md#pausa-reanudación-paso-y-parada).
+
+### Desplazamientos, rotaciones y lógica de bits
+
+- `SHL(IN, N)`, `SHR(IN, N)`, `ROL(IN, N)` y `ROR(IN, N)` son funciones. Un desplazamiento de 32 o más, o con una cuenta negativa, da 0 (`cmp-016-shift-by-the-width-or-more`). `SHR` es lógico: entran ceros por la izquierda.
+- Un `BYTE`, un `WORD` y los tipos enteros de 8 y 16 bits se desplazan y rotan dentro de su propio ancho: `SHL` descarta los bits desplazados más allá del bit 7 o del bit 15 (`cmp-014-shl-byte-keeps-8-bits`), y `ROL` y `ROR` dan la vuelta dentro de 8 o 16 bits (`cmp-014-rol-byte-rotates-within-8-bits`, `cmp-014-ror-word-rotates-within-16-bits`).
+- `AND`, `OR`, `XOR` y `NOT` trabajan con todo el ancho declarado (`cmp-014-not-byte`, `cmp-014-not-word`, `cmp-014-not-dword`, `cmp-014-and-or-xor-word`), y con 64 bits en `LWORD` (`cmp-015-ulint-compares-unsigned`).
+
+### Conversiones
+
+- **Ampliar conserva el valor.** Un tipo con signo se extiende con signo y un tipo sin signo o una cadena de bits se extiende con ceros: `INT` -5 pasa a `DINT` -5 (`cmp-011-int-widens-to-dint`), `UINT` 65535 pasa a `UDINT` 65535 (`cmp-012-uint-65535`), y un `LINT` toma un `DINT` con su signo y un `UDINT` sin él (`cmp-015-lint-widens-and-narrows`).
+- **Reducir al asignar conserva los bits bajos y no avisa.** Un `LINT` 5000000000 guardado en un `DINT` es 705032704 (`cmp-015-lint-widens-and-narrows`), y un `DINT` 70000 guardado en un `INT` es 4464.
+- **Un entero se convierte a `REAL`** cuando se asigna a uno o se mezcla con uno: `INT` por `REAL` es un `REAL` (`cmp-013-int-times-real`, `cmp-013-real-assigned-from-integer`).
+- **Lo inverso todavía no es una conversión.** `i := r` se acepta y guarda los bits bajos del patrón de bits del `REAL`, no su valor, y una expresión entera asignada a un `BOOL` no se reduce a `FALSE` o `TRUE`: es el requisito CMP-005, y los dos casos `cmp-005-int-assigned-from-real` y `cmp-005-bool-assigned-from-int` fallan hoy. Escriba `REAL_TO_INT(r)` e `i <> 0` en su lugar.
+- **`REAL_TO_INT` trunca hacia cero**, satura en los límites de `DINT` y da 0 para un NaN (`cmp-016-real-to-dint-truncates-toward-zero`, `cmp-016-real-out-of-range-to-dint`, `cmp-016-real-nan-to-dint`). Redondear al entero más cercano, como lo define IEC 61131-3, es el requisito CMP-057 y todavía no se cumple (`cmp-057-real-to-int-rounds` falla hoy). `TRUNC` y `ROUND` devuelven un `REAL` (`cmp-057-trunc-truncates`, `cmp-057-bool-and-round-conversions`).
+- Solo existen como funciones de conversión `INT_TO_REAL`, `REAL_TO_INT`, `BOOL_TO_INT`, `INT_TO_BOOL`, `TRUNC` y `ROUND`. Los demás pares `X_TO_Y` son hoy un error de compilación (CMP-057; `cmp-057-integer-conversion-functions` falla hoy).
+
+### Operandos mixtos y comparación
+
+- **El tipo de una operación es el del operando más ancho, `REAL` gana sobre todo entero, y entre dos tipos del mismo ancho gana el que no tiene signo** (la regla de C). Por eso `DINT` -1 comparado con `UDINT` 5 es una comparación sin signo y `-1 < 5` es FALSE, mientras que `INT` -1 comparado con `UINT` 5 es TRUE porque ambos se amplían primero a 32 bits. La regla es `commonType` en `packages/zplc-compiler/src/compiler/numeric.ts`, cubierta por `numeric.test.ts`.
+- **Los tipos sin signo se comparan sin signo en todo su rango**: `UDINT` 4294967295 es el valor mayor en toda comparación (`cmp-012-udint-max`, `cmp-012-udint-around-2-31`, `cmp-012-udint-compare-unsigned`), y lo mismo `ULINT` (`cmp-015-ulint-compares-unsigned`).
+- **`REAL` se compara con el orden de IEEE 754.** -0.0 es igual a 0.0, los infinitos se ordenan más allá de todo valor finito, y un NaN no es igual, menor ni mayor que nada, ni siquiera que sí mismo (`cmp-013-real-negative-zero-equals-zero`, `cmp-013-real-infinities-order`, `cmp-013-real-nan-is-unordered`).
+
+### Tipos de 64 bits
+
+| Sobre `LINT`, `ULINT` o `LWORD` | Hoy | Caso de conformidad |
+|---|---|---|
+| `+`, `-`, comparación, `AND`, `OR`, `XOR`, `NOT`, negación | Funciona | `cmp-015-lint-add-and-subtract-carry`, `cmp-015-lint-extreme-values`, `cmp-015-ulint-compares-unsigned` |
+| `*`, `/`, `MOD`, `SHL`, `SHR`, `ROL`, `ROR`, `ABS` y las demás funciones estándar, conversión desde o hacia `REAL`, un selector de `CASE`, un contador de `FOR` | Error de compilación que nombra CMP-015 | `cmp-015-lint-multiplication-is-refused`; `numeric.test.ts` para el resto |
+| Asignación o aritmética de `LREAL` | La compilación termina bien y el cargador rechaza el programa | `cmp-015-lreal-double-precision` (falla hoy) |
+
+El requisito CMP-015 pide todo esto. Hasta entonces, un rechazo en la compilación es el comportamiento previsto; el rechazo del cargador para `LREAL` no lo es.
+
 ## Tipos de tiempo y fecha
 
 | Tipo | Ancho | Qué contiene | Literal |
@@ -70,7 +130,7 @@ El compilador y la stdlib muestran uso de ST con:
 Este es el comportamiento actual. El signo y el ancho de `TIME` son una decisión abierta del propietario del proyecto, descrita al final de esta lista.
 
 - Un literal tiene días, horas, minutos, segundos y milisegundos, cada uno a lo sumo una vez y en ese orden, con un `_` opcional entre ellos (`T#1d_2h_3m_4s_5ms`). `us` y `ns` se aceptan cuando el literal completo es un número entero de milisegundos (`T#1000us` es 1 ms), y el último componente puede llevar fracción (`T#1h30.5m`, `T#1.5s`).
-- Un literal que no es un número entero de milisegundos (`T#1.5ms`), que supera 4294967295 ms (`T#50d`) o que es negativo (`T#-5s`) es un error de compilación que nombra el literal.
+- Un literal que no es un número entero de milisegundos (`T#1.5ms`), que supera 4294967295 ms (`T#50d`) o que es negativo (`T#-5s`) es un error de compilación que nombra el literal (`cmp-017-time-literal-below-a-millisecond`, `cmp-017-time-literal-above-the-range`, `cmp-017-time-literal-negative`). Las unidades fuera de orden (`T#30m1h`) también se rechazan (`cmp-017-time-literal-units-out-of-order`).
 - La comparación, la suma, la resta y la división son de 32 bits sin signo: `T#30d > T#1d` es TRUE y `T#30d + T#10d` es 3456000000 ms. Un preset de temporizador de más de 24,8 días funciona: un `TON` con `PT := T#30d` no termina a los 20 ms.
 - Una duración negativa no se puede representar. Una resta por debajo de cero da la vuelta módulo 2^32: `T#0s - T#1s` es 4294966296 ms (`T#49d17h2m46s296ms`), y la compilación no advierte nada. Verifique que el minuendo no sea menor antes de restar.
 - El Watch de Studio muestra un `TIME` superior a 2147483647 ms (24d20h31m23s647ms) como un número negativo, porque los adaptadores de watch leen sus 32 bits con signo. El valor que guarda el programa es la cuenta sin signo.
@@ -86,7 +146,7 @@ Este es el comportamiento actual. El signo y el ancho de `TIME` son una decisió
 
 `LTIME`, `LDATE`, `LTOD`, `LDT`, `CHAR` y `WCHAR` no forman parte de ZPLC 2.0. Hoy el compilador no los informa: acepta la declaración sin ningún mensaje y le da a la variable tamaño 0, de modo que comparte su dirección con la siguiente. No los declare. El requisito CMP-003 pide que la compilación los rechace, igual que a cualquier nombre de tipo desconocido, con un mensaje que nombre el tipo y su posición. Sus casos de conformidad (`cmp-003-*` en `conformance/cmp/`) fallan hoy y figuran en `tools/ci/expected-failures.json`.
 
-Nivel de evidencia: host. Los casos `cmp-017-*` y `cmp-015-dt-plus-time-and-difference` se ejecutan en el runtime nativo, y `packages/zplc-compiler/src/compiler/time.test.ts` cubre la gramática de los literales y sus rechazos. La vuelta por debajo de cero, la zona horaria de `DT#` y la visualización en Studio se observaron o se leyeron en el código (`numeric.ts`, `codegen.ts`, `debugAdapter.ts`) y todavía ningún caso las fija.
+Nivel de evidencia: host. Los casos `cmp-017-*` y `cmp-015-dt-plus-time-and-difference` compilan con el compilador del repositorio y ejecutan el programa en el runtime nativo, y `packages/zplc-compiler/src/compiler/time.test.ts` cubre la gramática de los literales y sus rechazos. La vuelta por debajo de cero, la zona horaria de `DT#` y la visualización en Studio se observaron o se leyeron en el código (`numeric.ts`, `codegen.ts`, `debugAdapter.ts`) y todavía ningún caso las fija.
 
 ## Datos, almacenamiento y valores iniciales
 

@@ -34,7 +34,7 @@ END_PROGRAM
 
 ## Data Types
 
-ZPLC supports these elementary types. [Structured Text (ST)](./st.md) gives the width, the range and the behaviour at the limits of each one.
+ZPLC supports these elementary types. [Structured Text (ST)](./st.md#numeric-types) gives the width, the range and the behaviour at the limits of each one.
 
 *   `BOOL`
 *   `SINT`, `INT`, `DINT`, `LINT` (signed integers of 8, 16, 32 and 64 bits)

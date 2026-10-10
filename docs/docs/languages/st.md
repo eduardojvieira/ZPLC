@@ -58,6 +58,66 @@ The compiler and stdlib surfaces show ST being used with:
 - string functions such as `LEN`, `CONCAT`, `LEFT`, `RIGHT`, and `MID`
 - communication FB calls where the runtime/compiler contract supports them
 
+## Numeric types
+
+The case named next to a row or a rule is a conformance program under `conformance/cmp/` that runs on the native runtime. A case marked "fails today" is on the expected-failures list in `tools/ci/expected-failures.json`.
+
+| Type | Bits | Range | Ordered as | Conformance case |
+|---|---|---|---|---|
+| `BOOL` | 8 | `FALSE`, `TRUE` | not ordered | `harness/vf-001-bool-output-toggles` |
+| `SINT` | 8 | -128 to 127 | signed | `cmp-011-sint-limits` |
+| `USINT` | 8 | 0 to 255 | unsigned | `cmp-012-usint-holds-0-to-255` |
+| `BYTE` | 8 | bit string, 0 to 255 | unsigned | `cmp-014-not-byte` |
+| `INT` | 16 | -32768 to 32767 | signed | `cmp-011-int-limits` |
+| `UINT` | 16 | 0 to 65535 | unsigned | `cmp-012-uint-65535` |
+| `WORD` | 16 | bit string, 0 to 65535 | unsigned | `cmp-014-not-word` |
+| `DINT` | 32 | -2147483648 to 2147483647 | signed | `cmp-011-dint-limits` |
+| `UDINT` | 32 | 0 to 4294967295 | unsigned | `cmp-012-udint-max` |
+| `DWORD` | 32 | bit string, 0 to 4294967295 | unsigned | `cmp-014-not-dword` |
+| `LINT` | 64 | -9223372036854775808 to 9223372036854775807 | signed | `cmp-015-lint-extreme-values` |
+| `ULINT` | 64 | 0 to 18446744073709551615 | unsigned | `cmp-015-ulint-compares-unsigned` |
+| `LWORD` | 64 | bit string, 0 to 18446744073709551615 | unsigned | `cmp-015-ulint-compares-unsigned` |
+| `REAL` | 32 | IEEE 754 single precision | IEEE order, NaN unordered | `cmp-013-real-nan-is-unordered` |
+| `LREAL` | 64 | IEEE 754 double precision, declaration only | not supported | `cmp-015-lreal-double-precision` (fails today) |
+
+### Arithmetic, wrap and division
+
+- **Width of a computation.** Operands of 8 and 16 bits are widened to 32 bits for the operation, and the result is cut to its width only when it is stored. With `i : INT := 32767`, `i + 1` is 32768 inside an expression and -32768 once it is stored in an `INT`; `UINT` 65535 plus 1 stored in a `UINT` is 0 (`cmp-012-uint-65535`), and `SINT`, `USINT` and `BYTE` behave the same.
+- **32 and 64 bits wrap in two's complement.** `DINT` 2147483647 plus 1 is -2147483648, and subtraction and multiplication wrap the same way. The most negative `DINT`, negated, passed to `ABS` or divided by -1, stays the most negative `DINT`, and that value `MOD` -1 is 0 (`cmp-016-dint-add-wraps`, `cmp-016-dint-sub-wraps`, `cmp-016-dint-mul-wraps`, `cmp-016-dint-negate-min`, `cmp-016-dint-abs-min`, `cmp-016-dint-min-divided-by-minus-one`, `cmp-016-dint-min-modulo-minus-one`). `LINT` addition wraps the same way (`cmp-015-lint-extreme-values`).
+- **Division truncates toward zero, and `MOD` takes the sign of the dividend.** -8 / 2 is -4 (`cmp-011-int-divide-negative`) and -7 / 2 is -3 with -7 `MOD` 2 equal to -1, as in C. `UDINT` division and `MOD` are unsigned over the whole range (`cmp-012-udint-divide-and-modulo`).
+- **Division or `MOD` by zero ends the scan with the VM fault `ZPLC_VM_DIV_BY_ZERO` (code 0x03).** The same happens for a `REAL` division by zero. The VM tests are `test_vm_arith_edges.c` and `test_vm_core.c` under `firmware/lib/zplc_core/tests/`; for what a fault does to the outputs, see [Pause, resume, step and stop](../runtime/scheduler.md#pause-resume-step-and-stop).
+
+### Shifts, rotations and bit logic
+
+- `SHL(IN, N)`, `SHR(IN, N)`, `ROL(IN, N)` and `ROR(IN, N)` are functions. A shift by 32 or more, or by a negative count, gives 0 (`cmp-016-shift-by-the-width-or-more`). `SHR` is logical: zeros enter on the left.
+- A `BYTE`, a `WORD` and the 8-bit and 16-bit integer types shift and rotate inside their own width: `SHL` drops the bits shifted past bit 7 or bit 15 (`cmp-014-shl-byte-keeps-8-bits`), and `ROL` and `ROR` wrap inside 8 or 16 bits (`cmp-014-rol-byte-rotates-within-8-bits`, `cmp-014-ror-word-rotates-within-16-bits`).
+- `AND`, `OR`, `XOR` and `NOT` work on the full declared width (`cmp-014-not-byte`, `cmp-014-not-word`, `cmp-014-not-dword`, `cmp-014-and-or-xor-word`), and on 64 bits for `LWORD` (`cmp-015-ulint-compares-unsigned`).
+
+### Conversions
+
+- **Widening keeps the value.** A signed type is sign-extended and an unsigned type or bit string is zero-extended: `INT` -5 becomes `DINT` -5 (`cmp-011-int-widens-to-dint`), `UINT` 65535 becomes `UDINT` 65535 (`cmp-012-uint-65535`), and a `LINT` takes a `DINT` with its sign and a `UDINT` without one (`cmp-015-lint-widens-and-narrows`).
+- **Narrowing on assignment keeps the low bits and gives no warning.** A `LINT` 5000000000 stored in a `DINT` is 705032704 (`cmp-015-lint-widens-and-narrows`), and a `DINT` 70000 stored in an `INT` is 4464.
+- **An integer is converted to `REAL`** when it is assigned to one or mixed with one: `INT` times `REAL` is a `REAL` (`cmp-013-int-times-real`, `cmp-013-real-assigned-from-integer`).
+- **The reverse is not a conversion yet.** `i := r` is accepted and stores the low bits of the bit pattern of the `REAL`, not its value, and an integer expression assigned to a `BOOL` is not reduced to `FALSE` or `TRUE`: requirement CMP-005, and the two cases `cmp-005-int-assigned-from-real` and `cmp-005-bool-assigned-from-int` fail today. Write `REAL_TO_INT(r)` and `i <> 0` instead.
+- **`REAL_TO_INT` truncates toward zero**, saturates at the `DINT` limits and gives 0 for a NaN (`cmp-016-real-to-dint-truncates-toward-zero`, `cmp-016-real-out-of-range-to-dint`, `cmp-016-real-nan-to-dint`). Rounding to the nearest integer, as IEC 61131-3 defines it, is requirement CMP-057 and is not true yet (`cmp-057-real-to-int-rounds` fails today). `TRUNC` and `ROUND` return a `REAL` (`cmp-057-trunc-truncates`, `cmp-057-bool-and-round-conversions`).
+- Only `INT_TO_REAL`, `REAL_TO_INT`, `BOOL_TO_INT`, `INT_TO_BOOL`, `TRUNC` and `ROUND` exist as conversion functions. The other `X_TO_Y` pairs are a build error today (CMP-057; `cmp-057-integer-conversion-functions` fails today).
+
+### Mixed operands and comparison
+
+- **The type of an operation is the wider operand, `REAL` wins over every integer, and between two types of the same width the unsigned one wins** (the C rule). `DINT` -1 compared with `UDINT` 5 is therefore an unsigned comparison and `-1 < 5` is FALSE, while `INT` -1 compared with `UINT` 5 is TRUE because both are widened to 32 bits first. The rule is `commonType` in `packages/zplc-compiler/src/compiler/numeric.ts`, covered by `numeric.test.ts`.
+- **Unsigned types compare unsigned over their whole range**: `UDINT` 4294967295 is the largest value in every comparison (`cmp-012-udint-max`, `cmp-012-udint-around-2-31`, `cmp-012-udint-compare-unsigned`), and so is `ULINT` (`cmp-015-ulint-compares-unsigned`).
+- **`REAL` compares by IEEE 754 order.** -0.0 equals 0.0, the infinities order beyond every finite value, and a NaN is neither equal, less nor greater than anything, itself included (`cmp-013-real-negative-zero-equals-zero`, `cmp-013-real-infinities-order`, `cmp-013-real-nan-is-unordered`).
+
+### 64-bit types
+
+| On `LINT`, `ULINT` or `LWORD` | Today | Conformance case |
+|---|---|---|
+| `+`, `-`, comparison, `AND`, `OR`, `XOR`, `NOT`, negation | Works | `cmp-015-lint-add-and-subtract-carry`, `cmp-015-lint-extreme-values`, `cmp-015-ulint-compares-unsigned` |
+| `*`, `/`, `MOD`, `SHL`, `SHR`, `ROL`, `ROR`, `ABS` and the other standard functions, conversion to or from `REAL`, a `CASE` selector, a `FOR` counter | Build error that names CMP-015 | `cmp-015-lint-multiplication-is-refused`; `numeric.test.ts` for the rest |
+| `LREAL` assignment or arithmetic | The build succeeds and the loader refuses the program | `cmp-015-lreal-double-precision` (fails today) |
+
+Requirement CMP-015 asks for all of these. Until then a refusal at build time is the intended behaviour; the loader refusal for `LREAL` is not.
+
 ## Time and date types
 
 | Type | Width | What it holds | Literal |
@@ -72,7 +132,7 @@ The compiler and stdlib surfaces show ST being used with:
 This is the current behaviour. The sign and the width of `TIME` are an open owner decision, described at the end of this list.
 
 - A literal has days, hours, minutes, seconds and milliseconds, each at most once and in that order, with an optional `_` between them (`T#1d_2h_3m_4s_5ms`). `us` and `ns` are accepted when the whole literal is a whole number of milliseconds (`T#1000us` is 1 ms), and the last component may have a fraction (`T#1h30.5m`, `T#1.5s`).
-- A literal that is not a whole number of milliseconds (`T#1.5ms`), is above 4294967295 ms (`T#50d`) or is negative (`T#-5s`) is a build error that names the literal.
+- A literal that is not a whole number of milliseconds (`T#1.5ms`), is above 4294967295 ms (`T#50d`) or is negative (`T#-5s`) is a build error that names the literal (`cmp-017-time-literal-below-a-millisecond`, `cmp-017-time-literal-above-the-range`, `cmp-017-time-literal-negative`). Units out of order (`T#30m1h`) are refused too (`cmp-017-time-literal-units-out-of-order`).
 - Comparison, addition, subtraction and division are unsigned 32-bit: `T#30d > T#1d` is TRUE and `T#30d + T#10d` is 3456000000 ms. A timer preset above 24.8 days works: a `TON` with `PT := T#30d` is not done after 20 ms.
 - A negative duration cannot be represented. A subtraction below zero wraps modulo 2^32: `T#0s - T#1s` is 4294966296 ms (`T#49d17h2m46s296ms`), and the build gives no warning. Check that the minuend is not smaller before subtracting.
 - Studio's Watch shows a `TIME` above 2147483647 ms (24d20h31m23s647ms) as a negative number, because the watch adapters read its 32 bits as signed. The value the program holds is the unsigned count.
@@ -88,7 +148,7 @@ This is the current behaviour. The sign and the width of `TIME` are an open owne
 
 `LTIME`, `LDATE`, `LTOD`, `LDT`, `CHAR` and `WCHAR` are not part of ZPLC 2.0. Today the compiler does not report them: it accepts the declaration without a message and gives the variable size 0, so the variable shares its address with the next one. Do not declare them. Requirement CMP-003 asks the build to reject them, and any unknown type name, with a message that names the type and its position. Its conformance cases (`cmp-003-*` in `conformance/cmp/`) fail today and are listed in `tools/ci/expected-failures.json`.
 
-Evidence level: host. The cases `cmp-017-*` and `cmp-015-dt-plus-time-and-difference` run on the native runtime, and `packages/zplc-compiler/src/compiler/time.test.ts` covers the literal grammar and its refusals. The wrap below zero, the time zone of `DT#` and the display in Studio were observed or read from the code (`numeric.ts`, `codegen.ts`, `debugAdapter.ts`) and no case pins them yet.
+Evidence level: host. The cases `cmp-017-*` and `cmp-015-dt-plus-time-and-difference` build with the repository compiler and run the program on the native runtime, and `packages/zplc-compiler/src/compiler/time.test.ts` covers the literal grammar and its refusals. The wrap below zero, the time zone of `DT#` and the display in Studio were observed or read from the code (`numeric.ts`, `codegen.ts`, `debugAdapter.ts`) and no case pins them yet.
 
 ## Data, storage and initial values
 
