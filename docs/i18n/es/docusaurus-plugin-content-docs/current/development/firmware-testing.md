@@ -180,7 +180,7 @@ cuando un tamaño excede su presupuesto en un solo byte.
 ## Presupuestos de tamaño
 
 `tools/firmware-test/size-budget.json` registra, para cada placa de
-`firmware/app/boards/supported-boards.v1.5.0.json`, la flash y la RAM medidas
+`firmware/app/boards/boards.json`, la flash y la RAM medidas
 en la tabla de memoria del enlazador y el presupuesto que la compilación debe
 respetar. La política de margen está en el archivo: el presupuesto es la
 medición más 5 por ciento, redondeada hacia arriba a 256 bytes.

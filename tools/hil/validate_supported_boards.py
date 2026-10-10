@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 from __future__ import annotations
 
+import importlib.util
 import json
 from pathlib import Path
 import re
@@ -8,24 +9,21 @@ import sys
 
 
 ROOT = Path(__file__).resolve().parents[2]
-MANIFEST = ROOT / "firmware/app/boards/supported-boards.v1.5.0.json"
+MANIFEST = ROOT / "firmware/app/boards/boards.json"
+LIBRARY = ROOT / "firmware/zephyr/scripts/zplc_boards.py"
 
 
-REQUIRED_KEYS = {
-    "board_id",
-    "display_name",
-    "ide_id",
-    "zephyr_board",
-    "support_assets",
-    "build_command",
-    "network_class",
-    "network_interface",
-    "validation_level",
-    "docs_ref",
-}
+def _load_library():
+    spec = importlib.util.spec_from_file_location("zplc_boards", LIBRARY)
+    assert spec and spec.loader
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
 
-VALID_NETWORK_CLASSES = {"serial-focused", "network-capable", "other"}
-VALID_NETWORK_INTERFACES = {"none", "wifi", "ethernet"}
+
+# The manifest rules (keys, channels, addresses, safe values, support level) live in one place, the library that the
+# firmware generator and the board reference generator use as well (IO-001, IO-012).
+boards_lib = _load_library()
 
 
 def find_duplicates(values: list[str]) -> list[str]:
@@ -72,7 +70,8 @@ def scalar(value: str, description: str) -> str:
     return result
 
 
-def read_cross_build_boards(workflow: Path) -> list[str]:
+def read_cross_build_entries(workflow: Path) -> list[dict[str, str]]:
+    """The include items of the zephyr-cross-build matrix: id, board and, when present, tidy_board."""
     try:
         lines = workflow.read_text().splitlines()
     except OSError as error:
@@ -107,9 +106,8 @@ def read_cross_build_boards(workflow: Path) -> list[str]:
     include = require_child(lines, matrix, matrix_end, 6, "include")
     include_end = block_end(lines, include, matrix_end, 8)
 
-    boards: list[str] = []
-    item_id: str | None = None
-    item_board: str | None = None
+    entries: list[dict[str, str]] = []
+    current: dict[str, str] | None = None
     for line in lines[include + 1 : include_end]:
         stripped = line.strip()
         if not stripped or stripped.startswith("#"):
@@ -119,29 +117,50 @@ def read_cross_build_boards(workflow: Path) -> list[str]:
             match = re.fullmatch(r"- id:\s*(.*)", stripped)
             if not match:
                 raise ValueError("zephyr-cross-build include items must start with - id")
-            if item_id is not None and item_board is None:
+            if current is not None and "board" not in current:
                 raise ValueError("zephyr-cross-build include item is missing board")
             item_id = scalar(match.group(1), "an id")
             if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_-]*", item_id):
                 raise ValueError("zephyr-cross-build include item has an invalid id")
-            item_board = None
+            current = {"id": item_id}
+            entries.append(current)
             continue
-        if line_indent == 12:
-            match = re.fullmatch(r"board:\s*(.*)", stripped)
-            if not match or item_id is None or item_board is not None:
+        if line_indent == 12 and current is not None:
+            # board names what is built; tidy_board names the board in clang-tidy-app-baseline.json
+            match = re.fullmatch(r"(board|tidy_board):\s*(.*)", stripped)
+            if not match or match.group(1) in current:
                 raise ValueError(
                     "zephyr-cross-build include items may contain only one board after id"
                 )
-            item_board = scalar(match.group(1), "a board entry")
-            boards.append(item_board)
+            current[match.group(1)] = scalar(match.group(2), "a board entry")
             continue
         raise ValueError("zephyr-cross-build include has malformed indentation or structure")
 
-    if item_id is None:
+    if current is None:
         raise ValueError("zephyr-cross-build include contains no items")
-    if item_board is None:
+    if "board" not in current:
         raise ValueError("zephyr-cross-build include item is missing board")
-    return boards
+    return entries
+
+
+def read_cross_build_boards(workflow: Path) -> list[str]:
+    return [entry["board"] for entry in read_cross_build_entries(workflow)]
+
+
+def tidy_board_errors(entries: list[dict[str, str]], boards: list[dict[str, object]]) -> list[str]:
+    """tidy_board must be the manifest board id of the zephyr board it sits next to."""
+    by_zephyr = {str(b.get("zephyr_board")): str(b.get("board_id")) for b in boards if isinstance(b, dict)}
+    errors: list[str] = []
+    for entry in entries:
+        tidy = entry.get("tidy_board")
+        if tidy is None:
+            errors.append(f"zephyr-cross-build item {entry['id']} is missing tidy_board")
+        elif by_zephyr.get(entry["board"]) not in (None, tidy):
+            errors.append(
+                f"zephyr-cross-build item {entry['id']}: tidy_board {tidy} is not the manifest board id "
+                f"{by_zephyr[entry['board']]} of {entry['board']}"
+            )
+    return errors
 
 
 def cross_build_board_errors(expected: list[str], matrix: list[str]) -> list[str]:
@@ -179,17 +198,12 @@ def main() -> int:
     serial_count = 0
     network_count = 0
 
+    errors.extend(boards_lib.validate_manifest(data, ROOT))
     if not isinstance(data, list) or not data:
-        errors.append("supported board manifest must contain a non-empty list")
         data = []
 
     for index, entry in enumerate(data):
-        if not isinstance(entry, dict):
-            errors.append(f"entry {index} must be an object")
-            continue
-        missing = sorted(REQUIRED_KEYS - entry.keys())
-        if missing:
-            errors.append(f"entry {index} missing keys: {', '.join(missing)}")
+        if not isinstance(entry, dict) or any(key not in entry for key in boards_lib.BOARD_REQUIRED):
             continue
 
         assets = entry["support_assets"]
@@ -203,15 +217,6 @@ def main() -> int:
                     )
 
         network_class = entry["network_class"]
-        network_interface = entry["network_interface"]
-        if network_class not in VALID_NETWORK_CLASSES:
-            errors.append(
-                f"{entry['ide_id']} has invalid network_class: {network_class}"
-            )
-        if network_interface not in VALID_NETWORK_INTERFACES:
-            errors.append(
-                f"{entry['ide_id']} has invalid network_interface: {network_interface}"
-            )
         if network_class == "serial-focused":
             serial_count += 1
         if network_class == "network-capable":
@@ -224,11 +229,13 @@ def main() -> int:
             if isinstance(entry, dict) and "zephyr_board" in entry
         ]
         try:
-            matrix_boards = read_cross_build_boards(ROOT / ".github/workflows/ci.yml")
+            matrix_entries = read_cross_build_entries(ROOT / ".github/workflows/ci.yml")
         except ValueError as error:
             errors.append(str(error))
         else:
+            matrix_boards = [entry["board"] for entry in matrix_entries]
             errors.extend(cross_build_board_errors(expected_boards, matrix_boards))
+            errors.extend(tidy_board_errors(matrix_entries, data))
 
     if serial_count == 0:
         errors.append("manifest must contain at least one serial-focused board")

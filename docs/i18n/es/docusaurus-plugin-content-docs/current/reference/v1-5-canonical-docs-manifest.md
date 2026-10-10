@@ -57,7 +57,7 @@ agregue una página.
 
 ## Compatibilidad del manifest de placas
 
-El nombre histórico del manifest de placas sigue siendo `firmware/app/boards/supported-boards.v1.5.0.json`. Sus entradas son profiles con nivel de evidencia, no un claim de producto v1.5.
+El manifest de placas es `firmware/app/boards/boards.json`; reemplazó al nombre versionado `supported-boards.v1.5.0.json`. Sus entradas son profiles con nivel de evidencia, no un claim de producto v1.5.
 
 ## Regla de fuentes de verdad
 

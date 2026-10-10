@@ -112,7 +112,7 @@ ctest --output-on-failure   # run the C tests
 Create a west workspace with `west init -l` on this repository, as the
 [Zephyr workspace setup](docs/docs/reference/zephyr-workspace-setup.md) page
 describes, then build from the repository root. Each board's command is in
-`firmware/app/boards/supported-boards.v1.5.0.json`; for the Raspberry Pi Pico:
+`firmware/app/boards/boards.json`; for the Raspberry Pi Pico:
 
 ```bash
 west build -b rpi_pico/rp2040 firmware/app --pristine

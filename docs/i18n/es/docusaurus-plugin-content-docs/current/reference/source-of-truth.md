@@ -24,7 +24,7 @@ los contratos y la evidencia registrada prevalecen sobre la prosa.
 | Compatibilidad de bytecode/ISA | `zplc_isa.h`, salida del compilador y tests de compatibilidad | La versión del producto no es la ABI. |
 | Sesión nativa de desktop | `packages/zplc-ide/src/runtime/` y spec 009 | Las capabilities indican soporte o degradación. |
 | Schema y migración actual del proyecto | `packages/zplc-ide/zplc.schema.json` y su migrador actual | Autoridad del formato actual; no implica actualización automática de consumidores. |
-| Perfiles de placas | `firmware/app/boards/supported-boards.v1.5.0.json` | Estar listado no equivale a HIL. |
+| Perfiles de placas | `firmware/app/boards/boards.json` | Estar listado no equivale a HIL. |
 | Calificación de placa/release | `specs/008-release-foundation/artifacts/` | El nivel de evidencia limita el claim público. |
 | Política de versiones | `VERSIONING.md` | Producto, schema, ABI y protocolo son ejes separados. |
 | Paridad de documentación | `docs/docs/` y `docs/i18n/es/` | Ambas fuentes se actualizan juntas. |

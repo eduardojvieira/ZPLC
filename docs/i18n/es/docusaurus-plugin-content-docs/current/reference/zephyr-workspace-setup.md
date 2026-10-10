@@ -23,7 +23,7 @@ flash, boot, I/O, timing, persistencia ni HIL.
 - `west.yml`
 - `firmware/app/CMakeLists.txt`
 - `firmware/app/README.md`
-- `firmware/app/boards/supported-boards.v1.5.0.json` (nombre histórico)
+- `firmware/app/boards/boards.json`
 - [Fuentes de verdad](./source-of-truth.md)
 
 ## Forma del workspace

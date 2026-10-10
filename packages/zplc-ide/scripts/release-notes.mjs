@@ -31,7 +31,7 @@ export function renderReleaseNotes({ version, windowsChannels = WINDOWS_CHANNELS
 ### Repository evidence
 - Release artifacts include checksums, an SPDX SBOM, and identity evidence produced by this workflow for the exact release SHA.
 - \`ST\`, \`IL\`, \`LD\`, \`FBD\`, and \`SFC\` are described only at the repository-declared and automated-tested workflow level.
-- \`firmware/app/boards/supported-boards.v1.5.0.json\` is the current board catalog/evidence baseline, not 2.0 HIL qualification.
+- \`firmware/app/boards/boards.json\` is the current board catalog/evidence baseline, not 2.0 HIL qualification.
 
 ### Signing state of every asset
 
@@ -72,7 +72,7 @@ Each platform is built and published by its own jobs, so a platform whose jobs f
 
 See the canonical manifest and generated docs reference instead of treating this release body as a separate source of truth:
 
-- \`firmware/app/boards/supported-boards.v1.5.0.json\`
+- \`firmware/app/boards/boards.json\`
 - https://eduardojvieira.github.io/ZPLC/reference/boards
 
 ### Documentation

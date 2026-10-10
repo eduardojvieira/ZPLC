@@ -1,0 +1,945 @@
+[
+  {
+    "board_id": "rpi-pico-rp2040",
+    "display_name": "Raspberry Pi Pico (RP2040)",
+    "ide_id": "rpi_pico",
+    "zephyr_board": "rpi_pico/rp2040",
+    "variant": "rp2040",
+    "memory": {
+      "work_size": 8192,
+      "retain_size": 4096,
+      "code_size_max": 45056
+    },
+    "support_assets": [
+      "firmware/app/boards/rpi_pico_rp2040.conf",
+      "firmware/app/boards/rpi_pico_rp2040.overlay"
+    ],
+    "build_command": "west build -b rpi_pico/rp2040 firmware/app --pristine",
+    "network_class": "serial-focused",
+    "network_interface": "none",
+    "evidence_refs": [],
+    "docs_ref": "docs/docs/reference/index.md#supported-boards",
+    "io": {
+      "schema_version": 1,
+      "channels": [
+        {
+          "id": "DO0",
+          "direction": "output",
+          "kind": "digital",
+          "address": "%QX0.0",
+          "pin": "GP0",
+          "dt": {
+            "alias": "led0",
+            "controller": "gpio0",
+            "pin": 0
+          },
+          "safe": 0,
+          "electrical": "3.3 V logic. Not 5 V tolerant. RP2040 drive strength is configurable up to 12 mA per pin (datasheet, not qualified here).",
+          "pin_status": "devicetree",
+          "source": "firmware/app/boards/rpi_pico_rp2040.overlay",
+          "location": "header pin 1"
+        },
+        {
+          "id": "DO1",
+          "direction": "output",
+          "kind": "digital",
+          "address": "%QX0.1",
+          "pin": "GP1",
+          "dt": {
+            "alias": "led1",
+            "controller": "gpio0",
+            "pin": 1
+          },
+          "safe": 0,
+          "electrical": "3.3 V logic. Not 5 V tolerant. RP2040 drive strength is configurable up to 12 mA per pin (datasheet, not qualified here).",
+          "pin_status": "devicetree",
+          "source": "firmware/app/boards/rpi_pico_rp2040.overlay",
+          "location": "header pin 2"
+        },
+        {
+          "id": "DO2",
+          "direction": "output",
+          "kind": "digital",
+          "address": "%QX0.2",
+          "pin": "GP2",
+          "dt": {
+            "alias": "led2",
+            "controller": "gpio0",
+            "pin": 2
+          },
+          "safe": 0,
+          "electrical": "3.3 V logic. Not 5 V tolerant. RP2040 drive strength is configurable up to 12 mA per pin (datasheet, not qualified here).",
+          "pin_status": "devicetree",
+          "source": "firmware/app/boards/rpi_pico_rp2040.overlay",
+          "location": "header pin 4"
+        },
+        {
+          "id": "DO3",
+          "direction": "output",
+          "kind": "digital",
+          "address": "%QX0.3",
+          "pin": "GP3",
+          "dt": {
+            "alias": "led3",
+            "controller": "gpio0",
+            "pin": 3
+          },
+          "safe": 0,
+          "electrical": "3.3 V logic. Not 5 V tolerant. RP2040 drive strength is configurable up to 12 mA per pin (datasheet, not qualified here).",
+          "pin_status": "devicetree",
+          "source": "firmware/app/boards/rpi_pico_rp2040.overlay",
+          "location": "header pin 5"
+        },
+        {
+          "id": "DO4",
+          "direction": "output",
+          "kind": "digital",
+          "address": "%QX0.4",
+          "pin": "GP25",
+          "dt": {
+            "alias": "led4",
+            "controller": "gpio0",
+            "pin": 25
+          },
+          "safe": 0,
+          "electrical": "On-board green LED through its series resistor; not a field output.",
+          "pin_status": "devicetree",
+          "source": "firmware/app/boards/rpi_pico_rp2040.overlay",
+          "location": "on-board LED"
+        },
+        {
+          "id": "DI0",
+          "direction": "input",
+          "kind": "digital",
+          "address": "%IX0.0",
+          "pin": "GP15",
+          "dt": {
+            "alias": "sw0",
+            "controller": "gpio0",
+            "pin": 15
+          },
+          "electrical": "3.3 V logic input with the RP2040 internal pull-up enabled by the profile; connect a switch to GND. Not 5 V tolerant.",
+          "pin_status": "devicetree",
+          "source": "firmware/app/boards/rpi_pico_rp2040.overlay",
+          "location": "header pin 20"
+        },
+        {
+          "id": "DI1",
+          "direction": "input",
+          "kind": "digital",
+          "address": "%IX0.1",
+          "pin": "GP14",
+          "dt": {
+            "alias": "sw1",
+            "controller": "gpio0",
+            "pin": 14
+          },
+          "electrical": "3.3 V logic input with the RP2040 internal pull-up enabled by the profile; connect a switch to GND. Not 5 V tolerant.",
+          "pin_status": "profile",
+          "source": "firmware/app/boards/rpi_pico_rp2040.overlay",
+          "location": "header pin 19"
+        },
+        {
+          "id": "DI2",
+          "direction": "input",
+          "kind": "digital",
+          "address": "%IX0.2",
+          "pin": "GP13",
+          "dt": {
+            "alias": "sw2",
+            "controller": "gpio0",
+            "pin": 13
+          },
+          "electrical": "3.3 V logic input with the RP2040 internal pull-up enabled by the profile; connect a switch to GND. Not 5 V tolerant.",
+          "pin_status": "profile",
+          "source": "firmware/app/boards/rpi_pico_rp2040.overlay",
+          "location": "header pin 17"
+        },
+        {
+          "id": "DI3",
+          "direction": "input",
+          "kind": "digital",
+          "address": "%IX0.3",
+          "pin": "GP12",
+          "dt": {
+            "alias": "sw3",
+            "controller": "gpio0",
+            "pin": 12
+          },
+          "electrical": "3.3 V logic input with the RP2040 internal pull-up enabled by the profile; connect a switch to GND. Not 5 V tolerant.",
+          "pin_status": "profile",
+          "source": "firmware/app/boards/rpi_pico_rp2040.overlay",
+          "location": "header pin 16"
+        },
+        {
+          "id": "AI0",
+          "direction": "input",
+          "kind": "analog",
+          "address": "%IW4",
+          "pin": "GP26 (ADC0)",
+          "dt": {
+            "controller": "adc",
+            "channel": 0
+          },
+          "resolution_bits": 12,
+          "range": {
+            "raw_min": 0,
+            "raw_max": 4095,
+            "eng_min": 0.0,
+            "eng_max": 3.3,
+            "unit": "V"
+          },
+          "electrical": "0 V to 3.3 V on the ADC input; do not exceed 3.3 V.",
+          "pin_status": "devicetree",
+          "source": "firmware/app/boards/rpi_pico_rp2040.overlay",
+          "location": "header pin 31"
+        },
+        {
+          "id": "AI1",
+          "direction": "input",
+          "kind": "analog",
+          "address": "%IW5",
+          "pin": "GP27 (ADC1)",
+          "dt": {
+            "controller": "adc",
+            "channel": 1
+          },
+          "resolution_bits": 12,
+          "range": {
+            "raw_min": 0,
+            "raw_max": 4095,
+            "eng_min": 0.0,
+            "eng_max": 3.3,
+            "unit": "V"
+          },
+          "electrical": "0 V to 3.3 V on the ADC input; do not exceed 3.3 V.",
+          "pin_status": "devicetree",
+          "source": "firmware/app/boards/rpi_pico_rp2040.overlay",
+          "location": "header pin 32"
+        },
+        {
+          "id": "AI2",
+          "direction": "input",
+          "kind": "analog",
+          "address": "%IW6",
+          "pin": "GP28 (ADC2)",
+          "dt": {
+            "controller": "adc",
+            "channel": 2
+          },
+          "resolution_bits": 12,
+          "range": {
+            "raw_min": 0,
+            "raw_max": 4095,
+            "eng_min": 0.0,
+            "eng_max": 3.3,
+            "unit": "V"
+          },
+          "electrical": "0 V to 3.3 V on the ADC input; do not exceed 3.3 V.",
+          "pin_status": "devicetree",
+          "source": "firmware/app/boards/rpi_pico_rp2040.overlay",
+          "location": "header pin 34"
+        },
+        {
+          "id": "AI3",
+          "direction": "input",
+          "kind": "analog",
+          "address": "%IW7",
+          "pin": "VSYS/3 (ADC3)",
+          "dt": {
+            "controller": "adc",
+            "channel": 3
+          },
+          "resolution_bits": 12,
+          "range": {
+            "raw_min": 0,
+            "raw_max": 4095,
+            "eng_min": 0.0,
+            "eng_max": 3.3,
+            "unit": "V"
+          },
+          "electrical": "Internal: the supply voltage divided by 3, no external connection.",
+          "pin_status": "devicetree",
+          "source": "firmware/app/boards/rpi_pico_rp2040.overlay",
+          "location": "internal",
+          "scaling": "VSYS = 3 x the input voltage"
+        },
+        {
+          "id": "AI4",
+          "direction": "input",
+          "kind": "analog",
+          "address": "%IW8",
+          "pin": "Temperature sensor (ADC4)",
+          "dt": {
+            "controller": "adc",
+            "channel": 4
+          },
+          "resolution_bits": 12,
+          "range": {
+            "raw_min": 0,
+            "raw_max": 4095,
+            "eng_min": 0.0,
+            "eng_max": 3.3,
+            "unit": "V"
+          },
+          "electrical": "Internal die temperature sensor, no external connection.",
+          "pin_status": "devicetree",
+          "source": "firmware/app/boards/rpi_pico_rp2040.overlay",
+          "location": "internal",
+          "scaling": "RP2040 datasheet: T [degC] = 27 - (V - 0.706) / 0.001721 with V = raw * 3.3 / 4095"
+        }
+      ],
+      "unmapped": []
+    }
+  },
+  {
+    "board_id": "arduino-giga-r1-m7",
+    "display_name": "Arduino GIGA R1 (STM32H747 M7)",
+    "ide_id": "arduino_giga_r1",
+    "zephyr_board": "arduino_giga_r1/stm32h747xx/m7",
+    "variant": "stm32h747xx/m7",
+    "memory": {
+      "work_size": 8192,
+      "retain_size": 4096,
+      "code_size_max": 45056
+    },
+    "support_assets": [
+      "firmware/app/boards/arduino_giga_r1_stm32h747xx_m7.conf",
+      "firmware/app/boards/arduino_giga_r1_stm32h747xx_m7.overlay"
+    ],
+    "build_command": "west build -b arduino_giga_r1/stm32h747xx/m7 firmware/app --pristine",
+    "network_class": "serial-focused",
+    "network_interface": "none",
+    "evidence_refs": [],
+    "docs_ref": "docs/docs/reference/index.md#supported-boards",
+    "io": {
+      "schema_version": 1,
+      "channels": [
+        {
+          "id": "DO0",
+          "direction": "output",
+          "kind": "digital",
+          "address": "%QX0.0",
+          "pin": "PI12 (red LED)",
+          "dt": {
+            "alias": "led0",
+            "controller": "gpioi",
+            "pin": 12
+          },
+          "safe": 0,
+          "electrical": "On-board LED, active low in the board devicetree; not a field output.",
+          "pin_status": "devicetree",
+          "source": "zephyr:boards/arduino/giga_r1/arduino_giga_r1.dtsi"
+        },
+        {
+          "id": "DO1",
+          "direction": "output",
+          "kind": "digital",
+          "address": "%QX0.1",
+          "pin": "PJ13 (green LED)",
+          "dt": {
+            "alias": "led1",
+            "controller": "gpioj",
+            "pin": 13
+          },
+          "safe": 0,
+          "electrical": "On-board LED, active low in the board devicetree; not a field output.",
+          "pin_status": "devicetree",
+          "source": "zephyr:boards/arduino/giga_r1/arduino_giga_r1.dtsi"
+        },
+        {
+          "id": "DI0",
+          "direction": "input",
+          "kind": "digital",
+          "address": "%IX0.0",
+          "pin": "PC13 (user button)",
+          "dt": {
+            "alias": "sw0",
+            "controller": "gpioc",
+            "pin": 13
+          },
+          "electrical": "On-board user button.",
+          "pin_status": "devicetree",
+          "source": "zephyr:boards/arduino/giga_r1/arduino_giga_r1.dtsi"
+        }
+      ],
+      "unmapped": []
+    }
+  },
+  {
+    "board_id": "esp32-s3-devkitc",
+    "display_name": "ESP32-S3-DevKitC-1 (N8R8)",
+    "ide_id": "esp32s3_devkitc",
+    "zephyr_board": "esp32s3_devkitc/esp32s3/procpu",
+    "variant": "esp32s3/procpu",
+    "hardware": {
+      "module": "ESP32-S3-WROOM-1-N8R8",
+      "variant": "N8R8",
+      "flash_mb": 8,
+      "psram_mb": 8,
+      "psram_mode": "octal",
+      "variant_confirmed": false,
+      "note": "Spec 010 names the N8R8 variant; read the marking on the module before relying on the sizes (OA-06)."
+    },
+    "memory": {
+      "work_size": 2048,
+      "retain_size": 1024,
+      "code_size_max": 8192
+    },
+    "support_assets": [
+      "firmware/app/boards/esp32s3_devkitc_esp32s3_procpu.conf",
+      "firmware/app/boards/esp32s3_devkitc_esp32s3_procpu.overlay"
+    ],
+    "build_command": "west build -b esp32s3_devkitc/esp32s3/procpu firmware/app --pristine",
+    "network_class": "network-capable",
+    "network_interface": "wifi",
+    "evidence_refs": [],
+    "docs_ref": "docs/docs/reference/index.md#supported-boards",
+    "io": {
+      "schema_version": 1,
+      "channels": [
+        {
+          "id": "DO0",
+          "direction": "output",
+          "kind": "digital",
+          "address": "%QX0.0",
+          "pin": "GPIO38",
+          "dt": {
+            "alias": "led0",
+            "controller": "gpio1",
+            "pin": 6
+          },
+          "safe": 0,
+          "electrical": "3.3 V logic. Not 5 V tolerant. External LED with a series resistor.",
+          "pin_status": "devicetree",
+          "source": "firmware/app/boards/esp32s3_devkitc_esp32s3_procpu.overlay",
+          "location": "header J3"
+        },
+        {
+          "id": "DO1",
+          "direction": "output",
+          "kind": "digital",
+          "address": "%QX0.1",
+          "pin": "GPIO15",
+          "dt": {
+            "alias": "led1",
+            "controller": "gpio0",
+            "pin": 15
+          },
+          "safe": 0,
+          "electrical": "3.3 V logic. Not 5 V tolerant.",
+          "pin_status": "devicetree",
+          "source": "firmware/app/boards/esp32s3_devkitc_esp32s3_procpu.overlay",
+          "location": "header J1"
+        },
+        {
+          "id": "DO2",
+          "direction": "output",
+          "kind": "digital",
+          "address": "%QX0.2",
+          "pin": "GPIO16",
+          "dt": {
+            "alias": "led2",
+            "controller": "gpio0",
+            "pin": 16
+          },
+          "safe": 0,
+          "electrical": "3.3 V logic. Not 5 V tolerant.",
+          "pin_status": "profile",
+          "source": "firmware/app/boards/esp32s3_devkitc_esp32s3_procpu.overlay",
+          "location": "header J1"
+        },
+        {
+          "id": "DO3",
+          "direction": "output",
+          "kind": "digital",
+          "address": "%QX0.3",
+          "pin": "GPIO17",
+          "dt": {
+            "alias": "led3",
+            "controller": "gpio0",
+            "pin": 17
+          },
+          "safe": 0,
+          "electrical": "3.3 V logic. Not 5 V tolerant.",
+          "pin_status": "profile",
+          "source": "firmware/app/boards/esp32s3_devkitc_esp32s3_procpu.overlay",
+          "location": "header J1"
+        },
+        {
+          "id": "DI0",
+          "direction": "input",
+          "kind": "digital",
+          "address": "%IX0.0",
+          "pin": "GPIO0 (BOOT)",
+          "dt": {
+            "alias": "sw0",
+            "controller": "gpio0",
+            "pin": 0
+          },
+          "electrical": "BOOT button, active low with an internal pull-up. A strapping pin: keep it high at reset.",
+          "pin_status": "devicetree",
+          "source": "zephyr:boards/espressif/esp32s3_devkitc/esp32s3_devkitc_procpu.dts",
+          "location": "header J3 and BOOT button"
+        },
+        {
+          "id": "DI1",
+          "direction": "input",
+          "kind": "digital",
+          "address": "%IX0.1",
+          "pin": "GPIO18",
+          "dt": {
+            "alias": "sw1",
+            "controller": "gpio0",
+            "pin": 18
+          },
+          "electrical": "3.3 V logic. Not 5 V tolerant. Internal pull-up; connect a switch to GND.",
+          "pin_status": "profile",
+          "source": "firmware/app/boards/esp32s3_devkitc_esp32s3_procpu.overlay",
+          "location": "header J1"
+        },
+        {
+          "id": "DI2",
+          "direction": "input",
+          "kind": "digital",
+          "address": "%IX0.2",
+          "pin": "GPIO8",
+          "dt": {
+            "alias": "sw2",
+            "controller": "gpio0",
+            "pin": 8
+          },
+          "electrical": "3.3 V logic. Not 5 V tolerant. Internal pull-up; connect a switch to GND.",
+          "pin_status": "profile",
+          "source": "firmware/app/boards/esp32s3_devkitc_esp32s3_procpu.overlay",
+          "location": "header J1"
+        },
+        {
+          "id": "DI3",
+          "direction": "input",
+          "kind": "digital",
+          "address": "%IX0.3",
+          "pin": "GPIO9",
+          "dt": {
+            "alias": "sw3",
+            "controller": "gpio0",
+            "pin": 9
+          },
+          "electrical": "3.3 V logic. Not 5 V tolerant. Internal pull-up; connect a switch to GND.",
+          "pin_status": "profile",
+          "source": "firmware/app/boards/esp32s3_devkitc_esp32s3_procpu.overlay",
+          "location": "header J1"
+        },
+        {
+          "id": "AI0",
+          "direction": "input",
+          "kind": "analog",
+          "address": "%IW4",
+          "pin": "GPIO4 (ADC1 channel 3)",
+          "dt": {
+            "controller": "adc0",
+            "channel": 3,
+            "gain": "ADC_GAIN_1_4",
+            "reference": "ADC_REF_INTERNAL",
+            "acquisition_time": "ADC_ACQ_TIME_DEFAULT"
+          },
+          "resolution_bits": 12,
+          "range": {
+            "raw_min": 0,
+            "raw_max": 4095,
+            "eng_min": 0.0,
+            "eng_max": 3.1,
+            "unit": "V"
+          },
+          "electrical": "0 V to about 3.1 V at 11 dB attenuation; do not exceed 3.3 V.",
+          "pin_status": "profile",
+          "source": "firmware/app/boards/esp32s3_devkitc_esp32s3_procpu.overlay",
+          "location": "header J1",
+          "scaling": "Nominal and uncalibrated: the ESP32-S3 converter is nonlinear near both ends"
+        }
+      ],
+      "unmapped": [
+        {
+          "terminal": "GPIO48 (RGB LED)",
+          "reason": "the on-board LED is an addressable RGB part that needs the LED-strip driver"
+        }
+      ]
+    }
+  },
+  {
+    "board_id": "stm32f746g-disco",
+    "display_name": "STM32F746G Discovery",
+    "ide_id": "stm32f746g_disco",
+    "zephyr_board": "stm32f746g_disco/stm32f746xx",
+    "variant": "stm32f746xx",
+    "memory": {
+      "work_size": 8192,
+      "retain_size": 4096,
+      "code_size_max": 45056
+    },
+    "support_assets": [
+      "firmware/app/boards/stm32f746g_disco.conf",
+      "firmware/app/boards/stm32f746g_disco.overlay"
+    ],
+    "build_command": "west build -b stm32f746g_disco/stm32f746xx firmware/app --pristine",
+    "network_class": "network-capable",
+    "network_interface": "ethernet",
+    "evidence_refs": [],
+    "docs_ref": "docs/docs/reference/index.md#supported-boards",
+    "io": {
+      "schema_version": 1,
+      "channels": [
+        {
+          "id": "DO0",
+          "direction": "output",
+          "kind": "digital",
+          "address": "%QX0.0",
+          "pin": "PI1 (LD1 green)",
+          "dt": {
+            "alias": "led0",
+            "controller": "gpioi",
+            "pin": 1
+          },
+          "safe": 0,
+          "electrical": "On-board LED; not a field output.",
+          "pin_status": "devicetree",
+          "source": "zephyr:boards/st/stm32f746g_disco/stm32f746g_disco.dts"
+        },
+        {
+          "id": "DI0",
+          "direction": "input",
+          "kind": "digital",
+          "address": "%IX0.0",
+          "pin": "PI11 (user button)",
+          "dt": {
+            "alias": "sw0",
+            "controller": "gpioi",
+            "pin": 11
+          },
+          "electrical": "On-board user button.",
+          "pin_status": "devicetree",
+          "source": "zephyr:boards/st/stm32f746g_disco/stm32f746g_disco.dts"
+        }
+      ],
+      "unmapped": []
+    }
+  },
+  {
+    "board_id": "nucleo-h743zi",
+    "display_name": "STM32 Nucleo-H743ZI",
+    "ide_id": "nucleo_h743zi",
+    "zephyr_board": "nucleo_h743zi/stm32h743xx",
+    "variant": "stm32h743xx",
+    "memory": {
+      "work_size": 8192,
+      "retain_size": 4096,
+      "code_size_max": 45056
+    },
+    "support_assets": [
+      "firmware/app/boards/nucleo_h743zi.conf",
+      "firmware/app/boards/nucleo_h743zi.overlay"
+    ],
+    "build_command": "west build -b nucleo_h743zi/stm32h743xx firmware/app --pristine",
+    "network_class": "network-capable",
+    "network_interface": "ethernet",
+    "evidence_refs": [],
+    "docs_ref": "docs/docs/reference/index.md#supported-boards",
+    "io": {
+      "schema_version": 1,
+      "channels": [
+        {
+          "id": "DO0",
+          "direction": "output",
+          "kind": "digital",
+          "address": "%QX0.0",
+          "pin": "PB0 (LD1 green)",
+          "dt": {
+            "alias": "led0",
+            "controller": "gpiob",
+            "pin": 0
+          },
+          "safe": 0,
+          "electrical": "On-board LED; not a field output.",
+          "pin_status": "devicetree",
+          "source": "zephyr:boards/st/nucleo_h743zi/nucleo_h743zi.dts"
+        },
+        {
+          "id": "DO1",
+          "direction": "output",
+          "kind": "digital",
+          "address": "%QX0.1",
+          "pin": "PE1 (LD2 yellow)",
+          "dt": {
+            "alias": "led1",
+            "controller": "gpioe",
+            "pin": 1
+          },
+          "safe": 0,
+          "electrical": "On-board LED; not a field output.",
+          "pin_status": "devicetree",
+          "source": "zephyr:boards/st/nucleo_h743zi/nucleo_h743zi.dts"
+        },
+        {
+          "id": "DI0",
+          "direction": "input",
+          "kind": "digital",
+          "address": "%IX0.0",
+          "pin": "PC13 (user button)",
+          "dt": {
+            "alias": "sw0",
+            "controller": "gpioc",
+            "pin": 13
+          },
+          "electrical": "On-board user button.",
+          "pin_status": "devicetree",
+          "source": "zephyr:boards/st/nucleo_h743zi/nucleo_h743zi.dts"
+        }
+      ],
+      "unmapped": []
+    }
+  },
+  {
+    "board_id": "arduino-opta-wifi-m7",
+    "display_name": "Arduino Opta WiFi (STM32H747 M7)",
+    "ide_id": "arduino_opta_wifi",
+    "zephyr_board": "arduino_opta/stm32h747xx/m7",
+    "variant": "stm32h747xx/m7",
+    "memory": {
+      "work_size": 8192,
+      "retain_size": 4096,
+      "code_size_max": 45056
+    },
+    "support_assets": [
+      "firmware/app/boards/arduino_opta_stm32h747xx_m7.conf",
+      "firmware/app/boards/arduino_opta_stm32h747xx_m7.overlay"
+    ],
+    "build_command": "west build -b arduino_opta/stm32h747xx/m7 firmware/app --pristine",
+    "network_class": "network-capable",
+    "network_interface": "wifi",
+    "evidence_refs": [],
+    "docs_ref": "docs/docs/reference/index.md#supported-boards",
+    "io": {
+      "schema_version": 1,
+      "channels": [
+        {
+          "id": "DO0",
+          "direction": "output",
+          "kind": "digital",
+          "address": "%QX0.0",
+          "pin": "PI0 (status LED D0)",
+          "dt": {
+            "alias": "led0",
+            "controller": "gpioi",
+            "pin": 0
+          },
+          "safe": 0,
+          "electrical": "On-board status LED; not a field output.",
+          "pin_status": "devicetree",
+          "source": "zephyr:boards/arduino/opta/arduino_opta-common.dtsi"
+        },
+        {
+          "id": "DO1",
+          "direction": "output",
+          "kind": "digital",
+          "address": "%QX0.1",
+          "pin": "PI1 (status LED D1)",
+          "dt": {
+            "alias": "led1",
+            "controller": "gpioi",
+            "pin": 1
+          },
+          "safe": 0,
+          "electrical": "On-board status LED; not a field output.",
+          "pin_status": "devicetree",
+          "source": "zephyr:boards/arduino/opta/arduino_opta-common.dtsi"
+        },
+        {
+          "id": "DO2",
+          "direction": "output",
+          "kind": "digital",
+          "address": "%QX0.2",
+          "pin": "PI3 (status LED D2)",
+          "dt": {
+            "alias": "led2",
+            "controller": "gpioi",
+            "pin": 3
+          },
+          "safe": 0,
+          "electrical": "On-board status LED; not a field output.",
+          "pin_status": "devicetree",
+          "source": "zephyr:boards/arduino/opta/arduino_opta-common.dtsi"
+        },
+        {
+          "id": "DO3",
+          "direction": "output",
+          "kind": "digital",
+          "address": "%QX0.3",
+          "pin": "PH15 (status LED D3)",
+          "dt": {
+            "alias": "led3",
+            "controller": "gpioh",
+            "pin": 15
+          },
+          "safe": 0,
+          "electrical": "On-board status LED; not a field output.",
+          "pin_status": "devicetree",
+          "source": "zephyr:boards/arduino/opta/arduino_opta-common.dtsi"
+        },
+        {
+          "id": "DO4",
+          "direction": "output",
+          "kind": "digital",
+          "address": "%QX0.4",
+          "pin": "PI6 (relay output 1)",
+          "dt": {
+            "alias": "relay1",
+            "controller": "gpioi",
+            "pin": 6
+          },
+          "safe": 0,
+          "electrical": "Relay contact: it can switch a field circuit. Observe the contact rating in the Arduino Opta documentation; not qualified here.",
+          "pin_status": "devicetree",
+          "source": "zephyr:boards/arduino/opta/arduino_opta-common.dtsi",
+          "location": "relay output terminal 1"
+        },
+        {
+          "id": "DO5",
+          "direction": "output",
+          "kind": "digital",
+          "address": "%QX0.5",
+          "pin": "PI5 (relay output 2)",
+          "dt": {
+            "alias": "relay2",
+            "controller": "gpioi",
+            "pin": 5
+          },
+          "safe": 0,
+          "electrical": "Relay contact: it can switch a field circuit. Observe the contact rating in the Arduino Opta documentation; not qualified here.",
+          "pin_status": "devicetree",
+          "source": "zephyr:boards/arduino/opta/arduino_opta-common.dtsi",
+          "location": "relay output terminal 2"
+        },
+        {
+          "id": "DO6",
+          "direction": "output",
+          "kind": "digital",
+          "address": "%QX0.6",
+          "pin": "PI7 (relay output 3)",
+          "dt": {
+            "alias": "relay3",
+            "controller": "gpioi",
+            "pin": 7
+          },
+          "safe": 0,
+          "electrical": "Relay contact: it can switch a field circuit. Observe the contact rating in the Arduino Opta documentation; not qualified here.",
+          "pin_status": "devicetree",
+          "source": "zephyr:boards/arduino/opta/arduino_opta-common.dtsi",
+          "location": "relay output terminal 3"
+        },
+        {
+          "id": "DO7",
+          "direction": "output",
+          "kind": "digital",
+          "address": "%QX0.7",
+          "pin": "PI4 (relay output 4)",
+          "dt": {
+            "alias": "relay4",
+            "controller": "gpioi",
+            "pin": 4
+          },
+          "safe": 0,
+          "electrical": "Relay contact: it can switch a field circuit. Observe the contact rating in the Arduino Opta documentation; not qualified here.",
+          "pin_status": "devicetree",
+          "source": "zephyr:boards/arduino/opta/arduino_opta-common.dtsi",
+          "location": "relay output terminal 4"
+        },
+        {
+          "id": "DI0",
+          "direction": "input",
+          "kind": "digital",
+          "address": "%IX0.0",
+          "pin": "PE4 (user button)",
+          "dt": {
+            "alias": "sw0",
+            "controller": "gpioe",
+            "pin": 4
+          },
+          "electrical": "On-board user button.",
+          "pin_status": "devicetree",
+          "source": "zephyr:boards/arduino/opta/arduino_opta-common.dtsi"
+        }
+      ],
+      "unmapped": [
+        {
+          "terminal": "I1 to I8 (field inputs)",
+          "reason": "the pin documentation of the Arduino Opta field inputs is not established (OA-13); the board devicetree defines no digital input alias for them"
+        }
+      ]
+    }
+  },
+  {
+    "board_id": "waveshare-rp2040-zero",
+    "display_name": "Waveshare RP2040-Zero",
+    "ide_id": "waveshare_rp2040_zero",
+    "zephyr_board": "rp2040_zero/rp2040",
+    "variant": "rp2040",
+    "memory": {
+      "work_size": 8192,
+      "retain_size": 4096,
+      "code_size_max": 45056
+    },
+    "support_assets": [
+      "firmware/app/boards/rp2040_zero_rp2040.conf",
+      "firmware/app/boards/rp2040_zero_rp2040.overlay"
+    ],
+    "build_command": "west build -b rp2040_zero/rp2040 firmware/app --pristine",
+    "network_class": "serial-focused",
+    "network_interface": "none",
+    "evidence_refs": [],
+    "docs_ref": "docs/docs/reference/index.md#supported-boards",
+    "io": {
+      "schema_version": 1,
+      "channels": [
+        {
+          "id": "DO0",
+          "direction": "output",
+          "kind": "digital",
+          "address": "%QX0.0",
+          "pin": "GP2",
+          "dt": {
+            "alias": "led0",
+            "controller": "gpio0",
+            "pin": 2
+          },
+          "safe": 0,
+          "electrical": "3.3 V logic. Not 5 V tolerant. RP2040 drive strength is configurable up to 12 mA per pin (datasheet, not qualified here).",
+          "pin_status": "devicetree",
+          "source": "firmware/app/boards/rp2040_zero_rp2040.overlay",
+          "location": "castellated edge pad GP2"
+        },
+        {
+          "id": "DI0",
+          "direction": "input",
+          "kind": "digital",
+          "address": "%IX0.0",
+          "pin": "GP3",
+          "dt": {
+            "alias": "sw0",
+            "controller": "gpio0",
+            "pin": 3
+          },
+          "electrical": "3.3 V logic input with the RP2040 internal pull-up enabled by the profile; connect a switch to GND. Not 5 V tolerant.",
+          "pin_status": "devicetree",
+          "source": "firmware/app/boards/rp2040_zero_rp2040.overlay",
+          "location": "castellated edge pad GP3"
+        }
+      ],
+      "unmapped": [
+        {
+          "terminal": "WS2812 RGB LED (GP16)",
+          "reason": "an addressable LED needs the LED-strip driver; it is not a simple output"
+        }
+      ]
+    }
+  }
+]

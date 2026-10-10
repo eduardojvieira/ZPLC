@@ -8,7 +8,7 @@ on:
       - 'tools/docs/**'
       - 'tools/hil/validate_docs_parity.py'
       - 'firmware/lib/zplc_core/include/**'
-      - 'firmware/app/boards/supported-boards.v1.5.0.json'
+      - 'firmware/app/boards/boards.json'
   pull_request:
     branches: [master, main]
     paths:
@@ -16,7 +16,7 @@ on:
       - 'tools/docs/**'
       - 'tools/hil/validate_docs_parity.py'
       - 'firmware/lib/zplc_core/include/**'
-      - 'firmware/app/boards/supported-boards.v1.5.0.json'
+      - 'firmware/app/boards/boards.json'
   workflow_dispatch:
 
 permissions:

@@ -167,7 +167,7 @@ fails when a size is one byte over its budget.
 ## Size budgets
 
 `tools/firmware-test/size-budget.json` records, for each board in
-`firmware/app/boards/supported-boards.v1.5.0.json`, the flash and RAM measured
+`firmware/app/boards/boards.json`, the flash and RAM measured
 from the linker's memory table and the budget the build must stay under. The
 margin policy is in the file: the budget is the measurement plus 5 percent,
 rounded up to 256 bytes.

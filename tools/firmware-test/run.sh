@@ -163,7 +163,7 @@ run_host() { # mode extra-flags
 }
 
 # ---------------------------------------------------------------------- size
-BOARDS_JSON="${ZPLC_FW_REPO}/firmware/app/boards/supported-boards.v1.5.0.json"
+BOARDS_JSON="${ZPLC_FW_REPO}/firmware/app/boards/boards.json"
 
 build_board() { # board-id zephyr-board; log in $OUT/size/<id>.log
   local id="$1" board="$2" logs="${OUT}/size"

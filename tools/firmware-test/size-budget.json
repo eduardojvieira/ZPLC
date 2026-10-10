@@ -148,6 +148,26 @@
         "flash": 456960,
         "ram": 435456
       }
+    },
+    "waveshare-rp2040-zero": {
+      "zephyr_board": "rp2040_zero/rp2040",
+      "regions": {
+        "flash": [
+          "BOOT_FLASH",
+          "FLASH"
+        ],
+        "ram": [
+          "RAM"
+        ]
+      },
+      "measured": {
+        "flash": 151712,
+        "ram": 179832
+      },
+      "budget": {
+        "flash": 159488,
+        "ram": 188928
+      }
     }
   },
   "toolchain": {

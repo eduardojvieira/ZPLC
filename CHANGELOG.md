@@ -4,6 +4,23 @@ All notable changes are documented here.
 
 ## Unreleased
 
+- The board manifest is one unversioned file with an I/O description per board
+  (IO-001, IO-009 to IO-012, IO-014, IO-015). `firmware/app/boards/boards.json`
+  replaces `supported-boards.v1.5.0.json` and is the only source of the board
+  table for Studio, the docs, CI and the MCP `boards_list` tool. Each of the
+  seven profiles lists its channels with direction, kind, IEC address, pin or
+  terminal name, devicetree binding, electrical notes and safe value; the
+  Raspberry Pi Pico maps its on-board LED (GP25) and four inputs, the ESP32-S3
+  profile describes the ESP32-S3-DevKitC-1 (N8R8; the LilyGo T-Display S3
+  settings moved to `boards/profiles/lilygo_tdisplay_s3.overlay`), the Arduino
+  Opta maps its four relay outputs, and the Waveshare RP2040-Zero profile is a
+  valid configuration listed in the manifest, built in CI and in the size
+  budget. The support level is derived from the evidence records the manifest
+  references and is no longer a field; with no record a board is
+  `cross-build`. The reference page now shows each board's channels, the
+  image bytes they need, the footprint from the size budget and the
+  description hash. `tools/hil/validate_supported_boards.py` also accepts the
+  `tidy_board` key of the cross-build matrix, which it rejected.
 - Three of the fifteen modules over the new size limit are split (IDE-014): the
   project settings are one module per section (2,181 lines to 213 and eleven
   files of at most 430), the Explorer's context menu and confirmations are
