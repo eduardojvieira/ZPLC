@@ -183,6 +183,11 @@ export interface ProjectFile {
   content: string;
   isModified: boolean;
   path: string;
+  /**
+   * What the file holds on disk as far as Studio knows: what it last read or wrote. A string is that content, and `null`
+   * means the file is known to be gone. A change made outside Studio is a disk content that differs from this (IDE-004).
+   */
+  diskContent?: string | null;
 }
 
 export interface Project {

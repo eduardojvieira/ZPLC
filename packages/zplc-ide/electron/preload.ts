@@ -66,7 +66,10 @@ const PROJECT_FILES_CHANNEL = {
   openRecent: 'project-files:open-recent',
   forgetRecent: 'project-files:forget-recent',
   markOpened: 'project-files:mark-opened',
+  watch: 'project-files:watch',
 } as const;
+// The one event the main process pushes for project files; projectFilesIpc.test.ts keeps it equal to PROJECT_FILES_EVENT.
+const PROJECT_FILES_EVENT = { changed: 'project-files:changed' } as const;
 const LEARN_PROGRESS_CHANNEL = { READ: 'learn-progress:read', MERGE: 'learn-progress:merge' } as const;
 const SESSION_CHANNEL = { LOAD: 'session:load', SAVE: 'session:save' } as const;
 // Repeats RECOVERY_CHANNEL of recoveryStoreProtocol.ts, for the same reason as the project files above.
@@ -154,6 +157,13 @@ contextBridge.exposeInMainWorld('electronAPI', {
     openRecent: (request: unknown) => ipcRenderer.invoke(PROJECT_FILES_CHANNEL.openRecent, request) as Promise<unknown>,
     forgetRecent: (request: unknown) => ipcRenderer.invoke(PROJECT_FILES_CHANNEL.forgetRecent, request) as Promise<unknown>,
     markOpened: (request: unknown) => ipcRenderer.invoke(PROJECT_FILES_CHANNEL.markOpened, request) as Promise<unknown>,
+    // Changes made outside Studio (IDE-004): watch the window's folder, and hear batches of relative paths.
+    watch: (request: unknown) => ipcRenderer.invoke(PROJECT_FILES_CHANNEL.watch, request) as Promise<unknown>,
+    onChanged: (callback: (change: unknown) => void) => {
+      const listener = (_event: Electron.IpcRendererEvent, change: unknown) => { callback(change); };
+      ipcRenderer.on(PROJECT_FILES_EVENT.changed, listener);
+      return () => { ipcRenderer.removeListener(PROJECT_FILES_EVENT.changed, listener); };
+    },
   },
   // Per-project session (IDE-008): the folder is named by the opaque id that projectFiles gave out; the document holds
   // relative paths and numbers. The main process validates it and stores it under the user-data directory.

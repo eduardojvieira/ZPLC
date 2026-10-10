@@ -28,7 +28,8 @@ import { buildApplicationMenu, describeApplicationMenu, isReloadShortcut } from 
 import { createCloseGuard } from './closeGuard.js';
 import { createProjectFiles } from './projectFiles.js';
 import { record, workspaceCompileFailure } from './workspaceCompileFailure.js';
-import { PROJECT_FILES_CHANNEL } from './projectFilesProtocol.js';
+import { PROJECT_FILES_CHANNEL, PROJECT_FILES_EVENT } from './projectFilesProtocol.js';
+import { createProjectWatcher } from './projectWatcher.js';
 import {
   DEFAULT_DEVELOPMENT_RENDERER_PORT,
   createContentSecurityPolicy,
@@ -115,7 +116,14 @@ const closeGuard = createCloseGuard();
 let recentProjects: ReturnType<typeof createRecentProjects> | null = null;
 let sessionStore: ReturnType<typeof createSessionStore> | null = null;
 let recoveryStore: ReturnType<typeof createRecoveryStore> | null = null;
-const projectFiles = createProjectFiles(chooseProjectDirectory, () => recentProjects);
+// Changes made outside Studio reach only the window that owns the folder, as relative paths (IDE-004).
+const projectWatcher = createProjectWatcher({
+  send: (ownerId, change) => {
+    const target = mainWindow?.webContents;
+    if (target && !target.isDestroyed() && target.id === ownerId) target.send(PROJECT_FILES_EVENT.changed, change);
+  },
+});
+const projectFiles = createProjectFiles(chooseProjectDirectory, () => recentProjects, projectWatcher);
 const toolApiUrl = pathToFileURL(path.join(__dirname, 'toolApi.js')).href;
 let aiProvider: ReturnType<typeof createAiProvider> | null = null;
 let learnProgress: ReturnType<typeof createLearnProgressStore> | null = null;

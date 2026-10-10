@@ -4,6 +4,16 @@ All notable changes are documented here.
 
 ## Unreleased
 
+- The project tree supports new folder, rename, move, duplicate and delete folder
+  (IDE-004), from the Explorer header, a context menu and F2. Open buffers, tabs
+  and breakpoints follow a renamed or moved entry, a task that runs a renamed
+  program follows it in `zplc.json`, and a name that the build reads as the same
+  as another program is refused. An empty folder is listed.
+- A change made outside Studio is picked up while a project is open (IDE-004): the
+  main process watches the folder behind a typed `project-files:watch` request and
+  pushes batches of relative paths on `project-files:changed`. An unmodified file
+  reloads, a deleted one closes, and a modified one asks to keep the user's
+  version or load the disk's. `zplc.json` is not watched yet.
 - Closing the project with modified files offers Save all and close next to
   Discard and Continue editing (IDE-005); it offered only discard or cancel. The
   main process also catches Ctrl+R, Ctrl+Shift+R and Cmd+R before the page and

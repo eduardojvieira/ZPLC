@@ -1077,7 +1077,7 @@ export const useIDEStore = create<IDEState>((set, get) => ({
       if (latest.projectSession !== expectedProjectSession || latestFile !== file) return false;
 
       const newLoadedFiles = new Map(latest.loadedFiles);
-      newLoadedFiles.set(fileId, { ...latestFile, isModified: false });
+      newLoadedFiles.set(fileId, { ...latestFile, isModified: false, diskContent: file.content });
       set({ loadedFiles: newLoadedFiles });
 
       if (!options.quiet) {
@@ -1192,6 +1192,7 @@ export const useIDEStore = create<IDEState>((set, get) => ({
         currentTreeForCreation();
         newFile.handle = fileHandle;
         newFile.isModified = false;
+        newFile.diskContent = content;
       }
 
       let committed = false;

@@ -279,6 +279,7 @@ export async function loadFileFromTree(
     language: node.language || 'ST',
     content,
     isModified: false,
+    diskContent: content,
     path: node.path,
     handle: node.handle,
     parentPath: node.path.substring(0, node.path.lastIndexOf('/')),

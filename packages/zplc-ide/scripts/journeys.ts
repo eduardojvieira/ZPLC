@@ -1151,4 +1151,54 @@ export const JOURNEYS: Journey[] = [
       assert(!existsSync(join(project, 'src', 'drivers')), 'The folder is still on disk.');
     },
   },
+
+  {
+    name: '24 Changes made outside Studio', example: 'motor_start_stop', proves: [], partly: ['IDE-004'],
+    run: async (app, { project }) => {
+      const motor = join(project, 'src', 'Motor.st');
+      const outside = (text: string) => writeFileSync(motor, text);
+      const original = disk(motor);
+      const prompt = css('[data-external-change-prompt]');
+      const tabModified = () => app.eval<boolean>(`document.getElementById('editor-tab-file:src/Motor.st')?.textContent?.includes('*') === true`);
+
+      // An unmodified file reloads by itself, with no question.
+      await openFolder(app, project);
+      await openFile(app, 'src/Motor.st');
+      const first = `${original}\n(* edited by another program *)\n`;
+      outside(first);
+      await app.until('the editor to show the new content', async () => (await editorText(app)).includes('edited by another program') || undefined, 10_000);
+      assert(!await app.visible(prompt) && !await tabModified(), 'An unmodified file that changed outside Studio must reload without a question and without being marked modified.');
+
+      // A modified file asks; Keep my version keeps the buffer and saves over the disk.
+      await cursorAtEndOfLine(app, 1);
+      await app.type(EDIT);
+      await app.until('the typed text', async () => (await editorText(app)).includes(EDIT) || undefined);
+      outside(`${first}(* second outside edit *)\n`);
+      await app.until('the question about Motor.st', async () => await app.visible(prompt) || undefined, 10_000);
+      assert((await app.eval<string>(`document.querySelector('[data-external-change-prompt]').innerText`)).includes('Motor.st'), 'The question should name the file.');
+      await app.click(button('Keep my version of Motor.st'));
+      await app.until('the question to close', async () => !await app.visible(prompt) || undefined);
+      assert((await editorText(app)).includes(EDIT) && !(await editorText(app)).includes('second outside edit'), 'Keep my version must keep the buffer as it was.');
+      await app.click(saveButton);
+      await app.until('the buffer on disk', () => disk(motor).includes(EDIT) && !disk(motor).includes('second outside edit') || undefined);
+
+      // Load from disk replaces the buffer and clears the modified mark.
+      await cursorAtEndOfLine(app, 1);
+      await app.type(' (* local again *)');
+      await app.until('the typed text', async () => (await editorText(app)).includes('local again') || undefined);
+      outside(`${original}\n(* third outside edit *)\n`);
+      await app.until('the question about Motor.st', async () => await app.visible(prompt) || undefined, 10_000);
+      await app.click(button('Load from disk Motor.st'));
+      await app.until('the disk text in the editor', async () => (await editorText(app)).includes('third outside edit') && !(await editorText(app)).includes('local again') || undefined);
+      assert(!await tabModified(), 'Loading from disk must clear the modified mark.');
+
+      // A new file made outside shows up in the tree, and a deleted unmodified file closes.
+      writeFileSync(join(project, 'src', 'Outside.st'), 'PROGRAM Outside\nEND_PROGRAM\n');
+      await app.click(tab('Explorer', 'exact'));
+      await app.until('the new file in the tree', async () => await app.visible(treeItem('file:src/Outside.st')) || undefined, 10_000);
+      await openFile(app, 'src/Outside.st');
+      rmSync(join(project, 'src', 'Outside.st'));
+      await app.until('the deleted file gone from the tree and its tab closed', async () => !await app.visible(treeItem('file:src/Outside.st')) && !await app.visible(editorTab('file:src/Outside.st')) || undefined, 10_000);
+    },
+  },
 ];

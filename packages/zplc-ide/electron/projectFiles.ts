@@ -22,6 +22,7 @@ import {
   PROJECT_FILES_OPS,
   parseProjectFilesRequest,
   parseRecentRequest,
+  parseWatchRequest,
   type ProjectEntry,
   type ProjectEntryKind,
   type ProjectFilesErrorCode,
@@ -222,13 +223,19 @@ async function reopenable(entry: RecentEntry): Promise<string> {
  * `handle` is the single entry point behind every IPC channel: it validates the message, finds the window's
  * folder and runs the operation, answering with a typed result.
  */
-export function createProjectFiles(chooseDirectory: (ownerId: number) => Promise<string | null>, recent: () => RecentProjects | null = () => null) {
+export function createProjectFiles(
+  chooseDirectory: (ownerId: number) => Promise<string | null>,
+  recent: () => RecentProjects | null = () => null,
+  /** Watches the window's folder for changes made outside Studio (IDE-004); absent in tests that do not need it. */
+  watcher: { start(ownerId: number, rootId: string, root: string): void; stop(ownerId: number): void } | null = null,
+) {
   const folders = new Map<number, Folder>();
   const choosing = new Map<number, Promise<ProjectFolder | null>>();
 
   /** Makes `real` the window's folder, replacing the previous one. */
   function adopt(ownerId: number, real: string): ProjectFolder {
     const folder = { id: randomUUID(), real };
+    watcher?.stop(ownerId); // the previous folder is not the window's any more
     folders.set(ownerId, folder);
     return { rootId: folder.id, name: path.basename(real) || 'Project' };
   }
@@ -288,6 +295,14 @@ export function createProjectFiles(chooseDirectory: (ownerId: number) => Promise
           await recent()?.record(folder.real);
           return { ok: true, value: null };
         }
+        if (channel === PROJECT_FILES_CHANNEL.watch) {
+          const request = parseWatchRequest(args);
+          if (!request) throw new Refusal('invalid-request');
+          const folder = folders.get(ownerId);
+          if (!folder || folder.id !== request.rootId) throw new Refusal('no-folder');
+          watcher?.start(ownerId, folder.id, folder.real);
+          return { ok: true, value: null };
+        }
         const op = OP_BY_CHANNEL.get(channel);
         const request = op ? parseProjectFilesRequest(op, args) : null;
         if (!op || !request) throw new Refusal('invalid-request');
@@ -316,6 +331,7 @@ export function createProjectFiles(chooseDirectory: (ownerId: number) => Promise
 
     /** Forgets the window's folder: the document changed or the window went away. */
     revokeOwner(ownerId: number): void {
+      watcher?.stop(ownerId);
       folders.delete(ownerId);
     },
   };
