@@ -308,6 +308,16 @@ Q:      __/¯¯¯\______/¯¯¯\______/¯¯¯\___
           |300|  700 |300|  700 |        (T_ON = 300 ms, T_OFF = 700 ms)
 ```
 
+### PWM (Modulación por Ancho de Pulso)
+- **Entradas:** `ENABLE` (BOOL), `PERIOD` (TIME), `DUTY` (REAL, 0.0 a 1.0).
+- **Salidas:** `Q` (BOOL).
+- **Comportamiento:** Mientras `ENABLE` es TRUE, `Q` es TRUE durante `PERIOD * DUTY` al comienzo de cada `PERIOD`. Un `DUTY` de 0.0 mantiene `Q` en FALSE y 1.0 lo mantiene en TRUE. `ENABLE` en FALSE pone `Q` en FALSE, y el próximo `ENABLE` inicia un período nuevo.
+
+### PULSE (Generador de Pulso Único)
+- **Entradas:** `TRIG` (BOOL), `PT` (TIME).
+- **Salidas:** `Q` (BOOL).
+- **Comportamiento:** Un flanco de subida de `TRIG` inicia un pulso de `PT`. Un flanco de subida durante el pulso se ignora, y un nivel que sigue en TRUE después no inicia nada.
+
 ### HYSTERESIS
 - **Entradas:** `IN`, `HIGH`, `LOW` (REAL).
 - **Salidas:** `Q` (BOOL).

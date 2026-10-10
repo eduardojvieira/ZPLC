@@ -1,0 +1,18 @@
+{
+  "requirement": "CMP-058",
+  "title": "SHL, SHR, ROL and ROR at the first and last bit and at a rotation of the whole width",
+  "matrix": ["functions.shift-rotate-and-word-logic"],
+  "note": "IEC 61131-3 shifts and rotations work in the width of their operand: SHL(1, 31) = 16#80000000, SHR(16#80000000, 31) = 1, ROL(16#81, 1) = 16#03 (the top bit comes round), ROR(16#0001, 1) = 16#8000, SHL(16#FF, 4) = 16#F0 in a BYTE, and a rotation by the width, or by 0, leaves the value",
+  "scans": 1,
+  "scanMs": 10,
+  "expect": [
+    {"at": "%QD0", "type": "DWORD", "value": 2147483648},
+    {"at": "%QD1", "type": "DWORD", "value": 1},
+    {"at": "%QB8", "type": "BYTE", "value": 3},
+    {"at": "%QW5", "type": "WORD", "value": 32768},
+    {"at": "%QB12", "type": "BYTE", "value": 240},
+    {"at": "%QD4", "type": "DWORD", "value": 2147483648},
+    {"at": "%QB20", "type": "BYTE", "value": 129},
+    {"at": "%QB21", "type": "BYTE", "value": 129}
+  ]
+}
