@@ -172,9 +172,9 @@ describe('conformance', () => {
 describe('conformance: the loader accepts what the compiler produces', () => {
   // Runs after every case above (a file's tests run in the order they are declared), and reads what each one saw.
   itNative('CMP-051 the loader accepts every artifact the compiler produced for a conformance case', () => {
+    console.log(`CMP-051: the loader accepted ${loader.accepted.length} of ${loader.accepted.length + loader.refused.length} artifacts the compiler produced`);
     expect(loader.accepted.length + loader.refused.length).toBeGreaterThan(0);
     expect(loader.refused).toEqual([]);
-    console.log(`CMP-051: the loader accepted ${loader.accepted.length} of ${loader.accepted.length + loader.refused.length} artifacts the compiler produced`);
   });
 });
 
