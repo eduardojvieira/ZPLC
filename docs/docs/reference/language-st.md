@@ -180,7 +180,7 @@ These elements do not work today. Each is rejected with a located message or is 
 | Positional function-block call | Rejected with a message, decision open | Not supported: the build refuses it with a message that names the position; whether a later release supports it is an open decision. | CMP-006 |
 | Properties, namespaces, ACTION blocks | Rejected with a message, decision open | Not supported: the build refuses it with a message that names the position; whether a later release supports it is an open decision. | CMP-006 |
 | Function forms of operators (ADD, MUL, GT, EQ, MOVE) | Rejected with a message, decision open | Not supported: the build refuses it with a message that names the position; whether a later release supports it is an open decision. | CMP-006 |
-| Communication and cloud blocks (12) | Not verified | No executed case covers it yet, so nothing is claimed. | COM-001, COM-002, COM-003, COM-004, COM-005, COM-006, COM-007, COM-008, COM-009 |
+| Communication and cloud blocks (12) | Not verified | No conformance case that runs covers it yet, so nothing is claimed about its behaviour. | COM-001, COM-002, COM-003, COM-004, COM-005, COM-006, COM-007, COM-008, COM-009 |
 | Event-triggered tasks | Rejected with a message, decision open | Not supported: the build refuses it with a message that names the position; whether a later release supports it is an open decision. | RT-015 |
 | Textual CONFIGURATION, RESOURCE, TASK | Rejected with a message, decision open | Not supported: the build refuses it with a message that names the position; whether a later release supports it is an open decision. | CMP-006 |
 

@@ -276,7 +276,7 @@ const NOT_SUPPORTED_NOTE: Record<State, L10n> = {
   works: { en: '', es: '' },
   partial: { en: 'Part of its cases fail today and are on the list of known failures.', es: 'Parte de sus casos fallan hoy y figuran en la lista de fallos conocidos.' },
   broken: { en: 'Its cases fail today and are on the list of known failures.', es: 'Sus casos fallan hoy y figuran en la lista de fallos conocidos.' },
-  unverified: { en: 'No executed case covers it yet, so nothing is claimed.', es: 'Ningún caso ejecutado lo cubre aún, por eso no se afirma nada.' },
+  unverified: { en: 'No conformance case that runs covers it yet, so nothing is claimed about its behaviour.', es: 'Ningún caso de conformidad que se ejecute lo cubre aún, por eso no se afirma nada sobre su comportamiento.' },
   rejected: { en: 'Not supported: the build refuses it with a message that names the position.', es: 'No admitido: la compilación lo rechaza con un mensaje que indica la posición.' },
   decision: { en: 'Not supported: the build refuses it with a message that names the position; whether a later release supports it is an open decision.', es: 'No admitido: la compilación lo rechaza con un mensaje que indica la posición; que una versión posterior lo admita es una decisión abierta.' },
 };

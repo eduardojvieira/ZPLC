@@ -180,7 +180,7 @@ Estos elementos no funcionan hoy. Cada uno se rechaza con un mensaje ubicado o a
 | Llamada posicional a un bloque de función | Se rechaza con un mensaje, decisión abierta | No admitido: la compilación lo rechaza con un mensaje que indica la posición; que una versión posterior lo admita es una decisión abierta. | CMP-006 |
 | Propiedades, espacios de nombres, bloques ACTION | Se rechaza con un mensaje, decisión abierta | No admitido: la compilación lo rechaza con un mensaje que indica la posición; que una versión posterior lo admita es una decisión abierta. | CMP-006 |
 | Formas de función de los operadores (ADD, MUL, GT, EQ, MOVE) | Se rechaza con un mensaje, decisión abierta | No admitido: la compilación lo rechaza con un mensaje que indica la posición; que una versión posterior lo admita es una decisión abierta. | CMP-006 |
-| Bloques de comunicación y de nube (12) | Sin verificar | Ningún caso ejecutado lo cubre aún, por eso no se afirma nada. | COM-001, COM-002, COM-003, COM-004, COM-005, COM-006, COM-007, COM-008, COM-009 |
+| Bloques de comunicación y de nube (12) | Sin verificar | Ningún caso de conformidad que se ejecute lo cubre aún, por eso no se afirma nada sobre su comportamiento. | COM-001, COM-002, COM-003, COM-004, COM-005, COM-006, COM-007, COM-008, COM-009 |
 | Tareas disparadas por evento | Se rechaza con un mensaje, decisión abierta | No admitido: la compilación lo rechaza con un mensaje que indica la posición; que una versión posterior lo admita es una decisión abierta. | RT-015 |
 | CONFIGURATION, RESOURCE y TASK textuales | Se rechaza con un mensaje, decisión abierta | No admitido: la compilación lo rechaza con un mensaje que indica la posición; que una versión posterior lo admita es una decisión abierta. | CMP-006 |
 
