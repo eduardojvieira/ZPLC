@@ -7,8 +7,13 @@
  * the loader verifies each of them.
  *
  * This is simulator evidence: it shows that the largest artifact is stored in chunks that NVS accepts, restored,
- * replaced and rolled back, and that the build-time rule of the HAL holds for this partition. It does not show that
- * a board's flash survives a power cut mid-write.
+ * replaced and rolled back, that a power cut at any operation of a deploy leaves the old program or the new one,
+ * and that the build-time rule of the HAL holds for this partition. The cut is the HAL's test injection: from the
+ * n-th persistence operation on, every operation fails and has no effect, which is how an entry of NVS (written
+ * whole or not at all) behaves. It does not show that a board's flash survives a power cut mid-write.
+ *
+ * One buffer does every job here, as in the firmware (RT-028): the artifact is staged in it, the commit verifies
+ * it and reads the payload back into it, and the restore after a cut reads the store into the very same bytes.
  */
 #include <stdio.h>
 #include <string.h>
@@ -18,6 +23,7 @@
 #include <zplc_hal.h>
 #include <zplc_isa.h>
 #include <zplc_loader.h>
+#include <zplc_test_hooks.h>
 
 #include "program_store.h"
 
@@ -179,6 +185,138 @@ ZTEST(program_store_nvs, test_only_the_keys_of_the_store_are_mapped) {
                 "a chunk number is decimal");
   zassert_equal(zplc_hal_persist_save("program_v1_slot_a_payload_9999", junk, sizeof(junk)), ZPLC_HAL_ERROR,
                 "and below the number of chunks of the largest artifact");
+}
+
+/* Every key the store uses, deleted: an empty store, whatever the previous test left. */
+static void clear_store(void) {
+  char key[48];
+  unsigned slot;
+  unsigned chunk;
+
+  (void)zplc_hal_persist_delete("program_v1_active");
+  (void)zplc_hal_persist_delete("code_len");
+  (void)zplc_hal_persist_delete("code");
+  for (slot = 0U; slot < 2U; slot++) {
+    const char name = slot == 0U ? 'a' : 'b';
+
+    (void)snprintf(key, sizeof(key), "program_v1_slot_%c_meta", name);
+    (void)zplc_hal_persist_delete(key);
+    (void)snprintf(key, sizeof(key), "program_v1_slot_%c_payload", name);
+    (void)zplc_hal_persist_delete(key);
+    for (chunk = 1U; chunk < 12U; chunk++) {
+      (void)snprintf(key, sizeof(key), "program_v1_slot_%c_payload_%u", name, chunk);
+      (void)zplc_hal_persist_delete(key);
+    }
+  }
+}
+
+/* RT-031: a power cut at every operation of a first deploy leaves nothing or the program. */
+ZTEST(program_store_nvs, test_first_deploy_power_cut_sweep) {
+  const size_t size = 3U * CHUNK + 100U;
+  unsigned long operations;
+  unsigned long cut;
+  bool saw_empty = false;
+  bool saw_program = false;
+  size_t restored = 0U;
+
+  build_artifact(expected_a, size, 0x51U);
+  clear_store();
+  zplc_hal_persist_test_fail_at(0UL);
+  zassert_ok(commit(expected_a, size), "the deploy, uninterrupted");
+  operations = zplc_hal_persist_test_operation_count();
+  zassert_true(operations > 8UL, "it is many persistence operations: %lu", operations);
+
+  for (cut = 1UL; cut <= operations; cut++) {
+    zplc_program_store_restore_t result;
+
+    clear_store();
+    zplc_hal_persist_test_power_cut_at(cut);
+    (void)commit(expected_a, size);
+    zplc_hal_persist_test_fail_at(0UL); /* the next boot */
+    result = restore(&restored);
+    if (result == ZPLC_PROGRAM_STORE_EMPTY) {
+      saw_empty = true;
+    } else {
+      zassert_equal(result, ZPLC_PROGRAM_STORE_OK, "cut at operation %lu leaves a program or nothing", cut);
+      zassert_equal(restored, size, "cut at operation %lu: whole program", cut);
+      zassert_mem_equal(store_workspace, expected_a, size, "cut at operation %lu: byte for byte", cut);
+      saw_program = true;
+    }
+  }
+  zassert_true(saw_empty && saw_program, "both outcomes occur");
+}
+
+/* RT-031: a power cut at every operation of a redeploy leaves the old program or the new. */
+ZTEST(program_store_nvs, test_redeploy_power_cut_sweep) {
+  const size_t old_size = 2U * CHUNK + 300U;
+  const size_t new_size = 3U * CHUNK + 700U;
+  unsigned long operations;
+  unsigned long cut;
+  bool saw_old = false;
+  bool saw_new = false;
+  size_t restored = 0U;
+
+  build_artifact(expected_a, old_size, 0x61U);
+  build_artifact(expected_b, new_size, 0x62U);
+  clear_store();
+  zassert_ok(commit(expected_a, old_size), "the old program");
+  zplc_hal_persist_test_fail_at(0UL);
+  zassert_ok(commit(expected_b, new_size), "the redeploy, uninterrupted");
+  operations = zplc_hal_persist_test_operation_count();
+  zassert_true(operations > 10UL, "it is many persistence operations: %lu", operations);
+
+  for (cut = 1UL; cut <= operations; cut++) {
+    clear_store();
+    zassert_ok(commit(expected_a, old_size), "the old program, again");
+    zplc_hal_persist_test_power_cut_at(cut);
+    (void)commit(expected_b, new_size);
+    zplc_hal_persist_test_fail_at(0UL);
+    zassert_equal(restore(&restored), ZPLC_PROGRAM_STORE_OK, "cut at operation %lu leaves a program", cut);
+    if (restored == new_size && memcmp(store_workspace, expected_b, new_size) == 0) {
+      saw_new = true;
+    } else {
+      zassert_equal(restored, old_size, "cut at operation %lu: the old program", cut);
+      zassert_mem_equal(store_workspace, expected_a, old_size, "cut at operation %lu: complete", cut);
+      saw_old = true;
+    }
+  }
+  zassert_true(saw_old && saw_new, "both occur: the new program appears with the active record");
+}
+
+/* RT-028, RT-031: the largest artifact, cut at the operations around the active record. */
+ZTEST(program_store_nvs, test_largest_redeploy_cut_around_the_active_record) {
+  unsigned long operations;
+  unsigned long cut;
+  size_t restored = 0U;
+  bool saw_old = false;
+  bool saw_new = false;
+
+  build_artifact(expected_a, LARGEST, 0x71U);
+  build_artifact(expected_b, LARGEST, 0x72U);
+  clear_store();
+  zassert_ok(commit(expected_a, LARGEST), "the old program of the largest size");
+  zplc_hal_persist_test_fail_at(0UL);
+  zassert_ok(commit(expected_b, LARGEST), "the redeploy of the largest size");
+  operations = zplc_hal_persist_test_operation_count();
+
+  /* The last operations of a deploy are the metadata and the active record; every payload chunk was written
+   * before them. A cut in that window and a few operations before it must leave one whole program. */
+  for (cut = operations > 12UL ? operations - 12UL : 1UL; cut <= operations; cut++) {
+    clear_store();
+    zassert_ok(commit(expected_a, LARGEST), "the old program, again");
+    zplc_hal_persist_test_power_cut_at(cut);
+    (void)commit(expected_b, LARGEST);
+    zplc_hal_persist_test_fail_at(0UL);
+    zassert_equal(restore(&restored), ZPLC_PROGRAM_STORE_OK, "cut at operation %lu", cut);
+    zassert_equal(restored, LARGEST, "cut at operation %lu: the largest size", cut);
+    if (memcmp(store_workspace, expected_b, LARGEST) == 0) {
+      saw_new = true;
+    } else {
+      zassert_mem_equal(store_workspace, expected_a, LARGEST, "cut at operation %lu: the old one, whole", cut);
+      saw_old = true;
+    }
+  }
+  zassert_true(saw_old && saw_new, "the window covers both outcomes");
 }
 
 ZTEST_SUITE(program_store_nvs, NULL, suite_setup, NULL, NULL, NULL);

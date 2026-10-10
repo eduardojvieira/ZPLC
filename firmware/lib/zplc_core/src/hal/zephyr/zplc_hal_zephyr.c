@@ -651,6 +651,64 @@ static struct nvs_fs nvs_handle;
 /** @brief NVS initialized flag */
 static bool nvs_initialized = false;
 
+#ifdef CONFIG_ZTEST
+/* RT-031: a test cuts the persistence operations off as a lost supply would. An entry of NVS is written whole or
+ * not at all, so a cut operation has no effect, and neither has any operation after it until the injection is
+ * reset by zplc_hal_persist_test_fail_at(). The names and the meaning are those of the POSIX HAL. */
+static unsigned long persist_operation_count;
+static unsigned long persist_fail_at;
+static unsigned long persist_power_cut_at;
+static bool persist_power_is_cut;
+static bool persist_failure_triggered;
+
+void zplc_hal_persist_test_fail_at(unsigned long operation) {
+  persist_operation_count = 0UL;
+  persist_fail_at = operation;
+  persist_power_cut_at = 0UL;
+  persist_power_is_cut = false;
+  persist_failure_triggered = false;
+}
+
+void zplc_hal_persist_test_power_cut_at(unsigned long operation) {
+  zplc_hal_persist_test_fail_at(0UL);
+  persist_power_cut_at = operation;
+}
+
+unsigned long zplc_hal_persist_test_operation_count(void) {
+  return persist_operation_count;
+}
+
+int zplc_hal_persist_test_failure_triggered(void) {
+  return persist_failure_triggered ? 1 : 0;
+}
+
+/* True when the operation about to run is the one that fails, or comes after the power cut. */
+static bool persist_operation_fails(void) {
+  persist_operation_count++;
+  if (persist_power_is_cut ||
+      (persist_power_cut_at != 0UL && persist_operation_count >= persist_power_cut_at)) {
+    persist_power_is_cut = true;
+    persist_failure_triggered = true;
+    return true;
+  }
+  if (persist_fail_at != 0UL && persist_operation_count == persist_fail_at) {
+    persist_failure_triggered = true;
+    return true;
+  }
+  return false;
+}
+#define ZPLC_PERSIST_INJECT()                                                  \
+  do {                                                                         \
+    if (persist_operation_fails()) {                                           \
+      return ZPLC_HAL_ERROR;                                                   \
+    }                                                                          \
+  } while (0)
+#else
+#define ZPLC_PERSIST_INJECT()                                                  \
+  do {                                                                         \
+  } while (0)
+#endif
+
 /**
  * @brief NVS ID of "program_v1_slot_<a|b>_payload_<n>", n a decimal chunk number from 1, or 0.
  */
@@ -774,6 +832,8 @@ zplc_hal_result_t zplc_hal_persist_save(const char *key, const void *data,
     return ZPLC_HAL_ERROR;
   }
 
+  ZPLC_PERSIST_INJECT();
+
   /* Initialize NVS if needed */
   if (ensure_nvs_init() != 0) {
     return ZPLC_HAL_ERROR;
@@ -815,6 +875,8 @@ zplc_hal_result_t zplc_hal_persist_load(const char *key, void *data,
   if (key == NULL || data == NULL || len == 0) {
     return ZPLC_HAL_ERROR;
   }
+
+  ZPLC_PERSIST_INJECT();
 
   /* Initialize NVS if needed */
   if (ensure_nvs_init() != 0) {
@@ -872,6 +934,8 @@ zplc_hal_result_t zplc_hal_persist_delete(const char *key) {
   if (key == NULL) {
     return ZPLC_HAL_ERROR;
   }
+
+  ZPLC_PERSIST_INJECT();
 
   /* Initialize NVS if needed */
   if (ensure_nvs_init() != 0) {
