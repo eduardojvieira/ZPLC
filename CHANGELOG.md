@@ -4,6 +4,29 @@ All notable changes are documented here.
 
 ## Unreleased
 
+- Analog inputs and persisted keys have native_sim tests (IO-006, IO-008,
+  IO-018). `io_analog` runs the analog inputs of a description over the ADC
+  emulator and shows that a required channel that cannot be configured fails
+  `zplc_hal_init()`, not the first scan. `hal_persist_keys` stores, reads and
+  deletes every key the runtime uses over the NVS of the flash simulator; the
+  two AWS fleet credential keys had no NVS identifier on Zephyr, so the
+  credentials were never persisted, and now have one. What the boards do with
+  these needs the bench of HIL-010 and is not claimed here.
+- Studio reads the board I/O description (IO-003, IO-004, IO-017). The I/O
+  mapping editor of the project settings lists the channels of the selected
+  board with their pin names, offers only those channels for a row and flags
+  a row on an address the board does not have; a build fails with an error
+  that names the variable, the address and the board when a variable is
+  located where the board has no channel. An image word that no pin drives is
+  listed under `io.virtual` in `zplc.json` (the `analog_test` temperature in
+  `%QW4` is one). Hardware deploy admission compares the `io` identity that
+  the firmware reports in `sys info --json` with the description Studio holds
+  and the process-image bytes the program's code touches with the channels of
+  the board, and refuses a mismatch with a message that names the board; a
+  program that touches no I/O is not held back. The bundled examples are
+  checked in CI: each targets the board its name and text state, its rows are
+  channels of that board and it builds for it. The Waveshare RP2040-Zero also
+  has its size budget and clang-tidy baseline for the cross-build matrix.
 - Firmware I/O is driven by the board description, not by C source (IO-002,
   IO-005, IO-007, IO-018). `firmware/zephyr/scripts/gen_io_table.py` turns the
   board's entry of `boards.json` into the I/O table at build time and the

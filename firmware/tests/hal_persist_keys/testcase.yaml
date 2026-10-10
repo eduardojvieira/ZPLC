@@ -1,0 +1,14 @@
+tests:
+  # IO-008: non-volatile storage works for every key the runtime uses, over the NVS of the flash simulator.
+  zplc.hal_persist_keys:
+    tags:
+      - zplc
+      - hal
+      - persist
+    platform_allow:
+      - native_sim/native/64
+      - native_sim/native
+    integration_platforms:
+      - native_sim/native/64
+    harness: ztest
+    timeout: 30

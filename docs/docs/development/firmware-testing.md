@@ -139,6 +139,12 @@ the devicetree has but the description does not list is never configured or driv
 three outputs and an input more than the base one, one of them in a second and one in a third image byte, and nothing
 in the firmware sources names them.
 
+`zplc.io_analog.ok` runs two analog inputs over the ADC emulator and checks that each raw value lands at its word of
+the input image and follows the voltage; `zplc.io_analog.missing` names a converter channel the emulator does not
+have and checks that the HAL fails at initialization, before any task runs. `zplc.hal_persist_keys` saves, loads
+and deletes every key the runtime stores (the program store, the RETAIN chunks of both slots and the credentials) over
+the NVS of the flash simulator, and checks that a key without an identifier answers with an error.
+
 The build also checks that the description and the devicetree agree. To see it fail, change a `dt.pin` or an
 `alias` in `io_base.json` and build the test:
 

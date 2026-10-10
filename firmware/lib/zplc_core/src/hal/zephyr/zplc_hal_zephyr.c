@@ -454,6 +454,12 @@ zplc_hal_result_t zplc_hal_dac_write(uint8_t channel, uint16_t value) {
 #define NVS_ID_PROGRAM_SLOT_B_PAYLOAD 7
 #define NVS_ID_PROGRAM_SLOT_B_META 8
 
+/** @brief NVS IDs 9 and 10: the credentials the application persists (IO-008). Every
+ *         key the runtime stores has an identifier; a key without one is an
+ *         error, not a silent drop. */
+#define NVS_ID_AWS_CERT 9
+#define NVS_ID_AWS_KEY 10
+
 /** @brief NVS IDs 16..31: chunk 0..7 of RETAIN slot a, then of slot b
  *         ("retain_a0".."retain_b7", see zplc_retain.h). */
 #define NVS_ID_RETAIN_CHUNKS 16
@@ -484,6 +490,10 @@ static uint16_t key_to_nvs_id(const char *key) {
     return NVS_ID_PROGRAM_SLOT_B_PAYLOAD;
   if (strcmp(key, "program_v1_slot_b_meta") == 0)
     return NVS_ID_PROGRAM_SLOT_B_META;
+  if (strcmp(key, "aws_cert_pem") == 0)
+    return NVS_ID_AWS_CERT;
+  if (strcmp(key, "aws_key_pem") == 0)
+    return NVS_ID_AWS_KEY;
   if (strncmp(key, "retain_", 7) == 0 && (key[7] == 'a' || key[7] == 'b') &&
       key[8] >= '0' && key[8] <= '7' && key[9] == '\0')
     return NVS_ID_RETAIN_CHUNKS + (key[7] - 'a') * 8 + (key[8] - '0');

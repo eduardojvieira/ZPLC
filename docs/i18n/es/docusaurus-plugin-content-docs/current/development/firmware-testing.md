@@ -150,6 +150,13 @@ llega a su pin, y que un pin que el devicetree tiene pero la descripción no lis
 descripción extendida lista tres salidas y una entrada más que la base, una de ellas en un segundo y otra en un
 tercer byte de imagen, y ningún fuente del firmware las nombra.
 
+`zplc.io_analog.ok` ejecuta dos entradas analógicas sobre el emulador de ADC y comprueba que cada valor crudo llega
+a su palabra de la imagen de entrada y sigue a la tensión; `zplc.io_analog.missing` nombra un canal de conversor que
+el emulador no tiene y comprueba que la HAL falla al inicializar, antes de que exista ninguna tarea.
+`zplc.hal_persist_keys` guarda, lee y borra cada clave que el runtime almacena (el almacén de programas, los chunks de
+RETAIN de ambos slots y las credenciales) sobre el NVS del simulador de flash, y comprueba que una clave sin
+identificador responde con un error.
+
 El build también comprueba que la descripción y el devicetree coinciden. Para verlo fallar, cambiá un `dt.pin` o un
 `alias` en `io_base.json` y compilá la prueba:
 
