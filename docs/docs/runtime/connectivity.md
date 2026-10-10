@@ -44,3 +44,27 @@ only changes the local RTU/TCP server mapping. It never changes the compiled
 remote address used by Modbus RTU/TCP polling clients. Treat it as runtime
 configuration: do not assume it is persisted unless a verified configuration
 save/load workflow has recorded it for the target.
+
+## Secure defaults
+
+A controller that was never configured is safe on a plant network:
+
+- **No broker.** MQTT is off and no broker address is stored. Nothing resolves or connects until an operator names a server and turns MQTT on; with MQTT on and no broker the client reports `-EDESTADDRREQ` in `zplc mqtt status` and does not try.
+- **TLS, verified.** The default transport is TLS on port 8883 and the broker's certificate is checked against the CA you installed. Plain TCP (`mqtt_transport 0`) and TLS without verification (`mqtt_security 1`) are explicit settings, never the default.
+- **Verification stays on in release firmware.** `mqtt_security 1` is refused unless the image was built with `CONFIG_ZPLC_MQTT_ALLOW_INSECURE_TLS=y`, and a stored value of 1 is not applied by an image that does not allow it. In an image that does, `zplc mqtt status` shows `tls-verify: OFF` and `zplc status` shows a warning for as long as the setting stands.
+
+The security setting only means something on a TLS transport. With plain TCP or WS the session has no TLS whatever `mqtt_security` says, and the status shows `tls-verify: n/a`.
+
+## Credentials
+
+- No command prints a password, a key, a SAS key or a certificate, and no log line contains one: `zplc config get` shows `(set)` or `(not set)`, `zplc cert status` shows presence and size only, and the MQTT client logs error codes and paths, not values. The test of the firmware sets a known value for each credential and looks for it in the output of every reporting command and in the log.
+- Credentials are stored with the other settings, and certificates and keys as files or entries of the device's non-volatile store. **None of the supported boards has a protected store** (no secure element, no encrypted flash by default): anybody who can read the flash of the board can read them. Treat the board as holding the secret, and use an account with only the rights the controller needs on the broker or the cloud.
+- `config set` over the serial link carries the value in the clear on that link; provision credentials on a link you trust.
+
+## Saved settings
+
+`zplc config save` writes every setting that `zplc config get` reports (and the Modbus mapping overrides) into the same non-volatile store as the program, one entry per setting, and reports an error when an entry could not be written. A reboot reads them back over the defaults. A test sets each of the 70 settings through the shell, saves, restarts the configuration the way a reboot does, and compares each one. Two limits remain:
+
+- A board whose store cannot be mounted cannot save settings: the Nucleo-H743ZI keeps its storage in one 128 KB sector, which the store cannot use (IO-008). `config save` there reports an error; it no longer says `OK`.
+- The save writes the entries one after the other. A power loss in the middle leaves some settings new and some old, each one valid by itself.
+

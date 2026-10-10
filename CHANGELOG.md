@@ -4,6 +4,35 @@ All notable changes are documented here.
 
 ## Unreleased
 
+- A controller that was never configured is safe on a plant network, and the
+  settings that `zplc config save` reports are the ones it stores (COM-014,
+  COM-015, COM-027). The default broker (`test.mosquitto.org`) is gone: MQTT is
+  off and has no broker until an operator names one. The default transport is
+  TLS on port 8883 with the broker's certificate verified; turning
+  verification off (`mqtt_security 1`) is refused by a release image and, in an
+  image built with `CONFIG_ZPLC_MQTT_ALLOW_INSECURE_TLS`, shows
+  `tls-verify: OFF` in `zplc mqtt status` and a warning in `zplc status`. A
+  password, key, SAS key or user name is shown as `(set)` or `(not set)`: a
+  test sets a known value for each and finds none in the output of any
+  reporting command or in the log. **`zplc config save` used to write nothing
+  and print `OK: Config saved`**: the settings handler had no export, so the
+  save was a no-op on every board. It now writes the 70 settings and the
+  Modbus overrides to the same store as the program (HAL NVS, keys `cfg_NN`),
+  stops and reports at the first entry that fails, and a test sets each
+  setting through the shell, saves, reboots the configuration and compares
+  them. `zplc config reset` reports a failed save too. A board whose store
+  cannot be mounted (the Nucleo-H743ZI) now reports the error instead of
+  `OK`. The AWS fleet certificate and key were never mapped to a store entry,
+  so their save always failed; they are mapped now. An Azure direct method is
+  answered `501` instead of `200`, since none is implemented.
+- Release firmware has no command that reads or writes memory outside the PLC
+  regions (COM-022). The Zephyr shell's `devmem` was on by default in every
+  board image; `firmware/app/prj.conf` turns it off, the diagnostic image
+  (`firmware/app/diagnostic.conf`) turns it on with
+  `CONFIG_ZPLC_SHELL_RAW_MEMORY`, and the application build stops when the
+  two disagree. `zplc dbg watch` and `zplc dbg timer`, which only printed
+  "not yet implemented" and succeeded, read a typed value and a timer
+  instance now.
 - Three of the fifteen modules over the new size limit are split (IDE-014): the
   project settings are one module per section (2,181 lines to 213 and eleven
   files of at most 430), the Explorer's context menu and confirmations are

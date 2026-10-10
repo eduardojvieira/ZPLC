@@ -117,12 +117,14 @@ static bool s_subscribed;
 
 static uint8_t s_publish_buf[512];
 
+#if defined(CONFIG_MQTT_LIB_TLS)
 static EXT_RAM_BSS_ATTR uint8_t s_tls_ca_buf[MQTT_CRED_BUF_SIZE];
 static EXT_RAM_BSS_ATTR uint8_t s_tls_cert_buf[MQTT_CRED_BUF_SIZE];
 static EXT_RAM_BSS_ATTR uint8_t s_tls_key_buf[MQTT_CRED_BUF_SIZE];
 
 static sec_tag_t s_mqtt_sec_tags[3];
 static uint8_t s_mqtt_sec_tag_count;
+#endif
 
 /* s_mqtt_username must hold the Azure IoT Hub MQTT username:
  *   "{hostname}/{device_id}/?api-version=2021-04-12"
@@ -137,10 +139,14 @@ static char s_mqtt_client_id[128];
 static char s_mqtt_topic_namespace[128];
 static char s_mqtt_group_id[64];
 static char s_mqtt_websocket_path[128];
+#if defined(CONFIG_MQTT_LIB_TLS_USE_ALPN)
 static char s_mqtt_alpn[128];
+#endif
+#if defined(CONFIG_MQTT_LIB_TLS)
 static char s_mqtt_ca_cert_path[96];
 static char s_mqtt_client_cert_path[96];
 static char s_mqtt_client_key_path[96];
+#endif
 static char s_lwt_topic[160];
 static char s_lwt_payload[256];
 static uint8_t s_ndeath_payload[64];
@@ -150,8 +156,10 @@ static struct mqtt_utf8 s_lwt_payload_utf8;
 static struct mqtt_topic s_will_topic;
 static struct mqtt_utf8 s_mqtt_username_utf8;
 static struct mqtt_utf8 s_mqtt_password_utf8;
+#if defined(CONFIG_MQTT_LIB_TLS)
 static const char *s_alpn_list[4];
 static uint32_t s_alpn_count;
+#endif
 
 #define ZPLC_MQTT_REQ_MAX_TOPIC 128
 #define ZPLC_MQTT_REQ_MAX_PAYLOAD 128
@@ -546,11 +554,13 @@ static void setup_websocket(struct mqtt_client *client) {
 }
 
 static int setup_tls(struct mqtt_client *client) {
-  zplc_mqtt_security_t security = zplc_config_get_mqtt_security();
   zplc_mqtt_transport_t transport = zplc_config_get_mqtt_transport();
+#if defined(CONFIG_MQTT_LIB_TLS)
+  zplc_mqtt_security_t security = zplc_config_get_mqtt_security();
 
   s_mqtt_sec_tag_count = 0U;
   s_alpn_count = 0U;
+#endif
 
   if (transport == ZPLC_MQTT_TRANSPORT_TCP ||
       transport == ZPLC_MQTT_TRANSPORT_WS) {
@@ -566,6 +576,13 @@ static int setup_tls(struct mqtt_client *client) {
     return 0;
   }
 
+#if !defined(CONFIG_MQTT_LIB_TLS)
+  /* COM-016: this firmware has no TLS (the board has no verified
+   * cryptographic random source yet): a TLS transport is refused rather
+   * than silently downgraded to plain TCP. */
+  LOG_ERR("MQTT transport needs TLS, which this firmware does not include");
+  return -ENOTSUP;
+#else
   if (security == ZPLC_MQTT_SECURITY_NONE) {
     return -EINVAL;
   }
@@ -579,11 +596,20 @@ static int setup_tls(struct mqtt_client *client) {
 #endif
 
   if (security == ZPLC_MQTT_SECURITY_TLS_NO_VERIFY) {
+#if defined(CONFIG_ZPLC_MQTT_ALLOW_INSECURE_TLS)
+    /* COM-014: reported by `zplc mqtt status` as tls-verify OFF for as
+     * long as it stays this way. */
+    LOG_WRN("MQTT TLS certificate verification is OFF: the broker is not "
+            "authenticated");
     client->transport.tls.config.peer_verify = TLS_PEER_VERIFY_NONE;
     client->transport.tls.config.sec_tag_list = NULL;
     client->transport.tls.config.sec_tag_count = 0;
     setup_websocket(client);
     return 0;
+#else
+    LOG_ERR("MQTT TLS verification cannot be switched off in this build");
+    return -EPERM;
+#endif
   }
 
   zplc_config_get_mqtt_ca_cert_path(s_mqtt_ca_cert_path,
@@ -662,6 +688,7 @@ static int setup_tls(struct mqtt_client *client) {
 
   setup_websocket(client);
   return 0;
+#endif /* CONFIG_MQTT_LIB_TLS */
 }
 
 /**
@@ -827,7 +854,9 @@ static int mqtt_socket_fd(const struct mqtt_client *client) {
 #endif
 #if defined(CONFIG_MQTT_LIB_WEBSOCKET)
   case MQTT_TRANSPORT_NON_SECURE_WEBSOCKET:
+#if defined(CONFIG_MQTT_LIB_TLS)
   case MQTT_TRANSPORT_SECURE_WEBSOCKET:
+#endif
     return client->transport.websocket.sock;
 #endif
   default:
@@ -1458,7 +1487,9 @@ static int handle_incoming_publish(struct mqtt_client *client,
     /*
      * Azure IoT Hub Direct Methods:
      *   $iothub/methods/POST/{methodName}/?$rid={rid}
-     * Respond immediately with HTTP 200 and an empty JSON body.
+     * No method is implemented on the device: respond 501 (not
+     * implemented) so the service does not read a success for a method
+     * that did nothing (COM-027, COM-017).
      */
     if (zplc_config_get_azure_direct_methods_enabled() &&
         strncmp(topic, "$iothub/methods/POST/", 21) == 0) {
@@ -1477,7 +1508,7 @@ static int handle_incoming_publish(struct mqtt_client *client,
 
       char resp_topic[TOPIC_WILDCARD_BUFFER_SIZE];
       int n = snprintf(resp_topic, sizeof(resp_topic),
-                       "$iothub/methods/res/200/?$rid=%s", rid_val);
+                       "$iothub/methods/res/501/?$rid=%s", rid_val);
       if (n > 0 && (size_t)n < sizeof(resp_topic)) {
         static const char empty_body[] = "{}";
         struct mqtt_publish_param resp = {
@@ -1508,7 +1539,7 @@ static int handle_incoming_publish(struct mqtt_client *client,
         }
       }
 
-      LOG_INF("Azure Direct Method on '%s' — responded 200/$rid=%s", topic,
+      LOG_INF("Azure Direct Method on '%s': responded 501/$rid=%s", topic,
               rid_val);
       return 0;
     }
@@ -2018,6 +2049,16 @@ static void resolve_broker(struct sockaddr_in *out) {
  */
 
 static int client_init(struct mqtt_client *client) {
+  char broker[2];
+
+  /* COM-014: there is no default broker. Nothing connects, and nothing is
+   * resolved, until an operator has named one. */
+  zplc_config_get_mqtt_broker(broker, sizeof(broker));
+  if (broker[0] == '\0') {
+    LOG_ERR("MQTT is enabled but no broker is configured");
+    return -EDESTADDRREQ;
+  }
+
   mqtt_client_init(client);
   setup_auth(client);
   if (s_mqtt_client_id[0] == '\0') {
@@ -2325,6 +2366,7 @@ void zplc_mqtt_get_status(zplc_mqtt_status_t *status) {
   status->profile = (uint8_t)zplc_config_get_mqtt_profile();
   status->protocol = (uint8_t)zplc_config_get_mqtt_protocol();
   status->transport = (uint8_t)zplc_config_get_mqtt_transport();
+  status->tls_verify = (uint8_t)zplc_config_get_mqtt_tls_verify();
   status->publish_qos = (uint8_t)zplc_config_get_mqtt_publish_qos();
   status->subscribe_qos = (uint8_t)zplc_config_get_mqtt_subscribe_qos();
   status->retain_enabled = zplc_config_get_mqtt_publish_retain();

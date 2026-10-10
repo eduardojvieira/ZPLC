@@ -45,3 +45,27 @@ cambia la dirección remota compilada que usan los clientes de polling Modbus
 RTU/TCP. Tratálo como configuración de runtime: no asumas que persiste salvo
 que un flujo verificado de guardado/carga de configuración lo haya registrado
 para el target.
+
+## Valores por defecto seguros
+
+Un controlador que nunca se configuró es seguro en una red de planta:
+
+- **Sin broker.** MQTT está apagado y no hay dirección de broker guardada. Nada resuelve ni se conecta hasta que un operador nombra un servidor y enciende MQTT; con MQTT encendido y sin broker el cliente informa `-EDESTADDRREQ` en `zplc mqtt status` y no lo intenta.
+- **TLS, verificado.** El transporte por defecto es TLS en el puerto 8883 y el certificado del broker se verifica contra la CA que instalaste. TCP plano (`mqtt_transport 0`) y TLS sin verificación (`mqtt_security 1`) son ajustes explícitos, nunca el valor por defecto.
+- **La verificación sigue activa en el firmware de release.** `mqtt_security 1` se rechaza salvo que la imagen se haya compilado con `CONFIG_ZPLC_MQTT_ALLOW_INSECURE_TLS=y`, y una imagen que no lo permite no aplica un valor guardado de 1. En una imagen que sí lo permite, `zplc mqtt status` muestra `tls-verify: OFF` y `zplc status` muestra una advertencia mientras el ajuste siga así.
+
+El ajuste de seguridad solo significa algo sobre un transporte TLS. Con TCP plano o WS la sesión no tiene TLS diga lo que diga `mqtt_security`, y el estado muestra `tls-verify: n/a`.
+
+## Credenciales
+
+- Ningún comando imprime una contraseña, una clave, una clave SAS ni un certificado, y ninguna línea de log contiene alguno: `zplc config get` muestra `(set)` o `(not set)`, `zplc cert status` muestra solo presencia y tamaño, y el cliente MQTT registra códigos de error y rutas, no valores. La prueba del firmware fija un valor conocido para cada credencial y lo busca en la salida de todos los comandos que informan y en el log.
+- Las credenciales se guardan con el resto de los ajustes, y los certificados y claves como archivos o entradas del almacén no volátil del dispositivo. **Ninguna de las placas soportadas tiene un almacén protegido** (sin elemento seguro, sin flash cifrada por defecto): quien pueda leer la flash de la placa puede leerlas. Tratá la placa como si guardara el secreto, y usá en el broker o en la nube una cuenta con solo los permisos que el controlador necesita.
+- `config set` por el enlace serial lleva el valor en claro por ese enlace; cargá las credenciales por un enlace de confianza.
+
+## Ajustes guardados
+
+`zplc config save` escribe todos los ajustes que informa `zplc config get` (y los overrides del mapeo Modbus) en el mismo almacén no volátil que el programa, una entrada por ajuste, e informa un error cuando una entrada no se pudo escribir. Un reinicio los lee de vuelta sobre los valores por defecto. Una prueba fija cada uno de los 70 ajustes por el shell, guarda, reinicia la configuración como lo hace un reinicio y compara cada uno. Quedan dos límites:
+
+- Una placa cuyo almacén no se puede montar no puede guardar ajustes: la Nucleo-H743ZI guarda su almacenamiento en un solo sector de 128 KB, que el almacén no puede usar (IO-008). `config save` ahí informa un error; ya no dice `OK`.
+- El guardado escribe las entradas una tras otra. Un corte de energía a mitad deja algunos ajustes nuevos y otros viejos, cada uno válido por sí solo.
+

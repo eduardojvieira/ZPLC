@@ -112,9 +112,10 @@ static struct {
 } cert_staging;
 #endif
 
-#ifdef CONFIG_ZPLC_HIL_DEBUG
-#define HIL_MAX_WATCHES 8
-#define HIL_WATCH_POLL_MS 100
+/* ============================================================================
+ * Typed reads of PLC memory (zplc dbg watch, zplc dbg timer, HIL watches)
+ * ============================================================================
+ */
 
 typedef enum {
   HIL_WATCH_BOOL = 0,
@@ -128,109 +129,12 @@ typedef enum {
 } hil_watch_type_t;
 
 typedef struct {
-  bool active;
-  uint16_t addr;
-  hil_watch_type_t type;
-  char type_name[6];
-  uint32_t last_raw;
-  bool has_last;
-} hil_watch_entry_t;
-
-typedef struct {
   uint32_t raw;
   bool bool_val;
   int32_t i32_val;
   uint32_t u32_val;
   float f32_val;
 } hil_watch_value_t;
-
-static hil_watch_entry_t s_hil_watches[HIL_MAX_WATCHES];
-static const struct shell *s_hil_shell;
-
-static void hil_watch_work_handler(struct k_work *work);
-static K_WORK_DELAYABLE_DEFINE(s_hil_watch_work, hil_watch_work_handler);
-#endif
-
-/**
- * @brief Convert hex string to byte array.
- */
-static int hex_decode(const char *hex, uint8_t *out, size_t out_len) {
-  /* A character that is not a hex digit is an error: it used to decode as 0x00 and be written. */
-  int decoded = zplc_hex_decode(hex, out, out_len);
-  return decoded < 0 ? -1 : decoded;
-}
-
-/**
- * @brief Get state name as string.
- */
-#ifndef CONFIG_ZPLC_SCHEDULER
-static const char *state_name(zplc_state_t state) {
-  switch (state) {
-  case ZPLC_STATE_IDLE:
-    return "IDLE";
-  case ZPLC_STATE_LOADING:
-    return "LOADING";
-  case ZPLC_STATE_READY:
-    return "READY";
-  case ZPLC_STATE_RUNNING:
-    return "RUNNING";
-  case ZPLC_STATE_PAUSED:
-    return "PAUSED";
-  case ZPLC_STATE_ERROR:
-    return "ERROR";
-  default:
-    return "UNKNOWN";
-  }
-}
-#endif
-
-#ifdef CONFIG_ZPLC_SCHEDULER
-static const char *sched_state_name(zplc_sched_state_t state) {
-  switch (state) {
-  case ZPLC_SCHED_STATE_IDLE:
-    return "idle";
-  case ZPLC_SCHED_STATE_RUNNING:
-    return "running";
-  case ZPLC_SCHED_STATE_PAUSED:
-    return "paused";
-  case ZPLC_SCHED_STATE_ERROR:
-    return "error";
-  case ZPLC_SCHED_STATE_UNINIT:
-  default:
-    return "uninit";
-  }
-}
-
-static const char *task_state_name(zplc_task_state_t state) {
-  switch (state) {
-  case ZPLC_TASK_STATE_IDLE:
-    return "idle";
-  case ZPLC_TASK_STATE_READY:
-    return "ready";
-  case ZPLC_TASK_STATE_RUNNING:
-    return "running";
-  case ZPLC_TASK_STATE_PAUSED:
-    return "paused";
-  case ZPLC_TASK_STATE_ERROR:
-    return "error";
-  default:
-    return "unknown";
-  }
-}
-#endif
-
-#ifdef CONFIG_ZPLC_HIL_DEBUG
-static const char *hil_mode_name(hil_mode_t mode) {
-  switch (mode) {
-  case HIL_MODE_SUMMARY:
-    return "summary";
-  case HIL_MODE_VERBOSE:
-    return "verbose";
-  case HIL_MODE_OFF:
-  default:
-    return "off";
-  }
-}
 
 static int hil_parse_watch_type(const char *type, hil_watch_type_t *out_type,
                                 size_t *out_size) {
@@ -338,7 +242,9 @@ static int hil_read_watch_value(uint16_t addr, hil_watch_type_t type,
     break;
   case HIL_WATCH_I8:
     value->raw = ptr[0];
-    value->i32_val = (int8_t)ptr[0];
+    /* Sign extension of one byte, written without a conversion from signed
+     * char. */
+    value->i32_val = (int32_t)(ptr[0] ^ 0x80U) - 128;
     break;
   case HIL_WATCH_U8:
     value->raw = ptr[0];
@@ -362,21 +268,118 @@ static int hil_read_watch_value(uint16_t addr, hil_watch_type_t type,
     memcpy(&value->raw, ptr, sizeof(uint32_t));
     value->u32_val = value->raw;
     break;
-  case HIL_WATCH_F32: {
-    union {
-      uint32_t u32;
-      float f32;
-    } conv;
-    memcpy(&conv.u32, ptr, sizeof(uint32_t));
-    value->raw = conv.u32;
-    value->f32_val = conv.f32;
+  case HIL_WATCH_F32:
+    memcpy(&value->raw, ptr, sizeof(uint32_t));
+    memcpy(&value->f32_val, ptr, sizeof(float));
     break;
-  }
   default:
     return -EINVAL;
   }
 
   return 0;
+}
+
+#ifdef CONFIG_ZPLC_HIL_DEBUG
+#define HIL_MAX_WATCHES 8
+#define HIL_WATCH_POLL_MS 100
+
+
+typedef struct {
+  bool active;
+  uint16_t addr;
+  hil_watch_type_t type;
+  char type_name[6];
+  uint32_t last_raw;
+  bool has_last;
+} hil_watch_entry_t;
+
+
+static hil_watch_entry_t s_hil_watches[HIL_MAX_WATCHES];
+static const struct shell *s_hil_shell;
+
+static void hil_watch_work_handler(struct k_work *work);
+static K_WORK_DELAYABLE_DEFINE(s_hil_watch_work, hil_watch_work_handler);
+#endif
+
+/**
+ * @brief Convert hex string to byte array.
+ */
+static int hex_decode(const char *hex, uint8_t *out, size_t out_len) {
+  /* A character that is not a hex digit is an error: it used to decode as 0x00 and be written. */
+  int decoded = zplc_hex_decode(hex, out, out_len);
+  return decoded < 0 ? -1 : decoded;
+}
+
+/**
+ * @brief Get state name as string.
+ */
+#ifndef CONFIG_ZPLC_SCHEDULER
+static const char *state_name(zplc_state_t state) {
+  switch (state) {
+  case ZPLC_STATE_IDLE:
+    return "IDLE";
+  case ZPLC_STATE_LOADING:
+    return "LOADING";
+  case ZPLC_STATE_READY:
+    return "READY";
+  case ZPLC_STATE_RUNNING:
+    return "RUNNING";
+  case ZPLC_STATE_PAUSED:
+    return "PAUSED";
+  case ZPLC_STATE_ERROR:
+    return "ERROR";
+  default:
+    return "UNKNOWN";
+  }
+}
+#endif
+
+#ifdef CONFIG_ZPLC_SCHEDULER
+static const char *sched_state_name(zplc_sched_state_t state) {
+  switch (state) {
+  case ZPLC_SCHED_STATE_IDLE:
+    return "idle";
+  case ZPLC_SCHED_STATE_RUNNING:
+    return "running";
+  case ZPLC_SCHED_STATE_PAUSED:
+    return "paused";
+  case ZPLC_SCHED_STATE_ERROR:
+    return "error";
+  case ZPLC_SCHED_STATE_UNINIT:
+  default:
+    return "uninit";
+  }
+}
+
+static const char *task_state_name(zplc_task_state_t state) {
+  switch (state) {
+  case ZPLC_TASK_STATE_IDLE:
+    return "idle";
+  case ZPLC_TASK_STATE_READY:
+    return "ready";
+  case ZPLC_TASK_STATE_RUNNING:
+    return "running";
+  case ZPLC_TASK_STATE_PAUSED:
+    return "paused";
+  case ZPLC_TASK_STATE_ERROR:
+    return "error";
+  default:
+    return "unknown";
+  }
+}
+#endif
+
+#ifdef CONFIG_ZPLC_HIL_DEBUG
+static const char *hil_mode_name(hil_mode_t mode) {
+  switch (mode) {
+  case HIL_MODE_SUMMARY:
+    return "summary";
+  case HIL_MODE_VERBOSE:
+    return "verbose";
+  case HIL_MODE_OFF:
+  default:
+    return "off";
+  }
 }
 
 static void hil_emit_watch_json(const struct shell *sh, uint16_t addr,
@@ -511,10 +514,10 @@ static int cmd_zplc_version(const struct shell *sh, size_t argc, char **argv) {
   shell_fprintf(sh, SHELL_NORMAL, "\"%s\":\"%s\"%s", key, val,                 \
                 (comma) ? "," : "")
 #define JSON_INT(sh, key, val, comma)                                          \
-  shell_fprintf(sh, SHELL_NORMAL, "\"%s\":%d%s", key, (int)val,                \
+  shell_fprintf(sh, SHELL_NORMAL, "\"%s\":%d%s", key, (int)(val),              \
                 (comma) ? "," : "")
 #define JSON_UINT(sh, key, val, comma)                                         \
-  shell_fprintf(sh, SHELL_NORMAL, "\"%s\":%u%s", key, (unsigned int)val,       \
+  shell_fprintf(sh, SHELL_NORMAL, "\"%s\":%u%s", key, (unsigned int)(val),     \
                 (comma) ? "," : "")
 #define JSON_BOOL(sh, key, val, comma)                                         \
   shell_fprintf(sh, SHELL_NORMAL, "\"%s\":%s%s", key,                          \
@@ -651,6 +654,11 @@ static int cmd_sched_status(const struct shell *sh, size_t argc, char **argv) {
     JSON_OBJ_START(sh);
     JSON_STR(sh, "state", sched_state_name(zplc_sched_get_state()), true);
     JSON_UINT(sh, "uptime_ms", stats.uptime_ms, true);
+    /* COM-014: a standing warning, not an event: present for as long as
+     * the session is configured to skip the certificate check. */
+    shell_fprintf(sh, SHELL_NORMAL, "\"warnings\":[%s],",
+                  zplc_config_mqtt_tls_verify_off() ? "\"mqtt_tls_verify_off\""
+                                                    : "");
     shell_fprintf(sh, SHELL_NORMAL, "\"stats\":");
     JSON_OBJ_START(sh);
     JSON_UINT(sh, "cycles", stats.total_cycles, true);
@@ -696,6 +704,10 @@ static int cmd_sched_status(const struct shell *sh, size_t argc, char **argv) {
   shell_print(sh, "  Tasks:      %u active", stats.active_tasks);
   shell_print(sh, "  Tot Cycles: %u", stats.total_cycles);
   shell_print(sh, "  Tot Ovr:    %u", stats.total_overruns);
+  if (zplc_config_mqtt_tls_verify_off()) {
+    shell_warn(sh, "  WARNING: MQTT tls-verify: OFF (the broker certificate "
+                   "is not checked)");
+  }
 #ifdef CONFIG_ZPLC_RETAIN_PERSIST
   {
     zplc_retain_status_t retain;
@@ -2303,21 +2315,129 @@ static int cmd_dbg_task(const struct shell *sh, size_t argc, char **argv) {
   return 0;
 }
 
+/**
+ * @brief `zplc dbg watch <addr> [type]`: one typed read of PLC memory.
+ *
+ * The shell has no stream to push changes on; Studio polls this, or reads
+ * through mpeek. The value is printed in the type the caller names (default
+ * u8) from IPI, OPI, WORK or RETAIN, and an address outside them is refused.
+ */
 static int cmd_dbg_watch(const struct shell *sh, size_t argc, char **argv) {
-  if (argc < 2) {
-    shell_error(sh, "Usage: dbg watch <addr> [type]");
+  hil_watch_type_t type = HIL_WATCH_U8;
+  hil_watch_value_t value;
+  const char *type_name = "u8";
+  unsigned long addr;
+  size_t width = 1U;
+  char *endptr;
+  int rc;
+
+  if (argc < 2 || argc > 3) {
+    shell_error(sh, "Usage: zplc dbg watch <addr> [bool|i8|i16|i32|u8|u16|u32|f32]");
     return -EINVAL;
   }
-  shell_print(sh, "Watch functionality not yet implemented in shell");
+  addr = strtoul(argv[1], &endptr, 0);
+  if (*argv[1] == '\0' || *endptr != '\0' || addr > UINT16_MAX) {
+    shell_error(sh, "ERROR: Invalid address");
+    return -EINVAL;
+  }
+  if (argc == 3) {
+    type_name = argv[2];
+    if (hil_parse_watch_type(type_name, &type, &width) != 0) {
+      shell_error(sh, "ERROR: Unknown type '%s'", type_name);
+      return -EINVAL;
+    }
+  }
+
+#ifdef CONFIG_ZPLC_SCHEDULER
+  if (zplc_sched_lock(5) != 0) {
+    shell_error(sh, "ERROR: Could not acquire scheduler lock");
+    return -EBUSY;
+  }
+#endif
+  rc = hil_read_watch_value((uint16_t)addr, type, &value);
+#ifdef CONFIG_ZPLC_SCHEDULER
+  (void)zplc_sched_unlock();
+#endif
+  if (rc != 0) {
+    shell_error(sh, "ERROR: 0x%04lX (%u bytes) is not inside a PLC memory region",
+                addr, (unsigned)width);
+    return -ERANGE;
+  }
+
+  switch (type) {
+  case HIL_WATCH_BOOL:
+    shell_print(sh, "0x%04lX bool = %s", addr, value.bool_val ? "true" : "false");
+    break;
+  case HIL_WATCH_I8:
+  case HIL_WATCH_I16:
+  case HIL_WATCH_I32:
+    shell_print(sh, "0x%04lX %s = %d", addr, type_name, (int)value.i32_val);
+    break;
+  case HIL_WATCH_F32:
+    shell_print(sh, "0x%04lX f32 = %.6g", addr, (double)value.f32_val);
+    break;
+  default:
+    shell_print(sh, "0x%04lX %s = %u", addr, type_name,
+                (unsigned int)value.u32_val);
+    break;
+  }
   return 0;
 }
 
+/* The TON, TOF and TP instance layout (packages/zplc-compiler stdlib
+ * timers.ts): IN +0, Q +1, PT +2 (TIME, 4 bytes), ET +6, running +14. */
+#define TIMER_INSTANCE_BYTES 16U
+
+/**
+ * @brief `zplc dbg timer <addr>`: the state of one timer instance.
+ */
 static int cmd_dbg_timer(const struct shell *sh, size_t argc, char **argv) {
-  if (argc < 2) {
-    shell_error(sh, "Usage: dbg timer <addr>");
+  uint8_t *ptr = NULL;
+  uint32_t pt = 0U;
+  uint32_t et = 0U;
+  uint8_t in = 0U;
+  uint8_t q = 0U;
+  uint8_t running = 0U;
+  unsigned long addr;
+  char *endptr;
+  int rc;
+
+  if (argc != 2) {
+    shell_error(sh, "Usage: zplc dbg timer <addr>");
     return -EINVAL;
   }
-  shell_print(sh, "Timer inspection not yet implemented");
+  addr = strtoul(argv[1], &endptr, 0);
+  if (*argv[1] == '\0' || *endptr != '\0' || addr > UINT16_MAX) {
+    shell_error(sh, "ERROR: Invalid address");
+    return -EINVAL;
+  }
+
+#ifdef CONFIG_ZPLC_SCHEDULER
+  if (zplc_sched_lock(5) != 0) {
+    shell_error(sh, "ERROR: Could not acquire scheduler lock");
+    return -EBUSY;
+  }
+#endif
+  rc = hil_resolve_mem_ptr((uint16_t)addr, TIMER_INSTANCE_BYTES, &ptr);
+  if (rc == 0) {
+    in = ptr[0];
+    q = ptr[1];
+    memcpy(&pt, &ptr[2], sizeof(pt));
+    memcpy(&et, &ptr[6], sizeof(et));
+    running = ptr[14];
+  }
+#ifdef CONFIG_ZPLC_SCHEDULER
+  (void)zplc_sched_unlock();
+#endif
+  if (rc != 0) {
+    shell_error(sh, "ERROR: 0x%04lX (%u bytes) is not inside a PLC memory region",
+                addr, (unsigned)TIMER_INSTANCE_BYTES);
+    return -ERANGE;
+  }
+
+  shell_print(sh, "Timer at 0x%04lX: IN=%u Q=%u PT=%u ms ET=%u ms running=%u",
+              addr, (unsigned)(in != 0U), (unsigned)(q != 0U),
+              (unsigned)pt, (unsigned)et, (unsigned)(running != 0U));
   return 0;
 }
 
@@ -2693,6 +2813,11 @@ static int cmd_ntp_sync(const struct shell *sh, size_t argc, char **argv)
  * ============================================================================
  */
 
+/** What `config get` shows for a credential: that it is set, never what it is. */
+static const char *secret_state(const char *value) {
+  return (value[0] != '\0') ? "(set)" : "(not set)";
+}
+
 static int cmd_config_get(const struct shell *sh, size_t argc, char **argv) {
   ARG_UNUSED(argc);
   ARG_UNUSED(argv);
@@ -2711,6 +2836,13 @@ static int cmd_config_get(const struct shell *sh, size_t argc, char **argv) {
   
   zplc_config_get_ip(buf, sizeof(buf));
   shell_print(sh, "  Static IP:    %s", buf);
+
+  zplc_config_get_wifi_ssid(buf, sizeof(buf));
+  shell_print(sh, "  WiFi SSID:    %s", (buf[0] != '\0') ? buf : "(none)");
+  shell_print(sh, "  WiFi Security: %u", (unsigned)zplc_config_get_wifi_security());
+  /* COM-015: a credential is reported as set or not set, never printed. */
+  zplc_config_get_wifi_pass(buf, sizeof(buf));
+  shell_print(sh, "  WiFi Password: %s", secret_state(buf));
   
   shell_print(sh, "  Modbus ID:    %u", zplc_config_get_modbus_id());
   shell_print(sh, "  Modbus TCP:   %s", zplc_config_get_modbus_tcp_enabled() ? "Enabled" : "Disabled");
@@ -2754,7 +2886,9 @@ static int cmd_config_get(const struct shell *sh, size_t argc, char **argv) {
   shell_print(sh, "  MQTT Session Expiry: %u s", (unsigned)zplc_config_get_mqtt_session_expiry_sec());
 
   zplc_config_get_mqtt_username(buf, sizeof(buf));
-  shell_print(sh, "  MQTT Username: %s", (buf[0] != '\0') ? buf : "(none)");
+  shell_print(sh, "  MQTT Username: %s", secret_state(buf));
+  zplc_config_get_mqtt_password(buf, sizeof(buf));
+  shell_print(sh, "  MQTT Password: %s", secret_state(buf));
 
   shell_print(sh, "  MQTT Security: %u", (unsigned)zplc_config_get_mqtt_security());
 
@@ -2780,6 +2914,9 @@ static int cmd_config_get(const struct shell *sh, size_t argc, char **argv) {
   shell_print(sh, "  MQTT LWT Payload: %s", (buf[0] != '\0') ? buf : "(none)");
   shell_print(sh, "  MQTT LWT QoS: %u", (unsigned)zplc_config_get_mqtt_lwt_qos());
   shell_print(sh, "  MQTT LWT Retain: %s", zplc_config_get_mqtt_lwt_retain() ? "Yes" : "No");
+  zplc_config_get_azure_sas_key(buf, sizeof(buf));
+  shell_print(sh, "  Azure SAS Key: %s", secret_state(buf));
+  shell_print(sh, "  Azure SAS Expiry: %u s", (unsigned)zplc_config_get_azure_sas_expiry_s());
   shell_print(sh, "  Azure Twin: %s", zplc_config_get_azure_twin_enabled() ? "Enabled" : "Disabled");
   shell_print(sh, "  Azure Direct Methods: %s", zplc_config_get_azure_direct_methods_enabled() ? "Enabled" : "Disabled");
   shell_print(sh, "  Azure C2D: %s", zplc_config_get_azure_c2d_enabled() ? "Enabled" : "Disabled");
@@ -2917,6 +3054,19 @@ static int cmd_config_set(const struct shell *sh, size_t argc, char **argv) {
   } else if (strcmp(key, "mqtt_session_expiry") == 0) {
     zplc_config_set_mqtt_session_expiry_sec(number);
   } else if (strcmp(key, "mqtt_security") == 0) {
+    if (number == (uint32_t)ZPLC_MQTT_SECURITY_TLS_NO_VERIFY) {
+#if defined(CONFIG_ZPLC_MQTT_ALLOW_INSECURE_TLS)
+      /* COM-014: the opt-in is explicit, and it is not silent. */
+      shell_warn(sh, "WARNING: TLS certificate verification is OFF; "
+                     "the broker is not authenticated. "
+                     "'zplc mqtt status' shows tls-verify: OFF.");
+#else
+      shell_error(sh, "ERROR: this firmware cannot turn TLS certificate "
+                      "verification off (CONFIG_ZPLC_MQTT_ALLOW_INSECURE_TLS "
+                      "is not set)");
+      return -EPERM;
+#endif
+    }
     zplc_config_set_mqtt_security((zplc_mqtt_security_t)number);
   } else if (strcmp(key, "mqtt_websocket_path") == 0) {
     zplc_config_set_mqtt_websocket_path(val);
@@ -2998,8 +3148,13 @@ static int cmd_config_save(const struct shell *sh, size_t argc, char **argv) {
 static int cmd_config_reset(const struct shell *sh, size_t argc, char **argv) {
   ARG_UNUSED(argc);
   ARG_UNUSED(argv);
-  zplc_config_reset();
-  shell_print(sh, "OK: Config reset");
+  int err = zplc_config_reset();
+  if (err) {
+    /* The defaults are in memory; they are not stored (COM-027). */
+    shell_error(sh, "ERROR: Config reset in memory but not saved: %d", err);
+    return err;
+  }
+  shell_print(sh, "OK: Config reset and saved");
   return 0;
 }
 
@@ -3622,8 +3777,8 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 #endif
     SHELL_CMD_ARG(info, NULL, "VM state", cmd_dbg_info, 1, 1),
     SHELL_CMD_ARG(task, NULL, "Task info", cmd_dbg_task, 2, 1),
-    SHELL_CMD_ARG(watch, NULL, "Watch memory", cmd_dbg_watch, 2, 1),
-    SHELL_CMD_ARG(timer, NULL, "Timer state", cmd_dbg_timer, 2, 0),
+    SHELL_CMD_ARG(watch, NULL, "Read a typed value: dbg watch <addr> [type]", cmd_dbg_watch, 2, 1),
+    SHELL_CMD_ARG(timer, NULL, "Timer instance state: dbg timer <addr>", cmd_dbg_timer, 2, 0),
     SHELL_SUBCMD_SET_END);
 
 #ifdef CONFIG_ZPLC_SCHEDULER
@@ -3705,6 +3860,18 @@ static int cmd_mqtt_reset_backoff(const struct shell *sh, size_t argc, char **ar
     return 0;
 }
 
+static const char *tls_verify_name(uint8_t state)
+{
+    switch (state) {
+    case ZPLC_MQTT_TLS_VERIFY_ON:
+        return "on";
+    case ZPLC_MQTT_TLS_VERIFY_OFF:
+        return "OFF";
+    default:
+        return "n/a";
+    }
+}
+
 static int cmd_mqtt_status(const struct shell *sh, size_t argc, char **argv)
 {
     bool json = (argc > 1 && strcmp(argv[1], "--json") == 0);
@@ -3719,6 +3886,7 @@ static int cmd_mqtt_status(const struct shell *sh, size_t argc, char **argv)
         JSON_UINT(sh, "profile", status.profile, true);
         JSON_UINT(sh, "protocol", status.protocol, true);
         JSON_UINT(sh, "transport", status.transport, true);
+        JSON_STR(sh, "tls_verify", tls_verify_name(status.tls_verify), true);
         JSON_UINT(sh, "publish_qos", status.publish_qos, true);
         JSON_UINT(sh, "subscribe_qos", status.subscribe_qos, true);
         JSON_BOOL(sh, "retain_enabled", status.retain_enabled, true);
@@ -3740,6 +3908,10 @@ static int cmd_mqtt_status(const struct shell *sh, size_t argc, char **argv)
     shell_print(sh, "  Profile: %u", status.profile);
     shell_print(sh, "  Protocol: %u", status.protocol);
     shell_print(sh, "  Transport: %u", status.transport);
+    shell_print(sh, "  tls-verify: %s", tls_verify_name(status.tls_verify));
+    if (status.tls_verify == ZPLC_MQTT_TLS_VERIFY_OFF) {
+      shell_warn(sh, "  WARNING: the broker certificate is not checked");
+    }
     shell_print(sh, "  Publish QoS: %u", status.publish_qos);
     shell_print(sh, "  Subscribe QoS: %u", status.subscribe_qos);
     shell_print(sh, "  Retain Enabled: %s", status.retain_enabled ? "Yes" : "No");

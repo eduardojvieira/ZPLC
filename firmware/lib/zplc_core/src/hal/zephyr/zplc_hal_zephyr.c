@@ -571,6 +571,8 @@ zplc_hal_result_t zplc_hal_dac_write(uint8_t channel, uint16_t value) {
  *   ID 2: "code"     - Program bytecode (up to 4KB)
  *   ID 3: "retain"   - unused (the RETAIN records use IDs 16..31)
  *   IDs 4-8: transactional .zplc program store v1
+ *   IDs 64..163: device settings, keys "cfg_00".."cfg_99" (COM-027)
+ *   IDs 200, 201: the AWS fleet certificate and private key PEM
  *
  * The storage_partition must be defined in the board's DeviceTree overlay.
  */
@@ -615,6 +617,14 @@ zplc_hal_result_t zplc_hal_dac_write(uint8_t channel, uint16_t value) {
  *         ("retain_a0".."retain_b7", see zplc_retain.h). */
 #define NVS_ID_RETAIN_CHUNKS 16
 
+/** @brief NVS IDs 64..163: one device setting per entry, "cfg_NN". */
+#define NVS_ID_CONFIG_BASE 64
+
+/** @brief The AWS IoT fleet-provisioned device certificate and key (PEM).
+ *         The keys were never mapped, so the save always failed on a board. */
+#define NVS_ID_AWS_CERT_PEM 200
+#define NVS_ID_AWS_KEY_PEM 201
+
 /** @brief NVS filesystem handle */
 static struct nvs_fs nvs_handle;
 
@@ -644,6 +654,13 @@ static uint16_t key_to_nvs_id(const char *key) {
   if (strncmp(key, "retain_", 7) == 0 && (key[7] == 'a' || key[7] == 'b') &&
       key[8] >= '0' && key[8] <= '7' && key[9] == '\0')
     return NVS_ID_RETAIN_CHUNKS + (key[7] - 'a') * 8 + (key[8] - '0');
+  if (strncmp(key, "cfg_", 4) == 0 && key[4] >= '0' && key[4] <= '9' &&
+      key[5] >= '0' && key[5] <= '9' && key[6] == '\0')
+    return NVS_ID_CONFIG_BASE + (key[4] - '0') * 10 + (key[5] - '0');
+  if (strcmp(key, "aws_cert_pem") == 0)
+    return NVS_ID_AWS_CERT_PEM;
+  if (strcmp(key, "aws_key_pem") == 0)
+    return NVS_ID_AWS_KEY_PEM;
   return 0; /* Invalid */
 }
 

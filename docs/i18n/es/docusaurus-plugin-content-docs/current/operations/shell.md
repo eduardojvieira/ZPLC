@@ -27,7 +27,7 @@ Inicie cada comando con `zplc`.
 - `zplc data <hex>` - Envía el siguiente fragmento del programa, en hexadecimal. Úselo solo después de `zplc load`.
 - `zplc start` - Inicia el planificador.
 - `zplc stop` - Detiene el planificador.
-- `zplc status` - Muestra el estado del runtime.
+- `zplc status` - Muestra el estado del runtime. Mientras MQTT esté habilitado sobre TLS con la verificación del certificado apagada, muestra además `WARNING: MQTT tls-verify: OFF` (`"warnings":["mqtt_tls_verify_off"]` en `--json`).
 - `zplc reset` - Reinicia la máquina virtual.
 - `zplc version` - Muestra la versión.
 
@@ -61,12 +61,14 @@ Los comandos `dbg` dan acceso directo al estado de ejecución, a la memoria y a 
 - `zplc dbg mpeek addr:len[,addr:len...]` - Lee uno o más bloques de memoria en las direcciones hexadecimales indicadas.
 - `zplc dbg poke <addr> <value>` - Escribe un valor en una dirección de memoria.
 - `zplc dbg mem <ipi|opi|work|retain> [offset]` - Vuelca una región de memoria en la consola, a partir del offset opcional.
-- `zplc dbg watch <addr> [type]` - No implementado. El comando solo imprime un mensaje; use `mpeek` o la pestaña Watch de Studio.
+- `zplc dbg watch <addr> [type]` - Lee un valor de una región de memoria del PLC y lo imprime en el tipo indicado: `bool`, `i8`, `i16`, `i32`, `u8` (por defecto), `u16`, `u32` o `f32`. Es una instantánea, no un flujo: la pestaña Watch de Studio consulta la misma memoria.
+
+Todo comando del conjunto `zplc` que recibe una dirección trabaja dentro de las cuatro regiones del PLC (imagen de entradas, imagen de salidas, work y retain) y rechaza una dirección fuera de ellas. Leer o escribir cualquier otra dirección del dispositivo es el comando `devmem` del shell de Zephyr, que el firmware de release no tiene: ver [Memoria cruda](#memoria-cruda-solo-firmware-de-diagnóstico).
 
 ### Ticks, tareas y temporizadores
 - `zplc dbg ticks` - Imprime el conteo de ticks del sistema, en milisegundos.
 - `zplc dbg task <task_id>` - Muestra la definición y los límites de una tarea.
-- `zplc dbg timer <addr>` - No implementado. El comando solo imprime un mensaje.
+- `zplc dbg timer <addr>` - Lee la instancia de 16 bytes de un `TON`, `TOF` o `TP` en la dirección e imprime `IN`, `Q`, `PT` y `ET` (en milisegundos) y si el temporizador está corriendo.
 
 ---
 
@@ -85,10 +87,24 @@ El planificador decide cuándo se ejecuta cada tarea. Estos comandos están disp
 
 Estos comandos administran los ajustes que ZPLC guarda en el almacenamiento no volátil de la placa.
 
-- `zplc config get` - Muestra la configuración actual.
-- `zplc config set <key> <val>` - Cambia un ajuste, como un intervalo o una dirección de red.
-- `zplc config save` - Escribe los ajustes actuales en el almacenamiento no volátil.
-- `zplc config reset` - Borra los ajustes guardados; los valores por defecto se aplican después del siguiente reinicio.
+- `zplc config get` - Muestra la configuración actual. Una contraseña, una clave o un nombre de usuario se muestra como `(set)` o `(not set)`; ningún comando ni línea de log imprime su valor.
+- `zplc config set <key> <val>` - Cambia un ajuste, como un intervalo o una dirección de red. El cambio queda en memoria hasta que se guarda.
+- `zplc config save` - Escribe todos los ajustes que `config get` informa, y los overrides del mapeo Modbus, en el almacén no volátil donde se guarda el programa. Imprime `OK: Config saved` solo después de haber escrito todas las entradas; si alguna no se escribió, imprime `ERROR: Failed to save config: <código>` y termina con ese código (`-134` significa que este firmware no guarda ajustes).
+- `zplc config reset` - Pone los ajustes por defecto en memoria y los guarda, de modo que también se aplican después del siguiente reinicio. Informa un error cuando no pudo guardar los valores por defecto.
+
+Los ajustes de un dispositivo que nunca se configuró son los valores por defecto: MQTT apagado, sin broker, y MQTT con TLS y el certificado del broker verificado (ver [Valores por defecto seguros](../runtime/connectivity.md#valores-por-defecto-seguros)).
+
+`zplc config set mqtt_security 1` apaga la verificación del certificado. Una imagen de release lo rechaza (`ERROR: this firmware cannot turn TLS certificate verification off`); una imagen compilada con `CONFIG_ZPLC_MQTT_ALLOW_INSECURE_TLS=y` lo acepta, imprime una advertencia y muestra `tls-verify: OFF` en `zplc mqtt status` y en `zplc status` mientras siga así.
+
+### Memoria cruda (solo firmware de diagnóstico)
+
+El shell de Zephyr tiene un comando `devmem` que lee y escribe cualquier dirección del dispositivo, no solo las regiones del PLC. El firmware de release no lo compila (`CONFIG_DEVMEM_SHELL=n`). La imagen de diagnóstico sí:
+
+```bash
+west build -b <board> firmware/app -- -DEXTRA_CONF_FILE=diagnostic.conf
+```
+
+`diagnostic.conf` activa `CONFIG_ZPLC_SHELL_RAW_MEMORY=y` junto con `CONFIG_DEVMEM_SHELL=y`, y la compilación de la aplicación se detiene con un error cuando solo uno de los dos está activo, de modo que el comando no aparece en una imagen de release por accidente. Usá una imagen de diagnóstico en un banco de pruebas, nunca en un controlador conectado a una planta.
 
 ---
 
@@ -116,7 +132,7 @@ Para las placas con hardware de red, como la ESP32-S3 o las placas STM32F7.
 
 ## MQTT y comunicación (`zplc mqtt` / `comm`)
 
-- `zplc mqtt status` - Muestra el estado del cliente MQTT, incluidos el broker y el ID de cliente.
+- `zplc mqtt status` - Muestra el estado del cliente MQTT, incluidos el broker y el ID de cliente, y `tls-verify`: `on` (TLS, se verifica el certificado del broker), `OFF` (TLS, no se verifica, con una línea de advertencia) o `n/a` (TCP plano, sin TLS). `--json` agrega `"tls_verify"`.
 - `zplc mqtt reset_backoff` - Restablece la espera de reconexión a su valor inicial.
 - `zplc comm map` - Muestra los enlaces de comunicación y las asignaciones del servidor Modbus.
 - `zplc comm set modbus <index> <address>` - Reemplaza una asignación del servidor Modbus.

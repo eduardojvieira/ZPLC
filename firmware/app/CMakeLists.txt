@@ -19,6 +19,11 @@ find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 
 project(zplc_zephyr_app)
 
+# COM-022: the raw memory command of the Zephyr shell is built only into the
+# diagnostic image (firmware/app/diagnostic.conf).
+include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/zplc_shell_rules.cmake)
+zplc_check_shell_rules("${CONFIG_DEVMEM_SHELL}" "${CONFIG_ZPLC_SHELL_RAW_MEMORY}")
+
 if(CONFIG_MQTT_LIB_WEBSOCKET)
   if(NOT TARGET subsys__net__lib__mqtt)
     message(FATAL_ERROR "Zephyr MQTT target subsys__net__lib__mqtt is required for the WebSocket net_log workaround")
