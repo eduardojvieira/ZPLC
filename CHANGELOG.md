@@ -51,6 +51,9 @@ All notable changes are documented here.
   position comes before the count in `MID`, `DELETE` and `REPLACE` (IEC 61131-3
   writes the length first); `WSTRING` supports declaration, initial values,
   assignment and `LEN`.
+- `TP` starts a pulse only on a rising edge of `IN` and is not retriggered by a
+  level that stays true after the pulse; `TON`, `TOF` and `TP` hold their
+  elapsed time at the preset and a `TON` with a preset of 0 follows its input.
 
 ## 2.0.0-rc.3 - 2026-09-01
 

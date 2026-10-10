@@ -585,7 +585,11 @@
     {"kind":"conformance","ref":"conformance/cmp/cmp-057-int-to-dint-exists.expect.json","test":"CMP-057 INT_TO_DINT exists"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-057-integer-conversion-functions.expect.json","test":"CMP-057 conversion functions between integer types keep an in-range value"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-057-real-to-int-rounds.expect.json","test":"CMP-057 REAL_TO_INT rounds to the nearest integer"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-057-tof-elapsed-stops-at-preset.expect.json","test":"CMP-057 TOF elapsed time stops at the preset and holds it while IN stays false"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-057-ton-elapsed-stops-at-preset.expect.json","test":"CMP-057 TON elapsed time stops at the preset"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-057-ton-zero-preset-follows-the-input.expect.json","test":"CMP-057 TON with a preset of 0 follows its input in the same scan"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-057-tp-elapsed-resets-when-the-pulse-ends-with-input-low.expect.json","test":"CMP-057 TP elapsed time is 0 when the pulse ends while IN is false"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-057-tp-new-edge-starts-a-new-pulse.expect.json","test":"CMP-057 TP ends its pulse at the preset, ignores a level that stays true, and starts a new pulse on the next rising edge"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-057-tp-not-retriggered.expect.json","test":"CMP-057 TP is not retriggered while its input stays true"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-057-tp-pulse-ignores-the-input-falling.expect.json","test":"CMP-057 TP holds Q for the preset when IN falls, and ends it at the preset"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-057-trunc-truncates.expect.json","test":"CMP-057 TRUNC truncates toward zero"}

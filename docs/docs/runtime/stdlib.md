@@ -24,7 +24,8 @@ Delays a rising edge. The output `Q` goes TRUE only after `IN` has been TRUE for
   - `PT` (TIME): Preset Time (duration to wait).
 - **Outputs:**
   - `Q` (BOOL): High if `IN` has been continuously high for `PT`.
-  - `ET` (TIME): Elapsed Time since `IN` went high.
+  - `ET` (TIME): Elapsed Time since `IN` went high. It counts up to `PT` and stops there; it is 0 while `IN` is low.
+- **Behavior:** `IN` low resets `Q` and `ET` at once. A preset of `T#0ms` makes `Q` follow `IN` in the same scan.
 
 ### TOF (Off-Delay Timer)
 Preserves a high state for a duration after a falling edge. `Q` follows `IN` to TRUE immediately, but delays going FALSE until `PT` has elapsed.
@@ -33,7 +34,7 @@ Preserves a high state for a duration after a falling edge. `Q` follows `IN` to 
   - `PT` (TIME): Preset Time (duration to keep high).
 - **Outputs:**
   - `Q` (BOOL): True while `IN` is true, plus `PT` duration after `IN` goes false.
-  - `ET` (TIME): Elapsed Time since `IN` went low.
+  - `ET` (TIME): Elapsed Time since `IN` went low. It counts up to `PT` and stays at `PT` until `IN` goes high again; it is 0 while `IN` is high.
 
 ### TP (Pulse Timer)
 Generates a pulse of fixed duration regardless of how long the input stays high.
@@ -42,7 +43,8 @@ Generates a pulse of fixed duration regardless of how long the input stays high.
   - `PT` (TIME): Preset Time (pulse width).
 - **Outputs:**
   - `Q` (BOOL): Pulses true for exactly `PT` duration upon `IN` rising edge.
-  - `ET` (TIME): Elapsed Time since pulse started.
+  - `ET` (TIME): Elapsed Time since pulse started. It counts up to `PT` and stops there; it holds `PT` while `IN` stays high after the pulse and is 0 once the pulse is over and `IN` is low.
+- **Behavior:** The pulse runs to its end whatever `IN` does and cannot be retriggered: a level that stays high does not start a second pulse, a new pulse needs a new rising edge after the pulse has ended. A preset of `T#0ms` gives no pulse.
 
 ---
 

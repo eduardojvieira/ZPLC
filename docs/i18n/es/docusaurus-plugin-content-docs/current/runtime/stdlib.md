@@ -24,7 +24,8 @@ Retrasa un flanco de subida. La salida `Q` se vuelve TRUE solo después de que `
   - `PT` (TIME): Tiempo preestablecido (duración a esperar).
 - **Salidas:**
   - `Q` (BOOL): High si `IN` ha sido alto continuamente durante `PT`.
-  - `ET` (TIME): Tiempo transcurrido desde que `IN` se puso en alto.
+  - `ET` (TIME): Tiempo transcurrido desde que `IN` se puso en alto. Cuenta hasta `PT` y se detiene ahí; vale 0 mientras `IN` está en bajo.
+- **Comportamiento:** `IN` en bajo reinicia `Q` y `ET` de inmediato. Un preset de `T#0ms` hace que `Q` siga a `IN` en el mismo scan.
 
 ### TOF (Temporizador Off-Delay)
 Conserva un estado alto durante un tiempo después de un flanco de bajada. `Q` sigue a `IN` a TRUE inmediatamente, pero retrasa su paso a FALSE hasta que haya transcurrido `PT`.
@@ -33,7 +34,7 @@ Conserva un estado alto durante un tiempo después de un flanco de bajada. `Q` s
   - `PT` (TIME): Tiempo preestablecido (duración a mantener en alto).
 - **Salidas:**
   - `Q` (BOOL): Verdadero mientras `IN` sea verdadero, más el tiempo `PT` después de que `IN` se vuelva falso.
-  - `ET` (TIME): Tiempo transcurrido desde que `IN` se puso en bajo.
+  - `ET` (TIME): Tiempo transcurrido desde que `IN` se puso en bajo. Cuenta hasta `PT` y se queda en `PT` hasta que `IN` vuelve a subir; vale 0 mientras `IN` está en alto.
 
 ### TP (Temporizador de Pulso)
 Genera un pulso de duración fija, sin importar cuánto tiempo permanezca alta la entrada.
@@ -42,7 +43,8 @@ Genera un pulso de duración fija, sin importar cuánto tiempo permanezca alta l
   - `PT` (TIME): Tiempo de pulso.
 - **Salidas:**
   - `Q` (BOOL): Lanza un pulso verdadero durante el tiempo `PT` en el flanco de subida de `IN`.
-  - `ET` (TIME): Tiempo transcurrido desde que inició el pulso.
+  - `ET` (TIME): Tiempo transcurrido desde que inició el pulso. Cuenta hasta `PT` y se detiene ahí; conserva `PT` mientras `IN` sigue en alto después del pulso y vale 0 cuando el pulso terminó y `IN` está en bajo.
+- **Comportamiento:** El pulso corre hasta el final haga lo que haga `IN` y no se puede redisparar: un nivel que se mantiene en alto no inicia un segundo pulso, un pulso nuevo necesita un flanco de subida nuevo después de que el anterior terminó. Un preset de `T#0ms` no da pulso.
 
 ---
 
