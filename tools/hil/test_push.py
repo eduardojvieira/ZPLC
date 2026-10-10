@@ -1,70 +1,24 @@
-from zplc_tester import ZPLCTester
-import struct
+"""Push variants: PUSH8, PUSH16 and PUSH32 with the limits of each width.
 
+A table of opcode cases (opcode_cases.py); it exits non-zero when a case fails (HIL-004).
+Needs a firmware image built with CONFIG_ZPLC_HIL_DEBUG=y for the trace frames; exits 77 (skipped) without it.
+"""
+from opcode_cases import *  # noqa: F401,F403
+from zplc_tester import ZPLCTester, cli
 
-def test_push():
-    tester = ZPLCTester()
-    OP = tester.OP
+OP = ZPLCTester.OP
+CASES = [
+    dict(name='PUSH8 127', code=[OP['PUSH8'], 127, OP['HALT']], tos=127),
+    dict(name='PUSH8 -128', code=[OP['PUSH8'], 0x80, OP['HALT']], tos=-128),
+    dict(name='PUSH16 32767', code=[OP['PUSH16'], 0xFF, 0x7F, OP['HALT']], tos=32767),
+    dict(name='PUSH16 -32768', code=[OP['PUSH16'], 0x00, 0x80, OP['HALT']], tos=-32768),
+    dict(name='PUSH32 0x7FFFFFFF', code=[OP['PUSH32']] + push32(0x7FFFFFFF) + [OP['HALT']], tos=2147483647),
+    dict(name='PUSH32 -1', code=[OP['PUSH32']] + push32(0xFFFFFFFF) + [OP['HALT']], tos=-1),
+]
 
-    print("\n--- Running Push Variant Tests ---")
-
-    # 1. PUSH8 (Signed 127)
-    print("Test PUSH8 (127)...", end="", flush=True)
-    bytecode = [OP["PUSH8"], 127, OP["HALT"]]
-    if tester.get_last_tos(tester.run_bytecode(bytecode)) == 127:
-        print("PASS")
-    else:
-        print("FAIL")
-
-    # 2. PUSH8 (Signed -128)
-    print("Test PUSH8 (-128)...", end="", flush=True)
-    bytecode = [OP["PUSH8"], 0x80, OP["HALT"]]
-    tos = tester.get_last_tos(tester.run_bytecode(bytecode))
-    if tos == 4294967168 or tos == -128:
-        print("PASS")
-    else:
-        print(f"FAIL (tos={tos})")
-
-    # 3. PUSH16 (Signed 32767)
-    print("Test PUSH16 (32767)...", end="", flush=True)
-    # Little-endian: 0xFF 0x7F
-    bytecode = [OP["PUSH16"], 0xFF, 0x7F, OP["HALT"]]
-    if tester.get_last_tos(tester.run_bytecode(bytecode)) == 32767:
-        print("PASS")
-    else:
-        print(f"FAIL (tos={tester.get_last_tos(tester.run_bytecode(bytecode))})")
-
-    # 4. PUSH16 (Signed -32768)
-    print("Test PUSH16 (-32768)...", end="", flush=True)
-    # Little-endian: 0x00 0x80
-    bytecode = [OP["PUSH16"], 0x00, 0x80, OP["HALT"]]
-    tos = tester.get_last_tos(tester.run_bytecode(bytecode))
-    if tos == 4294934528 or tos == -32768:
-        print("PASS")
-    else:
-        print(f"FAIL (tos={tos})")
-
-    # 5. PUSH32 (Max Int)
-    print("Test PUSH32 (0x7FFFFFFF)...", end="", flush=True)
-    val = 0x7FFFFFFF
-    bytecode = [OP["PUSH32"]] + list(struct.pack("<I", val)) + [OP["HALT"]]
-    if tester.get_last_tos(tester.run_bytecode(bytecode)) == val:
-        print("PASS")
-    else:
-        print(f"FAIL")
-
-    # 6. PUSH32 (-1)
-    print("Test PUSH32 (-1)...", end="", flush=True)
-    val = 0xFFFFFFFF
-    bytecode = [OP["PUSH32"]] + list(struct.pack("<I", val)) + [OP["HALT"]]
-    tos = tester.get_last_tos(tester.run_bytecode(bytecode))
-    if tos == 0xFFFFFFFF or tos == -1:
-        print("PASS")
-    else:
-        print(f"FAIL (tos={tos})")
-
-    tester.close()
+def test_push(tester=None):
+    return run(tester or ZPLCTester(), CASES)
 
 
 if __name__ == "__main__":
-    test_push()
+    cli(test_push)

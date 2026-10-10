@@ -24,8 +24,8 @@ from typing import NamedTuple
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "contract"))
 from zplc_contract import Opcode  # noqa: E402
 
-from hil_devices import SerialTransport, open_fake  # noqa: E402
-from hil_ports import resolve_port  # noqa: E402
+from hil_devices import DeviceError, SerialTransport, open_fake  # noqa: E402
+from hil_ports import PortError, resolve_port  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[2]
 CLI = ROOT / "packages/zplc-ide/src/cli/index.ts"
@@ -39,6 +39,16 @@ class CompileError(Exception):
 
 class UploadError(Exception):
     pass
+
+
+def cli(main, *args) -> None:
+    """The `if __name__ == "__main__"` of a device script: its status, or 2 with a plain message when there is no device to use."""
+    try:
+        code = main(*args)
+    except (PortError, DeviceError, CompileError, UploadError) as error:
+        print(f"error: {error}", file=sys.stderr)
+        code = 2
+    sys.exit(code if isinstance(code, int) else 0)
 
 
 class Check(NamedTuple):
@@ -67,12 +77,21 @@ class ZPLCTester:
                 time.sleep(1)  # the board resets when the port opens
         self.ser = transport
         self.kind = getattr(transport, "kind", "fake")
+        # pace scales the time a program is given to run; settle scales the pauses the serial protocol needs between
+        # commands, which a fake does not (the host runtime still needs its real time to run scans)
         self.pace = 0.0 if self.kind == "null" else 1.0
+        self.settle_scale = 1.0 if self.kind == "serial" else 0.0
 
     # judgement -------------------------------------------------------------------------------------
     def sleep(self, seconds: float) -> None:
+        """Let a program run for `seconds`."""
         if self.pace:
             time.sleep(seconds * self.pace)
+
+    def settle(self, seconds: float) -> None:
+        """Pause for the serial protocol between commands."""
+        if self.settle_scale:
+            time.sleep(seconds * self.settle_scale)
 
     def check(self, name: str, ok: bool, detail: str = "") -> bool:
         self.checks.append(Check(name, bool(ok), detail))
@@ -135,7 +154,7 @@ class ZPLCTester:
     def reset_state(self):
         self.send("zplc stop")
         self.send("zplc reset")
-        self.sleep(0.5)
+        self.settle(0.5)
 
     def upload_bytecode(self, bytecode):
         self.send("zplc stop")
@@ -149,7 +168,7 @@ class ZPLCTester:
             if "OK:" in response:
                 break
             print(f"WARN: zplc load retry {attempt + 1}")
-            self.sleep(0.5)
+            self.settle(0.5)
         else:
             raise UploadError(f"zplc load failed: {response.strip()}")
 
@@ -164,10 +183,10 @@ class ZPLCTester:
                 if "OK:" in response:
                     break
                 print(f"WARN: chunk {at} retry {attempt + 1}")
-                self.sleep(0.5)
+                self.settle(0.5)
             else:
                 raise UploadError(f"zplc data failed at byte {at // 2}: {response.strip()}")
-            self.sleep(0.05)
+            self.settle(0.05)
         self.send("")
 
     # observation --------------------------------------------------------------------------------------
@@ -234,7 +253,7 @@ class ZPLCTester:
                 values += [int(h, 16) for h in re.findall(r"\b([0-9A-Fa-f]{2})\b", line.split(":", 1)[1])]
             if len(values) >= length:
                 return values[:length]
-            self.sleep(0.2)
+            self.settle(0.2)
         return []
 
     def poke(self, addr, data):
@@ -258,6 +277,21 @@ class ZPLCTester:
             raise CompileError(f"compilation of {path.name} failed: {(done.stderr or done.stdout).strip()}")
         return list(out.read_bytes())
 
+    def compile_project(self, directory):
+        """Compile a Studio workspace (a folder with zplc.json and src/) into this tester's directory; return the artifact bytes."""
+        bun = shutil.which("bun")
+        if bun is None:
+            raise CompileError("bun is not on PATH: the repository compiler runs on it")
+        path = Path(directory)
+        path = path if path.is_absolute() else ROOT / path
+        if self.workdir is None:
+            self.workdir = tempfile.mkdtemp(prefix="zplc-hil-")
+        out = Path(self.workdir) / (path.name + ".zplc")
+        done = subprocess.run([bun, str(CLI), "compile", str(path), "-o", str(out)], capture_output=True, text=True, cwd=ROOT)
+        if done.returncode != 0:
+            raise CompileError(f"compilation of project {path.name} failed: {(done.stderr or done.stdout).strip()}")
+        return list(out.read_bytes())
+
     def run_st(self, st_file, reset=True, duration=2.0):
         bytecode = self.compile_st(st_file)
         if reset:
@@ -265,11 +299,17 @@ class ZPLCTester:
         self.upload_bytecode(bytecode)
         return self.start_and_capture(duration=duration)
 
-    def run_bytecode(self, bytecode, reset=True, duration=0.5):
-        """Upload raw bytecode (a list of bytes) and run it, capturing the traces of verbose mode."""
+    def run_bytecode(self, bytecode, reset=True, duration=0.5, before_start=None):
+        """Upload raw bytecode (a list of bytes) and run it, capturing the traces of verbose mode.
+
+        `before_start` runs after the upload, which resets the runtime, and before the start: memory a program needs
+        poked in goes there, because a reset would take it away if it were written earlier.
+        """
         if reset:
             self.reset_state()
         self.upload_bytecode(bytecode)
+        if before_start is not None:
+            before_start(self)
         return self.start_and_capture(duration=duration)
 
     @staticmethod

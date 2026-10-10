@@ -1,90 +1,25 @@
-from zplc_tester import ZPLCTester
+"""Logical and bitwise operations: AND, OR, XOR, NOT, SHL, SHR and SAR.
 
+A table of opcode cases (opcode_cases.py); it exits non-zero when a case fails (HIL-004).
+Needs a firmware image built with CONFIG_ZPLC_HIL_DEBUG=y for the trace frames; exits 77 (skipped) without it.
+"""
+from opcode_cases import *  # noqa: F401,F403
+from zplc_tester import ZPLCTester, cli
 
-def test_logic():
-    tester = ZPLCTester()
-    OP = tester.OP
+OP = ZPLCTester.OP
+CASES = [
+    dict(name='AND 0x0F & 0x55', code=[OP['PUSH8'], 0x0F, OP['PUSH8'], 0x55, OP['AND'], OP['HALT']], tos=5),
+    dict(name='OR 0x0F | 0x50', code=[OP['PUSH8'], 0x0F, OP['PUSH8'], 0x50, OP['OR'], OP['HALT']], tos=95),
+    dict(name='XOR 0x55 ^ 0x33', code=[OP['PUSH8'], 0x55, OP['PUSH8'], 0x33, OP['XOR'], OP['HALT']], tos=102),
+    dict(name='NOT 0', code=[OP['PUSH8'], 0, OP['NOT'], OP['HALT']], tos=-1),
+    dict(name='SHL 1 << 4', code=[OP['PUSH8'], 1, OP['PUSH8'], 4, OP['SHL'], OP['HALT']], tos=16),
+    dict(name='SHR 32 >> 3', code=[OP['PUSH8'], 32, OP['PUSH8'], 3, OP['SHR'], OP['HALT']], tos=4),
+    dict(name='SAR -16 >> 2', code=[OP['PUSH8'], 0xF0, OP['PUSH8'], 2, OP['SAR'], OP['HALT']], tos=-4),
+]
 
-    print("\n--- Running Logical/Bitwise Tests ---")
-
-    # 1. AND: 0x0F & 0x55 = 0x05
-    print("Test AND...", end="", flush=True)
-    bytecode = [OP["PUSH8"], 0x0F, OP["PUSH8"], 0x55, OP["AND"], OP["HALT"]]
-    traces = tester.run_bytecode(bytecode)
-    if tester.get_last_tos(traces) == 0x05:
-        print("PASS")
-    else:
-        print(f"FAIL (tos={tester.get_last_tos(traces)})")
-
-    # 2. OR: 0x0F | 0x50 = 0x5F
-    print("Test OR...", end="", flush=True)
-    bytecode = [OP["PUSH8"], 0x0F, OP["PUSH8"], 0x50, OP["OR"], OP["HALT"]]
-    traces = tester.run_bytecode(bytecode)
-    if tester.get_last_tos(traces) == 0x5F:
-        print("PASS")
-    else:
-        print(f"FAIL (tos={tester.get_last_tos(traces)})")
-
-    # 3. XOR: 0x55 ^ 0xFF = 0xAA (interpreted as -86 signed, or 0xFFFFFFAA)
-    # 0xAA in 32-bit is 170. But if PUSH8 0xFF is -1, then 0x55 ^ -1 = ~0x55 = 0xFFAA...
-    # Let's use simpler values to avoid sign-extension confusion
-    print("Test XOR...", end="", flush=True)
-    bytecode = [OP["PUSH8"], 0x55, OP["PUSH8"], 0x33, OP["XOR"], OP["HALT"]]
-    traces = tester.run_bytecode(bytecode)
-    # 0x55 (01010101) ^ 0x33 (00110011) = 0x66 (01100110) = 102
-    if tester.get_last_tos(traces) == 0x66:
-        print("PASS")
-    else:
-        print(f"FAIL (tos={tester.get_last_tos(traces)})")
-
-    # 4. NOT: ~0 = 0xFFFFFFFF
-    print("Test NOT...", end="", flush=True)
-    bytecode = [OP["PUSH8"], 0, OP["NOT"], OP["HALT"]]
-    traces = tester.run_bytecode(bytecode)
-    tos = tester.get_last_tos(traces)
-    if tos == 4294967295 or tos == -1:
-        print("PASS")
-    else:
-        print(f"FAIL (tos={tos})")
-
-    # 5. SHL: 1 << 4 = 16
-    print("Test SHL...", end="", flush=True)
-    bytecode = [OP["PUSH8"], 1, OP["PUSH8"], 4, OP["SHL"], OP["HALT"]]
-    traces = tester.run_bytecode(bytecode)
-    if tester.get_last_tos(traces) == 16:
-        print("PASS")
-    else:
-        print(f"FAIL (tos={tester.get_last_tos(traces)})")
-
-    # 6. SHR: 32 >> 3 = 4
-    print("Test SHR...", end="", flush=True)
-    bytecode = [OP["PUSH8"], 32, OP["PUSH8"], 3, OP["SHR"], OP["HALT"]]
-    traces = tester.run_bytecode(bytecode)
-    if tester.get_last_tos(traces) == 4:
-        print("PASS")
-    else:
-        print(f"FAIL (tos={tester.get_last_tos(traces)})")
-
-    # 7. SAR: -16 >> 2 = -4
-    print("Test SAR...", end="", flush=True)
-    bytecode = [
-        OP["PUSH8"],
-        0xF0,  # -16
-        OP["PUSH8"],
-        2,
-        OP["SAR"],
-        OP["HALT"],
-    ]
-    traces = tester.run_bytecode(bytecode)
-    tos = tester.get_last_tos(traces)
-    # -4 is 0xFFFFFFFC = 4294967292
-    if tos == 4294967292 or tos == -4:
-        print("PASS")
-    else:
-        print(f"FAIL (tos={tos})")
-
-    tester.close()
+def test_logic(tester=None):
+    return run(tester or ZPLCTester(), CASES)
 
 
 if __name__ == "__main__":
-    test_logic()
+    cli(test_logic)

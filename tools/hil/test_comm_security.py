@@ -1,9 +1,19 @@
+from __future__ import annotations
+
 import argparse
 import os
 import re
-import serial
+try:
+    import serial  # pyserial: running these scripts needs it, importing them does not (so that they can be tested without a port)
+except ImportError:
+    serial = None
 import subprocess
+import sys
 import time
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from hil_ports import PortError, resolve_port  # noqa: E402
 
 
 ANSI_ESCAPE = re.compile(
@@ -303,9 +313,8 @@ def main() -> int:
     parser = argparse.ArgumentParser(
         description="HIL test for MQTT security on hardware"
     )
-    parser.add_argument(
-        "--port", default=os.getenv("ZPLC_SERIAL_PORT", "/dev/cu.usbmodem101")
-    )
+    parser.add_argument("--port", help="serial port; else ZPLC_SERIAL_PORT, else found from the USB identifiers of --board")
+    parser.add_argument("--board", default=None, help="ide_id of the board, to find its port")
     parser.add_argument("--baud", type=int, default=115200)
     parser.add_argument(
         "--openocd-interface",
@@ -364,6 +373,14 @@ def main() -> int:
         ),
     )
     args = parser.parse_args()
+    if serial is None:
+        print("error: pyserial is not installed (pip install pyserial)", file=sys.stderr)
+        return 2
+    try:
+        args.port = resolve_port(args.port, args.board, os.environ)
+    except PortError as error:
+        print(f"error: {error}", file=sys.stderr)
+        return 2
 
     # Keep the serial handle open for the entire test — NEVER close and reopen.
     # On ESP32-S3 with USB-JTAG, closing the macOS CDC handle kills the

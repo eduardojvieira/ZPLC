@@ -41,6 +41,8 @@ class SerialTransport:
     kind = "serial"
 
     def __init__(self, port: str, baud: int = 115200, timeout: float = 1.0):
+        if os.environ.get("ZPLC_HIL_FORBID_SERIAL"):
+            raise DeviceError("a serial port may not be opened here (ZPLC_HIL_FORBID_SERIAL is set: this is a test run)")
         try:
             import serial  # noqa: PLC0415
         except ImportError as error:
@@ -64,6 +66,7 @@ class ShellDevice:
     def __init__(self) -> None:
         self._rx = bytearray()
         self._line = bytearray()
+        self._previous = 0
 
     # pyserial subset -------------------------------------------------------------------------------
     @property
@@ -72,13 +75,15 @@ class ShellDevice:
 
     def write(self, data: bytes) -> int:
         for byte in data:
-            if byte in (10, 13):
-                if self._line:
-                    text = self._line.decode("utf-8", "replace").strip()
-                    self._line.clear()
-                    self._answer(text)
+            if byte == 10 and self._previous == 13:
+                pass  # the LF of a CR LF ends nothing: the shell took the CR as Enter
+            elif byte in (10, 13):
+                text = self._line.decode("utf-8", "replace").strip()
+                self._line.clear()
+                self._answer(text)  # an empty line is answered with a prompt, as the shell does
             else:
                 self._line.append(byte)
+            self._previous = byte
         return len(data)
 
     def read(self, size: int = 1) -> bytes:
@@ -101,7 +106,7 @@ class ShellDevice:
 
     # shell -------------------------------------------------------------------------------------------
     def _answer(self, line: str) -> None:
-        reply = self.handle(line)
+        reply = self.handle(line) if line else ""
         self._rx += f"{line}\r\n{reply}{PROMPT}".encode()
 
     def handle(self, line: str) -> str:  # pragma: no cover - overridden

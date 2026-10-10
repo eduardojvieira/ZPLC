@@ -49,7 +49,7 @@ def resolve_port(
     port: str | None = None,
     board: str | None = None,
     env: Mapping[str, str] | None = None,
-    lister: Callable[[], list[PortInfo]] = list_serial_ports,
+    lister: Callable[[], list[PortInfo]] | None = None,
 ) -> str:
     if port:
         return port
@@ -60,7 +60,8 @@ def resolve_port(
     ids = board_usb_ids(board)
     if not ids:
         raise PortError(f"no USB identifiers are known for board {board!r}: pass --port or set {ENV_PORT}")
-    ports = lister()
+    # looked up at the call, so that a test can stand in for the port list with hil_ports.list_serial_ports
+    ports = (lister or list_serial_ports)()
     found: dict[str, str] = {}
     for device, vid, pid, _ in ports:
         if (vid, pid) in ids:
