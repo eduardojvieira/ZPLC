@@ -53,6 +53,20 @@ En simulación un solo hilo atiende las peticiones de control y ejecuta los batc
 
 `STOP`, la pausa externa, el unregister y los faults del scheduler cierran la admisión y drenan el trabajo en curso del coordinador antes de retornar. Estas garantías describen la implementación del scheduler y sus pruebas host/native-sim. No demuestran WCET, jitter, estado eléctrico ni cualificación de una placa.
 
+### Prioridades y orden de arranque (RT-013, RT-024)
+
+El coordinador del scan, la cola de trabajo de alta prioridad o la normal cuando no hay otra, tiene un número de
+prioridad menor que todos los hilos de comunicación de la aplicación, que corren en
+`CONFIG_ZPLC_COMM_THREAD_PRIORITY` (8 por defecto), y que los hilos del shell y del registro. La compilación lo
+comprueba y falla si no se cumple. Las placas con pila de red fijan `CONFIG_NET_TC_THREAD_PREEMPTIVE=y`, porque los
+hilos de red de Zephyr son cooperativos por defecto y superarían en prioridad al scan.
+
+El firmware arranca el runtime antes que cualquier servicio. Primero van la capa de hardware, el core, el scheduler
+con el program store y la restauración del programa almacenado, y el shell, que es el enlace de control, lo inicia
+Zephyr antes de `main()`. La red, el servicio de hora, los servidores de bus de campo y el aprovisionamiento MQTT o
+de nube arrancan después, y cada uno puede fallar: un servicio que no levanta se registra y se cuenta, y el runtime
+que ya está en marcha sigue funcionando. El registro de arranque nombra cada paso en el orden en que corrió.
+
 ## Plazos
 
 Un scan incumple su plazo cuando su tarea termina más de un intervalo después de la liberación del batch en que corrió: la tarea se liberó otra vez antes de terminar, o las tareas que la preceden en el batch consumieron su intervalo. Un incumplimiento tiene estos efectos, en este orden:

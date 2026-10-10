@@ -53,6 +53,20 @@ In simulation one thread serves the control requests and runs the batches, one a
 
 `STOP`, external pause, unregister, and scheduler faults close admission and drain in-flight coordinator work before returning. These guarantees describe the scheduler implementation and its host/native-sim tests. They do not establish WCET, jitter, electrical state, or board qualification.
 
+### Priorities and start-up order (RT-013, RT-024)
+
+The scan coordinator, the high-priority work queue or the normal one when there is none, has a lower priority number
+than every communication thread of the application, which all run at `CONFIG_ZPLC_COMM_THREAD_PRIORITY` (8 by
+default), and than the shell and log threads. The build checks it and fails otherwise. Boards with a network stack
+set `CONFIG_NET_TC_THREAD_PREEMPTIVE=y`, because Zephyr's network threads are cooperative by default and would
+outrank the scan.
+
+The firmware starts the runtime before any service. The hardware layer, the core, the scheduler with the program
+store and the restore of the stored program come first, and the shell, which is the control link, is started by
+Zephyr before `main()`. The network, the time service, the fieldbus servers and MQTT or cloud provisioning start
+after them, and each is allowed to fail: a service that does not come up is logged and counted, and the runtime that
+is already up keeps running. The boot log names every step in the order it ran.
+
 ## Deadlines
 
 A scan misses its deadline when its task ends more than one interval after the release of the batch it ran in: the task was released again before it was done, or the tasks ahead of it in the batch used its interval. A miss has these effects, in this order:

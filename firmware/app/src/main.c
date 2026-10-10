@@ -14,6 +14,7 @@
 #include "program_admission.h"
 #include "program_boot_restore.h"
 #include "program_store.h"
+#include "runtime_boot.h"
 #include "zplc_config.h"
 #include "zplc_lock.h"
 #include "zplc_time.h"
@@ -244,11 +245,10 @@ static int try_restore_legacy_program(void) {
   return 0;
 }
 
-static int run_legacy_mode(void) {
+/* Restores the stored program into STOP (RT-022). A rejected program latches the runtime safe; the runtime still
+ * started, so this is not a boot failure. */
+static int boot_runtime_legacy(void) {
   int ret;
-  uint32_t tick_start, tick_end, elapsed;
-  uint32_t scan_interval_ms;
-  int instructions_executed;
 
   zplc_hal_log("[LEGACY] Single-task mode (scheduler disabled)\n");
 
@@ -259,8 +259,16 @@ static int run_legacy_mode(void) {
   } else {
     zplc_hal_log("[LEGACY] Waiting for program via shell. Use 'zplc help'.\n");
   }
+  return 0;
+}
 
-  /* Main execution loop */
+static int run_legacy_mode(void) {
+  int ret;
+  uint32_t tick_start, tick_end, elapsed;
+  uint32_t scan_interval_ms;
+  int instructions_executed;
+
+/* Main execution loop */
   while (1) {
     bool executed_cycle = false;
     bool wait_for_next_cycle = false;
@@ -353,7 +361,7 @@ static int run_legacy_mode(void) {
  * @return Number of tasks loaded (>0), 0 if no saved program, or negative
  * error.
  */
-static int run_scheduler_mode(void) {
+static int boot_runtime_scheduler(void) {
   int ret;
   int restored_tasks;
   size_t restored_size = 0U;
@@ -387,7 +395,10 @@ static int run_scheduler_mode(void) {
   }
 
   zplc_hal_log("[SCHED] Shell available. Use 'zplc help' for commands.\n");
+  return 0;
+}
 
+static int run_scheduler_mode(void) {
   while (1) {
     k_msleep(1000);
   }
@@ -402,9 +413,165 @@ static int run_scheduler_mode(void) {
  * ============================================================================
  */
 
-int main(void) {
-  int ret;
+/* ============================================================================
+ * Start-up plan (RT-024)
+ * ============================================================================
+ *
+ * The runtime starts first: hardware, core, the scheduler with the program store and the restore of the stored
+ * program into STOP. The shell, which is the control link, is started by Zephyr before main(). Only then do the
+ * network and cloud services start, each of them allowed to fail: a service that does not come up is logged and
+ * the runtime that is already up keeps running. zplc_boot_run() refuses a plan that starts a service before a
+ * runtime step, and logs every step, so the boot log shows the order that ran.
+ */
+
+static int boot_hal(void) {
+  int ret = zplc_hal_init();
+
+  if (ret != ZPLC_HAL_OK) {
+    zplc_hal_log("[INIT] ERROR: HAL init failed: %d\n", ret);
+    return ret != 0 ? ret : -EIO;
+  }
+  return 0;
+}
+
+static int boot_core(void) {
+  int ret = zplc_core_init();
+
+  if (ret != 0) {
+    zplc_hal_log("[INIT] ERROR: Core init failed: %d\n", ret);
+  }
+  return ret;
+}
+
+#ifdef CONFIG_ZPLC_SCHEDULER
+#define boot_runtime boot_runtime_scheduler
+#else
+#define boot_runtime boot_runtime_legacy
+#endif
+
+static int boot_config(void) {
+  zplc_config_init();
+  return 0;
+}
+
+static int boot_network(void) {
+  char ip_buf[16];
+  zplc_hal_result_t result = zplc_hal_net_init();
+
+  if (zplc_hal_net_get_ip(ip_buf, sizeof(ip_buf)) == ZPLC_HAL_OK) {
+    zplc_hal_log("[INIT] IP Address: %s\n", ip_buf);
+  } else {
+    zplc_hal_log("[INIT] Networking active (DHCP pending...)\n");
+  }
+  return result == ZPLC_HAL_OK || result == ZPLC_HAL_NOT_IMPL ? 0 : -EIO;
+}
+
+static int boot_time(void) {
+  zplc_hal_log("[INIT] Synchronizing RTC via SNTP...\n");
+  return zplc_time_init();
+}
+
+static int boot_fieldbus(void) {
+#ifdef CONFIG_MODBUS
+  int result;
+  int handler;
+
+  zplc_hal_log("[INIT] Starting Modbus communication services...\n");
+  result = zplc_modbus_init();
+  handler = zplc_comm_modbus_handler_init();
+  if (handler != 0) {
+    zplc_hal_log("[INIT] ERROR: Modbus Handler init failed: %d\n", handler);
+  }
+  return result != 0 ? result : handler;
+#else
+  zplc_hal_log("[INIT] Modbus features disabled for this board build.\n");
+  return 0;
+#endif
+}
+
+static int boot_cloud(void) {
+#ifdef CONFIG_MQTT_LIB
+  int result;
   int rc;
+
+  zplc_hal_log("[INIT] Starting MQTT Client...\n");
+  result = zplc_mqtt_init();
+  if (result != 0) {
+    zplc_hal_log("[INIT] ERROR: MQTT init failed: %d\n", result);
+    return result;
+  }
+
+  if (zplc_config_get_mqtt_enabled()) {
+    rc = zplc_comm_mqtt_handler_init();
+    if (rc != 0) {
+      zplc_hal_log("[INIT] ERROR: MQTT Handler init failed: %d\n", rc);
+      result = rc;
+    }
+    rc = zplc_comm_cloud_handler_init();
+    if (rc != 0) {
+      zplc_hal_log("[INIT] ERROR: Cloud Handler init failed: %d\n", rc);
+      if (result == 0) {
+        result = rc;
+      }
+    }
+  }
+
+  (void)zplc_azure_dps_provision();
+  (void)zplc_aws_fleet_provision();
+  return result;
+#else
+  zplc_hal_log("[INIT] MQTT/Cloud features disabled for this board build.\n");
+  return 0;
+#endif
+}
+
+static const zplc_boot_step_t boot_runtime_steps[] = {
+    {"hal", ZPLC_BOOT_RUNTIME, boot_hal},
+    {"core", ZPLC_BOOT_RUNTIME, boot_core},
+    {"scheduler and stored program", ZPLC_BOOT_RUNTIME, boot_runtime},
+};
+
+static const zplc_boot_step_t boot_service_steps[] = {
+    {"configuration", ZPLC_BOOT_SERVICE, boot_config},
+    {"network", ZPLC_BOOT_SERVICE, boot_network},
+    {"time", ZPLC_BOOT_SERVICE, boot_time},
+    {"fieldbus", ZPLC_BOOT_SERVICE, boot_fieldbus},
+    {"cloud", ZPLC_BOOT_SERVICE, boot_cloud},
+};
+
+static void start_services(void) {
+  zplc_boot_report_t report;
+
+  (void)zplc_boot_run(boot_service_steps, ARRAY_SIZE(boot_service_steps), &report);
+  zplc_hal_log("[INIT] Services started (%u of %u failed). Shell ready. Use 'zplc help' for commands.\n\n",
+               (unsigned)report.service_failures,
+               (unsigned)ARRAY_SIZE(boot_service_steps));
+#ifdef CONFIG_ZPLC_HIL_DEBUG
+#ifdef CONFIG_ZPLC_SCHEDULER
+  hil_send_ready(zplc_core_version(), "sched,hil");
+#else
+  hil_send_ready(zplc_core_version(), "hil");
+#endif
+#endif
+}
+
+#ifndef CONFIG_ZPLC_SCHEDULER
+/* The legacy runtime is the main thread's scan loop, which the services must not delay: they start on a thread of
+ * their own, at the priority of the other communication threads. */
+static void services_thread_entry(void *arg1, void *arg2, void *arg3) {
+  ARG_UNUSED(arg1);
+  ARG_UNUSED(arg2);
+  ARG_UNUSED(arg3);
+  start_services();
+}
+
+K_THREAD_STACK_DEFINE(services_thread_stack, 4096);
+static struct k_thread services_thread;
+#endif
+
+int main(void) {
+  zplc_boot_report_t report;
+  int ret;
 
   /* ===== Banner ===== */
   zplc_hal_log("\n");
@@ -423,88 +590,21 @@ int main(void) {
   zplc_hal_log("  Code Max:     %u bytes\n", (unsigned)ZPLC_MEM_CODE_SIZE);
   zplc_hal_log("================================================\n\n");
 
-  /* ===== System Initialization ===== */
-  zplc_hal_log("[INIT] Initializing HAL...\n");
-  ret = zplc_hal_init();
-  if (ret != ZPLC_HAL_OK) {
-    zplc_hal_log("[INIT] ERROR: HAL init failed: %d\n", ret);
-    return ret;
-  }
-
-  zplc_hal_log("[INIT] Initializing VM Core...\n");
-  ret = zplc_core_init();
+  /* ===== The runtime ===== */
+  ret = zplc_boot_run(boot_runtime_steps, ARRAY_SIZE(boot_runtime_steps), &report);
   if (ret != 0) {
-    zplc_hal_log("[INIT] ERROR: Core init failed: %d\n", ret);
     return ret;
   }
 
-  /* ===== Industrial Networking Foundation (Phase 1.4.1) ===== */
-  zplc_hal_log("[INIT] Initializing Configuration Manager...\n");
-  zplc_config_init();
-
-  zplc_hal_log("[INIT] Initializing Networking HAL...\n");
-  zplc_hal_net_init();
-
-  char ip_buf[16];
-  if (zplc_hal_net_get_ip(ip_buf, sizeof(ip_buf)) == ZPLC_HAL_OK) {
-    zplc_hal_log("[INIT] IP Address: %s\n", ip_buf);
-  } else {
-    zplc_hal_log("[INIT] Networking active (DHCP pending...)\n");
-  }
-
-  zplc_hal_log("[INIT] Synchronizing RTC via SNTP...\n");
-  zplc_time_init();
-
-#ifdef CONFIG_MODBUS
-  zplc_hal_log("[INIT] Starting Modbus communication services...\n");
-  zplc_modbus_init();
-  rc = zplc_comm_modbus_handler_init();
-  if (rc != 0) {
-    zplc_hal_log("[INIT] ERROR: Modbus Handler init failed: %d\n", rc);
-  }
-#else
-  zplc_hal_log("[INIT] Modbus features disabled for this board build.\n");
-#endif
-
-#ifdef CONFIG_MQTT_LIB
-  zplc_hal_log("[INIT] Starting MQTT Client...\n");
-  ret = zplc_mqtt_init();
-  if (ret != 0) {
-    zplc_hal_log("[INIT] ERROR: MQTT init failed: %d\n", ret);
-    return ret;
-  }
-
-  if (zplc_config_get_mqtt_enabled()) {
-    rc = zplc_comm_mqtt_handler_init();
-    if (rc != 0) {
-      zplc_hal_log("[INIT] ERROR: MQTT Handler init failed: %d\n", rc);
-    }
-    rc = zplc_comm_cloud_handler_init();
-    if (rc != 0) {
-      zplc_hal_log("[INIT] ERROR: Cloud Handler init failed: %d\n", rc);
-    }
-  }
-
-  (void)zplc_azure_dps_provision();
-  (void)zplc_aws_fleet_provision();
-#else
-  zplc_hal_log("[INIT] MQTT/Cloud features disabled for this board build.\n");
-#endif
-
-  zplc_hal_log("[INIT] Shell ready. Use 'zplc help' for commands.\n\n");
-
-#ifdef CONFIG_ZPLC_HIL_DEBUG
+  /* ===== The services, and then the run loop ===== */
 #ifdef CONFIG_ZPLC_SCHEDULER
-  hil_send_ready(zplc_core_version(), "sched,hil");
-#else
-  hil_send_ready(zplc_core_version(), "hil");
-#endif
-#endif
-
-  /* ===== Run appropriate mode ===== */
-#ifdef CONFIG_ZPLC_SCHEDULER
+  start_services();
   return run_scheduler_mode();
 #else
+  (void)k_thread_create(&services_thread, services_thread_stack,
+                        K_THREAD_STACK_SIZEOF(services_thread_stack),
+                        services_thread_entry, NULL, NULL, NULL,
+                        K_PRIO_PREEMPT(ZPLC_COMM_THREAD_PRIORITY), 0, K_NO_WAIT);
   return run_legacy_mode();
 #endif
 }

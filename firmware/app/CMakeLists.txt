@@ -66,6 +66,7 @@ target_sources(app PRIVATE
     src/program_boot_restore.c
     src/program_admission.c
     src/program_store.c
+    src/runtime_boot.c
     src/zplc_config.c
     src/zplc_time.c
 )
