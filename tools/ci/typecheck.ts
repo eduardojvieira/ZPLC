@@ -50,15 +50,25 @@ function main(): number {
     return 1;
   }
   let failed = 0;
+  const perFile = new Map<string, number>();
   for (const program of PROGRAMS) {
     const label = join(program.cwd, program.project);
     const diagnostics = checkProgram(root, program);
     if (diagnostics.length === 0) { console.log(`ok   ${label}`); continue; }
     failed += diagnostics.length;
     console.error(`FAIL ${label}: ${diagnostics.length} error${diagnostics.length === 1 ? '' : 's'}`);
-    for (const line of diagnostics) console.error(line);
+    for (const line of diagnostics) {
+      console.error(line);
+      const file = /^(.+?)\(\d+,\d+\): error /.exec(line)?.[1];
+      if (file) perFile.set(join(program.cwd, file), (perFile.get(join(program.cwd, file)) ?? 0) + 1);
+    }
   }
-  if (failed > 0) console.error(`\n${failed} type error${failed === 1 ? '' : 's'}`);
+  if (failed > 0) {
+    console.error(`\n${failed} type error${failed === 1 ? '' : 's'}; by file:`);
+    for (const [file, count] of [...perFile].sort((left, right) => right[1] - left[1] || left[0].localeCompare(right[0])).slice(0, 20)) {
+      console.error(`  ${String(count).padStart(4)}  ${file}`);
+    }
+  }
   return failed > 0 ? 1 : 0;
 }
 
