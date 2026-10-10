@@ -393,6 +393,7 @@ jobs:
           python3 tools/docs/validate_docs_pages.py
           python3 tools/docs/test_generate_known_limits.py
           python3 tools/docs/generate_known_limits.py --check
+          bun tools/docs/generate_function_reference.ts --check
           bun tools/ci/test-inventory.ts
           bun tools/ci/test-source-guard.ts
 
@@ -416,13 +417,6 @@ jobs:
         run: |
           bun run docs:generate
           bun run docs:validate
-          git diff --exit-code -- \
-            docs/docs/reference/runtime-api.md \
-            docs/docs/reference/boards.md \
-            docs/docs/languages/st.md \
-            docs/docs/runtime/stdlib.md \
-            docs/i18n/es/docusaurus-plugin-content-docs/current/reference/runtime-api.md \
-            docs/i18n/es/docusaurus-plugin-content-docs/current/reference/boards.md \
-            docs/i18n/es/docusaurus-plugin-content-docs/current/languages/st.md \
-            docs/i18n/es/docusaurus-plugin-content-docs/current/runtime/stdlib.md
+          # every generated page lives below these two folders: a page that differs from what the generators write fails the job
+          git diff --exit-code -- docs/docs docs/i18n
           bun run docs:build

@@ -75,6 +75,16 @@ const sidebars = {
     },
     {
       type: 'category',
+      label: 'Generated references / Referencias generadas',
+      className: 'sidebar-category-reference',
+      collapsed: true,
+      items: [
+        'reference/functions',
+        'reference/function-blocks',
+      ],
+    },
+    {
+      type: 'category',
       label: 'Contributing / Contribuir',
       className: 'sidebar-category-contributing',
       collapsed: true,

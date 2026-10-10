@@ -44,6 +44,8 @@ languages (`bun run docs:validate`). Add a row when you add a page.
 | reference/runtime-api | docs/docs/reference/runtime-api.md | docs/i18n/es/docusaurus-plugin-content-docs/current/reference/runtime-api.md | reference | yes | docs | generated |
 | reference/boards | docs/docs/reference/boards.md | docs/i18n/es/docusaurus-plugin-content-docs/current/reference/boards.md | boards | yes | docs | generated |
 | reference/capabilities-evidence | docs/docs/reference/capabilities-evidence.md | docs/i18n/es/docusaurus-plugin-content-docs/current/reference/capabilities-evidence.md | reference | yes | docs | candidate |
+| reference/functions | docs/docs/reference/functions.md | docs/i18n/es/docusaurus-plugin-content-docs/current/reference/functions.md | reference | yes | docs | generated |
+| reference/function-blocks | docs/docs/reference/function-blocks.md | docs/i18n/es/docusaurus-plugin-content-docs/current/reference/function-blocks.md | reference | yes | docs | generated |
 | reference/zephyr-workspace-setup | docs/docs/reference/zephyr-workspace-setup.md | docs/i18n/es/docusaurus-plugin-content-docs/current/reference/zephyr-workspace-setup.md | zephyr-setup | yes | docs | in-progress |
 | operations/index | docs/docs/operations/index.md | docs/i18n/es/docusaurus-plugin-content-docs/current/operations/index.md | operations | yes | docs | in-progress |
 | operations/shell | docs/docs/operations/shell.md | docs/i18n/es/docusaurus-plugin-content-docs/current/operations/shell.md | operations | yes | docs | in-progress |
