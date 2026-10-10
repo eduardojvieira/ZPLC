@@ -466,7 +466,7 @@ function emitMemoryMap(state: CodeGenState): void {
 /**
  * Map tag names to numeric IDs from zplc_isa.h
  */
-const TAG_MAP: Record<string, number> = {
+export const TAG_MAP: Record<string, number> = {
     'publish': 1,
     'modbus': 2,
     'subscribe': 3,
@@ -601,7 +601,7 @@ function validateStringLiteralPool(state: CodeGenState, workMemoryBase: number, 
 /**
  * Map DataType string to numeric ID from zplc_isa.h
  */
-function getDataTypeId(type: any): number {
+export function getDataTypeId(type: any): number {
     const typeStr = typeof type === 'string' ? type.toUpperCase() : 'UNKNOWN';
     switch (typeStr) {
         case 'BOOL': return 0x01;

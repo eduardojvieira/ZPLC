@@ -1,0 +1,3260 @@
+{
+  "asm": {
+    "magic": 1129074778,
+    "opcodes": {
+      "ABS": 38,
+      "ABSF": 45,
+      "ADD": 32,
+      "ADDF": 40,
+      "AND": 48,
+      "BREAK": 2,
+      "CALL": 147,
+      "DIV": 35,
+      "DIVF": 43,
+      "DROP": 17,
+      "DUP": 16,
+      "EQ": 56,
+      "EXT16": 164,
+      "EXT8": 163,
+      "F2I": 161,
+      "GE": 61,
+      "GET_TICKS": 3,
+      "GT": 60,
+      "GTU": 63,
+      "HALT": 1,
+      "I2B": 162,
+      "I2F": 160,
+      "JMP": 144,
+      "JNZ": 146,
+      "JR": 80,
+      "JRNZ": 82,
+      "JRZ": 81,
+      "JZ": 145,
+      "LE": 59,
+      "LOAD16": 129,
+      "LOAD32": 130,
+      "LOAD64": 131,
+      "LOAD8": 128,
+      "LT": 58,
+      "LTU": 62,
+      "MOD": 36,
+      "MUL": 34,
+      "MULF": 42,
+      "NE": 57,
+      "NEG": 37,
+      "NEGF": 44,
+      "NOP": 0,
+      "NOT": 51,
+      "OR": 49,
+      "OVER": 19,
+      "PUSH16": 136,
+      "PUSH32": 192,
+      "PUSH8": 64,
+      "RET": 148,
+      "ROT": 20,
+      "SAR": 54,
+      "SHL": 52,
+      "SHR": 53,
+      "STORE16": 133,
+      "STORE32": 134,
+      "STORE64": 135,
+      "STORE8": 132,
+      "SUB": 33,
+      "SUBF": 41,
+      "SWAP": 18,
+      "XOR": 50,
+      "ZEXT16": 166,
+      "ZEXT8": 165
+    },
+    "operandSizes": {
+      "0": 0,
+      "1": 0,
+      "10": 0,
+      "100": 1,
+      "101": 1,
+      "102": 1,
+      "103": 1,
+      "104": 1,
+      "105": 1,
+      "106": 1,
+      "107": 1,
+      "108": 1,
+      "109": 1,
+      "11": 0,
+      "110": 1,
+      "111": 1,
+      "112": 1,
+      "113": 1,
+      "114": 1,
+      "115": 1,
+      "116": 1,
+      "117": 1,
+      "118": 1,
+      "119": 1,
+      "12": 0,
+      "120": 1,
+      "121": 1,
+      "122": 1,
+      "123": 1,
+      "124": 1,
+      "125": 1,
+      "126": 1,
+      "127": 1,
+      "128": 2,
+      "129": 2,
+      "13": 0,
+      "130": 2,
+      "131": 2,
+      "132": 2,
+      "133": 2,
+      "134": 2,
+      "135": 2,
+      "136": 2,
+      "137": 2,
+      "138": 2,
+      "139": 2,
+      "14": 0,
+      "140": 2,
+      "141": 2,
+      "142": 2,
+      "143": 2,
+      "144": 2,
+      "145": 2,
+      "146": 2,
+      "147": 2,
+      "148": 0,
+      "149": 2,
+      "15": 0,
+      "150": 2,
+      "151": 2,
+      "152": 2,
+      "153": 2,
+      "154": 2,
+      "155": 2,
+      "156": 2,
+      "157": 2,
+      "158": 2,
+      "159": 2,
+      "16": 0,
+      "160": 0,
+      "161": 0,
+      "162": 0,
+      "163": 0,
+      "164": 0,
+      "165": 0,
+      "166": 0,
+      "167": 2,
+      "168": 2,
+      "169": 2,
+      "17": 0,
+      "170": 2,
+      "171": 2,
+      "172": 2,
+      "173": 2,
+      "174": 2,
+      "175": 2,
+      "176": 2,
+      "177": 2,
+      "178": 2,
+      "179": 2,
+      "18": 0,
+      "180": 2,
+      "181": 2,
+      "182": 2,
+      "183": 2,
+      "184": 2,
+      "185": 2,
+      "186": 2,
+      "187": 2,
+      "188": 2,
+      "189": 2,
+      "19": 0,
+      "190": 2,
+      "191": 2,
+      "192": 4,
+      "193": 4,
+      "194": 4,
+      "195": 4,
+      "196": 4,
+      "197": 4,
+      "198": 4,
+      "199": 4,
+      "2": 0,
+      "20": 0,
+      "200": 4,
+      "201": 4,
+      "202": 4,
+      "203": 4,
+      "204": 4,
+      "205": 4,
+      "206": 4,
+      "207": 4,
+      "208": 4,
+      "209": 4,
+      "21": 0,
+      "210": 4,
+      "211": 4,
+      "212": 4,
+      "213": 4,
+      "214": 4,
+      "215": 4,
+      "216": 4,
+      "217": 4,
+      "218": 4,
+      "219": 4,
+      "22": 0,
+      "220": 4,
+      "221": 4,
+      "222": 4,
+      "223": 4,
+      "224": 4,
+      "225": 4,
+      "226": 4,
+      "227": 4,
+      "228": 4,
+      "229": 4,
+      "23": 0,
+      "230": 4,
+      "231": 4,
+      "232": 4,
+      "233": 4,
+      "234": 4,
+      "235": 4,
+      "236": 4,
+      "237": 4,
+      "238": 4,
+      "239": 4,
+      "24": 0,
+      "240": 4,
+      "241": 4,
+      "242": 4,
+      "243": 4,
+      "244": 4,
+      "245": 4,
+      "246": 4,
+      "247": 4,
+      "248": 4,
+      "249": 4,
+      "25": 0,
+      "250": 4,
+      "251": 4,
+      "252": 4,
+      "253": 4,
+      "254": 4,
+      "255": 4,
+      "26": 0,
+      "27": 0,
+      "28": 0,
+      "29": 0,
+      "3": 0,
+      "30": 0,
+      "31": 0,
+      "32": 0,
+      "33": 0,
+      "34": 0,
+      "35": 0,
+      "36": 0,
+      "37": 0,
+      "38": 0,
+      "39": 0,
+      "4": 0,
+      "40": 0,
+      "41": 0,
+      "42": 0,
+      "43": 0,
+      "44": 0,
+      "45": 0,
+      "46": 0,
+      "47": 0,
+      "48": 0,
+      "49": 0,
+      "5": 0,
+      "50": 0,
+      "51": 0,
+      "52": 0,
+      "53": 0,
+      "54": 0,
+      "55": 0,
+      "56": 0,
+      "57": 0,
+      "58": 0,
+      "59": 0,
+      "6": 0,
+      "60": 0,
+      "61": 0,
+      "62": 0,
+      "63": 0,
+      "64": 1,
+      "65": 1,
+      "66": 1,
+      "67": 1,
+      "68": 1,
+      "69": 1,
+      "7": 0,
+      "70": 1,
+      "71": 1,
+      "72": 1,
+      "73": 1,
+      "74": 1,
+      "75": 1,
+      "76": 1,
+      "77": 1,
+      "78": 1,
+      "79": 1,
+      "8": 0,
+      "80": 1,
+      "81": 1,
+      "82": 1,
+      "83": 1,
+      "84": 1,
+      "85": 1,
+      "86": 1,
+      "87": 1,
+      "88": 1,
+      "89": 1,
+      "9": 0,
+      "90": 1,
+      "91": 1,
+      "92": 1,
+      "93": 1,
+      "94": 1,
+      "95": 1,
+      "96": 1,
+      "97": 1,
+      "98": 1,
+      "99": 1
+    },
+    "versionMajor": 1,
+    "versionMinor": 0
+  },
+  "c": {
+    "enums": {
+      "zplc_comm_fb_kind_t": {
+        "ZPLC_COMM_FB_AWS_FLEET_PROV": 48,
+        "ZPLC_COMM_FB_AZURE_C2D_RECV": 32,
+        "ZPLC_COMM_FB_AZURE_DPS_PROV": 33,
+        "ZPLC_COMM_FB_AZURE_EG_PUB": 34,
+        "ZPLC_COMM_FB_COMM_STATUS": 20,
+        "ZPLC_COMM_FB_KIND_MAX": 255,
+        "ZPLC_COMM_FB_MB_READ_COIL": 3,
+        "ZPLC_COMM_FB_MB_READ_HREG": 1,
+        "ZPLC_COMM_FB_MB_WRITE_COIL": 4,
+        "ZPLC_COMM_FB_MB_WRITE_HREG": 2,
+        "ZPLC_COMM_FB_MQTT_CONNECT": 10,
+        "ZPLC_COMM_FB_MQTT_PUBLISH": 11,
+        "ZPLC_COMM_FB_MQTT_SUBSCRIBE": 12,
+        "ZPLC_COMM_FB_NONE": 0,
+        "ZPLC_COMM_FB_SPB_REBIRTH": 64
+      },
+      "zplc_comm_status_t": {
+        "ZPLC_COMM_AUTH_FAILED": 9,
+        "ZPLC_COMM_BUSY": 1,
+        "ZPLC_COMM_INVALID_ADDR": 6,
+        "ZPLC_COMM_NOT_CONNECTED": 4,
+        "ZPLC_COMM_NO_HANDLER": 3,
+        "ZPLC_COMM_OK": 0,
+        "ZPLC_COMM_PROTO_ERROR": 8,
+        "ZPLC_COMM_QUEUE_FULL": 5,
+        "ZPLC_COMM_STRING_OVERFLOW": 7,
+        "ZPLC_COMM_TIMEOUT": 2,
+        "ZPLC_COMM_UNKNOWN": 255
+      },
+      "zplc_data_type_t": {
+        "ZPLC_TYPE_BOOL": 1,
+        "ZPLC_TYPE_BYTE": 16,
+        "ZPLC_TYPE_DINT": 6,
+        "ZPLC_TYPE_DWORD": 18,
+        "ZPLC_TYPE_INT": 4,
+        "ZPLC_TYPE_LINT": 8,
+        "ZPLC_TYPE_LREAL": 11,
+        "ZPLC_TYPE_LWORD": 19,
+        "ZPLC_TYPE_NONE": 0,
+        "ZPLC_TYPE_REAL": 10,
+        "ZPLC_TYPE_SINT": 2,
+        "ZPLC_TYPE_STRING": 32,
+        "ZPLC_TYPE_TIME": 12,
+        "ZPLC_TYPE_UDINT": 7,
+        "ZPLC_TYPE_UINT": 5,
+        "ZPLC_TYPE_ULINT": 9,
+        "ZPLC_TYPE_USINT": 3,
+        "ZPLC_TYPE_WORD": 17
+      },
+      "zplc_file_flags_t": {
+        "ZPLC_FLAG_HAS_DEBUG": 1,
+        "ZPLC_FLAG_HAS_RETAIN": 4,
+        "ZPLC_FLAG_HAS_SYMBOLS": 2,
+        "ZPLC_FLAG_SIGNED": 8
+      },
+      "zplc_io_direction_t": {
+        "ZPLC_IO_INPUT": 0,
+        "ZPLC_IO_OUTPUT": 1
+      },
+      "zplc_opcode_t": {
+        "OP_ABS": 38,
+        "OP_ABSF": 45,
+        "OP_ADD": 32,
+        "OP_ADDF": 40,
+        "OP_AND": 48,
+        "OP_BREAK": 2,
+        "OP_CALL": 147,
+        "OP_COMM_EXEC": 208,
+        "OP_COMM_RESET": 210,
+        "OP_COMM_STATUS": 209,
+        "OP_DIV": 35,
+        "OP_DIVF": 43,
+        "OP_DROP": 17,
+        "OP_DUP": 16,
+        "OP_EQ": 56,
+        "OP_EXT16": 164,
+        "OP_EXT8": 163,
+        "OP_F2I": 161,
+        "OP_GE": 61,
+        "OP_GET_TICKS": 3,
+        "OP_GT": 60,
+        "OP_GTU": 63,
+        "OP_HALT": 1,
+        "OP_I2B": 162,
+        "OP_I2F": 160,
+        "OP_JMP": 144,
+        "OP_JNZ": 146,
+        "OP_JR": 80,
+        "OP_JRNZ": 82,
+        "OP_JRZ": 81,
+        "OP_JZ": 145,
+        "OP_LE": 59,
+        "OP_LOAD16": 129,
+        "OP_LOAD32": 130,
+        "OP_LOAD64": 131,
+        "OP_LOAD8": 128,
+        "OP_LOADI16": 25,
+        "OP_LOADI32": 22,
+        "OP_LOADI8": 21,
+        "OP_LT": 58,
+        "OP_LTU": 62,
+        "OP_MOD": 36,
+        "OP_MUL": 34,
+        "OP_MULF": 42,
+        "OP_NE": 57,
+        "OP_NEG": 37,
+        "OP_NEGF": 44,
+        "OP_NOP": 0,
+        "OP_NOT": 51,
+        "OP_OR": 49,
+        "OP_OVER": 19,
+        "OP_PICK": 65,
+        "OP_PUSH16": 136,
+        "OP_PUSH32": 192,
+        "OP_PUSH8": 64,
+        "OP_RET": 148,
+        "OP_ROT": 20,
+        "OP_SAR": 54,
+        "OP_SHL": 52,
+        "OP_SHR": 53,
+        "OP_STORE16": 133,
+        "OP_STORE32": 134,
+        "OP_STORE64": 135,
+        "OP_STORE8": 132,
+        "OP_STOREI16": 26,
+        "OP_STOREI32": 24,
+        "OP_STOREI8": 23,
+        "OP_STRCAT": 29,
+        "OP_STRCLR": 31,
+        "OP_STRCMP": 30,
+        "OP_STRCPY": 28,
+        "OP_STRLEN": 27,
+        "OP_SUB": 33,
+        "OP_SUBF": 41,
+        "OP_SWAP": 18,
+        "OP_XOR": 50,
+        "OP_ZEXT16": 166,
+        "OP_ZEXT8": 165
+      },
+      "zplc_segment_type_t": {
+        "ZPLC_SEG_BSS": 3,
+        "ZPLC_SEG_CODE": 1,
+        "ZPLC_SEG_DATA": 2,
+        "ZPLC_SEG_DEBUG": 17,
+        "ZPLC_SEG_IOMAP": 5,
+        "ZPLC_SEG_RETAIN": 4,
+        "ZPLC_SEG_SYMTAB": 16,
+        "ZPLC_SEG_TAGS": 48,
+        "ZPLC_SEG_TASK": 32
+      },
+      "zplc_tag_id_t": {
+        "ZPLC_TAG_MODBUS": 2,
+        "ZPLC_TAG_NONE": 0,
+        "ZPLC_TAG_PUBLISH": 1,
+        "ZPLC_TAG_SUBSCRIBE": 3
+      },
+      "zplc_task_type_t": {
+        "ZPLC_TASK_CYCLIC": 0,
+        "ZPLC_TASK_EVENT": 1,
+        "ZPLC_TASK_INIT": 2
+      },
+      "zplc_vm_error_t": {
+        "ZPLC_VM_CALL_OVERFLOW": 6,
+        "ZPLC_VM_DIV_BY_ZERO": 3,
+        "ZPLC_VM_HALTED": 9,
+        "ZPLC_VM_INVALID_JUMP": 7,
+        "ZPLC_VM_INVALID_OPCODE": 4,
+        "ZPLC_VM_OK": 0,
+        "ZPLC_VM_OUT_OF_BOUNDS": 5,
+        "ZPLC_VM_PAUSED": 10,
+        "ZPLC_VM_STACK_OVERFLOW": 1,
+        "ZPLC_VM_STACK_UNDERFLOW": 2,
+        "ZPLC_VM_WATCHDOG": 8
+      },
+      "zplc_vm_flags_t": {
+        "ZPLC_VM_FLAG_CARRY": 2,
+        "ZPLC_VM_FLAG_NEGATIVE": 8,
+        "ZPLC_VM_FLAG_OVERFLOW": 4,
+        "ZPLC_VM_FLAG_ZERO": 1
+      }
+    },
+    "macros": {
+      "ZPLC_CALL_STACK_MAX": 32,
+      "ZPLC_FILE_HEADER_SIZE": 32,
+      "ZPLC_IOMAP_ENTRY_SIZE": 8,
+      "ZPLC_LOADER_ERR_COMM": -16,
+      "ZPLC_LOADER_ERR_CONTROL_FLOW": -12,
+      "ZPLC_LOADER_ERR_CRC32": -6,
+      "ZPLC_LOADER_ERR_ENTRY_POINT": -9,
+      "ZPLC_LOADER_ERR_FLAGS": -7,
+      "ZPLC_LOADER_ERR_MAGIC": -1,
+      "ZPLC_LOADER_ERR_MEMORY": -13,
+      "ZPLC_LOADER_ERR_NO_CODE": -4,
+      "ZPLC_LOADER_ERR_OPCODE": -11,
+      "ZPLC_LOADER_ERR_SEGMENT": -8,
+      "ZPLC_LOADER_ERR_SIZE": -3,
+      "ZPLC_LOADER_ERR_TAGS": -15,
+      "ZPLC_LOADER_ERR_TASK": -14,
+      "ZPLC_LOADER_ERR_VERSION": -2,
+      "ZPLC_LOADER_ERR_WORKSPACE": -10,
+      "ZPLC_LOADER_MAX_TASKS": 16,
+      "ZPLC_LOADER_OK": 0,
+      "ZPLC_MAGIC": 1129074778,
+      "ZPLC_MAX_BREAKPOINTS": 16,
+      "ZPLC_MAX_TAGS": 64,
+      "ZPLC_MEM_CODE_BASE": 20480,
+      "ZPLC_MEM_CODE_SIZE": 45056,
+      "ZPLC_MEM_IPI_BASE": 0,
+      "ZPLC_MEM_IPI_SIZE": 4096,
+      "ZPLC_MEM_OPI_BASE": 4096,
+      "ZPLC_MEM_OPI_SIZE": 4096,
+      "ZPLC_MEM_RETAIN_BASE": 16384,
+      "ZPLC_MEM_RETAIN_SIZE": 4096,
+      "ZPLC_MEM_WORK_BASE": 8192,
+      "ZPLC_MEM_WORK_SIZE": 8192,
+      "ZPLC_SEGMENT_ENTRY_SIZE": 8,
+      "ZPLC_STACK_MAX_DEPTH": 256,
+      "ZPLC_STRING_CAP_OFFSET": 2,
+      "ZPLC_STRING_DATA_OFFSET": 4,
+      "ZPLC_STRING_DEFAULT_SIZE": 80,
+      "ZPLC_STRING_LEN_OFFSET": 0,
+      "ZPLC_STRING_MAX_SIZE": 255,
+      "ZPLC_SYS_CYCLE_TIME": 4080,
+      "ZPLC_SYS_FLAGS": 4089,
+      "ZPLC_SYS_FLAG_FIRST_SCAN": 1,
+      "ZPLC_SYS_FLAG_RUNNING": 4,
+      "ZPLC_SYS_FLAG_WDG_WARN": 2,
+      "ZPLC_SYS_REG_OFFSET": 4080,
+      "ZPLC_SYS_TASK_ID": 4088,
+      "ZPLC_SYS_UPTIME": 4084,
+      "ZPLC_TAG_ENTRY_SIZE": 8,
+      "ZPLC_TASK_DEF_SIZE": 16,
+      "ZPLC_VERSION_MAJOR": 1,
+      "ZPLC_VERSION_MINOR": 0
+    },
+    "operand": {
+      "0": {
+        "instruction": 1,
+        "operand": 0,
+        "valid": 1
+      },
+      "1": {
+        "instruction": 1,
+        "operand": 0,
+        "valid": 1
+      },
+      "10": {
+        "instruction": 1,
+        "operand": 0,
+        "valid": 0
+      },
+      "100": {
+        "instruction": 2,
+        "operand": 1,
+        "valid": 0
+      },
+      "101": {
+        "instruction": 2,
+        "operand": 1,
+        "valid": 0
+      },
+      "102": {
+        "instruction": 2,
+        "operand": 1,
+        "valid": 0
+      },
+      "103": {
+        "instruction": 2,
+        "operand": 1,
+        "valid": 0
+      },
+      "104": {
+        "instruction": 2,
+        "operand": 1,
+        "valid": 0
+      },
+      "105": {
+        "instruction": 2,
+        "operand": 1,
+        "valid": 0
+      },
+      "106": {
+        "instruction": 2,
+        "operand": 1,
+        "valid": 0
+      },
+      "107": {
+        "instruction": 2,
+        "operand": 1,
+        "valid": 0
+      },
+      "108": {
+        "instruction": 2,
+        "operand": 1,
+        "valid": 0
+      },
+      "109": {
+        "instruction": 2,
+        "operand": 1,
+        "valid": 0
+      },
+      "11": {
+        "instruction": 1,
+        "operand": 0,
+        "valid": 0
+      },
+      "110": {
+        "instruction": 2,
+        "operand": 1,
+        "valid": 0
+      },
+      "111": {
+        "instruction": 2,
+        "operand": 1,
+        "valid": 0
+      },
+      "112": {
+        "instruction": 2,
+        "operand": 1,
+        "valid": 0
+      },
+      "113": {
+        "instruction": 2,
+        "operand": 1,
+        "valid": 0
+      },
+      "114": {
+        "instruction": 2,
+        "operand": 1,
+        "valid": 0
+      },
+      "115": {
+        "instruction": 2,
+        "operand": 1,
+        "valid": 0
+      },
+      "116": {
+        "instruction": 2,
+        "operand": 1,
+        "valid": 0
+      },
+      "117": {
+        "instruction": 2,
+        "operand": 1,
+        "valid": 0
+      },
+      "118": {
+        "instruction": 2,
+        "operand": 1,
+        "valid": 0
+      },
+      "119": {
+        "instruction": 2,
+        "operand": 1,
+        "valid": 0
+      },
+      "12": {
+        "instruction": 1,
+        "operand": 0,
+        "valid": 0
+      },
+      "120": {
+        "instruction": 2,
+        "operand": 1,
+        "valid": 0
+      },
+      "121": {
+        "instruction": 2,
+        "operand": 1,
+        "valid": 0
+      },
+      "122": {
+        "instruction": 2,
+        "operand": 1,
+        "valid": 0
+      },
+      "123": {
+        "instruction": 2,
+        "operand": 1,
+        "valid": 0
+      },
+      "124": {
+        "instruction": 2,
+        "operand": 1,
+        "valid": 0
+      },
+      "125": {
+        "instruction": 2,
+        "operand": 1,
+        "valid": 0
+      },
+      "126": {
+        "instruction": 2,
+        "operand": 1,
+        "valid": 0
+      },
+      "127": {
+        "instruction": 2,
+        "operand": 1,
+        "valid": 0
+      },
+      "128": {
+        "instruction": 3,
+        "operand": 2,
+        "valid": 1
+      },
+      "129": {
+        "instruction": 3,
+        "operand": 2,
+        "valid": 1
+      },
+      "13": {
+        "instruction": 1,
+        "operand": 0,
+        "valid": 0
+      },
+      "130": {
+        "instruction": 3,
+        "operand": 2,
+        "valid": 1
+      },
+      "131": {
+        "instruction": 3,
+        "operand": 2,
+        "valid": 1
+      },
+      "132": {
+        "instruction": 3,
+        "operand": 2,
+        "valid": 1
+      },
+      "133": {
+        "instruction": 3,
+        "operand": 2,
+        "valid": 1
+      },
+      "134": {
+        "instruction": 3,
+        "operand": 2,
+        "valid": 1
+      },
+      "135": {
+        "instruction": 3,
+        "operand": 2,
+        "valid": 1
+      },
+      "136": {
+        "instruction": 3,
+        "operand": 2,
+        "valid": 1
+      },
+      "137": {
+        "instruction": 3,
+        "operand": 2,
+        "valid": 0
+      },
+      "138": {
+        "instruction": 3,
+        "operand": 2,
+        "valid": 0
+      },
+      "139": {
+        "instruction": 3,
+        "operand": 2,
+        "valid": 0
+      },
+      "14": {
+        "instruction": 1,
+        "operand": 0,
+        "valid": 0
+      },
+      "140": {
+        "instruction": 3,
+        "operand": 2,
+        "valid": 0
+      },
+      "141": {
+        "instruction": 3,
+        "operand": 2,
+        "valid": 0
+      },
+      "142": {
+        "instruction": 3,
+        "operand": 2,
+        "valid": 0
+      },
+      "143": {
+        "instruction": 3,
+        "operand": 2,
+        "valid": 0
+      },
+      "144": {
+        "instruction": 3,
+        "operand": 2,
+        "valid": 1
+      },
+      "145": {
+        "instruction": 3,
+        "operand": 2,
+        "valid": 1
+      },
+      "146": {
+        "instruction": 3,
+        "operand": 2,
+        "valid": 1
+      },
+      "147": {
+        "instruction": 3,
+        "operand": 2,
+        "valid": 1
+      },
+      "148": {
+        "instruction": 1,
+        "operand": 0,
+        "valid": 1
+      },
+      "149": {
+        "instruction": 3,
+        "operand": 2,
+        "valid": 0
+      },
+      "15": {
+        "instruction": 1,
+        "operand": 0,
+        "valid": 0
+      },
+      "150": {
+        "instruction": 3,
+        "operand": 2,
+        "valid": 0
+      },
+      "151": {
+        "instruction": 3,
+        "operand": 2,
+        "valid": 0
+      },
+      "152": {
+        "instruction": 3,
+        "operand": 2,
+        "valid": 0
+      },
+      "153": {
+        "instruction": 3,
+        "operand": 2,
+        "valid": 0
+      },
+      "154": {
+        "instruction": 3,
+        "operand": 2,
+        "valid": 0
+      },
+      "155": {
+        "instruction": 3,
+        "operand": 2,
+        "valid": 0
+      },
+      "156": {
+        "instruction": 3,
+        "operand": 2,
+        "valid": 0
+      },
+      "157": {
+        "instruction": 3,
+        "operand": 2,
+        "valid": 0
+      },
+      "158": {
+        "instruction": 3,
+        "operand": 2,
+        "valid": 0
+      },
+      "159": {
+        "instruction": 3,
+        "operand": 2,
+        "valid": 0
+      },
+      "16": {
+        "instruction": 1,
+        "operand": 0,
+        "valid": 1
+      },
+      "160": {
+        "instruction": 1,
+        "operand": 0,
+        "valid": 1
+      },
+      "161": {
+        "instruction": 1,
+        "operand": 0,
+        "valid": 1
+      },
+      "162": {
+        "instruction": 1,
+        "operand": 0,
+        "valid": 1
+      },
+      "163": {
+        "instruction": 1,
+        "operand": 0,
+        "valid": 1
+      },
+      "164": {
+        "instruction": 1,
+        "operand": 0,
+        "valid": 1
+      },
+      "165": {
+        "instruction": 1,
+        "operand": 0,
+        "valid": 1
+      },
+      "166": {
+        "instruction": 1,
+        "operand": 0,
+        "valid": 1
+      },
+      "167": {
+        "instruction": 3,
+        "operand": 2,
+        "valid": 0
+      },
+      "168": {
+        "instruction": 3,
+        "operand": 2,
+        "valid": 0
+      },
+      "169": {
+        "instruction": 3,
+        "operand": 2,
+        "valid": 0
+      },
+      "17": {
+        "instruction": 1,
+        "operand": 0,
+        "valid": 1
+      },
+      "170": {
+        "instruction": 3,
+        "operand": 2,
+        "valid": 0
+      },
+      "171": {
+        "instruction": 3,
+        "operand": 2,
+        "valid": 0
+      },
+      "172": {
+        "instruction": 3,
+        "operand": 2,
+        "valid": 0
+      },
+      "173": {
+        "instruction": 3,
+        "operand": 2,
+        "valid": 0
+      },
+      "174": {
+        "instruction": 3,
+        "operand": 2,
+        "valid": 0
+      },
+      "175": {
+        "instruction": 3,
+        "operand": 2,
+        "valid": 0
+      },
+      "176": {
+        "instruction": 3,
+        "operand": 2,
+        "valid": 0
+      },
+      "177": {
+        "instruction": 3,
+        "operand": 2,
+        "valid": 0
+      },
+      "178": {
+        "instruction": 3,
+        "operand": 2,
+        "valid": 0
+      },
+      "179": {
+        "instruction": 3,
+        "operand": 2,
+        "valid": 0
+      },
+      "18": {
+        "instruction": 1,
+        "operand": 0,
+        "valid": 1
+      },
+      "180": {
+        "instruction": 3,
+        "operand": 2,
+        "valid": 0
+      },
+      "181": {
+        "instruction": 3,
+        "operand": 2,
+        "valid": 0
+      },
+      "182": {
+        "instruction": 3,
+        "operand": 2,
+        "valid": 0
+      },
+      "183": {
+        "instruction": 3,
+        "operand": 2,
+        "valid": 0
+      },
+      "184": {
+        "instruction": 3,
+        "operand": 2,
+        "valid": 0
+      },
+      "185": {
+        "instruction": 3,
+        "operand": 2,
+        "valid": 0
+      },
+      "186": {
+        "instruction": 3,
+        "operand": 2,
+        "valid": 0
+      },
+      "187": {
+        "instruction": 3,
+        "operand": 2,
+        "valid": 0
+      },
+      "188": {
+        "instruction": 3,
+        "operand": 2,
+        "valid": 0
+      },
+      "189": {
+        "instruction": 3,
+        "operand": 2,
+        "valid": 0
+      },
+      "19": {
+        "instruction": 1,
+        "operand": 0,
+        "valid": 1
+      },
+      "190": {
+        "instruction": 3,
+        "operand": 2,
+        "valid": 0
+      },
+      "191": {
+        "instruction": 3,
+        "operand": 2,
+        "valid": 0
+      },
+      "192": {
+        "instruction": 5,
+        "operand": 4,
+        "valid": 1
+      },
+      "193": {
+        "instruction": 5,
+        "operand": 4,
+        "valid": 0
+      },
+      "194": {
+        "instruction": 5,
+        "operand": 4,
+        "valid": 0
+      },
+      "195": {
+        "instruction": 5,
+        "operand": 4,
+        "valid": 0
+      },
+      "196": {
+        "instruction": 5,
+        "operand": 4,
+        "valid": 0
+      },
+      "197": {
+        "instruction": 5,
+        "operand": 4,
+        "valid": 0
+      },
+      "198": {
+        "instruction": 5,
+        "operand": 4,
+        "valid": 0
+      },
+      "199": {
+        "instruction": 5,
+        "operand": 4,
+        "valid": 0
+      },
+      "2": {
+        "instruction": 1,
+        "operand": 0,
+        "valid": 1
+      },
+      "20": {
+        "instruction": 1,
+        "operand": 0,
+        "valid": 1
+      },
+      "200": {
+        "instruction": 5,
+        "operand": 4,
+        "valid": 0
+      },
+      "201": {
+        "instruction": 5,
+        "operand": 4,
+        "valid": 0
+      },
+      "202": {
+        "instruction": 5,
+        "operand": 4,
+        "valid": 0
+      },
+      "203": {
+        "instruction": 5,
+        "operand": 4,
+        "valid": 0
+      },
+      "204": {
+        "instruction": 5,
+        "operand": 4,
+        "valid": 0
+      },
+      "205": {
+        "instruction": 5,
+        "operand": 4,
+        "valid": 0
+      },
+      "206": {
+        "instruction": 5,
+        "operand": 4,
+        "valid": 0
+      },
+      "207": {
+        "instruction": 5,
+        "operand": 4,
+        "valid": 0
+      },
+      "208": {
+        "instruction": 5,
+        "operand": 4,
+        "valid": 1
+      },
+      "209": {
+        "instruction": 5,
+        "operand": 4,
+        "valid": 1
+      },
+      "21": {
+        "instruction": 1,
+        "operand": 0,
+        "valid": 1
+      },
+      "210": {
+        "instruction": 5,
+        "operand": 4,
+        "valid": 1
+      },
+      "211": {
+        "instruction": 5,
+        "operand": 4,
+        "valid": 0
+      },
+      "212": {
+        "instruction": 5,
+        "operand": 4,
+        "valid": 0
+      },
+      "213": {
+        "instruction": 5,
+        "operand": 4,
+        "valid": 0
+      },
+      "214": {
+        "instruction": 5,
+        "operand": 4,
+        "valid": 0
+      },
+      "215": {
+        "instruction": 5,
+        "operand": 4,
+        "valid": 0
+      },
+      "216": {
+        "instruction": 5,
+        "operand": 4,
+        "valid": 0
+      },
+      "217": {
+        "instruction": 5,
+        "operand": 4,
+        "valid": 0
+      },
+      "218": {
+        "instruction": 5,
+        "operand": 4,
+        "valid": 0
+      },
+      "219": {
+        "instruction": 5,
+        "operand": 4,
+        "valid": 0
+      },
+      "22": {
+        "instruction": 1,
+        "operand": 0,
+        "valid": 1
+      },
+      "220": {
+        "instruction": 5,
+        "operand": 4,
+        "valid": 0
+      },
+      "221": {
+        "instruction": 5,
+        "operand": 4,
+        "valid": 0
+      },
+      "222": {
+        "instruction": 5,
+        "operand": 4,
+        "valid": 0
+      },
+      "223": {
+        "instruction": 5,
+        "operand": 4,
+        "valid": 0
+      },
+      "224": {
+        "instruction": 5,
+        "operand": 4,
+        "valid": 0
+      },
+      "225": {
+        "instruction": 5,
+        "operand": 4,
+        "valid": 0
+      },
+      "226": {
+        "instruction": 5,
+        "operand": 4,
+        "valid": 0
+      },
+      "227": {
+        "instruction": 5,
+        "operand": 4,
+        "valid": 0
+      },
+      "228": {
+        "instruction": 5,
+        "operand": 4,
+        "valid": 0
+      },
+      "229": {
+        "instruction": 5,
+        "operand": 4,
+        "valid": 0
+      },
+      "23": {
+        "instruction": 1,
+        "operand": 0,
+        "valid": 1
+      },
+      "230": {
+        "instruction": 5,
+        "operand": 4,
+        "valid": 0
+      },
+      "231": {
+        "instruction": 5,
+        "operand": 4,
+        "valid": 0
+      },
+      "232": {
+        "instruction": 5,
+        "operand": 4,
+        "valid": 0
+      },
+      "233": {
+        "instruction": 5,
+        "operand": 4,
+        "valid": 0
+      },
+      "234": {
+        "instruction": 5,
+        "operand": 4,
+        "valid": 0
+      },
+      "235": {
+        "instruction": 5,
+        "operand": 4,
+        "valid": 0
+      },
+      "236": {
+        "instruction": 5,
+        "operand": 4,
+        "valid": 0
+      },
+      "237": {
+        "instruction": 5,
+        "operand": 4,
+        "valid": 0
+      },
+      "238": {
+        "instruction": 5,
+        "operand": 4,
+        "valid": 0
+      },
+      "239": {
+        "instruction": 5,
+        "operand": 4,
+        "valid": 0
+      },
+      "24": {
+        "instruction": 1,
+        "operand": 0,
+        "valid": 1
+      },
+      "240": {
+        "instruction": 5,
+        "operand": 4,
+        "valid": 0
+      },
+      "241": {
+        "instruction": 5,
+        "operand": 4,
+        "valid": 0
+      },
+      "242": {
+        "instruction": 5,
+        "operand": 4,
+        "valid": 0
+      },
+      "243": {
+        "instruction": 5,
+        "operand": 4,
+        "valid": 0
+      },
+      "244": {
+        "instruction": 5,
+        "operand": 4,
+        "valid": 0
+      },
+      "245": {
+        "instruction": 5,
+        "operand": 4,
+        "valid": 0
+      },
+      "246": {
+        "instruction": 5,
+        "operand": 4,
+        "valid": 0
+      },
+      "247": {
+        "instruction": 5,
+        "operand": 4,
+        "valid": 0
+      },
+      "248": {
+        "instruction": 5,
+        "operand": 4,
+        "valid": 0
+      },
+      "249": {
+        "instruction": 5,
+        "operand": 4,
+        "valid": 0
+      },
+      "25": {
+        "instruction": 1,
+        "operand": 0,
+        "valid": 1
+      },
+      "250": {
+        "instruction": 5,
+        "operand": 4,
+        "valid": 0
+      },
+      "251": {
+        "instruction": 5,
+        "operand": 4,
+        "valid": 0
+      },
+      "252": {
+        "instruction": 5,
+        "operand": 4,
+        "valid": 0
+      },
+      "253": {
+        "instruction": 5,
+        "operand": 4,
+        "valid": 0
+      },
+      "254": {
+        "instruction": 5,
+        "operand": 4,
+        "valid": 0
+      },
+      "255": {
+        "instruction": 5,
+        "operand": 4,
+        "valid": 0
+      },
+      "26": {
+        "instruction": 1,
+        "operand": 0,
+        "valid": 1
+      },
+      "27": {
+        "instruction": 1,
+        "operand": 0,
+        "valid": 1
+      },
+      "28": {
+        "instruction": 1,
+        "operand": 0,
+        "valid": 1
+      },
+      "29": {
+        "instruction": 1,
+        "operand": 0,
+        "valid": 1
+      },
+      "3": {
+        "instruction": 1,
+        "operand": 0,
+        "valid": 1
+      },
+      "30": {
+        "instruction": 1,
+        "operand": 0,
+        "valid": 1
+      },
+      "31": {
+        "instruction": 1,
+        "operand": 0,
+        "valid": 1
+      },
+      "32": {
+        "instruction": 1,
+        "operand": 0,
+        "valid": 1
+      },
+      "33": {
+        "instruction": 1,
+        "operand": 0,
+        "valid": 1
+      },
+      "34": {
+        "instruction": 1,
+        "operand": 0,
+        "valid": 1
+      },
+      "35": {
+        "instruction": 1,
+        "operand": 0,
+        "valid": 1
+      },
+      "36": {
+        "instruction": 1,
+        "operand": 0,
+        "valid": 1
+      },
+      "37": {
+        "instruction": 1,
+        "operand": 0,
+        "valid": 1
+      },
+      "38": {
+        "instruction": 1,
+        "operand": 0,
+        "valid": 1
+      },
+      "39": {
+        "instruction": 1,
+        "operand": 0,
+        "valid": 0
+      },
+      "4": {
+        "instruction": 1,
+        "operand": 0,
+        "valid": 0
+      },
+      "40": {
+        "instruction": 1,
+        "operand": 0,
+        "valid": 1
+      },
+      "41": {
+        "instruction": 1,
+        "operand": 0,
+        "valid": 1
+      },
+      "42": {
+        "instruction": 1,
+        "operand": 0,
+        "valid": 1
+      },
+      "43": {
+        "instruction": 1,
+        "operand": 0,
+        "valid": 1
+      },
+      "44": {
+        "instruction": 1,
+        "operand": 0,
+        "valid": 1
+      },
+      "45": {
+        "instruction": 1,
+        "operand": 0,
+        "valid": 1
+      },
+      "46": {
+        "instruction": 1,
+        "operand": 0,
+        "valid": 0
+      },
+      "47": {
+        "instruction": 1,
+        "operand": 0,
+        "valid": 0
+      },
+      "48": {
+        "instruction": 1,
+        "operand": 0,
+        "valid": 1
+      },
+      "49": {
+        "instruction": 1,
+        "operand": 0,
+        "valid": 1
+      },
+      "5": {
+        "instruction": 1,
+        "operand": 0,
+        "valid": 0
+      },
+      "50": {
+        "instruction": 1,
+        "operand": 0,
+        "valid": 1
+      },
+      "51": {
+        "instruction": 1,
+        "operand": 0,
+        "valid": 1
+      },
+      "52": {
+        "instruction": 1,
+        "operand": 0,
+        "valid": 1
+      },
+      "53": {
+        "instruction": 1,
+        "operand": 0,
+        "valid": 1
+      },
+      "54": {
+        "instruction": 1,
+        "operand": 0,
+        "valid": 1
+      },
+      "55": {
+        "instruction": 1,
+        "operand": 0,
+        "valid": 0
+      },
+      "56": {
+        "instruction": 1,
+        "operand": 0,
+        "valid": 1
+      },
+      "57": {
+        "instruction": 1,
+        "operand": 0,
+        "valid": 1
+      },
+      "58": {
+        "instruction": 1,
+        "operand": 0,
+        "valid": 1
+      },
+      "59": {
+        "instruction": 1,
+        "operand": 0,
+        "valid": 1
+      },
+      "6": {
+        "instruction": 1,
+        "operand": 0,
+        "valid": 0
+      },
+      "60": {
+        "instruction": 1,
+        "operand": 0,
+        "valid": 1
+      },
+      "61": {
+        "instruction": 1,
+        "operand": 0,
+        "valid": 1
+      },
+      "62": {
+        "instruction": 1,
+        "operand": 0,
+        "valid": 1
+      },
+      "63": {
+        "instruction": 1,
+        "operand": 0,
+        "valid": 1
+      },
+      "64": {
+        "instruction": 2,
+        "operand": 1,
+        "valid": 1
+      },
+      "65": {
+        "instruction": 2,
+        "operand": 1,
+        "valid": 1
+      },
+      "66": {
+        "instruction": 2,
+        "operand": 1,
+        "valid": 0
+      },
+      "67": {
+        "instruction": 2,
+        "operand": 1,
+        "valid": 0
+      },
+      "68": {
+        "instruction": 2,
+        "operand": 1,
+        "valid": 0
+      },
+      "69": {
+        "instruction": 2,
+        "operand": 1,
+        "valid": 0
+      },
+      "7": {
+        "instruction": 1,
+        "operand": 0,
+        "valid": 0
+      },
+      "70": {
+        "instruction": 2,
+        "operand": 1,
+        "valid": 0
+      },
+      "71": {
+        "instruction": 2,
+        "operand": 1,
+        "valid": 0
+      },
+      "72": {
+        "instruction": 2,
+        "operand": 1,
+        "valid": 0
+      },
+      "73": {
+        "instruction": 2,
+        "operand": 1,
+        "valid": 0
+      },
+      "74": {
+        "instruction": 2,
+        "operand": 1,
+        "valid": 0
+      },
+      "75": {
+        "instruction": 2,
+        "operand": 1,
+        "valid": 0
+      },
+      "76": {
+        "instruction": 2,
+        "operand": 1,
+        "valid": 0
+      },
+      "77": {
+        "instruction": 2,
+        "operand": 1,
+        "valid": 0
+      },
+      "78": {
+        "instruction": 2,
+        "operand": 1,
+        "valid": 0
+      },
+      "79": {
+        "instruction": 2,
+        "operand": 1,
+        "valid": 0
+      },
+      "8": {
+        "instruction": 1,
+        "operand": 0,
+        "valid": 0
+      },
+      "80": {
+        "instruction": 2,
+        "operand": 1,
+        "valid": 1
+      },
+      "81": {
+        "instruction": 2,
+        "operand": 1,
+        "valid": 1
+      },
+      "82": {
+        "instruction": 2,
+        "operand": 1,
+        "valid": 1
+      },
+      "83": {
+        "instruction": 2,
+        "operand": 1,
+        "valid": 0
+      },
+      "84": {
+        "instruction": 2,
+        "operand": 1,
+        "valid": 0
+      },
+      "85": {
+        "instruction": 2,
+        "operand": 1,
+        "valid": 0
+      },
+      "86": {
+        "instruction": 2,
+        "operand": 1,
+        "valid": 0
+      },
+      "87": {
+        "instruction": 2,
+        "operand": 1,
+        "valid": 0
+      },
+      "88": {
+        "instruction": 2,
+        "operand": 1,
+        "valid": 0
+      },
+      "89": {
+        "instruction": 2,
+        "operand": 1,
+        "valid": 0
+      },
+      "9": {
+        "instruction": 1,
+        "operand": 0,
+        "valid": 0
+      },
+      "90": {
+        "instruction": 2,
+        "operand": 1,
+        "valid": 0
+      },
+      "91": {
+        "instruction": 2,
+        "operand": 1,
+        "valid": 0
+      },
+      "92": {
+        "instruction": 2,
+        "operand": 1,
+        "valid": 0
+      },
+      "93": {
+        "instruction": 2,
+        "operand": 1,
+        "valid": 0
+      },
+      "94": {
+        "instruction": 2,
+        "operand": 1,
+        "valid": 0
+      },
+      "95": {
+        "instruction": 2,
+        "operand": 1,
+        "valid": 0
+      },
+      "96": {
+        "instruction": 2,
+        "operand": 1,
+        "valid": 0
+      },
+      "97": {
+        "instruction": 2,
+        "operand": 1,
+        "valid": 0
+      },
+      "98": {
+        "instruction": 2,
+        "operand": 1,
+        "valid": 0
+      },
+      "99": {
+        "instruction": 2,
+        "operand": 1,
+        "valid": 0
+      }
+    },
+    "structs": {
+      "zplc_file_header_t": {
+        "offsets": {
+          "code_size": 16,
+          "crc32": 12,
+          "data_size": 20,
+          "entry_point": 24,
+          "flags": 8,
+          "magic": 0,
+          "reserved": 28,
+          "segment_count": 26,
+          "version_major": 4,
+          "version_minor": 6
+        },
+        "size": 32
+      },
+      "zplc_iomap_entry_t": {
+        "offsets": {
+          "channel": 4,
+          "direction": 3,
+          "flags": 6,
+          "var_addr": 0,
+          "var_type": 2
+        },
+        "size": 8
+      },
+      "zplc_segment_entry_t": {
+        "offsets": {
+          "flags": 2,
+          "size": 4,
+          "type": 0
+        },
+        "size": 8
+      },
+      "zplc_tag_entry_t": {
+        "offsets": {
+          "tag_id": 3,
+          "value": 4,
+          "var_addr": 0,
+          "var_type": 2
+        },
+        "size": 8
+      },
+      "zplc_task_def_t": {
+        "offsets": {
+          "entry_point": 8,
+          "id": 0,
+          "interval_us": 4,
+          "priority": 3,
+          "reserved": 12,
+          "stack_size": 10,
+          "type": 2
+        },
+        "size": 16
+      }
+    }
+  },
+  "compiler": {
+    "addressOperands": [
+      80,
+      81,
+      82,
+      144,
+      145,
+      146,
+      147
+    ],
+    "commBlocks": {
+      "AWS_FLEET_PROV": {
+        "members": [
+          {
+            "direction": "in",
+            "name": "EN",
+            "offset": 0,
+            "type": "BOOL"
+          },
+          {
+            "direction": "out",
+            "name": "BUSY",
+            "offset": 1,
+            "type": "BOOL"
+          },
+          {
+            "direction": "out",
+            "name": "DONE",
+            "offset": 2,
+            "type": "BOOL"
+          },
+          {
+            "direction": "out",
+            "name": "ERROR",
+            "offset": 3,
+            "type": "BOOL"
+          },
+          {
+            "direction": "out",
+            "name": "STATUS",
+            "offset": 4,
+            "type": "DINT"
+          },
+          {
+            "direction": "in",
+            "name": "TEMPLATE_NAME",
+            "offset": 8,
+            "type": "STRING"
+          },
+          {
+            "direction": "out",
+            "name": "THING_NAME",
+            "offset": 73,
+            "type": "STRING"
+          }
+        ],
+        "size": 137
+      },
+      "AZURE_C2D_RECV": {
+        "members": [
+          {
+            "direction": "in",
+            "name": "EN",
+            "offset": 0,
+            "type": "BOOL"
+          },
+          {
+            "direction": "out",
+            "name": "BUSY",
+            "offset": 1,
+            "type": "BOOL"
+          },
+          {
+            "direction": "out",
+            "name": "DONE",
+            "offset": 2,
+            "type": "BOOL"
+          },
+          {
+            "direction": "out",
+            "name": "ERROR",
+            "offset": 3,
+            "type": "BOOL"
+          },
+          {
+            "direction": "out",
+            "name": "STATUS",
+            "offset": 4,
+            "type": "DINT"
+          },
+          {
+            "direction": "out",
+            "name": "PAYLOAD",
+            "offset": 8,
+            "type": "STRING"
+          },
+          {
+            "direction": "out",
+            "name": "VALID",
+            "offset": 93,
+            "type": "BOOL"
+          }
+        ],
+        "size": 94
+      },
+      "AZURE_DPS_PROV": {
+        "members": [
+          {
+            "direction": "in",
+            "name": "EN",
+            "offset": 0,
+            "type": "BOOL"
+          },
+          {
+            "direction": "out",
+            "name": "BUSY",
+            "offset": 1,
+            "type": "BOOL"
+          },
+          {
+            "direction": "out",
+            "name": "DONE",
+            "offset": 2,
+            "type": "BOOL"
+          },
+          {
+            "direction": "out",
+            "name": "ERROR",
+            "offset": 3,
+            "type": "BOOL"
+          },
+          {
+            "direction": "out",
+            "name": "STATUS",
+            "offset": 4,
+            "type": "DINT"
+          },
+          {
+            "direction": "in",
+            "name": "DEVICE_ID",
+            "offset": 8,
+            "type": "STRING"
+          },
+          {
+            "direction": "out",
+            "name": "ASSIGNED_HUB",
+            "offset": 73,
+            "type": "STRING"
+          }
+        ],
+        "size": 201
+      },
+      "AZURE_EG_PUB": {
+        "members": [
+          {
+            "direction": "in",
+            "name": "EN",
+            "offset": 0,
+            "type": "BOOL"
+          },
+          {
+            "direction": "out",
+            "name": "BUSY",
+            "offset": 1,
+            "type": "BOOL"
+          },
+          {
+            "direction": "out",
+            "name": "DONE",
+            "offset": 2,
+            "type": "BOOL"
+          },
+          {
+            "direction": "out",
+            "name": "ERROR",
+            "offset": 3,
+            "type": "BOOL"
+          },
+          {
+            "direction": "out",
+            "name": "STATUS",
+            "offset": 4,
+            "type": "DINT"
+          },
+          {
+            "direction": "in",
+            "name": "TOPIC",
+            "offset": 8,
+            "type": "STRING"
+          },
+          {
+            "direction": "in",
+            "name": "EVENT_TYPE",
+            "offset": 73,
+            "type": "STRING"
+          },
+          {
+            "direction": "in",
+            "name": "PAYLOAD",
+            "offset": 138,
+            "type": "STRING"
+          }
+        ],
+        "size": 266
+      },
+      "MB_READ_COIL": {
+        "members": [
+          {
+            "direction": "in",
+            "name": "EN",
+            "offset": 0,
+            "type": "BOOL"
+          },
+          {
+            "direction": "out",
+            "name": "BUSY",
+            "offset": 1,
+            "type": "BOOL"
+          },
+          {
+            "direction": "out",
+            "name": "DONE",
+            "offset": 2,
+            "type": "BOOL"
+          },
+          {
+            "direction": "out",
+            "name": "ERROR",
+            "offset": 3,
+            "type": "BOOL"
+          },
+          {
+            "direction": "out",
+            "name": "STATUS",
+            "offset": 4,
+            "type": "DINT"
+          },
+          {
+            "direction": "in",
+            "name": "PROTO",
+            "offset": 8,
+            "type": "USINT"
+          },
+          {
+            "direction": "in",
+            "name": "SLAVE_ID",
+            "offset": 9,
+            "type": "UINT"
+          },
+          {
+            "direction": "in",
+            "name": "ADDR",
+            "offset": 11,
+            "type": "UINT"
+          },
+          {
+            "direction": "in",
+            "name": "COUNT",
+            "offset": 13,
+            "type": "UINT"
+          },
+          {
+            "direction": "out",
+            "name": "VALUE",
+            "offset": 15,
+            "type": "BOOL"
+          },
+          {
+            "direction": "in",
+            "name": "HOST",
+            "offset": 18,
+            "type": "STRING"
+          },
+          {
+            "direction": "in",
+            "name": "PORT",
+            "offset": 103,
+            "type": "UINT"
+          }
+        ],
+        "size": 110
+      },
+      "MB_READ_HREG": {
+        "members": [
+          {
+            "direction": "in",
+            "name": "EN",
+            "offset": 0,
+            "type": "BOOL"
+          },
+          {
+            "direction": "out",
+            "name": "BUSY",
+            "offset": 1,
+            "type": "BOOL"
+          },
+          {
+            "direction": "out",
+            "name": "DONE",
+            "offset": 2,
+            "type": "BOOL"
+          },
+          {
+            "direction": "out",
+            "name": "ERROR",
+            "offset": 3,
+            "type": "BOOL"
+          },
+          {
+            "direction": "out",
+            "name": "STATUS",
+            "offset": 4,
+            "type": "DINT"
+          },
+          {
+            "direction": "in",
+            "name": "PROTO",
+            "offset": 8,
+            "type": "USINT"
+          },
+          {
+            "direction": "in",
+            "name": "SLAVE_ID",
+            "offset": 9,
+            "type": "UINT"
+          },
+          {
+            "direction": "in",
+            "name": "ADDR",
+            "offset": 11,
+            "type": "UINT"
+          },
+          {
+            "direction": "in",
+            "name": "COUNT",
+            "offset": 13,
+            "type": "UINT"
+          },
+          {
+            "direction": "out",
+            "name": "VALUE",
+            "offset": 15,
+            "type": "UINT"
+          },
+          {
+            "direction": "in",
+            "name": "HOST",
+            "offset": 18,
+            "type": "STRING"
+          },
+          {
+            "direction": "in",
+            "name": "PORT",
+            "offset": 103,
+            "type": "UINT"
+          }
+        ],
+        "size": 110
+      },
+      "MB_WRITE_COIL": {
+        "members": [
+          {
+            "direction": "in",
+            "name": "EN",
+            "offset": 0,
+            "type": "BOOL"
+          },
+          {
+            "direction": "out",
+            "name": "BUSY",
+            "offset": 1,
+            "type": "BOOL"
+          },
+          {
+            "direction": "out",
+            "name": "DONE",
+            "offset": 2,
+            "type": "BOOL"
+          },
+          {
+            "direction": "out",
+            "name": "ERROR",
+            "offset": 3,
+            "type": "BOOL"
+          },
+          {
+            "direction": "out",
+            "name": "STATUS",
+            "offset": 4,
+            "type": "DINT"
+          },
+          {
+            "direction": "in",
+            "name": "PROTO",
+            "offset": 8,
+            "type": "USINT"
+          },
+          {
+            "direction": "in",
+            "name": "SLAVE_ID",
+            "offset": 9,
+            "type": "UINT"
+          },
+          {
+            "direction": "in",
+            "name": "ADDR",
+            "offset": 11,
+            "type": "UINT"
+          },
+          {
+            "direction": "in",
+            "name": "COUNT",
+            "offset": 13,
+            "type": "UINT"
+          },
+          {
+            "direction": "in",
+            "name": "VALUE",
+            "offset": 15,
+            "type": "BOOL"
+          },
+          {
+            "direction": "in",
+            "name": "HOST",
+            "offset": 18,
+            "type": "STRING"
+          },
+          {
+            "direction": "in",
+            "name": "PORT",
+            "offset": 103,
+            "type": "UINT"
+          }
+        ],
+        "size": 110
+      },
+      "MB_WRITE_HREG": {
+        "members": [
+          {
+            "direction": "in",
+            "name": "EN",
+            "offset": 0,
+            "type": "BOOL"
+          },
+          {
+            "direction": "out",
+            "name": "BUSY",
+            "offset": 1,
+            "type": "BOOL"
+          },
+          {
+            "direction": "out",
+            "name": "DONE",
+            "offset": 2,
+            "type": "BOOL"
+          },
+          {
+            "direction": "out",
+            "name": "ERROR",
+            "offset": 3,
+            "type": "BOOL"
+          },
+          {
+            "direction": "out",
+            "name": "STATUS",
+            "offset": 4,
+            "type": "DINT"
+          },
+          {
+            "direction": "in",
+            "name": "PROTO",
+            "offset": 8,
+            "type": "USINT"
+          },
+          {
+            "direction": "in",
+            "name": "SLAVE_ID",
+            "offset": 9,
+            "type": "UINT"
+          },
+          {
+            "direction": "in",
+            "name": "ADDR",
+            "offset": 11,
+            "type": "UINT"
+          },
+          {
+            "direction": "in",
+            "name": "COUNT",
+            "offset": 13,
+            "type": "UINT"
+          },
+          {
+            "direction": "in",
+            "name": "VALUE",
+            "offset": 15,
+            "type": "UINT"
+          },
+          {
+            "direction": "in",
+            "name": "HOST",
+            "offset": 18,
+            "type": "STRING"
+          },
+          {
+            "direction": "in",
+            "name": "PORT",
+            "offset": 103,
+            "type": "UINT"
+          }
+        ],
+        "size": 110
+      },
+      "MQTT_CONNECT": {
+        "members": [
+          {
+            "direction": "in",
+            "name": "EN",
+            "offset": 0,
+            "type": "BOOL"
+          },
+          {
+            "direction": "out",
+            "name": "BUSY",
+            "offset": 1,
+            "type": "BOOL"
+          },
+          {
+            "direction": "out",
+            "name": "DONE",
+            "offset": 2,
+            "type": "BOOL"
+          },
+          {
+            "direction": "out",
+            "name": "ERROR",
+            "offset": 3,
+            "type": "BOOL"
+          },
+          {
+            "direction": "out",
+            "name": "STATUS",
+            "offset": 4,
+            "type": "DINT"
+          },
+          {
+            "direction": "in",
+            "name": "PROFILE",
+            "offset": 8,
+            "type": "USINT"
+          },
+          {
+            "direction": "out",
+            "name": "CONNECTED",
+            "offset": 9,
+            "type": "BOOL"
+          }
+        ],
+        "size": 12
+      },
+      "MQTT_PUBLISH": {
+        "members": [
+          {
+            "direction": "in",
+            "name": "EN",
+            "offset": 0,
+            "type": "BOOL"
+          },
+          {
+            "direction": "out",
+            "name": "BUSY",
+            "offset": 1,
+            "type": "BOOL"
+          },
+          {
+            "direction": "out",
+            "name": "DONE",
+            "offset": 2,
+            "type": "BOOL"
+          },
+          {
+            "direction": "out",
+            "name": "ERROR",
+            "offset": 3,
+            "type": "BOOL"
+          },
+          {
+            "direction": "out",
+            "name": "STATUS",
+            "offset": 4,
+            "type": "DINT"
+          },
+          {
+            "direction": "in",
+            "name": "QOS",
+            "offset": 8,
+            "type": "USINT"
+          },
+          {
+            "direction": "in",
+            "name": "RETAIN",
+            "offset": 9,
+            "type": "BOOL"
+          },
+          {
+            "direction": "in",
+            "name": "TOPIC",
+            "offset": 12,
+            "type": "STRING"
+          },
+          {
+            "direction": "in",
+            "name": "PAYLOAD",
+            "offset": 97,
+            "type": "STRING"
+          }
+        ],
+        "size": 190
+      },
+      "MQTT_SUBSCRIBE": {
+        "members": [
+          {
+            "direction": "in",
+            "name": "EN",
+            "offset": 0,
+            "type": "BOOL"
+          },
+          {
+            "direction": "out",
+            "name": "BUSY",
+            "offset": 1,
+            "type": "BOOL"
+          },
+          {
+            "direction": "out",
+            "name": "DONE",
+            "offset": 2,
+            "type": "BOOL"
+          },
+          {
+            "direction": "out",
+            "name": "ERROR",
+            "offset": 3,
+            "type": "BOOL"
+          },
+          {
+            "direction": "out",
+            "name": "STATUS",
+            "offset": 4,
+            "type": "DINT"
+          },
+          {
+            "direction": "in",
+            "name": "QOS",
+            "offset": 8,
+            "type": "USINT"
+          },
+          {
+            "direction": "out",
+            "name": "VALID",
+            "offset": 9,
+            "type": "BOOL"
+          },
+          {
+            "direction": "in",
+            "name": "TOPIC",
+            "offset": 12,
+            "type": "STRING"
+          },
+          {
+            "direction": "out",
+            "name": "PAYLOAD",
+            "offset": 97,
+            "type": "STRING"
+          }
+        ],
+        "size": 190
+      },
+      "SPB_REBIRTH": {
+        "members": [
+          {
+            "direction": "in",
+            "name": "EN",
+            "offset": 0,
+            "type": "BOOL"
+          },
+          {
+            "direction": "out",
+            "name": "BUSY",
+            "offset": 1,
+            "type": "BOOL"
+          },
+          {
+            "direction": "out",
+            "name": "DONE",
+            "offset": 2,
+            "type": "BOOL"
+          },
+          {
+            "direction": "out",
+            "name": "ERROR",
+            "offset": 3,
+            "type": "BOOL"
+          },
+          {
+            "direction": "out",
+            "name": "STATUS",
+            "offset": 4,
+            "type": "DINT"
+          }
+        ],
+        "size": 8
+      }
+    },
+    "commKinds": {
+      "AWS_FLEET_PROV": 48,
+      "AZURE_C2D_RECV": 32,
+      "AZURE_DPS_PROV": 33,
+      "AZURE_EG_PUB": 34,
+      "MB_READ_COIL": 3,
+      "MB_READ_HREG": 1,
+      "MB_WRITE_COIL": 4,
+      "MB_WRITE_HREG": 2,
+      "MQTT_CONNECT": 10,
+      "MQTT_PUBLISH": 11,
+      "MQTT_SUBSCRIBE": 12,
+      "SPB_REBIRTH": 64
+    },
+    "constants": {
+      "CODE_SIZE_MAX": 45056,
+      "HEADER_SIZE": 32,
+      "MAGIC": 1129074778,
+      "MAX_TASKS": 16,
+      "SEGMENT_ENTRY_SIZE": 8,
+      "SEGMENT_TYPE_CODE": 1,
+      "SEGMENT_TYPE_DATA": 2,
+      "SEGMENT_TYPE_TAGS": 48,
+      "SEGMENT_TYPE_TASK": 32,
+      "TAG_ENTRY_SIZE": 8,
+      "TASK_DEF_SIZE": 16,
+      "TASK_STACK_MAX_DEPTH": 256,
+      "VERSION_MAJOR": 1,
+      "VERSION_MINOR": 0
+    },
+    "debugMapLayout": {
+      "codeBase": 20480,
+      "codeSize": 45056,
+      "ipiBase": 0,
+      "ipiSize": 4096,
+      "opiBase": 4096,
+      "opiSize": 4096,
+      "retainBase": 16384,
+      "retainSize": 4096,
+      "workBase": 8192,
+      "workSize": 8192
+    },
+    "defaultMemoryProfile": {
+      "codeSizeMax": 45056,
+      "retainSize": 4096,
+      "workSize": 8192
+    },
+    "memoryLayout": {
+      "IPI_BASE": 0,
+      "OPI_BASE": 4096,
+      "RETAIN_BASE": 16384,
+      "WORK_BASE": 8192
+    },
+    "opcodeByName": {
+      "ABS": 38,
+      "ABSF": 45,
+      "ADD": 32,
+      "ADDF": 40,
+      "AND": 48,
+      "BREAK": 2,
+      "CALL": 147,
+      "COMM_EXEC": 208,
+      "COMM_RESET": 210,
+      "COMM_STATUS": 209,
+      "DIV": 35,
+      "DIVF": 43,
+      "DROP": 17,
+      "DUP": 16,
+      "EQ": 56,
+      "EXT16": 164,
+      "EXT8": 163,
+      "F2I": 161,
+      "GE": 61,
+      "GET_TICKS": 3,
+      "GT": 60,
+      "GTU": 63,
+      "HALT": 1,
+      "I2B": 162,
+      "I2F": 160,
+      "JMP": 144,
+      "JNZ": 146,
+      "JR": 80,
+      "JRNZ": 82,
+      "JRZ": 81,
+      "JZ": 145,
+      "LE": 59,
+      "LOAD16": 129,
+      "LOAD32": 130,
+      "LOAD64": 131,
+      "LOAD8": 128,
+      "LOADI16": 25,
+      "LOADI32": 22,
+      "LOADI8": 21,
+      "LT": 58,
+      "LTU": 62,
+      "MOD": 36,
+      "MUL": 34,
+      "MULF": 42,
+      "NE": 57,
+      "NEG": 37,
+      "NEGF": 44,
+      "NOP": 0,
+      "NOT": 51,
+      "OR": 49,
+      "OVER": 19,
+      "PICK": 65,
+      "PUSH16": 136,
+      "PUSH32": 192,
+      "PUSH8": 64,
+      "RET": 148,
+      "ROT": 20,
+      "SAR": 54,
+      "SHL": 52,
+      "SHR": 53,
+      "STORE16": 133,
+      "STORE32": 134,
+      "STORE64": 135,
+      "STORE8": 132,
+      "STOREI16": 26,
+      "STOREI32": 24,
+      "STOREI8": 23,
+      "STRCAT": 29,
+      "STRCLR": 31,
+      "STRCMP": 30,
+      "STRCPY": 28,
+      "STRLEN": 27,
+      "SUB": 33,
+      "SUBF": 41,
+      "SWAP": 18,
+      "XOR": 50,
+      "ZEXT16": 166,
+      "ZEXT8": 165
+    },
+    "opcodes": {
+      "ABS": 38,
+      "ABSF": 45,
+      "ADD": 32,
+      "ADDF": 40,
+      "AND": 48,
+      "BREAK": 2,
+      "CALL": 147,
+      "COMM_EXEC": 208,
+      "COMM_RESET": 210,
+      "COMM_STATUS": 209,
+      "DIV": 35,
+      "DIVF": 43,
+      "DROP": 17,
+      "DUP": 16,
+      "EQ": 56,
+      "EXT16": 164,
+      "EXT8": 163,
+      "F2I": 161,
+      "GE": 61,
+      "GET_TICKS": 3,
+      "GT": 60,
+      "GTU": 63,
+      "HALT": 1,
+      "I2B": 162,
+      "I2F": 160,
+      "JMP": 144,
+      "JNZ": 146,
+      "JR": 80,
+      "JRNZ": 82,
+      "JRZ": 81,
+      "JZ": 145,
+      "LE": 59,
+      "LOAD16": 129,
+      "LOAD32": 130,
+      "LOAD64": 131,
+      "LOAD8": 128,
+      "LOADI16": 25,
+      "LOADI32": 22,
+      "LOADI8": 21,
+      "LT": 58,
+      "LTU": 62,
+      "MOD": 36,
+      "MUL": 34,
+      "MULF": 42,
+      "NE": 57,
+      "NEG": 37,
+      "NEGF": 44,
+      "NOP": 0,
+      "NOT": 51,
+      "OR": 49,
+      "OVER": 19,
+      "PICK": 65,
+      "PUSH16": 136,
+      "PUSH32": 192,
+      "PUSH8": 64,
+      "RET": 148,
+      "ROT": 20,
+      "SAR": 54,
+      "SHL": 52,
+      "SHR": 53,
+      "STORE16": 133,
+      "STORE32": 134,
+      "STORE64": 135,
+      "STORE8": 132,
+      "STOREI16": 26,
+      "STOREI32": 24,
+      "STOREI8": 23,
+      "STRCAT": 29,
+      "STRCLR": 31,
+      "STRCMP": 30,
+      "STRCPY": 28,
+      "STRLEN": 27,
+      "SUB": 33,
+      "SUBF": 41,
+      "SWAP": 18,
+      "XOR": 50,
+      "ZEXT16": 166,
+      "ZEXT8": 165
+    },
+    "operandSizes": {
+      "0": 0,
+      "1": 0,
+      "10": 0,
+      "100": 1,
+      "101": 1,
+      "102": 1,
+      "103": 1,
+      "104": 1,
+      "105": 1,
+      "106": 1,
+      "107": 1,
+      "108": 1,
+      "109": 1,
+      "11": 0,
+      "110": 1,
+      "111": 1,
+      "112": 1,
+      "113": 1,
+      "114": 1,
+      "115": 1,
+      "116": 1,
+      "117": 1,
+      "118": 1,
+      "119": 1,
+      "12": 0,
+      "120": 1,
+      "121": 1,
+      "122": 1,
+      "123": 1,
+      "124": 1,
+      "125": 1,
+      "126": 1,
+      "127": 1,
+      "128": 2,
+      "129": 2,
+      "13": 0,
+      "130": 2,
+      "131": 2,
+      "132": 2,
+      "133": 2,
+      "134": 2,
+      "135": 2,
+      "136": 2,
+      "137": 2,
+      "138": 2,
+      "139": 2,
+      "14": 0,
+      "140": 2,
+      "141": 2,
+      "142": 2,
+      "143": 2,
+      "144": 2,
+      "145": 2,
+      "146": 2,
+      "147": 2,
+      "148": 0,
+      "149": 2,
+      "15": 0,
+      "150": 2,
+      "151": 2,
+      "152": 2,
+      "153": 2,
+      "154": 2,
+      "155": 2,
+      "156": 2,
+      "157": 2,
+      "158": 2,
+      "159": 2,
+      "16": 0,
+      "160": 0,
+      "161": 0,
+      "162": 0,
+      "163": 0,
+      "164": 0,
+      "165": 0,
+      "166": 0,
+      "167": 2,
+      "168": 2,
+      "169": 2,
+      "17": 0,
+      "170": 2,
+      "171": 2,
+      "172": 2,
+      "173": 2,
+      "174": 2,
+      "175": 2,
+      "176": 2,
+      "177": 2,
+      "178": 2,
+      "179": 2,
+      "18": 0,
+      "180": 2,
+      "181": 2,
+      "182": 2,
+      "183": 2,
+      "184": 2,
+      "185": 2,
+      "186": 2,
+      "187": 2,
+      "188": 2,
+      "189": 2,
+      "19": 0,
+      "190": 2,
+      "191": 2,
+      "192": 4,
+      "193": 4,
+      "194": 4,
+      "195": 4,
+      "196": 4,
+      "197": 4,
+      "198": 4,
+      "199": 4,
+      "2": 0,
+      "20": 0,
+      "200": 4,
+      "201": 4,
+      "202": 4,
+      "203": 4,
+      "204": 4,
+      "205": 4,
+      "206": 4,
+      "207": 4,
+      "208": 4,
+      "209": 4,
+      "21": 0,
+      "210": 4,
+      "211": 4,
+      "212": 4,
+      "213": 4,
+      "214": 4,
+      "215": 4,
+      "216": 4,
+      "217": 4,
+      "218": 4,
+      "219": 4,
+      "22": 0,
+      "220": 4,
+      "221": 4,
+      "222": 4,
+      "223": 4,
+      "224": 4,
+      "225": 4,
+      "226": 4,
+      "227": 4,
+      "228": 4,
+      "229": 4,
+      "23": 0,
+      "230": 4,
+      "231": 4,
+      "232": 4,
+      "233": 4,
+      "234": 4,
+      "235": 4,
+      "236": 4,
+      "237": 4,
+      "238": 4,
+      "239": 4,
+      "24": 0,
+      "240": 4,
+      "241": 4,
+      "242": 4,
+      "243": 4,
+      "244": 4,
+      "245": 4,
+      "246": 4,
+      "247": 4,
+      "248": 4,
+      "249": 4,
+      "25": 0,
+      "250": 4,
+      "251": 4,
+      "252": 4,
+      "253": 4,
+      "254": 4,
+      "255": 4,
+      "26": 0,
+      "27": 0,
+      "28": 0,
+      "29": 0,
+      "3": 0,
+      "30": 0,
+      "31": 0,
+      "32": 0,
+      "33": 0,
+      "34": 0,
+      "35": 0,
+      "36": 0,
+      "37": 0,
+      "38": 0,
+      "39": 0,
+      "4": 0,
+      "40": 0,
+      "41": 0,
+      "42": 0,
+      "43": 0,
+      "44": 0,
+      "45": 0,
+      "46": 0,
+      "47": 0,
+      "48": 0,
+      "49": 0,
+      "5": 0,
+      "50": 0,
+      "51": 0,
+      "52": 0,
+      "53": 0,
+      "54": 0,
+      "55": 0,
+      "56": 0,
+      "57": 0,
+      "58": 0,
+      "59": 0,
+      "6": 0,
+      "60": 0,
+      "61": 0,
+      "62": 0,
+      "63": 0,
+      "64": 1,
+      "65": 1,
+      "66": 1,
+      "67": 1,
+      "68": 1,
+      "69": 1,
+      "7": 0,
+      "70": 1,
+      "71": 1,
+      "72": 1,
+      "73": 1,
+      "74": 1,
+      "75": 1,
+      "76": 1,
+      "77": 1,
+      "78": 1,
+      "79": 1,
+      "8": 0,
+      "80": 1,
+      "81": 1,
+      "82": 1,
+      "83": 1,
+      "84": 1,
+      "85": 1,
+      "86": 1,
+      "87": 1,
+      "88": 1,
+      "89": 1,
+      "9": 0,
+      "90": 1,
+      "91": 1,
+      "92": 1,
+      "93": 1,
+      "94": 1,
+      "95": 1,
+      "96": 1,
+      "97": 1,
+      "98": 1,
+      "99": 1
+    },
+    "relativeJumps": [
+      80,
+      81,
+      82
+    ],
+    "tagIds": {
+      "modbus": 2,
+      "publish": 1,
+      "subscribe": 3
+    },
+    "taskTypes": {
+      "CYCLIC": 0,
+      "EVENT": 1,
+      "INIT": 2
+    },
+    "typeIds": {
+      "BOOL": 1,
+      "BYTE": 16,
+      "DINT": 6,
+      "DWORD": 18,
+      "INT": 4,
+      "LINT": 8,
+      "LREAL": 11,
+      "LWORD": 19,
+      "REAL": 10,
+      "SINT": 2,
+      "STRING": 32,
+      "TIME": 12,
+      "UDINT": 7,
+      "UINT": 5,
+      "ULINT": 9,
+      "USINT": 3,
+      "WORD": 17
+    }
+  },
+  "frozen": {
+    "commit": "aaf7c2f",
+    "what": "Contract values read from the hand-written definitions before WP-11 generated them. Taken with tools/contract/snapshot.py; never regenerate this file to make a test pass. When the contract changes on purpose, record the change in tools/contract/contract.json and update this file in the same commit with the reason in the message."
+  },
+  "ide": {
+    "memoryMap": {
+      "code": {
+        "base": 20480,
+        "size": 45056
+      },
+      "ipi": {
+        "base": 0,
+        "size": 4096
+      },
+      "opi": {
+        "base": 4096,
+        "size": 4096
+      },
+      "retain": {
+        "base": 16384,
+        "size": 4096
+      },
+      "work": {
+        "base": 8192,
+        "size": 8192
+      }
+    },
+    "regionOf": {
+      "0": "ipi",
+      "16383": "work",
+      "16384": "retain",
+      "20479": "retain",
+      "20480": "code",
+      "4095": "ipi",
+      "4096": "opi",
+      "65535": "code",
+      "8191": "opi",
+      "8192": "work"
+    },
+    "vmErrors": {
+      "ZPLC_VM_CALL_OVERFLOW": 6,
+      "ZPLC_VM_DIV_BY_ZERO": 3,
+      "ZPLC_VM_HALTED": 9,
+      "ZPLC_VM_INVALID_JUMP": 7,
+      "ZPLC_VM_INVALID_OPCODE": 4,
+      "ZPLC_VM_OK": 0,
+      "ZPLC_VM_OUT_OF_BOUNDS": 5,
+      "ZPLC_VM_PAUSED": 10,
+      "ZPLC_VM_STACK_OVERFLOW": 1,
+      "ZPLC_VM_STACK_UNDERFLOW": 2,
+      "ZPLC_VM_WATCHDOG": 8
+    }
+  },
+  "schema": 1,
+  "tester": {
+    "opcodes": {
+      "ABS": 38,
+      "ABSF": 45,
+      "ADD": 32,
+      "ADDF": 40,
+      "AND": 48,
+      "BREAK": 2,
+      "CALL": 147,
+      "DIV": 35,
+      "DIVF": 43,
+      "DROP": 17,
+      "DUP": 16,
+      "EQ": 56,
+      "EXT16": 164,
+      "EXT8": 163,
+      "F2I": 161,
+      "GE": 61,
+      "GET_TICKS": 3,
+      "GT": 60,
+      "GTU": 63,
+      "HALT": 1,
+      "I2B": 162,
+      "I2F": 160,
+      "JMP": 144,
+      "JNZ": 146,
+      "JR": 80,
+      "JRNZ": 82,
+      "JRZ": 81,
+      "JZ": 145,
+      "LE": 59,
+      "LOAD16": 129,
+      "LOAD32": 130,
+      "LOAD64": 131,
+      "LOAD8": 128,
+      "LOADI16": 25,
+      "LOADI32": 22,
+      "LOADI8": 21,
+      "LT": 58,
+      "LTU": 62,
+      "MOD": 36,
+      "MUL": 34,
+      "MULF": 42,
+      "NE": 57,
+      "NEG": 37,
+      "NEGF": 44,
+      "NOP": 0,
+      "NOT": 51,
+      "OR": 49,
+      "OVER": 19,
+      "PICK": 65,
+      "PUSH16": 136,
+      "PUSH32": 192,
+      "PUSH8": 64,
+      "RET": 148,
+      "ROT": 20,
+      "SAR": 54,
+      "SHL": 52,
+      "SHR": 53,
+      "STORE16": 133,
+      "STORE32": 134,
+      "STORE64": 135,
+      "STORE8": 132,
+      "STOREI16": 26,
+      "STOREI32": 24,
+      "STOREI8": 23,
+      "STRCAT": 29,
+      "STRCLR": 31,
+      "STRCMP": 30,
+      "STRCPY": 28,
+      "STRLEN": 27,
+      "SUB": 33,
+      "SUBF": 41,
+      "SWAP": 18,
+      "XOR": 50,
+      "ZEXT16": 166,
+      "ZEXT8": 165
+    }
+  }
+}
