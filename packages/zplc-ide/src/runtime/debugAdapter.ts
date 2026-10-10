@@ -7,6 +7,8 @@
  * whether running in WASM simulation or on real hardware via WebSerial.
  */
 
+import { ZPLC_CONTRACT } from '@zplc/compiler';
+
 /**
  * VM execution state
  */
@@ -53,16 +55,24 @@ export interface MemoryRegionInfo {
   writable: boolean;
 }
 
+const REGION = ZPLC_CONTRACT.MEMORY_REGION;
+
 /**
  * ZPLC Memory Map
+ *
+ * Bases and sizes come from the generated contract (tools/contract/contract.json),
+ * the source of zplc_isa.h; only the writable flag is the IDE's own.
  */
 export const MEMORY_MAP: Record<MemoryRegion, MemoryRegionInfo> = {
-  ipi: { name: 'ipi', baseAddress: 0x0000, size: 4096, writable: true },
-  opi: { name: 'opi', baseAddress: 0x1000, size: 4096, writable: false },
-  work: { name: 'work', baseAddress: 0x2000, size: 8192, writable: true },
-  retain: { name: 'retain', baseAddress: 0x4000, size: 4096, writable: true },
-  code: { name: 'code', baseAddress: 0x5000, size: 45056, writable: false },
+  ipi: { name: 'ipi', baseAddress: REGION.IPI.base, size: REGION.IPI.size, writable: true },
+  opi: { name: 'opi', baseAddress: REGION.OPI.base, size: REGION.OPI.size, writable: false },
+  work: { name: 'work', baseAddress: REGION.WORK.base, size: REGION.WORK.size, writable: true },
+  retain: { name: 'retain', baseAddress: REGION.RETAIN.base, size: REGION.RETAIN.size, writable: true },
+  code: { name: 'code', baseAddress: REGION.CODE.base, size: REGION.CODE.size, writable: false },
 };
+
+/** End of the 16-bit address space the VM addresses (one past the last byte). */
+const ADDRESS_SPACE_END = 0x10000;
 
 /**
  * Watch variable entry
@@ -561,10 +571,23 @@ export function bytesToHex(bytes: Uint8Array): string {
  * Determine which memory region an address belongs to
  */
 export function getMemoryRegion(address: number): MemoryRegion | null {
-  if (address >= 0x0000 && address < 0x1000) return 'ipi';
-  if (address >= 0x1000 && address < 0x2000) return 'opi';
-  if (address >= 0x2000 && address < 0x4000) return 'work';
-  if (address >= 0x4000 && address < 0x5000) return 'retain';
-  if (address >= 0x5000 && address < 0x10000) return 'code';
+  const { ipi, opi, work, retain, code } = MEMORY_MAP;
+  if (address >= ipi.baseAddress && address < opi.baseAddress) return 'ipi';
+  if (address >= opi.baseAddress && address < work.baseAddress) return 'opi';
+  if (address >= work.baseAddress && address < retain.baseAddress) return 'work';
+  if (address >= retain.baseAddress && address < code.baseAddress) return 'retain';
+  if (address >= code.baseAddress && address < ADDRESS_SPACE_END) return 'code';
   return null;
+}
+
+/**
+ * Bounds a forced range has to stay inside: the region that holds the address,
+ * where RETAIN runs up to the start of CODE (the runtime force table rule).
+ */
+export function getForceRegionBounds(address: number): { start: number; end: number } {
+  const { ipi, opi, work, retain, code } = MEMORY_MAP;
+  if (address < opi.baseAddress) return { start: ipi.baseAddress, end: opi.baseAddress };
+  if (address < work.baseAddress) return { start: opi.baseAddress, end: work.baseAddress };
+  if (address < retain.baseAddress) return { start: work.baseAddress, end: retain.baseAddress };
+  return { start: retain.baseAddress, end: code.baseAddress };
 }

@@ -13,7 +13,9 @@ import {
   DEBUG_ADAPTER_TYPE,
   bytesToHex,
   bytesToValue,
+  getForceRegionBounds,
   getTypeSize,
+  MEMORY_MAP,
   WATCH_FORCE_STATE,
 } from './debugAdapter';
 import {
@@ -195,9 +197,8 @@ function isNativeRuntimeSnapshot(value: unknown): value is NativeRuntimeSnapshot
     Array.isArray(candidate.force_entries) && candidate.force_entries.length <= 8 && candidate.force_entries.every(validForceEntry) &&
     candidate.force_entries.every((entry, index, entries) => {
       const end = entry.address + entry.size;
-      const regionStart = entry.address < 0x1000 ? 0 : entry.address < 0x2000 ? 0x1000 : entry.address < 0x4000 ? 0x2000 : 0x4000;
-      const regionEnd = regionStart === 0 ? 0x1000 : regionStart === 0x1000 ? 0x2000 : regionStart === 0x2000 ? 0x4000 : 0x5000;
-      return end <= 0x5000 && end <= regionEnd && !entries.slice(0, index).some((other) => entry.address < other.address + other.size && other.address < end);
+      const regionEnd = getForceRegionBounds(entry.address).end;
+      return end <= MEMORY_MAP.code.baseAddress && end <= regionEnd && !entries.slice(0, index).some((other) => entry.address < other.address + other.size && other.address < end);
     }) &&
     validCadence
   );
@@ -572,7 +573,7 @@ export class NativeAdapter implements IDebugAdapter {
   }
 
   async getOPI(offset: number): Promise<number> {
-    const bytes = await this.peek(0x1000 + offset, 1);
+    const bytes = await this.peek(MEMORY_MAP.opi.baseAddress + offset, 1);
     return bytes[0] ?? 0;
   }
 

@@ -9,6 +9,8 @@ import { readFileSync } from 'node:fs';
 
 import * as contract from '../../packages/zplc-compiler/src/contract.generated.ts';
 import { getDataTypeSize } from '../../packages/zplc-compiler/src/compiler/ast.ts';
+import { MEMORY_MAP, getForceRegionBounds, getMemoryRegion } from '../../packages/zplc-ide/src/runtime/debugAdapter.ts';
+import { VM_ERRORS, describeVmError } from '../../packages/zplc-ide/src/runtime/nativeTrace.ts';
 
 const golden = JSON.parse(readFileSync(new URL('./golden/contract.golden.json', import.meta.url), 'utf8'));
 const macros: Record<string, number> = golden.c.macros;
@@ -120,5 +122,37 @@ describe('generated TypeScript contract equals the frozen snapshot', () => {
       expect(getDataTypeSize(name as never)).toBe(size);
     }
     expect(getDataTypeSize('STRING')).toBe(contract.STRING_LAYOUT.defaultTotalSize);
+  });
+
+});
+
+describe('IDE runtime tables follow the generated contract', () => {
+  test('memory map bases and sizes', () => {
+    for (const [name, info] of Object.entries(MEMORY_MAP)) {
+      expect(info.baseAddress).toBe(macros[`ZPLC_MEM_${name.toUpperCase()}_BASE`]);
+      expect(info.size).toBe(macros[`ZPLC_MEM_${name.toUpperCase()}_SIZE`]);
+    }
+  });
+
+  test('region lookup and force bounds give what the adapters computed with literals', () => {
+    for (let address = 0; address < 0x10000; address += 0x1D) {
+      // The rule the native and serial adapters wrote out by hand before it came from the contract.
+      const regionStart = address < 0x1000 ? 0 : address < 0x2000 ? 0x1000 : address < 0x4000 ? 0x2000 : 0x4000;
+      const regionEnd = regionStart === 0 ? 0x1000 : regionStart === 0x1000 ? 0x2000 : regionStart === 0x2000 ? 0x4000 : 0x5000;
+      expect(getForceRegionBounds(address)).toEqual({ start: regionStart, end: regionEnd });
+      const region = address < 0x1000 ? 'ipi' : address < 0x2000 ? 'opi' : address < 0x4000 ? 'work' : address < 0x5000 ? 'retain' : 'code';
+      expect(getMemoryRegion(address)).toBe(region);
+    }
+    expect(getMemoryRegion(-1)).toBeNull();
+    expect(getMemoryRegion(0x10000)).toBeNull();
+  });
+
+  test('the Console names every VM error of the contract in plain words', () => {
+    expect(VM_ERRORS.map((entry) => entry.name)).toEqual(contract.VM_ERRORS.map((entry) => entry.name));
+    for (const entry of VM_ERRORS) {
+      expect(describeVmError(entry.code)).toBe(`${entry.code} ${entry.label}`);
+      expect(entry.label).toMatch(/^[a-z]+( [a-z]+)*$/);
+    }
+    expect(describeVmError(0x0a)).toBe('10 paused');
   });
 });

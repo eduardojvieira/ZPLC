@@ -1,3 +1,4 @@
+import { ZPLC_CONTRACT } from '@zplc/compiler';
 import { MEMORY_MAP, type IDebugAdapter, type RuntimeSnapshot, type VMState } from './debugAdapter';
 import type { DebugMap, DebugVarInfo } from '../compiler';
 
@@ -259,23 +260,31 @@ export function appendNativeTrace(
 
 export interface VmErrorCode { name: string; code: number; label: string }
 
+/** The words the Console trace shows next to the number of each VM error, by the C name of the code. */
+const VM_ERROR_LABELS: Readonly<Record<string, string>> = {
+  ZPLC_VM_OK: 'ok',
+  ZPLC_VM_STACK_OVERFLOW: 'stack overflow',
+  ZPLC_VM_STACK_UNDERFLOW: 'stack underflow',
+  ZPLC_VM_DIV_BY_ZERO: 'division by zero',
+  ZPLC_VM_INVALID_OPCODE: 'invalid opcode',
+  ZPLC_VM_OUT_OF_BOUNDS: 'memory access out of bounds',
+  ZPLC_VM_CALL_OVERFLOW: 'call stack overflow',
+  ZPLC_VM_INVALID_JUMP: 'invalid jump',
+  ZPLC_VM_WATCHDOG: 'watchdog timeout',
+  ZPLC_VM_HALTED: 'halted',
+  ZPLC_VM_PAUSED: 'paused',
+};
+
 /**
- * zplc_vm_error_t of firmware/lib/zplc_core/include/zplc_isa.h with the words the Console trace shows next to the number.
- * A test reads the header and fails when a name or a number here differs from it.
+ * zplc_vm_error_t of firmware/lib/zplc_core/include/zplc_isa.h, from the generated contract
+ * (tools/contract/contract.json), with the words the Console trace shows next to the number.
+ * A code the contract gains and this table has no words for is shown under its own name.
  */
-export const VM_ERRORS: readonly VmErrorCode[] = [
-  { name: 'ZPLC_VM_OK', code: 0x00, label: 'ok' },
-  { name: 'ZPLC_VM_STACK_OVERFLOW', code: 0x01, label: 'stack overflow' },
-  { name: 'ZPLC_VM_STACK_UNDERFLOW', code: 0x02, label: 'stack underflow' },
-  { name: 'ZPLC_VM_DIV_BY_ZERO', code: 0x03, label: 'division by zero' },
-  { name: 'ZPLC_VM_INVALID_OPCODE', code: 0x04, label: 'invalid opcode' },
-  { name: 'ZPLC_VM_OUT_OF_BOUNDS', code: 0x05, label: 'memory access out of bounds' },
-  { name: 'ZPLC_VM_CALL_OVERFLOW', code: 0x06, label: 'call stack overflow' },
-  { name: 'ZPLC_VM_INVALID_JUMP', code: 0x07, label: 'invalid jump' },
-  { name: 'ZPLC_VM_WATCHDOG', code: 0x08, label: 'watchdog timeout' },
-  { name: 'ZPLC_VM_HALTED', code: 0x09, label: 'halted' },
-  { name: 'ZPLC_VM_PAUSED', code: 0x0a, label: 'paused' },
-];
+export const VM_ERRORS: readonly VmErrorCode[] = ZPLC_CONTRACT.VM_ERRORS.map((entry) => ({
+  name: entry.name,
+  code: entry.code,
+  label: VM_ERROR_LABELS[entry.name] ?? entry.name.replace(/^ZPLC_VM_/, '').toLowerCase().replace(/_/g, ' '),
+}));
 
 /** What the trace table shows in its Error column: "10 paused" for a known code, the bare number for an unknown one, a dash for none. */
 export function describeVmError(code: number | null): string {
