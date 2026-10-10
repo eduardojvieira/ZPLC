@@ -41,7 +41,7 @@ for the repository-level checklist.
 The opcodes, the container layout, the sizes, the error codes and the
 identifiers of the `.zplc` format are defined once, in
 `tools/contract/contract.json`. The C headers, the TypeScript tables, the Python
-tools and the [reference tables](/reference/runtime-api) are generated from it,
+tools and the [reference tables](../reference/runtime-api.md) are generated from it,
 and CI fails when a generated file is stale.
 
 ### Draft contract counter

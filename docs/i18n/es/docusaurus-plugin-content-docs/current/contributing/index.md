@@ -41,7 +41,7 @@ equipamiento sin autorización explícita. Consultá
 Los opcodes, el layout del contenedor, los tamaños, los códigos de error y los
 identificadores del formato `.zplc` se definen una sola vez, en
 `tools/contract/contract.json`. Las cabeceras C, las tablas TypeScript, las
-herramientas Python y las [tablas de referencia](/reference/runtime-api) se
+herramientas Python y las [tablas de referencia](../reference/runtime-api.md) se
 generan de ese archivo, y CI falla cuando un archivo generado quedó viejo.
 
 ### Contador de borrador del contrato

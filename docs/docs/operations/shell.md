@@ -149,5 +149,5 @@ ZPLC can synchronize the clock over SNTP.
 
 These commands are available when the firmware is built with `CONFIG_ZPLC_SCHEDULER`.
 
-- `zplc sys info` - Shows the system information, including build and hardware details. `--json` also reports the `draft_counter` of the image; a program built for another draft is refused (see [Contributing](/contributing#draft-contract-counter)).
+- `zplc sys info` - Shows the system information, including build and hardware details. `--json` also reports the `draft_counter` of the image; a program built for another draft is refused (see [Contributing](../contributing/index.md#draft-contract-counter)).
 - `zplc sys reboot` - Reboots the board with a software reset.
