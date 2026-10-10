@@ -4,6 +4,11 @@ All notable changes are documented here.
 
 ## Unreleased
 
+- The FBD canvas refuses a wire between pins whose types do not match and says why
+  (LNG-013): a `BOOL` output into a numeric input, a `REAL` into a `BOOL` or integer
+  input, a number into a `TIME` input, and a second wire into an input. The table of
+  rules (`models/pinTypes.ts`) is the one the compiler applies to an assignment, and a
+  test compiles every pair of elementary types and fails when the two disagree.
 - Opening a Ladder, FBD or SFC file and saving it without a change leaves it byte for byte
   as it was (LNG-014): a commit of an editor that says what the file already said no longer
   rewrites it, and the one form that Studio writes (`serializeLDModel`, `serializeFBDModel`,

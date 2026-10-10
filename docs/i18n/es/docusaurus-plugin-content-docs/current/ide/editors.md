@@ -45,6 +45,18 @@ La primera edición real escribe el archivo completo en la única forma que usa 
 de línea al final (un número escrito `2.0` se escribe `2`; un rung escrito como lista de elementos se escribe como
 cuadrícula).
 
+## Tipos de pin en FBD
+
+El lienzo FBD rechaza un cable entre pines cuyos tipos no coinciden y explica el motivo en un mensaje sobre el lienzo
+(LNG-013). Las reglas son las que aplica el compilador a una asignación: los enteros, las cadenas de bits y `REAL` son
+una sola familia de números (un entero entra en un `REAL`, un `REAL` en un `LREAL`, nunca al revés), y `BOOL`,
+`TIME`, `DATE`, `TOD`, `DT` y las cadenas aceptan solo su propio tipo. Un bloque de variable tiene el tipo con que se
+declaró su variable y una constante el tipo con que está escrita (`T#2s` es un `TIME`, `0.5` un `REAL`); un pin
+declarado `ANY` no se juzga. Por eso una salida `BOOL` no puede alimentar una entrada numérica, un `REAL` no puede
+alimentar una entrada `BOOL` ni entera, y un número no puede alimentar una entrada `TIME`; conviértalo antes de forma
+explícita con una función de conversión como `REAL_TO_INT`. Una entrada tiene una sola fuente: un segundo cable hacia
+ella también se rechaza. Un cable puede iniciarse en cualquiera de sus dos extremos.
+
 ## Ruta de compilación
 
 Los modelos visuales se validan y se transpilan antes de la compilación

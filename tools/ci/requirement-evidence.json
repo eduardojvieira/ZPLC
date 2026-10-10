@@ -816,6 +816,12 @@
     {"kind":"unit","ref":"packages/zplc-ide/src/models/visualFileLoad.schema.test.ts","test":"LNG-011 the parts of a Ladder file have the shape the editor reads"},
     {"kind":"unit","ref":"packages/zplc-ide/src/models/visualFileLoad.schema.test.ts","test":"LNG-011 the parts of an SFC chart have the shape the editor reads"}
   ],
+  "LNG-013": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/editors/fbd/graphModel.test.ts","test":"LNG-013 drawing a wire between two pins"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/models/pinTypes.test.ts","test":"LNG-013 a pin takes what the compiler would take"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/models/pinTypes.test.ts","test":"LNG-013 judging a wire of the diagram"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/models/pinTypes.test.ts","test":"LNG-013 the reason a pin gives"}
+  ],
   "LNG-014": [
     {"kind":"unit","ref":"packages/zplc-ide/src/models/visualFileRoundTrip.test.ts","test":"LNG-014 the committed visual files"},
     {"kind":"unit","ref":"packages/zplc-ide/src/models/visualFileRoundTrip.test.ts","test":"LNG-014 the one form of a visual file"},

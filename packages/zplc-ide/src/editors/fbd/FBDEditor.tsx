@@ -15,7 +15,6 @@ import {
   Background,
   Controls,
   MiniMap,
-  addEdge,
   applyEdgeChanges,
   applyNodeChanges,
   useReactFlow,
@@ -27,11 +26,14 @@ import {
   type EdgeTypes,
   BackgroundVariant,
   ConnectionMode,
+  Panel,
+  type Connection,
+  type OnConnectEnd,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 
 import { type FBDModel, type FBDBlock, type FBDConnection, getDefaultPorts } from '../../models/fbd';
-import { copyFBDFragment, edgesToConnections, hasCanonicalEdgeChanges, hasCanonicalNodeChanges, nodesToBlocks, pasteFBDFragment, uniqueNodeId, type FBDClipboardFragment } from './graphModel';
+import { connectBlocks, copyFBDFragment, type WireEnds, edgesToConnections, hasCanonicalEdgeChanges, hasCanonicalNodeChanges, nodesToBlocks, pasteFBDFragment, uniqueNodeId, type FBDClipboardFragment } from './graphModel';
 import { nodeTypes, getNodeType } from './nodes';
 import { edgeTypes } from './edges';
 import FBDToolbox from './FBDToolbox';
@@ -222,17 +224,41 @@ function FBDEditorInner({
     replaceEdges(nextEdges);
   }, [debugActive, liveValues]);
 
+  // A wire between pins of types that do not match is refused, and the reason is shown (LNG-013)
+  const [refusal, setRefusal] = useState<string | null>(null);
+  const modelRef = useRef(model);
+  useEffect(() => {
+    modelRef.current = model;
+  }, [model]);
+  const drawWire = useCallback(
+    (params: WireEnds) =>
+      connectBlocks(modelRef.current, nodesRef.current, edgesRef.current, params, projectBlocks),
+    [projectBlocks]
+  );
+
   // Handle new connections
   const onConnect: OnConnect = useCallback(
     (params) => {
       if (readOnly) return;
-      commitGraph(nodesRef.current, addEdge({
-        ...params,
-        type: 'smoothstep',
-        style: { stroke: 'var(--visual-wire)', strokeWidth: 2 },
-      }, edgesRef.current));
+      const wire = drawWire(params);
+      setRefusal(wire.refusal ?? null);
+      if (wire.refusal === undefined) commitGraph(nodesRef.current, wire.edges);
     },
-    [commitGraph, readOnly]
+    [commitGraph, drawWire, readOnly]
+  );
+
+  // The canvas does not call onConnect for a wire that isValidConnection refuses: the reason is read when the drag ends
+  const isValidConnection = useCallback(
+    (wire: Edge | Connection) => drawWire(wire).refusal === undefined,
+    [drawWire]
+  );
+  const onConnectEnd: OnConnectEnd = useCallback(
+    (_event, state) => {
+      if (state.isValid !== false || !state.fromNode || !state.toNode || !state.fromHandle?.id || !state.toHandle?.id) return;
+      const wire = drawWire({ source: state.fromNode.id, sourceHandle: state.fromHandle.id, target: state.toNode.id, targetHandle: state.toHandle.id });
+      if (wire.refusal !== undefined) setRefusal(wire.refusal);
+    },
+    [drawWire]
   );
 
   // Notify parent of changes
@@ -358,6 +384,8 @@ function FBDEditorInner({
         onNodesChange={handleNodesChange}
         onEdgesChange={handleEdgesChange}
         onConnect={onConnect}
+        onConnectEnd={onConnectEnd}
+        isValidConnection={isValidConnection}
         nodesDraggable={!readOnly}
         nodesConnectable={!readOnly}
         elementsSelectable={!readOnly}
@@ -380,6 +408,18 @@ function FBDEditorInner({
           size={1}
           color="var(--color-surface-500)"
         />
+        {refusal && (
+          <Panel position="top-center">
+            <div
+              role="alert"
+              data-wire-refused
+              className="max-w-xl rounded border border-[var(--color-accent-red)] bg-[var(--color-surface-800)] px-3 py-2 text-xs text-[var(--color-surface-100)] shadow"
+            >
+              <span className="font-semibold">Wire refused. </span>{refusal}
+              <button type="button" className="ml-2 underline" onClick={() => setRefusal(null)}>Dismiss</button>
+            </div>
+          </Panel>
+        )}
         <Controls
           className="!bg-[var(--color-surface-800)] !border-[var(--color-surface-600)] !rounded-lg"
           showZoom
