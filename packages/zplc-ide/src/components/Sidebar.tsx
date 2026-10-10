@@ -66,6 +66,7 @@ function NewFileModal({
     if (!isCreating) onClose();
   };
 
+  // Catches its own errors; the button and the Enter key start it with `void`.
   const handleCreate = async () => {
     if (!fileName.trim() || isCreating) return;
     setIsCreating(true);
@@ -144,7 +145,7 @@ function NewFileModal({
             Cancel
           </button>
           <button
-            onClick={handleCreate}
+            onClick={() => { void handleCreate(); }}
             disabled={!fileName.trim() || isCreating}
             className="px-4 py-2 text-sm rounded bg-[var(--color-accent-blue)] hover:bg-[var(--color-accent-blue)]/80 text-white disabled:opacity-50 disabled:cursor-not-allowed"
           >
@@ -522,6 +523,7 @@ export function Sidebar() {
     }
   };
 
+  // deleteFile reports a failure as `false`, so the confirm button only starts this with `void`.
   const handleDelete = async (fileId: string, expectedProjectSession: number) => {
     if (isDeletingFile) return;
     setIsDeletingFile(true);
@@ -537,8 +539,9 @@ export function Sidebar() {
     else setDeleteError('Could not delete this file. It is still in the project. Try again.');
   };
 
+  // openFile and refreshFileTree report their own failure in the console; the click only starts them.
   const handleFileClick = (fileId: string) => {
-    openFile(fileId);
+    void openFile(fileId);
   };
 
   const handleTreeKeyDown = (event: React.KeyboardEvent<HTMLDivElement>, node: FileTreeNode) => {
@@ -616,7 +619,7 @@ export function Sidebar() {
             <Plus size={14} />
           </button>
           <button
-            onClick={() => refreshFileTree()}
+            onClick={() => { void refreshFileTree(); }}
             className="p-1 rounded hover:bg-[var(--color-surface-700)] text-[var(--color-surface-300)]"
             title="Refresh"
             aria-label="Refresh"
@@ -733,7 +736,7 @@ export function Sidebar() {
           fileName={deleteConfirm.fileName}
           isDeleting={isDeletingFile}
           error={deleteError}
-          onConfirm={() => handleDelete(deleteConfirm.fileId, deleteConfirm.projectSession)}
+          onConfirm={() => { void handleDelete(deleteConfirm.fileId, deleteConfirm.projectSession); }}
           onCancel={() => { if (!isDeletingFile) setDeleteConfirm(null); }}
         />
       )}

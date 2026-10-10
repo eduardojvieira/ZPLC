@@ -25,6 +25,27 @@ describe('ci.yml expected-failure check (VF-027)', () => {
   });
 });
 
+describe('ci.yml type-check (VF-010, VF-011)', () => {
+  const steps = workflow.jobs.typescript!.steps;
+  const indexOf = (text: string) => steps.findIndex((step) => step.run?.includes(text));
+  const manifest = JSON.parse(readFileSync(new URL('../../package.json', import.meta.url), 'utf8')) as { scripts: Record<string, string> };
+
+  it('runs the type-check of every TypeScript program once the compiler is built and before the IDE build', () => {
+    const typecheck = steps.findIndex((step) => step.run?.trim() === 'bun run typecheck');
+    expect(typecheck).toBeGreaterThan(-1);
+    expect(typecheck).toBeGreaterThan(indexOf('bun run build:compiler'));
+    expect(typecheck).toBeLessThan(indexOf('bun run build:ide'));
+    expect(manifest.scripts.typecheck).toBe('bun tools/ci/typecheck.ts');
+    expect(steps[typecheck]!.if).toBeUndefined();
+  });
+
+  it('lints the IDE in the job that builds it, through the package lint script', () => {
+    const lint = steps.find((step) => step.run?.includes('bun run lint:ide'));
+    expect(lint?.run).toContain('bun run build:ide');
+    expect(manifest.scripts['lint:ide']).toBe('bun run --cwd=packages/zplc-ide lint');
+  });
+});
+
 describe('ci.yml cross-build artifacts', () => {
   const job = workflow.jobs['zephyr-cross-build']!;
   const boards = job.strategy!.matrix.include;

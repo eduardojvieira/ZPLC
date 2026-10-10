@@ -961,7 +961,7 @@ describe('NativeAdapter', () => {
   });
 
   it('sends a strict logical timestamp for scenario steps', async () => {
-    const adapter = new NativeAdapter({ startSession, stopSession, request: requestMock });
+    const adapter = new NativeAdapter({ startSession, stopSession, request });
     await adapter.connect();
 
     await adapter.scenarioStep(20);

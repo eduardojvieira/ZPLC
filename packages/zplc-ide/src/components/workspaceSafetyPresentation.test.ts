@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'bun:test';
 import { presentWorkspaceSafetyCheck } from './workspaceSafetyPresentation';
 
-const pair = { outputs: ['Motor.Forward', 'Motor.Reverse'] };
+const pair = { outputs: ['Motor.Forward', 'Motor.Reverse'] as [string, string] };
 const evidence = { schemaVersion: 1, operation: 'safety-check', outcome: 'passed', diagnostics: [], artifacts: [] };
 
 describe('presentWorkspaceSafetyCheck', () => {

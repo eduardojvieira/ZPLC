@@ -72,8 +72,8 @@ jobs:
           actual=$(cd "${RUNNER_TEMP}" && ./zplc-cli --version)
           test "${actual}" = "zplc-cli ${expected}"
 
-      - name: Typecheck HIL package
-        run: bun run typecheck:hil
+      - name: Typecheck every TypeScript program
+        run: bun run typecheck
 
       - name: Build native POSIX simulator for IDE scenarios
         run: |

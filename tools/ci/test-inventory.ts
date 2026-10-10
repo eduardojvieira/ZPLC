@@ -14,7 +14,7 @@ export interface Inventory {
   runs: Array<{ pattern: string; job: string; command: string }>;
   notRunInCi: Array<{ pattern: string; requirement: string; reason: string }>;
 }
-export interface Workflow { jobs: Record<string, { steps: Array<{ run?: string }> }> }
+export interface Workflow { jobs: Record<string, { steps: Array<{ name?: string; uses?: string; run?: string }> }> }
 
 export const TEST_FILE = /\.test\.(ts|tsx|mjs)$|(^|\/)test_[^/]*\.py$|_test\.py$|^firmware\/(.*\/)?tests\/.*\.c$/;
 const ROOT = new URL('../../', import.meta.url);

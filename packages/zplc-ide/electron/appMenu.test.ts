@@ -36,7 +36,7 @@ describe('application menu', () => {
   });
 
   it('keeps the clipboard and undo accelerators the editor needs', () => {
-    const roles = flatten(buildApplicationMenu({ platform: 'darwin', isPackaged: true, appName: 'ZPLC IDE', requestReload: noop })).map((item) => item.role);
+    const roles: Array<string | undefined> = flatten(buildApplicationMenu({ platform: 'darwin', isPackaged: true, appName: 'ZPLC IDE', requestReload: noop })).map((item) => item.role);
     for (const role of ['undo', 'redo', 'cut', 'copy', 'paste', 'selectAll', 'quit']) expect(roles).toContain(role);
   });
 

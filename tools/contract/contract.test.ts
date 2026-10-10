@@ -20,7 +20,7 @@ const stripped = (entries: Record<string, number>, prefix: string) =>
 
 describe('generated TypeScript contract equals the frozen snapshot', () => {
   test('opcode numbers', () => {
-    expect({ ...contract.Opcode }).toEqual(stripped(cEnum('zplc_opcode_t'), 'OP_'));
+    expect<unknown>({ ...contract.Opcode }).toEqual(stripped(cEnum('zplc_opcode_t'), 'OP_'));
     expect(contract.OPCODE_TABLE.map((entry) => entry.name)).toEqual(Object.keys(contract.Opcode));
     expect(contract.OPCODE_TABLE.map((entry) => entry.code)).toEqual(Object.values(contract.Opcode));
   });
@@ -42,17 +42,17 @@ describe('generated TypeScript contract equals the frozen snapshot', () => {
   });
 
   test('container constants and layouts', () => {
-    expect(contract.CONTAINER.magic).toBe(macros.ZPLC_MAGIC);
-    expect(contract.ABI_VERSION).toEqual({ major: macros.ZPLC_VERSION_MAJOR, minor: macros.ZPLC_VERSION_MINOR });
-    expect(contract.DRAFT_COUNTER).toBe(macros.ZPLC_DRAFT_COUNTER);
+    expect<unknown>(contract.CONTAINER.magic).toBe(macros.ZPLC_MAGIC);
+    expect<unknown>(contract.ABI_VERSION).toEqual({ major: macros.ZPLC_VERSION_MAJOR, minor: macros.ZPLC_VERSION_MINOR });
+    expect<unknown>(contract.DRAFT_COUNTER).toBe(macros.ZPLC_DRAFT_COUNTER);
     expect(contract.DRAFT_COUNTER).toBe(golden.compiler.constants.DRAFT_COUNTER);
     expect(contract.CONTAINER_LAYOUT.header.draft_counter).toEqual({ offset: golden.compiler.constants.DRAFT_COUNTER_OFFSET, size: 4 });
-    expect(contract.CONTAINER.headerSize).toBe(macros.ZPLC_FILE_HEADER_SIZE);
-    expect(contract.CONTAINER.segmentEntrySize).toBe(macros.ZPLC_SEGMENT_ENTRY_SIZE);
-    expect(contract.CONTAINER.taskDefSize).toBe(macros.ZPLC_TASK_DEF_SIZE);
-    expect(contract.CONTAINER.iomapEntrySize).toBe(macros.ZPLC_IOMAP_ENTRY_SIZE);
-    expect(contract.CONTAINER.tagEntrySize).toBe(macros.ZPLC_TAG_ENTRY_SIZE);
-    expect(contract.CONTAINER.maxTasks).toBe(macros.ZPLC_LOADER_MAX_TASKS);
+    expect<unknown>(contract.CONTAINER.headerSize).toBe(macros.ZPLC_FILE_HEADER_SIZE);
+    expect<unknown>(contract.CONTAINER.segmentEntrySize).toBe(macros.ZPLC_SEGMENT_ENTRY_SIZE);
+    expect<unknown>(contract.CONTAINER.taskDefSize).toBe(macros.ZPLC_TASK_DEF_SIZE);
+    expect<unknown>(contract.CONTAINER.iomapEntrySize).toBe(macros.ZPLC_IOMAP_ENTRY_SIZE);
+    expect<unknown>(contract.CONTAINER.tagEntrySize).toBe(macros.ZPLC_TAG_ENTRY_SIZE);
+    expect<unknown>(contract.CONTAINER.maxTasks).toBe(macros.ZPLC_LOADER_MAX_TASKS);
     const byTypedef: Record<string, keyof typeof contract.CONTAINER_LAYOUT> = {
       zplc_file_header_t: 'header', zplc_segment_entry_t: 'segment', zplc_task_def_t: 'task',
       zplc_iomap_entry_t: 'iomap', zplc_tag_entry_t: 'tag',
@@ -64,51 +64,51 @@ describe('generated TypeScript contract equals the frozen snapshot', () => {
   });
 
   test('segment, task, tag, io and flag identifiers', () => {
-    expect({ ...contract.SEGMENT_TYPE }).toEqual(stripped(cEnum('zplc_segment_type_t'), 'ZPLC_SEG_'));
-    expect({ ...contract.TASK_TYPE_ID }).toEqual(stripped(cEnum('zplc_task_type_t'), 'ZPLC_TASK_'));
-    expect({ ...contract.IO_DIRECTION }).toEqual(stripped(cEnum('zplc_io_direction_t'), 'ZPLC_IO_'));
-    expect({ ...contract.TAG_ID }).toEqual(stripped(cEnum('zplc_tag_id_t'), 'ZPLC_TAG_'));
-    expect({ ...contract.FILE_FLAG }).toEqual(stripped(cEnum('zplc_file_flags_t'), 'ZPLC_FLAG_'));
+    expect<unknown>({ ...contract.SEGMENT_TYPE }).toEqual(stripped(cEnum('zplc_segment_type_t'), 'ZPLC_SEG_'));
+    expect<unknown>({ ...contract.TASK_TYPE_ID }).toEqual(stripped(cEnum('zplc_task_type_t'), 'ZPLC_TASK_'));
+    expect<unknown>({ ...contract.IO_DIRECTION }).toEqual(stripped(cEnum('zplc_io_direction_t'), 'ZPLC_IO_'));
+    expect<unknown>({ ...contract.TAG_ID }).toEqual(stripped(cEnum('zplc_tag_id_t'), 'ZPLC_TAG_'));
+    expect<unknown>({ ...contract.FILE_FLAG }).toEqual(stripped(cEnum('zplc_file_flags_t'), 'ZPLC_FLAG_'));
   });
 
   test('memory regions, limits and system registers', () => {
     for (const [name, region] of Object.entries(contract.MEMORY_REGION)) {
-      expect(region.base).toBe(macros[`ZPLC_MEM_${name}_BASE`]);
-      expect(region.size).toBe(macros[`ZPLC_MEM_${name}_SIZE`]);
+      expect<unknown>(region.base).toBe(macros[`ZPLC_MEM_${name}_BASE`]);
+      expect<unknown>(region.size).toBe(macros[`ZPLC_MEM_${name}_SIZE`]);
     }
-    expect(contract.MEMORY_LIMIT).toEqual({
+    expect<unknown>(contract.MEMORY_LIMIT).toEqual({
       maxTags: macros.ZPLC_MAX_TAGS, stackMaxDepth: macros.ZPLC_STACK_MAX_DEPTH,
       callStackMax: macros.ZPLC_CALL_STACK_MAX, maxBreakpoints: macros.ZPLC_MAX_BREAKPOINTS,
     });
-    expect(contract.SYSTEM_REGISTER.CYCLE_TIME.address).toBe(macros.ZPLC_SYS_CYCLE_TIME);
-    expect(contract.SYSTEM_REGISTER.UPTIME.address).toBe(macros.ZPLC_SYS_UPTIME);
-    expect(contract.SYSTEM_REGISTER.TASK_ID.address).toBe(macros.ZPLC_SYS_TASK_ID);
-    expect(contract.SYSTEM_REGISTER.FLAGS.address).toBe(macros.ZPLC_SYS_FLAGS);
-    expect(contract.SYSTEM_FLAG.FIRST_SCAN).toBe(macros.ZPLC_SYS_FLAG_FIRST_SCAN);
-    expect(contract.SYSTEM_FLAG.RUNNING).toBe(macros.ZPLC_SYS_FLAG_RUNNING);
+    expect<unknown>(contract.SYSTEM_REGISTER.CYCLE_TIME.address).toBe(macros.ZPLC_SYS_CYCLE_TIME);
+    expect<unknown>(contract.SYSTEM_REGISTER.UPTIME.address).toBe(macros.ZPLC_SYS_UPTIME);
+    expect<unknown>(contract.SYSTEM_REGISTER.TASK_ID.address).toBe(macros.ZPLC_SYS_TASK_ID);
+    expect<unknown>(contract.SYSTEM_REGISTER.FLAGS.address).toBe(macros.ZPLC_SYS_FLAGS);
+    expect<unknown>(contract.SYSTEM_FLAG.FIRST_SCAN).toBe(macros.ZPLC_SYS_FLAG_FIRST_SCAN);
+    expect<unknown>(contract.SYSTEM_FLAG.RUNNING).toBe(macros.ZPLC_SYS_FLAG_RUNNING);
   });
 
   test('data type identifiers are the ones the compiler writes into tags and the I/O map', () => {
-    expect({ ...contract.DATA_TYPE_ID }).toEqual(stripped(cEnum('zplc_data_type_t'), 'ZPLC_TYPE_'));
+    expect<unknown>({ ...contract.DATA_TYPE_ID }).toEqual(stripped(cEnum('zplc_data_type_t'), 'ZPLC_TYPE_'));
     for (const [name, id] of Object.entries(golden.compiler.typeIds)) {
       expect((contract.DATA_TYPE_ID as Record<string, number>)[name]).toBe(id as number);
     }
-    expect(contract.STRING_LAYOUT.dataOffset).toBe(macros.ZPLC_STRING_DATA_OFFSET);
-    expect(contract.STRING_LAYOUT.defaultSize).toBe(macros.ZPLC_STRING_DEFAULT_SIZE);
+    expect<unknown>(contract.STRING_LAYOUT.dataOffset).toBe(macros.ZPLC_STRING_DATA_OFFSET);
+    expect<unknown>(contract.STRING_LAYOUT.defaultSize).toBe(macros.ZPLC_STRING_DEFAULT_SIZE);
     expect(contract.STRING_LAYOUT.defaultTotalSize).toBe(85);
   });
 
   test('error codes of the VM and of the loader', () => {
-    expect(Object.fromEntries(contract.VM_ERRORS.map((entry) => [entry.name, entry.code]))).toEqual(cEnum('zplc_vm_error_t'));
+    expect<unknown>(Object.fromEntries(contract.VM_ERRORS.map((entry) => [entry.name, entry.code]))).toEqual(cEnum('zplc_vm_error_t'));
     const loader = Object.fromEntries(Object.entries(macros).filter(([name]) => name.startsWith('ZPLC_LOADER_ERR_') || name === 'ZPLC_LOADER_OK'));
-    expect(Object.fromEntries(contract.LOADER_ERRORS.map((entry) => [entry.name, entry.code]))).toEqual(loader);
+    expect<unknown>(Object.fromEntries(contract.LOADER_ERRORS.map((entry) => [entry.name, entry.code]))).toEqual(loader);
   });
 
   test('function-block kinds, sizes and member offsets', () => {
     expect({ ...contract.COMM_FB_KIND }).toEqual(golden.compiler.commKinds);
     const kinds = stripped(cEnum('zplc_comm_fb_kind_t'), 'ZPLC_COMM_FB_');
     delete kinds.KIND_MAX;
-    expect({ ...contract.COMM_KIND }).toEqual(kinds);
+    expect<unknown>({ ...contract.COMM_KIND }).toEqual(kinds);
     expect(contract.COMM_KIND_MAX).toBe(cEnum('zplc_comm_fb_kind_t').ZPLC_COMM_FB_KIND_MAX);
     expect(contract.COMM_BLOCKS.map((block) => block.name).sort()).toEqual(Object.keys(golden.compiler.commBlocks).sort());
     for (const block of contract.COMM_BLOCKS) {

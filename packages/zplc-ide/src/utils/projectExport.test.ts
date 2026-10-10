@@ -73,6 +73,7 @@ function testConfig(): ZPLCProjectConfig {
         clientId: 'controller',
         keepAliveSec: 60,
         cleanSession: true,
+        sessionExpirySec: 0,
         password: 'test-mqtt-secret',
         topicNamespace: 'zplc',
         publishIntervalMs: 1000,

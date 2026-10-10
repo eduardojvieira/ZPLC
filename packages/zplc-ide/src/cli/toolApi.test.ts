@@ -1089,7 +1089,7 @@ describe('testsRun', () => {
         expect(result.preview?.traceEvidenceSha256).toBe(result.evidence.artifacts.find((artifact) => artifact.kind === 'trace')?.sha256);
         const trace = result.evidence.artifacts.find((artifact) => artifact.kind === 'trace');
         expect(result.traceFile).toBeInstanceOf(Uint8Array);
-        expect(artifactEvidence('trace', result.traceFile!)).toEqual(trace);
+        expect(trace).toEqual(artifactEvidence('trace', result.traceFile!));
         expect(Object.getOwnPropertyDescriptor(result, 'traceFile')?.enumerable).toBe(false);
         expect(JSON.stringify(result)).not.toContain('traceFile');
         expect(JSON.stringify(result)).not.toContain(root);
@@ -1132,7 +1132,7 @@ describe('testsRun', () => {
         expect(first).toMatchObject({ ok: true, summary: { backend: 'native-posix', mode: 'logical-cyclic-task-set-scan', scenarios: [{ id: 'MotorStart', path: 'tests/motor.scenario.json', passed: true }] }, evidence: { artifacts: [{ kind: 'zplc' }, { kind: 'trace' }] }, preview: { scenarios: [{ id: 'MotorStart', passed: true }] } });
         const trace = first.evidence.artifacts.find((artifact) => artifact.kind === 'trace');
         expect(first.traceFile).toBeInstanceOf(Uint8Array);
-        expect(artifactEvidence('trace', first.traceFile!)).toEqual(trace);
+        expect(trace).toEqual(artifactEvidence('trace', first.traceFile!));
         expect(Object.getOwnPropertyDescriptor(first, 'traceFile')?.enumerable).toBe(false);
         expect(JSON.stringify(first)).not.toContain('traceFile');
         expect(second).toEqual(first);
@@ -1214,6 +1214,35 @@ END_PROGRAM`);
       await writeFile(join(root, 'src', 'Unused.st'), 'PROGRAM Unused\n(* changed but unused *)\nEND_PROGRAM');
       const unusedChanged = await testsRun(root);
       expect(identityOf(unusedChanged)).toEqual(identityOf(scenarioChanged));
+    } finally {
+      if (oldBinary === undefined) delete process.env.ZPLC_NATIVE_SIM_BIN;
+      else process.env.ZPLC_NATIVE_SIM_BIN = oldBinary;
+      await rm(root, { recursive: true, force: true });
+    }
+  }, 30_000);
+
+  itNative('covers every used source in the saved input identity, not only the last one', async () => {
+    const root = await workspace();
+    const oldBinary = process.env.ZPLC_NATIVE_SIM_BIN;
+    const identityOf = (result: Awaited<ReturnType<typeof testsRun>>) => (result as { savedTestInputIdentity?: { schemaVersion: number; sha256: string; fileCount: number } }).savedTestInputIdentity;
+    try {
+      process.env.ZPLC_NATIVE_SIM_BIN = nativeRuntimeBinary;
+      await writeFile(join(root, 'src', 'Lamp.st'), 'PROGRAM Lamp VAR_OUTPUT On AT %Q0.1 : BOOL; END_VAR On := TRUE; END_PROGRAM');
+      await writeFile(join(root, 'zplc.json'), JSON.stringify({ schemaVersion: 2, name: 'test', version: '1.0.0', tasks: [{ name: 'Main', trigger: 'cyclic', interval_ms: 10, priority: 1, programs: ['Motor.st'] }, { name: 'Aux', trigger: 'cyclic', interval_ms: 10, priority: 2, programs: ['Lamp.st'] }] }));
+      await writeFile(join(root, 'tests', 'motor.scenario.json'), scenario('MotorStart'));
+
+      const initial = await testsRun(root);
+      expect(initial.ok).toBe(true);
+      // The manifest, both used sources and the scenario are the four saved inputs of this run.
+      expect(identityOf(initial)).toMatchObject({ schemaVersion: 1, fileCount: 4 });
+
+      await writeFile(join(root, 'src', 'Motor.st'), `${await readFile(join(root, 'src', 'Motor.st'), 'utf8')}\n`);
+      const firstSourceChanged = await testsRun(root);
+      expect(identityOf(firstSourceChanged)?.sha256).not.toBe(identityOf(initial)?.sha256);
+
+      await writeFile(join(root, 'src', 'Lamp.st'), `${await readFile(join(root, 'src', 'Lamp.st'), 'utf8')}\n`);
+      const lastSourceChanged = await testsRun(root);
+      expect(identityOf(lastSourceChanged)?.sha256).not.toBe(identityOf(firstSourceChanged)?.sha256);
     } finally {
       if (oldBinary === undefined) delete process.env.ZPLC_NATIVE_SIM_BIN;
       else process.env.ZPLC_NATIVE_SIM_BIN = oldBinary;
@@ -1359,7 +1388,7 @@ END_PROGRAM`);
       const scenario = first.preview?.scenarios[0];
       expect(first.preview?.scenarios).toHaveLength(1);
       expect(scenario).toMatchObject({ id: 'EdgeCounter', truncated: false, totalAssertions: 7 });
-      expect(scenario?.assertions).toHaveLength(scenario?.totalAssertions);
+      expect(scenario?.assertions).toHaveLength(7);
       expect(scenario?.assertions.map((assertion) => assertion.kind)).toEqual(expect.arrayContaining(['AT', 'RISING', 'FALLING']));
       expect(first.evidence.artifacts).toHaveLength(2);
       expect(first.evidence.artifacts).toEqual(expect.arrayContaining([
@@ -1396,7 +1425,7 @@ END_PROGRAM`);
       const scenario = first.preview?.scenarios[0];
       expect(first.preview?.scenarios).toHaveLength(1);
       expect(scenario).toMatchObject({ id: 'ScanSnapshot', truncated: false, totalAssertions: 9 });
-      expect(scenario?.assertions).toHaveLength(scenario?.totalAssertions);
+      expect(scenario?.assertions).toHaveLength(9);
       expect(scenario?.assertions.map((assertion) => assertion.kind)).toEqual(expect.arrayContaining(['AT', 'RISING', 'FALLING', 'NEVER']));
       expect(first.evidence.artifacts).toHaveLength(2);
       expect(first.evidence.artifacts).toEqual(expect.arrayContaining([

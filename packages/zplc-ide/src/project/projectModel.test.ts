@@ -95,7 +95,7 @@ describe('parseAndMigrateProject', () => {
 
   it('migrates equivalent communication tags but rejects conflicting aliases', () => {
     const equivalent = project({ ...legacyProject, communication: { bindings: [{ symbol: 'A' }], tags: [{ symbol: 'A' }] } });
-    expect(equivalent.communication).toEqual({ bindings: [{ symbol: 'A' }] });
+    expect(equivalent.communication).toEqual({ bindings: [{ symbol: 'A' }] } as typeof equivalent.communication);
     const conflict = parseAndMigrateProject({ ...legacyProject, communication: { bindings: [{ symbol: 'A' }], tags: [{ symbol: 'B' }] } });
     expect(conflict).toMatchObject({ ok: false });
     if (!conflict.ok) expect(conflict.diagnostics).toContainEqual(expect.objectContaining({ path: 'communication.tags' }));

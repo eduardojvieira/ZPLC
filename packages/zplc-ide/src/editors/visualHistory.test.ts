@@ -20,7 +20,7 @@ describe('visual snapshot history', () => {
     const undo = undoVisualSnapshot(histories, key, 'C');
     histories = recordVisualSnapshot(undo.histories, key, 'B', 'D').histories;
     expect(redoVisualSnapshot(histories, key, 'D').content).toBeUndefined();
-    expect(recordVisualSnapshot(histories, key, 'D', 'D').history).toBe(histories.get(key));
+    expect(recordVisualSnapshot(histories, key, 'D', 'D').history).toBe(histories.get(key)!);
 
     let content = '0';
     histories = new Map();

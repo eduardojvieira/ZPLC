@@ -151,6 +151,7 @@ export function DebugWatchPanel({ setValue, toggleForceValue, clearAllForcedValu
     return parsed;
   };
 
+  // Catches its own errors and shows them as the force-change error; the input starts it with `void`.
   const handleSetKeyDown = async (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (!editing || forcesUnconfirmed) return;
 
@@ -424,7 +425,7 @@ export function DebugWatchPanel({ setValue, toggleForceValue, clearAllForcedValu
                         onChange={(e) =>
                           setEditing((prev) => prev ? { ...prev, draft: e.target.value } : null)
                         }
-                        onKeyDown={handleSetKeyDown}
+                        onKeyDown={(event) => { void handleSetKeyDown(event); }}
                         onBlur={() => setEditing(null)}
                         className="w-full bg-[var(--color-surface-900)] border border-amber-500
                                    rounded px-1 py-0 text-xs text-amber-300

@@ -2,6 +2,9 @@ import { test, expect, describe } from 'bun:test';
 import { CommBlocks } from './communication';
 import { DataType } from '../ast';
 
+// The context below emits no expression, so the argument only has to be a well-formed node.
+const ENABLE = { name: 'EN', value: { kind: 'Identifier' as const, name: 'node_expr', line: 1, column: 1 } };
+
 describe('Communication FBs (Phase 1 & 2)', () => {
 
   test('MB_READ_HREG has correct size and basics', () => {
@@ -61,7 +64,7 @@ describe('Communication FBs (Phase 1 & 2)', () => {
       emitExpression: () => {}
     };
 
-    fb.generateCall(0x1000, [{name: 'EN', value: 'node_expr'}], ctx);
+    fb.generateCall(0x1000, [ENABLE], ctx);
 
     // Should push base address 0x1000
     expect(emitted).toContain('PUSH16 4096');
@@ -80,7 +83,7 @@ describe('Communication FBs (Phase 1 & 2)', () => {
       emitExpression: () => {}
     };
 
-    fb.generateCall(0x1000, [{name: 'EN', value: 'node_expr'}], ctx);
+    fb.generateCall(0x1000, [ENABLE], ctx);
 
     expect(emitted).toContain('PUSH16 4096');
     expect(emitted).toContain('COMM_EXEC 0x000b');

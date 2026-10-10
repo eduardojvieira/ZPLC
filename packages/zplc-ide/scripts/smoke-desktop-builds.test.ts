@@ -121,7 +121,7 @@ test('fails when the packaged Tool API is missing', () => {
   });
 
   expect(result.exitCode).not.toBe(0);
-  expect(result.stderr.toString()).toContain('electron-dist/toolApi.js');
+  expect(result.stderr?.toString()).toContain('electron-dist/toolApi.js');
 });
 
 test('discovers macOS and unpacked resources without assuming a product directory name', () => {

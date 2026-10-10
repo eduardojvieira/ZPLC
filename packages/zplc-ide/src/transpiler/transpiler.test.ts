@@ -932,7 +932,6 @@ describe('LD to ST Transpiler', () => {
         {
           id: 'rung1',
           number: 1,
-          cells: [],
           elements: [
             {
               id: 'mb_ld_1',

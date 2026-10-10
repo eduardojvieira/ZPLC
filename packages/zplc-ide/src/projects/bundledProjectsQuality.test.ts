@@ -301,7 +301,7 @@ describe('edge_counter counts edges with CTU alone', () => {
       if (!built.ok || !built.debugMap) throw new Error(JSON.stringify(built.evidence.diagnostics));
       const session = await createNativeScenarioSession(process.env);
       try {
-        const result = await runScenario(compileScenario(HELD_PULSE, built.debugMap), built.zplcFile, session.runtime);
+        const result = await runScenario(compileScenario(HELD_PULSE, built.debugMap), built.zplcFile!, session.runtime);
         expect(result.assertions.map((assertion) => assertion.passed)).toEqual([true, true, true, true]);
       } finally {
         await session.close();
@@ -349,7 +349,7 @@ describe('motor_plant supervises the start', () => {
         if (!built.ok || !built.debugMap) throw new Error(JSON.stringify(built.evidence.diagnostics));
         const session = await createNativeScenarioSession(process.env);
         try {
-          const result = await runScenario(compileScenario(scenario, built.debugMap), built.zplcFile, session.runtime);
+          const result = await runScenario(compileScenario(scenario, built.debugMap), built.zplcFile!, session.runtime);
           expect(result.assertions.every((assertion) => assertion.passed)).toBe(true);
         } finally {
           await session.close();

@@ -132,7 +132,8 @@ describe('ConnectionManager lifecycle', () => {
 
   it('loads the exact admitted artifact once and reports an unknown result after a session change', async () => {
     const gate = deferred<void>();
-    let loaded: Uint8Array | null = null;
+    // Assigned inside the adapter callback, which the type narrowing cannot see.
+    let loaded = null as Uint8Array | null;
     const adapter = createAdapter({ connected: true, loadProgram: async (bytes: Uint8Array) => { loaded = bytes; await gate.promise; } });
     const manager = readyManager(adapter);
     const bytes = validArtifact();
