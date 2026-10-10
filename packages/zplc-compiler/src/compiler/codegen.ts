@@ -3261,9 +3261,16 @@ function foldNumber(state: CodeGenState, expr: Expression, depth = 0): FoldedNum
             const symbol = state.symbols.get(expr.name);
             if (!symbol || symbol.section !== VarSection.CONSTANT || !symbol.initialValue) return undefined;
             const initial = symbol.initialValue as Expression;
-            return initial.kind === 'IntLiteral' || initial.kind === 'RealLiteral' || initial.kind === 'UnaryExpr' || initial.kind === 'BinaryExpr'
-                ? foldNumber(state, initial, depth + 1)
-                : undefined;
+            if (initial.kind !== 'IntLiteral' && initial.kind !== 'RealLiteral' && initial.kind !== 'UnaryExpr' && initial.kind !== 'BinaryExpr') {
+                return undefined;
+            }
+            const value = foldNumber(state, initial, depth + 1);
+            if (value === undefined) return undefined;
+            // the constant has its declared type: a REAL constant is the single-precision value of its literal
+            const declared = numericTypeName(storedType(state, symbol.dataType));
+            if (declared === 'REAL') return { real: Math.fround('int' in value ? Number(value.int) : value.real) };
+            if (declared === 'LREAL') return { real: 'int' in value ? Number(value.int) : value.real };
+            return isIntegerLike(declared) && 'int' in value ? value : undefined;
         }
         default:
             return undefined;

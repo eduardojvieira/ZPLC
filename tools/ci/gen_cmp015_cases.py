@@ -621,6 +621,15 @@ c.outd("c4", "REAL#0.1 + x", f32(0.1))
 c.outd("c5", "LREAL#0.1 * 3", 0.1 * 3)
 c.outd("c6", "1.0 / 3.0", 1.0 / 3.0)
 c.outd("c7", "-0.5 * 4", -2.0)
+# a named constant has its declared type: a REAL constant is the single-precision value of its literal
+c.extra_top = """VAR_GLOBAL CONSTANT
+  PI_REAL : REAL := 3.14159;
+  PI_LREAL : LREAL := 3.14159;
+  SIZE : DINT := 7;
+END_VAR"""
+c.outd("k1", "PI_REAL * 2.0", f32(3.14159) * 2.0)
+c.outd("k2", "PI_LREAL * 2.0", 3.14159 * 2.0)
+c.outd("k3", "SIZE / 2 + 0.5", 3.5)
 
 c = case("lreal-conversion-functions", "The conversion functions between LREAL, REAL and the integers", "DoubleConversions",
          requirement="CMP-057", matrix=("data-types.lreal", "functions.other-conversions"),

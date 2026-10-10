@@ -82,6 +82,36 @@
       "at": "%QD13",
       "type": "UDINT",
       "value": 3221225472
+    },
+    {
+      "at": "%QD14",
+      "type": "UDINT",
+      "value": 0
+    },
+    {
+      "at": "%QD15",
+      "type": "UDINT",
+      "value": 1075388922
+    },
+    {
+      "at": "%QD16",
+      "type": "UDINT",
+      "value": 4028335726
+    },
+    {
+      "at": "%QD17",
+      "type": "UDINT",
+      "value": 1075388921
+    },
+    {
+      "at": "%QD18",
+      "type": "UDINT",
+      "value": 0
+    },
+    {
+      "at": "%QD19",
+      "type": "UDINT",
+      "value": 1074528256
     }
   ]
 }
