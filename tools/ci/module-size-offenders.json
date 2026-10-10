@@ -31,7 +31,7 @@
     "file": "packages/zplc-ide/src/components/Toolbar.tsx",
     "requirement": "IDE-014",
     "added": "2026-10-10",
-    "lines": 1256,
+    "lines": 1204,
     "reason": "Build, run, deploy, export and connection controls and their handlers in one component. Split by control group and move the handlers to hooks."
   },
   {
@@ -80,7 +80,7 @@
     "file": "packages/zplc-ide/src/components/Sidebar.tsx",
     "requirement": "IDE-014",
     "added": "2026-10-10",
-    "lines": 881,
+    "lines": 874,
     "reason": "Project tree, its dialogs, context menu and the migration notice in one component. Split the tree, the dialogs and the notice (IDE-014)."
   },
   {

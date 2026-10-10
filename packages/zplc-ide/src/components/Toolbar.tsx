@@ -44,8 +44,7 @@ import { ZPLC_CONSTANTS } from '@zplc/compiler';
 import { transpileToST } from '../compiler';
 import type { DebugMap } from '../compiler';
 import { GeneratedCodeDialog } from './GeneratedCodeDialog';
-import { collectProjectFilesForExport } from '../utils/projectExport';
-import { redactProjectConfigForExport } from '../project/sensitiveConfig';
+import { ProjectExportItems } from './ProjectExportItems';
 import {
   canRunCurrentProgram,
   HARDWARE_DEPLOY_UNCONFIRMED_MESSAGE,
@@ -241,48 +240,6 @@ export function Toolbar({ debugController }: ToolbarProps) {
 
     await saveFile(activeFileId);
 
-  };
-
-  const handleExportProject = async () => {
-    const snapshot = useIDEStore.getState();
-    const { projectSession, fileTree: tree, projectConfig: config } = snapshot;
-    const files = new Map(snapshot.loadedFiles);
-
-    if (!config || !tree) {
-      addConsoleEntry({ type: 'error', message: 'No project open', source: 'system' });
-      return;
-    }
-
-    try {
-      const fileList = await collectProjectFilesForExport(tree, files);
-      const current = useIDEStore.getState();
-      if (current.projectSession !== projectSession || current.fileTree !== tree || current.projectConfig !== config) {
-        throw new Error('Project changed while preparing the export; no file was downloaded');
-      }
-
-      const { config: redactedConfig, redactedPaths } = redactProjectConfigForExport(config);
-      const exportData = {
-        version: '1.0.0',
-        config: redactedConfig,
-        files: fileList,
-        redactedPaths,
-        exportedAt: new Date().toISOString(),
-      };
-
-      const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json;charset=utf-8' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `${config.name || 'zplc-project'}.zplc.json`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-
-      addConsoleEntry({ type: 'success', message: `Project export download started: ${config.name} (${redactedPaths.length} sensitive fields omitted)`, source: 'system' });
-    } catch (e) {
-      addConsoleEntry({ type: 'error', message: `Failed to export: ${e instanceof Error ? e.message : String(e)}`, source: 'system' });
-    }
   };
 
   // ==========================================================================
@@ -963,16 +920,7 @@ export function Toolbar({ debugController }: ToolbarProps) {
               <span>View Assembly</span>
             </button>
             <div className="h-px bg-[var(--color-surface-600)] my-1" />
-            <button
-              type="button"
-              role="menuitem"
-              onClick={() => { void handleExportProject(); }}
-              className="focus-ring w-full flex items-center gap-2 px-3 py-2 text-sm text-[var(--color-surface-100)] hover:bg-[var(--color-surface-600)] transition-colors"
-              aria-label="Export project"
-            >
-              <Download size={14} />
-              <span>Export Project</span>
-            </button>
+            <ProjectExportItems />
           </div>
         )}
       </div>

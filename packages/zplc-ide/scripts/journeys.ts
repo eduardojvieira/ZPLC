@@ -6,6 +6,7 @@
 import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { readZip } from '../electron/projectArchiveZip';
 import { learnLessonCatalog } from '../src/components/learnLesson';
 import { compilerCompile } from '../src/cli/toolApi';
 import { NATIVE_PROGRAM_MAX_BYTES } from '../electron/security';
@@ -1231,6 +1232,81 @@ export const JOURNEYS: Journey[] = [
       // The settings load when they are opened.
       await app.click(button('Project Settings'), 'the Project Settings button');
       await app.until('the settings', async () => await has(SETTINGS) && await app.visible(css('[data-app-preferences]')) || undefined);
+    },
+  },
+
+  {
+    name: '26 Export a project to one archive and import it back', example: 'motor_start_stop', proves: [], partly: ['IDE-022'],
+    run: async (app, { project, root }) => {
+      const archive = join(root, 'motor.zplc.zip');
+      const folder = join(root, 'imported');
+      mkdirSync(folder);
+      /** Every file under `directory`, relative, with its bytes as base64: two folders are equal when these are. */
+      const tree = (directory: string, prefix = ''): Record<string, string> => Object.fromEntries(readdirSync(directory, { withFileTypes: true }).flatMap((entry) =>
+        entry.isDirectory() ? Object.entries(tree(join(directory, entry.name), `${prefix}${entry.name}/`)) : [[`${prefix}${entry.name}`, readFileSync(join(directory, entry.name)).toString('base64')]]));
+
+      // Export: the save dialog is answered with a path, and one file appears there.
+      await openFolder(app, project);
+      app.answer(archive);
+      await app.click(button('Build options'));
+      await app.click(menuItem('Export Project Archive'));
+      await app.until('the archive on disk', () => existsSync(archive) || undefined);
+      await app.until('the export reported in Output', async () => /Exported motor\.zplc\.zip: \d+ files/.test(await outputText(app)) || undefined);
+      const entries = readZip(new Uint8Array(readFileSync(archive))).filter((entry) => entry.kind === 'file').map((entry) => entry.path);
+      assert(entries.includes('zplc.json') && entries.includes('src/Motor.st'), `The archive does not hold the project files: ${JSON.stringify(entries)}`);
+      assert(!entries.some((path) => path.startsWith('.git/') || path.startsWith('node_modules/')), 'The archive holds files that are not part of the project.');
+
+      // Import from the Welcome screen: choosing the archive writes nothing, the dialog says what is in it.
+      await app.click(tab('Explorer', 'exact'));
+      await app.click(button('Close Project'));
+      await app.until('the Welcome screen', async () => await app.visible(button('Import a project archive', 'contains')) || undefined);
+      app.answer(archive);
+      await app.click(button('Import a project archive', 'contains'), 'the Import a project archive button');
+      await app.until('the import dialog', async () => await app.visible(css('[data-import-archive-dialog]')) || undefined);
+      const summary = await app.eval<string>(`document.querySelector('[data-import-archive-dialog]').innerText`);
+      assert(summary.includes('motor.zplc.zip') && summary.includes('Motor Start Stop') && summary.includes('Nothing has been written'), `The import dialog does not say what the archive holds: ${summary}`);
+      assert(readdirSync(folder).length === 0, 'Choosing the archive wrote into the folder.');
+
+      // Import: an empty folder is chosen, the files are written and the project opens by itself.
+      app.answer(folder);
+      await app.click(button('Choose a folder and import'), 'the import button');
+      await app.until('the imported project open', async () => await app.visible(toolbar) || undefined);
+      assert(JSON.stringify(tree(folder)) === JSON.stringify(tree(project)), 'The imported folder is not equal to the project that was exported.');
+      assert(disk(join(folder, 'zplc.json')) === disk(join(project, 'zplc.json')), 'zplc.json is not byte-equal after the round trip.');
+      await openFile(app, 'src/Motor.st');
+      assert(hasProgram(await editorText(app), 'Motor'), 'The imported project does not open Motor.st.');
+    },
+  },
+
+  {
+    name: '27 A version 1 project shows its migration before it is applied', example: 'none', proves: [], partly: ['IDE-022'],
+    run: async (app, { project }) => {
+      mkdirSync(join(project, 'src'), { recursive: true });
+      const legacy = JSON.stringify({ name: 'Legacy', version: '1.0.0', tasks: [{ name: 'Main', type: 'CYCLIC', interval: 20, priority: 2, file: 'main.st' }] }, null, 2);
+      writeFileSync(join(project, 'zplc.json'), legacy);
+      writeFileSync(join(project, 'src', 'main.st'), 'PROGRAM Main\nEND_PROGRAM\n');
+
+      await openFolder(app, project);
+      await app.click(tab('Explorer', 'exact'));
+      await app.until('the migration notice', async () => (await app.text()).includes('Migration preview') || undefined);
+      assert(disk(join(project, 'zplc.json')) === legacy, 'Opening a version 1 project changed zplc.json.');
+
+      // The difference is a dialog of its own, and closing it changes nothing.
+      await app.click(button('Review the difference', 'prefix'), 'the Review the difference button');
+      await app.until('the difference', async () => await app.visible(css('[data-migration-difference]')) || undefined);
+      const shown = await app.eval<string>(`document.querySelector('[data-migration-difference]').innerText`);
+      assert(shown.includes('"schemaVersion": 2') && shown.includes('"trigger": "cyclic"') && shown.includes('"interval": 20'), `The difference does not show the migration: ${shown}`);
+      await app.click(button('Close'), 'Close');
+      await app.until('the dialog to close', async () => !await app.visible(css('[data-migration-preview]')) || undefined);
+      assert(disk(join(project, 'zplc.json')) === legacy, 'Closing the difference changed zplc.json.');
+
+      // Applying it is the save: zplc.json is then version 2, and the notice is gone.
+      await app.click(button('Review the difference', 'prefix'), 'the Review the difference button');
+      await app.until('the dialog', async () => await app.visible(button('Apply migration')) || undefined);
+      await app.click(button('Apply migration'), 'Apply migration');
+      await app.until('zplc.json at version 2', () => JSON.parse(disk(join(project, 'zplc.json'))).schemaVersion === 2 || undefined);
+      await app.until('the notice gone', async () => !(await app.text()).includes('Migration preview') || undefined);
+      assert(disk(join(project, 'src', 'main.st')) === 'PROGRAM Main\nEND_PROGRAM\n', 'The migration changed a program.');
     },
   },
 ];

@@ -11,6 +11,8 @@
  * `rootId` that every later request must repeat, so a handle from a closed project cannot act on the next one.
  */
 
+import { PROJECT_ARCHIVE_CHANNEL, type ProjectArchiveBridge, type ProjectArchiveErrorCode } from './projectArchiveProtocol.js';
+
 export const PROJECT_FILES_CHANNEL = {
   chooseFolder: 'project-files:choose-folder',
   list: 'project-files:list',
@@ -25,6 +27,7 @@ export const PROJECT_FILES_CHANNEL = {
   forgetRecent: 'project-files:forget-recent',
   markOpened: 'project-files:mark-opened',
   watch: 'project-files:watch',
+  ...PROJECT_ARCHIVE_CHANNEL,
 } as const;
 
 /** What the main process pushes to the window when files under its folder changed (IDE-004). */
@@ -53,7 +56,8 @@ export type ProjectFilesErrorCode =
   | 'not-empty'
   | 'too-large'
   | 'denied' // the operating system refused (permissions, read-only volume)
-  | 'failed';
+  | 'failed'
+  | ProjectArchiveErrorCode; // the archive operations answer with their own codes, listed in projectArchiveProtocol.ts
 
 export type ProjectFilesResult<T> = { ok: true; value: T } | { ok: false; code: ProjectFilesErrorCode };
 
@@ -134,7 +138,8 @@ export type ProjectFilesBridge = {
   watch?(request: WatchRequests['watch']): Promise<ProjectFilesResult<null>>;
   /** Subscribes to the batches of changes (IDE-004); returns the function that stops listening. */
   onChanged?(callback: (change: unknown) => void): () => void;
-} & { [Op in ProjectFilesOp]: (request: ProjectFilesRequests[Op]) => Promise<ProjectFilesResult<ProjectFilesValues[Op]>> };
+  // Project archives (IDE-022); absent where there is no main process to ask.
+} & Partial<ProjectArchiveBridge> & { [Op in ProjectFilesOp]: (request: ProjectFilesRequests[Op]) => Promise<ProjectFilesResult<ProjectFilesValues[Op]>> };
 
 type Field = 'id' | 'path' | 'bytes' | 'bool';
 /** Field name to field type, for each operation's single request object. */

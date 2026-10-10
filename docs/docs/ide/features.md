@@ -66,6 +66,29 @@ A change made outside Studio is picked up while a project is open. A file withou
 
 Evidence level: host. `packages/zplc-ide/src/project/treeOperations.test.ts`, `src/store/useIDEStore.test.ts` (project tree operations, over the real project service on a temporary folder), `src/store/externalChanges.test.ts`, `electron/projectWatcher.test.ts` and `electron/projectFiles.test.ts` cover the rules, and journeys 23 (project tree operations) and 24 (changes made outside Studio) of `bun run test:journeys` drive the real application.
 
+## Project archives
+
+**Export Project Archive** (the Build options menu) writes the open project to one file, a zip, that you choose in the
+system save dialog. **Import a project archive** (the Welcome screen) reads one back into an equivalent project:
+
+1. Choosing the archive reads it and writes nothing. A dialog says what it holds (its files, folders and size), whose
+   project it is, and, for a version 1 project, the lines that migrating it changes in `zplc.json`.
+2. **Choose a folder and import** asks for an empty folder, writes the files there byte for byte, and opens the project.
+   A folder that is not empty is refused, and an import that fails leaves the folder empty again.
+
+The archive holds the files as they are on disk, so Studio asks you to save modified files first. It leaves out what
+the project tree hides (`node_modules`, `.git`, `build`, `dist` and `.vscode`) and links. An archive made on one
+machine is the same bytes as one made on another: entries sorted by path, stored without compression, dated
+1980-01-01, names in UTF-8. Studio reads archives that other tools wrote (stored or deflated), and refuses one that
+holds an absolute path, a `..`, a name two systems read differently, a link, an encrypted entry, two files that differ
+only by case, a file that does not match its checksum, more than 4096 files, a file over 16 MiB or more than 64 MiB in
+all. **Export Project** next to it keeps writing the JSON document of the files and the configuration (without its
+secrets); that document does not import.
+
+Evidence level: host. `electron/projectArchiveZip.test.ts` and `electron/projectArchive.test.ts` cover the format, the
+refusals and a round trip on real folders; journey 26 of `bun run test:journeys` exports and imports a project in the
+real application and compares the two folders.
+
 ## Closing with unsaved changes
 
 Studio never drops a modified file without asking. Closing a modified tab, closing the project, closing the window and quitting the application each ask to save, discard or cancel; **Cancel** (and Escape) keep everything as it was, and a save that fails keeps the file open and modified. Closing the project offers **Save all and close**, **Discard changes and close** and **Continue editing**. Reload shortcuts (Ctrl+R, Ctrl+Shift+R, Cmd+R) are absent from a packaged build: the menu has no reload entry and the keys are swallowed. A development host reloads only through the same question.

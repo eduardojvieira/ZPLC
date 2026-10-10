@@ -28,6 +28,7 @@ import { useState, useRef, useEffect, useLayoutEffect, useCallback, useMemo } fr
 import { useIDEStore } from '../store/useIDEStore';
 import { PLC_LANGUAGES, type PLCLanguage, type FileTreeNode } from '../types';
 import { Modal } from './Modal';
+import { MigrationPreviewDialog } from './MigrationPreviewDialog';
 import { FileNameTakenError } from '../utils/fileSystem';
 import { unsavedOutcome } from '../utils/unsavedChanges';
 import { collectFolders, parentPath } from '../project/treeOperations';
@@ -494,6 +495,7 @@ export function Sidebar() {
   } = useIDEStore();
 
   const [isNewFileModalOpen, setIsNewFileModalOpen] = useState(false);
+  const [isMigrationOpen, setIsMigrationOpen] = useState(false);
   const [newFileModalEpoch, setNewFileModalEpoch] = useState(0);
   const [newFileName, setNewFileName] = useState('');
   const [newFileLanguage, setNewFileLanguage] = useState<PLCLanguage>('ST');
@@ -729,20 +731,11 @@ export function Sidebar() {
                 <div className="mt-0.5 text-[var(--color-surface-200)]">No project files were changed.</div>
               </div>
             </div>
-            <details className="mt-2">
-              <summary className="cursor-pointer text-[var(--color-accent-blue)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent-blue)]">
-                Review {projectMigrationPreview.changes.length} change{projectMigrationPreview.changes.length === 1 ? '' : 's'}
-              </summary>
-              <ul className="mt-2 max-h-40 space-y-1 overflow-y-auto border-t border-[var(--color-surface-600)] pt-2">
-                {projectMigrationPreview.changes.map((change) => (
-                  <li key={`${change.op}:${change.path}`} className="flex min-w-0 gap-2">
-                    <span className="shrink-0 font-medium text-[var(--color-surface-100)]">{change.op === 'add' ? 'Add' : change.op === 'remove' ? 'Remove' : 'Replace'}</span>
-                    <code className="min-w-0 break-words font-mono text-[var(--color-surface-200)]">{change.path}</code>
-                  </li>
-                ))}
-              </ul>
-            </details>
+            <button type="button" onClick={() => setIsMigrationOpen(true)} className="mt-2 text-[var(--color-accent-blue)] underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent-blue)]">
+              Review the difference ({projectMigrationPreview.changes.length} change{projectMigrationPreview.changes.length === 1 ? '' : 's'})
+            </button>
           </div>
+          {isMigrationOpen && <MigrationPreviewDialog onClose={() => setIsMigrationOpen(false)} />}
         </div>
       )}
 

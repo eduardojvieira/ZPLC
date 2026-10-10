@@ -4,6 +4,17 @@ All notable changes are documented here.
 
 ## Unreleased
 
+- A project exports to one archive and imports back into an equivalent project
+  (IDE-022). **Export Project Archive** (Build options) writes a zip of the
+  project files that is the same bytes on every machine (entries sorted by
+  path, stored, dated 1980-01-01); **Import a project archive** (Welcome)
+  reads one, says what it holds, and extracts it byte for byte into an empty
+  folder the user chooses before opening it. Both go through typed operations
+  of the main process behind native dialogs, and the reader refuses paths that
+  leave the folder, links, encryption, colliding names, checksum mismatches
+  and archives over the limits. A version 1 project, opened or imported, shows
+  the lines its migration changes in `zplc.json` in a dialog of its own, and
+  **Apply migration** is the save.
 - The Welcome screen loads without the code editor, the visual editors or the
   project settings (IDE-015): the workbench (toolbar, editor area and lower
   panel) loads when a project opens, and each editor and the settings load the

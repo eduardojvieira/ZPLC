@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { PROJECT_ARCHIVE_OPS } from './projectArchiveProtocol';
 import { PROJECT_FILES_CHANNEL, PROJECT_FILES_EVENT, PROJECT_FILES_OPS, PROJECT_RECENT_OPS, PROJECT_WATCH_OPS } from './projectFilesProtocol';
 
 const electronDir = path.dirname(fileURLToPath(import.meta.url));
@@ -29,7 +30,7 @@ describe('project files IPC boundary', () => {
     const bridge = BRIDGE_BLOCK.exec(preloadSource)?.[1] ?? '';
     expect(bridge).not.toBe('');
     const methods = [...bridge.matchAll(/^ {4}(\w+): /gm)].map(([, name]) => name);
-    expect(methods).toEqual(['chooseFolder', ...PROJECT_FILES_OPS, ...PROJECT_RECENT_OPS, ...PROJECT_WATCH_OPS, 'onChanged']);
+    expect(methods).toEqual(['chooseFolder', ...PROJECT_FILES_OPS, ...PROJECT_RECENT_OPS, ...PROJECT_WATCH_OPS, ...PROJECT_ARCHIVE_OPS, 'onChanged']);
     for (const name of methods.filter((method) => method !== 'onChanged')) expect(bridge).toContain(`ipcRenderer.invoke(PROJECT_FILES_CHANNEL.${name}`);
     // The one thing the renderer may hear is the batch of changed paths, on the one event channel of the shared module.
     expect(bridge).toContain('ipcRenderer.on(PROJECT_FILES_EVENT.changed, listener)');
@@ -63,7 +64,7 @@ describe('project files IPC boundary', () => {
   });
 
   it('asks the native dialog from the main process, and only a host that is not packaged may answer it from a test file', () => {
-    expect(mainSource).toContain('const projectFiles = createProjectFiles(chooseProjectDirectory, () => recentProjects, projectWatcher);');
+    expect(mainSource).toContain('const projectFiles = createProjectFiles(chooseProjectDirectory, () => recentProjects, projectWatcher, { dialog, getWindow: () => mainWindow, isPackaged: app.isPackaged, env: process.env });');
     expect(mainSource).toContain("dialog.showOpenDialog(win, { title: 'Choose project folder', properties: ['openDirectory', 'createDirectory'] })");
     expect(mainSource).toContain('readFolderDialogHook(app.isPackaged, process.env)');
     expect(mainSource).not.toContain('ZPLC_SMOKE_FOLDER_ANSWER_FILE');

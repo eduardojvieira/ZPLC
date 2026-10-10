@@ -15,9 +15,12 @@ folder stays unchanged until you explicitly save; that save updates its
 
 ## Quick path
 
-1. Open the existing project folder in Studio.
-2. Review the migration notice and its diff.
-3. Choose **Save** to write the reviewed v2 configuration to that workspace.
+1. Open the existing project folder in Studio, or import its archive from the Welcome screen: the import dialog
+   shows the same difference before it writes anything.
+2. Choose **Review the difference** in the migration notice of the Explorer. The dialog lists the lines of
+   `zplc.json` that migrating removes and adds; only `zplc.json` changes, and your programs are not touched.
+3. Choose **Apply migration** (the same as **Save**) to write the reviewed v2 configuration to that workspace, or
+   **Close** to leave the folder as it is.
 4. Compile and run the project’s scenario again after saving.
 
 ## What changes

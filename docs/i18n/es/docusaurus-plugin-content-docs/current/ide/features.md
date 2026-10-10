@@ -66,6 +66,31 @@ Un cambio hecho fuera de Studio se detecta mientras hay un proyecto abierto. Un 
 
 Nivel de evidencia: host. `packages/zplc-ide/src/project/treeOperations.test.ts`, `src/store/useIDEStore.test.ts` (operaciones del árbol, sobre el servicio de proyecto real en una carpeta temporal), `src/store/externalChanges.test.ts`, `electron/projectWatcher.test.ts` y `electron/projectFiles.test.ts` cubren las reglas, y los recorridos 23 (operaciones del árbol del proyecto) y 24 (cambios hechos fuera de Studio) de `bun run test:journeys` manejan la aplicación real.
 
+## Archivos de proyecto
+
+**Export Project Archive** (menú Build options) escribe el proyecto abierto en un solo archivo, un zip, que usted elige
+en el diálogo de guardado del sistema. **Import a project archive** (pantalla de bienvenida) lo vuelve a leer como un
+proyecto equivalente:
+
+1. Elegir el archivo lo lee y no escribe nada. Un diálogo dice qué contiene (sus archivos, carpetas y tamaño), de quién
+   es el proyecto y, para un proyecto de versión 1, las líneas que cambia la migración en `zplc.json`.
+2. **Choose a folder and import** pide una carpeta vacía, escribe allí los archivos byte por byte y abre el proyecto. Una
+   carpeta que no está vacía se rechaza, y una importación que falla deja la carpeta vacía otra vez.
+
+El archivo contiene los archivos tal como están en disco, por eso Studio le pide guardar antes los archivos
+modificados. Deja fuera lo que el árbol del proyecto oculta (`node_modules`, `.git`, `build`, `dist` y `.vscode`) y los
+enlaces. Un archivo hecho en una máquina tiene los mismos bytes que uno hecho en otra: entradas ordenadas por ruta,
+guardadas sin compresión, con fecha 1980-01-01 y nombres en UTF-8. Studio lee archivos que escribieron otras
+herramientas (guardados o comprimidos) y rechaza uno que contenga una ruta absoluta, un `..`, un nombre que dos
+sistemas leen distinto, un enlace, una entrada cifrada, dos archivos que solo difieren en mayúsculas, un archivo que no
+coincide con su suma de verificación, más de 4096 archivos, un archivo de más de 16 MiB o más de 64 MiB en total.
+**Export Project**, a su lado, sigue escribiendo el documento JSON de los archivos y la configuración (sin sus
+secretos); ese documento no se importa.
+
+Nivel de evidencia: host. `electron/projectArchiveZip.test.ts` y `electron/projectArchive.test.ts` cubren el formato,
+los rechazos y un viaje de ida y vuelta en carpetas reales; el recorrido 26 de `bun run test:journeys` exporta e importa
+un proyecto en la aplicación real y compara las dos carpetas.
+
 ## Cerrar con cambios sin guardar
 
 Studio nunca descarta un archivo modificado sin preguntar. Cerrar una pestaña modificada, cerrar el proyecto, cerrar la ventana y salir de la aplicación preguntan, cada uno, si guardar, descartar o cancelar; **Cancel** (y Escape) dejan todo como estaba, y un guardado que falla mantiene el archivo abierto y modificado. Cerrar el proyecto ofrece **Save all and close**, **Discard changes and close** y **Continue editing**. Los atajos de recarga (Ctrl+R, Ctrl+Shift+R, Cmd+R) no existen en una compilación empaquetada: el menú no tiene entrada de recarga y las teclas se descartan. Un entorno de desarrollo solo recarga pasando por la misma pregunta.
