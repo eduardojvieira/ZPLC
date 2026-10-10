@@ -27,6 +27,15 @@ export interface SyntaxIssue extends SourceSpan {
     detail: string;
 }
 
+/**
+ * Something the code generator accepted and wants the author to see (CMP-008): the build succeeds. `code`
+ * is the stable identifier of the kind of warning.
+ */
+export interface CodegenWarning extends SourceSpan {
+    code: 'IMPLICIT_NARROWING';
+    message: string;
+}
+
 /** What a compile accepted but the language reference does not define (CMP-031: the `0x` form). */
 export interface SourceWarning extends SourceSpan {
     message: string;

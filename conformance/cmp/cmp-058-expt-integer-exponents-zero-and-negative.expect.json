@@ -1,0 +1,21 @@
+{
+  "requirement": "CMP-058",
+  "title": "EXPT raises a REAL to integer exponents, zero and negative ones included, and leaves the stack as it found it",
+  "matrix": ["functions.trigonometric-logarithmic-exponential"],
+  "tags": ["arch-sensitive", "float"],
+  "note": "IEC 61131-3 EXPT(IN1, IN2) = IN1 ** IN2: 2.0 ** 8.0 = 256, any base to 0.0 is 1.0 (0.0 ** 0.0 included), 2.0 ** -2.0 = 0.25, (-3.0) ** 3.0 = -27.0, (-3.0) ** 2.0 = 9.0, an integer argument is converted to REAL (2 ** 10 = 1024) and 0.0 ** 3.0 = 0.0; twenty calls in a loop load, so a call leaves nothing on the stack",
+  "scans": 1,
+  "scanMs": 10,
+  "expect": [
+    {"at": "%QD0", "type": "REAL", "value": 256.0},
+    {"at": "%QD1", "type": "REAL", "value": 1.0},
+    {"at": "%QD2", "type": "REAL", "value": 1.0},
+    {"at": "%QD3", "type": "REAL", "value": 1.0},
+    {"at": "%QD4", "type": "REAL", "value": 0.25},
+    {"at": "%QD5", "type": "REAL", "value": -27.0},
+    {"at": "%QD6", "type": "REAL", "value": 9.0},
+    {"at": "%QD7", "type": "REAL", "value": 1024.0},
+    {"at": "%QD8", "type": "REAL", "value": 0.0},
+    {"at": "%QD9", "type": "REAL", "value": 160.0}
+  ]
+}

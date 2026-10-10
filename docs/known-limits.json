@@ -102,8 +102,8 @@
   },
   "CMP-042": {
     "page": "language",
-    "en": "A function block or a global declared in another file is not found (`Unknown FB type`, `Unknown identifier`).",
-    "es": "Un bloque de función o una global declarados en otro archivo no se encuentran (`Unknown FB type`, `Unknown identifier`)."
+    "en": "A function block or a global declared in another file is not found (`Unknown type`, `Unknown identifier`).",
+    "es": "Un bloque de función o una global declarados en otro archivo no se encuentran (`Unknown type`, `Unknown identifier`)."
   },
   "CMP-043": {
     "page": "language",
@@ -134,60 +134,5 @@
     "page": "language",
     "en": "A task with `trigger: event` is accepted by the compiler and refused later, and a program with two cyclic tasks of different intervals is refused by the native simulation.",
     "es": "Una tarea con `trigger: event` es aceptada por el compilador y rechazada después, y un programa con dos tareas cíclicas de intervalos distintos es rechazado por la simulación nativa."
-  },
-  "CMP-025": {
-    "page": "library",
-    "en": "A `FIFO` called without `SIZE` faults the VM: the documented default of eight items is not applied.",
-    "es": "Un `FIFO` llamado sin `SIZE` provoca una falla de la VM: no se aplica el valor por defecto documentado de ocho elementos."
-  },
-  "CMP-057": {
-    "page": "library",
-    "en": "Some standard blocks and conversion functions differ from IEC 61131-3.",
-    "es": "Algunos bloques estándar y funciones de conversión difieren de IEC 61131-3.",
-    "cases": {
-      "TON elapsed time stops at the preset": {
-        "en": "`TON.ET` keeps counting after it reaches `PT`.",
-        "es": "`TON.ET` sigue contando después de llegar a `PT`."
-      },
-      "TP is not retriggered while its input stays true": {
-        "en": "`TP` starts its pulse again after `PT` while `IN` stays TRUE.",
-        "es": "`TP` vuelve a iniciar su pulso después de `PT` mientras `IN` permanece en TRUE."
-      },
-      "REAL_TO_INT rounds to the nearest integer": {
-        "en": "`REAL_TO_INT` truncates toward zero, where IEC 61131-3 rounds to the nearest integer.",
-        "es": "`REAL_TO_INT` trunca hacia cero, donde IEC 61131-3 redondea al entero más cercano."
-      },
-      "conversion functions between integer types keep an in-range value": {
-        "en": "Only six conversion functions exist (`INT_TO_REAL`, `REAL_TO_INT`, `BOOL_TO_INT`, `INT_TO_BOOL`, `TRUNC`, `ROUND`); any other `X_TO_Y` name is a build error (`Unknown function`).",
-        "es": "Solo existen seis funciones de conversión (`INT_TO_REAL`, `REAL_TO_INT`, `BOOL_TO_INT`, `INT_TO_BOOL`, `TRUNC`, `ROUND`); cualquier otro nombre `X_TO_Y` es un error de compilación (`Unknown function`)."
-      },
-      "DINT_TO_REAL exists": {
-        "en": "Only six conversion functions exist (`INT_TO_REAL`, `REAL_TO_INT`, `BOOL_TO_INT`, `INT_TO_BOOL`, `TRUNC`, `ROUND`); any other `X_TO_Y` name is a build error (`Unknown function`).",
-        "es": "Solo existen seis funciones de conversión (`INT_TO_REAL`, `REAL_TO_INT`, `BOOL_TO_INT`, `INT_TO_BOOL`, `TRUNC`, `ROUND`); cualquier otro nombre `X_TO_Y` es un error de compilación (`Unknown function`)."
-      },
-      "INT_TO_DINT exists": {
-        "en": "Only six conversion functions exist (`INT_TO_REAL`, `REAL_TO_INT`, `BOOL_TO_INT`, `INT_TO_BOOL`, `TRUNC`, `ROUND`); any other `X_TO_Y` name is a build error (`Unknown function`).",
-        "es": "Solo existen seis funciones de conversión (`INT_TO_REAL`, `REAL_TO_INT`, `BOOL_TO_INT`, `INT_TO_BOOL`, `TRUNC`, `ROUND`); cualquier otro nombre `X_TO_Y` es un error de compilación (`Unknown function`)."
-      }
-    }
-  },
-  "CMP-058": {
-    "page": "library",
-    "en": "Some standard functions and blocks differ from IEC 61131-3.",
-    "es": "Algunas funciones y bloques estándar difieren de IEC 61131-3.",
-    "cases": {
-      "ASIN, ACOS and ATAN return radians": {
-        "en": "`ASIN`, `ACOS`, `ATAN` and `ATAN2` are approximations: `ASIN(0.5)` gives 0.5259 (exact 0.5236) and `ATAN(1.0)` gives 0.7238 (exact 0.7854).",
-        "es": "`ASIN`, `ACOS`, `ATAN` y `ATAN2` son aproximaciones: `ASIN(0.5)` da 0.5259 (exacto 0.5236) y `ATAN(1.0)` da 0.7238 (exacto 0.7854)."
-      },
-      "LN, LOG, EXP and SQRT": {
-        "en": "`LN`, `LOG` and `EXP` are approximations: `LN(10.0)` gives 2.2183 (exact 2.3026), `EXP(1.0)` gives 2.7167 (exact 2.7183) and `LOG(1000.0)` gives 1.449 where the answer is 3.0. `SQRT` is within 0.001 on the checked values.",
-        "es": "`LN`, `LOG` y `EXP` son aproximaciones: `LN(10.0)` da 2.2183 (exacto 2.3026), `EXP(1.0)` da 2.7167 (exacto 2.7183) y `LOG(1000.0)` da 1.449 donde la respuesta es 3.0. `SQRT` está dentro de 0.001 en los valores comprobados."
-      },
-      "BLINK is on for T_ON and off for T_OFF while ENABLE holds": {
-        "en": "`BLINK` (not an IEC block) starts in its OFF phase, so `Q` rises one `T_OFF` after `ENABLE`.",
-        "es": "`BLINK` (no es un bloque IEC) empieza en su fase apagada, de modo que `Q` sube un `T_OFF` después de `ENABLE`."
-      }
-    }
   }
 }

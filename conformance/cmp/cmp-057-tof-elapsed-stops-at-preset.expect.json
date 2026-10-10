@@ -1,0 +1,15 @@
+{
+  "requirement": "CMP-057",
+  "title": "TOF elapsed time stops at the preset and holds it while IN stays false",
+  "matrix": ["blocks.tof"],
+  "note": "IEC 61131-3, the TOF timing diagram: after IN falls the elapsed time counts up to PT and stays there until IN rises again; the scan is 30 ms, so the scan that ends the delay sees 60 ms of real time and ET must still read 50",
+  "scans": 6,
+  "scanMs": 30,
+  "expect": [
+    {"at": "%QX0.0", "type": "BOOL", "value": true, "afterScan": 4},
+    {"at": "%QD1", "type": "DINT", "value": 30, "afterScan": 4},
+    {"at": "%QX0.0", "type": "BOOL", "value": false, "afterScan": 5},
+    {"at": "%QD1", "type": "DINT", "value": 50, "afterScan": 5},
+    {"at": "%QD1", "type": "DINT", "value": 50, "afterScan": 6}
+  ]
+}

@@ -728,6 +728,27 @@ END_PROGRAM`);
       expect((await compilerCheck(root)).evidence.diagnostics).toEqual([]);
     } finally { await rm(root, { recursive: true, force: true }); }
   });
+  it('reports an integer stored in a narrower type as a warning of a build that passed (CMP-005)', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'zplc-tool-api-narrowing-'));
+    try {
+      await mkdir(join(root, 'src'));
+      await writeFile(join(root, 'zplc.json'), JSON.stringify({ schemaVersion: 2, name: 'test', version: '1.0.0', tasks: [{ name: 'Main', trigger: 'cyclic', interval_ms: 10, priority: 1, programs: ['Main.st'] }] }));
+      await writeFile(join(root, 'src', 'Main.st'), 'PROGRAM Narrow\nVAR\n  big : DINT := 70000;\n  small AT %QW0 : INT;\nEND_VAR\n  small := big;\n  small := small + 1;\nEND_PROGRAM\n');
+      for (const compile of [compilerCheck, compilerCompile]) {
+        const result = await compile(root);
+        expect(result.ok).toBe(true);
+        expect(result.evidence.outcome).toBe('passed');
+        expect(result.evidence.artifacts).toHaveLength(1);
+        expect(result.evidence.diagnostics).toHaveLength(1);
+        expect(result.evidence.diagnostics[0]).toMatchObject({ code: 'IMPLICIT_NARROWING', line: 6, column: 12, path: 'src/Main.st' });
+        expect(result.evidence.diagnostics[0]!.message).toContain('DINT');
+        expect(result.evidence.diagnostics[0]!.message).toContain('INT');
+        expect(result.evidence.diagnostics[0]!.message).toContain('low 16 bits');
+      }
+      await writeFile(join(root, 'src', 'Main.st'), 'PROGRAM Narrow\nVAR\n  big : DINT := 70000;\n  small AT %QW0 : INT;\nEND_VAR\n  small := big AND 16#7FFF;\nEND_PROGRAM\n');
+      expect((await compilerCheck(root)).evidence.diagnostics).toEqual([]);
+    } finally { await rm(root, { recursive: true, force: true }); }
+  });
   it('gives the safety check the position of a syntax error, as Build does', async () => {
     const root = await mkdtemp(join(tmpdir(), 'zplc-tool-api-safety-syntax-'));
     try {

@@ -1,0 +1,21 @@
+{
+  "requirement": "CMP-058",
+  "title": "PID_Compact gives KP times the error, negative errors included, limited to OUT_MIN and OUT_MAX",
+  "matrix": ["blocks.library-blocks-not-in-the-standard"],
+  "tags": ["arch-sensitive", "float"],
+  "note": "Not an IEC block: with KI and KD 0 the output is KP * (SP - PV) limited to OUT_MIN..OUT_MAX: PV 0 gives 20, PV 15 gives -10, PV 100 would give -180 and is limited to -100, PV -100 would give 220 and is limited to 100",
+  "scans": 4,
+  "scanMs": 10,
+  "inputs": [
+    {"at": "%ID0", "type": "REAL", "value": 0.0, "beforeScan": 1},
+    {"at": "%ID0", "type": "REAL", "value": 15.0, "beforeScan": 2},
+    {"at": "%ID0", "type": "REAL", "value": 100.0, "beforeScan": 3},
+    {"at": "%ID0", "type": "REAL", "value": -100.0, "beforeScan": 4}
+  ],
+  "expect": [
+    {"at": "%QD0", "type": "REAL", "value": 20.0, "afterScan": 1},
+    {"at": "%QD0", "type": "REAL", "value": -10.0, "afterScan": 2},
+    {"at": "%QD0", "type": "REAL", "value": -100.0, "afterScan": 3},
+    {"at": "%QD0", "type": "REAL", "value": 100.0, "afterScan": 4}
+  ]
+}

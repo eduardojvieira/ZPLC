@@ -16,6 +16,7 @@ import {
     getAllFnNames,
 } from './index.ts';
 import type { FunctionBlockDef, FunctionDef, CodeGenContext } from './types.ts';
+import { conversionResultType } from './conversions.ts';
 import type { Expression } from '../ast.ts';
 
 const COMM_FB_NAMES = [
@@ -177,7 +178,11 @@ describe('stdlib registry', () => {
         expect(fnNames).toContain('NE_STRING');
         expect(fnNames).toContain('NAND');
         expect(fnNames).toContain('NOR');
-        expect(fnNames.length).toBe(61);  // 45 + 14 string functions + 2 logic (NAND, NOR)
+        // the 61 functions of the inventory are 57 that are not conversions and the four conversions that existed;
+        // CMP-057 gives every ordered pair of the twelve conversion types a function: 12 x 11
+        const conversions = fnNames.filter((name) => conversionResultType(name) !== undefined);
+        expect(conversions.length).toBe(132);
+        expect(fnNames.length - conversions.length).toBe(57);
     });
 
     test('isFB returns correct values', () => {

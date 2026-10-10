@@ -1,0 +1,27 @@
+{
+  "requirement": "CMP-058",
+  "title": "ASIN, ACOS, ATAN and ATAN2 of negative arguments, of the ends of the domain and in every quadrant",
+  "matrix": ["functions.trigonometric-logarithmic-exponential"],
+  "tags": ["arch-sensitive", "float"],
+  "note": "ASIN and ACOS are defined on -1.0 to 1.0 (ASIN(-1.0) = -pi/2, ACOS(-1.0) = pi) and are not a number outside it; ATAN of a very large value approaches pi/2; ATAN2(Y, X) is the angle of the point (X, Y) in (-pi, pi]: ATAN2(1.0, -1.0) = 3*pi/4, ATAN2(-1.0, -1.0) = -3*pi/4, ATAN2(-1.0, 1.0) = -pi/4, ATAN2(1.0, 0.0) = pi/2 and ATAN2(0.0, 0.0) = 0",
+  "scans": 1,
+  "scanMs": 10,
+  "expect": [
+    {"at": "%QX0.0", "type": "BOOL", "value": true},
+    {"at": "%QX0.1", "type": "BOOL", "value": true},
+    {"at": "%QX0.2", "type": "BOOL", "value": true},
+    {"at": "%QX0.3", "type": "BOOL", "value": true},
+    {"at": "%QX0.4", "type": "BOOL", "value": true},
+    {"at": "%QX0.5", "type": "BOOL", "value": true},
+    {"at": "%QX0.6", "type": "BOOL", "value": true},
+    {"at": "%QX0.7", "type": "BOOL", "value": true},
+    {"at": "%QX1.0", "type": "BOOL", "value": true},
+    {"at": "%QX1.1", "type": "BOOL", "value": true},
+    {"at": "%QX1.2", "type": "BOOL", "value": true},
+    {"at": "%QX1.3", "type": "BOOL", "value": true},
+    {"at": "%QX1.4", "type": "BOOL", "value": true},
+    {"at": "%QX1.5", "type": "BOOL", "value": true},
+    {"at": "%QX1.6", "type": "BOOL", "value": true},
+    {"at": "%QX1.7", "type": "BOOL", "value": true}
+  ]
+}

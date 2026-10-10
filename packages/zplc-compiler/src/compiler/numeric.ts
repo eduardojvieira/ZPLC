@@ -131,6 +131,11 @@ export function floatBits(value: number): number {
     return view.getUint32(0, true);
 }
 
+/** The IEEE 754 single-precision pattern of a number as a PUSH32 operand (`0x3F800000` for 1). */
+export function f32hex(value: number): string {
+    return `0x${floatBits(value).toString(16).toUpperCase().padStart(8, '0')}`;
+}
+
 // ============================================================================
 // Helper routines
 // ============================================================================

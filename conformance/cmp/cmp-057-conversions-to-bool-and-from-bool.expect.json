@@ -1,0 +1,22 @@
+{
+  "requirement": "CMP-057",
+  "title": "a value converts to BOOL as not zero and BOOL converts to 0 or 1",
+  "matrix": ["functions.basic-conversions", "functions.other-conversions"],
+  "tags": ["arch-sensitive", "float-conversion"],
+  "note": "IEC 61131-3, data type conversion: zero is FALSE and any other value TRUE, whatever bits are set (16#10000 is TRUE as a DWORD); -0.0 is zero, so FALSE, and a NaN is not zero, so TRUE; TRUE converts to 1",
+  "scans": 1,
+  "scanMs": 10,
+  "expect": [
+    {"at": "%QX0.0", "type": "BOOL", "value": false},
+    {"at": "%QX0.1", "type": "BOOL", "value": true},
+    {"at": "%QX0.2", "type": "BOOL", "value": true},
+    {"at": "%QX0.3", "type": "BOOL", "value": false},
+    {"at": "%QX0.4", "type": "BOOL", "value": true},
+    {"at": "%QX0.5", "type": "BOOL", "value": true},
+    {"at": "%QX0.6", "type": "BOOL", "value": false},
+    {"at": "%QX0.7", "type": "BOOL", "value": true},
+    {"at": "%QB1", "type": "USINT", "value": 1},
+    {"at": "%QW1", "type": "INT", "value": 1},
+    {"at": "%QD1", "type": "DINT", "value": 1}
+  ]
+}

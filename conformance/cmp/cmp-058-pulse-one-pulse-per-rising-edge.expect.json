@@ -1,0 +1,25 @@
+{
+  "requirement": "CMP-058",
+  "title": "PULSE gives one pulse of PT for a rising edge, ignores a retrigger and a level that stays true",
+  "matrix": ["blocks.library-blocks-not-in-the-standard"],
+  "note": "Not an IEC block: a rising edge of TRIG starts a pulse of exactly PT; the edges at 20 ms (during the pulse) and the level that stays TRUE after it start nothing, and a new rising edge after TRIG fell starts the next one; the trigger rises at 10 ms, falls at 20 ms, rises at 30 ms and falls at 80 ms and rises at 90 ms",
+  "scans": 12,
+  "scanMs": 10,
+  "inputs": [
+    {"at": "%IX0.0", "type": "BOOL", "value": true, "beforeScan": 2},
+    {"at": "%IX0.0", "type": "BOOL", "value": false, "beforeScan": 3},
+    {"at": "%IX0.0", "type": "BOOL", "value": true, "beforeScan": 4},
+    {"at": "%IX0.0", "type": "BOOL", "value": false, "beforeScan": 9},
+    {"at": "%IX0.0", "type": "BOOL", "value": true, "beforeScan": 10}
+  ],
+  "expect": [
+    {"at": "%QX0.0", "type": "BOOL", "value": false, "afterScan": 1},
+    {"at": "%QX0.0", "type": "BOOL", "value": true, "afterScan": 2},
+    {"at": "%QX0.0", "type": "BOOL", "value": true, "afterScan": 4},
+    {"at": "%QX0.0", "type": "BOOL", "value": false, "afterScan": 5},
+    {"at": "%QX0.0", "type": "BOOL", "value": false, "afterScan": 8},
+    {"at": "%QX0.0", "type": "BOOL", "value": false, "afterScan": 9},
+    {"at": "%QX0.0", "type": "BOOL", "value": true, "afterScan": 10},
+    {"at": "%QX0.0", "type": "BOOL", "value": true, "afterScan": 12}
+  ]
+}

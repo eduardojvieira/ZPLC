@@ -1,0 +1,15 @@
+{
+  "requirement": "CMP-035",
+  "title": "two functions that call each other are rejected at the call that closes the cycle",
+  "matrix": [
+    "pous.function"
+  ],
+  "build": "fails",
+  "lines": [
+    10
+  ],
+  "messageIncludes": [
+    "Ping",
+    "Pong"
+  ]
+}

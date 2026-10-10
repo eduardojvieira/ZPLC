@@ -34,6 +34,18 @@ const LIBRARY_BLOCK_TYPES: Record<string, string> = Object.fromEntries([
     'HYSTERESIS', 'DEADBAND', 'LAG_FILTER', 'RAMP_REAL', 'INTEGRAL', 'DERIVATIVE', 'PID_Compact', 'FIFO', 'LIFO',
 ].map((name) => [name.toUpperCase(), name]));
 
+/**
+ * The elementary types a program may declare, by upper-case name. Type names are matched without regard to
+ * case (CMP-004): `byte` is BYTE, and every later phase meets the upper-case spelling.
+ */
+export const ELEMENTARY_TYPES: ReadonlySet<string> = new Set([
+    'BOOL', 'SINT', 'USINT', 'INT', 'UINT', 'DINT', 'UDINT', 'LINT', 'ULINT', 'REAL', 'LREAL', 'TIME',
+    'STRING', 'WSTRING', 'DATE', 'TIME_OF_DAY', 'TOD', 'DATE_AND_TIME', 'DT', 'BYTE', 'WORD', 'DWORD', 'LWORD',
+]);
+
+/** `STRING[20]` and `WSTRING(10)` as the parser writes them: the capacity is part of the type name. */
+const STRING_TYPE = /^(W?STRING)(\[\d+\])?$/i;
+
 interface ResolvedAlias {
     type: STDataType;
     initialValue: Expression | null;
@@ -73,9 +85,14 @@ export function resolveTypeNames(unit: CompilationUnit): AliasIssue[] {
             const key = type.toUpperCase();
             const alias = byName.get(key);
             if (alias) return resolveAlias(key, alias)?.type ?? type;
-            // a name the program declares itself is its own; any other library name is the library block
-            const library = LIBRARY_BLOCK_TYPES[key];
-            return library === undefined ? type : declared.get(key) ?? library;
+            // a name the program declares itself is its own, in the spelling of its declaration; a library name
+            // is the library block; an elementary type is its upper-case name (CMP-004)
+            const own = declared.get(key);
+            if (own !== undefined) return own;
+            if (ELEMENTARY_TYPES.has(key)) return key;
+            const text = STRING_TYPE.exec(type);
+            if (text) return `${text[1]!.toUpperCase()}${text[2] ?? ''}`;
+            return LIBRARY_BLOCK_TYPES[key] ?? type;
         }
         if (isArrayType(type)) {
             const element = resolveType(type.elementType, at);

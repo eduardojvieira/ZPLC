@@ -136,9 +136,7 @@ All notable changes are documented here.
   Reset or Load is TRUE, so a pulse that rises during Reset or Load is no longer
   counted when it is released; in `CTUD`, Reset beats Load and both beat the count
   edges, an up edge and a down edge in one scan cancel, and `CV` stops at 32767
-  instead of wrapping to -32768 (CMP-058). Counting below zero and negative
-  presets still do not follow IEC 61131-3 (CMP-011): see the standard library
-  reference.
+  instead of wrapping to -32768 (CMP-058).
 - The compiler reports every independent error of a file, in order and at its own
   line (a duplicate declaration and an unknown member no longer at line 0; an
   unterminated comment where it opens), and accepts the forms it used to reject:
@@ -151,6 +149,120 @@ All notable changes are documented here.
   call that passes an argument no `VAR_INPUT` takes is refused (CMP-006,
   CMP-007, CMP-009, CMP-029 to CMP-033, CMP-035, CMP-038). A `RETAIN` variable
   takes its initial value only when the retentive region holds no saved state.
+- `RETAIN` memory is now kept across a power cycle on the native runtime and,
+  behind `CONFIG_ZPLC_RETAIN_PERSIST`, on the Zephyr firmware (RT-025, RT-026,
+  RT-027). The region is stored on `STOP`, on a clean shutdown and periodically,
+  in two alternating records that carry a checksum, a layout hash and the
+  program identity; it is restored only when the identity and the layout match,
+  and otherwise it is initialised and the status says why (`retain` in the
+  native `status.get`, `zplc sched status` on the firmware). A rebuilt program
+  starts from its declared initial values; `execution.reset` is a cold restart.
+  The native runtime stores at most once per `ZPLC_RETAIN_SAVE_INTERVAL_MS`
+  (30 s by default); each firmware board has a documented interval and the build
+  fails when it would wear the storage flash out inside ten years. The
+  Nucleo-H743ZI cannot mount NVS, so it does not persist `RETAIN`, and the WASM
+  simulator does not apply the rules yet. No board was measured: see
+  `docs/runtime/persistence`.
+- The debug map is a function of the sources: two builds of the same project
+  give the same bytes (the `generatedAt` timestamp is gone), and
+  `compilerVersion` is the version of the compiler package. Each statement
+  has the full range of its instructions with its line and column, so any
+  program counter inside a statement resolves to that statement; the end of a
+  function and the helper routines after the cycle belong to none.
+- Names are matched without regard to case, as IEC 61131-3 says: variables,
+  functions, members, enumeration values, type names (`byte`) and direct
+  addresses (`%ix0.0`). A declaration whose type is not a type is a build
+  error that names it and its position; `LTIME`, `LDATE`, `LTOD`, `LDT`,
+  `CHAR` and `WCHAR` are rejected the same way (planned for 2.x, decision
+  D-04) instead of getting a variable of size 0, and `VAR PERSISTENT` is
+  rejected at the word (declare the variables `RETAIN`).
+- Every value is checked against the type it goes into. An assignment, an
+  initial value, a function argument, the value of a function and an output
+  bound with `=>` must convert as IEC 61131-3 allows: integers and bit strings
+  convert to each other (a value that does not fit keeps its low bits), an
+  integer to `REAL`; a `REAL` to an integer, a `BOOL` to or from a number and
+  `TIME` to or from a number are build errors that name both types. A
+  condition is a `BOOL`, and a constant that does not fit its type is an
+  error, so `small : SINT := 300;` no longer builds. A literal above
+  2147483647 goes to a `UDINT` parameter and to `XOR_DWORD`.
+- Each function is a scope of its own: two functions may use the same
+  parameter and local names, and a program's variables are not visible inside
+  a function. Arguments bind by name in any order (positional first); a
+  missing, repeated or unknown argument, and a recursive function, are build
+  errors. A function may be called as a statement and may be declared after
+  the functions that call it. A function block call checks its parameters
+  (a name the block does not have is an error) and `Q => y` copies an output.
+  The library blocks of the kitchen_sink project called their parameters
+  `SETPOINT`, `CYCLE`, `SET`...; the names were ignored and are now fixed to
+  the ones the blocks have.
+- An integer of a wider type stored in a narrower one (`DINT` to `INT`, `LINT`
+  to `DINT`) keeps its low bits as before and the build now reports the
+  warning `IMPLICIT_NARROWING` at the value, naming both types; Studio, the CLI
+  (`Warning:`) and the Tool API show it. A mask or a remainder that fits the
+  destination does not warn. The bundled `analog_test` project narrowed a
+  `DINT` into an `INT`; it now stores `TempDegC MOD 32768`, the same value
+  inside the plausible window.
+- Studio resolves a program counter to the statement that owns it, not only
+  the first instruction of the statement, and `release-version.ts` rewrites
+  and checks the compiler version that every debug map records.
+- `TP` starts a pulse only on a rising edge of `IN` and is not retriggered by a
+  level that stays true after the pulse; `TON`, `TOF` and `TP` hold their
+  elapsed time at the preset and a `TON` with a preset of 0 follows its input.
+- A conversion function `<FROM>_TO_<TO>` exists for every pair of different types
+  among `BOOL`, `SINT`, `USINT`, `BYTE`, `INT`, `UINT`, `WORD`, `DINT`, `UDINT`,
+  `DWORD`, `REAL` and `TIME` (it was an unknown function for all but four).
+  `REAL_TO_INT` and its relatives now round to the nearest integer, an exact
+  half to the even one, and saturate at the limits of the destination type
+  (they truncated and wrapped); a NaN converts to 0. `REAL_TO_INT(x)` no longer
+  yields a 32-bit value: use `REAL_TO_DINT`. `TRUNC` and `ROUND` keep a `REAL`
+  of 2^23 or more as it is instead of clamping it to the `DINT` range.
+- `FIFO` and `LIFO` called without `SIZE` hold their documented eight items (the
+  first call faulted on `MOD` by zero, a `LIFO` was full), a `SIZE` above eight
+  is limited to eight instead of writing past the instance, a pop of an empty
+  buffer on the first call does nothing, and a call no longer leaves two
+  values on the evaluation stack (a call inside a loop was refused by the
+  loader).
+- `SQRT`, `EXP`, `LN`, `LOG`, `SIN`, `COS`, `TAN`, `ASIN`, `ACOS`, `ATAN` and
+  `ATAN2` are computed by REAL routines with argument reduction and a polynomial
+  of fixed degree, measured against `Math.*` in the compiler tests (errors from
+  1.3e-7 relative to 4e-7 absolute, bounds in the standard-library reference);
+  the old series gave `ASIN(0.5)` = 0.5259, `ACOS(0.5)` = 1.0449, `ATAN(1.0)` =
+  0.7238, `LN(10.0)` = 2.218, `LOG(1000.0)` = 1.449 and an `ATAN2` wrong in
+  three quadrants. Their arguments may be integers. `SIN`, `COS` and `TAN` of
+  an angle of 100000 or more are reduced modulo 2 pi with 2 pi held to 36 bits
+  and a correction, so they are exact up to 2^40 (2e-6) and finite for every
+  finite REAL (an infinity or a NaN gives a NaN; no angle gives a fault or a
+  result outside -1 to 1); `LN(0.0)` is minus infinity, and
+  `ASIN` or `ACOS` outside -1 to 1 are a NaN. `EXPT` is the operator `**`: it
+  no longer underflows the evaluation stack for an exponent of 0 (the artifact
+  was refused by the loader) and no longer takes the bits of a REAL exponent as
+  a loop count.
+- An inlined method that returns a number writes a result slot that is pushed
+  once where the method ends: a method that assigned its name twice left two
+  values on the evaluation stack (a call in a loop was refused by the loader),
+  one that never assigned left none, and an inherited method called as a
+  statement was not dropped. A method that never assigns returns 0.
+- `NAND` and `NOR` return a `BOOL` of 0 or 1: they returned the bitwise
+  complement (254 or 255), so `IF NAND(TRUE, TRUE) THEN` was true.
+- `HYSTERESIS`, `RAMP_REAL` and `PID_Compact` compare REAL values as REAL: with
+  a negative threshold, a negative error or a negative `OUT_MIN` they compared
+  bit patterns as signed integers (a `RAMP_REAL` falling through zero did not
+  ramp, a `PID_Compact` output of -10 was limited to `OUT_MIN` -100). An integer
+  argument of any of these blocks and of `NORM_X` and `SCALE_X` is converted to
+  REAL, and `PID_Compact` called without `DT` no longer faults on its
+  derivative term.
+- `CTD` and `CTUD` count below 0 and stop at -32768 as IEC 61131-3 defines
+  (`CTD` stopped at 0), and the three counters compare `CV` with `PV` and 0 as
+  signed values: a negative `PV` made `Q` and `QU` wrong because the 16-bit
+  members were loaded without their sign. A `CTD` that was never loaded counts
+  from 0 to -1 on its first edge.
+- `BLINK` starts its cycle with the ON phase in the scan where `ENABLE` rises
+  (it started with the OFF phase) and starts it again after `ENABLE` was
+  FALSE; a phase ends at the first call at which its time has elapsed.
+- `PWM` takes an integer `DUTY` as a REAL (`DUTY := 1` was a denormal and the
+  output never came on), ends its pulse at `PERIOD * DUTY` also when that is not
+  a whole number of milliseconds (the comparison truncated 30.5 ms to 30 ms of
+  difference), and a `PERIOD` of 0 is off instead of dividing by zero.
 
 ## 2.0.0-rc.3 - 2026-09-01
 

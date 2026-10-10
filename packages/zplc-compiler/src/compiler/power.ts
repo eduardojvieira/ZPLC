@@ -18,10 +18,12 @@
  * It uses no memory but the stack, so it works in every POU.
  */
 
+import type { Routine } from './stdlib/types.ts';
+
 export const POWF_LABEL = '_zplc_powf';
 const POWI_LABEL = '_zplc_powi';
-const LOG2F_LABEL = '_zplc_log2f';
-const EXP2F_LABEL = '_zplc_exp2f';
+export const LOG2F_LABEL = '_zplc_log2f';
+export const EXP2F_LABEL = '_zplc_exp2f';
 
 /** The IEEE 754 single-precision pattern of `value`, as a hexadecimal PUSH32 operand. */
 function f32(value: number): string {
@@ -68,7 +70,7 @@ const POWI_HELPER: string[] = [
  * log2 of a positive normal REAL: [x] -> [log2 x].
  * x = m * 2^e with m in [0.71, 1.41]; ln m = 2 * atanh((m-1)/(m+1)) as the series s + s^3/3 + ... + s^9/9.
  */
-const LOG2F_HELPER: string[] = [
+export const LOG2F_HELPER: string[] = [
     `${LOG2F_LABEL}:          ; [x]`,
     `    DUP`,
     `    PUSH8 23`,
@@ -133,7 +135,7 @@ const LOG2F_HELPER: string[] = [
  * 2 ** z: [z] -> [2 ** z], 0.0 below 2 ** -126 and +infinity from 2 ** 128.
  * z = k + f with k whole and f in [0, 1); 2 ** f = e ** (f ln 2) by the Taylor series to g^8, scaled by 2 ** k.
  */
-const EXP2F_HELPER: string[] = [
+export const EXP2F_HELPER: string[] = [
     `${EXP2F_LABEL}:          ; [z]`,
     `    DUP`,
     `    F2I                 ; [z k]  truncated toward zero`,
@@ -331,6 +333,11 @@ export const POWF_HELPER: string[] = [
     `    PUSH32 0x7FC00000`,
     `    RET`,
     ...POWI_HELPER,
-    ...LOG2F_HELPER,
-    ...EXP2F_HELPER,
+];
+
+/** The three routines of `**`: the power itself, which calls the logarithm and the exponential. */
+export const POWF_ROUTINES: Routine[] = [
+    { label: POWF_LABEL, lines: POWF_HELPER, needs: [LOG2F_LABEL, EXP2F_LABEL] },
+    { label: LOG2F_LABEL, lines: LOG2F_HELPER, needs: [] },
+    { label: EXP2F_LABEL, lines: EXP2F_HELPER, needs: [] },
 ];

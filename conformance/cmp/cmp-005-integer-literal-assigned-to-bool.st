@@ -1,0 +1,6 @@
+PROGRAM Mismatch
+VAR
+  b : BOOL;
+END_VAR
+  b := 1;
+END_PROGRAM

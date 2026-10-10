@@ -39,10 +39,10 @@ The counters count rising edges and keep `CV` and `PV` as `INT`. What each block
 | Block | Count | Priority | `CV` limit | Outputs |
 |---|---|---|---|---|
 | `CTU` | +1 on a rising edge of `CU` | `R` sets `CV` to 0 | stops at 32767 | `Q` is `CV >= PV` |
-| `CTD` | -1 on a rising edge of `CD` | `LD` sets `CV` to `PV` | stops at 0 | `Q` is `CV <= 0` |
-| `CTUD` | +1 on `CU`, -1 on `CD`; both edges in one call cancel | `R`, then `LD`, then the edges | stops at 32767 | `QU` is `CV >= PV`, `QD` is `CV <= 0` |
+| `CTD` | -1 on a rising edge of `CD` | `LD` sets `CV` to `PV` | stops at -32768 | `Q` is `CV <= 0` |
+| `CTUD` | +1 on `CU`, -1 on `CD`; both edges in one call cancel | `R`, then `LD`, then the edges | stops at 32767 and at -32768 | `QU` is `CV >= PV`, `QD` is `CV <= 0` |
 
-The edge detector runs on every call, also while `R` or `LD` is TRUE. Counting below zero and negative presets do not follow IEC 61131-3 yet (requirement CMP-011). The full rules and the evidence are in [section 2 of the runtime reference](../runtime/stdlib.md#2-counters).
+The edge detector runs on every call, also while `R` or `LD` is TRUE. The comparisons are signed, so a counter counts below zero and takes a negative preset. The full rules and the evidence are in [section 2 of the runtime reference](../runtime/stdlib.md#2-counters).
 
 ## String functions
 
@@ -76,12 +76,13 @@ Additional utility string functions in the same file include:
 
 Examples directly registered in the stdlib include:
 
-- arithmetic and conversion: `ABS`, `ABSF`, `NEG`, `NEGF`, `SQRT`, `INT_TO_REAL`, `REAL_TO_INT`, `TRUNC`, `ROUND`
+- arithmetic: `ABS`, `ABSF`, `NEG`, `NEGF`, `SQRT`, `EXPT`, `TRUNC`, `ROUND`
+- conversion: `<FROM>_TO_<TO>` for every pair of different types among `BOOL`, `SINT`, `USINT`, `BYTE`, `INT`, `UINT`, `WORD`, `DINT`, `UDINT`, `DWORD`, `REAL` and `TIME` (`INT_TO_REAL`, `REAL_TO_INT`, `UDINT_TO_DINT`...), see [Type conversions](../runtime/stdlib.md#9-type-conversions)
 - trigonometry and logs: `SIN`, `COS`, `TAN`, `ASIN`, `ACOS`, `ATAN`, `ATAN2`, `LN`, `LOG`, `EXP`
 - selection helpers: `MAX`, `MIN`, `LIMIT`, `SEL`, `MUX`
 - bitwise helpers: `ROL`, `ROR`, `SHL`, `SHR`, `AND_WORD`, `OR_WORD`, `XOR_WORD`, `NOT_WORD`
 
-Three things in the registry cannot be used as the list suggests today. `MOD` and the logic operators are operators (`a MOD b`, `a AND b`), and the forms `MOD(a, b)` and `AND(a, b)` do not parse. A program that calls `EXPT` is refused by the loader. Only six conversion functions exist: `INT_TO_REAL`, `REAL_TO_INT`, `BOOL_TO_INT`, `INT_TO_BOOL`, `TRUNC` and `ROUND`; any other `X_TO_Y` name is a build error. The table of [known differences](../runtime/stdlib.md#11-known-differences-from-iec-61131-3) lists the cases that fail today, with their requirement ids.
+One thing in the registry cannot be used as the list suggests. `MOD` and the logic operators are operators (`a MOD b`, `a AND b`), and the forms `MOD(a, b)` and `AND(a, b)` do not parse. The 64-bit types and `DATE`, `TOD` and `DT` have no conversion functions yet. The table of [known differences](../runtime/stdlib.md#11-known-differences-from-iec-61131-3) lists the cases that fail today, with their requirement ids.
 
 ## Communication function blocks
 

@@ -128,6 +128,7 @@ export const TokenType = {
     
     // Symbols
     ASSIGN: 'ASSIGN',           // :=
+    OUTPUT_ASSIGN: 'OUTPUT_ASSIGN', // =>  (the binding of a function block output)
     COLON: 'COLON',             // :
     SEMICOLON: 'SEMICOLON',     // ;
     DOT: 'DOT',                 // .
@@ -756,6 +757,12 @@ export function tokenizeWithErrors(source: string): LexResult {
         // Comparison operators
         if (ch === '=') {
             advance();
+            if (current() === '>') {
+                // `Q => y` binds an output in a call (CMP-037); no other construct has `=` before `>`
+                advance();
+                addToken(TokenType.OUTPUT_ASSIGN, '=>', startLine, startColumn);
+                return;
+            }
             addToken(TokenType.EQ, '=', startLine, startColumn);
             return;
         }

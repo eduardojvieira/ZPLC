@@ -1,0 +1,17 @@
+{
+  "requirement": "CMP-058",
+  "title": "EXPT with a REAL exponent equals the operator ** and the square root",
+  "matrix": ["functions.trigonometric-logarithmic-exponential"],
+  "tags": ["arch-sensitive", "float"],
+  "note": "EXPT(x, y) and x ** y are one operation: 9.0 ** 0.5 = 3.0, 2.0 ** 0.5 = 1.4142135, 10.0 ** -1.5 = 0.0316228 within 1.0E-5 of the exact value, a negative base with a fractional exponent is not a number, and the function and the operator give the same bits",
+  "scans": 1,
+  "scanMs": 10,
+  "expect": [
+    {"at": "%QX0.0", "type": "BOOL", "value": true},
+    {"at": "%QX0.1", "type": "BOOL", "value": true},
+    {"at": "%QX0.2", "type": "BOOL", "value": true},
+    {"at": "%QX0.3", "type": "BOOL", "value": true},
+    {"at": "%QX0.4", "type": "BOOL", "value": true},
+    {"at": "%QX0.5", "type": "BOOL", "value": true}
+  ]
+}

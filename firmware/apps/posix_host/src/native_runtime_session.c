@@ -21,6 +21,7 @@
 #include <zplc_hal.h>
 #include <zplc_hal_posix.h>
 #include <zplc_isa.h>
+#include <zplc_retain.h>
 #include <zplc_scheduler.h>
 
 #define ZPLC_NATIVE_PROTOCOL_VERSION "1.0"
@@ -31,6 +32,13 @@
 #define ZPLC_NATIVE_FIELD_ABSENT 0U
 #define ZPLC_NATIVE_FIELD_VALID 1U
 #define ZPLC_NATIVE_FIELD_INVALID 2U
+
+/* RETAIN persistence (RT-025 to RT-027). The interval is the minimum time between
+ * periodic saves; 0 turns them off, so only STOP, reset and shutdown save. */
+#define ZPLC_NATIVE_RETAIN_INTERVAL_ENV "ZPLC_RETAIN_SAVE_INTERVAL_MS"
+#define ZPLC_NATIVE_RETAIN_DEFAULT_INTERVAL_MS 30000UL
+#define ZPLC_NATIVE_RETAIN_MIN_INTERVAL_MS 100UL
+#define ZPLC_NATIVE_RETAIN_MAX_INTERVAL_MS 86400000UL
 
 
 typedef struct {
@@ -62,6 +70,83 @@ static int narrow_uint16(uint32_t value, uint16_t *out)
 
     *out = (uint16_t)value;
     return 0;
+}
+
+static void retain_lock(void)
+{
+    (void)zplc_pi_lock();
+}
+
+static void retain_unlock(void)
+{
+    zplc_pi_unlock();
+}
+
+static uint32_t retain_interval_ms(void)
+{
+    const char *text = getenv(ZPLC_NATIVE_RETAIN_INTERVAL_ENV);
+    char *end = NULL;
+    unsigned long value;
+
+    if (text == NULL || text[0] == '\0') {
+        return (uint32_t)ZPLC_NATIVE_RETAIN_DEFAULT_INTERVAL_MS;
+    }
+    value = strtoul(text, &end, 10);
+    if (end == text || *end != '\0' ||
+        (value != 0UL && value < ZPLC_NATIVE_RETAIN_MIN_INTERVAL_MS) ||
+        value > ZPLC_NATIVE_RETAIN_MAX_INTERVAL_MS) {
+        (void)fprintf(stderr,
+                      "[native-sim] ignoring %s=%s: use 0 or %lu..%lu milliseconds\n",
+                      ZPLC_NATIVE_RETAIN_INTERVAL_ENV, text,
+                      ZPLC_NATIVE_RETAIN_MIN_INTERVAL_MS, ZPLC_NATIVE_RETAIN_MAX_INTERVAL_MS);
+        return (uint32_t)ZPLC_NATIVE_RETAIN_DEFAULT_INTERVAL_MS;
+    }
+    return (uint32_t)value;
+}
+
+static void session_retain_configure(void)
+{
+    zplc_retain_config_t config;
+
+    memset(&config, 0, sizeof(config));
+    config.region = zplc_mem_get_region(ZPLC_MEM_RETAIN_BASE);
+    config.region_size = ZPLC_MEM_RETAIN_SIZE;
+    config.lock = retain_lock;
+    config.unlock = retain_unlock;
+    config.min_interval_ms = retain_interval_ms();
+    (void)zplc_retain_init(&config);
+}
+
+/* The program is loaded (the core zeroed its memory): bring back its values, or
+ * leave the region initialised and let the status say why. */
+static void session_retain_restore(const uint8_t *artifact, size_t size)
+{
+    zplc_retain_identity_t identity;
+
+    if (zplc_retain_identity_from_artifact(artifact, size, &identity) == 0) {
+        (void)zplc_retain_restore(&identity, zplc_hal_tick());
+    }
+}
+
+static void session_retain_save(const zplc_native_runtime_session_t *session, uint32_t now_ms,
+                                zplc_retain_save_mode_t mode)
+{
+    zplc_retain_identity_t identity;
+
+    if (session->program_loaded != 0U &&
+        zplc_retain_identity_from_artifact(session->program, session->program_size, &identity) == 0) {
+        (void)zplc_retain_save(&identity, now_ms, mode);
+    }
+}
+
+static void session_retain_cold_reset(const zplc_native_runtime_session_t *session)
+{
+    zplc_retain_identity_t identity;
+
+    if (session->program_loaded != 0U &&
+        zplc_retain_identity_from_artifact(session->program, session->program_size, &identity) == 0) {
+        (void)zplc_retain_cold_reset(&identity, zplc_hal_tick());
+    }
 }
 
 static void session_reset_program(zplc_native_runtime_session_t *session)
@@ -882,10 +967,18 @@ static int append_status_payload(const zplc_native_runtime_session_t *session,
     const uint8_t *opi;
     const uint8_t *ipi;
     const zplc_vm_t *focused_vm;
+    zplc_retain_status_t retain;
+    char saved_at[16];
     uint8_t index;
 
     if (session == NULL || response == NULL || used == NULL) {
         return format_failed(response, response_size);
+    }
+    zplc_retain_last_status(&retain);
+    if (retain.saves == 0U) {
+        (void)snprintf(saved_at, sizeof(saved_at), "null");
+    } else {
+        (void)snprintf(saved_at, sizeof(saved_at), "%u", (unsigned)retain.saved_at_ms);
     }
 
     switch (session->state) {
@@ -915,6 +1008,8 @@ static int append_status_payload(const zplc_native_runtime_session_t *session,
         "\"program_size\":%u},"
         "\"host_cadence\":{\"kind\":\"observed_poll_cadence\",\"missed_intervals\":%u,"
         "\"last_dispatch_lateness_ms\":%u},"
+        "\"retain\":{\"reason\":\"%s\",\"restored\":%s,\"sequence\":%u,\"saves\":%u,"
+        "\"save_errors\":%u,\"saved_at_ms\":%s},"
         "\"focused_vm\":{\"pc\":%u,\"sp\":%u,\"halted\":%s,\"error\":%u},\"tasks\":[",
         state,
         session->last_scan_tick_ms,
@@ -925,6 +1020,9 @@ static int append_status_payload(const zplc_native_runtime_session_t *session,
         session->program_size,
         session->missed_interval_count,
         session->last_dispatch_lateness_ms,
+        zplc_retain_reason_string(retain.reason),
+        retain.reason == ZPLC_RETAIN_RESTORED ? "true" : "false",
+        (unsigned)retain.sequence, (unsigned)retain.saves, (unsigned)retain.save_errors, saved_at,
         (unsigned)focused_vm->pc, (unsigned)focused_vm->sp,
         focused_vm->halted != 0U ? "true" : "false", (unsigned)focused_vm->error) != 0) {
         return format_failed(response, response_size);
@@ -1181,6 +1279,7 @@ static int handle_program_load(zplc_native_runtime_session_t *session,
 
     memcpy(session->program, candidate, program_size);
     free(workspace);
+    session_retain_restore(candidate, program_size);
     free(candidate);
     session->program_loaded = 1U;
     session->program_size = (uint32_t)program_size;
@@ -1375,6 +1474,8 @@ static int handle_stop_or_reset(zplc_native_runtime_session_t *session,
                                 size_t response_size,
                                 int reset_program)
 {
+    const int was_faulted = session->state == ZPLC_NATIVE_SESSION_ERROR;
+
     if (reset_program != 0 && session->program_loaded != 0U) {
         zplc_native_program_details_t details;
         uint8_t *workspace;
@@ -1434,6 +1535,13 @@ static int handle_stop_or_reset(zplc_native_runtime_session_t *session,
     }
     if (reset_program != 0 || session->state != ZPLC_NATIVE_SESSION_ERROR) {
         session->state = ZPLC_NATIVE_SESSION_IDLE;
+    }
+    if (reset_program != 0) {
+        /* Reset is a cold restart: the stored values must not come back. */
+        session_retain_cold_reset(session);
+    } else if (!was_faulted) {
+        /* STOP: the values of the last complete scan are what a restart sees. */
+        session_retain_save(session, zplc_hal_tick(), ZPLC_RETAIN_SAVE_FORCED);
     }
 
     return format_jsonf(response,
@@ -1846,6 +1954,7 @@ void zplc_native_runtime_session_init(zplc_native_runtime_session_t *session)
     session->state = ZPLC_NATIVE_SESSION_IDLE;
     session->scan_interval_ms = 100U;
     zplc_core_init();
+    session_retain_configure();
 
     if (zplc_native_program_store_restore(session->program, sizeof(session->program),
                                           &saved_len) == 0) {
@@ -1860,6 +1969,7 @@ void zplc_native_runtime_session_init(zplc_native_runtime_session_t *session)
             session->program_format = ZPLC_NATIVE_PROGRAM_ZPLC;
             session->scan_interval_ms = details.scan_interval_ms;
             session->program_generation = 1U;
+            session_retain_restore(session->program, saved_len);
         } else {
             session_reset_program(session);
         }
@@ -1882,6 +1992,10 @@ void zplc_native_runtime_session_shutdown(zplc_native_runtime_session_t *session
         return;
     }
 
+    /* A clean shutdown keeps the values of the last complete scan, like a STOP. */
+    if (session->state != ZPLC_NATIVE_SESSION_ERROR) {
+        session_retain_save(session, zplc_hal_tick(), ZPLC_RETAIN_SAVE_FORCED);
+    }
     zplc_force_clear_all();
     zplc_hal_posix_clear_tick_override();
     {
@@ -2101,6 +2215,10 @@ int zplc_native_runtime_session_tick(zplc_native_runtime_session_t *session,
 
     if (session_focused_vm(session)->paused != 0U) {
         session->state = ZPLC_NATIVE_SESSION_PAUSED;
+    } else {
+        /* A scan boundary: the region is consistent. The module skips the call
+         * inside the interval and when nothing changed (flash wear, RT-026). */
+        session_retain_save(session, now_ms, ZPLC_RETAIN_SAVE_PERIODIC);
     }
 
     if (event != NULL && event_size > 0U &&

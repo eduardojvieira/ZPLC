@@ -6,6 +6,6 @@ VAR
   q_down AT %QD4 : DINT;
 END_VAR
   down := 0.0 - up;
-  q_up := REAL_TO_INT(up);
-  q_down := REAL_TO_INT(down);
+  q_up := REAL_TO_DINT(TRUNC(up));
+  q_down := REAL_TO_DINT(TRUNC(down));
 END_PROGRAM

@@ -26,7 +26,8 @@ Delays a rising edge. The output `Q` goes TRUE only after `IN` has been TRUE for
   - `PT` (TIME): Preset Time (duration to wait).
 - **Outputs:**
   - `Q` (BOOL): High if `IN` has been continuously high for `PT` (`cmp-058-ton-delays-output`).
-  - `ET` (TIME): Elapsed Time since `IN` went high. It keeps counting while `IN` stays high, where IEC 61131-3 stops it at `PT` (see section 11).
+  - `ET` (TIME): Elapsed Time since `IN` went high. It counts up to `PT` and stops there; it is 0 while `IN` is low (`cmp-057-ton-elapsed-stops-at-preset`).
+- **Behavior:** `IN` low resets `Q` and `ET` at once. A preset of `T#0ms` makes `Q` follow `IN` in the same scan (`cmp-057-ton-zero-preset-follows-the-input`).
 
 ### TOF (Off-Delay Timer)
 Preserves a high state for a duration after a falling edge. `Q` follows `IN` to TRUE immediately, but delays going FALSE until `PT` has elapsed.
@@ -35,7 +36,7 @@ Preserves a high state for a duration after a falling edge. `Q` follows `IN` to 
   - `PT` (TIME): Preset Time (duration to keep high).
 - **Outputs:**
   - `Q` (BOOL): True while `IN` is true, plus `PT` duration after `IN` goes false (`cmp-058-tof-holds-output`).
-  - `ET` (TIME): Elapsed Time since `IN` went low.
+  - `ET` (TIME): Elapsed Time since `IN` went low. It counts up to `PT` and stays at `PT` until `IN` goes high again; it is 0 while `IN` is high (`cmp-057-tof-elapsed-stops-at-preset`).
 
 ### TP (Pulse Timer)
 Generates a pulse of fixed duration regardless of how long the input stays high.
@@ -43,8 +44,9 @@ Generates a pulse of fixed duration regardless of how long the input stays high.
   - `IN` (BOOL): Trigger condition (rising edge starts the pulse).
   - `PT` (TIME): Preset Time (pulse width).
 - **Outputs:**
-  - `Q` (BOOL): True for `PT` after a rising edge of `IN`, whatever `IN` does meanwhile (`cmp-057-tp-pulse-ignores-the-input-falling`). While `IN` stays high the pulse starts again after `PT`, where IEC 61131-3 gives one pulse (see section 11).
-  - `ET` (TIME): Elapsed Time since pulse started.
+  - `Q` (BOOL): True for `PT` after a rising edge of `IN`, whatever `IN` does meanwhile (`cmp-057-tp-pulse-ignores-the-input-falling`).
+  - `ET` (TIME): Elapsed Time since pulse started. It counts up to `PT` and stops there; it holds `PT` while `IN` stays high after the pulse and is 0 once the pulse is over and `IN` is low (`cmp-057-tp-elapsed-resets-when-the-pulse-ends-with-input-low`).
+- **Behavior:** The pulse runs to its end whatever `IN` does and cannot be retriggered: a level that stays high does not start a second pulse, a new pulse needs a new rising edge after the pulse has ended (`cmp-057-tp-not-retriggered`, `cmp-057-tp-new-edge-starts-a-new-pulse`). A preset of `T#0ms` gives no pulse.
 
 ---
 
@@ -75,7 +77,7 @@ Subtracts 1 on every rising edge of `CD`.
   - `PV` (INT): Preset value.
 - **Outputs:**
   - `Q` (BOOL): TRUE when `CV <= 0`. A new instance starts with `CV` at 0, so `Q` is TRUE until the first load.
-  - `CV` (INT): Current value. It stops at 0: an edge there is not counted.
+  - `CV` (INT): Current value. It counts below 0 and stops at -32768: an edge there is not counted, and `CV` does not wrap to 32767 (`cmp-058-ctd-counts-below-zero`, `cmp-058-ctd-stops-at-the-int-minimum`).
 
 ### CTUD (Count Up/Down)
 Adds 1 on a rising edge of `CU` and subtracts 1 on a rising edge of `CD`.
@@ -88,19 +90,13 @@ Adds 1 on a rising edge of `CU` and subtracts 1 on a rising edge of `CD`.
 - **Outputs:**
   - `QU` (BOOL): TRUE when `CV >= PV`.
   - `QD` (BOOL): TRUE when `CV <= 0`.
-  - `CV` (INT): Current value. It stops at 32767 as `CTU` does. A rising edge of `CU` and one of `CD` in the same call cancel each other.
+  - `CV` (INT): Current value. It stops at 32767 as `CTU` does and at -32768 counting down. A rising edge of `CU` and one of `CD` in the same call cancel each other.
 
-### Counting below zero and negative presets (open requirement)
+### Signed values
 
-IEC 61131-3 lets a counter go down to -32768 and compares signed values. ZPLC does not follow it there yet. Today:
+`CV` and `PV` are signed 16-bit values and every comparison is signed: a negative `PV` is a negative preset (a `CTU` with `PV := -3` has `Q` TRUE from the first call, `cmp-058-ctu-with-a-negative-preset`), and `QU` and `QD` of `CTUD` compare `CV` with `PV` and with 0 as signed numbers below zero (`cmp-058-ctud-counts-down-through-zero-and-back`).
 
-- `CTD` stops at 0, as listed above.
-- `CTUD` has no lower limit: `CV` goes on to -1, -2 and so on, but `QU` and `QD` compare `CV` and `PV` as unsigned 16-bit numbers. With a negative `CV`, `QU` is TRUE and `QD` is FALSE, where IEC 61131-3 gives `QU` FALSE and `QD` TRUE.
-- A negative `PV` is read as 65536 plus `PV`. A `CTU` with `PV := -1` never sets `Q`, and a `CTD` that loads a negative `PV` goes on counting down below zero with `Q` FALSE.
-
-This is requirement CMP-011 (comparison on `INT` with negative values) and, for the boundary values of the standard blocks, CMP-058. Use a preset of 0 or more, and do not rely on `QU` or `QD` below zero.
-
-Evidence level: host. The cases `cmp-058-ctu-*`, `cmp-058-ctd-*` and `cmp-058-ctud-*` under `conformance/cmp/` run on the native runtime, and `packages/zplc-compiler/src/compiler/stdlib/counters.test.ts` replays the generated code scan by scan, including the stop of `CTD` at 0. The behaviour below zero and with a negative preset was observed on the native runtime and is recorded in the comments of `packages/zplc-compiler/src/compiler/stdlib/counters.ts`; no conformance case pins it yet.
+Evidence level: host. The cases `cmp-058-ctu-*`, `cmp-058-ctd-*` and `cmp-058-ctud-*` under `conformance/cmp/` run on the native runtime, and `packages/zplc-compiler/src/compiler/stdlib/counters.test.ts` replays the generated code scan by scan, including the stops at 32767 and at -32768.
 
 ---
 
@@ -150,14 +146,53 @@ Calculates the absolute value.
 ### SQRT
 Calculates the square root of a number.
 - **Inputs:** `IN` (REAL).
-- **Outputs:** (REAL) Square root of IN.
+- **Outputs:** (REAL) Square root of IN; 0.0 for an `IN` of 0.0 or below.
 
 ### SIN / COS / TAN
 Standard trigonometric functions (evaluated in radians).
 - **Inputs:** `IN` (REAL).
 - **Outputs:** (REAL) Sine, Cosine, or Tangent of IN (`cmp-058-trigonometric-functions`).
+- **Domain:** every finite `IN`. A NaN or an infinity gives a NaN (`cmp-058-sine-of-infinity-and-not-a-number`). An angle of 100000 or more is reduced modulo 2 pi before the sine is taken, with 2 pi held to 36 bits in three parts that multiply exactly and a correction applied once, so the result is the sine of the REAL itself: as accurate as for a small angle up to 2^40, and with an error that grows as `IN` times 1e-19 above it (1e-4 at 2^48). A REAL of 2 pi times 2^48 (1.8e15) or more has a spacing above 2^25 radians: the angle carries no information, the reduction does not hold it and the function gives the value for an angle of 0.0, finite, without an error (`cmp-058-trigonometric-functions-of-negative-and-large-angles`).
 
-`ASIN`, `ACOS`, `ATAN`, `ATAN2`, `LN`, `LOG` and `EXP` are also registered. They are approximations today and some are off by more than 0.05 (see section 11).
+### EXP / LN / LOG
+The natural exponential, the natural logarithm and the logarithm to base 10.
+- **Inputs:** `IN` (REAL; an integer is converted).
+- **Outputs:** (REAL) `e ** IN`, `ln(IN)` or `log10(IN)`.
+- **Range:** `EXP` gives +infinity above 88.72284 and 0.0 below -103.28. `LN` and `LOG` give -infinity for 0.0 and a NaN for a negative number.
+
+### ASIN / ACOS / ATAN / ATAN2
+Inverse trigonometric functions, in radians.
+- **Inputs:** `IN` (REAL) for `ASIN`, `ACOS` and `ATAN`; `ATAN2(Y, X)` takes two REAL values.
+- **Outputs:** (REAL) `ASIN` in [-pi/2, pi/2] and `ACOS` in [0, pi] for an `IN` from -1.0 to 1.0, a NaN outside it; `ATAN` in (-pi/2, pi/2) for any `IN`; `ATAN2` in (-pi, pi], the angle of the point (`X`, `Y`) measured from the positive X axis, and 0.0 for (0.0, 0.0).
+
+### NORM_X / SCALE_X
+Map a value between a range and 0.0 to 1.0.
+- **NORM_X(MIN, X, MAX)**: `(X - MIN) / (MAX - MIN)`, a REAL; 0.0 when `MAX` equals `MIN`. A value outside the range is not clamped (`NORM_X(0.0, 30.0, 20.0)` is 1.5).
+- **SCALE_X(MIN, X, MAX)**: `MIN + X * (MAX - MIN)`, a REAL. The bounds may be negative; integer arguments are converted.
+
+### EXPT
+`EXPT(BASE, EXP)` raises `BASE` to `EXP`; it is the operator `**` in function form. Both arguments are converted to REAL and the result is a REAL. An integer exponent, negative and 0 included, is computed by repeated squaring (`EXPT(2.0, -2.0)` is 0.25 and `EXPT(x, 0.0)` is 1.0); any other exponent as `2 ** (EXP * log2(BASE))`, a NaN for a negative base.
+
+### Accuracy of the REAL functions
+The functions above are subroutines in single-precision arithmetic, measured against `Math.*` over dense grids in the compiler test suite (`stdlib/mathlib.test.ts`). The error never exceeds:
+
+| Function | Range | Error |
+|---|---|---|
+| `SQRT` | all positive REAL, subnormals included | relative 1.3e-7 |
+| `EXP` | -87 to 88 | relative 1.3e-7 |
+| `LN`, `LOG` | all positive REAL, subnormals included | relative 3e-7 |
+| `SIN`, `COS` | magnitude up to 1000 | absolute 2e-7 |
+| `SIN`, `COS` | magnitude below 2^40 (1.1e12) | absolute 2e-6 |
+| `SIN`, `COS` | magnitude from 2^40 to 2^48 (2.8e14) | absolute 1e-4 |
+| `TAN` | magnitude up to 1000 | relative 3e-7 |
+| `TAN` | magnitude up to 2^40 | the error of the angle times `1 + TAN(x)^2`, plus 5e-7 of the result |
+| `ATAN` | all REAL | absolute 2e-7 |
+| `ASIN`, `ACOS` | -1.0 to 1.0 | absolute 4e-7 |
+| `ATAN2` | all REAL pairs | absolute 4e-7 |
+
+None of them faults the VM for any argument: a division by zero is replaced by the value the function defines, and a NaN argument gives a NaN.
+
+Cost: no loop depends on the argument, so the number of instructions executed has a fixed bound: at most 40 for `SQRT`, 90 for `EXP`, `LN` and `LOG`, 105 for `ASIN` and `ACOS`, 165 for `TAN` and 75 for `SIN` and `COS` up to 100000. An angle of 100000 or more is reduced first, in 190 to 355 more instructions by its size: `SIN` and `COS` at most 430, `TAN` at most 520.
 
 ---
 
@@ -194,6 +229,7 @@ Multiplexer. Selects one of N inputs based on an integer index.
 
 ### Logical Operators
 - **`a AND b`, `a OR b`, `a XOR b`, `NOT a`**: operators on `BOOL`, `BYTE`, `WORD`, `DWORD` and `LWORD`, on the full declared width. The function forms `AND(a, b)`, `OR(a, b)` and `XOR(a, b)` do not parse.
+- **NAND(IN1, IN2)** / **NOR(IN1, IN2)**: The negation of AND and of OR of two `BOOL` values, 0 or 1 (`cmp-058-nand-and-nor-truth-tables`).
 - **AND_WORD, OR_WORD, XOR_WORD, NOT_WORD** and **AND_DWORD, OR_DWORD, XOR_DWORD, NOT_DWORD**: the same operations as functions on `WORD` and `DWORD` (`cmp-014-shr-and-word-logic-functions`).
 
 ### Shifting and Rotating
@@ -246,12 +282,21 @@ The position comes before the count in `MID`, `DELETE` and `REPLACE`. IEC 61131-
 
 ## 9. Type Conversions
 
-Six conversion functions exist. Every other `X_TO_Y` name, such as `DINT_TO_REAL`, `SINT_TO_INT`, `TIME_TO_DINT` or `DINT_TO_TIME`, is a build error that names the function (requirement CMP-057).
+Use type conversion functions to move values between types. A function `<FROM>_TO_<TO>` exists for every ordered pair of different types among `BOOL`, `SINT`, `USINT`, `BYTE`, `INT`, `UINT`, `WORD`, `DINT`, `UDINT`, `DWORD`, `REAL` and `TIME`: `INT_TO_DINT`, `DINT_TO_REAL`, `SINT_TO_INT`, `REAL_TO_USINT`, `TIME_TO_DINT`, and so on (132 functions). The 64-bit types and `DATE`, `TOD` and `DT` have no conversion functions yet.
 
-- **INT_TO_REAL(IN)**: converts an integer to `REAL`.
-- **REAL_TO_INT(IN)**: converts a `REAL` to an integer. It truncates toward zero, saturates at the `DINT` limits and gives 0 for a NaN (`cmp-016-real-to-dint-truncates-toward-zero`, `cmp-016-real-out-of-range-to-dint`, `cmp-016-real-nan-to-dint`).
-- **BOOL_TO_INT(IN)** / **INT_TO_BOOL(IN)**: TRUE becomes 1 and FALSE becomes 0; a non-zero integer becomes TRUE (`cmp-057-bool-and-round-conversions`).
-- **TRUNC(IN)** / **ROUND(IN)**: return a `REAL` holding the integer part toward zero or the nearest integer (`cmp-057-trunc-truncates`, `cmp-057-bool-and-round-conversions`).
+| Conversion | Result |
+|---|---|
+| Integer to a wider integer or one of the same width | The same value. |
+| Integer to a narrower integer, or to the other signedness | The low bits of the value in the width of the destination (two's complement wrap): `INT_TO_SINT(300)` is 44, `INT_TO_UINT(-1)` is 65535, `DINT_TO_UDINT(-1)` is 4294967295. |
+| Integer or `TIME` to `BOOL` | FALSE for 0, TRUE for any other value. |
+| `BOOL` to a number | 0 or 1. |
+| Integer to `REAL` | The nearest `REAL`; a 32-bit value above 2^24 may lose its lowest bits. |
+| `REAL` to an integer | The nearest integer, an exact half to the even integer (`REAL_TO_INT(2.5)` is 2, `REAL_TO_INT(3.5)` is 4, `REAL_TO_INT(-2.5)` is -2). A value outside the range of the destination gives its nearest limit (`REAL_TO_INT(40000.0)` is 32767, `REAL_TO_USINT(-5.0)` is 0, infinity gives the limit of its sign) and a NaN gives 0. |
+| `REAL` to `BOOL` | FALSE for 0.0 and -0.0, TRUE for any other value. |
+| `TIME` | Its count of milliseconds as an unsigned 32-bit integer: `TIME_TO_DINT(T#2s)` is 2000. |
+
+- **TRUNC(IN)**: Removes the fractional part of a `REAL` toward zero and returns a `REAL` (`TRUNC(-3.7)` is -3.0). A magnitude of 2^23 or more has no fraction and is returned as it is. For the integer, use `REAL_TO_DINT(TRUNC(x))`.
+- **ROUND(IN)**: Not an IEC function. The nearest whole number as a `REAL`, an exact half away from zero (`ROUND(2.5)` is 3.0, `ROUND(-2.5)` is -3.0).
 
 ---
 
@@ -281,16 +326,93 @@ It must not be used as a safety control.
 The table is generated from the conformance cases that expect IEC 61131-3 behaviour and fail today (`tools/ci/expected-failures.json`) and from the description of each requirement in `docs/known-limits.json`. A row disappears when the last case of its requirement passes.
 
 {/* >>> GENERATED (tools/docs/generate_known_limits.py): known-limits-library. Do not edit. >>> */}
-| Requirement | What happens today | Cases that fail today |
-|---|---|---|
-| CMP-025 | A `FIFO` called without `SIZE` faults the VM: the documented default of eight items is not applied. | `a FIFO called without SIZE holds its documented default of eight items` |
-| CMP-057 | Some standard blocks and conversion functions differ from IEC 61131-3. Only six conversion functions exist (`INT_TO_REAL`, `REAL_TO_INT`, `BOOL_TO_INT`, `INT_TO_BOOL`, `TRUNC`, `ROUND`); any other `X_TO_Y` name is a build error (`Unknown function`). `REAL_TO_INT` truncates toward zero, where IEC 61131-3 rounds to the nearest integer. `TON.ET` keeps counting after it reaches `PT`. `TP` starts its pulse again after `PT` while `IN` stays TRUE. | `DINT_TO_REAL exists`<br />`INT_TO_DINT exists`<br />`REAL_TO_INT rounds to the nearest integer`<br />`TON elapsed time stops at the preset`<br />`TP is not retriggered while its input stays true`<br />`conversion functions between integer types keep an in-range value` |
-| CMP-058 | Some standard functions and blocks differ from IEC 61131-3. `ASIN`, `ACOS`, `ATAN` and `ATAN2` are approximations: `ASIN(0.5)` gives 0.5259 (exact 0.5236) and `ATAN(1.0)` gives 0.7238 (exact 0.7854). `BLINK` (not an IEC block) starts in its OFF phase, so `Q` rises one `T_OFF` after `ENABLE`. `LN`, `LOG` and `EXP` are approximations: `LN(10.0)` gives 2.2183 (exact 2.3026), `EXP(1.0)` gives 2.7167 (exact 2.7183) and `LOG(1000.0)` gives 1.449 where the answer is 3.0. `SQRT` is within 0.001 on the checked values. | `ASIN, ACOS and ATAN return radians`<br />`BLINK is on for T_ON and off for T_OFF while ENABLE holds`<br />`LN, LOG, EXP and SQRT` |
+No conformance case of this area is on the expected-failures list: no limit is recorded.
 {/* <<< END GENERATED: known-limits-library <<< */}
 
-Two limits have no conformance case yet, so the table cannot show them; each appears in the table once a case exists:
+A block or function that is not in the table is not known to differ. Every standard function and every library block outside the communication blocks has an executed case under `conformance/cmp/` (requirement CMP-058).
 
-- A program that calls `EXPT` is refused by the loader. Requirement CMP-058 asks for an executed case of every standard function.
-- `CTUD` counting below zero and negative presets differ from IEC 61131-3: see section 2 (requirement CMP-011).
+---
 
-A block or function that is neither in the table nor in this list is not known to differ. That is not the same as having an executed case: requirement CMP-058 asks for one case for each standard function and block, and the repository does not have all of them yet.
+## 12. Library Blocks Outside the Standard
+
+These blocks belong to the ZPLC library and are not IEC 61131-3 blocks.
+
+### BLINK (Asymmetric Pulse Generator)
+Generates a pulse train with separate ON and OFF times.
+- **Inputs:**
+  - `ENABLE` (BOOL): Runs the generator while TRUE.
+  - `T_ON` (TIME): Time `Q` is TRUE in each cycle.
+  - `T_OFF` (TIME): Time `Q` is FALSE in each cycle.
+- **Outputs:**
+  - `Q` (BOOL): The pulse train.
+- **Behavior:** The cycle starts with the ON phase in the scan where `ENABLE` rises: `Q` is TRUE at once, for `T_ON`, then FALSE for `T_OFF`, and so on. `ENABLE` FALSE makes `Q` FALSE at once, and the next `ENABLE` starts a new cycle with the ON phase. A phase ends at the first scan at which its time has elapsed, so with a scan period longer than `T_ON` or `T_OFF` the phase lasts one scan.
+
+```text
+ENABLE: __/¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯\____
+Q:      __/¯¯¯\______/¯¯¯\______/¯¯¯\___
+          |300|  700 |300|  700 |        (T_ON = 300 ms, T_OFF = 700 ms)
+```
+
+### PWM (Pulse Width Modulation)
+- **Inputs:** `ENABLE` (BOOL), `PERIOD` (TIME), `DUTY` (REAL, 0.0 to 1.0).
+- **Outputs:** `Q` (BOOL).
+- **Behavior:** While `ENABLE` is TRUE, `Q` is TRUE for `PERIOD * DUTY` at the start of each `PERIOD`. A `DUTY` of 0.0 keeps `Q` FALSE and 1.0 keeps it TRUE. `ENABLE` FALSE makes `Q` FALSE, and the next `ENABLE` starts a new period.
+
+### PULSE (Single Pulse Generator)
+- **Inputs:** `TRIG` (BOOL), `PT` (TIME).
+- **Outputs:** `Q` (BOOL).
+- **Behavior:** A rising edge of `TRIG` starts a pulse of `PT`. A rising edge during the pulse is ignored, and a level that stays TRUE after it starts nothing.
+
+### HYSTERESIS
+- **Inputs:** `IN`, `HIGH`, `LOW` (REAL).
+- **Outputs:** `Q` (BOOL).
+- **Behavior:** `Q` becomes TRUE when `IN` is above `HIGH` and FALSE when `IN` is below `LOW`; between them it keeps its value. Negative thresholds work like any other.
+
+### DEADBAND
+- **Inputs:** `IN`, `WIDTH` (REAL).
+- **Outputs:** `OUT` (REAL).
+- **Behavior:** `OUT` takes the value of `IN` when `IN` differs from the last value of `OUT` by more than `WIDTH`, and keeps its value otherwise.
+
+### LAG_FILTER
+- **Inputs:** `IN` (REAL), `GAIN` (REAL, 0.0 to 1.0).
+- **Outputs:** `OUT` (REAL).
+- **Behavior:** `OUT := OUT + GAIN * (IN - OUT)` at each call: `GAIN` 1.0 follows `IN`, 0.0 never moves.
+
+### RAMP_REAL
+- **Inputs:** `IN` (REAL), `RATE` (REAL, the largest change for each call).
+- **Outputs:** `OUT` (REAL).
+- **Behavior:** `OUT` moves toward `IN` by at most `RATE` at each call, up or down, and is `IN` once it is within `RATE` of it.
+
+### INTEGRAL
+- **Inputs:** `IN` (REAL), `DT` (REAL, seconds), `RESET` (BOOL).
+- **Outputs:** `OUT` (REAL).
+- **Behavior:** `OUT := OUT + IN * DT` at each call; `RESET` TRUE sets `OUT` to 0.0. A negative `IN` counts down.
+
+### DERIVATIVE
+- **Inputs:** `IN` (REAL), `DT` (REAL, seconds).
+- **Outputs:** `OUT` (REAL).
+- **Behavior:** `OUT := (IN - previous IN) / DT`; 0.0 when `DT` is 0.0. The first call compares with an `IN` of 0.0.
+
+### PID_Compact
+A discrete PID controller.
+- **Inputs:** `SP` (setpoint), `PV` (process value), `KP`, `KI`, `KD` (gains), `DT` (sample time in seconds), `OUT_MIN`, `OUT_MAX` (REAL).
+- **Outputs:** `OUT` (REAL).
+- **Behavior:** With `e = SP - PV`, `OUT = KP * e + KI * sum(e * DT) + KD * (e - previous e) / DT`, limited to `OUT_MIN` to `OUT_MAX`. A `DT` that is 0.0 (left out) leaves the integral and derivative terms at 0.0. The integral accumulator is not clamped while the output is limited. The first call takes the previous error as the current one, so it has no derivative step.
+
+### FIFO (First-In, First-Out Buffer)
+Holds up to 8 `DINT` values; they leave in the order they entered.
+- **Inputs:**
+  - `PUSH` (BOOL): A rising edge stores `DATA_IN`.
+  - `POP` (BOOL): A rising edge moves the oldest value to `DATA_OUT`.
+  - `RST` (BOOL): Empties the buffer.
+  - `DATA_IN` (DINT): The value to store.
+  - `SIZE` (DINT): Capacity, 1 to 8. A call that leaves it out gets 8, and so does a value outside 1 to 8: an instance has room for 8 values.
+- **Outputs:**
+  - `DATA_OUT` (DINT): The value of the last pop.
+  - `COUNT` (DINT): Values held.
+  - `EMPTY` (BOOL): TRUE when `COUNT` is 0.
+  - `FULL` (BOOL): TRUE when `COUNT` has reached the capacity.
+- **Behavior:** A push into a full buffer and a pop of an empty one do nothing.
+
+### LIFO (Last-In, First-Out Buffer)
+A stack of up to 8 `DINT` values; the last value stored leaves first. Its inputs and outputs are those of `FIFO`, with the same capacity rules.

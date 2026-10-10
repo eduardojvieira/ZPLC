@@ -1,0 +1,15 @@
+{
+  "requirement": "CMP-012",
+  "title": "a literal beyond the range of a WORD parameter is rejected",
+  "matrix": [
+    "data-types.byte-word-dword"
+  ],
+  "build": "fails",
+  "lines": [
+    5
+  ],
+  "messageIncludes": [
+    "65536",
+    "WORD"
+  ]
+}

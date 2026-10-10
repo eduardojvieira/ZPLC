@@ -11,7 +11,7 @@
  *   - RETAIN: 0x4000-0x4FFF (Retentive Memory)
  */
 
-import { getDataTypeSize, getArrayElementCount, isArrayType, DataType, VarSection } from './ast.ts';
+import { getDataTypeSize, getArrayElementCount, isArrayType, DataType, NameMap, sameName, VarSection } from './ast.ts';
 import type { STDataType, DataTypeValue, VarSectionValue, IOAddress, VarDecl, Program, ArrayType, PointerType, CompilationUnit, Expression, Statement, InitialValue } from './ast.ts';
 import { getFB } from './stdlib/index.ts';
 import { MEMORY_REGION } from '../contract.generated.ts';
@@ -69,6 +69,11 @@ export interface Symbol {
     declarationLine?: number;
     /** Placed in the retentive region (VAR RETAIN, CMP-029). */
     retain?: boolean;
+    /**
+     * The program that declares the variable; absent for a global, a constant of the unit or the variable
+     * of a function (those are named `Function.name`). A function does not see a variable of a program (CMP-034).
+     */
+    owner?: string;
 }
 
 /**
@@ -188,18 +193,22 @@ export interface UserEnumDefinition {
  * Symbol table for a compilation unit.
  */
 export class SymbolTable {
-    private symbols = new Map<string, Symbol>();
-    private userFBs = new Map<string, UserFBDefinition>();
-    private userStructs = new Map<string, UserStructDefinition>();
-    private userEnums = new Map<string, UserEnumDefinition>();
-    private interfaces = new Map<string, InterfaceDefinition>();
+    // Names are matched without regard to case (CMP-004)
+    private symbols = new NameMap<Symbol>();
+    private userFBs = new NameMap<UserFBDefinition>();
+    private userStructs = new NameMap<UserStructDefinition>();
+    private userEnums = new NameMap<UserEnumDefinition>();
+    private interfaces = new NameMap<InterfaceDefinition>();
     private workOffset = 0;  // Current offset in work memory
     private retainOffset = 0;  // Current offset in the retentive region (VAR RETAIN)
     /**
-     * Names that are in scope only while the code generator inlines a function block body: the members of the
-     * instance being inlined, instances declared inside it among them (CMP-038). They shadow the globals.
+     * Names that are in scope only while the code generator inlines a function block body or generates a
+     * function: the members of the instance being inlined, instances declared inside it among them
+     * (CMP-038), and the variables of the function (CMP-034). They shadow the globals. The resolver
+     * answers null for a name that is declared but not visible there, and undefined when the name is not
+     * its to decide.
      */
-    scopeResolver: ((name: string) => Symbol | undefined) | null = null;
+    scopeResolver: ((name: string) => Symbol | undefined | null) | null = null;
     private readonly workBase: number;  // Base address for work memory
 
     /**
@@ -228,14 +237,21 @@ export class SymbolTable {
      * Get a symbol by name.
      */
     get(name: string): Symbol | undefined {
-        return this.scopeResolver?.(name) ?? this.symbols.get(name);
+        const scoped = this.scopeResolver?.(name);
+        if (scoped !== undefined) return scoped ?? undefined;
+        return this.symbols.get(name);
+    }
+
+    /** A symbol by the name it was declared with, whatever the scope the generator is in. */
+    getDeclared(name: string): Symbol | undefined {
+        return this.symbols.get(name);
     }
 
     /**
      * Check if a symbol exists.
      */
     has(name: string): boolean {
-        return this.symbols.has(name) || this.scopeResolver?.(name) !== undefined;
+        return this.get(name) !== undefined;
     }
 
     /**
@@ -301,7 +317,7 @@ export class SymbolTable {
             // 1. Check user-defined FBs
             const userFB = this.userFBs.get(typeName);
             if (userFB) {
-                members = new Map();
+                members = new NameMap<number>();
                 for (const [mName, mInfo] of userFB.members) {
                     members.set(mName, mInfo.offset);
                 }
@@ -309,7 +325,7 @@ export class SymbolTable {
                 // 2. Check user-defined Structs
                 const userStruct = this.userStructs.get(typeName);
                 if (userStruct) {
-                    members = new Map();
+                    members = new NameMap<number>();
                     for (const [mName, mInfo] of userStruct.members) {
                         members.set(mName, mInfo.offset);
                     }
@@ -317,7 +333,7 @@ export class SymbolTable {
                     // 3. Check stdlib FBs
                     const fbDef = getFB(typeName as DataTypeValue);
                     if (fbDef) {
-                        members = new Map();
+                        members = new NameMap<number>();
                         for (const member of fbDef.members) {
                             members.set(member.name, member.offset);
                         }
@@ -426,7 +442,7 @@ export class SymbolTable {
             // 3. Check stdlib FBs
             const stdFB = getFB(typeName as DataTypeValue);
             if (stdFB) {
-                const member = stdFB.members.find(m => m.name === expr.member);
+                const member = stdFB.members.find(m => sameName(m.name, expr.member));
                 if (!member) throw new Error(`Unknown member '${expr.member}' on FB '${typeName}'`);
                 return {
                     address: parent.address + member.offset,
@@ -668,7 +684,7 @@ export function buildSymbolTable(unit: CompilationUnit | Program, workMemoryBase
         if (unit.typeDefinitions) {
             for (const typeDef of unit.typeDefinitions) {
                 if (typeDef.kind === 'StructDecl') {
-                    const members = new Map<string, MemberInfo>();
+                    const members = new NameMap<MemberInfo>();
                     let currentOffset = 0;
                     for (const member of typeDef.members) {
                         const memberSize = table.sizeOf(member.dataType);
@@ -690,7 +706,7 @@ export function buildSymbolTable(unit: CompilationUnit | Program, workMemoryBase
                         members
                     });
                 } else if (typeDef.kind === 'EnumDecl') {
-                    const values = new Map<string, number>();
+                    const values = new NameMap<number>();
                     for (const v of typeDef.values) {
                         values.set(v.name, v.value);
                         try {
@@ -721,7 +737,7 @@ export function buildSymbolTable(unit: CompilationUnit | Program, workMemoryBase
         // 2. Second Pass: Process INTERFACE definitions
         if (unit.interfaces) {
             for (const iface of unit.interfaces) {
-                const methodSigs = new Map<string, MethodSignature>();
+                const methodSigs = new NameMap<MethodSignature>();
                 
                 for (const method of iface.methods) {
                     const inputs = method.inputs.map(v => ({
@@ -771,8 +787,8 @@ export function buildSymbolTable(unit: CompilationUnit | Program, workMemoryBase
             const fb = unprocessedFBs[fbIndex];
             unprocessedFBs.splice(fbIndex, 1);
 
-            const fbMembers = new Map<string, MemberInfo>();
-            const methods = new Map<string, MethodInfo>();
+            const fbMembers = new NameMap<MemberInfo>();
+            const methods = new NameMap<MethodInfo>();
             let currentOffset = 0;
 
             // Inheritance: Copy members and methods from base FB
@@ -903,7 +919,7 @@ export function buildSymbolTable(unit: CompilationUnit | Program, workMemoryBase
                                 throw new CodegenError(`Method '${methodName}' has different number of inputs than required by interface '${ifaceName}'`, fb.line, fb.column);
                             }
                             for (let i = 0; i < method.inputs.length; i++) {
-                                if (method.inputs[i].name !== sig.inputs[i].name || method.inputs[i].dataType !== sig.inputs[i].dataType) {
+                                if (!sameName(method.inputs[i].name, sig.inputs[i].name) || method.inputs[i].dataType !== sig.inputs[i].dataType) {
                                     throw new CodegenError(`Input ${i} of method '${methodName}' does not match interface '${ifaceName}' signature`, fb.line, fb.column);
                                 }
                             }
@@ -913,7 +929,7 @@ export function buildSymbolTable(unit: CompilationUnit | Program, workMemoryBase
                                 throw new CodegenError(`Method '${methodName}' has different number of outputs than required by interface '${ifaceName}'`, fb.line, fb.column);
                             }
                             for (let i = 0; i < method.outputs.length; i++) {
-                                if (method.outputs[i].name !== sig.outputs[i].name || method.outputs[i].dataType !== sig.outputs[i].dataType) {
+                                if (!sameName(method.outputs[i].name, sig.outputs[i].name) || method.outputs[i].dataType !== sig.outputs[i].dataType) {
                                     throw new CodegenError(`Output ${i} of method '${methodName}' does not match interface '${ifaceName}' signature`, fb.line, fb.column);
                                 }
                             }
@@ -941,20 +957,23 @@ export function buildSymbolTable(unit: CompilationUnit | Program, workMemoryBase
             }
         }
 
-        // 4. Process functions (inputs and locals)
+        // 4. Process functions (inputs and locals). Each function is a scope of its own (CMP-034): its variables
+        // are declared as `Function.name`, so two functions may use the same names, and a parameter may be named
+        // like a variable of a program. The code generator resolves a name inside a function to these first.
         for (const func of unit.functions) {
+            const own = (name: string) => `${func.name}.${name}`;
             // Add inputs
             for (const input of func.inputs) {
-                table.add(input);
+                table.add({ ...input, name: own(input.name) });
             }
-            // Add locals
+            // Add locals; a VAR_EXTERNAL names a global and takes no storage in the function
             for (const local of func.locals) {
-                table.add(local);
+                table.add(local.section === VarSection.VAR_EXTERNAL ? local : { ...local, name: own(local.name) });
             }
             // Add function name as result variable
             table.add({
                 kind: 'VarDecl',
-                name: func.name,
+                name: own(func.name),
                 dataType: func.returnType,
                 section: VarSection.VAR,
                 initialValue: null, tags: {},
@@ -968,7 +987,8 @@ export function buildSymbolTable(unit: CompilationUnit | Program, workMemoryBase
         for (const program of unit.programs) {
             for (const block of program.varBlocks) {
                 for (const decl of block.variables) {
-                    table.add(decl);
+                    const symbol = table.add(decl);
+                    if (decl.section !== VarSection.VAR_EXTERNAL) symbol.owner = program.name;
                 }
             }
         }
