@@ -40,11 +40,32 @@ describe('LNG-004 a breakpoint on an element is armed at the element and follows
   const ld = file('src/main.ld.json', 'LD');
   const second = ldModel.rungs[1]!.id;
 
-  it('refuses a breakpoint until a build has said where the element is', () => {
+  it('keeps a breakpoint set before the program is loaded and arms it when the debug map arrives', () => {
     useIDEStore.setState({ loadedFiles: new Map([[ld.id, ld]]) });
-    expect(toggleElementBreakpoint(ld.id, `rung:${second}`)).toBe(false);
-    expect(elementBreakpointsOf(ld.id).size).toBe(0);
+    expect(toggleElementBreakpoint(ld.id, `rung:${second}`)).toBe(true);
+    expect([...elementBreakpointsOf(ld.id)]).toEqual([`rung:${second}`]);
     expect(useIDEStore.getState().getAllBreakpointPCs()).toEqual([]);
+
+    const map = build('LD', ldText, ld.path);
+    useIDEStore.getState().setDebugMap(map);
+    reconcileElementBreakpoints();
+    expect(useIDEStore.getState().getAllBreakpointPCs()).toEqual([pcOfRung(map, second)]);
+  });
+
+  it('refuses an element with no statement once the map of the file says so', () => {
+    useIDEStore.setState({ loadedFiles: new Map([[ld.id, ld]]) });
+    useIDEStore.getState().setDebugMap(build('LD', ldText, ld.path));
+    expect(toggleElementBreakpoint(ld.id, 'rung:nowhere')).toBe(false);
+    expect(elementBreakpointsOf(ld.id).size).toBe(0);
+  });
+
+  it('leaves the breakpoints of a file that the map has no diagram of as they are', () => {
+    const other = file('src/other.ld.json', 'LD');
+    useIDEStore.setState({ loadedFiles: new Map([[other.id, other]]) });
+    toggleElementBreakpoint(other.id, 'rung:r9');
+    useIDEStore.getState().setDebugMap(build('LD', ldText, ld.path));
+    reconcileElementBreakpoints();
+    expect([...elementBreakpointsOf(other.id)]).toEqual(['rung:r9']);
   });
 
   it('arms the first instruction of the rung, and clears it with a second toggle', () => {

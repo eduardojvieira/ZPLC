@@ -47,8 +47,10 @@ function arm(fileId: string): void {
 }
 
 /**
- * Set or clear the breakpoint on an element of the file. Returns false when execution cannot stop at the element
- * (nothing was built, or the element has no statement), and the breakpoint is not recorded.
+ * Set or clear the breakpoint on an element of the file. Like a dot on a line of a text file, it can be set before the
+ * program is loaded: the lines are worked out when the debug map arrives (Studio puts the map of a build in the store
+ * when it loads the program). Returns false when the debug map of the file is there and the element has no statement
+ * to stop at, and the breakpoint is not recorded.
  */
 export function toggleElementBreakpoint(fileId: string, element: SourceElementId): boolean {
   const state = useIDEStore.getState();
@@ -59,7 +61,7 @@ export function toggleElementBreakpoint(fileId: string, element: SourceElementId
   if (elements.has(element)) {
     elements.delete(element);
   } else {
-    if (elementBreakpointLine(state.debug.debugMap, file.path, element) === undefined) return false;
+    if (hasBreakpointElements(state.debug.debugMap, file.path) && elementBreakpointLine(state.debug.debugMap, file.path, element) === undefined) return false;
     elements.add(element);
   }
   at.byFile.set(fileId, elements);
@@ -69,8 +71,9 @@ export function toggleElementBreakpoint(fileId: string, element: SourceElementId
 }
 
 /**
- * A build produced a new debug map: the lines of the generated source moved. Work the lines of every file's
- * breakpoints out again from the elements, and forget an element that is no longer in the file.
+ * A program was loaded with a new debug map: the lines of the generated source moved. Work the lines of every file's
+ * breakpoints out again from the elements, and forget an element that the map of the file no longer has a place for.
+ * A file the map has no diagram of is left as it is.
  */
 export function reconcileElementBreakpoints(): void {
   const state = useIDEStore.getState();
@@ -79,7 +82,7 @@ export function reconcileElementBreakpoints(): void {
   let any = false;
   for (const [fileId, elements] of at.byFile) {
     const file = state.loadedFiles.get(fileId);
-    if (!file) continue;
+    if (!file || !hasBreakpointElements(state.debug.debugMap, file.path)) continue;
     for (const element of [...elements]) {
       if (elementBreakpointLine(state.debug.debugMap, file.path, element) === undefined) { elements.delete(element); any = true; }
     }
@@ -89,12 +92,12 @@ export function reconcileElementBreakpoints(): void {
 }
 
 export interface ElementBreakpoints {
-  /** Whether a build has put this file on the debug map: without it no element has a place to stop. */
-  built: boolean;
+  /** Whether the debug map of the loaded program names this file: before it does, a breakpoint waits for the load. */
+  mapped: boolean;
   /** Whether the runtime does not hold the breakpoints the editor shows, and why. */
   inactiveReason: string | null;
   isSet(element: SourceElementId): boolean;
-  /** Whether execution can stop at the element. */
+  /** Whether a breakpoint can be set on the element: always before the map names the file, after it only where there is a statement. */
   canSet(element: SourceElementId): boolean;
   toggle(element: SourceElementId): void;
   /** The element the paused program is at, when it is in this file. */
@@ -114,12 +117,13 @@ export function useElementBreakpoints(): ElementBreakpoints {
   useIDEStore((state) => (state.activeFileId ? state.debug.breakpoints.get(state.activeFileId) : undefined));
 
   const elements = fileId ? elementBreakpointsOf(fileId) : new Set<SourceElementId>();
+  const mapped = path !== undefined && hasBreakpointElements(debugMap, path);
   const canSet = useCallback(
-    (element: SourceElementId) => path !== undefined && elementBreakpointLine(debugMap, path, element) !== undefined,
-    [debugMap, path],
+    (element: SourceElementId) => path !== undefined && (!mapped || elementBreakpointLine(debugMap, path, element) !== undefined),
+    [debugMap, mapped, path],
   );
   return {
-    built: path !== undefined && hasBreakpointElements(debugMap, path),
+    mapped,
     inactiveReason,
     isSet: (element) => elements.has(element),
     canSet,

@@ -530,10 +530,10 @@ export default function LDEditor({ model, onChange, readOnly = false }: LDEditor
                     data-breakpoint-rung={rung.id}
                     aria-pressed={armed}
                     aria-label={`Breakpoint on rung ${rung.number}`}
-                    title={!breakpoints.built ? 'Build the project to set a breakpoint on this rung'
-                      : !settable ? 'This rung has no statement to stop at'
+                    title={!settable ? 'This rung has no statement to stop at'
                         : armed && breakpoints.inactiveReason ? `Breakpoint on rung ${rung.number} is not active: ${breakpoints.inactiveReason}`
-                          : `Toggle the breakpoint on rung ${rung.number} (F9 on the selected rung)`}
+                          : !breakpoints.mapped ? `Toggle the breakpoint on rung ${rung.number}: it is armed when the program is loaded (F9 on the selected rung)`
+                            : `Toggle the breakpoint on rung ${rung.number} (F9 on the selected rung)`}
                     disabled={!settable && !armed}
                     onClick={() => breakpoints.toggle(at)}
                     className={`absolute -left-3 top-2 z-10 h-3 w-3 rounded-full border transition-opacity disabled:opacity-30 ${

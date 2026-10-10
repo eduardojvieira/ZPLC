@@ -70,8 +70,9 @@ diagram that is not valid yields one diagnostic for each element that is wrong, 
 
 ## Breakpoints on a diagram
 
-After a build, a breakpoint can be set on the element of the diagram or the IL line you edited (LNG-004); the debug
-map relates each instruction range to that element, and the runtime stops at the first instruction of it.
+A breakpoint can be set on the element of the diagram or the IL line you edited (LNG-004); the debug map relates each
+instruction range to that element, and the runtime stops at the first instruction of it. Like the dot on a line of a
+text file, it can be set before the program is loaded and is armed when Run or Deploy loads it.
 
 | Language | Where | How |
 | --- | --- | --- |
@@ -81,8 +82,8 @@ map relates each instruction range to that element, and the runtime stops at the
 | SFC | A step stops where a transition enters it; a transition stops where it fires. A step that no transition enters has no place to stop. | F9 on the selected step or transition. |
 
 A breakpoint is kept on the element, not on a generated line, so it follows its rung, block or step when the diagram
-changes and is built again; one whose element was deleted is forgotten. The element that the paused program is at is
-outlined in yellow. Before a build there is nothing to stop at, so the dot is disabled. The program counters are the
+changes and is built again; one whose element was deleted is forgotten, and one on an element that has no statement is
+refused once a program is loaded. The element that the paused program is at is outlined in yellow. The program counters are the
 ones the runtime of the simulation and of a board take; stopping on a board has not been checked here.
 
 ## What the palettes offer

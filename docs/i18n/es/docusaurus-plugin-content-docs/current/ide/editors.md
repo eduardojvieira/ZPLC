@@ -75,9 +75,10 @@ dice. Un diagrama que no es válido da un diagnóstico por cada elemento incorre
 
 ## Breakpoints en un diagrama
 
-Después de compilar, se puede poner un breakpoint en el elemento del diagrama o en la línea IL que usted editó
-(LNG-004); el mapa de depuración relaciona cada rango de instrucciones con ese elemento y el runtime se detiene en su
-primera instrucción.
+Se puede poner un breakpoint en el elemento del diagrama o en la línea IL que usted editó (LNG-004); el mapa de
+depuración relaciona cada rango de instrucciones con ese elemento y el runtime se detiene en su primera instrucción.
+Como el punto de una línea de un archivo de texto, se puede poner antes de cargar el programa y se arma cuando Run o
+Deploy lo carga.
 
 | Lenguaje | Dónde | Cómo |
 | --- | --- | --- |
@@ -87,10 +88,10 @@ primera instrucción.
 | SFC | Un paso se detiene donde una transición entra en él; una transición, donde se dispara. Un paso en el que no entra ninguna transición no tiene dónde detenerse. | F9 con el paso o la transición seleccionados. |
 
 El breakpoint se guarda en el elemento y no en una línea generada, de modo que sigue a su rung, bloque o paso cuando el
-diagrama cambia y se compila de nuevo; si se borra el elemento, el breakpoint se olvida. El elemento en el que está
-detenido el programa se resalta en amarillo. Antes de compilar no hay dónde detenerse, así que el punto está
-deshabilitado. Los contadores de programa son los que toman el runtime de la simulación y el de una placa; detenerse en
-una placa no se ha comprobado aquí.
+diagrama cambia y se compila de nuevo; si se borra el elemento, el breakpoint se olvida, y uno en un elemento que no
+tiene sentencia se rechaza una vez cargado un programa. El elemento en el que está detenido el programa se resalta en
+amarillo. Los contadores de programa son los que toman el runtime de la simulación y el de una placa; detenerse en una
+placa no se ha comprobado aquí.
 
 ## Qué ofrecen las paletas
 
