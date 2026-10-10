@@ -1,4 +1,5 @@
 #include "zplc_config.h"
+#include "zplc_parse.h"
 #include "zplc_platform_attrs.h"
 #include "zplc_tls_credentials.h"
 
@@ -129,6 +130,8 @@ static int json_extract_int(const char *json, const char *key, int *out)
 {
     char needle[64];
     const char *start;
+    int32_t value = 0;
+    int rc;
 
     if (json == NULL || key == NULL || out == NULL) {
         return -EINVAL;
@@ -145,7 +148,13 @@ static int json_extract_int(const char *json, const char *key, int *out)
         return -EINVAL;
     }
 
-    *out = atoi(start + 1);
+    /* The whole number, at a delimiter: "12abc", "1.5" and a quoted "8883" are errors, and atoi() answered
+     * 0 or the leading digits for them. *out is left as it was. */
+    rc = zplc_json_int(start + 1, INT32_MIN, INT32_MAX, &value);
+    if (rc != 0) {
+        return rc;
+    }
+    *out = (int)value;
     return 0;
 }
 

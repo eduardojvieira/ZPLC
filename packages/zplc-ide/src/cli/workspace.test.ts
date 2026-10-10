@@ -184,7 +184,7 @@ describe('readWorkspaceScenarios', () => {
       await expect(readWorkspaceScenarios(root)).resolves.toMatchObject({ ok: false, diagnostics: [{ code: 'WORKSPACE_READ_FAILED', path: 'tests/motor.scenario.json' }] });
     } finally { __workspaceReadTestHooks.afterFileLstat = undefined; await rm(root, { recursive: true, force: true }); }
   });
-  it('rejects a hybrid scenario snapshot and keeps POSIX opens nonblocking', async () => {
+  it('rejects a hybrid scenario snapshot', async () => {
     const root = await workspace();
     try {
       await scenarios(root); const first = join(root, 'tests', 'Alpha.scenario.json'); const later = join(root, 'tests', 'Zeta.scenario.json');
@@ -193,7 +193,22 @@ describe('readWorkspaceScenarios', () => {
         if (path === later) { __workspaceReadTestHooks.afterFileLstat = undefined; await writeFile(first, '{"id":"other"}'); }
       };
       await expect(readWorkspaceScenarios(root)).resolves.toMatchObject({ ok: false, diagnostics: [{ code: 'WORKSPACE_READ_FAILED', path: 'tests' }] });
-      if (process.platform !== 'win32') expect(await Bun.file(join(import.meta.dir, 'workspace.ts')).text()).toContain('constants.O_NOFOLLOW | constants.O_NONBLOCK');
+    } finally { __workspaceReadTestHooks.afterFileLstat = undefined; await rm(root, { recursive: true, force: true }); }
+  });
+
+  // Without O_NONBLOCK, opening a named pipe that nobody writes to would wait for a writer for ever: the read has to refuse, not hang.
+  it.skipIf(process.platform === 'win32')('refuses a scenario that became a named pipe after its lstat, without waiting for a writer', async () => {
+    const root = await workspace();
+    try {
+      await scenarios(root); const only = join(root, 'tests', 'Alpha.scenario.json');
+      await scenario(root, 'Alpha.scenario.json', '{"id":"alpha"}');
+      __workspaceReadTestHooks.afterFileLstat = async path => {
+        if (path !== only) return;
+        __workspaceReadTestHooks.afterFileLstat = undefined;
+        await rm(only);
+        expect(Bun.spawnSync(['mkfifo', only]).exitCode).toBe(0);
+      };
+      await expect(readWorkspaceScenarios(root)).resolves.toMatchObject({ ok: false, diagnostics: [{ code: 'WORKSPACE_READ_FAILED', path: 'tests/Alpha.scenario.json' }] });
     } finally { __workspaceReadTestHooks.afterFileLstat = undefined; await rm(root, { recursive: true, force: true }); }
   });
 

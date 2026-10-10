@@ -36,7 +36,7 @@ ST is the natural fit for:
 
 ## Minimal canonical example
 
-```st
+```st runnable expect="Out1=TRUE" scans=30 scan_ms=10
 PROGRAM WorkflowST
 VAR
     Start : BOOL := TRUE;
@@ -47,6 +47,9 @@ Timer(IN := Start, PT := T#250ms);
 Out1 := Timer.Q;
 END_PROGRAM
 ```
+
+`Out1` is `FALSE` until the timer has counted 250 ms and `TRUE` from then on. CI compiles this
+program, runs it for 30 scans of 10 ms and checks that `Out1` is `TRUE`.
 
 ## Common ST building blocks in the current repo
 

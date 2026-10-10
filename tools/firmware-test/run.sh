@@ -13,6 +13,23 @@ set -uo pipefail
 # shellcheck source=env.sh
 . "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)/env.sh"
 
+# A build directory configured for another checkout (the workspace is reused across worktrees) makes cmake stop
+# with "source does not match the source"; drop it so the next configure starts clean.
+fresh_cmake_dir() { # build-dir source-dir
+  local build="$1" source="$2" home=""
+  if [ -f "${build}/CMakeCache.txt" ]; then
+    home="$(awk -F= '/^CMAKE_HOME_DIRECTORY:/ {print $2; exit}' "${build}/CMakeCache.txt")"
+    if [ -n "${home}" ] && [ "${home}" != "${source}" ]; then
+      rm -rf "${build}"
+    fi
+  fi
+}
+
+# Library mode, for the tests of the helpers above: `ZPLC_FWTEST_LIBRARY=1 . run.sh` defines them and stops here.
+if [ "${ZPLC_FWTEST_LIBRARY:-0}" = "1" ]; then
+  return 0 2> /dev/null || exit 0
+fi
+
 usage() {
   cat << 'EOF'
 usage: tools/firmware-test/run.sh <mode> [mode ...]
@@ -29,9 +46,12 @@ modes (what each one proves: docs/docs/development/firmware-testing.md):
   size      build firmware/app for every supported board, print flash and RAM
             next to size-budget.json, fail when a size is over its budget
             (board ids after "size" restrict it: run.sh size rpi-pico-rp2040)
-  all       every mode above
+  tidy      clang-tidy (warnings are errors, .clang-tidy) over the core, the POSIX HAL and the
+            host application; also the Zephyr HAL and firmware/app when the Opta build of
+            `size` or `app` is in $ZPLC_FW_WS/out. Needs clang-tidy; not part of `all`
+  all       every mode above except tidy
 
-Host, QEMU and size results are not hardware evidence.
+Host, QEMU, size and static-analysis results are not hardware evidence.
 EOF
 }
 
@@ -41,7 +61,7 @@ last_mode=""
 while [ $# -gt 0 ]; do
   case "$1" in
     -h | --help | help) usage; exit 0 ;;
-    host | host32 | native | native32 | qemu-m3 | qemu-m0 | app | size | all)
+    host | host32 | native | native32 | qemu-m3 | qemu-m0 | app | size | tidy | all)
       MODES+=("$1")
       last_mode="$1"
       ;;
@@ -98,18 +118,6 @@ record_report() {
     [ -n "${line}" ] && record "${line}"
   done <<< "${text}"
   return "${rc}"
-}
-
-# A build directory configured for another checkout (the workspace is reused across worktrees) makes cmake stop
-# with "source does not match the source"; drop it so the next configure starts clean.
-fresh_cmake_dir() { # build-dir source-dir
-  local build="$1" source="$2" home=""
-  if [ -f "${build}/CMakeCache.txt" ]; then
-    home="$(awk -F= '/^CMAKE_HOME_DIRECTORY:/ {print $2; exit}' "${build}/CMakeCache.txt")"
-    if [ -n "${home}" ] && [ "${home}" != "${source}" ]; then
-      rm -rf "${build}"
-    fi
-  fi
 }
 
 # ------------------------------------------------------------------- twister
@@ -225,6 +233,29 @@ run_app() {
   return "${rc}"
 }
 
+# ---------------------------------------------------------------------- tidy
+# VF-018: the host pass always runs. The Zephyr pass needs the compile database of a west build, so it runs only when
+# the Opta build of `size` or `app` (the board that has MQTT, Modbus and the shell) is already in the output directory.
+run_tidy() {
+  local tree="${OUT}/size/arduino-opta-wifi-m7" rc=0 zephyr=() text
+  if [ -f "${tree}/compile_commands.json" ]; then zephyr=(--zephyr-build "${tree}"); fi
+  echo "==> tidy: clang-tidy over the core, the POSIX HAL and the host application${zephyr[0]:+, and the Zephyr build ${tree}}"
+  python3 -B "${ZPLC_FW_REPO}/tools/ci/run_clang_tidy.py" ${zephyr[@]+"${zephyr[@]}"} > "${OUT}/tidy.log" 2>&1 || rc=$?
+  text="$(tail -n 4 "${OUT}/tidy.log")"
+  if [ "${rc}" -eq 0 ]; then
+    if [[ "${text}" == *"Zephyr pass skipped"* ]]; then
+      record "PASS tidy clang-tidy clean on the core, the POSIX HAL and the host application; Zephyr pass skipped, no west build tree"
+    else
+      record "PASS tidy clang-tidy clean on the core, the POSIX HAL, the host application and the Zephyr build"
+    fi
+  elif [ "${rc}" -eq 2 ]; then
+    record "FAIL tidy clang-tidy could not run (see ${OUT}/tidy.log)"
+  else
+    record "FAIL tidy clang-tidy reported findings (see ${OUT}/tidy.log)"
+  fi
+  return "${rc}"
+}
+
 # ---------------------------------------------------------------------- main
 expand_modes() {
   local m
@@ -250,6 +281,7 @@ while IFS= read -r mode; do
     qemu-m0) run_twister qemu-m0 qemu_cortex_m0 || rc=$? ;;
     app) run_app || rc=$? ;;
     size) run_size || rc=$? ;;
+    tidy) run_tidy || rc=$? ;;
   esac
   [ "${rc}" -eq 0 ] || FAILED=1
   echo "==> ${mode}: exit ${rc}, $(($(date +%s) - start)) s"

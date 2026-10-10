@@ -22,6 +22,11 @@ if(CONFIG_ZPLC)
 
   zephyr_library_named(zplc)
 
+  # VF-018: a warning in the ZPLC library is an error, as it is for the application (firmware/app/CMakeLists.txt) and
+  # for every host target of the core (firmware/lib/zplc_core/CMakeLists.txt). The twister and board builds of the
+  # pinned Zephyr revision print no compiler warning from these sources.
+  zephyr_library_compile_options(-Werror)
+
   zephyr_library_compile_definitions(ZPLC_CORE_VERSION_STR="${ZPLC_CORE_VERSION_STR}")
 
   # Core VM sources (platform-independent C99)

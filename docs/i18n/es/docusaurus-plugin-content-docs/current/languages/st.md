@@ -34,7 +34,7 @@ ST es la opción natural para:
 
 ## Ejemplo canónico mínimo
 
-```st
+```st runnable expect="Out1=TRUE" scans=30 scan_ms=10
 PROGRAM WorkflowST
 VAR
     Start : BOOL := TRUE;
@@ -45,6 +45,9 @@ Timer(IN := Start, PT := T#250ms);
 Out1 := Timer.Q;
 END_PROGRAM
 ```
+
+`Out1` es `FALSE` hasta que el temporizador cuenta 250 ms y `TRUE` desde entonces. CI compila este
+programa, lo ejecuta durante 30 scans de 10 ms y comprueba que `Out1` sea `TRUE`.
 
 ## Superficies ST visibles hoy en el repo
 

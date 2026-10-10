@@ -5,6 +5,7 @@ import { describe, expect, it } from 'bun:test';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
+import { COMPILER_VERSION } from '../packages/zplc-compiler/src/compiler/debug-map';
 import {
   COMPILER_VERSION_SOURCE,
   findCompilerVersionDrift,
@@ -93,9 +94,9 @@ describe('the compiler version of the debug map (CMP-053)', () => {
     expect(findCompilerVersionDrift('2.0.0', 'nothing')).toEqual([`${COMPILER_VERSION_SOURCE}: expected 2.0.0, found missing`]);
   });
 
-  it('is the root version in this checkout', () => {
+  it('is the root version in this checkout: the value the compiler stamps into every artifact, not a line of its source', () => {
     const root = join(import.meta.dir, '..');
     const { version } = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8')) as { version: string };
-    expect(findCompilerVersionDrift(version, readFileSync(join(root, COMPILER_VERSION_SOURCE), 'utf8'))).toEqual([]);
+    expect(COMPILER_VERSION).toBe(version);
   });
 });

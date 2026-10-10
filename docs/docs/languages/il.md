@@ -28,7 +28,7 @@ IL uses the common compiler destination, but execution cost, standard-library av
 
 This example evaluates `Start`, calls `TON`, and writes an output flag:
 
-```iecst
+```iecst runnable language=il expect="%QX0.0=TRUE" scans=30 scan_ms=10
 PROGRAM WorkflowIL
 VAR
     Start : BOOL := TRUE;
@@ -47,6 +47,9 @@ END_VAR
     ST Out1
 END_PROGRAM
 ```
+
+After 250 ms of scans the output at `%Q0.0` is `TRUE`: CI runs this sample for 30 scans of 10 ms
+and checks `%QX0.0`.
 
 ## Related pages
 

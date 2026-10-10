@@ -4,6 +4,41 @@ All notable changes are documented here.
 
 ## Unreleased
 
+- CI fails when a test reads the text of a product source file or asserts on the
+  assembly the compiler emitted (VF-006): a guard (`tools/ci/test-source-guard.ts`)
+  lists every test that reads Studio, Electron, script, firmware or workflow
+  source, or matches generated assembly text outside the assembler's own tests,
+  and `tools/ci/pinned-source-offenders.json`
+  records the known ones with the requirement and the kind of replacement for
+  each. The list can only shrink. Six source-text assertions are now behaviour
+  tests (the compiler version, the store's state, the Learn lesson catalog, the VM
+  error table against the generated contract, the native program limit, and a
+  scenario that becomes a named pipe).
+- `clang-tidy` runs in CI with a configuration file, `.clang-tidy`, and warnings
+  are errors (VF-018): over the core, the POSIX HAL and the host application on
+  every push, and over the Zephyr HAL and `firmware/app` in each cross-build job
+  and with `tools/firmware-test/run.sh tidy` when a board build exists. Findings fixed:
+  an unchecked `signal()` in the host runtime now reports a handler that was not
+  installed; the pointer offsets of the loader, the VM and the program store are
+  computed in `size_t`; the unchecked results of `snprintf`, `fclose` and `fflush` in the
+  HALs are discarded on purpose; a `strcpy` that was bounded by a check before it
+  is now a `memcpy` of the same length. `-Werror` now also applies to the ZPLC
+  Zephyr library.
+- The shell and the cloud clients of the firmware application parse numbers
+  strictly (`firmware/app/src/zplc_parse.h`, tested on the host). `zplc config set
+  modbus_tcp_port 70000` is refused instead of storing 4464, and so is `wifi_security
+  256` (it stored 0, an open network), `mqtt_port abc` (it stored 0) and `12abc`; a
+  value above what the field holds, or above the last enumerator of an enumeration,
+  is an error and nothing is stored. The same holds for the breakpoint address of
+  `dbg bp add` and `dbg bp remove` (65536 was stored as 0), the offset of `mem dump`,
+  the size of `cert begin`, `dbg task` and `adc read`; a hex payload with a character
+  that is not a hex digit is refused (it was written as a zero byte); and a JSON
+  number of the AWS fleet and Azure DPS responses must be a whole integer, as must the
+  status of a DPS topic. The firmware was not built for this change.
+- A code sample in the docs whose fence says `runnable` is compiled in CI, and
+  executed when it states an expected result (VF-020). The three Structured Text
+  and Instruction List samples of the language pages are marked, in English and
+  Spanish, and the convention is on the Contributing page.
 - `smoke:studio-vertical` passes again to its end: it clicked the close button of a
   tab that was seeded modified and expected it to close at once, which the unsaved
   changes question (IDE-005) had stopped doing. It now answers the question with

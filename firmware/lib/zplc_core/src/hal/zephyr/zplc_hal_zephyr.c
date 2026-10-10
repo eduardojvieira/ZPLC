@@ -944,6 +944,9 @@ zplc_hal_result_t zplc_hal_dns_resolve(const char *hostname, char *ip_buf, size_
   zsock_freeaddrinfo(res);
   return ZPLC_HAL_OK;
 #else
+  (void)hostname;
+  (void)ip_buf;
+  (void)len;
   return ZPLC_HAL_NOT_IMPL;
 #endif
 }
@@ -955,7 +958,7 @@ zplc_hal_socket_t zplc_hal_socket_connect(const char *host, uint16_t port) {
   hints.ai_socktype = SOCK_STREAM;
   
   char port_str[8];
-  snprintf(port_str, sizeof(port_str), "%u", port);
+  (void)snprintf(port_str, sizeof(port_str), "%u", port); /* a uint16_t always fits in 8 bytes */
   
   struct zsock_addrinfo *res;
   if (zsock_getaddrinfo(host, port_str, &hints, &res) != 0) {
@@ -975,7 +978,7 @@ zplc_hal_socket_t zplc_hal_socket_connect(const char *host, uint16_t port) {
   }
   
   zsock_freeaddrinfo(res);
-  return (zplc_hal_socket_t)(intptr_t)sock;
+  return (zplc_hal_socket_t)(intptr_t)sock; /* NOLINT(performance-no-int-to-ptr): the HAL handle is an opaque pointer */
 #else
   (void)host;
   (void)port;
@@ -1038,7 +1041,7 @@ void zplc_hal_log(const char *fmt, ...) {
   va_list args;
 
   va_start(args, fmt);
-  vsnprintf(buf, sizeof(buf), fmt, args);
+  (void)vsnprintf(buf, sizeof(buf), fmt, args); /* a truncated log line is still a log line */
   va_end(args);
 
   printk("%s", buf);
