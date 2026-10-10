@@ -1,0 +1,38 @@
+{
+  "requirement": "CMP-015",
+  "title": "CASE selects on a LINT with labels beyond 32 bits, ranges and ELSE",
+  "matrix": [
+    "data-types.lint-ulint-lword",
+    "statements.case"
+  ],
+  "tags": [
+    "arch-sensitive",
+    "64-bit",
+    "float"
+  ],
+  "note": "The selector and the labels are 64-bit values (CMP-015).",
+  "scans": 1,
+  "scanMs": 10,
+  "expect": [
+    {
+      "at": "%QD0",
+      "type": "DINT",
+      "value": 2
+    },
+    {
+      "at": "%QD1",
+      "type": "DINT",
+      "value": 3
+    },
+    {
+      "at": "%QD2",
+      "type": "DINT",
+      "value": 2
+    },
+    {
+      "at": "%QD3",
+      "type": "DINT",
+      "value": 40
+    }
+  ]
+}

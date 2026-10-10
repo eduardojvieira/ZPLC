@@ -1,0 +1,97 @@
+{
+  "requirement": "CMP-015",
+  "title": "LINT multiplication is the low 64 bits of the product",
+  "matrix": [
+    "data-types.lint-ulint-lword"
+  ],
+  "tags": [
+    "arch-sensitive",
+    "64-bit",
+    "float"
+  ],
+  "note": "Two's complement multiplication modulo 2^64 (CMP-015, CMP-016): the product of two LINT is the low 64 bits.",
+  "scans": 1,
+  "scanMs": 10,
+  "expect": [
+    {
+      "at": "%QD0",
+      "type": "UDINT",
+      "value": 12
+    },
+    {
+      "at": "%QD1",
+      "type": "UDINT",
+      "value": 0
+    },
+    {
+      "at": "%QD2",
+      "type": "UDINT",
+      "value": 1
+    },
+    {
+      "at": "%QD3",
+      "type": "UDINT",
+      "value": 4294967294
+    },
+    {
+      "at": "%QD4",
+      "type": "UDINT",
+      "value": 4294967284
+    },
+    {
+      "at": "%QD5",
+      "type": "UDINT",
+      "value": 4294967295
+    },
+    {
+      "at": "%QD6",
+      "type": "UDINT",
+      "value": 0
+    },
+    {
+      "at": "%QD7",
+      "type": "UDINT",
+      "value": 0
+    },
+    {
+      "at": "%QD8",
+      "type": "UDINT",
+      "value": 4294967294
+    },
+    {
+      "at": "%QD9",
+      "type": "UDINT",
+      "value": 4294967295
+    },
+    {
+      "at": "%QD10",
+      "type": "UDINT",
+      "value": 0
+    },
+    {
+      "at": "%QD11",
+      "type": "UDINT",
+      "value": 2147483648
+    },
+    {
+      "at": "%QD12",
+      "type": "UDINT",
+      "value": 3628567324
+    },
+    {
+      "at": "%QD13",
+      "type": "UDINT",
+      "value": 28370
+    },
+    {
+      "at": "%QD14",
+      "type": "UDINT",
+      "value": 0
+    },
+    {
+      "at": "%QD15",
+      "type": "UDINT",
+      "value": 0
+    }
+  ]
+}

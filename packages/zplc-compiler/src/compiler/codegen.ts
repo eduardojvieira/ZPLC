@@ -93,12 +93,14 @@ import {
     UNSIGNED_TO_REAL,
     cmp64Test,
     commonType,
+    doubleWords,
     fcmpTest,
     floatBits,
     isFloatType,
     isIntegerLike,
     isUnsigned32,
     isWide,
+    isWideInteger,
     numericInfo,
     numericTypeName,
     type CompareOp,
@@ -1938,6 +1940,7 @@ function emitAssignment(state: CodeGenState, stmt: Assignment): void {
             // Other expressions assigned to '_' - just evaluate and drop
             emitExpression(state, stmt.value);
             emit(state, `    DROP       ; discard result of expression`);
+            if (isWide(staticType(state, stmt.value))) emit(state, `    DROP`);
             return;
         }
 
@@ -1991,7 +1994,7 @@ function emitCondition(state: CodeGenState, condition: Expression): void {
     const type = meaningType(state, condition);
     if (type !== UNKNOWN_TYPE && type !== 'BOOL') {
         const named = type === LITERAL_INT ? 'INT' : type;
-        fail(condition, `Type mismatch: a condition is a BOOL and this is a ${named}; compare it, for example ${named === 'REAL' ? 'x > 0.0' : 'x <> 0'}`);
+        fail(condition, `Type mismatch: a condition is a BOOL and this is a ${named}; compare it, for example ${named === 'REAL' || named === 'LREAL' ? 'x > 0.0' : 'x <> 0'}`);
     }
     emitExpression(state, condition);
 }
@@ -2141,8 +2144,11 @@ function emitForStatement(state: CodeGenState, stmt: ForStatement): void {
     }
 
     const counterType = numericTypeName(storedType(state, counterPlace.type));
-    if (isWide(counterType)) {
-        fail(stmt, `A FOR counter of 64 bits is not supported yet (CMP-015)`);
+    // a 64-bit counter (LINT, ULINT, LWORD) is two cells: its start, test, step and increment are two-cell
+    // operations (CMP-015); LREAL is not an integer
+    const wideCounter = isWideInteger(counterType);
+    if (isWide(counterType) && !wideCounter) {
+        fail(stmt, `A FOR counter must be an integer variable, not ${counterType}`);
     }
     const counterExtend = signExtension(counterType);
     /** Load the counter in its canonical 32-bit form. */
@@ -2162,11 +2168,22 @@ function emitForStatement(state: CodeGenState, stmt: ForStatement): void {
 
     // Initialize counter
     emit(state, `    ; counter := start`);
-    emitStorePlace(state, counterPlace, () => emitExpression(state, stmt.start));
+    emitStorePlace(state, counterPlace, () => (wideCounter
+        ? emitConverted(state, stmt.start, counterType)
+        : emitExpression(state, stmt.start)));
 
     // Loop condition check: past the end is counter > end going up, counter < end going down
     // (an unsigned counter or end compares unsigned)
     const loopType = commonType(counterType, staticType(state, stmt.end));
+    // a two-cell end (or counter) makes the test a two-cell comparison: the other side is widened to it
+    const counterOperand = (): void => {
+        loadCounter();
+        if (isWide(loopType) && !wideCounter) emitConvertTop(state, counterType, loopType);
+    };
+    const endOperand = (): void => {
+        if (isWide(loopType)) emitConverted(state, stmt.end, loopType);
+        else emitExpression(state, stmt.end);
+    };
     emit(state, `${loopLabel}:`);
     const direction = stepDirection(stmt.step);
     if (direction === 'runtime') {
@@ -2174,23 +2191,30 @@ function emitForStatement(state: CodeGenState, stmt: ForStatement): void {
         const downLabel = newLabel(state, 'for_down');
         const testLabel = newLabel(state, 'for_test');
         emit(state, `    ; check: step < 0 ? counter < end : counter > end`);
-        emitExpression(state, stmt.step!);
+        if (wideCounter) {
+            // the sign of a two-cell step is the sign of its high word
+            emitConverted(state, stmt.step!, counterType);
+            emit(state, `    SWAP`);
+            emit(state, `    DROP`);
+        } else {
+            emitExpression(state, stmt.step!);
+        }
         emit(state, `    PUSH8 0`);
         emit(state, `    LT`);
         emit(state, `    JNZ ${downLabel}`);
-        loadCounter();
-        emitExpression(state, stmt.end);
+        counterOperand();
+        endOperand();
         emitCompare(state, 'GT', loopType);
         emit(state, `    JMP ${testLabel}`);
         emit(state, `${downLabel}:`);
-        loadCounter();
-        emitExpression(state, stmt.end);
+        counterOperand();
+        endOperand();
         emitCompare(state, 'LT', loopType);
         emit(state, `${testLabel}:`);
     } else {
         emit(state, direction === 'down' ? `    ; check: counter < end?` : `    ; check: counter > end?`);
-        loadCounter();
-        emitExpression(state, stmt.end);
+        counterOperand();
+        endOperand();
         emitCompare(state, direction === 'down' ? 'LT' : 'GT', loopType);
     }
     emit(state, `    JNZ ${endLabel}`);
@@ -2206,6 +2230,12 @@ function emitForStatement(state: CodeGenState, stmt: ForStatement): void {
     emit(state, `    ; counter := counter + step`);
     emitStorePlace(state, counterPlace, () => {
         loadCounter();
+        if (wideCounter) {
+            if (stmt.step) emitConverted(state, stmt.step, counterType);
+            else emitWideConstant(state, 1n);
+            callHelper(state, 'add64', ADD64_LABEL);
+            return;
+        }
         if (stmt.step) {
             emitExpression(state, stmt.step);
         } else {
@@ -2306,8 +2336,11 @@ function emitRepeatStatement(state: CodeGenState, stmt: RepeatStatement): void {
  *   end_case_N:
  */
 function emitCaseStatement(state: CodeGenState, stmt: CaseStatement): void {
-    if (isWide(staticType(state, stmt.selector))) {
-        fail(stmt.selector, `CASE on a 64-bit value is not supported yet (CMP-015)`);
+    const selectorType = staticType(state, stmt.selector);
+    if (isWide(selectorType)) {
+        if (!isWideInteger(selectorType)) fail(stmt.selector, `A CASE selector must be an integer or an enumeration, not ${selectorType}`);
+        emitWideCaseStatement(state, stmt, selectorType);
+        return;
     }
     const endLabel = newLabel(state, 'end_case');
     const elseLabel = stmt.elseBranch ? newLabel(state, 'case_else') : null;
@@ -2391,6 +2424,91 @@ function emitCaseStatement(state: CodeGenState, stmt: CaseStatement): void {
         emit(state, `    DROP        ; discard selector (no match)`);
     }
 
+    emit(state, `${endLabel}:`);
+}
+
+/**
+ * CASE on a 64-bit selector (LINT, ULINT, LWORD): the selector stays on the stack as two cells, each label is
+ * compared as a two-cell value of the selector's type (signed for LINT, unsigned for ULINT and LWORD), and the
+ * labels are 64-bit constants.
+ */
+function emitWideCaseStatement(state: CodeGenState, stmt: CaseStatement, selectorType: string): void {
+    const signed = numericInfo(selectorType)?.signed === true;
+    const normal = (value: bigint): bigint => (signed ? BigInt.asIntN(64, value) : BigInt.asUintN(64, value));
+    const labelValue = (expr: Expression): bigint => {
+        const value = foldConstant(state, expr);
+        if (value === undefined) fail(expr, `A CASE label must be an integer constant`);
+        if (value < integerRange(selectorType)!.low || value > integerRange(selectorType)!.high) {
+            fail(expr, `The CASE label ${value} does not fit ${selectorType}`);
+        }
+        return normal(value);
+    };
+    const endLabel = newLabel(state, 'end_case');
+    const elseLabel = stmt.elseBranch ? newLabel(state, 'case_else') : null;
+    const dropLabel = stmt.elseBranch ? null : newLabel(state, 'case_drop');
+    const branchLabels: string[] = stmt.branches.map(() => newLabel(state, 'case_branch'));
+    const dropSelector = (): void => {
+        emit(state, `    DROP        ; discard selector`);
+        emit(state, `    DROP`);
+    };
+
+    const taken: Array<{ lo: bigint; hi: bigint }> = [];
+    const bounds = stmt.branches.map((branch) => branch.values.map((label) => {
+        const lo = labelValue(label.start);
+        const hi = label.end ? labelValue(label.end) : lo;
+        const text = lo === hi ? `${lo}` : `${lo}..${hi}`;
+        if (lo > hi) fail(label, `CASE range ${text} is empty`);
+        if (taken.some((earlier) => lo <= earlier.hi && earlier.lo <= hi)) fail(label, `CASE label ${text} overlaps an earlier label`);
+        taken.push({ lo, hi });
+        return { lo, hi };
+    }));
+
+    emit(state, ``);
+    emit(state, `    ; CASE statement on ${selectorType} (two cells)`);
+    emitExpression(state, stmt.selector);
+
+    for (let i = 0; i < stmt.branches.length; i++) {
+        for (const { lo, hi } of bounds[i]!) {
+            emit(state, `    PICK 1`);
+            emit(state, `    PICK 1`);
+            emitWideConstant(state, lo);
+            if (lo === hi) {
+                emitCompare(state, 'EQ', selectorType);
+                emit(state, `    JNZ ${branchLabels[i]}`);
+            } else {
+                const next = newLabel(state, 'case_next');
+                emitCompare(state, 'GE', selectorType);
+                emit(state, `    JZ ${next}`);
+                emit(state, `    PICK 1`);
+                emit(state, `    PICK 1`);
+                emitWideConstant(state, hi);
+                emitCompare(state, 'LE', selectorType);
+                emit(state, `    JNZ ${branchLabels[i]}`);
+                emit(state, `${next}:`);
+            }
+        }
+    }
+    emit(state, `    JMP ${elseLabel ?? dropLabel}`);
+
+    for (let i = 0; i < stmt.branches.length; i++) {
+        emit(state, `${branchLabels[i]}:`);
+        dropSelector();
+        for (const s of stmt.branches[i]!.statements) {
+            emitStatement(state, s);
+        }
+        emit(state, `    JMP ${endLabel}`);
+    }
+    if (elseLabel && stmt.elseBranch) {
+        emit(state, `${elseLabel}:`);
+        dropSelector();
+        emit(state, `    ; ELSE branch`);
+        for (const s of stmt.elseBranch) {
+            emitStatement(state, s);
+        }
+    } else if (dropLabel) {
+        emit(state, `${dropLabel}:`);
+        dropSelector();
+    }
     emit(state, `${endLabel}:`);
 }
 
@@ -2523,7 +2641,7 @@ function emitFunctionCallStatement(state: CodeGenState, stmt: FBCallStatement): 
     // the value is one cell, two for a 64-bit integer
     const result = staticType(state, call);
     emit(state, `    DROP       ; discard the result of ${stmt.fbName}`);
-    if (isWide(result) && !isFloatType(result)) emit(state, `    DROP`);
+    if (isWide(result)) emit(state, `    DROP`);
 }
 
 /** A call written as a statement, as the call expression it is: the arguments are positional or named. */
@@ -2756,7 +2874,8 @@ function emitCopyOut(state: CodeGenState, source: Place, param: FBParameter): vo
         emitLoadPlace(state, source);
         const extend = signExtension(from);
         if (extend) emit(state, extend);
-        if (to === 'REAL' && from !== 'REAL' && isIntegerLike(from) && from !== UNKNOWN_TYPE) emitIntToReal(state, from);
+        if (isWide(to) || isWide(from)) emitConvertTop(state, from, to);
+        else if (to === 'REAL' && from !== 'REAL' && isIntegerLike(from) && from !== UNKNOWN_TYPE) emitIntToReal(state, from);
     });
 }
 
@@ -2877,6 +2996,10 @@ function emitIntLiteral(state: CodeGenState, expr: IntLiteral): void {
  * Converts the float to IEEE 754 single-precision (32-bit) representation.
  */
 function emitRealLiteral(state: CodeGenState, expr: RealLiteral): void {
+    if (expr.literalType === 'LREAL') {
+        emitDoubleConstant(state, expr.value);
+        return;
+    }
     // Convert float to 32-bit IEEE 754 representation
     const buffer = new ArrayBuffer(4);
     const floatView = new Float32Array(buffer);
@@ -3030,7 +3153,7 @@ function emitUnaryExpr(state: CodeGenState, expr: UnaryExpr): void {
             }
             break;
         case 'NEG':
-            emit(state, isFloatType(type) ? `    NEGF` : `    NEG`);
+            emit(state, type === 'LREAL' ? `    NEGD` : isFloatType(type) ? `    NEGF` : `    NEG`);
             break;
     }
 }
@@ -3210,7 +3333,8 @@ function functionResultType(state: CodeGenState, expr: FunctionCall): string {
             return args.length > 0 ? staticType(state, args[0]) : UNKNOWN_TYPE;
         case 'ABSF': case 'NEGF': case 'SQRT': case 'SIN': case 'COS': case 'TAN': case 'LN': case 'LOG':
         case 'EXP': case 'EXPT': case 'ASIN': case 'ACOS': case 'ATAN': case 'ATAN2': case 'TRUNC': case 'ROUND':
-            return 'REAL';
+            // an LREAL argument gives an LREAL (the transcendental functions compute in REAL and widen back)
+            return args.some((a) => staticType(state, a) === 'LREAL') ? 'LREAL' : 'REAL';
         case 'NAND': case 'NOR':
             return 'BOOL';
         case 'AND_WORD': case 'OR_WORD': case 'XOR_WORD': case 'NOT_WORD':
@@ -3232,7 +3356,8 @@ function staticType(state: CodeGenState, expr: Expression): string {
         case 'BoolLiteral': return 'BOOL';
         // INT#5 is an INT; a plain 5 adopts the type of the operand it meets (CMP-031)
         case 'IntLiteral': return expr.literalType ?? LITERAL_INT;
-        case 'RealLiteral': return 'REAL';
+        // 1.5 is a REAL; LREAL#1.5 is an LREAL. In an LREAL context a plain literal is the double (emitAsDouble).
+        case 'RealLiteral': return expr.literalType === 'LREAL' ? 'LREAL' : 'REAL';
         case 'TimeLiteral': return 'TIME';
         case 'DateLiteral': return 'DATE';
         case 'TODLiteral': return 'TOD';
@@ -3254,10 +3379,44 @@ function staticType(state: CodeGenState, expr: Expression): string {
             if (['EQ', 'NE', 'LT', 'LE', 'GT', 'GE'].includes(expr.operator)) return 'BOOL';
             if (expr.operator === 'POW') return 'REAL';
             return commonType(staticType(state, expr.left), staticType(state, expr.right));
-        case 'FunctionCall':
-            return functionResultType(state, expr);
+        case 'FunctionCall': {
+            // a method of the block being generated, called by its name (CMP-041)
+            const implicit = implicitMethodCall(state, expr);
+            return implicit ? methodResultType(state, implicit) : functionResultType(state, expr);
+        }
+        case 'MethodCall':
+            return methodResultType(state, expr);
         default:
             return UNKNOWN_TYPE;
+    }
+}
+
+/**
+ * Numeric type a method call returns, or UNKNOWN_TYPE when it is not a number. It names the same method the call
+ * runs (emitMethodCall): the method of a THIS, of an instance, of a variable of an interface type (the signature
+ * of the interface) or of SUPER^, so that a 64-bit result is counted as the two cells the call leaves.
+ */
+function methodResultType(state: CodeGenState, expr: MethodCall): string {
+    try {
+        let returned: unknown;
+        if (isSuperReference(expr.object)) {
+            const base = state.currentBlock ? state.symbols.getFBDefinition(state.currentBlock)?.extends : null;
+            returned = base ? state.symbols.getFBDefinition(base)?.methods.get(expr.methodName)?.returnType : undefined;
+        } else if (expr.object.kind === 'ThisExpr') {
+            const block = state.currentFBInstance?.dataType;
+            returned = typeof block === 'string' ? state.symbols.getFBDefinition(block)?.methods.get(expr.methodName)?.returnType : undefined;
+        } else if (expr.object.kind === 'Identifier' || expr.object.kind === 'MemberAccess' || expr.object.kind === 'ArrayAccess') {
+            const type = storedType(state, resolvePlace(state, expr.object).type);
+            if (typeof type === 'string' && isInterfaceType(state, type)) {
+                returned = state.symbols.findInterfaceMethod(type, expr.methodName)?.returnType;
+            } else if (typeof type === 'string') {
+                returned = state.symbols.getFBDefinition(type)?.methods.get(expr.methodName)?.returnType;
+            }
+        }
+        return returned === undefined || returned === null ? UNKNOWN_TYPE : numericTypeName(storedType(state, returned as STDataType));
+    } catch (error) {
+        if (error instanceof CodegenError) return UNKNOWN_TYPE;
+        throw error;
     }
 }
 
@@ -3316,9 +3475,146 @@ function emitWideConstant(state: CodeGenState, value: bigint): void {
     emit(state, `    PUSH32 ${Number(bits >> 32n)}       ; (high word)`);
 }
 
-/** The error of a 64-bit operation that has no opcode and no helper routine yet. */
-function failWide(at: { line: number; column: number }, what: string): never {
-    return fail(at, `${what} on a 64-bit value is not supported yet (CMP-015): the VM has no 64-bit opcode for it`);
+/** Push an LREAL constant as two cells, low word first (the order LOAD64 leaves them in). */
+function emitDoubleConstant(state: CodeGenState, value: number): void {
+    const [low, high] = doubleWords(value);
+    const text = Object.is(value, -0) ? '-0.0' : String(value);
+    emit(state, `    PUSH32 ${low}       ; ${text} (LREAL, low word)`);
+    emit(state, `    PUSH32 ${high}       ; (high word)`);
+}
+
+/** The value of a constant made of literals: an integer (ST integer arithmetic) or a real (double arithmetic). */
+type FoldedNumber = { int: bigint } | { real: number };
+
+/**
+ * Fold literals, their negation and their sums, differences, products and quotients, and a named constant
+ * of one of those. A division by zero is left to the VM (it faults); an explicit `REAL#x` is not folded, it
+ * is a single-precision value.
+ */
+function foldNumber(state: CodeGenState, expr: Expression, depth = 0): FoldedNumber | undefined {
+    if (depth > 16) return undefined;
+    switch (expr.kind) {
+        case 'IntLiteral':
+            return { int: expr.big ?? BigInt(expr.value) };
+        case 'RealLiteral':
+            return expr.literalType === 'REAL' ? undefined : { real: expr.value };
+        case 'UnaryExpr': {
+            if (expr.operator !== 'NEG') return undefined;
+            const inner = foldNumber(state, expr.operand, depth + 1);
+            if (inner === undefined) return undefined;
+            return 'int' in inner ? { int: -inner.int } : { real: -inner.real };
+        }
+        case 'BinaryExpr': {
+            if (!['ADD', 'SUB', 'MUL', 'DIV'].includes(expr.operator)) return undefined;
+            const left = foldNumber(state, expr.left, depth + 1);
+            const right = foldNumber(state, expr.right, depth + 1);
+            if (left === undefined || right === undefined) return undefined;
+            if ('int' in left && 'int' in right) {
+                switch (expr.operator) {
+                    case 'ADD': return { int: left.int + right.int };
+                    case 'SUB': return { int: left.int - right.int };
+                    case 'MUL': return { int: left.int * right.int };
+                    default: return right.int === 0n ? undefined : { int: left.int / right.int };
+                }
+            }
+            const a = 'int' in left ? Number(left.int) : left.real;
+            const b = 'int' in right ? Number(right.int) : right.real;
+            switch (expr.operator) {
+                case 'ADD': return { real: a + b };
+                case 'SUB': return { real: a - b };
+                case 'MUL': return { real: a * b };
+                default: return b === 0 ? undefined : { real: a / b };
+            }
+        }
+        case 'Identifier': {
+            const symbol = state.symbols.get(expr.name);
+            if (!symbol || symbol.section !== VarSection.CONSTANT || !symbol.initialValue) return undefined;
+            const initial = symbol.initialValue as Expression;
+            if (initial.kind !== 'IntLiteral' && initial.kind !== 'RealLiteral' && initial.kind !== 'UnaryExpr' && initial.kind !== 'BinaryExpr') {
+                return undefined;
+            }
+            const value = foldNumber(state, initial, depth + 1);
+            if (value === undefined) return undefined;
+            // the constant has its declared type: a REAL constant is the single-precision value of its literal
+            const declared = numericTypeName(storedType(state, symbol.dataType));
+            if (declared === 'REAL') return { real: Math.fround('int' in value ? Number(value.int) : value.real) };
+            if (declared === 'LREAL') return { real: 'int' in value ? Number(value.int) : value.real };
+            return isIntegerLike(declared) && 'int' in value ? value : undefined;
+        }
+        default:
+            return undefined;
+    }
+}
+
+/**
+ * Convert the value on top of the stack from the numeric type `from` to `to`, where either is 64 bits wide
+ * (LINT, ULINT, LWORD, DT or LREAL). Every case is one VM instruction, or two for the sign word of a
+ * 32-bit integer: LREAL conversions round to nearest even, to a 64-bit integer they truncate.
+ */
+function emitConvertTop(state: CodeGenState, from: string, to: string): void {
+    if (from === to) return;
+    const source = from === LITERAL_INT || from === UNKNOWN_TYPE ? undefined : numericInfo(from);
+    const signedSource = source === undefined || source.signed;
+
+    if (to === 'LREAL') {
+        if (from === 'REAL' || from === UNKNOWN_TYPE) emit(state, `    F2D`);
+        else if (isWideInteger(from)) emit(state, signedSource ? `    L2D` : `    U2D`);
+        else if (isUnsigned32(from)) {
+            emit(state, `    PUSH8 0             ; high word`);
+            emit(state, `    U2D`);
+        } else emit(state, `    I2D`);
+        return;
+    }
+    if (to === 'REAL') {
+        if (from === 'LREAL') emit(state, `    D2F`);
+        else if (isWideInteger(from)) emit(state, signedSource ? `    L2F` : `    U2F`);
+        else emitIntToReal(state, from);
+        return;
+    }
+    if (isWideInteger(to)) {
+        const unsigned = numericInfo(to)?.signed === false;
+        if (from === 'LREAL') {
+            emit(state, unsigned ? `    D2U` : `    D2L`);
+        } else if (from === 'REAL') {
+            emit(state, `    F2D`);
+            emit(state, unsigned ? `    D2U` : `    D2L`);
+        } else if (!isWideInteger(from)) {
+            if (signedSource) {
+                emit(state, `    DUP`);
+                emit(state, `    PUSH8 31`);
+                emit(state, `    SAR                 ; the sign word`);
+            } else {
+                emit(state, `    PUSH8 0             ; high word`);
+            }
+        }
+        return;
+    }
+    if (isWide(from)) {
+        // a 64-bit value assigned to a narrower integer keeps its low word (CMP-016)
+        emit(state, `    DROP                ; high word`);
+    }
+}
+
+/**
+ * Emit `expr` as an LREAL (two cells): a constant is written as the double it is, any other value is
+ * converted from the type it has. An LREAL expression is computed in double precision.
+ */
+function emitAsDouble(state: CodeGenState, expr: Expression, type: string): void {
+    const folded = foldNumber(state, expr);
+    if (folded !== undefined && !(expr.kind === 'RealLiteral' && expr.literalType === 'REAL')) {
+        emitDoubleConstant(state, 'int' in folded ? Number(folded.int) : folded.real);
+        return;
+    }
+    if (expr.kind === 'RealLiteral' && expr.literalType === 'REAL') {
+        emitDoubleConstant(state, Math.fround(expr.value));
+        return;
+    }
+    if (expr.kind === 'BinaryExpr' && (type === 'LREAL' || type === LITERAL_INT)) {
+        emitBinaryExpr(state, expr, 'LREAL');
+        return;
+    }
+    emitExpression(state, expr);
+    emitConvertTop(state, type, 'LREAL');
 }
 
 /**
@@ -3341,8 +3637,18 @@ function emitConverted(state: CodeGenState, expr: Expression, target: string): v
         }
     }
 
+    if (target === 'LREAL') {
+        emitAsDouble(state, expr, type);
+        return;
+    }
+
     if (target === 'REAL') {
-        if (isWide(type) && isIntegerLike(type)) failWide(expr, 'Conversion to REAL');
+        if (isWide(type)) {
+            // an LREAL is rounded to REAL precision (D2F); a 64-bit integer is converted with one rounding
+            emitExpression(state, expr);
+            emitConvertTop(state, type, 'REAL');
+            return;
+        }
         if (isIntegerLike(type) && sourceBits <= 32) {
             if (expr.kind === 'IntLiteral') {
                 emit(state, `    PUSH32 ${floatBits(expr.value)}       ; ${expr.value} (REAL)`);
@@ -3357,15 +3663,20 @@ function emitConverted(state: CodeGenState, expr: Expression, target: string): v
     }
 
     if (isWide(target) && !isFloatType(target)) {
-        if (isFloatType(type)) failWide(expr, 'Conversion from REAL');
-        if (isWide(type)) {
-            if (expr.kind === 'BinaryExpr') emitBinaryExpr(state, expr, target);
-            else emitExpression(state, expr);
+        if (isFloatType(type)) {
+            emitExpression(state, expr);
+            emitConvertTop(state, type, target);
             return;
         }
+        // a literal is two cells, whatever type it carries (LINT#5 is a LINT literal, not a one-cell value)
         const constant = constantInteger(expr);
         if (constant !== undefined) {
             emitWideConstant(state, constant);
+            return;
+        }
+        if (isWide(type)) {
+            if (expr.kind === 'BinaryExpr') emitBinaryExpr(state, expr, target);
+            else emitExpression(state, expr);
             return;
         }
         if (expr.kind === 'BinaryExpr' && type === LITERAL_INT) {
@@ -3427,6 +3738,20 @@ function warnNarrowing(state: CodeGenState, value: Expression, from: string, to:
     const source = typeKind(from);
     const target = typeKind(to);
     const integerLike = (kind: TypeKind | undefined) => kind === 'signed' || kind === 'unsigned' || kind === 'bits';
+    if (from === 'LREAL' && to === 'REAL') {
+        // a literal narrows without a word (it is written to the precision it is given to); a value is rounded
+        if (value.kind === 'RealLiteral' || foldNumber(state, value) !== undefined) return;
+        const warning: CodegenWarning = {
+            code: 'IMPLICIT_NARROWING',
+            message: `Implicit narrowing from LREAL to REAL: the value is rounded to single precision (about 7 significant digits) and a magnitude above 3.4e38 becomes an infinity; use LREAL_TO_REAL if that is intended`,
+            line: value.line,
+            column: value.column,
+            ...(value.endLine === undefined ? {} : { endLine: value.endLine, endColumn: value.endColumn }),
+        };
+        const seen = state.warnings.some((each) => each.line === warning.line && each.column === warning.column && each.message === warning.message);
+        if (!seen) state.warnings.push(warning);
+        return;
+    }
     if (!integerLike(source) || !integerLike(target)) return;
     const range = integerRange(to);
     if (!range || numericInfo(from)!.bits <= numericInfo(to)!.bits) return;
@@ -3503,7 +3828,8 @@ function convertsImplicitly(from: string, to: string): boolean {
     const integerLike = (kind: TypeKind) => kind === 'signed' || kind === 'unsigned' || kind === 'bits';
     switch (target) {
         case 'real':
-            if (source === 'real') return numericInfo(from)!.bits <= numericInfo(to)!.bits;
+            // REAL widens to LREAL; LREAL narrows to REAL with the IMPLICIT_NARROWING warning (warnNarrowing)
+            if (source === 'real') return true;
             return integerLike(source);
         case 'signed':
         case 'unsigned':
@@ -3582,6 +3908,11 @@ function checkConvertible(from: string, to: string, at: { line: number; column: 
 
 /** Emit the comparison `op` of the two values on the stack, read as `type`. */
 function emitCompare(state: CodeGenState, op: CompareOp, type: string): void {
+    if (type === 'LREAL') {
+        // one opcode for each operator: a NaN is unordered (false, except <>), -0.0 equals +0.0
+        emit(state, `    ${{ EQ: 'EQD', NE: 'NED', LT: 'LTD', LE: 'LED', GT: 'GTD', GE: 'GED' }[op]}`);
+        return;
+    }
     if (type === 'REAL') {
         // No float comparison opcode: the IEEE 754 order of two REAL values is a call to a helper
         callHelper(state, 'fcmp', FCMP_LABEL);
@@ -3805,18 +4136,21 @@ function emitBinaryExpr(state: CodeGenState, expr: BinaryExpr, contextType?: str
     }
 
     const useFloat = isFloatType(opType);
-    const target = opType === 'REAL' || isUnsigned32(opType) ? opType : UNKNOWN_TYPE;
+    const double = opType === 'LREAL';
+    const target = opType === 'REAL' || double || isUnsigned32(opType) ? opType : UNKNOWN_TYPE;
 
     emitConverted(state, expr.left, target);
     emitConverted(state, expr.right, target);
 
     switch (expr.operator) {
-        // Arithmetic operators - use float variants when operands are REAL
-        case 'ADD': emit(state, useFloat ? `    ADDF` : `    ADD`); break;
-        case 'SUB': emit(state, useFloat ? `    SUBF` : `    SUB`); break;
-        case 'MUL': emit(state, useFloat ? `    MULF` : `    MUL`); break;
+        // Arithmetic operators - use float variants when operands are REAL, double ones for LREAL
+        case 'ADD': emit(state, double ? `    ADDD` : useFloat ? `    ADDF` : `    ADD`); break;
+        case 'SUB': emit(state, double ? `    SUBD` : useFloat ? `    SUBF` : `    SUB`); break;
+        case 'MUL': emit(state, double ? `    MULD` : useFloat ? `    MULF` : `    MUL`); break;
         case 'DIV':
-            if (useFloat) {
+            if (double) {
+                emit(state, `    DIVD`);
+            } else if (useFloat) {
                 emit(state, `    DIVF`);
             } else if (isUnsigned32(opType)) {
                 callHelper(state, 'udiv32', UDIV32_LABEL);
@@ -3895,17 +4229,17 @@ function checkOperands(state: CodeGenState, expr: BinaryExpr): void {
 
 /** A binary operation on 64-bit integers: each operand is two cells, low word below the high word. */
 function emitWideBinary(state: CodeGenState, expr: BinaryExpr, opType: string): void {
-    switch (expr.operator) {
-        case 'MUL': case 'DIV': case 'MOD':
-            failWide(expr, `The ${expr.operator === 'MUL' ? 'multiplication' : expr.operator === 'DIV' ? 'division' : 'modulo'}`);
-    }
-
     emitConverted(state, expr.left, opType);
     emitConverted(state, expr.right, opType);
 
+    // LINT and DT are signed; ULINT and LWORD divide and take the remainder as unsigned values (CMP-012, CMP-015)
+    const signed = numericInfo(opType)?.signed === true;
     switch (expr.operator) {
         case 'ADD': callHelper(state, 'add64', ADD64_LABEL); break;
         case 'SUB': callHelper(state, 'sub64', SUB64_LABEL); break;
+        case 'MUL': emit(state, `    MUL64`); break;
+        case 'DIV': emit(state, signed ? `    DIVS64` : `    DIVU64`); break;
+        case 'MOD': emit(state, signed ? `    MODS64` : `    MODU64`); break;
         case 'AND': case 'OR': case 'XOR':
             // [alo ahi blo bhi]: the high words, then the low words
             emit(state, `    ROT`);
@@ -3975,6 +4309,12 @@ function bindArguments(state: CodeGenState, call: FunctionCall, inputs: VarDecl[
     return bound;
 }
 
+/** The standard functions that take 64-bit integers and LREAL (two cells) as well as one-cell values. */
+const WIDE_FUNCTIONS = new Set([
+    'ABS', 'NEG', 'ABSF', 'NEGF', 'MAX', 'MIN', 'LIMIT', 'SEL', 'MUX', 'SQRT', 'EXPT', 'TRUNC', 'ROUND',
+    'SIN', 'COS', 'TAN', 'LN', 'LOG', 'EXP', 'ASIN', 'ACOS', 'ATAN', 'ATAN2', 'SHL', 'SHR', 'ROL', 'ROR',
+]);
+
 function emitFunctionCall(state: CodeGenState, expr: FunctionCall): void {
     // a method of the block being generated, called by its name (CMP-041)
     const implicit = implicitMethodCall(state, expr);
@@ -4032,12 +4372,13 @@ function emitFunctionCall(state: CodeGenState, expr: FunctionCall): void {
         fail(expr, `Unknown function '${expr.name}'`);
     }
 
-    // The standard functions work on one cell per operand
+    // Most standard functions work on one cell per operand; the ones in WIDE_FUNCTIONS (and the conversions)
+    // are written for two-cell values as well
     for (const arg of expr.args) {
         const value = ((arg as any).kind === 'NamedArgument' ? (arg as any).value : arg) as Expression;
         const argType = staticType(state, value);
-        if (isWide(argType)) {
-            fail(expr, `${expr.name} does not take a 64-bit argument yet (CMP-015)`);
+        if (isWide(argType) && !WIDE_FUNCTIONS.has(expr.name.toUpperCase()) && conversionResultType(expr.name) === undefined) {
+            fail(expr, `${expr.name} does not take a 64-bit or LREAL argument (CMP-015): use a conversion function first`);
         }
         // the string routines of the VM work on one-byte characters
         if (expr.name.toUpperCase() !== 'LEN' && isStringFunction(expr.name)
@@ -4281,7 +4622,10 @@ function arrayPlace(state: CodeGenState, expr: ArrayAccess): Place {
         } else {
             const indexType = staticType(state, index);
             if (isFloatType(indexType)) fail(index, `An array index must be an integer, not ${indexType}`);
-            if (isWide(indexType)) failWide(index, 'An array index');
+            if (isWide(indexType)) {
+                // a 64-bit value cut to its low word could name an element that is not the one it says
+                fail(index, `An array index must be a 32-bit integer, not ${indexType}: convert it, for example with ${indexType}_TO_DINT`);
+            }
             addr = { k: 'index', base: addr, index, lower: dims[d].lowerBound, count, stride };
         }
     }
@@ -5372,9 +5716,7 @@ function emitBitAssignment(state: CodeGenState, stmt: Assignment, target: BitAcc
  * `a ** b`: both operands are converted to REAL and the helper routine computes the power (power.ts).
  */
 function emitPower(state: CodeGenState, expr: BinaryExpr): void {
-    for (const operand of [expr.left, expr.right]) {
-        if (isWide(staticType(state, operand))) failWide(expr, 'Exponentiation (**)');
-    }
+    // a 64-bit operand is converted to REAL first: the power is computed in single precision
     emitConverted(state, expr.left, 'REAL');
     emitConverted(state, expr.right, 'REAL');
     linkRoutine(state, POWF_LABEL);

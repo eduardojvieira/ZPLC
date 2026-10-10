@@ -77,12 +77,12 @@ Additional utility string functions in the same file include:
 Examples directly registered in the stdlib include:
 
 - arithmetic: `ABS`, `ABSF`, `NEG`, `NEGF`, `SQRT`, `EXPT`, `TRUNC`, `ROUND`
-- conversion: `<FROM>_TO_<TO>` for every pair of different types among `BOOL`, `SINT`, `USINT`, `BYTE`, `INT`, `UINT`, `WORD`, `DINT`, `UDINT`, `DWORD`, `REAL` and `TIME` (`INT_TO_REAL`, `REAL_TO_INT`, `UDINT_TO_DINT`...), see [Type conversions](../runtime/stdlib.md#9-type-conversions)
+- conversion: `<FROM>_TO_<TO>` for every pair of different types among `BOOL`, `SINT`, `USINT`, `BYTE`, `INT`, `UINT`, `WORD`, `DINT`, `UDINT`, `DWORD`, `LINT`, `ULINT`, `LWORD`, `REAL`, `LREAL` and `TIME` (`INT_TO_REAL`, `REAL_TO_INT`, `UDINT_TO_DINT`, `LINT_TO_LREAL`...), see [Type conversions](../runtime/stdlib.md#9-type-conversions)
 - trigonometry and logs: `SIN`, `COS`, `TAN`, `ASIN`, `ACOS`, `ATAN`, `ATAN2`, `LN`, `LOG`, `EXP`
 - selection helpers: `MAX`, `MIN`, `LIMIT`, `SEL`, `MUX`
 - bitwise helpers: `ROL`, `ROR`, `SHL`, `SHR`, `AND_WORD`, `OR_WORD`, `XOR_WORD`, `NOT_WORD`
 
-One thing in the registry cannot be used as the list suggests. `MOD` and the logic operators are operators (`a MOD b`, `a AND b`), and the forms `MOD(a, b)` and `AND(a, b)` do not parse. The 64-bit types and `DATE`, `TOD` and `DT` have no conversion functions yet. The table of [known differences](../runtime/stdlib.md#11-known-differences-from-iec-61131-3) lists the cases that fail today, with their requirement ids.
+One thing in the registry cannot be used as the list suggests. `MOD` and the logic operators are operators (`a MOD b`, `a AND b`), and the forms `MOD(a, b)` and `AND(a, b)` do not parse. `DATE`, `TOD` and `DT` have no conversion functions yet. `ABS`, `NEG`, `MAX`, `MIN`, `LIMIT`, `SEL`, `MUX`, `SQRT`, `TRUNC`, `ROUND`, `SHL`, `SHR`, `ROL` and `ROR` take the 64-bit integers and `LREAL`; the other functions refuse them with a message. The table of [known differences](../runtime/stdlib.md#11-known-differences-from-iec-61131-3) lists the cases that fail today, with their requirement ids.
 
 ## Communication function blocks
 

@@ -459,7 +459,7 @@ static void test_semantic_rejections_and_acceptance(void) {
                                   ZPLC_LOADER_ERR_WORKSPACE,
                                   "one byte below exact workspace is rejected");
 
-  code[0] = 0x04U;
+  code[0] = 0x0EU;
   length = make_program(file, code, sizeof(code));
   expect_rejection(file, length, ZPLC_LOADER_ERR_OPCODE,
                    "unknown opcode with valid CRC is rejected");

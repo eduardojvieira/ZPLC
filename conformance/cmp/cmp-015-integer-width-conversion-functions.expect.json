@@ -1,0 +1,123 @@
+{
+  "requirement": "CMP-057",
+  "title": "The conversion functions between the 64-bit and the narrower integers",
+  "matrix": [
+    "data-types.lint-ulint-lword",
+    "functions.other-conversions"
+  ],
+  "tags": [
+    "arch-sensitive",
+    "64-bit",
+    "float"
+  ],
+  "note": "A conversion to a narrower integer keeps the low bits; to a wider one it keeps the value (a sign word or a zero word); to BOOL it tests both words (CMP-057).",
+  "scans": 1,
+  "scanMs": 10,
+  "expect": [
+    {
+      "at": "%QD0",
+      "type": "DINT",
+      "value": 705032704
+    },
+    {
+      "at": "%QD1",
+      "type": "UDINT",
+      "value": 4294967295
+    },
+    {
+      "at": "%QW600",
+      "type": "INT",
+      "value": -1
+    },
+    {
+      "at": "%QB1024",
+      "type": "BYTE",
+      "value": 239
+    },
+    {
+      "at": "%QD2",
+      "type": "UDINT",
+      "value": 4294967295
+    },
+    {
+      "at": "%QD3",
+      "type": "UDINT",
+      "value": 4294967295
+    },
+    {
+      "at": "%QD4",
+      "type": "UDINT",
+      "value": 4294967295
+    },
+    {
+      "at": "%QD5",
+      "type": "UDINT",
+      "value": 0
+    },
+    {
+      "at": "%QD6",
+      "type": "UDINT",
+      "value": 4294967295
+    },
+    {
+      "at": "%QD7",
+      "type": "UDINT",
+      "value": 4294967295
+    },
+    {
+      "at": "%QD8",
+      "type": "UDINT",
+      "value": 200
+    },
+    {
+      "at": "%QD9",
+      "type": "UDINT",
+      "value": 0
+    },
+    {
+      "at": "%QD10",
+      "type": "UDINT",
+      "value": 4294967295
+    },
+    {
+      "at": "%QD11",
+      "type": "UDINT",
+      "value": 4294967295
+    },
+    {
+      "at": "%QD12",
+      "type": "UDINT",
+      "value": 4294967295
+    },
+    {
+      "at": "%QD13",
+      "type": "UDINT",
+      "value": 4294967295
+    },
+    {
+      "at": "%QX512.0",
+      "type": "BOOL",
+      "value": false
+    },
+    {
+      "at": "%QX512.1",
+      "type": "BOOL",
+      "value": true
+    },
+    {
+      "at": "%QX512.2",
+      "type": "BOOL",
+      "value": true
+    },
+    {
+      "at": "%QD14",
+      "type": "UDINT",
+      "value": 0
+    },
+    {
+      "at": "%QD15",
+      "type": "UDINT",
+      "value": 3220176896
+    }
+  ]
+}

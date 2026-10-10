@@ -1,0 +1,57 @@
+{
+  "requirement": "CMP-015",
+  "title": "ULINT multiplication gives the unsigned 64-bit product",
+  "matrix": [
+    "data-types.lint-ulint-lword"
+  ],
+  "tags": [
+    "arch-sensitive",
+    "64-bit",
+    "float"
+  ],
+  "note": "The low 64 bits of the product are the same pattern for signed and unsigned operands; the result is read as unsigned.",
+  "scans": 1,
+  "scanMs": 10,
+  "expect": [
+    {
+      "at": "%QD0",
+      "type": "UDINT",
+      "value": 1
+    },
+    {
+      "at": "%QD1",
+      "type": "UDINT",
+      "value": 0
+    },
+    {
+      "at": "%QD2",
+      "type": "UDINT",
+      "value": 0
+    },
+    {
+      "at": "%QD3",
+      "type": "UDINT",
+      "value": 2147483648
+    },
+    {
+      "at": "%QD4",
+      "type": "UDINT",
+      "value": 2596069104
+    },
+    {
+      "at": "%QD5",
+      "type": "UDINT",
+      "value": 305419896
+    },
+    {
+      "at": "%QD6",
+      "type": "UDINT",
+      "value": 0
+    },
+    {
+      "at": "%QD7",
+      "type": "UDINT",
+      "value": 0
+    }
+  ]
+}

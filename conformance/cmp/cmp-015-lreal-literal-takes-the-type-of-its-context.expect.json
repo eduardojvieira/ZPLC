@@ -1,0 +1,117 @@
+{
+  "requirement": "CMP-015",
+  "title": "A real literal in an LREAL expression is a double",
+  "matrix": [
+    "data-types.lreal"
+  ],
+  "tags": [
+    "arch-sensitive",
+    "64-bit",
+    "float"
+  ],
+  "note": "A literal without a type prefix takes the type the expression needs; REAL#0.1 is the REAL.",
+  "scans": 1,
+  "scanMs": 10,
+  "expect": [
+    {
+      "at": "%QD0",
+      "type": "UDINT",
+      "value": 858993460
+    },
+    {
+      "at": "%QD1",
+      "type": "UDINT",
+      "value": 1070805811
+    },
+    {
+      "at": "%QD2",
+      "type": "UDINT",
+      "value": 2576980378
+    },
+    {
+      "at": "%QD3",
+      "type": "UDINT",
+      "value": 1069128089
+    },
+    {
+      "at": "%QD4",
+      "type": "UDINT",
+      "value": 2576980378
+    },
+    {
+      "at": "%QD5",
+      "type": "UDINT",
+      "value": 1068079513
+    },
+    {
+      "at": "%QD6",
+      "type": "UDINT",
+      "value": 2684354560
+    },
+    {
+      "at": "%QD7",
+      "type": "UDINT",
+      "value": 1069128089
+    },
+    {
+      "at": "%QD8",
+      "type": "UDINT",
+      "value": 858993460
+    },
+    {
+      "at": "%QD9",
+      "type": "UDINT",
+      "value": 1070805811
+    },
+    {
+      "at": "%QD10",
+      "type": "UDINT",
+      "value": 1431655765
+    },
+    {
+      "at": "%QD11",
+      "type": "UDINT",
+      "value": 1070945621
+    },
+    {
+      "at": "%QD12",
+      "type": "UDINT",
+      "value": 0
+    },
+    {
+      "at": "%QD13",
+      "type": "UDINT",
+      "value": 3221225472
+    },
+    {
+      "at": "%QD14",
+      "type": "UDINT",
+      "value": 0
+    },
+    {
+      "at": "%QD15",
+      "type": "UDINT",
+      "value": 1075388922
+    },
+    {
+      "at": "%QD16",
+      "type": "UDINT",
+      "value": 4028335726
+    },
+    {
+      "at": "%QD17",
+      "type": "UDINT",
+      "value": 1075388921
+    },
+    {
+      "at": "%QD18",
+      "type": "UDINT",
+      "value": 0
+    },
+    {
+      "at": "%QD19",
+      "type": "UDINT",
+      "value": 1074528256
+    }
+  ]
+}

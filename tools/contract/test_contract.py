@@ -606,5 +606,87 @@ class GeneratedFilesAreFresh(unittest.TestCase):
         self.assertIn("MAX_TASKS", result.stderr)
 
 
+class RestampArtifacts(unittest.TestCase):
+    """tools/contract/restamp_artifacts.py moves every committed artifact to the current draft counter (CMP-052)."""
+
+    @staticmethod
+    def container(counter: int, code: bytes = b"\x40\x01\x01", crc_ok: bool = True) -> bytes:
+        import struct
+        import zlib
+        segments = struct.pack("<HHI", 1, 0, len(code))
+        header = bytearray(struct.pack("<4sHHIIIIHHI", b"ZPLC", 1, 0, 0, 0, len(code), 0, 0, 1, counter))
+        body = bytes(header) + segments + code
+        crc = zlib.crc32(body[:12] + body[16:]) & 0xFFFFFFFF
+        out = bytearray(body)
+        struct.pack_into("<I", out, 12, crc if crc_ok else crc ^ 1)
+        return bytes(out)
+
+    def make_tree(self, root: Path, counter: int = 3) -> dict[str, bytes]:
+        (root / "tools/contract/golden").mkdir(parents=True)
+        (root / "tools/contract/contract.json").write_text(json.dumps({"abi": {"draftCounter": counter}}))
+        (root / "tools/contract/golden/draft-ledger.json").write_text(
+            json.dumps({"entries": [{"counter": n} for n in range(1, counter + 1)]}))
+        stale, legacy, damaged, current = (self.container(2), self.container(0), self.container(2, crc_ok=False),
+                                           self.container(counter))
+        (root / "examples").mkdir()
+        (root / "examples/stale.zplc").write_bytes(stale)
+        (root / "examples/legacy.zplc").write_bytes(legacy)
+        (root / "examples/damaged.zplc").write_bytes(damaged)
+        (root / "examples/current.zplc").write_bytes(current)
+        (root / "fixture.hex").write_text(stale.hex().upper() + "\n")
+        array = ",\n    ".join("0x%02x" % b for b in stale)
+        (root / "fixture.h").write_text("static const uint8_t program[] = {\n    " + array + " /* end */\n};\n"
+                                        "static const uint8_t legacy[] = { " + ", ".join("0x%02X" % b for b in legacy) + " };\n")
+        (root / "corpus.json").write_text(json.dumps({"artifacts": {"a.zplc": stale.hex(), "b.zplc": legacy.hex()}}))
+        (root / "notes.md").write_text("The header starts 5a504c430100000000000000 and goes on\n")
+        (root / "short.h").write_text("static const uint8_t m[] = { 0x5a, 0x50, 0x4c, 0x43 };\n")
+        return {"stale": stale, "legacy": legacy, "damaged": damaged}
+
+    def run_tool(self, root: Path, *flags: str):
+        return subprocess.run([sys.executable, "-B", str(HERE / "restamp_artifacts.py"), "--root", str(root), *flags],
+                              capture_output=True, text=True)
+
+    def test_check_names_every_stale_artifact_and_a_restamp_fixes_exactly_those(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            made = self.make_tree(root)
+            before = {p.name: p.read_bytes() for p in root.rglob("*") if p.is_file()}
+            checked = self.run_tool(root, "--check")
+            self.assertEqual(checked.returncode, 1, checked.stdout + checked.stderr)
+            for name in ("examples/stale.zplc", "fixture.hex", "fixture.h", "corpus.json"):
+                self.assertIn(f"stale: {name}", checked.stderr)
+            for name in ("legacy.zplc", "damaged.zplc", "current.zplc", "notes.md", "short.h"):
+                self.assertNotIn(f"stale: examples/{name}", checked.stderr)
+                self.assertNotIn(f"stale: {name}", checked.stderr)
+            self.assertEqual({p.name: p.read_bytes() for p in root.rglob("*") if p.is_file()}, before,
+                             "--check must change nothing")
+
+            fixed = self.run_tool(root)
+            self.assertEqual(fixed.returncode, 0, fixed.stderr)
+            self.assertEqual(self.run_tool(root, "--check").returncode, 0)
+            import struct
+            import zlib
+            expected = self.container(3)
+            self.assertEqual((root / "examples/stale.zplc").read_bytes(), expected)
+            self.assertEqual((root / "fixture.hex").read_text(), expected.hex().upper() + "\n")
+            text = (root / "fixture.h").read_text()
+            self.assertIn("/* end */", text)
+            self.assertEqual(bytes(int(m, 16) for m in re.findall(r"0x([0-9a-f]{2})", text.split("legacy")[0])), expected)
+            self.assertEqual(json.loads((root / "corpus.json").read_text())["artifacts"],
+                             {"a.zplc": expected.hex(), "b.zplc": made["legacy"].hex()})
+            # a deliberate negative case is never touched: before the counter, and a damaged CRC
+            self.assertEqual((root / "examples/legacy.zplc").read_bytes(), made["legacy"])
+            self.assertEqual((root / "examples/damaged.zplc").read_bytes(), made["damaged"])
+            self.assertEqual((root / "notes.md").read_text(), (before["notes.md"]).decode())
+            data = (root / "examples/stale.zplc").read_bytes()
+            self.assertEqual(struct.unpack_from("<I", data, 28)[0], 3)
+            self.assertEqual(struct.unpack_from("<I", data, 12)[0], zlib.crc32(data[:12] + data[16:]) & 0xFFFFFFFF)
+
+    def test_every_committed_artifact_carries_the_current_counter(self):
+        result = subprocess.run([sys.executable, "-B", str(HERE / "restamp_artifacts.py"), "--check"],
+                                capture_output=True, text=True)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)

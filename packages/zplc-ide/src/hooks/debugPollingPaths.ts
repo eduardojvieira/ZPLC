@@ -3,7 +3,7 @@ import { findVariable, type DebugMap } from '../compiler';
 export interface PolledDebugVariableDescriptor {
   name: string;
   address: number;
-  type: 'BOOL' | 'INT' | 'DINT' | 'REAL' | 'BYTE' | 'WORD' | 'DWORD' | 'TIME' | 'STRING';
+  type: 'BOOL' | 'INT' | 'DINT' | 'REAL' | 'BYTE' | 'WORD' | 'DWORD' | 'TIME' | 'STRING' | 'LINT' | 'ULINT' | 'LWORD' | 'LREAL';
   forceable: boolean;
   bitOffset?: number;
   maxLength?: number;
@@ -14,11 +14,13 @@ function mapDebugType(type: string): PolledDebugVariableDescriptor['type'] {
 
   if (normalized === 'BOOL') return 'BOOL';
   if (normalized === 'INT' || normalized === 'SINT' || normalized === 'USINT' || normalized === 'UINT') return 'INT';
-  if (normalized === 'DINT' || normalized === 'UDINT' || normalized === 'LINT' || normalized === 'ULINT') return 'DINT';
-  if (normalized === 'REAL' || normalized === 'LREAL') return 'REAL';
+  if (normalized === 'DINT' || normalized === 'UDINT') return 'DINT';
+  // the 64-bit types are read as their 8 bytes (CMP-015): reading the low 4 bytes showed half of the value
+  if (normalized === 'LINT' || normalized === 'ULINT' || normalized === 'LWORD' || normalized === 'LREAL') return normalized;
+  if (normalized === 'REAL') return 'REAL';
   if (normalized === 'BYTE') return 'BYTE';
   if (normalized === 'WORD') return 'WORD';
-  if (normalized === 'DWORD' || normalized === 'LWORD') return 'DWORD';
+  if (normalized === 'DWORD') return 'DWORD';
   if (normalized === 'TIME') return 'TIME';
   if (normalized === 'STRING') return 'STRING';
 

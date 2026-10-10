@@ -141,22 +141,22 @@ The widths, the wrap and the behaviour at the limits are in the [numeric types](
 ### ABS
 Calculates the absolute value.
 - **Inputs:** `IN` (ANY_NUM).
-- **Outputs:** (ANY_NUM) Absolute value of IN.
+- **Outputs:** (ANY_NUM) Absolute value of IN. The most negative `DINT` and `LINT` stay as they are; an `LREAL` has its sign bit cleared (`ABS(-0.0)` is 0.0).
 
 ### SQRT
 Calculates the square root of a number.
-- **Inputs:** `IN` (REAL).
-- **Outputs:** (REAL) Square root of IN; 0.0 for an `IN` of 0.0 or below.
+- **Inputs:** `IN` (REAL or LREAL).
+- **Outputs:** (the type of IN) Square root of IN; 0.0 for an `IN` of 0.0 or below. For an `LREAL` it is the correctly rounded double (`SQRTD`).
 
 ### SIN / COS / TAN
 Standard trigonometric functions (evaluated in radians).
-- **Inputs:** `IN` (REAL).
+- **Inputs:** `IN` (REAL, or LREAL: the argument is rounded to REAL, the function computes in REAL and the result is widened back, so an LREAL result has the accuracy of a REAL, about seven significant digits).
 - **Outputs:** (REAL) Sine, Cosine, or Tangent of IN (`cmp-058-trigonometric-functions`).
 - **Domain:** every finite `IN`. A NaN or an infinity gives a NaN (`cmp-058-sine-of-infinity-and-not-a-number`). An angle of 100000 or more is reduced modulo 2 pi before the sine is taken, with 2 pi held to 36 bits in three parts that multiply exactly and a correction applied once, so the result is the sine of the REAL itself: as accurate as for a small angle up to 2^40, and with an error that grows as `IN` times 1e-19 above it (1e-4 at 2^48). A REAL of 2 pi times 2^48 (1.8e15) or more has a spacing above 2^25 radians: the angle carries no information, the reduction does not hold it and the function gives the value for an angle of 0.0, finite, without an error (`cmp-058-trigonometric-functions-of-negative-and-large-angles`).
 
 ### EXP / LN / LOG
 The natural exponential, the natural logarithm and the logarithm to base 10.
-- **Inputs:** `IN` (REAL; an integer is converted).
+- **Inputs:** `IN` (REAL; an integer is converted; an LREAL is rounded to REAL and the result widened back, with the accuracy of a REAL).
 - **Outputs:** (REAL) `e ** IN`, `ln(IN)` or `log10(IN)`.
 - **Range:** `EXP` gives +infinity above 88.72284 and 0.0 below -103.28. `LN` and `LOG` give -infinity for 0.0 and a NaN for a negative number.
 
@@ -282,7 +282,7 @@ The position comes before the count in `MID`, `DELETE` and `REPLACE`. IEC 61131-
 
 ## 9. Type Conversions
 
-Use type conversion functions to move values between types. A function `<FROM>_TO_<TO>` exists for every ordered pair of different types among `BOOL`, `SINT`, `USINT`, `BYTE`, `INT`, `UINT`, `WORD`, `DINT`, `UDINT`, `DWORD`, `REAL` and `TIME`: `INT_TO_DINT`, `DINT_TO_REAL`, `SINT_TO_INT`, `REAL_TO_USINT`, `TIME_TO_DINT`, and so on (132 functions). The 64-bit types and `DATE`, `TOD` and `DT` have no conversion functions yet.
+Use type conversion functions to move values between types. A function `<FROM>_TO_<TO>` exists for every ordered pair of different types among `BOOL`, `SINT`, `USINT`, `BYTE`, `INT`, `UINT`, `WORD`, `DINT`, `UDINT`, `DWORD`, `LINT`, `ULINT`, `LWORD`, `REAL`, `LREAL` and `TIME`: `INT_TO_DINT`, `DINT_TO_REAL`, `SINT_TO_INT`, `REAL_TO_USINT`, `TIME_TO_DINT`, `LINT_TO_LREAL`, `LREAL_TO_ULINT` and so on (240 functions). `DATE`, `TOD` and `DT` have no conversion functions yet.
 
 | Conversion | Result |
 |---|---|
@@ -290,13 +290,16 @@ Use type conversion functions to move values between types. A function `<FROM>_T
 | Integer to a narrower integer, or to the other signedness | The low bits of the value in the width of the destination (two's complement wrap): `INT_TO_SINT(300)` is 44, `INT_TO_UINT(-1)` is 65535, `DINT_TO_UDINT(-1)` is 4294967295. |
 | Integer or `TIME` to `BOOL` | FALSE for 0, TRUE for any other value. |
 | `BOOL` to a number | 0 or 1. |
-| Integer to `REAL` | The nearest `REAL`; a 32-bit value above 2^24 may lose its lowest bits. |
+| Integer to `REAL` | The nearest `REAL`, with one rounding (also for a 64-bit integer); a value above 2^24 may lose its lowest bits. |
+| Integer to `LREAL` | The nearest `LREAL`; exact up to 2^53, one rounding above. |
+| `REAL` to `LREAL`, `LREAL` to `REAL` | Exact widening; the nearest `REAL` (an overflow is an infinity) when narrowing. |
 | `REAL` to an integer | The nearest integer, an exact half to the even integer (`REAL_TO_INT(2.5)` is 2, `REAL_TO_INT(3.5)` is 4, `REAL_TO_INT(-2.5)` is -2). A value outside the range of the destination gives its nearest limit (`REAL_TO_INT(40000.0)` is 32767, `REAL_TO_USINT(-5.0)` is 0, infinity gives the limit of its sign) and a NaN gives 0. |
-| `REAL` to `BOOL` | FALSE for 0.0 and -0.0, TRUE for any other value. |
+| `LREAL` to an integer | As `REAL`: the nearest integer, an exact half to the even integer, the nearest limit of the destination outside its range (`LREAL_TO_LINT(1.0E30)` is 9223372036854775807, `LREAL_TO_ULINT(-2.5)` is 0), 0 for a NaN. |
+| `REAL` or `LREAL` to `BOOL` | FALSE for 0.0 and -0.0, TRUE for any other value, a NaN included. |
 | `TIME` | Its count of milliseconds as an unsigned 32-bit integer: `TIME_TO_DINT(T#2s)` is 2000. |
 
-- **TRUNC(IN)**: Removes the fractional part of a `REAL` toward zero and returns a `REAL` (`TRUNC(-3.7)` is -3.0). A magnitude of 2^23 or more has no fraction and is returned as it is. For the integer, use `REAL_TO_DINT(TRUNC(x))`.
-- **ROUND(IN)**: Not an IEC function. The nearest whole number as a `REAL`, an exact half away from zero (`ROUND(2.5)` is 3.0, `ROUND(-2.5)` is -3.0).
+- **TRUNC(IN)**: Removes the fractional part of a `REAL` toward zero and returns a `REAL` (`TRUNC(-3.7)` is -3.0). A magnitude of 2^23 or more has no fraction and is returned as it is. For the integer, use `REAL_TO_DINT(TRUNC(x))`. For an `LREAL` the result is an `LREAL`, exact, with the limit at 2^63 (`TRUNC(-0.4)` is +0.0).
+- **ROUND(IN)**: Not an IEC function. The nearest whole number as a `REAL`, an exact half away from zero (`ROUND(2.5)` is 3.0, `ROUND(-2.5)` is -3.0). For an `LREAL` the result is an `LREAL` and it is exact where adding 0.5 would not be (`ROUND(0.49999999999999994)` is 0.0).
 
 ---
 

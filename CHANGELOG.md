@@ -44,6 +44,44 @@ All notable changes are documented here.
   `serializeSFCModel`) ends in a newline, as the files of the repository do. The checks made
   when a visual file opens (LNG-011) now also cover the variables of FBD and SFC files, the
   actions, positions and conditions of an SFC chart, and the variable of a Ladder element.
+- The VM has 34 new opcodes for 64-bit integers and double precision (CMP-015),
+  all in the C core, so every runtime has them at once: `MUL64`, `DIVS64`,
+  `DIVU64`, `MODS64`, `MODU64`, `NEG64`, `ABS64`, `SHL64`, `SHR64` and `SAR64`
+  for `LINT`, `ULINT` and `LWORD`; `ADDD`, `SUBD`, `MULD`, `DIVD`, `NEGD`,
+  `ABSD`, `SQRTD`, `RNDD` and the comparisons `EQD` to `GED` for `LREAL`; and the
+  conversions `F2D`, `D2F`, `I2D`, `D2I`, `L2D`, `D2L`, `U2D`, `D2U`, `L2F` and
+  `U2F`. A two-word value has its low word deeper on the stack. The double
+  operations are computed in integer arithmetic, so a result is the same bit
+  pattern on the 64-bit host, on a 32-bit build and on every target, and every
+  NaN is `0x7FF8000000000000`. Division and modulo by zero fault like the 32-bit
+  ones, `INT64_MIN / -1` is `INT64_MIN`, a shift of 64 or more gives `0` (`-1` for
+  a negative `SAR64`) and a conversion to an integer truncates, saturates and
+  maps a NaN to `0`; the results are stated in the runtime ISA page. The opcodes
+  add about 4 KB of code on a Cortex-M3 at `-Os`.
+- `LREAL` and the 64-bit integers work (CMP-015). `LREAL` is declared,
+  initialised, computed (`+ - * /`, negation, comparison with IEEE 754 results,
+  a NaN is unordered), stored in arrays and structures, passed to and returned
+  from functions and retained; `LINT`, `ULINT` and `LWORD` have `*`, `/`, `MOD`
+  (unsigned for `ULINT` and `LWORD`), `ABS`, `SHL`, `SHR`, `ROL`, `ROR`, a `FOR`
+  counter, a `CASE` selector with 64-bit labels and literals of the whole range.
+  A real literal in an `LREAL` expression is the double it writes, an `LREAL`
+  assigned to a `REAL` builds with the `IMPLICIT_NARROWING` warning, and 240
+  conversion functions exist (16 types, ties to even, saturation). `SQRT`,
+  `ABS`, `TRUNC`, `ROUND`, `MAX`, `MIN`, `LIMIT`, `SEL` and `MUX` are exact on
+  an `LREAL`; the transcendental functions compute in `REAL` and widen the
+  result back, with the accuracy of a `REAL`. Division and `MOD` by zero fault
+  as the 32-bit ones do. The conformance cases give the same results on a 64-bit
+  and a 32-bit runtime.
+- Studio watches `LINT`, `ULINT`, `LWORD` and `LREAL` at their own width: a
+  64-bit integer shows every digit, an `LWORD` as 16 hexadecimal digits and an
+  `LREAL` as a double; they used to show the low 4 bytes as a `DINT`, a `DWORD`
+  or a `REAL`.
+- **ABI:** the draft counter is now 3. Artifacts built before this draft are
+  refused by the loader, the native runtime, the firmware shell and Studio, with
+  both numbers: rebuild programs and reflash boards together.
+  `tools/contract/restamp_artifacts.py` rewrites the counter and the CRC of the
+  artifacts committed to the repository (examples, fixtures, fuzz findings), and
+  `bun run contract:check` fails when one is stale.
 - The function blocks and functions that the Structured Text files of a project
   declare are blocks of the FBD and LD palettes (LNG-008): a diagram places one
   with the ports of its declaration, and the generated Structured Text calls it
@@ -220,8 +258,7 @@ All notable changes are documented here.
 - The compiler gives correct results for negative `SINT`/`INT`, unsigned
   comparison and division, `REAL` arithmetic with integer operands, `NOT` on
   `BYTE`/`WORD`, compound and fractional `TIME` literals and `TIME` over 24.8
-  days; 64-bit multiply, divide, modulo and shifts are now build errors
-  instead of wrong code.
+  days.
 - Pause, breakpoint and step on the Zephyr scheduler keep the output image and
   the force table and only drive the physical outputs to their safe state
   (RT-017); a paused or stepped target now shows the image of the scan that ran
