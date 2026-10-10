@@ -1,0 +1,95 @@
+name: Bug report
+description: Something in ZPLC does not behave as the documentation says.
+title: "[Bug] "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for taking the time. A vulnerability does not belong here: report it
+        privately through a security advisory (see `SECURITY.md`). Never paste
+        credentials, tokens or device identifiers.
+  - type: dropdown
+    id: area
+    attributes:
+      label: Where does it happen?
+      options:
+        - Studio (desktop application)
+        - Compiler or language
+        - Native runtime or simulator
+        - Firmware (Zephyr application)
+        - Command line or MCP
+        - Documentation
+        - Installer or release
+        - Something else
+    validations:
+      required: true
+  - type: textarea
+    id: summary
+    attributes:
+      label: What happened?
+      description: Say what you saw. Include the exact message if there was one.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect?
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: The smallest program or project that shows it, and the steps from a clean start. Attach files if you can.
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: ZPLC version
+      description: The version in the installer name, `zplc-cli --version`, or `zplc version` on a board.
+      placeholder: 2.0.0-rc.3
+    validations:
+      required: true
+  - type: dropdown
+    id: system
+    attributes:
+      label: Operating system
+      options:
+        - Linux
+        - macOS
+        - Windows
+        - Not applicable
+    validations:
+      required: true
+  - type: dropdown
+    id: where_seen
+    attributes:
+      label: Where did you observe it?
+      description: "The level matters: a simulator result says nothing about a board."
+      options:
+        - Studio only
+        - Native runtime (simulation)
+        - QEMU or native_sim
+        - A real board
+        - Not sure
+    validations:
+      required: true
+  - type: textarea
+    id: output
+    attributes:
+      label: Log or output
+      description: Console output, the Problems list, or a trace. Remove anything private.
+      render: shell
+  - type: checkboxes
+    id: confirmations
+    attributes:
+      label: Before you send
+      options:
+        - label: I searched the existing issues.
+          required: true
+        - label: This is not a security vulnerability.
+          required: true
+        - label: I removed credentials and device identifiers from everything I attached.
+          required: true
