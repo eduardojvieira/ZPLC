@@ -3,6 +3,7 @@
 //
 //   bun scripts/release/binaries.ts --targets host --out dist-bin --smoke
 //   bun scripts/release/binaries.ts --targets linux-arm64,win-x64 --out dist-bin
+//   bun scripts/release/binaries.ts --targets win-arm64 --out dist-bin --smoke --native    on a Windows on Arm runner
 //
 // File names follow the scheme of the installers (REL-020): <tool>-<version>-<os>-<arch>[.exe], with the os words
 // mac, win and linux that electron-builder uses. Cross-compiling downloads the target's runtime from the bun
@@ -116,16 +117,17 @@ async function smoke(directory: string, repoRoot: string, version: string, targe
 }
 
 async function main(argv: string[]): Promise<number> {
-  const options = { targets: 'host', out: '', version: '', smoke: false };
+  const options = { targets: 'host', out: '', version: '', smoke: false, native: false };
   for (let index = 0; index < argv.length; index += 1) {
     const flag = argv[index];
     if (flag === '--targets') options.targets = argv[++index] ?? '';
     else if (flag === '--out') options.out = argv[++index] ?? '';
     else if (flag === '--version') options.version = argv[++index] ?? '';
     else if (flag === '--smoke') options.smoke = true;
+    else if (flag === '--native') options.native = true;
     else { console.error(`binaries: unknown argument ${flag}`); return 2; }
   }
-  if (!options.out) { console.error('usage: binaries.ts --out <dir> [--targets host|all|linux-x64,...] [--version <v>] [--smoke]'); return 2; }
+  if (!options.out) { console.error('usage: binaries.ts --out <dir> [--targets host|all|linux-x64,...] [--version <v>] [--smoke] [--native]'); return 2; }
   const root = resolve(import.meta.dir, '..', '..');
   const productVersion = (JSON.parse(readFileSync(join(root, 'package.json'), 'utf8')) as { version: string }).version;
   if (options.version !== '' && options.version !== productVersion) {
@@ -154,8 +156,10 @@ async function main(argv: string[]): Promise<number> {
       if (built.exitCode !== 0) { console.error(`binaries: building ${file} failed`); return 1; }
       console.log(`binaries: ${file} (${Bun.file(file).size} bytes)`);
     }
+    // --native: the runner is of the architecture of the target even where Bun reports another one (an emulated x64 Bun on
+    // Windows on Arm), so the executables are run
     const host = hostTarget();
-    if (options.smoke && host && host.os === target.os && host.arch === target.arch) {
+    if (options.smoke && (options.native || (host && host.os === target.os && host.arch === target.arch))) {
       try {
         for (const line of await smoke(out, root, productVersion, target)) console.log(line);
       } catch (error) {

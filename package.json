@@ -48,7 +48,7 @@
     "check:docs-samples": "bun tools/docs/check-docs-samples.ts",
     "check:test-sources": "bun tools/ci/test-source-guard.ts",
     "lint:c": "python3 tools/ci/run_clang_tidy.py",
-    "release:rehearsal": "bun run check:versions && bun test scripts/release-version.test.ts && node --test scripts/release-artifacts.test.mjs && node --test scripts/workflow-action-pins.test.mjs && python3 tools/hil/audit_repo_hygiene.py && python3 tools/hil/validate_release_evidence.py && python3 tools/hil/validate_supported_boards.py && bun run contract:check",
+    "release:rehearsal": "bun run check:versions && bun scripts/release/changelog.ts --check && bun scripts/release/sbom.ts --check && bun test scripts/release-version.test.ts && node --test scripts/release-artifacts.test.mjs && node --test scripts/workflow-action-pins.test.mjs && bun run build:compiler && bun test ./scripts/release && python3 tools/hil/audit_repo_hygiene.py && python3 tools/hil/validate_release_evidence.py && python3 tools/hil/validate_supported_boards.py && bun run contract:check",
     "contract:generate": "python3 tools/contract/generate.py",
     "contract:check": "python3 tools/contract/generate.py --check && python3 tools/contract/test_contract.py && bun test ./tools/contract",
     "fuzz": "bash tools/fuzz/run.sh 60 both",

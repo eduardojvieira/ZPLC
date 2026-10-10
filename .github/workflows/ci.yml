@@ -66,6 +66,16 @@ jobs:
           bun run test:compiler -- --reporter=junit --reporter-outfile="${RUNNER_TEMP}/junit-compiler.xml" || status=$?
           bun tools/ci/check-expected-failures.ts --exit-code "${status}" "packages/zplc-compiler=${RUNNER_TEMP}/junit-compiler.xml"
 
+      # The release notes list the suites a run executed with their counts (REL-027): the reports are kept for it.
+      - name: Keep the compiler test report
+        if: ${{ always() }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: junit-compiler
+          path: ${{ runner.temp }}/junit-compiler.xml
+          if-no-files-found: ignore
+          retention-days: 7
+
       # REL-018: the bill of materials is generated from the lockfile; the check fails when the document would hold
       # fewer packages than the lockfile lists or than the recorded floor.
       - name: Check the software bill of materials
@@ -97,6 +107,15 @@ jobs:
           bun run test:ide -- --reporter=junit --reporter-outfile="${RUNNER_TEMP}/junit-ide.xml" || status=$?
           bun tools/ci/check-expected-failures.ts --exit-code "${status}" "packages/zplc-ide=${RUNNER_TEMP}/junit-ide.xml"
           bun run lint:ide
+
+      - name: Keep the Studio test report
+        if: ${{ always() }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: junit-ide
+          path: ${{ runner.temp }}/junit-ide.xml
+          if-no-files-found: ignore
+          retention-days: 7
 
       - name: Smoke Studio renderer vertical
         env:

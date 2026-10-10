@@ -145,11 +145,16 @@ describe('release.yml publishes each platform independently and only as a draft 
   };
   const run = (name: string) => (jobs[name]!.steps ?? []).map((step) => step.run ?? '').join('\n');
 
-  it('lets no job depend on the builds of two platforms', () => {
-    for (const name of Object.keys(jobs)) {
+  // The two jobs that gather what every platform did: they run whatever the platforms did (`always()`), so that a
+  // failed platform shows up in the notes instead of blocking them.
+  const FAN_IN = ['render-release-notes', 'publish-release-notes'];
+
+  it('lets no job depend on the builds of two platforms, except the notes, which run whatever the platforms did', () => {
+    for (const name of Object.keys(jobs).filter((job) => !FAN_IN.includes(job))) {
       const builds = [...ancestors(name)].filter((job) => job.startsWith('build-'));
       expect(builds.length, `${name} waits for ${builds.join(', ')}`).toBeLessThanOrEqual(1);
     }
+    for (const name of FAN_IN) expect(jobs[name]!.if, name).toContain('always()');
   });
 
   it.each(platforms)('chains the %s evidence and upload on that platform alone', (platform) => {
@@ -186,12 +191,14 @@ describe('release.yml publishes each platform independently and only as a draft 
 
   it('writes to the repository only in the draft and upload jobs, and uses no protected environment', () => {
     const writers = Object.keys(jobs).filter((name) => jobs[name]!.permissions?.contents === 'write').sort();
-    expect(writers).toEqual(['create-draft-release', ...platforms.map((platform) => `upload-release-${platform}`)].sort());
+    expect(writers).toEqual(['create-draft-release', 'publish-release-notes', ...platforms.map((platform) => `upload-release-${platform}`)].sort());
     for (const job of Object.values(jobs)) expect(job.environment).toBeUndefined();
   });
 
-  it('offers no input that selects what to upload', () => {
-    expect(Object.keys(workflow.on.workflow_dispatch.inputs).sort()).toEqual(['upload_to_release', 'version']);
+  it('offers no input that selects what to upload, and a rehearsal that is on unless a person turns it off (REL-030)', () => {
+    const inputs = workflow.on.workflow_dispatch.inputs as Record<string, { type: string; default?: unknown }>;
+    expect(Object.keys(inputs).sort()).toEqual(['rehearsal', 'version']);
+    expect(inputs.rehearsal).toMatchObject({ type: 'boolean', default: true });
   });
 });
 
@@ -205,7 +212,8 @@ describe('Windows installers carry unsigned in their variant until a channel is 
     expect(EXPECTED_ARTIFACTS.windows).toEqual(['-setup-unsigned.exe', '-portable-unsigned.exe']);
     const upload = workflow.jobs['build-windows']!.steps!.find((step) => step.uses?.startsWith('actions/upload-artifact@'))!;
     const paths = upload.with!.path!.split('\n').map((line) => line.trim()).filter(Boolean);
-    expect(paths).toEqual(['packages/zplc-ide/dist-electron/*-setup-unsigned.exe', 'packages/zplc-ide/dist-electron/*-portable-unsigned.exe']);
+    // the installers, and the standalone CLI and MCP server built on the same runner (REL-026)
+    expect(paths).toEqual(['packages/zplc-ide/dist-electron/*-setup-unsigned.exe', 'packages/zplc-ide/dist-electron/*-portable-unsigned.exe', 'dist-bin/*']);
   });
 });
 
@@ -222,5 +230,93 @@ describe('third-party notices are generated at packaging time and ship in every 
 
   it('copies the generated file next to the application resources, beside the examples and the runtime', () => {
     expect(builder.extraResources).toContainEqual({ from: 'build/THIRD-PARTY-NOTICES.txt', to: 'THIRD-PARTY-NOTICES.txt' });
+  });
+});
+
+describe('a rehearsal publishes nothing (REL-030)', () => {
+  const publishing = "needs.validate-version.outputs.publishing == 'true'";
+  const jobs = workflow.jobs;
+  const everyStep = Object.entries(jobs).flatMap(([name, job]) => (job.steps ?? []).map((step) => ({ name, step })));
+
+  it('gates every job that writes to the repository on the run being a publishing one', () => {
+    for (const [name, job] of Object.entries(jobs)) {
+      if (job.permissions?.contents === 'write') expect(job.if, name).toContain(publishing);
+    }
+  });
+
+  it('makes no attestation, which is a permanent public record, unless the run publishes', () => {
+    const attestations = everyStep.filter(({ step }) => step.uses?.startsWith('actions/attest@'));
+    expect(attestations.length).toBeGreaterThanOrEqual(6);
+    for (const { name, step } of attestations) expect(step.if, `${name}: ${step.name}`).toContain(publishing);
+  });
+
+  it('creates and edits releases and uploads assets only in the jobs that are gated', () => {
+    for (const { name, step } of everyStep) {
+      if (/gh release (?:create|edit|upload)/.test(step.run ?? '')) {
+        expect(jobs[name]!.if, `${name}: ${step.name}`).toContain(publishing);
+      }
+    }
+  });
+
+  it('resolves what the run may do with the script that is tested, in the job every other job waits for', () => {
+    const resolve = jobs['validate-version']!.steps.find((step) => step.run?.includes('scripts/release/resolve-release.ts'));
+    expect(resolve).toBeDefined();
+    for (const name of Object.keys(jobs).filter((job) => job.startsWith('build-'))) {
+      expect([jobs[name]!.needs ?? []].flat(), name).toContain('validate-version');
+    }
+  });
+});
+
+describe('the notes claim only checks that their job runs (REL-027)', () => {
+  const jobs = workflow.jobs;
+  const stepRunning = (job: string, text: string) => jobs[job]!.steps.find((step) => step.run?.includes(text));
+
+  // scripts/release/run-results.ts reports a check as passed when the job that runs it succeeded. Each claim it can
+  // make about a build job is a step of that job, and it is never conditional.
+  const CLAIMS: Array<[job: string, check: string, command: string]> = [
+    ['build-macos', 'signature', 'verify-mac-signature.ts'],
+    ['build-macos', 'launch', 'smoke:desktop-packaged'],
+    ['build-windows', 'launch', 'smoke:desktop-packaged'],
+    ['build-linux', 'launch', 'smoke:desktop-packaged'],
+    ['build-linux', 'install', 'check-linux-package.sh'],
+    ['build-macos', 'cli launch', 'binaries.ts --targets mac-'],
+    ['build-windows', 'cli launch', 'binaries.ts --targets win-'],
+    ['build-linux', 'cli launch', 'binaries.ts --targets linux-'],
+    ['build-macos', 'content', 'smoke:packaged-content'],
+    ['build-windows', 'content', 'smoke:packaged-content'],
+    ['build-linux', 'content', 'smoke:packaged-content'],
+  ];
+
+  it.each(CLAIMS)('%s runs the %s check unconditionally', (job, _check, command) => {
+    const step = stepRunning(job, command);
+    expect(step, `${job} has no step that runs ${command}`).toBeDefined();
+    expect(step!.if).toBeUndefined();
+  });
+
+  it('smokes each standalone executable on the architecture it was built for', () => {
+    for (const [job, os] of [['build-macos', 'mac'], ['build-windows', 'win'], ['build-linux', 'linux']] as const) {
+      const step = stepRunning(job, 'binaries.ts')!;
+      expect(step.run).toContain(`--targets ${os}-\${{ matrix.arch }}`);
+      expect(step.run).toContain('--smoke --native');
+    }
+  });
+
+  it('renders the notes in a job that runs for a rehearsal too, from the results of every job it waits for', () => {
+    const job = jobs['render-release-notes']!;
+    expect(job.if).toContain('always()');
+    expect(job.if).not.toContain('publishing');
+    expect(job.permissions).toEqual({ contents: 'read' });
+    expect([job.needs ?? []].flat().sort()).toEqual([
+      'build-linux', 'build-macos', 'build-windows', 'prepare-release-evidence-linux', 'prepare-release-evidence-macos',
+      'prepare-release-evidence-windows', 'validate-version', 'verify-linux-x64-payload-reproducibility', 'verify-release-candidate',
+    ]);
+    expect(stepRunning('render-release-notes', 'scripts/release/run-results.ts')).toBeDefined();
+    expect(stepRunning('render-release-notes', 'scripts/release/release-notes.ts')).toBeDefined();
+  });
+
+  it('keeps the test reports of CI that the notes count', () => {
+    const ci = Bun.YAML.parse(read('../../../.github/workflows/ci.yml')) as { jobs: Record<string, Job> };
+    const names = ci.jobs.typescript!.steps.filter((step) => step.uses?.startsWith('actions/upload-artifact@')).map((step) => step.with!.name);
+    expect(names).toEqual(expect.arrayContaining(['junit-compiler', 'junit-ide']));
   });
 });
