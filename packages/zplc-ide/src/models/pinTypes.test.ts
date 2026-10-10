@@ -30,9 +30,9 @@ describe('LNG-013 a pin takes what the compiler would take', () => {
     for (const from of ELEMENTARY) {
       for (const to of ELEMENTARY) {
         const verdict = compilerVerdict(from, to);
-        // The compiler accepts a STRING where a number goes today (a defect of the string check, not a rule of the language):
-        // a pin is refused it, and the pair is not a disagreement the table can settle.
-        if (verdict === 'cannot say' || (isString(from) && !isString(to))) continue;
+        // A compiler that accepts a STRING where a number goes has a defect in its string check, not a rule of the language:
+        // a pin is refused it, and the pair is not a disagreement the table can settle. One that refuses it is compared.
+        if (verdict === 'cannot say' || (verdict === 'accepts' && isString(from) && !isString(to))) continue;
         compared += 1;
         const problem = pinTypeProblem(from, to);
         if ((problem === undefined) !== (verdict === 'accepts')) disagreements.push(`${from} -> ${to}: compiler ${verdict}, pin ${problem === undefined ? 'accepts' : 'refuses'}`);
