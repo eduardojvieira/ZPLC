@@ -2,6 +2,7 @@
 #include "zplc_loader.h"
 #include "zplc_comm_dispatch.h"
 #include "zplc_isa.h"
+#include "zplc_mem_extent.h"
 #include <string.h>
 
 #define ZPLC_CRC_OFFSET 12U
@@ -36,27 +37,15 @@ static int validate_crc32(const uint8_t *data, size_t length) {
 static void bit_set(uint8_t *bits, uint32_t value) {
   bits[value / 8U] |= (uint8_t)(1U << (value % 8U));
 }
-static int bit_test(const uint8_t *bits, uint32_t value) {
-  return (bits[value / 8U] & (uint8_t)(1U << (value % 8U))) != 0U;
-}
-static void bit_clear(uint8_t *bits, uint32_t value) {
-  bits[value / 8U] &= (uint8_t)~(uint8_t)(1U << (value % 8U));
-}
 
-static int memory_access_valid(uint16_t address, uint8_t width, int writable) {
-  const uint32_t start = address, end = start + width;
-  if (end <= ZPLC_MEM_IPI_BASE + ZPLC_MEM_IPI_SIZE)
-    return !writable;
-  if (start >= ZPLC_MEM_OPI_BASE &&
-      end <= ZPLC_MEM_OPI_BASE + ZPLC_MEM_OPI_SIZE)
-    return 1;
-  if (start >= ZPLC_MEM_WORK_BASE &&
-      end <= ZPLC_MEM_WORK_BASE + ZPLC_MEM_WORK_SIZE)
-    return 1;
-  if (start >= ZPLC_MEM_RETAIN_BASE &&
-      end <= ZPLC_MEM_RETAIN_BASE + ZPLC_MEM_RETAIN_SIZE)
-    return 1;
-  return 0;
+/* The same placement as the VM (RT-001): the whole extent in one region, and
+ * the input image is never written. */
+static int memory_access_valid(uint32_t address, uint32_t width, int writable) {
+  const int region = zplc_mem_extent_locate(address, width, NULL);
+
+  if (region < 0)
+    return 0;
+  return !(writable && region == ZPLC_MEM_REGION_IPI);
 }
 static int verify_direct_memory(uint8_t opcode, uint16_t address) {
   uint8_t width;
@@ -168,16 +157,13 @@ static uint8_t tag_type_width(uint8_t tag_id, uint8_t type) {
 }
 static int tag_memory_access_valid(uint16_t address, uint8_t width,
                                    int writable) {
-  const uint32_t start = address, end = start + width;
+  const int region = zplc_mem_extent_locate(address, width, NULL);
 
   if (!memory_access_valid(address, width, writable))
     return 0;
   if (!writable)
     return 1;
-  return (start >= ZPLC_MEM_WORK_BASE &&
-          end <= ZPLC_MEM_WORK_BASE + ZPLC_MEM_WORK_SIZE) ||
-         (start >= ZPLC_MEM_RETAIN_BASE &&
-          end <= ZPLC_MEM_RETAIN_BASE + ZPLC_MEM_RETAIN_SIZE);
+  return region == ZPLC_MEM_REGION_WORK || region == ZPLC_MEM_REGION_RETAIN;
 }
 static int verify_tags(const zplc_program_view_t *view) {
   uint32_t index;
@@ -202,11 +188,413 @@ static int instruction_has_no_fallthrough(uint8_t opcode) {
   return opcode == OP_HALT || opcode == OP_RET || opcode == OP_JMP ||
          opcode == OP_JR;
 }
+/* ---------------------------------------------------------------------------
+ * Static stack verification (RT-003)
+ * ---------------------------------------------------------------------------
+ *
+ * Every path from an entry point is followed and the evaluation stack depth
+ * is tracked as an interval [lo, hi], relative to the depth at the entry of
+ * the subroutine ("frame") the path belongs to. A frame is the entry of a
+ * task, or the target of a CALL. An instruction that takes n values needs
+ * base + lo >= n (else the stack can underflow); an instruction that leaves
+ * hi above the entry needs base + hi <= limit (else it can overflow). Where
+ * paths meet at a control-flow target the intervals are joined, so a join of
+ * two depths is bounded rather than refused; a loop that grows the stack
+ * grows hi until it passes the limit, and is refused.
+ *
+ * For each frame the verifier computes a summary:
+ *   need   how many values the frame takes from its caller's stack,
+ *   peak   the highest depth above its entry that it reaches, and
+ *   [dlo, dhi]  the depth change over its returns, joined.
+ * A CALL then behaves as one instruction with that effect. This is the
+ * convention of the compiler, which passes arguments and results on the
+ * stack. A frame whose summary depends on a frame not yet summarised is
+ * walked again once it is; a callee that can never be summarised (it calls
+ * itself, directly or not) is refused.
+ *
+ * The frame of a task is checked in absolute terms: the task must need
+ * nothing, and its peak must not exceed the depth the task declares. The
+ * whole analysis has a step budget, proportional to the size of the code, so
+ * that no input can make it run long; running out is refusal as well.
+ *
+ * Depths are kept in a byte each, so the verifier follows a depth, and a
+ * need, of at most 127 values: beyond that it refuses (the compiler declares
+ * 64 to its tasks; a hand-written program that needs more than 127 values on
+ * the stack is not a program this verifier proves).
+ *
+ * Tables, in the caller's workspace (sizes: zplc_loader.h):
+ *   targets  one bit per CODE byte (the control-flow targets, built by
+ *            verify_code); the rank of a target is its index among them
+ *   prefix   rank index: targets before each 128 CODE bytes
+ *   depth    per target: lo and hi, biased; lo is 0xFF while unknown
+ *   pending  per target: interval changed, block to be followed again
+ *   frames   per subroutine entry: pc, state, need, peak, dlo, dhi
+ */
+
+#define DEPTH_MAX ZPLC_VERIFY_MAX_DEPTH
+#define DEPTH_BIAS ZPLC_VERIFY_MAX_DEPTH /* a depth in [-127, 127] is a byte below 0xFF */
+#define DEPTH_UNSET 0xFFU
+
+#define FRAME_UNEXPLORED 0U
+#define FRAME_BLOCKED 1U
+#define FRAME_DONE 2U
+#define FRAME_STATE_MASK 3U
+#define FRAME_RETURNS 4U /* a return is reachable: [dlo, dhi] is valid */
+
+typedef struct {
+  const uint8_t *code;
+  uint32_t code_size;
+  uint8_t *targets;
+  uint8_t *prefix;
+  uint8_t *depth;
+  uint8_t *pending;
+  uint8_t *frames;
+  uint32_t leaders;
+  uint32_t frame_count;
+  uint32_t budget;
+} verifier_t;
+
+/* what one walk over a frame learns */
+typedef struct {
+  int32_t need;
+  int32_t peak;
+  int32_t dlo;
+  int32_t dhi;
+  int returns;
+  int blocked;
+  int created; /* the walk created a frame */
+} walk_t;
+
+static uint32_t popcount8(uint8_t value) {
+  uint32_t count = 0U;
+  while (value != 0U) {
+    count += value & 1U;
+    value = (uint8_t)(value >> 1);
+  }
+  return count;
+}
+static void put_u16_le(uint8_t *data, uint16_t value) {
+  data[0] = (uint8_t)value;
+  data[1] = (uint8_t)(value >> 8);
+}
+
+/* index of the target at `pc` (which must be a target) among all targets */
+static uint32_t rank_of(const verifier_t *v, uint32_t pc) {
+  uint32_t rank = read_u16_le(v->prefix + 2U * (pc >> 7));
+  uint32_t index;
+
+  for (index = (pc >> 7) << 4; index < (pc >> 3); index++)
+    rank += popcount8(v->targets[index]);
+  return rank + popcount8((uint8_t)(v->targets[pc >> 3] &
+                                    ((1U << (pc & 7U)) - 1U)));
+}
+/* record layout: pc(2) flags(1) need(1) peak(1) dlo(1, biased) dhi(1, biased) */
+static uint8_t *frame_at(const verifier_t *v, uint32_t index) {
+  return v->frames + index * ZPLC_VERIFY_FRAME_BYTES;
+}
+static uint32_t frame_find(const verifier_t *v, uint32_t pc) {
+  uint32_t index;
+
+  for (index = 0U; index < v->frame_count; index++)
+    if (read_u16_le(frame_at(v, index)) == pc)
+      return index;
+  return UINT32_MAX;
+}
+static int frame_create(verifier_t *v, uint32_t pc, uint32_t *index) {
+  uint8_t *frame;
+
+  if (v->frame_count >= ZPLC_VERIFY_MAX_FRAMES)
+    return ZPLC_LOADER_ERR_WORKSPACE;
+  *index = v->frame_count++;
+  frame = frame_at(v, *index);
+  memset(frame, 0, ZPLC_VERIFY_FRAME_BYTES);
+  put_u16_le(frame, (uint16_t)pc);
+  return ZPLC_LOADER_OK;
+}
+
+/* a control-flow edge reaches the target at `pc` with depth [lo, hi]: join it
+ * with what is known, and have the block followed again when that changed */
+static void arrive(verifier_t *v, uint32_t pc, int32_t lo, int32_t hi) {
+  const uint32_t rank = rank_of(v, pc);
+  uint8_t *entry = v->depth + 2U * rank;
+  const uint8_t stored_lo = entry[0];
+  uint8_t new_lo = (uint8_t)(lo + DEPTH_BIAS);
+  uint8_t new_hi = (uint8_t)(hi + DEPTH_BIAS);
+
+  if (stored_lo != DEPTH_UNSET) {
+    const uint8_t stored_hi = entry[1];
+    if (stored_lo < new_lo)
+      new_lo = stored_lo;
+    if (stored_hi > new_hi)
+      new_hi = stored_hi;
+    if (new_lo == stored_lo && new_hi == stored_hi)
+      return;
+  }
+  entry[0] = new_lo;
+  entry[1] = new_hi;
+  v->pending[rank >> 3] |= (uint8_t)(1U << (rank & 7U));
+}
+
+/* the CALL to `target`, at depth [*lo, *hi], in the frame being walked */
+static int walk_call(verifier_t *v, walk_t *w, uint32_t target, int32_t *lo,
+                     int32_t *hi, int *continues) {
+  uint32_t index = frame_find(v, target);
+  const uint8_t *callee;
+  int32_t need, peak;
+
+  *continues = 0;
+  if (index == UINT32_MAX) {
+    const int result = frame_create(v, target, &index);
+    if (result != ZPLC_LOADER_OK)
+      return result;
+    w->created = 1;
+  }
+  callee = frame_at(v, index);
+  if ((callee[2] & FRAME_STATE_MASK) != FRAME_DONE) {
+    w->blocked = 1; /* the summary is not known yet: walk this frame again */
+    return ZPLC_LOADER_OK;
+  }
+  need = (int32_t)callee[3];
+  peak = (int32_t)callee[4];
+  if (need > *lo && need - *lo > w->need)
+    w->need = need - *lo;
+  if (*hi + peak > w->peak)
+    w->peak = *hi + peak;
+  if (w->need > DEPTH_MAX || w->peak > DEPTH_MAX)
+    return ZPLC_LOADER_ERR_STACK;
+  if ((callee[2] & FRAME_RETURNS) != 0U) {
+    *lo += (int32_t)callee[5] - DEPTH_BIAS;
+    *hi += (int32_t)callee[6] - DEPTH_BIAS;
+    if (*hi > DEPTH_MAX || *lo < -DEPTH_MAX)
+      return ZPLC_LOADER_ERR_STACK;
+    *continues = 1;
+  } /* a callee that never returns ends this path */
+  return ZPLC_LOADER_OK;
+}
+
+/* follow the straight-line code from `pc` until the path ends or reaches a
+ * control-flow target (which is then queued with the depth it was reached at) */
+static int walk_block(verifier_t *v, walk_t *w, uint32_t pc, int32_t lo,
+                      int32_t hi) {
+  for (;;) {
+    const uint8_t opcode = v->code[pc];
+    const uint8_t size = (uint8_t)(1U + zplc_opcode_operand_size(opcode));
+    int32_t pops = 0, pushes = 0, min_depth = 0;
+    int result = ZPLC_LOADER_OK;
+
+    if (v->budget == 0U)
+      return ZPLC_LOADER_ERR_STACK; /* more work than any program needs */
+    v->budget--;
+    switch (opcode) {
+#define ZPLC_VERIFY_EFFECT(name, number, operand, pop, push, min)              \
+  case number:                                                                 \
+    pops = (pop);                                                              \
+    pushes = (push);                                                           \
+    min_depth = (min);                                                         \
+    break;
+      ZPLC_OPCODE_TABLE(ZPLC_VERIFY_EFFECT)
+#undef ZPLC_VERIFY_EFFECT
+    default:
+      return ZPLC_LOADER_ERR_OPCODE;
+    }
+    if (opcode == OP_PICK)
+      min_depth = (int32_t)v->code[pc + 1U] + 1;
+    if (min_depth > lo && min_depth - lo > w->need)
+      w->need = min_depth - lo;
+    lo += pushes - pops;
+    hi += pushes - pops;
+    if (w->need > DEPTH_MAX || hi > DEPTH_MAX || lo < -DEPTH_MAX)
+      return ZPLC_LOADER_ERR_STACK;
+    if (hi > w->peak)
+      w->peak = hi;
+
+    switch (opcode) {
+    case OP_HALT:
+      return ZPLC_LOADER_OK;
+    case OP_RET:
+      if (!w->returns || lo < w->dlo)
+        w->dlo = lo;
+      if (!w->returns || hi > w->dhi)
+        w->dhi = hi;
+      w->returns = 1;
+      return ZPLC_LOADER_OK;
+    case OP_JMP:
+      arrive(v, read_u16_le(v->code + pc + 1U), lo, hi);
+      return ZPLC_LOADER_OK;
+    case OP_JR:
+      arrive(v, (uint32_t)((int32_t)pc + 2 + (int8_t)v->code[pc + 1U]), lo, hi);
+      return ZPLC_LOADER_OK;
+    case OP_JZ:
+    case OP_JNZ:
+      arrive(v, read_u16_le(v->code + pc + 1U), lo, hi);
+      break;
+    case OP_JRZ:
+    case OP_JRNZ:
+      arrive(v, (uint32_t)((int32_t)pc + 2 + (int8_t)v->code[pc + 1U]), lo, hi);
+      break;
+    case OP_CALL: {
+      int continues = 0;
+      result = walk_call(v, w, read_u16_le(v->code + pc + 1U), &lo, &hi,
+                         &continues);
+      if (result != ZPLC_LOADER_OK)
+        return result;
+      if (!continues)
+        return ZPLC_LOADER_OK;
+      break;
+    }
+    default:
+      break;
+    }
+
+    pc += size;
+    if (pc >= v->code_size)
+      return ZPLC_LOADER_ERR_CONTROL_FLOW;
+    if ((v->targets[pc >> 3] & (1U << (pc & 7U))) != 0U) {
+      arrive(v, pc, lo, hi); /* falls into a target: it carries on from there */
+      return ZPLC_LOADER_OK;
+    }
+  }
+}
+
+/* walk every path of the frame at index `frame`; fills its record */
+static int walk_frame(verifier_t *v, uint32_t frame, int *progress) {
+  const uint32_t entry = read_u16_le(frame_at(v, frame));
+  const uint32_t bytes = (v->code_size + 7U) >> 3;
+  walk_t w;
+  uint32_t byte, rank;
+  uint8_t *record;
+  int result, more = 1;
+
+  memset(&w, 0, sizeof(w));
+  memset(v->depth, 0xFF, 2U * v->leaders);
+  memset(v->pending, 0, (v->leaders + 7U) >> 3);
+  arrive(v, entry, 0, 0);
+  while (more) {
+    more = 0;
+    rank = 0U;
+    for (byte = 0U; byte < bytes; byte++) {
+      uint8_t bits = v->targets[byte];
+      uint32_t bit;
+      for (bit = 0U; bit < 8U && bits != 0U; bit++) {
+        if ((bits & (1U << bit)) == 0U)
+          continue;
+        bits = (uint8_t)(bits & ~(1U << bit));
+        if ((v->pending[rank >> 3] & (1U << (rank & 7U))) != 0U) {
+          const uint8_t *entry_depth = v->depth + 2U * rank;
+          const int32_t lo = (int32_t)entry_depth[0] - DEPTH_BIAS;
+          const int32_t hi = (int32_t)entry_depth[1] - DEPTH_BIAS;
+          v->pending[rank >> 3] &= (uint8_t)~(1U << (rank & 7U));
+          more = 1;
+          result = walk_block(v, &w, (byte << 3) + bit, lo, hi);
+          if (result != ZPLC_LOADER_OK)
+            return result;
+        }
+        rank++;
+      }
+    }
+  }
+  record = frame_at(v, frame);
+  record[3] = (uint8_t)w.need;
+  record[4] = (uint8_t)w.peak;
+  record[5] = (uint8_t)(w.dlo + DEPTH_BIAS);
+  record[6] = (uint8_t)(w.dhi + DEPTH_BIAS);
+  record[2] = (uint8_t)((w.returns ? FRAME_RETURNS : 0U) |
+                        (w.blocked ? FRAME_BLOCKED : FRAME_DONE));
+  if (w.created || !w.blocked)
+    *progress = 1;
+  return ZPLC_LOADER_OK;
+}
+
+/* roots: the header entry point (the singleton API runs it with the runtime's
+ * stack) and the entry point of each task with the depth it declares */
+static int verify_stack(const zplc_program_view_t *view, uint8_t *workspace) {
+  const uint32_t bitmap = (ZPLC_MEM_CODE_SIZE + 7U) / 8U;
+  const uint32_t chunks = (ZPLC_MEM_CODE_SIZE + 127U) / 128U;
+  const uint32_t bytes = (view->code_size + 7U) / 8U;
+  verifier_t v;
+  uint32_t byte, count = 0U, root, index;
+  int progress, result, ascending = 1;
+
+  v.code = view->code;
+  v.code_size = view->code_size;
+  v.targets = workspace;
+  v.prefix = v.targets + bitmap;
+  v.depth = v.prefix + 2U * chunks;
+  v.pending = v.depth + 2U * ZPLC_VERIFY_MAX_LEADERS;
+  v.frames = v.pending + (ZPLC_VERIFY_MAX_LEADERS + 7U) / 8U;
+  v.frame_count = 0U;
+  v.budget = ZPLC_VERIFY_STEPS_PER_BYTE * view->code_size + 4096U;
+
+  for (byte = 0U; byte < bytes; byte++) {
+    if ((byte & 15U) == 0U)
+      put_u16_le(v.prefix + 2U * (byte >> 4), (uint16_t)count);
+    count += popcount8(v.targets[byte]);
+  }
+  if (count > ZPLC_VERIFY_MAX_LEADERS)
+    return ZPLC_LOADER_ERR_WORKSPACE;
+  v.leaders = count;
+
+  for (root = 0U; root <= view->task_count; root++) {
+    const uint32_t entry =
+        root == 0U ? view->entry_point
+                   : read_u16_le(view->tasks + (root - 1U) * ZPLC_TASK_DEF_SIZE + 8U);
+    if (frame_find(&v, entry) == UINT32_MAX) {
+      result = frame_create(&v, entry, &index);
+      if (result != ZPLC_LOADER_OK)
+        return result;
+    }
+  }
+
+  /* Sweeps alternate direction: frames are created callers first, so going
+   * up finds the callees and going down summarises them before their
+   * callers; a chain of any depth then needs a constant number of sweeps. */
+  do {
+    progress = 0;
+    for (index = 0U; index < v.frame_count; index++) {
+      const uint32_t frame = ascending ? index : v.frame_count - 1U - index;
+
+      if ((frame_at(&v, frame)[2] & FRAME_STATE_MASK) == FRAME_DONE)
+        continue;
+      result = walk_frame(&v, frame, &progress);
+      if (result != ZPLC_LOADER_OK)
+        return result;
+    }
+    ascending = !ascending;
+  } while (progress);
+
+  for (index = 0U; index < v.frame_count; index++)
+    if ((frame_at(&v, index)[2] & FRAME_STATE_MASK) != FRAME_DONE)
+      return ZPLC_LOADER_ERR_STACK; /* a call cycle: nothing can be proved */
+
+  for (root = 0U; root <= view->task_count; root++) {
+    const uint32_t entry =
+        root == 0U ? view->entry_point
+                   : read_u16_le(view->tasks + (root - 1U) * ZPLC_TASK_DEF_SIZE + 8U);
+    const uint32_t limit =
+        root == 0U ? (uint32_t)ZPLC_STACK_MAX_DEPTH
+                   : read_u16_le(view->tasks + (root - 1U) * ZPLC_TASK_DEF_SIZE + 10U);
+    const uint8_t *record = frame_at(&v, frame_find(&v, entry));
+
+    if (record[3] != 0U || record[4] > limit)
+      return ZPLC_LOADER_ERR_STACK;
+  }
+  return ZPLC_LOADER_OK;
+}
+
+static int comm_block_fits(uint32_t address, uint32_t kind, int writable) {
+  uint32_t length = zplc_comm_fb_size(kind);
+
+  if (length == 0U) /* no layout: the handshake alone, as the VM places it */
+    length = ZPLC_COMM_FB_HANDSHAKE_SIZE;
+  return memory_access_valid(address, length, writable);
+}
+
 static int verify_code(const zplc_program_view_t *view, uint8_t *workspace) {
   const uint8_t *code = view->code;
-  uint32_t pc = 0U, task_index;
+  uint32_t pc = 0U, task_index, target_count = 0U, hits = 0U, index;
+  uint32_t constant = 0U;
   uint8_t last_opcode = 0U;
-  int result;
+  int result, constant_known = 0, comm_misfit = 0;
   memset(workspace, 0, (view->code_size + 7U) / 8U);
   if (mark_target(workspace, view->code_size, view->entry_point) !=
       ZPLC_LOADER_OK)
@@ -249,15 +637,40 @@ static int verify_code(const zplc_program_view_t *view, uint8_t *workspace) {
   }
   if (!instruction_has_no_fallthrough(last_opcode))
     return ZPLC_LOADER_ERR_CONTROL_FLOW;
+
+  /* Every control-flow target must be an instruction boundary: count them,
+   * then count those that are. The address of a block that comes from a push
+   * right before its opcode (and no jump lands between) is known statically;
+   * it has to fit its region (RT-002). */
+  for (index = 0U; index < (view->code_size + 7U) / 8U; index++)
+    target_count += popcount8(workspace[index]);
   pc = 0U;
   while (pc < view->code_size) {
-    bit_clear(workspace, pc);
-    pc += 1U + zplc_opcode_operand_size(code[pc]);
+    const uint8_t opcode = code[pc];
+    const int is_target = (workspace[pc >> 3] & (1U << (pc & 7U))) != 0U;
+
+    hits += is_target ? 1U : 0U;
+    if (constant_known && !is_target &&
+        (opcode == OP_COMM_EXEC || opcode == OP_COMM_STATUS ||
+         opcode == OP_COMM_RESET) &&
+        !comm_block_fits(constant, read_u32_le(code + pc + 1U),
+                         opcode != OP_COMM_STATUS))
+      comm_misfit = 1;
+    constant_known = opcode == OP_PUSH8 || opcode == OP_PUSH16 ||
+                     opcode == OP_PUSH32;
+    if (opcode == OP_PUSH8)
+      constant = (uint32_t)(int32_t)(int8_t)code[pc + 1U];
+    else if (opcode == OP_PUSH16)
+      constant = (uint32_t)(int32_t)(int16_t)read_u16_le(code + pc + 1U);
+    else if (opcode == OP_PUSH32)
+      constant = read_u32_le(code + pc + 1U);
+    pc += 1U + zplc_opcode_operand_size(opcode);
   }
-  for (pc = 0U; pc < view->code_size; pc++)
-    if (bit_test(workspace, pc))
-      return ZPLC_LOADER_ERR_CONTROL_FLOW;
-  return ZPLC_LOADER_OK;
+  if (hits != target_count)
+    return ZPLC_LOADER_ERR_CONTROL_FLOW;
+  if (comm_misfit)
+    return ZPLC_LOADER_ERR_COMM;
+  return verify_stack(view, workspace);
 }
 int zplc_loader_verify(const uint8_t *data, size_t length, uint8_t *workspace,
                        size_t workspace_size, zplc_program_view_t *out) {

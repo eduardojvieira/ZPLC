@@ -53,7 +53,25 @@ int zplc_comm_register_handler(zplc_comm_fb_kind_t kind,
   return 0;
 }
 
-int zplc_comm_fb_exec(zplc_comm_fb_kind_t kind, uint8_t *fb_mem) {
+/* The block must hold the handshake the dispatcher touches and the whole
+ * layout of its kind: a handler never receives less than the table says
+ * (RT-002). A kind without a layout is the handshake alone. */
+static int block_fits(zplc_comm_fb_kind_t kind, const uint8_t *fb_mem,
+                      uint16_t fb_len) {
+  uint16_t needed = zplc_comm_fb_size((uint32_t)kind);
+
+  if (needed < ZPLC_COMM_FB_HANDSHAKE_SIZE) {
+    needed = ZPLC_COMM_FB_HANDSHAKE_SIZE;
+  }
+  return fb_mem != NULL && fb_len >= needed;
+}
+
+int zplc_comm_fb_exec(zplc_comm_fb_kind_t kind, uint8_t *fb_mem,
+                      uint16_t fb_len) {
+  if (!block_fits(kind, fb_mem, fb_len)) {
+    return -1;
+  }
+
   uint8_t *en = &fb_mem[0];
   uint8_t *busy = &fb_mem[1];
   uint8_t *done = &fb_mem[2];
@@ -85,7 +103,7 @@ int zplc_comm_fb_exec(zplc_comm_fb_kind_t kind, uint8_t *fb_mem) {
   // Only call handler if not already busy
   if (!*busy) {
     *busy = 1;
-    int res = handler(kind, fb_mem, false);
+    int res = handler(kind, fb_mem, fb_len, false);
     if (res < 0) {
       *busy = 0;
       *error = 1;
@@ -97,7 +115,12 @@ int zplc_comm_fb_exec(zplc_comm_fb_kind_t kind, uint8_t *fb_mem) {
             // in subsequent scans via async result
 }
 
-int zplc_comm_fb_reset(zplc_comm_fb_kind_t kind, uint8_t *fb_mem) {
+int zplc_comm_fb_reset(zplc_comm_fb_kind_t kind, uint8_t *fb_mem,
+                       uint16_t fb_len) {
+  if (!block_fits(kind, fb_mem, fb_len)) {
+    return -1;
+  }
+
   uint8_t *en = &fb_mem[0];
   uint8_t *busy = &fb_mem[1];
   uint8_t *done = &fb_mem[2];
@@ -112,7 +135,7 @@ int zplc_comm_fb_reset(zplc_comm_fb_kind_t kind, uint8_t *fb_mem) {
 
   zplc_comm_handler_t handler = get_handler(kind);
   if (handler) {
-    handler(kind, fb_mem, true);
+    handler(kind, fb_mem, fb_len, true);
   }
   return 0;
 }

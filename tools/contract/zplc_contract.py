@@ -326,6 +326,7 @@ class LoaderError(IntEnum):
     ERR_TASK = -14
     ERR_TAGS = -15
     ERR_COMM = -16
+    ERR_STACK = -17
 
 
 class CommKind(IntEnum):

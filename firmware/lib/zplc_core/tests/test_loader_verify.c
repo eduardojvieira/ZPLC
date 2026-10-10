@@ -352,7 +352,10 @@ static void test_structural_rejections(void) {
 
 static void test_semantic_rejections_and_acceptance(void) {
   uint8_t file[512];
-  uint8_t code[] = {OP_I2F, OP_EXT8, OP_COMM_EXEC, 1U, 0U, 0U, 0U, OP_RET};
+  /* the address value is pushed first: RT-003 refuses a path that takes more
+   * values from the stack than it has put there */
+  uint8_t code[] = {OP_PUSH16, 0U,  0x20U, OP_I2F, OP_EXT8, OP_COMM_EXEC,
+                    1U,        0U,  0U,    0U,     OP_RET};
   size_t length = make_program(file, code, sizeof(code));
   size_t task_offset = 32U + 16U + sizeof(code);
 
