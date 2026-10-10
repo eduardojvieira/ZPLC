@@ -615,10 +615,8 @@ export const FIND_FN: FunctionDef = {
 /**
  * INSERT(s1: STRING, s2: STRING, pos: INT) : STRING
  *
- * Inserts s2 into s1 at position pos (1-based).
- * Returns modified s1.
- *
- * Simplified: appends s2 to s1 (ignores pos for now).
+ * Inserts s2 into s1 after the pos-th character (1-based) and returns the result as a new string; s1
+ * is not modified (CMP-021).
  */
 export const INSERT_FN: FunctionDef = {
     name: 'INSERT',

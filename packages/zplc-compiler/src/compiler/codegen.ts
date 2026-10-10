@@ -46,7 +46,6 @@ import type {
     DereferenceExpr,
     MethodCall,
     ThisExpr,
-    MethodDecl,
     DateLiteral,
     TODLiteral,
     DTLiteral,
@@ -57,7 +56,7 @@ import type {
     InitialValue,
     PointerType,
 } from './ast.ts';
-import { getArrayElementCount, isArrayType, NameMap, sameName, VarSection } from './ast.ts';
+import { argumentValue, getArrayElementCount, isArrayType, NameMap, sameName, VarSection } from './ast.ts';
 import { emitLine, emitLines } from './asm-line.ts';
 import type { AsmLine, Mnemonic } from './asm-line.ts';
 import { CodegenError, codegenErrorFrom, orderedUniqueErrors } from './diagnostics.ts';
@@ -262,7 +261,7 @@ interface CodeGenState {
     /** Current FB instance being inlined */
     currentFBInstance: Symbol | null;
     /** Current method being inlined (for return value handling) */
-    currentMethod: MethodDecl | null;
+    currentMethod: MethodInfo | null;
     /**
      * The function block whose body or method is being inlined: the block that declares the code that runs, which
      * is not always the type of the instance. SUPER^ and the access specifiers are relative to it (CMP-041).
@@ -316,16 +315,9 @@ interface CodeGenState {
 function resolveSymbol(state: CodeGenState, name: string): Symbol | undefined {
     // 1. Check Method Scope (Inputs, Outputs, Locals)
     if (state.currentMethod) {
-        const method = state.currentMethod as any;
-        
-        // Helper to find var in lists
-        const findVar = (list: any[]) => list && list.find((v: any) => sameName(v.name, name));
-
-        const methodVar = findVar(method.inputs) ||
-                          findVar(method.outputs) ||
-                          findVar(method.locals);
-
-        if (methodVar && methodVar.mangledName) {
+        const method = state.currentMethod;
+        const methodVar = [...method.inputs, ...method.outputs, ...method.locals].find((variable) => sameName(variable.name, name));
+        if (methodVar?.mangledName) {
             return state.symbols.get(methodVar.mangledName);
         }
     }
@@ -973,7 +965,7 @@ function validateStringLiteralPool(state: CodeGenState, workMemoryBase: number, 
 /**
  * Map DataType string to numeric ID from zplc_isa.h
  */
-export function getDataTypeId(type: any): number {
+export function getDataTypeId(type: unknown): number {
     const typeStr = typeof type === 'string' ? type.toUpperCase() : 'UNKNOWN';
     return Object.hasOwn(DATA_TYPE_ID, typeStr) ? DATA_TYPE_ID[typeStr as keyof typeof DATA_TYPE_ID] : 0x00;
 }
@@ -1194,21 +1186,13 @@ function collectStringLiteralsInExpression(state: CodeGenState, expr: Expression
             break;
         case 'FunctionCall':
             for (const arg of expr.args) {
-                if ((arg as any).kind === 'NamedArgument') {
-                    collectStringLiteralsInExpression(state, (arg as any).value);
-                } else {
-                    collectStringLiteralsInExpression(state, arg as Expression);
-                }
+                collectStringLiteralsInExpression(state, argumentValue(arg));
             }
             break;
         case 'MethodCall':
             collectStringLiteralsInExpression(state, expr.object);
             for (const arg of expr.args) {
-                if ((arg as any).kind === 'NamedArgument') {
-                    collectStringLiteralsInExpression(state, (arg as any).value);
-                } else {
-                    collectStringLiteralsInExpression(state, arg as Expression);
-                }
+                collectStringLiteralsInExpression(state, argumentValue(arg));
             }
             break;
         case 'FBCall':
@@ -1769,8 +1753,7 @@ function generateFunctionDecl(state: CodeGenState, func: FunctionDecl): void {
     emit(state, `; --- FUNCTION ${func.name} ---`);
     emit(state, `${label}:`);
 
-    // Function parameters are on the stack in order A, B, C...
-    // We need to pop them into local addresses in REVERSE order
+    // The parameters are on the stack in order A, B, C...: they are popped into their addresses in reverse order
     for (let i = func.inputs.length - 1; i >= 0; i--) {
         const input = func.inputs[i];
         const sym = state.symbols.get(input.name);
@@ -1925,8 +1908,8 @@ function emitAssignment(state: CodeGenState, stmt: Assignment): void {
     }
 
     if (stmt.target.kind === 'Identifier') {
-        // Bug 2 fix: Standalone method call as statement uses '_' as dummy target
-        // Just emit the method call expression, skip the STORE
+        // A method call used as a statement has the dummy target '_': the call is emitted and its result
+        // is not stored
         if (stmt.target.name === '_') {
             if (stmt.value.kind === 'MethodCall') {
                 emit(state, `    ; (method call as statement, result discarded)`);
@@ -1962,9 +1945,8 @@ function emitAssignment(state: CodeGenState, stmt: Assignment): void {
             return;
         }
 
-        // IEC return syntax: MethodName := value (for METHOD - inline context)
-        // Bug 1 fix: When inside an inlined method, assignment to method name 
-        // should leave the value on stack (not store it)
+        // IEC return syntax, MethodName := value: inside an inlined method the assignment to the name of the
+        // method is its return value; it is kept for the caller, not stored under that name
         if (state.currentMethod && sameName(stmt.target.name, state.currentMethod.name)) {
             emit(state, `    ; METHOD RETURN: ${state.currentMethod.name} := ...`);
             if (state.methodResult) {
@@ -1972,7 +1954,7 @@ function emitAssignment(state: CodeGenState, stmt: Assignment): void {
                 emitAssignToPlace(state, state.methodResult, stmt.value, stmt.target);
                 return;
             }
-            emitValueFor(state, stmt.value, (state.currentMethod as any).returnType);
+            emitValueFor(state, stmt.value, state.currentMethod.returnType);
             // a method that returns a string or another value that does not fit a cell leaves it on the stack
             return;
         }
@@ -3077,7 +3059,7 @@ function emitIdentifier(state: CodeGenState, expr: Identifier): void {
 
     // Inline CONSTANT values (e.g. ENUMs, VAR CONSTANT)
     if (sym && sym.section === 'CONSTANT' && sym.initialValue) {
-        const initVal = sym.initialValue as any;
+        const initVal = sym.initialValue;
         if (initVal.kind === 'IntLiteral' || initVal.kind === 'BoolLiteral' || initVal.kind === 'RealLiteral') {
             emitValueFor(state, initVal, sym.dataType);
             return;
@@ -3149,7 +3131,7 @@ function emitUnaryExpr(state: CodeGenState, expr: UnaryExpr): void {
                 if (info.bits === 8 && !info.signed) emit(state, `    ZEXT8`);
                 else if (info.bits === 16 && !info.signed) emit(state, `    ZEXT16`);
             } else {
-                // For boolean NOT, we need to mask to get 0 or 1
+                // the complement of a boolean is masked to 0 or 1
                 emit(state, `    PUSH8 1`);
                 emit(state, `    AND`);
             }
@@ -3253,21 +3235,15 @@ function stringifyExpression(expr: Expression): string {
         case 'UnaryExpr':
             return `${expr.operator}(${stringifyExpression(expr.operand)})`;
         case 'FunctionCall':
-            const args = expr.args.map(arg => {
-                if ((arg as any).kind === 'NamedArgument') {
-                    return `${(arg as any).name} := ${stringifyExpression((arg as any).value)}`;
-                }
-                return stringifyExpression(arg as Expression);
-            }).join(', ');
+            const args = expr.args.map((arg) => arg.kind === 'NamedArgument'
+                ? `${arg.name} := ${stringifyExpression(arg.value)}`
+                : stringifyExpression(arg)).join(', ');
             return `${expr.name}(${args})`;
         case 'MethodCall':
-             const mArgs = (expr as any).args.map((arg: any) => {
-                if (arg.kind === 'NamedArgument') {
-                    return `${arg.name} := ${stringifyExpression(arg.value)}`;
-                }
-                return stringifyExpression(arg);
-            }).join(', ');
-            return `${stringifyExpression((expr as any).object)}.${(expr as any).methodName}(${mArgs})`;
+             const mArgs = expr.args.map((arg) => arg.kind === 'NamedArgument'
+                ? `${arg.name} := ${stringifyExpression(arg.value)}`
+                : stringifyExpression(arg)).join(', ');
+            return `${stringifyExpression(expr.object)}.${expr.methodName}(${mArgs})`;
         default:
             return '...';
     }
@@ -3320,7 +3296,7 @@ function functionResultType(state: CodeGenState, expr: FunctionCall): string {
     const userFn = state.functionTable.get(expr.name);
     if (userFn) return numericTypeName(userFn.returnType);
 
-    const args = expr.args.map((a) => ((a as any).kind === 'NamedArgument' ? (a as any).value : a) as Expression);
+    const args = expr.args.map(argumentValue);
     const common = (list: Expression[]): string =>
         list.map((a) => staticType(state, a)).reduce((acc, t) => commonType(acc, t), LITERAL_INT);
 
@@ -3997,7 +3973,7 @@ function stringCapacityOf(state: CodeGenState, expr: Expression): number {
         case 'FunctionCall': {
             const userFunction = state.functionTable.get(expr.name);
             if (userFunction) return parseStringType(userFunction.returnType)?.capacity ?? 80;
-            const args = expr.args.map((a) => ((a as any).kind === 'NamedArgument' ? (a as any).value : a) as Expression);
+            const args = expr.args.map(argumentValue);
             switch (expr.name.toUpperCase()) {
                 case 'LEFT': case 'RIGHT': case 'MID': {
                     // a constant count bounds the result
@@ -4102,12 +4078,8 @@ function emitBinaryExpr(state: CodeGenState, expr: BinaryExpr, contextType?: str
             return;
         }
 
-        // String concatenation: s1 + s2 is not standard IEC 61131-3
-        // but we can support it by calling CONCAT
+        // `s1 + s2` is not IEC 61131-3 and has no destination to write the result to: CONCAT has one
         if (expr.operator === 'ADD') {
-            emit(state, `    ; String concatenation (s1 + s2)`);
-            emit(state, `    ; NOTE: Use CONCAT() for proper string concatenation`);
-            // For now, emit an error comment - proper concatenation needs a destination
             fail(expr, `String + operator requires destination. Use CONCAT(s1, s2) instead.`);
         }
 
@@ -4380,7 +4352,7 @@ function emitFunctionCall(state: CodeGenState, expr: FunctionCall): void {
     // Most standard functions work on one cell per operand; the ones in WIDE_FUNCTIONS (and the conversions)
     // are written for two-cell values as well
     for (const arg of expr.args) {
-        const value = ((arg as any).kind === 'NamedArgument' ? (arg as any).value : arg) as Expression;
+        const value = argumentValue(arg);
         const argType = staticType(state, value);
         if (isWide(argType) && !WIDE_FUNCTIONS.has(expr.name.toUpperCase()) && conversionResultType(expr.name) === undefined) {
             fail(expr, `${expr.name} does not take a 64-bit or LREAL argument (CMP-015): use a conversion function first`);
@@ -4400,12 +4372,10 @@ function emitFunctionCall(state: CodeGenState, expr: FunctionCall): void {
     // (baseAddress is not used for stateless functions)
     const ctx = makeCodeGenContext(state, 0, expr.name, expr);
 
-    // Let the function generate its inline code
-    // Convert args to pure expressions (ignoring names for built-ins for now)
+    // A standard function takes its arguments by position: a named argument stands for its value
     const formal = STANDARD_PARAMETER_TYPE[expr.name.toUpperCase()];
-    const simpleArgs = expr.args.map(a => 
-        (a as any).kind === 'NamedArgument' ? (a as any).value : a
-    ).map((value: Expression) => formal === undefined ? value : typedArgument(state, value, formal)) as Expression[];
+    const simpleArgs = expr.args.map(argumentValue)
+        .map((value) => formal === undefined ? value : typedArgument(state, value, formal));
 
     fnDef.generateInline(ctx, simpleArgs);
     state.resultCapacity = null;
@@ -4539,10 +4509,9 @@ function identifierPlace(state: CodeGenState, expr: Identifier): Place {
 
     // 1. Inputs, outputs and locals of the method being inlined: statics with a mangled name
     if (state.currentMethod) {
-        const method = state.currentMethod as any;
-        const findVar = (list: any[]) => list && list.find((v: any) => sameName(v.name, name));
-        const methodVar = findVar(method.inputs) || findVar(method.outputs) || findVar(method.locals);
-        if (methodVar && methodVar.mangledName) {
+        const method = state.currentMethod;
+        const methodVar = [...method.inputs, ...method.outputs, ...method.locals].find((variable) => sameName(variable.name, name));
+        if (methodVar?.mangledName) {
             const sym = state.symbols.get(methodVar.mangledName);
             if (sym) return { addr: { k: 'const', a: sym.address }, type: sym.dataType, size: sym.size, sym, name };
         }
@@ -4956,7 +4925,7 @@ function readRanges(state: CodeGenState, expr: Expression, out: Array<{ from: nu
         case 'FunctionCall': {
             if (state.functionTable.has(expr.name)) return false; // a function of the program may write any variable
             for (const arg of expr.args) {
-                const value = ((arg as any).kind === 'NamedArgument' ? (arg as any).value : arg) as Expression;
+                const value = argumentValue(arg);
                 if (!readRanges(state, value, out)) return false;
             }
             return true;
@@ -4992,7 +4961,7 @@ function emitStringFunctionInto(state: CodeGenState, place: Place, call: Functio
     const name = call.name.toUpperCase();
     if (state.functionTable.has(call.name)) return false;
     if (!['CONCAT', 'LEFT', 'RIGHT', 'MID', 'DELETE', 'INSERT', 'REPLACE'].includes(name)) return false;
-    const args = call.args.map((arg) => ((arg as any).kind === 'NamedArgument' ? (arg as any).value : arg) as Expression);
+    const args = call.args.map(argumentValue);
     if (place.addr.k !== 'const' || args.length === 0) return false;
     const text = parseStringType(storedType(state, place.type));
     if (!text || text.wide) return false;
@@ -5175,7 +5144,8 @@ function emitDereference(state: CodeGenState, expr: DereferenceExpr): void {
 /**
  * Emit a method call expression.
  * 
- * For now, methods are inlined at call sites (no dynamic dispatch).
+ * A method is inlined at each call site; the dispatch of a call through an interface is written out by
+ * the compiler (see Interfaces below).
  * Format: instance.MethodName(args)
  * 
  * The method body is executed with THIS bound to the instance.
@@ -5290,15 +5260,13 @@ function emitMethodInline(state: CodeGenState, expr: MethodCall, instanceSym: Sy
         for (const arg of expr.args) {
             let inputName: string;
             let argExpr: Expression;
-            let input: any;
+            let input: MethodInfo['inputs'][number] | undefined;
 
-            // Check if arg is NamedArgument or Expression
-            // We cast to any to access kind safely
-            if ((arg as any).kind === 'NamedArgument') {
-                inputName = (arg as any).name;
-                argExpr = (arg as any).value;
-                input = methodInfo.inputs.find((i: any) => sameName(i.name, inputName));
-                
+            if (arg.kind === 'NamedArgument') {
+                inputName = arg.name;
+                argExpr = arg.value;
+                input = methodInfo.inputs.find((candidate) => sameName(candidate.name, arg.name));
+
                 if (!input) {
                     fail(expr, `Unknown named argument '${inputName}' for method '${expr.methodName}'`);
                 }
@@ -5306,12 +5274,12 @@ function emitMethodInline(state: CodeGenState, expr: MethodCall, instanceSym: Sy
                 // Positional
                 if (positionalIndex >= methodInfo.inputs.length) {
                     emit(state, `    ; WARNING: Too many positional arguments`);
-                    emitExpression(state, arg as Expression);
+                    emitExpression(state, arg);
                     emit(state, `    DROP`);
                     continue;
                 }
-                input = methodInfo.inputs[positionalIndex];
-                argExpr = arg as Expression;
+                input = methodInfo.inputs[positionalIndex]!;
+                argExpr = arg;
                 inputName = input.name;
                 positionalIndex++;
             }
@@ -5336,12 +5304,11 @@ function emitMethodInline(state: CodeGenState, expr: MethodCall, instanceSym: Sy
     state.returnLabel = newLabel(state, 'method_return');
     state.currentFBInstance = instanceSym;
     state.currentBlock = methodInfo.owner;
-    // Cast MethodInfo to MethodDecl for compatibility (they share name/body which is what matters)
-    state.currentMethod = methodInfo as any;
+    state.currentMethod = methodInfo;
 
     // Initialize method locals (including VAR_TEMP)
     if (methodInfo.locals) {
-        for (const local of methodInfo.locals as any[]) {
+        for (const local of methodInfo.locals) {
             if (local.mangledName) {
                 const sym = state.symbols.get(local.mangledName);
                 if (sym) {

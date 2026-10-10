@@ -381,7 +381,7 @@ export const CTUD_FB: FunctionBlockDef = {
 
         ctx.emit(`${skipLoad}:`);
 
-        // Rising edge on CU?
+        // Rising edge on CU
         emitRisingEdge(cuAddr, prevCuAddr);
         ctx.emit(`    JZ ${checkDown}`);
 

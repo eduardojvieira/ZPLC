@@ -419,6 +419,12 @@ All notable changes are documented here.
   and every line is checked when it is written, so a line with an unknown
   mnemonic is an internal compiler error that names it and never reaches the
   assembler. The conformance programs are checked line by line.
+- The compiler sources are typed and quiet (CMP-061): the 35 `any` casts of the
+  code generator, the parser and the symbol table are gone (a method in progress
+  is a `MethodInfo`, a named argument is read with `argumentValue`), and the
+  comments that thought aloud or recorded a fix by number say what the code does.
+  A test lints the sources of the compiler with `no-explicit-any` and a list of
+  words that do not belong in a comment.
 
 ## 2.0.0-rc.3 - 2026-09-01
 

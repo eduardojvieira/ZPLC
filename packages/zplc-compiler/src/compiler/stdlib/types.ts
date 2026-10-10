@@ -205,7 +205,7 @@ export function getSizeSuffix(size: MemberSize): '8' | '16' | '32' {
         case 1: return '8';
         case 2: return '16';
         case 4: return '32';
-        case 8: return '32' as any; // Actually '64', but VM is mostly 32-bit for now
+        // an 8-byte member is moved as two 32-bit cells
         default: return '32';
     }
 }
