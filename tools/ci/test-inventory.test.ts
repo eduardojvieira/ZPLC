@@ -29,7 +29,7 @@ describe('TEST_FILE', () => {
   ])('does not take %s for a test file', (file) => expect(TEST_FILE.test(file)).toBe(false));
 });
 
-describe('checkInventory', () => {
+describe('checkInventory (VF-022)', () => {
   it('accepts files that a job runs or that are listed as not run', () => {
     expect(checkInventory(files, inventory, workflow)).toEqual([]);
   });
