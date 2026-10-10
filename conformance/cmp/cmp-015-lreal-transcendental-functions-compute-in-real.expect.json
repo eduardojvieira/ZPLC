@@ -1,0 +1,48 @@
+{
+  "requirement": "CMP-015",
+  "title": "SIN, COS, EXP, LN, ATAN of an LREAL are LREAL results of REAL accuracy",
+  "matrix": [
+    "data-types.lreal"
+  ],
+  "tags": [
+    "arch-sensitive",
+    "64-bit",
+    "float",
+    "float-conversion"
+  ],
+  "note": "The transcendental functions round an LREAL argument to REAL, compute in REAL and widen back: the result is an LREAL with about seven significant digits (documented in the standard-library reference).",
+  "scans": 1,
+  "scanMs": 10,
+  "expect": [
+    {
+      "at": "%QX512.0",
+      "type": "BOOL",
+      "value": true
+    },
+    {
+      "at": "%QX512.1",
+      "type": "BOOL",
+      "value": true
+    },
+    {
+      "at": "%QX512.2",
+      "type": "BOOL",
+      "value": true
+    },
+    {
+      "at": "%QX512.3",
+      "type": "BOOL",
+      "value": true
+    },
+    {
+      "at": "%QX512.4",
+      "type": "BOOL",
+      "value": true
+    },
+    {
+      "at": "%QX512.5",
+      "type": "BOOL",
+      "value": true
+    }
+  ]
+}

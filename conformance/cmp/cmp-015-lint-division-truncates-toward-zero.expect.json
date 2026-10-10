@@ -1,0 +1,147 @@
+{
+  "requirement": "CMP-016",
+  "title": "LINT division and MOD follow the sign of the dividend",
+  "matrix": [
+    "data-types.lint-ulint-lword"
+  ],
+  "tags": [
+    "arch-sensitive",
+    "64-bit",
+    "float"
+  ],
+  "note": "IEC 61131-3 division truncates toward zero; MOD takes the sign of the dividend; MIN / -1 wraps to MIN and MIN MOD -1 is 0 (CMP-016).",
+  "scans": 1,
+  "scanMs": 10,
+  "expect": [
+    {
+      "at": "%QD0",
+      "type": "UDINT",
+      "value": 3
+    },
+    {
+      "at": "%QD1",
+      "type": "UDINT",
+      "value": 0
+    },
+    {
+      "at": "%QD2",
+      "type": "UDINT",
+      "value": 4294967293
+    },
+    {
+      "at": "%QD3",
+      "type": "UDINT",
+      "value": 4294967295
+    },
+    {
+      "at": "%QD4",
+      "type": "UDINT",
+      "value": 4294967293
+    },
+    {
+      "at": "%QD5",
+      "type": "UDINT",
+      "value": 4294967295
+    },
+    {
+      "at": "%QD6",
+      "type": "UDINT",
+      "value": 3
+    },
+    {
+      "at": "%QD7",
+      "type": "UDINT",
+      "value": 0
+    },
+    {
+      "at": "%QD8",
+      "type": "UDINT",
+      "value": 1123222089
+    },
+    {
+      "at": "%QD9",
+      "type": "UDINT",
+      "value": 33
+    },
+    {
+      "at": "%QD10",
+      "type": "UDINT",
+      "value": 0
+    },
+    {
+      "at": "%QD11",
+      "type": "UDINT",
+      "value": 2147483648
+    },
+    {
+      "at": "%QD12",
+      "type": "UDINT",
+      "value": 1
+    },
+    {
+      "at": "%QD13",
+      "type": "UDINT",
+      "value": 2147483648
+    },
+    {
+      "at": "%QD14",
+      "type": "UDINT",
+      "value": 1
+    },
+    {
+      "at": "%QD15",
+      "type": "UDINT",
+      "value": 0
+    },
+    {
+      "at": "%QD16",
+      "type": "UDINT",
+      "value": 4294967295
+    },
+    {
+      "at": "%QD17",
+      "type": "UDINT",
+      "value": 4294967295
+    },
+    {
+      "at": "%QD18",
+      "type": "UDINT",
+      "value": 1
+    },
+    {
+      "at": "%QD19",
+      "type": "UDINT",
+      "value": 0
+    },
+    {
+      "at": "%QD20",
+      "type": "UDINT",
+      "value": 1
+    },
+    {
+      "at": "%QD21",
+      "type": "UDINT",
+      "value": 0
+    },
+    {
+      "at": "%QD22",
+      "type": "UDINT",
+      "value": 0
+    },
+    {
+      "at": "%QD23",
+      "type": "UDINT",
+      "value": 0
+    },
+    {
+      "at": "%QD24",
+      "type": "UDINT",
+      "value": 4294967295
+    },
+    {
+      "at": "%QD25",
+      "type": "UDINT",
+      "value": 4294967295
+    }
+  ]
+}

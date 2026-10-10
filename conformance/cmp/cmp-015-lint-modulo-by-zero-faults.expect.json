@@ -1,0 +1,16 @@
+{
+  "requirement": "CMP-016",
+  "title": "LINT MOD by zero ends the scan in a VM fault",
+  "matrix": [
+    "data-types.lint-ulint-lword"
+  ],
+  "tags": [
+    "arch-sensitive",
+    "64-bit",
+    "division"
+  ],
+  "note": "Division and modulo by zero fault on every width and platform (CMP-016).",
+  "scans": 1,
+  "scanMs": 10,
+  "fault": true
+}

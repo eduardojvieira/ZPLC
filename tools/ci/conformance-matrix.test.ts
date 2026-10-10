@@ -110,11 +110,9 @@ describe('the committed matrix', () => {
 
   it('tags every row that is architecture-sensitive with a case that carries the tag (VF-005)', () => {
     const cases = loadCases(new URL('../../conformance', import.meta.url).pathname).map(factsOf);
-    const listed = (JSON.parse(readFileSync(new URL('./expected-failures.json', import.meta.url), 'utf8')) as Array<{ test: string }>).map((entry) => entry.test);
     // A row whose only tagged case is on the expected-failure list still names it; the rule is about the tag, not the result.
     expect(untaggedRows(committed, cases, 'arch-sensitive')).toEqual([]);
     expect(untaggedRows(committed, cases, 'alignment')).toEqual([]);
-    expect(listed.length).toBeGreaterThan(0);
   });
 });
 

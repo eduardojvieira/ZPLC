@@ -74,12 +74,12 @@ Funciones utilitarias adicionales del mismo archivo:
 Ejemplos registrados hoy:
 
 - aritmética: `ABS`, `ABSF`, `NEG`, `NEGF`, `SQRT`, `EXPT`, `TRUNC`, `ROUND`
-- conversión: `<ORIGEN>_TO_<DESTINO>` para cada par de tipos distintos entre `BOOL`, `SINT`, `USINT`, `BYTE`, `INT`, `UINT`, `WORD`, `DINT`, `UDINT`, `DWORD`, `REAL` y `TIME` (`INT_TO_REAL`, `REAL_TO_INT`, `UDINT_TO_DINT`...), ver [Conversiones de tipo](../runtime/stdlib.md#9-conversiones-de-tipos)
+- conversión: `<ORIGEN>_TO_<DESTINO>` para cada par de tipos distintos entre `BOOL`, `SINT`, `USINT`, `BYTE`, `INT`, `UINT`, `WORD`, `DINT`, `UDINT`, `DWORD`, `LINT`, `ULINT`, `LWORD`, `REAL`, `LREAL` y `TIME` (`INT_TO_REAL`, `REAL_TO_INT`, `UDINT_TO_DINT`, `LINT_TO_LREAL`...), ver [Conversiones de tipo](../runtime/stdlib.md#9-conversiones-de-tipos)
 - trigonometría y logs: `SIN`, `COS`, `TAN`, `ASIN`, `ACOS`, `ATAN`, `ATAN2`, `LN`, `LOG`, `EXP`
 - helpers de selección: `MAX`, `MIN`, `LIMIT`, `SEL`, `MUX`
 - helpers bitwise: `ROL`, `ROR`, `SHL`, `SHR`, `AND_WORD`, `OR_WORD`, `XOR_WORD`, `NOT_WORD`
 
-Hoy una cosa del registro no se puede usar como la lista sugiere. `MOD` y los operadores lógicos son operadores (`a MOD b`, `a AND b`), y las formas `MOD(a, b)` y `AND(a, b)` no se analizan. Los tipos de 64 bits y `DATE`, `TOD` y `DT` todavía no tienen funciones de conversión. La tabla de [diferencias conocidas](../runtime/stdlib.md#11-diferencias-conocidas-con-iec-61131-3) lista los casos que fallan hoy, con sus ids de requisito.
+Hoy una cosa del registro no se puede usar como la lista sugiere. `MOD` y los operadores lógicos son operadores (`a MOD b`, `a AND b`), y las formas `MOD(a, b)` y `AND(a, b)` no se analizan. `DATE`, `TOD` y `DT` todavía no tienen funciones de conversión. `ABS`, `NEG`, `MAX`, `MIN`, `LIMIT`, `SEL`, `MUX`, `SQRT`, `TRUNC`, `ROUND`, `SHL`, `SHR`, `ROL` y `ROR` aceptan los enteros de 64 bits y `LREAL`; las demás funciones los rechazan con un mensaje. La tabla de [diferencias conocidas](../runtime/stdlib.md#11-diferencias-conocidas-con-iec-61131-3) lista los casos que fallan hoy, con sus ids de requisito.
 
 ## Bloques de función de comunicación
 

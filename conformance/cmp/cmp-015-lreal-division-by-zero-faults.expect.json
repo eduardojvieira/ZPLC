@@ -1,0 +1,17 @@
+{
+  "requirement": "CMP-016",
+  "title": "LREAL division by zero ends the scan in a VM fault, as REAL does",
+  "matrix": [
+    "data-types.lreal"
+  ],
+  "tags": [
+    "arch-sensitive",
+    "64-bit",
+    "float",
+    "division"
+  ],
+  "note": "Division by 0.0 or -0.0 faults whatever the dividend, as DIVF does (CMP-016).",
+  "scans": 1,
+  "scanMs": 10,
+  "fault": true
+}

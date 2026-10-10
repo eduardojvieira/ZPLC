@@ -1,0 +1,58 @@
+{
+  "requirement": "CMP-015",
+  "title": "A REF_TO LREAL or LINT and a VAR_IN_OUT of 64 bits read and write the whole value",
+  "matrix": [
+    "data-types.lreal",
+    "data-types.lint-ulint-lword"
+  ],
+  "tags": [
+    "arch-sensitive",
+    "64-bit",
+    "float"
+  ],
+  "note": "A reference and a VAR_IN_OUT parameter hold the address of the variable: reading and writing through them moves two cells, and the variable is the one the caller named (CMP-024, CMP-028, CMP-015).",
+  "scans": 1,
+  "scanMs": 10,
+  "expect": [
+    {
+      "at": "%QD0",
+      "type": "UDINT",
+      "value": 0
+    },
+    {
+      "at": "%QD1",
+      "type": "UDINT",
+      "value": 1073479680
+    },
+    {
+      "at": "%QD2",
+      "type": "UDINT",
+      "value": 1410065408
+    },
+    {
+      "at": "%QD3",
+      "type": "UDINT",
+      "value": 2
+    },
+    {
+      "at": "%QD4",
+      "type": "UDINT",
+      "value": 2
+    },
+    {
+      "at": "%QD5",
+      "type": "UDINT",
+      "value": 0
+    },
+    {
+      "at": "%QD6",
+      "type": "UDINT",
+      "value": 0
+    },
+    {
+      "at": "%QD7",
+      "type": "UDINT",
+      "value": 1074528256
+    }
+  ]
+}

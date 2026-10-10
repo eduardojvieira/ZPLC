@@ -1,0 +1,77 @@
+{
+  "requirement": "CMP-015",
+  "title": "A DINT, a LINT and a literal in one expression are computed in 64 bits",
+  "matrix": [
+    "data-types.lint-ulint-lword"
+  ],
+  "tags": [
+    "arch-sensitive",
+    "64-bit",
+    "float"
+  ],
+  "note": "The wider operand decides the width of an operation (CMP-015); a DINT operand is sign-extended, a UDINT zero-extended.",
+  "scans": 1,
+  "scanMs": 10,
+  "expect": [
+    {
+      "at": "%QD0",
+      "type": "UDINT",
+      "value": 0
+    },
+    {
+      "at": "%QD1",
+      "type": "UDINT",
+      "value": 4294467296
+    },
+    {
+      "at": "%QD2",
+      "type": "UDINT",
+      "value": 999999
+    },
+    {
+      "at": "%QD3",
+      "type": "UDINT",
+      "value": 1
+    },
+    {
+      "at": "%QD4",
+      "type": "UDINT",
+      "value": 2146483648
+    },
+    {
+      "at": "%QD5",
+      "type": "UDINT",
+      "value": 4294967295
+    },
+    {
+      "at": "%QD6",
+      "type": "UDINT",
+      "value": 2467954688
+    },
+    {
+      "at": "%QD7",
+      "type": "UDINT",
+      "value": 931322
+    },
+    {
+      "at": "%QD8",
+      "type": "UDINT",
+      "value": 0
+    },
+    {
+      "at": "%QD9",
+      "type": "UDINT",
+      "value": 0
+    },
+    {
+      "at": "%QX512.0",
+      "type": "BOOL",
+      "value": true
+    },
+    {
+      "at": "%QX512.1",
+      "type": "BOOL",
+      "value": true
+    }
+  ]
+}

@@ -102,6 +102,12 @@ export function isWide(typeName: string | undefined): boolean {
     return info !== undefined && info.bits === 64;
 }
 
+/** A 64-bit integer or bit-string type (LINT, ULINT, LWORD, DT): two stack cells, not a float. */
+export function isWideInteger(typeName: string | undefined): boolean {
+    const info = numericInfo(typeName);
+    return info !== undefined && info.bits === 64 && !info.float;
+}
+
 /**
  * Type of `a OP b` for an arithmetic, bit or comparison operator.
  *
@@ -129,6 +135,17 @@ export function floatBits(value: number): number {
     const view = new DataView(new ArrayBuffer(4));
     view.setFloat32(0, value, true);
     return view.getUint32(0, true);
+}
+
+/**
+ * The two 32-bit words, low word first (the order LOAD64 leaves), of the IEEE 754 double-precision
+ * pattern of a number. Every NaN is the quiet NaN 0x7FF8000000000000, as the VM makes it.
+ */
+export function doubleWords(value: number): [low: number, high: number] {
+    if (Number.isNaN(value)) return [0, 0x7FF80000];
+    const view = new DataView(new ArrayBuffer(8));
+    view.setFloat64(0, value, true);
+    return [view.getUint32(0, true), view.getUint32(4, true)];
 }
 
 /** The IEEE 754 single-precision pattern of a number as a PUSH32 operand (`0x3F800000` for 1). */

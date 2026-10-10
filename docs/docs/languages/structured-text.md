@@ -44,7 +44,7 @@ ZPLC supports these elementary types. [Structured Text (ST)](./st.md#numeric-typ
 *   `SINT`, `INT`, `DINT`, `LINT` (signed integers of 8, 16, 32 and 64 bits)
 *   `USINT`, `UINT`, `UDINT`, `ULINT` (unsigned integers of 8, 16, 32 and 64 bits)
 *   `BYTE`, `WORD`, `DWORD`, `LWORD` (bit strings of 8, 16, 32 and 64 bits)
-*   `REAL` (32-bit floating point). `LREAL` can be declared, but a program that assigns or computes with one is refused by the loader today (requirement CMP-015).
+*   `REAL` (32-bit floating point) and `LREAL` (64-bit floating point, IEEE 754 double precision; requirement CMP-015)
 *   `TIME`, `DATE`, `TOD`, `DT`: see [Time and date types](./st.md#time-and-date-types).
 *   `STRING`, `WSTRING`
 

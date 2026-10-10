@@ -1,0 +1,117 @@
+{
+  "requirement": "CMP-016",
+  "title": "NaN and infinity propagate through LREAL arithmetic",
+  "matrix": [
+    "data-types.lreal"
+  ],
+  "tags": [
+    "arch-sensitive",
+    "64-bit",
+    "float"
+  ],
+  "note": "Every NaN the VM makes is the quiet NaN 0x7FF8000000000000 (RT-005); an overflow is an infinity.",
+  "scans": 1,
+  "scanMs": 10,
+  "expect": [
+    {
+      "at": "%QD0",
+      "type": "UDINT",
+      "value": 0
+    },
+    {
+      "at": "%QD1",
+      "type": "UDINT",
+      "value": 2146435072
+    },
+    {
+      "at": "%QD2",
+      "type": "UDINT",
+      "value": 0
+    },
+    {
+      "at": "%QD3",
+      "type": "UDINT",
+      "value": 4293918720
+    },
+    {
+      "at": "%QD4",
+      "type": "UDINT",
+      "value": 0
+    },
+    {
+      "at": "%QD5",
+      "type": "UDINT",
+      "value": 2146435072
+    },
+    {
+      "at": "%QD6",
+      "type": "UDINT",
+      "value": 0
+    },
+    {
+      "at": "%QD7",
+      "type": "UDINT",
+      "value": 0
+    },
+    {
+      "at": "%QD8",
+      "type": "UDINT",
+      "value": 0
+    },
+    {
+      "at": "%QD9",
+      "type": "UDINT",
+      "value": 2147483648
+    },
+    {
+      "at": "%QD10",
+      "type": "UDINT",
+      "value": 0
+    },
+    {
+      "at": "%QD11",
+      "type": "UDINT",
+      "value": 2146959360
+    },
+    {
+      "at": "%QD12",
+      "type": "UDINT",
+      "value": 0
+    },
+    {
+      "at": "%QD13",
+      "type": "UDINT",
+      "value": 2146959360
+    },
+    {
+      "at": "%QD14",
+      "type": "UDINT",
+      "value": 0
+    },
+    {
+      "at": "%QD15",
+      "type": "UDINT",
+      "value": 2146959360
+    },
+    {
+      "at": "%QD16",
+      "type": "UDINT",
+      "value": 0
+    },
+    {
+      "at": "%QD17",
+      "type": "UDINT",
+      "value": 2146959360
+    },
+    {
+      "at": "%QD18",
+      "type": "UDINT",
+      "value": 0
+    },
+    {
+      "at": "%QD19",
+      "type": "UDINT",
+      "value": 2147483648
+    }
+  ]
+}

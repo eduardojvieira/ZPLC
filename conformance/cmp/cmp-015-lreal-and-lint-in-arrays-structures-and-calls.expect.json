@@ -1,0 +1,94 @@
+{
+  "requirement": "CMP-015",
+  "title": "LREAL and LINT in an array, a structure and through function calls",
+  "matrix": [
+    "data-types.lreal",
+    "data-types.lint-ulint-lword",
+    "data-types.arrays-bounds-and-element-types"
+  ],
+  "tags": [
+    "arch-sensitive",
+    "64-bit",
+    "float"
+  ],
+  "note": "A two-cell value is stored at its declared width in an array element and a structure member, and travels through a FUNCTION parameter and result as two cells.",
+  "scans": 1,
+  "scanMs": 10,
+  "expect": [
+    {
+      "at": "%QD0",
+      "type": "UDINT",
+      "value": 0
+    },
+    {
+      "at": "%QD1",
+      "type": "UDINT",
+      "value": 1072562176
+    },
+    {
+      "at": "%QD2",
+      "type": "UDINT",
+      "value": 2820130816
+    },
+    {
+      "at": "%QD3",
+      "type": "UDINT",
+      "value": 4
+    },
+    {
+      "at": "%QD4",
+      "type": "UDINT",
+      "value": 858993460
+    },
+    {
+      "at": "%QD5",
+      "type": "UDINT",
+      "value": 1070805811
+    },
+    {
+      "at": "%QD6",
+      "type": "UDINT",
+      "value": 2115098112
+    },
+    {
+      "at": "%QD7",
+      "type": "UDINT",
+      "value": 3
+    },
+    {
+      "at": "%QX512.0",
+      "type": "BOOL",
+      "value": true
+    },
+    {
+      "at": "%QD8",
+      "type": "UDINT",
+      "value": 2576980378
+    },
+    {
+      "at": "%QD9",
+      "type": "UDINT",
+      "value": 1072798105
+    },
+    {
+      "at": "%QD10",
+      "type": "UDINT",
+      "value": 0
+    },
+    {
+      "at": "%QD11",
+      "type": "UDINT",
+      "value": 1070727168
+    },
+    {
+      "at": "%QD12",
+      "type": "UDINT",
+      "value": 884901888
+    },
+    {
+      "at": "%QD13",
+      "type": "UDINT",
+      "value": 4294967293
+    }
+  ]
+}
