@@ -4,6 +4,15 @@ All notable changes are documented here.
 
 ## Unreleased
 
+- The palettes of LD, FBD and SFC offer only what their transpiler translates, and every
+  element they offer is placed in a program and run in the virtual machine by a generated
+  test (LNG-007). The Ladder palette offers the edge coils that the transpiler has
+  translated since LNG-022 and no longer offers `COMM_CONNECT`, `COMM_PUBLISH`,
+  `COMM_SUBSCRIBE` and `COMM_MODBUS`, which no Ladder file can declare. The FBD palette no
+  longer offers the functions of the library (`SQRT`, `SIN`, `LEN`...) or the four
+  `COMM_*` blocks, which the build refused or could not declare; a block of the library has
+  the inputs and outputs it declares (a `BLINK` has `ENABLE`, `T_ON` and `T_OFF`, not `IN`
+  and `OUT`), typed as the compiler types them.
 - A breakpoint can be set on an IL line, a Ladder rung, an FBD block and an SFC step or
   transition, and the runtime stops there (LNG-004). The debug map relates each instruction
   range to the element of the source that was edited (`element` on a source range and on a

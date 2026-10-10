@@ -92,6 +92,22 @@ detenido el programa se resalta en amarillo. Antes de compilar no hay dónde det
 deshabilitado. Los contadores de programa son los que toman el runtime de la simulación y el de una placa; detenerse en
 una placa no se ha comprobado aquí.
 
+## Qué ofrecen las paletas
+
+Una paleta ofrece solo lo que su transpilador traduce (LNG-007), y cada elemento que ofrece se ejecuta en la suite de
+pruebas: se coloca en un programa, se compila, se carga en la máquina virtual y se ejecuta un ciclo.
+
+- **LD** ofrece cuatro contactos (normalmente abierto, normalmente cerrado, flanco de subida y de bajada), seis bobinas
+  (normal, negada, set, reset, flanco de subida y de bajada), la rama y los bloques de función de la biblioteca del
+  compilador y del proyecto. Los bloques de comunicación `COMM_CONNECT`, `COMM_PUBLISH`, `COMM_SUBSCRIBE` y
+  `COMM_MODBUS` no se ofrecen: ningún archivo Ladder puede declarar una instancia de ellos.
+- **FBD** ofrece las compuertas, las comparaciones, `ADD`, `SUB`, `MUL`, `DIV`, `MOD`, `ABS`, `MAX`, `MIN`, `LIMIT` y
+  `SEL`, los bloques de función de la biblioteca y del proyecto con las entradas y salidas que declaran, y los bloques
+  que llevan un valor (`constant`, `variable`, `input`, `output`). Las funciones de la biblioteca (`SQRT`, `SIN`,
+  `LEN`, `CONCAT`, las conversiones...) todavía no se ofrecen: un diagrama no puede llamarlas y la compilación las
+  rechaza por su nombre.
+- **SFC** ofrece el paso, el paso inicial y la transición.
+
 ## Ruta de compilación
 
 Los modelos visuales se validan y se transpilan antes de la compilación

@@ -8,6 +8,7 @@
 
 import * as z from 'zod/v4';
 import { parseFBDModel, serializeFBDModel, type FBDModel } from './fbd';
+import { LD_COIL_TYPES, LD_CONTACT_TYPES } from './ldSupport';
 import { parseLDModel, serializeLDModel, type LDModel } from './ld';
 import { parseSFCModel, serializeSFCModel, type SFCModel } from './sfc';
 
@@ -28,10 +29,7 @@ const finite = z.number();
 const position = z.looseObject({ x: finite, y: finite });
 const variable = z.looseObject({ name: id, type: id });
 
-const LD_ELEMENT_TYPES = [
-  'left_rail', 'right_rail', 'contact_no', 'contact_nc', 'contact_p', 'contact_n',
-  'coil', 'coil_negated', 'coil_set', 'coil_reset', 'coil_p', 'coil_n', 'function_block',
-] as const;
+const LD_ELEMENT_TYPES = ['left_rail', 'right_rail', ...LD_CONTACT_TYPES, ...LD_COIL_TYPES, 'function_block'] as const;
 const ldElement = z.looseObject({ id, type: z.enum(LD_ELEMENT_TYPES), variable: z.string().optional() });
 const ldRung = z.looseObject({
   id,

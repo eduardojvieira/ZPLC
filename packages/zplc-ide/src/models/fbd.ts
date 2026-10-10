@@ -5,6 +5,7 @@
  * Based on IEC 61131-3 FBD language specification.
  */
 
+import { getFB } from '@zplc/compiler';
 import { ElementError, blockElement, connectionElement } from './sourceElements';
 import { serializeVisualDocument } from './visualFileFormat';
 import { findProjectBlock, type ProjectBlock } from './projectBlocks';
@@ -568,10 +569,26 @@ export function getDefaultPorts(type: string, blocks?: readonly ProjectBlock[]):
           { name: 'STATUS', type: 'BOOL' }
         ]
       };
-    default:
+    default: {
+      // a block of the compiler's library has the inputs and outputs it declares (LNG-007): wiring `IN` to a BLINK would
+      // be a call with a parameter the block does not have
+      const library = getFB(type);
+      if (library) {
+        // the type a member declares, else the one the compiler gives it by its size: a byte is a BOOL, two bytes an INT;
+        // anything wider is not checked by the compiler, so it is not claimed here
+        const port = (member: (typeof library.members)[number]): FBDPort => ({
+          name: member.name,
+          type: typeof member.dataType === 'string' ? member.dataType.toUpperCase() : member.size === 1 ? 'BOOL' : member.size === 2 ? 'INT' : 'ANY',
+        });
+        return {
+          inputs: library.members.filter((member) => member.isInput && !member.isInternal).map(port),
+          outputs: library.members.filter((member) => member.isOutput && !member.isInternal).map(port),
+        };
+      }
       return {
         inputs: [{ name: 'IN', type: 'ANY' }],
         outputs: [{ name: 'OUT', type: 'ANY' }]
       };
+    }
   }
 }

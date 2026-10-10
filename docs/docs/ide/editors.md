@@ -85,6 +85,21 @@ changes and is built again; one whose element was deleted is forgotten. The elem
 outlined in yellow. Before a build there is nothing to stop at, so the dot is disabled. The program counters are the
 ones the runtime of the simulation and of a board take; stopping on a board has not been checked here.
 
+## What the palettes offer
+
+A palette offers only what its transpiler translates (LNG-007), and every element it offers is run in the test suite:
+placed in a program, built, loaded into the virtual machine and scanned.
+
+- **LD** offers four contacts (normally open, normally closed, rising and falling edge), six coils (normal, negated, set,
+  reset, rising and falling edge), the branch and the function blocks of the compiler's library and of the project. The
+  communication blocks `COMM_CONNECT`, `COMM_PUBLISH`, `COMM_SUBSCRIBE` and `COMM_MODBUS` are not offered: no Ladder file
+  can declare an instance of them.
+- **FBD** offers the gates, the comparisons, `ADD`, `SUB`, `MUL`, `DIV`, `MOD`, `ABS`, `MAX`, `MIN`, `LIMIT` and `SEL`,
+  the function blocks of the library and of the project with the inputs and outputs they declare, and the blocks that
+  carry a value (`constant`, `variable`, `input`, `output`). The functions of the library (`SQRT`, `SIN`, `LEN`,
+  `CONCAT`, the conversions...) are not offered yet: a diagram cannot call them, and the build refuses them by name.
+- **SFC** offers the step, the initial step and the transition.
+
 ## Compile path
 
 Visual models are validated and transpiled before canonical compilation. Shared

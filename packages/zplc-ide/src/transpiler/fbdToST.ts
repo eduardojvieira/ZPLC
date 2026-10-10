@@ -508,6 +508,17 @@ export function transpileFBDToST(model: FBDModel, blocks?: readonly ProjectBlock
 // Block classification
 // =============================================================================
 
+/**
+ * Whether a block of this type can be placed in a diagram: the transpiler translates it (LNG-007). The palette of the
+ * editor offers the blocks for which this holds, and no other.
+ */
+export function fbdPlacesBlock(type: string, blocks?: readonly ProjectBlock[]): boolean {
+  const kind = classify({ id: 'palette', type, position: { x: 0, y: 0 } }, blocks);
+  if (kind === undefined) return false;
+  // a block that is an instance is declared as a variable of its type: a name the compiler does not have as a type is no block
+  return kind === 'standard' || kind === 'comm' || kind === 'registry' ? getFB(type) !== undefined : true;
+}
+
 function classify(block: FBDBlock, blocks?: readonly ProjectBlock[]): Kind | undefined {
   const type = block.type;
   switch (type) {

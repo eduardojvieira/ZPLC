@@ -26,6 +26,7 @@ import { DataType, getFB, parseIOAddress, parseTimeLiteral, TokenType } from '@z
 import { getFunctionBlockNamesForVisualEditors } from '../catalog/blockCatalog';
 import { getDefaultPorts } from '../models/fbd';
 import { findProjectBlock, type ProjectBlock } from '../models/projectBlocks';
+import { LD_COIL_TYPES, LD_CONTACT_TYPES, LD_MODBUS_HELPERS } from '../models/ldSupport';
 import {
   ElementError, Listing, Problems, cellElement, rungElement, rungItemElement,
   type ElementDiagnostic, type SourceElementId, type SourceMapRange,
@@ -51,9 +52,9 @@ interface Writer { type: string; rung: number; element?: SourceElementId; }
 
 const IDENTIFIER = /^[A-Za-z_][A-Za-z0-9_]*$/;
 const MEMBER_REFERENCE = /^([A-Za-z_][A-Za-z0-9_]*)\.([A-Za-z_][A-Za-z0-9_]*)$/;
-const CUSTOM_MODBUS_BLOCKS = new Set(['MB_COIL', 'MB_DISCRETE_INPUT', 'MB_INPUT_REGISTER', 'MB_HOLDING_REGISTER']);
-const SUPPORTED_CONTACTS = new Set(['contact_no', 'contact_nc', 'contact_p', 'contact_n']);
-const SUPPORTED_COILS = new Set(['coil', 'coil_negated', 'coil_set', 'coil_reset', 'coil_p', 'coil_n']);
+const CUSTOM_MODBUS_BLOCKS = LD_MODBUS_HELPERS;
+const SUPPORTED_CONTACTS: ReadonlySet<string> = new Set(LD_CONTACT_TYPES);
+const SUPPORTED_COILS: ReadonlySet<string> = new Set(LD_COIL_TYPES);
 /** The output of a standard block that carries the power on to the elements after it. */
 const POWER_OUTPUT: Record<string, string> = {
   TON: 'Q', TOF: 'Q', TP: 'Q', CTU: 'Q', CTD: 'Q', CTUD: 'QU', R_TRIG: 'Q', F_TRIG: 'Q', SR: 'Q1', RS: 'Q1',
