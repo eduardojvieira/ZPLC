@@ -48,6 +48,12 @@ La comprobación de actualizaciones consulta las versiones publicadas de este pr
 
 Nivel de evidencia: host. `packages/zplc-ide/src/utils/appSettings.test.ts`, `src/store/useAppSettings.test.ts`, `src/store/autosave.test.ts`, `electron/updateCheck.test.ts` y `electron/updateCheckIpc.test.ts` cubren las preferencias, el autoguardado y la comprobación de actualizaciones (requisitos IDE-007 e IDE-010), y el recorrido 21 (las preferencias se aplican y persisten por usuario) de `bun run test:journeys` las cambia en la aplicación real y la reinicia.
 
+## Cerrar con cambios sin guardar
+
+Studio nunca descarta un archivo modificado sin preguntar. Cerrar una pestaña modificada, cerrar el proyecto, cerrar la ventana y salir de la aplicación preguntan, cada uno, si guardar, descartar o cancelar; **Cancel** (y Escape) dejan todo como estaba, y un guardado que falla mantiene el archivo abierto y modificado. Cerrar el proyecto ofrece **Save all and close**, **Discard changes and close** y **Continue editing**. Los atajos de recarga (Ctrl+R, Ctrl+Shift+R, Cmd+R) no existen en una compilación empaquetada: el menú no tiene entrada de recarga y las teclas se descartan. Un entorno de desarrollo solo recarga pasando por la misma pregunta.
+
+Nivel de evidencia: host. El recorrido 10 (cerrar con cambios sin guardar: pestaña y ventana) y el recorrido 22 (Close Project pregunta antes de cerrar) de `bun run test:journeys` manejan la aplicación real; `packages/zplc-ide/electron/appMenu.test.ts` y `closeGuardIpc.test.ts` fijan el menú y los atajos de recarga. El atajo de recarga no se puede inyectar en el proceso principal con el protocolo de DevTools que usan los recorridos, así que la pregunta de recarga está cubierta por pruebas unitarias y por la lectura del manejador registrado, no por un recorrido.
+
 ## Recuperar trabajo sin guardar
 
 Studio guarda una copia de cada archivo modificado en su directorio privado de datos de usuario un segundo después de que usted deja de escribir (y como mínimo cada pocos segundos mientras sigue escribiendo). Guardar un archivo, descartarlo, cerrarlo con **Discard**, o cerrar el proyecto o la ventana y responder **Save** o **Discard** elimina la copia, de modo que una salida normal no deja nada.

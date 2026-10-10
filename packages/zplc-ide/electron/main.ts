@@ -24,7 +24,7 @@ import { createRecoveryStore } from './recoveryStore.js';
 import { RECOVERY_CHANNEL } from './recoveryStoreProtocol.js';
 import { checkForUpdate } from './updateCheck.js';
 import { UPDATE_CHECK_CHANNEL } from './updateCheckProtocol.js';
-import { buildApplicationMenu, describeApplicationMenu } from './appMenu.js';
+import { buildApplicationMenu, describeApplicationMenu, isReloadShortcut } from './appMenu.js';
 import { createCloseGuard } from './closeGuard.js';
 import { createProjectFiles } from './projectFiles.js';
 import { record, workspaceCompileFailure } from './workspaceCompileFailure.js';
@@ -350,6 +350,14 @@ function createWindow(): void {
   // A page that cannot load must not leave an invisible app.
   webContents.once('did-fail-load', reveal);
   webContents.once('render-process-gone', reveal);
+
+  // Reload chords never reach the page or the menu: a packaged build cannot reload by keyboard, and a development host
+  // reloads only through the unsaved-work guard (IDE-005).
+  webContents.on('before-input-event', (event, input) => {
+    if (!isReloadShortcut(input)) return;
+    event.preventDefault();
+    if (!app.isPackaged) requestReload();
+  });
 
   webContents.on('render-process-gone', () => revokeRendererOwner(ownerWebContentsId));
   webContents.on('render-process-gone', () => closeGuard.release());

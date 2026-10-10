@@ -1031,4 +1031,42 @@ export const JOURNEYS: Journey[] = [
       assert(JSON.stringify(await editorOptions(again)) === JSON.stringify({ fontSize: 20, tabSize: 2 }), `The editor options were not restored: ${JSON.stringify(await editorOptions(again))}`);
     },
   },
+
+  {
+    name: '22 Close Project asks before it closes', example: 'motor_start_stop', proves: [], partly: ['IDE-005'],
+    run: async (app, { project }) => {
+      const file = join(project, 'src', 'Motor.st'); const original = disk(file);
+      const edit = async () => { await openFile(app, 'src/Motor.st'); await cursorAtEndOfLine(app, 1); await app.type(EDIT); await app.until('the typed text', async () => (await editorText(app)).includes(EDIT) || undefined); };
+      const welcome = async () => await app.until('the Welcome screen', async () => (await app.text()).includes('ZPLC Studio 2.0') && !await app.visible(toolbar) || undefined);
+      const questionTitle = () => app.eval<string | null>(`document.querySelector('[role="dialog"] h2')?.textContent ?? null`);
+      const choice = (label: string) => `[...document.querySelectorAll('[role="dialog"] button')].find((item) => item.textContent?.trim() === ${JSON.stringify(label)})`;
+      const askToClose = async () => { await app.click(tab('Explorer', 'exact')); await app.click(button('Close Project')); await app.until('the question before the project closes', async () => await questionTitle() === 'Discard unsaved changes?' || undefined); };
+
+      // Cancel keeps the project and its changes.
+      await openFolder(app, project);
+      await edit();
+      await askToClose();
+      await app.click(choice('Continue editing'), 'Continue editing');
+      await app.until('the question to close', async () => await questionTitle() === null || undefined);
+      assert(await app.visible(toolbar) && (await editorText(app)).includes(EDIT), 'Continue editing must keep the project and its changes.');
+      assert(disk(file) === original, 'Cancelling must not write the file.');
+
+      // Save all and close writes the file, then closes: the user is offered save, discard or cancel.
+      await askToClose();
+      await app.click(choice('Save all and close'), 'Save all and close');
+      await app.until('the saved file on disk', () => disk(file).includes(EDIT) || undefined);
+      await welcome();
+
+      // Discard closes without writing.
+      await openFolder(app, project);
+      const saved = disk(file);
+      await openFile(app, 'src/Motor.st');
+      await cursorAtEndOfLine(app, 1);
+      await app.type(' (* discard me *)');
+      await askToClose();
+      await app.click(choice('Discard changes and close'), 'Discard changes and close');
+      await welcome();
+      assert(disk(file) === saved, 'Discard must leave the file as it was on disk.');
+    },
+  },
 ];

@@ -48,6 +48,12 @@ The update check asks the GitHub releases of this project for the latest publish
 
 Evidence level: host. `packages/zplc-ide/src/utils/appSettings.test.ts`, `src/store/useAppSettings.test.ts`, `src/store/autosave.test.ts`, `electron/updateCheck.test.ts` and `electron/updateCheckIpc.test.ts` cover the settings, autosave and the update check (requirements IDE-007 and IDE-010), and journey 21 (preferences apply and persist per user) of `bun run test:journeys` changes them in the real application and restarts it.
 
+## Closing with unsaved changes
+
+Studio never drops a modified file without asking. Closing a modified tab, closing the project, closing the window and quitting the application each ask to save, discard or cancel; **Cancel** (and Escape) keep everything as it was, and a save that fails keeps the file open and modified. Closing the project offers **Save all and close**, **Discard changes and close** and **Continue editing**. Reload shortcuts (Ctrl+R, Ctrl+Shift+R, Cmd+R) are absent from a packaged build: the menu has no reload entry and the keys are swallowed. A development host reloads only through the same question.
+
+Evidence level: host. Journey 10 (close with unsaved changes: tab and window) and journey 22 (Close Project asks before it closes) of `bun run test:journeys` drive the real application; `packages/zplc-ide/electron/appMenu.test.ts` and `closeGuardIpc.test.ts` pin the menu and the reload chords. The reload chord itself cannot be injected into the main process through the DevTools protocol that the journeys use, so the reload prompt is covered by unit tests and by reading the registered handler, not by a journey.
+
 ## Recovering unsaved work
 
 Studio keeps a copy of every modified file in its private user-data directory a second after you stop typing (and at least every few seconds while you keep typing). Saving a file, discarding it, closing it with **Discard**, or closing the project or the window and answering **Save** or **Discard** removes the copy, so a normal exit leaves nothing behind.

@@ -28,6 +28,7 @@ import { useIDEStore } from '../store/useIDEStore';
 import { PLC_LANGUAGES, type PLCLanguage, type FileTreeNode } from '../types';
 import { Modal } from './Modal';
 import { FileNameTakenError } from '../utils/fileSystem';
+import { unsavedOutcome } from '../utils/unsavedChanges';
 import { flattenVisibleTree, resolveTreeFocus, treeNavigation } from './sidebarTreeNavigation';
 
 // =============================================================================
@@ -254,11 +255,13 @@ function DeleteModal({ isOpen, fileName, isDeleting, error, onConfirm, onCancel 
 
 interface CloseProjectModalProps {
   isOpen: boolean;
+  busy: boolean;
   onConfirm: () => void;
+  onSave: () => void;
   onCancel: () => void;
 }
 
-function CloseProjectModal({ isOpen, onConfirm, onCancel }: CloseProjectModalProps) {
+function CloseProjectModal({ isOpen, busy, onConfirm, onSave, onCancel }: CloseProjectModalProps) {
   return (
     <Modal isOpen={isOpen} onClose={onCancel} title="Discard unsaved changes?" widthClass="max-w-sm">
       <div className="p-4">
@@ -275,6 +278,15 @@ function CloseProjectModal({ isOpen, onConfirm, onCancel }: CloseProjectModalPro
           </button>
           <button
             type="button"
+            disabled={busy}
+            onClick={onSave}
+            className="px-4 py-2 text-sm rounded bg-[var(--color-accent-blue)] hover:bg-[var(--color-accent-blue)]/80 text-white disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent-blue)]"
+          >
+            {busy ? 'Saving…' : 'Save all and close'}
+          </button>
+          <button
+            type="button"
+            disabled={busy}
             onClick={onConfirm}
             className="px-4 py-2 text-sm rounded bg-[var(--color-accent-red)] hover:bg-[var(--color-accent-red)]/80 text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent-blue)]"
           >
@@ -464,6 +476,7 @@ export function Sidebar() {
   const [isDeletingFile, setIsDeletingFile] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [isCloseProjectModalOpen, setIsCloseProjectModalOpen] = useState(false);
+  const [isSavingBeforeClose, setIsSavingBeforeClose] = useState(false);
   const [focusedTree, setFocusedTree] = useState<{ id: string | null; ancestorIds: string[] }>({ id: null, ancestorIds: [] });
   const treeItemRefs = useRef(new Map<string, HTMLDivElement>());
   const visibleTree = useMemo(() => flattenVisibleTree(fileTree?.children ?? []), [fileTree]);
@@ -505,6 +518,23 @@ export function Sidebar() {
       return;
     }
     state.closeProject();
+  }, []);
+
+  // Save, discard or cancel (IDE-005): saving closes the project only when nothing is left modified.
+  const handleSaveAndCloseProject = useCallback(async () => {
+    setIsSavingBeforeClose(true);
+    try {
+      await useIDEStore.getState().saveAllFiles();
+      if (useIDEStore.getState().projectConfigDirty) await useIDEStore.getState().saveProjectConfig();
+    } catch {
+      // The project stays open with what could not be written still modified.
+    } finally {
+      setIsSavingBeforeClose(false);
+    }
+    if (unsavedOutcome('save', useIDEStore.getState().hasUnsavedChanges()) !== 'proceed') return;
+    const closed = useIDEStore.getState().closeProject();
+    setIsCloseProjectModalOpen(false);
+    if (!closed) requestAnimationFrame(() => document.getElementById('console-tab-watch')?.focus());
   }, []);
 
   const handleDiscardAndCloseProject = useCallback(() => {
@@ -711,6 +741,8 @@ export function Sidebar() {
 
       <CloseProjectModal
         isOpen={isCloseProjectModalOpen}
+        busy={isSavingBeforeClose}
+        onSave={() => { void handleSaveAndCloseProject(); }}
         onConfirm={handleDiscardAndCloseProject}
         onCancel={() => setIsCloseProjectModalOpen(false)}
       />

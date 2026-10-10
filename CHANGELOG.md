@@ -4,6 +4,11 @@ All notable changes are documented here.
 
 ## Unreleased
 
+- Closing the project with modified files offers Save all and close next to
+  Discard and Continue editing (IDE-005); it offered only discard or cancel. The
+  main process also catches Ctrl+R, Ctrl+Shift+R and Cmd+R before the page and
+  the menu: a packaged build swallows them and a development host reloads only
+  through the unsaved-work question.
 - Studio has application preferences that persist per user (IDE-007, IDE-010):
   editor font size (10 to 32 px) and tab size (2, 3, 4, 8), density (compact
   scales the Tailwind spacing of the whole window), language (the Learn lessons

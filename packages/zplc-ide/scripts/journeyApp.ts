@@ -29,7 +29,7 @@ const KEYS: Record<string, { key: string; code: string; keyCode: number }> = {
   ArrowUp: { key: 'ArrowUp', code: 'ArrowUp', keyCode: 38 }, ArrowDown: { key: 'ArrowDown', code: 'ArrowDown', keyCode: 40 }, Enter: { key: 'Enter', code: 'Enter', keyCode: 13 }, Escape: { key: 'Escape', code: 'Escape', keyCode: 27 },
   F5: { key: 'F5', code: 'F5', keyCode: 116 }, F6: { key: 'F6', code: 'F6', keyCode: 117 },
   S: { key: 's', code: 'KeyS', keyCode: 83 }, B: { key: 'b', code: 'KeyB', keyCode: 66 }, Z: { key: 'z', code: 'KeyZ', keyCode: 90 },
-  A: { key: 'a', code: 'KeyA', keyCode: 65 }, End: { key: 'End', code: 'End', keyCode: 35 }, Home: { key: 'Home', code: 'Home', keyCode: 36 },
+  A: { key: 'a', code: 'KeyA', keyCode: 65 }, R: { key: 'r', code: 'KeyR', keyCode: 82 }, End: { key: 'End', code: 'End', keyCode: 35 }, Home: { key: 'Home', code: 'Home', keyCode: 36 },
 };
 
 export interface App {
