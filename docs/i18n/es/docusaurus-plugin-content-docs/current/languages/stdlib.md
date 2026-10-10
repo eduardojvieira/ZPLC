@@ -63,7 +63,8 @@ Funciones utilitarias adicionales del mismo archivo:
 
 Ejemplos registrados hoy:
 
-- aritmética y conversión: `ABS`, `ABSF`, `NEG`, `NEGF`, `MOD`, `SQRT`, `EXPT`, `INT_TO_REAL`, `REAL_TO_INT`
+- aritmética: `ABS`, `ABSF`, `NEG`, `NEGF`, `MOD`, `SQRT`, `EXPT`, `TRUNC`, `ROUND`
+- conversión: `<ORIGEN>_TO_<DESTINO>` para cada par de tipos distintos entre `BOOL`, `SINT`, `USINT`, `BYTE`, `INT`, `UINT`, `WORD`, `DINT`, `UDINT`, `DWORD`, `REAL` y `TIME` (`INT_TO_REAL`, `REAL_TO_INT`, `UDINT_TO_DINT`...), ver [Conversiones de tipo](../runtime/stdlib.md)
 - trigonometría y logs: `SIN`, `COS`, `TAN`, `ASIN`, `ACOS`, `ATAN`, `ATAN2`, `LN`, `LOG`, `EXP`
 - helpers de selección: `MAX`, `MIN`, `LIMIT`, `SEL`, `MUX`
 - helpers bitwise: `ROL`, `ROR`, `SHL`, `SHR`, `AND_WORD`, `OR_WORD`, `XOR_WORD`, `NOT_WORD`

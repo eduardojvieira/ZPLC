@@ -66,7 +66,8 @@ Additional utility string functions in the same file include:
 
 Examples directly registered in the stdlib include:
 
-- arithmetic and conversion: `ABS`, `ABSF`, `NEG`, `NEGF`, `MOD`, `SQRT`, `EXPT`, `INT_TO_REAL`, `REAL_TO_INT`
+- arithmetic: `ABS`, `ABSF`, `NEG`, `NEGF`, `MOD`, `SQRT`, `EXPT`, `TRUNC`, `ROUND`
+- conversion: `<FROM>_TO_<TO>` for every pair of different types among `BOOL`, `SINT`, `USINT`, `BYTE`, `INT`, `UINT`, `WORD`, `DINT`, `UDINT`, `DWORD`, `REAL` and `TIME` (`INT_TO_REAL`, `REAL_TO_INT`, `UDINT_TO_DINT`...), see [Type conversions](../runtime/stdlib.md)
 - trigonometry and logs: `SIN`, `COS`, `TAN`, `ASIN`, `ACOS`, `ATAN`, `ATAN2`, `LN`, `LOG`, `EXP`
 - selection helpers: `MAX`, `MIN`, `LIMIT`, `SEL`, `MUX`
 - bitwise helpers: `ROL`, `ROR`, `SHL`, `SHR`, `AND_WORD`, `OR_WORD`, `XOR_WORD`, `NOT_WORD`

@@ -220,8 +220,9 @@
     {"kind":"conformance","ref":"conformance/cmp/cmp-016-dint-sub-wraps.expect.json","test":"CMP-016 DINT subtraction wraps in two's complement"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-016-real-nan-to-dint.expect.json","test":"CMP-016 a not-a-number REAL converts to the integer 0"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-016-real-out-of-range-to-dint.expect.json","test":"CMP-016 an out-of-range REAL saturates to the DINT limits"},
-    {"kind":"conformance","ref":"conformance/cmp/cmp-016-real-to-dint-truncates-toward-zero.expect.json","test":"CMP-016 an in-range REAL converts to the DINT truncated toward zero"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-016-real-to-dint-truncates-toward-zero.expect.json","test":"CMP-016 TRUNC followed by REAL_TO_DINT gives the integer toward zero"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-016-shift-by-the-width-or-more.expect.json","test":"CMP-016 a shift by 32 or more, or by a negative count, gives 0"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-057-real-to-integer-saturates-at-the-destination-range.expect.json","test":"CMP-016 a REAL outside the range of the destination integer type saturates to its nearest limit"},
     {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_vm_arith_edges.c","test":"Defined results for the integer and float edge cases of the VM (RT-005, CMP-016)"}
   ],
   "CMP-017": [
@@ -581,10 +582,16 @@
   ],
   "CMP-057": [
     {"kind":"conformance","ref":"conformance/cmp/cmp-057-bool-and-round-conversions.expect.json","test":"CMP-057 BOOL_TO_INT, INT_TO_BOOL and ROUND"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-057-conversions-to-bool-and-from-bool.expect.json","test":"CMP-057 a value converts to BOOL as not zero and BOOL converts to 0 or 1"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-057-dint-to-real-exists.expect.json","test":"CMP-057 DINT_TO_REAL exists"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-057-int-to-dint-exists.expect.json","test":"CMP-057 INT_TO_DINT exists"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-057-integer-conversion-functions.expect.json","test":"CMP-057 conversion functions between integer types keep an in-range value"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-057-integer-conversions-wrap-to-the-destination-width.expect.json","test":"CMP-057 conversion functions between integer types keep the low bits of a value the destination cannot hold"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-057-integer-types-convert-to-real.expect.json","test":"CMP-057 every integer and bit-string type converts to REAL by its own signedness"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-057-real-to-int-rounds.expect.json","test":"CMP-057 REAL_TO_INT rounds to the nearest integer"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-057-real-to-int-ties-go-to-even.expect.json","test":"CMP-057 REAL_TO_INT rounds an exact half to the even integer"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-057-round-half-away-from-zero-and-large-values.expect.json","test":"CMP-057 ROUND returns the nearest whole number, an exact half away from zero, and keeps large values"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-057-time-conversions.expect.json","test":"CMP-057 a TIME converts to and from its count of milliseconds"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-057-tof-elapsed-stops-at-preset.expect.json","test":"CMP-057 TOF elapsed time stops at the preset and holds it while IN stays false"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-057-ton-elapsed-stops-at-preset.expect.json","test":"CMP-057 TON elapsed time stops at the preset"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-057-ton-zero-preset-follows-the-input.expect.json","test":"CMP-057 TON with a preset of 0 follows its input in the same scan"},
@@ -592,6 +599,7 @@
     {"kind":"conformance","ref":"conformance/cmp/cmp-057-tp-new-edge-starts-a-new-pulse.expect.json","test":"CMP-057 TP ends its pulse at the preset, ignores a level that stays true, and starts a new pulse on the next rising edge"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-057-tp-not-retriggered.expect.json","test":"CMP-057 TP is not retriggered while its input stays true"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-057-tp-pulse-ignores-the-input-falling.expect.json","test":"CMP-057 TP holds Q for the preset when IN falls, and ends it at the preset"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-057-trunc-keeps-negative-and-large-values.expect.json","test":"CMP-057 TRUNC removes the fraction toward zero for negative values and leaves a REAL above 2^31 as it is"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-057-trunc-truncates.expect.json","test":"CMP-057 TRUNC truncates toward zero"}
   ],
   "CMP-058": [

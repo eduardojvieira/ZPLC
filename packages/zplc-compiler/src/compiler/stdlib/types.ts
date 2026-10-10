@@ -87,6 +87,12 @@ export interface CodeGenContext {
     stringCapacity?: (expr: Expression) => number;
     /** Call a string routine: 'strappend' [dst src start n] -> [], 'strfind' [s1 s2] -> [pos]. */
     callHelper?: (name: 'strappend' | 'strfind') => void;
+    /**
+     * Call a routine of stdlib/routines.ts by its label: it is appended to the program, with the routines
+     * it calls, the first time and emitted as `CALL label`. The arguments are on the stack, as the routine
+     * documents, and its result replaces them.
+     */
+    callRoutine?: (label: string) => void;
 }
 
 // ============================================================================

@@ -23,7 +23,8 @@
  * - Logarithmic: LN, LOG, EXP
  * - Rounding: TRUNC, ROUND
  * - Scaling: NORM_X, SCALE_X
- * - Type Conversion: INT_TO_REAL, REAL_TO_INT, BOOL_TO_INT, INT_TO_BOOL
+ * - Type Conversion: <FROM>_TO_<TO> for BOOL, SINT, USINT, BYTE, INT, UINT, WORD, DINT, UDINT, DWORD,
+ *                    REAL and TIME (conversions.ts)
  * - System: UPTIME, CYCLE_TIME, WATCHDOG_RESET
  * - Strings: LEN, CONCAT, LEFT, RIGHT, MID, FIND, INSERT, DELETE, REPLACE, STRCMP
  */
@@ -49,13 +50,13 @@ import {
 } from './bitwise.ts';
 import {
     ABS_FN, ABSF_FN, NEG_FN, NEGF_FN, MOD_FN, SQRT_FN, EXPT_FN,
-    INT_TO_REAL_FN, REAL_TO_INT_FN, BOOL_TO_INT_FN, INT_TO_BOOL_FN,
     TRUNC_FN, ROUND_FN,
     SIN_FN, COS_FN, TAN_FN,
     ASIN_FN, ACOS_FN, ATAN_FN, ATAN2_FN,
     LN_FN, LOG_FN, EXP_FN
 } from './math.ts';
 import { NORM_X_FN, SCALE_X_FN } from './process.ts';
+import { CONVERSION_FNS } from './conversions.ts';
 import {
     UPTIME_FN, CYCLE_TIME_FN, WATCHDOG_RESET_FN,
     FIFO_FB, LIFO_FB
@@ -256,11 +257,8 @@ function initRegistry(): void {
     registerFn(SQRT_FN);
     registerFn(EXPT_FN);
 
-    // Type conversion functions (NEW in v1.1)
-    registerFn(INT_TO_REAL_FN);
-    registerFn(REAL_TO_INT_FN);
-    registerFn(BOOL_TO_INT_FN);
-    registerFn(INT_TO_BOOL_FN);
+    // Type conversion functions: one for every ordered pair of different types (CMP-057)
+    CONVERSION_FNS.forEach(fn => registerFn(fn));
 
     // Rounding functions (NEW in v1.2)
     registerFn(TRUNC_FN);

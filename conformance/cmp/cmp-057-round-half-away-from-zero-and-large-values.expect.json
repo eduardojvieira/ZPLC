@@ -1,0 +1,16 @@
+{
+  "requirement": "CMP-057",
+  "title": "ROUND returns the nearest whole number, an exact half away from zero, and keeps large values",
+  "matrix": ["functions.basic-conversions"],
+  "tags": ["arch-sensitive", "float-conversion"],
+  "note": "ROUND is not an IEC 61131-3 function: ZPLC defines it as the nearest whole REAL with an exact half away from zero (2.5 gives 3.0, -2.5 gives -3.0, 0.5 gives 1.0); 0.49999997 is below half and gives 0.0, and 3.0E9 has no fraction",
+  "scans": 1,
+  "scanMs": 10,
+  "expect": [
+    {"at": "%QD0", "type": "REAL", "value": 0.0},
+    {"at": "%QD1", "type": "REAL", "value": 3.0},
+    {"at": "%QD2", "type": "REAL", "value": -3.0},
+    {"at": "%QD3", "type": "REAL", "value": 3000000000.0},
+    {"at": "%QD4", "type": "REAL", "value": 1.0}
+  ]
+}

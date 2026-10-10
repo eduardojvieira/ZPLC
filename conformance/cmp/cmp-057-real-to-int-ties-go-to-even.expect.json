@@ -1,0 +1,20 @@
+{
+  "requirement": "CMP-057",
+  "title": "REAL_TO_INT rounds an exact half to the even integer",
+  "matrix": ["functions.basic-conversions"],
+  "tags": ["arch-sensitive", "float-conversion"],
+  "note": "IEC 61131-3, data type conversion: a REAL converts to the nearest integer and an exact half goes to the even one (IEC 60559 roundTiesToEven): 0.5 -> 0, 1.5 -> 2, 2.5 -> 2, 3.5 -> 4, -0.5 -> 0, -1.5 -> -2, -2.5 -> -2; the REAL just below one half (0.49999997) is 0; 8388607.5 (the last REAL with a fraction) goes to 8388608",
+  "scans": 1,
+  "scanMs": 10,
+  "expect": [
+    {"at": "%QW0", "type": "INT", "value": 0},
+    {"at": "%QW1", "type": "INT", "value": 2},
+    {"at": "%QW2", "type": "INT", "value": 2},
+    {"at": "%QW3", "type": "INT", "value": 4},
+    {"at": "%QW4", "type": "INT", "value": 0},
+    {"at": "%QW5", "type": "INT", "value": -2},
+    {"at": "%QW6", "type": "INT", "value": -2},
+    {"at": "%QW7", "type": "INT", "value": 0},
+    {"at": "%QD4", "type": "DINT", "value": 8388608}
+  ]
+}

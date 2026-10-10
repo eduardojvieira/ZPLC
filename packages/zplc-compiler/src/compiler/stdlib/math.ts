@@ -16,7 +16,8 @@
 
 import type { FunctionDef, CodeGenContext } from './types.ts';
 import type { Expression } from '../ast.ts';
-import { UNSIGNED_TO_REAL, isFloatType, isUnsigned32 } from '../numeric.ts';
+import { isFloatType, isUnsigned32 } from '../numeric.ts';
+import { ROUNDAF_LABEL, TRUNCF_LABEL } from './routines.ts';
 
 // ============================================================================
 // ABS - Absolute Value (Integer)
@@ -312,103 +313,6 @@ export const EXPT_FN: FunctionDef = {
 };
 
 // ============================================================================
-// Type Conversion Functions
-// ============================================================================
-
-/**
- * INT_TO_REAL(IN) -> OUT
- *
- * Converts an integer to a float.
- * This is a wrapper for the I2F opcode.
- */
-export const INT_TO_REAL_FN: FunctionDef = {
-    name: 'INT_TO_REAL',
-    argCount: 1,
-    variadic: false,
-
-    generateInline(ctx: CodeGenContext, args: Expression[]): void {
-        if (args.length !== 1) {
-            ctx.fail('INT_TO_REAL requires 1 argument');
-        }
-
-        ctx.emit(`    ; INT_TO_REAL(IN)`);
-        ctx.emitExpression(args[0]);
-        if (isUnsigned32(ctx.typeOf?.(args[0]))) {
-            // 2^31 and above are positive: split into 16-bit halves, one rounding
-            for (const line of UNSIGNED_TO_REAL) ctx.emit(line);
-        } else {
-            ctx.emit(`    I2F`);
-        }
-    },
-};
-
-/**
- * REAL_TO_INT(IN) -> OUT
- *
- * Converts a float to an integer (truncates toward zero).
- * This is a wrapper for the F2I opcode.
- */
-export const REAL_TO_INT_FN: FunctionDef = {
-    name: 'REAL_TO_INT',
-    argCount: 1,
-    variadic: false,
-
-    generateInline(ctx: CodeGenContext, args: Expression[]): void {
-        if (args.length !== 1) {
-            ctx.fail('REAL_TO_INT requires 1 argument');
-        }
-
-        ctx.emit(`    ; REAL_TO_INT(IN)`);
-        ctx.emitExpression(args[0]);
-        ctx.emit(`    F2I`);
-    },
-};
-
-/**
- * BOOL_TO_INT(IN) -> OUT
- *
- * Converts a boolean to an integer (0 or 1).
- */
-export const BOOL_TO_INT_FN: FunctionDef = {
-    name: 'BOOL_TO_INT',
-    argCount: 1,
-    variadic: false,
-
-    generateInline(ctx: CodeGenContext, args: Expression[]): void {
-        if (args.length !== 1) {
-            ctx.fail('BOOL_TO_INT requires 1 argument');
-        }
-
-        ctx.emit(`    ; BOOL_TO_INT(IN)`);
-        ctx.emitExpression(args[0]);
-        ctx.emit(`    PUSH8 1`);
-        ctx.emit(`    AND`);  // Ensure 0 or 1
-    },
-};
-
-/**
- * INT_TO_BOOL(IN) -> OUT
- *
- * Converts an integer to a boolean (0 = FALSE, non-zero = TRUE).
- * This is a wrapper for the I2B opcode.
- */
-export const INT_TO_BOOL_FN: FunctionDef = {
-    name: 'INT_TO_BOOL',
-    argCount: 1,
-    variadic: false,
-
-    generateInline(ctx: CodeGenContext, args: Expression[]): void {
-        if (args.length !== 1) {
-            ctx.fail('INT_TO_BOOL requires 1 argument');
-        }
-
-        ctx.emit(`    ; INT_TO_BOOL(IN)`);
-        ctx.emitExpression(args[0]);
-        ctx.emit(`    I2B`);
-    },
-};
-
-// ============================================================================
 // IEEE 754 Constants (as 32-bit integers)
 // ============================================================================
 
@@ -446,8 +350,9 @@ const IEEE754 = {
 /**
  * TRUNC(IN) -> OUT
  *
- * Truncates a float toward zero (removes fractional part).
- * Uses F2I followed by I2F.
+ * Truncates a REAL toward zero (removes the fractional part) and keeps it a REAL. A magnitude of 2^23
+ * or more has no fractional part and is returned as it is, so the conversion never saturates.
+ * The integer result is REAL_TO_DINT(TRUNC(x)).
  *
  * Stack: [IN] -> [trunc(IN)]
  */
@@ -460,11 +365,12 @@ export const TRUNC_FN: FunctionDef = {
         if (args.length !== 1) {
             ctx.fail('TRUNC requires 1 argument');
         }
+        if (!ctx.callRoutine) ctx.fail('TRUNC needs the routine linker');
 
         ctx.emit(`    ; TRUNC(IN)`);
-        ctx.emitExpression(args[0]);
-        ctx.emit(`    F2I`);   // Convert to integer (truncates)
-        ctx.emit(`    I2F`);   // Convert back to float
+        if (ctx.emitOperand) ctx.emitOperand(args[0], 'REAL');
+        else ctx.emitExpression(args[0]);
+        ctx.callRoutine(TRUNCF_LABEL);
     },
 };
 
@@ -475,8 +381,9 @@ export const TRUNC_FN: FunctionDef = {
 /**
  * ROUND(IN) -> OUT
  *
- * Rounds a float to the nearest integer (banker's rounding).
- * Implemented as TRUNC(IN + 0.5 * SIGN(IN))
+ * Rounds a REAL to the nearest whole number and keeps it a REAL; an exact half goes away from zero
+ * (ROUND(2.5) = 3.0, ROUND(-2.5) = -3.0). It is not an IEC 61131-3 function: REAL_TO_INT and its
+ * relatives round an exact half to the even integer. A magnitude of 2^23 or more is returned as it is.
  *
  * Stack: [IN] -> [round(IN)]
  */
@@ -489,32 +396,12 @@ export const ROUND_FN: FunctionDef = {
         if (args.length !== 1) {
             ctx.fail('ROUND requires 1 argument');
         }
-
-        const negLabel = ctx.newLabel('round_neg');
-        const endLabel = ctx.newLabel('round_end');
+        if (!ctx.callRoutine) ctx.fail('ROUND needs the routine linker');
 
         ctx.emit(`    ; ROUND(IN)`);
-        ctx.emitExpression(args[0]);   // [IN]
-        ctx.emit(`    DUP`);            // [IN, IN]
-        ctx.emit(`    PUSH32 ${IEEE754.ZERO}`);  // [IN, IN, 0.0]
-        ctx.emit(`    LT`);             // [IN, IN<0]
-        ctx.emit(`    JNZ ${negLabel}`);
-
-        // Positive: add 0.5
-        ctx.emit(`    PUSH32 ${IEEE754.HALF}`);  // [IN, 0.5]
-        ctx.emit(`    ADDF`);           // [IN + 0.5]
-        ctx.emit(`    F2I`);
-        ctx.emit(`    I2F`);
-        ctx.emit(`    JMP ${endLabel}`);
-
-        // Negative: subtract 0.5
-        ctx.emit(`${negLabel}:`);
-        ctx.emit(`    PUSH32 ${IEEE754.HALF}`);  // [IN, 0.5]
-        ctx.emit(`    SUBF`);           // [IN - 0.5]
-        ctx.emit(`    F2I`);
-        ctx.emit(`    I2F`);
-
-        ctx.emit(`${endLabel}:`);
+        if (ctx.emitOperand) ctx.emitOperand(args[0], 'REAL');
+        else ctx.emitExpression(args[0]);
+        ctx.callRoutine(ROUNDAF_LABEL);
     },
 };
 

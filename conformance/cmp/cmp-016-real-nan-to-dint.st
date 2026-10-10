@@ -7,5 +7,5 @@ VAR
 END_VAR
   inf := big * big;
   nan := inf - inf;
-  q := REAL_TO_INT(nan);
+  q := REAL_TO_DINT(nan);
 END_PROGRAM

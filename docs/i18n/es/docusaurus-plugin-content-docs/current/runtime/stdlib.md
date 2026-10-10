@@ -213,9 +213,21 @@ En `MID`, `DELETE` y `REPLACE` la posición va antes de la cantidad. IEC 61131-3
 
 ## 9. Conversiones de Tipos
 
-- **REAL_TO_INT(IN)** / **INT_TO_REAL(IN)**
-- **BOOL_TO_INT(IN)** / **INT_TO_BOOL(IN)**
-- **TIME_TO_DINT(IN)** / **DINT_TO_TIME(IN)**
+Las funciones de conversión mueven valores entre tipos. Existe una función `<ORIGEN>_TO_<DESTINO>` para cada par ordenado de tipos distintos entre `BOOL`, `SINT`, `USINT`, `BYTE`, `INT`, `UINT`, `WORD`, `DINT`, `UDINT`, `DWORD`, `REAL` y `TIME`: `INT_TO_DINT`, `DINT_TO_REAL`, `SINT_TO_INT`, `REAL_TO_USINT`, `TIME_TO_DINT`, etc. (132 funciones). Los tipos de 64 bits y `DATE`, `TOD` y `DT` todavía no tienen funciones de conversión.
+
+| Conversión | Resultado |
+|---|---|
+| Entero a un entero más ancho o del mismo ancho | El mismo valor. |
+| Entero a un entero más angosto, o al otro signo | Los bits bajos del valor en el ancho del destino (módulo, complemento a dos): `INT_TO_SINT(300)` es 44, `INT_TO_UINT(-1)` es 65535, `DINT_TO_UDINT(-1)` es 4294967295. |
+| Entero o `TIME` a `BOOL` | FALSE para 0, TRUE para cualquier otro valor. |
+| `BOOL` a un número | 0 o 1. |
+| Entero a `REAL` | El `REAL` más cercano; un valor de 32 bits mayor que 2^24 puede perder sus bits más bajos. |
+| `REAL` a un entero | El entero más cercano; una mitad exacta va al entero par (`REAL_TO_INT(2.5)` es 2, `REAL_TO_INT(3.5)` es 4, `REAL_TO_INT(-2.5)` es -2). Un valor fuera del rango del destino da su límite más cercano (`REAL_TO_INT(40000.0)` es 32767, `REAL_TO_USINT(-5.0)` es 0, el infinito da el límite de su signo) y un NaN da 0. |
+| `REAL` a `BOOL` | FALSE para 0.0 y -0.0, TRUE para cualquier otro valor. |
+| `TIME` | Su cantidad de milisegundos como entero sin signo de 32 bits: `TIME_TO_DINT(T#2s)` es 2000. |
+
+- **TRUNC(IN)**: Quita la parte fraccionaria de un `REAL` hacia cero y devuelve un `REAL` (`TRUNC(-3.7)` es -3.0). Una magnitud de 2^23 o más no tiene fracción y se devuelve igual. Para el entero, usá `REAL_TO_DINT(TRUNC(x))`.
+- **ROUND(IN)**: No es una función IEC. El número entero más cercano como `REAL`, una mitad exacta se aleja de cero (`ROUND(2.5)` es 3.0, `ROUND(-2.5)` es -3.0).
 
 ---
 

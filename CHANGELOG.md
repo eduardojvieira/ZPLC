@@ -54,6 +54,14 @@ All notable changes are documented here.
 - `TP` starts a pulse only on a rising edge of `IN` and is not retriggered by a
   level that stays true after the pulse; `TON`, `TOF` and `TP` hold their
   elapsed time at the preset and a `TON` with a preset of 0 follows its input.
+- A conversion function `<FROM>_TO_<TO>` exists for every pair of different types
+  among `BOOL`, `SINT`, `USINT`, `BYTE`, `INT`, `UINT`, `WORD`, `DINT`, `UDINT`,
+  `DWORD`, `REAL` and `TIME` (it was an unknown function for all but four).
+  `REAL_TO_INT` and its relatives now round to the nearest integer, an exact
+  half to the even one, and saturate at the limits of the destination type
+  (they truncated and wrapped); a NaN converts to 0. `REAL_TO_INT(x)` no longer
+  yields a 32-bit value: use `REAL_TO_DINT`. `TRUNC` and `ROUND` keep a `REAL`
+  of 2^23 or more as it is instead of clamping it to the `DINT` range.
 
 ## 2.0.0-rc.3 - 2026-09-01
 

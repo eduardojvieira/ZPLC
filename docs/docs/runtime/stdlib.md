@@ -227,11 +227,21 @@ The position comes before the count in `MID`, `DELETE` and `REPLACE`. IEC 61131-
 
 ## 9. Type Conversions
 
-Use type conversion functions to safely move payloads between memory classes.
+Use type conversion functions to move values between types. A function `<FROM>_TO_<TO>` exists for every ordered pair of different types among `BOOL`, `SINT`, `USINT`, `BYTE`, `INT`, `UINT`, `WORD`, `DINT`, `UDINT`, `DWORD`, `REAL` and `TIME`: `INT_TO_DINT`, `DINT_TO_REAL`, `SINT_TO_INT`, `REAL_TO_USINT`, `TIME_TO_DINT`, and so on (132 functions). The 64-bit types and `DATE`, `TOD` and `DT` have no conversion functions yet.
 
-- **REAL_TO_INT(IN)** / **INT_TO_REAL(IN)**: Input INT or REAL, outputs corresponding conversion.
-- **BOOL_TO_INT(IN)** / **INT_TO_BOOL(IN)**: TRUE becomes 1; FALSE becomes 0.
-- **TIME_TO_DINT(IN)** / **DINT_TO_TIME(IN)**: Conversion between milliseconds integer and IEC TIME definitions.
+| Conversion | Result |
+|---|---|
+| Integer to a wider integer or one of the same width | The same value. |
+| Integer to a narrower integer, or to the other signedness | The low bits of the value in the width of the destination (two's complement wrap): `INT_TO_SINT(300)` is 44, `INT_TO_UINT(-1)` is 65535, `DINT_TO_UDINT(-1)` is 4294967295. |
+| Integer or `TIME` to `BOOL` | FALSE for 0, TRUE for any other value. |
+| `BOOL` to a number | 0 or 1. |
+| Integer to `REAL` | The nearest `REAL`; a 32-bit value above 2^24 may lose its lowest bits. |
+| `REAL` to an integer | The nearest integer, an exact half to the even integer (`REAL_TO_INT(2.5)` is 2, `REAL_TO_INT(3.5)` is 4, `REAL_TO_INT(-2.5)` is -2). A value outside the range of the destination gives its nearest limit (`REAL_TO_INT(40000.0)` is 32767, `REAL_TO_USINT(-5.0)` is 0, infinity gives the limit of its sign) and a NaN gives 0. |
+| `REAL` to `BOOL` | FALSE for 0.0 and -0.0, TRUE for any other value. |
+| `TIME` | Its count of milliseconds as an unsigned 32-bit integer: `TIME_TO_DINT(T#2s)` is 2000. |
+
+- **TRUNC(IN)**: Removes the fractional part of a `REAL` toward zero and returns a `REAL` (`TRUNC(-3.7)` is -3.0). A magnitude of 2^23 or more has no fraction and is returned as it is. For the integer, use `REAL_TO_DINT(TRUNC(x))`.
+- **ROUND(IN)**: Not an IEC function. The nearest whole number as a `REAL`, an exact half away from zero (`ROUND(2.5)` is 3.0, `ROUND(-2.5)` is -3.0).
 
 ---
 

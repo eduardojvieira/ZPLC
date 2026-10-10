@@ -102,6 +102,8 @@ import {
     type HelperName,
 } from './numeric.ts';
 import { POWF_HELPER, POWF_LABEL } from './power.ts';
+import { getRoutine } from './stdlib/routines.ts';
+import { conversionResultType } from './stdlib/conversions.ts';
 
 // ============================================================================
 // Memory Layout Constants
@@ -2730,18 +2732,16 @@ function functionResultType(state: CodeGenState, expr: FunctionCall): string {
             return args.length > 0 ? staticType(state, args[0]) : UNKNOWN_TYPE;
         case 'ABSF': case 'NEGF': case 'SQRT': case 'SIN': case 'COS': case 'TAN': case 'LN': case 'LOG':
         case 'EXP': case 'ASIN': case 'ACOS': case 'ATAN': case 'ATAN2': case 'TRUNC': case 'ROUND':
-        case 'INT_TO_REAL':
             return 'REAL';
-        case 'REAL_TO_INT': case 'BOOL_TO_INT':
-            return 'INT';
-        case 'INT_TO_BOOL': case 'NAND': case 'NOR':
+        case 'NAND': case 'NOR':
             return 'BOOL';
         case 'AND_WORD': case 'OR_WORD': case 'XOR_WORD': case 'NOT_WORD':
             return 'WORD';
         case 'AND_DWORD': case 'OR_DWORD': case 'XOR_DWORD': case 'NOT_DWORD':
             return 'DWORD';
         default:
-            return UNKNOWN_TYPE;
+            // <FROM>_TO_<TO> (CMP-057)
+            return conversionResultType(expr.name) ?? UNKNOWN_TYPE;
     }
 }
 
@@ -2802,6 +2802,22 @@ function emitIntToReal(state: CodeGenState, fromType: string): void {
 /** Link a helper routine into the program and call it. */
 function callHelper(state: CodeGenState, helper: HelperName | 'powf', label: string): void {
     state.helpers.add(helper);
+    emit(state, `    CALL ${label}`);
+}
+
+/**
+ * Call a routine of the standard library (stdlib/routines.ts): it is appended to the program with the
+ * routines it calls the first time, in the order they were first needed.
+ */
+function linkRoutine(state: CodeGenState, label: string): void {
+    const link = (name: string): void => {
+        if (state.cellHelpers.has(name)) return;
+        const routine = getRoutine(name);
+        if (!routine) throw new Error(`stdlib routine ${name} is not registered`);
+        state.cellHelpers.set(name, routine.lines);
+        routine.needs.forEach(link);
+    };
+    link(label);
     emit(state, `    CALL ${label}`);
 }
 
@@ -3062,6 +3078,7 @@ function makeCodeGenContext(
         stringTemp: (capacity: number) => acquireStringBuffer(state, capacity),
         stringCapacity: (e: Expression) => stringCapacityOf(state, e),
         callHelper: (name) => callStringHelper(state, name),
+        callRoutine: (label) => linkRoutine(state, label),
     };
 }
 
