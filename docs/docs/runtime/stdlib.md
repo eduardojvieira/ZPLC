@@ -48,38 +48,57 @@ Generates a pulse of fixed duration regardless of how long the input stays high.
 
 ## 2. Counters
 
+`CTU`, `CTD` and `CTUD` keep their count in `CV` and take their preset from `PV`. Both are `INT`: 16 bits, from -32768 to 32767. The rules in this list apply to all three blocks, and each block below adds its own.
+
+- **Counting is edge-triggered.** A count happens when the input is TRUE in this call and was FALSE in the previous call of the same instance. An input that stays TRUE counts once, and an input that is already TRUE in the first call counts once. The edge is seen between two calls, not between two scans, so a call that an `IF` skips does not see an edge that rose and fell in between.
+- **Reset and load are levels and come first.** While `R` (`CTU`, `CTUD`) or `LD` (`CTD`, `CTUD`) is TRUE, nothing is counted. In `CTUD`, `R` wins over `LD`.
+- **The edge detector keeps running during reset and load.** A pulse that rises while `R` or `LD` is TRUE is not counted when `R` or `LD` is released. A pulse that rises on the call in which `R` or `LD` is released is counted, provided the input was FALSE in the call before.
+- **The outputs are recomputed on every call** from `CV` and `PV`, after the reset, load or count of that call.
+
 ### CTU (Count Up)
-Increments a value on every rising edge of the input.
+Adds 1 on every rising edge of `CU`.
 - **Inputs:**
-  - `CU` (BOOL): Count up trigger (rising edge).
-  - `R` (BOOL): Reset input; when TRUE, `CV` resets to 0.
-  - `PV` (INT): Preset Value (target).
-- **Outputs:**
-  - `Q` (BOOL): TRUE if `CV >= PV`.
-  - `CV` (INT): Current counter value.
-
-### CTD (Count Down)
-Decrements a value on every rising edge of the input.
-- **Inputs:**
-  - `CD` (BOOL): Count down trigger (rising edge).
-  - `LD` (BOOL): Load input; when TRUE, `CV` is set to `PV`.
-  - `PV` (INT): Preset Value (initial value).
-- **Outputs:**
-  - `Q` (BOOL): TRUE if `CV <= 0`.
-  - `CV` (INT): Current counter value.
-
-### CTUD (Count Up/Down)
-Combines the features of CTU and CTD.
-- **Inputs:**
-  - `CU` (BOOL): Count up trigger.
-  - `CD` (BOOL): Count down trigger.
-  - `R` (BOOL): Reset to 0.
-  - `LD` (BOOL): Load `PV` to `CV`.
+  - `CU` (BOOL): Count-up input.
+  - `R` (BOOL): Reset; while TRUE, `CV` is 0.
   - `PV` (INT): Preset value.
 - **Outputs:**
-  - `QU` (BOOL): TRUE if `CV >= PV`.
-  - `QD` (BOOL): TRUE if `CV <= 0`.
-  - `CV` (INT): Current counter value.
+  - `Q` (BOOL): TRUE when `CV >= PV`.
+  - `CV` (INT): Current value. It stops at 32767: an edge there is not counted, and `CV` does not wrap to -32768.
+
+### CTD (Count Down)
+Subtracts 1 on every rising edge of `CD`.
+- **Inputs:**
+  - `CD` (BOOL): Count-down input.
+  - `LD` (BOOL): Load; while TRUE, `CV` is `PV`.
+  - `PV` (INT): Preset value.
+- **Outputs:**
+  - `Q` (BOOL): TRUE when `CV <= 0`. A new instance starts with `CV` at 0, so `Q` is TRUE until the first load.
+  - `CV` (INT): Current value. It stops at 0: an edge there is not counted.
+
+### CTUD (Count Up/Down)
+Adds 1 on a rising edge of `CU` and subtracts 1 on a rising edge of `CD`.
+- **Inputs:**
+  - `CU` (BOOL): Count-up input.
+  - `CD` (BOOL): Count-down input.
+  - `R` (BOOL): Reset; while TRUE, `CV` is 0.
+  - `LD` (BOOL): Load; while TRUE and `R` is FALSE, `CV` is `PV`.
+  - `PV` (INT): Preset value.
+- **Outputs:**
+  - `QU` (BOOL): TRUE when `CV >= PV`.
+  - `QD` (BOOL): TRUE when `CV <= 0`.
+  - `CV` (INT): Current value. It stops at 32767 as `CTU` does. A rising edge of `CU` and one of `CD` in the same call cancel each other.
+
+### Counting below zero and negative presets (open requirement)
+
+IEC 61131-3 lets a counter go down to -32768 and compares signed values. ZPLC does not follow it there yet. Today:
+
+- `CTD` stops at 0, as listed above.
+- `CTUD` has no lower limit: `CV` goes on to -1, -2 and so on, but `QU` and `QD` compare `CV` and `PV` as unsigned 16-bit numbers. With a negative `CV`, `QU` is TRUE and `QD` is FALSE, where IEC 61131-3 gives `QU` FALSE and `QD` TRUE.
+- A negative `PV` is read as 65536 plus `PV`. A `CTU` with `PV := -1` never sets `Q`, and a `CTD` that loads a negative `PV` goes on counting down below zero with `Q` FALSE.
+
+This is requirement CMP-011 (comparison on `INT` with negative values) and, for the boundary values of the standard blocks, CMP-058. Use a preset of 0 or more, and do not rely on `QU` or `QD` below zero.
+
+Evidence level: host. The cases `cmp-058-ctu-*`, `cmp-058-ctd-*` and `cmp-058-ctud-*` under `conformance/cmp/` run on the native runtime, and `packages/zplc-compiler/src/compiler/stdlib/counters.test.ts` replays the generated code scan by scan, including the stop of `CTD` at 0. The behaviour below zero and with a negative preset was observed on the native runtime and is recorded in the comments of `packages/zplc-compiler/src/compiler/stdlib/counters.ts`; no conformance case pins it yet.
 
 ---
 

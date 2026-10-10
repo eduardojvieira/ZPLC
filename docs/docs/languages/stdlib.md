@@ -34,6 +34,16 @@ Examples:
 - timers: `TON`, `TOF`, `TP`
 - counters: `CTU`, `CTD`, `CTUD`
 
+The counters count rising edges and keep `CV` and `PV` as `INT`. What each block does today:
+
+| Block | Count | Priority | `CV` limit | Outputs |
+|---|---|---|---|---|
+| `CTU` | +1 on a rising edge of `CU` | `R` sets `CV` to 0 | stops at 32767 | `Q` is `CV >= PV` |
+| `CTD` | -1 on a rising edge of `CD` | `LD` sets `CV` to `PV` | stops at 0 | `Q` is `CV <= 0` |
+| `CTUD` | +1 on `CU`, -1 on `CD`; both edges in one call cancel | `R`, then `LD`, then the edges | stops at 32767 | `QU` is `CV >= PV`, `QD` is `CV <= 0` |
+
+The edge detector runs on every call, also while `R` or `LD` is TRUE. Counting below zero and negative presets do not follow IEC 61131-3 yet (requirement CMP-011). The full rules and the evidence are in [section 2 of the runtime reference](../runtime/stdlib.md#2-counters).
+
 ## String functions
 
 The current string surface in `stdlib/strings.ts` includes:

@@ -51,6 +51,13 @@ All notable changes are documented here.
   position comes before the count in `MID`, `DELETE` and `REPLACE` (IEC 61131-3
   writes the length first); `WSTRING` supports declaration, initial values,
   assignment and `LEN`.
+- The counters `CTU`, `CTD` and `CTUD` keep their edge detector running while
+  Reset or Load is TRUE, so a pulse that rises during Reset or Load is no longer
+  counted when it is released; in `CTUD`, Reset beats Load and both beat the count
+  edges, an up edge and a down edge in one scan cancel, and `CV` stops at 32767
+  instead of wrapping to -32768 (CMP-058). Counting below zero and negative
+  presets still do not follow IEC 61131-3 (CMP-011): see the standard library
+  reference.
 
 ## 2.0.0-rc.3 - 2026-09-01
 

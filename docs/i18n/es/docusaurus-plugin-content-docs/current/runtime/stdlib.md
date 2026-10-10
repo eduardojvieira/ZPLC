@@ -11,7 +11,7 @@ tags: [reference, stdlib, iec61131-3]
 
 ZPLC documenta las funciones y bloques de la biblioteca estándar implementados por sus rutas de compilador/runtime. La disponibilidad depende del flujo de lenguaje y del perfil de capacidades del destino; ST es el frontend central.
 
-Esta página describe las funciones cubiertas hoy por la referencia. Validá el proyecto contra el flujo y perfil seleccionados.
+Esta página describe las funciones cubiertas hoy por la referencia. Valide el proyecto contra el flujo y el perfil seleccionados.
 
 ---
 
@@ -48,38 +48,57 @@ Genera un pulso de duración fija, sin importar cuánto tiempo permanezca alta l
 
 ## 2. Contadores
 
+`CTU`, `CTD` y `CTUD` guardan su cuenta en `CV` y toman el valor de preselección de `PV`. Ambos son `INT`: 16 bits, de -32768 a 32767. Las reglas de esta lista valen para los tres bloques, y cada bloque agrega las suyas más abajo.
+
+- **La cuenta es por flanco.** Se cuenta cuando la entrada es TRUE en esta llamada y era FALSE en la llamada anterior de la misma instancia. Una entrada que permanece en TRUE cuenta una sola vez, y una entrada que ya es TRUE en la primera llamada cuenta una vez. El flanco se ve entre dos llamadas, no entre dos scans, de modo que una llamada que un `IF` omite no ve un flanco que subió y bajó entre medio.
+- **Reset y load son niveles y tienen prioridad.** Mientras `R` (`CTU`, `CTUD`) o `LD` (`CTD`, `CTUD`) es TRUE, no se cuenta nada. En `CTUD`, `R` gana sobre `LD`.
+- **El detector de flancos sigue funcionando durante el reset y el load.** Un pulso que sube mientras `R` o `LD` es TRUE no se cuenta cuando `R` o `LD` se suelta. Un pulso que sube en la llamada en que `R` o `LD` se suelta sí se cuenta, siempre que la entrada fuera FALSE en la llamada anterior.
+- **Las salidas se recalculan en cada llamada** a partir de `CV` y `PV`, después del reset, el load o la cuenta de esa llamada.
+
 ### CTU (Contador Ascendente)
-Incrementa un valor con cada flanco de subida de la entrada.
+Suma 1 en cada flanco de subida de `CU`.
 - **Entradas:**
-  - `CU` (BOOL): Disparo de conteo ascendente (flanco de subida).
-  - `R` (BOOL): Entrada de Reset; cuando es TRUE, `CV` se reinicia a 0.
-  - `PV` (INT): Valor de Preselección (Preset).
+  - `CU` (BOOL): Entrada de cuenta ascendente.
+  - `R` (BOOL): Reset; mientras es TRUE, `CV` vale 0.
+  - `PV` (INT): Valor de preselección.
 - **Salidas:**
-  - `Q` (BOOL): TRUE si `CV >= PV`.
-  - `CV` (INT): Valor actual del contador.
+  - `Q` (BOOL): TRUE cuando `CV >= PV`.
+  - `CV` (INT): Valor actual. Se detiene en 32767: un flanco ahí no se cuenta y `CV` no pasa a -32768.
 
 ### CTD (Contador Descendente)
-Decrementa un valor con cada flanco de subida de la entrada.
+Resta 1 en cada flanco de subida de `CD`.
 - **Entradas:**
-  - `CD` (BOOL): Disparo de conteo descendente (flanco de subida).
-  - `LD` (BOOL): Load; cuando es TRUE, `CV` se establece en `PV`.
-  - `PV` (INT): Valor inicial.
+  - `CD` (BOOL): Entrada de cuenta descendente.
+  - `LD` (BOOL): Load; mientras es TRUE, `CV` vale `PV`.
+  - `PV` (INT): Valor de preselección.
 - **Salidas:**
-  - `Q` (BOOL): TRUE si `CV <= 0`.
-  - `CV` (INT): Valor actual del contador.
+  - `Q` (BOOL): TRUE cuando `CV <= 0`. Una instancia nueva empieza con `CV` en 0, de modo que `Q` es TRUE hasta el primer load.
+  - `CV` (INT): Valor actual. Se detiene en 0: un flanco ahí no se cuenta.
 
 ### CTUD (Contador Ascendente/Descendente)
-Combina características de CTU y CTD.
+Suma 1 en un flanco de subida de `CU` y resta 1 en un flanco de subida de `CD`.
 - **Entradas:**
-  - `CU` (BOOL): Disparo ascendente.
-  - `CD` (BOOL): Disparo descendente.
-  - `R` (BOOL): Reset a 0.
-  - `LD` (BOOL): Cargar `PV` en `CV`.
-  - `PV` (INT): Valor preestablecido.
+  - `CU` (BOOL): Entrada de cuenta ascendente.
+  - `CD` (BOOL): Entrada de cuenta descendente.
+  - `R` (BOOL): Reset; mientras es TRUE, `CV` vale 0.
+  - `LD` (BOOL): Load; mientras es TRUE y `R` es FALSE, `CV` vale `PV`.
+  - `PV` (INT): Valor de preselección.
 - **Salidas:**
-  - `QU` (BOOL): TRUE si `CV >= PV`.
-  - `QD` (BOOL): TRUE si `CV <= 0`.
-  - `CV` (INT): Valor actual del contador.
+  - `QU` (BOOL): TRUE cuando `CV >= PV`.
+  - `QD` (BOOL): TRUE cuando `CV <= 0`.
+  - `CV` (INT): Valor actual. Se detiene en 32767 igual que `CTU`. Un flanco de subida de `CU` y otro de `CD` en la misma llamada se anulan entre sí.
+
+### Cuenta por debajo de cero y presets negativos (requisito abierto)
+
+IEC 61131-3 permite que un contador baje hasta -32768 y compara valores con signo. ZPLC todavía no lo sigue ahí. Hoy:
+
+- `CTD` se detiene en 0, como se indicó arriba.
+- `CTUD` no tiene límite inferior: `CV` sigue en -1, -2 y así, pero `QU` y `QD` comparan `CV` y `PV` como números de 16 bits sin signo. Con un `CV` negativo, `QU` es TRUE y `QD` es FALSE, mientras que IEC 61131-3 da `QU` FALSE y `QD` TRUE.
+- Un `PV` negativo se lee como 65536 más `PV`. Un `CTU` con `PV := -1` nunca activa `Q`, y un `CTD` que carga un `PV` negativo sigue contando hacia abajo por debajo de cero con `Q` en FALSE.
+
+Esto es el requisito CMP-011 (comparación sobre `INT` con valores negativos) y, para los valores límite de los bloques estándar, CMP-058. Use un preset de 0 o más y no dependa de `QU` ni de `QD` por debajo de cero.
+
+Nivel de evidencia: host. Los casos `cmp-058-ctu-*`, `cmp-058-ctd-*` y `cmp-058-ctud-*` de `conformance/cmp/` se ejecutan en el runtime nativo, y `packages/zplc-compiler/src/compiler/stdlib/counters.test.ts` reproduce el código generado scan por scan, incluida la detención de `CTD` en 0. El comportamiento por debajo de cero y con un preset negativo se observó en el runtime nativo y está registrado en los comentarios de `packages/zplc-compiler/src/compiler/stdlib/counters.ts`; todavía ningún caso de conformidad lo fija.
 
 ---
 

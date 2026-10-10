@@ -31,6 +31,16 @@ Ejemplos:
 - temporizadores: `TON`, `TOF`, `TP`
 - contadores: `CTU`, `CTD`, `CTUD`
 
+Los contadores cuentan flancos de subida y mantienen `CV` y `PV` como `INT`. Lo que hace hoy cada bloque:
+
+| Bloque | Cuenta | Prioridad | Límite de `CV` | Salidas |
+|---|---|---|---|---|
+| `CTU` | +1 en un flanco de subida de `CU` | `R` pone `CV` en 0 | se detiene en 32767 | `Q` es `CV >= PV` |
+| `CTD` | -1 en un flanco de subida de `CD` | `LD` pone `CV` en `PV` | se detiene en 0 | `Q` es `CV <= 0` |
+| `CTUD` | +1 con `CU`, -1 con `CD`; dos flancos en una llamada se anulan | `R`, luego `LD`, luego los flancos | se detiene en 32767 | `QU` es `CV >= PV`, `QD` es `CV <= 0` |
+
+El detector de flancos se ejecuta en cada llamada, también mientras `R` o `LD` es TRUE. La cuenta por debajo de cero y los presets negativos todavía no siguen IEC 61131-3 (requisito CMP-011). Las reglas completas y la evidencia están en la [sección 2 de la referencia del runtime](../runtime/stdlib.md#2-contadores).
+
 ## Funciones de string
 
 La superficie actual de strings en `stdlib/strings.ts` incluye:
@@ -78,7 +88,7 @@ El repo actual registra bloques como:
 - MQTT: `MQTT_CONNECT`, `MQTT_PUBLISH`, `MQTT_SUBSCRIBE`
 - wrappers cloud: `AZURE_C2D_RECV`, `AZURE_DPS_PROV`, `AZURE_EG_PUB`, `AWS_FLEET_PROV`, `SPB_REBIRTH`
 
-Para los detalles del contrato runtime y los límites del release, seguí con:
+Para los detalles del contrato runtime y los límites del release, continúe con:
 
 - [Bloques de Función de Comunicación](../runtime/communication-function-blocks.md)
 - [Conectividad](../runtime/connectivity.md)
@@ -87,4 +97,4 @@ Para los detalles del contrato runtime y los límites del release, seguí con:
 
 Una función o un bloque integrado está disponible para sus programas solo si la stdlib del compilador lo registra.
 
-Para la semántica específica del runtime y perfil, consultá la [Biblioteca estándar del runtime](../runtime/stdlib.md).
+Para la semántica específica del runtime y perfil, consulte la [Biblioteca estándar del runtime](../runtime/stdlib.md).
