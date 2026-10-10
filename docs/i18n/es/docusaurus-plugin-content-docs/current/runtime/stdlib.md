@@ -23,8 +23,8 @@ Retrasa un flanco de subida. La salida `Q` se vuelve TRUE solo después de que `
   - `IN` (BOOL): Condición de disparo.
   - `PT` (TIME): Tiempo preestablecido (duración a esperar).
 - **Salidas:**
-  - `Q` (BOOL): High si `IN` ha sido alto continuamente durante `PT`.
-  - `ET` (TIME): Tiempo transcurrido desde que `IN` se puso en alto.
+  - `Q` (BOOL): High si `IN` ha sido alto continuamente durante `PT` (`cmp-058-ton-delays-output`).
+  - `ET` (TIME): Tiempo transcurrido desde que `IN` se puso en alto. Sigue contando mientras `IN` permanece en alto, donde IEC 61131-3 lo detiene en `PT` (ver la sección 11).
 
 ### TOF (Temporizador Off-Delay)
 Conserva un estado alto durante un tiempo después de un flanco de bajada. `Q` sigue a `IN` a TRUE inmediatamente, pero retrasa su paso a FALSE hasta que haya transcurrido `PT`.
@@ -32,7 +32,7 @@ Conserva un estado alto durante un tiempo después de un flanco de bajada. `Q` s
   - `IN` (BOOL): Condición de disparo.
   - `PT` (TIME): Tiempo preestablecido (duración a mantener en alto).
 - **Salidas:**
-  - `Q` (BOOL): Verdadero mientras `IN` sea verdadero, más el tiempo `PT` después de que `IN` se vuelva falso.
+  - `Q` (BOOL): Verdadero mientras `IN` sea verdadero, más el tiempo `PT` después de que `IN` se vuelva falso (`cmp-058-tof-holds-output`).
   - `ET` (TIME): Tiempo transcurrido desde que `IN` se puso en bajo.
 
 ### TP (Temporizador de Pulso)
@@ -41,7 +41,7 @@ Genera un pulso de duración fija, sin importar cuánto tiempo permanezca alta l
   - `IN` (BOOL): Condición de disparo (el flanco de subida inicia el pulso).
   - `PT` (TIME): Tiempo de pulso.
 - **Salidas:**
-  - `Q` (BOOL): Lanza un pulso verdadero durante el tiempo `PT` en el flanco de subida de `IN`.
+  - `Q` (BOOL): Verdadero durante `PT` después de un flanco de subida de `IN`, haga lo que haga `IN` mientras tanto (`cmp-057-tp-pulse-ignores-the-input-falling`). Mientras `IN` permanece en alto, el pulso vuelve a empezar después de `PT`, donde IEC 61131-3 da un solo pulso (ver la sección 11).
   - `ET` (TIME): Tiempo transcurrido desde que inició el pulso.
 
 ---
@@ -133,11 +133,11 @@ Nivel de evidencia: host. Los casos `cmp-058-ctu-*`, `cmp-058-ctd-*` y `cmp-058-
 ## 5. Funciones Matemáticas
 
 ### Operadores Aritméticos
-- **ADD(IN1, IN2)**: Retorna `IN1 + IN2`. Soporta ANY_NUM (INT, REAL).
-- **SUB(IN1, IN2)**: Retorna `IN1 - IN2`. Soporta ANY_NUM.
-- **MUL(IN1, IN2)**: Retorna `IN1 * IN2`. Soporta ANY_NUM.
-- **DIV(IN1, IN2)**: Retorna `IN1 / IN2`. Soporta ANY_NUM.
-- **MOD(IN1, IN2)**: Retorna el residuo entero de `IN1 / IN2`. Soporta ANY_INT.
+- **`+`, `-`, `*`, `/`**: suma, resta, multiplicación y división de los tipos numéricos. La división entera trunca hacia cero.
+- **`a MOD b`**: el residuo entero, con el signo de `a`. Es un operador: la forma `MOD(a, b)` no se analiza.
+- Las formas de función `ADD(a, b)`, `SUB`, `MUL` y `DIV` no existen; la compilación las rechaza y nombra la función (`cmp-006-operator-function-form-is-rejected`).
+
+Los anchos, el desbordamiento y el comportamiento en los límites están en los [tipos numéricos](../languages/st.md#tipos-numéricos) de Structured Text.
 
 ### Matemáticas Avanzadas
 ### ABS
@@ -150,7 +150,9 @@ Nivel de evidencia: host. Los casos `cmp-058-ctu-*`, `cmp-058-ctd-*` y `cmp-058-
 
 ### SIN / COS / TAN
 - **Entradas:** `IN` (REAL).
-- **Salidas:** (REAL) Seno, Coseno o Tangente de IN (en radianes).
+- **Salidas:** (REAL) Seno, Coseno o Tangente de IN (en radianes) (`cmp-058-trigonometric-functions`).
+
+`ASIN`, `ACOS`, `ATAN`, `ATAN2`, `LN`, `LOG` y `EXP` también están registradas. Hoy son aproximaciones y algunas se desvían más de 0,05 (ver la sección 11).
 
 ---
 
@@ -181,19 +183,17 @@ Nivel de evidencia: host. Los casos `cmp-058-ctu-*`, `cmp-058-ctd-*` y `cmp-058-
 ## 7. Funciones de Bits
 
 ### Operadores Lógicos
-- **AND(IN1, IN2)**: AND Bit a bit. Soporta ANY_BIT (BYTE, WORD, DWORD).
-- **OR(IN1, IN2)**: OR Bit a bit. 
-- **XOR(IN1, IN2)**: OR Exclusivo Bit a bit. 
-- **NOT(IN)**: Inversión.
+- **`a AND b`, `a OR b`, `a XOR b`, `NOT a`**: operadores sobre `BOOL`, `BYTE`, `WORD`, `DWORD` y `LWORD`, con todo el ancho declarado. Las formas de función `AND(a, b)`, `OR(a, b)` y `XOR(a, b)` no se analizan.
+- **AND_WORD, OR_WORD, XOR_WORD, NOT_WORD** y **AND_DWORD, OR_DWORD, XOR_DWORD, NOT_DWORD**: las mismas operaciones como funciones sobre `WORD` y `DWORD` (`cmp-014-shr-and-word-logic-functions`).
 
 ### Rotación y Desplazamiento
 ### SHL
 - **Entradas:** `IN` (ANY_BIT), `N` (INT, número de bits).
-- **Salidas:** (ANY_BIT) `IN` desplazado a la izquierda.
+- **Salidas:** (ANY_BIT) `IN` desplazado a la izquierda. Un desplazamiento de 32 o más, o con una cuenta negativa, da 0 (`cmp-016-shift-by-the-width-or-more`), y un `BYTE` o un `WORD` descarta los bits desplazados más allá de su ancho (`cmp-014-shl-byte-keeps-8-bits`).
 
 ### SHR
 - **Entradas:** `IN` (ANY_BIT), `N` (INT).
-- **Salidas:** (ANY_BIT) `IN` desplazado a la derecha.
+- **Salidas:** (ANY_BIT) `IN` desplazado a la derecha. Un desplazamiento de 32 o más, o con una cuenta negativa, da 0.
 
 ### ROL
 - **Entradas:** `IN` (ANY_BIT), `N` (INT).
@@ -230,9 +230,12 @@ En `MID`, `DELETE` y `REPLACE` la posición va antes de la cantidad. IEC 61131-3
 
 ## 9. Conversiones de Tipos
 
-- **REAL_TO_INT(IN)** / **INT_TO_REAL(IN)**
-- **BOOL_TO_INT(IN)** / **INT_TO_BOOL(IN)**
-- **TIME_TO_DINT(IN)** / **DINT_TO_TIME(IN)**
+Existen seis funciones de conversión. Cualquier otro nombre `X_TO_Y`, como `DINT_TO_REAL`, `SINT_TO_INT`, `TIME_TO_DINT` o `DINT_TO_TIME`, es un error de compilación que nombra la función (requisito CMP-057).
+
+- **INT_TO_REAL(IN)**: convierte un entero a `REAL`.
+- **REAL_TO_INT(IN)**: convierte un `REAL` a un entero. Trunca hacia cero, satura en los límites de `DINT` y da 0 para un NaN (`cmp-016-real-to-dint-truncates-toward-zero`, `cmp-016-real-out-of-range-to-dint`, `cmp-016-real-nan-to-dint`).
+- **BOOL_TO_INT(IN)** / **INT_TO_BOOL(IN)**: TRUE pasa a 1 y FALSE pasa a 0; un entero distinto de cero pasa a TRUE (`cmp-057-bool-and-round-conversions`).
+- **TRUNC(IN)** / **ROUND(IN)**: devuelven un `REAL` con la parte entera hacia cero o con el entero más cercano (`cmp-057-trunc-truncates`, `cmp-057-bool-and-round-conversions`).
 
 ---
 
@@ -240,11 +243,11 @@ En `MID`, `DELETE` y `REPLACE` la posición va antes de la cantidad. IEC 61131-3
 
 ### UPTIME
 - **Entradas:** Ninguna.
-- **Salidas:** (UDINT / TIME) Campo de uptime del runtime en milisegundos.
+- **Salidas:** (UDINT / TIME) Campo de uptime del runtime en milisegundos (`cmp-058-uptime-follows-the-clock`).
 
 ### CYCLE_TIME
 - **Entradas:** Ninguna.
-- **Salidas:** (UDINT / TIME) Último valor de ciclo informado. Su unidad, resolución, punto de actualización y relación con el tiempo físico dependen del runtime/perfil; no lo uses como garantía de timing de hardware.
+- **Salidas:** (UDINT / TIME) Último valor de ciclo informado. Su unidad, resolución, punto de actualización y relación con el tiempo físico dependen del runtime/perfil; no lo use como garantía de timing de hardware.
 
 ### WATCHDOG_RESET
 Stub de compatibilidad. Hoy compila a `NOP` y no alimenta, reinicia ni valida un watchdog de hardware o software.
@@ -252,3 +255,24 @@ Stub de compatibilidad. Hoy compila a `NOP` y no alimenta, reinicia ni valida un
 - **Salidas:** Ninguna.
 
 No debe usarse como control de seguridad.
+
+---
+
+## 11. Diferencias conocidas con IEC 61131-3
+
+Cada fila es un caso de conformidad que espera el comportamiento de IEC 61131-3 y falla hoy. Los casos figuran en `tools/ci/expected-failures.json`, y la columna Observado hoy se leyó en el runtime nativo.
+
+| Bloque o función | Observado hoy | Requisito | Caso que falla hoy |
+|---|---|---|---|
+| `TON` | `ET` sigue contando después de llegar a `PT` | CMP-057 | `cmp-057-ton-elapsed-stops-at-preset` |
+| `TP` | Mientras `IN` permanece en TRUE, el pulso vuelve a empezar después de `PT` | CMP-057 | `cmp-057-tp-not-retriggered` |
+| `REAL_TO_INT` | Trunca hacia cero; IEC 61131-3 redondea al entero más cercano | CMP-057 | `cmp-057-real-to-int-rounds` |
+| Funciones de conversión | Solo existen las seis de la sección 9 | CMP-057 | `cmp-057-integer-conversion-functions`, `cmp-057-int-to-dint-exists`, `cmp-057-dint-to-real-exists` |
+| `ASIN`, `ACOS`, `ATAN`, `ATAN2` | Aproximaciones: `ASIN(0.5)` da 0.5259 (exacto 0.5236) y `ATAN(1.0)` da 0.7238 (exacto 0.7854) | CMP-058 | `cmp-058-inverse-trigonometric-functions` |
+| `LN`, `LOG`, `EXP` | Aproximaciones: `LN(10.0)` da 2.2183 (exacto 2.3026) y `EXP(1.0)` da 2.7167 (exacto 2.7183); `LOG(1000.0)` da 1.449 donde la respuesta es 3.0 | CMP-058 | `cmp-058-logarithmic-and-exponential-functions` |
+| `BLINK` (no es un bloque IEC) | Empieza en su fase apagada, de modo que `Q` sube un `T_OFF` después de `ENABLE` | CMP-058 | `cmp-058-blink-alternates-on-and-off` |
+| `FIFO` sin `SIZE` | La VM falla; no se aplica el valor por defecto documentado de ocho elementos | CMP-025 | `cmp-025-fifo-default-size-is-eight` |
+| `EXPT` | Un programa que la llama es rechazado por el cargador; todavía no existe un caso de conformidad | CMP-058 | ninguno |
+| `CTUD` por debajo de cero, presets negativos | Ver la sección 2 | CMP-011 | ninguno |
+
+Un bloque o una función que no está en esta tabla no se sabe que difiera. Eso no equivale a tener un caso ejecutado: el requisito CMP-058 pide un caso para cada función y bloque estándar, y el repositorio todavía no los tiene todos.

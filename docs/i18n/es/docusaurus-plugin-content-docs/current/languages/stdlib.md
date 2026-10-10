@@ -73,10 +73,12 @@ Funciones utilitarias adicionales del mismo archivo:
 
 Ejemplos registrados hoy:
 
-- aritmética y conversión: `ABS`, `ABSF`, `NEG`, `NEGF`, `MOD`, `SQRT`, `EXPT`, `INT_TO_REAL`, `REAL_TO_INT`
+- aritmética y conversión: `ABS`, `ABSF`, `NEG`, `NEGF`, `SQRT`, `INT_TO_REAL`, `REAL_TO_INT`, `TRUNC`, `ROUND`
 - trigonometría y logs: `SIN`, `COS`, `TAN`, `ASIN`, `ACOS`, `ATAN`, `ATAN2`, `LN`, `LOG`, `EXP`
 - helpers de selección: `MAX`, `MIN`, `LIMIT`, `SEL`, `MUX`
 - helpers bitwise: `ROL`, `ROR`, `SHL`, `SHR`, `AND_WORD`, `OR_WORD`, `XOR_WORD`, `NOT_WORD`
+
+Hoy tres cosas del registro no se pueden usar como la lista sugiere. `MOD` y los operadores lógicos son operadores (`a MOD b`, `a AND b`), y las formas `MOD(a, b)` y `AND(a, b)` no se analizan. Un programa que llama a `EXPT` es rechazado por el cargador. Solo existen seis funciones de conversión: `INT_TO_REAL`, `REAL_TO_INT`, `BOOL_TO_INT`, `INT_TO_BOOL`, `TRUNC` y `ROUND`; cualquier otro nombre `X_TO_Y` es un error de compilación. La tabla de [diferencias conocidas](../runtime/stdlib.md#11-diferencias-conocidas-con-iec-61131-3) lista los casos que fallan hoy, con sus ids de requisito.
 
 ## Bloques de función de comunicación
 

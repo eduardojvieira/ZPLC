@@ -76,10 +76,12 @@ Additional utility string functions in the same file include:
 
 Examples directly registered in the stdlib include:
 
-- arithmetic and conversion: `ABS`, `ABSF`, `NEG`, `NEGF`, `MOD`, `SQRT`, `EXPT`, `INT_TO_REAL`, `REAL_TO_INT`
+- arithmetic and conversion: `ABS`, `ABSF`, `NEG`, `NEGF`, `SQRT`, `INT_TO_REAL`, `REAL_TO_INT`, `TRUNC`, `ROUND`
 - trigonometry and logs: `SIN`, `COS`, `TAN`, `ASIN`, `ACOS`, `ATAN`, `ATAN2`, `LN`, `LOG`, `EXP`
 - selection helpers: `MAX`, `MIN`, `LIMIT`, `SEL`, `MUX`
 - bitwise helpers: `ROL`, `ROR`, `SHL`, `SHR`, `AND_WORD`, `OR_WORD`, `XOR_WORD`, `NOT_WORD`
+
+Three things in the registry cannot be used as the list suggests today. `MOD` and the logic operators are operators (`a MOD b`, `a AND b`), and the forms `MOD(a, b)` and `AND(a, b)` do not parse. A program that calls `EXPT` is refused by the loader. Only six conversion functions exist: `INT_TO_REAL`, `REAL_TO_INT`, `BOOL_TO_INT`, `INT_TO_BOOL`, `TRUNC` and `ROUND`; any other `X_TO_Y` name is a build error. The table of [known differences](../runtime/stdlib.md#11-known-differences-from-iec-61131-3) lists the cases that fail today, with their requirement ids.
 
 ## Communication function blocks
 
