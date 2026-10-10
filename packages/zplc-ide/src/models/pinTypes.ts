@@ -1,9 +1,9 @@
 /**
  * Pin types of an FBD diagram (LNG-013): which output may feed which input, and the reason when it may not.
  *
- * The rules are the ones the compiler applies to an assignment (CMP-005): integers, bit strings and REAL form one
- * family of numbers, an integer converts to REAL and REAL to LREAL, and BOOL, TIME, DATE, TOD, DT and STRING take
- * their own type only. The compiler keeps its rules private, so the table below is the editor's one copy and
+ * The rules are the ones the compiler applies to an assignment (CMP-005): integers, bit strings and the real types form one
+ * family of numbers, an integer converts to a real type, one real type to the other (the build warns when an LREAL is
+ * narrowed to a REAL), and BOOL, TIME, DATE, TOD, DT and STRING take their own type only. The compiler keeps its rules private, so the table below is the editor's one copy and
  * `pinTypes.test.ts` compiles an assignment for every pair of elementary types and fails when the two disagree.
  */
 
@@ -16,8 +16,6 @@ const BIT_STRINGS = ['BYTE', 'WORD', 'DWORD', 'LWORD'];
 const STRINGS = ['STRING', 'WSTRING'];
 const DATES = ['DATE', 'TOD', 'DT'];
 const ALIASES: Record<string, string> = { TIME_OF_DAY: 'TOD', DATE_AND_TIME: 'DT' };
-/** Bits of a REAL type: a wider real does not go into a narrower one. */
-const REAL_BITS: Record<string, number> = { REAL: 32, LREAL: 64 };
 
 /** The generic types of IEC 61131-3 that a pin may be declared with, and the elementary types each one admits. */
 const GENERIC: Record<string, readonly string[]> = {
@@ -57,7 +55,8 @@ function describe(type: string): string {
 /** Whether a value of the elementary type `from` converts implicitly to the elementary type `to`. */
 function converts(from: string, to: string): boolean {
   if (from === to) return true;
-  if (REALS.includes(to)) return REALS.includes(from) ? REAL_BITS[from]! <= REAL_BITS[to]! : INTEGERS.includes(from);
+  // a REAL goes into an LREAL, and an LREAL into a REAL with the compiler's warning of a narrowing
+  if (REALS.includes(to)) return REALS.includes(from) || INTEGERS.includes(from);
   if (INTEGERS.includes(to)) return INTEGERS.includes(from);
   return false; // BOOL, TIME, DATE, TOD, DT and the strings take their own type only
 }
@@ -88,9 +87,6 @@ export function pinTypeProblem(source: string | undefined, target: string | unde
   const what = GENERIC[from] ? `${from} is a number` : `${from} is ${describe(from)}`;
   if (REALS.includes(from) && INTEGERS.includes(to)) {
     return `${what}, and IEC 61131-3 does not convert a REAL to an integer implicitly; convert it explicitly, for example with ${from}_TO_${to}`;
-  }
-  if (REALS.includes(from) && REALS.includes(to)) {
-    return `${what} and ${to} is narrower: a value that does not fit would lose precision; convert it explicitly with ${from}_TO_${to}`;
   }
   const into = admitted ? `${to} takes ${TAKES[to]}` : `${to} is ${describe(to)}`;
   return `${what} and ${into}: IEC 61131-3 converts implicitly only to a wider type of the same kind; convert it explicitly${admitted ? '' : `, for example with ${from}_TO_${to}`}`;

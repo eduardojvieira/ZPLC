@@ -45,7 +45,7 @@ either. The first real edit writes the whole file in the one form Studio uses: t
 
 The FBD canvas refuses a wire between pins whose types do not match, and says why in a message over the canvas
 (LNG-013). The rules are the ones the compiler applies to an assignment: integers, bit strings and `REAL` are one
-family of numbers (an integer goes into a `REAL`, a `REAL` into an `LREAL`, never the other way), and `BOOL`, `TIME`,
+family of numbers (an integer goes into a `REAL` or an `LREAL`, a `REAL` and an `LREAL` into each other, the build warning when an `LREAL` is narrowed, and a `REAL` never into an integer), and `BOOL`, `TIME`,
 `DATE`, `TOD`, `DT` and the strings take only their own type. A variable block has the type its variable is
 declared with and a constant the type it is written as (`T#2s` is a `TIME`, `0.5` a `REAL`); a pin declared `ANY` is
 not judged. So a `BOOL` output cannot feed a numeric input, a `REAL` cannot feed a `BOOL` or an integer input, and

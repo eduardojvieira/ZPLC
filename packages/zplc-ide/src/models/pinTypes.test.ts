@@ -56,7 +56,8 @@ describe('LNG-013 the reason a pin gives', () => {
     expect(pinTypeProblem('BOOL', 'INT')).toBe('BOOL is a BOOL and INT is an integer (INT): IEC 61131-3 converts implicitly only to a wider type of the same kind; convert it explicitly, for example with BOOL_TO_INT');
     expect(pinTypeProblem('REAL', 'BOOL')).toContain('REAL is a real number (REAL)');
     expect(pinTypeProblem('REAL', 'DINT')).toContain('does not convert a REAL to an integer implicitly');
-    expect(pinTypeProblem('LREAL', 'REAL')).toContain('narrower');
+    // the build accepts an LREAL where a REAL goes and warns of the narrowing, so the pin does not refuse it
+    expect(pinTypeProblem('LREAL', 'REAL')).toBeUndefined();
   });
 
   it('lets a number into a numeric pin and keeps a BOOL, a time and a string out of it', () => {
