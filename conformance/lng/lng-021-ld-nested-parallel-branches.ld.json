@@ -1,0 +1,202 @@
+{
+  "name": "Nested",
+  "variables": {
+    "local": [],
+    "inputs": [
+      {
+        "name": "A",
+        "type": "BOOL",
+        "address": "%IX0.0"
+      },
+      {
+        "name": "B",
+        "type": "BOOL",
+        "address": "%IX0.1"
+      },
+      {
+        "name": "C",
+        "type": "BOOL",
+        "address": "%IX0.2"
+      },
+      {
+        "name": "D",
+        "type": "BOOL",
+        "address": "%IX0.3"
+      },
+      {
+        "name": "E",
+        "type": "BOOL",
+        "address": "%IX0.4"
+      },
+      {
+        "name": "F",
+        "type": "BOOL",
+        "address": "%IX0.5"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "Out",
+        "type": "BOOL",
+        "address": "%QX0.0"
+      }
+    ]
+  },
+  "rungs": [
+    {
+      "id": "rung1",
+      "number": 1,
+      "gridConfig": {
+        "cols": 6,
+        "rows": 3,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "a",
+              "type": "contact_no",
+              "variable": "A",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "b",
+              "type": "contact_no",
+              "variable": "B",
+              "row": 0,
+              "col": 1
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "c",
+              "type": "contact_no",
+              "variable": "C",
+              "row": 0,
+              "col": 2
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "e",
+              "type": "contact_no",
+              "variable": "E",
+              "row": 0,
+              "col": 3
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "k",
+              "type": "coil",
+              "variable": "Out",
+              "row": 0,
+              "col": 5
+            },
+            "hasWire": true
+          }
+        ],
+        [
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": {
+              "id": "f",
+              "type": "contact_no",
+              "variable": "F",
+              "row": 1,
+              "col": 1
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          }
+        ],
+        [
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": {
+              "id": "d",
+              "type": "contact_no",
+              "variable": "D",
+              "row": 2,
+              "col": 2
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          }
+        ]
+      ],
+      "branches": [
+        {
+          "id": "p",
+          "startCol": 1,
+          "endCol": 3,
+          "rows": [
+            0,
+            1,
+            2
+          ]
+        },
+        {
+          "id": "s",
+          "startCol": 2,
+          "endCol": 2,
+          "rows": [
+            0,
+            2
+          ],
+          "parentBranchId": "p"
+        }
+      ],
+      "verticalLinks": []
+    }
+  ]
+}

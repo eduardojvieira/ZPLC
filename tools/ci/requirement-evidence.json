@@ -315,7 +315,9 @@
   ],
   "LNG-002": [
     {"kind":"conformance","ref":"conformance/lng/lng-002-fbd-unknown-block.expect.json","test":"LNG-002 an FBD block the transpiler does not know is rejected"},
-    {"kind":"unit","ref":"packages/zplc-ide/src/compiler/il/il.test.ts","test":"IL transpiler errors (LNG-002, LNG-017, LNG-018)"}
+    {"kind":"conformance","ref":"conformance/lng/lng-002-ld-unknown-element.expect.json","test":"LNG-002 an LD element the transpiler does not know is rejected by name"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/compiler/il/il.test.ts","test":"IL transpiler errors (LNG-002, LNG-017, LNG-018)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/transpiler/transpiler.test.ts","test":"LD power flow (LNG-021, LNG-022, LNG-002)"}
   ],
   "LNG-005": [
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"7 Breakpoint stops execution","partial":true}
@@ -353,11 +355,19 @@
     {"kind":"conformance","ref":"conformance/lng/lng-020-il-load-and-store.expect.json","test":"LNG-020 IL loads, combines and stores a BOOL"}
   ],
   "LNG-021": [
-    {"kind":"conformance","ref":"conformance/lng/lng-021-ld-logic-after-a-block-uses-its-output.expect.json","test":"LNG-021 LD logic placed after a block uses the output of that block"}
+    {"kind":"conformance","ref":"conformance/lng/lng-021-ld-counter-output-powers-the-coil.expect.json","test":"LNG-021 LD coil after a counter follows the counter output"},
+    {"kind":"conformance","ref":"conformance/lng/lng-021-ld-logic-after-a-block-uses-its-output.expect.json","test":"LNG-021 LD logic placed after a block uses the output of that block"},
+    {"kind":"conformance","ref":"conformance/lng/lng-021-ld-nested-parallel-branches.expect.json","test":"LNG-021 LD power flows through nested parallel branches"},
+    {"kind":"conformance","ref":"conformance/lng/lng-021-ld-parallel-coils.expect.json","test":"LNG-021 LD coils on parallel rows follow the power that reaches each"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/transpiler/transpiler.test.ts","test":"LD power flow (LNG-021, LNG-022, LNG-002)"}
   ],
   "LNG-022": [
     {"kind":"conformance","ref":"conformance/lng/lng-022-ld-contact-and-coil.expect.json","test":"LNG-022 an LD contact drives a coil"},
-    {"kind":"conformance","ref":"conformance/lng/lng-022-ld-rising-edge-contact.expect.json","test":"LNG-022 an LD rising-edge contact passes power for one scan"}
+    {"kind":"conformance","ref":"conformance/lng/lng-022-ld-edge-coils.expect.json","test":"LNG-022 LD rising- and falling-edge coils pulse for one scan"},
+    {"kind":"conformance","ref":"conformance/lng/lng-022-ld-falling-edge-contact.expect.json","test":"LNG-022 an LD falling-edge contact passes power for one scan"},
+    {"kind":"conformance","ref":"conformance/lng/lng-022-ld-negated-set-and-reset-coils.expect.json","test":"LNG-022 LD negated, set and reset coils"},
+    {"kind":"conformance","ref":"conformance/lng/lng-022-ld-rising-edge-contact.expect.json","test":"LNG-022 an LD rising-edge contact passes power for one scan"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/transpiler/transpiler.test.ts","test":"LD power flow (LNG-021, LNG-022, LNG-002)"}
   ],
   "LNG-023": [
     {"kind":"conformance","ref":"conformance/lng/lng-023-fbd-and-gate.expect.json","test":"LNG-023 an FBD AND gate combines two inputs"},

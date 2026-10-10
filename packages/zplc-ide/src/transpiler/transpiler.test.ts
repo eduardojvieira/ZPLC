@@ -966,7 +966,7 @@ describe('LD to ST Transpiler', () => {
     const invalidModels: Array<[string, unknown]> = [
       ['unknown element type', { ...base, rungs: [{ ...base.rungs[0], elements: [{ id: 'bad', type: 'NOT_A_REAL_TYPE' }] }] }],
       ['unknown contact type', { ...base, rungs: [{ ...base.rungs[0], elements: [{ id: 'bad', type: 'contact_UNKNOWN', variable: 'Start' }] }] }],
-      ['unsupported edge contact', { ...base, rungs: [{ ...base.rungs[0], elements: [{ id: 'bad', type: 'contact_p', variable: 'Start' }] }] }],
+      ['edge contact on an unknown variable', { ...base, rungs: [{ ...base.rungs[0], elements: [{ id: 'bad', type: 'contact_p', variable: 'Missing' }] }] }],
       ['contact without variable', { ...base, rungs: [{ ...base.rungs[0], elements: [{ id: 'bad', type: 'contact_no' }] }] }],
       ['coil without variable', { ...base, rungs: [{ ...base.rungs[0], elements: [{ id: 'bad', type: 'coil' }] }] }],
       ['FB without type or instance', { ...base, rungs: [{ ...base.rungs[0], elements: [{ id: 'bad', type: 'function_block' }] }] }],
@@ -1039,6 +1039,116 @@ describe('LD to ST Transpiler', () => {
       ], branches: [{ id: 'bad_branch', startCol: 0, endCol: 0, rows: [1, 2] }] }],
     };
     expect(transpileLDToST(disconnectedBranch as LDModel)).toMatchObject({ success: false, source: '' });
+  });
+});
+
+describe('LD power flow (LNG-021, LNG-022, LNG-002)', () => {
+  const model = (rungs: unknown[], extra: Record<string, unknown[]> = {}): LDModel => ({
+    name: 'Flow',
+    variables: {
+      local: [{ name: 'Timer', type: 'TON' }, { name: 'Count', type: 'CTU' }],
+      inputs: [
+        { name: 'A', type: 'BOOL', address: '%I0.0' }, { name: 'B', type: 'BOOL', address: '%I0.1' },
+        { name: 'C', type: 'BOOL', address: '%I0.2' },
+      ],
+      outputs: [{ name: 'X', type: 'BOOL' }, { name: 'Y', type: 'BOOL' }],
+      ...extra,
+    },
+    rungs,
+  } as unknown as LDModel);
+  const legacy = (id: string, number: number, elements: unknown[]) => ({ id, number, elements, connections: [] });
+  const contact = (id: string, variable: string, type = 'contact_no') => ({ id, type, variable });
+  const rejected = (input: LDModel) => {
+    const result = transpileLDToST(input);
+    expect(result.success).toBe(false);
+    expect(result.source).toBe('');
+    return result.errors;
+  };
+
+  it('takes power for a coil from the block before it, not from every contact in the rung', () => {
+    const result = transpileLDToST(model([legacy('r1', 1, [
+      contact('a', 'A'),
+      { id: 'tmr', type: 'function_block', fbType: 'TON', instance: 'Timer', parameters: { IN: 'CONNECTED', PT: 'T#1s' } },
+      contact('b', 'B'),
+      { id: 'k', type: 'coil', variable: 'X' },
+    ])]));
+    expect(result.success).toBe(true);
+    // The coil is driven by Timer.Q AND B: the timer's input is A alone
+    expect(result.source).toContain('Timer(IN := _rung1_result, PT := T#1s);');
+    expect(result.source).toMatch(/_rung1_result_2 := Timer\.Q AND B;\s+X := _rung1_result_2;/);
+    expect(assemble(compileST(result.source)).bytecode.length).toBeGreaterThan(0);
+  });
+
+  it('follows nested branches and coils on parallel rows', () => {
+    const cell = (id: string | null, variable: string | null, row: number, col: number, wire: boolean, type = 'contact_no') =>
+      ({ element: id ? { id, type, variable, row, col } : null, hasWire: wire });
+    const rung = {
+      id: 'r1', number: 1, gridConfig: { rows: 3, cols: 5, cellWidth: 80, cellHeight: 60 },
+      grid: [
+        [cell('a', 'A', 0, 0, true), cell('b', 'B', 0, 1, true), cell('c', 'C', 0, 2, true), cell(null, null, 0, 3, true), cell('x', 'X', 0, 4, true, 'coil')],
+        [cell(null, null, 1, 0, false), cell('b2', 'B', 1, 1, true, 'contact_nc'), cell(null, null, 1, 2, true), cell(null, null, 1, 3, false), cell(null, null, 1, 4, false)],
+        [cell(null, null, 2, 0, false), cell(null, null, 2, 1, false), cell('c2', 'C', 2, 2, true, 'contact_nc'), cell(null, null, 2, 3, false), cell(null, null, 2, 4, false)],
+      ],
+      branches: [
+        { id: 'outer', startCol: 1, endCol: 2, rows: [0, 1, 2] },
+        { id: 'inner', startCol: 2, endCol: 2, rows: [0, 2], parentBranchId: 'outer' },
+      ],
+    };
+    const result = transpileLDToST(model([rung]));
+    expect(result.success).toBe(true);
+    // A AND ((B AND (C OR NOT C)) OR NOT B): the inner pair joins before the outer one
+    expect(result.source).toContain('A AND ((B AND (C OR NOT C)) OR NOT B)');
+  });
+
+  it('rejects branches that nest without saying so, or that do not fit their parent', () => {
+    const row = (...cells: Array<[string | null, boolean]>) => cells.map(([id, wire], col) => ({ element: id ? { id, type: 'contact_no', variable: 'A', row: 0, col } : null, hasWire: wire }));
+    const base = {
+      id: 'r1', number: 1, gridConfig: { rows: 2, cols: 3, cellWidth: 80, cellHeight: 60 },
+      grid: [row(['a', true], [null, true], ['b', true]), [{ element: null, hasWire: false }, { element: { id: 'p', type: 'contact_no', variable: 'B', row: 1, col: 1 }, hasWire: true }, { element: null, hasWire: true }]],
+    };
+    const ok = { ...base, branches: [{ id: 'one', startCol: 1, endCol: 2, rows: [0, 1] }] };
+    expect(transpileLDToST(model([ok])).success).toBe(true);
+    const crossing = { ...base, branches: [{ id: 'one', startCol: 1, endCol: 2, rows: [0, 1] }, { id: 'two', startCol: 0, endCol: 1, rows: [0, 1] }] };
+    expect(rejected(model([crossing])).join('\n')).toContain("overlapping branches 'one' and 'two'");
+    const escaping = { ...base, branches: [{ id: 'one', startCol: 1, endCol: 1, rows: [0, 1] }, { id: 'two', startCol: 1, endCol: 2, rows: [0, 1], parentBranchId: 'one' }] };
+    expect(rejected(model([escaping])).join('\n')).toContain("branch 'two' does not fit inside its parent 'one'");
+  });
+
+  it('rejects an element that no power reaches, naming it', () => {
+    const rung = {
+      id: 'r1', number: 1, gridConfig: { rows: 2, cols: 3, cellWidth: 80, cellHeight: 60 },
+      grid: [
+        [{ element: { id: 'a', type: 'contact_no', variable: 'A', row: 0, col: 0 }, hasWire: true }, { element: { id: 'c', type: 'contact_no', variable: 'C', row: 0, col: 1 }, hasWire: true }, { element: { id: 'x', type: 'coil', variable: 'X', row: 0, col: 2 }, hasWire: true }],
+        [{ element: null, hasWire: false }, { element: { id: 'late', type: 'coil', variable: 'Y', row: 1, col: 1 }, hasWire: true }, { element: null, hasWire: false }],
+      ],
+      branches: [{ id: 'ghost', startCol: 1, endCol: 1, rows: [1, 0] }],
+    };
+    const errors = rejected(model([rung]));
+    expect(errors.join('\n')).toContain("Rung 'r1' branch 'ghost' starts on row 1, which no power reaches at column 1");
+  });
+
+  it('names the element and rung of one it does not know', () => {
+    const errors = rejected(model([legacy('r1', 1, [contact('a', 'A'), { id: 'mystery', type: 'one_shot_rising' }, { id: 'k', type: 'coil', variable: 'X' }])]));
+    expect(errors).toEqual([expect.stringContaining("element 'mystery' in rung 1")]);
+  });
+
+  it('keeps edge contacts and edge coils in R_TRIG and F_TRIG instances that compile', () => {
+    const result = transpileLDToST(model([
+      legacy('r1', 1, [contact('up', 'A', 'contact_p'), contact('down', 'B', 'contact_n'), { id: 'k', type: 'coil_p', variable: 'X' }]),
+      legacy('r2', 2, [contact('c', 'C'), { id: 'k2', type: 'coil_n', variable: 'Y' }]),
+    ]));
+    expect(result.success).toBe(true);
+    expect(result.source).toMatch(/_edge_r1_up : R_TRIG;/);
+    expect(result.source).toMatch(/_edge_r1_down : F_TRIG;/);
+    expect(result.source).toMatch(/_edge_r2_k2 : F_TRIG;/);
+    expect(assemble(compileST(result.source)).bytecode.length).toBeGreaterThan(0);
+  });
+
+  it('refuses a variable that would collide with the state the transpiler generates', () => {
+    for (const name of ['_rung1_result_2', '_edge_r1_up']) {
+      const errors = rejected(model([legacy('r1', 1, [contact('a', 'A'), { id: 'k', type: 'coil', variable: 'X' }])], { local: [{ name, type: 'BOOL' }] }));
+      expect(errors.join('\n')).toContain('collides with generated rung state');
+    }
   });
 });
 

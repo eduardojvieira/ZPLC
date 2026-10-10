@@ -1,0 +1,9 @@
+{
+  "requirement": "LNG-002",
+  "title": "an LD element the transpiler does not know is rejected by name",
+  "build": "fails",
+  "messageIncludes": [
+    "mystery",
+    "one_shot_rising"
+  ]
+}
