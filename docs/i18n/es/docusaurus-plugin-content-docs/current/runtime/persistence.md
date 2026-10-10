@@ -77,13 +77,16 @@ loader, el tamaño de los buffers de recepción y de restore, el tamaño que inf
 (`max_artifact_size`) y el tamaño que se comunica al IDE para la placa (RT-028). La compilación falla si dos slots
 de ese tamaño, en trozos, no caben en la partición de almacenamiento. Por eso el perfil Raspberry Pi Pico fija 24576
 bytes (su partición de 64 KB), el perfil STM32F746G Discovery 16384 y el perfil Arduino Opta WiFi 32768 (su RAM), y
-el perfil ESP32-S3 mantiene sus 8192; los demás perfiles mantienen 45056. El program store, el staging de carga, la
-copia residente y la VM guardan cada uno un programa en RAM, así que un perfil gasta cuatro veces su tamaño de
-código.
+el perfil ESP32-S3 mantiene sus 8192; los demás perfiles mantienen 45056. El program store (como memoria de trabajo
+de su comprobación de rollback), el buffer de staging de carga y la VM guardan cada uno un programa en RAM, así que
+un perfil gasta tres veces su tamaño de código. No hay una cuarta copia residente: el buffer de staging conserva el
+artefacto cargado, y `zplc reset` recarga el programa desde el store, que guarda el mismo (un reset cancela una
+carga en curso).
 
 Lo que se ha demostrado: un corte de energía inyectado en cada operación de un deploy y una escritura truncada en
-cada registro, en el host y en `native_sim` sobre el simulador de flash de NVS, con un artefacto del tamaño máximo
-(`test_program_store`, `program_store_nvs`). Lo que no: un corte de energía en una placa. El driver de flash, el
+cada registro, en el host (`test_program_store`), y un corte de energía en cada operación de un deploy del tamaño
+máximo sobre el simulador de flash de NVS en `native_sim` (`program_store_nvs`), restaurado en el mismo buffer que
+usó el deploy. Lo que no: un corte de energía en una placa. El driver de flash, el
 tiempo de borrado y el comportamiento de la alimentación de cada perfil necesitan el registro de hardware de ese
 perfil (HIL-010).
 

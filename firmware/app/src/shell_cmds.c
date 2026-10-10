@@ -49,6 +49,7 @@
 #include "zplc_time.h"
 #include "program_admission.h"
 #include "program_store.h"
+#include "program_boot_restore.h"
 
 /* zplc_mqtt.c has no standalone header — declare the public symbol here */
 extern void zplc_mqtt_request_backoff_reset(void);
@@ -125,7 +126,9 @@ typedef enum {
 /* Runtime state from main.c */
 extern zplc_state_t runtime_state;
 extern uint32_t cycle_count;
+#ifndef CONFIG_ZPLC_SCHEDULER
 extern uint8_t *program_buffer;
+#endif
 extern size_t program_buffer_size;
 extern volatile size_t program_expected_size;
 extern volatile size_t program_received_size;
@@ -820,9 +823,10 @@ static int cmd_sched_data(const struct shell *sh, size_t argc, char **argv) {
     if (ret < 0) {
       shell_error(sh, "ERROR: Scheduler load failed after persistence (%d)", ret);
       program_expected_size = 0;
+      program_received_size = 0U; /* nothing is loaded; a reset has nothing to reload */
       return ret;
     }
-    memcpy(program_buffer, program_staging_buffer, program_staging_received_size);
+    /* The staging buffer now holds the loaded artifact and the store holds the same program: the one copy. */
     program_received_size = program_staging_received_size;
     shell_print(sh, "OK: Program loaded (%zu bytes); use 'zplc start' to execute",
                 program_received_size);
@@ -879,7 +883,6 @@ static int sched_reset_runtime(const uint8_t *binary, size_t size) {
 static int sched_latch_ambiguous_program_publication(void) {
   int safe_result = zplc_sched_enter_safe_error();
 
-  memset(program_buffer, 0, program_buffer_size);
   memset(program_staging_buffer, 0,
          program_buffer_size + ZPLC_PROGRAM_STORE_FOOTER_SIZE);
   program_expected_size = 0U;
@@ -924,11 +927,30 @@ static int cmd_zplc_stop(const struct shell *sh, size_t argc, char **argv) {
   return 0;
 }
 
+/* Reset: the loaded program is reloaded from the program store, which is its only resident copy (RT-028). The
+ * staging buffer is the one buffer of the code size, so an upload in progress is cancelled. With no program
+ * loaded there is nothing to reload: the scheduler is stopped and its tasks cleared, as before. */
+static int sched_reset_loaded_program(void) {
+  size_t size = 0U;
+  int rc;
+
+  program_expected_size = 0U;
+  program_staging_received_size = 0U;
+  if (program_received_size == 0U) {
+    return sched_reset_runtime(NULL, 0U);
+  }
+  rc = zplc_program_reload_scheduler(program_staging_buffer,
+                                     program_buffer_size + ZPLC_PROGRAM_STORE_FOOTER_SIZE,
+                                     &size);
+  program_received_size = rc > 0 ? size : 0U;
+  return rc < 0 ? rc : 0;
+}
+
 static int cmd_zplc_reset(const struct shell *sh, size_t argc, char **argv) {
   ARG_UNUSED(argc);
   ARG_UNUSED(argv);
 
-  int rc = sched_reset_runtime(program_buffer, program_received_size);
+  int rc = sched_reset_loaded_program();
   if (rc < 0) {
     shell_error(sh, "ERROR: Scheduler reset failed (%d)", rc);
     return rc;
@@ -2606,7 +2628,7 @@ static int cmd_hil_reset(const struct shell *sh, size_t argc, char **argv) {
   hil_set_shell(sh);
 
 #ifdef CONFIG_ZPLC_SCHEDULER
-  rc = sched_reset_runtime(program_buffer, program_received_size);
+  rc = sched_reset_loaded_program();
 #else
   rc = cmd_zplc_reset(sh, 0, NULL);
 #endif

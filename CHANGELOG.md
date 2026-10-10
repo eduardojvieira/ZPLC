@@ -34,9 +34,12 @@ All notable changes are documented here.
     and the IDE advertise it. **Behaviour change:** the Raspberry Pi Pico
     profile now advertises 24576 bytes, the STM32F746G Discovery profile
     16384 bytes and the Arduino Opta WiFi profile 32768 bytes, the largest
-    sizes their storage and RAM hold with four copies of the program in RAM;
+    sizes their storage and RAM hold with three copies of the program in RAM;
     the build fails when two slots of the configured size do not fit the
-    storage partition.
+    storage partition. The firmware keeps no resident copy of the program
+    beside the upload staging buffer: `zplc reset` reloads the loaded program
+    from the program store (and cancels an upload in progress), which saves
+    one program of RAM on every board.
   - A power cut at any moment of a program deploy leaves the previous or the
     complete new program; the store logic is one implementation shared by the
     host runtime and the firmware, tested with a power cut and a torn write at

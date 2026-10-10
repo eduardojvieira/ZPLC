@@ -70,15 +70,18 @@ BUILD_ASSERT(CONFIG_SYSTEM_WORKQUEUE_PRIORITY > ZPLC_SCAN_COORDINATOR_PRIORITY,
  * ============================================================================
  */
 
-/** @brief Static backing store for shell-based bytecode upload */
-static uint8_t s_program_buf[ZPLC_PROGRAM_STORE_MAX_ARTIFACT_SIZE];
+/* Static backing store for shell-based bytecode upload. The scheduler build keeps ONE buffer of the code size:
+ * the staging buffer receives an upload, is the workspace the program store commits from and restores into, and
+ * holds the loaded artifact afterwards. The stored program is the resident copy: a reset reloads it from the store
+ * (RT-028). The single-task build keeps a resident copy of its own. */
 static uint8_t s_program_staging_buf[ZPLC_PROGRAM_STORE_MAX_ARTIFACT_SIZE + ZPLC_PROGRAM_STORE_FOOTER_SIZE];
 #ifndef CONFIG_ZPLC_SCHEDULER
+static uint8_t s_program_buf[ZPLC_PROGRAM_STORE_MAX_ARTIFACT_SIZE];
 static uint8_t s_program_workspace[ZPLC_LOADER_VERIFY_WORKSPACE_SIZE];
-#endif
 
-/** @brief Pointer to the program buffer (extern in shell_cmds.c) */
+/** @brief Pointer to the resident program buffer (extern in shell_cmds.c, single-task build) */
 uint8_t *program_buffer = s_program_buf;
+#endif
 size_t program_buffer_size = ZPLC_PROGRAM_STORE_MAX_ARTIFACT_SIZE;
 volatile size_t program_expected_size = 0;
 volatile size_t program_received_size = 0;
@@ -377,8 +380,7 @@ static int boot_runtime_scheduler(void) {
 
   /* Try to restore a previously saved program from NVS */
   restored_tasks = zplc_boot_restore_scheduler(
-      program_staging_buffer, sizeof(s_program_staging_buf), program_buffer,
-      program_buffer_size, &restored_size);
+      program_staging_buffer, sizeof(s_program_staging_buf), &restored_size);
   program_received_size = restored_size;
 
   if (restored_tasks > 0) {

@@ -52,74 +52,88 @@ static int boot_store_commit(uint8_t *workspace, size_t program_size,
 #include <zplc_scheduler.h>
 
 static int scheduler_restore_fail(uint8_t *staging, size_t staging_capacity,
-                                  uint8_t *resident, size_t resident_capacity,
-                                  size_t *resident_size, int result) {
+                                  size_t *program_size, int result, int latch) {
   if (staging != NULL)
     memset(staging, 0, staging_capacity);
-  if (resident != NULL)
-    memset(resident, 0, resident_capacity);
-  if (resident_size != NULL)
-    *resident_size = 0U;
-  (void)zplc_sched_enter_safe_error();
+  if (program_size != NULL)
+    *program_size = 0U;
+  if (latch != 0)
+    (void)zplc_sched_enter_safe_error();
   return result;
 }
 
-int zplc_boot_restore_scheduler(uint8_t *staging, size_t staging_capacity,
-                                uint8_t *resident, size_t resident_capacity,
-                                size_t *resident_size) {
+/* Restore the stored program into staging, verify it and load it into the scheduler, stopped. A failure
+ * clears staging; it latches the scheduler safe when @p latch is set (a boot that cannot trust what it found). */
+static int restore_scheduler(uint8_t *staging, size_t staging_capacity,
+                             size_t *program_size, int latch) {
   zplc_program_store_restore_t restore;
   size_t saved_size = 0U;
   int task_count;
 
-  if (staging == NULL || resident == NULL || resident_size == NULL ||
+  if (staging == NULL || program_size == NULL ||
       staging_capacity < ZPLC_PROGRAM_STORE_FOOTER_SIZE) {
-    return scheduler_restore_fail(staging, staging_capacity, resident,
-                                  resident_capacity, resident_size,
-                                  ZPLC_BOOT_RESTORE_ERROR);
+    return scheduler_restore_fail(staging, staging_capacity, program_size,
+                                  ZPLC_BOOT_RESTORE_ERROR, latch);
   }
-  *resident_size = 0U;
+  *program_size = 0U;
   memset(staging, 0, staging_capacity);
-  memset(resident, 0, resident_capacity);
   restore = boot_store_restore(staging, staging_capacity, &saved_size);
   if (restore == ZPLC_PROGRAM_STORE_EMPTY) {
     if (zplc_sched_stop() == 0)
       return ZPLC_BOOT_RESTORE_EMPTY;
-    return scheduler_restore_fail(staging, staging_capacity, resident,
-                                  resident_capacity, resident_size,
-                                  ZPLC_BOOT_RESTORE_ERROR);
+    return scheduler_restore_fail(staging, staging_capacity, program_size,
+                                  ZPLC_BOOT_RESTORE_ERROR, latch);
   }
   if (restore == ZPLC_PROGRAM_STORE_ERROR || saved_size == 0U ||
-      saved_size > resident_capacity)
-    return scheduler_restore_fail(staging, staging_capacity, resident,
-                                  resident_capacity, resident_size,
-                                  ZPLC_BOOT_RESTORE_ERROR);
+      saved_size > staging_capacity - ZPLC_PROGRAM_STORE_FOOTER_SIZE)
+    return scheduler_restore_fail(staging, staging_capacity, program_size,
+                                  ZPLC_BOOT_RESTORE_ERROR, latch);
 
   /* Validation is deliberately separate from the load commit. Both paths use
    * the canonical verifier, so untrusted persistence cannot bypass it. */
   if (zplc_sched_validate_program(staging, saved_size) != ZPLC_LOADER_OK)
-    return scheduler_restore_fail(staging, staging_capacity, resident,
-                                  resident_capacity, resident_size,
-                                  ZPLC_BOOT_RESTORE_ERROR);
+    return scheduler_restore_fail(staging, staging_capacity, program_size,
+                                  ZPLC_BOOT_RESTORE_ERROR, latch);
   if (restore == ZPLC_PROGRAM_STORE_LEGACY) {
     int commit = boot_store_commit(staging, saved_size, staging_capacity);
 
     if (commit == ZPLC_PROGRAM_STORE_COMMIT_UNKNOWN)
-      return scheduler_restore_fail(staging, staging_capacity, resident,
-                                    resident_capacity, resident_size,
-                                    ZPLC_BOOT_RESTORE_COMMIT_UNKNOWN);
+      return scheduler_restore_fail(staging, staging_capacity, program_size,
+                                    ZPLC_BOOT_RESTORE_COMMIT_UNKNOWN, latch);
     if (commit != ZPLC_PROGRAM_STORE_COMMIT_OK)
-      return scheduler_restore_fail(staging, staging_capacity, resident,
-                                    resident_capacity, resident_size,
-                                    ZPLC_BOOT_RESTORE_ERROR);
+      return scheduler_restore_fail(staging, staging_capacity, program_size,
+                                    ZPLC_BOOT_RESTORE_ERROR, latch);
   }
+  /* The commit of a legacy migration used staging as its workspace and read the artifact back into it. */
   task_count = zplc_sched_load(staging, saved_size);
   if (task_count <= 0 || zplc_sched_stop() != 0)
-    return scheduler_restore_fail(staging, staging_capacity, resident,
-                                  resident_capacity, resident_size,
-                                  ZPLC_BOOT_RESTORE_ERROR);
-  memcpy(resident, staging, saved_size);
-  *resident_size = saved_size;
+    return scheduler_restore_fail(staging, staging_capacity, program_size,
+                                  ZPLC_BOOT_RESTORE_ERROR, latch);
+  *program_size = saved_size;
   return task_count;
+}
+
+int zplc_boot_restore_scheduler(uint8_t *staging, size_t staging_capacity,
+                                size_t *program_size) {
+  return restore_scheduler(staging, staging_capacity, program_size, 1);
+}
+
+int zplc_program_reload_scheduler(uint8_t *staging, size_t staging_capacity,
+                                  size_t *program_size) {
+  int first_error = 0;
+  int rc = zplc_sched_stop();
+
+  if (rc < 0)
+    return scheduler_restore_fail(staging, staging_capacity, program_size, rc, 0);
+  for (int task = 0; task < CONFIG_ZPLC_MAX_TASKS; task++) {
+    rc = zplc_sched_unregister_task(task);
+    if (rc < 0 && rc != -2 && first_error == 0)
+      first_error = rc;
+  }
+  if (first_error != 0)
+    return scheduler_restore_fail(staging, staging_capacity, program_size,
+                                  first_error, 0);
+  return restore_scheduler(staging, staging_capacity, program_size, 0);
 }
 #endif
 

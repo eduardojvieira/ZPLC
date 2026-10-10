@@ -28,7 +28,7 @@ Inicie cada comando con `zplc`.
 - `zplc start` - Inicia el planificador.
 - `zplc stop` - Detiene el planificador.
 - `zplc status` - Muestra el estado del runtime.
-- `zplc reset` - Reinicia la máquina virtual.
+- `zplc reset` - Recarga el programa cargado desde el program store y deja el scheduler detenido. El store es la única copia residente del programa, así que una carga en curso se cancela. Sin programa cargado solo detiene el scheduler y limpia sus tareas.
 - `zplc version` - Muestra la versión.
 
 ---

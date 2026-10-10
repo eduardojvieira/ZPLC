@@ -75,12 +75,14 @@ staging and restore buffers, the size `zplc sys info` reports (`max_artifact_siz
 the board (RT-028). The build fails when two slots of that size, in chunks, do not fit the storage partition. The
 Raspberry Pi Pico profile therefore sets 24576 bytes (its 64 KB partition), the STM32F746G Discovery
 profile 16384 and the Arduino Opta WiFi profile 32768 (their RAM), and the ESP32-S3 profile keeps its 8192; the
-other profiles keep 45056. The program store, the upload staging, the resident copy and the VM each hold one
-program in RAM, so a profile spends four times its code size.
+other profiles keep 45056. The program store (scratch for its rollback check), the upload staging buffer and the VM each
+hold one program in RAM, so a profile spends three times its code size. There is no fourth, resident copy: the staging
+buffer keeps the loaded artifact, and `zplc reset` reloads the program from the store, which holds the same one
+(an upload in progress is cancelled by a reset).
 
 What has been shown: a power cut injected at every operation of a deploy and a torn write at every record, on the
-host and on `native_sim` over the NVS flash simulator, with an artifact of the largest size
-(`test_program_store`, `program_store_nvs`). What has not: a power cut on a board. The flash driver, the erase time
+host (`test_program_store`), and a power cut at every operation of a deploy of the largest size over the NVS flash
+simulator on `native_sim` (`program_store_nvs`), restored into the same buffer the deploy used. What has not: a power cut on a board. The flash driver, the erase time
 and the supply behaviour of each profile need the hardware record of that profile (HIL-010).
 
 ## Retentive Memory (`RETAIN`)

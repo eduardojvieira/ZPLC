@@ -28,7 +28,7 @@ Start every command with `zplc`.
 - `zplc start` - Starts the scheduler.
 - `zplc stop` - Stops the scheduler.
 - `zplc status` - Shows the runtime state.
-- `zplc reset` - Resets the virtual machine.
+- `zplc reset` - Reloads the loaded program from the program store and leaves the scheduler stopped. The store is the only resident copy of the program, so an upload in progress is cancelled. With no program loaded it only stops the scheduler and clears its tasks.
 - `zplc version` - Shows the version.
 
 ---
