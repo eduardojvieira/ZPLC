@@ -56,6 +56,8 @@ import { forgetRecentProject as forgetRecentOnBridge, listRecentProjects, markPr
 import { loadSession } from '../ipc/sessionBridge';
 import { planRestore, type ViewState, type WorkspaceLayout } from '../utils/sessionState';
 import { flushSession, resetViewStates } from './sessionPersistence';
+import { createFolder, deleteFolder, duplicateEntry, moveEntry, renameEntry } from './projectTreeActions';
+import { preserveExpansion } from '../project/treeOperations';
 import { DEFAULT_DEBUG_POLLING_INTERVAL_MS } from './debugDefaults';
 import { NATIVE_TRACE_LIMIT, type NativeTraceSample } from '../runtime/nativeTrace';
 import type { CanonicalWorkspaceBuildEvidence } from '../components/workspaceTestPresentation';
@@ -238,7 +240,7 @@ export interface DebugState {
 // Store Interface
 // =============================================================================
 
-interface IDEState {
+export interface IDEState {
   // Theme State
   theme: Theme;
 
@@ -323,10 +325,17 @@ interface IDEState {
 
   // Actions - Files
   openFile: (fileId: string) => Promise<void>;
-  saveFile: (fileId: string) => Promise<boolean>;
-  saveAllFiles: () => Promise<void>;
+  /** `quiet` (autosave) writes the file without the "Saved" line in Output; a failure is always reported. */
+  saveFile: (fileId: string, options?: { quiet?: boolean }) => Promise<boolean>;
+  saveAllFiles: (options?: { quiet?: boolean }) => Promise<void>;
   createFile: (name: string, language: PLCLanguage, parentPath?: string) => Promise<string>;
   deleteFile: (fileId: string, expectedProjectSession?: number) => Promise<boolean>;
+  /** The project tree operations of the Explorer (IDE-004). Each raises an Error with a message for the user when it refuses. */
+  createFolder: (parentPath: string, name: string) => Promise<void>;
+  renameEntry: (path: string, name: string) => Promise<void>;
+  moveEntry: (path: string, targetFolder: string) => Promise<void>;
+  duplicateEntry: (path: string) => Promise<string>;
+  deleteFolder: (path: string) => Promise<void>;
   setActiveFile: (fileId: string | null) => void;
   updateFileContent: (fileId: string, content: string) => void;
   closeTab: (fileId: string) => void;
@@ -1010,10 +1019,10 @@ export const useIDEStore = create<IDEState>((set, get) => ({
     const intent = ++fileTreeRefreshIntent;
 
     try {
-      const fileTree = await readDirectoryRecursive(directoryHandle);
+      const read = await readDirectoryRecursive(directoryHandle);
       const current = get();
       if (fileTreeRefreshIntent !== intent || current.projectSession !== projectSession || current.directoryHandle !== directoryHandle) return;
-      set({ fileTree });
+      set({ fileTree: preserveExpansion(read, current.fileTree) });
     } catch (err) {
       console.error('Failed to refresh file tree:', err);
     }
@@ -1046,7 +1055,7 @@ export const useIDEStore = create<IDEState>((set, get) => ({
     }
   },
 
-  saveFile: async (fileId: string) => {
+  saveFile: async (fileId: string, options = {}) => {
     const { loadedFiles } = get();
     const file = loadedFiles.get(fileId);
     const expectedProjectSession = get().projectSession;
@@ -1068,14 +1077,16 @@ export const useIDEStore = create<IDEState>((set, get) => ({
       if (latest.projectSession !== expectedProjectSession || latestFile !== file) return false;
 
       const newLoadedFiles = new Map(latest.loadedFiles);
-      newLoadedFiles.set(fileId, { ...latestFile, isModified: false });
+      newLoadedFiles.set(fileId, { ...latestFile, isModified: false, diskContent: file.content });
       set({ loadedFiles: newLoadedFiles });
 
-      get().addConsoleEntry({
-        type: 'success',
-        message: `Saved: ${file.name}`,
-        source: 'system',
-      });
+      if (!options.quiet) {
+        get().addConsoleEntry({
+          type: 'success',
+          message: `Saved: ${file.name}`,
+          source: 'system',
+        });
+      }
 
       return true;
     } catch (err) {
@@ -1091,13 +1102,13 @@ export const useIDEStore = create<IDEState>((set, get) => ({
     }
   },
 
-  saveAllFiles: async () => {
+  saveAllFiles: async (options = {}) => {
     const { loadedFiles, projectSession } = get();
     
     for (const [fileId, file] of loadedFiles) {
       if (get().projectSession !== projectSession) return;
       if (file.isModified) {
-        await get().saveFile(fileId);
+        await get().saveFile(fileId, options);
       }
     }
   },
@@ -1181,6 +1192,7 @@ export const useIDEStore = create<IDEState>((set, get) => ({
         currentTreeForCreation();
         newFile.handle = fileHandle;
         newFile.isModified = false;
+        newFile.diskContent = content;
       }
 
       let committed = false;
@@ -1273,6 +1285,12 @@ export const useIDEStore = create<IDEState>((set, get) => ({
     }));
     return true;
   },
+
+  createFolder: (parentPath, name) => createFolder({ get, set }, parentPath, name),
+  renameEntry: (path, name) => renameEntry({ get, set }, path, name),
+  moveEntry: (path, targetFolder) => moveEntry({ get, set }, path, targetFolder),
+  duplicateEntry: (path) => duplicateEntry({ get, set }, path),
+  deleteFolder: (path) => deleteFolder({ get, set }, path),
 
   setActiveFile: (fileId: string | null) => {
     const { openTabs } = get();

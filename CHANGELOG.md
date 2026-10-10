@@ -49,6 +49,82 @@ All notable changes are documented here.
   map says where); the initialization flag is the last byte of the profile's
   WORK memory, and a project of several programs initialises everything in one
   routine that the entry of each program calls.
+- CI fails when a test reads the text of a product source file or asserts on the
+  assembly the compiler emitted (VF-006): a guard (`tools/ci/test-source-guard.ts`)
+  lists every test that reads Studio, Electron, script, firmware or workflow
+  source, or matches generated assembly text outside the assembler's own tests,
+  and `tools/ci/pinned-source-offenders.json`
+  records the known ones with the requirement and the kind of replacement for
+  each. The list can only shrink. Six source-text assertions are now behaviour
+  tests (the compiler version, the store's state, the Learn lesson catalog, the VM
+  error table against the generated contract, the native program limit, and a
+  scenario that becomes a named pipe).
+- `clang-tidy` runs in CI with a configuration file, `.clang-tidy`, and warnings
+  are errors (VF-018): over the core, the POSIX HAL and the host application on
+  every push, and over the Zephyr HAL and `firmware/app` in each cross-build job
+  and with `tools/firmware-test/run.sh tidy` when a board build exists. Findings fixed:
+  an unchecked `signal()` in the host runtime now reports a handler that was not
+  installed; the pointer offsets of the loader, the VM and the program store are
+  computed in `size_t`; the unchecked results of `snprintf`, `fclose` and `fflush` in the
+  HALs are discarded on purpose; a `strcpy` that was bounded by a check before it
+  is now a `memcpy` of the same length. `-Werror` now also applies to the ZPLC
+  Zephyr library.
+- The shell and the cloud clients of the firmware application parse numbers
+  strictly (`firmware/app/src/zplc_parse.h`, tested on the host). `zplc config set
+  modbus_tcp_port 70000` is refused instead of storing 4464, and so is `wifi_security
+  256` (it stored 0, an open network), `mqtt_port abc` (it stored 0) and `12abc`; a
+  value above what the field holds, or above the last enumerator of an enumeration,
+  is an error and nothing is stored. The same holds for the breakpoint address of
+  `dbg bp add` and `dbg bp remove` (65536 was stored as 0), the offset of `mem dump`,
+  the size of `cert begin`, `dbg task` and `adc read`; a hex payload with a character
+  that is not a hex digit is refused (it was written as a zero byte); and a JSON
+  number of the AWS fleet and Azure DPS responses must be a whole integer, as must the
+  status of a DPS topic. The firmware was not built for this change.
+- A code sample in the docs whose fence says `runnable` is compiled in CI, and
+  executed when it states an expected result (VF-020). The three Structured Text
+  and Instruction List samples of the language pages are marked, in English and
+  Spanish, and the convention is on the Contributing page.
+- `smoke:studio-vertical` passes again to its end: it clicked the close button of a
+  tab that was seeded modified and expected it to close at once, which the unsaved
+  changes question (IDE-005) had stopped doing. It now answers the question with
+  Cancel, checks the tab stays, and closes the tab once nothing is unsaved; its
+  Close Project step also asks for Save all and close.
+- The project tree supports new folder, rename, move, duplicate and delete folder
+  (IDE-004), from the Explorer header, a context menu and F2. Open buffers, tabs
+  and breakpoints follow a renamed or moved entry, a task that runs a renamed
+  program follows it in `zplc.json`, and a name that the build reads as the same
+  as another program is refused. An empty folder is listed.
+- A change made outside Studio is picked up while a project is open (IDE-004): the
+  main process watches the folder behind a typed `project-files:watch` request and
+  pushes batches of relative paths on `project-files:changed`. An unmodified file
+  reloads, a deleted one closes, and a modified one asks to keep the user's
+  version or load the disk's. `zplc.json` is not watched yet.
+- Closing the project with modified files offers Save all and close next to
+  Discard and Continue editing (IDE-005); it offered only discard or cancel. The
+  main process also catches Ctrl+R, Ctrl+Shift+R and Cmd+R before the page and
+  the menu: a packaged build swallows them and a development host reloads only
+  through the unsaved-work question.
+- Studio has application preferences that persist per user (IDE-007, IDE-010):
+  editor font size (10 to 32 px) and tab size (2, 3, 4, 8), density (compact
+  scales the Tailwind spacing of the whole window), language (the Learn lessons
+  follow it), autosave (off by default; after 5, 15, 30 or 60 seconds without
+  typing, saved without a line in Output per save) and an opt-in update check
+  (`update-check:run`, one fixed GitHub releases address, no argument from the
+  renderer, answers a version and a link). They sit at the top of Project
+  Settings and on the Welcome screen. Only the theme existed before.
+- An exception while the toolbar, the editor area or the lower panel draws now
+  shows its error and a Retry button in that region only (IDE-011); before,
+  only the editor content and the lower-panel content had their own boundary,
+  so a failure in the toolbar or in a tab strip replaced the whole window. A
+  development-only probe (`DevFaultProbe`, absent from production builds) lets
+  journey 20 make each region fail in the real application.
+- Studio keeps a copy of every modified file in its user-data directory within a
+  second of the last keystroke (IDE-006), and offers each one back, with its name
+  and the time it was kept, when the project is opened after a crash. A normal exit
+  (save, discard, close with discard) leaves nothing. The store is owned by the main
+  process behind three typed channels (`recovery:write`, `recovery:list`,
+  `recovery:discard`) that name the project by the opaque folder id and a relative
+  path; a project keeps at most 64 files and about 64 MB.
 - The loader refuses a program whose calls nest deeper than the call stack of
   the VM (`ZPLC_CALL_STACK_MAX`, 32 by default, 16 on the ESP32-S3 profile)
   with `ZPLC_LOADER_ERR_STACK`, instead of accepting it and ending the scan
@@ -272,6 +348,27 @@ All notable changes are documented here.
   output never came on), ends its pulse at `PERIOD * DUTY` also when that is not
   a whole number of milliseconds (the comparison truncated 30.5 ms to 30 ms of
   difference), and a `PERIOD` of 0 is off instead of dividing by zero.
+- A task with `trigger: "event"` (or `"interrupt"`) fails the build at its
+  definition in `zplc.json`, naming the task, its `trigger` field and the
+  supported triggers; the build used to produce an artifact that only the
+  scheduler refused (RT-015).
+- The native simulation runs cyclic tasks of different intervals: each task is
+  released on its own interval from a common start, tasks released together
+  run by earlier release, then priority, then task id, and share one input
+  image per batch, and a scenario steps by the greatest common divisor of the
+  intervals. It refused such an artifact before (RT-015, CMP-051). A late
+  dispatch runs a task once and skips the releases it missed.
+- The native simulation counts deadline misses (RT-014). A task misses its
+  deadline when it ends more than its interval after the release of its batch;
+  a miss raises a warning and is counted, and `ZPLC_DEADLINE_MISS_LIMIT`
+  consecutive misses of one task (1 to 1000000, default 1, which is what the
+  Zephyr scheduler does today) latch the fault. `status.get` gains a `deadline`
+  object (`warning`, `misses`, `consecutive_misses`, `miss_limit`,
+  `last_overrun_us`) and a `fault` object (`reason`, `task_id`), and
+  `stats.overruns` and the per-task `overruns` carry the counts; a latched
+  fault is also a `runtime.error` event with the code `DEADLINE_MISS`. The
+  target scheduler does not report the warning, the last overrun or the reason
+  yet. The scheduler page lists what simulation does not match.
 
 ## 2.0.0-rc.3 - 2026-09-01
 

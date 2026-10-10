@@ -39,6 +39,9 @@ jobs:
       - name: Test CI tooling
         run: bun test ./tools/ci
 
+      - name: Test documentation tooling
+        run: bun test ./tools/docs
+
       - name: Check the requirement index and its evidence record
         run: |
           bun tools/ci/generate-requirement-index.ts --check
@@ -173,6 +176,19 @@ jobs:
           UBSAN_OPTIONS: halt_on_error=1
         run: ctest --test-dir "${{ runner.temp }}/zplc-core-sanitized-build" --output-on-failure
 
+      # VF-018: clang-tidy with the repository's .clang-tidy, every finding an error, over the core, the POSIX HAL and
+      # the host application (a CMake compile database of firmware/lib/zplc_core, nothing is built for it). The Zephyr
+      # HAL and firmware/app are analysed where a west build tree exists: tools/firmware-test/run.sh tidy.
+      - name: Install clang-tidy
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes --no-install-recommends clang-tidy
+
+      - name: Static analysis (clang-tidy, warnings are errors)
+        run: |
+          python3 tools/ci/test_run_clang_tidy.py
+          python3 tools/ci/run_clang_tidy.py
+
       # VF-014: the loader fuzzer (mutations keep the CRC valid) and the run fuzzer (accepted artifacts are
       # executed under the sanitizers) for 60 seconds each, in parallel. A finding fails the job and its
       # reproducer is printed in the log (base64). The long run is proposed in tools/fuzz/nightly-fuzz.proposed.yml.
@@ -245,18 +261,26 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          # tidy_board names the board in tools/ci/clang-tidy-app-baseline.json (the board ids of
+          # firmware/app/boards/supported-boards.v1.5.0.json).
           - id: rpi-pico
             board: rpi_pico/rp2040
+            tidy_board: rpi-pico-rp2040
           - id: arduino-giga-r1
             board: arduino_giga_r1/stm32h747xx/m7
+            tidy_board: arduino-giga-r1-m7
           - id: esp32s3-devkitc
             board: esp32s3_devkitc/esp32s3/procpu
+            tidy_board: esp32-s3-devkitc
           - id: stm32f746g-disco
             board: stm32f746g_disco/stm32f746xx
+            tidy_board: stm32f746g-disco
           - id: nucleo-h743zi
             board: nucleo_h743zi/stm32h743xx
+            tidy_board: nucleo-h743zi
           - id: arduino-opta
             board: arduino_opta/stm32h747xx/m7
+            tidy_board: arduino-opta-wifi-m7
     env:
       ZEPHYR_TOOLCHAIN_VARIANT: zephyr
     steps:
@@ -301,6 +325,18 @@ jobs:
         run: |
           set -o pipefail
           west build -p always -b "${{ matrix.board }}" zplc/firmware/app -d "${RUNNER_TEMP}/zplc-${{ matrix.id }}" 2>&1 | tee "${RUNNER_TEMP}/zplc-${{ matrix.id }}.build.log"
+
+      # VF-018: clang-tidy over the Zephyr HAL, the scheduler, the core as built for this board and firmware/app, with
+      # the compile commands of the build above rewritten for clang. The core and the HAL must report nothing; the
+      # findings that firmware/app still has are counted per board in tools/ci/clang-tidy-app-baseline.json and a
+      # new one fails the step. The Xtensa board (esp32s3-devkitc) has no clang target and is skipped by the script.
+      - name: Static analysis of the Zephyr HAL and firmware/app (clang-tidy, warnings are errors)
+        shell: bash
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes --no-install-recommends clang-tidy
+          python3 zplc/tools/ci/run_clang_tidy.py --zephyr-only \
+            --zephyr-build "${RUNNER_TEMP}/zplc-${{ matrix.id }}" --board "${{ matrix.tidy_board }}"
 
       - name: Check flash and RAM against the size budget
         shell: bash
@@ -358,9 +394,23 @@ jobs:
           python3 tools/docs/test_generate_known_limits.py
           python3 tools/docs/generate_known_limits.py --check
           bun tools/ci/test-inventory.ts
+          bun tools/ci/test-source-guard.ts
 
       - name: Check the generated binary contract
         run: bun run contract:check
+
+      # VF-020: a documentation sample whose fence says `runnable` is compiled, and run on the native runtime when it
+      # states a result. The compiler package and the runtime are built here for it.
+      - name: Build the compiler and the native runtime for the documentation samples
+        run: |
+          bun run build:compiler
+          cmake -S firmware/lib/zplc_core -B "${RUNNER_TEMP}/zplc-docs-runtime" -DCMAKE_BUILD_TYPE=Release
+          cmake --build "${RUNNER_TEMP}/zplc-docs-runtime" --target zplc_runtime --parallel
+
+      - name: Check the runnable documentation samples
+        env:
+          ZPLC_NATIVE_SIM_BIN: ${{ runner.temp }}/zplc-docs-runtime/zplc_runtime
+        run: bun tools/docs/check-docs-samples.ts
 
       - name: Generate and validate documentation references
         run: |

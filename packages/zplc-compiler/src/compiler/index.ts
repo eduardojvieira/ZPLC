@@ -621,14 +621,16 @@ function mapTaskTrigger(trigger: TaskConfig['trigger']): TaskType {
     switch (trigger) {
         case 'cyclic':
             return TASK_TYPE.CYCLIC;
-        case 'event':
-            return TASK_TYPE.EVENT;
         case 'freewheeling':
             return TASK_TYPE.CYCLIC;
         default:
             throw new Error(`Unsupported task trigger '${trigger as string}'`);
     }
 }
+
+/** The project file the tasks are read from; a diagnostic about a task definition points at it. */
+const PROJECT_FILE_NAME = 'zplc.json';
+const SUPPORTED_TASK_TRIGGERS = "'cyclic' or 'freewheeling'";
 
 function validateTaskConfigs(config: Pick<ProjectConfig, 'tasks'>): void {
     if (config.tasks.length > ZPLC_CONSTANTS.MAX_TASKS) {
@@ -637,10 +639,23 @@ function validateTaskConfigs(config: Pick<ProjectConfig, 'tasks'>): void {
             0, 0, 'codegen',
         );
     }
-    for (const task of config.tasks) {
+    for (const [index, task] of config.tasks.entries()) {
         const label = `Task '${task.name}'`;
-        if (task.trigger !== 'cyclic' && task.trigger !== 'event' && task.trigger !== 'freewheeling') {
-            throw new CompilerError(`${label} has invalid trigger`, 0, 0, 'codegen');
+        // RT-015: this release schedules cyclic tasks only. The task is rejected here, at its definition in the
+        // project file, instead of producing an artifact that the scheduler refuses later.
+        const trigger = task.trigger as string;
+        if (trigger === 'event' || trigger === 'interrupt') {
+            throw new CompilerError(
+                `${label} (${PROJECT_FILE_NAME} tasks[${index}].trigger) has trigger '${trigger}', which is not supported in this release: `
+                + `event-triggered and interrupt-triggered tasks are not available; use trigger ${SUPPORTED_TASK_TRIGGERS}`,
+                0, 0, 'codegen', PROJECT_FILE_NAME,
+            );
+        }
+        if (task.trigger !== 'cyclic' && task.trigger !== 'freewheeling') {
+            throw new CompilerError(
+                `${label} has invalid trigger '${String(trigger)}'; use trigger ${SUPPORTED_TASK_TRIGGERS}`,
+                0, 0, 'codegen',
+            );
         }
         const interval = task.interval === undefined ? 10 : task.interval;
         if (!Number.isInteger(interval) || interval < 1 || interval > 3_600_000) {

@@ -9,6 +9,7 @@
  * - Task Configuration (cyclic, event, freewheeling)
  */
 
+import { AppPreferences } from './AppPreferences';
 import { useEffect, useId, useRef, useState } from 'react';
 import {
   Settings,
@@ -73,8 +74,11 @@ export function ProjectSettings() {
 
   if (!projectConfig) {
     return (
-      <div className="h-full flex items-center justify-center bg-[var(--color-surface-900)]">
-        <p className="text-[var(--color-surface-400)]">No project configuration loaded</p>
+      <div className="h-full overflow-auto bg-[var(--color-surface-900)] p-6">
+        <div className="max-w-3xl mx-auto">
+          <AppPreferences />
+          <p className="text-center text-[var(--color-surface-400)]">No project configuration loaded</p>
+        </div>
       </div>
     );
   }
@@ -124,6 +128,8 @@ export function ProjectSettings() {
             Save Config
           </button>
         </div>
+
+        <AppPreferences />
 
         {/* Settings Sections */}
         <div className="space-y-4">

@@ -3,7 +3,7 @@
  * only by input events over the DevTools protocol (mouse, wheel, keyboard, text insertion). The native folder dialog is
  * answered by the main-process hook that exists only when the app is not packaged. Native POSIX only, never HIL.
  */
-import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { trustedDevelopmentRendererUrl } from '../electron/security';
@@ -27,9 +27,9 @@ const centre = (target: Target) => `(() => { const el = ${target}; if (!el || el
 
 const KEYS: Record<string, { key: string; code: string; keyCode: number }> = {
   ArrowUp: { key: 'ArrowUp', code: 'ArrowUp', keyCode: 38 }, ArrowDown: { key: 'ArrowDown', code: 'ArrowDown', keyCode: 40 }, Enter: { key: 'Enter', code: 'Enter', keyCode: 13 }, Escape: { key: 'Escape', code: 'Escape', keyCode: 27 },
-  F5: { key: 'F5', code: 'F5', keyCode: 116 }, F6: { key: 'F6', code: 'F6', keyCode: 117 },
+  F2: { key: 'F2', code: 'F2', keyCode: 113 }, F5: { key: 'F5', code: 'F5', keyCode: 116 }, F6: { key: 'F6', code: 'F6', keyCode: 117 },
   S: { key: 's', code: 'KeyS', keyCode: 83 }, B: { key: 'b', code: 'KeyB', keyCode: 66 }, Z: { key: 'z', code: 'KeyZ', keyCode: 90 },
-  A: { key: 'a', code: 'KeyA', keyCode: 65 }, End: { key: 'End', code: 'End', keyCode: 35 }, Home: { key: 'Home', code: 'Home', keyCode: 36 },
+  A: { key: 'a', code: 'KeyA', keyCode: 65 }, R: { key: 'r', code: 'KeyR', keyCode: 82 }, End: { key: 'End', code: 'End', keyCode: 35 }, Home: { key: 'Home', code: 'Home', keyCode: 36 },
 };
 
 export interface App {
@@ -43,6 +43,8 @@ export interface App {
   until<T>(description: string, check: () => Promise<T | undefined | false> | T | undefined | false, timeoutMs?: number): Promise<T>;
   /** A real mouse click (or double click) at the centre of the target. */
   click(target: Target, description?: string, clicks?: number): Promise<void>;
+  /** A real right click at the centre of the target (the context menu of an item). */
+  rightClick(target: Target, description?: string): Promise<void>;
   /** A real key chord such as `Ctrl+S` or `F5`, sent to whatever has focus. */
   press(chord: string): Promise<void>;
   /** Text inserted as the user would type or paste it, into whatever has focus. */
@@ -60,17 +62,30 @@ export interface App {
   readonly errors: string[];
 }
 
-async function mouse(cdp: Cdp, x: number, y: number, clicks = 1): Promise<void> {
+async function mouse(cdp: Cdp, x: number, y: number, clicks = 1, button: 'left' | 'right' = 'left'): Promise<void> {
+  const buttons = button === 'left' ? 1 : 2;
   await cdp.command('Input.dispatchMouseEvent', { type: 'mouseMoved', x, y });
   for (let clickCount = 1; clickCount <= clicks; clickCount++) {
-    await cdp.command('Input.dispatchMouseEvent', { type: 'mousePressed', x, y, button: 'left', buttons: 1, clickCount });
-    await cdp.command('Input.dispatchMouseEvent', { type: 'mouseReleased', x, y, button: 'left', buttons: 0, clickCount });
+    await cdp.command('Input.dispatchMouseEvent', { type: 'mousePressed', x, y, button, buttons, clickCount });
+    await cdp.command('Input.dispatchMouseEvent', { type: 'mouseReleased', x, y, button, buttons: 0, clickCount });
   }
 }
 
 export interface Harness { vitePort: number; rendererUrl: string; runtime: string; output: string[] }
 
-export async function launchApp(harness: Harness, root: string): Promise<{ app: App; notes: string[]; stop(): Promise<void> }> {
+/** Process ids whose command line carries this exact `--user-data-dir`: the Electron main process and the helpers it started. */
+function processesOfProfile(profile: string): number[] {
+  if (process.platform !== 'linux') return [];
+  const needle = `--user-data-dir=${profile}`;
+  const found: number[] = [];
+  for (const name of readdirSync('/proc')) {
+    if (!/^\d+$/.test(name)) continue;
+    try { if (readFileSync(`/proc/${name}/cmdline`, 'utf8').split('\0').includes(needle)) found.push(Number(name)); } catch { /* it exited meanwhile */ }
+  }
+  return found;
+}
+
+export async function launchApp(harness: Harness, root: string): Promise<{ app: App; notes: string[]; stop(): Promise<void>; crash(): Promise<void> }> {
   const notes: string[] = [];
   const answerFile = join(root, 'folder-answer.txt'); writeFileSync(answerFile, '');
   const cdpPort = await freePort();
@@ -84,6 +99,16 @@ export async function launchApp(harness: Harness, root: string): Promise<{ app: 
   let cdp: Cdp | undefined;
   // Browser.close is not awaited: with unsaved changes the app answers it with a prompt, not a reply.
   const dispose = async () => { if (cdp) void cdp.command('Browser.close').catch(() => undefined); await Promise.race([electron.exited, Bun.sleep(3_000)]); cdp?.close(); await stop(electron); };
+  // A crash: SIGKILL on the process this runner started, no shutdown of any kind. Its helpers follow it; any that stay are ours by profile.
+  const crash = async () => {
+    electron.kill('SIGKILL');
+    await electron.exited;
+    cdp?.close();
+    for (let attempt = 0; attempt < 50 && processesOfProfile(join(root, 'profile')).length > 0; attempt++) {
+      if (attempt >= 10) for (const pid of processesOfProfile(join(root, 'profile'))) { try { process.kill(pid, 'SIGKILL'); } catch { /* gone */ } }
+      await Bun.sleep(100);
+    }
+  };
   try {
     const target = await waitFor('real Electron renderer target', async () => {
       const targets = await fetch(`http://${HOST}:${cdpPort}/json/list`).then((response) => response.json()).catch(() => [] as Array<{ type?: string; url?: string; webSocketDebuggerUrl?: string }>);
@@ -118,6 +143,10 @@ export async function launchApp(harness: Harness, root: string): Promise<{ app: 
         assert(Number.isFinite(point.x) && Number.isFinite(point.y), `${description} has no usable click point: ${JSON.stringify(point)}`);
         await mouse(page, point.x, point.y, clicks);
       },
+      rightClick: async (target, description = target.slice(0, 120)) => {
+        const point = await until(`${description} to be clickable`, async () => await evaluate<{ x: number; y: number } | null>(centre(target)) ?? undefined);
+        await mouse(page, point.x, point.y, 1, 'right');
+      },
       press: async (chord) => {
         const parts = chord.split('+'); const name = parts.pop()!; const definition = KEYS[name.length === 1 ? name.toUpperCase() : name];
         assert(definition, `Unknown key ${chord}`);
@@ -135,7 +164,7 @@ export async function launchApp(harness: Harness, root: string): Promise<{ app: 
       text: () => evaluate<string>('document.body.innerText'),
       errors: page.errors,
     };
-    return { app, notes, stop: dispose };
+    return { app, notes, stop: dispose, crash };
   } catch (error) {
     await dispose();
     throw new Error(`${error instanceof Error ? error.message : String(error)}\n${output.join('').slice(-4_000)}`);

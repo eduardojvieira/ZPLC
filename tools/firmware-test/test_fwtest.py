@@ -177,13 +177,6 @@ class StaleBuildDirectory(unittest.TestCase):
     """The workspace is reused across worktrees: a build dir of another checkout must not stop cmake (found on a
     second checkout where host, host32 and app all failed with "source does not match the source")."""
 
-    @staticmethod
-    def function_text() -> str:
-        script = (pathlib.Path(__file__).parent / "run.sh").read_text()
-        start = script.index("fresh_cmake_dir()")
-        end = script.index("\n}\n", start) + 3
-        return script[start:end]
-
     def run_helper(self, home_in_cache: str | None, source: str) -> bool:
         import subprocess, tempfile
         with tempfile.TemporaryDirectory() as tmp:
@@ -192,7 +185,12 @@ class StaleBuildDirectory(unittest.TestCase):
             if home_in_cache is not None:
                 (build / "CMakeCache.txt").write_text(f"CMAKE_HOME_DIRECTORY:INTERNAL={home_in_cache}\n")
             (build / "marker").write_text("x")
-            subprocess.run(["bash", "-c", f'{self.function_text()}\nfresh_cmake_dir "{build}" "{source}"'], check=True)
+            # run.sh in library mode defines its helpers and returns; the helper under test is called, not sliced out.
+            script = pathlib.Path(__file__).parent / "run.sh"
+            subprocess.run(
+                ["bash", "-c", 'ZPLC_FWTEST_LIBRARY=1 . "$0" && fresh_cmake_dir "$1" "$2"', str(script), str(build), source],
+                check=True,
+            )
             return (build / "marker").exists()
 
     def test_a_build_dir_of_another_checkout_is_dropped(self) -> None:
@@ -203,6 +201,55 @@ class StaleBuildDirectory(unittest.TestCase):
 
     def test_a_dir_without_a_cache_is_kept(self) -> None:
         self.assertTrue(self.run_helper(None, "/any"))
+
+
+class RunScriptModes(unittest.TestCase):
+    """The mode list of run.sh: a mode that is listed must be accepted, and an unknown one refused before any work."""
+
+    SCRIPT = pathlib.Path(__file__).parent / "run.sh"
+
+    def run_script(self, *args: str):
+        import subprocess
+        return subprocess.run(["bash", str(self.SCRIPT), *args], capture_output=True, text=True, check=False)
+
+    def test_help_lists_the_tidy_mode_and_says_it_is_not_part_of_all(self) -> None:
+        done = self.run_script("--help")
+        self.assertEqual(done.returncode, 0, done.stderr)
+        self.assertRegex(done.stdout, r"(?m)^  tidy +clang-tidy")
+        self.assertIn("every mode above except tidy", done.stdout)
+
+    def run_tidy(self, status: int, extra: str = ""):
+        """run.sh tidy with a python3 that stands in for tools/ci/run_clang_tidy.py: the mode must call it and report
+        what it said, whatever clang-tidy is on this machine."""
+        import os, subprocess, tempfile
+        with tempfile.TemporaryDirectory() as tmp:
+            root = pathlib.Path(tmp)
+            (root / "ws" / "zephyr").mkdir(parents=True)
+            (root / "ws" / "zephyr" / "VERSION").write_text("VERSION_MAJOR = 4\n")
+            (root / "bin").mkdir()
+            fake = root / "bin" / "python3"
+            fake.write_text(f'#!/usr/bin/env bash\necho "clang-tidy: host pass clean"\n{extra}\nexit {status}\n')
+            fake.chmod(0o755)
+            env = dict(os.environ, ZPLC_FW_WS=str(root / "ws"), PATH=f"{root / 'bin'}:{os.environ['PATH']}")
+            return subprocess.run(["bash", str(self.SCRIPT), "tidy"], capture_output=True, text=True, check=False, env=env)
+
+    def test_tidy_passes_when_the_analysis_is_clean_and_says_when_the_zephyr_pass_was_skipped(self) -> None:
+        done = self.run_tidy(0, 'echo "clang-tidy: Zephyr pass skipped, no west build tree."')
+        self.assertEqual(done.returncode, 0, done.stdout + done.stderr)
+        self.assertRegex(done.stdout, r"PASS tidy .*Zephyr pass skipped")
+
+    def test_tidy_fails_on_a_finding_and_says_so_apart_from_a_tool_that_could_not_run(self) -> None:
+        found = self.run_tidy(1)
+        self.assertEqual(found.returncode, 1)
+        self.assertRegex(found.stdout, r"FAIL tidy clang-tidy reported findings")
+        missing = self.run_tidy(2)
+        self.assertEqual(missing.returncode, 1)
+        self.assertRegex(missing.stdout, r"FAIL tidy clang-tidy could not run")
+
+    def test_an_unknown_mode_is_refused(self) -> None:
+        done = self.run_script("lint")
+        self.assertEqual(done.returncode, 2)
+        self.assertIn("unknown mode 'lint'", done.stderr)
 
 
 if __name__ == "__main__":

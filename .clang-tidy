@@ -1,0 +1,80 @@
+---
+# clang-tidy configuration for the ZPLC firmware C code (VF-018).
+#
+#   python3 tools/ci/run_clang_tidy.py    core, POSIX HAL, host application (host build)
+#   tools/firmware-test/run.sh tidy       the same, plus the Zephyr pass when a west build tree exists
+#
+# Every enabled check is an error (WarningsAsErrors '*'): the list below is the set the code satisfies, so a new
+# finding fails CI. A check is switched off here with its reason, or a single line carries a NOLINT with its reason;
+# nothing is silenced without a comment. The language is C99, so the C++-only groups (cppcoreguidelines, hicpp,
+# modernize, google, llvm, fuchsia, altera, boost, mpi, openmp, objc, zircon, abseil, linuxkernel) are not enabled.
+#
+# Enabled:
+#   bugprone-*            defects the compiler does not warn about (macro arguments, swapped arguments,
+#                         widening multiplication in an offset, assignments in conditions, branch clones).
+#   cert-*                the CERT C rules that apply to C (unchecked return values, reserved identifiers, ...).
+#   clang-analyzer-*     path-sensitive analysis: null dereference, dead stores, leaks, insecure APIs.
+#   misc-*                redundant expressions, unused parameters, header hygiene, recursion (none is allowed).
+#   performance-*, portability-*   cheap, and they keep new code honest.
+#   readability-*         a small set: misleading indentation, redundant casts, declarations and nested ifs,
+#                         uppercase literal suffixes, inconsistent brace use in if/else.
+#
+# Switched off:
+#   bugprone-easily-swappable-parameters   33 hits on (uint32_t address, uint32_t size) style APIs of the VM and
+#                                          the HAL; the types cannot be made distinct without rewriting the API.
+#   bugprone-signed-bitwise                158 hits, all of them the int literal of `(x >> 8) & 0xFF` or
+#                                          `(uint32_t)b << 8`; the operands that matter are unsigned, and shifts
+#                                          of negative values are covered by the UBSan runs of VF-005.
+#   misc-include-cleaner                   asks for an include-what-you-use mapping that does not exist for C
+#                                          and fights the single public header of the core.
+#   bugprone-macro-parentheses,            every hit is in a block that tools/contract/generate.py writes
+#   bugprone-branch-clone,                 (the negative loader error codes, the block-size switch, the opcode
+#   readability-else-after-return          table and helpers). The fix belongs in the generator (VF-012):
+#                                          emit (-1), merge case labels, drop the else. Re-enable then.
+#   misc-header-include-cycle              reports the kernel.h and tracing.h cycle inside Zephyr itself on the
+#                                          Zephyr pass; the ZPLC headers have no cycle.
+#   portability-no-assembler               the Zephyr headers use inline assembler for barriers and interrupt
+#                                          control on purpose; the target is a microcontroller.
+#   clang-analyzer-security.insecureAPI.DeprecatedOrUnsafeBufferHandling
+#                                          asks for the optional C11 Annex K functions (memcpy_s), which neither
+#                                          glibc, picolibc nor newlib provide; it fires on every memcpy.
+#   misc-use-internal-linkage              the only hits are the zplc_test_* and zplc_hal_persist_test_* hooks,
+#                                          which are exported on purpose and declared by the tests that use them.
+#   concurrency-mt-unsafe                  getenv() at start-up and strerror() in a log line of the host
+#                                          application; the Zephyr code has neither.
+#   readability-braces-around-statements, readability-magic-numbers, readability-identifier-length,
+#   readability-isolate-declaration, readability-math-missing-parentheses, readability-trailing-comma,
+#   readability-function-size, readability-function-cognitive-complexity, readability-use-concise-preprocessor-directives
+#                                          style and size metrics. The interpreter is one switch by design and the
+#                                          opcode and protocol constants are the data; enforcing these would
+#                                          reformat the tree without finding a defect.
+Checks: >-
+  -*,
+  bugprone-*,
+  cert-*,
+  clang-analyzer-*,
+  misc-*,
+  performance-*,
+  portability-*,
+  readability-misleading-indentation,
+  readability-redundant-casting,
+  readability-redundant-declaration,
+  readability-redundant-nested-if,
+  readability-uppercase-literal-suffix,
+  readability-inconsistent-ifelse-braces,
+  -bugprone-easily-swappable-parameters,
+  -bugprone-signed-bitwise,
+  -bugprone-macro-parentheses,
+  -bugprone-branch-clone,
+  -readability-else-after-return,
+  -misc-include-cleaner,
+  -misc-header-include-cycle,
+  -portability-no-assembler,
+  -clang-analyzer-security.insecureAPI.DeprecatedOrUnsafeBufferHandling,
+  -misc-use-internal-linkage
+WarningsAsErrors: '*'
+# Headers of the core, the host application and the firmware application are analysed through the files that
+# include them; third-party and Zephyr headers are not.
+HeaderFilterRegex: 'firmware/(lib/zplc_core/(include|src)|apps/posix_host/src|app/(include|src))/'
+FormatStyle: none
+...

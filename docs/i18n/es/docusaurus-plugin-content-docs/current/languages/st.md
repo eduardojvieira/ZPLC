@@ -34,7 +34,7 @@ ST es la opción natural para:
 
 ## Ejemplo canónico mínimo
 
-```st
+```st runnable expect="Out1=TRUE" scans=30 scan_ms=10
 PROGRAM WorkflowST
 VAR
     Start : BOOL := TRUE;
@@ -45,6 +45,9 @@ Timer(IN := Start, PT := T#250ms);
 Out1 := Timer.Q;
 END_PROGRAM
 ```
+
+`Out1` es `FALSE` hasta que el temporizador cuenta 250 ms y `TRUE` desde entonces. CI compila este
+programa, lo ejecuta durante 30 scans de 10 ms y comprueba que `Out1` sea `TRUE`.
 
 ## Superficies ST visibles hoy en el repo
 
@@ -256,8 +259,7 @@ Esta sección lista lo que el compilador, el cargador y el mapa de depuración n
 | Requisito | Qué ocurre hoy | Casos que fallan hoy |
 |---|---|---|
 | CMP-015 | `LINT`, `ULINT` y `LWORD` no tienen `*`, `/`, `MOD`, `SHL`, `SHR`, `ROL`, `ROR`, `ABS`, conversión desde o hacia `REAL`, selector de `CASE` ni contador de `FOR`: cada uno es un error de compilación que nombra CMP-015. Un programa que asigna o calcula con un `LREAL` se compila y luego es rechazado por el cargador. | `LREAL keeps double precision` |
-| CMP-051 | El cargador rechaza el artefacto que el compilador genera para un programa con un `LREAL` y para dos tareas cíclicas con intervalos distintos. | `the loader accepts every artifact the compiler produced for a conformance case` |
-| RT-015 | Una tarea con `trigger: event` es aceptada por el compilador y rechazada después, y un programa con dos tareas cíclicas de intervalos distintos es rechazado por la simulación nativa. | `an event-triggered task is rejected by the build`<br />`two cyclic tasks with different intervals load in simulation and each runs at its own interval` |
+| CMP-051 | El cargador rechaza el artefacto que el compilador genera para un programa con un `LREAL`. | `the loader accepts every artifact the compiler produced for a conformance case` |
 {/* <<< END GENERATED: known-limits-language <<< */}
 
 No soportado en esta versión y rechazado con un mensaje, por la decisión D-04: arreglos de arreglos, enumeraciones con tipo base, subrangos, `POINTER TO` y `ADR` (use `REF_TO` y `REF()`), `VAR_ACCESS`, una `CONFIGURATION` textual, `NAMESPACE`, `PROPERTY`, bloques `ACTION` en un programa, llamadas posicionales a bloques de función y las formas de función de los operadores como `ADD(a, b)`. Los casos `cmp-006-*-is-rejected` pasan: fijan el rechazo, de modo que un programa que usa uno de ellos no compila.

@@ -40,6 +40,14 @@ static void signal_handler(int signal_value)
     keep_running = 0;
 }
 
+/* A handler that was not installed leaves the default action: the process dies without the session shutting down. */
+static void install_signal_handler(int signal_number, const char *name)
+{
+    if (signal(signal_number, signal_handler) == SIG_ERR) {
+        (void)fprintf(stderr, "[native-sim] could not install the %s handler; it will not stop the runtime gracefully\n", name);
+    }
+}
+
 static void write_json_line(FILE *stream, const char *line)
 {
     if (stream == NULL || line == NULL || line[0] == '\0') {
@@ -60,7 +68,7 @@ static void write_request_too_long_error(void)
     (void)fprintf(stdout,
                   "{\"id\":\"unknown\",\"type\":\"response\",\"error\":{\"code\":\"INVALID_REQUEST\","
                   "\"message\":\"request line is longer than the %u bytes the runtime reads\"}}\n",
-                  (unsigned)(ZPLC_NATIVE_REQUEST_MAX - 1U));
+                  (ZPLC_NATIVE_REQUEST_MAX - 1U));
     (void)fflush(stdout);
 }
 
@@ -80,8 +88,8 @@ int main(void)
     zplc_host_stdio_result_t io_result;
     int discarding_long_line = 0;
 
-    signal(SIGINT, signal_handler);
-    signal(SIGTERM, signal_handler);
+    install_signal_handler(SIGINT, "SIGINT");
+    install_signal_handler(SIGTERM, "SIGTERM");
 
     if (zplc_hal_init() != ZPLC_HAL_OK) {
         (void)fprintf(stderr, "[native-sim] HAL initialization failed\n");
@@ -143,10 +151,8 @@ int main(void)
             continue;
         }
 
-        if (request_line[0] == '\0') {
-            if (feof(stdin) != 0) {
-                break;
-            }
+        if (request_line[0] == '\0' && feof(stdin) != 0) {
+            break;
         }
 
         response[0] = '\0';

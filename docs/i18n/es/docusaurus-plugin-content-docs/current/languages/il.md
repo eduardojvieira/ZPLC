@@ -28,7 +28,7 @@ IL usa el destino común del compilador, pero el costo de ejecución, la disponi
 
 Este ejemplo evalúa `Start`, llama a `TON` y escribe una bandera de salida:
 
-```iecst
+```iecst runnable language=il expect="%QX0.0=TRUE" scans=30 scan_ms=10
 PROGRAM WorkflowIL
 VAR
     Start : BOOL := TRUE;
@@ -47,6 +47,9 @@ END_VAR
     ST Out1
 END_PROGRAM
 ```
+
+Después de 250 ms de scans la salida en `%Q0.0` es `TRUE`: CI ejecuta este ejemplo durante 30 scans
+de 10 ms y comprueba `%QX0.0`.
 
 ## Páginas relacionadas
 

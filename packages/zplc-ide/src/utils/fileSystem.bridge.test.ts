@@ -120,6 +120,18 @@ describe('open, edit, save and reopen on a real folder', () => {
     expect(readFileSync(path.join(project, 'src', 'main.st'), 'utf8')).toBe('PROGRAM Main\n  Counter := Counter + 1; (* ñ *)\nEND_PROGRAM\r\n');
   });
 
+  it('lists a folder that holds nothing yet (a new folder), and still hides one that holds only files Studio does not read', async () => {
+    seedProject();
+    mkdirSync(path.join(project, 'src', 'drivers'));
+    mkdirSync(path.join(project, 'docs'));
+    writeFileSync(path.join(project, 'docs', 'README.md'), 'notes');
+    const tree = await readDirectoryRecursive((await openDirectoryPicker())!);
+    const src = tree.children!.find((child) => child.name === 'src')!;
+    expect(src.children!.map((child) => child.name)).toEqual(['drivers', 'main.st']);
+    expect(src.children![0]!.children).toEqual([]);
+    expect(tree.children!.map((child) => child.name)).toEqual(['src']);
+  });
+
   it('shows the saved content after the folder is opened again', async () => {
     seedProject();
     const first = (await openDirectoryPicker())!;

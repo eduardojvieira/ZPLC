@@ -36,7 +36,7 @@ ST is the natural fit for:
 
 ## Minimal canonical example
 
-```st
+```st runnable expect="Out1=TRUE" scans=30 scan_ms=10
 PROGRAM WorkflowST
 VAR
     Start : BOOL := TRUE;
@@ -47,6 +47,9 @@ Timer(IN := Start, PT := T#250ms);
 Out1 := Timer.Q;
 END_PROGRAM
 ```
+
+`Out1` is `FALSE` until the timer has counted 250 ms and `TRUE` from then on. CI compiles this
+program, runs it for 30 scans of 10 ms and checks that `Out1` is `TRUE`.
 
 ## Common ST building blocks in the current repo
 
@@ -259,8 +262,7 @@ This section lists what the compiler, the loader and the debug map do not do as 
 | Requirement | What happens today | Cases that fail today |
 |---|---|---|
 | CMP-015 | `LINT`, `ULINT` and `LWORD` have no `*`, `/`, `MOD`, `SHL`, `SHR`, `ROL`, `ROR`, `ABS`, conversion to or from `REAL`, `CASE` selector or `FOR` counter: each is a build error that names CMP-015. A program that assigns or computes with an `LREAL` builds and is then refused by the loader. | `LREAL keeps double precision` |
-| CMP-051 | The loader refuses the artifact that the compiler builds for a program with an `LREAL` and for two cyclic tasks with different intervals. | `the loader accepts every artifact the compiler produced for a conformance case` |
-| RT-015 | A task with `trigger: event` is accepted by the compiler and refused later, and a program with two cyclic tasks of different intervals is refused by the native simulation. | `an event-triggered task is rejected by the build`<br />`two cyclic tasks with different intervals load in simulation and each runs at its own interval` |
+| CMP-051 | The loader refuses the artifact that the compiler builds for a program with an `LREAL`. | `the loader accepts every artifact the compiler produced for a conformance case` |
 {/* <<< END GENERATED: known-limits-language <<< */}
 
 Not supported in this release and rejected with a message, by decision D-04: arrays of arrays, enumerations with a base type, subranges, `POINTER TO` and `ADR` (use `REF_TO` and `REF()`), `VAR_ACCESS`, a textual `CONFIGURATION`, `NAMESPACE`, `PROPERTY`, `ACTION` blocks in a program, positional function-block calls and the function forms of operators such as `ADD(a, b)`. The cases `cmp-006-*-is-rejected` pass: they pin the rejection, so a program that uses one fails to build.

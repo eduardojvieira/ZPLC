@@ -22,15 +22,27 @@ import { EditorArea } from './components/EditorArea';
 import { Console } from './components/Console';
 import { WelcomeScreen } from './components/WelcomeScreen';
 import { CloseGuard } from './components/CloseGuard';
+import { ErrorBoundary } from './components/ErrorBoundary';
+import { DevFaultProbe } from './components/DevFaultProbe';
+import { RecoveryOffer } from './components/RecoveryOffer';
+import { ExternalChangePrompt } from './components/ExternalChangePrompt';
 import { useTheme } from './hooks/useTheme';
 import { initializeTheme, useIDEStore } from './store/useIDEStore';
 import { useDebugController } from './hooks/useDebugController';
 import { useWorkspaceLayout } from './utils/layoutStorage';
 import { workspaceLayoutFrom } from './utils/sessionState';
 import { startSessionPersistence } from './store/sessionPersistence';
+import { startRecoveryPersistence } from './store/recoveryPersistence';
+import { startAutosave } from './store/autosave';
+import { startExternalChangeWatch } from './store/externalChangeWatch';
+import { initializeSettings, useAppSettings } from './store/useAppSettings';
+import { describeUpdateCheck, runUpdateCheck } from './ipc/updateCheckBridge';
+import { ZPLC_REPO_VERSION } from './version';
 
 // Apply the stored theme while modules load, before React renders the first frame (UX-016).
 initializeTheme();
+// The density and the language of the saved preferences, before the first frame.
+initializeSettings();
 
 function App() {
   useTheme();
@@ -50,6 +62,35 @@ function App() {
 
   // The open project's tabs, cursors and panel split are saved as they change (IDE-008).
   useEffect(() => startSessionPersistence(useIDEStore), []);
+
+  // A change made outside Studio reloads an unmodified file and asks about a modified one (IDE-004).
+  useEffect(() => startExternalChangeWatch(), []);
+
+  // Autosave (IDE-007): off unless the user chose an interval; it saves modified files after the typing stops.
+  useEffect(() => {
+    const autosave = startAutosave(useIDEStore, {
+      seconds: () => useAppSettings.getState().settings.autosaveSeconds,
+      save: () => useIDEStore.getState().saveAllFiles({ quiet: true }),
+    });
+    const unsubscribe = useAppSettings.subscribe((state, previous) => {
+      if (state.settings.autosaveSeconds !== previous.settings.autosaveSeconds) autosave.settingsChanged();
+    });
+    return () => { unsubscribe(); autosave.stop(); };
+  }, []);
+
+  // The update check (IDE-010) runs only while the user has it turned on: at start, and when it is turned on.
+  const checkForUpdates = useAppSettings((s) => s.settings.checkForUpdates);
+  useEffect(() => {
+    if (!checkForUpdates) return undefined;
+    let current = true;
+    void runUpdateCheck(window.electronAPI?.updateCheck, ZPLC_REPO_VERSION).then((result) => {
+      if (current && result.status === 'available') useIDEStore.getState().addConsoleEntry({ type: 'info', message: describeUpdateCheck(result), source: 'system' });
+    });
+    return () => { current = false; };
+  }, [checkForUpdates]);
+
+  // Modified files are kept in the main process a moment after the last keystroke, so that a crash loses nothing (IDE-006).
+  useEffect(() => startRecoveryPersistence(useIDEStore), []);
 
   // A project that opens while the workbench is already showing brings its own split; the first one is the group's default.
   useEffect(() => {
@@ -79,8 +120,13 @@ function App() {
   return (
     <div className="h-screen w-screen flex flex-col overflow-hidden bg-[var(--color-surface-900)]">
       <CloseGuard />
+      <RecoveryOffer />
+      <ExternalChangePrompt />
       {/* Unified Toolbar */}
-      <Toolbar debugController={debugController} />
+      <ErrorBoundary region="Toolbar">
+        <DevFaultProbe region="Toolbar" />
+        <Toolbar debugController={debugController} />
+      </ErrorBoundary>
 
       {/* Main resizable workspace */}
       <div className="flex-1 min-h-0 flex ledger-workspace">
@@ -100,7 +146,9 @@ function App() {
 
           {/* Editor Area */}
           <Panel id="editor" defaultSize="72%" minSize="30%" className="overflow-hidden">
-            <EditorArea />
+            <ErrorBoundary region="Editor">
+              <EditorArea />
+            </ErrorBoundary>
           </Panel>
 
           <Separator id="workspace-separator" aria-label="Resize editor and lower panel" />
@@ -116,7 +164,9 @@ function App() {
             collapsedSize={32}
             className="overflow-hidden"
           >
-            <Console debugController={debugController} />
+            <ErrorBoundary region="Panel">
+              <Console debugController={debugController} />
+            </ErrorBoundary>
           </Panel>
 
         </Group>

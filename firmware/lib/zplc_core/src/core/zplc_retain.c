@@ -415,7 +415,7 @@ zplc_retain_save_result_t zplc_retain_save(const zplc_retain_identity_t *identit
     if (s.min_interval_ms == 0U) {
       return ZPLC_RETAIN_SAVE_DISABLED;
     }
-    if ((uint32_t)(now_ms - s.last_write_ms) < s.min_interval_ms) {
+    if ((now_ms - s.last_write_ms) < s.min_interval_ms) {
       return ZPLC_RETAIN_SAVE_TOO_SOON;
     }
   }

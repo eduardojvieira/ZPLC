@@ -519,3 +519,42 @@ describe('recent projects (IDE-008)', () => {
     expect(entries[0]!.displayName).toBe('plant-11');
   });
 });
+
+describe('watching the window folder (IDE-004)', () => {
+  const started = () => {
+    const calls: string[] = [];
+    const files = createProjectFiles(async () => root, () => null, {
+      start: (ownerId, rootId, real) => { calls.push(`start ${ownerId} ${rootId.length > 0} ${real}`); },
+      stop: (ownerId) => { calls.push(`stop ${ownerId}`); },
+    });
+    return { files, calls };
+  };
+
+  it('starts the watch for the folder the window holds, and only when the request names that folder', async () => {
+    const { files, calls } = started();
+    const opened = await files.handle(OWNER, PROJECT_FILES_CHANNEL.chooseFolder, []);
+    const folder = (opened as { ok: true; value: ProjectFolder }).value;
+    await expect(files.handle(OWNER, PROJECT_FILES_CHANNEL.watch, [{ rootId: 'someone-elses' }])).resolves.toEqual({ ok: false, code: 'no-folder' });
+    await expect(files.handle(OWNER, PROJECT_FILES_CHANNEL.watch, [{ rootId: folder.rootId, path: '/' }])).resolves.toEqual({ ok: false, code: 'invalid-request' });
+    expect(calls.filter((call) => call.startsWith('start'))).toEqual([]);
+    await expect(files.handle(OWNER, PROJECT_FILES_CHANNEL.watch, [{ rootId: folder.rootId }])).resolves.toEqual({ ok: true, value: null });
+    expect(calls.at(-1)).toBe(`start ${OWNER} true ${root}`);
+  });
+
+  it('stops the watch when another folder replaces the window folder, and when the window goes away', async () => {
+    const { files, calls } = started();
+    await files.handle(OWNER, PROJECT_FILES_CHANNEL.chooseFolder, []);
+    await files.handle(OWNER, PROJECT_FILES_CHANNEL.chooseFolder, []);
+    expect(calls).toContain(`stop ${OWNER}`);
+    calls.length = 0;
+    files.revokeOwner(OWNER);
+    expect(calls).toEqual([`stop ${OWNER}`]);
+  });
+
+  it('answers a watch request without a watcher as done, so that a test host needs none', async () => {
+    const files = createProjectFiles(async () => root);
+    const opened = await files.handle(OWNER, PROJECT_FILES_CHANNEL.chooseFolder, []);
+    const folder = (opened as { ok: true; value: ProjectFolder }).value;
+    await expect(files.handle(OWNER, PROJECT_FILES_CHANNEL.watch, [{ rootId: folder.rootId }])).resolves.toEqual({ ok: true, value: null });
+  });
+});
