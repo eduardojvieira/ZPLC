@@ -66,6 +66,7 @@ add_library(zplc_core STATIC
     src/core/zplc_core.c
     src/core/zplc_comm_dispatch.c
     src/core/zplc_loader.c
+    src/core/zplc_retain.c
 )
 
 target_compile_definitions(zplc_core PUBLIC ZPLC_CORE_VERSION_STR="${ZPLC_CORE_VERSION_STR}")
@@ -301,6 +302,26 @@ target_compile_definitions(test_hal_posix_persist PRIVATE ZPLC_HAL_PERSIST_TESTI
 
 add_test(NAME test_hal_posix_persist COMMAND test_hal_posix_persist)
 
+# Test: RETAIN persistence module (RT-025, RT-026, RT-027): record format, two
+# alternating slots, identity and layout checks, power cut sweep. Also run under
+# the sanitizers.
+add_executable(test_retain
+    tests/test_retain.c
+    src/core/zplc_retain.c
+    src/hal/posix/zplc_hal_posix.c
+)
+
+target_include_directories(test_retain PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+)
+target_compile_definitions(test_retain PRIVATE ZPLC_HAL_PERSIST_TESTING)
+
+if(UNIX AND NOT APPLE)
+    target_link_libraries(test_retain PRIVATE rt)
+endif()
+
+add_test(NAME test_retain COMMAND test_retain)
+
 # Test: POSIX HAL mutex behavior
 add_executable(test_hal_posix_mutex
     tests/test_hal_posix_mutex.c
@@ -452,7 +473,7 @@ add_custom_target(check
 
 # The tests above join the check target without touching its list
 add_dependencies(check test_sandbox test_sandbox_regions test_comm_fb_access test_comm_handler_modbus
-                 test_comm_handler_mqtt test_comm_handler_cloud)
+                 test_comm_handler_mqtt test_comm_handler_cloud test_retain)
 
 # =============================================================================
 # Build Info

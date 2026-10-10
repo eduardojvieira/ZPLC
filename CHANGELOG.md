@@ -115,6 +115,20 @@ All notable changes are documented here.
   call that passes an argument no `VAR_INPUT` takes is refused (CMP-006,
   CMP-007, CMP-009, CMP-029 to CMP-033, CMP-035, CMP-038). A `RETAIN` variable
   takes its initial value only when the retentive region holds no saved state.
+- `RETAIN` memory is now kept across a power cycle on the native runtime and,
+  behind `CONFIG_ZPLC_RETAIN_PERSIST`, on the Zephyr firmware (RT-025, RT-026,
+  RT-027). The region is stored on `STOP`, on a clean shutdown and periodically,
+  in two alternating records that carry a checksum, a layout hash and the
+  program identity; it is restored only when the identity and the layout match,
+  and otherwise it is initialised and the status says why (`retain` in the
+  native `status.get`, `zplc sched status` on the firmware). A rebuilt program
+  starts from its declared initial values; `execution.reset` is a cold restart.
+  The native runtime stores at most once per `ZPLC_RETAIN_SAVE_INTERVAL_MS`
+  (30 s by default); each firmware board has a documented interval and the build
+  fails when it would wear the storage flash out inside ten years. The
+  Nucleo-H743ZI cannot mount NVS, so it does not persist `RETAIN`, and the WASM
+  simulator does not apply the rules yet. No board was measured: see
+  `docs/runtime/persistence`.
 
 ## 2.0.0-rc.3 - 2026-09-01
 

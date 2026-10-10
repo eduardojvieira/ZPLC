@@ -23,6 +23,7 @@ tags: [reference, runtime, generated]
 - `firmware/lib/zplc_core/include/zplc_hal_posix.h`
 - `firmware/lib/zplc_core/include/zplc_isa.h`
 - `firmware/lib/zplc_core/include/zplc_loader.h`
+- `firmware/lib/zplc_core/include/zplc_retain.h`
 - `firmware/lib/zplc_core/include/zplc_scheduler.h`
 
 ## `zplc_comm_dispatch.h`
@@ -2139,6 +2140,151 @@ Reads header word 28 and nothing else. The magic, the CRC and the rest of the ar
 | `ZPLC_VERIFY_FRAME_BYTES` | `7U` | — |
 | `ZPLC_VERIFY_STEPS_PER_BYTE` | `64U` | — |
 | `ZPLC_LOADER_VERIFY_WORKSPACE_SIZE` | `\\ (((ZPLC_MEM_CODE_SIZE + 7U) / 8U) + \\ 2U * ((ZPLC_MEM_CODE_SIZE + 127U) / 128U) + \\ 2U * ZPLC_VERIFY_MAX_LEADERS + (ZPLC_VERIFY_MAX_LEADERS + 7U) / 8U + \\ ZPLC_VERIFY_MAX_FRAMES * ZPLC_VERIFY_FRAME_BYTES)` | — |
+
+## `zplc_retain.h`
+
+Persistence of the RETAIN region across power cycles (RT-025, RT-026, RT-027).
+
+Portable C99: no operating-system header. The module reads and writes the RETAIN region through the pointer the caller gives to zplc_retain_init() and stores records only through the HAL persistence API (zplc_hal_persist_*), so the POSIX host, the WASM runtime and the Zephyr firmware apply the same rules. ## Record A record is one little-endian byte string. It is stored under two alternating slots, "a" and "b", and every slot is cut into fixed-size chunks so that a backend with a small maximum entry (Zephyr NVS on a 4 KB sector) can hold it: key = "retain_" + ('a' | 'b') + chunk number ('0'..'7'), for example "retain_a0" offset  size  field 0     4  magic "ZRTN" (bytes 5A 52 54 4E) 4     2  format version (ZPLC_RETAIN_FORMAT_VERSION) 6     2  reserved, zero 8     4  sequence number, monotonic, never 0 12     4  program identity: CRC32 word of the artifact header (byte 12) 16     4  program identity: code size word of the artifact header (byte 16) 20     4  layout hash (see below) 24     4  payload length in bytes (the size of the RETAIN region) 28     n  payload: the RETAIN region bytes 28+n     4  CRC-32 (IEEE 802.3, as in the artifact header) of bytes 0 .. 28+n-1 ## Layout hash CRC-32 over these 24 bytes, little-endian: 0  u32  RETAIN region size in bytes (the runtime value, not the maximum) 4  u32  ZPLC_MEM_RETAIN_BASE 8  u16  ZPLC_VERSION_MAJOR 10  u16  ZPLC_VERSION_MINOR 12  u32  ZPLC_DRAFT_COUNTER 16  u32  program identity, CRC32 word 20  u32  program identity, code size word The region size and the address of the region decide where a retained value lives; the version and the draft counter decide what the program image means; the program identity decides which program wrote the values. Any change of one of them makes a stored record unusable. ## Rules - save writes the OLDER slot with sequence = newest + 1, so a power cut during a save never destroys the last good record; - restore picks the valid record with the highest sequence whose identity and layout match, and otherwise initialises (zeroes) the region and keeps the reason; - a periodic save is skipped when the region did not change since the last record and when the minimum interval has not passed (flash wear, RT-026); - a slot the backend cannot read counts as a damaged record, and the next save rewrites it; when the backend fails on both slots nothing can be decided: the reason is io_error and saves are refused until a restore reads the backend again. The module is not re-entrant. The caller serialises its calls, and gives lock hooks that make the copy of the region coherent with the scan; the hooks are never held across a HAL call (RT-012).
+
+Source: `firmware/lib/zplc_core/include/zplc_retain.h`
+
+### Functions
+
+#### `zplc_retain_init`
+
+```c
+int zplc_retain_init(const zplc_retain_config_t *config);
+```
+
+**Source summary:** Reset the module and set its region, hooks and minimum interval.
+
+**Parameters**
+
+| Name | Type | Source description |
+| --- | --- | --- |
+| `config` | `const zplc_retain_config_t *` | — |
+
+**Source return value:** 0 on success, -1 on a NULL region, a size of 0 or above the capacity.
+
+#### `zplc_retain_identity_from_artifact`
+
+```c
+int zplc_retain_identity_from_artifact(const uint8_t *artifact, size_t size, zplc_retain_identity_t *out);
+```
+
+**Source summary:** Read the program identity from a .zplc artifact header.
+
+Reads the magic, the CRC word and the code size word; the loader verified the rest. @return 0 on success, -1 when the buffer is too short or has no magic.
+
+**Parameters**
+
+| Name | Type | Source description |
+| --- | --- | --- |
+| `artifact` | `const uint8_t *` | — |
+| `size` | `size_t` | — |
+| `out` | `zplc_retain_identity_t *` | — |
+
+#### `zplc_retain_restore`
+
+```c
+zplc_retain_reason_t zplc_retain_restore(const zplc_retain_identity_t *identity, uint32_t now_ms);
+```
+
+**Source summary:** Restore the region from the stored records, or initialise it.
+
+Call after the program is loaded and before the first scan. The region is zeroed whenever the result is not ZPLC_RETAIN_RESTORED.
+
+**Parameters**
+
+| Name | Type | Source description |
+| --- | --- | --- |
+| `identity` | `const zplc_retain_identity_t *` | — |
+| `now_ms` | `uint32_t` | the caller's monotonic millisecond clock |
+
+#### `zplc_retain_save`
+
+```c
+zplc_retain_save_result_t zplc_retain_save(const zplc_retain_identity_t *identity, uint32_t now_ms, zplc_retain_save_mode_t mode);
+```
+
+**Source summary:** Store the region as the next record when it changed.
+
+Reads the region under the lock hook, then writes with no lock held.
+
+**Parameters**
+
+| Name | Type | Source description |
+| --- | --- | --- |
+| `identity` | `const zplc_retain_identity_t *` | — |
+| `now_ms` | `uint32_t` | — |
+| `mode` | `zplc_retain_save_mode_t` | — |
+
+#### `zplc_retain_cold_reset`
+
+```c
+zplc_retain_save_result_t zplc_retain_cold_reset(const zplc_retain_identity_t *identity, uint32_t now_ms);
+```
+
+**Source summary:** Cold reset: zero the region and store it, so a restart does not bring the old values back. The reason becomes ZPLC_RETAIN_RESET.
+
+**Parameters**
+
+| Name | Type | Source description |
+| --- | --- | --- |
+| `identity` | `const zplc_retain_identity_t *` | — |
+| `now_ms` | `uint32_t` | — |
+
+#### `zplc_retain_last_status`
+
+```c
+void zplc_retain_last_status(zplc_retain_status_t *out);
+```
+
+**Source summary:** Copy the status.
+
+**Parameters**
+
+| Name | Type | Source description |
+| --- | --- | --- |
+| `out` | `zplc_retain_status_t *` | — |
+
+#### `zplc_retain_reason_string`
+
+```c
+const char *zplc_retain_reason_string(zplc_retain_reason_t reason);
+```
+
+**Source summary:** Stable token for a reason: restored, none, identity_mismatch, ...
+
+**Parameters**
+
+| Name | Type | Source description |
+| --- | --- | --- |
+| `reason` | `zplc_retain_reason_t` | — |
+
+### Types
+
+| Name | Kind | Source summary |
+| --- | --- | --- |
+| `zplc_retain_reason_t` | Enum | Outcome of the last restore (or of a cold reset). |
+| `zplc_retain_save_mode_t` | Enum | Whether a save is bound by the minimum interval. |
+| `zplc_retain_save_result_t` | Enum | Result of zplc_retain_save(). |
+| `crc32` | Struct | Identity of the program that owns the retained values. |
+| `region` | Struct | Module configuration; the module keeps its own copy. |
+| `reason` | Struct | What the status of the runtime reports (RT-025: "the status says why"). |
+
+### Constants and macros
+
+| Name | Value | Source summary |
+| --- | --- | --- |
+| `ZPLC_RETAIN_H` | `—` | — |
+| `ZPLC_RETAIN_FORMAT_VERSION` | `1U` | Record format version written and accepted. |
+| `ZPLC_RETAIN_HEADER_SIZE` | `28U` | Bytes before the payload. |
+| `ZPLC_RETAIN_TRAILER_SIZE` | `4U` | Bytes after the payload (the CRC-32). |
+| `ZPLC_RETAIN_CHUNK_SIZE` | `CONFIG_ZPLC_RETAIN_CHUNK_SIZE` | — |
+| `ZPLC_RETAIN_CHUNK_SIZE` | `1024U` | — |
+| `ZPLC_RETAIN_MAX_CHUNKS` | `8U` | Chunks per slot; the keys use the digits '0'..'7'. |
 
 ## `zplc_scheduler.h`
 
