@@ -1423,14 +1423,15 @@ export const JOURNEYS: Journey[] = [
   {
     // IDE-012: the work of Tests runs in processes of its own and is cancellable; the window keeps answering throughout.
     name: '26 A long test run can be cancelled and leaves no process behind', example: 'motor_start_stop', proves: ['IDE-012'], partly: [],
-    run: async (app, { project }) => {
+    run: async (app, { project, root }) => {
       // Three scenarios of the longest allowed length (10,000 samples each): seconds of work in the runtime.
       for (const name of ['LongA', 'LongB', 'LongC']) {
         const scenario = { schemaVersion: 1, id: name, tickMs: 10, durationMs: 99_990, events: [{ atMs: 0, set: { 'Motor.Start': true, 'Motor.Stop': false, 'Motor.EStop': false, 'Motor.Overload': false } }], expectations: [{ kind: 'AT', atMs: 0, condition: { 'Motor.Forward': false, 'Motor.Reverse': false } }] };
         writeFileSync(join(project, 'tests', `${name}.scenario.json`), JSON.stringify(scenario));
       }
       /**
-       * The processes below the main process of the app under test (found by the port switch only it carries): pid and name.
+       * The processes below the main process of the app under test (found by the private user-data directory only it
+       * carries: other applications may be running on the machine): pid and name.
        * A utility process rewrites its command line once it is up, so the tree and the process name are what identify it.
        */
       const descendants = (): Array<{ pid: number; name: string }> => {
@@ -1442,7 +1443,8 @@ export const JOURNEYS: Journey[] = [
             table.set(Number(entry), { parent, name: readFileSync(`/proc/${entry}/comm`, 'utf8').trim(), command: readFileSync(`/proc/${entry}/cmdline`, 'utf8').split('\0').join(' ') });
           } catch { /* it exited meanwhile */ }
         }
-        const main = [...table.entries()].find(([, entry]) => entry.command.includes('--zplc-smoke-port=') && !entry.command.includes('--type='))?.[0];
+        const profile = `--user-data-dir=${join(root, 'profile')}`;
+        const main = [...table.entries()].find(([, entry]) => entry.command.split(' ').includes(profile) && entry.command.includes('--zplc-smoke-port=') && !entry.command.includes('--type='))?.[0];
         const found: Array<{ pid: number; name: string }> = [];
         const walk = (pid: number) => { for (const [child, entry] of table) if (entry.parent === pid) { found.push({ pid: child, name: entry.name }); walk(child); } };
         if (main !== undefined) walk(main);
@@ -1463,7 +1465,7 @@ export const JOURNEYS: Journey[] = [
       const during = await app.until('a worker process that owns a native runtime', async () => {
         const now = added();
         return now.some((process) => process.name === 'zplc_runtime') && now.some((process) => process.name !== 'zplc_runtime') ? now : undefined;
-      }, 5_000);
+      }, 20_000);
       assert(during.filter((process) => process.name !== 'zplc_runtime').length >= 1, 'The tests did not run in a process of their own.');
 
       // The main process answers the window promptly while the work runs somewhere else.

@@ -85,7 +85,7 @@ export function SimulationInputsList({ rows, unavailable, message, onSet, onForc
                     <td className="px-2 py-1">
                       <input
                         type="checkbox" checked={row.forced} disabled={disabled || !row.forceable || row.value === null}
-                        aria-label={`Force ${row.input.name}`}
+                        aria-label={`Force input ${row.input.name}`}
                         title={row.forceable ? undefined : 'A force carries up to 32 bits'}
                         onChange={(event) => onForce(row.input, event.target.checked)}
                       />

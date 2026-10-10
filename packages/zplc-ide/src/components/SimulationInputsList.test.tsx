@@ -31,7 +31,7 @@ describe('the simulation inputs list (IDE-024)', () => {
     expect(html).toContain('1234');
     expect(html).toContain('role="switch"');
     expect(html).toContain('aria-label="Value of Setpoint"');
-    expect(html).toContain('aria-label="Force Setpoint"');
+    expect(html).toContain('aria-label="Force input Setpoint"');
   });
 
   it('says in words that there is nothing to set, and why the inputs are read-only', () => {
