@@ -108,6 +108,15 @@ if(ZPLC_BUILD_FUZZER)
         message(FATAL_ERROR "ZPLC_BUILD_FUZZER requires Clang")
     endif()
 
+    # Address and undefined-behaviour sanitizers, with undefined behaviour and out-of-range
+    # float-to-integer conversions fatal: a finding must stop the run and save its input.
+    set(ZPLC_FUZZ_FLAGS
+        -fsanitize=fuzzer,address,undefined,float-cast-overflow
+        -fno-sanitize-recover=undefined,float-cast-overflow
+        -fno-omit-frame-pointer
+    )
+
+    # VF-014: the verifier alone, with a mutator that keeps the CRC valid.
     add_executable(fuzz_loader_verify
         tests/fuzz_loader_verify.c
         src/core/zplc_loader.c
@@ -117,14 +126,8 @@ if(ZPLC_BUILD_FUZZER)
         ${CMAKE_CURRENT_SOURCE_DIR}/include
     )
 
-    target_compile_options(fuzz_loader_verify PRIVATE
-        -fsanitize=fuzzer,address,undefined
-        -fno-omit-frame-pointer
-    )
-    target_link_options(fuzz_loader_verify PRIVATE
-        -fsanitize=fuzzer,address,undefined
-        -fno-omit-frame-pointer
-    )
+    target_compile_options(fuzz_loader_verify PRIVATE ${ZPLC_FUZZ_FLAGS})
+    target_link_options(fuzz_loader_verify PRIVATE ${ZPLC_FUZZ_FLAGS})
 endif()
 
 enable_testing()
