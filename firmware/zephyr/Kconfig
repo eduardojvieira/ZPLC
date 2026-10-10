@@ -78,6 +78,20 @@ config ZPLC_REQUIRED_GPIO_OUTPUT_MASK
       unconfigurable required channel fails HAL initialization; this setting
       does not qualify the electrical behavior of any mapped pin.
 
+config ZPLC_PROGRAM_STORE_CHUNK_SIZE
+    int "Largest piece of a stored program kept under one key (bytes)"
+    default 1024
+    range 256 2048
+    help
+      The program store cuts the artifact into chunks of this size and keeps each under its own key, because a
+      flash key-value store holds one entry inside one erase sector and an artifact as large as
+      ZPLC_CODE_SIZE_MAX (45056 bytes by default) does not fit a 4 KB sector. An artifact of at most one chunk is
+      one key, which is the layout of the first version of the store.
+
+      A chunk and the entry overhead of the backend must fit a sector with room for its allocation records:
+      1024 fits the 4 KB sector of every board of this repository. The build checks that the storage partition
+      holds two slots of ZPLC_CODE_SIZE_MAX in chunks of this size.
+
 config ZPLC_VM_CYCLE_INSTRUCTION_BUDGET
     int "PLC scan instruction budget"
     default 100000

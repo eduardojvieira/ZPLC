@@ -986,7 +986,11 @@ static int cmd_sys_info(const struct shell *sh, size_t argc, char **argv) {
     JSON_INT(sh, "work_size", ZPLC_MEM_WORK_SIZE, true);
     JSON_INT(sh, "retain_size", ZPLC_MEM_RETAIN_SIZE, true);
     JSON_INT(sh, "ipi_size", ZPLC_MEM_IPI_SIZE, true);
-    JSON_INT(sh, "opi_size", ZPLC_MEM_OPI_SIZE, false);
+    JSON_INT(sh, "opi_size", ZPLC_MEM_OPI_SIZE, true);
+    /* The largest artifact the program store accepts is the configured code size: one value, advertised here,
+     * accepted by 'zplc load' and kept by the store (RT-028). */
+    JSON_INT(sh, "code_size", ZPLC_MEM_CODE_SIZE, true);
+    JSON_INT(sh, "max_artifact_size", (int)ZPLC_PROGRAM_STORE_MAX_ARTIFACT_SIZE, false);
     JSON_OBJ_END(sh);
 
     JSON_OBJ_END(sh);
@@ -1004,6 +1008,8 @@ static int cmd_sys_info(const struct shell *sh, size_t argc, char **argv) {
   shell_print(sh, "  Memory Sizes:   WORK=%d, RETAIN=%d, IPI=%d, OPI=%d",
               ZPLC_MEM_WORK_SIZE, ZPLC_MEM_RETAIN_SIZE, ZPLC_MEM_IPI_SIZE,
               ZPLC_MEM_OPI_SIZE);
+  shell_print(sh, "  Program Size:   CODE=%d, largest artifact=%u bytes",
+              ZPLC_MEM_CODE_SIZE, (unsigned int)ZPLC_PROGRAM_STORE_MAX_ARTIFACT_SIZE);
 
   return 0;
 }

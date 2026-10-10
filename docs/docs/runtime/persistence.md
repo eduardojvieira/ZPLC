@@ -46,6 +46,43 @@ when the verified load completes; it never starts the machine. Start is a
 separate, explicit human operation. Target, power-cut, HIL and electrical
 evidence remain specific to the exact profile and have not been executed here.
 
+### How the store keeps a program
+
+The store has two slots, A and B, and a small active record that names the slot to run. A slot is the artifact, an
+8 byte footer (`ZPE1` and the artifact length) and a 32 byte metadata record; every record carries a CRC-32 and the
+format version. The host runtime and the firmware run the same code (`zplc_program_store.c`) over the HAL persistence
+calls, so the order of the writes below is the one the host tests exercise.
+
+A deploy writes the slot that is not active, reads it back and verifies it, writes the metadata as prepared and
+reads it back, and only then writes the active record: that write is the single point at which the new program
+becomes the one to restore. The metadata is then rewritten as committed.
+
+| A power cut ... | What the next restore finds |
+|---|---|
+| before the active record is written | The previous program. A store that never held one is empty. |
+| in the middle of the new payload | The previous program: a slot that is half old and half new fails the CRC-32 of its artifact and is never accepted. |
+| after the active record, before the metadata is rewritten | The new program: the slot was read back before the pointer moved. |
+| that damages the active record | The newest complete committed slot. |
+
+Records that exist and verify as nothing are never read as an empty store: restore reports them as unverifiable and a
+deploy refuses to write over them. A store written by the first firmware (one key, `code_len` and `code`) is
+restored as it is and migrated at the next deploy.
+
+A flash key-value store keeps an entry inside one erase sector, so a payload is cut into chunks of
+`CONFIG_ZPLC_PROGRAM_STORE_CHUNK_SIZE` bytes (1024 by default), each under its own key. The largest artifact is one
+number, `CONFIG_ZPLC_CODE_SIZE_MAX`: it is the code region, the largest artifact the loader accepts, the size of the
+staging and restore buffers, the size `zplc sys info` reports (`max_artifact_size`) and the size the IDE is told for
+the board (RT-028). The build fails when two slots of that size, in chunks, do not fit the storage partition. The
+Raspberry Pi Pico profile therefore sets 24576 bytes (its 64 KB partition), the STM32F746G Discovery
+profile 16384 and the Arduino Opta WiFi profile 32768 (their RAM), and the ESP32-S3 profile keeps its 8192; the
+other profiles keep 45056. The program store, the upload staging, the resident copy and the VM each hold one
+program in RAM, so a profile spends four times its code size.
+
+What has been shown: a power cut injected at every operation of a deploy and a torn write at every record, on the
+host and on `native_sim` over the NVS flash simulator, with an artifact of the largest size
+(`test_program_store`, `program_store_nvs`). What has not: a power cut on a board. The flash driver, the erase time
+and the supply behaviour of each profile need the hardware record of that profile (HIL-010).
+
 ## Retentive Memory (`RETAIN`)
 
 The compiler accepts `VAR RETAIN` and `VAR_GLOBAL RETAIN`, places those

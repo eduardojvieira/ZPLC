@@ -53,6 +53,16 @@ void zplc_hal_persist_test_fail_at(unsigned long operation);
 void zplc_hal_persist_test_fail_result(zplc_hal_result_t result);
 /** @brief Number of persistence operations since the last fail_at call. */
 unsigned long zplc_hal_persist_test_operation_count(void);
+/**
+ * @brief Cut the power at the n-th persistence operation (1-based): that operation and every later one fail,
+ *        until zplc_hal_persist_test_fail_at(0) is called (RT-031).
+ */
+void zplc_hal_persist_test_power_cut_at(unsigned long operation);
+/**
+ * @brief The save at the n-th operation leaves only the first @p bytes of its data in the final file, and the
+ *        power is cut as for zplc_hal_persist_test_power_cut_at (a torn write, RT-031).
+ */
+void zplc_hal_persist_test_tear_at(unsigned long operation, size_t bytes);
 /** @brief 1 when the injected failure fired. */
 int zplc_hal_persist_test_failure_triggered(void);
 /** @brief Fail every parent-directory sync (enabled) or none. */

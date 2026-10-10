@@ -74,6 +74,7 @@ add_library(zplc_core STATIC
     src/core/zplc_comm_dispatch.c
     src/core/zplc_loader.c
     src/core/zplc_retain.c
+    src/core/zplc_program_store.c
 )
 
 target_compile_definitions(zplc_core PUBLIC ZPLC_CORE_VERSION_STR="${ZPLC_CORE_VERSION_STR}")
@@ -308,6 +309,25 @@ target_include_directories(test_core_lock PRIVATE
 target_compile_definitions(test_core_lock PRIVATE ZPLC_CORE_VERSION_STR="${ZPLC_CORE_VERSION_STR}")
 
 add_test(NAME test_core_lock COMMAND test_core_lock)
+
+# Test: the durable program store: the largest artifact, chunked payloads, a power cut at every operation and a
+# torn write at every save (RT-028, RT-031, RT-032). Also run under the sanitizers.
+add_executable(test_program_store
+    tests/test_program_store.c
+    src/core/zplc_program_store.c
+    src/hal/posix/zplc_hal_posix.c
+)
+
+target_include_directories(test_program_store PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+)
+target_compile_definitions(test_program_store PRIVATE ZPLC_HAL_PERSIST_TESTING)
+
+if(UNIX AND NOT APPLE)
+    target_link_libraries(test_program_store PRIVATE rt)
+endif()
+
+add_test(NAME test_program_store COMMAND test_program_store)
 
 # Test: VM Core Execution
 add_executable(test_vm_core

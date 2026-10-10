@@ -12,6 +12,8 @@
  */
 
 #include <zplc_hal.h>
+#include <zplc_isa.h>
+#include <zplc_program_store.h>
 
 #include <zephyr/device.h>
 #include <zephyr/devicetree.h>
@@ -615,11 +617,73 @@ zplc_hal_result_t zplc_hal_dac_write(uint8_t channel, uint16_t value) {
  *         ("retain_a0".."retain_b7", see zplc_retain.h). */
 #define NVS_ID_RETAIN_CHUNKS 16
 
+/** @brief NVS IDs from 64: chunk 1, 2, ... of the payload of program slot a, then of slot b
+ *         ("program_v1_slot_a_payload_1", see zplc_program_store.h). Chunk 0 is NVS_ID_PROGRAM_SLOT_x_PAYLOAD.
+ *         Each slot has ZPLC_PROGRAM_STORE_MAX_CHUNKS identifiers, of which the first is not used. */
+#define NVS_ID_PROGRAM_CHUNKS 64
+
+/* RT-029: the two program slots of the largest artifact, the records and, when it is built in, the two RETAIN
+ * records have to fit the storage partition with one spare sector for garbage collection. A sector is taken as
+ * 4 KB, the smallest the boards of this repository have; a board with larger sectors keeps more spare. The figure
+ * is an estimate (entry overhead is ZPLC_PROGRAM_STORE_ENTRY_OVERHEAD per entry), so it fails the build early
+ * rather than promising that the last byte fits. The remedy is a smaller CONFIG_ZPLC_CODE_SIZE_MAX in the board
+ * profile, or a larger partition. */
+#define ZPLC_STORAGE_SPARE_SECTOR_BYTES 4096U
+#ifdef CONFIG_ZPLC_RETAIN_PERSIST
+#define ZPLC_STORAGE_RETAIN_BYTES                                              \
+  (2U * (((ZPLC_MEM_RETAIN_SIZE + 64U + ZPLC_PROGRAM_STORE_CHUNK_SIZE - 1U) /  \
+          ZPLC_PROGRAM_STORE_CHUNK_SIZE) *                                     \
+         (ZPLC_PROGRAM_STORE_CHUNK_SIZE + ZPLC_PROGRAM_STORE_ENTRY_OVERHEAD)))
+#else
+#define ZPLC_STORAGE_RETAIN_BYTES 0U
+#endif
+#define ZPLC_STORAGE_REQUIRED_BYTES                                            \
+  (ZPLC_PROGRAM_STORE_WORST_CASE_BYTES + ZPLC_STORAGE_RETAIN_BYTES +           \
+   ZPLC_STORAGE_SPARE_SECTOR_BYTES)
+BUILD_ASSERT(ZPLC_STORAGE_SIZE() >= ZPLC_STORAGE_REQUIRED_BYTES,
+             "the storage partition cannot hold two program slots of "
+             "CONFIG_ZPLC_CODE_SIZE_MAX (and the RETAIN records): lower the code size "
+             "of the board profile or enlarge storage_partition");
+
 /** @brief NVS filesystem handle */
 static struct nvs_fs nvs_handle;
 
 /** @brief NVS initialized flag */
 static bool nvs_initialized = false;
+
+/**
+ * @brief NVS ID of "program_v1_slot_<a|b>_payload_<n>", n a decimal chunk number from 1, or 0.
+ */
+static uint16_t program_chunk_id(const char *key) {
+  static const char prefix[] = "program_v1_slot_";
+  static const char suffix[] = "_payload_";
+  const size_t prefix_length = sizeof(prefix) - 1U;
+  const size_t suffix_length = sizeof(suffix) - 1U;
+  const char *digits;
+  unsigned long chunk = 0UL;
+  unsigned slot;
+
+  if (strncmp(key, prefix, prefix_length) != 0 ||
+      (key[prefix_length] != 'a' && key[prefix_length] != 'b') ||
+      strncmp(key + prefix_length + 1U, suffix, suffix_length) != 0) {
+    return 0;
+  }
+  slot = key[prefix_length] == 'a' ? 0U : 1U;
+  digits = key + prefix_length + 1U + suffix_length;
+  if (*digits == '\0' || *digits == '0') {
+    return 0;
+  }
+  for (; *digits != '\0'; digits++) {
+    if (*digits < '0' || *digits > '9') {
+      return 0;
+    }
+    chunk = chunk * 10UL + (unsigned long)(*digits - '0');
+    if (chunk >= ZPLC_PROGRAM_STORE_MAX_CHUNKS) {
+      return 0;
+    }
+  }
+  return (uint16_t)(NVS_ID_PROGRAM_CHUNKS + slot * ZPLC_PROGRAM_STORE_MAX_CHUNKS + chunk);
+}
 
 /**
  * @brief Map string key to NVS ID.
@@ -644,7 +708,7 @@ static uint16_t key_to_nvs_id(const char *key) {
   if (strncmp(key, "retain_", 7) == 0 && (key[7] == 'a' || key[7] == 'b') &&
       key[8] >= '0' && key[8] <= '7' && key[9] == '\0')
     return NVS_ID_RETAIN_CHUNKS + (key[7] - 'a') * 8 + (key[8] - '0');
-  return 0; /* Invalid */
+  return program_chunk_id(key);
 }
 
 /**
@@ -762,6 +826,22 @@ zplc_hal_result_t zplc_hal_persist_load(const char *key, void *data,
   if (id == 0) {
     zplc_hal_log("[HAL] Unknown persist key: %s\n", key);
     return ZPLC_HAL_ERROR;
+  }
+
+  /* NVS refuses a read request larger than the largest entry it can hold: a sector less two allocation entries.
+   * An entry is never larger, so asking for less than the caller's capacity truncates nothing. A caller that
+   * passes the capacity of a whole artifact (the program store reads the first chunk that way) is served. */
+  {
+    const size_t write_block = nvs_handle.flash_parameters != NULL
+                                   ? nvs_handle.flash_parameters->write_block_size
+                                   : 1U;
+    const size_t allocation_entry =
+        write_block <= 1U ? 8U : ((8U + write_block - 1U) / write_block) * write_block;
+    const size_t largest_entry = nvs_handle.sector_size - 2U * allocation_entry;
+
+    if (len > largest_entry) {
+      len = largest_entry;
+    }
   }
 
   /* Read from NVS */
