@@ -1,0 +1,8 @@
+{
+  "requirement": "CMP-032",
+  "title": "0.0 ** -1.0 is a division by zero, as 1.0 / 0.0 is",
+  "scans": 1,
+  "scanMs": 10,
+  "expect": [],
+  "fault": true
+}

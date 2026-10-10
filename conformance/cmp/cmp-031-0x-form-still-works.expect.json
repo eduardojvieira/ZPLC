@@ -1,0 +1,13 @@
+{
+  "requirement": "CMP-031",
+  "title": "the non-IEC 0x form keeps working",
+  "scans": 1,
+  "scanMs": 10,
+  "expect": [
+    {
+      "at": "%QW0",
+      "type": "INT",
+      "value": 255
+    }
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "requirement": "CMP-032",
+  "title": "** with a negative base and a whole exponent",
+  "scans": 1,
+  "scanMs": 10,
+  "expect": [
+    {
+      "at": "%QD0",
+      "type": "REAL",
+      "value": -27.0
+    },
+    {
+      "at": "%QD4",
+      "type": "REAL",
+      "value": 4.0
+    }
+  ]
+}

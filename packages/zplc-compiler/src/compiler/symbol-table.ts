@@ -15,6 +15,7 @@ import { getDataTypeSize, getArrayElementCount, isArrayType, DataType, VarSectio
 import type { STDataType, DataTypeValue, VarSectionValue, IOAddress, VarDecl, Program, ArrayType, PointerType, CompilationUnit, Expression, Statement, InitialValue } from './ast.ts';
 import { getFB } from './stdlib/index.ts';
 import { MEMORY_REGION } from '../contract.generated.ts';
+import { CodegenError } from './diagnostics.ts';
 
 // ============================================================================
 // Memory Layout Constants
@@ -30,6 +31,13 @@ export const MemoryLayout = {
     /** Retentive Memory base address */
     RETAIN_BASE: MEMORY_REGION.RETAIN.base,
 } as const;
+
+/**
+ * Bytes the retentive region reserves at its start when a program has a RETAIN variable. The first byte is set
+ * once the initial values of the retained variables have been applied, and is saved with them: a region the
+ * runtime restored has it set, so the initial values do not overwrite what was saved (CMP-029).
+ */
+export const RETAIN_MARKER_SIZE = 4;
 
 // ============================================================================
 // Symbol Table Types
@@ -59,6 +67,8 @@ export interface Symbol {
     tags?: Record<string, string | true>;
     /** Source line where this variable was declared (1-based) */
     declarationLine?: number;
+    /** Placed in the retentive region (VAR RETAIN, CMP-029). */
+    retain?: boolean;
 }
 
 /**
@@ -184,6 +194,12 @@ export class SymbolTable {
     private userEnums = new Map<string, UserEnumDefinition>();
     private interfaces = new Map<string, InterfaceDefinition>();
     private workOffset = 0;  // Current offset in work memory
+    private retainOffset = 0;  // Current offset in the retentive region (VAR RETAIN)
+    /**
+     * Names that are in scope only while the code generator inlines a function block body: the members of the
+     * instance being inlined, instances declared inside it among them (CMP-038). They shadow the globals.
+     */
+    scopeResolver: ((name: string) => Symbol | undefined) | null = null;
     private readonly workBase: number;  // Base address for work memory
 
     /**
@@ -212,14 +228,14 @@ export class SymbolTable {
      * Get a symbol by name.
      */
     get(name: string): Symbol | undefined {
-        return this.symbols.get(name);
+        return this.scopeResolver?.(name) ?? this.symbols.get(name);
     }
 
     /**
      * Check if a symbol exists.
      */
     has(name: string): boolean {
-        return this.symbols.has(name);
+        return this.symbols.has(name) || this.scopeResolver?.(name) !== undefined;
     }
 
     /**
@@ -234,8 +250,11 @@ export class SymbolTable {
      * Automatically assigns memory address.
      */
     add(decl: VarDecl): Symbol {
+        if (decl.section === VarSection.VAR_EXTERNAL) {
+            return this.linkExternal(decl);
+        }
         if (this.symbols.has(decl.name)) {
-            throw new Error(`Symbol '${decl.name}' already defined`);
+            throw new CodegenError(`Symbol '${decl.name}' already defined`, decl.line, decl.column, decl.line, decl.column + decl.name.length);
         }
 
         const varSize = this.sizeOf(decl.dataType);
@@ -257,6 +276,14 @@ export class SymbolTable {
             } else {
                 address = this.workBase + offset;
             }
+        } else if (decl.retain) {
+            // VAR RETAIN: the retentive region, which the runtime saves and restores (CMP-029)
+            if (this.retainOffset === 0) this.retainOffset = RETAIN_MARKER_SIZE;
+            const alignment = Math.min(varSize, 4);
+            this.retainOffset = alignTo(this.retainOffset, alignment);
+
+            address = MemoryLayout.RETAIN_BASE + this.retainOffset;
+            this.retainOffset += varSize;
         } else {
             // Regular variable: allocate in work memory
             const alignment = Math.min(varSize, 4);
@@ -310,10 +337,31 @@ export class SymbolTable {
             initialValue: decl.initialValue,
             tags: decl.tags,
             declarationLine: decl.line,
+            ...(decl.retain && !decl.ioAddress ? { retain: true } : {}),
         };
 
         this.symbols.set(decl.name, symbol);
         return symbol;
+    }
+
+    /**
+     * VAR_EXTERNAL: the name refers to a VAR_GLOBAL variable declared elsewhere and takes no storage (CMP-030).
+     */
+    private linkExternal(decl: VarDecl): Symbol {
+        const global = this.symbols.get(decl.name);
+        const at = [decl.line, decl.column, decl.line, decl.column + decl.name.length] as const;
+        if (!global) {
+            throw new CodegenError(`VAR_EXTERNAL '${decl.name}' has no VAR_GLOBAL declaration`, ...at);
+        }
+        if (JSON.stringify(global.dataType).toUpperCase() !== JSON.stringify(decl.dataType).toUpperCase()) {
+            throw new CodegenError(`VAR_EXTERNAL '${decl.name}' is declared with another type than its VAR_GLOBAL`, ...at);
+        }
+        return global;
+    }
+
+    /** Bytes of the retentive region the variables declared RETAIN take. */
+    getRetainOffset(): number {
+        return this.retainOffset;
     }
 
     /**
@@ -400,6 +448,9 @@ export class SymbolTable {
             type.dimensions.forEach((dimension, d) => {
                 const index = expr.indices[d];
                 if (!index || index.kind !== 'IntLiteral') throw new Error('Array index is not a constant');
+                if (index.value < dimension.lowerBound || index.value > dimension.upperBound) {
+                    throw new Error(`Index ${index.value} is outside the array bounds ${dimension.lowerBound}..${dimension.upperBound}`);
+                }
                 const inner = type.dimensions.slice(d + 1).reduce((n, dim) => n * (dim.upperBound - dim.lowerBound + 1), 1);
                 element += (index.value - dimension.lowerBound) * inner;
             });
@@ -713,7 +764,8 @@ export function buildSymbolTable(unit: CompilationUnit | Program, workMemoryBase
 
             if (fbIndex === -1) {
                 const missing = unprocessedFBs.map(fb => `${fb.name} (extends ${fb.extends})`).join(', ');
-                throw new Error(`Circular inheritance or missing base FB in definitions: ${missing}`);
+                const first = unprocessedFBs[0]!;
+                throw new CodegenError(`Circular inheritance or missing base FB in definitions: ${missing}`, first.line, first.column);
             }
 
             const fb = unprocessedFBs[fbIndex];
@@ -795,16 +847,16 @@ export function buildSymbolTable(unit: CompilationUnit | Program, workMemoryBase
                 
                 if (method.isOverride) {
                     if (!baseMethod) {
-                        throw new Error(`Method '${method.name}' marked as OVERRIDE but no base method found in '${fb.name}'`);
+                        throw new CodegenError(`Method '${method.name}' marked as OVERRIDE but no base method found in '${fb.name}'`, method.line, method.column);
                     }
                     if (baseMethod.isFinal) {
-                        throw new Error(`Cannot override FINAL method '${method.name}' in '${fb.name}'`);
+                        throw new CodegenError(`Cannot override FINAL method '${method.name}' in '${fb.name}'`, method.line, method.column);
                     }
                     if (method.returnType !== baseMethod.returnType) {
-                        throw new Error(`Override method '${method.name}' return type '${method.returnType}' does not match base '${baseMethod.returnType}'`);
+                        throw new CodegenError(`Override method '${method.name}' return type '${method.returnType}' does not match base '${baseMethod.returnType}'`, method.line, method.column);
                     }
                 } else if (baseMethod) {
-                    throw new Error(`Method '${method.name}' in '${fb.name}' hides inherited method. Use OVERRIDE explicitly.`);
+                    throw new CodegenError(`Method '${method.name}' in '${fb.name}' hides inherited method. Use OVERRIDE explicitly.`, method.line, method.column);
                 }
                 
                 // If overriding, we replace the entry in the map
@@ -827,7 +879,7 @@ export function buildSymbolTable(unit: CompilationUnit | Program, workMemoryBase
                 for (const ifaceName of fb.implements) {
                     const validateInterface = (name: string) => {
                         const iface = table.getInterfaceDefinition(name);
-                        if (!iface) throw new Error(`Unknown interface '${name}' implemented by '${fb.name}'`);
+                        if (!iface) throw new CodegenError(`Unknown interface '${name}' implemented by '${fb.name}'`, fb.line, fb.column);
                         
                         // Check base interfaces
                         for (const base of iface.extends) {
@@ -838,31 +890,31 @@ export function buildSymbolTable(unit: CompilationUnit | Program, workMemoryBase
                         for (const [methodName, sig] of iface.methods) {
                             const method = methods.get(methodName);
                             if (!method) {
-                                throw new Error(`Function Block '${fb.name}' implements interface '${ifaceName}' but is missing required method '${methodName}'`);
+                                throw new CodegenError(`Function Block '${fb.name}' implements interface '${ifaceName}' but is missing required method '${methodName}'`, fb.line, fb.column);
                             }
                             
                             // Check signature
                             if (method.returnType !== sig.returnType) {
-                                throw new Error(`Method '${methodName}' in '${fb.name}' has return type '${method.returnType}' but interface '${ifaceName}' requires '${sig.returnType}'`);
+                                throw new CodegenError(`Method '${methodName}' in '${fb.name}' has return type '${method.returnType}' but interface '${ifaceName}' requires '${sig.returnType}'`, fb.line, fb.column);
                             }
                             
                             // Check inputs
                             if (method.inputs.length !== sig.inputs.length) {
-                                throw new Error(`Method '${methodName}' has different number of inputs than required by interface '${ifaceName}'`);
+                                throw new CodegenError(`Method '${methodName}' has different number of inputs than required by interface '${ifaceName}'`, fb.line, fb.column);
                             }
                             for (let i = 0; i < method.inputs.length; i++) {
                                 if (method.inputs[i].name !== sig.inputs[i].name || method.inputs[i].dataType !== sig.inputs[i].dataType) {
-                                    throw new Error(`Input ${i} of method '${methodName}' does not match interface '${ifaceName}' signature`);
+                                    throw new CodegenError(`Input ${i} of method '${methodName}' does not match interface '${ifaceName}' signature`, fb.line, fb.column);
                                 }
                             }
                             
                             // Check outputs
                             if (method.outputs.length !== sig.outputs.length) {
-                                throw new Error(`Method '${methodName}' has different number of outputs than required by interface '${ifaceName}'`);
+                                throw new CodegenError(`Method '${methodName}' has different number of outputs than required by interface '${ifaceName}'`, fb.line, fb.column);
                             }
                             for (let i = 0; i < method.outputs.length; i++) {
                                 if (method.outputs[i].name !== sig.outputs[i].name || method.outputs[i].dataType !== sig.outputs[i].dataType) {
-                                    throw new Error(`Output ${i} of method '${methodName}' does not match interface '${ifaceName}' signature`);
+                                    throw new CodegenError(`Output ${i} of method '${methodName}' does not match interface '${ifaceName}' signature`, fb.line, fb.column);
                                 }
                             }
                         }

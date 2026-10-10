@@ -1,0 +1,18 @@
+{
+  "requirement": "CMP-032",
+  "title": "bit access on a structure member and on an array element",
+  "scans": 1,
+  "scanMs": 10,
+  "expect": [
+    {
+      "at": "%QX0.0",
+      "type": "BOOL",
+      "value": true
+    },
+    {
+      "at": "%QX0.1",
+      "type": "BOOL",
+      "value": true
+    }
+  ]
+}

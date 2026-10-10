@@ -1,0 +1,18 @@
+{
+  "requirement": "CMP-029",
+  "title": "retained and ordinary variables of one program",
+  "scans": 3,
+  "scanMs": 10,
+  "expect": [
+    {
+      "at": "%QD0",
+      "type": "DINT",
+      "value": 33
+    },
+    {
+      "at": "%QX4.0",
+      "type": "BOOL",
+      "value": true
+    }
+  ]
+}

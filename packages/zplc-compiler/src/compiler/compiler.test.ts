@@ -10,7 +10,7 @@ import { join } from 'path';
 
 import { tokenize, TokenType } from './lexer.ts';
 import { parse } from './parser.ts';
-import { buildSymbolTable, MemoryLayout } from './symbol-table.ts';
+import { buildSymbolTable, MemoryLayout, RETAIN_MARKER_SIZE } from './symbol-table.ts';
 import { generate } from './codegen.ts';
 import { compileST, compileToBinary, compileSingleFileWithTask, validate, CompilerError } from './index.ts';
 import { findPC, findSourceLine } from './debug-map.ts';
@@ -414,33 +414,62 @@ describe('target memory profiles', () => {
     });
 });
 
-describe('RETAIN declarations', () => {
+describe('RETAIN declarations (CMP-029)', () => {
     const config = {
-        name: 'RetainReject',
+        name: 'RetainAccept',
         version: '1.0.0',
         tasks: [{ name: 'MainTask', trigger: 'cyclic' as const, interval: 10, priority: 1, programs: ['Main'] }],
     };
 
-    for (const [label, content] of [
-        ['VAR RETAIN', 'PROGRAM Main\nVAR RETAIN\nState : BOOL;\nEND_VAR\nEND_PROGRAM'],
-        ['VAR_GLOBAL RETAIN', 'VAR_GLOBAL RETAIN\nState : BOOL;\nEND_VAR\nPROGRAM Main\nEND_PROGRAM'],
-    ] as const) {
-        it(`rejects ${label} as an unsupported parser feature with source provenance`, () => {
-            try {
-                compileMultiTaskProject(config, [{ name: 'Main', sourceRef: `src/${label.replaceAll(' ', '_')}.st`, content }]);
-                throw new Error('expected RETAIN declaration rejection');
-            } catch (error) {
-                expect(error).toBeInstanceOf(CompilerError);
-                expect(error).toMatchObject({
-                    phase: 'parser',
-                    line: label === 'VAR RETAIN' ? 2 : 1,
-                    column: label === 'VAR RETAIN' ? 5 : 12,
-                    sourceRef: `src/${label.replaceAll(' ', '_')}.st`,
-                });
-                expect(error).toHaveProperty('detail', `Compilation of 'Main' failed: RETAIN declarations are not supported`);
-            }
-        });
-    }
+    it('accepts VAR RETAIN and VAR_GLOBAL RETAIN', () => {
+        for (const content of [
+            'PROGRAM Main\nVAR RETAIN\nState : BOOL;\nEND_VAR\nEND_PROGRAM',
+            'VAR_GLOBAL RETAIN\nState : BOOL;\nEND_VAR\nPROGRAM Main\nEND_PROGRAM',
+            'PROGRAM Main\nVAR NON_RETAIN\nState : BOOL;\nEND_VAR\nEND_PROGRAM',
+        ]) {
+            expect(() => compileMultiTaskProject(config, [{ name: 'Main', content }])).not.toThrow();
+        }
+    });
+
+    it('places a RETAIN variable in the retentive region and the others in WORK', () => {
+        const result = compileMultiTaskProject(config, [{
+            name: 'Main',
+            content: 'PROGRAM Main\nVAR RETAIN\nKept : INT;\nEND_VAR\nVAR\nLost : INT;\nEND_VAR\nKept := Kept + 1;\nLost := Kept;\nEND_PROGRAM',
+        }]);
+        const vars = result.debugMap.pou.Main!.vars;
+        expect(vars.Kept!.region).toBe('RETAIN');
+        // the first bytes of the region hold the marker of the initial values
+        expect(vars.Kept!.addr).toBe(0x4000 + RETAIN_MARKER_SIZE);
+        expect(vars.Lost!.region).toBe('WORK');
+    });
+
+    it('applies the initial value of a RETAIN variable only when the retentive region holds no saved state', () => {
+        const content = 'PROGRAM Main\nVAR RETAIN\nKept : INT := 5;\nOther : DINT;\nEND_VAR\nVAR\nPlain : INT := 7;\nEND_VAR\nKept := Kept + 1;\nEND_PROGRAM';
+        const assembly = compileMultiTaskProject(config, [{ name: 'Main', content }]).programDetails[0]!.assembly;
+        const lines = assembly.split('\n').map((line) => line.trim());
+        const guard = lines.indexOf('LOAD8 0x4000');
+        expect(guard).toBeGreaterThan(0);
+        // the marker is tested, the retained initial value is stored behind it, then the marker is set
+        expect(lines[guard + 1]).toMatch(/^JNZ retain_restored_\d+$/);
+        expect(lines.slice(guard, guard + 8).join('|')).toContain('PUSH8 5|STORE16 0x4004');
+        expect(lines).toContain('STORE8 0x4000');
+        // the ordinary variable is initialised as before, outside the guard
+        expect(lines.indexOf('STORE16 0x2000')).toBeLessThan(guard);
+        // a program whose RETAIN variables have no initial value has no guard
+        const bare = compileMultiTaskProject(config, [{ name: 'Main', content: 'PROGRAM Main\nVAR RETAIN\nKept : INT;\nEND_VAR\nKept := Kept + 1;\nEND_PROGRAM' }]);
+        expect(bare.programDetails[0]!.assembly).not.toContain('LOAD8 0x4000');
+    });
+
+    it('refuses more retentive data than the target holds', () => {
+        const content = 'PROGRAM Main\nVAR RETAIN\nBig : ARRAY[0..299] OF DINT;\nEND_VAR\nEND_PROGRAM';
+        expect(() => compileMultiTaskProject(config, [{ name: 'Main', content }], { memoryProfile: { workSize: 0x2000, retainSize: 256, codeSizeMax: 0xB000 } }))
+            .toThrow(/RETAIN allocation exceeds the target memory profile/);
+    });
+
+    it('keeps retain as the name of a variable', () => {
+        const content = 'PROGRAM Main\nVAR\nretain : BOOL;\nEND_VAR\nretain := TRUE;\nEND_PROGRAM';
+        expect(() => compileMultiTaskProject(config, [{ name: 'Main', content }])).not.toThrow();
+    });
 });
 
 // ============================================================================
@@ -1107,7 +1136,7 @@ describe('Multi-Task Compiler', () => {
         }
     });
 
-    it('keeps unmappable code generation diagnostics at 0:0', () => {
+    it('positions a generation error that has no position of its own at its statement (CMP-006)', () => {
         expect(() => compileMultiTaskProject(
             { name: 'GlobalDiagnostic', version: '1.0.0', tasks: [{ name: 'MainTask', trigger: 'cyclic', interval: 10, programs: ['Main'] }] },
             [{ name: 'Main', sourceRef: 'src/Main.st', content: 'PROGRAM Main\nWATCHDOG_RESET(unused := 1);\nEND_PROGRAM' }],
@@ -1121,8 +1150,8 @@ describe('Multi-Task Compiler', () => {
         } catch (error) {
             const diagnostic = error as CompilerError;
             expect(diagnostic.phase).toBe('codegen');
-            expect(diagnostic.line).toBe(0);
-            expect(diagnostic.column).toBe(0);
+            expect(diagnostic.line).toBe(2);
+            expect(diagnostic.column).toBe(1);
             expect(diagnostic.sourceRef).toBe('src/Main.st');
         }
     });

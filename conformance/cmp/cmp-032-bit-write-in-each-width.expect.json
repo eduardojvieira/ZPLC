@@ -1,0 +1,23 @@
+{
+  "requirement": "CMP-032",
+  "title": "the top bit of a BYTE, an INT and a DWORD",
+  "scans": 1,
+  "scanMs": 10,
+  "expect": [
+    {
+      "at": "%QB0",
+      "type": "BYTE",
+      "value": 128
+    },
+    {
+      "at": "%QW2",
+      "type": "INT",
+      "value": -32768
+    },
+    {
+      "at": "%QD4",
+      "type": "DWORD",
+      "value": 2147483649
+    }
+  ]
+}

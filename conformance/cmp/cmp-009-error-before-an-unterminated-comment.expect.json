@@ -1,0 +1,9 @@
+{
+  "requirement": "CMP-009",
+  "title": "an error before an unterminated comment is reported too",
+  "build": "fails",
+  "lines": [
+    5,
+    6
+  ]
+}
