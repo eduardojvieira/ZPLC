@@ -68,7 +68,7 @@ import {
     parseStringType,
     typeToString as typeText,
 } from './symbol-table.ts';
-import type { SymbolTable, Symbol, MemberInfo } from './symbol-table.ts';
+import type { SymbolTable, Symbol, MemberInfo, MethodInfo } from './symbol-table.ts';
 import {
     getFn,
     getFB,
@@ -259,6 +259,11 @@ interface CodeGenState {
     currentFBInstance: Symbol | null;
     /** Current method being inlined (for return value handling) */
     currentMethod: MethodDecl | null;
+    /**
+     * The function block whose body or method is being inlined: the block that declares the code that runs, which
+     * is not always the type of the instance. SUPER^ and the access specifiers are relative to it (CMP-041).
+     */
+    currentBlock: string | null;
     /** Where RETURN jumps: the end of the function, inlined function block or inlined method; null in a program */
     returnLabel: string | null;
     memoryProfile: CompilerMemoryProfile;
@@ -468,6 +473,7 @@ function generateUnit(unit: CompilationUnit | Program, options: CodeGenOptions |
         currentFunction: null,
         currentFBInstance: null,
         currentMethod: null,
+        currentBlock: null,
         returnLabel: null,
         memoryProfile,
         workMemorySize,
@@ -1415,7 +1421,7 @@ interface InitOptions {
 /** Whether a value of this type holds something other than zero before the program writes to it. */
 function hasNonZeroDefault(state: CodeGenState, type: STDataType | ArrayType): boolean {
     const t = storedType(state, type);
-    if (isStringType(t) || isPointerType(t)) return true;
+    if (isStringType(t) || isPointerType(t) || isInterfaceType(state, t)) return true;
     if (isArrayType(t as STDataType)) return hasNonZeroDefault(state, (t as ArrayType).elementType);
     if (typeof t !== 'string') return false;
     const members = state.symbols.getStructDefinition(t)?.members ?? state.symbols.getFBDefinition(t)?.members;
@@ -1521,6 +1527,15 @@ function emitInitValue(state: CodeGenState, address: number, type: STDataType | 
             emit(state, text.wide ? `    PUSH16 0` : `    PUSH8 0`);
             emit(state, `    STORE${text.wide ? 16 : 8} ${formatAddress(address + 4)}`);
         }
+        return;
+    }
+
+    // a variable of an interface type refers to no instance until one is assigned
+    if (isInterfaceType(state, t)) {
+        if (init) fail(at, `'${name}' of the interface type ${typeText(t)} is given an instance by assignment, not by an initial value`);
+        emit(state, `    ; ${name} := NULL`);
+        emit(state, `    PUSH16 ${NULL_REFERENCE}   ; NULL: no instance`);
+        emit(state, `    STORE32 ${formatAddress(address)}`);
         return;
     }
 
@@ -1823,7 +1838,7 @@ function generateFunctionDecl(state: CodeGenState, func: FunctionDecl): void {
  */
 function emitStatement(state: CodeGenState, stmt: Statement): void {
     const loops = state.loopStack.length;
-    const { currentFBInstance, currentMethod, currentFunction, returnLabel, expressionDepth, resultBuffer, resultCapacity, sourceRef } = state;
+    const { currentFBInstance, currentMethod, currentBlock, currentFunction, returnLabel, expressionDepth, resultBuffer, resultCapacity, sourceRef } = state;
     const depth = state.statementStack.length;
     state.statementStack.push({ line: stmt.line, column: stmt.column, sourceRef: state.sourceRef });
     try {
@@ -1836,6 +1851,7 @@ function emitStatement(state: CodeGenState, stmt: Statement): void {
         state.loopStack.length = loops;
         state.currentFBInstance = currentFBInstance;
         state.currentMethod = currentMethod;
+        state.currentBlock = currentBlock;
         state.currentFunction = currentFunction;
         state.returnLabel = returnLabel;
         state.expressionDepth = expressionDepth;
@@ -2448,9 +2464,26 @@ function emitFBCallStatement(state: CodeGenState, stmt: FBCallStatement): void {
         emitIndexedInstanceCall(state, stmt, stmt.instance);
         return;
     }
+    if (stmt.fbName === 'SUPER^') {
+        emitSuperBodyCall(state, stmt);
+        return;
+    }
     const sym = state.symbols.get(stmt.fbName);
 
     if (!sym) {
+        // a method of the block being generated, called by its name, as a statement (CMP-041)
+        const implicit = implicitMethodCall(state, statementAsCall(stmt));
+        if (implicit) {
+            state.methodLeftResult = false;
+            emitMethodCall(state, implicit);
+            // the value the method left is discarded
+            if (state.methodLeftResult) {
+                emit(state, `    DROP       ; discard unused return value`);
+                state.methodLeftResult = false;
+            }
+            return;
+        }
+
         // A function called for what it does, its result discarded (CMP-035)
         if (state.functionTable.has(stmt.fbName)
             || (getFn(stmt.fbName) !== undefined && stmt.fbName.toUpperCase() !== 'WATCHDOG_RESET')) {
@@ -2484,7 +2517,18 @@ function emitFBCallStatement(state: CodeGenState, stmt: FBCallStatement): void {
  * are positional or named, as in a call inside an expression.
  */
 function emitFunctionCallStatement(state: CodeGenState, stmt: FBCallStatement): void {
-    const call: FunctionCall = {
+    const call = statementAsCall(stmt);
+    emit(state, `    ; ${stmt.fbName}(...) as a statement: the result is discarded`);
+    emitExpression(state, call);
+    // the value is one cell, two for a 64-bit integer
+    const result = staticType(state, call);
+    emit(state, `    DROP       ; discard the result of ${stmt.fbName}`);
+    if (isWide(result) && !isFloatType(result)) emit(state, `    DROP`);
+}
+
+/** A call written as a statement, as the call expression it is: the arguments are positional or named. */
+function statementAsCall(stmt: FBCallStatement): FunctionCall {
+    return {
         kind: 'FunctionCall',
         name: stmt.fbName,
         args: stmt.parameters.map((parameter) => {
@@ -2498,12 +2542,54 @@ function emitFunctionCallStatement(state: CodeGenState, stmt: FBCallStatement): 
         line: stmt.line,
         column: stmt.column,
     };
-    emit(state, `    ; ${stmt.fbName}(...) as a statement: the result is discarded`);
-    emitExpression(state, call);
-    // the value is one cell, two for a 64-bit integer
-    const result = staticType(state, call);
-    emit(state, `    DROP       ; discard the result of ${stmt.fbName}`);
-    if (isWide(result) && !isFloatType(result)) emit(state, `    DROP`);
+}
+
+/**
+ * A call `Name(...)` inside a function block, where `Name` is a method of the block: it is a call of the
+ * method on the instance that runs (THIS), as in IEC 61131-3 ed. 3 (CMP-041).
+ */
+function implicitMethodCall(state: CodeGenState, call: FunctionCall): MethodCall | null {
+    const instance = state.currentFBInstance;
+    if (!instance || typeof instance.dataType !== 'string' || state.currentFunction) return null;
+    if (!state.symbols.getFBDefinition(instance.dataType)?.methods.has(call.name)) return null;
+    return {
+        kind: 'MethodCall',
+        object: { kind: 'ThisExpr', line: call.line, column: call.column },
+        methodName: call.name,
+        args: call.args,
+        line: call.line,
+        column: call.column,
+    };
+}
+
+/**
+ * `SUPER^();` runs the body of the base block of the block that declares the code that runs, on the same
+ * instance: the base block's own statements, with RETURN leaving only them (CMP-041).
+ */
+function emitSuperBodyCall(state: CodeGenState, stmt: FBCallStatement): void {
+    const block = state.currentBlock;
+    if (!block || !state.currentFBInstance) fail(stmt, `SUPER^ is used outside of a function block`);
+    const baseName = state.symbols.getFBDefinition(block)?.extends;
+    if (!baseName) fail(stmt, `'${block}' extends no function block: SUPER^() has no base block to call`);
+    const base = state.functionBlockTable.get(baseName);
+    if (!base) fail(stmt, `The base block '${baseName}' of '${block}' is not declared`);
+    if (stmt.parameters.length > 0) fail(stmt.parameters[0]! as { line: number; column: number }, `SUPER^() takes no parameters: give the inputs a value before the call`);
+
+    emit(state, `    ; --- SUPER^(): the body of ${base.name} ---`);
+    const oldBlock = state.currentBlock;
+    const oldReturnLabel = state.returnLabel;
+    const oldSourceRef = state.sourceRef;
+    state.currentBlock = base.name;
+    state.returnLabel = newLabel(state, 'fb_return');
+    if (base.sourceRef !== undefined) state.sourceRef = base.sourceRef;
+    for (const bodyStmt of base.body) {
+        emitStatement(state, bodyStmt);
+    }
+    state.sourceRef = oldSourceRef;
+    emit(state, `${state.returnLabel}:`);
+    state.currentBlock = oldBlock;
+    state.returnLabel = oldReturnLabel;
+    emit(state, `    ; --- END SUPER^(): ${base.name} ---`);
 }
 
 /** The error of a parameter that cannot be bound as written. */
@@ -2572,7 +2658,9 @@ function emitInstanceCall(state: CodeGenState, stmt: FBCallStatement, sym: Symbo
         // Set context for inlining
         const oldFBInstance = state.currentFBInstance;
         const oldReturnLabel = state.returnLabel;
+        const oldBlock = state.currentBlock;
         state.currentFBInstance = sym;
+        state.currentBlock = userFB.name;
         state.returnLabel = newLabel(state, 'fb_return');
 
         // Inline FB Body: its statements are the ones of the file the block is declared in
@@ -2586,6 +2674,7 @@ function emitInstanceCall(state: CodeGenState, stmt: FBCallStatement, sym: Symbo
         // Restore context
         emit(state, `${state.returnLabel}:`);
         state.currentFBInstance = oldFBInstance;
+        state.currentBlock = oldBlock;
         state.returnLabel = oldReturnLabel;
 
         // Output bindings: the outputs the body left are copied into the caller's variables
@@ -3314,6 +3403,10 @@ function emitConverted(state: CodeGenState, expr: Expression, target: string): v
  * defines (CMP-005), and a constant must fit it (CMP-018).
  */
 function emitValueFor(state: CodeGenState, value: Expression, targetType: unknown): void {
+    if (isInterfaceType(state, targetType)) {
+        emitInterfaceValue(state, value, targetType as string);
+        return;
+    }
     const target = numericTypeName(targetType);
     if (target !== UNKNOWN_TYPE) {
         const constant = foldConstant(state, value);
@@ -3883,6 +3976,13 @@ function bindArguments(state: CodeGenState, call: FunctionCall, inputs: VarDecl[
 }
 
 function emitFunctionCall(state: CodeGenState, expr: FunctionCall): void {
+    // a method of the block being generated, called by its name (CMP-041)
+    const implicit = implicitMethodCall(state, expr);
+    if (implicit) {
+        emitMethodCall(state, implicit);
+        return;
+    }
+
     // 1. Check if it's a user-defined function
     const userFn = state.functionTable.get(expr.name);
     if (userFn) {
@@ -4728,9 +4828,21 @@ function emitDereference(state: CodeGenState, expr: DereferenceExpr): void {
  */
 function emitMethodCall(state: CodeGenState, expr: MethodCall): void {
     emit(state, `    ; Method call: ${stringifyExpression(expr.object)}.${expr.methodName}()`);
-    
+
+    // SUPER^.Method(): the method of the base of the block that declares the code that runs (CMP-041)
+    const isSuper = isSuperReference(expr.object);
+
+    // A variable of an interface type: the method of the instance it holds is the one that runs (CMP-041)
+    if (expr.object.kind === 'Identifier' || expr.object.kind === 'MemberAccess' || expr.object.kind === 'ArrayAccess') {
+        const target = interfaceTarget(state, expr.object);
+        if (target) {
+            emitInterfaceCall(state, expr, target.place, target.name);
+            return;
+        }
+    }
+
     // Get the object (FB instance)
-    if (expr.object.kind !== 'Identifier' && expr.object.kind !== 'ThisExpr') {
+    if (expr.object.kind !== 'Identifier' && expr.object.kind !== 'ThisExpr' && !isSuper) {
         fail(expr, `Complex method call targets not supported yet`);
     }
     
@@ -4738,7 +4850,15 @@ function emitMethodCall(state: CodeGenState, expr: MethodCall): void {
     let fbTypeName: string;
     let instanceSym: Symbol | undefined;
     
-    if (expr.object.kind === 'ThisExpr') {
+    if (isSuper) {
+        const block = state.currentBlock;
+        if (!block || !state.currentFBInstance) fail(expr, `SUPER^ is used outside of a function block`);
+        const base = state.symbols.getFBDefinition(block)?.extends;
+        if (!base) fail(expr, `'${block}' extends no function block: SUPER^ has no base block to call`);
+        instanceSym = state.currentFBInstance;
+        instanceName = instanceSym.name;
+        fbTypeName = base;
+    } else if (expr.object.kind === 'ThisExpr') {
         // Method called on THIS - we're inside an FB context
         if (!state.currentFBInstance) {
             fail(expr, `THIS used outside of FB context`);
@@ -4755,6 +4875,14 @@ function emitMethodCall(state: CodeGenState, expr: MethodCall): void {
         fbTypeName = instanceSym.dataType as string;
     }
     
+    emitMethodInline(state, expr, instanceSym, fbTypeName);
+}
+
+/**
+ * Inline the method `expr.methodName` of the function block `fbTypeName`, on the instance `instanceSym`: its
+ * arguments, its locals, its body and its result (CMP-041).
+ */
+function emitMethodInline(state: CodeGenState, expr: MethodCall, instanceSym: Symbol, fbTypeName: string): void {
     // Get the FB definition from SymbolTable (which handles inheritance)
     const fbDef = state.symbols.getFBDefinition(fbTypeName);
     if (!fbDef) {
@@ -4766,6 +4894,10 @@ function emitMethodCall(state: CodeGenState, expr: MethodCall): void {
     if (!methodInfo) {
         fail(expr, `Unknown method '${expr.methodName}' on FB '${fbTypeName}'`);
     }
+    checkMethodAccess(state, methodInfo, fbTypeName, expr);
+    if (methodInfo.isAbstract) {
+        fail(expr, `The method '${methodInfo.name}' of '${methodInfo.owner}' is ABSTRACT: it has no body to run, a derived block implements it`);
+    }
     
     // A method that returns a number writes a result slot that is pushed once where the method ends,
     // so the caller sees one value however many times, or never, the method assigns its name
@@ -4774,7 +4906,9 @@ function emitMethodCall(state: CodeGenState, expr: MethodCall): void {
     if (methodReturnType !== undefined) {
         const stored = storedType(state, methodReturnType);
         if (!isStringType(stored) && !isAggregateType(state, stored) && !isPointerType(stored)) {
-            const key = `${fbTypeName}.${(methodInfo as { name: string }).name}`;
+            // by the block that declares the method: an override and the method it overrides have a slot each,
+            // so SUPER^.Method() cannot write the result its caller has not read yet
+            const key = `${methodInfo.owner}.${methodInfo.name}`;
             const size = Math.max(state.symbols.sizeOf(methodReturnType), 1);
             let address = state.methodResultSlots.get(key);
             if (address === undefined) {
@@ -4788,6 +4922,7 @@ function emitMethodCall(state: CodeGenState, expr: MethodCall): void {
     // Save current FB context; the one of the method is set up after the arguments: they are values of the
     // caller, and a name in them is the caller's whatever the callee has of that name
     const prevFBInstance = state.currentFBInstance;
+    const prevBlock = state.currentBlock;
     const prevMethod = state.currentMethod;
     const prevMethodResult = state.methodResult;
     const prevReturnLabel = state.returnLabel;
@@ -4846,6 +4981,7 @@ function emitMethodCall(state: CodeGenState, expr: MethodCall): void {
     // From here on the code is the method's: its instance, its inputs and locals, its return
     state.returnLabel = newLabel(state, 'method_return');
     state.currentFBInstance = instanceSym;
+    state.currentBlock = methodInfo.owner;
     // Cast MethodInfo to MethodDecl for compatibility (they share name/body which is what matters)
     state.currentMethod = methodInfo as any;
 
@@ -4904,9 +5040,205 @@ function emitMethodCall(state: CodeGenState, expr: MethodCall): void {
 
     // Restore previous FB context
     state.currentFBInstance = prevFBInstance;
+    state.currentBlock = prevBlock;
     state.currentMethod = prevMethod;
     state.methodResult = prevMethodResult;
     state.returnLabel = prevReturnLabel;
+}
+
+// ============================================================================
+// Interfaces (CMP-041)
+//
+// A variable of an interface type is a 32-bit reference: the address of an instance in the low 16 bits and the tag
+// of its function-block type in the high 16 bits (NULL, 0xFFFF, has tag 0). Function blocks are inlined at each
+// call site with the addresses of their instance, so a call through an interface is a switch the compiler writes
+// out: for each instance in the unit of a block that implements the interface, compare the reference with the
+// one of that instance and run the method inlined on it; a reference that matches none is a VM fault.
+// ============================================================================
+
+function isInterfaceType(state: CodeGenState, type: unknown): boolean {
+    return typeof type === 'string' && state.symbols.isInterface(type);
+}
+
+/** The tag of a function-block type in an interface reference: its position among the blocks of the unit, from 1. */
+function blockTag(state: CodeGenState, fbType: string): number {
+    let tag = 1;
+    for (const name of state.functionBlockTable.keys()) {
+        if (sameName(name, fbType)) return tag;
+        tag++;
+    }
+    return fail({ line: 0, column: 0 }, `Function block '${fbType}' is not declared`);
+}
+
+/** The reference to the instance at `address` of the block `fbType`, as a variable of an interface type holds it. */
+function interfaceReference(state: CodeGenState, fbType: string, address: number): number {
+    return blockTag(state, fbType) * 0x10000 + address;
+}
+
+/**
+ * Leave on the stack the value a variable of the interface `iface` takes from `value`: NULL, another variable of
+ * that interface (or of one that extends it), or an instance of a block that implements it.
+ */
+function emitInterfaceValue(state: CodeGenState, value: Expression, iface: string): void {
+    if ((value.kind === 'IntLiteral' && value.value === 0) || isNullLiteral(state, value)) {
+        emit(state, `    PUSH16 ${NULL_REFERENCE}   ; NULL`);
+        return;
+    }
+    let place: Place | undefined;
+    try {
+        place = resolvePlace(state, value);
+    } catch (error) {
+        if (!(error instanceof CodegenError)) throw error;
+    }
+    const given = place === undefined ? undefined : storedType(state, place.type);
+    if (place && typeof given === 'string' && isInterfaceType(state, given)) {
+        if (!state.symbols.interfaceDerivesFrom(given, iface)) {
+            fail(value, `Cannot assign the interface '${given}' of '${place.name}' to a variable of the interface '${iface}'`);
+        }
+        emitLoadPlace(state, place);
+        return;
+    }
+    if (place && typeof given === 'string' && state.symbols.getFBDefinition(given)) {
+        if (!state.symbols.blockImplements(given, iface)) {
+            fail(value, `'${place.name}' is a ${given}, which does not implement the interface '${iface}'`);
+        }
+        emitAddr(state, place.addr);
+        emit(state, `    PUSH32 ${blockTag(state, given) * 0x10000}   ; tag of ${given}`);
+        emit(state, `    OR`);
+        return;
+    }
+    fail(value, `A variable of the interface '${iface}' takes an instance of a block that implements it, a variable of that interface or NULL, not ${stringifyExpression(value)}`);
+}
+
+/** The place an expression names, when it is a variable of an interface type. */
+function interfaceTarget(state: CodeGenState, object: Expression): { place: Place; name: string } | null {
+    let place: Place;
+    try {
+        place = resolvePlace(state, object);
+    } catch (error) {
+        if (error instanceof CodegenError) return null; // the call reports what is wrong with it
+        throw error;
+    }
+    const type = storedType(state, place.type);
+    return typeof type === 'string' && isInterfaceType(state, type) ? { place, name: type } : null;
+}
+
+/**
+ * Every instance in the unit of a block that implements `iface`, with the type it was declared as: the program
+ * and global variables, function and method variables, array elements, and the instances inside other blocks and
+ * structures. An address that more than one instance has (a block and its first member) has one entry for each
+ * type; the tag of the reference tells them apart.
+ */
+function interfaceCandidates(state: CodeGenState, iface: string): Array<{ symbol: Symbol; type: string; reference: number }> {
+    const candidates: Array<{ symbol: Symbol; type: string; reference: number }> = [];
+    const seen = new Set<number>();
+    const visit = (name: string, type: STDataType | ArrayType, address: number, depth: number): void => {
+        if (depth > 8) return;
+        if (isArrayType(type as STDataType)) {
+            const array = type as ArrayType;
+            const element = array.elementType;
+            if (typeof element !== 'string' || !(state.symbols.getFBDefinition(element) || state.symbols.getStructDefinition(element))) return;
+            const stride = state.symbols.sizeOf(element);
+            for (let index = 0; index < getArrayElementCount(array); index++) visit(`${name}[${index}]`, element, address + index * stride, depth + 1);
+            return;
+        }
+        if (typeof type !== 'string') return;
+        const block = state.symbols.getFBDefinition(type);
+        if (block) {
+            if (state.symbols.blockImplements(block.name, iface)) {
+                const reference = interfaceReference(state, block.name, address);
+                if (!seen.has(reference)) {
+                    seen.add(reference);
+                    candidates.push({
+                        symbol: {
+                            name, dataType: block.name, address, size: block.size, section: VarSection.VAR, ioAddress: null,
+                            members: memberOffsets(state, block.name), initialValue: null, tags: {},
+                        },
+                        type: block.name,
+                        reference,
+                    });
+                }
+            }
+            for (const [member, info] of block.members) {
+                if (info.section === VarSection.VAR_IN_OUT) continue; // a reference, not storage
+                visit(`${name}.${member}`, info.dataType, address + info.offset, depth + 1);
+            }
+            return;
+        }
+        const struct = state.symbols.getStructDefinition(type);
+        if (struct) {
+            for (const [member, info] of struct.members) visit(`${name}.${member}`, info.dataType, address + info.offset, depth + 1);
+        }
+    };
+    for (const symbol of state.symbols.all()) {
+        if (symbol.ioAddress !== null) continue;
+        visit(symbol.owner === undefined ? symbol.name : `${symbol.owner}.${symbol.name}`, symbol.dataType, symbol.address, 0);
+    }
+    return candidates;
+}
+
+/**
+ * `reference.Method(args)` where `reference` is a variable of an interface type: the method of the instance the
+ * variable holds. The stack is the same on every path: the reference is consumed by the comparison that matches
+ * it, and what a method leaves (its result, or nothing) is what the call leaves.
+ */
+function emitInterfaceCall(state: CodeGenState, expr: MethodCall, place: Place, iface: string): void {
+    const signature = state.symbols.findInterfaceMethod(iface, expr.methodName);
+    if (!signature) fail(expr, `The interface '${iface}' has no method '${expr.methodName}'`);
+
+    const candidates = interfaceCandidates(state, iface);
+    emit(state, `    ; --- interface call: ${place.name}.${expr.methodName}() through ${iface}, ${candidates.length} instance${candidates.length === 1 ? '' : 's'} ---`);
+    const end = newLabel(state, 'iface_end');
+    emitLoadPlace(state, place);
+    for (const candidate of candidates) {
+        const next = newLabel(state, 'iface_next');
+        emit(state, `    DUP`);
+        emit(state, `    PUSH32 ${candidate.reference}   ; ${candidate.symbol.name} (${candidate.type})`);
+        emit(state, `    EQ`);
+        emit(state, `    JZ ${next}`);
+        emit(state, `    DROP`);
+        emitMethodInline(state, expr, candidate.symbol, candidate.type);
+        emit(state, `    JMP ${end}`);
+        emit(state, `${next}:`);
+    }
+    // NULL, or a reference that names no instance of a block that implements the interface
+    emit(state, `    DROP`);
+    emitFault(state, `${place.name} refers to no instance`);
+    emit(state, `${end}:`);
+    // what the inlined methods left: one value for a method with a result, none for the others
+    state.methodLeftResult = signature.returnType !== null;
+}
+
+/** `SUPER^`: the base block of the block that declares the code that runs (CMP-041). */
+function isSuperReference(expr: Expression): boolean {
+    return expr.kind === 'DereferenceExpr' && expr.operand.kind === 'Identifier' && expr.operand.name.toUpperCase() === 'SUPER';
+}
+
+/** Whether `block` is `ancestor` or extends it, directly or through other blocks. */
+function derivesFrom(state: CodeGenState, block: string, ancestor: string): boolean {
+    const seen = new Set<string>();
+    for (let name: string | null = block; name !== null && !seen.has(name.toUpperCase()); name = state.symbols.getFBDefinition(name)?.extends ?? null) {
+        if (sameName(name, ancestor)) return true;
+        seen.add(name.toUpperCase());
+    }
+    return false;
+}
+
+/**
+ * The access specifiers of a method are enforced where it is called (CMP-041): a PRIVATE method is called only
+ * from the block that declares it, and a PROTECTED one from that block and the blocks that extend it. The code
+ * that runs is the block's own, so a call from a program, a function or another block is outside.
+ */
+function checkMethodAccess(state: CodeGenState, method: MethodInfo, typeName: string, at: { line: number; column: number; endLine?: number; endColumn?: number }): void {
+    if (method.access !== 'PRIVATE' && method.access !== 'PROTECTED') return;
+    const here = state.currentBlock;
+    const inside = here !== null
+        && (method.access === 'PRIVATE' ? sameName(here, method.owner) : derivesFrom(state, here, method.owner));
+    if (inside) return;
+    const where = method.access === 'PRIVATE'
+        ? `inside '${method.owner}'`
+        : `inside '${method.owner}' and the function blocks that extend it`;
+    fail(at, `The method '${method.name}' of '${typeName}' is ${method.access}: it can be called only ${where}`);
 }
 
 /**

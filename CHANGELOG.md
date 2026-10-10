@@ -4,6 +4,20 @@ All notable changes are documented here.
 
 ## Unreleased
 
+- Methods and inheritance work as IEC 61131-3 defines them (CMP-041).
+  `SUPER^.Method()` calls the method of the base of the block that declares the
+  code that runs, and `SUPER^();` runs the body of that base block; a block
+  calls the methods of its own by their name; `PRIVATE` and `PROTECTED`
+  methods are enforced where they are called; `FUNCTION_BLOCK ABSTRACT` and
+  `FUNCTION_BLOCK FINAL` are accepted and enforced (an abstract block has no
+  instances, a block that is not abstract implements the abstract methods it
+  inherits, a final block is not extended). A variable of an interface type
+  holds a reference to an instance and calls the method of the instance
+  assigned to it: the compiler writes a comparison with every instance of a
+  block that implements the interface and the method inlined behind each, and
+  a call through a variable that holds no instance ends the scan with a VM
+  fault. The code of an interface call is as large as those methods together.
+  Nothing in the binary contract changes: there is no indirect call.
 - The Structured Text files of a project are one compilation unit (CMP-042): a
   type, a function, a function block, an interface or a `VAR_GLOBAL` declared
   in any file is visible to every program, whether or not a task runs a program

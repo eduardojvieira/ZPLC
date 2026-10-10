@@ -1120,6 +1120,10 @@ export interface FunctionBlockDecl extends ASTNode {
     locals: VarDecl[];     // VAR
     methods: MethodDecl[]; // Methods defined in this FB
     body: Statement[];
+    /** `FUNCTION_BLOCK ABSTRACT Name`: it has no instances, and may have methods without a body. */
+    isAbstract?: boolean;
+    /** `FUNCTION_BLOCK FINAL Name`: no block may extend it. */
+    isFinal?: boolean;
 }
 
 // ============================================================================

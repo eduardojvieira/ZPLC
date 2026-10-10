@@ -1,0 +1,17 @@
+{
+  "requirement": "CMP-041",
+  "title": "a PRIVATE method called from a block that extends its own is rejected",
+  "matrix": [
+    "pous.public-private-protected-abstract"
+  ],
+  "note": "IEC 61131-3 ed. 3, access specifiers of methods: a PRIVATE method is accessible only inside the block that declares it, not in its derived blocks",
+  "build": "fails",
+  "lines": [
+    9
+  ],
+  "messageIncludes": [
+    "PRIVATE",
+    "Offset",
+    "Sensor"
+  ]
+}

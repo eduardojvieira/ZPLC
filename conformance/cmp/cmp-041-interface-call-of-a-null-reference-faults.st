@@ -1,0 +1,20 @@
+INTERFACE IRun
+METHOD Go : INT
+END_METHOD
+END_INTERFACE
+
+FUNCTION_BLOCK A IMPLEMENTS IRun
+METHOD Go : INT
+  Go := 1;
+END_METHOD
+END_FUNCTION_BLOCK
+
+PROGRAM Unassigned
+VAR
+  a : A;
+  r : IRun;
+  seen AT %QW0 : INT;
+END_VAR
+  seen := 5;
+  seen := r.Go();
+END_PROGRAM

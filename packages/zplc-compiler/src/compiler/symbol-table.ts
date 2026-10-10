@@ -84,6 +84,8 @@ export interface Symbol {
 export interface UserFBDefinition {
     name: string;
     size: number;
+    /** Declared ABSTRACT: no variable is of this type (CMP-041). */
+    isAbstract?: boolean;
     extends: string | null;  // Base FB name
     implements: string[];    // Interface names
     members: Map<string, MemberInfo>;
@@ -207,6 +209,8 @@ export class SymbolTable {
     private userStructs = new NameMap<UserStructDefinition>();
     private userEnums = new NameMap<UserEnumDefinition>();
     private interfaces = new NameMap<InterfaceDefinition>();
+    /** The names of the interfaces of the unit, known before their definitions are: a member may be of one (CMP-041). */
+    private interfaceNames = new NameMap<true>();
     private workOffset = 0;  // Current offset in work memory
     private retainOffset = 0;  // Current offset in the retentive region (VAR RETAIN)
     /**
@@ -308,6 +312,11 @@ export class SymbolTable {
         const key = scope.program === undefined ? decl.name : `${scope.program}.${decl.name}`;
         if (this.symbols.has(key) || (scope.program !== undefined && this.symbols.has(decl.name))) {
             throw new CodegenError(`Symbol '${decl.name}' already defined`, decl.line, decl.column, decl.line, decl.column + decl.name.length);
+        }
+
+        const instanceType = isArrayType(decl.dataType) ? (decl.dataType as ArrayType).elementType : decl.dataType;
+        if (typeof instanceType === 'string' && this.userFBs.get(instanceType)?.isAbstract) {
+            throw new CodegenError(`'${decl.name}' is an instance of the ABSTRACT function block '${instanceType}'`, decl.line, decl.column, decl.line, decl.column + decl.name.length);
         }
 
         const varSize = this.sizeOf(decl.dataType);
@@ -535,6 +544,49 @@ export class SymbolTable {
         return this.interfaces.get(name);
     }
 
+    /** Declare the name of an interface; its definition follows (see interfaceNames). */
+    declareInterface(name: string): void {
+        this.interfaceNames.set(name, true);
+    }
+
+    /** Whether `name` is an interface of the unit: a variable of it holds a reference to an instance (CMP-041). */
+    isInterface(name: string): boolean {
+        return this.interfaceNames.has(name) || this.interfaces.has(name);
+    }
+
+    /** Whether `iface` is `ancestor` or extends it, directly or through other interfaces. */
+    interfaceDerivesFrom(iface: string, ancestor: string, seen: Set<string> = new Set()): boolean {
+        if (sameName(iface, ancestor)) return true;
+        if (seen.has(iface.toUpperCase())) return false;
+        seen.add(iface.toUpperCase());
+        return (this.interfaces.get(iface)?.extends ?? []).some((base) => this.interfaceDerivesFrom(base, ancestor, seen));
+    }
+
+    /** The signature of `method` in `iface` or in an interface it extends. */
+    findInterfaceMethod(iface: string, method: string, seen: Set<string> = new Set()): MethodSignature | undefined {
+        if (seen.has(iface.toUpperCase())) return undefined;
+        seen.add(iface.toUpperCase());
+        const definition = this.interfaces.get(iface);
+        if (!definition) return undefined;
+        const own = definition.methods.get(method);
+        if (own) return own;
+        for (const base of definition.extends) {
+            const found = this.findInterfaceMethod(base, method, seen);
+            if (found) return found;
+        }
+        return undefined;
+    }
+
+    /** Whether the block `fbType`, or a block it extends, implements `iface` or an interface that extends it. */
+    blockImplements(fbType: string, iface: string): boolean {
+        const seen = new Set<string>();
+        for (let name: string | null = fbType; name !== null && !seen.has(name.toUpperCase()); name = this.userFBs.get(name)?.extends ?? null) {
+            seen.add(name.toUpperCase());
+            if ((this.userFBs.get(name)?.implements ?? []).some((implemented) => this.interfaceDerivesFrom(implemented, iface))) return true;
+        }
+        return false;
+    }
+
     /**
      * Get method info for a specific FB and method.
      */
@@ -620,6 +672,9 @@ export class SymbolTable {
         }
 
         if (typeof type === 'string') {
+            // a variable of an interface type holds a reference to an instance of a block that implements it
+            if (this.isInterface(type)) return REFERENCE_SIZE;
+
             const userFB = this.userFBs.get(type);
             if (userFB) return userFB.size;
 
@@ -751,6 +806,9 @@ export function buildSymbolTable(unit: CompilationUnit | Program, workMemoryBase
 
     try {
     if (unit.kind === 'CompilationUnit') {
+        // the interfaces are known by name first: a member of a structure or a block may be of one
+        for (const iface of unit.interfaces ?? []) table.declareInterface(iface.name);
+
         // 1. First Pass: Process Type Definitions (STRUCTs and ENUMs)
         if (unit.typeDefinitions) {
             for (const typeDef of dependenciesFirst(unit.typeDefinitions)) {
@@ -866,6 +924,14 @@ export function buildSymbolTable(unit: CompilationUnit | Program, workMemoryBase
             unprocessedFBs.splice(fbIndex, 1);
             currentFile = fb.sourceRef;
 
+            // FINAL blocks are not extended (CMP-041)
+            if (fb.extends) {
+                const base = unit.functionBlocks.find((candidate) => sameName(candidate.name, fb.extends!));
+                if (base?.isFinal) {
+                    throw new CodegenError(`Function block '${fb.name}' extends '${base.name}', which is FINAL`, fb.line, fb.column);
+                }
+            }
+
             const fbMembers = new NameMap<MemberInfo>();
             const methods = new NameMap<MethodInfo>();
             let currentOffset = 0;
@@ -890,6 +956,11 @@ export function buildSymbolTable(unit: CompilationUnit | Program, workMemoryBase
 
             const allVars = [...fb.inputs, ...fb.outputs, ...fb.inouts, ...fb.locals];
             for (const v of allVars) {
+                // a member that is an instance of an ABSTRACT block has no code to run
+                const memberType = isArrayType(v.dataType as STDataType) ? (v.dataType as ArrayType).elementType : v.dataType;
+                if (typeof memberType === 'string' && v.section !== VarSection.VAR_IN_OUT && table.getFBDefinition(memberType)?.isAbstract) {
+                    throw new CodegenError(`'${v.name}' is an instance of the ABSTRACT function block '${memberType}'`, v.line, v.column);
+                }
                 // Shadowing check: warn or error if member exists in base?
                 // For now, allow shadowing but it effectively hides the base member in symbol lookup
                 // (though memory addresses are distinct if offsets are different, but here we append)
@@ -1022,9 +1093,23 @@ export function buildSymbolTable(unit: CompilationUnit | Program, workMemoryBase
                 }
             }
 
+            // a block that is not ABSTRACT implements every method it declares or inherits
+            if (!fb.isAbstract) {
+                for (const [methodName, info] of methods) {
+                    if (info.isAbstract) {
+                        throw new CodegenError(
+                            info.owner === fb.name
+                                ? `Method '${methodName}' of '${fb.name}' is ABSTRACT, so the function block must be declared FUNCTION_BLOCK ABSTRACT`
+                                : `Function block '${fb.name}' does not implement the ABSTRACT method '${methodName}' of '${info.owner}'`,
+                            fb.line, fb.column);
+                    }
+                }
+            }
+
             table.addFBDefinition({
                 name: fb.name,
                 size: currentOffset,
+                ...(fb.isAbstract ? { isAbstract: true } : {}),
                 extends: fb.extends,
                 implements: fb.implements,
                 members: fbMembers,

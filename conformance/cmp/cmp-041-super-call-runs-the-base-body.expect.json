@@ -1,0 +1,17 @@
+{
+  "requirement": "CMP-041",
+  "title": "SUPER^() runs the body of the base block inside the body of the derived one",
+  "matrix": [
+    "pous.extends-override-final-super"
+  ],
+  "note": "IEC 61131-3 ed. 3, inheritance: the body of the base block runs where SUPER^() is called; the body of the derived block does not run it by itself. Two calls of 1 + 10 are 22",
+  "scans": 1,
+  "scanMs": 10,
+  "expect": [
+    {
+      "at": "%QW0",
+      "type": "INT",
+      "value": 22
+    }
+  ]
+}

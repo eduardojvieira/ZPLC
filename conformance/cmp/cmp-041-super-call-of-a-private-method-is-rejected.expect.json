@@ -1,0 +1,17 @@
+{
+  "requirement": "CMP-041",
+  "title": "SUPER^ does not reach a PRIVATE method of the base block",
+  "matrix": [
+    "pous.extends-override-final-super",
+    "pous.public-private-protected-abstract"
+  ],
+  "note": "A PRIVATE method belongs to its own block only: the derived block cannot call it through SUPER^ either",
+  "build": "fails",
+  "lines": [
+    9
+  ],
+  "messageIncludes": [
+    "PRIVATE",
+    "Secret"
+  ]
+}
