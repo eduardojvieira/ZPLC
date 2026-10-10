@@ -373,6 +373,7 @@
     {"kind":"conformance","ref":"conformance/cmp/cmp-025-global-structure-and-array-initial-values.expect.json","test":"CMP-025 a global structure and a global array hold their declared values"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-025-initial-value-is-written-once.expect.json","test":"CMP-025 an initial value is written at the first scan only"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-025-initial-values-of-each-type.expect.json","test":"CMP-025 BOOL, REAL, DINT and TIME variables hold their declared values"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-025-lifo-default-size-is-eight.expect.json","test":"CMP-025 a LIFO called without SIZE holds its documented default of eight items"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-025-var-input-and-var-output-of-a-function-block.expect.json","test":"CMP-025 VAR_INPUT and VAR_OUTPUT of a function block"},
     {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/storage.test.ts","test":"initial values (CMP-025, CMP-026, CMP-027)"}
   ],
@@ -618,7 +619,10 @@
     {"kind":"conformance","ref":"conformance/cmp/cmp-058-ctud-up-and-down-edge-in-one-scan-cancel.expect.json","test":"CMP-058 CTUD counts nothing when an up edge and a down edge arrive in one scan"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-058-deadband-ignores-small-changes.expect.json","test":"CMP-058 DEADBAND moves its output only when the input leaves the band around it"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-058-f-trig-pulses-on-the-falling-edge.expect.json","test":"CMP-058 F_TRIG gives one pulse when its input falls"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-058-fifo-and-lifo-called-in-a-loop.expect.json","test":"CMP-058 a FIFO and a LIFO called in a loop leave the evaluation stack as they found it"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-058-fifo-pop-of-an-empty-queue-does-nothing.expect.json","test":"CMP-058 a pop of an empty FIFO on its first call does nothing"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-058-fifo-returns-values-in-order.expect.json","test":"CMP-058 FIFO pops in the order of the pushes and counts its items"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-058-fifo-size-above-its-capacity-is-limited-to-eight.expect.json","test":"CMP-058 a FIFO holds at most the eight items of its instance whatever SIZE says"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-058-hysteresis-switches-at-its-thresholds.expect.json","test":"CMP-058 HYSTERESIS sets above HIGH, holds between the thresholds and resets below LOW"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-058-inverse-trigonometric-functions.expect.json","test":"CMP-058 ASIN, ACOS and ATAN return radians"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-058-lag-filter-approaches-the-input.expect.json","test":"CMP-058 LAG_FILTER moves its output by GAIN of the distance to the input"},

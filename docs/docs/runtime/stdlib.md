@@ -263,3 +263,27 @@ Compatibility stub only. It compiles to `NOP` today and does not feed, reset, or
 - **Outputs:** None.
 
 It must not be used as a safety control.
+
+---
+
+## 11. Library Blocks Outside the Standard
+
+These blocks belong to the ZPLC library and are not IEC 61131-3 blocks.
+
+### FIFO (First-In, First-Out Buffer)
+Holds up to 8 `DINT` values; they leave in the order they entered.
+- **Inputs:**
+  - `PUSH` (BOOL): A rising edge stores `DATA_IN`.
+  - `POP` (BOOL): A rising edge moves the oldest value to `DATA_OUT`.
+  - `RST` (BOOL): Empties the buffer.
+  - `DATA_IN` (DINT): The value to store.
+  - `SIZE` (DINT): Capacity, 1 to 8. A call that leaves it out gets 8, and so does a value outside 1 to 8: an instance has room for 8 values.
+- **Outputs:**
+  - `DATA_OUT` (DINT): The value of the last pop.
+  - `COUNT` (DINT): Values held.
+  - `EMPTY` (BOOL): TRUE when `COUNT` is 0.
+  - `FULL` (BOOL): TRUE when `COUNT` has reached the capacity.
+- **Behavior:** A push into a full buffer and a pop of an empty one do nothing.
+
+### LIFO (Last-In, First-Out Buffer)
+A stack of up to 8 `DINT` values; the last value stored leaves first. Its inputs and outputs are those of `FIFO`, with the same capacity rules.

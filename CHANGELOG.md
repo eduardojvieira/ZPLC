@@ -62,6 +62,12 @@ All notable changes are documented here.
   (they truncated and wrapped); a NaN converts to 0. `REAL_TO_INT(x)` no longer
   yields a 32-bit value: use `REAL_TO_DINT`. `TRUNC` and `ROUND` keep a `REAL`
   of 2^23 or more as it is instead of clamping it to the `DINT` range.
+- `FIFO` and `LIFO` called without `SIZE` hold their documented eight items (the
+  first call faulted on `MOD` by zero, a `LIFO` was full), a `SIZE` above eight
+  is limited to eight instead of writing past the instance, a pop of an empty
+  buffer on the first call does nothing, and a call no longer leaves two
+  values on the evaluation stack (a call inside a loop was refused by the
+  loader).
 
 ## 2.0.0-rc.3 - 2026-09-01
 

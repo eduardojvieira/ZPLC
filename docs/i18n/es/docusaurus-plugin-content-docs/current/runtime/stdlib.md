@@ -247,3 +247,27 @@ Stub de compatibilidad. Hoy compila a `NOP` y no alimenta, reinicia ni valida un
 - **Salidas:** Ninguna.
 
 No debe usarse como control de seguridad.
+
+---
+
+## 11. Bloques de Biblioteca Fuera del Estándar
+
+Estos bloques pertenecen a la biblioteca de ZPLC y no son bloques de IEC 61131-3.
+
+### FIFO (Buffer Primero en Entrar, Primero en Salir)
+Guarda hasta 8 valores `DINT`; salen en el orden en que entraron.
+- **Entradas:**
+  - `PUSH` (BOOL): Un flanco de subida guarda `DATA_IN`.
+  - `POP` (BOOL): Un flanco de subida mueve el valor más antiguo a `DATA_OUT`.
+  - `RST` (BOOL): Vacía el buffer.
+  - `DATA_IN` (DINT): El valor a guardar.
+  - `SIZE` (DINT): Capacidad, de 1 a 8. Una llamada que lo omite recibe 8, igual que un valor fuera de 1 a 8: una instancia tiene lugar para 8 valores.
+- **Salidas:**
+  - `DATA_OUT` (DINT): El valor del último pop.
+  - `COUNT` (DINT): Valores guardados.
+  - `EMPTY` (BOOL): TRUE cuando `COUNT` es 0.
+  - `FULL` (BOOL): TRUE cuando `COUNT` llegó a la capacidad.
+- **Comportamiento:** Un push en un buffer lleno y un pop de uno vacío no hacen nada.
+
+### LIFO (Buffer Último en Entrar, Primero en Salir)
+Una pila de hasta 8 valores `DINT`; el último valor guardado sale primero. Sus entradas y salidas son las de `FIFO`, con las mismas reglas de capacidad.
