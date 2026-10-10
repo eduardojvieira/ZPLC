@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto';
 import { constants } from 'node:fs';
 import { spawn, type ChildProcess } from 'node:child_process';
+import { spawnVector } from '../../electron/spawnAllowList';
 import { lstat, mkdir, mkdtemp, open, realpath, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { isAbsolute, join, relative, resolve, sep } from 'node:path';
@@ -68,7 +69,9 @@ export async function runFirmwareBuild(repositoryRoot: string, zephyrBoard: stri
   try {
     result = await new Promise<FirmwareBuildRunResult>((finish) => {
       const send = options.sendGroupSignal ?? defaultSignal; const alive = options.isGroupAlive ?? defaultAlive; const limit = options.outputLimit ?? OUTPUT_LIMIT; const poll = options.pollMs ?? 10; let cause: FirmwareBuildFailure | undefined; let leaderClosed = false; let completed = false; let killTimer: ReturnType<typeof setTimeout> | undefined;
-      const child = (options.spawnProcess ?? spawn)('west', ['build', '-b', zephyrBoard, 'firmware/app', '-d', buildPath, '--pristine'], { cwd: root.path, shell: false, stdio: ['ignore', 'pipe', 'pipe'], windowsHide: true, detached: true });
+      let vector: ReturnType<typeof spawnVector>;
+      try { vector = spawnVector({ kind: 'firmware-build', zephyrBoard, buildPath }); } catch { return finish({ ok: false, failure: 'unavailable', output: observed }); }
+      const child = (options.spawnProcess ?? spawn)(vector.command, vector.args, { cwd: root.path, shell: false, stdio: ['ignore', 'pipe', 'pipe'], windowsHide: true, detached: true });
       const stop = (why: FirmwareBuildFailure) => { if (cause || completed) return; cause = why; send(child.pid, 'SIGTERM'); killTimer = setTimeout(() => send(child.pid, 'SIGKILL'), options.killGraceMs ?? KILL_GRACE_MS); };
       const settle = async (code?: number | null) => {
         if (completed || !leaderClosed) return;

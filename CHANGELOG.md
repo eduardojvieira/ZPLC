@@ -55,7 +55,7 @@ All notable changes are documented here.
   Only the Monaco core Studio uses is bundled, so the CSS, HTML, JSON and
   TypeScript language workers (about 9 MB) and the 80 basic languages are no
   longer built, and the installer holds no source maps. `welcomeBundle.test.ts`
-  proves it on the build output, and journey 29 on the development host.
+  proves it on the build output, and journey 38 on the development host.
 - CI checks the structure of Studio's source (IDE-014, IDE-033):
   `tools/ci/ide-structure.ts`, run by `bun run lint:ide` and by
   `bun test ./tools/ci`, fails when a store module imports a component, when a
@@ -210,6 +210,59 @@ All notable changes are documented here.
   `tools/contract/restamp_artifacts.py` rewrites the counter and the CRC of the
   artifacts committed to the repository (examples, fixtures, fuzz findings), and
   `bun run contract:check` fails when one is stale.
+- The element of a build diagnostic (LNG-003) crosses the compile channel: the main
+  process keeps it on each diagnostic of a failed build when it is an element id (at
+  most 256 characters, the forms of `models/sourceElements.ts`) and drops it
+  otherwise, the window passes it to the Problems panel, and activating the problem
+  selects that element, also when the open file has changed since the build; without
+  one, the element is derived from the open file as before.
+- Any input that the running program declares can be set from Studio in native
+  simulation, not only three motor signals (IDE-024). The **Simulation inputs**
+  section of the Watch tab lists the variables mapped to the input image (whatever
+  their name) and the inputs of the programs, with their address and live value,
+  and sets each one: a TRUE/FALSE switch for a BOOL (only its own bit changes) and
+  a number box for the other numeric types, with **Force** for the types a force
+  carries. The build marks the program inputs that have no direct address in the
+  debug map (`zplc:input` tag).
+- The security properties of Studio are proven by what the running application
+  does (IDE-016): an inline script and an inline event handler that a page injects
+  are blocked by the production policy, a permission other than serial is
+  refused, `window.open`, a `_blank` link and navigation to another origin are
+  refused, and a project operation given `..`, an absolute path, or a link that
+  leaves the project is refused. The probes run on the development host (journey
+  29) and, with `ZPLC_PACKAGED_DIST`, on the packaged application. They found that
+  a navigation the window refused still revoked its authority (its project folder
+  and its IPC) until a reload; only a navigation that can replace the document
+  revokes it now.
+- Studio shows the result of a build, a save, a deploy, a connection change and
+  a test run as a notification that opens the panel with its details, and shows a
+  long operation with progress and a **Cancel** action (IDE-021). A success goes by
+  itself after a few seconds; a failure, a warning and a cancellation stay until
+  dismissed. The messages of the Output panel are unchanged.
+- Compile, safety check, scenario tests and the candidate review run outside the
+  main process and can be cancelled (IDE-012). Each request starts a worker
+  process of its own (`electron/toolWorker.ts`, bundled with the Tool API); the
+  window keeps answering while it works, **Cancel scenarios** stops a run and the
+  native runtime it started, a run that does not answer a cancel is killed, and a
+  deadline kills a worker that never finishes. A cancelled run is recorded as
+  cancelled in the execution log.
+- Studio defines every IPC channel once and answers all of them through one
+  checked table (IDE-017). `electron/ipcContract.ts` names the channels for the
+  main process, the preload and the renderer (the preload is now bundled into one
+  script that requires only `electron`, so it keeps no copy; the project archive
+  channels of IDE-022 are part of the project-files group there, and
+  `projectArchiveProtocol.ts` re-exports them); the main process
+  refuses to start when a channel has no handler or a handler has no channel, and
+  every call is checked for its sender, its message and the freshness of the
+  document before any handler runs. The processes that Studio starts for compile,
+  test and firmware build (the native runtime, `west build`, the toolchain
+  probes) come from a closed list of fixed argument vectors and never take a
+  command or an argument from the renderer.
+- Build and Test act only on the project that the editor shows (IDE-002). The
+  build, safety-check and test-run requests carry the id of the window's folder,
+  and the main process refuses a workspace that is not that folder's (a stale
+  workspace after another folder was opened, or a `zplc.json` of another
+  folder). A crafted message for another project is refused.
 - The function blocks and functions that the Structured Text files of a project
   declare are blocks of the FBD and LD palettes (LNG-008): a diagram places one
   with the ports of its declaration, and the generated Structured Text calls it

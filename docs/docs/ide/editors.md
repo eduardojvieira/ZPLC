@@ -70,6 +70,16 @@ Problems panel selects it when you activate the problem:
 The line and column of a diagram diagnostic stay those of the generated Structured Text, and the message says so. A
 diagram that is not valid yields one diagnostic for each element that is wrong, not one for the whole file.
 
+The element travels with the diagnostic from the build to the Problems panel (the build runs in its own process and
+sends it, checked, with the code, the path and the position). The problem therefore selects the element the build
+named, also when the file in the editor has changed since the build ran; a diagnostic that came without an element
+(an older host, a text that is not an element id) is placed from the file that is open, as before.
+
+Evidence level: host. `electron/workspaceCompileFailure.test.ts` and `src/components/workspaceTestPresentation.test.ts`
+cover the element across the two processes, `src/editors/diagnosticElement.test.ts` the choice between the carried
+element and the open file, and journey 25 of `bun run test:journeys` puts the wire back on disk after a failed build
+and still gets the block the build named.
+
 ## Breakpoints on a diagram
 
 A breakpoint can be set on the element of the diagram or the IL line you edited (LNG-004); the debug map relates each

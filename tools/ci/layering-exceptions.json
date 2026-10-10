@@ -5,5 +5,19 @@
     "requirement": "IDE-033",
     "added": "2026-10-10",
     "reason": "The supervisor is plain Node (it spawns the native runtime and speaks its framed stdio) and the command line needs the same one. It still lives under electron/ because tsconfig.electron.json compiles with rootDir electron, so electron/main.ts cannot import a module of src/. Moving it needs the shared Node modules (this one, nativeSimulationIpc, the protocol files) in a folder both programs compile, which is the layout decision of the IPC contract work (IDE-017); do it there and delete this entry."
+  },
+  {
+    "file": "packages/zplc-ide/src/cli/toolApi.ts",
+    "imports": "packages/zplc-ide/electron/spawnAllowList.ts",
+    "requirement": "IDE-017",
+    "added": "2026-10-10",
+    "reason": "The allow-list is plain Node (a closed list of fixed argument vectors over node:child_process) and the Tool API starts the toolchain probes through it, as the main process starts the native runtime and the tool worker through it. It lives under electron/ for the reason of the entry for nativeSimulationSupervisor.ts: tsconfig.electron.json compiles with rootDir electron, so electron/main.ts cannot import a module of src/, and a spawn list that the command line owned would leave the main process without it. Moving it needs the shared Node modules in a folder both programs compile, a change to the packaged layout of electron-dist that is not made here; do it with the move of the supervisor and delete these entries."
+  },
+  {
+    "file": "packages/zplc-ide/src/cli/firmwareBuildRunner.ts",
+    "imports": "packages/zplc-ide/electron/spawnAllowList.ts",
+    "requirement": "IDE-017",
+    "added": "2026-10-10",
+    "reason": "The allow-list is plain Node (a closed list of fixed argument vectors over node:child_process) and the Tool API starts the toolchain probes through it, as the main process starts the native runtime and the tool worker through it. It lives under electron/ for the reason of the entry for nativeSimulationSupervisor.ts: tsconfig.electron.json compiles with rootDir electron, so electron/main.ts cannot import a module of src/, and a spawn list that the command line owned would leave the main process without it. Moving it needs the shared Node modules in a folder both programs compile, a change to the packaged layout of electron-dist that is not made here; do it with the move of the supervisor and delete these entries."
   }
 ]

@@ -3,61 +3,15 @@ import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { PROJECT_ARCHIVE_OPS } from './projectArchiveProtocol';
-import { PROJECT_FILES_CHANNEL, PROJECT_FILES_EVENT, PROJECT_FILES_OPS, PROJECT_RECENT_OPS, PROJECT_WATCH_OPS } from './projectFilesProtocol';
-
+// The channels, the exposed methods and the sender and message checks of the project files are proven by behaviour in
+// ipcRegistry.test.ts and preload.test.ts. What stays here is the wiring that has no stand-in: the revocation of the
+// window folder, the dialog hook and the permission handlers, pinned as text of main.ts until the main process has a
+// renderer-less seam (the VF-008 journeys and the IDE-016 behaviour probes cover them in the real application).
 const electronDir = path.dirname(fileURLToPath(import.meta.url));
 const read = (name: string) => readFileSync(path.join(electronDir, name), 'utf8');
 const mainSource = read('main.ts');
-const preloadSource = read('preload.ts');
-
-const CHANNEL_BLOCK = /const PROJECT_FILES_CHANNEL = \{([^}]*)\} as const;/;
-const BRIDGE_BLOCK = /projectFiles: \{([\s\S]*?)\n {2}\},/;
 
 describe('project files IPC boundary', () => {
-  it('repeats in the preload exactly the channels the main process registers', () => {
-    const block = CHANNEL_BLOCK.exec(preloadSource)?.[1] ?? '';
-    const declared = [...block.matchAll(/(\w+): '([^']+)'/g)].map(([, name, channel]) => [name, channel]);
-    expect(declared).toEqual(Object.entries(PROJECT_FILES_CHANNEL));
-  });
-
-  it('keeps the shared module out of the sandboxed preload, which cannot require it and would make tsc re-emit it as CommonJS', () => {
-    expect(preloadSource).not.toContain("from './projectFilesProtocol");
-    expect(preloadSource).not.toContain("from './projectFiles");
-  });
-
-  it('exposes one narrow projectFiles object: one invoke per operation and nothing generic', () => {
-    const bridge = BRIDGE_BLOCK.exec(preloadSource)?.[1] ?? '';
-    expect(bridge).not.toBe('');
-    const methods = [...bridge.matchAll(/^ {4}(\w+): /gm)].map(([, name]) => name);
-    expect(methods).toEqual(['chooseFolder', ...PROJECT_FILES_OPS, ...PROJECT_RECENT_OPS, ...PROJECT_WATCH_OPS, ...PROJECT_ARCHIVE_OPS, 'onChanged']);
-    for (const name of methods.filter((method) => method !== 'onChanged')) expect(bridge).toContain(`ipcRenderer.invoke(PROJECT_FILES_CHANNEL.${name}`);
-    // The one thing the renderer may hear is the batch of changed paths, on the one event channel of the shared module.
-    expect(bridge).toContain('ipcRenderer.on(PROJECT_FILES_EVENT.changed, listener)');
-    expect(preloadSource).toContain("const PROJECT_FILES_EVENT = { changed: 'project-files:changed' } as const;");
-    expect(PROJECT_FILES_EVENT).toEqual({ changed: 'project-files:changed' });
-    expect(bridge).not.toMatch(/require\(|readFile|writeFile|webUtils|\bfs\b|process\./);
-    expect(bridge).not.toContain('ipcRenderer.send');
-    expect(preloadSource).not.toContain('ipcRenderer.send');
-    expect(preloadSource).not.toContain('ipcRenderer.on(PROJECT_FILES_CHANNEL');
-    // chooseFolder takes no argument: the renderer cannot suggest where the dialog opens or what it returns.
-    expect(bridge).toContain('chooseFolder: () => ipcRenderer.invoke(PROJECT_FILES_CHANNEL.chooseFolder)');
-    // Nor does listing the recent projects: the renderer cannot ask about a path, and it receives ids and base names only.
-    expect(bridge).toContain('listRecent: () => ipcRenderer.invoke(PROJECT_FILES_CHANNEL.listRecent)');
-  });
-
-  it('registers every channel behind the sender check, then lets the shared handler validate the message', () => {
-    expect(mainSource).toContain("import { createProjectFiles } from './projectFiles.js';");
-    expect(mainSource).toContain("import { PROJECT_FILES_CHANNEL, PROJECT_FILES_EVENT } from './projectFilesProtocol.js';");
-    expect(mainSource).toContain('for (const channel of Object.values(PROJECT_FILES_CHANNEL)) {');
-    expect(mainSource).toContain('ipcMain.handle(channel, async (event, ...args: unknown[]) => {');
-    const registration = mainSource.slice(mainSource.indexOf('for (const channel of Object.values(PROJECT_FILES_CHANNEL)) {'));
-    const body = registration.slice(0, registration.indexOf('\n  }\n') + 5);
-    expect(body.indexOf('currentRendererOwner(event)')).toBeGreaterThan(-1);
-    expect(body.indexOf("throw new Error('Request denied')")).toBeLessThan(body.indexOf('projectFiles.handle(owner.ownerId, channel, args)'));
-    expect(body).toContain('if (!rendererOwnerIsCurrent(owner)) throw new Error(\'Request denied\');');
-  });
-
   it('forgets a window folder when its document is revoked', () => {
     const revoke = mainSource.slice(mainSource.indexOf('function revokeRendererOwner(ownerId: number): void {'));
     expect(revoke.slice(0, revoke.indexOf('\n}\n'))).toContain('projectFiles.revokeOwner(ownerId);');
