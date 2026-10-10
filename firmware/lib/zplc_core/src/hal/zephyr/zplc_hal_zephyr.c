@@ -569,7 +569,7 @@ zplc_hal_result_t zplc_hal_dac_write(uint8_t channel, uint16_t value) {
  * We use numeric IDs for keys:
  *   ID 1: "code_len" - Program length (4 bytes)
  *   ID 2: "code"     - Program bytecode (up to 4KB)
- *   ID 3: "retain"   - Retentive memory region (future)
+ *   ID 3: "retain"   - unused (the RETAIN records use IDs 16..31)
  *   IDs 4-8: transactional .zplc program store v1
  *
  * The storage_partition must be defined in the board's DeviceTree overlay.
@@ -578,8 +578,24 @@ zplc_hal_result_t zplc_hal_dac_write(uint8_t channel, uint16_t value) {
 #ifdef CONFIG_NVS
 
 #include <zephyr/drivers/flash.h>
+/* Newer Zephyr moved NVS to kvss and renamed the FIXED_PARTITION_* macros; both
+ * spellings warn as deprecated there, and the twister builds make warnings errors. */
+#if __has_include(<zephyr/kvss/nvs.h>)
+#include <zephyr/kvss/nvs.h>
+#else
 #include <zephyr/fs/nvs.h>
+#endif
 #include <zephyr/storage/flash_map.h>
+
+#ifdef PARTITION_DEVICE
+#define ZPLC_STORAGE_DEVICE() PARTITION_DEVICE(storage_partition)
+#define ZPLC_STORAGE_OFFSET() PARTITION_OFFSET(storage_partition)
+#define ZPLC_STORAGE_SIZE() PARTITION_SIZE(storage_partition)
+#else
+#define ZPLC_STORAGE_DEVICE() FIXED_PARTITION_DEVICE(storage_partition)
+#define ZPLC_STORAGE_OFFSET() FIXED_PARTITION_OFFSET(storage_partition)
+#define ZPLC_STORAGE_SIZE() FIXED_PARTITION_SIZE(storage_partition)
+#endif
 
 /** @brief NVS ID for program length */
 #define NVS_ID_CODE_LEN 1
@@ -594,6 +610,10 @@ zplc_hal_result_t zplc_hal_dac_write(uint8_t channel, uint16_t value) {
 #define NVS_ID_PROGRAM_SLOT_A_META 6
 #define NVS_ID_PROGRAM_SLOT_B_PAYLOAD 7
 #define NVS_ID_PROGRAM_SLOT_B_META 8
+
+/** @brief NVS IDs 16..31: chunk 0..7 of RETAIN slot a, then of slot b
+ *         ("retain_a0".."retain_b7", see zplc_retain.h). */
+#define NVS_ID_RETAIN_CHUNKS 16
 
 /** @brief NVS filesystem handle */
 static struct nvs_fs nvs_handle;
@@ -621,6 +641,9 @@ static uint16_t key_to_nvs_id(const char *key) {
     return NVS_ID_PROGRAM_SLOT_B_PAYLOAD;
   if (strcmp(key, "program_v1_slot_b_meta") == 0)
     return NVS_ID_PROGRAM_SLOT_B_META;
+  if (strncmp(key, "retain_", 7) == 0 && (key[7] == 'a' || key[7] == 'b') &&
+      key[8] >= '0' && key[8] <= '7' && key[9] == '\0')
+    return NVS_ID_RETAIN_CHUNKS + (key[7] - 'a') * 8 + (key[8] - '0');
   return 0; /* Invalid */
 }
 
@@ -636,13 +659,13 @@ static int ensure_nvs_init(void) {
   }
 
   /* Get the storage partition from DeviceTree */
-  nvs_handle.flash_device = FIXED_PARTITION_DEVICE(storage_partition);
+  nvs_handle.flash_device = ZPLC_STORAGE_DEVICE();
   if (!device_is_ready(nvs_handle.flash_device)) {
     zplc_hal_log("[HAL] NVS flash device not ready\n");
     return -ENODEV;
   }
 
-  nvs_handle.offset = FIXED_PARTITION_OFFSET(storage_partition);
+  nvs_handle.offset = ZPLC_STORAGE_OFFSET();
 
   /* Get flash page info to determine sector size */
   ret = flash_get_page_info_by_offs(nvs_handle.flash_device, nvs_handle.offset,
@@ -654,7 +677,7 @@ static int ensure_nvs_init(void) {
 
   nvs_handle.sector_size = page_info.size;
   nvs_handle.sector_count =
-      FIXED_PARTITION_SIZE(storage_partition) / page_info.size;
+      ZPLC_STORAGE_SIZE() / page_info.size;
 
   /* Mount NVS */
   ret = nvs_mount(&nvs_handle);

@@ -43,6 +43,9 @@
 #include <zplc_hal.h>
 #include <zplc_isa.h>
 #include <zplc_scheduler.h>
+#ifdef CONFIG_ZPLC_RETAIN_PERSIST
+#include <zplc_retain.h>
+#endif
 
 /* ============================================================================
  * Configuration
@@ -162,6 +165,54 @@ static uint32_t test_watchdog_prepare_count;
 static uint32_t test_watchdog_feed_count;
 static uint32_t test_watchdog_disarm_count;
 static uint8_t test_force_next_deadline_miss;
+#endif
+
+#ifdef CONFIG_ZPLC_RETAIN_PERSIST
+/*
+ * RETAIN persistence (RT-025, RT-026).
+ *
+ * A record is cut into chunks of ZPLC_RETAIN_CHUNK_SIZE; every chunk is one
+ * backend entry (NVS entry header and alignment included, estimated at
+ * CONFIG_ZPLC_RETAIN_ENTRY_OVERHEAD bytes). The wear budget is an engineering
+ * estimate from the Kconfig values of the board, not a measurement:
+ *
+ *   saves the flash takes   = ENDURANCE_CYCLES * WEAR_BYTES / flash bytes per save
+ *   life of the board       = saves * SAVE_INTERVAL_S
+ *
+ * and the build fails when that life is shorter than ZPLC_RETAIN_LIFE_YEARS. A
+ * save that finds the region unchanged writes nothing, so this is the worst case:
+ * a region that changes in every interval.
+ */
+#define ZPLC_RETAIN_RECORD_BYTES                                               \
+  ((uint64_t)ZPLC_RETAIN_HEADER_SIZE + ZPLC_MEM_RETAIN_SIZE +                  \
+   ZPLC_RETAIN_TRAILER_SIZE)
+#define ZPLC_RETAIN_RECORD_CHUNKS                                              \
+  ((ZPLC_RETAIN_RECORD_BYTES + ZPLC_RETAIN_CHUNK_SIZE - 1U) /                  \
+   ZPLC_RETAIN_CHUNK_SIZE)
+#define ZPLC_RETAIN_FLASH_BYTES_PER_SAVE                                       \
+  (ZPLC_RETAIN_RECORD_BYTES +                                                  \
+   ZPLC_RETAIN_RECORD_CHUNKS * CONFIG_ZPLC_RETAIN_ENTRY_OVERHEAD)
+#define ZPLC_RETAIN_SECONDS_PER_YEAR 31557600ULL
+
+BUILD_ASSERT(ZPLC_RETAIN_RECORD_CHUNKS <= ZPLC_RETAIN_MAX_CHUNKS,
+             "CONFIG_ZPLC_RETAIN_CHUNK_SIZE is too small: the RETAIN region "
+             "needs more than the eight chunks a slot can name");
+BUILD_ASSERT(CONFIG_ZPLC_RETAIN_SAVE_INTERVAL_S == 0 ||
+                 (uint64_t)CONFIG_ZPLC_RETAIN_FLASH_ENDURANCE_CYCLES *
+                         CONFIG_ZPLC_RETAIN_FLASH_WEAR_BYTES *
+                         CONFIG_ZPLC_RETAIN_SAVE_INTERVAL_S >=
+                     (uint64_t)CONFIG_ZPLC_RETAIN_LIFE_YEARS *
+                         ZPLC_RETAIN_SECONDS_PER_YEAR *
+                         ZPLC_RETAIN_FLASH_BYTES_PER_SAVE,
+             "CONFIG_ZPLC_RETAIN_SAVE_INTERVAL_S wears the storage flash out "
+             "before CONFIG_ZPLC_RETAIN_LIFE_YEARS: raise the interval, or fix "
+             "the endurance and wear-bytes values of the board");
+
+/* The identity and the periodic save belong to the program that zplc_sched_load()
+ * admitted; both are owned by the control plane (control_mutex). */
+static zplc_retain_identity_t retain_identity;
+static bool retain_active;
+static struct k_work_delayable retain_work;
 #endif
 
 /** @brief Normal priority work queue */
@@ -598,6 +649,50 @@ static int scheduler_fault_is_latched(void) {
   k_spin_unlock(&admission_lock, key);
   return latched;
 }
+
+#ifdef CONFIG_ZPLC_RETAIN_PERSIST
+/* The module copies the region under the memory lock, which is held by a scan
+ * batch from input latch to output commit: a copy is always at a scan boundary.
+ * It never holds the lock across a backend call (RT-012). */
+static void retain_lock(void) { k_mutex_lock(&mem_mutex, K_FOREVER); }
+static void retain_unlock(void) { k_mutex_unlock(&mem_mutex); }
+
+static void retain_arm_periodic(void) {
+  if (CONFIG_ZPLC_RETAIN_SAVE_INTERVAL_S > 0) {
+    (void)k_work_reschedule_for_queue(
+        &normal_workq, &retain_work,
+        K_SECONDS(CONFIG_ZPLC_RETAIN_SAVE_INTERVAL_S));
+  }
+}
+
+/* Runs on the normal work queue, which the coordinator does not use while the
+ * high-priority queue exists (CONFIG_ZPLC_RETAIN_PERSIST depends on it), so a
+ * slow flash write never delays a scan batch from the queue side. A busy
+ * control plane (load, stop, start) defers the round instead of blocking. */
+static void retain_work_handler(struct k_work *work) {
+  ARG_UNUSED(work);
+  if (k_mutex_lock(&control_mutex, K_NO_WAIT) == 0) {
+    if (retain_active && sched_state == ZPLC_SCHED_STATE_RUNNING &&
+        !scheduler_fault_is_latched()) {
+      (void)zplc_retain_save(&retain_identity, k_uptime_get_32(),
+                             ZPLC_RETAIN_SAVE_PERIODIC);
+    }
+    k_mutex_unlock(&control_mutex);
+  }
+  retain_arm_periodic();
+}
+
+/* Caller owns control_mutex and the program was just materialized: the core
+ * zeroed the region, so restore brings the values back or leaves it initialised. */
+static void retain_program_loaded(const uint8_t *binary, size_t size) {
+  retain_active = false;
+  if (zplc_retain_identity_from_artifact(binary, size, &retain_identity) == 0) {
+    (void)zplc_retain_restore(&retain_identity, k_uptime_get_32());
+    retain_active = true;
+    retain_arm_periodic();
+  }
+}
+#endif
 
 /* ============================================================================
  * Helper Functions
@@ -1384,6 +1479,9 @@ static int unregister_task_locked(int task_id) {
     sched_state = ZPLC_SCHED_STATE_IDLE;
     k_spin_unlock(&admission_lock, key);
     k_mutex_unlock(&mem_mutex);
+#ifdef CONFIG_ZPLC_RETAIN_PERSIST
+    retain_active = false;
+#endif
     zplc_hal_log("[SCHED] Last task unregistered; outputs safe\n");
     return 0;
   }
@@ -1520,6 +1618,22 @@ int zplc_sched_init(void) {
   /* Initialize shared memory */
   zplc_mem_init();
 
+#ifdef CONFIG_ZPLC_RETAIN_PERSIST
+  {
+    zplc_retain_config_t retain_config = {0};
+
+    retain_active = false;
+    k_work_init_delayable(&retain_work, retain_work_handler);
+    retain_config.region = zplc_mem_get_region(ZPLC_MEM_RETAIN_BASE);
+    retain_config.region_size = ZPLC_MEM_RETAIN_SIZE;
+    retain_config.lock = retain_lock;
+    retain_config.unlock = retain_unlock;
+    retain_config.min_interval_ms =
+        (uint32_t)CONFIG_ZPLC_RETAIN_SAVE_INTERVAL_S * 1000U;
+    (void)zplc_retain_init(&retain_config);
+  }
+#endif
+
   sched_state = ZPLC_SCHED_STATE_IDLE;
 
   zplc_hal_log("[SCHED] Scheduler initialized\n");
@@ -1547,6 +1661,16 @@ int zplc_sched_shutdown(void) {
     }
   }
   sched_state = ZPLC_SCHED_STATE_UNINIT;
+#ifdef CONFIG_ZPLC_RETAIN_PERSIST
+  {
+    struct k_work_sync retain_sync;
+
+    /* The handler only try-locks the control plane, so waiting for it here
+     * cannot deadlock; init re-initialises the work item afterwards. */
+    retain_active = false;
+    (void)k_work_cancel_delayable_sync(&retain_work, &retain_sync);
+  }
+#endif
   k_mutex_unlock(&control_mutex);
 
   zplc_hal_log("[SCHED] Scheduler shutdown\n");
@@ -1747,6 +1871,10 @@ int zplc_sched_load(const uint8_t *binary, size_t size) {
   sched_state = ZPLC_SCHED_STATE_IDLE;
   k_spin_unlock(&admission_lock, key);
 
+#ifdef CONFIG_ZPLC_RETAIN_PERSIST
+  retain_program_loaded(binary, size);
+#endif
+
   k_mutex_unlock(&control_mutex);
   return count;
 }
@@ -1867,6 +1995,14 @@ int zplc_sched_stop(void) {
   }
   k_mutex_lock(&control_mutex, K_FOREVER);
   result = stop_locked();
+#ifdef CONFIG_ZPLC_RETAIN_PERSIST
+  /* The timers are stopped and the coordinator cancelled: no scan runs, so the
+   * region holds the values of the last complete scan. A fault stores nothing. */
+  if (retain_active && !scheduler_fault_is_latched()) {
+    (void)zplc_retain_save(&retain_identity, k_uptime_get_32(),
+                           ZPLC_RETAIN_SAVE_FORCED);
+  }
+#endif
   k_mutex_unlock(&control_mutex);
   return result;
 }

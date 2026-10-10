@@ -2230,8 +2230,8 @@ static void test_rejected_load_preserves_running_session(void)
     TEST_ASSERT(session.state == ZPLC_NATIVE_SESSION_IDLE,
                 "stop returns runtime to idle before artifact validation cases");
     snapshot_native_runtime(&session);
-    /* STOP stores the RETAIN region (RT-025), which is a persistence operation of its
-     * own: count again from here, so the rejections below are measured alone. */
+    /* STOP stores the RETAIN region, which is a persistence operation of its own:
+     * count again from here, so the rejections below are measured alone. */
     zplc_hal_persist_test_fail_at(0UL);
 
     artifact[artifact_size - 1U] ^= 1U;
