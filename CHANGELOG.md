@@ -50,7 +50,11 @@ All notable changes are documented here.
   run control, the force table, the program loader or store, or a reboot; and
   `firmware/tests/inbound_authority` drives every Modbus function code and
   every write count through the product's framing and mapping in front of a
-  core whose authority entries count their calls.
+  core whose authority entries count their calls. `firmware/tests/inbound_mqtt`
+  compiles the product's MQTT client with its Sparkplug B protobuf files and
+  delivers hostile topics and payloads to it under each of the five profiles:
+  nothing reached run control, the force table or the loader, and the only
+  write was to a subscribed variable inside the work or retain image.
 - No MCP tool and no AI path opens the device link (COM-030).
   `src/mcp/deviceLink.test.ts` enumerates the tools and resources of the live
   server, builds the module graph of the MCP entry point and of the AI

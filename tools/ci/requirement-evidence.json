@@ -1193,8 +1193,9 @@
     {"kind":"unit","ref":"tools/firmware-test/test_comm_rules.py","test":"TlsRandomRule","partial":true,"note":"the build rule is proven for every combination (cmake -P) and fires in the application build (a build of the Opta with TLS on a test generator stops with zplc_rule_tls_with_test_random_generator); the two boards that set the test generator now use the hardware generator with TLS off, and the requirement's second half, a verified hardware source and TLS on again before GA, needs the board record of HIL-011"}
   ],
   "COM-017": [
-    {"kind":"unit","ref":"tools/firmware-test/test_check_inbound_authority.py","test":"InboundAuthority","note":"the link-level check of the inbound objects of every board image (run.sh size); the behavioural Modbus test is the c-test of firmware/tests/inbound_authority. MQTT and cloud inbound are covered at link level only: no test injects a hostile MQTT publish into the compiled client"},
-    {"kind":"c-test","ref":"firmware/tests/inbound_authority/src/main.c","test":"COM-017: no message that arrives from Modbus changes RUN/STOP, sets or"}
+    {"kind":"unit","ref":"tools/firmware-test/test_check_inbound_authority.py","test":"InboundAuthority","note":"the link-level check of the inbound objects of every board image (run.sh size); the behavioural checks are the c-tests of firmware/tests/inbound_authority (Modbus) and firmware/tests/inbound_mqtt (MQTT, all five profiles). The cloud provisioning clients (Azure DPS, AWS fleet) are covered at link level only"},
+    {"kind":"c-test","ref":"firmware/tests/inbound_authority/src/main.c","test":"COM-017: no message that arrives from Modbus changes RUN/STOP, sets or"},
+    {"kind":"c-test","ref":"firmware/tests/inbound_mqtt/src/main.c","test":"COM-017: no message that arrives over MQTT changes RUN/STOP, sets or clears"}
   ],
   "COM-022": [
     {"kind":"unit","ref":"tools/firmware-test/test_comm_rules.py","test":"ShellRule","partial":true,"note":"the raw memory command is off in release images and built only with the diagnostic switch, and the documented commands are implemented; the part of the requirement that makes the state-changing commands of the diagnostic shell obey the session rule needs the session of COM-020, which does not exist yet"},

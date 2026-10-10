@@ -106,7 +106,9 @@ static uint8_t s_rx_buf[MQTT_BUFFER_SIZE];
 static uint8_t s_tx_buf[MQTT_BUFFER_SIZE];
 static uint8_t s_payload_buf[PAYLOAD_BUFFER_SIZE];
 static uint8_t s_metric_buf[PAYLOAD_BUFFER_SIZE];
+#if defined(CONFIG_MQTT_LIB_WEBSOCKET)
 static uint8_t s_ws_tmp_buf[512];
+#endif
 
 static struct mqtt_client s_client;
 static struct sockaddr_storage s_broker_addr;
@@ -138,7 +140,9 @@ static char s_mqtt_hostname[192];
 static char s_mqtt_client_id[128];
 static char s_mqtt_topic_namespace[128];
 static char s_mqtt_group_id[64];
+#if defined(CONFIG_MQTT_LIB_WEBSOCKET)
 static char s_mqtt_websocket_path[128];
+#endif
 #if defined(CONFIG_MQTT_LIB_TLS_USE_ALPN)
 static char s_mqtt_alpn[128];
 #endif
@@ -1437,6 +1441,10 @@ static int abort_incoming_publish(struct mqtt_client *client, int error) {
   return error;
 }
 
+static int dispatch_incoming_message(struct mqtt_client *client,
+                                     const struct mqtt_publish_param *pub,
+                                     const char *topic, size_t payload_len);
+
 static int handle_incoming_publish(struct mqtt_client *client,
                                    const struct mqtt_publish_param *pub) {
   size_t payload_len;
@@ -1468,7 +1476,24 @@ static int handle_incoming_publish(struct mqtt_client *client,
   }
   topic[topic_len] = '\0';
 
+  return dispatch_incoming_message(client, pub, topic, payload_len);
+}
+
+/*
+ * What an arrived message does, once its payload is in s_publish_buf and its
+ * topic is a C string. Everything an inbound message can cause is below this
+ * line: a write to a subscribed variable through the force-aware write, a
+ * rebirth, a log line, a reply. None of it reaches RUN/STOP, the force table
+ * or the program (COM-017), and the test of firmware/tests/inbound_mqtt
+ * drives this function with hostile topics and payloads of every profile.
+ * `pub` carries the MQTT v5 properties and may be NULL.
+ */
+static int dispatch_incoming_message(struct mqtt_client *client,
+                                     const struct mqtt_publish_param *pub,
+                                     const char *topic, size_t payload_len) {
   uint16_t count = zplc_core_get_tag_count();
+
+  ARG_UNUSED(pub);
 
   if (mqtt_profile_is_azure_iot_hub()) {
     /*
@@ -1601,6 +1626,9 @@ static int handle_incoming_publish(struct mqtt_client *client,
       if (mqtt_profile_is_azure_event_grid()) {
 #if defined(CONFIG_MQTT_VERSION_5_0)
         const struct mqtt_publish_param *publish = pub;
+        if (publish == NULL) {
+          return 0;
+        }
         if (publish->prop.rx.has_content_type) {
           LOG_INF("Event Grid content-type: %.*s",
                   (int)publish->prop.content_type.size,
@@ -2377,3 +2405,20 @@ void zplc_mqtt_get_status(zplc_mqtt_status_t *status) {
   zplc_config_get_mqtt_broker(status->broker, sizeof(status->broker));
   zplc_config_get_mqtt_client_id(status->client_id, sizeof(status->client_id));
 }
+
+#if defined(CONFIG_ZTEST)
+/* Test seam (COM-017): delivers a message as the client would, without a
+ * broker. The payload goes through the same buffer and the same dispatch
+ * as a PUBLISH that arrived from the network. */
+int zplc_mqtt_test_inject(const char *topic, const uint8_t *payload,
+                          size_t payload_len) {
+  if (payload_len > ZPLC_MQTT_COMMAND_MAX_PAYLOAD) {
+    return -EMSGSIZE;
+  }
+  if (payload_len != 0U) {
+    memcpy(s_publish_buf, payload, payload_len);
+  }
+  s_publish_buf[payload_len] = '\0';
+  return dispatch_incoming_message(NULL, NULL, topic, payload_len);
+}
+#endif
