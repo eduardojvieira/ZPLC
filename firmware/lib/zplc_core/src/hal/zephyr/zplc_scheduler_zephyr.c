@@ -172,6 +172,9 @@ K_THREAD_STACK_DEFINE(high_workq_stack, CONFIG_ZPLC_SCHED_HIGH_PRIO_STACK_SIZE);
 static struct k_work_q high_workq;
 #endif
 
+/** @brief The work queue threads exist; they are started once per boot. */
+static bool workqueues_started;
+
 static uint16_t read_u16_le(const uint8_t *data) {
   return (uint16_t)data[0] | ((uint16_t)data[1] << 8);
 }
@@ -1415,19 +1418,26 @@ int zplc_sched_init(void) {
   k_mutex_init(&mem_mutex);
   k_mutex_init(&control_mutex);
 
-  /* Initialize normal priority work queue */
-  k_work_queue_init(&normal_workq);
-  k_work_queue_start(&normal_workq, normal_workq_stack,
-                     K_THREAD_STACK_SIZEOF(normal_workq_stack),
-                     CONFIG_ZPLC_SCHED_WORKQ_PRIORITY, NULL);
+  /* The work queue threads are started once and keep running across
+   * shutdown and init: they use static stacks and static queue objects, and
+   * starting them again would re-create a live thread over its own stack and
+   * thread object. */
+  if (!workqueues_started) {
+    /* Initialize normal priority work queue */
+    k_work_queue_init(&normal_workq);
+    k_work_queue_start(&normal_workq, normal_workq_stack,
+                       K_THREAD_STACK_SIZEOF(normal_workq_stack),
+                       CONFIG_ZPLC_SCHED_WORKQ_PRIORITY, NULL);
 
 #ifdef CONFIG_ZPLC_SCHED_HIGH_PRIO_WORKQ
-  /* Initialize high priority work queue */
-  k_work_queue_init(&high_workq);
-  k_work_queue_start(&high_workq, high_workq_stack,
-                     K_THREAD_STACK_SIZEOF(high_workq_stack),
-                     CONFIG_ZPLC_SCHED_HIGH_PRIO_PRIORITY, NULL);
+    /* Initialize high priority work queue */
+    k_work_queue_init(&high_workq);
+    k_work_queue_start(&high_workq, high_workq_stack,
+                       K_THREAD_STACK_SIZEOF(high_workq_stack),
+                       CONFIG_ZPLC_SCHED_HIGH_PRIO_PRIORITY, NULL);
 #endif
+    workqueues_started = true;
+  }
 
   /* Clear task array */
   memset(tasks, 0, sizeof(tasks));

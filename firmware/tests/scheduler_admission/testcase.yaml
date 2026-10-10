@@ -1,13 +1,3 @@
-# Not allowed on qemu_cortex_m3 yet. With the regions of boards/qemu_cortex_m3.conf
-# the suite links and runs: 38 of 46 cases pass, then
-# test_stop_waits_for_batch_and_leaves_safe_outputs fails because the control
-# thread (priority 5) never receives the CPU while the scheduler holds a batch
-# before its output commit, and the next case ends in a kernel panic
-# (ASSERTION FAIL thread->base.pended_on, ksched.h:164). The same suite passes
-# 46 of 46 on native_sim/native (32-bit), so this is not the data model.
-# Reproduce with:
-#   west twister -T zplc/firmware/tests -p qemu_cortex_m3 --force-platform \
-#     -s zplc.scheduler_admission
 tests:
   zplc.scheduler_admission:
     tags:
@@ -16,6 +6,7 @@ tests:
     platform_allow:
       - native_sim/native/64
       - native_sim/native
+      - qemu_cortex_m3
     integration_platforms:
       - native_sim/native/64
     harness: ztest
