@@ -42,7 +42,14 @@ add_compile_options(
 # Paths
 # =============================================================================
 
-set(NANOPB_DIR   "/Users/eduardo/zephyrproject/modules/lib/nanopb"
+# The nanopb module of the Zephyr workspace (ZEPHYR_BASE is exported by
+# tools/firmware-test/env.sh and by Zephyr's own environment scripts).
+if(DEFINED ENV{ZEPHYR_BASE})
+    get_filename_component(_ZPLC_NANOPB_DEFAULT "$ENV{ZEPHYR_BASE}/../modules/lib/nanopb" ABSOLUTE)
+else()
+    set(_ZPLC_NANOPB_DEFAULT "")
+endif()
+set(NANOPB_DIR   "${_ZPLC_NANOPB_DEFAULT}"
     CACHE PATH   "Path to nanopb source directory")
 
 set(PROTO_BUILD_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../build_giga/proto"
@@ -62,8 +69,17 @@ set(ZPLC_CORE_INC "${CMAKE_CURRENT_SOURCE_DIR}/../../lib/zplc_core/include"
 if(NOT EXISTS "${PROTO_BUILD_DIR}/sparkplug_b.pb.h")
     message(FATAL_ERROR
         "Proto-generated header not found at ${PROTO_BUILD_DIR}/sparkplug_b.pb.h\n"
-        "Run a Zephyr build first, e.g.:\n"
-        "  west build -b arduino_giga_r1/stm32h747xx/m7 firmware/app -d firmware/app/build_giga\n"
+        "Build a board that enables MQTT first and pass its proto directory, e.g.:\n"
+        "  west build -b arduino_opta/stm32h747xx/m7 zplc/firmware/app -d <dir>\n"
+        "  cmake -S firmware/app/tests -B <test-build> -DPROTO_BUILD_DIR=<dir>/proto\n"
+        "or run tools/firmware-test/run.sh app, which does both.\n"
+    )
+endif()
+
+if(NOT EXISTS "${NANOPB_DIR}/pb_encode.c")
+    message(FATAL_ERROR
+        "nanopb sources not found at '${NANOPB_DIR}'. Set NANOPB_DIR, or set "
+        "ZEPHYR_BASE to a Zephyr workspace that has modules/lib/nanopb."
     )
 endif()
 

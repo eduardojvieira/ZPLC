@@ -6,6 +6,8 @@ tests:
       - gpio
     platform_allow:
       - native_sim/native/64
+      - native_sim/native
+      - qemu_cortex_m3
     integration_platforms:
       - native_sim/native/64
     harness: ztest
@@ -19,10 +21,15 @@ tests:
       - gpio
     platform_allow:
       - native_sim/native/64
+      - native_sim/native
+      - qemu_cortex_m3
     integration_platforms:
       - native_sim/native/64
     harness: ztest
     timeout: 20
+  # The next two need the GPIO emulator and the LED alias of native_sim: on a
+  # board without them the HAL configures no channel and the scenarios would
+  # pass or fail for a reason they do not name.
   zplc.hal_gpio_policy.partial_required:
     tags:
       - zplc
@@ -30,6 +37,7 @@ tests:
       - gpio
     platform_allow:
       - native_sim/native/64
+      - native_sim/native
     integration_platforms:
       - native_sim/native/64
     harness: ztest
@@ -45,6 +53,7 @@ tests:
       - gpio
     platform_allow:
       - native_sim/native/64
+      - native_sim/native
     integration_platforms:
       - native_sim/native/64
     harness: ztest

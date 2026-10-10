@@ -1,0 +1,191 @@
+---
+slug: /development/firmware-testing
+title: Firmware Testing on Linux
+sidebar_label: Firmware Testing
+description: Run the ZPLC firmware suites on a Linux machine, on 64-bit and 32-bit native_sim and on QEMU Cortex-M3 and Cortex-M0, and check the flash and RAM budgets.
+---
+
+# Firmware Testing on Linux
+
+This page describes the one method a contributor uses to test the firmware on
+a Linux machine: the scripts under `tools/firmware-test/`. They run the same
+suites as the continuous-integration Zephyr jobs, on more targets, against a
+Zephyr workspace that lives outside the repository.
+
+Everything here is host, simulator or build evidence. A passing run does not
+show that a board boots, that its pins behave, or that a scan keeps its period
+on real silicon. Those claims need the hardware-in-the-loop procedures in
+[Capabilities and Evidence Tiers](../reference/capabilities-evidence.md).
+
+## What you need
+
+- Linux on x86-64 with about 15 GB free: the pinned Zephyr tree is about 6 GB
+  and the build outputs add a few more.
+- `git`, `cmake` 3.20 or newer, `ninja`, `dtc`, `gperf`, `python3` 3.10 or
+  newer, and a C compiler. The 32-bit modes also need the 32-bit C runtime
+  (`lib32-glibc` and `lib32-gcc-libs` on Arch, `gcc-multilib` on Debian and
+  Ubuntu).
+- The Zephyr SDK 1.0.1 with the `arm-zephyr-eabi` toolchain and the SDK host
+  tools, which carry `qemu-system-arm`. The ESP32-S3 size row also needs the
+  `xtensa-espressif_esp32s3_zephyr-elf` toolchain.
+- Network access the first time, for `west update`.
+
+The scripts read the SDK from `~/zephyr-sdk-1.0.1`. Set
+`ZEPHYR_SDK_INSTALL_DIR` to use another location. If the SDK is missing, the
+setup script prints the `west sdk install` line to run and does not run it.
+
+## One-time setup
+
+```bash
+tools/firmware-test/setup.sh
+```
+
+The script is safe to repeat. It creates or verifies, in `~/zplc-zephyr-ws`
+(override with `ZPLC_FW_WS`):
+
+- a Python virtual environment with `west` 1.5.0 and the Python packages
+  Zephyr needs;
+- a `zplc` symlink to your checkout, so west treats the checkout as its
+  manifest repository and the tests always run your working tree;
+- the Zephyr tree and its modules at the revision pinned in `west.yml`, fetched
+  shallow, and a check that the checked-out revision is that pin.
+
+Two choices are deliberate. The workspace is written by hand instead of with
+`west init -l`, because `west init -l` resolves the symlink and would create
+`.west` next to your real checkout. And `west zephyr-export` is skipped,
+because it registers the workspace in `~/.cmake/packages`, where every other
+CMake project of your user would find it; `ZEPHYR_BASE` is enough for these
+builds. Set `ZPLC_FW_ZEPHYR_EXPORT=1` if you want the export.
+
+Several checkouts or worktrees can share one workspace. `run.sh` points the
+`zplc` symlink at the checkout it is run from, so run one checkout at a time.
+Use another `ZPLC_FW_WS` for concurrent runs.
+
+## Daily commands
+
+```bash
+tools/firmware-test/run.sh native
+tools/firmware-test/run.sh host host32 native32 qemu-m3 qemu-m0 app
+tools/firmware-test/run.sh size rpi-pico-rp2040
+tools/firmware-test/run.sh all
+```
+
+Each mode builds what it needs, runs it without prompting, and exits non-zero
+on any failure. The last lines are one summary line per scenario or board. All
+output is under `$ZPLC_FW_WS/out`, with one log per mode.
+
+| Mode | What runs | What a pass shows | What it does not show |
+|------|-----------|-------------------|-----------------------|
+| `host` | The nine CMake suites of `firmware/lib/zplc_core` under ctest, built with the address and undefined-behaviour sanitizers | VM, loader, dispatch and host runtime behave on a 64-bit host without undefined behaviour | Anything about a 32-bit or Cortex-M target |
+| `host32` | The same suites built with `-m32` | The same, with 32-bit `int`, `long` and pointers | Cortex-M behaviour: x86 tolerates unaligned access and has no short enums |
+| `native` | The Zephyr suites of `firmware/tests` on `native_sim/native/64`, as CI does | The firmware application logic, the Zephyr HAL and the scheduler against the Zephyr kernel on the host | Timing, interrupts and drivers of a real board |
+| `native32` | The same on `native_sim/native`, the 32-bit variant | The same, with a 32-bit data model | The same |
+| `qemu-m3` | The Zephyr suites on `qemu_cortex_m3`, plus the core suites | Behaviour on a real Cortex-M instruction set with a 64 KB RAM budget, short enums and a 1 KB default thread stack | Timing: QEMU is not cycle accurate. The VM memory regions are reduced to fit |
+| `qemu-m0` | The Cortex-M0 subset on `qemu_cortex_m0` (16 KB of RAM) | Division, shifts, float conversion and unaligned access on an ARMv6-M core with no hardware divide and no unaligned access | The full VM suite: it does not fit, see the limits below |
+| `app` | The host test of the Sparkplug encoder in `firmware/app/tests`, against the nanopb files generated by an Arduino Opta build | The encoder produces the expected payloads on a 64-bit host | The MQTT client, TLS or any network behaviour |
+| `size` | `firmware/app` built for every supported board | Flash and RAM of the image against the recorded budget | Run-time stack and heap use, or that the image runs |
+
+## Reading the result
+
+A run ends with a block like this one, produced by `run.sh native32`:
+
+```text
+PASS native32  zplc.core.vm_core                              1/1 cases
+PASS native32  zplc.scheduler_admission                       46/46 cases
+PASS native32  18/18 scenarios passed, 0 filtered out
+```
+
+To look at one scenario, open its log under the mode's Twister output
+directory, or run it alone from the workspace:
+
+```bash
+cd ~/zplc-zephyr-ws && west twister -T zplc/firmware/tests -p qemu_cortex_m3 -s zplc.program_store --inline-logs
+```
+
+A scenario that Twister marks `skipped`, for example for a RAM overflow, is
+reported as a failure here. A filtered scenario, one that does not list the
+platform, is not counted.
+
+## What the suites cover
+
+The Zephyr suites live in `firmware/tests`. Each has a `testcase.yaml` that
+lists the platforms it is allowed on. The plain C suites of
+`firmware/lib/zplc_core/tests` also run on Zephyr targets through
+`firmware/tests/core_suites`, which compiles the same source files and calls
+each suite from a test case.
+
+The VM suites name a memory profile in the scenario, so a result always says
+which sizes it was made with:
+
+- no suffix: the ISA default sizes (8 KB work, 4 KB retentive, 44 KB code),
+  used on `native_sim`;
+- `.small`: 4 KB work, 2 KB retentive and 16 KB code, used on
+  `qemu_cortex_m3`;
+- `.tiny`: 256 B work, 64 B retentive, 512 B code, four tags and a 32-entry
+  stack, used on `qemu_cortex_m0`.
+
+The process images are 4 KB each in every profile because the ISA fixes them.
+
+## Continuous integration
+
+The `zephyr-twister` job runs `native` through its own Twister step and then
+`native32`, `qemu-m3` and `qemu-m0` through `run.sh`, in the same workspace.
+Each `zephyr-cross-build` job checks its board's flash and RAM against
+`size-budget.json` and writes the table to the job summary. The report tool has
+its own unit tests, `tools/firmware-test/test_fwtest.py`, which prove the gate
+fails when a size is one byte over its budget.
+
+## Size budgets
+
+`tools/firmware-test/size-budget.json` records, for each board in
+`firmware/app/boards/supported-boards.v1.5.0.json`, the flash and RAM measured
+from the linker's memory table and the budget the build must stay under. The
+margin policy is in the file: the budget is the measurement plus 5 percent,
+rounded up to 256 bytes.
+
+When a change makes an image grow past its budget, the build fails. Raise the
+budget in the same commit and say why:
+
+```bash
+python3 tools/firmware-test/fwtest.py size \
+  --budget tools/firmware-test/size-budget.json \
+  --logs ~/zplc-zephyr-ws/out/size --rebaseline
+```
+
+The figures are link-time static allocation. They do not include the stacks or
+the heap high-water mark.
+
+## Adding a test
+
+- Put a Zephyr suite in `firmware/tests/<name>` with a `testcase.yaml`, and
+  list every platform it passes on in `platform_allow`. Do not list a platform
+  where the scenario would pass for a reason it does not name.
+- Zephyr picks board files by exact qualifier. A file for the 64-bit variant is
+  `boards/native_sim_native_64.overlay` and the 32-bit variant needs
+  `boards/native_sim_native.overlay`. Per-board settings go in
+  `boards/<board>.conf`, for example `boards/qemu_cortex_m3.conf`.
+- Print ASCII only. Twister decodes QEMU output one byte at a time as UTF-8 and
+  fails the run on a multi-byte character.
+- Keep a thread's stack in mind. `native_sim` runs threads on the host stack,
+  so a stack that is too small shows up only on a target. The default test
+  thread stack on `qemu_cortex_m3` is 1 KB.
+
+## Known limits
+
+- `vm_core` and `loader_verify` do not run on `qemu_cortex_m0`. The VM keeps
+  8 KB of fixed process images and about 5 KB of static state at the default
+  stack depth, so the whole suite exceeds 16 KB with the sizes it needs, and
+  the loader suite builds programs larger than the `.tiny` code region.
+- `hal_gpio_policy.partial_required` and `post_shutdown` need the GPIO emulator
+  and the LED alias of `native_sim`.
+- The `app` mode is not part of continuous integration yet: no job builds a
+  board and then runs the host test.
+- Two integration cases in `test_vm_core.c` skip on every target, the host
+  included, because the example binaries they load predate the CRC field.
+  The `SKIP:` lines are in the suite log and the summary still reports a pass.
+
+## Related pages
+
+- [Zephyr Workspace Setup](../reference/zephyr-workspace-setup.md)
+- [Supported Boards](../reference/boards.md)
+- [Capabilities and Evidence Tiers](../reference/capabilities-evidence.md)

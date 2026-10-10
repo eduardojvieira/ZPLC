@@ -12,12 +12,13 @@
     { "pattern": "tools/hil/test_validate_supported_boards.py", "job": "docs-and-truth", "command": "python3 tools/hil/test_validate_supported_boards.py" },
     { "pattern": "firmware/lib/zplc_core/tests/fuzz_loader_verify.c", "job": "host-core-sanitized", "command": "fuzz_loader_verify" },
     { "pattern": "firmware/lib/zplc_core/tests/*.c", "job": "host-core", "command": "ctest --test-dir" },
-    { "pattern": "firmware/tests/**/*.c", "job": "zephyr-twister", "command": "west twister -T zplc/firmware/tests" }
+    { "pattern": "firmware/tests/**/*.c", "job": "zephyr-twister", "command": "west twister -T zplc/firmware/tests" },
+    { "pattern": "tools/firmware-test/test_*.py", "job": "zephyr-twister", "command": "python3 zplc/tools/firmware-test/test_fwtest.py" }
   ],
   "notRunInCi": [
     { "pattern": "packages/zplc-hil/tests/**/*.test.ts", "requirement": "HIL-001", "reason": "case tables for a board runner; the package has no test script and the files contain no tests that run" },
     { "pattern": "tools/hil/test_*.py", "requirement": "HIL-004", "reason": "device scripts that need a connected board; each must exit with a failure status or be listed as a bench utility" },
     { "pattern": "tools/test_crc32_cross.py", "requirement": "HIL-017", "reason": "compares a library with itself; it must compare the C implementation with the TypeScript one" },
-    { "pattern": "firmware/app/tests/*.c", "requirement": "VF-022", "reason": "host test that needs nanopb and a Zephyr build directory, with fixed paths of one machine; no requirement names its fix yet, owner to assign" }
+    { "pattern": "firmware/app/tests/*.c", "requirement": "VF-022", "reason": "host test that needs nanopb and the protobuf files of a Zephyr board build; tools/firmware-test/run.sh app runs it on a developer machine, but no CI job builds a board and then runs it yet" }
   ]
 }

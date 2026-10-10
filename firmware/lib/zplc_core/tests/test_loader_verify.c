@@ -4,8 +4,8 @@
 #include <stdio.h>
 #include <string.h>
 
-#ifndef ZPLC_LOADER_FIXTURE_PATH
-#error "ZPLC_LOADER_FIXTURE_PATH must be defined"
+#if !defined(ZPLC_LOADER_FIXTURE_PATH) && !defined(ZPLC_LOADER_FIXTURE_HEX)
+#error "ZPLC_LOADER_FIXTURE_PATH or ZPLC_LOADER_FIXTURE_HEX must be defined"
 #endif
 
 static int failures;
@@ -30,6 +30,30 @@ static int hex_value(int character) {
   return -1;
 }
 
+#if defined(ZPLC_LOADER_FIXTURE_HEX)
+/* Targets without a file system (the Zephyr core suites) compile the fixture
+ * text of tests/fixtures/zplc-v1-code-task-tags.hex in. */
+static size_t read_fixture(uint8_t *out, size_t capacity) {
+  const char *text = ZPLC_LOADER_FIXTURE_HEX;
+  int high = -1;
+  size_t count = 0;
+
+  for (; *text != '\0'; text++) {
+    int value = hex_value((unsigned char)*text);
+    if (value < 0)
+      continue;
+    if (high < 0) {
+      high = value;
+    } else {
+      if (count == capacity)
+        return 0;
+      out[count++] = (uint8_t)((high << 4) | value);
+      high = -1;
+    }
+  }
+  return high < 0 ? count : 0;
+}
+#else
 static size_t read_fixture(uint8_t *out, size_t capacity) {
   FILE *file = fopen(ZPLC_LOADER_FIXTURE_PATH, "r");
   int high = -1;
@@ -56,6 +80,7 @@ static size_t read_fixture(uint8_t *out, size_t capacity) {
   (void)fclose(file);
   return high < 0 ? count : 0;
 }
+#endif
 
 static uint32_t crc32_update(uint32_t crc, const uint8_t *data, size_t length) {
   size_t index;

@@ -28,8 +28,12 @@ static void test_registration(void) {
       zplc_comm_register_handler(ZPLC_COMM_FB_MB_READ_HREG, dummy_handler);
   assert(res == 0);
 
-  // Test invalid kind
-  res = zplc_comm_register_handler(0xFFFF, dummy_handler);
+  // Test invalid kind. The value is wider than the enum on targets that
+  // compile with -fshort-enums, so it goes through a variable: the narrowed
+  // result (0xFF) is the kind-count sentinel and is rejected as well.
+  volatile int invalid_kind = 0xFFFF;
+  res = zplc_comm_register_handler((zplc_comm_fb_kind_t)invalid_kind,
+                                   dummy_handler);
   assert(res < 0);
 
   // Test NULL handler
