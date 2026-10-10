@@ -59,6 +59,11 @@ export interface DebugVarInfo {
      * addresses for inline value annotations (CodeSys-style online monitoring).
      */
     declarationLine?: number;
+    /**
+     * `global` for a variable declared in a VAR_GLOBAL block: it is seen by every program, whichever file declares
+     * it, and the map lists it once, in the POU of its file (CMP-042).
+     */
+    scope?: 'global';
 }
 
 /**
@@ -393,6 +398,7 @@ function buildVarInfoFromSymbol(sym: Symbol, typeResolver?: TypeResolver): Debug
         size: sym.size,
         tags: sym.tags,
         declarationLine: sym.declarationLine,
+        ...(sym.owner === undefined && sym.section === 'VAR_GLOBAL' ? { scope: 'global' as const } : {}),
     };
     if (text) {
         varInfo.capacity = text.capacity;

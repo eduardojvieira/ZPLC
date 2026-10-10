@@ -644,7 +644,9 @@
     {"kind":"conformance","ref":"conformance/cmp/cmp-042-type-from-another-file-in-a-structure.expect.json","test":"CMP-042 a type declared in another file is the type of the members of a structure"},
     {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/unit.test.ts","test":"a declaration made twice is an error at every place it is made (CMP-042)"},
     {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/unit.test.ts","test":"the debug map of a unit (CMP-042, CMP-054)"},
-    {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/unit.test.ts","test":"what every file of a project sees of the others (CMP-042)"}
+    {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/unit.test.ts","test":"what every file of a project sees of the others (CMP-042)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/cli/toolApi.test.ts","test":"lists a global of a library file once, under a POU name the MCP symbol schema accepts (CMP-042)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/test-engine/globals.test.ts","test":"scenario signals that name a global (CMP-042)"}
   ],
   "CMP-043": [
     {"kind":"conformance","ref":"conformance/cmp/cmp-043-allocation-failure-states-bytes-and-consumers.expect.json","test":"CMP-043 an allocation failure states the bytes required, the bytes available and the largest consumers"},

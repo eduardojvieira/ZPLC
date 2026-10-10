@@ -964,12 +964,21 @@ export function compileMultiTaskProject(
 
     // The map of the unit: one POU for each file, from the table the code was generated with (CMP-054)
     const entryByRef = new Map(programs.map((program) => [program.sourceRef, program.entryPoint] as const));
+    // a file with no program is a POU named by its file name, as a program is by its own name; two files of one
+    // name in different folders keep their whole path
+    const taken = new Set<string>(parsedFiles.flatMap(({ program }) => (program ? [program.name] : [])));
+    const libraryKey = (ref: string): string => {
+        const name = ref.split(/[\\/]/).pop() || ref;
+        const key = taken.has(name) ? ref : name;
+        taken.add(key);
+        return key;
+    };
     const debugFiles: UnitDebugFile[] = parsedFiles.map(({ ref, unit, program }) => program
         ? { ref, sourceRef: ref, key: program.name, type: 'PROGRAM', entryPoint: entryByRef.get(ref) }
         : {
             ref,
             sourceRef: ref,
-            key: ref,
+            key: libraryKey(ref),
             type: unit.functionBlocks.length > 0 ? 'FUNCTION_BLOCK' : unit.functions.length > 0 ? 'FUNCTION' : 'LIBRARY',
         });
     const debugMap = buildUnitDebugMap({

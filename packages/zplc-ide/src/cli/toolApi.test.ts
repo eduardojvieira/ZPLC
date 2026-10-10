@@ -601,6 +601,26 @@ END_PROGRAM`);
       for (const forbidden of ['zplcFile', 'bytecode', 'assembly', 'debugMap', 'tags', 'children', root, 'PROGRAM Alpha']) expect(serialized).not.toContain(forbidden);
     } finally { await rm(root, { recursive: true, force: true }); }
   });
+  it('lists a global of a library file once, under a POU name the MCP symbol schema accepts (CMP-042)', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'zplc-symbols-library-'));
+    try {
+      await mkdir(join(root, 'src'));
+      await writeFile(join(root, 'zplc.json'), JSON.stringify({ schemaVersion: 2, name: 'symbols', version: '1.0.0', tasks: [
+        { name: 'AlphaTask', trigger: 'cyclic', interval_ms: 10, priority: 1, programs: ['Alpha.st'] },
+        { name: 'BetaTask', trigger: 'cyclic', interval_ms: 10, priority: 2, programs: ['Beta.st'] },
+      ] }));
+      await writeFile(join(root, 'src', 'Alpha.st'), 'PROGRAM Alpha\nVAR_OUTPUT Lamp AT %Q0.0 : BOOL; END_VAR\nLamp := Shared > 0;\nEND_PROGRAM');
+      await writeFile(join(root, 'src', 'Beta.st'), 'PROGRAM Beta\nVAR Seen : INT; END_VAR\nShared := Shared + 1;\nSeen := Shared;\nEND_PROGRAM');
+      await writeFile(join(root, 'src', 'globals.st'), 'VAR_GLOBAL\n Shared : INT;\nEND_VAR\n');
+      const listed = await symbolsList(root);
+      expect(listed.ok).toBe(true);
+      const symbols = (listed as { summary: { symbols: Array<{ pou: string; name: string; sourceRef?: string }> } }).summary.symbols;
+      const shared = symbols.filter((symbol) => symbol.name === 'Shared');
+      expect(shared).toEqual([expect.objectContaining({ pou: 'globals.st', sourceRef: 'src/globals.st' })]);
+      // the names the MCP server's `symbols_list` output accepts
+      for (const symbol of symbols) expect(symbol.pou).toMatch(/^[A-Za-z_][A-Za-z0-9_.:-]*$/);
+    } finally { await rm(root, { recursive: true, force: true }); }
+  });
   it('fails symbols listing through the canonical sanitized compile path', async () => {
     const root = await mkdtemp(join(tmpdir(), 'zplc-symbols-failure-'));
     try {
@@ -902,6 +922,33 @@ describe('testsRun', () => {
       const changed = await scenarioRun(root, 'Alpha');
       expect(changed.savedTestInputIdentity).not.toEqual(first.savedTestInputIdentity);
       expect(changed.evidence.artifacts.find((artifact) => artifact.kind === 'trace')).not.toEqual(first.evidence.artifacts.find((artifact) => artifact.kind === 'trace'));
+    } finally {
+      if (oldBinary === undefined) delete process.env.ZPLC_NATIVE_SIM_BIN; else process.env.ZPLC_NATIVE_SIM_BIN = oldBinary;
+      await rm(root, { recursive: true, force: true });
+    }
+  }, 30_000);
+
+  itNative('drives and observes a global that another file declares, by program or by name alone (CMP-042)', async () => {
+    const root = await workspace('PROGRAM Motor VAR_INPUT Start AT %I0.0 : BOOL; END_VAR VAR_OUTPUT Forward AT %Q0.0 : BOOL; END_VAR Forward := Start AND Enabled; Ready := Forward; END_PROGRAM');
+    const oldBinary = process.env.ZPLC_NATIVE_SIM_BIN;
+    try {
+      // Enabled and Ready are located globals of a library file no task runs
+      await writeFile(join(root, 'src', 'globals.st'), 'VAR_GLOBAL\n  Enabled AT %IX0.1 : BOOL;\n  Ready AT %QX0.1 : BOOL;\nEND_VAR\n');
+      const run = (id: string, set: Record<string, boolean>, condition: Record<string, boolean>) => JSON.stringify({
+        schemaVersion: 1, id, tickMs: 10, durationMs: 10, events: [{ atMs: 0, set }], expectations: [{ kind: 'AT', atMs: 0, condition }],
+      });
+      await writeFile(join(root, 'tests', 'a.scenario.json'), run('ByProgram', { 'Motor.Start': true, 'Motor.Enabled': true }, { 'Motor.Forward': true, 'Motor.Ready': true }));
+      await writeFile(join(root, 'tests', 'b.scenario.json'), run('ByName', { 'Motor.Start': true, Enabled: false }, { 'Motor.Forward': false, Ready: false }));
+      process.env.ZPLC_NATIVE_SIM_BIN = nativeRuntimeBinary;
+      const result = await testsRun(root);
+      expect(result).toMatchObject({ ok: true, preview: { totalScenarioCount: 2 } });
+      expect(result.preview?.scenarios.map((entry) => [entry.id, entry.passed])).toEqual([['ByProgram', true], ['ByName', true]]);
+      // the signal names of the trace stay `Program.variable`, the one form the presentation of a run accepts
+      const trace = JSON.stringify(result.preview);
+      expect(trace).toContain('Motor.Ready');
+      // a global that no file declares is not a signal
+      await writeFile(join(root, 'tests', 'b.scenario.json'), run('ByName', { 'Motor.Start': true, Missing: false }, { 'Motor.Forward': false }));
+      expect(await testsRun(root)).toMatchObject({ ok: false, evidence: { diagnostics: [{ code: 'TEST_SCENARIO_INVALID', path: 'tests/b.scenario.json' }] } });
     } finally {
       if (oldBinary === undefined) delete process.env.ZPLC_NATIVE_SIM_BIN; else process.env.ZPLC_NATIVE_SIM_BIN = oldBinary;
       await rm(root, { recursive: true, force: true });

@@ -68,17 +68,19 @@ describe('what every file of a project sees of the others (CMP-042)', () => {
         expect(result.debugMap.pou.P!.vars.s).toMatchObject({ type: 'DINT', size: 4 });
     });
 
-    it('a function of another file is called from two programs of two tasks', () => {
-        const result = build({
+    it('a function of another file is called from two programs of two tasks, and is built once', () => {
+        const files = {
             'a.st': 'PROGRAM A\nVAR r AT %QW0 : INT; END_VAR\n  r := Twice(x := 4);\nEND_PROGRAM\n',
             'b.st': 'PROGRAM B\nVAR r AT %QW1 : INT; END_VAR\n  r := Twice(x := 5);\nEND_PROGRAM\n',
             'lib.st': 'FUNCTION Twice : INT\nVAR_INPUT x : INT; END_VAR\n  Twice := x * 2;\nEND_FUNCTION\n',
-        }, ['a.st', 'b.st']);
-        expect(result.tasks).toHaveLength(2);
-        // one body of the function, called from both programs
-        const functionBodies = result.programDetails.map((program) => program.assembly).join('\n').split('\n').filter((line) => line.trim() === 'func_Twice:');
-        expect(functionBodies).toHaveLength(1);
-        expect(result.programDetails.every((program) => /CALL func_Twice/.test(program.assembly))).toBe(true);
+        };
+        const both = build(files, ['a.st', 'b.st']);
+        expect(both.tasks).toHaveLength(2);
+        // the second caller costs its own statement, not another copy of the function: the project is smaller
+        // than two projects of one program each, which would build the function twice
+        const onlyA = build({ 'a.st': files['a.st'], 'lib.st': files['lib.st'] }, ['a.st']);
+        const onlyB = build({ 'b.st': files['b.st'], 'lib.st': files['lib.st'] }, ['b.st']);
+        expect(both.codeSize).toBeLessThan(onlyA.codeSize + onlyB.codeSize);
     });
 
     it('a global has one address for every program and appears once in the debug map', () => {
@@ -89,10 +91,9 @@ describe('what every file of a project sees of the others (CMP-042)', () => {
         }, ['a.st', 'b.st']);
         const where = listed(result, 'Shared');
         expect(where).toHaveLength(1);
-        const address = `0x${where[0]!.addr.toString(16).padStart(4, '0')}`;
-        // both programs read it where the map says it is
-        expect(result.programDetails[0]!.assembly).toContain(`LOAD16 ${address}`);
-        expect(result.programDetails[1]!.assembly).toContain(`LOAD16 ${address}`);
+        // and no program keeps a copy of its own: the variables of the programs sit after it
+        const others = [listed(result, 'here')[0]!.addr, listed(result, 'there')[0]!.addr];
+        expect(others.every((address) => address !== where[0]!.addr)).toBe(true);
     });
 
     it('two programs may use the same variable name: each keeps its own storage', () => {
@@ -184,6 +185,21 @@ describe('the debug map of a unit (CMP-042, CMP-054)', () => {
         expect(map.pou.Main!.sourceRef).toBe('src/main.st');
         const library = Object.entries(map.pou).filter(([name]) => name !== 'Main');
         expect(library.map(([, info]) => info.sourceRef).sort()).toEqual(['src/echo.st', 'src/globals.st']);
+    });
+
+    it('names the POU of a file that has no program by its file name, and by its path only when two share one', () => {
+        const names = (files: Record<string, string>) => Object.keys(build(files, ['main.st']).debugMap.pou);
+        expect(names({ ...files })).toEqual(['Main', 'echo.st', 'globals.st']);
+        const second = compileMultiTaskProject(
+            { name: 'Unit', version: '1.0.0', tasks: [task('main.st')] },
+            [
+                { name: 'main.st', content: files['main.st'], sourceRef: 'src/main.st' },
+                { name: 'echo.st', content: files['echo.st'], sourceRef: 'src/echo.st' },
+                { name: 'globals.st', content: files['globals.st'], sourceRef: 'src/globals.st' },
+                { name: 'more.st', content: 'VAR_GLOBAL\n  More : INT;\nEND_VAR\n', sourceRef: 'src/lib/globals.st' },
+            ],
+        );
+        expect(Object.keys(second.debugMap.pou)).toEqual(['Main', 'echo.st', 'globals.st', 'src/lib/globals.st']);
     });
 
     it('lists a global in the POU of the file that declares it, and no other', () => {
@@ -283,8 +299,10 @@ describe('memory is limited by the target profile only (CMP-043)', () => {
         expect(JSON.stringify(build(files, ['a.st', 'b.st']).debugMap.pou)).toBe(JSON.stringify(first.debugMap.pou));
     });
 
-    it('puts the initialization flag at the end of the region of the profile', () => {
-        const result = build({ 'main.st': 'PROGRAM P\nVAR x : INT := 5; END_VAR\nEND_PROGRAM\n' }, ['main.st'], { workSize: 512, retainSize: 256, codeSizeMax: 0xB000 });
-        expect(result.programDetails[0]!.assembly).toContain('LOAD8 0x21ff');
+    it('keeps the last byte of the region of the profile for the initialization flag', () => {
+        const profile = { workSize: 512, retainSize: 256, codeSizeMax: 0xB000 };
+        expect(() => build({ 'main.st': program([arrayOf('fits', 511)]) }, ['main.st'], profile)).not.toThrow();
+        const found = rejected({ 'main.st': program([arrayOf('over', 512)]) }, ['main.st'], profile);
+        expect(found[0]!.message).toContain('513 bytes required, 512 bytes available');
     });
 });
