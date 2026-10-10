@@ -21,7 +21,7 @@ const HASH_B = 'b'.repeat(64);
 
 export function grade(overrides: Partial<GradeRecord> = {}): GradeRecord {
   return {
-    schemaVersion: 1, lessonId: 'motor-start-stop-safe', lessonVersion: 1, scenarioId: 'MotorStartStop', scenarioSha256: HASH_A, programSha256: HASH_B,
+    schemaVersion: 1, lessonId: 'motor-start-stop-safe', lessonVersion: 1, track: 'simulation', scenarioId: 'MotorStartStop', scenarioSha256: HASH_A, programSha256: HASH_B,
     runtimeVersion: '1.0.0', time: '2026-10-10T12:00:00.000Z', result: 'passed', assertions: { total: 27, passed: 27 }, failedAssertions: [], ...overrides,
   };
 }
@@ -58,6 +58,7 @@ describe('the Learn progress document (LRN-031, LRN-032)', () => {
     expect(parseGradeRecord({ ...grade(), extra: true })).toBeUndefined();
     expect(parseGradeRecord(grade({ time: '2026-10-10 12:00' }))).toBeUndefined();
     expect(parseGradeRecord(grade({ programSha256: 'xyz' }))).toBeUndefined();
+    expect(parseGradeRecord(grade({ track: 'bench' as 'simulation' }))).toBeUndefined();
     // A pass that lists a failed assertion, a pass that did not pass them all, and a failure that failed nothing are forgeries.
     expect(parseGradeRecord(grade({ failedAssertions: failed().failedAssertions }))).toBeUndefined();
     expect(parseGradeRecord(grade({ assertions: { total: 27, passed: 26 } }))).toBeUndefined();

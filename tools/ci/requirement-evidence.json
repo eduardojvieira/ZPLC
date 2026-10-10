@@ -1318,7 +1318,8 @@
   "LRN-026": [
     {"kind":"unit","ref":"packages/zplc-ide/src/components/learnLesson.test.ts","test":"Learn grading against the lesson package (LRN-022, LRN-026)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/learn/gradeRecord.test.ts","test":"failed assertions of a lesson check (LRN-026)"},
-    {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonCheck.test.ts","test":"lesson check (LRN-022, LRN-023, LRN-026)"}
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonCheck.test.ts","test":"lesson check (LRN-022, LRN-023, LRN-026)"},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"29 Learn says which assertion failed","partial":true}
   ],
   "LRN-027": [
     {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonCi.test.ts","test":"lesson packages (LRN-009, LRN-010, LRN-027)"},

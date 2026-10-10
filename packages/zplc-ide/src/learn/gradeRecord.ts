@@ -87,6 +87,7 @@ export function gradeRecordOf(input: GradeInput): GradeRecord {
     schemaVersion: 1,
     lessonId: input.lessonId,
     lessonVersion: input.lessonVersion,
+    track: 'simulation',
     scenarioId: input.scenario.id,
     scenarioSha256: input.scenarioSha256,
     programSha256: input.programSha256,

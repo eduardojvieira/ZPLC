@@ -54,7 +54,7 @@ describe('grade record (LRN-023)', () => {
   it('records the lesson id and version, scenario hash, program hash, runtime version and time of a pass', () => {
     const record = gradeRecordOf({ ...base, scenario, assertions: scenario.expectations.map((expectation) => ({ kind: expectation.kind, passed: true })), trace, traceSha256: TRACE });
     expect(record).toEqual({
-      schemaVersion: 1, lessonId: 'motor-start-stop-safe', lessonVersion: 3, scenarioId: 'Motor', scenarioSha256: 'a'.repeat(64), programSha256: 'b'.repeat(64),
+      schemaVersion: 1, lessonId: 'motor-start-stop-safe', lessonVersion: 3, track: 'simulation', scenarioId: 'Motor', scenarioSha256: 'a'.repeat(64), programSha256: 'b'.repeat(64),
       runtimeVersion: '1.2.3', time: '2026-10-10T12:00:00.000Z', result: 'passed', assertions: { total: 3, passed: 3 }, failedAssertions: [],
     });
     expect(parseGradeRecord(record)).toEqual(record);

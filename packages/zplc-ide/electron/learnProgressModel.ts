@@ -56,6 +56,8 @@ export interface GradeRecord {
   schemaVersion: 1;
   lessonId: string;
   lessonVersion: number;
+  /** `simulation` for a grade of the native simulation; a hardware run is a different grade and never this one (LRN-024). */
+  track: 'simulation' | 'hardware';
   scenarioId: string;
   /** Content hash of the reference scenario the program was run against. */
   scenarioSha256: string;
@@ -150,8 +152,8 @@ function parseFailed(value: unknown): FailedAssertion | undefined {
 
 /** A grade record, or undefined for anything that is not exactly one. */
 export function parseGradeRecord(value: unknown): GradeRecord | undefined {
-  if (!isObject(value) || !hasExactKeys(value, ['schemaVersion', 'lessonId', 'lessonVersion', 'scenarioId', 'scenarioSha256', 'programSha256', 'runtimeVersion', 'time', 'result', 'assertions', 'failedAssertions'])) return undefined;
-  if (value.schemaVersion !== 1 || !isLessonId(value.lessonId) || !isInt(value.lessonVersion, 1, 1_000_000)) return undefined;
+  if (!isObject(value) || !hasExactKeys(value, ['schemaVersion', 'lessonId', 'lessonVersion', 'track', 'scenarioId', 'scenarioSha256', 'programSha256', 'runtimeVersion', 'time', 'result', 'assertions', 'failedAssertions'])) return undefined;
+  if (value.schemaVersion !== 1 || !isLessonId(value.lessonId) || !isInt(value.lessonVersion, 1, 1_000_000) || (value.track !== 'simulation' && value.track !== 'hardware')) return undefined;
   if (typeof value.scenarioId !== 'string' || value.scenarioId.length === 0 || value.scenarioId.length > 128) return undefined;
   if (!isSha(value.scenarioSha256) || !isSha(value.programSha256) || typeof value.runtimeVersion !== 'string' || value.runtimeVersion.length === 0 || value.runtimeVersion.length > 64) return undefined;
   if (!isTime(value.time) || (value.result !== 'passed' && value.result !== 'failed')) return undefined;
@@ -168,7 +170,7 @@ export function parseGradeRecord(value: unknown): GradeRecord | undefined {
   if (value.result === 'passed' && (failedAssertions.length > 0 || assertions.passed !== assertions.total)) return undefined;
   if (value.result === 'failed' && assertions.passed === assertions.total) return undefined;
   return {
-    schemaVersion: 1, lessonId: value.lessonId, lessonVersion: value.lessonVersion, scenarioId: value.scenarioId,
+    schemaVersion: 1, lessonId: value.lessonId, lessonVersion: value.lessonVersion, track: value.track, scenarioId: value.scenarioId,
     scenarioSha256: value.scenarioSha256, programSha256: value.programSha256, runtimeVersion: value.runtimeVersion, time: value.time,
     result: value.result, assertions: { total: assertions.total, passed: assertions.passed }, failedAssertions,
   };

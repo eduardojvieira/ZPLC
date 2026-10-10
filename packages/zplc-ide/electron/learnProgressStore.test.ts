@@ -11,7 +11,7 @@ async function fixture(): Promise<string> { const directory = await mkdtemp(join
 
 const HASH = 'c'.repeat(64);
 function grade(lessonId: string, time: string, overrides: Partial<GradeRecord> = {}): GradeRecord {
-  return { schemaVersion: 1, lessonId, lessonVersion: 1, scenarioId: 'Scenario', scenarioSha256: HASH, programSha256: HASH, runtimeVersion: '1.0.0', time, result: 'passed', assertions: { total: 3, passed: 3 }, failedAssertions: [], ...overrides };
+  return { schemaVersion: 1, lessonId, lessonVersion: 1, track: 'simulation', scenarioId: 'Scenario', scenarioSha256: HASH, programSha256: HASH, runtimeVersion: '1.0.0', time, result: 'passed', assertions: { total: 3, passed: 3 }, failedAssertions: [], ...overrides };
 }
 const at = (iso: string) => () => new Date(iso);
 
