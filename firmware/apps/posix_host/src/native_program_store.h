@@ -9,6 +9,8 @@
 #include <zplc_loader.h>
 
 typedef struct {
+    /* What zplc_loader_verify() answered; ZPLC_LOADER_ERR_DRAFT lets the caller say which draft. */
+    int loader_result;
     uint8_t task_count;
     uint8_t has_task_segment;
     uint32_t scan_interval_ms;

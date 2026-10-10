@@ -40,6 +40,7 @@ import {
 import { useIDEStore } from '../store/useIDEStore';
 import { useTheme } from '../hooks/useTheme';
 import { useDebugController } from '../hooks/useDebugController';
+import { ZPLC_CONSTANTS } from '@zplc/compiler';
 import { transpileToST } from '../compiler';
 import type { DebugMap } from '../compiler';
 import { GeneratedCodeDialog } from './GeneratedCodeDialog';
@@ -411,7 +412,7 @@ export function Toolbar({ debugController }: ToolbarProps) {
           zplc: canonical.zplcEvidence,
         });
         setProgramLoadState(nextProgramLoadStateAfterCompile());
-        addConsoleEntry({ type: 'success', message: `Built saved workspace locally: ${canonical.artifact.zplcFile.length} bytes (${canonical.summary.codeSize} code, ${canonical.summary.taskCount} tasks)`, source: 'compiler' });
+        addConsoleEntry({ type: 'success', message: `Built saved workspace locally: ${canonical.artifact.zplcFile.length} bytes (${canonical.summary.codeSize} code, ${canonical.summary.taskCount} tasks, contract draft ${ZPLC_CONSTANTS.DRAFT_COUNTER})`, source: 'compiler' });
         markCompilerMessagesChecked();
       } catch {
         const latest = useIDEStore.getState();
@@ -589,7 +590,9 @@ export function Toolbar({ debugController }: ToolbarProps) {
         type: 'error',
         message: programSendStarted && !preflightDenied
           ? HARDWARE_DEPLOY_UNCONFIRMED_MESSAGE
-          : 'Hardware deploy preflight failed. No program was sent.',
+          : error instanceof DeviceAdmissionError && error.detail
+            ? `Hardware deploy refused: ${error.detail}. Rebuild the program or reflash the board. No program was sent.`
+            : 'Hardware deploy preflight failed. No program was sent.',
         source: 'runtime',
       });
     } finally {

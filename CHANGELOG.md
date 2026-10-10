@@ -4,6 +4,19 @@ All notable changes are documented here.
 
 ## Unreleased
 
+- The binary contract now carries a draft counter (CMP-052). Every artifact the
+  compiler or assembler writes records it in header word 28, and the loader, the
+  native runtime, the firmware shell and Studio refuse a program or a board on
+  another draft and show both numbers. Programs must be rebuilt and boards
+  reflashed after upgrading from 2.0.0-rc.3.
+- The binary contract tables (opcodes, container constants, block layouts) are
+  generated from one source, `tools/contract/contract.json`.
+- The compiler gives correct results for negative `SINT`/`INT`, unsigned
+  comparison and division, `REAL` arithmetic with integer operands, `NOT` on
+  `BYTE`/`WORD`, compound and fractional `TIME` literals and `TIME` over 24.8
+  days; 64-bit multiply, divide, modulo and shifts are now build errors
+  instead of wrong code.
+
 ## 2.0.0-rc.3 - 2026-09-01
 
 - Closed the remaining source-truth gaps: project schemas reject persisted

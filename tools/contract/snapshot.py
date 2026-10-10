@@ -37,7 +37,7 @@ HEADERS = ["zplc_isa.h", "zplc_loader.h", "zplc_comm_dispatch.h"]
 # Macros that are part of the contract, by prefix. Other macros (header guards,
 # the packing attribute, Kconfig fallbacks) are not numbers of the contract.
 MACRO_PREFIXES = (
-    "ZPLC_MAGIC", "ZPLC_VERSION_", "ZPLC_MEM_", "ZPLC_SYS_", "ZPLC_MAX_TAGS",
+    "ZPLC_MAGIC", "ZPLC_VERSION_", "ZPLC_DRAFT_", "ZPLC_MEM_", "ZPLC_SYS_", "ZPLC_MAX_TAGS",
     "ZPLC_STACK_MAX_DEPTH", "ZPLC_CALL_STACK_MAX", "ZPLC_MAX_BREAKPOINTS",
     "ZPLC_STRING_", "ZPLC_FILE_HEADER_SIZE", "ZPLC_SEGMENT_ENTRY_SIZE",
     "ZPLC_TASK_DEF_SIZE", "ZPLC_IOMAP_ENTRY_SIZE", "ZPLC_TAG_ENTRY_SIZE",
@@ -143,6 +143,7 @@ def py_views() -> dict:
             "magic": asm.ZPLC_MAGIC,
             "versionMajor": asm.ZPLC_VERSION_MAJOR,
             "versionMinor": asm.ZPLC_VERSION_MINOR,
+            "draftCounter": asm.ZPLC_DRAFT_COUNTER,
         },
         "tester": {"opcodes": {name: int(code) for name, code in tester.ZPLCTester.OP.items()}},
     }

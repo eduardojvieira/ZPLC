@@ -102,6 +102,7 @@ static size_t make_program(uint8_t *file, const uint8_t *code,
   memcpy(file, "ZPLC", 4U);
   write_u16_le(file + 4U, ZPLC_VERSION_MAJOR);
   write_u16_le(file + 6U, ZPLC_VERSION_MINOR);
+  write_u32_le(file + 28U, ZPLC_DRAFT_COUNTER);
   write_u32_le(file + 16U, (uint32_t)code_size);
   write_u32_le(file + 20U, ZPLC_TASK_DEF_SIZE);
   write_u16_le(file + 26U, 2U);
@@ -128,6 +129,7 @@ static size_t make_tag_program(uint8_t *file, uint16_t address, uint8_t type,
   memcpy(file, "ZPLC", 4U);
   write_u16_le(file + 4U, ZPLC_VERSION_MAJOR);
   write_u16_le(file + 6U, ZPLC_VERSION_MINOR);
+  write_u32_le(file + 28U, ZPLC_DRAFT_COUNTER);
   write_u32_le(file + 16U, 1U);
   write_u32_le(file + 20U, ZPLC_TASK_DEF_SIZE + ZPLC_TAG_ENTRY_SIZE);
   write_u16_le(file + 26U, 3U);
@@ -233,10 +235,10 @@ static void test_structural_rejections(void) {
   expect_rejection(file, length, ZPLC_LOADER_ERR_FLAGS,
                    "signed flag is unsupported without signature verification");
   (void)read_fixture(file, sizeof(file));
-  file[28] = 1U;
+  file[28] = (uint8_t)(ZPLC_DRAFT_COUNTER + 1U);
   refresh_crc(file, length);
-  expect_rejection(file, length, ZPLC_LOADER_ERR_SIZE,
-                   "non-zero header reserved is rejected");
+  expect_rejection(file, length, ZPLC_LOADER_ERR_DRAFT,
+                   "header word 28 is the draft counter, not a reserved word");
   (void)read_fixture(file, sizeof(file));
   file[16] = 3U;
   expect_rejection(file, length, ZPLC_LOADER_ERR_CRC32,
@@ -613,6 +615,7 @@ static void test_semantic_rejections_and_acceptance(void) {
     memcpy(tags_file, "ZPLC", 4U);
     write_u16_le(tags_file + 4U, ZPLC_VERSION_MAJOR);
     write_u16_le(tags_file + 6U, ZPLC_VERSION_MINOR);
+    write_u32_le(tags_file + 28U, ZPLC_DRAFT_COUNTER);
     write_u32_le(tags_file + 16U, 1U);
     write_u32_le(tags_file + 20U, 16U + (uint32_t)tag_size);
     write_u16_le(tags_file + 26U, 3U);
@@ -726,11 +729,68 @@ static void test_tag_semantics(void) {
       "MODBUS address outside the consumer's uint16 range is rejected");
 }
 
+/* CMP-052: the loader refuses an artifact built for another draft of the contract or without a counter.
+ * The artifact records the draft in header word 28 and the loader reports both numbers: the artifact's
+ * through zplc_loader_artifact_draft_counter, which trusts neither the magic nor the CRC, and its own. */
+static void test_draft_counter(void) {
+  uint8_t file[128];
+  uint8_t code[1] = {OP_RET};
+  const size_t length = make_program(file, code, 1U);
+  zplc_program_view_t view;
+  const uint32_t foreign = ZPLC_DRAFT_COUNTER + 7U;
+
+  CHECK(ZPLC_DRAFT_COUNTER >= 1U, "the runtime's own counter is never 0");
+  CHECK(zplc_loader_artifact_draft_counter(file, length) == ZPLC_DRAFT_COUNTER,
+        "a matching artifact reports the runtime's counter");
+  CHECK(zplc_loader_verify(file, length, workspace, sizeof(workspace), &view) ==
+            ZPLC_LOADER_OK,
+        "an artifact built for this draft verifies");
+
+  write_u32_le(file + 28U, foreign);
+  refresh_crc(file, length);
+  expect_rejection(file, length, ZPLC_LOADER_ERR_DRAFT,
+                   "an artifact built for another draft is refused");
+  CHECK(zplc_loader_artifact_draft_counter(file, length) == foreign &&
+            foreign != ZPLC_DRAFT_COUNTER,
+        "the refusal carries both numbers: the artifact's and the runtime's");
+
+  write_u32_le(file + 28U, 0U);
+  refresh_crc(file, length);
+  expect_rejection(file, length, ZPLC_LOADER_ERR_DRAFT,
+                   "an artifact without a counter is refused");
+  CHECK(zplc_loader_artifact_draft_counter(file, length) == 0U,
+        "an artifact without a counter reports 0");
+
+  /* The counter is read before anything else is trusted. */
+  (void)make_program(file, code, 1U);
+  write_u32_le(file + 28U, foreign);
+  expect_rejection(file, length, ZPLC_LOADER_ERR_DRAFT,
+                   "a foreign counter wins over a stale CRC");
+  file[4] = 2U;
+  file[8] = 0x08U;
+  expect_rejection(file, length, ZPLC_LOADER_ERR_DRAFT,
+                   "a foreign counter wins over version and flags");
+  file[0] ^= 1U;
+  expect_rejection(file, length, ZPLC_LOADER_ERR_MAGIC,
+                   "a file that is not a ZPLC artifact is reported as such first");
+
+  (void)make_program(file, code, 1U);
+  file[16] = 3U;
+  expect_rejection(file, length, ZPLC_LOADER_ERR_CRC32,
+                   "the matching counter does not excuse a bad CRC");
+
+  CHECK(zplc_loader_artifact_draft_counter(NULL, length) == 0U,
+        "NULL has no counter");
+  CHECK(zplc_loader_artifact_draft_counter(file, 31U) == 0U,
+        "a buffer shorter than a header has no counter");
+}
+
 int main(void) {
   test_valid_fixture_and_purity();
   test_structural_rejections();
   test_semantic_rejections_and_acceptance();
   test_tag_semantics();
+  test_draft_counter();
   if (failures != 0)
     return 1;
   puts("All loader verifier tests passed.");

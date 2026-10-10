@@ -4,6 +4,7 @@ import { lstat, readFile, realpath, rename, rm, writeFile } from 'node:fs/promis
 import { basename, dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { parseArgs } from 'node:util';
 import productManifest from '../../../../package.json';
+import { ZPLC_CONSTANTS } from '@zplc/compiler';
 import { compileSingleFileWithTask, type PLCLanguage } from '../compiler';
 import { getLanguageFromFilename } from '../types';
 import { artifactEvidence, compilerCheck, compilerCompile, executionPermission, finishToolExecution, firmwareBuild, projectInspect, projectMigrationExport, projectMigrationPreview, projectValidate, safeCompilerDiagnostic, safetyCheck, scenarioRun, startToolExecution, symbolsList, testsRun, toolchainInspect, withToolExecution, type FirmwareBuildSummary, type ProjectMigrationExportResult, type TestRunResult, type ToolEvidence, type ToolExecutionStart, type ToolResult } from './toolApi';
@@ -115,9 +116,9 @@ async function singleFileCompile(file: string, values: Values, output: Output): 
     const result = compileSingleFileWithTask(await readFile(file, 'utf8'), language, { taskName: 'Main', intervalMs: 50, priority: 3, programName: 'Main' });
     const artifact = values.output?.toLowerCase().endsWith('.bin') ? result.bytecode : result.zplcFile;
     if (values.output && !await writeArtifact(values.output, artifact)) return emitFailure(output, json, 'compile', 'Unable to write output artifact', start);
-    const value = { ok: true as const, summary: { codeSize: result.codeSize, language }, evidence: { schemaVersion: 1 as const, operation: 'compile' as const, outcome: 'passed' as const, diagnostics: [], artifacts: [artifactEvidence(values.output?.toLowerCase().endsWith('.bin') ? 'bytecode' : 'zplc', artifact)] } };
+    const value = { ok: true as const, summary: { codeSize: result.codeSize, language, draftCounter: ZPLC_CONSTANTS.DRAFT_COUNTER }, evidence: { schemaVersion: 1 as const, operation: 'compile' as const, outcome: 'passed' as const, diagnostics: [], artifacts: [artifactEvidence(values.output?.toLowerCase().endsWith('.bin') ? 'bytecode' : 'zplc', artifact)] } };
     if (json) emitJson(output, cliExecution('compile', value, start));
-    else if (values.output) output.log(`Compiled ${file} (${result.codeSize} bytes)`);
+    else if (values.output) output.log(`Compiled ${file} (${result.codeSize} bytes, contract draft ${ZPLC_CONSTANTS.DRAFT_COUNTER})`);
     else output.log(result.assembly);
     return 0;
   } catch (error) { return emitCompilerFailure(output, json, 'compile', error, file, start); }
@@ -166,6 +167,7 @@ export async function main(args = Bun.argv.slice(2), output: Output = console, o
   if (values.json) emitJson(output, cliExecution(operationForCommand(command), result, executionStart));
   else if (result.ok && command === 'safety-check' && !result.summary.configured) output.log('safety-check: no incompatible outputs declared');
   else if (result.ok && command === 'safety-check') output.log('safety-check coverage checked');
+  else if (result.ok && command === 'compile') output.log(`compile passed (contract draft ${ZPLC_CONSTANTS.DRAFT_COUNTER})`);
   else if (result.ok) output.log(`${command} passed`); else result.evidence.diagnostics.forEach((diagnostic) => output.error(`Error: ${describeDiagnostic(diagnostic)}`));
   return command === 'test' || command === 'scenario-run' ? testExitCode(result as TestRunResult) : result.ok ? 0 : 1;
 }

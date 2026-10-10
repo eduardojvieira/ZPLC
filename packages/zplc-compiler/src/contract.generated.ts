@@ -10,6 +10,9 @@
 
 export const ABI_VERSION = { major: 1, minor: 0 } as const;
 
+/** Draft contract counter (CMP-052): written in header word 28 of every artifact and compared by the loader. */
+export const DRAFT_COUNTER = 1 as const;
+
 /** Container (.zplc file) constants. */
 export const CONTAINER = {
   magic: 0x434C505A,
@@ -35,7 +38,7 @@ export const CONTAINER_LAYOUT = {
     data_size: { offset: 20, size: 4 },
     entry_point: { offset: 24, size: 2 },
     segment_count: { offset: 26, size: 2 },
-    reserved: { offset: 28, size: 4 },
+    draft_counter: { offset: 28, size: 4 },
   },
   segment: {
     type: { offset: 0, size: 2 },
@@ -438,6 +441,7 @@ export const LOADER_ERRORS = [
   { name: "ZPLC_LOADER_ERR_TASK", code: -14, doc: "Task definition is invalid or there are too many tasks" },
   { name: "ZPLC_LOADER_ERR_TAGS", code: -15, doc: "Tag entry is invalid" },
   { name: "ZPLC_LOADER_ERR_COMM", code: -16, doc: "Communication function-block kind is NONE or at or above the kind limit" },
+  { name: "ZPLC_LOADER_ERR_DRAFT", code: -17, doc: "Draft contract counter of the artifact differs from the loader's, or the artifact has none" },
 ] as const;
 
 /** Every communication function-block kind identifier of the core (zplc_comm_fb_kind_t). */

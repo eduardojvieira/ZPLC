@@ -123,5 +123,5 @@ ZPLC ampara sistemas embebidos de alto calibre dependientes en servicios sincró
 
 ## Sub-Comandos Root (`zplc sys`)
 
-- `zplc sys info` - Analiza huellas y compilaciones Zephyr (Tiempos de Build, Fechas, Topes del RAM o HW base instanciadas de placa C).
+- `zplc sys info` - Analiza huellas y compilaciones Zephyr (Tiempos de Build, Fechas, Topes del RAM o HW base instanciadas de placa C). Con `--json` informa también el `draft_counter` de la imagen; un programa construido para otro borrador se rechaza (ver [Contribuir](/contributing#contador-de-borrador-del-contrato)).
 - `zplc sys reboot` - Inicia una bandera nativa invocando parajes o "resets" cálidos e inmediatos idénticos al oprimido físico de su botón base RESET.

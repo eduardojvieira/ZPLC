@@ -45,6 +45,13 @@ extern "C" {
 
 /** @brief Current ISA minor version */
 #define ZPLC_VERSION_MINOR 0
+
+/**
+ * @brief Draft contract counter (CMP-052).
+ *
+ * Increases by one with every change of an opcode, layout, size or code until the contract freeze. The compiler writes it in header word 28 of every artifact and the loader refuses an artifact whose counter differs from this value (ZPLC_LOADER_ERR_DRAFT). 0 is what an artifact built before the counter carries and is never accepted.
+ */
+#define ZPLC_DRAFT_COUNTER 1U
 /* <<< END GENERATED: version <<< */
 
 /* ============================================================================
@@ -471,7 +478,7 @@ typedef struct ZPLC_PACKED {
   uint32_t data_size; /**< Size of data segment (bytes) */
   uint16_t entry_point; /**< Code offset of main entry */
   uint16_t segment_count; /**< Number of segments */
-  uint32_t reserved; /**< Reserved (must be 0) */
+  uint32_t draft_counter; /**< Draft contract counter: must equal ZPLC_DRAFT_COUNTER (0 = built before the counter) */
 } zplc_file_header_t;
 
 /** @brief Expected size of file header */
@@ -488,7 +495,7 @@ enum { zplc_assert_offsetof_header_code_size = 1 / (offsetof(zplc_file_header_t,
 enum { zplc_assert_offsetof_header_data_size = 1 / (offsetof(zplc_file_header_t, data_size) == 20U) };
 enum { zplc_assert_offsetof_header_entry_point = 1 / (offsetof(zplc_file_header_t, entry_point) == 24U) };
 enum { zplc_assert_offsetof_header_segment_count = 1 / (offsetof(zplc_file_header_t, segment_count) == 26U) };
-enum { zplc_assert_offsetof_header_reserved = 1 / (offsetof(zplc_file_header_t, reserved) == 28U) };
+enum { zplc_assert_offsetof_header_draft_counter = 1 / (offsetof(zplc_file_header_t, draft_counter) == 28U) };
 
 /** @brief File header flags. */
 typedef enum {

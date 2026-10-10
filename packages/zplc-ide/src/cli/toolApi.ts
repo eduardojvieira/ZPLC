@@ -4,6 +4,7 @@ import { lstat, mkdir, mkdtemp, readFile, realpath, rm, writeFile } from 'node:f
 import { tmpdir } from 'node:os';
 import { isAbsolute, join, relative, resolve, sep, win32 } from 'node:path';
 import { load } from 'js-yaml';
+import { ZPLC_CONSTANTS } from '@zplc/compiler';
 import { CompilerError, assertTaskProgramCardinality, compileMultiTaskProject, parse, transpileToST, type DebugMap, type DebugVarInfo, type Statement } from '../compiler';
 import type { ProjectMigrationChange } from '../project/projectModel';
 import { resolveProgramSource } from '../utils/programSourceResolution';
@@ -94,7 +95,7 @@ export function withToolExecution<T extends object>(value: T, execution: ToolExe
   return { ...value, execution };
 }
 export type ToolResult<T> = { ok: true; summary: T; evidence: ToolEvidence } | { ok: false; evidence: ToolEvidence };
-export type CompilerSummary = { name: string; version: string; taskCount: number; codeSize: number };
+export type CompilerSummary = { name: string; version: string; taskCount: number; codeSize: number; draftCounter: number };
 export type CompilerCheckResult = ToolResult<CompilerSummary>;
 export interface SymbolSummary {
   symbols: Array<{
@@ -330,7 +331,7 @@ async function compile<Operation extends CompileOperation>(root: string, operati
     if (operation === 'symbols-list') return { ok: true, summary: symbolSummary(result.debugMap, loaded.workspace), evidence: evidence('symbols-list', 'passed') } as CompileResult<Operation>;
     const bytes = result.zplcFile;
     const artifact = artifactEvidence('zplc', bytes);
-    const response: CompilerCompileResult = { ok: true, summary: { name: loaded.workspace.project.name, version: loaded.workspace.project.version, taskCount: loaded.workspace.project.tasks.length, codeSize: result.codeSize }, evidence: evidence(operation, 'passed', [], operation === 'symbols-list' ? [] : [artifact]) };
+    const response: CompilerCompileResult = { ok: true, summary: { name: loaded.workspace.project.name, version: loaded.workspace.project.version, taskCount: loaded.workspace.project.tasks.length, codeSize: result.codeSize, draftCounter: ZPLC_CONSTANTS.DRAFT_COUNTER }, evidence: evidence(operation, 'passed', [], operation === 'symbols-list' ? [] : [artifact]) };
     if (operation === 'compile') {
       Object.defineProperties(response, {
         bytes: { value: bytes, enumerable: false },

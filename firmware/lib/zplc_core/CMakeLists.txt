@@ -170,7 +170,9 @@ if(UNIX AND NOT APPLE)
     target_link_libraries(test_vm_core PRIVATE rt)
 endif()
 
-add_test(NAME test_vm_core COMMAND test_vm_core)
+# The integration tests load examples/*.zplc by a path relative to the repository root.
+add_test(NAME test_vm_core COMMAND test_vm_core
+         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/../../..)
 
 # Test: VM arithmetic edge cases (RT-005); also run under the sanitizers
 add_executable(test_vm_arith_edges

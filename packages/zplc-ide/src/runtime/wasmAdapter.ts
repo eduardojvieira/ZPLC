@@ -27,6 +27,7 @@ import {
   RUNTIME_SESSION_SOURCE,
   WATCH_FORCE_STATE,
 } from './debugAdapter';
+import { describeLoadFailure } from './draftCounter';
 import { loadZPLCModule, type EmscriptenModule } from './wasmLoader';
 import { debugLog } from '../utils/debugLog';
 
@@ -291,7 +292,7 @@ export class WASMAdapter implements IDebugAdapter {
         verifierWorkspaceSize,
       ) ?? -1;
       if (result !== 0) {
-        throw new Error(`Failed to load program: ${result}`);
+        throw new Error(describeLoadFailure(result, bytecode));
       }
 
       this.stopExecutionLoop();

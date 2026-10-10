@@ -18,17 +18,36 @@ const info = {
   device_protocol_version: 1,
   bytecode_abi_major: 1,
   bytecode_abi_minor: 0,
+  draft_counter: ZPLC_CONSTANTS.DRAFT_COUNTER,
   capabilities: { fpu: true, mpu: true, scheduler: true, max_tasks: 4 },
   memory: { work_size: 1, retain_size: 1, ipi_size: 1, opi_size: 1 },
 };
 
-function artifact(major = 1, minor = 0): Uint8Array {
+function artifact(major = 1, minor = 0, draft: number = ZPLC_CONSTANTS.DRAFT_COUNTER): Uint8Array {
   const bytes = new Uint8Array(ZPLC_CONSTANTS.HEADER_SIZE);
   const view = new DataView(bytes.buffer);
   view.setUint32(0, ZPLC_CONSTANTS.MAGIC, true);
   view.setUint16(4, major, true);
   view.setUint16(6, minor, true);
+  view.setUint32(ZPLC_CONSTANTS.DRAFT_COUNTER_OFFSET, draft, true);
   return bytes;
+}
+
+/** The handshake of a firmware image that predates the draft counter. */
+function withoutCounter(): Record<string, unknown> {
+  const legacy: Record<string, unknown> = { ...info };
+  delete legacy.draft_counter;
+  return legacy;
+}
+
+function refusal(bytes: Uint8Array, handshake: ReturnType<typeof parseDeviceHandshake>): DeviceAdmissionError {
+  try {
+    validateHardwareDeployAdmission(bytes, 'stm32f746g_disco', handshake);
+  } catch (error) {
+    if (error instanceof DeviceAdmissionError) return error;
+    throw error;
+  }
+  throw new Error('the deploy was admitted');
 }
 
 describe('device handshake admission', () => {
@@ -97,5 +116,52 @@ describe('device handshake admission', () => {
       board_profile: 'arduino_opta/stm32h747xx/m7',
     });
     expect(validateHardwareDeployAdmission(artifact(), 'arduino_opta_wifi', handshake)).toEqual(handshake);
+  });
+
+  // CMP-052: the draft counter of the firmware image is part of the handshake; a different one is refused with both numbers.
+  describe('draft contract counter', () => {
+    const other = ZPLC_CONSTANTS.DRAFT_COUNTER + 3;
+
+    it('reads the counter the firmware reports', () => {
+      expect(parseDeviceHandshake(info).draftCounter).toBe(ZPLC_CONSTANTS.DRAFT_COUNTER);
+      expect(parseDeviceSystemInfo(info).draft_counter).toBe(ZPLC_CONSTANTS.DRAFT_COUNTER);
+    });
+
+    it('parses an image that reports no counter as none, and refuses to deploy to it', () => {
+      const handshake = parseDeviceHandshake(withoutCounter());
+      expect(handshake.draftCounter).toBeNull();
+      const error = refusal(artifact(), handshake);
+      expect(error.code).toBe('ZPLC_DEVICE_BYTECODE_ABI_MISMATCH');
+      expect(error.detail).toBe(`Program was built for contract draft ${ZPLC_CONSTANTS.DRAFT_COUNTER}, this runtime is draft none`);
+    });
+
+    it('refuses an artifact built for another draft and shows both numbers', () => {
+      const error = refusal(artifact(1, 0, other), parseDeviceHandshake(info));
+      expect(error.code).toBe('ZPLC_DEVICE_BYTECODE_ABI_MISMATCH');
+      expect(error.detail).toBe(`Program was built for contract draft ${other}, this runtime is draft ${ZPLC_CONSTANTS.DRAFT_COUNTER}`);
+    });
+
+    it('refuses a firmware image on another draft and shows both numbers', () => {
+      const handshake = parseDeviceHandshake({ ...info, draft_counter: other });
+      const error = refusal(artifact(), handshake);
+      expect(error.code).toBe('ZPLC_DEVICE_BYTECODE_ABI_MISMATCH');
+      expect(error.detail).toBe(`Program was built for contract draft ${ZPLC_CONSTANTS.DRAFT_COUNTER}, this runtime is draft ${other}`);
+    });
+
+    it('says none for an artifact built before the counter', () => {
+      const error = refusal(artifact(1, 0, 0), parseDeviceHandshake(info));
+      expect(error.detail).toBe(`Program was built for contract draft none, this runtime is draft ${ZPLC_CONSTANTS.DRAFT_COUNTER}`);
+    });
+
+    it('keeps the message the content-free code and carries the numbers in detail only', () => {
+      const error = refusal(artifact(1, 0, other), parseDeviceHandshake(info));
+      expect(error.message).toBe('ZPLC_DEVICE_BYTECODE_ABI_MISMATCH');
+    });
+
+    it('rejects a counter that is not a uint32 integer', () => {
+      for (const draft_counter of [-1, 1.5, 0x1_0000_0000, '1', null]) {
+        expect(() => parseDeviceHandshake({ ...info, draft_counter })).toThrow('ZPLC_DEVICE_HANDSHAKE_INVALID');
+      }
+    });
   });
 });

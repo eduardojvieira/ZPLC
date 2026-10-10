@@ -259,6 +259,11 @@ static int verify_code(const zplc_program_view_t *view, uint8_t *workspace) {
       return ZPLC_LOADER_ERR_CONTROL_FLOW;
   return ZPLC_LOADER_OK;
 }
+uint32_t zplc_loader_artifact_draft_counter(const uint8_t *data, size_t length) {
+  if (data == NULL || length < ZPLC_FILE_HEADER_SIZE)
+    return 0U;
+  return read_u32_le(data + 28U);
+}
 int zplc_loader_verify(const uint8_t *data, size_t length, uint8_t *workspace,
                        size_t workspace_size, zplc_program_view_t *out) {
   zplc_program_view_t candidate;
@@ -273,13 +278,16 @@ int zplc_loader_verify(const uint8_t *data, size_t length, uint8_t *workspace,
   if (data[0] != 0x5AU || data[1] != 0x50U || data[2] != 0x4CU ||
       data[3] != 0x43U)
     return ZPLC_LOADER_ERR_MAGIC;
+  /* CMP-052: the draft counter is compared before anything else of the
+   * artifact is trusted, because a different draft may lay the rest out
+   * differently. 0 (built before the counter) never matches. */
+  if (zplc_loader_artifact_draft_counter(data, length) != ZPLC_DRAFT_COUNTER)
+    return ZPLC_LOADER_ERR_DRAFT;
   if (read_u16_le(data + 4U) != ZPLC_VERSION_MAJOR ||
       read_u16_le(data + 6U) != ZPLC_VERSION_MINOR)
     return ZPLC_LOADER_ERR_VERSION;
   if ((read_u32_le(data + 8U) & ~ZPLC_HEADER_FLAGS_SUPPORTED) != 0U)
     return ZPLC_LOADER_ERR_FLAGS;
-  if (read_u32_le(data + 28U) != 0U)
-    return ZPLC_LOADER_ERR_SIZE;
   if (validate_crc32(data, length) != ZPLC_LOADER_OK)
     return ZPLC_LOADER_ERR_CRC32;
   memset(&candidate, 0, sizeof(candidate));

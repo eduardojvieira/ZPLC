@@ -11,6 +11,7 @@ from enum import IntEnum
 ZPLC_MAGIC = 0x434C505A
 ZPLC_VERSION_MAJOR = 1
 ZPLC_VERSION_MINOR = 0
+ZPLC_DRAFT_COUNTER = 1
 HEADER_SIZE = 32
 SEGMENT_ENTRY_SIZE = 8
 TASK_DEF_SIZE = 16
@@ -326,6 +327,7 @@ class LoaderError(IntEnum):
     ERR_TASK = -14
     ERR_TAGS = -15
     ERR_COMM = -16
+    ERR_DRAFT = -17
 
 
 class CommKind(IntEnum):

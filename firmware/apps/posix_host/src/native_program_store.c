@@ -46,12 +46,14 @@ int zplc_native_program_describe(const uint8_t *program, size_t program_size,
     uint8_t *workspace;
     zplc_program_view_t view;
     int result;
-    if (program == NULL || program_size == 0U || details == NULL) return -1;
+    if (details == NULL) return -1;
     memset(details, 0, sizeof(*details));
+    if (program == NULL || program_size == 0U) return -1;
     workspace = (uint8_t *)malloc(ZPLC_LOADER_VERIFY_WORKSPACE_SIZE);
     if (workspace == NULL) return -1;
     result = zplc_loader_verify(program, program_size, workspace,
                                 ZPLC_LOADER_VERIFY_WORKSPACE_SIZE, &view);
+    details->loader_result = result;
     if (result == ZPLC_LOADER_OK) {
         if (view.task_count == 0U) {
             details->task_count = 1U;

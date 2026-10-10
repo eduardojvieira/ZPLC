@@ -100,6 +100,7 @@ static size_t build_verified_program(uint8_t *file, size_t capacity,
     memcpy(file, "ZPLC", 4U);
     write_u16_le(file + 4U, ZPLC_VERSION_MAJOR);
     write_u16_le(file + 6U, ZPLC_VERSION_MINOR);
+    write_u32_le(file + 28U, ZPLC_DRAFT_COUNTER);
     write_u32_le(file + 16U, (uint32_t)code_size);
     write_u32_le(file + 20U, data_size);
     write_u16_le(file + 24U, entry_point);
@@ -1213,12 +1214,7 @@ static void test_integration_assembled_program(void)
      * Expected result: OPI[0] = 300
      */
 
-    /* Initialize and set up inputs */
     zplc_core_init();
-
-    /* Set input values in IPI (16-bit values at non-overlapping offsets) */
-    zplc_core_set_ipi16(0, 100);  /* IPI[0:1] = 100 */
-    zplc_core_set_ipi16(2, 200);  /* IPI[2:3] = 200 */
 
     /* Load the assembled program - try multiple paths */
     result = load_zplc_file("examples/02_addition.zplc");
@@ -1236,6 +1232,11 @@ static void test_integration_assembled_program(void)
     }
 
     TEST_ASSERT_EQ(result, 0, "Load .zplc file succeeded");
+
+    /* Loading re-initialises memory, so the inputs are set after it (16-bit
+     * values at non-overlapping offsets). */
+    zplc_core_set_ipi16(0, 100);  /* IPI[0:1] = 100 */
+    zplc_core_set_ipi16(2, 200);  /* IPI[2:3] = 200 */
 
     /* Execute the program */
     result = zplc_core_run(0);
@@ -1262,11 +1263,7 @@ static void test_integration_float_math(void)
      *   (25 * 9 / 5) + 32 = 45 + 32 = 77
      */
 
-    /* Initialize and set up inputs */
     zplc_core_init();
-
-    /* Set Celsius temperature = 25 */
-    zplc_core_set_ipi16(0, 25);
 
     /* Load the assembled program - try multiple paths */
     result = load_zplc_file("examples/08_float_math.zplc");
@@ -1285,6 +1282,9 @@ static void test_integration_float_math(void)
 
     TEST_ASSERT_EQ(result, 0, "Load float_math.zplc succeeded");
 
+    /* Loading re-initialises memory: set Celsius temperature = 25 after it. */
+    zplc_core_set_ipi16(0, 25);
+
     /* Execute the program */
     result = zplc_core_run(0);
     TEST_ASSERT(result >= 0, "Float math program executed without error");
@@ -1295,20 +1295,20 @@ static void test_integration_float_math(void)
 
     /* Test another value: 0°C = 32°F */
     zplc_core_init();
-    zplc_core_set_ipi16(0, 0);
     if (load_zplc_file("examples/08_float_math.zplc") != 0) {
         load_zplc_file("../../../../examples/08_float_math.zplc");
     }
+    zplc_core_set_ipi16(0, 0);
     zplc_core_run(0);
     opi_value = (uint16_t)(zplc_core_get_opi(0) & 0xFFFF);
     TEST_ASSERT_EQ(opi_value, 32, "Float math: 0°C = 32°F");
 
     /* Test: 100°C = 212°F (boiling point) */
     zplc_core_init();
-    zplc_core_set_ipi16(0, 100);
     if (load_zplc_file("examples/08_float_math.zplc") != 0) {
         load_zplc_file("../../../../examples/08_float_math.zplc");
     }
+    zplc_core_set_ipi16(0, 100);
     zplc_core_run(0);
     opi_value = (uint16_t)(zplc_core_get_opi(0) & 0xFFFF);
     TEST_ASSERT_EQ(opi_value, 212, "Float math: 100°C = 212°F");
@@ -1620,8 +1620,11 @@ static size_t build_multitask_zplc(uint8_t *buf, size_t buf_size,
     buf[offset++] = 2;
     buf[offset++] = 0;
 
-    /* reserved (4 bytes) */
-    offset += 4;
+    /* draft_counter (4 bytes) */
+    buf[offset++] = ZPLC_DRAFT_COUNTER & 0xFF;
+    buf[offset++] = (ZPLC_DRAFT_COUNTER >> 8) & 0xFF;
+    buf[offset++] = (ZPLC_DRAFT_COUNTER >> 16) & 0xFF;
+    buf[offset++] = (ZPLC_DRAFT_COUNTER >> 24) & 0xFF;
 
     /* Verify header size */
     if (offset != ZPLC_FILE_HEADER_SIZE) {

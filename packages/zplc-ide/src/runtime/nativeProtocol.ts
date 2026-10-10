@@ -124,6 +124,8 @@ export interface NativeHelloResult {
   protocol_version: string;
   runtime_kind: string;
   runtime_version: string;
+  /** Draft contract counter of the runtime (CMP-052); absent from a runtime built before the counter. */
+  draft_counter?: number;
   capability_profile: NativeCapabilityProfile;
 }
 

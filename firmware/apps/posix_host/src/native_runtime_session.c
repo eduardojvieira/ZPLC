@@ -1026,7 +1026,7 @@ static int handle_session_hello(const zplc_native_request_t *request,
         response_size,
         "{\"id\":\"%s\",\"type\":\"response\",\"result\":{"
         "\"protocol_version\":\"%s\",\"runtime_kind\":\"%s\","
-        "\"runtime_version\":\"%s\",\"capability_profile\":{"
+        "\"runtime_version\":\"%s\",\"draft_counter\":%u,\"capability_profile\":{"
         "\"profile_id\":\"native-posix-mvp\",\"features\":["
         "{\"name\":\"pause\",\"status\":\"supported\"},"
         "{\"name\":\"resume\",\"status\":\"supported\"},"
@@ -1039,7 +1039,8 @@ static int handle_session_hello(const zplc_native_request_t *request,
         request->id,
         ZPLC_NATIVE_PROTOCOL_VERSION,
         ZPLC_NATIVE_RUNTIME_KIND,
-        zplc_core_version());
+        zplc_core_version(),
+        (unsigned)ZPLC_DRAFT_COUNTER);
 }
 
 static int handle_program_load(zplc_native_runtime_session_t *session,
@@ -1109,6 +1110,23 @@ static int handle_program_load(zplc_native_runtime_session_t *session,
     }
 
     if (validate_program_artifact(candidate, program_size, &details) != 0) {
+        if (details.loader_result == ZPLC_LOADER_ERR_DRAFT) {
+            /* CMP-052: say which draft the program was built for; 0 is an artifact without a counter. */
+            char message[128];
+            const uint32_t built = zplc_loader_artifact_draft_counter(candidate, program_size);
+
+            if (built == 0U) {
+                (void)snprintf(message, sizeof(message),
+                               "Program was built for contract draft none, this runtime is draft %u",
+                               (unsigned)ZPLC_DRAFT_COUNTER);
+            } else {
+                (void)snprintf(message, sizeof(message),
+                               "Program was built for contract draft %u, this runtime is draft %u",
+                               (unsigned)built, (unsigned)ZPLC_DRAFT_COUNTER);
+            }
+            free(candidate);
+            return format_error_response(request->id, "PROGRAM_LOAD_FAILED", message, response, response_size);
+        }
         free(candidate);
         return format_error_response(request->id,
                                      "PROGRAM_LOAD_FAILED",

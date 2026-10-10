@@ -89,7 +89,10 @@ from zplc_contract import (  # noqa: E402
     SEGMENT_TYPE,
     TAG_ID,
     TASK_TYPE,
+    ZPLC_DRAFT_COUNTER,
     ZPLC_MAGIC,
+    ZPLC_VERSION_MAJOR,
+    ZPLC_VERSION_MINOR,
 )
 
 
@@ -246,19 +249,19 @@ def build_zplc_binary() -> bytes:
 
     # File header (32 bytes)
     # struct: magic(u32), ver_maj(u16), ver_min(u16), flags(u32), crc32(u32),
-    #         code_size(u32), data_size(u32), entry_point(u16), segment_count(u16), reserved(u32)
+    #         code_size(u32), data_size(u32), entry_point(u16), segment_count(u16), draft_counter(u32)
     header = struct.pack(
         "<IHHIIII HH I",
         ZPLC_MAGIC,  # magic      u32
-        1,  # version_major u16
-        0,  # version_minor u16
+        ZPLC_VERSION_MAJOR,  # version_major u16
+        ZPLC_VERSION_MINOR,  # version_minor u16
         0,  # flags      u32
         0,  # crc32      u32
         len(code_payload),  # code_size  u32
-        0,  # data_size  u32
+        len(task_payload) + len(tags_payload),  # data_size  u32: every segment but CODE
         0,  # entry_point u16
         segment_count,  # segment_count u16
-        0,  # reserved   u32
+        ZPLC_DRAFT_COUNTER,  # draft_counter u32 (CMP-052): the contract draft this artifact is built for
     )
 
     # Segment table entries (8 bytes each): type(u16), flags(u16), size(u32)

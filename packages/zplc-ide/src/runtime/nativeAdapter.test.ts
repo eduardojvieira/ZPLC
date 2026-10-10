@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, it, mock } from 'bun:test';
 
+import { ZPLC_CONSTANTS } from '@zplc/compiler';
+
 import { NATIVE_PROGRAM_MAX_BYTES } from '../../electron/security';
 import { DEBUG_ADAPTER_TYPE } from './debugAdapter';
 import { NativeAdapter } from './nativeAdapter';
@@ -237,6 +239,87 @@ describe('NativeAdapter', () => {
     expect(requestMock).not.toHaveBeenCalled();
     expect(adapter.connected).toBe(true);
     expect(adapter.state).toBe('idle');
+  });
+
+  // CMP-052: the runtime reports its draft contract counter in the hello; a program built for another draft is refused.
+  describe('draft contract counter', () => {
+    const features = [{ name: 'pause', status: 'supported' as const }];
+    const connectedAdapter = async (draft: number | undefined) => {
+      const adapter = new NativeAdapter({
+        startSession: async () => ({
+          protocol_version: '1.0', runtime_kind: 'native-posix', runtime_version: '1.5.0',
+          ...(draft === undefined ? {} : { draft_counter: draft }),
+          capability_profile: { profile_id: 'native-posix-mvp', features },
+        }),
+        stopSession,
+        request,
+      });
+      await adapter.connect();
+      requestMock.mockClear();
+      return adapter;
+    };
+    const artifact = (draft: number) => {
+      const bytes = new Uint8Array(ZPLC_CONSTANTS.HEADER_SIZE + 4);
+      const view = new DataView(bytes.buffer);
+      view.setUint32(0, ZPLC_CONSTANTS.MAGIC, true);
+      view.setUint32(ZPLC_CONSTANTS.DRAFT_COUNTER_OFFSET, draft, true);
+      return bytes;
+    };
+
+    it('refuses a program built for another draft before sending it, and shows both numbers', async () => {
+      const adapter = await connectedAdapter(5);
+      await expect(adapter.loadProgram(artifact(2))).rejects.toThrow(
+        'Program was built for contract draft 2, this runtime is draft 5',
+      );
+      expect(requestMock).not.toHaveBeenCalled();
+      expect(adapter.connected).toBe(true);
+      expect(adapter.state).toBe('idle');
+    });
+
+    it('says none for a program built before the counter', async () => {
+      const adapter = await connectedAdapter(5);
+      await expect(adapter.loadProgram(artifact(0))).rejects.toThrow(
+        'Program was built for contract draft none, this runtime is draft 5',
+      );
+      expect(requestMock).not.toHaveBeenCalled();
+    });
+
+    it('sends a program built for the draft of the runtime', async () => {
+      const adapter = await connectedAdapter(5);
+      await adapter.loadProgram(artifact(5));
+      expect(requestMock).toHaveBeenCalledTimes(1);
+      expect(requestMock.mock.calls[0]![0].method).toBe('program.load');
+    });
+
+    it('leaves the decision to a runtime that reports no counter', async () => {
+      const adapter = await connectedAdapter(undefined);
+      await adapter.loadProgram(artifact(2));
+      expect(requestMock).toHaveBeenCalledTimes(1);
+    });
+
+    it('forgets the counter of a closed session', async () => {
+      const hellos = [5, undefined];
+      const adapter = new NativeAdapter({
+        startSession: async () => {
+          const draft = hellos.shift();
+          return {
+            protocol_version: '1.0', runtime_kind: 'native-posix', runtime_version: '1.5.0',
+            ...(draft === undefined ? {} : { draft_counter: draft }),
+            capability_profile: { profile_id: 'native-posix-mvp', features },
+          };
+        },
+        stopSession,
+        request,
+      });
+      await adapter.connect();
+      await expect(adapter.loadProgram(artifact(2))).rejects.toThrow('this runtime is draft 5');
+      await adapter.disconnect();
+      await adapter.connect();
+      requestMock.mockClear();
+      // The second session reports no counter, so nothing of the first one is applied to it.
+      await adapter.loadProgram(artifact(2));
+      expect(requestMock).toHaveBeenCalledTimes(1);
+    });
   });
 
   it('stages only closed simulation inputs after a native program activation', async () => {

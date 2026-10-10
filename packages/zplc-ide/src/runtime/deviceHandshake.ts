@@ -1,11 +1,14 @@
 import { ZPLC_CONSTANTS } from '@zplc/compiler';
 import { getZephyrBoardTarget, isKnownZephyrBoardTarget } from '../config/boardProfiles';
+import { artifactDraftCounter, draftMismatchMessage } from './draftCounter';
 
 const MAX_TEXT_LENGTH = 128;
 const REQUIRED_ROOT_KEYS = [
   'board', 'board_profile', 'zplc_version', 'zephyr_version', 'uptime_ms', 'cpu_freq_mhz',
   'device_protocol_version', 'bytecode_abi_major', 'bytecode_abi_minor', 'capabilities', 'memory',
 ] as const;
+/** Firmware images from before the draft counter (CMP-052) do not report it; Studio refuses to deploy to them. */
+const OPTIONAL_ROOT_KEYS = ['draft_counter'] as const;
 const REQUIRED_CAPABILITY_KEYS = ['fpu', 'mpu', 'scheduler', 'max_tasks'] as const;
 const REQUIRED_MEMORY_KEYS = ['work_size', 'retain_size', 'ipi_size', 'opi_size'] as const;
 
@@ -26,11 +29,14 @@ export type DeviceAdmissionCode = (typeof DEVICE_ADMISSION_CODE)[keyof typeof DE
 
 export class DeviceAdmissionError extends Error {
   readonly code: DeviceAdmissionCode;
+  /** Plain words for the person, only where the denial has some (the draft counter mismatch). */
+  readonly detail?: string;
 
-  constructor(code: DeviceAdmissionCode) {
+  constructor(code: DeviceAdmissionCode, detail?: string) {
     super(code);
     this.name = 'DeviceAdmissionError';
     this.code = code;
+    if (detail !== undefined) this.detail = detail;
   }
 }
 
@@ -40,6 +46,8 @@ export interface DeviceHandshake {
   readonly deviceProtocolVersion: number;
   readonly bytecodeAbiMajor: number;
   readonly bytecodeAbiMinor: number;
+  /** Draft contract counter of the firmware image (CMP-052); null when the image does not report one. */
+  readonly draftCounter: number | null;
 }
 
 export interface DeviceSystemInfo {
@@ -52,12 +60,13 @@ export interface DeviceSystemInfo {
   device_protocol_version: number;
   bytecode_abi_major: number;
   bytecode_abi_minor: number;
+  draft_counter?: number;
   capabilities: { fpu: boolean; mpu: boolean; scheduler: boolean; max_tasks: number };
   memory: { work_size: number; retain_size: number; ipi_size: number; opi_size: number };
 }
 
-function fail(code: DeviceAdmissionCode): never {
-  throw new DeviceAdmissionError(code);
+function fail(code: DeviceAdmissionCode, detail?: string): never {
+  throw new DeviceAdmissionError(code, detail);
 }
 
 function snapshotRecord(value: unknown): Record<string, unknown> | null {
@@ -77,9 +86,10 @@ function snapshotRecord(value: unknown): Record<string, unknown> | null {
   }
 }
 
-function exactKeys(value: Record<string, unknown>, keys: readonly string[]): boolean {
+function exactKeys(value: Record<string, unknown>, keys: readonly string[], optional: readonly string[] = []): boolean {
   const actual = Object.keys(value);
-  return actual.length === keys.length && keys.every((key) => Object.hasOwn(value, key));
+  const present = optional.filter((key) => Object.hasOwn(value, key));
+  return actual.length === keys.length + present.length && keys.every((key) => Object.hasOwn(value, key));
 }
 
 function readText(value: unknown): string | null {
@@ -92,7 +102,7 @@ function readInteger(value: unknown, max: number): number | null {
 
 function parseDeviceSystemInfoSnapshot(value: unknown): DeviceSystemInfo | null {
   const root = snapshotRecord(value);
-  if (!root || !exactKeys(root, REQUIRED_ROOT_KEYS)) return null;
+  if (!root || !exactKeys(root, REQUIRED_ROOT_KEYS, OPTIONAL_ROOT_KEYS)) return null;
   const capabilities = snapshotRecord(root.capabilities);
   const memory = snapshotRecord(root.memory);
   if (!capabilities || !memory || !exactKeys(capabilities, REQUIRED_CAPABILITY_KEYS) || !exactKeys(memory, REQUIRED_MEMORY_KEYS)) return null;
@@ -103,13 +113,15 @@ function parseDeviceSystemInfoSnapshot(value: unknown): DeviceSystemInfo | null 
     && readText(root.zplc_version) !== null && readText(root.zephyr_version) !== null
     && readInteger(root.uptime_ms, 0xffffffff) !== null && readInteger(root.cpu_freq_mhz, 1_000_000) !== null
     && readInteger(root.device_protocol_version, 0xffff) !== null
-    && readInteger(root.bytecode_abi_major, 0xffff) !== null && readInteger(root.bytecode_abi_minor, 0xffff) !== null)) return null;
+    && readInteger(root.bytecode_abi_major, 0xffff) !== null && readInteger(root.bytecode_abi_minor, 0xffff) !== null
+    && (!Object.hasOwn(root, 'draft_counter') || readInteger(root.draft_counter, 0xffffffff) !== null))) return null;
   return {
     board: root.board as string, board_profile: root.board_profile as string,
     zplc_version: root.zplc_version as string, zephyr_version: root.zephyr_version as string,
     uptime_ms: root.uptime_ms as number, cpu_freq_mhz: root.cpu_freq_mhz as number,
     device_protocol_version: root.device_protocol_version as number,
     bytecode_abi_major: root.bytecode_abi_major as number, bytecode_abi_minor: root.bytecode_abi_minor as number,
+    ...(Object.hasOwn(root, 'draft_counter') ? { draft_counter: root.draft_counter as number } : {}),
     capabilities: { fpu: capabilities.fpu, mpu: capabilities.mpu, scheduler: capabilities.scheduler, max_tasks: capabilities.max_tasks as number },
     memory: { work_size: memory.work_size as number, retain_size: memory.retain_size as number, ipi_size: memory.ipi_size as number, opi_size: memory.opi_size as number },
   };
@@ -124,6 +136,7 @@ export function parseDeviceHandshake(value: unknown): DeviceHandshake {
     deviceProtocolVersion: info.device_protocol_version,
     bytecodeAbiMajor: info.bytecode_abi_major,
     bytecodeAbiMinor: info.bytecode_abi_minor,
+    draftCounter: info.draft_counter ?? null,
   };
 }
 
@@ -132,11 +145,16 @@ export function parseDeviceSystemInfo(value: unknown): DeviceSystemInfo {
   return parseDeviceSystemInfoSnapshot(value) ?? fail(DEVICE_ADMISSION_CODE.HANDSHAKE_INVALID);
 }
 
-function readArtifactAbi(bytes: Uint8Array): { major: number; minor: number } {
+function readArtifactAbi(bytes: Uint8Array): { major: number; minor: number; draftCounter: number } {
   if (bytes.byteLength < 8) fail(DEVICE_ADMISSION_CODE.ARTIFACT_INVALID);
   const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
   if (view.getUint32(0, true) !== ZPLC_CONSTANTS.MAGIC) fail(DEVICE_ADMISSION_CODE.ARTIFACT_INVALID);
-  return { major: view.getUint16(4, true), minor: view.getUint16(6, true) };
+  // A header shorter than the counter's offset has no counter (0), as an artifact built before it does.
+  return {
+    major: view.getUint16(4, true),
+    minor: view.getUint16(6, true),
+    draftCounter: artifactDraftCounter(bytes) ?? 0,
+  };
 }
 
 /** Validate the exact bytes that will be sent before a human-triggered hardware deploy. */
@@ -152,6 +170,13 @@ export function validateHardwareDeployAdmission(
   if (!isKnownZephyrBoardTarget(handshake.boardProfile)) fail(DEVICE_ADMISSION_CODE.BOARD_PROFILE_UNKNOWN);
   if (handshake.boardProfile !== target) fail(DEVICE_ADMISSION_CODE.BOARD_PROFILE_MISMATCH);
   const artifact = readArtifactAbi(bytes);
+  // CMP-052: the draft counter is compared before the version, and a refusal names both numbers.
+  if (artifact.draftCounter !== ZPLC_CONSTANTS.DRAFT_COUNTER) {
+    fail(DEVICE_ADMISSION_CODE.BYTECODE_ABI_MISMATCH, draftMismatchMessage(artifact.draftCounter, ZPLC_CONSTANTS.DRAFT_COUNTER));
+  }
+  if (handshake.draftCounter !== artifact.draftCounter) {
+    fail(DEVICE_ADMISSION_CODE.BYTECODE_ABI_MISMATCH, draftMismatchMessage(artifact.draftCounter, handshake.draftCounter));
+  }
   if (artifact.major !== ZPLC_CONSTANTS.VERSION_MAJOR || artifact.minor !== ZPLC_CONSTANTS.VERSION_MINOR
     || handshake.bytecodeAbiMajor !== ZPLC_CONSTANTS.VERSION_MAJOR || handshake.bytecodeAbiMinor !== ZPLC_CONSTANTS.VERSION_MINOR
     || artifact.major !== handshake.bytecodeAbiMajor || artifact.minor !== handshake.bytecodeAbiMinor) {

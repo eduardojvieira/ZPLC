@@ -2009,6 +2009,7 @@ static inline int zplc_opcode_is_valid(uint8_t opcode);
 | `ZPLC_MAGIC` | `0x434C505AU` | Magic number for .zplc files. |
 | `ZPLC_VERSION_MAJOR` | `1` | Current ISA major version |
 | `ZPLC_VERSION_MINOR` | `0` | Current ISA minor version |
+| `ZPLC_DRAFT_COUNTER` | `1U` | Draft contract counter (CMP-052). |
 | `ZPLC_MEM_IPI_BASE` | `0x0000U` | Base address of Input Process Image |
 | `ZPLC_MEM_IPI_SIZE` | `0x1000U` | Size of Input Process Image (4 KB, fixed by spec) |
 | `ZPLC_MEM_OPI_BASE` | `0x1000U` | Base address of Output Process Image |
@@ -2077,6 +2078,25 @@ This does not load or authorize a runtime. Product load paths remain a separate 
 
 **Source return value:** 0 on success, negative error code on failure. The view remains valid only while @p data remains valid.
 
+#### `zplc_loader_artifact_draft_counter`
+
+```c
+uint32_t zplc_loader_artifact_draft_counter(const uint8_t *data, size_t len);
+```
+
+**Source summary:** Draft contract counter recorded in an artifact header (CMP-052).
+
+Reads header word 28 and nothing else. The magic, the CRC and the rest of the artifact are not checked, so a caller can show the number of an artifact that zplc_loader_verify() refused with ZPLC_LOADER_ERR_DRAFT ("built for draft N, this runtime is draft ZPLC_DRAFT_COUNTER").
+
+**Parameters**
+
+| Name | Type | Source description |
+| --- | --- | --- |
+| `data` | `const uint8_t *` | Pointer to the file data, may be NULL |
+| `len` | `size_t` | Length of the data in bytes |
+
+**Source return value:** The counter, or 0 when @p data is NULL or shorter than a header. 0 is also what an artifact built before the counter carries.
+
 ### Types
 
 | Name | Kind | Source summary |
@@ -2104,6 +2124,7 @@ This does not load or authorize a runtime. Product load paths remain a separate 
 | `ZPLC_LOADER_ERR_TASK` | `-14` | Task definition is invalid or there are too many tasks |
 | `ZPLC_LOADER_ERR_TAGS` | `-15` | Tag entry is invalid |
 | `ZPLC_LOADER_ERR_COMM` | `-16` | Communication function-block kind is NONE or at or above the kind limit |
+| `ZPLC_LOADER_ERR_DRAFT` | `-17` | Draft contract counter of the artifact differs from the loader's, or the artifact has none |
 | `ZPLC_LOADER_MAX_TASKS` | `16U` | — |
 
 ## `zplc_scheduler.h`
@@ -2529,6 +2550,7 @@ These tables are generated from `tools/contract/contract.json`, the single sourc
 | --- | --- | --- |
 | Magic number | `0x434C505A` | `5A 50 4C 43` = "ZPLC" |
 | ISA version (major.minor) | `1.0` |  |
+| Draft contract counter | `1` | Written in header word 28 of every artifact. The loader and Studio refuse an artifact, or a device image, whose counter differs from their own and show both numbers; 0 means an artifact built before the counter. It increases with every contract change until the freeze. |
 | File header size (bytes) | `32` |  |
 | Segment entry size (bytes) | `8` |  |
 | Task definition size (bytes) | `16` |  |
@@ -2550,7 +2572,7 @@ These tables are generated from `tools/contract/contract.json`, the single sourc
 | `20` | `data_size` | `uint32_t` | 4 | Size of data segment (bytes) |
 | `24` | `entry_point` | `uint16_t` | 2 | Code offset of main entry |
 | `26` | `segment_count` | `uint16_t` | 2 | Number of segments |
-| `28` | `reserved` | `uint32_t` | 4 | Reserved (must be 0) |
+| `28` | `draft_counter` | `uint32_t` | 4 | Draft contract counter: must equal ZPLC_DRAFT_COUNTER (0 = built before the counter) |
 
 ### Layout of `zplc_segment_entry_t`
 
@@ -2822,6 +2844,7 @@ The operand size follows the opcode range (0x00-0x3F none, 0x40-0x7F 8-bit, 0x80
 | `ZPLC_LOADER_ERR_TASK` | `-14` | Task definition is invalid or there are too many tasks |
 | `ZPLC_LOADER_ERR_TAGS` | `-15` | Tag entry is invalid |
 | `ZPLC_LOADER_ERR_COMM` | `-16` | Communication function-block kind is NONE or at or above the kind limit |
+| `ZPLC_LOADER_ERR_DRAFT` | `-17` | Draft contract counter of the artifact differs from the loader's, or the artifact has none |
 
 ### Communication function blocks
 

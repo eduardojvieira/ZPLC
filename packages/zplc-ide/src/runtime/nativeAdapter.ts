@@ -1,4 +1,5 @@
 import { NATIVE_PROGRAM_MAX_BYTES } from '../../electron/security';
+import { artifactDraftCounter, draftMismatchMessage } from './draftCounter';
 import type {
   DebugAdapterEvents,
   IDebugAdapter,
@@ -213,6 +214,8 @@ export class NativeAdapter implements IDebugAdapter {
   private _state: VMState = 'disconnected';
   private capabilityProfile: NativeCapabilityProfile | null = null;
   private runtimeKind: string | null = null;
+  /** Draft contract counter the runtime reported in its hello (CMP-052); null for a runtime that reports none. */
+  private runtimeDraftCounter: number | null = null;
   private unsubscribe: (() => void) | null = null;
   private requestCount = 0;
   private statusEventCount = 0;
@@ -343,6 +346,7 @@ export class NativeAdapter implements IDebugAdapter {
         this._connected = false;
         this.capabilityProfile = null;
         this.runtimeKind = null;
+        this.runtimeDraftCounter = null;
         this.programGeneration = null;
         this.sessionGeneration += 1;
         this.setState('disconnected');
@@ -370,6 +374,7 @@ export class NativeAdapter implements IDebugAdapter {
       this.sessionGeneration += 1;
       this.capabilityProfile = null;
       this.runtimeKind = null;
+      this.runtimeDraftCounter = null;
       this.clearProgramGeneration();
       this._connected = false;
       this.setState('disconnected');
@@ -383,6 +388,7 @@ export class NativeAdapter implements IDebugAdapter {
     }
     this.capabilityProfile = capabilityProfile;
     this.runtimeKind = hello.runtime_kind;
+    this.runtimeDraftCounter = typeof hello.draft_counter === 'number' ? hello.draft_counter : null;
     this.programGeneration = null;
     this._connected = true;
     this.bindEvents(generation);
@@ -397,6 +403,7 @@ export class NativeAdapter implements IDebugAdapter {
     this._connected = false;
     this.capabilityProfile = null;
     this.runtimeKind = null;
+    this.runtimeDraftCounter = null;
     this.programGeneration = null;
     this.setState('disconnected');
     if (!wasConnected) {
@@ -418,6 +425,12 @@ export class NativeAdapter implements IDebugAdapter {
       throw new Error(
         `the program is ${bytecode.length} bytes, but the native simulation loads at most ${NATIVE_PROGRAM_MAX_BYTES} bytes`,
       );
+    }
+
+    // CMP-052: say which draft the program was built for before anything is sent. The runtime refuses it too.
+    const builtFor = artifactDraftCounter(bytecode);
+    if (this.runtimeDraftCounter !== null && builtFor !== null && builtFor !== this.runtimeDraftCounter) {
+      throw new Error(draftMismatchMessage(builtFor, this.runtimeDraftCounter));
     }
 
     options?.trace?.({

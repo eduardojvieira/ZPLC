@@ -8,7 +8,9 @@ writes it (packages/zplc-compiler/src/assembler/codegen.ts) and zlib, which the
 Python assembler uses. This script runs the first two on the same byte strings,
 in separate processes, and compares them with zlib. A byte string at a time it
 also asks the C loader to verify artifacts written by the TypeScript and Python
-assemblers.
+assemblers, the one the HIL Modbus script builds by hand and every committed
+examples/*.zplc, and the verdicts of an artifact built for another draft of the
+contract and of one built before the counter (CMP-052).
 
 Needs a C compiler (cc, gcc or clang) and bun on PATH.
 
@@ -16,11 +18,14 @@ Usage: python3 tools/contract/crc_cross.py   (exit 0 when all agree)
 """
 from __future__ import annotations
 
+import importlib.util
 import json
 import shutil
+import struct
 import subprocess
 import sys
 import tempfile
+import types
 import zlib
 from pathlib import Path
 
@@ -92,6 +97,31 @@ def python_artifact() -> bytes:
     return asm.create_zplc_file(asm.assemble("NOP\nHALT"))
 
 
+def hil_artifact() -> bytes:
+    """The artifact tools/hil/test_modbus_tcp.py builds by hand. The script imports pyserial, which is stubbed here."""
+    stub = types.ModuleType("serial")
+    stub.Serial = object
+    saved = sys.modules.get("serial")
+    sys.modules["serial"] = stub
+    try:
+        spec = importlib.util.spec_from_file_location("test_modbus_tcp_probe", ROOT / "tools/hil/test_modbus_tcp.py")
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        return module.build_zplc_binary()
+    finally:
+        if saved is None:
+            sys.modules.pop("serial", None)
+        else:
+            sys.modules["serial"] = saved
+
+
+def with_counter(artifact: bytes, counter: int) -> bytes:
+    """The artifact with another draft counter (header word 28) and a CRC that still matches."""
+    body = artifact[:28] + struct.pack("<I", counter) + artifact[32:]
+    crc = zlib.crc32(body[:12] + body[16:]) & 0xFFFFFFFF
+    return body[:12] + struct.pack("<I", crc) + body[16:]
+
+
 def run() -> dict:
     cc = shutil.which("cc") or shutil.which("gcc") or shutil.which("clang")
     bun = shutil.which("bun")
@@ -110,21 +140,33 @@ def run() -> dict:
         py_artifact = python_artifact()
         tampered = bytearray(ts_artifact)
         tampered[-1] ^= 0x01
-        verify_input = "".join(f"v {a.hex()}\n" for a in (ts_artifact, py_artifact, bytes(tampered)))
+        artifacts = {
+            "typescript_artifact": ts_artifact,
+            "python_artifact": py_artifact,
+            "tampered_artifact": bytes(tampered),
+            "hil_modbus_artifact": hil_artifact(),
+            "other_draft_artifact": with_counter(ts_artifact, struct.unpack_from("<I", ts_artifact, 28)[0] + 1),
+            "no_counter_artifact": with_counter(ts_artifact, 0),
+        }
+        for example in sorted((ROOT / "examples").glob("*.zplc")):
+            artifacts[f"examples/{example.name}"] = example.read_bytes()
+        verify_input = "".join(f"v {a.hex()}\n" for a in artifacts.values())
         verdicts = [int(v) for v in subprocess.run([str(tmp_path / "probe")], input=verify_input, check=True, capture_output=True, text=True).stdout.split()]
     return {
         "vectors": [case.hex()[:16] for case in cases],
         "c": c_crc,
         "ts": ts_crc,
         "zlib": [f"{zlib.crc32(case) & 0xFFFFFFFF:08x}" for case in cases],
-        "loader_verdicts": {"typescript_artifact": verdicts[0], "python_artifact": verdicts[1], "tampered_artifact": verdicts[2]},
+        "loader_verdicts": dict(zip(artifacts, verdicts)),
     }
 
 
 def main() -> int:
     result = run()
-    ok = result["c"] == result["ts"] == result["zlib"] and result["loader_verdicts"]["typescript_artifact"] == 0 \
-        and result["loader_verdicts"]["python_artifact"] == 0 and result["loader_verdicts"]["tampered_artifact"] != 0
+    verdicts = result["loader_verdicts"]
+    accepted = [name for name in verdicts if name not in ("tampered_artifact", "other_draft_artifact", "no_counter_artifact")]
+    ok = result["c"] == result["ts"] == result["zlib"] and all(verdicts[name] == 0 for name in accepted) \
+        and verdicts["tampered_artifact"] != 0 and verdicts["other_draft_artifact"] != 0 and verdicts["no_counter_artifact"] != 0
     print(json.dumps(result, indent=2))
     return 0 if ok else 1
 
