@@ -12,6 +12,17 @@ import { useIDEStore } from '../store/useIDEStore';
 import { Modal } from './Modal';
 import { declarationKindLabel, libraryChoices, libraryRows } from './projectDeclarationsPresentation';
 
+const EXPANDED_KEY = 'zplc-ide.declarations-expanded';
+
+/** Whether the section was left open: kept for the window's session, so that leaving the Explorer tab does not close it. */
+function readExpanded(): boolean {
+  try { return globalThis.sessionStorage?.getItem(EXPANDED_KEY) === '1'; } catch { return false; }
+}
+
+function writeExpanded(value: boolean): void {
+  try { globalThis.sessionStorage?.setItem(EXPANDED_KEY, value ? '1' : '0'); } catch { /* not remembered */ }
+}
+
 const BUTTON = 'px-4 py-2 text-sm rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent-blue)] disabled:cursor-not-allowed disabled:opacity-50';
 const FIELD = 'w-full px-3 py-2 bg-[var(--color-surface-900)] border border-[var(--color-surface-500)] rounded text-sm text-[var(--color-surface-100)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent-blue)]';
 
@@ -71,7 +82,14 @@ export function ProjectDeclarations() {
   const open = useIDEStore((state) => state.navigateToCompilerDiagnostic);
   const [adding, setAdding] = useState(false);
   // Closed until asked for: the lower panel is short, and the file tree keeps its room.
-  const [expanded, setExpanded] = useState(false);
+  const [expanded, setExpandedState] = useState(readExpanded);
+  const setExpanded = (next: boolean | ((current: boolean) => boolean)) => {
+    setExpandedState((current) => {
+      const value = typeof next === 'function' ? next(current) : next;
+      writeExpanded(value);
+      return value;
+    });
+  };
   const libraries = configuredLibraries(config);
   const total = groups.reduce((sum, group) => sum + group.declarations.length, 0);
   const rows = libraryRows(libraries, tree);
@@ -89,7 +107,7 @@ export function ProjectDeclarations() {
   };
 
   return (
-    <section aria-label="Project declarations" data-project-declarations className="border-t border-[var(--color-surface-700)] text-xs">
+    <section aria-label="Project declarations" data-project-declarations className="max-h-[45%] shrink-0 overflow-y-auto border-t border-[var(--color-surface-700)] text-xs">
       <div className="flex items-center justify-between gap-2 px-3 py-1.5">
         <h2 className="font-semibold uppercase tracking-[0.08em] text-[var(--color-surface-200)]">
           <button

@@ -1276,7 +1276,7 @@
     {"kind":"unit","ref":"packages/zplc-ide/scripts/welcomeBundle.test.ts","test":"the Monaco that is bundled (IDE-015)"},
     {"kind":"unit","ref":"packages/zplc-ide/scripts/welcomeBundle.test.ts","test":"the chunks the Welcome screen loads at start (IDE-015)"},
     {"kind":"unit","ref":"packages/zplc-ide/scripts/welcomeBundle.test.ts","test":"the installer payload (IDE-015)"},
-    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"25 The Welcome screen loads no editor","partial":true}
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"29 The Welcome screen loads no editor","partial":true}
   ],
   "IDE-019": [
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"18 Force an input while stopped at a breakpoint","partial":true},
@@ -1295,19 +1295,23 @@
     {"kind":"unit","ref":"packages/zplc-ide/src/ipc/projectArchiveBridge.test.ts","test":"the renderer side of the project archives (IDE-022)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/project/archiveReview.test.ts","test":"reviewArchive (IDE-022)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/project/migrationDiff.test.ts","test":"describeMigration of a version 1 project (IDE-022)"},
-    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"26 Export a project to one archive and import it back","partial":true},
-    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"27 A version 1 project shows its migration before it is applied","partial":true}
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"30 Export a project to one archive and import it back","partial":true},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"31 A version 1 project shows its migration before it is applied","partial":true}
   ],
   "IDE-023": [
     {"kind":"unit","ref":"packages/zplc-ide/src/components/stLanguageService.project.test.ts","test":"completion from the project (IDE-023)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/components/stLanguageService.project.test.ts","test":"hover over a name of the project (IDE-023)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/project/libraries.test.ts","test":"addLibrary and removeLibrary (IDE-023)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/project/libraries.test.ts","test":"configuredLibraries (IDE-023)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/project/libraries.test.ts","test":"libraryProblem (IDE-023)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/project/libraries.test.ts","test":"projectSourceFiles (IDE-023)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/project/libraries.test.ts","test":"unlistedSourceFiles (IDE-023)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/project/projectDeclarations.test.ts","test":"declarationsOf (IDE-023)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/project/projectDeclarations.test.ts","test":"projectDeclarations (IDE-023)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/project/unlistedSources.test.ts","test":"scanUnlistedSources (IDE-023)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/store/projectSources.test.ts","test":"readProjectSources (IDE-023)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/store/projectSources.test.ts","test":"trackProjectSources (IDE-023)"},
-    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"28 Declarations in the tree, and a library folder offered to every editor","partial":true}
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"32 Declarations in the tree, and a library folder offered to every editor","partial":true}
   ],
   "IDE-029": [
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"18 Force an input while stopped at a breakpoint","partial":true},
@@ -1318,7 +1322,7 @@
   ],
   "IDE-032": [
     {"kind":"unit","ref":"packages/zplc-ide/src/components/InterlockCoverage.test.tsx","test":"InterlockCoverage (IDE-032)"},
-    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"29 Declared interlock coverage has a tab of its own","partial":true}
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"33 Declared interlock coverage has a tab of its own","partial":true}
   ],
   "IDE-033": [
     {"kind":"unit","ref":"tools/ci/ide-structure.test.ts","test":"import cycles stopgap (IDE-033)","partial":true},
