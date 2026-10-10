@@ -483,7 +483,26 @@
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"7 Breakpoint stops execution","partial":true}
   ],
   "RT-001": [
-    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/fuzz_run_program.c","test":"RT-001/COM-001 are open, so that a long run can look for other findings); ZPLC_FUZZ_DUMP=<path> writes the"}
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/fuzz_run_program.c","test":"RT-001/COM-001 are open, so that a long run can look for other findings); ZPLC_FUZZ_DUMP=<path> writes the"},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_opcode_coverage.c","test":"inside one region, writable unless the opcode only reads (RT-001, RT-002)."},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_sandbox.c","test":"RT-001, RT-002: what the run fuzzer found in the communication opcodes"},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_sandbox.c","test":"RT-001: communication opcodes (the PoC shapes, address built at run time)"},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_sandbox.c","test":"RT-001: indirect loads and stores"},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_sandbox.c","test":"RT-001: string operations"},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_sandbox.c","test":"Sandbox closure of the VM and the loader (RT-001, RT-002, RT-003)."}
+  ],
+  "RT-002": [
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_comm_dispatch.c","test":"RT-002: the dispatcher hands a handler no less than the layout of its"},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_opcode_coverage.c","test":"inside one region, writable unless the opcode only reads (RT-001, RT-002)."},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_sandbox.c","test":"RT-001, RT-002: what the run fuzzer found in the communication opcodes"},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_sandbox.c","test":"RT-002: the loader refuses a statically known block that does not fit"},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_sandbox.c","test":"Sandbox closure of the VM and the loader (RT-001, RT-002, RT-003)."}
+  ],
+  "RT-003": [
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_loader_verify.c","test":"the address value is pushed first: RT-003 refuses a path that takes more"},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_sandbox.c","test":"RT-003 premise: the stack effects of the contract table are what the VM does"},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_sandbox.c","test":"RT-003: the loader verifies the stack effect of every path"},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_sandbox.c","test":"Sandbox closure of the VM and the loader (RT-001, RT-002, RT-003)."}
   ],
   "RT-004": [
     {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_comm_dispatch.c","test":"RT-004: the STATUS field is written byte by byte, little endian, at any"}
@@ -515,7 +534,11 @@
     {"kind":"c-test","ref":"firmware/tests/scheduler_run_control/src/main.c","test":"RT-017: the pause command keeps the image and forces with the pins safe."}
   ],
   "COM-001": [
-    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/fuzz_run_program.c","test":"RT-001/COM-001 are open, so that a long run can look for other findings); ZPLC_FUZZ_DUMP=<path> writes the"}
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/fuzz_run_program.c","test":"RT-001/COM-001 are open, so that a long run can look for other findings); ZPLC_FUZZ_DUMP=<path> writes the"},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_comm_fb_access.c","test":"The bounded accessors of a function-block instance (COM-001)."},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_comm_handler_cloud.c","test":"The cloud function-block handlers against crafted blocks (COM-001)."},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_comm_handler_modbus.c","test":"The Modbus function-block handler against crafted blocks (COM-001)."},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_comm_handler_mqtt.c","test":"The MQTT function-block handler against crafted blocks (COM-001)."}
   ],
   "IDE-001": [
     {"kind":"unit","ref":"packages/zplc-ide/electron/projectFiles.test.ts","test":"the root held for the main process (IDE-001)"},
