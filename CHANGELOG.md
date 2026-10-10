@@ -4,6 +4,13 @@ All notable changes are documented here.
 
 ## Unreleased
 
+- Compile, safety check, scenario tests and the candidate review run outside the
+  main process and can be cancelled (IDE-012). Each request starts a worker
+  process of its own (`electron/toolWorker.ts`, bundled with the Tool API); the
+  window keeps answering while it works, **Cancel scenarios** stops a run and the
+  native runtime it started, a run that does not answer a cancel is killed, and a
+  deadline kills a worker that never finishes. A cancelled run is recorded as
+  cancelled in the execution log.
 - Studio defines every IPC channel once and answers all of them through one
   checked table (IDE-017). `electron/ipcContract.ts` names the channels for the
   main process, the preload and the renderer (the preload is now bundled into one

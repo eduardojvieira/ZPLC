@@ -7,7 +7,8 @@
  * directory it created, a checkout the user picked in a native dialog), and each is checked against the shape its slot
  * allows, so a value that is not that shape stops the spawn instead of reaching an argument vector.
  *
- * Pure TypeScript over `node:child_process` and `node:path`, importable by the main process and by the Tool API bundle.
+ * A `tool-worker` entry is started by the caller's own fork (Electron's utility process), which has no shell either;
+ * `spawnVector` gives its script and its empty argument list. Pure TypeScript over `node:child_process` and `node:path`, importable by the main process and by the Tool API bundle.
  */
 import { spawn, type ChildProcess, type SpawnOptions } from 'node:child_process';
 import path from 'node:path';
@@ -31,7 +32,9 @@ export type SpawnEntry =
   | { kind: 'firmware-build'; zephyrBoard: string; buildPath: string }
   | { kind: 'toolchain-probe'; probe: ToolchainProbe }
   /** The revision of the Zephyr checkout that the user picked. */
-  | { kind: 'zephyr-revision'; zephyrBase: string };
+  | { kind: 'zephyr-revision'; zephyrBase: string }
+  /** The tool worker (a script of the application, started with no argument by Electron's utility process): compile, safety check, tests. */
+  | { kind: 'tool-worker'; script: string };
 
 export interface SpawnVector { command: string; args: string[] }
 
@@ -59,6 +62,8 @@ export function spawnVector(entry: SpawnEntry): SpawnVector {
       const probe = TOOLCHAIN_PROBES[entry.probe];
       return { command: probe.command, args: [...probe.args] };
     }
+    case 'tool-worker':
+      return { command: absolute(entry.script, 'the tool worker script'), args: [] };
     case 'zephyr-revision':
       return { command: 'git', args: ['-C', absolute(entry.zephyrBase, 'the Zephyr checkout'), 'rev-parse', '--verify', 'HEAD'] };
     default:

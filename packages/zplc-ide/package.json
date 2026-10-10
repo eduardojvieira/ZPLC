@@ -24,7 +24,7 @@
     "test:watch": "bun test --watch",
     "electron:compile": "tsc -p tsconfig.electron.json && bun run electron:compile:preload && bun run electron:compile:tool-api",
     "electron:compile:preload": "bun build ./electron/preload.ts --target node --format cjs --external electron --outfile electron-dist/preload.cjs",
-    "electron:compile:tool-api": "bun build src/cli/toolApi.ts --target node --format esm --outfile electron-dist/toolApi.js && node scripts/verify-tool-api-bundle.mjs",
+    "electron:compile:tool-api": "bun build src/cli/toolApi.ts --target node --format esm --outfile electron-dist/toolApi.js && bun build ./electron/toolWorker.ts --target node --format esm --outfile electron-dist/toolWorker.js && node scripts/verify-tool-api-bundle.mjs",
     "mcp": "bun run src/mcp/index.ts",
     "electron:dev": "concurrently -k \"vite\" \"wait-on http://localhost:3000 && bun run electron:compile && NODE_ENV=development electron .\"",
     "electron:preview": "bun run build && bun run electron:compile && electron .",

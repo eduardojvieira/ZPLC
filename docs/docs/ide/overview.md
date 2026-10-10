@@ -45,6 +45,25 @@ runs the real preload against a stand-in and compares what it invokes with the
 contract, and `electron/spawnAllowList.test.ts` shows the argument vectors
 (requirement IDE-017). It is not packaged-application evidence.
 
+## Work that does not block the window
+
+Compile, safety check, scenario tests and the candidate review run in a process of
+their own, started for each request from a fixed list and stopped when the
+request ends. The main process only sends the request and waits, so a long compile
+or run cannot make the window unresponsive. **Cancel scenarios** in the Tests panel
+asks the worker to stop; a worker that is busy in a compile and does not answer is
+killed after a short grace period, and a deadline kills a worker that never
+finishes. Killing the worker also ends the native runtime that it started. A
+cancelled run is shown as cancelled and is recorded as cancelled in the execution
+log; nothing of it is kept as a build.
+
+Evidence level: host. `electron/toolWorkerHost.test.ts` runs real child processes:
+a worker stuck in a busy loop is killed and is really gone while the caller keeps
+running, and the real worker compiles a project and cancels a run of scenarios on
+the native runtime. Journey 26 of `bun run test:journeys` cancels a long run in the
+real application, sees the window answer throughout and finds no process of the
+run left (requirement IDE-012).
+
 ## One project of record
 
 Build, Test, Simulate and the candidate review all act on the folder that the

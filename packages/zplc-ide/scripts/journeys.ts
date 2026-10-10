@@ -1261,4 +1261,67 @@ export const JOURNEYS: Journey[] = [
       assert((await operation('compile', shownWorkspace, otherId)).refused, 'The earlier workspace must stay refused after the new one is registered.');
     },
   },
+
+  {
+    // IDE-012: the work of Tests runs in processes of its own and is cancellable; the window keeps answering throughout.
+    name: '26 A long test run can be cancelled and leaves no process behind', example: 'motor_start_stop', proves: ['IDE-012'], partly: [],
+    run: async (app, { project }) => {
+      // Three scenarios of the longest allowed length (10,000 samples each): seconds of work in the runtime.
+      for (const name of ['LongA', 'LongB', 'LongC']) {
+        const scenario = { schemaVersion: 1, id: name, tickMs: 10, durationMs: 99_990, events: [{ atMs: 0, set: { 'Motor.Start': true, 'Motor.Stop': false, 'Motor.EStop': false, 'Motor.Overload': false } }], expectations: [{ kind: 'AT', atMs: 0, condition: { 'Motor.Forward': false, 'Motor.Reverse': false } }] };
+        writeFileSync(join(project, 'tests', `${name}.scenario.json`), JSON.stringify(scenario));
+      }
+      /**
+       * The processes below the main process of the app under test (found by the port switch only it carries): pid and name.
+       * A utility process rewrites its command line once it is up, so the tree and the process name are what identify it.
+       */
+      const descendants = (): Array<{ pid: number; name: string }> => {
+        const table = new Map<number, { parent: number; name: string; command: string }>();
+        for (const entry of readdirSync('/proc')) {
+          if (!/^\d+$/.test(entry)) continue;
+          try {
+            const parent = Number(/PPid:\s+(\d+)/.exec(readFileSync(`/proc/${entry}/status`, 'utf8'))?.[1]);
+            table.set(Number(entry), { parent, name: readFileSync(`/proc/${entry}/comm`, 'utf8').trim(), command: readFileSync(`/proc/${entry}/cmdline`, 'utf8').split('\0').join(' ') });
+          } catch { /* it exited meanwhile */ }
+        }
+        const main = [...table.entries()].find(([, entry]) => entry.command.includes('--zplc-smoke-port=') && !entry.command.includes('--type='))?.[0];
+        const found: Array<{ pid: number; name: string }> = [];
+        const walk = (pid: number) => { for (const [child, entry] of table) if (entry.parent === pid) { found.push({ pid: child, name: entry.name }); walk(child); } };
+        if (main !== undefined) walk(main);
+        return found;
+      };
+      const reply = () => app.eval<number>(`(async () => { const started = performance.now(); await window.electronAPI.getAppInfo(); return performance.now() - started; })()`);
+      const run = button('Run host scenarios');
+      const cancel = button('Cancel scenarios');
+
+      await openFolder(app, project);
+      const known = new Set(descendants().map((process) => process.pid));
+      const added = () => descendants().filter((process) => !known.has(process.pid));
+      assert(known.size > 0, 'The journey could not find the processes of the app under test.');
+      await app.click(tab('Tests'));
+      await app.click(run);
+      await app.until('Cancel scenarios while the scenarios run', async () => await app.visible(cancel) || undefined);
+      // The tests run in a process of their own, which starts the native runtime: neither is a process of the app's main process alone.
+      const during = await app.until('a worker process that owns a native runtime', async () => {
+        const now = added();
+        return now.some((process) => process.name === 'zplc_runtime') && now.some((process) => process.name !== 'zplc_runtime') ? now : undefined;
+      }, 5_000);
+      assert(during.filter((process) => process.name !== 'zplc_runtime').length >= 1, 'The tests did not run in a process of their own.');
+
+      // The main process answers the window promptly while the work runs somewhere else.
+      const latencies: number[] = [];
+      for (let probe = 0; probe < 10; probe++) latencies.push(await reply());
+      assert(Math.max(...latencies) < 500, `The main process answered slowly while tests ran: ${latencies.map((value) => Math.round(value)).join(', ')} ms`);
+
+      await app.click(cancel);
+      await app.until('the run to end and Run host scenarios to come back', async () => !await app.visible(cancel) && await app.clickable(run) || undefined, 10_000);
+      await app.until('no worker and no runtime left', async () => added().length === 0 || undefined, 10_000);
+      assert((await app.text()).includes('Cancelled') || (await app.text()).toLowerCase().includes('cancel'), 'The Tests panel should say that the run was cancelled.');
+
+      // The window is alive and the next operation works.
+      assert(await reply() < 500, 'The main process does not answer after the cancel.');
+      const built = await compile(app);
+      assert(built.kind === 'built', `A build after a cancelled run should succeed: ${built.kind} ${built.message}`);
+    },
+  },
 ];

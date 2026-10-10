@@ -5,7 +5,7 @@
  * This is the entry point for the Electron desktop application.
  */
 
-import { app, BrowserWindow, dialog, Menu, nativeTheme, session, ipcMain, safeStorage, type IpcMainInvokeEvent, type WebContents } from 'electron';
+import { app, BrowserWindow, dialog, Menu, nativeTheme, session, ipcMain, safeStorage, utilityProcess, type IpcMainInvokeEvent, type WebContents } from 'electron';
 import path from 'path';
 import { fileURLToPath, pathToFileURL } from 'url';
 import { NativeSimulationSupervisor } from './nativeSimulationSupervisor.js';
@@ -24,6 +24,8 @@ import { buildApplicationMenu, describeApplicationMenu, isReloadShortcut } from 
 import { createCloseGuard } from './closeGuard.js';
 import { createProjectFiles } from './projectFiles.js';
 import { createIpcHandlers, type RendererOwner, type ToolApiModule } from './ipcHandlers.js';
+import { spawnVector } from './spawnAllowList.js';
+import { createToolWorkerHost, type ToolWorkerProcess } from './toolWorkerHost.js';
 import { registerIpcHandlers } from './ipcRegistry.js';
 import {
   CLOSE_GUARD_CHANNEL,
@@ -67,6 +69,28 @@ const projectWatcher = createProjectWatcher({
 });
 const projectFiles = createProjectFiles(chooseProjectDirectory, () => recentProjects, projectWatcher);
 const toolApiUrl = pathToFileURL(path.join(__dirname, 'toolApi.js')).href;
+
+/**
+ * Compile, safety check, tests and candidate review run in a utility process of their own, one per request (IDE-012), from
+ * the fixed vector of the allow-list: the bundled `toolWorker.js` and no argument. The environment is the one of the native
+ * simulation, so that the worker finds the runtime it starts for scenarios.
+ */
+function spawnToolWorker(): ToolWorkerProcess {
+  const { command, args } = spawnVector({ kind: 'tool-worker', script: path.join(__dirname, 'toolWorker.js') });
+  const environment: Record<string, string> = {};
+  for (const [name, value] of Object.entries(nativeSimulationEnvironment(process.env, isDev, process.resourcesPath))) {
+    if (typeof value === 'string') environment[name] = value;
+  }
+  const child = utilityProcess.fork(command, args, { serviceName: 'zplc-tool-worker', env: environment, stdio: 'ignore' });
+  return {
+    get pid() { return child.pid; },
+    postMessage: (message) => child.postMessage(message),
+    onMessage: (listener) => { child.on('message', listener); },
+    onExit: (listener) => { child.on('exit', (code) => listener(code)); },
+    kill: () => { child.kill(); },
+  };
+}
+const toolWorkerHost = createToolWorkerHost({ spawn: spawnToolWorker });
 let aiProvider: ReturnType<typeof createAiProvider> | null = null;
 let learnProgress: ReturnType<typeof createLearnProgressStore> | null = null;
 
@@ -392,6 +416,7 @@ function setupIPC(): void {
     workspaceGateway: workspaceTestGateway,
     firmwareGateway: firmwareBuildGateway,
     loadToolApi: () => import(toolApiUrl) as Promise<ToolApiModule>,
+    toolWorker: toolWorkerHost,
     nativeSimulation: {
       async start(owner) {
         if (!nativeSimulationSupervisor) {
@@ -494,6 +519,9 @@ app.whenReady().then(async () => {
   console.error('ZPLC IDE failed to start', error);
   app.exit(1);
 });
+
+// A worker that is still running when the application quits is killed with it.
+app.on('before-quit', () => toolWorkerHost.dispose());
 
 // Quit when all windows are closed (except on macOS)
 app.on('window-all-closed', () => {

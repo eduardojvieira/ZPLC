@@ -1121,6 +1121,13 @@
     {"kind":"unit","ref":"packages/zplc-ide/src/components/ErrorBoundary.test.tsx","test":"a region that throws (IDE-011)"},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"20 A failing region does not blank the window"}
   ],
+  "IDE-012": [
+    {"kind":"unit","ref":"packages/zplc-ide/electron/ipcRegistry.test.ts","test":"compile, safety check and tests run outside the main process (IDE-012)"},
+    {"kind":"unit","ref":"packages/zplc-ide/electron/toolWorkerHost.test.ts","test":"real worker processes (IDE-012)"},
+    {"kind":"unit","ref":"packages/zplc-ide/electron/toolWorkerHost.test.ts","test":"the tool worker host (IDE-012)"},
+    {"kind":"unit","ref":"packages/zplc-ide/electron/toolWorkerHost.test.ts","test":"the worker command schema (IDE-012, IDE-017)"},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"26 A long test run can be cancelled and leaves no process behind"}
+  ],
   "IDE-016": [
     {"kind":"unit","ref":"packages/zplc-ide/electron/ipcRegistry.test.ts","test":"project files over the IPC boundary (IDE-001, IDE-016)"}
   ],
@@ -1132,6 +1139,7 @@
     {"kind":"unit","ref":"packages/zplc-ide/electron/ipcRegistry.test.ts","test":"workspace tests, candidate review and the AI provider (IDE-001, IDE-017)"},
     {"kind":"unit","ref":"packages/zplc-ide/electron/preload.test.ts","test":"preload bridge (IDE-017)"},
     {"kind":"unit","ref":"packages/zplc-ide/electron/spawnAllowList.test.ts","test":"the spawn allow-list (IDE-017)"},
+    {"kind":"unit","ref":"packages/zplc-ide/electron/toolWorkerHost.test.ts","test":"the worker command schema (IDE-012, IDE-017)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/cli/firmwareBuildRunner.test.ts","test":"never starts a process for a board that is not a manifest board id (IDE-017)"}
   ],
   "IDE-019": [

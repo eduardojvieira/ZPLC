@@ -56,6 +56,8 @@ import {
   sanitizeCandidateChangeSetReview,
   sanitizeWorkspaceSafetyCheck,
 } from './security.js';
+import { ToolWorkerError } from './toolWorkerHost.js';
+import type { ToolWorkerRequest } from './toolWorkerProtocol.js';
 import { record, workspaceCompileFailure } from './workspaceCompileFailure.js';
 
 /** The renderer document that owns the window: its web contents and the epoch of the document it loaded. */
@@ -68,11 +70,6 @@ export interface ToolApiModule {
   startToolExecution(actor: 'human-studio' | 'agent', permission: string, operation: string): { jobId: string; startedAt: string };
   finishToolExecution(start: ExecutionStart, value: unknown): unknown;
   isToolExecutionEnvelope(value: unknown): boolean;
-  testsRun?: (workspaceRoot: string, options: { signal: AbortSignal }) => Promise<unknown>;
-  scenarioRun?: (workspaceRoot: string, scenarioId: string, options: { signal: AbortSignal }) => Promise<unknown>;
-  compilerCompile?: (workspaceRoot: string) => Promise<unknown>;
-  safetyCheck?: (workspaceRoot: string) => Promise<unknown>;
-  createCandidateChangeSet?: (workspaceRoot: string, edits: unknown, options: { signal: AbortSignal }) => Promise<unknown>;
   toolchainInspect?: (repositoryRoot: string) => Promise<unknown>;
   firmwareBuild?: (repositoryRoot: string, ideId: string, options: { signal: AbortSignal }) => Promise<unknown>;
 }
@@ -93,6 +90,8 @@ export interface IpcDeps {
   workspaceGateway: Pick<ReturnType<typeof createWorkspaceTestGateway>, 'registerProjectManifest' | 'run' | 'cancel'>;
   firmwareGateway: Pick<ReturnType<typeof createFirmwareBuildGateway>, 'inspect' | 'start' | 'cancel' | 'revokeOwner'>;
   loadToolApi(): Promise<ToolApiModule>;
+  /** Compile, safety check, scenario runs and candidate review run in a process of their own, never in the main process (IDE-012). */
+  toolWorker: { run(request: ToolWorkerRequest, signal: AbortSignal): Promise<unknown> };
   nativeSimulation: {
     start(owner: RendererOwner): Promise<unknown>;
     stop(owner: RendererOwner): Promise<void>;
@@ -157,6 +156,29 @@ export function createIpcHandlers(deps: IpcDeps): IpcHandlerTable<RendererOwner>
     if (!toolApi.isToolExecutionEnvelope(execution)) throw new Error(WORKSPACE_FAILED);
     await deps.toolExecutionAudit.add(execution);
     return execution;
+  };
+
+  /**
+   * Runs one operation in the tool worker and records how it ended (the audit log keeps who, what, when and the outcome):
+   * a cancelled or timed-out run is recorded as such and the failure is passed on.
+   */
+  const inWorker = async (
+    toolApi: ToolApiModule,
+    options: { signal: AbortSignal; jobId: string; startedAt: string },
+    request: ToolWorkerRequest,
+    permission: string,
+    operation: string,
+  ): Promise<{ value: unknown; execution: unknown }> => {
+    let value: unknown;
+    try {
+      value = await deps.toolWorker.run(request, options.signal);
+    } catch (error) {
+      const cancelled = error instanceof ToolWorkerError ? error.reason === 'cancelled' : options.signal.aborted;
+      const ended = { evidence: { outcome: 'failed', diagnostics: cancelled ? [{ code: 'TOOL_CANCELLED' }] : [] } };
+      await finishStudioExecution(toolApi, options, permission, operation, ended).catch(() => undefined);
+      throw error;
+    }
+    return { value, execution: await finishStudioExecution(toolApi, options, permission, operation, value) };
   };
 
   const finishAgentReviewExecution = async (toolApi: ToolApiModule, start: { jobId: string; startedAt: string }, value: unknown): Promise<void> => {
@@ -278,14 +300,10 @@ export function createIpcHandlers(deps: IpcDeps): IpcHandlerTable<RendererOwner>
       oneArgument(isAllowedWorkspaceTestRunRequest),
       (owner, [request]: [{ workspaceId: string; rootId: string; scenarioId?: string }]) => deps.workspaceGateway.run(owner.ownerId, { workspaceId: request.workspaceId }, async (root, options) => {
         const toolApi = await deps.loadToolApi();
-        if (request.scenarioId !== undefined) {
-          if (typeof toolApi.scenarioRun !== 'function') throw new Error(WORKSPACE_FAILED);
-          const value = await toolApi.scenarioRun(root, request.scenarioId, options);
-          return { ...(value as object), execution: await finishStudioExecution(toolApi, options, 'tests:run', 'scenario-run', value) };
-        }
-        if (typeof toolApi.testsRun !== 'function') throw new Error(WORKSPACE_FAILED);
-        const value = await toolApi.testsRun(root, options);
-        return { ...(value as object), execution: await finishStudioExecution(toolApi, options, 'tests:run', 'test', value) };
+        const { value, execution } = request.scenarioId === undefined
+          ? await inWorker(toolApi, options, { operation: 'test', root }, 'tests:run', 'test')
+          : await inWorker(toolApi, options, { operation: 'scenario-run', root, scenarioId: request.scenarioId }, 'tests:run', 'scenario-run');
+        return { ...(value as object), execution };
       }, folderOf(owner, request.rootId)),
       WORKSPACE_FAILED,
     ),
@@ -294,9 +312,8 @@ export function createIpcHandlers(deps: IpcDeps): IpcHandlerTable<RendererOwner>
       oneArgument(isAllowedWorkspaceOperationRequest),
       (owner, [request]: [{ workspaceId: string; rootId: string }]) => deps.workspaceGateway.run(owner.ownerId, { workspaceId: request.workspaceId }, async (root, options) => {
         const toolApi = await deps.loadToolApi();
-        if (typeof toolApi.compilerCompile !== 'function') throw new Error(WORKSPACE_FAILED);
-        const value = await toolApi.compilerCompile(root);
-        return toWorkspaceCompileEnvelope(value, await finishStudioExecution(toolApi, options, 'compiler:check', 'compile', value));
+        const { value, execution } = await inWorker(toolApi, options, { operation: 'compile', root }, 'compiler:check', 'compile');
+        return toWorkspaceCompileEnvelope(value, execution);
       }, folderOf(owner, request.rootId)),
       WORKSPACE_FAILED,
     ),
@@ -305,9 +322,8 @@ export function createIpcHandlers(deps: IpcDeps): IpcHandlerTable<RendererOwner>
       async (owner, [request]: [{ workspaceId: string; rootId: string }]) => {
         const result = await deps.workspaceGateway.run(owner.ownerId, { workspaceId: request.workspaceId }, async (root, options) => {
           const toolApi = await deps.loadToolApi();
-          if (typeof toolApi.safetyCheck !== 'function') throw new Error(WORKSPACE_FAILED);
-          const value = await toolApi.safetyCheck(root);
-          return { ...(value as object), execution: await finishStudioExecution(toolApi, options, 'safety:check', 'safety-check', value) };
+          const { value, execution } = await inWorker(toolApi, options, { operation: 'safety-check', root }, 'safety:check', 'safety-check');
+          return { ...(value as object), execution };
         }, folderOf(owner, request.rootId));
         const safe = sanitizeWorkspaceSafetyCheck(result);
         if (!safe) throw new Error(WORKSPACE_FAILED);
@@ -321,10 +337,9 @@ export function createIpcHandlers(deps: IpcDeps): IpcHandlerTable<RendererOwner>
       async (owner, [request]: [{ workspaceId: string; edit: { path: string; content: string } }]) => {
         const result = await deps.workspaceGateway.run(owner.ownerId, { workspaceId: request.workspaceId }, async (root, options) => {
           const toolApi = await deps.loadToolApi();
-          if (typeof toolApi.createCandidateChangeSet !== 'function') throw new Error(WORKSPACE_FAILED);
           let value: unknown;
           try {
-            value = await toolApi.createCandidateChangeSet(root, [{ path: request.edit.path, content: request.edit.content }], options);
+            value = await deps.toolWorker.run({ operation: 'change-set-review', root, edits: [{ path: request.edit.path, content: request.edit.content }] }, options.signal);
           } catch {
             await finishAgentReviewExecution(toolApi, options, { evidence: { outcome: 'failed' } });
             throw new Error(WORKSPACE_FAILED);

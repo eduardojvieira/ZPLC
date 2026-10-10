@@ -12,6 +12,8 @@ import path from 'node:path';
 import { createProjectFiles } from './projectFiles';
 import { IPC_EVENT_CHANNELS, IPC_INVOKE_CHANNELS, PROJECT_FILES_CHANNEL } from './ipcContract';
 import { createIpcHandlers, type IpcDeps, type RendererOwner, type ToolApiModule } from './ipcHandlers';
+import type { ToolWorkerRequest } from './toolWorkerProtocol';
+import { finishToolExecution, isToolExecutionEnvelope, startToolExecution } from '../src/cli/toolApi';
 import { IPC_DENIED, ipcTableMismatch, registerIpcHandlers, type IpcMainLike } from './ipcRegistry';
 
 const OWNER: RendererOwner = { ownerId: 7, epoch: 1 };
@@ -33,7 +35,7 @@ interface Harness {
 const scratches: string[] = [];
 afterEach(() => { for (const directory of scratches.splice(0)) rmSync(directory, { recursive: true, force: true }); });
 
-async function harness(options: { toolApi?: Partial<ToolApiModule>; failToolApi?: boolean } = {}): Promise<Harness> {
+async function harness(options: { toolApi?: Partial<ToolApiModule>; failToolApi?: boolean; worker?: (request: ToolWorkerRequest) => Promise<unknown> } = {}): Promise<Harness> {
   const folder = realpathSync(mkdtempSync(path.join(tmpdir(), 'zplc-ipc-registry-')));
   scratches.push(folder);
   mkdirSync(path.join(folder, 'project'));
@@ -57,17 +59,12 @@ async function harness(options: { toolApi?: Partial<ToolApiModule>; failToolApi?
       : target[property as string],
   });
   const toolApi: ToolApiModule = {
-    startToolExecution: () => ({ jobId: EXECUTION_ID, startedAt: '2026-10-10T00:00:00.000Z' }),
-    // The real envelope carries metadata only: who, what, when and the outcome, never the value.
-    finishToolExecution: (start) => ({ schemaVersion: 1, jobId: start.jobId, actor: start.actor, permission: start.permission, operation: start.operation, outcome: 'passed', startedAt: start.startedAt, finishedAt: '2026-10-10T00:00:01.000Z' }),
-    isToolExecutionEnvelope: () => !options.failToolApi,
-    testsRun: async () => { note('toolApi.testsRun'); return { ok: true }; },
-    scenarioRun: async (_root, scenario) => { note(`toolApi.scenarioRun:${scenario}`); return { ok: true }; },
-    compilerCompile: async () => { note('toolApi.compilerCompile'); return { ok: false, evidence: { diagnostics: [{ code: 'COMPILATION_FAILED', message: 'bad /home/secret/x.st', path: 'src/Main.st', line: 3 }] } }; },
-    safetyCheck: async () => { note('toolApi.safetyCheck'); return { ok: false }; },
+    // The real envelope functions: metadata only, and the outcome is read from the evidence of the value.
+    startToolExecution: (actor, permission, operation) => startToolExecution(actor, permission as never, operation as never),
+    finishToolExecution: (start, value) => finishToolExecution(start as never, value),
+    isToolExecutionEnvelope: (value) => !options.failToolApi && isToolExecutionEnvelope(value),
     toolchainInspect: async () => ({ ok: true }),
     firmwareBuild: async (_root, ideId) => { note(`toolApi.firmwareBuild:${ideId}`); return { ok: true }; },
-    createCandidateChangeSet: async () => { note('toolApi.createCandidateChangeSet'); throw new Error('boom'); },
     ...options.toolApi,
   };
   const gateway = {
@@ -100,6 +97,19 @@ async function harness(options: { toolApi?: Partial<ToolApiModule>; failToolApi?
       revokeOwner: () => { note('firmware.revokeOwner'); return false; },
     } as never,
     loadToolApi: async () => toolApi,
+    // The operations that parse, compile and run scenarios: every one goes to the worker process, none runs in the main process.
+    toolWorker: {
+      run: async (request, signal) => {
+        note(`worker.${request.operation}${request.operation === 'scenario-run' ? `:${request.scenarioId}` : ''}${signal.aborted ? ':aborted' : ''}`);
+        if (options.worker) return options.worker(request);
+        switch (request.operation) {
+          case 'compile': return { ok: false, evidence: { diagnostics: [{ code: 'COMPILATION_FAILED', message: 'bad /home/secret/x.st', path: 'src/Main.st', line: 3 }] } };
+          case 'safety-check': return { ok: false };
+          case 'change-set-review': throw new Error('boom');
+          default: return { ok: true };
+        }
+      },
+    },
     nativeSimulation: {
       start: async () => { note('native.start'); return {}; },
       stop: async () => { note('native.stop'); },
@@ -204,7 +214,7 @@ describe('every invoke channel (IDE-017)', () => {
   });
 
   it('tells the renderer one fixed message when a handler fails, never the text of the internal error', async () => {
-    const h = await harness({ toolApi: { compilerCompile: async () => { throw new Error('/home/secret/projects/x.st: token abc123'); } } });
+    const h = await harness({ worker: async () => { throw new Error('/home/secret/projects/x.st: token abc123'); } });
     const answer = await settle(h.invoke('workspace-tests:compile', TRUSTED, { workspaceId: WORKSPACE_ID, rootId: h.rootId }));
     expect(answer).toEqual({ ok: false, message: 'Workspace operation failed' });
   });
@@ -277,7 +287,7 @@ describe('workspace tests, candidate review and the AI provider (IDE-001, IDE-01
   it('run a named scenario only for a well-formed scenario id', async () => {
     const h = await harness();
     await h.invoke('workspace-tests:run', TRUSTED, { workspaceId: WORKSPACE_ID, rootId: h.rootId, scenarioId: 'start-stop' });
-    expect(h.touched).toContain('toolApi.scenarioRun:start-stop');
+    expect(h.touched).toContain('worker.scenario-run:start-stop');
     expect(await settle(h.invoke('workspace-tests:run', TRUSTED, { workspaceId: WORKSPACE_ID, rootId: h.rootId, scenarioId: '../../etc' }))).toEqual({ ok: false, message: IPC_DENIED });
   });
 
@@ -341,7 +351,7 @@ describe('safety check over the IPC boundary (IDE-017)', () => {
     const h = await harness();
     expect(await settle(h.invoke('workspace-tests:safety-check', TRUSTED, { workspaceId: WORKSPACE_ID, rootId: h.rootId }))).toEqual({ ok: false, message: 'Workspace operation failed' });
     const evidence = { schemaVersion: 1, operation: 'safety-check', outcome: 'passed', diagnostics: [], artifacts: [] };
-    const good = await harness({ toolApi: { safetyCheck: async () => ({ ok: true, summary: { configured: false, declared: [], covered: [], uncovered: [] }, evidence }) } });
+    const good = await harness({ worker: async () => ({ ok: true, summary: { configured: false, declared: [], covered: [], uncovered: [] }, evidence }) });
     const answer = await good.invoke('workspace-tests:safety-check', TRUSTED, { workspaceId: WORKSPACE_ID, rootId: good.rootId }) as { ok: boolean; execution?: unknown };
     expect(answer.ok).toBe(true);
     expect(answer.execution).toMatchObject({ actor: 'human-studio', operation: 'safety-check' });
@@ -373,5 +383,28 @@ describe('a build, a test run and a review act only on the project of the editor
     const h = await harness();
     await h.invoke('workspace-tests:register-project-file', TRUSTED, '/anywhere/zplc.json');
     expect(h.touched).toEqual(['gateway.register:/anywhere/zplc.json@window-folder']);
+  });
+});
+
+describe('compile, safety check and tests run outside the main process (IDE-012)', () => {
+  it('send every operation to the worker with the workspace root and the cancel signal of the run, and run none of them in process', async () => {
+    const inProcess: string[] = [];
+    const trap = (name: string) => async () => { inProcess.push(name); return { ok: true }; };
+    const h = await harness({ toolApi: { testsRun: trap('testsRun'), scenarioRun: trap('scenarioRun'), compilerCompile: trap('compilerCompile'), safetyCheck: trap('safetyCheck'), createCandidateChangeSet: trap('createCandidateChangeSet') } as never });
+    await h.invoke('workspace-tests:compile', TRUSTED, { workspaceId: WORKSPACE_ID, rootId: h.rootId });
+    await settle(h.invoke('workspace-tests:safety-check', TRUSTED, { workspaceId: WORKSPACE_ID, rootId: h.rootId }));
+    await h.invoke('workspace-tests:run', TRUSTED, { workspaceId: WORKSPACE_ID, rootId: h.rootId });
+    await h.invoke('workspace-tests:run', TRUSTED, { workspaceId: WORKSPACE_ID, rootId: h.rootId, scenarioId: 'start-stop' });
+    await settle(h.invoke('candidate-change-set:review', TRUSTED, { workspaceId: WORKSPACE_ID, edit: { path: 'src/Main.st', content: 'x' } }));
+    expect(h.touched.filter((entry) => entry.startsWith('worker.'))).toEqual(['worker.compile', 'worker.safety-check', 'worker.test', 'worker.scenario-run:start-stop', 'worker.change-set-review']);
+    expect(inProcess).toEqual([]);
+  });
+
+  it('records a cancelled run as cancelled in the audit log, and tells the renderer only that the operation failed', async () => {
+    const { ToolWorkerError } = await import('./toolWorkerHost');
+    const h = await harness({ worker: async () => { throw new ToolWorkerError('cancelled'); } });
+    expect(await settle(h.invoke('workspace-tests:compile', TRUSTED, { workspaceId: WORKSPACE_ID, rootId: h.rootId }))).toEqual({ ok: false, message: 'Workspace operation failed' });
+    const audit = JSON.parse(h.touched.find((entry) => entry.startsWith('audit.add:'))!.slice('audit.add:'.length)) as { operation: string; outcome: string };
+    expect(audit).toMatchObject({ operation: 'compile', outcome: 'cancelled' });
   });
 });

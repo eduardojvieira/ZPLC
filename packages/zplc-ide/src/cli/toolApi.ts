@@ -42,7 +42,7 @@ export interface ToolExecutionStart {
   startedAt: string;
 }
 const EXECUTION_JOB_ID = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-const CANCELLED_DIAGNOSTIC_CODES = new Set(['TEST_CANCELLED', 'FIRMWARE_BUILD_CANCELLED']);
+const CANCELLED_DIAGNOSTIC_CODES = new Set(['TEST_CANCELLED', 'FIRMWARE_BUILD_CANCELLED', 'TOOL_CANCELLED']);
 export function executionPermission(operation: ToolOperation): ToolExecutionPermission {
   switch (operation) {
     case 'inspect': case 'migrate-preview': case 'validate': return 'project:read';

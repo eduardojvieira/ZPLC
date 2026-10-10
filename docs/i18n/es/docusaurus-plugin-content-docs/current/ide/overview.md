@@ -48,6 +48,27 @@ que invoca con el contrato, y `electron/spawnAllowList.test.ts` muestra los
 vectores de argumentos (requisito IDE-017). No es evidencia de la aplicación
 empaquetada.
 
+## Trabajo que no bloquea la ventana
+
+Compilar, la comprobación de seguridad, las pruebas de escenarios y la revisión de
+candidatos se ejecutan en un proceso propio, que se lanza para cada petición desde
+una lista fija y se detiene cuando la petición termina. El proceso principal solo
+envía la petición y espera, de modo que una compilación o una ejecución larga no
+puede dejar la ventana sin respuesta. **Cancel scenarios**, en el panel de pruebas,
+pide al proceso que se detenga; un proceso ocupado en una compilación que no
+responde se mata tras un breve periodo de gracia, y un plazo mata al que nunca
+termina. Matar el proceso también termina el runtime nativo que había lanzado. Una
+ejecución cancelada se muestra como cancelada y se registra como cancelada en el
+registro de ejecuciones; nada de ella se conserva como compilación.
+
+Nivel de evidencia: host. `electron/toolWorkerHost.test.ts` ejecuta procesos hijo
+reales: un proceso atascado en un bucle se mata y desaparece de verdad mientras el
+llamador sigue funcionando, y el proceso real compila un proyecto y cancela una
+ejecución de escenarios sobre el runtime nativo. El recorrido 26 de
+`bun run test:journeys` cancela una ejecución larga en la aplicación real, ve que
+la ventana responde todo el tiempo y no encuentra ningún proceso de la ejecución
+(requisito IDE-012).
+
 ## Un solo proyecto de referencia
 
 Build, Test, Simulate y la revisión de candidatos actúan sobre la carpeta que
