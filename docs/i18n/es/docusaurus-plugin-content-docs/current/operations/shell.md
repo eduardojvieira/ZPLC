@@ -31,7 +31,7 @@ Inicie cada comando con `zplc`.
 - `zplc stop` - Detiene el planificador.
 - `zplc status` - Muestra el estado del runtime.
 - `zplc reset` - Recarga el programa cargado desde el program store y deja el scheduler detenido. El store es la única copia residente del programa, así que una carga en curso se cancela. Sin programa cargado solo detiene el scheduler y limpia sus tareas.
-- `zplc version` - Muestra la versión.
+- `zplc version` - Muestra qué compilación es: la versión, el commit desde el que se construyó la imagen (y si el árbol de trabajo tenía cambios sin confirmar), la placa, la ABI del bytecode, el borrador del contrato y las opciones de compilación con su hash. No imprime fecha de compilación, de modo que dos compilaciones del mismo commit son la misma imagen. El mismo texto es `zplc sys build`.
 
 ---
 
@@ -159,4 +159,5 @@ ZPLC puede sincronizar el reloj mediante SNTP.
 Estos comandos están disponibles cuando el firmware se compila con `CONFIG_ZPLC_SCHEDULER`.
 
 - `zplc sys info` - Muestra la información del sistema, incluidos datos de la compilación y del hardware. Con `--json` informa también el `draft_counter` de la imagen y, en `memory`, `code_size` y `max_artifact_size`, el mayor programa que acepta la placa (`CONFIG_ZPLC_CODE_SIZE_MAX`); un programa construido para otro borrador se rechaza (ver [Contribuir](../contributing/index.md#contador-de-borrador-del-contrato)).
+- `zplc sys build` - Muestra la identidad de la imagen de firmware, igual que `zplc version`. Con `--json` la imprime como un objeto con `version`, `commit`, `dirty`, `board`, `abi_major`, `abi_minor`, `draft_counter`, `options_hash` y `options`. `commit` vale `unknown` cuando la imagen se construyó desde un archivo de fuentes sin historial de git. Es un comando aparte porque el saludo de Studio acepta exactamente las claves de `zplc sys info --json`.
 - `zplc sys reboot` - Reinicia la placa con un reinicio por software.

@@ -256,9 +256,9 @@ def action_steps(job: str, action: str) -> list[list[str]]:
 
 
 PLATFORM_SUBJECTS = {
-    "macos": ("release/*.dmg", "release/*.zip"),
+    "macos": ("release/*.dmg", "release/*.zip", "release/zplc-cli-*-mac-*", "release/zplc-mcp-*-mac-*"),
     "windows": ("release/*.exe",),
-    "linux": ("release/*.AppImage", "release/*.deb", "release/*.rpm"),
+    "linux": ("release/*.AppImage", "release/*.deb", "release/*.rpm", "release/zplc-cli-*-linux-*", "release/zplc-mcp-*-linux-*"),
 }
 
 
@@ -279,13 +279,11 @@ def validate_release_workflow(errors: list[str], workflow: str | None = None) ->
         errors.append("release workflow must define a validate-version job")
     else:
         commands = run_commands(version_gate)
+        # What a run may publish is decided by scripts/release/resolve-release.ts, which has tests of its own
+        # (scripts/release/resolve-release.test.ts); the job has to run it and to expose its version.
         requirements = {
             "bun run check:versions": has_command(commands, "bun run check:versions"),
-            "package.json": any(
-                command
-                == 'canonical_version="$(bun -e \'console.log(JSON.parse(require("fs").readFileSync("package.json", "utf8")).version)\')"'
-                for command in commands
-            ),
+            "scripts/release/resolve-release.ts": has_command(commands, "bun scripts/release/resolve-release.ts"),
             "steps.version.outputs.version": job_mapping_field(
                 version_gate, "outputs", "version"
             ) == "${{ steps.version.outputs.version }}",
@@ -302,16 +300,6 @@ def validate_release_workflow(errors: list[str], workflow: str | None = None) ->
             )
         elif not checkout_at_sha:
             errors.append("validate-version must checkout the validated github.sha")
-        manual_upload_guard = (
-            'if [ "$EVENT_NAME" = "workflow_dispatch" ] && '
-            '[ "$UPLOAD_TO_RELEASE" = "true" ] && '
-            '[ "$EVENT_REF" != "refs/tags/v$canonical_version" ]; then'
-        )
-        if not has_command(commands, manual_upload_guard):
-            errors.append("validate-version must include the exact manual upload tag guard")
-        canonical_version_guard = 'if [ "$requested" != "$canonical_version" ]; then'
-        if not has_command(commands, canonical_version_guard):
-            errors.append("validate-version must include the exact canonical version comparison")
 
     if any(
         re.search(r"\b(?:bun|node|tsx)\b.*\brelease-version\.ts\b", command)
@@ -362,11 +350,10 @@ def validate_release_workflow(errors: list[str], workflow: str | None = None) ->
             errors.append("create-draft-release must run only when publishing")
         if job_mapping(create, "permissions") != {"contents": "write"}:
             errors.append("create-draft-release must use only contents: write")
-        checkout_pinned, checkout_at_sha = has_pinned_checkout_at_sha(create)
-        if not checkout_pinned:
-            errors.append("create-draft-release must use exactly one actions/checkout pinned to a 40-character SHA")
-        elif not checkout_at_sha:
-            errors.append("create-draft-release must checkout the validated github.sha")
+        # the draft is created with the tag and a placeholder body: it reads nothing from the repository, so it has no
+        # checkout (the notes are written by publish-release-notes, once the platform jobs have finished)
+        if action_steps(create, "actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955"):
+            errors.append("create-draft-release must not check out the repository")
         commands = run_commands(create)
         releases = [command for command in commands if re.search(r"\bgh release (?:create|edit)\b", command)]
         if not any("gh release create" in command and "--draft" in command and "--verify-tag" in command for command in releases):
@@ -407,20 +394,10 @@ def validate_release_workflow(errors: list[str], workflow: str | None = None) ->
             download = action_steps(prepare, "actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093")
             if len(download) != 1 or step_mapping_field(download[0], "with", "path") != "artifacts" or step_mapping_field(download[0], "with", "pattern") != f"{platform}-*":
                 errors.append(f"{prepare_name} must download only its own platform's build artifacts to artifacts")
-            sbom = action_steps(prepare, "anchore/sbom-action@e22c389904149dbc22b58101806040fa8d37a610")
-            expected_spdx = f"artifacts/ZPLC-${{{{ needs.validate-version.outputs.version }}}}-{platform}.spdx.json"
-            if len(sbom) != 1 or any(
-                step_mapping_field(sbom[0], "with", key) != value
-                for key, value in {
-                    "path": "artifacts",
-                    "format": "spdx-json",
-                    "output-file": expected_spdx,
-                    "upload-artifact": "false",
-                    "upload-release-assets": "false",
-                    "dependency-snapshot": "false",
-                }.items()
-            ):
-                errors.append(f"{prepare_name} must generate an unpublished SPDX SBOM from artifacts")
+            # REL-018: the bill of materials is written from the lockfile and the manifests, never from a scan of the installers
+            sbom_file = f"artifacts/ZPLC-${{{{ needs.validate-version.outputs.version }}}}-{platform}.cdx.json"
+            if not has_command(commands, f"bun scripts/release/sbom.ts --out {sbom_file}") or action_steps(prepare, "anchore/sbom-action@e22c389904149dbc22b58101806040fa8d37a610"):
+                errors.append(f"{prepare_name} must generate the bill of materials from the lockfile with scripts/release/sbom.ts")
             if not has_command(commands, f"mv release/SHA256SUMS release/SHA256SUMS-{platform}") or not has_command(
                 commands, f"mv release/release-evidence.json release/release-evidence-{platform}.json"
             ):
@@ -428,8 +405,11 @@ def validate_release_workflow(errors: list[str], workflow: str | None = None) ->
             attestations = action_steps(prepare, "actions/attest@508db95dd578ae2727ebd6217d5ba78e4fbda05d")
             if len(attestations) != 2 or not all(has_subject_paths(step, subjects) for step in attestations):
                 errors.append(f"{prepare_name} must attest only its installer paths twice")
-            elif step_mapping_field(attestations[0], "with", "sbom-path") is not None or step_mapping_field(attestations[1], "with", "sbom-path") != expected_spdx:
-                errors.append(f"{prepare_name} must produce default provenance and SPDX SBOM attestations")
+            elif step_mapping_field(attestations[0], "with", "sbom-path") is not None or step_mapping_field(attestations[1], "with", "sbom-path") != sbom_file:
+                errors.append(f"{prepare_name} must produce default provenance and SBOM attestations")
+            elif any(normalize_whitespace(step_field(step, "if")[0] if step_field(step, "if") else "") != publishing_only for step in attestations):
+                # an attestation is a permanent public record: a rehearsal makes none (REL-030)
+                errors.append(f"{prepare_name} must attest only when publishing")
             bundle = action_steps(prepare, "actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02")
             expected_bundle = f"release-bundle-{platform}-${{{{ needs.validate-version.outputs.publishing == 'true' && 'publishable' || 'preview' }}}}"
             if len(bundle) != 1 or step_mapping_field(bundle[0], "with", "name") != expected_bundle or step_mapping_field(bundle[0], "with", "path") != "release/":

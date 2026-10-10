@@ -38,7 +38,8 @@
     "smoke:journeys": "bun run scripts/run-journeys.ts",
     "smoke:studio-vertical": "bun run scripts/smoke-studio-vertical.ts",
     "smoke:desktop-builds": "bun run scripts/smoke-desktop-builds.ts",
-    "cli:build": "bun build --compile --minify --target bun-darwin-arm64 src/cli/index.ts --outfile dist/zplc-cli"
+    "cli:build": "bun build --compile --minify src/cli/index.ts --outfile dist/zplc-cli",
+    "smoke:packaged-content": "bun run scripts/packaged-content.ts"
   },
   "bin": {
     "zplc-cli": "./dist/zplc-cli"

@@ -31,6 +31,17 @@ project(zplc_core
     LANGUAGES C
 )
 
+# What this build is: version, commit, board, ABI and options, as a generated header (REL-023). The runtime reports
+# it in its handshake; the host test of the formatter reads it.
+include(${CMAKE_CURRENT_LIST_DIR}/../../../scripts/release/zplc_fw_identity.cmake)
+zplc_generate_fw_identity(
+    OUT_DIR ${CMAKE_CURRENT_BINARY_DIR}/generated
+    REPO_ROOT ${CMAKE_CURRENT_LIST_DIR}/../../..
+    VERSION ${ZPLC_CORE_VERSION_STR}
+    BOARD posix
+    OPTIONS "build_type=${CMAKE_BUILD_TYPE}"
+)
+
 # =============================================================================
 # Compiler Configuration
 # =============================================================================
@@ -111,6 +122,7 @@ add_executable(zplc_runtime
 
 target_include_directories(zplc_runtime PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${ZPLC_FW_IDENTITY_DIR}
 )
 
 target_link_libraries(zplc_runtime PRIVATE zplc_core)
@@ -377,6 +389,23 @@ endif()
 
 add_test(NAME test_exchange COMMAND test_exchange)
 
+# Test: the identity a firmware image or the runtime reports (REL-023)
+add_executable(test_fw_identity
+    tests/test_fw_identity.c
+)
+
+target_include_directories(test_fw_identity PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${ZPLC_FW_IDENTITY_DIR}
+)
+
+target_compile_definitions(test_fw_identity PRIVATE
+    ZPLC_EXPECTED_PRODUCT_VERSION="${ZPLC_CORE_VERSION_STR}"
+    ZPLC_EXPECTED_COMMIT="${ZPLC_FW_IDENTITY_COMMIT}"
+)
+
+add_test(NAME test_fw_identity COMMAND test_fw_identity)
+
 # Test: VM Core Execution
 add_executable(test_vm_core
     tests/test_vm_core.c
@@ -455,6 +484,7 @@ add_executable(test_native_runtime_session
 
 target_include_directories(test_native_runtime_session PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${ZPLC_FW_IDENTITY_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/../../apps/posix_host/src
     ${CMAKE_CURRENT_SOURCE_DIR}/tests/fixtures
 )

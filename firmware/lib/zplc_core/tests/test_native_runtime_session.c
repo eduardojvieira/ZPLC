@@ -21,6 +21,7 @@
 #include <zplc_core.h>
 #include <zplc_hal.h>
 #include <zplc_hal_posix.h>
+#include <zplc_fw_identity.h>
 
 #include "process_image_differential.h"
 
@@ -345,6 +346,20 @@ static void test_handshake(void)
                        "\"draft_counter\":%u", (unsigned)ZPLC_DRAFT_COUNTER);
         TEST_ASSERT_CONTAINS(response, expected_draft,
                              "Handshake reports the draft contract counter of the runtime (CMP-052)");
+    }
+    {
+        /* REL-023: the runtime says which build it is, so Studio can compare it with its own version. */
+        const zplc_fw_identity_t identity = zplc_fw_identity();
+        char identity_json[512];
+        char expected_build[640];
+
+        TEST_ASSERT(zplc_fw_identity_json(&identity, identity_json, sizeof(identity_json)) > 0,
+                    "The identity of this build formats");
+        (void)snprintf(expected_build, sizeof(expected_build), "\"build\":%s", identity_json);
+        TEST_ASSERT_CONTAINS(response, expected_build, "Handshake reports the firmware identity as its build");
+        TEST_ASSERT_CONTAINS(response, "\"build\":{\"version\":\"", "Handshake build starts with the version");
+        TEST_ASSERT_CONTAINS(response, "\"board\":\"posix\"", "Handshake build names the host runtime board");
+        TEST_ASSERT_CONTAINS(response, "\"options_hash\":\"", "Handshake build reports the options hash");
     }
     TEST_ASSERT(event[0] == '\0', "Handshake does not emit async event");
 

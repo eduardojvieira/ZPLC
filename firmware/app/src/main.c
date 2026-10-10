@@ -20,6 +20,7 @@
 #include "zplc_time.h"
 #include <zephyr/kernel.h>
 #include <zplc_core.h>
+#include <zplc_fw_identity.h>
 #include <zplc_debug.h>
 #include <zplc_hal.h>
 #include <zplc_isa.h>
@@ -580,6 +581,8 @@ int main(void) {
   zplc_hal_log("================================================\n");
   zplc_hal_log("  ZPLC Runtime - Zephyr Target\n");
   zplc_hal_log("  Core Version: %s\n", zplc_core_version());
+  zplc_hal_log("  Commit:       %s%s\n", ZPLC_FW_COMMIT,
+               ZPLC_FW_DIRTY != 0 ? " (dirty)" : "");
 #ifdef CONFIG_ZPLC_SCHEDULER
   zplc_hal_log("  Mode: Multitask Scheduler\n");
 #else

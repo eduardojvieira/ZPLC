@@ -20,6 +20,16 @@ if(CONFIG_ZPLC)
     message(FATAL_ERROR "package.json must contain a valid ZPLC product semver version")
   endif()
 
+  # What this image is: version, commit, board, ABI and the CONFIG_ZPLC_* options, as a generated header that the
+  # shell reports (REL-023). The generator is shared with the host runtime build.
+  include(${CMAKE_CURRENT_LIST_DIR}/../scripts/release/zplc_fw_identity.cmake)
+  zplc_generate_fw_identity(
+    OUT_DIR ${CMAKE_CURRENT_BINARY_DIR}/zplc_generated
+    REPO_ROOT ${CMAKE_CURRENT_LIST_DIR}/..
+    VERSION ${ZPLC_CORE_VERSION_STR}
+    BOARD "${BOARD}"
+  )
+
   zephyr_library_named(zplc)
 
   # VF-018: a warning in the ZPLC library is an error, as it is for the application (firmware/app/CMakeLists.txt) and
@@ -71,6 +81,7 @@ if(CONFIG_ZPLC)
   # Make headers available to applications
   zephyr_include_directories(
     ${CMAKE_CURRENT_LIST_DIR}/lib/zplc_core/include
+    ${ZPLC_FW_IDENTITY_DIR}
   )
 
 endif()

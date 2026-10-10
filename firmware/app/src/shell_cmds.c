@@ -40,6 +40,7 @@
 #include <zplc_hal.h>
 #include <zplc_isa.h>
 #include <zplc_debug.h>
+#include <zplc_fw_identity.h>
 #ifdef CONFIG_ZPLC_RETAIN_PERSIST
 #include <zplc_retain.h>
 #endif
@@ -500,14 +501,28 @@ static void hil_watch_arm_poll(void) {
  */
 
 /**
+ * @brief Sink of the identity formatters: each piece goes to the terminal as it is produced, so the shell thread
+ * needs no buffer for an identity that carries every build option (REL-023).
+ */
+static int identity_to_shell(void *context, const char *text) {
+  shell_fprintf((const struct shell *)context, SHELL_NORMAL, "%s", text);
+  return 0;
+}
+
+/**
  * @brief Handler for 'zplc version'
+ *
+ * The first line is the one the bench tools match. What follows is what this image is: the commit it was built
+ * from, the board, the bytecode ABI and the build options. It used to print the compile date and time, which made
+ * two builds of one commit differ (REL-023).
  */
 static int cmd_zplc_version(const struct shell *sh, size_t argc, char **argv) {
+  const zplc_fw_identity_t identity = zplc_fw_identity();
+
   ARG_UNUSED(argc);
   ARG_UNUSED(argv);
 
-  shell_print(sh, "ZPLC Runtime v%s", zplc_core_version());
-  shell_print(sh, "Build: %s %s", __DATE__, __TIME__);
+  (void)zplc_fw_identity_emit_text(&identity, identity_to_shell, (void *)sh);
   return 0;
 }
 
@@ -592,6 +607,7 @@ static int cmd_sched_data(const struct shell *sh, size_t argc, char **argv);
 static int sched_reset_runtime(const uint8_t *binary, size_t size);
 static int sched_latch_ambiguous_program_publication(void);
 static int cmd_sys_info(const struct shell *sh, size_t argc, char **argv);
+static int cmd_sys_build(const struct shell *sh, size_t argc, char **argv);
 static int cmd_sys_reboot(const struct shell *sh, size_t argc, char **argv);
 #endif
 
@@ -1011,6 +1027,9 @@ static int cmd_sys_info(const struct shell *sh, size_t argc, char **argv) {
   shell_print(sh, "  Board:          %s", CONFIG_BOARD);
   shell_print(sh, "  ZPLC Version:   %s", zplc_core_version());
   shell_print(sh, "  Contract Draft: %u", (unsigned int)ZPLC_DRAFT_COUNTER);
+  shell_print(sh, "  Commit:         %s%s", ZPLC_FW_COMMIT,
+              ZPLC_FW_DIRTY != 0 ? " (dirty)" : "");
+  shell_print(sh, "  Options Hash:   %s", ZPLC_FW_OPTIONS_HASH);
   shell_print(sh, "  Zephyr Version: %s", KERNEL_VERSION_STRING);
   shell_print(sh, "  Uptime:         %u ms", k_uptime_get_32());
   shell_print(sh, "  CPU Freq:       %u MHz", (unsigned int)CPU_FREQ_MHZ);
@@ -1020,6 +1039,24 @@ static int cmd_sys_info(const struct shell *sh, size_t argc, char **argv) {
   shell_print(sh, "  Program Size:   CODE=%d, largest artifact=%u bytes",
               ZPLC_MEM_CODE_SIZE, (unsigned int)ZPLC_PROGRAM_STORE_MAX_ARTIFACT_SIZE);
 
+  return 0;
+}
+
+/**
+ * @brief Handler for 'zplc sys build [--json]': which firmware image this is (REL-023).
+ *
+ * A command of its own and not more keys in `sys info --json`: Studio's handshake parser accepts exactly the keys
+ * of that object, so a new key would make every released Studio refuse a device that reports it.
+ */
+static int cmd_sys_build(const struct shell *sh, size_t argc, char **argv) {
+  const zplc_fw_identity_t identity = zplc_fw_identity();
+
+  if (argc > 1 && strcmp(argv[1], "--json") == 0) {
+    (void)zplc_fw_identity_emit_json(&identity, identity_to_shell, (void *)sh);
+    shell_fprintf(sh, SHELL_NORMAL, "\n");
+    return 0;
+  }
+  (void)zplc_fw_identity_emit_text(&identity, identity_to_shell, (void *)sh);
   return 0;
 }
 
@@ -3678,6 +3715,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 SHELL_STATIC_SUBCMD_SET_CREATE(
     sub_sys,
     SHELL_CMD_ARG(info, NULL, "System information", cmd_sys_info, 1, 1),
+    SHELL_CMD_ARG(build, NULL, "Firmware identity: commit, board, ABI, options [--json]", cmd_sys_build, 1, 1),
     SHELL_CMD(reboot, NULL, "Reboot", cmd_sys_reboot),
     SHELL_SUBCMD_SET_END);
 #endif
