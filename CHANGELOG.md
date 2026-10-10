@@ -76,7 +76,10 @@ All notable changes are documented here.
   0.7238, `LN(10.0)` = 2.218, `LOG(1000.0)` = 1.449 and an `ATAN2` wrong in
   three quadrants. Their arguments may be integers. `SIN`, `COS` and `TAN` of
   an angle of 100000 or more are a NaN, `LN(0.0)` is minus infinity, and
-  `ASIN` or `ACOS` outside -1 to 1 are a NaN. `EXPT` is the operator `**`.
+  `ASIN` or `ACOS` outside -1 to 1 are a NaN. `EXPT` is the operator `**`: it
+  no longer underflows the evaluation stack for an exponent of 0 (the artifact
+  was refused by the loader) and no longer takes the bits of a REAL exponent as
+  a loop count.
 - `BLINK` starts its cycle with the ON phase in the scan where `ENABLE` rises
   (it started with the OFF phase) and starts it again after `ENABLE` was
   FALSE; a phase ends at the first call at which its time has elapsed.
