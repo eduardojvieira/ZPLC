@@ -1,0 +1,26 @@
+{
+  // Type-checks everything under src and build.ts, tests included, which tsconfig.json leaves out. noEmit only.
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "declaration": false,
+    "declarationMap": false,
+    "sourceMap": false,
+    "rootDir": ".",
+    "lib": ["ES2022"],
+    // The package has no @types of its own (the test runner is Bun); the IDE package carries them.
+    "typeRoots": ["../zplc-ide/node_modules/@types"],
+    "types": ["bun", "node"]
+  },
+  "include": ["src/**/*.ts", "build.ts"],
+  "exclude": [
+    "node_modules",
+    "dist",
+    // Known type errors in the compiler tests (ProgramSource has no `language`, a missing '../types/index.ts',
+    // a string where an Expression is expected). They are listed in tools/ci/typecheck-coverage.test.ts and
+    // must be fixed together with the removal of these three lines.
+    "src/compiler/arrays.test.ts",
+    "src/compiler/compiler.test.ts",
+    "src/compiler/stdlib/communication.test.ts"
+  ]
+}

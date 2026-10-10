@@ -4,6 +4,13 @@ All notable changes are documented here.
 
 ## Unreleased
 
+- `bun run typecheck` type-checks every TypeScript program of the repository with
+  strict flags, and CI runs it (VF-010): the Studio CLI and MCP server, the
+  Electron host, the scripts, the tests of every package and the CI, contract
+  and fuzz tooling were not checked before. A test fails when a TypeScript file
+  or a tsconfig is left out of that list. `noUncheckedIndexedAccess` stays off:
+  it would add about 800 errors (468 in Studio, 335 in the compiler) that each
+  need a real narrowing.
 - The CLI reports a rejected `symbols` command under the operation
   `symbols-list`, as its successful result does, instead of the value `symbols`
   that is not a Tool API operation. The saved-input identity of a host test run

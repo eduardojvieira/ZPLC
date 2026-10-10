@@ -1,0 +1,37 @@
+{
+  // The TypeScript that lives outside the package projects: the CI and contract tooling, the fuzz seed script,
+  // the release scripts and the HIL package's tests. `bun run typecheck` runs it (tools/ci/typecheck.ts).
+  // The tools import the compiler and Studio sources directly, so the browser libraries and JSX are on, as in
+  // the Studio projects. The compiler, HIL and Studio keep their own stricter project for their own files.
+  "compilerOptions": {
+    "target": "ES2023",
+    "lib": ["ES2023", "DOM", "DOM.Iterable", "DOM.AsyncIterable"],
+    "jsx": "react-jsx",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    // The workspace root declares no @types; the Studio package carries the ones Bun and Node need.
+    "typeRoots": ["./packages/zplc-ide/node_modules/@types"],
+    "types": ["bun", "node"],
+    "skipLibCheck": true,
+    "allowImportingTsExtensions": true,
+    "resolveJsonModule": true,
+    "esModuleInterop": true,
+    "moduleDetection": "force",
+    "noEmit": true,
+
+    "strict": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUncheckedSideEffectImports": true
+  },
+  "include": [
+    "tools/ci/**/*.ts",
+    "tools/contract/**/*.ts",
+    "tools/fuzz/**/*.ts",
+    "scripts/**/*.ts",
+    "packages/zplc-hil/tests/**/*.ts",
+    // Ambient declarations of the Studio that the sources above rely on without importing.
+    "packages/zplc-ide/src/**/*.d.ts"
+  ],
+  // The example imports ../src/index, which does not exist; listed in tools/ci/typecheck-coverage.test.ts.
+  "exclude": ["packages/zplc-hil/tests/examples/hello.ts"]
+}
