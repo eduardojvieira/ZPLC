@@ -126,6 +126,8 @@ def read_cross_build_boards(workflow: Path) -> list[str]:
                 raise ValueError("zephyr-cross-build include item has an invalid id")
             item_board = None
             continue
+        if line_indent == 12 and item_board is not None and re.fullmatch(r"tidy_board:\s*\S+", stripped):
+            continue  # names the board of the clang-tidy baseline; not part of the board table
         if line_indent == 12:
             match = re.fullmatch(r"board:\s*(.*)", stripped)
             if not match or item_id is None or item_board is not None:
