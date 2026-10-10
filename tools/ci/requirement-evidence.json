@@ -1198,6 +1198,10 @@
     {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_program_store.c","test":"RT-028: artifacts of every size round-trip, up to the code size."},
     {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_program_store.c","test":"RT-028: the largest artifact the store accepts is the configured code size."},
     {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_program_store.c","test":"The durable program store (RT-028, RT-031, RT-032): the largest artifact and a power cut at every step."},
+    {"kind":"c-test","ref":"firmware/tests/program_boot_restore/src/main.c","test":"RT-028: the stored program is the only resident copy, so a reload takes everything from the store."},
+    {"kind":"c-test","ref":"firmware/tests/program_boot_restore/src/main.c","test":"The staging buffer is the one buffer of the code size: it receives the stored program and keeps it (RT-028)."},
+    {"kind":"c-test","ref":"firmware/tests/program_store_nvs/src/main.c","test":"One buffer does every job here, as in the firmware (RT-028): the artifact is staged in it, the commit verifies"},
+    {"kind":"c-test","ref":"firmware/tests/program_store_nvs/src/main.c","test":"RT-028, RT-031: the largest artifact, cut at the operations around the active record."},
     {"kind":"c-test","ref":"firmware/tests/program_store_nvs/src/main.c","test":"The program store on the Zephyr HAL and NVS (RT-028, RT-031)."}
   ],
   "RT-029": [
@@ -1217,6 +1221,9 @@
     {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_program_store.c","test":"RT-031: a slot half rewritten is never restored, even when it is all that is left."},
     {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_program_store.c","test":"RT-031: a write the power cut in the middle never leaves a mixture."},
     {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_program_store.c","test":"The durable program store (RT-028, RT-031, RT-032): the largest artifact and a power cut at every step."},
+    {"kind":"c-test","ref":"firmware/tests/program_store_nvs/src/main.c","test":"RT-028, RT-031: the largest artifact, cut at the operations around the active record."},
+    {"kind":"c-test","ref":"firmware/tests/program_store_nvs/src/main.c","test":"RT-031: a power cut at every operation of a first deploy leaves nothing or the program."},
+    {"kind":"c-test","ref":"firmware/tests/program_store_nvs/src/main.c","test":"RT-031: a power cut at every operation of a redeploy leaves the old program or the new."},
     {"kind":"c-test","ref":"firmware/tests/program_store_nvs/src/main.c","test":"The program store on the Zephyr HAL and NVS (RT-028, RT-031)."}
   ],
   "RT-032": [
