@@ -65,6 +65,23 @@ TLS needs random numbers that nobody can predict. A firmware build that enables 
 - Credentials are stored with the other settings, and certificates and keys as files or entries of the device's non-volatile store. **None of the supported boards has a protected store** (no secure element, no encrypted flash by default): anybody who can read the flash of the board can read them. Treat the board as holding the secret, and use an account with only the rights the controller needs on the broker or the cloud.
 - `config set` over the serial link carries the value in the clear on that link; provision credentials on a link you trust.
 
+## What a message from the network can do
+
+No message that arrives from Modbus, MQTT or a cloud service changes RUN/STOP, sets or clears a force, or downloads a program. Those actions exist only in the diagnostic shell and in Studio, on the serial link.
+
+| Source | What it can change | What it cannot reach |
+| --- | --- | --- |
+| Modbus TCP and RTU server | The bytes of the variables you bound with `{modbus}`, through the server mapping | RUN/STOP, forces, program download |
+| MQTT topics of subscribed variables (`DCMD`, command topics) | The bytes of the variables you marked `{subscribe}`, through the force-aware write: an address with an active force keeps it | RUN/STOP, forces, program download |
+| Sparkplug B `NCMD`/`DCMD` Rebirth | Makes the node publish its birth certificates again | RUN/STOP, forces, program download |
+| Azure cloud-to-device message | The payload of the `AZURE_C2D_RECV` block that your program runs | RUN/STOP, forces, program download |
+| Azure direct methods and device twin, AWS shadow and jobs | Nothing: they are logged, and a direct method is answered `501` (not implemented) | RUN/STOP, forces, program download |
+| Provisioning reply (Azure DPS, AWS fleet) | Only after your program started the block: the assigned hub or the issued credentials | RUN/STOP, forces, program download |
+
+This is checked in two places. The object files of the handlers of every board image are read at link level (`tools/firmware-test/check_inbound_authority.py`, run by `run.sh size`): none of them references the scheduler's start, stop, pause, resume, step or load, the force set and clear calls, the program loader or store, or a reboot. And a test drives every Modbus function code and every write count at the server's framing and mapping, in front of a core whose authority entries count their calls (`firmware/tests/inbound_authority`).
+
+Known limit: Modbus server writes still go to the process image directly and do not honour an active force on the same address (COM-010).
+
 ## Saved settings
 
 `zplc config save` writes every setting that `zplc config get` reports (and the Modbus mapping overrides) into the same non-volatile store as the program, one entry per setting, and reports an error when an entry could not be written. A reboot reads them back over the defaults. A test sets each of the 70 settings through the shell, saves, restarts the configuration the way a reboot does, and compares each one. Two limits remain:

@@ -43,6 +43,14 @@ All notable changes are documented here.
   instead of downgraded. The firmware compiles with MQTT and TLS off for the
   first time (unused buffers and the secure-websocket transport were not
   guarded).
+- No message from Modbus, MQTT or a cloud service changes RUN/STOP, sets or
+  clears a force, or downloads a program, and two checks say so (COM-017):
+  `tools/firmware-test/check_inbound_authority.py` reads the compiled objects
+  of the inbound handlers of every board image and fails on a reference to
+  run control, the force table, the program loader or store, or a reboot; and
+  `firmware/tests/inbound_authority` drives every Modbus function code and
+  every write count through the product's framing and mapping in front of a
+  core whose authority entries count their calls.
 - Three of the fifteen modules over the new size limit are split (IDE-014): the
   project settings are one module per section (2,181 lines to 213 and eleven
   files of at most 430), the Explorer's context menu and confirmations are

@@ -66,6 +66,23 @@ TLS necesita números aleatorios que nadie pueda predecir. Una compilación de f
 - Las credenciales se guardan con el resto de los ajustes, y los certificados y claves como archivos o entradas del almacén no volátil del dispositivo. **Ninguna de las placas soportadas tiene un almacén protegido** (sin elemento seguro, sin flash cifrada por defecto): quien pueda leer la flash de la placa puede leerlas. Tratá la placa como si guardara el secreto, y usá en el broker o en la nube una cuenta con solo los permisos que el controlador necesita.
 - `config set` por el enlace serial lleva el valor en claro por ese enlace; cargá las credenciales por un enlace de confianza.
 
+## Qué puede hacer un mensaje de la red
+
+Ningún mensaje que llegue desde Modbus, MQTT o un servicio en la nube cambia RUN/STOP, fija o borra un forzado, ni descarga un programa. Esas acciones existen solo en el shell de diagnóstico y en Studio, por el enlace serial.
+
+| Origen | Qué puede cambiar | Qué no alcanza |
+| --- | --- | --- |
+| Servidor Modbus TCP y RTU | Los bytes de las variables que enlazaste con `{modbus}`, a través del mapeo del servidor | RUN/STOP, forzados, descarga de programa |
+| Tópicos MQTT de variables suscriptas (`DCMD`, tópicos de comando) | Los bytes de las variables que marcaste `{subscribe}`, con la escritura que respeta forzados: una dirección con un forzado activo lo conserva | RUN/STOP, forzados, descarga de programa |
+| Rebirth `NCMD`/`DCMD` de Sparkplug B | Hace que el nodo publique de nuevo sus certificados de nacimiento | RUN/STOP, forzados, descarga de programa |
+| Mensaje de Azure de nube a dispositivo | El payload del bloque `AZURE_C2D_RECV` que ejecuta tu programa | RUN/STOP, forzados, descarga de programa |
+| Direct methods y device twin de Azure, shadow y jobs de AWS | Nada: se registran, y un direct method se responde `501` (no implementado) | RUN/STOP, forzados, descarga de programa |
+| Respuesta de aprovisionamiento (Azure DPS, AWS fleet) | Solo después de que tu programa inició el bloque: el hub asignado o las credenciales emitidas | RUN/STOP, forzados, descarga de programa |
+
+Esto se verifica en dos lugares. Los archivos objeto de los manejadores de la imagen de cada placa se leen a nivel de enlace (`tools/firmware-test/check_inbound_authority.py`, lo ejecuta `run.sh size`): ninguno referencia start, stop, pause, resume, step o load del planificador, las llamadas que fijan y borran forzados, el cargador o el almacén de programas, ni un reinicio. Y una prueba envía cada código de función Modbus y cada cantidad de escritura al encuadre y al mapeo del servidor, delante de un núcleo cuyas entradas de autoridad cuentan sus llamadas (`firmware/tests/inbound_authority`).
+
+Límite conocido: las escrituras del servidor Modbus todavía van directo a la imagen de proceso y no respetan un forzado activo en la misma dirección (COM-010).
+
 ## Ajustes guardados
 
 `zplc config save` escribe todos los ajustes que informa `zplc config get` (y los overrides del mapeo Modbus) en el mismo almacén no volátil que el programa, una entrada por ajuste, e informa un error cuando una entrada no se pudo escribir. Un reinicio los lee de vuelta sobre los valores por defecto. Una prueba fija cada uno de los 70 ajustes por el shell, guarda, reinicia la configuración como lo hace un reinicio y compara cada uno. Quedan dos límites:
