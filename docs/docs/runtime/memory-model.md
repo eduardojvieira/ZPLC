@@ -72,6 +72,14 @@ That is the architectural reason multitask scheduling can share process data wit
 
 That means user memory and runtime metadata are not mixed arbitrarily.
 
+## Start of a program
+
+A program load is a cold start on every runtime (RT-016). IPI, OPI, WORK and RETAIN are set to zero and the force
+table is emptied before the new program is published, so a program never starts on the variables of the one it
+replaced; a runtime that holds a stored `RETAIN` record restores it after that. `zplc_core_cold_start()` is that
+operation, and `zplc_core_warm_start()` is the same without touching `RETAIN`, for a restart that keeps the retained
+values. The code region and the tags are the program and are not touched by either.
+
 ## How the compiler places variables
 
 The compiler gives the whole project one layout in WORK memory, and the debug map lists it: each variable, with its address and size, in the POU of the file that declares it. The order is the globals, the variables of each function, the variables of the methods, the variables of each program in the order of the tasks, the string literals, and the work buffers of the string functions; the last byte of the region of the target profile is the initialization flag. The memory a program can use is what the target profile has, shared by every program of the project, and a project that does not fit is a build error that states the bytes required, the bytes available and the largest consumers. Variables located with `AT %M` are at `0x2000` plus their offset, and a variable that the compiler places on top of one is a build error.

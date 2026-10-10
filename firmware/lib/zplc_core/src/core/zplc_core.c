@@ -2866,6 +2866,21 @@ int zplc_core_init(void) {
   return pi_mutex != NULL ? 0 : -1;
 }
 
+void zplc_core_cold_start(void) {
+  memset(mem_ipi, 0, sizeof(mem_ipi));
+  memset(mem_opi, 0, sizeof(mem_opi));
+  memset(mem_work, 0, sizeof(mem_work));
+  memset(mem_retain, 0, sizeof(mem_retain));
+  memset(force_entries, 0, sizeof(force_entries));
+}
+
+void zplc_core_warm_start(void) {
+  memset(mem_ipi, 0, sizeof(mem_ipi));
+  memset(mem_opi, 0, sizeof(mem_opi));
+  memset(mem_work, 0, sizeof(mem_work));
+  memset(force_entries, 0, sizeof(force_entries));
+}
+
 int zplc_core_shutdown(void) {
   default_program_loaded = 0;
   default_vm.halted = 1;
@@ -2875,6 +2890,8 @@ int zplc_core_shutdown(void) {
 static void zplc_core_commit_verified(const zplc_program_view_t *view) {
   uint32_t index;
 
+  /* Loading a program is a cold start on every runtime (RT-016). */
+  zplc_core_cold_start();
   memcpy(mem_code, view->code, view->code_size);
   code_size = view->code_size;
   memset(mem_tags, 0, sizeof(mem_tags));

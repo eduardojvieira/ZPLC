@@ -1644,5 +1644,32 @@ ZTEST(zplc_scheduler_admission,
   zassert_ok(zplc_sched_stop(), "stop");
 }
 
+/* RT-016: loading a program is a cold start on the Zephyr scheduler as it is on the host runtime. */
+ZTEST(zplc_scheduler_admission, test_program_load_is_a_cold_start) {
+  uint8_t program[PROGRAM_CAPACITY];
+  size_t size;
+  uint8_t *work;
+  uint8_t *retain;
+  uint8_t force = 1U;
+
+  clear_scheduler();
+  work = zplc_mem_get_region(ZPLC_MEM_WORK_BASE);
+  retain = zplc_mem_get_region(ZPLC_MEM_RETAIN_BASE);
+  zassert_not_null(work, "WORK exists");
+  zassert_not_null(retain, "RETAIN exists");
+  work[0] = 0xABU;
+  work[ZPLC_MEM_WORK_SIZE - 1U] = 0xCDU;
+  retain[0] = 0xEFU;
+  zassert_ok(zplc_force_set_bytes(ZPLC_MEM_OPI_BASE, &force, 1U), "a force is set");
+
+  size = build_program(program, 1U, ZPLC_TASK_CYCLIC, 1000U, 1U);
+  zassert_equal(zplc_sched_load(program, size), 1, "load a program");
+  zassert_equal(work[0], 0U, "the first byte of WORK starts at zero");
+  zassert_equal(work[ZPLC_MEM_WORK_SIZE - 1U], 0U, "and the last");
+  zassert_equal(retain[0], 0U, "RETAIN starts at zero when no record is restored");
+  zassert_equal(zplc_force_get_count(), 0U, "and no force survives");
+  clear_scheduler();
+}
+
 ZTEST_SUITE(zplc_scheduler_admission, NULL, scheduler_setup, NULL, NULL,
             scheduler_teardown);

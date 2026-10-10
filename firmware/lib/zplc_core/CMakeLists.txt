@@ -329,6 +329,27 @@ endif()
 
 add_test(NAME test_program_store COMMAND test_program_store)
 
+# Test: cold and warm start are defined in the core and a program load is a cold start (RT-016)
+add_executable(test_core_start
+    tests/test_core_start.c
+    src/core/zplc_core.c
+    src/core/zplc_loader.c
+    src/core/zplc_comm_dispatch.c
+    src/hal/posix/zplc_hal_posix.c
+)
+
+target_include_directories(test_core_start PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+)
+
+target_compile_definitions(test_core_start PRIVATE ZPLC_CORE_VERSION_STR="${ZPLC_CORE_VERSION_STR}")
+
+if(UNIX AND NOT APPLE)
+    target_link_libraries(test_core_start PRIVATE rt)
+endif()
+
+add_test(NAME test_core_start COMMAND test_core_start)
+
 # Test: VM Core Execution
 add_executable(test_vm_core
     tests/test_vm_core.c

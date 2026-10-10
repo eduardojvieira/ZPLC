@@ -60,6 +60,15 @@ flowchart LR
 - task id actual
 - flags del runtime
 
+## Inicio de un programa
+
+Cargar un programa es un arranque en frío en todos los runtimes (RT-016). IPI, OPI, WORK y RETAIN se ponen a cero y
+la tabla de forces se vacía antes de publicar el programa nuevo, de modo que un programa nunca arranca sobre las
+variables del que reemplazó; un runtime que tiene un registro `RETAIN` almacenado lo restaura después.
+`zplc_core_cold_start()` es esa operación, y `zplc_core_warm_start()` es lo mismo sin tocar `RETAIN`, para un
+reinicio que conserva los valores retentivos. La región de código y las etiquetas son el programa y ninguna de las
+dos las toca.
+
 ## Cómo coloca el compilador las variables
 
 El compilador da a todo el proyecto una sola disposición en la memoria WORK, y el mapa de depuración la lista: cada variable, con su dirección y su tamaño, en el POU del archivo que la declara. El orden es: las globales, las variables de cada función, las variables de los métodos, las variables de cada programa en el orden de las tareas, los literales de cadena y los buffers de trabajo de las funciones de cadena; el último byte de la región del perfil del destino es la bandera de inicialización. La memoria que puede usar un programa es la que tiene el perfil del destino, compartida por todos los programas del proyecto, y un proyecto que no cabe es un error de compilación que indica los bytes requeridos, los bytes disponibles y los mayores consumidores. Las variables ubicadas con `AT %M` están en `0x2000` más su desplazamiento, y una variable que el compilador coloque encima de una es un error de compilación.

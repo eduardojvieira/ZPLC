@@ -323,9 +323,7 @@ static int load_program_artifact(zplc_native_runtime_session_t *session,
         session->tasks[0] = details->tasks[0];
         return 0;
     }
-    /* Match zplc_core_load() replacement semantics before its task-loader commit. */
-    zplc_mem_init();
-    zplc_force_clear_all();
+    /* zplc_core_load_tasks() is a cold start (RT-016): the same replacement semantics as zplc_core_load(). */
     count = zplc_core_load_tasks(program, program_size, session->tasks,
                                  ZPLC_LOADER_MAX_TASKS, workspace, workspace_size);
     if (count <= 0 || (uint8_t)count != details->task_count) return -1;
