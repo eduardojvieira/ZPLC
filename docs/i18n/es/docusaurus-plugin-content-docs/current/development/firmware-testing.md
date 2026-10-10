@@ -102,7 +102,8 @@ Una ejecución termina con un bloque como este, producido por
 ```text
 PASS native32  zplc.core.vm_core                              1/1 cases
 PASS native32  zplc.scheduler_admission                       46/46 cases
-PASS native32  18/18 scenarios passed, 0 filtered out
+PASS native32  zplc.scheduler_run_control                     9/9 cases
+PASS native32  19/19 scenarios passed, 0 filtered out
 ```
 
 Para mirar un escenario, abra su registro bajo el directorio de salida de
@@ -193,6 +194,11 @@ ni la marca máxima del heap.
   programas más grandes que la región de código `.tiny`.
 - `hal_gpio_policy.partial_required` y `post_shutdown` necesitan el emulador
   de GPIO y el alias de LED de `native_sim`.
+- `scheduler_run_control` observa el nivel físico del canal de salida 0 con el
+  mismo emulador y alias de LED. En `qemu_cortex_m3`, que no tiene ninguno de
+  los dos, sólo comprueba la imagen de salidas, la tabla de forzados y los scans
+  de las tareas, así que "salidas seguras durante la pausa" se observa sólo en
+  `native_sim`.
 - El modo `app` todavía no forma parte de la integración continua: ningún
   trabajo compila una placa y luego ejecuta la prueba de host.
 - Dos casos de integración de `test_vm_core.c` se omiten en todos los

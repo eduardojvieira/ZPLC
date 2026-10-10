@@ -92,7 +92,8 @@ A run ends with a block like this one, produced by `run.sh native32`:
 ```text
 PASS native32  zplc.core.vm_core                              1/1 cases
 PASS native32  zplc.scheduler_admission                       46/46 cases
-PASS native32  18/18 scenarios passed, 0 filtered out
+PASS native32  zplc.scheduler_run_control                     9/9 cases
+PASS native32  19/19 scenarios passed, 0 filtered out
 ```
 
 To look at one scenario, open its log under the mode's Twister output
@@ -178,6 +179,10 @@ the heap high-water mark.
   the loader suite builds programs larger than the `.tiny` code region.
 - `hal_gpio_policy.partial_required` and `post_shutdown` need the GPIO emulator
   and the LED alias of `native_sim`.
+- `scheduler_run_control` watches the physical level of output channel 0
+  through the same emulator and LED alias. On `qemu_cortex_m3`, which has
+  neither, it checks the output image, the force table and the task scans only,
+  so "outputs safe while paused" is observed on `native_sim` alone.
 - The `app` mode is not part of continuous integration yet: no job builds a
   board and then runs the host test.
 - Two integration cases in `test_vm_core.c` skip on every target, the host

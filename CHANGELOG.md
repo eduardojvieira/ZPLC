@@ -16,6 +16,14 @@ All notable changes are documented here.
   `BYTE`/`WORD`, compound and fractional `TIME` literals and `TIME` over 24.8
   days; 64-bit multiply, divide, modulo and shifts are now build errors
   instead of wrong code.
+- Pause, breakpoint and step on the Zephyr scheduler keep the output image and
+  the force table and only drive the physical outputs to their safe state
+  (RT-017); a paused or stepped target now shows the image of the scan that ran
+  instead of zeros and no forces. Resume and step continue a scan that a
+  breakpoint interrupted instead of restarting it, `STOP` returns every task to
+  its entry point, and a breakpoint on the first instruction of a task is no
+  longer skipped after a resume. Behaviour of `STOP` and of faults is unchanged:
+  outputs safe, output image zeroed, forces cleared.
 
 ## 2.0.0-rc.3 - 2026-09-01
 
