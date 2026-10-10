@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto';
-import { mkdtemp, mkdir, readdir, rm, symlink, writeFile } from 'node:fs/promises';
+import { mkdtemp, mkdir, readFile, readdir, rm, symlink, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, describe, expect, test } from 'bun:test';
@@ -94,6 +94,30 @@ describe('local MCP adapter', () => {
     await expect(courseProgressResource({ ...bound, userData: user })).resolves.toEqual({ ok: false, error: 'MCP_INTERNAL_ERROR' });
     await rm(join(userData, 'zplc-learn-progress.v2.json')); await rm(join(userData, 'zplc-learn-mastery.v1.json')); await symlink('/etc/passwd', join(userData, 'zplc-learn-mastery.v1.json'));
     await expect(courseProgressResource({ ...bound, userData: user })).resolves.toEqual({ ok: false, error: 'MCP_INTERNAL_ERROR' });
+  });
+
+  test('cannot mark a lesson passed: no tool takes a lesson or progress, and no tool or resource read changes the progress files (LRN-034)', async () => {
+    const root = await workspace(); const userData = await mkdtemp(join(tmpdir(), 'zplc-mcp-user-data-')); temporary.push(userData);
+    const progressText = JSON.stringify({ schemaVersion: 2, last: null, lessons: { 'edge-counter-pulses': { state: 'passed', grade: null, passedAt: null, startedAt: null, hintsUsed: 0, solutionShown: false } } });
+    await writeFile(join(userData, 'zplc-learn-progress.v2.json'), progressText);
+    await writeFile(join(userData, 'zplc-learn-mastery.v1.json'), '{"schemaVersion":1,"mastered":["motor-start-stop-safe"]}');
+    const bound = await openMcpWorkspace(root); const user = await openMcpUserData(userData); expect(bound).toBeDefined(); expect(user).toBeDefined(); if (!bound || !user) return;
+    const withUserData = { ...bound, userData: user };
+    const snapshot = async () => Object.fromEntries(await Promise.all((await readdir(userData)).sort().map(async (name) => [name, await readFile(join(userData, name), 'utf8')])));
+    const before = await snapshot();
+    const dispatcher = createMcpDispatcher(withUserData, operations()); const signal = new AbortController().signal;
+    const argumentsOf: Record<string, Record<string, unknown>> = {
+      scenario_run: { scenarioId: 'smoke' }, simulation_start: { scenarioId: 'smoke' }, trace_get: { scenarioId: 'smoke' },
+      simulation_step: { scenarioId: 'smoke', cursor: 0, traceSha256: hash }, runtime_snapshot: { scenarioId: 'smoke', cursor: 0, traceSha256: hash },
+    };
+    for (const tool of MCP_TOOL_NAMES.filter((name) => name !== 'firmware_build')) {
+      await dispatcher(tool, argumentsOf[tool] ?? {}, signal);
+      // A tool refuses an argument that names a lesson, so a client cannot pass one in.
+      expect(await dispatcher(tool, { lessonId: 'edge-counter-pulses', passed: true }, signal)).toMatchObject({ isError: true, structuredContent: { error: 'MCP_INVALID_ARGUMENTS' } });
+    }
+    expect(MCP_TOOL_NAMES.filter((name) => /lesson|learn|progress|course|mastery|grade/i.test(name))).toEqual([]);
+    for (let read = 0; read < 3; read += 1) await courseProgressResource(withUserData);
+    expect(await snapshot()).toEqual(before);
   });
 
   test('serializes only public data and rejects accessors, buffers, prototypes, symbols, and oversize results', () => {
