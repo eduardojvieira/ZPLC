@@ -54,7 +54,11 @@
  *     and layout match, and otherwise initialises (zeroes) the region and keeps
  *     the reason;
  *   - a periodic save is skipped when the region did not change since the last
- *     record and when the minimum interval has not passed (flash wear, RT-026).
+ *     record and when the minimum interval has not passed (flash wear, RT-026);
+ *   - a slot the backend cannot read counts as a damaged record, and the next
+ *     save rewrites it; when the backend fails on both slots nothing can be
+ *     decided: the reason is io_error and saves are refused until a restore
+ *     reads the backend again.
  *
  * The module is not re-entrant. The caller serialises its calls, and gives lock
  * hooks that make the copy of the region coherent with the scan; the hooks are

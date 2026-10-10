@@ -54,7 +54,7 @@ static struct {
   void (*unlock)(void);
   uint32_t min_interval_ms;
   int restored;            /* restore ran since init */
-  int writable;            /* every slot was readable, so the sequence is trustworthy */
+  int writable;            /* the backend answered, so the next sequence can be trusted */
   int image_valid;         /* s_buf holds exactly the record last restored or written */
   zplc_retain_identity_t image_id;
   uint32_t newest_sequence;
@@ -291,7 +291,8 @@ zplc_retain_reason_t zplc_retain_restore(const zplc_retain_identity_t *identity,
   unsigned order[2];
   unsigned candidates = 0U;
   unsigned index;
-  int io_error = 0;
+  int failed[2] = { 0, 0 };  /* the backend failed on this slot */
+  int backend_down;
   int invalid_seen = 0;
   int valid_seen = 0;
   int matched = -1;
@@ -312,7 +313,7 @@ zplc_retain_reason_t zplc_retain_restore(const zplc_retain_identity_t *identity,
 
   for (index = 0U; index < 2U; index++) {
     state[index] = read_header(index, &header[index]);
-    io_error |= state[index] == SLOT_IO;
+    failed[index] = state[index] == SLOT_IO;
     invalid_seen |= state[index] == SLOT_INVALID;
   }
   /* Newest first, so the first valid record is the newest valid one. */
@@ -333,7 +334,7 @@ zplc_retain_reason_t zplc_retain_restore(const zplc_retain_identity_t *identity,
     const int valid = read_record(slot, &header[slot]);
 
     if (valid < 0) {
-      io_error = 1;
+      failed[slot] = 1;
       continue;
     }
     if (valid == 0) {
@@ -351,6 +352,11 @@ zplc_retain_reason_t zplc_retain_restore(const zplc_retain_identity_t *identity,
     }
   }
 
+  /* One unreadable slot is a damaged record: the next save repairs it. Both
+   * slots failing means the backend itself is down, and nothing can be decided. */
+  backend_down = failed[0] != 0 && failed[1] != 0;
+  invalid_seen |= (failed[0] | failed[1]) != 0;
+
   if (matched >= 0) {
     lock_region();
     memcpy(s.region, s_buf + ZPLC_RETAIN_HEADER_SIZE, s.region_size);
@@ -360,7 +366,7 @@ zplc_retain_reason_t zplc_retain_restore(const zplc_retain_identity_t *identity,
     s.status.sequence = header[matched].sequence;
     reason = ZPLC_RETAIN_RESTORED;
   } else {
-    if (io_error != 0) {
+    if (backend_down != 0) {
       reason = ZPLC_RETAIN_IO_ERROR;
     } else if (valid_seen != 0) {
       reason = newest_reason;
@@ -376,7 +382,7 @@ zplc_retain_reason_t zplc_retain_restore(const zplc_retain_identity_t *identity,
   }
 
   s.restored = 1;
-  s.writable = io_error == 0;
+  s.writable = backend_down == 0;
   s.last_write_ms = now_ms;
   s.status.reason = reason;
   zplc_hal_log("[RETAIN] restore: %s, sequence %u\n", zplc_retain_reason_string(reason),
@@ -400,8 +406,8 @@ zplc_retain_save_result_t zplc_retain_save(const zplc_retain_identity_t *identit
     return ZPLC_RETAIN_SAVE_NOT_READY;
   }
   if (s.writable == 0) {
-    /* A slot could not be read, so the newest sequence is unknown: writing could
-     * hide a newer record. Say so in the status instead of dropping the call. */
+    /* The backend did not answer at restore, so the newest sequence is unknown:
+     * writing could hide a newer record. Say so in the status, not by silence. */
     s.status.save_errors++;
     return ZPLC_RETAIN_SAVE_NOT_READY;
   }

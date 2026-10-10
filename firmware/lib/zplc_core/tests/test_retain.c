@@ -783,22 +783,41 @@ static void test_backend_errors(void)
 {
     zplc_retain_status_t status;
     char path[256];
+    char not_a_directory[256];
 
     printf("\n=== Test: backend failures are reported, never hidden ===\n");
+    /* The persistence root is a file: every load and save fails with a real error. */
     TEST_ASSERT(fresh_root() == 0 && start_module(REGION_SMALL, 0U) == 0, "module over a clean directory");
+    (void)snprintf(not_a_directory, sizeof(not_a_directory), "%s/file", g_root);
+    TEST_ASSERT(write_file(not_a_directory, (const uint8_t *)"x", 1U) == 0, "a plain file created");
+    (void)setenv("ZPLC_PERSIST_ROOT", not_a_directory, 1);
     memset(g_region, 0xAA, REGION_SMALL);
-    zplc_hal_persist_test_fail_at(1UL);
-    TEST_ASSERT(zplc_retain_restore(&ID1, 0U) == ZPLC_RETAIN_IO_ERROR, "a failing load is an io error");
-    zplc_hal_persist_test_fail_at(0UL);
+    TEST_ASSERT(zplc_retain_restore(&ID1, 0U) == ZPLC_RETAIN_IO_ERROR, "a backend that fails on both slots is an io error");
     memset(g_expect, 0, REGION_SMALL);
     TEST_ASSERT(memcmp(g_region, g_expect, REGION_SMALL) == 0, "the region is initialised to zero");
     g_region[0] = 1U;
     TEST_ASSERT(zplc_retain_save(&ID1, 1U, ZPLC_RETAIN_SAVE_FORCED) == ZPLC_RETAIN_SAVE_NOT_READY,
-                "saves are refused after an io error, so a record that could not be read is not overwritten");
+                "saves are refused, so a record that could not be read is not overwritten");
     zplc_retain_last_status(&status);
-    TEST_ASSERT(status.reason == ZPLC_RETAIN_IO_ERROR, "status says io_error");
+    TEST_ASSERT(status.reason == ZPLC_RETAIN_IO_ERROR && status.save_errors == 1U && status.last_error != 0,
+                "status says io_error, counts the refused save and keeps the HAL result");
     TEST_ASSERT(strcmp(zplc_retain_reason_string(ZPLC_RETAIN_IO_ERROR), "io_error") == 0,
                 "the reason token is io_error");
+    (void)setenv("ZPLC_PERSIST_ROOT", g_root, 1);
+    (void)unlink(not_a_directory);
+    remove_root();
+
+    /* One slot unreadable (the backend fails once): a damaged record, and a save repairs it. */
+    TEST_ASSERT(fresh_root() == 0 && start_module(REGION_SMALL, 0U) == 0, "module over a clean directory");
+    zplc_hal_persist_test_fail_at(1UL);
+    TEST_ASSERT(zplc_retain_restore(&ID1, 0U) == ZPLC_RETAIN_CORRUPT, "one unreadable slot is a damaged record");
+    zplc_hal_persist_test_fail_at(0UL);
+    g_region[0] = 1U;
+    TEST_ASSERT(zplc_retain_save(&ID1, 1U, ZPLC_RETAIN_SAVE_FORCED) == ZPLC_RETAIN_SAVE_WRITTEN,
+                "and the next save is written");
+    (void)start_module(REGION_SMALL, 0U);
+    TEST_ASSERT(zplc_retain_restore(&ID1, 0U) == ZPLC_RETAIN_RESTORED && g_region[0] == 1U,
+                "the repaired store restores");
     remove_root();
 
     /* An empty file is a structurally invalid record: the HAL says corrupt. */
