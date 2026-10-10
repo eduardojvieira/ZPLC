@@ -59,7 +59,18 @@ describe('the conversions of a value to a place (CMP-005)', () => {
     expect(assign('TIME', 'TIME')).toEqual([]);
     expect(assign('BOOL', 'BOOL')).toEqual([]);
     expect(assign('DATE', 'TIME')).toHaveLength(1);
-    expect(assign('LREAL', 'REAL')).toHaveLength(1);
+    // LREAL to REAL narrows: the build goes on and the narrowing is a warning (see below)
+    expect(assign('LREAL', 'REAL')).toEqual([]);
+    expect(assign('REAL', 'LREAL')).toEqual([]);
+    expect(assign('LREAL', 'LREAL')).toEqual([]);
+  });
+
+  test.each([...INTEGERS, 'LINT', 'ULINT', 'LWORD'])('%s goes to LREAL and LREAL goes to no integer', (type) => {
+    expect(assign(type, 'LREAL')).toEqual([]);
+    const found = assign('LREAL', type);
+    expect(found).toHaveLength(1);
+    expect(found[0]!.detail).toContain('LREAL');
+    expect(found[0]!.detail).toContain(type);
   });
 
   test('the difference of two points in time is a TIME', () => {
@@ -214,6 +225,24 @@ describe('an integer stored in a narrower type is a warning (CMP-005, CMP-016)',
     ['INT', 'DINT'], ['SINT', 'INT'], ['USINT', 'UINT'], ['BYTE', 'WORD'], ['INT', 'UINT'], ['DINT', 'DINT'], ['INT', 'REAL'],
   ])('%s stored in a %s does not', (from, to) => {
     expect(warnings(`  src : ${from};\n  dst : ${to};`, '  dst := src;')).toEqual([]);
+  });
+
+  test('an LREAL stored in a REAL warns that it is rounded, and an expression of LREAL does too', () => {
+    const found = warnings('  d : LREAL;\n  r : REAL;', '  r := d;\n  r := d * 2.0;');
+    expect(found.map((warning) => [warning.code, warning.line])).toEqual([['IMPLICIT_NARROWING', 6], ['IMPLICIT_NARROWING', 7]]);
+    expect(found[0]!.message).toContain('LREAL');
+    expect(found[0]!.message).toContain('REAL');
+    expect(found[0]!.message).toContain('rounded');
+  });
+
+  test('a literal is not narrowed, an LREAL#literal that is written to a REAL is', () => {
+    expect(warnings('  r : REAL;', '  r := 0.1;')).toEqual([]);
+    expect(warnings('  r : REAL;', '  r := REAL#0.1;')).toEqual([]);
+    expect(warnings('  r : REAL;', '  r := LREAL#0.1;')).toEqual([]);
+  });
+
+  test('a REAL stored in an LREAL, and an integer, do not warn', () => {
+    expect(warnings('  r : REAL;\n  d : LREAL;\n  i : DINT;\n  l : LINT;', '  d := r;\n  d := i;\n  d := l;')).toEqual([]);
   });
 
   test('a constant, a mask and a remainder that fit are not narrowed', () => {

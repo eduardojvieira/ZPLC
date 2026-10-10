@@ -377,14 +377,131 @@ describe('generated code', () => {
         expect(assembly('b := a + u;', 'a : LINT; b : LINT; u : UDINT;')).toMatch(/LOAD32 0x2010[^\n]*\n\s+PUSH8 0\n\s+CALL/);
     });
 
-    it('refuses what a 64-bit value cannot do yet, naming the requirement', () => {
-        const wide = 'a : LINT; b : LINT; c : DINT;';
-        expect(() => assembly('b := a * 2;', wide)).toThrow('CMP-015');
-        expect(() => assembly('b := a / 2;', wide)).toThrow('CMP-015');
-        expect(() => assembly('b := a MOD 2;', wide)).toThrow('CMP-015');
-        expect(() => assembly('b := ABS(a);', wide)).toThrow('64-bit argument');
-        expect(() => assembly('FOR a := 0 TO 3 DO c := 1; END_FOR;', wide)).toThrow('FOR counter');
-        expect(() => assembly('CASE a OF 1: c := 1; END_CASE;', wide)).toThrow('CASE');
+    it('multiplies, divides and takes the remainder of 64-bit integers with the 64-bit opcodes (CMP-015)', () => {
+        const signed = 'a : LINT; b : LINT; c : DINT;';
+        expect(assembly('b := a * 2;', signed)).toMatch(/PUSH32 2[^\n]*\n\s+PUSH32 0[^\n]*\n\s+MUL64/);
+        expect(assembly('b := a / 2;', signed)).toContain('DIVS64');
+        expect(assembly('b := a MOD 2;', signed)).toContain('MODS64');
+        const unsigned = 'a : ULINT; b : ULINT; c : DINT;';
+        expect(assembly('b := a / 2;', unsigned)).toContain('DIVU64');
+        expect(assembly('b := a MOD 2;', unsigned)).toContain('MODU64');
+        expect(assembly('b := a / 2;', 'a : LWORD; b : LWORD;')).toContain('DIVU64');
+        // none of them links a helper routine
+        expect(assembly('b := a * a;', signed)).not.toContain('_zplc_');
+    });
+
+    it('takes ABS and the negation of a LINT with ABS64 and NEG64, and a ULINT is its own magnitude', () => {
+        expect(assembly('b := ABS(a);', 'a : LINT; b : LINT;')).toContain('ABS64');
+        expect(assembly('b := ABS(a);', 'a : ULINT; b : ULINT;')).not.toContain('ABS64');
+        expect(assembly('b := NEG(a);', 'a : LINT; b : LINT;')).toContain('NEG64');
+    });
+
+    it('shifts and rotates a 64-bit value with the 64-bit shift opcodes', () => {
+        expect(assembly('b := SHL(a, 3);', 'a : LWORD; b : LWORD;')).toContain('SHL64');
+        expect(assembly('b := SHR(a, 3);', 'a : LWORD; b : LWORD;')).toContain('SHR64');
+        const rotate = assembly('b := ROL(a, 3);', 'a : LWORD; b : LWORD;');
+        expect(rotate).toContain('SHL64');
+        expect(rotate).toContain('SHR64');
+    });
+
+    it('builds a FOR loop with a 64-bit counter and a CASE on a 64-bit selector', () => {
+        const loop = assembly('FOR a := 0 TO 3 DO c := 1; END_FOR;', 'a : LINT; c : DINT;');
+        expect(loop).toContain('_zplc_add64');
+        expect(loop).toContain('_zplc_cmp64s');
+        const select = assembly('CASE a OF 1: c := 1; 5000000000: c := 2; END_CASE;', 'a : LINT; c : DINT;');
+        expect(select).toContain('_zplc_cmp64s');
+        expect(select).toContain('PICK 1');
+        const unsigned = assembly('CASE a OF 18446744073709551615: c := 1; END_CASE;', 'a : ULINT; c : DINT;');
+        expect(unsigned).toContain('_zplc_cmp64u');
+    });
+
+    it('refuses what a 64-bit or LREAL value cannot be used for, with the reason', () => {
+        const wide = 'a : LINT; b : LINT; c : DINT; arr : ARRAY[0..3] OF DINT; d : LREAL;';
+        expect(() => assembly('c := arr[a];', wide)).toThrow('array index must be a 32-bit integer');
+        expect(() => assembly('FOR d := 0 TO 3 DO c := 1; END_FOR;', wide)).toThrow('FOR counter must be an integer');
+        expect(() => assembly('CASE d OF 1: c := 1; END_CASE;', wide)).toThrow('CASE selector must be an integer');
+        expect(() => assembly('c := LEN(a);', wide)).toThrow('does not take a 64-bit or LREAL argument');
+        expect(() => assembly('d := d AND d;', wide)).toThrow('Type mismatch');
+        expect(() => assembly('d := d MOD d;', wide)).toThrow('MOD takes integers');
+    });
+});
+
+describe('LREAL code (CMP-015)', () => {
+    const decls = 'a : LREAL; b : LREAL; r : REAL; i : DINT; u : UDINT; l : LINT; w : ULINT; ok : BOOL;';
+
+    it('computes an LREAL operation with the double-precision opcodes, and links no helper', () => {
+        expect(assembly('a := a + b;', decls)).toMatch(/\n\s+ADDD\n/);
+        expect(assembly('a := a - b;', decls)).toMatch(/\n\s+SUBD\n/);
+        expect(assembly('a := a * b;', decls)).toMatch(/\n\s+MULD\n/);
+        expect(assembly('a := a / b;', decls)).toMatch(/\n\s+DIVD\n/);
+        expect(assembly('a := -a;', decls)).toMatch(/\n\s+NEGD\n/);
+        expect(assembly('a := a * b + a / b;', decls)).not.toContain('_zplc_');
+    });
+
+    it('compares LREAL with one opcode for each operator', () => {
+        for (const [operator, opcode] of [['=', 'EQD'], ['<>', 'NED'], ['<', 'LTD'], ['<=', 'LED'], ['>', 'GTD'], ['>=', 'GED']] as const) {
+            const asm = assembly(`ok := a ${operator} b;`, decls);
+            expect(asm).toMatch(new RegExp(`\\n\\s+${opcode}\\n`));
+            expect(asm).not.toContain('_zplc_fcmp');
+        }
+    });
+
+    it('widens a REAL and an integer to the LREAL operand: F2D, I2D, U2D with a zero word, L2D and U2D', () => {
+        expect(assembly('a := a + r;', decls)).toMatch(/LOAD32 0x2010[^\n]*\n\s+F2D\n/);
+        expect(assembly('a := a + i;', decls)).toMatch(/LOAD32 0x2014[^\n]*\n\s+I2D\n/);
+        expect(assembly('a := a + u;', decls)).toMatch(/LOAD32 0x2018[^\n]*\n\s+PUSH8 0[^\n]*\n\s+U2D\n/);
+        expect(assembly('a := a + l;', decls)).toMatch(/LOAD64 0x201c[^\n]*\n\s+L2D\n/);
+        expect(assembly('a := a + w;', decls)).toMatch(/LOAD64 0x2024[^\n]*\n\s+U2D\n/);
+    });
+
+    it('writes a literal in an LREAL context as the double it is, in two cells', () => {
+        const asm = assembly('a := 0.1;', decls);
+        // 0.1 = 0x3FB999999999999A: low word 2576980378, high word 1069128089
+        expect(asm).toContain('PUSH32 2576980378');
+        expect(asm).toContain('PUSH32 1069128089');
+        expect(asm).not.toContain('F2D');
+        // a sum of literals is folded in double precision, not computed in REAL and widened
+        const sum = assembly('a := 0.1 + 0.2;', decls);
+        const bits = new DataView(new ArrayBuffer(8));
+        bits.setFloat64(0, 0.1 + 0.2, true);
+        expect(sum).toContain(`PUSH32 ${bits.getUint32(0, true)}`);
+        expect(sum).toContain(`PUSH32 ${bits.getUint32(4, true)}`);
+        expect(sum).not.toMatch(/\n\s+ADDD\n/);
+    });
+
+    it('keeps a REAL expression a REAL and widens its result', () => {
+        const asm = assembly('a := r + r;', decls);
+        expect(asm).toMatch(/ADDF\n\s+F2D\n/);
+        expect(asm).not.toMatch(/\n\s+ADDD\n/);
+    });
+
+    it('narrows an LREAL to a REAL with D2F', () => {
+        expect(assembly('r := a;', decls)).toMatch(/LOAD64 0x2000[^\n]*\n\s+D2F\n/);
+    });
+
+    it('takes SQRT, ABS and the rounding functions of an LREAL exactly, and the others through REAL', () => {
+        expect(assembly('a := SQRT(b);', decls)).toMatch(/\n\s+SQRTD\n/);
+        expect(assembly('a := ABS(b);', decls)).toMatch(/\n\s+ABSD\n/);
+        expect(assembly('a := TRUNC(b);', decls)).toContain('CALL _zplc_truncd');
+        expect(assembly('a := ROUND(b);', decls)).toContain('CALL _zplc_roundad');
+        const sine = assembly('a := SIN(b);', decls);
+        expect(sine).toMatch(/D2F\n[\s\S]*?CALL _zplc_sincosf\n\s+F2D/);
+    });
+
+    it('converts with RNDD (ties to even) and a saturating truncation', () => {
+        expect(assembly('i := LREAL_TO_DINT(a);', decls)).toMatch(/RNDD\n\s+D2I\n/);
+        expect(assembly('l := LREAL_TO_LINT(a);', decls)).toMatch(/RNDD\n\s+D2L\n/);
+        expect(assembly('w := LREAL_TO_ULINT(a);', decls)).toMatch(/RNDD\n\s+D2U\n/);
+        expect(assembly('a := REAL_TO_LREAL(r);', decls)).toMatch(/F2D\n/);
+        expect(assembly('a := LINT_TO_LREAL(l);', decls)).toMatch(/L2D\n/);
+        expect(assembly('r := LINT_TO_REAL(l);', decls)).toMatch(/L2F\n/);
+        expect(assembly('r := ULINT_TO_REAL(w);', decls)).toMatch(/U2F\n/);
+    });
+
+    it('stores and loads an LREAL as two cells', () => {
+        const asm = assembly('a := b;', decls);
+        expect(asm).toContain('LOAD64 0x2008');
+        expect(asm).toContain('STORE64 0x2000');
     });
 });
 

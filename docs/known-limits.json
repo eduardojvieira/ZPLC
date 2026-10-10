@@ -24,11 +24,6 @@
     "en": "A literal above 2147483647 is refused as the argument of a function whose parameter is a `DWORD` (`XOR_DWORD(d, 4294967295)` fails with `Integer literal 4294967295 does not fit a signed 32-bit integer`). Assigned to a `UDINT` or a `DWORD` variable it works.",
     "es": "Un literal mayor que 2147483647 se rechaza como argumento de una función cuyo parámetro es un `DWORD` (`XOR_DWORD(d, 4294967295)` falla con `Integer literal 4294967295 does not fit a signed 32-bit integer`). Asignado a una variable `UDINT` o `DWORD` funciona."
   },
-  "CMP-015": {
-    "page": "language",
-    "en": "`LINT`, `ULINT` and `LWORD` have no `*`, `/`, `MOD`, `SHL`, `SHR`, `ROL`, `ROR`, `ABS`, conversion to or from `REAL`, `CASE` selector or `FOR` counter: each is a build error that names CMP-015. A program that assigns or computes with an `LREAL` builds and is then refused by the loader.",
-    "es": "`LINT`, `ULINT` y `LWORD` no tienen `*`, `/`, `MOD`, `SHL`, `SHR`, `ROL`, `ROR`, `ABS`, conversión desde o hacia `REAL`, selector de `CASE` ni contador de `FOR`: cada uno es un error de compilación que nombra CMP-015. Un programa que asigna o calcula con un `LREAL` se compila y luego es rechazado por el cargador."
-  },
   "CMP-018": {
     "page": "language",
     "en": "A constant that does not fit its type (`small : SINT := 300`) is accepted without a message and stored truncated (300 is stored as 44).",

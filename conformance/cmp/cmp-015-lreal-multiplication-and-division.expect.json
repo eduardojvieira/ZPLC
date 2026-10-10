@@ -1,0 +1,107 @@
+{
+  "requirement": "CMP-015",
+  "title": "LREAL * and / give the IEEE 754 double result",
+  "matrix": [
+    "data-types.lreal"
+  ],
+  "tags": [
+    "arch-sensitive",
+    "64-bit",
+    "float"
+  ],
+  "note": "IEEE 754 binary64, round to nearest even; overflow is an infinity and underflow is gradual.",
+  "scans": 1,
+  "scanMs": 10,
+  "expect": [
+    {
+      "at": "%QD0",
+      "type": "UDINT",
+      "value": 858993460
+    },
+    {
+      "at": "%QD1",
+      "type": "UDINT",
+      "value": 1070805811
+    },
+    {
+      "at": "%QD2",
+      "type": "UDINT",
+      "value": 0
+    },
+    {
+      "at": "%QD3",
+      "type": "UDINT",
+      "value": 1073872896
+    },
+    {
+      "at": "%QD4",
+      "type": "UDINT",
+      "value": 0
+    },
+    {
+      "at": "%QD5",
+      "type": "UDINT",
+      "value": 2146435072
+    },
+    {
+      "at": "%QD6",
+      "type": "UDINT",
+      "value": 0
+    },
+    {
+      "at": "%QD7",
+      "type": "UDINT",
+      "value": 524288
+    },
+    {
+      "at": "%QD8",
+      "type": "UDINT",
+      "value": 1
+    },
+    {
+      "at": "%QD9",
+      "type": "UDINT",
+      "value": 0
+    },
+    {
+      "at": "%QD10",
+      "type": "UDINT",
+      "value": 1431655765
+    },
+    {
+      "at": "%QD11",
+      "type": "UDINT",
+      "value": 1070945621
+    },
+    {
+      "at": "%QD12",
+      "type": "UDINT",
+      "value": 490853406
+    },
+    {
+      "at": "%QD13",
+      "type": "UDINT",
+      "value": 1066222036
+    },
+    {
+      "at": "%QD14",
+      "type": "UDINT",
+      "value": 4294967295
+    },
+    {
+      "at": "%QD15",
+      "type": "UDINT",
+      "value": 2145386495
+    },
+    {
+      "at": "%QD16",
+      "type": "UDINT",
+      "value": 0
+    },
+    {
+      "at": "%QD17",
+      "type": "UDINT",
+      "value": 3219652608
+    }
+  ]
+}

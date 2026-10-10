@@ -101,7 +101,8 @@ END_PROGRAM`;
         expect(asm).toContain('func_SquareRoot:');
         expect(asm).toContain('LOAD64'); // LREAL is 64-bit
         expect(asm).toContain('STORE64');
-        expect(asm).toContain('MULF');
+        expect(asm).toContain('MULD'); // an LREAL product is a double-precision multiplication (CMP-015)
+        expect(asm).not.toContain('MULF');
         expect(asm).toContain('CALL func_SquareRoot');
     });
 });

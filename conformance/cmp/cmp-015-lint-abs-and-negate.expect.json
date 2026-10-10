@@ -1,0 +1,77 @@
+{
+  "requirement": "CMP-015",
+  "title": "ABS and unary minus on LINT",
+  "matrix": [
+    "data-types.lint-ulint-lword"
+  ],
+  "tags": [
+    "arch-sensitive",
+    "64-bit",
+    "float"
+  ],
+  "note": "ABS of INT64_MIN is INT64_MIN and so is its negation: the same defined result as DINT (CMP-016).",
+  "scans": 1,
+  "scanMs": 10,
+  "expect": [
+    {
+      "at": "%QD0",
+      "type": "UDINT",
+      "value": 410065408
+    },
+    {
+      "at": "%QD1",
+      "type": "UDINT",
+      "value": 2
+    },
+    {
+      "at": "%QD2",
+      "type": "UDINT",
+      "value": 0
+    },
+    {
+      "at": "%QD3",
+      "type": "UDINT",
+      "value": 2147483648
+    },
+    {
+      "at": "%QD4",
+      "type": "UDINT",
+      "value": 410065408
+    },
+    {
+      "at": "%QD5",
+      "type": "UDINT",
+      "value": 2
+    },
+    {
+      "at": "%QD6",
+      "type": "UDINT",
+      "value": 410065408
+    },
+    {
+      "at": "%QD7",
+      "type": "UDINT",
+      "value": 2
+    },
+    {
+      "at": "%QD8",
+      "type": "UDINT",
+      "value": 0
+    },
+    {
+      "at": "%QD9",
+      "type": "UDINT",
+      "value": 2147483648
+    },
+    {
+      "at": "%QD10",
+      "type": "UDINT",
+      "value": 3884901888
+    },
+    {
+      "at": "%QD11",
+      "type": "UDINT",
+      "value": 4294967293
+    }
+  ]
+}

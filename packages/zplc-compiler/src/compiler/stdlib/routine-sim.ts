@@ -8,7 +8,8 @@
  * sweep. This runs one routine on the evaluation stack with the semantics of the instructions it
  * uses in firmware/lib/zplc_core/src/core/zplc_core.c: 32-bit cells, REAL results rounded to single
  * precision after every operation, F2I that truncates and saturates, DIVF that faults on a divisor of
- * 0.0. The tests that use it check the same routines on the real VM at chosen points
+ * 0.0. The double-precision opcodes (LREAL, two cells with the low word deeper) use the host's double,
+ * which is IEEE 754 binary64 as the VM's integer implementation is. The tests that use it check the same routines on the real VM at chosen points
  * (conformance/cmp/cmp-058-*), so a difference between the two would be seen there.
  *
  * Not part of the compiler: only tests import it.
@@ -37,6 +38,45 @@ export function asReal(bits: number): number {
 export function bitsOf(value: number): number {
     view.setFloat32(0, value, true);
     return view.getUint32(0, true);
+}
+
+const wide = new DataView(new ArrayBuffer(8));
+
+/** The LREAL a pair of 32-bit words holds (low word first). */
+export function asDouble(low: number, high: number): number {
+    wide.setUint32(0, low >>> 0, true);
+    wide.setUint32(4, high >>> 0, true);
+    return wide.getFloat64(0, true);
+}
+
+/** The two words, low first, of an LREAL. A NaN is the quiet NaN, as the VM makes it. */
+export function wordsOf(value: number): [number, number] {
+    if (Number.isNaN(value)) return [0, 0x7ff80000];
+    wide.setFloat64(0, value, true);
+    return [wide.getUint32(0, true), wide.getUint32(4, true)];
+}
+
+/** Round to the nearest integer, an exact half to the even one (the sign of a zero is kept). */
+function rint(value: number): number {
+    if (!Number.isFinite(value) || Math.abs(value) >= 2 ** 52) return value;
+    const floor = Math.floor(value);
+    const fraction = value - floor;
+    let result = fraction < 0.5 ? floor : fraction > 0.5 ? floor + 1 : floor % 2 === 0 ? floor : floor + 1;
+    if (result === 0 && (value < 0 || Object.is(value, -0))) result = -0;
+    return result;
+}
+
+/** A double as the 64-bit pattern of the integer it truncates to (saturating); a NaN is 0. */
+function toInteger64(value: number, signed: boolean): bigint {
+    if (Number.isNaN(value)) return 0n;
+    if (signed) {
+        if (value >= 2 ** 63) return (1n << 63n) - 1n;
+        if (value <= -(2 ** 63)) return BigInt.asUintN(64, -(1n << 63n));
+        return BigInt.asUintN(64, BigInt(Math.trunc(value)));
+    }
+    if (value < 1) return 0n;
+    if (value >= 2 ** 64) return (1n << 64n) - 1n;
+    return BigInt(Math.trunc(value));
 }
 
 interface Instruction {
@@ -178,6 +218,50 @@ export function simulate(label: string, args: number[]): SimResult {
                 push(Number.isNaN(value) ? 0 : value >= 2147483648 ? 0x7fffffff : value <= -2147483648 ? 0x80000000 : Math.trunc(value));
                 break;
             }
+            // double precision (CMP-015): two cells, the low word deeper
+            case 'ADDD': case 'SUBD': case 'MULD': {
+                need(4, op);
+                const bh = pop(); const bl = pop(); const ah = pop(); const al = pop();
+                const a = asDouble(al, ah);
+                const b = asDouble(bl, bh);
+                const [low, high] = wordsOf(op === 'ADDD' ? a + b : op === 'SUBD' ? a - b : a * b);
+                push(low); push(high);
+                break;
+            }
+            case 'ABSD': case 'NEGD': case 'RNDD': {
+                need(2, op);
+                const high = pop(); const low = pop();
+                const value = asDouble(low, high);
+                const [l, h] = wordsOf(op === 'ABSD' ? Math.abs(value) : op === 'NEGD' ? -value : rint(value));
+                push(l); push(h);
+                break;
+            }
+            case 'EQD': case 'NED': case 'LTD': case 'LED': case 'GTD': case 'GED': {
+                need(4, op);
+                const bh = pop(); const bl = pop(); const ah = pop(); const al = pop();
+                const a = asDouble(al, ah);
+                const b = asDouble(bl, bh);
+                push(flag(op === 'EQD' ? a === b : op === 'NED' ? a !== b : op === 'LTD' ? a < b : op === 'LED' ? a <= b : op === 'GTD' ? a > b : a >= b));
+                break;
+            }
+            case 'D2L': case 'D2U': {
+                need(2, op);
+                const high = pop(); const low = pop();
+                const bits = toInteger64(asDouble(low, high), op === 'D2L');
+                push(Number(bits & 0xffffffffn)); push(Number(bits >> 32n));
+                break;
+            }
+            case 'L2D': case 'U2D': {
+                need(2, op);
+                const high = pop(); const low = pop();
+                const bits = (BigInt(high >>> 0) << 32n) | BigInt(low >>> 0);
+                const [l, h] = wordsOf(Number(op === 'L2D' ? BigInt.asIntN(64, bits) : bits));
+                push(l); push(h);
+                break;
+            }
+            case 'F2D': { need(1, op); const [l, h] = wordsOf(asReal(pop())); push(l); push(h); break; }
+            case 'D2F': { need(2, op); const high = pop(); const low = pop(); push(bitsOf(asDouble(low, high))); break; }
+            case 'I2D': { need(1, op); const [l, h] = wordsOf(pop() | 0); push(l); push(h); break; }
             case 'I2B': { need(1, op); push(flag(pop() !== 0)); break; }
             case 'EXT8': { need(1, op); push((pop() << 24) >> 24); break; }
             case 'EXT16': { need(1, op); push((pop() << 16) >> 16); break; }

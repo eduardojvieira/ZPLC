@@ -1,0 +1,118 @@
+{
+  "requirement": "CMP-057",
+  "title": "TRUNC and ROUND on LREAL are exact",
+  "matrix": [
+    "data-types.lreal",
+    "functions.basic-conversions"
+  ],
+  "tags": [
+    "arch-sensitive",
+    "64-bit",
+    "float"
+  ],
+  "note": "TRUNC goes toward zero; ROUND takes an exact half away from zero and is exact where adding 0.5 would not be.",
+  "scans": 1,
+  "scanMs": 10,
+  "expect": [
+    {
+      "at": "%QD0",
+      "type": "UDINT",
+      "value": 0
+    },
+    {
+      "at": "%QD1",
+      "type": "UDINT",
+      "value": 1073741824
+    },
+    {
+      "at": "%QD2",
+      "type": "UDINT",
+      "value": 0
+    },
+    {
+      "at": "%QD3",
+      "type": "UDINT",
+      "value": 3221225472
+    },
+    {
+      "at": "%QD4",
+      "type": "UDINT",
+      "value": 2281731484
+    },
+    {
+      "at": "%QD5",
+      "type": "UDINT",
+      "value": 2117592124
+    },
+    {
+      "at": "%QD6",
+      "type": "UDINT",
+      "value": 0
+    },
+    {
+      "at": "%QD7",
+      "type": "UDINT",
+      "value": 0
+    },
+    {
+      "at": "%QD8",
+      "type": "UDINT",
+      "value": 0
+    },
+    {
+      "at": "%QD9",
+      "type": "UDINT",
+      "value": 1074266112
+    },
+    {
+      "at": "%QD10",
+      "type": "UDINT",
+      "value": 0
+    },
+    {
+      "at": "%QD11",
+      "type": "UDINT",
+      "value": 3221749760
+    },
+    {
+      "at": "%QD12",
+      "type": "UDINT",
+      "value": 0
+    },
+    {
+      "at": "%QD13",
+      "type": "UDINT",
+      "value": 0
+    },
+    {
+      "at": "%QD14",
+      "type": "UDINT",
+      "value": 0
+    },
+    {
+      "at": "%QD15",
+      "type": "UDINT",
+      "value": 1127219200
+    },
+    {
+      "at": "%QD16",
+      "type": "UDINT",
+      "value": 0
+    },
+    {
+      "at": "%QD17",
+      "type": "UDINT",
+      "value": 1074266112
+    },
+    {
+      "at": "%QD18",
+      "type": "UDINT",
+      "value": 2281731484
+    },
+    {
+      "at": "%QD19",
+      "type": "UDINT",
+      "value": 2117592124
+    }
+  ]
+}

@@ -1,0 +1,58 @@
+{
+  "requirement": "CMP-015",
+  "title": "A FOR loop counts a LINT across 2^32",
+  "matrix": [
+    "data-types.lint-ulint-lword",
+    "statements.for"
+  ],
+  "tags": [
+    "arch-sensitive",
+    "64-bit",
+    "float"
+  ],
+  "note": "A 64-bit counter is a full two-word variable: start, end, step and the increment are 64-bit (CMP-015).",
+  "scans": 1,
+  "scanMs": 10,
+  "expect": [
+    {
+      "at": "%QD0",
+      "type": "UDINT",
+      "value": 0
+    },
+    {
+      "at": "%QD1",
+      "type": "UDINT",
+      "value": 5
+    },
+    {
+      "at": "%QD2",
+      "type": "UDINT",
+      "value": 5
+    },
+    {
+      "at": "%QD3",
+      "type": "UDINT",
+      "value": 0
+    },
+    {
+      "at": "%QD4",
+      "type": "UDINT",
+      "value": 3
+    },
+    {
+      "at": "%QD5",
+      "type": "UDINT",
+      "value": 0
+    },
+    {
+      "at": "%QD6",
+      "type": "UDINT",
+      "value": 4294967292
+    },
+    {
+      "at": "%QD7",
+      "type": "UDINT",
+      "value": 0
+    }
+  ]
+}

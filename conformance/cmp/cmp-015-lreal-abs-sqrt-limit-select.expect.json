@@ -1,0 +1,188 @@
+{
+  "requirement": "CMP-015",
+  "title": "ABS, SQRT, MAX, MIN, LIMIT, SEL and MUX on LREAL and LINT",
+  "matrix": [
+    "data-types.lreal",
+    "functions.basic-conversions"
+  ],
+  "tags": [
+    "arch-sensitive",
+    "64-bit",
+    "float"
+  ],
+  "note": "SQRT of an LREAL is the correctly rounded root, and 0.0 for 0.0 and below as it is for a REAL.",
+  "scans": 1,
+  "scanMs": 10,
+  "expect": [
+    {
+      "at": "%QD0",
+      "type": "UDINT",
+      "value": 0
+    },
+    {
+      "at": "%QD1",
+      "type": "UDINT",
+      "value": 1073741824
+    },
+    {
+      "at": "%QD2",
+      "type": "UDINT",
+      "value": 1719614413
+    },
+    {
+      "at": "%QD3",
+      "type": "UDINT",
+      "value": 1073127582
+    },
+    {
+      "at": "%QD4",
+      "type": "UDINT",
+      "value": 0
+    },
+    {
+      "at": "%QD5",
+      "type": "UDINT",
+      "value": 0
+    },
+    {
+      "at": "%QD6",
+      "type": "UDINT",
+      "value": 1926876078
+    },
+    {
+      "at": "%QD7",
+      "type": "UDINT",
+      "value": 532752760
+    },
+    {
+      "at": "%QD8",
+      "type": "UDINT",
+      "value": 0
+    },
+    {
+      "at": "%QD9",
+      "type": "UDINT",
+      "value": 1073741824
+    },
+    {
+      "at": "%QD10",
+      "type": "UDINT",
+      "value": 0
+    },
+    {
+      "at": "%QD11",
+      "type": "UDINT",
+      "value": 3221225472
+    },
+    {
+      "at": "%QD12",
+      "type": "UDINT",
+      "value": 0
+    },
+    {
+      "at": "%QD13",
+      "type": "UDINT",
+      "value": 1073217536
+    },
+    {
+      "at": "%QD14",
+      "type": "UDINT",
+      "value": 0
+    },
+    {
+      "at": "%QD15",
+      "type": "UDINT",
+      "value": 3220701184
+    },
+    {
+      "at": "%QD16",
+      "type": "UDINT",
+      "value": 0
+    },
+    {
+      "at": "%QD17",
+      "type": "UDINT",
+      "value": 1070596096
+    },
+    {
+      "at": "%QD18",
+      "type": "UDINT",
+      "value": 0
+    },
+    {
+      "at": "%QD19",
+      "type": "UDINT",
+      "value": 1073741824
+    },
+    {
+      "at": "%QD20",
+      "type": "UDINT",
+      "value": 0
+    },
+    {
+      "at": "%QD21",
+      "type": "UDINT",
+      "value": 1075642368
+    },
+    {
+      "at": "%QD22",
+      "type": "UDINT",
+      "value": 1705032704
+    },
+    {
+      "at": "%QD23",
+      "type": "UDINT",
+      "value": 1
+    },
+    {
+      "at": "%QD24",
+      "type": "UDINT",
+      "value": 3589934592
+    },
+    {
+      "at": "%QD25",
+      "type": "UDINT",
+      "value": 4294967294
+    },
+    {
+      "at": "%QD26",
+      "type": "UDINT",
+      "value": 3589934592
+    },
+    {
+      "at": "%QD27",
+      "type": "UDINT",
+      "value": 4294967294
+    },
+    {
+      "at": "%QD28",
+      "type": "UDINT",
+      "value": 0
+    },
+    {
+      "at": "%QD29",
+      "type": "UDINT",
+      "value": 0
+    },
+    {
+      "at": "%QD30",
+      "type": "UDINT",
+      "value": 1705032704
+    },
+    {
+      "at": "%QD31",
+      "type": "UDINT",
+      "value": 1
+    },
+    {
+      "at": "%QD32",
+      "type": "UDINT",
+      "value": 3589934592
+    },
+    {
+      "at": "%QD33",
+      "type": "UDINT",
+      "value": 4294967294
+    }
+  ]
+}

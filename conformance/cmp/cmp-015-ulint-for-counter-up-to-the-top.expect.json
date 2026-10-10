@@ -1,0 +1,38 @@
+{
+  "requirement": "CMP-015",
+  "title": "A FOR loop with a ULINT counter and a constant step",
+  "matrix": [
+    "data-types.lint-ulint-lword",
+    "statements.for"
+  ],
+  "tags": [
+    "arch-sensitive",
+    "64-bit",
+    "float"
+  ],
+  "note": "The counter is compared as unsigned.",
+  "scans": 1,
+  "scanMs": 10,
+  "expect": [
+    {
+      "at": "%QD0",
+      "type": "UDINT",
+      "value": 4
+    },
+    {
+      "at": "%QD1",
+      "type": "UDINT",
+      "value": 0
+    },
+    {
+      "at": "%QD2",
+      "type": "UDINT",
+      "value": 4294967294
+    },
+    {
+      "at": "%QD3",
+      "type": "UDINT",
+      "value": 4294967295
+    }
+  ]
+}
