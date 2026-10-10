@@ -1257,6 +1257,9 @@
     {"kind":"c-test","ref":"firmware/tests/comm_modbus_fb/src/main.c","test":"COM-008: resetting a Modbus block while its request is in flight releases"}
   ],
   "COM-014": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/runtime/provisioningCommands.test.ts","test":"MQTT security (COM-014)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/runtime/serialAdapter.test.ts","test":"keeps the standing warnings of the status and rejects nothing for them (COM-014)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/types/index.test.ts","test":"names no broker and starts with MQTT off, over TLS with the certificate verified (COM-014)"},
     {"kind":"c-test","ref":"firmware/tests/comm_safety/src/main.c","test":"COM-014"},
     {"kind":"c-test","ref":"firmware/tests/comm_safety/src/main.c","test":"COM-014, COM-015, COM-022 and COM-027 on the shell of the product."}
   ],

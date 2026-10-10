@@ -9,7 +9,7 @@
  * that start, stop, force or load are traps that count a call, the direct
  * way into PLC memory (the live region, the image lock, the force-aware
  * write) is a trap too, because a client reaches memory through the exchange
- * only (RT-010), and the one write that a message may cause, the queued write
+ * only (zplc_exchange.h), and the one write that a message may cause, the queued write
  * to a subscribed variable, is a spy that records what it was asked to write.
  */
 #include <errno.h>

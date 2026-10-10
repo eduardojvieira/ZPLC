@@ -7,7 +7,7 @@
  * (zplc_modbus_tcp.c, zplc_modbus.c) in front of a core whose authority
  * entries are traps. The framing, the mapping and the two address spaces are
  * the real ones. The server reaches PLC memory through the exchange only
- * (RT-010): the exchange is a fake that keeps the bytes of a small image, and
+ * (zplc_exchange.h): the exchange is a fake that keeps the bytes of a small image, and
  * the direct entries of the core (the live region, the image lock, the
  * force-aware write) are traps as well, so a server that went round the
  * exchange would be counted.

@@ -315,7 +315,7 @@ ZTEST(comm_safety, test_watch_and_timer_read_plc_memory)
 {
 	/* PLC memory is written the way everything outside the scan writes it:
 	 * through the exchange, which applies it at once while no scan runs and
-	 * publishes the snapshot that the shell reads (RT-010). */
+	 * publishes the snapshot that the shell reads. */
 	static const uint8_t word[] = {0x34U, 0x12U};
 	static const uint8_t timer[16] = {
 		1U, 0U,                  /* IN, Q */
