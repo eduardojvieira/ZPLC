@@ -1937,23 +1937,46 @@ export const JOURNEYS: Journey[] = [
   },
   {
     // The starter of lesson 1 fails its scenario. Learn must say which assertion failed, when, what was expected against what
-    // was observed, and where in the trace (LRN-026), after the learner ran only that scenario from Tests.
-    name: '39 Learn reports the failed assertion of a lesson', example: 'motor_start_stop_starter', proves: [], partly: ['LRN-026'],
-    run: async (app, { project }) => {
+    // was observed, and where in the trace (LRN-026), after the learner pressed Check: the program of the shown project is
+    // graded against the scenario of the lesson package, in the tool worker (LRN-022).
+    name: '39 Learn reports the failed assertion of a lesson', example: 'motor_start_stop_starter', proves: [], partly: ['LRN-022', 'LRN-026', 'LRN-031'],
+    run: async (app, { project, root }) => {
       await openFolder(app, project);
-      await app.click(tab('Tests'));
-      await app.until('the Tests tab to report the linked workspace', async () => (await app.text()).includes('Linked saved workspace ready') || undefined);
-      await app.click(button('Run host scenarios', 'contains'), 'the Run host scenarios button');
-      await app.until('the run to show its scenario', async () => await app.visible(button('Run this scenario again', 'contains')) || undefined);
-      await app.click(button('Run this scenario again', 'contains'), 'the button that runs only that scenario');
-      await app.until('the single-scenario run to finish', async () => await app.visible(button('Run this scenario again', 'contains')) || undefined);
       await app.click(css('#console-tab-learn'), 'the Learn tab');
-      await app.until('Learn to grade the run as failed', async () => await app.eval<boolean>(`document.querySelector('[data-learn-grade="failed"]') !== null`) || undefined)
-        .catch(async (error: Error) => { throw new Error(`${error.message}: the grade shown is ${await app.eval<string>(`document.querySelector('[data-learn-grade]')?.getAttribute('data-learn-grade') ?? 'none'`)}`); });
+      await app.until('the Check button to be enabled', async () => await app.eval<boolean>(`document.querySelector('[data-learn-check]')?.disabled === false`) || undefined);
+      await app.click(css('[data-learn-check]'), 'the Check button');
+      await app.until('Learn to grade the program as failed', async () => await app.eval<boolean>(`document.querySelector('[data-learn-grade="failed"]') !== null`) || undefined)
+        .catch(async (error: Error) => { throw new Error(`${error.message}: the grade shown is ${await app.eval<string>(`document.querySelector('[data-learn-grade]')?.getAttribute('data-learn-grade') ?? 'none'`)}; ${await app.eval<string>(`document.querySelector('[data-learn-check-status]')?.textContent ?? ''`)}`); });
       const failures = await app.eval<string[]>(`[...document.querySelectorAll('[data-learn-failures] li')].map((item) => item.textContent ?? '')`);
       assert(failures.length > 0, 'Learn lists no failed assertion.');
       assert(failures.every((line) => /Motor\./.test(line) && /(expected|se esperaba)/.test(line) && /(observed|se observó)/.test(line)), `A failed assertion does not say what was expected against what was observed: ${JSON.stringify(failures[0])}`);
       assert(failures.every((line) => line.includes('zplc://runtime/snapshot/MotorStartStop/')), `A failed assertion does not give the address of its trace point: ${JSON.stringify(failures[0])}`);
+      // The grade record is kept by the main process in the user-data directory, and a failure does not pass the lesson.
+      const file = join(root, 'profile', 'zplc-learn-progress.v2.json');
+      await app.until('the progress file', () => existsSync(file) || undefined);
+      const progress = JSON.parse(disk(file)) as { last: { lessonId: string } | null; lessons: Record<string, { state: string; grade: unknown }> };
+      assert(progress.lessons['motor-start-stop-safe']?.state === 'in-progress' && progress.lessons['motor-start-stop-safe'].grade === null && progress.last?.lessonId === 'motor-start-stop-safe', `The progress file does not show the lesson in progress: ${JSON.stringify(progress)}`);
+    },
+  },
+  {
+    // The reference solution is put in the starter folder before Studio opens it: the check passes, and the grade record says
+    // which lesson version, scenario hash and program it was for (LRN-023, LRN-031).
+    name: '39b Learn records the grade of a passed lesson', example: 'motor_start_stop_starter', proves: [], partly: ['LRN-023', 'LRN-031'],
+    run: async (app, { project, root }) => {
+      const lesson = learnLessonCatalog.en.find(({ id }) => id === 'motor-start-stop-safe')!;
+      writeFileSync(join(project, 'src', 'Motor.st'), disk(join(packageRoot, 'projects', lesson.referenceExampleId, lesson.solutionProgram)));
+      await openFolder(app, project);
+      await app.click(css('#console-tab-learn'), 'the Learn tab');
+      await app.until('the Check button to be enabled', async () => await app.eval<boolean>(`document.querySelector('[data-learn-check]')?.disabled === false`) || undefined);
+      await app.click(css('[data-learn-check]'), 'the Check button');
+      await app.until('Learn to grade the program as passed', async () => await app.eval<boolean>(`document.querySelector('[data-learn-grade="passed"]') !== null`) || undefined)
+        .catch(async (error: Error) => { throw new Error(`${error.message}: the grade shown is ${await app.eval<string>(`document.querySelector('[data-learn-grade]')?.getAttribute('data-learn-grade') ?? 'none'`)}; ${await app.eval<string>(`document.querySelector('[data-learn-check-status]')?.textContent ?? ''`)}`); });
+      const file = join(root, 'profile', 'zplc-learn-progress.v2.json');
+      await app.until('the passed lesson in the progress file', () => existsSync(file) && disk(file).includes('"state":"passed"') || undefined);
+      const progress = JSON.parse(disk(file)) as { lessons: Record<string, { state: string; grade: { lessonId: string; lessonVersion: number; scenarioSha256: string; programSha256: string; runtimeVersion: string; time: string; result: string } | null }> };
+      const grade = progress.lessons['motor-start-stop-safe']?.grade;
+      assert(grade && grade.result === 'passed' && grade.lessonId === lesson.id && grade.lessonVersion === lesson.version && grade.scenarioSha256 === lesson.scenarioSha256, `The grade record is not the one of this lesson: ${JSON.stringify(grade)}`);
+      assert(/^[0-9a-f]{64}$/.test(grade.programSha256) && grade.runtimeVersion.length > 0 && !Number.isNaN(Date.parse(grade.time)), `The grade record lacks the program hash, the runtime version or the time: ${JSON.stringify(grade)}`);
     },
   },
 ];

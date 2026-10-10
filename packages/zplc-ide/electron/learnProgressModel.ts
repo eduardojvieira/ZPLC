@@ -215,6 +215,29 @@ function parseDocument(value: unknown, withKind: boolean): LearnProgress | undef
 
 const byteLength = (text: string): number => new TextEncoder().encode(text).byteLength;
 
+/** A document held as a value (what crossed the IPC boundary, already parsed), or undefined when it is not exactly one. */
+export function parseProgressValue(value: unknown): LearnProgress | undefined {
+  return parseDocument(value, false);
+}
+
+/** One note about a lesson: exactly `lessonId` and any of `started`, `hint` (1 or 2), `solution`, `last`; nothing else. */
+export function parseLessonNote(value: unknown): LessonNote | undefined {
+  if (!isObject(value) || !isLessonId(value.lessonId)) return undefined;
+  const allowed = ['lessonId', 'started', 'hint', 'solution', 'last'];
+  if (Object.keys(value).some((key) => !allowed.includes(key))) return undefined;
+  if (value.started !== undefined && value.started !== true) return undefined;
+  if (value.solution !== undefined && value.solution !== true) return undefined;
+  if (value.last !== undefined && value.last !== true) return undefined;
+  if (value.hint !== undefined && value.hint !== 1 && value.hint !== 2) return undefined;
+  return {
+    lessonId: value.lessonId,
+    ...(value.started === true ? { started: true as const } : {}),
+    ...(value.hint === 1 || value.hint === 2 ? { hint: value.hint } : {}),
+    ...(value.solution === true ? { solution: true as const } : {}),
+    ...(value.last === true ? { last: true as const } : {}),
+  };
+}
+
 /** The stored document, or undefined when `raw` is not exactly one. */
 export function parseProgress(raw: string): LearnProgress | undefined {
   if (typeof raw !== 'string' || byteLength(raw) > LEARN_PROGRESS_MAX_BYTES) return undefined;

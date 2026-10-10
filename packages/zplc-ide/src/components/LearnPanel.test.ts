@@ -37,7 +37,7 @@ describe('Learn panel contract', () => {
     expect(source).not.toContain('clearTimeout');
     expect(source).toContain('Completada anteriormente');
     expect(source).toContain('Previously completed');
-    expect(source).toContain('data-learn-grade={grade.kind}');
+    expect(source).toContain('data-learn-grade={shownGrade.kind}');
     expect(source).toContain('{lesson.scope}');
     expect(source).toContain('serializeLearnMastery(mastered)');
     expect(source).toContain('parseLearnMasteryImport(await file.text())');

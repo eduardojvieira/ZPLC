@@ -77,14 +77,14 @@ describe('preload bridge (IDE-017)', () => {
     expect(methods('session')).toEqual(['load', 'save']);
     expect(methods('updateCheck')).toEqual(['run']);
     expect(methods('closeGuard')).toEqual(['setDirty', 'closeNow', 'onCloseRequested']);
-    expect(methods('workspaceTests')).toEqual(['registerProjectFile', 'registerProjectRoot', 'run', 'cancel', 'compile', 'safetyCheck']);
+    expect(methods('workspaceTests')).toEqual(['registerProjectFile', 'registerProjectRoot', 'run', 'cancel', 'compile', 'safetyCheck', 'lessonCheck']);
     expect(methods('candidateChangeSet')).toEqual(['review']);
     expect(methods('toolchain')).toEqual(['inspect']);
     expect(methods('firmwareBuild')).toEqual(['start', 'cancel']);
     expect(methods('toolExecutionAudit')).toEqual(['list']);
     expect(methods('aiProvider')).toEqual(['getStatus', 'getConfig', 'saveConfig', 'storeKey', 'clearKey', 'request', 'cancel']);
     expect(methods('nativeSimulation')).toEqual(['startSession', 'stopSession', 'request', 'onEvent']);
-    expect(methods('learnProgress')).toEqual(['read', 'merge']);
+    expect(methods('learnProgress')).toEqual(['read', 'merge', 'readProgress', 'recordGrade', 'noteLesson', 'exportProgress', 'importProgress']);
   });
 
   it('invokes every channel of the contract, and only those', () => {

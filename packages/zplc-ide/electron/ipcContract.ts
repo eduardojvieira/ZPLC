@@ -31,6 +31,8 @@ export const WORKSPACE_TESTS_CHANNEL = {
   CANCEL: 'workspace-tests:cancel',
   COMPILE: 'workspace-tests:compile',
   SAFETY_CHECK: 'workspace-tests:safety-check',
+  /** Grades the project shown by the window against the reference scenario of a lesson (LRN-022). */
+  LESSON_CHECK: 'workspace-tests:lesson-check',
 } as const;
 
 export const CANDIDATE_CHANGE_SET_CHANNEL = { REVIEW: 'candidate-change-set:review' } as const;
@@ -51,7 +53,16 @@ export const AI_PROVIDER_CHANNEL = {
   CANCEL: 'ai-provider:cancel',
 } as const;
 
-export const LEARN_PROGRESS_CHANNEL = { READ: 'learn-progress:read', MERGE: 'learn-progress:merge' } as const;
+/** The Learn progress store (LRN-031, LRN-032): the first two are the ids-only operations of the first release. */
+export const LEARN_PROGRESS_CHANNEL = {
+  READ: 'learn-progress:read',
+  MERGE: 'learn-progress:merge',
+  READ_PROGRESS: 'learn-progress:read-progress',
+  RECORD_GRADE: 'learn-progress:record-grade',
+  NOTE_LESSON: 'learn-progress:note-lesson',
+  EXPORT: 'learn-progress:export',
+  IMPORT: 'learn-progress:import',
+} as const;
 
 export const SESSION_CHANNEL = { LOAD: 'session:load', SAVE: 'session:save' } as const;
 

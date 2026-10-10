@@ -23,6 +23,7 @@ const bridge = {
   run: async (request: unknown) => { sent.push({ operation: 'run', request }); return null; },
   compile: async (request: unknown) => { sent.push({ operation: 'compile', request }); return null; },
   safetyCheck: async (request: unknown) => { sent.push({ operation: 'safetyCheck', request }); return null; },
+  lessonCheck: async (request: unknown) => { sent.push({ operation: 'lessonCheck', request }); return null; },
 };
 
 afterEach(() => {
@@ -31,17 +32,19 @@ afterEach(() => {
 });
 
 describe('the workspace bridge of a window that shows one project (IDE-002)', () => {
-  it('adds the id of the folder on screen to every build, safety check and test run, and to nothing else', async () => {
+  it('adds the id of the folder on screen to every build, safety check, test run and lesson check, and to nothing else', async () => {
     useIDEStore.setState({ isProjectOpen: true, directoryHandle: await chooseProjectFolder(projectFiles('folder-a')) });
     const shown = shownProjectBridge(bridge)!;
     await shown.compile({ workspaceId: 'w' });
     await shown.safetyCheck({ workspaceId: 'w' });
     await shown.run({ workspaceId: 'w', scenarioId: 'start-stop' });
+    await shown.lessonCheck({ workspaceId: 'w', lessonId: 'edge-counter-pulses' });
     await shown.registerProjectRoot({ rootId: 'folder-a' });
     expect(sent).toEqual([
       { operation: 'compile', request: { workspaceId: 'w', rootId: 'folder-a' } },
       { operation: 'safetyCheck', request: { workspaceId: 'w', rootId: 'folder-a' } },
       { operation: 'run', request: { workspaceId: 'w', scenarioId: 'start-stop', rootId: 'folder-a' } },
+      { operation: 'lessonCheck', request: { workspaceId: 'w', lessonId: 'edge-counter-pulses', rootId: 'folder-a' } },
       { operation: 'registerProjectRoot', request: { rootId: 'folder-a' } },
     ]);
   });

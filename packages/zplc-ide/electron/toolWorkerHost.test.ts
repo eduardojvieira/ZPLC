@@ -123,13 +123,17 @@ describe('the tool worker host (IDE-012)', () => {
 });
 
 describe('the worker command schema (IDE-012, IDE-017)', () => {
-  it('accepts exactly the five operations with exactly their fields, and nothing a caller could use as a command', () => {
+  it('accepts exactly the six operations with exactly their fields, and nothing a caller could use as a command', () => {
     const run = { type: 'run', id: 'a' };
     expect(parseToolWorkerCommand({ ...run, operation: 'compile', root: '/p' })).toEqual({ type: 'run', id: 'a', operation: 'compile', root: '/p' });
     expect(parseToolWorkerCommand({ ...run, operation: 'scenario-run', root: '/p', scenarioId: 'x' })).not.toBeNull();
     expect(parseToolWorkerCommand({ ...run, operation: 'change-set-review', root: '/p', edits: [{ path: 'src/A.st', content: '' }] })).not.toBeNull();
+    expect(parseToolWorkerCommand({ ...run, operation: 'lesson-check', root: '/p', lessonId: 'edge-counter-pulses' })).toEqual({ type: 'run', id: 'a', operation: 'lesson-check', root: '/p', lessonId: 'edge-counter-pulses' });
     expect(parseToolWorkerCommand({ type: 'cancel' })).toEqual({ type: 'cancel' });
     for (const bad of [
+      // The lesson check names a lesson and nothing else: no scenario, no path, no extra field.
+      { ...run, operation: 'lesson-check', root: '/p' }, { ...run, operation: 'lesson-check', root: '/p', lessonId: '../x' },
+      { ...run, operation: 'lesson-check', root: '/p', lessonId: 'edge-counter-pulses', scenario: '{}' },
       null, 'run', { ...run, operation: 'shell', root: '/p' }, { ...run, operation: 'compile' }, { ...run, operation: 'compile', root: '' },
       { ...run, operation: 'compile', root: '/p', argv: ['rm'] }, { ...run, operation: 'scenario-run', root: '/p' },
       { ...run, operation: 'change-set-review', root: '/p', edits: [] }, { ...run, operation: 'change-set-review', root: '/p', edits: [{ path: 'a', content: 'b', mode: 1 }] },

@@ -14,6 +14,8 @@ export type VersionedLearnLesson = LearnLesson & Readonly<{
   /** The example project the learner's workspace is copied from, and the one that holds the reference solution. */
   starterExampleId: string;
   referenceExampleId: string;
+  /** The file of the reference solution project, as `src/<file>`. */
+  solutionProgram: string;
   visibleScenarioIds: readonly string[];
   /** Scenarios of the same starter that stay a regression check. */
   authorScenarioIds: readonly string[];
@@ -55,6 +57,7 @@ export function learnLessonOf(entry: LessonIndexEntry, locale: LearnLocale): Ver
     locale,
     starterExampleId: entry.starter.project,
     referenceExampleId: entry.solution.project,
+    solutionProgram: entry.solution.program,
     visibleScenarioIds: Object.freeze([entry.scenario.id]),
     authorScenarioIds: Object.freeze([...entry.regressionScenarios]),
     faultCases: Object.freeze([...text.faultCases]),

@@ -25,7 +25,6 @@ import {
   CANDIDATE_CHANGE_SET_CHANNEL,
   CLOSE_GUARD_CHANNEL,
   FIRMWARE_BUILD_CHANNEL,
-  LEARN_PROGRESS_CHANNEL,
   NATIVE_SIMULATION_CHANNEL,
   PROJECT_FILES_CHANNEL,
   RECOVERY_CHANNEL,
@@ -36,6 +35,8 @@ import {
   WORKSPACE_TESTS_CHANNEL,
 } from './ipcContract.js';
 import { IPC_DENIED, type IpcHandler, type IpcHandlerTable } from './ipcRegistry.js';
+import { isLessonCheckRequest, lessonCheckAnswer } from './lessonCheckProtocol.js';
+import { createLearnProgressHandlers } from './learnProgressIpc.js';
 import type { NativeSimulationRequest } from './nativeSimulationIpc.js';
 import {
   isAllowedAiProviderConfig,
@@ -227,19 +228,7 @@ export function createIpcHandlers(deps: IpcDeps): IpcHandlerTable<RendererOwner>
 
     [TOOL_EXECUTION_AUDIT_CHANNEL.LIST]: handler(noArguments, () => deps.toolExecutionAudit.list()),
 
-    [LEARN_PROGRESS_CHANNEL.READ]: handler(noArguments, async () => {
-      const store = deps.learnProgress();
-      if (!store) throw denied();
-      return [...await store.read()];
-    }),
-    [LEARN_PROGRESS_CHANNEL.MERGE]: handler(
-      oneArgument((ids) => Array.isArray(ids) && ids.length <= 10 && ids.every((id) => typeof id === 'string' && id.length > 0 && id.length <= 128)),
-      async (_owner, [ids]: [string[]]) => {
-        const store = deps.learnProgress();
-        if (!store) throw denied();
-        return [...await store.merge(ids)];
-      },
-    ),
+    ...createLearnProgressHandlers<RendererOwner>(deps.learnProgress),
 
     // Per-project session (IDE-008): the renderer names the window's folder by its opaque id; the main process finds the
     // real path, validates the document and keeps it under the user-data directory, never inside the project.
@@ -328,6 +317,23 @@ export function createIpcHandlers(deps: IpcDeps): IpcHandlerTable<RendererOwner>
         const safe = sanitizeWorkspaceSafetyCheck(result);
         if (!safe) throw new Error(WORKSPACE_FAILED);
         return safe;
+      },
+      WORKSPACE_FAILED,
+    ),
+
+    // The lesson check (LRN-022): the program of the folder the window shows is graded against the scenario of the lesson
+    // package, in the tool worker like a scenario run (cancellable, one run at a time, bound to that folder). The renderer
+    // names a lesson, never a scenario; what it receives is a grade record or a fixed reason.
+    [WORKSPACE_TESTS_CHANNEL.LESSON_CHECK]: handler(
+      oneArgument(isLessonCheckRequest),
+      async (owner, [request]: [{ workspaceId: string; rootId: string; lessonId: string }]) => {
+        const answer = await deps.workspaceGateway.run(owner.ownerId, { workspaceId: request.workspaceId }, async (root, options) => {
+          const toolApi = await deps.loadToolApi();
+          const { value, execution } = await inWorker(toolApi, options, { operation: 'lesson-check', root, lessonId: request.lessonId }, 'tests:run', 'scenario-run');
+          return lessonCheckAnswer(value, execution);
+        }, folderOf(owner, request.rootId));
+        if (!answer) throw new Error(WORKSPACE_FAILED);
+        return answer;
       },
       WORKSPACE_FAILED,
     ),
