@@ -6,6 +6,12 @@ Source/local non-HIL gates are closed. Hosted exact-tag/SHA artifact generation
 remains execution evidence until that workflow runs. Only REL-007 remains pending:
 a traceable physical run of the exact release SHA on the two selected profiles.
 
+The `owner` column names who is accountable for a gate: a team or role of the
+project. `owner_type` says only how the gate is closed: `AI` marks a gate whose
+evidence is produced by automated checks that anyone can re-run, `Human` a gate
+that needs a person on real hardware or a real machine, and `Shared` both. An
+automated check never answers for a gate; the `owner` does.
+
 | gate_id | gate_name | claim_scope | owner_type | owner | verification_method | required_evidence | status | artifact_links | notes |
 |---------|-----------|-------------|------------|-------|---------------------|-------------------|--------|----------------|-------|
 | REL-001 | Truth and runtime boundary | Version truth, verifier, persistence, scheduler and host regression gates | AI | Runtime + release engineering | CMake/CTest, sanitizers, fuzz smoke and evidence validator | source contracts and automated checks | passed | tools/hil/validate_release_evidence.py; firmware/lib/zplc_core/tests | Host evidence only; no target timing claim. |

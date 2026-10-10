@@ -12,9 +12,9 @@ los contratos y la evidencia registrada prevalecen sobre la prosa.
 
 ## Camino rápido
 
-1. Encontrá el contrato de implementación del comportamiento a cambiar.
-2. Encontrá la evidencia requerida antes de publicar un claim.
-3. Actualizá documentación en inglés y español en el mismo cambio.
+1. Encuentre el contrato de implementación del comportamiento que va a cambiar.
+2. Encuentre la evidencia requerida antes de publicar una afirmación.
+3. Actualice la documentación en inglés y español en el mismo cambio.
 
 ## Mapa de autoridad
 

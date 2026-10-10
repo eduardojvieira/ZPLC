@@ -1,12 +1,15 @@
 ---
-title: ZPLC 2.0 Canonical Docs Manifest
-sidebar_label: ZPLC 2.0 Docs
-description: Release-blocking documentation surface for the ZPLC 2.0 candidate.
+title: Documentation manifest
+sidebar_label: Docs manifest
+description: For contributors. The pages that must exist in English and Spanish, and who owns each.
 ---
 
-# ZPLC 2.0 Canonical Docs Manifest
+# Documentation manifest
 
-The following pages are release-blocking and must exist in English and Spanish for ZPLC 2.0.
+This page is for contributors. It lists the documentation pages that must exist
+in English and Spanish, with the area and the owner of each. CI checks that every
+row marked `release_blocking: yes` has both files and the same slug in both
+languages (`bun run docs:validate`). Add a row when you add a page.
 
 | slug | english_path | spanish_path | area | release_blocking | owner | status |
 |------|--------------|--------------|------|------------------|-------|--------|
@@ -36,8 +39,8 @@ The following pages are release-blocking and must exist in English and Spanish f
 | languages/stdlib | docs/docs/languages/stdlib.md | docs/i18n/es/docusaurus-plugin-content-docs/current/languages/stdlib.md | languages | yes | docs | in-progress |
 | languages/examples/v1-5-language-suite | docs/docs/languages/examples/v1-5-language-suite.md | docs/i18n/es/docusaurus-plugin-content-docs/current/languages/examples/v1-5-language-suite.md | languages | yes | docs | in-progress |
 | reference/index | docs/docs/reference/index.md | docs/i18n/es/docusaurus-plugin-content-docs/current/reference/index.md | reference | yes | docs | in-progress |
-| reference/v1-5-canonical-docs-manifest | docs/docs/reference/v1-5-canonical-docs-manifest.md | docs/i18n/es/docusaurus-plugin-content-docs/current/reference/v1-5-canonical-docs-manifest.md | reference | yes | docs | foundation |
-| reference/source-of-truth | docs/docs/reference/source-of-truth.md | docs/i18n/es/docusaurus-plugin-content-docs/current/reference/source-of-truth.md | reference | yes | docs | foundation |
+| reference/v1-5-canonical-docs-manifest | docs/docs/reference/v1-5-canonical-docs-manifest.md | docs/i18n/es/docusaurus-plugin-content-docs/current/reference/v1-5-canonical-docs-manifest.md | contributing | yes | docs | foundation |
+| reference/source-of-truth | docs/docs/reference/source-of-truth.md | docs/i18n/es/docusaurus-plugin-content-docs/current/reference/source-of-truth.md | contributing | yes | docs | foundation |
 | reference/runtime-api | docs/docs/reference/runtime-api.md | docs/i18n/es/docusaurus-plugin-content-docs/current/reference/runtime-api.md | reference | yes | docs | generated |
 | reference/boards | docs/docs/reference/boards.md | docs/i18n/es/docusaurus-plugin-content-docs/current/reference/boards.md | boards | yes | docs | generated |
 | reference/capabilities-evidence | docs/docs/reference/capabilities-evidence.md | docs/i18n/es/docusaurus-plugin-content-docs/current/reference/capabilities-evidence.md | reference | yes | docs | candidate |
@@ -47,6 +50,9 @@ The following pages are release-blocking and must exist in English and Spanish f
 | operations/recovery | docs/docs/operations/recovery.md | docs/i18n/es/docusaurus-plugin-content-docs/current/operations/recovery.md | operations | yes | docs | candidate |
 | release-notes/index | docs/docs/release-notes/index.md | docs/i18n/es/docusaurus-plugin-content-docs/current/release-notes/index.md | release-notes | yes | docs | release-ready |
 | development/firmware-testing | docs/docs/development/firmware-testing.md | docs/i18n/es/docusaurus-plugin-content-docs/current/development/firmware-testing.md | development | no | firmware | candidate |
+| contributing/index | docs/docs/contributing/index.md | docs/i18n/es/docusaurus-plugin-content-docs/current/contributing/index.md | contributing | no | docs | candidate |
+| contributing/principles | docs/docs/contributing/principles.md | docs/i18n/es/docusaurus-plugin-content-docs/current/contributing/principles.md | contributing | no | docs | candidate |
+| contributing/roadmap | docs/docs/contributing/roadmap.md | docs/i18n/es/docusaurus-plugin-content-docs/current/contributing/roadmap.md | contributing | no | docs | candidate |
 
 ## Board manifest compatibility
 
@@ -54,5 +60,5 @@ The historical board manifest filename remains `firmware/app/boards/supported-bo
 
 ## Source-of-Truth Rule
 
-The manifest is only the navigation contract. The truth for runtime APIs, boards, IDE workflows,
-and release scope lives in the files mapped by [`source-of-truth.md`](./source-of-truth.md).
+The manifest is only a navigation contract. The truth for runtime APIs, boards, Studio workflows
+and release scope lives in the files named in the [source of truth](./source-of-truth.md).
