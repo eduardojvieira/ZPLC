@@ -102,6 +102,10 @@ All notable changes are documented here.
 - `BLINK` starts its cycle with the ON phase in the scan where `ENABLE` rises
   (it started with the OFF phase) and starts it again after `ENABLE` was
   FALSE; a phase ends at the first call at which its time has elapsed.
+- `PWM` takes an integer `DUTY` as a REAL (`DUTY := 1` was a denormal and the
+  output never came on), ends its pulse at `PERIOD * DUTY` also when that is not
+  a whole number of milliseconds (the comparison truncated 30.5 ms to 30 ms of
+  difference), and a `PERIOD` of 0 is off instead of dividing by zero.
 
 ## 2.0.0-rc.3 - 2026-09-01
 

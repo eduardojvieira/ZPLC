@@ -653,6 +653,8 @@
     {"kind":"conformance","ref":"conformance/cmp/cmp-058-pid-compact-proportional-term-and-output-limits.expect.json","test":"CMP-058 PID_Compact gives KP times the error, negative errors included, limited to OUT_MIN and OUT_MAX"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-058-pulse-one-pulse-per-rising-edge.expect.json","test":"CMP-058 PULSE gives one pulse of PT for a rising edge, ignores a retrigger and a level that stays true"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-058-pwm-duty-cycle-and-disable.expect.json","test":"CMP-058 PWM is on for DUTY of each PERIOD, never at 0.0, always at 1.0, and off while ENABLE is false"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-058-pwm-fractional-on-time.expect.json","test":"CMP-058 PWM stays on while the elapsed time is below a fractional on time"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-058-pwm-zero-period-is-always-off.expect.json","test":"CMP-058 PWM with a PERIOD of 0 is off and does not divide by zero"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-058-r-trig-one-pulse-per-edge.expect.json","test":"CMP-058 R_TRIG gives one pulse per rising edge"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-058-ramp-real-limits-the-rate-up-and-down.expect.json","test":"CMP-058 RAMP_REAL moves toward its input by at most RATE for each scan, up and down through zero"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-058-sel-and-mux-with-negative-and-real-inputs.expect.json","test":"CMP-058 SEL and MUX return negative and REAL inputs, the last input, and IN0 for a selector out of range"},

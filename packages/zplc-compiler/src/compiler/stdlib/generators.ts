@@ -253,7 +253,9 @@ export const PWM_FB: FunctionBlockDef = {
                 ctx.emit(`    STORE32 ${periodAddr}`);
             } else if (param.name === 'DUTY') {
                 ctx.emit(`    ; Set ${ctx.instanceName}.DUTY`);
-                ctx.emitExpression(param.value);
+                // DUTY := 1 is the REAL 1.0, not the bit pattern of the integer 1
+                if (ctx.emitOperand) ctx.emitOperand(param.value, 'REAL');
+                else ctx.emitExpression(param.value);
                 ctx.emit(`    STORE32 ${dutyAddr}`);
             }
         }
@@ -278,8 +280,8 @@ export const PWM_FB: FunctionBlockDef = {
         
         // Check if we've completed a full period
         ctx.emit(`    LOAD32 ${periodAddr}`);
-        ctx.emit(`    GE`);               // elapsed >= PERIOD?
-        ctx.emit(`    JZ ${checkOutput}`);
+        ctx.emit(`    LTU`);              // elapsed < PERIOD, unsigned milliseconds
+        ctx.emit(`    JNZ ${checkOutput}`);
         
         // Start new period
         ctx.emit(`    DROP`);             // discard old elapsed
@@ -289,29 +291,31 @@ export const PWM_FB: FunctionBlockDef = {
         
         ctx.emit(`${checkOutput}:`);
         // Stack: [elapsed]
-        // Calculate ON time: PERIOD * DUTY (as integers)
-        // We need: elapsed < (PERIOD * DUTY)
-        
-        ctx.emit(`    I2F`);              // Convert elapsed to float
+        // ON while elapsed / PERIOD < DUTY. The ratio is compared with DUTY itself, not with a product
+        // PERIOD * DUTY: 30 / 100 and 0.3 are the same REAL, so the pulse of a duty of 0.3 ends at 30 ms,
+        // where 100 * 0.3 is a little above 30. A PERIOD of 0 has no ON phase (and no division).
+        const zeroPeriod = ctx.newLabel('pwm_zero_period');
+        ctx.emit(`    I2F`);              // [elapsed_f]
         ctx.emit(`    LOAD32 ${periodAddr}`);
-        ctx.emit(`    I2F`);              // Convert PERIOD to float
-        ctx.emit(`    LOAD32 ${dutyAddr}`); // DUTY is already float
-        ctx.emit(`    MULF`);             // PERIOD * DUTY = on_time
-        
-        // Compare: elapsed < on_time?
-        // Stack: [elapsed_f, on_time_f]
-        ctx.emit(`    SWAP`);             // [on_time_f, elapsed_f]
-        ctx.emit(`    SUBF`);             // on_time - elapsed
-        ctx.emit(`    F2I`);              // Convert to integer for comparison
-        ctx.emit(`    PUSH8 0`);
-        ctx.emit(`    GT`);               // (on_time - elapsed) > 0?
+        ctx.emit(`    DUP`);
+        ctx.emit(`    JZ ${zeroPeriod}`); // [elapsed_f PERIOD]
+        ctx.emit(`    I2F`);
+        ctx.emit(`    DIVF`);             // [elapsed / PERIOD]
+        ctx.emit(`    LOAD32 ${dutyAddr}`); // DUTY is a REAL
+        if (ctx.emitCompare) ctx.emitCompare('LT', 'REAL');
+        else ctx.emit(`    LT`);
         ctx.emit(`    JZ ${setOff}`);
-        
+
         // ON phase
         ctx.emit(`    PUSH8 1`);
         ctx.emit(`    STORE8 ${qAddr}`);
         ctx.emit(`    JMP ${pwmEnd}`);
         
+        // A PERIOD of 0: nothing on the stack but the two values
+        ctx.emit(`${zeroPeriod}:`);
+        ctx.emit(`    DROP`);
+        ctx.emit(`    DROP`);
+
         // OFF phase
         ctx.emit(`${setOff}:`);
         ctx.emit(`    PUSH8 0`);
@@ -439,8 +443,8 @@ export const PULSE_FB: FunctionBlockDef = {
         ctx.emit(`    LOAD32 ${startAddr}`);
         ctx.emit(`    SUB`);              // elapsed
         ctx.emit(`    LOAD32 ${ptAddr}`);
-        ctx.emit(`    GE`);               // elapsed >= PT?
-        ctx.emit(`    JZ ${pulseEnd}`);   // No, keep pulse active
+        ctx.emit(`    LTU`);              // elapsed < PT, unsigned milliseconds?
+        ctx.emit(`    JNZ ${pulseEnd}`);  // Yes, keep pulse active
 
         // Pulse expired
         ctx.emit(`${endPulse}:`);
