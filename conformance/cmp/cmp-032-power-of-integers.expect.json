@@ -1,0 +1,18 @@
+{
+  "requirement": "CMP-032",
+  "title": "** converts integer operands to REAL",
+  "scans": 1,
+  "scanMs": 10,
+  "expect": [
+    {
+      "at": "%QD0",
+      "type": "REAL",
+      "value": 1024.0
+    },
+    {
+      "at": "%QD4",
+      "type": "REAL",
+      "value": 8.0
+    }
+  ]
+}

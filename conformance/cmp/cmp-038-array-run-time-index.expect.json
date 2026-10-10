@@ -1,0 +1,23 @@
+{
+  "requirement": "CMP-038",
+  "title": "an array element called through a run-time index, each element with its own state",
+  "scans": 3,
+  "scanMs": 10,
+  "expect": [
+    {
+      "at": "%QW0",
+      "type": "INT",
+      "value": 1
+    },
+    {
+      "at": "%QW2",
+      "type": "INT",
+      "value": 1
+    },
+    {
+      "at": "%QW4",
+      "type": "INT",
+      "value": 1
+    }
+  ]
+}

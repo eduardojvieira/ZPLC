@@ -1,0 +1,6 @@
+PROGRAM Literal
+VAR
+  seen AT %QW0 : INT;
+END_VAR
+  seen := 2#1111_0000;
+END_PROGRAM

@@ -1,0 +1,18 @@
+{
+  "requirement": "CMP-038",
+  "title": "an array of user function blocks, each element with its own state",
+  "scans": 3,
+  "scanMs": 10,
+  "expect": [
+    {
+      "at": "%QW0",
+      "type": "INT",
+      "value": 3
+    },
+    {
+      "at": "%QW2",
+      "type": "INT",
+      "value": 30
+    }
+  ]
+}

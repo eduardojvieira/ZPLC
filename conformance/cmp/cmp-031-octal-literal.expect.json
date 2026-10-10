@@ -1,0 +1,13 @@
+{
+  "requirement": "CMP-031",
+  "title": "octal literal 8#17",
+  "scans": 1,
+  "scanMs": 10,
+  "expect": [
+    {
+      "at": "%QW0",
+      "type": "INT",
+      "value": 15
+    }
+  ]
+}

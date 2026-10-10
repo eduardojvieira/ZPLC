@@ -26,6 +26,7 @@ import {
     type DebugMap,
     type ProjectConfig as CoreProjectConfig,
     type ProgramSource as CoreProgramSource,
+    type CompilerWarning,
 } from '@zplc/compiler';
 
 export const LANGUAGE_WORKFLOW_STAGE = {
@@ -129,6 +130,8 @@ export interface ProgramSource {
  * Result of multi-task project compilation.
  */
 export interface MultiTaskCompilationResult {
+    /** What the compiler accepted that the language reference does not define (CMP-031), in source order. */
+    warnings: CompilerWarning[];
     /** Complete .zplc file with CODE and TASK segments */
     zplcFile: Uint8Array;
     /** Concatenated bytecode */
@@ -170,6 +173,8 @@ export interface SingleFileTaskOptions {
  * Result of single-file compilation with task.
  */
 export interface SingleFileTaskResult extends ProjectCompilationResult {
+    /** What the compiler accepted that the language reference does not define (CMP-031). */
+    warnings: CompilerWarning[];
     /** Task definitions (always contains exactly one task) */
     tasks: TaskDef[];
     /** Whether the file contains TASK segment (always true) */
@@ -516,14 +521,20 @@ export function compileMultiTaskProject(
     };
 
     try {
-        return compileCoreMultiTaskProject(coreConfig, coreSources, {
+        const result = compileCoreMultiTaskProject(coreConfig, coreSources, {
             memoryProfile: getCompilerMemoryProfile(config.target?.board),
         });
+        // a graphical source has no lines: its warnings would point into the generated Structured Text
+        return { ...result, warnings: result.warnings.filter((warning) => !warning.sourceRef || !visualSourceRefs.has(warning.sourceRef)) };
     } catch (error) {
         if (error instanceof CompilerError) {
-            if (error.sourceRef && visualSourceRefs.has(error.sourceRef) && error.line > 0) {
-                // The position is kept: the graphical models have no lines, so it names the generated Structured Text.
-                throw new CompilerError(`${error.detail} (position in the generated Structured Text)`, error.line, error.column, error.phase, error.sourceRef);
+            // The position is kept: the graphical models have no lines, so it names the generated Structured Text.
+            const relocated = error.errors.map((each) => each.sourceRef && visualSourceRefs.has(each.sourceRef) && each.line > 0
+                ? new CompilerError(`${each.detail} (position in the generated Structured Text)`, each.line, each.column, each.phase, each.sourceRef, each.endLine, each.endColumn)
+                : each);
+            if (relocated.some((each, index) => each !== error.errors[index])) {
+                relocated[0]!.errors = relocated;
+                throw relocated[0];
             }
         }
         throw error;
@@ -587,6 +598,7 @@ export function compileSingleFileWithTask(
         codeSize: multiResult.codeSize,
         debugMap: multiResult.debugMap,
         language,
+        warnings: multiResult.warnings,
         tasks: multiResult.tasks,
         hasTaskSegment: true,
     };

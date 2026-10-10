@@ -1,0 +1,11 @@
+{
+  "requirement": "CMP-038",
+  "title": "a call with a constant index outside the array is rejected",
+  "build": "fails",
+  "lines": [
+    5
+  ],
+  "messageIncludes": [
+    "outside the array bounds"
+  ]
+}

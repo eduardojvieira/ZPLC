@@ -1,0 +1,13 @@
+{
+  "requirement": "CMP-030",
+  "title": "several names in one declaration share the initial value",
+  "scans": 1,
+  "scanMs": 10,
+  "expect": [
+    {
+      "at": "%QW0",
+      "type": "INT",
+      "value": 12
+    }
+  ]
+}

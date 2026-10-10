@@ -20,8 +20,8 @@
 // =============================================================================
 // Lexer exports
 // =============================================================================
-export { tokenize, TokenType, LexerError } from './lexer.ts';
-export type { Token, TokenTypeValue } from './lexer.ts';
+export { tokenize, tokenizeWithErrors, TokenType, LexerError } from './lexer.ts';
+export type { Token, TokenTypeValue, LexResult, LexerWarning } from './lexer.ts';
 
 // =============================================================================
 // AST exports
@@ -56,7 +56,9 @@ export type {
 // =============================================================================
 // Parser exports
 // =============================================================================
-export { parse, ParseError } from './parser.ts';
+export { parse, parseWithDiagnostics, ParseError } from './parser.ts';
+export type { ParseOutcome } from './parser.ts';
+export type { SourceSpan, SourceWarning, SyntaxIssue } from './diagnostics.ts';
 
 // =============================================================================
 // Symbol table exports
@@ -120,10 +122,11 @@ export type {
 // =============================================================================
 // Internal imports for main functions
 // =============================================================================
-import { parse } from './parser.ts';
+import { parse, parseWithDiagnostics } from './parser.ts';
 import { ParseError } from './parser.ts';
 import { LexerError } from './lexer.ts';
 import { generate, CodegenError, WORK_MEMORY_REGION_SIZE, DEFAULT_COMPILER_MEMORY_PROFILE, validateCompilerMemoryProfile } from './codegen.ts';
+import type { SyntaxIssue } from './diagnostics.ts';
 import type { CodeGenOptions, CompilerMemoryProfile } from './codegen.ts';
 import { assemble, createMultiTaskZplcFile, relocateBytecode, TASK_TYPE, ZPLC_CONSTANTS } from '../assembler/index.ts';
 import type { AssemblyResult, TagDef, TaskDef, TaskType } from '../assembler/index.ts';
@@ -146,19 +149,71 @@ export class CompilerError extends Error {
     detail: string;
     line: number;
     column: number;
+    /** Position just after the offending text, when the phase knows it. */
+    endLine?: number;
+    endColumn?: number;
     phase: 'lexer' | 'parser' | 'codegen' | 'assembler';
     /** Physical project-relative source identity, when the diagnostic belongs to one source. */
     sourceRef?: string;
+    /**
+     * Every independent error of the compile, in source order (programs in task order); this error is
+     * the first of them. A caller that shows one diagnostic shows this one; one that shows all uses this list (CMP-007).
+     */
+    errors: CompilerError[] = [this];
 
-    constructor(message: string, line: number, column: number, phase: 'lexer' | 'parser' | 'codegen' | 'assembler', sourceRef?: string) {
+    constructor(
+        message: string,
+        line: number,
+        column: number,
+        phase: 'lexer' | 'parser' | 'codegen' | 'assembler',
+        sourceRef?: string,
+        endLine?: number,
+        endColumn?: number,
+    ) {
         super(`[${phase}] Error at ${line}:${column}: ${message}`);
         this.name = 'CompilerError';
         this.detail = message;
         this.line = line;
         this.column = column;
+        this.endLine = endLine;
+        this.endColumn = endColumn;
         this.phase = phase;
         this.sourceRef = sourceRef;
     }
+}
+
+/**
+ * The errors one source produced, as compiler errors in source order: every error a lexer, parser or
+ * generator reported, each with its own position (CMP-006, CMP-007).
+ */
+export function compilerErrorsOf(
+    error: unknown,
+    label: string,
+    sourceRef: string | undefined,
+    fallback: { line: number; column: number },
+): CompilerError[] {
+    if (error instanceof CompilerError) {
+        return error.errors.map((each) => (sourceRef ? attachSourceRef(each, sourceRef) : each));
+    }
+    if (error instanceof CodegenError) {
+        return error.errors.map((each) => new CompilerError(each.message, each.line, each.column, 'codegen', sourceRef, each.endLine, each.endColumn));
+    }
+    if (error instanceof LexerError || error instanceof ParseError) {
+        return (error.errors as SyntaxIssue[]).map((each) => new CompilerError(
+            `Compilation of '${label}' failed: ${each.detail}`,
+            each.line, each.column, each.name === 'LexerError' ? 'lexer' : 'parser', sourceRef, each.endLine, each.endColumn,
+        ));
+    }
+    const err = error as Error;
+    // an error that carries no position is placed at the start of the unit it came from, never at line 0
+    return [new CompilerError(`Compilation of '${label}' failed: ${err.message}`, fallback.line, fallback.column, 'codegen', sourceRef)];
+}
+
+/** Throw the first of `errors` carrying all of them. */
+function throwAll(errors: CompilerError[]): never {
+    const first = errors[0]!;
+    first.errors = errors;
+    throw first;
 }
 
 // =============================================================================
@@ -249,7 +304,7 @@ export function compileST(source: string, options?: CodeGenOptions): string {
         return generate(ast, options);
     } catch (e) {
         if (e instanceof CodegenError) {
-            throw new CompilerError(e.message, e.line, e.column, 'codegen');
+            throwAll(compilerErrorsOf(e, 'source', undefined, e));
         }
         throw e;
     }
@@ -368,7 +423,7 @@ export function compileToBinary(source: string, options?: CompileOptions): Compi
         assembly = generate(ast, codegenOptions);
     } catch (e) {
         if (e instanceof CodegenError) {
-            throw new CompilerError(e.message, e.line, e.column, 'codegen');
+            throwAll(compilerErrorsOf(e, 'source', undefined, e));
         }
         throw e;
     }
@@ -488,9 +543,26 @@ function attachSourceRef(error: CompilerError, sourceRef: string): CompilerError
 }
 
 /**
+ * Something the compiler accepted that the language reference does not define: the build succeeds (CMP-031).
+ */
+export interface CompilerWarning {
+    /** Stable identifier of the kind of warning. */
+    code: 'NON_IEC_HEX_LITERAL';
+    message: string;
+    line: number;
+    column: number;
+    endLine?: number;
+    endColumn?: number;
+    /** Physical project-relative source identity, when the warning belongs to one source. */
+    sourceRef?: string;
+}
+
+/**
  * Result of multi-task project compilation.
  */
 export interface MultiTaskCompilationResult {
+    /** Warnings of the compile, in source order (programs in task order). */
+    warnings: CompilerWarning[];
     /** Complete .zplc file with CODE and TASK segments */
     zplcFile: Uint8Array;
     /** Concatenated bytecode */
@@ -671,6 +743,9 @@ export function compileMultiTaskProject(
     let programIndex = 0;
     const declaredProgramSources = new Map<string, string>();
     const physicalOutputOwners: PhysicalOutputOwner[] = [];
+    // The errors of every program that failed: one compile reports them all (CMP-007)
+    const failures: CompilerError[] = [];
+    const warnings: CompilerWarning[] = [];
 
     for (const progName of referencedPrograms) {
         const source = sourceMap.get(progName) || sourceMap.get(progName.toLowerCase());
@@ -692,8 +767,28 @@ export function compileMultiTaskProject(
         // Compile to assembly — enable source annotations for debug map
         let assembly: string;
         let programAst: ReturnType<typeof parse>;
+        let unitStart = { line: 1, column: 1 };
         try {
-            programAst = parse(source.content);
+            const parsed = parseWithDiagnostics(source.content);
+            if (parsed.errors.length > 0) {
+                // the first error carries all of them, as parse() throws it
+                const first = parsed.errors[0]!;
+                first.errors = parsed.errors;
+                throw first;
+            }
+            programAst = parsed.unit;
+            unitStart = programAst.programs[0] ?? unitStart;
+            for (const warning of parsed.warnings) {
+                warnings.push({
+                    code: 'NON_IEC_HEX_LITERAL',
+                    message: warning.message,
+                    line: warning.line,
+                    column: warning.column,
+                    endLine: warning.endLine,
+                    endColumn: warning.endColumn,
+                    sourceRef,
+                });
+            }
             if (programAst.programs.length === 0) {
                 throw new CompilerError('No program found in source', 1, 1, 'parser', sourceRef);
             }
@@ -718,25 +813,11 @@ export function compileMultiTaskProject(
                 emitSourceAnnotations: true,
             });
         } catch (e) {
-            if (e instanceof CompilerError) throw attachSourceRef(e, sourceRef);
-            if (e instanceof CodegenError) {
-                throw attachSourceRef(
-                    new CompilerError(e.message, e.line, e.column, 'codegen'),
-                    sourceRef,
-                );
-            }
-            if (e instanceof LexerError) {
-                throw new CompilerError(`Compilation of '${progName}' failed: ${e.message.replace(/^Lexer error at \d+:\d+:\s*/, '')}`, e.line, e.column, 'lexer', sourceRef);
-            }
-            if (e instanceof ParseError) {
-                throw new CompilerError(`Compilation of '${progName}' failed: ${e.message.replace(/^Parse error at \d+:\d+:\s*/, '')}`, e.line, e.column, 'parser', sourceRef);
-            }
-            const err = e as Error;
-            throw new CompilerError(
-                `Compilation of '${progName}' failed: ${err.message}`,
-                0, 0, 'codegen', sourceRef
-            );
+            // The other programs are still compiled, so that their errors are reported too
+            failures.push(...compilerErrorsOf(e, progName, sourceRef, unitStart));
+            continue;
         }
+        if (failures.length > 0) continue;
 
         // Assemble to bytecode
         let asmResult: AssemblyResult;
@@ -779,6 +860,8 @@ export function compileMultiTaskProject(
         currentOffset += asmResult.bytecode.length;
         programIndex++;
     }
+
+    if (failures.length > 0) throwAll(failures);
 
     // Concatenate all bytecode with relocation
     const totalCodeSize = compiledPrograms.reduce((sum, p) => sum + p.size, 0);
@@ -849,6 +932,7 @@ export function compileMultiTaskProject(
     }
 
     return {
+        warnings,
         zplcFile,
         bytecode: concatenatedBytecode,
         tasks: taskDefs,

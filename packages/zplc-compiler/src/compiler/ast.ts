@@ -20,6 +20,9 @@ export interface ASTNode {
     kind: string;
     line: number;
     column: number;
+    /** Position just after the last character of the construct, when the parser recorded it. */
+    endLine?: number;
+    endColumn?: number;
 }
 
 // ============================================================================
@@ -244,6 +247,7 @@ export const VarSection = {
     VAR_OUTPUT: 'VAR_OUTPUT',
     VAR_IN_OUT: 'VAR_IN_OUT',
     VAR_TEMP: 'VAR_TEMP',
+    VAR_EXTERNAL: 'VAR_EXTERNAL',
     VAR_RETAIN: 'VAR_RETAIN',
     VAR_GLOBAL: 'VAR_GLOBAL',
     CONSTANT: 'CONSTANT',
@@ -347,6 +351,8 @@ export interface VarDecl extends ASTNode {
     ioAddress: IOAddress | null;  // For I/O-mapped variables
     section: VarSectionValue;
     tags: Record<string, string | true>; // Optional attributes like {publish} or {modbus:40001}
+    /** Declared in a `VAR RETAIN` block (`NON_RETAIN` and no qualifier are false/absent). */
+    retain?: boolean;
 }
 
 /**
@@ -356,6 +362,8 @@ export interface VarBlock extends ASTNode {
     kind: 'VarBlock';
     section: VarSectionValue;
     variables: VarDecl[];
+    /** `VAR RETAIN` (true) or `VAR NON_RETAIN` (false); absent when no qualifier is written. */
+    retain?: boolean;
 }
 
 // ============================================================================
@@ -386,7 +394,19 @@ export type Expression =
     | ArrayLiteral
     | ReferenceExpr
     | DereferenceExpr
+    | BitAccess
     | ThisExpr;
+
+/**
+ * Access to one bit of an integer or bit-string value: `w.0`, `status.15` (CMP-032).
+ * A BOOL as an expression; as an assignment target it sets or clears the bit.
+ */
+export interface BitAccess extends ASTNode {
+    kind: 'BitAccess';
+    operand: Expression;
+    /** Bit number, 0 is the least significant bit. */
+    bit: number;
+}
 
 /**
  * Reference expression (REF(variable)).
@@ -472,6 +492,8 @@ export interface IntLiteral extends ASTNode {
     value: number;
     /** The exact value, present only when it is beyond 2^53 and `value` is rounded (a LINT or ULINT literal). */
     big?: bigint;
+    /** The type a typed literal names: `INT#5` is an INT, a plain `5` has none (CMP-031). */
+    literalType?: string;
 }
 
 /**
@@ -480,6 +502,8 @@ export interface IntLiteral extends ASTNode {
 export interface RealLiteral extends ASTNode {
     kind: 'RealLiteral';
     value: number;  // Parsed float value
+    /** The type a typed literal names: `LREAL#1.5` (CMP-031). */
+    literalType?: string;
 }
 
 /**
@@ -632,7 +656,7 @@ export interface UnaryExpr extends ASTNode {
  */
 export interface BinaryExpr extends ASTNode {
     kind: 'BinaryExpr';
-    operator: 'AND' | 'OR' | 'XOR' | 'ADD' | 'SUB' | 'MUL' | 'DIV' | 'MOD' | 'EQ' | 'NE' | 'LT' | 'LE' | 'GT' | 'GE';
+    operator: 'AND' | 'OR' | 'XOR' | 'ADD' | 'SUB' | 'MUL' | 'DIV' | 'MOD' | 'POW' | 'EQ' | 'NE' | 'LT' | 'LE' | 'GT' | 'GE';
     left: Expression;
     right: Expression;
 }
@@ -682,7 +706,7 @@ export type Statement =
  */
 export interface Assignment extends ASTNode {
     kind: 'Assignment';
-    target: Identifier | MemberAccess | ArrayAccess | DereferenceExpr;
+    target: Identifier | MemberAccess | ArrayAccess | DereferenceExpr | BitAccess;
     value: Expression;
 }
 
@@ -840,6 +864,11 @@ export interface FBCallStatement extends ASTNode {
     kind: 'FBCallStatement';
     fbName: string;
     parameters: FBParameter[];
+    /**
+     * The instance when it is not a plain name: `timers[2](IN := x)` (CMP-038). `fbName` then holds
+     * the text of the expression, for messages and annotations.
+     */
+    instance?: Expression;
 }
 
 /**
@@ -910,6 +939,18 @@ export interface EnumDecl extends ASTNode {
 export type TypeDefinition = StructDecl | EnumDecl;
 
 /**
+ * Type alias (`TYPE Speed : INT; END_TYPE`, CMP-030). The parser replaces every use of the alias by its
+ * base type, so no later phase meets an alias name; the declaration stays here for tools.
+ */
+export interface AliasDecl extends ASTNode {
+    kind: 'AliasDecl';
+    name: string;
+    baseType: STDataType;
+    /** Default value of a variable of this type that has no initial value of its own. */
+    initialValue: Expression | null;
+}
+
+/**
  * A complete compilation unit (one .st file).
  */
 export interface CompilationUnit extends ASTNode {
@@ -918,6 +959,8 @@ export interface CompilationUnit extends ASTNode {
     functions: FunctionDecl[];      // User-defined functions
     functionBlocks: FunctionBlockDecl[]; // NEW in v1.4.3
     typeDefinitions: TypeDefinition[];  // NEW for Sprint 4
+    /** Type aliases, already resolved in every declaration (CMP-030). */
+    typeAliases?: AliasDecl[];
     interfaces: InterfaceDecl[];    // NEW for OOP support
     programs: Program[];
 }
@@ -942,7 +985,12 @@ export interface FunctionDecl extends ASTNode {
     name: string;
     returnType: DataTypeValue;
     inputs: VarDecl[];     // VAR_INPUT parameters
-    locals: VarDecl[];     // VAR variables
+    /** VAR, VAR_TEMP, VAR_OUTPUT and VAR_IN_OUT variables: a function keeps its outputs in static storage like its locals. */
+    locals: VarDecl[];
+    /** The VAR_OUTPUT declarations, which are also in `locals`. */
+    outputs?: VarDecl[];
+    /** The VAR_IN_OUT declarations, which are also in `locals`. */
+    inouts?: VarDecl[];
     body: Statement[];
 }
 
