@@ -39,11 +39,13 @@ equipo de escritorio Linux x86-64 de 12 hilos con cachés calientes.
 | Compilador | `bun run test:compiler:ci` | unos 2 s | Pasan las pruebas del compilador y del ensamblador, y todo fallo es uno de los listados |
 | Studio, CLI, conformidad | `bun run test:ide:ci` | de 30 a 60 s | Las suites de Studio y los casos de conformidad se comportan como está listado |
 | Lint y tipos | `bun run lint`, `bun run typecheck` y `bun run build:ide` | unos 10 s, 20 s y 40 s | ESLint no marca nada, incluidas las reglas que rechazan una promesa sin manejar; todo programa TypeScript, con sus pruebas y scripts, pasa el comprobador de tipos; y Studio compila |
+| Análisis estático de C | `bun run lint:c` | unos 15 s | `clang-tidy` con `.clang-tidy`, cada hallazgo es un error, no marca nada en el núcleo, el HAL POSIX y la aplicación de host; también se analizan el HAL de Zephyr y `firmware/app` cuando existe una compilación de placa |
+| Fuentes de las pruebas | `bun run check:test-sources` | menos de 1 s | Ninguna prueba lee el texto del código del producto, salvo los archivos listados para reemplazo en `tools/ci/pinned-source-offenders.json` |
 | Contrato binario | `bun run contract:check` | unos 1 s | Los archivos generados coinciden con `contract.json` |
 | Simulación | `bun run simulate packages/zplc-ide/projects/motor_plant` | menos de 1 s | Las pruebas de escenario del proyecto pasan en el runtime nativo |
 | Recorridos de Studio | `bun run test:journeys` | de 70 a 90 s | La aplicación real pasa sus recorridos de extremo a extremo (requiere pantalla) |
 | Firmware en Linux | `bun run setup:firmware` y luego `bun run test:firmware` | unos 6 min una vez, luego unos 4 min | Las suites de Zephyr pasan en `native_sim`, QEMU y los presupuestos de tamaño |
-| Documentación | `bun run check:docs` | unos 20 s | Las referencias están al día, las páginas están completas, las páginas en inglés y español coinciden en estructura, y el sitio compila |
+| Documentación | `bun run check:docs` | unos 50 s | Las referencias están al día, las páginas están completas, las páginas en inglés y español coinciden en estructura, todo ejemplo marcado como ejecutable compila y da el resultado que su cerco indica, y el sitio compila |
 | Ensayo de publicación | `bun run release:rehearsal` | unos 10 s | Las verificaciones que el workflow de publicación ejecuta antes de construir nada |
 
 Un resultado correcto en un nivel nunca prueba uno superior: una prueba de host no
@@ -63,6 +65,44 @@ explica qué muestra cada modo del firmware y qué no.
 
 No publique, no flashee hardware, no despliegue un programa PLC ni accione equipos
 sin autorización explícita.
+
+## Ejemplos de código ejecutables
+
+Un ejemplo de código de la documentación se verifica en CI cuando su cerco lo indica. La primera
+palabra del cerco nombra el lenguaje; las palabras siguientes dicen qué verificar:
+
+````text
+```st runnable
+PROGRAM Counting
+VAR
+    Count : INT;
+END_VAR
+Count := Count + 1;
+END_PROGRAM
+```
+
+```st runnable expect="Count=3" scans=3 scan_ms=10
+PROGRAM Counting
+VAR
+    Count : INT;
+END_VAR
+Count := Count + 1;
+END_PROGRAM
+```
+````
+
+| Palabra | Significado |
+|---|---|
+| `runnable` | El ejemplo se compila con el compilador del repositorio. Un ejemplo que no compila hace fallar `bun run check:docs`: corrija el ejemplo o quite la palabra. |
+| `expect="Nombre=Valor ..."` | El ejemplo además se ejecuta en el runtime nativo y cada valor nombrado se compara después del último scan. `Nombre` es una variable del programa o una dirección directa como `%QX0.0` o `%QW0` (`Nombre:TIPO` fija el tipo de una dirección); `Valor` es `TRUE`, `FALSE` o un número. La página debe decir el resultado con palabras junto al ejemplo. |
+| `scans=N`, `scan_ms=N` | Cuántos scans ejecutar (por defecto 1) y el período de cada uno en milisegundos (por defecto 10). Solo con `expect`. |
+| `fragment` | El bloque es un cuerpo sin encabezado (variables y sentencias): se envuelve en `PROGRAM DocSample ... END_PROGRAM` antes de compilarlo. |
+| `language=il` | El ejemplo es Instruction List, escrito en un cerco `iecst`. |
+
+La página en inglés y su gemela en español marcan los mismos ejemplos de la misma manera, con el
+mismo resultado. El ejemplo está escrito en código y por eso es igual en ambos idiomas. La
+verificación es `bun run check:docs-samples`; necesita `bun run build:compiler` y, para un ejemplo
+con `expect`, `bun run build:runtime`, y falla en vez de omitirse cuando falta el runtime.
 
 ## Documentos del proyecto
 

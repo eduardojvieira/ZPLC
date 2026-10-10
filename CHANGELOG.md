@@ -4,6 +4,28 @@ All notable changes are documented here.
 
 ## Unreleased
 
+- CI fails when a test reads the text of a product source file (VF-006): a guard
+  (`tools/ci/test-source-guard.ts`) lists every test that reads Studio, Electron,
+  script, firmware or workflow source, and `tools/ci/pinned-source-offenders.json`
+  records the known ones with the requirement and the kind of replacement for
+  each. The list can only shrink. Six source-text assertions are now behaviour
+  tests (the compiler version, the store's state, the Learn lesson catalog, the VM
+  error table against the generated contract, the native program limit, and a
+  scenario that becomes a named pipe).
+- `clang-tidy` runs in CI with a configuration file, `.clang-tidy`, and warnings
+  are errors (VF-018): over the core, the POSIX HAL and the host application on
+  every push, and over the Zephyr HAL and `firmware/app` with
+  `tools/firmware-test/run.sh tidy` when a board build exists. Findings fixed:
+  an unchecked `signal()` in the host runtime now reports a handler that was not
+  installed; the pointer offsets of the loader, the VM and the program store are
+  computed in `size_t`; the unchecked results of `snprintf`, `fclose` and `fflush` in the
+  HALs are discarded on purpose; a `strcpy` that was bounded by a check before it
+  is now a `memcpy` of the same length. `-Werror` now also applies to the ZPLC
+  Zephyr library.
+- A code sample in the docs whose fence says `runnable` is compiled in CI, and
+  executed when it states an expected result (VF-020). The three Structured Text
+  and Instruction List samples of the language pages are marked, in English and
+  Spanish, and the convention is on the Contributing page.
 - The loader refuses a program whose calls nest deeper than the call stack of
   the VM (`ZPLC_CALL_STACK_MAX`, 32 by default, 16 on the ESP32-S3 profile)
   with `ZPLC_LOADER_ERR_STACK`, instead of accepting it and ending the scan

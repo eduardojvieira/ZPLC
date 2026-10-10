@@ -39,11 +39,13 @@ Run every command from the repository root. The times were measured on a
 | Compiler | `bun run test:compiler:ci` | about 2 s | Compiler and assembler tests pass, and every failure is a listed one |
 | Studio, CLI, conformance | `bun run test:ide:ci` | 30 to 60 s | The Studio suites and the conformance cases behave as listed |
 | Lint and types | `bun run lint`, `bun run typecheck` and `bun run build:ide` | about 10 s, 20 s and 40 s | ESLint is clean, including the rules that reject an unhandled promise; every TypeScript program, tests and scripts included, type-checks; and the Studio builds |
+| C static analysis | `bun run lint:c` | about 15 s | `clang-tidy` with `.clang-tidy`, every finding an error, is clean on the core, the POSIX HAL and the host application; the Zephyr HAL and `firmware/app` are analysed too when a board build exists |
+| Test sources | `bun run check:test-sources` | under 1 s | No test reads the text of product source, except the files listed for replacement in `tools/ci/pinned-source-offenders.json` |
 | Binary contract | `bun run contract:check` | about 1 s | Generated files match `contract.json` |
 | Simulation | `bun run simulate packages/zplc-ide/projects/motor_plant` | under 1 s | The project's scenario tests pass on the native runtime |
 | Studio journeys | `bun run test:journeys` | 70 to 90 s | The real application passes its end-to-end journeys (needs a display) |
 | Firmware on Linux | `bun run setup:firmware`, then `bun run test:firmware` | about 6 min once, then about 4 min | Zephyr suites pass on `native_sim`, QEMU and the size budgets |
-| Documentation | `bun run check:docs` | about 20 s | References are fresh, pages are complete, English and Spanish pages match in structure, and the site builds |
+| Documentation | `bun run check:docs` | about 50 s | References are fresh, pages are complete, English and Spanish pages match in structure, every sample marked runnable compiles and gives the result its fence states, and the site builds |
 | Release rehearsal | `bun run release:rehearsal` | about 10 s | The checks the release workflow runs before it builds anything |
 
 A pass at one level never proves a higher one: a host test says nothing about a
@@ -63,6 +65,45 @@ firmware mode shows and what it does not.
 
 Do not publish, flash hardware, deploy a PLC program, or actuate equipment
 without explicit authorization.
+
+## Runnable documentation samples
+
+A code sample in the docs is checked in CI when its fence says so. The first word of the
+fence names the language; the words after it say what to check:
+
+````text
+```st runnable
+PROGRAM Counting
+VAR
+    Count : INT;
+END_VAR
+Count := Count + 1;
+END_PROGRAM
+```
+
+```st runnable expect="Count=3" scans=3 scan_ms=10
+PROGRAM Counting
+VAR
+    Count : INT;
+END_VAR
+Count := Count + 1;
+END_PROGRAM
+```
+````
+
+| Word | Meaning |
+|---|---|
+| `runnable` | The sample is compiled with the repository compiler. A sample that does not compile fails `bun run check:docs`: fix the sample, or remove the word. |
+| `expect="Name=Value ..."` | The sample is also run on the native runtime, and every named value is compared after the last scan. `Name` is a variable of the program or a direct address such as `%QX0.0` or `%QW0` (`Name:TYPE` sets the type of an address); `Value` is `TRUE`, `FALSE` or a number. The page must say the result in words next to the sample. |
+| `scans=N`, `scan_ms=N` | How many scans to run (default 1) and the period of each in milliseconds (default 10). Only with `expect`. |
+| `fragment` | The block is a bare body (variables and statements): it is wrapped in `PROGRAM DocSample ... END_PROGRAM` before it is compiled. |
+| `language=il` | The sample is Instruction List, written in an `iecst` fence. |
+
+The English page and its Spanish twin mark the same samples the same way, with the same
+result. The sample is written in code and so it is the same in both languages. The check
+is `bun run check:docs-samples`; it needs `bun run build:compiler` and, for a sample with
+`expect`, `bun run build:runtime`, and it fails rather than skips when the runtime is
+missing.
 
 ## Project documents
 

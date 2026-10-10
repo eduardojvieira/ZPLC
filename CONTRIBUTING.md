@@ -55,9 +55,12 @@ them.
 | `test:journeys` | Studio end-to-end journeys on the real application |
 | `setup:firmware`, `test:firmware` | Firmware suites on Linux (Zephyr) |
 | `contract:check` | The generated binary contract is in step with its source |
+| `lint:c` | `clang-tidy` over the core, the POSIX HAL and the host application, every finding an error (needs `clang-tidy`) |
+| `check:test-sources` | No test reads the text of product source, except the files listed for replacement |
 | `simulate <project>` | Run a project's scenario tests on the native runtime |
 | `dev` | Run Studio in development mode against the native runtime |
 | `docs:start`, `check:docs` | Serve the site, or generate, validate and build it |
+| `check:docs-samples` | Compile every documentation sample marked runnable, and run those that state a result (needs the compiler and the native runtime built) |
 | `release:rehearsal` | The checks the release workflow runs before it builds anything |
 
 ## Build
@@ -136,8 +139,12 @@ bun run check:docs         # generate, validate and build English and Spanish, a
 
 `check:docs` regenerates the reference pages from the C headers and the board
 manifest, fails on a page that stops mid-sentence, is missing from the sidebar or
-whose Spanish twin has a different structure, and builds both languages. Links
-between pages are relative `.md` paths. A user-visible change updates
+whose Spanish twin has a different structure, compiles every code sample whose
+fence says `runnable` (and runs the ones that state a result; the convention is
+on the [Contributing](docs/docs/contributing/index.md#runnable-documentation-samples)
+page), and builds both languages. It needs the compiler and the native runtime
+built (`bun run build:compiler`, `bun run build:runtime`). Links between pages
+are relative `.md` paths. A user-visible change updates
 `docs/docs/` and `docs/i18n/es/` in the same pull request.
 
 ## Release rehearsal
@@ -159,7 +166,8 @@ machine use `bun run --cwd packages/zplc-ide electron:build:linux` (or `:mac`,
 1. Branch from `master` and keep the change to one purpose.
 2. Write the test first and watch it fail for the right reason. Test behaviour:
    compile a program, load it into the VM, render the screen. Do not assert on
-   source text.
+   source text: `bun run check:test-sources` fails on a test that reads the text
+   of product source, and the list of old offenders can only shrink.
 3. Make the change, then run the command of each layer you touched.
 4. Update the English and Spanish documentation together when a claim, a
    workflow or a limitation changes.
