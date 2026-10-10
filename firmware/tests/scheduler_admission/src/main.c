@@ -1323,7 +1323,11 @@ ZTEST(zplc_scheduler_admission,
   zplc_task_t peer_after;
 
   clear_scheduler();
-  size = build_program(program, 2U, ZPLC_TASK_CYCLIC, 10000U, 1U);
+  /* The batch is held for about one kernel tick (10 ms at 100 ticks/s) while
+   * the unregistration waits. A period of one tick leaves no margin and the
+   * peer misses its activation deadline, which latches the scheduler. Three
+   * ticks keep the hold inside the deadline on every target. */
+  size = build_program(program, 2U, ZPLC_TASK_CYCLIC, 30000U, 1U);
   zassert_equal(zplc_sched_load(program, size), 2, "load two running tasks");
   zassert_ok(zplc_sched_get_task(1, &peer_before), "observe peer baseline");
   zplc_sched_test_hold_before_commit();
@@ -1345,7 +1349,7 @@ ZTEST(zplc_scheduler_admission,
   zassert_ok(zplc_sched_get_task(1, &peer_after), "observe peer after drain");
   zassert_true(peer_after.stats.cycle_count > peer_before.stats.cycle_count,
                "pending peer work must continue after coordinator drain");
-  k_msleep(20);
+  k_msleep(40);
   zassert_ok(zplc_sched_get_task(1, &peer_before), "observe later peer cycle");
   zassert_true(peer_before.stats.cycle_count > peer_after.stats.cycle_count,
                "peer continues after target unregister returns");
