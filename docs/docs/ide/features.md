@@ -94,7 +94,8 @@ compares the results. It does not cover a board.
 
 ## Declarations and library folders
 
-Under the file tree, the Explorer lists the declarations of the project: the programs, function blocks, functions,
+Under the file tree, the Explorer has a **Declarations** section (closed until you open it with its heading, which
+shows how many there are). It lists the declarations of the project: the programs, function blocks, functions,
 interfaces and data types that its Structured Text files declare, grouped under their file. Choosing one opens its file
 with the cursor on its name. The list covers the files the build reads (directly in `src`) and the files of the
 library folders, open or not, and it follows what you type.

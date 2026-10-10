@@ -5,7 +5,7 @@
  * the completion and hover of ST); it is named in `zplc.json` under `libraries`.
  */
 import { useState, type FormEvent } from 'react';
-import { BookMarked, FileCode2, FolderPlus, X } from 'lucide-react';
+import { BookMarked, ChevronDown, ChevronRight, FileCode2, FolderPlus, X } from 'lucide-react';
 import { configuredLibraries, addLibrary, libraryProblem, removeLibrary } from '../project/libraries';
 import { useProjectSources } from '../store/projectSources';
 import { useIDEStore } from '../store/useIDEStore';
@@ -69,7 +69,10 @@ export function ProjectDeclarations() {
   const saveProjectConfig = useIDEStore((state) => state.saveProjectConfig);
   const open = useIDEStore((state) => state.navigateToCompilerDiagnostic);
   const [adding, setAdding] = useState(false);
+  // Closed until asked for: the lower panel is short, and the file tree keeps its room.
+  const [expanded, setExpanded] = useState(false);
   const libraries = configuredLibraries(config);
+  const total = groups.reduce((sum, group) => sum + group.declarations.length, 0);
   const rows = libraryRows(libraries, tree);
 
   const remove = async (path: string) => {
@@ -79,11 +82,24 @@ export function ProjectDeclarations() {
 
   return (
     <section aria-label="Project declarations" data-project-declarations className="border-t border-[var(--color-surface-700)] text-xs">
-      <div className="flex items-center justify-between gap-2 px-3 py-2">
-        <h2 className="flex items-center gap-1.5 font-semibold uppercase tracking-[0.08em] text-[var(--color-surface-200)]"><BookMarked size={13} aria-hidden="true" />Declarations</h2>
+      <div className="flex items-center justify-between gap-2 px-3 py-1.5">
+        <h2 className="font-semibold uppercase tracking-[0.08em] text-[var(--color-surface-200)]">
+          <button
+            type="button"
+            aria-expanded={expanded}
+            aria-controls="project-declarations-body"
+            onClick={() => setExpanded((value) => !value)}
+            className="flex items-center gap-1.5 rounded py-0.5 uppercase hover:text-[var(--color-surface-100)] focus-visible:outline-2 focus-visible:outline-[var(--color-accent-blue)]"
+          >
+            {expanded ? <ChevronDown size={13} aria-hidden="true" /> : <ChevronRight size={13} aria-hidden="true" />}
+            <BookMarked size={13} aria-hidden="true" />
+            Declarations
+            <span className="rounded-full bg-[var(--color-surface-600)] px-1.5 font-normal normal-case text-[var(--color-surface-300)]">{total}</span>
+          </button>
+        </h2>
         <button
           type="button"
-          onClick={() => setAdding(true)}
+          onClick={() => { setExpanded(true); setAdding(true); }}
           disabled={migrating}
           title={migrating ? 'Apply the migration of the project first' : 'Add a library folder'}
           aria-label="Add library folder"
@@ -93,6 +109,7 @@ export function ProjectDeclarations() {
         </button>
       </div>
 
+ {expanded && <div id="project-declarations-body">
       {rows.length > 0 && (
         <ul aria-label="Library folders" data-libraries className="px-3 pb-2">
           {rows.map((row) => (
@@ -130,6 +147,7 @@ export function ProjectDeclarations() {
           ))}
         </ul>
       )}
+      </div>}
       {adding && <AddLibraryDialog onClose={() => setAdding(false)} />}
     </section>
   );

@@ -95,7 +95,8 @@ Studio, y compara los resultados. No cubre una placa.
 
 ## Declaraciones y carpetas de biblioteca
 
-Bajo el árbol de archivos, el Explorer lista las declaraciones del proyecto: los programas, bloques de función,
+Bajo el árbol de archivos, el Explorer tiene una sección **Declarations** (cerrada hasta que usted la abre con su
+encabezado, que muestra cuántas hay). Lista las declaraciones del proyecto: los programas, bloques de función,
 funciones, interfaces y tipos de datos que declaran sus archivos Structured Text, agrupados bajo su archivo. Elegir una
 abre su archivo con el cursor en su nombre. La lista cubre los archivos que lee la compilación (directamente en `src`)
 y los archivos de las carpetas de biblioteca, estén abiertos o no, y sigue lo que usted escribe.

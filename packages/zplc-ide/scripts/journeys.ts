@@ -1324,6 +1324,7 @@ export const JOURNEYS: Journey[] = [
       // The tree lists what the files of src declare, grouped under their file, before any library exists.
       await openFolder(app, project);
       await app.click(tab('Explorer', 'exact'));
+      await app.click(button('Declarations', 'prefix'), 'the Declarations heading');
       await app.until('the declarations of the project', async () => await app.visible(declaration('Motor')) || undefined);
       assert(await app.visible(declarations) && !await app.visible(declaration('Debounce')), 'A file outside src and the libraries was listed.');
       const group = await app.eval<string>(`document.querySelector('[data-declaration-file="src/Motor.st"]')?.innerText ?? ''`);
