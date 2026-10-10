@@ -10,6 +10,7 @@
     { "pattern": "tools/contract/*.test.ts", "job": "docs-and-truth", "command": "bun run contract:check" },
     { "pattern": "tools/hil/test_validate_release_evidence.py", "job": "docs-and-truth", "command": "python3 tools/hil/test_validate_release_evidence.py" },
     { "pattern": "tools/hil/test_validate_supported_boards.py", "job": "docs-and-truth", "command": "python3 tools/hil/test_validate_supported_boards.py" },
+    { "pattern": "tools/docs/test_generate_known_limits.py", "job": "docs-and-truth", "command": "python3 tools/docs/test_generate_known_limits.py" },
     { "pattern": "tools/docs/test_*.py", "job": "docs-and-truth", "command": "python3 tools/docs/test_validate_docs_pages.py" },
     { "pattern": "firmware/lib/zplc_core/tests/fuzz_*.c", "job": "host-core-sanitized", "command": "tools/fuzz/run.sh" },
     { "pattern": "firmware/lib/zplc_core/tests/*.c", "job": "host-core", "command": "ctest --test-dir" },

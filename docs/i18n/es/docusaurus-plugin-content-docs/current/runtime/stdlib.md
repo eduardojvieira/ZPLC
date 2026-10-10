@@ -262,19 +262,19 @@ No debe usarse como control de seguridad.
 
 ## 11. Diferencias conocidas con IEC 61131-3
 
-Cada fila es un caso de conformidad que espera el comportamiento de IEC 61131-3 y falla hoy. Los casos figuran en `tools/ci/expected-failures.json`, y la columna Observado hoy se leyó en el runtime nativo.
+La tabla se genera a partir de los casos de conformidad que esperan el comportamiento de IEC 61131-3 y fallan hoy (`tools/ci/expected-failures.json`) y de la descripción de cada requisito en `docs/known-limits.json`. Una fila desaparece cuando pasa el último caso de su requisito.
 
-| Bloque o función | Observado hoy | Requisito | Caso que falla hoy |
-|---|---|---|---|
-| `TON` | `ET` sigue contando después de llegar a `PT` | CMP-057 | `cmp-057-ton-elapsed-stops-at-preset` |
-| `TP` | Mientras `IN` permanece en TRUE, el pulso vuelve a empezar después de `PT` | CMP-057 | `cmp-057-tp-not-retriggered` |
-| `REAL_TO_INT` | Trunca hacia cero; IEC 61131-3 redondea al entero más cercano | CMP-057 | `cmp-057-real-to-int-rounds` |
-| Funciones de conversión | Solo existen las seis de la sección 9 | CMP-057 | `cmp-057-integer-conversion-functions`, `cmp-057-int-to-dint-exists`, `cmp-057-dint-to-real-exists` |
-| `ASIN`, `ACOS`, `ATAN`, `ATAN2` | Aproximaciones: `ASIN(0.5)` da 0.5259 (exacto 0.5236) y `ATAN(1.0)` da 0.7238 (exacto 0.7854) | CMP-058 | `cmp-058-inverse-trigonometric-functions` |
-| `LN`, `LOG`, `EXP` | Aproximaciones: `LN(10.0)` da 2.2183 (exacto 2.3026) y `EXP(1.0)` da 2.7167 (exacto 2.7183); `LOG(1000.0)` da 1.449 donde la respuesta es 3.0 | CMP-058 | `cmp-058-logarithmic-and-exponential-functions` |
-| `BLINK` (no es un bloque IEC) | Empieza en su fase apagada, de modo que `Q` sube un `T_OFF` después de `ENABLE` | CMP-058 | `cmp-058-blink-alternates-on-and-off` |
-| `FIFO` sin `SIZE` | La VM falla; no se aplica el valor por defecto documentado de ocho elementos | CMP-025 | `cmp-025-fifo-default-size-is-eight` |
-| `EXPT` | Un programa que la llama es rechazado por el cargador; todavía no existe un caso de conformidad | CMP-058 | ninguno |
-| `CTUD` por debajo de cero, presets negativos | Ver la sección 2 | CMP-011 | ninguno |
+{/* >>> GENERATED (tools/docs/generate_known_limits.py): known-limits-library. Do not edit. >>> */}
+| Requisito | Qué ocurre hoy | Casos que fallan hoy |
+|---|---|---|
+| CMP-025 | Un `FIFO` llamado sin `SIZE` provoca una falla de la VM: no se aplica el valor por defecto documentado de ocho elementos. | `a FIFO called without SIZE holds its documented default of eight items` |
+| CMP-057 | Algunos bloques estándar y funciones de conversión difieren de IEC 61131-3. Solo existen seis funciones de conversión (`INT_TO_REAL`, `REAL_TO_INT`, `BOOL_TO_INT`, `INT_TO_BOOL`, `TRUNC`, `ROUND`); cualquier otro nombre `X_TO_Y` es un error de compilación (`Unknown function`). `REAL_TO_INT` trunca hacia cero, donde IEC 61131-3 redondea al entero más cercano. `TON.ET` sigue contando después de llegar a `PT`. `TP` vuelve a iniciar su pulso después de `PT` mientras `IN` permanece en TRUE. | `DINT_TO_REAL exists`<br />`INT_TO_DINT exists`<br />`REAL_TO_INT rounds to the nearest integer`<br />`TON elapsed time stops at the preset`<br />`TP is not retriggered while its input stays true`<br />`conversion functions between integer types keep an in-range value` |
+| CMP-058 | Algunas funciones y bloques estándar difieren de IEC 61131-3. `ASIN`, `ACOS`, `ATAN` y `ATAN2` son aproximaciones: `ASIN(0.5)` da 0.5259 (exacto 0.5236) y `ATAN(1.0)` da 0.7238 (exacto 0.7854). `BLINK` (no es un bloque IEC) empieza en su fase apagada, de modo que `Q` sube un `T_OFF` después de `ENABLE`. `LN`, `LOG` y `EXP` son aproximaciones: `LN(10.0)` da 2.2183 (exacto 2.3026), `EXP(1.0)` da 2.7167 (exacto 2.7183) y `LOG(1000.0)` da 1.449 donde la respuesta es 3.0. `SQRT` está dentro de 0.001 en los valores comprobados. | `ASIN, ACOS and ATAN return radians`<br />`BLINK is on for T_ON and off for T_OFF while ENABLE holds`<br />`LN, LOG, EXP and SQRT` |
+{/* <<< END GENERATED: known-limits-library <<< */}
 
-Un bloque o una función que no está en esta tabla no se sabe que difiera. Eso no equivale a tener un caso ejecutado: el requisito CMP-058 pide un caso para cada función y bloque estándar, y el repositorio todavía no los tiene todos.
+Dos límites todavía no tienen un caso de conformidad, de modo que la tabla no puede mostrarlos; cada uno aparece en la tabla cuando exista un caso:
+
+- Un programa que llama a `EXPT` es rechazado por el cargador. El requisito CMP-058 pide un caso ejecutado de cada función estándar.
+- `CTUD` por debajo de cero y los presets negativos difieren de IEC 61131-3: ver la sección 2 (requisito CMP-011).
+
+Un bloque o una función que no está en la tabla ni en esta lista no se sabe que difiera. Eso no equivale a tener un caso ejecutado: el requisito CMP-058 pide un caso para cada función y bloque estándar, y el repositorio todavía no los tiene todos.
