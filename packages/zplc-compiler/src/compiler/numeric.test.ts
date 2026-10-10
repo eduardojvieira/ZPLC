@@ -12,6 +12,7 @@ import { describe, it, expect } from 'bun:test';
 
 import { assemble } from '../assembler/index.ts';
 import { generate } from './codegen.ts';
+import { compileST } from './index.ts';
 import {
     ADD64_HELPER,
     ADD64_LABEL,
@@ -36,11 +37,12 @@ import {
 import { parse } from './parser.ts';
 
 // ============================================================================
-// A reference VM for the opcodes the helpers use: 32-bit cells, as zplc_core.c
+// A reference VM for the opcodes the generated code uses: 32-bit cells, as zplc_core.c
 // ============================================================================
 
-function run(source: string): number[] {
+function run(source: string, memory: Uint8Array = new Uint8Array(0x10000)): number[] {
     const { bytecode } = assemble(source);
+    const ram = new DataView(memory.buffer, memory.byteOffset, memory.byteLength);
     const code = bytecode;
     const view = new DataView(code.buffer, code.byteOffset, code.byteLength);
     const stack: number[] = [];
@@ -54,7 +56,7 @@ function run(source: string): number[] {
         return value >>> 0;
     };
     let pc = 0;
-    for (let steps = 0; steps < 10_000; steps += 1) {
+    for (let steps = 0; steps < 100_000; steps += 1) {
         const op = code[pc]!;
         switch (op) {
             case 0x01: return stack.map((v) => v >>> 0); // HALT
@@ -72,8 +74,26 @@ function run(source: string): number[] {
                 stack.push(b === 0xFFFFFFFF ? (0 - a) >>> 0 : (Math.trunc((a | 0) / (b | 0)) >>> 0));
                 pc += 1; break;
             }
+            case 0x24: {
+                const b = pop(); const a = pop();
+                if (b === 0) throw new Error('division by zero');
+                stack.push(b === 0xFFFFFFFF ? 0 : (((a | 0) % (b | 0)) >>> 0));
+                pc += 1; break;
+            }
+            case 0x25: { const a = pop(); stack.push((0 - a) >>> 0); pc += 1; break; }
+            case 0x26: { const a = pop(); stack.push(a >>> 31 ? (0 - a) >>> 0 : a); pc += 1; break; }
             case 0x28: { const b = pop(); const a = pop(); stack.push(toBits(toFloat(a) + toFloat(b))); pc += 1; break; }
+            case 0x29: { const b = pop(); const a = pop(); stack.push(toBits(toFloat(a) - toFloat(b))); pc += 1; break; }
             case 0x2A: { const b = pop(); const a = pop(); stack.push(toBits(toFloat(a) * toFloat(b))); pc += 1; break; }
+            case 0x2B: {
+                const b = pop(); const a = pop();
+                if (toFloat(b) === 0) throw new Error('division by zero');
+                stack.push(toBits(toFloat(a) / toFloat(b)));
+                pc += 1; break;
+            }
+            case 0x2C: { const a = pop(); stack.push((a ^ 0x80000000) >>> 0); pc += 1; break; }
+            case 0x2D: { const a = pop(); stack.push((a & 0x7FFFFFFF) >>> 0); pc += 1; break; }
+            case 0x33: { const a = pop(); stack.push((~a) >>> 0); pc += 1; break; }
             case 0x30: { const b = pop(); const a = pop(); stack.push((a & b) >>> 0); pc += 1; break; }
             case 0x31: { const b = pop(); const a = pop(); stack.push((a | b) >>> 0); pc += 1; break; }
             case 0x32: { const b = pop(); const a = pop(); stack.push((a ^ b) >>> 0); pc += 1; break; }
@@ -90,6 +110,21 @@ function run(source: string): number[] {
             case 0x3F: { const b = pop(); const a = pop(); stack.push(a > b ? 1 : 0); pc += 1; break; }
             case 0x40: stack.push((view.getInt8(pc + 1)) >>> 0); pc += 2; break;
             case 0x41: { const n = code[pc + 1]!; stack.push(stack[stack.length - 1 - n]!); pc += 2; break; }
+            case 0x80: stack.push(ram.getUint8(view.getUint16(pc + 1, true))); pc += 3; break;
+            case 0x81: stack.push(ram.getUint16(view.getUint16(pc + 1, true), true)); pc += 3; break;
+            case 0x82: stack.push(ram.getUint32(view.getUint16(pc + 1, true), true)); pc += 3; break;
+            case 0x83: {
+                const at = view.getUint16(pc + 1, true);
+                stack.push(ram.getUint32(at, true), ram.getUint32(at + 4, true)); pc += 3; break;
+            }
+            case 0x84: ram.setUint8(view.getUint16(pc + 1, true), pop()); pc += 3; break;
+            case 0x85: ram.setUint16(view.getUint16(pc + 1, true), pop(), true); pc += 3; break;
+            case 0x86: ram.setUint32(view.getUint16(pc + 1, true), pop(), true); pc += 3; break;
+            case 0x87: {
+                const at = view.getUint16(pc + 1, true);
+                const high = pop(); const low = pop();
+                ram.setUint32(at, low, true); ram.setUint32(at + 4, high, true); pc += 3; break;
+            }
             case 0x88: stack.push(view.getInt16(pc + 1, true) >>> 0); pc += 3; break;
             case 0xC0: stack.push(view.getUint32(pc + 1, true)); pc += 5; break;
             case 0x90: pc = view.getUint16(pc + 1, true); break;
@@ -98,6 +133,15 @@ function run(source: string): number[] {
             case 0x93: calls.push(pc + 3); pc = view.getUint16(pc + 1, true); break;
             case 0x94: pc = calls.pop()!; break;
             case 0xA0: { const a = pop(); stack.push(toBits(a | 0)); pc += 1; break; }
+            case 0xA1: {
+                const f = toFloat(pop());
+                stack.push(Number.isNaN(f) ? 0 : f >= 2147483648 ? 0x7FFFFFFF : f <= -2147483648 ? 0x80000000 : Math.trunc(f) >>> 0);
+                pc += 1; break;
+            }
+            case 0xA3: { const a = pop(); stack.push(((a << 24) >> 24) >>> 0); pc += 1; break; }
+            case 0xA4: { const a = pop(); stack.push(((a << 16) >> 16) >>> 0); pc += 1; break; }
+            case 0xA5: { const a = pop(); stack.push(a & 0xFF); pc += 1; break; }
+            case 0xA6: { const a = pop(); stack.push(a & 0xFFFF); pc += 1; break; }
             default: throw new Error(`reference VM: opcode 0x${op.toString(16)} at ${pc}`);
         }
     }
@@ -341,5 +385,176 @@ describe('generated code', () => {
         expect(() => assembly('b := ABS(a);', wide)).toThrow('64-bit argument');
         expect(() => assembly('FOR a := 0 TO 3 DO c := 1; END_FOR;', wide)).toThrow('FOR counter');
         expect(() => assembly('CASE a OF 1: c := 1; END_CASE;', wide)).toThrow('CASE');
+    });
+});
+
+// ============================================================================
+// Whole programs on the reference VM
+// ============================================================================
+
+type Scalar = { name: string; bits: 8 | 16 | 32; signed: boolean; letter: 'B' | 'W' | 'D'; values: bigint[] };
+
+const SCALARS: Scalar[] = [
+    { name: 'SINT', bits: 8, signed: true, letter: 'B', values: [-128n, -127n, -1n, 0n, 1n, 126n, 127n] },
+    { name: 'INT', bits: 16, signed: true, letter: 'W', values: [-32768n, -32767n, -1n, 0n, 1n, 32766n, 32767n] },
+    { name: 'DINT', bits: 32, signed: true, letter: 'D', values: [-2147483648n, -2147483647n, -1n, 0n, 1n, 2147483646n, 2147483647n] },
+    { name: 'USINT', bits: 8, signed: false, letter: 'B', values: [0n, 1n, 2n, 127n, 128n, 254n, 255n] },
+    { name: 'BYTE', bits: 8, signed: false, letter: 'B', values: [0n, 1n, 127n, 128n, 255n] },
+    { name: 'UINT', bits: 16, signed: false, letter: 'W', values: [0n, 1n, 2n, 32767n, 32768n, 65534n, 65535n] },
+    { name: 'WORD', bits: 16, signed: false, letter: 'W', values: [0n, 1n, 32767n, 32768n, 65535n] },
+    { name: 'UDINT', bits: 32, signed: false, letter: 'D', values: [0n, 1n, 2n, 2147483647n, 2147483648n, 4294967294n, 4294967295n] },
+    { name: 'DWORD', bits: 32, signed: false, letter: 'D', values: [0n, 1n, 2147483647n, 2147483648n, 4294967295n] },
+];
+
+function readScalar(memory: Uint8Array, scalar: Scalar): bigint {
+    const view = new DataView(memory.buffer, 0x1000, 4);
+    if (scalar.bits === 8) return BigInt(scalar.signed ? view.getInt8(0) : view.getUint8(0));
+    if (scalar.bits === 16) return BigInt(scalar.signed ? view.getInt16(0, true) : view.getUint16(0, true));
+    return BigInt(scalar.signed ? view.getInt32(0, true) : view.getUint32(0, true));
+}
+
+function execute(program: string): Uint8Array {
+    const memory = new Uint8Array(0x10000);
+    run(compileST(program), memory);
+    return memory;
+}
+
+const wrap = (scalar: Scalar, value: bigint): bigint =>
+    scalar.signed ? BigInt.asIntN(scalar.bits, value) : BigInt.asUintN(scalar.bits, value);
+
+describe('executed programs: integer operators at the limits of their type', () => {
+    const arithmetic: Array<[string, (a: bigint, b: bigint) => bigint]> = [
+        ['+', (a, b) => a + b], ['-', (a, b) => a - b], ['*', (a, b) => a * b],
+        ['/', (a, b) => a / b], ['MOD', (a, b) => a % b],
+    ];
+    const comparison: Array<[string, (a: bigint, b: bigint) => boolean]> = [
+        ['<', (a, b) => a < b], ['<=', (a, b) => a <= b], ['>', (a, b) => a > b],
+        ['>=', (a, b) => a >= b], ['=', (a, b) => a === b], ['<>', (a, b) => a !== b],
+    ];
+
+    for (const scalar of SCALARS) {
+        it(`${scalar.name} arithmetic wraps at its width and divides toward zero`, () => {
+            for (const [operator, apply] of arithmetic) {
+                for (const a of scalar.values) {
+                    for (const b of scalar.values) {
+                        if ((operator === '/' || operator === 'MOD') && b === 0n) continue;
+                        const memory = execute(`PROGRAM T
+VAR
+  a : ${scalar.name} := ${a};
+  b : ${scalar.name} := ${b};
+  r AT %Q${scalar.letter}0 : ${scalar.name};
+END_VAR
+  r := a ${operator} b;
+END_PROGRAM`);
+                        const observed = readScalar(memory, scalar);
+                        const expected = wrap(scalar, apply(a, b));
+                        if (observed !== expected) {
+                            throw new Error(`${scalar.name} ${a} ${operator} ${b}: expected ${expected}, observed ${observed}`);
+                        }
+                    }
+                }
+            }
+        });
+
+        it(`${scalar.name} comparison orders by the value, signed or unsigned as the type says`, () => {
+            for (const [operator, test] of comparison) {
+                for (const a of scalar.values) {
+                    for (const b of scalar.values) {
+                        const memory = execute(`PROGRAM T
+VAR
+  a : ${scalar.name} := ${a};
+  b : ${scalar.name} := ${b};
+  r AT %QX0.0 : BOOL;
+END_VAR
+  r := a ${operator} b;
+END_PROGRAM`);
+                        const observed = (memory[0x1000]! & 1) === 1;
+                        if (observed !== test(a, b)) {
+                            throw new Error(`${scalar.name} ${a} ${operator} ${b}: expected ${test(a, b)}, observed ${observed}`);
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    it('widens a narrow value to DINT and UDINT with its own sign rule', () => {
+        for (const scalar of SCALARS.filter((s) => s.bits < 32)) {
+            for (const a of scalar.values) {
+                const memory = execute(`PROGRAM T
+VAR
+  a : ${scalar.name} := ${a};
+  wide AT %QD0 : DINT;
+END_VAR
+  wide := a;
+END_PROGRAM`);
+                expect(new DataView(memory.buffer, 0x1000, 4).getInt32(0, true)).toBe(Number(a));
+            }
+        }
+    });
+});
+
+describe('executed programs: REAL operators', () => {
+    const literals = ['-2.5', '-1.0', '0.0', '1.5', '3.25', '-3.0E38', '3.0E38', '1.0E-30'];
+    const values = literals.map((text) => Math.fround(Number(text)));
+    const arithmetic: Array<[string, (a: number, b: number) => number]> = [
+        ['+', (a, b) => a + b], ['-', (a, b) => a - b], ['*', (a, b) => a * b], ['/', (a, b) => a / b],
+    ];
+    const comparison: Array<[string, (a: number, b: number) => boolean]> = [
+        ['<', (a, b) => a < b], ['<=', (a, b) => a <= b], ['>', (a, b) => a > b],
+        ['>=', (a, b) => a >= b], ['=', (a, b) => a === b], ['<>', (a, b) => a !== b],
+    ];
+
+    it('arithmetic is single precision, with negative operands', () => {
+        for (const [operator, apply] of arithmetic) {
+            literals.forEach((la, i) => literals.forEach((lb, j) => {
+                const a = values[i]!; const b = values[j]!;
+                if (operator === '/' && b === 0) return;
+                const result = Math.fround(apply(a, b));
+                // an overflow to infinity is not a case for this table
+                if (!Number.isFinite(result)) return;
+                const memory = execute(`PROGRAM T
+VAR
+  a : REAL := ${la};
+  b : REAL := ${lb};
+  r AT %QD0 : REAL;
+END_VAR
+  r := a ${operator} b;
+END_PROGRAM`);
+                const observed = new DataView(memory.buffer, 0x1000, 4).getFloat32(0, true);
+                if (!Object.is(observed, result)) throw new Error(`${la} ${operator} ${lb}: expected ${result}, observed ${observed}`);
+            }));
+        }
+    });
+
+    it('comparison is the IEEE order', () => {
+        for (const [operator, test] of comparison) {
+            literals.forEach((la, i) => literals.forEach((lb, j) => {
+                const memory = execute(`PROGRAM T
+VAR
+  a : REAL := ${la};
+  b : REAL := ${lb};
+  r AT %QX0.0 : BOOL;
+END_VAR
+  r := a ${operator} b;
+END_PROGRAM`);
+                const observed = (memory[0x1000]! & 1) === 1;
+                if (observed !== test(values[i]!, values[j]!)) throw new Error(`${la} ${operator} ${lb}: expected ${test(values[i]!, values[j]!)}, observed ${observed}`);
+            }));
+        }
+    });
+
+    it('an INT operand is converted with its sign before REAL arithmetic', () => {
+        for (const n of [-32768, -1, 0, 1, 32767]) {
+            const memory = execute(`PROGRAM T
+VAR
+  n : INT := ${n};
+  g : REAL := 0.5;
+  r AT %QD0 : REAL;
+END_VAR
+  r := n * g;
+END_PROGRAM`);
+            expect(new DataView(memory.buffer, 0x1000, 4).getFloat32(0, true)).toBe(Math.fround(n * 0.5));
+        }
     });
 });
