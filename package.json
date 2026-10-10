@@ -39,6 +39,7 @@
     "docs:start": "bun run --cwd=docs start",
     "check:versions": "bun scripts/release-version.ts --check",
     "release:sbom": "bun scripts/release/sbom.ts --check",
+    "release:binaries": "bun scripts/release/binaries.ts --targets host --out dist-bin --smoke",
     "req:coverage": "bun tools/ci/requirement-coverage.ts",
     "conformance:matrix": "bun tools/ci/generate-conformance-matrix.ts",
     "conformance:coverage": "bun tools/ci/conformance-coverage.ts",

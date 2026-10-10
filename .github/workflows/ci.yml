@@ -56,14 +56,6 @@ jobs:
       - name: Test release integrity bundle
         run: node --test scripts/release-artifacts.test.mjs
 
-      # The bill of materials and the licence notices are generated from the lockfile; the check fails when the
-      # document would hold fewer packages than the lockfile lists or than the recorded floor (REL-018).
-      - name: Test release tooling
-        run: bun test ./scripts/release
-
-      - name: Check the software bill of materials
-        run: bun scripts/release/sbom.ts --check
-
       - name: Verify workflow action pins
         run: node --test scripts/workflow-action-pins.test.mjs
 
@@ -74,14 +66,18 @@ jobs:
           bun run test:compiler -- --reporter=junit --reporter-outfile="${RUNNER_TEMP}/junit-compiler.xml" || status=$?
           bun tools/ci/check-expected-failures.ts --exit-code "${status}" "packages/zplc-compiler=${RUNNER_TEMP}/junit-compiler.xml"
 
-      - name: Verify standalone CLI version
+      # REL-018: the bill of materials is generated from the lockfile; the check fails when the document would hold
+      # fewer packages than the lockfile lists or than the recorded floor.
+      - name: Check the software bill of materials
+        run: bun scripts/release/sbom.ts --check
+
+      # REL-026: the CLI and the MCP server are built as standalone executables and run from a folder with no
+      # checkout (version, a compile of a bundled project, the list of MCP tools). The tests of the release
+      # scripts need the compiler package built, so they run here and not before it.
+      - name: Test release tooling and smoke the standalone CLI and MCP server
         run: |
-          bun build --compile --minify --target bun-linux-x64 \
-            packages/zplc-ide/src/cli/index.ts \
-            --outfile "${RUNNER_TEMP}/zplc-cli"
-          expected=$(bun -e "console.log(require('./package.json').version)")
-          actual=$(cd "${RUNNER_TEMP}" && ./zplc-cli --version)
-          test "${actual}" = "zplc-cli ${expected}"
+          bun test ./scripts/release
+          bun scripts/release/binaries.ts --targets host --out "${RUNNER_TEMP}/zplc-bin" --smoke
 
       - name: Typecheck every TypeScript program
         run: bun run typecheck
