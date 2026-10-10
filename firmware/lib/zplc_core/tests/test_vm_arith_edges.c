@@ -119,6 +119,13 @@ static const arith_case_t cases[] = {
     { "ABS -5 is 5",                           OP_ABS, 1, 0xFFFFFFFBU, 0U, 5U },
     { "ABS 5 is 5",                            OP_ABS, 1, 5U, 0U, 5U },
 
+    /* ABSF clears the sign bit, as IEEE-754 absolute value does: also of -0.0 and of a NaN. */
+    { "ABSF -0.0 is +0.0",                     OP_ABSF, 1, 0x80000000U, 0U, 0U },
+    { "ABSF -NaN is +NaN",                     OP_ABSF, 1, 0xFFC00000U, 0U, 0x7FC00000U },
+    { "ABSF -Inf is +Inf",                     OP_ABSF, 1, 0xFF800000U, 0U, 0x7F800000U },
+    { "ABSF -1.5 is 1.5",                      OP_ABSF, 1, 0xBFC00000U, 0U, 0x3FC00000U },
+    { "ABSF 1.5 is 1.5",                       OP_ABSF, 1, 0x3FC00000U, 0U, 0x3FC00000U },
+
     /* Shifts by the width or more give 0 (-1 for an arithmetic shift of a negative value). */
     { "SHL 1 << 31",                           OP_SHL, 2, 1U, 31U, INT_MIN32 },
     { "SHL 1 << 32 is 0",                      OP_SHL, 2, 1U, 32U, 0U },

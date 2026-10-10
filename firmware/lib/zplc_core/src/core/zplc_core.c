@@ -1423,14 +1423,9 @@ int zplc_vm_step(zplc_vm_t *vm) {
   case OP_ABSF:
     VM_CHECK_STACK_UNDERFLOW(vm, 1);
     a = VM_POP(vm);
-    {
-      float fa;
-      memcpy(&fa, &a, sizeof(float));
-      if (fa < 0.0f)
-        fa = -fa;
-      memcpy(&result, &fa, sizeof(uint32_t));
-      VM_PUSH(vm, result);
-    }
+    /* IEEE-754 absolute value clears the sign bit: -0.0 gives +0.0 and a
+     * negative NaN a positive one (a comparison with 0.0 would keep both). */
+    VM_PUSH(vm, a & 0x7FFFFFFFU);
     vm->pc++;
     break;
 
