@@ -2,13 +2,15 @@
 
 `firmware/lib/zplc_core/include/zplc_hal.h` es el contrato público entre el core de ZPLC y cualquier plataforma concreta.
 
-Eso incluye targets Zephyr, runtimes host/POSIX, shims WASM y futuros ports de placa.
+Eso incluye los destinos Zephyr, los runtimes host/POSIX, un port para navegador con WebAssembly (está en el árbol de código fuente, pero no se distribuye en esta versión) y los futuros ports de placa.
 
 ## Regla central
 
-El core portable no debería tocar APIs de plataforma de forma directa.
+El core portable no debe llamar directamente a las APIs de la plataforma.
 
-Si algo pertenece a GPIO, timing, persistencia, networking, sockets o sincronización, el core tiene que consumirlo mediante `zplc_hal_*`.
+Si algo pertenece a GPIO, timing, persistencia, networking, sockets o sincronización, el core debe usarlo mediante `zplc_hal_*`.
+
+El core portable define la semántica de ejecución. La HAL se encarga de la integración con la plataforma.
 
 ## Superficie HAL por responsabilidad
 
@@ -30,12 +32,14 @@ flowchart TD
 
 ## E/S digital y analógica
 
-La superficie pública actual es por canales lógicos:
+La superficie pública actual trabaja por canales lógicos:
 
 - `zplc_hal_gpio_read()`
 - `zplc_hal_gpio_write()`
 - `zplc_hal_adc_read()`
 - `zplc_hal_dac_write()`
+
+El core direcciona la E/S por **canal lógico**, no por pin de la placa. El mapa de E/S del programa `.zplc` asocia los canales con la imagen de proceso, y el port de la plataforma asocia los canales con el hardware.
 
 ## Persistencia
 
@@ -62,6 +66,8 @@ La superficie pública de red incluye:
 - `zplc_hal_socket_recv()`
 - `zplc_hal_socket_close()`
 
+Los ports de Zephyr, POSIX y WebAssembly implementan estas funciones.
+
 ## Sincronización
 
 El contrato también incluye mutexes:
@@ -69,6 +75,7 @@ El contrato también incluye mutexes:
 - `zplc_hal_mutex_create()`
 - `zplc_hal_mutex_lock()`
 - `zplc_hal_mutex_unlock()`
+- `zplc_hal_mutex_destroy()`
 
 ## Logging y ciclo de vida
 
@@ -76,6 +83,8 @@ El contrato también incluye mutexes:
 - `zplc_hal_shutdown()`
 - `zplc_hal_log()`
 
-## Regla práctica de documentación
+## Páginas relacionadas
 
-Si una página del runtime describe comportamiento de plataforma que salta por afuera de este header, probablemente está mezclando capas.
+- [Visión general del runtime](./index.md)
+- [Modelo de memoria](./memory-model.md)
+- [Conectividad](./connectivity.md)

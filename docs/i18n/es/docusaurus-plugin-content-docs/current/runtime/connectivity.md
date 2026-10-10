@@ -18,7 +18,7 @@ El soporte de protocolos depende de las capacidades físicas de tu placa objetiv
 - **Con capacidad Wi-Fi**: Soporta protocolos TCP/UDP (Modbus TCP, MQTT) mediante redes inalámbricas (ej. ESP32-S3).
 - **Con capacidad Ethernet**: Soporta protocolos TCP/UDP sobre conexiones cableadas (ej. STM32 Nucleo/Discovery).
 
-El IDE filtra automáticamente los protocolos disponibles basándose en el perfil de placa seleccionado.
+Studio muestra la configuración de Wi-Fi o Ethernet solo para las placas que tienen ese hardware.
 
 ## Protocolos Soportados
 

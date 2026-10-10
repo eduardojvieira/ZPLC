@@ -133,15 +133,10 @@ Public segment identifiers defined today include:
 - `ZPLC_SEG_TASK`
 - `ZPLC_SEG_TAGS`
 
-## Documentation rule for ZPLC 2.0
-
-When docs make claims about bytecode layout, stack limits, breakpoints, memory regions, or `.zplc` structure, those claims should come from `zplc_isa.h`.
-
-Do not document an aspirational ISA that the public header does not define.
-
 ## Related pages
 
 - [Runtime Overview](./index.md)
 - [Memory Model](./memory-model.md)
 - [Persistence & Retain Memory](./persistence.md)
 - [Runtime API](../reference/runtime-api.md)
+- [Native C Runtime](./native-c.md)

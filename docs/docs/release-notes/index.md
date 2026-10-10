@@ -14,20 +14,20 @@ PLC certification, a production-qualified board release, or a completed HIL resu
 
 ## Current release posture
 
-The non-HIL ZPLC 2.0 gates are implemented and locally verifiable: C99 host and
-sanitized tests, compiler/IDE checks, native simulation, deterministic Lab/Learn,
-restricted AI/MCP, bilingual docs, exact-SHA CI and release-workflow controls.
-The hosted workflow runs that exact SHA before publishing; it creates checksums,
-an SPDX SBOM and provenance, verifies native macOS/Windows signing when publishing,
-and checks reproducible Linux payloads. Those concrete artifacts do not exist until
-that hosted tag/SHA workflow succeeds.
+The rc.3 installers are unsigned: macOS and Windows warn before they run them,
+and [Getting Started](../getting-started/index.md) shows how to continue. They
+come from a preview build of commit `b379d82` and were uploaded by hand; the build
+that would publish a release from the tag did not run to completion. The release
+lists SHA-256 checksums and an SPDX software bill of materials.
 
-The sole remaining product qualification gate is traceable physical HIL for the
-Raspberry Pi Pico RP2040 and ESP32-S3-DevKitC-1-N8R8: exact SHA build, flash,
-identity/hash, program deploy, golden scenario, reboot/persistence, safe outputs,
-and timing evidence per profile.
+The automated checks that ran for that commit are the C99 host tests, the
+sanitizer and fuzz tests, the Zephyr Twister tests on `native_sim`, the packaged
+desktop smoke tests, and the cross-build of the six board profiles.
 
-The current review record is `specs/008-release-foundation/artifacts/release-evidence-matrix.md` in this checkout.
+No board has been tested on hardware. A hardware claim needs a traceable physical
+test (HIL) for the Raspberry Pi Pico RP2040 and the ESP32-S3-DevKitC-1-N8R8:
+build of the exact SHA, flash, identity and hash, program deploy, golden
+scenario, reboot and persistence, safe outputs, and timing per profile.
 
 ## Evidence boundaries
 

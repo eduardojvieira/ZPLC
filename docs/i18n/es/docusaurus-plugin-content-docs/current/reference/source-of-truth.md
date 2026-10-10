@@ -42,6 +42,7 @@ los contratos y la evidencia registrada prevalecen sobre la prosa.
 
 ## Regla de actualización
 
-Cambiá primero la implementación o el registro autoritativo y después la
-documentación. No afirmes consumo automático por IDE, compilador o docs salvo
-que un test o la implementación prueben esa relación.
+Primero cambia la implementación o el registro autoritativo; la documentación que
+lo describe se actualiza después. Una página afirma que el IDE, el compilador o
+los docs consumen una fuente de forma automática solo cuando una prueba o la
+implementación lo demuestran.

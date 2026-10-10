@@ -4,6 +4,7 @@ title: Documentation Publishing
 sidebar_label: Publishing
 description: How to release and deploy the ZPLC documentation to GitHub Pages.
 tags: [operations, docs, github-pages]
+unlisted: true
 ---
 
 # Documentation Publishing
@@ -12,12 +13,12 @@ The ZPLC documentation is built using Docusaurus and automatically deployed to G
 
 ## The Deployment Pipeline
 
-The pipeline is defined in `.github/workflows/docs-deploy.yml` and runs as **Deploy Docusaurus to GitHub Pages**. It handles both pull requests and pushes to the main branch.
+The pipeline is defined in `.github/workflows/deploy-docs.yml` and runs as **Deploy Documentation**. It handles both pull requests and pushes to the main branch.
 
 ### Pull Requests (Validation)
 When a PR is opened that modifies the `docs/` directory:
 1. The CI pipeline installs dependencies.
-2. It runs `bun run validate:docs` and then `bun run build`.
+2. It generates and validates the documentation references, then builds the site.
 3. **Crucially**, Docusaurus is configured with `onBrokenLinks: 'throw'`. If your PR introduces a broken internal link, a missing markdown import, or invalid frontmatter, the build will fail, blocking the merge.
 
 ### Merges to Main (Deployment)
@@ -32,15 +33,15 @@ To publish new documentation:
 1. Make your changes in a feature branch.
 2. Run `cd docs && bun run validate:docs` locally to verify manifest parity and generated references.
 3. Open a Pull Request.
-4. Wait for the `Build Documentation` job in **Deploy Docusaurus to GitHub Pages** to pass.
+4. Wait for the `build` job in **Deploy Documentation** to pass.
 5. Merge the PR or push the approved change to `main`. GitHub Actions will upload `docs/build` and deploy it to GitHub Pages automatically.
 
 ## Versioning a Release
 
-When the ZPLC project hits a release milestone (for example, `v1.5.0`), you should take a snapshot of the documentation.
+When the ZPLC project hits a release milestone (for example, `v2.0.0`), you should take a snapshot of the documentation.
 
 1. Create a branch for the release.
-2. Run `cd docs && bun run docusaurus docs:version 1.5.0`.
+2. Run `cd docs && bun run docusaurus docs:version 2.0.0`.
 3. Commit the new `versions.json` and the `versioned_docs/` folder.
 4. Merge the PR.
 

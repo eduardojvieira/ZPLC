@@ -1,26 +1,29 @@
 # Editores de texto y visuales
 
-Studio tiene un workbench para ST, IL, LD, FBD y SFC, pero cada lenguaje visual
-conserva su propio modelo semántico.
+Studio tiene un solo entorno de trabajo para ST, IL, LD, FBD y SFC, pero cada
+lenguaje visual conserva su propio modelo.
 
-## Caminos actuales de autoría
+## Vías de edición actuales
 
-| Lenguaje | Camino | Límite |
+| Lenguaje | Vía | Límite |
 | --- | --- | --- |
-| ST | Editor textual principal con diagnósticos y navegación. | El subconjunto IEC soportado es contrato del compilador. |
-| IL | Camino textual de compatibilidad. | Depende del subconjunto aceptado por compilador. |
-| LD | Rungs, contactos, bobinas, ramas, undo y validación visual. | ST generado es salida read-only. |
-| FBD | Puertos tipados, bloques, conexiones, undo y validación visual. | ST generado es salida read-only. |
-| SFC | Steps, transiciones, acciones, undo y validación visual. | ST generado es salida read-only. |
+| ST | Editor de texto principal, con diagnósticos y navegación por el código. | El subconjunto de IEC admitido es el que define el compilador. |
+| IL | Vía de texto de compatibilidad. | Depende del subconjunto que acepte el compilador. |
+| LD | Rungs, contactos, bobinas, ramas, deshacer y validación visual. | El ST generado es una salida de solo lectura. |
+| FBD | Puertos con tipo, bloques, conexiones, deshacer y validación visual. | El ST generado es una salida de solo lectura. |
+| SFC | Pasos, transiciones, acciones, deshacer y validación visual. | El ST generado es una salida de solo lectura. |
 
-## Camino de compilación
+## Ruta de compilación
 
-Los modelos visuales se validan y transpilan antes de la compilación canónica.
-El backend compartido reduce implementación duplicada, pero no garantiza que
-cada lenguaje tenga el mismo conjunto de funciones o comportamiento de debug.
-Compilá y ejecutá el proyecto y escenario deseados para establecer el
-comportamiento que necesitás.
+Los modelos visuales se validan y se transpilan antes de la compilación
+canónica. Compartir el backend evita duplicar código, pero no garantiza que todos
+los lenguajes tengan las mismas funciones ni el mismo comportamiento al depurar.
+Compile y ejecute el proyecto y el escenario que le interesan para comprobar el
+comportamiento que necesita.
 
 ## Edición con IA
 
-La IA edita modelos visuales mediante operaciones tipadas, nunca JSON crudo. El
+La IA edita los modelos visuales mediante operaciones con tipo, nunca con JSON
+sin procesar. El cambio candidato resultante queda aislado en la pestaña
+**Changes** hasta que usted lo revisa, lo compila, lo prueba y lo guarda.
+Consulte [IA y privacidad](./ai-privacy.md).

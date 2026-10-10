@@ -31,3 +31,4 @@ an HIL run before claiming target behavior.
 Do not retry blindly. Re-inspect the selected board/profile and runtime ABI,
 then use [Recovery Boundaries](../operations/recovery.md). The program deploy
 flow is not firmware recovery and does not replace the board-specific runner
+procedure.

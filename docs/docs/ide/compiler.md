@@ -22,14 +22,15 @@ flowchart LR
   Compile --> Artifact[.zplc artifact, diagnostics, metadata]
 ```
 
-## Scope, not parity promise
+## What the compiler accepts
 
-The same backend is useful only for features accepted by the relevant editor,
-transpiler, and compiler contracts. It does not establish universal language
-parity, runtime parity, or identical debug behavior. Use the compiler output
-and scenario result for the exact project as the evidence.
+All languages share one backend, but each accepts only the constructs its editor,
+transpiler, and compiler support. The languages do not have identical features
+or identical debugging behavior. Check the compiler output and a scenario result
+for your own project.
 
 ## Artifact boundary
 
 The artifact is verified before runtime loading. A successful host compile does
 not prove a board can flash, restore, meet timing, or drive an output. Those
+need a run on that board; see [deployment](./deployment.md).

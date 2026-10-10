@@ -16,7 +16,7 @@ and reviewing PLC projects in a folder selected by the user.
 
 1. Create or copy an example into a folder.
 2. Edit ST, LD, FBD, or SFC and compile through the canonical compiler path.
-3. Run temporal tests and native POSIX simulation; inspect evidence in the lower ledger.
+3. Run temporal tests and native POSIX simulation; inspect the results in the bottom panel.
 4. For hardware, use the separate human build, flash, deploy, and RUN/STOP flows.
 
 ## What the workbench owns
@@ -36,4 +36,5 @@ target timing, electrical I/O, HIL, or production qualification. Board profiles
 currently carry cross-build evidence only; see [capabilities and evidence](../reference/capabilities-evidence.md).
 
 AI may prepare an isolated candidate change, but only a person can save it or
-initiate a physical operation. Read [AI and privacy](./ai-privacy.md) before
+initiate a physical operation. Read [AI and privacy](./ai-privacy.md) before you
+opt in to an AI provider.

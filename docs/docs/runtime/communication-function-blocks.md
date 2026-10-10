@@ -50,4 +50,4 @@ Pre-configured wrappers that simplify connecting to major hyperscalers.
 
 ## Language Availability
 
-All communication Function Blocks are universally available across ZPLC's supported IEC 61131-3 languages. They can be instanced natively in Structured Text (ST), or dragged and dropped onto networks in Ladder Diagram (LD) and Function Block Diagram (FBD).
+The compiler registers every communication function block, so you can instance them in Structured Text (ST). Whether the Ladder Diagram (LD) and Function Block Diagram (FBD) editors offer each block has not been verified for this release.

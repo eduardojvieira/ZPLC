@@ -13,7 +13,7 @@ export default function HardwareSupport() {
       </div>
       <div className={styles.heroStats} style={{ justifyContent: 'center', gap: '2.5rem' }}>
         {hardwareSection.boards.map((board) => (
-          <div key={board.value} className={styles.stat}>
+          <div key={board.label} className={styles.stat}>
             <span className={styles.statValue}>{board.value}</span>
             <span className={styles.statLabel}>{board.label}</span>
           </div>

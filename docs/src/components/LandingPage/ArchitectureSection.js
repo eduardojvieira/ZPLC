@@ -13,15 +13,6 @@ export default function ArchitectureSection() {
         <p className={styles.sectionSubtitle}>{architectureSection.subtitle}</p>
       </div>
 
-      <div style={{ display: 'flex', justifyContent: 'center', margin: '2rem 0' }}>
-        <img
-          src={require('@site/static/img/architecture-diagram.png').default}
-          alt={architectureSection.title}
-          className={styles.ideScreenshot}
-          style={{ maxWidth: '100%', maxHeight: '600px', objectFit: 'contain' }}
-        />
-      </div>
-
       <div className={styles.archFlow}>
         {architectureSection.steps.map((step, index) => (
           <Fragment key={step.title}>

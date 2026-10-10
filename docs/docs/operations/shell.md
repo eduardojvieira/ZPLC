@@ -3,125 +3,151 @@ slug: /operations/shell
 id: shell
 title: The ZPLC Shell
 sidebar_label: ZPLC Shell
-description: Comprehensive reference for the built-in Zephyr shell commands in ZPLC.
+description: Reference for the built-in Zephyr shell commands in ZPLC.
 tags: [operations, debugging, shell]
 ---
 
 # The ZPLC Shell
 
-ZPLC integrates directly with the Zephyr RTOS shell over the primary interactive UART interface (usually 115200 baud).
+ZPLC adds a `zplc` command set to the Zephyr shell on the board's interactive UART (usually 115200 baud).
 
-The shell provides a powerful, low-level interface for inspecting memory, managing networking, debugging execution errors, and controlling the virtual machine directly from the terminal without needing the desktop IDE.
+From a terminal you can inspect memory, check the network, read execution errors and control the virtual machine without the desktop IDE.
 
 ## Accessing the Shell
 
-To access the shell, connect a serial terminal program (such as PuTTY, screen, or Minicom) to the virtual COM port representing your Zephyr board.
+Connect a serial terminal program (such as PuTTY, screen, or Minicom) to the virtual COM port of your Zephyr board.
 
-Provide standard commands by prefixing them with the `zplc` subsystem identifier.
+Start every command with `zplc`.
+
+---
+
+## Runtime Control (`zplc`)
+
+- `zplc load <size>` - Prepares the runtime to receive a `.zplc` program of the given size in bytes. It refuses while the runtime is faulted; run `zplc reset` first.
+- `zplc data <hex>` - Sends the next chunk of the program, in hexadecimal. Use it only after `zplc load`.
+- `zplc start` - Starts the scheduler.
+- `zplc stop` - Stops the scheduler.
+- `zplc status` - Shows the runtime state.
+- `zplc reset` - Resets the virtual machine.
+- `zplc version` - Shows the version.
 
 ---
 
 ## Core VM & Debugging (`zplc dbg`)
 
-The `dbg` subsystem gives you raw access to the execution state, memory segments, and breakpoints.
+The `dbg` commands give you direct access to the execution state, memory and breakpoints.
 
 ### Breakpoints (`bp`)
-- `zplc dbg bp list` - Lists all currently active instruction breakpoints.
+- `zplc dbg bp list` - Lists the active breakpoints.
 - `zplc dbg bp add <pc>` - Adds a breakpoint at the given program counter (PC) address.
-- `zplc dbg bp remove <pc>` - Removes a breakpoint at the given PC address.
-- `zplc dbg bp clear` - Clears all active breakpoints.
+- `zplc dbg bp remove <pc>` - Removes the breakpoint at the given PC address.
+- `zplc dbg bp clear` - Clears all breakpoints.
 
 ### Forcing Variables (`force`)
-- `zplc dbg force list` - Lists all currently forced memory addresses.
-- `zplc dbg force set <addr> <hexbytes>` - Forces a specific memory address to hold a continuous hex value overriding logical assignments.
-- `zplc dbg force clear <addr>` - Removes the force overlay on a specific address.
-- `zplc dbg force clear_all` - Clears all forced variables, restoring full logic control.
+- `zplc dbg force list` - Lists the forced memory addresses.
+- `zplc dbg force set <addr> <hexbytes>` - Forces a memory address to hold the given bytes, overriding the program's own assignments.
+- `zplc dbg force clear <addr>` - Removes the force on one address.
+- `zplc dbg force clear_all` - Removes all forces, so the program controls every address again.
 
 ### Execution Control
-- `zplc dbg pause` - Pauses the execution of the Virtual Machine mid-cycle.
-- `zplc dbg resume` - Resumes suspended execution.
-- `zplc dbg step` - Executes exactly one IEC logic cycle frame and pauses automatically.
+- `zplc dbg pause` - Pauses the virtual machine.
+- `zplc dbg resume` - Resumes execution.
+- `zplc dbg step` - Runs exactly one scan cycle and pauses again.
 
 ### Memory Introspection
-- `zplc dbg info` - Displays global VM state, memory allocations, and current PC.
-- `zplc dbg mpeek addr:len[,addr:len...]` - Reads chunks of consecutive memory by hex address dynamically.
-- `zplc dbg poke <addr> <value>` - Writes raw hex payload to a specified VM address buffer.
-- `zplc dbg mem <addr> <len>` - Dumps a specified block of memory to the console.
-- `zplc dbg watch <addr> <len>` - Streams continuous updates of memory chunk states.
+- `zplc dbg info` - Shows the virtual machine state and the current PC.
+- `zplc dbg mpeek addr:len[,addr:len...]` - Reads one or more blocks of memory at the given hexadecimal addresses.
+- `zplc dbg poke <addr> <value>` - Writes a value to a memory address.
+- `zplc dbg mem <ipi|opi|work|retain> [offset]` - Dumps one memory region to the console, starting at the optional offset.
+- `zplc dbg watch <addr> [type]` - Not implemented. The command only prints a message; use `mpeek`, or the Watch tab in Studio.
 
-### Core Timers
-- `zplc dbg ticks` - Prints current operating system tick count via the hardware timer mechanism.
-- `zplc dbg task <task_id>` - Dumps detailed IEC task structural limits.
-- `zplc dbg timer <timer_id>` - Displays the state of standard IEC Timers (`TON`, `TOF`, `TP`).
+### Ticks, Tasks and Timers
+- `zplc dbg ticks` - Prints the system tick count in milliseconds.
+- `zplc dbg task <task_id>` - Shows the definition and limits of one task.
+- `zplc dbg timer <addr>` - Not implemented. The command only prints a message.
 
 ---
 
 ## Scheduler (`zplc sched`)
 
-The scheduler manages how and when the IEC programs loop. Use these commands to diagnose latency issues or manually upload bytecode.
+The scheduler decides when each task runs. These commands are available when the firmware is built with `CONFIG_ZPLC_SCHEDULER`. Use them to inspect task timing or to upload a program by hand.
 
-- `zplc sched status` - Shows the active scheduler state (e.g. `RUNNING`, `HALTED`).
-- `zplc sched tasks` - Lists all configured tasks, priority indices, and their internal CPU load (cycle time) metrics.
-- `zplc sched load <size>` - Signals the bootloader to expect a `.zplc` bytecode payload of the specified bytes.
-- `zplc sched data <hex>` - Manually writes bytecode frames into the NVS storage bypassing IDE mechanisms.
+- `zplc sched status` - Shows the scheduler state, such as `RUNNING` or `HALTED`.
+- `zplc sched tasks` - Lists the configured tasks with their priority and cycle-time measurements.
+- `zplc sched load <size>` - Prepares the runtime to receive a `.zplc` program of the given size in bytes.
+- `zplc sched data <hex>` - Sends the next chunk of the program, in hexadecimal, without going through Studio.
 
 ---
 
 ## Configuration & Persistence (`zplc config`)
 
-The Zephyr NVS settings storage backing ZPLC parameters can be managed manually.
+These commands manage the settings that ZPLC keeps in the board's non-volatile storage.
 
-- `zplc config get` - Shows the current live configuration tree.
-- `zplc config set <key> <val>` - Modifies a configuration entry (e.g. intervals, network addresses).
-- `zplc config save` - Persists volatile settings deeply into the EEPROM/Flash.
-- `zplc config reset` - Destroys the settings layer, restoring pure defaults upon reboot.
+- `zplc config get` - Shows the current configuration.
+- `zplc config set <key> <val>` - Changes a setting, such as an interval or a network address.
+- `zplc config save` - Writes the current settings to non-volatile storage.
+- `zplc config reset` - Deletes the saved settings; the defaults apply after the next reboot.
 
 ---
 
 ## Hardware Integration (`zplc hil` / `adc`)
 
-- `zplc hil mode <mode>` - Changes the debug/HIL operational modality constraint.
-- `zplc hil status` - Shows underlying HIL metrics.
-- `zplc hil reset` - Issues a hard-reset on the Virtual Machine.
-- `zplc hil watch <id> <addr>` - Registers HIL tracking probes.
-- `zplc adc temp` - Reads native processor internal temperature if supported natively.
-- `zplc adc read <channel>` - Triggers a raw analog read on an ADC multiplexer channel.
+The `adc` commands exist only when the firmware is built with `CONFIG_ADC`.
+
+- `zplc hil mode <mode>` - Changes the hardware-in-the-loop (HIL) mode.
+- `zplc hil status` - Shows the HIL status.
+- `zplc hil reset` - Resets the virtual machine.
+- `zplc hil watch <id> <addr>` - Registers a HIL watch.
+- `zplc adc temp` - Reads the processor's internal temperature, if the board supports it.
+- `zplc adc read <channel>` - Reads one ADC channel.
 
 ---
 
 ## Networking (`zplc net` / `wifi`)
 
-For network-capable targets (e.g. `ESP32`, `STM32F7`), managing TCP stacks is critical.
+For boards with network hardware, such as the ESP32-S3 or the STM32F7 boards.
 
-- `zplc net status` - Displays live IPv4 assignments, gateway links, and MAC addresses.
-- `zplc wifi connect` - Attempts linking using credential payloads stored in `zplc config`.
+- `zplc net status` - Shows the IPv4 address, the gateway and the MAC address.
+- `zplc wifi connect` - Connects to Wi-Fi with the credentials stored by `zplc config`.
+
+---
+
+## MQTT and Communication (`zplc mqtt` / `comm`)
+
+- `zplc mqtt status` - Shows the MQTT client status, including the broker and the client ID.
+- `zplc mqtt reset_backoff` - Resets the reconnect delay to its initial value.
+- `zplc comm map` - Shows the communication bindings and the Modbus server mappings.
+- `zplc comm set modbus <index> <address>` - Overrides one Modbus server mapping.
+- `zplc comm clear modbus <index>` - Removes the override of one Modbus server mapping.
 
 ---
 
 ## Certificates / Security (`zplc cert`)
 
-When integrating MQTT payloads to secured brokers (like AWS IoT core), root certificates are mandated.
+A secured MQTT broker, such as AWS IoT Core, needs TLS certificates stored on the board.
 
-- `zplc cert status` - Shows the presence and byte length of installed CA, certs, and private keys.
-- `zplc cert begin <ca|client|key> <size>` - Initializes an upload buffer for TLS provisioning.
-- `zplc cert chunk <hex>` - Deposits segmented cryptographic bundles to the staging buffer.
-- `zplc cert commit` - Flashes the staged cryptographic key securely to the partition.
-- `zplc cert erase <ca|client|key>` - Wipes sensitive TLS material structurally.
+- `zplc cert status` - Shows whether the CA certificate, the client certificate and the private key are installed, and their sizes.
+- `zplc cert begin <ca|client|key> <size>` - Starts an upload of the given size.
+- `zplc cert chunk <hex>` - Sends the next chunk of the upload, in hexadecimal.
+- `zplc cert commit` - Writes the uploaded data to storage.
+- `zplc cert erase <ca|client|key>` - Erases the stored certificate or key.
 
 ---
 
 ## Time Services (`zplc ntp`)
 
-ZPLC provides native SNTP hooks for time-critical logical operations.
+ZPLC can synchronize the clock over SNTP.
 
-- `zplc ntp status` - Checks current Unix Epoch synchronization offset.
-- `zplc ntp enable` / `zplc ntp disable` - Toggles the SNTP background service.
-- `zplc ntp server <hostname>` - Overwrites the upstream time provider.
-- `zplc ntp sync` - Forces an immediate NTP time request.
+- `zplc ntp status` - Shows the synchronization state and the offset from Unix time.
+- `zplc ntp enable` / `zplc ntp disable` - Turns the SNTP service on or off.
+- `zplc ntp server <hostname>` - Sets the time server.
+- `zplc ntp sync` - Requests the time immediately.
 
 ---
 
 ## System Base (`zplc sys`)
 
-- `zplc sys info` - Dumps Zephyr OS metrics, build configurations, and physical HW boundaries. `--json` also reports the `draft_counter` of the image; a program built for another draft is refused (see [Contributing](/contributing#draft-contract-counter)).
-- `zplc sys reboot` - Initiates a rigid microcontroller system software reset simulating a power cycle.
+These commands are available when the firmware is built with `CONFIG_ZPLC_SCHEDULER`.
+
+- `zplc sys info` - Shows the system information, including build and hardware details. `--json` also reports the `draft_counter` of the image; a program built for another draft is refused (see [Contributing](/contributing#draft-contract-counter)).
+- `zplc sys reboot` - Reboots the board with a software reset.

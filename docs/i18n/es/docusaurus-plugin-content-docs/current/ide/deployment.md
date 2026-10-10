@@ -1,32 +1,34 @@
 # Despliegue y sesiones de runtime
 
-Build de firmware, flash de firmware, deploy de programa PLC y run/debug son
-cuatro operaciones separadas. IA y MCP nunca las inician.
+Compilar el firmware, grabarlo, desplegar un programa PLC y ejecutar o depurar
+son cuatro operaciones distintas. La IA y MCP nunca las inician.
 
 ## Camino rápido
 
-1. Compilá, testeá y simulá el programa esperado.
-2. Elegí el profile de placa exacto y conectá el runtime correspondiente.
-3. Inspeccioná handshake, ABI, board/profile, hash, tamaño y cantidad de tareas.
-4. Una persona confirma el deploy; inspeccioná estado stopped antes de RUN.
+1. Compile, pruebe y simule el programa previsto.
+2. Elija el perfil de placa exacto y conecte el runtime que le corresponde.
+3. Revise el handshake, la ABI, la placa y el perfil, el hash del contenido, el tamaño y el número de tareas.
+4. Una persona confirma el despliegue; revise que el runtime esté detenido antes de cualquier RUN.
 
 ## Operaciones
 
-| Operación | Significado | Autoridad |
+| Operación | Qué hace | Quién la autoriza |
 | --- | --- | --- |
-| Build runtime firmware | Produce artefactos firmware Zephyr. | Flujo humano. |
-| Flash runtime firmware | Escribe firmware/boot chain al dispositivo. | Flujo humano; requiere procedimiento del profile. |
-| Deploy PLC program | Transfiere un artefacto `.zplc` verificado a runtime compatible. | Confirmación humana con evidencia del artefacto. |
-| Run / debug | Observa o cambia estado operacional. | Flujo humano y procedimiento del sitio. |
+| Build runtime firmware | Genera los artefactos de firmware de Zephyr. | Una persona. |
+| Flash runtime firmware | Escribe el firmware y la cadena de arranque en un dispositivo. | Una persona; requiere el procedimiento del perfil. |
+| Deploy PLC program | Transfiere un artefacto `.zplc` verificado a un runtime compatible. | Confirmación de una persona, con los datos del artefacto a la vista. |
+| Run / debug | Observa o cambia el estado de operación. | Una persona, según el procedimiento del sitio. |
 
-## Límite de evidencia
+## Límite de la evidencia
 
-El adaptador POSIX nativo es simulación host. Conexión serial y profile
-cross-build no lo convierten en HIL. Los profiles catalogados actuales tienen
-cero referencias HIL; usá el procedimiento Zephyr exacto y registrá un run HIL
-antes de afirmar comportamiento target.
+El adaptador POSIX nativo es una simulación en el equipo anfitrión. Una conexión
+serial y un perfil con cross-build no la convierten en HIL. Los perfiles del
+catálogo no tienen hoy ninguna referencia de HIL; use su procedimiento exacto de
+Zephyr y registre una ejecución HIL antes de afirmar cómo se comporta la placa.
 
-## Ante conexión o deploy fallido
+## Si falla la conexión o el despliegue
 
-No reintentes a ciegas. Volvé a inspeccionar board/profile y ABI del runtime y
-usá [Límites de recuperación](../operations/recovery.md). El deploy de programa
+No reintente a ciegas. Vuelva a revisar la placa y el perfil elegidos y la ABI
+del runtime, y luego consulte [Límites de recuperación](../operations/recovery.md).
+El despliegue de un programa no es una recuperación de firmware y no reemplaza el
+procedimiento del runner propio de cada placa.

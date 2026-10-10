@@ -1,124 +1,125 @@
-# ZPLC (Zephyr PLC)
+# ZPLC
 
-**One execution core, evidence-aware runtimes.**
+**An open-source IEC 61131-3 PLC runtime and desktop IDE.**
 
-ZPLC is a portable IEC 61131-3 runtime environment with a C99 core, Zephyr
-targets, and native host tooling. Its timing, hardware, and release claims are
-limited to recorded evidence rather than inferred from source presence.
+ZPLC compiles Structured Text, Ladder Diagram, Function Block Diagram,
+Sequential Function Chart and Instruction List to one bytecode format. A small
+C99 runtime executes it: on microcontroller boards as a Zephyr module, and on
+your computer as a simulator. ZPLC Studio, the desktop app, edits, compiles,
+tests and simulates projects.
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Zephyr 4.4.2](https://img.shields.io/badge/Zephyr-4.4.2-blue.svg)](https://zephyrproject.org/)
+> **Status:** 2.0.0-rc.3 is a preview for evaluation. Six boards cross-build in
+> CI and none has been tested on hardware yet. It is not a safety PLC and must
+> not be used to control machinery.
+
+[Download ZPLC Studio](https://github.com/eduardojvieira/ZPLC/releases) ·
+[Getting started](docs/docs/getting-started/index.md) ·
+[Documentation](https://eduardojvieira.github.io/ZPLC/) · MIT licence
+
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Zephyr: pinned in west.yml](https://img.shields.io/badge/Zephyr-pinned%20in%20west.yml-blue.svg)](west.yml)
 [![C99](https://img.shields.io/badge/C-C99-green.svg)](https://en.wikipedia.org/wiki/C99)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.9-blue.svg)](https://www.typescriptlang.org/)
 
-[![Website](https://img.shields.io/badge/Website-Live-brightgreen)](https://eduardojvieira.github.io/ZPLC/)
+## What you can do today
 
-## Features
+- Write programs in Structured Text, Instruction List, Ladder, FBD or SFC in Studio.
+- Compile them to `.zplc` bytecode and run them in the simulator, with no hardware.
+- Test them with scenarios: scripted inputs and timed checks on outputs, run from Studio's Tests tab.
+- Start from 16 example projects, such as a tank level controller, a conveyor, motor start/stop and a pedestrian crossing.
+- Build the runtime for six Zephyr boards.
 
-- **Portable core**: ANSI C99 runtime separated from its hardware abstraction layer.
-- **Language and editor assets**: ST, IL, LD, FBD, and SFC paths exist in the repository; release support is evidence-gated.
-- **Desktop tooling**: Electron, native POSIX simulation, and a degraded WASM fallback are available development surfaces.
-- **Evidence-aware validation**: Host, QEMU, target build, HIL, and manual checks are distinct evidence levels.
+## What it runs on
+
+| Part | Runs on |
+| --- | --- |
+| Studio | Windows, macOS and Linux. The rc.3 installers are unsigned. |
+| Simulator | Your computer, as a host build of the same C runtime. Studio bundles it. |
+| Boards | Raspberry Pi Pico (RP2040), Arduino GIGA R1, ESP32-S3 DevKitC, STM32F746G Discovery, STM32 Nucleo-H743ZI and Arduino Opta WiFi. All six cross-build only: the firmware builds in CI and has not been run on a board. |
+
+## Try it
+
+1. Download the installer for your system from [GitHub Releases](https://github.com/eduardojvieira/ZPLC/releases).
+2. Open it. Windows and macOS warn about unsigned apps; [Getting started](docs/docs/getting-started/index.md) shows how to continue.
+3. In Studio, copy the **Blinky** example, compile it, choose **Simulate**, press **Connect** and then **Run**.
+
+## How it compares
+
+Checked on 2026-10-09 against the sources linked in each row. The cells repeat
+what each project says about itself; we did not install or test the others.
+
+| Project | Licence and cost | Languages | Where it runs |
+| --- | --- | --- | --- |
+| ZPLC | MIT ([LICENSE](LICENSE)) | ST, IL, LD, FBD, SFC | Studio on Windows, macOS, Linux. Runtime on six Zephyr boards (cross-build only) and as a host simulator. |
+| [OpenPLC](https://github.com/Autonomy-Logic/openplc-runtime) (Editor and Runtime v4) | [Editor](https://github.com/Autonomy-Logic/openplc-editor): GPL-3.0. Runtime: MIT. The v3 runtime repository is [marked end of life](https://github.com/thiagoralves/OpenPLC_v3). | Ladder, Structured Text, Function Block Diagram and other IEC 61131-3 languages | Editor: desktop app for macOS, Windows and Linux. Runtime: Linux on x86_64, ARM64 and ARMv7, or Docker. |
+| [Beremiz](https://github.com/beremiz/beremiz) | IDE: GPL v2 or later. Python runtime: LGPL v2 or later. C++ runtime: GPL v3 or later. | LD, FBD, SFC, IL, ST ([Beremiz](https://beremiz.org/)) | Compiles PLC programs to C and then to native code, for a bare-metal microcontroller, an industrial controller or a Linux PC. IDE: Windows installer and Linux Snap package. |
+| [CODESYS](https://store.codesys.com/en/codesys.html) | [Development System: free of charge in the CODESYS Store](https://store.codesys.com/en/engineering/ide.html); a licence agreement applies. | FBD, LD, IL, ST, SFC editors (IL is no longer maintained but can be enabled) | Integrated compilers for many CPU platforms. A web-based CODESYS 4 is available for Windows x64, Linux x64 and Linux ARM64. |
+| [Arduino PLC IDE](https://docs.arduino.cc/software/plc-ide/) | Free download, Windows only. Compatible devices need a licence activation. | IEC 61131-3 languages | Arduino devices that support it, such as Opta and Portenta Machine Control. |
+
+ZPLC has no hardware test results yet. Beremiz says on its website that it has
+been maintained in the open since 2007.
 
 ## Documentation
 
-The full documentation for ZPLC, including the runtime architecture, hardware integration guides, and language references, is hosted on our **[Docusaurus Site](https://eduardojvieira.github.io/ZPLC/)**.
+The full documentation, including the runtime architecture, board references and
+language references, is on the **[documentation site](https://eduardojvieira.github.io/ZPLC/)**.
 
-- [Getting Started & Platform Overview](https://eduardojvieira.github.io/ZPLC/docs/platform-overview)
-- [System Architecture](https://eduardojvieira.github.io/ZPLC/docs/architecture)
-- [Runtime & Hardware Abstraction (HAL)](https://eduardojvieira.github.io/ZPLC/docs/runtime)
-- [Languages & Structured Text Reference](https://eduardojvieira.github.io/ZPLC/docs/languages)
-- [IDE & Tooling](https://eduardojvieira.github.io/ZPLC/docs/ide)
-- [Integration & Deployment](https://eduardojvieira.github.io/ZPLC/docs/integration)
-
-*Note for AI Assistants & Contributors: Please refer to [AGENTS.md](AGENTS.md) for contribution guidelines, project architecture rules, and testing requirements before modifying the codebase.*
-
-## Current posture
-
-`v2.0.0-rc.3` is the current prerelease candidate. Its non-HIL controls and
-release gates are implemented and locally verifiable: source, native simulation,
-packaging, documentation, exact-SHA CI, and fail-closed signing/release workflow
-checks. A hosted workflow run on the exact tag/SHA creates the concrete signed,
-notarized, SBOM and attestation artifacts where applicable. The only remaining
-product qualification gate is traceable physical HIL on the two selected boards;
-ZPLC is not a safety PLC or production-qualified board release. See the
-[release notes](docs/docs/release-notes/index.md) and [release evidence
-matrix](specs/008-release-foundation/artifacts/release-evidence-matrix.md) for
-the current boundary.
-
-ZPLC 2.0 remains an incremental evolution of Studio and orchestration around
-the existing core and compiler assets. Its implemented and pending gates are
-recorded in the [Foundation specification](specs/010-zplc-2-0-foundation/spec.md),
-[roadmap](docs/docs/runtime/roadmap.md), and [source-of-truth map](docs/docs/reference/source-of-truth.md).
+- [Getting started](https://eduardojvieira.github.io/ZPLC/docs/getting-started)
+- [Platform overview](https://eduardojvieira.github.io/ZPLC/docs/platform-overview)
+- [System architecture](https://eduardojvieira.github.io/ZPLC/docs/architecture)
+- [Runtime and hardware abstraction layer (HAL)](https://eduardojvieira.github.io/ZPLC/docs/runtime)
+- [Languages and Structured Text reference](https://eduardojvieira.github.io/ZPLC/docs/languages)
+- [Studio](https://eduardojvieira.github.io/ZPLC/docs/ide)
+- [Integration and deployment](https://eduardojvieira.github.io/ZPLC/docs/integration)
+- [Release notes](docs/docs/release-notes/index.md)
 
 ---
 
-## Quick Start
+## Build from source
 
-### Option 1: Electron Desktop Workflow
+### Studio (Linux and macOS)
 
-Run the desktop app locally from source:
+You need Bun 1.3.14, CMake and a C compiler. Studio's simulator is a separate
+program: build it first and point Studio to it.
 
 ```bash
-bun --version  # requires 1.3.14
+cmake -S firmware/lib/zplc_core -B firmware/lib/zplc_core/build
+cmake --build firmware/lib/zplc_core/build
 bun install --frozen-lockfile
-cd packages/zplc-ide
-bun run electron:dev    # Development mode
-bun run electron:build  # Build distributable
+ZPLC_NATIVE_SIM_BIN="$PWD/firmware/lib/zplc_core/build/zplc_runtime" \
+  bun run --cwd=packages/zplc-ide electron:dev
 ```
 
-### Option 2: Web IDE (Development)
+`bun run --cwd=packages/zplc-ide electron:build` builds the installers. The
+simulator needs the Electron app. `bun run --cwd=packages/zplc-ide dev` starts
+the editor in a browser at http://localhost:3000, where the native simulator is
+not available.
 
-Run the IDE in your browser:
-
-```bash
-bun --version  # requires 1.3.14
-bun install --frozen-lockfile
-cd packages/zplc-ide
-bun run dev
-# Open http://localhost:5173
-```
-
-### Option 3: POSIX Build (Core Development)
-
-Build and test the C runtime on your host machine:
+### Runtime on your computer
 
 ```bash
-# Clone the repository
 git clone https://github.com/eduardojvieira/ZPLC.git
 cd ZPLC/firmware/lib/zplc_core
-
-# Build
 mkdir build && cd build
 cmake ..
 make
-
-# Run tests
-ctest --output-on-failure
-
-# Run the demo runtime
-./zplc_runtime
+ctest --output-on-failure   # run the C tests
+./zplc_runtime              # run the demo runtime
 ```
 
-### Option 4: Zephyr Build (Manual or Emulated Hardware)
+### Firmware for a board
 
-Run on real hardware or the QEMU emulator:
+Create a west workspace with `west init -l` on this repository, as the
+[Zephyr workspace setup](docs/docs/reference/zephyr-workspace-setup.md) page
+describes, then build from the repository root. Each board's command is in
+`firmware/app/boards/supported-boards.v1.5.0.json`; for the Raspberry Pi Pico:
 
 ```bash
-# Activate Zephyr environment
-source ~/zephyrproject/activate.sh
-
-# Build for QEMU Cortex-M3 emulator
-cd ~/zephyrproject
-west build -b mps2/an385 $ZEPLC_PATH/firmware/app --pristine
-
-# Run in QEMU (manual/emulated workflow; no CI workflow is claimed yet)
-west build -t run
-
-# Or build for Raspberry Pi Pico (manual hardware operation)
-west build -b rpi_pico $ZEPLC_PATH/firmware/app --pristine
-cp build/zephyr/zephyr.uf2 /Volumes/RPI-RP2/
+west build -b rpi_pico/rp2040 firmware/app --pristine
 ```
+
+This is a cross-build: ZPLC has not yet flashed or run it on a Pico. Flashing is
+a separate step that a person does with the board's own Zephyr procedure.
 
 ---
 
@@ -126,7 +127,7 @@ cp build/zephyr/zephyr.uf2 /Volumes/RPI-RP2/
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                    Development Host (IDE)                    │
+│                    Development Host (Studio)                 │
 │  ┌─────────┐    ┌──────────┐    ┌────────┐    ┌──────────┐ │
 │  │ ST/LD/  │───▶│ Compiler │───▶│ Linker │───▶│  .zplc   │ │
 │  │ FBD/SFC │    │          │    │        │    │ bytecode │ │
@@ -138,41 +139,26 @@ cp build/zephyr/zephyr.uf2 /Volumes/RPI-RP2/
 │  ┌──────────────────────────────────────────────────────┐  │
 │  │                    ZPLC Core (C99)                    │  │
 │  │  ┌──────────┐  ┌─────────────┐  ┌─────────────────┐  │  │
-│  │  │ Loader   │  │ VM (75 ops) │  │ Process Image   │  │  │
+│  │  │ Loader   │  │     VM      │  │ Process Image   │  │  │
 │  │  └──────────┘  └─────────────┘  └─────────────────┘  │  │
 │  └──────────────────────────┬───────────────────────────┘  │
 │                             │ HAL Interface                 │
 │  ┌──────────────────────────▼───────────────────────────┐  │
-│  │ ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌────────┐ │  │
-│  │ │  Zephyr  │  │  POSIX   │  │ Windows  │  │  WASM  │ │  │
-│  │ │   HAL    │  │   HAL    │  │   HAL    │  │  HAL   │ │  │
-│  │ └──────────┘  └──────────┘  └──────────┘  └────────┘ │  │
+│  │ ┌──────────┐  ┌──────────┐  ┌────────────────────┐   │  │
+│  │ │  Zephyr  │  │  POSIX   │  │  WASM (not shipped) │   │  │
+│  │ │   HAL    │  │   HAL    │  │        HAL          │   │  │
+│  │ └──────────┘  └──────────┘  └────────────────────┘   │  │
 │  └──────────────────────────────────────────────────────┘  │
 └─────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## Supported Platforms
-
-### Embedded (Zephyr RTOS)
-ZPLC is a Zephyr module. Board entries describe repository profiles; their
-validation level and evidence determine what can be claimed. Refer to the
-board manifest and release evidence before treating any profile as hardware-qualified.
-
-### Desktop & Development
-- **Desktop app surface**: Windows, macOS, and Linux source/build workflows with packaged smoke gates in the exact-SHA release workflow.
-- **POSIX**: host development and test runtime.
-- **QEMU**: emulated target evidence where configured.
-- **WASM**: degraded browser fallback, not parity-authoritative evidence.
-
----
-
-## Project Structure
+## Project structure
 
 ```
 ZPLC/
-├── firmware/                      # Standalone Zephyr project
+├── firmware/                      # Zephyr module root
 │   ├── app/                       # Zephyr application (main target)
 │   │   ├── src/main.c
 │   │   ├── src/shell_cmds.c
@@ -182,45 +168,27 @@ ZPLC/
 │   ├── lib/zplc_core/             # Core library (C99)
 │   │   ├── include/               # Public headers
 │   │   ├── src/core/              # VM implementation
-│   │   ├── src/hal/               # HAL implementations
+│   │   ├── src/hal/               # HAL implementations (zephyr, posix, wasm)
 │   │   └── tests/                 # C unit tests
 │   ├── CMakeLists.txt             # Zephyr module CMake
-│   ├── Kconfig                    # Zephyr Kconfig
-│   └── module.yml                 # Zephyr module definition
+│   └── zephyr/                    # Kconfig and module.yml
 ├── packages/                      # Monorepo packages
-│   ├── zplc-compiler/             # ST Compiler & Code Generator
-│   ├── zplc-ide/                  # Desktop & Web IDE (React + Electron)
-│   └── ...
+│   ├── zplc-compiler/             # Compiler & code generator
+│   ├── zplc-ide/                  # Studio (React + Electron)
+│   └── zplc-hil/                  # Hardware-in-the-loop test runner
 ├── docs/                          # Documentation (Docusaurus)
-└── AGENTS.md                      # AI agent & contributor guide
+└── AGENTS.md                      # Guide for AI-assisted contributions
 ```
 
 ---
 
-## Using ZPLC in Your Zephyr Project
+## Using ZPLC in your Zephyr project
 
-### Via West Manifest
-
-Add to your `west.yml`:
-
-```yaml
-manifest:
-  projects:
-    - name: zplc
-      url: https://github.com/eduardojvieira/ZPLC
-      revision: master
-      path: modules/lib/zplc
-      import:
-        path-prefix: firmware
-```
-
-### Via ZEPHYR_EXTRA_MODULES
+The module root is the `firmware/` directory. Point `ZEPHYR_EXTRA_MODULES` at it:
 
 ```bash
 west build -b <board> <app> -- -DZEPHYR_EXTRA_MODULES=/path/to/zplc/firmware
 ```
-
-### Application Configuration
 
 In your `prj.conf`:
 
@@ -236,28 +204,26 @@ CONFIG_ZPLC_MAX_TASKS=4
 
 ## Contributing
 
-See [AGENTS.md](AGENTS.md) for detailed contribution guidelines, coding standards, and development workflows.
-
-### Quick Commands
+See [CONTRIBUTING.md](CONTRIBUTING.md). Contributions that use AI assistants
+follow [AGENTS.md](AGENTS.md).
 
 ```bash
-# C Runtime (from firmware/lib/zplc_core/build)
+# C runtime (from firmware/lib/zplc_core/build)
 cmake .. && make && ctest --output-on-failure
 
-# TypeScript (Monorepo)
+# TypeScript (monorepo)
 bun install --frozen-lockfile
 bun run test
 
-# Single test file (Compiler)
-cd packages/zplc-compiler
-bun test compiler.test.ts
+# One compiler test file
+bun test packages/zplc-compiler/src/compiler/compiler.test.ts
 ```
 
 ---
 
-## License
+## Licence
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+ZPLC is licensed under the MIT License. See [LICENSE](LICENSE).
 
 ## Acknowledgments
 

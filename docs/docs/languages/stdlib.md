@@ -82,9 +82,8 @@ For the runtime-side details and release constraints, continue with:
 - [Communication Function Blocks](../runtime/communication-function-blocks.md)
 - [Connectivity](../runtime/connectivity.md)
 
-## Practical rule
+## Availability
 
-If a built-in function or block is not registered in the compiler stdlib or justified by the
-runtime contract, it should not be documented as a firm ZPLC 2.0 capability.
+A built-in function or block is available to your programs only if the compiler stdlib registers it.
 
 For runtime and profile-specific semantics, see [Runtime Standard Library](../runtime/stdlib.md).

@@ -1,15 +1,16 @@
 # Flujo del compilador
 
-ZPLC usa un camino de compilador canónico para fuente y modelos visuales soportados.
+ZPLC usa un compilador canónico para el código fuente y para los modelos
+visuales admitidos.
 
 ## Camino rápido
 
-1. Compilá el proyecto respaldado por carpeta.
-2. Leé diagnósticos e identidad del artefacto producido.
-3. Ejecutá tests temporales y simulación POSIX nativa sobre ese artefacto.
-4. Recién después considerá el flujo humano separado de hardware.
+1. Compile el proyecto guardado en una carpeta.
+2. Lea los diagnósticos y la identidad del artefacto producido.
+3. Ejecute pruebas temporales y la simulación POSIX nativa con ese artefacto.
+4. Solo después considere el flujo de hardware, que inicia una persona por separado.
 
-## Tubería
+## Canalización
 
 ```mermaid
 flowchart LR
@@ -19,17 +20,20 @@ flowchart LR
   FBD[Modelo FBD] --> Transpile
   SFC[Modelo SFC] --> Transpile
   Transpile --> Compile
-  Compile --> Artifact[Artefacto .zplc, diagnósticos, metadata]
+  Compile --> Artifact[Artefacto .zplc, diagnósticos, metadatos]
 ```
 
-## Alcance, no promesa de paridad
+## Qué acepta el compilador
 
-El backend compartido sirve sólo para funcionalidades aceptadas por los
-contratos de editor, transpilador y compilador. No establece paridad universal
-de lenguajes, runtimes ni debug idéntico. Usá la salida de compilación y
-resultado de escenario del proyecto exacto como evidencia.
+Todos los lenguajes comparten un solo backend, pero cada uno acepta únicamente
+las construcciones que admiten su editor, su transpilador y el compilador. Los
+lenguajes no tienen las mismas funciones ni el mismo comportamiento al depurar.
+Revise la salida del compilador y el resultado de un escenario en su propio
+proyecto.
 
 ## Límite del artefacto
 
-El artefacto se verifica antes de que el runtime lo cargue. Un compile host
-exitoso no prueba flash, restore, timing ni salida de una placa. Esos claims
+El artefacto se verifica antes de que el runtime lo cargue. Una compilación
+correcta en el equipo anfitrión no demuestra que una placa pueda grabarse,
+restaurarse, cumplir sus tiempos o activar una salida. Eso requiere una
+ejecución en esa placa; consulte [despliegue](./deployment.md).

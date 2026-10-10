@@ -12,7 +12,7 @@ Structured Text (ST) es la base semántica canónica de ZPLC.
 - `IL`, `LD`, `FBD` y `SFC` son rutas cuando sus contratos de editor, transpilador y compilador las aceptan
 - el runtime sigue ejecutando `.zplc`, no código fuente específico de lenguaje
 
-Usá la [suite histórica de lenguajes](./examples/v1-5-language-suite.md) como evidencia de compatibilidad; no prueba paridad universal, timing target, hardware ni HIL.
+La [suite histórica de lenguajes](./examples/v1-5-language-suite.md) es evidencia de compatibilidad; no prueba paridad universal, tiempos en la placa, hardware ni HIL.
 
 ## Por qué ST importa arquitectónicamente
 
@@ -22,6 +22,15 @@ Usá la [suite histórica de lenguajes](./examples/v1-5-language-suite.md) como 
 - los demás lenguajes se normalizan a ST antes de compilar
 
 Por eso ST es el mejor lugar para entender la semántica pública de automatización que el runtime debería ejecutar.
+
+## Uso típico en ZPLC
+
+ST es la opción natural para:
+
+- lógica de control en texto
+- aritmética y manipulación de datos
+- llamar directamente a funciones y bloques de función de la stdlib
+- cuerpos de acción que provienen de flujos visuales de más alto nivel
 
 ## Ejemplo canónico mínimo
 
@@ -36,17 +45,6 @@ Timer(IN := Start, PT := T#250ms);
 Out1 := Timer.Q;
 END_PROGRAM
 ```
-
-## Qué puede reclamar esta página
-
-- ST como camino directo de compilación
-- ST como baseline semántica del resto
-- ejemplos que coinciden con los tests de workflow compartido
-- uso de stdlib respaldado por el registro stdlib del compilador
-
-## Qué NO debería reclamar
-
-No deberías vender ST como si tuviera privilegios runtime especiales. Compila al mismo contrato de bytecode que el resto.
 
 ## Superficies ST visibles hoy en el repo
 

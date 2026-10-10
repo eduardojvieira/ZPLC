@@ -1,27 +1,31 @@
 # Arquitectura de Studio y modelo de proyecto
 
-Studio presenta un proyecto respaldado por carpeta a editores y tools; el
-renderer no posee acceso privilegiado a filesystem, shell ni dispositivos.
+Studio presenta a los editores y a las herramientas un proyecto guardado en una
+carpeta; el renderer no tiene acceso privilegiado al sistema de archivos, a la
+shell ni a los dispositivos.
 
 ## Camino rápido
 
-Abrí una carpeta de proyecto, inspeccioná target y tareas, editá una fuente y
-compilá mediante la Tool API. Exportá una carpeta v2 revisada en lugar de confiar
-en una reescritura implícita del legado.
+Abra una carpeta de proyecto, revise su destino y sus tareas, edite un archivo
+fuente y compile con la Tool API. Exporte una carpeta v2 ya revisada, en lugar de
+depender de una reescritura implícita del proyecto antiguo.
 
 ## Límites
 
 | Capa | Responsabilidad |
 | --- | --- |
-| Renderer | Workbench, modelos visuales, diagnósticos y presentación de evidencia. |
-| Preload/main | Operaciones de filesystem validadas y runtime supervisado. |
-| Compilador | Compilación canónica de fuente/modelos visuales a `.zplc`. |
-| Adaptadores runtime | Simulación POSIX nativa o runtime compatible conectado. |
+| Renderer | Entorno de trabajo, modelos visuales, diagnósticos y presentación de resultados. |
+| Preload/main | Operaciones acotadas y validadas sobre archivos, y ejecución supervisada del runtime. |
+| Compilador | Compilación canónica de fuentes y modelos visuales a `.zplc`. |
+| Adaptadores de runtime | Simulación POSIX nativa o un runtime compatible conectado. |
 
 ## Configuración del proyecto
 
-`zplc.json` nombra metadata, target, tareas y fuentes. La elección de placa se
-controla contra el profile catalogado durante una operación; no importa
-automáticamente un modelo de capacidades ni certifica cableado.
+`zplc.json` define los metadatos del proyecto, el destino, las tareas y las
+fuentes. La placa elegida se compara con el perfil del catálogo durante cada
+operación; no importa por sí sola un modelo de capacidades ni certifica un
+cableado.
 
-Los ejemplos se copian a una carpeta de destino elegida por la persona usuaria.
+Los ejemplos se copian a una carpeta de destino que usted elige. No existe un
+modo de proyecto virtual o en memoria. Consulte la [migración](./migration-v1-to-v2.md)
+para saber cómo llevar a una carpeta un proyecto de la versión 1.

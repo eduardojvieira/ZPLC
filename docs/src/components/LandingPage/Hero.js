@@ -28,7 +28,7 @@ export default function Hero() {
 
           <p className={styles.heroSubtitle}>{hero.subtitle}</p>
 
-          <div className={styles.buttons} style={{ justifyContent: 'flex-start' }}>
+          <div className={styles.buttons}>
             <Link
               className={`button button--primary button--lg ${styles.heroButton} ${styles.primaryButton}`}
               to={hero.primaryTo}>
@@ -43,7 +43,7 @@ export default function Hero() {
           </div>
 
           <div className={styles.trustedBy}>
-            <div className={styles.techLogos} style={{ justifyContent: 'flex-start' }}>
+            <div className={styles.techLogos}>
               {hero.chips.map((chip) => (
                 <span key={chip} className={styles.techLogo}>
                   {chip}
@@ -51,14 +51,6 @@ export default function Hero() {
               ))}
             </div>
           </div>
-        </div>
-
-        <div className={styles.heroImageContainer}>
-          <img
-            src={require('@site/static/img/hero-ide-runtime.png').default}
-            alt={hero.imageAlt}
-            className={styles.heroImage}
-          />
         </div>
       </div>
     </header>

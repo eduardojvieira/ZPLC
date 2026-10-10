@@ -69,8 +69,10 @@ Los headers públicos también exponen límites como:
 - `ZPLC_MAX_BREAKPOINTS`
 - tamaños configurables para work, retain y code
 
-El README del runtime Zephyr también documenta claves `CONFIG_*` representativas para esos tamaños.
+En Zephyr los tamaños se fijan con opciones de Kconfig. Estos son los valores por defecto de `firmware/zephyr/Kconfig`; el `prj.conf` de una placa puede reemplazarlos:
 
-## Regla documental
-
-Cuando hables de seguridad de memoria, determinismo, RETAIN o límites de stack, anclá el claim en estos contratos públicos. No inventes un segundo modelo de memoria en prosa.
+```kconfig
+CONFIG_ZPLC_WORK_MEMORY_SIZE=8192
+CONFIG_ZPLC_RETAIN_MEMORY_SIZE=4096
+CONFIG_ZPLC_CODE_SIZE_MAX=45056
+```

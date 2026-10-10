@@ -79,8 +79,8 @@ Para los detalles del contrato runtime y los límites del release, seguí con:
 - [Bloques de Función de Comunicación](../runtime/communication-function-blocks.md)
 - [Conectividad](../runtime/connectivity.md)
 
-## Regla práctica
+## Disponibilidad
 
-Si una función o bloque no está registrado en la stdlib del compilador ni justificado por el contrato runtime, no debería documentarse como capacidad firme de ZPLC 2.0.
+Una función o un bloque integrado está disponible para sus programas solo si la stdlib del compilador lo registra.
 
 Para la semántica específica del runtime y perfil, consultá la [Biblioteca estándar del runtime](../runtime/stdlib.md).

@@ -3,37 +3,39 @@ slug: /ide
 id: index
 title: ZPLC Studio 2.0
 sidebar_label: Studio
-description: Autoría PLC respaldada por carpetas, validación, simulación, evidencia y flujos de hardware controlados por personas.
+description: Creación de proyectos PLC en una carpeta, validación, simulación y flujos de hardware controlados por una persona.
 tags: [ide, tooling]
 ---
 
 # ZPLC Studio 2.0
 
-Studio es el workbench de escritorio para crear, compilar, testear, simular y
-revisar proyectos PLC en una carpeta elegida por la persona usuaria.
+Studio es el entorno de trabajo de escritorio para crear, compilar, probar,
+simular y revisar proyectos PLC en una carpeta que usted elige.
 
 ## Camino rápido
 
-1. Creá o copiá un ejemplo a una carpeta.
-2. Editá ST, LD, FBD o SFC y compilá mediante el camino canónico.
-3. Ejecutá tests temporales y simulación POSIX nativa; inspeccioná evidencia en el ledger inferior.
-4. Para hardware, usá flujos humanos separados de build, flash, deploy y RUN/STOP.
+1. Cree un proyecto o copie un ejemplo a una carpeta.
+2. Edite ST, LD, FBD o SFC y compile con el compilador canónico.
+3. Ejecute pruebas temporales y la simulación POSIX nativa; revise los resultados en el panel inferior.
+4. Para hardware, use los flujos separados de compilación, grabación, despliegue y RUN/STOP, que inicia una persona.
 
-## Qué posee el workbench
+## Qué ofrece el entorno de trabajo
 
-| Superficie | Rol actual |
+| Superficie | Función actual |
 | --- | --- |
-| Proyecto | Archivos respaldados por carpeta, export v2 y diff de migración. |
-| Editores | ST es el camino textual principal; LD/FBD/SFC preservan modelos visuales semánticos. |
-| Validación | Diagnósticos, tests temporales, reglas de seguridad, trace y simulación POSIX. |
-| Evidencia | Registra resultados de tools y su alcance; no promociona host a HIL. |
-| Hardware | Connect y deploy siguen siendo acciones humanas explícitas tras controles de compatibilidad. |
+| Proyecto | Archivos en una carpeta, exportación al esquema v2 y diferencias de migración. |
+| Editores | ST es la vía de texto principal; LD, FBD y SFC conservan sus modelos visuales. |
+| Validación | Diagnósticos del compilador, pruebas temporales, reglas de seguridad, trace y simulación POSIX. |
+| Evidencia | Registra los resultados de las herramientas y su alcance; no convierte un resultado en host en uno de HIL. |
+| Hardware | Connect y deploy siguen siendo acciones explícitas de una persona, después de las verificaciones de compatibilidad. |
 
 ## Límites importantes
 
-La simulación POSIX nativa valida comportamiento host. No afirma timing target
-exacto, I/O eléctrico, HIL ni calificación de producción. Los perfiles de placas
-sólo tienen evidencia cross-build; consultá [capacidades y evidencia](../reference/capabilities-evidence.md).
+La simulación POSIX nativa valida el comportamiento en el equipo anfitrión. No
+afirma tiempos exactos de la placa, E/S eléctrica, HIL ni calificación para
+producción. Los perfiles de placa solo tienen resultados de cross-build; consulte
+[capacidades y evidencia](../reference/capabilities-evidence.md).
 
-La IA puede preparar un cambio candidato aislado, pero sólo una persona puede
-guardarlo o iniciar una operación física. Leé [IA y privacidad](./ai-privacy.md)
+La IA puede preparar un cambio candidato aislado, pero solo una persona puede
+guardarlo o iniciar una operación física. Lea [IA y privacidad](./ai-privacy.md)
+antes de activar un proveedor de IA.
