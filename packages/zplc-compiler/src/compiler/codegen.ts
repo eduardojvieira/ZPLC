@@ -114,9 +114,9 @@ import { checkDeclaredTypes, checkRecursion } from './semantic.ts';
 // ============================================================================
 
 /**
- * Size of work memory region allocated per program in multi-task mode.
- * Each program gets this many bytes of isolated work memory.
- * Must be a power of 2 for efficient alignment.
+ * Size of the WORK region a caller gets when it gives a `workMemoryBase` and no `workMemorySize`: a window of
+ * its own inside the WORK memory. A project is not built with it: all its programs share the whole WORK
+ * memory of the target profile (CMP-043).
  */
 export const WORK_MEMORY_REGION_SIZE = 256;
 
@@ -159,7 +159,7 @@ export function validateCompilerMemoryProfile(profile: CompilerMemoryProfile): C
 export interface CodeGenOptions {
     /** Effective target memory limits; omitted preserves the host defaults. */
     memoryProfile?: CompilerMemoryProfile;
-    /** Internal multi-task bucket size; defaults to the target WORK capacity. */
+    /** Bytes of the WORK region the unit is allocated in; defaults to the target WORK capacity. */
     workMemorySize?: number;
     /**
      * Base address for work memory allocation.
@@ -246,7 +246,7 @@ interface CodeGenState {
      * The statements being generated, outermost first. A statement that holds others (IF, FOR...) has
      * instructions of its own after the nested ones; its position is annotated again there (CMP-055).
      */
-    statementStack: Array<{ line: number; column: number }>;
+    statementStack: Array<{ line: number; column: number; sourceRef?: string }>;
     /** Enable source annotations in assembly output */
     emitSourceAnnotations: boolean;
     /** User-defined functions registry */
@@ -285,6 +285,10 @@ interface CodeGenState {
     methodResultSlots: Map<string, number>;
     /** The result place of the method being inlined, when it returns a number; its assignments write it. */
     methodResult: Place | null;
+    /** The source file of the declaration being generated: errors, warnings and source ranges are placed in it (CMP-042). */
+    sourceRef: string | undefined;
+    /** The files of the unit, in the order their statements are annotated; empty for a unit of one file. */
+    sourceFiles: string[];
     /** The last method call expression left one value on the stack (a call used as a statement drops it). */
     methodLeftResult: boolean;
     /** Routines that need work cells of their own, by label; appended after the main cycle. */
@@ -376,22 +380,43 @@ function memberOffsets(state: CodeGenState, typeName: unknown): Map<string, numb
  * @returns Assembly source code
  */
 export function generate(unit: CompilationUnit | Program, options?: CodeGenOptions): string {
+    return generateProject(unit, options).assembly;
+}
+
+/**
+ * What the generation of a unit gives: the assembly, and what the debug map needs from the same layout the
+ * code was generated with (CMP-054): the symbol table, and where the code of each program starts.
+ */
+export interface GeneratedProject {
+    assembly: string;
+    symbols: SymbolTable;
+    /** The programs of the unit in the order their code is generated, with their lines of the assembly. */
+    programs: Array<{ name: string; sourceRef?: string; entryLabel: string; assembly: string }>;
+}
+
+/**
+ * Generate ZPLC assembly for a unit of one file or of a whole project (CMP-042): one program per task entry,
+ * the functions, the function blocks and the memory shared by all of them.
+ */
+export function generateProject(unit: CompilationUnit | Program, options?: CodeGenOptions): GeneratedProject {
     // Statements that cannot be generated are recorded and generation goes on, so one build reports every
     // independent error (CMP-007); the first is thrown with all of them in `errors`.
     const found: CodegenError[] = [];
-    let assembly: string | undefined;
+    let project: GeneratedProject | undefined;
     try {
-        assembly = generateUnit(unit, options, found);
+        project = generateUnit(unit, options, found);
     } catch (caught) {
         const where = unit.kind === 'CompilationUnit' ? (unit.programs[0] ?? unit) : unit;
         const error = codegenErrorFrom(caught, where);
         if (error === null) throw caught;
+        // an error that names no file is the one of the first program's
+        for (const each of error.errors) if (each.sourceRef === undefined && where.sourceRef !== undefined) each.sourceRef = where.sourceRef;
         found.push(...error.errors);
     }
     if (found.length === 0) {
         // source order, whatever the order the program organisation units were generated in
         options?.warnings?.sort((first, second) => first.line - second.line || first.column - second.column);
-        return assembly!;
+        return project!;
     }
     const errors = orderedUniqueErrors(found);
     const first = errors[0]!;
@@ -399,7 +424,7 @@ export function generate(unit: CompilationUnit | Program, options?: CodeGenOptio
     throw first;
 }
 
-function generateUnit(unit: CompilationUnit | Program, options: CodeGenOptions | undefined, errors: CodegenError[]): string {
+function generateUnit(unit: CompilationUnit | Program, options: CodeGenOptions | undefined, errors: CodegenError[]): GeneratedProject {
     const workMemoryBase = options?.workMemoryBase ?? MemoryLayout.WORK_BASE;
     const memoryProfile = validateCompilerMemoryProfile(options?.memoryProfile ?? DEFAULT_COMPILER_MEMORY_PROFILE);
     const workMemorySize = options?.workMemorySize
@@ -455,6 +480,8 @@ function generateUnit(unit: CompilationUnit | Program, options: CodeGenOptions |
         expressionDepth: 0,
         methodResultSlots: new Map(),
         methodResult: null,
+        sourceRef: undefined,
+        sourceFiles: unit.kind === 'CompilationUnit' && (unit.sourceFiles?.length ?? 0) > 1 ? [...unit.sourceFiles!] : [],
         methodLeftResult: false,
         cellHelpers: new Map(),
         stringCells: null,
@@ -465,7 +492,11 @@ function generateUnit(unit: CompilationUnit | Program, options: CodeGenOptions |
     // inlined function block, its members (and the instances declared in it)
     symbols.scopeResolver = (name) => {
         const inFunction = functionScopeSymbol(state, name);
-        return inFunction !== undefined ? inFunction : fbScopeSymbol(state, name);
+        if (inFunction !== undefined) return inFunction;
+        const member = fbScopeSymbol(state, name);
+        if (member !== undefined) return member;
+        // a function block sees its members and the globals, never the variables of the program that calls it
+        return state.currentFBInstance ? state.symbols.getGlobal(name) ?? null : undefined;
     };
 
     const isUnit = unit.kind === 'CompilationUnit';
@@ -487,7 +518,7 @@ function generateUnit(unit: CompilationUnit | Program, options: CodeGenOptions |
     // Emit header
     emit(state, `; ============================================================================`);
     emit(state, `; ZPLC Generated Assembly`);
-    emit(state, `; Program: ${mainProgram.name}`);
+    emit(state, `; Program: ${(isUnit ? (unit as CompilationUnit).programs : [mainProgram]).map((program) => program.name).join(', ')}`);
     if (options?.workMemoryBase !== undefined) {
         emit(state, `; Work Memory Base: ${formatAddress(workMemoryBase)}`);
         emit(state, `; Init Flag: ${formatAddress(initFlagAddr)}`);
@@ -496,7 +527,7 @@ function generateUnit(unit: CompilationUnit | Program, options: CodeGenOptions |
     emit(state, ``);
 
     // Memory map
-    emitMemoryMap(state);
+    emitMemoryMap(state, isUnit ? (unit as CompilationUnit).programs.length : 1);
 
     // Emit bootstrap jump to ensure entry point is always 0
     emit(state, `; === Bootstrap ===`);
@@ -517,54 +548,98 @@ function generateUnit(unit: CompilationUnit | Program, options: CodeGenOptions |
             state.functionTable.set(func.name, { label: `func_${func.name}`, returnType: func.returnType, inputs: func.inputs });
         }
 
-        // Generate User Functions
+        // Generate User Functions: once for the whole unit, whichever programs call them (CMP-042)
         for (const func of cu.functions) {
-            generateFunctionDecl(state, func);
+            inFile(state, func.sourceRef, () => generateFunctionDecl(state, func));
         }
     }
 
-    // Emit program entry
-    emit(state, `; === Program Entry ===`);
-    emit(state, `_start:`);
-
-    // Initialization check
-    emit(state, `    ; Check if already initialized`);
-    emit(state, `    LOAD8 ${formatAddress(state.initFlagAddr)}    ; _initialized flag`);
-    emit(state, `    JNZ _cycle                  ; Skip init if already done`);
-
-    // Initialization: the literal pool first, the variable initialisers copy from it
+    // The first-scan initialisation of the unit: the literal pool first, the variable initialisers copy from it.
+    // A unit of one program carries it in its entry; a unit of several has it once, as a routine every entry
+    // calls, so that whichever task runs first initialises everything and nothing is initialised twice.
+    const programs = isUnit ? (unit as CompilationUnit).programs : [mainProgram];
+    const shared = programs.length > 1;
+    const code = state.output;
+    state.output = [];
     emitStringLiteralInit(state);
 
     // the initial values of the RETAIN variables of the globals and of the programs share one guard
     const retained: VarDecl[] = [];
     if (isUnit) {
         emitGlobalInitialization(state, unit as CompilationUnit, retained);
-        for (const prog of (unit as CompilationUnit).programs) {
-            emitInitialization(state, prog, retained);
+        for (const prog of programs) {
+            symbols.programScope = prog.name;
+            inFile(state, prog.sourceRef, () => emitInitialization(state, prog, retained));
         }
+        symbols.programScope = null;
     } else {
         emitInitialization(state, mainProgram, retained);
     }
     emitRetainedInitialization(state, retained);
+    const initialization = state.output;
+    state.output = code;
 
-    emit(state, ``);
-    emit(state, `    ; Mark as initialized`);
-    emit(state, `    PUSH8 1`);
-    emit(state, `    STORE8 ${formatAddress(state.initFlagAddr)}`);
+    const entries: GeneratedProject['programs'] = [];
+    const starts: number[] = [];
+    programs.forEach((program, index) => {
+        const entryLabel = index === 0 ? '_start' : `_start_${program.name}`;
+        const cycleLabel = index === 0 ? '_cycle' : `_cycle_${program.name}`;
+        starts.push(state.output.length);
+        entries.push({ name: program.name, sourceRef: program.sourceRef, entryLabel, assembly: '' });
 
-    emit(state, ``);
-    emit(state, `; === Main Cycle ===`);
-    emit(state, `_cycle:`);
+        // Emit program entry
+        if (shared) {
+            emit(state, ``);
+            emit(state, `; === Memory Map: ${program.name} ===`);
+            for (const sym of symbols.all()) {
+                if (sym.owner === program.name) emitMemoryMapEntry(state, sym);
+            }
+        }
+        emit(state, `; === Program Entry${shared ? `: ${program.name}` : ''} ===`);
+        emit(state, `${entryLabel}:`);
 
-    // Emit statements for the main program
-    for (const stmt of mainProgram.statements) {
-        emitStatement(state, stmt);
+        // Initialization check
+        emit(state, `    ; Check if already initialized`);
+        emit(state, `    LOAD8 ${formatAddress(state.initFlagAddr)}    ; _initialized flag`);
+        emit(state, `    JNZ ${cycleLabel}                  ; Skip init if already done`);
+
+        if (shared) {
+            emit(state, `    CALL _zplc_init`);
+        } else {
+            state.output.push(...initialization);
+        }
+
+        emit(state, ``);
+        emit(state, `    ; Mark as initialized`);
+        emit(state, `    PUSH8 1`);
+        emit(state, `    STORE8 ${formatAddress(state.initFlagAddr)}`);
+
+        emit(state, ``);
+        emit(state, `; === Main Cycle${shared ? `: ${program.name}` : ''} ===`);
+        emit(state, `${cycleLabel}:`);
+
+        // Emit statements for the program; its variables are the ones its name stands for
+        state.symbols.programScope = program.name;
+        state.sourceRef = program.sourceRef;
+        for (const stmt of program.statements) {
+            emitStatement(state, stmt);
+        }
+        state.symbols.programScope = null;
+        state.sourceRef = undefined;
+
+        emitSourceEnd(state);
+        emit(state, ``);
+        emit(state, `    ; End of cycle`);
+        emit(state, `    HALT`);
+    });
+
+    if (shared) {
+        emit(state, ``);
+        emit(state, `; --- Initialization of the unit (called by the entry of every program) ---`);
+        emit(state, `_zplc_init:`);
+        state.output.push(...initialization);
+        emit(state, `    RET`);
     }
-
-    emitSourceEnd(state);
-    emit(state, ``);
-    emit(state, `    ; End of cycle`);
-    emit(state, `    HALT`);
 
     // The work buffers the string functions took came after the literal pool was checked
     validateStringLiteralPool(state, workMemoryBase, workMemorySize);
@@ -582,7 +657,15 @@ function generateUnit(unit: CompilationUnit | Program, options: CodeGenOptions |
         state.output.push(...lines);
     }
 
-    return state.output.join('\n');
+    // the code of each program: from its entry to the next one; the first also holds what comes before it
+    // (the header, the functions) and the last what comes after (the routines)
+    entries.forEach((entry, index) => {
+        const from = index === 0 ? 0 : starts[index]!;
+        const to = index + 1 < entries.length ? starts[index + 1]! : state.output.length;
+        entry.assembly = state.output.slice(from, to).join('\n');
+    });
+
+    return { assembly: state.output.join('\n'), symbols, programs: entries };
 }
 
 // ============================================================================
@@ -599,16 +682,38 @@ function fail(at: { line: number; column: number; endLine?: number; endColumn?: 
 }
 
 /**
+ * Run `action` with `file` as the file of the declaration being generated (CMP-042). An error that leaves it
+ * without a file is placed in that one; the file of the caller is back when it ends.
+ */
+function inFile<T>(state: CodeGenState, file: string | undefined, action: () => T): T {
+    const previous = state.sourceRef;
+    if (file !== undefined) state.sourceRef = file;
+    try {
+        return action();
+    } catch (caught) {
+        if (caught instanceof CodegenError) {
+            for (const each of caught.errors) if (each.sourceRef === undefined && state.sourceRef !== undefined) each.sourceRef = state.sourceRef;
+        }
+        throw caught;
+    } finally {
+        state.sourceRef = previous;
+    }
+}
+
+/**
  * Emit a source annotation comment: the statement at `at` starts here, and owns every instruction up to the
  * next annotation (CMP-055). The assembler attaches it to the next instruction, so one `; @source`
  * line becomes one range of the debug map. The same position is not annotated twice in a row.
  */
-function emitSourceAnnotation(state: CodeGenState, at: { line: number; column: number } | undefined): void {
+function emitSourceAnnotation(state: CodeGenState, at: { line: number; column: number; sourceRef?: string } | undefined): void {
     if (!state.emitSourceAnnotations || !at || !at.line) return;
-    const key = `${at.line}:${at.column}`;
+    // in a project of several files the annotation names the file, so that a range of an inlined block
+    // is placed in the file of the block and not in the one of the program that calls it (CMP-042)
+    const file = state.sourceFiles.length > 0 ? state.sourceFiles.indexOf(at.sourceRef ?? state.sourceRef ?? '') : -1;
+    const key = `${at.line}:${at.column}:${file}`;
     if (key === state.lastSourceKey) return;
     state.lastSourceKey = key;
-    emit(state, `    ; @source ${at.line}${at.column > 0 ? `:${at.column}` : ''}`);
+    emit(state, `    ; @source ${at.line}${at.column > 0 ? `:${at.column}` : ''}${file >= 0 ? ` @${file}` : ''}`);
 }
 
 /**
@@ -633,23 +738,16 @@ function formatAddress(addr: number): string {
 // Memory Map Comment
 // ============================================================================
 
-function emitMemoryMap(state: CodeGenState): void {
+function emitMemoryMap(state: CodeGenState, programs: number): void {
     emit(state, `; === Memory Map ===`);
 
     // Document the reserved init flag
     emit(state, `; ${formatAddress(state.initFlagAddr)}: _initialized (BOOL, 1 byte) [RESERVED]`);
 
+    // a unit of several programs lists here what is shared; the variables of each program come with its entry
     for (const sym of state.symbols.all()) {
-        const addrHex = formatAddress(sym.address);
-        emit(state, `; ${addrHex}: ${sym.name} (${sym.dataType}, ${sym.size} bytes)`);
-
-        // Emit member offsets for function blocks
-        if (sym.members) {
-            for (const [member, offset] of sym.members) {
-                const memberAddr = formatAddress(sym.address + offset);
-                emit(state, `;   ${memberAddr}: .${member}`);
-            }
-        }
+        if (programs > 1 && sym.owner !== undefined) continue;
+        emitMemoryMapEntry(state, sym);
     }
 
     // Document string literals
@@ -665,6 +763,19 @@ function emitMemoryMap(state: CodeGenState): void {
     emitVariableTags(state);
 
     emit(state, ``);
+}
+
+function emitMemoryMapEntry(state: CodeGenState, sym: Symbol): void {
+    const addrHex = formatAddress(sym.address);
+    emit(state, `; ${addrHex}: ${sym.name} (${sym.dataType}, ${sym.size} bytes)`);
+
+    // Emit member offsets for function blocks
+    if (sym.members) {
+        for (const [member, offset] of sym.members) {
+            const memberAddr = formatAddress(sym.address + offset);
+            emit(state, `;   ${memberAddr}: .${member}`);
+        }
+    }
 }
 
 /**
@@ -722,13 +833,40 @@ function validateWorkRegionOptions(
     }
 }
 
-/** Names the budget that was exceeded: each program owns WORK_MEMORY_REGION_SIZE bytes, init flag included. */
-function workBudgetMessage(workMemorySize: number): string {
-    return `WORK allocation exceeds the target memory profile (limit: ${workMemorySize} bytes of WORK memory per program, including the initialization flag)`;
+/** One thing that takes WORK memory: a variable or instance (named as the program sees it), a pool, a set of buffers. */
+interface WorkConsumer {
+    name: string;
+    size: number;
+}
+
+/**
+ * The failure of an allocation (CMP-043): the bytes the unit needs, the bytes the target profile has, and the
+ * three largest consumers, so the author knows what to shrink. The WORK memory is the one of the target
+ * profile, shared by every program of the project; one byte of it is the initialization flag.
+ */
+function workBudgetError(required: number, available: number, consumers: WorkConsumer[], at: { line: number; column: number; sourceRef?: string }): TagAdmissionError {
+    const largest = [...consumers].sort((first, second) => second.size - first.size || (first.name < second.name ? -1 : 1)).slice(0, 3);
+    const names = largest.map((consumer) => `${consumer.name} (${consumer.size} bytes)`).join(', ');
+    const error = new TagAdmissionError(
+        `WORK allocation exceeds the target memory profile: ${required} bytes required, ${available} bytes available `
+        + `(the WORK memory of the target profile, one byte of it the initialization flag). Largest consumers: ${names || 'none'}`,
+        at.line, at.column,
+    );
+    if (at.sourceRef !== undefined) error.sourceRef = at.sourceRef;
+    return error;
+}
+
+/** The variables and instances that take automatic WORK memory, named as the author wrote them. */
+function workConsumers(symbols: SymbolTable): WorkConsumer[] {
+    return symbols.all()
+        .filter((symbol) => symbol.ioAddress === null && !symbol.retain && symbol.size > 0)
+        .map((symbol) => ({ name: symbol.owner === undefined ? symbol.name : `${symbol.owner}.${symbol.name}`, size: symbol.size }));
 }
 
 function validateWorkSymbols(symbols: SymbolTable, workMemoryBase: number, workMemorySize: number, initFlagAddr: number, retainSize: number = MEMORY_REGION.RETAIN.size): void {
     const workEnd = workMemoryBase + workMemorySize;
+    // the last byte of the region is the initialization flag: variables end before it (CMP-043)
+    const limit = initFlagAddr === workEnd - 1 ? initFlagAddr : workEnd;
     const automaticWorkSymbols: Symbol[] = [];
     const directlyLocatedWorkSymbols: Symbol[] = [];
     for (const symbol of symbols.all()) {
@@ -762,8 +900,11 @@ function validateWorkSymbols(symbols: SymbolTable, workMemoryBase: number, workM
                 throw new TagAdmissionError(`RETAIN allocation exceeds the target memory profile (limit: ${retainSize} bytes of retentive memory)`, symbol.declarationLine ?? 0, 0);
             }
             continue;
-        } else if (symbol.address < workMemoryBase || symbolEnd > workEnd) {
-            throw new TagAdmissionError(workBudgetMessage(workMemorySize), symbol.declarationLine ?? 0, 0);
+        } else if (symbol.address < workMemoryBase || symbolEnd > limit) {
+            // the variables of the whole unit, in the order they were allocated, from the start of the region
+            const required = symbols.getWorkBase() + symbols.getWorkOffset() - workMemoryBase + 1;
+            throw workBudgetError(required, workMemorySize, workConsumers(symbols),
+                { line: symbol.declarationLine ?? 0, column: 0, sourceRef: symbol.sourceRef });
         }
 
         if ((!symbol.ioAddress || symbol.ioAddress.type === 'M')
@@ -786,17 +927,27 @@ function validateWorkSymbols(symbols: SymbolTable, workMemoryBase: number, workM
 
 function validateStringLiteralPool(state: CodeGenState, workMemoryBase: number, workMemorySize: number): void {
     const workEnd = workMemoryBase + workMemorySize;
+    const limit = state.initFlagAddr === workEnd - 1 ? state.initFlagAddr : workEnd;
     const directlyLocatedSymbols = state.symbols.all().filter(symbol => symbol.ioAddress?.type === 'M');
     const pooled = [
         ...state.stringLiterals,
         ...state.scratchStrings,
     ];
+    // the literals and the buffers of the string functions come after the variables, in the same region
+    if (!Number.isSafeInteger(state.stringLiteralNextAddr) || state.stringLiteralNextAddr > limit) {
+        const consumers = workConsumers(state.symbols);
+        const literals = state.stringLiterals.reduce((total, literal) => total + literal.size, 0);
+        const buffers = state.scratchStrings.reduce((total, buffer) => total + buffer.size, 0);
+        if (literals > 0) consumers.push({ name: 'string literals', size: literals });
+        if (buffers > 0) consumers.push({ name: 'work buffers of the string functions', size: buffers });
+        throw workBudgetError(state.stringLiteralNextAddr - workMemoryBase + 1, workMemorySize, consumers, { line: 0, column: 0 });
+    }
     for (const literal of pooled) {
         const literalEnd = literal.address + literal.size;
         if (!Number.isSafeInteger(literalEnd)
             || literal.address < workMemoryBase
             || literalEnd > workEnd) {
-            throw new TagAdmissionError(workBudgetMessage(workMemorySize), 0, 0);
+            throw workBudgetError(literalEnd - workMemoryBase + 1, workMemorySize, workConsumers(state.symbols), { line: 0, column: 0 });
         }
         if (rangesOverlap(literal.address, literal.size, state.initFlagAddr, 1)) {
             throw new TagAdmissionError('WORK allocation collides with the initialization flag', 0, 0);
@@ -1499,6 +1650,9 @@ function emitArrayInit(state: CodeGenState, address: number, type: ArrayType,
 
 }
 
+/** The variable of a retained declaration: found when its program is in scope, used when the guard is emitted. */
+const retainedSymbol = new WeakMap<VarDecl, Symbol>();
+
 /** First-scan initialisation of a list of declarations (a program's variables, a block of globals). */
 function emitDeclarationInitialization(state: CodeGenState, declarations: VarDecl[], retained: VarDecl[]): void {
     let hasInit = false;
@@ -1510,6 +1664,7 @@ function emitDeclarationInitialization(state: CodeGenState, declarations: VarDec
         // a retained variable is initialised apart, only when the retentive region holds no saved state (CMP-029)
         if (sym.retain) {
             retained.push(decl);
+            retainedSymbol.set(decl, sym);
             continue;
         }
 
@@ -1539,7 +1694,9 @@ function emitInitialization(state: CodeGenState, program: Program, retained: Var
 
 /** The VAR_GLOBAL blocks hold their declared values at the first scan too (CMP-025). */
 function emitGlobalInitialization(state: CodeGenState, unit: CompilationUnit, retained: VarDecl[]): void {
-    emitDeclarationInitialization(state, unit.globalVars.flatMap((block) => block.variables), retained);
+    for (const block of unit.globalVars) {
+        inFile(state, block.sourceRef, () => emitDeclarationInitialization(state, block.variables, retained));
+    }
 }
 
 /**
@@ -1558,8 +1715,8 @@ function emitRetainedInitialization(state: CodeGenState, retained: VarDecl[]): v
     emit(state, `    LOAD8 ${marker}`);
     emit(state, `    JNZ ${restored}`);
     for (const decl of retained) {
-        const sym = state.symbols.get(decl.name)!;
-        emitInitValue(state, sym.address, sym.dataType, decl.initialValue, decl, decl.name, { everyCall: false });
+        const sym = retainedSymbol.get(decl)!;
+        inFile(state, decl.sourceRef, () => emitInitValue(state, sym.address, sym.dataType, decl.initialValue, decl, decl.name, { everyCall: false }));
     }
     emit(state, `    PUSH8 1`);
     emit(state, `    STORE8 ${marker}`);
@@ -1666,14 +1823,16 @@ function generateFunctionDecl(state: CodeGenState, func: FunctionDecl): void {
  */
 function emitStatement(state: CodeGenState, stmt: Statement): void {
     const loops = state.loopStack.length;
-    const { currentFBInstance, currentMethod, currentFunction, returnLabel, expressionDepth, resultBuffer, resultCapacity } = state;
+    const { currentFBInstance, currentMethod, currentFunction, returnLabel, expressionDepth, resultBuffer, resultCapacity, sourceRef } = state;
     const depth = state.statementStack.length;
-    state.statementStack.push({ line: stmt.line, column: stmt.column });
+    state.statementStack.push({ line: stmt.line, column: stmt.column, sourceRef: state.sourceRef });
     try {
         emitStatementNode(state, stmt);
     } catch (caught) {
         const error = codegenErrorFrom(caught, stmt);
         if (error === null) throw caught;
+        // the error is in the file of the declaration the statement belongs to (CMP-042)
+        for (const each of error.errors) if (each.sourceRef === undefined && state.sourceRef !== undefined) each.sourceRef = state.sourceRef;
         state.loopStack.length = loops;
         state.currentFBInstance = currentFBInstance;
         state.currentMethod = currentMethod;
@@ -1682,6 +1841,7 @@ function emitStatement(state: CodeGenState, stmt: Statement): void {
         state.expressionDepth = expressionDepth;
         state.resultBuffer = resultBuffer;
         state.resultCapacity = resultCapacity;
+        state.sourceRef = sourceRef;
         state.errors.push(...error.errors);
     } finally {
         state.statementStack.length = depth;
@@ -2415,10 +2575,13 @@ function emitInstanceCall(state: CodeGenState, stmt: FBCallStatement, sym: Symbo
         state.currentFBInstance = sym;
         state.returnLabel = newLabel(state, 'fb_return');
 
-        // Inline FB Body
+        // Inline FB Body: its statements are the ones of the file the block is declared in
+        const oldSourceRef = state.sourceRef;
+        if (userFB.sourceRef !== undefined) state.sourceRef = userFB.sourceRef;
         for (const bodyStmt of userFB.body) {
             emitStatement(state, bodyStmt);
         }
+        state.sourceRef = oldSourceRef;
 
         // Restore context
         emit(state, `${state.returnLabel}:`);
@@ -3188,8 +3351,9 @@ function warnNarrowing(state: CodeGenState, value: Expression, from: string, to:
         line: value.line,
         column: value.column,
         ...(value.endLine === undefined ? {} : { endLine: value.endLine, endColumn: value.endColumn }),
+        ...(state.sourceRef === undefined ? {} : { sourceRef: state.sourceRef }),
     };
-    const seen = state.warnings.some((each) => each.line === warning.line && each.column === warning.column && each.message === warning.message);
+    const seen = state.warnings.some((each) => each.line === warning.line && each.column === warning.column && each.message === warning.message && each.sourceRef === warning.sourceRef);
     if (!seen) state.warnings.push(warning);
 }
 
@@ -4621,16 +4785,13 @@ function emitMethodCall(state: CodeGenState, expr: MethodCall): void {
         }
     }
 
-    // Save current FB context and set up new one for method execution
+    // Save current FB context; the one of the method is set up after the arguments: they are values of the
+    // caller, and a name in them is the caller's whatever the callee has of that name
     const prevFBInstance = state.currentFBInstance;
     const prevMethod = state.currentMethod;
     const prevMethodResult = state.methodResult;
     const prevReturnLabel = state.returnLabel;
-    state.returnLabel = newLabel(state, 'method_return');
-    state.currentFBInstance = instanceSym;
-    // Cast MethodInfo to MethodDecl for compatibility (they share name/body which is what matters)
-    state.currentMethod = methodInfo as any;
-    
+
     emit(state, `    ; --- Begin Method ${fbTypeName}.${expr.methodName} ---`);
     
     // Handle method inputs from args (Positional and Named)
@@ -4682,6 +4843,12 @@ function emitMethodCall(state: CodeGenState, expr: MethodCall): void {
         }
     }
     
+    // From here on the code is the method's: its instance, its inputs and locals, its return
+    state.returnLabel = newLabel(state, 'method_return');
+    state.currentFBInstance = instanceSym;
+    // Cast MethodInfo to MethodDecl for compatibility (they share name/body which is what matters)
+    state.currentMethod = methodInfo as any;
+
     // Initialize method locals (including VAR_TEMP)
     if (methodInfo.locals) {
         for (const local of methodInfo.locals as any[]) {
@@ -4718,12 +4885,15 @@ function emitMethodCall(state: CodeGenState, expr: MethodCall): void {
         emit(state, `    STORE${getLoadStoreSuffix(storedType(state, methodReturnType!) as DataTypeValue)} ${formatAddress((resultPlace.addr as { a: number }).a)}`);
     }
 
-    // Inline the method body
+    // Inline the method body: its statements are the ones of the file of the block that declares it
+    const prevSourceRef = state.sourceRef;
+    if ((methodInfo as { sourceRef?: string }).sourceRef !== undefined) state.sourceRef = (methodInfo as { sourceRef?: string }).sourceRef;
     state.expressionDepth++;
     for (const stmt of methodInfo.body) {
         emitStatement(state, stmt);
     }
     state.expressionDepth--;
+    state.sourceRef = prevSourceRef;
     emit(state, `${state.returnLabel}:`);
 
     // The value of the method: the slot, once; a string result was left on the stack by its assignments

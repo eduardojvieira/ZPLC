@@ -4,6 +4,29 @@ All notable changes are documented here.
 
 ## Unreleased
 
+- The Structured Text files of a project are one compilation unit (CMP-042): a
+  type, a function, a function block, an interface or a `VAR_GLOBAL` declared
+  in any file is visible to every program, whether or not a task runs a program
+  of that file. A global has one address shared by every program and task and
+  is initialised once, by the entry of whichever task runs first; a function is
+  built once. A declaration made twice is reported at each place, naming both
+  files and lines, and an error is reported in the file it belongs to. Two
+  programs may declare variables of the same name. A function block no longer
+  sees the variables of the program that calls it, and the arguments of a
+  method call are evaluated in the caller's scope (a name that the callee also
+  declared used to resolve to the callee's). The debug map has one POU for each
+  file that declares a program, a variable or code, so a global is listed once
+  and the statements of a function block are ranges of its own file.
+- The memory of a program is the WORK memory of the target profile, shared by
+  all the programs of the project (CMP-043): the 256-byte bucket of each
+  program, and the limit of 14 steps of an SFC chart that came from it, are
+  gone. An allocation failure is a build error at the declaration that crosses
+  the end of the region and states the bytes required, the bytes available and
+  the three largest consumers. The variables of the second and later programs of
+  a project move to the addresses that follow the first program's (the debug
+  map says where); the initialization flag is the last byte of the profile's
+  WORK memory, and a project of several programs initialises in one routine,
+  four bytes of code more than one program's inline initialisation.
 - The loader refuses a program whose calls nest deeper than the call stack of
   the VM (`ZPLC_CALL_STACK_MAX`, 32 by default, 16 on the ESP32-S3 profile)
   with `ZPLC_LOADER_ERR_STACK`, instead of accepting it and ending the scan

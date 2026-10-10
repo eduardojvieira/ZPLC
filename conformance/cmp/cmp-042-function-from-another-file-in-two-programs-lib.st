@@ -1,0 +1,4 @@
+FUNCTION Twice : INT
+VAR_INPUT x : INT; END_VAR
+  Twice := x * 2;
+END_FUNCTION

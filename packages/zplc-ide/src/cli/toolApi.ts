@@ -206,11 +206,18 @@ function compilationSources(workspace: WorkspaceProject) {
   }
   const bytesByPath = new Map(workspace.sources.map((source) => [source.path, source.bytes]));
   // A resolved source always comes from workspace.sources, so its sourceRef is a workspace path that has bytes.
-  return [...sourceByProgram].flatMap(([name, source]) => {
+  const programs = [...sourceByProgram].flatMap(([name, source]) => {
     const sourceRef = source?.sourceRef;
     const bytes = sourceRef === undefined ? undefined : bytesByPath.get(sourceRef);
     return source && sourceRef !== undefined && bytes ? [{ ...source, name, sourceRef, bytes }] : [];
   });
+  // The project is one compilation unit (CMP-042): the Structured Text files that no task runs are built with the
+  // programs, and what they declare is seen by every program. They are named by their path, which no task uses.
+  const run = new Set(programs.map((source) => source.sourceRef));
+  const libraries = workspace.sources
+    .filter((source) => source.language === 'ST' && !run.has(source.path))
+    .map((source) => ({ name: source.path, content: source.content, language: source.language, sourceRef: source.path, bytes: source.bytes }));
+  return [...programs, ...libraries];
 }
 function createSavedTestInputIdentity(workspace: WorkspaceProject, sources: Array<{ sourceRef: string; bytes: Uint8Array }>, scenarios: WorkspaceScenario[]): SavedTestInputIdentity {
   const inputs = [

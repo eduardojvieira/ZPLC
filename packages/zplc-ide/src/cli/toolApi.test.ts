@@ -594,7 +594,7 @@ END_PROGRAM`);
         { pou: 'Alpha', name: 'Work', type: 'INT', region: 'WORK', address: 8192, size: 2, declarationLine: 6, sourceRef: 'src/Alpha.st' },
         { pou: 'Beta', name: 'Input', type: 'BOOL', region: 'IPI', address: 0, size: 1, bitOffset: 0, declarationLine: 3, sourceRef: 'src/Beta.st' },
         { pou: 'Beta', name: 'Output', type: 'BOOL', region: 'OPI', address: 4096, size: 1, bitOffset: 1, declarationLine: 9, sourceRef: 'src/Beta.st' },
-        { pou: 'Beta', name: 'Work', type: 'INT', region: 'WORK', address: 8448, size: 2, declarationLine: 6, sourceRef: 'src/Beta.st' },
+        { pou: 'Beta', name: 'Work', type: 'INT', region: 'WORK', address: 8194, size: 2, declarationLine: 6, sourceRef: 'src/Beta.st' },
       ] }, evidence: { operation: 'symbols-list', outcome: 'passed', artifacts: [] } });
       expect(second).toEqual(first);
       const serialized = JSON.stringify(first);
@@ -1203,7 +1203,7 @@ END_PROGRAM`);
     }
   }, 30_000);
 
-  itNative('records only the exact saved inputs used by a completed host scenario run', async () => {
+  itNative('records the exact saved inputs of a completed host scenario run: the manifest, the Structured Text sources and the scenarios', async () => {
     const root = await workspace();
     const oldBinary = process.env.ZPLC_NATIVE_SIM_BIN;
     const identityOf = (result: Awaited<ReturnType<typeof testsRun>>) => (result as { savedTestInputIdentity?: { schemaVersion: number; sha256: string; fileCount: number } }).savedTestInputIdentity;
@@ -1215,7 +1215,8 @@ END_PROGRAM`);
       const initial = await testsRun(root);
       const repeated = await testsRun(root);
       expect(identityOf(initial)).toEqual(identityOf(repeated));
-      expect(identityOf(initial)).toMatchObject({ schemaVersion: 1, fileCount: 3, sha256: expect.stringMatching(/^[a-f0-9]{64}$/) });
+      // a Structured Text file that no task runs is part of the unit, so it is one of the inputs (CMP-042)
+      expect(identityOf(initial)).toMatchObject({ schemaVersion: 1, fileCount: 4, sha256: expect.stringMatching(/^[a-f0-9]{64}$/) });
       expect(JSON.stringify(initial)).not.toContain(root);
       expect(JSON.stringify(initial)).not.toContain('Unused.st');
       expect(JSON.stringify(initial)).not.toContain('PROGRAM Motor');
@@ -1232,9 +1233,10 @@ END_PROGRAM`);
       const scenarioChanged = await testsRun(root);
       expect(identityOf(scenarioChanged)?.sha256).not.toBe(identityOf(sourceChanged)?.sha256);
 
-      await writeFile(join(root, 'src', 'Unused.st'), 'PROGRAM Unused\n(* changed but unused *)\nEND_PROGRAM');
+      await writeFile(join(root, 'src', 'Unused.st'), 'PROGRAM Unused\n(* changed, and no task runs it *)\nEND_PROGRAM');
       const unusedChanged = await testsRun(root);
-      expect(identityOf(unusedChanged)).toEqual(identityOf(scenarioChanged));
+      expect(identityOf(unusedChanged)?.sha256).not.toBe(identityOf(scenarioChanged)?.sha256);
+      expect(identityOf(unusedChanged)?.fileCount).toBe(4);
     } finally {
       if (oldBinary === undefined) delete process.env.ZPLC_NATIVE_SIM_BIN;
       else process.env.ZPLC_NATIVE_SIM_BIN = oldBinary;

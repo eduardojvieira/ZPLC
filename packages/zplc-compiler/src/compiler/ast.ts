@@ -86,6 +86,12 @@ export interface ASTNode {
     /** Position just after the last character of the construct, when the parser recorded it. */
     endLine?: number;
     endColumn?: number;
+    /**
+     * The source file a top-level declaration was read from. The parser leaves it out (one unit is one file);
+     * the project build sets it on every declaration it merges, so that a diagnostic, a symbol and a source
+     * range are placed in the file they belong to (CMP-042).
+     */
+    sourceRef?: string;
 }
 
 // ============================================================================
@@ -1062,6 +1068,11 @@ export interface CompilationUnit extends ASTNode {
     typeAliases?: AliasDecl[];
     interfaces: InterfaceDecl[];    // NEW for OOP support
     programs: Program[];
+    /**
+     * The files a merged unit was read from, in the order their statements are annotated; absent for a unit
+     * of one file (CMP-042).
+     */
+    sourceFiles?: string[];
 }
 
 // ============================================================================

@@ -1,0 +1,52 @@
+{
+  "requirement": "CMP-042",
+  "title": "a global has one storage location shared by the programs of two tasks",
+  "matrix": [
+    "declarations.var-global",
+    "pous.shared-pous-and-libraries"
+  ],
+  "note": "CMP-042: a global has exactly one storage location shared by all programs and tasks; the debug map names that location, so the variable read through the map is the one both programs used",
+  "scans": 3,
+  "scanMs": 10,
+  "files": [
+    "cmp-042-two-tasks-share-a-global-reader.st",
+    "cmp-042-two-tasks-share-a-global-globals.st"
+  ],
+  "tasks": [
+    {
+      "name": "WriteTask",
+      "trigger": "cyclic",
+      "interval_ms": 10,
+      "priority": 0,
+      "programs": [
+        "main.st"
+      ]
+    },
+    {
+      "name": "ReadTask",
+      "trigger": "cyclic",
+      "interval_ms": 10,
+      "priority": 1,
+      "programs": [
+        "cmp-042-two-tasks-share-a-global-reader.st"
+      ]
+    }
+  ],
+  "expect": [
+    {
+      "at": "%QW0",
+      "type": "INT",
+      "value": 7
+    },
+    {
+      "at": "%QW1",
+      "type": "INT",
+      "value": 7
+    },
+    {
+      "var": "Shared",
+      "type": "INT",
+      "value": 7
+    }
+  ]
+}

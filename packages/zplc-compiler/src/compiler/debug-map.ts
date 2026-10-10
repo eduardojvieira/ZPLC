@@ -115,8 +115,11 @@ export interface BreakpointLocation {
  * Debug information for a Program Organization Unit (POU).
  */
 export interface DebugPOUInfo {
-    /** POU type */
-    type: 'PROGRAM' | 'FUNCTION' | 'FUNCTION_BLOCK';
+    /**
+     * POU type. A source file with no program that declares functions, function blocks or variables is a
+     * POU of its own (`LIBRARY` when it declares neither of the first two): its source reference is the file.
+     */
+    type: 'PROGRAM' | 'FUNCTION' | 'FUNCTION_BLOCK' | 'LIBRARY';
     /** Entry point PC (for PROGRAM/FUNCTION) */
     entryPoint?: number;
     /** Variable information */
@@ -425,9 +428,14 @@ function buildVarInfoFromSymbol(sym: Symbol, typeResolver?: TypeResolver): Debug
  * the end of a statement with no other one following (the end of the cycle, the return of a function).
  * A statement that holds others has one range for each stretch of its own instructions.
  */
-function buildSourceMappings(instructionMappings: InstructionMapping[]): SourceLineMapping[] {
+function buildSourceMappings(
+    instructionMappings: InstructionMapping[],
+    /** The file of the statement an instruction belongs to, when the unit has several; the index of `files` below. */
+    fileOf?: (mapping: InstructionMapping) => number,
+    files?: number[],
+): SourceLineMapping[] {
     const mappings: SourceLineMapping[] = [];
-    let open: { line: number; column?: number; pc: number } | null = null;
+    let open: { line: number; column?: number; pc: number; file: number } | null = null;
     const close = (end: number): void => {
         if (open && end > open.pc) {
             mappings.push({
@@ -436,6 +444,7 @@ function buildSourceMappings(instructionMappings: InstructionMapping[]): SourceL
                 pc: open.pc,
                 length: end - open.pc,
             });
+            files?.push(open.file);
         }
         open = null;
     };
@@ -444,7 +453,7 @@ function buildSourceMappings(instructionMappings: InstructionMapping[]): SourceL
         const annotation = m.sourceAnnotation;
         if (!annotation) continue;
         close(m.pc);
-        if (annotation.line > 0) open = { line: annotation.line, column: annotation.column, pc: m.pc };
+        if (annotation.line > 0) open = { line: annotation.line, column: annotation.column, pc: m.pc, file: fileOf ? fileOf(m) : 0 };
     }
     const last = instructionMappings[instructionMappings.length - 1];
     if (last) close(last.pc + last.size);
@@ -549,5 +558,87 @@ export function buildDebugMap(options: BuildDebugMapOptions): DebugMap {
         map.memoryLayout.codeSize = codeSize;
     }
     
+    return map;
+}
+
+// ============================================================================
+// The debug map of a project built as one unit (CMP-042, CMP-054)
+// ============================================================================
+
+/** One source file of a unit, as the map names it. */
+export interface UnitDebugFile {
+    /** The identity of the file in the unit: what the symbols and the annotations of the code name it by. */
+    ref: string;
+    /** The source reference the POU of the file records; absent for a unit that was compiled from bare text. */
+    sourceRef?: string;
+    /** The key of its POU: the name of its program when a task runs one, else `ref`. */
+    key: string;
+    type: DebugPOUInfo['type'];
+    /** Absolute address of the entry of its program. */
+    entryPoint?: number;
+}
+
+export interface BuildUnitDebugMapOptions {
+    /** Name of the project */
+    projectName: string;
+    /** The files in the order the code generator numbered them in its annotations. */
+    files: UnitDebugFile[];
+    /** The symbol table the code was generated with: one layout for code and map. */
+    symbols: { all(): Symbol[] };
+    instructionMappings: InstructionMapping[];
+    /** The assembly the mappings come from, where each annotation names its file. */
+    assembly: string;
+    typeResolver?: TypeResolver;
+    memoryProfile?: { workSize: number; retainSize: number; codeSizeMax: number };
+    codeSize?: number;
+}
+
+/**
+ * The debug map of a unit: one POU for each file that holds a program, a variable or code, each variable and
+ * each source range in the POU of the file it was declared in. A global is listed once, in the file that
+ * declares it; the statements of a function block that a program inlines are ranges of the block's file.
+ */
+export function buildUnitDebugMap(options: BuildUnitDebugMapOptions): DebugMap {
+    const { projectName, files, symbols, instructionMappings, assembly, typeResolver, memoryProfile, codeSize = 0 } = options;
+    const map = createDebugMap(projectName, memoryProfile);
+
+    const pous: DebugPOUInfo[] = files.map((file) => ({
+        type: file.type,
+        entryPoint: file.entryPoint ?? 0,
+        vars: {},
+        sourceMap: [],
+        breakpoints: [],
+        ...(file.sourceRef === undefined ? {} : { sourceRef: file.sourceRef }),
+    }));
+    const indexOf = new Map(files.map((file, index) => [file.ref, index] as const));
+    const firstProgram = Math.max(0, files.findIndex((file) => file.type === 'PROGRAM'));
+
+    for (const sym of symbols.all()) {
+        const pou = pous[(sym.sourceRef === undefined ? undefined : indexOf.get(sym.sourceRef)) ?? firstProgram];
+        if (pou) pou.vars[sym.name] = buildVarInfoFromSymbol(sym, typeResolver);
+    }
+
+    // each annotation names its file: `; @source line:column @file` (a unit of one file has no `@file`)
+    const lines = assembly.split('\n');
+    const annotation = /;\s*@source\s+\d+(?::\d+)?(?:\s+@(\d+))?\s*$/;
+    const fileOfLine: number[] = [];
+    let current = 0;
+    for (let index = 0; index < lines.length; index++) {
+        const found = annotation.exec(lines[index]!);
+        if (found) current = found[1] === undefined ? 0 : parseInt(found[1], 10);
+        fileOfLine.push(current);
+    }
+    const ranges: number[] = [];
+    const sourceMap = buildSourceMappings(instructionMappings, (mapping) => fileOfLine[mapping.asmLine - 1] ?? 0, ranges);
+    sourceMap.forEach((range, index) => (pous[ranges[index]!] ?? pous[firstProgram])?.sourceMap.push(range));
+
+    pous.forEach((pou, index) => {
+        pou.breakpoints = buildBreakpointLocations(pou.sourceMap);
+        const file = files[index]!;
+        const used = file.type === 'PROGRAM' || Object.keys(pou.vars).length > 0 || pou.sourceMap.length > 0;
+        if (used) map.pou[file.key] = pou;
+    });
+
+    if (codeSize > 0) map.memoryLayout.codeSize = codeSize;
     return map;
 }

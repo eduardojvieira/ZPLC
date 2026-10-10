@@ -1,0 +1,45 @@
+{
+  "requirement": "CMP-043",
+  "title": "two programs of 300 bytes each have their own storage in the one region",
+  "matrix": [
+    "configuration.ownership-and-memory-checks"
+  ],
+  "note": "CMP-043: the programs of a project draw on the WORK memory of the target together, each from its own part of it; each one keeps its value",
+  "scans": 2,
+  "scanMs": 10,
+  "files": [
+    "cmp-043-programs-share-the-region-second.st"
+  ],
+  "tasks": [
+    {
+      "name": "FirstTask",
+      "trigger": "cyclic",
+      "interval_ms": 10,
+      "priority": 1,
+      "programs": [
+        "main.st"
+      ]
+    },
+    {
+      "name": "SecondTask",
+      "trigger": "cyclic",
+      "interval_ms": 10,
+      "priority": 2,
+      "programs": [
+        "cmp-043-programs-share-the-region-second.st"
+      ]
+    }
+  ],
+  "expect": [
+    {
+      "at": "%QW0",
+      "type": "INT",
+      "value": 5
+    },
+    {
+      "at": "%QW1",
+      "type": "INT",
+      "value": 9
+    }
+  ]
+}

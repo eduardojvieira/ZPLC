@@ -100,16 +100,6 @@
       }
     }
   },
-  "CMP-042": {
-    "page": "language",
-    "en": "A function block or a global declared in another file is not found (`Unknown type`, `Unknown identifier`).",
-    "es": "Un bloque de función o una global declarados en otro archivo no se encuentran (`Unknown type`, `Unknown identifier`)."
-  },
-  "CMP-043": {
-    "page": "language",
-    "en": "With the profile of the `posix` target a program may use 256 bytes of WORK memory (variables, string literals and work buffers, one byte of it for the initialization flag). A 400-byte array, three `STRING` variables or an SFC chart of twenty steps is a build error.",
-    "es": "Con el perfil del destino `posix`, un programa puede usar 256 bytes de memoria WORK (variables, literales de cadena y buffers de trabajo, uno de ellos para la bandera de inicialización). Un arreglo de 400 bytes, tres variables `STRING` o un gráfico SFC de veinte pasos es un error de compilación."
-  },
   "CMP-051": {
     "page": "language",
     "en": "The loader refuses the artifact that the compiler builds for a program with an `LREAL` and for two cyclic tasks with different intervals.",

@@ -604,12 +604,23 @@
     {"kind":"conformance","ref":"conformance/cmp/cmp-041-this-member-in-method.expect.json","test":"CMP-041 THIS.member inside a method"}
   ],
   "CMP-042": [
+    {"kind":"conformance","ref":"conformance/cmp/cmp-042-function-block-declared-in-two-files-is-rejected.expect.json","test":"CMP-042 a function block declared in two files is an error at both declarations"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-042-function-block-in-another-file.expect.json","test":"CMP-042 a function block declared in another file"},
-    {"kind":"conformance","ref":"conformance/cmp/cmp-042-global-in-another-file.expect.json","test":"CMP-042 a global declared in another file"}
+    {"kind":"conformance","ref":"conformance/cmp/cmp-042-function-from-another-file-in-two-programs.expect.json","test":"CMP-042 a function declared in another file is called from two programs of two tasks"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-042-global-in-another-file.expect.json","test":"CMP-042 a global declared in another file"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-042-two-tasks-share-a-global.expect.json","test":"CMP-042 a global has one storage location shared by the programs of two tasks"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-042-type-from-another-file-in-a-structure.expect.json","test":"CMP-042 a type declared in another file is the type of the members of a structure"},
+    {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/unit.test.ts","test":"a declaration made twice is an error at every place it is made (CMP-042)"},
+    {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/unit.test.ts","test":"the debug map of a unit (CMP-042, CMP-054)"},
+    {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/unit.test.ts","test":"what every file of a project sees of the others (CMP-042)"}
   ],
   "CMP-043": [
+    {"kind":"conformance","ref":"conformance/cmp/cmp-043-allocation-failure-states-bytes-and-consumers.expect.json","test":"CMP-043 an allocation failure states the bytes required, the bytes available and the largest consumers"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-043-array-beyond-256-bytes.expect.json","test":"CMP-043 a program with a 400-byte array"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-043-program-that-fills-the-region.expect.json","test":"CMP-043 a program that fills the WORK memory of the target exactly builds and runs"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-043-programs-share-the-region.expect.json","test":"CMP-043 two programs of 300 bytes each have their own storage in the one region"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-043-three-strings.expect.json","test":"CMP-043 a program with three STRING variables"},
+    {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/unit.test.ts","test":"memory is limited by the target profile only (CMP-043)"},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"17 Large program, and one over the limit","partial":true}
   ],
   "CMP-044": [
@@ -642,7 +653,8 @@
     {"kind":"conformance","ref":"conformance/cmp/cmp-054-debug-map-address-with-a-type.expect.json","test":"CMP-054 the debug map gives the address of a variable in a file with a TYPE"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-054-debug-map-lists-a-global.expect.json","test":"CMP-054 the debug map lists a global variable"},
     {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/control-flow.test.ts","test":"debug map (CMP-054 stopgap)","partial":true},
-    {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/debug-map.test.ts","test":"the variables of a function (CMP-034, CMP-054)"}
+    {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/debug-map.test.ts","test":"the variables of a function (CMP-034, CMP-054)"},
+    {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/unit.test.ts","test":"the debug map of a unit (CMP-042, CMP-054)"}
   ],
   "CMP-055": [
     {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/debug-map.test.ts","test":"statement ranges (CMP-055)"},

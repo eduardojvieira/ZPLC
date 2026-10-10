@@ -495,6 +495,7 @@ export function compileMultiTaskProject(
     const coreSources: CoreProgramSource[] = [];
     const compiledPrograms = new Set<string>();
     const visualSourceRefs = new Set<string>();
+    const programFiles = new Set<ProgramSource>();
 
     for (const task of config.tasks) {
         for (const progName of task.programs) {
@@ -505,6 +506,7 @@ export function compileMultiTaskProject(
             if (!source) {
                 throw new CompilerError(`Program '${progName}' referenced by task but not found in sources`, 0, 0, 'codegen');
             }
+            programFiles.add(source);
 
             const transpiled: TranspileResult = source.language === 'ST'
                 ? { success: true, source: source.content, errors: [] }
@@ -520,6 +522,13 @@ export function compileMultiTaskProject(
                 sourceRef: source.sourceRef,
             });
         }
+    }
+
+    // The files of the project that no task runs are part of the unit: a type, a function, a function block or a
+    // global declared in one of them is seen by every program (CMP-042). Only Structured Text declares them.
+    for (const source of programSources) {
+        if (programFiles.has(source) || source.language !== 'ST') continue;
+        coreSources.push({ name: source.sourceRef ?? source.name, content: source.content, sourceRef: source.sourceRef });
     }
 
     const coreConfig: CoreProjectConfig = {
