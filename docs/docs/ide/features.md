@@ -38,6 +38,12 @@ Limits: a project keeps copies of at most 64 files and about 64 MB of text. Chan
 
 Evidence level: host. The unit tests of requirement IDE-006 (`packages/zplc-ide/electron/recoveryStore.test.ts`, `recoveryStoreIpc.test.ts`, `packages/zplc-ide/src/store/recoveryPersistence.test.ts`, `src/utils/recoveryOffer.test.ts` and `src/ipc/recoveryBridge.test.ts`) cover the store, the messages and the timing, and journey 19 (recover modified files after a crash) of `bun run test:journeys` kills the real application process with SIGKILL, starts it again and restores the file.
 
+## A failure stays in its region
+
+If the editor, the lower panel or the toolbar throws an exception while it draws, that region shows what stopped and a **Retry** button, and the rest of the window keeps working, so you can still save your files. **Retry** draws only that region again. If the failure is outside every region, the whole window shows the same message with **Retry** and a way to close the project; the window is never left blank.
+
+Evidence level: host. Journey 20 (a failing region does not blank the window) of `bun run test:journeys` makes each of the three regions fail in the real application, checks that the other two keep working and that Retry brings the failed one back; `packages/zplc-ide/src/components/ErrorBoundary.test.tsx` covers the region logic.
+
 ## Editors
 
 ST is the primary language-service path. LD, FBD, and SFC open, edit, save,

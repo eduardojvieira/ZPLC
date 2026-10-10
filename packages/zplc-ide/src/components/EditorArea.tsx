@@ -24,6 +24,7 @@ import { canCommitVisualEditorChange } from '../editors/visualCommitGuard';
 import { displayEditorFileName } from './editorFilePresentation';
 import { UnsavedChangesDialog } from './UnsavedChangesDialog';
 import { ErrorBoundary } from './ErrorBoundary';
+import { DevFaultProbe } from './DevFaultProbe';
 import { unsavedOutcome, type UnsavedChoice } from '../utils/unsavedChanges';
 import {
   recordVisualSnapshot,
@@ -439,6 +440,7 @@ export function EditorArea() {
         className="flex-1 overflow-hidden"
       >
         <ErrorBoundary region="Editor" resetKey={selectedViewId}>
+        <DevFaultProbe region="Editor" />
         {showSettings ? (
           /* Project Settings Panel */
           <ProjectSettings />

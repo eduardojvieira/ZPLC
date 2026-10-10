@@ -929,4 +929,36 @@ export const JOURNEYS: Journey[] = [
       assert(!await last.visible(recoveryOffer), 'A clean exit left something to recover.');
     },
   },
+
+  {
+    name: '20 A failing region does not blank the window', example: 'motor_start_stop', proves: ['IDE-011'], partly: [],
+    run: async (app, { project }) => {
+      await openFolder(app, project);
+      await openFile(app, 'src/Motor.st');
+      const fail = (region: string) => app.eval(`window.dispatchEvent(new CustomEvent('zplc:inject-render-fault', { detail: ${JSON.stringify(region)} }))`);
+      const regionError = (region: string) => css(`[data-region-error="${region}"]`);
+      const retry = (region: string) => css(`[data-region-error="${region}"] button`);
+      const regions = {
+        Editor: async () => hasProgram(await editorText(app), 'Motor'),
+        Panel: async () => await app.visible(tab('Explorer', 'exact')) && await app.visible(treeItem('dir:src')),
+        Toolbar: async () => await app.visible(toolbar),
+      } as const;
+      // The other two regions keep working while one shows its error, and Retry brings that one back without reopening anything.
+      for (const failing of ['Editor', 'Panel', 'Toolbar'] as const) {
+        await fail(failing);
+        await app.until(`the error of the ${failing} region`, async () => await app.visible(regionError(failing)) || undefined);
+        const message = await app.eval<string>(`document.querySelector('[data-region-error="${failing}"]')?.innerText ?? ''`);
+        assert(message.includes(`${failing} stopped working`) && message.includes('Retry'), `The ${failing} error should say what stopped and offer Retry: ${JSON.stringify(message)}`);
+        assert((await app.text()).trim().length > 40, `The window is blank while the ${failing} region shows its error.`);
+        for (const [other, works] of Object.entries(regions)) {
+          if (other === failing) continue;
+          assert(!await app.visible(regionError(other)), `The ${other} region shows an error although only ${failing} failed.`);
+          assert(await works(), `The ${other} region stopped working when the ${failing} region failed.`);
+        }
+        await app.click(retry(failing), `Retry in the ${failing} region`);
+        await app.until(`the ${failing} region to come back`, async () => !await app.visible(regionError(failing)) && await regions[failing]() || undefined);
+      }
+      assert(app.errors.filter((error) => !error.includes('Injected render fault')).length === 0, `Unexpected renderer errors: ${app.errors.join(' | ')}`);
+    },
+  },
 ];

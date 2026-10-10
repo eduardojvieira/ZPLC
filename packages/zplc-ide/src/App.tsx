@@ -22,6 +22,8 @@ import { EditorArea } from './components/EditorArea';
 import { Console } from './components/Console';
 import { WelcomeScreen } from './components/WelcomeScreen';
 import { CloseGuard } from './components/CloseGuard';
+import { ErrorBoundary } from './components/ErrorBoundary';
+import { DevFaultProbe } from './components/DevFaultProbe';
 import { RecoveryOffer } from './components/RecoveryOffer';
 import { useTheme } from './hooks/useTheme';
 import { initializeTheme, useIDEStore } from './store/useIDEStore';
@@ -86,7 +88,10 @@ function App() {
       <CloseGuard />
       <RecoveryOffer />
       {/* Unified Toolbar */}
-      <Toolbar debugController={debugController} />
+      <ErrorBoundary region="Toolbar">
+        <DevFaultProbe region="Toolbar" />
+        <Toolbar debugController={debugController} />
+      </ErrorBoundary>
 
       {/* Main resizable workspace */}
       <div className="flex-1 min-h-0 flex ledger-workspace">
@@ -106,7 +111,9 @@ function App() {
 
           {/* Editor Area */}
           <Panel id="editor" defaultSize="72%" minSize="30%" className="overflow-hidden">
-            <EditorArea />
+            <ErrorBoundary region="Editor">
+              <EditorArea />
+            </ErrorBoundary>
           </Panel>
 
           <Separator id="workspace-separator" aria-label="Resize editor and lower panel" />
@@ -122,7 +129,9 @@ function App() {
             collapsedSize={32}
             className="overflow-hidden"
           >
-            <Console debugController={debugController} />
+            <ErrorBoundary region="Panel">
+              <Console debugController={debugController} />
+            </ErrorBoundary>
           </Panel>
 
         </Group>

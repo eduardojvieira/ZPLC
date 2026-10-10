@@ -38,6 +38,12 @@ Límites: un proyecto conserva copias de a lo sumo 64 archivos y unos 64 MB de t
 
 Nivel de evidencia: host. Las pruebas unitarias del requisito IDE-006 (`packages/zplc-ide/electron/recoveryStore.test.ts`, `recoveryStoreIpc.test.ts`, `packages/zplc-ide/src/store/recoveryPersistence.test.ts`, `src/utils/recoveryOffer.test.ts` y `src/ipc/recoveryBridge.test.ts`) cubren el almacén, los mensajes y los tiempos, y el recorrido 19 (recuperar archivos modificados tras un fallo) de `bun run test:journeys` mata con SIGKILL el proceso de la aplicación real, la arranca de nuevo y restaura el archivo.
 
+## Un fallo se queda en su región
+
+Si el editor, el panel inferior o la barra de herramientas lanzan una excepción al dibujarse, esa región muestra qué se detuvo y un botón **Retry**, y el resto de la ventana sigue funcionando, así que todavía puede guardar sus archivos. **Retry** vuelve a dibujar solo esa región. Si el fallo está fuera de toda región, toda la ventana muestra el mismo mensaje con **Retry** y una forma de cerrar el proyecto; la ventana nunca queda en blanco.
+
+Nivel de evidencia: host. El recorrido 20 (una región que falla no deja la ventana en blanco) de `bun run test:journeys` hace fallar cada una de las tres regiones en la aplicación real, comprueba que las otras dos siguen funcionando y que Retry devuelve la región caída; `packages/zplc-ide/src/components/ErrorBoundary.test.tsx` cubre la lógica de la región.
+
 ## Editores
 
 ST es la vía principal con servicio de lenguaje. LD, FBD y SFC abren, editan,

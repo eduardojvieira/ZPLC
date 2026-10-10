@@ -4,6 +4,12 @@ All notable changes are documented here.
 
 ## Unreleased
 
+- An exception while the toolbar, the editor area or the lower panel draws now
+  shows its error and a Retry button in that region only (IDE-011); before,
+  only the editor content and the lower-panel content had their own boundary,
+  so a failure in the toolbar or in a tab strip replaced the whole window. A
+  development-only probe (`DevFaultProbe`, absent from production builds) lets
+  journey 20 make each region fail in the real application.
 - Studio keeps a copy of every modified file in its user-data directory within a
   second of the last keystroke (IDE-006), and offers each one back, with its name
   and the time it was kept, when the project is opened after a crash. A normal exit
