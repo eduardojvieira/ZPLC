@@ -135,6 +135,18 @@ static const arith_case_t cases[] = {
     { "SAR -8 >> 1 is -4",                     OP_SAR, 2, 0xFFFFFFF8U, 1U, 0xFFFFFFFCU },
     { "SAR -1 >> 5 is -1",                     OP_SAR, 2, MINUS_ONE, 5U, MINUS_ONE },
 
+    /* The same pattern orders differently signed and unsigned: the compiler picks LT/GT or LTU/GTU by type (CMP-012). */
+    { "LT 0xFFFFFFFF < 0 is true (signed -1 < 0)", OP_LT, 2, MINUS_ONE, 0U, 1U },
+    { "GT INT32_MIN > INT32_MAX is false",     OP_GT, 2, INT_MIN32, INT_MAX32, 0U },
+    { "LTU 0xFFFFFFFF < 0 is false",           OP_LTU, 2, MINUS_ONE, 0U, 0U },
+    { "LTU 0 < 0xFFFFFFFF is true",            OP_LTU, 2, 0U, MINUS_ONE, 1U },
+    { "LTU INT32_MAX < INT32_MIN is true",     OP_LTU, 2, INT_MAX32, INT_MIN32, 1U },
+    { "LTU equal operands is false",           OP_LTU, 2, INT_MIN32, INT_MIN32, 0U },
+    { "GTU 0xFFFFFFFF > 0 is true",            OP_GTU, 2, MINUS_ONE, 0U, 1U },
+    { "GTU INT32_MIN > INT32_MAX is true",     OP_GTU, 2, INT_MIN32, INT_MAX32, 1U },
+    { "GTU 0 > 0xFFFFFFFF is false",           OP_GTU, 2, 0U, MINUS_ONE, 0U },
+    { "GTU equal operands is false",           OP_GTU, 2, 5U, 5U, 0U },
+
     /* REAL to integer: NaN is 0, out of range saturates, in range truncates toward zero. */
     { "F2I NaN is 0",                          OP_F2I, 1, 0x7FC00000U, 0U, 0U },
     { "F2I negative NaN is 0",                 OP_F2I, 1, 0xFFC00000U, 0U, 0U },
