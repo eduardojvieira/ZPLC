@@ -1,0 +1,164 @@
+{
+  "schema": 1,
+  "description": "Flash and RAM budgets of firmware/app per supported board (VF-025). Values are bytes of the linker's memory usage table of `west build` with the ZPLC_FW toolchain pinned in env.sh; they come from a host build, not from hardware.",
+  "margin_policy": {
+    "percent": 5,
+    "round_to_bytes": 256,
+    "rule": "budget = ceil(measured * (100 + percent) / 100 / round_to_bytes) * round_to_bytes. A change that raises a size past its budget raises the budget in the same commit, with the reason in the commit message; run `tools/firmware-test/run.sh size` then `python3 tools/firmware-test/fwtest.py size --budget tools/firmware-test/size-budget.json --logs <ws>/out/size --rebaseline`."
+  },
+  "boards": {
+    "rpi-pico-rp2040": {
+      "zephyr_board": "rpi_pico/rp2040",
+      "regions": {
+        "flash": [
+          "BOOT_FLASH",
+          "FLASH"
+        ],
+        "ram": [
+          "RAM"
+        ]
+      },
+      "measured": {
+        "flash": 142156,
+        "ram": 164720
+      },
+      "budget": {
+        "flash": 149504,
+        "ram": 173056
+      }
+    },
+    "arduino-giga-r1-m7": {
+      "zephyr_board": "arduino_giga_r1/stm32h747xx/m7",
+      "regions": {
+        "flash": [
+          "FLASH"
+        ],
+        "ram": [
+          "RAM",
+          "ITCM",
+          "DTCM",
+          "SRAM0",
+          "SRAM1",
+          "SRAM2",
+          "SRAM3",
+          "SRAM4"
+        ]
+      },
+      "measured": {
+        "flash": 191312,
+        "ram": 179692
+      },
+      "budget": {
+        "flash": 200960,
+        "ram": 188928
+      }
+    },
+    "esp32-s3-devkitc": {
+      "zephyr_board": "esp32s3_devkitc/esp32s3/procpu",
+      "regions": {
+        "flash": [
+          "FLASH"
+        ],
+        "ram": [
+          "iram0_0_seg",
+          "dram0_0_seg",
+          "ext_dram_seg",
+          "rtc_slow_seg"
+        ]
+      },
+      "measured": {
+        "flash": 1001380,
+        "ram": 2419808
+      },
+      "budget": {
+        "flash": 1051648,
+        "ram": 2540800
+      }
+    },
+    "stm32f746g-disco": {
+      "zephyr_board": "stm32f746g_disco/stm32f746xx",
+      "regions": {
+        "flash": [
+          "FLASH"
+        ],
+        "ram": [
+          "RAM",
+          "SRAM0",
+          "DTCM"
+        ]
+      },
+      "measured": {
+        "flash": 276800,
+        "ram": 225676
+      },
+      "budget": {
+        "flash": 290816,
+        "ram": 237056
+      }
+    },
+    "nucleo-h743zi": {
+      "zephyr_board": "nucleo_h743zi/stm32h743xx",
+      "regions": {
+        "flash": [
+          "FLASH"
+        ],
+        "ram": [
+          "BACKUP_SRAM",
+          "RAM",
+          "ITCM",
+          "DTCM",
+          "SRAM0",
+          "SRAM1",
+          "SRAM2",
+          "SRAM3",
+          "SRAM4"
+        ]
+      },
+      "measured": {
+        "flash": 410716,
+        "ram": 374684
+      },
+      "budget": {
+        "flash": 431360,
+        "ram": 393472
+      }
+    },
+    "arduino-opta-wifi-m7": {
+      "zephyr_board": "arduino_opta/stm32h747xx/m7",
+      "regions": {
+        "flash": [
+          "FLASH"
+        ],
+        "ram": [
+          "RAM",
+          "ITCM",
+          "DTCM",
+          "SRAM0",
+          "SRAM1",
+          "SRAM2",
+          "SRAM3",
+          "SRAM4"
+        ]
+      },
+      "measured": {
+        "flash": 431348,
+        "ram": 395540
+      },
+      "budget": {
+        "flash": 453120,
+        "ram": 415488
+      }
+    }
+  },
+  "toolchain": {
+    "zephyr": "dccb09599635bdff17633fa7e9dab014b91dce90 (Zephyr 4.4.2)",
+    "sdk": "Zephyr SDK 1.0.1",
+    "arm": "arm-zephyr-eabi-gcc 14.3.0",
+    "xtensa": "xtensa-espressif_esp32s3_zephyr-elf-gcc (SDK 1.0.1)",
+    "optimization": "the project's firmware/app/prj.conf, no overrides"
+  },
+  "notes": {
+    "flash": "Used bytes of the listed linker regions that live in flash (the image size).",
+    "ram": "Used bytes of the listed on-chip RAM regions, static allocation only: the stack and heap high-water marks are not in a link-time figure. The esp32-s3 row includes ext_dram_seg, which the build maps to external RAM."
+  }
+}
