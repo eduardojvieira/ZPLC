@@ -12,7 +12,7 @@ import { itNative, nativeRuntimeBinary } from './nativeRuntimeGuard';
 const ROOT = fileURLToPath(new URL('../../../../', import.meta.url));
 const python = Bun.which('python3');
 const inCi = !['', '0', 'false'].includes(process.env.CI ?? '');
-const withPython = python || !inCi ? test.skipIf(!python) : ((name: string) => test(name, () => { throw new Error('python3 is not on PATH (CI is set)'); })) as typeof test;
+const withPython = python || !inCi ? test.skipIf(!python) : ((name: string) => test(name, () => { throw new Error('python3 is not on PATH (CI is set)'); })) as unknown as typeof test;
 
 function run(args: string[], env: Record<string, string | undefined> = {}) {
   const done = Bun.spawnSync([python!, '-B', ...args], { cwd: ROOT, env: { ...process.env, ...env }, stdout: 'pipe', stderr: 'pipe' });

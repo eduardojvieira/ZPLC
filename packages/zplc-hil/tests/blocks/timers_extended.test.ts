@@ -1,4 +1,5 @@
-import { HILTestCase } from '../../src/runner';
+import type { HILTestCase } from '../../src/runner';
+import { describeCases } from '../cases';
 
 export const extendedTimerTests: HILTestCase[] = [
   {
@@ -111,3 +112,6 @@ export const counterTests: HILTestCase[] = [
     ]
   }
 ];
+
+describeCases('HIL cases: extended timer blocks (HIL-001)', extendedTimerTests);
+describeCases('HIL cases: counter blocks (HIL-001)', counterTests);
