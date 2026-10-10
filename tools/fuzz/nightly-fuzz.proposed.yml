@@ -1,0 +1,42 @@
+# PROPOSED, NOT ENABLED (VF-014). This file lives outside .github/workflows on purpose: GitHub ignores it.
+#
+# The pull-request gate is the "Fuzz loader verification and artifact execution (short)" step of the
+# host-core-sanitized job in .github/workflows/ci.yml (tools/fuzz/run.sh 60 both). The long run belongs to the
+# scheduled workflow. To enable it, replace the loader-fuzz job of .github/workflows/nightly-quality.yml with the
+# job below (it keeps the job name, so a branch-protection or dashboard reference to "loader-fuzz" is unchanged)
+# and pin any action the way scripts/workflow-action-pins.test.mjs requires.
+#
+# What the long run buys over the short one: coverage that needs minutes (deeper programs, multi-task
+# artifacts with breakpoints, the corpus growing from the seed artifacts), and the run is repeated with a
+# fresh random seed every night so the search does not repeat itself. Reproducers are uploaded, so a finding is
+# a file, not a log line.
+#
+# VF-014 also requires that a scheduled workflow have at least one recorded successful run before GA (VF-016):
+# trigger this one by hand with workflow_dispatch once it is merged.
+jobs:
+  loader-fuzz:
+    name: Extended fuzz (loader verification and artifact execution)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    steps:
+      - name: Checkout
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
+
+      - name: Fuzz both targets for 40 minutes each
+        env:
+          ASAN_OPTIONS: detect_leaks=1
+          UBSAN_OPTIONS: halt_on_error=1
+          ZPLC_FUZZ_WORK: ${{ runner.temp }}/zplc-fuzz
+          ZPLC_FUZZ_ARTIFACTS: ${{ runner.temp }}/zplc-fuzz-artifacts
+          # More than one process per target: libFuzzer then runs in fork mode and reports every distinct
+          # finding of the night instead of stopping at the first.
+          ZPLC_FUZZ_JOBS: 2
+        run: tools/fuzz/run.sh 2400 both
+
+      - name: Upload reproducers
+        if: failure()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: fuzz-reproducers
+          path: ${{ runner.temp }}/zplc-fuzz-artifacts
+          if-no-files-found: ignore

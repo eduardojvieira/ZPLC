@@ -108,6 +108,15 @@ if(ZPLC_BUILD_FUZZER)
         message(FATAL_ERROR "ZPLC_BUILD_FUZZER requires Clang")
     endif()
 
+    # Address and undefined-behaviour sanitizers, with undefined behaviour and out-of-range
+    # float-to-integer conversions fatal: a finding must stop the run and save its input.
+    set(ZPLC_FUZZ_FLAGS
+        -fsanitize=fuzzer,address,undefined,float-cast-overflow
+        -fno-sanitize-recover=undefined,float-cast-overflow
+        -fno-omit-frame-pointer
+    )
+
+    # VF-014: the verifier alone, with a mutator that keeps the CRC valid.
     add_executable(fuzz_loader_verify
         tests/fuzz_loader_verify.c
         src/core/zplc_loader.c
@@ -117,14 +126,34 @@ if(ZPLC_BUILD_FUZZER)
         ${CMAKE_CURRENT_SOURCE_DIR}/include
     )
 
-    target_compile_options(fuzz_loader_verify PRIVATE
-        -fsanitize=fuzzer,address,undefined
-        -fno-omit-frame-pointer
+    target_compile_options(fuzz_loader_verify PRIVATE ${ZPLC_FUZZ_FLAGS})
+    target_link_options(fuzz_loader_verify PRIVATE ${ZPLC_FUZZ_FLAGS})
+
+    # VF-014: load accepted artifacts and run them. The scan budget is the documented override
+    # of ZPLC_VM_CYCLE_INSTRUCTION_BUDGET, so that a loop costs microseconds, not milliseconds.
+    add_executable(fuzz_run_program
+        tests/fuzz_run_program.c
+        src/core/zplc_core.c
+        src/core/zplc_loader.c
+        src/core/zplc_comm_dispatch.c
+        src/hal/posix/zplc_hal_posix.c
     )
-    target_link_options(fuzz_loader_verify PRIVATE
-        -fsanitize=fuzzer,address,undefined
-        -fno-omit-frame-pointer
+
+    target_include_directories(fuzz_run_program PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/include
     )
+
+    target_compile_definitions(fuzz_run_program PRIVATE
+        ZPLC_CORE_VERSION_STR="${ZPLC_CORE_VERSION_STR}"
+        ZPLC_VM_CYCLE_INSTRUCTION_BUDGET=4096U
+    )
+
+    target_compile_options(fuzz_run_program PRIVATE ${ZPLC_FUZZ_FLAGS})
+    target_link_options(fuzz_run_program PRIVATE ${ZPLC_FUZZ_FLAGS})
+
+    if(UNIX AND NOT APPLE)
+        target_link_libraries(fuzz_run_program PRIVATE rt)
+    endif()
 endif()
 
 enable_testing()
@@ -194,6 +223,29 @@ if(UNIX AND NOT APPLE)
 endif()
 
 add_test(NAME test_vm_arith_edges COMMAND test_vm_arith_edges)
+
+# Test: every opcode of the generated table is executed and checked against a
+# reference model (VF-013); a new opcode without a case fails this test. Also
+# run under the sanitizers.
+add_executable(test_opcode_coverage
+    tests/test_opcode_coverage.c
+    src/core/zplc_core.c
+    src/hal/posix/zplc_hal_posix.c
+)
+
+target_include_directories(test_opcode_coverage PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+)
+
+target_compile_definitions(test_opcode_coverage PRIVATE ZPLC_CORE_TESTING)
+
+target_link_libraries(test_opcode_coverage PRIVATE zplc_core)
+
+if(UNIX AND NOT APPLE)
+    target_link_libraries(test_opcode_coverage PRIVATE rt)
+endif()
+
+add_test(NAME test_opcode_coverage COMMAND test_opcode_coverage)
 
 # Test: Native Runtime Session Protocol
 add_executable(test_native_runtime_session
@@ -294,7 +346,7 @@ add_test(NAME test_loader_verify COMMAND test_loader_verify)
 # Custom target to run all tests
 add_custom_target(check
     COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure
-    DEPENDS test_isa test_contract test_vm_core test_vm_arith_edges test_comm_dispatch test_loader_verify test_native_runtime_session test_host_stdio test_hal_posix_persist test_hal_posix_mutex
+    DEPENDS test_isa test_contract test_vm_core test_vm_arith_edges test_opcode_coverage test_comm_dispatch test_loader_verify test_native_runtime_session test_host_stdio test_hal_posix_persist test_hal_posix_mutex
     COMMENT "Running all tests..."
 )
 
