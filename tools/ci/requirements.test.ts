@@ -96,7 +96,7 @@ describe('validateIndex', () => {
   it('rejects anything that is not an array', () => expect(validateIndex({})).toEqual(['the index must be an array']));
 });
 
-describe('checkAgainstSpec', () => {
+describe('checkAgainstSpec (VF-027)', () => {
   it('passes when the committed text is what the spec generates', () => {
     expect(checkAgainstSpec(serialize(buildIndex(spec, plan)), spec, plan)).toEqual([]);
   });
@@ -109,7 +109,7 @@ describe('checkAgainstSpec', () => {
   });
 });
 
-describe('the committed index', () => {
+describe('the committed index (VF-027)', () => {
   const index = JSON.parse(readFileSync(new URL('./requirements-index.json', import.meta.url), 'utf8')) as ReturnType<typeof buildIndex>;
 
   it('is well formed', () => expect(validateIndex(index)).toEqual([]));

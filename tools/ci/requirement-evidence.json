@@ -1,0 +1,479 @@
+{
+  "VF-001": [
+    {"kind":"conformance","ref":"conformance/harness/vf-001-bool-output-toggles.expect.json","test":"VF-001 BOOL output toggles on every scan"},
+    {"kind":"conformance","ref":"conformance/harness/vf-001-input-reaches-output.expect.json","test":"VF-001 an input set before a scan reaches the output on that scan"},
+    {"kind":"conformance","ref":"conformance/harness/vf-001-vm-fault-is-observed.expect.json","test":"VF-001 a division by zero ends the scan in a VM fault and stores nothing"}
+  ],
+  "VF-008": [
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"1 Open an existing folder","partial":true}
+  ],
+  "VF-016": [
+    {"kind":"unit","ref":"tools/ci/ci-workflow.test.ts","test":"ci.yml triggers (VF-016)","partial":true,"note":"asserts the parsed workflow triggers; its own header says that a hosted run on the 2.0 branch is the only proof that GitHub honours them, and a green default branch and a recorded scheduled run are not shown by it"}
+  ],
+  "VF-022": [
+    {"kind":"unit","ref":"tools/ci/test-inventory.test.ts","test":"checkInventory (VF-022)"}
+  ],
+  "VF-027": [
+    {"kind":"unit","ref":"tools/ci/ci-workflow.test.ts","test":"ci.yml expected-failure check (VF-027)"},
+    {"kind":"unit","ref":"tools/ci/requirement-coverage.test.ts","test":"the committed evidence (VF-027)"},
+    {"kind":"unit","ref":"tools/ci/requirements.test.ts","test":"checkAgainstSpec (VF-027)"},
+    {"kind":"unit","ref":"tools/ci/requirements.test.ts","test":"the committed index (VF-027)"}
+  ],
+  "CMP-001": [
+    {"kind":"conformance","ref":"conformance/cmp/cmp-001-sfc-action-undeclared-variable.expect.json","test":"CMP-001 an SFC action that assigns an undeclared variable is rejected"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-001-undeclared-assignment-target.expect.json","test":"CMP-001 an assignment to an undeclared variable is rejected"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-001-undeclared-identifier-read.expect.json","test":"CMP-001 reading an undeclared identifier is rejected"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-001-unknown-function.expect.json","test":"CMP-001 calling an unknown function is rejected"},
+    {"kind":"conformance","ref":"conformance/lng/cmp-001-ld-contact-undeclared-variable.expect.json","test":"CMP-001 an LD contact on an undeclared variable is rejected"},
+    {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/semantic-errors.test.ts","test":"semantic errors fail the build (CMP-001, CMP-002 stopgap)","partial":true},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"4 Build with an error, reach it from Problems","partial":true},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"4b Problems say what is wrong","partial":true}
+  ],
+  "CMP-002": [
+    {"kind":"conformance","ref":"conformance/cmp/cmp-002-exit-outside-loop.expect.json","test":"CMP-002 EXIT outside a loop builds no artifact"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-002-wrong-argument-count.expect.json","test":"CMP-002 a standard function called with the wrong number of arguments builds no artifact"},
+    {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/semantic-errors.test.ts","test":"semantic errors fail the build (CMP-001, CMP-002 stopgap)","partial":true}
+  ],
+  "CMP-003": [
+    {"kind":"conformance","ref":"conformance/cmp/cmp-003-unknown-type-name.expect.json","test":"CMP-003 a declaration with an unknown type name is rejected"}
+  ],
+  "CMP-004": [
+    {"kind":"conformance","ref":"conformance/cmp/cmp-004-identifier-case-insensitive.expect.json","test":"CMP-004 identifiers are matched without regard to case"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-004-lowercase-direct-address.expect.json","test":"CMP-004 direct address written in lower case"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-004-std-block-parameter-case-insensitive.expect.json","test":"CMP-004 standard block parameters are matched without regard to case"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-004-type-name-case-insensitive.expect.json","test":"CMP-004 type names are matched without regard to case"}
+  ],
+  "CMP-005": [
+    {"kind":"conformance","ref":"conformance/cmp/cmp-005-bool-assigned-from-int.expect.json","test":"CMP-005 assigning an INT expression to a BOOL is rejected"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-005-int-assigned-from-real.expect.json","test":"CMP-005 assigning a REAL to an INT is rejected"}
+  ],
+  "CMP-006": [
+    {"kind":"conformance","ref":"conformance/cmp/cmp-006-duplicate-variable-position.expect.json","test":"CMP-006 a duplicate declaration is reported at its own line"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-006-unknown-member-position.expect.json","test":"CMP-006 an unknown member of a function block is reported at its own line"},
+    {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/semantic-errors.test.ts","test":"rejects an unknown member of a function block instance (position comes with CMP-006)"}
+  ],
+  "CMP-007": [
+    {"kind":"conformance","ref":"conformance/cmp/cmp-007-three-errors-three-diagnostics.expect.json","test":"CMP-007 a file with three unrelated errors yields three diagnostics"}
+  ],
+  "CMP-009": [
+    {"kind":"conformance","ref":"conformance/cmp/cmp-009-unterminated-comment-position.expect.json","test":"CMP-009 an unterminated comment is reported where it opens"}
+  ],
+  "CMP-010": [
+    {"kind":"conformance","ref":"conformance/cmp/cmp-010-build-error-names-the-reason.expect.json","test":"CMP-010 a failed build reports why, not only where"},
+    {"kind":"unit","ref":"packages/zplc-ide/electron/workspaceCompileFailure.test.ts","test":"the compiler message of a diagnostic (CMP-010)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/cli/index.test.ts","test":"prints the compiler message and position when a single file does not build (CMP-010 stopgap)","partial":true},
+    {"kind":"unit","ref":"packages/zplc-ide/src/cli/toolApi.test.ts","test":"passes the compiler message and position through for a semantic error (CMP-010 stopgap)","partial":true},
+    {"kind":"unit","ref":"packages/zplc-ide/src/components/workspaceTestPresentation.test.ts","test":"shows the compiler message that the main process sends, capped and without a machine path, with its position (CMP-010)"},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"4b Problems say what is wrong","partial":true}
+  ],
+  "CMP-011": [
+    {"kind":"conformance","ref":"conformance/cmp/cmp-011-abs-negative-int.expect.json","test":"CMP-011 ABS of a negative INT"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-011-int-arithmetic-positive.expect.json","test":"CMP-011 INT arithmetic with positive operands"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-011-int-compare-negative.expect.json","test":"CMP-011 INT comparison with a negative operand"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-011-int-divide-negative.expect.json","test":"CMP-011 INT division of a negative operand"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-011-int-to-real-negative.expect.json","test":"CMP-011 INT_TO_REAL of a negative INT"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-011-int-widens-to-dint.expect.json","test":"CMP-011 INT widens to DINT keeping its sign"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-011-max-negative-int.expect.json","test":"CMP-011 MAX of a negative INT and a positive one"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-011-sint-negative-arithmetic.expect.json","test":"CMP-011 SINT arithmetic with a negative operand"}
+  ],
+  "CMP-012": [
+    {"kind":"conformance","ref":"conformance/cmp/cmp-012-udint-compare-unsigned.expect.json","test":"CMP-012 UDINT comparison above 2147483647"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-012-udint-divide-unsigned.expect.json","test":"CMP-012 UDINT division above 2147483647"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-012-udint-literal-above-int32.expect.json","test":"CMP-012 UDINT literal above 2147483647"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-012-uint-compare-above-int16.expect.json","test":"CMP-012 UINT comparison above 32767"}
+  ],
+  "CMP-013": [
+    {"kind":"conformance","ref":"conformance/cmp/cmp-013-int-times-real.expect.json","test":"CMP-013 INT times REAL"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-013-real-arithmetic-positive.expect.json","test":"CMP-013 REAL arithmetic with positive operands"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-013-real-compare-negative.expect.json","test":"CMP-013 REAL comparison of two negative values"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-013-real-negate-variable.expect.json","test":"CMP-013 REAL negation of a variable"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-013-real-negative-literal.expect.json","test":"CMP-013 REAL negative literal"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-013-real-plus-integer-literal.expect.json","test":"CMP-013 REAL plus an integer literal"}
+  ],
+  "CMP-014": [
+    {"kind":"conformance","ref":"conformance/cmp/cmp-014-not-byte.expect.json","test":"CMP-014 NOT on a BYTE"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-014-not-word.expect.json","test":"CMP-014 NOT on a WORD"}
+  ],
+  "CMP-015": [
+    {"kind":"conformance","ref":"conformance/cmp/cmp-015-lint-literal-above-int32.expect.json","test":"CMP-015 LINT holds a literal above 4294967295"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-015-lint-small-value.expect.json","test":"CMP-015 LINT initialised and incremented"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-015-lreal-double-precision.expect.json","test":"CMP-015 LREAL keeps double precision"}
+  ],
+  "CMP-016": [
+    {"kind":"conformance","ref":"conformance/cmp/cmp-016-dint-abs-min.expect.json","test":"CMP-016 ABS of the most negative DINT is the most negative DINT"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-016-dint-add-wraps.expect.json","test":"CMP-016 DINT addition wraps in two's complement"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-016-dint-min-divided-by-minus-one.expect.json","test":"CMP-016 the most negative DINT divided by -1 is the most negative DINT"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-016-dint-min-modulo-minus-one.expect.json","test":"CMP-016 the most negative DINT MOD -1 is 0"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-016-dint-mul-wraps.expect.json","test":"CMP-016 DINT multiplication wraps in two's complement"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-016-dint-negate-min.expect.json","test":"CMP-016 negation of the most negative DINT is the most negative DINT"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-016-dint-sub-wraps.expect.json","test":"CMP-016 DINT subtraction wraps in two's complement"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-016-real-nan-to-dint.expect.json","test":"CMP-016 a not-a-number REAL converts to the integer 0"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-016-real-out-of-range-to-dint.expect.json","test":"CMP-016 an out-of-range REAL saturates to the DINT limits"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-016-real-to-dint-truncates-toward-zero.expect.json","test":"CMP-016 an in-range REAL converts to the DINT truncated toward zero"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-016-shift-by-the-width-or-more.expect.json","test":"CMP-016 a shift by 32 or more, or by a negative count, gives 0"},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_vm_arith_edges.c","test":"Defined results for the integer and float edge cases of the VM (RT-005, CMP-016)"}
+  ],
+  "CMP-017": [
+    {"kind":"conformance","ref":"conformance/cmp/cmp-017-time-compare-short.expect.json","test":"CMP-017 TIME comparison of short durations"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-017-time-compound-literal.expect.json","test":"CMP-017 TIME compound literal T#1h30m"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-017-time-fractional-literal.expect.json","test":"CMP-017 TIME fractional literal T#1.5s"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-017-time-over-24-days.expect.json","test":"CMP-017 TIME comparison beyond 24.8 days"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-017-tod-plus-time.expect.json","test":"CMP-017 TOD plus TIME"}
+  ],
+  "CMP-018": [
+    {"kind":"conformance","ref":"conformance/cmp/cmp-018-constant-does-not-fit.expect.json","test":"CMP-018 a constant that does not fit its type is rejected"}
+  ],
+  "CMP-019": [
+    {"kind":"conformance","ref":"conformance/cmp/cmp-019-fb-member-int.expect.json","test":"CMP-019 function-block output INT of 1000"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-019-nested-struct-member.expect.json","test":"CMP-019 nested structure member access"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-019-struct-as-parameter.expect.json","test":"CMP-019 structure passed to a function"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-019-struct-assignment-copies-all.expect.json","test":"CMP-019 whole-structure assignment copies every byte"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-019-struct-dint-member.expect.json","test":"CMP-019 structure DINT member of 100000"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-019-struct-initialiser.expect.json","test":"CMP-019 structure initialiser"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-019-struct-int-member.expect.json","test":"CMP-019 structure INT member of 1000"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-019-struct-small-members.expect.json","test":"CMP-019 structure members that fit in a byte"}
+  ],
+  "CMP-020": [
+    {"kind":"conformance","ref":"conformance/cmp/cmp-020-enum-compare-ignores-neighbour.expect.json","test":"CMP-020 comparing an enumeration ignores the next variable"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-020-enum-qualified-literal.expect.json","test":"CMP-020 qualified enumeration value St#RUN"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-020-enum-store-keeps-neighbour.expect.json","test":"CMP-020 storing an enumeration keeps the next variable"}
+  ],
+  "CMP-021": [
+    {"kind":"conformance","ref":"conformance/cmp/cmp-021-string-assign-length.expect.json","test":"CMP-021 STRING variable holds an assigned text"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-021-string-function-keeps-argument.expect.json","test":"CMP-021 a string function leaves its argument unchanged"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-021-string-literal-length.expect.json","test":"CMP-021 LEN of a string literal"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-021-string-with-capacity.expect.json","test":"CMP-021 STRING[20] declaration"}
+  ],
+  "CMP-022": [
+    {"kind":"conformance","ref":"conformance/cmp/cmp-022-array-constant-bound.expect.json","test":"CMP-022 ARRAY bound written as a constant"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-022-array-element-read-write.expect.json","test":"CMP-022 array element written and read in a loop"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-022-array-initialiser-list.expect.json","test":"CMP-022 array initialiser with a list of values"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-022-array-initialiser-repeat.expect.json","test":"CMP-022 array initialiser with a repeat count"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-022-array-negative-lower-bound.expect.json","test":"CMP-022 ARRAY[-5..5] with a negative lower bound"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-022-array-of-lint.expect.json","test":"CMP-022 array of LINT"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-022-array-of-structures.expect.json","test":"CMP-022 array of structures"}
+  ],
+  "CMP-023": [
+    {"kind":"conformance","ref":"conformance/cmp/cmp-023-array-index-out-of-bounds-faults.expect.json","test":"CMP-023 a variable array index outside the bounds raises a VM fault"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-023-constant-index-out-of-bounds.expect.json","test":"CMP-023 a constant array index outside the bounds is rejected"}
+  ],
+  "CMP-024": [
+    {"kind":"conformance","ref":"conformance/cmp/cmp-024-null-reference-faults.expect.json","test":"CMP-024 dereferencing a null reference raises a VM fault"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-024-ref-of-another-type.expect.json","test":"CMP-024 REF() of a REAL assigned to a REF_TO INT is rejected"}
+  ],
+  "CMP-025": [
+    {"kind":"conformance","ref":"conformance/cmp/cmp-025-fb-member-initial-value.expect.json","test":"CMP-025 function-block member holds its declared initial value"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-025-function-local-initial-value.expect.json","test":"CMP-025 function local holds its declared initial value"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-025-global-initial-value.expect.json","test":"CMP-025 VAR_GLOBAL holds its declared initial value"}
+  ],
+  "CMP-026": [
+    {"kind":"conformance","ref":"conformance/cmp/cmp-026-assignment-to-a-constant.expect.json","test":"CMP-026 an assignment to a constant is rejected"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-026-global-constant-value.expect.json","test":"CMP-026 VAR_GLOBAL CONSTANT holds its value"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-026-var-constant.expect.json","test":"CMP-026 VAR CONSTANT in a program"}
+  ],
+  "CMP-027": [
+    {"kind":"conformance","ref":"conformance/cmp/cmp-027-fb-var-temp-not-retained.expect.json","test":"CMP-027 VAR_TEMP of a function block is initialised on every call"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-027-function-local-not-retained.expect.json","test":"CMP-027 a function holds no state between calls"}
+  ],
+  "CMP-028": [
+    {"kind":"conformance","ref":"conformance/cmp/cmp-028-var-in-out-by-reference.expect.json","test":"CMP-028 VAR_IN_OUT is passed by reference"}
+  ],
+  "CMP-029": [
+    {"kind":"conformance","ref":"conformance/cmp/cmp-029-var-retain-accepted.expect.json","test":"CMP-029 VAR RETAIN is accepted"}
+  ],
+  "CMP-030": [
+    {"kind":"conformance","ref":"conformance/cmp/cmp-030-function-var-output.expect.json","test":"CMP-030 VAR_OUTPUT in a function"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-030-several-names-one-declaration.expect.json","test":"CMP-030 several names in one declaration"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-030-several-types-one-block.expect.json","test":"CMP-030 several types in one TYPE block"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-030-type-alias.expect.json","test":"CMP-030 type alias"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-030-var-external.expect.json","test":"CMP-030 VAR_EXTERNAL refers to a global"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-030-var-temp-in-program.expect.json","test":"CMP-030 VAR_TEMP in a program"}
+  ],
+  "CMP-031": [
+    {"kind":"conformance","ref":"conformance/cmp/cmp-031-binary-literal.expect.json","test":"CMP-031 binary literal 2#1010"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-031-digit-separator.expect.json","test":"CMP-031 digit separator in 1_000"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-031-hexadecimal-literal.expect.json","test":"CMP-031 hexadecimal literal 16#FF"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-031-typed-literal.expect.json","test":"CMP-031 typed literal INT#5"}
+  ],
+  "CMP-032": [
+    {"kind":"conformance","ref":"conformance/cmp/cmp-032-ampersand-operator.expect.json","test":"CMP-032 the & operator"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-032-bit-access.expect.json","test":"CMP-032 bit access w.0"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-032-block-comment.expect.json","test":"CMP-032 block comment written /* */"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-032-empty-statement.expect.json","test":"CMP-032 empty statement"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-032-exponent-operator.expect.json","test":"CMP-032 the ** operator"}
+  ],
+  "CMP-033": [
+    {"kind":"conformance","ref":"conformance/cmp/cmp-033-library-block-name-as-variable.expect.json","test":"CMP-033 a library block name as a variable name"}
+  ],
+  "CMP-034": [
+    {"kind":"conformance","ref":"conformance/cmp/cmp-034-parameter-shadows-program-variable.expect.json","test":"CMP-034 a function parameter named like a program variable"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-034-same-parameter-name-two-functions.expect.json","test":"CMP-034 two functions with a parameter of the same name"}
+  ],
+  "CMP-035": [
+    {"kind":"conformance","ref":"conformance/cmp/cmp-035-function-call-as-statement.expect.json","test":"CMP-035 a function call used as a statement"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-035-missing-argument.expect.json","test":"CMP-035 a call with a missing required argument is rejected"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-035-named-arguments-any-order.expect.json","test":"CMP-035 named arguments bind by name"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-035-recursive-call.expect.json","test":"CMP-035 a recursive function is rejected"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-035-unknown-argument-name.expect.json","test":"CMP-035 a call with an unknown argument name is rejected"}
+  ],
+  "CMP-036": [
+    {"kind":"conformance","ref":"conformance/cmp/cmp-036-return-in-a-program-ends-its-scan.expect.json","test":"CMP-036 RETURN in a program ends the scan of that program"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-036-return-leaves-the-function-block-only.expect.json","test":"CMP-036 RETURN leaves a function block body and the scan continues"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-036-return-leaves-the-function-only.expect.json","test":"CMP-036 RETURN leaves the function and the scan continues"},
+    {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/control-flow.test.ts","test":"RETURN (CMP-036 stopgap)","partial":true}
+  ],
+  "CMP-037": [
+    {"kind":"conformance","ref":"conformance/cmp/cmp-037-output-binding.expect.json","test":"CMP-037 function-block call with an output binding =>"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-037-unknown-parameter-standard-block.expect.json","test":"CMP-037 an unknown parameter of a standard block is rejected"}
+  ],
+  "CMP-038": [
+    {"kind":"conformance","ref":"conformance/cmp/cmp-038-array-of-instances.expect.json","test":"CMP-038 array of function-block instances"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-038-instance-inside-function-block.expect.json","test":"CMP-038 function-block instance declared inside a function block"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-038-two-instances-keep-own-state.expect.json","test":"CMP-038 two instances of one function block keep their own state"}
+  ],
+  "CMP-039": [
+    {"kind":"conformance","ref":"conformance/cmp/cmp-039-for-counting-down.expect.json","test":"CMP-039 FOR with a negative BY counts down"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-039-for-inside-function-block.expect.json","test":"CMP-039 FOR loop inside a function block"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-039-for-variable-negative-step.expect.json","test":"CMP-039 FOR with a negative BY held in a variable counts down"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-039-repeat-until.expect.json","test":"CMP-039 REPEAT runs its body until the condition holds"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-039-while-and-exit.expect.json","test":"CMP-039 WHILE with EXIT"}
+  ],
+  "CMP-040": [
+    {"kind":"conformance","ref":"conformance/cmp/cmp-040-case-enum-label.expect.json","test":"CMP-040 CASE with an enumeration label"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-040-case-integer-list.expect.json","test":"CMP-040 CASE with a list of integer labels"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-040-case-negative-label.expect.json","test":"CMP-040 CASE with a negative label"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-040-case-range.expect.json","test":"CMP-040 CASE with a range label"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-040-overlapping-case-labels.expect.json","test":"CMP-040 overlapping CASE labels are rejected"},
+    {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/control-flow.test.ts","test":"CASE labels (CMP-040 stopgap)","partial":true}
+  ],
+  "CMP-041": [
+    {"kind":"conformance","ref":"conformance/cmp/cmp-041-interface-dispatch.expect.json","test":"CMP-041 a variable of an interface type calls the method of its instance"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-041-override-and-inherited-method.expect.json","test":"CMP-041 an inherited method and an overriding one"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-041-super-call.expect.json","test":"CMP-041 SUPER^ calls the method of the base block"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-041-this-member-in-method.expect.json","test":"CMP-041 THIS.member inside a method"}
+  ],
+  "CMP-042": [
+    {"kind":"conformance","ref":"conformance/cmp/cmp-042-function-block-in-another-file.expect.json","test":"CMP-042 a function block declared in another file"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-042-global-in-another-file.expect.json","test":"CMP-042 a global declared in another file"}
+  ],
+  "CMP-043": [
+    {"kind":"conformance","ref":"conformance/cmp/cmp-043-array-beyond-256-bytes.expect.json","test":"CMP-043 a program with a 400-byte array"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-043-three-strings.expect.json","test":"CMP-043 a program with three STRING variables"},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"17 Large program, and one over the limit","partial":true}
+  ],
+  "CMP-044": [
+    {"kind":"conformance","ref":"conformance/cmp/cmp-044-located-memory-overlap.expect.json","test":"CMP-044 a variable that overlaps an AT %M variable is rejected"}
+  ],
+  "CMP-053": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/conformance/conformance.test.ts","test":"CMP-053 the debug map records the version of the compiler package"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/conformance/conformance.test.ts","test":"CMP-053 two builds of one project produce the same bytecode"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/conformance/conformance.test.ts","test":"CMP-053 two builds of one project produce the same debug map"}
+  ],
+  "CMP-054": [
+    {"kind":"conformance","ref":"conformance/cmp/cmp-054-debug-map-address-with-a-type.expect.json","test":"CMP-054 the debug map gives the address of a variable in a file with a TYPE"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-054-debug-map-lists-a-global.expect.json","test":"CMP-054 the debug map lists a global variable"},
+    {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/control-flow.test.ts","test":"debug map (CMP-054 stopgap)","partial":true}
+  ],
+  "CMP-055": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/conformance/conformance.test.ts","test":"CMP-055 every instruction of a statement resolves to that statement in the debug map"}
+  ],
+  "CMP-057": [
+    {"kind":"conformance","ref":"conformance/cmp/cmp-057-dint-to-real-exists.expect.json","test":"CMP-057 DINT_TO_REAL exists"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-057-int-to-dint-exists.expect.json","test":"CMP-057 INT_TO_DINT exists"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-057-real-to-int-rounds.expect.json","test":"CMP-057 REAL_TO_INT rounds to the nearest integer"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-057-ton-elapsed-stops-at-preset.expect.json","test":"CMP-057 TON elapsed time stops at the preset"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-057-tp-not-retriggered.expect.json","test":"CMP-057 TP is not retriggered while its input stays true"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-057-trunc-truncates.expect.json","test":"CMP-057 TRUNC truncates toward zero"}
+  ],
+  "CMP-058": [
+    {"kind":"conformance","ref":"conformance/cmp/cmp-058-ctd-edge-during-load-is-not-counted.expect.json","test":"CMP-058 CTD does not count a pulse that rises while Load is TRUE"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-058-ctd-edge-on-the-scan-load-is-released-counts.expect.json","test":"CMP-058 CTD counts a pulse that rises on the scan Load is released"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-058-ctu-counts-to-preset.expect.json","test":"CMP-058 CTU counts rising edges up to the preset"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-058-ctu-edge-during-reset-is-not-counted.expect.json","test":"CMP-058 CTU does not count a pulse that rises while Reset is TRUE"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-058-ctu-edge-on-the-scan-reset-is-released-counts.expect.json","test":"CMP-058 CTU counts a pulse that rises on the scan Reset is released"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-058-ctu-held-input-counts-once.expect.json","test":"CMP-058 CTU counts an input held high once"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-058-ctu-stops-at-32767.expect.json","test":"CMP-058 CTU stops at 32767 instead of wrapping to -32768"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-058-ctud-load-beats-count-edges.expect.json","test":"CMP-058 CTUD Load beats an up edge and a down edge in the same scan"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-058-ctud-reset-beats-count-edges.expect.json","test":"CMP-058 CTUD Reset beats an up edge and a down edge in the same scan"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-058-ctud-reset-beats-load.expect.json","test":"CMP-058 CTUD Reset beats Load when both are TRUE"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-058-ctud-stops-at-32767.expect.json","test":"CMP-058 CTUD stops at 32767 instead of wrapping to -32768"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-058-ctud-up-and-down-edge-in-one-scan-cancel.expect.json","test":"CMP-058 CTUD counts nothing when an up edge and a down edge arrive in one scan"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-058-r-trig-one-pulse-per-edge.expect.json","test":"CMP-058 R_TRIG gives one pulse per rising edge"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-058-selection-and-limit-functions.expect.json","test":"CMP-058 SQRT, ABS, MAX, LIMIT, SEL, MUX, MIN and MOD with positive operands"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-058-sr-and-rs-dominance.expect.json","test":"CMP-058 SR is set-dominant and RS is reset-dominant"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-058-tof-holds-output.expect.json","test":"CMP-058 TOF holds Q for the preset after IN falls"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-058-ton-delays-output.expect.json","test":"CMP-058 TON sets Q after the preset"}
+  ],
+  "LNG-001": [
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"15 New file: create, edit, save, reopen","partial":true},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"3 Edit Structured Text, save, reopen","partial":true},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"5 Build successfully","partial":true},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"6 Simulate: connect, run, watch a value change","partial":true}
+  ],
+  "LNG-002": [
+    {"kind":"conformance","ref":"conformance/lng/lng-002-fbd-unknown-block.expect.json","test":"LNG-002 an FBD block the transpiler does not know is rejected"}
+  ],
+  "LNG-005": [
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"7 Breakpoint stops execution","partial":true}
+  ],
+  "LNG-009": [
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"9 Undo after switching tabs"}
+  ],
+  "LNG-018": [
+    {"kind":"conformance","ref":"conformance/lng/lng-018-il-jump-runs-every-scan.expect.json","test":"LNG-018 an IL program with a jump runs completely on every scan"},
+    {"kind":"conformance","ref":"conformance/lng/lng-018-il-jump-to-unknown-label.expect.json","test":"LNG-018 an IL jump to an unknown label is rejected"}
+  ],
+  "LNG-019": [
+    {"kind":"conformance","ref":"conformance/lng/lng-019-il-parenthesised-operation.expect.json","test":"LNG-019 IL parenthesised operation"},
+    {"kind":"conformance","ref":"conformance/lng/lng-019-il-real-accumulator.expect.json","test":"LNG-019 IL accumulator holds a REAL"}
+  ],
+  "LNG-020": [
+    {"kind":"conformance","ref":"conformance/lng/lng-020-il-load-and-store.expect.json","test":"LNG-020 IL loads, combines and stores a BOOL"}
+  ],
+  "LNG-021": [
+    {"kind":"conformance","ref":"conformance/lng/lng-021-ld-logic-after-a-block-uses-its-output.expect.json","test":"LNG-021 LD logic placed after a block uses the output of that block"}
+  ],
+  "LNG-022": [
+    {"kind":"conformance","ref":"conformance/lng/lng-022-ld-contact-and-coil.expect.json","test":"LNG-022 an LD contact drives a coil"},
+    {"kind":"conformance","ref":"conformance/lng/lng-022-ld-rising-edge-contact.expect.json","test":"LNG-022 an LD rising-edge contact passes power for one scan"}
+  ],
+  "LNG-023": [
+    {"kind":"conformance","ref":"conformance/lng/lng-023-fbd-and-gate.expect.json","test":"LNG-023 an FBD AND gate combines two inputs"},
+    {"kind":"conformance","ref":"conformance/lng/lng-023-fbd-real-addition.expect.json","test":"LNG-023 FBD numeric blocks keep the type of their inputs"},
+    {"kind":"conformance","ref":"conformance/lng/lng-023-fbd-unwired-input.expect.json","test":"LNG-023 an FBD block with an unwired required input is rejected"}
+  ],
+  "LNG-024": [
+    {"kind":"conformance","ref":"conformance/lng/lng-024-sfc-one-transition-per-scan.expect.json","test":"LNG-024 an SFC chain crosses one transition per scan"}
+  ],
+  "LNG-025": [
+    {"kind":"conformance","ref":"conformance/lng/lng-025-sfc-n-action-runs-in-its-step.expect.json","test":"LNG-025 an SFC step runs its N action"},
+    {"kind":"conformance","ref":"conformance/lng/lng-025-sfc-stored-action.expect.json","test":"LNG-025 an SFC stored (S) action keeps running after its step is left"}
+  ],
+  "LNG-027": [
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"16 Debug details: stop, trace, resume mid-scan","partial":true},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"7 Breakpoint stops execution","partial":true}
+  ],
+  "RT-004": [
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_comm_dispatch.c","test":"RT-004: the STATUS field is written byte by byte, little endian, at any"}
+  ],
+  "RT-005": [
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_vm_arith_edges.c","test":"Defined results for the integer and float edge cases of the VM (RT-005, CMP-016)"}
+  ],
+  "RT-006": [
+    {"kind":"conformance","ref":"conformance/rt/rt-006-runaway-loop-ends-in-a-fault.expect.json","test":"RT-006 a scan that runs past the instruction budget ends in a VM fault"}
+  ],
+  "RT-007": [
+    {"kind":"conformance","ref":"conformance/rt/rt-007-vm-fault-drives-outputs-safe.expect.json","test":"RT-007 a VM fault drives the outputs to their safe state"}
+  ],
+  "RT-017": [
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"16 Debug details: stop, trace, resume mid-scan","partial":true},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"18 Force an input while stopped at a breakpoint","partial":true},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_native_runtime_session.c","test":"RT-017: resume and step continue the scan a breakpoint interrupted"},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_vm_core.c","test":"Resume continues the scan a breakpoint interrupted (RT-017)."}
+  ],
+  "IDE-001": [
+    {"kind":"unit","ref":"packages/zplc-ide/electron/projectFiles.test.ts","test":"the root held for the main process (IDE-001)"},
+    {"kind":"unit","ref":"packages/zplc-ide/electron/workspaceTestsIpc.test.ts","test":"registers the project folder the main process owns from its id alone, with no linking step (IDE-001)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/components/workspaceTestPresentation.test.ts","test":"builds a project the host can link by itself without asking for a zplc.json first (IDE-001)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/utils/workspaceTestLink.test.ts","test":"linking the open project to its workspace without choosing a file (IDE-001)"},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"1 Open an existing folder","partial":true},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"5b Tests need no zplc.json to be chosen","partial":true}
+  ],
+  "IDE-003": [
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"1 Open an existing folder","partial":true},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"14 A recent project that is gone","partial":true},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"3 Edit Structured Text, save, reopen","partial":true},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"3b Save with Ctrl+S in the editor","partial":true}
+  ],
+  "IDE-004": [
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"15 New file: create, edit, save, reopen","partial":true}
+  ],
+  "IDE-005": [
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"10 Close with unsaved changes","partial":true}
+  ],
+  "IDE-008": [
+    {"kind":"unit","ref":"packages/zplc-ide/electron/projectFiles.test.ts","test":"recent projects (IDE-008)"},
+    {"kind":"unit","ref":"packages/zplc-ide/electron/projectFilesProtocol.test.ts","test":"recent project message schema (IDE-008)"},
+    {"kind":"unit","ref":"packages/zplc-ide/electron/sessionStore.test.ts","test":"session store (IDE-008)"},
+    {"kind":"unit","ref":"packages/zplc-ide/electron/sessionStoreIpc.test.ts","test":"session IPC boundary (IDE-008)"},
+    {"kind":"unit","ref":"packages/zplc-ide/electron/sessionStoreProtocol.test.ts","test":"session state format (IDE-008)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/components/welcomeRecent.test.ts","test":"the rows of the Recent section (IDE-008)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/components/welcomeRecent.test.ts","test":"when a recent project was last opened (IDE-008)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/ipc/projectFilesHandles.test.ts","test":"recent projects over the bridge (IDE-008)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/ipc/sessionBridge.test.ts","test":"session bridge adapter (IDE-008)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/store/sessionPersistence.test.ts","test":"cursor and scroll of the open files (IDE-008)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/store/sessionPersistence.test.ts","test":"debounced session saver (IDE-008)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/store/sessionPersistence.test.ts","test":"what triggers a save (IDE-008)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/store/sessionWiring.test.ts","test":"the editor reports and applies the session (IDE-008)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/store/sessionWiring.test.ts","test":"the workbench keeps its split per project (IDE-008)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/store/useIDEStore.test.ts","test":"useIDEStore recent projects and session restore (IDE-008)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/utils/sessionState.test.ts","test":"capturing the session of an open project (IDE-008)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/utils/sessionState.test.ts","test":"finding the project file an editor model shows (IDE-008)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/utils/sessionState.test.ts","test":"planning the restore of a saved session (IDE-008)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/utils/sessionState.test.ts","test":"reading the split the panel library reports (IDE-008)"},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"12 Restore the session"},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"14 A recent project that is gone","partial":true}
+  ],
+  "IDE-009": [
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"2 Create a project from an example","partial":true},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"2b Create a new project","partial":true}
+  ],
+  "IDE-019": [
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"18 Force an input while stopped at a breakpoint","partial":true},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"8 Force an input and release it","partial":true}
+  ],
+  "IDE-020": [
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"4 Build with an error, reach it from Problems","partial":true}
+  ],
+  "IDE-029": [
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"18 Force an input while stopped at a breakpoint","partial":true},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"8 Force an input and release it","partial":true}
+  ],
+  "UX-022": [
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"13 Welcome helps a newcomer choose","partial":true},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"14 A recent project that is gone","partial":true}
+  ],
+  "UX-023": [
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"13 Welcome helps a newcomer choose","partial":true}
+  ],
+  "UX-027": [
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"13 Welcome helps a newcomer choose","partial":true}
+  ],
+  "LRN-001": [
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"11 Learn with no project open","partial":true}
+  ],
+  "LRN-003": [
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"11 Learn with no project open","partial":true}
+  ],
+  "LRN-036": [
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"13 Welcome helps a newcomer choose","partial":true}
+  ],
+  "REL-001": [
+    {"kind":"unit","ref":"packages/zplc-ide/scripts/release-config.test.ts","test":"electron-builder.yml macOS signing (REL-001)","partial":true,"note":"asserts the parsed electron-builder and workflow configuration, not the produced installer; its own header says a hosted release run is the proof (VF-021)"}
+  ],
+  "REL-002": [
+    {"kind":"unit","ref":"packages/zplc-ide/scripts/release-config.test.ts","test":"release.yml macOS build jobs prove the signature on both architectures (REL-002)","partial":true,"note":"asserts the parsed electron-builder and workflow configuration, not the produced installer; its own header says a hosted release run is the proof (VF-021)"}
+  ],
+  "REL-003": [
+    {"kind":"unit","ref":"packages/zplc-ide/scripts/release-config.test.ts","test":"electron-builder.yml Windows signing (REL-003, REL-038)","partial":true,"note":"asserts the parsed electron-builder and workflow configuration, not the produced installer; its own header says a hosted release run is the proof (VF-021)"},
+    {"kind":"unit","ref":"scripts/release-artifacts.test.mjs","test":"contains no paid credential, Developer ID, notarization or Windows certificate path (REL-003)","partial":true,"note":"asserts the text of the release workflow and packaging script by regular expression (VF-006, VF-021); the produced artifact is not inspected"}
+  ],
+  "REL-038": [
+    {"kind":"unit","ref":"packages/zplc-ide/scripts/release-config.test.ts","test":"electron-builder.yml Windows signing (REL-003, REL-038)","partial":true,"note":"asserts the parsed electron-builder and workflow configuration, not the produced installer; its own header says a hosted release run is the proof (VF-021)"},
+    {"kind":"unit","ref":"packages/zplc-ide/scripts/release-config.test.ts","test":"Windows installers carry unsigned in their variant until a channel is live (REL-038)","partial":true,"note":"asserts the parsed electron-builder and workflow configuration, not the produced installer; its own header says a hosted release run is the proof (VF-021)"},
+    {"kind":"unit","ref":"scripts/release-artifacts.test.mjs","test":"release notes give the Windows first-run steps, the Smart App Control statement and each channel state (REL-038)"}
+  ],
+  "REL-011": [
+    {"kind":"unit","ref":"packages/zplc-ide/scripts/release-config.test.ts","test":"Linux packages use electron-builder defaults and are installed in clean containers (REL-011)","partial":true,"note":"asserts the parsed electron-builder and workflow configuration, not the produced installer; its own header says a hosted release run is the proof (VF-021)"}
+  ],
+  "REL-015": [
+    {"kind":"unit","ref":"packages/zplc-ide/scripts/release-config.test.ts","test":"release.yml publishes each platform independently and only as a draft (REL-015, REL-016)","partial":true,"note":"asserts the parsed electron-builder and workflow configuration, not the produced installer; its own header says a hosted release run is the proof (VF-021)"},
+    {"kind":"unit","ref":"scripts/release-artifacts.test.mjs","test":"release notes state the signing state of every asset the pipeline publishes (REL-015)"}
+  ],
+  "REL-016": [
+    {"kind":"unit","ref":"packages/zplc-ide/scripts/release-config.test.ts","test":"release.yml publishes each platform independently and only as a draft (REL-015, REL-016)","partial":true,"note":"asserts the parsed electron-builder and workflow configuration, not the produced installer; its own header says a hosted release run is the proof (VF-021)"}
+  ],
+  "REL-020": [
+    {"kind":"unit","ref":"packages/zplc-ide/scripts/release-config.test.ts","test":"names the installer and the portable executable by the REL-020 variants, with unsigned appended","partial":true,"note":"asserts the parsed electron-builder and workflow configuration, not the produced installer; its own header says a hosted release run is the proof (VF-021)"}
+  ]
+}

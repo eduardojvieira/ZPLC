@@ -25,6 +25,7 @@
     "docs:validate": "bun run --cwd=docs validate:docs",
     "docs:build": "bun run --cwd=docs build",
     "check:versions": "bun scripts/release-version.ts --check",
+    "req:coverage": "bun tools/ci/requirement-coverage.ts",
     "check:typescript": "bun run build:compiler && bun run test:compiler && bun run typecheck:hil && bun run build:ide && bun run test:ide && bun run lint:ide",
     "check:docs": "bun run docs:generate && bun run docs:validate && bun run docs:build"
   },

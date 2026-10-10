@@ -19,8 +19,12 @@ export interface JourneyContext {
   /** Closes the app and starts it again on the same user-data directory, as a user restarting it would. */
   relaunch(): Promise<App>;
 }
-/** `example` names the folder of projects/ copied into a fresh temporary folder for the journey, or `none`. */
-export interface Journey { name: string; example: string; run(app: App, context: JourneyContext): Promise<void> }
+/**
+ * `example` names the folder of projects/ copied into a fresh temporary folder for the journey, or `none`.
+ * `proves` lists the requirements whose stated behaviour the journey executes end to end, and `partly` those of which it
+ * executes only a leg (tools/ci/requirement-coverage.ts counts the first as covered and the second as partial).
+ */
+export interface Journey { name: string; example: string; proves: string[]; partly: string[]; run(app: App, context: JourneyContext): Promise<void> }
 
 // ---------------------------------------------------------------------------------------------------------------------
 // Steps a user performs
@@ -255,7 +259,7 @@ const EDIT = ' (* journey edit: ñ 温度 *)';
 
 export const JOURNEYS: Journey[] = [
   {
-    name: '1 Open an existing folder', example: 'motor_start_stop',
+    name: '1 Open an existing folder', example: 'motor_start_stop', proves: [], partly: ['IDE-001', 'IDE-003', 'VF-008'],
     run: async (app, { project }) => {
       await openFolder(app, project);
       await app.click(tab('Explorer', 'exact'));
@@ -265,7 +269,7 @@ export const JOURNEYS: Journey[] = [
     },
   },
   {
-    name: '2 Create a project from an example', example: 'motor_start_stop',
+    name: '2 Create a project from an example', example: 'motor_start_stop', proves: [], partly: ['IDE-009'],
     run: async (app, { root }) => {
       const folder = join(root, 'new-project'); mkdirSync(folder);
       app.answer(folder);
@@ -277,7 +281,7 @@ export const JOURNEYS: Journey[] = [
     },
   },
   {
-    name: '2b Create a new project', example: 'none',
+    name: '2b Create a new project', example: 'none', proves: [], partly: ['IDE-009'],
     run: async (app, { root }) => {
       const folder = join(root, 'empty-project'); mkdirSync(folder);
       app.answer(folder);
@@ -289,7 +293,7 @@ export const JOURNEYS: Journey[] = [
     },
   },
   {
-    name: '3 Edit Structured Text, save, reopen', example: 'motor_start_stop',
+    name: '3 Edit Structured Text, save, reopen', example: 'motor_start_stop', proves: [], partly: ['IDE-003', 'LNG-001'],
     run: async (app, { project }) => {
       const file = join(project, 'src', 'Motor.st'); const original = disk(file);
       await openFolder(app, project);
@@ -310,7 +314,7 @@ export const JOURNEYS: Journey[] = [
     },
   },
   {
-    name: '3b Save with Ctrl+S in the editor', example: 'motor_start_stop',
+    name: '3b Save with Ctrl+S in the editor', example: 'motor_start_stop', proves: [], partly: ['IDE-003'],
     run: async (app, { project }) => {
       const file = join(project, 'src', 'Motor.st'); const original = disk(file);
       await openFolder(app, project);
@@ -324,7 +328,7 @@ export const JOURNEYS: Journey[] = [
     },
   },
   {
-    name: '4 Build with an error, reach it from Problems', example: 'motor_start_stop',
+    name: '4 Build with an error, reach it from Problems', example: 'motor_start_stop', proves: [], partly: ['IDE-020', 'CMP-001'],
     run: async (app, { project }) => {
       await buildWithUndeclaredVariable(app, project);
       await app.click(tab('Problems'));
@@ -338,7 +342,7 @@ export const JOURNEYS: Journey[] = [
     },
   },
   {
-    name: '4b Problems say what is wrong', example: 'motor_start_stop',
+    name: '4b Problems say what is wrong', example: 'motor_start_stop', proves: [], partly: ['CMP-001', 'CMP-010'],
     run: async (app, { project }) => {
       await buildWithUndeclaredVariable(app, project);
       await app.click(tab('Problems'));
@@ -348,7 +352,7 @@ export const JOURNEYS: Journey[] = [
     },
   },
   {
-    name: '5 Build successfully', example: 'motor_start_stop',
+    name: '5 Build successfully', example: 'motor_start_stop', proves: [], partly: ['LNG-001'],
     run: async (app, { project }) => {
       await openFolder(app, project);
       await openFile(app, 'src/Motor.st');
@@ -357,7 +361,7 @@ export const JOURNEYS: Journey[] = [
     },
   },
   {
-    name: '5b Tests need no zplc.json to be chosen', example: 'motor_start_stop',
+    name: '5b Tests need no zplc.json to be chosen', example: 'motor_start_stop', proves: [], partly: ['IDE-001'],
     run: async (app, { project }) => {
       await openFolder(app, project);
       await app.click(tab('Tests'));
@@ -366,7 +370,7 @@ export const JOURNEYS: Journey[] = [
     },
   },
   {
-    name: '6 Simulate: connect, run, watch a value change', example: 'blinky_st',
+    name: '6 Simulate: connect, run, watch a value change', example: 'blinky_st', proves: [], partly: ['LNG-001'],
     run: async (app, { project }) => {
       await openFolder(app, project);
       await openFile(app, 'src/main.st');
@@ -381,7 +385,7 @@ export const JOURNEYS: Journey[] = [
     },
   },
   {
-    name: '7 Breakpoint stops execution', example: 'motor_start_stop',
+    name: '7 Breakpoint stops execution', example: 'motor_start_stop', proves: [], partly: ['LNG-005', 'LNG-027'],
     run: async (app, { project }) => {
       await openFolder(app, project);
       await openFile(app, 'src/Motor.st');
@@ -404,7 +408,7 @@ export const JOURNEYS: Journey[] = [
     },
   },
   {
-    name: '8 Force an input and release it', example: 'motor_start_stop',
+    name: '8 Force an input and release it', example: 'motor_start_stop', proves: [], partly: ['IDE-019', 'IDE-029'],
     run: async (app, { project }) => {
       await openFolder(app, project);
       await openFile(app, 'src/Motor.st');
@@ -433,7 +437,7 @@ export const JOURNEYS: Journey[] = [
     },
   },
   {
-    name: '9 Undo after switching tabs', example: 'motor_start_stop',
+    name: '9 Undo after switching tabs', example: 'motor_start_stop', proves: ['LNG-009'], partly: [],
     run: async (app, { project }) => {
       await openFolder(app, project);
       await openFile(app, 'src/Motor.st');
@@ -465,7 +469,7 @@ export const JOURNEYS: Journey[] = [
     },
   },
   {
-    name: '10 Close with unsaved changes', example: 'motor_start_stop',
+    name: '10 Close with unsaved changes', example: 'motor_start_stop', proves: [], partly: ['IDE-005'],
     run: async (app, { project }) => {
       const file = join(project, 'src', 'Motor.st'); const original = disk(file);
       const edit = async () => { await openFile(app, 'src/Motor.st'); await cursorAtEndOfLine(app, 1); await app.type(EDIT); await app.until('the typed text', async () => (await editorText(app)).includes(EDIT) || undefined); };
@@ -494,7 +498,7 @@ export const JOURNEYS: Journey[] = [
     },
   },
   {
-    name: '11 Learn with no project open', example: 'none',
+    name: '11 Learn with no project open', example: 'none', proves: [], partly: ['LRN-001', 'LRN-003'],
     run: async (app, { root }) => {
       const first = learnLessonCatalog.en[0]!;
       const folder = join(root, 'learn-project'); mkdirSync(folder);
@@ -509,7 +513,7 @@ export const JOURNEYS: Journey[] = [
     },
   },
   {
-    name: '12 Restore the session', example: 'motor_start_stop',
+    name: '12 Restore the session', example: 'motor_start_stop', proves: ['IDE-008'], partly: [],
     run: async (app, { project, root, relaunch }) => {
       const before = readdirSync(project).sort();
       writeFileSync(join(project, 'src', 'Long.st'), ['PROGRAM Long', 'VAR', '  Flag : BOOL;', 'END_VAR', ...Array.from({ length: 250 }, (_, index) => `(* filler line ${index + 5} *)`), 'Flag := TRUE;', 'END_PROGRAM', ''].join('\n'));
@@ -571,7 +575,7 @@ export const JOURNEYS: Journey[] = [
     },
   },
   {
-    name: '13 Welcome helps a newcomer choose', example: 'none',
+    name: '13 Welcome helps a newcomer choose', example: 'none', proves: [], partly: ['UX-022', 'UX-023', 'UX-027', 'LRN-036'],
     run: async (app) => {
       assert(await app.visible(button('Learn', 'prefix')), 'The Welcome screen has no Learn button.');
       const groups = await app.eval<Array<{ heading: string; examples: number; withSummary: number }>>(`[...document.querySelectorAll('[data-example-group]')].map((section) => ({ heading: section.querySelector('h3')?.textContent?.trim() ?? '', examples: section.querySelectorAll('[data-welcome-example]').length, withSummary: section.querySelectorAll('[data-welcome-example] [data-example-summary]').length }))`);
@@ -614,7 +618,7 @@ export const JOURNEYS: Journey[] = [
     },
   },
   {
-    name: '14 A recent project that is gone', example: 'motor_start_stop',
+    name: '14 A recent project that is gone', example: 'motor_start_stop', proves: [], partly: ['UX-022', 'IDE-003', 'IDE-008'],
     run: async (app, { project, root, relaunch }) => {
       await openFolder(app, project);
       await app.click(tab('Explorer', 'exact'));
@@ -647,7 +651,7 @@ export const JOURNEYS: Journey[] = [
     },
   },
   {
-    name: '15 New file: create, edit, save, reopen', example: 'motor_start_stop',
+    name: '15 New file: create, edit, save, reopen', example: 'motor_start_stop', proves: [], partly: ['IDE-004', 'LNG-001'],
     run: async (app, { project }) => {
       // A file an older version created with New File: the build reads boiler.ld as the same file as boiler.ld.json.
       writeFileSync(join(project, 'src', 'boiler.ld'), JSON.stringify({ name: 'boiler', rungs: [] }));
@@ -695,7 +699,7 @@ export const JOURNEYS: Journey[] = [
     },
   },
   {
-    name: '16 Debug details: stop, trace, resume mid-scan', example: 'motor_start_stop',
+    name: '16 Debug details: stop, trace, resume mid-scan', example: 'motor_start_stop', proves: [], partly: ['RT-017', 'LNG-027'],
     run: async (app, { project }) => {
       await openFolder(app, project);
       await openFile(app, 'src/Motor.st');
@@ -750,7 +754,7 @@ export const JOURNEYS: Journey[] = [
     },
   },
   {
-    name: '17 Large program, and one over the limit', example: 'none',
+    name: '17 Large program, and one over the limit', example: 'none', proves: [], partly: ['CMP-043'],
     run: async (app, { root, relaunch }) => {
       const limit = NATIVE_PROGRAM_MAX_BYTES; // the code size of the VM: 0xB000
       const builtBytes = async (a: App) => Number(/Built saved workspace locally: (\d+) bytes/.exec((await outputText(a)).match(BUILD_RESULT)?.at(-1) ?? '')?.[1] ?? 'NaN');
@@ -793,7 +797,7 @@ export const JOURNEYS: Journey[] = [
     },
   },
   {
-    name: '18 Force an input while stopped at a breakpoint', example: 'motor_start_stop',
+    name: '18 Force an input while stopped at a breakpoint', example: 'motor_start_stop', proves: [], partly: ['IDE-019', 'IDE-029', 'RT-017'],
     run: async (app, { project }) => {
       await openFolder(app, project);
       await openFile(app, 'src/Motor.st');

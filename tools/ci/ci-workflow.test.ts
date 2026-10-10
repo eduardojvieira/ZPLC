@@ -11,13 +11,13 @@ type Workflow = {
 
 const workflow = Bun.YAML.parse(readFileSync(new URL('../../.github/workflows/ci.yml', import.meta.url), 'utf8')) as Workflow;
 
-describe('ci.yml triggers', () => {
+describe('ci.yml triggers (VF-016)', () => {
   it.each(['push', 'pull_request'])('runs on %s for the 2.0 branch and the default branches', (event) => {
     expect(workflow.on[event]?.branches).toEqual(expect.arrayContaining(['main', 'master', 'zplc-2.0-candidate']));
   });
 });
 
-describe('ci.yml expected-failure check', () => {
+describe('ci.yml expected-failure check (VF-027)', () => {
   it.each(['test:compiler', 'test:ide'])('runs %s through the JUnit report and the expected-failure rule', (script) => {
     const step = workflow.jobs.typescript!.steps.find((candidate) => candidate.run?.includes(`bun run ${script}`));
     expect(step?.run).toContain('--reporter=junit');
