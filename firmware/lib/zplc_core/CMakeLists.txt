@@ -120,10 +120,12 @@ add_executable(zplc_runtime
     ${CMAKE_CURRENT_SOURCE_DIR}/../../apps/posix_host/src/host_stdio.c
     ${CMAKE_CURRENT_SOURCE_DIR}/../../apps/posix_host/src/native_runtime_session.c
     ${CMAKE_CURRENT_SOURCE_DIR}/../../apps/posix_host/src/native_program_store.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../apps/posix_host/src/native_device_link.c
     src/hal/posix/zplc_hal_posix.c
 )
 
 target_include_directories(zplc_runtime PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../apps/posix_host/src
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${ZPLC_FW_IDENTITY_DIR}
 )

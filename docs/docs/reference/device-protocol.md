@@ -9,7 +9,7 @@ tags: [reference, generated]
 
 {/* >>> GENERATED (tools/docs/generate_source_references.ts): reference/device-protocol. Do not edit. >>> */}
 
-The device link protocol is how Studio and a device talk: a framed, versioned binary protocol with a length, a sequence number and a checksum on every frame, capability negotiation and explicit error codes. It runs over UART, USB serial and TCP. This is protocol version `1`: 41 messages and 8 events. The text shell of the device stays: it is the older protocol and the recovery console, and `zplc sys info --json` keeps its keys. This page is read off `tools/contract/protocol.json`, the one definition the C codec of the firmware and the TypeScript codec of Studio are generated from.
+The device link protocol is how Studio and a device talk: a framed, versioned binary protocol with a length, a sequence number and a checksum on every frame, capability negotiation and explicit error codes. It runs over UART, USB serial and TCP. This is protocol version `1`: 41 messages and 8 events. The text shell of the device stays: it is the older protocol and the recovery console, and `zplc sys info --json` keeps its keys. This page is read off `tools/contract/protocol.json`, the one definition the C codec of the firmware and the TypeScript codec of Studio are generated from. The native runtime speaks the same protocol on standard input and output when it is started with `--device-link`; `--device-link-network` applies the rules of a network link to it, so that they can be exercised without a socket.
 
 ## Sessions
 

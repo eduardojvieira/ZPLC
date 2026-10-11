@@ -7,6 +7,7 @@
  */
 
 #include "native_runtime_session.h"
+#include "native_device_link.h"
 #include "host_stdio.h"
 
 #include <signal.h>
@@ -72,9 +73,12 @@ static void write_request_too_long_error(void)
     (void)fflush(stdout);
 }
 
-int main(void)
+int main(int argc, char **argv)
 {
     zplc_native_runtime_session_t session;
+    int device_link = 0;
+    int device_link_network = 0;
+    int arg;
     /*
      * The request buffer is 96 KiB: the hex of the largest program plus the envelope.
      * Measured with gcc -fstack-usage at -O2, this frame is ~175 KiB (the session is
@@ -87,6 +91,18 @@ int main(void)
     char event[ZPLC_NATIVE_EVENT_MAX];
     zplc_host_stdio_result_t io_result;
     int discarding_long_line = 0;
+
+    for (arg = 1; arg < argc; arg++) {
+        if (strcmp(argv[arg], "--device-link") == 0) {
+            device_link = 1;
+        } else if (strcmp(argv[arg], "--device-link-network") == 0) {
+            device_link = 1;
+            device_link_network = 1; /* the rules of a network transport, on standard input and output */
+        } else {
+            (void)fprintf(stderr, "usage: %s [--device-link | --device-link-network]\n", argv[0]);
+            return 2;
+        }
+    }
 
     install_signal_handler(SIGINT, "SIGINT");
     install_signal_handler(SIGTERM, "SIGTERM");
@@ -101,6 +117,14 @@ int main(void)
         const char *scenario_clock = getenv("ZPLC_NATIVE_SCENARIO_VIRTUAL_CLOCK");
         zplc_native_runtime_session_set_scenario_clock_enabled(
             &session, scenario_clock != NULL && strcmp(scenario_clock, "1") == 0);
+    }
+    if (device_link != 0) {
+        /* COM-019: frames of the device link protocol on standard input and output, no JSON */
+        const int link_status = zplc_native_device_link_run(&session, device_link_network);
+
+        zplc_native_runtime_session_shutdown(&session);
+        zplc_hal_shutdown();
+        return link_status;
     }
     emit_session_ready_event();
 
