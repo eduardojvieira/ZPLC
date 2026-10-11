@@ -140,7 +140,7 @@ describe('CLI JSON boundary', () => {
       expect(failure.errors).toEqual([]); expect(failure.lines).toHaveLength(1);
       expect(JSON.parse(failure.lines[0] ?? '{}')).toMatchObject({ ok: false, evidence: { operation: 'validate', diagnostics: [{ code: 'PROGRAM_NOT_FOUND' }], artifacts: [] } });
       const humanFailure = output();
-      expect(await main(['validate', root], humanFailure)).toBe(1); expect(humanFailure.lines).toEqual([]); expect(humanFailure.errors).toEqual(['Error: Task program could not be resolved from src']);
+      expect(await main(['validate', root], humanFailure)).toBe(1); expect(humanFailure.lines).toEqual([]); expect(humanFailure.errors).toEqual(['Error: Task program could not be resolved from src [PROGRAM_NOT_FOUND]']);
 
       const human = output();
       await writeFile(join(root, 'src', 'Main.st'), 'PROGRAM Main\nEND_PROGRAM');
@@ -245,11 +245,11 @@ describe('CLI JSON boundary', () => {
     try {
       await writeFile(source, 'PROGRAM Typo\nVAR\n  x : INT;\nEND_VAR\n  nope := 5;\nEND_PROGRAM\n');
       const human = output(); expect(await main(['compile', source, '--output', artifact], human)).toBe(1);
-      expect(human.lines).toEqual([]); expect(human.errors).toEqual([`Error: ${source}:5:3: Unknown identifier 'nope'`]);
+      expect(human.lines).toEqual([]); expect(human.errors).toEqual([`Error: ${source}:5:3: Unknown identifier 'nope' [UNKNOWN_IDENTIFIER]`]);
       await expect(stat(artifact)).rejects.toThrow();
       const json = output(); expect(await main(['compile', source, '--json'], json)).toBe(1);
       expect(json.errors).toEqual([]); expect(json.lines).toHaveLength(1);
-      expect(JSON.parse(json.lines[0] ?? '{}')).toMatchObject({ ok: false, evidence: { operation: 'compile', outcome: 'failed', artifacts: [], diagnostics: [{ code: 'COMPILATION_FAILED', message: "Unknown identifier 'nope'", phase: 'codegen', line: 5, column: 3 }] } });
+      expect(JSON.parse(json.lines[0] ?? '{}')).toMatchObject({ ok: false, evidence: { operation: 'compile', outcome: 'failed', artifacts: [], diagnostics: [{ code: 'UNKNOWN_IDENTIFIER', message: "Unknown identifier 'nope'", phase: 'codegen', line: 5, column: 3 }] } });
     } finally { await rm(root, { recursive: true, force: true }); }
   });
   it('prints every error of a single file, one line each, and the warnings of a file that builds (CMP-007, CMP-031)', async () => {
@@ -258,15 +258,15 @@ describe('CLI JSON boundary', () => {
       await writeFile(broken, 'PROGRAM Broken\nVAR\n  x : INT;\nEND_VAR\n  x := ;\n  x := 1 @ 2;\n  nope := 3;\nEND_PROGRAM\n');
       const human = output(); expect(await main(['compile', broken], human)).toBe(1);
       expect(human.errors).toEqual([
-        `Error: ${broken}:5:8: Compilation of 'Main' failed: Expected expression, got SEMICOLON`,
-        `Error: ${broken}:6:10: Compilation of 'Main' failed: Unexpected character: '@'`,
+        `Error: ${broken}:5:8: Compilation of 'Main' failed: Expected expression, got SEMICOLON [UNEXPECTED_TOKEN]`,
+        `Error: ${broken}:6:10: Compilation of 'Main' failed: Unexpected character: '@' [UNEXPECTED_CHARACTER]`,
       ]);
       const json = output(); expect(await main(['compile', broken, '--json'], json)).toBe(1);
       expect(JSON.parse(json.lines[0] ?? '{}').evidence.diagnostics.map((diagnostic: { line: number; column: number }) => [diagnostic.line, diagnostic.column])).toEqual([[5, 8], [6, 10]]);
 
       await writeFile(hex, 'PROGRAM Hex\nVAR\n  x AT %QW0 : INT;\nEND_VAR\n  x := 0xFF;\nEND_PROGRAM\n');
       const passed = output(); expect(await main(['compile', hex], passed)).toBe(0);
-      expect(passed.errors).toEqual([`Warning: ${hex}:5:8: The hexadecimal literal 0xFF is not IEC 61131-3 syntax: write 16#FF`]);
+      expect(passed.errors).toEqual([`Warning: ${hex}:5:8: The hexadecimal literal 0xFF is not IEC 61131-3 syntax: write 16#FF [NON_IEC_HEX_LITERAL]`]);
       const passedJson = output(); expect(await main(['compile', hex, '--json'], passedJson)).toBe(0);
       expect(JSON.parse(passedJson.lines[0] ?? '{}')).toMatchObject({ ok: true, evidence: { outcome: 'passed', diagnostics: [{ code: 'NON_IEC_HEX_LITERAL', line: 5, column: 8 }] } });
     } finally { await rm(root, { recursive: true, force: true }); }
@@ -301,9 +301,9 @@ describe('CLI JSON boundary', () => {
       await writeFile(join(root, 'src', 'Main.st'), 'PROGRAM Typo\nVAR\n  x : INT;\nEND_VAR\n  nope := 5;\nEND_PROGRAM\n');
       for (const command of ['check', 'compile']) {
         const human = output(); expect(await main([command, root], human)).toBe(1);
-        expect(human.lines).toEqual([]); expect(human.errors).toEqual(["Error: src/Main.st:5:3: Unknown identifier 'nope'"]);
+        expect(human.lines).toEqual([]); expect(human.errors).toEqual(["Error: src/Main.st:5:3: Unknown identifier 'nope' [UNKNOWN_IDENTIFIER]"]);
         const json = output(); expect(await main([command, root, '--json'], json)).toBe(1);
-        expect(JSON.parse(json.lines[0] ?? '{}')).toMatchObject({ ok: false, evidence: { operation: command, diagnostics: [{ code: 'COMPILATION_FAILED', message: "Unknown identifier 'nope'", phase: 'codegen', line: 5, column: 3, path: 'src/Main.st' }] } });
+        expect(JSON.parse(json.lines[0] ?? '{}')).toMatchObject({ ok: false, evidence: { operation: command, diagnostics: [{ code: 'UNKNOWN_IDENTIFIER', message: "Unknown identifier 'nope'", phase: 'codegen', line: 5, column: 3, path: 'src/Main.st' }] } });
       }
     } finally { await rm(root, { recursive: true, force: true }); }
   });

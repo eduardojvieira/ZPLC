@@ -2,6 +2,7 @@
   "requirement": "LNG-003",
   "title": "a Ladder contact on a variable that is not declared is reported against its rung and cell",
   "build": "fails",
+  "codes": ["TRANSLATION_FAILED"],
   "elements": [
     "rung:r1/cell:0,0"
   ],

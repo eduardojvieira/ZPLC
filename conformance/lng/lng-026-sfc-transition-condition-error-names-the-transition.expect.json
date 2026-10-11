@@ -2,6 +2,7 @@
   "requirement": "LNG-026",
   "title": "an error in an SFC transition condition is reported against the transition",
   "build": "fails",
+  "codes": ["UNKNOWN_IDENTIFIER"],
   "elements": [
     "transition:t_ab"
   ],

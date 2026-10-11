@@ -7,6 +7,9 @@
   "lines": [
     7
   ],
+  "codes": [
+    "TRANSLATION_FAILED"
+  ],
   "messageIncludes": [
     "ANDD"
   ]

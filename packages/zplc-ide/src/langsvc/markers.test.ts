@@ -3,7 +3,7 @@ import { describe, expect, it } from 'bun:test';
 import { applyProjectMarkers } from './markers';
 import type { STLiveDiagnostic } from '../types';
 
-interface Marker { message: string; severity: number; startLineNumber: number; startColumn: number; endLineNumber: number; endColumn: number }
+interface Marker { message: string; code?: string; severity: number; startLineNumber: number; startColumn: number; endLineNumber: number; endColumn: number }
 
 function fakeMonaco(files: Record<string, string>) {
   const set = new Map<string, Marker[]>();
@@ -40,6 +40,12 @@ describe('the diagnostics of the project as markers (LNG-015)', () => {
     expect(set.get('live:/3/file:src/main.st')).toEqual([{ message: 'Expected expression', severity: 8, startLineNumber: 2, startColumn: 8, endLineNumber: 2, endColumn: 9 }]);
     expect(set.get('live:/3/file:src/lib.st')).toEqual([{ message: 'unused', severity: 4, startLineNumber: 1, startColumn: 10, endLineNumber: 1, endColumn: 11 }]);
     expect(set.has('live:/3/untitled')).toBe(false);
+  });
+
+  it('gives the marker the stable code of the problem, the one a build reports (CMP-006)', () => {
+    const { monaco, set } = fakeMonaco(files);
+    applyProjectMarkers(monaco, 'live', [diagnostic({ file: 'src/main.st', line: 2, column: 8, endLine: 2, endColumn: 9, errorCode: 'UNEXPECTED_TOKEN' })], 'src/main.st');
+    expect(set.get('live:/3/file:src/main.st')).toEqual([{ message: 'bad', code: 'UNEXPECTED_TOKEN', severity: 8, startLineNumber: 2, startColumn: 8, endLineNumber: 2, endColumn: 9 }]);
   });
 
   it('clears the markers of a file that has none now, and everything when the effect is cleaned up', () => {

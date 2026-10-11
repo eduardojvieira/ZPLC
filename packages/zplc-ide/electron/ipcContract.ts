@@ -66,6 +66,21 @@ export const LEARN_PROGRESS_CHANNEL = {
 
 export const SESSION_CHANNEL = { LOAD: 'session:load', SAVE: 'session:save' } as const;
 
+/**
+ * The port the user chooses for a connection (IDE-018): the main process asks the window that called
+ * `navigator.serial.requestPort()` which port to use; the window shows an in-application dialog and answers with one port
+ * or a cancel. It carries a choice, never data to or from a port, so its name says "port choice" (the contract test refuses
+ * a channel that names a serial operation).
+ */
+export const PORT_CHOICE_CHANNEL = {
+  /** The window's answer: the identifier of one port of the offer, or null. */
+  CHOOSE: 'port-choice:choose',
+  /** The window asks for the list the main process holds now (the refresh of the dialog). */
+  LIST: 'port-choice:list',
+  /** Pushed by the main process: the ports the system offers, for the dialog (the same request id updates it). */
+  REQUESTED: 'port-choice:requested',
+} as const;
+
 export const CLOSE_GUARD_CHANNEL = {
   SET_DIRTY: 'close-guard:set-dirty',
   CLOSE_NOW: 'close-guard:close-now',
@@ -78,6 +93,9 @@ export const RECOVERY_CHANNEL = { WRITE: 'recovery:write', LIST: 'recovery:list'
 
 /** The update check (IDE-010). */
 export const UPDATE_CHECK_CHANNEL = { RUN: 'update-check:run' } as const;
+
+/** The firmware images that this installation carries, with their checksums and flashing steps (REL-025). Read-only. */
+export const FIRMWARE_IMAGES_CHANNEL = { LIST: 'firmware-images:list' } as const;
 
 /**
  * Project archives (IDE-022): three operations of the project-files bridge. They are part of `PROJECT_FILES_CHANNEL`,
@@ -124,15 +142,18 @@ export const IPC_INVOKE_CHANNELS: readonly string[] = [
   ...values(AI_PROVIDER_CHANNEL),
   ...values(LEARN_PROGRESS_CHANNEL),
   ...values(SESSION_CHANNEL),
+  PORT_CHOICE_CHANNEL.CHOOSE, PORT_CHOICE_CHANNEL.LIST,
   CLOSE_GUARD_CHANNEL.SET_DIRTY, CLOSE_GUARD_CHANNEL.CLOSE_NOW,
   ...values(RECOVERY_CHANNEL),
   ...values(UPDATE_CHECK_CHANNEL),
+  ...values(FIRMWARE_IMAGES_CHANNEL),
   ...values(PROJECT_FILES_CHANNEL),
 ];
 
 /** Every channel the main process pushes to the renderer; the renderer never sends on them and no handler answers them. */
 export const IPC_EVENT_CHANNELS: readonly string[] = [
   NATIVE_SIMULATION_CHANNEL.EVENT,
+  PORT_CHOICE_CHANNEL.REQUESTED,
   CLOSE_GUARD_CHANNEL.CLOSE_REQUESTED,
   PROJECT_FILES_EVENT.changed,
 ];

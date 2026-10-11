@@ -48,8 +48,16 @@ the board.
 
 ## 1. Get the firmware
 
-There is no prebuilt firmware in the releases: you build it from the source, with
-the same script that continuous integration runs. Set up the Zephyr workspace once
+The rc.3 release has no prebuilt firmware: it was uploaded by hand. The release
+pipeline builds one image of the runtime for every board of the manifest for each
+release it makes, named `zplc-runtime-<version>-<board>.<ext>`, with the checksum
+in `SHA256SUMS` and the evidence level of the board in the release notes. Its
+installers carry the images of the Raspberry Pi Pico and the ESP32-S3: in Studio,
+open **Project settings**, **Target**, choose the board, and Studio shows the file,
+its SHA-256, where it is and the steps to flash it. Studio only shows them: you
+flash (step 2). The pipeline has not made a release yet, so today you build the
+firmware from the source, with the same script that continuous integration runs.
+Set up the Zephyr workspace once
 (about 6 GB, see [Firmware testing](../development/firmware-testing.md#one-time-setup)),
 then build the board:
 
@@ -88,8 +96,11 @@ If a board does not come back, use the recovery procedure of its profile:
 
 1. Open the project of the example, build it (**Build**, **Compile**) and choose
    **Hardware** in the toolbar instead of **Simulate**.
-2. Press **Connect** and choose the serial port of the board. On Linux your user
-   needs the serial group: [Install ZPLC Studio](../getting-started/install.md#linux-serial-port-access).
+2. Press **Connect**. A dialog of Studio lists each serial port with its name and
+   its USB identifiers and marks the boards it knows. If the board is not listed,
+   plug it in and press **Refresh**. Choose its port and press **Use this port**:
+   Studio uses only that port, and choosing it sends nothing to the board. On Linux
+   your user needs the serial group: [Install ZPLC Studio](../getting-started/install.md#linux-serial-port-access).
 3. Studio reads the identity of the runtime: board, profile and ABI. A project built
    for another board is refused.
 

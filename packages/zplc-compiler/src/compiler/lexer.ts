@@ -7,6 +7,7 @@
  */
 
 import type { SyntaxIssue } from './diagnostics.ts';
+import type { ErrorCode } from './error-codes.ts';
 
 /**
  * Token types for Structured Text.
@@ -200,6 +201,8 @@ export interface Token {
  * Lexer error with location information.
  */
 export class LexerError extends Error {
+    /** The stable code of the kind of error (CMP-006). */
+    code: ErrorCode;
     line: number;
     column: number;
     /** Position just after the offending text. */
@@ -210,9 +213,10 @@ export class LexerError extends Error {
     /** Every lexical error of the source, in order; the thrown error is the first of them. */
     errors: SyntaxIssue[] = [this];
 
-    constructor(message: string, line: number, column: number, endLine = line, endColumn = column + 1) {
+    constructor(code: ErrorCode, message: string, line: number, column: number, endLine = line, endColumn = column + 1) {
         super(`Lexer error at ${line}:${column}: ${message}`);
         this.name = 'LexerError';
+        this.code = code;
         this.detail = message;
         this.line = line;
         this.column = column;
@@ -377,8 +381,8 @@ export function tokenizeWithErrors(source: string): LexResult {
     };
 
     /** An error that ends at the current position and starts at `startLine:startColumn`. */
-    const error = (message: string, startLine: number, startColumn: number): LexerError =>
-        new LexerError(message, startLine, startColumn, line, column);
+    const error = (code: ErrorCode, message: string, startLine: number, startColumn: number): LexerError =>
+        new LexerError(code, message, startLine, startColumn, line, column);
 
     const skipWhitespace = (): void => {
         while (!isAtEnd()) {
@@ -403,7 +407,7 @@ export function tokenizeWithErrors(source: string): LexResult {
                 }
                 if (!closed) {
                     // CMP-009: reported where the comment opens, not where the file ends
-                    throw new LexerError('Unterminated comment: the comment opened by (* is never closed with *)', openLine, openColumn, openLine, openColumn + 2);
+                    throw new LexerError('UNTERMINATED_COMMENT', 'Unterminated comment: the comment opened by (* is never closed with *)', openLine, openColumn, openLine, openColumn + 2);
                 }
             } else if (ch === '/' && peek() === '*') {
                 // C-style block comment /* ... */
@@ -422,7 +426,7 @@ export function tokenizeWithErrors(source: string): LexResult {
                     advance();
                 }
                 if (!closed) {
-                    throw new LexerError('Unterminated comment: the comment opened by /* is never closed with */', openLine, openColumn, openLine, openColumn + 2);
+                    throw new LexerError('UNTERMINATED_COMMENT', 'Unterminated comment: the comment opened by /* is never closed with */', openLine, openColumn, openLine, openColumn + 2);
                 }
             } else if (ch === '/' && peek() === '/') {
                 // C-style line comment // ...
@@ -456,7 +460,7 @@ export function tokenizeWithErrors(source: string): LexResult {
             } else if (ch === '_' && result !== '') {
                 advance();
                 if (!valid(current())) {
-                    throw error('A digit separator _ must stand between two digits', startLine, startColumn);
+                    throw error('INVALID_NUMBER_LITERAL', 'A digit separator _ must stand between two digits', startLine, startColumn);
                 }
             } else {
                 break;
@@ -479,7 +483,7 @@ export function tokenizeWithErrors(source: string): LexResult {
             advance(); // x
             const digits = readDigits(isHexDigit, startLine, startColumn);
             if (digits === '') {
-                throw error('A hexadecimal literal needs at least one digit after 0x', startLine, startColumn);
+                throw error('INVALID_NUMBER_LITERAL', 'A hexadecimal literal needs at least one digit after 0x', startLine, startColumn);
             }
             warnings.push({
                 code: 'NON_IEC_HEX_LITERAL',
@@ -497,15 +501,15 @@ export function tokenizeWithErrors(source: string): LexResult {
             const base = BASED_DIGITS[whole];
             advance(); // #
             if (!base) {
-                throw error(`The number base ${whole}# is not supported: use 2#, 8# or 16#`, startLine, startColumn);
+                throw error('INVALID_NUMBER_LITERAL', `The number base ${whole}# is not supported: use 2#, 8# or 16#`, startLine, startColumn);
             }
             const digits = readDigits(base.valid, startLine, startColumn);
             if (digits === '') {
-                throw error(`A base-${whole} literal needs at least one digit after ${whole}#`, startLine, startColumn);
+                throw error('INVALID_NUMBER_LITERAL', `A base-${whole} literal needs at least one digit after ${whole}#`, startLine, startColumn);
             }
             if (isAlphaNumeric(current())) {
                 const bad = advance();
-                throw error(`The digit '${bad}' is not valid in a base-${whole} literal`, startLine, startColumn);
+                throw error('INVALID_NUMBER_LITERAL', `The digit '${bad}' is not valid in a base-${whole} literal`, startLine, startColumn);
             }
             return { value: `${base.prefix}${digits}`, isReal: false };
         }
@@ -561,7 +565,7 @@ export function tokenizeWithErrors(source: string): LexResult {
         let result = '';
         while (!isAtEnd()) {
             if (current() === '\n' || current() === '\r') {
-                throw error('Unterminated string literal (newline in string)', startLine, startColumn);
+                throw error('UNTERMINATED_STRING_LITERAL', 'Unterminated string literal (newline in string)', startLine, startColumn);
             }
             // Handle escape sequences: '' for single quote
             if (current() === "'") {
@@ -579,7 +583,7 @@ export function tokenizeWithErrors(source: string): LexResult {
             }
         }
         if (isAtEnd()) {
-            throw error('Unterminated string literal', startLine, startColumn);
+            throw error('UNTERMINATED_STRING_LITERAL', 'Unterminated string literal', startLine, startColumn);
         }
         advance(); // consume closing quote
         return result;
@@ -590,7 +594,7 @@ export function tokenizeWithErrors(source: string): LexResult {
         let result = '';
         while (!isAtEnd()) {
             if (current() === '\n' || current() === '\r') {
-                throw error('Unterminated wstring literal (newline in string)', startLine, startColumn);
+                throw error('UNTERMINATED_STRING_LITERAL', 'Unterminated wstring literal (newline in string)', startLine, startColumn);
             }
             if (current() === '"') {
                 if (peek() === '"') {
@@ -603,7 +607,7 @@ export function tokenizeWithErrors(source: string): LexResult {
                 result += advance();
             }
         }
-        if (isAtEnd()) throw error('Unterminated wstring literal', startLine, startColumn);
+        if (isAtEnd()) throw error('UNTERMINATED_STRING_LITERAL', 'Unterminated wstring literal', startLine, startColumn);
         advance(); // consume closing quote
         return result;
     };
@@ -650,12 +654,12 @@ export function tokenizeWithErrors(source: string): LexResult {
         if (typeName === 'BOOL' && isAlpha(current())) {
             const word = readIdentifier().toUpperCase();
             if (word !== 'TRUE' && word !== 'FALSE') {
-                throw error(`Expected 0, 1, TRUE or FALSE after BOOL#, got '${word}'`, startLine, startColumn);
+                throw error('INVALID_TYPED_LITERAL', `Expected 0, 1, TRUE or FALSE after BOOL#, got '${word}'`, startLine, startColumn);
             }
             return word === 'TRUE' ? '1' : '0';
         }
         if (!isDigit(current())) {
-            throw error(`Expected a number after ${typeName}#`, startLine, startColumn);
+            throw error('INVALID_TYPED_LITERAL', `Expected a number after ${typeName}#`, startLine, startColumn);
         }
         const number = readNumber();
         return `${sign}${number.value}`;
@@ -885,7 +889,7 @@ export function tokenizeWithErrors(source: string): LexResult {
                     return;
                 }
 
-                throw error(`Unknown typed literal prefix '${ident}'`, startLine, startColumn);
+                throw error('INVALID_TYPED_LITERAL', `Unknown typed literal prefix '${ident}'`, startLine, startColumn);
             }
 
             // Compound keywords written with a space before the underscore: END _IF
@@ -970,7 +974,7 @@ export function tokenizeWithErrors(source: string): LexResult {
         }
 
         advance();
-        throw error(`Unexpected character: '${ch}'`, startLine, startColumn);
+        throw error('UNEXPECTED_CHARACTER', `Unexpected character: '${ch}'`, startLine, startColumn);
     };
 
     while (true) {

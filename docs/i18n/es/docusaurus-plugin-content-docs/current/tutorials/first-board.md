@@ -48,8 +48,16 @@ placa.
 
 ## 1. Obtenga el firmware
 
-No hay firmware precompilado en las versiones: usted lo compila desde el código
-fuente, con el mismo script que ejecuta la integración continua. Prepare el espacio
+La versión rc.3 no incluye firmware precompilado: se subió a mano. El pipeline de
+versiones compila una imagen del runtime para cada placa del manifiesto en cada
+versión que hace, con el nombre `zplc-runtime-<versión>-<placa>.<extensión>`, con su
+suma de verificación en `SHA256SUMS` y el nivel de evidencia de la placa en las
+notas de la versión. Sus instaladores llevan las imágenes de la Raspberry Pi Pico y
+de la ESP32-S3: en Studio, abra **Project settings**, **Target**, elija la placa, y
+Studio muestra el archivo, su SHA-256, dónde está y los pasos para grabarlo. Studio
+solo las muestra: usted graba (paso 2). El pipeline todavía no ha hecho una versión,
+así que hoy usted compila el firmware desde el código fuente, con el mismo script que
+ejecuta la integración continua. Prepare el espacio
 de trabajo de Zephyr una vez (unos 6 GB, vea
 [Pruebas de firmware](../development/firmware-testing.md#preparación-única)), y
 luego compile la placa:
@@ -90,7 +98,10 @@ Si una placa no vuelve, use el procedimiento de recuperación de su perfil:
 
 1. Abra el proyecto del ejemplo, compílelo (**Build**, **Compile**) y elija
    **Hardware** en la barra de herramientas en lugar de **Simulate**.
-2. Presione **Connect** y elija el puerto serie de la placa. En Linux su usuario
+2. Presione **Connect**. Un diálogo de Studio lista cada puerto serie con su nombre
+   y sus identificadores USB, y marca las placas que conoce. Si la placa no aparece,
+   conéctela y presione **Refresh**. Elija su puerto y presione **Use this port**:
+   Studio usa solo ese puerto, y elegirlo no envía nada a la placa. En Linux su usuario
    necesita el grupo del puerto serie: [Instalar ZPLC Studio](../getting-started/install.md#linux-acceso-al-puerto-serie).
 3. Studio lee la identidad del runtime: placa, perfil y ABI. Un proyecto compilado
    para otra placa se rechaza.

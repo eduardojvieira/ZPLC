@@ -518,7 +518,7 @@ async function openExistingProject(
 
   try {
     // The folder of the window is about to be replaced: the session of the project it holds goes out first.
-    flushSession();
+    void flushSession();
     const dirHandle = await pick();
     if (!isCurrent()) return false;
     if (!dirHandle) return false;
@@ -705,7 +705,7 @@ export const useIDEStore = create<IDEState>((set, get) => ({
     }
 
     try {
-      flushSession();
+      void flushSession();
       const dirHandle = await openDirectoryPicker();
       if (!dirHandle) {
         return false;
@@ -784,7 +784,7 @@ export const useIDEStore = create<IDEState>((set, get) => ({
       return false;
     }
     try {
-      flushSession();
+      void flushSession();
       const dirHandle = await openDirectoryPicker();
       if (!isCurrent() || !dirHandle) return false;
       get().addConsoleEntry({ type: 'info', message: `Copying example to: ${dirHandle.name}...`, source: 'system' });
@@ -855,7 +855,7 @@ export const useIDEStore = create<IDEState>((set, get) => ({
     if (get().hasUnsavedChanges() && !options.discardUnsaved) return false;
 
     // The session of the project goes out before its state is cleared.
-    flushSession();
+    void flushSession();
     resetViewStates();
     set({
       sessionLayout: null,

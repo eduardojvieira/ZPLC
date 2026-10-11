@@ -1,3 +1,4 @@
+import { isErrorCode } from '@zplc/compiler';
 import { isSourceElementId } from '../models/sourceElements';
 import type { ScenarioKind } from '../test-engine';
 import type { CanonicalWorkspaceBuildEvidence, WorkspaceTestArtifact } from '../store/buildEvidence';
@@ -5,6 +6,7 @@ import type { CanonicalWorkspaceBuildEvidence, WorkspaceTestArtifact } from '../
 export type WorkspaceTestResultKind = 'passed' | 'assertion-failed' | 'cancelled' | 'timeout' | 'infrastructure-unavailable' | 'invalid';
 
 export interface WorkspaceTestDiagnostic {
+  /** The stable code of the problem: a code of the compiler's registry for a build, a workspace or test code otherwise. */
   code: string;
   message: string;
   path?: string;
@@ -185,7 +187,8 @@ const DIAGNOSTIC_MESSAGES: Record<string, string> = {
   WORKSPACE_DUPLICATE_SCENARIO: 'Scenario names must be unique.',
   PROJECT_INVALID: 'Project configuration is invalid.',
   PROGRAM_NOT_FOUND: 'Task program could not be resolved.',
-  COMPILATION_FAILED: 'Compilation failed.',
+  // what a compiler message that cannot be shown says instead (a build's error codes are those of the compiler's registry)
+  COMPILER_MESSAGE_UNAVAILABLE: 'Compilation failed.',
   TEST_SCENARIO_INVALID: 'Scenario is invalid.',
   TEST_SCENARIOS_MISSING: 'Workspace has no scenarios.',
   TEST_DUPLICATE_SCENARIO: 'Scenario identifiers must be unique.',
@@ -241,7 +244,7 @@ function safePath(value: unknown): string | undefined {
 
 /** The compiler's own message (CMP-010 stopgap): plain text of 512 characters at most, else the fixed text. */
 function compilerMessage(value: unknown): string {
-  return typeof value === 'string' && value.length >= 1 && value.length <= 512 && ![...value].some((char) => char < ' ' || char === '\u007f') ? value : DIAGNOSTIC_MESSAGES.COMPILATION_FAILED;
+  return typeof value === 'string' && value.length >= 1 && value.length <= 512 && ![...value].some((char) => char < ' ' || char === '\u007f') ? value : DIAGNOSTIC_MESSAGES.COMPILER_MESSAGE_UNAVAILABLE;
 }
 
 function diagnostics(value: unknown): WorkspaceTestDiagnostic[] | null {
@@ -251,7 +254,7 @@ function diagnostics(value: unknown): WorkspaceTestDiagnostic[] | null {
   for (const item of items) {
     const diagnostic = record(item);
     if (!diagnostic || typeof diagnostic.code !== 'string' || diagnostic.code.length === 0) return null;
-    const message = diagnostic.code === 'COMPILATION_FAILED' ? compilerMessage(diagnostic.message) : Object.hasOwn(DIAGNOSTIC_MESSAGES, diagnostic.code) ? DIAGNOSTIC_MESSAGES[diagnostic.code] : undefined;
+    const message = isErrorCode(diagnostic.code) ? compilerMessage(diagnostic.message) : Object.hasOwn(DIAGNOSTIC_MESSAGES, diagnostic.code) ? DIAGNOSTIC_MESSAGES[diagnostic.code] : undefined;
     result.push({ ...(message ? { code: diagnostic.code, message } : INVALID_DIAGNOSTIC), ...(safePath(diagnostic.path) ? { path: safePath(diagnostic.path) } : {}) });
   }
   return result;

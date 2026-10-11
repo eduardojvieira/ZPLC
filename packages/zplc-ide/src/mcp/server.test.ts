@@ -168,9 +168,9 @@ describe('local MCP adapter', () => {
   });
 
   test('LNG-003 carries the element a diagnostic is about, and only an element', () => {
-    const failed = (diagnostic: Record<string, unknown>) => toMcpToolResult('compiler_compile', { ok: false, evidence: { ...evidence('compile'), outcome: 'failed', artifacts: [], diagnostics: [{ code: 'COMPILATION_FAILED', message: 'Nope', path: 'src/main.ld.json', line: 4, column: 1, ...diagnostic }] } });
+    const failed = (diagnostic: Record<string, unknown>) => toMcpToolResult('compiler_compile', { ok: false, evidence: { ...evidence('compile'), outcome: 'failed', artifacts: [], diagnostics: [{ code: 'UNKNOWN_IDENTIFIER', message: 'Nope', path: 'src/main.ld.json', line: 4, column: 1, ...diagnostic }] } });
     for (const element of ['rung:rung_1', 'rung:rung_1/cell:0,2', 'rung:r%201/element:c1', 'block:and_1', 'connection:w3', 'step:s1', 'transition:t1', 'action:a1', 'line:12']) {
-      expect(failed({ element }).structuredContent).toMatchObject({ ok: false, evidence: { diagnostics: [{ code: 'COMPILATION_FAILED', path: 'src/main.ld.json', line: 4, element }] } });
+      expect(failed({ element }).structuredContent).toMatchObject({ ok: false, evidence: { diagnostics: [{ code: 'UNKNOWN_IDENTIFIER', path: 'src/main.ld.json', line: 4, element }] } });
     }
     // an element is a short id of the source: a path, a command or free text is not one, and the result is refused whole
     for (const element of ['/etc/passwd', '../x', 'rung 1', 'block:a b', '', 'x'.repeat(300), 'block:']) {

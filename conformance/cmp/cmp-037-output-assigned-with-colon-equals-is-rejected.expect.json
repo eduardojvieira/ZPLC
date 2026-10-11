@@ -8,6 +8,9 @@
   "lines": [
     11
   ],
+  "codes": [
+    "INVALID_OUTPUT_BINDING"
+  ],
   "messageIncludes": [
     "sum"
   ]

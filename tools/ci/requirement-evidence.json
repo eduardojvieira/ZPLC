@@ -13,8 +13,8 @@
     {"kind":"unit","ref":"packages/zplc-ide/src/conformance/cases.test.ts","test":"parseExpectation: matrix rows, tags and located diagnostics (VF-003, VF-005)"}
   ],
   "VF-004": [
-    {"kind":"unit","ref":"tools/ci/conformance-defects.test.ts","test":"the committed map (VF-004)","partial":true,"note":"133 defects of Current failures of CMP, LNG and RT are listed with the case, the test or the reason that shows each (conformance/defect-map.md); 9 are open, and a defect that is open has no case yet because the behaviour is not fixed (a case that fails would join the expected-failure list, which must end empty): codes of diagnostics (CMP-006, the Tool API reports COMPILATION_FAILED for every error), the per-gesture undo and the keyboard access of the visual editors (LNG-010, LNG-012), the language service (LNG-015), the fail-safe of the processor (RT-019 to RT-021), the shared scheduler core (RT-008), the first-miss latch (RT-014) and the per-scan time latch and the charge of data-dependent opcodes (RT-006)"},
-    {"kind":"unit","ref":"tools/ci/conformance-defects.test.ts","test":"the map of defects and cases (VF-004)","partial":true,"note":"133 defects of Current failures of CMP, LNG and RT are listed with the case, the test or the reason that shows each (conformance/defect-map.md); 9 are open, and a defect that is open has no case yet because the behaviour is not fixed (a case that fails would join the expected-failure list, which must end empty): codes of diagnostics (CMP-006, the Tool API reports COMPILATION_FAILED for every error), the per-gesture undo and the keyboard access of the visual editors (LNG-010, LNG-012), the language service (LNG-015), the fail-safe of the processor (RT-019 to RT-021), the shared scheduler core (RT-008), the first-miss latch (RT-014) and the per-scan time latch and the charge of data-dependent opcodes (RT-006)"}
+    {"kind":"unit","ref":"tools/ci/conformance-defects.test.ts","test":"the committed map (VF-004)","partial":true,"note":"133 defects of Current failures of CMP, LNG and RT are listed with the case, the test or the reason that shows each (conformance/defect-map.md); 8 are open, and a defect that is open has no case yet because the behaviour is not fixed (a case that fails would join the expected-failure list, which must end empty): the per-gesture undo and the keyboard access of the visual editors (LNG-010, LNG-012), the language service (LNG-015), the fail-safe of the processor (RT-019 to RT-021), the shared scheduler core (RT-008), the first-miss latch (RT-014) and the per-scan time latch and the charge of data-dependent opcodes (RT-006)"},
+    {"kind":"unit","ref":"tools/ci/conformance-defects.test.ts","test":"the map of defects and cases (VF-004)","partial":true,"note":"133 defects of Current failures of CMP, LNG and RT are listed with the case, the test or the reason that shows each (conformance/defect-map.md); 8 are open, and a defect that is open has no case yet because the behaviour is not fixed (a case that fails would join the expected-failure list, which must end empty): the per-gesture undo and the keyboard access of the visual editors (LNG-010, LNG-012), the language service (LNG-015), the fail-safe of the processor (RT-019 to RT-021), the shared scheduler core (RT-008), the first-miss latch (RT-014) and the per-scan time latch and the charge of data-dependent opcodes (RT-006)"}
   ],
   "VF-005": [
     {"kind":"unit","ref":"packages/zplc-ide/src/conformance/cases.test.ts","test":"parseExpectation: matrix rows, tags and located diagnostics (VF-003, VF-005)"},
@@ -190,12 +190,21 @@
     {"kind":"conformance","ref":"conformance/cmp/cmp-006-unknown-identifier-in-function.expect.json","test":"CMP-006 an error in the body of a function is reported at its line"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-006-unknown-member-position.expect.json","test":"CMP-006 an unknown member of a function block is reported at its own line"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-006-var-access-is-rejected.expect.json","test":"CMP-006 a VAR_ACCESS block is rejected"},
+    {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/check.test.ts","test":"the code of a checked error is the one the build reports (CMP-006)"},
     {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/compiler.test.ts","test":"positions a generation error that has no position of its own at its statement (CMP-006)"},
+    {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/error-codes.test.ts","test":"each code is provoked by a build, with its position and its message (CMP-006)"},
+    {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/error-codes.test.ts","test":"errors that no source provokes (CMP-006)"},
+    {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/error-codes.test.ts","test":"the registry of error codes (CMP-006)"},
     {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/names.test.ts","test":"PERSISTENT is rejected where it is written (CMP-006)"},
     {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/semantic-errors.test.ts","test":"rejects an unknown member of a function block instance (position comes with CMP-006)"},
     {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/syntax.test.ts","test":"compile: every independent error, each positioned (CMP-006, CMP-007)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/cli/toolApi.test.ts","test":"returns every independent error of a source, each with its position (CMP-006, CMP-007)"},
-    {"kind":"unit","ref":"packages/zplc-ide/src/compiler/communication-tags.test.ts","test":"keeps every line of the source where it was, so a diagnostic names the line the author sees (CMP-006)"}
+    {"kind":"unit","ref":"packages/zplc-ide/src/compiler/communication-tags.test.ts","test":"keeps every line of the source where it was, so a diagnostic names the line the author sees (CMP-006)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/compiler/languageWorkflow.test.ts","test":"refuses a located variable where the board has no channel, with the code NO_BOARD_CHANNEL (IO-003, CMP-006)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/compiler/languageWorkflow.test.ts","test":"refuses a source that does not translate, with the code TRANSLATION_FAILED and the element it is about (LNG-003, CMP-006)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/langsvc/markers.test.ts","test":"gives the marker the stable code of the problem, the one a build reports (CMP-006)"},
+    {"kind":"unit","ref":"tools/ci/generate-error-codes.test.ts","test":"the generated list of error codes (CMP-006)"},
+    {"kind":"unit","ref":"tools/docs/generate_diagnostic_codes.test.ts","test":"CMP-006 diagnostic code reference: generated from the registry of the compiler"}
   ],
   "CMP-007": [
     {"kind":"conformance","ref":"conformance/cmp/cmp-007-declarations-and-statements.expect.json","test":"CMP-007 errors of declarations and of statements are reported together"},
@@ -752,7 +761,9 @@
     {"kind":"conformance","ref":"conformance/cmp/cmp-043-program-that-fills-the-region.expect.json","test":"CMP-043 a program that fills the WORK memory of the target exactly builds and runs"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-043-programs-share-the-region.expect.json","test":"CMP-043 two programs of 300 bytes each have their own storage in the one region"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-043-three-strings.expect.json","test":"CMP-043 a program with three STRING variables"},
+    {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/error-codes.test.ts","test":"the over-size failures state what is required, what is available and what takes the most (CMP-043)"},
     {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/unit.test.ts","test":"memory is limited by the target profile only (CMP-043)"},
+    {"kind":"unit","ref":"tools/docs/generate_diagnostic_codes.test.ts","test":"states the over-size failures, which name the bytes required, the bytes available and the largest consumers (CMP-043)"},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"17 Large program, and one over the limit","partial":true}
   ],
   "CMP-044": [
@@ -953,6 +964,7 @@
     {"kind":"unit","ref":"packages/zplc-ide/src/cli/visualDiagnostics.test.ts","test":"LNG-003 an FBD diagnostic names the block or the wire"},
     {"kind":"unit","ref":"packages/zplc-ide/src/cli/visualDiagnostics.test.ts","test":"LNG-003 an IL diagnostic names its line"},
     {"kind":"unit","ref":"packages/zplc-ide/src/cli/visualDiagnostics.test.ts","test":"LNG-003 and LNG-026 an SFC diagnostic names the step, the transition or the action"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/compiler/languageWorkflow.test.ts","test":"refuses a source that does not translate, with the code TRANSLATION_FAILED and the element it is about (LNG-003, CMP-006)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/components/workspaceTestPresentation.test.ts","test":"carries the element of a diagnostic, when it is an element id, and drops it otherwise (LNG-003)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/conformance/cases.test.ts","test":"LNG-003 asserts the element each diagnostic of a rejected diagram or IL program is about, one for each diagnostic"},
     {"kind":"unit","ref":"packages/zplc-ide/src/editors/diagnosticElement.test.ts","test":"LNG-003 Problems selects the element that the build named"},
@@ -1435,6 +1447,7 @@
     {"kind":"unit","ref":"packages/zplc-ide/src/boards/boardBuild.test.ts","test":"mapping a variable to a channel the board does not have is a build error (IO-003)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/boards/boardIoMapping.test.ts","test":"the rows of the I/O mapping editor against the channels of the board (IO-003)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/boards/ioAdmission.test.ts","test":"a located variable the board has no channel for is a build error (IO-003)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/compiler/languageWorkflow.test.ts","test":"refuses a located variable where the board has no channel, with the code NO_BOARD_CHANNEL (IO-003, CMP-006)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/config/boardProfiles.test.ts","test":"board I/O descriptions in the catalogue (IO-001, IO-003, IO-009)"},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"40 The I/O mapping editor lists the channels of the board and flags a row it does not have","partial":true}
   ],
@@ -1742,7 +1755,7 @@
   "IDE-001": [
     {"kind":"unit","ref":"packages/zplc-ide/electron/ipcRegistry.test.ts","test":"project files over the IPC boundary (IDE-001, IDE-016)"},
     {"kind":"unit","ref":"packages/zplc-ide/electron/ipcRegistry.test.ts","test":"register the folder of the window by its id alone, as <folder>/zplc.json, and refuse any other id (IDE-001)"},
-    {"kind":"unit","ref":"packages/zplc-ide/electron/ipcRegistry.test.ts","test":"workspace tests, candidate review and the AI provider (IDE-001, IDE-017)"},
+    {"kind":"unit","ref":"packages/zplc-ide/electron/ipcRegistry.test.ts","test":"workspace tests, candidate review and the AI provider (IDE-001, IDE-017, IDE-030)"},
     {"kind":"unit","ref":"packages/zplc-ide/electron/projectFiles.test.ts","test":"the root held for the main process (IDE-001)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/components/workspaceTestPresentation.test.ts","test":"builds a project the host can link by itself without asking for a zplc.json first (IDE-001)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/utils/workspaceTestLink.test.ts","test":"linking the open project to its workspace without choosing a file (IDE-001)"},
@@ -1808,6 +1821,7 @@
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"21 Preferences apply and persist per user"}
   ],
   "IDE-008": [
+    {"kind":"unit","ref":"packages/zplc-ide/electron/appLifecycle.test.ts","test":"application lifecycle (IDE-008)"},
     {"kind":"unit","ref":"packages/zplc-ide/electron/ipcRegistry.test.ts","test":"recovery and session over the IPC boundary (IDE-006, IDE-008)"},
     {"kind":"unit","ref":"packages/zplc-ide/electron/projectFiles.test.ts","test":"recent projects (IDE-008)"},
     {"kind":"unit","ref":"packages/zplc-ide/electron/projectFilesProtocol.test.ts","test":"recent project message schema (IDE-008)"},
@@ -1880,11 +1894,17 @@
     {"kind":"unit","ref":"packages/zplc-ide/electron/ipcRegistry.test.ts","test":"safety check over the IPC boundary (IDE-017)"},
     {"kind":"unit","ref":"packages/zplc-ide/electron/ipcRegistry.test.ts","test":"the contract and the handler table (IDE-017)"},
     {"kind":"unit","ref":"packages/zplc-ide/electron/ipcRegistry.test.ts","test":"toolchain inspection and firmware build (IDE-017, IDE-027)"},
-    {"kind":"unit","ref":"packages/zplc-ide/electron/ipcRegistry.test.ts","test":"workspace tests, candidate review and the AI provider (IDE-001, IDE-017)"},
+    {"kind":"unit","ref":"packages/zplc-ide/electron/ipcRegistry.test.ts","test":"workspace tests, candidate review and the AI provider (IDE-001, IDE-017, IDE-030)"},
     {"kind":"unit","ref":"packages/zplc-ide/electron/preload.test.ts","test":"preload bridge (IDE-017)"},
     {"kind":"unit","ref":"packages/zplc-ide/electron/spawnAllowList.test.ts","test":"the spawn allow-list (IDE-017)"},
     {"kind":"unit","ref":"packages/zplc-ide/electron/toolWorkerHost.test.ts","test":"the worker command schema (IDE-012, IDE-017)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/cli/firmwareBuildRunner.test.ts","test":"never starts a process for a board that is not a manifest board id (IDE-017)"}
+  ],
+  "IDE-018": [
+    {"kind":"unit","ref":"packages/zplc-ide/electron/serialPortBroker.test.ts","test":"serial port broker (IDE-018)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/components/SerialPortDialog.test.tsx","test":"serial port dialog (IDE-018)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/utils/serialPortChoice.test.ts","test":"serial port choice (IDE-018)"},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"42 Choosing a serial port is a dialog of the application","partial":true}
   ],
   "IDE-019": [
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"18 Force an input while stopped at a breakpoint","partial":true},
@@ -1951,6 +1971,16 @@
   "IDE-029": [
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"18 Force an input while stopped at a breakpoint","partial":true},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"8 Force an input and release it","partial":true}
+  ],
+  "IDE-030": [
+    {"kind":"unit","ref":"packages/zplc-ide/electron/aiProvider.test.ts","test":"optional AI provider (IDE-030)"},
+    {"kind":"unit","ref":"packages/zplc-ide/electron/ipcRegistry.test.ts","test":"workspace tests, candidate review and the AI provider (IDE-001, IDE-017, IDE-030)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/cli/changeSet.test.ts","test":"isolated candidate change sets (IDE-030)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/components/aiProviderPresentation.test.ts","test":"AI provider presenters (IDE-030)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/components/workspaceTestPresentation.test.ts","test":"presentCandidateChangeSetReview (IDE-030)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/mcp/deviceLink.test.ts","test":"IDE-030: the tools an assistant can call are a closed list that names no physical operation (AGENTS.md rule 7)"},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"43 A change is reviewed as a difference and saved by a person, and Studio works without the assistant","partial":true},
+    {"kind":"manual","ref":"packages/zplc-ide/scripts/journeys.ts","test":"43 A change is reviewed as a difference and saved by a person, and Studio works without the assistant","partial":true,"note":"The assistant's own proposal is not driven end to end by a journey: the provider keeps its key in the secret store of the system, which a headless Linux host does not have. A proposal takes the road that this journey drives (the review of the Changes tab, then the person's own save); the boundary of the provider (an inert answer, no tools, no field that names a device) is held by electron/aiProvider.test.ts and electron/aiDeviceLink.test.ts, and the closed list of MCP tools by src/mcp/deviceLink.test.ts."}
   ],
   "IDE-031": [
     {"kind":"unit","ref":"packages/zplc-ide/src/cli/scenarioParity.test.ts","test":"a project run through the Tool API, the CLI, the MCP tools and Studio gives one result (IDE-031)"}
@@ -2097,6 +2127,7 @@
     {"kind":"unit","ref":"tools/hil/test_hil_chain.py","test":"DryRunTests","partial":true,"note":"the chain runs on fake devices with a scripted person and refuses without an interactive terminal; it has not run on a board, and D-08 is open; run by the typescript job of ci.yml, step 'Test the HIL tools and the HIL package', on fake devices and the native runtime; no serial port is opened"}
   ],
   "HIL-013": [
+    {"kind":"unit","ref":"scripts/release/firmware-images.test.ts","test":"never accepts the HIL trace, from the configuration or from the options the image reports (HIL-013)"},
     {"kind":"unit","ref":"tools/hil/test_hil_chain.py","test":"BuildCommandAndTraceTests","note":"the chain prints and records the build command, and fails when the image's trace option is not what the run asked for; run by the typescript job of ci.yml, step 'Test the HIL tools and the HIL package', on fake devices and the native runtime; no serial port is opened"},
     {"kind":"unit","ref":"tools/hil/test_hil_trace_profile.py","test":"ProfileTests","note":"no shipped board profile sets CONFIG_ZPLC_HIL_DEBUG=y and the overlay does (tools/hil/validate_hil_trace_profile.py, run by the docs-and-truth job of ci.yml); the Pico image built with the overlay differs from the release one in its options hash and lists HIL_DEBUG=y, and the image reports its options (REL-023)"}
   ],
@@ -2111,7 +2142,15 @@
   ],
   "REL-003": [
     {"kind":"unit","ref":"packages/zplc-ide/scripts/release-config.test.ts","test":"electron-builder.yml Windows signing (REL-003, REL-038)","partial":true,"note":"asserts the parsed electron-builder and workflow configuration, not the produced installer; its own header says a hosted release run is the proof (VF-021)"},
-    {"kind":"unit","ref":"packages/zplc-ide/scripts/release-config.test.ts","test":"the workflow reads no secret but the job token, and every platform verifies the bundle it made (REL-003)"}
+    {"kind":"unit","ref":"packages/zplc-ide/scripts/release-config.test.ts","test":"the workflow reads no secret but the job token, and every platform verifies the bundle it made (REL-003)"},
+    {"kind":"unit","ref":"tools/docs/check_capability_claims.test.ts","test":"flags a channel or a signature that does not exist, and not the sentence that limits it (REL-028, REL-003)"}
+  ],
+  "REL-005": [
+    {"kind":"unit","ref":"packages/zplc-ide/scripts/release-config.test.ts","test":"the DMG and the ZIP are published for each macOS architecture (REL-005)","partial":true,"note":"asserts the parsed electron-builder and workflow configuration, not the produced installer or a run of the workflow; only a hosted release run proves it (VF-021). The first run of a downloaded DMG on a real Mac, Apple silicon and Intel, is manual evidence of the release checklist (RELEASING.md step 6) and is not recorded."},
+    {"kind":"unit","ref":"tools/docs/install_and_status_pages.test.ts","test":"says why the macOS app is not notarized, and the first-run steps in the order the system shows them (REL-005)","partial":true,"note":"covers the install page half (the steps in order, not notarized and why, in English and Spanish); the DMG and the ZIP of each architecture are produced only by the hosted macOS jobs, and the steps were not followed on a real Mac"}
+  ],
+  "REL-006": [
+    {"kind":"unit","ref":"tools/docs/install_and_status_pages.test.ts","test":"no curl | sh installer is recommended or offered (REL-006)"}
   ],
   "REL-038": [
     {"kind":"unit","ref":"packages/zplc-ide/scripts/release-config.test.ts","test":"Windows installers carry unsigned in their variant until a channel is live (REL-038)","partial":true,"note":"asserts the parsed electron-builder and workflow configuration, not the produced installer; its own header says a hosted release run is the proof (VF-021)"},
@@ -2123,6 +2162,16 @@
     {"kind":"unit","ref":"packages/zplc-ide/scripts/packaged-content.test.ts","test":"the Linux desktop identity of the unpacked package (REL-011)"},
     {"kind":"unit","ref":"packages/zplc-ide/scripts/release-config.test.ts","test":"Linux packages use electron-builder defaults and are installed in clean containers (REL-011)","partial":true,"note":"asserts the parsed electron-builder and workflow configuration, not the produced installer; its own header says a hosted release run is the proof (VF-021)"},
     {"kind":"unit","ref":"packages/zplc-ide/scripts/release-config.test.ts","test":"the Linux desktop identity of the package follows the executable (REL-011)"}
+  ],
+  "REL-012": [
+    {"kind":"unit","ref":"packages/zplc-ide/scripts/release-config.test.ts","test":"the AppImage stays published beside the .deb and the .rpm (REL-012)","partial":true,"note":"asserts the parsed electron-builder and workflow configuration, not the produced installer or a run of the workflow; only a hosted release run proves it (VF-021)"},
+    {"kind":"unit","ref":"tools/docs/install_and_status_pages.test.ts","test":"recommends the .deb or the .rpm before the AppImage, and lists the AppImage prerequisites (REL-012)","partial":true,"note":"covers the documentation half; the AppImage is built and launched only by the hosted Linux jobs, and its prerequisites (FUSE 2, the Chromium sandbox on Ubuntu 24.04) were not tried with ZPLC"}
+  ],
+  "REL-013": [
+    {"kind":"unit","ref":"packages/zplc-ide/scripts/linux-package-files.test.ts","test":"the udev rule inside a .deb (REL-013)","partial":true,"note":"reads stand-in packages made with ar and tar (and, where rpmbuild exists, an .rpm made with it); the real packages are read by the release workflow after electron-builder"},
+    {"kind":"unit","ref":"packages/zplc-ide/scripts/release-config.test.ts","test":"the .deb and the .rpm install the udev rule of the boards (REL-013)","partial":true,"note":"asserts the parsed electron-builder and workflow configuration, not the produced installer or a run of the workflow; only a hosted release run proves it (VF-021). The package reader (packages/zplc-ide/scripts/linux-package-files.ts, a step of build-linux) was run on the .deb and the .rpm that electron-builder made on this Linux machine and found the generated rule in both; the installation in clean containers runs only on hosted runners."},
+    {"kind":"unit","ref":"scripts/release/udev-rules.test.ts","test":"the udev rule (REL-013)"},
+    {"kind":"unit","ref":"tools/docs/install_and_status_pages.test.ts","test":"names the udev rule the packages install, the boards it covers and how to apply it without a reboot (REL-013)"}
   ],
   "REL-015": [
     {"kind":"unit","ref":"packages/zplc-ide/scripts/release-config.test.ts","test":"release.yml publishes each platform independently and only as a draft (REL-015, REL-016)","partial":true,"note":"asserts the parsed electron-builder and workflow configuration, not the produced installer; its own header says a hosted release run is the proof (VF-021)"},
@@ -2161,9 +2210,37 @@
   "REL-020": [
     {"kind":"unit","ref":"packages/zplc-ide/scripts/release-config.test.ts","test":"names the installer and the portable executable by the REL-020 variants, with unsigned appended","partial":true,"note":"asserts the parsed electron-builder and workflow configuration, not the produced installer; its own header says a hosted release run is the proof (VF-021)"}
   ],
+  "REL-021": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/components/UpdateNotice.test.tsx","test":"the update notice (REL-021)","partial":true,"note":"renders the notice to static markup; the wiring in App.tsx is not exercised by a test or a journey"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/ipc/updateNotice.test.ts","test":"the check is optional, and says nothing when it cannot tell (REL-021)","partial":true,"note":"proves the check with a fake fetch (default off, one fixed address, silent when offline or refused); the effect in App.tsx that runs it at start, and the notice in the real window, are not exercised by a test or a journey"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/ipc/updateNotice.test.ts","test":"the notice (REL-021)","partial":true,"note":"proves the content, the dismissal per release and the storage; the effect in App.tsx that runs the check at start, and the notice in the real window, are not exercised by a test or a journey"}
+  ],
+  "REL-022": [
+    {"kind":"unit","ref":"packages/zplc-ide/scripts/release-config.test.ts","test":"the release builds the firmware of every board and ships it in its own chain (REL-022, REL-025)","partial":true,"note":"asserts the parsed electron-builder and workflow configuration, not the produced installer or a run of the workflow; only a hosted release run proves it (VF-021). The script that the jobs run was run for real on this machine, for all seven boards of the manifest, from a clean checkout (scripts/release/firmware-images.ts build): the images, their sizes and checksums are in the report of that run, and no release run has produced the set."},
+    {"kind":"unit","ref":"scripts/release/firmware-images.test.ts","test":"how an image is flashed, from the build that made it (REL-022, REL-025)"},
+    {"kind":"unit","ref":"scripts/release/firmware-images.test.ts","test":"one board (REL-022)"},
+    {"kind":"unit","ref":"scripts/release/firmware-images.test.ts","test":"the evidence level of a board (REL-022)"},
+    {"kind":"unit","ref":"scripts/release/firmware-images.test.ts","test":"the files of each board (REL-022)"},
+    {"kind":"unit","ref":"scripts/release/firmware-images.test.ts","test":"the release set (REL-022)"},
+    {"kind":"unit","ref":"scripts/release/firmware-images.test.ts","test":"what a build says (REL-022, REL-023)"},
+    {"kind":"unit","ref":"scripts/release/release-notes.test.ts","test":"labels a firmware image with the evidence level of its board and claims no launch (REL-022)"},
+    {"kind":"unit","ref":"scripts/release/release-notes.test.ts","test":"says which firmware job to read when the run published no firmware image (REL-022)"},
+    {"kind":"unit","ref":"scripts/release/run-results.test.ts","test":"labels a firmware image with the evidence level of its board, from the manifest that travels with it (REL-022)"}
+  ],
   "REL-023": [
+    {"kind":"unit","ref":"scripts/release/firmware-images.test.ts","test":"what a build says (REL-022, REL-023)"},
     {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_fw_identity.c","test":"REL-023: the identity a firmware image or host runtime reports (version, commit, board, ABI, options)."},
     {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_native_runtime_session.c","test":"REL-023: the runtime says which build it is, so Studio can compare it with its own version."}
+  ],
+  "REL-025": [
+    {"kind":"unit","ref":"packages/zplc-ide/electron/firmwareImages.test.ts","test":"the firmware images of an installation (REL-025)"},
+    {"kind":"unit","ref":"packages/zplc-ide/scripts/packaged-content.test.ts","test":"the firmware images of the package (REL-025)","partial":true,"note":"reads stand-in resources; the unpacked Linux package that electron-builder made on this machine holds the manifest and the two learner images (packaged-content.ts with ZPLC_REQUIRE_FIRMWARE=1, and the packaged smoke through the preload bridge); the macOS and Windows installers are made only by the hosted jobs"},
+    {"kind":"unit","ref":"packages/zplc-ide/scripts/release-config.test.ts","test":"the release builds the firmware of every board and ships it in its own chain (REL-022, REL-025)","partial":true,"note":"asserts the parsed electron-builder and workflow configuration, not the produced installer: the staging of the two learner images and the check that the package holds them run only in the hosted desktop jobs. On this machine the unpacked Linux package built with the staged images held them and the packaged application listed both through the preload bridge."},
+    {"kind":"unit","ref":"packages/zplc-ide/src/boards/firmwareImage.test.ts","test":"the flashing steps (REL-025)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/boards/firmwareImage.test.ts","test":"the image of the selected board (REL-025)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/components/settings/FirmwareImageCard.test.tsx","test":"the firmware image card (REL-025)"},
+    {"kind":"unit","ref":"scripts/release/firmware-images.test.ts","test":"how an image is flashed, from the build that made it (REL-022, REL-025)"},
+    {"kind":"unit","ref":"scripts/release/firmware-images.test.ts","test":"the copy that the installers carry (REL-025)"}
   ],
   "REL-026": [
     {"kind":"unit","ref":"scripts/release/binaries.test.ts","test":"the release binaries (REL-026)"},
@@ -2177,6 +2254,10 @@
     {"kind":"unit","ref":"scripts/release/run-results.test.ts","test":"classifyAsset (REL-027)"},
     {"kind":"unit","ref":"scripts/release/run-results.test.ts","test":"collectRunResults (REL-027)"},
     {"kind":"unit","ref":"scripts/release/run-results.test.ts","test":"countJunit (REL-027)"}
+  ],
+  "REL-028": [
+    {"kind":"unit","ref":"tools/docs/check_capability_claims.test.ts","test":"flags a channel or a signature that does not exist, and not the sentence that limits it (REL-028, REL-003)"},
+    {"kind":"unit","ref":"tools/docs/install_and_status_pages.test.ts","test":"opens with a Download section: one line per system with its first-run note, and no channel that does not exist (REL-028)"}
   ],
   "REL-029": [
     {"kind":"unit","ref":"scripts/release/releasing-md.test.ts","test":"the checklist of a release (REL-029)"}
@@ -2195,6 +2276,9 @@
     {"kind":"unit","ref":"scripts/release/release-records.test.ts","test":"what a version bump edits (REL-031, REL-038)"},
     {"kind":"unit","ref":"scripts/release/resolve-release.test.ts","test":"prerelease tags continue the rc sequence (REL-031)"}
   ],
+  "REL-032": [
+    {"kind":"unit","ref":"packages/zplc-ide/scripts/release-config.test.ts","test":"keeps the reproducibility check and lets no release job wait for it (REL-032)","partial":true,"note":"asserts the parsed electron-builder and workflow configuration, not the produced installer or a run of the workflow; only a hosted release run proves it (VF-021). The check itself (scripts/verify-reproducible-linux-payload.ts) is run by CI tests of its comparison logic and by the job on a hosted Linux runner."}
+  ],
   "REL-034": [
     {"kind":"unit","ref":"packages/zplc-ide/scripts/packaged-content.test.ts","test":"packaged content (REL-034)"},
     {"kind":"unit","ref":"packages/zplc-ide/scripts/packaged-content.test.ts","test":"the asar reader (REL-034)"},
@@ -2202,6 +2286,10 @@
   ],
   "REL-035": [
     {"kind":"unit","ref":"scripts/release/releasing-md.test.ts","test":"the external services of the release (REL-035)"}
+  ],
+  "REL-036": [
+    {"kind":"unit","ref":"packages/zplc-ide/scripts/release-config.test.ts","test":"every published installer format is installed or mounted and launched on its own system before the draft (REL-036)","partial":true,"note":"asserts the parsed electron-builder and workflow configuration, not the produced installer or a run of the workflow; only a hosted release run proves it (VF-021). The steps never ran: the AppImage in a container, the DMG mount, the ZIP, the NSIS silent install and the portable launch need hosted macOS and Windows runners and Docker. On this Linux machine, outside a container, the AppImage that electron-builder made was extracted and its application launched through ZPLC_PACKAGED_EXECUTABLE with the packaged smoke (the Chromium sandbox on, no setuid helper)."},
+    {"kind":"unit","ref":"packages/zplc-ide/scripts/run-packaged-desktop-smoke.test.ts","test":"names an installed application by its executable, and refuses a missing file, a directory and a link (REL-036)","partial":true,"note":"checks the executable that an installer or an archive left is a real file; the installation and the launch happen only on hosted runners"}
   ],
   "DOC-002": [
     {"kind":"unit","ref":"tools/docs/docs_structure.test.ts","test":"docs structure: the sidebar is organised by reader intent (DOC-002)"}

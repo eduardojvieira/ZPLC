@@ -5,6 +5,9 @@
   "lines": [
     1
   ],
+  "codes": [
+    "INVALID_INHERITANCE"
+  ],
   "messageIncludes": [
     "Parent"
   ]

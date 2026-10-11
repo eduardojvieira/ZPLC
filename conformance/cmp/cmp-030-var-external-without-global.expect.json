@@ -5,6 +5,9 @@
   "lines": [
     2
   ],
+  "codes": [
+    "INVALID_EXTERNAL_DECLARATION"
+  ],
   "messageIncludes": [
     "VAR_EXTERNAL",
     "Missing"

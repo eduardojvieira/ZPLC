@@ -47,6 +47,19 @@ describe('session store (IDE-008)', () => {
     expect((await stat(join(userData, SESSION_DIRECTORY))).mode & 0o777).toBe(0o700);
   });
 
+  test('settles once the saves accepted so far are on the disk, whether or not anybody awaited them (the process waits on it before it exits)', async () => {
+    const userData = await fixture();
+    const store = createSessionStore(userData);
+    // the closing window's message: accepted, and nobody holds its promise
+    const first = store.save(PROJECT, state({ tabs: [{ path: 'a.st', line: 12, column: 1, scrollTop: 0 }], activePath: 'a.st' }));
+    const refused = store.save(PROJECT, { not: 'a session' });
+    void first.catch(() => undefined);
+    void refused.catch(() => undefined);
+    await store.settled();
+    expect(JSON.parse(await readFile(fileOf(userData, PROJECT), 'utf8')).tabs[0].line).toBe(12);
+    await expect(createSessionStore(await fixture()).settled()).resolves.toBeUndefined();
+  });
+
   test('refuses to store anything that is not exactly a session document, and writes nothing', async () => {
     const userData = await fixture();
     const store = createSessionStore(userData);

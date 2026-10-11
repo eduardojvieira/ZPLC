@@ -3,5 +3,6 @@
   "title": "assigning an INT expression to a BOOL is rejected",
   "matrix": ["functions.implicit-widening-conversion"],
   "build": "fails",
-  "lines": [6]
+  "lines": [6],
+  "codes": ["TYPE_MISMATCH"]
 }

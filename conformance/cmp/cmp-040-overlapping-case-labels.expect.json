@@ -3,5 +3,6 @@
   "title": "overlapping CASE labels are rejected",
   "matrix": ["statements.case"],
   "build": "fails",
-  "lines": [8]
+  "lines": [8],
+  "codes": ["OVERLAPPING_CASE_LABELS"]
 }

@@ -20,6 +20,29 @@ systems ask you to confirm before the first launch. No paid certificate is used.
 Do not use ZPLC to control machinery: [Safety and limitations](../safety-and-limitations.md).
 :::
 
+## Download
+
+Every installer is a file of a [GitHub release](https://github.com/eduardojvieira/ZPLC/releases),
+which is the only channel that exists today. Find the line of your system, check
+the file against `SHA256SUMS` ([Verify the download](#verify-the-download)) and
+open it:
+
+- **Windows:** the `setup-unsigned.exe` installer, or the `portable-unsigned.exe`
+  file. It is unsigned: Windows shows **Windows protected your PC**; choose **More
+  info**, then **Run anyway**. Where Smart App Control is on, it blocks the file
+  and offers no override.
+- **macOS:** the `.dmg`, or the `.zip`, for Apple silicon (`arm64`) or Intel
+  (`x64`). The app is signed only ad hoc and is not notarized, because
+  notarization needs a paid Apple account that this project does not use: macOS
+  says it could not verify the app; choose **Done**, then **System Settings**,
+  **Privacy & Security**, **Open Anyway**.
+- **Linux:** the `.deb` (Debian, Ubuntu) or the `.rpm` (Fedora), for `x64` or
+  `arm64`; the AppImage only when neither fits. They are unsigned and nothing asks
+  you, so the checksum is your check. The packages install the udev rule for the
+  boards; the AppImage needs FUSE 2.
+
+The steps of each system are under [First launch](#first-launch).
+
 ## Channels
 
 | Channel | State | What it is |
@@ -45,7 +68,7 @@ you can check as shown [below](#verify-the-download). The notes of every release
 list the signing state of each file, and say so when a check of that run did not
 pass.
 
-## Download
+## Files of a release
 
 Open the [releases page](https://github.com/eduardojvieira/ZPLC/releases) and
 choose a release whose name starts with `ZPLC v2.0`. While 2.0 is a prerelease,
@@ -111,7 +134,7 @@ neither changes what Windows or macOS ask you at the first launch.
 ### macOS
 
 1. Open the DMG, drag **ZPLC IDE** to Applications and open it.
-2. macOS says it could not verify the app. Choose **Done**, not **Move to Trash**.
+2. macOS says it could not verify the app, because the app is not notarized: notarization needs a paid Apple Developer Program membership, and this project uses no paid service. Choose **Done**, not **Move to Trash**.
 3. Open **System Settings**, then **Privacy & Security**. In the **Security** section, choose **Open Anyway** next to the ZPLC IDE message, confirm, and enter your password. The button stays available for about an hour after the failed attempt. See [Apple's instructions](https://support.apple.com/guide/mac-help/open-a-mac-app-from-an-unknown-developer-mh40616/mac).
 
 If macOS reports that the app is damaged and offers only **Move to Trash**, the
@@ -124,29 +147,69 @@ xattr -dr com.apple.quarantine "/Applications/ZPLC IDE.app"
 
 ### Linux
 
-```bash
-# Fedora and the RHEL family (RPM)
-sudo dnf install ./ZPLC.IDE-2.0.0-rc.3-linux-x86_64.rpm
+Install the `.deb` or the `.rpm` first. The package manager brings the
+libraries the application needs, installs the [udev rule of the boards](#linux-serial-port-access)
+and removes everything when you uninstall. Use the AppImage only when neither
+package fits your distribution.
 
-# Ubuntu 22.04 (DEB)
+```bash
+# Debian, Ubuntu and their derivatives (DEB)
 sudo apt install ./ZPLC.IDE-2.0.0-rc.3-linux-amd64.deb
 
-# Any distribution (AppImage)
-chmod +x ZPLC.IDE-2.0.0-rc.3-linux-x86_64.AppImage
-./ZPLC.IDE-2.0.0-rc.3-linux-x86_64.AppImage
+# Fedora and the RHEL family (RPM)
+sudo dnf install ./ZPLC.IDE-2.0.0-rc.3-linux-x86_64.rpm
 ```
 
 The `.deb` of rc.3 declares dependencies that current Debian and Ubuntu releases
-no longer provide, so it installs only on Ubuntu 22.04: use the AppImage on any
-other Debian-based system. The pipeline that builds the later releases installs
-the `.deb` and the `.rpm` in clean containers before it publishes them, and the
-release notes say whether that check passed.
+no longer provide, so it installs only on Ubuntu 22.04. The pipeline that builds
+the later releases installs the `.deb` on Debian 13 and Ubuntu 24.04 and the
+`.rpm` on Fedora, in clean containers, before it publishes them, and the release
+notes say whether that check passed.
+
+The AppImage is published for every release and needs nothing installed, with
+these prerequisites:
+
+- FUSE 2 (`libfuse2` or `libfuse2t64` on Debian and Ubuntu, `fuse-libs` on
+  Fedora). Without it, run the file with `--appimage-extract-and-run`, an option
+  of the AppImage runtime.
+- On Ubuntu 24.04 and later, AppArmor restricts the Chromium sandbox of an
+  application that is not installed by a package. Neither this nor FUSE was tried
+  with ZPLC: this is why the packages come first.
+- It installs nothing outside its own file, so it installs no udev rule: use the
+  group of [serial port access](#linux-serial-port-access).
+
+```bash
+chmod +x ZPLC.IDE-2.0.0-rc.3-linux-x86_64.AppImage
+./ZPLC.IDE-2.0.0-rc.3-linux-x86_64.AppImage
+```
 
 ## Linux: serial port access
 
 Studio opens a serial port only when you connect a board yourself. On Linux a
 board that shows up as `/dev/ttyACM0` or `/dev/ttyUSB0` belongs to a group, and
-your user has to be a member of it:
+your user has to be allowed to open it.
+
+**The `.deb` and the `.rpm` do this for you** for the boards whose USB identifier
+the project has recorded. They install `/usr/lib/udev/rules.d/70-zplc-boards.rules`,
+which tells `systemd-logind` to give the user who is logged in at the machine
+access to those serial devices while the session lasts, with no group and no
+reboot. The rule is generated from the project's list of board USB identifiers
+(`tools/hil/usb-ids.json`), so it covers exactly the boards that list names. Today
+that is the two RP2040 boards, Raspberry Pi Pico and Waveshare RP2040-Zero
+(`2e8a:000a`); the file lists the boards that have no recorded identifier, such as
+the ESP32-S3-DevKitC-1, and they need the group below.
+
+To apply the rule to a board that is already plugged in, without rebooting,
+reload the rules and replay the device events, or unplug the board and plug it in
+again:
+
+```bash
+sudo udevadm control --reload-rules
+sudo udevadm trigger --subsystem-match=tty --action=add
+getfacl /dev/ttyACM0   # an entry for your user means the rule applied
+```
+
+**The group, for the AppImage and for the boards the rule does not name:**
 
 ```bash
 ls -l /dev/ttyACM0
@@ -164,7 +227,10 @@ Studio never updates itself. To find out whether a newer release exists, turn on
 **Check for a newer release when Studio starts** in Preferences, or press
 **Check now**. The check is off by default; it asks the GitHub releases of this
 project for the latest published release, sends nothing about you, and shows a
-version and a link. It downloads and installs nothing.
+version and a link. It downloads and installs nothing. When a newer release
+exists, Studio shows a notice with its version, the address of the release and
+the step for your system; dismiss it and it comes back only for a still newer
+release. When you are offline, or the answer cannot be read, it shows nothing.
 
 To update, download the new file and verify it as above, then install it over the
 old one (Windows setup, macOS: replace the app in Applications; Linux: install

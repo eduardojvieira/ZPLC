@@ -129,6 +129,8 @@ export type CompilerMessageType = 'info' | 'warning' | 'error';
 export interface CompilerMessage {
   type: CompilerMessageType;
   message: string;
+  /** The stable code of the kind of problem, as the build reported it (`ERROR_CODES` of the compiler; CMP-006). */
+  code?: string;
   file?: string;
   line?: number;
   column?: number;
@@ -149,6 +151,8 @@ export interface STLiveDiagnostic {
   /** The position just after the last character, when the front end knows the extent. */
   endLine?: number;
   endColumn?: number;
+  /** The stable code of the kind of problem: the one the build reports for the same source (CMP-006). */
+  errorCode?: string;
 }
 
 /** Identity-fenced result for one active Structured Text buffer. */

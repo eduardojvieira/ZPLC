@@ -9,6 +9,9 @@
   "lines": [
     3
   ],
+  "codes": [
+    "ADDRESS_OUT_OF_REGION"
+  ],
   "messageIncludes": [
     "exceeds"
   ]

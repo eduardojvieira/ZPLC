@@ -4,6 +4,7 @@
   "matrix": ["ld-fbd.en-eno"],
   "note": "Decision D-04 (2.x recommended): EN and ENO on blocks need a rule for every block and are left to 2.x; a wire that the transpiler cannot honour is an error and not a dropped wire (LNG-002)",
   "build": "fails",
+  "codes": ["TRANSLATION_FAILED"],
   "elements": ["connection:w2"],
   "messageIncludes": ["gate"]
 }

@@ -5,6 +5,9 @@
   "lines": [
     5
   ],
+  "codes": [
+    "INVALID_TIME_LITERAL"
+  ],
   "messageIncludes": [
     "Invalid time literal"
   ]

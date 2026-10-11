@@ -6,7 +6,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parseAndMigrateProject } from '../project/projectModel';
-import { artifactEvidence, boardsList, compilerCheck, compilerCompile, createTestDeadline, executionPermission, finishToolExecution, firmwareBuild, firmwareBuildPlan, isToolExecutionEnvelope, projectInspect, projectMigrationExport, projectMigrationPreview, projectValidate, safetyCheck, scenarioRun, startToolExecution, symbolsList, testsRun, toolchainInspect, withToolExecution } from './toolApi';
+import { artifactEvidence, boardsList, compilerCheck, compilerCompile, createTestDeadline, executionPermission, finishToolExecution, firmwareBuild, firmwareBuildPlan, isToolExecutionEnvelope, projectInspect, projectMigrationExport, projectMigrationPreview, projectValidate, safeCompilerDiagnostic, safetyCheck, scenarioRun, startToolExecution, symbolsList, testsRun, toolchainInspect, withToolExecution } from './toolApi';
 import { itNative, nativeRuntimeBinary } from './nativeRuntimeGuard';
 
 const demo = fileURLToPath(new URL('../../projects/multitask_demo', import.meta.url));
@@ -647,7 +647,7 @@ END_PROGRAM`);
       await writeFile(join(root, 'zplc.json'), JSON.stringify({ schemaVersion: 2, name: 'symbols', version: '1.0.0', tasks: [{ name: 'Main', trigger: 'cyclic', interval_ms: 10, priority: 1, programs: ['Main.st'] }] }));
       await writeFile(join(root, 'src', 'Main.st'), 'PROGRAM Main\nVAR\n SecretValue : BOOL;\nEND_VAR\n @\nEND_PROGRAM');
       const compileFailure = await symbolsList(root);
-      expect(compileFailure).toMatchObject({ ok: false, evidence: { operation: 'symbols-list', outcome: 'failed', diagnostics: [{ code: 'COMPILATION_FAILED', path: 'src/Main.st' }], artifacts: [] } });
+      expect(compileFailure).toMatchObject({ ok: false, evidence: { operation: 'symbols-list', outcome: 'failed', diagnostics: [{ code: 'UNEXPECTED_CHARACTER', path: 'src/Main.st' }], artifacts: [] } });
       expect(JSON.stringify(compileFailure)).not.toContain('SecretValue'); expect(JSON.stringify(compileFailure)).not.toContain(root);
       await rm(join(root, 'src', 'Main.st'));
       const missing = await symbolsList(root);
@@ -674,7 +674,7 @@ END_PROGRAM`);
         const result = await operation(root);
         expect(result).toMatchObject({
           ok: false,
-          evidence: { outcome: 'failed', diagnostics: [{ code: 'COMPILATION_FAILED', path: 'src/Main.st' }], artifacts: [] },
+          evidence: { outcome: 'failed', diagnostics: [{ code: 'WORK_MEMORY_EXCEEDED', path: 'src/Main.st' }], artifacts: [] },
         });
         expect(JSON.stringify(result)).not.toContain(root);
       }
@@ -689,7 +689,7 @@ END_PROGRAM`);
       await writeFile(join(root, 'src', 'missing.st'), 'PROGRAM Main\nVAR\n SecretValue : BOOL;\nEND_VAR\n @\nEND_PROGRAM');
       for (const compile of [compilerCheck, compilerCompile]) {
         const result = await compile(root);
-        expect(result).toMatchObject({ ok: false, evidence: { diagnostics: [{ code: 'COMPILATION_FAILED', message: "Compilation of 'missing.st' failed: Unexpected character: '@'", phase: 'lexer', line: 5, column: 2, path: 'src/missing.st' }] } });
+        expect(result).toMatchObject({ ok: false, evidence: { diagnostics: [{ code: 'UNEXPECTED_CHARACTER', message: "Compilation of 'missing.st' failed: Unexpected character: '@'", phase: 'lexer', line: 5, column: 2, path: 'src/missing.st' }] } });
         expect(JSON.stringify(result)).not.toContain('SecretValue'); expect(JSON.stringify(result)).not.toContain(root);
       }
     } finally { await rm(root, { recursive: true, force: true }); }
@@ -702,10 +702,28 @@ END_PROGRAM`);
       await writeFile(join(root, 'src', 'Main.st'), 'PROGRAM Typo\nVAR\n  x : INT;\nEND_VAR\n  nope := 5;\nEND_PROGRAM\n');
       for (const compile of [compilerCheck, compilerCompile]) {
         const result = await compile(root);
-        expect(result).toMatchObject({ ok: false, evidence: { outcome: 'failed', artifacts: [], diagnostics: [{ code: 'COMPILATION_FAILED', message: "Unknown identifier 'nope'", phase: 'codegen', line: 5, column: 3, path: 'src/Main.st' }] } });
+        expect(result).toMatchObject({ ok: false, evidence: { outcome: 'failed', artifacts: [], diagnostics: [{ code: 'UNKNOWN_IDENTIFIER', message: "Unknown identifier 'nope'", phase: 'codegen', line: 5, column: 3, path: 'src/Main.st' }] } });
         expect(JSON.stringify(result)).not.toContain(root);
       }
     } finally { await rm(root, { recursive: true, force: true }); }
+  });
+  it('sends where an error ends: endLine and endColumn, with its code', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'zplc-tool-api-range-'));
+    try {
+      await mkdir(join(root, 'src'));
+      await writeFile(join(root, 'zplc.json'), JSON.stringify({ schemaVersion: 2, name: 'test', version: '1.0.0', tasks: [{ name: 'Main', trigger: 'cyclic', interval_ms: 10, priority: 1, programs: ['Main.st'] }] }));
+      // a name the program does not declare: the range is the name, which has seven characters
+      await writeFile(join(root, 'src', 'Main.st'), 'PROGRAM Main\nVAR\n  x : INT;\nEND_VAR\n  x := Missing;\nEND_PROGRAM\n');
+      const result = await compilerCheck(root);
+      expect(result.ok).toBe(false);
+      expect(result.evidence.diagnostics).toEqual([{
+        code: 'UNKNOWN_IDENTIFIER', message: "Unknown identifier 'Missing'", phase: 'codegen',
+        line: 5, column: 8, endLine: 5, endColumn: 15, path: 'src/Main.st',
+      }]);
+    } finally { await rm(root, { recursive: true, force: true }); }
+  });
+  it('reports a failure that is not one of the compiler\'s own with the code of an internal error and nothing else', async () => {
+    expect(safeCompilerDiagnostic(new Error('/home/eve/plant/src/Motor.st: boom'))).toEqual({ code: 'INTERNAL_COMPILER_ERROR', message: 'Compilation failed' });
   });
   it('returns every independent error of a source, each with its position (CMP-006, CMP-007)', async () => {
     const root = await mkdtemp(join(tmpdir(), 'zplc-tool-api-many-'));
@@ -722,7 +740,7 @@ END_PROGRAM`);
           { line: 6, column: 11, phase: 'parser', path: 'src/Main.st' },
           { line: 7, column: 8, phase: 'parser', path: 'src/Main.st' },
         ]);
-        expect(result.evidence.diagnostics.every(({ code, message }) => code === 'COMPILATION_FAILED' && message.includes('Expected expression'))).toBe(true);
+        expect(result.evidence.diagnostics.every(({ code, message }) => code === 'UNEXPECTED_TOKEN' && message.includes('Expected expression'))).toBe(true);
         expect(JSON.stringify(result)).not.toContain(root);
       }
     } finally { await rm(root, { recursive: true, force: true }); }
@@ -797,7 +815,7 @@ END_PROGRAM`);
       const result = await safetyCheck(root);
       expect(result.ok).toBe(false);
       expect(result.evidence.diagnostics.map(({ code, line, column, path }) => [code, line, column, path])).toEqual([
-        ['COMPILATION_FAILED', 5, 8, 'src/Main.st'], ['COMPILATION_FAILED', 6, 8, 'src/Main.st'],
+        ['UNEXPECTED_TOKEN', 5, 8, 'src/Main.st'], ['UNEXPECTED_TOKEN', 6, 8, 'src/Main.st'],
       ]);
     } finally { await rm(root, { recursive: true, force: true }); }
   });
@@ -817,7 +835,7 @@ END_PROGRAM`);
       const result = await compilerCompile(root);
       expect(result.ok).toBe(false);
       const [diagnostic] = result.evidence.diagnostics;
-      expect(diagnostic).toMatchObject({ code: 'COMPILATION_FAILED', phase: 'codegen', path: 'src/main.sfc.json' });
+      expect(diagnostic).toMatchObject({ code: 'UNKNOWN_IDENTIFIER', phase: 'codegen', path: 'src/main.sfc.json' });
       expect(diagnostic!.message).toContain("Unknown identifier 'Undeclared'");
       expect(diagnostic!.line).toBeGreaterThan(0);
       expect(diagnostic!.column).toBeGreaterThan(0);
@@ -835,7 +853,7 @@ END_PROGRAM`);
           ok: false,
           evidence: {
             outcome: 'failed',
-            diagnostics: [{ code: 'COMPILATION_FAILED', message: 'Exactly one PROGRAM is required per source unit', phase: 'codegen', line: 2, column: 1, path: 'src/Main.st' }],
+            diagnostics: [{ code: 'MULTIPLE_PROGRAMS_IN_SOURCE', message: 'Exactly one PROGRAM is required per source unit', phase: 'codegen', line: 2, column: 1, path: 'src/Main.st' }],
             artifacts: [],
           },
         });
@@ -862,7 +880,7 @@ END_PROGRAM`);
         expect(result.evidence.diagnostics).toHaveLength(1);
         const [diagnostic] = result.evidence.diagnostics;
         // the project file, not a source file; the task and its field in the message; the supported triggers named
-        expect(diagnostic).toMatchObject({ code: 'COMPILATION_FAILED', phase: 'codegen', path: 'zplc.json' });
+        expect(diagnostic).toMatchObject({ code: 'INVALID_TASK_CONFIGURATION', phase: 'codegen', path: 'zplc.json' });
         expect(diagnostic!.message).toContain("Task 'OnEvent'");
         expect(diagnostic!.message).toContain('tasks[1].trigger');
         expect(diagnostic!.message).toContain('not supported in this release');
@@ -882,11 +900,11 @@ END_PROGRAM`);
           ok: false,
           evidence: {
             outcome: 'failed',
-            diagnostics: [{ code: 'COMPILATION_FAILED', message: "Task 'Main' must reference exactly one PROGRAM", phase: 'codegen', line: 0, column: 0 }],
+            diagnostics: [{ code: 'INVALID_TASK_CONFIGURATION', message: "Task 'Main' must reference exactly one PROGRAM", phase: 'codegen', line: 1, column: 1, path: 'zplc.json' }],
             artifacts: [],
           },
         });
-        expect(result.evidence.diagnostics[0]).not.toHaveProperty('path');
+        expect(result.evidence.diagnostics[0]).toHaveProperty('path', 'zplc.json'); // the project file, at its first line (CMP-006)
         for (const key of ['bytes', 'zplcFile', 'bytecode', 'assembly', 'debugMap']) {
           expect(Object.prototype.hasOwnProperty.call(result, key)).toBe(false);
         }
@@ -1054,7 +1072,7 @@ describe('testsRun', () => {
       await expect(testsRun(root)).resolves.toMatchObject({ ok: false, evidence: { diagnostics: [{ code: 'TEST_SCENARIO_INVALID', path: 'tests/bad.scenario.json' }], artifacts: [] } });
       await writeFile(join(root, 'tests', 'bad.scenario.json'), scenario('MotorStart'));
       await writeFile(join(root, 'src', 'Motor.st'), 'PROGRAM Motor @ END_PROGRAM');
-      await expect(testsRun(root)).resolves.toMatchObject({ ok: false, evidence: { diagnostics: [{ code: 'COMPILATION_FAILED', path: 'src/Motor.st' }], artifacts: [] } });
+      await expect(testsRun(root)).resolves.toMatchObject({ ok: false, evidence: { diagnostics: [{ code: 'UNEXPECTED_CHARACTER', path: 'src/Motor.st' }], artifacts: [] } });
     } finally { await rm(root, { recursive: true, force: true }); }
   });
 
@@ -1135,8 +1153,8 @@ describe('testsRun', () => {
       process.env.ZPLC_NATIVE_SIM_BIN = join(root, 'missing-runtime');
       for (const run of [() => testsRun(root), () => scenarioRun(root, 'MotorStart')]) {
         const result = await run();
-        expect(result).toMatchObject({ ok: false, evidence: { outcome: 'failed', diagnostics: [{ code: 'COMPILATION_FAILED', message: "Task 'Main' must reference exactly one PROGRAM", phase: 'codegen', line: 0, column: 0 }], artifacts: [] } });
-        expect(result.evidence.diagnostics[0]).not.toHaveProperty('path');
+        expect(result).toMatchObject({ ok: false, evidence: { outcome: 'failed', diagnostics: [{ code: 'INVALID_TASK_CONFIGURATION', message: "Task 'Main' must reference exactly one PROGRAM", phase: 'codegen', line: 1, column: 1, path: 'zplc.json' }], artifacts: [] } });
+        expect(result.evidence.diagnostics[0]).toHaveProperty('path', 'zplc.json'); // the project file, at its first line (CMP-006)
         expect(JSON.stringify(result)).not.toContain(root);
         expect(JSON.stringify(result)).not.toContain('missing-a.st');
         expect(JSON.stringify(result)).not.toContain('missing-b.st');

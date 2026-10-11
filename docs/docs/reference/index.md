@@ -27,6 +27,7 @@ from. To learn how to do something, start from the how-to guides instead.
 - [Project file (`zplc.json`)](./project-file.md): every field.
 - [Scenario file format](./scenario-file.md): events, expectations and limits.
 - [Command line](./cli.md) and [MCP server](./mcp.md): every command, tool and resource.
+- [Diagnostic codes](./diagnostic-codes.md): the stable code of every error of a build, what it means and a program that provokes it.
 
 ## Runtime and firmware
 

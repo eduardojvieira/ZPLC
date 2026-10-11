@@ -3,6 +3,7 @@
   "title": "an FBD block of a type the transpiler does not translate is rejected by name",
   "matrix": ["ld-fbd.fbd-blocks"],
   "build": "fails",
+  "codes": ["TRANSLATION_FAILED"],
   "messageIncludes": [
     "'root'",
     "SQRT"

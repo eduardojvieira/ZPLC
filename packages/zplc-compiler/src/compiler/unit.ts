@@ -61,7 +61,7 @@ function reportDuplicates(declarations: Declaration[], describe: (kind: string) 
     for (const group of groups.values()) {
         if (group.length < 2) continue;
         for (const site of group) {
-            const error = new CodegenError(duplicateMessage(group, site, describe(site.kind)), site.line, site.column, site.endLine, site.endColumn);
+            const error = new CodegenError('DUPLICATE_DECLARATION', duplicateMessage(group, site, describe(site.kind)), site.line, site.column, site.endLine, site.endColumn);
             error.sourceRef = site.ref;
             errors.push(error);
         }
@@ -143,7 +143,7 @@ export function mergeUnits(sources: UnitSource[]): MergedUnit {
         for (const issue of resolveTypeNames(merged)) {
             if (/is already declared$/.test(issue.message)) continue; // reported with both places above
             const alias = aliases.find((each) => each.line === issue.line && each.column === issue.column);
-            const error = new CodegenError(issue.message, issue.line, issue.column, issue.endLine, issue.endColumn);
+            const error = new CodegenError(issue.code, issue.message, issue.line, issue.column, issue.endLine, issue.endColumn);
             if (alias?.sourceRef !== undefined) error.sourceRef = alias.sourceRef;
             errors.push(error);
         }

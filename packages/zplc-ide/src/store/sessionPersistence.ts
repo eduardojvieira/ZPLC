@@ -31,23 +31,25 @@ export function createSessionSaver({ send, delayMs = SESSION_SAVE_DELAY_MS, sche
   let snapshot: (() => SessionSnapshot | null) | null = null;
   let timer: Timer | null = null;
   const stop = () => { if (timer !== null) { cancel(timer); timer = null; } };
-  const flush = () => {
+  /** Sends what is queued now. The promise settles when the main process has answered (or the send failed): it never rejects. */
+  const flush = (): Promise<void> => {
     stop();
     const take = snapshot;
     snapshot = null;
-    if (!take) return;
+    if (!take) return Promise.resolve();
     try {
       const taken = take();
-      if (taken) void send(taken.rootId, taken.state).catch(onError);
+      if (taken) return send(taken.rootId, taken.state).then(() => undefined, (error: unknown) => { onError(error); });
     } catch (error) {
       onError(error);
     }
+    return Promise.resolve();
   };
   return {
     queue(take: () => SessionSnapshot | null): void {
       snapshot = take;
       stop();
-      timer = schedule(flush, delayMs);
+      timer = schedule(() => { void flush(); }, delayMs);
     },
     flush,
     dispose(): void { stop(); snapshot = null; },
@@ -62,7 +64,7 @@ export function createSessionSaver({ send, delayMs = SESSION_SAVE_DELAY_MS, sche
 let viewStates = new Map<string, ViewState>();
 /** Positions restored from the saved session that no editor has shown yet. */
 let pendingViewStates = new Map<string, ViewState>();
-let active: { queue(): void; flush(): void } | null = null;
+let active: { queue(): void; flush(): Promise<void> } | null = null;
 
 /** Called by the editor when the cursor or the scroll of a file moves. */
 export function recordViewState(path: string, view: ViewState): void {
@@ -145,18 +147,22 @@ export function startSessionPersistence<S extends SessionStoreState & { director
   });
   const flush = () => saver.flush();
   // The window going away: the renderer is unloaded, and what is still queued goes out now.
-  if (typeof window !== 'undefined') window.addEventListener('pagehide', flush);
+  const onPageHide = () => { void flush(); };
+  if (typeof window !== 'undefined') window.addEventListener('pagehide', onPageHide);
   const handle = { queue, flush };
   active = handle;
   return () => {
     unsubscribe();
-    if (typeof window !== 'undefined') window.removeEventListener('pagehide', flush);
+    if (typeof window !== 'undefined') window.removeEventListener('pagehide', onPageHide);
     saver.dispose();
     if (active === handle) active = null;
   };
 }
 
-/** Sends the pending session now: before another folder replaces the window's, and when the project closes. */
-export function flushSession(): void {
-  active?.flush();
+/**
+ * Sends the pending session now: before another folder replaces the window's, and when the project closes. The promise
+ * settles when the main process has stored it, so a caller that is about to destroy the window can wait for it.
+ */
+export function flushSession(): Promise<void> {
+  return active?.flush() ?? Promise.resolve();
 }

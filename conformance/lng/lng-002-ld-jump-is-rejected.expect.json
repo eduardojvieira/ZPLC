@@ -4,6 +4,7 @@
   "matrix": ["ld-fbd.ld-jumps-and-labels"],
   "note": "Decision D-04 (2.x recommended): jumps and labels in Ladder are left to 2.x; an element the transpiler does not translate is rejected naming it (LNG-002)",
   "build": "fails",
+  "codes": ["TRANSLATION_FAILED"],
   "elements": ["rung:rung1/element:j1"],
   "messageIncludes": ["j1", "jump"]
 }

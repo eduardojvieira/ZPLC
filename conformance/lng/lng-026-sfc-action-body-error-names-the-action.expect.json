@@ -2,6 +2,7 @@
   "requirement": "LNG-026",
   "title": "an error in an SFC action body is reported against the action",
   "build": "fails",
+  "codes": ["UNKNOWN_IDENTIFIER"],
   "elements": [
     "action:mark"
   ],
