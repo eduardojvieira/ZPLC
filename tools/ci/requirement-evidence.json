@@ -1978,6 +1978,18 @@
   "REL-035": [
     {"kind":"unit","ref":"scripts/release/releasing-md.test.ts","test":"the external services of the release (REL-035)"}
   ],
+  "DOC-002": [
+    {"kind":"unit","ref":"tools/docs/docs_structure.test.ts","test":"docs structure: the sidebar is organised by reader intent (DOC-002)"}
+  ],
+  "DOC-003": [
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"41 Blink without hardware (the tutorial)"}
+  ],
+  "DOC-004": [
+    {"kind":"unit","ref":"tools/docs/install_and_status_pages.test.ts","test":"first board page: written from the manifest, and honest that no board has run it (DOC-004, stopgap: the steps have not been executed on a board)","partial":true}
+  ],
+  "DOC-005": [
+    {"kind":"unit","ref":"tools/docs/install_and_status_pages.test.ts","test":"install page: built from the channels and installers that exist today (DOC-005)"}
+  ],
   "DOC-006": [
     {"kind":"unit","ref":"tools/docs/generate_language_reference.test.ts","test":"language reference: every row of the matrix is on a page, in both languages (DOC-006, stopgap: no editor screenshot yet)","partial":true},
     {"kind":"unit","ref":"tools/docs/generate_language_reference.test.ts","test":"language reference: markup and addressing (DOC-006, stopgap: no editor screenshot yet)","partial":true},
@@ -2001,10 +2013,55 @@
     {"kind":"unit","ref":"tools/docs/source-parsers.test.ts","test":"source readers: the command line, MCP and the protocol (DOC-008)"},
     {"kind":"unit","ref":"tools/docs/source-parsers.test.ts","test":"source readers: the shell command tree (DOC-008)"}
   ],
+  "DOC-009": [
+    {"kind":"unit","ref":"tools/docs/check-docs-config.test.ts","test":"docs configuration fragments: a fragment is a piece of a project file that builds (DOC-009)"},
+    {"kind":"unit","ref":"tools/docs/check-docs-config.test.ts","test":"finds a board entry of a page by its fence and checks it against the validator of the board manifest (DOC-009)"},
+    {"kind":"unit","ref":"tools/docs/check-docs-config.test.ts","test":"how-to guides: each task has a page in both languages with something that runs (DOC-009)"},
+    {"kind":"unit","ref":"tools/docs/mcp_protocol_revision.test.ts","test":"MCP guide: the protocol revision of the server is the one the page shows (DOC-009)"}
+  ],
+  "DOC-010": [
+    {"kind":"unit","ref":"tools/docs/install_and_status_pages.test.ts","test":"hardware support page: one table, derived from the manifest and its records (DOC-010)"},
+    {"kind":"unit","ref":"tools/docs/install_and_status_pages.test.ts","test":"safety page: what ZPLC is not, and limits that the source says (DOC-010)"}
+  ],
+  "DOC-011": [
+    {"kind":"unit","ref":"tools/docs/contributor_docs.test.ts","test":"README: what ZPLC is, what it does today, what it runs on and how to try it, on the first screen (DOC-011)"}
+  ],
+  "DOC-012": [
+    {"kind":"unit","ref":"tools/docs/check_capability_claims.test.ts","test":"capability claims: what the public text says ZPLC can do is backed by a check (DOC-012)"}
+  ],
+  "DOC-013": [
+    {"kind":"unit","ref":"tools/docs/capture-screenshots.test.ts","test":"documentation screenshots: a page shows only captured pictures (DOC-013)"},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"41 Blink without hardware (the tutorial)","partial":true}
+  ],
   "DOC-014": [
     {"kind":"unit","ref":"tools/docs/check_doc_claims.test.ts","test":"doc claims: a claim holds only when the source has the thing (DOC-014)"},
     {"kind":"unit","ref":"tools/docs/check_doc_claims.test.ts","test":"doc claims: the allow-list can only shrink (DOC-014)"},
     {"kind":"unit","ref":"tools/docs/check_doc_claims.test.ts","test":"doc claims: the documents of the repository (DOC-014)"},
     {"kind":"unit","ref":"tools/docs/check_doc_claims.test.ts","test":"doc claims: what a page says is read from its code spans and shell blocks (DOC-014)"}
+  ],
+  "DOC-016": [
+    {"kind":"unit","ref":"tools/docs/docs_structure.test.ts","test":"docs structure: a page is published only when both languages are complete (DOC-016)"}
+  ],
+  "DOC-018": [
+    {"kind":"unit","ref":"tools/docs/docs_structure.test.ts","test":"docs site: admonitions in the generator\\'s own syntax and no version selector for one version (DOC-018, stopgap: the site has no search yet)","partial":true}
+  ],
+  "DOC-022": [
+    {"kind":"unit","ref":"tools/docs/contributor_docs.test.ts","test":"agent files: the project skill and AGENTS.md are current, and the contributor guide comes first (DOC-022)"}
+  ],
+  "DOC-023": [
+    {"kind":"unit","ref":"tools/docs/contributor_docs.test.ts","test":"task runner: one entry point, with a recipe for each step a contributor takes (DOC-023)"}
+  ],
+  "DOC-024": [
+    {"kind":"unit","ref":"tools/docs/contributor_docs.test.ts","test":"CONTRIBUTING.md: copy-and-paste commands per layer, and the files a contributor expects (DOC-024)"}
+  ],
+  "DOC-026": [
+    {"kind":"unit","ref":"tools/docs/contributor_docs.test.ts","test":"examples: the VM fixtures are labelled and the PLC projects are easy to find (DOC-026)"}
+  ],
+  "DOC-029": [
+    {"kind":"unit","ref":"tools/docs/contributor_docs.test.ts","test":"principles: the constitution is readable from the contributor pages (DOC-029)"}
+  ],
+  "DOC-030": [
+    {"kind":"unit","ref":"scripts/release/release-notes.test.ts","test":"what changed for a user, what breaks, how to migrate and what is limited (DOC-030)"},
+    {"kind":"unit","ref":"tools/docs/contributor_docs.test.ts","test":"changelog: what changed for a user, what breaks, how to migrate and what is limited (DOC-030)"}
   ]
 }

@@ -19,6 +19,10 @@ Esta tabla se lee del archivo fuente `packages/zplc-ide/src/mcp/server.ts`; su t
 zplc-mcp --workspace <absolute-real-directory> [--repository <absolute-real-directory>] [--user-data <absolute-real-directory>]
 ```
 
+## Revisión del protocolo
+
+El servidor habla la revisión 2026-07-28 del protocolo y ninguna anterior: su punto de entrada inicia el transporte con `legacy: 'reject'`. Un cliente nombra la revisión y sus capacidades en el `_meta` de cada solicitud (`io.modelcontextprotocol/protocolVersion` y `io.modelcontextprotocol/clientCapabilities`); no hay paso `initialize`. Un `initialize` de una revisión anterior se responde con el error `-32022`, `Unsupported protocol version: <revisión>`, y `data.supported` lista `2026-07-28`. Las respuestas exactas están en [Usar un asistente de IA y MCP con seguridad](../guides/ai-and-mcp.md#la-revisión-del-protocolo).
+
 ## Herramientas
 
 | Herramienta | Título | Entrada | Solo lectura | Descripción |

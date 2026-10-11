@@ -1,0 +1,58 @@
+{
+  "schemaVersion": 1,
+  "command": "bun run docs:screenshots",
+  "journey": "41 Blink without hardware (the tutorial)",
+  "commit": "5aa58d29040e43715021b625a73f244879c77473",
+  "worktreeClean": true,
+  "productVersion": "2.0.0-rc.3",
+  "images": [
+    {
+      "file": "tutorials/blink-1-welcome.png",
+      "step": "The Welcome screen with the example list",
+      "sha256": "10b30b337826d9fd33a7c9a68f8b85c7cba1ddddab266c35e0f64767890fcd11",
+      "bytes": 126672,
+      "width": 1440,
+      "height": 900
+    },
+    {
+      "file": "tutorials/blink-2-program.png",
+      "step": "The program open in the editor",
+      "sha256": "9d3aaebb7b5fc001eb853351cc991ec7b9db1587321e4064cab4bae5bd1563e5",
+      "bytes": 112917,
+      "width": 1440,
+      "height": 900
+    },
+    {
+      "file": "tutorials/blink-3-built.png",
+      "step": "The build succeeded",
+      "sha256": "4a8fc125cde20c4dedc503ffe6f63618dafb1d07d16515118d6b50dee94b8206",
+      "bytes": 141699,
+      "width": 1440,
+      "height": 900
+    },
+    {
+      "file": "tutorials/blink-4-output-true.png",
+      "step": "The simulator runs and the output is TRUE",
+      "sha256": "2fb465e471c7e0f02940937c360ba83342bfa0dd39f34b00234b3d4285948abb",
+      "bytes": 102354,
+      "width": 1440,
+      "height": 900
+    },
+    {
+      "file": "tutorials/blink-5-output-false.png",
+      "step": "The output is FALSE half a second later",
+      "sha256": "c0293237b457940c9f3c5b907c757e2b8c4a7922a7786eb549971320f4b08b10",
+      "bytes": 102633,
+      "width": 1440,
+      "height": 900
+    },
+    {
+      "file": "tutorials/blink-6-scenario.png",
+      "step": "The scenario test passed",
+      "sha256": "07f220d7565c06a3350007d736430f8b02abe9b4bfdf247e6e910c3b7e8bc4b0",
+      "bytes": 126313,
+      "width": 1440,
+      "height": 900
+    }
+  ]
+}

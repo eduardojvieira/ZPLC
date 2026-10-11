@@ -23,6 +23,22 @@ folder stays unchanged until you explicitly save; that save updates its
    **Close** to leave the folder as it is.
 4. Compile and run the project’s scenario again after saving.
 
+## From a terminal
+
+To see what the migration would change without opening Studio, and to write the
+version 2 project file where you choose, use the command line
+([Use the command line](../guides/command-line.md)):
+
+```bash
+zplc-cli migrate-preview path/to/project
+zplc-cli migrate path/to/project --output zplc.v2.json
+```
+
+`migrate-preview` writes nothing and prints `migrate-preview passed`; add `--json` for
+the list of changes. `migrate` writes the version 2 project file to `--output`, which
+cannot be the project file or a file in `src` or `tests`, and leaves the project folder
+as it was. Review the file, then copy it over `zplc.json` when you accept it.
+
 ## What changes
 
 | Area | v2 behavior |
@@ -44,6 +60,15 @@ Back up the project folder or commit it to version control before saving, then
 review the diff. Use diagnostics to resolve unsupported source or configuration
 before adopting the migration. Do not hand-edit generated visual model JSON to
 bypass a diagnostic.
+
+## What is verified, and what is not
+
+| Part | Verified | Level |
+| --- | --- | --- |
+| `migrate-preview` writes nothing, and `migrate` writes only the file named by `--output` and leaves the folder byte-identical | Unit tests of the command line, and the two commands above run on a copy of the bundled project `motor_start_stop` with its `schemaVersion` removed | Host |
+| Studio shows the difference before it writes, and applies it on **Apply migration** | Journey 31 in the real application | Host |
+| The saved version 2 form keeps what the project does | A test exports the migration of the motor start/stop project and checks that its golden scenario gives the same observable on the native runtime | Host |
+| The migrated project behaves the same on a board | Not claimed: no target, electrical or timing equivalence | None |
 
 ## Next step
 

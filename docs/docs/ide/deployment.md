@@ -24,7 +24,9 @@ separate operations. They are never initiated by AI or MCP.
 The native POSIX adapter is a host simulation. Serial connection and a
 cross-build board profile do not turn it into HIL. Current catalogued profiles
 have zero HIL evidence references; use their exact Zephyr procedure and record
-an HIL run before claiming target behavior.
+an HIL run before claiming target behavior. See
+[Hardware support](../reference/capabilities-evidence.md) and
+[Safety and limitations](../safety-and-limitations.md).
 
 ## On a failed connection or deploy
 

@@ -204,6 +204,14 @@ const editorView = (app: App) => monacoEval<{ line: number; column: number; scro
 const activeTabId = (app: App) => app.eval<string | null>(`document.querySelector('[role="tab"][aria-selected="true"][id^="editor-tab-"]')?.id ?? null`);
 /** How tall the editor is: with the lower panel it makes the split that a project keeps. */
 const editorHeight = (app: App) => app.eval<number>(`document.getElementById('editor')?.getBoundingClientRect().height ?? 0`);
+/** DOC-013: when ZPLC_DOC_SHOTS names a folder, the picture of the window at this step is saved there as `<name>.png`. */
+const docShot = async (app: App, name: string): Promise<void> => {
+  const directory = process.env.ZPLC_DOC_SHOTS;
+  if (!directory) return;
+  mkdirSync(directory, { recursive: true });
+  const png = await app.cdp.command('Page.captureScreenshot', { format: 'png' }) as { data: string };
+  writeFileSync(join(directory, `${name}.png`), Buffer.from(png.data, 'base64'));
+};
 const savePicture = async (app: App, variable: string) => {
   const file = process.env[variable];
   if (file) { const png = await app.cdp.command('Page.captureScreenshot', { format: 'png' }) as { data: string }; writeFileSync(file, Buffer.from(png.data, 'base64')); }
@@ -2011,6 +2019,65 @@ export const JOURNEYS: Journey[] = [
       await app.until('the flag gone', async () => await app.eval<boolean>(`document.querySelector('[role="alert"]') === null`) || undefined);
       const virtual = await app.eval<string>(`document.body.innerText`);
       assert(virtual.includes('Virtual (no pin)') && virtual.includes('%QX0.6'), 'The address was not listed as virtual.');
+    },
+  },
+
+  {
+    // DOC-003: the tutorial "Blink without hardware" (docs/docs/tutorials/blink-without-hardware.md), step for step: the
+    // example is copied from the Welcome screen into an empty folder, read, built, run in the simulator with its output
+    // watched while it toggles, and its scenario test run. With ZPLC_DOC_SHOTS=<folder> the picture of each step is
+    // saved too, which is where the screenshots of the tutorial come from (DOC-013, tools/docs/capture-screenshots.ts).
+    name: '41 Blink without hardware (the tutorial)', example: 'none', proves: ['DOC-003'], partly: ['DOC-013'],
+    run: async (app, { root }) => {
+      const folder = join(root, 'blink'); mkdirSync(folder);
+      await app.until('the Welcome screen with the example', async () => await app.visible(css('button[data-welcome-example="blinky_st"]')) || undefined);
+      await app.eval(`document.querySelector('button[data-welcome-example="blinky_st"]')?.scrollIntoView({ block: 'center' })`);
+      await docShot(app, 'blink-1-welcome');
+
+      // Step 2: copy the example into an empty folder; Studio opens it.
+      app.answer(folder);
+      await app.click(css('button[data-welcome-example="blinky_st"]'), 'the Blinky (Structured Text) example');
+      await app.until('the project workbench to appear', async () => await app.visible(toolbar) || undefined);
+      for (const file of ['zplc.json', 'src/main.st', 'tests/blinky-st.scenario.json']) {
+        assert(existsSync(join(folder, ...file.split('/'))), `The copied example has no ${file}.`);
+      }
+
+      // Step 3: read the program.
+      await openFile(app, 'src/main.st');
+      assert(hasProgram(await editorText(app), 'Blinky'), 'The example does not open its program Blinky.');
+      await docShot(app, 'blink-2-program');
+
+      // Step 4: build it.
+      const built = await compile(app);
+      assert(built.kind === 'built', `The example does not build: ${built.message}`);
+      await docShot(app, 'blink-3-built');
+
+      // Steps 5 and 6: connect to the simulator, run, and watch the output change.
+      await connectAndRun(app);
+      await watch(app, 'LED_Output');
+      // The divider above the lower panel is dragged up so that the Watch table has room (the user's own choice).
+      await app.click(css('[role="separator"]'), 'the divider above the lower panel');
+      for (let step = 0; step < 6; step++) await app.press('ArrowUp');
+      // The output changes every 500 ms: a picture counts when the table showed the value before and after it was taken.
+      const outputShot = async (name: string, value: 'TRUE' | 'FALSE') => {
+        for (let attempt = 0; attempt < 20; attempt++) {
+          await app.until(`LED_Output to be ${value}`, async () => await watchValue(app, 'LED_Output') === value || undefined);
+          await docShot(app, name);
+          if (await watchValue(app, 'LED_Output') === value) return;
+        }
+        throw new Error(`The picture of LED_Output = ${value} could not be taken while the table showed it.`);
+      };
+      await outputShot('blink-4-output-true', 'TRUE');
+      await outputShot('blink-5-output-false', 'FALSE');
+      await app.click(button('Stop (Shift+F5)', 'prefix'), 'Stop');
+      await app.until('the program to stop', async () => await app.visible(button('Run (F5)', 'prefix')) || undefined);
+
+      // Step 7: run the scenario test of the project.
+      await app.click(tab('Tests'));
+      await app.click(button('Run host scenarios'));
+      await app.until('the scenario to pass', async () => (await app.text()).includes('Host POSIX scenarios passed.') || undefined, 30_000);
+      assert(!(await app.text()).includes('scenario assertions failed'), 'The tutorial scenario reports a failed assertion.');
+      await docShot(app, 'blink-6-scenario');
     },
   },
 ];

@@ -1,7 +1,10 @@
 # Project schema and canonical tools
 
 Use `packages/zplc-ide/src/project/projectModel.ts` as the parser and
-migrator for `zplc.json`. It accepts source schema 1 or 2, produces in-memory
+migrator for `zplc.json`. Its fields are listed, from the schema
+`packages/zplc-ide/zplc.schema.json`, in `docs/docs/reference/project-file.md`; the
+`io` section maps variables to a board's channels and `communication` holds the
+Modbus and MQTT settings and the bindings of variables. It accepts source schema 1 or 2, produces in-memory
 schema 2, rejects sensitive values, and returns a change list. Use
 `migrate-preview` before changing a v1 project; do not silently rewrite it.
 

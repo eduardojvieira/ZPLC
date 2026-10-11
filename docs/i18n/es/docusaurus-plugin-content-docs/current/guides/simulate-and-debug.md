@@ -1,0 +1,103 @@
+---
+slug: /guides/simulate-and-debug
+id: simulate-and-debug
+title: Simular y depurar un programa
+sidebar_label: Simular y depurar
+description: "Ejecute un programa en el simulador, observe sus variables, deténgalo en un punto de interrupción, avance paso a paso y vea qué conserva cada control."
+tags: [how-to, debugging, simulation, breakpoints]
+---
+
+# Simular y depurar un programa
+
+El simulador ejecuta el programa compilado en su equipo, con la misma máquina virtual
+y el mismo planificador que una placa. Úselo para ver qué hace la lógica, para
+detenerla en una sentencia y mirar los valores, antes de llevarla a otro lugar.
+
+:::note Un resultado de host
+El simulador muestra qué hace la lógica. No modela las entradas ni las salidas de una
+placa, sus controladores ni sus tiempos reales, así que un programa que se comporta
+bien en el simulador no se ha demostrado que se comporte bien en una placa.
+:::
+
+## 1. Compile y ejecute
+
+1. Compile el proyecto (**Build**, **Compile**).
+2. En la barra de herramientas, compruebe que **Simulate** esté seleccionado y
+   presione **Connect** y luego **Run** (F5). La línea de estado muestra **Running** y
+   el contador de ciclos sube.
+3. Abra la pestaña **Watch**, presione **+** e ingrese una variable. Su valor sigue al
+   programa. Haga doble clic en un valor para escribirlo.
+
+[Blink sin hardware](../tutorials/blink-without-hardware.md) hace esto en un primer
+proyecto.
+
+## 2. Deténgase en un punto de interrupción
+
+Cualquier programa sirve. Este cuenta sus ciclos, de modo que una parada muestra el valor
+del ciclo que la alcanzó:
+
+```st runnable
+PROGRAM Counter
+VAR
+    Count : DINT;
+    Armed : BOOL := TRUE;
+END_VAR
+
+IF Armed THEN
+    Count := Count + 1;
+END_IF;
+END_PROGRAM
+```
+
+1. Haga clic en el margen del editor, junto a `Count := Count + 1;`. Un punto marca la línea.
+2. Presione **Run**. El programa se detiene cuando un ciclo llega a la sentencia: la
+   barra de herramientas ofrece **Resume** (F5), el editor marca la línea, **Output**
+   dice `Breakpoint hit at PC=..., line N` y una fila de la pestaña **Trace** dice
+   `paused`.
+3. Mire los valores en **Watch**. Son los valores del ciclo que se detuvo. Fije una
+   entrada, o fuerce un valor ([Forzar un valor](./force-values.md)), y vuelva a
+   mirar.
+4. Presione **Resume** (F5) para que el ciclo termine y siga hasta la siguiente
+   detención, o **Step one cycle** (F10) para ejecutar un ciclo y detenerse en el
+   siguiente límite de ciclo o en el siguiente punto de interrupción.
+
+También puede fijarse un punto de interrupción en una línea de Instruction List, un
+peldaño de Ladder, un bloque de FBD y un paso o transición de SFC. El mapa de
+depuración relaciona las instrucciones con el elemento que usted editó.
+
+## 3. Qué conserva cada control
+
+| Control | Imagen de salida | Forzados | El ciclo |
+| --- | --- | --- | --- |
+| Pause (F6) | Se conserva | Se conservan | Se detiene entre ciclos |
+| Step one cycle (F10) | Se conserva, y muestra el ciclo ejecutado | Se conservan | Ejecuta un ciclo completo, o termina el que estaba detenido en un punto de interrupción |
+| Resume (F5) | Se conserva | Se conservan | Un ciclo detenido en un punto de interrupción continúa desde allí |
+| Stop (Shift+F5) | Se pone en cero | Se borran | Cada tarea vuelve a su punto de entrada |
+| Reset (F8) | Un reinicio en frío: valores iniciales | Se borran | Empieza de nuevo desde el primer ciclo |
+
+La tabla completa, con las pruebas que la respaldan, está en
+[Pausa, reanudación, paso y parada](../runtime/scheduler.md#pausa-reanudación-paso-y-parada).
+En una placa, la pausa, el paso y la detención también llevan las salidas físicas a su
+estado seguro.
+
+## 4. Compruébelo con un escenario
+
+Una ejecución manual muestra un camino. Una [prueba de escenario](./scenario-tests.md)
+dice qué debe hacer el programa y descubre cuándo un cambio lo rompe. Use el depurador
+para entender un escenario que falla: el fallo da el instante, y usted puede ejecutar
+hasta ese ciclo.
+
+## Qué está verificado y qué no
+
+| Parte | Verificado | Nivel |
+| --- | --- | --- |
+| Un punto de interrupción se enlaza y detiene el ciclo, y Resume termina el ciclo interrumpido | Los recorridos 7 y 16 en la aplicación real, y las suites del planificador | Host y `native_sim` |
+| Un forzado fijado en un punto de interrupción lo ve el resto del ciclo | El recorrido 18 en la aplicación real | Host |
+| Pause, step y stop conservan y borran lo que dice la tabla | Las suites de Zephyr en `native_sim` y QEMU | Destino emulado |
+| Las mismas detenciones en una placa | No probado | Ninguno |
+
+## Vea también
+
+- [Banco de trabajo de Studio](../ide/features.md#límite-de-la-depuración): lo que muestran los watches, los trazos y los forzados.
+- [La consola de ZPLC](../operations/shell.md): los comandos de depuración de un dispositivo.
+- [Seguridad y limitaciones](../safety-and-limitations.md).

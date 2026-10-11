@@ -76,4 +76,4 @@ un comando local repetible.
 
 Hasta que una fase se cierre, las afirmaciones de la versión preliminar actual
 siguen como las establecen las [notas de versión](../release-notes/index.md) y
-[Capacidades y niveles de evidencia](../reference/capabilities-evidence.md).
+[Soporte de hardware](../reference/capabilities-evidence.md).

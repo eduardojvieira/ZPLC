@@ -24,7 +24,7 @@ This table is read off the source file `packages/zplc-ide/zplc.schema.json`; its
 | `description` | `string` |   |   | Optional project description |
 | `author` | `string` |   |   | Project author |
 | `target` | `object` |   |   | Target hardware configuration |
-| `target.board` | `string: "rpi_pico" \| "arduino_giga_r1" \| "arduino_opta_wifi" \| "stm32f746g_disco" \| "esp32s3_devkitc" \| "nucleo_h743zi" \| "posix"` |   |   | Target board (e.g., rpi_pico, posix) |
+| `target.board` | `string: "rpi_pico" \| "arduino_giga_r1" \| "arduino_opta_wifi" \| "stm32f746g_disco" \| "esp32s3_devkitc" \| "nucleo_h743zi" \| "waveshare_rp2040_zero" \| "posix"` |   |   | Target board (e.g., rpi_pico, posix) |
 | `target.cpu` | `string` |   |   | CPU identifier |
 | `target.clock_mhz` | `integer (>= 1)` |   |   | CPU clock frequency in MHz |
 | `compiler` | `object` |   |   | Compiler settings |

@@ -1,17 +1,22 @@
 #!/usr/bin/env python3
-"""Docs page checks (VF-019). Fails on:
+"""Docs page checks (VF-019, DOC-016). Fails on:
 
 1. a page whose last non-empty line is not a complete sentence, table row, list item,
    closing code fence, image or admonition end (a page cut off mid-sentence, or in the
    header of a table, or inside an open code block);
 2. a page that is not in docs/sidebars.js (front matter `unlisted: true` or `draft: true` opts out;
    a name that only a comment of the sidebar mentions is not listed);
-3. an English and Spanish pair whose heading levels or number of code blocks differ.
+3. an English and Spanish pair whose heading levels, number of code blocks, tables or admonitions
+   differ, or whose `id`, `slug`, `draft` or `unlisted` differ;
+4. a page that exists in one language only (DOC-016: a page is published when both are complete;
+   front matter `draft: true` keeps a page out of the published site and so out of this rule);
+5. a Spanish page that repeats the English prose instead of translating it.
 
-    python3 tools/docs/validate_docs_pages.py
+    python3 tools/docs/validate_docs_pages.py [--root <repository root>]
 """
 from __future__ import annotations
 
+import argparse
 from pathlib import Path
 import re
 import sys
@@ -150,7 +155,7 @@ def check_parity(root: Path) -> list[str]:
     errors = []
     for name, path in pages(root, EN_DIR).items():
         if name not in spanish:
-            continue  # not a pair
+            continue  # not a pair: check_twins says so
         en_levels, en_blocks, _ = scan(split_front_matter(path.read_text())[1])
         es_levels, es_blocks, _ = scan(split_front_matter(spanish[name].read_text())[1])
         if en_levels != es_levels:
@@ -160,19 +165,134 @@ def check_parity(root: Path) -> list[str]:
     return errors
 
 
+def is_draft(path: Path) -> bool:
+    return split_front_matter(path.read_text())[0].get("draft") == "true"
+
+
+def check_twins(root: Path) -> list[str]:
+    """DOC-016: a page that exists in one language only is published half-finished, unless it is a draft."""
+    english = pages(root, EN_DIR)
+    spanish = pages(root, ES_DIR)
+    errors = []
+    for name, path in english.items():
+        if name not in spanish and not is_draft(path):
+            errors.append(
+                f"{name}: has no Spanish page (write {ES_DIR}/{name}, or set `draft: true` so that the page is not published)"
+            )
+    for name, path in spanish.items():
+        if name not in english and not is_draft(path):
+            errors.append(
+                f"es:{name}: has no English page (write {EN_DIR}/{name}, or set `draft: true` so that the page is not published)"
+            )
+    return errors
+
+
+def page_features(lines: list[str]) -> tuple[int, int]:
+    """Number of tables and of admonitions outside code blocks."""
+    tables = admonitions = 0
+    fence = ""
+    in_table = False
+    for line in lines:
+        marker = FENCE.match(line)
+        if fence:
+            if marker and marker.group(1)[0] == fence[0] and len(marker.group(1)) >= len(fence):
+                fence = ""
+            continue
+        if marker:
+            fence = marker.group(1)
+            in_table = False
+            continue
+        if re.match(r":::\s*\w", line):
+            admonitions += 1
+        if line.lstrip().startswith("|"):
+            if not in_table:
+                tables += 1
+            in_table = True
+        else:
+            in_table = False
+    return tables, admonitions
+
+
+def prose_lines(lines: list[str]) -> list[str]:
+    """The sentences of a page: no code, tables, generated-block markers or admonition fences."""
+    out: list[str] = []
+    fence = ""
+    for line in lines:
+        marker = FENCE.match(line)
+        if fence:
+            if marker and marker.group(1)[0] == fence[0] and len(marker.group(1)) >= len(fence):
+                fence = ""
+            continue
+        if marker:
+            fence = marker.group(1)
+            continue
+        text = line.strip()
+        if not text or text.startswith(("|", "{/*", ":::", "import ")):
+            continue
+        text = re.sub(r"`[^`]*`", "", text)
+        text = re.sub(r"\[([^\]]*)\]\([^)]*\)", r"\1", text)
+        out.append(text)
+    return out
+
+
+UNTRANSLATED_SHARE = 0.5
+UNTRANSLATED_MIN_LINES = 5
+
+
+def check_pair_metadata(root: Path) -> list[str]:
+    """DOC-016: the two halves of a pair are one page: same address, same listing, same shape, translated."""
+    spanish = pages(root, ES_DIR)
+    errors = []
+    for name, path in pages(root, EN_DIR).items():
+        if name not in spanish:
+            continue
+        en_meta, en_lines = split_front_matter(path.read_text())
+        es_meta, es_lines = split_front_matter(spanish[name].read_text())
+        stem = Path(name).stem
+        for key, fallback in (("id", stem), ("slug", None), ("draft", None), ("unlisted", None)):
+            en_value = en_meta.get(key, fallback)
+            es_value = es_meta.get(key, fallback)
+            if en_value != es_value:
+                errors.append(f"{name}: front matter `{key}` differs, EN {en_value!r} and ES {es_value!r}")
+        en_tables, en_admonitions = page_features(en_lines)
+        es_tables, es_admonitions = page_features(es_lines)
+        if en_tables != es_tables:
+            errors.append(f"{name}: number of tables differs, EN {en_tables} and ES {es_tables}")
+        if en_admonitions != es_admonitions:
+            errors.append(f"{name}: number of admonitions differs, EN {en_admonitions} and ES {es_admonitions}")
+        english_prose = prose_lines(en_lines)
+        spanish_prose = set(prose_lines(es_lines))
+        long_lines = [line for line in english_prose if len(line.split()) >= 4]
+        repeated = [line for line in long_lines if line in spanish_prose]
+        if len(long_lines) >= UNTRANSLATED_MIN_LINES and len(repeated) / len(long_lines) > UNTRANSLATED_SHARE:
+            errors.append(
+                f"{name}: the Spanish page repeats {len(repeated)} of {len(long_lines)} English sentences: translate it"
+            )
+    return errors
+
+
 def validate(root: Path = ROOT) -> list[str]:
-    return check_endings(root) + check_sidebar(root) + check_parity(root)
+    return (
+        check_endings(root)
+        + check_sidebar(root)
+        + check_twins(root)
+        + check_parity(root)
+        + check_pair_metadata(root)
+    )
 
 
 def main() -> int:
-    errors = validate()
+    parser = argparse.ArgumentParser(description=__doc__.split("\n")[0])
+    parser.add_argument("--root", type=Path, default=ROOT, help="repository root to validate (default: this repository)")
+    root = parser.parse_args().root.resolve()
+    errors = validate(root)
     for error in errors:
         print(f"ERROR: {error}")
     if errors:
         return 1
     print(
-        f"Validated page endings, sidebar membership and EN/ES shape for "
-        f"{len(pages(ROOT, EN_DIR))} English and {len(pages(ROOT, ES_DIR))} Spanish pages"
+        f"Validated page endings, sidebar membership, EN/ES pairs and shape for "
+        f"{len(pages(root, EN_DIR))} English and {len(pages(root, ES_DIR))} Spanish pages"
     )
     return 0
 

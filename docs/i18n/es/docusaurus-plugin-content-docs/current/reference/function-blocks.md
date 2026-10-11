@@ -629,7 +629,7 @@ Resultado tras 6 scans de 10 ms: `Top` = `30`, `Items` = `1`.
 
 ## Modbus
 
-Los ejemplos de estos bloques se ejecutan en el runtime nativo del host, que no tiene servidor Modbus, broker MQTT ni servicio en la nube con quien hablar: cada bloque termina con `ERROR` en TRUE y `STATUS` 3 (sin manejador). Prueban que el bloque compila, se ejecuta e informa su estado; el intercambio con un par se verifica por separado, contra dobles de protocolo.
+Los ejemplos de estos bloques se ejecutan en el runtime nativo del host, que no tiene servidor Modbus, broker MQTT ni servicio en la nube con quien hablar: cada bloque termina con `ERROR` en TRUE y `STATUS` 3 (sin manejador). Prueban que el bloque compila, se ejecuta e informa su estado, y nada sobre un intercambio con un par: lo que se ha verificado de cada bloque, y contra qué, se indica en las guías prácticas de [Modbus](../guides/modbus.md), [MQTT y Sparkplug B](../guides/mqtt-sparkplug.md) y [los bloques de nube](../guides/cloud-blocks.md).
 
 ### MB_READ_HREG
 
@@ -773,7 +773,7 @@ Resultado tras 3 scans de 10 ms: `Failed` = `TRUE`, `Code` = `3`.
 
 ## MQTT
 
-Los ejemplos de estos bloques se ejecutan en el runtime nativo del host, que no tiene servidor Modbus, broker MQTT ni servicio en la nube con quien hablar: cada bloque termina con `ERROR` en TRUE y `STATUS` 3 (sin manejador). Prueban que el bloque compila, se ejecuta e informa su estado; el intercambio con un par se verifica por separado, contra dobles de protocolo.
+Los ejemplos de estos bloques se ejecutan en el runtime nativo del host, que no tiene servidor Modbus, broker MQTT ni servicio en la nube con quien hablar: cada bloque termina con `ERROR` en TRUE y `STATUS` 3 (sin manejador). Prueban que el bloque compila, se ejecuta e informa su estado, y nada sobre un intercambio con un par: lo que se ha verificado de cada bloque, y contra qué, se indica en las guías prácticas de [Modbus](../guides/modbus.md), [MQTT y Sparkplug B](../guides/mqtt-sparkplug.md) y [los bloques de nube](../guides/cloud-blocks.md).
 
 ### MQTT_CONNECT
 
@@ -871,7 +871,7 @@ Resultado tras 3 scans de 10 ms: `Failed` = `TRUE`, `Code` = `3`.
 
 ## Nube y Sparkplug B
 
-Los ejemplos de estos bloques se ejecutan en el runtime nativo del host, que no tiene servidor Modbus, broker MQTT ni servicio en la nube con quien hablar: cada bloque termina con `ERROR` en TRUE y `STATUS` 3 (sin manejador). Prueban que el bloque compila, se ejecuta e informa su estado; el intercambio con un par se verifica por separado, contra dobles de protocolo.
+Los ejemplos de estos bloques se ejecutan en el runtime nativo del host, que no tiene servidor Modbus, broker MQTT ni servicio en la nube con quien hablar: cada bloque termina con `ERROR` en TRUE y `STATUS` 3 (sin manejador). Prueban que el bloque compila, se ejecuta e informa su estado, y nada sobre un intercambio con un par: lo que se ha verificado de cada bloque, y contra qué, se indica en las guías prácticas de [Modbus](../guides/modbus.md), [MQTT y Sparkplug B](../guides/mqtt-sparkplug.md) y [los bloques de nube](../guides/cloud-blocks.md).
 
 ### AZURE_C2D_RECV
 

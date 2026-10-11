@@ -71,5 +71,5 @@ command runs.
 
 Until a phase closes, the claims of the current prerelease stay as the
 [release notes](../release-notes/index.md) and
-[Capabilities and evidence tiers](../reference/capabilities-evidence.md) state
+[Hardware support](../reference/capabilities-evidence.md) state
 them.
