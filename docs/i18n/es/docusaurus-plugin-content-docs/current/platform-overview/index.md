@@ -29,7 +29,7 @@ flowchart TB
 
 - **Memoria acotada en runtime**: el core C99 usa límites de memoria definidos; la validación sigue siendo parte de cada perfil de destino.
 - **Separación mediante HAL**: el core y los adaptadores de hardware se separan para inspeccionar y probar cada comportamiento de plataforma de forma independiente.
-- **Evidencia antes que claims**: timing del scheduler, I/O, persistencia, protocolos y soporte de placas sólo se afirman para el perfil/revisión con evidencia correspondiente.
+- **Evidencia antes que claims**: timing del scheduler, I/O, persistencia, protocolos y soporte de placas sólo se afirman para el perfil/revisión con evidencia correspondiente. [Soporte de hardware](../reference/capabilities-evidence.md) enumera los niveles, y [Seguridad y limitaciones](../safety-and-limitations.md) dice qué no es ZPLC.
 
 ## Fronteras de producto
 

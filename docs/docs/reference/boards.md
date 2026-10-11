@@ -81,7 +81,7 @@ Flash and RAM of `firmware/app` per board, from the linker memory table of the C
 - **Network:** Serial-focused
 - **Support level:** cross-build (no hardware record)
 - **Build command:** `west build -b rpi_pico/rp2040 firmware/app --pristine`
-- **Reference anchor:** `docs/docs/reference/index.md#supported-boards`
+- **Reference anchor:** `docs/docs/reference/capabilities-evidence.md`
 - **Process image used (input, output):** 18 B, 1 B
 - **I/O description hash:** `d27196be`
 - **Support assets:**
@@ -116,7 +116,7 @@ Flash and RAM of `firmware/app` per board, from the linker memory table of the C
 - **Network:** Serial-focused
 - **Support level:** cross-build (no hardware record)
 - **Build command:** `west build -b arduino_giga_r1/stm32h747xx/m7 firmware/app --pristine`
-- **Reference anchor:** `docs/docs/reference/index.md#supported-boards`
+- **Reference anchor:** `docs/docs/reference/capabilities-evidence.md`
 - **Process image used (input, output):** 1 B, 1 B
 - **I/O description hash:** `77271dae`
 - **Support assets:**
@@ -141,7 +141,7 @@ Flash and RAM of `firmware/app` per board, from the linker memory table of the C
 - **Support level:** cross-build (no hardware record)
 - **Module:** ESP32-S3-WROOM-1-N8R8, 8 MB flash, 8 MB PSRAM (variant to be confirmed on the module)
 - **Build command:** `west build -b esp32s3_devkitc/esp32s3/procpu firmware/app --pristine`
-- **Reference anchor:** `docs/docs/reference/index.md#supported-boards`
+- **Reference anchor:** `docs/docs/reference/capabilities-evidence.md`
 - **Process image used (input, output):** 10 B, 1 B
 - **I/O description hash:** `2e9abb09`
 - **Support assets:**
@@ -175,7 +175,7 @@ Flash and RAM of `firmware/app` per board, from the linker memory table of the C
 - **Network:** Network-capable (Ethernet)
 - **Support level:** cross-build (no hardware record)
 - **Build command:** `west build -b stm32f746g_disco/stm32f746xx firmware/app --pristine`
-- **Reference anchor:** `docs/docs/reference/index.md#supported-boards`
+- **Reference anchor:** `docs/docs/reference/capabilities-evidence.md`
 - **Process image used (input, output):** 1 B, 1 B
 - **I/O description hash:** `80927f2e`
 - **Support assets:**
@@ -198,7 +198,7 @@ Flash and RAM of `firmware/app` per board, from the linker memory table of the C
 - **Network:** Network-capable (Ethernet)
 - **Support level:** cross-build (no hardware record)
 - **Build command:** `west build -b nucleo_h743zi/stm32h743xx firmware/app --pristine`
-- **Reference anchor:** `docs/docs/reference/index.md#supported-boards`
+- **Reference anchor:** `docs/docs/reference/capabilities-evidence.md`
 - **Process image used (input, output):** 1 B, 1 B
 - **I/O description hash:** `4193575e`
 - **Support assets:**
@@ -222,7 +222,7 @@ Flash and RAM of `firmware/app` per board, from the linker memory table of the C
 - **Network:** Network-capable (Wi-Fi)
 - **Support level:** cross-build (no hardware record)
 - **Build command:** `west build -b arduino_opta/stm32h747xx/m7 firmware/app --pristine`
-- **Reference anchor:** `docs/docs/reference/index.md#supported-boards`
+- **Reference anchor:** `docs/docs/reference/capabilities-evidence.md`
 - **Process image used (input, output):** 1 B, 1 B
 - **I/O description hash:** `6ce9cc7a`
 - **Support assets:**
@@ -256,7 +256,7 @@ Flash and RAM of `firmware/app` per board, from the linker memory table of the C
 - **Network:** Serial-focused
 - **Support level:** cross-build (no hardware record)
 - **Build command:** `west build -b rp2040_zero/rp2040 firmware/app --pristine`
-- **Reference anchor:** `docs/docs/reference/index.md#supported-boards`
+- **Reference anchor:** `docs/docs/reference/capabilities-evidence.md`
 - **Process image used (input, output):** 1 B, 1 B
 - **I/O description hash:** `0d5edb3c`
 - **Support assets:**

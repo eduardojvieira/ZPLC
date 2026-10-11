@@ -15,7 +15,7 @@ import { markdownFiles } from './check_doc_claims';
 const ROOT = new URL('../../', import.meta.url).pathname;
 const EN_DIR = 'docs/docs';
 const ES_DIR = 'docs/i18n/es/docusaurus-plugin-content-docs/current';
-const VALIDATOR = join(ROOT, 'tools/docs/validate_docs_pages.py');
+const text = (path: string) => readFileSync(join(ROOT, path), 'utf8');
 
 interface Category { type: 'category'; label: string; items: Item[] }
 type Item = string | Category;
@@ -41,7 +41,7 @@ function pageId(path: string, text: string): { id: string; draft: boolean } {
 function pagesOf(base: string): Array<{ path: string; id: string; draft: boolean }> {
   return markdownFiles(ROOT, base).map((file) => {
     const path = file.slice(base.length + 1);
-    return { path, ...pageId(path, readFileSync(join(ROOT, file), 'utf8')) };
+    return { path, ...pageId(path, text(file)) };
   });
 }
 
@@ -64,7 +64,7 @@ describe('docs structure: the sidebar is organised by reader intent (DOC-002)', 
   });
 
   it('has a Spanish label for every category, through the translation file of the site', async () => {
-    const translations = JSON.parse(readFileSync(join(ROOT, 'docs/i18n/es/docusaurus-plugin-content-docs/current.json'), 'utf8')) as Record<string, { message: string }>;
+    const translations = JSON.parse(text('docs/i18n/es/docusaurus-plugin-content-docs/current.json')) as Record<string, { message: string }>;
     for (const label of labels(await sidebar())) {
       const entry = translations[`sidebar.docsSidebar.category.${label}`];
       expect({ label, translated: entry !== undefined && entry.message.trim() !== '' }).toEqual({ label, translated: true });
@@ -72,11 +72,11 @@ describe('docs structure: the sidebar is organised by reader intent (DOC-002)', 
   });
 
   it('keeps the labels of the navigation and the footer out of the pages, in the translation files', () => {
-    const config = readFileSync(join(ROOT, 'docs/docusaurus.config.js'), 'utf8');
+    const config = text('docs/docusaurus.config.js');
     // a label with both languages written into it ("Docs / Documentación") cannot be localised
     expect(config.match(/(?:label|title): '[^']* \/ [^']*'/g) ?? []).toEqual([]);
     for (const file of ['navbar.json', 'footer.json']) {
-      const translated = JSON.parse(readFileSync(join(ROOT, `docs/i18n/es/docusaurus-theme-classic/${file}`), 'utf8')) as Record<string, { message: string }>;
+      const translated = JSON.parse(text(`docs/i18n/es/docusaurus-theme-classic/${file}`)) as Record<string, { message: string }>;
       expect(Object.keys(translated).length).toBeGreaterThan(0);
     }
   });
@@ -101,7 +101,7 @@ describe('docs structure: a page is published only when both languages are compl
         writeFileSync(join(root, base, name), text);
       }
     }
-    const result = Bun.spawnSync(['python3', '-B', VALIDATOR, '--root', root], { stdout: 'pipe', stderr: 'pipe' });
+    const result = Bun.spawnSync(['python3', '-B', 'tools/docs/validate_docs_pages.py', '--root', root], { cwd: ROOT, stdout: 'pipe', stderr: 'pipe' });
     return { code: result.exitCode, output: result.stdout.toString() + result.stderr.toString() };
   }
 
@@ -141,7 +141,7 @@ describe('docs structure: a page is published only when both languages are compl
   });
 
   it('holds for the pages of this repository', () => {
-    const result = Bun.spawnSync(['python3', '-B', VALIDATOR], { cwd: ROOT, stdout: 'pipe', stderr: 'pipe' });
+    const result = Bun.spawnSync(['python3', '-B', 'tools/docs/validate_docs_pages.py'], { cwd: ROOT, stdout: 'pipe', stderr: 'pipe' });
     expect({ code: result.exitCode, output: result.stdout.toString() + result.stderr.toString() }).toMatchObject({ code: 0 });
   });
 });

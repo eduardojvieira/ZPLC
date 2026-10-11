@@ -61,4 +61,4 @@ device. See [Recovery Boundaries](../operations/recovery.md).
 ## Related pages
 
 - [Board profiles](./boards.md)
-- [Capabilities and Evidence](./capabilities-evidence.md)
+- [Hardware support](./capabilities-evidence.md)

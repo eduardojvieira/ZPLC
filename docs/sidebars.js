@@ -24,8 +24,10 @@ const sidebars = {
       collapsed: false,
       items: [
         'getting-started/index',
+        'getting-started/install',
         'platform-overview/index',
         'reference/capabilities-evidence',
+        'safety-and-limitations',
       ],
     },
     {

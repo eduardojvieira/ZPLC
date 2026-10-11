@@ -37,6 +37,9 @@ de firmware.
 - Estado eléctrico de salida, timing/WCET, watchdog físico, persistencia ante corte de energía, recovery de runner y calificación de producción.
 - Cualquier afirmación de que un profile de placa funciona más allá de su nivel de evidencia registrado.
 
+Vea [Soporte de hardware](../reference/capabilities-evidence.md) para los niveles y
+[Seguridad y limitaciones](../safety-and-limitations.md) para lo que ZPLC no es.
+
 ## Registro de escalamiento
 
 - Conservá diagnósticos, trace, identidad del artefacto, profile y decisión del operador.

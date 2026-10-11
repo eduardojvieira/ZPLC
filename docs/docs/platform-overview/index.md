@@ -29,7 +29,7 @@ flowchart TB
 
 - **Bounded runtime memory**: the C99 core uses defined memory boundaries; validation remains part of every target profile.
 - **HAL separation**: the core and hardware adapters are separate so platform behavior can be inspected and tested independently.
-- **Evidence before claims**: scheduler timing, I/O behavior, persistence, protocols, and board support are stated only for the profile/revision with matching evidence.
+- **Evidence before claims**: scheduler timing, I/O behavior, persistence, protocols, and board support are stated only for the profile/revision with matching evidence. [Hardware support](../reference/capabilities-evidence.md) lists the levels, and [Safety and limitations](../safety-and-limitations.md) says what ZPLC is not.
 
 ## Product boundaries
 

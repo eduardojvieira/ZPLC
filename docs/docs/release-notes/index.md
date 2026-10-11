@@ -24,7 +24,8 @@ The automated checks that ran for that commit are the C99 host tests, the
 sanitizer and fuzz tests, the Zephyr Twister tests on `native_sim`, the packaged
 desktop smoke tests, and the cross-build of the six board profiles.
 
-No board has been tested on hardware. A hardware claim needs a traceable physical
+No board has been tested on hardware: see [Hardware support](../reference/capabilities-evidence.md)
+and [Safety and limitations](../safety-and-limitations.md). A hardware claim needs a traceable physical
 test (HIL) for the Raspberry Pi Pico RP2040 and the ESP32-S3-DevKitC-1-N8R8:
 build of the exact SHA, flash, identity and hash, program deploy, golden
 scenario, reboot and persistence, safe outputs, and timing per profile.

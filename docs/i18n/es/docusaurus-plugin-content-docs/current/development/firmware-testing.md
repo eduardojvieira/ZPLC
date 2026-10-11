@@ -17,7 +17,7 @@ Todo lo que se describe aquí es evidencia de host, de simulador o de
 compilación. Una ejecución correcta no demuestra que una placa arranque, que
 sus pines se comporten ni que un ciclo de scan mantenga su período en silicio
 real. Esas afirmaciones requieren los procedimientos de hardware en el lazo
-descritos en [Capacidades y niveles de evidencia](../reference/capabilities-evidence.md).
+descritos en [Soporte de hardware](../reference/capabilities-evidence.md).
 
 ## Qué necesita
 
@@ -292,4 +292,4 @@ ni la marca máxima del heap.
 
 - [Configuración del Workspace Zephyr](../reference/zephyr-workspace-setup.md)
 - [Placas Soportadas](../reference/boards.md)
-- [Capacidades y niveles de evidencia](../reference/capabilities-evidence.md)
+- [Soporte de hardware](../reference/capabilities-evidence.md)

@@ -3,35 +3,38 @@ slug: /reference
 id: index
 title: Reference
 sidebar_label: Reference
-description: ZPLC 2.0 APIs, board profiles, evidence tiers, and Zephyr setup.
+description: "Look a fact up: the languages, the functions and function blocks, the project and scenario files, the command line, the runtime and the boards."
 tags: [reference]
 ---
 
 # Reference
 
-Use this section to identify the current contract and the evidence behind a
-claim. Profile presence is not HIL or production qualification.
+Use this section to look a fact up. Most pages are generated from the source
+they describe, so they cannot drift from it; each says which source it is read
+from. To learn how to do something, start from the how-to guides instead.
 
-## Start here
+## Languages
 
-- [Capabilities and Evidence](./capabilities-evidence.md) — how to read host, POSIX, package, Twister/QEMU, cross-build, and HIL results.
-- [Board profiles](./boards.md) — generated data from the historical manifest filename.
-- [Runtime API](./runtime-api.md) — generated C header reference.
-- [Zephyr workspace setup](./zephyr-workspace-setup.md) — reproducible build inputs.
+- [Structured Text reference](./language-st.md): what works, element by element, and what does not.
+- [Instruction List](./language-il.md), [Ladder Diagram](./language-ld.md), [Function Block Diagram](./language-fbd.md) and [Sequential Function Chart](./language-sfc.md): the same, per language.
 
-## Supported Boards
+## Functions and function blocks
 
-| Board | IDE ID | Zephyr Target | Network | Validation |
-|-------|--------|---------------|---------|------------|
-| Raspberry Pi Pico (RP2040) | `rpi_pico` | `rpi_pico/rp2040` | Serial-focused | cross-build |
-| Arduino GIGA R1 (STM32H747 M7) | `arduino_giga_r1` | `arduino_giga_r1/stm32h747xx/m7` | Serial-focused | cross-build |
-| ESP32-S3-DevKitC-1 (N8R8) | `esp32s3_devkitc` | `esp32s3_devkitc/esp32s3/procpu` | Network-capable (Wi-Fi) | cross-build |
-| STM32F746G Discovery | `stm32f746g_disco` | `stm32f746g_disco/stm32f746xx` | Network-capable (Ethernet) | cross-build |
-| STM32 Nucleo-H743ZI | `nucleo_h743zi` | `nucleo_h743zi/stm32h743xx` | Network-capable (Ethernet) | cross-build |
-| Arduino Opta WiFi (STM32H747 M7) | `arduino_opta_wifi` | `arduino_opta/stm32h747xx/m7` | Network-capable (Wi-Fi) | cross-build |
-| Waveshare RP2040-Zero | `waveshare_rp2040_zero` | `rp2040_zero/rp2040` | Serial-focused | cross-build |
+- [Functions](./functions.md) and [function blocks](./function-blocks.md): every name of the compiler registry, with its signature or pins and an example that is run by the documentation check.
 
-The table mirrors `firmware/app/boards/boards.json`, the one board manifest. The
-validation level is derived from the evidence records the manifest references,
-never set by hand, and every current row has none. The I/O channels of each board
-are in [Supported Boards](./boards.md).
+## Projects and tools
+
+- [Project file (`zplc.json`)](./project-file.md): every field.
+- [Scenario file format](./scenario-file.md): events, expectations and limits.
+- [Command line](./cli.md) and [MCP server](./mcp.md): every command, tool and resource.
+
+## Runtime and firmware
+
+- [Runtime API](./runtime-api.md): the C headers.
+- [Runtime session protocol](./runtime-protocol.md), [Kconfig options](./kconfig.md) and [shell commands](./shell-commands.md).
+
+## Boards
+
+- [Hardware support](./capabilities-evidence.md): the levels of evidence and the level of every board.
+- [Supported boards](./boards.md): the I/O channels, pins and footprint of each board, generated from the board manifest.
+- [Zephyr workspace setup](./zephyr-workspace-setup.md): the inputs of a reproducible firmware build.

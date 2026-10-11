@@ -33,7 +33,7 @@ and reviewing PLC projects in a folder selected by the user.
 
 Native POSIX simulation validates host behavior. It is not a claim of exact
 target timing, electrical I/O, HIL, or production qualification. Board profiles
-currently carry cross-build evidence only; see [capabilities and evidence](../reference/capabilities-evidence.md).
+currently carry cross-build evidence only; see [hardware support](../reference/capabilities-evidence.md).
 
 AI may prepare an isolated candidate change, but only a person can save it or
 initiate a physical operation. Read [AI and privacy](./ai-privacy.md) before you
