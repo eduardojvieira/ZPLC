@@ -695,15 +695,15 @@ export function Console({ debugController }: ConsoleProps) {
               {problemSummary}
             </div>
             {liveSTDiagnostics.length > 0 && (
-              <section aria-label="Live Structured Text syntax diagnostics" className="space-y-1 pb-2 border-b border-[var(--color-surface-700)]">
-                <div className="px-2 text-xs text-[var(--color-surface-300)]">Live ST syntax · not build evidence</div>
+              <section aria-label="Live Structured Text diagnostics" className="space-y-1 pb-2 border-b border-[var(--color-surface-700)]">
+                <div className="px-2 text-xs text-[var(--color-surface-300)]">Live ST diagnostics · not build evidence</div>
                 {liveSTDiagnostics.map((msg, idx) => (
                   <div key={`${msg.code}-${idx}`} className="flex items-start gap-2 rounded px-2 py-1">
                     {msg.type === 'error' ? <XCircle size={14} className="text-[var(--color-accent-red)] mt-0.5 flex-shrink-0" /> : <AlertCircle size={14} className="text-[var(--color-accent-yellow)] mt-0.5 flex-shrink-0" />}
                     <div className="flex-1">
                       <span className="sr-only">{msg.type === 'warning' ? 'Warning' : 'Error'}: </span>
                       <span className="text-[var(--color-surface-100)]">{msg.message}</span>
-                      {activeFile?.path && <span className="ml-2 text-[var(--color-surface-400)] text-xs">{activeFile.path}{msg.line !== undefined && `:${msg.line}`}{msg.column !== undefined && `:${msg.column}`}</span>}
+                      {(msg.file ?? activeFile?.path) && <span className="ml-2 text-[var(--color-surface-400)] text-xs">{msg.file ?? activeFile?.path}{msg.line !== undefined && `:${msg.line}`}{msg.column !== undefined && `:${msg.column}`}</span>}
                     </div>
                   </div>
                 ))}

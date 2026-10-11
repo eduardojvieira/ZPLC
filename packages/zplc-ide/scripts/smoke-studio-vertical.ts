@@ -685,7 +685,7 @@ async function main(): Promise<void> {
     await click('Problems');
     let diagnosticText = '';
     try {
-      await waitFor('incremental compiler diagnostic', async () => { diagnosticText = await text(); return diagnosticText.includes('Live ST syntax') && diagnosticText.includes('Unexpected character') ? true : undefined; });
+      await waitFor('incremental compiler diagnostic', async () => { diagnosticText = await text(); return diagnosticText.includes('Live ST diagnostics') && diagnosticText.includes('Unexpected character') ? true : undefined; });
     } catch (error) { throw new Error(`${error instanceof Error ? error.message : String(error)}; panel: ${diagnosticText}`); }
     assert((await text()).includes('src/Motor.st'), 'Compiler diagnostic did not retain src/Motor.st provenance');
     assert(await page().evaluate(`window.__zplcSmoke.compileCalls === 0 && !document.body.innerText.includes('Built saved workspace locally:')`) === true, 'An incremental ST diagnostic must not invoke or claim a canonical build');

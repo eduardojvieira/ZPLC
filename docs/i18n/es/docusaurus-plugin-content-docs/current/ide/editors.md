@@ -64,6 +64,33 @@ Nivel de evidencia: host. `src/editors/gesture.test.ts` ejercita la regla de com
 y una serie de cambios de selección, y `src/editors/visualHistory.test.ts` guarda 100 gestos, la fusión de ediciones y la
 selección de cada paso. Arrastrar con un puntero real no está cubierto: este repositorio no tiene un entorno de pruebas con DOM.
 
+## El servicio de lenguaje de Structured Text
+
+El editor de Structured Text lee todo el proyecto, no solo el archivo que tienes delante (LNG-015, LNG-016).
+
+| Función | Qué hace |
+| --- | --- |
+| Diagnósticos | Cada error de sintaxis y cada error semántico de cada archivo Structured Text del proyecto, mientras escribes (con una pausa de 0,3 s), con el rango que dio el propio front end del compilador. Aparecen como subrayados en los archivos abiertos y en **Problemas** (Diagnósticos ST en vivo), y desaparecen la siguiente vez que se comprueba el proyecto y el error ya no está. No son evidencia de compilación; la evidencia es **Build**. |
+| Autocompletado | Las variables, parámetros y métodos en el ámbito; tras un punto, los miembros del tipo de lo que está antes (un bloque, una estructura, un elemento de un arreglo de estructuras, un bloque estándar); los bloques, funciones y tipos de todos los archivos; los tipos donde va un tipo; los parámetros de una llamada como `Nombre := `. Los nombres del proyecto van antes que la biblioteca estándar. |
+| Hover | Qué es un nombre, su tipo y dónde se declara, también en otro archivo. |
+| Ir a la definición, buscar referencias | En todos los archivos del proyecto. Un nombre se encuentra por lo que es, no por cómo se escribe: el `Count` de un programa no es el `Count` de otro. |
+| Esquema | Las declaraciones del archivo como un árbol (un bloque contiene sus entradas, salidas, variables y métodos). |
+| Ayuda de firma | Los parámetros de la función, método o bloque que se llama, y el parámetro en el que está el cursor, también con argumentos con nombre. |
+| Renombrar símbolo (`F2`) | Renombra lo que un nombre representa en todos los archivos del proyecto, por ámbito y por tipo, nunca como texto. Se rechaza, con el motivo, cuando el nombre nuevo ya está declarado donde se usa el anterior, cuando un archivo del proyecto tiene un error de sintaxis (podría contener un uso que no se encontró), cuando el nombre aparece en un archivo Ladder, FBD, SFC o IL (renómbralo también allí) o cuando el nombre es un programa (las tareas de `zplc.json` lo ejecutan por su nombre). Los archivos que cambian se abren como pestañas modificadas; tú las guardas. |
+| Formatear documento (`Shift+Alt+F`) | Sangra cada línea según la profundidad de sus bloques y recorta los extremos de las líneas. Solo cambia espacios al principio y al final de una línea: no añade ni quita líneas (un breakpoint es una línea), no mueve ningún token y deja los comentarios como están. Formatear dos veces da el mismo texto. |
+
+Cada función se responde desde un solo índice del proyecto, construido con el lexer y el parser del compilador, con el
+texto del editor en lugar de su archivo; un archivo que aún no analiza sintácticamente sigue aportando las declaraciones
+que dan sus tokens, así que el autocompletado funciona a mitad de una línea.
+
+No cubierto: un nombre que solo se usa en un archivo Ladder, FBD, SFC o IL no forma parte del índice (renombrar no lo
+adivina, como dice la tabla); la búsqueda de símbolos en todo el espacio de trabajo; las acciones de código.
+
+Nivel de evidencia: host. `packages/zplc-compiler/src/compiler/check.test.ts` compara los diagnósticos con los errores
+de la compilación para los mismos proyectos; `src/langsvc/*.test.ts` cubren el índice, renombrar, autocompletado, ayuda
+de firma, esquema, formato (sobre cada proyecto de ejemplo, token a token), los marcadores y los proveedores de Monaco.
+Escribir en el editor real no lo ejecuta ninguna prueba.
+
 ## Tipos de pin en FBD
 
 El lienzo FBD rechaza un cable entre pines cuyos tipos no coinciden y explica el motivo en un mensaje sobre el lienzo

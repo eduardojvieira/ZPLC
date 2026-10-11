@@ -59,6 +59,33 @@ Evidence level: host. `src/editors/gesture.test.ts` drives the commit rule with 
 selection changes, and `src/editors/visualHistory.test.ts` holds 100 gestures, the coalescing and the selection of each step.
 Dragging with a real pointer is not covered: there is no DOM test environment in this repository.
 
+## The Structured Text language service
+
+The Structured Text editor reads the whole project, not only the file in front of you (LNG-015, LNG-016).
+
+| Feature | What it does |
+| --- | --- |
+| Diagnostics | Every syntax error and every semantic error of every Structured Text file of the project, while you type (a pause of 0.3 s), with the range the compiler's own front end gave. They appear as squiggles in the files that are open and in **Problems** (Live ST diagnostics), and go away the next time the project is checked and the error is gone. They are not build evidence; **Build** is. |
+| Completion | The variables, parameters and methods in scope; after a dot the members of the type of what is before it (a block, a structure, an element of an array of structures, a standard block); the blocks, functions and types of every file; the types where a type goes; the parameters of a call as `Name := `. Project names come before the standard library. |
+| Hover | What a name is, its type and where it is declared, also in another file. |
+| Go to definition, find references | Across the files of the project. A name is found by what it is, not by its spelling: `Count` of one program is not `Count` of another. |
+| Outline | The declarations of the file as a tree (a block holds its inputs, outputs, variables and methods). |
+| Signature help | The parameters of the function, method or block being called, and the one the cursor is at, also when the arguments are named. |
+| Rename symbol (`F2`) | Renames what a name stands for in every file of the project, by scope and by type, never as text. It is refused, with the reason, when the new name is already declared where the old one is used, when a file of the project has a syntax error (it could hold a use that was not found), when the name is mentioned in a Ladder, FBD, SFC or IL file (rename it there too), or when the name is a program (the tasks of `zplc.json` run it by name). The files that change are open as modified tabs; you save them. |
+| Format document (`Shift+Alt+F`) | Indents each line by the depth of its blocks and trims the ends of lines. It changes only white space at the start and end of a line: no line is added or removed (a breakpoint is a line), no token moves, and a comment is left as written. Formatting twice gives the same text. |
+
+Each feature is answered from one index of the project, built from the compiler's lexer and parser, with the text of the
+editor in place of its file; a file that does not parse yet still contributes the declarations that its tokens give, so
+completion works in the middle of a line.
+
+Not covered: a name used only in a Ladder, FBD, SFC or IL file is not part of the index (rename refuses to guess it, as
+the table says); workspace-wide symbol search; code actions.
+
+Evidence level: host. `packages/zplc-compiler/src/compiler/check.test.ts` runs the diagnostics against the build's
+errors for the same projects; `src/langsvc/*.test.ts` cover the index, rename, completion, signature help, outline,
+formatting (over every example project, token for token), the markers and the Monaco providers. Typing in the real editor
+is not driven by a test.
+
 ## Pin types in FBD
 
 The FBD canvas refuses a wire between pins whose types do not match, and says why in a message over the canvas

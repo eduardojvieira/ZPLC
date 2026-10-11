@@ -122,7 +122,7 @@ lista, marcada "not in the project", hasta que usted la quita. Un proyecto que e
 versión 1 no puede cambiar sus bibliotecas hasta que se aplique.
 
 Nivel de evidencia: host. `src/project/libraries.test.ts`, `src/project/unlistedSources.test.ts`,
-`src/store/projectSources.test.ts` y `src/components/stLanguageService.project.test.ts` cubren las reglas, las fuentes
+`src/store/projectSources.test.ts` y `src/langsvc/assist.test.ts` cubren las reglas, las fuentes
 y los servicios del editor; el recorrido 32 de `bun run test:journeys` lista una biblioteca en la aplicación real,
 comprueba el árbol, la paleta de Ladder y el cursor, y compila el proyecto con ella.
 

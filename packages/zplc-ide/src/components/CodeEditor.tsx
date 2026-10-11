@@ -40,7 +40,13 @@ import { projectPathFromModelPath } from '../utils/sessionState';
 import { recordViewState, takePendingViewState } from '../store/sessionPersistence';
 import { compilerMarkersForFile } from './compilerMarkers';
 import { editorModelPath, isMonacoCancellation } from './editorModels';
-import { ensureSTLanguageService, getSTSyntaxDiagnostics } from './stLanguageService';
+import { registerSTProviders } from '../langsvc/monacoProviders';
+import { ideBridge } from '../langsvc/ideBridge';
+import { liveDiagnostics } from '../langsvc/liveDiagnostics';
+import { currentProjectFiles, filesWithBuffer } from '../langsvc/session';
+import { buildOptionsOf } from '../project/buildOptions';
+import { getCompilerMemoryProfile } from '../config/boardProfiles';
+import { applyProjectMarkers } from '../langsvc/markers';
 
 const ST_LIVE_MARKER_OWNER = 'zplc.st-live';
 const ST_LIVE_ANALYSIS_DELAY_MS = 300;
@@ -287,7 +293,7 @@ export function CodeEditor({
       monaco.languages.setMonarchTokensProvider(ST_LANGUAGE_ID, stLanguage);
       monaco.languages.setLanguageConfiguration(ST_LANGUAGE_ID, stConf);
     }
-    ensureSTLanguageService(monaco);
+    registerSTProviders(monaco, ideBridge);
     if (!languages.some((l: { id: string }) => l.id === IL_LANGUAGE_ID)) {
       monaco.languages.register({ id: IL_LANGUAGE_ID });
       monaco.languages.setMonarchTokensProvider(IL_LANGUAGE_ID, ilLanguage);
@@ -392,8 +398,17 @@ export function CodeEditor({
     const identity = { projectSession, compilerRunId, fileId, file: filePath };
     if (state.activeFileId !== fileId || state.projectSession !== projectSession || state.compilerRunId !== compilerRunId) return;
 
+    // The whole project is checked with the compiler's front end, each open file as it is being edited, so an error that
+    // this edit causes in another file is shown, and one that it fixes is cleared (LNG-015).
     const timer = window.setTimeout(() => {
-      const diagnostics = getSTSyntaxDiagnostics(content);
+      const { loadedFiles, projectConfig } = useIDEStore.getState();
+      let files = currentProjectFiles();
+      for (const open of loadedFiles.values()) if (open.language === 'ST') files = filesWithBuffer(open.path, open.id === fileId ? content : open.content, files);
+      if (!files.some((file) => file.path === filePath)) files = filesWithBuffer(filePath, content, files);
+      const diagnostics = liveDiagnostics(files, filePath, {
+        strictTypes: buildOptionsOf(projectConfig).strictTypes,
+        ...(getCompilerMemoryProfile(projectConfig?.target?.board) ? { memoryProfile: getCompilerMemoryProfile(projectConfig?.target?.board)! } : {}),
+      });
       useIDEStore.getState().setSTBufferDiagnostics({ ...identity, diagnostics }, content);
     }, ST_LIVE_ANALYSIS_DELAY_MS);
 
@@ -403,30 +418,14 @@ export function CodeEditor({
     };
   }, [compilerRunId, content, fileId, filePath, language, projectSession]);
 
+  // The diagnostics of the project, as markers on the model of each file that is open: the ranges the front end gave
   useEffect(() => {
-    const editor = editorRef.current;
     const monaco = monacoRef.current;
-    const model = editor?.getModel();
-    if (!editor || !monaco || !model) return;
+    if (!editorReady || !monaco) return;
     const current = stBufferDiagnostics;
     const isCurrent = language === 'ST' && current?.projectSession === projectSession
       && current.compilerRunId === compilerRunId && current.fileId === fileId && current.file === filePath;
-    const markers = !isCurrent ? [] : current.diagnostics.flatMap((diagnostic) => {
-      if (!diagnostic.line || diagnostic.line < 1) return [];
-      const line = Math.min(diagnostic.line, model.getLineCount());
-      const column = Math.min(Math.max(1, diagnostic.column ?? 1), model.getLineMaxColumn(line));
-      const endColumn = Math.min(column + 1, model.getLineMaxColumn(line));
-      return [{
-        message: diagnostic.message,
-        severity: diagnostic.type === 'error' ? monaco.MarkerSeverity.Error : monaco.MarkerSeverity.Warning,
-        startLineNumber: line,
-        startColumn: column,
-        endLineNumber: line,
-        endColumn,
-      }];
-    });
-    monaco.editor.setModelMarkers(model, ST_LIVE_MARKER_OWNER, markers);
-    return () => monaco.editor.setModelMarkers(model, ST_LIVE_MARKER_OWNER, []);
+    return applyProjectMarkers(monaco, ST_LIVE_MARKER_OWNER, isCurrent ? current.diagnostics : [], filePath);
   }, [compilerRunId, editorReady, fileId, filePath, language, projectSession, stBufferDiagnostics]);
 
   // A cursor and a scroll restored with the session are put back once, when the editor first shows the file (IDE-008).

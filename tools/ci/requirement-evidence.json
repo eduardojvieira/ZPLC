@@ -973,6 +973,21 @@
     {"kind":"unit","ref":"packages/zplc-ide/src/models/visualFileRoundTrip.test.ts","test":"LNG-014 the one form of a visual file"},
     {"kind":"unit","ref":"packages/zplc-ide/src/utils/fileSystem.visualRoundTrip.test.ts","test":"LNG-014 open and save without an edit"}
   ],
+  "LNG-015": [
+    {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/check.test.ts","test":"checking a project (LNG-015)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/langsvc/assist.test.ts","test":"completion in a buffer that is being typed (LNG-015)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/langsvc/assist.test.ts","test":"hover and outline across the project (LNG-015)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/langsvc/liveDiagnostics.test.ts","test":"the live diagnostics of the project (LNG-015)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/langsvc/markers.test.ts","test":"the diagnostics of the project as markers (LNG-015)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/langsvc/monacoProviders.test.ts","test":"the language service providers (LNG-015, LNG-016)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/langsvc/projectIndex.test.ts","test":"the index of a project resolves names by scope (LNG-015)"}
+  ],
+  "LNG-016": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/langsvc/assist.test.ts","test":"signature help (LNG-016)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/langsvc/format.test.ts","test":"document formatting (LNG-016)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/langsvc/monacoProviders.test.ts","test":"the language service providers (LNG-015, LNG-016)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/langsvc/rename.test.ts","test":"rename symbol (LNG-016)"}
+  ],
   "LNG-017": [
     {"kind":"conformance","ref":"conformance/lng/lng-017-il-unbalanced-closing-parenthesis.expect.json","test":"LNG-017 an IL closing parenthesis without an opening one is an error on its line"},
     {"kind":"conformance","ref":"conformance/lng/lng-017-il-unknown-mnemonic.expect.json","test":"LNG-017 an IL unknown mnemonic is an error on its line"},
@@ -1470,8 +1485,8 @@
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"31 A version 1 project shows its migration before it is applied","partial":true}
   ],
   "IDE-023": [
-    {"kind":"unit","ref":"packages/zplc-ide/src/components/stLanguageService.project.test.ts","test":"completion from the project (IDE-023)"},
-    {"kind":"unit","ref":"packages/zplc-ide/src/components/stLanguageService.project.test.ts","test":"hover over a name of the project (IDE-023)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/langsvc/assist.test.ts","test":"completion from the project (IDE-023)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/langsvc/assist.test.ts","test":"hover over a name of the project and of the library (IDE-023)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/project/libraries.test.ts","test":"addLibrary and removeLibrary (IDE-023)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/project/libraries.test.ts","test":"configuredLibraries (IDE-023)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/project/libraries.test.ts","test":"libraryProblem (IDE-023)"},

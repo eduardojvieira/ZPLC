@@ -23,8 +23,8 @@ describe('CodeEditor local Monaco bootstrap', () => {
 
     expect(source).toContain("const ST_LIVE_MARKER_OWNER = 'zplc.st-live';");
     expect(source).toContain("setModelMarkers(model, 'zplc.compiler', markers)");
-    expect(source).toContain('setModelMarkers(model, ST_LIVE_MARKER_OWNER, markers)');
-    expect(source).toContain('setModelMarkers(model, ST_LIVE_MARKER_OWNER, [])');
+    // the live markers are the project's: their ranges and files are set by `langsvc/markers.ts` (markers.test.ts)
+    expect(source).toContain('applyProjectMarkers(monaco, ST_LIVE_MARKER_OWNER,');
     expect(source).toContain('ST_LIVE_ANALYSIS_DELAY_MS = 300');
     expect(source).toContain('setSTBufferDiagnostics({ ...identity, diagnostics }, content)');
   });

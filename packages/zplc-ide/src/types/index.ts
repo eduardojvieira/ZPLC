@@ -137,13 +137,18 @@ export interface CompilerMessage {
   timestamp: Date;
 }
 
-/** Ephemeral syntax feedback for the current ST editor buffer. Never build evidence. */
+/** Ephemeral feedback for the project's ST files, from the compiler's front end while typing. Never build evidence. */
 export interface STLiveDiagnostic {
-  code: 'ST_LEXER' | 'ST_PARSER' | 'ST_SOURCE_LIMIT' | 'ST_ANALYSIS_UNAVAILABLE';
+  code: 'ST_LEXER' | 'ST_PARSER' | 'ST_SEMANTIC' | 'ST_WARNING' | 'ST_SOURCE_LIMIT' | 'ST_ANALYSIS_UNAVAILABLE';
   type: Extract<CompilerMessageType, 'warning' | 'error'>;
   message: string;
+  /** The project-relative file the diagnostic is in; absent for the buffer of the editor alone. */
+  file?: string;
   line?: number;
   column?: number;
+  /** The position just after the last character, when the front end knows the extent. */
+  endLine?: number;
+  endColumn?: number;
 }
 
 /** Identity-fenced result for one active Structured Text buffer. */

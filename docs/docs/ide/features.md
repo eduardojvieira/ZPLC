@@ -120,7 +120,7 @@ you remove it. A project that is waiting for its version 1 migration to be appli
 is.
 
 Evidence level: host. `src/project/libraries.test.ts`, `src/project/unlistedSources.test.ts`,
-`src/store/projectSources.test.ts` and `src/components/stLanguageService.project.test.ts` cover the rules, the sources
+`src/store/projectSources.test.ts` and `src/langsvc/assist.test.ts` cover the rules, the sources
 and the editor services; journey 32 of `bun run test:journeys` lists a library in the real application, checks the
 tree, the Ladder palette and the cursor, and builds the project with it.
 
