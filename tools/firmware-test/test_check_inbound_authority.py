@@ -65,6 +65,27 @@ class InboundAuthority(unittest.TestCase):
                 self.assertNotEqual(result.returncode, 0)
                 self.assertIn(f"zplc_modbus.c.obj references {symbol}", result.stdout)
 
+    def test_the_device_link_engine_is_held_to_the_same_rule(self):
+        # COM-020, COM-021: the engine and the codec of the framed protocol take frames from the network; they may
+        # name the exchange and the crypto, and not run control, the force table, the loader or the store
+        ok = self.run_check(
+            {
+                "zplc_proto_dev.c.obj": ["zplc_hmac_sha256", "zplc_ct_equal", "zplc_secure_zero", "memcpy", "memset"],
+                "zplc_proto.c.obj": ["memcpy", "memmove"],
+                **self.EXCHANGE_OK,
+                "zplc_mqtt.c.obj": ["zplc_exchange_read"],
+            }
+        )
+        self.assertEqual(ok.returncode, 0, ok.stdout)
+        for symbol in ("zplc_sched_start", "zplc_sched_stop", "zplc_force_set_bytes", "zplc_force_write_bytes",
+                       "zplc_program_store_commit", "zplc_core_load", "sys_reboot", "zplc_mem_get_region"):
+            with self.subTest(symbol=symbol):
+                result = self.run_check(
+                    {"zplc_proto_dev.c.obj": ["zplc_hmac_sha256", symbol], **self.EXCHANGE_OK}
+                )
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn(f"zplc_proto_dev.c.obj references {symbol}", result.stdout)
+
     def test_a_handler_that_goes_round_the_exchange_fails(self):
         for symbol in ("zplc_force_write_bytes", "zplc_mem_get_region", "zplc_pi_lock", "zplc_pi_unlock"):
             with self.subTest(symbol=symbol):

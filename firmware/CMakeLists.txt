@@ -113,6 +113,17 @@ if(CONFIG_ZPLC)
     ${CMAKE_CURRENT_LIST_DIR}/lib/zplc_core/src/core/zplc_retain.c
   )
 
+  # The framed device link protocol: codec, engine and the crypto of the authentication code (COM-019 to COM-021)
+  zephyr_library_sources_ifdef(CONFIG_ZPLC_DEVICE_LINK
+    ${CMAKE_CURRENT_LIST_DIR}/lib/zplc_core/src/core/zplc_proto.c
+    ${CMAKE_CURRENT_LIST_DIR}/lib/zplc_core/src/core/zplc_proto_dev.c
+    ${CMAKE_CURRENT_LIST_DIR}/lib/zplc_core/src/core/zplc_sha256.c
+  )
+  zephyr_library_sources_ifdef(CONFIG_ZPLC_PROTO_SIGNATURE
+    ${CMAKE_CURRENT_LIST_DIR}/lib/zplc_core/src/core/zplc_sha512.c
+    ${CMAKE_CURRENT_LIST_DIR}/lib/zplc_core/src/core/zplc_ed25519.c
+  )
+
   # ZPLC Loader (always included if ZPLC is enabled)
   zephyr_library_sources(
     ${CMAKE_CURRENT_LIST_DIR}/lib/zplc_core/src/core/zplc_loader.c

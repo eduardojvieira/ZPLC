@@ -23,6 +23,7 @@ El texto envolvente está localizado al español, mientras que los nombres de AP
 - `firmware/lib/zplc_core/include/zplc_core.h`
 - `firmware/lib/zplc_core/include/zplc_crc32.h`
 - `firmware/lib/zplc_core/include/zplc_debug.h`
+- `firmware/lib/zplc_core/include/zplc_ed25519.h`
 - `firmware/lib/zplc_core/include/zplc_exchange.h`
 - `firmware/lib/zplc_core/include/zplc_failsafe.h`
 - `firmware/lib/zplc_core/include/zplc_hal.h`
@@ -30,9 +31,13 @@ El texto envolvente está localizado al español, mientras que los nombres de AP
 - `firmware/lib/zplc_core/include/zplc_isa.h`
 - `firmware/lib/zplc_core/include/zplc_loader.h`
 - `firmware/lib/zplc_core/include/zplc_program_store.h`
+- `firmware/lib/zplc_core/include/zplc_proto.h`
+- `firmware/lib/zplc_core/include/zplc_proto_dev.h`
 - `firmware/lib/zplc_core/include/zplc_retain.h`
 - `firmware/lib/zplc_core/include/zplc_sched_core.h`
 - `firmware/lib/zplc_core/include/zplc_scheduler.h`
+- `firmware/lib/zplc_core/include/zplc_sha256.h`
+- `firmware/lib/zplc_core/include/zplc_sha512.h`
 - `firmware/lib/zplc_core/include/zplc_single_task.h`
 
 ## `zplc_bytes.h`
@@ -1963,6 +1968,47 @@ const char *hil_error_name(uint8_t code);
 
 Ninguno.
 
+## `zplc_ed25519.h`
+
+Ed25519 signature verification (RFC 8032), for the signed artifact of COM-026.
+
+A device that holds a public key accepts a program only when its signature verifies under that key. This is verification only: it holds no secret, so it is neither constant-time nor does it need to be. It is the field arithmetic of TweetNaCl (16 limbs of 16 bits) with the checks of RFC 8032 (the point must decode, and the scalar of the signature must be below the order of the group), about 2 KB of stack and no table. Time: a verification is two scalar multiplications; on a Cortex-M0+ at 125 MHz it takes seconds, which a deploy can afford and a scan cannot: it runs in the command that commits a program, never in the scan.
+
+Fuente: `firmware/lib/zplc_core/include/zplc_ed25519.h`
+
+### Funciones
+
+#### `zplc_ed25519_verify`
+
+```c
+int zplc_ed25519_verify(const uint8_t signature[ZPLC_ED25519_SIGNATURE_BYTES], const uint8_t public_key[ZPLC_ED25519_PUBLIC_BYTES], const uint8_t *message, size_t length);
+```
+
+**Resumen fuente:** Verify the signature of a message.
+
+**Parámetros**
+
+| Nombre | Tipo | Descripción fuente |
+| --- | --- | --- |
+| `const uint8_t signature[ZPLC_ED25519_SIGNATURE_BYTES]` | `—` | — |
+| `const uint8_t public_key[ZPLC_ED25519_PUBLIC_BYTES]` | `—` | — |
+| `message` | `const uint8_t *` | — |
+| `length` | `size_t` | — |
+
+**Retorno fuente:** 0 when it is valid under the key, a negative number when it is not (or the key is not a point)
+
+### Tipos
+
+Ninguno.
+
+### Constantes y macros
+
+| Nombre | Valor | Resumen fuente |
+| --- | --- | --- |
+| `ZPLC_ED25519_H` | `—` | — |
+| `ZPLC_ED25519_PUBLIC_BYTES` | `32U` | — |
+| `ZPLC_ED25519_SIGNATURE_BYTES` | `64U` | — |
+
 ## `zplc_exchange.h`
 
 The exchange between the scan and everything outside it: a write queue and a published snapshot (RT-010, RT-011, RT-012).
@@ -3269,6 +3315,399 @@ zplc_program_store_restore_t zplc_pstore_restore( const zplc_pstore_config_t *co
 | `ZPLC_PROGRAM_STORE_WORST_CASE_BYTES` | `\\ (2U * ((size_t)ZPLC_PROGRAM_STORE_MAX_CHUNKS * \\ (ZPLC_PROGRAM_STORE_CHUNK_SIZE + ZPLC_PROGRAM_STORE_ENTRY_OVERHEAD)) +\\ 3U * (32U + ZPLC_PROGRAM_STORE_ENTRY_OVERHEAD))` | Storage, in bytes, the two slots of the largest artifact and their records take, worst case. |
 | `ZPLC_PROGRAM_STORE_KEY_MAX` | `40U` | The longest key the store uses, with its terminator. |
 
+## `zplc_proto.h`
+
+The codec of the device link protocol: frames, and a decoder that finds them in a byte stream (COM-019).
+
+A frame is a header (sync, version, flags, message, sequence, length), a payload, an optional 32-byte message authentication code and a CRC-32. The numbers and layouts are in zplc_proto_defs.h, generated from tools/contract/protocol.json; the rules (what a decoder discards and counts) are written there too, and the TypeScript codec of Studio follows the same rules. Both run the same generated frames (zplc_proto_vectors.h). Portable C99: no Zephyr header, no allocation, no clock. A decoder owns one buffer of ZPLC_PROTO_FRAME_MAX bytes.
+
+Fuente: `firmware/lib/zplc_core/include/zplc_proto.h`
+
+### Funciones
+
+#### `zplc_proto_frame_size`
+
+```c
+static inline size_t zplc_proto_frame_size(size_t length, int authenticated);
+```
+
+**Resumen fuente:** Bytes of a frame with a payload of @p length bytes.
+
+**Parámetros**
+
+| Nombre | Tipo | Descripción fuente |
+| --- | --- | --- |
+| `length` | `size_t` | — |
+| `authenticated` | `int` | — |
+
+#### `zplc_proto_write_header`
+
+```c
+size_t zplc_proto_write_header(uint8_t *out, uint8_t kind, uint8_t message, uint32_t sequence, uint16_t length, int authenticated);
+```
+
+**Resumen fuente:** Write the header of a frame whose payload is already at out + ZPLC_PROTO_HEADER_BYTES.
+
+For a sender that builds the payload in place. Returns the number of header bytes.
+
+**Parámetros**
+
+| Nombre | Tipo | Descripción fuente |
+| --- | --- | --- |
+| `out` | `uint8_t *` | — |
+| `kind` | `uint8_t` | — |
+| `message` | `uint8_t` | — |
+| `sequence` | `uint32_t` | — |
+| `length` | `uint16_t` | — |
+| `authenticated` | `int` | — |
+
+#### `zplc_proto_begin`
+
+```c
+size_t zplc_proto_begin(uint8_t *out, size_t capacity, uint8_t kind, uint8_t message, uint32_t sequence, const uint8_t *payload, uint16_t length, int authenticated);
+```
+
+**Resumen fuente:** Write the header and the payload of a frame.
+
+The caller computes the code over the returned bytes and hands it to zplc_proto_finish().
+
+**Parámetros**
+
+| Nombre | Tipo | Descripción fuente |
+| --- | --- | --- |
+| `out` | `uint8_t *` | — |
+| `capacity` | `size_t` | — |
+| `kind` | `uint8_t` | — |
+| `message` | `uint8_t` | — |
+| `sequence` | `uint32_t` | — |
+| `payload` | `const uint8_t *` | — |
+| `length` | `uint16_t` | — |
+| `authenticated` | `int` | — |
+
+**Retorno fuente:** bytes used (the header and the payload), or 0 when @p capacity cannot hold the whole frame (with the code, when @p authenticated) or @p length is above ZPLC_PROTO_PAYLOAD_MAX_HARD.
+
+#### `zplc_proto_finish`
+
+```c
+size_t zplc_proto_finish(uint8_t *out, size_t used, const uint8_t *mac);
+```
+
+**Resumen fuente:** Append the code (when the frame was begun authenticated) and the checksum.
+
+**Parámetros**
+
+| Nombre | Tipo | Descripción fuente |
+| --- | --- | --- |
+| `out` | `uint8_t *` | — |
+| `used` | `size_t` | bytes zplc_proto_begin() returned |
+| `mac` | `const uint8_t *` | ZPLC_PROTO_MAC_BYTES bytes for an authenticated frame, NULL otherwise |
+
+**Retorno fuente:** the size of the whole frame
+
+#### `zplc_proto_encode`
+
+```c
+size_t zplc_proto_encode(uint8_t *out, size_t capacity, uint8_t kind, uint8_t message, uint32_t sequence, const uint8_t *payload, uint16_t length);
+```
+
+**Resumen fuente:** A frame without a code in one call; returns its size, or 0 when it does not fit.
+
+**Parámetros**
+
+| Nombre | Tipo | Descripción fuente |
+| --- | --- | --- |
+| `out` | `uint8_t *` | — |
+| `capacity` | `size_t` | — |
+| `kind` | `uint8_t` | — |
+| `message` | `uint8_t` | — |
+| `sequence` | `uint32_t` | — |
+| `payload` | `const uint8_t *` | — |
+| `length` | `uint16_t` | — |
+
+#### `zplc_proto_parse`
+
+```c
+int zplc_proto_parse(const uint8_t *data, size_t length, size_t payload_max, zplc_proto_frame_t *frame);
+```
+
+**Resumen fuente:** Check and open one whole frame (a transport that frames its own lines).
+
+**Parámetros**
+
+| Nombre | Tipo | Descripción fuente |
+| --- | --- | --- |
+| `data` | `const uint8_t *` | — |
+| `length` | `size_t` | — |
+| `payload_max` | `size_t` | — |
+| `frame` | `zplc_proto_frame_t *` | — |
+
+**Retorno fuente:** 0 and @p frame filled, or a ZPLC_PROTO_PARSE_* code
+
+#### `zplc_proto_decoder_init`
+
+```c
+void zplc_proto_decoder_init(zplc_proto_decoder_t *decoder, size_t payload_max);
+```
+
+**Resumen fuente:** Start a decoder. @p payload_max is the limit of this link (at most ZPLC_PROTO_PAYLOAD_MAX).
+
+**Parámetros**
+
+| Nombre | Tipo | Descripción fuente |
+| --- | --- | --- |
+| `decoder` | `zplc_proto_decoder_t *` | — |
+| `payload_max` | `size_t` | — |
+
+#### `zplc_proto_decoder_reset`
+
+```c
+void zplc_proto_decoder_reset(zplc_proto_decoder_t *decoder);
+```
+
+**Resumen fuente:** Forget the bytes of a frame that is being assembled (a link that was reopened). Counters stay.
+
+**Parámetros**
+
+| Nombre | Tipo | Descripción fuente |
+| --- | --- | --- |
+| `decoder` | `zplc_proto_decoder_t *` | — |
+
+#### `zplc_proto_decoder_feed`
+
+```c
+void zplc_proto_decoder_feed(zplc_proto_decoder_t *decoder, const uint8_t *data, size_t length, zplc_proto_frame_fn on_frame, void *context);
+```
+
+**Resumen fuente:** Take bytes from the stream.
+
+Discards noise, assembles candidates and calls @p on_frame for each frame whose header and checksum are valid, in order. A candidate that is not valid costs its first byte and the decoder looks for the next sync pair among the bytes it holds, so a frame inside a damaged one is delivered and a damaged frame costs nothing after itself. The work per input byte is bounded by ZPLC_PROTO_FRAME_MAX.
+
+**Parámetros**
+
+| Nombre | Tipo | Descripción fuente |
+| --- | --- | --- |
+| `decoder` | `zplc_proto_decoder_t *` | — |
+| `data` | `const uint8_t *` | — |
+| `length` | `size_t` | — |
+| `on_frame` | `zplc_proto_frame_fn` | — |
+| `context` | `void *` | — |
+
+### Tipos
+
+| Nombre | Tipo | Resumen fuente |
+| --- | --- | --- |
+| `kind` | Estructura | A frame that passed the checks of the codec. The pointers point into the buffer that was parsed. |
+| `frames` | Estructura | What a decoder discarded, and why. Counted since init. |
+| `ZPLC_PROTO_FRAME_MAX` | Estructura | — |
+| `zplc_proto_frame_fn` | Typedef | Called once for each valid frame. The frame is valid until the callback returns. |
+
+### Constantes y macros
+
+| Nombre | Valor | Resumen fuente |
+| --- | --- | --- |
+| `ZPLC_PROTO_H` | `—` | — |
+| `ZPLC_PROTO_PAYLOAD_MAX_CONFIGURED` | `CONFIG_ZPLC_PROTO_PAYLOAD_MAX` | — |
+| `ZPLC_PROTO_PAYLOAD_MAX_CONFIGURED` | `ZPLC_PROTO_PAYLOAD_MAX_DEFAULT` | — |
+| `ZPLC_PROTO_FRAME_MAX` | `\\ (ZPLC_PROTO_HEADER_BYTES + ZPLC_PROTO_PAYLOAD_MAX + ZPLC_PROTO_MAC_BYTES + ZPLC_PROTO_CRC_BYTES)` | Bytes of the largest frame: header, payload, code and checksum. |
+
+## `zplc_proto_dev.h`
+
+The device side of the device link protocol: sessions, authenticated frames, atomic writes, events (COM-020, COM-021, COM-023, COM-025, COM-028).
+
+The engine takes frames from one or more links (a UART, a USB serial port, a TCP connection), answers them, and turns them into calls of the port it was given (zplc_proto_ops_t). It knows nothing of Zephyr, of the scheduler or of the host runtime: a port fills the table, so the same engine runs on a board, on the host runtime and in the tests, and the rules below are proved once. The rules: - Everything that changes the device (download, RUN/STOP, memory write, force, configuration, credentials, the key) needs a session that is open on the link it arrives on. One session is open at a time. A session ends when its client closes it, when nothing arrives for the idle time, when the link is lost, when a person at the serial link takes it over, and when the key is changed. The forces the session set end with it and the outputs follow the program again. - A link is SERIAL (whoever holds the cable holds the device) or NETWORK. On a network link every message except HELLO, IDENTITY, CHALLENGE and LINK_STATS needs a session that was opened with a code under the key that was provisioned over the serial link, and every frame of that session carries a code (HMAC-SHA-256) that covers its header, its payload and so its sequence number. A frame with a wrong or missing code, a repeated sequence number or one that is not the next, is dropped, counted and not answered. - A write of a multi-byte value goes through ops->mem_write, which a port binds to the write queue of the exchange: it is applied at the input latch of the next scan, whole. - The engine is called from one thread at a time (the port serialises it); zplc_proto_log() and zplc_proto_event_post() may be called from any thread when the port gives the event try-lock. - Nothing the engine does is on the scan: it has no hook in the scheduler. Telemetry is read by the engine's own service call, from a low priority context, and a queue that is full drops and counts. Portable C99: no Zephyr header, no allocation.
+
+Fuente: `firmware/lib/zplc_core/include/zplc_proto_dev.h`
+
+### Funciones
+
+#### `zplc_proto_dev_init`
+
+```c
+int zplc_proto_dev_init(zplc_proto_dev_t *dev, const zplc_proto_ops_t *ops, uint16_t idle_timeout_s);
+```
+
+**Resumen fuente:** Start the engine over a port.
+
+**Parámetros**
+
+| Nombre | Tipo | Descripción fuente |
+| --- | --- | --- |
+| `dev` | `zplc_proto_dev_t *` | — |
+| `ops` | `const zplc_proto_ops_t *` | — |
+| `idle_timeout_s` | `uint16_t` | — |
+
+**Retorno fuente:** 0, or -1 when the port has no clock
+
+#### `zplc_proto_link_init`
+
+```c
+void zplc_proto_link_init(zplc_proto_link_t *link, zplc_proto_dev_t *dev, uint8_t transport, zplc_proto_write_fn write, void *write_context);
+```
+
+**Resumen fuente:** Attach a link. `write` is called once per frame.
+
+**Parámetros**
+
+| Nombre | Tipo | Descripción fuente |
+| --- | --- | --- |
+| `link` | `zplc_proto_link_t *` | — |
+| `dev` | `zplc_proto_dev_t *` | — |
+| `transport` | `uint8_t` | — |
+| `write` | `zplc_proto_write_fn` | — |
+| `write_context` | `void *` | — |
+
+#### `zplc_proto_link_feed`
+
+```c
+void zplc_proto_link_feed(zplc_proto_link_t *link, const uint8_t *data, size_t length);
+```
+
+**Resumen fuente:** Bytes that arrived on a stream link.
+
+**Parámetros**
+
+| Nombre | Tipo | Descripción fuente |
+| --- | --- | --- |
+| `link` | `zplc_proto_link_t *` | — |
+| `data` | `const uint8_t *` | — |
+| `length` | `size_t` | — |
+
+#### `zplc_proto_link_feed_frame`
+
+```c
+int zplc_proto_link_feed_frame(zplc_proto_link_t *link, uint8_t *frame, size_t length);
+```
+
+**Resumen fuente:** One whole frame that arrived on a link that frames its own lines.
+
+The payload of a KEY_SET frame is overwritten once it has been used: the caller's buffer does not keep a key.
+
+**Parámetros**
+
+| Nombre | Tipo | Descripción fuente |
+| --- | --- | --- |
+| `link` | `zplc_proto_link_t *` | — |
+| `frame` | `uint8_t *` | — |
+| `length` | `size_t` | — |
+
+**Retorno fuente:** 0 when the frame was valid and handled (a refusal is a valid frame), or a ZPLC_PROTO_PARSE_* code
+
+#### `zplc_proto_link_lost`
+
+```c
+void zplc_proto_link_lost(zplc_proto_link_t *link);
+```
+
+**Resumen fuente:** The link is gone: its session ends, its forces are released.
+
+**Parámetros**
+
+| Nombre | Tipo | Descripción fuente |
+| --- | --- | --- |
+| `link` | `zplc_proto_link_t *` | — |
+
+#### `zplc_proto_dev_service`
+
+```c
+void zplc_proto_dev_service(zplc_proto_dev_t *dev, zplc_proto_link_t *const *links, size_t link_count);
+```
+
+**Resumen fuente:** Time passes: idle timeouts, telemetry produced from the runtime's status, watch batches, and the events in the queue sent to the links that asked for them.
+
+Call it about every 20 ms from a context that is not the scan. @p links is an array of @p link_count links.
+
+**Parámetros**
+
+| Nombre | Tipo | Descripción fuente |
+| --- | --- | --- |
+| `dev` | `zplc_proto_dev_t *` | — |
+| `links` | `zplc_proto_link_t *const *` | — |
+| `link_count` | `size_t` | — |
+
+#### `zplc_proto_event_post`
+
+```c
+int zplc_proto_event_post(zplc_proto_dev_t *dev, uint8_t id, const uint8_t *data, size_t length);
+```
+
+**Resumen fuente:** Queue an event. Returns 0, or -1 when it was dropped (and counted). Callable from any thread.
+
+**Parámetros**
+
+| Nombre | Tipo | Descripción fuente |
+| --- | --- | --- |
+| `dev` | `zplc_proto_dev_t *` | — |
+| `id` | `uint8_t` | — |
+| `data` | `const uint8_t *` | — |
+| `length` | `size_t` | — |
+
+#### `zplc_proto_log`
+
+```c
+void zplc_proto_log(zplc_proto_dev_t *dev, uint8_t level, const char *text);
+```
+
+**Resumen fuente:** Queue a log line (cut to fit). Callable from any thread.
+
+**Parámetros**
+
+| Nombre | Tipo | Descripción fuente |
+| --- | --- | --- |
+| `dev` | `zplc_proto_dev_t *` | — |
+| `level` | `uint8_t` | — |
+| `text` | `const char *` | — |
+
+#### `zplc_proto_session_is_open`
+
+```c
+int zplc_proto_session_is_open(const zplc_proto_dev_t *dev);
+```
+
+**Resumen fuente:** Whether a session is open (a port uses it to apply the same rule to its own commands).
+
+**Parámetros**
+
+| Nombre | Tipo | Descripción fuente |
+| --- | --- | --- |
+| `dev` | `const zplc_proto_dev_t *` | — |
+
+#### `zplc_proto_session_end`
+
+```c
+void zplc_proto_session_end(zplc_proto_dev_t *dev, uint8_t reason);
+```
+
+**Resumen fuente:** End the session now (a port that must, for example before a reboot).
+
+**Parámetros**
+
+| Nombre | Tipo | Descripción fuente |
+| --- | --- | --- |
+| `dev` | `zplc_proto_dev_t *` | — |
+| `reason` | `uint8_t` | — |
+
+### Tipos
+
+| Nombre | Tipo | Resumen fuente |
+| --- | --- | --- |
+| `state` | Estructura | What the port tells about the runtime. The engine compares successive values to produce events. |
+| `abi_major` | Estructura | — |
+| `loaded` | Estructura | — |
+| `address` | Estructura | One extent of a batched read. |
+| `context` | Estructura | What a port gives the engine. Every call returns 0, or a ZPLC_PROTO_ERR_* number that the engine sends as the status of the response. A member that is NULL means the capability is not there: the engine clears its bit in the hello and answers ERR_UNSUPPORTED. |
+| `zplc_proto_dev_t` | Estructura | — |
+| `zplc_proto_link_t` | Estructura | — |
+| `zplc_proto_write_fn` | Typedef | Send one whole frame; returns 0 when it was handed to the transport. |
+| `frames_in` | Estructura | The counters of one link (the LINK_STATS message). |
+| `id` | Estructura | — |
+
+### Constantes y macros
+
+| Nombre | Valor | Resumen fuente |
+| --- | --- | --- |
+| `ZPLC_PROTO_DEV_H` | `—` | — |
+| `ZPLC_PROTO_OWNED_FORCES` | `8U` | Forces one session can own (the force table of the core has this many entries). |
+
 ## `zplc_retain.h`
 
 Persistence of the RETAIN region across power cycles (RT-025, RT-026, RT-027).
@@ -4434,6 +4873,255 @@ int zplc_sched_unlock(void);
 | `ZPLC_SCAN_COORDINATOR_PRIORITY` | `CONFIG_ZPLC_SCHED_WORKQ_PRIORITY` | — |
 | `ZPLC_MIN_INTERVAL_US` | `1000` | Minimum task interval in microseconds (1ms) |
 | `ZPLC_MAX_INTERVAL_US` | `3600000000UL` | Maximum task interval in microseconds (1 hour) |
+
+## `zplc_sha256.h`
+
+SHA-256 and HMAC-SHA-256 (FIPS 180-4, RFC 2104), and the two helpers that key material needs (COM-021).
+
+The authentication code of a frame in a network session is HMAC-SHA-256 under a key that was provisioned over the local serial link. This is a small portable implementation, no table but the 64 round constants and no allocation, that the core and every port share; the test of it runs the vectors of FIPS 180-4 and RFC 4231. Two helpers belong to it because of what they protect: zplc_ct_equal() compares two codes in time that does not depend on where they differ, and zplc_secure_zero() clears key material in a way the compiler may not remove.
+
+Fuente: `firmware/lib/zplc_core/include/zplc_sha256.h`
+
+### Funciones
+
+#### `zplc_sha256_init`
+
+```c
+void zplc_sha256_init(zplc_sha256_t *context);
+```
+
+**Resumen fuente:** No se encontró un resumen en el comentario del header.
+
+**Parámetros**
+
+| Nombre | Tipo | Descripción fuente |
+| --- | --- | --- |
+| `context` | `zplc_sha256_t *` | — |
+
+#### `zplc_sha256_update`
+
+```c
+void zplc_sha256_update(zplc_sha256_t *context, const uint8_t *data, size_t length);
+```
+
+**Resumen fuente:** No se encontró un resumen en el comentario del header.
+
+**Parámetros**
+
+| Nombre | Tipo | Descripción fuente |
+| --- | --- | --- |
+| `context` | `zplc_sha256_t *` | — |
+| `data` | `const uint8_t *` | — |
+| `length` | `size_t` | — |
+
+#### `zplc_sha256_final`
+
+```c
+void zplc_sha256_final(zplc_sha256_t *context, uint8_t digest[ZPLC_SHA256_DIGEST_BYTES]);
+```
+
+**Resumen fuente:** Write the digest and clear the context.
+
+**Parámetros**
+
+| Nombre | Tipo | Descripción fuente |
+| --- | --- | --- |
+| `context` | `zplc_sha256_t *` | — |
+| `uint8_t digest[ZPLC_SHA256_DIGEST_BYTES]` | `—` | — |
+
+#### `zplc_sha256`
+
+```c
+void zplc_sha256(const uint8_t *data, size_t length, uint8_t digest[ZPLC_SHA256_DIGEST_BYTES]);
+```
+
+**Resumen fuente:** No se encontró un resumen en el comentario del header.
+
+**Parámetros**
+
+| Nombre | Tipo | Descripción fuente |
+| --- | --- | --- |
+| `data` | `const uint8_t *` | — |
+| `length` | `size_t` | — |
+| `uint8_t digest[ZPLC_SHA256_DIGEST_BYTES]` | `—` | — |
+
+#### `zplc_hmac_sha256_init`
+
+```c
+void zplc_hmac_sha256_init(zplc_hmac_sha256_t *context, const uint8_t *key, size_t key_length);
+```
+
+**Resumen fuente:** No se encontró un resumen en el comentario del header.
+
+**Parámetros**
+
+| Nombre | Tipo | Descripción fuente |
+| --- | --- | --- |
+| `context` | `zplc_hmac_sha256_t *` | — |
+| `key` | `const uint8_t *` | — |
+| `key_length` | `size_t` | — |
+
+#### `zplc_hmac_sha256_update`
+
+```c
+void zplc_hmac_sha256_update(zplc_hmac_sha256_t *context, const uint8_t *data, size_t length);
+```
+
+**Resumen fuente:** No se encontró un resumen en el comentario del header.
+
+**Parámetros**
+
+| Nombre | Tipo | Descripción fuente |
+| --- | --- | --- |
+| `context` | `zplc_hmac_sha256_t *` | — |
+| `data` | `const uint8_t *` | — |
+| `length` | `size_t` | — |
+
+#### `zplc_hmac_sha256_final`
+
+```c
+void zplc_hmac_sha256_final(zplc_hmac_sha256_t *context, uint8_t mac[ZPLC_SHA256_DIGEST_BYTES]);
+```
+
+**Resumen fuente:** Write the code and clear the context (the key pads included).
+
+**Parámetros**
+
+| Nombre | Tipo | Descripción fuente |
+| --- | --- | --- |
+| `context` | `zplc_hmac_sha256_t *` | — |
+| `uint8_t mac[ZPLC_SHA256_DIGEST_BYTES]` | `—` | — |
+
+#### `zplc_hmac_sha256`
+
+```c
+void zplc_hmac_sha256(const uint8_t *key, size_t key_length, const uint8_t *data, size_t length, uint8_t mac[ZPLC_SHA256_DIGEST_BYTES]);
+```
+
+**Resumen fuente:** No se encontró un resumen en el comentario del header.
+
+**Parámetros**
+
+| Nombre | Tipo | Descripción fuente |
+| --- | --- | --- |
+| `key` | `const uint8_t *` | — |
+| `key_length` | `size_t` | — |
+| `data` | `const uint8_t *` | — |
+| `length` | `size_t` | — |
+| `uint8_t mac[ZPLC_SHA256_DIGEST_BYTES]` | `—` | — |
+
+#### `zplc_ct_equal`
+
+```c
+int zplc_ct_equal(const uint8_t *a, const uint8_t *b, size_t length);
+```
+
+**Resumen fuente:** 1 when the two buffers are equal; the time taken depends on @p length only.
+
+**Parámetros**
+
+| Nombre | Tipo | Descripción fuente |
+| --- | --- | --- |
+| `a` | `const uint8_t *` | — |
+| `b` | `const uint8_t *` | — |
+| `length` | `size_t` | — |
+
+#### `zplc_secure_zero`
+
+```c
+void zplc_secure_zero(void *buffer, size_t length);
+```
+
+**Resumen fuente:** Clear @p length bytes in a way the compiler does not optimise away.
+
+**Parámetros**
+
+| Nombre | Tipo | Descripción fuente |
+| --- | --- | --- |
+| `buffer` | `void *` | — |
+| `length` | `size_t` | — |
+
+### Tipos
+
+| Nombre | Tipo | Resumen fuente |
+| --- | --- | --- |
+| `state` | Estructura | — |
+| `inner` | Estructura | — |
+
+### Constantes y macros
+
+| Nombre | Valor | Resumen fuente |
+| --- | --- | --- |
+| `ZPLC_SHA256_H` | `—` | — |
+| `ZPLC_SHA256_DIGEST_BYTES` | `32U` | — |
+| `ZPLC_SHA256_BLOCK_BYTES` | `64U` | — |
+
+## `zplc_sha512.h`
+
+SHA-512 (FIPS 180-4), the hash of Ed25519 (COM-026).
+
+Fuente: `firmware/lib/zplc_core/include/zplc_sha512.h`
+
+### Funciones
+
+#### `zplc_sha512_init`
+
+```c
+void zplc_sha512_init(zplc_sha512_t *context);
+```
+
+**Resumen fuente:** No se encontró un resumen en el comentario del header.
+
+**Parámetros**
+
+| Nombre | Tipo | Descripción fuente |
+| --- | --- | --- |
+| `context` | `zplc_sha512_t *` | — |
+
+#### `zplc_sha512_update`
+
+```c
+void zplc_sha512_update(zplc_sha512_t *context, const uint8_t *data, size_t length);
+```
+
+**Resumen fuente:** No se encontró un resumen en el comentario del header.
+
+**Parámetros**
+
+| Nombre | Tipo | Descripción fuente |
+| --- | --- | --- |
+| `context` | `zplc_sha512_t *` | — |
+| `data` | `const uint8_t *` | — |
+| `length` | `size_t` | — |
+
+#### `zplc_sha512_final`
+
+```c
+void zplc_sha512_final(zplc_sha512_t *context, uint8_t digest[ZPLC_SHA512_DIGEST_BYTES]);
+```
+
+**Resumen fuente:** Write the digest and clear the context.
+
+**Parámetros**
+
+| Nombre | Tipo | Descripción fuente |
+| --- | --- | --- |
+| `context` | `zplc_sha512_t *` | — |
+| `uint8_t digest[ZPLC_SHA512_DIGEST_BYTES]` | `—` | — |
+
+### Tipos
+
+| Nombre | Tipo | Resumen fuente |
+| --- | --- | --- |
+| `state` | Estructura | — |
+
+### Constantes y macros
+
+| Nombre | Valor | Resumen fuente |
+| --- | --- | --- |
+| `ZPLC_SHA512_H` | `—` | — |
+| `ZPLC_SHA512_DIGEST_BYTES` | `64U` | — |
+| `ZPLC_SHA512_BLOCK_BYTES` | `128U` | — |
 
 ## `zplc_single_task.h`
 

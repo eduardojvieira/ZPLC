@@ -10,6 +10,7 @@
     { "pattern": "scripts/release/*.test.ts", "job": "typescript", "command": "bun test ./scripts/release" },
     { "pattern": "tools/contract/test_contract.py", "job": "docs-and-truth", "command": "bun run contract:check" },
     { "pattern": "tools/contract/*.test.ts", "job": "docs-and-truth", "command": "bun run contract:check" },
+    { "pattern": "tools/contract/test_protocol.py", "job": "docs-and-truth", "command": "bun run contract:check" },
     { "pattern": "tools/hil/test_hil_*.py", "job": "typescript", "command": "python3 -B -m unittest discover -s tools/hil -p 'test_hil_*.py'" },
     { "pattern": "tools/test_crc32_cross.py", "job": "typescript", "command": "python3 -B tools/test_crc32_cross.py" },
     { "pattern": "packages/zplc-hil/tests/**/*.test.ts", "job": "typescript", "command": "bun test packages/zplc-hil" },
@@ -25,7 +26,8 @@
     { "pattern": "firmware/tests/**/*.c", "job": "zephyr-twister", "command": "west twister -T zplc/firmware/tests" },
     { "pattern": "tools/ci/test_run_clang_tidy.py", "job": "host-core-sanitized", "command": "python3 tools/ci/test_run_clang_tidy.py" },
     { "pattern": "tools/firmware-test/test_*.py", "job": "zephyr-twister", "command": "python3 zplc/tools/firmware-test/test_fwtest.py" },
-    { "pattern": "firmware/tests/app_shell_identity/test_*.py", "job": "zephyr-twister", "command": "firmware/tests/app_shell_identity/test_app_shell_identity.py" }
+    { "pattern": "firmware/tests/app_shell_identity/test_*.py", "job": "zephyr-twister", "command": "firmware/tests/app_shell_identity/test_app_shell_identity.py" },
+    { "pattern": "firmware/tests/app_device_link/test_*.py", "job": "zephyr-twister", "command": "firmware/tests/app_device_link/test_app_device_link.py" }
   ],
   "notRunInCi": [
     { "pattern": "tools/hil/test_*.py", "requirement": "HIL-004", "reason": "device scripts that need a connected board, which CI cannot run; tools/hil/test_hil_scripts.py runs each against fake devices and shows that it exits non-zero when a check fails" },

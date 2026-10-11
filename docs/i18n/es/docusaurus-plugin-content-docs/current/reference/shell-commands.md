@@ -9,7 +9,7 @@ tags: [reference, generated]
 
 {/* >>> GENERATED (tools/docs/generate_source_references.ts): reference/shell-commands. Do not edit. >>> */}
 
-La consola del dispositivo tiene un comando raíz, `zplc`, con 77 subcomandos. Un grupo solo contiene subcomandos. Los argumentos son las palabras que siguen al nombre del comando; un comando solo está presente cuando el símbolo de Kconfig de la última columna está habilitado. El runtime de una simulación de escritorio no tiene consola: habla el [protocolo de sesión](./runtime-protocol.md).
+La consola del dispositivo tiene un comando raíz, `zplc`, con 78 subcomandos. Un grupo solo contiene subcomandos. Los argumentos son las palabras que siguen al nombre del comando; un comando solo está presente cuando el símbolo de Kconfig de la última columna está habilitado. El runtime de una simulación de escritorio no tiene consola: habla el [protocolo de sesión](./runtime-protocol.md).
 
 Esta tabla se lee del archivo fuente `firmware/app/src/shell_cmds.c`; su texto es el de la propia fuente, por eso es igual en inglés y en español.
 
@@ -23,6 +23,7 @@ Esta tabla se lee del archivo fuente `firmware/app/src/shell_cmds.c`; su texto e
 | `zplc status` | comando | 1 opcional | Runtime status |   |
 | `zplc reset` | comando | ninguno | Reset VM |   |
 | `zplc version` | comando | ninguno | Version info |   |
+| `zplc link` | comando | 1 obligatorio | One frame of the device link protocol, in hexadecimal | `CONFIG_ZPLC_DEVICE_LINK` |
 | `zplc dbg` | grupo |   | Debug commands |   |
 | `zplc dbg pause` | comando | ninguno | Pause VM execution |   |
 | `zplc dbg resume` | comando | ninguno | Resume VM execution |   |
