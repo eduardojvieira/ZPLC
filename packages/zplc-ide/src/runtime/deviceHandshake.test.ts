@@ -59,6 +59,33 @@ function refusal(bytes: Uint8Array, handshake: ReturnType<typeof parseDeviceHand
   throw new Error('the deploy was admitted');
 }
 
+describe('the program memory a firmware reports (COM-028)', () => {
+  const withCapacity = (maxArtifact: number) => ({
+    ...info,
+    memory: { work_size: 8192, retain_size: 4096, ipi_size: 4096, opi_size: 4096, code_size: maxArtifact, max_artifact_size: maxArtifact },
+  });
+
+  it('accepts what the firmware prints from RT-028 on: the code size and the largest artifact', () => {
+    // `zplc sys info --json` of the application carries both keys; a parser that took exactly four refused the device
+    const handshake = parseDeviceHandshake(withCapacity(4096));
+    expect(handshake.maxArtifactBytes).toBe(4096);
+    expect(parseDeviceHandshake(info).maxArtifactBytes).toBeNull();
+  });
+
+  it('still refuses a key that is not one of those', () => {
+    expect(() => parseDeviceSystemInfo({ ...info, memory: { ...withCapacity(4096).memory, secret: 1 } })).toThrow('ZPLC_DEVICE_HANDSHAKE_INVALID');
+    expect(() => parseDeviceSystemInfo({ ...info, memory: { ...withCapacity(4096).memory, code_size: -1 } })).toThrow('ZPLC_DEVICE_HANDSHAKE_INVALID');
+  });
+
+  it('refuses a program larger than the device accepts, with both numbers, and accepts one that fits', () => {
+    const big = artifact(1, 0, ZPLC_CONSTANTS.DRAFT_COUNTER, new Array(100).fill(ZPLC_CONTRACT.Opcode.HALT));
+    const refused = refusal(big, parseDeviceHandshake(withCapacity(64)));
+    expect(refused.code).toBe('ZPLC_DEVICE_ARTIFACT_TOO_LARGE');
+    expect(refused.detail).toBe(`The program is ${big.byteLength} bytes and this device accepts at most 64.`);
+    expect(validateHardwareDeployAdmission(big, 'stm32f746g_disco', parseDeviceHandshake(withCapacity(big.byteLength)))).toBeDefined();
+  });
+});
+
 describe('device handshake admission', () => {
   it('accepts an exact v1 handshake and same artifact ABI', () => {
     const handshake = parseDeviceHandshake(info);

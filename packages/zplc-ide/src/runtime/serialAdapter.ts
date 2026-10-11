@@ -24,11 +24,10 @@ import type {
 import {
   bytesToHex,
   bytesToValue,
-  getForceRegionBounds,
   getTypeSize,
   MEMORY_MAP,
-  WATCH_FORCE_STATE,
 } from './debugAdapter';
+import { assertMemoryAccess, CONTRACT_REGION_SIZES, type RegionSizes } from './memoryAccess';
 
 import type { SerialConnection } from '../uploader/webserial';
 import {
@@ -48,6 +47,7 @@ import { parsePeekBytes, groupVariablesForBatchPeek, extractVariableBytes, parse
 import type { MpeekRequest } from './peekParser';
 import { debugLog } from '../utils/debugLog';
 import { deriveHardwareDebugState } from './debugStatus';
+import { parseForcedValues, parseStatusInfo, requireForceCommandConfirmation } from './serialResponses';
 import { normalizeSerialRuntimeSnapshot } from './runtimeSnapshot';
 import { joinDeviceIo, parseDeviceSystemInfo, type DeviceSystemInfo } from './deviceHandshake';
 
@@ -60,101 +60,6 @@ const COMMAND_TIMEOUT_MS = 10000;
 /** Line ending for commands */
 const LINE_ENDING = '\r\n';
 
-const ZPLC_STATUS_STATES = new Set(['idle', 'loading', 'ready', 'running', 'paused', 'error', 'uninit']);
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null && !Array.isArray(value);
-}
-
-function isNonNegativeInteger(value: unknown): value is number {
-  return typeof value === 'number' && Number.isSafeInteger(value) && value >= 0;
-}
-
-function isByte(value: unknown): value is number {
-  return isNonNegativeInteger(value) && value <= 0xff;
-}
-
-function requireForceCommandConfirmation(response: string): void {
-  if (!response.startsWith('OK:')) {
-    throw new Error('Force command confirmation failed');
-  }
-}
-
-function parseStatusInfo(value: unknown): StatusInfo {
-  if (!isRecord(value)
-    || typeof value.state !== 'string'
-    || !ZPLC_STATUS_STATES.has(value.state.toLowerCase())
-    || !isNonNegativeInteger(value.uptime_ms)
-    || !isRecord(value.stats)
-    || !isNonNegativeInteger(value.stats.cycles)
-    || !Array.isArray(value.opi)
-    || !value.opi.every(isByte)) {
-    throw new Error('Invalid ZPLC status response');
-  }
-
-  for (const field of ['overruns', 'active_tasks', 'program_size'] as const) {
-    if (value.stats[field] !== undefined && !isNonNegativeInteger(value.stats[field])) {
-      throw new Error('Invalid ZPLC status response');
-    }
-  }
-
-  if (value.vm !== undefined) {
-    if (!isRecord(value.vm)
-      || !isNonNegativeInteger(value.vm.pc)
-      || !isNonNegativeInteger(value.vm.sp)
-      || typeof value.vm.halted !== 'boolean'
-      || typeof value.vm.error !== 'number'
-      || !Number.isSafeInteger(value.vm.error)) {
-      throw new Error('Invalid ZPLC status response');
-    }
-  }
-
-  return value as unknown as StatusInfo;
-}
-
-function parseForcedValues(value: unknown): WatchForceEntry[] {
-  if (!isRecord(value)
-    || !isNonNegativeInteger(value.count)
-    || value.count > 8
-    || !Array.isArray(value.items)
-    || value.count !== value.items.length) {
-    throw new Error('Invalid force list response');
-  }
-
-  const ranges: Array<{ start: number; end: number }> = [];
-  return value.items.map((item) => {
-    if (!isRecord(item)
-      || !isNonNegativeInteger(item.addr)
-      || item.addr > 0xffff
-      || !isNonNegativeInteger(item.size)
-      || item.size === 0
-      || item.size > 260
-      || typeof item.bytes !== 'string'
-      || !/^[0-9a-f]*$/i.test(item.bytes)
-      || item.bytes.length !== item.size * 2) {
-      throw new Error('Invalid force list response');
-    }
-
-    const address = item.addr as number;
-    const size = item.size as number;
-    const bytes = item.bytes as string;
-    const end = address + size;
-    const regionEnd = getForceRegionBounds(address).end;
-    if (end > MEMORY_MAP.code.baseAddress || end > regionEnd || ranges.some((range) => address < range.end && range.start < end)) {
-      throw new Error('Invalid force list response');
-    }
-    ranges.push({ start: address, end });
-
-    return {
-      path: `0x${address.toString(16).toUpperCase().padStart(4, '0')}`,
-      address,
-      size,
-      type: size === 1 ? 'BYTE' : size === 2 ? 'WORD' : 'DWORD',
-      bytesHex: bytes,
-      state: WATCH_FORCE_STATE.FORCED,
-    };
-  });
-}
 
 /**
  * Extended VMInfo with additional fields from JSON responses
@@ -248,16 +153,16 @@ interface CommunicationMapResponse {
 export class SerialAdapter implements IDebugAdapter {
   readonly type = 'serial' as const;
 
-  private connection: SerialConnection | null = null;
+  protected connection: SerialConnection | null = null;
   private port: SerialPort | null = null;
-  private _connected = false;
+  protected _connected = false;
   private _state: VMState = 'disconnected';
-  private events: DebugAdapterEvents = {};
+  protected events: DebugAdapterEvents = {};
   private pollingInterval: ReturnType<typeof setInterval> | null = null;
   private _passthroughMode = false;
   private connectionAttempt = 0;
   private readonly onUnexpectedDisconnect?: (adapter: SerialAdapter, message: string) => void;
-  private systemInfoCache: SystemInfo | null = null;
+  protected systemInfoCache: SystemInfo | null = null;
   private serialConsoleRemainder = '';
   private readonly handleLiveSerialChunk = (chunk: string): void => {
     const result = consumeSerialConsoleChunk(this.serialConsoleRemainder, chunk);
@@ -299,7 +204,7 @@ export class SerialAdapter implements IDebugAdapter {
     return this._passthroughMode;
   }
 
-  private setState(newState: VMState): void {
+  protected setState(newState: VMState): void {
     if (this._state !== newState) {
       this._state = newState;
       this.events.onStateChange?.(newState);
@@ -541,7 +446,7 @@ export class SerialAdapter implements IDebugAdapter {
     this.pollingInterval = setInterval(() => { void poll(); }, 200);
   }
 
-  private stopPolling(): void {
+  protected stopPolling(): void {
     if (this.pollingInterval !== null) {
       clearInterval(this.pollingInterval);
       this.pollingInterval = null;
@@ -706,7 +611,7 @@ export class SerialAdapter implements IDebugAdapter {
    * All three send variants (sendCommand, sendCommandWithOutput, sendJsonCommand)
    * go through this so they are strictly serialized on the single serial port.
    */
-  private withCommandMutex<T>(fn: () => Promise<T>): Promise<T> {
+  protected withCommandMutex<T>(fn: () => Promise<T>): Promise<T> {
     const run = async (): Promise<T> => {
       this.activeCommandCount += 1;
       try {
@@ -1015,10 +920,19 @@ export class SerialAdapter implements IDebugAdapter {
     throw new Error('Command timeout');
   }
 
+  /** The sizes of the regions this device reports (`sys info`), or the contract's until it has been asked. */
+  protected regionSizes(): RegionSizes {
+    const memory = this.systemInfoCache?.memory;
+    return memory
+      ? { ipi: memory.ipi_size, opi: memory.opi_size, work: memory.work_size, retain: memory.retain_size }
+      : CONTRACT_REGION_SIZES;
+  }
+
   async peek(address: number, length: number): Promise<Uint8Array> {
     if (!this._connected) {
       throw new Error('Not connected');
     }
+    assertMemoryAccess(address, length, 'read', this.regionSizes());
 
     const lines = await this.readMemoryDump(`zplc dbg peek 0x${address.toString(16)} ${length}`);
     return parsePeekBytes(lines, length);
@@ -1056,6 +970,7 @@ export class SerialAdapter implements IDebugAdapter {
     if (!this._connected) {
       throw new Error('Not connected');
     }
+    assertMemoryAccess(address, 1, 'write', this.regionSizes());
 
     const response = await this.sendDebugCommand(`poke 0x${address.toString(16)} ${value}`);
     if (response.startsWith('ERROR:')) {
@@ -1068,7 +983,9 @@ export class SerialAdapter implements IDebugAdapter {
       throw new Error('Not connected');
     }
 
-    // Since we don't have a bulk poke command yet, send individual bytes
+    assertMemoryAccess(address, bytes.length, 'write', this.regionSizes());
+
+    // Firmware without the framed protocol has no atomic write: one byte at a time, the scan may run between them
     for (let i = 0; i < bytes.length; i++) {
       await this.poke(address + i, bytes[i]);
     }
@@ -1082,6 +999,7 @@ export class SerialAdapter implements IDebugAdapter {
     if (!this._connected) {
       throw new Error('Not connected');
     }
+    assertMemoryAccess(address, bytes.length, 'force', this.regionSizes());
 
     try {
       requireForceCommandConfirmation(await this.sendDebugCommand(
@@ -1096,6 +1014,7 @@ export class SerialAdapter implements IDebugAdapter {
     if (!this._connected) {
       throw new Error('Not connected');
     }
+    assertMemoryAccess(address, 1, 'force', this.regionSizes());
 
     try {
       requireForceCommandConfirmation(await this.sendDebugCommand(`force clear 0x${address.toString(16)}`));
@@ -1125,6 +1044,7 @@ export class SerialAdapter implements IDebugAdapter {
   }
 
   async getOPI(offset: number): Promise<number> {
+    assertMemoryAccess(MEMORY_MAP.opi.baseAddress + offset, 1, 'read', this.regionSizes());
     // Use JSON status to get OPI values
     try {
       const status = await this.getStatus();

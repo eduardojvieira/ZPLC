@@ -132,6 +132,60 @@ config ZPLC_EXCHANGE_QUEUE_BYTES
       The exchange also keeps one copy of IPI, OPI, WORK and RETAIN, the snapshot a reader sees, so it costs the
       sum of the four region sizes of RAM besides this queue.
 
+config ZPLC_DEVICE_LINK
+    bool "Framed device link protocol (sessions, atomic writes, events)"
+    default y
+    depends on SHELL && ZPLC_SCHEDULER
+    help
+      Builds the engine of the framed device link protocol (COM-019): every state-changing request needs a
+      session, a multi-byte write is whole with respect to the scan, and the device pushes events. The text
+      shell stays: it is the older protocol and the recovery console, and the frames reach the engine through
+      the `zplc link` command of the shell, one frame per line in hexadecimal.
+
+      Authenticated sessions (for a network transport) are offered only where the board has a cryptographic
+      generator (CONFIG_CSPRNG_ENABLED): the nonces of a challenge and of a session must not be predictable.
+
+      A board that has no RAM for it turns it off: Studio then talks to the text shell and says so.
+
+config ZPLC_PROTO_PAYLOAD_MAX
+    int "Largest payload of one frame of the device link, in bytes"
+    default 512
+    range 64 1024
+    depends on ZPLC_DEVICE_LINK
+    help
+      Each link of the protocol keeps one buffer of this size plus 47 bytes, and the engine one more for the
+      response it builds. A payload of 264 bytes or more carries the largest force (a 255-character STRING);
+      a smaller one makes Studio send a program in smaller chunks and refuse a force it cannot carry.
+
+config ZPLC_PROTO_EVENT_QUEUE
+    int "Events the device link can hold until they are sent"
+    default 16
+    range 4 64
+    depends on ZPLC_DEVICE_LINK
+    help
+      Each queued event takes 66 bytes. A queue that is full drops the newest event and counts it; the link is
+      told how many were lost once there is room again. The queue is filled from a low priority context and never
+      from the scan.
+
+config ZPLC_PROTO_SESSION_IDLE_S
+    int "Seconds of silence after which a session of the device link ends"
+    default 30
+    range 5 3600
+    depends on ZPLC_DEVICE_LINK
+    help
+      The forces a session set are released when it ends, whatever the reason (COM-020).
+
+config ZPLC_PROTO_SIGNATURE
+    bool "Signed programs: accept only programs signed with the key of the device"
+    default n
+    depends on ZPLC_DEVICE_LINK
+    help
+      A device that holds a public key (given over the serial link with SIGNING_KEY_SET) activates only a program
+      whose Ed25519 signature, sent with it, verifies under that key (COM-026); a program that is loaded through the
+      text shell is refused while the device holds a key. Costs about 5 KB of flash and 2 KB of stack, and a
+      verification takes seconds on a core without a hardware multiplier: it runs in the command that commits the
+      program, never in the scan.
+
 config ZPLC_VM_CYCLE_INSTRUCTION_BUDGET
     int "PLC scan instruction budget"
     default 100000
