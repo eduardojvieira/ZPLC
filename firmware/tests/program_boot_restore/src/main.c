@@ -5,6 +5,7 @@
 #include "program_boot_restore.h"
 #include "zplc_app_test_hooks.h"
 #include <zplc_core.h>
+#include <zplc_failsafe.h>
 #include <zplc_hal.h>
 #include <zplc_isa.h>
 #include <zplc_scheduler.h>
@@ -381,6 +382,83 @@ ZTEST(program_boot_restore, test_legacy_prepare_commit_unknown_clears_staging) {
   for (index = 0U; index < sizeof(staging); ++index)
     zassert_equal(staging[index], 0U, "staging is cleared");
   boot_teardown();
+}
+
+/*
+ * RT-021, RT-022 (decision D-13, option A): whatever the reset left, the runtime restores the stored program into
+ * STOP with the outputs at their safe values and does not scan until a person starts it. The previous run's record
+ * is what the reset left: a processor fault the firmware rebooted for, a fault the scheduler latched before its
+ * watchdog reset the part, or nothing (a power-on).
+ */
+static void boot_after_reset_that_left(const zplc_fault_record_t *record, int expect_fault_reset,
+                                       int expect_fault) {
+  uint8_t staging[WORKSPACE_CAPACITY];
+  const zplc_reset_report_t *report;
+  zplc_task_t task;
+  size_t loaded_size;
+
+  boot_setup();
+  stored_size = build_program(stored_program, 1U);
+  stored_result = ZPLC_PROGRAM_STORE_OK;
+  /* The program of the previous run had left an output on: the image of the new run has nothing in it. */
+  zplc_mem_get_region(ZPLC_MEM_OPI_BASE)[0] = 0xA5U;
+  zplc_failsafe_test_set_retained(record);
+  zplc_failsafe_boot();
+  report = zplc_failsafe_report();
+  /* native_sim reports a power-on at its first boot and nothing after the cause was cleared: what is asserted is
+   * the one cause that the record decides. */
+  zassert_equal(report->cause == ZPLC_RESET_FAULT, expect_fault_reset != 0, "the cause the previous run left");
+  zassert_equal(report->has_fault != 0U, expect_fault != 0, "and its fault, when there was one");
+  zassert_equal(zplc_reset_may_run(report->cause), 0, "no cause may run on its own");
+
+  zassert_equal(restore(staging, &loaded_size), 1, "the stored program is restored");
+  zassert_equal(zplc_sched_get_state(), ZPLC_SCHED_STATE_IDLE, "into STOP");
+  zassert_equal(zplc_core_get_opi(0U), 0U, "with the outputs at their safe values");
+  k_msleep(120); /* a dozen of the 10 ms task's intervals: nothing releases a scan */
+  zassert_ok(zplc_sched_get_task(0, &task), "read the restored task");
+  zassert_equal(task.stats.cycle_count, 0U, "no scan ran");
+  zassert_equal(zplc_sched_get_state(), ZPLC_SCHED_STATE_IDLE, "and the runtime is still in STOP");
+  zassert_ok(zplc_sched_start(), "a person's command starts it");
+  boot_teardown();
+}
+
+ZTEST(program_boot_restore, test_a_power_on_restores_into_stop) {
+  boot_after_reset_that_left(NULL, 0, 0);
+}
+
+ZTEST(program_boot_restore, test_a_processor_fault_restores_into_stop_and_shows_the_reason) {
+  zplc_fault_record_t record;
+
+  zplc_fault_record_make(&record, ZPLC_FAULT_PROCESSOR, 4U, 0U, 0x08001234U, 3U);
+  boot_after_reset_that_left(&record, 1, 1);
+  zassert_equal(zplc_failsafe_report()->fault.reason, 4U, "the kernel's reason is in the report");
+  zassert_equal(zplc_failsafe_report()->fault.pc, 0x08001234U, "and the program counter");
+}
+
+ZTEST(program_boot_restore, test_a_latched_scheduler_fault_that_a_watchdog_reset_survives_is_shown) {
+  zplc_fault_record_t record;
+
+  zplc_fault_record_make(&record, ZPLC_FAULT_SCHEDULER, (uint8_t)1U, 2U, 0U, 9U);
+  /* A watchdog reset: the cause is what the part says, not a fault of the processor; the record is reported with it. */
+  boot_after_reset_that_left(&record, 0, 1);
+  zassert_equal(zplc_failsafe_report()->fault.kind, (uint8_t)ZPLC_FAULT_SCHEDULER, "a scheduler fault");
+  zassert_equal(zplc_failsafe_report()->fault.task_id, 2U, "of task 2");
+}
+
+ZTEST(program_boot_restore, test_the_record_is_reported_once_and_garbage_is_nothing) {
+  zplc_fault_record_t record;
+
+  zplc_fault_record_make(&record, ZPLC_FAULT_PROCESSOR, 3U, 0U, 0U, 1U);
+  zplc_failsafe_test_set_retained(&record);
+  zplc_failsafe_boot();
+  zassert_equal(zplc_failsafe_report()->has_fault, 1U, "the record is found");
+  zplc_failsafe_boot();
+  zassert_equal(zplc_failsafe_report()->has_fault, 0U, "and consumed: the next boot does not see it again");
+  memset(&record, 0xC3, sizeof(record));
+  zplc_failsafe_test_set_retained(&record);
+  zplc_failsafe_boot();
+  zassert_equal(zplc_failsafe_report()->has_fault, 0U, "RAM that holds anything else is not a record");
+  zassert_not_equal(zplc_failsafe_report()->cause, ZPLC_RESET_FAULT, "and not a fault");
 }
 
 ZTEST_SUITE(program_boot_restore, NULL, NULL, NULL, NULL, NULL);

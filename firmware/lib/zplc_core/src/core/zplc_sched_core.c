@@ -385,13 +385,16 @@ uint64_t zplc_sched_core_overrun_us(uint64_t ref_us, uint64_t end_us, uint32_t i
  * ============================================================================
  */
 
-/* Latches the fault in the state. The first reason is the one that is kept. Critical. */
-static void latch_state_locked(zplc_sched_core_t *core, zplc_sched_fault_reason_t reason, uint16_t task_id) {
+/* Latches the fault in the state. The first reason is the one that is kept. Critical. Returns 1 when this call
+ * is the one that set the reason. */
+static int latch_state_locked(zplc_sched_core_t *core, zplc_sched_fault_reason_t reason, uint16_t task_id) {
   uint8_t index;
+  int first = 0;
 
   if (core->fault_reason == (uint8_t)ZPLC_SCHED_FAULT_NONE) {
     core->fault_reason = (uint8_t)reason;
     core->fault_task_id = task_id;
+    first = 1;
   }
   core->fault_latched = 1U;
   core->state = ZPLC_SCHED_STATE_ERROR;
@@ -403,15 +406,19 @@ static void latch_state_locked(zplc_sched_core_t *core, zplc_sched_fault_reason_
       slot->pending = 0U;
     }
   }
+  return first;
 }
 
 int zplc_sched_core_latch_fault_image(zplc_sched_core_t *core, const zplc_sched_port_t *port,
                                       zplc_sched_fault_reason_t reason, uint16_t task_id) {
   unsigned int key = enter(port);
+  const int first = latch_state_locked(core, reason, task_id);
 
-  latch_state_locked(core, reason, task_id);
   leave(port, key);
   trace(core, ZPLC_SCHED_TRACE_FAULT, task_id, (uint64_t)reason, 0U);
+  if (first != 0 && port->fault_latched != NULL) {
+    port->fault_latched(port->ctx, reason, task_id);
+  }
   return port->reset_image != NULL ? port->reset_image(port->ctx) : 0;
 }
 
@@ -422,8 +429,8 @@ zplc_sched_safe_result_t zplc_sched_core_settle(const zplc_sched_core_t *core, c
 
   (void)core;
   out.safe_result = image_result != 0 ? image_result : pins_result;
-  if (out.safe_result == 0 && port->disarm_watchdog != NULL) {
-    out.watchdog_result = port->disarm_watchdog(port->ctx);
+  if (out.safe_result == 0 && port->watchdog_state != NULL) {
+    out.watchdog_result = port->watchdog_state(port->ctx, ZPLC_WDT_STATE_FAULT);
   }
   return out;
 }
@@ -431,16 +438,19 @@ zplc_sched_safe_result_t zplc_sched_core_settle(const zplc_sched_core_t *core, c
 int zplc_sched_core_lock_failure(zplc_sched_core_t *core, const zplc_sched_port_t *port) {
   unsigned int key = enter(port);
   int safe_result;
+  const int first = latch_state_locked(core, ZPLC_SCHED_FAULT_LOCK, 0U);
 
-  latch_state_locked(core, ZPLC_SCHED_FAULT_LOCK, 0U);
   leave(port, key);
   trace(core, ZPLC_SCHED_TRACE_FAULT, 0U, (uint64_t)ZPLC_SCHED_FAULT_LOCK, 0U);
+  if (first != 0 && port->fault_latched != NULL) {
+    port->fault_latched(port->ctx, ZPLC_SCHED_FAULT_LOCK, 0U);
+  }
   if (port->stop_releases != NULL) {
     port->stop_releases(port->ctx);
   }
   safe_result = port->drive_safe_pins != NULL ? port->drive_safe_pins(port->ctx) : 0;
-  if (safe_result == 0 && port->disarm_watchdog != NULL) {
-    (void)port->disarm_watchdog(port->ctx);
+  if (safe_result == 0 && port->watchdog_state != NULL) {
+    (void)port->watchdog_state(port->ctx, ZPLC_WDT_STATE_FAULT);
   }
   return ZPLC_SCHED_ERR_LOCK;
 }
@@ -859,7 +869,8 @@ int zplc_sched_core_scan(zplc_sched_core_t *core, const zplc_sched_port_t *port,
     if (port->stop_releases != NULL) {
       port->stop_releases(port->ctx);
     }
-    if (pause_safe_result == 0 && port->disarm_watchdog != NULL && port->disarm_watchdog(port->ctx) != 0) {
+    if (pause_safe_result == 0 && port->watchdog_state != NULL &&
+        port->watchdog_state(port->ctx, ZPLC_WDT_STATE_PAUSED) != 0) {
       (void)zplc_sched_core_fault(core, port, ZPLC_SCHED_FAULT_IO, 0U);
       report->faulted = 1U;
       result = ZPLC_SCHED_ERR_IO;

@@ -106,6 +106,12 @@ uint32_t zplc_sched_test_watchdog_prepare_count(void);
 uint32_t zplc_sched_test_watchdog_feed_count(void);
 uint32_t zplc_sched_test_watchdog_disarm_count(void);
 void zplc_sched_test_force_next_deadline_miss(void);
+/** @brief Times the model of the hardware watchdog expired: it was not fed within the timeout it was armed with. */
+uint32_t zplc_sched_test_watchdog_expired_count(void);
+/** @brief The timeout the model was last armed with, derived from the task set (RT-020). */
+uint32_t zplc_sched_test_watchdog_timeout_ms(void);
+/** @brief What the watchdog does in STOP, a pause and a latched fault: zplc_wdt_action_t values. */
+void zplc_sched_test_set_watchdog_policy(uint8_t stop, uint8_t pause, uint8_t fault);
 /** @brief Make the next take of a mutex fail with result (RT-030): which is 0 memory, 1 control, 2 output I/O. */
 void zplc_sched_test_fail_next_lock(int result, int which);
 
@@ -138,6 +144,15 @@ void zplc_sched_test_stop_timers(void);
 void zplc_sched_test_set_miss_limit(uint32_t limit);
 /** @brief The core the adapter drives: a test installs its trace sink there. */
 struct zplc_sched_core *zplc_sched_test_core(void);
+
+/*
+ * Fault injection for the fail-safe adapter (RT-019): the reboot the handler would make, and the RAM as the
+ * previous run left it.
+ */
+struct zplc_fault_record;
+void zplc_failsafe_test_set_reboot(void (*reboot)(void));
+void zplc_failsafe_test_set_retained(const struct zplc_fault_record *record);
+const struct zplc_fault_record *zplc_failsafe_test_retained(void);
 
 #endif /* CONFIG_ZTEST */
 

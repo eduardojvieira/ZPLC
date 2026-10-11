@@ -89,6 +89,7 @@ add_library(zplc_core STATIC
     src/core/zplc_exchange.c
     src/core/zplc_sched_core.c
     src/core/zplc_single_task.c
+    src/core/zplc_failsafe.c
 )
 
 target_compile_definitions(zplc_core PUBLIC ZPLC_CORE_VERSION_STR="${ZPLC_CORE_VERSION_STR}")
@@ -416,6 +417,25 @@ if(UNIX AND NOT APPLE)
 endif()
 
 add_test(NAME test_vm_scan COMMAND test_vm_scan)
+
+# Test: the fail-safe decisions: the reset cause, the record of a fault, the start policy and the watchdog policy
+# of a profile (RT-019 to RT-022). Also run under the sanitizers.
+add_executable(test_failsafe
+    tests/test_failsafe.c
+    src/hal/posix/zplc_hal_posix.c
+)
+
+target_include_directories(test_failsafe PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+)
+
+target_link_libraries(test_failsafe PRIVATE zplc_core)
+
+if(UNIX AND NOT APPLE)
+    target_link_libraries(test_failsafe PRIVATE rt)
+endif()
+
+add_test(NAME test_failsafe COMMAND test_failsafe)
 
 # Test: the single-task configuration runs on the scheduler core and decides like the multitask runtimes (RT-018).
 # Also run under the sanitizers.

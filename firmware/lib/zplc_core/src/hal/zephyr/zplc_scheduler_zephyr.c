@@ -41,6 +41,7 @@
 #include <zplc_core.h>
 #include <zplc_debug.h>
 #include <zplc_exchange.h>
+#include <zplc_failsafe.h>
 #include <zplc_hal.h>
 #include <zplc_isa.h>
 #include <zplc_sched_core.h>
@@ -381,46 +382,116 @@ static const zplc_io_ops_t safe_ops = {.read = NULL, .write = test_safe_channel}
 
 static int drive_safe_pins(void);
 static int reset_image_locked(void);
+#ifdef CONFIG_ZTEST
 static void increment_counter(uint32_t *counter);
+#endif
 static int watchdog_disarm(void);
+static int watchdog_apply_state(zplc_wdt_state_t state);
+static int watchdog_prepare(void);
+
+/* ============================================================================
+ * The hardware watchdog (RT-020)
+ * ============================================================================
+ *
+ * The physical watchdog is intentionally opt-in per exact board profile: boards.json says, for each board, whether
+ * its profile has a hardware record (HIL-010), and CONFIG_ZPLC_HARDWARE_WATCHDOG is set in exactly the profiles
+ * that do; the build fails when the two disagree. No board has a record today, so none arms it. Tests use the
+ * narrow ztest model below rather than pretending native_sim owns a physical watchdog.
+ *
+ * Where it is enabled it is fed from one place: after the outputs of a scan were written (the commit of the
+ * core). A runtime that waits (STOP, a pause or a breakpoint) is kept fed by a work item of the control path,
+ * when the profile's policy says so; a latched fault is left to expire, so that the board resets into STOP with
+ * the cause recorded (zplc_failsafe_note_scheduler_fault). Nothing feeds it from a timer, an ISR or the shell.
+ */
 
 #ifdef CONFIG_ZTEST
 #define ZPLC_TEST_WATCHDOG_TIMEOUT_MS 1000U
+/* The longest timeout the model of the part accepts: a task set whose interval is over half of it is refused. */
+#define ZPLC_TEST_WATCHDOG_MAX_MS 1000U
+
+/* The model of the part: it expires when it is not fed within the timeout it was armed with. */
+static struct k_timer test_watchdog_timer;
+static uint32_t test_watchdog_expired_count;
+static uint32_t test_watchdog_timeout_ms;
+static zplc_wdt_policy_t test_watchdog_policy;
+static uint8_t test_watchdog_policy_set;
+
+static void test_watchdog_expired(struct k_timer *timer) {
+  ARG_UNUSED(timer);
+  test_watchdog_expired_count++;
+}
 #endif
 
-static int watchdog_timeout_admits_tasks(void) {
-  uint64_t max_interval_us = 0U;
-  uint64_t timeout_us;
+static struct k_work_delayable keepalive_work;
+static bool keepalive_running;
+
+/* The policy of this profile: the design default, changed by the three options of the profile. */
+static zplc_wdt_policy_t watchdog_policy(void) {
+  zplc_wdt_policy_t policy = zplc_wdt_policy_default();
+
+#ifdef CONFIG_ZTEST
+  if (test_watchdog_policy_set != 0U) {
+    return test_watchdog_policy;
+  }
+#endif
+#ifdef CONFIG_ZPLC_WATCHDOG_STOP_FEED
+  policy.stop = (uint8_t)ZPLC_WDT_FEED;
+#endif
+#ifdef CONFIG_ZPLC_WATCHDOG_PAUSE_DISARM
+  policy.pause = (uint8_t)ZPLC_WDT_DISARM;
+#endif
+#ifdef CONFIG_ZPLC_WATCHDOG_FAULT_DISARM
+  policy.fault = (uint8_t)ZPLC_WDT_DISARM;
+#endif
+  return policy;
+}
+
+/* The timeout the part is armed with for the registered task set: the profile's, or the two intervals of the
+ * slowest task when that is longer. 0 when the part cannot be given one that fits. */
+static uint32_t watchdog_timeout_for_tasks(void) {
+  uint32_t longest_interval_us = 0U;
+  uint32_t profile_ms;
+  uint32_t hardware_max_ms;
   int index;
 
 #if defined(CONFIG_ZTEST)
-  timeout_us = (uint64_t)ZPLC_TEST_WATCHDOG_TIMEOUT_MS * 1000U;
+  profile_ms = ZPLC_TEST_WATCHDOG_TIMEOUT_MS;
+  hardware_max_ms = ZPLC_TEST_WATCHDOG_MAX_MS;
 #elif defined(CONFIG_ZPLC_HARDWARE_WATCHDOG)
-  timeout_us = (uint64_t)CONFIG_ZPLC_HARDWARE_WATCHDOG_TIMEOUT_MS * 1000U;
+  profile_ms = CONFIG_ZPLC_HARDWARE_WATCHDOG_TIMEOUT_MS;
+  hardware_max_ms = CONFIG_ZPLC_HARDWARE_WATCHDOG_TIMEOUT_MAX_MS;
+#else
+  return 0U;
+#endif
+  for (index = 0; index < CONFIG_ZPLC_MAX_TASKS; ++index) {
+    if (slots[index].registered != 0U && slots[index].task.config.interval_us > longest_interval_us) {
+      longest_interval_us = slots[index].task.config.interval_us;
+    }
+  }
+  return zplc_wdt_timeout_for(profile_ms, hardware_max_ms, longest_interval_us);
+}
+
+static int watchdog_timeout_admits_tasks(void) {
+#if defined(CONFIG_ZTEST) || defined(CONFIG_ZPLC_HARDWARE_WATCHDOG)
+  return watchdog_timeout_for_tasks() != 0U ? 0 : -ERANGE;
 #else
   return 0;
 #endif
-  for (index = 0; index < CONFIG_ZPLC_MAX_TASKS; ++index) {
-    if (slots[index].registered != 0U &&
-        slots[index].task.config.interval_us > max_interval_us) {
-      max_interval_us = slots[index].task.config.interval_us;
-    }
-  }
-  return timeout_us > max_interval_us * 2U ? 0 : -ERANGE;
 }
 
-/*
- * The physical watchdog is intentionally opt-in per exact board profile.
- * No public profile enables CONFIG_ZPLC_HARDWARE_WATCHDOG until HIL proves
- * reset timing and electrical safe-state behavior.  Tests use the narrow
- * ztest seam below rather than pretending native_sim owns a physical WDT.
- */
 static int watchdog_prepare(void) {
-  int admission = watchdog_timeout_admits_tasks();
+  int admission;
+  uint32_t timeout_ms;
 
+  if (hardware_watchdog_channel >= 0) {
+    /* Already armed (a pause or a STOP of a feeding profile): a part cannot be installed twice. */
+    return 0;
+  }
+  admission = watchdog_timeout_admits_tasks();
   if (admission != 0) {
     return admission;
   }
+  timeout_ms = watchdog_timeout_for_tasks();
 #ifdef CONFIG_ZTEST
   increment_counter(&test_watchdog_prepare_count);
   if (test_watchdog_prepare_failure != 0) {
@@ -434,13 +505,15 @@ static int watchdog_prepare(void) {
     test_watchdog_setup_failure = 0;
     return failure;
   }
+  test_watchdog_timeout_ms = timeout_ms;
+  k_timer_start(&test_watchdog_timer, K_MSEC(timeout_ms), K_NO_WAIT);
   return 0;
 #elif defined(CONFIG_ZPLC_HARDWARE_WATCHDOG)
 #if DT_HAS_CHOSEN(zephyr_watchdog)
   static const struct device *const watchdog =
       DEVICE_DT_GET(DT_CHOSEN(zephyr_watchdog));
   struct wdt_timeout_cfg timeout = {
-      .window = {.min = 0U, .max = CONFIG_ZPLC_HARDWARE_WATCHDOG_TIMEOUT_MS},
+      .window = {.min = 0U, .max = timeout_ms},
       .flags = WDT_FLAG_RESET_SOC,
   };
   int channel;
@@ -464,11 +537,12 @@ static int watchdog_prepare(void) {
   return -ENODEV;
 #endif
 #else
+  ARG_UNUSED(timeout_ms);
   return 0;
 #endif
 }
 
-static int watchdog_feed_after_commit(void) {
+static int watchdog_feed_hardware(void) {
   if (hardware_watchdog_channel < 0) {
     return 0;
   }
@@ -479,6 +553,7 @@ static int watchdog_feed_after_commit(void) {
     test_watchdog_feed_failure = 0;
     return failure;
   }
+  k_timer_start(&test_watchdog_timer, K_MSEC(test_watchdog_timeout_ms), K_NO_WAIT);
   return 0;
 #elif defined(CONFIG_ZPLC_HARDWARE_WATCHDOG)
 #if DT_HAS_CHOSEN(zephyr_watchdog)
@@ -493,6 +568,9 @@ static int watchdog_feed_after_commit(void) {
 #endif
 }
 
+/* The feed after the outputs of a scan were written (the commit phase, output lock held). */
+static int watchdog_feed_after_commit(void) { return watchdog_feed_hardware(); }
+
 /* Safe output application precedes disarm.  If a driver cannot disarm, the
  * already-safe system deliberately receives no more feeds and will reset. */
 static int watchdog_disarm(void) {
@@ -506,6 +584,7 @@ static int watchdog_disarm(void) {
   locked = io_lock();
 #ifdef CONFIG_ZTEST
   increment_counter(&test_watchdog_disarm_count);
+  k_timer_stop(&test_watchdog_timer);
   if (test_watchdog_disarm_failure != 0) {
     result = test_watchdog_disarm_failure;
     test_watchdog_disarm_failure = 0;
@@ -522,6 +601,84 @@ static int watchdog_disarm(void) {
     io_unlock();
   }
   return result;
+}
+
+/* The wait of the runtime (STOP, a pause or a breakpoint) under a profile that feeds. This is the control path:
+ * it feeds only while the runtime waits, never while it scans (the scan feeds after its commit) and never in a
+ * latched fault. Its period is a third of the timeout the part was armed with. */
+static void keepalive_schedule(void) {
+#if defined(CONFIG_ZTEST) || defined(CONFIG_ZPLC_HARDWARE_WATCHDOG)
+  uint32_t timeout_ms = watchdog_timeout_for_tasks();
+
+  if (timeout_ms == 0U) {
+    timeout_ms = 3U;
+  }
+  keepalive_running = true;
+  (void)k_work_reschedule_for_queue(&normal_workq, &keepalive_work, K_MSEC(timeout_ms / 3U > 0U ? timeout_ms / 3U : 1U));
+#endif
+}
+
+static void keepalive_stop(void) {
+  struct k_work_sync sync;
+
+  keepalive_running = false;
+  (void)k_work_cancel_delayable_sync(&keepalive_work, &sync);
+}
+
+static void keepalive_handler(struct k_work *work) {
+  zplc_sched_state_t state;
+  int fault;
+  int feed = 0;
+  k_spinlock_key_t key;
+  zplc_wdt_policy_t policy;
+
+  ARG_UNUSED(work);
+  policy = watchdog_policy();
+  key = k_spin_lock(&admission_lock);
+  state = core.state;
+  fault = core.fault_latched != 0U;
+  k_spin_unlock(&admission_lock, key);
+  if (!keepalive_running || hardware_watchdog_channel < 0 || fault) {
+    return;
+  }
+  if (state == ZPLC_SCHED_STATE_PAUSED) {
+    feed = zplc_wdt_action(&policy, ZPLC_WDT_STATE_PAUSED) == ZPLC_WDT_FEED;
+  } else if (state == ZPLC_SCHED_STATE_IDLE) {
+    feed = zplc_wdt_action(&policy, ZPLC_WDT_STATE_STOP) == ZPLC_WDT_FEED;
+  }
+  if (feed != 0) {
+    if (io_lock() == 0) {
+      (void)watchdog_feed_hardware();
+      io_unlock();
+    }
+    keepalive_schedule();
+  }
+}
+
+/* The watchdog is stopped whatever the policy says: a scheduler that is shut down, or a start that failed. */
+static int watchdog_force_disarm(void) {
+  keepalive_stop();
+  return watchdog_disarm();
+}
+
+/* The runtime entered a state of the policy: the watchdog is disarmed, kept fed or left to expire (RT-020). */
+static int watchdog_apply_state(zplc_wdt_state_t state) {
+  const zplc_wdt_policy_t policy = watchdog_policy();
+
+  switch (zplc_wdt_action(&policy, state)) {
+  case ZPLC_WDT_FEED:
+    if (hardware_watchdog_channel >= 0) {
+      keepalive_schedule();
+    }
+    return 0;
+  case ZPLC_WDT_LET_EXPIRE:
+    keepalive_stop();
+    return 0;
+  case ZPLC_WDT_DISARM:
+  default:
+    keepalive_stop();
+    return watchdog_disarm();
+  }
 }
 
 /*
@@ -571,9 +728,11 @@ static uint64_t scheduler_elapsed_us(const scheduler_stamp_t *start,
   return k_cyc_to_us_floor64(scheduler_elapsed_cycles(start, end));
 }
 
+#ifdef CONFIG_ZTEST
 static uint32_t scheduler_duration_us_u32(uint64_t duration_us) {
   return duration_us > UINT32_MAX ? UINT32_MAX : (uint32_t)duration_us;
 }
+#endif
 
 
 /* ============================================================================
@@ -694,9 +853,15 @@ static int port_drive_safe_pins(void *ctx) {
   return drive_safe_pins();
 }
 
-static int port_disarm_watchdog(void *ctx) {
+static int port_watchdog_state(void *ctx, zplc_wdt_state_t state) {
   ARG_UNUSED(ctx);
-  return watchdog_disarm();
+  return watchdog_apply_state(state);
+}
+
+static void port_fault_latched(void *ctx, zplc_sched_fault_reason_t reason, uint16_t task_id) {
+  ARG_UNUSED(ctx);
+  /* A watchdog reset that follows must not erase what the scheduler latched (RT-020). */
+  zplc_failsafe_note_scheduler_fault((uint8_t)reason, task_id);
 }
 
 static void stop_all_task_timers(void) {
@@ -771,11 +936,12 @@ static const zplc_sched_port_t zephyr_port = {
     .feed_watchdog = port_feed_watchdog,
     .reset_image = port_reset_image,
     .drive_safe_pins = port_drive_safe_pins,
-    .disarm_watchdog = port_disarm_watchdog,
+    .watchdog_state = port_watchdog_state,
     .stop_releases = port_stop_releases,
 #ifdef CONFIG_ZTEST
     .probe = port_probe,
 #endif
+    .fault_latched = port_fault_latched,
 };
 
 /* The exchange (RT-010) asks the scheduler three things: whether scans are running, so that an external write
@@ -965,11 +1131,13 @@ void zplc_sched_test_set_miss_limit(uint32_t limit) {
 zplc_sched_core_t *zplc_sched_test_core(void) { return &core; }
 #endif
 
+#ifdef CONFIG_ZTEST
 static void increment_counter(uint32_t *counter) {
   if (*counter != UINT32_MAX) {
     (*counter)++;
   }
 }
+#endif
 
 /* The fault, the pins and the watchdog from the control path. The first failure is returned and logged; the
  * memory lock could not be taken only when the result is ZPLC_SCHED_ERR_LOCK (RT-030). */
@@ -1168,6 +1336,17 @@ uint32_t zplc_sched_test_watchdog_disarm_count(void) {
   return test_watchdog_disarm_count;
 }
 
+uint32_t zplc_sched_test_watchdog_expired_count(void) { return test_watchdog_expired_count; }
+
+uint32_t zplc_sched_test_watchdog_timeout_ms(void) { return test_watchdog_timeout_ms; }
+
+void zplc_sched_test_set_watchdog_policy(uint8_t stop, uint8_t pause, uint8_t fault) {
+  test_watchdog_policy.stop = stop;
+  test_watchdog_policy.pause = pause;
+  test_watchdog_policy.fault = fault;
+  test_watchdog_policy_set = 1U;
+}
+
 void zplc_sched_test_force_next_deadline_miss(void) {
   test_force_next_deadline_miss = 1U;
 }
@@ -1326,7 +1505,7 @@ static int stop_locked(void) {
   (void)k_work_cancel_sync(&coordinator_work, &sync);
   if (safe_result != 0) {
     (void)latch_fault_with_mem_lock(ZPLC_SCHED_FAULT_IO);
-  } else if (watchdog_disarm() != 0) {
+  } else if (watchdog_apply_state(ZPLC_WDT_STATE_STOP) != 0) {
     /* Outputs are already safe; no further feed makes an unsupported WDT
      * reset fail-safe rather than silently remaining armed. */
     (void)latch_fault_with_mem_lock(ZPLC_SCHED_FAULT_IO);
@@ -1376,7 +1555,7 @@ static int unregister_task_locked(int task_id) {
     if (safe_result == 0) {
       safe_result = pins_result;
     }
-    if (safe_result != 0 || watchdog_disarm() != 0) {
+    if (safe_result != 0 || watchdog_apply_state(ZPLC_WDT_STATE_STOP) != 0) {
       (void)latch_fault_with_mem_lock(ZPLC_SCHED_FAULT_IO);
       return safe_result != 0 ? safe_result : -EIO;
     }
@@ -1431,7 +1610,7 @@ static int pause_locked(void) {
   (void)k_work_cancel_sync(&coordinator_work, &sync);
   if (safe_result != 0) {
     (void)latch_fault_with_mem_lock(ZPLC_SCHED_FAULT_IO);
-  } else if (watchdog_disarm() != 0) {
+  } else if (watchdog_apply_state(ZPLC_WDT_STATE_PAUSED) != 0) {
     (void)latch_fault_with_mem_lock(ZPLC_SCHED_FAULT_IO);
     if (safe_result == 0) {
       safe_result = -EIO;
@@ -1478,6 +1657,8 @@ int zplc_sched_init(void) {
   }
 
   k_work_init(&coordinator_work, coordinator_work_handler);
+  k_work_init_delayable(&keepalive_work, keepalive_handler);
+  keepalive_running = false;
   hardware_watchdog_channel = -1;
   clock_base = scheduler_stamp_now();
 #ifdef CONFIG_ZTEST
@@ -1503,6 +1684,10 @@ int zplc_sched_init(void) {
   test_watchdog_disarm_count = 0U;
   test_force_next_deadline_miss = 0U;
   test_clock_us = NULL;
+  k_timer_init(&test_watchdog_timer, test_watchdog_expired, NULL);
+  test_watchdog_expired_count = 0U;
+  test_watchdog_timeout_ms = 0U;
+  test_watchdog_policy_set = 0U;
   test_lock_failure = 0;
   test_lock_failure_kind = 0U;
 #endif
@@ -1570,6 +1755,8 @@ int zplc_sched_shutdown(void) {
       (void)unregister_task_locked(index);
     }
   }
+  /* A scheduler that is gone cannot feed: whatever the policy of STOP says, the watchdog stops. */
+  (void)watchdog_force_disarm();
   core.state = ZPLC_SCHED_STATE_UNINIT;
 #ifdef CONFIG_ZPLC_RETAIN_PERSIST
   {
@@ -1824,7 +2011,7 @@ int zplc_sched_start(void) {
     int safe_result = apply_safe_outputs_with_mem_lock();
 
     if (safe_result == 0) {
-      (void)watchdog_disarm();
+      (void)watchdog_force_disarm();
     }
     control_unlock();
     return -3;
@@ -1854,7 +2041,7 @@ int zplc_sched_start(void) {
     stop_all_task_timers();
     safe_result = apply_safe_outputs_with_mem_lock();
     if (safe_result == 0) {
-      (void)watchdog_disarm();
+      (void)watchdog_force_disarm();
     }
     control_unlock();
     return -1;
@@ -1970,7 +2157,7 @@ int zplc_sched_resume(void) {
     /* The scheduler stays paused: its image and forces stay with it. */
     safe_result = drive_safe_outputs_with_mem_lock();
     if (safe_result == 0) {
-      (void)watchdog_disarm();
+      (void)watchdog_force_disarm();
     }
     control_unlock();
     return -2;
@@ -2001,7 +2188,7 @@ int zplc_sched_resume(void) {
     stop_all_task_timers();
     safe_result = apply_safe_outputs_with_mem_lock();
     if (safe_result == 0) {
-      (void)watchdog_disarm();
+      (void)watchdog_force_disarm();
     }
     control_unlock();
     return -1;

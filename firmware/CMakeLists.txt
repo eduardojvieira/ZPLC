@@ -47,6 +47,7 @@ if(CONFIG_ZPLC)
     ${CMAKE_CURRENT_LIST_DIR}/lib/zplc_core/src/core/zplc_exchange.c
     ${CMAKE_CURRENT_LIST_DIR}/lib/zplc_core/src/core/zplc_sched_core.c
     ${CMAKE_CURRENT_LIST_DIR}/lib/zplc_core/src/core/zplc_single_task.c
+    ${CMAKE_CURRENT_LIST_DIR}/lib/zplc_core/src/core/zplc_failsafe.c
   )
 
   # Zephyr HAL implementation
@@ -94,6 +95,11 @@ if(CONFIG_ZPLC)
   # Scheduler (optional - enabled via CONFIG_ZPLC_SCHEDULER)
   zephyr_library_sources_ifdef(CONFIG_ZPLC_SCHEDULER
     ${CMAKE_CURRENT_LIST_DIR}/lib/zplc_core/src/hal/zephyr/zplc_scheduler_zephyr.c
+  )
+
+  # Reset cause, the record of a fault and the fatal-error handler (RT-019, RT-021)
+  zephyr_library_sources(
+    ${CMAKE_CURRENT_LIST_DIR}/lib/zplc_core/src/hal/zephyr/zplc_failsafe_zephyr.c
   )
 
   # HIL Debug support (optional - enabled via CONFIG_ZPLC_HIL_DEBUG)

@@ -42,6 +42,7 @@
 #include <stdint.h>
 
 #include "zplc_core.h"
+#include "zplc_failsafe.h"
 #include "zplc_hal.h"
 #include "zplc_isa.h"
 #include "zplc_scheduler.h"
@@ -168,13 +169,23 @@ typedef struct zplc_sched_port {
   int (*reset_image)(void *ctx);
   /** Safe state: drive every physical output to its safe level. Takes the output lock itself. 0 or a failure. */
   int (*drive_safe_pins)(void *ctx);
-  /** Safe state: stop the hardware watchdog, when the profile says it is stopped. 0 or a failure. */
-  int (*disarm_watchdog)(void *ctx);
+  /**
+   * The runtime entered a state in which the profile's hardware watchdog policy applies (paused, or a latched
+   * fault; a STOP is the control plane's): the platform disarms it, keeps it fed, or lets it expire as the
+   * profile says (RT-020). The outputs are already safe. 0 or a failure.
+   */
+  int (*watchdog_state)(void *ctx, zplc_wdt_state_t state);
   /** Stop the platform's release mechanism (the kernel timers). Called once the fault is latched. */
   void (*stop_releases)(void *ctx);
 
   /** A test hook; see zplc_sched_probe_t. */
   int (*probe)(void *ctx, zplc_sched_probe_t point, uint16_t task_id);
+
+  /**
+   * The fault was latched, with the reason and the task that are kept (the first of a run of faults): the
+   * platform keeps them where a reset will not erase them (RT-020). Called with no lock held by the core.
+   */
+  void (*fault_latched)(void *ctx, zplc_sched_fault_reason_t reason, uint16_t task_id);
 } zplc_sched_port_t;
 
 /* ============================================================================

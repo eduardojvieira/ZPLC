@@ -208,6 +208,9 @@ static void clear_scheduler(void) {
   int index;
 
 #ifdef CONFIG_ZTEST
+  /* The cases of this suite are about the feed and the disarm of a profile that disarms the watchdog in STOP, in
+   * a pause and in a latched fault. The policies of the other profiles are those of scheduler_watchdog. */
+  zplc_sched_test_set_watchdog_policy(0U, 0U, 0U);
   zplc_sched_test_fail_next_output_commit(0U, ZPLC_HAL_OK);
   zplc_sched_test_fail_next_gpio_read(0U, ZPLC_HAL_OK);
   zplc_sched_test_fail_safe_outputs(ZPLC_HAL_OK);

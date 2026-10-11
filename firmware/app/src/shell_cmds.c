@@ -40,6 +40,7 @@
 #include <zplc_hal.h>
 #include <zplc_isa.h>
 #include <zplc_debug.h>
+#include <zplc_failsafe.h>
 #include <zplc_fw_identity.h>
 #ifdef CONFIG_ZPLC_RETAIN_PERSIST
 #include <zplc_retain.h>
@@ -56,6 +57,7 @@
 extern void zplc_mqtt_request_backoff_reset(void);
 
 #ifdef CONFIG_ZPLC_SCHEDULER
+#include <zplc_sched_core.h>
 #include <zplc_scheduler.h>
 #include <zplc_exchange.h>
 #endif
@@ -612,6 +614,7 @@ static int sched_latch_ambiguous_program_publication(void);
 static int cmd_sys_info(const struct shell *sh, size_t argc, char **argv);
 static int cmd_sys_build(const struct shell *sh, size_t argc, char **argv);
 static int cmd_sys_io(const struct shell *sh, size_t argc, char **argv);
+static int cmd_sys_reset(const struct shell *sh, size_t argc, char **argv);
 static int cmd_sys_reboot(const struct shell *sh, size_t argc, char **argv);
 #endif
 
@@ -683,6 +686,23 @@ static int cmd_sched_status(const struct shell *sh, size_t argc, char **argv) {
     JSON_OBJ_START(sh);
     JSON_STR(sh, "state", sched_state_name(zplc_sched_get_state()), true);
     JSON_UINT(sh, "uptime_ms", stats.uptime_ms, true);
+    /* RT-014: the miss count, its run, the limit, the last overrun and the reason of a latched fault; RT-021: why
+     * the processor was last reset. The same objects the host runtime reports. */
+    shell_fprintf(sh, SHELL_NORMAL,
+                  "\"deadline\":{\"warning\":%s,\"misses\":%u,\"consecutive_misses\":%u,\"miss_limit\":%u,"
+                  "\"last_overrun_us\":%u},",
+                  stats.consecutive_misses != 0U ? "true" : "false", (unsigned int)stats.total_overruns,
+                  (unsigned int)stats.consecutive_misses, (unsigned int)stats.miss_limit,
+                  (unsigned int)stats.last_overrun_us);
+    if (stats.fault_reason == (uint8_t)ZPLC_SCHED_FAULT_NONE) {
+      shell_fprintf(sh, SHELL_NORMAL, "\"fault\":{\"reason\":\"none\",\"task_id\":null},");
+    } else {
+      shell_fprintf(sh, SHELL_NORMAL, "\"fault\":{\"reason\":\"%s\",\"task_id\":%u},",
+                    zplc_sched_fault_reason_name((zplc_sched_fault_reason_t)stats.fault_reason),
+                    (unsigned int)stats.fault_task_id);
+    }
+    shell_fprintf(sh, SHELL_NORMAL, "\"reset_cause\":\"%s\",",
+                  zplc_reset_cause_name(zplc_failsafe_report()->cause));
     /* COM-014: a standing warning, not an event: present for as long as
      * the session is configured to skip the certificate check. */
     shell_fprintf(sh, SHELL_NORMAL, "\"warnings\":[%s],",
@@ -733,6 +753,11 @@ static int cmd_sched_status(const struct shell *sh, size_t argc, char **argv) {
   shell_print(sh, "  Tasks:      %u active", stats.active_tasks);
   shell_print(sh, "  Tot Cycles: %u", stats.total_cycles);
   shell_print(sh, "  Tot Ovr:    %u", stats.total_overruns);
+  shell_print(sh, "  Deadline:   %s, run %u of %u, last overrun %u us", stats.consecutive_misses != 0U ? "WARNING" : "ok",
+              (unsigned int)stats.consecutive_misses, (unsigned int)stats.miss_limit,
+              (unsigned int)stats.last_overrun_us);
+  shell_print(sh, "  Fault:      %s", zplc_sched_fault_reason_name((zplc_sched_fault_reason_t)stats.fault_reason));
+  shell_print(sh, "  Reset:      %s", zplc_reset_cause_name(zplc_failsafe_report()->cause));
   if (zplc_config_mqtt_tls_verify_off()) {
     shell_warn(sh, "  WARNING: MQTT tls-verify: OFF (the broker certificate "
                    "is not checked)");
@@ -1107,6 +1132,59 @@ static int cmd_sys_io(const struct shell *sh, size_t argc, char **argv) {
   shell_print(sh, "I/O description: %s, %u channels, hash %s, %u B in, %u B out", table->board_id,
               (unsigned int)table->channel_count, io_hash, (unsigned int)table->input_bytes,
               (unsigned int)table->output_bytes);
+  return 0;
+}
+
+/**
+ * @brief Handler for 'zplc sys reset [--json]': why the processor was last reset and what the previous run left
+ * (RT-019, RT-021).
+ *
+ * The cause is one of power_on, brown_out, pin, software, watchdog, fault or unknown (a part that does not report
+ * one). `fault` is the previous run's own record: a processor fault, a stack overflow or a kernel panic that the
+ * firmware handled with the outputs driven safe, or a fault the scheduler latched before a watchdog reset. After
+ * any reset the runtime is in STOP: `run_policy` says so (D-13). A command of its own and not keys of
+ * `sys info --json`: Studio's handshake parser accepts exactly the keys of that object.
+ */
+static int cmd_sys_reset(const struct shell *sh, size_t argc, char **argv) {
+  const zplc_reset_report_t *report = zplc_failsafe_report();
+  const char *cause = zplc_reset_cause_name(report->cause);
+  char reason[48];
+
+  zplc_fault_record_reason_text(&report->fault, reason, sizeof(reason));
+  if (argc > 1 && strcmp(argv[1], "--json") == 0) {
+    JSON_OBJ_START(sh);
+    JSON_UINT(sh, "schema", 1U, true);
+    JSON_STR(sh, "cause", cause, true);
+    JSON_BOOL(sh, "reported", report->reported != 0U, true);
+    JSON_UINT(sh, "raw", report->raw_bits, true);
+    JSON_UINT(sh, "supported", report->supported_bits, true);
+    JSON_STR(sh, "run_policy", zplc_reset_may_run(report->cause) != 0 ? "run" : "stop", true);
+    JSON_KEY(sh, "fault");
+    if (report->has_fault != 0U) {
+      JSON_OBJ_START(sh);
+      JSON_STR(sh, "kind", report->fault.kind == (uint8_t)ZPLC_FAULT_SCHEDULER ? "scheduler" : "processor", true);
+      JSON_STR(sh, "reason", reason, true);
+      JSON_UINT(sh, "task_id", report->fault.task_id, true);
+      JSON_UINT(sh, "pc", report->fault.pc, true);
+      JSON_UINT(sh, "sequence", report->fault.sequence, false);
+      JSON_OBJ_END(sh);
+    } else {
+      shell_fprintf(sh, SHELL_NORMAL, "null");
+    }
+    JSON_OBJ_END(sh);
+    JSON_NEWLINE(sh);
+    return 0;
+  }
+  shell_print(sh, "Reset cause:  %s%s", cause, report->reported != 0U ? "" : " (this part does not report one)");
+  if (report->has_fault != 0U) {
+    shell_print(sh, "Last fault:   %s (%s, task %u, pc 0x%08x)", reason,
+                report->fault.kind == (uint8_t)ZPLC_FAULT_SCHEDULER ? "scheduler" : "processor",
+                (unsigned int)report->fault.task_id, (unsigned int)report->fault.pc);
+  } else {
+    shell_print(sh, "Last fault:   none recorded");
+  }
+  shell_print(sh, "Run policy:   %s: the runtime waits in STOP for a person's RUN command",
+              zplc_reset_may_run(report->cause) != 0 ? "run" : "stop");
   return 0;
 }
 
@@ -3894,6 +3972,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
     SHELL_CMD_ARG(info, NULL, "System information", cmd_sys_info, 1, 1),
     SHELL_CMD_ARG(build, NULL, "Firmware identity: commit, board, ABI, options [--json]", cmd_sys_build, 1, 1),
     SHELL_CMD_ARG(io, NULL, "Identity of the board I/O description [--json]", cmd_sys_io, 1, 1),
+    SHELL_CMD_ARG(reset, NULL, "Why the processor was last reset, and the fault it left [--json]", cmd_sys_reset, 1, 1),
     SHELL_CMD(reboot, NULL, "Reboot", cmd_sys_reboot),
     SHELL_SUBCMD_SET_END);
 #endif

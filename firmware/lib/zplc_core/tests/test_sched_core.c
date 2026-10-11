@@ -58,6 +58,10 @@ typedef struct {
   int reset_image_result;
   int drive_safe_result;
   int force_miss;
+  /* the faults the port was told about, by reason, in order */
+  int latched_count;
+  int latched_reason;
+  uint16_t latched_task;
   /* depth of the locks, to check that I/O never runs under the image lock */
   int image_locked;
   int io_locked;
@@ -183,9 +187,9 @@ static int fake_drive_safe(void *ctx) {
   return fake.drive_safe_result;
 }
 
-static int fake_disarm(void *ctx) {
+static int fake_watchdog_state(void *ctx, zplc_wdt_state_t state) {
   (void)ctx;
-  log_word("disarm");
+  log_word(state == ZPLC_WDT_STATE_FAULT ? "wdt_fault" : "wdt_pause");
   return 0;
 }
 
@@ -206,6 +210,13 @@ static int fake_probe(void *ctx, zplc_sched_probe_t point, uint16_t task_id) {
   return 0;
 }
 
+static void fake_fault_latched(void *ctx, zplc_sched_fault_reason_t reason, uint16_t task_id) {
+  (void)ctx;
+  fake.latched_count++;
+  fake.latched_reason = (int)reason;
+  fake.latched_task = task_id;
+}
+
 static const zplc_sched_port_t port = {
     NULL,
     fake_now,
@@ -223,9 +234,10 @@ static const zplc_sched_port_t port = {
     fake_feed,
     fake_reset_image,
     fake_drive_safe,
-    fake_disarm,
+    fake_watchdog_state,
     fake_stop_releases,
     fake_probe,
+    fake_fault_latched,
 };
 
 static void fake_trace(void *ctx, zplc_sched_trace_kind_t kind, uint16_t task_id, uint64_t a, uint64_t b) {
@@ -560,14 +572,17 @@ static void test_vm_fault_latches_and_settles(void) {
 
   CHECK(result < 0 && core.fault_latched == 1U && core.fault_reason == (uint8_t)ZPLC_SCHED_FAULT_VM, "the fault latches");
   CHECK(core.fault_task_id == 2U && report.error_task == 2, "with the task that failed");
-  CHECK(strcmp(fake.log, "sample lock_image latch reset publish unlock_image safe disarm stop_releases ") == 0,
+  CHECK(strcmp(fake.log, "sample lock_image latch reset publish unlock_image safe wdt_fault stop_releases ") == 0,
         "the image is reset under the lock, the pins are driven after it is released, then the watchdog");
   CHECK(report.committed == 0U && core.output_commit_count == 0U, "nothing is committed");
   CHECK(core.state == ZPLC_SCHED_STATE_ERROR && core.slot[0].task.state == ZPLC_TASK_STATE_ERROR,
         "every task is in ERROR");
+  CHECK(fake.latched_count == 1 && fake.latched_reason == (int)ZPLC_SCHED_FAULT_VM && fake.latched_task == 2U,
+        "the platform was told of the fault once, with its reason and task, to keep where a reset will not erase it");
   CHECK(zplc_sched_core_latch_fault_image(&core, &port, ZPLC_SCHED_FAULT_IO, 3U) == 0 &&
             core.fault_reason == (uint8_t)ZPLC_SCHED_FAULT_VM && core.fault_task_id == 2U,
         "the first reason is the one kept");
+  CHECK(fake.latched_count == 1, "and a later fault is not told: the first is what a reset must not erase");
 }
 
 static void test_sample_failure_is_an_io_fault(void) {
@@ -654,7 +669,7 @@ static void test_step_and_breakpoint(void) {
   CHECK(result == 0 && report.paused == 1U && core.state == ZPLC_SCHED_STATE_PAUSED,
         "the step ends paused, and a slow task is not a deadline miss");
   CHECK(core.slot[0].task.stats.overrun_count == 0U, "no deadline accounting in a step");
-  CHECK(strstr(fake.log, "write unlock_io safe stop_releases disarm") != NULL && strstr(fake.log, "feed") == NULL,
+  CHECK(strstr(fake.log, "write unlock_io safe stop_releases wdt_pause") != NULL && strstr(fake.log, "feed") == NULL,
         "the batch is committed once, then the pins are driven safe; the watchdog is not fed");
   CHECK(zplc_opi_read8(0U) == 10U, "the image is kept (RT-017)");
 

@@ -22,6 +22,7 @@
 #include <zplc_core.h>
 #include <zplc_fw_identity.h>
 #include <zplc_debug.h>
+#include <zplc_failsafe.h>
 #include <zplc_hal.h>
 #include <zplc_isa.h>
 #include <zplc_loader.h>
@@ -417,6 +418,27 @@ static int boot_hal(void) {
   return 0;
 }
 
+/* RT-021, RT-022: why the processor was reset, and what the previous run left. Whatever the cause, the runtime
+ * restores the stored program into STOP and waits for a person's RUN command (D-13 option A): there is nothing in
+ * the boot path that could start a scan, and zplc_reset_may_run() is the one place that says so. */
+static int boot_reset_cause(void) {
+  const zplc_reset_report_t *report;
+  char reason[48];
+
+  zplc_failsafe_boot();
+  report = zplc_failsafe_report();
+  zplc_hal_log("[RESET] Cause: %s%s\n", zplc_reset_cause_name(report->cause),
+               report->reported != 0U ? "" : " (this part does not report one)");
+  if (report->has_fault != 0U) {
+    zplc_fault_record_reason_text(&report->fault, reason, sizeof(reason));
+    zplc_hal_log("[RESET] The previous run stopped on a fault: %s (task %u, pc 0x%08x)\n", reason,
+                 (unsigned int)report->fault.task_id, (unsigned int)report->fault.pc);
+  }
+  zplc_hal_log("[RESET] The runtime %s: RUN waits for a person's command\n",
+               zplc_reset_may_run(report->cause) != 0 ? "may run" : "stays in STOP");
+  return 0;
+}
+
 static int boot_core(void) {
   int ret = zplc_core_init();
 
@@ -510,6 +532,7 @@ static int boot_cloud(void) {
 
 static const zplc_boot_step_t boot_runtime_steps[] = {
     {"hal", ZPLC_BOOT_RUNTIME, boot_hal},
+    {"reset cause", ZPLC_BOOT_RUNTIME, boot_reset_cause},
     {"core", ZPLC_BOOT_RUNTIME, boot_core},
     {"scheduler and stored program", ZPLC_BOOT_RUNTIME, boot_runtime},
 };
