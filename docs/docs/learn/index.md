@@ -42,9 +42,9 @@ through one of them.
 
 A scenario is a short script that sets inputs, lets the program run for a fixed
 time and checks the outputs. Writing one is the best way to find out what your
-program really does. The [scenario file format](../reference/scenario-file.md)
-lists every field, and the [command line](../reference/cli.md) runs them without
-Studio.
+program really does. [Write and run scenario tests](../guides/scenario-tests.md)
+shows how, the [scenario file format](../reference/scenario-file.md) lists every
+field, and the [command line](../reference/cli.md) runs them without Studio.
 
 ## Read the language examples
 

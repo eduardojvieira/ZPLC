@@ -195,6 +195,7 @@ a pasar.
 
 ## Siguientes pasos
 
+- [Escribir y ejecutar pruebas de escenario](../guides/scenario-tests.md): escriba un escenario propio.
 - [Banco de trabajo de Studio](../ide/features.md): los editores, la tabla Watch, los forzados y los puntos de interrupción.
 - [Referencia de Structured Text](../reference/language-st.md): qué admite hoy el lenguaje.
 - [Aprender](../learn/index.md): lecciones que califican su programa contra un escenario.

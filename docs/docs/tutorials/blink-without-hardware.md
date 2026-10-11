@@ -189,6 +189,7 @@ it passes again.
 
 ## Next steps
 
+- [Write and run scenario tests](../guides/scenario-tests.md): write a scenario of your own.
 - [Studio workbench](../ide/features.md): the editors, the Watch table, forcing and breakpoints.
 - [Structured Text reference](../reference/language-st.md): what the language supports today.
 - [Learn](../learn/index.md): lessons that grade your program against a scenario.

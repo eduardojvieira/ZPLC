@@ -43,7 +43,8 @@ uno de ellos.
 
 Un escenario es un guion corto que fija entradas, deja correr el programa durante
 un tiempo definido y verifica las salidas. Escribir uno es la mejor manera de
-descubrir lo que su programa hace realmente. El [formato del archivo de escenario](../reference/scenario-file.md)
+descubrir lo que su programa hace realmente. [Escribir y ejecutar pruebas de escenario](../guides/scenario-tests.md)
+muestra cómo, el [formato del archivo de escenario](../reference/scenario-file.md)
 enumera cada campo, y la [línea de comandos](../reference/cli.md) los ejecuta sin
 Studio.
 

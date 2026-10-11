@@ -629,7 +629,7 @@ Result after 6 scans of 10 ms: `Top` = `30`, `Items` = `1`.
 
 ## Modbus
 
-The examples of these blocks run on the native host runtime, which has no Modbus server, MQTT broker or cloud service to talk to: each block ends with `ERROR` TRUE and `STATUS` 3 (no handler). They prove that the block compiles, runs and reports its status; the exchange with a peer is verified separately, against protocol doubles.
+The examples of these blocks run on the native host runtime, which has no Modbus server, MQTT broker or cloud service to talk to: each block ends with `ERROR` TRUE and `STATUS` 3 (no handler). They prove that the block compiles, runs and reports its status, and nothing about an exchange with a peer: what has been verified for each block, and against what, is stated in the how-to pages for [Modbus](../guides/modbus.md), [MQTT and Sparkplug B](../guides/mqtt-sparkplug.md) and [the cloud blocks](../guides/cloud-blocks.md).
 
 ### MB_READ_HREG
 
@@ -773,7 +773,7 @@ Result after 3 scans of 10 ms: `Failed` = `TRUE`, `Code` = `3`.
 
 ## MQTT
 
-The examples of these blocks run on the native host runtime, which has no Modbus server, MQTT broker or cloud service to talk to: each block ends with `ERROR` TRUE and `STATUS` 3 (no handler). They prove that the block compiles, runs and reports its status; the exchange with a peer is verified separately, against protocol doubles.
+The examples of these blocks run on the native host runtime, which has no Modbus server, MQTT broker or cloud service to talk to: each block ends with `ERROR` TRUE and `STATUS` 3 (no handler). They prove that the block compiles, runs and reports its status, and nothing about an exchange with a peer: what has been verified for each block, and against what, is stated in the how-to pages for [Modbus](../guides/modbus.md), [MQTT and Sparkplug B](../guides/mqtt-sparkplug.md) and [the cloud blocks](../guides/cloud-blocks.md).
 
 ### MQTT_CONNECT
 
@@ -871,7 +871,7 @@ Result after 3 scans of 10 ms: `Failed` = `TRUE`, `Code` = `3`.
 
 ## Cloud and Sparkplug B
 
-The examples of these blocks run on the native host runtime, which has no Modbus server, MQTT broker or cloud service to talk to: each block ends with `ERROR` TRUE and `STATUS` 3 (no handler). They prove that the block compiles, runs and reports its status; the exchange with a peer is verified separately, against protocol doubles.
+The examples of these blocks run on the native host runtime, which has no Modbus server, MQTT broker or cloud service to talk to: each block ends with `ERROR` TRUE and `STATUS` 3 (no handler). They prove that the block compiles, runs and reports its status, and nothing about an exchange with a peer: what has been verified for each block, and against what, is stated in the how-to pages for [Modbus](../guides/modbus.md), [MQTT and Sparkplug B](../guides/mqtt-sparkplug.md) and [the cloud blocks](../guides/cloud-blocks.md).
 
 ### AZURE_C2D_RECV
 
