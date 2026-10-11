@@ -159,6 +159,34 @@ valor que la rompe y espera que la compilación falle nombrando la regla. Los pu
 declaran en `firmware/lib/zplc_core/tests/include/zplc_test_hooks.h`, nunca en un header público;
 `test_public_headers` falla si un header público declara uno.
 
+### La descripción de E/S de la placa
+
+`zplc.io_table.base` y `zplc.io_table.extended` compilan el firmware desde dos descripciones sintéticas de placa
+(`firmware/tests/io_table/io_base.json` e `io_extended.json`) sobre el emulador de GPIO de `native_sim` y ejecutan el
+mismo código de prueba en ambas. La prueba lee la tabla generada, maneja cada pin de entrada emulado, ejecuta un
+scan y comprueba que una entrada descrita llega a la imagen de entrada en su dirección, que una salida descrita
+llega a su pin, y que un pin que el devicetree tiene pero la descripción no lista nunca se configura ni se maneja. La
+descripción extendida lista tres salidas y una entrada más que la base, una de ellas en un segundo y otra en un
+tercer byte de imagen, y ningún fuente del firmware las nombra.
+
+`zplc.io_analog.ok` ejecuta dos entradas analógicas sobre el emulador de ADC y comprueba que cada valor crudo llega
+a su palabra de la imagen de entrada y sigue a la tensión; `zplc.io_analog.missing` nombra un canal de conversor que
+el emulador no tiene y comprueba que la HAL falla al inicializar, antes de que exista ninguna tarea.
+`zplc.hal_persist_keys` guarda, lee y borra cada clave que el runtime almacena (el almacén de programas, los chunks de
+RETAIN de ambos slots y las credenciales) sobre el NVS del simulador de flash, y comprueba que una clave sin
+identificador responde con un error.
+
+El build también comprueba que la descripción y el devicetree coinciden. Para verlo fallar, cambiá un `dt.pin` o un
+`alias` en `io_base.json` y compilá la prueba:
+
+```bash
+west build -p -b native_sim/native/64 zplc/firmware/tests/io_table
+```
+
+El build se detiene con un mensaje como `I/O description: channel DO0 (P0) disagrees with the devicetree: alias led0
+is not on pin 7`. `python3 tools/hil/test_io_table_generator.py` fija el texto que emite el generador, y
+`python3 tools/ci/check_hal_contract.py` comprueba que cada función de la HAL está implementada en cada port.
+
 ## Análisis estático
 
 `clang-tidy` lee `.clang-tidy` en la raíz del repositorio. Todo chequeo que habilita es un error, así que la
@@ -199,7 +227,7 @@ cuando un tamaño excede su presupuesto en un solo byte.
 ## Presupuestos de tamaño
 
 `tools/firmware-test/size-budget.json` registra, para cada placa de
-`firmware/app/boards/supported-boards.v1.5.0.json`, la flash y la RAM medidas
+`firmware/app/boards/boards.json`, la flash y la RAM medidas
 en la tabla de memoria del enlazador y el presupuesto que la compilación debe
 respetar. La política de margen está en el archivo: el presupuesto es la
 medición más 5 por ciento, redondeada hacia arriba a 256 bytes.

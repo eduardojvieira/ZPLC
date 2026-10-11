@@ -168,7 +168,7 @@ CONFIG_NVS=y
 
 ## 🎯 Board support
 
-The canonical [board manifest](boards/supported-boards.v1.5.0.json) and the
+The canonical [board manifest](boards/boards.json) and the
 published board reference define each profile's hardware revision, capabilities
 and evidence tier (`catalogued`, `build-verified`, `HIL-verified`, or
 `production-qualified`). Source presence or a successful cross-build does not

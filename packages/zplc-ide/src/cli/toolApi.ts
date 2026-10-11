@@ -9,6 +9,7 @@ import { ZPLC_CONSTANTS } from '@zplc/compiler';
 import { markProgramInputs } from './programInputs';
 import { collectUnboundedLoopDiagnostics, safetyDiagnostic } from './safetyDiagnostics';
 import { CompilerError, assertTaskProgramCardinality, compileMultiTaskProject, compilerErrorsOf, parse, selectWarnings, transpileFailure, transpileToST, type CompilerWarning, type DebugMap, type DebugVarInfo } from '../compiler';
+import { supportLevelFromFiles } from '../boards/supportLevel';
 import { buildOptionsOf } from '../project/buildOptions';
 import type { ProjectMigrationChange } from '../project/projectModel';
 import { resolveProgramSource } from '../utils/programSourceResolution';
@@ -163,7 +164,6 @@ const WORKSPACE_TEST_TIMEOUT_MS = 30_000;
 const TOOLCHAIN_FILE_MAX_BYTES = 128 * 1024;
 const TOOLCHAIN_COMMAND_OUTPUT_MAX_BYTES = 4096;
 const TOOLCHAIN_COMMAND_TIMEOUT_MS = 3000;
-const EXPECTED_BOARD_COUNT = 6;
 
 export type ToolchainCheckStatus = 'ready' | 'missing' | 'invalid' | 'malformed' | 'timeout' | 'unavailable';
 export interface ToolchainCheck {
@@ -962,21 +962,21 @@ function parseWestRevision(text: string): string | undefined {
 async function parseBoards(root: string, text: string): Promise<ParsedBoard[] | undefined> {
   let value: unknown;
   try { value = JSON.parse(text); } catch { return undefined; }
-  if (!Array.isArray(value) || value.length !== EXPECTED_BOARD_COUNT) return undefined;
-  const boards: ParsedBoard[] = [];
-  const boardIds = new Set<string>(); const ideIds = new Set<string>();
+  if (!Array.isArray(value) || value.length < 1 || value.length > 32) return undefined;
+  const boards: ParsedBoard[] = []; const boardIds = new Set<string>(); const ideIds = new Set<string>();
   for (const item of value) {
     if (typeof item !== 'object' || item === null) return undefined;
     const board = item as Record<string, unknown>;
-    const required = ['board_id', 'display_name', 'ide_id', 'zephyr_board', 'variant', 'build_command', 'network_class', 'validation_level', 'docs_ref'];
+    const required = ['board_id', 'display_name', 'ide_id', 'zephyr_board', 'variant', 'build_command', 'network_class', 'docs_ref'];
     const validString = (value: unknown, max = 256) => typeof value === 'string' && value.length > 0 && value.length <= max && [...value].every((character) => character >= ' ' && character !== '\x7f');
-    if (required.some((field) => !validString(board[field]))) return undefined;
-    const boardId = board.board_id as string; const ideId = board.ide_id as string; const zephyrBoard = board.zephyr_board as string; const validationLevel = board.validation_level as string;
-    if (!/^[a-z0-9][a-z0-9-]{0,63}$/.test(boardId) || !/^[a-z0-9][a-z0-9_]{0,63}$/.test(ideId) || !/^[a-z0-9][a-z0-9_/-]{0,127}$/.test(zephyrBoard) || boardIds.has(boardId) || ideIds.has(ideId) || !['cross-build', 'human-hil'].includes(validationLevel) || !['serial-focused', 'network-capable', 'other'].includes(board.network_class as string)) return undefined;
+    if (required.some((field) => !validString(board[field])) || Object.hasOwn(board, 'validation_level')) return undefined;
+    const boardId = board.board_id as string; const ideId = board.ide_id as string; const zephyrBoard = board.zephyr_board as string;
+    if (!/^[a-z0-9][a-z0-9-]{0,63}$/.test(boardId) || !/^[a-z0-9][a-z0-9_]{0,63}$/.test(ideId) || !/^[a-z0-9][a-z0-9_/-]{0,127}$/.test(zephyrBoard) || boardIds.has(boardId) || ideIds.has(ideId) || !['serial-focused', 'network-capable', 'other'].includes(board.network_class as string)) return undefined;
     if (!Array.isArray(board.support_assets) || board.support_assets.length === 0 || board.support_assets.length > 16 || !board.support_assets.every((asset): asset is string => validString(asset) && /^firmware\/app\/boards\/[a-z0-9][a-z0-9_-]{0,127}\.(conf|overlay)$/.test(asset))) return undefined;
-    if (!Array.isArray(board.evidence_refs) || board.evidence_refs.length > 16 || !board.evidence_refs.every((ref): ref is string => validString(ref)) || (validationLevel === 'human-hil' && board.evidence_refs.length === 0)) return undefined;
+    if (!Array.isArray(board.evidence_refs) || board.evidence_refs.length > 16 || !board.evidence_refs.every((ref): ref is string => validString(ref))) return undefined;
     for (const asset of board.support_assets) if (!(await containedFile(root, asset)).ok) return undefined;
-    boardIds.add(boardId); ideIds.add(ideId); boards.push({ boardId, ideId, zephyrBoard, validationLevel: validationLevel as ParsedBoard['validationLevel'] });
+    const validationLevel = await supportLevelFromFiles(boardId, board.evidence_refs, async (ref) => { const file = await containedFile(root, ref, TOOLCHAIN_FILE_MAX_BYTES); return file.ok ? file.text : undefined; });
+    boardIds.add(boardId); ideIds.add(ideId); boards.push({ boardId, ideId, zephyrBoard, validationLevel });
   }
   return boards.sort((left, right) => left.ideId.localeCompare(right.ideId));
 }
@@ -985,7 +985,7 @@ async function parseBoards(root: string, text: string): Promise<ParsedBoard[] | 
 export async function boardsList(repositoryRoot: string): Promise<BoardsListResult> {
   const root = await realDirectory(repositoryRoot);
   if (!root) return failed('boards-list', [{ code: 'BOARDS_REPOSITORY_INVALID', message: 'Board profiles are unavailable' }]);
-  const manifest = await containedFile(root, 'firmware/app/boards/supported-boards.v1.5.0.json', TOOLCHAIN_FILE_MAX_BYTES);
+  const manifest = await containedFile(root, 'firmware/app/boards/boards.json', TOOLCHAIN_FILE_MAX_BYTES);
   const boards = manifest.ok && manifest.text ? await parseBoards(root, manifest.text) : undefined;
   if (!boards) return failed('boards-list', [{ code: 'BOARDS_MANIFEST_INVALID', message: 'Board profiles are unavailable' }]);
   return { ok: true, summary: { boards: boards.map(({ boardId, ideId, zephyrBoard, validationLevel }) => ({ boardId, ideId, zephyrBoard, validationLevel })) }, evidence: evidence('boards-list', 'passed') };
@@ -1001,7 +1001,7 @@ export async function firmwareBuildPlan(repositoryRoot: string, ideId: string): 
   if (!root || typeof ideId !== 'string') return firmwareBuildPlanFailure();
   const [appCmake, boardManifest] = await Promise.all([
     containedFile(root, 'firmware/app/CMakeLists.txt', TOOLCHAIN_FILE_MAX_BYTES),
-    containedFile(root, 'firmware/app/boards/supported-boards.v1.5.0.json', TOOLCHAIN_FILE_MAX_BYTES),
+    containedFile(root, 'firmware/app/boards/boards.json', TOOLCHAIN_FILE_MAX_BYTES),
   ]);
   if (!appCmake.ok || !boardManifest.ok) return firmwareBuildPlanFailure();
   const board = (await parseBoards(root, boardManifest.text!))?.find((candidate) => candidate.ideId === ideId);
@@ -1056,7 +1056,7 @@ export async function toolchainInspect(repositoryRoot: string): Promise<Toolchai
   if (!root) return toolchainResult(checks, boards, [toolchainDiagnostic('TOOLCHAIN_REPOSITORY_INVALID')]);
   const [appCmake, boardManifest, westManifest] = await Promise.all([
     containedFile(root, 'firmware/app/CMakeLists.txt', TOOLCHAIN_FILE_MAX_BYTES),
-    containedFile(root, 'firmware/app/boards/supported-boards.v1.5.0.json', TOOLCHAIN_FILE_MAX_BYTES),
+    containedFile(root, 'firmware/app/boards/boards.json', TOOLCHAIN_FILE_MAX_BYTES),
     containedFile(root, 'west.yml', TOOLCHAIN_FILE_MAX_BYTES),
   ]);
   const requiredRevision = westManifest.ok && westManifest.text ? parseWestRevision(westManifest.text) : undefined;

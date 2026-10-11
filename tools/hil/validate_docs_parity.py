@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 from __future__ import annotations
 
+import importlib.util
 import json
 from pathlib import Path
 import re
@@ -14,7 +15,8 @@ MANIFEST_ES = (
     ROOT
     / "docs/i18n/es/docusaurus-plugin-content-docs/current/reference/v1-5-canonical-docs-manifest.md"
 )
-BOARD_MANIFEST = ROOT / "firmware/app/boards/supported-boards.v1.5.0.json"
+BOARD_MANIFEST = ROOT / "firmware/app/boards/boards.json"
+BOARDS_LIBRARY = ROOT / "firmware/zephyr/scripts/zplc_boards.py"
 REFERENCE_INDEX_EN = ROOT / "docs/docs/reference/index.md"
 REFERENCE_INDEX_ES = (
     ROOT / "docs/i18n/es/docusaurus-plugin-content-docs/current/reference/index.md"
@@ -129,13 +131,18 @@ def parse_section_table(path: Path, heading: str) -> list[list[str]]:
 
 def validate_reference_index(errors: list[str]) -> None:
     boards = json.loads(BOARD_MANIFEST.read_text())
+    # The support level is derived from the evidence records of the manifest, never read from a hand-set field (IO-015)
+    spec = importlib.util.spec_from_file_location("zplc_boards", BOARDS_LIBRARY)
+    assert spec and spec.loader
+    library = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(library)
     expected_en = [
         [
             str(entry["display_name"]),
             f"`{entry['ide_id']}`",
             f"`{entry['zephyr_board']}`",
             network_summary(entry, False),
-            str(entry["validation_level"]),
+            library.support_level(entry, ROOT)["level"],
         ]
         for entry in boards
     ]
@@ -145,7 +152,7 @@ def validate_reference_index(errors: list[str]) -> None:
             f"`{entry['ide_id']}`",
             f"`{entry['zephyr_board']}`",
             network_summary(entry, True),
-            str(entry["validation_level"]),
+            library.support_level(entry, ROOT)["level"],
         ]
         for entry in boards
     ]
@@ -153,11 +160,11 @@ def validate_reference_index(errors: list[str]) -> None:
     actual_es = parse_section_table(REFERENCE_INDEX_ES, "## Placas Soportadas")
     if actual_en != expected_en:
         errors.append(
-            "docs/docs/reference/index.md board summary drifts from firmware/app/boards/supported-boards.v1.5.0.json"
+            "docs/docs/reference/index.md board summary drifts from firmware/app/boards/boards.json"
         )
     if actual_es != expected_es:
         errors.append(
-            "docs/i18n/es/.../reference/index.md board summary drifts from firmware/app/boards/supported-boards.v1.5.0.json"
+            "docs/i18n/es/.../reference/index.md board summary drifts from firmware/app/boards/boards.json"
         )
 
 

@@ -2,16 +2,23 @@
  * ZPLC Board Overlay - Raspberry Pi Pico (RP2040)
  * SPDX-License-Identifier: MIT
  *
- * The RPi Pico already defines:
- *   - led0 (GPIO25, onboard LED)
+ * The RPi Pico board defines led0 as the on-board LED (GP25). This profile
+ * re-points led0 to GP0 so that DO0 to DO3 are four header pins, and maps the
+ * on-board LED as led4 (DO4, %QX0.4).
  *
  * This overlay:
  *   - Enables USB CDC ACM as the console/shell interface
- *   - Adds a button input for testing
+ *   - Maps four outputs (GP0-GP3) and the on-board LED (GP25)
+ *   - Maps four inputs (GP15, GP14, GP13, GP12), switches to GND
  *   - Defines a storage partition for NVS (program persistence)
  *
+ * The channels are listed, with their header pins and electrical notes, in the
+ * I/O description of firmware/app/boards/boards.json (rpi-pico-rp2040); the
+ * build fails when the description and this file disagree.
+ *
  * Hardware connection:
- *   GPIO15 -> Button -> GND (optional)
+ *   GP0..GP3   -> LED -> resistor -> GND   (outputs, header pins 1, 2, 4, 5)
+ *   GP15..GP12 -> switch -> GND            (inputs, internal pull-up)
  *
  * Flash Layout (2MB total):
  *   0x000000 - 0x1EFFFF: Application code (1984 KB)
@@ -40,6 +47,21 @@
             label = "ZPLC Input 0";
             zephyr,code = <0>;
         };
+        button1: button_1 {
+            gpios = <&gpio0 14 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+            label = "ZPLC Input 1 (GP14)";
+            zephyr,code = <1>;
+        };
+        button2: button_2 {
+            gpios = <&gpio0 13 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+            label = "ZPLC Input 2 (GP13)";
+            zephyr,code = <2>;
+        };
+        button3: button_3 {
+            gpios = <&gpio0 12 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+            label = "ZPLC Input 3 (GP12)";
+            zephyr,code = <3>;
+        };
     };
     
     leds {
@@ -60,10 +82,19 @@
             gpios = <&gpio0 3 GPIO_ACTIVE_HIGH>;
             label = "ZPLC Output 3 (GP3)";
         };
+        /* The on-board LED: led0 of the board DTS is re-pointed above, so it gets its own node (IO-009) */
+        led4: led_4 {
+            gpios = <&gpio0 25 GPIO_ACTIVE_HIGH>;
+            label = "ZPLC Output 4 (GP25, on-board LED)";
+        };
     };
 
     aliases {
         sw0 = &button0;
+        sw1 = &button1;
+        sw2 = &button2;
+        sw3 = &button3;
+        led4 = &led4;
         led0 = &led0;
         led1 = &led1;
         led2 = &led2;

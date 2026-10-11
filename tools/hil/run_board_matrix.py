@@ -8,7 +8,7 @@ import sys
 
 
 ROOT = Path(__file__).resolve().parents[2]
-MANIFEST = ROOT / "firmware/app/boards/supported-boards.v1.5.0.json"
+MANIFEST = ROOT / "firmware/app/boards/boards.json"
 
 
 def main() -> int:

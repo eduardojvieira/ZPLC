@@ -1296,6 +1296,82 @@
     {"kind":"conformance","ref":"conformance/rt/rt-034-watchdog-reset-is-reported-and-changes-nothing.expect.json","test":"RT-034 a call to WATCHDOG_RESET builds with the warning WATCHDOG_RESET_NO_EFFECT and changes nothing the program does"},
     {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/warnings.test.ts","test":"a call to WATCHDOG_RESET does nothing, and the build says so (RT-034)"}
   ],
+  "IO-001": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/boards/boardIo.test.ts","test":"direct addresses of the process image (IO-001)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/boards/boardIo.test.ts","test":"the board I/O description (IO-001, IO-005)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/config/boardProfiles.test.ts","test":"board I/O descriptions in the catalogue (IO-001, IO-003, IO-009)"},
+    {"kind":"unit","ref":"tools/hil/test_board_io_description.py","test":"ValidationTests","note":"Python unit test run by the docs-and-truth job of ci.yml; it is not in the scanned file kinds. It pins every rule of the board I/O description: channels, addresses, direction, safe value, devicetree binding."},
+    {"kind":"unit","ref":"tools/hil/test_io_table_generator.py","test":"RenderTests","note":"Python unit test run by the docs-and-truth job of ci.yml; it is not in the scanned file kinds. It pins the BUILD_ASSERTs that fail the build when the description and the devicetree disagree; the C compile of that failure is shown by the I/O table suite of firmware-testing.md."},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_io_table.c","test":"The I/O table accessors every port shares (IO-001, IO-002, IO-007)."},
+    {"kind":"c-test","ref":"firmware/tests/io_table/src/main.c","test":"The board I/O description drives the firmware I/O (IO-001, IO-002, IO-005, IO-018)."}
+  ],
+  "IO-002": [
+    {"kind":"unit","ref":"tools/hil/test_io_table_generator.py","test":"RenderTests","note":"Python unit test run by the docs-and-truth job of ci.yml; it is not in the scanned file kinds. The native_sim suite zplc.io_table runs the generated table over two descriptions."},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_io_table.c","test":"The I/O table accessors every port shares (IO-001, IO-002, IO-007)."},
+    {"kind":"c-test","ref":"firmware/tests/io_table/src/main.c","test":"The board I/O description drives the firmware I/O (IO-001, IO-002, IO-005, IO-018)."}
+  ],
+  "IO-003": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/boards/boardBuild.test.ts","test":"mapping a variable to a channel the board does not have is a build error (IO-003)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/boards/boardIoMapping.test.ts","test":"the rows of the I/O mapping editor against the channels of the board (IO-003)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/boards/ioAdmission.test.ts","test":"a located variable the board has no channel for is a build error (IO-003)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/config/boardProfiles.test.ts","test":"board I/O descriptions in the catalogue (IO-001, IO-003, IO-009)"},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"40 The I/O mapping editor lists the channels of the board and flags a row it does not have","partial":true}
+  ],
+  "IO-004": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/boards/ioAdmission.test.ts","test":"deploy admission by I/O (IO-004)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/runtime/deviceHandshake.test.ts","test":"device handshake: the I/O description of the firmware (IO-004)"}
+  ],
+  "IO-005": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/boards/boardIo.test.ts","test":"the board I/O description (IO-001, IO-005)"},
+    {"kind":"unit","ref":"tools/hil/test_io_table_generator.py","test":"RenderTests","note":"Python unit test run by the docs-and-truth job of ci.yml; it is not in the scanned file kinds. The image sizes derive from the channels and the Kconfig override must cover them; the memory behind the images stays 4 KB until the contract chain changes it.","partial":true},
+    {"kind":"c-test","ref":"firmware/tests/io_table/src/main.c","test":"IO-005: the image sizes are what the channels need"},
+    {"kind":"c-test","ref":"firmware/tests/io_table/src/main.c","test":"The board I/O description drives the firmware I/O (IO-001, IO-002, IO-005, IO-018)."}
+  ],
+  "IO-006": [
+    {"kind":"c-test","ref":"firmware/tests/io_analog/src/main.c","test":"Analog inputs of the board description (IO-006, IO-018).","partial":true,"note":"native_sim level: the ADC emulator; the converters of the RP2040 and the ESP32-S3 need the loopback bench of HIL-010"}
+  ],
+  "IO-007": [
+    {"kind":"unit","ref":"tools/ci/test_check_hal_contract.py","test":"CheckerTests","note":"Python unit test run by the docs-and-truth job of ci.yml; it is not in the scanned file kinds. Every HAL function is implemented on the posix, zephyr and wasm ports.","partial":true},
+    {"kind":"unit","ref":"tools/ci/test_check_hal_contract.py","test":"RepositoryTests","note":"Python unit test run by the docs-and-truth job of ci.yml; it is not in the scanned file kinds. The repository contract has no finding; six functions without a caller are listed in tools/ci/hal-contract.json with their pending decision, so the requirement is not closed.","partial":true},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_hal_posix_io_table.c","test":"The POSIX port lists no channel and says so through the shared accessors (IO-007)."},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_io_table.c","test":"The I/O table accessors every port shares (IO-001, IO-002, IO-007)."}
+  ],
+  "IO-008": [
+    {"kind":"c-test","ref":"firmware/tests/hal_persist_keys/src/main.c","test":"Non-volatile storage works for every key the runtime uses (IO-008).","partial":true,"note":"native_sim level: the NVS of the flash simulator; the flash of each shipped board needs the bench of HIL-010"}
+  ],
+  "IO-009": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/config/boardProfiles.test.ts","test":"board I/O descriptions in the catalogue (IO-001, IO-003, IO-009)","partial":true,"note":"description and target-build level: the pins are proven by the loopback bench of HIL-010 (WP-85, WP-94)"},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"40 The I/O mapping editor lists the channels of the board and flags a row it does not have","partial":true}
+  ],
+  "IO-010": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/config/boardProfiles.test.ts","test":"every one of the seven profiles has its channels, the Opta its relays and the RP2040-Zero is listed (IO-010, IO-011)"},
+    {"kind":"unit","ref":"tools/hil/test_board_io_description.py","test":"ManifestTests","note":"Python unit test run by the docs-and-truth job of ci.yml; it is not in the scanned file kinds. All seven profiles carry a description; the cross-build of the seven profiles is the zephyr-cross-build matrix, which validate_supported_boards.py ties to the manifest."}
+  ],
+  "IO-011": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/config/boardProfiles.test.ts","test":"every one of the seven profiles has its channels, the Opta its relays and the RP2040-Zero is listed (IO-010, IO-011)"},
+    {"kind":"unit","ref":"tools/hil/test_board_io_description.py","test":"ManifestTests","note":"Python unit test run by the docs-and-truth job of ci.yml; it is not in the scanned file kinds. The RP2040-Zero is listed with an I/O description; the matrix, size budget and clang-tidy baseline carry it."}
+  ],
+  "IO-012": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/boards/boardIo.test.ts","test":"the manifest read by Studio is the one the docs are generated from (IO-012)"},
+    {"kind":"unit","ref":"tools/hil/test_board_io_description.py","test":"ManifestTests","note":"Python unit test run by the docs-and-truth job of ci.yml; it is not in the scanned file kinds. One unversioned manifest; validate_supported_boards.py and generate_board_reference.py read it."}
+  ],
+  "IO-014": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/boards/boardIo.test.ts","test":"the generated reference prints the footprint of every board from the size budget (IO-014)"}
+  ],
+  "IO-015": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/boards/supportLevel.test.ts","test":"support level derived from evidence records (IO-015)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/cli/toolApi.test.ts","test":"derives the support level of a board from the evidence records it references (IO-015)"},
+    {"kind":"unit","ref":"tools/hil/test_board_io_description.py","test":"SupportLevelTests","note":"Python unit test run by the docs-and-truth job of ci.yml; it is not in the scanned file kinds. The level is derived from evidence records and no hand-set field exists; no record exists yet."}
+  ],
+  "IO-017": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/boards/exampleProjects.test.ts","test":"example projects (IO-017)"}
+  ],
+  "IO-018": [
+    {"kind":"c-test","ref":"firmware/tests/io_analog/src/main.c","test":"Analog inputs of the board description (IO-006, IO-018)."},
+    {"kind":"c-test","ref":"firmware/tests/io_analog/src/main.c","test":"IO-018: the failure is the HAL's, before any task exists."},
+    {"kind":"c-test","ref":"firmware/tests/io_table/src/main.c","test":"IO-018: the peripherals are configured here, before any task runs"},
+    {"kind":"c-test","ref":"firmware/tests/io_table/src/main.c","test":"The board I/O description drives the firmware I/O (IO-001, IO-002, IO-005, IO-018)."}
+  ],
   "COM-001": [
     {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/fuzz_run_program.c","test":"RT-001/COM-001 are open, so that a long run can look for other findings); ZPLC_FUZZ_DUMP=<path> writes the"},
     {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_comm_fb_access.c","test":"The bounded accessors of a function-block instance (COM-001)."},

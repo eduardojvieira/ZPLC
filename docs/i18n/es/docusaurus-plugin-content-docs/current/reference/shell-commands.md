@@ -9,7 +9,7 @@ tags: [reference, generated]
 
 {/* >>> GENERATED (tools/docs/generate_source_references.ts): reference/shell-commands. Do not edit. >>> */}
 
-La consola del dispositivo tiene un comando raíz, `zplc`, con 75 subcomandos. Un grupo solo contiene subcomandos. Los argumentos son las palabras que siguen al nombre del comando; un comando solo está presente cuando el símbolo de Kconfig de la última columna está habilitado. El runtime de una simulación de escritorio no tiene consola: habla el [protocolo de sesión](./runtime-protocol.md).
+La consola del dispositivo tiene un comando raíz, `zplc`, con 76 subcomandos. Un grupo solo contiene subcomandos. Los argumentos son las palabras que siguen al nombre del comando; un comando solo está presente cuando el símbolo de Kconfig de la última columna está habilitado. El runtime de una simulación de escritorio no tiene consola: habla el [protocolo de sesión](./runtime-protocol.md).
 
 Esta tabla se lee del archivo fuente `firmware/app/src/shell_cmds.c`; su texto es el de la propia fuente, por eso es igual en inglés y en español.
 
@@ -82,6 +82,7 @@ Esta tabla se lee del archivo fuente `firmware/app/src/shell_cmds.c`; su texto e
 | `zplc sys` | grupo |   | System commands | `CONFIG_ZPLC_SCHEDULER` |
 | `zplc sys info` | comando | 1 opcional | System information | `CONFIG_ZPLC_SCHEDULER` |
 | `zplc sys build` | comando | 1 opcional | Firmware identity: commit, board, ABI, options [--json] | `CONFIG_ZPLC_SCHEDULER` |
+| `zplc sys io` | comando | 1 opcional | Identity of the board I/O description [--json] | `CONFIG_ZPLC_SCHEDULER` |
 | `zplc sys reboot` | comando | ninguno | Reboot | `CONFIG_ZPLC_SCHEDULER` |
 | `zplc adc` | grupo |   | ADC commands | `CONFIG_ADC` |
 | `zplc adc temp` | comando | ninguno | Read temperature | `CONFIG_ADC` |

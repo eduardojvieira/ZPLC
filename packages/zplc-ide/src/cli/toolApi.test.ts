@@ -73,9 +73,9 @@ async function toolchainRepository() {
   await mkdir(join(root, 'firmware', 'app', 'boards'), { recursive: true });
   await writeFile(join(root, 'firmware', 'app', 'CMakeLists.txt'), 'cmake_minimum_required(VERSION 3.20.0)');
   await writeFile(join(root, 'west.yml'), 'manifest:\n  projects:\n    - name: zephyr\n      revision: dccb09599635bdff17633fa7e9dab014b91dce90\n');
-  const boards = ['alpha', 'bravo', 'charlie', 'delta', 'echo', 'foxtrot'].map((ide_id) => ({ board_id: ide_id, display_name: ide_id, ide_id, zephyr_board: `${ide_id}/board`, variant: 'test', support_assets: [`firmware/app/boards/${ide_id}.conf`], build_command: 'west build', network_class: 'other', validation_level: 'cross-build', evidence_refs: [], docs_ref: 'docs' }));
+  const boards = ['alpha', 'bravo', 'charlie', 'delta', 'echo', 'foxtrot'].map((ide_id) => ({ board_id: ide_id, display_name: ide_id, ide_id, zephyr_board: `${ide_id}/board`, variant: 'test', support_assets: [`firmware/app/boards/${ide_id}.conf`], build_command: 'west build', network_class: 'other', evidence_refs: [], docs_ref: 'docs' }));
   for (const board of boards) await writeFile(join(root, board.support_assets[0]!), 'CONFIG_TEST=y');
-  await writeFile(join(root, 'firmware', 'app', 'boards', 'supported-boards.v1.5.0.json'), JSON.stringify(boards));
+  await writeFile(join(root, 'firmware', 'app', 'boards', 'boards.json'), JSON.stringify(boards));
   return root;
 }
 async function filesBelow(root: string, prefix = ''): Promise<string[]> {
@@ -264,12 +264,30 @@ END_PROGRAM`);
       expect(result.evidence).toMatchObject({ operation: 'boards-list', outcome: 'passed' });
     } finally { await rm(root, { recursive: true, force: true }); }
   });
+  it('derives the support level of a board from the evidence records it references (IO-015)', async () => {
+    const root = await toolchainRepository();
+    try {
+      const path = join(root, 'firmware', 'app', 'boards', 'boards.json');
+      const boards = JSON.parse(await readFile(path, 'utf8')) as Array<Record<string, unknown>>;
+      const record = (overrides: Record<string, unknown> = {}) => JSON.stringify({ schema: 'zplc.hil-record/1', board_id: 'alpha', firmware_version: '2.0.0', commit: '0'.repeat(40), image_sha256: 'a'.repeat(64), result: 'pass', ...overrides });
+      await mkdir(join(root, 'firmware', 'app', 'boards', 'evidence'), { recursive: true });
+      await writeFile(join(root, 'firmware', 'app', 'boards', 'evidence', 'alpha.json'), record());
+      await writeFile(join(root, 'firmware', 'app', 'boards', 'evidence', 'bravo.json'), record({ board_id: 'bravo', result: 'fail' }));
+      boards[0]!.evidence_refs = ['firmware/app/boards/evidence/alpha.json'];
+      boards[1]!.evidence_refs = ['firmware/app/boards/evidence/bravo.json'];
+      boards[2]!.evidence_refs = ['firmware/app/boards/evidence/missing.json'];
+      await writeFile(path, JSON.stringify(boards));
+      const result = await boardsList(root);
+      expect(result.ok).toBe(true);
+      if (result.ok) expect(result.summary.boards.slice(0, 4).map((board) => board.validationLevel)).toEqual(['human-hil', 'cross-build', 'cross-build', 'cross-build']);
+    } finally { await rm(root, { recursive: true, force: true }); }
+  });
   it('returns a static cross-build plan without probing, writing, or exposing build details', async () => {
     const root = await toolchainRepository();
     const oldPath = process.env.PATH; const oldBase = process.env.ZEPHYR_BASE; const oldSdk = process.env.ZEPHYR_SDK_INSTALL_DIR;
     process.env.PATH = ''; process.env.ZEPHYR_BASE = 'base-secret-value'; process.env.ZEPHYR_SDK_INSTALL_DIR = 'sdk-secret-value';
     try {
-      const manifest = join(root, 'firmware', 'app', 'boards', 'supported-boards.v1.5.0.json');
+      const manifest = join(root, 'firmware', 'app', 'boards', 'boards.json');
       const boards = JSON.parse(await readFile(manifest, 'utf8')) as Array<Record<string, unknown>>;
       boards[0]!.board_id = 'alpha-board'; boards[0]!.build_command = 'west build; do-not-run'; await writeFile(manifest, JSON.stringify(boards));
       const before = await filesBelow(root);
@@ -308,7 +326,7 @@ END_PROGRAM`);
         const invalid = await toolchainRepository();
         try {
           const cmake = join(invalid, 'firmware', 'app', 'CMakeLists.txt');
-          const manifest = join(invalid, 'firmware', 'app', 'boards', 'supported-boards.v1.5.0.json');
+          const manifest = join(invalid, 'firmware', 'app', 'boards', 'boards.json');
           if (kind === 'missing-cmake') await rm(cmake);
           if (kind === 'linked-cmake') { await rm(cmake); await symlink(join(invalid, 'west.yml'), cmake); }
           if (kind === 'malformed-manifest') await writeFile(manifest, '{');
@@ -359,7 +377,7 @@ END_PROGRAM`);
   it.skipIf(process.platform === 'win32')('fails closed when the admitted board plan changes during west execution', async () => {
     const root = await toolchainRepository(); let restore: (() => Promise<void>) | undefined;
     try {
-      const manifest = join(root, 'firmware', 'app', 'boards', 'supported-boards.v1.5.0.json'); const changed = JSON.stringify((JSON.parse(await readFile(manifest, 'utf8')) as Array<Record<string, unknown>>).map((board) => board.ide_id === 'alpha' ? { ...board, zephyr_board: 'changed/board' } : board));
+      const manifest = join(root, 'firmware', 'app', 'boards', 'boards.json'); const changed = JSON.stringify((JSON.parse(await readFile(manifest, 'utf8')) as Array<Record<string, unknown>>).map((board) => board.ide_id === 'alpha' ? { ...board, zephyr_board: 'changed/board' } : board));
       restore = await toolchainHost(root, undefined, undefined, `while [ "$#" -gt 0 ]; do [ "$1" = -d ] && { shift; out=$1; }; shift; done\n/bin/mkdir -p "$out/zephyr"\n/bin/dd if=/dev/zero of="$out/zephyr/zephyr.elf" bs=52 count=1 2>/dev/null\nprintf '\\177ELF\\001\\001\\001' | /bin/dd of="$out/zephyr/zephyr.elf" bs=1 seek=0 conv=notrunc 2>/dev/null\nprintf '\\002\\000\\003\\000\\001\\000\\000\\000' | /bin/dd of="$out/zephyr/zephyr.elf" bs=1 seek=16 conv=notrunc 2>/dev/null\nprintf '\\064\\000' | /bin/dd of="$out/zephyr/zephyr.elf" bs=1 seek=40 conv=notrunc 2>/dev/null\nprintf '%s' '${changed.replace(/'/g, "'\\''")}' > '${manifest}'`);
       await expect(firmwareBuild(root, 'alpha')).resolves.toEqual({ ok: false, evidence: { schemaVersion: 1, operation: 'firmware-build', outcome: 'failed', diagnostics: [{ code: 'FIRMWARE_BUILD_PLAN_STALE', message: 'Firmware build is unavailable' }], artifacts: [] } });
     } finally { await restore?.(); await rm(root, { recursive: true, force: true }); }
@@ -386,8 +404,8 @@ END_PROGRAM`);
   it('fails closed on malformed board inventories before any build action', async () => {
     const root = await toolchainRepository();
     try {
-      const boardPath = join(root, 'firmware', 'app', 'boards', 'supported-boards.v1.5.0.json');
-      await writeFile(boardPath, JSON.stringify(Array.from({ length: 6 }, () => ({ board_id: 'duplicate', display_name: 'duplicate', ide_id: 'duplicate', zephyr_board: 'board', variant: 'test', support_assets: ['firmware/app/boards/alpha.conf'], build_command: 'west build', network_class: 'other', validation_level: 'cross-build', evidence_refs: [], docs_ref: 'docs' }))));
+      const boardPath = join(root, 'firmware', 'app', 'boards', 'boards.json');
+      await writeFile(boardPath, JSON.stringify(Array.from({ length: 6 }, () => ({ board_id: 'duplicate', display_name: 'duplicate', ide_id: 'duplicate', zephyr_board: 'board', variant: 'test', support_assets: ['firmware/app/boards/alpha.conf'], build_command: 'west build', network_class: 'other', evidence_refs: [], docs_ref: 'docs' }))));
       const result = await toolchainInspect(root);
       expect(result.ok).toBe(false); expect(result.summary.checks).toEqual(expect.arrayContaining([{ id: 'repository-manifest', status: 'malformed' }])); expect(result.evidence.diagnostics).toEqual(expect.arrayContaining([{ code: 'TOOLCHAIN_BOARDS_MALFORMED', message: 'Toolchain prerequisite is unavailable' }]));
     } finally { await rm(root, { recursive: true, force: true }); }
@@ -397,8 +415,8 @@ END_PROGRAM`);
     try {
       await symlink(root, alias, process.platform === 'win32' ? 'junction' : 'dir');
       const linked = await toolchainInspect(alias); expect(linked.ok).toBe(false); expect(linked.evidence.diagnostics).toEqual([{ code: 'TOOLCHAIN_REPOSITORY_INVALID', message: 'Toolchain prerequisite is unavailable' }]);
-      const boards = JSON.parse(await readFile(join(root, 'firmware', 'app', 'boards', 'supported-boards.v1.5.0.json'), 'utf8')) as Array<{ support_assets: string[] }>;
-      boards[0]!.support_assets = ['firmware/app/boards/../CMakeLists.txt']; await writeFile(join(root, 'firmware', 'app', 'boards', 'supported-boards.v1.5.0.json'), JSON.stringify(boards));
+      const boards = JSON.parse(await readFile(join(root, 'firmware', 'app', 'boards', 'boards.json'), 'utf8')) as Array<{ support_assets: string[] }>;
+      boards[0]!.support_assets = ['firmware/app/boards/../CMakeLists.txt']; await writeFile(join(root, 'firmware', 'app', 'boards', 'boards.json'), JSON.stringify(boards));
       const escaped = await toolchainInspect(root); expect(escaped.summary.checks).toEqual(expect.arrayContaining([{ id: 'repository-manifest', status: 'malformed' }]));
     } finally { await rm(alias, { recursive: true, force: true }); await rm(root, { recursive: true, force: true }); }
   });
@@ -432,7 +450,7 @@ END_PROGRAM`);
     for (const mutate of mutations) {
       const root = await toolchainRepository();
       try {
-        const path = join(root, 'firmware', 'app', 'boards', 'supported-boards.v1.5.0.json'); const boards = JSON.parse(await readFile(path, 'utf8')) as Array<Record<string, unknown>>;
+        const path = join(root, 'firmware', 'app', 'boards', 'boards.json'); const boards = JSON.parse(await readFile(path, 'utf8')) as Array<Record<string, unknown>>;
         mutate(boards); await writeFile(path, JSON.stringify(boards)); expect((await toolchainInspect(root)).summary.checks.find((check) => check.id === 'repository-manifest')?.status).toBe('malformed');
       } finally { await rm(root, { recursive: true, force: true }); }
     }
@@ -440,11 +458,11 @@ END_PROGRAM`);
   it.skipIf(process.platform === 'win32')('accepts a coherent local host without invoking host tools outside its fixed allowlist', async () => {
     const root = await toolchainRepository(); const restore = await toolchainHost(root);
     try {
-      const before = await Promise.all(['west.yml', 'firmware/app/CMakeLists.txt', 'firmware/app/boards/supported-boards.v1.5.0.json'].map((path) => readFile(join(root, path), 'utf8'))); const beforeFiles = await filesBelow(root);
+      const before = await Promise.all(['west.yml', 'firmware/app/CMakeLists.txt', 'firmware/app/boards/boards.json'].map((path) => readFile(join(root, path), 'utf8'))); const beforeFiles = await filesBelow(root);
       const result = await toolchainInspect(root);
       expect(result.ok).toBe(true); expect(result.summary).toMatchObject({ scope: 'local-firmware-build-prerequisites', ready: true }); expect(result.summary.boards.map((board) => board.ideId)).toEqual(['alpha', 'bravo', 'charlie', 'delta', 'echo', 'foxtrot']); expect(result.summary.boards.every((board) => board.validationLevel === 'cross-build')).toBe(true);
       expect(result.summary.checks).toEqual(expect.arrayContaining([{ id: 'west', status: 'ready', version: '1.5.0' }, { id: 'zephyr-base', status: 'ready', requiredRevision: 'dccb09599635bdff17633fa7e9dab014b91dce90', observedRevision: 'dccb09599635bdff17633fa7e9dab014b91dce90' }])); expect(result.evidence).toMatchObject({ operation: 'toolchain-inspect', outcome: 'passed', artifacts: [] });
-      expect(await Promise.all(['west.yml', 'firmware/app/CMakeLists.txt', 'firmware/app/boards/supported-boards.v1.5.0.json'].map((path) => readFile(join(root, path), 'utf8')))).toEqual(before);
+      expect(await Promise.all(['west.yml', 'firmware/app/CMakeLists.txt', 'firmware/app/boards/boards.json'].map((path) => readFile(join(root, path), 'utf8')))).toEqual(before);
       expect(await filesBelow(root)).toEqual(beforeFiles);
     } finally { await restore(); }
   });
