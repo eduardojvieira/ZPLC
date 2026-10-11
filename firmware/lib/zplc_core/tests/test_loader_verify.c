@@ -747,11 +747,28 @@ static void test_tag_semantics(void) {
                             ZPLC_TAG_SUBSCRIBE, 0U);
   expect_rejection(file, length, ZPLC_LOADER_ERR_TAGS,
                    "SUBSCRIBE write-capable tag cannot target OPI");
-  length =
-      make_tag_program(file, 0x3000U, ZPLC_TYPE_BOOL, ZPLC_TAG_PUBLISH, 0U);
-  expect_rejection(
-      file, length, ZPLC_LOADER_ERR_TAGS,
-      "WORK 0x3000 alias is rejected until adapters preserve its offset");
+  /* COM-013: the whole of WORK and of RETAIN can be bound. The upper half of WORK was refused "until the
+   * adapters preserve its offset"; every adapter reaches memory through the exchange with its whole address. */
+  {
+    static const uint16_t addresses[] = {
+        0x2000U, 0x2FFEU, 0x3000U, 0x3001U, 0x3FFCU, 0x3FFEU, ZPLC_MEM_RETAIN_BASE,
+        (uint16_t)(ZPLC_MEM_RETAIN_BASE + ZPLC_MEM_RETAIN_SIZE - 4U)};
+    static const uint8_t kinds[] = {ZPLC_TAG_PUBLISH, ZPLC_TAG_MODBUS, ZPLC_TAG_SUBSCRIBE};
+    size_t a, k;
+
+    for (a = 0U; a < sizeof(addresses) / sizeof(addresses[0]); a++) {
+      for (k = 0U; k < sizeof(kinds) / sizeof(kinds[0]); k++) {
+        zplc_program_view_t view;
+
+        length = make_tag_program(file, addresses[a], ZPLC_TYPE_UINT, kinds[k], 40001U);
+        CHECK(zplc_loader_verify(file, length, workspace, sizeof(workspace), &view) == ZPLC_LOADER_OK,
+              "a tag anywhere in WORK or RETAIN is accepted");
+      }
+    }
+    length = make_tag_program(file, (uint16_t)(ZPLC_MEM_WORK_BASE + ZPLC_MEM_WORK_SIZE - 1U), ZPLC_TYPE_UINT,
+                              ZPLC_TAG_MODBUS, 40001U);
+    expect_rejection(file, length, ZPLC_LOADER_ERR_TAGS, "a 16-bit tag that ends past WORK is rejected");
+  }
   length = make_tag_program(file, ZPLC_MEM_WORK_BASE, ZPLC_TYPE_BOOL,
                             ZPLC_TAG_MODBUS, UINT16_MAX + 1U);
   expect_rejection(

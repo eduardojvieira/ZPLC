@@ -20,6 +20,7 @@
 #include "zplc_azure_sas.h"
 #include "zplc_config.h"
 #include "zplc_mqtt_command.h"
+#include "zplc_mqtt_fb.h"
 #include "zplc_platform_attrs.h"
 #include "zplc_time.h"
 #include "zplc_tls_credentials.h"
@@ -33,6 +34,8 @@
 #include <zephyr/net/socket.h>
 #include <zephyr/net/tls_credentials.h>
 #include <zephyr/net/websocket.h>
+#include <zplc_comm_dispatch.h>
+#include <zplc_comm_req.h>
 #include <zplc_core.h>
 #include <zplc_exchange.h>
 #include <zplc_hal.h>
@@ -169,17 +172,83 @@ static uint32_t s_alpn_count;
 #define ZPLC_MQTT_REQ_MAX_TOPIC 128
 #define ZPLC_MQTT_REQ_MAX_PAYLOAD 128
 
-typedef struct {
-  char topic[ZPLC_MQTT_REQ_MAX_TOPIC];
-  uint8_t payload[ZPLC_MQTT_REQ_MAX_PAYLOAD];
-  size_t payload_len;
+/*
+ * What the communication blocks hand to this thread (COM-003, COM-004): one
+ * request for one operation, in a slot of zplc_comm_req.h that the block
+ * polls. Nothing in the scan waits for this thread or for the broker.
+ */
+#define MQTT_FB_REQ_MAX 8U
+#define MQTT_FB_SUB_MAX 4U
+#define MQTT_FB_EVENT_TYPE_MAX 96U
+/** Message ids of the subscriptions made for blocks: MQTT_FB_SUBSCRIBE_ID + index. */
+#define MQTT_FB_SUBSCRIBE_ID 0x0300U
+/** A request that this thread has not finished in this time is reported TIMEOUT and dropped (COM-018). */
+#define MQTT_FB_REQUEST_TIMEOUT_MS 5000U
+
+typedef enum {
+  MQTT_FB_PUBLISH = 0,
+  MQTT_FB_EVENT_GRID,
+  MQTT_FB_REBIRTH
+} mqtt_fb_kind_t;
+
+struct mqtt_fb_req {
+  zplc_comm_req_t head; /* first: the pool of zplc_comm_req.h */
+  uint8_t kind;
   uint8_t qos;
   bool retain;
-} zplc_mqtt_pub_req_t;
+  size_t payload_len;
+  char topic[ZPLC_MQTT_REQ_MAX_TOPIC];
+  uint8_t payload[ZPLC_MQTT_REQ_MAX_PAYLOAD];
+  char event_type[MQTT_FB_EVENT_TYPE_MAX];
+};
 
-#define MQTT_PUB_QUEUE_SIZE 8
+/** The subscription a block keeps, and the newest message that arrived on it. */
+struct mqtt_fb_sub {
+  const void *owner; /* NULL: free */
+  bool c2d;          /* the cloud-to-device messages of Azure IoT Hub */
+  uint8_t qos;
+  uint8_t state; /* 0 to be sent, 1 sent, 2 acknowledged, 3 refused */
+  char topic[ZPLC_MQTT_REQ_MAX_TOPIC];
+  bool has_message;
+  size_t message_len;
+  uint8_t message[ZPLC_MQTT_REQ_MAX_PAYLOAD];
+};
+
 static struct k_msgq s_mqtt_pub_q;
-static zplc_mqtt_pub_req_t s_mqtt_pub_q_buf[MQTT_PUB_QUEUE_SIZE];
+static struct mqtt_fb_req s_fb_reqs[MQTT_FB_REQ_MAX];
+static struct mqtt_fb_req *s_mqtt_pub_q_buf[MQTT_FB_REQ_MAX];
+static struct mqtt_fb_sub s_fb_subs[MQTT_FB_SUB_MAX];
+static struct k_spinlock s_fb_lock;
+static k_spinlock_key_t s_fb_key;
+
+static void fb_lock(void *context) {
+  ARG_UNUSED(context);
+  s_fb_key = k_spin_lock(&s_fb_lock);
+}
+
+static void fb_unlock(void *context) {
+  ARG_UNUSED(context);
+  k_spin_unlock(&s_fb_lock, s_fb_key);
+}
+
+static const zplc_comm_req_pool_t s_fb_pool = {
+    .slots = s_fb_reqs,
+    .stride = sizeof(struct mqtt_fb_req),
+    .count = MQTT_FB_REQ_MAX,
+    .lock = fb_lock,
+    .unlock = fb_unlock,
+    .context = NULL,
+};
+
+static void fb_deliver(const char *topic, const uint8_t *payload, size_t length,
+                       bool c2d);
+static void fb_subscriptions_unsent(void);
+static void fb_subscription_acknowledged(uint16_t message_id, int result);
+
+/** Where the client thread is in its cycle, for the blocks: connecting, or down and waiting to retry. */
+#define MQTT_PHASE_CONNECTING 0U
+#define MQTT_PHASE_DOWN 1U
+static volatile uint8_t s_session_phase = MQTT_PHASE_CONNECTING;
 
 static struct mqtt_topic s_sub_topics[MQTT_SUB_MAX_TOPICS];
 static zplc_azure_c2d_cb_t s_c2d_callback;
@@ -1490,6 +1559,9 @@ static int dispatch_incoming_message(struct mqtt_client *client,
 
   ARG_UNUSED(pub);
 
+  /* A block that subscribed to this topic gets the message (it is data for the scan to take, not PLC memory). */
+  fb_deliver(topic, s_publish_buf, payload_len, false);
+
   if (mqtt_profile_is_azure_iot_hub()) {
     /*
      * Azure IoT Hub Device Twin response:
@@ -1568,6 +1640,7 @@ static int dispatch_incoming_message(struct mqtt_client *client,
         strncmp(topic, "devices/", 8) == 0 &&
         strstr(topic, "/messages/devicebound/") != NULL) {
       LOG_INF("Azure C2D message received (%u bytes)", (unsigned)payload_len);
+      fb_deliver(topic, s_publish_buf, payload_len, true);
       if (s_c2d_callback != NULL) {
         s_c2d_callback(s_publish_buf, payload_len);
       }
@@ -1940,6 +2013,8 @@ static void mqtt_evt_handler(struct mqtt_client *const client,
     if (subscribe_runtime_tags(client) != 0) {
       LOG_WRN("Subscribe setup failed");
     }
+    /* A new session holds none of the subscriptions the blocks made on the last one. */
+    fb_subscriptions_unsent();
     break;
 
   case MQTT_EVT_DISCONNECT:
@@ -1947,6 +2022,7 @@ static void mqtt_evt_handler(struct mqtt_client *const client,
     s_connected = false;
     s_subscribed = false;
     s_last_error = evt->result;
+    fb_subscriptions_unsent();
     clear_fds();
     break;
 
@@ -1977,6 +2053,7 @@ static void mqtt_evt_handler(struct mqtt_client *const client,
   case MQTT_EVT_SUBACK:
     LOG_INF("MQTT SUBACK id=%u result=%d", evt->param.suback.message_id,
             evt->result);
+    fb_subscription_acknowledged(evt->param.suback.message_id, evt->result);
     break;
 
   case MQTT_EVT_PUBREC: {
@@ -2121,6 +2198,420 @@ static int client_init(struct mqtt_client *client) {
 }
 
 /* ============================================================================
+ * Communication blocks (COM-003, COM-004, COM-018)
+ *
+ * The scan side of this section is the API of zplc_mqtt_fb.h: every call takes
+ * the lock of the slots for a few instructions and returns. The client
+ * thread side is below it: it takes a request, publishes it, and writes the
+ * result into the slot the block polls.
+ * ============================================================================
+ */
+
+/* True when `filter` (with + and # wildcards) matches `topic`. */
+static bool fb_topic_matches(const char *filter, const char *topic) {
+  while (*filter != '\0') {
+    if (*filter == '#') {
+      return true;
+    }
+    if (*filter == '+') {
+      while (*topic != '\0' && *topic != '/') {
+        topic++;
+      }
+      filter++;
+      if (*filter == '\0') {
+        return *topic == '\0';
+      }
+      continue;
+    }
+    if (*filter != *topic) {
+      return false;
+    }
+    filter++;
+    topic++;
+  }
+  return *topic == '\0';
+}
+
+/* A message arrived on `topic`: keep it for the block that subscribed to it. */
+static void fb_deliver(const char *topic, const uint8_t *payload, size_t length,
+                       bool c2d) {
+  size_t i;
+  size_t kept = MIN(length, (size_t)ZPLC_MQTT_REQ_MAX_PAYLOAD);
+
+  fb_lock(NULL);
+  for (i = 0U; i < MQTT_FB_SUB_MAX; i++) {
+    struct mqtt_fb_sub *sub = &s_fb_subs[i];
+
+    if (sub->owner == NULL || sub->c2d != c2d) {
+      continue;
+    }
+    if (c2d || (sub->state == 2U && fb_topic_matches(sub->topic, topic))) {
+      memcpy(sub->message, payload, kept);
+      sub->message_len = kept;
+      sub->has_message = true;
+    }
+  }
+  fb_unlock(NULL);
+}
+
+/* Make the subscriptions of the blocks that the broker has not heard of (client thread). */
+static void fb_send_subscriptions(struct mqtt_client *client) {
+  size_t i;
+
+  for (i = 0U; i < MQTT_FB_SUB_MAX; i++) {
+    struct mqtt_fb_sub *sub = &s_fb_subs[i];
+    char topic[ZPLC_MQTT_REQ_MAX_TOPIC];
+    uint8_t qos = 0U;
+    bool send = false;
+
+    fb_lock(NULL);
+    if (sub->owner != NULL && !sub->c2d && sub->state == 0U) {
+      memcpy(topic, sub->topic, sizeof(topic));
+      qos = sub->qos;
+      sub->state = 1U;
+      send = true;
+    }
+    fb_unlock(NULL);
+
+    if (send) {
+      struct mqtt_topic filter = {
+          .topic = {.utf8 = (const uint8_t *)topic, .size = (uint16_t)strlen(topic)},
+          .qos = mqtt_qos_from_config(qos),
+      };
+      struct mqtt_subscription_list list = {
+          .list = &filter,
+          .list_count = 1U,
+          .message_id = (uint16_t)(MQTT_FB_SUBSCRIBE_ID + i),
+      };
+
+      if (mqtt_subscribe(client, &list) != 0) {
+        fb_lock(NULL);
+        if (sub->state == 1U) {
+          sub->state = 0U; /* the next pass of the loop tries again */
+        }
+        fb_unlock(NULL);
+      }
+    }
+  }
+}
+
+/* The session is up again, or it went down: the broker holds none of the subscriptions of the blocks. */
+static void fb_subscriptions_unsent(void) {
+  size_t i;
+
+  fb_lock(NULL);
+  for (i = 0U; i < MQTT_FB_SUB_MAX; i++) {
+    if (s_fb_subs[i].owner != NULL && !s_fb_subs[i].c2d) {
+      s_fb_subs[i].state = 0U;
+    }
+  }
+  fb_unlock(NULL);
+}
+
+/* The broker acknowledged (or refused) a subscription made for a block. */
+static void fb_subscription_acknowledged(uint16_t message_id, int result) {
+  if (message_id >= MQTT_FB_SUBSCRIBE_ID &&
+      message_id < MQTT_FB_SUBSCRIBE_ID + MQTT_FB_SUB_MAX) {
+    struct mqtt_fb_sub *sub = &s_fb_subs[message_id - MQTT_FB_SUBSCRIBE_ID];
+
+    fb_lock(NULL);
+    if (sub->owner != NULL && sub->state == 1U) {
+      sub->state = result == 0 ? 2U : 3U;
+    }
+    fb_unlock(NULL);
+  }
+}
+
+static int fb_publish_event_grid(const char *event_type, const char *topic,
+                                 const char *data);
+
+/* Run one request on the client (client thread); returns 0 or a negative errno. */
+static int fb_run_request(struct mqtt_fb_req *req) {
+  switch (req->kind) {
+  case MQTT_FB_PUBLISH: {
+    struct mqtt_publish_param param;
+
+    memset(&param, 0, sizeof(param));
+    param.message.topic.qos = (req->qos <= 2U) ? req->qos : 0U;
+    param.message.topic.topic.utf8 = (const uint8_t *)req->topic;
+    param.message.topic.topic.size = strlen(req->topic);
+    param.message.payload.data = req->payload;
+    param.message.payload.len = req->payload_len;
+    param.message_id = k_uptime_get_32();
+    param.dup_flag = 0U;
+    param.retain_flag = req->retain ? 1U : 0U;
+    return mqtt_publish(&s_client, &param);
+  }
+  case MQTT_FB_EVENT_GRID:
+    return fb_publish_event_grid(req->event_type, req->topic,
+                                 (const char *)req->payload);
+  case MQTT_FB_REBIRTH:
+    return publish_nbirth(&s_client);
+  default:
+    return -ENOTSUP;
+  }
+}
+
+/* The client thread takes every queued request, runs it and leaves the result in its slot. */
+static void fb_drain_requests(bool connected) {
+  struct mqtt_fb_req *req = NULL;
+
+  while (k_msgq_get(&s_mqtt_pub_q, (void *)&req, K_NO_WAIT) == 0) {
+    int rc;
+
+    /* Let go of by its block (reset, or older than its timeout) while it waited: nothing is sent. */
+    if (req == NULL || !zplc_comm_req_begin(&s_fb_pool, &req->head)) {
+      continue;
+    }
+    rc = connected ? fb_run_request(req) : -ENOTCONN;
+    if (rc != 0) {
+      LOG_WRN("FB request failed: %d", rc);
+    }
+    zplc_comm_req_finish(&s_fb_pool, &req->head,
+                         rc == 0 ? ZPLC_COMM_HANDLER_DONE : zplc_comm_fail_from_errno(rc));
+  }
+}
+
+zplc_mqtt_fb_session_t zplc_mqtt_fb_session(int *last_error) {
+  if (last_error != NULL) {
+    *last_error = 0;
+  }
+  if (!zplc_config_get_mqtt_enabled()) {
+    if (last_error != NULL) {
+      *last_error = -ENOTSUP;
+    }
+    return ZPLC_MQTT_FB_DOWN;
+  }
+  if (s_connected) {
+    return ZPLC_MQTT_FB_UP;
+  }
+  if (last_error != NULL) {
+    *last_error = s_last_error;
+  }
+  return s_session_phase == MQTT_PHASE_CONNECTING ? ZPLC_MQTT_FB_CONNECTING
+                                                  : ZPLC_MQTT_FB_DOWN;
+}
+
+static int fb_queue(struct mqtt_fb_req *req) {
+  zplc_comm_req_submit(&s_fb_pool, &req->head);
+  if (k_msgq_put(&s_mqtt_pub_q, (const void *)&req, K_NO_WAIT) != 0) {
+    zplc_comm_req_cancel(&s_fb_pool, &req->head);
+    return ZPLC_COMM_HANDLER_FAIL(ZPLC_COMM_QUEUE_FULL);
+  }
+  return ZPLC_COMM_HANDLER_PENDING;
+}
+
+static int fb_start(const void *owner, uint8_t kind, struct mqtt_fb_req **out) {
+  struct mqtt_fb_req *req;
+
+  if (!zplc_config_get_mqtt_enabled()) {
+    return ZPLC_COMM_HANDLER_FAIL(ZPLC_COMM_UNAVAILABLE);
+  }
+  if (!s_connected) {
+    /* Nothing is queued for a session that may come later: the block reports the failure now. */
+    return ZPLC_COMM_HANDLER_FAIL(ZPLC_COMM_NOT_CONNECTED);
+  }
+  req = (struct mqtt_fb_req *)zplc_comm_req_claim(&s_fb_pool, owner, k_uptime_get_32());
+  if (req == NULL) {
+    return ZPLC_COMM_HANDLER_FAIL(ZPLC_COMM_QUEUE_FULL);
+  }
+  req->kind = kind;
+  req->qos = 0U;
+  req->retain = false;
+  req->payload_len = 0U;
+  req->topic[0] = '\0';
+  req->event_type[0] = '\0';
+  *out = req;
+  return ZPLC_COMM_HANDLER_PENDING;
+}
+
+int zplc_mqtt_fb_publish(const void *owner, const char *topic, const uint8_t *payload,
+                         size_t length, uint8_t qos, bool retain) {
+  struct mqtt_fb_req *req = NULL;
+  int rc;
+
+  if (topic == NULL || length > ZPLC_MQTT_REQ_MAX_PAYLOAD ||
+      strlen(topic) >= ZPLC_MQTT_REQ_MAX_TOPIC) {
+    return ZPLC_COMM_HANDLER_FAIL(ZPLC_COMM_STRING_OVERFLOW);
+  }
+  rc = fb_start(owner, MQTT_FB_PUBLISH, &req);
+  if (rc != ZPLC_COMM_HANDLER_PENDING) {
+    return rc;
+  }
+  strncpy(req->topic, topic, sizeof(req->topic) - 1U);
+  req->topic[sizeof(req->topic) - 1U] = '\0';
+  if (length != 0U) {
+    memcpy(req->payload, payload, length);
+  }
+  req->payload_len = length;
+  req->qos = qos;
+  req->retain = retain;
+  return fb_queue(req);
+}
+
+int zplc_mqtt_fb_event_grid(const void *owner, const char *event_type, const char *topic,
+                            const char *data) {
+  struct mqtt_fb_req *req = NULL;
+  int rc;
+
+  if (!mqtt_profile_is_azure_event_grid()) {
+    return ZPLC_COMM_HANDLER_FAIL(ZPLC_COMM_UNAVAILABLE);
+  }
+  if (event_type == NULL || topic == NULL || data == NULL ||
+      strlen(event_type) >= MQTT_FB_EVENT_TYPE_MAX ||
+      strlen(topic) >= ZPLC_MQTT_REQ_MAX_TOPIC ||
+      strlen(data) >= ZPLC_MQTT_REQ_MAX_PAYLOAD) {
+    return ZPLC_COMM_HANDLER_FAIL(ZPLC_COMM_STRING_OVERFLOW);
+  }
+  rc = fb_start(owner, MQTT_FB_EVENT_GRID, &req);
+  if (rc != ZPLC_COMM_HANDLER_PENDING) {
+    return rc;
+  }
+  /* every length was checked against its member above: the terminator goes with the text */
+  memcpy(req->event_type, event_type, strlen(event_type) + 1U);
+  memcpy(req->topic, topic, strlen(topic) + 1U);
+  req->payload_len = strlen(data);
+  memcpy(req->payload, data, req->payload_len + 1U);
+  return fb_queue(req);
+}
+
+int zplc_mqtt_fb_rebirth(const void *owner) {
+  struct mqtt_fb_req *req = NULL;
+  int rc;
+
+  if (!mqtt_profile_is_sparkplug()) {
+    return ZPLC_COMM_HANDLER_FAIL(ZPLC_COMM_UNAVAILABLE);
+  }
+  rc = fb_start(owner, MQTT_FB_REBIRTH, &req);
+  if (rc != ZPLC_COMM_HANDLER_PENDING) {
+    return rc;
+  }
+  return fb_queue(req);
+}
+
+int zplc_mqtt_fb_poll(const void *owner) {
+  zplc_comm_req_t *slot = NULL;
+  const int result =
+      zplc_comm_req_peek(&s_fb_pool, owner, k_uptime_get_32(), MQTT_FB_REQUEST_TIMEOUT_MS, &slot);
+
+  if (result == ZPLC_COMM_HANDLER_DONE && slot != NULL) {
+    zplc_comm_req_release(&s_fb_pool, slot);
+  }
+  return result;
+}
+
+void zplc_mqtt_fb_abort(const void *owner) { zplc_comm_req_abort(&s_fb_pool, owner); }
+
+bool zplc_mqtt_fb_c2d_available(void) {
+  return mqtt_profile_is_azure_iot_hub() && zplc_config_get_azure_c2d_enabled();
+}
+
+bool zplc_mqtt_fb_sparkplug(void) { return mqtt_profile_is_sparkplug(); }
+
+int zplc_mqtt_fb_subscribe(const void *owner, const char *topic, uint8_t qos) {
+  struct mqtt_fb_sub *sub = NULL;
+  const bool c2d = topic == NULL;
+  int result;
+  size_t i;
+
+  if (!zplc_config_get_mqtt_enabled()) {
+    return ZPLC_COMM_HANDLER_FAIL(ZPLC_COMM_UNAVAILABLE);
+  }
+  if (c2d && !zplc_mqtt_fb_c2d_available()) {
+    return ZPLC_COMM_HANDLER_FAIL(ZPLC_COMM_UNAVAILABLE);
+  }
+  if (!c2d && strlen(topic) >= ZPLC_MQTT_REQ_MAX_TOPIC) {
+    return ZPLC_COMM_HANDLER_FAIL(ZPLC_COMM_STRING_OVERFLOW);
+  }
+
+  fb_lock(NULL);
+  for (i = 0U; i < MQTT_FB_SUB_MAX; i++) {
+    if (s_fb_subs[i].owner == owner) {
+      sub = &s_fb_subs[i];
+      break;
+    }
+  }
+  if (sub == NULL) {
+    for (i = 0U; i < MQTT_FB_SUB_MAX; i++) {
+      if (s_fb_subs[i].owner == NULL) {
+        sub = &s_fb_subs[i];
+        memset(sub, 0, sizeof(*sub));
+        sub->owner = owner;
+        sub->c2d = !c2d; /* differs from what is asked: filled in below */
+        break;
+      }
+    }
+  }
+  if (sub == NULL) {
+    fb_unlock(NULL);
+    return ZPLC_COMM_HANDLER_FAIL(ZPLC_COMM_QUEUE_FULL);
+  }
+  if (sub->c2d != c2d || (!c2d && (strcmp(sub->topic, topic) != 0 || sub->qos != qos))) {
+    sub->c2d = c2d;
+    sub->qos = qos;
+    sub->state = c2d ? 2U : 0U; /* the profile holds the C2D subscription already */
+    sub->has_message = false;
+    sub->message_len = 0U;
+    if (c2d) {
+      sub->topic[0] = '\0';
+    } else {
+      strncpy(sub->topic, topic, sizeof(sub->topic) - 1U);
+      sub->topic[sizeof(sub->topic) - 1U] = '\0';
+    }
+  }
+  if (!s_connected) {
+    result = ZPLC_COMM_HANDLER_PENDING;
+    if (s_session_phase != MQTT_PHASE_CONNECTING) {
+      const int status = zplc_comm_status_from_errno(s_last_error);
+
+      result = ZPLC_COMM_HANDLER_FAIL(
+          status == ZPLC_COMM_UNKNOWN || status == ZPLC_COMM_OK ? ZPLC_COMM_NOT_CONNECTED : status);
+    }
+  } else if (sub->state == 2U) {
+    result = ZPLC_COMM_HANDLER_DONE;
+  } else if (sub->state == 3U) {
+    result = ZPLC_COMM_HANDLER_FAIL(ZPLC_COMM_PROTO_ERROR);
+  } else {
+    result = ZPLC_COMM_HANDLER_PENDING;
+  }
+  fb_unlock(NULL);
+  return result;
+}
+
+int zplc_mqtt_fb_take_message(const void *owner, uint8_t *payload, size_t capacity) {
+  int length = -1;
+  size_t i;
+
+  fb_lock(NULL);
+  for (i = 0U; i < MQTT_FB_SUB_MAX; i++) {
+    struct mqtt_fb_sub *sub = &s_fb_subs[i];
+
+    if (sub->owner == owner && sub->has_message) {
+      const size_t kept = MIN(sub->message_len, capacity);
+
+      memcpy(payload, sub->message, kept);
+      length = (int)kept;
+      sub->has_message = false;
+      break;
+    }
+  }
+  fb_unlock(NULL);
+  return length;
+}
+
+void zplc_mqtt_fb_unsubscribe(const void *owner) {
+  size_t i;
+
+  fb_lock(NULL);
+  for (i = 0U; i < MQTT_FB_SUB_MAX; i++) {
+    if (s_fb_subs[i].owner == owner) {
+      memset(&s_fb_subs[i], 0, sizeof(s_fb_subs[i]));
+    }
+  }
+  fb_unlock(NULL);
+}
+
+/* ============================================================================
  * MQTT Client Thread
  * ============================================================================
  */
@@ -2131,6 +2622,7 @@ static void mqtt_client_thread(void *arg1, void *arg2, void *arg3) {
   ARG_UNUSED(arg3);
 
   /* Allow network stack + DHCP to settle before first connect attempt */
+  s_session_phase = MQTT_PHASE_CONNECTING;
   k_sleep(K_SECONDS(5));
 
   uint32_t backoff_s = BACKOFF_INITIAL_S;
@@ -2154,10 +2646,12 @@ static void mqtt_client_thread(void *arg1, void *arg2, void *arg3) {
 
     s_connected = false;
     s_subscribed = false;
+    s_session_phase = MQTT_PHASE_CONNECTING;
     int tls_rc = client_init(&s_client);
     if (tls_rc < 0) {
       LOG_ERR("MQTT security setup failed: %d", tls_rc);
       s_last_error = tls_rc;
+      s_session_phase = MQTT_PHASE_DOWN;
       /* Interruptible sleep: wakes early if s_wakeup_sem is given */
       k_sem_take(&s_wakeup_sem, K_SECONDS(backoff_s));
       backoff_s = MIN(backoff_s * 2U, BACKOFF_MAX_S);
@@ -2171,6 +2665,7 @@ static void mqtt_client_thread(void *arg1, void *arg2, void *arg3) {
     if (rc != 0) {
       LOG_ERR("mqtt_connect failed: %d — retrying in %us", rc, backoff_s);
       s_last_error = rc;
+      s_session_phase = MQTT_PHASE_DOWN;
       /* Interruptible sleep: wakes early if s_wakeup_sem is given */
       k_sem_take(&s_wakeup_sem, K_SECONDS(backoff_s));
       /* Exponential backoff, capped at BACKOFF_MAX_S */
@@ -2190,6 +2685,7 @@ static void mqtt_client_thread(void *arg1, void *arg2, void *arg3) {
       mqtt_abort(&s_client);
       LOG_WRN("No CONNACK received — retrying in %us", backoff_s);
       s_last_error = -ETIMEDOUT;
+      s_session_phase = MQTT_PHASE_DOWN;
       /* Interruptible sleep: wakes early if s_wakeup_sem is given */
       k_sem_take(&s_wakeup_sem, K_SECONDS(backoff_s));
       backoff_s = MIN(backoff_s * 2U, BACKOFF_MAX_S);
@@ -2221,32 +2717,17 @@ static void mqtt_client_thread(void *arg1, void *arg2, void *arg3) {
         s_last_publish_ms = now_ms;
       }
 
-      /* Drain FB publishes */
-      zplc_mqtt_pub_req_t req;
-      while (k_msgq_get(&s_mqtt_pub_q, &req, K_NO_WAIT) == 0) {
-        struct mqtt_publish_param param;
-        memset(&param, 0, sizeof(param));
-        param.message.topic.qos = (req.qos <= 2) ? req.qos : 0;
-        param.message.topic.topic.utf8 = (const uint8_t *)req.topic;
-        param.message.topic.topic.size = strlen(req.topic);
-        param.message.payload.data = req.payload;
-        param.message.payload.len = req.payload_len;
-        param.message_id = k_uptime_get_32();
-        param.dup_flag = 0U;
-        param.retain_flag = req.retain ? 1U : 0U;
-
-#if defined(CONFIG_MQTT_VERSION_5_0)
-        memset(&param.prop, 0, sizeof(param.prop));
-#endif
-
-        int pub_rc = mqtt_publish(&s_client, &param);
-        if (pub_rc != 0) {
-          LOG_WRN("FB publish failed: %d", pub_rc);
-        }
-      }
+      /* What the blocks have queued, and their subscriptions (COM-003) */
+      fb_drain_requests(true);
+      fb_send_subscriptions(&s_client);
 
       mqtt_live(&s_client);
     }
+
+    /* The session is down: a request that was queued is failed now, not sent on the next session (COM-018). */
+    s_session_phase = MQTT_PHASE_DOWN;
+    fb_drain_requests(false);
+    fb_subscriptions_unsent();
 
     if (s_client.protocol_version == MQTT_VERSION_3_1_1) {
       mqtt_disconnect(&s_client, NULL);
@@ -2271,7 +2752,7 @@ static void mqtt_client_thread(void *arg1, void *arg2, void *arg3) {
 
 int zplc_mqtt_init(void) {
   k_msgq_init(&s_mqtt_pub_q, (char *)s_mqtt_pub_q_buf,
-              sizeof(zplc_mqtt_pub_req_t), MQTT_PUB_QUEUE_SIZE);
+              sizeof(struct mqtt_fb_req *), MQTT_FB_REQ_MAX);
 
   k_tid_t tid = k_thread_create(
       &s_mqtt_thread, s_mqtt_stack, K_THREAD_STACK_SIZEOF(s_mqtt_stack),
@@ -2300,28 +2781,9 @@ void zplc_mqtt_set_azure_c2d_callback(zplc_azure_c2d_cb_t cb) {
   s_c2d_callback = cb;
 }
 
-int zplc_mqtt_enqueue_publish(const char *topic, const uint8_t *payload,
-                              size_t len, uint8_t qos, bool retain) {
-  if (!s_connected)
-    return -ENOTCONN;
-  if (len > ZPLC_MQTT_REQ_MAX_PAYLOAD)
-    return -EMSGSIZE;
-  if (strlen(topic) >= ZPLC_MQTT_REQ_MAX_TOPIC)
-    return -EMSGSIZE;
-
-  zplc_mqtt_pub_req_t req;
-  strncpy(req.topic, topic, sizeof(req.topic) - 1);
-  req.topic[sizeof(req.topic) - 1] = '\0';
-  memcpy(req.payload, payload, len);
-  req.payload_len = len;
-  req.qos = qos;
-  req.retain = retain;
-
-  return k_msgq_put(&s_mqtt_pub_q, &req, K_NO_WAIT);
-}
-
-int zplc_azure_event_grid_publish(const char *event_type, const char *source,
-                                  const char *topic, const char *data) {
+/* Build the CloudEvent of the block and publish it on the client (client thread). */
+static int fb_publish_event_grid(const char *event_type, const char *topic,
+                                 const char *data) {
   char resolved_topic[192];
   char resolved_source[128];
   char resolved_type[96];
@@ -2344,13 +2806,8 @@ int zplc_azure_event_grid_publish(const char *event_type, const char *source,
                                            sizeof(resolved_topic));
   }
 
-  if (source != NULL && source[0] != '\0') {
-    strncpy(resolved_source, source, sizeof(resolved_source) - 1U);
-    resolved_source[sizeof(resolved_source) - 1U] = '\0';
-  } else {
-    zplc_config_get_azure_event_grid_source(resolved_source,
-                                            sizeof(resolved_source));
-  }
+  zplc_config_get_azure_event_grid_source(resolved_source,
+                                          sizeof(resolved_source));
 
   if (event_type != NULL && event_type[0] != '\0') {
     strncpy(resolved_type, event_type, sizeof(resolved_type) - 1U);
