@@ -481,8 +481,13 @@ def parse_header(path: Path) -> HeaderDoc:
     )
 
 
+# Headers that are written whole by a generator and have a reference page of their own: the numbers and layouts of
+# the device link protocol are on reference/device-protocol (tools/docs/generate_source_references.ts).
+GENERATED_HEADERS = {"zplc_proto_defs.h"}
+
+
 def load_headers() -> list[HeaderDoc]:
-    return [parse_header(path) for path in sorted(INCLUDE_DIR.glob("*.h"))]
+    return [parse_header(path) for path in sorted(INCLUDE_DIR.glob("*.h")) if path.name not in GENERATED_HEADERS]
 
 
 def semantic_errors(headers: list[HeaderDoc]) -> list[str]:

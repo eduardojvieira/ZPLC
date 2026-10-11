@@ -10,7 +10,10 @@
  * Implements passthrough mode to pause polling when terminal is active.
  */
 
-import { SerialAdapter } from './serialAdapter';
+import type { SerialAdapter } from './serialAdapter';
+import { FramedSerialAdapter } from './framedSerialAdapter';
+import type { FirmwareReport } from './link/firmwareProtocol';
+import type { RouterStatus } from './link/eventRouter';
 import type { CommunicationMapEntry, MqttRuntimeStatus, SystemInfo, StatusInfo } from './serialAdapter';
 import type { ZPLCProjectConfig } from '../types';
 import type { LoadProgramOptions, RuntimeSnapshot } from './debugAdapter';
@@ -32,6 +35,13 @@ export type RuntimeSnapshotCallback = (snapshot: RuntimeSnapshot) => void;
 /** System info update callback */
 export type SystemInfoCallback = (info: SystemInfo) => void;
 
+/** What the firmware speaks and how the state of the device is known (COM-025, COM-029). */
+export interface LinkInfo {
+  firmware: FirmwareReport | null;
+  router: RouterStatus | null;
+}
+export type LinkInfoCallback = (info: LinkInfo) => void;
+
 /** Communication map update callback */
 export type CommunicationMapCallback = (entries: CommunicationMapEntry[]) => void;
 export type MqttStatusCallback = (status: MqttRuntimeStatus | null) => void;
@@ -42,6 +52,10 @@ export type MqttStatusCallback = (status: MqttRuntimeStatus | null) => void;
 export class ConnectionManager {
   private adapter: SerialAdapter | null = null;
   private generation = 0;
+  private linkUnsubscribe: (() => void) | null = null;
+  private pollInFlight = false;
+  private _linkInfo: LinkInfo = { firmware: null, router: null };
+  private linkInfoCallbacks: Set<LinkInfoCallback> = new Set();
   private connectPromise: Promise<void> | null = null;
   private disconnectPromise: Promise<void> | null = null;
   private connectionPublished = false;
@@ -63,8 +77,12 @@ export class ConnectionManager {
   private _communicationMap: CommunicationMapEntry[] = [];
   private _mqttStatus: MqttRuntimeStatus | null = null;
 
-  /** Poll interval in ms */
+  /**
+   * Poll interval in ms for a firmware that does not push its state: the labelled fallback (COM-025).
+   * A firmware that does is read when it says something changed, and this slow pass only reconciles.
+   */
   private readonly POLL_INTERVAL = 1000;
+  private readonly RECONCILE_INTERVAL = 5000;
 
   // =========================================================================
   // Connection Management
@@ -110,6 +128,30 @@ export class ConnectionManager {
     return this._mqttStatus;
   }
 
+  /** What the firmware speaks, and whether the state is pushed by the device or polled (COM-025, COM-029). */
+  get linkInfo(): LinkInfo {
+    return this._linkInfo;
+  }
+
+  onLinkInfoUpdate(callback: LinkInfoCallback): () => void {
+    this.linkInfoCallbacks.add(callback);
+    callback(this._linkInfo);
+    return () => this.linkInfoCallbacks.delete(callback);
+  }
+
+  /** The adapter that speaks the framed link, or null for any other (a plain serial adapter is the text shell). */
+  private framedOf(adapter: SerialAdapter | null): FramedSerialAdapter | null {
+    return adapter !== null && typeof (adapter as Partial<FramedSerialAdapter>).linkStatus === 'function'
+      ? (adapter as FramedSerialAdapter)
+      : null;
+  }
+
+  private publishLinkInfo(adapter: SerialAdapter | null): void {
+    const framed = this.framedOf(adapter);
+    this._linkInfo = framed ? { firmware: framed.firmware, router: framed.linkStatus() } : { firmware: null, router: null };
+    this.linkInfoCallbacks.forEach((callback) => callback(this._linkInfo));
+  }
+
   /**
    * Get the adapter instance (for terminal/upload)
    */
@@ -123,6 +165,9 @@ export class ConnectionManager {
 
   private clearConnectionState(): void {
     this.stopPolling();
+    this.linkUnsubscribe?.();
+    this.linkUnsubscribe = null;
+    this.publishLinkInfo(null);
     this._systemInfo = null;
     this._status = null;
     this._runtimeSnapshot = null;
@@ -166,7 +211,7 @@ export class ConnectionManager {
       }
 
       const generation = ++this.generation;
-      const adapter = this.adapter ?? new SerialAdapter(this.handleUnexpectedDisconnect);
+      const adapter = this.adapter ?? new FramedSerialAdapter(this.handleUnexpectedDisconnect);
       adapter.disableAutoPolling = true;
       this.adapter = adapter;
 
@@ -178,6 +223,13 @@ export class ConnectionManager {
 
         this.connectionPublished = true;
         this.notifyConnectionChange(true);
+        // A firmware that pushes events is read when it says something changed; one that does not is polled.
+        this.publishLinkInfo(adapter);
+        this.linkUnsubscribe?.();
+        this.linkUnsubscribe = this.framedOf(adapter)?.linkEvents.subscribe(() => {
+          this.publishLinkInfo(adapter);
+          if (this.isCurrent(generation, adapter) && !this._passthroughMode) void this.poll(generation, adapter);
+        }) ?? null;
 
         try {
           const systemInfo = await adapter.getSystemInfo();
@@ -382,7 +434,7 @@ export class ConnectionManager {
     // Don't poll immediately to avoid conflicts with recent commands
     this.pollInterval = setInterval(() => {
       void this.poll(generation, adapter);
-    }, this.POLL_INTERVAL);
+    }, this.framedOf(adapter)?.linkStatus().source === 'events' ? this.RECONCILE_INTERVAL : this.POLL_INTERVAL);
   }
 
   private stopPolling(): void {
@@ -393,10 +445,11 @@ export class ConnectionManager {
   }
 
   private async poll(generation: number, adapter: SerialAdapter): Promise<void> {
-    if (!this.isCurrent(generation, adapter) || !this.connected || this._passthroughMode) {
+    if (!this.isCurrent(generation, adapter) || !this.connected || this._passthroughMode || this.pollInFlight) {
       return;
     }
 
+    this.pollInFlight = true;
     try {
       const status = await adapter.getStatus();
       if (!this.isCurrent(generation, adapter) || this._passthroughMode) return;
@@ -413,6 +466,8 @@ export class ConnectionManager {
     } catch (e) {
       // Silently ignore poll errors
       console.debug('Poll error:', e);
+    } finally {
+      this.pollInFlight = false;
     }
   }
 

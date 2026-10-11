@@ -23,6 +23,8 @@ static const char *const runtime_keys[] = {
     "program_v1_slot_b_payload", "program_v1_slot_b_meta",
     /* credentials */
     "aws_cert_pem", "aws_key_pem",
+    /* the keys of the device link: sessions (COM-021) and signed programs (COM-026) */
+    "link_key", "link_signkey",
 };
 
 static void check_round_trip(const char *key, uint8_t seed) {
