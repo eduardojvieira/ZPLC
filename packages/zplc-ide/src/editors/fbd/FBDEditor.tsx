@@ -9,7 +9,7 @@
  * - Instance Monitor popup for Function Block inspection
  */
 
-import { useCallback, useEffect, useMemo, useReducer, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from 'react';
+import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react';
 import {
   ReactFlow,
   Background,
@@ -32,8 +32,8 @@ import {
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 
-import { type FBDModel, type FBDBlock, type FBDConnection, getDefaultPorts } from '../../models/fbd';
-import { applyFBDSelection, blockNodeData, connectBlocks, copyFBDFragment, type WireEnds, edgesToConnections, fbdSelection, nodesToBlocks, pasteFBDFragment, uniqueNodeId, type FBDClipboardFragment } from './graphModel';
+import { type FBDModel, type FBDBlock, type FBDConnection } from '../../models/fbd';
+import { applyFBDSelection, blockNodeData, connectBlocks, copyFBDFragment, type WireEnds, edgesToConnections, fbdSelection, nodesToBlocks, pasteFBDFragment, type FBDClipboardFragment } from './graphModel';
 import { edgeChangesCommit, nodeChangesCommit } from '../gesture';
 import { useGestureCommit } from '../useGestureCommit';
 import { getVisualSelection, setVisualSelection, useVisualFileKey } from '../visualSelection';
@@ -44,8 +44,9 @@ import FBDToolbox from './FBDToolbox';
 import InstanceMonitor from './InstanceMonitor';
 import { useMonitor } from '../../monitoring/useMonitor';
 import type { ElementState, Reading } from '../../monitoring/elementStates';
-import { findProjectBlock } from '../../models/projectBlocks';
 import { useProjectBlocks } from '../useProjectBlocks';
+import { fbdCanvasCommands } from './keyboard';
+import { useCanvasKeyboard } from '../useCanvasKeyboard';
 import { useElementSelection } from '../elementSelection';
 import { useElementBreakpoints } from '../elementBreakpoints';
 import { markBreakpointNodes } from '../breakpointMarks';
@@ -331,73 +332,39 @@ function FBDEditorInner({
     [commitGraph, readOnly]
   );
 
-  // Handle drop from toolbox
-  const onDrop = useCallback(
-    (event: React.DragEvent) => {
-      event.preventDefault();
-      if (readOnly) return;
-
-      const blockType = event.dataTransfer.getData('application/zplc-block');
-      if (!blockType) return;
-
-      // Convert screen coordinates to flow coordinates
-      const position = screenToFlowPosition({
-        x: event.clientX,
-        y: event.clientY,
-      });
-
-      // Generate unique ID
-      const id = uniqueNodeId(`${blockType.toLowerCase()}_${Date.now()}`, nodesRef.current);
-
-      const newNode: Node = {
-        id,
-        type: getNodeType(blockType),
-        position,
-        data: {
-          type: blockType,
-          readOnly,
-          onChangeData: (nodeId: string, data: Record<string, unknown>) => updateNodeDataRef.current?.(nodeId, data),
-          onOpenMonitor,
-          // a block the project declares has the ports of its declaration (LNG-008)
-          inputs: getDefaultPorts(blockType, projectBlocks).inputs,
-          outputs: getDefaultPorts(blockType, projectBlocks).outputs,
-          variableName: blockType.startsWith('COMM_') ? `${blockType}_TAG` : undefined,
-          instanceName: blockType.match(/^(TON|TOF|TP|CTU|CTD|CTUD|R_TRIG|F_TRIG|SR|RS)$/)
-            || findProjectBlock(projectBlocks, blockType)?.kind === 'FUNCTION_BLOCK'
-            ? `${blockType}_${id}`
-            : undefined,
-        },
-      };
-
-      commitGraph([...nodesRef.current, newNode], edgesRef.current);
+  // What a command of the keyboard adds to the canvas: the nodes it makes carry what every node of the canvas carries
+  const decorate = useCallback((node: Node): Node => ({
+    ...node,
+    data: {
+      ...node.data,
+      readOnly,
+      onChangeData: (nodeId: string, data: Record<string, unknown>) => updateNodeDataRef.current?.(nodeId, data),
+      onOpenMonitor,
     },
-    [commitGraph, onOpenMonitor, projectBlocks, readOnly, screenToFlowPosition]
-  );
+  }), [onOpenMonitor, readOnly]);
 
-  const onDragOver = useCallback((event: React.DragEvent) => {
-    event.preventDefault();
-    event.dataTransfer.dropEffect = 'move';
+  // The cursor moved, or the selection changed: the canvas shows it and the document does not change
+  const showGraph = useCallback((nextNodes: Node[], nextEdges: Edge[]) => {
+    nodesRef.current = nextNodes;
+    edgesRef.current = nextEdges;
+    replaceNodes(nextNodes);
+    replaceEdges(nextEdges);
+    setVisualSelection(fileKeyRef.current, fbdSelection(nextNodes, nextEdges));
   }, []);
 
-  const onKeyDown = useCallback((event: ReactKeyboardEvent<HTMLDivElement>) => {
-    if (event.key === 'F9') {
-      const selected = nodesRef.current.filter((node) => node.selected);
-      if (selected.length === 0) return;
-      for (const node of selected) breakpoints.toggle(blockElement(node.id));
-      event.preventDefault();
+  // The clipboard, and the breakpoints of the selected blocks
+  const editorCommand = useCallback((command: string) => {
+    if (command === 'toggleBreakpoint') {
+      for (const node of nodesRef.current.filter((candidate) => candidate.selected)) breakpoints.toggle(blockElement(node.id));
       return;
     }
-    if (readOnly || event.altKey || event.shiftKey || event.ctrlKey === event.metaKey) return;
-    const target = event.target as HTMLElement;
-    if (target.closest('input, textarea, select, [contenteditable="true"]')) return;
-    if (event.key.toLowerCase() === 'c') {
+    if (readOnly) return;
+    if (command === 'copySelection') {
       const fragment = copyFBDFragment(nodesRef.current, edgesRef.current);
-      if (!fragment) return;
-      clipboardRef.current = fragment;
-      event.preventDefault();
+      if (fragment) clipboardRef.current = fragment;
       return;
     }
-    if (event.key.toLowerCase() !== 'v' || !clipboardRef.current) return;
+    if (command !== 'pasteSelection' || !clipboardRef.current) return;
     const currentModel = { ...model, blocks: nodesToBlocks(nodesRef.current), connections: edgesToConnections(edgesRef.current) };
     const pasted = pasteFBDFragment(currentModel, clipboardRef.current);
     if (!pasted) return;
@@ -412,19 +379,54 @@ function FBDEditorInner({
       })),
     ];
     const nextEdges = [...edgesRef.current.map((edge) => ({ ...edge, selected: false })), ...connectionsToEdges(addedConnections)];
-    event.preventDefault();
     commitGraph(nextNodes, nextEdges);
   }, [breakpoints, commitGraph, model, onOpenMonitor, readOnly]);
 
+  const wrapperRef = useRef<HTMLDivElement>(null);
+  const commands = useMemo(() => fbdCanvasCommands(model, projectBlocks), [model, projectBlocks]);
+  const keyboard = useCanvasKeyboard({
+    commands, nodesRef, edgesRef, readOnly, wrapperRef, commit: commitGraph, show: showGraph, decorate, editorCommand,
+    commentOf: (node) => (typeof (node.data as Record<string, unknown>).comment === 'string' ? ((node.data as Record<string, unknown>).comment as string) : undefined),
+  });
+
+  // Handle drop from toolbox: the block is inserted as the keyboard inserts one, at the place of the drop
+  const onDrop = useCallback(
+    (event: React.DragEvent) => {
+      event.preventDefault();
+      if (readOnly) return;
+      const blockType = event.dataTransfer.getData('application/zplc-block');
+      if (!blockType) return;
+      keyboard.run('insertElement', { blockType, position: screenToFlowPosition({ x: event.clientX, y: event.clientY }) });
+    },
+    [keyboard, readOnly, screenToFlowPosition]
+  );
+
+  const onDragOver = useCallback((event: React.DragEvent) => {
+    event.preventDefault();
+    event.dataTransfer.dropEffect = 'move';
+  }, []);
+
+  // A double click on a block asks what it holds, as F2 does
+  const onNodeDoubleClick = useCallback((_event: React.MouseEvent, node: Node) => {
+    if (readOnly) return;
+    const next = nodesRef.current.map((candidate) => ({ ...candidate, selected: candidate.id === node.id }));
+    showGraph(next, edgesRef.current.map((edge) => (edge.selected ? { ...edge, selected: false } : edge)));
+    keyboard.run('bindVariable');
+  }, [keyboard, readOnly, showGraph]);
+
   return (
+    <>
+    {!readOnly && <FBDToolbox onInsert={(type) => keyboard.run('insertElement', { blockType: type })} />}
     <div
-      className="flex-1 h-full"
+      ref={wrapperRef}
+      className="relative flex-1 h-full"
       tabIndex={0}
       role="region"
       aria-label="Function block diagram canvas"
+      aria-keyshortcuts="F1"
       onDrop={onDrop}
       onDragOver={onDragOver}
-      onKeyDown={onKeyDown}
+      onKeyDown={keyboard.onKeyDown}
     >
       <ReactFlow
         nodes={markedNodes}
@@ -434,6 +436,9 @@ function FBDEditorInner({
         onConnect={onConnect}
         onConnectEnd={onConnectEnd}
         isValidConnection={isValidConnection}
+        onNodeDoubleClick={onNodeDoubleClick}
+        // deleting is a command of the keyboard table, one gesture for the blocks and the wires on them
+        deleteKeyCode={null}
         nodesDraggable={!readOnly}
         nodesConnectable={!readOnly}
         elementsSelectable={!readOnly}
@@ -486,7 +491,10 @@ function FBDEditorInner({
           maskColor="var(--color-surface-600)"
         />
       </ReactFlow>
+      {keyboard.overlay}
+      {keyboard.status}
     </div>
+    </>
   );
 }
 
@@ -519,10 +527,7 @@ export default function FBDEditor({ model, onChange, readOnly = false }: FBDEdit
 
   return (
     <div className="zplc-visual-editor w-full h-full flex">
-      {/* Toolbox sidebar */}
-      {!readOnly && <FBDToolbox />}
-
-      {/* Main canvas - wrapped in provider */}
+      {/* Main canvas - wrapped in provider (the toolbox is drawn inside it, beside the canvas) */}
       <ReactFlowProvider>
         <FBDEditorInner
           model={model}

@@ -11,14 +11,13 @@
  * - Shows "armed" transitions (ready to fire)
  */
 
-import { useCallback, useMemo, useRef, useEffect, useReducer, type KeyboardEvent as ReactKeyboardEvent } from 'react';
+import { useCallback, useMemo, useRef, useEffect, useReducer } from 'react';
 import {
   ReactFlow,
   ReactFlowProvider,
   Background,
   Controls,
   MiniMap,
-  addEdge,
   applyEdgeChanges,
   applyNodeChanges,
   useReactFlow,
@@ -35,7 +34,9 @@ import {
 import '@xyflow/react/dist/style.css';
 
 import { type SFCModel, type SFCStep, type SFCTransition } from '../../models/sfc';
-import { applySFCSelection, copySFCFragment, sfcSelection, stepNodeData, transitionNodeData, isCanonicalSFCConnection, nodesToSteps, nodesToTransitions, pasteSFCFragment, uniqueNodeId, type SFCClipboardFragment } from './graphModel';
+import { applySFCSelection, connectSFC, copySFCFragment, sfcSelection, stepNodeData, transitionNodeData, isCanonicalSFCConnection, nodesToSteps, nodesToTransitions, pasteSFCFragment, type SFCClipboardFragment } from './graphModel';
+import { sfcCanvasCommands } from './keyboard';
+import { useCanvasKeyboard } from '../useCanvasKeyboard';
 import { edgeChangesCommit, nodeChangesCommit } from '../gesture';
 import { useGestureCommit } from '../useGestureCommit';
 import { getVisualSelection, setVisualSelection, useVisualFileKey } from '../visualSelection';
@@ -376,25 +377,12 @@ function SFCEditorInner({
   }, [fitView, model.actions]);
   useElementSelection(selectElement);
 
-  // Handle new connections
+  // Handle new connections: a step to a transition and a transition to a step, by the rule the keyboard draws wires by
   const onConnect: OnConnect = useCallback(
     (params) => {
       if (readOnly) return;
-      
-      if (!isCanonicalSFCConnection(params, nodesRef.current)) return;
-      const source = nodesRef.current.find((node) => node.id === params.source);
-      const target = nodesRef.current.find((node) => node.id === params.target);
-      if (!source || !target) return;
-      const nextEdges = edgesRef.current.filter((edge) => {
-        if (target.type === 'transition') return edge.target !== target.id;
-        return edge.source !== source.id;
-      });
-      commitGraph(nodesRef.current, addEdge({
-        ...params,
-        type: 'sfc',
-        style: { stroke: 'var(--visual-wire)', strokeWidth: 2 },
-        markerEnd: { type: MarkerType.ArrowClosed, width: 10, height: 10 },
-      }, nextEdges));
+      const nextEdges = connectSFC(nodesRef.current, edgesRef.current, params);
+      if (nextEdges) commitGraph(nodesRef.current, nextEdges);
     },
     [commitGraph, readOnly]
   );
@@ -431,107 +419,35 @@ function SFCEditorInner({
     [commitGraph, readOnly]
   );
 
-  // Handle drop from toolbox
-  const onDrop = useCallback(
-    (event: React.DragEvent) => {
-      event.preventDefault();
-      if (readOnly) return;
+  // What a command of the keyboard adds to the canvas: the nodes it makes carry what every node of the canvas carries
+  const decorate = useCallback((node: Node): Node => ({
+    ...node,
+    data: { ...node.data, readOnly, onChangeData: (nodeId: string, data: Record<string, unknown>) => updateNodeDataRef.current?.(nodeId, data) },
+  }), [readOnly]);
 
-      const elementType = event.dataTransfer.getData('application/zplc-sfc');
-      if (!elementType) return;
-
-      const position = screenToFlowPosition({
-        x: event.clientX,
-        y: event.clientY,
-      });
-
-      const id = uniqueNodeId(`${elementType}_${Date.now()}`, nodesRef.current);
-
-      let newNode: Node;
-
-      switch (elementType) {
-        case 'step':
-          newNode = {
-            id,
-            type: 'step',
-            position,
-            data: {
-              readOnly,
-              onChangeData: (nodeId: string, data: Record<string, unknown>) => updateNodeDataRef.current?.(nodeId, data),
-              name: `Step_${id}`,
-              isInitial: false,
-              actions: [],
-              debugActive: false,
-            },
-          };
-          break;
-          
-        case 'initial_step':
-          newNode = {
-            id,
-            type: 'step',
-            position,
-            data: {
-              readOnly,
-              onChangeData: (nodeId: string, data: Record<string, unknown>) => updateNodeDataRef.current?.(nodeId, data),
-              name: `Init_${id}`,
-              isInitial: true,
-              actions: [],
-              debugActive: false,
-            },
-          };
-          break;
-          
-        case 'transition':
-          newNode = {
-            id,
-            type: 'transition',
-            position,
-            data: {
-              readOnly,
-              onChangeData: (nodeId: string, data: Record<string, unknown>) => updateNodeDataRef.current?.(nodeId, data),
-              condition: 'TRUE',
-              fromStep: '',
-              toStep: '',
-              debugActive: false,
-            },
-          };
-          break;
-          
-        default:
-          return;
-      }
-
-      commitGraph([...nodesRef.current, newNode], edgesRef.current);
-    },
-    [commitGraph, readOnly, screenToFlowPosition]
-  );
-
-  const onDragOver = useCallback((event: React.DragEvent) => {
-    event.preventDefault();
-    event.dataTransfer.dropEffect = 'move';
+  // The cursor moved, or the selection changed: the canvas shows it and the document does not change
+  const showGraph = useCallback((nextNodes: Node[], nextEdges: Edge[]) => {
+    nodesRef.current = nextNodes;
+    edgesRef.current = nextEdges;
+    replaceNodes(nextNodes);
+    replaceEdges(nextEdges);
+    setVisualSelection(fileKeyRef.current, sfcSelection(nextNodes, nextEdges));
   }, []);
 
-  const onKeyDown = useCallback((event: ReactKeyboardEvent<HTMLDivElement>) => {
-    if (event.key === 'F9') {
-      const selected = nodesRef.current.filter((node) => node.selected);
-      const elements = selected.map(elementOfNode).filter((element): element is SourceElementId => element !== undefined);
-      if (elements.length === 0) return;
+  // The clipboard, and the breakpoints of the selected steps and transitions
+  const editorCommand = useCallback((command: string) => {
+    if (command === 'toggleBreakpoint') {
+      const elements = nodesRef.current.filter((node) => node.selected).map(elementOfNode).filter((element): element is SourceElementId => element !== undefined);
       for (const element of elements) breakpoints.toggle(element);
-      event.preventDefault();
       return;
     }
-    if (readOnly || event.altKey || event.shiftKey || event.ctrlKey === event.metaKey) return;
-    const target = event.target as HTMLElement;
-    if (target.closest('input, textarea, select, [contenteditable="true"]')) return;
-    if (event.key.toLowerCase() === 'c') {
+    if (readOnly) return;
+    if (command === 'copySelection') {
       const fragment = copySFCFragment(nodesRef.current, edgesRef.current);
-      if (!fragment) return;
-      clipboardRef.current = fragment;
-      event.preventDefault();
+      if (fragment) clipboardRef.current = fragment;
       return;
     }
-    if (event.key.toLowerCase() !== 'v' || !clipboardRef.current) return;
+    if (command !== 'pasteSelection' || !clipboardRef.current) return;
     const currentModel = { ...model, steps: nodesToSteps(nodesRef.current), transitions: nodesToTransitions(nodesRef.current, edgesRef.current) };
     const pasted = pasteSFCFragment(currentModel, clipboardRef.current);
     if (!pasted) return;
@@ -543,18 +459,43 @@ function SFCEditorInner({
       ...transitionsToNodes(addedTransitions, debugActive, transitionDebugInfo).map((node) => ({ ...node, selected: true, data: { ...node.data, readOnly, onChangeData: (nodeId: string, data: Record<string, unknown>) => updateNodeDataRef.current?.(nodeId, data) } })),
     ];
     const nextEdges = [...edgesRef.current.map((edge) => ({ ...edge, selected: false })), ...pasted.edges.map((edge) => ({ ...edge, selected: false, style: { stroke: 'var(--visual-wire)', strokeWidth: 2 }, markerEnd: { type: MarkerType.ArrowClosed, width: 10, height: 10 } }))];
-    event.preventDefault();
     commitGraph(nextNodes, nextEdges);
   }, [breakpoints, commitGraph, debugActive, elementOfNode, model, readOnly, stepDebugInfo, transitionDebugInfo]);
 
+  const commands = useMemo(() => sfcCanvasCommands(model), [model]);
+  const keyboard = useCanvasKeyboard({
+    commands, nodesRef, edgesRef, readOnly, wrapperRef: reactFlowWrapper, commit: commitGraph, show: showGraph, decorate, editorCommand,
+    commentOf: (node) => (typeof (node.data as Record<string, unknown>).comment === 'string' ? ((node.data as Record<string, unknown>).comment as string) : undefined),
+  });
+
+  // Handle drop from toolbox: the element is inserted as the keyboard inserts one, at the place of the drop
+  const onDrop = useCallback(
+    (event: React.DragEvent) => {
+      event.preventDefault();
+      if (readOnly) return;
+      const elementType = event.dataTransfer.getData('application/zplc-sfc');
+      if (!elementType) return;
+      keyboard.run('insertElement', { elementType, position: screenToFlowPosition({ x: event.clientX, y: event.clientY }) });
+    },
+    [keyboard, readOnly, screenToFlowPosition]
+  );
+
+  const onDragOver = useCallback((event: React.DragEvent) => {
+    event.preventDefault();
+    event.dataTransfer.dropEffect = 'move';
+  }, []);
+
   return (
+    <>
+    {!readOnly && <SFCToolbox onInsert={(type) => keyboard.run('insertElement', { elementType: type })} />}
     <div 
       ref={reactFlowWrapper}
-      className="flex-1 h-full"
+      className="relative flex-1 h-full"
       tabIndex={0}
       role="region"
       aria-label="Sequential function chart canvas"
-      onKeyDown={onKeyDown}
+      aria-keyshortcuts="F1"
+      onKeyDown={keyboard.onKeyDown}
     >
       <ReactFlow
         nodes={markedNodes}
@@ -571,6 +512,8 @@ function SFCEditorInner({
         nodeTypes={nodeTypes as NodeTypes}
         edgeTypes={edgeTypes as EdgeTypes}
         isValidConnection={isValidConnection}
+        // deleting is a command of the keyboard table, one gesture for the elements and the wires on them
+        deleteKeyCode={null}
         connectionMode={ConnectionMode.Strict}
         defaultViewport={{ x: 50, y: 50, zoom: 1 }}
         fitView
@@ -624,7 +567,10 @@ function SFCEditorInner({
           </div>
         )}
       </ReactFlow>
+      {keyboard.overlay}
+      {keyboard.status}
     </div>
+    </>
   );
 }
 
@@ -684,10 +630,7 @@ export default function SFCEditor({ model, onChange, readOnly = false }: SFCEdit
 
   return (
     <div className="zplc-visual-editor w-full h-full flex">
-      {/* Toolbox sidebar */}
-      {!readOnly && !running && <SFCToolbox />}
-
-      {/* Main canvas - wrapped in provider */}
+      {/* Main canvas - wrapped in provider (the toolbox is drawn inside it, beside the canvas) */}
       <ReactFlowProvider>
         <SFCEditorInner
           model={model}
