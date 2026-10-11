@@ -75,6 +75,12 @@ existe:
   "network_interface": "none",
   "evidence_refs": [],
   "docs_ref": "docs/docs/reference/capabilities-evidence.md",
+  "watchdog": {
+    "enabled": false,
+    "reason": "No hardware record yet (HIL-010): the hardware watchdog stays off in this profile until the reset timing and the safe outputs are recorded on this board with it enabled (RT-020).",
+    "timeout_ms": 1000, "max_timeout_ms": 8000,
+    "stop": "disarm", "pause": "feed", "fault": "expire"
+  },
   "io": {
     "schema_version": 1,
     "channels": [
@@ -104,6 +110,7 @@ Qué contiene el manifiesto y la regla que rechaza un valor erróneo:
 | `memory` | Los tres tamaños del paso 1 | La compilación se detiene cuando difieren del `.conf` |
 | `network_class`, `network_interface` | `serial-focused`, `network-capable` u `other`; `none`, `wifi` o `ethernet` | Solo se aceptan estas palabras |
 | `evidence_refs` | Una lista vacía | Una ruta debe ser un registro de hardware que exista; el nivel se deriva de los registros y nunca se escribe a mano |
+| `watchdog` | Si el watchdog de hardware está activado en este perfil (`false` hasta que exista un registro de hardware), el timeout con el que se registró su tiempo de reset, el timeout más largo que acepta el componente y qué hace en STOP, en pausa y en un fault latcheado (`disarm` o `feed`; `disarm` o `expire`) | Una razón cuando está apagado, un timeout dentro de lo que acepta el componente y las palabras de las tres políticas; nunca se activa sin un registro de hardware |
 | `io.channels` | Una entrada por pin al que un programa puede llegar, como máximo 64 | Cada canal tiene una dirección de la dirección y el ancho correctos, dos canales no comparten un bit, una salida tiene su valor seguro y un canal digital nombra su alias de devicetree, su controlador y su pin |
 | `io.unmapped` | Los terminales que existen y que ZPLC no usa, cada uno con un motivo | Una entrada tiene un terminal y un motivo |
 

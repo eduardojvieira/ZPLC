@@ -147,6 +147,16 @@ typedef struct {
   uint32_t input_latch_count;
   /** Logical normal output process-image commits since initialization. */
   uint32_t output_commit_count;
+  /** The longest run of deadline misses of one task that no scan in time has ended (RT-014). */
+  uint32_t consecutive_misses;
+  /** Consecutive misses of one task that latch the fault. */
+  uint32_t miss_limit;
+  /** How far past its deadline the last late task ended, in microseconds. */
+  uint32_t last_overrun_us;
+  /** Why the fault latched: a zplc_sched_fault_reason_t, 0 when none. */
+  uint8_t fault_reason;
+  /** The task the fault belongs to; meaningful when fault_reason is not 0. */
+  uint16_t fault_task_id;
 } zplc_sched_stats_t;
 
 /* ============================================================================

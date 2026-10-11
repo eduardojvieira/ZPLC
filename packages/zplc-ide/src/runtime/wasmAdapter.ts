@@ -28,6 +28,7 @@ import {
   WATCH_FORCE_STATE,
 } from './debugAdapter';
 import { ZPLC_CONTRACT } from '@zplc/compiler';
+import { assertMemoryAccess } from './memoryAccess';
 import { describeLoadFailure } from './draftCounter';
 import { loadZPLCModule, type EmscriptenModule } from './wasmLoader';
 import { debugLog } from '../utils/debugLog';
@@ -472,7 +473,7 @@ export class WASMAdapter implements IDebugAdapter {
 
       // Re-apply forced values before each cycle (match hardware runtime force table behavior)
       for (const [address, bytes] of this.forcedEntries.entries()) {
-        this.pokeN(address, bytes).catch(e => console.error('Failed to re-inject forced value', e));
+        this.writeRegions(address, bytes);
       }
     }
 
@@ -549,9 +550,10 @@ export class WASMAdapter implements IDebugAdapter {
     if (!this._connected || !this.module) {
       throw new Error('Not connected');
     }
+    assertMemoryAccess(address, length, 'read');
 
     const result = new Uint8Array(length);
-    const { opi, work, retain, code } = MEMORY_MAP;
+    const { opi, work, retain } = MEMORY_MAP;
 
     for (let i = 0; i < length; i++) {
       const addr = address + i;
@@ -564,13 +566,12 @@ export class WASMAdapter implements IDebugAdapter {
         // OPI region
         byte = (this.opiRead8?.(addr - opi.baseAddress) ?? 0) & 0xff;
       } else if (addr < retain.baseAddress) {
-        // WORK region — read via HEAPU8 + region pointer
+        // WORK region: HEAPU8 + the region pointer
         byte = this.readRegionByte(work.baseAddress, addr - work.baseAddress);
-      } else if (addr < code.baseAddress) {
-        // RETAIN region — read via HEAPU8 + region pointer
+      } else {
+        // RETAIN region: HEAPU8 + the region pointer
         byte = this.readRegionByte(retain.baseAddress, addr - retain.baseAddress);
       }
-      // addr >= code.baseAddress is CODE region — read-only, could add later
 
       result[i] = byte;
     }
@@ -611,39 +612,29 @@ export class WASMAdapter implements IDebugAdapter {
     if (!this._connected) {
       throw new Error('Not connected');
     }
-
-    const { ipi, opi, work, retain, code } = MEMORY_MAP;
-    if (address >= ipi.baseAddress && address < opi.baseAddress) {
-      // IPI — use typed 8-bit write
-      this.ipiWrite8?.(address, value & 0xff);
-    } else if (address >= work.baseAddress && address < retain.baseAddress) {
-      // WORK region — direct HEAPU8 write
-      this.writeRegionByte(work.baseAddress, address - work.baseAddress, value);
-    } else if (address >= retain.baseAddress && address < code.baseAddress) {
-      // RETAIN region — direct HEAPU8 write
-      this.writeRegionByte(retain.baseAddress, address - retain.baseAddress, value);
-    } else {
-      throw new Error(
-        `Cannot write to address 0x${address.toString(16)}: region not writable`
-      );
-    }
+    await this.pokeN(address, new Uint8Array([value & 0xff]));
   }
 
   async pokeN(address: number, bytes: Uint8Array): Promise<void> {
     if (!this._connected) {
       throw new Error('Not connected');
     }
+    assertMemoryAccess(address, bytes.length, 'write');
+    this.writeRegions(address, bytes);
+  }
 
-    const { ipi, opi, work, retain, code } = MEMORY_MAP;
+  /** Put bytes into the regions the program does not own; a forced output has no byte to write here. */
+  private writeRegions(address: number, bytes: Uint8Array): void {
+    const { ipi, opi, work, retain } = MEMORY_MAP;
     for (let i = 0; i < bytes.length; i++) {
       const addr = address + i;
-      const val = bytes[i];
+      const val = bytes[i]!;
 
       if (addr >= ipi.baseAddress && addr < opi.baseAddress) {
         this.ipiWrite8?.(addr, val);
       } else if (addr >= work.baseAddress && addr < retain.baseAddress) {
         this.writeRegionByte(work.baseAddress, addr - work.baseAddress, val);
-      } else if (addr >= retain.baseAddress && addr < code.baseAddress) {
+      } else if (addr >= retain.baseAddress && addr < MEMORY_MAP.code.baseAddress) {
         this.writeRegionByte(retain.baseAddress, addr - retain.baseAddress, val);
       }
     }
@@ -654,12 +645,14 @@ export class WASMAdapter implements IDebugAdapter {
   }
 
   async forceValue(address: number, bytes: Uint8Array): Promise<void> {
+    assertMemoryAccess(address, bytes.length, 'force');
     const copy = new Uint8Array(bytes);
     this.forcedEntries.set(address, copy);
-    await this.pokeN(address, copy);
+    this.writeRegions(address, copy);
   }
 
   async clearForcedValue(address: number): Promise<void> {
+    assertMemoryAccess(address, 1, 'force');
     this.forcedEntries.delete(address);
   }
 
@@ -682,6 +675,7 @@ export class WASMAdapter implements IDebugAdapter {
     if (!this._connected) {
       throw new Error('Not connected');
     }
+    assertMemoryAccess(MEMORY_MAP.opi.baseAddress + offset, 1, 'read');
 
     return (this.coreGetOpi?.(offset) ?? 0) & 0xff;
   }
@@ -690,6 +684,7 @@ export class WASMAdapter implements IDebugAdapter {
     if (!this._connected) {
       throw new Error('Not connected');
     }
+    assertMemoryAccess(offset, 1, 'write');
 
     this.coreSetIpi?.(offset, value & 0xff);
   }

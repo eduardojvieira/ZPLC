@@ -150,10 +150,24 @@ El endurecimiento del runtime del firmware (RT-010 a RT-034) tiene sus propias s
   valor forzado;
 - `scheduler_admission` retiene un scan en el commit y en la escritura de salidas, para mostrar que una escritura de
   fuera espera al latch de entradas y nunca al scan, y que el lock de la imagen está libre mientras se escriben los
-  pines.
+  pines;
+- `scheduler_equivalence` conduce el scheduler Zephyr por los escenarios del núcleo común del scheduler y compara sus
+  decisiones con la traza de referencia a la que se somete la sesión de host (RT-008, RT-018);
+- `single_task` ejecuta la configuración de una tarea del núcleo: el latch de entradas de los pines, el plazo, el
+  fault y el estado seguro (RT-018);
+- `failsafe` ejercita el manejador de error fatal con un reinicio interceptado y muestra las salidas llevadas al
+  estado seguro, el registro del fault y la causa que informa el arranque siguiente; `failsafe_reboot` provoca un
+  fault real y un reinicio real en `qemu_cortex_m3` y lee el registro después (RT-019, RT-021, RT-022);
+- `scheduler_watchdog` ejecuta la política de watchdog de hardware de un perfil sobre un modelo del watchdog: la
+  alimentación desde la finalización de un scan, el timeout tomado del conjunto de tareas, un scan detenido que lo
+  deja expirar, y la política en STOP, en pausa y en un fault (RT-020).
 
 Las suites de host del core suman `test_exchange` (un scanner, lectores y escritores en hilos), `test_program_store`
-(un corte de energía y una escritura truncada en cada operación), `test_core_start`, `test_core_lock`,
+(un corte de energía y una escritura truncada en cada operación), `test_sched_core` y `test_sched_equivalence` (las
+decisiones del núcleo del scheduler y la traza de referencia), `test_single_task`, `test_vm_scan` (el tiempo de un
+scan se lee una vez y un opcode de texto se cobra por sus bytes), `test_failsafe` (la causa de reset, el registro de
+un fault y la política de watchdog), `test_safe_state` (el valor seguro que declara un proyecto decide el nivel de un
+pin, sobre una placa propia), `test_core_start`, `test_core_lock`,
 `test_bytes_crc` y las pruebas `config_rule_*`, cada una de las cuales compila una regla de configuración con un
 valor que la rompe y espera que la compilación falle nombrando la regla. Los puntos de entrada solo para pruebas se
 declaran en `firmware/lib/zplc_core/tests/include/zplc_test_hooks.h`, nunca en un header público;

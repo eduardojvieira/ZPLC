@@ -110,6 +110,7 @@ const sidebars = {
           items: [
             'reference/runtime-api',
             'reference/runtime-protocol',
+            'reference/device-protocol',
             'reference/kconfig',
             'reference/shell-commands',
             'operations/shell',

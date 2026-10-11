@@ -9,7 +9,24 @@ description: Configuración de tareas, ciclo de vida y diagnósticos del runtime
 
 # Programador multitarea
 
-ZPLC programa las tareas PLC configuradas mediante adaptadores específicos del runtime. La ruta actual de Zephyr admite liberaciones de timers en un único coordinador batch; la ruta POSIX ejecuta el mismo modelo de tareas para flujos repetibles en host. Son contratos lógicos del runtime, no evidencia de timing ni de I/O físico en una placa.
+ZPLC programa las tareas PLC configuradas mediante adaptadores específicos del runtime alrededor de un núcleo de scheduler portable. La ruta actual de Zephyr admite liberaciones de timers en un único coordinador batch; la ruta POSIX ejecuta el mismo modelo de tareas para flujos repetibles en host; la configuración de firmware de una sola tarea ejecuta una tarea sobre el mismo núcleo. Son contratos lógicos del runtime, no evidencia de timing ni de I/O físico en una placa.
+
+## Un solo núcleo de scheduler
+
+Las decisiones del scheduler se toman en un solo lugar, `zplc_sched_core` (`firmware/lib/zplc_core/src/core/zplc_sched_core.c`), y los runtimes sólo aportan lo que depende de la plataforma (RT-008, RT-018):
+
+| En el núcleo, igual en todas partes | En el adaptador |
+|---|---|
+| Qué tareas vencen y en qué orden: primero la liberación más temprana, luego la prioridad, luego el ID de tarea | El reloj, los timers y los hilos que llaman al núcleo |
+| El control del plazo: un incumplimiento se advierte, se cuenta y se registra su exceso; una racha de `N` incumplimientos de una tarea latchea el fault | Los locks de la imagen de proceso y de la E/S de salida |
+| El latch del fault y su causa; se conserva la primera causa y un fault de la VM gana a un incumplimiento en el mismo scan | Los pines y el watchdog de hardware |
+| El latch de entradas, el commit de las salidas y el estado seguro de STOP, una pausa y un fault | El protocolo de depuración y el shell |
+
+Lo usan tres adaptadores: la sesión POSIX del runtime de host (`native_runtime_session.c`), el scheduler Zephyr (`zplc_scheduler_zephyr.c`) y la configuración de una sola tarea (`zplc_single_task.c`, véase [Configuración de una sola tarea](#configuración-de-una-sola-tarea)). Un escenario es una lista de tareas y de los instantes en que un batch vence, empieza y termina; su salida es la lista de decisiones que tomó el núcleo, una línea por cada una. El test de host `test_sched_equivalence` y la suite Zephyr `scheduler_equivalence` ejecutan los mismos escenarios y comparan las decisiones con una sola traza de referencia, de modo que un cambio de la regla en un runtime hace fallar al otro. Los escenarios son un programa de tres tareas (tareas de 100 y 200 ms, `N` de 3, con latch en el cuarto batch) y un programa de una tarea. La comparación es de decisiones, no de tiempo: el host cuenta milisegundos enteros y el target lee un contador de ciclos en microsegundos.
+
+### Configuración de una sola tarea
+
+Un firmware compilado con `CONFIG_ZPLC_SCHEDULER=n` ejecuta una tarea de un intervalo. Es la configuración de una tarea del núcleo, no otro bucle: su scan tiene el mismo latch de entradas, control de plazo y límite (`CONFIG_ZPLC_DEADLINE_MISS_LIMIT`), latch de fault y estado seguro que el scheduler multitarea, y su estado informa los mismos campos. Dos cosas difieren y no se ocultan: el bucle mantiene el lock del runtime durante todo el scan, de modo que un comando del shell espera a que el scan termine, y no tiene intercambio por snapshot, de modo que un hilo fuera del scan lee y escribe la imagen de proceso bajo ese lock en lugar de hacerlo por la cola.
 
 ## Modelo de tareas
 
@@ -97,9 +114,9 @@ Un scan incumple su plazo cuando su tarea termina más de un intervalo después 
 
 Un scan que termina a tiempo corta la racha de esa tarea y borra su parte de la advertencia. La cuenta se conserva hasta cargar un programa o hacer reset. Un paso del depurador y un scan detenido en un breakpoint no se comprueban.
 
-`N`, los incumplimientos consecutivos que latchean el fault, es configurable. En simulación es la variable de entorno `ZPLC_DEADLINE_MISS_LIMIT`, un entero de 1 a 1 000 000, leída al iniciar la sesión; un valor fuera de ese rango se ignora y se escribe un mensaje en la salida de error estándar. El valor por defecto es 1: el primer incumplimiento latchea el fault, que es lo que hace hoy el scheduler del target.
+`N`, los incumplimientos consecutivos que latchean el fault, es configurable y vale **3** por defecto en todos los runtimes: una activación tardía, que puede causar una ráfaga de comunicación o una escritura en flash, se advierte y se cuenta, y una tarea que sigue incumpliendo detiene el programa. El valor 3 es un valor por defecto de diseño (RT-D05b) que el responsable del proyecto no confirmó; 1 es el comportamiento de versiones anteriores. En simulación `N` es la variable de entorno `ZPLC_DEADLINE_MISS_LIMIT`, un entero de 1 a 1 000 000, leída al iniciar la sesión; un valor fuera de ese rango se ignora y se escribe un mensaje en la salida de error estándar. En un target es `CONFIG_ZPLC_DEADLINE_MISS_LIMIT`, en el mismo rango, fijo al compilar el firmware.
 
-La simulación informa un incumplimiento en el resultado de `status.get` y en cada evento `status.changed`; un fault latcheado se envía además como evento `runtime.error` con el código `DEADLINE_MISS`. Los campos que ya existían conservan su significado.
+La simulación informa un incumplimiento en el resultado de `status.get` y en cada evento `status.changed`; un fault latcheado se envía además como evento `runtime.error` con el código `DEADLINE_MISS`. Un target informa los mismos campos en `zplc sched status --json`, como los objetos `deadline` y `fault` (allí el exceso en microsegundos es exacto). Los campos que ya existían conservan su significado.
 
 | Campo | Significado |
 |---|---|
@@ -127,7 +144,7 @@ Las cinco reglas anteriores son las mismas en simulación y en un target. Lo sig
 | Primera liberación | El primer scan después de un arranque o una reanudación es una liberación de todas las tareas: el calendario empieza en el arranque mismo. | La primera liberación de cada tarea llega un intervalo después del arranque o de la reanudación. |
 | Dos tareas del mismo tick | Se liberan en el mismo instante, así que se ordenan por prioridad y luego por ID de tarea. | La comparación es la misma, pero la liberación se marca en cada callback de timer con el contador de ciclos. No se afirma aquí qué orden obtienen dos timers de un mismo tick en una placa. |
 | Velocidad y jitter | La VM corre en un procesador de host bajo un sistema operativo de propósito general. | La VM corre en el procesador de la placa. Un programa que cumple a tiempo en simulación puede incumplir en un target, y a la inversa. |
-| Informe de un incumplimiento | La bandera de advertencia, la cuenta, el último exceso, el límite configurable y la causa del fault de la tabla anterior. | La cuenta de cada tarea y el total, y el estado `error` una vez latcheado. El límite es fijo, de un incumplimiento. La bandera de advertencia, el último exceso y la causa no se informan; pasan al target con el núcleo común del scheduler (RT-008, RT-014). |
+| Informe de un incumplimiento | La bandera de advertencia, la cuenta, el último exceso, el límite configurable y la causa del fault de la tabla anterior. | Los mismos campos, del mismo núcleo (`deadline` y `fault` de `zplc sched status --json`), con la cuenta de cada tarea, el total y el estado `error` una vez latcheado. El límite es `CONFIG_ZPLC_DEADLINE_MISS_LIMIT`. |
 
 ## Pausa, reanudación, paso y parada
 
@@ -144,11 +161,73 @@ El runtime separa dos cosas: las **salidas físicas** (los pines) y el **estado 
 
 Notas sobre la tabla:
 
-- Seguro significa apagado en todos los canales de salida hoy. Los pines se llevan a ese estado por política, nunca desde la imagen, de modo que un bit en uno de la imagen pausada no lo energiza. Un valor seguro declarado por proyecto para cada salida es otro requisito (RT-023).
+- Seguro significa apagado para una salida, salvo que el proyecto declare otro valor para ella ([Estado seguro de una salida](#estado-seguro-de-una-salida)). Los pines se llevan a ese estado por política, nunca desde la imagen, de modo que un bit en uno de la imagen pausada no lo energiza.
 - El primer commit normal después de una reanudación copia a los pines la imagen de salidas, con la tabla de forzados aplicada. Una reanudación no energiza nada por sí sola. Una salida forzada en uno permanece apagada mientras dura la pausa y se enciende en ese commit.
 - Un scan que continúa después de una reanudación o un paso conserva lo que vio su primera parte: las instrucciones ya ejecutadas, la pila de evaluación, la bandera de primer scan y su propio ID de tarea. Las entradas se vuelven a latchear al inicio del batch que lo continúa, de modo que el resto lee las entradas de ese momento.
 - El batch que se detiene en un breakpoint, y un paso, hacen un commit de la imagen a los pines y luego los llevan al estado seguro. El tiempo entre las dos escrituras es del driver y no se mide aquí.
 - La evidencia de este comportamiento son las suites Zephyr en `native_sim` y QEMU (`scheduler_run_control`, `scheduler_admission`). El nivel físico se observa con el emulador GPIO de `native_sim`; no se midió ninguna placa.
+
+## Estado seguro de una salida
+
+Una salida está **apagada** siempre que el programa no la controla: en STOP, en pausa o en un breakpoint, en un fault latcheado, desde el arranque hasta el primer scan y mientras un deploy está en curso. El nivel se decide en una sola función, `zplc_io_drive_safe`, y en ningún otro lugar (RT-023):
+
+1. El valor que **declara el programa cargado** para esa salida, cuando declara uno.
+2. Si no, **apagado**, salvo que la descripción de la placa (`firmware/app/boards/boards.json`) dé a ese canal otro nivel seguro, como puede hacerlo un relé activo en bajo.
+
+Un proyecto declara el valor en `zplc.json`, en una fila de `io.outputs`:
+
+```json
+{
+  "io": {
+    "outputs": [
+      { "name": "Brake", "address": "%QX0.0", "type": "BOOL", "safe": true },
+      { "name": "Valve", "address": "%QX0.1", "type": "BOOL" }
+    ]
+  }
+}
+```
+
+Aquí `Brake` está energizada siempre que el programa no la maneja, y `Valve` está apagada. La declaración viaja **dentro del artefacto**, en su segmento `SAFE`, de modo que un programa y su estado seguro son una sola unidad: un dispositivo que restaura el programa restaura su declaración, un programa reemplazado la reemplaza, y un deploy interrumpido no puede dejar el programa de una compilación con los valores seguros de otra (véase [Valores seguros declarados](isa.md#valores-seguros-declarados)).
+
+Qué se verifica, y dónde:
+
+| Dónde | Qué se rechaza |
+|---|---|
+| La compilación (Studio, la línea de comandos, MCP) | Un `safe` que no es `true` ni `false`; uno en una fila que no es un bit de salida digital (`%QW0`, `%QB0`); uno en una entrada o en una fila `virtual`; dos filas para una salida; una salida para la que la placa elegida no tiene un canal digital. El mensaje nombra la salida, la dirección y la placa, y no hay artefacto que desplegar. |
+| El loader | Un segmento que no son entradas completas, una entrada fuera de la imagen de salidas, un valor distinto de 0 o 1, una salida dos veces, o más de 64 entradas. |
+| El firmware, en el deploy y en la restauración de arranque | Una declaración para una salida que no es un canal de salida digital de la tabla de E/S de la placa (un proyecto de otra placa). El programa no se guarda ni se ejecuta. |
+
+Los valores declarados rigen desde la carga que confirma el programa, antes del primer scan, y la carga los lleva a los pines: un programa restaurado espera en STOP con sus salidas declaradas encendidas. Reemplazarlo por un programa que no declara nada devuelve los pines al nivel de la placa en esa carga. La imagen de proceso de salidas es el estado lógico del programa y se pone en cero en STOP, sea cual sea el valor que muestre el pin.
+
+Lo que esto no afirma: el tiempo entre el encendido y el instante en que el firmware maneja los pines es el estado de reset del componente, y una placa que necesita un pin en uno ahí necesita hardware que lo haga (véase [Placas](../reference/boards.md)); la confirmación de deploy que muestra a una persona los valores declarados antes de escribirlos en un dispositivo es una pantalla de Studio y no forma parte de esta página.
+
+## Runtime a prueba de fallas: faults, causa de reset y watchdog
+
+Son los requisitos RT-019 a RT-022. Las decisiones que no dependen de una plataforma están en `zplc_failsafe` y se prueban en el host; lo que hace la plataforma (el registro de causa de reset, un registro en una RAM que un reset no borra, el reinicio, el watchdog) es `zplc_failsafe_zephyr.c`.
+
+### Un fault del procesador (RT-019)
+
+Un fault del procesador, un desbordamiento de stack, una aserción o un kernel panic no deja las salidas donde las dejó el último scan. El manejador de error fatal del firmware (`CONFIG_ZPLC_FATAL_HANDLER`, activado por defecto) no toma ningún lock ni reserva memoria: lleva cada salida digital a su nivel seguro, guarda la causa en un registro de 24 bytes en una RAM que un reset no borra (un magic, una versión, el tipo, la causa del kernel, la tarea, el contador de programa, un número de secuencia y un CRC-32) y reinicia. El arranque siguiente encuentra el registro, lo informa y lo consume, de modo que el reset que sigue no se llama fault. Un registro que no está completo o no es nuestro no es nada.
+
+### Por qué se reinició el runtime (RT-021)
+
+`zplc sys reset` (y `--json`) informa la causa del último reset: `power_on`, `brown_out`, `pin`, `software`, `watchdog`, `fault` o `unknown` (un componente que no informa ninguna), el registro crudo, el registro de fault de la ejecución anterior y la política de arranque. Cuando un procesador informa varios bits el orden es fijo: un registro de fault de la ejecución anterior, luego encendido, brown-out, watchdog, lock-up, software y, al final, el pin, porque casi todo reset lo activa. `zplc sys info --json` conserva exactamente sus claves; la causa es también la clave `reset_cause` de `zplc sched status --json`.
+
+### Tras un reset el runtime espera en STOP (RT-022)
+
+Sea cual sea la causa, el programa guardado se restaura en STOP con las salidas en sus valores seguros, y **RUN es un comando de una persona**. El runtime nunca entra en RUN por sí solo a causa de un reset (la función `zplc_reset_may_run` vale 0 para toda causa; volver a ejecutar tras un encendido limpio de un dispositivo que una persona habilitó antes es una decisión del responsable del proyecto, D-13, y no se toma aquí). Las variables retentivas se restauran sólo cuando `CONFIG_ZPLC_RETAIN_PERSIST` está activado, y por defecto no lo está. Un deploy detiene el programa en ejecución antes de transferir un solo byte, de modo que una transferencia nunca corre junto a un programa que estaba en RUN.
+
+### El watchdog de hardware (RT-020)
+
+El perfil de cada placa (`watchdog` en `boards.json`) dice si su watchdog de hardware está habilitado, el timeout con el que se registró su tiempo de reset, el timeout más largo que acepta el componente y qué hace el watchdog en STOP, en pausa y en un fault latcheado. **Ninguna placa lo tiene habilitado**: las opciones están desactivadas hasta que una placa y revisión exactas tengan un registro de hardware del tiempo de reset y de los pines mientras se reinicia (HIL-010). Cuando está habilitado:
+
+- Se alimenta desde la finalización de un scan, nunca desde un timer, una interrupción, el shell o el hilo ocioso. Un scan que se detiene corta la alimentación y el watchdog reinicia la placa.
+- Su timeout es el del perfil, alargado cuando el conjunto de tareas lo necesita: más de dos intervalos de la tarea más lenta, hasta el máximo que acepta el componente. Un conjunto de tareas que no cabe se rechaza al iniciarlo.
+- La política por defecto es **desarmado en STOP**, **alimentado desde la ruta de control en pausa** (para que un breakpoint largo no reinicie la placa) y **dejado expirar en un fault latcheado**: la placa se reinicia en STOP con la causa registrada, y el registro del fault sobrevive al reset. Un componente cuyo watchdog no se puede detener se perfila para alimentarse en STOP.
+
+### Evidencia y lo que no se muestra
+
+Las decisiones se prueban en el host (`test_failsafe`, `test_sched_core`) y los comportamientos en el emulador Zephyr y QEMU: `failsafe` (el manejador, el registro, el reinicio interceptado), `failsafe_reboot` (un fault real de instrucción indefinida y un reinicio real en `qemu_cortex_m3`: el registro sobrevive al reset con el motivo del kernel dentro, y la causa es `fault`), `scheduler_watchdog` (la alimentación, el timeout, la política y una expiración modelada), `program_boot_restore` y `scheduler_admission`. No se muestra, y queda registrado como pendiente de un registro de hardware: el tiempo que tarda un componente real en reiniciarse, el nivel de un pin mientras se reinicia, que la RAM de un componente dado sobreviva a su reset por watchdog y el watchdog de cualquier placa. Nada de esto es una calificación de placa.
 
 ## Diagnósticos y evidencia
 

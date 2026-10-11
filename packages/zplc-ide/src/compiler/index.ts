@@ -83,6 +83,7 @@ import type {
 } from '../types/index.ts';
 import { getCompilerMemoryProfile } from '../config/boardProfiles.ts';
 import { checkLocatedVariables, locatedVariablesOf } from '../boards/ioAdmission.ts';
+import { checkedSafeOutputs, type DeclaredSafeOutput, type DeclaredSafeOutputs } from '../boards/safeOutputs.ts';
 import { normalizeAddress } from '../boards/boardIoMapping.ts';
 import { annotateDebugMapElements } from './debugElements.ts';
 import {
@@ -203,6 +204,8 @@ export interface MultiTaskCompilationResult {
     }[];
     /** Merged debug map for all programs (always present) */
     debugMap: DebugMap;
+    /** The safe values of the outputs (RT-023): as the artifact holds them, and as a deploy confirmation shows them. */
+    safe: DeclaredSafeOutputs['entries']; declaredSafe: DeclaredSafeOutput[];
 }
 
 /**
@@ -687,6 +690,7 @@ export function compileMultiTaskProject(
         coreSources.push({ name: source.sourceRef ?? source.name, content: source.content, sourceRef: source.sourceRef });
     }
 
+    const safeDeclared = checkedSafeOutputs(config.io, config.target?.board); // a build error when the board lacks one
     const options = buildOptionsOf(config);
     const coreConfig: CoreProjectConfig = {
         name: config.name,
@@ -706,6 +710,7 @@ export function compileMultiTaskProject(
             strictTypes: options.strictTypes,
             debug: options.debug,
             reportWarnings: options.reportWarnings,
+            safeOutputs: safeDeclared.entries,
         });
         // IO-003: a variable located where the board has no channel is a build error that names the board
         const unmapped = checkLocatedVariables(
@@ -721,7 +726,7 @@ export function compileMultiTaskProject(
         annotateDebugMapElements(result.debugMap, translated);
         // a graphical source has no lines: its warnings would point into the generated Structured Text
         const found = result.warnings.filter((warning) => !warning.sourceRef || !visualSourceRefs.has(warning.sourceRef));
-        return { ...result, warnings: selectWarnings([...optionWarnings(options), ...found], options.reportWarnings) };
+        return { ...result, warnings: selectWarnings([...optionWarnings(options), ...found], options.reportWarnings), declaredSafe: safeDeclared.declared };
     } catch (error) {
         if (error instanceof CompilerError) {
             const relocated = error.errors.map((each) => relocateToSource(each, translated, visualSourceRefs));

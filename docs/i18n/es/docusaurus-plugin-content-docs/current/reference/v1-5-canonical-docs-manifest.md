@@ -59,6 +59,7 @@ agregue una página.
 | reference/cli | docs/docs/reference/cli.md | docs/i18n/es/docusaurus-plugin-content-docs/current/reference/cli.md | reference | yes | docs | generated |
 | reference/mcp | docs/docs/reference/mcp.md | docs/i18n/es/docusaurus-plugin-content-docs/current/reference/mcp.md | reference | yes | docs | generated |
 | reference/runtime-protocol | docs/docs/reference/runtime-protocol.md | docs/i18n/es/docusaurus-plugin-content-docs/current/reference/runtime-protocol.md | reference | yes | docs | generated |
+| reference/device-protocol | docs/docs/reference/device-protocol.md | docs/i18n/es/docusaurus-plugin-content-docs/current/reference/device-protocol.md | reference | yes | docs | generated |
 | reference/zephyr-workspace-setup | docs/docs/reference/zephyr-workspace-setup.md | docs/i18n/es/docusaurus-plugin-content-docs/current/reference/zephyr-workspace-setup.md | zephyr-setup | yes | docs | in-progress |
 | operations/index | docs/docs/operations/index.md | docs/i18n/es/docusaurus-plugin-content-docs/current/operations/index.md | operations | yes | docs | in-progress |
 | operations/shell | docs/docs/operations/shell.md | docs/i18n/es/docusaurus-plugin-content-docs/current/operations/shell.md | operations | yes | docs | in-progress |

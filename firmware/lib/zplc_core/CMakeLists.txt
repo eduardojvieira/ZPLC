@@ -87,6 +87,14 @@ add_library(zplc_core STATIC
     src/core/zplc_retain.c
     src/core/zplc_program_store.c
     src/core/zplc_exchange.c
+    src/core/zplc_sched_core.c
+    src/core/zplc_single_task.c
+    src/core/zplc_failsafe.c
+    src/core/zplc_proto.c
+    src/core/zplc_proto_dev.c
+    src/core/zplc_sha256.c
+    src/core/zplc_sha512.c
+    src/core/zplc_ed25519.c
 )
 
 target_compile_definitions(zplc_core PUBLIC ZPLC_CORE_VERSION_STR="${ZPLC_CORE_VERSION_STR}")
@@ -117,10 +125,12 @@ add_executable(zplc_runtime
     ${CMAKE_CURRENT_SOURCE_DIR}/../../apps/posix_host/src/host_stdio.c
     ${CMAKE_CURRENT_SOURCE_DIR}/../../apps/posix_host/src/native_runtime_session.c
     ${CMAKE_CURRENT_SOURCE_DIR}/../../apps/posix_host/src/native_program_store.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../apps/posix_host/src/native_device_link.c
     src/hal/posix/zplc_hal_posix.c
 )
 
 target_include_directories(zplc_runtime PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../apps/posix_host/src
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${ZPLC_FW_IDENTITY_DIR}
 )
@@ -224,6 +234,34 @@ if(ZPLC_BUILD_FUZZER)
     if(UNIX AND NOT APPLE)
         target_link_libraries(fuzz_run_program PRIVATE rt)
     endif()
+
+    # COM-019, VF-014: the frame decoder of the device link protocol, on mutated frames and streams.
+    add_executable(fuzz_proto_frame
+        tests/fuzz_proto_frame.c
+        src/core/zplc_proto.c
+    )
+
+    target_include_directories(fuzz_proto_frame PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/include
+    )
+
+    target_compile_options(fuzz_proto_frame PRIVATE ${ZPLC_FUZZ_FLAGS})
+    target_link_options(fuzz_proto_frame PRIVATE ${ZPLC_FUZZ_FLAGS})
+
+    # COM-020, COM-021, VF-014: the device engine, over a port that counts the calls that change the device.
+    add_executable(fuzz_proto_link
+        tests/fuzz_proto_link.c
+        src/core/zplc_proto.c
+        src/core/zplc_proto_dev.c
+        src/core/zplc_sha256.c
+    )
+
+    target_include_directories(fuzz_proto_link PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/include
+    )
+
+    target_compile_options(fuzz_proto_link PRIVATE ${ZPLC_FUZZ_FLAGS})
+    target_link_options(fuzz_proto_link PRIVATE ${ZPLC_FUZZ_FLAGS})
 endif()
 
 enable_testing()
@@ -398,6 +436,129 @@ endif()
 
 add_test(NAME test_core_start COMMAND test_core_start)
 
+# Test: the portable scheduler core: admission, order, the phases of a scan, deadlines, the fault latch and the safe
+# state, through a fake port (RT-008, RT-014, RT-018). Also run under the sanitizers.
+add_executable(test_sched_core
+    tests/test_sched_core.c
+    src/core/zplc_sched_core.c
+    src/core/zplc_core.c
+    src/core/zplc_loader.c
+    src/core/zplc_comm_dispatch.c
+    src/hal/posix/zplc_hal_posix.c
+)
+
+target_include_directories(test_sched_core PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+)
+
+target_compile_definitions(test_sched_core PRIVATE
+    ZPLC_CORE_VERSION_STR="${ZPLC_CORE_VERSION_STR}"
+    ZPLC_CORE_TESTING
+)
+
+if(UNIX AND NOT APPLE)
+    target_link_libraries(test_sched_core PRIVATE rt)
+endif()
+
+add_test(NAME test_sched_core COMMAND test_sched_core)
+
+# Test: time is latched once per scan, and the instruction budget charges the bytes a string opcode processes
+# (RT-006). Also run under the sanitizers.
+add_executable(test_vm_scan
+    tests/test_vm_scan.c
+    src/core/zplc_core.c
+    src/core/zplc_loader.c
+    src/core/zplc_comm_dispatch.c
+    src/hal/posix/zplc_hal_posix.c
+)
+
+target_include_directories(test_vm_scan PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/tests/include
+)
+
+target_compile_definitions(test_vm_scan PRIVATE
+    ZPLC_CORE_VERSION_STR="${ZPLC_CORE_VERSION_STR}"
+    ZPLC_CORE_TESTING
+)
+
+if(UNIX AND NOT APPLE)
+    target_link_libraries(test_vm_scan PRIVATE rt)
+endif()
+
+add_test(NAME test_vm_scan COMMAND test_vm_scan)
+
+# Test: the fail-safe decisions: the reset cause, the record of a fault, the start policy and the watchdog policy
+# of a profile (RT-019 to RT-022). Also run under the sanitizers.
+add_executable(test_failsafe
+    tests/test_failsafe.c
+    src/hal/posix/zplc_hal_posix.c
+)
+
+target_include_directories(test_failsafe PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+)
+
+target_link_libraries(test_failsafe PRIVATE zplc_core)
+
+if(UNIX AND NOT APPLE)
+    target_link_libraries(test_failsafe PRIVATE rt)
+endif()
+
+add_test(NAME test_failsafe COMMAND test_failsafe)
+
+# Test: the single-task configuration runs on the scheduler core and decides like the multitask runtimes (RT-018).
+# Also run under the sanitizers.
+add_executable(test_single_task
+    tests/test_single_task.c
+    src/core/zplc_single_task.c
+    src/core/zplc_sched_core.c
+    src/core/zplc_exchange.c
+    src/core/zplc_core.c
+    src/core/zplc_loader.c
+    src/core/zplc_comm_dispatch.c
+    src/hal/posix/zplc_hal_posix.c
+)
+
+target_include_directories(test_single_task PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/tests/include
+)
+
+target_compile_definitions(test_single_task PRIVATE
+    ZPLC_CORE_VERSION_STR="${ZPLC_CORE_VERSION_STR}"
+    ZPLC_CORE_TESTING
+)
+
+if(UNIX AND NOT APPLE)
+    target_link_libraries(test_single_task PRIVATE rt)
+endif()
+
+add_test(NAME test_single_task COMMAND test_single_task)
+
+# Test: the safe value a project declares for an output decides the level of its pin (RT-023). It brings its own
+# board (an I/O table and a recording pin driver) and no HAL: the core's HAL needs are a mutex and a tick.
+# Also run under the sanitizers.
+add_executable(test_safe_state
+    tests/test_safe_state.c
+    src/core/zplc_sched_core.c
+    src/core/zplc_exchange.c
+    src/core/zplc_core.c
+    src/core/zplc_loader.c
+    src/core/zplc_comm_dispatch.c
+)
+
+target_include_directories(test_safe_state PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/tests/include
+)
+
+target_compile_definitions(test_safe_state PRIVATE
+    ZPLC_CORE_VERSION_STR="${ZPLC_CORE_VERSION_STR}"
+)
+
+add_test(NAME test_safe_state COMMAND test_safe_state)
+
 # Test: the exchange between the scan and the threads outside it: write queue, force-aware latch, published
 # snapshot, and a scanner with readers and writers on threads (RT-010, RT-011, RT-012). Also run under the sanitizers.
 add_executable(test_exchange
@@ -423,6 +584,83 @@ if(UNIX AND NOT APPLE)
 endif()
 
 add_test(NAME test_exchange COMMAND test_exchange)
+
+# Test: the codec of the device link protocol against the frames generated from tools/contract/protocol.json
+# (COM-019). Also run under the sanitizers.
+add_executable(test_proto_codec
+    tests/test_proto_codec.c
+    src/core/zplc_proto.c
+)
+
+target_include_directories(test_proto_codec PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/tests
+)
+
+add_test(NAME test_proto_codec COMMAND test_proto_codec)
+
+# Test: SHA-256 and HMAC-SHA-256 against FIPS 180-4, RFC 4231 and the codes of the generated frames (COM-021).
+# Also run under the sanitizers.
+add_executable(test_sha256
+    tests/test_sha256.c
+    src/core/zplc_sha256.c
+    src/core/zplc_proto.c
+)
+
+target_include_directories(test_sha256 PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/tests
+)
+
+add_test(NAME test_sha256 COMMAND test_sha256)
+
+# Test: the device side of the device link protocol: sessions, authenticated frames, atomic writes, events and
+# program transfer (COM-020, COM-021, COM-023, COM-025, COM-028). Also run under the sanitizers.
+add_executable(test_proto_session
+    tests/test_proto_session.c
+    src/core/zplc_proto.c
+    src/core/zplc_proto_dev.c
+    src/core/zplc_sha256.c
+    src/core/zplc_sha512.c
+    src/core/zplc_ed25519.c
+    src/core/zplc_exchange.c
+    src/core/zplc_core.c
+    src/core/zplc_loader.c
+    src/core/zplc_comm_dispatch.c
+    src/hal/posix/zplc_hal_posix.c
+)
+
+target_include_directories(test_proto_session PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/tests
+)
+
+target_compile_definitions(test_proto_session PRIVATE ZPLC_CORE_VERSION_STR="${ZPLC_CORE_VERSION_STR}")
+
+find_package(Threads REQUIRED)
+target_link_libraries(test_proto_session PRIVATE Threads::Threads)
+
+if(UNIX AND NOT APPLE)
+    target_link_libraries(test_proto_session PRIVATE rt)
+endif()
+
+add_test(NAME test_proto_session COMMAND test_proto_session)
+
+# Test: SHA-512 and Ed25519 verification against FIPS 180-4, RFC 8032 and the signatures of a Python reference,
+# valid and damaged (COM-026). Also run under the sanitizers.
+add_executable(test_ed25519
+    tests/test_ed25519.c
+    src/core/zplc_sha256.c
+    src/core/zplc_sha512.c
+    src/core/zplc_ed25519.c
+)
+
+target_include_directories(test_ed25519 PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/tests
+)
+
+add_test(NAME test_ed25519 COMMAND test_ed25519)
 
 # Test: the identity a firmware image or the runtime reports (REL-023)
 add_executable(test_fw_identity
@@ -536,6 +774,31 @@ if(UNIX AND NOT APPLE)
 endif()
 
 add_test(NAME test_native_runtime_session COMMAND test_native_runtime_session)
+
+# Test: the host session decides what the firmware decides: the same scenario and the same golden trace as
+# firmware/tests/scheduler_equivalence (RT-008). Also run under the sanitizers.
+add_executable(test_sched_equivalence
+    tests/test_sched_equivalence.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../apps/posix_host/src/native_runtime_session.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../apps/posix_host/src/native_program_store.c
+    src/core/zplc_core.c
+    src/hal/posix/zplc_hal_posix.c
+)
+
+target_include_directories(test_sched_equivalence PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${ZPLC_FW_IDENTITY_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../apps/posix_host/src
+    ${CMAKE_CURRENT_SOURCE_DIR}/tests/include
+)
+
+target_link_libraries(test_sched_equivalence PRIVATE zplc_core)
+
+if(UNIX AND NOT APPLE)
+    target_link_libraries(test_sched_equivalence PRIVATE rt)
+endif()
+
+add_test(NAME test_sched_equivalence COMMAND test_sched_equivalence)
 
 # Test: POSIX host stdio polling behavior
 add_executable(test_host_stdio

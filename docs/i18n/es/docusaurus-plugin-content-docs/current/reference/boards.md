@@ -63,10 +63,10 @@ Flash y RAM de `firmware/app` por placa, de la tabla de memoria del enlazador en
 
 | Board ID | Flash (KiB) | Flash budget (KiB) | RAM (KiB) | RAM budget (KiB) | Work (KiB) | RETAIN (KiB) | Code (KiB) |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| `rpi-pico-rp2040` | 151.5 | 159.2 | 199.9 | 210.0 | 8.0 | 4.0 | 24.0 |
-| `arduino-giga-r1-m7` | 199.1 | 209.2 | 287.7 | 302.2 | 8.0 | 4.0 | 44.0 |
+| `rpi-pico-rp2040` | 162.0 | 170.2 | 202.6 | 210.0 | 8.0 | 4.0 | 24.0 |
+| `arduino-giga-r1-m7` | 212.7 | 223.5 | 292.5 | 302.2 | 8.0 | 4.0 | 44.0 |
 | `esp32-s3-devkitc` | 981.8 | 1031.0 | 2374.2 | 2493.0 | 2.0 | 1.0 | 8.0 |
-| `stm32f746g-disco` | 282.8 | 297.0 | 230.2 | 241.8 | 8.0 | 4.0 | 16.0 |
+| `stm32f746g-disco` | 298.3 | 313.2 | 236.1 | 241.8 | 8.0 | 4.0 | 16.0 |
 | `nucleo-h743zi` | 414.3 | 435.0 | 478.0 | 502.0 | 8.0 | 4.0 | 44.0 |
 | `arduino-opta-wifi-m7` | 434.0 | 455.8 | 458.4 | 481.5 | 8.0 | 4.0 | 32.0 |
 | `waveshare-rp2040-zero` | 156.4 | 164.5 | 200.7 | 210.8 | 8.0 | 4.0 | 24.0 |
@@ -81,6 +81,7 @@ Flash y RAM de `firmware/app` por placa, de la tabla de memoria del enlazador en
 - **Variant:** `rp2040`
 - **Network:** Enfoque serial
 - **Nivel de soporte:** cross-build (sin registro de hardware)
+- **Watchdog de hardware:** apagado: sin registro de hardware (HIL-010), el perfil lo mantiene apagado hasta que el tiempo de reinicio y las salidas seguras se registren en esta placa con él encendido
 - **Comando de build:** `west build -b rpi_pico/rp2040 firmware/app --pristine`
 - **Ancla de referencia:** `docs/docs/reference/capabilities-evidence.md`
 - **Imagen de proceso usada (entrada, salida):** 18 B, 1 B
@@ -116,6 +117,7 @@ Flash y RAM de `firmware/app` por placa, de la tabla de memoria del enlazador en
 - **Variant:** `stm32h747xx/m7`
 - **Network:** Enfoque serial
 - **Nivel de soporte:** cross-build (sin registro de hardware)
+- **Watchdog de hardware:** apagado: sin registro de hardware (HIL-010), el perfil lo mantiene apagado hasta que el tiempo de reinicio y las salidas seguras se registren en esta placa con él encendido
 - **Comando de build:** `west build -b arduino_giga_r1/stm32h747xx/m7 firmware/app --pristine`
 - **Ancla de referencia:** `docs/docs/reference/capabilities-evidence.md`
 - **Imagen de proceso usada (entrada, salida):** 1 B, 1 B
@@ -141,6 +143,7 @@ Flash y RAM de `firmware/app` por placa, de la tabla de memoria del enlazador en
 - **Network:** Capacidad de red (Wi-Fi)
 - **Nivel de soporte:** cross-build (sin registro de hardware)
 - **Módulo:** ESP32-S3-WROOM-1-N8R8, 8 MB flash, 8 MB PSRAM (variante por confirmar en el módulo)
+- **Watchdog de hardware:** apagado: sin registro de hardware (HIL-010), el perfil lo mantiene apagado hasta que el tiempo de reinicio y las salidas seguras se registren en esta placa con él encendido
 - **Comando de build:** `west build -b esp32s3_devkitc/esp32s3/procpu firmware/app --pristine`
 - **Ancla de referencia:** `docs/docs/reference/capabilities-evidence.md`
 - **Imagen de proceso usada (entrada, salida):** 10 B, 1 B
@@ -175,6 +178,7 @@ Flash y RAM de `firmware/app` por placa, de la tabla de memoria del enlazador en
 - **Variant:** `stm32f746xx`
 - **Network:** Capacidad de red (Ethernet)
 - **Nivel de soporte:** cross-build (sin registro de hardware)
+- **Watchdog de hardware:** apagado: sin registro de hardware (HIL-010), el perfil lo mantiene apagado hasta que el tiempo de reinicio y las salidas seguras se registren en esta placa con él encendido
 - **Comando de build:** `west build -b stm32f746g_disco/stm32f746xx firmware/app --pristine`
 - **Ancla de referencia:** `docs/docs/reference/capabilities-evidence.md`
 - **Imagen de proceso usada (entrada, salida):** 1 B, 1 B
@@ -198,6 +202,7 @@ Flash y RAM de `firmware/app` por placa, de la tabla de memoria del enlazador en
 - **Variant:** `stm32h743xx`
 - **Network:** Capacidad de red (Ethernet)
 - **Nivel de soporte:** cross-build (sin registro de hardware)
+- **Watchdog de hardware:** apagado: sin registro de hardware (HIL-010), el perfil lo mantiene apagado hasta que el tiempo de reinicio y las salidas seguras se registren en esta placa con él encendido
 - **Comando de build:** `west build -b nucleo_h743zi/stm32h743xx firmware/app --pristine`
 - **Ancla de referencia:** `docs/docs/reference/capabilities-evidence.md`
 - **Imagen de proceso usada (entrada, salida):** 1 B, 1 B
@@ -222,6 +227,7 @@ Flash y RAM de `firmware/app` por placa, de la tabla de memoria del enlazador en
 - **Variant:** `stm32h747xx/m7`
 - **Network:** Capacidad de red (Wi-Fi)
 - **Nivel de soporte:** cross-build (sin registro de hardware)
+- **Watchdog de hardware:** apagado: sin registro de hardware (HIL-010), el perfil lo mantiene apagado hasta que el tiempo de reinicio y las salidas seguras se registren en esta placa con él encendido
 - **Comando de build:** `west build -b arduino_opta/stm32h747xx/m7 firmware/app --pristine`
 - **Ancla de referencia:** `docs/docs/reference/capabilities-evidence.md`
 - **Imagen de proceso usada (entrada, salida):** 1 B, 1 B
@@ -256,6 +262,7 @@ Flash y RAM de `firmware/app` por placa, de la tabla de memoria del enlazador en
 - **Variant:** `rp2040`
 - **Network:** Enfoque serial
 - **Nivel de soporte:** cross-build (sin registro de hardware)
+- **Watchdog de hardware:** apagado: sin registro de hardware (HIL-010), el perfil lo mantiene apagado hasta que el tiempo de reinicio y las salidas seguras se registren en esta placa con él encendido
 - **Comando de build:** `west build -b rp2040_zero/rp2040 firmware/app --pristine`
 - **Ancla de referencia:** `docs/docs/reference/capabilities-evidence.md`
 - **Imagen de proceso usada (entrada, salida):** 1 B, 1 B

@@ -507,6 +507,11 @@ BUILD_ASSERT(NVS_ID_PROGRAM_CHUNKS + 2U * ZPLC_PROGRAM_STORE_MAX_CHUNKS <= NVS_I
 BUILD_ASSERT(NVS_ID_CONFIG_BASE + 100U <= NVS_ID_AWS_CERT_PEM,
              "the device setting identifiers run into those of the AWS credentials");
 
+/** @brief The keys of the device link (COM-021, COM-026): the 32-byte key of the authenticated sessions, and the
+ *         Ed25519 public key that programs have to be signed with. They are provisioned over the serial link. */
+#define NVS_ID_LINK_KEY 642
+#define NVS_ID_LINK_SIGNING_KEY 643
+
 /** @brief NVS filesystem handle */
 static struct nvs_fs nvs_handle;
 
@@ -635,6 +640,10 @@ static uint16_t key_to_nvs_id(const char *key) {
     return NVS_ID_AWS_CERT_PEM;
   if (strcmp(key, "aws_key_pem") == 0)
     return NVS_ID_AWS_KEY_PEM;
+  if (strcmp(key, "link_key") == 0)
+    return NVS_ID_LINK_KEY;
+  if (strcmp(key, "link_signkey") == 0)
+    return NVS_ID_LINK_SIGNING_KEY;
   return program_chunk_id(key);
 }
 

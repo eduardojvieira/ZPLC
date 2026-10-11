@@ -9,7 +9,7 @@ tags: [reference, generated]
 
 {/* >>> GENERATED (tools/docs/generate_source_references.ts): reference/project-file. Do not edit. >>> */}
 
-Todos los campos del archivo de proyecto `zplc.json` que define el esquema `packages/zplc-ide/zplc.schema.json`, 156 en total. Un campo de una lista se escribe con `[]`: `tasks[].name` es el `name` de cada tarea. Un campo es obligatorio solo dentro de un objeto que está presente.
+Todos los campos del archivo de proyecto `zplc.json` que define el esquema `packages/zplc-ide/zplc.schema.json`, 159 en total. Un campo de una lista se escribe con `[]`: `tasks[].name` es el `name` de cada tarea. Un campo es obligatorio solo dentro de un objeto que está presente.
 
 Un archivo de proyecto debe tener `name`, `version`, `tasks`. El editor y las herramientas validan un archivo contra este esquema antes de usarlo.
 
@@ -38,18 +38,21 @@ Esta tabla se lee del archivo fuente `packages/zplc-ide/zplc.schema.json`; su te
 | `io.inputs[].address` | `string` | sí |   | IEC 61131-3 address (e.g., %I0.0, %Q0.1, %MW0) |
 | `io.inputs[].type` | `string: "BOOL" \| "BYTE" \| "WORD" \| "DWORD"` |   | `"BOOL"` | Data type |
 | `io.inputs[].pin` | `integer (>= 0)` |   |   | GPIO pin number (hardware-specific) |
+| `io.inputs[].safe` | `boolean` |   |   | Digital outputs only: the value the output takes whenever the program does not control it (STOP, a pause, a latched fault, the boot, a deploy in progress). Absent is off, unless the board description says otherwise. The build refuses a value for an output the selected board does not have, and the value travels in the artifact with the program. |
 | `io.inputs[].description` | `string` |   |   | Optional description |
 | `io.outputs` | `array of object` |   |   | Digital output definitions |
 | `io.outputs[].name` | `string (length >= 1)` | sí |   | Variable name |
 | `io.outputs[].address` | `string` | sí |   | IEC 61131-3 address (e.g., %I0.0, %Q0.1, %MW0) |
 | `io.outputs[].type` | `string: "BOOL" \| "BYTE" \| "WORD" \| "DWORD"` |   | `"BOOL"` | Data type |
 | `io.outputs[].pin` | `integer (>= 0)` |   |   | GPIO pin number (hardware-specific) |
+| `io.outputs[].safe` | `boolean` |   |   | Digital outputs only: the value the output takes whenever the program does not control it (STOP, a pause, a latched fault, the boot, a deploy in progress). Absent is off, unless the board description says otherwise. The build refuses a value for an output the selected board does not have, and the value travels in the artifact with the program. |
 | `io.outputs[].description` | `string` |   |   | Optional description |
 | `io.virtual` | `array of object` |   |   | Words or bits of the process image that no pin of the board drives, read in the debugger or by a test. A variable located where the selected board has no channel is a build error that names the board unless its address is listed here. |
 | `io.virtual[].name` | `string (length >= 1)` | sí |   | Variable name |
 | `io.virtual[].address` | `string` | sí |   | IEC 61131-3 address (e.g., %I0.0, %Q0.1, %MW0) |
 | `io.virtual[].type` | `string: "BOOL" \| "BYTE" \| "WORD" \| "DWORD"` |   | `"BOOL"` | Data type |
 | `io.virtual[].pin` | `integer (>= 0)` |   |   | GPIO pin number (hardware-specific) |
+| `io.virtual[].safe` | `boolean` |   |   | Digital outputs only: the value the output takes whenever the program does not control it (STOP, a pause, a latched fault, the boot, a deploy in progress). Absent is off, unless the board description says otherwise. The build refuses a value for an output the selected board does not have, and the value travels in the artifact with the program. |
 | `io.virtual[].description` | `string` |   |   | Optional description |
 | `io.analog` | `object` |   |   | Analog I/O configuration |
 | `io.analog.adc` | `array of object` |   |   | ADC channel definitions |

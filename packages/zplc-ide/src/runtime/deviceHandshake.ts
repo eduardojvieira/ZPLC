@@ -20,6 +20,11 @@ const OPTIONAL_ROOT_KEYS = ['draft_counter', 'io'] as const;
 const REQUIRED_IO_KEYS = ['schema', 'board_id', 'hash', 'channels', 'input_bytes', 'output_bytes'] as const;
 const REQUIRED_CAPABILITY_KEYS = ['fpu', 'mpu', 'scheduler', 'max_tasks'] as const;
 const REQUIRED_MEMORY_KEYS = ['work_size', 'retain_size', 'ipi_size', 'opi_size'] as const;
+/**
+ * The program memory a firmware reports from RT-028 on: the size of the CODE region and the largest artifact the
+ * program store accepts. An image before it does not have them; Studio then has no capacity to check a size against.
+ */
+const OPTIONAL_MEMORY_KEYS = ['code_size', 'max_artifact_size'] as const;
 
 export const DEVICE_ADMISSION_CODE = {
   HANDSHAKE_INVALID: 'ZPLC_DEVICE_HANDSHAKE_INVALID',
@@ -33,6 +38,7 @@ export const DEVICE_ADMISSION_CODE = {
   BOARD_PROFILE_MISMATCH: 'ZPLC_DEVICE_BOARD_PROFILE_MISMATCH',
   ARTIFACT_INVALID: 'ZPLC_DEVICE_ARTIFACT_INVALID',
   BYTECODE_ABI_MISMATCH: 'ZPLC_DEVICE_BYTECODE_ABI_MISMATCH',
+  ARTIFACT_TOO_LARGE: 'ZPLC_DEVICE_ARTIFACT_TOO_LARGE',
   PREFLIGHT_STALE: 'ZPLC_DEVICE_PREFLIGHT_STALE',
   RESULT_UNKNOWN: 'ZPLC_DEVICE_RESULT_UNKNOWN',
 } as const;
@@ -62,6 +68,8 @@ export interface DeviceHandshake {
   readonly draftCounter: number | null;
   /** Identity of the board I/O description of the image (IO-004); null when the image does not report one. */
   readonly io: DeviceIoIdentity | null;
+  /** The largest artifact the device accepts, in bytes; null when the image does not report it (before RT-028). */
+  readonly maxArtifactBytes: number | null;
 }
 
 export interface DeviceSystemInfo {
@@ -77,7 +85,10 @@ export interface DeviceSystemInfo {
   draft_counter?: number;
   io?: { schema: number; board_id: string; hash: string; channels: number; input_bytes: number; output_bytes: number };
   capabilities: { fpu: boolean; mpu: boolean; scheduler: boolean; max_tasks: number };
-  memory: { work_size: number; retain_size: number; ipi_size: number; opi_size: number };
+  memory: {
+    work_size: number; retain_size: number; ipi_size: number; opi_size: number;
+    code_size?: number; max_artifact_size?: number;
+  };
 }
 
 function fail(code: DeviceAdmissionCode, detail?: string): never {
@@ -132,12 +143,13 @@ function parseDeviceSystemInfoSnapshot(value: unknown): DeviceSystemInfo | null 
   if (!root || !exactKeys(root, REQUIRED_ROOT_KEYS, OPTIONAL_ROOT_KEYS)) return null;
   const capabilities = snapshotRecord(root.capabilities);
   const memory = snapshotRecord(root.memory);
-  if (!capabilities || !memory || !exactKeys(capabilities, REQUIRED_CAPABILITY_KEYS) || !exactKeys(memory, REQUIRED_MEMORY_KEYS)) return null;
+  if (!capabilities || !memory || !exactKeys(capabilities, REQUIRED_CAPABILITY_KEYS) || !exactKeys(memory, REQUIRED_MEMORY_KEYS, OPTIONAL_MEMORY_KEYS)) return null;
   const io = Object.hasOwn(root, 'io') ? parseDeviceIo(root.io) : undefined;
   if (io === null) return null;
   if (!(typeof capabilities.fpu === 'boolean' && typeof capabilities.mpu === 'boolean' && typeof capabilities.scheduler === 'boolean'
     && readInteger(capabilities.max_tasks, 1024) !== null
     && REQUIRED_MEMORY_KEYS.every((key) => readInteger(memory[key], 0xffffffff) !== null)
+    && OPTIONAL_MEMORY_KEYS.every((key) => !Object.hasOwn(memory, key) || readInteger(memory[key], 0xffffffff) !== null)
     && readText(root.board) !== null && readText(root.board_profile) !== null
     && readText(root.zplc_version) !== null && readText(root.zephyr_version) !== null
     && readInteger(root.uptime_ms, 0xffffffff) !== null && readInteger(root.cpu_freq_mhz, 1_000_000) !== null
@@ -153,7 +165,12 @@ function parseDeviceSystemInfoSnapshot(value: unknown): DeviceSystemInfo | null 
     ...(Object.hasOwn(root, 'draft_counter') ? { draft_counter: root.draft_counter as number } : {}),
     ...(io ? { io } : {}),
     capabilities: { fpu: capabilities.fpu, mpu: capabilities.mpu, scheduler: capabilities.scheduler, max_tasks: capabilities.max_tasks as number },
-    memory: { work_size: memory.work_size as number, retain_size: memory.retain_size as number, ipi_size: memory.ipi_size as number, opi_size: memory.opi_size as number },
+    memory: {
+      work_size: memory.work_size as number, retain_size: memory.retain_size as number,
+      ipi_size: memory.ipi_size as number, opi_size: memory.opi_size as number,
+      ...(Object.hasOwn(memory, 'code_size') ? { code_size: memory.code_size as number } : {}),
+      ...(Object.hasOwn(memory, 'max_artifact_size') ? { max_artifact_size: memory.max_artifact_size as number } : {}),
+    },
   };
 }
 
@@ -167,6 +184,7 @@ export function parseDeviceHandshake(value: unknown): DeviceHandshake {
     bytecodeAbiMajor: info.bytecode_abi_major,
     bytecodeAbiMinor: info.bytecode_abi_minor,
     draftCounter: info.draft_counter ?? null,
+    maxArtifactBytes: info.memory.max_artifact_size ?? null,
     io: info.io
       ? { schema: info.io.schema, boardId: info.io.board_id, hash: info.io.hash, channels: info.io.channels, inputBytes: info.io.input_bytes, outputBytes: info.io.output_bytes }
       : null,
@@ -223,6 +241,11 @@ export function validateHardwareDeployAdmission(
   }
   if (handshake.draftCounter !== artifact.draftCounter) {
     fail(DEVICE_ADMISSION_CODE.BYTECODE_ABI_MISMATCH, draftMismatchMessage(artifact.draftCounter, handshake.draftCounter));
+  }
+  // COM-028: the size is part of the preflight, against what this device says it accepts
+  if (handshake.maxArtifactBytes !== null && bytes.byteLength > handshake.maxArtifactBytes) {
+    fail(DEVICE_ADMISSION_CODE.ARTIFACT_TOO_LARGE,
+      `The program is ${bytes.byteLength} bytes and this device accepts at most ${handshake.maxArtifactBytes}.`);
   }
   if (artifact.major !== ZPLC_CONSTANTS.VERSION_MAJOR || artifact.minor !== ZPLC_CONSTANTS.VERSION_MINOR
     || handshake.bytecodeAbiMajor !== ZPLC_CONSTANTS.VERSION_MAJOR || handshake.bytecodeAbiMinor !== ZPLC_CONSTANTS.VERSION_MINOR

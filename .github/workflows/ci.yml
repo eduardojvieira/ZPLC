@@ -334,6 +334,13 @@ jobs:
           ZPLC_FW_WS: ${{ github.workspace }}
         run: python3 zplc/firmware/tests/app_shell_identity/test_app_shell_identity.py
 
+      # COM-019 to COM-028: the framed device link on the firmware application, on a real shell: the session rule,
+      # an atomic write, forces that end with their session, a download read back, events and a damaged frame.
+      - name: Check the framed device link of the application
+        env:
+          ZPLC_FW_WS: ${{ github.workspace }}
+        run: python3 zplc/firmware/tests/app_device_link/test_app_device_link.py
+
   zephyr-cross-build:
     name: Zephyr cross-build (${{ matrix.id }})
     runs-on: ubuntu-latest
