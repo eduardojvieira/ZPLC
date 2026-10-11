@@ -129,6 +129,26 @@ placed in a program, built, loaded into the virtual machine and scanned.
   `CONCAT`, the conversions...) are not offered yet: a diagram cannot call them, and the build refuses them by name.
 - **SFC** offers the step, the initial step and the transition.
 
+## What is drawn again when a value changes
+
+A watched value is read ten times a second while a program runs. Studio draws again only what shows it (IDE-013): the Watch
+table, and the editor of the file that has the variable in it. The Explorer, the toolbar, the settings and the tab bar do not
+subscribe to the readings, and a reading that is the value it was publishes nothing. A component that needs five of 200
+watched values is drawn again when one of those five changes, not when another does.
+
+`bun tools/ci/ide-structure.ts` (run by `bun run lint:ide`) fails a component or hook outside `src/store/` that subscribes to
+the whole store, or to its `debug` slice: each region of the window names the fields it shows
+(`src/store/regionSubscriptions.ts`).
+
+Measured on the store with 200 watched values read 100 times and 50 keystrokes in a 2,000-line file: before, each of the
+Explorer, the toolbar, the Console, the editor area and the settings was drawn again 150 times and each reader of
+watched values 100 times; now the regions that show neither are drawn 0 times, the tab bar and the editor 50 times (once for
+each keystroke), and a reader of five values 10 times, for the 10 readings that changed them.
+
+Evidence level: host, at the level of the store and its selectors (`src/store/regionSubscriptions.test.ts`). This
+repository has no DOM test environment, so the draws themselves of React are not counted; the Console still renders on each
+keystroke, because the Problems tab shows what typing clears and its checks compare the run counter of the build.
+
 ## Compile path
 
 Visual models are validated and transpiled before canonical compilation. Shared

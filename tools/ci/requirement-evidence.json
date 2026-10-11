@@ -1414,6 +1414,10 @@
     {"kind":"unit","ref":"packages/zplc-ide/electron/toolWorkerHost.test.ts","test":"the worker command schema (IDE-012, IDE-017)"},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"35 A long test run can be cancelled and leaves no process behind"}
   ],
+  "IDE-013": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/store/regionSubscriptions.test.ts","test":"regions render for what they show (IDE-013)"},
+    {"kind":"unit","ref":"tools/ci/ide-structure.test.ts","test":"a component must not subscribe to the whole store (IDE-013)"}
+  ],
   "IDE-014": [
     {"kind":"unit","ref":"tools/ci/ide-structure.test.ts","test":"module size stopgap (IDE-014): listed modules may stay above the limit until they are split","partial":true}
   ],

@@ -36,6 +36,8 @@ import { DiffEditor, type Monaco } from './monacoRuntime';
 import { shownProjectBridge } from '../ipc/shownProjectBridge';
 import { trackTestRun } from './workspaceTestNotifications';
 import { useIDEStore } from '../store/useIDEStore';
+import { useConsoleState } from '../store/regionSubscriptions';
+import { isCandidateSTPath, sha256Text } from './candidateSources';
 import type { ConsoleEntry, ConsoleTab } from '../types';
 import { TerminalTab } from './TerminalTab';
 import { WatchTab } from './WatchTab';
@@ -67,16 +69,6 @@ type CandidateReviewSnapshot = { origin: 'manual' | 'agent'; projectSession: num
 type CandidateReviewState = { kind: 'idle' | 'matches-disk' | 'running' | 'cancelling' | 'saving' | 'stale' | 'error' | 'saved' } | { kind: 'result'; snapshot: CandidateReviewSnapshot; presentation: CandidateChangeSetReviewPresentation };
 type AgentEditIdentity = { projectSession: number; compilerRunId: number; workspaceId: string; fileId: string; path: string; content: string; handle: FileSystemFileHandle; baselineSha256: string };
 type AgentState = 'idle' | 'loading' | 'sending' | 'cancelling' | 'unavailable' | 'error' | { kind: 'response'; presentation: AiProviderResponsePresentation; expectedEdit?: AgentEditIdentity };
-
-async function sha256Text(value: string): Promise<string> {
-  const bytes = new TextEncoder().encode(value);
-  const digest = await crypto.subtle.digest('SHA-256', bytes);
-  return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, '0')).join('');
-}
-
-function isCandidateSTPath(path: string): boolean {
-  return path.length <= 512 && /^src\/[^/\\\0\r\n]+\.st$/.test(path);
-}
 
 interface ConsoleProps {
   debugController?: DebugController;
@@ -120,7 +112,7 @@ export function Console({ debugController }: ConsoleProps) {
     saveProjectConfig,
     saveFile,
     updateFileContent,
-  } = useIDEStore();
+  } = useConsoleState();
   const { effectiveTheme } = useTheme();
   const projectBlocks = useProjectBlocks();
   const [workspaceTestBusy, setWorkspaceTestBusy] = useState(false);

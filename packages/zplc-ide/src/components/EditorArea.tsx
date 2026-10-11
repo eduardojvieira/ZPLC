@@ -8,6 +8,7 @@
 import { lazy, Suspense, useMemo, useCallback, useEffect, useRef, useState, type KeyboardEvent } from 'react';
 import { X, FileCode, File, Settings, Undo2, Redo2 } from 'lucide-react';
 import { useIDEStore } from '../store/useIDEStore';
+import { useEditorAreaState, useOpenFiles } from '../store/regionSubscriptions';
 import { PLC_LANGUAGES, type PLCLanguage } from '../types';
 import { serializeFBDModel, type FBDModel } from '../models/fbd';
 import { serializeLDModel, type LDModel } from '../models/ld';
@@ -87,7 +88,9 @@ export function EditorArea() {
     getActiveFile,
     getFile,
     projectSession,
-  } = useIDEStore();
+  } = useEditorAreaState();
+  // the files of the open tabs: this region shows them, so it renders again when one of them changes; a watched value does not
+  useOpenFiles();
 
   const [unsavedTabId, setUnsavedTabId] = useState<string | null>(null);
   const [savingTab, setSavingTab] = useState(false);

@@ -139,6 +139,28 @@ pruebas: se coloca en un programa, se compila, se carga en la máquina virtual y
   rechaza por su nombre.
 - **SFC** ofrece el paso, el paso inicial y la transición.
 
+## Qué se vuelve a dibujar cuando cambia un valor
+
+Un valor observado se lee diez veces por segundo mientras corre un programa. Studio vuelve a dibujar solo lo que lo muestra
+(IDE-013): la tabla Watch y el editor del archivo que tiene la variable. El Explorador, la barra de herramientas, los ajustes
+y la barra de pestañas no se suscriben a las lecturas, y una lectura que vale lo mismo que antes no publica nada. Un
+componente que necesita cinco de 200 valores observados se vuelve a dibujar cuando cambia uno de esos cinco, no cuando
+cambia otro.
+
+`bun tools/ci/ide-structure.ts` (lo ejecuta `bun run lint:ide`) falla si un componente o hook fuera de `src/store/` se suscribe
+a todo el store o a su porción `debug`: cada región de la ventana nombra los campos que muestra
+(`src/store/regionSubscriptions.ts`).
+
+Medido sobre el store con 200 valores observados leídos 100 veces y 50 pulsaciones en un archivo de 2.000 líneas: antes, cada
+uno de Explorador, barra de herramientas, Consola, área del editor y ajustes se dibujaba 150 veces y cada lector de valores
+observados 100 veces; ahora las regiones que no muestran ninguno de los dos se dibujan 0 veces, la barra de pestañas y el
+editor 50 veces (una por pulsación), y un lector de cinco valores 10 veces, por las 10 lecturas que los cambiaron.
+
+Nivel de evidencia: host, al nivel del store y de sus selectores (`src/store/regionSubscriptions.test.ts`). Este repositorio
+no tiene un entorno de pruebas con DOM, así que no se cuentan los dibujos de React; la Consola sigue dibujándose en cada
+pulsación, porque la pestaña Problemas muestra lo que escribir borra y sus comprobaciones comparan el contador de la
+compilación.
+
 ## Ruta de compilación
 
 Los modelos visuales se validan y se transpilan antes de la compilación

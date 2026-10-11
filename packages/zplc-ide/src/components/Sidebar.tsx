@@ -25,6 +25,7 @@ import {
 } from 'lucide-react';
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { useIDEStore } from '../store/useIDEStore';
+import { useSidebarState } from '../store/regionSubscriptions';
 import { PLC_LANGUAGES, type PLCLanguage, type FileTreeNode } from '../types';
 import { Modal } from './Modal';
 import { MigrationPreviewDialog } from './MigrationPreviewDialog';
@@ -337,7 +338,7 @@ export function Sidebar() {
     openFile,
     deleteFile,
     refreshFileTree,
-  } = useIDEStore();
+  } = useSidebarState();
 
   // The library folders and the files no build reads, marked in the tree (IDE-023).
   const projectConfig = useIDEStore((state) => state.projectConfig);
