@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it } from 'bun:test';
+import { afterEach, beforeEach, describe, expect, it } from 'bun:test';
 
 import { builtWasmModule, itWasm } from '../cli/wasmModuleGuard';
 import { connectSimulationAdapter } from './simulationAdapterFactory';
@@ -28,8 +28,14 @@ const nativeHello = {
   capability_profile: { profile_id: 'native-posix-mvp', features: [{ name: 'pause', status: 'supported' }] },
 };
 
+// the tests of other files share this process: what they found there is put back
+let previous: { present: boolean; value: unknown };
+beforeEach(() => {
+  previous = { present: 'window' in globalThis, value: (globalThis as { window?: unknown }).window };
+});
 afterEach(() => {
-  delete (globalThis as { window?: unknown }).window;
+  if (previous.present) (globalThis as { window?: unknown }).window = previous.value;
+  else delete (globalThis as { window?: unknown }).window;
 });
 
 describe('the runtime a simulation runs on (IDE-025)', () => {
