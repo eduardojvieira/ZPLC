@@ -40,8 +40,15 @@ The root `package.json` is the only source of the product version (`VERSIONING.m
 1. `bun run release:rehearsal` runs the checks of the release workflow that need no runner: the versions, the
    changelog, the bill of materials, the tests of the release scripts and of the integrity bundle, the pins of the
    workflow actions, the repository hygiene and release-evidence validators, and the contract check.
-2. Push the branch. CI (`.github/workflows/ci.yml`) must be green on the exact commit that will be tagged. The
-   release workflow runs it again for the tagged SHA before it builds anything.
+2. Electron (IDE-028): open <https://releases.electronjs.org/schedule> and the `electron` dist-tags on npm, update
+   `tools/ci/electron-support.json` (the supported majors, their end of support and the latest patch of each), and
+   run `bun tools/ci/electron-support.ts --release`. It fails while the dependency of Studio is outside the supported
+   majors or is not the latest patch of its line; change `packages/zplc-ide/package.json` and the lockfile, rebuild,
+   and run the checks again. The check of the major line alone runs in every pull request.
+3. Push the branch. CI (`.github/workflows/ci.yml`) must be green on the exact commit that will be tagged. The
+   release workflow runs it again for the tagged SHA before it builds anything. The macOS and Windows unit tests
+   and journeys run nightly (`.github/workflows/nightly-quality.yml`): read the last run of that workflow for the
+   commit before tagging.
 
 ### 3. Rehearse
 
