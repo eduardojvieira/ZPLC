@@ -63,6 +63,16 @@ describe('docs structure: the sidebar is organised by reader intent (DOC-002)', 
     }
   });
 
+  it('hides nothing without saying why: a draft page carries its reason in its front matter', () => {
+    for (const base of [EN_DIR, ES_DIR]) {
+      for (const file of markdownFiles(ROOT, base)) {
+        const front = /^---\n([\s\S]*?)\n---/.exec(text(file))?.[1] ?? '';
+        if (!/^draft:\s*true\s*$/m.test(front)) continue;
+        expect({ file, reason: /^draft_reason:\s*\S.{40,}/m.test(front) }).toEqual({ file, reason: true });
+      }
+    }
+  });
+
   it('has a Spanish label for every category, through the translation file of the site', async () => {
     const translations = JSON.parse(text('docs/i18n/es/docusaurus-plugin-content-docs/current.json')) as Record<string, { message: string }>;
     for (const label of labels(await sidebar())) {
@@ -163,10 +173,12 @@ describe('docs site: admonitions in the generator\'s own syntax and no version s
     }
   });
 
-  it('shows no version dropdown while one version is published', () => {
+  it('shows no version dropdown while one version is published, and the first snapshot brings it back', () => {
+    // the site has the current docs and one version per entry of versions.json: a selector needs two to choose from
     const versions = JSON.parse(text('docs/versions.json')) as string[];
     const config = text('docs/docusaurus.config.js');
-    if (versions.length < 2) expect(config).not.toContain("'docsVersionDropdown'");
+    if (versions.length === 0) expect(config).not.toContain("'docsVersionDropdown'");
+    else expect(config).toContain("'docsVersionDropdown'");
   });
 });
 

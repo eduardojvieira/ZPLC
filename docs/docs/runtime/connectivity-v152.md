@@ -1,5 +1,6 @@
 ---
 draft: true
+draft_reason: "A planning snapshot of March 2026, not a description of the product: its status column (In Progress, Partial) is a point in time, it names Kconfig symbols (ZPLC_MODBUS_RTU_CLIENT, ZPLC_MODBUS_TCP_CLIENT) that do not exist, and the communication handshake and block set it plans were rewritten since. The published pages are the how-to guides (Modbus, MQTT and Sparkplug B, cloud blocks), the connectivity page, the communication function blocks page and the generated Kconfig and function-block references."
 ---
 
 # Connectivity v1_5_2 — Implementation Spec

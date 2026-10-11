@@ -1,30 +1,32 @@
 ---
-draft: true
+title: HAL ports
+sidebar_label: HAL ports
+description: "What the Zephyr, POSIX and WebAssembly ports of the hardware abstraction layer do with the contract, and how to add a port."
+tags: [runtime, embedded, hal]
 ---
 
-# Hardware Abstraction Layer (HAL)
+# Hardware Abstraction Layer (HAL): the ports
 
-The ZPLC Hardware Abstraction Layer provides a portable interface between the VM core and the underlying platform. This design allows the same bytecode to run on embedded RTOS, desktop operating systems, and web browsers.
-
-## Architecture
+The [HAL contract](./hal-contract.md) says what the portable core asks of a platform.
+This page says what each port in the source tree does with it, and what adding a port
+takes. The contract is `firmware/lib/zplc_core/include/zplc_hal.h`; the ports are the
+three files below `firmware/lib/zplc_core/src/hal/`.
 
 ```mermaid
 graph TB
-    subgraph "ZPLC Core"
-        VM[Virtual Machine]
-        Scheduler[Task Scheduler]
+    subgraph "ZPLC core"
+        VM[Virtual machine]
+        Scheduler[Task scheduler]
     end
-    
-    subgraph "HAL Interface"
-        HAL[zplc_hal.h]
+
+    HAL[zplc_hal.h]
+
+    subgraph "Ports"
+        Zephyr[Zephyr]
+        POSIX[POSIX]
+        WASM[WebAssembly]
     end
-    
-    subgraph "Platform Implementations"
-        Zephyr[Zephyr HAL]
-        POSIX[POSIX HAL]
-        WASM[WASM HAL]
-    end
-    
+
     VM --> HAL
     Scheduler --> HAL
     HAL --> Zephyr
@@ -32,211 +34,75 @@ graph TB
     HAL --> WASM
 ```
 
-## HAL Functions
+## The three ports
 
-The HAL defines a contract of functions that each platform must implement:
+| | Zephyr | POSIX | WebAssembly |
+| --- | --- | --- | --- |
+| Source | `zephyr/zplc_hal_zephyr.c` | `posix/zplc_hal_posix.c` | `wasm/zplc_hal_wasm.c` |
+| Used by | The firmware of every board | The native simulator, `zplc_runtime`, that Studio and the command line run programs and scenarios on | A browser build; in the source tree and not shipped in this release |
+| Time | `k_uptime_get()`, and `k_msleep()` to sleep | `CLOCK_MONOTONIC`; a scenario can replace it with a logical clock (`zplc_hal_posix_set_tick_override`) | `performance.now()` through JavaScript |
+| Digital and analog I/O | GPIO and ADC drivers, for the channels of the board description in `boards.json`: outputs are numbered first, then inputs. Analog outputs answer `ZPLC_HAL_NOT_IMPL` | None: the functions answer `ZPLC_HAL_NOT_IMPL`, because the host runtime exchanges the process image with Studio | Four outputs and four inputs, bridged to JavaScript callbacks |
+| Persistence | NVS on the `storage_partition` of the board when `CONFIG_NVS` is on, and `ZPLC_HAL_NOT_IMPL` when it is off | One file `<key>.bin` per key, in `$ZPLC_PERSIST_ROOT` when that variable is set, and in `~/.zplc` otherwise | The browser's `localStorage`, under the key `zplc_<key>` |
+| Network and sockets | The Zephyr network stack when `CONFIG_NETWORKING` is on, and `ZPLC_HAL_NOT_IMPL` when it is off | `ZPLC_HAL_NOT_IMPL` | `ZPLC_HAL_NOT_IMPL` |
 
-### Lifecycle
+A function that a platform cannot perform returns `ZPLC_HAL_NOT_IMPL`, which is the
+defined "not supported" result; it is never left undefined. The pages on the
+[contract](./hal-contract.md#digital-and-analog-io) and on the
+[supported boards](../reference/boards.md) say which channels a board has and how the
+I/O table is generated.
 
-| Function | Description |
-|----------|-------------|
-| `zplc_hal_init()` | Initialize the HAL (called once at startup) |
-| `zplc_hal_shutdown()` | Clean shutdown of HAL resources |
+## What a Zephyr board sets
 
-### Timing
-
-| Function | Description |
-|----------|-------------|
-| `zplc_hal_tick()` | Returns current system time in milliseconds |
-| `zplc_hal_sleep(ms)` | Sleeps for the specified duration |
-
-### GPIO (Digital I/O)
-
-| Function | Description |
-|----------|-------------|
-| `zplc_hal_gpio_read(channel)` | Read digital input state (0 or 1) |
-| `zplc_hal_gpio_write(channel, value)` | Write digital output state |
-
-### Analog I/O
-
-| Function | Description |
-|----------|-------------|
-| `zplc_hal_adc_read(channel)` | Read analog input (12-bit typical) |
-| `zplc_hal_dac_write(channel, value)` | Write analog output |
-
-### Persistence (NVS)
-
-| Function | Description |
-|----------|-------------|
-| `zplc_hal_persist_save(key, data, len)` | Save data to non-volatile storage |
-| `zplc_hal_persist_load(key, data, len)` | Load data from non-volatile storage |
-| `zplc_hal_persist_delete(key)` | Delete key from non-volatile storage |
-
-### Logging
-
-| Function | Description |
-|----------|-------------|
-| `zplc_hal_log(level, msg)` | Output a log message |
-
-## Platform Implementations
-
-### Zephyr RTOS (Primary Target)
-
-The Zephyr HAL leverages Zephyr's device driver model and kernel services:
-
-```c
-// Timing uses Zephyr kernel
-uint32_t zplc_hal_tick(void) {
-    return k_uptime_get_32();
-}
-
-void zplc_hal_sleep(uint32_t ms) {
-    k_sleep(K_MSEC(ms));
-}
-
-// GPIO uses DeviceTree bindings
-int zplc_hal_gpio_read(uint8_t channel) {
-    return gpio_pin_get_dt(&io_channels[channel]);
-}
-
-// Persistence uses NVS directly
-zplc_hal_result_t zplc_hal_persist_save(const char *key, const void *data, size_t len) {
-    uint16_t id = key_to_id(key);  // "code_len"->1, "code"->2, "retain"->3
-    int rc = nvs_write(&nvs_fs, id, data, len);
-    return (rc >= 0) ? ZPLC_HAL_OK : ZPLC_HAL_ERROR;
-}
-```
-
-**Configuration via Kconfig:**
+The sizes of the program store and of the memories are Kconfig symbols of the module.
+A board that has less memory than the defaults sets them in its
+`firmware/app/boards/<board>.conf`, and the manifest repeats the same numbers (a
+build fails when the two differ):
 
 ```ini
-# Enable ZPLC module
-CONFIG_ZPLC=y
-
-# Memory configuration
-CONFIG_ZPLC_STACK_DEPTH=256
+# default 8192
 CONFIG_ZPLC_WORK_MEMORY_SIZE=8192
+# default 4096
 CONFIG_ZPLC_RETAIN_MEMORY_SIZE=4096
+# default 45056
+CONFIG_ZPLC_CODE_SIZE_MAX=24576
 
-# I/O channel count
-CONFIG_ZPLC_GPIO_CHANNELS=16
-CONFIG_ZPLC_ADC_CHANNELS=8
-
-# Persistence (NVS)
+# Persistence: NVS needs the flash driver, the partition map and a storage_partition
 CONFIG_FLASH=y
 CONFIG_FLASH_PAGE_LAYOUT=y
 CONFIG_FLASH_MAP=y
 CONFIG_NVS=y
 ```
 
-**DeviceTree Overlay (with storage partition):**
+The board overlay defines `storage_partition` unless the upstream board already does.
+The [Kconfig reference](../reference/kconfig.md) lists every symbol with its default
+and range.
 
-```dts
-/ {
-    zplc {
-        compatible = "zplc,runtime";
-        digital-inputs = <&gpio0 0>, <&gpio0 1>, <&gpio0 2>;
-        digital-outputs = <&gpio1 0>, <&gpio1 1>;
-        analog-inputs = <&adc0 0>, <&adc0 1>;
-    };
-};
+## Adding a port
 
-&flash0 {
-    partitions {
-        compatible = "fixed-partitions";
-        #address-cells = <1>;
-        #size-cells = <1>;
+1. Add `src/hal/<platform>/zplc_hal_<platform>.c` next to the three ports and define
+   every function that `zplc_hal.h` declares. Answer `ZPLC_HAL_NOT_IMPL` for what the
+   platform cannot do.
+2. Build it with the core: the portable sources are `src/core/*.c`, which must not
+   include a platform header (a target of that CMake builds them alone and stops on a
+   platform include), and the port is listed in the CMake of
+   `firmware/lib/zplc_core` the way the POSIX port is.
+3. Add the port to `PORTS` in `tools/ci/check_hal_contract.py` and run it. It fails when a
+   declared function has no definition on a port, has no caller outside the ports and
+   the tests, or has a stale entry in `tools/ci/hal-contract.json`:
 
-        storage_partition: partition@1f0000 {
-            label = "storage";
-            reg = <0x1f0000 0x10000>;  /* 64KB */
-        };
-    };
-};
-```
-
-### POSIX (Linux/macOS/Windows)
-
-The POSIX HAL is designed for development and testing:
-
-```c
-uint32_t zplc_hal_tick(void) {
-    struct timespec ts;
-    clock_gettime(CLOCK_MONOTONIC, &ts);
-    return (ts.tv_sec * 1000) + (ts.tv_nsec / 1000000);
-}
-
-void zplc_hal_sleep(uint32_t ms) {
-    usleep(ms * 1000);
-}
-
-// GPIO is simulated via shared memory or file
-int zplc_hal_gpio_read(uint8_t channel) {
-    return simulated_inputs[channel];
-}
-
-// Persistence uses file system
-zplc_hal_result_t zplc_hal_persist_save(const char *key, const void *data, size_t len) {
-    char filename[64];
-    snprintf(filename, sizeof(filename), "zplc_%s.bin", key);
-    FILE *f = fopen(filename, "wb");
-    if (!f) return ZPLC_HAL_ERROR;
-    fwrite(data, 1, len, f);
-    fclose(f);
-    return ZPLC_HAL_OK;
-}
-```
-
-### WebAssembly (Browser)
-
-The WASM HAL interfaces with JavaScript:
-
-```c
-// Imported from JavaScript environment
-extern uint32_t js_performance_now(void);
-extern void js_set_output(uint8_t channel, int value);
-extern int js_get_input(uint8_t channel);
-
-uint32_t zplc_hal_tick(void) {
-    return js_performance_now();
-}
-
-int zplc_hal_gpio_read(uint8_t channel) {
-    return js_get_input(channel);
-}
-```
-
-## Adding a New Platform
-
-To port ZPLC to a new platform:
-
-1. **Create HAL implementation file:**
-   ```
-   src/hal/myplatform/zplc_hal_myplatform.c
-   ```
-
-2. **Implement all HAL functions:**
-   - Start with timing (`tick`, `sleep`)
-   - Add GPIO support
-   - Add persistence if needed
-
-3. **Update build system:**
-   - Add platform detection
-   - Link correct HAL implementation
-
-4. **Test with the POSIX test suite:**
    ```bash
-   make test HAL=myplatform
+   python3 tools/ci/check_hal_contract.py
    ```
 
-## Implementation Status
+4. Run the core tests (`bun run test:core`), which build the core with the address and
+   undefined-behaviour sanitizers.
 
-| HAL | Timing | GPIO | Analog | Persist | Network |
-|-----|--------|------|--------|---------|---------|
-| Zephyr | ✅ Complete | ✅ Complete | Stub | ✅ NVS | 🔜 Phase 1.4.1 |
-| POSIX | ✅ Complete | Simulated | Simulated | ✅ File | 🔜 Phase 1.4.1 |
-| WASM | ✅ Complete | ✅ JS Bridge | JS Bridge | ✅ localStorage | N/A |
+For a board, and not a platform, see [Port ZPLC to a new board](../guides/port-to-a-board.md).
 
-:::note
-Network support requires Phase 1.4.1 (Networking Foundation) which will implement `zplc_hal_socket_*` functions for Zephyr and POSIX targets.
-:::
+## What is verified, and what is not
+
+| Part | Verified | Level |
+| --- | --- | --- |
+| Each port defines every function of the contract, and each function has a caller or a ledger entry | `tools/ci/check_hal_contract.py` in CI | Host |
+| The statements of the table above | Read from the three port sources on the date of this page; they are not behind a test of their own | None |
+| A port other than the three behaves as the contract says | Not applicable: no other port exists | None |

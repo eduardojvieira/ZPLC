@@ -109,7 +109,7 @@ Qué contiene el manifiesto y la regla que rechaza un valor erróneo:
 
 Ningún port admite una salida analógica, así que déjela fuera de la descripción. Las
 direcciones de los canales son las que un proyecto asigna con `AT %I0.0`
-([Asignar variables a pines](./map-io.md)).
+([Vincular variables a pines](./map-io.md)).
 
 ## 3. Agregar la placa a la compilación cruzada
 

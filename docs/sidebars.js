@@ -113,6 +113,7 @@ const sidebars = {
             'operations/shell',
             'runtime/isa',
             'runtime/hal-contract',
+            'runtime/hal',
           ],
         },
         {
@@ -181,6 +182,7 @@ const sidebars = {
         'contributing/roadmap',
         'development/firmware-testing',
         'development/hardware-in-the-loop',
+        'integration/publishing',
         'release-notes/index',
         'reference/source-of-truth',
         'reference/v1-5-canonical-docs-manifest',
