@@ -92,6 +92,9 @@ export class FramedSerialAdapter extends SerialAdapter {
       : { ...events, onSerialData: (line: string) => { if (!/ZF:(?:[0-9a-fA-F]{2})+/.test(line)) onSerialData(line); } });
   }
 
+  /** How long one request to the device may wait for its answer. Tests on a loaded machine raise it. */
+  linkRequestTimeoutMs = 1200;
+
   override async connect(): Promise<void> {
     await super.connect();
     await this.negotiate();
@@ -135,7 +138,7 @@ export class FramedSerialAdapter extends SerialAdapter {
     this.stripFrames = () => { connection._rxBuffer = ShellLineTransport.withoutFrames(connection._rxBuffer); };
     addDataListener(connection, this.stripFrames);
     const transport = new ShellLineTransport(textConsole);
-    const link = new DeviceLink(transport, { requestTimeoutMs: 1200 });
+    const link = new DeviceLink(transport, { requestTimeoutMs: this.linkRequestTimeoutMs });
 
     let hello = null;
     try {

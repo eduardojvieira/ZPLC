@@ -87,8 +87,11 @@ afterEach(async () => {
   for (const root of roots.splice(0)) await rm(root, { recursive: true, force: true });
 });
 
-async function connected(made: Bridge): Promise<FramedSerialAdapter> {
+/** `requestTimeoutMs` stays short for firmware that never answers (the wait IS the test); a firmware that speaks the link gets a
+ *  long one, because a loaded shared machine can hold an answer far longer than the 1.2 s of a bench. */
+async function connected(made: Bridge, requestTimeoutMs = 1200): Promise<FramedSerialAdapter> {
   const adapter = new FramedSerialAdapter();
+  adapter.linkRequestTimeoutMs = requestTimeoutMs;
   const internals = adapter as unknown as { connection: SerialConnection; _connected: boolean; negotiate: () => Promise<void> };
   internals.connection = made.connection;
   internals._connected = true;
@@ -102,7 +105,7 @@ const program = (): Uint8Array =>
 describe('the serial adapter on firmware that speaks the link (COM-019, COM-023, COM-025, COM-028)', () => {
   itNative('recognises it, writes whole values, forces and releases them, and reports a refused range before any frame', async () => {
     const made = await bridge(true);
-    const adapter = await connected(made);
+    const adapter = await connected(made, 15_000);
     expect(adapter.framed).toBe(true);
     expect(adapter.firmware).toMatchObject({ action: 'use-link', features: { sessions: true, atomicWrite: true, events: true, checkedDownload: true } });
     expect(adapter.linkStatus()).toMatchObject({ source: 'events', label: 'state pushed by the device' });
@@ -127,7 +130,7 @@ describe('the serial adapter on firmware that speaks the link (COM-019, COM-023,
 
   itNative('downloads a program with progress and a read-back, runs and stops it, and is told the state', async () => {
     const made = await bridge(true);
-    const adapter = await connected(made);
+    const adapter = await connected(made, 15_000);
     const states: string[] = [];
     adapter.setEventHandlers({ onStateChange: (state) => states.push(state) });
     const trace: string[] = [];
@@ -145,7 +148,7 @@ describe('the serial adapter on firmware that speaks the link (COM-019, COM-023,
 
   itNative('breakpoints go through the link and come back from the device', async () => {
     const made = await bridge(true);
-    const adapter = await connected(made);
+    const adapter = await connected(made, 15_000);
     await adapter.loadProgram(program());
     expect(await adapter.setBreakpoint(2)).toBe(true);
     expect(await adapter.getBreakpoints()).toEqual([2]);
