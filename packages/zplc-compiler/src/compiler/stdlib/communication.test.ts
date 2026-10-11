@@ -88,4 +88,24 @@ describe('Communication FBs (Phase 1 & 2)', () => {
     expect(emitted).toContain('PUSH16 4096');
     expect(emitted).toContain('COMM_EXEC 0x000b');
   });
+
+  // COM-005: a STRING argument is copied into the member in the layout of the string table, not stored as an address.
+  test('a STRING argument is copied into its member with the capacity written first', () => {
+    const fb = CommBlocks['MQTT_PUBLISH'];
+    const emitted: string[] = [];
+    const ctx: any = {
+      emit: (str: string) => emitted.push(str.trim()),
+      emitExpression: (expr: { name: string }) => emitted.push(`<${expr.name}>`),
+    };
+    const topic = { name: 'TOPIC', value: { kind: 'Identifier' as const, name: 'topic_text', line: 1, column: 1 } };
+
+    fb.generateCall(0x1000, [topic], ctx);
+
+    const at = (offset: number) => 0x1000 + offset;
+    expect(emitted).toContain(`STORE16 ${at(12 + 2)}`);
+    const copy = emitted.indexOf('<topic_text>');
+    expect(copy).toBeGreaterThan(emitted.indexOf(`STORE16 ${at(14)}`));
+    expect(emitted.slice(copy, copy + 3)).toEqual(['<topic_text>', `PUSH16 ${at(12)}`, 'STRCPY']);
+    expect(emitted).not.toContain(`STORE32 ${at(12)}`);
+  });
 });

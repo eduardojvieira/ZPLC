@@ -938,6 +938,32 @@ All notable changes are documented here.
   build; `compiler.warnings` selects it (the level `default` reports it). The
   bundled `kitchen_sink` fixture keeps its call, which exercises the function,
   and already selects no warnings.
+- **Contract change, draft counter 4 -> 5.** A STRING argument of a communication
+  block reaches the handler (COM-005). The compiler stored the *address* of
+  the literal into the first four bytes of the member, so the handler of
+  `MQTT_PUBLISH` read an empty topic and an empty payload, and every other
+  STRING input (`HOST`, `DEVICE_ID`, `TOPIC`, `EVENT_TYPE`, `TEMPLATE_NAME`)
+  was empty too. It now writes the capacity the member has room for and copies
+  the string into it (`STRCPY`), in the `[len u16][cap u16][data][terminator]`
+  layout of the string table, and reading a STRING member (`LEN(Pub.TOPIC)`)
+  is the address of the member like any other string. The layout table
+  itself put the STRING members of `AZURE_DPS_PROV`, `AZURE_EG_PUB` and
+  `AWS_FLEET_PROV` over one another, and `THING_NAME` past the end of its
+  block: the second member began 65 bytes after the first and each takes 85.
+  The blocks are 179, 264 and 179 bytes now (`ASSIGNED_HUB` and
+  `THING_NAME` at 93, `EVENT_TYPE` at 93, `PAYLOAD` of the event at 178), the
+  contract generator refuses a member that ends past its block or over the
+  next member, and the new status `ZPLC_COMM_UNAVAILABLE` (10) is the answer of
+  a block whose service this runtime does not have. The last byte of every
+  block that has a layout belongs to the dispatcher, which keeps there the EN
+  of the previous call to tell a rising edge from an EN that stays TRUE (one
+  trigger, one operation: COM-004); `AZURE_C2D_RECV`, `AZURE_DPS_PROV`,
+  `AZURE_EG_PUB`, `AWS_FLEET_PROV` and `SPB_REBIRTH` grow by that byte. Artifacts built before
+  this draft are refused and must be rebuilt; a device with the older
+  firmware is refused by Studio and must be reflashed.
+  `tools/contract/string_cross.py` compiles a program that gives every STRING
+  input of the twelve blocks its own text and reads each member back with the
+  accessors of the handlers.
 
 ## 2.0.0-rc.3 - 2026-09-01
 

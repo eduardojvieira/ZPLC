@@ -3303,6 +3303,8 @@ function isStringExpression(state: CodeGenState, expr: Expression): boolean {
 function stdlibMemberType(fbType: string, member: { name: string; size: number; dataType?: unknown }): string {
     const declared = numericTypeName(member.dataType);
     if (declared !== UNKNOWN_TYPE) return declared;
+    // A STRING member of a communication block holds the string itself (COM-005): a read is its address.
+    if (typeof member.dataType === 'string' && member.dataType.toUpperCase() === 'STRING') return 'STRING';
     if (member.size === 1) return 'BOOL';
     // The counters' PV and CV are the only 2-byte members, and they are INT in IEC 61131-3.
     if (member.size === 2) return 'INT';

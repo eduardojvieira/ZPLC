@@ -11,7 +11,7 @@
 export const ABI_VERSION = { major: 1, minor: 0 } as const;
 
 /** Draft contract counter (CMP-052): written in header word 28 of every artifact and compared by the loader. */
-export const DRAFT_COUNTER = 4 as const;
+export const DRAFT_COUNTER = 5 as const;
 
 /** Container (.zplc file) constants. */
 export const CONTAINER = {
@@ -569,6 +569,7 @@ export const COMM_STATUS_CODE = {
   STRING_OVERFLOW: 7,
   PROTO_ERROR: 8,
   AUTH_FAILED: 9,
+  UNAVAILABLE: 10,
   UNKNOWN: 255,
 } as const;
 
@@ -681,7 +682,7 @@ export const COMM_BLOCKS: readonly CommBlockInfo[] = [
     { name: "TOPIC", type: "STRING", offset: 12, size: 85, direction: "in" },
     { name: "PAYLOAD", type: "STRING", offset: 97, size: 85, direction: "out" },
   ] },
-  { name: "AZURE_C2D_RECV", kind: 0x0020, size: 94, doc: "Azure cloud-to-device receive", members: [
+  { name: "AZURE_C2D_RECV", kind: 0x0020, size: 95, doc: "Azure cloud-to-device receive", members: [
     { name: "EN", type: "BOOL", offset: 0, size: 1, direction: "in" },
     { name: "BUSY", type: "BOOL", offset: 1, size: 1, direction: "out" },
     { name: "DONE", type: "BOOL", offset: 2, size: 1, direction: "out" },
@@ -690,35 +691,35 @@ export const COMM_BLOCKS: readonly CommBlockInfo[] = [
     { name: "PAYLOAD", type: "STRING", offset: 8, size: 85, direction: "out" },
     { name: "VALID", type: "BOOL", offset: 93, size: 1, direction: "out" },
   ] },
-  { name: "AZURE_DPS_PROV", kind: 0x0021, size: 201, doc: "Azure DPS provisioning", members: [
+  { name: "AZURE_DPS_PROV", kind: 0x0021, size: 179, doc: "Azure DPS provisioning", members: [
     { name: "EN", type: "BOOL", offset: 0, size: 1, direction: "in" },
     { name: "BUSY", type: "BOOL", offset: 1, size: 1, direction: "out" },
     { name: "DONE", type: "BOOL", offset: 2, size: 1, direction: "out" },
     { name: "ERROR", type: "BOOL", offset: 3, size: 1, direction: "out" },
     { name: "STATUS", type: "DINT", offset: 4, size: 4, direction: "out" },
     { name: "DEVICE_ID", type: "STRING", offset: 8, size: 85, direction: "in" },
-    { name: "ASSIGNED_HUB", type: "STRING", offset: 73, size: 85, direction: "out" },
+    { name: "ASSIGNED_HUB", type: "STRING", offset: 93, size: 85, direction: "out" },
   ] },
-  { name: "AZURE_EG_PUB", kind: 0x0022, size: 266, doc: "Azure Event Grid publish", members: [
+  { name: "AZURE_EG_PUB", kind: 0x0022, size: 264, doc: "Azure Event Grid publish", members: [
     { name: "EN", type: "BOOL", offset: 0, size: 1, direction: "in" },
     { name: "BUSY", type: "BOOL", offset: 1, size: 1, direction: "out" },
     { name: "DONE", type: "BOOL", offset: 2, size: 1, direction: "out" },
     { name: "ERROR", type: "BOOL", offset: 3, size: 1, direction: "out" },
     { name: "STATUS", type: "DINT", offset: 4, size: 4, direction: "out" },
     { name: "TOPIC", type: "STRING", offset: 8, size: 85, direction: "in" },
-    { name: "EVENT_TYPE", type: "STRING", offset: 73, size: 85, direction: "in" },
-    { name: "PAYLOAD", type: "STRING", offset: 138, size: 85, direction: "in" },
+    { name: "EVENT_TYPE", type: "STRING", offset: 93, size: 85, direction: "in" },
+    { name: "PAYLOAD", type: "STRING", offset: 178, size: 85, direction: "in" },
   ] },
-  { name: "AWS_FLEET_PROV", kind: 0x0030, size: 137, doc: "AWS fleet provisioning", members: [
+  { name: "AWS_FLEET_PROV", kind: 0x0030, size: 179, doc: "AWS fleet provisioning", members: [
     { name: "EN", type: "BOOL", offset: 0, size: 1, direction: "in" },
     { name: "BUSY", type: "BOOL", offset: 1, size: 1, direction: "out" },
     { name: "DONE", type: "BOOL", offset: 2, size: 1, direction: "out" },
     { name: "ERROR", type: "BOOL", offset: 3, size: 1, direction: "out" },
     { name: "STATUS", type: "DINT", offset: 4, size: 4, direction: "out" },
     { name: "TEMPLATE_NAME", type: "STRING", offset: 8, size: 85, direction: "in" },
-    { name: "THING_NAME", type: "STRING", offset: 73, size: 85, direction: "out" },
+    { name: "THING_NAME", type: "STRING", offset: 93, size: 85, direction: "out" },
   ] },
-  { name: "SPB_REBIRTH", kind: 0x0040, size: 8, doc: "Sparkplug B rebirth; a rising EN triggers REBIRTH", members: [
+  { name: "SPB_REBIRTH", kind: 0x0040, size: 9, doc: "Sparkplug B rebirth; a rising EN triggers REBIRTH", members: [
     { name: "EN", type: "BOOL", offset: 0, size: 1, direction: "in" },
     { name: "BUSY", type: "BOOL", offset: 1, size: 1, direction: "out" },
     { name: "DONE", type: "BOOL", offset: 2, size: 1, direction: "out" },

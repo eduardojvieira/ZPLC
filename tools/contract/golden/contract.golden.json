@@ -1,6 +1,6 @@
 {
   "asm": {
-    "draftCounter": 4,
+    "draftCounter": 5,
     "magic": 1129074778,
     "opcodes": {
       "ABS": 38,
@@ -392,6 +392,7 @@
         "ZPLC_COMM_QUEUE_FULL": 5,
         "ZPLC_COMM_STRING_OVERFLOW": 7,
         "ZPLC_COMM_TIMEOUT": 2,
+        "ZPLC_COMM_UNAVAILABLE": 10,
         "ZPLC_COMM_UNKNOWN": 255
       },
       "zplc_data_type_t": {
@@ -584,7 +585,7 @@
     "macros": {
       "ZPLC_BUILD_ENTRY_SIZE": 4,
       "ZPLC_CALL_STACK_MAX": 32,
-      "ZPLC_DRAFT_COUNTER": 4,
+      "ZPLC_DRAFT_COUNTER": 5,
       "ZPLC_FILE_HEADER_SIZE": 32,
       "ZPLC_IOMAP_ENTRY_SIZE": 8,
       "ZPLC_LOADER_ERR_COMM": -16,
@@ -2044,12 +2045,12 @@
           {
             "direction": "out",
             "name": "THING_NAME",
-            "offset": 73,
+            "offset": 93,
             "size": 85,
             "type": "STRING"
           }
         ],
-        "size": 137
+        "size": 179
       },
       "AZURE_C2D_RECV": {
         "members": [
@@ -2103,7 +2104,7 @@
             "type": "BOOL"
           }
         ],
-        "size": 94
+        "size": 95
       },
       "AZURE_DPS_PROV": {
         "members": [
@@ -2152,12 +2153,12 @@
           {
             "direction": "out",
             "name": "ASSIGNED_HUB",
-            "offset": 73,
+            "offset": 93,
             "size": 85,
             "type": "STRING"
           }
         ],
-        "size": 201
+        "size": 179
       },
       "AZURE_EG_PUB": {
         "members": [
@@ -2206,19 +2207,19 @@
           {
             "direction": "in",
             "name": "EVENT_TYPE",
-            "offset": 73,
+            "offset": 93,
             "size": 85,
             "type": "STRING"
           },
           {
             "direction": "in",
             "name": "PAYLOAD",
-            "offset": 138,
+            "offset": 178,
             "size": 85,
             "type": "STRING"
           }
         ],
-        "size": 266
+        "size": 264
       },
       "MB_READ_COIL": {
         "members": [
@@ -2804,7 +2805,7 @@
             "type": "DINT"
           }
         ],
-        "size": 8
+        "size": 9
       }
     },
     "commKinds": {
@@ -2825,7 +2826,7 @@
       "BUILD_ENTRY_SIZE": 4,
       "CALL_STACK_MAX": 32,
       "CODE_SIZE_MAX": 45056,
-      "DRAFT_COUNTER": 4,
+      "DRAFT_COUNTER": 5,
       "DRAFT_COUNTER_OFFSET": 28,
       "HEADER_SIZE": 32,
       "MAGIC": 1129074778,

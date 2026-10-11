@@ -29,6 +29,7 @@ import crc_cross  # noqa: E402
 import depth_cross  # noqa: E402
 import generate  # noqa: E402
 import snapshot  # noqa: E402
+import string_cross  # noqa: E402
 import zplc_contract as zc  # noqa: E402
 
 GOLDEN = json.loads((HERE / "golden/contract.golden.json").read_text())
@@ -280,10 +281,21 @@ class PythonToolsMatchGolden(unittest.TestCase):
 HANDLERS = ROOT / "firmware/app/src"
 
 
+def generated_comm_constants() -> dict[str, int]:
+    """ZPLC_COMM_<BLOCK>_<MEMBER>_OFFSET and ZPLC_COMM_<BLOCK>_SIZE of the generated header."""
+    text = (ROOT / "firmware/lib/zplc_core/include/zplc_comm_dispatch.h").read_text()
+    return {m.group(1): int(m.group(2)) for m in re.finditer(r"^\s+(ZPLC_COMM_\w+_(?:OFFSET|SIZE)) = (\d+)", text, flags=re.M)}
+
+
 def c_defines(path: Path) -> dict[str, int]:
+    """The numeric #defines of a handler: a literal, or a constant the generated header gives."""
     text = path.read_text()
-    return {m.group(1): int(m.group(2), 0)
-            for m in re.finditer(r"^#define\s+(\w+)\s+(0x[0-9A-Fa-f]+|\d+)U?\b", text, flags=re.M)}
+    generated = generated_comm_constants()
+    values = {m.group(1): int(m.group(2), 0)
+              for m in re.finditer(r"^#define\s+(\w+)\s+(0x[0-9A-Fa-f]+|\d+)U?\b", text, flags=re.M)}
+    for m in re.finditer(r"^#define\s+(\w+)\s+(ZPLC_COMM_\w+_(?:OFFSET|SIZE))\b", text, flags=re.M):
+        values[m.group(1)] = generated[m.group(2)]
+    return values
 
 
 class HandlersAgreeWithTheBlockTable(unittest.TestCase):
@@ -292,19 +304,13 @@ class HandlersAgreeWithTheBlockTable(unittest.TestCase):
     The handlers were not edited by WP-11. Every disagreement is a finding; the KNOWN lists hold them,
     so a new one fails here and a fixed one has to be removed from the list (WP-18, WP-86). WP-18 fixed
     the Modbus counts (a result no longer runs over HOST, PORT and the block), the cloud STRING layout
-    and the MQTT CONNECTED offset; what is left is the nominal STRING sizes of the layout table, which
-    are a layout (contract) change.
+    and the MQTT CONNECTED offset; draft counter 5 gave every STRING member of the table the room the
+    compiler reserves for it (COM-005), so no list holds a finding any more.
     """
 
     KNOWN_FINDINGS: list[str] = []
 
-    KNOWN_LAYOUT_FINDINGS = [
-        "AWS_FLEET_PROV.TEMPLATE_NAME: 85 reserved bytes at 8 reach 93, past THING_NAME at 73",
-        "AWS_FLEET_PROV.THING_NAME: 85 reserved bytes at 73 reach 158, past the instance size 137",
-        "AZURE_DPS_PROV.DEVICE_ID: 85 reserved bytes at 8 reach 93, past ASSIGNED_HUB at 73",
-        "AZURE_EG_PUB.EVENT_TYPE: 85 reserved bytes at 73 reach 158, past PAYLOAD at 138",
-        "AZURE_EG_PUB.TOPIC: 85 reserved bytes at 8 reach 93, past EVENT_TYPE at 73",
-    ]
+    KNOWN_LAYOUT_FINDINGS: list[str] = []
 
     @classmethod
     def setUpClass(cls):
@@ -452,6 +458,24 @@ class DeclaredDepthIsTheLoadersMeasure(unittest.TestCase):
         self.assertEqual(self.result["wrong"], [])
 
 
+class StringArgumentsReachTheHandlers(unittest.TestCase):
+    """COM-005: the compiler, the VM and the handlers read one STRING layout.
+
+    A program passes a different text to every STRING input of all twelve blocks; the probe handlers read each
+    member at the offset of the generated table, with the accessors of the product handlers.
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        cls.result = string_cross.run()
+
+    def test_every_block_with_a_string_input_is_looked_at(self):
+        self.assertGreaterEqual(self.result["blocks"], 10)
+
+    def test_every_string_member_reads_back_as_the_text_the_program_passed(self):
+        self.assertEqual(self.result["wrong"], [])
+
+
 class ValidationRejectsADriftedSource(unittest.TestCase):
     """The generator refuses a contract.json that contradicts itself."""
 
@@ -494,6 +518,27 @@ class ValidationRejectsADriftedSource(unittest.TestCase):
         def edit(c):
             c["comm"]["memberSizes"]["STRING"] = 84
         with self.assertRaisesRegex(generate.ContractError, "STRING"):
+            generate.validate(self.mutate(edit))
+
+    def test_a_member_that_reaches_into_the_next_one_is_refused(self):
+        def edit(c):
+            block = next(b for b in c["comm"]["blocks"] if b["name"] == "MQTT_PUBLISH")
+            next(m for m in block["members"] if isinstance(m, dict) and m["name"] == "PAYLOAD")["offset"] = 96
+        with self.assertRaisesRegex(generate.ContractError, "over PAYLOAD at 96"):
+            generate.validate(self.mutate(edit))
+
+    def test_a_member_that_reaches_past_the_instance_is_refused(self):
+        def edit(c):
+            block = next(b for b in c["comm"]["blocks"] if b["name"] == "MQTT_PUBLISH")
+            block["size"] = 181
+        with self.assertRaisesRegex(generate.ContractError, "past the instance size"):
+            generate.validate(self.mutate(edit))
+
+    def test_a_member_that_covers_the_byte_of_the_dispatcher_is_refused(self):
+        def edit(c):
+            block = next(b for b in c["comm"]["blocks"] if b["name"] == "MQTT_PUBLISH")
+            block["size"] = 182  # PAYLOAD ends at 182: it would hold the last byte
+        with self.assertRaisesRegex(generate.ContractError, "byte.s. of the dispatcher"):
             generate.validate(self.mutate(edit))
 
     def test_a_kind_at_or_above_the_limit_is_refused(self):

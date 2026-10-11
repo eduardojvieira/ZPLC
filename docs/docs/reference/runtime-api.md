@@ -196,6 +196,7 @@ int zplc_comm_fb_reset(zplc_comm_fb_kind_t kind, uint8_t *fb_mem, uint16_t fb_le
 | Name | Value | Source summary |
 | --- | --- | --- |
 | `ZPLC_COMM_FB_HANDSHAKE_SIZE` | `8U` | Size in bytes of the handshake every communication block starts with (EN, BUSY, DONE, ERROR, STATUS). |
+| `ZPLC_COMM_FB_TAIL_BYTES` | `1U` | Bytes at the end of every block that has a layout. They belong to the dispatcher, which keeps there the value EN had on the previous call to tell a rising edge from an EN that stays TRUE (COM-004). No member covers them and a program does not name them; a kind without a layout has none. |
 
 ## `zplc_core.h`
 
@@ -2523,7 +2524,7 @@ static inline int zplc_opcode_is_valid(uint8_t opcode);
 | `ZPLC_MAGIC` | `0x434C505AU` | Magic number for .zplc files. |
 | `ZPLC_VERSION_MAJOR` | `1` | Current ISA major version |
 | `ZPLC_VERSION_MINOR` | `0` | Current ISA minor version |
-| `ZPLC_DRAFT_COUNTER` | `4U` | Draft contract counter (CMP-052). |
+| `ZPLC_DRAFT_COUNTER` | `5U` | Draft contract counter (CMP-052). |
 | `ZPLC_MEM_IPI_BASE` | `0x0000U` | Base address of Input Process Image |
 | `ZPLC_MEM_IPI_SIZE` | `0x1000U` | Size of Input Process Image (4 KB, fixed by spec) |
 | `ZPLC_MEM_OPI_BASE` | `0x1000U` | Base address of Output Process Image |
@@ -3287,7 +3288,7 @@ These tables are generated from `tools/contract/contract.json`, the single sourc
 | --- | --- | --- |
 | Magic number | `0x434C505A` | `5A 50 4C 43` = "ZPLC" |
 | ISA version (major.minor) | `1.0` |  |
-| Draft contract counter | `4` | Written in header word 28 of every artifact. The loader and Studio refuse an artifact, or a device image, whose counter differs from their own and show both numbers; 0 means an artifact built before the counter. It increases with every contract change until the freeze. |
+| Draft contract counter | `5` | Written in header word 28 of every artifact. The loader and Studio refuse an artifact, or a device image, whose counter differs from their own and show both numbers; 0 means an artifact built before the counter. It increases with every contract change until the freeze. |
 | File header size (bytes) | `32` |  |
 | Segment entry size (bytes) | `8` |  |
 | Task definition size (bytes) | `16` |  |
@@ -3630,7 +3631,7 @@ The operand size follows the opcode range (0x00-0x3F none, 0x40-0x7F 8-bit, 0x80
 
 ### Communication function blocks
 
-Each function-block instance is a byte block in work or retentive memory. Every block starts with the same 8-byte handshake. The core takes the size of a block from this table.
+Each function-block instance is a byte block in work or retentive memory. Every block starts with the same 8-byte handshake and ends with one byte that belongs to the dispatcher (it keeps the previous EN there); no member covers it. The core takes the size of a block from this table.
 
 | Name | Kind | Instance size (bytes) | Description |
 | --- | --- | --- | --- |
@@ -3641,11 +3642,11 @@ Each function-block instance is a byte block in work or retentive memory. Every 
 | `MQTT_CONNECT` | `0x000A` | 12 | MQTT connect |
 | `MQTT_PUBLISH` | `0x000B` | 190 | MQTT publish |
 | `MQTT_SUBSCRIBE` | `0x000C` | 190 | MQTT subscribe; PAYLOAD is an output |
-| `AZURE_C2D_RECV` | `0x0020` | 94 | Azure cloud-to-device receive |
-| `AZURE_DPS_PROV` | `0x0021` | 201 | Azure DPS provisioning |
-| `AZURE_EG_PUB` | `0x0022` | 266 | Azure Event Grid publish |
-| `AWS_FLEET_PROV` | `0x0030` | 137 | AWS fleet provisioning |
-| `SPB_REBIRTH` | `0x0040` | 8 | Sparkplug B rebirth; a rising EN triggers REBIRTH |
+| `AZURE_C2D_RECV` | `0x0020` | 95 | Azure cloud-to-device receive |
+| `AZURE_DPS_PROV` | `0x0021` | 179 | Azure DPS provisioning |
+| `AZURE_EG_PUB` | `0x0022` | 264 | Azure Event Grid publish |
+| `AWS_FLEET_PROV` | `0x0030` | 179 | AWS fleet provisioning |
+| `SPB_REBIRTH` | `0x0040` | 9 | Sparkplug B rebirth; a rising EN triggers REBIRTH |
 
 Kinds at or above `0x00FF` are refused by the loader and by handler registration.
 
@@ -3779,7 +3780,7 @@ Kinds at or above `0x00FF` are refused by the loader and by handler registration
 | 3 | `ERROR` | `BOOL` | output |
 | 4 | `STATUS` | `DINT` | output |
 | 8 | `DEVICE_ID` | `STRING` | input |
-| 73 | `ASSIGNED_HUB` | `STRING` | output |
+| 93 | `ASSIGNED_HUB` | `STRING` | output |
 
 #### Layout of `AZURE_EG_PUB`
 
@@ -3791,8 +3792,8 @@ Kinds at or above `0x00FF` are refused by the loader and by handler registration
 | 3 | `ERROR` | `BOOL` | output |
 | 4 | `STATUS` | `DINT` | output |
 | 8 | `TOPIC` | `STRING` | input |
-| 73 | `EVENT_TYPE` | `STRING` | input |
-| 138 | `PAYLOAD` | `STRING` | input |
+| 93 | `EVENT_TYPE` | `STRING` | input |
+| 178 | `PAYLOAD` | `STRING` | input |
 
 #### Layout of `AWS_FLEET_PROV`
 
@@ -3804,7 +3805,7 @@ Kinds at or above `0x00FF` are refused by the loader and by handler registration
 | 3 | `ERROR` | `BOOL` | output |
 | 4 | `STATUS` | `DINT` | output |
 | 8 | `TEMPLATE_NAME` | `STRING` | input |
-| 73 | `THING_NAME` | `STRING` | output |
+| 93 | `THING_NAME` | `STRING` | output |
 
 #### Layout of `SPB_REBIRTH`
 
@@ -3830,4 +3831,5 @@ Kinds at or above `0x00FF` are refused by the loader and by handler registration
 | `ZPLC_COMM_STRING_OVERFLOW` | `7` |
 | `ZPLC_COMM_PROTO_ERROR` | `8` |
 | `ZPLC_COMM_AUTH_FAILED` | `9` |
+| `ZPLC_COMM_UNAVAILABLE` | `10` |
 | `ZPLC_COMM_UNKNOWN` | `255` |

@@ -55,8 +55,8 @@ LOG_MODULE_REGISTER(zplc_comm_cloud, LOG_LEVEL_INF);
  * +93 VALID   BOOL        — set true by the MQTT receive callback
  * ============================================================================
  */
-#define C2D_OFF_PAYLOAD 8
-#define C2D_OFF_VALID 93
+#define C2D_OFF_PAYLOAD ZPLC_COMM_AZURE_C2D_RECV_PAYLOAD_OFFSET
+#define C2D_OFF_VALID ZPLC_COMM_AZURE_C2D_RECV_VALID_OFFSET
 
 /* ============================================================================
  * AZURE_DPS_PROV (0x0021)
@@ -64,8 +64,8 @@ LOG_MODULE_REGISTER(zplc_comm_cloud, LOG_LEVEL_INF);
  * +73 ASSIGNED_HUB STRING[128]
  * ============================================================================
  */
-#define DPS_OFF_DEVICE_ID 8
-#define DPS_OFF_ASSIGNED_HUB 73
+#define DPS_OFF_DEVICE_ID ZPLC_COMM_AZURE_DPS_PROV_DEVICE_ID_OFFSET
+#define DPS_OFF_ASSIGNED_HUB ZPLC_COMM_AZURE_DPS_PROV_ASSIGNED_HUB_OFFSET
 
 /* ============================================================================
  * AZURE_EG_PUB (0x0022)
@@ -74,9 +74,9 @@ LOG_MODULE_REGISTER(zplc_comm_cloud, LOG_LEVEL_INF);
  * +138 PAYLOAD    STRING[127]
  * ============================================================================
  */
-#define EG_OFF_TOPIC 8
-#define EG_OFF_EVENT_TYPE 73
-#define EG_OFF_PAYLOAD 138
+#define EG_OFF_TOPIC ZPLC_COMM_AZURE_EG_PUB_TOPIC_OFFSET
+#define EG_OFF_EVENT_TYPE ZPLC_COMM_AZURE_EG_PUB_EVENT_TYPE_OFFSET
+#define EG_OFF_PAYLOAD ZPLC_COMM_AZURE_EG_PUB_PAYLOAD_OFFSET
 
 /* ============================================================================
  * AWS_FLEET_PROV (0x0030)
@@ -84,8 +84,8 @@ LOG_MODULE_REGISTER(zplc_comm_cloud, LOG_LEVEL_INF);
  * +73 THING_NAME    STRING[63]
  * ============================================================================
  */
-#define AWS_OFF_TEMPLATE_NAME 8
-#define AWS_OFF_THING_NAME 73
+#define AWS_OFF_TEMPLATE_NAME ZPLC_COMM_AWS_FLEET_PROV_TEMPLATE_NAME_OFFSET
+#define AWS_OFF_THING_NAME ZPLC_COMM_AWS_FLEET_PROV_THING_NAME_OFFSET
 
 /* ============================================================================
  * Helpers
