@@ -90,6 +90,8 @@ export function useCanvasKeyboard<Argument>(options: CanvasKeyboardOptions<Argum
     else show(nodes, outcome.edges);
     setStatus(outcome.say);
     const prompt = outcome.prompt;
+    // a node that is replaced while the canvas is rebuilt takes the focus with it: the canvas itself holds it meanwhile
+    if (outcome.changed && !prompt && !wrapperRef.current?.contains(document.activeElement)) wrapperRef.current?.focus();
     if (prompt?.kind === 'palette') {
       setAsk({ kind: 'palette', title: commands.paletteTitle, items: commands.palette(), allowFreeText: false, placeholder: commands.palettePlaceholder });
     } else if (prompt?.kind === 'comment') {
@@ -112,8 +114,11 @@ export function useCanvasKeyboard<Argument>(options: CanvasKeyboardOptions<Argum
         }
         const wrapper = wrapperRef.current;
         const target = [...(wrapper?.querySelectorAll<HTMLElement>('.react-flow__node') ?? [])].find((element) => element.getAttribute('data-id') === id);
-        (target ?? wrapper)?.focus();
-        if (target && document.activeElement !== target && attempt < 30) focus(attempt + 1);
+        target?.focus();
+        if (document.activeElement === target) return;
+        // until the node can take it, the canvas holds the focus, so that the next key is still a key of the editor
+        if (!wrapper?.contains(document.activeElement)) wrapper?.focus();
+        if (target && attempt < 30) focus(attempt + 1);
       });
       focus(0);
     }

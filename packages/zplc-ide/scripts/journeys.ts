@@ -178,7 +178,8 @@ async function connectAndRun(app: App): Promise<void> {
   await app.click(button('Connect'));
   await app.until('the simulation to connect', async () => await app.visible(button('Disconnect')) || undefined);
   await app.click(button('Run (F5)', 'prefix'));
-  await app.until('the program to run', async () => await app.visible(button('Pause (F6)', 'prefix')) || undefined);
+  await app.until('the program to run', async () => await app.visible(button('Pause (F6)', 'prefix')) || undefined)
+    .catch(async (error: Error) => { throw new Error(`${error.message}: the window says ${JSON.stringify((await app.text()).replace(/\s+/g, ' ').slice(-900))}`); });
 }
 
 const cycles = async (app: App) => Number((/cycles\s+(\d[\d,]*)/.exec(await app.eval<string>(`document.querySelector('[aria-label="Operational status"]')?.innerText ?? ''`))?.[1] ?? 'NaN').replace(/,/g, ''));
