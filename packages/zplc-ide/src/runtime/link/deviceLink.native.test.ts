@@ -12,6 +12,7 @@ import { ZPLC_CONSTANTS, compileToBinary } from '@zplc/compiler';
 import { itNative, nativeRuntimeBinary } from '../../cli/nativeRuntimeGuard';
 import { DeviceLink, LinkError, type LinkEvent, type LinkTransport } from './deviceLink';
 import { beginFrame, crc32, encodeFrame, finishFrame } from './frame';
+import { programSignerOf, publicKeyOf, signProgram } from './signing';
 import { CAPABILITY, ENUMS, ERROR, EVENT_MASK, KIND, MESSAGES } from './protocol.generated';
 
 const KEY = Uint8Array.from({ length: 32 }, (_, index) => (index * 7 + 3) & 0xff);
@@ -275,5 +276,55 @@ describe('the device link over the network rules (every session authenticated)',
     expect(link.has('AUTH')).toBe(true);
     expect(CAPABILITY.AUTH).toBeGreaterThan(0);
     expect(ERROR.AUTH_REQUIRED).toBe(6);
+  });
+});
+
+describe('signed programs (COM-026) against the real native runtime', () => {
+  const SEED = Uint8Array.from({ length: 32 }, (_, index) => 0x80 + index);
+
+  itNative('a device that holds a public key activates only a program signed with the matching private key', async () => {
+    const { link } = await start(['--device-link']);
+    await link.hello();
+    await link.openSession({ name: 'signing' });
+    const bytes = program();
+    const send = async (signature: Uint8Array | null, content: Uint8Array = bytes) => {
+      await link.request('PROGRAM_BEGIN', { size: content.length, crc32: crc32(content) });
+      for (let at = 0; at < content.length; at += 64) await link.request('PROGRAM_CHUNK', { offset: at, data: content.subarray(at, at + 64) });
+      if (signature !== null) await link.request('PROGRAM_SIGN', { signature });
+      return link.request('PROGRAM_COMMIT', {});
+    };
+    const refusal = async (run: () => Promise<unknown>) => {
+      const error = await run().then(() => null, (reason: unknown) => reason);
+      expect(error).toBeInstanceOf(LinkError);
+      return (error as LinkError).errorName;
+    };
+
+    // no key: an unsigned program is accepted
+    expect((await send(null)).size).toBe(bytes.length);
+    expect(link.has('SIGNATURE')).toBe(true);
+
+    // the key is the serial link's to give, over a session
+    await link.request('SIGNING_KEY_SET', { public_key: await publicKeyOf(SEED) });
+    expect((await link.hello()).signatureRequired).toBe(true);
+    expect(await refusal(() => send(null))).toBe('SIGNATURE_REQUIRED');
+
+    // the transfer is still open: the signature can follow, and the commit goes through
+    const signature = await signProgram(SEED, bytes);
+    await link.request('PROGRAM_SIGN', { signature });
+    expect(await link.request('PROGRAM_COMMIT', {})).toMatchObject({ size: bytes.length, crc32: crc32(bytes) });
+
+    // the signature of another seed, and the signature of this program on another program
+    const strangers = await signProgram(Uint8Array.from(SEED).reverse(), bytes);
+    expect(await refusal(() => send(strangers))).toBe('SIGNATURE_INVALID');
+    const other = new Uint8Array(bytes);
+    other[other.length - 1]! ^= 0x01;
+    expect(await refusal(() => send(signature, other))).toBe('SIGNATURE_INVALID');
+
+    // the signer a Studio adapter uses is the same function
+    expect(await programSignerOf(SEED)(bytes)).toEqual(signature);
+
+    await link.request('SIGNING_KEY_CLEAR', {});
+    expect((await link.hello()).signatureRequired).toBe(false);
+    expect((await send(null)).size).toBe(bytes.length);
   });
 });

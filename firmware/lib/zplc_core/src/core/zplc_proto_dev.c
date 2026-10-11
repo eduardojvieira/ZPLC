@@ -104,6 +104,9 @@ static int capability_bit(const zplc_proto_ops_t *ops, uint32_t bit) {
     return ops->mem_read != NULL;
   case ZPLC_PROTO_CAP_AUTH:
     return ops->random != NULL && ops->key_load != NULL && ops->key_store != NULL && ops->key_erase != NULL;
+  case ZPLC_PROTO_CAP_SIGNATURE:
+    return ops->signing_key_load != NULL && ops->signing_key_store != NULL && ops->signing_key_erase != NULL &&
+           ops->program_verify != NULL;
   case ZPLC_PROTO_CAP_CONFIG:
     return ops->config_set != NULL && ops->config_save != NULL && ops->config_reset != NULL;
   case ZPLC_PROTO_CAP_CREDENTIALS:
@@ -429,6 +432,13 @@ static uint8_t session_state_for(const zplc_proto_dev_t *dev, const zplc_proto_l
   return dev->owner == link ? (uint8_t)ZPLC_PROTO_SESSION_STATE_THIS_LINK : (uint8_t)ZPLC_PROTO_SESSION_STATE_OTHER_LINK;
 }
 
+static int signing_key_held(const zplc_proto_dev_t *dev, uint8_t key[ZPLC_PROTO_KEY_BYTES]) {
+  if (!capability_bit(dev->ops, ZPLC_PROTO_CAP_SIGNATURE)) {
+    return 0;
+  }
+  return dev->ops->signing_key_load(dev->ops->context, key) == 0;
+}
+
 static int load_key(const zplc_proto_dev_t *dev, uint8_t key[ZPLC_PROTO_KEY_BYTES]) {
   if (dev->ops->key_load == NULL) {
     return -1;
@@ -553,6 +563,8 @@ static void do_hello(const request_t *r) {
   body[ZPLC_PROTO_HELLO_RSP_KEY_PROVISIONED_OFF - 1U] = (uint8_t)(load_key(dev, key) == 0 ? 1U : 0U);
   zplc_secure_zero(key, sizeof(key));
   zplc_put_u16_le(body + ZPLC_PROTO_HELLO_RSP_IDLE_TIMEOUT_S_OFF - 1U, dev->idle_timeout_s);
+  body[ZPLC_PROTO_HELLO_RSP_SIGNATURE_REQUIRED_OFF - 1U] = (uint8_t)(signing_key_held(dev, key) ? 1U : 0U);
+  zplc_secure_zero(key, sizeof(key));
   respond(link, r->frame, (uint8_t)ZPLC_PROTO_ERR_OK, ZPLC_PROTO_HELLO_RSP_FIXED - 1U);
 }
 
@@ -1076,6 +1088,7 @@ static void do_program_begin(const request_t *r) {
     return;
   }
   dev->transfer_active = 1U;
+  dev->transfer_signed = 0U;
   dev->transfer_size = size;
   dev->transfer_received = 0U;
   dev->transfer_crc = crc;
@@ -1130,6 +1143,26 @@ static void do_program_commit(const request_t *r) {
     respond_error(r->link, r->frame, (int)ZPLC_PROTO_ERR_CRC);
     return;
   }
+  {
+    uint8_t signing_key[ZPLC_PROTO_KEY_BYTES];
+
+    if (signing_key_held(dev, signing_key)) {
+      /* the device holds a public key: nothing is activated that its owner did not sign (COM-026) */
+      if (dev->transfer_signed == 0U) {
+        zplc_secure_zero(signing_key, sizeof(signing_key));
+        respond_error(r->link, r->frame, (int)ZPLC_PROTO_ERR_SIGNATURE_REQUIRED);
+        return; /* the transfer stays: the signature can still be sent */
+      }
+      result = ops_error(dev->ops->program_verify(dev->ops->context, signing_key, dev->transfer_signature));
+      zplc_secure_zero(signing_key, sizeof(signing_key));
+      if (result != 0) {
+        dev->ops->program_abort(dev->ops->context);
+        dev->transfer_active = 0U;
+        respond_error(r->link, r->frame, (int)ZPLC_PROTO_ERR_SIGNATURE_INVALID);
+        return;
+      }
+    }
+  }
   (void)memset(&info, 0, sizeof(info));
   result = ops_error(dev->ops->program_commit(dev->ops->context, &info));
   dev->transfer_active = 0U;
@@ -1146,6 +1179,23 @@ static void do_program_commit(const request_t *r) {
   zplc_put_u32_le(b + 4U, info.crc32);
   zplc_put_u32_le(b + 8U, info.generation);
   respond(r->link, r->frame, (uint8_t)ZPLC_PROTO_ERR_OK, 12U);
+}
+
+static void do_program_sign(const request_t *r) {
+  zplc_proto_dev_t *dev = r->link->dev;
+
+  if (!capability_bit(dev->ops, ZPLC_PROTO_CAP_SIGNATURE)) {
+    respond_error(r->link, r->frame, (int)ZPLC_PROTO_ERR_UNSUPPORTED);
+    return;
+  }
+  if (dev->transfer_active == 0U) {
+    respond_error(r->link, r->frame, (int)ZPLC_PROTO_ERR_STATE);
+    return;
+  }
+  (void)memcpy(dev->transfer_signature, r->payload + ZPLC_PROTO_PROGRAM_SIGN_REQ_SIGNATURE_OFF,
+               sizeof(dev->transfer_signature));
+  dev->transfer_signed = 1U;
+  respond(r->link, r->frame, (uint8_t)ZPLC_PROTO_ERR_OK, 0U);
 }
 
 static void do_program_abort(const request_t *r) {
@@ -1299,6 +1349,29 @@ static void do_key_set(const request_t *r) {
   respond(r->link, r->frame, (uint8_t)result, 0U);
 }
 
+static void do_signing_key_set(const request_t *r) {
+  zplc_proto_dev_t *dev = r->link->dev;
+
+  if (!capability_bit(dev->ops, ZPLC_PROTO_CAP_SIGNATURE)) {
+    respond_error(r->link, r->frame, (int)ZPLC_PROTO_ERR_UNSUPPORTED);
+    return;
+  }
+  respond(r->link, r->frame,
+          (uint8_t)ops_error(dev->ops->signing_key_store(dev->ops->context,
+                                                         r->payload + ZPLC_PROTO_SIGNING_KEY_SET_REQ_PUBLIC_KEY_OFF)),
+          0U);
+}
+
+static void do_signing_key_clear(const request_t *r) {
+  zplc_proto_dev_t *dev = r->link->dev;
+
+  if (!capability_bit(dev->ops, ZPLC_PROTO_CAP_SIGNATURE)) {
+    respond_error(r->link, r->frame, (int)ZPLC_PROTO_ERR_UNSUPPORTED);
+    return;
+  }
+  respond(r->link, r->frame, (uint8_t)ops_error(dev->ops->signing_key_erase(dev->ops->context)), 0U);
+}
+
 static void do_key_clear(const request_t *r) {
   zplc_proto_dev_t *dev = r->link->dev;
 
@@ -1356,6 +1429,7 @@ static void dispatch(const request_t *r) {
   case ZPLC_PROTO_MSG_PROGRAM_BEGIN: do_program_begin(r); break;
   case ZPLC_PROTO_MSG_PROGRAM_CHUNK: do_program_chunk(r); break;
   case ZPLC_PROTO_MSG_PROGRAM_COMMIT: do_program_commit(r); break;
+  case ZPLC_PROTO_MSG_PROGRAM_SIGN: do_program_sign(r); break;
   case ZPLC_PROTO_MSG_PROGRAM_ABORT: do_program_abort(r); break;
   case ZPLC_PROTO_MSG_PROGRAM_INFO: do_program_info(r); break;
   case ZPLC_PROTO_MSG_CONFIG_SET: do_config_set(r); break;
@@ -1367,6 +1441,8 @@ static void dispatch(const request_t *r) {
   case ZPLC_PROTO_MSG_CRED_ERASE: do_cred_erase(r); break;
   case ZPLC_PROTO_MSG_KEY_SET: do_key_set(r); break;
   case ZPLC_PROTO_MSG_KEY_CLEAR: do_key_clear(r); break;
+  case ZPLC_PROTO_MSG_SIGNING_KEY_SET: do_signing_key_set(r); break;
+  case ZPLC_PROTO_MSG_SIGNING_KEY_CLEAR: do_signing_key_clear(r); break;
   default:
     respond_error(r->link, r->frame, (int)ZPLC_PROTO_ERR_UNKNOWN_MESSAGE);
     break;
@@ -1446,7 +1522,7 @@ int zplc_proto_dev_init(zplc_proto_dev_t *dev, const zplc_proto_ops_t *ops, uint
 
     if ((flag & (ZPLC_PROTO_CAP_MEMORY | ZPLC_PROTO_CAP_FORCE | ZPLC_PROTO_CAP_RUN_CONTROL |
                  ZPLC_PROTO_CAP_BREAKPOINTS | ZPLC_PROTO_CAP_PROGRAM | ZPLC_PROTO_CAP_WATCH | ZPLC_PROTO_CAP_AUTH |
-                 ZPLC_PROTO_CAP_CONFIG | ZPLC_PROTO_CAP_CREDENTIALS)) != 0U &&
+                 ZPLC_PROTO_CAP_CONFIG | ZPLC_PROTO_CAP_CREDENTIALS | ZPLC_PROTO_CAP_SIGNATURE)) != 0U &&
         capability_bit(ops, flag) != 0) {
       dev->capabilities |= flag;
     }

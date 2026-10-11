@@ -155,6 +155,14 @@ typedef struct {
   void (*program_abort)(void *context);
   int (*program_info)(void *context, zplc_proto_program_info_t *info);
 
+  /** Signed programs (COM-026): the public key the artifact has to be signed with. A port that holds one refuses
+   *  every program the engine did not see verified. */
+  int (*signing_key_load)(void *context, uint8_t key[ZPLC_PROTO_KEY_BYTES]);
+  int (*signing_key_store)(void *context, const uint8_t key[ZPLC_PROTO_KEY_BYTES]);
+  int (*signing_key_erase)(void *context);
+  /** Verify the staged artifact against its signature under the key; 0, or ZPLC_PROTO_ERR_SIGNATURE_INVALID. */
+  int (*program_verify)(void *context, const uint8_t public_key[ZPLC_PROTO_KEY_BYTES], const uint8_t signature[64]);
+
   int (*config_set)(void *context, const char *key, const uint8_t *value, uint16_t length);
   int (*config_save)(void *context);
   int (*config_reset)(void *context);
@@ -235,6 +243,8 @@ struct zplc_proto_dev {
   uint32_t transfer_received;
   uint32_t transfer_crc;
   uint32_t transfer_crc_state;
+  uint8_t transfer_signed;
+  uint8_t transfer_signature[64];
   uint8_t cred_active;
   uint16_t cred_size;
   uint16_t cred_received;

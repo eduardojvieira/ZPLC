@@ -90,6 +90,8 @@ add_library(zplc_core STATIC
     src/core/zplc_proto.c
     src/core/zplc_proto_dev.c
     src/core/zplc_sha256.c
+    src/core/zplc_sha512.c
+    src/core/zplc_ed25519.c
 )
 
 target_compile_definitions(zplc_core PUBLIC ZPLC_CORE_VERSION_STR="${ZPLC_CORE_VERSION_STR}")
@@ -458,6 +460,8 @@ add_executable(test_proto_session
     src/core/zplc_proto.c
     src/core/zplc_proto_dev.c
     src/core/zplc_sha256.c
+    src/core/zplc_sha512.c
+    src/core/zplc_ed25519.c
     src/core/zplc_exchange.c
     src/core/zplc_core.c
     src/core/zplc_loader.c
@@ -480,6 +484,22 @@ if(UNIX AND NOT APPLE)
 endif()
 
 add_test(NAME test_proto_session COMMAND test_proto_session)
+
+# Test: SHA-512 and Ed25519 verification against FIPS 180-4, RFC 8032 and the signatures of a Python reference,
+# valid and damaged (COM-026). Also run under the sanitizers.
+add_executable(test_ed25519
+    tests/test_ed25519.c
+    src/core/zplc_sha256.c
+    src/core/zplc_sha512.c
+    src/core/zplc_ed25519.c
+)
+
+target_include_directories(test_ed25519 PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/tests
+)
+
+add_test(NAME test_ed25519 COMMAND test_ed25519)
 
 # Test: the identity a firmware image or the runtime reports (REL-023)
 add_executable(test_fw_identity

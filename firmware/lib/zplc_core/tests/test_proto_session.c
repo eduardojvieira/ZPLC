@@ -25,6 +25,7 @@
 #include <zplc_hal.h>
 #include <zplc_proto.h>
 #include <zplc_proto_dev.h>
+#include <zplc_ed25519.h>
 #include <zplc_sha256.h>
 
 #include "zplc_proto_vectors.h"
@@ -93,6 +94,10 @@ typedef struct {
   /* credential upload */
   uint8_t cred_kind;
   uint16_t cred_bytes;
+  /* signed programs */
+  uint8_t signing_key[32];
+  int signing_key_set;
+  unsigned verifications;
   /* exchange binding */
   int use_exchange;
   char config_key[32];
@@ -412,6 +417,36 @@ static int port_cred_commit(void *c) { (void)c; fake.calls_cred++; return 0; }
 static int port_cred_erase(void *c, uint8_t kind) { (void)c; (void)kind; fake.calls_cred++; return 0; }
 static void port_cred_abort(void *c) { (void)c; }
 
+static int port_signing_key_load(void *c, uint8_t key[32]) {
+  (void)c;
+  if (!fake.signing_key_set) {
+    return 1;
+  }
+  memcpy(key, fake.signing_key, 32U);
+  return 0;
+}
+
+static int port_signing_key_store(void *c, const uint8_t key[32]) {
+  (void)c;
+  memcpy(fake.signing_key, key, 32U);
+  fake.signing_key_set = 1;
+  return 0;
+}
+
+static int port_signing_key_erase(void *c) {
+  (void)c;
+  fake.signing_key_set = 0;
+  return 0;
+}
+
+/* The staged bytes are what the loader would be given: the same bytes the signature has to be of. */
+static int port_program_verify(void *c, const uint8_t key[32], const uint8_t signature[64]) {
+  (void)c;
+  fake.verifications++;
+  return zplc_ed25519_verify(signature, key, fake.staged, fake.staged_size) == 0 ? 0
+                                                                                  : (int)ZPLC_PROTO_ERR_SIGNATURE_INVALID;
+}
+
 static zplc_proto_ops_t full_ops(void) {
   zplc_proto_ops_t ops;
 
@@ -617,6 +652,16 @@ static int open_network_session(client_t *c, const uint8_t *device_key, int tamp
   c->next_sequence = 100U;
   (void)send_with(c, ZPLC_PROTO_MSG_SESSION_OPEN, payload, sizeof(payload), device_key, c->next_sequence++);
   return last_status(c);
+}
+
+static zplc_proto_ops_t signing_ops(void) {
+  zplc_proto_ops_t o = full_ops();
+
+  o.signing_key_load = port_signing_key_load;
+  o.signing_key_store = port_signing_key_store;
+  o.signing_key_erase = port_signing_key_erase;
+  o.program_verify = port_program_verify;
+  return o;
 }
 
 static void reset_world(zplc_proto_ops_t *the_ops) {
@@ -1367,6 +1412,137 @@ static void test_a_network_session_authenticates_every_frame(void) {
   CHECK(last_status(&net) == ZPLC_PROTO_ERR_AUTH_REQUIRED, "a frame of the closed session is not a session");
 }
 
+/* COM-026: a device that holds a public key activates only a program signed with the matching private key. */
+static const zplc_proto_signature_case_t *signature_case(const char *name) {
+  size_t i;
+
+  for (i = 0U; i < ZPLC_PROTO_SIGNATURE_CASE_COUNT; i++) {
+    if (strcmp(zplc_proto_signature_cases[i].name, name) == 0) {
+      return &zplc_proto_signature_cases[i];
+    }
+  }
+  return NULL;
+}
+
+static int transfer(client_t *c, const uint8_t *program, size_t size, const uint8_t *signature) {
+  uint8_t begin[8];
+  uint8_t chunk[4U + 200U];
+  size_t sent = 0U;
+  int status;
+
+  zplc_put_u32_le(begin, (uint32_t)size);
+  zplc_put_u32_le(begin + 4U, zplc_crc32(program, size));
+  status = ask(c, ZPLC_PROTO_MSG_PROGRAM_BEGIN, begin, 8U);
+  if (status != 0) {
+    return status;
+  }
+  while (sent < size) {
+    const size_t part = size - sent < 200U ? size - sent : 200U;
+
+    zplc_put_u32_le(chunk, (uint32_t)sent);
+    memcpy(chunk + 4U, program + sent, part);
+    status = ask(c, ZPLC_PROTO_MSG_PROGRAM_CHUNK, chunk, 4U + part);
+    if (status != 0) {
+      return status;
+    }
+    sent += part;
+  }
+  if (signature != NULL) {
+    status = ask(c, ZPLC_PROTO_MSG_PROGRAM_SIGN, signature, 64U);
+    if (status != 0) {
+      return status;
+    }
+  }
+  return ask(c, ZPLC_PROTO_MSG_PROGRAM_COMMIT, NULL, 0U);
+}
+
+static void test_a_device_with_a_key_accepts_only_signed_programs(void) {
+  client_t c;
+  client_t net;
+  const zplc_proto_signature_case_t *good = signature_case("valid, 300 bytes");
+  const zplc_proto_signature_case_t *other = signature_case("damaged signature: a bit of S");
+  const zplc_proto_signature_case_t *foreign = signature_case("valid, 1000 bytes");
+  zplc_proto_ops_t signing;
+  uint8_t key[32];
+  const seen_t *s;
+
+  CHECK(good != NULL && other != NULL && foreign != NULL, "the vectors have the cases");
+  reset_world(&ops);
+  signing = signing_ops();
+  CHECK(zplc_proto_dev_init(&dev, &signing, 30U) == 0, "an engine over a port that can verify");
+  client_init(&c, ZPLC_PROTO_TRANSPORT_SERIAL);
+  client_init(&net, ZPLC_PROTO_TRANSPORT_NETWORK);
+  open_serial_session(&c, 0U);
+
+  client_forget(&c);
+  (void)send_plain(&c, ZPLC_PROTO_MSG_HELLO, (const uint8_t[3]){1U, 0U, 2U}, 3U);
+  s = last_seen(&c);
+  CHECK((u32_at(s->payload + ZPLC_PROTO_HELLO_RSP_CAPABILITIES_OFF) & ZPLC_PROTO_CAP_SIGNATURE) != 0U &&
+            s->payload[ZPLC_PROTO_HELLO_RSP_SIGNATURE_REQUIRED_OFF] == 0U,
+        "the device offers signed programs and does not require them until it has a key");
+  CHECK(transfer(&c, good->message, good->message_length, NULL) == 0 && fake.verifications == 0U,
+        "an unsigned program is accepted while there is no key");
+
+  /* the key is given over the serial link */
+  memcpy(key, good->public_key, 32U);
+  CHECK(ask(&c, ZPLC_PROTO_MSG_SIGNING_KEY_SET, key, 32U) == 0 && fake.signing_key_set, "the public key is stored");
+  client_forget(&c);
+  (void)send_plain(&c, ZPLC_PROTO_MSG_HELLO, (const uint8_t[3]){1U, 0U, 2U}, 3U);
+  CHECK(last_seen(&c)->payload[ZPLC_PROTO_HELLO_RSP_SIGNATURE_REQUIRED_OFF] == 1U, "and the hello says programs have to be signed");
+
+  fake.verifications = 0U;
+  CHECK(transfer(&c, good->message, good->message_length, NULL) == ZPLC_PROTO_ERR_SIGNATURE_REQUIRED &&
+            fake.verifications == 0U,
+        "an unsigned program is refused, and nothing was verified");
+  {
+    /* the transfer is still open: the signature can follow, and the commit then goes through */
+    CHECK(ask(&c, ZPLC_PROTO_MSG_PROGRAM_SIGN, good->signature, 64U) == 0, "the signature is accepted after the chunks");
+    CHECK(ask(&c, ZPLC_PROTO_MSG_PROGRAM_COMMIT, NULL, 0U) == 0 && fake.verifications == 1U &&
+              memcmp(fake.stored, good->message, good->message_length) == 0,
+          "and the commit verifies it and activates the program");
+  }
+  fake.stored_size = 0U;
+  CHECK(transfer(&c, good->message, good->message_length, other->signature) == ZPLC_PROTO_ERR_SIGNATURE_INVALID &&
+            fake.stored_size == 0U,
+        "a signature that is not of this program is refused, with nothing stored");
+  CHECK(ask(&c, ZPLC_PROTO_MSG_PROGRAM_COMMIT, NULL, 0U) == ZPLC_PROTO_ERR_STATE, "and the transfer is dropped");
+  CHECK(transfer(&c, foreign->message, foreign->message_length, good->signature) == ZPLC_PROTO_ERR_SIGNATURE_INVALID,
+        "a signature of another program, and a program of another key, are refused");
+  {
+    /* a program altered after it was signed */
+    uint8_t altered[1000];
+
+    memcpy(altered, foreign->message, foreign->message_length);
+    altered[10] ^= 0x01U;
+    /* the key of the vector is another one: install it, so that only the byte is wrong */
+    memcpy(key, foreign->public_key, 32U);
+    CHECK(ask(&c, ZPLC_PROTO_MSG_SIGNING_KEY_SET, key, 32U) == 0, "the key of the second case");
+    CHECK(transfer(&c, foreign->message, foreign->message_length, foreign->signature) == 0, "its own program and signature are accepted");
+    CHECK(transfer(&c, altered, foreign->message_length, foreign->signature) == ZPLC_PROTO_ERR_SIGNATURE_INVALID,
+          "one byte of the program changed after it was signed: refused");
+  }
+
+  /* the key is the serial link's, and a network link cannot give or take it */
+  {
+    uint8_t net_key[32];
+
+    memcpy(net_key, good->public_key, 32U);
+    memcpy(fake.key, TEST_KEY, 32U);
+    fake.key_set = 1;
+    CHECK(ask(&c, ZPLC_PROTO_MSG_SESSION_CLOSE, NULL, 0U) == 0, "the serial session is closed");
+    CHECK(open_network_session(&net, TEST_KEY, 0) == 0, "a network session");
+    CHECK(ask(&net, ZPLC_PROTO_MSG_SIGNING_KEY_SET, net_key, 32U) == ZPLC_PROTO_ERR_REFUSED,
+          "a network link cannot give the device another key");
+    CHECK(ask(&net, ZPLC_PROTO_MSG_SIGNING_KEY_CLEAR, NULL, 0U) == ZPLC_PROTO_ERR_REFUSED,
+          "and cannot take the key away to load an unsigned program");
+    CHECK(ask(&net, ZPLC_PROTO_MSG_SESSION_CLOSE, NULL, 0U) == 0, "closed");
+  }
+  open_serial_session(&c, 0U);
+  CHECK(last_status(&c) == 0, "the serial session is open again");
+  CHECK(ask(&c, ZPLC_PROTO_MSG_SIGNING_KEY_CLEAR, NULL, 0U) == 0 && !fake.signing_key_set, "the serial link erases it");
+  CHECK(transfer(&c, good->message, good->message_length, NULL) == 0, "and unsigned programs are accepted again");
+}
+
 static void test_events(void) {
   client_t c;
   zplc_proto_link_t *links[1];
@@ -1531,6 +1707,7 @@ int main(void) {
   test_the_value_a_scan_reads_is_never_a_mix();
   test_serial_trust_and_key_provisioning();
   test_a_network_session_authenticates_every_frame();
+  test_a_device_with_a_key_accepts_only_signed_programs();
   test_events();
   test_a_hostile_stream_does_nothing();
   printf("%d checks, %d failed\n", test_count, fail_count);

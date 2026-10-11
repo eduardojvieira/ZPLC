@@ -820,6 +820,20 @@ static int cmd_sched_data(const struct shell *sh, size_t argc, char **argv) {
   }
   program_staging_received_size += decoded;
   if (program_staging_received_size >= program_expected_size) {
+#ifdef CONFIG_ZPLC_PROTO_SIGNATURE
+    {
+      uint8_t signing_key[32];
+
+      /* COM-026: while the device holds a public key, a program that nobody signed does not come in by this door */
+      if (zplc_hal_persist_load("link_signkey", signing_key, sizeof(signing_key)) == ZPLC_HAL_OK) {
+        shell_error(sh, "ERROR: this device accepts only signed programs; send it through the device link");
+        program_expected_size = 0;
+        program_staging_received_size = 0;
+        memset(program_staging_buffer, 0, program_buffer_size);
+        return -EACCES;
+      }
+    }
+#endif
     int validation = zplc_sched_validate_program(program_staging_buffer,
                                                  program_staging_received_size);
     if (validation != ZPLC_LOADER_OK) {
@@ -3858,8 +3872,12 @@ static int cmd_wifi_connect(const struct shell *sh, size_t argc, char **argv)
 #if defined(CONFIG_CSPRNG_ENABLED)
 #include <zephyr/random/random.h>
 #endif
+#ifdef CONFIG_ZPLC_PROTO_SIGNATURE
+#include <zplc_ed25519.h>
+#endif
 
 #define LINK_KEY_NAME "link_key"
+#define LINK_SIGNING_KEY_NAME "link_signkey"
 #define LINK_SERVICE_MS 20
 
 static zplc_proto_dev_t link_dev;
@@ -3901,6 +3919,37 @@ static int lk_key_erase(void *context) {
   (void)zplc_hal_persist_delete(LINK_KEY_NAME);
   return 0;
 }
+
+#ifdef CONFIG_ZPLC_PROTO_SIGNATURE
+static int lk_signing_key_load(void *context, uint8_t key[ZPLC_PROTO_KEY_BYTES]) {
+  ARG_UNUSED(context);
+  return zplc_hal_persist_load(LINK_SIGNING_KEY_NAME, key, ZPLC_PROTO_KEY_BYTES) == ZPLC_HAL_OK ? 0 : 1;
+}
+
+static int lk_signing_key_store(void *context, const uint8_t key[ZPLC_PROTO_KEY_BYTES]) {
+  ARG_UNUSED(context);
+  return zplc_hal_persist_save(LINK_SIGNING_KEY_NAME, key, ZPLC_PROTO_KEY_BYTES) == ZPLC_HAL_OK
+             ? 0
+             : (int)ZPLC_PROTO_ERR_FAILED;
+}
+
+static int lk_signing_key_erase(void *context) {
+  ARG_UNUSED(context);
+  (void)zplc_hal_persist_delete(LINK_SIGNING_KEY_NAME);
+  return 0;
+}
+
+/* The staging buffer holds what the loader is given: the signature is of those bytes. */
+static int lk_program_verify(void *context, const uint8_t key[ZPLC_PROTO_KEY_BYTES], const uint8_t signature[64]) {
+  ARG_UNUSED(context);
+  if (program_expected_size == 0U || program_staging_received_size != program_expected_size) {
+    return (int)ZPLC_PROTO_ERR_STATE;
+  }
+  return zplc_ed25519_verify(signature, key, program_staging_buffer, program_staging_received_size) == 0
+             ? 0
+             : (int)ZPLC_PROTO_ERR_SIGNATURE_INVALID;
+}
+#endif /* CONFIG_ZPLC_PROTO_SIGNATURE */
 
 static int lk_status(void *context, zplc_proto_status_t *status) {
   zplc_sched_stats_t stats;
@@ -4349,6 +4398,12 @@ static void link_start(void) {
   link_ops.program_commit = lk_program_commit;
   link_ops.program_abort = lk_program_abort;
   link_ops.program_info = lk_program_info;
+#ifdef CONFIG_ZPLC_PROTO_SIGNATURE
+  link_ops.signing_key_load = lk_signing_key_load;
+  link_ops.signing_key_store = lk_signing_key_store;
+  link_ops.signing_key_erase = lk_signing_key_erase;
+  link_ops.program_verify = lk_program_verify;
+#endif
   (void)zplc_proto_dev_init(&link_dev, &link_ops, CONFIG_ZPLC_PROTO_SESSION_IDLE_S);
   zplc_proto_link_init(&link_shell_link, &link_dev, ZPLC_PROTO_TRANSPORT_SERIAL, link_write, NULL);
   k_work_init_delayable(&link_service_work, link_service);

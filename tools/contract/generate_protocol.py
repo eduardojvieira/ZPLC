@@ -32,6 +32,9 @@ import sys
 import zlib
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import ed25519_ref  # noqa: E402
+
 ROOT = Path(__file__).resolve().parents[2]
 SOURCE = ROOT / "tools/contract/protocol.json"
 GENERATOR_REL = "tools/contract/generate_protocol.py"
@@ -43,6 +46,7 @@ VECTORS_JSON = ROOT / "tools/contract/golden/protocol-vectors.json"
 VECTORS_H = ROOT / "firmware/lib/zplc_core/tests/zplc_proto_vectors.h"
 
 KEY = bytes(range(32))  # the key of the authenticated test frames: 00 01 02 ... 1f
+SIGNING_SEED = bytes(range(0x80, 0xA0))  # the seed of the signing key of the signed-program tests (COM-026)
 
 
 class ProtocolError(Exception):
@@ -604,6 +608,8 @@ def build_vectors(p: dict) -> dict:
         "frames": frames,
         "streams": streams,
         "accessCases": access_cases(p),
+        "signatures": signature_cases(),
+        "signingSeedHex": SIGNING_SEED.hex(),
     }
 
 
@@ -617,6 +623,48 @@ def access_cases(p: dict) -> list[dict]:
         start, end = REGIONS.get(case["region"], (0xFFFF, 0xFFFF))
         out.append({**case, "start": start, "end": end})
     return out
+
+
+def signature_cases() -> list[dict]:
+    """Ed25519 signatures that a device has to accept and ones it has to refuse (COM-026)."""
+    cases: list[dict] = []
+
+    def add(name: str, public: bytes, message: bytes, signature: bytes) -> None:
+        cases.append({
+            "name": name, "public": public.hex(), "message": message.hex(), "signature": signature.hex(),
+            "valid": ed25519_ref.verify(public, message, signature),
+        })
+
+    seeds = [bytes([n] * 32) for n in (1, 2, 3)] + [SIGNING_SEED]
+    lengths = [0, 1, 2, 3, 31, 32, 33, 63, 64, 65, 111, 112, 113, 127, 128, 129, 255, 300, 1000]
+    for index, length in enumerate(lengths):
+        seed = seeds[index % len(seeds)]
+        message = bytes((index * 31 + i * 7 + 5) & 0xFF for i in range(length))
+        public = ed25519_ref.public_key(seed)
+        signature = ed25519_ref.sign(seed, message)
+        add(f"valid, {length} bytes", public, message, signature)
+    seed = SIGNING_SEED
+    public = ed25519_ref.public_key(seed)
+    message = bytes(range(200))
+    good = ed25519_ref.sign(seed, message)
+    for bit_index, label in ((0, "the first bit of R"), (255, "the last bit of R"), (256 + 3, "a bit of S"), (511 - 8, "a high bit of S")):
+        damaged = bytearray(good)
+        damaged[bit_index // 8] ^= 1 << (bit_index % 8)
+        add(f"damaged signature: {label}", public, message, bytes(damaged))
+    add("damaged message", public, message[:-1] + bytes([message[-1] ^ 1]), good)
+    add("a message that is a prefix", public, message[:-1], good)
+    add("another key", ed25519_ref.public_key(bytes([9] * 32)), message, good)
+    order = ed25519_ref.Q
+    s = int.from_bytes(good[32:], "little")
+    malleable = good[:32] + int.to_bytes(s + order, 32, "little")
+    add("S plus the order of the group", public, message, malleable)
+    add("S equal to the order of the group", public, message, good[:32] + int.to_bytes(order, 32, "little"))
+    # a public key that is not the encoding of a point: y = 2 has no x on the curve
+    not_a_point = int.to_bytes(2, 32, "little")
+    add("a public key that is not a point", not_a_point, message, good)
+    add("an R that is not a point", public, message, not_a_point + good[32:])
+    add("all zero signature", public, message, bytes(64))
+    return cases
 
 
 def render_vectors_json(vectors: dict) -> str:
@@ -710,6 +758,27 @@ def render_vectors_h(vectors: dict) -> str:
             f"{1 if case['ok'] else 0}U, {case['start']}U, {case['end']}U }},")
     add("};")
     add(f"#define ZPLC_PROTO_ACCESS_CASE_COUNT {len(vectors['accessCases'])}U")
+    add("")
+    add("typedef struct {")
+    add("  const char *name;")
+    add("  const uint8_t *public_key;")
+    add("  const uint8_t *message;")
+    add("  size_t message_length;")
+    add("  const uint8_t *signature;")
+    add("  uint8_t valid;")
+    add("} zplc_proto_signature_case_t;")
+    add("")
+    for i, case in enumerate(vectors["signatures"]):
+        add(f"static const uint8_t zplc_sg_k{i}[32] = {{ {c_bytes(bytes.fromhex(case['public']))} }};")
+        add(f"static const uint8_t zplc_sg_m{i}[] = {{ {c_bytes(bytes.fromhex(case['message']))} }};")
+        add(f"static const uint8_t zplc_sg_s{i}[64] = {{ {c_bytes(bytes.fromhex(case['signature']))} }};")
+    add("")
+    add("static const zplc_proto_signature_case_t zplc_proto_signature_cases[] = {")
+    for i, case in enumerate(vectors["signatures"]):
+        add(f"  {{ \"{case['name']}\", zplc_sg_k{i}, zplc_sg_m{i}, {len(case['message']) // 2}U, zplc_sg_s{i}, "
+            f"{1 if case['valid'] else 0}U }},")
+    add("};")
+    add(f"#define ZPLC_PROTO_SIGNATURE_CASE_COUNT {len(vectors['signatures'])}U")
     add("")
     add("#endif /* ZPLC_PROTO_VECTORS_H */")
     add("")

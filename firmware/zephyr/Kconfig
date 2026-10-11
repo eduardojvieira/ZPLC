@@ -175,6 +175,17 @@ config ZPLC_PROTO_SESSION_IDLE_S
     help
       The forces a session set are released when it ends, whatever the reason (COM-020).
 
+config ZPLC_PROTO_SIGNATURE
+    bool "Signed programs: accept only programs signed with the key of the device"
+    default n
+    depends on ZPLC_DEVICE_LINK
+    help
+      A device that holds a public key (given over the serial link with SIGNING_KEY_SET) activates only a program
+      whose Ed25519 signature, sent with it, verifies under that key (COM-026); a program that is loaded through the
+      text shell is refused while the device holds a key. Costs about 5 KB of flash and 2 KB of stack, and a
+      verification takes seconds on a core without a hardware multiplier: it runs in the command that commits the
+      program, never in the scan.
+
 config ZPLC_VM_CYCLE_INSTRUCTION_BUDGET
     int "PLC scan instruction budget"
     default 100000

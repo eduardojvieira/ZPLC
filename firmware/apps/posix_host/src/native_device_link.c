@@ -21,6 +21,7 @@
 #include <zplc_bytes.h>
 #include <zplc_core.h>
 #include <zplc_crc32.h>
+#include <zplc_ed25519.h>
 #include <zplc_fw_identity.h>
 #include <zplc_hal.h>
 #include <zplc_isa.h>
@@ -178,6 +179,48 @@ static int p_key_erase(void *context)
     zplc_secure_zero(port->key, ZPLC_PROTO_KEY_BYTES);
     port->key_set = 0;
     return 0;
+}
+
+static int p_signing_key_load(void *context, uint8_t key[ZPLC_PROTO_KEY_BYTES])
+{
+    zplc_native_device_link_port_t *port = port_of(context);
+
+    if (!port->signing_key_set) {
+        return 1;
+    }
+    memcpy(key, port->signing_key, ZPLC_PROTO_KEY_BYTES);
+    return 0;
+}
+
+static int p_signing_key_store(void *context, const uint8_t key[ZPLC_PROTO_KEY_BYTES])
+{
+    zplc_native_device_link_port_t *port = port_of(context);
+
+    memcpy(port->signing_key, key, ZPLC_PROTO_KEY_BYTES);
+    port->signing_key_set = 1;
+    return 0;
+}
+
+static int p_signing_key_erase(void *context)
+{
+    zplc_native_device_link_port_t *port = port_of(context);
+
+    memset(port->signing_key, 0, ZPLC_PROTO_KEY_BYTES);
+    port->signing_key_set = 0;
+    return 0;
+}
+
+/* The bytes that were staged are the bytes the loader is given: the signature is of those. */
+static int p_program_verify(void *context, const uint8_t key[ZPLC_PROTO_KEY_BYTES], const uint8_t signature[64])
+{
+    zplc_native_device_link_port_t *port = port_of(context);
+
+    if (port->staged == NULL) {
+        return (int)ZPLC_PROTO_ERR_STATE;
+    }
+    return zplc_ed25519_verify(signature, key, port->staged, port->staged_size) == 0
+               ? 0
+               : (int)ZPLC_PROTO_ERR_SIGNATURE_INVALID;
 }
 
 static int p_status(void *context, zplc_proto_status_t *status)
@@ -475,6 +518,10 @@ void zplc_native_device_link_port_init(zplc_native_device_link_port_t *port,
     ops->program_commit = p_program_commit;
     ops->program_abort = p_program_abort;
     ops->program_info = p_program_info;
+    ops->signing_key_load = p_signing_key_load;
+    ops->signing_key_store = p_signing_key_store;
+    ops->signing_key_erase = p_signing_key_erase;
+    ops->program_verify = p_program_verify;
     /* no configuration and no credentials: the simulator has neither */
 }
 

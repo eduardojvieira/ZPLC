@@ -73,6 +73,8 @@ export const ERROR = {
   CRC: 15,
   BUSY: 16,
   FAILED: 17,
+  SIGNATURE_REQUIRED: 18,
+  SIGNATURE_INVALID: 19,
 } as const;
 
 export const CAPABILITY = {
@@ -118,7 +120,7 @@ export interface EventSpec {
 }
 
 export const MESSAGES = {
-  HELLO: { id: 1, access: 'OPEN', request: [{ name: 'client_version', type: 'u8' }, { name: 'client_max_payload', type: 'u16' }], response: [{ name: 'version', type: 'u8' }, { name: 'transport', type: 'u8', enum: 'TRANSPORT' }, { name: 'max_payload', type: 'u16' }, { name: 'capabilities', type: 'u32' }, { name: 'session_state', type: 'u8', enum: 'SESSION_STATE' }, { name: 'key_provisioned', type: 'u8' }, { name: 'idle_timeout_s', type: 'u16' }] },
+  HELLO: { id: 1, access: 'OPEN', request: [{ name: 'client_version', type: 'u8' }, { name: 'client_max_payload', type: 'u16' }], response: [{ name: 'version', type: 'u8' }, { name: 'transport', type: 'u8', enum: 'TRANSPORT' }, { name: 'max_payload', type: 'u16' }, { name: 'capabilities', type: 'u32' }, { name: 'session_state', type: 'u8', enum: 'SESSION_STATE' }, { name: 'key_provisioned', type: 'u8' }, { name: 'idle_timeout_s', type: 'u16' }, { name: 'signature_required', type: 'u8' }] },
   IDENTITY: { id: 2, access: 'OPEN', request: [], response: [{ name: 'abi_major', type: 'u16' }, { name: 'abi_minor', type: 'u16' }, { name: 'draft_counter', type: 'u32' }, { name: 'io_hash', type: 'u32' }, { name: 'io_input_bytes', type: 'u16' }, { name: 'io_output_bytes', type: 'u16' }, { name: 'io_channels', type: 'u16' }, { name: 'code_size_max', type: 'u32' }, { name: 'work_size', type: 'u32' }, { name: 'retain_size', type: 'u32' }, { name: 'ipi_size', type: 'u32' }, { name: 'opi_size', type: 'u32' }, { name: 'product_version', type: 'str:24' }, { name: 'board', type: 'str:32' }, { name: 'board_profile', type: 'str:40' }, { name: 'io_board_id', type: 'str:32' }] },
   STATUS: { id: 3, access: 'READ', request: [], response: [{ name: 'state', type: 'u8', enum: 'RUN_STATE' }, { name: 'fault', type: 'u8', enum: 'FAULT' }, { name: 'program_loaded', type: 'u8' }, { name: 'forces', type: 'u8' }, { name: 'cycles', type: 'u32' }, { name: 'overruns', type: 'u32' }, { name: 'program_size', type: 'u32' }, { name: 'program_generation', type: 'u32' }, { name: 'uptime_ms', type: 'u32' }] },
   CHALLENGE: { id: 4, access: 'OPEN', request: [], response: [{ name: 'nonce', type: 'bytes:16' }] },
@@ -150,6 +152,7 @@ export const MESSAGES = {
   PROGRAM_COMMIT: { id: 66, access: 'SESSION', request: [], response: [{ name: 'size', type: 'u32' }, { name: 'crc32', type: 'u32' }, { name: 'generation', type: 'u32' }] },
   PROGRAM_ABORT: { id: 67, access: 'SESSION', request: [], response: [] },
   PROGRAM_INFO: { id: 68, access: 'READ', request: [], response: [{ name: 'loaded', type: 'u8' }, { name: 'size', type: 'u32' }, { name: 'crc32', type: 'u32' }, { name: 'generation', type: 'u32' }] },
+  PROGRAM_SIGN: { id: 69, access: 'SESSION', request: [{ name: 'signature', type: 'bytes:64' }], response: [] },
   CONFIG_SET: { id: 80, access: 'SESSION', request: [{ name: 'key', type: 'str:24' }, { name: 'value', type: 'tail' }], response: [] },
   CONFIG_SAVE: { id: 81, access: 'SESSION', request: [], response: [] },
   CONFIG_RESET: { id: 82, access: 'SESSION', request: [], response: [] },
@@ -159,6 +162,8 @@ export const MESSAGES = {
   CRED_ERASE: { id: 91, access: 'SESSION', request: [{ name: 'kind', type: 'u8', enum: 'CREDENTIAL' }], response: [] },
   KEY_SET: { id: 96, access: 'SERIAL_SESSION', request: [{ name: 'key', type: 'bytes:32' }], response: [] },
   KEY_CLEAR: { id: 97, access: 'SERIAL_SESSION', request: [], response: [] },
+  SIGNING_KEY_SET: { id: 98, access: 'SERIAL_SESSION', request: [{ name: 'public_key', type: 'bytes:32' }], response: [] },
+  SIGNING_KEY_CLEAR: { id: 99, access: 'SERIAL_SESSION', request: [], response: [] },
 } as const satisfies Record<string, MessageSpec>;
 
 export const EVENTS = {

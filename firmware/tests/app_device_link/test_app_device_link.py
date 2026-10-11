@@ -17,8 +17,11 @@ its scheduler, its exchange, its force table and its program store:
   events           a status change and the end of a session arrive as lines without being asked for
   dropped frames   a frame with a bad checksum is counted, not answered
 
+  signed programs  a device that holds a public key activates only a program with a valid Ed25519 signature, and the
+                   text shell refuses an upload meanwhile (COM-026)
+
 The image is built with a five second idle time (CONFIG_ZPLC_PROTO_SESSION_IDLE_S) so that the timeout can be waited
-for. Authenticated sessions need a cryptographic generator that native_sim does not have here: they are proved on
+for, and with CONFIG_ZPLC_PROTO_SIGNATURE. Authenticated sessions need a cryptographic generator that native_sim does not have here: they are proved on
 the host (test_proto_session.c and the native runtime tests).
 
 Usage:  ZPLC_FW_WS=<west workspace> python3 firmware/tests/app_device_link/test_app_device_link.py
@@ -40,6 +43,7 @@ from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(REPO / "tools" / "contract"))
+import ed25519_ref  # noqa: E402  (RFC 8032 in Python integers: the signatures the image has to accept)
 import generate_protocol as proto  # noqa: E402  (the definition and a reference encoder and decoder)
 
 WORKSPACE = Path(os.environ.get("ZPLC_FW_WS", Path.home() / "zplc-zephyr-ws"))
@@ -80,7 +84,7 @@ def build(directory: Path) -> Path:
     command = (
         f'. "{REPO}/tools/firmware-test/env.sh" && cd "{WORKSPACE}" && '
         f'west build -p always -b native_sim/native zplc/firmware/app -d "{directory}" -- '
-        f"-DCONFIG_ZPLC_CODE_SIZE_MAX=4096 -DCONFIG_ZPLC_PROTO_SESSION_IDLE_S={IDLE_SECONDS}"
+        f"-DCONFIG_ZPLC_CODE_SIZE_MAX=4096 -DCONFIG_ZPLC_PROTO_SESSION_IDLE_S={IDLE_SECONDS} -DCONFIG_ZPLC_PROTO_SIGNATURE=y"
     )
     log = directory.with_suffix(".log")
     with open(log, "w", encoding="utf-8") as out:
@@ -184,6 +188,13 @@ class Link:
         for received in frames_of(self.shell.take()):
             if received["kind"] == 2:
                 self.events.append(received)
+
+
+def capabilities_now(link: "Link", field: str = "capabilities") -> int:
+    """A field of a fresh hello."""
+    body = link.request("HELLO", bytes([1]) + struct.pack("<H", 512))["payload"]
+    capabilities, _state, _key, _idle, required = struct.unpack_from("<IBBHB", body, 5)
+    return capabilities if field == "capabilities" else required
 
 
 def u16(value: int) -> bytes:
@@ -321,6 +332,40 @@ def main() -> int:
               "the end of the session by idle time arrives as an event")
         check(json.loads(shell.run("zplc dbg force list --json"))["count"] == 0, "and the force is released")
         check(link.status_of(link.request("STOP")) == ERR["NO_SESSION"], "the session is gone")
+
+        # ---- a device that holds a public key accepts only signed programs ---------------------------------
+        check(link.status_of(link.request("SESSION_OPEN", open_payload())) == 0, "a session for the key")
+        check(capabilities_now(link) & CAP["SIGNATURE"] != 0, "the image offers signed programs")
+        seed = bytes(range(0x40, 0x60))
+        check(link.status_of(link.request("SIGNING_KEY_SET", ed25519_ref.public_key(seed))) == 0, "the public key is given")
+        check(capabilities_now(link, field="signature_required") == 1, "and the hello says programs have to be signed")
+
+        def download(signature: bytes | None, content: bytes = artifact) -> dict | None:
+            started = link.request("PROGRAM_BEGIN", u32(len(content)) + u32(zlib.crc32(content) & 0xFFFFFFFF))
+            if link.status_of(started) != 0:
+                return started
+            for at in range(0, len(content), 32):
+                link.request("PROGRAM_CHUNK", u32(at) + content[at:at + 32])
+            if signature is not None:
+                link.request("PROGRAM_SIGN", signature)
+            return link.request("PROGRAM_COMMIT")
+
+        unsigned = download(None)
+        check(link.status_of(unsigned) == ERR["SIGNATURE_REQUIRED"], "an unsigned program is refused")
+        signature = ed25519_ref.sign(seed, artifact)
+        check(link.status_of(link.request("PROGRAM_SIGN", signature)) == 0, "the signature can follow the chunks")
+        check(link.status_of(link.request("PROGRAM_COMMIT")) == 0, "and the commit then activates the program")
+        stranger = ed25519_ref.sign(bytes(range(0x50, 0x70)), artifact)
+        check(link.status_of(download(stranger)) == ERR["SIGNATURE_INVALID"], "a signature of another key is refused")
+        altered = bytearray(artifact)
+        altered[-1] ^= 0x01
+        check(link.status_of(download(signature, bytes(altered))) == ERR["SIGNATURE_INVALID"], "a program changed after it was signed is refused")
+        shell.run(f"zplc load {len(artifact)}")
+        refused_by_shell = shell.run("zplc data " + artifact.hex())
+        check("accepts only signed programs" in refused_by_shell, "the text shell refuses an upload while the device holds a key")
+        check(link.status_of(link.request("SIGNING_KEY_CLEAR")) == 0, "the key is erased")
+        check(link.status_of(download(None)) == 0, "and an unsigned program is accepted again")
+        check(link.status_of(link.request("SESSION_CLOSE")) == 0, "the session is closed")
 
         # ---- a damaged frame is counted, not answered ---------------------------------------------------------
         before = link.request("LINK_STATS")["payload"]

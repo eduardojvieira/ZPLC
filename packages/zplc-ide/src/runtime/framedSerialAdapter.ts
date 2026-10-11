@@ -50,6 +50,7 @@ export class FramedSerialAdapter extends SerialAdapter {
   private stripFrames: ((chunk: string) => void) | null = null;
   private _firmware: FirmwareReport | null = null;
   private localBreakpoints = new Set<number>();
+  private signer: ((artifact: Uint8Array) => Promise<Uint8Array>) | null = null;
 
   /** What the firmware speaks, once the adapter is connected. */
   get firmware(): FirmwareReport | null {
@@ -63,6 +64,24 @@ export class FramedSerialAdapter extends SerialAdapter {
 
   linkStatus(): RouterStatus {
     return this.linkEvents.status();
+  }
+
+  /** The signer for a device that accepts only signed programs (COM-026); see link/signing.ts. */
+  setProgramSigner(signer: ((artifact: Uint8Array) => Promise<Uint8Array>) | null): void {
+    this.signer = signer;
+  }
+
+  /** Give the device the public key programs have to be signed with, over the serial link. */
+  async provisionSigningKey(publicKey: Uint8Array): Promise<void> {
+    if (!this.link) throw new Error('This firmware does not speak the device link, which signed programs need.');
+    await this.changing((link) => link.request('SIGNING_KEY_SET', { public_key: publicKey }));
+    await this.ask((link) => link.hello());
+  }
+
+  async clearSigningKey(): Promise<void> {
+    if (!this.link) throw new Error('This firmware does not speak the device link, which signed programs need.');
+    await this.changing((link) => link.request('SIGNING_KEY_CLEAR', {}));
+    await this.ask((link) => link.hello());
   }
 
   override setEventHandlers(events: DebugAdapterEvents): void {
@@ -394,6 +413,15 @@ export class FramedSerialAdapter extends SerialAdapter {
         const offset = index * chunk;
         await this.ask((link) => link.request('PROGRAM_CHUNK', { offset, data: bytecode.subarray(offset, offset + chunk) }));
         trace?.({ kind: 'stage', message: `Sent ${Math.min(offset + chunk, bytecode.length)} of ${bytecode.length} bytes (${index + 1}/${chunks})` });
+      }
+      if (this.link.info?.signatureRequired) {
+        const signer = this.signer;
+        if (signer === null) {
+          throw new Error('This device accepts only signed programs and Studio has no signing key for it.');
+        }
+        const signature = await signer(bytecode);
+        trace?.({ kind: 'stage', message: 'Sending the signature of the program' });
+        await this.ask((link) => link.request('PROGRAM_SIGN', { signature }));
       }
       const done = await this.ask((link) => link.request('PROGRAM_COMMIT', {}));
       trace?.({ kind: 'response', message: `The device holds ${done.size} bytes, CRC-32 ${done.crc32.toString(16).padStart(8, '0')}` });

@@ -9,7 +9,7 @@ tags: [reference, generated]
 
 {/* >>> GENERATED (tools/docs/generate_source_references.ts): reference/device-protocol. Do not edit. >>> */}
 
-The device link protocol is how Studio and a device talk: a framed, versioned binary protocol with a length, a sequence number and a checksum on every frame, capability negotiation and explicit error codes. It runs over UART, USB serial and TCP. This is protocol version `1`: 41 messages and 8 events. The text shell of the device stays: it is the older protocol and the recovery console, and `zplc sys info --json` keeps its keys. This page is read off `tools/contract/protocol.json`, the one definition the C codec of the firmware and the TypeScript codec of Studio are generated from. The native runtime speaks the same protocol on standard input and output when it is started with `--device-link`; `--device-link-network` applies the rules of a network link to it, so that they can be exercised without a socket.
+The device link protocol is how Studio and a device talk: a framed, versioned binary protocol with a length, a sequence number and a checksum on every frame, capability negotiation and explicit error codes. It runs over UART, USB serial and TCP. This is protocol version `1`: 44 messages and 8 events. The text shell of the device stays: it is the older protocol and the recovery console, and `zplc sys info --json` keeps its keys. This page is read off `tools/contract/protocol.json`, the one definition the C codec of the firmware and the TypeScript codec of Studio are generated from. The native runtime speaks the same protocol on standard input and output when it is started with `--device-link`; `--device-link-network` applies the rules of a network link to it, so that they can be exercised without a socket.
 
 ## Sessions
 
@@ -21,7 +21,9 @@ The forces a session set end with it, whatever the reason, and the outputs follo
 
 A multi-byte value is written with one `MEM_WRITE`: the device queues it whole and the scan applies it at its next input latch, so a program never reads half of it. A download is `PROGRAM_BEGIN` (size and CRC-32), `PROGRAM_CHUNK` in order, and `PROGRAM_COMMIT`, which checks the CRC-32, verifies and activates the artifact and answers with the size and CRC-32 that the device read back from what it holds. The runtime is stopped before, and stays stopped after: RUN is another request.
 
-The messages that need a session: `MEM_WRITE`, `FORCE_SET`, `FORCE_CLEAR`, `FORCE_CLEAR_ALL`, `SESSION_CLOSE`, `KEEPALIVE`, `RUN`, `STOP`, `PAUSE`, `RESUME`, `STEP`, `RESET`, `BP_ADD`, `BP_REMOVE`, `BP_CLEAR`, `PROGRAM_BEGIN`, `PROGRAM_CHUNK`, `PROGRAM_COMMIT`, `PROGRAM_ABORT`, `CONFIG_SET`, `CONFIG_SAVE`, `CONFIG_RESET`, `CRED_BEGIN`, `CRED_CHUNK`, `CRED_COMMIT`, `CRED_ERASE`, `KEY_SET`, `KEY_CLEAR`. `KEY_SET` and `KEY_CLEAR` also need the serial link.
+A device that was given a public key with `SIGNING_KEY_SET` (over the serial link) accepts only a program that was signed with the matching private key: the Ed25519 signature (RFC 8032) of the whole artifact is sent with `PROGRAM_SIGN` after the last chunk, and `PROGRAM_COMMIT` verifies it first. An unsigned program is refused with `SIGNATURE_REQUIRED`, one that is not a signature of this artifact with `SIGNATURE_INVALID`; the text shell refuses an upload while the device holds a key. The hello says whether signatures are required. A device that cannot verify does not offer the capability.
+
+The messages that need a session: `MEM_WRITE`, `FORCE_SET`, `FORCE_CLEAR`, `FORCE_CLEAR_ALL`, `SESSION_CLOSE`, `KEEPALIVE`, `RUN`, `STOP`, `PAUSE`, `RESUME`, `STEP`, `RESET`, `BP_ADD`, `BP_REMOVE`, `BP_CLEAR`, `PROGRAM_BEGIN`, `PROGRAM_CHUNK`, `PROGRAM_COMMIT`, `PROGRAM_ABORT`, `PROGRAM_SIGN`, `CONFIG_SET`, `CONFIG_SAVE`, `CONFIG_RESET`, `CRED_BEGIN`, `CRED_CHUNK`, `CRED_COMMIT`, `CRED_ERASE`, `KEY_SET`, `KEY_CLEAR`, `SIGNING_KEY_SET`, `SIGNING_KEY_CLEAR`. `KEY_SET` and `KEY_CLEAR` also need the serial link.
 
 ## Authentication on a network link
 
@@ -131,6 +133,8 @@ The code covers the header and the payload, so the sequence number and the direc
 | `CRC` | 15 | The CRC-32 of the transferred program is not the one announced. |
 | `BUSY` | 16 | A resource the message needs is in use; try again. |
 | `FAILED` | 17 | The device tried and could not do it. |
+| `SIGNATURE_REQUIRED` | 18 | The device holds a public key and accepts only signed programs: send the signature of the artifact before the commit. |
+| `SIGNATURE_INVALID` | 19 | The signature is not a signature of this artifact under the key of the device; the transfer is dropped. |
 
 A response starts with its status byte. After `RANGE` the response carries `address`, `length`, `region_start`, `region_end` (`u16` each): the access that was refused and the region that holds the address.
 
@@ -216,6 +220,7 @@ A response starts with its status byte. After `RANGE` the response carries `addr
 | `PROGRAM_COMMIT` | 0x42 | `SESSION` | Check the CRC-32, verify the artifact and activate it. The runtime stays stopped. |
 | `PROGRAM_ABORT` | 0x43 | `SESSION` | Drop a transfer that is in progress. |
 | `PROGRAM_INFO` | 0x44 | `READ` | Size, CRC-32 and generation of the loaded program, computed over what the device holds. |
+| `PROGRAM_SIGN` | 0x45 | `SESSION` | The Ed25519 signature of the artifact being transferred, sent after its last chunk and before the commit. Needed when the device holds a public key. |
 | `CONFIG_SET` | 0x50 | `SESSION` | Change one configuration value. |
 | `CONFIG_SAVE` | 0x51 | `SESSION` | Persist the configuration. |
 | `CONFIG_RESET` | 0x52 | `SESSION` | Reset the configuration to its defaults. |
@@ -225,6 +230,8 @@ A response starts with its status byte. After `RANGE` the response carries `addr
 | `CRED_ERASE` | 0x5B | `SESSION` | Erase a credential. |
 | `KEY_SET` | 0x60 | `SERIAL_SESSION` | Provision the key of authenticated sessions. The device never sends the key back. |
 | `KEY_CLEAR` | 0x61 | `SERIAL_SESSION` | Erase the key; authenticated sessions are no longer possible. |
+| `SIGNING_KEY_SET` | 0x62 | `SERIAL_SESSION` | Give the device the public key that programs have to be signed with. From then on it accepts only signed programs. |
+| `SIGNING_KEY_CLEAR` | 0x63 | `SERIAL_SESSION` | Erase the public key; the device accepts unsigned programs again. |
 
 ### HELLO (0x01)
 
@@ -248,6 +255,7 @@ Recognise the device: protocol version, link kind, largest payload, capabilities
 | `session_state` | `u8 (SESSION_STATE)` | The state of the session as this link sees it. |
 | `key_provisioned` | `u8` | 1 when the device holds a key for authenticated sessions. |
 | `idle_timeout_s` | `u16` | Seconds of silence after which a session ends. |
+| `signature_required` | `u8` | 1 when the device holds a public key and accepts only signed programs (COM-026). |
 
 ### IDENTITY (0x02)
 
@@ -747,6 +755,20 @@ no fields
 | `crc32` | `u32` | CRC-32 of the loaded program. |
 | `generation` | `u32` | The program generation. |
 
+### PROGRAM_SIGN (0x45)
+
+The Ed25519 signature of the artifact being transferred, sent after its last chunk and before the commit. Needed when the device holds a public key. Access: `SESSION`.
+
+**Request**
+
+| Field | Type | Meaning |
+| --- | --- | --- |
+| `signature` | `bytes:64` | The signature (RFC 8032) of the whole artifact, header and CRC included. |
+
+**Response** (after the status byte)
+
+no fields
+
 ### CONFIG_SET (0x50)
 
 Change one configuration value. Access: `SESSION`.
@@ -858,6 +880,32 @@ no fields
 ### KEY_CLEAR (0x61)
 
 Erase the key; authenticated sessions are no longer possible. Access: `SERIAL_SESSION`.
+
+**Request**
+
+no fields
+
+**Response** (after the status byte)
+
+no fields
+
+### SIGNING_KEY_SET (0x62)
+
+Give the device the public key that programs have to be signed with. From then on it accepts only signed programs. Access: `SERIAL_SESSION`.
+
+**Request**
+
+| Field | Type | Meaning |
+| --- | --- | --- |
+| `public_key` | `bytes:32` | The Ed25519 public key. |
+
+**Response** (after the status byte)
+
+no fields
+
+### SIGNING_KEY_CLEAR (0x63)
+
+Erase the public key; the device accepts unsigned programs again. Access: `SERIAL_SESSION`.
 
 **Request**
 

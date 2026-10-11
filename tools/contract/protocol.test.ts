@@ -16,12 +16,13 @@ interface VectorFrame {
   name: string; kind: number; message: number; sequence: number; auth: boolean; payload: string; wire: string;
   fields: Record<string, number | string>;
 }
+interface SignatureCase { name: string; public: string; message: string; signature: string; valid: boolean }
 interface VectorStream {
   name: string; hex: string; delivered: string[];
   counters: { crc_errors: number; version_errors: number; malformed: number; oversize: number; resyncs: number };
 }
 const vectors = JSON.parse(readFileSync(new URL('./golden/protocol-vectors.json', import.meta.url), 'utf8')) as {
-  payloadMax: number; keyHex: string; frames: VectorFrame[]; streams: VectorStream[];
+  payloadMax: number; keyHex: string; frames: VectorFrame[]; streams: VectorStream[]; signatures: SignatureCase[];
 };
 const bytes = (hex: string) => Uint8Array.from(Buffer.from(hex, 'hex'));
 const hex = (data: Uint8Array) => Buffer.from(data).toString('hex');
@@ -139,4 +140,23 @@ describe('parseFrame names why a buffer is not a frame', () => {
     expect(mutate((c) => { c[c.length - 1]! ^= 1; })).toEqual({ error: PARSE_ERROR.CRC });
     expect(mutate((c) => { c[11]! ^= 1; })).toEqual({ error: PARSE_ERROR.CRC });
   });
+});
+
+describe('the signatures the generator wrote (COM-026)', () => {
+  // The vectors are computed by a Python reference of RFC 8032. The runtime's own Ed25519 (the one Studio signs with)
+  // has to agree with it on every case, so the C verifier of the firmware, which the same vectors hold, is held to
+  // the standard and not to one implementation.
+  for (const [index, vector] of vectors.signatures.entries()) {
+    test(`${index}: ${vector.name}`, async () => {
+      const publicKey = bytes(vector.public);
+      let accepted = false;
+      try {
+        const key = await globalThis.crypto.subtle.importKey('raw', publicKey, { name: 'Ed25519' }, false, ['verify']);
+        accepted = await globalThis.crypto.subtle.verify({ name: 'Ed25519' }, key, bytes(vector.signature), bytes(vector.message));
+      } catch {
+        accepted = false; // a key that is not a point is refused at import
+      }
+      expect(accepted).toBe(vector.valid);
+    });
+  }
 });

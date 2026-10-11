@@ -133,7 +133,9 @@
     { "name": "TOO_LARGE", "value": 14, "doc": { "en": "The program is larger than the device accepts.", "es": "El programa es más grande de lo que el dispositivo acepta." } },
     { "name": "CRC", "value": 15, "doc": { "en": "The CRC-32 of the transferred program is not the one announced.", "es": "El CRC-32 del programa transferido no es el anunciado." } },
     { "name": "BUSY", "value": 16, "doc": { "en": "A resource the message needs is in use; try again.", "es": "Un recurso que el mensaje necesita está en uso; reintente." } },
-    { "name": "FAILED", "value": 17, "doc": { "en": "The device tried and could not do it.", "es": "El dispositivo lo intentó y no pudo." } }
+    { "name": "FAILED", "value": 17, "doc": { "en": "The device tried and could not do it.", "es": "El dispositivo lo intentó y no pudo." } },
+    { "name": "SIGNATURE_REQUIRED", "value": 18, "doc": { "en": "The device holds a public key and accepts only signed programs: send the signature of the artifact before the commit.", "es": "El dispositivo tiene una clave pública y solo acepta programas firmados: envíe la firma del artefacto antes de confirmar." } },
+    { "name": "SIGNATURE_INVALID", "value": 19, "doc": { "en": "The signature is not a signature of this artifact under the key of the device; the transfer is dropped.", "es": "La firma no es una firma de este artefacto bajo la clave del dispositivo; se descarta la transferencia." } }
   ],
   "capabilities": [
     { "name": "SESSION", "bit": 0, "doc": { "en": "Sessions: one writer at a time, with an idle timeout.", "es": "Sesiones: un solo escritor a la vez, con tiempo de inactividad." } },
@@ -203,7 +205,8 @@
         { "name": "capabilities", "type": "u32", "doc": "Bit mask of the capabilities of this build." },
         { "name": "session_state", "type": "u8", "enum": "SESSION_STATE", "doc": "The state of the session as this link sees it." },
         { "name": "key_provisioned", "type": "u8", "doc": "1 when the device holds a key for authenticated sessions." },
-        { "name": "idle_timeout_s", "type": "u16", "doc": "Seconds of silence after which a session ends." }
+        { "name": "idle_timeout_s", "type": "u16", "doc": "Seconds of silence after which a session ends." },
+        { "name": "signature_required", "type": "u8", "doc": "1 when the device holds a public key and accepts only signed programs (COM-026)." }
       ]
     },
     {
@@ -511,6 +514,12 @@
       ]
     },
     {
+      "name": "PROGRAM_SIGN", "id": 69, "access": "SESSION",
+      "summary": { "en": "The Ed25519 signature of the artifact being transferred, sent after its last chunk and before the commit. Needed when the device holds a public key.", "es": "La firma Ed25519 del artefacto que se transfiere, enviada después de su último fragmento y antes de confirmar. Se necesita cuando el dispositivo tiene una clave pública." },
+      "request": [ { "name": "signature", "type": "bytes:64", "doc": "The signature (RFC 8032) of the whole artifact, header and CRC included." } ],
+      "response": []
+    },
+    {
       "name": "CONFIG_SET", "id": 80, "access": "SESSION",
       "summary": { "en": "Change one configuration value.", "es": "Cambiar un valor de configuración." },
       "request": [
@@ -567,6 +576,18 @@
     {
       "name": "KEY_CLEAR", "id": 97, "access": "SERIAL_SESSION",
       "summary": { "en": "Erase the key; authenticated sessions are no longer possible.", "es": "Borrar la clave; ya no son posibles las sesiones autenticadas." },
+      "request": [],
+      "response": []
+    },
+    {
+      "name": "SIGNING_KEY_SET", "id": 98, "access": "SERIAL_SESSION",
+      "summary": { "en": "Give the device the public key that programs have to be signed with. From then on it accepts only signed programs.", "es": "Dar al dispositivo la clave pública con la que se deben firmar los programas. Desde entonces solo acepta programas firmados." },
+      "request": [ { "name": "public_key", "type": "bytes:32", "doc": "The Ed25519 public key." } ],
+      "response": []
+    },
+    {
+      "name": "SIGNING_KEY_CLEAR", "id": 99, "access": "SERIAL_SESSION",
+      "summary": { "en": "Erase the public key; the device accepts unsigned programs again.", "es": "Borrar la clave pública; el dispositivo vuelve a aceptar programas sin firma." },
       "request": [],
       "response": []
     }

@@ -25,6 +25,9 @@ typedef struct {
     zplc_native_runtime_session_t *session;
     uint8_t key[ZPLC_PROTO_KEY_BYTES];
     int key_set;
+    /* the public key programs have to be signed with (COM-026) */
+    uint8_t signing_key[ZPLC_PROTO_KEY_BYTES];
+    int signing_key_set;
     /* a program being transferred */
     uint8_t *staged;
     uint32_t staged_expected;

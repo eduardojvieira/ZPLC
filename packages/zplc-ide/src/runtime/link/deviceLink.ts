@@ -82,6 +82,8 @@ export interface HelloInfo {
   sessionState: 'NONE' | 'THIS_LINK' | 'OTHER_LINK';
   keyProvisioned: boolean;
   idleTimeoutS: number;
+  /** The device holds a public key and accepts only signed programs (COM-026). */
+  signatureRequired: boolean;
 }
 
 export interface SessionInfo {
@@ -218,6 +220,7 @@ export class DeviceLink {
       sessionState: SESSION_STATE_NAMES[response.session_state] ?? 'NONE',
       keyProvisioned: response.key_provisioned === 1,
       idleTimeoutS: response.idle_timeout_s,
+      signatureRequired: response.signature_required === 1,
     };
     this._hello = info;
     this.decoder = new FrameDecoder(Math.min(info.maxPayload, this.options.maxPayload));

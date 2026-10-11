@@ -9,7 +9,7 @@ tags: [reference, generated]
 
 {/* >>> GENERATED (tools/docs/generate_source_references.ts): reference/device-protocol. Do not edit. >>> */}
 
-El protocolo de enlace con el dispositivo es como hablan Studio y un dispositivo: un protocolo binario con tramas y versión, con longitud, número de secuencia y suma de verificación en cada trama, negociación de capacidades y códigos de error explícitos. Funciona sobre UART, USB serie y TCP. Esta es la versión `1` del protocolo: 41 mensajes y 8 eventos. La consola de texto del dispositivo se mantiene: es el protocolo anterior y la consola de recuperación, y `zplc sys info --json` conserva sus claves. Esta página se lee de `tools/contract/protocol.json`, la definición única de la que se generan el códec C del firmware y el códec TypeScript de Studio. El runtime nativo habla el mismo protocolo por la entrada y la salida estándar cuando se inicia con `--device-link`; `--device-link-network` le aplica las reglas de un enlace de red, para poder ejercitarlas sin un socket.
+El protocolo de enlace con el dispositivo es como hablan Studio y un dispositivo: un protocolo binario con tramas y versión, con longitud, número de secuencia y suma de verificación en cada trama, negociación de capacidades y códigos de error explícitos. Funciona sobre UART, USB serie y TCP. Esta es la versión `1` del protocolo: 44 mensajes y 8 eventos. La consola de texto del dispositivo se mantiene: es el protocolo anterior y la consola de recuperación, y `zplc sys info --json` conserva sus claves. Esta página se lee de `tools/contract/protocol.json`, la definición única de la que se generan el códec C del firmware y el códec TypeScript de Studio. El runtime nativo habla el mismo protocolo por la entrada y la salida estándar cuando se inicia con `--device-link`; `--device-link-network` le aplica las reglas de un enlace de red, para poder ejercitarlas sin un socket.
 
 ## Sesiones
 
@@ -21,7 +21,9 @@ Los forzados que fijó una sesión terminan con ella, sea cual sea el motivo, y 
 
 Un valor de varios bytes se escribe con un solo `MEM_WRITE`: el dispositivo lo encola completo y el ciclo lo aplica en su siguiente latch de entradas, de modo que un programa nunca lee la mitad. Una descarga es `PROGRAM_BEGIN` (tamaño y CRC-32), `PROGRAM_CHUNK` en orden y `PROGRAM_COMMIT`, que comprueba el CRC-32, verifica y activa el artefacto y responde con el tamaño y el CRC-32 que el dispositivo leyó de lo que tiene. El runtime está detenido antes y sigue detenido después: RUN es otra solicitud.
 
-Los mensajes que necesitan una sesión: `MEM_WRITE`, `FORCE_SET`, `FORCE_CLEAR`, `FORCE_CLEAR_ALL`, `SESSION_CLOSE`, `KEEPALIVE`, `RUN`, `STOP`, `PAUSE`, `RESUME`, `STEP`, `RESET`, `BP_ADD`, `BP_REMOVE`, `BP_CLEAR`, `PROGRAM_BEGIN`, `PROGRAM_CHUNK`, `PROGRAM_COMMIT`, `PROGRAM_ABORT`, `CONFIG_SET`, `CONFIG_SAVE`, `CONFIG_RESET`, `CRED_BEGIN`, `CRED_CHUNK`, `CRED_COMMIT`, `CRED_ERASE`, `KEY_SET`, `KEY_CLEAR`. `KEY_SET` y `KEY_CLEAR` necesitan además el enlace serie.
+Un dispositivo al que se le dio una clave pública con `SIGNING_KEY_SET` (por el enlace serie) acepta solo un programa firmado con la clave privada correspondiente: la firma Ed25519 (RFC 8032) del artefacto completo se envía con `PROGRAM_SIGN` después del último fragmento, y `PROGRAM_COMMIT` la verifica primero. Un programa sin firma se rechaza con `SIGNATURE_REQUIRED`, uno cuya firma no es de este artefacto con `SIGNATURE_INVALID`; la consola de texto rechaza una subida mientras el dispositivo tiene una clave. El saludo dice si se exigen firmas. Un dispositivo que no puede verificar no ofrece la capacidad.
+
+Los mensajes que necesitan una sesión: `MEM_WRITE`, `FORCE_SET`, `FORCE_CLEAR`, `FORCE_CLEAR_ALL`, `SESSION_CLOSE`, `KEEPALIVE`, `RUN`, `STOP`, `PAUSE`, `RESUME`, `STEP`, `RESET`, `BP_ADD`, `BP_REMOVE`, `BP_CLEAR`, `PROGRAM_BEGIN`, `PROGRAM_CHUNK`, `PROGRAM_COMMIT`, `PROGRAM_ABORT`, `PROGRAM_SIGN`, `CONFIG_SET`, `CONFIG_SAVE`, `CONFIG_RESET`, `CRED_BEGIN`, `CRED_CHUNK`, `CRED_COMMIT`, `CRED_ERASE`, `KEY_SET`, `KEY_CLEAR`, `SIGNING_KEY_SET`, `SIGNING_KEY_CLEAR`. `KEY_SET` y `KEY_CLEAR` necesitan además el enlace serie.
 
 ## Autenticación en un enlace de red
 
@@ -131,6 +133,8 @@ El código cubre el encabezado y la carga útil, de modo que el número de secue
 | `CRC` | 15 | El CRC-32 del programa transferido no es el anunciado. |
 | `BUSY` | 16 | Un recurso que el mensaje necesita está en uso; reintente. |
 | `FAILED` | 17 | El dispositivo lo intentó y no pudo. |
+| `SIGNATURE_REQUIRED` | 18 | El dispositivo tiene una clave pública y solo acepta programas firmados: envíe la firma del artefacto antes de confirmar. |
+| `SIGNATURE_INVALID` | 19 | La firma no es una firma de este artefacto bajo la clave del dispositivo; se descarta la transferencia. |
 
 Una respuesta empieza con su byte de estado. Tras `RANGE` la respuesta lleva `address`, `length`, `region_start`, `region_end` (`u16` cada uno): el acceso que se rechazó y la región que contiene la dirección.
 
@@ -216,6 +220,7 @@ Una respuesta empieza con su byte de estado. Tras `RANGE` la respuesta lleva `ad
 | `PROGRAM_COMMIT` | 0x42 | `SESSION` | Comprobar el CRC-32, verificar el artefacto y activarlo. El runtime sigue detenido. |
 | `PROGRAM_ABORT` | 0x43 | `SESSION` | Descartar una transferencia en curso. |
 | `PROGRAM_INFO` | 0x44 | `READ` | Tamaño, CRC-32 y generación del programa cargado, calculados sobre lo que el dispositivo tiene. |
+| `PROGRAM_SIGN` | 0x45 | `SESSION` | La firma Ed25519 del artefacto que se transfiere, enviada después de su último fragmento y antes de confirmar. Se necesita cuando el dispositivo tiene una clave pública. |
 | `CONFIG_SET` | 0x50 | `SESSION` | Cambiar un valor de configuración. |
 | `CONFIG_SAVE` | 0x51 | `SESSION` | Guardar la configuración. |
 | `CONFIG_RESET` | 0x52 | `SESSION` | Restablecer la configuración a sus valores por defecto. |
@@ -225,6 +230,8 @@ Una respuesta empieza con su byte de estado. Tras `RANGE` la respuesta lleva `ad
 | `CRED_ERASE` | 0x5B | `SESSION` | Borrar una credencial. |
 | `KEY_SET` | 0x60 | `SERIAL_SESSION` | Aprovisionar la clave de las sesiones autenticadas. El dispositivo nunca devuelve la clave. |
 | `KEY_CLEAR` | 0x61 | `SERIAL_SESSION` | Borrar la clave; ya no son posibles las sesiones autenticadas. |
+| `SIGNING_KEY_SET` | 0x62 | `SERIAL_SESSION` | Dar al dispositivo la clave pública con la que se deben firmar los programas. Desde entonces solo acepta programas firmados. |
+| `SIGNING_KEY_CLEAR` | 0x63 | `SERIAL_SESSION` | Borrar la clave pública; el dispositivo vuelve a aceptar programas sin firma. |
 
 ### HELLO (0x01)
 
@@ -248,6 +255,7 @@ Reconocer el dispositivo: versión del protocolo, tipo de enlace, carga útil m�
 | `session_state` | `u8 (SESSION_STATE)` | The state of the session as this link sees it. |
 | `key_provisioned` | `u8` | 1 when the device holds a key for authenticated sessions. |
 | `idle_timeout_s` | `u16` | Seconds of silence after which a session ends. |
+| `signature_required` | `u8` | 1 when the device holds a public key and accepts only signed programs (COM-026). |
 
 ### IDENTITY (0x02)
 
@@ -747,6 +755,20 @@ sin campos
 | `crc32` | `u32` | CRC-32 of the loaded program. |
 | `generation` | `u32` | The program generation. |
 
+### PROGRAM_SIGN (0x45)
+
+La firma Ed25519 del artefacto que se transfiere, enviada después de su último fragmento y antes de confirmar. Se necesita cuando el dispositivo tiene una clave pública. Acceso: `SESSION`.
+
+**Solicitud**
+
+| Campo | Tipo | Significado |
+| --- | --- | --- |
+| `signature` | `bytes:64` | The signature (RFC 8032) of the whole artifact, header and CRC included. |
+
+**Respuesta** (después del byte de estado)
+
+sin campos
+
 ### CONFIG_SET (0x50)
 
 Cambiar un valor de configuración. Acceso: `SESSION`.
@@ -858,6 +880,32 @@ sin campos
 ### KEY_CLEAR (0x61)
 
 Borrar la clave; ya no son posibles las sesiones autenticadas. Acceso: `SERIAL_SESSION`.
+
+**Solicitud**
+
+sin campos
+
+**Respuesta** (después del byte de estado)
+
+sin campos
+
+### SIGNING_KEY_SET (0x62)
+
+Dar al dispositivo la clave pública con la que se deben firmar los programas. Desde entonces solo acepta programas firmados. Acceso: `SERIAL_SESSION`.
+
+**Solicitud**
+
+| Campo | Tipo | Significado |
+| --- | --- | --- |
+| `public_key` | `bytes:32` | The Ed25519 public key. |
+
+**Respuesta** (después del byte de estado)
+
+sin campos
+
+### SIGNING_KEY_CLEAR (0x63)
+
+Borrar la clave pública; el dispositivo vuelve a aceptar programas sin firma. Acceso: `SERIAL_SESSION`.
 
 **Solicitud**
 

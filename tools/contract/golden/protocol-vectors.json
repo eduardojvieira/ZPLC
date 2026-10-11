@@ -23,8 +23,8 @@
    "message": 1,
    "sequence": 2,
    "auth": false,
-   "payload": "00030a3614d3c3b3a31f263a18",
-   "wire": "5aa5010101020000000d0000030a3614d3c3b3a31f263a18f54200db",
+   "payload": "00030a3614d3c3b3a31f263a1834",
+   "wire": "5aa5010101020000000e0000030a3614d3c3b3a31f263a18341ba97217",
    "fields": {
     "version": 3,
     "transport": 10,
@@ -32,7 +32,8 @@
     "capabilities": 2746467283,
     "session_state": 31,
     "key_provisioned": 38,
-    "idle_timeout_s": 6202
+    "idle_timeout_s": 6202,
+    "signature_required": 52
    }
   },
   {
@@ -782,13 +783,35 @@
    }
   },
   {
+   "name": "program_sign_request",
+   "kind": 0,
+   "message": 69,
+   "sequence": 65,
+   "auth": false,
+   "payload": "101112131415161718191a1b1c1d1e1f202122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e3f404142434445464748494a4b4c4d4e4f",
+   "wire": "5aa5010045410000004000101112131415161718191a1b1c1d1e1f202122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e3f404142434445464748494a4b4c4d4e4fa966807b",
+   "fields": {
+    "signature": "101112131415161718191a1b1c1d1e1f202122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e3f404142434445464748494a4b4c4d4e4f"
+   }
+  },
+  {
+   "name": "program_sign_response",
+   "kind": 1,
+   "message": 69,
+   "sequence": 66,
+   "auth": false,
+   "payload": "00",
+   "wire": "5aa5010145420000000100009bdf2166",
+   "fields": {}
+  },
+  {
    "name": "config_set_request",
    "kind": 0,
    "message": 80,
-   "sequence": 65,
+   "sequence": 67,
    "auth": false,
    "payload": "6b65790000000000000000000000000000000000000000004142434445",
-   "wire": "5aa5010050410000001d006b6579000000000000000000000000000000000000000000414243444542107c7e",
+   "wire": "5aa5010050430000001d006b657900000000000000000000000000000000000000000041424344459339313a",
    "fields": {
     "key": "key",
     "value": "4142434445"
@@ -798,60 +821,60 @@
    "name": "config_set_response",
    "kind": 1,
    "message": 80,
-   "sequence": 66,
+   "sequence": 68,
    "auth": false,
    "payload": "00",
-   "wire": "5aa501015042000000010000d4e07a52",
+   "wire": "5aa501015044000000010000eed5aa31",
    "fields": {}
   },
   {
    "name": "config_save_request",
    "kind": 0,
    "message": 81,
-   "sequence": 67,
+   "sequence": 69,
    "auth": false,
    "payload": "",
-   "wire": "5aa50100514300000000005b7bf2a5",
+   "wire": "5aa50100514500000000004698ab73",
    "fields": {}
   },
   {
    "name": "config_save_response",
    "kind": 1,
    "message": 81,
-   "sequence": 68,
+   "sequence": 70,
    "auth": false,
    "payload": "00",
-   "wire": "5aa50101514400000001000070d500fd",
+   "wire": "5aa50101514600000001000059c49f6a",
    "fields": {}
   },
   {
    "name": "config_reset_request",
    "kind": 0,
    "message": 82,
-   "sequence": 69,
+   "sequence": 71,
    "auth": false,
    "payload": "",
-   "wire": "5aa5010052450000000000db824342",
+   "wire": "5aa5010052470000000000d0238b0f",
    "fields": {}
   },
   {
    "name": "config_reset_response",
    "kind": 1,
    "message": 82,
-   "sequence": 70,
+   "sequence": 72,
    "auth": false,
    "payload": "00",
-   "wire": "5aa501015246000000010000bac310e4",
+   "wire": "5aa501015248000000010000e7b82fb4",
    "fields": {}
   },
   {
    "name": "cred_begin_request",
    "kind": 0,
    "message": 88,
-   "sequence": 71,
+   "sequence": 73,
    "auth": false,
    "payload": "033513",
-   "wire": "5aa5010058470000000300033513cc1640c2",
+   "wire": "5aa50100584900000003000335135ecd820a",
    "fields": {
     "kind": 3,
     "size": 4917
@@ -861,20 +884,20 @@
    "name": "cred_begin_response",
    "kind": 1,
    "message": 88,
-   "sequence": 72,
+   "sequence": 74,
    "auth": false,
    "payload": "00",
-   "wire": "5aa5010158480000000100002fa4ef25",
+   "wire": "5aa50101584a00000001000006b570b2",
    "fields": {}
   },
   {
    "name": "cred_chunk_request",
    "kind": 0,
    "message": 89,
-   "sequence": 73,
+   "sequence": 75,
    "auth": false,
    "payload": "4041424344",
-   "wire": "5aa501005949000000050040414243446567d444",
+   "wire": "5aa50100594b00000005004041424344a4deb81c",
    "fields": {
     "data": "4041424344"
    }
@@ -883,40 +906,40 @@
    "name": "cred_chunk_response",
    "kind": 1,
    "message": 89,
-   "sequence": 74,
+   "sequence": 76,
    "auth": false,
    "payload": "00",
-   "wire": "5aa50101594a00000001000098b5da7e",
+   "wire": "5aa50101594c000000010000a2800a1d",
    "fields": {}
   },
   {
    "name": "cred_commit_request",
    "kind": 0,
    "message": 90,
-   "sequence": 75,
+   "sequence": 77,
    "auth": false,
    "payload": "",
-   "wire": "5aa501005a4b0000000000ccada64b",
+   "wire": "5aa501005a4d0000000000d14eff9d",
    "fields": {}
   },
   {
    "name": "cred_commit_response",
    "kind": 1,
    "message": 90,
-   "sequence": 76,
+   "sequence": 78,
    "auth": false,
    "payload": "00",
-   "wire": "5aa501015a4c00000001000041878593",
+   "wire": "5aa501015a4e00000001000068961a04",
    "fields": {}
   },
   {
    "name": "cred_erase_request",
    "kind": 0,
    "message": 91,
-   "sequence": 77,
+   "sequence": 79,
    "auth": false,
    "payload": "03",
-   "wire": "5aa501005b4d00000001000392c92a77",
+   "wire": "5aa501005b4f000000010003bbd8b5e0",
    "fields": {
     "kind": 3
    }
@@ -925,20 +948,20 @@
    "name": "cred_erase_response",
    "kind": 1,
    "message": 91,
-   "sequence": 78,
+   "sequence": 80,
    "auth": false,
    "payload": "00",
-   "wire": "5aa501015b4e000000010000f696b0c8",
+   "wire": "5aa501015b50000000010000657151ff",
    "fields": {}
   },
   {
    "name": "key_set_request",
    "kind": 0,
    "message": 96,
-   "sequence": 79,
+   "sequence": 81,
    "auth": false,
    "payload": "101112131415161718191a1b1c1d1e1f202122232425262728292a2b2c2d2e2f",
-   "wire": "5aa50100604f0000002000101112131415161718191a1b1c1d1e1f202122232425262728292a2b2c2d2e2f7b4df589",
+   "wire": "5aa5010060510000002000101112131415161718191a1b1c1d1e1f202122232425262728292a2b2c2d2e2f4e44f610",
    "fields": {
     "key": "101112131415161718191a1b1c1d1e1f202122232425262728292a2b2c2d2e2f"
    }
@@ -947,40 +970,82 @@
    "name": "key_set_response",
    "kind": 1,
    "message": 96,
-   "sequence": 80,
+   "sequence": 82,
    "auth": false,
    "payload": "00",
-   "wire": "5aa5010160500000000100004e3ef627",
+   "wire": "5aa501016052000000010000672f69b0",
    "fields": {}
   },
   {
    "name": "key_clear_request",
    "kind": 0,
    "message": 97,
-   "sequence": 81,
+   "sequence": 83,
    "auth": false,
    "payload": "",
-   "wire": "5aa5010061510000000000997d8f43",
+   "wire": "5aa501006153000000000092dc470e",
    "fields": {}
   },
   {
    "name": "key_clear_response",
    "kind": 1,
    "message": 97,
-   "sequence": 82,
+   "sequence": 84,
    "auth": false,
    "payload": "00",
-   "wire": "5aa501016152000000010000f92fc37c",
+   "wire": "5aa501016154000000010000c31a131f",
+   "fields": {}
+  },
+  {
+   "name": "signing_key_set_request",
+   "kind": 0,
+   "message": 98,
+   "sequence": 85,
+   "auth": false,
+   "payload": "101112131415161718191a1b1c1d1e1f202122232425262728292a2b2c2d2e2f",
+   "wire": "5aa5010062550000002000101112131415161718191a1b1c1d1e1f202122232425262728292a2b2c2d2e2f57ae54d6",
+   "fields": {
+    "public_key": "101112131415161718191a1b1c1d1e1f202122232425262728292a2b2c2d2e2f"
+   }
+  },
+  {
+   "name": "signing_key_set_response",
+   "kind": 1,
+   "message": 98,
+   "sequence": 86,
+   "auth": false,
+   "payload": "00",
+   "wire": "5aa501016256000000010000090c0306",
+   "fields": {}
+  },
+  {
+   "name": "signing_key_clear_request",
+   "kind": 0,
+   "message": 99,
+   "sequence": 87,
+   "auth": false,
+   "payload": "",
+   "wire": "5aa5010063570000000000ad8f4902",
+   "fields": {}
+  },
+  {
+   "name": "signing_key_clear_response",
+   "kind": 1,
+   "message": 99,
+   "sequence": 88,
+   "auth": false,
+   "payload": "00",
+   "wire": "5aa501016358000000010000ca77969a",
    "fields": {}
   },
   {
    "name": "evt_status_event",
    "kind": 2,
    "message": 128,
-   "sequence": 83,
+   "sequence": 89,
    "auth": false,
    "payload": "030ad2c2b2a2",
-   "wire": "5aa5010280530000000600030ad2c2b2a2167543c9",
+   "wire": "5aa5010280590000000600030ad2c2b2a2779d7423",
    "fields": {
     "state": 3,
     "fault": 10,
@@ -991,10 +1056,10 @@
    "name": "evt_fault_event",
    "kind": 2,
    "message": 129,
-   "sequence": 84,
+   "sequence": 90,
    "auth": false,
    "payload": "030a3614",
-   "wire": "5aa5010281540000000400030a3614c5c5b9d4",
+   "wire": "5aa50102815a0000000400030a361476f570ca",
    "fields": {
     "fault": 3,
     "task": 10,
@@ -1005,10 +1070,10 @@
    "name": "evt_breakpoint_event",
    "kind": 2,
    "message": 130,
-   "sequence": 85,
+   "sequence": 91,
    "auth": false,
    "payload": "033513",
-   "wire": "5aa50102825500000003000335137ada2950",
+   "wire": "5aa50102825b0000000300033513e801eb98",
    "fields": {
     "task": 3,
     "pc": 4917
@@ -1018,10 +1083,10 @@
    "name": "evt_force_event",
    "kind": 2,
    "message": 131,
-   "sequence": 86,
+   "sequence": 92,
    "auth": false,
    "payload": "03351311",
-   "wire": "5aa501028356000000040003351311fc2a8e3f",
+   "wire": "5aa50102835c00000004000335131135baac28",
    "fields": {
     "change": 3,
     "address": 4917,
@@ -1032,10 +1097,10 @@
    "name": "evt_log_event",
    "kind": 2,
    "message": 132,
-   "sequence": 87,
+   "sequence": 93,
    "auth": false,
    "payload": "034142434445",
-   "wire": "5aa501028457000000060003414243444554ece004",
+   "wire": "5aa50102845d00000006000341424344453504d7ee",
    "fields": {
     "level": 3,
     "text": "4142434445"
@@ -1045,10 +1110,10 @@
    "name": "evt_watch_event",
    "kind": 2,
    "message": 133,
-   "sequence": 88,
+   "sequence": 94,
    "auth": false,
    "payload": "d0c0b0a04142434445",
-   "wire": "5aa5010285580000000900d0c0b0a0414243444502a64fcb",
+   "wire": "5aa50102855e0000000900d0c0b0a04142434445f072b5e9",
    "fields": {
     "cycle": 2695938256,
     "data": "4142434445"
@@ -1058,10 +1123,10 @@
    "name": "evt_session_end_event",
    "kind": 2,
    "message": 134,
-   "sequence": 89,
+   "sequence": 95,
    "auth": false,
    "payload": "030a",
-   "wire": "5aa5010286590000000200030a5e385827",
+   "wire": "5aa50102865f0000000200030ad93137e1",
    "fields": {
     "reason": 3,
     "forces_released": 10
@@ -1071,10 +1136,10 @@
    "name": "evt_dropped_event",
    "kind": 2,
    "message": 135,
-   "sequence": 90,
+   "sequence": 96,
    "auth": false,
    "payload": "d0c0b0a0",
-   "wire": "5aa50102875a0000000400d0c0b0a08c72c92b",
+   "wire": "5aa5010287600000000400d0c0b0a07d601854",
    "fields": {
     "count": 2695938256
    }
@@ -1083,10 +1148,10 @@
    "name": "mem_write_range_error",
    "kind": 1,
    "message": 17,
-   "sequence": 91,
+   "sequence": 97,
    "auth": false,
    "payload": "09fe4f040000400050",
-   "wire": "5aa50101115b000000090009fe4f0400004000500b961b70",
+   "wire": "5aa501011161000000090009fe4f040000400050cc4ab3db",
    "fields": {}
   },
   {
@@ -1463,5 +1528,225 @@
    "start": 8192,
    "end": 16384
   }
- ]
+ ],
+ "signatures": [
+  {
+   "name": "valid, 0 bytes",
+   "public": "8a88e3dd7409f195fd52db2d3cba5d72ca6709bf1d94121bf3748801b40f6f5c",
+   "message": "",
+   "signature": "778cda0634c021fae8b1a9fa655ba13230f6fcfc5c5d519afb0872ec9bf1d64241cc3eed8ad47270d86d30e762ad17677c6fb1797e35bca7eba30388257e020f",
+   "valid": true
+  },
+  {
+   "name": "valid, 1 bytes",
+   "public": "8139770ea87d175f56a35466c34c7ecccb8d8a91b4ee37a25df60f5b8fc9b394",
+   "message": "24",
+   "signature": "67107a0c38e1226222ce72efe40a1cb023f33cb616a4999aa3d33e01cf87ec862b9325892d90cf5e70b41bd0409aa8e0c73665a0a22ebd442218532c07f42a06",
+   "valid": true
+  },
+  {
+   "name": "valid, 2 bytes",
+   "public": "ed4928c628d1c2c6eae90338905995612959273a5c63f93636c14614ac8737d1",
+   "message": "434a",
+   "signature": "7ddeeb969e5089b267658276e1e8013f9e60bba6f3781ebdeb56871fc19948f8d0a8ba3c19a096c6b12e4b0053e7ac556cfaae6193ac658178f37c3901c49e07",
+   "valid": true
+  },
+  {
+   "name": "valid, 3 bytes",
+   "public": "cd14b37f956e953194ff7fb73b3d81dcc561d61a7538094b7c3e1a643ee5f3aa",
+   "message": "626970",
+   "signature": "c181f104b9fadae19d0be6b916daf2f0c3a706f442709b911e599a51e66094e303dd21fa9aba9c3427d09b6856604d2ee3b95d3d071c630558342cead3ba630d",
+   "valid": true
+  },
+  {
+   "name": "valid, 31 bytes",
+   "public": "8a88e3dd7409f195fd52db2d3cba5d72ca6709bf1d94121bf3748801b40f6f5c",
+   "message": "81888f969da4abb2b9c0c7ced5dce3eaf1f8ff060d141b222930373e454c53",
+   "signature": "0e056b881f03a308427b801d1ee19df471f0c0a9a6e74697e8be8055ce0b27a08bcc61b5453cf62a3c1db49a66bdcbc9e81190a9173547a6176595a0f813de00",
+   "valid": true
+  },
+  {
+   "name": "valid, 32 bytes",
+   "public": "8139770ea87d175f56a35466c34c7ecccb8d8a91b4ee37a25df60f5b8fc9b394",
+   "message": "a0a7aeb5bcc3cad1d8dfe6edf4fb020910171e252c333a41484f565d646b7279",
+   "signature": "7ca56f19986081749a099cebc23a0cf58af8059951f6eef674585207146f14a0c8e6326fe4c54e4d3745e7dd27aba039ab271cf1208ad2a88dcea5c77ad5ea0d",
+   "valid": true
+  },
+  {
+   "name": "valid, 33 bytes",
+   "public": "ed4928c628d1c2c6eae90338905995612959273a5c63f93636c14614ac8737d1",
+   "message": "bfc6cdd4dbe2e9f0f7fe050c131a21282f363d444b525960676e757c838a91989f",
+   "signature": "152d6d83b3697c727944b836e5509a28d8effe5c25f364aca4a94360a84dd28f3be08e86a8244dec03e0ff2248da8bb36b838054298ff5ca9b164048e51c7404",
+   "valid": true
+  },
+  {
+   "name": "valid, 63 bytes",
+   "public": "cd14b37f956e953194ff7fb73b3d81dcc561d61a7538094b7c3e1a643ee5f3aa",
+   "message": "dee5ecf3fa01080f161d242b323940474e555c636a71787f868d949ba2a9b0b7bec5ccd3dae1e8eff6fd040b121920272e353c434a51585f666d747b828990",
+   "signature": "dcd79c049c641a3a8bb3889513329079e2222319e56a7e9649f5ebc62c3968ca15ad334871aedcb2ed589d600e9a8c421d01ceabed7fec15df002d2e70dc3609",
+   "valid": true
+  },
+  {
+   "name": "valid, 64 bytes",
+   "public": "8a88e3dd7409f195fd52db2d3cba5d72ca6709bf1d94121bf3748801b40f6f5c",
+   "message": "fd040b121920272e353c434a51585f666d747b828990979ea5acb3bac1c8cfd6dde4ebf2f900070e151c232a31383f464d545b626970777e858c939aa1a8afb6",
+   "signature": "fd944aa27a51a12e43bc4c0215bba2c3e53c3f115df91d695071b4f1ca62ad70cb27757cccf7084a0c32e059d9bba2f9d6f4f979b849cc747db5958d50204004",
+   "valid": true
+  },
+  {
+   "name": "valid, 65 bytes",
+   "public": "8139770ea87d175f56a35466c34c7ecccb8d8a91b4ee37a25df60f5b8fc9b394",
+   "message": "1c232a31383f464d545b626970777e858c939aa1a8afb6bdc4cbd2d9e0e7eef5fc030a11181f262d343b424950575e656c737a81888f969da4abb2b9c0c7ced5dc",
+   "signature": "710801abab804dbb99c97dfda9d788f7eb78cc9c3a594b2e8102c45d2ed47807d9551287b9293dd886614a1348ebd328e4b2d0dfa6598f5294c5c2ef72b3ba0e",
+   "valid": true
+  },
+  {
+   "name": "valid, 111 bytes",
+   "public": "ed4928c628d1c2c6eae90338905995612959273a5c63f93636c14614ac8737d1",
+   "message": "3b424950575e656c737a81888f969da4abb2b9c0c7ced5dce3eaf1f8ff060d141b222930373e454c535a61686f767d848b9299a0a7aeb5bcc3cad1d8dfe6edf4fb020910171e252c333a41484f565d646b727980878e959ca3aab1b8bfc6cdd4dbe2e9f0f7fe050c131a21282f363d",
+   "signature": "61263942a6e7582e8837d5e384dad2cb441b8a534d855e286cd59149f092059cd8910ad6e3d18055deebf9ba06bf024f3eeb2fc1d0778deee0de2c0f04cb6200",
+   "valid": true
+  },
+  {
+   "name": "valid, 112 bytes",
+   "public": "cd14b37f956e953194ff7fb73b3d81dcc561d61a7538094b7c3e1a643ee5f3aa",
+   "message": "5a61686f767d848b9299a0a7aeb5bcc3cad1d8dfe6edf4fb020910171e252c333a41484f565d646b727980878e959ca3aab1b8bfc6cdd4dbe2e9f0f7fe050c131a21282f363d444b525960676e757c838a91989fa6adb4bbc2c9d0d7dee5ecf3fa01080f161d242b323940474e555c63",
+   "signature": "2dfe6475a35e319389e76949ba1c304483e579ccbb1b953fd086707d8afb3355f2588fe9f616040a6f2ba936572645ef09f18fb4193cf50da042fa9c80c1180f",
+   "valid": true
+  },
+  {
+   "name": "valid, 113 bytes",
+   "public": "8a88e3dd7409f195fd52db2d3cba5d72ca6709bf1d94121bf3748801b40f6f5c",
+   "message": "7980878e959ca3aab1b8bfc6cdd4dbe2e9f0f7fe050c131a21282f363d444b525960676e757c838a91989fa6adb4bbc2c9d0d7dee5ecf3fa01080f161d242b323940474e555c636a71787f868d949ba2a9b0b7bec5ccd3dae1e8eff6fd040b121920272e353c434a51585f666d747b8289",
+   "signature": "da160e69ede2847d9d586978ed61410817078d5c7c6d483d11bcc9a529dbe7b485373eddfb14841253206ab4d4efe48d19e829d5763413d037fc9edbd1b18703",
+   "valid": true
+  },
+  {
+   "name": "valid, 127 bytes",
+   "public": "8139770ea87d175f56a35466c34c7ecccb8d8a91b4ee37a25df60f5b8fc9b394",
+   "message": "989fa6adb4bbc2c9d0d7dee5ecf3fa01080f161d242b323940474e555c636a71787f868d949ba2a9b0b7bec5ccd3dae1e8eff6fd040b121920272e353c434a51585f666d747b828990979ea5acb3bac1c8cfd6dde4ebf2f900070e151c232a31383f464d545b626970777e858c939aa1a8afb6bdc4cbd2d9e0e7eef5fc030a",
+   "signature": "5bde6a312ff8eb2a0a5b4b4726ac9d19223f29a35d9e6644e70e31625a369bc0c6d582b67d640b4c24fabd205665a20d382ecc6bc1fa12c4819b646313315500",
+   "valid": true
+  },
+  {
+   "name": "valid, 128 bytes",
+   "public": "ed4928c628d1c2c6eae90338905995612959273a5c63f93636c14614ac8737d1",
+   "message": "b7bec5ccd3dae1e8eff6fd040b121920272e353c434a51585f666d747b828990979ea5acb3bac1c8cfd6dde4ebf2f900070e151c232a31383f464d545b626970777e858c939aa1a8afb6bdc4cbd2d9e0e7eef5fc030a11181f262d343b424950575e656c737a81888f969da4abb2b9c0c7ced5dce3eaf1f8ff060d141b222930",
+   "signature": "8ded679bd97656500a5f0e80207e7bbc8fd04850d8b038e2c88b356c2cec0431ba780d0863277c515b2be9d76f5dbc67ec237043b79fb93696dca4481ecc8507",
+   "valid": true
+  },
+  {
+   "name": "valid, 129 bytes",
+   "public": "cd14b37f956e953194ff7fb73b3d81dcc561d61a7538094b7c3e1a643ee5f3aa",
+   "message": "d6dde4ebf2f900070e151c232a31383f464d545b626970777e858c939aa1a8afb6bdc4cbd2d9e0e7eef5fc030a11181f262d343b424950575e656c737a81888f969da4abb2b9c0c7ced5dce3eaf1f8ff060d141b222930373e454c535a61686f767d848b9299a0a7aeb5bcc3cad1d8dfe6edf4fb020910171e252c333a41484f56",
+   "signature": "6be607acb56f6c0689da907aacf57d57f644a91be19fff5f85cb49754e69d085b5f483be30eadf6013985178690465b7c2e5b30ae4378d9f1b84e089a6a59606",
+   "valid": true
+  },
+  {
+   "name": "valid, 255 bytes",
+   "public": "8a88e3dd7409f195fd52db2d3cba5d72ca6709bf1d94121bf3748801b40f6f5c",
+   "message": "f5fc030a11181f262d343b424950575e656c737a81888f969da4abb2b9c0c7ced5dce3eaf1f8ff060d141b222930373e454c535a61686f767d848b9299a0a7aeb5bcc3cad1d8dfe6edf4fb020910171e252c333a41484f565d646b727980878e959ca3aab1b8bfc6cdd4dbe2e9f0f7fe050c131a21282f363d444b525960676e757c838a91989fa6adb4bbc2c9d0d7dee5ecf3fa01080f161d242b323940474e555c636a71787f868d949ba2a9b0b7bec5ccd3dae1e8eff6fd040b121920272e353c434a51585f666d747b828990979ea5acb3bac1c8cfd6dde4ebf2f900070e151c232a31383f464d545b626970777e858c939aa1a8afb6bdc4cbd2d9e0e7",
+   "signature": "357b1acadfee8f8e94b8e252d2baa525fd0624aa12a855eba85f5691ebabf586a3941ba783e38529863c0bf89bc043d329e32d23c7e3fe0ddb6f9e5b99a31f0b",
+   "valid": true
+  },
+  {
+   "name": "valid, 300 bytes",
+   "public": "8139770ea87d175f56a35466c34c7ecccb8d8a91b4ee37a25df60f5b8fc9b394",
+   "message": "141b222930373e454c535a61686f767d848b9299a0a7aeb5bcc3cad1d8dfe6edf4fb020910171e252c333a41484f565d646b727980878e959ca3aab1b8bfc6cdd4dbe2e9f0f7fe050c131a21282f363d444b525960676e757c838a91989fa6adb4bbc2c9d0d7dee5ecf3fa01080f161d242b323940474e555c636a71787f868d949ba2a9b0b7bec5ccd3dae1e8eff6fd040b121920272e353c434a51585f666d747b828990979ea5acb3bac1c8cfd6dde4ebf2f900070e151c232a31383f464d545b626970777e858c939aa1a8afb6bdc4cbd2d9e0e7eef5fc030a11181f262d343b424950575e656c737a81888f969da4abb2b9c0c7ced5dce3eaf1f8ff060d141b222930373e454c535a61686f767d848b9299a0a7aeb5bcc3cad1d8dfe6edf4fb020910171e252c333a41",
+   "signature": "b43f8e1a498292fa0bc6087d5be7293e071b1a0ded02e401bbb4245a7c055f60393fc993bbe78d502f241c840019588c2299790ccdb0c804ffecac285fbda40c",
+   "valid": true
+  },
+  {
+   "name": "valid, 1000 bytes",
+   "public": "ed4928c628d1c2c6eae90338905995612959273a5c63f93636c14614ac8737d1",
+   "message": "333a41484f565d646b727980878e959ca3aab1b8bfc6cdd4dbe2e9f0f7fe050c131a21282f363d444b525960676e757c838a91989fa6adb4bbc2c9d0d7dee5ecf3fa01080f161d242b323940474e555c636a71787f868d949ba2a9b0b7bec5ccd3dae1e8eff6fd040b121920272e353c434a51585f666d747b828990979ea5acb3bac1c8cfd6dde4ebf2f900070e151c232a31383f464d545b626970777e858c939aa1a8afb6bdc4cbd2d9e0e7eef5fc030a11181f262d343b424950575e656c737a81888f969da4abb2b9c0c7ced5dce3eaf1f8ff060d141b222930373e454c535a61686f767d848b9299a0a7aeb5bcc3cad1d8dfe6edf4fb020910171e252c333a41484f565d646b727980878e959ca3aab1b8bfc6cdd4dbe2e9f0f7fe050c131a21282f363d444b525960676e757c838a91989fa6adb4bbc2c9d0d7dee5ecf3fa01080f161d242b323940474e555c636a71787f868d949ba2a9b0b7bec5ccd3dae1e8eff6fd040b121920272e353c434a51585f666d747b828990979ea5acb3bac1c8cfd6dde4ebf2f900070e151c232a31383f464d545b626970777e858c939aa1a8afb6bdc4cbd2d9e0e7eef5fc030a11181f262d343b424950575e656c737a81888f969da4abb2b9c0c7ced5dce3eaf1f8ff060d141b222930373e454c535a61686f767d848b9299a0a7aeb5bcc3cad1d8dfe6edf4fb020910171e252c333a41484f565d646b727980878e959ca3aab1b8bfc6cdd4dbe2e9f0f7fe050c131a21282f363d444b525960676e757c838a91989fa6adb4bbc2c9d0d7dee5ecf3fa01080f161d242b323940474e555c636a71787f868d949ba2a9b0b7bec5ccd3dae1e8eff6fd040b121920272e353c434a51585f666d747b828990979ea5acb3bac1c8cfd6dde4ebf2f900070e151c232a31383f464d545b626970777e858c939aa1a8afb6bdc4cbd2d9e0e7eef5fc030a11181f262d343b424950575e656c737a81888f969da4abb2b9c0c7ced5dce3eaf1f8ff060d141b222930373e454c535a61686f767d848b9299a0a7aeb5bcc3cad1d8dfe6edf4fb020910171e252c333a41484f565d646b727980878e959ca3aab1b8bfc6cdd4dbe2e9f0f7fe050c131a21282f363d444b525960676e757c838a91989fa6adb4bbc2c9d0d7dee5ecf3fa01080f161d242b323940474e555c636a71787f868d949ba2a9b0b7bec5ccd3dae1e8eff6fd040b121920272e353c434a51585f666d747b828990979ea5acb3bac1c8cfd6dde4ebf2f900070e151c232a31383f464d545b626970777e858c939aa1a8afb6bdc4cbd2d9e0e7eef5fc030a11181f262d343b424950575e656c737a81888f969da4abb2b9c0c7ced5dce3eaf1f8ff060d141b222930373e454c535a61686f767d84",
+   "signature": "8b358875f2faf3978b8587f2e83b5d6a02fcce2a0208811fe9fc673abf934b4638fcc849a35a24b4e40a493ef24fa57077e30138ef05134fe66413b482ee000b",
+   "valid": true
+  },
+  {
+   "name": "damaged signature: the first bit of R",
+   "public": "cd14b37f956e953194ff7fb73b3d81dcc561d61a7538094b7c3e1a643ee5f3aa",
+   "message": "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f202122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e3f404142434445464748494a4b4c4d4e4f505152535455565758595a5b5c5d5e5f606162636465666768696a6b6c6d6e6f707172737475767778797a7b7c7d7e7f808182838485868788898a8b8c8d8e8f909192939495969798999a9b9c9d9e9fa0a1a2a3a4a5a6a7a8a9aaabacadaeafb0b1b2b3b4b5b6b7b8b9babbbcbdbebfc0c1c2c3c4c5c6c7",
+   "signature": "d8c4582566dc4dbd5025e8cb18156141eed1def676c7b0377adb219de929c0ebf69713f147c2b259979c477fd889252ea0b7ace0d530d5cde2ecb897f0fa8c03",
+   "valid": false
+  },
+  {
+   "name": "damaged signature: the last bit of R",
+   "public": "cd14b37f956e953194ff7fb73b3d81dcc561d61a7538094b7c3e1a643ee5f3aa",
+   "message": "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f202122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e3f404142434445464748494a4b4c4d4e4f505152535455565758595a5b5c5d5e5f606162636465666768696a6b6c6d6e6f707172737475767778797a7b7c7d7e7f808182838485868788898a8b8c8d8e8f909192939495969798999a9b9c9d9e9fa0a1a2a3a4a5a6a7a8a9aaabacadaeafb0b1b2b3b4b5b6b7b8b9babbbcbdbebfc0c1c2c3c4c5c6c7",
+   "signature": "d9c4582566dc4dbd5025e8cb18156141eed1def676c7b0377adb219de929c06bf69713f147c2b259979c477fd889252ea0b7ace0d530d5cde2ecb897f0fa8c03",
+   "valid": false
+  },
+  {
+   "name": "damaged signature: a bit of S",
+   "public": "cd14b37f956e953194ff7fb73b3d81dcc561d61a7538094b7c3e1a643ee5f3aa",
+   "message": "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f202122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e3f404142434445464748494a4b4c4d4e4f505152535455565758595a5b5c5d5e5f606162636465666768696a6b6c6d6e6f707172737475767778797a7b7c7d7e7f808182838485868788898a8b8c8d8e8f909192939495969798999a9b9c9d9e9fa0a1a2a3a4a5a6a7a8a9aaabacadaeafb0b1b2b3b4b5b6b7b8b9babbbcbdbebfc0c1c2c3c4c5c6c7",
+   "signature": "d9c4582566dc4dbd5025e8cb18156141eed1def676c7b0377adb219de929c0ebfe9713f147c2b259979c477fd889252ea0b7ace0d530d5cde2ecb897f0fa8c03",
+   "valid": false
+  },
+  {
+   "name": "damaged signature: a high bit of S",
+   "public": "cd14b37f956e953194ff7fb73b3d81dcc561d61a7538094b7c3e1a643ee5f3aa",
+   "message": "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f202122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e3f404142434445464748494a4b4c4d4e4f505152535455565758595a5b5c5d5e5f606162636465666768696a6b6c6d6e6f707172737475767778797a7b7c7d7e7f808182838485868788898a8b8c8d8e8f909192939495969798999a9b9c9d9e9fa0a1a2a3a4a5a6a7a8a9aaabacadaeafb0b1b2b3b4b5b6b7b8b9babbbcbdbebfc0c1c2c3c4c5c6c7",
+   "signature": "d9c4582566dc4dbd5025e8cb18156141eed1def676c7b0377adb219de929c0ebf69713f147c2b259979c477fd889252ea0b7ace0d530d5cde2ecb897f0fa0c03",
+   "valid": false
+  },
+  {
+   "name": "damaged message",
+   "public": "cd14b37f956e953194ff7fb73b3d81dcc561d61a7538094b7c3e1a643ee5f3aa",
+   "message": "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f202122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e3f404142434445464748494a4b4c4d4e4f505152535455565758595a5b5c5d5e5f606162636465666768696a6b6c6d6e6f707172737475767778797a7b7c7d7e7f808182838485868788898a8b8c8d8e8f909192939495969798999a9b9c9d9e9fa0a1a2a3a4a5a6a7a8a9aaabacadaeafb0b1b2b3b4b5b6b7b8b9babbbcbdbebfc0c1c2c3c4c5c6c6",
+   "signature": "d9c4582566dc4dbd5025e8cb18156141eed1def676c7b0377adb219de929c0ebf69713f147c2b259979c477fd889252ea0b7ace0d530d5cde2ecb897f0fa8c03",
+   "valid": false
+  },
+  {
+   "name": "a message that is a prefix",
+   "public": "cd14b37f956e953194ff7fb73b3d81dcc561d61a7538094b7c3e1a643ee5f3aa",
+   "message": "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f202122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e3f404142434445464748494a4b4c4d4e4f505152535455565758595a5b5c5d5e5f606162636465666768696a6b6c6d6e6f707172737475767778797a7b7c7d7e7f808182838485868788898a8b8c8d8e8f909192939495969798999a9b9c9d9e9fa0a1a2a3a4a5a6a7a8a9aaabacadaeafb0b1b2b3b4b5b6b7b8b9babbbcbdbebfc0c1c2c3c4c5c6",
+   "signature": "d9c4582566dc4dbd5025e8cb18156141eed1def676c7b0377adb219de929c0ebf69713f147c2b259979c477fd889252ea0b7ace0d530d5cde2ecb897f0fa8c03",
+   "valid": false
+  },
+  {
+   "name": "another key",
+   "public": "fd1724385aa0c75b64fb78cd602fa1d991fdebf76b13c58ed702eac835e9f618",
+   "message": "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f202122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e3f404142434445464748494a4b4c4d4e4f505152535455565758595a5b5c5d5e5f606162636465666768696a6b6c6d6e6f707172737475767778797a7b7c7d7e7f808182838485868788898a8b8c8d8e8f909192939495969798999a9b9c9d9e9fa0a1a2a3a4a5a6a7a8a9aaabacadaeafb0b1b2b3b4b5b6b7b8b9babbbcbdbebfc0c1c2c3c4c5c6c7",
+   "signature": "d9c4582566dc4dbd5025e8cb18156141eed1def676c7b0377adb219de929c0ebf69713f147c2b259979c477fd889252ea0b7ace0d530d5cde2ecb897f0fa8c03",
+   "valid": false
+  },
+  {
+   "name": "S plus the order of the group",
+   "public": "cd14b37f956e953194ff7fb73b3d81dcc561d61a7538094b7c3e1a643ee5f3aa",
+   "message": "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f202122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e3f404142434445464748494a4b4c4d4e4f505152535455565758595a5b5c5d5e5f606162636465666768696a6b6c6d6e6f707172737475767778797a7b7c7d7e7f808182838485868788898a8b8c8d8e8f909192939495969798999a9b9c9d9e9fa0a1a2a3a4a5a6a7a8a9aaabacadaeafb0b1b2b3b4b5b6b7b8b9babbbcbdbebfc0c1c2c3c4c5c6c7",
+   "signature": "d9c4582566dc4dbd5025e8cb18156141eed1def676c7b0377adb219de929c0ebe36b094e6225c5b16d393f22b7830443a0b7ace0d530d5cde2ecb897f0fa8c13",
+   "valid": false
+  },
+  {
+   "name": "S equal to the order of the group",
+   "public": "cd14b37f956e953194ff7fb73b3d81dcc561d61a7538094b7c3e1a643ee5f3aa",
+   "message": "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f202122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e3f404142434445464748494a4b4c4d4e4f505152535455565758595a5b5c5d5e5f606162636465666768696a6b6c6d6e6f707172737475767778797a7b7c7d7e7f808182838485868788898a8b8c8d8e8f909192939495969798999a9b9c9d9e9fa0a1a2a3a4a5a6a7a8a9aaabacadaeafb0b1b2b3b4b5b6b7b8b9babbbcbdbebfc0c1c2c3c4c5c6c7",
+   "signature": "d9c4582566dc4dbd5025e8cb18156141eed1def676c7b0377adb219de929c0ebedd3f55c1a631258d69cf7a2def9de1400000000000000000000000000000010",
+   "valid": false
+  },
+  {
+   "name": "a public key that is not a point",
+   "public": "0200000000000000000000000000000000000000000000000000000000000000",
+   "message": "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f202122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e3f404142434445464748494a4b4c4d4e4f505152535455565758595a5b5c5d5e5f606162636465666768696a6b6c6d6e6f707172737475767778797a7b7c7d7e7f808182838485868788898a8b8c8d8e8f909192939495969798999a9b9c9d9e9fa0a1a2a3a4a5a6a7a8a9aaabacadaeafb0b1b2b3b4b5b6b7b8b9babbbcbdbebfc0c1c2c3c4c5c6c7",
+   "signature": "d9c4582566dc4dbd5025e8cb18156141eed1def676c7b0377adb219de929c0ebf69713f147c2b259979c477fd889252ea0b7ace0d530d5cde2ecb897f0fa8c03",
+   "valid": false
+  },
+  {
+   "name": "an R that is not a point",
+   "public": "cd14b37f956e953194ff7fb73b3d81dcc561d61a7538094b7c3e1a643ee5f3aa",
+   "message": "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f202122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e3f404142434445464748494a4b4c4d4e4f505152535455565758595a5b5c5d5e5f606162636465666768696a6b6c6d6e6f707172737475767778797a7b7c7d7e7f808182838485868788898a8b8c8d8e8f909192939495969798999a9b9c9d9e9fa0a1a2a3a4a5a6a7a8a9aaabacadaeafb0b1b2b3b4b5b6b7b8b9babbbcbdbebfc0c1c2c3c4c5c6c7",
+   "signature": "0200000000000000000000000000000000000000000000000000000000000000f69713f147c2b259979c477fd889252ea0b7ace0d530d5cde2ecb897f0fa8c03",
+   "valid": false
+  },
+  {
+   "name": "all zero signature",
+   "public": "cd14b37f956e953194ff7fb73b3d81dcc561d61a7538094b7c3e1a643ee5f3aa",
+   "message": "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f202122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e3f404142434445464748494a4b4c4d4e4f505152535455565758595a5b5c5d5e5f606162636465666768696a6b6c6d6e6f707172737475767778797a7b7c7d7e7f808182838485868788898a8b8c8d8e8f909192939495969798999a9b9c9d9e9fa0a1a2a3a4a5a6a7a8a9aaabacadaeafb0b1b2b3b4b5b6b7b8b9babbbcbdbebfc0c1c2c3c4c5c6c7",
+   "signature": "00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+   "valid": false
+  }
+ ],
+ "signingSeedHex": "808182838485868788898a8b8c8d8e8f909192939495969798999a9b9c9d9e9f"
 }

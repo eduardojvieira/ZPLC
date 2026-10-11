@@ -111,6 +111,10 @@ if(CONFIG_ZPLC)
     ${CMAKE_CURRENT_LIST_DIR}/lib/zplc_core/src/core/zplc_proto_dev.c
     ${CMAKE_CURRENT_LIST_DIR}/lib/zplc_core/src/core/zplc_sha256.c
   )
+  zephyr_library_sources_ifdef(CONFIG_ZPLC_PROTO_SIGNATURE
+    ${CMAKE_CURRENT_LIST_DIR}/lib/zplc_core/src/core/zplc_sha512.c
+    ${CMAKE_CURRENT_LIST_DIR}/lib/zplc_core/src/core/zplc_ed25519.c
+  )
 
   # ZPLC Loader (always included if ZPLC is enabled)
   zephyr_library_sources(

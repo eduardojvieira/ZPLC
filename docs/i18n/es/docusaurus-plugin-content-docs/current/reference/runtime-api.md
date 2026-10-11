@@ -21,6 +21,7 @@ tags: [reference, runtime, generated]
 - `firmware/lib/zplc_core/include/zplc_core.h`
 - `firmware/lib/zplc_core/include/zplc_crc32.h`
 - `firmware/lib/zplc_core/include/zplc_debug.h`
+- `firmware/lib/zplc_core/include/zplc_ed25519.h`
 - `firmware/lib/zplc_core/include/zplc_exchange.h`
 - `firmware/lib/zplc_core/include/zplc_hal.h`
 - `firmware/lib/zplc_core/include/zplc_hal_posix.h`
@@ -32,6 +33,7 @@ tags: [reference, runtime, generated]
 - `firmware/lib/zplc_core/include/zplc_retain.h`
 - `firmware/lib/zplc_core/include/zplc_scheduler.h`
 - `firmware/lib/zplc_core/include/zplc_sha256.h`
+- `firmware/lib/zplc_core/include/zplc_sha512.h`
 
 ## `zplc_bytes.h`
 
@@ -1648,6 +1650,47 @@ const char *hil_error_name(uint8_t code);
 ### Constantes y macros
 
 Ninguno.
+
+## `zplc_ed25519.h`
+
+Ed25519 signature verification (RFC 8032), for the signed artifact of COM-026.
+
+A device that holds a public key accepts a program only when its signature verifies under that key. This is verification only: it holds no secret, so it is neither constant-time nor does it need to be. It is the field arithmetic of TweetNaCl (16 limbs of 16 bits) with the checks of RFC 8032 (the point must decode, and the scalar of the signature must be below the order of the group), about 2 KB of stack and no table. Time: a verification is two scalar multiplications; on a Cortex-M0+ at 125 MHz it takes seconds, which a deploy can afford and a scan cannot: it runs in the command that commits a program, never in the scan.
+
+Fuente: `firmware/lib/zplc_core/include/zplc_ed25519.h`
+
+### Funciones
+
+#### `zplc_ed25519_verify`
+
+```c
+int zplc_ed25519_verify(const uint8_t signature[ZPLC_ED25519_SIGNATURE_BYTES], const uint8_t public_key[ZPLC_ED25519_PUBLIC_BYTES], const uint8_t *message, size_t length);
+```
+
+**Resumen fuente:** Verify the signature of a message.
+
+**Parámetros**
+
+| Nombre | Tipo | Descripción fuente |
+| --- | --- | --- |
+| `const uint8_t signature[ZPLC_ED25519_SIGNATURE_BYTES]` | `—` | — |
+| `const uint8_t public_key[ZPLC_ED25519_PUBLIC_BYTES]` | `—` | — |
+| `message` | `const uint8_t *` | — |
+| `length` | `size_t` | — |
+
+**Retorno fuente:** 0 when it is valid under the key, a negative number when it is not (or the key is not a point)
+
+### Tipos
+
+Ninguno.
+
+### Constantes y macros
+
+| Nombre | Valor | Resumen fuente |
+| --- | --- | --- |
+| `ZPLC_ED25519_H` | `—` | — |
+| `ZPLC_ED25519_PUBLIC_BYTES` | `32U` | — |
+| `ZPLC_ED25519_SIGNATURE_BYTES` | `64U` | — |
 
 ## `zplc_exchange.h`
 
@@ -3854,6 +3897,73 @@ void zplc_secure_zero(void *buffer, size_t length);
 | `ZPLC_SHA256_H` | `—` | — |
 | `ZPLC_SHA256_DIGEST_BYTES` | `32U` | — |
 | `ZPLC_SHA256_BLOCK_BYTES` | `64U` | — |
+
+## `zplc_sha512.h`
+
+SHA-512 (FIPS 180-4), the hash of Ed25519 (COM-026).
+
+Fuente: `firmware/lib/zplc_core/include/zplc_sha512.h`
+
+### Funciones
+
+#### `zplc_sha512_init`
+
+```c
+void zplc_sha512_init(zplc_sha512_t *context);
+```
+
+**Resumen fuente:** No se encontró un resumen en el comentario del header.
+
+**Parámetros**
+
+| Nombre | Tipo | Descripción fuente |
+| --- | --- | --- |
+| `context` | `zplc_sha512_t *` | — |
+
+#### `zplc_sha512_update`
+
+```c
+void zplc_sha512_update(zplc_sha512_t *context, const uint8_t *data, size_t length);
+```
+
+**Resumen fuente:** No se encontró un resumen en el comentario del header.
+
+**Parámetros**
+
+| Nombre | Tipo | Descripción fuente |
+| --- | --- | --- |
+| `context` | `zplc_sha512_t *` | — |
+| `data` | `const uint8_t *` | — |
+| `length` | `size_t` | — |
+
+#### `zplc_sha512_final`
+
+```c
+void zplc_sha512_final(zplc_sha512_t *context, uint8_t digest[ZPLC_SHA512_DIGEST_BYTES]);
+```
+
+**Resumen fuente:** Write the digest and clear the context.
+
+**Parámetros**
+
+| Nombre | Tipo | Descripción fuente |
+| --- | --- | --- |
+| `context` | `zplc_sha512_t *` | — |
+| `uint8_t digest[ZPLC_SHA512_DIGEST_BYTES]` | `—` | — |
+
+### Tipos
+
+| Nombre | Tipo | Resumen fuente |
+| --- | --- | --- |
+| `state` | Estructura | — |
+
+### Constantes y macros
+
+| Nombre | Valor | Resumen fuente |
+| --- | --- | --- |
+| `ZPLC_SHA512_H` | `—` | — |
+| `ZPLC_SHA512_DIGEST_BYTES` | `64U` | — |
+| `ZPLC_SHA512_BLOCK_BYTES` | `128U` | — |
 
 ## Tablas del contrato binario
 
