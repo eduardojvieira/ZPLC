@@ -1982,6 +1982,13 @@
     {"kind":"unit","ref":"tools/ci/electron-support.test.ts","test":"the Electron line (IDE-028)","partial":true,"note":"fails when the dependency is outside the supported majors of tools/ci/electron-support.json or is not an exact pin; the latest patch is the release check (bun tools/ci/electron-support.ts --release, RELEASING.md), and it fails today: electron 43.4.1, the latest patch of 43 recorded on 2026-10-10 is 43.7.9"}
   ],
   "IDE-029": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/components/debugSessionState.test.ts","test":"accepts only the compile result built for the current compiler generation","note":"stale-build detection: a compile result of an older compiler generation is not current"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/components/debugSessionState.test.ts","test":"marks a deploy loaded only when its revision and compiler generation are still current","note":"stale-build detection across a deploy: a program built before an edit is not marked loaded"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/components/hardwareDeployConfirmation.test.ts","test":"hardware deploy confirmation","note":"the deploy confirmation that a person approves before any program is sent"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/components/operationalStatusPresentation.test.ts","test":"presentOperationalStatus","note":"the operational status wording that exists today (disconnected simulation, native cycles and overruns, handshaken and configured-only targets, the degraded WebAssembly fallback, hostile strings) is pinned by value; run by the typescript job of ci.yml"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/components/operationalStatusPresentation.test.ts","test":"shows active forces only in a compatible session and makes unconfirmed state dominate","note":"the force banner text and when it is unconfirmed are pinned by value"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/runtime/connectionManager.test.ts","test":"never starts a physical load for denied or stale hardware admission","note":"a denied or stale admission never reaches the device"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/runtime/deviceHandshake.test.ts","test":"device handshake admission","note":"the deploy admission checks (protocol, board, ABI, draft counter, I/O description) refuse with stable codes"},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"18 Force an input while stopped at a breakpoint","partial":true},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"8 Force an input and release it","partial":true}
   ],
@@ -2149,6 +2156,9 @@
     {"kind":"unit","ref":"scripts/release/firmware-images.test.ts","test":"never accepts the HIL trace, from the configuration or from the options the image reports (HIL-013)"},
     {"kind":"unit","ref":"tools/hil/test_hil_chain.py","test":"BuildCommandAndTraceTests","note":"the chain prints and records the build command, and fails when the image's trace option is not what the run asked for; run by the typescript job of ci.yml, step 'Test the HIL tools and the HIL package', on fake devices and the native runtime; no serial port is opened"},
     {"kind":"unit","ref":"tools/hil/test_hil_trace_profile.py","test":"ProfileTests","note":"no shipped board profile sets CONFIG_ZPLC_HIL_DEBUG=y and the overlay does (tools/hil/validate_hil_trace_profile.py, run by the docs-and-truth job of ci.yml); the Pico image built with the overlay differs from the release one in its options hash and lists HIL_DEBUG=y, and the image reports its options (REL-023)"}
+  ],
+  "HIL-016": [
+    {"kind":"unit","ref":"tools/docs/check_capability_claims.test.ts","test":"flags a published timing figure that cites no hardware record, and passes one that links a record of a board (HIL-016)"}
   ],
   "HIL-017": [
     {"kind":"unit","ref":"tools/hil/test_hil_crc.py","test":"CrcCrossTests","note":"the C loader and the TypeScript assembler are compared on the same bytes, and any disagreement or wrong loader verdict fails; run by the typescript job of ci.yml, step 'Test the HIL tools and the HIL package', on fake devices and the native runtime; no serial port is opened"}
