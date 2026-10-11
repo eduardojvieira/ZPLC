@@ -1,5 +1,6 @@
 @import "tailwindcss";
 @import "./theme/tokens.generated.css";
+@import "./ui/kit.css";
 
 /* =============================================================================
    ZPLC design tokens (UX-003)

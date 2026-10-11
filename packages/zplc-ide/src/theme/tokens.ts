@@ -239,6 +239,9 @@ scale(TYPE, '--line-height-tight', 'Line height of controls and tables.', '1.3')
 scale(TYPE, '--line-height-normal', 'Line height of running text.', '1.5');
 scale(TYPE, '--letter-spacing-label', 'Tracking of an uppercase structural label.', '0.08em');
 
+/** Icon sizes in pixels: the `--icon-size-*` tokens and the `size` of a lucide icon read the same numbers. */
+export const ICON_SIZES = { sm: 12, md: 16, lg: 20 } as const;
+
 const SHAPE = 'Shape, elevation and icons';
 scale(SHAPE, '--radius-control', 'Corner radius of a button, a field and a tab.', '2px');
 scale(SHAPE, '--radius-surface', 'Corner radius of a panel or a card: square.', '0px');
@@ -247,9 +250,9 @@ scale(SHAPE, '--radius-round', 'Corner radius of a status dot.', '9999px');
 scale(SHAPE, '--elevation-flat', 'Surfaces are flat at rest.', 'none');
 scale(SHAPE, '--elevation-tooltip', 'The shadow of a tooltip, the only small overlay.', 'var(--shadow-sm)');
 scale(SHAPE, '--elevation-overlay', 'The shadow of a dialog, a menu or a popover: transient surfaces only.', 'var(--shadow-md)');
-scale(SHAPE, '--icon-size-sm', 'Icon inside a compact control or a badge.', '12px');
-scale(SHAPE, '--icon-size-md', 'Icon in a toolbar or a button.', '16px');
-scale(SHAPE, '--icon-size-lg', 'Icon of an empty state or a dialog.', '20px');
+scale(SHAPE, '--icon-size-sm', 'Icon inside a compact control or a badge.', `${ICON_SIZES.sm}px`);
+scale(SHAPE, '--icon-size-md', 'Icon in a toolbar or a button.', `${ICON_SIZES.md}px`);
+scale(SHAPE, '--icon-size-lg', 'Icon of an empty state or a dialog.', `${ICON_SIZES.lg}px`);
 scale(SHAPE, '--status-dot-size', 'Diameter of a status dot.', '8px');
 
 const LAYER = 'Layers and motion';

@@ -1,0 +1,13 @@
+/* Layout of the development gallery only. Colours and sizes are tokens. */
+.ui-gallery { min-height: 100vh; padding: 16px; background: var(--color-surface-900); color: var(--text-primary); font-family: var(--font-sans); overflow: auto; }
+.ui-gallery-header { display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px; }
+.ui-gallery-header h1 { margin: 0; font-size: var(--font-size-heading); }
+.ui-gallery-header p { margin: 0; color: var(--text-secondary); }
+.ui-gallery-controls { display: flex; gap: 12px; max-width: 28rem; }
+.ui-gallery-panel { margin-bottom: 24px; padding: 16px; border: 1px solid var(--border-color); background: var(--color-surface-800); color: var(--text-primary); }
+.ui-gallery-panel-title { margin: 0 0 12px; font-size: var(--font-size-title); }
+.ui-gallery-specimens { display: grid; grid-template-columns: repeat(auto-fill, minmax(22rem, 1fr)); gap: 16px; }
+.ui-gallery-specimen { min-width: 0; padding: 12px; border: 1px solid var(--border-color); background: var(--color-surface-700); }
+.ui-gallery-name { margin: 0 0 8px; color: var(--text-secondary); font-size: var(--font-size-caption); font-weight: var(--font-weight-strong); letter-spacing: var(--letter-spacing-label); text-transform: uppercase; }
+.ui-gallery-row { display: flex; flex-wrap: wrap; align-items: flex-start; gap: var(--gap-control); }
+.ui-gallery-target { padding: 12px 16px; border: 1px dashed var(--input-border); color: var(--text-secondary); }
