@@ -42,9 +42,9 @@ static int fail_count = 0;
 #define CODE_PER_TASK 6U /* PUSH8 value, STORE8 address(2), HALT */
 
 /* A container with CODE and TASK segments: the tasks of the scenario, each storing its value in its output byte. */
-static size_t build_artifact(uint8_t *out, size_t capacity) {
-  const size_t code_size = ZPLC_TRACE_TASK_COUNT * CODE_PER_TASK;
-  const size_t task_size = ZPLC_TRACE_TASK_COUNT * ZPLC_TASK_DEF_SIZE;
+static size_t build_artifact(uint8_t *out, size_t capacity, const zplc_trace_task_t *tasks, unsigned count) {
+  const size_t code_size = (size_t)count * CODE_PER_TASK;
+  const size_t task_size = (size_t)count * ZPLC_TASK_DEF_SIZE;
   const size_t total = ZPLC_FILE_HEADER_SIZE + 2U * ZPLC_SEGMENT_ENTRY_SIZE + code_size + task_size;
   size_t offset;
   unsigned index;
@@ -68,23 +68,23 @@ static size_t build_artifact(uint8_t *out, size_t capacity) {
   zplc_put_u16_le(out + offset, ZPLC_SEG_TASK);
   zplc_put_u32_le(out + offset + 4U, (uint32_t)task_size);
   offset += ZPLC_SEGMENT_ENTRY_SIZE;
-  for (index = 0U; index < ZPLC_TRACE_TASK_COUNT; index++) {
+  for (index = 0U; index < count; index++) {
     uint8_t *code = out + offset + (size_t)index * CODE_PER_TASK;
 
     code[0] = OP_PUSH8;
-    code[1] = ZPLC_TRACE_TASKS[index].output;
+    code[1] = tasks[index].output;
     code[2] = OP_STORE8;
     zplc_put_u16_le(code + 3U, (uint16_t)(ZPLC_MEM_OPI_BASE + index));
     code[5] = OP_HALT;
   }
   offset += code_size;
-  for (index = 0U; index < ZPLC_TRACE_TASK_COUNT; index++) {
+  for (index = 0U; index < count; index++) {
     uint8_t *task = out + offset + (size_t)index * ZPLC_TASK_DEF_SIZE;
 
-    zplc_put_u16_le(task, ZPLC_TRACE_TASKS[index].id);
+    zplc_put_u16_le(task, tasks[index].id);
     task[2] = ZPLC_TASK_CYCLIC;
-    task[3] = ZPLC_TRACE_TASKS[index].priority;
-    zplc_put_u32_le(task + 4U, ZPLC_TRACE_TASKS[index].interval_ms * 1000U);
+    task[3] = tasks[index].priority;
+    zplc_put_u32_le(task + 4U, tasks[index].interval_ms * 1000U);
     zplc_put_u16_le(task + 8U, (uint16_t)(index * CODE_PER_TASK));
     zplc_put_u16_le(task + 10U, 16U);
   }
@@ -147,7 +147,7 @@ static void test_the_session_decides_the_golden_trace(void) {
 
   zplc_native_runtime_session_init(&session);
   CHECK(session.deadline_miss_limit == ZPLC_SCHED_DEFAULT_MISS_LIMIT, "the host runs with the default limit");
-  size = build_artifact(artifact, sizeof(artifact));
+  size = build_artifact(artifact, sizeof(artifact), ZPLC_TRACE_TASKS, ZPLC_TRACE_TASK_COUNT);
   CHECK(size != 0U && load_artifact(&session, artifact, size), "the three tasks load");
   CHECK(session.task_count == 3U && session.multirate == 1U, "they are a multirate program");
   zplc_sched_core_set_trace(&session.core, zplc_trace_render, &log);
@@ -180,9 +180,70 @@ static void test_the_session_decides_the_golden_trace(void) {
   zplc_native_runtime_session_shutdown(&session);
 }
 
+/* The clock of the one-task scenario: the two reads of a batch, when it starts and when the task ended. */
+static const zplc_trace_one_batch_t *one_batch;
+static unsigned one_read;
+
+static uint32_t one_task_clock(void) {
+  const uint32_t value = one_read == 0U ? one_batch->start_ms : one_batch->end_ms;
+
+  one_read = 1U;
+  return value;
+}
+
+static void test_the_session_with_one_task_decides_the_one_task_trace(void) {
+  static const zplc_trace_task_t one = {ZPLC_TRACE_ONE_TASK_ID, 0U, ZPLC_TRACE_ONE_INTERVAL_MS, ZPLC_TRACE_ONE_OUTPUT};
+  zplc_native_runtime_session_t session;
+  uint8_t artifact[256];
+  char template[] = "/tmp/zplc_sched_equivalence_XXXXXX";
+  char response[1024];
+  char event[1024];
+  zplc_trace_log_t log;
+  unsigned batch;
+  unsigned line;
+  size_t size;
+  int all_lines_equal = 1;
+
+  printf("\n=== Test: a session with one task decides the one-task trace (RT-018) ===\n");
+  if (mkdtemp(template) == NULL) {
+    CHECK(0, "a directory for the program store");
+    return;
+  }
+  setenv("ZPLC_PERSIST_ROOT", template, 1);
+  unsetenv("ZPLC_DEADLINE_MISS_LIMIT");
+  memset(&log, 0, sizeof(log));
+
+  zplc_native_runtime_session_init(&session);
+  size = build_artifact(artifact, sizeof(artifact), &one, 1U);
+  CHECK(size != 0U && load_artifact(&session, artifact, size), "the task loads");
+  CHECK(session.task_count == 1U && session.multirate == 0U, "it is a single-rate program");
+  zplc_sched_core_set_trace(&session.core, zplc_trace_render, &log);
+  session.clock_ms = one_task_clock;
+  (void)zplc_native_runtime_session_handle_request(&session,
+                                                   "{\"id\":\"2\",\"type\":\"request\",\"method\":\"execution.start\",\"params\":{}}",
+                                                   response, sizeof(response), event, sizeof(event));
+  for (batch = 0U; batch < ZPLC_TRACE_ONE_BATCH_COUNT; batch++) {
+    one_batch = &ZPLC_TRACE_ONE_BATCHES[batch];
+    one_read = 0U;
+    (void)zplc_native_runtime_session_tick(&session, ZPLC_TRACE_ONE_BATCHES[batch].at_ms, event, sizeof(event));
+  }
+  CHECK(log.count == ZPLC_TRACE_ONE_GOLDEN_COUNT, "the trace has as many decisions as the golden one");
+  for (line = 0U; line < log.count && line < ZPLC_TRACE_ONE_GOLDEN_COUNT; line++) {
+    if (strcmp(log.line[line], ZPLC_TRACE_ONE_GOLDEN[line]) != 0) {
+      fprintf(stderr, "line %u: got \"%s\", want \"%s\"\n", line, log.line[line], ZPLC_TRACE_ONE_GOLDEN[line]);
+      all_lines_equal = 0;
+    }
+  }
+  CHECK(all_lines_equal != 0, "every decision is the golden one");
+  CHECK(session.state == ZPLC_NATIVE_SESSION_ERROR && session.fault_reason == ZPLC_NATIVE_FAULT_DEADLINE_MISS,
+        "the session is latched on the third miss in a row");
+  zplc_native_runtime_session_shutdown(&session);
+}
+
 int main(void) {
   printf("==== test_sched_equivalence ====\n");
   test_the_session_decides_the_golden_trace();
+  test_the_session_with_one_task_decides_the_one_task_trace();
   printf("\n%d checks, %d failed\n", test_count, fail_count);
   return fail_count == 0 ? 0 : 1;
 }

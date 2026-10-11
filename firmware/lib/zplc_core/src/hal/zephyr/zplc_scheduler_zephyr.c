@@ -285,210 +285,94 @@ static int scheduler_slots_empty(void) {
  */
 
 /*
- * The channels that are synchronized are the I/O table of the board
- * (zplc_io_table(), generated from the board description): every input channel
- * is written to the input image at its address and every output channel is
- * read from the output image, so a channel added to a board needs no change
- * here.
+ * The channels that are synchronized are the I/O table of the board (zplc_io_table(), generated from the board
+ * description): every input channel is written to the input image at its address and every output channel is
+ * read from the output image, so a channel added to a board needs no change here. The synchronization itself,
+ * zplc_io_sample() and its siblings, is the portable core's, and so is the one the single-task configuration
+ * uses. What this file adds is, in a test build, the failures a test makes the channels have.
  */
-
-/**
- * @brief The physical inputs of one scan, read before the scan takes the image lock (RT-012).
- *
- * Reading a pin or a converter is hardware I/O and can block; the image is not touched by it. The values are
- * kept by table index and are written into IPI at the input latch, under the image lock, by
- * apply_input_samples_locked().
- */
-typedef struct {
-  uint16_t value[ZPLC_IO_MAX_CHANNELS];                    /* by table index: pin level (0/1) or converter word */
-  uint8_t valid[(ZPLC_IO_MAX_CHANNELS + 7U) / 8U];         /* bit set: the channel answered */
-} input_samples_t;
-
-static void sample_mark_valid(input_samples_t *samples, size_t index) {
-  samples->valid[index / 8U] |= (uint8_t)(1U << (index % 8U));
-}
-
-static bool sample_is_valid(const input_samples_t *samples, size_t index) {
-  return (samples->valid[index / 8U] & (1U << (index % 8U))) != 0U;
-}
-
-static zplc_hal_result_t sample_inputs(input_samples_t *samples) {
-  size_t index;
-  size_t count = zplc_io_channel_count();
-  uint8_t digital_ordinal = 0U; /* digital input channels counted in table order */
-
-  memset(samples, 0, sizeof(*samples));
-  if (count > ZPLC_IO_MAX_CHANNELS) {
-    return ZPLC_HAL_ERROR;
-  }
-
-  for (index = 0U; index < count; index++) {
-    const zplc_io_channel_t *channel = zplc_io_channel_at(index);
-    zplc_hal_result_t result;
-    uint16_t value = 0U;
-
-    if (channel == NULL || channel->direction != ZPLC_IO_DIR_INPUT) {
-      continue;
-    }
 
 #ifdef CONFIG_ZTEST
-    if (channel->kind == ZPLC_IO_KIND_DIGITAL) {
-      k_spinlock_key_t key = k_spin_lock(&admission_lock);
-
-      result = ZPLC_HAL_OK;
-      if (test_gpio_read_failure != ZPLC_HAL_OK &&
-          test_gpio_read_failure_channel == digital_ordinal) {
-        result = test_gpio_read_failure;
-        test_gpio_read_failure = ZPLC_HAL_OK;
-      }
-      k_spin_unlock(&admission_lock, key);
-      if (result != ZPLC_HAL_OK && result != ZPLC_HAL_NOT_IMPL) {
-        return result;
-      }
-      if (result == ZPLC_HAL_NOT_IMPL) {
-        digital_ordinal++;
-        continue;
-      }
-    }
-#endif
-    result = zplc_io_read_channel(channel, &value);
-    if (result != ZPLC_HAL_OK && result != ZPLC_HAL_NOT_IMPL) {
-      return result;
-    }
-    if (result == ZPLC_HAL_OK) {
-      samples->value[index] = value;
-      sample_mark_valid(samples, index);
-    }
-    if (channel->kind == ZPLC_IO_KIND_DIGITAL) {
-      digital_ordinal++;
-    }
-  }
-  return ZPLC_HAL_OK;
-}
-
-/* The input latch: image lock held. Every input channel that answered is written to the input image at its
- * address: a digital channel is one bit of its byte, an analog one a 16-bit little-endian word. */
-static void apply_input_samples_locked(const input_samples_t *samples) {
+static size_t channel_ordinal(const zplc_io_channel_t *channel, int direction, int digital_only) {
+  const size_t count = zplc_io_channel_count();
+  size_t ordinal = 0U;
   size_t index;
-  size_t count = zplc_io_channel_count();
 
-  if (count > ZPLC_IO_MAX_CHANNELS) {
-    return;
-  }
   for (index = 0U; index < count; index++) {
-    const zplc_io_channel_t *channel = zplc_io_channel_at(index);
+    const zplc_io_channel_t *candidate = zplc_io_channel_at(index);
 
-    if (channel == NULL || channel->direction != ZPLC_IO_DIR_INPUT ||
-        !sample_is_valid(samples, index)) {
-      continue;
+    if (candidate == channel) {
+      break;
     }
-    if (channel->kind == ZPLC_IO_KIND_DIGITAL) {
-      uint8_t current = zplc_ipi_read8(channel->image_offset);
-
-      if (samples->value[index] != 0U) {
-        current = (uint8_t)(current | (uint8_t)(1U << channel->bit));
-      } else {
-        current = (uint8_t)(current & (uint8_t)~(1U << channel->bit));
-      }
-      (void)zplc_ipi_write8(channel->image_offset, current);
-    } else if ((size_t)channel->image_offset + 1U < ZPLC_MEM_IPI_SIZE) {
-      (void)zplc_ipi_write16(channel->image_offset, samples->value[index]);
-    }
-  }
-}
-
-/**
- * @brief The values the physical outputs are given at the end of one scan.
- *
- * Captured under the image lock, by capture_outputs_locked(), and written to the pins by write_physical_outputs()
- * after the lock is released (RT-012). The values are by table index.
- */
-typedef struct {
-  uint16_t value[ZPLC_IO_MAX_CHANNELS];
-} output_samples_t;
-
-/* Image lock held: the output image as it is at the end of the scan, forces applied, for every output channel. */
-static void capture_outputs_locked(output_samples_t *outputs) {
-  size_t index;
-  size_t count = zplc_io_channel_count();
-
-  memset(outputs, 0, sizeof(*outputs));
-  if (count > ZPLC_IO_MAX_CHANNELS) {
-    return;
-  }
-  for (index = 0U; index < count; index++) {
-    const zplc_io_channel_t *channel = zplc_io_channel_at(index);
-
-    if (channel == NULL || channel->direction != ZPLC_IO_DIR_OUTPUT) {
-      continue;
-    }
-    if (channel->kind == ZPLC_IO_KIND_DIGITAL) {
-      outputs->value[index] =
-          (uint16_t)((zplc_opi_read8(channel->image_offset) >> channel->bit) & 1U);
-    } else {
-      outputs->value[index] = zplc_opi_read16(channel->image_offset);
-    }
-  }
-}
-
-/**
- * @brief Write the committed output image to the physical outputs.
- *
- * Hardware I/O: called with io_mutex held and the image lock released, with the output values as they were at
- * the end of the scan. Every output channel of the board table is written, at the level its address holds.
- */
-static zplc_hal_result_t write_physical_outputs(const output_samples_t *outputs) {
-  size_t index;
-  size_t count = zplc_io_channel_count();
-  uint8_t ordinal = 0U; /* output channels counted in table order */
-
-  if (count > ZPLC_IO_MAX_CHANNELS) {
-    return ZPLC_HAL_ERROR;
-  }
-  for (index = 0U; index < count; index++) {
-    const zplc_io_channel_t *channel = zplc_io_channel_at(index);
-    zplc_hal_result_t result;
-
-    if (channel == NULL || channel->direction != ZPLC_IO_DIR_OUTPUT) {
-      continue;
-    }
-
-#ifdef CONFIG_ZTEST
-    {
-      k_spinlock_key_t key = k_spin_lock(&admission_lock);
-      result = ZPLC_HAL_OK;
-      if (test_output_commit_failure != ZPLC_HAL_OK &&
-          test_output_commit_failure_channel == ordinal) {
-        result = test_output_commit_failure;
-        test_output_commit_failure = ZPLC_HAL_OK;
-      }
-      k_spin_unlock(&admission_lock, key);
-    }
-    if (result != ZPLC_HAL_OK && result != ZPLC_HAL_NOT_IMPL) {
-      return result;
-    }
-    if (result == ZPLC_HAL_NOT_IMPL) {
+    if (candidate != NULL && candidate->direction == direction &&
+        (!digital_only || candidate->kind == ZPLC_IO_KIND_DIGITAL)) {
       ordinal++;
-      continue;
     }
-#endif
-    result = zplc_io_write_channel(channel, outputs->value[index]);
-#ifdef CONFIG_ZTEST
-    {
-      k_spinlock_key_t key = k_spin_lock(&admission_lock);
-      if (test_output_commit_write_count != UINT8_MAX) {
-        test_output_commit_write_count++;
-      }
-      k_spin_unlock(&admission_lock, key);
+  }
+  return ordinal;
+}
+
+/* The ordinal of a digital input channel in table order fails its read, or marks it unavailable. */
+static zplc_hal_result_t test_read_channel(const zplc_io_channel_t *channel, uint16_t *value) {
+  if (channel->kind == ZPLC_IO_KIND_DIGITAL) {
+    const size_t ordinal = channel_ordinal(channel, ZPLC_IO_DIR_INPUT, 1);
+    k_spinlock_key_t key = k_spin_lock(&admission_lock);
+    zplc_hal_result_t result = ZPLC_HAL_OK;
+
+    if (test_gpio_read_failure != ZPLC_HAL_OK && test_gpio_read_failure_channel == ordinal) {
+      result = test_gpio_read_failure;
+      test_gpio_read_failure = ZPLC_HAL_OK;
     }
-#endif
-    ordinal++;
-    if (result != ZPLC_HAL_OK && result != ZPLC_HAL_NOT_IMPL) {
+    k_spin_unlock(&admission_lock, key);
+    if (result != ZPLC_HAL_OK) {
       return result;
     }
   }
-  return ZPLC_HAL_OK;
+  return zplc_io_read_channel(channel, value);
 }
+
+/* The ordinal of an output channel in table order fails its commit; every real write is counted. */
+static zplc_hal_result_t test_commit_channel(const zplc_io_channel_t *channel, uint16_t value) {
+  const size_t ordinal = channel_ordinal(channel, ZPLC_IO_DIR_OUTPUT, 0);
+  k_spinlock_key_t key = k_spin_lock(&admission_lock);
+  zplc_hal_result_t result = ZPLC_HAL_OK;
+
+  if (test_output_commit_failure != ZPLC_HAL_OK && test_output_commit_failure_channel == ordinal) {
+    result = test_output_commit_failure;
+    test_output_commit_failure = ZPLC_HAL_OK;
+  }
+  k_spin_unlock(&admission_lock, key);
+  if (result != ZPLC_HAL_OK) {
+    return result;
+  }
+  result = zplc_io_write_channel(channel, value);
+  key = k_spin_lock(&admission_lock);
+  if (test_output_commit_write_count != UINT8_MAX) {
+    test_output_commit_write_count++;
+  }
+  k_spin_unlock(&admission_lock, key);
+  return result;
+}
+
+/* The safe state of every digital output fails with the result a test set. */
+static zplc_hal_result_t test_safe_channel(const zplc_io_channel_t *channel, uint16_t value) {
+  if (test_safe_output_failure != 0) {
+    return (zplc_hal_result_t)test_safe_output_failure;
+  }
+  return zplc_io_write_channel(channel, value);
+}
+
+static const zplc_io_ops_t read_ops = {.read = test_read_channel, .write = NULL};
+static const zplc_io_ops_t commit_ops = {.read = NULL, .write = test_commit_channel};
+static const zplc_io_ops_t safe_ops = {.read = NULL, .write = test_safe_channel};
+#define READ_OPS (&read_ops)
+#define COMMIT_OPS (&commit_ops)
+#define SAFE_OPS (&safe_ops)
+#else
+#define READ_OPS NULL
+#define COMMIT_OPS NULL
+#define SAFE_OPS NULL
+#endif
 
 /* ============================================================================
  * Forward Declarations
@@ -715,8 +599,8 @@ static uint64_t scheduler_now_us(void) {
 /* What a scan holds on its stack: the samples of its inputs and the values of its outputs. The core calls the
  * port with a pointer to it, so no scan buffer is static. */
 typedef struct {
-  input_samples_t samples;
-  output_samples_t outputs;
+  zplc_io_samples_t samples;
+  zplc_io_outputs_t outputs;
 } scan_buffers_t;
 
 static uint64_t port_now_us(void *ctx) {
@@ -762,20 +646,20 @@ static void port_unlock_io(void *ctx) {
 static int port_sample_inputs(void *ctx) {
   scan_buffers_t *buffers = ctx;
 
-  return (int)sample_inputs(&buffers->samples);
+  return (int)zplc_io_sample(&buffers->samples, READ_OPS);
 }
 
 static void port_latch_inputs(void *ctx) {
   scan_buffers_t *buffers = ctx;
 
   (void)zplc_exchange_latch();
-  apply_input_samples_locked(&buffers->samples);
+  zplc_io_apply_samples(&buffers->samples);
 }
 
 static void port_capture_outputs(void *ctx) {
   scan_buffers_t *buffers = ctx;
 
-  capture_outputs_locked(&buffers->outputs);
+  zplc_io_capture_outputs(&buffers->outputs);
 }
 
 static void port_publish(void *ctx) {
@@ -786,7 +670,7 @@ static void port_publish(void *ctx) {
 static int port_write_outputs(void *ctx) {
   scan_buffers_t *buffers = ctx;
 
-  return (int)write_physical_outputs(&buffers->outputs);
+  return (int)zplc_io_write_outputs(&buffers->outputs, COMMIT_OPS);
 }
 
 static int watchdog_feed_after_commit(void);
@@ -1368,35 +1252,9 @@ static int validate_program_locked(const uint8_t *binary, size_t size) {
  * held by the caller; the image lock is not (RT-012).
  * This is the whole safe state of a paused runtime (RT-017): the commit that copies the image to the pins does
  * not run while paused, so the pins stay at the safe level until the next normal commit after a resume.
- * The level is off for every channel; RT-023 will let a project declare another one, and that choice belongs
- * here and nowhere else. */
-static int drive_safe_pins_io_locked(void) {
-  int first_error = 0;
-  int index;
-
-  /* Every digital output of the board table goes to its safe level. */
-  for (index = 0; index < (int)zplc_io_channel_count(); ++index) {
-    const zplc_io_channel_t *channel = zplc_io_channel_at((size_t)index);
-    zplc_hal_result_t result;
-
-    if (channel == NULL || channel->direction != ZPLC_IO_DIR_OUTPUT ||
-        channel->kind != ZPLC_IO_KIND_DIGITAL) {
-      continue;
-    }
-#ifdef CONFIG_ZTEST
-    result = test_safe_output_failure != 0
-                 ? test_safe_output_failure
-                 : zplc_io_write_channel(channel, channel->safe);
-#else
-    result = zplc_io_write_channel(channel, channel->safe);
-#endif
-    if (result != ZPLC_HAL_OK && result != ZPLC_HAL_NOT_IMPL &&
-        first_error == 0) {
-      first_error = (int)result;
-    }
-  }
-  return first_error;
-}
+ * The level is the board description's `safe` of each channel; the choice is made in zplc_io_drive_safe() and
+ * nowhere else. */
+static int drive_safe_pins_io_locked(void) { return (int)zplc_io_drive_safe(SAFE_OPS); }
 
 /* The safe state of the pins, taking io_mutex. Hardware I/O: never call it with the image lock held. A lock that
  * cannot be taken does not leave an output energised: the pins are driven all the same, and the failure is
@@ -1419,16 +1277,8 @@ static int drive_safe_pins(void) {
  * output image is zeroed and the force table cleared) and the snapshot follows it. The physical outputs go safe
  * after the image lock is released, with drive_safe_pins(). A pause does not end the run and only drives the pins. */
 static int reset_image_locked(void) {
-  uint8_t *opi;
-  int result = 0;
+  const int result = zplc_io_reset_image();
 
-  zplc_force_clear_all();
-  opi = zplc_mem_get_region(ZPLC_MEM_OPI_BASE);
-  if (opi == NULL) {
-    result = -1;
-  } else {
-    memset(opi, 0, ZPLC_MEM_OPI_SIZE);
-  }
   zplc_exchange_publish();
   return result;
 }

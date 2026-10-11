@@ -88,6 +88,7 @@ add_library(zplc_core STATIC
     src/core/zplc_program_store.c
     src/core/zplc_exchange.c
     src/core/zplc_sched_core.c
+    src/core/zplc_single_task.c
 )
 
 target_compile_definitions(zplc_core PUBLIC ZPLC_CORE_VERSION_STR="${ZPLC_CORE_VERSION_STR}")
@@ -389,6 +390,35 @@ if(UNIX AND NOT APPLE)
 endif()
 
 add_test(NAME test_sched_core COMMAND test_sched_core)
+
+# Test: the single-task configuration runs on the scheduler core and decides like the multitask runtimes (RT-018).
+# Also run under the sanitizers.
+add_executable(test_single_task
+    tests/test_single_task.c
+    src/core/zplc_single_task.c
+    src/core/zplc_sched_core.c
+    src/core/zplc_exchange.c
+    src/core/zplc_core.c
+    src/core/zplc_loader.c
+    src/core/zplc_comm_dispatch.c
+    src/hal/posix/zplc_hal_posix.c
+)
+
+target_include_directories(test_single_task PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/tests/include
+)
+
+target_compile_definitions(test_single_task PRIVATE
+    ZPLC_CORE_VERSION_STR="${ZPLC_CORE_VERSION_STR}"
+    ZPLC_CORE_TESTING
+)
+
+if(UNIX AND NOT APPLE)
+    target_link_libraries(test_single_task PRIVATE rt)
+endif()
+
+add_test(NAME test_single_task COMMAND test_single_task)
 
 # Test: the exchange between the scan and the threads outside it: write queue, force-aware latch, published
 # snapshot, and a scanner with readers and writers on threads (RT-010, RT-011, RT-012). Also run under the sanitizers.

@@ -364,6 +364,8 @@ void zplc_sched_core_restart_schedule(zplc_sched_core_t *core) {
 void zplc_sched_core_begin_run(zplc_sched_core_t *core) {
   uint8_t index;
 
+  core->batch_count = 0U;
+  core->run_commit_count = 0U;
   for (index = 0U; index < core->capacity; ++index) {
     core->slot[index].consecutive_misses = 0U;
     core->slot[index].run_scans = 0U;
@@ -792,9 +794,10 @@ int zplc_sched_core_scan(zplc_sched_core_t *core, const zplc_sched_port_t *port,
         if (write_result == 0) {
           key = enter(port);
           count_up(&core->output_commit_count);
+          count_up(&core->run_commit_count);
           leave(port, key);
           report->committed = 1U;
-          trace(core, ZPLC_SCHED_TRACE_COMMIT, 0U, core->output_commit_count, 0U);
+          trace(core, ZPLC_SCHED_TRACE_COMMIT, 0U, core->run_commit_count, 0U);
           if (paused == 0 && port->feed_watchdog != NULL && port->feed_watchdog(port->ctx) != 0) {
             result = ZPLC_SCHED_ERR_IO;
             commit_failed = 1;
@@ -858,4 +861,153 @@ int zplc_sched_core_scan(zplc_sched_core_t *core, const zplc_sched_port_t *port,
     }
   }
   return result;
+}
+
+/* ============================================================================
+ * The board's I/O table and the process image
+ * ============================================================================
+ */
+
+static void sample_mark_valid(zplc_io_samples_t *samples, size_t index) {
+  samples->valid[index / 8U] |= (uint8_t)(1U << (index % 8U));
+}
+
+static int sample_is_valid(const zplc_io_samples_t *samples, size_t index) {
+  return (samples->valid[index / 8U] & (1U << (index % 8U))) != 0U;
+}
+
+zplc_hal_result_t zplc_io_sample(zplc_io_samples_t *samples, const zplc_io_ops_t *ops) {
+  const size_t count = zplc_io_channel_count();
+  size_t index;
+
+  memset(samples, 0, sizeof(*samples));
+  if (count > ZPLC_IO_MAX_CHANNELS) {
+    return ZPLC_HAL_ERROR;
+  }
+  for (index = 0U; index < count; index++) {
+    const zplc_io_channel_t *channel = zplc_io_channel_at(index);
+    zplc_hal_result_t result;
+    uint16_t value = 0U;
+
+    if (channel == NULL || channel->direction != ZPLC_IO_DIR_INPUT) {
+      continue;
+    }
+    result = (ops != NULL && ops->read != NULL) ? ops->read(channel, &value) : zplc_io_read_channel(channel, &value);
+    if (result != ZPLC_HAL_OK && result != ZPLC_HAL_NOT_IMPL) {
+      return result;
+    }
+    if (result == ZPLC_HAL_OK) {
+      samples->value[index] = value;
+      sample_mark_valid(samples, index);
+    }
+  }
+  return ZPLC_HAL_OK;
+}
+
+void zplc_io_apply_samples(const zplc_io_samples_t *samples) {
+  const size_t count = zplc_io_channel_count();
+  size_t index;
+
+  if (count > ZPLC_IO_MAX_CHANNELS) {
+    return;
+  }
+  for (index = 0U; index < count; index++) {
+    const zplc_io_channel_t *channel = zplc_io_channel_at(index);
+
+    if (channel == NULL || channel->direction != ZPLC_IO_DIR_INPUT || !sample_is_valid(samples, index)) {
+      continue;
+    }
+    if (channel->kind == ZPLC_IO_KIND_DIGITAL) {
+      uint8_t current = zplc_ipi_read8(channel->image_offset);
+
+      if (samples->value[index] != 0U) {
+        current = (uint8_t)(current | (uint8_t)(1U << channel->bit));
+      } else {
+        current = (uint8_t)(current & (uint8_t)~(1U << channel->bit));
+      }
+      (void)zplc_ipi_write8(channel->image_offset, current);
+    } else if ((size_t)channel->image_offset + 1U < ZPLC_MEM_IPI_SIZE) {
+      (void)zplc_ipi_write16(channel->image_offset, samples->value[index]);
+    }
+  }
+}
+
+void zplc_io_capture_outputs(zplc_io_outputs_t *outputs) {
+  const size_t count = zplc_io_channel_count();
+  size_t index;
+
+  memset(outputs, 0, sizeof(*outputs));
+  if (count > ZPLC_IO_MAX_CHANNELS) {
+    return;
+  }
+  for (index = 0U; index < count; index++) {
+    const zplc_io_channel_t *channel = zplc_io_channel_at(index);
+
+    if (channel == NULL || channel->direction != ZPLC_IO_DIR_OUTPUT) {
+      continue;
+    }
+    if (channel->kind == ZPLC_IO_KIND_DIGITAL) {
+      outputs->value[index] = (uint16_t)((zplc_opi_read8(channel->image_offset) >> channel->bit) & 1U);
+    } else {
+      outputs->value[index] = zplc_opi_read16(channel->image_offset);
+    }
+  }
+}
+
+zplc_hal_result_t zplc_io_write_outputs(const zplc_io_outputs_t *outputs, const zplc_io_ops_t *ops) {
+  const size_t count = zplc_io_channel_count();
+  size_t index;
+
+  if (count > ZPLC_IO_MAX_CHANNELS) {
+    return ZPLC_HAL_ERROR;
+  }
+  for (index = 0U; index < count; index++) {
+    const zplc_io_channel_t *channel = zplc_io_channel_at(index);
+    zplc_hal_result_t result;
+
+    if (channel == NULL || channel->direction != ZPLC_IO_DIR_OUTPUT) {
+      continue;
+    }
+    result = (ops != NULL && ops->write != NULL) ? ops->write(channel, outputs->value[index])
+                                                 : zplc_io_write_channel(channel, outputs->value[index]);
+    if (result != ZPLC_HAL_OK && result != ZPLC_HAL_NOT_IMPL) {
+      return result;
+    }
+  }
+  return ZPLC_HAL_OK;
+}
+
+zplc_hal_result_t zplc_io_drive_safe(const zplc_io_ops_t *ops) {
+  zplc_hal_result_t first_error = ZPLC_HAL_OK;
+  const size_t count = zplc_io_channel_count();
+  size_t index;
+
+  /* The level is off for every channel unless the board description gives another (channel->safe); the choice
+   * is made here and nowhere else (RT-023). */
+  for (index = 0U; index < count; ++index) {
+    const zplc_io_channel_t *channel = zplc_io_channel_at(index);
+    zplc_hal_result_t result;
+
+    if (channel == NULL || channel->direction != ZPLC_IO_DIR_OUTPUT || channel->kind != ZPLC_IO_KIND_DIGITAL) {
+      continue;
+    }
+    result = (ops != NULL && ops->write != NULL) ? ops->write(channel, channel->safe)
+                                                 : zplc_io_write_channel(channel, channel->safe);
+    if (result != ZPLC_HAL_OK && result != ZPLC_HAL_NOT_IMPL && first_error == ZPLC_HAL_OK) {
+      first_error = result;
+    }
+  }
+  return first_error;
+}
+
+int zplc_io_reset_image(void) {
+  uint8_t *opi;
+
+  zplc_force_clear_all();
+  opi = zplc_mem_get_region(ZPLC_MEM_OPI_BASE);
+  if (opi == NULL) {
+    return -1;
+  }
+  memset(opi, 0, ZPLC_MEM_OPI_SIZE);
+  return 0;
 }

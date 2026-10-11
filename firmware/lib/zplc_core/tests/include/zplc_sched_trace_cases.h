@@ -95,6 +95,48 @@ static const char *const ZPLC_TRACE_GOLDEN[] = {
 
 #define ZPLC_TRACE_GOLDEN_COUNT (sizeof(ZPLC_TRACE_GOLDEN) / sizeof(ZPLC_TRACE_GOLDEN[0]))
 
+/*
+ * The same decisions for a program of ONE task (RT-018): the single-task configuration of the firmware, the host
+ * session with one task and the multitask scheduler with one task are driven through it. The task has id 0, an
+ * interval of 100 ms and a body of PUSH8, STORE8 and HALT. A one-interval program is dispatched by a host only
+ * once an interval has gone by, so the first batch is at 100 ms.
+ *
+ * Batch 0, 1 and 3 are in time; 2 is 20 ms late; 4, 5 and 6 are late three times in a row: with a limit of three
+ * the fault latches at batch 6.
+ */
+#define ZPLC_TRACE_ONE_TASK_ID 0U
+#define ZPLC_TRACE_ONE_INTERVAL_MS 100U
+#define ZPLC_TRACE_ONE_OUTPUT 0x44U
+#define ZPLC_TRACE_ONE_BATCH_COUNT 7U
+
+typedef struct {
+  uint32_t at_ms;
+  uint32_t start_ms; /**< the clock when the batch starts */
+  uint32_t end_ms;   /**< the clock when the task ended */
+} zplc_trace_one_batch_t;
+
+static const zplc_trace_one_batch_t ZPLC_TRACE_ONE_BATCHES[ZPLC_TRACE_ONE_BATCH_COUNT] = {
+    {100U, 100U, 140U}, /* 40 ms: in time */
+    {200U, 200U, 290U}, /* 90 ms: in time */
+    {300U, 300U, 420U}, /* 120 ms: 20 ms late */
+    {400U, 400U, 480U}, /* 80 ms: in time, the run of misses ends */
+    {500U, 500U, 620U}, /* 120 ms: 20 ms late */
+    {600U, 600U, 730U}, /* 130 ms: 30 ms late, a second in a row */
+    {700U, 700U, 850U}, /* 150 ms: 50 ms late, the third in a row */
+};
+
+static const char *const ZPLC_TRACE_ONE_GOLDEN[] = {
+    "ADMIT t0 100000", "LATCH 1", "ORDER t0 0", "TASK t0 40000 0",  "COMMIT 1",
+    "ADMIT t0 200000", "LATCH 2", "ORDER t0 0", "TASK t0 90000 0",  "COMMIT 2",
+    "ADMIT t0 300000", "LATCH 3", "ORDER t0 0", "TASK t0 120000 0", "MISS t0 20000 1", "COMMIT 3",
+    "ADMIT t0 400000", "LATCH 4", "ORDER t0 0", "TASK t0 80000 0",  "COMMIT 4",
+    "ADMIT t0 500000", "LATCH 5", "ORDER t0 0", "TASK t0 120000 0", "MISS t0 20000 1", "COMMIT 5",
+    "ADMIT t0 600000", "LATCH 6", "ORDER t0 0", "TASK t0 130000 0", "MISS t0 30000 2", "COMMIT 6",
+    "ADMIT t0 700000", "LATCH 7", "ORDER t0 0", "TASK t0 150000 0", "MISS t0 50000 3", "FAULT t0 1",
+};
+
+#define ZPLC_TRACE_ONE_GOLDEN_COUNT (sizeof(ZPLC_TRACE_ONE_GOLDEN) / sizeof(ZPLC_TRACE_ONE_GOLDEN[0]))
+
 /** @brief The trace one runtime wrote. */
 typedef struct {
   char line[96][40];

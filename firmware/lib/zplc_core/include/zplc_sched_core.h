@@ -206,7 +206,8 @@ typedef struct zplc_sched_core {
   zplc_sched_state_t state;        /**< what the runtime is doing */
   uint32_t miss_limit;             /**< consecutive misses of a task that latch the fault, at least one */
   uint32_t last_overrun_us;        /**< how far past its deadline the last late task ended */
-  uint32_t batch_count;            /**< batches whose inputs were latched */
+  uint32_t batch_count;            /**< batches whose inputs were latched since the run began */
+  uint32_t run_commit_count;       /**< output commits since the run began */
   uint32_t input_latch_count;      /**< logical input latches since init */
   uint32_t output_commit_count;    /**< logical output commits since init */
   zplc_sched_trace_fn trace;
@@ -415,6 +416,68 @@ void zplc_sched_core_begin_run(zplc_sched_core_t *core);
  *        reference instant, and ending exactly on it is in time.
  */
 uint64_t zplc_sched_core_overrun_us(uint64_t ref_us, uint64_t end_us, uint32_t interval_us);
+
+/* ============================================================================
+ * The board's I/O table and the process image
+ * ============================================================================
+ *
+ * The channels that are synchronized are those of the board's I/O table (zplc_io_table(), generated from the
+ * board description): every input channel is written to the input image at its address and every output channel
+ * is read from the output image, so a channel added to a board needs no change here. A digital channel is one bit
+ * of its byte, an analog one a 16-bit little-endian word. Every adapter that has pins uses these functions: the
+ * multitask scheduler of the firmware and the single-task configuration.
+ */
+
+/** @brief The physical inputs of one scan, kept by table index until they are latched into the image. */
+typedef struct {
+  uint16_t value[ZPLC_IO_MAX_CHANNELS];            /**< pin level (0/1) or converter word */
+  uint8_t valid[(ZPLC_IO_MAX_CHANNELS + 7U) / 8U]; /**< bit set: the channel answered */
+} zplc_io_samples_t;
+
+/** @brief The values the physical outputs are given at the end of one scan, by table index. */
+typedef struct {
+  uint16_t value[ZPLC_IO_MAX_CHANNELS];
+} zplc_io_outputs_t;
+
+/**
+ * @brief Replaces the HAL access of the helpers below: a test makes a channel fail. NULL members, and a NULL
+ *        table, are the HAL (zplc_io_read_channel, zplc_io_write_channel).
+ */
+typedef struct {
+  zplc_hal_result_t (*read)(const zplc_io_channel_t *channel, uint16_t *value);
+  zplc_hal_result_t (*write)(const zplc_io_channel_t *channel, uint16_t value);
+} zplc_io_ops_t;
+
+/**
+ * @brief Phase 1: read every input channel. Hardware I/O: no lock is held. A channel that is not available on this
+ *        build (ZPLC_HAL_NOT_IMPL) is skipped; any other failure ends the sampling and is returned.
+ */
+zplc_hal_result_t zplc_io_sample(zplc_io_samples_t *samples, const zplc_io_ops_t *ops);
+
+/** @brief Phase 2, image lock held: write the channels that answered into the input image. */
+void zplc_io_apply_samples(const zplc_io_samples_t *samples);
+
+/** @brief Phase 2, image lock held: the output image as it is at the end of the scan, for every output channel. */
+void zplc_io_capture_outputs(zplc_io_outputs_t *outputs);
+
+/**
+ * @brief Phase 3, image lock released, output lock held: write the captured values to the pins.
+ * @return the first failure; ZPLC_HAL_NOT_IMPL channels are skipped
+ */
+zplc_hal_result_t zplc_io_write_outputs(const zplc_io_outputs_t *outputs, const zplc_io_ops_t *ops);
+
+/**
+ * @brief The safe state of the pins: every digital output at its safe level. The output image and the force
+ *        table are the logical state of the program and are not touched (RT-017).
+ * @return the first failure; every channel is attempted
+ */
+zplc_hal_result_t zplc_io_drive_safe(const zplc_io_ops_t *ops);
+
+/**
+ * @brief The safe state of the image: forces cleared and the output image zeroed. Image lock held by the caller.
+ * @return 0, or -1 when the output image does not exist
+ */
+int zplc_io_reset_image(void);
 
 #ifdef __cplusplus
 }
