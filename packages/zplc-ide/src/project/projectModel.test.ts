@@ -176,6 +176,15 @@ describe('parseAndMigrateProject', () => {
     expect(parseAndMigrateProject({ ...legacyProject, vendor: { accessKeyId: 'id', credentialType: 'x', publicCertificatePath: '/public.pem' } })).toMatchObject({ ok: true });
   });
 
+  it('names in the shipped schema every board of the board manifest, and the simulator, as a target', () => {
+    // The schema is written by hand and the manifest is the one list of boards: a board added to the manifest that the
+    // schema does not name would be flagged by every editor that reads the schema (the file has no generator).
+    const schema = JSON.parse(readFileSync(fileURLToPath(new URL('../../zplc.schema.json', import.meta.url)), 'utf8'));
+    const manifest = JSON.parse(readFileSync(fileURLToPath(new URL('../../../../firmware/app/boards/boards.json', import.meta.url)), 'utf8')) as Array<{ ide_id: string }>;
+    const named: string[] = schema.properties.target.properties.board.enum;
+    expect([...named].sort()).toEqual([...manifest.map((board) => board.ide_id), 'posix'].sort());
+  });
+
   it('declares the legacy task transition in the shipped schema', () => {
     const schema = JSON.parse(readFileSync(fileURLToPath(new URL('../../zplc.schema.json', import.meta.url)), 'utf8'));
     const task = schema.properties.tasks.items;

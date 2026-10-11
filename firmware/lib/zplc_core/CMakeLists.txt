@@ -135,6 +135,41 @@ if(UNIX AND NOT APPLE)
     target_link_libraries(zplc_runtime PRIVATE rt)
 endif()
 
+# The communication blocks in simulation (COM-009): the handlers of firmware/app compiled against a POSIX kernel
+# shim, on a Modbus TCP client and an MQTT client of the host. They are registered only when the session asks
+# (ZPLC_NATIVE_COMM=1), and a Windows runtime has no sockets of this kind: it keeps answering "no handler".
+if(NOT WIN32)
+    set(ZPLC_HOST_COMM_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../../apps/posix_host)
+    set(ZPLC_HOST_COMM_SOURCES
+        ${ZPLC_HOST_COMM_DIR}/src/host_comm.c
+        ${ZPLC_HOST_COMM_DIR}/src/host_kernel_shim.c
+        ${ZPLC_HOST_COMM_DIR}/src/host_modbus_client.c
+        ${ZPLC_HOST_COMM_DIR}/src/host_mqtt_fb.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../app/src/zplc_comm_modbus_handler.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../app/src/zplc_comm_mqtt_handler.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../app/src/zplc_modbus_tcp.c
+    )
+    set(ZPLC_HOST_COMM_INCLUDES
+        ${ZPLC_HOST_COMM_DIR}/shim
+        ${ZPLC_HOST_COMM_DIR}/src
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../app/src
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../app/include
+    )
+    find_package(Threads REQUIRED)
+    target_sources(zplc_runtime PRIVATE ${ZPLC_HOST_COMM_SOURCES})
+    target_include_directories(zplc_runtime PRIVATE ${ZPLC_HOST_COMM_INCLUDES})
+    target_compile_definitions(zplc_runtime PRIVATE ZPLC_HOST_COMM=1)
+    target_link_libraries(zplc_runtime PRIVATE Threads::Threads)
+
+    # The peers of a simulation, on 127.0.0.1, as a program that the session starts and ends (COM-009).
+    add_executable(zplc_loopback
+        ${ZPLC_HOST_COMM_DIR}/src/loopback_main.c
+        ${ZPLC_HOST_COMM_DIR}/src/loopback_endpoints.c
+    )
+    target_include_directories(zplc_loopback PRIVATE ${ZPLC_HOST_COMM_DIR}/src)
+    target_link_libraries(zplc_loopback PRIVATE Threads::Threads)
+endif()
+
 # =============================================================================
 # Testing
 # =============================================================================
@@ -752,6 +787,21 @@ target_link_libraries(test_comm_dispatch PRIVATE zplc_core)
 
 add_test(NAME test_comm_dispatch COMMAND test_comm_dispatch)
 
+# Test: the request slots between the scan and a worker (COM-003, COM-004, COM-008, COM-018); two threads use
+# one pool, so the pthread library is linked.
+find_package(Threads REQUIRED)
+add_executable(test_comm_req
+    tests/test_comm_req.c
+)
+
+target_include_directories(test_comm_req PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+)
+
+target_link_libraries(test_comm_req PRIVATE Threads::Threads)
+
+add_test(NAME test_comm_req COMMAND test_comm_req)
+
 add_executable(test_loader_verify
     tests/test_loader_verify.c
 )
@@ -829,7 +879,10 @@ set(ZPLC_APP_SRC ${CMAKE_CURRENT_SOURCE_DIR}/../../app/src)
 add_executable(test_comm_fb_access
     tests/test_comm_fb_access.c
 )
-target_include_directories(test_comm_fb_access PRIVATE ${ZPLC_APP_SRC})
+target_include_directories(test_comm_fb_access PRIVATE
+    ${ZPLC_APP_SRC}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+)
 add_test(NAME test_comm_fb_access COMMAND test_comm_fb_access)
 
 # Strict parsing of operator and cloud input: the header the Zephyr shell and the cloud clients use
@@ -840,6 +893,15 @@ target_include_directories(test_parse PRIVATE
     ${ZPLC_APP_SRC}
 )
 add_test(NAME test_parse COMMAND test_parse)
+
+# Test: the frames of the Modbus clients, and the unit of their timeouts (COM-006, COM-012). The server of the
+# product is compiled with it, so the request of the client is checked against what the server accepts.
+add_executable(test_modbus_client_pdu
+    tests/test_modbus_client_pdu.c
+    ${ZPLC_APP_SRC}/zplc_modbus_tcp.c
+)
+target_include_directories(test_modbus_client_pdu PRIVATE ${ZPLC_APP_SRC})
+add_test(NAME test_modbus_client_pdu COMMAND test_modbus_client_pdu)
 
 add_executable(test_comm_handler_modbus
     tests/test_comm_handler_modbus.c
@@ -883,6 +945,20 @@ add_custom_target(check
     DEPENDS test_isa test_contract test_vm_core test_vm_arith_edges test_opcode_coverage test_comm_dispatch test_loader_verify test_native_runtime_session test_host_stdio test_hal_posix_persist test_hal_posix_mutex
     COMMENT "Running all tests..."
 )
+
+# The communication blocks of the simulation runtime on real sockets, against the loopback endpoints (COM-009).
+if(NOT WIN32)
+    add_executable(test_host_comm
+        tests/test_host_comm.c
+        ${ZPLC_HOST_COMM_SOURCES}
+        ${ZPLC_HOST_COMM_DIR}/src/loopback_endpoints.c
+    )
+    target_include_directories(test_host_comm PRIVATE ${ZPLC_HOST_COMM_INCLUDES} ${CMAKE_CURRENT_SOURCE_DIR}/include)
+    target_link_libraries(test_host_comm PRIVATE zplc_core Threads::Threads)
+    add_test(NAME test_host_comm COMMAND test_host_comm)
+    set_tests_properties(test_host_comm PROPERTIES TIMEOUT 180)
+    add_dependencies(check test_host_comm)
+endif()
 
 # The tests above join the check target without touching its list
 add_dependencies(check test_sandbox test_sandbox_regions test_comm_fb_access test_comm_handler_modbus

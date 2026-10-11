@@ -174,10 +174,11 @@ the `REAL` conversions are.
 Until the contract is frozen (CMP-052), header word 28 of every `.zplc` artifact
 holds the draft counter (`ZPLC_DRAFT_COUNTER`) and the loader refuses an artifact
 that carries another value, with both numbers. Every change of an opcode, layout
-or size increases it. The counter is **5** since the declared safe values (the
+or size increases it. The counter is **6** since the declared safe values (the
 `ZPLC_SEG_SAFE` segment): programs built before are refused and must be rebuilt
-(it was 4 with the call depth of a task and the build identity, and 3 with the
-64-bit and double-precision opcodes). The
+(it was 5 with the layout of the strings of the communication blocks, 4 with the
+call depth of a task and the build identity, and 3 with the 64-bit and
+double-precision opcodes). The
 `tools/contract/restamp_artifacts.py` tool moves the artifacts committed to the
 repository to the current counter.
 

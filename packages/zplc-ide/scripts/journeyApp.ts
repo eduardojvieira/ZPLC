@@ -31,6 +31,12 @@ const KEYS: Record<string, { key: string; code: string; keyCode: number }> = {
   F2: { key: 'F2', code: 'F2', keyCode: 113 }, F5: { key: 'F5', code: 'F5', keyCode: 116 }, F6: { key: 'F6', code: 'F6', keyCode: 117 },
   S: { key: 's', code: 'KeyS', keyCode: 83 }, B: { key: 'b', code: 'KeyB', keyCode: 66 }, Z: { key: 'z', code: 'KeyZ', keyCode: 90 },
   A: { key: 'a', code: 'KeyA', keyCode: 65 }, R: { key: 'r', code: 'KeyR', keyCode: 82 }, End: { key: 'End', code: 'End', keyCode: 35 }, Home: { key: 'Home', code: 'Home', keyCode: 36 },
+  // the keys of the keyboard editing of the visual editors (LNG-012)
+  ArrowLeft: { key: 'ArrowLeft', code: 'ArrowLeft', keyCode: 37 }, ArrowRight: { key: 'ArrowRight', code: 'ArrowRight', keyCode: 39 },
+  Delete: { key: 'Delete', code: 'Delete', keyCode: 46 }, Backspace: { key: 'Backspace', code: 'Backspace', keyCode: 8 }, Insert: { key: 'Insert', code: 'Insert', keyCode: 45 },
+  PageUp: { key: 'PageUp', code: 'PageUp', keyCode: 33 }, PageDown: { key: 'PageDown', code: 'PageDown', keyCode: 34 },
+  C: { key: 'c', code: 'KeyC', keyCode: 67 }, N: { key: 'n', code: 'KeyN', keyCode: 78 }, O: { key: 'o', code: 'KeyO', keyCode: 79 }, I: { key: 'i', code: 'KeyI', keyCode: 73 },
+  T: { key: 't', code: 'KeyT', keyCode: 84 }, V: { key: 'v', code: 'KeyV', keyCode: 86 }, K: { key: 'k', code: 'KeyK', keyCode: 75 },
 };
 
 export interface App {

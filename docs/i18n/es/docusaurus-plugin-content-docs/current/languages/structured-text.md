@@ -1,10 +1,9 @@
 ---
 id: structured-text
 title: Structured Text (ST)
-sidebar_label: Structured Text
+sidebar_label: Sintaxis de Structured Text
 description: Escribir lógica PLC con Structured Text en ZPLC.
 tags: [languages, st, iec61131-3]
-unlisted: true
 ---
 
 # Structured Text (ST)

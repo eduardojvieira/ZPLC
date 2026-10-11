@@ -23,7 +23,12 @@
     },
     {
       "counter": 5,
-      "fingerprint": "a5576648f78f8673e3d338fa6316d890b181ca4612fb5a276a318fc792c30f2b",
+      "fingerprint": "aef229245e7b0ba0a01d3896d52a9d66efe8b58afa8889a8220fa2dfd645bc0b",
+      "reason": "Communication blocks (COM-004, COM-005, COM-009): the STRING members of AZURE_DPS_PROV, AZURE_EG_PUB and AWS_FLEET_PROV no longer overlap each other or run past the instance; the last byte of every block with a layout belongs to the dispatcher, which keeps the previous EN there (the blocks AZURE_C2D_RECV, AZURE_DPS_PROV, AZURE_EG_PUB, AWS_FLEET_PROV and SPB_REBIRTH grow by one byte); the status ZPLC_COMM_UNAVAILABLE (10) is new. Artifacts built before this draft are refused."
+    },
+    {
+      "counter": 6,
+      "fingerprint": "2e0e31bafbb3b934dec8fcbc5c64d0902b79db8766c20521cbf0a18bb8bac024",
       "reason": "Add the SAFE segment (0x41) so a project can declare the value an output takes in a safe state, atomic with the program (RT-023): zplc_safe_entry_t, ZPLC_SAFE_ENTRY_SIZE, ZPLC_LOADER_MAX_SAFE, ZPLC_LOADER_ERR_SAFE"
     }
   ]

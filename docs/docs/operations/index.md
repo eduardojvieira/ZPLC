@@ -36,6 +36,9 @@ state from a host result or turn a deploy into a firmware recovery procedure.
 - Electrical output state, timing/WCET, physical watchdog behavior, power-cut persistence, runner recovery, and production qualification.
 - Any assertion that a board profile works beyond its recorded evidence tier.
 
+See [Hardware support](../reference/capabilities-evidence.md) for the tiers and
+[Safety and limitations](../safety-and-limitations.md) for what ZPLC is not.
+
 ## Escalation record
 
 - Preserve diagnostics, trace, artifact identity, selected profile, and operator decision.

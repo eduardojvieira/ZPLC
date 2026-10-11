@@ -51,7 +51,7 @@ extern "C" {
  *
  * Increases by one with every change of an opcode, layout, size or code until the contract freeze. The compiler writes it in header word 28 of every artifact and the loader refuses an artifact whose counter differs from this value (ZPLC_LOADER_ERR_DRAFT). 0 is what an artifact built before the counter carries and is never accepted.
  */
-#define ZPLC_DRAFT_COUNTER 5U
+#define ZPLC_DRAFT_COUNTER 6U
 /* <<< END GENERATED: version <<< */
 
 /* ============================================================================

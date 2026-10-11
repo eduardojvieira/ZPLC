@@ -172,10 +172,11 @@ conversiones de `REAL`.
 Hasta que el contrato se congele (CMP-052), la palabra 28 del encabezado de cada artefacto
 `.zplc` guarda el contador de borrador (`ZPLC_DRAFT_COUNTER`) y el loader rechaza un artefacto
 con otro valor, mostrando ambos números. Cada cambio de un opcode, de un layout o de un tamaño
-lo incrementa. El contador es **5** desde los valores seguros declarados (el segmento
-`ZPLC_SEG_SAFE`): los programas compilados antes se rechazan y hay que recompilarlos (era 4
-con la profundidad de llamadas de una tarea y la identidad de compilación, y 3 con los
-opcodes de 64 bits y de doble precisión). La herramienta
+lo incrementa. El contador es **6** desde los valores seguros declarados (el segmento
+`ZPLC_SEG_SAFE`): los programas compilados antes se rechazan y hay que recompilarlos (era 5
+con el layout de los textos de los bloques de comunicación, 4 con la profundidad de llamadas
+de una tarea y la identidad de compilación, y 3 con los opcodes de 64 bits y de doble
+precisión). La herramienta
 `tools/contract/restamp_artifacts.py` lleva los artefactos versionados en el repositorio al
 contador actual.
 

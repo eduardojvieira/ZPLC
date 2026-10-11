@@ -19,6 +19,10 @@ This table is read off the source file `packages/zplc-ide/src/mcp/server.ts`; it
 zplc-mcp --workspace <absolute-real-directory> [--repository <absolute-real-directory>] [--user-data <absolute-real-directory>]
 ```
 
+## Protocol revision
+
+The server speaks protocol revision 2026-07-28 and no older one: its entry point starts the transport with `legacy: 'reject'`. A client names the revision and its capabilities in the `_meta` of every request (`io.modelcontextprotocol/protocolVersion` and `io.modelcontextprotocol/clientCapabilities`); there is no `initialize` step. An `initialize` of an older revision is answered with error `-32022`, `Unsupported protocol version: <revision>`, and `data.supported` lists `2026-07-28`. The exact answers are in [Use an AI assistant and MCP safely](../guides/ai-and-mcp.md#the-protocol-revision).
+
 ## Tools
 
 | Tool | Title | Input | Read only | Description |

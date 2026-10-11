@@ -5,7 +5,8 @@
  */
 
 import { useEffect } from 'react';
-import { applyThemeToDOM, useIDEStore, type Theme } from '../store/useIDEStore';
+import { applyThemeToDOM, type Theme } from '../store/useIDEStore';
+import { useThemeState } from '../store/regionSubscriptions';
 
 /**
  * Hook that manages theme application to the DOM
@@ -13,7 +14,7 @@ import { applyThemeToDOM, useIDEStore, type Theme } from '../store/useIDEStore';
  * - Listens for system preference changes when in 'system' mode
  */
 export function useTheme() {
-  const { theme, setTheme } = useIDEStore();
+  const { theme, setTheme } = useThemeState();
 
   // Apply theme to DOM whenever it changes
   useEffect(() => {

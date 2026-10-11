@@ -51,6 +51,7 @@
                         "stm32f746g_disco",
                         "esp32s3_devkitc",
                         "nucleo_h743zi",
+                        "waveshare_rp2040_zero",
                         "posix"
                     ]
                 },

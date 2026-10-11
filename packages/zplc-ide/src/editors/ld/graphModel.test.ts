@@ -3,7 +3,7 @@ import { readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { parseLDModel, serializeLDModel, type LDModel } from '../../models/ld';
 import { transpileLDToST } from '../../transpiler/ldToST';
-import { copyLDRungFragment, pasteLDRungFragment } from './graphModel';
+import { copyLDRungFragment, ldSelectionIds, ldSelectionOfIds, NO_LD_SELECTION, pasteLDRungFragment } from './graphModel';
 
 const blinkyPath = fileURLToPath(new URL('../../../projects/blinky/src/main.ld.json', import.meta.url));
 
@@ -111,5 +111,16 @@ describe('LD whole-rung clipboard', () => {
     expect(pasteLDRungFragment(model, { ...timer, localVariables: [{ ...timer.localVariables[0]!, type: 'TOF' }] }, 'rung_1')).toBeUndefined();
     expect(pasteLDRungFragment(model, { ...timer, rung: { ...timer.rung, grid: [[{ element: null, hasWire: false }]] } }, 'rung_1')).toBeUndefined();
     expect(serializeLDModel(model)).toBe(original);
+  });
+});
+
+describe('LD selection (LNG-010)', () => {
+  it('is remembered as the id of a rung or of an element of a rung, and read back', () => {
+    expect(ldSelectionIds({ rungId: 'rung_1', elementId: null })).toEqual(['rung:rung_1']);
+    expect(ldSelectionIds({ rungId: 'rung_1', elementId: 'c1' })).toEqual(['rung:rung_1/element:c1']);
+    expect(ldSelectionIds(NO_LD_SELECTION)).toEqual([]);
+    expect(ldSelectionOfIds(['rung:rung_1/element:c1'])).toEqual({ rungId: 'rung_1', elementId: 'c1' });
+    expect(ldSelectionOfIds(['rung:rung_1'])).toEqual({ rungId: 'rung_1', elementId: null });
+    expect(ldSelectionOfIds(['block:and_1'])).toEqual(NO_LD_SELECTION);
   });
 });

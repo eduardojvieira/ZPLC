@@ -9,8 +9,9 @@ tags: [reference, boards, generated]
 
 # Placas Soportadas
 
-> [!IMPORTANT]
-> Esta página se genera desde `firmware/app/boards/boards.json`, el único manifiesto de placas. Actualizá el JSON o volvé a ejecutar `python3 tools/docs/generate_board_reference.py` en lugar de editar este archivo manualmente.
+:::note
+Esta página se genera desde `firmware/app/boards/boards.json`, el único manifiesto de placas. Actualizá el JSON o volvé a ejecutar `python3 tools/docs/generate_board_reference.py` en lugar de editar este archivo manualmente.
+:::
 
 ## Topología
 
@@ -82,7 +83,7 @@ Flash y RAM de `firmware/app` por placa, de la tabla de memoria del enlazador en
 - **Nivel de soporte:** cross-build (sin registro de hardware)
 - **Watchdog de hardware:** apagado: sin registro de hardware (HIL-010), el perfil lo mantiene apagado hasta que el tiempo de reinicio y las salidas seguras se registren en esta placa con él encendido
 - **Comando de build:** `west build -b rpi_pico/rp2040 firmware/app --pristine`
-- **Ancla de referencia:** `docs/docs/reference/index.md#supported-boards`
+- **Ancla de referencia:** `docs/docs/reference/capabilities-evidence.md`
 - **Imagen de proceso usada (entrada, salida):** 18 B, 1 B
 - **Hash de la descripción de E/S:** `d27196be`
 - **Assets de soporte:**
@@ -118,7 +119,7 @@ Flash y RAM de `firmware/app` por placa, de la tabla de memoria del enlazador en
 - **Nivel de soporte:** cross-build (sin registro de hardware)
 - **Watchdog de hardware:** apagado: sin registro de hardware (HIL-010), el perfil lo mantiene apagado hasta que el tiempo de reinicio y las salidas seguras se registren en esta placa con él encendido
 - **Comando de build:** `west build -b arduino_giga_r1/stm32h747xx/m7 firmware/app --pristine`
-- **Ancla de referencia:** `docs/docs/reference/index.md#supported-boards`
+- **Ancla de referencia:** `docs/docs/reference/capabilities-evidence.md`
 - **Imagen de proceso usada (entrada, salida):** 1 B, 1 B
 - **Hash de la descripción de E/S:** `77271dae`
 - **Assets de soporte:**
@@ -144,7 +145,7 @@ Flash y RAM de `firmware/app` por placa, de la tabla de memoria del enlazador en
 - **Módulo:** ESP32-S3-WROOM-1-N8R8, 8 MB flash, 8 MB PSRAM (variante por confirmar en el módulo)
 - **Watchdog de hardware:** apagado: sin registro de hardware (HIL-010), el perfil lo mantiene apagado hasta que el tiempo de reinicio y las salidas seguras se registren en esta placa con él encendido
 - **Comando de build:** `west build -b esp32s3_devkitc/esp32s3/procpu firmware/app --pristine`
-- **Ancla de referencia:** `docs/docs/reference/index.md#supported-boards`
+- **Ancla de referencia:** `docs/docs/reference/capabilities-evidence.md`
 - **Imagen de proceso usada (entrada, salida):** 10 B, 1 B
 - **Hash de la descripción de E/S:** `2e9abb09`
 - **Assets de soporte:**
@@ -179,7 +180,7 @@ Flash y RAM de `firmware/app` por placa, de la tabla de memoria del enlazador en
 - **Nivel de soporte:** cross-build (sin registro de hardware)
 - **Watchdog de hardware:** apagado: sin registro de hardware (HIL-010), el perfil lo mantiene apagado hasta que el tiempo de reinicio y las salidas seguras se registren en esta placa con él encendido
 - **Comando de build:** `west build -b stm32f746g_disco/stm32f746xx firmware/app --pristine`
-- **Ancla de referencia:** `docs/docs/reference/index.md#supported-boards`
+- **Ancla de referencia:** `docs/docs/reference/capabilities-evidence.md`
 - **Imagen de proceso usada (entrada, salida):** 1 B, 1 B
 - **Hash de la descripción de E/S:** `80927f2e`
 - **Assets de soporte:**
@@ -203,7 +204,7 @@ Flash y RAM de `firmware/app` por placa, de la tabla de memoria del enlazador en
 - **Nivel de soporte:** cross-build (sin registro de hardware)
 - **Watchdog de hardware:** apagado: sin registro de hardware (HIL-010), el perfil lo mantiene apagado hasta que el tiempo de reinicio y las salidas seguras se registren en esta placa con él encendido
 - **Comando de build:** `west build -b nucleo_h743zi/stm32h743xx firmware/app --pristine`
-- **Ancla de referencia:** `docs/docs/reference/index.md#supported-boards`
+- **Ancla de referencia:** `docs/docs/reference/capabilities-evidence.md`
 - **Imagen de proceso usada (entrada, salida):** 1 B, 1 B
 - **Hash de la descripción de E/S:** `4193575e`
 - **Assets de soporte:**
@@ -228,7 +229,7 @@ Flash y RAM de `firmware/app` por placa, de la tabla de memoria del enlazador en
 - **Nivel de soporte:** cross-build (sin registro de hardware)
 - **Watchdog de hardware:** apagado: sin registro de hardware (HIL-010), el perfil lo mantiene apagado hasta que el tiempo de reinicio y las salidas seguras se registren en esta placa con él encendido
 - **Comando de build:** `west build -b arduino_opta/stm32h747xx/m7 firmware/app --pristine`
-- **Ancla de referencia:** `docs/docs/reference/index.md#supported-boards`
+- **Ancla de referencia:** `docs/docs/reference/capabilities-evidence.md`
 - **Imagen de proceso usada (entrada, salida):** 1 B, 1 B
 - **Hash de la descripción de E/S:** `6ce9cc7a`
 - **Assets de soporte:**
@@ -263,7 +264,7 @@ Flash y RAM de `firmware/app` por placa, de la tabla de memoria del enlazador en
 - **Nivel de soporte:** cross-build (sin registro de hardware)
 - **Watchdog de hardware:** apagado: sin registro de hardware (HIL-010), el perfil lo mantiene apagado hasta que el tiempo de reinicio y las salidas seguras se registren en esta placa con él encendido
 - **Comando de build:** `west build -b rp2040_zero/rp2040 firmware/app --pristine`
-- **Ancla de referencia:** `docs/docs/reference/index.md#supported-boards`
+- **Ancla de referencia:** `docs/docs/reference/capabilities-evidence.md`
 - **Imagen de proceso usada (entrada, salida):** 1 B, 1 B
 - **Hash de la descripción de E/S:** `0d5edb3c`
 - **Assets de soporte:**

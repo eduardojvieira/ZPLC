@@ -27,7 +27,7 @@
       "pause": "feed",
       "fault": "expire"
     },
-    "docs_ref": "docs/docs/reference/index.md#supported-boards",
+    "docs_ref": "docs/docs/reference/capabilities-evidence.md",
     "io": {
       "schema_version": 1,
       "channels": [
@@ -329,7 +329,7 @@
       "pause": "feed",
       "fault": "expire"
     },
-    "docs_ref": "docs/docs/reference/index.md#supported-boards",
+    "docs_ref": "docs/docs/reference/capabilities-evidence.md",
     "io": {
       "schema_version": 1,
       "channels": [
@@ -421,7 +421,7 @@
       "pause": "feed",
       "fault": "expire"
     },
-    "docs_ref": "docs/docs/reference/index.md#supported-boards",
+    "docs_ref": "docs/docs/reference/capabilities-evidence.md",
     "io": {
       "schema_version": 1,
       "channels": [
@@ -621,7 +621,7 @@
       "pause": "feed",
       "fault": "expire"
     },
-    "docs_ref": "docs/docs/reference/index.md#supported-boards",
+    "docs_ref": "docs/docs/reference/capabilities-evidence.md",
     "io": {
       "schema_version": 1,
       "channels": [
@@ -688,7 +688,7 @@
       "pause": "feed",
       "fault": "expire"
     },
-    "docs_ref": "docs/docs/reference/index.md#supported-boards",
+    "docs_ref": "docs/docs/reference/capabilities-evidence.md",
     "io": {
       "schema_version": 1,
       "channels": [
@@ -771,7 +771,7 @@
       "pause": "feed",
       "fault": "expire"
     },
-    "docs_ref": "docs/docs/reference/index.md#supported-boards",
+    "docs_ref": "docs/docs/reference/capabilities-evidence.md",
     "io": {
       "schema_version": 1,
       "channels": [
@@ -959,7 +959,7 @@
       "pause": "feed",
       "fault": "expire"
     },
-    "docs_ref": "docs/docs/reference/index.md#supported-boards",
+    "docs_ref": "docs/docs/reference/capabilities-evidence.md",
     "io": {
       "schema_version": 1,
       "channels": [

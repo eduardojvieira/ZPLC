@@ -60,6 +60,8 @@ export { parse, parseWithDiagnostics, ParseError } from './parser.ts';
 export type { ParseOutcome } from './parser.ts';
 export type { SourceSpan, SourceWarning, SyntaxIssue, WarningCode, WarningSelection } from './diagnostics.ts';
 export { WARNING_CODES, parseWarningSelection, selectWarnings } from './diagnostics.ts';
+export { checkProject } from './check.ts';
+export type { CheckDiagnostic, CheckOptions, CheckSource } from './check.ts';
 
 // =============================================================================
 // Symbol table exports
@@ -117,6 +119,8 @@ export type {
     SourceLineMapping,
     BreakpointLocation,
     DebugPOUInfo,
+    DebugMonitorEntry,
+    DebugPowerExpr,
     DebugMap,
     BuildDebugMapOptions,
     TypeResolver,

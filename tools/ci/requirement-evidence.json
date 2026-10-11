@@ -979,6 +979,20 @@
   "LNG-005": [
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"7 Breakpoint stops execution","partial":true}
   ],
+  "LNG-006": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/monitoring/elementStates.test.ts","test":"a variable is read from the program of its own file (LNG-006)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/monitoring/elementStates.test.ts","test":"every variable that a translated source says it reads exists in the debug map (LNG-006)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/monitoring/elementStates.test.ts","test":"the power of a rung from the values read (LNG-006)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/monitoring/elementStates.test.ts","test":"the states of elements from monitor entries (LNG-006)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/monitoring/inlineValues.test.ts","test":"inline values in Instruction List (LNG-006)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/monitoring/inlineValues.test.ts","test":"inline values in Structured Text (LNG-006)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/monitoring/inlineValues.test.ts","test":"the widgets of a file (LNG-006)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/monitoring/runtime.test.ts","test":"online monitoring of the five languages against the real runtime (LNG-006)"},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"28b Online values of a rung come from the debug map","partial":true},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"28c Online values of an FBD come from the debug map","partial":true},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"28d Online state of an SFC comes from the debug map","partial":true},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"28e Inline values in Structured Text come from the debug map","partial":true}
+  ],
   "LNG-007": [
     {"kind":"unit","ref":"packages/zplc-ide/src/editors/paletteExecution.test.ts","test":"LNG-007 every block of the FBD palette is placed, built and run"},
     {"kind":"unit","ref":"packages/zplc-ide/src/editors/paletteExecution.test.ts","test":"LNG-007 every coil of the Ladder palette is run"},
@@ -997,10 +1011,44 @@
   "LNG-009": [
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"9 Undo after switching tabs"}
   ],
+  "LNG-010": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/editors/gesture.test.ts","test":"one drag is one undo step, and the selection comes back (LNG-010, WP-55)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/editors/gesture.test.ts","test":"which changes of a canvas end a gesture (LNG-010)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/editors/ld/graphModel.test.ts","test":"LD selection (LNG-010)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/editors/sfc/graphModel.test.ts","test":"SFC selection (LNG-010)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/editors/visualHistory.test.ts","test":"visual snapshot history (LNG-010)"},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"28i An element dropped on a rung is inserted as the keyboard inserts it","partial":true},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"28j A block dragged with the pointer is one undo step","partial":true}
+  ],
   "LNG-011": [
     {"kind":"unit","ref":"packages/zplc-ide/src/models/visualFileLoad.schema.test.ts","test":"LNG-011 a variable is an object with a name and a type, in every language"},
     {"kind":"unit","ref":"packages/zplc-ide/src/models/visualFileLoad.schema.test.ts","test":"LNG-011 the parts of a Ladder file have the shape the editor reads"},
     {"kind":"unit","ref":"packages/zplc-ide/src/models/visualFileLoad.schema.test.ts","test":"LNG-011 the parts of an SFC chart have the shape the editor reads"}
+  ],
+  "LNG-012": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/editors/fbd/keyboard.test.ts","test":"LNG-012 binding a function block diagram from the declared symbols"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/editors/fbd/keyboard.test.ts","test":"LNG-012 connecting and disconnecting from the keyboard"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/editors/fbd/keyboard.test.ts","test":"LNG-012 deleting and commenting from the keyboard"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/editors/fbd/keyboard.test.ts","test":"LNG-012 function block diagram cursor"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/editors/fbd/keyboard.test.ts","test":"LNG-012 function block diagram keyboard authoring"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/editors/fbd/keyboard.test.ts","test":"LNG-012 function block diagram palette"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/editors/keymap.test.ts","test":"LNG-012 the key table of the visual editors"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/editors/ld/keyboard.test.ts","test":"LNG-012 binding a variable from the declared symbols"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/editors/ld/keyboard.test.ts","test":"LNG-012 ladder cursor"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/editors/ld/keyboard.test.ts","test":"LNG-012 ladder keyboard authoring"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/editors/ld/keyboard.test.ts","test":"LNG-012 ladder structure from the keyboard"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/editors/ld/keyboard.test.ts","test":"LNG-012 what the keyboard does not do without a cursor to show it"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/editors/picker.test.ts","test":"LNG-012 palettes are searchable from the keyboard"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/editors/sfc/keyboard.test.ts","test":"LNG-012 connecting and deleting in the chart from the keyboard"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/editors/sfc/keyboard.test.ts","test":"LNG-012 naming and conditions from the declared symbols"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/editors/sfc/keyboard.test.ts","test":"LNG-012 sequential function chart cursor"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/editors/sfc/keyboard.test.ts","test":"LNG-012 sequential function chart keyboard authoring"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/editors/sfc/keyboard.test.ts","test":"LNG-012 sequential function chart palette"},
+    {"kind":"unit","ref":"tools/docs/generate_keyboard_reference.test.ts","test":"LNG-012 keyboard reference: generated from the key table of the editors"},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"28f A rung is built from the keyboard","partial":true},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"28g A function block diagram is edited from the keyboard","partial":true},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"28h A sequential function chart is edited from the keyboard","partial":true},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"28i An element dropped on a rung is inserted as the keyboard inserts it","partial":true}
   ],
   "LNG-013": [
     {"kind":"unit","ref":"packages/zplc-ide/src/editors/fbd/graphModel.test.ts","test":"LNG-013 drawing a wire between two pins"},
@@ -1013,6 +1061,22 @@
     {"kind":"unit","ref":"packages/zplc-ide/src/models/visualFileRoundTrip.test.ts","test":"LNG-014 the committed visual files"},
     {"kind":"unit","ref":"packages/zplc-ide/src/models/visualFileRoundTrip.test.ts","test":"LNG-014 the one form of a visual file"},
     {"kind":"unit","ref":"packages/zplc-ide/src/utils/fileSystem.visualRoundTrip.test.ts","test":"LNG-014 open and save without an edit"}
+  ],
+  "LNG-015": [
+    {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/check.test.ts","test":"checking a project (LNG-015)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/langsvc/assist.test.ts","test":"completion in a buffer that is being typed (LNG-015)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/langsvc/assist.test.ts","test":"hover and outline across the project (LNG-015)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/langsvc/liveDiagnostics.test.ts","test":"the live diagnostics of the project (LNG-015)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/langsvc/markers.test.ts","test":"the diagnostics of the project as markers (LNG-015)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/langsvc/monacoProviders.test.ts","test":"the language service providers (LNG-015, LNG-016)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/langsvc/projectIndex.test.ts","test":"the index of a project resolves names by scope (LNG-015)"},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"4c Errors of the project are shown while typing","partial":true}
+  ],
+  "LNG-016": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/langsvc/assist.test.ts","test":"signature help (LNG-016)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/langsvc/format.test.ts","test":"document formatting (LNG-016)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/langsvc/monacoProviders.test.ts","test":"the language service providers (LNG-015, LNG-016)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/langsvc/rename.test.ts","test":"rename symbol (LNG-016)"}
   ],
   "LNG-017": [
     {"kind":"conformance","ref":"conformance/lng/lng-017-il-unbalanced-closing-parenthesis.expect.json","test":"LNG-017 an IL closing parenthesis without an opening one is an error on its line"},
@@ -1429,12 +1493,101 @@
   "COM-001": [
     {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/fuzz_run_program.c","test":"RT-001/COM-001 are open, so that a long run can look for other findings); ZPLC_FUZZ_DUMP=<path> writes the"},
     {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_comm_fb_access.c","test":"The bounded accessors of a function-block instance (COM-001)."},
-    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_comm_handler_cloud.c","test":"The cloud function-block handlers against crafted blocks (COM-001)."},
-    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_comm_handler_modbus.c","test":"The Modbus function-block handler against crafted blocks (COM-001)."},
-    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_comm_handler_mqtt.c","test":"The MQTT function-block handler against crafted blocks (COM-001)."}
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_comm_handler_cloud.c","test":"(COM-001, COM-002, COM-003, COM-004, COM-005, COM-008, COM-018)."},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_comm_handler_modbus.c","test":"(COM-001, COM-002, COM-003, COM-004, COM-008, COM-018)."},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_comm_handler_modbus.c","test":"completed read lands in VALUE and nowhere else (COM-001)."},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_comm_handler_modbus.c","test":"nothing is queued; a count it can hold is accepted (COM-001)."},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_comm_handler_mqtt.c","test":"(COM-001, COM-002, COM-004, COM-005, COM-018)."}
+  ],
+  "COM-002": [
+    {"kind":"conformance","ref":"conformance/com/com-002-a-failed-request-holds-error-while-en-stays-true.expect.json","test":"COM-002 a failed request holds ERROR while EN stays TRUE, EN FALSE clears it and STATUS keeps the code"},
+    {"kind":"conformance","ref":"conformance/com/com-002-a-request-is-one-for-each-rising-edge.expect.json","test":"COM-002 a result is shown once for each rising edge of EN, and a held EN makes no second request"},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_comm_dispatch.c","test":"COM-002: BUSY sticks while the handler is pending, the handler is called on"},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_comm_dispatch.c","test":"and cannot replay the finished one (COM-002)."},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_comm_handler_cloud.c","test":"(COM-001, COM-002, COM-003, COM-004, COM-005, COM-008, COM-018)."},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_comm_handler_modbus.c","test":"(COM-001, COM-002, COM-003, COM-004, COM-008, COM-018)."},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_comm_handler_modbus.c","test":"COM-002: BUSY sticks across scans while the worker has not finished, and the"},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_comm_handler_mqtt.c","test":"(COM-001, COM-002, COM-004, COM-005, COM-018)."},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_comm_req.c","test":"A block that asks again gets a request of its own, never the finished one: no replay (COM-002)."},
+    {"kind":"c-test","ref":"firmware/tests/comm_cloud_fb/src/main.c","test":"(COM-002, COM-003, COM-004, COM-008, COM-018)."},
+    {"kind":"c-test","ref":"firmware/tests/comm_modbus_fb/src/main.c","test":"(COM-002, COM-003, COM-004, COM-008, COM-018)."}
+  ],
+  "COM-003": [
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_comm_handler_cloud.c","test":"(COM-001, COM-002, COM-003, COM-004, COM-005, COM-008, COM-018)."},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_comm_handler_cloud.c","test":"COM-003 and COM-004: the service that waits for a broker is not called by the scan; one"},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_comm_handler_cloud.c","test":"when it is called from a scan, which is the bound of COM-003: nothing the"},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_comm_handler_modbus.c","test":"(COM-001, COM-002, COM-003, COM-004, COM-008, COM-018)."},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_comm_req.c","test":"The request slots between the scan and a worker (COM-003, COM-004, COM-008, COM-018)."},
+    {"kind":"c-test","ref":"firmware/tests/comm_cloud_fb/src/main.c","test":"(COM-002, COM-003, COM-004, COM-008, COM-018)."},
+    {"kind":"c-test","ref":"firmware/tests/comm_cloud_fb/src/main.c","test":"COM-003: a provisioning service that waits for the better part of a second does not hold up the scan."},
+    {"kind":"c-test","ref":"firmware/tests/comm_modbus_fb/src/main.c","test":"(COM-002, COM-003, COM-004, COM-008, COM-018)."},
+    {"kind":"c-test","ref":"firmware/tests/comm_modbus_fb/src/main.c","test":"COM-003: the worker is away in the client for the better part of a second; the scan is not. Every call of"}
+  ],
+  "COM-004": [
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_comm_dispatch.c","test":"COM-004: one rising edge, one operation; a held EN does not repeat it."},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_comm_handler_cloud.c","test":"(COM-001, COM-002, COM-003, COM-004, COM-005, COM-008, COM-018)."},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_comm_handler_cloud.c","test":"COM-003 and COM-004: the service that waits for a broker is not called by the scan; one"},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_comm_handler_modbus.c","test":"(COM-001, COM-002, COM-003, COM-004, COM-008, COM-018)."},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_comm_handler_modbus.c","test":"COM-004: one rising EN is one request, whatever EN does afterwards."},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_comm_handler_mqtt.c","test":"(COM-001, COM-002, COM-004, COM-005, COM-018)."},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_comm_handler_mqtt.c","test":"COM-004: one message for one trigger; the strings are read in the layout of the table (COM-005)."},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_comm_req.c","test":"The request slots between the scan and a worker (COM-003, COM-004, COM-008, COM-018)."},
+    {"kind":"c-test","ref":"firmware/tests/comm_cloud_fb/src/main.c","test":"(COM-002, COM-003, COM-004, COM-008, COM-018)."},
+    {"kind":"c-test","ref":"firmware/tests/comm_modbus_fb/src/main.c","test":"(COM-002, COM-003, COM-004, COM-008, COM-018)."},
+    {"kind":"c-test","ref":"firmware/tests/comm_modbus_fb/src/main.c","test":"COM-004: one rising edge is one request, however long EN stays up; a new rise is another."}
+  ],
+  "COM-005": [
+    {"kind":"conformance","ref":"conformance/com/com-005-string-arguments-of-a-block.expect.json","test":"COM-005 a STRING argument of a communication block is copied into the member in the STRING layout"},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_comm_handler_cloud.c","test":"(COM-001, COM-002, COM-003, COM-004, COM-005, COM-008, COM-018)."},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_comm_handler_cloud.c","test":"DEVICE_ID, which ends where ASSIGNED_HUB begins in the table, was not overwritten (COM-005)"},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_comm_handler_cloud.c","test":"the three strings end where the next begins: none is cut or overwritten (COM-005)"},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_comm_handler_mqtt.c","test":"(COM-001, COM-002, COM-004, COM-005, COM-018)."},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_comm_handler_mqtt.c","test":"COM-004: one message for one trigger; the strings are read in the layout of the table (COM-005)."}
+  ],
+  "COM-006": [
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_comm_handler_modbus.c","test":"The status of a failed request is a documented code, whatever the client's errno (COM-006, COM-018).","partial":true,"note":"Modbus TCP against a protocol double, and the MQTT client of the simulation runtime against a broker double; the cloud blocks are verified only at the handler with a stand-in service, the MQTT client of the controller is not run against a broker, and Modbus RTU needs a device that was not used"},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_host_comm.c","test":"The communication blocks in the simulation runtime, on real sockets (COM-006, COM-009, COM-018).","partial":true,"note":"Modbus TCP against a protocol double, and the MQTT client of the simulation runtime against a broker double; the cloud blocks are verified only at the handler with a stand-in service, the MQTT client of the controller is not run against a broker, and Modbus RTU needs a device that was not used"},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_modbus_client_pdu.c","test":"The frames of the Modbus clients, and the unit of their timeouts (COM-006, COM-012).","partial":true,"note":"Modbus TCP against a protocol double, and the MQTT client of the simulation runtime against a broker double; the cloud blocks are verified only at the handler with a stand-in service, the MQTT client of the controller is not run against a broker, and Modbus RTU needs a device that was not used"},
+    {"kind":"c-test","ref":"firmware/tests/modbus_client_tcp/src/main.c","test":"A TCP response may arrive in pieces; the client puts it back together (COM-006).","partial":true,"note":"Modbus TCP against a protocol double, and the MQTT client of the simulation runtime against a broker double; the cloud blocks are verified only at the handler with a stand-in service, the MQTT client of the controller is not run against a broker, and Modbus RTU needs a device that was not used"},
+    {"kind":"c-test","ref":"firmware/tests/modbus_client_tcp/src/main.c","test":"COM-006, COM-012, COM-018: the Modbus TCP client of the product against a","partial":true,"note":"Modbus TCP against a protocol double, and the MQTT client of the simulation runtime against a broker double; the cloud blocks are verified only at the handler with a stand-in service, the MQTT client of the controller is not run against a broker, and Modbus RTU needs a device that was not used"}
+  ],
+  "COM-007": [
+    {"kind":"unit","ref":"tools/docs/communication_blocks.test.ts","test":"the communication blocks say what each was verified against (COM-007)"}
   ],
   "COM-008": [
-    {"kind":"c-test","ref":"firmware/tests/comm_modbus_fb/src/main.c","test":"COM-008: resetting a Modbus block while its request is in flight releases"}
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_comm_handler_cloud.c","test":"(COM-001, COM-002, COM-003, COM-004, COM-005, COM-008, COM-018)."},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_comm_handler_cloud.c","test":"COM-008: reset while queued or running; the pool is as full as the worker's holds say."},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_comm_handler_modbus.c","test":"(COM-001, COM-002, COM-003, COM-004, COM-008, COM-018)."},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_comm_handler_modbus.c","test":"COM-008: a block reset while its request is queued or running does not give"},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_comm_handler_mqtt.c","test":"COM-008: a reset while the request is queued lets go of it; the block is idle."},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_comm_req.c","test":"COM-008: let go of while running, the slot stays taken until the worker is through."},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_comm_req.c","test":"The request slots between the scan and a worker (COM-003, COM-004, COM-008, COM-018)."},
+    {"kind":"c-test","ref":"firmware/tests/comm_cloud_fb/src/main.c","test":"(COM-002, COM-003, COM-004, COM-008, COM-018)."},
+    {"kind":"c-test","ref":"firmware/tests/comm_cloud_fb/src/main.c","test":"COM-008: the block is reset while the service runs; the result is dropped, not delivered to whoever asks next."},
+    {"kind":"c-test","ref":"firmware/tests/comm_modbus_fb/src/main.c","test":"(COM-002, COM-003, COM-004, COM-008, COM-018)."}
+  ],
+  "COM-009": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/conformance/communication.test.ts","test":"COM-009 the communication blocks in simulation","partial":true,"note":"the runtime reaches loopback endpoints that a test starts (zplc_loopback, in-process doubles); Studio does not start or stop them for a session, does not show the status, and the program has to be given their ports"},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_host_comm.c","test":"The communication blocks in the simulation runtime, on real sockets (COM-006, COM-009, COM-018).","partial":true,"note":"the runtime reaches loopback endpoints that a test starts (zplc_loopback, in-process doubles); Studio does not start or stop them for a session, does not show the status, and the program has to be given their ports"}
+  ],
+  "COM-011": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/compiler/communication-tags.test.ts","test":"where a Modbus tag is served (COM-011)"},
+    {"kind":"c-test","ref":"firmware/tests/modbus_areas/src/main.c","test":"COM-011 and COM-013: the four areas of the Modbus server are four address spaces, writes to the input areas"},
+    {"kind":"c-test","ref":"firmware/tests/modbus_areas/src/main.c","test":"COM-011: a write to a discrete input or an input register is refused with nothing written."},
+    {"kind":"c-test","ref":"firmware/tests/modbus_areas/src/main.c","test":"COM-011: number 20 is four variables; each area serves its own."},
+    {"kind":"c-test","ref":"firmware/tests/modbus_areas/src/main.c","test":"COM-011: the exception a client sees."},
+    {"kind":"c-test","ref":"firmware/tests/modbus_client_tcp/src/main.c","test":"(COM-011)."}
+  ],
+  "COM-012": [
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_modbus_client_pdu.c","test":"COM-012: the Zephyr Modbus client reads its timeout in MICROseconds."},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_modbus_client_pdu.c","test":"The frames of the Modbus clients, and the unit of their timeouts (COM-006, COM-012)."},
+    {"kind":"c-test","ref":"firmware/tests/modbus_client_tcp/src/main.c","test":"COM-006, COM-012, COM-018: the Modbus TCP client of the product against a"},
+    {"kind":"c-test","ref":"firmware/tests/modbus_client_tcp/src/main.c","test":"COM-012: the interface of an RTU client waits for a response for rx_timeout MICROseconds. A value in"}
+  ],
+  "COM-013": [
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_loader_verify.c","test":"COM-013: the whole of WORK and of RETAIN can be bound. The upper half of WORK was refused \"until the"},
+    {"kind":"c-test","ref":"firmware/tests/modbus_areas/src/main.c","test":"COM-011 and COM-013: the four areas of the Modbus server are four address spaces, writes to the input areas"},
+    {"kind":"c-test","ref":"firmware/tests/modbus_areas/src/main.c","test":"COM-013: the memory the server serves is served to its last byte, in WORK and in RETAIN."}
   ],
   "COM-014": [
     {"kind":"unit","ref":"packages/zplc-ide/src/runtime/provisioningCommands.test.ts","test":"MQTT security (COM-014)"},
@@ -1454,6 +1607,25 @@
     {"kind":"unit","ref":"tools/firmware-test/test_check_inbound_authority.py","test":"InboundAuthority","note":"the link-level check of the inbound objects of every board image (run.sh size); the behavioural checks are the c-tests of firmware/tests/inbound_authority (Modbus) and firmware/tests/inbound_mqtt (MQTT, all five profiles). The cloud provisioning clients (Azure DPS, AWS fleet) are covered at link level only"},
     {"kind":"c-test","ref":"firmware/tests/inbound_authority/src/main.c","test":"COM-017: no message that arrives from Modbus changes RUN/STOP, sets or"},
     {"kind":"c-test","ref":"firmware/tests/inbound_mqtt/src/main.c","test":"COM-017: no message that arrives over MQTT changes RUN/STOP, sets or clears"}
+  ],
+  "COM-018": [
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_comm_handler_cloud.c","test":"(COM-001, COM-002, COM-003, COM-004, COM-005, COM-008, COM-018)."},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_comm_handler_cloud.c","test":"COM-018: a service that has not answered in its time is TIMEOUT, and a late answer is dropped."},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_comm_handler_cloud.c","test":"COM-018: the session is down; this runtime has no C2D (profile)"},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_comm_handler_modbus.c","test":"(COM-001, COM-002, COM-003, COM-004, COM-008, COM-018)."},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_comm_handler_modbus.c","test":"COM-018: a request that the worker does not finish in its time is reported"},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_comm_handler_modbus.c","test":"The status of a failed request is a documented code, whatever the client's errno (COM-006, COM-018)."},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_comm_handler_mqtt.c","test":"(COM-001, COM-002, COM-004, COM-005, COM-018)."},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_comm_handler_mqtt.c","test":"COM-018: the session is down"},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_comm_handler_mqtt.c","test":"COM-018: the session went down; the block says so, with the reason, on the next scan"},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_comm_req.c","test":"COM-018: older than its timeout, a request is TIMEOUT and its late result is dropped."},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_comm_req.c","test":"The request slots between the scan and a worker (COM-003, COM-004, COM-008, COM-018)."},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_host_comm.c","test":"The communication blocks in the simulation runtime, on real sockets (COM-006, COM-009, COM-018)."},
+    {"kind":"c-test","ref":"firmware/tests/comm_cloud_fb/src/main.c","test":"(COM-002, COM-003, COM-004, COM-008, COM-018)."},
+    {"kind":"c-test","ref":"firmware/tests/comm_modbus_fb/src/main.c","test":"(COM-002, COM-003, COM-004, COM-008, COM-018)."},
+    {"kind":"c-test","ref":"firmware/tests/comm_modbus_fb/src/main.c","test":"COM-018: a client that fails is ERROR with a status of the documented set, within the request."},
+    {"kind":"c-test","ref":"firmware/tests/modbus_client_tcp/src/main.c","test":"COM-006, COM-012, COM-018: the Modbus TCP client of the product against a"},
+    {"kind":"c-test","ref":"firmware/tests/modbus_client_tcp/src/main.c","test":"COM-018: a server that does not answer is a timeout, after the configured time and not much after."}
   ],
   "COM-022": [
     {"kind":"unit","ref":"tools/firmware-test/test_comm_rules.py","test":"ShellRule","partial":true,"note":"the raw memory command is off in release images and built only with the diagnostic switch, and the documented commands are implemented; the part of the requirement that makes the state-changing commands of the diagnostic shell obey the session rule needs the session of COM-020, which does not exist yet"},
@@ -1589,6 +1761,10 @@
     {"kind":"unit","ref":"packages/zplc-ide/electron/toolWorkerHost.test.ts","test":"the worker command schema (IDE-012, IDE-017)"},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"35 A long test run can be cancelled and leaves no process behind"}
   ],
+  "IDE-013": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/store/regionSubscriptions.test.ts","test":"regions render for what they show (IDE-013)"},
+    {"kind":"unit","ref":"tools/ci/ide-structure.test.ts","test":"a component must not subscribe to the whole store (IDE-013)"}
+  ],
   "IDE-014": [
     {"kind":"unit","ref":"tools/ci/ide-structure.test.ts","test":"module size stopgap (IDE-014): listed modules may stay above the limit until they are split","partial":true}
   ],
@@ -1641,8 +1817,8 @@
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"31 A version 1 project shows its migration before it is applied","partial":true}
   ],
   "IDE-023": [
-    {"kind":"unit","ref":"packages/zplc-ide/src/components/stLanguageService.project.test.ts","test":"completion from the project (IDE-023)"},
-    {"kind":"unit","ref":"packages/zplc-ide/src/components/stLanguageService.project.test.ts","test":"hover over a name of the project (IDE-023)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/langsvc/assist.test.ts","test":"completion from the project (IDE-023)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/langsvc/assist.test.ts","test":"hover over a name of the project and of the library (IDE-023)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/project/libraries.test.ts","test":"addLibrary and removeLibrary (IDE-023)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/project/libraries.test.ts","test":"configuredLibraries (IDE-023)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/project/libraries.test.ts","test":"libraryProblem (IDE-023)"},
@@ -1931,6 +2107,18 @@
   "REL-035": [
     {"kind":"unit","ref":"scripts/release/releasing-md.test.ts","test":"the external services of the release (REL-035)"}
   ],
+  "DOC-002": [
+    {"kind":"unit","ref":"tools/docs/docs_structure.test.ts","test":"docs structure: the sidebar is organised by reader intent (DOC-002)"}
+  ],
+  "DOC-003": [
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"41 Blink without hardware (the tutorial)"}
+  ],
+  "DOC-004": [
+    {"kind":"unit","ref":"tools/docs/install_and_status_pages.test.ts","test":"first board page: written from the manifest, and honest that no board has run it (DOC-004, stopgap: the steps have not been executed on a board)","partial":true}
+  ],
+  "DOC-005": [
+    {"kind":"unit","ref":"tools/docs/install_and_status_pages.test.ts","test":"install page: built from the channels and installers that exist today (DOC-005)"}
+  ],
   "DOC-006": [
     {"kind":"unit","ref":"tools/docs/generate_language_reference.test.ts","test":"language reference: every row of the matrix is on a page, in both languages (DOC-006, stopgap: no editor screenshot yet)","partial":true},
     {"kind":"unit","ref":"tools/docs/generate_language_reference.test.ts","test":"language reference: markup and addressing (DOC-006, stopgap: no editor screenshot yet)","partial":true},
@@ -1954,10 +2142,55 @@
     {"kind":"unit","ref":"tools/docs/source-parsers.test.ts","test":"source readers: the command line, MCP and the protocol (DOC-008)"},
     {"kind":"unit","ref":"tools/docs/source-parsers.test.ts","test":"source readers: the shell command tree (DOC-008)"}
   ],
+  "DOC-009": [
+    {"kind":"unit","ref":"tools/docs/check-docs-config.test.ts","test":"docs configuration fragments: a fragment is a piece of a project file that builds (DOC-009)"},
+    {"kind":"unit","ref":"tools/docs/check-docs-config.test.ts","test":"finds a board entry of a page by its fence and checks it against the validator of the board manifest (DOC-009)"},
+    {"kind":"unit","ref":"tools/docs/check-docs-config.test.ts","test":"how-to guides: each task has a page in both languages with something that runs (DOC-009)"},
+    {"kind":"unit","ref":"tools/docs/mcp_protocol_revision.test.ts","test":"MCP guide: the protocol revision of the server is the one the page shows (DOC-009)"}
+  ],
+  "DOC-010": [
+    {"kind":"unit","ref":"tools/docs/install_and_status_pages.test.ts","test":"hardware support page: one table, derived from the manifest and its records (DOC-010)"},
+    {"kind":"unit","ref":"tools/docs/install_and_status_pages.test.ts","test":"safety page: what ZPLC is not, and limits that the source says (DOC-010)"}
+  ],
+  "DOC-011": [
+    {"kind":"unit","ref":"tools/docs/contributor_docs.test.ts","test":"README: what ZPLC is, what it does today, what it runs on and how to try it, on the first screen (DOC-011)"}
+  ],
+  "DOC-012": [
+    {"kind":"unit","ref":"tools/docs/check_capability_claims.test.ts","test":"capability claims: what the public text says ZPLC can do is backed by a check (DOC-012)"}
+  ],
+  "DOC-013": [
+    {"kind":"unit","ref":"tools/docs/capture-screenshots.test.ts","test":"documentation screenshots: a page shows only captured pictures (DOC-013)"},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"41 Blink without hardware (the tutorial)","partial":true}
+  ],
   "DOC-014": [
     {"kind":"unit","ref":"tools/docs/check_doc_claims.test.ts","test":"doc claims: a claim holds only when the source has the thing (DOC-014)"},
     {"kind":"unit","ref":"tools/docs/check_doc_claims.test.ts","test":"doc claims: the allow-list can only shrink (DOC-014)"},
     {"kind":"unit","ref":"tools/docs/check_doc_claims.test.ts","test":"doc claims: the documents of the repository (DOC-014)"},
     {"kind":"unit","ref":"tools/docs/check_doc_claims.test.ts","test":"doc claims: what a page says is read from its code spans and shell blocks (DOC-014)"}
+  ],
+  "DOC-016": [
+    {"kind":"unit","ref":"tools/docs/docs_structure.test.ts","test":"docs structure: a page is published only when both languages are complete (DOC-016)"}
+  ],
+  "DOC-018": [
+    {"kind":"unit","ref":"tools/docs/docs_structure.test.ts","test":"docs site: admonitions in the generator\\'s own syntax and no version selector for one version (DOC-018, stopgap: the site has no search yet)","partial":true}
+  ],
+  "DOC-022": [
+    {"kind":"unit","ref":"tools/docs/contributor_docs.test.ts","test":"agent files: the project skill and AGENTS.md are current, and the contributor guide comes first (DOC-022)"}
+  ],
+  "DOC-023": [
+    {"kind":"unit","ref":"tools/docs/contributor_docs.test.ts","test":"task runner: one entry point, with a recipe for each step a contributor takes (DOC-023)"}
+  ],
+  "DOC-024": [
+    {"kind":"unit","ref":"tools/docs/contributor_docs.test.ts","test":"CONTRIBUTING.md: copy-and-paste commands per layer, and the files a contributor expects (DOC-024)"}
+  ],
+  "DOC-026": [
+    {"kind":"unit","ref":"tools/docs/contributor_docs.test.ts","test":"examples: the VM fixtures are labelled and the PLC projects are easy to find (DOC-026)"}
+  ],
+  "DOC-029": [
+    {"kind":"unit","ref":"tools/docs/contributor_docs.test.ts","test":"principles: the constitution is readable from the contributor pages (DOC-029)"}
+  ],
+  "DOC-030": [
+    {"kind":"unit","ref":"scripts/release/release-notes.test.ts","test":"what changed for a user, what breaks, how to migrate and what is limited (DOC-030)"},
+    {"kind":"unit","ref":"tools/docs/contributor_docs.test.ts","test":"changelog: what changed for a user, what breaks, how to migrate and what is limited (DOC-030)"}
   ]
 }

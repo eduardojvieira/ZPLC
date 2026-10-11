@@ -26,6 +26,8 @@ const config = {
   projectName: 'ZPLC',
 
   onBrokenLinks: 'throw',
+  // A link to a heading that no longer exists is as broken as a link to a page that does not (DOC-002).
+  onBrokenAnchors: 'throw',
 
   i18n: {
     defaultLocale: 'en',
@@ -95,11 +97,7 @@ const config = {
             type: 'doc',
             docId: 'getting-started/index',
             position: 'left',
-            label: 'Docs / Documentación',
-          },
-          {
-            type: 'docsVersionDropdown',
-            position: 'right',
+            label: 'Docs',
           },
           {
             type: 'localeDropdown',
@@ -116,58 +114,28 @@ const config = {
         style: 'dark',
         links: [
           {
-            title: 'Docs / Documentación',
+            title: 'Docs',
             items: [
-              {
-                label: 'Quickstart / Inicio',
-                to: '/docs/getting-started',
-              },
-              {
-                label: 'Platform Overview / Visión general',
-                to: '/docs/platform-overview',
-              },
-              {
-                label: 'Runtime / Runtime',
-                to: '/docs/runtime',
-              },
-              {
-                label: 'IDE / IDE',
-                to: '/docs/ide',
-              },
+              { label: 'Getting started', to: '/docs/getting-started' },
+              { label: 'Hardware support', to: '/docs/reference/capabilities-evidence' },
+              { label: 'Reference', to: '/docs/reference' },
+              { label: 'Studio', to: '/docs/ide' },
             ],
           },
           {
-            title: 'Release / Release',
+            title: 'Project',
             items: [
-              {
-                label: 'Canonical Manifest / Manifiesto',
-                to: '/docs/reference/v1-5-canonical-docs-manifest',
-              },
-              {
-                label: 'Source of Truth / Fuentes de verdad',
-                to: '/docs/reference/source-of-truth',
-              },
-              {
-                label: 'Release Notes / Notas de versión',
-                to: '/docs/release-notes',
-              },
+              { label: 'Release notes', to: '/docs/release-notes' },
+              { label: 'Contributing', to: '/docs/contributing' },
+              { label: 'Roadmap', to: '/docs/contributing/roadmap' },
             ],
           },
           {
             title: 'Community',
             items: [
-              {
-                label: 'GitHub',
-                href: 'https://github.com/eduardojvieira/ZPLC',
-              },
-              {
-                label: 'Discussions',
-                href: 'https://github.com/eduardojvieira/ZPLC/discussions',
-              },
-              {
-                label: 'Zephyr Project',
-                href: 'https://zephyrproject.org/',
-              },
+              { label: 'GitHub', href: 'https://github.com/eduardojvieira/ZPLC' },
+              { label: 'Discussions', href: 'https://github.com/eduardojvieira/ZPLC/discussions' },
+              { label: 'Zephyr Project', href: 'https://zephyrproject.org/' },
             ],
           },
         ],

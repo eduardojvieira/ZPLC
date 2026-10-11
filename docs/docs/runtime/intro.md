@@ -1,10 +1,9 @@
 ---
 id: intro
 title: Runtime introduction
-sidebar_label: Runtime overview
+sidebar_label: Runtime introduction
 description: Portable ZPLC runtime, verified artifacts, and evidence boundaries.
 tags: [runtime, embedded, vm]
-unlisted: true
 ---
 
 # ZPLC runtime

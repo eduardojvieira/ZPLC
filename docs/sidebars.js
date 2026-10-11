@@ -1,104 +1,181 @@
 /**
- * ZPLC Documentation Sidebar Configuration
+ * ZPLC documentation sidebar (DOC-002).
+ *
+ * The pages are grouped by what the reader came to do, not by who wrote them:
+ *
+ *   Start here    get running, and what ZPLC is and is not
+ *   How-to guides do one task
+ *   Reference     look a fact up (generated from the source where a source exists)
+ *   Concepts      understand how it works
+ *   Learn         practise
+ *   Project       contribute and follow the release
+ *
+ * Every page of the site is listed once. Changing a folder or a slug breaks a published address, so a page moves
+ * between categories here and keeps its file. The labels are English; the Spanish ones are in
+ * i18n/es/docusaurus-plugin-content-docs/current.json, which the structure test (tools/docs/docs_structure.test.ts)
+ * checks label by label.
  * @type {import('@docusaurus/plugin-content-docs').SidebarsConfig}
  */
 const sidebars = {
-  // Main documentation sidebar
   docsSidebar: [
     {
       type: 'category',
-      label: 'Quickstart / Inicio',
-      className: 'sidebar-category-home',
+      label: 'Start here',
       collapsed: false,
       items: [
         'getting-started/index',
+        'getting-started/install',
+        'tutorials/blink-without-hardware',
+        'tutorials/first-board',
         'platform-overview/index',
+        'reference/capabilities-evidence',
+        'safety-and-limitations',
+      ],
+    },
+    {
+      type: 'category',
+      label: 'How-to guides',
+      collapsed: true,
+      items: [
+        'guides/map-io',
+        'guides/modbus',
+        'guides/mqtt-sparkplug',
+        'guides/cloud-blocks',
+        'guides/force-values',
+        'guides/retained-variables',
+        'guides/scenario-tests',
+        'guides/project-archive',
+        'guides/simulate-and-debug',
+        'guides/command-line',
+        'guides/ai-and-mcp',
+        'guides/port-to-a-board',
+        'guides/troubleshooting',
         'integration/index',
-      ],
-    },
-    {
-      type: 'category',
-      label: 'Architecture / Arquitectura',
-      className: 'sidebar-category-getting-started',
-      collapsed: true,
-      items: [
-        'architecture/index',
-        'runtime/index',
-        'runtime/hal-contract',
-        'runtime/memory-model',
-        'runtime/scheduler',
-        'runtime/connectivity',
-        'runtime/communication-function-blocks',
-        'runtime/isa',
-        'runtime/persistence',
-        'runtime/native-c',
-      ],
-    },
-    {
-      type: 'category',
-      label: 'IDE & Languages / IDE y lenguajes',
-      className: 'sidebar-category-runtime',
-      collapsed: true,
-      items: [
-        'languages/index',
-        'languages/st',
-        'languages/il',
-        'languages/stdlib',
-        'runtime/stdlib',
-        'languages/examples/v1-5-language-suite',
-        'ide/index',
-        'ide/overview',
-        'ide/features',
-        'ide/editors',
-        'ide/compiler',
         'ide/deployment',
         'ide/migration-v1-to-v2',
         'ide/ai-privacy',
-      ],
-    },
-    {
-      type: 'category',
-      label: 'Reference & Release / Referencia y release',
-      className: 'sidebar-category-reference',
-      collapsed: true,
-      items: [
-        'reference/index',
-        'reference/runtime-api',
-        'reference/boards',
-        'reference/capabilities-evidence',
-        'reference/zephyr-workspace-setup',
-        'release-notes/index',
         'operations/index',
-        'operations/shell',
         'operations/recovery',
       ],
     },
     {
       type: 'category',
-      label: 'Generated references / Referencias generadas',
-      className: 'sidebar-category-reference',
+      label: 'Reference',
       collapsed: true,
       items: [
-        'reference/language-st',
-        'reference/language-il',
-        'reference/language-ld',
-        'reference/language-fbd',
-        'reference/language-sfc',
-        'reference/functions',
-        'reference/function-blocks',
-        'reference/kconfig',
-        'reference/shell-commands',
-        'reference/project-file',
-        'reference/scenario-file',
-        'reference/cli',
-        'reference/mcp',
-        'reference/runtime-protocol',
+        'reference/index',
+        {
+          type: 'category',
+          label: 'Languages',
+          collapsed: true,
+          items: [
+            'languages/st',
+            'languages/structured-text',
+            'languages/il',
+            'reference/language-st',
+            'reference/language-il',
+            'reference/language-ld',
+            'reference/language-fbd',
+            'reference/language-sfc',
+            'reference/visual-editor-keyboard',
+          ],
+        },
+        {
+          type: 'category',
+          label: 'Functions and function blocks',
+          collapsed: true,
+          items: [
+            'reference/functions',
+            'reference/function-blocks',
+            'languages/stdlib',
+            'runtime/stdlib',
+          ],
+        },
+        {
+          type: 'category',
+          label: 'Projects and tools',
+          collapsed: true,
+          items: [
+            'reference/project-file',
+            'reference/scenario-file',
+            'reference/cli',
+            'reference/mcp',
+          ],
+        },
+        {
+          type: 'category',
+          label: 'Runtime and firmware',
+          collapsed: true,
+          items: [
+            'reference/runtime-api',
+            'reference/runtime-protocol',
+            'reference/kconfig',
+            'reference/shell-commands',
+            'operations/shell',
+            'runtime/isa',
+            'runtime/hal-contract',
+            'runtime/hal',
+          ],
+        },
+        {
+          type: 'category',
+          label: 'Boards',
+          collapsed: true,
+          items: [
+            'reference/boards',
+            'reference/zephyr-workspace-setup',
+          ],
+        },
       ],
     },
     {
       type: 'category',
-      label: 'Contributing / Contribuir',
-      className: 'sidebar-category-contributing',
+      label: 'Concepts',
+      collapsed: true,
+      items: [
+        'architecture/index',
+        {
+          type: 'category',
+          label: 'Studio',
+          collapsed: true,
+          items: [
+            'ide/index',
+            'ide/overview',
+            'ide/features',
+            'ide/editors',
+            'ide/compiler',
+          ],
+        },
+        'languages/index',
+        {
+          type: 'category',
+          label: 'Runtime',
+          collapsed: true,
+          items: [
+            'runtime/index',
+            'runtime/intro',
+            'runtime/scheduler',
+            'runtime/memory-model',
+            'runtime/persistence',
+            'runtime/connectivity',
+            'runtime/communication-function-blocks',
+            'runtime/native-c',
+          ],
+        },
+      ],
+    },
+    {
+      type: 'category',
+      label: 'Learn',
+      collapsed: true,
+      items: [
+        'learn/index',
+        'languages/examples/v1-5-language-suite',
+      ],
+    },
+    {
+      type: 'category',
+      label: 'Project',
       collapsed: true,
       items: [
         'contributing/index',
@@ -106,6 +183,8 @@ const sidebars = {
         'contributing/roadmap',
         'development/firmware-testing',
         'development/hardware-in-the-loop',
+        'integration/publishing',
+        'release-notes/index',
         'reference/source-of-truth',
         'reference/v1-5-canonical-docs-manifest',
       ],

@@ -629,7 +629,7 @@ Result after 6 scans of 10 ms: `Top` = `30`, `Items` = `1`.
 
 ## Modbus
 
-The examples of these blocks run on the native host runtime, which has no Modbus server, MQTT broker or cloud service to talk to: each block ends with `ERROR` TRUE and `STATUS` 3 (no handler). They prove that the block compiles, runs and reports its status; the exchange with a peer is verified separately, against protocol doubles.
+The examples of these blocks run on the native host runtime, which has no Modbus server, MQTT broker or cloud service to talk to: each block ends with `ERROR` TRUE and `STATUS` 3 (no handler). They prove that the block compiles, runs and reports its status, and nothing about an exchange with a peer: what has been verified for each block, and against what, is stated in the how-to pages for [Modbus](../guides/modbus.md), [MQTT and Sparkplug B](../guides/mqtt-sparkplug.md) and [the cloud blocks](../guides/cloud-blocks.md).
 
 ### MB_READ_HREG
 
@@ -637,17 +637,17 @@ Reads holding registers from a Modbus server.
 
 | Pin | Direction | Type | Initial | Description |
 | --- | --- | --- | --- | --- |
-| `EN` | Input | `BOOL` | `FALSE` | Enable: the block runs while it is TRUE. |
+| `EN` | Input | `BOOL` | `FALSE` | A rising edge starts one request. While EN stays TRUE the result is held and nothing is repeated; EN FALSE clears DONE and ERROR. |
 | `PROTO` | Input | `USINT` | `0` | Transport: 0 for RTU, 1 for TCP. |
 | `SLAVE_ID` | Input | `UINT` | `0` | Modbus unit identifier of the server. |
 | `ADDR` | Input | `UINT` | `0` | First address to read or write. |
 | `COUNT` | Input | `UINT` | `0` | Number of items requested. |
 | `HOST` | Input | `STRING` | `''` | Host name or address of the server, for TCP. |
 | `PORT` | Input | `UINT` | `0` | TCP port of the server. |
-| `BUSY` | Output | `BOOL` | `FALSE` | TRUE while a request is in progress. |
-| `DONE` | Output | `BOOL` | `FALSE` | TRUE when the request has finished without error. |
-| `ERROR` | Output | `BOOL` | `FALSE` | TRUE when the request failed; STATUS says why. |
-| `STATUS` | Output | `DINT` | `0` | Status code: 0 OK, 1 busy, 2 timeout, 3 no handler, 4 not connected, 5 queue full, 6 invalid address, 7 string overflow, 8 protocol error, 9 authentication failed. |
+| `BUSY` | Output | `BOOL` | `FALSE` | TRUE from the rising edge until the request has finished; a request in flight completes even if EN falls. |
+| `DONE` | Output | `BOOL` | `FALSE` | TRUE when the request has finished without error; held while EN stays TRUE. |
+| `ERROR` | Output | `BOOL` | `FALSE` | TRUE when the request failed; STATUS says why; held while EN stays TRUE. |
+| `STATUS` | Output | `DINT` | `0` | Status code of the last request: 0 OK, 1 busy, 2 timeout, 3 no handler, 4 not connected, 5 queue full, 6 invalid address, 7 string overflow, 8 protocol error, 9 authentication failed, 10 service not available in this runtime. |
 | `VALUE` | Output | `UINT` | `0` | The first register read. |
 
 ```pascal runnable expect="Failed=TRUE Code=3" scans=3
@@ -672,7 +672,7 @@ Writes holding registers of a Modbus server.
 
 | Pin | Direction | Type | Initial | Description |
 | --- | --- | --- | --- | --- |
-| `EN` | Input | `BOOL` | `FALSE` | Enable: the block runs while it is TRUE. |
+| `EN` | Input | `BOOL` | `FALSE` | A rising edge starts one request. While EN stays TRUE the result is held and nothing is repeated; EN FALSE clears DONE and ERROR. |
 | `PROTO` | Input | `USINT` | `0` | Transport: 0 for RTU, 1 for TCP. |
 | `SLAVE_ID` | Input | `UINT` | `0` | Modbus unit identifier of the server. |
 | `ADDR` | Input | `UINT` | `0` | First address to read or write. |
@@ -680,10 +680,10 @@ Writes holding registers of a Modbus server.
 | `VALUE` | Input | `UINT` | `0` | The first register to write. |
 | `HOST` | Input | `STRING` | `''` | Host name or address of the server, for TCP. |
 | `PORT` | Input | `UINT` | `0` | TCP port of the server. |
-| `BUSY` | Output | `BOOL` | `FALSE` | TRUE while a request is in progress. |
-| `DONE` | Output | `BOOL` | `FALSE` | TRUE when the request has finished without error. |
-| `ERROR` | Output | `BOOL` | `FALSE` | TRUE when the request failed; STATUS says why. |
-| `STATUS` | Output | `DINT` | `0` | Status code: 0 OK, 1 busy, 2 timeout, 3 no handler, 4 not connected, 5 queue full, 6 invalid address, 7 string overflow, 8 protocol error, 9 authentication failed. |
+| `BUSY` | Output | `BOOL` | `FALSE` | TRUE from the rising edge until the request has finished; a request in flight completes even if EN falls. |
+| `DONE` | Output | `BOOL` | `FALSE` | TRUE when the request has finished without error; held while EN stays TRUE. |
+| `ERROR` | Output | `BOOL` | `FALSE` | TRUE when the request failed; STATUS says why; held while EN stays TRUE. |
+| `STATUS` | Output | `DINT` | `0` | Status code of the last request: 0 OK, 1 busy, 2 timeout, 3 no handler, 4 not connected, 5 queue full, 6 invalid address, 7 string overflow, 8 protocol error, 9 authentication failed, 10 service not available in this runtime. |
 
 ```pascal runnable expect="Failed=TRUE Code=3" scans=3
 PROGRAM Example
@@ -707,17 +707,17 @@ Reads coils from a Modbus server.
 
 | Pin | Direction | Type | Initial | Description |
 | --- | --- | --- | --- | --- |
-| `EN` | Input | `BOOL` | `FALSE` | Enable: the block runs while it is TRUE. |
+| `EN` | Input | `BOOL` | `FALSE` | A rising edge starts one request. While EN stays TRUE the result is held and nothing is repeated; EN FALSE clears DONE and ERROR. |
 | `PROTO` | Input | `USINT` | `0` | Transport: 0 for RTU, 1 for TCP. |
 | `SLAVE_ID` | Input | `UINT` | `0` | Modbus unit identifier of the server. |
 | `ADDR` | Input | `UINT` | `0` | First address to read or write. |
 | `COUNT` | Input | `UINT` | `0` | Number of items requested. |
 | `HOST` | Input | `STRING` | `''` | Host name or address of the server, for TCP. |
 | `PORT` | Input | `UINT` | `0` | TCP port of the server. |
-| `BUSY` | Output | `BOOL` | `FALSE` | TRUE while a request is in progress. |
-| `DONE` | Output | `BOOL` | `FALSE` | TRUE when the request has finished without error. |
-| `ERROR` | Output | `BOOL` | `FALSE` | TRUE when the request failed; STATUS says why. |
-| `STATUS` | Output | `DINT` | `0` | Status code: 0 OK, 1 busy, 2 timeout, 3 no handler, 4 not connected, 5 queue full, 6 invalid address, 7 string overflow, 8 protocol error, 9 authentication failed. |
+| `BUSY` | Output | `BOOL` | `FALSE` | TRUE from the rising edge until the request has finished; a request in flight completes even if EN falls. |
+| `DONE` | Output | `BOOL` | `FALSE` | TRUE when the request has finished without error; held while EN stays TRUE. |
+| `ERROR` | Output | `BOOL` | `FALSE` | TRUE when the request failed; STATUS says why; held while EN stays TRUE. |
+| `STATUS` | Output | `DINT` | `0` | Status code of the last request: 0 OK, 1 busy, 2 timeout, 3 no handler, 4 not connected, 5 queue full, 6 invalid address, 7 string overflow, 8 protocol error, 9 authentication failed, 10 service not available in this runtime. |
 | `VALUE` | Output | `BOOL` | `FALSE` | The first coil read. |
 
 ```pascal runnable expect="Failed=TRUE Code=3" scans=3
@@ -742,7 +742,7 @@ Writes coils of a Modbus server.
 
 | Pin | Direction | Type | Initial | Description |
 | --- | --- | --- | --- | --- |
-| `EN` | Input | `BOOL` | `FALSE` | Enable: the block runs while it is TRUE. |
+| `EN` | Input | `BOOL` | `FALSE` | A rising edge starts one request. While EN stays TRUE the result is held and nothing is repeated; EN FALSE clears DONE and ERROR. |
 | `PROTO` | Input | `USINT` | `0` | Transport: 0 for RTU, 1 for TCP. |
 | `SLAVE_ID` | Input | `UINT` | `0` | Modbus unit identifier of the server. |
 | `ADDR` | Input | `UINT` | `0` | First address to read or write. |
@@ -750,10 +750,10 @@ Writes coils of a Modbus server.
 | `VALUE` | Input | `BOOL` | `FALSE` | The first coil to write. |
 | `HOST` | Input | `STRING` | `''` | Host name or address of the server, for TCP. |
 | `PORT` | Input | `UINT` | `0` | TCP port of the server. |
-| `BUSY` | Output | `BOOL` | `FALSE` | TRUE while a request is in progress. |
-| `DONE` | Output | `BOOL` | `FALSE` | TRUE when the request has finished without error. |
-| `ERROR` | Output | `BOOL` | `FALSE` | TRUE when the request failed; STATUS says why. |
-| `STATUS` | Output | `DINT` | `0` | Status code: 0 OK, 1 busy, 2 timeout, 3 no handler, 4 not connected, 5 queue full, 6 invalid address, 7 string overflow, 8 protocol error, 9 authentication failed. |
+| `BUSY` | Output | `BOOL` | `FALSE` | TRUE from the rising edge until the request has finished; a request in flight completes even if EN falls. |
+| `DONE` | Output | `BOOL` | `FALSE` | TRUE when the request has finished without error; held while EN stays TRUE. |
+| `ERROR` | Output | `BOOL` | `FALSE` | TRUE when the request failed; STATUS says why; held while EN stays TRUE. |
+| `STATUS` | Output | `DINT` | `0` | Status code of the last request: 0 OK, 1 busy, 2 timeout, 3 no handler, 4 not connected, 5 queue full, 6 invalid address, 7 string overflow, 8 protocol error, 9 authentication failed, 10 service not available in this runtime. |
 
 ```pascal runnable expect="Failed=TRUE Code=3" scans=3
 PROGRAM Example
@@ -773,7 +773,7 @@ Result after 3 scans of 10 ms: `Failed` = `TRUE`, `Code` = `3`.
 
 ## MQTT
 
-The examples of these blocks run on the native host runtime, which has no Modbus server, MQTT broker or cloud service to talk to: each block ends with `ERROR` TRUE and `STATUS` 3 (no handler). They prove that the block compiles, runs and reports its status; the exchange with a peer is verified separately, against protocol doubles.
+The examples of these blocks run on the native host runtime, which has no Modbus server, MQTT broker or cloud service to talk to: each block ends with `ERROR` TRUE and `STATUS` 3 (no handler). They prove that the block compiles, runs and reports its status, and nothing about an exchange with a peer: what has been verified for each block, and against what, is stated in the how-to pages for [Modbus](../guides/modbus.md), [MQTT and Sparkplug B](../guides/mqtt-sparkplug.md) and [the cloud blocks](../guides/cloud-blocks.md).
 
 ### MQTT_CONNECT
 
@@ -781,12 +781,12 @@ Reports the state of the MQTT session that the device configuration opens; it do
 
 | Pin | Direction | Type | Initial | Description |
 | --- | --- | --- | --- | --- |
-| `EN` | Input | `BOOL` | `FALSE` | Enable: the block runs while it is TRUE. |
+| `EN` | Input | `BOOL` | `FALSE` | Enable: the block reports its state on every scan while it is TRUE; FALSE clears BUSY, DONE and ERROR. |
 | `PROFILE` | Input | `USINT` | `0` | Connection profile selector. The session is the one that the device configuration defines; this pin does not change it. |
-| `BUSY` | Output | `BOOL` | `FALSE` | TRUE while a request is in progress. |
-| `DONE` | Output | `BOOL` | `FALSE` | TRUE when the request has finished without error. |
-| `ERROR` | Output | `BOOL` | `FALSE` | TRUE when the request failed; STATUS says why. |
-| `STATUS` | Output | `DINT` | `0` | Status code: 0 OK, 1 busy, 2 timeout, 3 no handler, 4 not connected, 5 queue full, 6 invalid address, 7 string overflow, 8 protocol error, 9 authentication failed. |
+| `BUSY` | Output | `BOOL` | `FALSE` | TRUE while the first connection attempt is in progress. |
+| `DONE` | Output | `BOOL` | `FALSE` | TRUE while the broker session is up. |
+| `ERROR` | Output | `BOOL` | `FALSE` | TRUE while the state cannot be reached (the session is down, or the service is not available); STATUS says why. |
+| `STATUS` | Output | `DINT` | `0` | Status code of the last request: 0 OK, 1 busy, 2 timeout, 3 no handler, 4 not connected, 5 queue full, 6 invalid address, 7 string overflow, 8 protocol error, 9 authentication failed, 10 service not available in this runtime. |
 | `CONNECTED` | Output | `BOOL` | `FALSE` | TRUE while the broker session is open. |
 
 ```pascal runnable expect="Failed=TRUE Code=3" scans=3
@@ -811,15 +811,15 @@ Publishes one message to a topic.
 
 | Pin | Direction | Type | Initial | Description |
 | --- | --- | --- | --- | --- |
-| `EN` | Input | `BOOL` | `FALSE` | Enable: the block runs while it is TRUE. |
+| `EN` | Input | `BOOL` | `FALSE` | A rising edge starts one request. While EN stays TRUE the result is held and nothing is repeated; EN FALSE clears DONE and ERROR. |
 | `QOS` | Input | `USINT` | `0` | Quality of service: 0, 1 or 2. |
 | `RETAIN` | Input | `BOOL` | `FALSE` | Ask the broker to retain the message. |
 | `TOPIC` | Input | `STRING` | `''` | Topic to publish to. |
 | `PAYLOAD` | Input | `STRING` | `''` | Message to publish. |
-| `BUSY` | Output | `BOOL` | `FALSE` | TRUE while a request is in progress. |
-| `DONE` | Output | `BOOL` | `FALSE` | TRUE when the request has finished without error. |
-| `ERROR` | Output | `BOOL` | `FALSE` | TRUE when the request failed; STATUS says why. |
-| `STATUS` | Output | `DINT` | `0` | Status code: 0 OK, 1 busy, 2 timeout, 3 no handler, 4 not connected, 5 queue full, 6 invalid address, 7 string overflow, 8 protocol error, 9 authentication failed. |
+| `BUSY` | Output | `BOOL` | `FALSE` | TRUE from the rising edge until the request has finished; a request in flight completes even if EN falls. |
+| `DONE` | Output | `BOOL` | `FALSE` | TRUE when the request has finished without error; held while EN stays TRUE. |
+| `ERROR` | Output | `BOOL` | `FALSE` | TRUE when the request failed; STATUS says why; held while EN stays TRUE. |
+| `STATUS` | Output | `DINT` | `0` | Status code of the last request: 0 OK, 1 busy, 2 timeout, 3 no handler, 4 not connected, 5 queue full, 6 invalid address, 7 string overflow, 8 protocol error, 9 authentication failed, 10 service not available in this runtime. |
 
 ```pascal runnable expect="Failed=TRUE Code=3" scans=3
 PROGRAM Example
@@ -843,14 +843,14 @@ Subscribes to a topic and delivers its messages.
 
 | Pin | Direction | Type | Initial | Description |
 | --- | --- | --- | --- | --- |
-| `EN` | Input | `BOOL` | `FALSE` | Enable: the block runs while it is TRUE. |
+| `EN` | Input | `BOOL` | `FALSE` | Enable: the block reports its state on every scan while it is TRUE; FALSE clears BUSY, DONE and ERROR. |
 | `QOS` | Input | `USINT` | `0` | Quality of service: 0, 1 or 2. |
 | `TOPIC` | Input | `STRING` | `''` | Topic to subscribe to. |
-| `BUSY` | Output | `BOOL` | `FALSE` | TRUE while a request is in progress. |
-| `DONE` | Output | `BOOL` | `FALSE` | TRUE when the request has finished without error. |
-| `ERROR` | Output | `BOOL` | `FALSE` | TRUE when the request failed; STATUS says why. |
-| `STATUS` | Output | `DINT` | `0` | Status code: 0 OK, 1 busy, 2 timeout, 3 no handler, 4 not connected, 5 queue full, 6 invalid address, 7 string overflow, 8 protocol error, 9 authentication failed. |
-| `VALID` | Output | `BOOL` | `FALSE` | TRUE when PAYLOAD holds a new message. |
+| `BUSY` | Output | `BOOL` | `FALSE` | TRUE until the broker has acknowledged the subscription. |
+| `DONE` | Output | `BOOL` | `FALSE` | TRUE while the subscription holds. |
+| `ERROR` | Output | `BOOL` | `FALSE` | TRUE while the state cannot be reached (the session is down, or the service is not available); STATUS says why. |
+| `STATUS` | Output | `DINT` | `0` | Status code of the last request: 0 OK, 1 busy, 2 timeout, 3 no handler, 4 not connected, 5 queue full, 6 invalid address, 7 string overflow, 8 protocol error, 9 authentication failed, 10 service not available in this runtime. |
+| `VALID` | Output | `BOOL` | `FALSE` | TRUE for one scan when a message arrived since the last scan; PAYLOAD holds it. |
 | `PAYLOAD` | Output | `STRING` | `''` | The last message received. |
 
 ```pascal runnable expect="Failed=TRUE Code=3" scans=3
@@ -871,7 +871,7 @@ Result after 3 scans of 10 ms: `Failed` = `TRUE`, `Code` = `3`.
 
 ## Cloud and Sparkplug B
 
-The examples of these blocks run on the native host runtime, which has no Modbus server, MQTT broker or cloud service to talk to: each block ends with `ERROR` TRUE and `STATUS` 3 (no handler). They prove that the block compiles, runs and reports its status; the exchange with a peer is verified separately, against protocol doubles.
+The examples of these blocks run on the native host runtime, which has no Modbus server, MQTT broker or cloud service to talk to: each block ends with `ERROR` TRUE and `STATUS` 3 (no handler). They prove that the block compiles, runs and reports its status, and nothing about an exchange with a peer: what has been verified for each block, and against what, is stated in the how-to pages for [Modbus](../guides/modbus.md), [MQTT and Sparkplug B](../guides/mqtt-sparkplug.md) and [the cloud blocks](../guides/cloud-blocks.md).
 
 ### AZURE_C2D_RECV
 
@@ -879,13 +879,13 @@ Receives a cloud-to-device message of Azure IoT Hub.
 
 | Pin | Direction | Type | Initial | Description |
 | --- | --- | --- | --- | --- |
-| `EN` | Input | `BOOL` | `FALSE` | Enable: the block runs while it is TRUE. |
-| `BUSY` | Output | `BOOL` | `FALSE` | TRUE while a request is in progress. |
-| `DONE` | Output | `BOOL` | `FALSE` | TRUE when the request has finished without error. |
-| `ERROR` | Output | `BOOL` | `FALSE` | TRUE when the request failed; STATUS says why. |
-| `STATUS` | Output | `DINT` | `0` | Status code: 0 OK, 1 busy, 2 timeout, 3 no handler, 4 not connected, 5 queue full, 6 invalid address, 7 string overflow, 8 protocol error, 9 authentication failed. |
+| `EN` | Input | `BOOL` | `FALSE` | Enable: the block reports its state on every scan while it is TRUE; FALSE clears BUSY, DONE and ERROR. |
+| `BUSY` | Output | `BOOL` | `FALSE` | TRUE while the session with the hub is being established. |
+| `DONE` | Output | `BOOL` | `FALSE` | TRUE while the session is up and cloud-to-device messages can arrive. |
+| `ERROR` | Output | `BOOL` | `FALSE` | TRUE while the state cannot be reached (the session is down, or the service is not available); STATUS says why. |
+| `STATUS` | Output | `DINT` | `0` | Status code of the last request: 0 OK, 1 busy, 2 timeout, 3 no handler, 4 not connected, 5 queue full, 6 invalid address, 7 string overflow, 8 protocol error, 9 authentication failed, 10 service not available in this runtime. |
 | `PAYLOAD` | Output | `STRING` | `''` | The cloud-to-device message received. |
-| `VALID` | Output | `BOOL` | `FALSE` | TRUE when PAYLOAD holds a new message. |
+| `VALID` | Output | `BOOL` | `FALSE` | TRUE for one scan when a message arrived since the last scan; PAYLOAD holds it. |
 
 ```pascal runnable expect="Failed=TRUE Code=3" scans=3
 PROGRAM Example
@@ -909,12 +909,12 @@ Registers the device with the Azure Device Provisioning Service.
 
 | Pin | Direction | Type | Initial | Description |
 | --- | --- | --- | --- | --- |
-| `EN` | Input | `BOOL` | `FALSE` | Enable: the block runs while it is TRUE. |
-| `DEVICE_ID` | Input | `STRING` | `''` | Registration identifier of the device. |
-| `BUSY` | Output | `BOOL` | `FALSE` | TRUE while a request is in progress. |
-| `DONE` | Output | `BOOL` | `FALSE` | TRUE when the request has finished without error. |
-| `ERROR` | Output | `BOOL` | `FALSE` | TRUE when the request failed; STATUS says why. |
-| `STATUS` | Output | `DINT` | `0` | Status code: 0 OK, 1 busy, 2 timeout, 3 no handler, 4 not connected, 5 queue full, 6 invalid address, 7 string overflow, 8 protocol error, 9 authentication failed. |
+| `EN` | Input | `BOOL` | `FALSE` | A rising edge starts one request. While EN stays TRUE the result is held and nothing is repeated; EN FALSE clears DONE and ERROR. |
+| `DEVICE_ID` | Input | `STRING` | `''` | Registration identifier of the device; when it is not empty it is the one used for this request. |
+| `BUSY` | Output | `BOOL` | `FALSE` | TRUE from the rising edge until the request has finished; a request in flight completes even if EN falls. |
+| `DONE` | Output | `BOOL` | `FALSE` | TRUE when the request has finished without error; held while EN stays TRUE. |
+| `ERROR` | Output | `BOOL` | `FALSE` | TRUE when the request failed; STATUS says why; held while EN stays TRUE. |
+| `STATUS` | Output | `DINT` | `0` | Status code of the last request: 0 OK, 1 busy, 2 timeout, 3 no handler, 4 not connected, 5 queue full, 6 invalid address, 7 string overflow, 8 protocol error, 9 authentication failed, 10 service not available in this runtime. |
 | `ASSIGNED_HUB` | Output | `STRING` | `''` | The hub that the service assigned. |
 
 ```pascal runnable expect="Failed=TRUE Code=3" scans=3
@@ -939,14 +939,14 @@ Publishes an event to an Azure Event Grid topic.
 
 | Pin | Direction | Type | Initial | Description |
 | --- | --- | --- | --- | --- |
-| `EN` | Input | `BOOL` | `FALSE` | Enable: the block runs while it is TRUE. |
+| `EN` | Input | `BOOL` | `FALSE` | A rising edge starts one request. While EN stays TRUE the result is held and nothing is repeated; EN FALSE clears DONE and ERROR. |
 | `TOPIC` | Input | `STRING` | `''` | Event Grid topic to publish to. |
 | `EVENT_TYPE` | Input | `STRING` | `''` | Type of the event. |
 | `PAYLOAD` | Input | `STRING` | `''` | Body of the event. |
-| `BUSY` | Output | `BOOL` | `FALSE` | TRUE while a request is in progress. |
-| `DONE` | Output | `BOOL` | `FALSE` | TRUE when the request has finished without error. |
-| `ERROR` | Output | `BOOL` | `FALSE` | TRUE when the request failed; STATUS says why. |
-| `STATUS` | Output | `DINT` | `0` | Status code: 0 OK, 1 busy, 2 timeout, 3 no handler, 4 not connected, 5 queue full, 6 invalid address, 7 string overflow, 8 protocol error, 9 authentication failed. |
+| `BUSY` | Output | `BOOL` | `FALSE` | TRUE from the rising edge until the request has finished; a request in flight completes even if EN falls. |
+| `DONE` | Output | `BOOL` | `FALSE` | TRUE when the request has finished without error; held while EN stays TRUE. |
+| `ERROR` | Output | `BOOL` | `FALSE` | TRUE when the request failed; STATUS says why; held while EN stays TRUE. |
+| `STATUS` | Output | `DINT` | `0` | Status code of the last request: 0 OK, 1 busy, 2 timeout, 3 no handler, 4 not connected, 5 queue full, 6 invalid address, 7 string overflow, 8 protocol error, 9 authentication failed, 10 service not available in this runtime. |
 
 ```pascal runnable expect="Failed=TRUE Code=3" scans=3
 PROGRAM Example
@@ -970,12 +970,12 @@ Provisions the device through AWS IoT fleet provisioning.
 
 | Pin | Direction | Type | Initial | Description |
 | --- | --- | --- | --- | --- |
-| `EN` | Input | `BOOL` | `FALSE` | Enable: the block runs while it is TRUE. |
-| `TEMPLATE_NAME` | Input | `STRING` | `''` | Name of the fleet provisioning template. |
-| `BUSY` | Output | `BOOL` | `FALSE` | TRUE while a request is in progress. |
-| `DONE` | Output | `BOOL` | `FALSE` | TRUE when the request has finished without error. |
-| `ERROR` | Output | `BOOL` | `FALSE` | TRUE when the request failed; STATUS says why. |
-| `STATUS` | Output | `DINT` | `0` | Status code: 0 OK, 1 busy, 2 timeout, 3 no handler, 4 not connected, 5 queue full, 6 invalid address, 7 string overflow, 8 protocol error, 9 authentication failed. |
+| `EN` | Input | `BOOL` | `FALSE` | A rising edge starts one request. While EN stays TRUE the result is held and nothing is repeated; EN FALSE clears DONE and ERROR. |
+| `TEMPLATE_NAME` | Input | `STRING` | `''` | Name of the fleet provisioning template; when it is not empty it is the one used for this request. |
+| `BUSY` | Output | `BOOL` | `FALSE` | TRUE from the rising edge until the request has finished; a request in flight completes even if EN falls. |
+| `DONE` | Output | `BOOL` | `FALSE` | TRUE when the request has finished without error; held while EN stays TRUE. |
+| `ERROR` | Output | `BOOL` | `FALSE` | TRUE when the request failed; STATUS says why; held while EN stays TRUE. |
+| `STATUS` | Output | `DINT` | `0` | Status code of the last request: 0 OK, 1 busy, 2 timeout, 3 no handler, 4 not connected, 5 queue full, 6 invalid address, 7 string overflow, 8 protocol error, 9 authentication failed, 10 service not available in this runtime. |
 | `THING_NAME` | Output | `STRING` | `''` | The name of the thing that the service created. |
 
 ```pascal runnable expect="Failed=TRUE Code=3" scans=3
@@ -1000,11 +1000,11 @@ Asks the Sparkplug B session to publish its birth certificates again.
 
 | Pin | Direction | Type | Initial | Description |
 | --- | --- | --- | --- | --- |
-| `EN` | Input | `BOOL` | `FALSE` | Enable: the block runs while it is TRUE. |
-| `BUSY` | Output | `BOOL` | `FALSE` | TRUE while a request is in progress. |
-| `DONE` | Output | `BOOL` | `FALSE` | TRUE when the request has finished without error. |
-| `ERROR` | Output | `BOOL` | `FALSE` | TRUE when the request failed; STATUS says why. |
-| `STATUS` | Output | `DINT` | `0` | Status code: 0 OK, 1 busy, 2 timeout, 3 no handler, 4 not connected, 5 queue full, 6 invalid address, 7 string overflow, 8 protocol error, 9 authentication failed. |
+| `EN` | Input | `BOOL` | `FALSE` | A rising edge starts one request. While EN stays TRUE the result is held and nothing is repeated; EN FALSE clears DONE and ERROR. |
+| `BUSY` | Output | `BOOL` | `FALSE` | TRUE from the rising edge until the request has finished; a request in flight completes even if EN falls. |
+| `DONE` | Output | `BOOL` | `FALSE` | TRUE when the request has finished without error; held while EN stays TRUE. |
+| `ERROR` | Output | `BOOL` | `FALSE` | TRUE when the request failed; STATUS says why; held while EN stays TRUE. |
+| `STATUS` | Output | `DINT` | `0` | Status code of the last request: 0 OK, 1 busy, 2 timeout, 3 no handler, 4 not connected, 5 queue full, 6 invalid address, 7 string overflow, 8 protocol error, 9 authentication failed, 10 service not available in this runtime. |
 
 ```pascal runnable expect="Failed=TRUE Code=3" scans=3
 PROGRAM Example

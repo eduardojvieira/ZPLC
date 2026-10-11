@@ -14,7 +14,7 @@ with the CLI and local MCP adapter.
 
 Host simulation, a package build, and a board cross-build do not establish HIL,
 electrical behavior, target timing, or production qualification. See the
-[capabilities and evidence guide](../../docs/docs/reference/capabilities-evidence.md).
+[hardware support page](../../docs/docs/reference/capabilities-evidence.md).
 
 ## Development
 

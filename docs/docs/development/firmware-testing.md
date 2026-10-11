@@ -15,7 +15,7 @@ Zephyr workspace that lives outside the repository.
 Everything here is host, simulator or build evidence. A passing run does not
 show that a board boots, that its pins behave, or that a scan keeps its period
 on real silicon. Those claims need the hardware-in-the-loop procedures in
-[Capabilities and Evidence Tiers](../reference/capabilities-evidence.md).
+[Hardware support](../reference/capabilities-evidence.md).
 
 ## What you need
 
@@ -285,4 +285,4 @@ the heap high-water mark.
 
 - [Zephyr Workspace Setup](../reference/zephyr-workspace-setup.md)
 - [Supported Boards](../reference/boards.md)
-- [Capabilities and Evidence Tiers](../reference/capabilities-evidence.md)
+- [Hardware support](../reference/capabilities-evidence.md)

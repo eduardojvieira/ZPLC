@@ -108,19 +108,21 @@ static void test_string_set(void) {
   const uint8_t text[] = "0123456789ABCDEF0123456789";
   printf("test_string_set...\n");
 
-  /* the capacity field says 65535: it is program data and is not used */
+  /* the capacity field says 65535: it is program data and is not used; what is written is the room of the
+   * member, so that the program can copy the value on (STRCPY reads it) */
   set_u16(memory, 6U, 0xFFFFU);
   assert(zplc_fb_string_set(memory, 20U, 4U, 12U, text, 26U) == 7U);
   assert(memory[0] == 0U && memory[3] == 0U);        /* before: untouched */
   assert(memory[4] == 7U && memory[5] == 0U);        /* length */
+  assert(memory[6] == 7U && memory[7] == 0U);        /* capacity */
   assert(memory[8 + 7] == 0U);                       /* terminator */
   assert(memcmp(&memory[8], "0123456", 7U) == 0);
   assert(memory[16] == 0U && memory[19] == 0U);      /* after: untouched */
 
   /* a member that runs past the block is cut at the block end */
   assert(zplc_fb_string_set(memory, 20U, 12U, 85U, text, 26U) == 3U);
-  assert(memory[12] == 3U && memory[16] == '0' && memory[18] == '2' &&
-         memory[19] == 0U);
+  assert(memory[12] == 3U && memory[14] == 3U && memory[16] == '0' &&
+         memory[18] == '2' && memory[19] == 0U); /* length 3, capacity 3 */
 
   /* a header that does not fit writes nothing */
   memset(memory, 0xA5, 20U);

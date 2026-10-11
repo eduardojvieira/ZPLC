@@ -11,6 +11,7 @@ import { create } from 'zustand';
 import { projectDeclarations, setProjectDeclarations, type FileDeclarations } from '../project/projectDeclarations';
 import { configuredLibraries, projectSourceFiles, unlistedSourceFiles } from '../project/libraries';
 import { loadFileFromTree } from '../utils/fileSystem';
+import { setCurrentProject } from '../langsvc/session';
 import type { FileTreeNode, ProjectFileWithHandle } from '../types';
 
 export interface ProjectSource { path: string; name: string; content: string; language: string }
@@ -56,6 +57,8 @@ export interface TrackedState {
   fileTree: FileTreeNode | null;
   loadedFiles: ReadonlyMap<string, ProjectFileWithHandle>;
   projectConfig: object | null;
+  /** The identity of the open project session; the language service names its files by it. */
+  projectSession?: number;
 }
 
 export interface TrackedStore {
@@ -80,22 +83,24 @@ export function trackProjectSources(
   let timer: ReturnType<typeof setTimeout> | undefined;
   let stopped = false;
 
-  const publish = (sources: ProjectSource[], unlisted: string[] = []) => {
+  const publish = (sources: ProjectSource[], unlisted: string[] = [], session = 0) => {
     const declarations = projectDeclarations(sources);
     useProjectSources.setState({ sources, declarations, unlisted });
     setProjectDeclarations(declarations.flatMap((group) => group.declarations));
+    // the language service reads the same files: its index is the project with the buffer of the editor in place
+    setCurrentProject(sources.map(({ path, content }) => ({ path, content })), session);
   };
 
   const run = async () => {
     const mine = ++generation;
-    const { isProjectOpen, fileTree, loadedFiles, projectConfig } = store.getState();
+    const { isProjectOpen, fileTree, loadedFiles, projectConfig, projectSession } = store.getState();
     if (!isProjectOpen || !fileTree) { publish([]); return; }
     const libraries = configuredLibraries(projectConfig);
     const [sources, unlisted] = await Promise.all([
       readProjectSources({ tree: fileTree, libraries, loaded: loadedFiles, read }),
       unlistedSourceFiles(fileTree, libraries),
     ]);
-    if (!stopped && mine === generation) publish(sources, unlisted);
+    if (!stopped && mine === generation) publish(sources, unlisted, projectSession ?? 0);
   };
 
   const schedule = () => {

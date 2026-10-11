@@ -110,10 +110,10 @@ describe('Console tab boundary', () => {
     expect(source).not.toContain('No terminal, secrets, raw serial, or physical controls are included.');
   });
 
-  it('labels live ST syntax separately from canonical build diagnostics', () => {
+  it('labels live ST diagnostics separately from canonical build diagnostics', () => {
     const source = readFileSync(join(import.meta.dir, 'Console.tsx'), 'utf8');
 
-    expect(source).toContain('Live ST syntax · not build evidence');
+    expect(source).toContain('Live ST diagnostics · not build evidence');
     expect(source).toContain('Latest build diagnostics');
     expect(source).toContain('Build to check project diagnostics');
     expect(source).toContain('stBufferDiagnostics.compilerRunId === compilerRunId');

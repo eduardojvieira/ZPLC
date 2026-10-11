@@ -192,10 +192,10 @@ static int verify_tags(const zplc_program_view_t *view) {
     const uint8_t width = tag_type_width(tag_id, tag[2U]);
     const int writable = tag_id != ZPLC_TAG_PUBLISH;
 
+    /* A variable anywhere in WORK or RETAIN may be bound: every adapter reaches it through the exchange with its
+     * whole 16-bit address (COM-013). */
     if (width == 0U ||
         !tag_memory_access_valid(address, width, writable) ||
-        /* Current communication adapters discard this high WORK offset. */
-        (address & 0xF000U) == 0x3000U ||
         (tag_id == ZPLC_TAG_MODBUS && zplc_get_u32_le(tag + 4U) > UINT16_MAX))
       return ZPLC_LOADER_ERR_TAGS;
   }

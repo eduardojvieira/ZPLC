@@ -151,26 +151,26 @@ typedef struct {
 static ref_t g_model;
 
 /* Communication handlers installed by the test; the model knows what they do. */
-#define KIND_OK ZPLC_COMM_FB_MQTT_CONNECT   /* handler writes the profile and connected bytes, returns 0 */
-#define KIND_FAIL ZPLC_COMM_FB_SPB_REBIRTH  /* handler returns -3 and writes nothing */
-#define KIND_NONE ZPLC_COMM_FB_MB_READ_HREG /* a valid kind with no handler registered */
+#define KIND_OK ZPLC_COMM_FB_MQTT_CONNECT   /* a service block; handler writes the profile and connected bytes, returns DONE */
+#define KIND_FAIL ZPLC_COMM_FB_SPB_REBIRTH  /* a request block; handler fails with TIMEOUT and writes nothing */
+#define KIND_NONE ZPLC_COMM_FB_MB_READ_HREG /* a valid request kind with no handler registered */
 
-static int handler_ok(zplc_comm_fb_kind_t kind, uint8_t *fb_mem, uint16_t fb_len, bool reset)
+static int handler_ok(zplc_comm_fb_kind_t kind, uint8_t *fb_mem, uint16_t fb_len, zplc_comm_call_t call)
 {
     (void)kind;
     (void)fb_len;
     fb_mem[ZPLC_COMM_MQTT_CONNECT_PROFILE_OFFSET] = (uint8_t)(fb_mem[ZPLC_COMM_MQTT_CONNECT_PROFILE_OFFSET] + 1U);
-    fb_mem[ZPLC_COMM_MQTT_CONNECT_CONNECTED_OFFSET] = reset ? 2U : 1U;
-    return 0;
+    fb_mem[ZPLC_COMM_MQTT_CONNECT_CONNECTED_OFFSET] = call == ZPLC_COMM_CALL_RESET ? 2U : 1U;
+    return ZPLC_COMM_HANDLER_DONE;
 }
 
-static int handler_fail(zplc_comm_fb_kind_t kind, uint8_t *fb_mem, uint16_t fb_len, bool reset)
+static int handler_fail(zplc_comm_fb_kind_t kind, uint8_t *fb_mem, uint16_t fb_len, zplc_comm_call_t call)
 {
     (void)kind;
     (void)fb_mem;
     (void)fb_len;
-    (void)reset;
-    return -3;
+    (void)call;
+    return ZPLC_COMM_HANDLER_FAIL(ZPLC_COMM_TIMEOUT);
 }
 
 static void ref_fault(ref_t *m, uint8_t code)
@@ -795,7 +795,6 @@ static void ref_comm(ref_t *m, uint8_t op, uint32_t kind)
     uint8_t *fb;
     uint32_t fb_len;
     int has_handler;
-    int handler_fails;
 
     if (kind == ZPLC_COMM_FB_NONE || kind >= ZPLC_COMM_FB_KIND_MAX) {
         ref_fault(m, ZPLC_VM_INVALID_OPCODE);
@@ -813,44 +812,60 @@ static void ref_comm(ref_t *m, uint8_t op, uint32_t kind)
         return;
     }
     has_handler = kind == KIND_OK || kind == KIND_FAIL;
-    handler_fails = kind == KIND_FAIL;
     if (op == OP_COMM_STATUS) {
         ref_push(m, (uint32_t)fb[4] | ((uint32_t)fb[5] << 8) | ((uint32_t)fb[6] << 16) | ((uint32_t)fb[7] << 24));
     } else if (op == OP_COMM_RESET) {
         fb[0] = fb[1] = fb[2] = fb[3] = 0U;
         fb[4] = fb[5] = fb[6] = fb[7] = 0U;
+        if (zplc_comm_fb_size(kind) != 0U) {
+            fb[zplc_comm_fb_size(kind) - 1U] = 0U; /* the byte of the dispatcher */
+        }
         if (kind == KIND_OK) {
             fb[ZPLC_COMM_MQTT_CONNECT_PROFILE_OFFSET] = (uint8_t)(fb[ZPLC_COMM_MQTT_CONNECT_PROFILE_OFFSET] + 1U);
             fb[ZPLC_COMM_MQTT_CONNECT_CONNECTED_OFFSET] = 2U;
         }
     } else { /* OP_COMM_EXEC */
-        if (fb[0] == 0U) {
-            fb[1] = fb[2] = fb[3] = 0U;
+        if (kind == KIND_OK) {
+            /* a service block: the handler is polled on every scan while EN is set and its result is the state */
+            if (fb[0] == 0U) {
+                if (fb[1] != 0U || fb[2] != 0U || fb[3] != 0U) {
+                    fb[ZPLC_COMM_MQTT_CONNECT_PROFILE_OFFSET] = (uint8_t)(fb[ZPLC_COMM_MQTT_CONNECT_PROFILE_OFFSET] + 1U);
+                    fb[ZPLC_COMM_MQTT_CONNECT_CONNECTED_OFFSET] = 2U; /* the handler saw RESET */
+                    fb[1] = fb[2] = fb[3] = 0U;
+                }
+                return;
+            }
+            fb[ZPLC_COMM_MQTT_CONNECT_PROFILE_OFFSET] = (uint8_t)(fb[ZPLC_COMM_MQTT_CONNECT_PROFILE_OFFSET] + 1U);
+            fb[ZPLC_COMM_MQTT_CONNECT_CONNECTED_OFFSET] = 1U;
+            fb[1] = 0U;
+            fb[2] = 1U; /* DONE */
+            fb[3] = 0U;
+            fb[4] = fb[5] = fb[6] = fb[7] = 0U;
             return;
         }
-        fb[2] = 0U;
-        fb[3] = 0U;
-        if (!has_handler) {
+        /* a request block: one operation for each rising EN, polled while BUSY, the result held while EN stays set.
+         * The last byte of the block holds the EN of the previous call, which is what tells a rising edge. */
+        {
+            const uint32_t size = zplc_comm_fb_size(kind);
+            const int enabled = fb[0] != 0U;
+            const int rising = enabled && fb[size - 1U] == 0U;
+
+            fb[size - 1U] = enabled ? 1U : 0U;
             if (fb[1] == 0U) {
-                fb[3] = 1U;
-                fb[4] = (uint8_t)ZPLC_COMM_NO_HANDLER;
-                fb[5] = fb[6] = fb[7] = 0U;
-            }
-            return;
-        }
-        if (fb[1] == 0U) {
-            fb[1] = 1U;
-            if (kind == KIND_OK) {
-                fb[ZPLC_COMM_MQTT_CONNECT_PROFILE_OFFSET] = (uint8_t)(fb[ZPLC_COMM_MQTT_CONNECT_PROFILE_OFFSET] + 1U);
-                fb[ZPLC_COMM_MQTT_CONNECT_CONNECTED_OFFSET] = 1U;
-            }
-            if (handler_fails) {
-                fb[1] = 0U;
-                fb[3] = 1U;
-                fb[4] = (uint8_t)ZPLC_COMM_UNKNOWN;
-                fb[5] = fb[6] = fb[7] = 0U;
+                if (!enabled) {
+                    fb[2] = fb[3] = 0U; /* EN fell: the result goes with it, STATUS stays */
+                    return;
+                }
+                if (!rising && (fb[2] != 0U || fb[3] != 0U)) {
+                    return; /* a result is held: one trigger is one operation */
+                }
             }
         }
+        fb[1] = 0U;
+        fb[2] = 0U;
+        fb[3] = 1U;
+        fb[4] = (uint8_t)(has_handler ? ZPLC_COMM_TIMEOUT : ZPLC_COMM_NO_HANDLER);
+        fb[5] = fb[6] = fb[7] = 0U;
     }
 }
 
