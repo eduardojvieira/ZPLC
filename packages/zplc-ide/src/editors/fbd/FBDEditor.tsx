@@ -33,7 +33,11 @@ import {
 import '@xyflow/react/dist/style.css';
 
 import { type FBDModel, type FBDBlock, type FBDConnection, getDefaultPorts } from '../../models/fbd';
-import { blockNodeData, connectBlocks, copyFBDFragment, type WireEnds, edgesToConnections, hasCanonicalEdgeChanges, hasCanonicalNodeChanges, nodesToBlocks, pasteFBDFragment, uniqueNodeId, type FBDClipboardFragment } from './graphModel';
+import { applyFBDSelection, blockNodeData, connectBlocks, copyFBDFragment, type WireEnds, edgesToConnections, fbdSelection, nodesToBlocks, pasteFBDFragment, uniqueNodeId, type FBDClipboardFragment } from './graphModel';
+import { edgeChangesCommit, nodeChangesCommit } from '../gesture';
+import { useGestureCommit } from '../useGestureCommit';
+import { getVisualSelection, setVisualSelection, useVisualFileKey } from '../visualSelection';
+import type { VisualGesture } from '../visualHistory';
 import { nodeTypes, getNodeType } from './nodes';
 import { edgeTypes } from './edges';
 import FBDToolbox from './FBDToolbox';
@@ -53,7 +57,8 @@ import { blockElement, parseElement, type SourceElementId } from '../../models/s
 
 interface FBDEditorProps {
   model: FBDModel;
-  onChange?: (model: FBDModel) => void;
+  /** Called once for each gesture of the user (LNG-010), with what the history needs to know of it. */
+  onChange?: (model: FBDModel, gesture?: VisualGesture) => void;
   readOnly?: boolean;
 }
 
@@ -159,36 +164,54 @@ function FBDEditorInner({
   const edgesRef = useRef(edges);
   const clipboardRef = useRef<FBDClipboardFragment | undefined>(undefined);
 
-  const commitGraph = useCallback((nextNodes: Node[], nextEdges: Edge[]) => {
+  // One gesture is one commit (LNG-010): a delete reaches the canvas as the removal of the nodes and then of their
+  // wires in one task, and the document is committed once, with the selection from before the gesture and after it.
+  const fileKey = useVisualFileKey();
+  const fileKeyRef = useRef(fileKey);
+  useEffect(() => {
+    fileKeyRef.current = fileKey;
+  }, [fileKey]);
+  const commitModel = useGestureCommit<FBDModel>(onChange);
+
+  const commitGraph = useCallback((nextNodes: Node[], nextEdges: Edge[], coalesce?: string) => {
+    const before = fbdSelection(nodesRef.current, edgesRef.current);
+    const after = fbdSelection(nextNodes, nextEdges);
     nodesRef.current = nextNodes;
     edgesRef.current = nextEdges;
     replaceNodes(nextNodes);
     replaceEdges(nextEdges);
+    setVisualSelection(fileKeyRef.current, after);
     if (!readOnly && onChange) {
-      onChange({
+      commitModel({
         ...model,
         blocks: nodesToBlocks(nextNodes),
         connections: edgesToConnections(nextEdges),
-      });
+      }, { before, after, ...(coalesce === undefined ? {} : { coalesce }) });
     }
-  }, [model, onChange, readOnly]);
+  }, [commitModel, model, onChange, readOnly]);
 
   const updateNodeData = useCallback((nodeId: string, data: Record<string, unknown>) => {
     if (readOnly) return;
     commitGraph(nodesRef.current.map((node) => node.id === nodeId
       ? { ...node, data: { ...node.data, ...data } }
-      : node), edgesRef.current);
+      : node), edgesRef.current, `data:${nodeId}:${Object.keys(data).sort().join(',')}`);
   }, [commitGraph, readOnly]);
   useEffect(() => {
     updateNodeDataRef.current = updateNodeData;
   }, [updateNodeData]);
 
+  // The canvas is rebuilt from the document after every edit, undo and change made outside; the selection is not part of
+  // the document, so it is put back from where the editor remembers it (LNG-010).
   useEffect(() => {
-    const nextNodes = initialNodes.map((node) => ({ ...node, data: { ...node.data, readOnly, onChangeData: (nodeId: string, data: Record<string, unknown>) => updateNodeDataRef.current?.(nodeId, data) } }));
-    nodesRef.current = nextNodes;
-    edgesRef.current = initialEdges;
-    replaceNodes(nextNodes);
-    replaceEdges(initialEdges);
+    const shown = applyFBDSelection(
+      initialNodes.map((node) => ({ ...node, data: { ...node.data, readOnly, onChangeData: (nodeId: string, data: Record<string, unknown>) => updateNodeDataRef.current?.(nodeId, data) } })),
+      initialEdges,
+      getVisualSelection(fileKeyRef.current),
+    );
+    nodesRef.current = shown.nodes;
+    edgesRef.current = shown.edges;
+    replaceNodes(shown.nodes);
+    replaceEdges(shown.edges);
   }, [initialNodes, initialEdges, readOnly]);
 
   // Update nodes/edges when debug state changes
@@ -237,6 +260,7 @@ function FBDEditorInner({
       edgesRef.current = nextEdges;
       replaceNodes(nextNodes);
       replaceEdges(nextEdges);
+      setVisualSelection(fileKeyRef.current, fbdSelection(nextNodes, nextEdges));
       void fitView({ nodes: [{ id: parsed.id }], maxZoom: 1, duration: 200 });
     } else if (parsed?.kind === 'connection' && edgesRef.current.some((edge) => edge.id === parsed.id)) {
       const nextEdges = edgesRef.current.map((edge) => ({ ...edge, selected: edge.id === parsed.id }));
@@ -245,6 +269,7 @@ function FBDEditorInner({
       edgesRef.current = nextEdges;
       replaceNodes(nextNodes);
       replaceEdges(nextEdges);
+      setVisualSelection(fileKeyRef.current, fbdSelection(nextNodes, nextEdges));
     }
   }, [fitView]);
   useElementSelection(selectElement);
@@ -291,10 +316,12 @@ function FBDEditorInner({
     (changes: Parameters<typeof applyNodeChanges>[0]) => {
       if (readOnly) return;
       const nextNodes = applyNodeChanges(changes, nodesRef.current);
-      if (hasCanonicalNodeChanges(changes)) commitGraph(nextNodes, edgesRef.current);
+      // the steps of a drag only move the node on the canvas: the document is committed when the node is put down
+      if (nodeChangesCommit(changes)) commitGraph(nextNodes, edgesRef.current);
       else {
         nodesRef.current = nextNodes;
         replaceNodes(nextNodes);
+        if (changes.some((change) => change.type === 'select')) setVisualSelection(fileKeyRef.current, fbdSelection(nextNodes, edgesRef.current));
       }
     },
     [commitGraph, readOnly]
@@ -304,10 +331,11 @@ function FBDEditorInner({
     (changes: Parameters<typeof applyEdgeChanges>[0]) => {
       if (readOnly) return;
       const nextEdges = applyEdgeChanges(changes, edgesRef.current);
-      if (hasCanonicalEdgeChanges(changes)) commitGraph(nodesRef.current, nextEdges);
+      if (edgeChangesCommit(changes)) commitGraph(nodesRef.current, nextEdges);
       else {
         edgesRef.current = nextEdges;
         replaceEdges(nextEdges);
+        if (changes.some((change) => change.type === 'select')) setVisualSelection(fileKeyRef.current, fbdSelection(nodesRef.current, nextEdges));
       }
     },
     [commitGraph, readOnly]

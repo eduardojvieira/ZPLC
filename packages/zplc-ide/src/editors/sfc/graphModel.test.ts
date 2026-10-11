@@ -2,7 +2,7 @@ import { describe, expect, it } from 'bun:test';
 import type { Edge, Node } from '@xyflow/react';
 import { parseSFCModel, serializeSFCModel, type SFCModel } from '../../models/sfc';
 import { transpileSFCToST } from '../../transpiler/sfcToST';
-import { copySFCFragment, isCanonicalSFCConnection, nodesToTransitions, pasteSFCFragment } from './graphModel';
+import { applySFCSelection, copySFCFragment, isCanonicalSFCConnection, nodesToTransitions, pasteSFCFragment, sfcSelection } from './graphModel';
 
 const nodes: Node[] = [
   { id: 'step', type: 'step', position: { x: 0, y: 0 }, data: {} },
@@ -77,5 +77,16 @@ describe('SFC graph to transitions', () => {
       { id: 'fork', fromStep: 'a', toStep: 'b', toSteps: ['b', 'c'], priority: 3, condition: 'Go', position: { x: 0, y: 0 }, comment: undefined },
       { id: 'join', fromStep: 'b', toStep: 'd', fromSteps: ['b', 'c'], condition: 'TRUE', position: { x: 0, y: 0 }, comment: undefined },
     ]);
+  });
+});
+
+describe('SFC selection (LNG-010)', () => {
+  it('names steps, transitions and wires, and puts the selection back on a rebuilt canvas', () => {
+    const edges: Edge[] = [{ id: 'step_to_transition', source: 'step', target: 'transition' }];
+    expect(sfcSelection(nodes.map((node) => ({ ...node, selected: true })), edges.map((edge) => ({ ...edge, selected: true }))))
+      .toEqual(['step:step', 'transition:transition', 'edge:step_to_transition']);
+    const rebuilt = applySFCSelection(nodes, edges, ['transition:transition', 'step:gone']);
+    expect(rebuilt.nodes.map((node) => node.selected)).toEqual([false, true]);
+    expect(rebuilt.edges.map((edge) => edge.selected)).toEqual([false]);
   });
 });

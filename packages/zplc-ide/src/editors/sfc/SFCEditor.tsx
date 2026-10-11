@@ -35,7 +35,11 @@ import {
 import '@xyflow/react/dist/style.css';
 
 import { type SFCModel, type SFCStep, type SFCTransition } from '../../models/sfc';
-import { copySFCFragment, stepNodeData, transitionNodeData, hasCanonicalEdgeChanges, hasCanonicalNodeChanges, isCanonicalSFCConnection, nodesToSteps, nodesToTransitions, pasteSFCFragment, uniqueNodeId, type SFCClipboardFragment } from './graphModel';
+import { applySFCSelection, copySFCFragment, sfcSelection, stepNodeData, transitionNodeData, isCanonicalSFCConnection, nodesToSteps, nodesToTransitions, pasteSFCFragment, uniqueNodeId, type SFCClipboardFragment } from './graphModel';
+import { edgeChangesCommit, nodeChangesCommit } from '../gesture';
+import { useGestureCommit } from '../useGestureCommit';
+import { getVisualSelection, setVisualSelection, useVisualFileKey } from '../visualSelection';
+import type { VisualGesture } from '../visualHistory';
 import { nodeTypes } from './nodes';
 import { edgeTypes } from './edges';
 import SFCToolbox from './SFCToolbox';
@@ -52,7 +56,8 @@ import { parseElement, stepElement, transitionElement, type SourceElementId } fr
 
 interface SFCEditorProps {
   model: SFCModel;
-  onChange?: (model: SFCModel) => void;
+  /** Called once for each gesture of the user (LNG-010), with what the history needs to know of it. */
+  onChange?: (model: SFCModel, gesture?: VisualGesture) => void;
   readOnly?: boolean;
 }
 
@@ -219,32 +224,50 @@ function SFCEditorInner({
   const edgesRef = useRef(edges);
   const clipboardRef = useRef<SFCClipboardFragment | undefined>(undefined);
 
-  const commitGraph = useCallback((nextNodes: Node[], nextEdges: Edge[]) => {
+  // One gesture is one commit (LNG-010): the document is committed once, with the selection from before the gesture and after.
+  const fileKey = useVisualFileKey();
+  const fileKeyRef = useRef(fileKey);
+  useEffect(() => {
+    fileKeyRef.current = fileKey;
+  }, [fileKey]);
+  const commitModel = useGestureCommit<SFCModel>(onChange);
+
+  const commitGraph = useCallback((nextNodes: Node[], nextEdges: Edge[], coalesce?: string) => {
+    const before = sfcSelection(nodesRef.current, edgesRef.current);
+    const after = sfcSelection(nextNodes, nextEdges);
     nodesRef.current = nextNodes;
     edgesRef.current = nextEdges;
     replaceNodes(nextNodes);
     replaceEdges(nextEdges);
+    setVisualSelection(fileKeyRef.current, after);
     if (!readOnly && onChange) {
-      onChange({ ...model, steps: nodesToSteps(nextNodes), transitions: nodesToTransitions(nextNodes, nextEdges) });
+      commitModel({ ...model, steps: nodesToSteps(nextNodes), transitions: nodesToTransitions(nextNodes, nextEdges) },
+        { before, after, ...(coalesce === undefined ? {} : { coalesce }) });
     }
-  }, [model, onChange, readOnly]);
+  }, [commitModel, model, onChange, readOnly]);
 
   const updateNodeData = useCallback((nodeId: string, data: Record<string, unknown>) => {
     if (readOnly) return;
     commitGraph(nodesRef.current.map((node) => node.id === nodeId
       ? { ...node, data: { ...node.data, ...data } }
-      : node), edgesRef.current);
+      : node), edgesRef.current, `data:${nodeId}:${Object.keys(data).sort().join(',')}`);
   }, [commitGraph, readOnly]);
   useEffect(() => {
     updateNodeDataRef.current = updateNodeData;
   }, [updateNodeData]);
 
+  // The canvas is rebuilt from the document after every edit, undo and change made outside; the selection is not part of
+  // the document, so it is put back from where the editor remembers it (LNG-010).
   useEffect(() => {
-    const nextNodes = initialNodes.map((node) => ({ ...node, data: { ...node.data, readOnly, onChangeData: (nodeId: string, data: Record<string, unknown>) => updateNodeDataRef.current?.(nodeId, data) } }));
-    nodesRef.current = nextNodes;
-    edgesRef.current = initialEdges;
-    replaceNodes(nextNodes);
-    replaceEdges(initialEdges);
+    const shown = applySFCSelection(
+      initialNodes.map((node) => ({ ...node, data: { ...node.data, readOnly, onChangeData: (nodeId: string, data: Record<string, unknown>) => updateNodeDataRef.current?.(nodeId, data) } })),
+      initialEdges,
+      getVisualSelection(fileKeyRef.current),
+    );
+    nodesRef.current = shown.nodes;
+    edgesRef.current = shown.edges;
+    replaceNodes(shown.nodes);
+    replaceEdges(shown.edges);
   }, [initialNodes, initialEdges, readOnly]);
 
   // Update nodes when debug info changes
@@ -344,6 +367,7 @@ function SFCEditorInner({
     edgesRef.current = nextEdges;
     replaceNodes(nextNodes);
     replaceEdges(nextEdges);
+    setVisualSelection(fileKeyRef.current, sfcSelection(nextNodes, nextEdges));
     void fitView({ nodes: [{ id: target }], maxZoom: 1, duration: 200 });
   }, [fitView, model.actions]);
   useElementSelection(selectElement);
@@ -378,10 +402,12 @@ function SFCEditorInner({
     (changes: Parameters<typeof applyNodeChanges>[0]) => {
       if (readOnly) return;
       const nextNodes = applyNodeChanges(changes, nodesRef.current);
-      if (hasCanonicalNodeChanges(changes)) commitGraph(nextNodes, edgesRef.current);
+      // the steps of a drag only move the node on the canvas: the document is committed when the node is put down
+      if (nodeChangesCommit(changes)) commitGraph(nextNodes, edgesRef.current);
       else {
         nodesRef.current = nextNodes;
         replaceNodes(nextNodes);
+        if (changes.some((change) => change.type === 'select')) setVisualSelection(fileKeyRef.current, sfcSelection(nextNodes, edgesRef.current));
       }
     },
     [commitGraph, readOnly]
@@ -391,10 +417,11 @@ function SFCEditorInner({
     (changes: Parameters<typeof applyEdgeChanges>[0]) => {
       if (readOnly) return;
       const nextEdges = applyEdgeChanges(changes, edgesRef.current);
-      if (hasCanonicalEdgeChanges(changes)) commitGraph(nodesRef.current, nextEdges);
+      if (edgeChangesCommit(changes)) commitGraph(nodesRef.current, nextEdges);
       else {
         edgesRef.current = nextEdges;
         replaceEdges(nextEdges);
+        if (changes.some((change) => change.type === 'select')) setVisualSelection(fileKeyRef.current, sfcSelection(nodesRef.current, nextEdges));
       }
     },
     [commitGraph, readOnly]

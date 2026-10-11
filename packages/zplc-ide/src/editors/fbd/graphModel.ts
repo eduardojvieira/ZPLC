@@ -1,7 +1,8 @@
-import { addEdge, type Edge, type EdgeChange, type Node, type NodeChange } from '@xyflow/react';
+import { addEdge, type Edge, type Node } from '@xyflow/react';
 import { isFunctionBlock, type FBDBlock, type FBDConnection, type FBDModel, validateFBDModel } from '../../models/fbd';
 import { judgeConnection } from '../../models/pinTypes';
 import type { ProjectBlock } from '../../models/projectBlocks';
+import { blockElement, connectionElement } from '../../models/sourceElements';
 
 const BLOCK_FIELDS = new Set(['id', 'type', 'position', 'instanceName', 'variableName', 'address', 'dataType', 'value', 'comment', 'inputs', 'outputs']);
 
@@ -68,12 +69,24 @@ export function connectBlocks(
   };
 }
 
-export function hasCanonicalNodeChanges(changes: NodeChange[]): boolean {
-  return changes.some((change) => change.type === 'position' || change.type === 'add' || change.type === 'remove' || change.type === 'replace');
+/** Whether the changes of the canvas are a commit of the document: a node put down, not one dragged (LNG-010). */
+export { edgeChangesCommit as hasCanonicalEdgeChanges, nodeChangesCommit as hasCanonicalNodeChanges } from '../gesture';
+
+/** The ids of what is selected on the canvas: `block:<id>` and `connection:<id>` (LNG-010). */
+export function fbdSelection(nodes: readonly Node[], edges: readonly Edge[]): string[] {
+  return [
+    ...nodes.filter((node) => node.selected).map((node) => blockElement(node.id)),
+    ...edges.filter((edge) => edge.selected).map((edge) => connectionElement(edge.id)),
+  ];
 }
 
-export function hasCanonicalEdgeChanges(changes: EdgeChange[]): boolean {
-  return changes.some((change) => change.type === 'add' || change.type === 'remove' || change.type === 'replace');
+/** The nodes and wires with the selection set to `ids`; what is not on the canvas any more is not selected. */
+export function applyFBDSelection(nodes: Node[], edges: Edge[], ids: readonly string[]): { nodes: Node[]; edges: Edge[] } {
+  const wanted = new Set(ids);
+  return {
+    nodes: nodes.map((node) => ({ ...node, selected: wanted.has(blockElement(node.id)) })),
+    edges: edges.map((edge) => ({ ...edge, selected: wanted.has(connectionElement(edge.id)) })),
+  };
 }
 
 export function uniqueNodeId(base: string, nodes: Node[]): string {

@@ -47,6 +47,23 @@ La primera edición real escribe el archivo completo en la única forma que usa 
 de línea al final (un número escrito `2.0` se escribe `2`; un rung escrito como lista de elementos se escribe como
 cuadrícula).
 
+## Deshacer, rehacer y selección en los editores visuales
+
+Un gesto tuyo es un paso de deshacer (LNG-010): un arrastre, un pegado, un borrado (los nodos y los cables que se fueron con
+ellos), un soltar desde la paleta, un cable trazado o la edición de un nombre o de una condición. Un arrastre de 300 píxeles
+llega al lienzo como unos treinta cambios de posición; el archivo se escribe, y el historial recibe una entrada, una sola
+vez, cuando sueltas el nodo. Las letras escritas en un campo con menos de un segundo entre una y otra son un solo paso. El
+historial guarda los últimos 100 gestos de cada archivo durante la sesión; lo usan los botones Deshacer y Rehacer, `Ctrl+Z` y
+`Ctrl+Shift+Z` (`Ctrl+Y`).
+
+La selección no es parte del archivo, y sobrevive a la edición: lo que está seleccionado sigue seleccionado cuando el lienzo
+se reconstruye desde el archivo tras un cambio. Deshacer y rehacer devuelven la selección junto con el contenido: deshacer
+un borrado devuelve los bloques y los selecciona, deshacer un pegado selecciona lo que estaba seleccionado antes de pegar.
+
+Nivel de evidencia: host. `src/editors/gesture.test.ts` ejercita la regla de commit con un arrastre de 30 pasos, un borrado
+y una serie de cambios de selección, y `src/editors/visualHistory.test.ts` guarda 100 gestos, la fusión de ediciones y la
+selección de cada paso. Arrastrar con un puntero real no está cubierto: este repositorio no tiene un entorno de pruebas con DOM.
+
 ## Tipos de pin en FBD
 
 El lienzo FBD rechaza un cable entre pines cuyos tipos no coinciden y explica el motivo en un mensaje sobre el lienzo

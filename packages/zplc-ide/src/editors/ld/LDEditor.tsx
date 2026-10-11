@@ -23,12 +23,14 @@ import {
 } from '../../models/ld';
 import LDToolbox from './LDToolbox';
 import LDRungGrid from './LDRungGrid';
-import { copyLDRungFragment, pasteLDRungFragment, type LDClipboardFragment } from './graphModel';
+import { copyLDRungFragment, ldSelectionIds as selectionIds, ldSelectionOfIds as selectionOfIds, NO_LD_SELECTION, pasteLDRungFragment, type LDClipboardFragment, type LDSelection } from './graphModel';
 import { useIDEStore } from '../../store/useIDEStore';
 import { useDebugValues } from '../../hooks/useDebugValue';
 import { useElementSelection } from '../elementSelection';
 import { useElementBreakpoints } from '../elementBreakpoints';
 import { parseElement, rungElement, type SourceElementId } from '../../models/sourceElements';
+import { getVisualSelection, setVisualSelection, useVisualFileKey } from '../visualSelection';
+import type { VisualGesture } from '../visualHistory';
 
 // =============================================================================
 // Props
@@ -36,7 +38,8 @@ import { parseElement, rungElement, type SourceElementId } from '../../models/so
 
 interface LDEditorProps {
   model: LDModel;
-  onChange?: (model: LDModel) => void;
+  /** Called once for each gesture of the user (LNG-010), with what the history needs to know of it. */
+  onChange?: (model: LDModel, gesture?: VisualGesture) => void;
   readOnly?: boolean;
 }
 
@@ -172,10 +175,27 @@ function ElementProperties({ element, onChange, onClose }: ElementPropertiesProp
 // Main Component
 // =============================================================================
 
+const NO_SELECTION = NO_LD_SELECTION;
+
 export default function LDEditor({ model, onChange, readOnly = false }: LDEditorProps) {
-  const [selectedElement, setSelectedElement] = useState<LDElementType | null>(null);
-  const [selectedRungId, setSelectedRungId] = useState<string | null>(null);
+  const [selection, setSelection] = useState<LDSelection>(NO_SELECTION);
   const clipboardRef = useRef<LDClipboardFragment | undefined>(undefined);
+  // The selection is not part of the document: it is remembered by file, and undo gives back the one from before (LNG-010)
+  const fileKey = useVisualFileKey();
+  const selectionRef = useRef(selection);
+  const select = useCallback((next: LDSelection) => {
+    selectionRef.current = next;
+    setSelection(next);
+    setVisualSelection(fileKey, selectionIds(next));
+  }, [fileKey]);
+  const lastModelRef = useRef(model);
+  useEffect(() => {
+    if (lastModelRef.current === model) return;
+    lastModelRef.current = model;
+    const remembered = selectionOfIds(getVisualSelection(fileKey));
+    selectionRef.current = remembered;
+    setSelection(remembered);
+  }, [fileKey, model]);
 
   // Get debug mode from store
   const debugMode = useIDEStore((state) => state.debug.mode);
@@ -265,6 +285,23 @@ export default function LDEditor({ model, onChange, readOnly = false }: LDEditor
     return map;
   }, [debugMode, allVariables, debugValues]);
 
+  const selectedRungId = selection.rungId;
+  const selectedElement = useMemo<LDElementType | null>(() => {
+    if (selection.rungId === null || selection.elementId === null) return null;
+    const rung = normalizedModel.rungs.find((candidate) => candidate.id === selection.rungId);
+    return rung?.grid?.flat().find((cell) => cell.element?.id === selection.elementId)?.element ?? null;
+  }, [normalizedModel, selection]);
+
+  /** One gesture is one commit: the document, and the selection from before it and after it (LNG-010). */
+  const commit = useCallback((next: LDModel, after: LDSelection = selectionRef.current, coalesce?: string) => {
+    if (readOnly || !onChange) return;
+    onChange(next, {
+      ...(coalesce === undefined ? {} : { coalesce }),
+      selection: { before: selectionIds(selectionRef.current), after: selectionIds(after) },
+    });
+    select(after);
+  }, [onChange, readOnly, select]);
+
   // Add a new rung
   const handleAddRung = useCallback(() => {
     if (readOnly || !onChange) return;
@@ -272,11 +309,11 @@ export default function LDEditor({ model, onChange, readOnly = false }: LDEditor
     const newRungNumber = normalizedModel.rungs.length + 1;
     const newRung = createEmptyRung(newRungNumber);
 
-    onChange({
+    commit({
       ...normalizedModel,
       rungs: [...normalizedModel.rungs, newRung],
     });
-  }, [normalizedModel, onChange, readOnly]);
+  }, [commit, normalizedModel, onChange, readOnly]);
 
   // Delete a rung
   const handleDeleteRung = useCallback((rungId: string) => {
@@ -286,24 +323,21 @@ export default function LDEditor({ model, onChange, readOnly = false }: LDEditor
     const filtered = normalizedModel.rungs.filter(r => r.id !== rungId);
     const renumbered = filtered.map((r, idx) => ({ ...r, number: idx + 1 }));
 
-    onChange({
+    commit({
       ...normalizedModel,
       rungs: renumbered,
-    });
-
-    setSelectedElement(null);
-    setSelectedRungId(null);
-  }, [normalizedModel, onChange, readOnly]);
+    }, NO_SELECTION);
+  }, [commit, normalizedModel, onChange, readOnly]);
 
   // Update a rung
-  const handleRungChange = useCallback((rungId: string, updatedRung: LDRung) => {
+  const handleRungChange = useCallback((rungId: string, updatedRung: LDRung, after?: LDSelection, coalesce?: string) => {
     if (readOnly || !onChange) return;
 
-    onChange({
+    commit({
       ...normalizedModel,
       rungs: normalizedModel.rungs.map(r => r.id === rungId ? updatedRung : r),
-    });
-  }, [normalizedModel, onChange, readOnly]);
+    }, after, coalesce);
+  }, [commit, normalizedModel, onChange, readOnly]);
 
   // Add a row to a rung (for parallel branches)
   const handleAddRow = useCallback((rungId: string) => {
@@ -329,11 +363,11 @@ export default function LDEditor({ model, onChange, readOnly = false }: LDEditor
     // Renumber
     const renumbered = newRungs.map((r, i) => ({ ...r, number: i + 1 }));
 
-    onChange({
+    commit({
       ...normalizedModel,
       rungs: renumbered,
     });
-  }, [normalizedModel, onChange, readOnly]);
+  }, [commit, normalizedModel, onChange, readOnly]);
 
   // Move rung down
   const handleMoveRungDown = useCallback((rungId: string) => {
@@ -348,11 +382,11 @@ export default function LDEditor({ model, onChange, readOnly = false }: LDEditor
     // Renumber
     const renumbered = newRungs.map((r, i) => ({ ...r, number: i + 1 }));
 
-    onChange({
+    commit({
       ...normalizedModel,
       rungs: renumbered,
     });
-  }, [normalizedModel, onChange, readOnly]);
+  }, [commit, normalizedModel, onChange, readOnly]);
 
   // Handle element deletion
   const handleElementDelete = useCallback((rungId: string, element: LDElementType) => {
@@ -362,15 +396,13 @@ export default function LDEditor({ model, onChange, readOnly = false }: LDEditor
     if (!rung || element.row === undefined || element.col === undefined) return;
     
     const updatedRung = removeElementAt(rung, element.row, element.col);
-    handleRungChange(rungId, updatedRung);
-    setSelectedElement(null);
+    handleRungChange(rungId, updatedRung, { rungId, elementId: null });
   }, [normalizedModel, handleRungChange, readOnly, onChange]);
 
   // Handle element selection
   const handleElementSelect = useCallback((element: LDElementType | null, rungId: string) => {
-    setSelectedElement(element);
-    setSelectedRungId(rungId);
-  }, []);
+    select({ rungId, elementId: element?.id ?? null });
+  }, [select]);
 
   // Activating a problem of this diagram selects the rung and the cell it is about, and scrolls to the rung (LNG-003)
   const selectSourceElement = useCallback((element: SourceElementId) => {
@@ -383,13 +415,12 @@ export default function LDEditor({ model, onChange, readOnly = false }: LDEditor
     let selected: LDElementType | null = null;
     if (parsed.kind === 'cell') selected = rung.grid?.[parsed.row!]?.[parsed.col!]?.element ?? null;
     if (parsed.kind === 'element') selected = rung.grid?.flat().find((cell) => cell.element?.id === parsed.id)?.element ?? null;
-    setSelectedElement(selected);
-    setSelectedRungId(rung.id);
+    select({ rungId: rung.id, elementId: selected?.id ?? null });
     requestAnimationFrame(() => {
       [...document.querySelectorAll('[data-ld-rung-id]')].find((node) => node.getAttribute('data-ld-rung-id') === rung.id)
         ?.scrollIntoView?.({ block: 'center' });
     });
-  }, [normalizedModel]);
+  }, [normalizedModel, select]);
   useElementSelection(selectSourceElement);
 
   // Handle element property update
@@ -409,8 +440,7 @@ export default function LDEditor({ model, onChange, readOnly = false }: LDEditor
       })
     );
 
-    handleRungChange(selectedRungId, { ...rung, grid: newGrid });
-    setSelectedElement(updated);
+    handleRungChange(selectedRungId, { ...rung, grid: newGrid }, { rungId: selectedRungId, elementId: updated.id }, `element:${updated.id}`);
   }, [normalizedModel, selectedRungId, handleRungChange, onChange]);
 
   // Handle element deletion (via keyboard)
@@ -433,9 +463,7 @@ export default function LDEditor({ model, onChange, readOnly = false }: LDEditor
       latestModelRef.current = pasted;
       const copiedRung = pasted.rungs[pasted.rungs.findIndex((rung) => rung.id === selectedRungId) + 1];
       e.preventDefault();
-      onChange(pasted);
-      setSelectedElement(null);
-      setSelectedRungId(copiedRung?.id ?? null);
+      commit(pasted, copiedRung ? { rungId: copiedRung.id, elementId: null } : NO_SELECTION);
       return;
     }
     if (e.key === 'F9') {
@@ -449,19 +477,17 @@ export default function LDEditor({ model, onChange, readOnly = false }: LDEditor
         const rung = normalizedModel.rungs.find(r => r.id === selectedRungId);
         if (rung && selectedElement.row !== undefined && selectedElement.col !== undefined) {
           const updatedRung = removeElementAt(rung, selectedElement.row, selectedElement.col);
-          handleRungChange(selectedRungId, updatedRung);
-          setSelectedElement(null);
+          handleRungChange(selectedRungId, updatedRung, { rungId: selectedRungId, elementId: null });
           e.preventDefault();
         }
       }
     }
     if (e.key === 'Escape') {
       if (!selectedElement && !selectedRungId) return;
-      setSelectedElement(null);
-      setSelectedRungId(null);
+      select(NO_SELECTION);
       e.preventDefault();
     }
-  }, [selectedElement, selectedRungId, normalizedModel, handleRungChange, readOnly, onChange, breakpoints]);
+  }, [selectedElement, selectedRungId, normalizedModel, handleRungChange, commit, select, readOnly, onChange, breakpoints]);
 
   return (
     <div
@@ -636,7 +662,7 @@ export default function LDEditor({ model, onChange, readOnly = false }: LDEditor
             key={selectedElement.id}
             element={selectedElement}
             onChange={handleElementUpdate}
-            onClose={() => setSelectedElement(null)}
+            onClose={() => select({ rungId: selectedRungId, elementId: null })}
           />
         )}
       </div>

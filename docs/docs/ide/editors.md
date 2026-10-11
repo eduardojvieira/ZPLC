@@ -43,6 +43,22 @@ written in. A change that ends where it started, such as dragging an element awa
 either. The first real edit writes the whole file in the one form Studio uses: two-space JSON with a newline at the end
 (a number written `2.0` is written `2`; a Ladder rung written as a list of elements is written as a grid).
 
+## Undo, redo and selection in the visual editors
+
+One gesture of yours is one undo step (LNG-010): a drag, a paste, a delete (the nodes and the wires that went with them), a drop
+from the palette, a wire drawn, or an edit of a name or a condition. A drag that is 300 pixels long reaches the canvas as
+about thirty position changes; the file is written, and the history gets an entry, once, when you put the node down. Letters
+typed into one field within a second of each other are one step. The history keeps the last 100 gestures of each file for the
+session; the Undo and Redo buttons, `Ctrl+Z` and `Ctrl+Shift+Z` (`Ctrl+Y`) use it.
+
+The selection is not part of the file, and it survives the edit: whatever is selected stays selected when the canvas is
+rebuilt from the file after a change. Undo and redo give the selection back with the content: undoing a delete puts the
+deleted blocks back and selects them, undoing a paste selects what was selected before the paste.
+
+Evidence level: host. `src/editors/gesture.test.ts` drives the commit rule with a 30-step drag, a delete and a stream of
+selection changes, and `src/editors/visualHistory.test.ts` holds 100 gestures, the coalescing and the selection of each step.
+Dragging with a real pointer is not covered: there is no DOM test environment in this repository.
+
 ## Pin types in FBD
 
 The FBD canvas refuses a wire between pins whose types do not match, and says why in a message over the canvas
