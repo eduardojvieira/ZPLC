@@ -38,6 +38,24 @@ Connectivity is defined in your project's `zplc.json` file. Through the IDE, you
 
 The runtime handles the underlying protocol dispatch automatically while your PLC logic is executing.
 
+### Modbus areas and addresses
+
+The four areas of a Modbus server are four address spaces: a coil, a discrete input, an input register and a holding register with the same number are four different variables. The number of the `{modbus:N}` tag of a variable says which one it is, in the notation of the Modbus world:
+
+| `N` | Area | Address on the wire | A client can |
+| --- | --- | --- | --- |
+| 10001 to 19999 | Discrete input | `N - 10001` | read it (function 2) |
+| 30001 to 39999 | Input register | `N - 30001` | read it (function 4) |
+| 40001 to 49999 | Holding register | `N - 40001` | read it (function 3) and write it (6, 16) |
+| any other number, a `BOOL` | Coil | `N` | read it (function 1) and write it (5, 15) |
+| any other number, another type | Holding register | `N` | read it (function 3) and write it (6, 16) |
+
+A variable is served in one area only. A request of an address that no variable has in the area it asks for is answered with exception 2 (illegal data address), even when another area has a variable at that number. Discrete inputs and input registers have no write function, and the server does not write them. A 32-bit variable takes two consecutive registers; a bit area carries one bit for each variable.
+
+The project says the area with the `MODBUS_COIL`, `MODBUS_DISCRETE_INPUT`, `MODBUS_INPUT_REGISTER` and `MODBUS_HOLDING_REGISTER` helpers and with the area of a communication tag: the address you give is the address on the wire, and the build writes the number of the table (a holding register at address 5 is `{modbus:40006}`). An address that is already in the notation of its area (40001 for a holding register) is kept; one that is in the notation of another area, or that the notation cannot write (an input register past 9998), is a build error at the line of the helper.
+
+Every variable of WORK (`0x2000` to `0x3FFF`) and of RETAIN can be bound, and the server serves the whole of the wire range, up to address 65535, for the addresses that have a variable. The Modbus TCP client of the controller reads a tag with the address of its area on the remote device: a holding register with function 3 and a coil with function 1; the client has no read of discrete inputs or input registers, and a tag in those areas is served by the server only.
+
 ### Modbus server mapping overrides
 
 The controller's Communication Map can temporarily override a Modbus **server**

@@ -5,7 +5,7 @@
     "versionMajor": 1,
     "versionMinor": 0,
     "doc": "ISA and container version. The one final version integer of CMP-052 is assigned and frozen when the conformance matrix is closed; until then the draft counter below is what the loader and Studio compare.",
-    "draftCounter": 4,
+    "draftCounter": 5,
     "draftDoc": "Draft contract counter (CMP-052).\n\nIncreases by one with every change of an opcode, layout, size or code until the contract freeze. The compiler writes it in header word 28 of every artifact and the loader refuses an artifact whose counter differs from this value (ZPLC_LOADER_ERR_DRAFT). 0 is what an artifact built before the counter carries and is never accepted."
   },
   "container": {
@@ -712,8 +712,13 @@
         {"name": "STRING_OVERFLOW", "value": 7, "doc": ""},
         {"name": "PROTO_ERROR", "value": 8, "doc": ""},
         {"name": "AUTH_FAILED", "value": 9, "doc": ""},
+        {"name": "UNAVAILABLE", "value": 10, "doc": ""},
         {"name": "UNKNOWN", "value": "0xFF", "doc": ""}
       ]
+    },
+    "tail": {
+      "bytes": 1,
+      "doc": "Bytes at the end of every block that has a layout. They belong to the dispatcher, which keeps there the value EN had on the previous call to tell a rising edge from an EN that stays TRUE (COM-004). No member covers them and a program does not name them; a kind without a layout has none."
     },
     "memberSizes": {
       "doc": "Bytes the compiler reserves for a member of each type (stdlib MEMBER_SIZE). A STRING member is the default 80-character string: 4 header + 80 + 1 terminator.",
@@ -843,7 +848,7 @@
       {
         "name": "AZURE_C2D_RECV",
         "kind": "AZURE_C2D_RECV",
-        "size": 94,
+        "size": 95,
         "doc": "Azure cloud-to-device receive",
         "members": [
           "@COMM_HEADER",
@@ -854,38 +859,38 @@
       {
         "name": "AZURE_DPS_PROV",
         "kind": "AZURE_DPS_PROV",
-        "size": 201,
+        "size": 179,
         "doc": "Azure DPS provisioning",
         "members": [
           "@COMM_HEADER",
           {"name": "DEVICE_ID", "dir": "in", "type": "STRING", "offset": 8},
-          {"name": "ASSIGNED_HUB", "dir": "out", "type": "STRING", "offset": 73}
+          {"name": "ASSIGNED_HUB", "dir": "out", "type": "STRING", "offset": 93}
         ]
       },
       {
         "name": "AZURE_EG_PUB",
         "kind": "AZURE_EG_PUB",
-        "size": 266,
+        "size": 264,
         "doc": "Azure Event Grid publish",
         "members": [
           "@COMM_HEADER",
           {"name": "TOPIC", "dir": "in", "type": "STRING", "offset": 8},
-          {"name": "EVENT_TYPE", "dir": "in", "type": "STRING", "offset": 73},
-          {"name": "PAYLOAD", "dir": "in", "type": "STRING", "offset": 138}
+          {"name": "EVENT_TYPE", "dir": "in", "type": "STRING", "offset": 93},
+          {"name": "PAYLOAD", "dir": "in", "type": "STRING", "offset": 178}
         ]
       },
       {
         "name": "AWS_FLEET_PROV",
         "kind": "AWS_FLEET_PROV",
-        "size": 137,
+        "size": 179,
         "doc": "AWS fleet provisioning",
         "members": [
           "@COMM_HEADER",
           {"name": "TEMPLATE_NAME", "dir": "in", "type": "STRING", "offset": 8},
-          {"name": "THING_NAME", "dir": "out", "type": "STRING", "offset": 73}
+          {"name": "THING_NAME", "dir": "out", "type": "STRING", "offset": 93}
         ]
       },
-      {"name": "SPB_REBIRTH", "kind": "SPB_REBIRTH", "size": 8, "doc": "Sparkplug B rebirth; a rising EN triggers REBIRTH", "members": ["@COMM_HEADER"]}
+      {"name": "SPB_REBIRTH", "kind": "SPB_REBIRTH", "size": 9, "doc": "Sparkplug B rebirth; a rising EN triggers REBIRTH", "members": ["@COMM_HEADER"]}
     ]
   }
 }

@@ -1084,6 +1084,119 @@ and version when the release is cut (see `RELEASING.md`).
   build; `compiler.warnings` selects it (the level `default` reports it). The
   bundled `kitchen_sink` fixture keeps its call, which exercises the function,
   and already selects no warnings.
+- **Contract change, draft counter 4 -> 5.** A STRING argument of a communication
+  block reaches the handler (COM-005). The compiler stored the *address* of
+  the literal into the first four bytes of the member, so the handler of
+  `MQTT_PUBLISH` read an empty topic and an empty payload, and every other
+  STRING input (`HOST`, `DEVICE_ID`, `TOPIC`, `EVENT_TYPE`, `TEMPLATE_NAME`)
+  was empty too. It now writes the capacity the member has room for and copies
+  the string into it (`STRCPY`), in the `[len u16][cap u16][data][terminator]`
+  layout of the string table, and reading a STRING member (`LEN(Pub.TOPIC)`)
+  is the address of the member like any other string. The layout table
+  itself put the STRING members of `AZURE_DPS_PROV`, `AZURE_EG_PUB` and
+  `AWS_FLEET_PROV` over one another, and `THING_NAME` past the end of its
+  block: the second member began 65 bytes after the first and each takes 85.
+  The blocks are 179, 264 and 179 bytes now (`ASSIGNED_HUB` and
+  `THING_NAME` at 93, `EVENT_TYPE` at 93, `PAYLOAD` of the event at 178), the
+  contract generator refuses a member that ends past its block or over the
+  next member, and the new status `ZPLC_COMM_UNAVAILABLE` (10) is the answer of
+  a block whose service this runtime does not have. The last byte of every
+  block that has a layout belongs to the dispatcher, which keeps there the EN
+  of the previous call to tell a rising edge from an EN that stays TRUE (one
+  trigger, one operation: COM-004); `AZURE_C2D_RECV`, `AZURE_DPS_PROV`,
+  `AZURE_EG_PUB`, `AWS_FLEET_PROV` and `SPB_REBIRTH` grow by that byte. Artifacts built before
+  this draft are refused and must be rebuilt; a device with the older
+  firmware is refused by Studio and must be reflashed.
+  `tools/contract/string_cross.py` compiles a program that gives every STRING
+  input of the twelve blocks its own text and reads each member back with the
+  accessors of the handlers.
+- **The twelve communication and cloud blocks have one handshake and none of them
+  waits inside the scan** (COM-002, COM-003, COM-004, COM-008, COM-018). A Modbus
+  block was BUSY for ever: the dispatcher never called the handler again once
+  BUSY was set, so the worker's result was never taken, and a falling and rising
+  EN gave back the old result without a new request. The cloud blocks repeated
+  their operation on every scan while EN stayed TRUE, and `AWS_FLEET_PROV`,
+  `AZURE_DPS_PROV` and the Event Grid publish waited for a broker for up to 30
+  seconds inside the scan. Now a rising EN is one request; the handler is called
+  on every scan while it is in flight; the result (DONE, or ERROR with a status
+  code) is held while EN stays TRUE and cleared when it falls; a request in
+  flight completes even when EN falls, and a reset lets go of it without
+  releasing what the worker still uses. A request goes to a slot
+  (`zplc_comm_req.h`) that a worker thread answers: the Modbus client, the MQTT
+  client thread and, for the two provisioning services, a worker thread of their
+  own (8 KB of RAM on the boards that have a cloud profile). `ASSIGNED_HUB` and
+  `THING_NAME` are filled in; `MQTT_SUBSCRIBE` and `AZURE_C2D_RECV` deliver their
+  messages in `PAYLOAD` with `VALID` for one scan (they never did);
+  `SPB_REBIRTH` publishes the birth certificate again once for each rising
+  edge. A request older than its time limit is `ERROR` with `STATUS` 2 and its
+  late result is dropped; a message queued when the session goes down is
+  failed, not sent on the next session. `STATUS` holds one of the documented
+  codes, not a raw errno. The handshake and the time limits of each block are
+  in `docs/docs/runtime/communication-function-blocks.md`.
+- **A Modbus RTU request to a responsive device succeeds within the configured
+  timeout, and the TCP client takes a response whole** (COM-012, COM-006,
+  COM-018). The RTU client passed its timeout in milliseconds into the field
+  the Zephyr Modbus client reads in microseconds, so the interface waited a
+  thousandth of the configured time (0.5 ms for the default 500 ms) and every
+  request to a device timed out before the first byte of an answer could arrive.
+  The TCP client read the response with one `recv()`, so an answer that came in
+  two segments was refused, did not check the transaction, the unit, the length or
+  the count it had asked for, took any exception for `-EIO`, and connected
+  without a time limit. It now connects without blocking past the configured
+  time, sends all of the request, puts the response together from the stream,
+  and accepts only the answer to its request: another transaction, another unit,
+  a short frame or a count that is not the one asked for is a protocol error
+  (`STATUS` 8), an exception response is a protocol error too, and silence is a
+  timeout (`STATUS` 2) after the configured time. The frames are built and read
+  by `zplc_modbus_tcp.c`, which the server of the product already used, so the
+  host tests run the client's requests through the server. `firmware/tests/
+  modbus_client_tcp` runs the client against a Modbus TCP server written for the
+  test on the loopback interface of native_sim. No serial device is used by any
+  of it: the RTU path is checked at the interface parameters, and the
+  hardware record of an RTU exchange on the Pico is not made.
+- **The four Modbus areas are four address spaces, and the server serves the
+  whole of WORK and RETAIN** (COM-011, COM-013). A coil, a discrete input, an
+  input register and a holding register with the same number were one
+  variable: the server found a variable by the number of its tag and did not
+  look at the area of the request. The number of a `{modbus:N}` tag now says the
+  area in the notation of the Modbus world: 10001 to 19999 are discrete inputs,
+  30001 to 39999 input registers, 40001 to 49999 holding registers, and any
+  other number is a coil for a BOOL and a holding register for any other type,
+  at that address, so a project that wrote no prefix keeps its addresses.
+  The IDE writes the number from the area of the communication tag and from the
+  `MODBUS_*` helper (the area of a tag was kept in the project and dropped by the
+  build); a number that cannot be written is a build error at the line of the
+  helper. The Modbus client polls a tag at the address of its area and no
+  longer asks the remote device for the number of the tag. A variable at
+  `0x3000` to `0x3FFF` of WORK could not be bound at all (the loader and the
+  compiler refused the tag because the adapters discarded the high offset);
+  every adapter reaches memory through the exchange with its whole 16-bit
+  address now, and the guard is gone. `firmware/tests/modbus_areas` loads a
+  program with the tags of the four areas, the edges of WORK and RETAIN and
+  address 65535 and reads and writes them through the seams both servers end in;
+  `firmware/tests/modbus_client_tcp` polls tags against a server on loopback.
+- **The Modbus and MQTT blocks run in simulation, against endpoints on the
+  loopback interface** (COM-009, COM-006). The native runtime answered every
+  communication block `STATUS` 3 and had no peer to talk to. It now links the
+  same Modbus and MQTT handlers as a controller (the sources of `firmware/app`,
+  over a POSIX shim of the few Zephyr kernel calls they make), on a Modbus TCP
+  client whose transaction code is the file the controller compiles too
+  (`zplc_modbus_tcp_client.inc`) and on an MQTT 3.1.1 client of the host. It is
+  off until the session starts the runtime with `ZPLC_NATIVE_COMM=1` (and
+  `ZPLC_NATIVE_MQTT_BROKER=host:port`), so a runtime started the old way
+  answers as before. A Modbus RTU request and every cloud block answer
+  `STATUS` 10 (not available in this runtime). `zplc_loopback`, built with the
+  runtime, starts a Modbus TCP server and an MQTT broker on 127.0.0.1 and ends
+  when its input closes. `test_host_comm` runs every block against them on real
+  sockets (success, timeout, exception, refusal, reset while busy, a scan that
+  never waits for the peer, one request for one rising EN, loss of the MQTT
+  session, a message published while it is down that fails at once and is not
+  sent on the next one, reconnection and
+  the silent loss) and passes under the address, undefined-behaviour and thread
+  sanitizers; `packages/zplc-ide/src/conformance/communication.test.ts` runs a
+  program on the runtime through the session protocol. **Not done: Studio does
+  not start the endpoints for a session yet**, and nothing here was run
+  against a real device, broker or cloud service.
 
 ## 2.0.0-rc.3 - 2026-09-01
 

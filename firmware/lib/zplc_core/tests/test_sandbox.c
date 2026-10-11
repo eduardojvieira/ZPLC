@@ -576,11 +576,13 @@ static void test_comm_opcodes(void) {
   comm_runtime("COMM_EXEC at 0xFFFFFFFF", OP_COMM_EXEC,
                ZPLC_COMM_FB_MB_READ_HREG, 0xFFFFFFFFU, OOB);
 
-  /* the smallest block, 8 bytes, at its boundary */
-  comm_runtime("8-byte block at the last 8 retentive bytes", OP_COMM_EXEC,
-               ZPLC_COMM_FB_SPB_REBIRTH, 0x4FF8U, OK);
-  comm_runtime("8-byte block one byte too far", OP_COMM_EXEC,
-               ZPLC_COMM_FB_SPB_REBIRTH, 0x4FF9U, OOB);
+  /* the smallest block with a layout, the 8-byte handshake and the byte of the dispatcher, at its boundary */
+  comm_runtime("9-byte block at the last 9 retentive bytes", OP_COMM_EXEC,
+               ZPLC_COMM_FB_SPB_REBIRTH,
+               0x5000U - ZPLC_COMM_SPB_REBIRTH_SIZE, OK);
+  comm_runtime("9-byte block one byte too far", OP_COMM_EXEC,
+               ZPLC_COMM_FB_SPB_REBIRTH,
+               0x5000U - ZPLC_COMM_SPB_REBIRTH_SIZE + 1U, OOB);
 
   /* a kind with no layout is the 8-byte handshake only */
   comm_runtime("kind without layout at the last 8 bytes", OP_COMM_STATUS,
@@ -690,9 +692,9 @@ static uint16_t handler_length;
 static uint8_t *handler_block;
 
 static int recording_handler(zplc_comm_fb_kind_t kind, uint8_t *fb_mem,
-                             uint16_t fb_len, bool reset) {
+                             uint16_t fb_len, zplc_comm_call_t call) {
   (void)kind;
-  (void)reset;
+  (void)call;
   handler_calls++;
   handler_length = fb_len;
   handler_block = fb_mem;

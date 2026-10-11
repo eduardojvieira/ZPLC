@@ -38,6 +38,24 @@ La conectividad se define en el archivo `zplc.json` de tu proyecto. A través de
 
 El runtime maneja automáticamente la retransmisión del protocolo por debajo mientras tu lógica de PLC ejecuta.
 
+### Áreas y direcciones Modbus
+
+Las cuatro áreas de un servidor Modbus son cuatro espacios de direcciones: una bobina, una entrada discreta, un registro de entrada y un registro de retención con el mismo número son cuatro variables distintas. El número del tag `{modbus:N}` de una variable dice cuál es, en la notación del mundo Modbus:
+
+| `N` | Área | Dirección en el cable | Un cliente puede |
+| --- | --- | --- | --- |
+| 10001 a 19999 | Entrada discreta | `N - 10001` | leerla (función 2) |
+| 30001 a 39999 | Registro de entrada | `N - 30001` | leerlo (función 4) |
+| 40001 a 49999 | Registro de retención | `N - 40001` | leerlo (función 3) y escribirlo (6, 16) |
+| cualquier otro número, un `BOOL` | Bobina | `N` | leerla (función 1) y escribirla (5, 15) |
+| cualquier otro número, otro tipo | Registro de retención | `N` | leerlo (función 3) y escribirlo (6, 16) |
+
+Una variable se sirve en una sola área. Un pedido de una dirección que ninguna variable tiene en el área que pide se responde con la excepción 2 (dirección de datos ilegal), aunque otra área tenga una variable con ese número. Las entradas discretas y los registros de entrada no tienen función de escritura, y el servidor no los escribe. Una variable de 32 bits ocupa dos registros consecutivos; un área de bits lleva un bit por variable.
+
+El proyecto dice el área con los ayudantes `MODBUS_COIL`, `MODBUS_DISCRETE_INPUT`, `MODBUS_INPUT_REGISTER` y `MODBUS_HOLDING_REGISTER` y con el área de un tag de comunicación: la dirección que das es la dirección en el cable, y la compilación escribe el número de la tabla (un registro de retención en la dirección 5 es `{modbus:40006}`). Una dirección que ya está en la notación de su área (40001 para un registro de retención) se conserva; una que está en la notación de otra área, o que la notación no puede escribir (un registro de entrada pasada la 9998), es un error de compilación en la línea del ayudante.
+
+Toda variable de WORK (`0x2000` a `0x3FFF`) y de RETAIN se puede enlazar, y el servidor sirve todo el rango del cable, hasta la dirección 65535, para las direcciones que tienen una variable. El cliente Modbus TCP del controlador lee un tag con la dirección de su área en el dispositivo remoto: un registro de retención con la función 3 y una bobina con la función 1; el cliente no tiene lectura de entradas discretas ni de registros de entrada, y un tag en esas áreas lo sirve solo el servidor.
+
 ### Overrides de mapeo del servidor Modbus
 
 El Communication Map del controlador puede sobrescribir temporalmente el

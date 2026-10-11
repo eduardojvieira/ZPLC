@@ -247,3 +247,123 @@ int zplc_modbus_tcp_process_adu(const uint8_t *request, size_t request_length,
     return exception_response(request, response, response_capacity, response_length, 0x01U);
   }
 }
+
+/* ============================================================================
+ * The client side (COM-006, COM-012)
+ * ============================================================================
+ */
+
+size_t zplc_modbus_tcp_build_request(uint8_t *adu, size_t capacity, uint16_t transaction,
+                                     uint8_t unit_id, const uint8_t *pdu, size_t pdu_length)
+{
+  if (adu == NULL || pdu == NULL || pdu_length == 0U || pdu_length > ZPLC_MODBUS_PDU_MAX ||
+      capacity < ZPLC_MODBUS_TCP_MBAP_LEN + pdu_length) {
+    return 0U;
+  }
+  put_be16(&adu[0], transaction);
+  put_be16(&adu[2], 0U);
+  put_be16(&adu[4], (uint16_t)(pdu_length + 1U));
+  adu[6] = unit_id;
+  memcpy(&adu[ZPLC_MODBUS_TCP_MBAP_LEN], pdu, pdu_length);
+  return ZPLC_MODBUS_TCP_MBAP_LEN + pdu_length;
+}
+
+int zplc_modbus_tcp_response_pdu(const uint8_t *adu, size_t length, uint16_t transaction,
+                                 uint8_t unit_id, const uint8_t **pdu, size_t *pdu_length)
+{
+  if (adu == NULL || pdu == NULL || pdu_length == NULL) {
+    return -EINVAL;
+  }
+  /* MBAP header and a function code at least */
+  if (length < ZPLC_MODBUS_TCP_MBAP_LEN + 1U || be16(&adu[2]) != 0U ||
+      (size_t)be16(&adu[4]) + 6U != length || be16(&adu[0]) != transaction || adu[6] != unit_id) {
+    return -EPROTO;
+  }
+  *pdu = &adu[ZPLC_MODBUS_TCP_MBAP_LEN];
+  *pdu_length = length - ZPLC_MODBUS_TCP_MBAP_LEN;
+  return 0;
+}
+
+size_t zplc_modbus_pdu_read(uint8_t *pdu, uint8_t function, uint16_t address, uint16_t count)
+{
+  pdu[0] = function;
+  put_be16(&pdu[1], address);
+  put_be16(&pdu[3], count);
+  return 5U;
+}
+
+size_t zplc_modbus_pdu_write_single(uint8_t *pdu, uint8_t function, uint16_t address, uint16_t value)
+{
+  pdu[0] = function;
+  put_be16(&pdu[1], address);
+  if (function == ZPLC_MODBUS_FC_WRITE_SINGLE_COIL) {
+    put_be16(&pdu[3], value != 0U ? 0xFF00U : 0x0000U);
+  } else {
+    put_be16(&pdu[3], value);
+  }
+  return 5U;
+}
+
+/* The function of a response, or -EBADMSG for an exception response, -EPROTO for what is not one. */
+static int response_function(const uint8_t *pdu, size_t length, uint8_t function)
+{
+  if (pdu == NULL || length < 2U) {
+    return -EPROTO;
+  }
+  if (pdu[0] == (uint8_t)(function | 0x80U)) {
+    return -EBADMSG;
+  }
+  return pdu[0] == function ? 0 : -EPROTO;
+}
+
+int zplc_modbus_pdu_read_registers_response(const uint8_t *pdu, size_t length, uint16_t count,
+                                            uint16_t *registers)
+{
+  int rc = response_function(pdu, length, ZPLC_MODBUS_FC_READ_HOLDING_REGISTERS);
+  uint16_t i;
+
+  if (rc != 0) {
+    return rc;
+  }
+  if (registers == NULL || pdu[1] != (uint8_t)(count * 2U) || (size_t)count * 2U > 250U ||
+      length != 2U + (size_t)count * 2U) {
+    return -EPROTO;
+  }
+  for (i = 0U; i < count; i++) {
+    registers[i] = be16(&pdu[2U + (size_t)i * 2U]);
+  }
+  return 0;
+}
+
+int zplc_modbus_pdu_read_coils_response(const uint8_t *pdu, size_t length, uint16_t count,
+                                        uint8_t *bits, size_t bits_capacity)
+{
+  int rc = response_function(pdu, length, ZPLC_MODBUS_FC_READ_COILS);
+  const size_t bytes = ((size_t)count + 7U) / 8U;
+
+  if (rc != 0) {
+    return rc;
+  }
+  if (bits == NULL || bytes > bits_capacity || pdu[1] != bytes || length != 2U + bytes) {
+    return -EPROTO;
+  }
+  memcpy(bits, &pdu[2], bytes);
+  return 0;
+}
+
+int zplc_modbus_pdu_write_single_response(const uint8_t *pdu, size_t length, uint8_t function,
+                                          uint16_t address, uint16_t value)
+{
+  int rc;
+  uint8_t expected[5];
+
+  if (pdu == NULL || length < 2U) {
+    return -EPROTO;
+  }
+  rc = response_function(pdu, length, function);
+  if (rc != 0) {
+    return rc;
+  }
+  (void)zplc_modbus_pdu_write_single(expected, function, address, value);
+  return length == sizeof(expected) && memcmp(pdu, expected, sizeof(expected)) == 0 ? 0 : -EPROTO;
+}

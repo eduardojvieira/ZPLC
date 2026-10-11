@@ -1,61 +1,32 @@
 /**
  * ZPLC MQTT FB Handler
  *
- * Bridges the synchronous VM communication blocks with the asynchronous Zephyr
- * MQTT client.
+ * Bridges the communication blocks of the scan with the MQTT client, which runs
+ * in its own thread (zplc_mqtt_fb.h). A handler call never waits for the broker
+ * (COM-003). The handshake is the one of zplc_comm_dispatch.h: MQTT_PUBLISH is
+ * a request block, one message for each rising EN (COM-004); MQTT_CONNECT and
+ * MQTT_SUBSCRIBE are service blocks that report the state of the session and
+ * of one subscription on every scan, and report ERROR with a status code when
+ * the session is down (COM-018).
  */
 
 #include "zplc_comm_fb_access.h"
 #include "zplc_comm_mqtt_handler.h"
 #include "zplc_config.h"
+#include "zplc_mqtt_fb.h"
 #include <errno.h>
 #include <string.h>
 #include <zephyr/logging/log.h>
 #include <zplc_comm_dispatch.h>
-#include <zplc_core.h>
-#include <zplc_hal.h>
+#include <zplc_comm_req.h>
 
 LOG_MODULE_REGISTER(zplc_comm_mqtt, LOG_LEVEL_INF);
 
-extern bool zplc_mqtt_is_connected(void);
-extern bool zplc_mqtt_is_subscribed(void);
-
-/* ============================================================================
- * Internal FB Layout (Offsets)
- * ============================================================================
- */
-
-/* Handshake header is always 8 bytes for Comm FBs */
-#define FB_OFF_EN 0
-#define FB_OFF_BUSY 1
-#define FB_OFF_DONE 2
-#define FB_OFF_ERROR 3
-#define FB_OFF_STATUS 4 /* 32-bit (offset 4) */
-
-/* MQTT CONNECT Layout: PROFILE (input) is at 8, CONNECTED (output) at 9 */
-#define FB_CONNECT_OFF_CONNECTED 9
-
-/* MQTT PUBLISH Layout */
-#define FB_PUB_OFF_QOS 8
-#define FB_PUB_OFF_RETAIN 9
-#define FB_PUB_OFF_TOPIC 12   /* STRING header (4) + 81 chars */
-#define FB_PUB_OFF_PAYLOAD 97 /* STRING header (4) + 81 chars */
-
-/* MQTT SUBSCRIBE Layout */
-#define FB_SUB_OFF_QOS 8
-#define FB_SUB_OFF_VALID 9
-#define FB_SUB_OFF_TOPIC 12   /* STRING header (4) + 81 chars */
-#define FB_SUB_OFF_PAYLOAD 97 /* STRING header (4) + 81 chars */
-
-/* String Layout */
-#define STR_OFF_LEN 0
-#define STR_OFF_CAPACITY 2
-#define STR_OFF_DATA 4
-
 /* Bytes the layout table reserves for each STRING member (header, up to 80
- * characters, terminator). Strings are read and written through
- * zplc_comm_fb_access.h, bounded by this and by the block (COM-001). */
-#define FB_STRING_BYTES 85U
+ * characters, terminator), from the string layout of the contract. Strings are
+ * read and written through zplc_comm_fb_access.h, bounded by this and by the
+ * block (COM-001, COM-005). */
+#define FB_STRING_BYTES ((uint16_t)(ZPLC_STRING_DATA_OFFSET + ZPLC_STRING_DEFAULT_SIZE + 1))
 
 /* The shortest block of each kind the handler accepts: the table size. */
 static bool block_ok(zplc_comm_fb_kind_t kind, const uint8_t *fb_mem,
@@ -65,131 +36,87 @@ static bool block_ok(zplc_comm_fb_kind_t kind, const uint8_t *fb_mem,
   return fb_mem != NULL && needed != 0U && fb_len >= needed;
 }
 
-static inline void set_status(uint8_t *fb_mem, int32_t status) {
-  fb_mem[FB_OFF_STATUS] = status & 0xFF;
-  fb_mem[FB_OFF_STATUS + 1] = (status >> 8) & 0xFF;
-  fb_mem[FB_OFF_STATUS + 2] = (status >> 16) & 0xFF;
-  fb_mem[FB_OFF_STATUS + 3] = (status >> 24) & 0xFF;
+/* Where the session stands, as the result a service block reports. */
+static int session_result(void) {
+  int last_error = 0;
+
+  switch (zplc_mqtt_fb_session(&last_error)) {
+  case ZPLC_MQTT_FB_UP:
+    return ZPLC_COMM_HANDLER_DONE;
+  case ZPLC_MQTT_FB_CONNECTING:
+    return ZPLC_COMM_HANDLER_PENDING;
+  case ZPLC_MQTT_FB_DOWN:
+  default: {
+    /* The reason the session is down, when the client knows it, else "not connected". */
+    const int status = zplc_comm_status_from_errno(last_error);
+
+    return ZPLC_COMM_HANDLER_FAIL(status == ZPLC_COMM_UNKNOWN || status == ZPLC_COMM_OK
+                                      ? ZPLC_COMM_NOT_CONNECTED
+                                      : status);
+  }
+  }
 }
 
-/* ============================================================================
- * Exec Handlers
- * ============================================================================
- */
+/* MQTT_CONNECT: reports the session; the session itself is opened by the client from the configuration. */
+static int mqtt_connect_poll(uint8_t *fb_mem) {
+  const int result = session_result();
 
-static int exec_mqtt_connect(uint8_t *fb_mem, uint16_t fb_len) {
-  (void)fb_len; /* every offset used is inside the 12 bytes block_ok() found */
-  bool en = fb_mem[FB_OFF_EN];
-  bool is_connected = zplc_mqtt_is_connected();
-
-  if (en) {
-    fb_mem[FB_OFF_BUSY] = 0;
-    fb_mem[FB_OFF_DONE] = 1;
-    fb_mem[FB_OFF_ERROR] = 0;
-    set_status(fb_mem, is_connected ? 0 : 1);
-  } else {
-    fb_mem[FB_OFF_BUSY] = 0;
-    fb_mem[FB_OFF_DONE] = 0;
-    fb_mem[FB_OFF_ERROR] = 0;
-    set_status(fb_mem, 0);
-  }
-
-  fb_mem[FB_CONNECT_OFF_CONNECTED] = is_connected ? 1 : 0;
-  return 0;
+  fb_mem[ZPLC_COMM_MQTT_CONNECT_CONNECTED_OFFSET] =
+      result == ZPLC_COMM_HANDLER_DONE ? 1U : 0U;
+  return result;
 }
 
-static int exec_mqtt_publish(uint8_t *fb_mem, uint16_t fb_len) {
-  bool en = fb_mem[FB_OFF_EN];
-  bool busy = fb_mem[FB_OFF_BUSY];
-  bool done = fb_mem[FB_OFF_DONE];
+static int mqtt_publish_start(uint8_t *fb_mem, uint16_t fb_len) {
+  char topic[ZPLC_STRING_DEFAULT_SIZE + 1];
+  uint8_t payload[ZPLC_STRING_DEFAULT_SIZE + 1];
+  uint16_t payload_len;
+  const uint8_t qos = fb_mem[ZPLC_COMM_MQTT_PUBLISH_QOS_OFFSET];
+  const bool retain = fb_mem[ZPLC_COMM_MQTT_PUBLISH_RETAIN_OFFSET] != 0U;
 
-  if (!en) {
-    fb_mem[FB_OFF_BUSY] = 0;
-    fb_mem[FB_OFF_DONE] = 0;
-    fb_mem[FB_OFF_ERROR] = 0;
-    set_status(fb_mem, 0);
-    return 0;
+  if (qos > 2U) {
+    return ZPLC_COMM_HANDLER_FAIL(ZPLC_COMM_INVALID_ADDR);
   }
-
-  if (done) {
-    return 0; // Already finished for this EN edge
+  (void)zplc_fb_string_copy(topic, sizeof(topic), fb_mem, fb_len,
+                            ZPLC_COMM_MQTT_PUBLISH_TOPIC_OFFSET, FB_STRING_BYTES);
+  if (topic[0] == '\0') {
+    return ZPLC_COMM_HANDLER_FAIL(ZPLC_COMM_INVALID_ADDR);
   }
-
-  if (!busy && !done) {
-    /* Rising edge: Enqueue */
-    char topic[85];
-    uint8_t payload[85];
-
-    (void)zplc_fb_string_copy(topic, sizeof(topic), fb_mem, fb_len,
-                              FB_PUB_OFF_TOPIC, FB_STRING_BYTES);
-
-    /* at most the 80 characters of the member, and what the block holds */
-    uint8_t payload_len = (uint8_t)zplc_fb_string_chars(
-        fb_mem, fb_len, FB_PUB_OFF_PAYLOAD, FB_STRING_BYTES);
-    memcpy(payload, &fb_mem[FB_PUB_OFF_PAYLOAD + STR_OFF_DATA], payload_len);
-
-    uint8_t qos = fb_mem[FB_PUB_OFF_QOS];
-    bool retain = fb_mem[FB_PUB_OFF_RETAIN] != 0;
-
-    int rc =
-        zplc_mqtt_enqueue_publish(topic, payload, payload_len, qos, retain);
-    if (rc == 0) {
-      /* Instant complete for fire-and-forget MQTT */
-      fb_mem[FB_OFF_DONE] = 1;
-      fb_mem[FB_OFF_ERROR] = 0;
-      set_status(fb_mem, 0);
-    } else {
-      fb_mem[FB_OFF_DONE] = 0;
-      fb_mem[FB_OFF_ERROR] = 1;
-      set_status(fb_mem, rc);
-    }
+  /* at most the characters of the member, and what the block holds */
+  payload_len = zplc_fb_string_chars(fb_mem, fb_len,
+                                     ZPLC_COMM_MQTT_PUBLISH_PAYLOAD_OFFSET,
+                                     FB_STRING_BYTES);
+  if (payload_len != 0U) {
+    memcpy(payload,
+           &fb_mem[ZPLC_COMM_MQTT_PUBLISH_PAYLOAD_OFFSET + ZPLC_FB_STR_DATA],
+           payload_len);
   }
-
-  return 0;
+  return zplc_mqtt_fb_publish(fb_mem, topic, payload, payload_len, qos, retain);
 }
 
-static int exec_mqtt_subscribe(uint8_t *fb_mem, uint16_t fb_len) {
-  bool en = fb_mem[FB_OFF_EN];
-  bool is_connected = zplc_mqtt_is_connected();
-  bool is_subscribed = zplc_mqtt_is_subscribed();
-  uint8_t payload_len = (uint8_t)zplc_fb_string_chars(
-      fb_mem, fb_len, FB_SUB_OFF_PAYLOAD, FB_STRING_BYTES);
+/* MQTT_SUBSCRIBE: the subscription of this block, and the newest message that arrived on it. */
+static int mqtt_subscribe_poll(uint8_t *fb_mem, uint16_t fb_len) {
+  char topic[ZPLC_STRING_DEFAULT_SIZE + 1];
+  uint8_t message[ZPLC_STRING_DEFAULT_SIZE + 1];
+  const uint8_t qos = fb_mem[ZPLC_COMM_MQTT_SUBSCRIBE_QOS_OFFSET];
+  int result;
+  int length;
 
-  if (!en) {
-    fb_mem[FB_OFF_BUSY] = 0;
-    fb_mem[FB_OFF_DONE] = 0;
-    fb_mem[FB_OFF_ERROR] = 0;
-    set_status(fb_mem, 0);
-    fb_mem[FB_SUB_OFF_VALID] = 0;
-    (void)zplc_fb_string_set(fb_mem, fb_len, FB_SUB_OFF_PAYLOAD,
-                             FB_STRING_BYTES, (const uint8_t *)"", 0U);
-    return 0;
+  fb_mem[ZPLC_COMM_MQTT_SUBSCRIBE_VALID_OFFSET] = 0U;
+  (void)zplc_fb_string_copy(topic, sizeof(topic), fb_mem, fb_len,
+                            ZPLC_COMM_MQTT_SUBSCRIBE_TOPIC_OFFSET, FB_STRING_BYTES);
+  if (topic[0] == '\0' || qos > 2U) {
+    return ZPLC_COMM_HANDLER_FAIL(ZPLC_COMM_INVALID_ADDR);
   }
 
-  fb_mem[FB_OFF_BUSY] = 0;
-  fb_mem[FB_SUB_OFF_VALID] = payload_len > 0U ? 1U : 0U;
-
-  if (!is_connected) {
-    fb_mem[FB_OFF_DONE] = 0;
-    fb_mem[FB_OFF_ERROR] = 1;
-    fb_mem[FB_SUB_OFF_VALID] = 0;
-    set_status(fb_mem, ZPLC_COMM_NOT_CONNECTED);
-    return 0;
+  result = zplc_mqtt_fb_subscribe(fb_mem, topic, qos);
+  length = zplc_mqtt_fb_take_message(fb_mem, message, ZPLC_STRING_DEFAULT_SIZE);
+  if (length >= 0) {
+    /* VALID is TRUE for the one scan the message is new in; PAYLOAD keeps the last one. */
+    (void)zplc_fb_string_set(fb_mem, fb_len, ZPLC_COMM_MQTT_SUBSCRIBE_PAYLOAD_OFFSET,
+                             FB_STRING_BYTES, message, (size_t)length);
+    fb_mem[ZPLC_COMM_MQTT_SUBSCRIBE_VALID_OFFSET] = 1U;
   }
-
-  if (!is_subscribed) {
-    fb_mem[FB_OFF_DONE] = 0;
-    fb_mem[FB_OFF_ERROR] = 0;
-    fb_mem[FB_SUB_OFF_VALID] = 0;
-    set_status(fb_mem, ZPLC_COMM_BUSY);
-    return 0;
-  }
-
-  fb_mem[FB_OFF_DONE] = 1;
-  fb_mem[FB_OFF_ERROR] = 0;
-  set_status(fb_mem, ZPLC_COMM_OK);
-
-  return 0;
+  return result;
 }
 
 /* ============================================================================
@@ -198,34 +125,39 @@ static int exec_mqtt_subscribe(uint8_t *fb_mem, uint16_t fb_len) {
  */
 
 static int zplc_comm_mqtt_handler(zplc_comm_fb_kind_t kind, uint8_t *fb_mem,
-                                  uint16_t fb_len, bool reset) {
+                                  uint16_t fb_len, zplc_comm_call_t call) {
   if (!block_ok(kind, fb_mem, fb_len)) {
     return -EINVAL;
   }
 
-  if (reset) {
-    fb_mem[FB_OFF_BUSY] = 0;
-    fb_mem[FB_OFF_DONE] = 0;
-    fb_mem[FB_OFF_ERROR] = 0;
-    set_status(fb_mem, 0);
-
-    if (kind == ZPLC_COMM_FB_MQTT_CONNECT) {
-      fb_mem[FB_CONNECT_OFF_CONNECTED] = 0;
-    } else if (kind == ZPLC_COMM_FB_MQTT_SUBSCRIBE) {
-      fb_mem[FB_SUB_OFF_VALID] = 0;
-      (void)zplc_fb_string_set(fb_mem, fb_len, FB_SUB_OFF_PAYLOAD,
+  if (call == ZPLC_COMM_CALL_RESET) {
+    switch (kind) {
+    case ZPLC_COMM_FB_MQTT_CONNECT:
+      fb_mem[ZPLC_COMM_MQTT_CONNECT_CONNECTED_OFFSET] = 0U;
+      break;
+    case ZPLC_COMM_FB_MQTT_PUBLISH:
+      zplc_mqtt_fb_abort(fb_mem);
+      break;
+    case ZPLC_COMM_FB_MQTT_SUBSCRIBE:
+      zplc_mqtt_fb_unsubscribe(fb_mem);
+      fb_mem[ZPLC_COMM_MQTT_SUBSCRIBE_VALID_OFFSET] = 0U;
+      (void)zplc_fb_string_set(fb_mem, fb_len, ZPLC_COMM_MQTT_SUBSCRIBE_PAYLOAD_OFFSET,
                                FB_STRING_BYTES, (const uint8_t *)"", 0U);
+      break;
+    default:
+      break;
     }
-    return 0;
+    return ZPLC_COMM_HANDLER_DONE;
   }
 
   switch (kind) {
   case ZPLC_COMM_FB_MQTT_CONNECT:
-    return exec_mqtt_connect(fb_mem, fb_len);
+    return mqtt_connect_poll(fb_mem);
   case ZPLC_COMM_FB_MQTT_PUBLISH:
-    return exec_mqtt_publish(fb_mem, fb_len);
+    return call == ZPLC_COMM_CALL_START ? mqtt_publish_start(fb_mem, fb_len)
+                                        : zplc_mqtt_fb_poll(fb_mem);
   case ZPLC_COMM_FB_MQTT_SUBSCRIBE:
-    return exec_mqtt_subscribe(fb_mem, fb_len);
+    return mqtt_subscribe_poll(fb_mem, fb_len);
   default:
     return -EINVAL;
   }

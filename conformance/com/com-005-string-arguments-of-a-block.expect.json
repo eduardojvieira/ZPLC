@@ -1,0 +1,16 @@
+{
+  "requirement": "COM-005",
+  "title": "a STRING argument of a communication block is copied into the member in the STRING layout",
+  "scans": 2,
+  "scanMs": 10,
+  "expect": [
+    { "at": "%QW0", "type": "INT", "value": 7 },
+    { "at": "%QW1", "type": "INT", "value": 5 },
+    { "at": "%QX4.0", "type": "BOOL", "value": true },
+    { "at": "%QW3", "type": "INT", "value": 12 },
+    { "at": "%QW4", "type": "INT", "value": 0 },
+    { "at": "%QW5", "type": "INT", "value": 8 },
+    { "at": "%QW6", "type": "UINT", "value": 1502 }
+  ],
+  "note": "A STRING is [len u16][cap u16][data][terminator] (zplc_isa.h, the generated string table). The block handlers read the members of a block in that layout, so the compiler must copy the argument into the member (STRCPY after writing the capacity), not store the address of the literal into its first four bytes. The block runs with EN FALSE: the native runtime has no handler, and the members are read back as STRING values by LEN and the string comparison."
+}

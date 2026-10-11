@@ -22,10 +22,13 @@
 #include <stdint.h>
 #include <string.h>
 
-/* STRING layout of the contract: [len u16][cap u16][data...][terminator] */
-#define ZPLC_FB_STR_LEN 0U
-#define ZPLC_FB_STR_CAP 2U
-#define ZPLC_FB_STR_DATA 4U
+#include <zplc_isa.h>
+
+/* STRING layout of the contract: [len u16][cap u16][data...][terminator], from
+ * the generated string table (COM-005). */
+#define ZPLC_FB_STR_LEN ((uint16_t)ZPLC_STRING_LEN_OFFSET)
+#define ZPLC_FB_STR_CAP ((uint16_t)ZPLC_STRING_CAP_OFFSET)
+#define ZPLC_FB_STR_DATA ((uint16_t)ZPLC_STRING_DATA_OFFSET)
 
 /**
  * @brief True when [offset, offset + count) lies inside a block of fb_len bytes.
@@ -106,10 +109,12 @@ static inline uint16_t zplc_fb_string_copy(char *dest, size_t dest_size,
 
 /**
  * @brief Store text into a STRING member: as much as the member has room for
- *        and the block holds, then the length and the terminator.
+ *        and the block holds, then the length, the capacity and the terminator.
  *
  * Nothing is written when the member header does not fit the block. The
- * capacity field in the block is not consulted: it is program data.
+ * capacity written is what the member has room for, so that the program can
+ * copy the value on (STRCPY reads it); a read does not consult it, because it
+ * is program data.
  *
  * @return number of characters stored
  */
@@ -136,6 +141,8 @@ static inline uint16_t zplc_fb_string_set(uint8_t *fb_mem, uint16_t fb_len,
   fb_mem[offset + ZPLC_FB_STR_DATA + len] = 0U;
   fb_mem[offset + ZPLC_FB_STR_LEN] = (uint8_t)(len & 0xFFU);
   fb_mem[offset + ZPLC_FB_STR_LEN + 1U] = (uint8_t)((len >> 8) & 0xFFU);
+  fb_mem[offset + ZPLC_FB_STR_CAP] = (uint8_t)(room & 0xFFU);
+  fb_mem[offset + ZPLC_FB_STR_CAP + 1U] = (uint8_t)((room >> 8) & 0xFFU);
   return (uint16_t)len;
 }
 

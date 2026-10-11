@@ -5,6 +5,7 @@
  */
 
 #include "zplc_config.h"
+#include "zplc_modbus_map.h"
 #include "zplc_modbus_tcp.h"
 #include <zplc_core.h>
 #include <zplc_exchange.h>
@@ -95,37 +96,25 @@ static uint32_t get_effective_modbus_address(uint16_t tag_index,
     return tag ? tag->value : 0U;
 }
 
-static bool modbus_address_matches_area(uint32_t configured_addr,
-                                        uint16_t request_addr,
-                                        zplc_modbus_area_t area,
-                                        uint16_t width,
-                                        uint16_t *word_offset_out)
+/**
+ * @brief Where a mapped variable is served (COM-011): its area and its address on the wire.
+ *
+ * The number of the tag, or the one that overrides it, says both (zplc_modbus_map.h).
+ */
+static bool tag_location(uint16_t tag_index, const zplc_tag_entry_t *tag, zplc_modbus_location_t *where)
 {
-    static const uint32_t area_bases[] = { 1U, 10001U, 30001U, 40001U };
-    uint32_t candidates[2];
-    size_t candidate_count = 1U;
+    const zplc_data_type_t type = (zplc_data_type_t)tag->var_type;
 
-    candidates[0] = (uint32_t)request_addr;
-    if ((uint32_t)request_addr + area_bases[area] <= UINT32_MAX) {
-        candidates[1] = (uint32_t)request_addr + area_bases[area];
-        candidate_count = 2U;
-    }
-
-    for (size_t i = 0; i < candidate_count; i++) {
-        uint32_t candidate = candidates[i];
-        if (candidate < configured_addr || candidate >= configured_addr + width) {
-            continue;
-        }
-
-        if (word_offset_out != NULL) {
-            *word_offset_out = (uint16_t)(candidate - configured_addr);
-        }
-        return true;
-    }
-
-    return false;
+    return zplc_modbus_locate(get_effective_modbus_address(tag_index, tag), type == ZPLC_TYPE_BOOL,
+                              modbus_register_width(type), where);
 }
 
+/**
+ * @brief The variable served at `modbus_addr` of `area`, and which of its registers that is.
+ *
+ * An item of one area is never an item of another (COM-011): a request of a coil finds only the
+ * variables located in the coils, whatever the number of a variable in another area.
+ */
 static const zplc_tag_entry_t* find_modbus_tag(uint16_t modbus_addr,
                                                 zplc_modbus_area_t area,
                                                 uint16_t *tag_index_out,
@@ -133,13 +122,12 @@ static const zplc_tag_entry_t* find_modbus_tag(uint16_t modbus_addr,
     uint16_t count = zplc_core_get_tag_count();
     for (uint16_t i = 0; i < count; i++) {
         const zplc_tag_entry_t* tag = zplc_core_get_tag(i);
-        if (!tag || tag->tag_id != ZPLC_TAG_MODBUS) {
+        zplc_modbus_location_t where;
+
+        if (!tag || tag->tag_id != ZPLC_TAG_MODBUS || !tag_location(i, tag, &where)) {
             continue;
         }
-
-        uint32_t start_addr = get_effective_modbus_address(i, tag);
-        uint16_t width = modbus_register_width((zplc_data_type_t)tag->var_type);
-        if (!modbus_address_matches_area(start_addr, modbus_addr, area, width, word_offset_out)) {
+        if (!zplc_modbus_location_covers(&where, area, modbus_addr, word_offset_out)) {
             continue;
         }
 
@@ -248,6 +236,23 @@ static int handle_read(uint16_t addr, uint16_t count, uint8_t *resp_data, bool i
         return count * 2;
     }
 }
+
+/**
+ * @brief The read the server of TCP and RTU makes, for a request already framed (COM-011, COM-013).
+ *
+ * Returns the bytes of the response (the registers big endian, the bits packed from the least significant
+ * bit), or -1 when an item of the range is not served in `area` or the response does not fit.
+ */
+int zplc_modbus_read_mapped(uint16_t addr, uint16_t count, uint8_t *response, size_t capacity,
+                            bool is_bit, zplc_modbus_area_t area) {
+    const size_t required = is_bit ? ((size_t)count + 7U) / 8U : (size_t)count * 2U;
+
+    if (response == NULL || required > capacity) {
+        return -1;
+    }
+    memset(response, 0, required);
+    return handle_read(addr, count, response, is_bit, area);
+}
 #endif
 
 /**
@@ -301,7 +306,9 @@ int zplc_modbus_write_mapped(uint16_t addr, uint16_t count, const uint8_t *req_d
     size_t records = 0U;
     size_t total_bytes = 0U;
 
-    if (count == 0U || (uint32_t)addr + (uint32_t)count > UINT16_MAX + 1U) {
+    /* A discrete input and an input register are read-only to the network (COM-011). */
+    if (!zplc_modbus_area_is_writable(area) || count == 0U ||
+        (uint32_t)addr + (uint32_t)count > UINT16_MAX + 1U) {
         return -1;
     }
 

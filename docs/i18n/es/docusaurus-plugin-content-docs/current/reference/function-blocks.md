@@ -637,17 +637,17 @@ Lee registros de retención de un servidor Modbus.
 
 | Pin | Dirección | Tipo | Inicial | Descripción |
 | --- | --- | --- | --- | --- |
-| `EN` | Entrada | `BOOL` | `FALSE` | Habilitación: el bloque actúa mientras es TRUE. |
+| `EN` | Entrada | `BOOL` | `FALSE` | Un flanco ascendente inicia una solicitud. Mientras EN sigue en TRUE el resultado se mantiene y nada se repite; EN en FALSE borra DONE y ERROR. |
 | `PROTO` | Entrada | `USINT` | `0` | Transporte: 0 para RTU, 1 para TCP. |
 | `SLAVE_ID` | Entrada | `UINT` | `0` | Identificador de unidad Modbus del servidor. |
 | `ADDR` | Entrada | `UINT` | `0` | Primera dirección a leer o escribir. |
 | `COUNT` | Entrada | `UINT` | `0` | Cantidad de elementos solicitados. |
 | `HOST` | Entrada | `STRING` | `''` | Nombre o dirección del servidor, para TCP. |
 | `PORT` | Entrada | `UINT` | `0` | Puerto TCP del servidor. |
-| `BUSY` | Salida | `BOOL` | `FALSE` | TRUE mientras una solicitud está en curso. |
-| `DONE` | Salida | `BOOL` | `FALSE` | TRUE cuando la solicitud terminó sin error. |
-| `ERROR` | Salida | `BOOL` | `FALSE` | TRUE cuando la solicitud falló; STATUS dice por qué. |
-| `STATUS` | Salida | `DINT` | `0` | Código de estado: 0 correcto, 1 ocupado, 2 tiempo agotado, 3 sin manejador, 4 sin conexión, 5 cola llena, 6 dirección inválida, 7 desborde de cadena, 8 error de protocolo, 9 autenticación fallida. |
+| `BUSY` | Salida | `BOOL` | `FALSE` | TRUE desde el flanco ascendente hasta que la solicitud termina; una solicitud en curso se completa aunque EN baje. |
+| `DONE` | Salida | `BOOL` | `FALSE` | TRUE cuando la solicitud terminó sin error; se mantiene mientras EN sigue en TRUE. |
+| `ERROR` | Salida | `BOOL` | `FALSE` | TRUE cuando la solicitud falló; STATUS dice por qué; se mantiene mientras EN sigue en TRUE. |
+| `STATUS` | Salida | `DINT` | `0` | Código de estado de la última solicitud: 0 correcto, 1 ocupado, 2 tiempo agotado, 3 sin manejador, 4 sin conexión, 5 cola llena, 6 dirección inválida, 7 desborde de cadena, 8 error de protocolo, 9 autenticación fallida, 10 servicio no disponible en este runtime. |
 | `VALUE` | Salida | `UINT` | `0` | El primer registro leído. |
 
 ```pascal runnable expect="Failed=TRUE Code=3" scans=3
@@ -672,7 +672,7 @@ Escribe registros de retención de un servidor Modbus.
 
 | Pin | Dirección | Tipo | Inicial | Descripción |
 | --- | --- | --- | --- | --- |
-| `EN` | Entrada | `BOOL` | `FALSE` | Habilitación: el bloque actúa mientras es TRUE. |
+| `EN` | Entrada | `BOOL` | `FALSE` | Un flanco ascendente inicia una solicitud. Mientras EN sigue en TRUE el resultado se mantiene y nada se repite; EN en FALSE borra DONE y ERROR. |
 | `PROTO` | Entrada | `USINT` | `0` | Transporte: 0 para RTU, 1 para TCP. |
 | `SLAVE_ID` | Entrada | `UINT` | `0` | Identificador de unidad Modbus del servidor. |
 | `ADDR` | Entrada | `UINT` | `0` | Primera dirección a leer o escribir. |
@@ -680,10 +680,10 @@ Escribe registros de retención de un servidor Modbus.
 | `VALUE` | Entrada | `UINT` | `0` | El primer registro a escribir. |
 | `HOST` | Entrada | `STRING` | `''` | Nombre o dirección del servidor, para TCP. |
 | `PORT` | Entrada | `UINT` | `0` | Puerto TCP del servidor. |
-| `BUSY` | Salida | `BOOL` | `FALSE` | TRUE mientras una solicitud está en curso. |
-| `DONE` | Salida | `BOOL` | `FALSE` | TRUE cuando la solicitud terminó sin error. |
-| `ERROR` | Salida | `BOOL` | `FALSE` | TRUE cuando la solicitud falló; STATUS dice por qué. |
-| `STATUS` | Salida | `DINT` | `0` | Código de estado: 0 correcto, 1 ocupado, 2 tiempo agotado, 3 sin manejador, 4 sin conexión, 5 cola llena, 6 dirección inválida, 7 desborde de cadena, 8 error de protocolo, 9 autenticación fallida. |
+| `BUSY` | Salida | `BOOL` | `FALSE` | TRUE desde el flanco ascendente hasta que la solicitud termina; una solicitud en curso se completa aunque EN baje. |
+| `DONE` | Salida | `BOOL` | `FALSE` | TRUE cuando la solicitud terminó sin error; se mantiene mientras EN sigue en TRUE. |
+| `ERROR` | Salida | `BOOL` | `FALSE` | TRUE cuando la solicitud falló; STATUS dice por qué; se mantiene mientras EN sigue en TRUE. |
+| `STATUS` | Salida | `DINT` | `0` | Código de estado de la última solicitud: 0 correcto, 1 ocupado, 2 tiempo agotado, 3 sin manejador, 4 sin conexión, 5 cola llena, 6 dirección inválida, 7 desborde de cadena, 8 error de protocolo, 9 autenticación fallida, 10 servicio no disponible en este runtime. |
 
 ```pascal runnable expect="Failed=TRUE Code=3" scans=3
 PROGRAM Example
@@ -707,17 +707,17 @@ Lee bobinas de un servidor Modbus.
 
 | Pin | Dirección | Tipo | Inicial | Descripción |
 | --- | --- | --- | --- | --- |
-| `EN` | Entrada | `BOOL` | `FALSE` | Habilitación: el bloque actúa mientras es TRUE. |
+| `EN` | Entrada | `BOOL` | `FALSE` | Un flanco ascendente inicia una solicitud. Mientras EN sigue en TRUE el resultado se mantiene y nada se repite; EN en FALSE borra DONE y ERROR. |
 | `PROTO` | Entrada | `USINT` | `0` | Transporte: 0 para RTU, 1 para TCP. |
 | `SLAVE_ID` | Entrada | `UINT` | `0` | Identificador de unidad Modbus del servidor. |
 | `ADDR` | Entrada | `UINT` | `0` | Primera dirección a leer o escribir. |
 | `COUNT` | Entrada | `UINT` | `0` | Cantidad de elementos solicitados. |
 | `HOST` | Entrada | `STRING` | `''` | Nombre o dirección del servidor, para TCP. |
 | `PORT` | Entrada | `UINT` | `0` | Puerto TCP del servidor. |
-| `BUSY` | Salida | `BOOL` | `FALSE` | TRUE mientras una solicitud está en curso. |
-| `DONE` | Salida | `BOOL` | `FALSE` | TRUE cuando la solicitud terminó sin error. |
-| `ERROR` | Salida | `BOOL` | `FALSE` | TRUE cuando la solicitud falló; STATUS dice por qué. |
-| `STATUS` | Salida | `DINT` | `0` | Código de estado: 0 correcto, 1 ocupado, 2 tiempo agotado, 3 sin manejador, 4 sin conexión, 5 cola llena, 6 dirección inválida, 7 desborde de cadena, 8 error de protocolo, 9 autenticación fallida. |
+| `BUSY` | Salida | `BOOL` | `FALSE` | TRUE desde el flanco ascendente hasta que la solicitud termina; una solicitud en curso se completa aunque EN baje. |
+| `DONE` | Salida | `BOOL` | `FALSE` | TRUE cuando la solicitud terminó sin error; se mantiene mientras EN sigue en TRUE. |
+| `ERROR` | Salida | `BOOL` | `FALSE` | TRUE cuando la solicitud falló; STATUS dice por qué; se mantiene mientras EN sigue en TRUE. |
+| `STATUS` | Salida | `DINT` | `0` | Código de estado de la última solicitud: 0 correcto, 1 ocupado, 2 tiempo agotado, 3 sin manejador, 4 sin conexión, 5 cola llena, 6 dirección inválida, 7 desborde de cadena, 8 error de protocolo, 9 autenticación fallida, 10 servicio no disponible en este runtime. |
 | `VALUE` | Salida | `BOOL` | `FALSE` | La primera bobina leída. |
 
 ```pascal runnable expect="Failed=TRUE Code=3" scans=3
@@ -742,7 +742,7 @@ Escribe bobinas de un servidor Modbus.
 
 | Pin | Dirección | Tipo | Inicial | Descripción |
 | --- | --- | --- | --- | --- |
-| `EN` | Entrada | `BOOL` | `FALSE` | Habilitación: el bloque actúa mientras es TRUE. |
+| `EN` | Entrada | `BOOL` | `FALSE` | Un flanco ascendente inicia una solicitud. Mientras EN sigue en TRUE el resultado se mantiene y nada se repite; EN en FALSE borra DONE y ERROR. |
 | `PROTO` | Entrada | `USINT` | `0` | Transporte: 0 para RTU, 1 para TCP. |
 | `SLAVE_ID` | Entrada | `UINT` | `0` | Identificador de unidad Modbus del servidor. |
 | `ADDR` | Entrada | `UINT` | `0` | Primera dirección a leer o escribir. |
@@ -750,10 +750,10 @@ Escribe bobinas de un servidor Modbus.
 | `VALUE` | Entrada | `BOOL` | `FALSE` | La primera bobina a escribir. |
 | `HOST` | Entrada | `STRING` | `''` | Nombre o dirección del servidor, para TCP. |
 | `PORT` | Entrada | `UINT` | `0` | Puerto TCP del servidor. |
-| `BUSY` | Salida | `BOOL` | `FALSE` | TRUE mientras una solicitud está en curso. |
-| `DONE` | Salida | `BOOL` | `FALSE` | TRUE cuando la solicitud terminó sin error. |
-| `ERROR` | Salida | `BOOL` | `FALSE` | TRUE cuando la solicitud falló; STATUS dice por qué. |
-| `STATUS` | Salida | `DINT` | `0` | Código de estado: 0 correcto, 1 ocupado, 2 tiempo agotado, 3 sin manejador, 4 sin conexión, 5 cola llena, 6 dirección inválida, 7 desborde de cadena, 8 error de protocolo, 9 autenticación fallida. |
+| `BUSY` | Salida | `BOOL` | `FALSE` | TRUE desde el flanco ascendente hasta que la solicitud termina; una solicitud en curso se completa aunque EN baje. |
+| `DONE` | Salida | `BOOL` | `FALSE` | TRUE cuando la solicitud terminó sin error; se mantiene mientras EN sigue en TRUE. |
+| `ERROR` | Salida | `BOOL` | `FALSE` | TRUE cuando la solicitud falló; STATUS dice por qué; se mantiene mientras EN sigue en TRUE. |
+| `STATUS` | Salida | `DINT` | `0` | Código de estado de la última solicitud: 0 correcto, 1 ocupado, 2 tiempo agotado, 3 sin manejador, 4 sin conexión, 5 cola llena, 6 dirección inválida, 7 desborde de cadena, 8 error de protocolo, 9 autenticación fallida, 10 servicio no disponible en este runtime. |
 
 ```pascal runnable expect="Failed=TRUE Code=3" scans=3
 PROGRAM Example
@@ -781,12 +781,12 @@ Informa el estado de la sesión MQTT que abre la configuración del dispositivo;
 
 | Pin | Dirección | Tipo | Inicial | Descripción |
 | --- | --- | --- | --- | --- |
-| `EN` | Entrada | `BOOL` | `FALSE` | Habilitación: el bloque actúa mientras es TRUE. |
+| `EN` | Entrada | `BOOL` | `FALSE` | Habilitación: el bloque informa su estado en cada ciclo mientras es TRUE; FALSE borra BUSY, DONE y ERROR. |
 | `PROFILE` | Entrada | `USINT` | `0` | Selector del perfil de conexión. La sesión es la que define la configuración del dispositivo; este pin no la cambia. |
-| `BUSY` | Salida | `BOOL` | `FALSE` | TRUE mientras una solicitud está en curso. |
-| `DONE` | Salida | `BOOL` | `FALSE` | TRUE cuando la solicitud terminó sin error. |
-| `ERROR` | Salida | `BOOL` | `FALSE` | TRUE cuando la solicitud falló; STATUS dice por qué. |
-| `STATUS` | Salida | `DINT` | `0` | Código de estado: 0 correcto, 1 ocupado, 2 tiempo agotado, 3 sin manejador, 4 sin conexión, 5 cola llena, 6 dirección inválida, 7 desborde de cadena, 8 error de protocolo, 9 autenticación fallida. |
+| `BUSY` | Salida | `BOOL` | `FALSE` | TRUE mientras el primer intento de conexión está en curso. |
+| `DONE` | Salida | `BOOL` | `FALSE` | TRUE mientras la sesión con el broker está activa. |
+| `ERROR` | Salida | `BOOL` | `FALSE` | TRUE mientras no se puede alcanzar el estado (la sesión está caída o el servicio no está disponible); STATUS dice por qué. |
+| `STATUS` | Salida | `DINT` | `0` | Código de estado de la última solicitud: 0 correcto, 1 ocupado, 2 tiempo agotado, 3 sin manejador, 4 sin conexión, 5 cola llena, 6 dirección inválida, 7 desborde de cadena, 8 error de protocolo, 9 autenticación fallida, 10 servicio no disponible en este runtime. |
 | `CONNECTED` | Salida | `BOOL` | `FALSE` | TRUE mientras la sesión con el broker está abierta. |
 
 ```pascal runnable expect="Failed=TRUE Code=3" scans=3
@@ -811,15 +811,15 @@ Publica un mensaje en un tema.
 
 | Pin | Dirección | Tipo | Inicial | Descripción |
 | --- | --- | --- | --- | --- |
-| `EN` | Entrada | `BOOL` | `FALSE` | Habilitación: el bloque actúa mientras es TRUE. |
+| `EN` | Entrada | `BOOL` | `FALSE` | Un flanco ascendente inicia una solicitud. Mientras EN sigue en TRUE el resultado se mantiene y nada se repite; EN en FALSE borra DONE y ERROR. |
 | `QOS` | Entrada | `USINT` | `0` | Calidad de servicio: 0, 1 o 2. |
 | `RETAIN` | Entrada | `BOOL` | `FALSE` | Pide al broker que retenga el mensaje. |
 | `TOPIC` | Entrada | `STRING` | `''` | Tema donde se publica. |
 | `PAYLOAD` | Entrada | `STRING` | `''` | Mensaje a publicar. |
-| `BUSY` | Salida | `BOOL` | `FALSE` | TRUE mientras una solicitud está en curso. |
-| `DONE` | Salida | `BOOL` | `FALSE` | TRUE cuando la solicitud terminó sin error. |
-| `ERROR` | Salida | `BOOL` | `FALSE` | TRUE cuando la solicitud falló; STATUS dice por qué. |
-| `STATUS` | Salida | `DINT` | `0` | Código de estado: 0 correcto, 1 ocupado, 2 tiempo agotado, 3 sin manejador, 4 sin conexión, 5 cola llena, 6 dirección inválida, 7 desborde de cadena, 8 error de protocolo, 9 autenticación fallida. |
+| `BUSY` | Salida | `BOOL` | `FALSE` | TRUE desde el flanco ascendente hasta que la solicitud termina; una solicitud en curso se completa aunque EN baje. |
+| `DONE` | Salida | `BOOL` | `FALSE` | TRUE cuando la solicitud terminó sin error; se mantiene mientras EN sigue en TRUE. |
+| `ERROR` | Salida | `BOOL` | `FALSE` | TRUE cuando la solicitud falló; STATUS dice por qué; se mantiene mientras EN sigue en TRUE. |
+| `STATUS` | Salida | `DINT` | `0` | Código de estado de la última solicitud: 0 correcto, 1 ocupado, 2 tiempo agotado, 3 sin manejador, 4 sin conexión, 5 cola llena, 6 dirección inválida, 7 desborde de cadena, 8 error de protocolo, 9 autenticación fallida, 10 servicio no disponible en este runtime. |
 
 ```pascal runnable expect="Failed=TRUE Code=3" scans=3
 PROGRAM Example
@@ -843,14 +843,14 @@ Se suscribe a un tema y entrega sus mensajes.
 
 | Pin | Dirección | Tipo | Inicial | Descripción |
 | --- | --- | --- | --- | --- |
-| `EN` | Entrada | `BOOL` | `FALSE` | Habilitación: el bloque actúa mientras es TRUE. |
+| `EN` | Entrada | `BOOL` | `FALSE` | Habilitación: el bloque informa su estado en cada ciclo mientras es TRUE; FALSE borra BUSY, DONE y ERROR. |
 | `QOS` | Entrada | `USINT` | `0` | Calidad de servicio: 0, 1 o 2. |
 | `TOPIC` | Entrada | `STRING` | `''` | Tema al que se suscribe. |
-| `BUSY` | Salida | `BOOL` | `FALSE` | TRUE mientras una solicitud está en curso. |
-| `DONE` | Salida | `BOOL` | `FALSE` | TRUE cuando la solicitud terminó sin error. |
-| `ERROR` | Salida | `BOOL` | `FALSE` | TRUE cuando la solicitud falló; STATUS dice por qué. |
-| `STATUS` | Salida | `DINT` | `0` | Código de estado: 0 correcto, 1 ocupado, 2 tiempo agotado, 3 sin manejador, 4 sin conexión, 5 cola llena, 6 dirección inválida, 7 desborde de cadena, 8 error de protocolo, 9 autenticación fallida. |
-| `VALID` | Salida | `BOOL` | `FALSE` | TRUE cuando PAYLOAD tiene un mensaje nuevo. |
+| `BUSY` | Salida | `BOOL` | `FALSE` | TRUE hasta que el broker confirmó la suscripción. |
+| `DONE` | Salida | `BOOL` | `FALSE` | TRUE mientras la suscripción se mantiene. |
+| `ERROR` | Salida | `BOOL` | `FALSE` | TRUE mientras no se puede alcanzar el estado (la sesión está caída o el servicio no está disponible); STATUS dice por qué. |
+| `STATUS` | Salida | `DINT` | `0` | Código de estado de la última solicitud: 0 correcto, 1 ocupado, 2 tiempo agotado, 3 sin manejador, 4 sin conexión, 5 cola llena, 6 dirección inválida, 7 desborde de cadena, 8 error de protocolo, 9 autenticación fallida, 10 servicio no disponible en este runtime. |
+| `VALID` | Salida | `BOOL` | `FALSE` | TRUE durante un ciclo cuando llegó un mensaje desde el ciclo anterior; PAYLOAD lo contiene. |
 | `PAYLOAD` | Salida | `STRING` | `''` | El último mensaje recibido. |
 
 ```pascal runnable expect="Failed=TRUE Code=3" scans=3
@@ -879,13 +879,13 @@ Recibe un mensaje de la nube al dispositivo de Azure IoT Hub.
 
 | Pin | Dirección | Tipo | Inicial | Descripción |
 | --- | --- | --- | --- | --- |
-| `EN` | Entrada | `BOOL` | `FALSE` | Habilitación: el bloque actúa mientras es TRUE. |
-| `BUSY` | Salida | `BOOL` | `FALSE` | TRUE mientras una solicitud está en curso. |
-| `DONE` | Salida | `BOOL` | `FALSE` | TRUE cuando la solicitud terminó sin error. |
-| `ERROR` | Salida | `BOOL` | `FALSE` | TRUE cuando la solicitud falló; STATUS dice por qué. |
-| `STATUS` | Salida | `DINT` | `0` | Código de estado: 0 correcto, 1 ocupado, 2 tiempo agotado, 3 sin manejador, 4 sin conexión, 5 cola llena, 6 dirección inválida, 7 desborde de cadena, 8 error de protocolo, 9 autenticación fallida. |
+| `EN` | Entrada | `BOOL` | `FALSE` | Habilitación: el bloque informa su estado en cada ciclo mientras es TRUE; FALSE borra BUSY, DONE y ERROR. |
+| `BUSY` | Salida | `BOOL` | `FALSE` | TRUE mientras se establece la sesión con el hub. |
+| `DONE` | Salida | `BOOL` | `FALSE` | TRUE mientras la sesión está activa y pueden llegar mensajes de la nube al dispositivo. |
+| `ERROR` | Salida | `BOOL` | `FALSE` | TRUE mientras no se puede alcanzar el estado (la sesión está caída o el servicio no está disponible); STATUS dice por qué. |
+| `STATUS` | Salida | `DINT` | `0` | Código de estado de la última solicitud: 0 correcto, 1 ocupado, 2 tiempo agotado, 3 sin manejador, 4 sin conexión, 5 cola llena, 6 dirección inválida, 7 desborde de cadena, 8 error de protocolo, 9 autenticación fallida, 10 servicio no disponible en este runtime. |
 | `PAYLOAD` | Salida | `STRING` | `''` | El mensaje de la nube al dispositivo recibido. |
-| `VALID` | Salida | `BOOL` | `FALSE` | TRUE cuando PAYLOAD tiene un mensaje nuevo. |
+| `VALID` | Salida | `BOOL` | `FALSE` | TRUE durante un ciclo cuando llegó un mensaje desde el ciclo anterior; PAYLOAD lo contiene. |
 
 ```pascal runnable expect="Failed=TRUE Code=3" scans=3
 PROGRAM Example
@@ -909,12 +909,12 @@ Registra el dispositivo en el servicio de aprovisionamiento de dispositivos de A
 
 | Pin | Dirección | Tipo | Inicial | Descripción |
 | --- | --- | --- | --- | --- |
-| `EN` | Entrada | `BOOL` | `FALSE` | Habilitación: el bloque actúa mientras es TRUE. |
-| `DEVICE_ID` | Entrada | `STRING` | `''` | Identificador de registro del dispositivo. |
-| `BUSY` | Salida | `BOOL` | `FALSE` | TRUE mientras una solicitud está en curso. |
-| `DONE` | Salida | `BOOL` | `FALSE` | TRUE cuando la solicitud terminó sin error. |
-| `ERROR` | Salida | `BOOL` | `FALSE` | TRUE cuando la solicitud falló; STATUS dice por qué. |
-| `STATUS` | Salida | `DINT` | `0` | Código de estado: 0 correcto, 1 ocupado, 2 tiempo agotado, 3 sin manejador, 4 sin conexión, 5 cola llena, 6 dirección inválida, 7 desborde de cadena, 8 error de protocolo, 9 autenticación fallida. |
+| `EN` | Entrada | `BOOL` | `FALSE` | Un flanco ascendente inicia una solicitud. Mientras EN sigue en TRUE el resultado se mantiene y nada se repite; EN en FALSE borra DONE y ERROR. |
+| `DEVICE_ID` | Entrada | `STRING` | `''` | Identificador de registro del dispositivo; cuando no está vacío es el que se usa en esta solicitud. |
+| `BUSY` | Salida | `BOOL` | `FALSE` | TRUE desde el flanco ascendente hasta que la solicitud termina; una solicitud en curso se completa aunque EN baje. |
+| `DONE` | Salida | `BOOL` | `FALSE` | TRUE cuando la solicitud terminó sin error; se mantiene mientras EN sigue en TRUE. |
+| `ERROR` | Salida | `BOOL` | `FALSE` | TRUE cuando la solicitud falló; STATUS dice por qué; se mantiene mientras EN sigue en TRUE. |
+| `STATUS` | Salida | `DINT` | `0` | Código de estado de la última solicitud: 0 correcto, 1 ocupado, 2 tiempo agotado, 3 sin manejador, 4 sin conexión, 5 cola llena, 6 dirección inválida, 7 desborde de cadena, 8 error de protocolo, 9 autenticación fallida, 10 servicio no disponible en este runtime. |
 | `ASSIGNED_HUB` | Salida | `STRING` | `''` | El hub que asignó el servicio. |
 
 ```pascal runnable expect="Failed=TRUE Code=3" scans=3
@@ -939,14 +939,14 @@ Publica un evento en un tema de Azure Event Grid.
 
 | Pin | Dirección | Tipo | Inicial | Descripción |
 | --- | --- | --- | --- | --- |
-| `EN` | Entrada | `BOOL` | `FALSE` | Habilitación: el bloque actúa mientras es TRUE. |
+| `EN` | Entrada | `BOOL` | `FALSE` | Un flanco ascendente inicia una solicitud. Mientras EN sigue en TRUE el resultado se mantiene y nada se repite; EN en FALSE borra DONE y ERROR. |
 | `TOPIC` | Entrada | `STRING` | `''` | Tema de Event Grid donde se publica. |
 | `EVENT_TYPE` | Entrada | `STRING` | `''` | Tipo del evento. |
 | `PAYLOAD` | Entrada | `STRING` | `''` | Cuerpo del evento. |
-| `BUSY` | Salida | `BOOL` | `FALSE` | TRUE mientras una solicitud está en curso. |
-| `DONE` | Salida | `BOOL` | `FALSE` | TRUE cuando la solicitud terminó sin error. |
-| `ERROR` | Salida | `BOOL` | `FALSE` | TRUE cuando la solicitud falló; STATUS dice por qué. |
-| `STATUS` | Salida | `DINT` | `0` | Código de estado: 0 correcto, 1 ocupado, 2 tiempo agotado, 3 sin manejador, 4 sin conexión, 5 cola llena, 6 dirección inválida, 7 desborde de cadena, 8 error de protocolo, 9 autenticación fallida. |
+| `BUSY` | Salida | `BOOL` | `FALSE` | TRUE desde el flanco ascendente hasta que la solicitud termina; una solicitud en curso se completa aunque EN baje. |
+| `DONE` | Salida | `BOOL` | `FALSE` | TRUE cuando la solicitud terminó sin error; se mantiene mientras EN sigue en TRUE. |
+| `ERROR` | Salida | `BOOL` | `FALSE` | TRUE cuando la solicitud falló; STATUS dice por qué; se mantiene mientras EN sigue en TRUE. |
+| `STATUS` | Salida | `DINT` | `0` | Código de estado de la última solicitud: 0 correcto, 1 ocupado, 2 tiempo agotado, 3 sin manejador, 4 sin conexión, 5 cola llena, 6 dirección inválida, 7 desborde de cadena, 8 error de protocolo, 9 autenticación fallida, 10 servicio no disponible en este runtime. |
 
 ```pascal runnable expect="Failed=TRUE Code=3" scans=3
 PROGRAM Example
@@ -970,12 +970,12 @@ Aprovisiona el dispositivo mediante el aprovisionamiento de flota de AWS IoT.
 
 | Pin | Dirección | Tipo | Inicial | Descripción |
 | --- | --- | --- | --- | --- |
-| `EN` | Entrada | `BOOL` | `FALSE` | Habilitación: el bloque actúa mientras es TRUE. |
-| `TEMPLATE_NAME` | Entrada | `STRING` | `''` | Nombre de la plantilla de aprovisionamiento de flota. |
-| `BUSY` | Salida | `BOOL` | `FALSE` | TRUE mientras una solicitud está en curso. |
-| `DONE` | Salida | `BOOL` | `FALSE` | TRUE cuando la solicitud terminó sin error. |
-| `ERROR` | Salida | `BOOL` | `FALSE` | TRUE cuando la solicitud falló; STATUS dice por qué. |
-| `STATUS` | Salida | `DINT` | `0` | Código de estado: 0 correcto, 1 ocupado, 2 tiempo agotado, 3 sin manejador, 4 sin conexión, 5 cola llena, 6 dirección inválida, 7 desborde de cadena, 8 error de protocolo, 9 autenticación fallida. |
+| `EN` | Entrada | `BOOL` | `FALSE` | Un flanco ascendente inicia una solicitud. Mientras EN sigue en TRUE el resultado se mantiene y nada se repite; EN en FALSE borra DONE y ERROR. |
+| `TEMPLATE_NAME` | Entrada | `STRING` | `''` | Nombre de la plantilla de aprovisionamiento de flota; cuando no está vacío es el que se usa en esta solicitud. |
+| `BUSY` | Salida | `BOOL` | `FALSE` | TRUE desde el flanco ascendente hasta que la solicitud termina; una solicitud en curso se completa aunque EN baje. |
+| `DONE` | Salida | `BOOL` | `FALSE` | TRUE cuando la solicitud terminó sin error; se mantiene mientras EN sigue en TRUE. |
+| `ERROR` | Salida | `BOOL` | `FALSE` | TRUE cuando la solicitud falló; STATUS dice por qué; se mantiene mientras EN sigue en TRUE. |
+| `STATUS` | Salida | `DINT` | `0` | Código de estado de la última solicitud: 0 correcto, 1 ocupado, 2 tiempo agotado, 3 sin manejador, 4 sin conexión, 5 cola llena, 6 dirección inválida, 7 desborde de cadena, 8 error de protocolo, 9 autenticación fallida, 10 servicio no disponible en este runtime. |
 | `THING_NAME` | Salida | `STRING` | `''` | El nombre del objeto que creó el servicio. |
 
 ```pascal runnable expect="Failed=TRUE Code=3" scans=3
@@ -1000,11 +1000,11 @@ Pide a la sesión Sparkplug B que publique de nuevo sus certificados de nacimien
 
 | Pin | Dirección | Tipo | Inicial | Descripción |
 | --- | --- | --- | --- | --- |
-| `EN` | Entrada | `BOOL` | `FALSE` | Habilitación: el bloque actúa mientras es TRUE. |
-| `BUSY` | Salida | `BOOL` | `FALSE` | TRUE mientras una solicitud está en curso. |
-| `DONE` | Salida | `BOOL` | `FALSE` | TRUE cuando la solicitud terminó sin error. |
-| `ERROR` | Salida | `BOOL` | `FALSE` | TRUE cuando la solicitud falló; STATUS dice por qué. |
-| `STATUS` | Salida | `DINT` | `0` | Código de estado: 0 correcto, 1 ocupado, 2 tiempo agotado, 3 sin manejador, 4 sin conexión, 5 cola llena, 6 dirección inválida, 7 desborde de cadena, 8 error de protocolo, 9 autenticación fallida. |
+| `EN` | Entrada | `BOOL` | `FALSE` | Un flanco ascendente inicia una solicitud. Mientras EN sigue en TRUE el resultado se mantiene y nada se repite; EN en FALSE borra DONE y ERROR. |
+| `BUSY` | Salida | `BOOL` | `FALSE` | TRUE desde el flanco ascendente hasta que la solicitud termina; una solicitud en curso se completa aunque EN baje. |
+| `DONE` | Salida | `BOOL` | `FALSE` | TRUE cuando la solicitud terminó sin error; se mantiene mientras EN sigue en TRUE. |
+| `ERROR` | Salida | `BOOL` | `FALSE` | TRUE cuando la solicitud falló; STATUS dice por qué; se mantiene mientras EN sigue en TRUE. |
+| `STATUS` | Salida | `DINT` | `0` | Código de estado de la última solicitud: 0 correcto, 1 ocupado, 2 tiempo agotado, 3 sin manejador, 4 sin conexión, 5 cola llena, 6 dirección inválida, 7 desborde de cadena, 8 error de protocolo, 9 autenticación fallida, 10 servicio no disponible en este runtime. |
 
 ```pascal runnable expect="Failed=TRUE Code=3" scans=3
 PROGRAM Example
