@@ -3,7 +3,7 @@
 // decides a render: a component re-renders when the value its selector returns is not the same as the one before
 // (`Object.is`, or a shallow comparison under `useShallow`). The selectors are the ones the components use
 // (src/store/regionSubscriptions.ts and src/hooks/useDebugValue.ts), run against the real store and its real actions.
-import { afterAll, beforeEach, describe, expect, it, mock } from 'bun:test';
+import { afterEach, beforeEach, describe, expect, it, mock } from 'bun:test';
 import { shallow } from 'zustand/shallow';
 
 await mock.module('../utils/projectLoader', () => ({ getAvailableProjects: () => [], loadProject: () => null, loadProjectAssets: () => null }));
@@ -43,9 +43,14 @@ beforeEach(() => {
   }));
 });
 
-// The store is one module for every test file that bun runs in a process: what this file loaded into it (a file with 2,000
-// lines, 200 watched values) must not be there for the next file, whichever runs after it.
-afterAll(() => { useIDEStore.setState(useIDEStore.getInitialState(), true); });
+// The store is one object for the whole test process, and these tests type into its file: what they leave is not for the
+// next file to find (useIDEStore.test.ts closes a project, which an unsaved file refuses).
+afterEach(() => {
+  useIDEStore.setState((state) => ({
+    loadedFiles: new Map(), activeFileId: null, openTabs: [],
+    debug: { ...state.debug, watchVariables: [], liveValues: new Map() },
+  }));
+});
 
 const readValues = (tick: number): Map<string, number> => new Map(watched.map((path, index) => [path, tick * 3 + index]));
 const watchedRegions = { ...REGION_SELECTORS } as Record<string, Selector>;

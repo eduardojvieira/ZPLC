@@ -31,6 +31,7 @@ import {
   TOOLCHAIN_CHANNEL,
   TOOL_EXECUTION_AUDIT_CHANNEL,
   UPDATE_CHECK_CHANNEL,
+  FIRMWARE_IMAGES_CHANNEL,
   WORKSPACE_TESTS_CHANNEL,
 } from './ipcContract.js';
 
@@ -157,6 +158,11 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // Update check (IDE-010): one call with no argument; the main process asks one fixed address and answers a version and a link.
   updateCheck: {
     run: () => ipcRenderer.invoke(UPDATE_CHECK_CHANNEL.RUN) as Promise<unknown>,
+  },
+  // Firmware images (REL-025): one call with no argument; the main process lists the manifest of this installation and
+  // the files beside it. Nothing here flashes: the answer is data that Studio shows.
+  firmwareImages: {
+    list: () => ipcRenderer.invoke(FIRMWARE_IMAGES_CHANNEL.LIST) as Promise<unknown>,
   },
   // Learn progress (LRN-031, LRN-032): ids, one grade record, one lesson note, or the text of a file the learner chose. The
   // main process keeps the document under the user-data directory; results are documents the renderer validates again.

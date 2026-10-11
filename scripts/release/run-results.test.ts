@@ -78,6 +78,25 @@ describe('collectRunResults (REL-027)', () => {
     expect(results.assets.every((asset) => asset.runUrl === 'https://example.test/run/1')).toBe(true);
   });
 
+  test('labels a firmware image with the evidence level of its board, from the manifest that travels with it (REL-022)', () => {
+    const bundle = join(directory, 'release-bundle-firmware');
+    evidence(bundle, 'firmware', ['zplc-runtime-2.0.0-rc.4-rpi-pico-rp2040.uf2', 'zplc-runtime-2.0.0-rc.4-nucleo-h743zi.bin', 'zplc-runtime-2.0.0-rc.4.manifest.json']);
+    writeFileSync(join(bundle, 'zplc-runtime-2.0.0-rc.4.manifest.json'), JSON.stringify({
+      schema: 'zplc.firmware-release/1',
+      images: [
+        { file: 'zplc-runtime-2.0.0-rc.4-rpi-pico-rp2040.uf2', evidenceLevel: 'cross-build' },
+        { file: 'zplc-runtime-2.0.0-rc.4-nucleo-h743zi.bin', evidenceLevel: 'human-hil' },
+      ],
+    }));
+    const results = collectRunResults({ ...common, needs: needs({ 'build-firmware': 'success' }) });
+    const byName = Object.fromEntries(results.assets.map((asset) => [asset.name, asset]));
+    expect(byName['zplc-runtime-2.0.0-rc.4-rpi-pico-rp2040.uf2']).toMatchObject({ platform: 'firmware', job: 'build-firmware', evidenceLevel: 'cross-build' });
+    expect(byName['zplc-runtime-2.0.0-rc.4-nucleo-h743zi.bin']).toMatchObject({ evidenceLevel: 'human-hil' });
+    // an image the manifest does not list, and a file that is not an image, carry no level
+    expect(byName['zplc-runtime-2.0.0-rc.4.manifest.json']!.evidenceLevel).toBeUndefined();
+    expect(byName['ZPLC IDE-2.0.0-rc.4-mac-arm64.dmg']!.evidenceLevel).toBeUndefined();
+  });
+
   test('records a failed job as a failed check, and a job that did not run as not run', () => {
     const failed = collectRunResults({ ...common, needs: needs({ 'build-macos': 'failure', 'build-linux': 'skipped', 'build-windows': 'success', 'build-binaries': 'cancelled' }) });
     const mac = failed.assets.find((asset) => asset.platform === 'macos')!;

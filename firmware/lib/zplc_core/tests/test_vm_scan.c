@@ -184,9 +184,9 @@ static uint32_t run_string_loop(uint8_t opcode, uint16_t length, uint32_t *lap_u
 }
 
 static void test_string_opcodes_are_charged_by_their_bytes(void) {
-  uint32_t lap;
+  uint32_t lap = 0U;
   uint32_t laps;
-  int result;
+  int result = 0;
   uint32_t instructions_only;
 
   printf("\n=== Test: the budget charges the bytes a string opcode processes (RT-006, RT-D11c) ===\n");

@@ -119,6 +119,7 @@ async function harness(options: { toolApi?: Partial<ToolApiModule>; failToolApi?
     pickToolchainRepository: async () => { note('dialog.toolchain'); return null; },
     confirmFirmwareBuild: async () => { note('dialog.firmwareBuild'); return false; },
     checkForUpdate: async () => { note('update.check'); return { status: 'unavailable', current: '9.9.9' }; },
+    firmwareImages: async () => { note('firmware.images'); return { status: 'absent' }; },
   };
   const listeners = new Map<string, (event: unknown, ...args: unknown[]) => unknown>();
   const ipc: IpcMainLike = { handle: (channel, listener) => { if (listeners.has(channel)) throw new Error(`registered twice: ${channel}`); listeners.set(channel, listener); } };
@@ -203,7 +204,9 @@ describe('every invoke channel (IDE-017)', () => {
     expect(await settle(h.invoke('get-app-info', TRUSTED, 'x'))).toEqual({ ok: false, message: IPC_DENIED });
     expect(await h.invoke('update-check:run', TRUSTED)).toEqual({ status: 'unavailable', current: '9.9.9' });
     expect(await settle(h.invoke('update-check:run', TRUSTED, 'https://example.invalid/'))).toEqual({ ok: false, message: IPC_DENIED });
-    expect(h.touched).toEqual(['update.check']);
+    expect(await h.invoke('firmware-images:list', TRUSTED)).toEqual({ status: 'absent' });
+    expect(await settle(h.invoke('firmware-images:list', TRUSTED, { path: '/etc' }))).toEqual({ ok: false, message: IPC_DENIED });
+    expect(h.touched).toEqual(['update.check', 'firmware.images']);
   });
 
   it('does not release an answer once the document that asked is no longer the window owner', async () => {

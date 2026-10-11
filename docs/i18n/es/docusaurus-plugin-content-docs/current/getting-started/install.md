@@ -21,6 +21,29 @@ inicio. No se usa ningún certificado de pago. No use ZPLC para controlar
 maquinaria: [Seguridad y limitaciones](../safety-and-limitations.md).
 :::
 
+## Descarga
+
+Todo instalador es un archivo de una [versión de GitHub](https://github.com/eduardojvieira/ZPLC/releases),
+que es el único canal que existe hoy. Busque la línea de su sistema, compruebe el
+archivo contra `SHA256SUMS` ([Verificar la descarga](#verificar-la-descarga)) y
+ábralo:
+
+- **Windows:** el instalador `setup-unsigned.exe`, o el archivo
+  `portable-unsigned.exe`. No está firmado: Windows muestra **Windows protected
+  your PC**; elija **More info** y luego **Run anyway**. Donde Smart App Control
+  está activado, bloquea el archivo y no ofrece ninguna excepción.
+- **macOS:** el `.dmg`, o el `.zip`, para Apple silicon (`arm64`) o Intel (`x64`).
+  La aplicación está firmada solo ad hoc y no está notarizada, porque la
+  notarización necesita una cuenta de Apple de pago que este proyecto no usa:
+  macOS indica que no pudo verificar la aplicación; elija **Done** y luego **System
+  Settings**, **Privacy & Security**, **Open Anyway**.
+- **Linux:** el `.deb` (Debian, Ubuntu) o el `.rpm` (Fedora), para `x64` o
+  `arm64`; el AppImage solo cuando ninguno sirve. No están firmados y nada le
+  pregunta, así que la suma de verificación es su comprobación. Los paquetes
+  instalan la regla udev de las placas; el AppImage necesita FUSE 2.
+
+Los pasos de cada sistema están en [Primer inicio](#primer-inicio).
+
 ## Canales
 
 | Canal | Estado | Qué es |
@@ -47,7 +70,7 @@ procedencia de compilación, que puede comprobar como se muestra [más abajo](#v
 Las notas de cada versión enumeran el estado de firma de cada archivo, y lo dicen
 cuando una comprobación de esa ejecución no pasó.
 
-## Descarga
+## Archivos de una versión
 
 Abra la [página de versiones](https://github.com/eduardojvieira/ZPLC/releases) y
 elija una versión cuyo nombre empiece por `ZPLC v2.0`. Mientras la 2.0 sea una
@@ -114,7 +137,7 @@ inicio.
 ### macOS
 
 1. Abra el DMG, arrastre **ZPLC IDE** a Aplicaciones y ábralo.
-2. macOS indica que no pudo verificar la aplicación. Elija **Done**, no **Move to Trash**.
+2. macOS indica que no pudo verificar la aplicación, porque no está notarizada: la notarización necesita una membresía de pago del Apple Developer Program, y este proyecto no usa ningún servicio de pago. Elija **Done**, no **Move to Trash**.
 3. Abra **System Settings** y luego **Privacy & Security**. En la sección **Security**, elija **Open Anyway** junto al mensaje de ZPLC IDE, confirme e ingrese su contraseña. El botón queda disponible durante aproximadamente una hora después del intento fallido. Consulte las [instrucciones de Apple](https://support.apple.com/guide/mac-help/open-a-mac-app-from-an-unknown-developer-mh40616/mac).
 
 Si macOS informa que la aplicación está dañada y ofrece solo **Move to Trash**, la
@@ -128,29 +151,69 @@ xattr -dr com.apple.quarantine "/Applications/ZPLC IDE.app"
 
 ### Linux
 
-```bash
-# Fedora y la familia RHEL (RPM)
-sudo dnf install ./ZPLC.IDE-2.0.0-rc.3-linux-x86_64.rpm
+Instale primero el `.deb` o el `.rpm`. El gestor de paquetes trae las bibliotecas
+que la aplicación necesita, instala la [regla udev de las placas](#linux-acceso-al-puerto-serie)
+y lo quita todo cuando usted desinstala. Use el AppImage solo cuando ningún
+paquete sirva para su distribución.
 
-# Ubuntu 22.04 (DEB)
+```bash
+# Debian, Ubuntu y derivadas (DEB)
 sudo apt install ./ZPLC.IDE-2.0.0-rc.3-linux-amd64.deb
 
-# Cualquier distribución (AppImage)
-chmod +x ZPLC.IDE-2.0.0-rc.3-linux-x86_64.AppImage
-./ZPLC.IDE-2.0.0-rc.3-linux-x86_64.AppImage
+# Fedora y la familia RHEL (RPM)
+sudo dnf install ./ZPLC.IDE-2.0.0-rc.3-linux-x86_64.rpm
 ```
 
 El `.deb` de rc.3 declara dependencias que las versiones actuales de Debian y
-Ubuntu ya no ofrecen, por lo que solo se instala en Ubuntu 22.04: use el AppImage
-en cualquier otro sistema basado en Debian. El pipeline que construye las versiones
-posteriores instala el `.deb` y el `.rpm` en contenedores limpios antes de
-publicarlos, y las notas de la versión dicen si esa comprobación pasó.
+Ubuntu ya no ofrecen, por lo que solo se instala en Ubuntu 22.04. El pipeline que
+construye las versiones posteriores instala el `.deb` en Debian 13 y Ubuntu 24.04
+y el `.rpm` en Fedora, en contenedores limpios, antes de publicarlos, y las notas
+de la versión dicen si esa comprobación pasó.
+
+El AppImage se publica en cada versión y no necesita instalar nada, con estos
+requisitos:
+
+- FUSE 2 (`libfuse2` o `libfuse2t64` en Debian y Ubuntu, `fuse-libs` en Fedora).
+  Sin él, ejecute el archivo con `--appimage-extract-and-run`, una opción del
+  runtime de AppImage.
+- En Ubuntu 24.04 y posteriores, AppArmor restringe el sandbox de Chromium de una
+  aplicación que no instaló un paquete. Ni esto ni FUSE se probaron con ZPLC: por
+  eso los paquetes van primero.
+- No instala nada fuera de su propio archivo, por lo que no instala ninguna regla
+  udev: use el grupo de [acceso al puerto serie](#linux-acceso-al-puerto-serie).
+
+```bash
+chmod +x ZPLC.IDE-2.0.0-rc.3-linux-x86_64.AppImage
+./ZPLC.IDE-2.0.0-rc.3-linux-x86_64.AppImage
+```
 
 ## Linux: acceso al puerto serie
 
 Studio abre un puerto serie solo cuando usted conecta una placa. En Linux, una
 placa que aparece como `/dev/ttyACM0` o `/dev/ttyUSB0` pertenece a un grupo, y su
-usuario tiene que ser miembro de él:
+usuario tiene que tener permiso para abrirla.
+
+**El `.deb` y el `.rpm` lo hacen por usted** para las placas cuyo identificador USB
+el proyecto ha registrado. Instalan `/usr/lib/udev/rules.d/70-zplc-boards.rules`,
+que indica a `systemd-logind` que dé al usuario con la sesión abierta en la
+máquina acceso a esos dispositivos serie mientras dure la sesión, sin grupo y sin
+reiniciar. La regla se genera desde la lista de identificadores USB de placas del
+proyecto (`tools/hil/usb-ids.json`), así que cubre exactamente las placas que esa
+lista nombra. Hoy son las dos placas RP2040, Raspberry Pi Pico y Waveshare
+RP2040-Zero (`2e8a:000a`); el archivo enumera las placas sin identificador
+registrado, como la ESP32-S3-DevKitC-1, y ellas necesitan el grupo de abajo.
+
+Para aplicar la regla a una placa que ya está conectada, sin reiniciar, recargue
+las reglas y repita los eventos del dispositivo, o desconecte la placa y vuelva a
+conectarla:
+
+```bash
+sudo udevadm control --reload-rules
+sudo udevadm trigger --subsystem-match=tty --action=add
+getfacl /dev/ttyACM0   # una entrada para su usuario indica que la regla se aplicó
+```
+
+**El grupo, para el AppImage y para las placas que la regla no nombra:**
 
 ```bash
 ls -l /dev/ttyACM0
@@ -168,7 +231,10 @@ Studio nunca se actualiza solo. Para saber si existe una versión más reciente,
 active **Check for a newer release when Studio starts** en Preferences, o presione
 **Check now**. La comprobación está desactivada por defecto; consulta las versiones
 de GitHub de este proyecto para obtener la última publicada, no envía nada sobre
-usted y muestra una versión y un enlace. No descarga ni instala nada.
+usted y muestra una versión y un enlace. No descarga ni instala nada. Cuando existe
+una versión más reciente, Studio muestra un aviso con su versión, la dirección de la
+versión y el paso para su sistema; descártelo y volverá solo para una versión aún
+más reciente. Si no hay conexión, o la respuesta no se puede leer, no muestra nada.
 
 Para actualizar, descargue el archivo nuevo y verifíquelo como se indicó, y luego
 instálelo sobre el anterior (instalador de Windows; en macOS, reemplace la

@@ -22,12 +22,41 @@ export function noticesCommand(projectDir) {
 }
 
 /**
- * electron-builder beforePack hook: generates THIRD-PARTY-NOTICES.txt, which extraResources then copies into the
- * resources of every installer. The generator fails on a package or font it has no licence for, which stops the build.
+ * The command that writes the udev rule of the Linux packages (REL-013). electron-builder.yml maps the file to the
+ * rules folder of the .deb and the .rpm through fpm, so the path is the one it names.
  *
- * @param {{ packager: { projectDir: string } }} context
+ * @param {string} projectDir the folder of the Studio package
+ */
+export function udevRulesCommand(projectDir) {
+  const repoRoot = path.resolve(projectDir, '..', '..');
+  return {
+    command: 'bun',
+    args: [path.join(repoRoot, 'scripts', 'release', 'udev-rules.ts'), '--out', path.join(projectDir, 'build', 'linux', '70-zplc-boards.rules')],
+  };
+}
+
+/**
+ * The commands that the hook runs for a platform: the notices for every installer, and the udev rule for the Linux
+ * packages only, so that a macOS or Windows packaging run needs none of the files the rule is generated from.
+ *
+ * @param {{ packager: { projectDir: string }, electronPlatformName?: string }} context
+ */
+export function packCommands(context) {
+  const { projectDir } = context.packager;
+  const commands = [noticesCommand(projectDir)];
+  if (context.electronPlatformName === undefined || context.electronPlatformName === 'linux') commands.push(udevRulesCommand(projectDir));
+  return commands;
+}
+
+/**
+ * electron-builder beforePack hook: generates THIRD-PARTY-NOTICES.txt, which extraResources then copies into the
+ * resources of every installer, and the udev rule that the Linux packages install. The generators fail on a package
+ * or font they have no licence for, or on an identifier that is not valid, which stops the build.
+ *
+ * @param {{ packager: { projectDir: string }, electronPlatformName?: string }} context
  */
 export default async function beforePack(context) {
-  const { command, args } = noticesCommand(context.packager.projectDir);
-  execFileSync(command, args, { stdio: 'inherit' });
+  for (const { command, args } of packCommands(context)) {
+    execFileSync(command, args, { stdio: 'inherit' });
+  }
 }

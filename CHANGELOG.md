@@ -104,6 +104,24 @@ and version when the release is cut (see `RELEASING.md`).
   publishes nothing, the notes say which check each file passed, a bill of materials
   is written from the lockfile, the command line and the MCP server are standalone
   executables, and every file has a checksum and a build attestation.
+- **A release carries the firmware of every board, and Studio shows the one you need.**
+  The release pipeline builds one image per board of the manifest in the format the
+  board flashes (UF2 for the two RP2040 boards, one binary for the ESP32-S3, binary
+  and ELF for the others), with its checksum, the version and commit it was built
+  from and the evidence level of its board. In **Project settings**, **Target**,
+  Studio shows the image of the board of your project, its SHA-256, where the file is
+  and the steps to flash it; the images of the Raspberry Pi Pico and the ESP32-S3
+  travel inside the installers. Studio does not flash: you do.
+- **The Linux packages let you open a board's serial port.** The `.deb` and the `.rpm`
+  install a udev rule that gives the user who is logged in access to the USB serial
+  device of the boards whose identifier the project has recorded (the two RP2040
+  boards today); the install page says how to apply it without a reboot, and the
+  group that the other boards need.
+- **Studio tells you about a newer release.** With the optional check turned on, or when
+  you press **Check now**, a dismissible notice names the release, its address and the
+  update step of your system. Nothing is downloaded or installed.
+- **The README and the install page open with a Download section** with one line per
+  system and what that system asks the first time you open the file.
 
 ### Breaking changes
 
@@ -1235,6 +1253,30 @@ and version when the release is cut (see `RELEASING.md`).
   program on the runtime through the session protocol. **Not done: Studio does
   not start the endpoints for a session yet**, and nothing here was run
   against a real device, broker or cloud service.
+- Release engineering that a Linux machine can prove (REL-005, REL-006, REL-012,
+  REL-013, REL-021, REL-022, REL-025, REL-028, REL-032, REL-036).
+  `scripts/release/firmware-images.ts` collects one `west build` of `firmware/app`
+  per board (it refuses an image made for another board, version or commit, from a
+  dirty tree or with the HIL trace), assembles the boards into one
+  `zplc-runtime-<version>.manifest.json` with each image's SHA-256, build identity,
+  flash runner and address (read from the build's own `runners.yaml` and `.config`)
+  and the evidence level of its board, and stages the manifest and the two learner
+  images for the installers (`extraResources` `firmware`). The release workflow
+  builds the seven boards (`build-firmware`), assembles them (`assemble-firmware`),
+  and checksums, attests and uploads them in a chain of their own; the three desktop
+  builds wait for the set but not for its success. The main process lists the
+  installation's images through one typed, argument-free channel
+  (`firmware-images:list`), the renderer validates the answer again, and the card has
+  no operation that writes to a board. `scripts/release/udev-rules.ts` writes the
+  udev rule from `tools/hil/usb-ids.json` in the `beforePack` hook and fpm installs it
+  in both packages; `linux-package-files.ts` reads it out of the packages that were
+  made. The Linux payload reproducibility check is `continue-on-error` and no job
+  waits for it. The workflow launches the AppImage in a clean container, mounts the
+  DMG, unpacks the ZIP, installs the NSIS setup silently and launches the portable
+  executable. **Not done: none of those workflow steps has run** (they need hosted
+  macOS and Windows runners and Docker), no release has been made by the pipeline, no
+  board has a hardware record, and the udev rule covers only the boards with a
+  recorded USB identifier.
 
 ## 2.0.0-rc.3 - 2026-09-01
 

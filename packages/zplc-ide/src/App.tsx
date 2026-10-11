@@ -35,7 +35,9 @@ import { startAutosave } from './store/autosave';
 import { trackProjectSources } from './store/projectSources';
 import { startExternalChangeWatch } from './store/externalChangeWatch';
 import { initializeSettings, useAppSettings } from './store/useAppSettings';
-import { describeUpdateCheck, runUpdateCheck } from './ipc/updateCheckBridge';
+import { runUpdateCheck } from './ipc/updateCheckBridge';
+import { UpdateNoticeBanner } from './components/UpdateNotice';
+import { useUpdateNotice } from './store/updateNotice';
 import { ZPLC_REPO_VERSION } from './version';
 
 interface WorkbenchParts {
@@ -109,7 +111,8 @@ function App() {
     if (!checkForUpdates) return undefined;
     let current = true;
     void runUpdateCheck(window.electronAPI?.updateCheck, ZPLC_REPO_VERSION).then((result) => {
-      if (current && result.status === 'available') useIDEStore.getState().addConsoleEntry({ type: 'info', message: describeUpdateCheck(result), source: 'system' });
+      // A newer release shows the dismissible notice; an answer that says nothing, or that could not be had, shows nothing (REL-021).
+      if (current) useUpdateNotice.getState().report(result);
     });
     return () => { current = false; };
   }, [checkForUpdates]);
@@ -147,6 +150,7 @@ function App() {
   if (!isProjectOpen) {
     return (
       <div className="h-screen w-screen flex flex-col overflow-hidden bg-[var(--color-surface-900)]">
+        <UpdateNoticeBanner />
         <WelcomeScreen />
         <CloseGuard />
         <SerialPortChooser />
@@ -179,6 +183,7 @@ function App() {
       <SerialPortChooser />
       <RecoveryOffer />
       <ExternalChangePrompt />
+      <UpdateNoticeBanner />
       {/* Unified Toolbar */}
       <ErrorBoundary region="Toolbar">
         <DevFaultProbe region="Toolbar" />

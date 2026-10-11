@@ -7,6 +7,7 @@ import type { ProjectFilesBridge } from '../../electron/projectFilesProtocol';
 import type { RecoveryBridge } from '../../electron/recoveryStoreProtocol';
 import type { SerialPortBridge } from '../../electron/serialPortProtocol';
 import type { SessionBridge } from '../../electron/sessionStoreProtocol';
+import type { FirmwareImagesBridge } from '../../electron/firmwareImagesProtocol';
 import type { UpdateCheckBridge } from '../../electron/updateCheckProtocol';
 
 // =============================================================================
@@ -114,6 +115,8 @@ declare global {
       recovery?: RecoveryBridge;
       /** Asks the main process whether a newer release exists, when the user turned the update check on or pressed Check now (IDE-010). */
       updateCheck?: UpdateCheckBridge;
+      /** The firmware images of the release this installation belongs to, with checksums and flashing steps; Studio never flashes (REL-025). */
+      firmwareImages?: FirmwareImagesBridge;
       isElectron: boolean;
       platform: string;
     };

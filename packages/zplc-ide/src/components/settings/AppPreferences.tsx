@@ -11,6 +11,7 @@ import { AUTOSAVE_CHOICES, DENSITY_CHOICES, LANGUAGE_CHOICES, TAB_SIZE_CHOICES, 
 import { describeUpdateCheck, runUpdateCheck } from '../../ipc/updateCheckBridge';
 import { ZPLC_REPO_VERSION } from '../../version';
 import type { UpdateCheckResult } from '../../../electron/updateCheckProtocol';
+import { useUpdateNotice } from '../../store/updateNotice';
 
 const FONT_SIZES = [10, 11, 12, 13, 14, 16, 18, 20, 24, 28, 32] as const;
 const SELECT = 'h-9 border border-[var(--border-color)] bg-[var(--color-surface-800)] px-2 text-sm text-[var(--text-primary)] hover:bg-[var(--color-surface-700)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-accent-blue)]';
@@ -51,7 +52,12 @@ export function AppPreferences({ includeTheme = true }: { includeTheme?: boolean
 
   const checkNow = () => {
     setChecking(true);
-    void runUpdateCheck(window.electronAPI?.updateCheck, ZPLC_REPO_VERSION).then((answer) => { setResult(answer); setChecking(false); });
+    void runUpdateCheck(window.electronAPI?.updateCheck, ZPLC_REPO_VERSION).then((answer) => {
+      setResult(answer);
+      setChecking(false);
+      // a check on request raises the notice too, so that the release and the step are one click away from here
+      useUpdateNotice.getState().report(answer);
+    });
   };
 
   return (

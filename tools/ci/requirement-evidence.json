@@ -2127,6 +2127,7 @@
     {"kind":"unit","ref":"tools/hil/test_hil_chain.py","test":"DryRunTests","partial":true,"note":"the chain runs on fake devices with a scripted person and refuses without an interactive terminal; it has not run on a board, and D-08 is open; run by the typescript job of ci.yml, step 'Test the HIL tools and the HIL package', on fake devices and the native runtime; no serial port is opened"}
   ],
   "HIL-013": [
+    {"kind":"unit","ref":"scripts/release/firmware-images.test.ts","test":"never accepts the HIL trace, from the configuration or from the options the image reports (HIL-013)"},
     {"kind":"unit","ref":"tools/hil/test_hil_chain.py","test":"BuildCommandAndTraceTests","note":"the chain prints and records the build command, and fails when the image's trace option is not what the run asked for; run by the typescript job of ci.yml, step 'Test the HIL tools and the HIL package', on fake devices and the native runtime; no serial port is opened"},
     {"kind":"unit","ref":"tools/hil/test_hil_trace_profile.py","test":"ProfileTests","note":"no shipped board profile sets CONFIG_ZPLC_HIL_DEBUG=y and the overlay does (tools/hil/validate_hil_trace_profile.py, run by the docs-and-truth job of ci.yml); the Pico image built with the overlay differs from the release one in its options hash and lists HIL_DEBUG=y, and the image reports its options (REL-023)"}
   ],
@@ -2141,7 +2142,15 @@
   ],
   "REL-003": [
     {"kind":"unit","ref":"packages/zplc-ide/scripts/release-config.test.ts","test":"electron-builder.yml Windows signing (REL-003, REL-038)","partial":true,"note":"asserts the parsed electron-builder and workflow configuration, not the produced installer; its own header says a hosted release run is the proof (VF-021)"},
-    {"kind":"unit","ref":"packages/zplc-ide/scripts/release-config.test.ts","test":"the workflow reads no secret but the job token, and every platform verifies the bundle it made (REL-003)"}
+    {"kind":"unit","ref":"packages/zplc-ide/scripts/release-config.test.ts","test":"the workflow reads no secret but the job token, and every platform verifies the bundle it made (REL-003)"},
+    {"kind":"unit","ref":"tools/docs/check_capability_claims.test.ts","test":"flags a channel or a signature that does not exist, and not the sentence that limits it (REL-028, REL-003)"}
+  ],
+  "REL-005": [
+    {"kind":"unit","ref":"packages/zplc-ide/scripts/release-config.test.ts","test":"the DMG and the ZIP are published for each macOS architecture (REL-005)","partial":true,"note":"asserts the parsed electron-builder and workflow configuration, not the produced installer or a run of the workflow; only a hosted release run proves it (VF-021). The first run of a downloaded DMG on a real Mac, Apple silicon and Intel, is manual evidence of the release checklist (RELEASING.md step 6) and is not recorded."},
+    {"kind":"unit","ref":"tools/docs/install_and_status_pages.test.ts","test":"says why the macOS app is not notarized, and the first-run steps in the order the system shows them (REL-005)","partial":true,"note":"covers the install page half (the steps in order, not notarized and why, in English and Spanish); the DMG and the ZIP of each architecture are produced only by the hosted macOS jobs, and the steps were not followed on a real Mac"}
+  ],
+  "REL-006": [
+    {"kind":"unit","ref":"tools/docs/install_and_status_pages.test.ts","test":"no curl | sh installer is recommended or offered (REL-006)"}
   ],
   "REL-038": [
     {"kind":"unit","ref":"packages/zplc-ide/scripts/release-config.test.ts","test":"Windows installers carry unsigned in their variant until a channel is live (REL-038)","partial":true,"note":"asserts the parsed electron-builder and workflow configuration, not the produced installer; its own header says a hosted release run is the proof (VF-021)"},
@@ -2153,6 +2162,16 @@
     {"kind":"unit","ref":"packages/zplc-ide/scripts/packaged-content.test.ts","test":"the Linux desktop identity of the unpacked package (REL-011)"},
     {"kind":"unit","ref":"packages/zplc-ide/scripts/release-config.test.ts","test":"Linux packages use electron-builder defaults and are installed in clean containers (REL-011)","partial":true,"note":"asserts the parsed electron-builder and workflow configuration, not the produced installer; its own header says a hosted release run is the proof (VF-021)"},
     {"kind":"unit","ref":"packages/zplc-ide/scripts/release-config.test.ts","test":"the Linux desktop identity of the package follows the executable (REL-011)"}
+  ],
+  "REL-012": [
+    {"kind":"unit","ref":"packages/zplc-ide/scripts/release-config.test.ts","test":"the AppImage stays published beside the .deb and the .rpm (REL-012)","partial":true,"note":"asserts the parsed electron-builder and workflow configuration, not the produced installer or a run of the workflow; only a hosted release run proves it (VF-021)"},
+    {"kind":"unit","ref":"tools/docs/install_and_status_pages.test.ts","test":"recommends the .deb or the .rpm before the AppImage, and lists the AppImage prerequisites (REL-012)","partial":true,"note":"covers the documentation half; the AppImage is built and launched only by the hosted Linux jobs, and its prerequisites (FUSE 2, the Chromium sandbox on Ubuntu 24.04) were not tried with ZPLC"}
+  ],
+  "REL-013": [
+    {"kind":"unit","ref":"packages/zplc-ide/scripts/linux-package-files.test.ts","test":"the udev rule inside a .deb (REL-013)","partial":true,"note":"reads stand-in packages made with ar and tar (and, where rpmbuild exists, an .rpm made with it); the real packages are read by the release workflow after electron-builder"},
+    {"kind":"unit","ref":"packages/zplc-ide/scripts/release-config.test.ts","test":"the .deb and the .rpm install the udev rule of the boards (REL-013)","partial":true,"note":"asserts the parsed electron-builder and workflow configuration, not the produced installer or a run of the workflow; only a hosted release run proves it (VF-021). The package reader (packages/zplc-ide/scripts/linux-package-files.ts, a step of build-linux) was run on the .deb and the .rpm that electron-builder made on this Linux machine and found the generated rule in both; the installation in clean containers runs only on hosted runners."},
+    {"kind":"unit","ref":"scripts/release/udev-rules.test.ts","test":"the udev rule (REL-013)"},
+    {"kind":"unit","ref":"tools/docs/install_and_status_pages.test.ts","test":"names the udev rule the packages install, the boards it covers and how to apply it without a reboot (REL-013)"}
   ],
   "REL-015": [
     {"kind":"unit","ref":"packages/zplc-ide/scripts/release-config.test.ts","test":"release.yml publishes each platform independently and only as a draft (REL-015, REL-016)","partial":true,"note":"asserts the parsed electron-builder and workflow configuration, not the produced installer; its own header says a hosted release run is the proof (VF-021)"},
@@ -2191,9 +2210,37 @@
   "REL-020": [
     {"kind":"unit","ref":"packages/zplc-ide/scripts/release-config.test.ts","test":"names the installer and the portable executable by the REL-020 variants, with unsigned appended","partial":true,"note":"asserts the parsed electron-builder and workflow configuration, not the produced installer; its own header says a hosted release run is the proof (VF-021)"}
   ],
+  "REL-021": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/components/UpdateNotice.test.tsx","test":"the update notice (REL-021)","partial":true,"note":"renders the notice to static markup; the wiring in App.tsx is not exercised by a test or a journey"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/ipc/updateNotice.test.ts","test":"the check is optional, and says nothing when it cannot tell (REL-021)","partial":true,"note":"proves the check with a fake fetch (default off, one fixed address, silent when offline or refused); the effect in App.tsx that runs it at start, and the notice in the real window, are not exercised by a test or a journey"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/ipc/updateNotice.test.ts","test":"the notice (REL-021)","partial":true,"note":"proves the content, the dismissal per release and the storage; the effect in App.tsx that runs the check at start, and the notice in the real window, are not exercised by a test or a journey"}
+  ],
+  "REL-022": [
+    {"kind":"unit","ref":"packages/zplc-ide/scripts/release-config.test.ts","test":"the release builds the firmware of every board and ships it in its own chain (REL-022, REL-025)","partial":true,"note":"asserts the parsed electron-builder and workflow configuration, not the produced installer or a run of the workflow; only a hosted release run proves it (VF-021). The script that the jobs run was run for real on this machine, for all seven boards of the manifest, from a clean checkout (scripts/release/firmware-images.ts build): the images, their sizes and checksums are in the report of that run, and no release run has produced the set."},
+    {"kind":"unit","ref":"scripts/release/firmware-images.test.ts","test":"how an image is flashed, from the build that made it (REL-022, REL-025)"},
+    {"kind":"unit","ref":"scripts/release/firmware-images.test.ts","test":"one board (REL-022)"},
+    {"kind":"unit","ref":"scripts/release/firmware-images.test.ts","test":"the evidence level of a board (REL-022)"},
+    {"kind":"unit","ref":"scripts/release/firmware-images.test.ts","test":"the files of each board (REL-022)"},
+    {"kind":"unit","ref":"scripts/release/firmware-images.test.ts","test":"the release set (REL-022)"},
+    {"kind":"unit","ref":"scripts/release/firmware-images.test.ts","test":"what a build says (REL-022, REL-023)"},
+    {"kind":"unit","ref":"scripts/release/release-notes.test.ts","test":"labels a firmware image with the evidence level of its board and claims no launch (REL-022)"},
+    {"kind":"unit","ref":"scripts/release/release-notes.test.ts","test":"says which firmware job to read when the run published no firmware image (REL-022)"},
+    {"kind":"unit","ref":"scripts/release/run-results.test.ts","test":"labels a firmware image with the evidence level of its board, from the manifest that travels with it (REL-022)"}
+  ],
   "REL-023": [
+    {"kind":"unit","ref":"scripts/release/firmware-images.test.ts","test":"what a build says (REL-022, REL-023)"},
     {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_fw_identity.c","test":"REL-023: the identity a firmware image or host runtime reports (version, commit, board, ABI, options)."},
     {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_native_runtime_session.c","test":"REL-023: the runtime says which build it is, so Studio can compare it with its own version."}
+  ],
+  "REL-025": [
+    {"kind":"unit","ref":"packages/zplc-ide/electron/firmwareImages.test.ts","test":"the firmware images of an installation (REL-025)"},
+    {"kind":"unit","ref":"packages/zplc-ide/scripts/packaged-content.test.ts","test":"the firmware images of the package (REL-025)","partial":true,"note":"reads stand-in resources; the unpacked Linux package that electron-builder made on this machine holds the manifest and the two learner images (packaged-content.ts with ZPLC_REQUIRE_FIRMWARE=1, and the packaged smoke through the preload bridge); the macOS and Windows installers are made only by the hosted jobs"},
+    {"kind":"unit","ref":"packages/zplc-ide/scripts/release-config.test.ts","test":"the release builds the firmware of every board and ships it in its own chain (REL-022, REL-025)","partial":true,"note":"asserts the parsed electron-builder and workflow configuration, not the produced installer: the staging of the two learner images and the check that the package holds them run only in the hosted desktop jobs. On this machine the unpacked Linux package built with the staged images held them and the packaged application listed both through the preload bridge."},
+    {"kind":"unit","ref":"packages/zplc-ide/src/boards/firmwareImage.test.ts","test":"the flashing steps (REL-025)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/boards/firmwareImage.test.ts","test":"the image of the selected board (REL-025)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/components/settings/FirmwareImageCard.test.tsx","test":"the firmware image card (REL-025)"},
+    {"kind":"unit","ref":"scripts/release/firmware-images.test.ts","test":"how an image is flashed, from the build that made it (REL-022, REL-025)"},
+    {"kind":"unit","ref":"scripts/release/firmware-images.test.ts","test":"the copy that the installers carry (REL-025)"}
   ],
   "REL-026": [
     {"kind":"unit","ref":"scripts/release/binaries.test.ts","test":"the release binaries (REL-026)"},
@@ -2207,6 +2254,10 @@
     {"kind":"unit","ref":"scripts/release/run-results.test.ts","test":"classifyAsset (REL-027)"},
     {"kind":"unit","ref":"scripts/release/run-results.test.ts","test":"collectRunResults (REL-027)"},
     {"kind":"unit","ref":"scripts/release/run-results.test.ts","test":"countJunit (REL-027)"}
+  ],
+  "REL-028": [
+    {"kind":"unit","ref":"tools/docs/check_capability_claims.test.ts","test":"flags a channel or a signature that does not exist, and not the sentence that limits it (REL-028, REL-003)"},
+    {"kind":"unit","ref":"tools/docs/install_and_status_pages.test.ts","test":"opens with a Download section: one line per system with its first-run note, and no channel that does not exist (REL-028)"}
   ],
   "REL-029": [
     {"kind":"unit","ref":"scripts/release/releasing-md.test.ts","test":"the checklist of a release (REL-029)"}
@@ -2225,6 +2276,9 @@
     {"kind":"unit","ref":"scripts/release/release-records.test.ts","test":"what a version bump edits (REL-031, REL-038)"},
     {"kind":"unit","ref":"scripts/release/resolve-release.test.ts","test":"prerelease tags continue the rc sequence (REL-031)"}
   ],
+  "REL-032": [
+    {"kind":"unit","ref":"packages/zplc-ide/scripts/release-config.test.ts","test":"keeps the reproducibility check and lets no release job wait for it (REL-032)","partial":true,"note":"asserts the parsed electron-builder and workflow configuration, not the produced installer or a run of the workflow; only a hosted release run proves it (VF-021). The check itself (scripts/verify-reproducible-linux-payload.ts) is run by CI tests of its comparison logic and by the job on a hosted Linux runner."}
+  ],
   "REL-034": [
     {"kind":"unit","ref":"packages/zplc-ide/scripts/packaged-content.test.ts","test":"packaged content (REL-034)"},
     {"kind":"unit","ref":"packages/zplc-ide/scripts/packaged-content.test.ts","test":"the asar reader (REL-034)"},
@@ -2232,6 +2286,10 @@
   ],
   "REL-035": [
     {"kind":"unit","ref":"scripts/release/releasing-md.test.ts","test":"the external services of the release (REL-035)"}
+  ],
+  "REL-036": [
+    {"kind":"unit","ref":"packages/zplc-ide/scripts/release-config.test.ts","test":"every published installer format is installed or mounted and launched on its own system before the draft (REL-036)","partial":true,"note":"asserts the parsed electron-builder and workflow configuration, not the produced installer or a run of the workflow; only a hosted release run proves it (VF-021). The steps never ran: the AppImage in a container, the DMG mount, the ZIP, the NSIS silent install and the portable launch need hosted macOS and Windows runners and Docker. On this Linux machine, outside a container, the AppImage that electron-builder made was extracted and its application launched through ZPLC_PACKAGED_EXECUTABLE with the packaged smoke (the Chromium sandbox on, no setuid helper)."},
+    {"kind":"unit","ref":"packages/zplc-ide/scripts/run-packaged-desktop-smoke.test.ts","test":"names an installed application by its executable, and refuses a missing file, a directory and a link (REL-036)","partial":true,"note":"checks the executable that an installer or an archive left is a real file; the installation and the launch happen only on hosted runners"}
   ],
   "DOC-002": [
     {"kind":"unit","ref":"tools/docs/docs_structure.test.ts","test":"docs structure: the sidebar is organised by reader intent (DOC-002)"}
