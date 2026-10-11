@@ -5,6 +5,7 @@
 import { useState } from 'react';
 
 import { inputAddressLabel, type DeclaredInput } from '../runtime/declaredInputs';
+import { Button, Checkbox, NumberField, Switch } from '../ui';
 
 export interface SimulationInputRow {
   input: DeclaredInput;
@@ -15,7 +16,6 @@ export interface SimulationInputRow {
   forceable: boolean;
 }
 
-const BUTTON = 'border border-[var(--color-surface-600)] bg-[var(--color-surface-800)] px-2 py-0.5 text-xs text-[var(--color-surface-100)] hover:bg-[var(--color-surface-700)] disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-accent-blue)]';
 
 function NumberControl({ row, disabled, onSet }: { row: SimulationInputRow; disabled: boolean; onSet: (value: number) => void }) {
   const [draft, setDraft] = useState('');
@@ -25,14 +25,8 @@ function NumberControl({ row, disabled, onSet }: { row: SimulationInputRow; disa
   };
   return (
     <span className="inline-flex items-center gap-1">
-      <input
-        type="number" inputMode="decimal" value={draft} placeholder={row.value === null ? '' : String(row.value)} disabled={disabled}
-        aria-label={`Value of ${row.input.name}`}
-        onChange={(event) => setDraft(event.target.value)}
-        onKeyDown={(event) => { if (event.key === 'Enter') submit(); }}
-        className="w-24 border border-[var(--color-surface-600)] bg-[var(--color-surface-900)] px-1 py-0.5 text-xs tabular-nums text-[var(--color-surface-100)] disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-[var(--color-accent-blue)]"
-      />
-      <button type="button" className={BUTTON} disabled={disabled || draft.trim() === ''} aria-label={`Set ${row.input.name}`} onClick={submit}>Set</button>
+      <NumberField inputMode="decimal" value={draft} placeholder={row.value === null ? '' : String(row.value)} disabled={disabled} aria-label={`Value of ${row.input.name}`} onChange={(event) => setDraft(event.target.value)} onKeyDown={(event) => { if (event.key === 'Enter') submit(); }} className="w-24 tabular-nums" />
+      <Button variant="ghost" size="sm" disabled={disabled || draft.trim() === ''} aria-label={`Set ${row.input.name}`} onClick={submit}>Set</Button>
     </span>
   );
 }
@@ -73,22 +67,20 @@ export function SimulationInputsList({ rows, unavailable, message, onSet, onForc
                     <td className="px-2 py-1 tabular-nums" data-input-value>{row.value === null ? '—' : typeof row.value === 'boolean' ? (row.value ? 'TRUE' : 'FALSE') : String(row.value)}</td>
                     <td className="px-2 py-1">
                       {row.input.type === 'BOOL' ? (
-                        <button
-                          type="button" role="switch" aria-checked={row.value === true} disabled={disabled} className={BUTTON}
-                          aria-label={`${row.input.name}: ${row.value === true ? 'TRUE' : 'FALSE'}`}
-                          onClick={() => onSet(row.input, row.value !== true)}
-                        >{row.value === true ? 'Set FALSE' : 'Set TRUE'}</button>
+                        <Switch
+                          label={`${row.input.name}: ${row.value === true ? 'TRUE' : 'FALSE'}`}
+                          hideLabel
+                          checked={row.value === true}
+                          disabled={disabled}
+                          onChange={() => onSet(row.input, row.value !== true)}
+                        />
                       ) : (
                         <NumberControl row={row} disabled={disabled} onSet={(value) => onSet(row.input, value)} />
                       )}
                     </td>
                     <td className="px-2 py-1">
-                      <input
-                        type="checkbox" checked={row.forced} disabled={disabled || !row.forceable || row.value === null}
-                        aria-label={`Force input ${row.input.name}`}
-                        title={row.forceable ? undefined : 'A force carries up to 32 bits'}
-                        onChange={(event) => onForce(row.input, event.target.checked)}
-                      />
+                      <Checkbox label={`Force input ${row.input.name}`} hideLabel checked={row.forced} disabled={disabled || !row.forceable || row.value === null} onChange={(event) => onForce(row.input, event.target.checked)} />
+                      {!row.forceable && <span className="ml-2 text-xs text-[var(--text-tertiary)]">A force carries up to 32 bits</span>}
                     </td>
                   </tr>
                 ))}

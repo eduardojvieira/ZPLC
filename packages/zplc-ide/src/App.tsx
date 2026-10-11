@@ -36,6 +36,7 @@ import { startExternalChangeWatch } from './store/externalChangeWatch';
 import { initializeSettings, useAppSettings } from './store/useAppSettings';
 import { describeUpdateCheck, runUpdateCheck } from './ipc/updateCheckBridge';
 import { ZPLC_REPO_VERSION } from './version';
+import { Button } from './ui';
 
 interface WorkbenchParts {
   Toolbar: ComponentType<{ debugController: DebugController }>;
@@ -160,9 +161,7 @@ function App() {
         <div role={failed ? 'alert' : 'status'} className="flex flex-1 flex-col items-center justify-center gap-3 text-sm text-[var(--text-secondary)]">
           <p>{failed ? `Studio could not load the workbench: ${workbenchFailure.message}` : 'Loading the workbench…'}</p>
           {failed && (
-            <button type="button" onClick={() => setWorkbenchAttempt((attempt) => attempt + 1)} className="h-8 border border-[var(--border-color)] px-3 text-[var(--text-primary)] hover:bg-[var(--color-surface-700)]">
-              Retry
-            </button>
+            <Button onClick={() => setWorkbenchAttempt((attempt) => attempt + 1)}>Retry</Button>
           )}
         </div>
       </div>

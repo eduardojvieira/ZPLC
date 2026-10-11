@@ -3,6 +3,7 @@ import { renderToStaticMarkup } from 'react-dom/server';
 
 import type { DeclaredInput } from '../runtime/declaredInputs';
 import { inputAddressLabel } from '../runtime/declaredInputs';
+import { auditMarkup } from '../ui/audit';
 import { SimulationInputsList, type SimulationInputRow } from './SimulationInputsList';
 
 const input = (patch: Partial<DeclaredInput>): DeclaredInput => ({ path: 'Plant.SensorWest', pou: 'Plant', name: 'SensorWest', type: 'BOOL', region: 'IPI', address: 0, size: 1, bitOffset: 3, origin: 'mapped', ...patch });
@@ -31,7 +32,9 @@ describe('the simulation inputs list (IDE-024)', () => {
     expect(html).toContain('1234');
     expect(html).toContain('role="switch"');
     expect(html).toContain('aria-label="Value of Setpoint"');
-    expect(html).toContain('aria-label="Force input Setpoint"');
+    // The checkbox is named by its label, which only a screen reader reads (a hidden label of the kit's Checkbox).
+    expect(html).toContain('>Force input Setpoint<');
+    expect(auditMarkup(html)).toEqual([]);
   });
 
   it('says in words that there is nothing to set, and why the inputs are read-only', () => {

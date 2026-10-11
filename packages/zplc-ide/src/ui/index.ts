@@ -3,7 +3,7 @@
  * `select`, `textarea`, `title` tooltip or native `confirm` and `alert` (tools/ci/ui-kit-guard.ts, UX-002).
  */
 export { Button, IconButton, type ButtonProps, type IconButtonProps, type ButtonSize, type ButtonVariant } from './Button';
-export { Field, TextField, NumberField, Textarea, Select, Checkbox, Switch, type FieldProps, type TextFieldProps, type NumberFieldProps, type TextareaProps, type SelectProps, type CheckboxProps } from './Field';
+export { Field, TextField, NumberField, RangeField, FileInput, Textarea, Select, Checkbox, Switch, type FieldProps, type TextFieldProps, type NumberFieldProps, type RangeFieldProps, type FileInputProps, type TextareaProps, type SelectProps, type CheckboxProps } from './Field';
 export { TabList, TabPanel, type TabSpec, type TabListProps, type TabPanelProps } from './Tabs';
 export { ToggleGroup, type ToggleOption, type ToggleGroupProps } from './ToggleGroup';
 export { Dialog, DialogSurface, AlertDialog, type DialogProps, type DialogSize, type DialogSurfaceProps, type AlertDialogProps } from './Dialog';

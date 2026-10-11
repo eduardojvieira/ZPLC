@@ -27,6 +27,7 @@ import {
 } from 'lucide-react';
 import { connectionManager } from '../runtime/connectionManager';
 import type { CommunicationMapEntry, MqttRuntimeStatus, SystemInfo, StatusInfo } from '../runtime/serialAdapter';
+import { Button, NumberField } from '../ui';
 
 export function ControllerView() {
   // State from connection manager
@@ -177,14 +178,11 @@ export function ControllerView() {
 
       {/* Device Info Section */}
       <div className="border-b border-[var(--color-surface-700)]">
-        <button
-          onClick={() => toggleSection('info')}
-          className="flex items-center gap-2 w-full p-2 hover:bg-[var(--color-surface-700)] text-left"
-        >
+        <Button variant="secondary" size="sm" aria-expanded={expandedSections.info === true} onClick={() => toggleSection('info')} className="w-full justify-start text-left">
           {expandedSections.info ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
           <Cpu size={14} className="text-[var(--color-accent-purple)]" />
           <span className="text-[var(--color-surface-200)]">Device Info</span>
-        </button>
+        </Button>
         
         {expandedSections.info && systemInfo && (
           <div className="px-4 pb-3 space-y-1.5 text-xs">
@@ -251,17 +249,14 @@ export function ControllerView() {
           {/* Tasks Section */}
           {status.tasks && status.tasks.length > 0 && (
             <div className="border-b border-[var(--color-surface-700)]">
-              <button
-                onClick={() => toggleSection('tasks')}
-                className="flex items-center gap-2 w-full p-2 hover:bg-[var(--color-surface-700)] text-left"
-              >
+              <Button variant="secondary" size="sm" aria-expanded={expandedSections.tasks === true} onClick={() => toggleSection('tasks')} className="w-full justify-start text-left">
                 {expandedSections.tasks ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
                 <Layers size={14} className="text-[var(--color-accent-blue)]" />
                 <span className="text-[var(--color-surface-200)]">Tasks</span>
                 <span className="ml-auto text-xs text-[var(--color-surface-400)]">
                   {status.tasks.length}
                 </span>
-              </button>
+              </Button>
               
               {expandedSections.tasks && (
                 <div className="px-2 pb-2">
@@ -302,27 +297,21 @@ export function ControllerView() {
           )}
 
           <div className="border-b border-[var(--color-surface-700)]">
-            <button
-              onClick={() => toggleSection('communication')}
-              className="flex items-center gap-2 w-full p-2 hover:bg-[var(--color-surface-700)] text-left"
-            >
+            <Button variant="secondary" size="sm" aria-expanded={expandedSections.communication === true} onClick={() => toggleSection('communication')} className="w-full justify-start text-left">
               {expandedSections.communication ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
               <Radio size={14} className="text-[var(--color-accent-green)]" />
               <span className="text-[var(--color-surface-200)]">Communication</span>
               <span className="ml-auto text-xs text-[var(--color-surface-400)]">
                 {communicationMap.length}
               </span>
-            </button>
+            </Button>
 
             {expandedSections.communication && (
               <div className="px-2 pb-2 space-y-2">
                 <div className="flex justify-end">
-                  <button
-                    onClick={() => void connectionManager.refreshCommunicationMap()}
-                    className="text-[10px] px-2 py-1 rounded bg-[var(--color-surface-700)] text-[var(--color-surface-300)]"
-                  >
+                  <Button variant="secondary" size="sm" onClick={() => void connectionManager.refreshCommunicationMap()}>
                     Refresh map
-                  </button>
+                  </Button>
                 </div>
 
                 {communicationMap.length === 0 ? (
@@ -335,7 +324,7 @@ export function ControllerView() {
                       <div key={entry.index} className="rounded border border-[var(--color-surface-700)] p-2 text-xs">
                         <div className="flex items-center gap-2">
                           <span className="font-mono text-[var(--color-surface-200)]">#{entry.index}</span>
-                          <span className="rounded bg-[var(--color-surface-700)] px-1.5 py-0.5 uppercase text-[10px] text-[var(--color-surface-300)]">
+                          <span className="rounded bg-[var(--color-surface-700)] px-1.5 py-0.5 uppercase text-[11px] text-[var(--text-secondary)]">
                             {entry.kind}
                           </span>
                           <span className="text-[var(--color-surface-400)]">{entry.type}</span>
@@ -348,27 +337,14 @@ export function ControllerView() {
                             <span className="text-[var(--color-surface-500)]">
                               Server map {entry.effective_value}{entry.width > 1 ? `-${entry.effective_value + entry.width - 1}` : ''}
                             </span>
-                            <input
-                              type="number"
-                              min={1}
-                              max={65535 - entry.width + 1}
-                              value={modbusDrafts[entry.index] ?? String(entry.effective_value)}
-                              onChange={(e) => setModbusDrafts((prev) => ({ ...prev, [entry.index]: e.target.value }))}
-                              className="w-24 rounded border border-[var(--color-surface-600)] bg-[var(--color-surface-800)] px-2 py-1 text-[var(--color-surface-100)]"
-                            />
-                            <button
-                              onClick={() => void applyModbusOverride(entry)}
-                              className="rounded bg-[var(--color-accent-blue)]/20 px-2 py-1 text-[var(--color-accent-blue)]"
-                            >
+                            <NumberField aria-label={`Override value of binding ${entry.index}`} min={1} max={65535 - entry.width + 1} value={modbusDrafts[entry.index] ?? String(entry.effective_value)} onChange={(e) => setModbusDrafts((prev) => ({ ...prev, [entry.index]: e.target.value }))} className="w-24" />
+                            <Button variant="primary" size="sm" onClick={() => void applyModbusOverride(entry)}>
                               Apply
-                            </button>
+                            </Button>
                             {entry.override && (
-                              <button
-                                onClick={() => void clearModbusOverride(entry)}
-                                className="rounded bg-[var(--color-accent-yellow)]/20 px-2 py-1 text-[var(--color-accent-yellow)]"
-                              >
+                              <Button variant="ghost" size="sm" onClick={() => void clearModbusOverride(entry)}>
                                 Clear override
-                              </button>
+                              </Button>
                             )}
                           </div>
                         ) : (
@@ -385,17 +361,14 @@ export function ControllerView() {
           </div>
 
           <div className="border-b border-[var(--color-surface-700)]">
-            <button
-              onClick={() => toggleSection('mqtt')}
-              className="flex items-center gap-2 w-full p-2 hover:bg-[var(--color-surface-700)] text-left"
-            >
+            <Button variant="secondary" size="sm" aria-expanded={expandedSections.mqtt === true} onClick={() => toggleSection('mqtt')} className="w-full justify-start text-left">
               {expandedSections.mqtt ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
               <Radio size={14} className="text-[var(--color-accent-blue)]" />
               <span className="text-[var(--color-surface-200)]">MQTT Runtime</span>
               <span className="ml-auto text-xs text-[var(--color-surface-400)]">
                 {mqttStatus?.connected ? 'online' : 'offline'}
               </span>
-            </button>
+            </Button>
 
             {expandedSections.mqtt && mqttStatus && (
               <div className="px-4 pb-3 space-y-1.5 text-xs">
@@ -416,14 +389,11 @@ export function ControllerView() {
 
           {/* Memory Section */}
           <div className="border-b border-[var(--color-surface-700)]">
-            <button
-              onClick={() => toggleSection('memory')}
-              className="flex items-center gap-2 w-full p-2 hover:bg-[var(--color-surface-700)] text-left"
-            >
+            <Button variant="secondary" size="sm" aria-expanded={expandedSections.memory === true} onClick={() => toggleSection('memory')} className="w-full justify-start text-left">
               {expandedSections.memory ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
               <HardDrive size={14} className="text-[var(--color-accent-yellow)]" />
               <span className="text-[var(--color-surface-200)]">Memory</span>
-            </button>
+            </Button>
             
             {expandedSections.memory && systemInfo && (
               <div className="px-4 pb-3 space-y-2 text-xs">
@@ -473,14 +443,11 @@ export function ControllerView() {
 
           {/* I/O Preview Section */}
           <div className="border-b border-[var(--color-surface-700)]">
-            <button
-              onClick={() => toggleSection('io')}
-              className="flex items-center gap-2 w-full p-2 hover:bg-[var(--color-surface-700)] text-left"
-            >
+            <Button variant="secondary" size="sm" aria-expanded={expandedSections.io === true} onClick={() => toggleSection('io')} className="w-full justify-start text-left">
               {expandedSections.io ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
               <Activity size={14} className="text-[var(--color-accent-green)]" />
               <span className="text-[var(--color-surface-200)]">I/O Preview</span>
-            </button>
+            </Button>
             
             {expandedSections.io && status.opi && (
               <div className="px-4 pb-3 text-xs">

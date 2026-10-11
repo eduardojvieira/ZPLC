@@ -98,7 +98,7 @@ function TaskCard({ task, availablePrograms, onUpdate, onRemove }: TaskCardProps
     <div className="bg-[var(--color-surface-700)] rounded-lg p-3 border border-[var(--color-surface-500)]">
       <div className="flex items-center justify-between mb-3">
         <TextField aria-label="Task name" value={task.name} onChange={(e) => onUpdate({ name: e.target.value })} />
-        <IconButton label="Remove Task" variant="ghost" size="sm" icon={<><Trash2 size={14} /></>} onClick={onRemove} />
+        <IconButton label="Remove Task" variant="ghost" size="sm" icon={<Trash2 size={14} />} onClick={onRemove} />
       </div>
 
       <div className="grid grid-cols-4 gap-3">

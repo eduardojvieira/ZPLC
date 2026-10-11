@@ -80,6 +80,23 @@ export function NumberField({ label, hint, error, layout, fieldClassName, classN
   return <>{withField(<InputControl {...rest} type="number" inputMode="decimal" className={cx('ui-input ui-tabular', className)} />, { label, hint, error, layout, fieldClassName }, rest.required, rest.disabled, rest.id)}</>;
 }
 
+export type RangeFieldProps = Omit<ComponentProps<'input'>, 'type'> & Labelled;
+
+/** A native slider: the arrows, Home, End and Page keys and the announcement of the value are the platform's. */
+export function RangeField({ label, hint, error, layout, fieldClassName, className, ...rest }: RangeFieldProps) {
+  return <>{withField(<InputControl {...rest} type="range" className={cx('ui-range', className)} />, { label, hint, error, layout, fieldClassName }, rest.required, rest.disabled, rest.id)}</>;
+}
+
+export interface FileInputProps extends Omit<ComponentProps<'input'>, 'type' | 'children' | 'aria-label'> {
+  /** Names what the file is for. The input itself is not drawn: a button opens it with `ref.current.click()`. */
+  label: string;
+}
+
+/** A file chooser that a visible button opens. It is `hidden`, so it takes no place in the tab order; the button is the control. */
+export function FileInput({ label, ...rest }: FileInputProps) {
+  return <input {...rest} type="file" hidden aria-label={label} />;
+}
+
 export type TextareaProps = ComponentProps<'textarea'> & Labelled;
 
 export function Textarea({ label, hint, error, layout, fieldClassName, className, ...rest }: TextareaProps) {

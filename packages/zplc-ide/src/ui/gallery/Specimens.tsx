@@ -9,7 +9,7 @@ import { ICON_SIZES } from '../../theme/tokens';
 import { SIGNAL_TONES } from '../../theme/signalTone';
 import {
   Badge, Button, Checkbox, ContextMenu, DialogSurface, EmptyState, Field, IconButton, MenuButton, NumberField, Popover,
-  PropertyList, Select, SignalChip, Spinner, StatusDot, Switch, TabList, TabPanel, TextField, Textarea, ToggleGroup, Toolbar, Tooltip,
+  PropertyList, RangeField, Select, SignalChip, Spinner, StatusDot, Switch, TabList, TabPanel, TextField, Textarea, ToggleGroup, Toolbar, Tooltip,
 } from '..';
 
 const noop = (): void => undefined;
@@ -75,6 +75,9 @@ export function Specimens() {
       </Specimen>
       <Specimen name="Textarea">
         <Textarea label="Description" rows={3} defaultValue="Runs the motor interlock every 100 ms." />
+      </Specimen>
+      <Specimen name="Range">
+        <RangeField label="Playback position" min={0} max={100} defaultValue={40} />
       </Specimen>
       <Specimen name="Select">
         <Select label="Trigger" defaultValue="cyclic"><option value="cyclic">Cyclic</option><option value="event">Event</option><option value="freewheeling">Freewheeling</option></Select>

@@ -14,6 +14,7 @@ import { ImportArchive } from './ImportArchive';
 import { ThemeControl } from './ThemeControl';
 import { AppPreferences } from './settings/AppPreferences';
 import { recentRows } from './welcomeRecent';
+import { Button } from '../ui';
 
 /** The Learn entry starts the course where the Learn tab starts: with the first lesson, on its own starter project. */
 const FIRST_LESSON_STARTER = learnLessonCatalog.en[0]!.starterExampleId;
@@ -96,11 +97,8 @@ export function WelcomeScreen() {
       setIsCopyingExample(false);
     });
   };
-  const actionClass = `group flex w-full items-start gap-3 px-4 py-3 text-left transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[var(--color-accent-blue)] ${
-    unavailable
-      ? 'cursor-not-allowed text-[var(--text-primary)] opacity-60'
-      : 'text-[var(--text-primary)] hover:bg-[var(--color-surface-700)]'
-  }`;
+  // A start action is a wide row of a title and a sentence: the kit button, with room for wrapped text.
+  const actionClass = 'h-auto w-full items-start justify-start gap-3 whitespace-normal px-4 py-3 text-left';
 
   return (
     <main className="relative flex min-h-0 flex-1 overflow-y-auto bg-[var(--color-surface-900)] px-5 py-5 text-[var(--text-primary)] sm:px-8 sm:py-8">
@@ -124,27 +122,27 @@ export function WelcomeScreen() {
           </div>
 
           <div className="grid divide-y divide-[var(--border-color)] border border-[var(--border-color)] bg-[var(--color-surface-800)] sm:grid-cols-3 sm:divide-x sm:divide-y-0">
-            <button type="button" onClick={() => void openProjectFromFolder()} disabled={unavailable} className={actionClass}>
+            <Button variant="ghost" onClick={() => void openProjectFromFolder()} disabled={unavailable} className={actionClass}>
               <FolderOpen size={18} aria-hidden="true" className="mt-0.5 shrink-0 text-[var(--color-accent-blue)]" />
               <span className="min-w-0">
                 <span className="block font-medium">Open project</span>
                 <span className="mt-0.5 block text-sm leading-5 text-[var(--text-secondary)]">Open an existing project folder from disk.</span>
               </span>
-            </button>
-            <button type="button" onClick={() => void createNewProjectInFolder()} disabled={unavailable} className={actionClass}>
+            </Button>
+            <Button variant="ghost" onClick={() => void createNewProjectInFolder()} disabled={unavailable} className={actionClass}>
               <FolderPlus size={18} aria-hidden="true" className="mt-0.5 shrink-0 text-[var(--color-accent-blue)]" />
               <span className="min-w-0">
                 <span className="block font-medium">New project</span>
                 <span className="mt-0.5 block text-sm leading-5 text-[var(--text-secondary)]">Create in a folder after checking project-file conflicts.</span>
               </span>
-            </button>
-            <button type="button" onClick={() => startCopy(() => startLearning(FIRST_LESSON_STARTER))} disabled={unavailable || isCopyingExample} data-welcome-learn className={actionClass}>
+            </Button>
+            <Button variant="ghost" onClick={() => startCopy(() => startLearning(FIRST_LESSON_STARTER))} disabled={unavailable || isCopyingExample} data-welcome-learn className={actionClass}>
               <BookOpen size={18} aria-hidden="true" className="mt-0.5 shrink-0 text-[var(--color-accent-blue)]" />
               <span className="min-w-0">
                 <span className="block font-medium">Learn</span>
                 <span className="mt-0.5 block text-sm leading-5 text-[var(--text-secondary)]">Start the course: its first lesson is copied into a folder you choose.</span>
               </span>
-            </button>
+            </Button>
           </div>
           <ImportArchive disabled={unavailable || isCopyingExample} />
         </section>
@@ -162,12 +160,7 @@ export function WelcomeScreen() {
             <ul className="mt-3 divide-y divide-[var(--border-color)] border border-[var(--border-color)] bg-[var(--color-surface-800)]">
               {rows.map((row) => (
                 <li key={row.recentId} data-recent-project={row.recentId} className="flex flex-wrap items-stretch">
-                  <button
-                    type="button"
-                    onClick={() => reopen(row.recentId)}
-                    disabled={!row.available || busy}
-                    className="group flex min-w-0 flex-1 items-start gap-3 px-4 py-3 text-left text-[var(--text-primary)] transition-colors duration-150 hover:bg-[var(--color-surface-700)] focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[var(--color-accent-blue)] disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:bg-transparent"
-                  >
+                  <Button variant="ghost" size="sm" onClick={() => reopen(row.recentId)} disabled={!row.available || busy} className="h-auto min-w-0 flex-1 items-start justify-start gap-3 whitespace-normal px-4 py-3 text-left">
                     <History size={18} aria-hidden="true" className="mt-0.5 shrink-0 text-[var(--color-accent-blue)]" />
                     <span className="min-w-0">
                       <span className="block truncate font-medium">{row.name}</span>
@@ -175,16 +168,11 @@ export function WelcomeScreen() {
                         {row.available ? `Opened ${row.opened}` : row.reason}
                       </span>
                     </span>
-                  </button>
+                  </Button>
                   {(!row.available || recentError?.recentId === row.recentId) && (
-                    <button
-                      type="button"
-                      onClick={() => void forgetRecentProject(row.recentId)}
-                      aria-label={`Forget ${row.name}`}
-                      className="shrink-0 px-4 py-3 text-sm text-[var(--text-secondary)] hover:bg-[var(--color-surface-700)] hover:text-[var(--text-primary)] focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[var(--color-accent-blue)]"
-                    >
+                    <Button variant="secondary" size="sm" onClick={() => void forgetRecentProject(row.recentId)} aria-label={`Forget ${row.name}`} className="shrink-0">
                       Forget
-                    </button>
+                    </Button>
                   )}
                   {recentError?.recentId === row.recentId && (
                     <p role="alert" data-recent-error className="w-full break-words px-4 pb-3 text-sm leading-5 text-[var(--color-accent-red)]">{recentError.message}</p>
@@ -208,17 +196,11 @@ export function WelcomeScreen() {
                 <ul className="mt-3 grid gap-2 sm:grid-cols-2">
                   {section.examples.map((example) => (
                     <li key={example.id} className="flex">
-                      <button
-                        type="button"
-                        onClick={() => startCopy(() => copyExampleProjectToFolder(example.id))}
-                        disabled={unavailable || isCopyingExample}
-                        data-welcome-example={example.id}
-                        className="flex w-full flex-col items-start gap-1.5 border border-[var(--border-color)] bg-[var(--color-surface-900)] px-3 py-2.5 text-left text-[var(--text-primary)] transition-colors duration-150 hover:border-[var(--color-accent-blue)] hover:bg-[var(--color-surface-700)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-accent-blue)] disabled:cursor-not-allowed disabled:opacity-60"
-                      >
+                      <Button variant="secondary" size="sm" onClick={() => startCopy(() => copyExampleProjectToFolder(example.id))} disabled={unavailable || isCopyingExample} data-welcome-example={example.id} className="w-full flex-col items-start text-left duration-150">
                         <span className="font-medium">{example.title}</span>
                         <ExampleBadges example={example} />
                         {example.summary && <span data-example-summary className="text-sm leading-5 text-[var(--text-secondary)]">{example.summary}</span>}
-                      </button>
+                      </Button>
                     </li>
                   ))}
                 </ul>
@@ -228,7 +210,7 @@ export function WelcomeScreen() {
         )}
 
         <details data-welcome-preferences className="mt-6 border-t border-[var(--border-color)] pt-3">
-          <summary className="cursor-pointer text-sm text-[var(--text-secondary)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-accent-blue)]">Preferences: editor, density, language, autosave and updates</summary>
+          <summary className="cursor-pointer text-sm text-[var(--text-secondary)]">Preferences: editor, density, language, autosave and updates</summary>
           <div className="mt-3"><AppPreferences includeTheme={false} /></div>
         </details>
 

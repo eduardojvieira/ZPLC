@@ -59,6 +59,7 @@ import { useProjectBlocks } from '../editors/useProjectBlocks';
 import { presentAiProviderConfig, presentAiProviderMutation, presentAiProviderResponse, presentAiProviderStatus, type AiProviderMode, type AiProviderResponsePresentation, type AiProviderStatusPresentation } from './aiProviderPresentation';
 import { useTheme } from '../hooks/useTheme';
 import { ZPLC_DARK_THEME, ZPLC_DARK_THEME_ID, ZPLC_HIGH_CONTRAST_THEME, ZPLC_HIGH_CONTRAST_THEME_ID, ZPLC_LIGHT_THEME, ZPLC_LIGHT_THEME_ID } from '../utils/monaco-themes';
+import { Button, Checkbox, FileInput, IconButton, TextField, Textarea, Tooltip } from '../ui';
 
 type WorkspaceTestResultState = { presentation: WorkspaceTestPresentation; projectSession: number; compilerRunId: number; workspaceId: string };
 type WorkspaceSafetyTextState = { status: 'running' | 'unavailable'; projectSession: number; compilerRunId: number; workspaceId: string };
@@ -561,15 +562,10 @@ export function Console({ debugController }: ConsoleProps) {
   if (isConsoleCollapsed) {
     return (
       <div className="h-8 bg-[var(--color-surface-800)] border-t border-[var(--color-surface-600)] flex items-center px-2">
-        <button
-          onClick={toggleConsole}
-          className="flex items-center gap-1 text-sm text-[var(--color-surface-300)] hover:text-[var(--color-surface-100)] transition-colors"
-          aria-label="Expand workbench panel"
-          title="Expand workbench panel"
-        >
+        <Button variant="ghost" size="sm" onClick={toggleConsole} aria-label="Expand workbench panel">
           <ChevronUp size={16} />
           <span>Panel</span>
-        </button>
+        </Button>
         
         {/* Quick status */}
         <div className="ml-4 text-xs tabular-nums text-[var(--color-surface-300)]" aria-label={`Problems: ${problemSummary}`}>
@@ -584,14 +580,7 @@ export function Console({ debugController }: ConsoleProps) {
       {/* Tab Bar */}
       <div className="h-8 flex items-center border-b border-[var(--color-surface-600)] px-2">
         {/* Collapse Button */}
-        <button
-          onClick={toggleConsole}
-          className="p-1 mr-2 rounded hover:bg-[var(--color-surface-700)] text-[var(--color-surface-300)]"
-          title="Collapse workbench panel"
-          aria-label="Collapse workbench panel"
-        >
-          <ChevronDown size={16} />
-        </button>
+        <IconButton label="Collapse workbench panel" variant="ghost" size="sm" icon={<ChevronDown size={16} />} onClick={toggleConsole} className="mr-2" />
 
         <div role="tablist" aria-label="Workbench panels" className="flex h-full min-w-0 items-center overflow-x-auto">
           {tabs.map((tab) => (
@@ -629,18 +618,11 @@ export function Console({ debugController }: ConsoleProps) {
         <div className="flex-1" />
 
         {(activeConsoleTab === 'output' || activeConsoleTab === 'problems' || activeConsoleTab === 'trace') && (
-          <button
-            onClick={() => {
-              if (activeConsoleTab === 'output') clearConsole();
-              if (activeConsoleTab === 'problems') clearCompilerMessages();
-              if (activeConsoleTab === 'trace') clearNativeTrace();
-            }}
-            className="p-1 rounded hover:bg-[var(--color-surface-700)] text-[var(--color-surface-400)] hover:text-[var(--color-surface-200)]"
-            title="Clear"
-            aria-label={`Clear ${activeConsoleTab}`}
-          >
-            <Trash2 size={14} />
-          </button>
+          <IconButton label={`Clear ${activeConsoleTab}`} tooltip="Clear" variant="ghost" size="sm" icon={<Trash2 size={14} />} onClick={() => {
+ if (activeConsoleTab === 'output') clearConsole();
+ if (activeConsoleTab === 'problems') clearCompilerMessages();
+ if (activeConsoleTab === 'trace') clearNativeTrace();
+ }} />
         )}
       </div>
 
@@ -653,13 +635,10 @@ export function Console({ debugController }: ConsoleProps) {
       >
         <ErrorBoundary region="Panel" resetKey={activeConsoleTab}>
         <DevFaultProbe region="Panel" />
-        <input
+        <FileInput
           ref={workspaceManifestInputRef}
-          type="file"
           accept="application/json,.json"
-          hidden
-          tabIndex={-1}
-          aria-hidden="true"
+          label="Choose the workspace zplc.json"
           data-workspace-manifest-input
           onChange={(event) => { void registerWorkspaceManifest(event); }}
         />
@@ -751,7 +730,7 @@ export function Console({ debugController }: ConsoleProps) {
                     )}
                   </div>
                 </>;
-                return navigable ? <button key={idx} type="button" onClick={() => { void activateDiagnostic(msg); }} className="flex w-full items-start gap-2 rounded px-2 py-1 text-left hover:bg-[var(--color-surface-700)] focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[var(--color-accent-blue)]">{content}</button> : <div key={idx} className="flex items-start gap-2 rounded px-2 py-1">{content}</div>;
+                return navigable ? <Button variant="ghost" size="sm" key={idx} onClick={() => { void activateDiagnostic(msg); }} className="h-auto w-full items-start justify-start whitespace-normal py-1 text-left">{content}</Button> : <div key={idx} className="flex items-start gap-2 rounded px-2 py-1">{content}</div>;
               })
               )}
             </section>
@@ -767,43 +746,23 @@ export function Console({ debugController }: ConsoleProps) {
             ) : (
               <>
                 <div className="flex flex-wrap items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => workspaceManifestInputRef.current?.click()}
-                    disabled={workspaceTestBusy}
-                    className="inline-flex items-center gap-1.5 rounded px-2.5 py-1.5 bg-[var(--color-surface-700)] text-[var(--color-surface-100)] hover:bg-[var(--color-surface-600)] disabled:cursor-not-allowed disabled:opacity-60 focus:outline-none focus:ring-2 focus:ring-[var(--color-accent-blue)]"
-                  >
+                  <Button variant="secondary" size="sm" onClick={() => workspaceManifestInputRef.current?.click()} disabled={workspaceTestBusy}>
                     <FolderOpen size={14} aria-hidden="true" />
                     {hasCurrentWorkspaceLink ? 'Relink zplc.json' : 'Choose zplc.json'}
-                  </button>
+                  </Button>
                   {workspaceTestAvailabilityState === 'unsaved' && (
-                    <button
-                      type="button"
-                      onClick={() => { void saveWorkspaceProject(); }}
-                      disabled={workspaceTestBusy}
-                      className="inline-flex items-center gap-1.5 rounded border border-[var(--color-surface-600)] bg-[var(--color-surface-800)] px-2.5 py-1.5 text-[var(--color-surface-100)] hover:bg-[var(--color-surface-700)] disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-accent-blue)]"
-                    >
+                    <Button variant="secondary" size="sm" onClick={() => { void saveWorkspaceProject(); }} disabled={workspaceTestBusy}>
                       Save project
-                    </button>
+                    </Button>
                   )}
-                  <button
-                    type="button"
-                    onClick={() => { void runWorkspaceTests(); }}
-                    disabled={workspaceTestBusy || workspaceTestAvailabilityState !== 'ready'}
-                    className="inline-flex items-center gap-1.5 rounded px-2.5 py-1.5 bg-[var(--color-accent-blue)] text-white hover:bg-[var(--color-accent-blue)]/80 disabled:cursor-not-allowed disabled:opacity-60 focus:outline-none focus:ring-2 focus:ring-[var(--color-accent-blue)]"
-                  >
+                  <Button variant="primary" size="sm" onClick={() => { void runWorkspaceTests(); }} disabled={workspaceTestBusy || workspaceTestAvailabilityState !== 'ready'}>
                     <Play size={14} aria-hidden="true" />
                     Run host scenarios
-                  </button>
+                  </Button>
                   {workspaceTestStateForLink === 'running' || workspaceTestStateForLink === 'cancelling' ? (
-                    <button
-                      type="button"
-                      onClick={() => { void cancelWorkspaceTests(); }}
-                      disabled={workspaceTestStateForLink === 'cancelling'}
-                      className="inline-flex items-center gap-1.5 rounded px-2.5 py-1.5 bg-[var(--color-surface-700)] text-[var(--color-surface-100)] hover:bg-[var(--color-surface-600)] disabled:cursor-not-allowed disabled:opacity-60 focus:outline-none focus:ring-2 focus:ring-[var(--color-accent-blue)]"
-                    >
+                    <Button variant="secondary" size="sm" onClick={() => { void cancelWorkspaceTests(); }} disabled={workspaceTestStateForLink === 'cancelling'}>
                       {workspaceTestStateForLink === 'cancelling' ? 'Cancelling…' : 'Cancel scenarios'}
-                    </button>
+                    </Button>
                   ) : null}
                 </div>
 
@@ -857,10 +816,10 @@ export function Console({ debugController }: ConsoleProps) {
             <div className="border border-[var(--color-surface-600)] bg-[var(--color-surface-800)] p-3">
               <div className="flex flex-wrap items-center gap-2">
                 {!hasCurrentWorkspaceLink && isProjectOpen && candidateDesktopReady && (
-                  <button type="button" onClick={() => workspaceManifestInputRef.current?.click()} disabled={workspaceTestBusy} className="inline-flex items-center gap-1.5 border border-[var(--color-surface-600)] px-2.5 py-1.5 hover:bg-[var(--color-surface-700)] disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-accent-blue)]"><FolderOpen size={14} aria-hidden="true" />Choose zplc.json</button>
+                  <Button variant="secondary" size="sm" onClick={() => workspaceManifestInputRef.current?.click()} disabled={workspaceTestBusy}><FolderOpen size={14} aria-hidden="true" />Choose zplc.json</Button>
                 )}
-                <button type="button" onClick={() => { void reviewCandidateChange(); }} disabled={!candidateEligible || workspaceTestBusy} className="inline-flex items-center gap-1.5 bg-[var(--color-accent-blue)] px-2.5 py-1.5 text-white hover:bg-[var(--color-accent-blue)]/80 disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-accent-blue)]"><FileDiff size={14} aria-hidden="true" />Review active ST change</button>
-                {candidateReviewStateForCurrent.kind === 'running' && <button type="button" onClick={() => { void cancelCandidateReview(); }} className="inline-flex items-center gap-1.5 border border-[var(--color-surface-600)] px-2.5 py-1.5 hover:bg-[var(--color-surface-700)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-accent-blue)]">Cancel review</button>}
+                <Button variant="primary" size="sm" onClick={() => { void reviewCandidateChange(); }} disabled={!candidateEligible || workspaceTestBusy}><FileDiff size={14} aria-hidden="true" />Review active ST change</Button>
+                {candidateReviewStateForCurrent.kind === 'running' && <Button variant="secondary" size="sm" onClick={() => { void cancelCandidateReview(); }}>Cancel review</Button>}
               </div>
               {!candidateDesktopReady ? <p role="status" aria-live="polite" className="mt-3">Candidate review requires the desktop app.</p>
                 : !isProjectOpen ? <p role="status" aria-live="polite" className="mt-3">Open a saved project folder to review a change.</p>
@@ -888,21 +847,21 @@ export function Console({ debugController }: ConsoleProps) {
             <section aria-label="Optional Agent" className="max-w-3xl space-y-3 border border-[var(--color-surface-600)] bg-[var(--color-surface-800)] p-3">
               <div className="flex flex-wrap items-baseline justify-between gap-2 border-b border-[var(--color-surface-600)] pb-2">
                 <div><h2 className="font-medium text-[var(--color-surface-100)]">Agent</h2><p className="mt-1 text-xs text-[var(--color-surface-400)]">Provider response — not evidence. It cannot operate hardware.</p></div>
-                <button type="button" onClick={() => { if (!agentBusy && !agentSettingsBusy) void refreshAiProvider(); }} disabled={agentState === 'loading' || agentBusy || agentSettingsBusy} className="border border-[var(--color-surface-600)] px-2 py-1 text-xs hover:bg-[var(--color-surface-700)] disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-accent-blue)]">Refresh status</button>
+                <Button variant="secondary" size="sm" onClick={() => { if (!agentBusy && !agentSettingsBusy) void refreshAiProvider(); }} disabled={agentState === 'loading' || agentBusy || agentSettingsBusy}>Refresh status</Button>
               </div>
               <div role="radiogroup" aria-label="Agent mode" className="flex flex-wrap gap-1">
-                {(['ask', 'plan', 'edit', 'debug'] as const).map((mode, index, modes) => <button key={mode} type="button" role="radio" aria-checked={agentMode === mode} tabIndex={agentMode === mode ? 0 : -1} disabled={agentBusy} onClick={() => { if (!agentBusy) { setAgentMode(mode); setAgentState('idle'); } }} onKeyDown={(event) => { if (agentBusy) return; const next = event.key === 'ArrowRight' ? modes[(index + 1) % modes.length] : event.key === 'ArrowLeft' ? modes[(index + modes.length - 1) % modes.length] : undefined; if (next) { event.preventDefault(); setAgentMode(next); document.getElementById(`agent-mode-${next}`)?.focus(); } }} id={`agent-mode-${mode}`} className={`border px-2.5 py-1 text-xs font-medium capitalize focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-accent-blue)] disabled:cursor-not-allowed disabled:opacity-60 ${agentMode === mode ? 'border-[var(--color-accent-blue)] text-[var(--color-surface-100)]' : 'border-[var(--color-surface-600)] text-[var(--color-surface-300)] hover:bg-[var(--color-surface-700)]'}`}>{mode}</button>)}
+                {(['ask', 'plan', 'edit', 'debug'] as const).map((mode, index, modes) => <Button variant="secondary" size="sm" key={mode} role="radio" aria-checked={agentMode === mode} tabIndex={agentMode === mode ? 0 : -1} disabled={agentBusy} onClick={() => { if (!agentBusy) { setAgentMode(mode); setAgentState('idle'); } }} onKeyDown={(event) => { if (agentBusy) return; const next = event.key === 'ArrowRight' ? modes[(index + 1) % modes.length] : event.key === 'ArrowLeft' ? modes[(index + modes.length - 1) % modes.length] : undefined; if (next) { event.preventDefault(); setAgentMode(next); document.getElementById(`agent-mode-${next}`)?.focus(); } }} id={`agent-mode-${mode}`} className={`border px-2.5 py-1 text-xs font-medium capitalize disabled:cursor-not-allowed disabled:opacity-60 ${agentMode === mode ? 'border-[var(--color-accent-blue)] text-[var(--color-surface-100)]' : 'border-[var(--color-surface-600)] text-[var(--color-surface-300)] hover:bg-[var(--color-surface-700)]'}`}>{mode}</Button>)}
               </div>
-              <label className="block text-xs font-medium text-[var(--color-surface-200)]">Request<textarea value={agentPrompt} disabled={agentBusy} maxLength={4_000} onChange={(event) => { if (!agentBusy) setAgentPrompt(event.target.value); }} rows={4} placeholder="Describe what you want to understand or review." className="mt-1 block w-full resize-y border border-[var(--color-surface-600)] bg-[var(--color-surface-900)] p-2 text-sm text-[var(--color-surface-100)] placeholder:text-[var(--color-surface-500)] disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-accent-blue)]" /></label>
+              <Textarea label="Request" value={agentPrompt} disabled={agentBusy} maxLength={4_000} onChange={(event) => { if (!agentBusy) setAgentPrompt(event.target.value); }} rows={4} placeholder="Describe what you want to understand or review." />
               <p className="text-xs tabular-nums text-[var(--color-surface-400)]">{agentPrompt.length}/4000 characters</p>
               <section aria-label="Agent context preview" className="border-y border-[var(--color-surface-600)] py-2 text-xs text-[var(--color-surface-300)]">
                 <h3 className="font-medium text-[var(--color-surface-200)]">Context preview</h3>
                 <ul className="mt-1 list-disc space-y-1 pl-4"><li>Mode: {agentMode}; prompt length: {agentPrompt.trim().length}.</li><li>Workspace: {hasCurrentWorkspaceLink ? 'linked saved workspace' : 'link zplc.json in Tests before sending'}.</li>{agentMode === 'edit' && <li>{agentEditFile ? `Host will reread saved ${agentEditFile.path}; editor changes are excluded.` : 'Edit requires the active saved, unmodified Structured Text file under src/.'}</li>}{agentMode === 'debug' && <li>Bounded diagnostics: {agentDiagnostics.length}; host trace samples: {agentTrace.length}.</li>}{(agentMode === 'ask' || agentMode === 'plan') && <li>No source file or active editor content is sent.</li>}<li>Do not put secrets in the prompt. Known sensitive patterns in the prompt or context are rejected before network access; do not paste secrets. Terminal, raw serial, and physical controls are excluded.</li></ul>
               </section>
-              <div className="flex flex-wrap gap-2"><button type="button" onClick={() => { void sendAgentRequest(); }} disabled={!agentCanSend} className="inline-flex items-center gap-1.5 border border-[var(--color-accent-blue)] bg-[var(--color-accent-blue)] px-2.5 py-1.5 text-xs font-medium text-white hover:bg-[var(--color-accent-blue)]/80 disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-accent-blue)]"><Send size={14} aria-hidden="true" />Send request</button>{agentBusy && <button type="button" onClick={() => { void cancelAgentRequest(); }} disabled={agentState === 'cancelling'} className="inline-flex items-center gap-1.5 border border-[var(--color-surface-600)] px-2.5 py-1.5 text-xs hover:bg-[var(--color-surface-700)] disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-accent-blue)]"><CircleStop size={14} aria-hidden="true" />Cancel request</button>}</div>
+              <div className="flex flex-wrap gap-2"><Button variant="primary" size="sm" onClick={() => { void sendAgentRequest(); }} disabled={!agentCanSend}><Send size={14} aria-hidden="true" />Send request</Button>{agentBusy && <Button variant="secondary" size="sm" onClick={() => { void cancelAgentRequest(); }} disabled={agentState === 'cancelling'}><CircleStop size={14} aria-hidden="true" />Cancel request</Button>}</div>
               <AgentStatus state={agentState} status={agentStatus} />
-              {typeof agentState === 'object' && agentState.kind === 'response' && <section className="space-y-2 border-t border-[var(--color-surface-600)] pt-2"><p className="whitespace-pre-wrap text-[var(--color-surface-100)]">{agentState.presentation.kind === 'answer' ? agentState.presentation.answer : agentState.presentation.kind === 'error' ? `Provider request failed: ${agentState.presentation.code}.` : 'Provider response could not be trusted.'}</p><p className="text-xs text-[var(--color-surface-400)]">Provider response — not evidence.</p>{agentState.presentation.kind === 'answer' && agentState.presentation.replacement && (agentProposalCurrent ? <button type="button" onClick={() => { void reviewAgentProposal(); }} disabled={workspaceTestBusy || !agentEditFile} className="inline-flex items-center gap-1.5 border border-[var(--color-accent-blue)] px-2.5 py-1.5 text-xs font-medium text-[var(--color-surface-100)] hover:bg-[var(--color-surface-700)] disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-accent-blue)]"><FileDiff size={14} aria-hidden="true" />Review proposed ST change</button> : <p role="status" className="text-xs text-[var(--color-accent-yellow)]">Proposed change is stale. Send a new request.</p>)}</section>}
-              <details open={agentSettingsOpen} onToggle={(event) => { if (agentBusy) { event.currentTarget.open = agentSettingsOpen; return; } setAgentSettingsOpen(event.currentTarget.open); }} className="border-t border-[var(--color-surface-600)] pt-2"><summary aria-disabled={agentBusy} className="cursor-pointer text-xs font-medium text-[var(--color-surface-200)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-accent-blue)]">Provider settings</summary><fieldset disabled={agentBusy || agentSettingsBusy} className="mt-2 disabled:opacity-60"><div className="grid gap-2 sm:grid-cols-2"><label className="flex items-center gap-2 text-xs"><input type="checkbox" checked={agentConfig.enabled} onChange={(event) => setAgentConfig((config) => ({ ...config, enabled: event.target.checked }))} />Enabled</label><label className="text-xs">Endpoint<input value={agentConfig.endpoint} onChange={(event) => setAgentConfig((config) => ({ ...config, endpoint: event.target.value }))} className="mt-1 block w-full border border-[var(--color-surface-600)] bg-[var(--color-surface-900)] px-2 py-1 text-[var(--color-surface-100)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-accent-blue)]" /></label><label className="text-xs">Model<input value={agentConfig.model} onChange={(event) => setAgentConfig((config) => ({ ...config, model: event.target.value }))} className="mt-1 block w-full border border-[var(--color-surface-600)] bg-[var(--color-surface-900)] px-2 py-1 text-[var(--color-surface-100)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-accent-blue)]" /></label><label className="text-xs">API key<input type="password" value={agentKey} onChange={(event) => setAgentKey(event.target.value)} autoComplete="new-password" className="mt-1 block w-full border border-[var(--color-surface-600)] bg-[var(--color-surface-900)] px-2 py-1 text-[var(--color-surface-100)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-accent-blue)]" /></label></div><div className="mt-2 flex flex-wrap gap-2"><button type="button" onClick={() => { void saveAgentConfig(); }} disabled={!aiProvider} className="border border-[var(--color-surface-600)] px-2 py-1 text-xs hover:bg-[var(--color-surface-700)] disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-accent-blue)]">Save configuration</button><button type="button" onClick={() => { void storeAgentKey(); }} disabled={!aiProvider || !agentKey} className="border border-[var(--color-surface-600)] px-2 py-1 text-xs hover:bg-[var(--color-surface-700)] disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-accent-blue)]">Store key</button><button type="button" onClick={() => { void clearAgentKey(); }} disabled={!aiProvider} className="border border-[var(--color-surface-600)] px-2 py-1 text-xs hover:bg-[var(--color-surface-700)] disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-accent-blue)]">Clear key</button></div></fieldset>{agentSettingsMessage && <p role="status" className="mt-2 text-xs text-[var(--color-surface-300)]">{agentSettingsMessage}</p>}</details>
+              {typeof agentState === 'object' && agentState.kind === 'response' && <section className="space-y-2 border-t border-[var(--color-surface-600)] pt-2"><p className="whitespace-pre-wrap text-[var(--color-surface-100)]">{agentState.presentation.kind === 'answer' ? agentState.presentation.answer : agentState.presentation.kind === 'error' ? `Provider request failed: ${agentState.presentation.code}.` : 'Provider response could not be trusted.'}</p><p className="text-xs text-[var(--color-surface-400)]">Provider response — not evidence.</p>{agentState.presentation.kind === 'answer' && agentState.presentation.replacement && (agentProposalCurrent ? <Button variant="secondary" size="sm" onClick={() => { void reviewAgentProposal(); }} disabled={workspaceTestBusy || !agentEditFile}><FileDiff size={14} aria-hidden="true" />Review proposed ST change</Button> : <p role="status" className="text-xs text-[var(--color-accent-yellow)]">Proposed change is stale. Send a new request.</p>)}</section>}
+              <details open={agentSettingsOpen} onToggle={(event) => { if (agentBusy) { event.currentTarget.open = agentSettingsOpen; return; } setAgentSettingsOpen(event.currentTarget.open); }} className="border-t border-[var(--color-surface-600)] pt-2"><summary aria-disabled={agentBusy} className="cursor-pointer text-xs font-medium text-[var(--color-surface-200)]">Provider settings</summary><fieldset disabled={agentBusy || agentSettingsBusy} className="mt-2 disabled:opacity-60"><div className="grid gap-2 sm:grid-cols-2"><Checkbox checked={agentConfig.enabled} onChange={(event) => setAgentConfig((config) => ({ ...config, enabled: event.target.checked }))} label="Enabled" /><TextField value={agentConfig.endpoint} onChange={(event) => setAgentConfig((config) => ({ ...config, endpoint: event.target.value }))} className="mt-1 block w-full" label="Endpoint" /><TextField value={agentConfig.model} onChange={(event) => setAgentConfig((config) => ({ ...config, model: event.target.value }))} className="mt-1 block w-full" label="Model" /><TextField type="password" value={agentKey} onChange={(event) => setAgentKey(event.target.value)} autoComplete="new-password" className="mt-1 block w-full" label="API key" /></div><div className="mt-2 flex flex-wrap gap-2"><Button variant="secondary" size="sm" onClick={() => { void saveAgentConfig(); }} disabled={!aiProvider}>Save configuration</Button><Button variant="secondary" size="sm" onClick={() => { void storeAgentKey(); }} disabled={!aiProvider || !agentKey}>Store key</Button><Button variant="secondary" size="sm" onClick={() => { void clearAgentKey(); }} disabled={!aiProvider}>Clear key</Button></div></fieldset>{agentSettingsMessage && <p role="status" className="mt-2 text-xs text-[var(--color-surface-300)]">{agentSettingsMessage}</p>}</details>
             </section>
           </div>
         )}
@@ -972,8 +931,8 @@ function CandidateReviewResult({ state, effectiveTheme, beforeMount, onSave, bus
       <h2 className="font-medium text-[var(--color-surface-100)]">Review · {snapshot.path}</h2>
       <p className={accepted ? 'text-[var(--color-accent-green)]' : presentation.kind === 'rejected' ? 'text-[var(--color-accent-yellow)]' : 'text-[var(--color-accent-red)]'}>{accepted ? 'Accepted: isolated host candidate passed.' : presentation.kind === 'rejected' ? 'Rejected: candidate was not accepted.' : 'Invalid: candidate review result could not be trusted.'}</p>
       <dl className="grid gap-x-4 gap-y-1 border-y border-[var(--color-surface-600)] py-2 text-xs sm:grid-cols-2">
-        {presentation.artifacts.map((artifact) => <div key={artifact.kind} className="flex justify-between gap-2"><dt>{artifact.kind === 'zplc' ? 'ZPLC program' : 'Trace'}</dt><dd className="break-all tabular-nums" title={artifact.sha256} aria-label={`${artifact.kind === 'zplc' ? 'ZPLC program' : 'Trace'} SHA-256 ${artifact.sha256}`}>{artifact.sha256.slice(0, 12)} · {artifact.byteLength} bytes</dd></div>)}
-        {presentation.savedTestInputIdentity && <div className="flex justify-between gap-2 sm:col-span-2"><dt>Saved input identity</dt><dd className="break-all tabular-nums" title={presentation.savedTestInputIdentity.sha256} aria-label={`Saved input identity SHA-256 ${presentation.savedTestInputIdentity.sha256}`}>{presentation.savedTestInputIdentity.sha256.slice(0, 12)} · {presentation.savedTestInputIdentity.fileCount} files</dd></div>}
+        {presentation.artifacts.map((artifact) => <div key={artifact.kind} className="flex justify-between gap-2"><dt>{artifact.kind === 'zplc' ? 'ZPLC program' : 'Trace'}</dt><Tooltip content={artifact.sha256}><dd className="break-all tabular-nums" tabIndex={0} aria-label={`${artifact.kind === 'zplc' ? 'ZPLC program' : 'Trace'} SHA-256 ${artifact.sha256}`}>{artifact.sha256.slice(0, 12)} · {artifact.byteLength} bytes</dd></Tooltip></div>)}
+        {presentation.savedTestInputIdentity && <div className="flex justify-between gap-2 sm:col-span-2"><dt>Saved input identity</dt><Tooltip content={presentation.savedTestInputIdentity.sha256}><dd className="break-all tabular-nums" tabIndex={0} aria-label={`Saved input identity SHA-256 ${presentation.savedTestInputIdentity.sha256}`}>{presentation.savedTestInputIdentity.sha256.slice(0, 12)} · {presentation.savedTestInputIdentity.fileCount} files</dd></Tooltip></div>}
         {presentation.diagnostics.map((diagnostic) => <div key={diagnostic.code} className="sm:col-span-2"><dt className="inline">Diagnostic </dt><dd className="inline">{diagnostic.code}</dd></div>)}
       </dl>
       <div className="grid gap-1 text-xs text-[var(--color-surface-300)] sm:grid-cols-2"><span>Saved on disk</span><span>{snapshot.origin === 'agent' ? 'Proposed ST change' : 'Current editor buffer'}</span></div>
@@ -982,7 +941,7 @@ function CandidateReviewResult({ state, effectiveTheme, beforeMount, onSave, bus
       </div>
       <p className="text-xs text-[var(--color-surface-400)]">Native POSIX host evidence — not hardware or HIL evidence.</p>
       <p className="text-xs text-[var(--color-surface-400)]">No file has been written.</p>
-      {accepted && <button type="button" onClick={onSave} disabled={busy} className="border border-[var(--color-accent-blue)] px-2.5 py-1.5 text-[var(--color-surface-100)] hover:bg-[var(--color-surface-700)] disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-accent-blue)]">Save reviewed change</button>}
+      {accepted && <Button variant="secondary" size="sm" onClick={onSave} disabled={busy}>Save reviewed change</Button>}
     </section>
   );
 }
@@ -1058,8 +1017,7 @@ function LiveNativeMotorPanel(props: Omit<Parameters<typeof presentLiveNativeMot
   if (!output) return null;
   const unavailable = failedAtMs !== null;
   const disabled = pending || unavailable;
-  const inputButton = 'border border-[var(--color-surface-600)] bg-[var(--color-surface-800)] px-2 py-1 text-xs font-medium text-[var(--color-surface-100)] hover:bg-[var(--color-surface-700)] disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-accent-blue)]';
-
+  
   return (
     <section aria-label="Live native POSIX motor" aria-busy={pending} className="mb-3 border border-[var(--color-surface-700)] bg-[var(--color-surface-900)] p-2">
       <p className="text-xs font-medium text-[var(--color-surface-100)]">Live native POSIX host motor — not hardware or HIL evidence.</p>
@@ -1070,10 +1028,10 @@ function LiveNativeMotorPanel(props: Omit<Parameters<typeof presentLiveNativeMot
       </dl>
       {controls && setSimulationInput && (
         <div className="mt-2 flex flex-wrap gap-2">
-          <button type="button" className={inputButton} disabled={disabled || controls.eStopAsserted} onClick={() => void command('motor.start', true)}>Start</button>
-          <button type="button" className={inputButton} disabled={disabled || controls.eStopAsserted} onClick={() => void command('motor.stop', true)}>Stop</button>
-          <button type="button" className={inputButton} disabled={disabled || controls.eStopAsserted} onClick={() => void command('motor.estop', true)}>Assert E-stop</button>
-          <button type="button" className={inputButton} disabled={disabled || !controls.eStopAsserted} onClick={() => void command('motor.estop', false)}>Release E-stop</button>
+          <Button variant="ghost" size="sm" disabled={disabled || controls.eStopAsserted} onClick={() => void command('motor.start', true)}>Start</Button>
+          <Button variant="ghost" size="sm" disabled={disabled || controls.eStopAsserted} onClick={() => void command('motor.stop', true)}>Stop</Button>
+          <Button variant="ghost" size="sm" disabled={disabled || controls.eStopAsserted} onClick={() => void command('motor.estop', true)}>Assert E-stop</Button>
+          <Button variant="ghost" size="sm" disabled={disabled || !controls.eStopAsserted} onClick={() => void command('motor.estop', false)}>Release E-stop</Button>
         </div>
       )}
       <p role="status" aria-live="polite" className="mt-2 text-xs text-[var(--color-surface-200)]">
@@ -1119,7 +1077,7 @@ function WorkspaceTestResult({ presentation, buildLink, onRunScenario, scenarioR
 
       {presentation.preview && (
         <details open={presentation.kind === 'assertion-failed' || presentation.preview.scenarios.some((scenario) => presentRecordedMotorPlant(scenario) || presentRecordedConveyorPlant(scenario) || presentRecordedPedestrianCrossing(scenario) || presentRecordedTankLevel(scenario))} className="border-t border-[var(--color-surface-700)] pt-2">
-          <summary className="cursor-pointer text-xs font-medium text-[var(--color-surface-200)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-accent-blue)]">Scenario evidence (recorded test result)</summary>
+          <summary className="cursor-pointer text-xs font-medium text-[var(--color-surface-200)]">Scenario evidence (recorded test result)</summary>
           <p className="mt-2 text-xs text-[var(--color-surface-400)]">Recorded during this host test run. It does not update with the live Trace panel.</p>
           {presentation.preview.totalScenarioCount > presentation.preview.scenarios.length && <p className="mt-1 text-xs tabular-nums text-[var(--color-surface-400)]">Showing {presentation.preview.scenarios.length} of {presentation.preview.totalScenarioCount} scenarios.</p>}
           <div className="mt-3 space-y-4">
@@ -1137,7 +1095,7 @@ function WorkspaceTestResult({ presentation, buildLink, onRunScenario, scenarioR
               {presentation.artifacts.map((artifact) => (
                 <tr key={`${artifact.kind}-${artifact.sha256}`} className="border-t border-[var(--color-surface-700)] text-[var(--color-surface-300)]">
                   <td className="py-1.5 pr-3">{artifact.kind}</td>
-                  <td className="py-1.5 pr-3 font-mono" title={artifact.sha256} aria-label={`SHA-256 ${artifact.sha256}`}>{artifact.sha256.slice(0, 12)}…</td>
+                  <Tooltip content={artifact.sha256}><td className="py-1.5 pr-3 font-mono" tabIndex={0} aria-label={`SHA-256 ${artifact.sha256}`}>{artifact.sha256.slice(0, 12)}…</td></Tooltip>
                   <td className="py-1.5 text-right tabular-nums">{artifact.byteLength}</td>
                 </tr>
               ))}
@@ -1156,7 +1114,7 @@ function WorkspaceTestResult({ presentation, buildLink, onRunScenario, scenarioR
         )}
       </section>
 
-      {presentation.savedTestInputIdentity && <p className="border-t border-[var(--color-surface-700)] pt-2 text-xs tabular-nums text-[var(--color-surface-400)]">Saved test inputs · {presentation.savedTestInputIdentity.fileCount} files · SHA-256 <span className="font-mono" title={presentation.savedTestInputIdentity.sha256}>{presentation.savedTestInputIdentity.sha256.slice(0, 12)}…</span></p>}
+      {presentation.savedTestInputIdentity && <p className="border-t border-[var(--color-surface-700)] pt-2 text-xs tabular-nums text-[var(--color-surface-400)]">Saved test inputs · {presentation.savedTestInputIdentity.fileCount} files · SHA-256 <Tooltip content={presentation.savedTestInputIdentity.sha256}><span className="font-mono" tabIndex={0}>{presentation.savedTestInputIdentity.sha256.slice(0, 12)}…</span></Tooltip></p>}
 
       {presentation.hasEvidence && <p className="border-t border-[var(--color-surface-700)] pt-2 text-xs text-[var(--color-surface-400)]">Evidence: native POSIX · logical single-task scan. This is not hardware or HIL evidence.</p>}
     </div>
@@ -1176,7 +1134,7 @@ function ScenarioPreview({ scenario, onRunScenario, scenarioRunDisabled }: {
   const tankLevel = presentRecordedTankLevel(scenario);
   return (
     <section className="space-y-2">
-      <div className="flex flex-wrap items-center gap-2 text-xs"><span className={scenario.passed ? 'text-[var(--color-accent-green)]' : 'text-[var(--color-accent-red)]'}>{scenario.passed ? 'Passed' : 'Failed'}</span><span className="text-[var(--color-surface-200)]">{scenario.id}</span><span className="break-all text-[var(--color-surface-500)]">{scenario.path}</span>{scenario.truncated && <span className="text-[var(--color-surface-400)]">Preview truncated.</span>}<button type="button" onClick={() => onRunScenario(scenario.id)} aria-label={`Run ${scenario.id} again on native POSIX`} disabled={scenarioRunDisabled} className="ml-auto border border-[var(--color-surface-600)] bg-[var(--color-surface-800)] px-2 py-1 text-xs font-medium text-[var(--color-surface-100)] hover:bg-[var(--color-surface-700)] disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-accent-blue)]">Run this scenario again</button></div>
+      <div className="flex flex-wrap items-center gap-2 text-xs"><span className={scenario.passed ? 'text-[var(--color-accent-green)]' : 'text-[var(--color-accent-red)]'}>{scenario.passed ? 'Passed' : 'Failed'}</span><span className="text-[var(--color-surface-200)]">{scenario.id}</span><span className="break-all text-[var(--color-surface-500)]">{scenario.path}</span>{scenario.truncated && <span className="text-[var(--color-surface-400)]">Preview truncated.</span>}<Button variant="secondary" size="sm" onClick={() => onRunScenario(scenario.id)} aria-label={`Run ${scenario.id} again on native POSIX`} disabled={scenarioRunDisabled} className="ml-auto">Run this scenario again</Button></div>
       <div className="overflow-x-auto">
         <table className="w-full min-w-[360px] text-left text-xs tabular-nums">
           <caption className="sr-only">Recorded assertions for {scenario.id}.</caption>
@@ -1217,7 +1175,7 @@ function ScenarioPreview({ scenario, onRunScenario, scenarioRunDisabled }: {
       {motorPlant && (
         <section data-recorded-motor-plant className="space-y-2 border-t border-[var(--color-surface-700)] pt-2" aria-label="Motor plant recorded host scenario">
           <p className="flex items-center gap-1.5 text-xs font-medium text-[var(--color-surface-200)]"><Activity size={14} aria-hidden="true" />Motor plant · recorded host scenario</p>
-          <div role="region" className="overflow-x-auto focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-accent-blue)]" tabIndex={0} aria-label="Recorded motor plant matrix">
+          <div role="region" className="overflow-x-auto" tabIndex={0} aria-label="Recorded motor plant matrix">
             <div role="group" aria-label="Recorded motor plant samples: Command, Running, At speed, and Speed by time" className="flex min-w-max border border-[var(--color-surface-600)] bg-[var(--color-surface-700)] text-xs tabular-nums">
               <div className="flex shrink-0 flex-col border-r border-[var(--color-surface-600)] text-[var(--color-surface-200)]">
                 <span className="flex h-7 items-center px-2 font-medium">Time</span>
@@ -1246,7 +1204,7 @@ function ScenarioPreview({ scenario, onRunScenario, scenarioRunDisabled }: {
       {conveyorPlant && (
         <section data-recorded-conveyor-plant className="space-y-1 border-t border-[var(--color-surface-700)] pt-1.5" aria-label="Conveyor plant recorded host scenario">
           <p className="flex items-center gap-1.5 text-xs font-medium text-[var(--color-surface-200)]"><Activity size={14} aria-hidden="true" />Conveyor plant · recorded host scenario</p>
-          <div role="region" className="overflow-x-auto focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-accent-blue)]" tabIndex={0} aria-label="Recorded conveyor plant matrix">
+          <div role="region" className="overflow-x-auto" tabIndex={0} aria-label="Recorded conveyor plant matrix">
             <div role="group" aria-label="Recorded conveyor plant samples by time" className="flex min-w-max border border-[var(--color-surface-600)] bg-[var(--color-surface-700)] text-[11px] tabular-nums">
               <div className="grid shrink-0 grid-cols-2 border-r border-[var(--color-surface-600)] text-[var(--color-surface-200)]">
                 <span className="col-span-2 flex h-6 items-center px-2 font-medium">Time</span>
@@ -1281,7 +1239,7 @@ function ScenarioPreview({ scenario, onRunScenario, scenarioRunDisabled }: {
       {pedestrianCrossing && (
         <section data-recorded-pedestrian-crossing className="space-y-1 border-t border-[var(--color-surface-700)] pt-1.5" aria-label="Pedestrian crossing recorded host scenario">
           <p className="flex items-center gap-1.5 text-xs font-medium text-[var(--color-surface-200)]"><Activity size={14} aria-hidden="true" />Pedestrian crossing · recorded host scenario</p>
-          <div role="region" className="overflow-x-auto focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-accent-blue)]" tabIndex={0} aria-label="Recorded pedestrian crossing matrix">
+          <div role="region" className="overflow-x-auto" tabIndex={0} aria-label="Recorded pedestrian crossing matrix">
             <div role="group" aria-label="Recorded pedestrian crossing samples by time" className="flex min-w-max border border-[var(--color-surface-600)] bg-[var(--color-surface-700)] text-xs tabular-nums">
               <div className="flex shrink-0 flex-col border-r border-[var(--color-surface-600)] text-[var(--color-surface-200)]">
                 <span className="flex h-7 items-center px-2 font-medium">Time</span>
@@ -1307,7 +1265,7 @@ function ScenarioPreview({ scenario, onRunScenario, scenarioRunDisabled }: {
       {tankLevel && (
         <section data-recorded-tank-level className="space-y-1 border-t border-[var(--color-surface-700)] pt-1.5" aria-label="Tank level controller recorded host scenario">
           <p className="flex items-center gap-1.5 text-xs font-medium text-[var(--color-surface-200)]"><Activity size={14} aria-hidden="true" />Tank level controller · recorded host scenario</p>
-          <div role="region" className="overflow-x-auto focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-accent-blue)]" tabIndex={0} aria-label="Recorded tank level matrix">
+          <div role="region" className="overflow-x-auto" tabIndex={0} aria-label="Recorded tank level matrix">
             <div role="group" aria-label="Recorded tank level outputs by time" className="flex min-w-max border border-[var(--color-surface-600)] bg-[var(--color-surface-700)] text-xs tabular-nums">
               <div className="flex shrink-0 flex-col border-r border-[var(--color-surface-600)] text-[var(--color-surface-200)]">
                 <span className="flex h-7 items-center px-2 font-medium">Time</span>

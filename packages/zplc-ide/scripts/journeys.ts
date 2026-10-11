@@ -167,7 +167,7 @@ const cycles = async (app: App) => Number((/cycles\s+(\d[\d,]*)/.exec(await app.
 
 async function watch(app: App, variable: string): Promise<void> {
   await app.click(tab('Watch', 'prefix'));
-  if (!await app.visible(css('input[placeholder^="Variable path"]'))) await app.click(css('button[title="Add variable"]'));
+  if (!await app.visible(css('input[placeholder^="Variable path"]'))) await app.click(button('Add variable'));
   await app.click(css('input[placeholder^="Variable path"]'));
   await app.type(variable);
   await app.press('Enter');
@@ -1001,7 +1001,7 @@ export const JOURNEYS: Journey[] = [
       // table polls every 100 ms). A click then did nothing and said nothing: the handler dropped it for want of a value. The box must
       // not offer itself until it can work, and the click that waits for it must then force the input.
       await app.click(tab('Watch', 'prefix'));
-      if (!await app.visible(css('input[placeholder^="Variable path"]'))) await app.click(css('button[title="Add variable"]'));
+      if (!await app.visible(css('input[placeholder^="Variable path"]'))) await app.click(button('Add variable'));
       await app.click(css('input[placeholder^="Variable path"]'));
       await app.type('Start');
       const forceBox = css('input[aria-label="Force Start"]');

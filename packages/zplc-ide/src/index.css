@@ -300,7 +300,7 @@ html, body, #root {
 .ledger-inspector { height: 100%; overflow: auto; background: var(--color-surface-800); color: var(--text-primary); }
 .ledger-index { color: var(--text-tertiary); font-family: var(--font-mono); font-weight: 500; }
 .ledger-inspector section { border-bottom: 1px solid var(--border-color); padding: 10px; }
-.ledger-inspector h2 { margin: 0 0 7px; color: var(--color-accent-blue); font-size: 10px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+.ledger-inspector h2 { margin: 0 0 7px; color: var(--color-accent-blue); font-size: var(--font-size-caption); font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
 .ledger-inspector p { margin: 0; color: var(--text-secondary); font-size: 12px; line-height: 1.45; }
 .ledger-inspector dl { margin: 0; }
 .ledger-inspector-row { display: grid; grid-template-columns: 72px minmax(0, 1fr); gap: 8px; padding: 3px 0; font-size: 12px; line-height: 1.35; }

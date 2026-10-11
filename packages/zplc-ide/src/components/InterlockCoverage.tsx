@@ -6,6 +6,7 @@
  */
 import type { workspaceTestAvailability } from './workspaceTestPresentation';
 import type { WorkspaceSafetyPresentation } from './workspaceSafetyPresentation';
+import { Button } from '../ui';
 
 type SafetyView = 'idle' | 'running' | 'unavailable' | { presentation: WorkspaceSafetyPresentation };
 
@@ -35,14 +36,9 @@ export function InterlockCoverage({ availability, state, busy, onCheck }: Interl
     <section aria-label="Declared interlock coverage" data-interlock-coverage className="space-y-2 p-3 font-sans text-sm">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h2 className="text-xs font-semibold uppercase tracking-[0.08em] text-[var(--color-surface-200)]">Declared interlock coverage</h2>
-        <button
-          type="button"
-          onClick={onCheck}
-          disabled={busy || availability !== 'ready'}
-          className="border border-[var(--color-surface-600)] bg-[var(--color-surface-800)] px-2 py-1 text-xs font-medium text-[var(--color-surface-100)] hover:bg-[var(--color-surface-700)] disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-accent-blue)]"
-        >
+        <Button variant="secondary" size="sm" onClick={onCheck} disabled={busy || availability !== 'ready'}>
           {state === 'running' ? 'Checking…' : 'Check declared interlocks'}
-        </button>
+        </Button>
       </div>
       {availability === 'link-required' && <p role="status" className="text-xs text-[var(--color-surface-400)]">Save the project and choose zplc.json in Tests to check declared interlocks.</p>}
       {availability === 'unsaved' && <p role="status" className="text-xs text-[var(--color-surface-400)]">Save all changes before checking declared interlocks.</p>}
