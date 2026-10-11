@@ -10,7 +10,10 @@
    differ, or whose `id`, `slug`, `draft` or `unlisted` differ;
 4. a page that exists in one language only (DOC-016: a page is published when both are complete;
    front matter `draft: true` keeps a page out of the published site and so out of this rule);
-5. a Spanish page that repeats the English prose instead of translating it.
+5. a Spanish page that repeats the English prose instead of translating it;
+6. a page that speaks to the person who writes it (DOC-001): a section that is a rule for the writer, a sentence
+   that tells the writer what a page may claim, a note to the author, or an unfinished marker. The pages under
+   `contributing/` are for contributors and are exempt.
 
     python3 tools/docs/validate_docs_pages.py [--root <repository root>]
 """
@@ -271,6 +274,45 @@ def check_pair_metadata(root: Path) -> list[str]:
     return errors
 
 
+# Rule 6 (DOC-001). The lines that the pages of the first drafts carried ("What this page should and should not
+# claim", "Why this matters for docs", "Do not invent a second undocumented memory model in prose") and the markers
+# of a page that is not finished, in both languages. A line of a code block, a table, a link target or an inline
+# code span is not read (prose_lines).
+ADDRESSED_TO_THE_AUTHOR = tuple(
+    re.compile(pattern, re.IGNORECASE)
+    for pattern in (
+        r"^#{1,6}\s+.*\b(why this matters for docs|documentation rules?|what this page should|rules? for (docs|documentation|authors?|writers?)|notes? for (authors?|writers?))\b",
+        r"\b(when|if) (the )?(docs|documentation|a page|this page) (make|makes|talk|talks|claim|claims|describe|describes)\b",
+        r"\bthis page (should|must|is safe ground)\b",
+        r"\b(docs|documentation|pages|authors?|writers?) (should|must) (not )?(claim|state|say|anchor|be anchored|cite)\b",
+        r"\bdo not (invent|pretend|document an aspirational)\b",
+        r"\bnote to (the )?(author|writer|editor)\b",
+        r"^#{1,6}\s+.*\b(por qué importa para la documentación|reglas? de (la )?documentación|notas? para (los )?(autores|redactores))\b",
+        r"\bcuando (la )?documentaci[oó]n (hace|habla|afirma|describe)\b",
+        r"\besta página (debe|debería|no debe|no debería)\b",
+        r"\bno invente\b",
+        r"\bnota para (el|la) (autor|autora|redactor|redactora)\b",
+    )
+) + (re.compile(r"\b(TODO|FIXME|TBD)\b"),)
+CONTRIBUTOR_PAGES = "contributing/"
+
+
+def check_author_notes(root: Path) -> list[str]:
+    errors = []
+    for prefix, base in (("", EN_DIR), ("es:", ES_DIR)):
+        for name, path in pages(root, base).items():
+            if name.startswith(CONTRIBUTOR_PAGES):
+                continue
+            for line in prose_lines(split_front_matter(path.read_text())[1]):
+                if any(rule.search(line) for rule in ADDRESSED_TO_THE_AUTHOR):
+                    errors.append(
+                        f'{prefix}{name}: speaks to its author, not to its reader (DOC-001): "{line[:80]}" '
+                        "(say it to the reader, or move it to the contributor pages)"
+                    )
+                    break
+    return errors
+
+
 def validate(root: Path = ROOT) -> list[str]:
     return (
         check_endings(root)
@@ -278,6 +320,7 @@ def validate(root: Path = ROOT) -> list[str]:
         + check_twins(root)
         + check_parity(root)
         + check_pair_metadata(root)
+        + check_author_notes(root)
     )
 
 
@@ -291,7 +334,7 @@ def main() -> int:
     if errors:
         return 1
     print(
-        f"Validated page endings, sidebar membership, EN/ES pairs and shape for "
+        f"Validated page endings, notes to the author, sidebar membership, EN/ES pairs and shape for "
         f"{len(pages(root, EN_DIR))} English and {len(pages(root, ES_DIR))} Spanish pages"
     )
     return 0

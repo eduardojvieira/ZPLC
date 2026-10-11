@@ -202,6 +202,42 @@ class DocsPageValidatorTests(unittest.TestCase):
         self.assertEqual(len(errors), 1)
         self.assertIn("translate it", errors[0])
 
+    # Rule 6 (DOC-001): a published page speaks to its reader, not to whoever wrote it.
+
+    def test_pages_that_address_their_author_fail(self) -> None:
+        # the sentences of the pages that said so before DOC-001 was closed, in both languages
+        notes = {
+            "a section that is a rule for the writer": "## Why this matters for docs\n\nKeep claims anchored.",
+            "what a page may claim": "## What this page should and should not claim\n\nNothing.",
+            "an instruction about claims": "When documentation talks about memory safety, claims should be anchored to the header.",
+            "a page that says what it is safe ground for": "This page is safe ground for the compiler input path.",
+            "a page that tells the writer what to avoid": "Do not invent a second undocumented memory model in prose.",
+            "a note to the writer": "Note to the author: add the real numbers.",
+            "an unfinished marker": "The limit is TODO for now.",
+            "the same in Spanish": "Cuando la documentación habla de la memoria, las afirmaciones deben apoyarse en el encabezado.",
+        }
+        for name, note in notes.items():
+            with self.subTest(name):
+                errors = self.run_validator({"guide/index.md": f"# Title\n\nIntro.\n\n{note}\n\nDone.\n", "guide/second.md": GOOD})
+                self.assertEqual(len(errors), 1, errors)
+                self.assertIn("guide/index.md", errors[0])
+                self.assertIn("author", errors[0])
+
+    def test_pages_that_speak_to_their_reader_pass(self) -> None:
+        text = (
+            "# Title\n\n"
+            "When the scan ends, the outputs are written. Do not wire a relay to 24 V on this board.\n\n"
+            "```text\nTODO is only a word in this listing\n```\n\n"
+            "The page `TODO` of the tracker is a name, and Todo el mundo lo sabe.\n"
+        )
+        self.assertEqual(self.run_validator({"guide/index.md": text, "guide/second.md": GOOD}), [])
+
+    def test_a_contributor_page_may_speak_to_its_writers(self) -> None:
+        page = "# Writing pages\n\nWhen documentation talks about a board, claims should be anchored to the manifest.\n"
+        pages = {"guide/index.md": GOOD, "guide/second.md": GOOD, "contributing/index.md": page}
+        sidebar = "module.exports = { docsSidebar: ['guide/index', 'guide/second', 'contributing/index'] };\n"
+        self.assertEqual(self.run_validator(pages, pages, sidebar=sidebar), [])
+
 
 if __name__ == "__main__":
     unittest.main()
