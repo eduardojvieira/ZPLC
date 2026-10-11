@@ -59,6 +59,17 @@ The build must fail and produce no artifact. `lines` (optional) lists the line o
 
 VF-003 asks a negative case to assert the diagnostic code and its position. Every failed build reports the one code `COMPILATION_FAILED` until the compiler has stable codes (CMP-006), and a case that asserted it would pin the placeholder, so the cases assert the position (`lines`) and, where the requirement says the message names the construct (CMP-003), the words. A case adds `codes` the day a code exists, and WP-24 does that for all of them.
 
+## Which defect a case shows
+
+VF-004 asks for one case for every defect that the review lists under "Current failures" of CMP, LNG and RT and that a program can show on a host. `defects.json` lists those defects (the spec may be untracked, so CI cannot read them from it), each with the requirements that fix it and the evidence that shows it: the cases, another executed test, the reason that no program shows it, or the mark that it is still open. `defect-map.md` is generated from it:
+
+```
+bun tools/ci/conformance-defects.ts --write      # regenerate defect-map.md
+bun tools/ci/conformance-defects.ts --check      # CI: the list is well formed and the map is current
+```
+
+A new case that shows a listed defect is named in that defect's `cases`, and its requirement must be one of the requirements that fix it. A defect that is open gets its case the day the behaviour is fixed, and its entry changes from `open` to `cases` in the same commit.
+
 ## Run the cases
 
 The cases need the native POSIX runtime, built out of the repository tree:
@@ -72,6 +83,8 @@ cd packages/zplc-ide && bun test src/conformance          # only the cases
 ```
 
 Without the binary the cases that run a program are skipped on a developer machine; with `CI` set they fail. Cases that must not build never need it.
+
+`ZPLC_CONFORMANCE_ROOT=<folder> bun test src/conformance/conformance.test.ts` runs the cases of another folder instead of this one. `packages/zplc-ide/src/conformance/addCase.test.ts` uses it to prove VF-002: a folder that holds only a source file and an expected-values file is a case the runner finds, runs and judges, with no edit to test code.
 
 `ZPLC_CONFORMANCE_TAGS=arch-sensitive,alignment bun test src/conformance` runs only the cases that carry one of the tags, which is how the firmware test method selects the architecture-sensitive subset (VF-005). `bun tools/ci/conformance-coverage.ts --tag alignment` lists those cases, one path for each.
 

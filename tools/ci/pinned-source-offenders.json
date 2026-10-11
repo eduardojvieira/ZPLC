@@ -513,18 +513,6 @@
     "reason": "Matches two lines of projectLoader.ts as text to prove _starter projects are loadable but not listed. Replace by calling the starter filter as a function once it is exported without the Vite glob."
   },
   {
-    "file": "scripts/release-artifacts.test.mjs",
-    "requirement": "VF-021",
-    "added": "2026-10-10",
-    "reads": [
-      ".github/workflows/ci.yml",
-      ".github/workflows/release.yml",
-      "packages/zplc-ide/scripts/package-mac-release.mjs"
-    ],
-    "replacement": "artifact",
-    "reason": "VF-021 names this file: it matches release.yml, ci.yml, the packaging scripts and electron-builder.yml with regular expressions. Replace by tests of the produced installers, checksums and bill of materials."
-  },
-  {
     "file": "scripts/workflow-action-pins.test.mjs",
     "requirement": "VF-021",
     "added": "2026-10-10",

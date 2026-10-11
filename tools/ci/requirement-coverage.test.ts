@@ -27,6 +27,7 @@ describe('unitChecks', () => {
     '  });',
     "  it(`${name} (CMP-020)`, () => {});",
     "  test.skip('skipped one (UX-001)', () => {});",
+    "  itNative('needs the runtime (CMP-051)', async () => {});",
     "});",
     "describe('RETURN (CMP-036 stopgap)', () => {});",
     "// a comment that cites UX-005 is not a test name",
@@ -39,6 +40,7 @@ describe('unitChecks', () => {
       'IDE-008 session store (IDE-008)',
       'IDE-008 writes atomically (IDE-008, IDE-006)',
       'IDE-006 writes atomically (IDE-008, IDE-006)',
+      'CMP-051 needs the runtime (CMP-051)',
       'CMP-036 RETURN (CMP-036 stopgap)',
     ]);
   });
