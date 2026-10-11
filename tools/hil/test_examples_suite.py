@@ -1,97 +1,51 @@
-import sys
-import os
-import time
+"""Reference projects of Studio on the device: the LD, FBD and SFC blinkies and the LD motor control (HIL-004, HIL-015).
+
+Each project is compiled as a workspace by the repository compiler and run; the checks are what the project is for
+(a blinker toggles its output, a motor circuit seals in and drops out), judged on values read while it runs.
+Exits non-zero when one differs.
+"""
 from language_tester import LanguageTester
+from zplc_tester import ROOT, cli
+
+PROJECTS = str(ROOT / "packages/zplc-ide/projects")
 
 
-def run_tests():
-    tester = LanguageTester()
-    results = []
+def blinks(at="%QX0.0", scans=250):
+    return [{"scans": scans, "expect": [{"at": at, "type": "BOOL", "op": "toggles", "min": 2}]}]
 
-    # -------------------------------------------------------------------------
-    # 1. Blinky LD
-    # -------------------------------------------------------------------------
-    print("\n--- TEST: Blinky (LD) ---")
-    try:
-        # Blink period 500ms.
-        # Run 100ms -> likely Q=0 (timer running)
-        # We just check it runs and doesn't crash.
-        path = "packages/zplc-ide/projects/blinky/src/main.ld.json"
-        print(f"Compiling {path}...")
-        tester.compile_and_run(path, duration=0.2)
 
-        # Check output address 0x1000 (Q0.0)
-        # It's hard to guarantee state without precise timing, but we can read it.
-        val = tester.peek(0x1000, 1)
-        print(f"Output %Q0.0: {val[0] if val else 'ERR'}")
+def cases():
+    return [
+        {"id": "examples.blinky_ld", "title": "Blinky (LD): the LED output toggles", "source": f"{PROJECTS}/blinky", "phases": blinks()},
+        {"id": "examples.blinky_fbd", "title": "Blinky (FBD): the LED output toggles", "source": f"{PROJECTS}/blinky_fbd", "phases": blinks()},
+        {"id": "examples.blinky_sfc", "title": "Blinky (SFC): the LED starts on and toggles", "source": f"{PROJECTS}/blinky_sfc", "phases": [
+            {"scans": 3, "expect": [{"at": "%QX0.0", "type": "BOOL", "value": True}]},
+            *blinks(),
+        ]},
+        {"id": "examples.motor_control", "title": "Motor control (LD): start seals in, overload drops out", "source": f"{PROJECTS}/motor_control", "phases": [
+            {"scans": 5, "inputs": [{"at": "%IX0.0", "type": "BOOL", "value": False}],
+             "expect": [{"at": "%QX0.0", "type": "BOOL", "value": False}, {"at": "%QX0.1", "type": "BOOL", "value": False}]},
+            {"scans": 5, "inputs": [{"at": "%IX0.0", "type": "BOOL", "value": True}],
+             "expect": [{"at": "%QX0.0", "type": "BOOL", "value": True}, {"at": "%QX0.1", "type": "BOOL", "value": True}]},
+            {"scans": 5, "inputs": [{"at": "%IX0.0", "type": "BOOL", "value": False}],
+             "expect": [{"at": "%QX0.0", "type": "BOOL", "value": True}]},
+            {"scans": 5, "inputs": [{"at": "%IX0.2", "type": "BOOL", "value": True}],
+             "expect": [{"at": "%QX0.0", "type": "BOOL", "value": False}]},
+        ]},
+    ]
 
-        results.append(True)
-    except Exception as e:
-        print(f"FAILED: {e}")
-        results.append(False)
 
-    # -------------------------------------------------------------------------
-    # 2. Blinky FBD
-    # -------------------------------------------------------------------------
-    print("\n--- TEST: Blinky (FBD) ---")
-    try:
-        path = "packages/zplc-ide/projects/blinky_fbd/src/main.fbd.json"
-        tester.compile_and_run(path, duration=0.2)
-        val = tester.peek(0x1000, 1)
-        print(f"Output %Q0.0: {val[0] if val else 'ERR'}")
-        results.append(True)
-    except Exception as e:
-        print(f"FAILED: {e}")
-        results.append(False)
-
-    # -------------------------------------------------------------------------
-    # 3. Blinky SFC
-    # -------------------------------------------------------------------------
-    print("\n--- TEST: Blinky (SFC) ---")
-    try:
-        path = "packages/zplc-ide/projects/blinky_sfc/src/main.sfc.json"
-        tester.compile_and_run(path, duration=0.2)
-        # Initial step LED_ON -> Output should be TRUE initially
-        r1 = tester.expect_bool(0x1000, 0, True, "LED_Output (Initial)")
-        results.append(r1)
-    except Exception as e:
-        print(f"FAILED: {e}")
-        results.append(False)
-
-    # -------------------------------------------------------------------------
-    # 4. Motor Control (LD)
-    # -------------------------------------------------------------------------
-    print("\n--- TEST: Motor Control (LD) ---")
-    try:
-        path = "packages/zplc-ide/projects/motor_control/src/main.ld.json"
-        tester.compile_and_run(path, duration=0.2)
-
-        # Initial state: Motor OFF
-        r1 = tester.expect_bool(0x1000, 0, False, "MotorContactor (Q0.0)")
-        r2 = tester.expect_bool(
-            0x1001, 0, False, "RunningLamp (Q0.1)"
-        )  # 0x1001 if byte addressing
-        # Note: %Q0.1 is bit 1 of byte 0, OR byte 1?
-        # ZPLC addressing: %Q0.0 -> byte 0 bit 0. %Q0.1 -> byte 0 bit 1.
-        # But my previous tests treated them as separate bytes (e.g. basic_il.il uses %Q0.0, %Q0.2 with INTs).
-        # Boolean variables in ZPLC might be byte-aligned or bit-packed.
-        # In `codegen.ts`, size is 1 byte for BOOL.
-        # `ilToST.ts`: `a AT %Q0.0 : INT`.
-        # If standard IEC: %Q0.0 is bit.
-        # But ZPLC implementation of `AT` usually maps to BYTE address in `symbol-table.ts`.
-        # If `symbol-table.ts` parses `%Q0.1` as byte offset 0, bit 1? Or byte offset 1?
-        # Let's assume byte 0 bit 0 for Q0.0.
-
-        # Re-check r1 logic.
-
-        results.append(all([r1, r2]))
-    except Exception as e:
-        print(f"FAILED: {e}")
-        results.append(False)
-
+def run_tests(tester=None):
+    tester = tester or LanguageTester()
+    for case in cases():
+        try:
+            problems = tester.run_fixture(case, scan_ms=10)
+        except Exception as error:
+            problems = [f"{type(error).__name__}: {error}"]
+        tester.check(f"{case['id']}: {case['title']}", not problems, "; ".join(problems))
     tester.close()
-    return all(results)
+    return tester.finish()
 
 
 if __name__ == "__main__":
-    run_tests()
+    cli(run_tests)

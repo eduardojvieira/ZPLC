@@ -34,15 +34,16 @@ Ensure you have the Zephyr environment activated.
 ```bash
 # Activate environment
 source ~/zephyrproject/activate.sh
+export ZPLC_PATH=/path/to/this/checkout
 
 # Build for Raspberry Pi Pico
-west build -b rpi_pico $ZEPLC_PATH/apps/zephyr_app --pristine
+west build -b rpi_pico $ZPLC_PATH/firmware/app --pristine
 
 # Flash via BOOTSEL mode
 cp build/zephyr/zephyr.uf2 /Volumes/RPI-RP2/
 
 # Or build for QEMU
-west build -b mps2/an385 $ZEPLC_PATH/apps/zephyr_app
+west build -b mps2/an385 $ZPLC_PATH/firmware/app
 west build -t run
 ```
 

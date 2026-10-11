@@ -7,11 +7,11 @@ VAR
     sum : INT := 0;
     case_val : INT := 0;
     
-    (* Resultados en WORK (para que no los pise el stop) *)
-    res_tof : BOOL;   
-    res_tp : BOOL;    
-    res_for : INT;    
-    res_case : INT;   
+    (* Results on the output image: STOP puts the outputs in their safe state, so they are read while it runs *)
+    res_tof AT %QX0.0 : BOOL;
+    res_tp AT %QX0.1 : BOOL;
+    res_for AT %QW1 : INT;
+    res_case AT %QW2 : INT;
 END_VAR
 
 test_cycle := test_cycle + 1;

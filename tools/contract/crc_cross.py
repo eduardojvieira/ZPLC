@@ -161,14 +161,35 @@ def run() -> dict:
     }
 
 
+def problems(result: dict) -> list[str]:
+    """What disagrees in a result of run(); an empty list is agreement."""
+    found = []
+    for position, vector in enumerate(result["vectors"]):
+        c, ts, zl = result["c"][position], result["ts"][position], result["zlib"][position]
+        if not c == ts == zl:
+            found.append(f"CRC32 of vector {position} ({vector}...): C {c}, TypeScript {ts}, zlib {zl}")
+    if not result["vectors"]:
+        found.append("no test vector was compared")
+    verdicts = result["loader_verdicts"]
+    rejected = ("tampered_artifact", "other_draft_artifact", "no_counter_artifact")
+    for name, verdict in verdicts.items():
+        if name in rejected and verdict == 0:
+            found.append(f"the C loader accepted {name}, which it must refuse")
+        if name not in rejected and verdict != 0:
+            found.append(f"the C loader refused {name} (verdict {verdict}), which it must accept")
+    for name in rejected:
+        if name not in verdicts:
+            found.append(f"no verdict for {name}")
+    return found
+
+
 def main() -> int:
     result = run()
-    verdicts = result["loader_verdicts"]
-    accepted = [name for name in verdicts if name not in ("tampered_artifact", "other_draft_artifact", "no_counter_artifact")]
-    ok = result["c"] == result["ts"] == result["zlib"] and all(verdicts[name] == 0 for name in accepted) \
-        and verdicts["tampered_artifact"] != 0 and verdicts["other_draft_artifact"] != 0 and verdicts["no_counter_artifact"] != 0
     print(json.dumps(result, indent=2))
-    return 0 if ok else 1
+    issues = problems(result)
+    for issue in issues:
+        print(f"MISMATCH: {issue}", file=sys.stderr)
+    return 1 if issues else 0
 
 
 if __name__ == "__main__":

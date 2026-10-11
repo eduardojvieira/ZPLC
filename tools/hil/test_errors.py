@@ -1,59 +1,22 @@
-from zplc_tester import ZPLCTester
-from zplc_contract import VmError  # on sys.path through zplc_tester; the table is generated
+"""Error conditions: division by zero, stack underflow and overflow, an invalid opcode.
 
+A table of opcode cases (opcode_cases.py); it exits non-zero when a case fails (HIL-004).
+Needs a firmware image built with CONFIG_ZPLC_HIL_DEBUG=y for the trace frames; exits 77 (skipped) without it.
+"""
+from opcode_cases import *  # noqa: F401,F403
+from zplc_tester import ZPLCTester, cli
 
-def test_errors():
-    tester = ZPLCTester()
-    OP = tester.OP
+OP = ZPLCTester.OP
+CASES = [
+    dict(name='DIV by zero', code=[OP['PUSH8'], 10, OP['PUSH8'], 0, OP['DIV'], OP['HALT']], error='DIV_BY_ZERO'),
+    dict(name='stack underflow', code=[OP['DROP'], OP['HALT']], error='STACK_UNDERFLOW'),
+    dict(name='stack overflow', code=[OP['PUSH8'], 1] * 260 + [OP['HALT']], error='STACK_OVERFLOW'),
+    dict(name='invalid opcode', code=[0xFE, OP['HALT']], error='INVALID_OPCODE'),
+]
 
-    ERR = {error.name: int(error) for error in VmError}
-
-    print("\n--- Running Error Condition Tests ---")
-
-    # 1. DIV BY ZERO (Int)
-    print("Test DIV by Zero (Int)...", end="", flush=True)
-    bytecode = [OP["PUSH8"], 10, OP["PUSH8"], 0, OP["DIV"], OP["HALT"]]
-    traces = tester.run_bytecode(bytecode)
-    err = next((t for t in traces if t.get("t") == "error"), {})
-    if err.get("code") == ERR["DIV_BY_ZERO"]:
-        print("PASS")
-    else:
-        print(f"FAIL (err={err.get('code')})")
-
-    # 2. STACK UNDERFLOW
-    print("Test Stack Underflow...", end="", flush=True)
-    bytecode = [OP["DROP"], OP["HALT"]]
-    traces = tester.run_bytecode(bytecode)
-    err = next((t for t in traces if t.get("t") == "error"), {})
-    if err.get("code") == ERR["STACK_UNDERFLOW"]:
-        print("PASS")
-    else:
-        print(f"FAIL (err={err.get('code')})")
-        print(f"DEBUG: Traces: {traces}")
-
-    # 3. STACK OVERFLOW
-    print("Test Stack Overflow...", end="", flush=True)
-    bytecode = [OP["PUSH8"], 1] * 260 + [OP["HALT"]]
-    traces = tester.run_bytecode(bytecode)
-    err = next((t for t in traces if t.get("t") == "error"), {})
-    if err.get("code") == ERR["STACK_OVERFLOW"]:
-        print("PASS")
-    else:
-        print(f"FAIL (err={err.get('code')})")
-
-    # 4. INVALID OPCODE
-    print("Test Invalid Opcode...", end="", flush=True)
-    bytecode = [0xFE, OP["HALT"]]
-    traces = tester.run_bytecode(bytecode)
-    err = next((t for t in traces if t.get("t") == "error"), {})
-    if err.get("code") == ERR["INVALID_OPCODE"]:
-        print("PASS")
-    else:
-        print(f"FAIL (err={err.get('code')})")
-        print(f"DEBUG: Traces: {traces}")
-
-    tester.close()
+def test_errors(tester=None):
+    return run(tester or ZPLCTester(), CASES)
 
 
 if __name__ == "__main__":
-    test_errors()
+    cli(test_errors)

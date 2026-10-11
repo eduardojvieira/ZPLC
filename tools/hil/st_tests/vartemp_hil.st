@@ -12,8 +12,8 @@ END_FUNCTION_BLOCK
 PROGRAM Main
     VAR
         fb : FB_TempTest;
-        res1 : INT;
-        res2 : INT;
+        res1 AT %QW0 : INT;
+        res2 AT %QW1 : INT;
     END_VAR
 
     res1 := fb.AddTemp(In := 10);

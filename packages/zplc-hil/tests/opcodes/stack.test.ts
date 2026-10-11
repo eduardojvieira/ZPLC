@@ -1,4 +1,5 @@
-import { HILTestCase } from '../../src/runner';
+import type { HILTestCase } from '../../src/runner';
+import { describeCases } from '../cases';
 
 export const stackTests: HILTestCase[] = [
   {
@@ -48,3 +49,5 @@ export const stackTests: HILTestCase[] = [
     ]
   }
 ];
+
+describeCases('HIL cases: stack opcodes (HIL-001)', stackTests);

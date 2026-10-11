@@ -68,6 +68,8 @@ v1.5 release additions
 - Multi-register validation should cover COUNT > 1 for holding-register operations.
 """
 
+from __future__ import annotations
+
 import argparse
 import binascii
 import os
@@ -78,11 +80,16 @@ import sys
 import time
 from pathlib import Path
 
-import serial
+try:
+    import serial  # pyserial: running these scripts needs it, importing them does not (so that they can be tested without a port)
+except ImportError:
+    serial = None
 
 # Magic, segment types, task type, tag id, type ids and memory bases come from the
 # generated contract (tools/contract/contract.json); this script keeps no copy (HIL-008).
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "contract"))
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from hil_ports import PortError, resolve_port  # noqa: E402
 from zplc_contract import (  # noqa: E402
     DATA_TYPE_ID,
     MEMORY_REGION,
@@ -484,9 +491,8 @@ def main() -> int:
     parser = argparse.ArgumentParser(
         description="HIL test for ZPLC Modbus TCP server on hardware"
     )
-    parser.add_argument(
-        "--port", default=os.getenv("ZPLC_SERIAL_PORT", "/dev/cu.usbmodem101")
-    )
+    parser.add_argument("--port", help="serial port; else ZPLC_SERIAL_PORT, else found from the USB identifiers of --board")
+    parser.add_argument("--board", default="esp32s3_devkitc", help="ide_id of the board, to find its port")
     parser.add_argument("--baud", type=int, default=115200)
     parser.add_argument("--wifi-ssid", default=os.getenv("ZPLC_WIFI_SSID", ""))
     parser.add_argument("--wifi-password", default=os.getenv("ZPLC_WIFI_PASSWORD", ""))
@@ -503,6 +509,14 @@ def main() -> int:
         help="Override board IP (skip auto-discovery via 'zplc net status')",
     )
     args = parser.parse_args()
+    if serial is None:
+        print("error: pyserial is not installed (pip install pyserial)", file=sys.stderr)
+        return 2
+    try:
+        args.port = resolve_port(args.port, args.board, os.environ)
+    except PortError as error:
+        print(f"error: {error}", file=sys.stderr)
+        return 2
 
     ser = serial.Serial(
         args.port,

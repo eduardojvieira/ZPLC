@@ -1,29 +1,67 @@
 {
   "name": "SFCTwoStates",
   "variables": {
+    "local": [],
     "outputs": [
-      { "name": "State", "type": "INT", "address": "%Q0.0" }
-    ],
-    "local": []
+      {
+        "name": "State",
+        "type": "INT",
+        "address": "%QW0"
+      }
+    ]
   },
   "steps": [
     {
-      "id": "s1", "name": "S1", "isInitial": true,
-      "actions": [{ "qualifier": "N", "actionName": "Set1" }]
+      "id": "s1",
+      "name": "S1",
+      "isInitial": true,
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "actions": [
+        {
+          "qualifier": "N",
+          "actionName": "Set1"
+        }
+      ]
     },
     {
-      "id": "s2", "name": "S2", "isInitial": false,
-      "actions": [{ "qualifier": "N", "actionName": "Set2" }]
+      "id": "s2",
+      "name": "S2",
+      "isInitial": false,
+      "position": {
+        "x": 0,
+        "y": 1
+      },
+      "actions": [
+        {
+          "qualifier": "N",
+          "actionName": "Set2"
+        }
+      ]
     }
   ],
   "transitions": [
     {
-      "id": "t1", "fromStep": "s1", "toStep": "s2",
-      "condition": "s1.T >= T#200ms"
+      "id": "t1",
+      "fromStep": "s1",
+      "toStep": "s2",
+      "condition": "S1.T >= T#200ms"
     }
   ],
   "actions": [
-    { "id": "Set1", "name": "Set1", "type": "ST", "body": "State := 1;" },
-    { "id": "Set2", "name": "Set2", "type": "ST", "body": "State := 2;" }
+    {
+      "id": "set1",
+      "name": "Set1",
+      "type": "ST",
+      "body": "State := 1;"
+    },
+    {
+      "id": "set2",
+      "name": "Set2",
+      "type": "ST",
+      "body": "State := 2;"
+    }
   ]
 }

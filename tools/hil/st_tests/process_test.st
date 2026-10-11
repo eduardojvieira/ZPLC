@@ -3,7 +3,7 @@ VAR
     (* --- HYSTERESIS Test --- *)
     hyst : HYSTERESIS;
     hyst_in : REAL;
-    hyst_q : BOOL;
+    hyst_q AT %QX0.0 : BOOL;
     
     (* --- DEADBAND Test --- *)
     db : DEADBAND;
@@ -13,7 +13,7 @@ VAR
     (* --- LAG_FILTER Test --- *)
     lag : LAG_FILTER;
     lag_in : REAL := 100.0;
-    lag_out : REAL;
+    lag_out AT %QD1 : REAL;
     
     (* --- RAMP_REAL Test --- *)
     ramp : RAMP_REAL;
@@ -24,7 +24,7 @@ VAR
     pid : PID_Compact;
     pid_sp : REAL := 10.0;
     pid_pv : REAL := 0.0;
-    pid_out : REAL;
+    pid_out AT %QD2 : REAL;
     
     cycle : INT := 0;
 END_VAR

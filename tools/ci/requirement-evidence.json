@@ -1412,7 +1412,9 @@
   ],
   "COM-030": [
     {"kind":"unit","ref":"packages/zplc-ide/electron/aiDeviceLink.test.ts","test":"COM-030: no AI request can carry a device link"},
-    {"kind":"unit","ref":"packages/zplc-ide/src/mcp/deviceLink.test.ts","test":"COM-030: the MCP server cannot open the device link","partial":true,"note":"covers the MCP tools and the AI path; the other half, that the hardware scenario and bench commands of HIL-003 and HIL-012 exit with an error without an interactive terminal, has a todo in the same file because the commands are not in the tree yet"}
+    {"kind":"unit","ref":"packages/zplc-ide/src/mcp/deviceLink.test.ts","test":"COM-030: the MCP server cannot open the device link","partial":true,"note":"covers the MCP tools and the AI path; the other half, that the hardware scenario and bench commands of HIL-003 and HIL-012 exit with an error without an interactive terminal, has a todo in the same file because the commands are not in the tree yet"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/mcp/hilReach.test.ts","test":"hardware runs are not reachable from MCP or AI tools (HIL-003, COM-030)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/mcp/hilReach.test.ts","test":"the hardware scenario command started without an interactive terminal exits with an error, before it reads or opens anything (HIL-003, COM-030)"}
   ],
   "IDE-001": [
     {"kind":"unit","ref":"packages/zplc-ide/electron/ipcRegistry.test.ts","test":"project files over the IPC boundary (IDE-001, IDE-016)"},
@@ -1713,6 +1715,59 @@
   ],
   "LRN-038": [
     {"kind":"unit","ref":"packages/zplc-ide/src/components/learnLesson.test.ts","test":"Learn lesson text is never replaced at run time (LRN-038)"}
+  ],
+  "HIL-001": [
+    {"kind":"unit","ref":"packages/zplc-hil/tests/runner.test.ts","test":"the runner compiles, deploys, starts and observes (HIL-001)","partial":true,"note":"the deploy goes through the shell grammar of the firmware, which is the control path of the boards today; the framed protocol of COM-019 is one more DeviceLink when it is on the device, and a board run is made by a person"},
+    {"kind":"unit","ref":"packages/zplc-hil/tests/shellLink.test.ts","test":"the shell link speaks the firmware grammar (HIL-001)","partial":true,"note":"the deploy goes through the shell grammar of the firmware, which is the control path of the boards today; the framed protocol of COM-019 is one more DeviceLink when it is on the device, and a board run is made by a person"}
+  ],
+  "HIL-002": [
+    {"kind":"unit","ref":"packages/zplc-hil/tests/hardwarePort.test.ts","test":"the hardware runtime port of the scenario engine (HIL-002)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/test-engine/hardwarePort.test.ts","test":"the scenario engine on a hardware runtime port (HIL-002)"}
+  ],
+  "HIL-003": [
+    {"kind":"unit","ref":"packages/zplc-hil/tests/cli.test.ts","test":"the hardware scenario command (HIL-003)"},
+    {"kind":"unit","ref":"packages/zplc-hil/tests/guard.test.ts","test":"the human-presence guard (HIL-003)"},
+    {"kind":"unit","ref":"packages/zplc-hil/tests/hardwarePort.test.ts","test":"forces are released by the tool at the end and on abort (HIL-003)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/mcp/hilReach.test.ts","test":"hardware runs are not reachable from MCP or AI tools (HIL-003, COM-030)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/mcp/hilReach.test.ts","test":"no flag turns the guard off: an unknown one is an error of its own, not a bypass (HIL-003)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/mcp/hilReach.test.ts","test":"no module that the MCP server loads, at import or while it serves its tools, is the HIL package or a serial library (HIL-003)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/mcp/hilReach.test.ts","test":"the hardware scenario command started without an interactive terminal exits with an error, before it reads or opens anything (HIL-003, COM-030)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/mcp/hilReach.test.ts","test":"the tools MCP serves are the fixed list, and none of them names a device, a board or a physical action (HIL-003)"}
+  ],
+  "HIL-004": [
+    {"kind":"unit","ref":"tools/hil/test_hil_scripts.py","test":"DeviceScriptsFailTests","note":"every opcode, fixture and project script exits non-zero on a device that shows nothing, and 77 on one that has no trace; run by the typescript job of ci.yml, step 'Test the HIL tools and the HIL package', on fake devices and the native runtime; no serial port is opened"}
+  ],
+  "HIL-005": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/cli/hilFixtures.test.ts","test":"every expected value of the manifest names a real address of its type (HIL-005)","partial":true,"note":"the host leg: every fixture compiles and holds its expected values on the native runtime; the leg on a board is run_chain.py at the bench and has no record yet"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/cli/hilFixtures.test.ts","test":"language fixtures of tools/hil (HIL-005, HIL-006)","partial":true,"note":"the host leg: every fixture compiles and holds its expected values on the native runtime; the leg on a board is run_chain.py at the bench and has no record yet"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/cli/hilFixtures.test.ts","test":"the manifest lists every language fixture of tools/hil, once (HIL-005)","partial":true,"note":"the host leg: every fixture compiles and holds its expected values on the native runtime; the leg on a board is run_chain.py at the bench and has no record yet"}
+  ],
+  "HIL-006": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/cli/hilFixtures.test.ts","test":"language fixtures of tools/hil (HIL-005, HIL-006)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/cli/hilFixtures.test.ts","test":"no compiled fixture is tracked under tools/hil (HIL-006)"}
+  ],
+  "HIL-007": [
+    {"kind":"unit","ref":"packages/zplc-hil/tests/ports.test.ts","test":"the serial port is a parameter or found from USB identifiers (HIL-007)"},
+    {"kind":"unit","ref":"tools/hil/test_hil_ports.py","test":"ResolvePortTests","note":"a port is a parameter, the environment, or found by USB identifiers; two matches or none is an error that names what was seen; run by the typescript job of ci.yml, step 'Test the HIL tools and the HIL package', on fake devices and the native runtime; no serial port is opened"},
+    {"kind":"unit","ref":"tools/hil/test_hil_scripts.py","test":"ScriptsAreSafeToImportAndRunTests","note":"no script needs pyserial to load or opens a port it was not given; run by the typescript job of ci.yml, step 'Test the HIL tools and the HIL package', on fake devices and the native runtime; no serial port is opened"}
+  ],
+  "HIL-008": [
+    {"kind":"unit","ref":"tools/hil/test_hil_harness.py","test":"TablesAreTheContractTests","note":"the opcode and error tables of the tester and the opcode scripts are the generated contract; run by the typescript job of ci.yml, step 'Test the HIL tools and the HIL package', on fake devices and the native runtime; no serial port is opened"}
+  ],
+  "HIL-009": [
+    {"kind":"unit","ref":"packages/zplc-hil/tests/record.test.ts","test":"the run record (HIL-009)","partial":true,"note":"the record is written, validated against its schema and shared by the Python and TypeScript tools; no hardware record exists yet, and the support level of the manifest is not yet derived from the records"},
+    {"kind":"unit","ref":"tools/hil/test_hil_record.py","test":"IdentityTests","partial":true,"note":"the firmware fields are read from the real keys of zplc sys build --json, fed with the output of the generated formatter for the host runtime and for the Pico with and without the overlay; no hardware record exists yet and the manifest support level is not derived from records; run by the typescript job of ci.yml, step 'Test the HIL tools and the HIL package', on fake devices and the native runtime; no serial port is opened"},
+    {"kind":"unit","ref":"tools/hil/test_hil_record.py","test":"SchemaTests","partial":true,"note":"the record is validated against the schema that the TypeScript tool reads too; no hardware record exists yet; run by the typescript job of ci.yml, step 'Test the HIL tools and the HIL package', on fake devices and the native runtime; no serial port is opened"}
+  ],
+  "HIL-012": [
+    {"kind":"unit","ref":"tools/hil/test_hil_chain.py","test":"DryRunTests","partial":true,"note":"the chain runs on fake devices with a scripted person and refuses without an interactive terminal; it has not run on a board, and D-08 is open; run by the typescript job of ci.yml, step 'Test the HIL tools and the HIL package', on fake devices and the native runtime; no serial port is opened"}
+  ],
+  "HIL-013": [
+    {"kind":"unit","ref":"tools/hil/test_hil_chain.py","test":"BuildCommandAndTraceTests","note":"the chain prints and records the build command, and fails when the image's trace option is not what the run asked for; run by the typescript job of ci.yml, step 'Test the HIL tools and the HIL package', on fake devices and the native runtime; no serial port is opened"},
+    {"kind":"unit","ref":"tools/hil/test_hil_trace_profile.py","test":"ProfileTests","note":"no shipped board profile sets CONFIG_ZPLC_HIL_DEBUG=y and the overlay does (tools/hil/validate_hil_trace_profile.py, run by the docs-and-truth job of ci.yml); the Pico image built with the overlay differs from the release one in its options hash and lists HIL_DEBUG=y, and the image reports its options (REL-023)"}
+  ],
+  "HIL-017": [
+    {"kind":"unit","ref":"tools/hil/test_hil_crc.py","test":"CrcCrossTests","note":"the C loader and the TypeScript assembler are compared on the same bytes, and any disagreement or wrong loader verdict fails; run by the typescript job of ci.yml, step 'Test the HIL tools and the HIL package', on fake devices and the native runtime; no serial port is opened"}
   ],
   "REL-001": [
     {"kind":"unit","ref":"packages/zplc-ide/scripts/release-config.test.ts","test":"electron-builder.yml macOS signing (REL-001)","partial":true,"note":"asserts the parsed electron-builder and workflow configuration, not the produced installer; its own header says a hosted release run is the proof (VF-021)"}

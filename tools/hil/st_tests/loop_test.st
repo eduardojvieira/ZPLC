@@ -3,8 +3,8 @@ VAR
     i : INT := 0;
     j : INT := 0;
     
-    res_while AT %Q0.0 : INT;  (* 0x1000 *)
-    res_repeat AT %Q2.0 : INT; (* 0x1002 *)
+    res_while AT %QW0 : INT;  (* 0x1000 *)
+    res_repeat AT %QW1 : INT; (* 0x1002 *)
 END_VAR
 
 (* WHILE Loop *)

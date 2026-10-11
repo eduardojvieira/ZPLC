@@ -1,4 +1,5 @@
-import { run, HILTestCase } from '../../src/index';
+import { openSerialLink, run } from '../../src/index';
+import type { HILTestCase } from '../../src/index';
 
 const test: HILTestCase = {
   id: 'examples.hello',
@@ -26,11 +27,12 @@ const test: HILTestCase = {
 
 async function main() {
   console.log(`Running test: ${test.name}`);
-  // Usage: bun run hello.ts <port>
-  const port = process.argv[2] || '/dev/tty.usbmodem1234';
+  // Usage: bun run hello.ts [port]. Without a port, ZPLC_SERIAL_PORT, or the USB identifiers of the board, name it.
+  // A person runs this at the bench: it deploys to a board.
   
   try {
-    const result = await run(test, { port });
+    const link = await openSerialLink({ ...(process.argv[2] ? { port: process.argv[2] } : {}), board: 'rpi_pico' });
+    const result = await run(test, link).finally(() => link.close());
     console.log(`Status: ${result.status}`);
     console.log(`Duration: ${result.duration}ms`);
     if (result.status === 'pass') {
@@ -38,9 +40,11 @@ async function main() {
     } else {
       console.log('❌ FAIL');
       console.log(result.error);
+      process.exitCode = 1;
     }
   } catch (err) {
     console.error('Infrastructure Error:', err);
+    process.exitCode = 1;
   }
 }
 

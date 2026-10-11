@@ -6,7 +6,8 @@
   "types": "src/index.ts",
   "scripts": {
     "test": "bun test",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "hil": "bun src/cli.ts"
   },
   "dependencies": {
     "serialport": "^12.0.0",
