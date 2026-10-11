@@ -1136,16 +1136,29 @@
     {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_vm_arith_edges.c","test":"Defined results for the integer and float edge cases of the VM (RT-005, CMP-016)"}
   ],
   "RT-006": [
-    {"kind":"conformance","ref":"conformance/rt/rt-006-runaway-loop-ends-in-a-fault.expect.json","test":"RT-006 a scan that runs past the instruction budget ends in a VM fault"}
+    {"kind":"conformance","ref":"conformance/rt/rt-006-runaway-loop-ends-in-a-fault.expect.json","test":"RT-006 a scan that runs past the instruction budget ends in a VM fault"},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_vm_scan.c","test":"RT-006: the budget charges the data an opcode processes"},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_vm_scan.c","test":"RT-006: time is latched once per scan"},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_vm_scan.c","test":"the data an opcode processes (RT-006, RT-D11b, RT-D11c)."}
   ],
   "RT-007": [
-    {"kind":"conformance","ref":"conformance/rt/rt-007-vm-fault-drives-outputs-safe.expect.json","test":"RT-007 a VM fault drives the outputs to their safe state"}
+    {"kind":"conformance","ref":"conformance/rt/rt-007-vm-fault-drives-outputs-safe.expect.json","test":"RT-007 a VM fault drives the outputs to their safe state"},
+    {"kind":"c-test","ref":"firmware/tests/single_task/src/main.c","test":"and the image safe (RT-014, RT-007);"}
+  ],
+  "RT-008": [
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_sched_core.c","test":"(RT-008, RT-014, RT-018).","partial":true,"note":"the portable core runs under the POSIX host runtime, the Zephyr scheduler and the single-task configuration, and the equivalence suites hold them to one trace; the WASM runtime does not use the core yet (WP-92), and RT-008 asks for the same suite on each port, so it stays open until it does"},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_sched_equivalence.c","test":"The host runtime decides what the firmware decides (RT-008).","partial":true,"note":"the portable core runs under the POSIX host runtime, the Zephyr scheduler and the single-task configuration, and the equivalence suites hold them to one trace; the WASM runtime does not use the core yet (WP-92), and RT-008 asks for the same suite on each port, so it stays open until it does"},
+    {"kind":"c-test","ref":"firmware/tests/scheduler_admission/src/main.c","test":"The order of a batch is decided by the portable core (RT-008); the target's wrap-safe clock is checked by","partial":true,"note":"the portable core runs under the POSIX host runtime, the Zephyr scheduler and the single-task configuration, and the equivalence suites hold them to one trace; the WASM runtime does not use the core yet (WP-92), and RT-008 asks for the same suite on each port, so it stays open until it does"},
+    {"kind":"c-test","ref":"firmware/tests/scheduler_equivalence/src/main.c","test":"The Zephyr scheduler decides what the host runtime decides (RT-008).","partial":true,"note":"the portable core runs under the POSIX host runtime, the Zephyr scheduler and the single-task configuration, and the equivalence suites hold them to one trace; the WASM runtime does not use the core yet (WP-92), and RT-008 asks for the same suite on each port, so it stays open until it does"}
   ],
   "RT-009": [
-    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_native_runtime_session.c","test":"RT-009: the tasks of a batch read one input image, and a simulation pulse lasts one batch.","partial":true,"note":"covers the POSIX host runtime only: the Zephyr coordinator is checked by its own suite and the WASM runtime has no scheduler test yet, so RT-009 stays open until the shared scheduler core (RT-008) runs one suite on every port"}
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_native_runtime_session.c","test":"RT-009: the tasks of a batch read one input image, and a simulation pulse lasts one batch.","partial":true,"note":"covers the POSIX host runtime, and the Zephyr scheduler through the equivalence suite of the shared scheduler core (firmware/tests/scheduler_equivalence); the WASM runtime has no scheduler test yet (WP-92), so RT-009 stays open until one suite runs on every port (RT-008)"},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_sched_core.c","test":"callbacks that write what they did to a log. The log is the evidence of the order of the phases (RT-009,"},
+    {"kind":"c-test","ref":"firmware/tests/single_task/src/main.c","test":"end, from the image (the same latch and commit as the multitask scheduler, RT-009);"}
   ],
   "RT-010": [
     {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_exchange.c","test":"The exchange between the scan and the threads outside it (RT-010, RT-011, RT-012)."},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_sched_core.c","test":"RT-010, RT-012): the image lock is taken before the latch and released before the pins are written."},
     {"kind":"c-test","ref":"firmware/tests/modbus_tcp/src/main.c","test":"RT-010: a write the scan's queue has no room for is a busy server (exception 6), not an invalid address."},
     {"kind":"c-test","ref":"firmware/tests/modbus_tcp/src/main.c","test":"RT-010: the exchange the server reads and writes through is a fake that records how it was used."},
     {"kind":"c-test","ref":"firmware/tests/scheduler_admission/src/main.c","test":"RT-010, RT-012: an outside write waits for the input latch and never for the scan, and a read sees the last commit."},
@@ -1157,6 +1170,7 @@
   ],
   "RT-012": [
     {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_exchange.c","test":"The exchange between the scan and the threads outside it (RT-010, RT-011, RT-012)."},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_sched_core.c","test":"RT-010, RT-012): the image lock is taken before the latch and released before the pins are written."},
     {"kind":"c-test","ref":"firmware/tests/scheduler_admission/src/main.c","test":"RT-010, RT-012: an outside write waits for the input latch and never for the scan, and a read sees the last commit."},
     {"kind":"c-test","ref":"firmware/tests/scheduler_admission/src/main.c","test":"RT-012: the lock of the process image is not held while the physical outputs are written."}
   ],
@@ -1164,11 +1178,14 @@
     {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/config_check_probe.c","test":"RT-013: a communication, shell or log priority that the scan coordinator does not outrank stops the build."}
   ],
   "RT-014": [
-    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_native_runtime_session.c","test":"RT-014, RT-017: a debugger step is not checked for a deadline.","partial":true,"note":"covers the POSIX host runtime only: the Zephyr scheduler latches at the first miss and reports neither the warning flag, the last overrun nor the fault reason, so RT-014 stays open for the target until the shared scheduler core (RT-008)"},
-    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_native_runtime_session.c","test":"RT-014: a deadline miss raises the warning, is counted, and latches the fault after the configured number in a row.","partial":true,"note":"covers the POSIX host runtime only: the Zephyr scheduler latches at the first miss and reports neither the warning flag, the last overrun nor the fault reason, so RT-014 stays open for the target until the shared scheduler core (RT-008)"},
-    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_native_runtime_session.c","test":"RT-014: the number of consecutive misses that latches the fault is configurable.","partial":true,"note":"covers the POSIX host runtime only: the Zephyr scheduler latches at the first miss and reports neither the warning flag, the last overrun nor the fault reason, so RT-014 stays open for the target until the shared scheduler core (RT-008)"},
-    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_native_runtime_session.c","test":"RT-014: the status of the largest session, with the deadline report, still fits the response line.","partial":true,"note":"covers the POSIX host runtime only: the Zephyr scheduler latches at the first miss and reports neither the warning flag, the last overrun nor the fault reason, so RT-014 stays open for the target until the shared scheduler core (RT-008)"},
-    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_native_runtime_session.c","test":"RT-014: with the default limit the first miss latches the fault, as the target scheduler does.","partial":true,"note":"covers the POSIX host runtime only: the Zephyr scheduler latches at the first miss and reports neither the warning flag, the last overrun nor the fault reason, so RT-014 stays open for the target until the shared scheduler core (RT-008)"}
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_native_runtime_session.c","test":"RT-014, RT-017: a debugger step is not checked for a deadline."},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_native_runtime_session.c","test":"RT-014, RT-D05b: with the default limit one late activation is a warning and a count, and the third in a row"},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_native_runtime_session.c","test":"RT-014: a deadline miss raises the warning, is counted, and latches the fault after the configured number in a row."},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_native_runtime_session.c","test":"RT-014: a limit of one latches at the first miss, as the firmware did before the limit was configurable."},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_native_runtime_session.c","test":"RT-014: the number of consecutive misses that latches the fault is configurable."},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_native_runtime_session.c","test":"RT-014: the status of the largest session, with the deadline report, still fits the response line."},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_sched_core.c","test":"(RT-008, RT-014, RT-018)."},
+    {"kind":"c-test","ref":"firmware/tests/single_task/src/main.c","test":"and the image safe (RT-014, RT-007);"}
   ],
   "RT-015": [
     {"kind":"conformance","ref":"conformance/rt/rt-015-event-triggered-task-is-rejected.expect.json","test":"RT-015 an event-triggered task is rejected by the build","partial":true,"note":"covers the model in simulation and the documentation: the Zephyr scheduler still differs in how it reports a deadline miss (RT-014), and the differences that remain are listed in the scheduler page, so RT-015 stays open until the target is checked against the same suite"},
@@ -1207,7 +1224,45 @@
     {"kind":"c-test","ref":"firmware/tests/scheduler_run_control/src/main.c","test":"RT-017: a step keeps the image and forces and leaves the pins safe."},
     {"kind":"c-test","ref":"firmware/tests/scheduler_run_control/src/main.c","test":"RT-017: an interrupted scan keeps its task id and first-scan flag."},
     {"kind":"c-test","ref":"firmware/tests/scheduler_run_control/src/main.c","test":"RT-017: step from a breakpoint finishes the interrupted scan."},
-    {"kind":"c-test","ref":"firmware/tests/scheduler_run_control/src/main.c","test":"RT-017: the pause command keeps the image and forces with the pins safe."}
+    {"kind":"c-test","ref":"firmware/tests/scheduler_run_control/src/main.c","test":"RT-017: the pause command keeps the image and forces with the pins safe."},
+    {"kind":"c-test","ref":"firmware/tests/single_task/src/main.c","test":"a step keeps the image and drives the pins safe (RT-017);"}
+  ],
+  "RT-018": [
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_sched_core.c","test":"(RT-008, RT-014, RT-018)."},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_single_task.c","test":"The single-task configuration runs on the scheduler core, with the same decisions (RT-018)."},
+    {"kind":"c-test","ref":"firmware/tests/scheduler_equivalence/src/main.c","test":"RT-018: a program of one task is a one-task configuration of the same scheduler, and decides what the"},
+    {"kind":"c-test","ref":"firmware/tests/single_task/src/main.c","test":"The single-task configuration of the firmware runs on the scheduler core (RT-018)."}
+  ],
+  "RT-019": [
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_failsafe.c","test":"policy of a profile (RT-019 to RT-022)."},
+    {"kind":"c-test","ref":"firmware/tests/failsafe/src/main.c","test":"The firmware's answer to a processor fault, a stack overflow or a kernel panic (RT-019)."},
+    {"kind":"c-test","ref":"firmware/tests/failsafe_reboot/src/main.c","test":"A real processor fault, a real reboot, and the record after it (RT-019, RT-021)."}
+  ],
+  "RT-020": [
+    {"kind":"c-test","ref":"firmware/tests/scheduler_watchdog/src/main.c","test":"The hardware watchdog of a profile that has one (RT-020)."}
+  ],
+  "RT-021": [
+    {"kind":"c-test","ref":"firmware/tests/failsafe/src/main.c","test":"output is the emulated LED of native_sim. The next boot reads the record (RT-021) and the runtime stays in STOP;"},
+    {"kind":"c-test","ref":"firmware/tests/failsafe_reboot/src/main.c","test":"A real processor fault, a real reboot, and the record after it (RT-019, RT-021)."},
+    {"kind":"c-test","ref":"firmware/tests/program_boot_restore/src/main.c","test":"RT-021, RT-022 (decision D-13, option A): whatever the reset left, the runtime restores the stored program into"}
+  ],
+  "RT-022": [
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_failsafe.c","test":"policy of a profile (RT-019 to RT-022)."},
+    {"kind":"c-test","ref":"firmware/tests/program_boot_restore/src/main.c","test":"RT-021, RT-022 (decision D-13, option A): whatever the reset left, the runtime restores the stored program into"},
+    {"kind":"c-test","ref":"firmware/tests/program_boot_restore/src/main.c","test":"RT-022, RT-023: a program that declares an output safe at 1 is restored into STOP with that pin high, before"}
+  ],
+  "RT-023": [
+    {"kind":"unit","ref":"packages/zplc-compiler/src/assembler/safe.test.ts","test":"the SAFE segment of an artifact (RT-023)","partial":true,"note":"the declaration is built, carried, checked and driven to the pins; the deploy confirmation that shows a person the declared values before they are written to a device is a Studio screen that is not built (the compile result carries declaredSafe for it), so RT-023 stays open until that screen exists"},
+    {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/safe.test.ts","test":"a declared safe value reaches the artifact (RT-023)","partial":true,"note":"the declaration is built, carried, checked and driven to the pins; the deploy confirmation that shows a person the declared values before they are written to a device is a Studio screen that is not built (the compile result carries declaredSafe for it), so RT-023 stays open until that screen exists"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/boards/boardSafeBuild.test.ts","test":"a safe value declared by the project is in the artifact (RT-023)","partial":true,"note":"the declaration is built, carried, checked and driven to the pins; the deploy confirmation that shows a person the declared values before they are written to a device is a Studio screen that is not built (the compile result carries declaredSafe for it), so RT-023 stays open until that screen exists"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/boards/safeOutputs.test.ts","test":"the safe values a project declares for its outputs (RT-023)","partial":true,"note":"the declaration is built, carried, checked and driven to the pins; the deploy confirmation that shows a person the declared values before they are written to a device is a Studio screen that is not built (the compile result carries declaredSafe for it), so RT-023 stays open until that screen exists"},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_loader_verify.c","test":"RT-023: the declared safe values travel in a SAFE segment of entries","partial":true,"note":"the declaration is built, carried, checked and driven to the pins; the deploy confirmation that shows a person the declared values before they are written to a device is a Studio screen that is not built (the compile result carries declaredSafe for it), so RT-023 stays open until that screen exists"},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_safe_state.c","test":"The safe value a project declares for an output decides the level of its pin (RT-023).","partial":true,"note":"the declaration is built, carried, checked and driven to the pins; the deploy confirmation that shows a person the declared values before they are written to a device is a Studio screen that is not built (the compile result carries declaredSafe for it), so RT-023 stays open until that screen exists"},
+    {"kind":"c-test","ref":"firmware/tests/failsafe/src/main.c","test":"RT-023: the fatal handler drives the pins to the safe state of the program that was running, the value the","partial":true,"note":"the declaration is built, carried, checked and driven to the pins; the deploy confirmation that shows a person the declared values before they are written to a device is a Studio screen that is not built (the compile result carries declaredSafe for it), so RT-023 stays open until that screen exists"},
+    {"kind":"c-test","ref":"firmware/tests/legacy_program_admission/src/main.c","test":"RT-023: a declared safe value is admitted for an output of the board and refused for one it does not have, so","partial":true,"note":"the declaration is built, carried, checked and driven to the pins; the deploy confirmation that shows a person the declared values before they are written to a device is a Studio screen that is not built (the compile result carries declaredSafe for it), so RT-023 stays open until that screen exists"},
+    {"kind":"c-test","ref":"firmware/tests/program_boot_restore/src/main.c","test":"RT-022, RT-023: a program that declares an output safe at 1 is restored into STOP with that pin high, before","partial":true,"note":"the declaration is built, carried, checked and driven to the pins; the deploy confirmation that shows a person the declared values before they are written to a device is a Studio screen that is not built (the compile result carries declaredSafe for it), so RT-023 stays open until that screen exists"},
+    {"kind":"c-test","ref":"firmware/tests/program_boot_restore/src/main.c","test":"RT-023: a stored program whose declaration is for an output this board does not have is not restored: it is","partial":true,"note":"the declaration is built, carried, checked and driven to the pins; the deploy confirmation that shows a person the declared values before they are written to a device is a Studio screen that is not built (the compile result carries declaredSafe for it), so RT-023 stays open until that screen exists"},
+    {"kind":"c-test","ref":"firmware/tests/scheduler_run_control/src/main.c","test":"RT-023: the safe value a project declares is the level of the pin from the load that committed the program,","partial":true,"note":"the declaration is built, carried, checked and driven to the pins; the deploy confirmation that shows a person the declared values before they are written to a device is a Studio screen that is not built (the compile result carries declaredSafe for it), so RT-023 stays open until that screen exists"}
   ],
   "RT-024": [
     {"kind":"c-test","ref":"firmware/tests/runtime_boot/src/main.c","test":"RT-024: the start-up plan. The scheduler, the program store and the control link start before any network or"}
@@ -1759,6 +1814,12 @@
     {"kind":"unit","ref":"packages/zplc-hil/tests/record.test.ts","test":"the run record (HIL-009)","partial":true,"note":"the record is written, validated against its schema and shared by the Python and TypeScript tools; no hardware record exists yet, and the support level of the manifest is not yet derived from the records"},
     {"kind":"unit","ref":"tools/hil/test_hil_record.py","test":"IdentityTests","partial":true,"note":"the firmware fields are read from the real keys of zplc sys build --json, fed with the output of the generated formatter for the host runtime and for the Pico with and without the overlay; no hardware record exists yet and the manifest support level is not derived from records; run by the typescript job of ci.yml, step 'Test the HIL tools and the HIL package', on fake devices and the native runtime; no serial port is opened"},
     {"kind":"unit","ref":"tools/hil/test_hil_record.py","test":"SchemaTests","partial":true,"note":"the record is validated against the schema that the TypeScript tool reads too; no hardware record exists yet; run by the typescript job of ci.yml, step 'Test the HIL tools and the HIL package', on fake devices and the native runtime; no serial port is opened"}
+  ],
+  "HIL-010": [
+    {"kind":"c-test","ref":"firmware/tests/failsafe/src/main.c","test":"their safe level while it resets (HIL-010).","partial":true,"note":"a comment that names the hardware record this behaviour needs: the suite proves the behaviour on an emulator, a model or QEMU and does not stand in for the record of the reset timing and of the pins on a board"},
+    {"kind":"c-test","ref":"firmware/tests/failsafe_reboot/src/main.c","test":"while it resets (HIL-010).","partial":true,"note":"a comment that names the hardware record this behaviour needs: the suite proves the behaviour on an emulator, a model or QEMU and does not stand in for the record of the reset timing and of the pins on a board"},
+    {"kind":"c-test","ref":"firmware/tests/scheduler_watchdog/src/main.c","test":"and that a stopped counter cannot be restarted (HIL-010).","partial":true,"note":"a comment that names the hardware record this behaviour needs: the suite proves the behaviour on an emulator, a model or QEMU and does not stand in for the record of the reset timing and of the pins on a board"},
+    {"kind":"c-test","ref":"firmware/tests/scheduler_watchdog/src/main.c","test":"record (HIL-010). This suite drives the scheduler against the model of the part that a test build carries,","partial":true,"note":"a comment that names the hardware record this behaviour needs: the suite proves the behaviour on an emulator, a model or QEMU and does not stand in for the record of the reset timing and of the pins on a board"}
   ],
   "HIL-012": [
     {"kind":"unit","ref":"tools/hil/test_hil_chain.py","test":"DryRunTests","partial":true,"note":"the chain runs on fake devices with a scripted person and refuses without an interactive terminal; it has not run on a board, and D-08 is open; run by the typescript job of ci.yml, step 'Test the HIL tools and the HIL package', on fake devices and the native runtime; no serial port is opened"}

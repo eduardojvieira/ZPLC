@@ -998,22 +998,52 @@ zplc_hal_result_t zplc_io_drive_safe(const zplc_io_ops_t *ops) {
   const size_t count = zplc_io_channel_count();
   size_t index;
 
-  /* The level is off for every channel unless the board description gives another (channel->safe); the choice
-   * is made here and nowhere else (RT-023). */
+  /* The level is what the loaded program declares for the channel, and off for every channel it declares nothing
+   * for unless the board description gives another (channel->safe); the choice is made here and nowhere else
+   * (RT-023). */
   for (index = 0U; index < count; ++index) {
     const zplc_io_channel_t *channel = zplc_io_channel_at(index);
     zplc_hal_result_t result;
+    uint8_t declared = 0U;
+    uint16_t level;
 
     if (channel == NULL || channel->direction != ZPLC_IO_DIR_OUTPUT || channel->kind != ZPLC_IO_KIND_DIGITAL) {
       continue;
     }
-    result = (ops != NULL && ops->write != NULL) ? ops->write(channel, channel->safe)
-                                                 : zplc_io_write_channel(channel, channel->safe);
+    level = zplc_core_declared_safe(channel->image_offset, channel->bit, &declared) != 0 ? (uint16_t)declared
+                                                                                       : (uint16_t)channel->safe;
+    result = (ops != NULL && ops->write != NULL) ? ops->write(channel, level) : zplc_io_write_channel(channel, level);
     if (result != ZPLC_HAL_OK && result != ZPLC_HAL_NOT_IMPL && first_error == ZPLC_HAL_OK) {
       first_error = result;
     }
   }
   return first_error;
+}
+
+int zplc_io_declared_safe_fits_board(const uint8_t *safe, uint32_t count) {
+  const size_t channels = zplc_io_channel_count();
+  uint32_t entry;
+
+  if (safe == NULL || count == 0U || channels == 0U) {
+    return ZPLC_LOADER_OK;
+  }
+  for (entry = 0U; entry < count; entry++) {
+    const uint8_t *bytes = safe + (size_t)entry * ZPLC_SAFE_ENTRY_SIZE;
+    const uint16_t offset = (uint16_t)((uint16_t)bytes[0] | (uint16_t)((uint16_t)bytes[1] << 8));
+    int found = 0;
+    size_t index;
+
+    for (index = 0U; index < channels && found == 0; index++) {
+      const zplc_io_channel_t *channel = zplc_io_channel_at(index);
+
+      found = channel != NULL && channel->direction == ZPLC_IO_DIR_OUTPUT && channel->kind == ZPLC_IO_KIND_DIGITAL &&
+              channel->image_offset == offset && channel->bit == bytes[2];
+    }
+    if (found == 0) {
+      return ZPLC_LOADER_ERR_SAFE;
+    }
+  }
+  return ZPLC_LOADER_OK;
 }
 
 int zplc_io_reset_image(void) {

@@ -118,8 +118,15 @@ export const ZPLC_CONSTANTS = {
     SEGMENT_TYPE_TASK: SEGMENT_TYPE.TASK,
     SEGMENT_TYPE_TAGS: SEGMENT_TYPE.TAGS,
     SEGMENT_TYPE_BUILD: SEGMENT_TYPE.BUILD,
+    SEGMENT_TYPE_SAFE: SEGMENT_TYPE.SAFE,
     /** Size of the build identity, the payload of the BUILD segment, in bytes. */
     BUILD_ENTRY_SIZE: CONTAINER.buildEntrySize,
+    /** Size of one declared safe value, an entry of the SAFE segment, in bytes (RT-023). */
+    SAFE_ENTRY_SIZE: CONTAINER.safeEntrySize,
+    /** Most outputs an artifact may declare a safe value for; the loader refuses more. */
+    MAX_SAFE_ENTRIES: CONTAINER.maxSafeEntries,
+    /** Bytes of the output image: where a declared safe value can point. */
+    OUTPUT_IMAGE_SIZE: MEMORY_REGION.OPI.size,
     /** Deepest evaluation stack the loader proves for a task; the compiler fails the build above it. */
     MAX_VERIFIED_DEPTH: CONTAINER.maxVerifiedDepth,
     /** Default maximum depth of the call stack of the VM (per zplc_isa.h). */
@@ -169,6 +176,19 @@ export interface TaskDef {
      * is not declared (CMP-050).
      */
     callDepth?: number;
+}
+
+/**
+ * The value an output takes in the safe state, declared in the SAFE segment (RT-023).
+ * Matches zplc_safe_entry_t in zplc_isa.h (4 bytes).
+ */
+export interface SafeEntry {
+    /** Byte offset of the output in the output image */
+    offset: number;
+    /** Bit of that byte, 0 to 7 */
+    bit: number;
+    /** The value of the output in the safe state: 0 or 1 */
+    value: 0 | 1;
 }
 
 /**

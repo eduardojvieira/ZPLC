@@ -4,8 +4,8 @@
  *
  * Verifies the structural and bytecode integrity of .zplc files without
  * changing runtime state. The current v1 subset accepts flags=0 and CODE,
- * TASK, TAGS and BUILD segments only. The returned view borrows the input
- * buffer.
+ * TASK, TAGS, BUILD and SAFE segments only. The returned view borrows the
+ * input buffer.
  */
 
 #ifndef ZPLC_LOADER_H
@@ -54,6 +54,8 @@
 #define ZPLC_LOADER_ERR_DRAFT -17
 /** @brief The evaluation stack can underflow, or exceed the depth the task declares, on some path, or the verifier cannot prove that it cannot */
 #define ZPLC_LOADER_ERR_STACK -18
+/** @brief A declared safe value is invalid: the segment is not whole entries, an entry names no bit of the output image or a value other than 0 or 1, an output is declared twice, or there are too many */
+#define ZPLC_LOADER_ERR_SAFE -19
 /* <<< END GENERATED: loader-errors <<< */
 
 /* Artifact-wide v1 admission limit. This intentionally does not depend on
@@ -61,6 +63,8 @@
  * limit after verification. */
 /* >>> GENERATED (tools/contract/generate.py): loader-max-tasks. Do not edit. >>> */
 #define ZPLC_LOADER_MAX_TASKS 16U
+/** @brief Most outputs one artifact may declare a safe value for, in the SAFE segment (loader). */
+#define ZPLC_LOADER_MAX_SAFE 64U
 /* <<< END GENERATED: loader-max-tasks <<< */
 
 /* Transient storage of the verifier, provided by the caller. It holds, for
@@ -115,9 +119,15 @@ typedef struct {
     uint16_t entry_point;
     uint32_t flags;
     uint16_t segment_count;
-    zplc_program_segment_t segments[4];
+    zplc_program_segment_t segments[5];
     /** Build identity of the artifact (CMP-056); 0 when it carries none. */
     uint32_t build_id;
+    /** Declared safe values of digital outputs (RT-023): safe_count entries of
+     *  ZPLC_SAFE_ENTRY_SIZE bytes, each checked to name one bit of the output
+     *  image, with the value 0 or 1, once. NULL and 0 when the artifact
+     *  declares none: every output is then off in the safe state. */
+    const uint8_t *safe;
+    uint32_t safe_count;
 } zplc_program_view_t;
 
 /**

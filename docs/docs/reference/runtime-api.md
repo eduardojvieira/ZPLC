@@ -3287,7 +3287,7 @@ These tables are generated from `tools/contract/contract.json`, the single sourc
 | --- | --- | --- |
 | Magic number | `0x434C505A` | `5A 50 4C 43` = "ZPLC" |
 | ISA version (major.minor) | `1.0` |  |
-| Draft contract counter | `4` | Written in header word 28 of every artifact. The loader and Studio refuse an artifact, or a device image, whose counter differs from their own and show both numbers; 0 means an artifact built before the counter. It increases with every contract change until the freeze. |
+| Draft contract counter | `5` | Written in header word 28 of every artifact. The loader and Studio refuse an artifact, or a device image, whose counter differs from their own and show both numbers; 0 means an artifact built before the counter. It increases with every contract change until the freeze. |
 | File header size (bytes) | `32` |  |
 | Segment entry size (bytes) | `8` |  |
 | Task definition size (bytes) | `16` |  |
@@ -3295,6 +3295,8 @@ These tables are generated from `tools/contract/contract.json`, the single sourc
 | Tag entry size (bytes) | `8` |  |
 | Maximum tasks in an artifact | `16` |  |
 | Build identity size (bytes) | `4` |  |
+| Safe-state entry size (bytes) | `4` |  |
+| Most outputs an artifact may declare a safe value for | `64` |  |
 | Deepest evaluation stack the loader proves | `127` | A task that needs more is refused, whatever the target stack allows; the compiler fails the build above it. |
 | CRC32 | `0xEDB88320` | IEEE 802.3 polynomial 0xEDB88320, over the whole file except the 4 bytes at offset 12. |
 
@@ -3340,6 +3342,14 @@ These tables are generated from `tools/contract/contract.json`, the single sourc
 | --- | --- | --- | --- | --- |
 | `0` | `build_id` | `uint32_t` | 4 | CRC-32 of CODE then TASK; never 0 (0 = not identified) |
 
+### Layout of `zplc_safe_entry_t`
+
+| Offset | Field | Type | Bytes | Description |
+| --- | --- | --- | --- | --- |
+| `0` | `offset` | `uint16_t` | 2 | Byte offset of the output in the output image |
+| `2` | `bit` | `uint8_t` | 1 | Bit of the byte, 0 to 7 |
+| `3` | `value` | `uint8_t` | 1 | The output's value in the safe state: 0 or 1 |
+
 ### Layout of `zplc_iomap_entry_t`
 
 | Offset | Field | Type | Bytes | Description |
@@ -3382,6 +3392,7 @@ These tables are generated from `tools/contract/contract.json`, the single sourc
 | `ZPLC_SEG_TASK` | `0x20` | Task definitions |
 | `ZPLC_SEG_TAGS` | `0x30` | Variable tags (networking metadata) |
 | `ZPLC_SEG_BUILD` | `0x40` | Build identity of the artifact (CMP-056) |
+| `ZPLC_SEG_SAFE` | `0x41` | Declared safe values of digital outputs (RT-023) |
 
 ### Task types
 
@@ -3627,6 +3638,7 @@ The operand size follows the opcode range (0x00-0x3F none, 0x40-0x7F 8-bit, 0x80
 | `ZPLC_LOADER_ERR_COMM` | `-16` | Communication function-block kind is NONE or at or above the kind limit, or a block at a statically known address does not fit one memory region |
 | `ZPLC_LOADER_ERR_DRAFT` | `-17` | Draft contract counter of the artifact differs from the loader's, or the artifact has none |
 | `ZPLC_LOADER_ERR_STACK` | `-18` | The evaluation stack can underflow, or exceed the depth the task declares, on some path, or the verifier cannot prove that it cannot |
+| `ZPLC_LOADER_ERR_SAFE` | `-19` | A declared safe value is invalid: the segment is not whole entries, an entry names no bit of the output image or a value other than 0 or 1, an output is declared twice, or there are too many |
 
 ### Communication function blocks
 

@@ -639,7 +639,11 @@ def region_loader_errors(c: dict) -> list[str]:
 
 
 def region_loader_max_tasks(c: dict) -> list[str]:
-    return [f"#define ZPLC_LOADER_MAX_TASKS {c['container']['maxTasks']['value']}U"]
+    return [
+        f"#define ZPLC_LOADER_MAX_TASKS {c['container']['maxTasks']['value']}U",
+        f"/** @brief {c['container']['maxSafeEntries']['doc']} */",
+        f"#define ZPLC_LOADER_MAX_SAFE {c['container']['maxSafeEntries']['value']}U",
+    ]
 
 
 def region_loader_verified_depth(c: dict) -> list[str]:
@@ -834,6 +838,8 @@ def render_ts(c: dict) -> str:
         f"  maxTasks: {cont['maxTasks']['value']},",
         f"  maxVerifiedDepth: {cont['maxVerifiedDepth']['value']},",
         f"  buildEntrySize: {structs['build']['size']},",
+        f"  safeEntrySize: {structs['safe']['size']},",
+        f"  maxSafeEntries: {cont['maxSafeEntries']['value']},",
         f"  crcOffset: {cont['crc']['offset']},",
         f"  crcSize: {cont['crc']['size']},",
         "} as const;",
@@ -1086,6 +1092,8 @@ def render_py(c: dict) -> str:
         f"MAX_TASKS = {cont['maxTasks']['value']}",
         f"MAX_VERIFIED_DEPTH = {cont['maxVerifiedDepth']['value']}",
         f"BUILD_ENTRY_SIZE = {structs['build']['size']}",
+        f"SAFE_ENTRY_SIZE = {structs['safe']['size']}",
+        f"MAX_SAFE_ENTRIES = {cont['maxSafeEntries']['value']}",
         f"CRC_OFFSET = {cont['crc']['offset']}",
         f"CRC_SIZE = {cont['crc']['size']}",
         "",
@@ -1221,7 +1229,8 @@ DOC_TEXT = {
         "headerSize": "File header size (bytes)",
         "segmentSize": "Segment entry size (bytes)", "taskSize": "Task definition size (bytes)",
         "iomapSize": "I/O map entry size (bytes)", "tagSize": "Tag entry size (bytes)", "maxTasks": "Maximum tasks in an artifact",
-        "buildSize": "Build identity size (bytes)", "maxDepth": "Deepest evaluation stack the loader proves",
+        "buildSize": "Build identity size (bytes)", "safeSize": "Safe-state entry size (bytes)",
+        "maxSafe": "Most outputs an artifact may declare a safe value for", "maxDepth": "Deepest evaluation stack the loader proves",
         "depthNote": "A task that needs more is refused, whatever the target stack allows; the compiler fails the build above it.",
         "crc": "CRC32", "crcNote": "IEEE 802.3 polynomial {poly}, over the whole file except the 4 bytes at offset {off}.",
         "layout": "Layout of {name}", "offset": "Offset", "field": "Field", "type": "Type", "bytes": "Bytes", "description": "Description",
@@ -1249,7 +1258,8 @@ DOC_TEXT = {
         "headerSize": "Tamaño de la cabecera del archivo (bytes)",
         "segmentSize": "Tamaño de la entrada de segmento (bytes)", "taskSize": "Tamaño de la definición de tarea (bytes)",
         "iomapSize": "Tamaño de la entrada del mapa de E/S (bytes)", "tagSize": "Tamaño de la entrada de etiqueta (bytes)", "maxTasks": "Máximo de tareas en un artefacto",
-        "buildSize": "Tamaño de la identidad de compilación (bytes)", "maxDepth": "Pila de evaluación más profunda que el loader demuestra",
+        "buildSize": "Tamaño de la identidad de compilación (bytes)", "safeSize": "Tamaño de la entrada de estado seguro (bytes)",
+        "maxSafe": "Máximo de salidas para las que un artefacto puede declarar un valor seguro", "maxDepth": "Pila de evaluación más profunda que el loader demuestra",
         "depthNote": "Una tarea que necesita más es rechazada, aunque la pila del destino lo permita; el compilador falla la compilación por encima.",
         "crc": "CRC32", "crcNote": "Polinomio IEEE 802.3 {poly}, sobre todo el archivo salvo los 4 bytes en el offset {off}.",
         "layout": "Layout de {name}", "offset": "Offset", "field": "Campo", "type": "Tipo", "bytes": "Bytes", "description": "Descripción",
@@ -1305,6 +1315,8 @@ def render_docs(c: dict, lang: str) -> str:
         [t["tagSize"], f"`{structs['tag']['size']}`", ""],
         [t["maxTasks"], f"`{cont['maxTasks']['value']}`", ""],
         [t["buildSize"], f"`{structs['build']['size']}`", ""],
+        [t["safeSize"], f"`{structs['safe']['size']}`", ""],
+        [t["maxSafe"], f"`{cont['maxSafeEntries']['value']}`", ""],
         [t["maxDepth"], f"`{cont['maxVerifiedDepth']['value']}`", t["depthNote"]],
         [t["crc"], f"`{cont['crc']['polynomial']}`",
          t["crcNote"].format(poly=cont["crc"]["polynomial"], off=cont["crc"]["offset"])],

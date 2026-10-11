@@ -4,6 +4,22 @@ All notable changes are documented here.
 
 ## Unreleased
 
+- A project declares the value an output takes in the safe state, and the artifact carries it (RT-023).
+  An output is still off whenever the program does not control it (STOP, a pause, a latched
+  fault, the boot, a deploy in progress); a row of `io.outputs` with `"safe": true` is on instead,
+  and the board's own level for the channel is replaced in both directions. The declaration is a
+  new `SAFE` segment (`0x41`, entries of offset, bit and value) so that a program and its safe
+  state are one unit: a restored program restores its declaration, and a replaced program
+  replaces it. **Contract change, draft counter 4 to 5**: artifacts built before are refused and
+  must be rebuilt, the committed ones and the fuzz seeds are restamped, and `ZPLC_LOADER_ERR_SAFE`
+  (`-19`) and `ZPLC_LOADER_MAX_SAFE` (64) are new. The build refuses a `safe` that is not `true` or
+  `false`, one on a row that is not a digital output bit or is an input, a duplicate, and an output
+  the selected board has no digital channel for, naming the output and the board; the firmware
+  refuses the same declaration at deploy and at boot restore. The compile result lists the declared
+  values (`declaredSafe`) for a deploy confirmation; the screen is not part of this change.
+  `tools/contract/safe_cross.py` has the C loader read what the compiler writes. The hardware
+  state of a pin between power-on and the first instruction of the firmware is the part's own and
+  is not claimed.
 - The hardware-in-the-loop tools are repaired and tested without a board
   (HIL-001 to HIL-009, HIL-012, HIL-017). Every script of `tools/hil` exits
   non-zero when a check fails, or is listed with its reason in

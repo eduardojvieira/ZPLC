@@ -480,9 +480,28 @@ zplc_hal_result_t zplc_io_write_outputs(const zplc_io_outputs_t *outputs, const 
 /**
  * @brief The safe state of the pins: every digital output at its safe level. The output image and the force
  *        table are the logical state of the program and are not touched (RT-017).
+ *
+ * The level of an output is the one the loaded program declares for it (zplc_core_declared_safe(), RT-023), or the
+ * board description's `safe` for an output the program declares nothing for: off, unless the board says another
+ * level. This is the one place the level is chosen.
+ *
  * @return the first failure; every channel is attempted
  */
 zplc_hal_result_t zplc_io_drive_safe(const zplc_io_ops_t *ops);
+
+/**
+ * @brief Whether every safe value a program declares is for an output this board has (RT-023).
+ *
+ * An entry has to name a digital output channel of the board's I/O table by its image offset and bit. A declaration
+ * for an output the board does not have is a project for another board, or a typing mistake: the program is
+ * refused instead of being run with a safe state that does not exist. A runtime with no I/O table (the host
+ * simulator, which has no pins) accepts every entry the loader accepted.
+ *
+ * @param safe  the entries of the SAFE segment, ZPLC_SAFE_ENTRY_SIZE bytes each; may be NULL when @p count is 0
+ * @param count number of entries
+ * @return ZPLC_LOADER_OK, or ZPLC_LOADER_ERR_SAFE
+ */
+int zplc_io_declared_safe_fits_board(const uint8_t *safe, uint32_t count);
 
 /**
  * @brief The safe state of the image: forces cleared and the output image zeroed. Image lock held by the caller.

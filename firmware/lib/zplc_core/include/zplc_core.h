@@ -648,6 +648,24 @@ int zplc_core_load(const uint8_t *binary, size_t size, uint8_t *workspace,
                    size_t workspace_size);
 
 /**
+ * @brief The safe value the loaded program declares for one digital output (RT-023).
+ *
+ * The declaration is part of the artifact (its SAFE segment): it is in force from the load that committed the
+ * program until the program is replaced or the memory is initialised, whether the program is running, stopped,
+ * paused or latched in a fault. An output the program declares nothing for is off in the safe state, unless the
+ * board description says otherwise; the choice between the two is made in zplc_io_drive_safe() and nowhere else.
+ *
+ * @param offset byte offset of the output in the output image
+ * @param bit    bit in that byte, 0 to 7
+ * @param value  receives 0 or 1 when the program declares one; may be NULL
+ * @return 1 when the program declares a value for this output, 0 when it does not
+ */
+int zplc_core_declared_safe(uint16_t offset, uint8_t bit, uint8_t *value);
+
+/** @brief How many outputs the loaded program declares a safe value for; 0 when it declares none. */
+uint32_t zplc_core_declared_safe_count(void);
+
+/**
  * @brief Execute a single instruction.
  *
  * @return ZPLC_VM_OK on success, error code otherwise

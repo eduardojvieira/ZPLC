@@ -264,6 +264,11 @@ export interface IOPinConfig {
   pin?: number;          // Physical GPIO pin
   channel?: number;      // ADC/DAC channel index (e.g., 0 for ADC0/GP26)
   type?: 'BOOL' | 'INT' | 'REAL';
+  /**
+   * Digital outputs only (RT-023): the value the output takes whenever the program does not control it (STOP, a
+   * pause, a fault, the boot, a deploy in progress). Absent is off, unless the board description says otherwise.
+   */
+  safe?: boolean;
 }
 
 /** Target hardware configuration */

@@ -1,5 +1,6 @@
 #include <string.h>
 
+#include <zephyr/devicetree.h>
 #include <zephyr/ztest.h>
 
 #include "program_boot_restore.h"
@@ -10,6 +11,26 @@
 #include <zplc_isa.h>
 #include <zplc_scheduler.h>
 #include <zplc_test_hooks.h>
+
+#include "zplc_test_safe.h"
+
+/* The physical output is the emulated LED of native_sim (HAL channel 0, image byte 0 bit 0). A target without the
+ * emulator checks the same through the declaration the core holds and the state of the scheduler. */
+#if DT_NODE_EXISTS(DT_ALIAS(led0))
+#if DT_NODE_HAS_COMPAT(DT_GPIO_CTLR(DT_ALIAS(led0), gpios), zephyr_gpio_emul)
+#include <zephyr/drivers/gpio/gpio_emul.h>
+#define HAVE_EMULATED_OUTPUT 1
+#endif
+#endif
+
+#ifdef HAVE_EMULATED_OUTPUT
+#define LED0_CONTROLLER DEVICE_DT_GET(DT_GPIO_CTLR(DT_ALIAS(led0), gpios))
+#define LED0_PIN DT_GPIO_PIN(DT_ALIAS(led0), gpios)
+#define assert_physical_output(expected, message) \
+  zassert_equal(gpio_emul_output_get(LED0_CONTROLLER, LED0_PIN), (expected), message)
+#else
+#define assert_physical_output(expected, message) ((void)(expected))
+#endif
 
 #define PROGRAM_CAPACITY 256U
 #define WORKSPACE_CAPACITY (PROGRAM_CAPACITY + ZPLC_PROGRAM_STORE_FOOTER_SIZE)
@@ -147,6 +168,51 @@ ZTEST(program_boot_restore, test_verified_active_is_ready_idle_and_safe) {
   zassert_equal(task.stats.cycle_count, 0U, "restore never executes a cycle");
   zassert_equal(zplc_core_get_opi(0U), 0U, "outputs remain safe");
   zassert_equal(zplc_force_get_count(), 0U, "no forces on boot");
+  boot_teardown();
+}
+
+/* RT-022, RT-023: a program that declares an output safe at 1 is restored into STOP with that pin high, before
+ * any scan, and the restore does not run it. Fails without the load driving the safe state of the program it
+ * committed: the pin is where the boot left it. */
+ZTEST(program_boot_restore, test_restored_program_puts_its_declared_safe_value_on_the_pin_and_waits_in_stop) {
+  uint8_t staging[WORKSPACE_CAPACITY];
+  const uint8_t on[] = {ZPLC_TEST_SAFE(0, 0, 1)};
+  size_t loaded_size;
+  zplc_task_t task;
+
+  boot_setup();
+  assert_physical_output(0, "the board is at its own level before any program");
+  stored_size = build_program(stored_program, 1U);
+  stored_size = zplc_test_append_safe(stored_program, stored_size, sizeof(stored_program), on, sizeof(on));
+  zassert_true(stored_size != 0U, "the artifact is built");
+  stored_result = ZPLC_PROGRAM_STORE_OK;
+  zassert_equal(restore(staging, &loaded_size), 1, "one task restored");
+  zassert_equal(zplc_sched_get_state(), ZPLC_SCHED_STATE_IDLE, "restore never auto-starts");
+  zassert_ok(zplc_sched_get_task(0, &task), "read restored task");
+  zassert_equal(task.stats.cycle_count, 0U, "restore never executes a cycle");
+  zassert_equal(zplc_core_declared_safe_count(), 1U, "the declaration came back with the program");
+  assert_physical_output(1, "the pin is at the declared value in STOP");
+  zassert_equal(zplc_core_get_opi(0U), 0U, "while the image of the program stays zero");
+  boot_teardown();
+}
+
+/* RT-023: a stored program whose declaration is for an output this board does not have is not restored: it is
+ * the project of another board. The runtime latches safe like it does for any program it cannot verify. */
+ZTEST(program_boot_restore, test_stored_declaration_for_an_output_the_board_lacks_is_not_restored) {
+  uint8_t staging[WORKSPACE_CAPACITY];
+  const uint8_t nowhere[] = {ZPLC_TEST_SAFE(7, 3, 1)};
+  size_t loaded_size = 99U;
+
+  boot_setup();
+  stored_size = build_program(stored_program, 1U);
+  stored_size = zplc_test_append_safe(stored_program, stored_size, sizeof(stored_program), nowhere, sizeof(nowhere));
+  zassert_true(stored_size != 0U, "the artifact is built");
+  stored_result = ZPLC_PROGRAM_STORE_OK;
+  zassert_equal(restore(staging, &loaded_size), ZPLC_BOOT_RESTORE_ERROR, "the program is refused");
+  zassert_equal(loaded_size, 0U, "nothing is published");
+  zassert_equal(zplc_sched_get_state(), ZPLC_SCHED_STATE_ERROR, "the runtime latches safe");
+  zassert_equal(zplc_core_declared_safe_count(), 0U, "no declaration is in force");
+  assert_physical_output(0, "and the pin is at the board's level");
   boot_teardown();
 }
 

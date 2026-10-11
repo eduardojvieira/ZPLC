@@ -466,6 +466,29 @@ endif()
 
 add_test(NAME test_single_task COMMAND test_single_task)
 
+# Test: the safe value a project declares for an output decides the level of its pin (RT-023). It brings its own
+# board (an I/O table and a recording pin driver) and no HAL: the core's HAL needs are a mutex and a tick.
+# Also run under the sanitizers.
+add_executable(test_safe_state
+    tests/test_safe_state.c
+    src/core/zplc_sched_core.c
+    src/core/zplc_exchange.c
+    src/core/zplc_core.c
+    src/core/zplc_loader.c
+    src/core/zplc_comm_dispatch.c
+)
+
+target_include_directories(test_safe_state PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/tests/include
+)
+
+target_compile_definitions(test_safe_state PRIVATE
+    ZPLC_CORE_VERSION_STR="${ZPLC_CORE_VERSION_STR}"
+)
+
+add_test(NAME test_safe_state COMMAND test_safe_state)
+
 # Test: the exchange between the scan and the threads outside it: write queue, force-aware latch, published
 # snapshot, and a scanner with readers and writers on threads (RT-010, RT-011, RT-012). Also run under the sanitizers.
 add_executable(test_exchange

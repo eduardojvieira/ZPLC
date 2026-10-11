@@ -19,6 +19,8 @@
 #include <zplc_isa.h>
 #include <zplc_test_hooks.h>
 
+#include "zplc_test_safe.h"
+
 #if DT_NODE_EXISTS(DT_ALIAS(led0))
 #if DT_NODE_HAS_COMPAT(DT_GPIO_CTLR(DT_ALIAS(led0), gpios), zephyr_gpio_emul)
 #include <zephyr/drivers/gpio/gpio_emul.h>
@@ -40,6 +42,14 @@ static void intercepted_reboot(void) {
 #ifdef HAVE_EMULATED_OUTPUT
   led_when_rebooted = led_level();
 #endif
+}
+
+static uint8_t workspace[ZPLC_LOADER_VERIFY_WORKSPACE_SIZE];
+
+/* A program that declares nothing is in the core, and so is its absence of a declaration. */
+static void suite_after(void *fixture) {
+  ARG_UNUSED(fixture);
+  (void)zplc_mem_init();
 }
 
 static void *suite_setup(void) {
@@ -113,4 +123,42 @@ ZTEST(zplc_failsafe, test_a_second_fault_continues_the_sequence) {
   zassert_equal(record->reason, 2U, "and the last one is kept");
 }
 
-ZTEST_SUITE(zplc_failsafe, NULL, suite_setup, NULL, NULL, suite_teardown);
+/* RT-023: the fatal handler drives the pins to the safe state of the program that was running, the value the
+ * project declared, and the board's level when it declared nothing. It reads no artifact: the declaration was
+ * copied out of it when the program was committed. Fails without zplc_io_drive_safe() reading the declaration:
+ * the pin is at the board's level, 0, when the board reboots. */
+ZTEST(zplc_failsafe, test_a_fault_drives_the_value_the_program_declared_safe) {
+  uint8_t program[96];
+  const uint8_t on[] = {ZPLC_TEST_SAFE(0, 0, 1)};
+  size_t size = zplc_test_minimal_program(program);
+
+  size = zplc_test_append_safe(program, size, sizeof(program), on, sizeof(on));
+  zassert_true(size != 0U, "the artifact is built");
+  zassert_ok(zplc_core_init(), "the core starts");
+  zassert_ok(zplc_core_load(program, size, workspace, sizeof(workspace)), "a program declaring output 0 is loaded");
+  zassert_equal(zplc_core_declared_safe_count(), 1U, "the core holds the declaration");
+
+  reboots = 0U;
+  led_when_rebooted = -1;
+  zplc_failsafe_test_set_retained(NULL);
+  zplc_failsafe_test_set_reboot(intercepted_reboot);
+#ifdef HAVE_EMULATED_OUTPUT
+  zassert_equal(zplc_hal_gpio_write(0U, 0U), ZPLC_HAL_OK, "the scan that is dying had the output off");
+#endif
+  zplc_failsafe_fatal(5U, 0x0800BEEFU);
+  zassert_equal(reboots, 1U, "the board reboots");
+#ifdef HAVE_EMULATED_OUTPUT
+  zassert_equal(led_when_rebooted, 1, "with the pin at the value the project declared");
+#endif
+
+  size = zplc_test_minimal_program(program);
+  zassert_ok(zplc_core_load(program, size, workspace, sizeof(workspace)), "a program declaring nothing replaces it");
+  zassert_equal(zplc_core_declared_safe_count(), 0U, "so the declaration is gone");
+  led_when_rebooted = -1;
+  zplc_failsafe_fatal(5U, 0x0800BEEFU);
+#ifdef HAVE_EMULATED_OUTPUT
+  zassert_equal(led_when_rebooted, 0, "and a fault leaves the pin at the board's level");
+#endif
+}
+
+ZTEST_SUITE(zplc_failsafe, NULL, suite_setup, NULL, suite_after, suite_teardown);

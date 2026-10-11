@@ -20,6 +20,11 @@
       "counter": 4,
       "fingerprint": "d350e9901cd5e56522063fc85a5badbd1f18fb67f39ead7fa114b3baf0d56d34",
       "reason": "TASK call_depth field and BUILD segment: the compiler records the call depth of each task and a build identity that its debug map repeats (CMP-050, CMP-056)"
+    },
+    {
+      "counter": 5,
+      "fingerprint": "a5576648f78f8673e3d338fa6316d890b181ca4612fb5a276a318fc792c30f2b",
+      "reason": "Add the SAFE segment (0x41) so a project can declare the value an output takes in a safe state, atomic with the program (RT-023): zplc_safe_entry_t, ZPLC_SAFE_ENTRY_SIZE, ZPLC_LOADER_MAX_SAFE, ZPLC_LOADER_ERR_SAFE"
     }
   ]
 }

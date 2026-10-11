@@ -5,7 +5,7 @@
     "versionMajor": 1,
     "versionMinor": 0,
     "doc": "ISA and container version. The one final version integer of CMP-052 is assigned and frozen when the conformance matrix is closed; until then the draft counter below is what the loader and Studio compare.",
-    "draftCounter": 4,
+    "draftCounter": 5,
     "draftDoc": "Draft contract counter (CMP-052).\n\nIncreases by one with every change of an opcode, layout, size or code until the contract freeze. The compiler writes it in header word 28 of every artifact and the loader refuses an artifact whose counter differs from this value (ZPLC_LOADER_ERR_DRAFT). 0 is what an artifact built before the counter carries and is never accepted."
   },
   "container": {
@@ -15,6 +15,7 @@
     },
     "crc": {"offset": 12, "size": 4, "polynomial": "0xEDB88320", "doc": "CRC32 (IEEE 802.3) over the whole file except the 4 bytes of the crc32 field."},
     "maxTasks": {"value": 16, "doc": "Artifact-wide v1 admission limit for TASK segment entries (loader)."},
+    "maxSafeEntries": {"value": 64, "doc": "Most outputs one artifact may declare a safe value for, in the SAFE segment (loader)."},
     "maxVerifiedDepth": {"value": 127, "doc": "Deepest evaluation stack the loader proves for a task. A program that needs more is refused, whatever the target stack allows; the compiler fails the build above it (CMP-050)."},
     "structs": [
       {
@@ -83,6 +84,19 @@
         ]
       },
       {
+        "name": "safe",
+        "typedef": "zplc_safe_entry_t",
+        "sizeMacro": "ZPLC_SAFE_ENTRY_SIZE",
+        "size": 4,
+        "doc": "Declared safe value of one digital output, an entry of the SAFE segment (4 bytes) (RT-023).\n\nThe safe state of an output is off unless the project declares another value for it. The declaration travels in the artifact, so a program and its safe state are one unit: a device that restores the program restores its declaration, and an interrupted deploy cannot leave the program of one build with the safe values of another.",
+        "sizeDoc": "Expected size of a safe-state entry",
+        "fields": [
+          {"name": "offset", "type": "uint16_t", "doc": "Byte offset of the output in the output image"},
+          {"name": "bit", "type": "uint8_t", "doc": "Bit of the byte, 0 to 7"},
+          {"name": "value", "type": "uint8_t", "doc": "The output's value in the safe state: 0 or 1"}
+        ]
+      },
+      {
         "name": "iomap",
         "typedef": "zplc_iomap_entry_t",
         "enum": "ioDirections",
@@ -143,7 +157,8 @@
           {"name": "DEBUG", "value": "0x11", "doc": "Debug information"},
           {"name": "TASK", "value": "0x20", "doc": "Task definitions"},
           {"name": "TAGS", "value": "0x30", "doc": "Variable tags (networking metadata)"},
-          {"name": "BUILD", "value": "0x40", "doc": "Build identity of the artifact (CMP-056)"}
+          {"name": "BUILD", "value": "0x40", "doc": "Build identity of the artifact (CMP-056)"},
+          {"name": "SAFE", "value": "0x41", "doc": "Declared safe values of digital outputs (RT-023)"}
         ]
       },
       {
@@ -671,7 +686,8 @@
       {"macro": "ZPLC_LOADER_ERR_TAGS", "value": -15, "doc": "Tag entry is invalid"},
       {"macro": "ZPLC_LOADER_ERR_COMM", "value": -16, "doc": "Communication function-block kind is NONE or at or above the kind limit, or a block at a statically known address does not fit one memory region"},
       {"macro": "ZPLC_LOADER_ERR_DRAFT", "value": -17, "doc": "Draft contract counter of the artifact differs from the loader's, or the artifact has none"},
-      {"macro": "ZPLC_LOADER_ERR_STACK", "value": -18, "doc": "The evaluation stack can underflow, or exceed the depth the task declares, on some path, or the verifier cannot prove that it cannot"}
+      {"macro": "ZPLC_LOADER_ERR_STACK", "value": -18, "doc": "The evaluation stack can underflow, or exceed the depth the task declares, on some path, or the verifier cannot prove that it cannot"},
+      {"macro": "ZPLC_LOADER_ERR_SAFE", "value": -19, "doc": "A declared safe value is invalid: the segment is not whole entries, an entry names no bit of the output image or a value other than 0 or 1, an output is declared twice, or there are too many"}
     ]
   },
   "comm": {

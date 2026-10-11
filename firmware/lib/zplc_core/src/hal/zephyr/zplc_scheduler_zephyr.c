@@ -1423,7 +1423,9 @@ static int validate_program_locked(const uint8_t *binary, size_t size) {
       return ZPLC_LOADER_ERR_TASK;
     }
   }
-  return ZPLC_LOADER_OK;
+  /* A safe value for an output this board does not have is a project for another board: refused here, before
+   * anything is stored or committed, so that no program runs with a safe state that does not exist (RT-023). */
+  return zplc_io_declared_safe_fits_board(view.safe, view.safe_count);
 }
 
 /* Drives every physical output channel to its safe level and touches nothing else: the output process image and
@@ -1965,6 +1967,19 @@ int zplc_sched_load(const uint8_t *binary, size_t size) {
   if (mem_lock() == 0) {
     zplc_exchange_publish();
     mem_unlock();
+  }
+
+  /* The safe state of the program that was just committed is in force from here: its declared values (RT-023)
+   * are on the pins before the first scan and for as long as the program waits in STOP. A pin that cannot be
+   * driven leaves the runtime latched, as at every other place the safe state is established. */
+  {
+    const int pins_result = drive_safe_pins();
+
+    if (pins_result != 0) {
+      (void)latch_fault_with_mem_lock(ZPLC_SCHED_FAULT_IO);
+      control_unlock();
+      return pins_result;
+    }
   }
 
   control_unlock();

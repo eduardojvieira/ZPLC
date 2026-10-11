@@ -64,6 +64,18 @@ static uint16_t tag_count = 0;
 /** @brief Loaded code size (for bounds checking) */
 static uint32_t code_size = 0;
 
+/* The safe values the loaded program declares (RT-023), copied from its SAFE segment at the commit: the artifact
+ * buffer is not kept, and the pins have to go safe from a fatal handler that cannot parse anything. Written under
+ * the same exclusion as the program (a load happens with the scheduler stopped); read by the safe-state paths. */
+typedef struct {
+  uint16_t offset;
+  uint8_t bit;
+  uint8_t value;
+} declared_safe_t;
+
+static declared_safe_t declared_safe[ZPLC_LOADER_MAX_SAFE];
+static volatile uint32_t declared_safe_entries = 0U;
+
 /** @brief Process Image Mutex for thread-safe access */
 static zplc_hal_mutex_t pi_mutex = NULL;
 
@@ -438,6 +450,7 @@ int zplc_mem_init(void) {
   memset(mem_code, 0, sizeof(mem_code));
   memset(force_entries, 0, sizeof(force_entries));
   code_size = 0;
+  declared_safe_entries = 0U;
   return 0;
 }
 
@@ -2946,6 +2959,17 @@ static void zplc_core_commit_verified(const zplc_program_view_t *view) {
                             ((uint32_t)tag[6] << 16) |
                             ((uint32_t)tag[7] << 24);
   }
+  /* The declaration of the program that was replaced ends with it; the entries were verified by the loader, which
+   * bounds their number by ZPLC_LOADER_MAX_SAFE. */
+  declared_safe_entries = 0U;
+  for (index = 0U; index < view->safe_count && index < ZPLC_LOADER_MAX_SAFE; index++) {
+    const uint8_t *entry = view->safe + (size_t)index * ZPLC_SAFE_ENTRY_SIZE;
+
+    declared_safe[index].offset = (uint16_t)entry[0] | (uint16_t)((uint16_t)entry[1] << 8);
+    declared_safe[index].bit = entry[2];
+    declared_safe[index].value = entry[3];
+  }
+  declared_safe_entries = index;
   zplc_vm_init(&default_vm);
   default_vm.entry_point = view->entry_point;
   default_vm.pc = view->entry_point;
@@ -2953,6 +2977,23 @@ static void zplc_core_commit_verified(const zplc_program_view_t *view) {
   default_vm.code_size = view->code_size;
   default_program_loaded = 1;
 }
+
+int zplc_core_declared_safe(uint16_t offset, uint8_t bit, uint8_t *value) {
+  const uint32_t count = declared_safe_entries;
+  uint32_t index;
+
+  for (index = 0U; index < count && index < ZPLC_LOADER_MAX_SAFE; index++) {
+    if (declared_safe[index].offset == offset && declared_safe[index].bit == bit) {
+      if (value != NULL) {
+        *value = declared_safe[index].value;
+      }
+      return 1;
+    }
+  }
+  return 0;
+}
+
+uint32_t zplc_core_declared_safe_count(void) { return declared_safe_entries; }
 
 int zplc_core_load(const uint8_t *binary, size_t size, uint8_t *workspace,
                    size_t workspace_size) {

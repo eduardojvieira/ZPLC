@@ -3287,7 +3287,7 @@ Estas tablas se generan desde `tools/contract/contract.json`, la fuente única d
 | --- | --- | --- |
 | Número mágico | `0x434C505A` | `5A 50 4C 43` = "ZPLC" |
 | Versión del ISA (mayor.menor) | `1.0` |  |
-| Contador de borrador del contrato | `4` | Se escribe en la palabra 28 de la cabecera de cada artefacto. El loader y Studio rechazan un artefacto, o una imagen de dispositivo, cuyo contador difiere del propio y muestran ambos números; 0 significa un artefacto construido antes del contador. Aumenta con cada cambio del contrato hasta el congelamiento. |
+| Contador de borrador del contrato | `5` | Se escribe en la palabra 28 de la cabecera de cada artefacto. El loader y Studio rechazan un artefacto, o una imagen de dispositivo, cuyo contador difiere del propio y muestran ambos números; 0 significa un artefacto construido antes del contador. Aumenta con cada cambio del contrato hasta el congelamiento. |
 | Tamaño de la cabecera del archivo (bytes) | `32` |  |
 | Tamaño de la entrada de segmento (bytes) | `8` |  |
 | Tamaño de la definición de tarea (bytes) | `16` |  |
@@ -3295,6 +3295,8 @@ Estas tablas se generan desde `tools/contract/contract.json`, la fuente única d
 | Tamaño de la entrada de etiqueta (bytes) | `8` |  |
 | Máximo de tareas en un artefacto | `16` |  |
 | Tamaño de la identidad de compilación (bytes) | `4` |  |
+| Tamaño de la entrada de estado seguro (bytes) | `4` |  |
+| Máximo de salidas para las que un artefacto puede declarar un valor seguro | `64` |  |
 | Pila de evaluación más profunda que el loader demuestra | `127` | Una tarea que necesita más es rechazada, aunque la pila del destino lo permita; el compilador falla la compilación por encima. |
 | CRC32 | `0xEDB88320` | Polinomio IEEE 802.3 0xEDB88320, sobre todo el archivo salvo los 4 bytes en el offset 12. |
 
@@ -3340,6 +3342,14 @@ Estas tablas se generan desde `tools/contract/contract.json`, la fuente única d
 | --- | --- | --- | --- | --- |
 | `0` | `build_id` | `uint32_t` | 4 | CRC-32 of CODE then TASK; never 0 (0 = not identified) |
 
+### Layout de `zplc_safe_entry_t`
+
+| Offset | Campo | Tipo | Bytes | Descripción |
+| --- | --- | --- | --- | --- |
+| `0` | `offset` | `uint16_t` | 2 | Byte offset of the output in the output image |
+| `2` | `bit` | `uint8_t` | 1 | Bit of the byte, 0 to 7 |
+| `3` | `value` | `uint8_t` | 1 | The output's value in the safe state: 0 or 1 |
+
 ### Layout de `zplc_iomap_entry_t`
 
 | Offset | Campo | Tipo | Bytes | Descripción |
@@ -3382,6 +3392,7 @@ Estas tablas se generan desde `tools/contract/contract.json`, la fuente única d
 | `ZPLC_SEG_TASK` | `0x20` | Task definitions |
 | `ZPLC_SEG_TAGS` | `0x30` | Variable tags (networking metadata) |
 | `ZPLC_SEG_BUILD` | `0x40` | Build identity of the artifact (CMP-056) |
+| `ZPLC_SEG_SAFE` | `0x41` | Declared safe values of digital outputs (RT-023) |
 
 ### Tipos de tarea
 
@@ -3627,6 +3638,7 @@ El tamaño del operando sigue el rango del opcode (0x00-0x3F ninguno, 0x40-0x7F 
 | `ZPLC_LOADER_ERR_COMM` | `-16` | Communication function-block kind is NONE or at or above the kind limit, or a block at a statically known address does not fit one memory region |
 | `ZPLC_LOADER_ERR_DRAFT` | `-17` | Draft contract counter of the artifact differs from the loader's, or the artifact has none |
 | `ZPLC_LOADER_ERR_STACK` | `-18` | The evaluation stack can underflow, or exceed the depth the task declares, on some path, or the verifier cannot prove that it cannot |
+| `ZPLC_LOADER_ERR_SAFE` | `-19` | A declared safe value is invalid: the segment is not whole entries, an entry names no bit of the output image or a value other than 0 or 1, an output is declared twice, or there are too many |
 
 ### Bloques de función de comunicación
 

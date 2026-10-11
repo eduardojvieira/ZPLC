@@ -28,6 +28,7 @@ sys.path.insert(0, str(HERE))
 import crc_cross  # noqa: E402
 import depth_cross  # noqa: E402
 import generate  # noqa: E402
+import safe_cross  # noqa: E402
 import snapshot  # noqa: E402
 import zplc_contract as zc  # noqa: E402
 
@@ -449,6 +450,20 @@ class DeclaredDepthIsTheLoadersMeasure(unittest.TestCase):
         self.assertGreater(self.result["lowered"], 300)
 
     def test_the_loader_accepts_each_artifact_and_refuses_it_with_a_depth_one_lower(self):
+        self.assertEqual(self.result["wrong"], [])
+
+
+class DeclaredSafeValuesAreWhatTheLoaderReads(unittest.TestCase):
+    """RT-023: the SAFE segment the compiler writes is the one the C loader reads, and the loader refuses what it must not."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.result = safe_cross.run()
+
+    def test_artifacts_that_declare_nothing_a_few_and_the_most_are_looked_at_with_every_refusal(self):
+        self.assertGreaterEqual(self.result["checked"], 10)
+
+    def test_the_loader_reads_every_entry_and_refuses_each_one_it_must_not_take(self):
         self.assertEqual(self.result["wrong"], [])
 
 

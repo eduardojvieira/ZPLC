@@ -83,7 +83,7 @@ export type { CodeGenOptions, CompilerMemoryProfile } from './codegen.ts';
 // Assembler exports (ASM -> bytecode)
 // =============================================================================
 export { assemble, createZplcFile, createMultiTaskZplcFile, relocateBytecode, readArtifact, buildIdOf, analyzeDepths, DepthError, TASK_TYPE, AssemblerError, ZPLC_CONSTANTS } from '../assembler/index.ts';
-export type { AssemblyResult, ArtifactInfo, TaskDef, TaskDepth, TaskType, InstructionMapping, TagDef } from '../assembler/index.ts';
+export type { AssemblyResult, ArtifactInfo, SafeEntry, TaskDef, TaskDepth, TaskType, InstructionMapping, TagDef } from '../assembler/index.ts';
 
 // =============================================================================
 // Binary contract (generated from tools/contract/contract.json)
@@ -134,7 +134,8 @@ import type { CodegenWarning, SyntaxIssue, WarningCode, WarningSelection } from 
 import { analyzeUnit } from './warnings.ts';
 import type { GeneratedProject } from './codegen.ts';
 import type { CodeGenOptions, CompilerMemoryProfile } from './codegen.ts';
-import { DepthError, analyzeDepths, assemble, createMultiTaskZplcFile, readArtifact, TASK_TYPE, ZPLC_CONSTANTS } from '../assembler/index.ts';
+import { DepthError, analyzeDepths, assemble, createMultiTaskZplcFile, readArtifact, safeProblem, TASK_TYPE, ZPLC_CONSTANTS } from '../assembler/index.ts';
+import type { SafeEntry } from '../assembler/index.ts';
 import type { AssemblyResult, TaskDef, TaskDepth, TaskType } from '../assembler/index.ts';
 import type { DebugMap, TypeResolver } from './debug-map.ts';
 import { buildUnitDebugMap } from './debug-map.ts';
@@ -270,6 +271,13 @@ export interface CompileOptions extends CodeGenOptions {
      * breakpoints and the current line need (project option `compiler.debug`). Default: true.
      */
     debug?: boolean;
+    /**
+     * The value each listed output takes in the safe state (STOP, a pause, a fault, the boot, a deploy in
+     * progress), by its place in the output image. An output that is not listed is off, unless the board says
+     * otherwise. They are written to the SAFE segment of the artifact, so the program and its safe state are one
+     * unit (RT-023). Which of them belong to the board is the front end's check.
+     */
+    safeOutputs?: readonly SafeEntry[];
 }
 
 function requireSingleProgram(ast: CompilationUnit, sourceRef?: string): Program {
@@ -690,6 +698,8 @@ export interface MultiTaskCompilationResult {
     }[];
     /** Merged debug map for all programs (always present) */
     debugMap: DebugMap;
+    /** The safe values the artifact declares for its outputs (RT-023); empty when it declares none. */
+    safe: SafeEntry[];
 }
 
 /**
@@ -823,7 +833,7 @@ function admitPhysicalOutputOwners(
 export function compileMultiTaskProject(
     config: ProjectConfig,
     programSources: ProgramSource[],
-    options?: Pick<CompileOptions, 'memoryProfile' | 'strictTypes' | 'reportWarnings' | 'debug'>,
+    options?: Pick<CompileOptions, 'memoryProfile' | 'strictTypes' | 'reportWarnings' | 'debug' | 'safeOutputs'>,
 ): MultiTaskCompilationResult {
     if (!config.tasks || config.tasks.length === 0) {
         throw new CompilerError('No tasks defined in project configuration', 0, 0, 'codegen');
@@ -1056,8 +1066,13 @@ export function compileMultiTaskProject(
         taskDefs[index]!.callDepth = depth.frames;
     });
 
-    // Generate .zplc file with TASK segment
-    const zplcFile = createMultiTaskZplcFile(asmResult.bytecode, taskDefs, asmResult.tags ?? []);
+    // Generate .zplc file with TASK segment, and the safe values the project declares (RT-023)
+    const safe = [...(options?.safeOutputs ?? [])].map((entry) => ({ ...entry }));
+    const unsafe = safeProblem(safe);
+    if (unsafe !== undefined) {
+        throw new CompilerError(unsafe, 0, 0, 'codegen', PROJECT_FILE_NAME);
+    }
+    const zplcFile = createMultiTaskZplcFile(asmResult.bytecode, taskDefs, asmResult.tags ?? [], safe);
 
     // The map of the unit: one POU for each file, from the table the code was generated with (CMP-054)
     const entryByRef = new Map(programs.map((program) => [program.sourceRef, program.entryPoint] as const));
@@ -1095,6 +1110,7 @@ export function compileMultiTaskProject(
         bytecode: asmResult.bytecode,
         tasks: taskDefs,
         codeSize: totalCodeSize,
+        safe,
         programDetails: sections.map((program) => ({
             name: files.find((file) => file.runs && file.ref === program.sourceRef)?.label ?? program.name,
             entryPoint: program.entryPoint,
