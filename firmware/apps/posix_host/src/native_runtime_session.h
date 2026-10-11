@@ -12,6 +12,7 @@
 #include <zplc_isa.h>
 #include <zplc_core.h>
 #include <zplc_loader.h>
+#include <zplc_sched_core.h>
 
 /*
  * Sizes of the lines the POSIX host reads and writes on stdio (see main.c).
@@ -101,6 +102,13 @@ typedef struct {
     uint32_t last_overrun_us;
     zplc_native_fault_reason_t fault_reason;
     uint16_t fault_task_id;
+    /*
+     * RT-008: admission, order, deadlines, the fault latch and the scan phases are decided by the portable
+     * scheduler core, the same one the firmware runs. The session supplies the clock and the poll loop. The fields
+     * above that report misses and the fault are what the status shows: they follow the core after every batch.
+     */
+    zplc_sched_slot_t core_slots[ZPLC_LOADER_MAX_TASKS];
+    zplc_sched_core_t core;
     /* Milliseconds clock that times a scan; NULL means zplc_hal_tick(). A test sets it to let time pass inside a scan. */
     uint32_t (*clock_ms)(void);
     uint8_t program[ZPLC_MEM_CODE_SIZE];
