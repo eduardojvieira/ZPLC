@@ -20,8 +20,8 @@ async function readyToolchainRoot() {
   const root = await mkdtemp(join(tmpdir(), 'zplc-cli-toolchain-ready-')); const host = await mkdtemp(join(tmpdir(), 'zplc-cli-toolchain-host-')); const bin = join(host, 'bin'); const base = join(host, 'zephyr'); const sdk = join(host, 'sdk');
   await mkdir(join(root, 'firmware', 'app', 'boards'), { recursive: true }); await mkdir(bin); await mkdir(base); await mkdir(join(sdk, 'arm-zephyr-eabi', 'bin'), { recursive: true }); await mkdir(join(sdk, 'xtensa-espressif_esp32s3_zephyr-elf', 'bin'), { recursive: true });
   await writeFile(join(root, 'firmware', 'app', 'CMakeLists.txt'), 'cmake_minimum_required(VERSION 3.20.0)'); await writeFile(join(root, 'west.yml'), 'manifest:\n  projects:\n    - name: zephyr\n      revision: dccb09599635bdff17633fa7e9dab014b91dce90\n');
-  const boards = ['alpha', 'bravo', 'charlie', 'delta', 'echo', 'foxtrot'].map((ide_id) => ({ board_id: ide_id, display_name: ide_id, ide_id, zephyr_board: `${ide_id}/board`, variant: 'test', support_assets: [`firmware/app/boards/${ide_id}.conf`], build_command: 'west build', network_class: 'other', validation_level: 'cross-build', evidence_refs: [], docs_ref: 'docs' }));
-  for (const board of boards) await writeFile(join(root, board.support_assets[0]!), 'CONFIG_TEST=y'); await writeFile(join(root, 'firmware', 'app', 'boards', 'supported-boards.v1.5.0.json'), JSON.stringify(boards));
+  const boards = ['alpha', 'bravo', 'charlie', 'delta', 'echo', 'foxtrot'].map((ide_id) => ({ board_id: ide_id, display_name: ide_id, ide_id, zephyr_board: `${ide_id}/board`, variant: 'test', support_assets: [`firmware/app/boards/${ide_id}.conf`], build_command: 'west build', network_class: 'other', evidence_refs: [], docs_ref: 'docs' }));
+  for (const board of boards) await writeFile(join(root, board.support_assets[0]!), 'CONFIG_TEST=y'); await writeFile(join(root, 'firmware', 'app', 'boards', 'boards.json'), JSON.stringify(boards));
   await writeFile(join(sdk, 'arm-zephyr-eabi', 'bin', 'arm-zephyr-eabi-gcc'), 'toolchain'); await writeFile(join(sdk, 'xtensa-espressif_esp32s3_zephyr-elf', 'bin', 'xtensa-espressif_esp32s3_zephyr-elf-gcc'), 'toolchain');
   for (const [command, value] of Object.entries({ west: 'west 1.5.0', python3: 'Python 3.12.0', cmake: 'cmake version 3.30.0', ninja: '1.12.0', git: 'dccb09599635bdff17633fa7e9dab014b91dce90' })) { const args = command === 'git' ? '[ "$#" -eq 5 ] && [ "$1" = "-C" ] && [ "$3" = "rev-parse" ] && [ "$4" = "--verify" ] && [ "$5" = "HEAD" ] || exit 64' : '[ "$#" -eq 1 ] && [ "$1" = "--version" ] || exit 64'; const script = join(bin, command); await writeFile(script, `#!/bin/sh\n${args}\nprintf '%s\\n' '${value}'\n`); await chmod(script, 0o755); }
   return { root, host, bin, base, sdk };
@@ -32,9 +32,9 @@ async function firmwareBuildRoot(blocking = false) {
   await mkdir(join(root, 'firmware', 'app', 'boards'), { recursive: true }); await mkdir(bin); await mkdir(base); await mkdir(join(sdk, 'arm-zephyr-eabi', 'bin'), { recursive: true }); await mkdir(join(sdk, 'xtensa-espressif_esp32s3_zephyr-elf', 'bin'), { recursive: true });
   await writeFile(join(root, 'firmware', 'app', 'CMakeLists.txt'), 'cmake_minimum_required(VERSION 3.20.0)');
   await writeFile(join(root, 'west.yml'), 'manifest:\n  projects:\n    - name: zephyr\n      revision: dccb09599635bdff17633fa7e9dab014b91dce90\n');
-  const boards = ['alpha', 'bravo', 'charlie', 'delta', 'echo', 'foxtrot'].map((ide_id) => ({ board_id: `${ide_id}-board`, display_name: ide_id, ide_id, zephyr_board: `${ide_id}/board`, variant: 'test', support_assets: [`firmware/app/boards/${ide_id}.conf`], build_command: 'this must never execute', network_class: 'other', validation_level: 'cross-build', evidence_refs: [], docs_ref: 'docs' }));
+  const boards = ['alpha', 'bravo', 'charlie', 'delta', 'echo', 'foxtrot'].map((ide_id) => ({ board_id: `${ide_id}-board`, display_name: ide_id, ide_id, zephyr_board: `${ide_id}/board`, variant: 'test', support_assets: [`firmware/app/boards/${ide_id}.conf`], build_command: 'this must never execute', network_class: 'other', evidence_refs: [], docs_ref: 'docs' }));
   for (const board of boards) await writeFile(join(root, board.support_assets[0]!), 'CONFIG_TEST=y');
-  await writeFile(join(root, 'firmware', 'app', 'boards', 'supported-boards.v1.5.0.json'), JSON.stringify(boards));
+  await writeFile(join(root, 'firmware', 'app', 'boards', 'boards.json'), JSON.stringify(boards));
   await writeFile(join(sdk, 'arm-zephyr-eabi', 'bin', 'arm-zephyr-eabi-gcc'), 'toolchain'); await writeFile(join(sdk, 'xtensa-espressif_esp32s3_zephyr-elf', 'bin', 'xtensa-espressif_esp32s3_zephyr-elf-gcc'), 'toolchain');
   for (const [command, value] of Object.entries({ python3: 'Python 3.12.0', cmake: 'cmake version 3.30.0', ninja: '1.12.0', git: 'dccb09599635bdff17633fa7e9dab014b91dce90' })) { const args = command === 'git' ? '[ "$#" -eq 5 ] && [ "$1" = "-C" ] && [ "$3" = "rev-parse" ] && [ "$4" = "--verify" ] && [ "$5" = "HEAD" ] || exit 64' : '[ "$#" -eq 1 ] && [ "$1" = "--version" ] || exit 64'; const script = join(bin, command); await writeFile(script, `#!/bin/sh\n${args}\nprintf '%s\\n' '${value}'\n`); await chmod(script, 0o755); }
   const script = blocking
@@ -413,7 +413,7 @@ describe('CLI firmware-build command', () => {
   });
 
   it.skipIf(process.platform === 'win32')('runs the fixed local cross-build and emits only its evidence', async () => {
-    const fixture = await firmwareBuildRoot(); const manifest = await readFile(join(fixture.root, 'firmware', 'app', 'boards', 'supported-boards.v1.5.0.json'), 'utf8'); const cmake = await readFile(join(fixture.root, 'firmware', 'app', 'CMakeLists.txt'), 'utf8');
+    const fixture = await firmwareBuildRoot(); const manifest = await readFile(join(fixture.root, 'firmware', 'app', 'boards', 'boards.json'), 'utf8'); const cmake = await readFile(join(fixture.root, 'firmware', 'app', 'CMakeLists.txt'), 'utf8');
     const oldPath = process.env.PATH; const oldBase = process.env.ZEPHYR_BASE; const oldSdk = process.env.ZEPHYR_SDK_INSTALL_DIR; const oldMarker = process.env.ZPLC_FAKE_WEST_MARKER;
     process.env.PATH = `${fixture.bin}:${oldPath ?? ''}`; process.env.ZEPHYR_BASE = fixture.base; process.env.ZEPHYR_SDK_INSTALL_DIR = fixture.sdk; process.env.ZPLC_FAKE_WEST_MARKER = fixture.marker;
     try {
@@ -422,7 +422,7 @@ describe('CLI firmware-build command', () => {
       const result = JSON.parse(io.lines[0] ?? '{}');
       expect(result).toMatchObject({ ok: true, summary: { schemaVersion: 1, scope: 'local-ephemeral-cross-build', sourceIdentity: 'unverified', board: { boardId: 'alpha-board', ideId: 'alpha', zephyrBoard: 'alpha/board' }, artifact: { kind: 'firmware-elf', byteLength: 52, sha256: expect.stringMatching(/^[a-f0-9]{64}$/) } }, evidence: { schemaVersion: 1, operation: 'firmware-build', outcome: 'passed', diagnostics: [], artifacts: [{ kind: 'firmware-elf' }] } });
       expect(JSON.stringify(result)).not.toMatch(new RegExp(`(?:${fixture.root.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}|PATH|argv|cwd|build_command|flash|deploy|HIL)`, 'i'));
-      expect(await readFile(join(fixture.root, 'firmware', 'app', 'boards', 'supported-boards.v1.5.0.json'), 'utf8')).toBe(manifest); expect(await readFile(join(fixture.root, 'firmware', 'app', 'CMakeLists.txt'), 'utf8')).toBe(cmake);
+      expect(await readFile(join(fixture.root, 'firmware', 'app', 'boards', 'boards.json'), 'utf8')).toBe(manifest); expect(await readFile(join(fixture.root, 'firmware', 'app', 'CMakeLists.txt'), 'utf8')).toBe(cmake);
       expect((await lstat(fixture.marker)).isFile()).toBe(true);
     } finally {
       if (oldPath === undefined) delete process.env.PATH; else process.env.PATH = oldPath; if (oldBase === undefined) delete process.env.ZEPHYR_BASE; else process.env.ZEPHYR_BASE = oldBase; if (oldSdk === undefined) delete process.env.ZEPHYR_SDK_INSTALL_DIR; else process.env.ZEPHYR_SDK_INSTALL_DIR = oldSdk; if (oldMarker === undefined) delete process.env.ZPLC_FAKE_WEST_MARKER; else process.env.ZPLC_FAKE_WEST_MARKER = oldMarker;

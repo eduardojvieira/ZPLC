@@ -49,7 +49,7 @@ import type { MpeekRequest } from './peekParser';
 import { debugLog } from '../utils/debugLog';
 import { deriveHardwareDebugState } from './debugStatus';
 import { normalizeSerialRuntimeSnapshot } from './runtimeSnapshot';
-import { parseDeviceSystemInfo, type DeviceSystemInfo } from './deviceHandshake';
+import { joinDeviceIo, parseDeviceSystemInfo, type DeviceSystemInfo } from './deviceHandshake';
 
 /** Command timeout in milliseconds.
  * 10 s to accommodate firmware flash writes (NVS page erase can take ~1 s
@@ -556,11 +556,11 @@ export class SerialAdapter implements IDebugAdapter {
    * Send a command that expects a JSON response.
    * Serialized through the command mutex.
    */
-  private sendJsonCommand(command: string): Promise<unknown> {
-    return this.withCommandMutex(() => this._sendJsonCommandRaw(command));
+  private sendJsonCommand(command: string, timeoutMs = COMMAND_TIMEOUT_MS): Promise<unknown> {
+    return this.withCommandMutex(() => this._sendJsonCommandRaw(command, timeoutMs));
   }
 
-  private async _sendJsonCommandRaw(command: string): Promise<unknown> {
+  private async _sendJsonCommandRaw(command: string, timeoutMs = COMMAND_TIMEOUT_MS): Promise<unknown> {
     if (!this.connection || !this.connection.isConnected) {
       throw new Error('Not connected');
     }
@@ -585,7 +585,7 @@ export class SerialAdapter implements IDebugAdapter {
     // Read response with timeout by polling _rxBuffer
     const startTime = Date.now();
 
-    while (Date.now() - startTime < COMMAND_TIMEOUT_MS) {
+    while (Date.now() - startTime < timeoutMs) {
       // Check buffer for JSON response (starts with { and ends with })
       let buffer = this.connection._rxBuffer.replace(ansiRegex, '');
       
@@ -738,7 +738,7 @@ export class SerialAdapter implements IDebugAdapter {
    */
   async getSystemInfo(): Promise<SystemInfo> {
     try {
-      const result = parseDeviceSystemInfo(await this.sendJsonCommand('zplc sys info'));
+      const result = await joinDeviceIo(parseDeviceSystemInfo(await this.sendJsonCommand('zplc sys info')), () => this.sendJsonCommand('zplc sys io', 2000));
       this.systemInfoCache = result;
       return result;
     } catch {

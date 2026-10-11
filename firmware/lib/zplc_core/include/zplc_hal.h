@@ -315,6 +315,87 @@ zplc_hal_result_t zplc_hal_socket_close(zplc_hal_socket_t sock);
 void zplc_hal_log(const char *fmt, ...);
 
 /* ============================================================================
+ * I/O Table (the board I/O description, IO-001, IO-002)
+ * ============================================================================
+ * The channels of a board are data: firmware/app/boards/boards.json lists each
+ * with its direction, kind, process-image address and pin, and a build step
+ * (firmware/zephyr/scripts/gen_io_table.py) turns that description into one
+ * constant table. The scheduler synchronizes the process image through the
+ * table, so adding a channel to a board changes no C source.
+ */
+
+/** @brief The most channels a board description may list. */
+#define ZPLC_IO_MAX_CHANNELS 64U
+
+/** @brief Kind of an I/O channel. */
+typedef enum {
+    ZPLC_IO_KIND_DIGITAL = 0, /**< One bit of the process image; HAL gpio channel */
+    ZPLC_IO_KIND_ANALOG = 1   /**< One 16-bit little-endian word; HAL adc channel */
+} zplc_io_kind_t;
+
+/** @brief Direction of an I/O channel, seen from the program. */
+typedef enum {
+    ZPLC_IO_DIR_INPUT = 0,  /**< Physical input, written to the input image (IPI) */
+    ZPLC_IO_DIR_OUTPUT = 1  /**< Physical output, read from the output image (OPI) */
+} zplc_io_dir_t;
+
+/** @brief One channel of the board description. */
+typedef struct {
+    const char *id;         /**< Channel id of the description, e.g. "DO0" */
+    const char *pin;        /**< Pin or terminal name printed on the board, e.g. "GP0" */
+    uint16_t image_offset;  /**< Byte offset in the input image (inputs) or output image (outputs) */
+    uint8_t kind;           /**< zplc_io_kind_t */
+    uint8_t direction;      /**< zplc_io_dir_t */
+    uint8_t bit;            /**< Bit of the byte for a digital channel, 0 for an analog one */
+    uint8_t hal_channel;    /**< Number given to zplc_hal_gpio_* (digital) or zplc_hal_adc_read (analog) */
+    uint8_t safe;           /**< Logical value of an output in the safe state */
+    uint8_t required;       /**< 1: the channel must initialise for zplc_hal_init to succeed */
+} zplc_io_channel_t;
+
+/** @brief The whole description of a board, as built. */
+typedef struct {
+    const char *board_id;           /**< Board id of the manifest, or the id of the default profile */
+    uint32_t description_hash;      /**< FNV-1a 32 of the canonical description; Studio compares it */
+    uint16_t input_bytes;           /**< Bytes of the input image the channels need (or the Kconfig override) */
+    uint16_t output_bytes;          /**< Bytes of the output image the channels need (or the Kconfig override) */
+    uint16_t channel_count;         /**< Entries of `channels` */
+    const zplc_io_channel_t *channels; /**< Outputs first, then inputs, each by image address */
+} zplc_io_table_t;
+
+/**
+ * @brief The board's I/O table (never NULL; it may list no channel).
+ *
+ * @note Platform implementations:
+ *       - Zephyr: generated at build time from the board description
+ *       - POSIX, WASM: an empty table; the host runtime exchanges the image
+ *         with Studio, not with pins
+ */
+const zplc_io_table_t *zplc_io_table(void);
+
+/** @brief Number of channels of the board. */
+size_t zplc_io_channel_count(void);
+
+/** @brief Channel `index` of the table, or NULL past the end. */
+const zplc_io_channel_t *zplc_io_channel_at(size_t index);
+
+/**
+ * @brief Read one physical input channel through the HAL.
+ *
+ * A digital channel reads 0 or 1, an analog one the raw converter value.
+ *
+ * @return ZPLC_HAL_OK, ZPLC_HAL_NOT_IMPL when the channel is not available on
+ *         this build (an optional channel without its devicetree node), or an
+ *         error.
+ */
+zplc_hal_result_t zplc_io_read_channel(const zplc_io_channel_t *channel, uint16_t *value);
+
+/** @brief Write one physical digital output channel through the HAL. */
+zplc_hal_result_t zplc_io_write_channel(const zplc_io_channel_t *channel, uint16_t value);
+
+/** @brief The value of a channel in an image buffer (a digital channel is 0 or 1). */
+uint16_t zplc_io_image_get(const uint8_t *image, size_t size, const zplc_io_channel_t *channel);
+
+/* ============================================================================
  * System Initialization
  * ============================================================================ */
 

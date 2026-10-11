@@ -1,0 +1,133 @@
+{
+  "board_id": "io-test-base",
+  "io": {
+    "schema_version": 1,
+    "unmapped": [],
+    "channels": [
+      {
+        "id": "DO0",
+        "direction": "output",
+        "kind": "digital",
+        "address": "%QX0.0",
+        "pin": "P0",
+        "dt": {
+          "alias": "led0",
+          "controller": "gpio0",
+          "pin": 0
+        },
+        "safe": 0,
+        "electrical": "emulated pin",
+        "pin_status": "devicetree",
+        "source": "firmware/zephyr/io-default.json"
+      },
+      {
+        "id": "DO1",
+        "direction": "output",
+        "kind": "digital",
+        "address": "%QX0.1",
+        "pin": "P1",
+        "dt": {
+          "alias": "led1",
+          "controller": "gpio0",
+          "pin": 1
+        },
+        "safe": 0,
+        "electrical": "emulated pin",
+        "pin_status": "devicetree",
+        "source": "firmware/zephyr/io-default.json"
+      },
+      {
+        "id": "DO2",
+        "direction": "output",
+        "kind": "digital",
+        "address": "%QX0.2",
+        "pin": "P2",
+        "dt": {
+          "alias": "led2",
+          "controller": "gpio0",
+          "pin": 2
+        },
+        "safe": 0,
+        "electrical": "emulated pin",
+        "pin_status": "devicetree",
+        "source": "firmware/zephyr/io-default.json"
+      },
+      {
+        "id": "DO3",
+        "direction": "output",
+        "kind": "digital",
+        "address": "%QX0.3",
+        "pin": "P3",
+        "dt": {
+          "alias": "led3",
+          "controller": "gpio0",
+          "pin": 3
+        },
+        "safe": 0,
+        "electrical": "emulated pin",
+        "pin_status": "devicetree",
+        "source": "firmware/zephyr/io-default.json"
+      },
+      {
+        "id": "DI0",
+        "direction": "input",
+        "kind": "digital",
+        "address": "%IX0.0",
+        "pin": "P8",
+        "dt": {
+          "alias": "sw0",
+          "controller": "gpio0",
+          "pin": 8
+        },
+        "electrical": "emulated pin",
+        "pin_status": "devicetree",
+        "source": "firmware/zephyr/io-default.json"
+      },
+      {
+        "id": "DI1",
+        "direction": "input",
+        "kind": "digital",
+        "address": "%IX0.1",
+        "pin": "P9",
+        "dt": {
+          "alias": "sw1",
+          "controller": "gpio0",
+          "pin": 9
+        },
+        "electrical": "emulated pin",
+        "pin_status": "devicetree",
+        "source": "firmware/zephyr/io-default.json"
+      },
+      {
+        "id": "DI2",
+        "direction": "input",
+        "kind": "digital",
+        "address": "%IX0.2",
+        "pin": "P10",
+        "dt": {
+          "alias": "sw2",
+          "controller": "gpio0",
+          "pin": 10
+        },
+        "electrical": "emulated pin",
+        "pin_status": "devicetree",
+        "source": "firmware/zephyr/io-default.json"
+      },
+      {
+        "id": "DI3",
+        "direction": "input",
+        "kind": "digital",
+        "address": "%IX0.3",
+        "pin": "P11",
+        "dt": {
+          "alias": "sw3",
+          "controller": "gpio0",
+          "pin": 11
+        },
+        "electrical": "emulated pin",
+        "pin_status": "devicetree",
+        "source": "firmware/zephyr/io-default.json"
+      }
+    ]
+  }
+}

@@ -70,7 +70,7 @@ languages (`bun run docs:validate`). Add a row when you add a page.
 
 ## Board manifest compatibility
 
-The historical board manifest filename remains `firmware/app/boards/supported-boards.v1.5.0.json`. Its entries are evidence-tiered profiles, not a v1.5 product claim.
+The board manifest is `firmware/app/boards/boards.json`; it replaced the versioned filename `supported-boards.v1.5.0.json`. Its entries are evidence-tiered profiles, not a v1.5 product claim.
 
 ## Source-of-Truth Rule
 

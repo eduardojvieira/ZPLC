@@ -63,7 +63,7 @@ Modbus frame builder (raw TCP, no pymodbus):
 
 v1.5 release additions
 ----------------------
-- The supported-board list comes from `firmware/app/boards/supported-boards.v1.5.0.json`.
+- The supported-board list comes from `firmware/app/boards/boards.json`.
 - Human HIL evidence must include one serial-focused board and one network-capable board.
 - Multi-register validation should cover COUNT > 1 for holding-register operations.
 """
