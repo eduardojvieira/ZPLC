@@ -24,10 +24,11 @@ All notable changes are documented here.
   hash). The Pico and ESP32-S3 profiles no longer turn the HIL trace on (HIL-013);
   a HIL image adds `tools/hil/hil_debug.conf`, the chain prints and records
   that build command, and `tools/hil/validate_hil_trace_profile.py` fails a
-  profile that sets it, for every `.conf` of the board profiles of the single
-  manifest `firmware/app/boards/boards.json`. The chain compares the I/O
-  description the image reports (`zplc sys io --json`) with the one of
-  `boards.json` and fails on another board, hash or size; its pending loopback
+  profile that sets it: the `.conf` files of the single manifest
+  `firmware/app/boards/boards.json`, the ones Zephyr applies for each of its
+  board names, every `.conf` of `firmware/app/boards` and `prj.conf`. The chain
+  compares the I/O description the image reports (`zplc sys io --json`) with
+  the one of `boards.json` and fails on another board, hash or size; its pending loopback
   and analog items name the channels of that description and leave the wiring
   `TO BE FILLED`. A run on real hardware of a named, clean image also writes the
   flat evidence record the manifest derives a support level from; no run on a
