@@ -1533,6 +1533,9 @@
     {"kind":"unit","ref":"packages/zplc-ide/src/runtime/wasmParity.test.ts","test":"the core in WebAssembly gives the results of the conformance cases (IDE-025)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/runtime/wasmParity.test.ts","test":"the verifier of the loader is on the path that loads a program in WebAssembly (IDE-025)"}
   ],
+  "IDE-026": [
+    {"kind":"unit","ref":"scripts/release/binaries.test.ts","test":"the standalone binaries of this machine run without a JavaScript runtime (REL-026, IDE-026)"}
+  ],
   "IDE-027": [
     {"kind":"unit","ref":"packages/zplc-ide/electron/ipcRegistry.test.ts","test":"toolchain inspection and firmware build (IDE-017, IDE-027)"}
   ],
@@ -1700,7 +1703,7 @@
   ],
   "REL-026": [
     {"kind":"unit","ref":"scripts/release/binaries.test.ts","test":"the release binaries (REL-026)"},
-    {"kind":"unit","ref":"scripts/release/binaries.test.ts","test":"the standalone binaries of this machine run without a JavaScript runtime (REL-026)"}
+    {"kind":"unit","ref":"scripts/release/binaries.test.ts","test":"the standalone binaries of this machine run without a JavaScript runtime (REL-026, IDE-026)"}
   ],
   "REL-027": [
     {"kind":"unit","ref":"packages/zplc-ide/scripts/release-config.test.ts","test":"the notes claim only checks that their job runs (REL-027)"},
