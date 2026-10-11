@@ -19,12 +19,12 @@
         ]
       },
       "measured": {
-        "flash": 165924,
-        "ram": 207512
+        "flash": 166408,
+        "ram": 170136
       },
       "budget": {
         "flash": 174336,
-        "ram": 215040
+        "ram": 178688
       }
     },
     "arduino-giga-r1-m7": {
@@ -45,12 +45,12 @@
         ]
       },
       "measured": {
-        "flash": 217792,
-        "ram": 299500
+        "flash": 217920,
+        "ram": 235460
       },
       "budget": {
         "flash": 228864,
-        "ram": 309504
+        "ram": 247296
       }
     },
     "esp32-s3-devkitc": {
@@ -67,8 +67,8 @@
         ]
       },
       "measured": {
-        "flash": 1005380,
-        "ram": 2431168
+        "flash": 1010708,
+        "ram": 2438200
       },
       "budget": {
         "flash": 1055744,
@@ -88,12 +88,12 @@
         ]
       },
       "measured": {
-        "flash": 305440,
-        "ram": 241804
+        "flash": 304836,
+        "ram": 214756
       },
       "budget": {
-        "flash": 320768,
-        "ram": 247552
+        "flash": 320256,
+        "ram": 225536
       }
     },
     "nucleo-h743zi": {
@@ -115,12 +115,12 @@
         ]
       },
       "measured": {
-        "flash": 424196,
-        "ram": 489500
+        "flash": 361816,
+        "ram": 406628
       },
       "budget": {
-        "flash": 445440,
-        "ram": 514048
+        "flash": 380160,
+        "ram": 427008
       }
     },
     "arduino-opta-wifi-m7": {
@@ -141,12 +141,12 @@
         ]
       },
       "measured": {
-        "flash": 444412,
-        "ram": 469396
+        "flash": 381432,
+        "ram": 401820
       },
       "budget": {
-        "flash": 466688,
-        "ram": 493056
+        "flash": 400640,
+        "ram": 422144
       }
     },
     "waveshare-rp2040-zero": {
@@ -161,12 +161,12 @@
         ]
       },
       "measured": {
-        "flash": 173768,
-        "ram": 209240
+        "flash": 166688,
+        "ram": 170144
       },
       "budget": {
-        "flash": 182528,
-        "ram": 215808
+        "flash": 175104,
+        "ram": 178688
       }
     }
   },

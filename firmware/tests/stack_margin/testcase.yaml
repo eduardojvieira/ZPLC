@@ -1,0 +1,14 @@
+tests:
+  # The stack of the scan is measured on the Cortex-M3 of QEMU: its frames are those of the Thumb code the boards run,
+  # which the frames of the host are not. This is the margin of the build under test (the library is linked with
+  # link-time optimization, CONFIG_ZPLC_LTO); a board has its own driver calls under the scan.
+  zplc.stack_margin:
+    tags:
+      - zplc
+      - scheduler
+    platform_allow:
+      - qemu_cortex_m3
+    integration_platforms:
+      - qemu_cortex_m3
+    harness: ztest
+    timeout: 30

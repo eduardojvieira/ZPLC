@@ -243,6 +243,28 @@ python3 tools/firmware-test/fwtest.py size \
 The figures are link-time static allocation. They do not include the stacks or
 the heap high-water mark.
 
+The ZPLC library and the application are compiled with link-time optimization (`CONFIG_ZPLC_LTO`, on by default),
+which is worth about 3 percent of the flash of an image. Zephyr's own code is not part of it. The `native_sim`
+targets link their image as a relocatable object, which the optimizer cannot be part of, so they run without it; the
+suites of `firmware/tests` link the library the same way as the boards on `qemu-m3` and `qemu-m0`, which is where
+the code that ships is exercised. To compare, or to debug a fault with the inlining out of the way, build with
+`-DCONFIG_ZPLC_LTO=n`.
+
+To see where the bytes of a board go, run the footprint report on the same
+build trees. It reads each linker map and prints, per board, the used bytes of
+every memory region, the headroom to the budget, the input sections by kind and
+by library, and the largest input sections of flash and RAM with the object
+file that owns each one. The strings of the image are one merged block, so it
+reports that block once and the strings of each object before merging:
+
+```bash
+python3 tools/firmware-test/footprint_report.py \
+  --logs ~/zplc-zephyr-ws/out/size --board rpi-pico-rp2040 --top 25
+```
+
+The report only reads files. Its own tests are
+`tools/firmware-test/test_footprint_report.py`.
+
 ## Adding a test
 
 - Put a Zephyr suite in `firmware/tests/<name>` with a `testcase.yaml`, and

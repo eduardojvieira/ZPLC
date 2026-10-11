@@ -435,35 +435,19 @@ static int discover_rollback_slot(const zplc_pstore_config_t *config,
  * ----------------------------------------------------------------------------
  */
 
-int zplc_pstore_commit(const zplc_pstore_config_t *config,
-                              uint8_t *workspace, size_t program_size,
-                              size_t workspace_capacity) {
+/* What a commit does once it knows which slot is the rollback: write the new program to the other slot (or slot 0
+ * when there is none), read it back, verify it, prepare, publish, commit the metadata. `current` is the result of
+ * discover_rollback_slot() (0: a v1 slot, with its number and generation; 1: an empty store; 2: a verified legacy
+ * program). The caller has admitted the artifact. */
+static int commit_after_discovery(const zplc_pstore_config_t *config, int current, unsigned prior_slot,
+                                  uint32_t generation, uint8_t *workspace, size_t program_size) {
   uint8_t meta[STORE_META_SIZE];
   uint8_t active[STORE_ACTIVE_SIZE];
-  uint32_t generation = 0U;
-  unsigned prior_slot = 0U;
   unsigned slot;
   uint32_t expected_header_crc;
   size_t total;
-  int current;
   zplc_hal_result_t result;
 
-  if (config == NULL || config->admit == NULL || config->scratch == NULL ||
-      config->scratch_capacity <
-          ZPLC_PROGRAM_STORE_MAX_ARTIFACT_SIZE + ZPLC_PROGRAM_STORE_FOOTER_SIZE ||
-      workspace == NULL || program_size == 0U ||
-      program_size > ZPLC_PROGRAM_STORE_MAX_ARTIFACT_SIZE ||
-      workspace_capacity < ZPLC_PROGRAM_STORE_FOOTER_SIZE ||
-      program_size > workspace_capacity - ZPLC_PROGRAM_STORE_FOOTER_SIZE ||
-      program_size < ZPLC_FILE_HEADER_SIZE ||
-      !admits(config, workspace, program_size)) {
-    return ZPLC_PROGRAM_STORE_COMMIT_ERROR;
-  }
-
-  current = discover_rollback_slot(config, &prior_slot, &generation);
-  if (current < 0) {
-    return ZPLC_PROGRAM_STORE_COMMIT_ERROR;
-  }
   if (highest_structural_generation(&generation) != 0) {
     return ZPLC_PROGRAM_STORE_COMMIT_ERROR;
   }
@@ -517,6 +501,145 @@ int zplc_pstore_commit(const zplc_pstore_config_t *config,
   (void)zplc_hal_persist_delete(STORE_LEGACY_LEN);
   (void)zplc_hal_persist_delete(STORE_LEGACY_CODE);
   return ZPLC_PROGRAM_STORE_COMMIT_OK;
+}
+
+static int artifact_fits(size_t program_size, size_t workspace_capacity) {
+  return program_size != 0U && program_size <= ZPLC_PROGRAM_STORE_MAX_ARTIFACT_SIZE &&
+         workspace_capacity >= ZPLC_PROGRAM_STORE_FOOTER_SIZE &&
+         program_size <= workspace_capacity - ZPLC_PROGRAM_STORE_FOOTER_SIZE && program_size >= ZPLC_FILE_HEADER_SIZE;
+}
+
+int zplc_pstore_commit(const zplc_pstore_config_t *config,
+                              uint8_t *workspace, size_t program_size,
+                              size_t workspace_capacity) {
+  uint32_t generation = 0U;
+  unsigned prior_slot = 0U;
+  int current;
+
+  if (config == NULL || config->admit == NULL || config->scratch == NULL ||
+      config->scratch_capacity <
+          ZPLC_PROGRAM_STORE_MAX_ARTIFACT_SIZE + ZPLC_PROGRAM_STORE_FOOTER_SIZE ||
+      workspace == NULL || !artifact_fits(program_size, workspace_capacity) ||
+      !admits(config, workspace, program_size)) {
+    return ZPLC_PROGRAM_STORE_COMMIT_ERROR;
+  }
+
+  current = discover_rollback_slot(config, &prior_slot, &generation);
+  if (current < 0) {
+    return ZPLC_PROGRAM_STORE_COMMIT_ERROR;
+  }
+  return commit_after_discovery(config, current, prior_slot, generation, workspace, program_size);
+}
+
+/* ----------------------------------------------------------------------------
+ * The rollback found before the upload
+ * ----------------------------------------------------------------------------
+ */
+
+/* A digest of everything discover_rollback_slot() reads from the store that is not a payload: the active record,
+ * both metadata records, the length key of the first version, and what the backend answered for each of those and
+ * for the program key of the first version. Two equal digests mean that no record changed in between, which is all a
+ * commit can be disturbed by (it is the only writer). A record carries its own CRC-32, so a CRC-32 over the records
+ * would be the same for every valid one: the digest is FNV-1a. */
+static int records_digest(uint32_t *digest) {
+  static const char *const keys[] = {STORE_ACTIVE, "program_v1_slot_a_meta", "program_v1_slot_b_meta",
+                                     STORE_LEGACY_LEN, STORE_LEGACY_CODE};
+  uint32_t hash = 2166136261U;
+  size_t index;
+
+  for (index = 0U; index < sizeof(keys) / sizeof(keys[0]); index++) {
+    uint8_t record[STORE_META_SIZE + 1U];
+    size_t byte;
+    zplc_hal_result_t result;
+
+    memset(record, 0, sizeof(record));
+    /* The last key is the whole program of the first version: it is asked for one byte, which says that it is there
+     * (an answer of "too large" is that too) and does not need a buffer of its size. */
+    result = zplc_hal_persist_load(keys[index], record + 1U,
+                                   index + 1U < sizeof(keys) / sizeof(keys[0]) ? STORE_META_SIZE : 1U);
+    if (result != ZPLC_HAL_OK && !absent_or_corrupt(result)) {
+      return -1;
+    }
+    record[0] = (uint8_t)result;
+    for (byte = 0U; byte < sizeof(record); byte++) {
+      hash = (hash ^ record[byte]) * 16777619U;
+    }
+  }
+  *digest = hash;
+  return 0;
+}
+
+static void rollback_clear(zplc_pstore_rollback_t *rollback) { memset(rollback, 0, sizeof(*rollback)); }
+
+int zplc_pstore_probe(const zplc_pstore_config_t *config, uint8_t *buffer, size_t capacity,
+                      zplc_pstore_rollback_t *rollback) {
+  zplc_pstore_config_t local;
+  unsigned slot = 0U;
+  uint32_t generation = 0U;
+  int found;
+
+  if (rollback == NULL) {
+    return ZPLC_PROGRAM_STORE_COMMIT_ERROR;
+  }
+  rollback_clear(rollback);
+  if (config == NULL || config->admit == NULL || buffer == NULL ||
+      capacity < ZPLC_PROGRAM_STORE_MAX_ARTIFACT_SIZE + ZPLC_PROGRAM_STORE_FOOTER_SIZE) {
+    return ZPLC_PROGRAM_STORE_COMMIT_ERROR;
+  }
+  local = *config;
+  local.scratch = buffer;
+  local.scratch_capacity = capacity;
+  found = discover_rollback_slot(&local, &slot, &generation);
+  if (found < 0 || records_digest(&rollback->digest) != 0) {
+    rollback_clear(rollback);
+    return ZPLC_PROGRAM_STORE_COMMIT_ERROR;
+  }
+  rollback->kind = found == 0 ? ZPLC_PSTORE_ROLLBACK_SLOT
+                              : (found == 1 ? ZPLC_PSTORE_ROLLBACK_EMPTY : ZPLC_PSTORE_ROLLBACK_LEGACY);
+  rollback->slot = (uint8_t)slot;
+  rollback->generation = generation;
+  return 0;
+}
+
+zplc_program_store_restore_t zplc_pstore_restore_probed(const zplc_pstore_config_t *config, uint8_t *workspace,
+                                                        size_t workspace_capacity, size_t *program_size,
+                                                        zplc_pstore_rollback_t *rollback) {
+  zplc_program_store_restore_t result;
+
+  result = zplc_pstore_restore(config, workspace, workspace_capacity, program_size);
+  if (rollback != NULL) {
+    rollback_clear(rollback);
+    /* The program of the first version was read and admitted into the caller's buffer just now: it is the
+     * rollback of the commit that migrates it, and nothing else of the store is needed to know that. */
+    if (result == ZPLC_PROGRAM_STORE_LEGACY) {
+      if (records_digest(&rollback->digest) == 0) {
+        rollback->kind = ZPLC_PSTORE_ROLLBACK_LEGACY;
+      } else {
+        rollback_clear(rollback);
+      }
+    }
+  }
+  return result;
+}
+
+int zplc_pstore_commit_probed(const zplc_pstore_config_t *config, const zplc_pstore_rollback_t *rollback,
+                              uint8_t *workspace, size_t program_size, size_t workspace_capacity) {
+  uint32_t digest;
+  int current;
+
+  if (config == NULL || config->admit == NULL || rollback == NULL || workspace == NULL ||
+      !artifact_fits(program_size, workspace_capacity) || !admits(config, workspace, program_size)) {
+    return ZPLC_PROGRAM_STORE_COMMIT_ERROR;
+  }
+  if (rollback->kind < ZPLC_PSTORE_ROLLBACK_SLOT || rollback->kind > ZPLC_PSTORE_ROLLBACK_LEGACY) {
+    return ZPLC_PROGRAM_STORE_COMMIT_ERROR; /* nothing was found, or it was found unverifiable: fail closed */
+  }
+  /* the kinds are in the order of discover_rollback_slot()'s answers: a slot, an empty store, the first version */
+  current = (int)rollback->kind - (int)ZPLC_PSTORE_ROLLBACK_SLOT;
+  if (records_digest(&digest) != 0 || digest != rollback->digest) {
+    return ZPLC_PROGRAM_STORE_COMMIT_ERROR; /* the store changed since the rollback was found */
+  }
+  return commit_after_discovery(config, current, rollback->slot, rollback->generation, workspace, program_size);
 }
 
 /* ----------------------------------------------------------------------------

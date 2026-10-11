@@ -19,6 +19,9 @@ find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 
 project(zplc_zephyr_app)
 
+# The application is optimized across its files with the runtime (CONFIG_ZPLC_LTO; the module does the library).
+zplc_target_lto(app)
+
 # COM-022: the raw memory command of the Zephyr shell is built only into the
 # diagnostic image (firmware/app/diagnostic.conf).
 include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/zplc_shell_rules.cmake)
