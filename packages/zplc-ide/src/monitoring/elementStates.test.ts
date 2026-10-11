@@ -4,18 +4,18 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { Glob } from 'bun';
 import { compileSingleFileWithTask, type DebugMap, type PLCLanguage } from '../compiler';
-import type { MonitorEntry } from '../models/sourceElements';
+import type { MonitorEntry, PowerExpr } from '../models/sourceElements';
 import { evaluatePower, readElementStates, truthy, variablesOf, type Read } from './elementStates';
 import { monitorKey, parseMonitorKey, resolveVariable } from './debugVariables';
 
 const reads = (values: Record<string, number | boolean | string>): Read => (variable) => values[variable];
 
 describe('the power of a rung from the values read (LNG-006)', () => {
-  const start = { op: 'var', variable: 'Start' } as const;
-  const stop = { op: 'var', variable: 'Stop', not: true } as const;
+  const start: PowerExpr = { op: 'var', variable: 'Start' };
+  const stop: PowerExpr = { op: 'var', variable: 'Stop', not: true };
 
   it('follows series (AND) and parallel (OR), with a contact that is normally closed', () => {
-    const rung = { op: 'and', terms: [{ op: 'or', terms: [start, { op: 'var', variable: 'Latch' }] }, stop] } as const;
+    const rung: PowerExpr = { op: 'and', terms: [{ op: 'or', terms: [start, { op: 'var', variable: 'Latch' }] }, stop] };
     expect(evaluatePower(rung, reads({ Start: true, Latch: false, Stop: false }))).toBe(true);
     expect(evaluatePower(rung, reads({ Start: false, Latch: true, Stop: false }))).toBe(true);
     expect(evaluatePower(rung, reads({ Start: true, Latch: false, Stop: true }))).toBe(false);
@@ -30,7 +30,7 @@ describe('the power of a rung from the values read (LNG-006)', () => {
   });
 
   it('is unavailable when a value it needs was not read and nothing decides it', () => {
-    const rung = { op: 'and', terms: [start, { op: 'var', variable: 'Unread' }] } as const;
+    const rung: PowerExpr = { op: 'and', terms: [start, { op: 'var', variable: 'Unread' }] };
     expect(evaluatePower(rung, reads({ Start: true }))).toBeUndefined();
     // a FALSE decides an AND, a TRUE decides an OR, whatever else could not be read
     expect(evaluatePower(rung, reads({ Start: false }))).toBe(false);

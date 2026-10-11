@@ -354,8 +354,7 @@ function DropZone({
       strokeDasharray={isOver ? 'none' : '4,2'}
       onDragOver={handleDragOver}
       onDragLeave={onDragLeave}
-      onClick={() => onPick?.(col, row)}
-      data-ld-drop-zone={`${row},${col}`}
+      onClick={() => onPick?.(col, row)} data-ld-drop-zone={`${row},${col}`}
       style={{
         cursor: hasElement ? 'default' : 'crosshair',
         pointerEvents: hasElement ? 'none' : 'auto',

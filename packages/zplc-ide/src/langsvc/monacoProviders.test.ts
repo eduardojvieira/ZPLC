@@ -142,7 +142,7 @@ describe('the language service providers (LNG-015, LNG-016)', () => {
   it('goes to the definition in another file, and opens a file that has no tab when asked to show it', () => {
     const { providers, opener, opened } = setup();
     const model = modelOf('src/main.st', MAIN);
-    const location = call(providers.definition!, 'provideDefinition', model, at(MAIN, 'Motor;', 1), live) as { uri: { path: string }; range: { startLineNumber: number; startColumn: number; endColumn: number } };
+    const location = call(providers.definition!, 'provideDefinition', model, at(MAIN, 'Motor;', 1), live) as { uri: { path: string }; range: { startLineNumber: number; startColumn: number; endLineNumber: number; endColumn: number } };
     expect(location.uri.path).toBe('/7/file:src/lib/blocks.st');
     expect(location.range).toEqual({ startLineNumber: 8, startColumn: 16, endLineNumber: 8, endColumn: 21 });
     expect(opener.current!.openCodeEditor(undefined, location.uri, { startLineNumber: 8, startColumn: 16 })).toBe(true);
