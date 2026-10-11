@@ -51,7 +51,7 @@ static uint32_t now_ms(const zplc_proto_dev_t *dev) {
 }
 
 static uint32_t elapsed_ms(uint32_t now, uint32_t then) {
-  return (uint32_t)(now - then);
+  return now - then;
 }
 
 /** The response body starts after the header and the status byte. */
@@ -65,13 +65,14 @@ static size_t body_capacity(const zplc_proto_link_t *link) {
 
 static void put_text(uint8_t *out, size_t size, const char *text) {
   size_t length = text == NULL ? 0U : strlen(text);
+  size_t i;
 
   (void)memset(out, 0, size);
   if (length > size) {
     length = size;
   }
-  if (length != 0U) {
-    (void)memcpy(out, text, length);
+  for (i = 0U; i < length; i++) {
+    out[i] = (uint8_t)text[i];
   }
 }
 
@@ -274,13 +275,14 @@ int zplc_proto_event_post(zplc_proto_dev_t *dev, uint8_t id, const uint8_t *data
 void zplc_proto_log(zplc_proto_dev_t *dev, uint8_t level, const char *text) {
   uint8_t data[ZPLC_PROTO_EVENT_PAYLOAD_MAX];
   size_t length = text == NULL ? 0U : strlen(text);
+  size_t i;
 
   if (length > sizeof(data) - 1U) {
     length = sizeof(data) - 1U;
   }
   data[0] = level;
-  if (length != 0U) {
-    (void)memcpy(data + 1U, text, length);
+  for (i = 0U; i < length; i++) {
+    data[1U + i] = (uint8_t)text[i];
   }
   (void)zplc_proto_event_post(dev, ZPLC_PROTO_EVT_LOG, data, 1U + length);
 }
@@ -531,6 +533,7 @@ typedef struct {
   zplc_proto_link_t *link;
   const zplc_proto_frame_t *frame;
   const uint8_t *payload;
+  uint8_t *payload_rw; /* the same bytes, in the buffer the caller owns: a key is cleared from it */
   size_t length;
 } request_t;
 
@@ -1344,7 +1347,7 @@ static void do_key_set(const request_t *r) {
   }
   result = ops_error(dev->ops->key_store(dev->ops->context, r->payload + ZPLC_PROTO_KEY_SET_REQ_KEY_OFF));
   /* The key is never sent back, and the copy of it in the buffer of the frame is cleared. */
-  zplc_secure_zero((uint8_t *)(uintptr_t)r->payload, r->length);
+  zplc_secure_zero(r->payload_rw, r->length);
   dev->challenge_valid = 0U;
   respond(r->link, r->frame, (uint8_t)result, 0U);
 }
@@ -1449,7 +1452,7 @@ static void dispatch(const request_t *r) {
   }
 }
 
-static void handle_frame(zplc_proto_link_t *link, const zplc_proto_frame_t *frame) {
+static void handle_frame(zplc_proto_link_t *link, const zplc_proto_frame_t *frame, uint8_t *bytes) {
   zplc_proto_dev_t *dev = link->dev;
   const request_spec_t *spec;
   request_t request;
@@ -1499,6 +1502,7 @@ static void handle_frame(zplc_proto_link_t *link, const zplc_proto_frame_t *fram
   request.link = link;
   request.frame = frame;
   request.payload = frame->payload;
+  request.payload_rw = bytes + (size_t)(frame->payload - bytes);
   request.length = frame->length;
   dispatch(&request);
 }
@@ -1542,7 +1546,9 @@ void zplc_proto_link_init(zplc_proto_link_t *link, zplc_proto_dev_t *dev, uint8_
 }
 
 static void on_frame(void *context, const zplc_proto_frame_t *frame) {
-  handle_frame((zplc_proto_link_t *)context, frame);
+  zplc_proto_link_t *link = (zplc_proto_link_t *)context;
+
+  handle_frame(link, frame, link->decoder.buf);
 }
 
 void zplc_proto_link_feed(zplc_proto_link_t *link, const uint8_t *data, size_t length) {
@@ -1573,7 +1579,7 @@ int zplc_proto_link_feed_frame(zplc_proto_link_t *link, uint8_t *frame, size_t l
     return result;
   }
   stats->frames++;
-  handle_frame(link, &parsed);
+  handle_frame(link, &parsed, frame);
   return 0;
 }
 

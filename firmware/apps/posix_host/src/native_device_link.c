@@ -3,7 +3,7 @@
  * @brief The POSIX host runtime as a device of the device link protocol (COM-019 to COM-025, COM-028).
  */
 
-#define _POSIX_C_SOURCE 200809L
+#define _POSIX_C_SOURCE 200809L /* NOLINT(bugprone-reserved-identifier,cert-dcl37-c,cert-dcl51-cpp): feature-test macro */
 
 #include "native_device_link.h"
 
@@ -88,7 +88,7 @@ static int load_program(zplc_native_runtime_session_t *session, const uint8_t *b
         request[used++] = hex_digits[bytes[i] >> 4];
         request[used++] = hex_digits[bytes[i] & 0x0FU];
     }
-    used += (size_t)snprintf(request + used, request_size - used, "\"}}");
+    (void)snprintf(request + used, request_size - used, "\"}}");
     response[0] = '\0';
     event[0] = '\0';
     (void)zplc_native_runtime_session_handle_request(session, request, response, ZPLC_NATIVE_RESPONSE_MAX, event,
@@ -577,7 +577,7 @@ int zplc_native_device_link_run(zplc_native_runtime_session_t *session, int netw
         const char *text = getenv("ZPLC_NATIVE_LINK_KEY_HEX");
         size_t i;
 
-        if (text != NULL && strlen(text) == 2U * ZPLC_PROTO_KEY_BYTES) {
+        if (text != NULL && strlen(text) == (size_t)ZPLC_PROTO_KEY_BYTES * 2U) {
             uint8_t key[ZPLC_PROTO_KEY_BYTES];
             int good = 1;
 

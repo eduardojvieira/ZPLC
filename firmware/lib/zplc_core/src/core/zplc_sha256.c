@@ -27,7 +27,7 @@ static uint32_t rotr(uint32_t value, unsigned bits) {
 static void compress(uint32_t state[8], const uint8_t block[ZPLC_SHA256_BLOCK_BYTES]) {
   uint32_t w[64];
   uint32_t a, b, c, d, e, f, g, h;
-  unsigned i;
+  size_t i;
 
   for (i = 0U; i < 16U; i++) {
     w[i] = ((uint32_t)block[4U * i] << 24) | ((uint32_t)block[4U * i + 1U] << 16) |
@@ -85,7 +85,7 @@ void zplc_sha256_update(zplc_sha256_t *context, const uint8_t *data, size_t leng
 
 void zplc_sha256_final(zplc_sha256_t *context, uint8_t digest[ZPLC_SHA256_DIGEST_BYTES]) {
   const uint64_t bits = context->bits;
-  unsigned i;
+  size_t i;
 
   context->block[context->fill++] = 0x80U;
   if (context->fill > 56U) {

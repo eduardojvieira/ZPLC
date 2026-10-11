@@ -49,7 +49,7 @@ static void car25519(gf o) {
 
     o[i] += (int64_t)1 << 16;
     c = o[i] >> 16;
-    o[(i + 1) * (i < 15)] += c - 1 + 37 * (c - 1) * (i == 15);
+    o[(i < 15) ? (i + 1) : 0] += c - 1 + 37 * (c - 1) * (i == 15);
     o[i] -= c * 65536;
   }
 }
@@ -69,6 +69,7 @@ static void sel25519(gf p, gf q, int b) {
 static void pack25519(uint8_t *o, const gf n) {
   int i;
   int j;
+  size_t k;
   gf m;
   gf t;
 
@@ -91,9 +92,9 @@ static void pack25519(uint8_t *o, const gf n) {
     m[14] &= 0xffff;
     sel25519(t, m, 1 - b);
   }
-  for (i = 0; i < 16; i++) {
-    o[2 * i] = (uint8_t)(t[i] & 0xff);
-    o[2 * i + 1] = (uint8_t)(t[i] >> 8);
+  for (k = 0U; k < 16U; k++) {
+    o[2U * k] = (uint8_t)(t[k] & 0xff);
+    o[2U * k + 1U] = (uint8_t)(t[k] >> 8);
   }
 }
 
@@ -119,10 +120,10 @@ static uint8_t par25519(const gf a) {
 }
 
 static void unpack25519(gf o, const uint8_t *n) {
-  int i;
+  size_t i;
 
-  for (i = 0; i < 16; i++) {
-    o[i] = n[2 * i] + ((int64_t)n[2 * i + 1] << 8);
+  for (i = 0U; i < 16U; i++) {
+    o[i] = n[2U * i] + ((int64_t)n[2U * i + 1U] << 8);
   }
   o[15] &= 0x7fff;
 }
