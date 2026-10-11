@@ -106,6 +106,7 @@ const sidebars = {
         'contributing/principles',
         'contributing/roadmap',
         'development/firmware-testing',
+        'development/hardware-in-the-loop',
         'reference/source-of-truth',
         'reference/v1-5-canonical-docs-manifest',
       ],

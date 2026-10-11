@@ -1,19 +1,70 @@
 {
   "name": "FBDNot",
   "variables": {
+    "local": [],
     "outputs": [
-      { "name": "InA", "type": "BOOL", "address": "%Q0.0" },
-      { "name": "OutQ", "type": "BOOL", "address": "%Q1.0" }
-    ],
-    "local": []
+      {
+        "name": "InA",
+        "type": "BOOL",
+        "address": "%IX0.0"
+      },
+      {
+        "name": "OutQ",
+        "type": "BOOL",
+        "address": "%QX0.0"
+      }
+    ]
   },
   "blocks": [
-    { "id": "1", "type": "variable", "variableName": "InA", "direction": "read", "outputs": [{ "name": "OUT", "type": "BOOL" }] },
-    { "id": "2", "type": "NOT", "outputs": [{ "name": "OUT", "type": "BOOL" }] },
-    { "id": "3", "type": "output", "variableName": "OutQ", "inputs": [{ "name": "IN", "type": "BOOL" }] }
+    {
+      "id": "a",
+      "type": "input",
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "variableName": "InA"
+    },
+    {
+      "id": "not1",
+      "type": "NOT",
+      "position": {
+        "x": 1,
+        "y": 0
+      }
+    },
+    {
+      "id": "q",
+      "type": "output",
+      "position": {
+        "x": 2,
+        "y": 0
+      },
+      "variableName": "OutQ"
+    }
   ],
   "connections": [
-    { "from": { "block": "1", "port": "OUT" }, "to": { "block": "2", "port": "IN" } },
-    { "from": { "block": "2", "port": "OUT" }, "to": { "block": "3", "port": "IN" } }
+    {
+      "id": "w_a_not1",
+      "from": {
+        "block": "a",
+        "port": "OUT"
+      },
+      "to": {
+        "block": "not1",
+        "port": "IN"
+      }
+    },
+    {
+      "id": "w_not1_q",
+      "from": {
+        "block": "not1",
+        "port": "OUT"
+      },
+      "to": {
+        "block": "q",
+        "port": "IN"
+      }
+    }
   ]
 }

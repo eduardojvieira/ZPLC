@@ -1,117 +1,41 @@
-from zplc_tester import ZPLCTester
+"""String operations: STRLEN, STRCPY and STRCMP on strings poked into work memory.
+
+A table of opcode cases (opcode_cases.py); it exits non-zero when a case fails (HIL-004).
+Needs a firmware image built with CONFIG_ZPLC_HIL_DEBUG=y for the trace frames; exits 77 (skipped) without it.
+"""
 import struct
 
+from opcode_cases import run
+from zplc_tester import ZPLCTester, cli
 
-def test_strings():
-    tester = ZPLCTester()
-    OP = tester.OP
+OP = ZPLCTester.OP
+STR1 = 0x2100
+STR2 = 0x2200
 
-    # WORK memory for strings
-    STR1 = 0x2100
-    STR2 = 0x2200
 
-    print("\n--- Running String Operations Tests ---")
+def put_string(tester, address, text, capacity=10):
+    """A string as the VM keeps it: a length and a capacity (two 16-bit words), then the bytes and a NUL."""
+    data = struct.pack("<HH", len(text), capacity) + text.encode() + b"\0"
+    tester.poke(address, data)
 
-    # 1. STRLEN
-    # Header for "Hello": len=5, cap=10
-    print("Test STRLEN...", end="", flush=True)
-    header = struct.pack("<HH", 5, 10)
-    data = b"Hello\0"
-    bytecode = [
-        OP["PUSH16"],
-        STR1 & 0xFF,
-        (STR1 >> 8) & 0xFF,
-        OP["PUSH8"],
-        42,  # Trash
-        OP["DROP"],
-        OP["STRLEN"],
-        OP["HALT"],
-    ]
-    # Necesitamos inicializar la memoria con el string
-    tester.reset_state()
-    # Poke memory for string header and data
-    tester.send(f"zplc dbg poke {STR1} {header[0]}")
-    tester.send(f"zplc dbg poke {STR1 + 1} {header[1]}")
-    tester.send(f"zplc dbg poke {STR1 + 2} {header[2]}")
-    tester.send(f"zplc dbg poke {STR1 + 3} {header[3]}")
-    for i, b in enumerate(data):
-        tester.send(f"zplc dbg poke {STR1 + 4 + i} {b}")
 
-    traces = tester.run_bytecode(bytecode, reset=False)
-    if tester.get_last_tos(traces) == 5:
-        print("PASS")
-    else:
-        print(f"FAIL (tos={tester.get_last_tos(traces)})")
+def address(value):
+    return [value & 0xFF, (value >> 8) & 0xFF]
 
-    # 2. STRCPY
-    print("Test STRCPY...", end="", flush=True)
-    # STR1: "ZPLC" (len 4, cap 10)
-    # STR2: empty (len 0, cap 10)
-    tester.reset_state()
-    # Init STR1
-    header1 = struct.pack("<HH", 4, 10)
-    for i in range(4):
-        tester.send(f"zplc dbg poke {STR1 + i} {header1[i]}")
-    for i, b in enumerate(b"ZPLC\0"):
-        tester.send(f"zplc dbg poke {STR1 + 4 + i} {b}")
-    # Init STR2
-    header2 = struct.pack("<HH", 0, 10)
-    for i in range(4):
-        tester.send(f"zplc dbg poke {STR2 + i} {header2[i]}")
 
-    bytecode = [
-        OP["PUSH16"],
-        STR1 & 0xFF,
-        (STR1 >> 8) & 0xFF,  # src
-        OP["PUSH16"],
-        STR2 & 0xFF,
-        (STR2 >> 8) & 0xFF,  # dst
-        OP["STRCPY"],
-        OP["PUSH16"],
-        STR2 & 0xFF,
-        (STR2 >> 8) & 0xFF,
-        OP["STRLEN"],
-        OP["HALT"],
-    ]
-    if tester.get_last_tos(tester.run_bytecode(bytecode, reset=False)) == 4:
-        print("PASS")
-    else:
-        print("FAIL")
+CASES = [
+    dict(name="STRLEN of Hello", code=[OP["PUSH16"]] + address(STR1) + [OP["STRLEN"], OP["HALT"]], tos=5,
+         pre=lambda t: put_string(t, STR1, "Hello")),
+    dict(name="STRCPY then STRLEN of the copy", code=[OP["PUSH16"]] + address(STR1) + [OP["PUSH16"]] + address(STR2) + [OP["STRCPY"], OP["PUSH16"]] + address(STR2) + [OP["STRLEN"], OP["HALT"]], tos=4,
+         pre=lambda t: (put_string(t, STR1, "ZPLC"), put_string(t, STR2, ""))),
+    dict(name="STRCMP of AAA and BBB is -1", code=[OP["PUSH16"]] + address(STR1) + [OP["PUSH16"]] + address(STR2) + [OP["STRCMP"], OP["HALT"]], tos=-1,
+         pre=lambda t: (put_string(t, STR1, "AAA"), put_string(t, STR2, "BBB"))),
+]
 
-    # 3. STRCMP
-    print("Test STRCMP...", end="", flush=True)
-    # AAA vs BBB
-    bytecode = [
-        OP["PUSH16"],
-        STR1 & 0xFF,
-        (STR1 >> 8) & 0xFF,
-        OP["PUSH16"],
-        STR2 & 0xFF,
-        (STR2 >> 8) & 0xFF,
-        OP["STRCMP"],
-        OP["HALT"],
-    ]
-    # Init strings
-    tester.reset_state()
-    h = struct.pack("<HH", 3, 10)
-    for i in range(4):
-        tester.send(f"zplc dbg poke {STR1 + i} {h[i]}")
-        tester.send(f"zplc dbg poke {STR2 + i} {h[i]}")
-    for i, b in enumerate(b"AAA\0"):
-        tester.send(f"zplc dbg poke {STR1 + 4 + i} {b}")
-    for i, b in enumerate(b"BBB\0"):
-        tester.send(f"zplc dbg poke {STR2 + 4 + i} {b}")
 
-    tos = tester.get_last_tos(tester.run_bytecode(bytecode, reset=False))
-
-    # "AAA" < "BBB" -> -1 (0xFFFFFFFF)
-    if tos == 4294967295 or tos == -1:
-        print("PASS")
-    else:
-        print(f"FAIL (tos={tos})")
-
-    tester.close()
+def test_strings(tester=None):
+    return run(tester or ZPLCTester(), CASES)
 
 
 if __name__ == "__main__":
-    test_strings()
+    cli(test_strings)

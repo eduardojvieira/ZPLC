@@ -1,81 +1,45 @@
+"""Run the language suites (IL, LD, FBD, SFC, ST) and the reference projects, and report them (HIL-004).
+
+Exit status: 0 when every suite passed, 1 when one failed. A suite is a script with run_tests() that returns its status.
+"""
+import importlib
 import sys
-import os
 import time
-import importlib.util
 
-# Add current directory to path
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+from zplc_tester import EXIT_SKIPPED
+
+SUITES = [
+    ("test_il_suite", "IL (Instruction List)"),
+    ("test_ld_suite", "LD (Ladder Diagram)"),
+    ("test_fbd_suite", "FBD (Function Block Diagram)"),
+    ("test_sfc_suite", "SFC (Sequential Function Chart)"),
+    ("test_st_suite", "ST (Structured Text)"),
+    ("test_examples_suite", "Reference projects (blinky, motor control)"),
+]
 
 
-def run_suite(module_path, suite_name):
-    print(f"\n>>> Running Suite: {suite_name}...")
+def run_suite(module_name):
     try:
-        spec = importlib.util.spec_from_file_location("module.name", module_path)
-        module = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(module)
-        if hasattr(module, "run_tests"):
-            return module.run_tests()
-        else:
-            print(f"⚠️  Module {suite_name} has no run_tests() function.")
-            return False
-    except Exception as e:
-        print(f"❌ ERROR in {suite_name}: {e}")
-        import traceback
-
-        traceback.print_exc()
-        return False
+        return importlib.import_module(module_name).run_tests()
+    except Exception as error:
+        print(f"ERROR in {module_name}: {error}")
+        return 1
 
 
-def main():
-    print("====================================================")
-    print("       ZPLC MULTI-LANGUAGE HIL TEST RUNNER          ")
-    print("====================================================")
+def main(suites=SUITES):
+    print("ZPLC MULTI-LANGUAGE HIL TEST RUNNER")
     print(f"Started at: {time.ctime()}")
-
-    base_dir = os.path.dirname(os.path.abspath(__file__))
-
-    # Order matters: simpler languages first
-    potential_suites = [
-        ("test_il_suite.py", "IL (Instruction List)"),
-        ("test_ld_suite.py", "LD (Ladder Diagram)"),
-        ("test_fbd_suite.py", "FBD (Function Block Diagram)"),
-        ("test_sfc_suite.py", "SFC (Sequential Function Chart)"),
-        ("test_examples_suite.py", "Integration Examples (Blinky/Motor)"),
-    ]
-
-    active_suites = []
-    for fname, name in potential_suites:
-        fpath = os.path.join(base_dir, fname)
-        if os.path.exists(fpath):
-            active_suites.append((fpath, name))
-
-    if not active_suites:
-        print("No test suites found! (Create test_*_suite.py files)")
-        sys.exit(0)
-
     results = []
-    for fpath, name in active_suites:
-        success = run_suite(fpath, name)
-        results.append((name, success))
-
-    print("\n\n====================================================")
-    print("                FINAL REPORT                        ")
-    print("====================================================")
-    all_pass = True
-    for name, success in results:
-        status = "SUCCESS ✅" if success else "FAILED ❌"
-        print(f"{name:<30} : {status}")
-        if not success:
-            all_pass = False
-
-    print("====================================================")
-    if all_pass:
-        print("ALL SUITES PASSED! 🚀")
-        sys.exit(0)
-    else:
-        print("SOME SUITES FAILED! 💀")
-        sys.exit(1)
+    for module_name, title in suites:
+        print(f"\n>>> Running Suite: {title}...")
+        results.append((title, run_suite(module_name)))
+    print("\nFINAL REPORT")
+    for title, status in results:
+        print(f"{title:<45} : {'SUCCESS' if status == 0 else 'SKIPPED' if status == EXIT_SKIPPED else 'FAILED'}")
+    failed = [title for title, status in results if status not in (0, EXIT_SKIPPED)]
+    print("SOME SUITES FAILED" if failed else "ALL SUITES PASSED")
+    return 1 if failed else 0
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())

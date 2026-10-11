@@ -1,11 +1,11 @@
 PROGRAM Jumps
 VAR
   (* Results - all should stay at their initial values *)
-  skip1_result AT %Q0.0 : INT := 0;
-  skip2_result AT %Q2.0 : INT := 0;
-  exec1_result AT %Q4.0 : INT := 0;
-  exec2_result AT %Q6.0 : INT := 0;
-  jump_cond AT %Q8.0 : BOOL := TRUE;
+  skip1_result AT %QW0 : INT := 0;
+  skip2_result AT %QW1 : INT := 0;
+  exec1_result AT %QW2 : INT := 0;
+  exec2_result AT %QW3 : INT := 0;
+  jump_cond AT %QX8.0 : BOOL := TRUE;
 END_VAR
 
 (* Test 1: JMPC - Conditional Jump when TRUE *)

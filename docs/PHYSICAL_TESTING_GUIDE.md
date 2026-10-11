@@ -1,5 +1,10 @@
 # ZPLC Physical Testing Guide
 
+> **Superseded.** This is a proposed procedure from January 2026 with empty results, and it is kept as it was.
+> It is no longer the guide: what a person does at the bench, what each tool checks and the record it writes are in
+> [Hardware in the Loop](./docs/development/hardware-in-the-loop.md), and the boards' build commands are those of
+> `firmware/app/boards/boards.json`. `ZPLC_PATH` below is the checkout of this repository.
+
 ## Guía Profesional de Pruebas Físicas - HAL & Overlay Verification
 
 **Versión:** 2.0  
@@ -78,13 +83,18 @@ Esta guía verifica:
         zephyr,shell-uart = &cdc_acm_uart0;
     };
     gpio_keys {
-        button0: button_0 {
-            gpios = <&gpio0 15 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
-        };
+        button0: button_0 { gpios = <&gpio0 15 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>; };
+        button1: button_1 { gpios = <&gpio0 14 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>; };
+        button2: button_2 { gpios = <&gpio0 13 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>; };
+        button3: button_3 { gpios = <&gpio0 12 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>; };
+    };
+    leds {
+        /* led0 to led3 are GP0 to GP3; the onboard LED has its own node (GP25) */
+        led4: led_4 { gpios = <&gpio0 25 GPIO_ACTIVE_HIGH>; };
     };
     aliases {
-        sw0 = &button0;
-        /* led0 = GPIO25 (onboard LED) */
+        sw0 = &button0; sw1 = &button1; sw2 = &button2; sw3 = &button3;
+        led4 = &led4;
     };
 };
 
@@ -134,14 +144,19 @@ Conexiones detalladas:
 | `%Q0.0`        | 1          | GP0       | `zplc_hal_gpio_write(0, x)`       |
 | `%Q0.1`        | 2          | GP1       | `zplc_hal_gpio_write(1, x)`       |
 | `%Q0.2`        | 4          | GP2       | `zplc_hal_gpio_write(2, x)`       |
-| `%Q0.3`        | -          | GP25      | LED onboard (led0 alias)          |
-| `%I0.0`        | 20         | GP15      | `zplc_hal_gpio_read(4, &v)` - sw0 |
-| `%I0.1`        | 19         | GP14      | `zplc_hal_gpio_read(5, &v)`       |
-| `%I0.2`        | 17         | GP13      | `zplc_hal_gpio_read(6, &v)`       |
-| `%IW0`         | 31         | ADC0/GP26 | `zplc_hal_adc_read(0, &v)`        |
-| `%IW2`         | 32         | ADC1/GP27 | `zplc_hal_adc_read(1, &v)`        |
-| `%IW4`         | 34         | ADC2/GP28 | `zplc_hal_adc_read(2, &v)`        |
+| `%Q0.3`        | 5          | GP3       | `zplc_hal_gpio_write(3, x)`       |
+| `%Q0.4`        | -          | GP25      | LED onboard (led4 alias)          |
+| `%I0.0`        | 20         | GP15      | `zplc_hal_gpio_read(5, &v)` - sw0 |
+| `%I0.1`        | 19         | GP14      | `zplc_hal_gpio_read(6, &v)`       |
+| `%I0.2`        | 17         | GP13      | `zplc_hal_gpio_read(7, &v)`       |
+| `%I0.3`        | 16         | GP12      | `zplc_hal_gpio_read(8, &v)`       |
+| `%IW4`         | 31         | ADC0/GP26 | `zplc_hal_adc_read(0, &v)`        |
+| `%IW5`         | 32         | ADC1/GP27 | `zplc_hal_adc_read(1, &v)`        |
+| `%IW6`         | 34         | ADC2/GP28 | `zplc_hal_adc_read(2, &v)`        |
 | `%IW8`         | -          | ADC4      | Sensor temperatura interno        |
+
+La descripción completa de los canales de cada placa (direcciones, pines, notas eléctricas) está en
+`firmware/app/boards/boards.json` y en la referencia generada de placas.
 
 ---
 
@@ -554,7 +569,7 @@ source ~/zephyrproject/activate.sh
 cd ~/zephyrproject
 
 # Compilar
-west build -b rpi_pico $ZEPLC_PATH/apps/zephyr_app --pristine
+west build -b rpi_pico $ZPLC_PATH/firmware/app --pristine
 
 # Flash via BOOTSEL
 # 1. Mantener BOOTSEL, conectar USB
@@ -572,7 +587,7 @@ source ~/zephyrproject/activate.sh
 cd ~/zephyrproject
 
 # Compilar
-west build -b arduino_giga_r1/stm32h747xx/m7 $ZEPLC_PATH/apps/zephyr_app --pristine
+west build -b arduino_giga_r1/stm32h747xx/m7 $ZPLC_PATH/firmware/app --pristine
 
 # Flash via DFU o ST-Link
 west flash
@@ -588,7 +603,7 @@ source ~/zephyrproject/activate.sh
 cd ~/zephyrproject
 
 # Compilar
-west build -b esp32s3_devkitc $ZEPLC_PATH/apps/zephyr_app --pristine
+west build -b esp32s3_devkitc $ZPLC_PATH/firmware/app --pristine
 
 # Flash via USB-Serial
 west flash
@@ -604,7 +619,7 @@ source ~/zephyrproject/activate.sh
 cd ~/zephyrproject
 
 # Compilar
-west build -b nucleo_h743zi $ZEPLC_PATH/apps/zephyr_app --pristine
+west build -b nucleo_h743zi $ZPLC_PATH/firmware/app --pristine
 
 # Flash via ST-Link integrado
 west flash

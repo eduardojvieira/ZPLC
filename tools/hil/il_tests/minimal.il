@@ -1,6 +1,6 @@
 PROGRAM Minimal
 VAR
-  res AT %Q0.0 : INT;
+  res AT %QW0 : INT;
 END_VAR
 LD 123
 ST res

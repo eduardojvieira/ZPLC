@@ -27,7 +27,7 @@ calificación de hardware.
 
 ## Verdad actual de placas
 
-El nombre histórico del manifest sigue siendo la fuente de los seis profiles
+El manifest de placas es la fuente de los siete profiles
 actuales. Cada entrada está en `cross-build` con **cero referencias de
 evidencia HIL**. Ninguna está HIL-verified ni production-qualified.
 
@@ -35,14 +35,15 @@ evidencia HIL**. Ninguna está HIL-verified ni production-qualified.
 | --- | --- | --- | --- | --- |
 | Raspberry Pi Pico (RP2040) | `rpi_pico` | `rpi_pico/rp2040` | cross-build | 0 |
 | Arduino GIGA R1 (STM32H747 M7) | `arduino_giga_r1` | `arduino_giga_r1/stm32h747xx/m7` | cross-build | 0 |
-| ESP32-S3 DevKitC | `esp32s3_devkitc` | `esp32s3_devkitc/esp32s3/procpu` | cross-build | 0 |
+| ESP32-S3-DevKitC-1 (N8R8) | `esp32s3_devkitc` | `esp32s3_devkitc/esp32s3/procpu` | cross-build | 0 |
 | STM32F746G Discovery | `stm32f746g_disco` | `stm32f746g_disco/stm32f746xx` | cross-build | 0 |
 | STM32 Nucleo-H743ZI | `nucleo_h743zi` | `nucleo_h743zi/stm32h743xx` | cross-build | 0 |
 | Arduino Opta WiFi (STM32H747 M7) | `arduino_opta_wifi` | `arduino_opta/stm32h747xx/m7` | cross-build | 0 |
+| Waveshare RP2040-Zero | `waveshare_rp2040_zero` | `rp2040_zero/rp2040` | cross-build | 0 |
 
-Los datos salen de `firmware/app/boards/supported-boards.v1.5.0.json`; el
-nombre del archivo es compatibilidad histórica, no un claim de que ZPLC 2.0
-sea v1.5.
+Los datos salen de `firmware/app/boards/boards.json`. El nivel mostrado se
+deriva de los registros de evidencia que referencia el manifiesto y nombra la
+versión de firmware de cada registro; sin registro una placa es `cross-build`.
 
 ## Usá la conclusión correcta
 

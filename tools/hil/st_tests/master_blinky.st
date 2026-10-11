@@ -3,8 +3,8 @@ VAR
     fast_tmr : TON;
     slow_tmr : TON;
     
-    fast_state AT %Q0.1 : BOOL; (* GP1 *)
-    slow_state AT %Q0.0 : BOOL; (* GP0 *)
+    fast_state AT %QX0.1 : BOOL; (* GP1 *)
+    slow_state AT %QX0.0 : BOOL; (* GP0 *)
     
     cycle_count : INT := 0;
 END_VAR

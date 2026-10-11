@@ -11,7 +11,7 @@ END_FUNCTION_BLOCK
 PROGRAM NamedParamsTest
     VAR
         calc : FB_Calc;
-        res : REAL;
+        res AT %QD0 : REAL;
     END_VAR
     
     res := calc.Add(A := 10.0, B := 20.0);

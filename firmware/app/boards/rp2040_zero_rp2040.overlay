@@ -1,0 +1,65 @@
+/*
+ * ZPLC Board Overlay - Waveshare RP2040-Zero (rp2040_zero/rp2040)
+ * SPDX-License-Identifier: MIT
+ *
+ * The board has no on-board simple LED (the RGB LED is a WS2812 on GP16 and needs
+ * the LED-strip driver). The profile exposes one output and one input on edge pads:
+ *
+ *   GP2 -> LED -> resistor -> GND     (DO0, alias led0)
+ *   GP3 -> switch -> GND              (DI0, alias sw0, internal pull-up)
+ *
+ * The channels are listed in the I/O description of
+ * firmware/app/boards/boards.json (waveshare-rp2040-zero); the build fails when
+ * the description and this file disagree.
+ *
+ * Flash layout (2 MB): the last 64 KB is the NVS storage partition.
+ */
+
+/ {
+    chosen {
+        zephyr,console = &cdc_acm_uart0;
+        zephyr,shell-uart = &cdc_acm_uart0;
+    };
+
+    leds {
+        compatible = "gpio-leds";
+        led_0: led_0 {
+            gpios = <&gpio0 2 GPIO_ACTIVE_HIGH>;
+            label = "ZPLC Output 0 (GP2)";
+        };
+    };
+
+    gpio_keys {
+        compatible = "gpio-keys";
+        button_0: button_0 {
+            gpios = <&gpio0 3 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+            label = "ZPLC Input 0 (GP3)";
+            zephyr,code = <0>;
+        };
+    };
+
+    aliases {
+        led0 = &led_0;
+        sw0 = &button_0;
+    };
+};
+
+&flash0 {
+    partitions {
+        compatible = "fixed-partitions";
+        #address-cells = <1>;
+        #size-cells = <1>;
+
+        /* NVS storage: 64 KB at the end of the 2 MB flash, program and RETAIN persistence */
+        storage_partition: partition@1f0000 {
+            label = "storage";
+            reg = <0x1f0000 0x10000>;
+        };
+    };
+};
+
+&zephyr_udc0 {
+    cdc_acm_uart0: cdc_acm_uart0 {
+        compatible = "zephyr,cdc-acm-uart";
+    };
+};

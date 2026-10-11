@@ -1,4 +1,5 @@
-import { HILTestCase } from '../../src/runner';
+import type { HILTestCase } from '../../src/runner';
+import { describeCases } from '../cases';
 
 export const logicTests: HILTestCase[] = [
   {
@@ -48,3 +49,5 @@ export const logicTests: HILTestCase[] = [
     ]
   }
 ];
+
+describeCases('HIL cases: logic opcodes (HIL-001)', logicTests);

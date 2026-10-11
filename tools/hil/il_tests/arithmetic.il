@@ -1,12 +1,12 @@
 PROGRAM Arithmetic
 VAR
-  a AT %Q0.0 : INT;
-  b AT %Q2.0 : INT;
-  res_add AT %Q4.0 : INT;
-  res_sub AT %Q6.0 : INT;
-  res_mul AT %Q8.0 : INT;
-  res_div AT %Q10.0 : INT;
-  res_mod AT %Q12.0 : INT;
+  a AT %QW0 : INT;
+  b AT %QW1 : INT;
+  res_add AT %QW2 : INT;
+  res_sub AT %QW3 : INT;
+  res_mul AT %QW4 : INT;
+  res_div AT %QW5 : INT;
+  res_mod AT %QW6 : INT;
 END_VAR
 
 (* Explicit init for test stability *)

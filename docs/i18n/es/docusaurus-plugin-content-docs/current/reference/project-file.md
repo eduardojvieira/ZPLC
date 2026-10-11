@@ -9,7 +9,7 @@ tags: [reference, generated]
 
 {/* >>> GENERATED (tools/docs/generate_source_references.ts): reference/project-file. Do not edit. >>> */}
 
-Todos los campos del archivo de proyecto `zplc.json` que define el esquema `packages/zplc-ide/zplc.schema.json`, 150 en total. Un campo de una lista se escribe con `[]`: `tasks[].name` es el `name` de cada tarea. Un campo es obligatorio solo dentro de un objeto que está presente.
+Todos los campos del archivo de proyecto `zplc.json` que define el esquema `packages/zplc-ide/zplc.schema.json`, 156 en total. Un campo de una lista se escribe con `[]`: `tasks[].name` es el `name` de cada tarea. Un campo es obligatorio solo dentro de un objeto que está presente.
 
 Un archivo de proyecto debe tener `name`, `version`, `tasks`. El editor y las herramientas validan un archivo contra este esquema antes de usarlo.
 
@@ -45,6 +45,12 @@ Esta tabla se lee del archivo fuente `packages/zplc-ide/zplc.schema.json`; su te
 | `io.outputs[].type` | `string: "BOOL" \| "BYTE" \| "WORD" \| "DWORD"` |   | `"BOOL"` | Data type |
 | `io.outputs[].pin` | `integer (>= 0)` |   |   | GPIO pin number (hardware-specific) |
 | `io.outputs[].description` | `string` |   |   | Optional description |
+| `io.virtual` | `array of object` |   |   | Words or bits of the process image that no pin of the board drives, read in the debugger or by a test. A variable located where the selected board has no channel is a build error that names the board unless its address is listed here. |
+| `io.virtual[].name` | `string (length >= 1)` | sí |   | Variable name |
+| `io.virtual[].address` | `string` | sí |   | IEC 61131-3 address (e.g., %I0.0, %Q0.1, %MW0) |
+| `io.virtual[].type` | `string: "BOOL" \| "BYTE" \| "WORD" \| "DWORD"` |   | `"BOOL"` | Data type |
+| `io.virtual[].pin` | `integer (>= 0)` |   |   | GPIO pin number (hardware-specific) |
+| `io.virtual[].description` | `string` |   |   | Optional description |
 | `io.analog` | `object` |   |   | Analog I/O configuration |
 | `io.analog.adc` | `array of object` |   |   | ADC channel definitions |
 | `io.analog.adc[].name` | `string (length >= 1)` | sí |   | Variable name |
