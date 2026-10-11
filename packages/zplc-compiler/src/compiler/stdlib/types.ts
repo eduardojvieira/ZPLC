@@ -9,6 +9,7 @@
 
 import type { Expression, FBParameter, STDataType } from '../ast.ts';
 import type { AsmLine } from '../asm-line.ts';
+import type { ErrorCode } from '../error-codes.ts';
 import { STRING_LAYOUT } from '../../contract.generated.ts';
 
 export const MEMBER_SIZE = {
@@ -68,8 +69,11 @@ export interface CodeGenContext {
     emit: (line: AsmLine) => void;
     /** Emit an expression to the stack */
     emitExpression: (expr: Expression) => void;
-    /** Fail the build at the call being generated; nothing is emitted in place of the error */
-    fail: (message: string) => never;
+    /**
+     * Fail the build at the call being generated; nothing is emitted in place of the error. `code` is the stable code
+     * of the error (CMP-006): the wrong number of arguments unless the generator says it is a defect of the compiler.
+     */
+    fail: (message: string, code?: ErrorCode) => never;
     /**
      * Static type of an expression: an elementary type name ('INT', 'REAL', ...) or '#INT' for an
      * integer literal; undefined when it is not known. Absent in a context built by a test.

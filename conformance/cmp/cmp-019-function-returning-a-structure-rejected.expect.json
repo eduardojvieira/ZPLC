@@ -2,6 +2,7 @@
   "requirement": "CMP-019",
   "title": "a function that returns a structure is rejected with a message, not built wrongly",
   "build": "fails",
+  "codes": ["INVALID_FUNCTION_RETURN_TYPE"],
   "messageIncludes": [
     "returns Pt"
   ]

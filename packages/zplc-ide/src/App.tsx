@@ -19,6 +19,7 @@ import { useEffect, useState, type ComponentType } from 'react';
 import { Group, Panel, Separator, useGroupCallbackRef, usePanelCallbackRef } from 'react-resizable-panels';
 import { WelcomeScreen } from './components/WelcomeScreen';
 import { CloseGuard } from './components/CloseGuard';
+import { SerialPortChooser } from './components/SerialPortChooser';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { DevFaultProbe } from './components/DevFaultProbe';
 import { RecoveryOffer } from './components/RecoveryOffer';
@@ -152,6 +153,7 @@ function App() {
         <UpdateNoticeBanner />
         <WelcomeScreen />
         <CloseGuard />
+        <SerialPortChooser />
       </div>
     );
   }
@@ -161,6 +163,7 @@ function App() {
     return (
       <div className="h-screen w-screen flex flex-col overflow-hidden bg-[var(--color-surface-900)]">
         <CloseGuard />
+        <SerialPortChooser />
         <div role={failed ? 'alert' : 'status'} className="flex flex-1 flex-col items-center justify-center gap-3 text-sm text-[var(--text-secondary)]">
           <p>{failed ? `Studio could not load the workbench: ${workbenchFailure.message}` : 'Loading the workbench…'}</p>
           {failed && (
@@ -177,6 +180,7 @@ function App() {
   return (
     <div className="h-screen w-screen flex flex-col overflow-hidden bg-[var(--color-surface-900)]">
       <CloseGuard />
+      <SerialPortChooser />
       <RecoveryOffer />
       <ExternalChangePrompt />
       <UpdateNoticeBanner />

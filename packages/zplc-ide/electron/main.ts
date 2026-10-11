@@ -6,6 +6,7 @@
  */
 
 import { app, BrowserWindow, dialog, Menu, nativeTheme, session, ipcMain, safeStorage, utilityProcess, type IpcMainInvokeEvent, type WebContents } from 'electron';
+import { randomUUID } from 'node:crypto';
 import path from 'path';
 import { fileURLToPath, pathToFileURL } from 'url';
 import { NativeSimulationSupervisor } from './nativeSimulationSupervisor.js';
@@ -13,10 +14,11 @@ import { nativeRuntimeSwitchedOff, nativeSimulationEnvironment } from './nativeS
 import { createFirmwareBuildGateway } from './firmwareBuildGateway.js';
 import { createWorkspaceTestGateway } from './workspaceTestGateway.js';
 import { createToolExecutionAudit } from './toolExecutionAudit.js';
-import { selectSerialPort } from './serialPortSelection.js';
+import { createSerialPortBroker } from './serialPortBroker.js';
 import { createAiProvider } from './aiProvider.js';
 import { createLearnProgressStore } from './learnProgressStore.js';
 import { createRecentProjects } from './recentProjects.js';
+import { registerAppLifecycle } from './appLifecycle.js';
 import { createSessionStore } from './sessionStore.js';
 import { createRecoveryStore } from './recoveryStore.js';
 import { checkForUpdate } from './updateCheck.js';
@@ -30,6 +32,7 @@ import { createToolWorkerHost, type ToolWorkerProcess } from './toolWorkerHost.j
 import { registerIpcHandlers } from './ipcRegistry.js';
 import {
   CLOSE_GUARD_CHANNEL,
+  PORT_CHOICE_CHANNEL,
   NATIVE_SIMULATION_CHANNEL,
   PROJECT_FILES_EVENT,
 } from './ipcContract.js';
@@ -61,6 +64,16 @@ const toolExecutionAudit = createToolExecutionAudit();
 const closeGuard = createCloseGuard();
 let recentProjects: ReturnType<typeof createRecentProjects> | null = null;
 let sessionStore: ReturnType<typeof createSessionStore> | null = null;
+/** The serial-port questions of the window: asked to its dialog, answered once to Electron (IDE-018). */
+const serialPorts = createSerialPortBroker({
+  send: (ownerId, offer) => {
+    const contents = mainWindow?.webContents;
+    if (!contents || contents.isDestroyed() || contents.id !== ownerId) return false;
+    contents.send(PORT_CHOICE_CHANNEL.REQUESTED, offer);
+    return true;
+  },
+  newRequestId: () => randomUUID(),
+});
 let recoveryStore: ReturnType<typeof createRecoveryStore> | null = null;
 // Changes made outside Studio reach only the window that owns the folder, as relative paths (IDE-004).
 const projectWatcher = createProjectWatcher({
@@ -150,6 +163,7 @@ function nativeSimulationBelongsTo(owner: RendererOwner): boolean {
 }
 
 function revokeRendererOwner(ownerId: number): void {
+  serialPorts.cancelOwner(ownerId);
   workspaceTestGateway.revokeOwner(ownerId);
   firmwareBuildGateway.revokeOwner(ownerId);
   projectFiles.revokeOwner(ownerId);
@@ -371,28 +385,15 @@ function setupSerialPortSelection(): void {
 
     sess.on('select-serial-port', (event, portList, requestingContents, callback) => {
       event.preventDefault();
+      // The window is asked with the ports the system lists; the choice is made in its dialog (IDE-018).
       if (!serialRendererIsCurrent(requestingContents)) {
         callback('');
         return;
       }
-      const ownerWindow = mainWindow;
-      if (!ownerWindow) {
-        callback('');
-        return;
-      }
-      const removedPortIds = new Set<string>();
-      const onPortRemoved = (_event: Electron.Event, port: Electron.SerialPort, contents: WebContents): void => {
-        if (contents === requestingContents) removedPortIds.add(port.portId);
-      };
-      sess.on('serial-port-removed', onPortRemoved);
-      void selectSerialPort({
-        ports: portList,
-        dialog: { showMessageBox: (options) => dialog.showMessageBox(ownerWindow, options) },
-        isCurrent: () => serialRendererIsCurrent(requestingContents),
-        isPortStale: (portId) => removedPortIds.has(portId),
-        callback,
-      }).finally(() => sess.removeListener('serial-port-removed', onPortRemoved));
+      serialPorts.open({ ownerId: requestingContents.id, ports: portList, callback });
     });
+    sess.on('serial-port-added', (_event, port, requestingContents) => serialPorts.added(requestingContents.id, port));
+    sess.on('serial-port-removed', (_event, port, requestingContents) => serialPorts.removed(requestingContents.id, port.portId));
   });
 }
 
@@ -413,6 +414,7 @@ function setupIPC(): void {
     projectFiles,
     recoveryStore: () => recoveryStore,
     sessionStore: () => sessionStore,
+    serialPorts,
     learnProgress: () => learnProgress,
     aiProvider: () => aiProvider,
     toolExecutionAudit,
@@ -527,14 +529,12 @@ app.whenReady().then(async () => {
   app.exit(1);
 });
 
-// A worker that is still running when the application quits is killed with it.
-app.on('before-quit', () => toolWorkerHost.dispose());
-
-// Quit when all windows are closed (except on macOS)
-app.on('window-all-closed', () => {
-  if (process.platform !== 'darwin') {
-    app.quit();
-  }
+// A worker that is still running when the application quits is killed with it, and the process leaves only once the
+// session that the closing window sent has been written (IDE-008).
+registerAppLifecycle(app, {
+  platform: process.platform,
+  onQuit: () => toolWorkerHost.dispose(),
+  writesSettled: () => sessionStore?.settled() ?? Promise.resolve(),
 });
 
 // Handle second instance (single instance lock)

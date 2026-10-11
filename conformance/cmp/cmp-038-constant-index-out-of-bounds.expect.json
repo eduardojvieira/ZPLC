@@ -5,6 +5,9 @@
   "lines": [
     5
   ],
+  "codes": [
+    "INDEX_OUT_OF_BOUNDS"
+  ],
   "messageIncludes": [
     "outside the array bounds"
   ]

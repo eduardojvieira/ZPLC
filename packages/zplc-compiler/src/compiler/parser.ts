@@ -11,6 +11,7 @@ import { tokenizeWithErrors, TokenType } from './lexer.ts';
 import type { Token, TokenTypeValue, LexerError } from './lexer.ts';
 import { orderedUniqueErrors } from './diagnostics.ts';
 import type { SourceSpan, SourceWarning, SyntaxIssue } from './diagnostics.ts';
+import type { ErrorCode } from './error-codes.ts';
 import { resolveTypeNames } from './type-names.ts';
 import { DataType, NameMap, VarSection, parseTimeLiteral, parseIOAddress } from './ast.ts';
 import type {
@@ -83,6 +84,8 @@ import type {
  * Parser error with location information.
  */
 export class ParseError extends Error {
+    /** The stable code of the kind of error (CMP-006). */
+    code: ErrorCode;
     line: number;
     column: number;
     /** Position just after the offending token. */
@@ -95,9 +98,10 @@ export class ParseError extends Error {
     /** Index of the token the error was found at (error recovery only). */
     tokenIndex = -1;
 
-    constructor(message: string, line: number, column: number, endLine = line, endColumn = column + 1) {
+    constructor(code: ErrorCode, message: string, line: number, column: number, endLine = line, endColumn = column + 1) {
         super(`Parse error at ${line}:${column}: ${message}`);
         this.name = 'ParseError';
+        this.code = code;
         this.detail = message;
         this.line = line;
         this.column = column;
@@ -247,17 +251,17 @@ class Parser {
             return this.advance();
         }
         const curr = this.current();
-        throw this.syntaxError(`${message}, got ${curr.type} '${curr.value}'`);
+        throw this.syntaxError('UNEXPECTED_TOKEN', `${message}, got ${curr.type} '${curr.value}'`);
     }
 
-    private error(message: string): never {
-        throw this.syntaxError(message);
+    private error(code: ErrorCode, message: string): never {
+        throw this.syntaxError(code, message);
     }
 
     /** A syntax error at the current token. */
-    private syntaxError(message: string): ParseError {
+    private syntaxError(code: ErrorCode, message: string): ParseError {
         const curr = this.current();
-        const error = new ParseError(message, curr.line, curr.column, curr.endLine, curr.endColumn);
+        const error = new ParseError(code, message, curr.line, curr.column, curr.endLine, curr.endColumn);
         error.tokenIndex = this.pos;
         return error;
     }
@@ -306,7 +310,7 @@ class Parser {
                 } else if (this.check(TokenType.INTERFACE)) {
                     interfaces.push(this.parseInterfaceDecl());
                 } else {
-                    this.error(`Expected VAR_GLOBAL, FUNCTION, FUNCTION_BLOCK, PROGRAM, TYPE or INTERFACE, got ${this.current().type}`);
+                    this.error('UNEXPECTED_TOKEN', `Expected VAR_GLOBAL, FUNCTION, FUNCTION_BLOCK, PROGRAM, TYPE or INTERFACE, got ${this.current().type}`);
                 }
             } catch (caught) {
                 if (!(caught instanceof ParseError)) throw caught;
@@ -331,7 +335,7 @@ class Parser {
         };
         // Replace every use of an alias by the type it stands for, and name the library blocks (CMP-030, CMP-033)
         for (const issue of resolveTypeNames(unit)) {
-            this.record(new ParseError(issue.message, issue.line, issue.column, issue.endLine, issue.endColumn));
+            this.record(new ParseError(issue.code, issue.message, issue.line, issue.column, issue.endLine, issue.endColumn));
         }
         return unit;
     }
@@ -549,7 +553,7 @@ class Parser {
                     if (lit.kind === 'IntLiteral') {
                         val = lit.value;
                     } else {
-                        this.error("Enum value must be an integer literal");
+                        this.error('INVALID_ENUMERATION', "Enum value must be an integer literal");
                     }
                 }
                 
@@ -609,7 +613,7 @@ class Parser {
             if (this.check(TokenType.METHOD)) {
                 methods.push(this.parseMethodDecl(true)); // isAbstract = true
             } else {
-                this.error(`Expected METHOD in interface, got ${this.current().type}`);
+                this.error('UNEXPECTED_TOKEN', `Expected METHOD in interface, got ${this.current().type}`);
             }
         }
 
@@ -761,7 +765,7 @@ class Parser {
 
         // Return type must be elementary, not array
         if (typeof returnType !== 'string') {
-            this.error('Function return type must be an elementary type, not ARRAY');
+            this.error('INVALID_FUNCTION_RETURN_TYPE', 'Function return type must be an elementary type, not ARRAY');
         }
 
         const inputs: VarDecl[] = [];
@@ -828,7 +832,7 @@ class Parser {
         } else if (this.match(TokenType.VAR_EXTERNAL)) {
             section = VarSection.VAR_EXTERNAL;
         } else {
-            this.error('Expected VAR, VAR_OUTPUT, VAR_INPUT, VAR_IN_OUT, VAR_GLOBAL, or VAR_TEMP');
+            this.error('UNEXPECTED_TOKEN', 'Expected VAR, VAR_OUTPUT, VAR_INPUT, VAR_IN_OUT, VAR_GLOBAL, or VAR_TEMP');
         }
 
         const retain = this.parseRetainQualifier();
@@ -865,7 +869,7 @@ class Parser {
             if (word === 'PERSISTENT') {
                 // VAR PERSISTENT is left to 2.x (decision D-04); RETAIN keeps a value across a restart.
                 // The block is read as an ordinary one, so the errors after it are found too.
-                this.record(new ParseError(`'PERSISTENT' is not supported in this release: declare the variables RETAIN`, token.line, token.column, token.endLine, token.endColumn));
+                this.record(new ParseError('UNSUPPORTED_CONSTRUCT', `'PERSISTENT' is not supported in this release: declare the variables RETAIN`, token.line, token.column, token.endLine, token.endColumn));
                 this.advance();
             } else if ((word === 'RETAIN' || word === 'NON_RETAIN') && retain === undefined) {
                 this.advance();
@@ -895,7 +899,7 @@ class Parser {
             try {
                 ioAddress = parseIOAddress(addrToken.value);
             } catch (e) {
-                throw new ParseError((e as Error).message, addrToken.line, addrToken.column, addrToken.endLine, addrToken.endColumn);
+                throw new ParseError('INVALID_DIRECT_ADDRESS', (e as Error).message, addrToken.line, addrToken.column, addrToken.endLine, addrToken.endColumn);
             }
         }
 
@@ -1015,7 +1019,7 @@ class Parser {
             return token.value.toUpperCase() === 'WSTRING' ? this.parseStringCapacity(token.value) : token.value;
         }
 
-        this.error(`Expected type name, got ${this.current().type}`);
+        this.error('UNEXPECTED_TOKEN', `Expected type name, got ${this.current().type}`);
     }
 
     /**
@@ -1034,7 +1038,7 @@ class Parser {
         // Parse additional dimensions (comma-separated)
         while (this.match(TokenType.COMMA)) {
             if (dimensions.length >= 3) {
-                this.error('Maximum 3 dimensions supported for arrays');
+                this.error('INVALID_ARRAY_DECLARATION', 'Maximum 3 dimensions supported for arrays');
             }
             dimensions.push(this.parseArrayDimension());
         }
@@ -1046,7 +1050,7 @@ class Parser {
 
         // Nested arrays not supported - use multi-dimensional
         if (typeof elementType === 'object' && 'kind' in elementType) {
-            this.error('Nested arrays not supported, use multi-dimensional array syntax: ARRAY[a..b, c..d] OF TYPE');
+            this.error('UNSUPPORTED_CONSTRUCT', 'Nested arrays not supported, use multi-dimensional array syntax: ARRAY[a..b, c..d] OF TYPE');
         }
 
         return {
@@ -1067,7 +1071,7 @@ class Parser {
         const upper = this.parseBound('upper');
 
         if (upper < lower) {
-            this.error(`Invalid array bounds: ${lower}..${upper} (upper must be >= lower)`);
+            this.error('INVALID_ARRAY_DECLARATION', `Invalid array bounds: ${lower}..${upper} (upper must be >= lower)`);
         }
 
         return { lowerBound: lower, upperBound: upper };
@@ -1079,7 +1083,7 @@ class Parser {
         const expr = this.parseAdditiveExpr();
         const value = this.foldInteger(expr);
         if (value === undefined) {
-            throw new ParseError(`The ${which} bound of an array must be an integer constant expression`, at.line, at.column);
+            throw new ParseError('INVALID_ARRAY_DECLARATION', `The ${which} bound of an array must be an integer constant expression`, at.line, at.column);
         }
         return value;
     }
@@ -1121,7 +1125,7 @@ class Parser {
         const at = this.current();
         const capacity = this.foldInteger(this.parseAdditiveExpr());
         if (capacity === undefined || capacity < 1 || capacity > 0xFFFF) {
-            throw new ParseError(`The capacity of ${base} must be an integer constant of 1 or more`, at.line, at.column);
+            throw new ParseError('INVALID_STRING_CAPACITY', `The capacity of ${base} must be an integer constant of 1 or more`, at.line, at.column);
         }
         this.expect(open === TokenType.LBRACKET ? TokenType.RBRACKET : TokenType.RPAREN, `Expected ${open === TokenType.LBRACKET ? ']' : ')'} after the string capacity`);
         return `${base.toUpperCase()}[${capacity}]`;
@@ -1224,7 +1228,7 @@ class Parser {
 
         // Must be identifier-based (assignment or FB call) or THIS-based
         if (!this.check(TokenType.IDENTIFIER) && !this.check(TokenType.THIS)) {
-            this.error(`Expected statement, got ${this.current().type}`);
+            this.error('UNEXPECTED_TOKEN', `Expected statement, got ${this.current().type}`);
         }
 
         const startToken = this.current();
@@ -1282,7 +1286,7 @@ class Parser {
             } as Assignment;
         }
 
-        this.error(`Expected := after assignment target, got ${this.current().type}`);
+        this.error('UNEXPECTED_TOKEN', `Expected := after assignment target, got ${this.current().type}`);
     }
 
     /**
@@ -1600,7 +1604,7 @@ class Parser {
             const target = this.current();
             const value = this.parseExpression();
             if (value.kind !== 'Identifier' && value.kind !== 'MemberAccess' && value.kind !== 'ArrayAccess' && value.kind !== 'DereferenceExpr') {
-                throw new ParseError(`An output binding names the variable that receives '${first.value}'`, target.line, target.column, target.endLine, target.endColumn);
+                throw new ParseError('INVALID_OUTPUT_BINDING', `An output binding names the variable that receives '${first.value}'`, target.line, target.column, target.endLine, target.endColumn);
             }
             return { name: first.value, value, output: true, line: first.line, column: first.column, endLine: first.endLine, endColumn: first.endColumn };
         }
@@ -1924,7 +1928,7 @@ class Parser {
             try {
                 valueMs = parseTimeLiteral(curr.value);
             } catch (e) {
-                throw new ParseError((e as Error).message, curr.line, curr.column);
+                throw new ParseError('INVALID_TIME_LITERAL', (e as Error).message, curr.line, curr.column);
             }
             return {
                 kind: 'TimeLiteral',
@@ -2041,7 +2045,7 @@ class Parser {
                     this.advance(); // .
                     const bitToken = this.advance();
                     if (!/^\d+$/.test(bitToken.value) || Number(bitToken.value) > 63) {
-                        throw new ParseError(`A bit number is a decimal number from 0 to 63, got '${bitToken.value}'`, bitToken.line, bitToken.column, bitToken.endLine, bitToken.endColumn);
+                        throw new ParseError('INVALID_BIT_ACCESS', `A bit number is a decimal number from 0 to 63, got '${bitToken.value}'`, bitToken.line, bitToken.column, bitToken.endLine, bitToken.endColumn);
                     }
                     expr = {
                         kind: 'BitAccess',
@@ -2106,7 +2110,7 @@ class Parser {
 
                     while (this.match(TokenType.COMMA)) {
                         if (indices.length >= 3) {
-                            this.error('Maximum 3 indices supported for array access');
+                            this.error('INVALID_ARRAY_ACCESS', 'Maximum 3 indices supported for array access');
                         }
                         indices.push(this.parseExpression());
                     }
@@ -2212,7 +2216,7 @@ class Parser {
             } as ReferenceExpr;
         }
 
-        this.error(`Expected expression, got ${this.current().type}`);
+        this.error('UNEXPECTED_TOKEN', `Expected expression, got ${this.current().type}`);
     }
 
     // ========================================================================
@@ -2230,7 +2234,7 @@ class Parser {
 
         if (typeName === 'BOOL') {
             if (digits !== '0' && digits !== '1') {
-                throw new ParseError(`BOOL# takes 0, 1, TRUE or FALSE, got ${text}`, at.line, at.column, at.endLine, at.endColumn);
+                throw new ParseError('INVALID_TYPED_LITERAL', `BOOL# takes 0, 1, TRUE or FALSE, got ${text}`, at.line, at.column, at.endLine, at.endColumn);
             }
             return { kind: 'BoolLiteral', value: digits === '1' && !negative, literalType: undefined, ...at } as BoolLiteral;
         }
@@ -2241,12 +2245,12 @@ class Parser {
         }
 
         if (/[.eE]/.test(digits) && !/^0x/.test(digits)) {
-            throw new ParseError(`${typeName}#${text}: an integer literal has no fraction or exponent`, at.line, at.column, at.endLine, at.endColumn);
+            throw new ParseError('INVALID_TYPED_LITERAL', `${typeName}#${text}: an integer literal has no fraction or exponent`, at.line, at.column, at.endLine, at.endColumn);
         }
         const exact = negative ? -BigInt(digits) : BigInt(digits);
         const [low, high] = INTEGER_TYPE_RANGES[typeName]!;
         if (exact < low || exact > high) {
-            throw new ParseError(`The literal ${typeName}#${text} is out of range: ${typeName} holds ${low} to ${high}`, at.line, at.column, at.endLine, at.endColumn);
+            throw new ParseError('INVALID_TYPED_LITERAL', `The literal ${typeName}#${text} is out of range: ${typeName} holds ${low} to ${high}`, at.line, at.column, at.endLine, at.endColumn);
         }
         const value = Number(exact);
         return {
@@ -2296,7 +2300,7 @@ class Parser {
         for (let index = this.pos + 2; index < this.tokens.length; index++) {
             const token = this.tokens[index]!;
             if (token.type !== TokenType.IDENTIFIER || token.value.toUpperCase() !== closer) continue;
-            const error = this.syntaxError(`${first.value.toUpperCase()} ... ${closer} is not supported`);
+            const error = this.syntaxError('UNSUPPORTED_CONSTRUCT', `${first.value.toUpperCase()} ... ${closer} is not supported`);
             this.record(error);
             this.pos = index + 1;
             this.match(TokenType.SEMICOLON);
@@ -2322,7 +2326,7 @@ class Parser {
             const open = this.innermostOpenStatement();
             if (open !== undefined) {
                 const here = this.current();
-                throw this.syntaxError(`Expected ${STATEMENT_CLOSER_OF[open]}, got ${here.type} '${here.value}'`);
+                throw this.syntaxError('UNEXPECTED_TOKEN', `Expected ${STATEMENT_CLOSER_OF[open]}, got ${here.type} '${here.value}'`);
             }
             into.push(this.parseStatement());
             return;

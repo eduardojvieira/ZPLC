@@ -5,6 +5,9 @@
   "lines": [
     7
   ],
+  "codes": [
+    "TYPE_MISMATCH"
+  ],
   "elements": [
     "line:7"
   ],

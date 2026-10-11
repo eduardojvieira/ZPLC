@@ -100,10 +100,11 @@ export function checkDeclaredTypes(unit: CompilationUnit | Program): CodegenErro
         if (typeof type !== 'string') return;
         const key = type.toUpperCase();
         if (known.has(key) || STRING_TYPE.test(type)) return;
-        const message = DEFERRED_TYPES.has(key)
+        const deferred = DEFERRED_TYPES.has(key);
+        const message = deferred
             ? `The type '${type}' is not supported in this release (it is planned for 2.x); it is used in ${what}`
             : `Unknown type '${type}' in ${what}`;
-        const error = new CodegenError(message, at.line, at.column, at.endLine, at.endColumn);
+        const error = new CodegenError(deferred ? 'UNSUPPORTED_CONSTRUCT' : 'UNKNOWN_TYPE', message, at.line, at.column, at.endLine, at.endColumn);
         if (where !== undefined) error.sourceRef = where;
         errors.push(error);
     };
@@ -236,7 +237,7 @@ export function checkRecursion(unit: CompilationUnit): CodegenError[] {
                 const message = cycle.length === 2
                     ? `Function '${target.name}' calls itself: a function cannot be recursive`
                     : `Function '${target.name}' calls itself through ${cycle.slice(1, -1).map((each) => `'${each}'`).join(', ')}: a function cannot be recursive`;
-                const error = new CodegenError(message, site.at.line, site.at.column, site.at.endLine, site.at.endColumn);
+                const error = new CodegenError('RECURSIVE_CALL', message, site.at.line, site.at.column, site.at.endLine, site.at.endColumn);
                 if (site.file !== undefined) error.sourceRef = site.file;
                 errors.push(error);
             } else {

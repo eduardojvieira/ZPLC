@@ -8,6 +8,9 @@
   "lines": [
     6
   ],
+  "codes": [
+    "TYPE_MISMATCH"
+  ],
   "messageIncludes": [
     "BOOL"
   ]

@@ -5,6 +5,9 @@
   "lines": [
     4
   ],
+  "codes": [
+    "UNKNOWN_IDENTIFIER"
+  ],
   "messageIncludes": [
     "factor"
   ]

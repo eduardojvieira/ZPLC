@@ -2,5 +2,6 @@
   "requirement": "CMP-044",
   "title": "a variable that overlaps an AT %M variable is rejected",
   "matrix": ["declarations.at-m", "configuration.ownership-and-memory-checks"],
-  "build": "fails"
+  "build": "fails",
+  "codes": ["ADDRESS_OVERLAP"]
 }

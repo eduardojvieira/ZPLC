@@ -6,6 +6,9 @@
   "lines": [
     1
   ],
+  "codes": [
+    "STACK_DEPTH_EXCEEDED"
+  ],
   "messageIncludes": [
     "evaluation stack",
     "the target holds 127"

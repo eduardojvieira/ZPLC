@@ -43,7 +43,7 @@ const REST = 0x7FFF;
  * first argument can plus `extra`, and it is empty.
  */
 function newString(ctx: CodeGenContext, first: Expression, extra = 0): number {
-    if (!ctx.stringTemp) ctx.fail('This string function needs the code generator of a program');
+    if (!ctx.stringTemp) ctx.fail('This string function needs the code generator of a program', 'INTERNAL_COMPILER_ERROR');
     const capacity = Math.min(0xFFFF, (ctx.stringCapacity?.(first) ?? 80) + extra);
     const address = ctx.stringTemp(capacity);
     ctx.emit(`    PUSH16 ${address}`);
@@ -68,7 +68,7 @@ function append(ctx: CodeGenContext, address: number, source: Expression, start:
 }
 
 function callHelper(ctx: CodeGenContext, name: 'strappend' | 'strfind'): void {
-    if (!ctx.callHelper) ctx.fail('This string function needs the code generator of a program');
+    if (!ctx.callHelper) ctx.fail('This string function needs the code generator of a program', 'INTERNAL_COMPILER_ERROR');
     ctx.callHelper(name);
 }
 

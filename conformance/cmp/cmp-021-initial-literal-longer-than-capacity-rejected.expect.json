@@ -4,5 +4,8 @@
   "build": "fails",
   "lines": [
     3
+  ],
+  "codes": [
+    "STRING_TOO_LONG"
   ]
 }

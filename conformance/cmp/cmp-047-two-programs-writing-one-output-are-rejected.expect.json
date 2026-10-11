@@ -5,6 +5,7 @@
   "note": "CMP-047: two programs that write the same physical output MUST still be rejected; the diagnostic is at the declaration in the second program, line 3 of the second file",
   "build": "fails",
   "lines": [3],
+  "codes": ["OUTPUT_OWNERSHIP_CONFLICT"],
   "messageIncludes": ["motor", "overlaps"],
   "files": ["cmp-047-two-programs-writing-one-output-are-rejected-second.st"],
   "tasks": [

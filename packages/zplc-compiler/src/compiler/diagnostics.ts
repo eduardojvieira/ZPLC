@@ -9,6 +9,8 @@
  * caller that shows one diagnostic keeps working and a caller that shows all of them has them.
  */
 
+import type { ErrorCode } from './error-codes.ts';
+
 /** A region of a source file; `endLine` and `endColumn` are the position just after the last character. */
 export interface SourceSpan {
     line: number;
@@ -21,6 +23,8 @@ export interface SourceSpan {
 export interface SyntaxIssue extends SourceSpan {
     /** 'LexerError' or 'ParseError'. */
     name: string;
+    /** The stable code of the kind of error (CMP-006). */
+    code: ErrorCode;
     /** The message with its position prefix. */
     message: string;
     /** The message without the prefix. */
@@ -137,6 +141,8 @@ export class CodegenError extends Error {
     sourceRef?: string;
 
     constructor(
+        /** The stable code of the kind of error (CMP-006). */
+        readonly code: ErrorCode,
         message: string,
         readonly line: number,
         readonly column: number,
@@ -165,7 +171,8 @@ export function codegenErrorFrom(
         return caught;
     }
     if (caught instanceof Error) {
-        return new CodegenError(caught.message, fallback.line, fallback.column, fallback.endLine, fallback.endColumn);
+        // an error that was not raised as one of the compiler's own is a condition it did not expect
+        return new CodegenError('INTERNAL_COMPILER_ERROR', caught.message, fallback.line, fallback.column, fallback.endLine, fallback.endColumn);
     }
     return null;
 }

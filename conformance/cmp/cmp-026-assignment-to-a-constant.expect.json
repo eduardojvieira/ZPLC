@@ -2,5 +2,6 @@
   "requirement": "CMP-026",
   "title": "an assignment to a constant is rejected",
   "build": "fails",
-  "lines": [7]
+  "lines": [7],
+  "codes": ["ASSIGNMENT_TO_CONSTANT"]
 }

@@ -4,5 +4,6 @@
   "matrix": ["pous.function"],
   "build": "fails",
   "lines": [5],
+  "codes": ["INVALID_ARGUMENTS"],
   "messageIncludes": ["ABS"]
 }

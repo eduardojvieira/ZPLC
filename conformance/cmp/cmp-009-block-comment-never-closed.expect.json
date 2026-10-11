@@ -5,6 +5,9 @@
   "lines": [
     6
   ],
+  "codes": [
+    "UNTERMINATED_COMMENT"
+  ],
   "messageIncludes": [
     "Unterminated comment"
   ]

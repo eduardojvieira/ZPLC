@@ -26,6 +26,7 @@ export function applyProjectMarkers(monaco: Monaco, owner: string, diagnostics: 
           : Math.min(startColumn + 1, model.getLineMaxColumn(startLineNumber));
         return {
           message: diagnostic.message,
+          ...(diagnostic.errorCode === undefined ? {} : { code: diagnostic.errorCode }),
           severity: diagnostic.type === 'error' ? monaco.MarkerSeverity.Error : monaco.MarkerSeverity.Warning,
           startLineNumber, startColumn, endLineNumber, endColumn,
         };

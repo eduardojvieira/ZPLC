@@ -83,6 +83,7 @@ async function harness(options: { toolApi?: Partial<ToolApiModule>; failToolApi?
     projectFiles,
     recoveryStore: () => store('recovery') as never,
     sessionStore: () => store('session') as never,
+    serialPorts: { choose: () => undefined, list: () => null },
     learnProgress: () => store('learn', { read: async () => new Set(['a']), merge: async (ids: string[]) => new Set(ids) }) as never,
     aiProvider: () => store('ai', { cancel: () => ({ requested: false }), request: async () => ({ ok: true }) }) as never,
     toolExecutionAudit: { list: () => ({ schemaVersion: 1, executions: [] }), add: async (envelope: unknown) => { note(`audit.add:${JSON.stringify(envelope)}`); } } as never,
@@ -103,7 +104,7 @@ async function harness(options: { toolApi?: Partial<ToolApiModule>; failToolApi?
         note(`worker.${request.operation}${request.operation === 'scenario-run' ? `:${request.scenarioId}` : ''}${signal.aborted ? ':aborted' : ''}`);
         if (options.worker) return options.worker(request);
         switch (request.operation) {
-          case 'compile': return { ok: false, evidence: { diagnostics: [{ code: 'COMPILATION_FAILED', message: 'bad /home/secret/x.st', path: 'src/Main.st', line: 3 }] } };
+          case 'compile': return { ok: false, evidence: { diagnostics: [{ code: 'UNKNOWN_IDENTIFIER', message: 'bad /home/secret/x.st', path: 'src/Main.st', line: 3 }] } };
           case 'safety-check': return { ok: false };
           case 'change-set-review': throw new Error('boom');
           default: return { ok: true };
@@ -267,7 +268,7 @@ describe('recovery and session over the IPC boundary (IDE-006, IDE-008)', () => 
   });
 });
 
-describe('workspace tests, candidate review and the AI provider (IDE-001, IDE-017)', () => {
+describe('workspace tests, candidate review and the AI provider (IDE-001, IDE-017, IDE-030)', () => {
   it('register the folder of the window by its id alone, as <folder>/zplc.json, and refuse any other id (IDE-001)', async () => {
     const h = await harness();
     expect(await h.invoke('workspace-tests:register-project-root', TRUSTED, { rootId: h.rootId })).toEqual({ workspaceId: WORKSPACE_ID });

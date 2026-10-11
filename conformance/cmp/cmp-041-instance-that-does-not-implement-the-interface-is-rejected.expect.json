@@ -9,6 +9,9 @@
   "lines": [
     17
   ],
+  "codes": [
+    "INTERFACE_NOT_IMPLEMENTED"
+  ],
   "messageIncludes": [
     "Plain",
     "does not implement",

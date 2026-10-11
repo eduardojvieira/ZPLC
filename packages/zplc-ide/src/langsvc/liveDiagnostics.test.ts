@@ -43,6 +43,8 @@ describe('the live diagnostics of the project (LNG-015)', () => {
     expect(found[0]!.column).toBeGreaterThan(0);
     expect(found[0]!.endColumn).toBeGreaterThan(0);
     expect(found[2]!.message).toContain('Nope');
+    // each carries the stable code that a build of the same source reports (CMP-006)
+    expect(found.map((each) => each.errorCode)).toEqual(['UNEXPECTED_TOKEN', 'UNEXPECTED_TOKEN', 'UNKNOWN_IDENTIFIER']);
   });
 
   it('finds the semantic error that an edit in one file causes in another, and clears it when the edit is undone', () => {

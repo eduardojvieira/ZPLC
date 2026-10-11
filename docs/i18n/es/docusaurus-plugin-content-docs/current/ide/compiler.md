@@ -42,6 +42,31 @@ contador de programa dentro de una sentencia se resuelve a esa sentencia. El
 final de una función y las rutinas auxiliares que siguen al ciclo no pertenecen
 a ninguna sentencia.
 
+## Errores
+
+Un error detiene la compilación y no produce ningún artefacto. Una compilación
+informa todos los errores independientes de las fuentes que leyó, cada uno con su
+**código**, su mensaje y su posición: la línea y la columna donde empieza y donde
+termina, y el archivo. El código nombra el tipo de problema (`UNKNOWN_IDENTIFIER`,
+`TYPE_MISMATCH`, `WORK_MEMORY_EXCEEDED`) y no cambia cuando se reformula el
+mensaje, de modo que un script o una persona pueden buscarlo:
+[Códigos de diagnóstico](../reference/diagnostic-codes.md) lista cada código con
+un programa que lo provoca.
+
+La línea de comandos imprime el código al final de la línea, entre corchetes:
+
+```text
+src/Motor.st:12:5: Unknown identifier 'Speed' [UNKNOWN_IDENTIFIER]
+```
+
+Un programa que no cabe en la memoria del destino dice cuánto necesita, cuánto
+tiene el destino y qué ocupa más, para la memoria de trabajo, la memoria
+retentiva y el código:
+
+```text
+CODE exceeds the target memory profile: 46012 bytes required, 45056 bytes available (the code memory of the target profile). Largest consumers: Program Main (41000 bytes), Function Scale (3100 bytes), Helper: byte copy (900 bytes)
+```
+
 ## Advertencias
 
 Una compilación que termina bien puede aun así avisar al autor de lo que merece

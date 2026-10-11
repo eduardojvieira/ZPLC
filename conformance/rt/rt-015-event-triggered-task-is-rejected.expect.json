@@ -4,6 +4,7 @@
   "matrix": ["configuration.event-triggered-tasks"],
   "note": "Decision D-04 (2.x recommended): event-triggered tasks are left to 2.x; the scheduler rejects them today and the build says so (RT-015)",
   "build": "fails",
+  "codes": ["INVALID_TASK_CONFIGURATION"],
   "messageIncludes": [],
   "tasks": [
     {"name": "EventTask", "trigger": "event", "interval_ms": 10, "priority": 1, "programs": ["main.st"]}

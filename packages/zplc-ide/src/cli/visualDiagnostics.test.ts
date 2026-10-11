@@ -47,7 +47,7 @@ describe('LNG-003 a Ladder diagnostic names the rung and the cell', () => {
 
     const diagnostics = await diagnosticsOf('.ld.json', JSON.stringify(model));
     expect(diagnostics).toEqual([expect.objectContaining({
-      code: 'COMPILATION_FAILED', path: 'src/main.ld.json', element: `rung:${rung.id}/cell:0,${col}`,
+      code: 'TRANSLATION_FAILED', path: 'src/main.ld.json', element: `rung:${rung.id}/cell:0,${col}`,
       message: expect.stringContaining("'Missing'"),
     })]);
   });
@@ -192,6 +192,6 @@ describe('LNG-003 an IL diagnostic names its line', () => {
 describe('a failure that is not a compiler error', () => {
   // Without the fix this call never returned: the function called itself with the same argument.
   it('is one diagnostic that says only that the build failed', () => {
-    expect(safeCompilerDiagnostics(new Error('internal detail that is not for the report'))).toEqual([{ code: 'COMPILATION_FAILED', message: 'Compilation failed' }]);
+    expect(safeCompilerDiagnostics(new Error('internal detail that is not for the report'))).toEqual([{ code: 'INTERNAL_COMPILER_ERROR', message: 'Compilation failed' }]);
   });
 });

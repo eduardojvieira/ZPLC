@@ -3,5 +3,6 @@
   "title": "assigning a REAL to an INT is rejected",
   "matrix": ["functions.implicit-widening-conversion"],
   "build": "fails",
-  "lines": [6]
+  "lines": [6],
+  "codes": ["TYPE_MISMATCH"]
 }

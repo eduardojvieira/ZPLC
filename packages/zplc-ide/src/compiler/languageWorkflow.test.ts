@@ -5,6 +5,7 @@ import {
   compileSingleFileWithTask,
   CompilerError,
   getLanguageWorkflowSupport,
+  transpileFailure,
   transpileToST,
   type PLCLanguage,
 } from './index';
@@ -134,6 +135,33 @@ describe('v1.5 language workflow support', () => {
     expect(result.debugMap.memoryLayout).toMatchObject({ workSize: 2048, retainSize: 1024 });
   });
 
+  it('refuses a located variable where the board has no channel, with the code NO_BOARD_CHANNEL (IO-003, CMP-006)', () => {
+    let failure: CompilerError | undefined;
+    try {
+      compileMultiTaskProject(
+        {
+          name: 'NoChannel', version: '1.0.0', target: { board: 'rpi_pico' },
+          tasks: [{ name: 'Main', trigger: 'cyclic', interval_ms: 10, priority: 1, programs: ['Main'] }],
+        },
+        [{ name: 'Main', sourceRef: 'src/Main.st', language: 'ST', content: 'PROGRAM Main\nVAR\n  Led AT %QX0.6 : BOOL;\nEND_VAR\n  Led := TRUE;\nEND_PROGRAM\n' }],
+      );
+    } catch (error) {
+      failure = error as CompilerError;
+    }
+    expect(failure).toBeInstanceOf(CompilerError);
+    expect(failure!.code).toBe('NO_BOARD_CHANNEL');
+    expect(failure!.detail).toContain("Variable 'Led' is located at %QX0.6");
+    expect(failure!.detail).toContain('Raspberry Pi Pico (RP2040)');
+  });
+
+  it('refuses a source that does not translate, with the code TRANSLATION_FAILED and the element it is about (LNG-003, CMP-006)', () => {
+    const empty = transpileFailure({ success: false, source: '', errors: ['FBD block \'not_1\' (NOT): input \'IN\' is not wired'], diagnostics: [{ message: 'FBD block \'not_1\' (NOT): input \'IN\' is not wired', element: 'block:not_1' }] }, 'src/main.fbd.json');
+    expect(empty.code).toBe('TRANSLATION_FAILED');
+    expect(empty.element).toBe('block:not_1');
+    expect(empty.sourceRef).toBe('src/main.fbd.json');
+    expect(transpileFailure({ success: false, source: '', errors: [] }).code).toBe('TRANSLATION_FAILED');
+  });
+
   it('compiles canonical single-file workflow sources for every claimed language', () => {
     const languages: PLCLanguage[] = ['ST', 'IL', 'LD', 'FBD', 'SFC'];
 
@@ -210,9 +238,11 @@ describe('v1.5 language workflow support', () => {
     } catch (error) {
       const diagnostic = error as CompilerError;
       expect(diagnostic.phase).toBe('codegen');
-      expect(diagnostic.line).toBe(0);
-      expect(diagnostic.column).toBe(0);
-      expect(diagnostic.sourceRef).toBeUndefined();
+      // the project file, at its first line: no diagnostic is at line 0 (CMP-006)
+      expect(diagnostic.line).toBe(1);
+      expect(diagnostic.column).toBe(1);
+      expect(diagnostic.sourceRef).toBe('zplc.json');
+      expect(diagnostic.code).toBe('INVALID_TASK_CONFIGURATION');
       expect(diagnostic.detail).toBe("Task 'Main' must reference exactly one PROGRAM");
     }
   });
@@ -239,9 +269,10 @@ describe('v1.5 language workflow support', () => {
     } catch (error) {
       expect(error).toMatchObject({
         phase: 'codegen',
-        line: 0,
-        column: 0,
-        sourceRef: undefined,
+        code: 'INVALID_TASK_CONFIGURATION',
+        line: 1,
+        column: 1,
+        sourceRef: 'zplc.json',
       });
     }
   });

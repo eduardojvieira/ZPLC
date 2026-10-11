@@ -39,6 +39,31 @@ and column, so any program counter inside a statement resolves to that
 statement. The end of a function and the helper routines after the cycle belong
 to no statement.
 
+## Errors
+
+An error stops the build and produces no artifact. A build reports every
+independent error of the sources it read, each with its **code**, its message and
+its position: the line and column where it starts and where it ends, and the
+file. The code names the kind of problem (`UNKNOWN_IDENTIFIER`,
+`TYPE_MISMATCH`, `WORK_MEMORY_EXCEEDED`) and does not change when the message is
+reworded, so a script or a person can search for it:
+[Diagnostic codes](../reference/diagnostic-codes.md) lists every code with a
+program that provokes it.
+
+The command line prints the code at the end of the line, in brackets:
+
+```text
+src/Motor.st:12:5: Unknown identifier 'Speed' [UNKNOWN_IDENTIFIER]
+```
+
+A program that does not fit the memory of the target says how much it needs, how
+much the target has and what takes the most, for the work memory, the retentive
+memory and the code:
+
+```text
+CODE exceeds the target memory profile: 46012 bytes required, 45056 bytes available (the code memory of the target profile). Largest consumers: Program Main (41000 bytes), Function Scale (3100 bytes), Helper: byte copy (900 bytes)
+```
+
 ## Warnings
 
 A build that succeeds can still tell the author what deserves a look. Every

@@ -5,5 +5,6 @@
   "note": "Decision D-04 (2.x recommended): positional (non-formal) function-block calls are left to 2.x; the formal call with := and => is in 2.0",
   "build": "fails",
   "lines": [6],
+  "codes": ["INVALID_ARGUMENTS"],
   "messageIncludes": []
 }

@@ -28,9 +28,9 @@ describe('the lesson check request and answer (LRN-022, LRN-026)', () => {
     expect(lessonCheckAnswer({ ok: true, record: { ...record, result: 'failed' } })).toBeNull();
     expect(lessonCheckAnswer({ ok: true, record: { ...record, programSha256: 'nope' } })).toBeNull();
     const refused = lessonCheckAnswer({ ok: false, reason: 'not-graded', evidence: { diagnostics: [
-      { code: 'COMPILATION_FAILED', message: 'bad /home/secret/x.st', path: 'src/A.st' }, { code: 'lowercase' }, { code: 'COMPILATION_FAILED' }, { code: 'SIMULATOR_UNAVAILABLE' },
+      { code: 'UNKNOWN_IDENTIFIER', message: 'bad /home/secret/x.st', path: 'src/A.st' }, { code: 'lowercase' }, { code: 'UNKNOWN_IDENTIFIER' }, { code: 'SIMULATOR_UNAVAILABLE' },
     ] } }, { jobId: 'j' });
-    expect(refused).toEqual({ ok: false, reason: 'not-graded', codes: ['COMPILATION_FAILED', 'SIMULATOR_UNAVAILABLE'], execution: { jobId: 'j' } });
+    expect(refused).toEqual({ ok: false, reason: 'not-graded', codes: ['UNKNOWN_IDENTIFIER', 'SIMULATOR_UNAVAILABLE'], execution: { jobId: 'j' } });
     expect(JSON.stringify(refused)).not.toContain('/home/secret');
     expect(lessonCheckAnswer({ ok: false, reason: 'because I said so' })).toBeNull();
     expect(lessonCheckAnswer('x')).toBeNull();

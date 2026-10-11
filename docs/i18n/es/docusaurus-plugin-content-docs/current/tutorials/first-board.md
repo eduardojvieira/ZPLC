@@ -98,7 +98,10 @@ Si una placa no vuelve, use el procedimiento de recuperación de su perfil:
 
 1. Abra el proyecto del ejemplo, compílelo (**Build**, **Compile**) y elija
    **Hardware** en la barra de herramientas en lugar de **Simulate**.
-2. Presione **Connect** y elija el puerto serie de la placa. En Linux su usuario
+2. Presione **Connect**. Un diálogo de Studio lista cada puerto serie con su nombre
+   y sus identificadores USB, y marca las placas que conoce. Si la placa no aparece,
+   conéctela y presione **Refresh**. Elija su puerto y presione **Use this port**:
+   Studio usa solo ese puerto, y elegirlo no envía nada a la placa. En Linux su usuario
    necesita el grupo del puerto serie: [Instalar ZPLC Studio](../getting-started/install.md#linux-acceso-al-puerto-serie).
 3. Studio lee la identidad del runtime: placa, perfil y ABI. Un proyecto compilado
    para otra placa se rechaza.
