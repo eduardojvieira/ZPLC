@@ -40,7 +40,8 @@ and version when the release is cut (see `RELEASING.md`).
   runtime waits in STOP after every reset. Each board profile in `boards.json` has a `watchdog`
   object (policy in STOP, paused and in a fault, timeout and its maximum); no board has the
   hardware watchdog enabled, because none has the hardware record of its reset timing (HIL-010).
-  Not done: the WASM runtime does not use the core yet, and nothing here was run on a board.
+  The WebAssembly runtime runs the same core and the same session (see the entry on the browser runtime below);
+  nothing here was run on a board.
 - A project declares the value an output takes in the safe state, and the artifact carries it (RT-023).
   An output is still off whenever the program does not control it (STOP, a pause, a latched
   fault, the boot, a deploy in progress); a row of `io.outputs` with `"safe": true` is on instead,
@@ -76,6 +77,11 @@ and version when the release is cut (see `RELEASING.md`).
   released on its own interval, a deadline miss is counted, any input of the
   running program can be set or forced from Studio, and `VAR RETAIN` values are
   kept from one run to the next.
+- **Studio simulates in the browser when the native runtime cannot start.** The runtime is
+  the native session built to WebAssembly, with the loader's verifier, the scheduler core and
+  the retain rules of the firmware; the status bar says **WASM fallback · degraded** and lists
+  what it does not have (communication blocks, serial, pins, real-time timing), and the console
+  says why the native simulation did not start. Retained values are kept with the project.
 - **Scenario tests give the same answer everywhere.** Studio, the command line and
   the MCP server run them the same way, and the **Interlocks** tab lists which
   pairs of outputs are asserted never to be on together.
@@ -150,7 +156,10 @@ and version when the release is cut (see `RELEASING.md`).
   on firmware.
 - TLS is off on the Nucleo-H743ZI and the Arduino Opta until their random generator is
   verified on the board, so MQTT runs over plain TCP there.
-- The browser simulator is unavailable: simulation needs the desktop application.
+- The browser runtime is degraded and was run on one engine: the module under Bun and in the
+  Electron renderer on Linux. Its timing is the browser's, its communication blocks answer
+  `STATUS` 10 (unavailable), and it has no serial port and no pins
+  ([Browser runtime](docs/docs/runtime/browser-runtime.md)).
 - The installers are not signed with a paid identity: Windows asks you to confirm the
   first launch and macOS needs **Open Anyway**
   ([Install ZPLC Studio](docs/docs/getting-started/install.md)).
@@ -159,6 +168,22 @@ and version when the release is cut (see `RELEASING.md`).
 
 ### Details for contributors
 
+- The WebAssembly runtime is built and shipped, and runs the shared core (IDE-025, RT-008, RT-009, RT-027).
+  `tools/wasm-core/build.ts` builds one module with `clang` and `wasm-ld` from the sources of
+  the native runtime (`zplc_core`, the loader and its verifier, `zplc_sched_core`, `zplc_retain`,
+  the program store, `native_runtime_session.c`) and the WebAssembly port of the HAL
+  (`zplc_hal_wasm.c`, five imports of `zplc_host`); the Emscripten build and
+  `scripts/build_wasm.sh` are gone. The Vite build of the IDE embeds it
+  (`scripts/wasmRuntimePlugin.ts`, the virtual module `virtual:zplc-wasm-runtime`) and writes
+  `dist/wasm-runtime.json` with its size, SHA-256, commit and compiler; a machine without the
+  tools builds a Studio that says it has no browser runtime, and CI fails. The page may compile
+  WebAssembly (`'wasm-unsafe-eval'` in `script-src`, nothing else is evaluated). The native
+  runtime failing to start, or `ZPLC_RUNTIME=wasm` in an unpackaged app, makes the simulation run
+  on it, with the reason in the console. Every communication block answers `STATUS` 10.
+  Evidence: `wasmRuntime.test.ts` (the golden trace of the scheduler core test suite, RT-009),
+  `wasmConformance.test.ts` (all 499 conformance cases that build, through the adapter),
+  `wasmRetain.test.ts` (the retain scenarios of the host session and the project folder), journey
+  8b. Not done: no other browser engine, no timing measurement, no cross-origin isolation work.
 - The hardware-in-the-loop tools are repaired and tested without a board
   (HIL-001 to HIL-009, HIL-012, HIL-017). Every script of `tools/hil` exits
   non-zero when a check fails, or is listed with its reason in

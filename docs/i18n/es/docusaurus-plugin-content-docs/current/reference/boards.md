@@ -69,7 +69,7 @@ Flash y RAM de `firmware/app` por placa, de la tabla de memoria del enlazador en
 | `stm32f746g-disco` | 298.3 | 313.2 | 236.1 | 241.8 | 8.0 | 4.0 | 16.0 |
 | `nucleo-h743zi` | 414.3 | 435.0 | 478.0 | 502.0 | 8.0 | 4.0 | 44.0 |
 | `arduino-opta-wifi-m7` | 434.0 | 455.8 | 458.4 | 481.5 | 8.0 | 4.0 | 32.0 |
-| `waveshare-rp2040-zero` | 156.4 | 164.5 | 200.7 | 210.8 | 8.0 | 4.0 | 24.0 |
+| `waveshare-rp2040-zero` | 169.7 | 178.2 | 204.3 | 210.8 | 8.0 | 4.0 | 24.0 |
 
 ## Detalle por placa
 

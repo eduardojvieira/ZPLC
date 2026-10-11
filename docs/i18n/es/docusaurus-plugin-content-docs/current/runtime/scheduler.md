@@ -146,6 +146,8 @@ Las cinco reglas anteriores son las mismas en simulación y en un target. Lo sig
 | Velocidad y jitter | La VM corre en un procesador de host bajo un sistema operativo de propósito general. | La VM corre en el procesador de la placa. Un programa que cumple a tiempo en simulación puede incumplir en un target, y a la inversa. |
 | Informe de un incumplimiento | La bandera de advertencia, la cuenta, el último exceso, el límite configurable y la causa del fault de la tabla anterior. | Los mismos campos, del mismo núcleo (`deadline` y `fault` de `zplc sched status --json`), con la cuenta de cada tarea, el total y el estado `error` una vez latcheado. El límite es `CONFIG_ZPLC_DEADLINE_MISS_LIMIT`. |
 
+El runtime WebAssembly de Studio ejecuta el mismo núcleo del scheduler y la misma sesión que la simulación nativa, y una prueba compara sus decisiones con la traza compartida del núcleo (admisión, orden, latch de entradas, incumplimientos de plazo, latch de falla y commit, para tres tareas y para una). Su reloj es el de la página, en milisegundos enteros, así que las filas anteriores que nombran el reloj del host valen para el reloj del navegador, y una pestaña en segundo plano puede ir con retraso. Ver [Runtime del navegador](./browser-runtime.md).
+
 ## Pausa, reanudación, paso y parada
 
 El runtime separa dos cosas: las **salidas físicas** (los pines) y el **estado lógico del programa** (la imagen de proceso de salidas, la tabla de forzados y el contador de programa y las pilas de cada tarea). Una pausa deja seguras las primeras y conserva el segundo, de modo que una reanudación o un paso continúan el programa donde se detuvo (requisito RT-017). `STOP` termina la ejecución y descarta ambos.

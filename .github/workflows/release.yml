@@ -117,6 +117,11 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y rpm
 
+      # IDE-025: the IDE build embeds the WebAssembly runtime (clang and wasm-ld), and fails where CI is set without them.
+      - name: Install the WebAssembly toolchain
+        run: |
+          sudo apt-get install --yes --no-install-recommends clang lld
+
       - name: Build two clean Linux x64 payloads from the exact SHA
         shell: bash
         run: |
@@ -192,6 +197,15 @@ jobs:
         run: |
           test -f bun.lock
           bun install --frozen-lockfile
+
+      # IDE-025: the IDE build embeds the WebAssembly runtime, which tools/wasm-core builds with clang and wasm-ld, and the
+      # build fails where CI is set and they are missing. Apple's clang has no WebAssembly target: Homebrew's LLVM goes first.
+      - name: Install the WebAssembly toolchain
+        shell: bash
+        run: |
+          brew install llvm lld
+          echo "$(brew --prefix llvm)/bin" >> "$GITHUB_PATH"
+          echo "$(brew --prefix lld)/bin" >> "$GITHUB_PATH"
 
       - name: Build dependencies
         run: |
@@ -274,6 +288,13 @@ jobs:
         run: |
           test -f bun.lock
           bun install --filter '@zplc/ide' --filter '@zplc/compiler' --frozen-lockfile
+
+      # IDE-025: the IDE build embeds the WebAssembly runtime (clang and wasm-ld), and fails where CI is set without them.
+      - name: Install the WebAssembly toolchain
+        shell: bash
+        run: |
+          choco install llvm --yes --no-progress
+          echo "C:\\Program Files\\LLVM\\bin" >> "$GITHUB_PATH"
 
       - name: Build dependencies
         run: |
@@ -362,6 +383,12 @@ jobs:
         run: |
           test -f bun.lock
           bun install --frozen-lockfile
+
+      # IDE-025: the IDE build embeds the WebAssembly runtime (clang and wasm-ld), and fails where CI is set without them.
+      - name: Install the WebAssembly toolchain
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes --no-install-recommends clang lld
 
       - name: Build dependencies
         run: |

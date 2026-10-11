@@ -145,7 +145,7 @@ a separate step that a person does with the board's own Zephyr procedure.
 │                             │ HAL Interface                 │
 │  ┌──────────────────────────▼───────────────────────────┐  │
 │  │ ┌──────────┐  ┌──────────┐  ┌────────────────────┐   │  │
-│  │ │  Zephyr  │  │  POSIX   │  │  WASM (not shipped) │   │  │
+│  │ │  Zephyr  │  │  POSIX   │  │  WASM (browser)     │   │  │
 │  │ │   HAL    │  │   HAL    │  │        HAL          │   │  │
 │  │ └──────────┘  └──────────┘  └────────────────────┘   │  │
 │  └──────────────────────────────────────────────────────┘  │
@@ -231,5 +231,5 @@ ZPLC is licensed under the MIT License. See [LICENSE](LICENSE).
 - [React Flow](https://reactflow.dev/) - Powering our visual editors
 - [Monaco Editor](https://microsoft.github.io/monaco-editor/) - Code editing experience
 - [Electron](https://www.electronjs.org/) - Cross-platform desktop framework
-- [Emscripten](https://emscripten.org/) - WebAssembly compilation
+- [LLVM](https://llvm.org/) - `clang` and `lld` build the WebAssembly runtime
 - [IEC 61131-3](https://en.wikipedia.org/wiki/IEC_61131-3) - The standard we implement

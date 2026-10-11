@@ -14,7 +14,7 @@ That includes:
 
 - Zephyr targets
 - host/POSIX runtimes
-- a browser/WebAssembly port (in the source tree, not shipped in this release)
+- a browser/WebAssembly port (the runtime of the browser simulation, built with the IDE)
 - any future board-specific port
 
 ## Core rule

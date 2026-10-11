@@ -23,7 +23,7 @@ The ZPLC runtime core relies on an abstract Hardware Abstraction Layer (HAL) for
 |---|---|
 | **Zephyr profile** | Program-store backend when enabled and operational; NVS is one implementation, not a universal board guarantee. The `RETAIN` records use the same HAL calls. |
 | **Native Sim (Desktop)** | Files in the persistence directory (`ZPLC_PERSIST_ROOT`, default `~/.zplc`): the program store and the `RETAIN` records. |
-| **WASM simulator** | `localStorage` of the browser, through the same HAL calls. The simulator does not use it for `RETAIN` yet. |
+| **WASM simulator** | The records of the retain module (`retain_a0` to `retain_b7`) go through the HAL calls of the module to the host page, which keeps them in the `build/retain` folder of the open project, and in the memory of the page when no project is open. The program store of the session is in memory. See [Browser runtime](./browser-runtime.md). |
 
 ## Program Persistence on Hardware
 
@@ -176,11 +176,17 @@ host simulator therefore keep their `RETAIN` values from one session to the
 next, as a controller does; use `execution.reset`, or another persistence
 directory, to start from the declared values.
 
-The WASM simulator does not apply these rules yet. Its storage is `localStorage`
-and the portable module needs only the HAL calls, but the module is not linked
-into the WASM build and its adapter does not call a save on stop or a restore on
-load. Until that is wired, a program on the WASM simulator starts from the
-declared values at every load.
+The WASM runtime applies the same module and the same rules: the module is the
+one the firmware and the host run, linked into the WebAssembly build, and the
+session saves on `STOP`, on `execution.reset` and at shutdown, and restores when
+a program loads. What differs is the storage and the interval. The page keeps
+the records in the `build/retain` folder of the open project (the files
+`retain_a0.bin` to `retain_b7.bin`), and in the memory of the page when no
+project is open. The periodic interval is 30 seconds, because a module has no
+environment variable to change it. The write to the folder follows the call that
+saves, so a page closed between the two can lose that one record, and the
+previous one stays valid because two records alternate. [Browser
+runtime](./browser-runtime.md) lists the scenarios that hold it to the host's.
 
 ### Enabling it on a firmware board
 
