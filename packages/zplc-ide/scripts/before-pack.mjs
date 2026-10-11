@@ -36,14 +36,27 @@ export function udevRulesCommand(projectDir) {
 }
 
 /**
+ * The commands that the hook runs for a platform: the notices for every installer, and the udev rule for the Linux
+ * packages only, so that a macOS or Windows packaging run needs none of the files the rule is generated from.
+ *
+ * @param {{ packager: { projectDir: string }, electronPlatformName?: string }} context
+ */
+export function packCommands(context) {
+  const { projectDir } = context.packager;
+  const commands = [noticesCommand(projectDir)];
+  if (context.electronPlatformName === undefined || context.electronPlatformName === 'linux') commands.push(udevRulesCommand(projectDir));
+  return commands;
+}
+
+/**
  * electron-builder beforePack hook: generates THIRD-PARTY-NOTICES.txt, which extraResources then copies into the
  * resources of every installer, and the udev rule that the Linux packages install. The generators fail on a package
  * or font they have no licence for, or on an identifier that is not valid, which stops the build.
  *
- * @param {{ packager: { projectDir: string } }} context
+ * @param {{ packager: { projectDir: string }, electronPlatformName?: string }} context
  */
 export default async function beforePack(context) {
-  for (const { command, args } of [noticesCommand(context.packager.projectDir), udevRulesCommand(context.packager.projectDir)]) {
+  for (const { command, args } of packCommands(context)) {
     execFileSync(command, args, { stdio: 'inherit' });
   }
 }

@@ -136,6 +136,68 @@ describe('Linux packages use electron-builder defaults and are installed in clea
   });
 });
 
+describe('the release builds the firmware of every board and ships it in its own chain (REL-022, REL-025)', () => {
+  const jobs = workflow.jobs;
+  const needsOf = (name: string) => [jobs[name]?.needs ?? []].flat().sort();
+  const run = (name: string) => (jobs[name]!.steps ?? []).map((step) => step.run ?? '').join('\n');
+  const manifest = JSON.parse(read('../../../firmware/app/boards/boards.json')) as Array<{ ide_id: string; zephyr_board: string }>;
+
+  it('builds every board of the manifest, once, with the Zephyr target that the manifest names', () => {
+    const job = jobs['build-firmware'] as unknown as { strategy: { matrix: { include: Array<{ ide_id: string; board: string }> } } };
+    const matrix = job.strategy.matrix.include;
+    expect(matrix.map((entry) => [entry.ide_id, entry.board]).sort()).toEqual(manifest.map((entry) => [entry.ide_id, entry.zephyr_board]).sort());
+  });
+
+  it('collects each board with the checks, from the exact SHA, and uploads the images under a name per board', () => {
+    const steps = jobs['build-firmware']!.steps;
+    const build = steps.findIndex((step) => step.run?.includes('west build'));
+    const collect = steps.findIndex((step) => step.run?.includes('firmware-images.ts collect'));
+    const upload = steps.findIndex((step) => step.uses?.startsWith('actions/upload-artifact@'));
+    expect(build).toBeGreaterThan(-1);
+    expect(collect).toBeGreaterThan(build);
+    expect(upload).toBeGreaterThan(collect);
+    expect(steps[collect]!.run).toContain('--commit "${{ github.sha }}"');
+    expect(steps[collect]!.if).toBeUndefined();
+    expect(steps[upload]!.with!.name).toBe('release-firmware-board-${{ matrix.ide_id }}');
+    expect(steps[upload]!.with!['if-no-files-found']).toBe('error');
+    // the HIL overlay is never added to a release build
+    expect(run('build-firmware')).not.toMatch(/EXTRA_CONF_FILE|hil_debug/);
+  });
+
+  it('joins the boards in one job that fails when a board is missing, then attests and uploads the set in a chain of its own', () => {
+    expect(needsOf('assemble-firmware')).toEqual(['build-firmware', 'validate-version']);
+    expect(run('assemble-firmware')).toContain('firmware-images.ts assemble');
+    expect(needsOf('prepare-release-evidence-firmware')).toEqual(['assemble-firmware', 'validate-version']);
+    expect(needsOf('upload-release-firmware')).toEqual(['create-draft-release', 'prepare-release-evidence-firmware', 'validate-version']);
+    expect(jobs['upload-release-firmware']!.if).toContain("needs.validate-version.outputs.publishing == 'true'");
+    expect(run('prepare-release-evidence-firmware')).toContain('mv release/SHA256SUMS release/SHA256SUMS-firmware');
+    const attestations = jobs['prepare-release-evidence-firmware']!.steps.filter((step) => step.uses?.startsWith('actions/attest@'));
+    expect(attestations).toHaveLength(2);
+    for (const step of attestations) expect(step.with!['subject-path']).toContain('release/zplc-runtime-*');
+  });
+
+  it.each(['macos', 'windows', 'linux'])('stages the learner-board images in the %s build before electron-builder packs, and checks that the package holds them', (platform) => {
+    const job = jobs[`build-${platform}`]!;
+    const download = job.steps.findIndex((step) => step.with?.name === 'release-firmware-set');
+    const stage = indexOfStep(job, 'firmware-images.ts stage');
+    const pack = job.steps.findIndex((step) => /electron-builder|package-mac-release/.test(step.run ?? ''));
+    const content = indexOfStep(job, 'smoke:packaged-content');
+    expect(download).toBeGreaterThan(-1);
+    expect(stage).toBeGreaterThan(download);
+    expect(pack).toBeGreaterThan(stage);
+    expect(content).toBeGreaterThan(pack);
+    expect(job.steps[stage]!.run).toContain('--out packages/zplc-ide/dist-firmware');
+    expect(job.steps[download]!.id).toBe('firmware');
+    expect((job.steps[download] as unknown as { 'continue-on-error'?: boolean })['continue-on-error']).toBe(true);
+    expect(job.steps[stage]!.if).toContain("steps.firmware.outcome == 'success'");
+    expect((job.steps[content] as unknown as { env: Record<string, string> }).env.ZPLC_REQUIRE_FIRMWARE).toContain("steps.firmware.outcome == 'success'");
+  });
+
+  it('ships the staged folder as the resources folder that Studio reads', () => {
+    expect(builder.extraResources).toContainEqual({ from: 'dist-firmware', to: 'firmware', filter: ['**/*'] });
+  });
+});
+
 describe('the .deb and the .rpm install the udev rule of the boards (REL-013)', () => {
   // fpm takes `source=destination` pairs. The source is relative to the Studio package: the file that beforePack writes.
   const mapping = (fpm: string[] | undefined) => (fpm ?? []).filter((argument) => argument.includes('=') && !argument.startsWith('-'));
@@ -148,6 +210,14 @@ describe('the .deb and the .rpm install the udev rule of the boards (REL-013)', 
     const written = args[args.indexOf('--out') + 1]!.replace('/repo/packages/zplc-ide/', '');
     expect(mapping(builder[target].fpm)).toEqual([`${written}=${RULE_TARGET}`]);
     expect(RULE_TARGET).toBe(`/usr/lib/udev/rules.d/${RULE_FILE_NAME}`);
+  });
+
+  it('writes the rule for a Linux package only, so that the macOS staging copy needs no identifier file', async () => {
+    const hook = (await import(hookPath)) as { packCommands(context: { packager: { projectDir: string }; electronPlatformName?: string }): Array<{ args: string[] }> };
+    const scripts = (platform: string) => hook.packCommands({ packager: { projectDir: '/repo/packages/zplc-ide' }, electronPlatformName: platform }).map((command) => command.args[0]!.split('/').at(-1));
+    expect(scripts('linux')).toEqual(['licenses.ts', 'udev-rules.ts']);
+    expect(scripts('darwin')).toEqual(['licenses.ts']);
+    expect(scripts('win32')).toEqual(['licenses.ts']);
   });
 
   it('generates the rule from the identifier files, before the packages are made', async () => {
@@ -171,8 +241,9 @@ describe('release.yml publishes each platform independently and only as a draft 
   const FAN_IN = ['render-release-notes', 'publish-release-notes'];
 
   it('lets no job depend on the builds of two platforms, except the notes, which run whatever the platforms did', () => {
+    // the firmware is built once for every platform (the installers carry the learner-board images): it is not a platform
     for (const name of Object.keys(jobs).filter((job) => !FAN_IN.includes(job))) {
-      const builds = [...ancestors(name)].filter((job) => job.startsWith('build-'));
+      const builds = [...ancestors(name)].filter((job) => job.startsWith('build-') && job !== 'build-firmware');
       expect(builds.length, `${name} waits for ${builds.join(', ')}`).toBeLessThanOrEqual(1);
     }
     for (const name of FAN_IN) expect(jobs[name]!.if, name).toContain('always()');
@@ -184,9 +255,13 @@ describe('release.yml publishes each platform independently and only as a draft 
     expect(jobs[`upload-release-${platform}`]!.if).toContain("needs.validate-version.outputs.publishing == 'true'");
   });
 
-  it('keeps the Linux payload reproducibility gate on the Linux chain only', () => {
-    expect(needsOf('prepare-release-evidence-linux')).toContain('verify-linux-x64-payload-reproducibility');
-    for (const platform of ['macos', 'windows']) expect(ancestors(`upload-release-${platform}`).has('verify-linux-x64-payload-reproducibility')).toBe(false);
+  it('keeps the reproducibility check and lets no release job wait for it (REL-032)', () => {
+    const check = jobs['verify-linux-x64-payload-reproducibility'] as unknown as { 'continue-on-error'?: unknown };
+    expect(check['continue-on-error']).toBe(true);
+    expect(jobs['verify-linux-x64-payload-reproducibility']!.steps.some((step) => step.run?.includes('verify-reproducible-linux-payload.ts'))).toBe(true);
+    for (const name of Object.keys(jobs).filter((job) => job !== 'verify-linux-x64-payload-reproducibility')) {
+      expect(ancestors(name).has('verify-linux-x64-payload-reproducibility'), `${name} waits for the reproducibility check`).toBe(false);
+    }
   });
 
   it.each(platforms)('gives the %s checksum and evidence files a platform-specific name', (platform) => {
@@ -212,7 +287,7 @@ describe('release.yml publishes each platform independently and only as a draft 
 
   it('writes to the repository only in the draft and upload jobs, and uses no protected environment', () => {
     const writers = Object.keys(jobs).filter((name) => jobs[name]!.permissions?.contents === 'write').sort();
-    expect(writers).toEqual(['create-draft-release', 'publish-release-notes', ...platforms.map((platform) => `upload-release-${platform}`)].sort());
+    expect(writers).toEqual(['create-draft-release', 'publish-release-notes', 'upload-release-firmware', ...platforms.map((platform) => `upload-release-${platform}`)].sort());
     for (const job of Object.values(jobs)) expect(job.environment).toBeUndefined();
   });
 
@@ -311,6 +386,7 @@ describe('the notes claim only checks that their job runs (REL-027)', () => {
     ['prepare-release-evidence-macos', 'bundle', 'verify-bundle.ts'],
     ['prepare-release-evidence-windows', 'bundle', 'verify-bundle.ts'],
     ['prepare-release-evidence-linux', 'bundle', 'verify-bundle.ts'],
+    ['prepare-release-evidence-firmware', 'bundle', 'verify-bundle.ts'],
   ];
 
   it.each(CLAIMS)('%s runs the %s check unconditionally', (job, _check, command) => {
@@ -333,8 +409,9 @@ describe('the notes claim only checks that their job runs (REL-027)', () => {
     expect(job.if).not.toContain('publishing');
     expect(job.permissions).toEqual({ contents: 'read' });
     expect([job.needs ?? []].flat().sort()).toEqual([
-      'build-linux', 'build-macos', 'build-windows', 'prepare-release-evidence-linux', 'prepare-release-evidence-macos',
-      'prepare-release-evidence-windows', 'validate-version', 'verify-linux-x64-payload-reproducibility', 'verify-release-candidate',
+      'assemble-firmware', 'build-firmware', 'build-linux', 'build-macos', 'build-windows', 'prepare-release-evidence-firmware',
+      'prepare-release-evidence-linux', 'prepare-release-evidence-macos', 'prepare-release-evidence-windows', 'validate-version',
+      'verify-release-candidate',
     ]);
     expect(stepRunning('render-release-notes', 'scripts/release/run-results.ts')).toBeDefined();
     expect(stepRunning('render-release-notes', 'scripts/release/release-notes.ts')).toBeDefined();
@@ -354,14 +431,18 @@ describe('every release build waits for the full CI and for the evidence of its 
     expect([candidate.needs ?? []].flat()).toEqual(['validate-version']);
   });
 
-  it.each(['build-macos', 'build-windows', 'build-linux'])('%s waits for the version check and for that CI', (name) => {
-    expect(needsOf(name)).toEqual(['validate-version', 'verify-release-candidate']);
+  it.each(['build-macos', 'build-windows', 'build-linux'])('%s waits for the version check, for that CI and for the firmware set, but not for its success', (name) => {
+    expect(needsOf(name)).toEqual(['assemble-firmware', 'validate-version', 'verify-release-candidate']);
+    const condition = (jobs[name] as unknown as { if?: string }).if ?? '';
+    expect(condition).toContain('!cancelled()');
+    expect(condition).toContain("needs.verify-release-candidate.result == 'success'");
+    expect(condition).not.toContain('assemble-firmware');
   });
 
   it('builds two clean Linux x64 payloads of the exact SHA and compares them, after the same CI', () => {
     expect(needsOf('verify-linux-x64-payload-reproducibility')).toEqual(['validate-version', 'verify-release-candidate']);
     expect(jobs['verify-linux-x64-payload-reproducibility']!.steps.some((step) => step.run?.includes('verify-reproducible-linux-payload.ts'))).toBe(true);
-    expect(needsOf('prepare-release-evidence-linux')).toEqual(['build-linux', 'validate-version', 'verify-linux-x64-payload-reproducibility']);
+    expect(needsOf('prepare-release-evidence-linux')).toEqual(['build-linux', 'validate-version']);
   });
 });
 

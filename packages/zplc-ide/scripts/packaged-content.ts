@@ -7,9 +7,11 @@
 // lessons are found by pattern, so a lesson package that is added is checked with no edit here: the ids of the
 // content files (src/components/learnContent*.ts) and the folders `lessons/*/lesson.json`. The bytecode examples
 // are copied beside the archive and compared byte for byte. The licence notices must name every package and font
-// that the archive holds.
+// that the archive holds. When the firmware bundle of the release was available at packaging (ZPLC_REQUIRE_FIRMWARE=1),
+// the package must hold its manifest and the two learner-board images (REL-025).
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { dirname, join, relative, resolve, sep } from 'node:path';
+import { LEARNER_BOARDS, verifyFirmwareFolder, type ReleaseManifest } from '../../../scripts/release/firmware-images';
 import { discoverUnpackedResources } from './smoke-desktop-builds';
 import { listAsarFiles } from './run-packaged-desktop-smoke';
 
@@ -93,11 +95,36 @@ export interface PackagedContentOptions {
   /** The `resources` folder of the unpacked package (`Contents/Resources` of a macOS bundle). */
   resources: string;
   repoRoot: string;
+  /** The firmware bundle was available when the package was made, so the package must hold the learner-board images (REL-025). */
+  requireFirmware?: boolean;
+}
+
+/**
+ * The firmware images of the package (REL-025): the manifest of the release and the two learner-board images, with the
+ * checksums the manifest states, and no other image. A package made while no firmware bundle was available has none of
+ * it, which is a problem only when `required`.
+ */
+export function checkFirmware(resources: string, required: boolean): string[] {
+  const folder = join(resources, 'firmware');
+  if (!existsSync(folder)) return required ? ['firmware/ is not in the resources, and a firmware bundle was available'] : [];
+  const problems = verifyFirmwareFolder(folder).map((problem) => `firmware/: ${problem}`);
+  const manifestName = readdirSync(folder).find((name) => /^zplc-runtime-.+\.manifest\.json$/.test(name));
+  if (manifestName === undefined) return problems;
+  const manifest = JSON.parse(readFileSync(join(folder, manifestName), 'utf8')) as ReleaseManifest;
+  const expected = new Set(manifest.images.filter((image) => image.learner && image.role === 'flash').map((image) => image.file));
+  for (const board of LEARNER_BOARDS) {
+    if (!manifest.images.some((image) => image.board === board && image.learner && image.role === 'flash')) problems.push(`firmware/ manifest names no image for the learner board ${board}`);
+  }
+  for (const file of expected) if (!existsSync(join(folder, file))) problems.push(`firmware/${file} is not in the resources`);
+  for (const name of readdirSync(folder)) {
+    if (name !== manifestName && !expected.has(name)) problems.push(`firmware/${name} is in the resources and is not a learner-board image of the manifest`);
+  }
+  return problems;
 }
 
 /** What is wrong with the package; an empty list means it holds the examples, the lessons and the notices. */
-export function checkPackagedContent({ resources, repoRoot }: PackagedContentOptions): string[] {
-  const problems: string[] = [];
+export function checkPackagedContent({ resources, repoRoot, requireFirmware = false }: PackagedContentOptions): string[] {
+  const problems: string[] = [...checkFirmware(resources, requireFirmware)];
   const packageRoot = join(repoRoot, 'packages', 'zplc-ide');
   const archivePath = join(resources, 'app.asar');
   if (!existsSync(archivePath)) return [`${archivePath} does not exist`];
@@ -177,7 +204,7 @@ function main(argv: string[]): number {
   }
   let failed = 0;
   for (const folder of resources) {
-    const problems = checkPackagedContent({ resources: folder, repoRoot });
+    const problems = checkPackagedContent({ resources: folder, repoRoot, requireFirmware: process.env.ZPLC_REQUIRE_FIRMWARE === '1' });
     for (const problem of problems) console.error(`Packaged content check (${folder}): ${problem}`);
     failed += problems.length;
   }

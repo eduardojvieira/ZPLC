@@ -44,6 +44,13 @@ extraResources:
   # The licence notices of every third-party package and font in the application (REL-019).
   - from: build/THIRD-PARTY-NOTICES.txt
     to: THIRD-PARTY-NOTICES.txt
+  # The manifest of the release firmware and the images of the two learner boards, so that Studio shows them with no
+  # network (REL-025). scripts/release/firmware-images.ts `stage` writes the folder in the release workflow; a local
+  # build has none and the application then says that it holds no firmware image.
+  - from: dist-firmware
+    to: firmware
+    filter:
+      - "**/*"
 
 # Asset Index - for faster builds
 asar: true
