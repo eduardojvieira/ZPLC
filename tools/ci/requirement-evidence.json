@@ -1739,6 +1739,7 @@
   ],
   "HIL-005": [
     {"kind":"unit","ref":"packages/zplc-ide/src/cli/hilFixtures.test.ts","test":"every expected value of the manifest names a real address of its type (HIL-005)","partial":true,"note":"the host leg: every fixture compiles and holds its expected values on the native runtime; the leg on a board is run_chain.py at the bench and has no record yet"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/cli/hilFixtures.test.ts","test":"every phase of every language fixture holds on the native runtime (HIL-005)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/cli/hilFixtures.test.ts","test":"language fixtures of tools/hil (HIL-005, HIL-006)","partial":true,"note":"the host leg: every fixture compiles and holds its expected values on the native runtime; the leg on a board is run_chain.py at the bench and has no record yet"},
     {"kind":"unit","ref":"packages/zplc-ide/src/cli/hilFixtures.test.ts","test":"the manifest lists every language fixture of tools/hil, once (HIL-005)","partial":true,"note":"the host leg: every fixture compiles and holds its expected values on the native runtime; the leg on a board is run_chain.py at the bench and has no record yet"}
   ],
