@@ -1,33 +1,22 @@
 import { afterAll, beforeAll, describe, expect, it } from 'bun:test';
-import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { rm } from 'node:fs/promises';
-import { tmpdir } from 'node:os';
-import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { assemble } from '@zplc/compiler';
 
-import { buildCoreWasm, toolchain } from '../../../../tools/wasm-core/build';
+import { builtWasmModule, itWasm, wasmToolchainAvailable } from '../cli/wasmModuleGuard';
 import { compilerCompile } from '../cli/toolApi';
 import { cellLocation, cellSize, loadCases, type CellType, type ConformanceCase, type RunExpectation } from '../conformance/cases';
 import { ACCESS, label, workspace } from '../conformance/harness';
 
 // IDE-025: the core of the runtime, built as WebAssembly from the same source files as the native runtime and the
 // firmware, gives the results that the conformance cases state, with the loader's verifier on the path that loads the
-// program. The module is built by tools/wasm-core with clang and wasm-ld; it is not the Emscripten module of the browser
-// simulation, which needs the Emscripten SDK and is not built by this repository's CI yet (see the note at the end).
+// program. This file drives the bare core of the module (zplc_core_*), one scan at a time, the way the native session
+// does for a one-task program; the session and the scheduler of the same module are held to the native runtime by
+// wasmRuntime.test.ts. The module is built by tools/wasm-core with clang and wasm-ld, with no Emscripten.
 //
 // Without clang and wasm-ld the tests skip on a developer machine and fail in CI, as the tests that need the native
 // runtime do (VF-023).
-
-const tools = toolchain();
-const inCi = !['', '0', 'false'].includes(process.env.CI ?? '');
-const available = !('missing' in tools);
-if (!available && !inCi) console.warn(`the WebAssembly core is not built: ${(tools as { missing: string[] }).missing.join(' and ')} not found; the tests of ${fileURLToPath(import.meta.url).split('/').at(-1)} are skipped here and fail in CI`);
-
-const itWasm = (available || !inCi ? it.skipIf(!available) : (name: string) => it(name, () => {
-  throw new Error(`cannot build the WebAssembly core: ${(tools as { missing: string[] }).missing.join(' and ')} not found on the PATH (CI is set); install clang and lld`);
-})) as ReturnType<typeof it.skipIf>;
 
 interface CoreExports {
   memory: WebAssembly.Memory;
@@ -37,7 +26,7 @@ interface CoreExports {
   zplc_core_get_error(): number;
   zplc_ipi_write8(offset: number, value: number): number;
   zplc_mem_get_region(base: number): number;
-  zplc_shim_set_time(milliseconds: number): void;
+  zplc_hal_posix_set_tick_override(milliseconds: number): void;
   zplc_shim_artifact(): number;
   zplc_shim_artifact_capacity(): number;
   zplc_shim_workspace(): number;
@@ -47,19 +36,27 @@ interface CoreExports {
 // the regions of the memory map (zplc_isa.h): the input image, the output image, work memory and retentive memory
 const REGIONS = [0x4000, 0x2000, 0x1000, 0x0000];
 
-let workDirectory = '';
+// the five imports of the module (the HAL port of src/hal/wasm): the clock is the tick override that each scan sets, and
+// there is no record store
+const HOST_IMPORTS = {
+  zplc_host: {
+    clock_ms: () => 0,
+    persist_save: () => -1,
+    persist_load: () => -4,
+    persist_delete: () => -4,
+    log: () => undefined,
+  },
+};
+
 let compiled: WebAssembly.Module;
 beforeAll(async () => {
-  if (!available) return;
-  workDirectory = mkdtempSync(join(tmpdir(), 'zplc-wasm-parity-'));
-  const file = join(workDirectory, 'core.wasm');
-  buildCoreWasm(file);
-  compiled = await WebAssembly.compile(readFileSync(file));
+  if (!wasmToolchainAvailable) return;
+  compiled = await WebAssembly.compile(builtWasmModule().bytes);
 }, 180_000);
-afterAll(() => { if (workDirectory !== '') rmSync(workDirectory, { recursive: true, force: true }); });
+afterAll(() => undefined);
 
 async function instance(): Promise<CoreExports> {
-  const created = await WebAssembly.instantiate(compiled, {});
+  const created = await WebAssembly.instantiate(compiled, HOST_IMPORTS);
   const core = created.exports as unknown as CoreExports;
   expect(core.zplc_core_init()).toBe(0);
   return core;
@@ -98,7 +95,7 @@ async function runOnWasm(expectation: RunExpectation, zplcFile: Uint8Array, addr
       }
     }
     // the clock of the virtual scan: the first scan at 0 ms, each next one a scan interval later, as the native session steps it
-    core.zplc_shim_set_time((scan - 1) * expectation.scanMs);
+    core.zplc_hal_posix_set_tick_override((scan - 1) * expectation.scanMs);
     const result = core.zplc_core_run_cycle();
     if (result < 0) {
       if (!expectation.fault || scan !== expectation.scans) return [...failures, `scan ${scan}: the VM faulted: error ${core.zplc_core_get_error()}`];
@@ -138,9 +135,10 @@ async function runCase(found: ConformanceCase): Promise<string[]> {
 
 const conformanceRoot = fileURLToPath(new URL('../../../../conformance', import.meta.url));
 
-// What the bare core cannot show, and the reason. A project of several tasks needs the scheduler of a runtime session; the
-// safe state of the outputs on a VM fault is applied by that session too, so the core, which only stops, leaves them as they
-// were (RT-007, and the shared scheduler core of RT-008 is not there yet: a WebAssembly runtime has no scheduler).
+// What the bare core cannot show, and the reason. A project of several tasks needs the scheduler of the session, and the
+// safe state of the outputs on a VM fault is applied by the session too, so the core, which only stops, leaves them as they
+// were (RT-007). wasmConformance.test.ts runs these cases, and every other, on the session of the same module through the
+// adapter of the IDE, with the scheduler core of RT-008.
 const SESSION_ONLY = ['RT-007 a VM fault drives the outputs to their safe state'];
 
 const runnable = loadCases(conformanceRoot).filter((found) => found.expectation.build === 'succeeds');
