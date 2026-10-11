@@ -63,6 +63,8 @@ describe('the signing state of every asset comes from the checks of the run (REL
     expect(row('zplc-runtime-2.0.0-rc.4-rpi-pico-rp2040.uf2')).toContain('has not been flashed or run on it');
     expect(row('zplc-runtime-2.0.0-rc.4-rpi-pico-rp2040.uf2')).not.toContain('launched on its own system');
     expect(row('zplc-runtime-2.0.0-rc.4-nucleo-h743zi.bin')).toContain('evidence level of the board is not recorded in this run');
+    results.assets.push({ name: 'zplc-runtime-2.0.0-rc.4.manifest.json', platform: 'firmware', job: 'build-firmware', signing: 'unsigned', checks: { signature: 'not-run', launch: 'not-run', install: 'not-run' } });
+    expect(renderReleaseNotes(results).split('\n').find((line) => line.startsWith('| zplc-runtime-2.0.0-rc.4.manifest.json |'))).toContain('lists the firmware images of this release');
   });
 
   test('reports a launch check that failed or did not run as such, never as passed', () => {

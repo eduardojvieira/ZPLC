@@ -143,6 +143,9 @@ const LEVEL_TEXT: Record<NonNullable<AssetResult['evidenceLevel']>, string> = {
 };
 
 function checksText(asset: AssetResult): string {
+  if (asset.platform === 'firmware' && asset.name.endsWith('.manifest.json')) {
+    return 'lists the firmware images of this release with their checksums, build identity and the evidence level of each board';
+  }
   if (asset.platform === 'firmware') {
     // a firmware image is built and checksummed, never launched by the run: the only label that it can carry is its board's level
     return asset.evidenceLevel === undefined
