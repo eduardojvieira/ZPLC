@@ -60,6 +60,8 @@ export { parse, parseWithDiagnostics, ParseError } from './parser.ts';
 export type { ParseOutcome } from './parser.ts';
 export type { SourceSpan, SourceWarning, SyntaxIssue, WarningCode, WarningSelection } from './diagnostics.ts';
 export { WARNING_CODES, parseWarningSelection, selectWarnings } from './diagnostics.ts';
+export { ERROR_CODES, ERROR_CODE_TABLE, isErrorCode } from './error-codes.ts';
+export type { ErrorCode, ErrorCodeInfo, ErrorPhase } from './error-codes.ts';
 export { checkProject } from './check.ts';
 export type { CheckDiagnostic, CheckOptions, CheckSource } from './check.ts';
 
@@ -134,9 +136,10 @@ import { ParseError } from './parser.ts';
 import { LexerError } from './lexer.ts';
 import { generate, generateProject, CodegenError, DEFAULT_COMPILER_MEMORY_PROFILE, validateCompilerMemoryProfile } from './codegen.ts';
 import { selectWarnings } from './diagnostics.ts';
+import type { ErrorCode } from './error-codes.ts';
 import type { CodegenWarning, SyntaxIssue, WarningCode, WarningSelection } from './diagnostics.ts';
 import { analyzeUnit } from './warnings.ts';
-import type { GeneratedProject } from './codegen.ts';
+import type { CodeUnit, GeneratedProject } from './codegen.ts';
 import type { CodeGenOptions, CompilerMemoryProfile } from './codegen.ts';
 import { DepthError, analyzeDepths, assemble, createMultiTaskZplcFile, readArtifact, TASK_TYPE, ZPLC_CONSTANTS } from '../assembler/index.ts';
 import type { AssemblyResult, TaskDef, TaskDepth, TaskType } from '../assembler/index.ts';
@@ -160,6 +163,8 @@ import type { CompilationUnit, Program } from './ast.ts';
  * Compiler error with source location.
  */
 export class CompilerError extends Error {
+    /** The stable code of the kind of error (CMP-006): the same for the same problem, whatever the wording. */
+    code: ErrorCode;
     /** Unformatted diagnostic detail, retained when a caller needs to relocate it. */
     detail: string;
     line: number;
@@ -183,6 +188,7 @@ export class CompilerError extends Error {
     errors: CompilerError[] = [this];
 
     constructor(
+        code: ErrorCode,
         message: string,
         line: number,
         column: number,
@@ -193,6 +199,7 @@ export class CompilerError extends Error {
     ) {
         super(`[${phase}] Error at ${line}:${column}: ${message}`);
         this.name = 'CompilerError';
+        this.code = code;
         this.detail = message;
         this.line = line;
         this.column = column;
@@ -217,17 +224,62 @@ export function compilerErrorsOf(
         return error.errors.map((each) => (sourceRef ? attachSourceRef(each, sourceRef) : each));
     }
     if (error instanceof CodegenError) {
-        return error.errors.map((each) => new CompilerError(each.message, each.line, each.column, 'codegen', each.sourceRef ?? sourceRef, each.endLine, each.endColumn));
+        return error.errors.map((each) => new CompilerError(each.code, each.message, each.line, each.column, 'codegen', each.sourceRef ?? sourceRef, each.endLine, each.endColumn));
     }
     if (error instanceof LexerError || error instanceof ParseError) {
         return (error.errors as SyntaxIssue[]).map((each) => new CompilerError(
+            each.code,
             `Compilation of '${label}' failed: ${each.detail}`,
             each.line, each.column, each.name === 'LexerError' ? 'lexer' : 'parser', sourceRef, each.endLine, each.endColumn,
         ));
     }
     const err = error as Error;
     // an error that carries no position is placed at the start of the unit it came from, never at line 0
-    return [new CompilerError(`Compilation of '${label}' failed: ${err.message}`, fallback.line, fallback.column, 'codegen', sourceRef)];
+    return [new CompilerError('INTERNAL_COMPILER_ERROR', `Compilation of '${label}' failed: ${err.message}`, fallback.line, fallback.column, 'codegen', sourceRef)];
+}
+
+/**
+ * The error of an assembler that refused the generated code. It is not a mistake of the program: the assembler refuses
+ * an operand or a relocated address that does not fit its field instead of truncating it (CMP-049). The error has no
+ * line of the author's source, so it is placed at `at`, the program that was being built.
+ */
+export function assemblerError(
+    message: string,
+    at: { line: number; column: number; sourceRef?: string },
+): CompilerError {
+    return new CompilerError('ASSEMBLER_ERROR', message, Math.max(1, at.line), Math.max(1, at.column), 'assembler', at.sourceRef);
+}
+
+/**
+ * The error of a program that does not fit the code memory of the target (CMP-043): the bytes it needs, the bytes the
+ * profile has, and the three parts of the program that take the most, so that the author knows what to shrink. It is
+ * reported at the declaration of the largest one that the author wrote, or at `fallback`.
+ */
+function codeBudgetError(
+    assembly: AssemblyResult,
+    units: readonly CodeUnit[],
+    available: number,
+    fallback: { line: number; column: number; sourceRef?: string },
+): CompilerError {
+    const required = assembly.bytecode.length;
+    // each part runs from its label to the next labelled part; what comes before the first (the bootstrap jump) is nobody's
+    const starts = units
+        .flatMap((unit) => { const address = assembly.labels.get(unit.label.toUpperCase())?.address; return address === undefined ? [] : [{ unit, address }]; })
+        .sort((first, second) => first.address - second.address);
+    const consumers = starts.map((start, index) => ({
+        unit: start.unit,
+        size: (starts[index + 1]?.address ?? required) - start.address,
+    }));
+    const largest = [...consumers].sort((first, second) => second.size - first.size || (first.unit.title < second.unit.title ? -1 : 1)).slice(0, 3);
+    const names = largest.map((consumer) => `${consumer.unit.title} (${consumer.size} bytes)`).join(', ');
+    const written = largest.find((consumer) => consumer.unit.line !== undefined)?.unit;
+    const at = written?.line === undefined ? fallback : { line: written.line, column: written.column ?? 1, sourceRef: written.sourceRef };
+    return new CompilerError(
+        'CODE_MEMORY_EXCEEDED',
+        `CODE exceeds the target memory profile: ${required} bytes required, ${available} bytes available `
+        + `(the code memory of the target profile). Largest consumers: ${names || 'none'}`,
+        at.line, at.column, 'codegen', at.sourceRef ?? fallback.sourceRef,
+    );
 }
 
 /** Throw the first of `errors` carrying all of them. */
@@ -280,6 +332,7 @@ function requireSingleProgram(ast: CompilationUnit, sourceRef?: string): Program
     if (ast.programs.length > 1) {
         const secondProgram = ast.programs[1]!;
         throw new CompilerError(
+            'MULTIPLE_PROGRAMS_IN_SOURCE',
             'Exactly one PROGRAM is required per source unit',
             secondProgram.line,
             secondProgram.column,
@@ -324,7 +377,7 @@ export function compileST(source: string, options?: CodeGenOptions): string {
     const ast = parse(source);
 
     if (ast.programs.length === 0) {
-        throw new CompilerError('No program found in source', 1, 1, 'parser');
+        throw new CompilerError('NO_PROGRAM', 'No program found in source', 1, 1, 'parser');
     }
 
     requireSingleProgram(ast);
@@ -436,7 +489,8 @@ export function compileToBinary(source: string, options?: CompileOptions): Compi
         memoryProfile = validateCompilerMemoryProfile(options?.memoryProfile ?? DEFAULT_COMPILER_MEMORY_PROFILE);
     } catch (e) {
         if (e instanceof CodegenError) {
-            throw new CompilerError(e.message, e.line, e.column, 'codegen');
+            // a profile belongs to no line of the source: the error is placed at its start
+            throw new CompilerError(e.code, e.message, Math.max(1, e.line), Math.max(1, e.column), 'codegen');
         }
         throw e;
     }
@@ -451,7 +505,7 @@ export function compileToBinary(source: string, options?: CompileOptions): Compi
     const warnings: CompilerWarning[] = parsed.warnings.map((warning) => ({ ...warning }));
 
     if (ast.programs.length === 0) {
-        throw new CompilerError('No program found in source', 1, 1, 'parser');
+        throw new CompilerError('NO_PROGRAM', 'No program found in source', 1, 1, 'parser');
     }
 
     const program = requireSingleProgram(ast);
@@ -468,10 +522,12 @@ export function compileToBinary(source: string, options?: CompileOptions): Compi
     // Generate assembly using full AST
     let assembly: string;
     let symbols: import('./symbol-table.ts').SymbolTable;
+    let units: CodeUnit[];
     try {
         const project = generateProject(ast, codegenOptions);
         assembly = project.assembly;
         symbols = project.symbols;
+        units = project.units;
         warnings.push(...generated, ...analyzeUnit(ast));
         warnings.sort((first, second) => first.line - second.line || first.column - second.column);
     } catch (e) {
@@ -486,11 +542,10 @@ export function compileToBinary(source: string, options?: CompileOptions): Compi
     try {
         asmResult = assemble(assembly);
     } catch (e) {
-        const err = e as Error;
-        throw new CompilerError(err.message, 0, 0, 'assembler');
+        throw assemblerError((e as Error).message, { line: program.line, column: program.column });
     }
     if (asmResult.bytecode.length > memoryProfile.codeSizeMax) {
-        throw new CompilerError('CODE exceeds the target memory profile', 0, 0, 'codegen');
+        throw codeBudgetError(asmResult, units, memoryProfile.codeSizeMax, { line: program.line, column: program.column });
     }
     // a file of one program has no task table to record the depth in, and the loader proves the same limits
     measureDepths(asmResult, [asmResult.entryPoint], memoryProfile, () => ({ label: `Program '${program.name}'`, line: program.line, column: program.column }));
@@ -575,8 +630,9 @@ export function assertTaskProgramCardinality(config: Pick<ProjectConfig, 'tasks'
     for (const task of config.tasks) {
         if (task.programs?.length !== 1) {
             throw new CompilerError(
+                'INVALID_TASK_CONFIGURATION',
                 `Task '${task.name}' must reference exactly one PROGRAM`,
-                0, 0, 'codegen',
+                1, 1, 'codegen', PROJECT_FILE_NAME,
             );
         }
     }
@@ -634,18 +690,20 @@ function measureDepths(
         // the parameter names the entry whose analysis failed when the error carries its address
         const at = entries.findIndex((entry) => entry === error.address);
         const where = describe(at >= 0 ? at : 0);
-        throw new CompilerError(`${where.label}: the stack depth cannot be determined: ${error.message}`, where.line ?? 0, where.column ?? 0, 'codegen', where.ref);
+        throw new CompilerError('STACK_DEPTH_EXCEEDED', `${where.label}: the stack depth cannot be determined: ${error.message}`, where.line ?? 0, where.column ?? 0, 'codegen', where.ref);
     }
     depths.forEach((depth, index) => {
         const where = describe(index);
         if (depth.stack > limit.stack) {
             throw new CompilerError(
+                'STACK_DEPTH_EXCEEDED',
                 `${where.label} needs an evaluation stack of ${depth.stack} values and the target holds ${limit.stack}: split the largest expression, or move part of the program into a function`,
                 where.line ?? 0, where.column ?? 0, 'codegen', where.ref,
             );
         }
         if (depth.frames - 1 > limit.calls) {
             throw new CompilerError(
+                'STACK_DEPTH_EXCEEDED',
                 `${where.label} nests calls ${depth.frames - 1} deep and the target's call stack holds ${limit.calls}`,
                 where.line ?? 0, where.column ?? 0, 'codegen', where.ref,
             );
@@ -717,8 +775,9 @@ const SUPPORTED_TASK_TRIGGERS = "'cyclic' or 'freewheeling'";
 function validateTaskConfigs(config: Pick<ProjectConfig, 'tasks'>): void {
     if (config.tasks.length > ZPLC_CONSTANTS.MAX_TASKS) {
         throw new CompilerError(
+            'INVALID_TASK_CONFIGURATION',
             `Project supports at most ${ZPLC_CONSTANTS.MAX_TASKS} tasks`,
-            0, 0, 'codegen',
+            1, 1, 'codegen', PROJECT_FILE_NAME,
         );
     }
     for (const [index, task] of config.tasks.entries()) {
@@ -728,24 +787,26 @@ function validateTaskConfigs(config: Pick<ProjectConfig, 'tasks'>): void {
         const trigger = task.trigger as string;
         if (trigger === 'event' || trigger === 'interrupt') {
             throw new CompilerError(
+                'INVALID_TASK_CONFIGURATION',
                 `${label} (${PROJECT_FILE_NAME} tasks[${index}].trigger) has trigger '${trigger}', which is not supported in this release: `
                 + `event-triggered and interrupt-triggered tasks are not available; use trigger ${SUPPORTED_TASK_TRIGGERS}`,
-                0, 0, 'codegen', PROJECT_FILE_NAME,
+                1, 1, 'codegen', PROJECT_FILE_NAME,
             );
         }
         if (task.trigger !== 'cyclic' && task.trigger !== 'freewheeling') {
             throw new CompilerError(
+                'INVALID_TASK_CONFIGURATION',
                 `${label} has invalid trigger '${String(trigger)}'; use trigger ${SUPPORTED_TASK_TRIGGERS}`,
-                0, 0, 'codegen',
+                1, 1, 'codegen', PROJECT_FILE_NAME,
             );
         }
         const interval = task.interval === undefined ? 10 : task.interval;
         if (!Number.isInteger(interval) || interval < 1 || interval > 3_600_000) {
-            throw new CompilerError(`${label} has invalid interval`, 0, 0, 'codegen');
+            throw new CompilerError('INVALID_TASK_CONFIGURATION', `${label} has invalid interval`, 1, 1, 'codegen', PROJECT_FILE_NAME);
         }
         const priority = task.priority === undefined ? 1 : task.priority;
         if (!Number.isInteger(priority) || priority < 0 || priority > 0xFF) {
-            throw new CompilerError(`${label} has invalid priority`, 0, 0, 'codegen');
+            throw new CompilerError('INVALID_TASK_CONFIGURATION', `${label} has invalid priority`, 1, 1, 'codegen', PROJECT_FILE_NAME);
         }
     }
 }
@@ -780,9 +841,10 @@ function admitPhysicalOutputOwners(
             && startBit < owner.endBit && owner.startBit < endBit);
         if (previous) {
             throw new CompilerError(
+                'OUTPUT_OWNERSHIP_CONFLICT',
                 `Physical output '${programName}.${symbol.name}' (${sourceRef}) overlaps '${previous.programName}.${previous.variableName}' (${previous.sourceRef})`,
-                symbol.declarationLine ?? 0,
-                0,
+                symbol.declarationLine ?? 1,
+                1,
                 'codegen',
                 sourceRef,
             );
@@ -830,7 +892,7 @@ export function compileMultiTaskProject(
     options?: Pick<CompileOptions, 'memoryProfile' | 'strictTypes' | 'reportWarnings' | 'debug'>,
 ): MultiTaskCompilationResult {
     if (!config.tasks || config.tasks.length === 0) {
-        throw new CompilerError('No tasks defined in project configuration', 0, 0, 'codegen');
+        throw new CompilerError('INVALID_TASK_CONFIGURATION', 'No tasks defined in project configuration', 1, 1, 'codegen', PROJECT_FILE_NAME);
     }
 
     validateTaskConfigs(config);
@@ -850,7 +912,7 @@ export function compileMultiTaskProject(
         memoryProfile = validateCompilerMemoryProfile(options?.memoryProfile ?? DEFAULT_COMPILER_MEMORY_PROFILE);
     } catch (e) {
         if (e instanceof CodegenError) {
-            throw new CompilerError(e.message, e.line, e.column, 'codegen');
+            throw new CompilerError(e.code, e.message, Math.max(1, e.line), Math.max(1, e.column), 'codegen', PROJECT_FILE_NAME);
         }
         throw e;
     }
@@ -867,8 +929,9 @@ export function compileMultiTaskProject(
         const source = sourceMap.get(progName) || sourceMap.get(progName.toLowerCase());
         if (!source) {
             throw new CompilerError(
+                'UNKNOWN_TASK_PROGRAM',
                 `Program '${progName}' referenced by task but not found in sources`,
-                0, 0, 'codegen'
+                1, 1, 'codegen', PROJECT_FILE_NAME
             );
         }
         files.push({ label: progName, source, ref: source.sourceRef ?? progName, runs: true });
@@ -914,7 +977,7 @@ export function compileMultiTaskProject(
                 continue;
             }
             if (ast.programs.length === 0) {
-                throw new CompilerError('No program found in source', 1, 1, 'parser', ref);
+                throw new CompilerError('NO_PROGRAM', 'No program found in source', 1, 1, 'parser', ref);
             }
             const program = requireSingleProgram(ast, ref);
 
@@ -922,6 +985,7 @@ export function compileMultiTaskProject(
             const previousSourceRef = declaredProgramSources.get(normalizedProgramName);
             if (previousSourceRef) {
                 throw new CompilerError(
+                    'DUPLICATE_DECLARATION',
                     `Duplicate PROGRAM name '${program.name}' in '${label}' (already declared by '${previousSourceRef}')`,
                     program.line,
                     program.column,
@@ -944,7 +1008,7 @@ export function compileMultiTaskProject(
     // One unit: what a file declares is seen by every program, and declared once (CMP-042)
     const merged = mergeUnits(parsedFiles);
     if (merged.errors.length > 0) {
-        failures.push(...merged.errors.map((error) => new CompilerError(error.message, error.line, error.column, 'codegen', error.sourceRef, error.endLine, error.endColumn)));
+        failures.push(...merged.errors.map((error) => new CompilerError(error.code, error.message, error.line, error.column, 'codegen', error.sourceRef, error.endLine, error.endColumn)));
         throwFound();
     }
 
@@ -976,16 +1040,17 @@ export function compileMultiTaskProject(
     try {
         asmResult = assemble(built.assembly);
     } catch (e) {
-        const err = e as Error;
-        throw new CompilerError(
-            `Assembly of the project failed: ${err.message}`,
-            0, 0, 'assembler', files[0]!.ref
-        );
+        const first = merged.unit.programs[0];
+        throw assemblerError(`Assembly of the project failed: ${(e as Error).message}`,
+            { line: first?.line ?? 1, column: first?.column ?? 1, sourceRef: files[0]!.ref });
     }
 
     const totalCodeSize = asmResult.bytecode.length;
     if (totalCodeSize > memoryProfile.codeSizeMax) {
-        throw new CompilerError('CODE exceeds the target memory profile', 0, 0, 'codegen');
+        const first = built.programs[0];
+        throw codeBudgetError(asmResult, built.units, memoryProfile.codeSizeMax, {
+            line: merged.unit.programs[0]?.line ?? 1, column: merged.unit.programs[0]?.column ?? 1, ...(first?.sourceRef === undefined ? {} : { sourceRef: first.sourceRef }),
+        });
     }
 
     // Where each program starts: the entry label of its code
@@ -993,7 +1058,7 @@ export function compileMultiTaskProject(
         const label = asmResult.labels.get(entry.entryLabel.toUpperCase());
         const entryPoint = index === 0 ? asmResult.entryPoint : label?.address;
         if (entryPoint === undefined) {
-            throw new CompilerError(`Program '${entry.name}' was not compiled`, 0, 0, 'codegen', entry.sourceRef);
+            throw new CompilerError('INTERNAL_COMPILER_ERROR', `Program '${entry.name}' was not compiled`, 0, 0, 'codegen', entry.sourceRef);
         }
         return { ...entry, entryPoint };
     });
@@ -1032,8 +1097,9 @@ export function compileMultiTaskProject(
         const entryPoint = entryPointMap.get(firstProgram) ?? entryPointMap.get(firstProgram.toLowerCase());
         if (entryPoint === undefined) {
             throw new CompilerError(
+                'UNKNOWN_TASK_PROGRAM',
                 `Program '${firstProgram}' for task '${taskConfig.name}' was not compiled`,
-                0, 0, 'codegen'
+                1, 1, 'codegen', PROJECT_FILE_NAME
             );
         }
 
