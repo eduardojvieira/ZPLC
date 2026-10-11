@@ -119,6 +119,8 @@ export type {
     SourceLineMapping,
     BreakpointLocation,
     DebugPOUInfo,
+    DebugMonitorEntry,
+    DebugPowerExpr,
     DebugMap,
     BuildDebugMapOptions,
     TypeResolver,
