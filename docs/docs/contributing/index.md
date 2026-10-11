@@ -155,6 +155,7 @@ checked the same way, by what the fence says:
 |---|---|
 | `json zplc-fragment` | The keys are merged into a minimal project for the host simulator, checked against `packages/zplc-ide/zplc.schema.json` (a key that the schema does not name is an error) and built. A fragment with `board=<ide id>` is merged into a project for that board, and every address of `io.inputs` and `io.outputs` must be a channel of the board unless it is listed under `io.virtual`. |
 | `json zplc-scenario` | The scenario is written to the `tests` folder of a project whose program is the first `runnable` Structured Text sample of the same page, and every expectation must pass on the native runtime. |
+| `json zplc-board` | The entry is checked by the validator of the board manifest (`firmware/zephyr/scripts/zplc_boards.py`) together with the manifest of this repository: a missing key, a wrong address, a channel that the rules refuse or a name that another board already has is an error. |
 | `![alt](/img/...)` | The image must be listed in `docs/static/img/manifest.json`, which `bun run docs:screenshots` writes with the commit the application was built from: a page shows no picture that automation did not capture. |
 
 The English page and its Spanish twin show the same fragments and scenarios. The checks

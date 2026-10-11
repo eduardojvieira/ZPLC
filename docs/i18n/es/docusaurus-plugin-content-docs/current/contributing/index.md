@@ -157,6 +157,7 @@ aplicación se comprueba de la misma manera, según lo que dice el cerco:
 |---|---|
 | `json zplc-fragment` | Las claves se combinan con un proyecto mínimo para el simulador del host, se contrastan con `packages/zplc-ide/zplc.schema.json` (una clave que el esquema no nombra es un error) y se compilan. Un fragmento con `board=<id del IDE>` se combina con un proyecto para esa placa, y toda dirección de `io.inputs` y `io.outputs` debe ser un canal de la placa, salvo que figure en `io.virtual`. |
 | `json zplc-scenario` | El escenario se escribe en la carpeta `tests` de un proyecto cuyo programa es el primer ejemplo `runnable` de Structured Text de la misma página, y toda expectativa debe pasar en el runtime nativo. |
+| `json zplc-board` | La entrada la comprueba el validador del manifiesto de placas (`firmware/zephyr/scripts/zplc_boards.py`) junto con el manifiesto de este repositorio: una clave que falta, una dirección errónea, un canal que las reglas rechazan o un nombre que ya tiene otra placa es un error. |
 | `![alt](/img/...)` | La imagen debe figurar en `docs/static/img/manifest.json`, que escribe `bun run docs:screenshots` con el commit del que se construyó la aplicación: una página no muestra ninguna imagen que la automatización no haya capturado. |
 
 La página en inglés y su gemela en español muestran los mismos fragmentos y escenarios.

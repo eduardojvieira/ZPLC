@@ -15,10 +15,17 @@
 //
 //   ```json zplc-scenario            the scenario of the page's first runnable Structured Text program
 //
+// A board entry that a page shows (`json zplc-board`, docs/docs/guides/port-to-a-board.md) is put through the validator of
+// the board manifest together with the manifest of this repository, so a field that the manifest would refuse, or a name
+// that another board already has, is a docs defect.
+//
+//   ```json zplc-board               one entry of firmware/app/boards/boards.json
+//
 // The keys of the fragment replace the keys of the project at the top level, so a fragment shows the part of
 // `zplc.json` that it is about (communication, io, network, safety) and never the whole file. The program of the project
 // is `PROGRAM Main` with the variables the fragment names declared as BOOL, so a binding or a mapping has a symbol to
 // reach. The English page and its Spanish twin must show the same fragments, in the same order.
+import { spawnSync } from 'node:child_process';
 import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -104,8 +111,8 @@ export interface Fragment {
   line: number;
   board: string;
   source: string;
-  /** `fragment` is merged into a project file; `scenario` is run against the page's program. */
-  kind: 'fragment' | 'scenario';
+  /** `fragment` is merged into a project file; `scenario` is run against the page's program; `board` is an entry of the board manifest. */
+  kind: 'fragment' | 'scenario' | 'board';
   /** For a scenario: the Structured Text program of the page it is run against. */
   program?: string;
 }
@@ -128,7 +135,11 @@ export function extractFragments(page: string, text: string): { fragments: Fragm
     }
     const words = info.trim().split(/\s+/);
     if (['st', 'iecst', 'pascal'].includes(words[0]!) && words.includes('runnable') && !words.includes('fragment') && closed && program === undefined) program = body.join('\n');
-    const kind = words[0] === 'json' && words.includes('zplc-fragment') ? 'fragment' : words[0] === 'json' && words.includes('zplc-scenario') ? 'scenario' : undefined;
+    const kind = words[0] !== 'json' ? undefined
+      : words.includes('zplc-fragment') ? 'fragment'
+      : words.includes('zplc-scenario') ? 'scenario'
+      : words.includes('zplc-board') ? 'board'
+      : undefined;
     if (kind === undefined) continue;
     const line = index - body.length + 1;
     if (!closed) { errors.push(`${page}:${line}: the ${kind} is never closed`); continue; }
@@ -216,12 +227,29 @@ async function scenarioProblems(fragment: Fragment, scenario: { id?: string; tic
   } finally { await rm(root, { recursive: true, force: true }); }
 }
 
+/** What the validator of the board manifest says about an entry, shown beside the manifest of this repository: empty when it accepts it. */
+export function boardProblems(source: string): string[] {
+  const script = [
+    'import importlib.util, json, sys',
+    "spec = importlib.util.spec_from_file_location('zplc_boards', 'firmware/zephyr/scripts/zplc_boards.py')",
+    'library = importlib.util.module_from_spec(spec)',
+    'spec.loader.exec_module(library)',
+    "manifest = json.load(open('firmware/app/boards/boards.json'))",
+    'entry = json.loads(sys.stdin.read())',
+    'print(json.dumps(library.validate_manifest(manifest + [entry], None)))',
+  ].join('\n');
+  const result = spawnSync('python3', ['-B', '-c', script], { cwd: ROOT, input: source, encoding: 'utf8' });
+  if (result.status !== 0) return [`could not be checked: ${result.stderr.trim().split('\n').at(-1) ?? 'the validator failed'}`];
+  return JSON.parse(result.stdout) as string[];
+}
+
 /** What the validation and the build say about a fragment: empty when the project that holds it builds. */
 export async function problemsOf(fragment: Fragment): Promise<string[]> {
   let parsed: unknown;
   try { parsed = JSON.parse(fragment.source); } catch (error) { return [`is not JSON: ${(error as Error).message}`]; }
   if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) return ['must be a JSON object'];
   if (fragment.kind === 'scenario') return scenarioProblems(fragment, parsed as { id?: string; tickMs?: number });
+  if (fragment.kind === 'board') return boardProblems(fragment.source);
   const { compilerCompile, projectValidate } = await import('../../packages/zplc-ide/src/cli/toolApi');
   const { manifest, program } = projectOf(fragment);
   const schema = JSON.parse(readFileSync(join(ROOT, SCHEMA), 'utf8')) as Schema;

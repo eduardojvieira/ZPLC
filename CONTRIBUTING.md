@@ -61,7 +61,7 @@ them.
 | `dev` | Run Studio in development mode against the native runtime |
 | `docs:start`, `check:docs` | Serve the site, or generate, check and build it |
 | `check:docs-samples` | Compile every documentation sample marked runnable, and run those that state a result (needs the compiler and the native runtime built) |
-| `check:docs-config` | Build every configuration fragment of a page (`json zplc-fragment`) and run every scenario of a page (`json zplc-scenario`) |
+| `check:docs-config` | Build every configuration fragment of a page (`json zplc-fragment`), run every scenario of a page (`json zplc-scenario`) and validate every board entry of a page (`json zplc-board`) |
 | `check:doc-claims`, `check:capability-claims` | Every name a page mentions exists in the source; no sentence of the public text states a capability that nothing executed backs |
 | `docs:screenshots` | Capture the screenshots of the tutorial in the real application (needs a display) and write their manifest |
 | `release:rehearsal` | The checks the release workflow runs before it builds anything |

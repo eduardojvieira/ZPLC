@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'bun:test';
 
-import { addressesWithoutChannel, extractFragments, parityErrors, problemsOf, projectOf, schemaErrors, type Fragment } from './check-docs-config';
+import { addressesWithoutChannel, boardProblems, extractFragments, parityErrors, problemsOf, projectOf, schemaErrors, type Fragment } from './check-docs-config';
 import { markdownFiles } from './check_doc_claims';
 
 const ROOT = new URL('../../', import.meta.url).pathname;
@@ -60,24 +60,55 @@ describe('docs configuration fragments: a fragment is a piece of a project file 
     expect(parityErrors(new Map([['a.md', [one]]]), new Map())[0]).toContain('its Spanish page has 0');
   });
 
+  it('finds a board entry of a page by its fence and checks it against the validator of the board manifest (DOC-009)', () => {
+    const entry = (change: (value: Record<string, any>) => void) => {
+      const value = JSON.parse(readFileSync(join(ROOT, 'firmware/app/boards/boards.json'), 'utf8'))[0] as Record<string, any>;
+      value.board_id = 'example-board'; value.ide_id = 'example_board'; value.zephyr_board = 'example_board/example_soc';
+      change(value);
+      return JSON.stringify(value);
+    };
+    const found = extractFragments('p.md', `${FENCE}json zplc-board\n{}\n${FENCE}`);
+    expect(found.errors).toEqual([]);
+    expect(found.fragments.map((one) => [one.kind, one.board])).toEqual([['board', 'posix']]);
+    expect(boardProblems(entry(() => {}))).toEqual([]);
+    expect(boardProblems(entry((value) => { value.zephyr_board = 'rpi_pico/rp2040'; }))[0]).toContain('duplicate zephyr_board: rpi_pico/rp2040');
+    expect(boardProblems(entry((value) => { value.validation_level = 'human-hil'; }))[0]).toContain('validation_level is derived from the evidence records');
+    expect(boardProblems(entry((value) => { delete value.evidence_refs; }))[0]).toContain('is missing keys: evidence_refs');
+    expect(boardProblems(entry((value) => { value.io.channels[0].address = '%IX0.0'; }))[0]).toContain('cannot sit on the %IX0.0 address');
+    expect(boardProblems(entry((value) => { value.io.channels[0].safe = 2; }))[0]).toContain('needs its safe value');
+    expect(boardProblems(entry((value) => { value.io.channels.push({ ...value.io.channels[0], id: 'AO0', kind: 'analog', address: '%QW0', dt: { controller: 'dac', channel: 0 } }); }))[0]).toContain('analog output is not supported');
+  });
+
   it('holds for the pages of this repository: every fragment and scenario builds and passes', () => {
     const result = Bun.spawnSync(['bun', 'tools/docs/check-docs-config.ts'], { cwd: ROOT, stdout: 'pipe', stderr: 'pipe' });
     expect({ code: result.exitCode, output: result.stdout.toString() + result.stderr.toString() }).toMatchObject({ code: 0 });
   });
 });
 
-describe('how-to guides: each task has a page in both languages with something that runs (DOC-009, stopgap: porting to a board, troubleshooting and the command line have no how-to page yet)', () => {
-  const guides = ['map-io', 'modbus', 'mqtt-sparkplug', 'cloud-blocks', 'force-values', 'retained-variables', 'scenario-tests', 'project-archive'];
-  const runnable = /^`{3,}(?:json zplc-(?:fragment|scenario)|st runnable|bash|ini)/m;
+describe('how-to guides: each task has a page in both languages with something that runs (DOC-009)', () => {
+  // The tasks of DOC-009: Modbus, MQTT and Sparkplug B, the cloud blocks, mapping I/O, simulating and debugging, scenario
+  // tests, the command line, AI and MCP, migrating a version 1 project, porting to a board and troubleshooting.
+  const guides = [
+    'map-io', 'modbus', 'mqtt-sparkplug', 'cloud-blocks', 'force-values', 'retained-variables', 'scenario-tests',
+    'project-archive', 'simulate-and-debug', 'command-line', 'ai-and-mcp', 'port-to-a-board', 'troubleshooting',
+  ];
+  const pages = [...guides.map((guide) => `guides/${guide}.md`), 'ide/migration-v1-to-v2.md'];
+  const runnable = /^`{3,}(?:json zplc-(?:fragment|scenario|board)|st runnable|bash|ini)/m;
 
   it('has every guide in English and Spanish with a fragment, a runnable sample or a command, and says what is verified', () => {
-    for (const guide of guides) {
+    for (const page of pages) {
       for (const base of ['docs/docs', 'docs/i18n/es/docusaurus-plugin-content-docs/current']) {
-        const text = readFileSync(join(ROOT, base, 'guides', `${guide}.md`), 'utf8');
-        expect({ guide, base, runnable: runnable.test(text) }).toEqual({ guide, base, runnable: true });
-        expect({ guide, base, verified: /^## (?:What is verified|Qué está verificado)/m.test(text) }).toEqual({ guide, base, verified: true });
+        const text = readFileSync(join(ROOT, base, page), 'utf8');
+        expect({ page, base, runnable: runnable.test(text) }).toEqual({ page, base, runnable: true });
+        expect({ page, base, verified: /^## (?:What is verified|Qué está verificado)/m.test(text) }).toEqual({ page, base, verified: true });
       }
     }
     expect(markdownFiles(ROOT, 'docs/docs').filter((page) => page.startsWith('docs/docs/guides/')).length).toBe(guides.length);
+  });
+
+  it('lists every guide in the how-to category of the sidebar', async () => {
+    const { default: sidebars } = await import(join(ROOT, 'docs/sidebars.js')) as { default: { docsSidebar: Array<{ label: string; items: unknown[] }> } };
+    const howTo = sidebars.docsSidebar.find((category) => category.label === 'How-to guides')!.items;
+    for (const page of pages) expect({ page, listed: howTo.includes(page.replace(/\.md$/, '')) }).toEqual({ page, listed: true });
   });
 });

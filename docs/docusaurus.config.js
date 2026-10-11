@@ -26,6 +26,8 @@ const config = {
   projectName: 'ZPLC',
 
   onBrokenLinks: 'throw',
+  // A link to a heading that no longer exists is as broken as a link to a page that does not (DOC-002).
+  onBrokenAnchors: 'throw',
 
   i18n: {
     defaultLocale: 'en',

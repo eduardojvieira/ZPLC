@@ -71,6 +71,13 @@ describe('docs structure: the sidebar is organised by reader intent (DOC-002)', 
     }
   });
 
+  it('fails the build of the site on a broken link and on a broken anchor, so that moving a page cannot leave one behind', () => {
+    const config = text('docs/docusaurus.config.js');
+    expect(config).toContain("onBrokenLinks: 'throw'");
+    expect(config).toContain("onBrokenAnchors: 'throw'");
+    expect(config).toContain("onBrokenMarkdownLinks: 'throw'");
+  });
+
   it('keeps the labels of the navigation and the footer out of the pages, in the translation files', () => {
     const config = text('docs/docusaurus.config.js');
     // a label with both languages written into it ("Docs / Documentación") cannot be localised
