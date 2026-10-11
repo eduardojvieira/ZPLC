@@ -124,6 +124,18 @@ describe('the DMG and the ZIP are published for each macOS architecture (REL-005
   });
 });
 
+describe('the AppImage stays published beside the .deb and the .rpm (REL-012)', () => {
+  const lines = (value: string) => value.split('\n').map((line) => line.trim());
+  const upload = workflow.jobs['build-linux']!.steps.find((step) => step.uses?.startsWith('actions/upload-artifact@'))!;
+  const attested = workflow.jobs['prepare-release-evidence-linux']!.steps.filter((step) => step.uses?.startsWith('actions/attest@')).flatMap((step) => lines(step.with!['subject-path']!));
+
+  it('builds all three formats, and uploads, checksums and attests the AppImage with the packages', () => {
+    expect([...(builder as unknown as { linux: { target: string[] } }).linux.target].sort()).toEqual(['AppImage', 'deb', 'rpm']);
+    expect(lines(upload.with!.path!)).toEqual(expect.arrayContaining(['packages/zplc-ide/dist-electron/*.AppImage', 'packages/zplc-ide/dist-electron/*.deb', 'packages/zplc-ide/dist-electron/*.rpm']));
+    expect(attested).toEqual(expect.arrayContaining(['release/*.AppImage', 'release/*.deb', 'release/*.rpm']));
+  });
+});
+
 describe('Linux packages use electron-builder defaults and are installed in clean containers (REL-011)', () => {
   const job = workflow.jobs['build-linux']!;
   const script = new URL('./check-linux-package.sh', import.meta.url).pathname;
@@ -290,6 +302,16 @@ describe('the .deb and the .rpm install the udev rule of the boards (REL-013)', 
     expect(scripts('linux')).toEqual(['licenses.ts', 'udev-rules.ts']);
     expect(scripts('darwin')).toEqual(['licenses.ts']);
     expect(scripts('win32')).toEqual(['licenses.ts']);
+  });
+
+  it('reads the rule out of the packages that were made, before they are installed or uploaded', () => {
+    const job = workflow.jobs['build-linux']!;
+    const build = indexOfStep(job, 'electron-builder --linux');
+    const check = indexOfStep(job, 'scripts/linux-package-files.ts');
+    const install = indexOfStep(job, 'debian:13');
+    expect(check).toBeGreaterThan(build);
+    expect(check).toBeLessThan(install);
+    expect(job.steps[check]!.if).toBeUndefined();
   });
 
   it('generates the rule from the identifier files, before the packages are made', async () => {

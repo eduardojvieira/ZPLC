@@ -670,6 +670,12 @@ jobs:
         working-directory: packages/zplc-ide
         run: bun run smoke:desktop-builds linux ${{ matrix.arch }}
 
+      # REL-013: the packages that were made hold the udev rule of the boards, with the bytes that the identifier files
+      # generate (read with ar and tar, rpm2cpio and cpio, from the files and not from the configuration).
+      - name: Check the udev rule inside the .deb and the .rpm
+        working-directory: packages/zplc-ide
+        run: bun run scripts/linux-package-files.ts dist-electron
+
       - name: Prepare Linux Electron sandbox
         working-directory: packages/zplc-ide
         shell: bash
