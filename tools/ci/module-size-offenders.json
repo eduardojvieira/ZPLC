@@ -52,7 +52,7 @@
     "file": "packages/zplc-ide/src/editors/ld/LDRungGrid.tsx",
     "requirement": "IDE-014",
     "added": "2026-10-10",
-    "lines": 1028,
+    "lines": 960,
     "reason": "Rung grid layout, drag and drop and cell rendering in one component; the visual-language work (WS-22a) edits it. Split after that lands."
   },
   {
@@ -73,7 +73,7 @@
     "file": "packages/zplc-ide/src/editors/ld/LDElement.tsx",
     "requirement": "IDE-014",
     "added": "2026-10-10",
-    "lines": 837,
+    "lines": 834,
     "reason": "Ladder element rendering for every element kind in one component; the visual-language work (WS-22a) edits it. Split per element kind after that lands."
   }
 ]

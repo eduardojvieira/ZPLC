@@ -15,6 +15,7 @@
  */
 
 import { type LDElement as LDElementType, isContact, isCoil, isFunctionBlock } from '../../models/ld';
+import { LD_ELEMENT_KIND } from '../../models/ldSupport';
 import { splitFBIdentifier } from './fbLabel';
 import type { DebugValueResult } from '../../hooks/useDebugValue';
 
@@ -692,11 +693,7 @@ export default function LDElement({ element, x, y, selected, energized, debugVal
   const translateY = y * CELL_HEIGHT;
   const selectable = Boolean(onClick);
   const elementName = isFunctionBlock(element.type) ? [element.fbType, element.instance].filter(Boolean).join(' ') : element.variable;
-  const elementKind = {
-    contact_no: 'normally open contact', contact_nc: 'normally closed contact', contact_p: 'positive transition contact', contact_n: 'negative transition contact',
-    coil: 'coil', coil_negated: 'negated coil', coil_set: 'set coil', coil_reset: 'reset coil', coil_p: 'positive transition coil', coil_n: 'negative transition coil',
-    function_block: 'function block', left_rail: 'left power rail', right_rail: 'right power rail',
-  }[element.type];
+  const elementKind = LD_ELEMENT_KIND[element.type];
   const selectionLabel = `Select ${elementKind}${elementName ? ` ${elementName}` : ''}`;
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {

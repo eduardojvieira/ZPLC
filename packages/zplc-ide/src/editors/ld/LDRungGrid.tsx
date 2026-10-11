@@ -19,16 +19,13 @@ import {
   DEFAULT_GRID_CONFIG,
   convertToGridRung,
   normalizeGridRung,
-  createBranch,
-  createNestedBranch,
   removeBranch,
-  getBranchesAtCell,
   type LDBranch,
 } from '../../models/ld';
 import LDElement, { CELL_WIDTH, CELL_HEIGHT, WIRE_Y, COLORS, type DebugValuesMap } from './LDElement';
 import { cellElement } from '../../models/sourceElements';
 import type { ElementState } from '../../monitoring/elementStates';
-import { parseLDDropData, DRAG_MIME_TYPE } from './ldDragData';
+import { parseLDDropData, DRAG_MIME_TYPE, type LDDropData } from './ldDragData';
 
 // =============================================================================
 // Constants
@@ -54,6 +51,14 @@ interface LDRungGridProps {
   elementStates?: ReadonlyMap<string, ElementState>;
   /** Full debug values map for rich value display on elements */
   debugValues?: DebugValuesMap;
+  /** An item of the toolbox was dropped on an empty cell: the editor inserts it, as it does for the keyboard (LNG-012). */
+  onInsert?: (item: LDDropData, row: number, col: number) => void;
+  /** The cell of the keyboard cursor, when it is in this rung. */
+  cursor?: { row: number; col: number } | null;
+  /** A cell was clicked: the cursor goes there. */
+  onCursor?: (row: number, col: number) => void;
+  /** Changes when the editor asks for the comment of the rung to be edited (Shift+F2). */
+  commentRequest?: number;
 }
 
 // =============================================================================
@@ -297,6 +302,8 @@ interface DropZoneProps {
   onDragLeave: () => void;
   hasElement: boolean;
   isDragging: boolean;  // New: track if any drag is happening
+  /** The cell was clicked: the keyboard cursor goes there. */
+  onPick?: (col: number, row: number) => void;
 }
 
 function DropZone({
@@ -308,6 +315,7 @@ function DropZone({
   onDragLeave,
   hasElement,
   isDragging,
+  onPick,
 }: DropZoneProps) {
   const x = gridOffsetX + col * CELL_WIDTH;
   const y = PADDING + row * CELL_HEIGHT;
@@ -346,6 +354,8 @@ function DropZone({
       strokeDasharray={isOver ? 'none' : '4,2'}
       onDragOver={handleDragOver}
       onDragLeave={onDragLeave}
+      onClick={() => onPick?.(col, row)}
+      data-ld-drop-zone={`${row},${col}`}
       style={{
         cursor: hasElement ? 'default' : 'crosshair',
         pointerEvents: hasElement ? 'none' : 'auto',
@@ -364,12 +374,23 @@ interface RungHeaderProps {
   rows: number;
   readOnly?: boolean;
   onChange?: (rung: LDRung) => void;
+  /** Changes when the keyboard asks for the comment to be edited (LNG-012). */
+  editRequest?: number;
 }
 
-function RungHeader({ rung, cols, rows, readOnly, onChange }: RungHeaderProps) {
+function RungHeader({ rung, cols, rows, readOnly, onChange, editRequest }: RungHeaderProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [commentDraft, setCommentDraft] = useState(rung.comment || '');
   const inputRef = useRef<HTMLInputElement>(null);
+  // The keyboard asks for the comment to be edited: the draft starts from the comment, during this render, not after it
+  const [seenRequest, setSeenRequest] = useState(editRequest);
+  if (editRequest !== seenRequest) {
+    setSeenRequest(editRequest);
+    if (!readOnly) {
+      setCommentDraft(rung.comment || '');
+      setIsEditing(true);
+    }
+  }
 
   // Focus input when entering edit mode
   useEffect(() => {
@@ -460,6 +481,10 @@ export default function LDRungGrid({
   readOnly = false,
   elementStates,
   debugValues,
+  onInsert,
+  cursor,
+  onCursor,
+  commentRequest,
 }: LDRungGridProps) {
   const [hoverCell, setHoverCell] = useState<{ col: number; row: number } | null>(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -570,81 +595,10 @@ export default function LDRungGrid({
 
     const dropData = parseLDDropData(e.dataTransfer);
     if (!dropData) return;
-    if (resizeData) {
-      try {
-        const { branchId } = JSON.parse(resizeData);
-        const branchToResize = gridRung.branches?.find(b => b.id === branchId);
-        if (branchToResize) {
-          // New end column is where we dropped
-          let newEndCol = col;
-          // Ensure it ends AFTER startCol
-          if (newEndCol <= branchToResize.startCol) {
-            newEndCol = branchToResize.startCol + 1;
-          }
-          // Ensure we don't shrink past elements inside (simplistic check)
-          // Ideally we check if excluding columns would hide elements
 
-          const updatedBranches = gridRung.branches?.map(b => {
-            if (b.id === branchId) {
-              return { ...b, endCol: newEndCol };
-            }
-            return b;
-          });
-
-          onChange({ ...gridRung, branches: updatedBranches });
-          setHoverCell(null);
-          return;
-        }
-      } catch (err) {
-        console.error('Failed to parse branch resize data', err);
-      }
-    }
-
-    // Check if cell is occupied (can't drop on occupied cell)
-    if (grid[row]?.[col]?.element) {
-      console.warn('Cell is occupied');
-      setHoverCell(null);
-      return;
-    }
-
-    // Handle BRANCH creation
-    if (dropData.type === 'branch' && dropData.category === 'structure') {
-      // Check for EXISTING branches at drop location to create NESTED branch
-      const existingBranches = getBranchesAtCell(gridRung, row, col);
-
-      // Determine end column
-      let endCol = cols - 2;
-      for (let c = cols - 1; c > col; c--) {
-        if (grid[row]?.[c]?.element) {
-          endCol = c - 1;
-          break;
-        }
-      }
-      if (endCol <= col) {
-        endCol = Math.min(col + 2, cols - 1);
-      }
-
-      // If dropping ON an existing branch, nest inside it
-      if (existingBranches.length > 0) {
-        // Use the deepest branch
-        // Sort by how "narrow" they are (closest fit) or just pick last one
-        const parentBranch = existingBranches[existingBranches.length - 1];
-
-        // Ensure we fit inside parent
-        const safeStart = Math.max(col, parentBranch.startCol);
-        const safeEnd = Math.min(endCol, parentBranch.endCol);
-
-        if (safeEnd > safeStart) {
-          const updatedRung = createNestedBranch(gridRung, parentBranch.id, safeStart, safeEnd, row);
-          onChange(updatedRung);
-          setHoverCell(null);
-          return;
-        }
-      }
-
-      // Default: Create new top-level branch
-      const updatedRung = createBranch(gridRung, col, endCol, row);
-      onChange(updatedRung);
+    // A new element and a new branch are inserted by the editor, as they are from the keyboard
+    if (!(dropData.isMove && dropData.fromRow !== undefined && dropData.fromCol !== undefined)) {
+      onInsert?.(dropData, row, col);
       setHoverCell(null);
       return;
     }
@@ -656,62 +610,23 @@ export default function LDRungGrid({
       return;
     }
 
-    // Update grid
+    // MOVE existing element
     const newGrid = grid.map(r => [...r]);
-
-    // Ensure row exists
     while (newGrid.length <= row) {
-      const emptyRow: LDCell[] = Array(cols).fill(null).map(() => ({ element: null, hasWire: false }));
-      newGrid.push(emptyRow);
+      newGrid.push(Array(cols).fill(null).map(() => ({ element: null, hasWire: false })));
     }
-
-    // Ensure cell exists
-    while (newGrid[row].length <= col) {
-      newGrid[row].push({ element: null, hasWire: false });
+    const sourceElement = grid[dropData.fromRow]?.[dropData.fromCol]?.element;
+    if (!sourceElement) {
+      console.warn('Source element not found');
+      setHoverCell(null);
+      return;
     }
-
-    if (dropData.isMove && dropData.fromRow !== undefined && dropData.fromCol !== undefined) {
-      // MOVE existing element
-      const sourceElement = grid[dropData.fromRow]?.[dropData.fromCol]?.element;
-      if (!sourceElement) {
-        console.warn('Source element not found');
-        setHoverCell(null);
-        return;
-      }
-
-      // Clear source cell but keep wire for continuity
-      if (newGrid[dropData.fromRow] && newGrid[dropData.fromRow][dropData.fromCol]) {
-        newGrid[dropData.fromRow][dropData.fromCol] = { element: null, hasWire: true };
-      }
-
-      // Place element in new cell with updated position
-      const movedElement: LDElementType = {
-        ...sourceElement,
-        row,
-        col,
-      };
-      newGrid[row][col] = { element: movedElement, hasWire: true };
-    } else {
-      // CREATE new element
-      const newElement: LDElementType = {
-        id: `${dropData.type}_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
-        type: dropData.type as LDElementType['type'],
-        row,
-        col,
-        variable: dropData.category === 'function_block' ? undefined : 'NewVar',
-        fbType: dropData.fbType,
-        instance: dropData.fbType ? `${dropData.fbType}_${Date.now().toString(36).slice(-4)}` : undefined,
-      };
-      newGrid[row][col] = { element: newElement, hasWire: true };
-    }
-
-    onChange({
-      ...gridRung,
-      grid: newGrid,
-    });
-
+    // Clear source cell but keep wire for continuity
+    newGrid[dropData.fromRow]![dropData.fromCol] = { element: null, hasWire: true };
+    newGrid[row]![col] = { element: { ...sourceElement, row, col }, hasWire: true };
+    onChange({ ...gridRung, grid: newGrid });
     setHoverCell(null);
-  }, [readOnly, onChange, hoverCell, grid, cols, gridRung]);
+  }, [readOnly, onChange, onInsert, hoverCell, grid, cols, gridRung]);
 
   const handleContainerDragOver = useCallback((e: React.DragEvent) => {
     // Check if it's our LD element type
@@ -823,6 +738,7 @@ export default function LDRungGrid({
         rows={rows}
         readOnly={readOnly}
         onChange={onChange}
+        editRequest={commentRequest}
       />
 
       {/* SVG Canvas with delete button overlay */}
@@ -967,6 +883,7 @@ export default function LDRungGrid({
                 onDragLeave={handleDragLeave}
                 hasElement={cell.element !== null}
                 isDragging={isDragging}
+                onPick={(pickedCol, pickedRow) => onCursor?.(pickedRow, pickedCol)}
               />
             ))
           )}
@@ -1001,6 +918,22 @@ export default function LDRungGrid({
               )
             )}
           </g>
+
+          {/* The cursor of the keyboard editing (LNG-012) */}
+          {cursor && cursor.row < rows && cursor.col < cols && (
+            <rect
+              data-ld-cursor={`${cursor.row},${cursor.col}`}
+              x={gridOffsetX + cursor.col * CELL_WIDTH + 1}
+              y={PADDING + cursor.row * CELL_HEIGHT + 1}
+              width={CELL_WIDTH - 2}
+              height={CELL_HEIGHT - 2}
+              rx={4}
+              fill="none"
+              stroke="var(--color-accent-blue)"
+              strokeWidth={2}
+              style={{ pointerEvents: 'none' }}
+            />
+          )}
         </svg>
 
         {/* Delete button overlay for selected element */}
