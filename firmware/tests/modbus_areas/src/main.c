@@ -64,6 +64,9 @@ static const struct tag tags[] = {
     {RETAIN_LAST_DWORD, ZPLC_TYPE_DWORD, 40201U},
     /* the last address the wire has */
     {WORK(0x20), ZPLC_TYPE_UINT, 65535U},
+    /* an input register and a discrete input that no holding register or coil shares the address with */
+    {WORK(0x22), ZPLC_TYPE_UINT, 30031U}, /* input register 30 */
+    {WORK(0x24), ZPLC_TYPE_BOOL, 10031U}, /* discrete input 30 */
 };
 
 static void put_u16(uint8_t *data, uint16_t value) {
@@ -269,6 +272,63 @@ ZTEST(modbus_areas, test_the_range_of_the_wire_is_served_to_its_last_address) {
                 "the two registers of a 32-bit value");
   zassert_equal(zplc_modbus_read_mapped(10U, 1U, out, 1U, false, ZPLC_MODBUS_AREA_HOLDING_REGISTER), -1,
                 "a response that does not fit");
+}
+
+/* The framing of the TCP server, in front of the same two seams the server of the application ends in: what a
+ * client sees when it asks for, or writes, an address that only an input has. */
+static int ops_read(uint16_t address, uint16_t count, uint8_t *response, size_t capacity, bool bits,
+                    zplc_modbus_area_t area, void *context) {
+  ARG_UNUSED(context);
+  return zplc_modbus_read_mapped(address, count, response, capacity, bits, area);
+}
+
+static int ops_write(uint16_t address, uint16_t count, const uint8_t *data, bool bits, bool multiple,
+                     zplc_modbus_area_t area, void *context) {
+  ARG_UNUSED(context);
+  return zplc_modbus_write_mapped(address, count, data, bits, multiple, area);
+}
+
+/* One request of function `function` for `address` and `value` (count of a read, value of a single write). */
+static size_t ask(uint8_t function, uint16_t address, uint16_t value, uint8_t *response) {
+  static const zplc_modbus_tcp_ops_t ops = {.unit_id = 1U, .read = ops_read, .write = ops_write, .context = NULL};
+  const uint8_t request[12] = {0x00, 0x01, 0x00, 0x00, 0x00, 0x06, 0x01, function,
+                               (uint8_t)(address >> 8), (uint8_t)address, (uint8_t)(value >> 8), (uint8_t)value};
+  size_t length = 0U;
+
+  zassert_ok(zplc_modbus_tcp_process_adu(request, sizeof(request), response, 260U, &length, &ops), "framing");
+  return length;
+}
+
+/* COM-011: the exception a client sees. */
+ZTEST(modbus_areas, test_an_address_only_an_input_has_is_exception_2_for_a_write_and_a_read_of_the_other_area) {
+  uint8_t response[260];
+  size_t length;
+
+  zplc_exchange_publish();
+  /* the input register 30 is read through function 4 */
+  length = ask(0x04U, 30U, 1U, response);
+  zassert_equal(length, 11U, "length %u", (unsigned)length);
+  zassert_equal(response[7], 0x04U, "function 4 answers");
+  /* a holding register at 30 is not a variable: reading or writing it is exception 2, and nothing is written */
+  length = ask(0x03U, 30U, 1U, response);
+  zassert_equal(length, 9U);
+  zassert_equal(response[7], 0x83U, "exception of function 3");
+  zassert_equal(response[8], 0x02U, "illegal data address");
+  length = ask(0x06U, 30U, 0xABCDU, response);
+  zassert_equal(response[7], 0x86U, "exception of function 6");
+  zassert_equal(response[8], 0x02U, "illegal data address");
+  zassert_equal(live(WORK(0x22))[0], 0U, "the input register is untouched by the write of a holding register");
+  /* the same for a coil at the address of a discrete input */
+  length = ask(0x02U, 30U, 1U, response);
+  zassert_equal(response[7], 0x02U, "function 2 answers");
+  length = ask(0x05U, 30U, 0xFF00U, response);
+  zassert_equal(response[7], 0x85U, "exception of function 5");
+  zassert_equal(response[8], 0x02U, "illegal data address");
+  zassert_equal(live(WORK(0x24))[0], 0U, "the discrete input is untouched by the write of a coil");
+  /* and a function that does not exist is exception 1 */
+  length = ask(0x08U, 0U, 0U, response);
+  zassert_equal(response[7], 0x88U);
+  zassert_equal(response[8], 0x01U, "illegal function");
 }
 
 ZTEST_SUITE(modbus_areas, NULL, suite_setup, before_each, NULL, NULL);
