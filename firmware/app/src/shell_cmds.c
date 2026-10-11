@@ -4000,6 +4000,15 @@ static bool link_started;
 static const struct shell *link_sh;
 static uint32_t link_generation;
 static char link_line[ZPLC_PROTO_FRAME_MAX * 2U + 4U];
+
+/* A frame arrives as one line of the shell, `zplc link ` and the frame in hexadecimal. The shell drops the
+ * characters of a line that does not fit its command buffer (data_insert() in shell_ops.c: a line takes at most
+ * CONFIG_SHELL_CMD_BUFF_SIZE - 1 of them) and then runs what is left, so a frame longer than that is never seen
+ * whole. The buffer therefore has to hold the largest frame this build accepts; a board that lowers it to save RAM
+ * lowers ZPLC_PROTO_PAYLOAD_MAX with it, and the build says so. */
+BUILD_ASSERT(CONFIG_SHELL_CMD_BUFF_SIZE >= sizeof("zplc link ") - 1U + 2U * ZPLC_PROTO_FRAME_MAX + 1U,
+             "CONFIG_SHELL_CMD_BUFF_SIZE cannot hold a frame of the device link in hexadecimal: raise it or lower "
+             "CONFIG_ZPLC_PROTO_PAYLOAD_MAX (2 * (payload + 47) + 11 characters)");
 static struct k_work_delayable link_service_work;
 static K_MUTEX_DEFINE(link_mutex);
 
