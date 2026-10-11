@@ -62,11 +62,12 @@ export function FirmwareImageView({ presentation }: { presentation: FirmwareImag
 
 /** Asks the main process for the images of this installation once, and shows the one of the board. */
 export function FirmwareImageCard({ ideId }: { ideId: string | undefined }) {
-  const [result, setResult] = useState<FirmwareImagesResult | null | undefined>(undefined);
   const bridge = typeof window === 'undefined' ? undefined : window.electronAPI?.firmwareImages;
+  // no bridge (a browser build) is an answer of its own: the card says so instead of waiting for one
+  const [result, setResult] = useState<FirmwareImagesResult | null | undefined>(bridge ? undefined : null);
 
   useEffect(() => {
-    if (!bridge) { setResult(null); return undefined; }
+    if (!bridge) return undefined;
     let current = true;
     bridge.list().then(
       (answer) => { if (current) setResult(parseFirmwareImagesResult(answer)); },

@@ -5,7 +5,7 @@
 // The udev rule that lets the logged-in user open the serial port of a board must be in each package, at the vendor
 // rules folder, with the bytes that scripts/release/udev-rules.ts generates from tools/hil/usb-ids.json. A .deb is read
 // with ar and tar, an .rpm with rpm2cpio and cpio: the tools that the Linux runners and every distribution have.
-import { mkdtempSync, readdirSync, readFileSync, rmSync } from 'node:fs';
+import { mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { RULE_TARGET, readUsbIds, renderUdevRules, type BoardEntry } from '../../../scripts/release/udev-rules';
@@ -23,7 +23,7 @@ export function fileOfPackage(packagePath: string, path: string): Buffer | null 
       const cpio = run(['rpm2cpio', packagePath]);
       if (!cpio.ok) throw new Error(`rpm2cpio failed for ${packagePath}: ${cpio.stderr.trim()}`);
       const archive = join(work, 'payload.cpio');
-      Bun.write(archive, cpio.stdout);
+      writeFileSync(archive, cpio.stdout);
       const extracted = run(['cpio', '--quiet', '-i', '--to-stdout', `.${path}`, '-F', archive]);
       return extracted.ok && extracted.stdout.length > 0 ? extracted.stdout : null;
     } finally {
