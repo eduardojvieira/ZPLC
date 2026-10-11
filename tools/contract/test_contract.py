@@ -281,34 +281,14 @@ class PythonToolsMatchGolden(unittest.TestCase):
 HANDLERS = ROOT / "firmware/app/src"
 
 
-def generated_comm_constants() -> dict[str, int]:
-    """ZPLC_COMM_<BLOCK>_<MEMBER>_OFFSET and ZPLC_COMM_<BLOCK>_SIZE of the generated header."""
-    text = (ROOT / "firmware/lib/zplc_core/include/zplc_comm_dispatch.h").read_text()
-    return {m.group(1): int(m.group(2)) for m in re.finditer(r"^\s+(ZPLC_COMM_\w+_(?:OFFSET|SIZE)) = (\d+)", text, flags=re.M)}
+class HandlersTakeTheirLayoutFromTheTable(unittest.TestCase):
+    """What the Zephyr handlers assume of a function-block layout against the generated table (RT-002, COM-005).
 
-
-def c_defines(path: Path) -> dict[str, int]:
-    """The numeric #defines of a handler: a literal, or a constant the generated header gives."""
-    text = path.read_text()
-    generated = generated_comm_constants()
-    values = {m.group(1): int(m.group(2), 0)
-              for m in re.finditer(r"^#define\s+(\w+)\s+(0x[0-9A-Fa-f]+|\d+)U?\b", text, flags=re.M)}
-    for m in re.finditer(r"^#define\s+(\w+)\s+(ZPLC_COMM_\w+_(?:OFFSET|SIZE))\b", text, flags=re.M):
-        values[m.group(1)] = generated[m.group(2)]
-    return values
-
-
-class HandlersAgreeWithTheBlockTable(unittest.TestCase):
-    """What the Zephyr handlers assume of a function-block layout against the generated table (RT-002).
-
-    The handlers were not edited by WP-11. Every disagreement is a finding; the KNOWN lists hold them,
-    so a new one fails here and a fixed one has to be removed from the list (WP-18, WP-86). WP-18 fixed
-    the Modbus counts (a result no longer runs over HOST, PORT and the block), the cloud STRING layout
-    and the MQTT CONNECTED offset; draft counter 5 gave every STRING member of the table the room the
-    compiler reserves for it (COM-005), so no list holds a finding any more.
+    A handler names no offset of its own: every member is the generated ZPLC_COMM_<BLOCK>_<MEMBER>_OFFSET, so the
+    table is the one place a layout is written. The behaviour is proved by the host tests of the handlers, which
+    build their blocks from the same constants under the address sanitizer, and by string_cross.py, which reads the
+    members of a compiled program with the accessors of the handlers.
     """
-
-    KNOWN_FINDINGS: list[str] = []
 
     KNOWN_LAYOUT_FINDINGS: list[str] = []
 
@@ -316,81 +296,25 @@ class HandlersAgreeWithTheBlockTable(unittest.TestCase):
     def setUpClass(cls):
         cls.blocks = {b["name"]: b for b in generate.comm_blocks(CONTRACT)}
 
-    def offset(self, block: str, member: str) -> int:
-        return next(m["offset"] for m in self.blocks[block]["members"] if m["name"] == member)
+    def test_no_handler_writes_a_member_offset_or_a_string_layout_as_a_number(self):
+        # The one place the repository has to pin a source text: the handlers are C files of the Zephyr
+        # application and nothing renders them, so a number in a #define is only seen by reading it.
+        found = []
+        for path in sorted(HANDLERS.glob("zplc_comm_*_handler.c")):
+            text = path.read_text()
+            for m in re.finditer(r"^#define\s+(\w*(?:_OFF_|_OFFSET|STR_OFF)\w*)\s+(?:0x[0-9A-Fa-f]+|\d+)U?\b", text, flags=re.M):
+                found.append(f"{path.name}: {m.group(1)}")
+        self.assertEqual(found, [])
 
-    KNOWN_OFFSET_FINDINGS: list[str] = []
-
-    def test_members_the_handlers_name_sit_where_the_table_puts_them(self):
-        header = {"FB_OFF_EN": "EN", "FB_OFF_BUSY": "BUSY", "FB_OFF_DONE": "DONE", "FB_OFF_ERROR": "ERROR", "FB_OFF_STATUS": "STATUS"}
-        named = {
-            "zplc_comm_mqtt_handler.c": {
-                "FB_CONNECT_OFF_CONNECTED": ("MQTT_CONNECT", "CONNECTED"),
-                "FB_PUB_OFF_QOS": ("MQTT_PUBLISH", "QOS"), "FB_PUB_OFF_RETAIN": ("MQTT_PUBLISH", "RETAIN"),
-                "FB_PUB_OFF_TOPIC": ("MQTT_PUBLISH", "TOPIC"), "FB_PUB_OFF_PAYLOAD": ("MQTT_PUBLISH", "PAYLOAD"),
-                "FB_SUB_OFF_QOS": ("MQTT_SUBSCRIBE", "QOS"), "FB_SUB_OFF_VALID": ("MQTT_SUBSCRIBE", "VALID"),
-                "FB_SUB_OFF_TOPIC": ("MQTT_SUBSCRIBE", "TOPIC"), "FB_SUB_OFF_PAYLOAD": ("MQTT_SUBSCRIBE", "PAYLOAD"),
-            },
-            "zplc_comm_cloud_handler.c": {
-                "C2D_OFF_PAYLOAD": ("AZURE_C2D_RECV", "PAYLOAD"), "C2D_OFF_VALID": ("AZURE_C2D_RECV", "VALID"),
-                "DPS_OFF_DEVICE_ID": ("AZURE_DPS_PROV", "DEVICE_ID"), "DPS_OFF_ASSIGNED_HUB": ("AZURE_DPS_PROV", "ASSIGNED_HUB"),
-                "EG_OFF_TOPIC": ("AZURE_EG_PUB", "TOPIC"), "EG_OFF_EVENT_TYPE": ("AZURE_EG_PUB", "EVENT_TYPE"),
-                "EG_OFF_PAYLOAD": ("AZURE_EG_PUB", "PAYLOAD"),
-                "AWS_OFF_TEMPLATE_NAME": ("AWS_FLEET_PROV", "TEMPLATE_NAME"), "AWS_OFF_THING_NAME": ("AWS_FLEET_PROV", "THING_NAME"),
-            },
-        }
-        findings = []
-        for filename, mapping in named.items():
-            defines = c_defines(HANDLERS / filename)
-            for name, (block, member) in mapping.items():
-                self.assertIn(name, defines, f"{filename} no longer defines {name}")
-                expected = self.offset(block, member)
-                if defines[name] != expected:
-                    findings.append(f"{filename}: {name} is {defines[name]}, {block}.{member} is at {expected}"
-                                    + (" (PROFILE is at 8)" if (block, member) == ("MQTT_CONNECT", "CONNECTED") else ""))
-            for name, member in header.items():
-                self.assertEqual(defines[name], self.offset("MQTT_CONNECT", member), f"{filename}: {name}")
-        self.assertEqual(sorted(findings), sorted(self.KNOWN_OFFSET_FINDINGS))
-
-    def test_modbus_handler_layout_comment_matches_the_four_modbus_blocks(self):
-        text = (HANDLERS / "zplc_comm_modbus_handler.c").read_text()
-        comment = text[text.index("// Memory layout offsets:"):text.index("if (is_reset)")]
-        offsets = {name: int(off) for off, name in re.findall(r"\+(\d+):\s*([A-Z_]+)", comment)}
-        self.assertEqual(sorted(offsets), sorted(["EN", "BUSY", "DONE", "ERROR", "PROTO", "SLAVE_ID", "ADDR", "COUNT", "VALUE", "HOST", "PORT"]))
-        for block in ("MB_READ_HREG", "MB_WRITE_HREG", "MB_READ_COIL", "MB_WRITE_COIL"):
-            for member, offset in offsets.items():
-                self.assertEqual(offset, self.offset(block, member), f"{block}.{member}")
-
-    def test_the_findings_are_exactly_the_known_ones(self):
-        findings = []
+    def test_the_string_accessors_take_the_layout_from_the_string_table(self):
+        text = (HANDLERS / "zplc_comm_fb_access.h").read_text()
         string = CONTRACT["string"]
-        mqtt = c_defines(HANDLERS / "zplc_comm_mqtt_handler.c")
-        cloud = c_defines(HANDLERS / "zplc_comm_cloud_handler.c")
-        isa = (string["lenOffset"], string["capOffset"], string["dataOffset"])
-        layouts = {
-            "mqtt": (mqtt["STR_OFF_LEN"], mqtt["STR_OFF_CAPACITY"], mqtt["STR_OFF_DATA"]),
-            "cloud": (cloud["STR_OFF_LEN"], cloud["STR_OFF_CAP"], cloud["STR_OFF_DATA"]),
-        }
-        self.assertEqual(layouts["mqtt"], isa)
-        if layouts["cloud"] != isa:
-            findings.append("cloud handler STRING layout is [len u8][cap u8][data at 2]; the contract and the MQTT and Modbus handlers use [len u16][cap u16][data at 4]")
-        modbus = (HANDLERS / "zplc_comm_modbus_handler.c").read_text()
-        reg_limit = int(re.search(r"#define MAX_MODBUS_REG_COUNT (\d+)", modbus).group(1))
-        coil_limit = int(re.search(r"#define MAX_MODBUS_COIL_COUNT (\d+)", modbus).group(1))
-        value = self.offset("MB_READ_HREG", "VALUE")
-        for block, extent, verb, unit in (
-            ("MB_READ_HREG", value + 2 * reg_limit, "writes", f"{value} + 2 * {reg_limit} registers"),
-            ("MB_WRITE_HREG", value + 2 * reg_limit, "reads", f"{value} + 2 * {reg_limit} registers"),
-            ("MB_READ_COIL", value + coil_limit, "writes", f"{value} + {coil_limit} coils"),
-        ):
-            size = self.blocks[block]["size"]
-            # COM-001: inside the block, and a result buffer does not overlap the block's own parameters
-            following = min((m["offset"] for m in self.blocks[block]["members"] if m["offset"] > value), default=size)
-            if extent > size:
-                findings.append(f"{block}: handler {verb} up to offset {extent} ({unit}), instance size is {size}")
-            elif extent > following:
-                findings.append(f"{block}: handler {verb} up to offset {extent} ({unit}), over the member at {following}")
-        self.assertEqual(sorted(findings), sorted(self.KNOWN_FINDINGS))
+        for name, key in (("ZPLC_STRING_LEN_OFFSET", "lenOffset"), ("ZPLC_STRING_CAP_OFFSET", "capOffset"),
+                          ("ZPLC_STRING_DATA_OFFSET", "dataOffset")):
+            self.assertIn(name, text)
+            self.assertIn(name, (ROOT / "firmware/lib/zplc_core/include/zplc_isa.h").read_text())
+            self.assertIsInstance(string[key], int)
+        self.assertNotRegex(text, r"#define\s+ZPLC_FB_STR_(LEN|CAP|DATA)\s+\d")
 
     def test_nominal_string_members_against_the_layout_offsets(self):
         findings = []

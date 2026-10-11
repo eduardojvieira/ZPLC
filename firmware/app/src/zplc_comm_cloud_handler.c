@@ -1,13 +1,18 @@
 /**
  * ZPLC Cloud Communication FB Handler
  *
- * Bridges VM OP_COMM_EXEC opcodes for Phase 5 cloud wrapper FBs
- * (Azure C2D, DPS, Event Grid; AWS Fleet Provision; Sparkplug B Rebirth)
- * to the existing runtime services in zplc_azure_dps.c, zplc_aws_fleet.c,
- * and zplc_mqtt.c.
+ * Bridges the cloud blocks of the scan (Azure C2D, DPS, Event Grid; AWS Fleet
+ * Provisioning; Sparkplug B Rebirth) to the runtime services in
+ * zplc_azure_dps.c, zplc_aws_fleet.c and zplc_mqtt.c.
  *
- * All functions run in the VM scan thread and MUST NOT block.
- * Actual network work is done in background threads in the respective modules.
+ * Nothing here waits for a service (COM-003). The two provisioning services
+ * wait for a broker for up to 30 seconds, so they run on a worker thread of
+ * their own: a handler call takes a slot of zplc_comm_req.h and queues it, and
+ * the block polls the slot on every scan until the worker has written the
+ * result. The other blocks ask the MQTT client, which has a thread of its own,
+ * through zplc_mqtt_fb.h. The handshake is the one of zplc_comm_dispatch.h: a
+ * rising EN is one request (COM-004); AZURE_C2D_RECV is a service block that
+ * reports the session and pulses VALID for each message.
  *
  * SPDX-License-Identifier: MIT
  */
@@ -16,231 +21,197 @@
 
 #include "zplc_comm_fb_access.h"
 #include "zplc_config.h"
-#include "zplc_mqtt.h"
+#include "zplc_mqtt_fb.h"
 #include <errno.h>
 #include <string.h>
+#include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <zplc_comm_dispatch.h>
+#include <zplc_comm_req.h>
+#include <zplc_isa.h>
 
 LOG_MODULE_REGISTER(zplc_comm_cloud, LOG_LEVEL_INF);
 
-/* ============================================================================
- * FB Memory Layout — Common Header (matches all comm FBs)
- * ============================================================================
- * +0  EN     BOOL
- * +1  BUSY   BOOL
- * +2  DONE   BOOL
- * +3  ERROR  BOOL
- * +4  STATUS DINT (4 bytes, little-endian)
- */
-#define FB_OFF_EN 0
-#define FB_OFF_BUSY 1
-#define FB_OFF_DONE 2
-#define FB_OFF_ERROR 3
-#define FB_OFF_STATUS 4
+/* Bytes the layout table reserves for each STRING member (header, up to 80
+ * characters, terminator), from the string layout of the contract. Strings are
+ * read and written through zplc_comm_fb_access.h, bounded by this and by the
+ * block (COM-001, COM-005). */
+#define FB_STRING_BYTES ((uint16_t)(ZPLC_STRING_DATA_OFFSET + ZPLC_STRING_DEFAULT_SIZE + 1))
+#define FB_STRING_CHARS ((size_t)ZPLC_STRING_DEFAULT_SIZE)
 
-/* String layout of the contract: [LEN UINT][CAP UINT][DATA...][terminator].
- * The compiler and the other handlers use it; strings are read and written
- * through zplc_comm_fb_access.h, bounded by the block (COM-001). */
-#define STR_OFF_LEN 0
-#define STR_OFF_CAP 2
-#define STR_OFF_DATA 4
+/* The provisioning services wait for the broker for 30 seconds in each of their steps (DPS_TIMEOUT_MS,
+ * AWS_FLEET_TIMEOUT_MS); a request that has not finished in this time is reported TIMEOUT (COM-018). */
+#define CLOUD_REQ_TIMEOUT_MS 90000U
+#define CLOUD_REQ_MAX 4U
+/* The TLS handshake of a provisioning service runs on this thread, as the one of the MQTT client runs on its own. */
+#define CLOUD_WORKER_STACK_SIZE 8192
 
-/* Bytes the layout table reserves for each STRING member */
-#define FB_STRING_BYTES 85U
+struct cloud_req {
+  zplc_comm_req_t head; /* first: the pool of zplc_comm_req.h */
+  zplc_comm_fb_kind_t kind;
+  char input[FB_STRING_CHARS + 1U];  /* DEVICE_ID or TEMPLATE_NAME, as the block holds it */
+  char output[FB_STRING_CHARS + 1U]; /* ASSIGNED_HUB or THING_NAME, when the service finished */
+};
 
-/* ============================================================================
- * AZURE_C2D_RECV (0x0020)
- * +8  PAYLOAD STRING[83]  — written by the MQTT receive callback
- * +93 VALID   BOOL        — set true by the MQTT receive callback
- * ============================================================================
- */
-#define C2D_OFF_PAYLOAD ZPLC_COMM_AZURE_C2D_RECV_PAYLOAD_OFFSET
-#define C2D_OFF_VALID ZPLC_COMM_AZURE_C2D_RECV_VALID_OFFSET
+static struct cloud_req s_reqs[CLOUD_REQ_MAX];
+static struct k_spinlock s_lock;
+static k_spinlock_key_t s_key;
+static struct k_msgq s_queue;
+static struct cloud_req *s_queue_buf[CLOUD_REQ_MAX];
+static struct k_thread s_worker_thread;
+static K_THREAD_STACK_DEFINE(s_worker_stack, CLOUD_WORKER_STACK_SIZE);
 
-/* ============================================================================
- * AZURE_DPS_PROV (0x0021)
- * +8  DEVICE_ID    STRING[63]
- * +73 ASSIGNED_HUB STRING[128]
- * ============================================================================
- */
-#define DPS_OFF_DEVICE_ID ZPLC_COMM_AZURE_DPS_PROV_DEVICE_ID_OFFSET
-#define DPS_OFF_ASSIGNED_HUB ZPLC_COMM_AZURE_DPS_PROV_ASSIGNED_HUB_OFFSET
-
-/* ============================================================================
- * AZURE_EG_PUB (0x0022)
- * +8   TOPIC      STRING[63]
- * +73  EVENT_TYPE STRING[63]
- * +138 PAYLOAD    STRING[127]
- * ============================================================================
- */
-#define EG_OFF_TOPIC ZPLC_COMM_AZURE_EG_PUB_TOPIC_OFFSET
-#define EG_OFF_EVENT_TYPE ZPLC_COMM_AZURE_EG_PUB_EVENT_TYPE_OFFSET
-#define EG_OFF_PAYLOAD ZPLC_COMM_AZURE_EG_PUB_PAYLOAD_OFFSET
-
-/* ============================================================================
- * AWS_FLEET_PROV (0x0030)
- * +8  TEMPLATE_NAME STRING[63]
- * +73 THING_NAME    STRING[63]
- * ============================================================================
- */
-#define AWS_OFF_TEMPLATE_NAME ZPLC_COMM_AWS_FLEET_PROV_TEMPLATE_NAME_OFFSET
-#define AWS_OFF_THING_NAME ZPLC_COMM_AWS_FLEET_PROV_THING_NAME_OFFSET
-
-/* ============================================================================
- * Helpers
- * ============================================================================
- */
-
-static void set_status(uint8_t *fb_mem, int32_t s) {
-  fb_mem[FB_OFF_STATUS] = (uint8_t)(s & 0xFF);
-  fb_mem[FB_OFF_STATUS + 1] = (uint8_t)((s >> 8) & 0xFF);
-  fb_mem[FB_OFF_STATUS + 2] = (uint8_t)((s >> 16) & 0xFF);
-  fb_mem[FB_OFF_STATUS + 3] = (uint8_t)((s >> 24) & 0xFF);
+static void req_lock(void *context) {
+  ARG_UNUSED(context);
+  s_key = k_spin_lock(&s_lock);
 }
 
-static void fb_reset_common(uint8_t *fb_mem) {
-  fb_mem[FB_OFF_BUSY] = 0;
-  fb_mem[FB_OFF_DONE] = 0;
-  fb_mem[FB_OFF_ERROR] = 0;
-  set_status(fb_mem, 0);
+static void req_unlock(void *context) {
+  ARG_UNUSED(context);
+  k_spin_unlock(&s_lock, s_key);
 }
 
-/**
- * Read a ZPLC STRING field into a C string buffer, bounded by the block.
- */
-static void read_fb_str(const uint8_t *fb_mem, uint16_t fb_len,
-                        uint16_t offset, char *dest, size_t dest_size) {
-  (void)zplc_fb_string_copy(dest, dest_size, fb_mem, fb_len, offset,
-                            FB_STRING_BYTES);
-}
+static const zplc_comm_req_pool_t s_pool = {
+    .slots = s_reqs,
+    .stride = sizeof(struct cloud_req),
+    .count = CLOUD_REQ_MAX,
+    .lock = req_lock,
+    .unlock = req_unlock,
+    .context = NULL,
+};
 
 /* ============================================================================
- * Per-FB exec handlers
+ * The worker: the provisioning services, which wait for a broker
  * ============================================================================
  */
 
-static int exec_azure_c2d_recv(uint8_t *fb_mem, uint16_t fb_len) {
-  /* Read-only FB: the MQTT receive callback populates PAYLOAD and VALID.
-   * On each scan with EN=1 we just report the current state. */
-  bool en = fb_mem[FB_OFF_EN] != 0;
+static int cloud_run_request(struct cloud_req *req) {
+  int rc;
 
-  if (!en) {
-    fb_reset_common(fb_mem);
-    (void)zplc_fb_string_set(fb_mem, fb_len, C2D_OFF_PAYLOAD, FB_STRING_BYTES,
-                             (const uint8_t *)"", 0U);
-    fb_mem[C2D_OFF_VALID] = 0;
-    return 0;
-  }
-
-  /* Nothing to do synchronously — data is filled by the MQTT thread via
-   * the Azure C2D callback. Mark DONE for this scan to signal "ready". */
-  fb_mem[FB_OFF_BUSY] = 0;
-  fb_mem[FB_OFF_DONE] = fb_mem[C2D_OFF_VALID]; /* 1 only when new msg */
-  fb_mem[FB_OFF_ERROR] = 0;
-  set_status(fb_mem, 0);
-  return 0;
-}
-
-static int exec_azure_dps_prov(uint8_t *fb_mem, uint16_t fb_len) {
-  bool en = fb_mem[FB_OFF_EN] != 0;
-  bool busy = fb_mem[FB_OFF_BUSY] != 0;
-  bool done = fb_mem[FB_OFF_DONE] != 0;
-
-  if (!en) {
-    fb_reset_common(fb_mem);
-    return 0;
-  }
-  if (done)
-    return 0; /* Already finished this edge */
-
-  if (!busy) {
-    char device_id[64];
-    read_fb_str(fb_mem, fb_len, DPS_OFF_DEVICE_ID, device_id,
-                sizeof(device_id));
-
-    /* Trigger provisioning — non-blocking; result comes via callback */
-    int rc = zplc_azure_dps_provision();
-    if (rc == 0) {
-      fb_mem[FB_OFF_DONE] = 1;
-      fb_mem[FB_OFF_ERROR] = 0;
-      set_status(fb_mem, 0);
-    } else {
-      fb_mem[FB_OFF_DONE] = 0;
-      fb_mem[FB_OFF_ERROR] = 1;
-      set_status(fb_mem, rc);
+  req->output[0] = '\0';
+  switch (req->kind) {
+  case ZPLC_COMM_FB_AZURE_DPS_PROV:
+    if (req->input[0] != '\0') {
+      zplc_config_set_azure_dps_registration_id(req->input);
     }
-    fb_mem[FB_OFF_BUSY] = 0;
+    rc = zplc_azure_dps_provision();
+    if (rc == 0) {
+      /* The service stores the hub it was assigned as the broker. */
+      zplc_config_get_mqtt_broker(req->output, sizeof(req->output));
+    }
+    return rc;
+  case ZPLC_COMM_FB_AWS_FLEET_PROV:
+    if (req->input[0] != '\0') {
+      zplc_config_set_aws_fleet_template_name(req->input);
+    }
+    rc = zplc_aws_fleet_provision();
+    if (rc == 0) {
+      /* The service stores the thing it registered as the client id. */
+      zplc_config_get_mqtt_client_id(req->output, sizeof(req->output));
+    }
+    return rc;
+  default:
+    return -ENOTSUP;
   }
-  return 0;
 }
 
-static int exec_azure_eg_pub(uint8_t *fb_mem, uint16_t fb_len) {
-  bool en = fb_mem[FB_OFF_EN] != 0;
-  bool done = fb_mem[FB_OFF_DONE] != 0;
+/* The worker's whole turn for one queued request. */
+static void cloud_process(struct cloud_req *req) {
+  int rc;
 
-  if (!en) {
-    fb_reset_common(fb_mem);
-    return 0;
+  if (!zplc_comm_req_begin(&s_pool, &req->head)) {
+    /* Reset while it waited in the queue: the service is not called. */
+    return;
   }
-  if (done)
-    return 0;
-
-  char topic[64], event_type[64], payload[128];
-  read_fb_str(fb_mem, fb_len, EG_OFF_TOPIC, topic, sizeof(topic));
-  read_fb_str(fb_mem, fb_len, EG_OFF_EVENT_TYPE, event_type,
-              sizeof(event_type));
-  read_fb_str(fb_mem, fb_len, EG_OFF_PAYLOAD, payload, sizeof(payload));
-
-  int rc = zplc_azure_event_grid_publish(event_type, NULL, topic, payload);
-  fb_mem[FB_OFF_BUSY] = 0;
-  fb_mem[FB_OFF_DONE] = (rc == 0) ? 1 : 0;
-  fb_mem[FB_OFF_ERROR] = (rc != 0) ? 1 : 0;
-  set_status(fb_mem, rc);
-  return 0;
+  rc = cloud_run_request(req);
+  zplc_comm_req_finish(&s_pool, &req->head,
+                       rc == 0 ? ZPLC_COMM_HANDLER_DONE : zplc_comm_fail_from_errno(rc));
 }
 
-static int exec_aws_fleet_prov(uint8_t *fb_mem) {
-  bool en = fb_mem[FB_OFF_EN] != 0;
-  bool done = fb_mem[FB_OFF_DONE] != 0;
+static void cloud_worker(void *p1, void *p2, void *p3) {
+  ARG_UNUSED(p1);
+  ARG_UNUSED(p2);
+  ARG_UNUSED(p3);
 
-  if (!en) {
-    fb_reset_common(fb_mem);
-    return 0;
+  while (1) {
+    struct cloud_req *req = NULL;
+
+    if (k_msgq_get(&s_queue, (void *)&req, K_FOREVER) == 0 && req != NULL) {
+      cloud_process(req);
+    }
   }
-  if (done)
-    return 0;
-
-  /* Trigger provisioning — wraps zplc_aws_fleet_provision() */
-  int rc = zplc_aws_fleet_provision();
-  fb_mem[FB_OFF_BUSY] = 0;
-  fb_mem[FB_OFF_DONE] = (rc == 0) ? 1 : 0;
-  fb_mem[FB_OFF_ERROR] = (rc != 0) ? 1 : 0;
-  set_status(fb_mem, rc);
-  return 0;
 }
 
-static int exec_spb_rebirth(uint8_t *fb_mem) {
-  bool en = fb_mem[FB_OFF_EN] != 0;
-  bool done = fb_mem[FB_OFF_DONE] != 0;
+/* ============================================================================
+ * The blocks, in the scan
+ * ============================================================================
+ */
 
-  if (!en) {
-    fb_reset_common(fb_mem);
-    return 0;
+/* START: one request, for the provisioning blocks. */
+static int provision_start(zplc_comm_fb_kind_t kind, const uint8_t *fb_mem,
+                           uint16_t fb_len, uint16_t input_offset) {
+  struct cloud_req *req;
+
+  req = (struct cloud_req *)zplc_comm_req_claim(&s_pool, fb_mem, k_uptime_get_32());
+  if (req == NULL) {
+    return ZPLC_COMM_HANDLER_FAIL(ZPLC_COMM_QUEUE_FULL);
   }
-  if (done)
-    return 0;
+  req->kind = kind;
+  (void)zplc_fb_string_copy(req->input, sizeof(req->input), fb_mem, fb_len, input_offset,
+                            FB_STRING_BYTES);
+  req->output[0] = '\0';
+  zplc_comm_req_submit(&s_pool, &req->head);
+  if (k_msgq_put(&s_queue, (const void *)&req, K_NO_WAIT) != 0) {
+    zplc_comm_req_cancel(&s_pool, &req->head);
+    return ZPLC_COMM_HANDLER_FAIL(ZPLC_COMM_QUEUE_FULL);
+  }
+  return ZPLC_COMM_HANDLER_PENDING;
+}
 
-  /* Request a Sparkplug B REBIRTH by publishing an NBIRTH/DBIRTH sequence.
-   * zplc_mqtt_request_backoff_reset forces the MQTT thread to reconnect and
-   * re-publish birth certificates on next cycle. */
-  zplc_mqtt_request_backoff_reset();
+/* POLL: the result of the request of this block; the output string of a finished one goes to the block. */
+static int provision_poll(uint8_t *fb_mem, uint16_t fb_len, uint16_t output_offset) {
+  zplc_comm_req_t *slot = NULL;
+  const int result = zplc_comm_req_peek(&s_pool, fb_mem, k_uptime_get_32(),
+                                        CLOUD_REQ_TIMEOUT_MS, &slot);
 
-  fb_mem[FB_OFF_BUSY] = 0;
-  fb_mem[FB_OFF_DONE] = 1;
-  fb_mem[FB_OFF_ERROR] = 0;
-  set_status(fb_mem, 0);
-  return 0;
+  if (result == ZPLC_COMM_HANDLER_DONE && slot != NULL) {
+    const struct cloud_req *req = (const struct cloud_req *)slot;
+
+    (void)zplc_fb_string_set(fb_mem, fb_len, output_offset, FB_STRING_BYTES,
+                             (const uint8_t *)req->output, strlen(req->output));
+    zplc_comm_req_release(&s_pool, slot);
+  }
+  return result;
+}
+
+static int event_grid_start(uint8_t *fb_mem, uint16_t fb_len) {
+  char topic[FB_STRING_CHARS + 1U];
+  char event_type[FB_STRING_CHARS + 1U];
+  char payload[FB_STRING_CHARS + 1U];
+
+  (void)zplc_fb_string_copy(topic, sizeof(topic), fb_mem, fb_len,
+                            ZPLC_COMM_AZURE_EG_PUB_TOPIC_OFFSET, FB_STRING_BYTES);
+  (void)zplc_fb_string_copy(event_type, sizeof(event_type), fb_mem, fb_len,
+                            ZPLC_COMM_AZURE_EG_PUB_EVENT_TYPE_OFFSET, FB_STRING_BYTES);
+  (void)zplc_fb_string_copy(payload, sizeof(payload), fb_mem, fb_len,
+                            ZPLC_COMM_AZURE_EG_PUB_PAYLOAD_OFFSET, FB_STRING_BYTES);
+  /* An empty TOPIC or EVENT_TYPE is the configured default of the client. */
+  return zplc_mqtt_fb_event_grid(fb_mem, event_type, topic, payload);
+}
+
+/* AZURE_C2D_RECV: the session, and a pulse of VALID for each cloud-to-device message. */
+static int c2d_poll(uint8_t *fb_mem, uint16_t fb_len) {
+  uint8_t message[FB_STRING_CHARS + 1U];
+  const int result = zplc_mqtt_fb_subscribe(fb_mem, NULL, 0U);
+  const int length = zplc_mqtt_fb_take_message(fb_mem, message, FB_STRING_CHARS);
+
+  fb_mem[ZPLC_COMM_AZURE_C2D_RECV_VALID_OFFSET] = 0U;
+  if (length >= 0) {
+    (void)zplc_fb_string_set(fb_mem, fb_len, ZPLC_COMM_AZURE_C2D_RECV_PAYLOAD_OFFSET,
+                             FB_STRING_BYTES, message, (size_t)length);
+    fb_mem[ZPLC_COMM_AZURE_C2D_RECV_VALID_OFFSET] = 1U;
+  }
+  return result;
 }
 
 /* ============================================================================
@@ -249,30 +220,59 @@ static int exec_spb_rebirth(uint8_t *fb_mem) {
  */
 
 static int zplc_comm_cloud_handler(zplc_comm_fb_kind_t kind, uint8_t *fb_mem,
-                                   uint16_t fb_len, bool reset) {
-  /* A block of this kind is at least its table size; every offset used by
-   * the exec handlers is inside it (COM-001). */
+                                   uint16_t fb_len, zplc_comm_call_t call) {
+  /* A block of this kind is at least its table size; every offset used below
+   * is inside it (COM-001). */
   if (fb_mem == NULL || zplc_comm_fb_size((uint32_t)kind) == 0U ||
       fb_len < zplc_comm_fb_size((uint32_t)kind)) {
     return -EINVAL;
   }
 
-  if (reset) {
-    fb_reset_common(fb_mem);
-    return 0;
+  if (call == ZPLC_COMM_CALL_RESET) {
+    switch (kind) {
+    case ZPLC_COMM_FB_AZURE_DPS_PROV:
+      zplc_comm_req_abort(&s_pool, fb_mem);
+      (void)zplc_fb_string_set(fb_mem, fb_len, ZPLC_COMM_AZURE_DPS_PROV_ASSIGNED_HUB_OFFSET,
+                               FB_STRING_BYTES, (const uint8_t *)"", 0U);
+      break;
+    case ZPLC_COMM_FB_AWS_FLEET_PROV:
+      zplc_comm_req_abort(&s_pool, fb_mem);
+      (void)zplc_fb_string_set(fb_mem, fb_len, ZPLC_COMM_AWS_FLEET_PROV_THING_NAME_OFFSET,
+                               FB_STRING_BYTES, (const uint8_t *)"", 0U);
+      break;
+    case ZPLC_COMM_FB_AZURE_EG_PUB:
+    case ZPLC_COMM_FB_SPB_REBIRTH:
+      zplc_mqtt_fb_abort(fb_mem);
+      break;
+    case ZPLC_COMM_FB_AZURE_C2D_RECV:
+      zplc_mqtt_fb_unsubscribe(fb_mem);
+      fb_mem[ZPLC_COMM_AZURE_C2D_RECV_VALID_OFFSET] = 0U;
+      (void)zplc_fb_string_set(fb_mem, fb_len, ZPLC_COMM_AZURE_C2D_RECV_PAYLOAD_OFFSET,
+                               FB_STRING_BYTES, (const uint8_t *)"", 0U);
+      break;
+    default:
+      break;
+    }
+    return ZPLC_COMM_HANDLER_DONE;
   }
 
   switch (kind) {
   case ZPLC_COMM_FB_AZURE_C2D_RECV:
-    return exec_azure_c2d_recv(fb_mem, fb_len);
+    return c2d_poll(fb_mem, fb_len);
   case ZPLC_COMM_FB_AZURE_DPS_PROV:
-    return exec_azure_dps_prov(fb_mem, fb_len);
-  case ZPLC_COMM_FB_AZURE_EG_PUB:
-    return exec_azure_eg_pub(fb_mem, fb_len);
+    return call == ZPLC_COMM_CALL_START
+               ? provision_start(kind, fb_mem, fb_len, ZPLC_COMM_AZURE_DPS_PROV_DEVICE_ID_OFFSET)
+               : provision_poll(fb_mem, fb_len, ZPLC_COMM_AZURE_DPS_PROV_ASSIGNED_HUB_OFFSET);
   case ZPLC_COMM_FB_AWS_FLEET_PROV:
-    return exec_aws_fleet_prov(fb_mem);
+    return call == ZPLC_COMM_CALL_START
+               ? provision_start(kind, fb_mem, fb_len, ZPLC_COMM_AWS_FLEET_PROV_TEMPLATE_NAME_OFFSET)
+               : provision_poll(fb_mem, fb_len, ZPLC_COMM_AWS_FLEET_PROV_THING_NAME_OFFSET);
+  case ZPLC_COMM_FB_AZURE_EG_PUB:
+    return call == ZPLC_COMM_CALL_START ? event_grid_start(fb_mem, fb_len)
+                                        : zplc_mqtt_fb_poll(fb_mem);
   case ZPLC_COMM_FB_SPB_REBIRTH:
-    return exec_spb_rebirth(fb_mem);
+    return call == ZPLC_COMM_CALL_START ? zplc_mqtt_fb_rebirth(fb_mem)
+                                        : zplc_mqtt_fb_poll(fb_mem);
   default:
     return -EINVAL;
   }
@@ -285,6 +285,12 @@ static int zplc_comm_cloud_handler(zplc_comm_fb_kind_t kind, uint8_t *fb_mem,
 
 int zplc_comm_cloud_handler_init(void) {
   int rc;
+
+  k_msgq_init(&s_queue, (char *)s_queue_buf, sizeof(void *), CLOUD_REQ_MAX);
+  k_thread_create(&s_worker_thread, s_worker_stack, K_THREAD_STACK_SIZEOF(s_worker_stack),
+                  cloud_worker, NULL, NULL, NULL,
+                  K_PRIO_PREEMPT(ZPLC_COMM_THREAD_PRIORITY), 0, K_NO_WAIT);
+  k_thread_name_set(&s_worker_thread, "cloud_fb_worker");
 
   rc = zplc_comm_register_handler(ZPLC_COMM_FB_AZURE_C2D_RECV,
                                   zplc_comm_cloud_handler);

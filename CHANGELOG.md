@@ -964,6 +964,29 @@ All notable changes are documented here.
   `tools/contract/string_cross.py` compiles a program that gives every STRING
   input of the twelve blocks its own text and reads each member back with the
   accessors of the handlers.
+- **The twelve communication and cloud blocks have one handshake and none of them
+  waits inside the scan** (COM-002, COM-003, COM-004, COM-008, COM-018). A Modbus
+  block was BUSY for ever: the dispatcher never called the handler again once
+  BUSY was set, so the worker's result was never taken, and a falling and rising
+  EN gave back the old result without a new request. The cloud blocks repeated
+  their operation on every scan while EN stayed TRUE, and `AWS_FLEET_PROV`,
+  `AZURE_DPS_PROV` and the Event Grid publish waited for a broker for up to 30
+  seconds inside the scan. Now a rising EN is one request; the handler is called
+  on every scan while it is in flight; the result (DONE, or ERROR with a status
+  code) is held while EN stays TRUE and cleared when it falls; a request in
+  flight completes even when EN falls, and a reset lets go of it without
+  releasing what the worker still uses. A request goes to a slot
+  (`zplc_comm_req.h`) that a worker thread answers: the Modbus client, the MQTT
+  client thread and, for the two provisioning services, a worker thread of their
+  own (8 KB of RAM on the boards that have a cloud profile). `ASSIGNED_HUB` and
+  `THING_NAME` are filled in; `MQTT_SUBSCRIBE` and `AZURE_C2D_RECV` deliver their
+  messages in `PAYLOAD` with `VALID` for one scan (they never did);
+  `SPB_REBIRTH` publishes the birth certificate again once for each rising
+  edge. A request older than its time limit is `ERROR` with `STATUS` 2 and its
+  late result is dropped; a message queued when the session goes down is
+  failed, not sent on the next session. `STATUS` holds one of the documented
+  codes, not a raw errno. The handshake and the time limits of each block are
+  in `docs/docs/runtime/communication-function-blocks.md`.
 
 ## 2.0.0-rc.3 - 2026-09-01
 

@@ -60,7 +60,37 @@ typedef enum {
 #define ZPLC_COMM_FB_HANDSHAKE_SIZE 8U
 
 /**
+ * @brief Why a handler is called (COM-002).
+ *
+ * START and POLL are the two calls of a block that is enabled; RESET releases
+ * the instance. The values keep a caller that still passes `true` for "reset"
+ * a reset.
+ */
+typedef enum {
+  /** EN is TRUE and the block is idle: begin one operation. Once per rising EN. */
+  ZPLC_COMM_CALL_START = 0,
+  /** COMM_RESET, or EN fell on a block that reports a state: let go of what is held for this instance. */
+  ZPLC_COMM_CALL_RESET = 1,
+  /** The operation is in flight (BUSY), or the block reports a state (a service block, every scan). */
+  ZPLC_COMM_CALL_POLL = 2
+} zplc_comm_call_t;
+
+/**
+ * Results of a handler call. A handler never writes EN, BUSY, DONE, ERROR or STATUS: it returns one of these and
+ * the dispatcher publishes it. It writes only the outputs of its own block (VALUE, PAYLOAD, ASSIGNED_HUB...).
+ */
+/** The operation finished successfully: BUSY 0, DONE 1, STATUS 0. */
+#define ZPLC_COMM_HANDLER_DONE 0
+/** The operation is in flight: BUSY 1, STATUS ZPLC_COMM_BUSY; the handler is called again on the next scan. */
+#define ZPLC_COMM_HANDLER_PENDING 1
+/** The operation failed with a zplc_comm_status_t code: BUSY 0, ERROR 1, STATUS the code. Any other negative value is UNKNOWN. */
+#define ZPLC_COMM_HANDLER_FAIL(status) (-(int)(status))
+
+/**
  * @brief Comm FB handler function type.
+ *
+ * Every call returns within a bounded time (COM-003): a handler takes a lock held for a few instructions and hands
+ * anything that waits for a peer, a socket or a flash to a worker it does not wait for.
  *
  * @param kind   The function-block kind
  * @param fb_mem The block, fb_len bytes; the handler must not read or write
@@ -68,11 +98,12 @@ typedef enum {
  *               from the block against fb_len (COM-001)
  * @param fb_len Length of the block in bytes: the size of the kind from the
  *               table, or ZPLC_COMM_FB_HANDSHAKE_SIZE for a kind without layout
- * @param reset  true to reset the instance, false to execute it
- * @return 0 on success, negative on error
+ * @param call   Why the handler is called (zplc_comm_call_t)
+ * @return ZPLC_COMM_HANDLER_DONE, ZPLC_COMM_HANDLER_PENDING or
+ *         ZPLC_COMM_HANDLER_FAIL(status); the result of a RESET call is ignored
  */
 typedef int (*zplc_comm_handler_t)(zplc_comm_fb_kind_t kind, uint8_t *fb_mem,
-                                   uint16_t fb_len, bool reset);
+                                   uint16_t fb_len, zplc_comm_call_t call);
 
 /* >>> GENERATED (tools/contract/generate.py): comm-blocks. Do not edit. >>> */
 /**
@@ -389,7 +420,45 @@ int zplc_comm_register_handler(zplc_comm_fb_kind_t kind,
                                zplc_comm_handler_t fn);
 
 /**
+ * @brief True for the blocks that report a state that can change on any scan: MQTT_CONNECT, MQTT_SUBSCRIBE and
+ *        AZURE_C2D_RECV. Their handler is called on every scan while EN is TRUE; the others make one request
+ *        for each rising EN.
+ */
+int zplc_comm_fb_is_service(zplc_comm_fb_kind_t kind);
+
+/**
  * @brief Execute a communication FB instance (called by VM from OP_COMM_EXEC).
+ *
+ * The one handshake of the twelve blocks (COM-002, COM-004). The block is the only writer of BUSY, DONE, ERROR and
+ * STATUS; a handler returns its result and the dispatcher publishes it.
+ *
+ * A request block (the Modbus blocks, MQTT_PUBLISH, AZURE_DPS_PROV, AZURE_EG_PUB, AWS_FLEET_PROV, SPB_REBIRTH):
+ *
+ *   EN        0 0 1 1 1 1 1 1 1 1 0 0 1 1 1 1
+ *   BUSY      0 0 0 1 1 1 0 0 0 0 0 0 0 1 1 0       one operation, begun by the rising edge
+ *   DONE      0 0 0 0 0 0 1 1 1 1 0 0 0 0 0 1       the result, held while EN stays TRUE
+ *   ERROR     0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0       (a failed operation holds ERROR instead of DONE)
+ *   handler       . . S P P R . . . . . . S P R         S START, P POLL, R the result
+ *
+ * - EN is FALSE and the block idle: all three outputs are 0 and the handler is not called.
+ * - EN rises on an idle block (BUSY, DONE and ERROR all 0): START. A handler that finishes at once gives DONE or
+ *   ERROR in the same scan; one that returns PENDING gives BUSY, STATUS = ZPLC_COMM_BUSY.
+ * - BUSY: the handler is called on every scan, whatever EN does, until it returns a result. A trigger that is a
+ *   one-scan pulse still completes, and a rising EN while BUSY starts nothing.
+ * - The result is DONE (STATUS 0) or ERROR (STATUS a zplc_comm_status_t code). It is held while EN stays TRUE, and
+ *   the handler is not called: one rising edge causes exactly one operation. It is shown for one scan when EN had
+ *   already fallen.
+ * - EN FALSE with DONE or ERROR set: both are cleared. STATUS keeps the code of the last operation until the next
+ *   START or a COMM_RESET.
+ * - COMM_RESET (zplc_comm_fb_reset): EN, BUSY, DONE, ERROR and STATUS are 0 and the handler is called with RESET to
+ *   release what it holds; an operation still in flight completes unseen.
+ *
+ * A service block reports a state: the handler is called with POLL on every scan while EN is TRUE and its result is
+ * published as it is: PENDING is BUSY (it has not reached its state yet), DONE is DONE while the state holds, a
+ * failure is ERROR. When EN falls on a block that reports a state, the handler is called once with RESET and the
+ * outputs are cleared.
+ *
+ * A kind with no handler gives ERROR with STATUS ZPLC_COMM_NO_HANDLER (3).
  *
  * @param kind   The function-block kind
  * @param fb_mem The block; the caller has placed all of it in PLC memory

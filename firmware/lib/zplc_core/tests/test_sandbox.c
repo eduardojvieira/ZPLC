@@ -692,9 +692,9 @@ static uint16_t handler_length;
 static uint8_t *handler_block;
 
 static int recording_handler(zplc_comm_fb_kind_t kind, uint8_t *fb_mem,
-                             uint16_t fb_len, bool reset) {
+                             uint16_t fb_len, zplc_comm_call_t call) {
   (void)kind;
-  (void)reset;
+  (void)call;
   handler_calls++;
   handler_length = fb_len;
   handler_block = fb_mem;

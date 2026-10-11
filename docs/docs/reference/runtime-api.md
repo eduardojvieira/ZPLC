@@ -18,6 +18,7 @@ tags: [reference, runtime, generated]
 
 - `firmware/lib/zplc_core/include/zplc_bytes.h`
 - `firmware/lib/zplc_core/include/zplc_comm_dispatch.h`
+- `firmware/lib/zplc_core/include/zplc_comm_req.h`
 - `firmware/lib/zplc_core/include/zplc_core.h`
 - `firmware/lib/zplc_core/include/zplc_crc32.h`
 - `firmware/lib/zplc_core/include/zplc_debug.h`
@@ -147,6 +148,20 @@ int zplc_comm_register_handler(zplc_comm_fb_kind_t kind, zplc_comm_handler_t fn)
 | `kind` | `zplc_comm_fb_kind_t` | — |
 | `fn` | `zplc_comm_handler_t` | — |
 
+#### `zplc_comm_fb_is_service`
+
+```c
+int zplc_comm_fb_is_service(zplc_comm_fb_kind_t kind);
+```
+
+**Source summary:** True for the blocks that report a state that can change on any scan: MQTT_CONNECT, MQTT_SUBSCRIBE and AZURE_C2D_RECV. Their handler is called on every scan while EN is TRUE; the others make one request for each rising EN.
+
+**Parameters**
+
+| Name | Type | Source description |
+| --- | --- | --- |
+| `kind` | `zplc_comm_fb_kind_t` | — |
+
 #### `zplc_comm_fb_exec`
 
 ```c
@@ -154,6 +169,8 @@ int zplc_comm_fb_exec(zplc_comm_fb_kind_t kind, uint8_t *fb_mem, uint16_t fb_len
 ```
 
 **Source summary:** Execute a communication FB instance (called by VM from OP_COMM_EXEC).
+
+The one handshake of the twelve blocks (COM-002, COM-004). The block is the only writer of BUSY, DONE, ERROR and STATUS; a handler returns its result and the dispatcher publishes it. A request block (the Modbus blocks, MQTT_PUBLISH, AZURE_DPS_PROV, AZURE_EG_PUB, AWS_FLEET_PROV, SPB_REBIRTH): EN        0 0 1 1 1 1 1 1 1 1 0 0 1 1 1 1 BUSY      0 0 0 1 1 1 0 0 0 0 0 0 0 1 1 0       one operation, begun by the rising edge DONE      0 0 0 0 0 0 1 1 1 1 0 0 0 0 0 1       the result, held while EN stays TRUE ERROR     0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0       (a failed operation holds ERROR instead of DONE) handler       . . S P P R . . . . . . S P R         S START, P POLL, R the result - EN is FALSE and the block idle: all three outputs are 0 and the handler is not called. - EN rises on an idle block (BUSY, DONE and ERROR all 0): START. A handler that finishes at once gives DONE or ERROR in the same scan; one that returns PENDING gives BUSY, STATUS = ZPLC_COMM_BUSY. - BUSY: the handler is called on every scan, whatever EN does, until it returns a result. A trigger that is a one-scan pulse still completes, and a rising EN while BUSY starts nothing. - The result is DONE (STATUS 0) or ERROR (STATUS a zplc_comm_status_t code). It is held while EN stays TRUE, and the handler is not called: one rising edge causes exactly one operation. It is shown for one scan when EN had already fallen. - EN FALSE with DONE or ERROR set: both are cleared. STATUS keeps the code of the last operation until the next START or a COMM_RESET. - COMM_RESET (zplc_comm_fb_reset): EN, BUSY, DONE, ERROR and STATUS are 0 and the handler is called with RESET to release what it holds; an operation still in flight completes unseen. A service block reports a state: the handler is called with POLL on every scan while EN is TRUE and its result is published as it is: PENDING is BUSY (it has not reached its state yet), DONE is DONE while the state holds, a failure is ERROR. When EN falls on a block that reports a state, the handler is called once with RESET and the outputs are cleared. A kind with no handler gives ERROR with STATUS ZPLC_COMM_NO_HANDLER (3).
 
 **Parameters**
 
@@ -189,6 +206,7 @@ int zplc_comm_fb_reset(zplc_comm_fb_kind_t kind, uint8_t *fb_mem, uint16_t fb_le
 | --- | --- | --- |
 | `zplc_comm_fb_kind_t` | Enum | Communication function block kind identifiers. |
 | `zplc_comm_status_t` | Enum | Communication status codes written to FB.STATUS. |
+| `zplc_comm_call_t` | Enum | Why a handler is called (COM-002). |
 | `zplc_comm_handler_t` | Typedef | Comm FB handler function type. |
 
 ### Constants and macros
@@ -196,7 +214,249 @@ int zplc_comm_fb_reset(zplc_comm_fb_kind_t kind, uint8_t *fb_mem, uint16_t fb_le
 | Name | Value | Source summary |
 | --- | --- | --- |
 | `ZPLC_COMM_FB_HANDSHAKE_SIZE` | `8U` | Size in bytes of the handshake every communication block starts with (EN, BUSY, DONE, ERROR, STATUS). |
+| `ZPLC_COMM_HANDLER_DONE` | `0` | The operation finished successfully: BUSY 0, DONE 1, STATUS 0. |
+| `ZPLC_COMM_HANDLER_PENDING` | `1` | The operation is in flight: BUSY 1, STATUS ZPLC_COMM_BUSY; the handler is called again on the next scan. |
 | `ZPLC_COMM_FB_TAIL_BYTES` | `1U` | Bytes at the end of every block that has a layout. They belong to the dispatcher, which keeps there the value EN had on the previous call to tell a rising edge from an EN that stays TRUE (COM-004). No member covers them and a program does not name them; a kind without a layout has none. |
+
+## `zplc_comm_req.h`
+
+Request slots between the scan and a worker (COM-003, COM-004, COM-008, COM-018).
+
+A communication block never waits for a peer. When it begins an operation it takes a slot, fills in what the worker needs and queues the slot; the worker (a thread, the MQTT client, a transport callback) runs it and writes the result into the slot; the scan reads the result on a later call. The slot is the only thing the two sides share, and it is only ever changed under the lock of its pool: FREE --claim--> CLAIMED --submit--> QUEUED --begin--> RUNNING --finish--> DONE --release--> FREE |                 | +--- abandon -----+--> ABANDONED --(worker is through)--> FREE A block that is reset, a request that outlives its timeout, or a program that is replaced abandons its slot. An abandoned slot is not released: the worker may be reading its payload, so it stays taken until the worker has finished with it (COM-008). The result of an abandoned request belongs to nobody and is dropped, never delivered to the next block that uses the slot (COM-018). The header has no state of its own and no dependency on an operating system: a pool is an array of structures whose first member is a zplc_comm_req_t, and a pair of lock functions. The host tests drive it with a pthread mutex or none; the firmware uses a spinlock.
+
+Source: `firmware/lib/zplc_core/include/zplc_comm_req.h`
+
+### Functions
+
+#### `zplc_comm_req_at`
+
+```c
+static inline zplc_comm_req_t *zplc_comm_req_at(const zplc_comm_req_pool_t *pool, size_t index);
+```
+
+**Source summary:** No summary found in the header comment.
+
+**Parameters**
+
+| Name | Type | Source description |
+| --- | --- | --- |
+| `pool` | `const zplc_comm_req_pool_t *` | — |
+| `index` | `size_t` | — |
+
+#### `zplc_comm_req_lock`
+
+```c
+static inline void zplc_comm_req_lock(const zplc_comm_req_pool_t *pool);
+```
+
+**Source summary:** No summary found in the header comment.
+
+**Parameters**
+
+| Name | Type | Source description |
+| --- | --- | --- |
+| `pool` | `const zplc_comm_req_pool_t *` | — |
+
+#### `zplc_comm_req_unlock`
+
+```c
+static inline void zplc_comm_req_unlock(const zplc_comm_req_pool_t *pool);
+```
+
+**Source summary:** No summary found in the header comment.
+
+**Parameters**
+
+| Name | Type | Source description |
+| --- | --- | --- |
+| `pool` | `const zplc_comm_req_pool_t *` | — |
+
+#### `zplc_comm_status_from_errno`
+
+```c
+static inline int zplc_comm_status_from_errno(int error);
+```
+
+**Source summary:** The status code a failure of the platform maps to (the documented codes of the blocks).
+
+The status code a failure of the platform maps to (the documented codes of the blocks).
+
+**Parameters**
+
+| Name | Type | Source description |
+| --- | --- | --- |
+| `error` | `int` | — |
+
+#### `zplc_comm_fail_from_errno`
+
+```c
+static inline int zplc_comm_fail_from_errno(int error);
+```
+
+**Source summary:** A handler result for a failure of the platform, as a -errno or a zplc_comm_status_t.
+
+A handler result for a failure of the platform, as a -errno or a zplc_comm_status_t.
+
+**Parameters**
+
+| Name | Type | Source description |
+| --- | --- | --- |
+| `error` | `int` | — |
+
+#### `zplc_comm_req_claim`
+
+```c
+static inline zplc_comm_req_t *zplc_comm_req_claim(const zplc_comm_req_pool_t *pool, const void *owner, uint32_t now_ms);
+```
+
+**Source summary:** Take a free slot for a request of the block `owner` (scan side).
+
+A slot that this block still holds is let go first: a request in flight is abandoned, a finished one is freed. A request therefore never sees the result of an earlier one. Returns NULL when every slot is taken: the block reports ZPLC_COMM_QUEUE_FULL (COM-008).
+
+**Parameters**
+
+| Name | Type | Source description |
+| --- | --- | --- |
+| `pool` | `const zplc_comm_req_pool_t *` | — |
+| `owner` | `const void *` | — |
+| `now_ms` | `uint32_t` | — |
+
+#### `zplc_comm_req_submit`
+
+```c
+static inline void zplc_comm_req_submit(const zplc_comm_req_pool_t *pool, zplc_comm_req_t *slot);
+```
+
+**Source summary:** The slot is filled in: hand it to the worker (scan side).
+
+The slot is filled in: hand it to the worker (scan side).
+
+**Parameters**
+
+| Name | Type | Source description |
+| --- | --- | --- |
+| `pool` | `const zplc_comm_req_pool_t *` | — |
+| `slot` | `zplc_comm_req_t *` | — |
+
+#### `zplc_comm_req_cancel`
+
+```c
+static inline void zplc_comm_req_cancel(const zplc_comm_req_pool_t *pool, zplc_comm_req_t *slot);
+```
+
+**Source summary:** The request could not be queued after all: give the slot back (scan side).
+
+The request could not be queued after all: give the slot back (scan side).
+
+**Parameters**
+
+| Name | Type | Source description |
+| --- | --- | --- |
+| `pool` | `const zplc_comm_req_pool_t *` | — |
+| `slot` | `zplc_comm_req_t *` | — |
+
+#### `zplc_comm_req_begin`
+
+```c
+static inline int zplc_comm_req_begin(const zplc_comm_req_pool_t *pool, zplc_comm_req_t *slot);
+```
+
+**Source summary:** The worker takes the request (worker side).
+
+Returns 1 when the request is to be run. Returns 0 when its block let go of it while it waited: the slot is free again and nothing is sent.
+
+**Parameters**
+
+| Name | Type | Source description |
+| --- | --- | --- |
+| `pool` | `const zplc_comm_req_pool_t *` | — |
+| `slot` | `zplc_comm_req_t *` | — |
+
+#### `zplc_comm_req_finish`
+
+```c
+static inline void zplc_comm_req_finish(const zplc_comm_req_pool_t *pool, zplc_comm_req_t *slot, int result);
+```
+
+**Source summary:** The worker is through (worker side).
+
+The result is kept for the block, or dropped, and the slot freed, when the block let go of the request while it ran.
+
+**Parameters**
+
+| Name | Type | Source description |
+| --- | --- | --- |
+| `pool` | `const zplc_comm_req_pool_t *` | — |
+| `slot` | `zplc_comm_req_t *` | — |
+| `result` | `int` | — |
+
+#### `zplc_comm_req_peek`
+
+```c
+static inline int zplc_comm_req_peek(const zplc_comm_req_pool_t *pool, const void *owner, uint32_t now_ms, uint32_t timeout_ms, zplc_comm_req_t **slot);
+```
+
+**Source summary:** Where the request of a block stands (scan side).
+
+Returns ZPLC_COMM_HANDLER_PENDING while the request is queued or running and younger than `timeout_ms`; ZPLC_COMM_HANDLER_DONE with *slot set when it finished (the caller reads the outputs from the slot and then calls zplc_comm_req_release); ZPLC_COMM_HANDLER_FAIL(...) when it failed (the slot is freed here). A request older than the timeout is abandoned and reported as ZPLC_COMM_TIMEOUT: its late result is dropped, not replayed (COM-018). A block that has no request, which is the case of a block that was BUSY across a program reload, is reported as ZPLC_COMM_UNKNOWN.
+
+**Parameters**
+
+| Name | Type | Source description |
+| --- | --- | --- |
+| `pool` | `const zplc_comm_req_pool_t *` | — |
+| `owner` | `const void *` | — |
+| `now_ms` | `uint32_t` | — |
+| `timeout_ms` | `uint32_t` | — |
+| `slot` | `zplc_comm_req_t **` | — |
+
+#### `zplc_comm_req_release`
+
+```c
+static inline void zplc_comm_req_release(const zplc_comm_req_pool_t *pool, zplc_comm_req_t *slot);
+```
+
+**Source summary:** The block has read the result: free the slot (scan side).
+
+The block has read the result: free the slot (scan side).
+
+**Parameters**
+
+| Name | Type | Source description |
+| --- | --- | --- |
+| `pool` | `const zplc_comm_req_pool_t *` | — |
+| `slot` | `zplc_comm_req_t *` | — |
+
+#### `zplc_comm_req_abort`
+
+```c
+static inline void zplc_comm_req_abort(const zplc_comm_req_pool_t *pool, const void *owner);
+```
+
+**Source summary:** The block is reset, or its program is going away (scan side).
+
+A request in flight is abandoned, a finished one freed. Nothing the worker is using is released before the worker is through with it (COM-008).
+
+**Parameters**
+
+| Name | Type | Source description |
+| --- | --- | --- |
+| `pool` | `const zplc_comm_req_pool_t *` | — |
+| `owner` | `const void *` | — |
+
+### Types
+
+| Name | Kind | Source summary |
+| --- | --- | --- |
+| `zplc_comm_req_state_t` | Enum | — |
+| `state` | Struct | The head of every slot of a pool. |
+| `slots` | Struct | — |
+
+### Constants and macros
+
+| Name | Value | Source summary |
+| --- | --- | --- |
+| `ZPLC_COMM_REQ_H` | `—` | — |
 
 ## `zplc_core.h`
 

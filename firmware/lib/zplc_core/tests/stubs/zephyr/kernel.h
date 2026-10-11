@@ -41,6 +41,9 @@ static inline void k_spin_unlock(struct k_spinlock *lock, k_spinlock_key_t key) 
   (void)key;
 }
 
+/* The tick of the handlers' request ages: the host test sets it by defining this function. */
+uint32_t k_uptime_get_32(void);
+
 #define K_FOREVER 0
 #define K_NO_WAIT 0
 #define K_PRIO_PREEMPT(priority) (priority)

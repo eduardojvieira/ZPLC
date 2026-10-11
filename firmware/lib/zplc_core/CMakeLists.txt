@@ -601,6 +601,21 @@ target_link_libraries(test_comm_dispatch PRIVATE zplc_core)
 
 add_test(NAME test_comm_dispatch COMMAND test_comm_dispatch)
 
+# Test: the request slots between the scan and a worker (COM-003, COM-004, COM-008, COM-018); two threads use
+# one pool, so the pthread library is linked.
+find_package(Threads REQUIRED)
+add_executable(test_comm_req
+    tests/test_comm_req.c
+)
+
+target_include_directories(test_comm_req PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+)
+
+target_link_libraries(test_comm_req PRIVATE Threads::Threads)
+
+add_test(NAME test_comm_req COMMAND test_comm_req)
+
 add_executable(test_loader_verify
     tests/test_loader_verify.c
 )
@@ -678,7 +693,10 @@ set(ZPLC_APP_SRC ${CMAKE_CURRENT_SOURCE_DIR}/../../app/src)
 add_executable(test_comm_fb_access
     tests/test_comm_fb_access.c
 )
-target_include_directories(test_comm_fb_access PRIVATE ${ZPLC_APP_SRC})
+target_include_directories(test_comm_fb_access PRIVATE
+    ${ZPLC_APP_SRC}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+)
 add_test(NAME test_comm_fb_access COMMAND test_comm_fb_access)
 
 # Strict parsing of operator and cloud input: the header the Zephyr shell and the cloud clients use
