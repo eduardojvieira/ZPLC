@@ -135,11 +135,15 @@ config ZPLC_EXCHANGE_QUEUE_BYTES
 config ZPLC_DEVICE_LINK
     bool "Framed device link protocol (sessions, atomic writes, events)"
     default y
-    depends on SHELL
+    depends on SHELL && ZPLC_SCHEDULER
     help
       Builds the engine of the framed device link protocol (COM-019): every state-changing request needs a
       session, a multi-byte write is whole with respect to the scan, and the device pushes events. The text
-      shell stays: it is the older protocol and the recovery console.
+      shell stays: it is the older protocol and the recovery console, and the frames reach the engine through
+      the `zplc link` command of the shell, one frame per line in hexadecimal.
+
+      Authenticated sessions (for a network transport) are offered only where the board has a cryptographic
+      generator (CONFIG_CSPRNG_ENABLED): the nonces of a challenge and of a session must not be predictable.
 
       A board that has no RAM for it turns it off: Studio then talks to the text shell and says so.
 

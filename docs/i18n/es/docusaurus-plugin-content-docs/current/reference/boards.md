@@ -62,8 +62,8 @@ Flash y RAM de `firmware/app` por placa, de la tabla de memoria del enlazador en
 
 | Board ID | Flash (KiB) | Flash budget (KiB) | RAM (KiB) | RAM budget (KiB) | Work (KiB) | RETAIN (KiB) | Code (KiB) |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| `rpi-pico-rp2040` | 151.5 | 159.2 | 199.9 | 210.0 | 8.0 | 4.0 | 24.0 |
-| `arduino-giga-r1-m7` | 199.1 | 209.2 | 287.7 | 302.2 | 8.0 | 4.0 | 44.0 |
+| `rpi-pico-rp2040` | 162.0 | 170.2 | 202.6 | 210.0 | 8.0 | 4.0 | 24.0 |
+| `arduino-giga-r1-m7` | 212.7 | 223.5 | 292.5 | 302.2 | 8.0 | 4.0 | 44.0 |
 | `esp32-s3-devkitc` | 981.8 | 1031.0 | 2374.2 | 2493.0 | 2.0 | 1.0 | 8.0 |
 | `stm32f746g-disco` | 282.8 | 297.0 | 230.2 | 241.8 | 8.0 | 4.0 | 16.0 |
 | `nucleo-h743zi` | 414.3 | 435.0 | 478.0 | 502.0 | 8.0 | 4.0 | 44.0 |
