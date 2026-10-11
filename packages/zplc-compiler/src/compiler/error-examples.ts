@@ -22,6 +22,8 @@ export interface ErrorExample {
     source?: string;
     /** The files of a project by program name, when one program is not enough. */
     files?: Readonly<Record<string, string>>;
+    /** The safe values of the outputs that the project declares (RT-023). */
+    safeOutputs?: ReadonlyArray<{ offset: number; bit: number; value: 0 | 1 }>;
     /** The tasks of the project; the default is one cyclic task that runs `Main`. */
     tasks?: ReadonlyArray<{ name: string; trigger: 'cyclic' | 'freewheeling'; interval: number; priority: number; programs: string[] }>;
     memoryProfile?: CompilerMemoryProfile;
@@ -459,6 +461,14 @@ export const ERROR_EXAMPLES: Partial<Record<ErrorCode, ErrorExample>> = {
         column: 1,
         file: 'zplc.json',
         message: 'Task \'Main\' has invalid interval',
+    },
+    INVALID_SAFE_VALUE: {
+        source: 'PROGRAM Main\nVAR\n  X : INT;\nEND_VAR\n  X := 1;\nEND_PROGRAM\n',
+        safeOutputs: [{ offset: 0, bit: 3, value: 1 }, { offset: 0, bit: 3, value: 0 }],
+        line: 1,
+        column: 1,
+        file: 'zplc.json',
+        message: 'Safe value 1 declares output byte 0 bit 3 twice',
     },
     UNKNOWN_TASK_PROGRAM: {
         source: 'PROGRAM Main\nVAR\n  X : INT;\n  B : BOOL;\nEND_VAR\n  X := 1;\nEND_PROGRAM\n',

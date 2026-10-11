@@ -473,6 +473,13 @@ export const ERROR_CODE_TABLE = {
             es: 'Dos programas escriben la misma salida física.',
         },
     },
+    INVALID_SAFE_VALUE: {
+        phases: ['codegen'],
+        summary: {
+            en: 'The safe values that the project declares for its outputs cannot be loaded: more of them than the loader takes, an offset outside the output image, a bit past 7, a value that is not 0 or 1, or the same output twice.',
+            es: 'Los valores seguros que el proyecto declara para sus salidas no se pueden cargar: más de los que admite el cargador, un desplazamiento fuera de la imagen de salidas, un bit mayor que 7, un valor que no es 0 ni 1, o la misma salida dos veces.',
+        },
+    },
     ASSEMBLER_ERROR: {
         phases: ['assembler'],
         summary: {

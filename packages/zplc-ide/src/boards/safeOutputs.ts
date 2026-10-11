@@ -100,7 +100,7 @@ export function declaredSafeOutputs(io: IOConfig | undefined, board: string | un
 export function checkedSafeOutputs(io: IOConfig | undefined, board: string | undefined): DeclaredSafeOutputs {
   const result = declaredSafeOutputs(io, board);
   if (result.problems.length > 0) {
-    const errors = result.problems.map((message) => new CompilerError(message, 0, 0, 'codegen', 'zplc.json'));
+    const errors = result.problems.map((message) => new CompilerError('INVALID_SAFE_VALUE', message, 1, 1, 'codegen', 'zplc.json'));
     errors[0]!.errors = errors;
     throw errors[0];
   }

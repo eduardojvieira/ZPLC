@@ -28,7 +28,11 @@ function failureOf(example: ErrorExample): CompilerError {
         compileMultiTaskProject(
             { name: 'Example', version: '1.0.0', tasks: example.tasks ? [...example.tasks] : RUN_MAIN },
             sources,
-            { ...(example.memoryProfile ? { memoryProfile: example.memoryProfile } : {}), ...(example.strictTypes ? { strictTypes: true } : {}) },
+            {
+                ...(example.memoryProfile ? { memoryProfile: example.memoryProfile } : {}),
+                ...(example.strictTypes ? { strictTypes: true } : {}),
+                ...(example.safeOutputs ? { safeOutputs: example.safeOutputs } : {}),
+            },
         );
     } catch (error) {
         if (error instanceof CompilerError) return error;

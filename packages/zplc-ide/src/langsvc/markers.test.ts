@@ -3,7 +3,7 @@ import { describe, expect, it } from 'bun:test';
 import { applyProjectMarkers } from './markers';
 import type { STLiveDiagnostic } from '../types';
 
-interface Marker { message: string; severity: number; startLineNumber: number; startColumn: number; endLineNumber: number; endColumn: number }
+interface Marker { message: string; code?: string; severity: number; startLineNumber: number; startColumn: number; endLineNumber: number; endColumn: number }
 
 function fakeMonaco(files: Record<string, string>) {
   const set = new Map<string, Marker[]>();

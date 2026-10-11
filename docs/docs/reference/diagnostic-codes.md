@@ -101,6 +101,7 @@ The memory a program can use is limited by the target profile only: the board th
 | `INVALID_TASK_CONFIGURATION` | The tasks of `zplc.json` are not valid: none, too many, a trigger that is not supported, an interval or a priority out of range, or a task that does not reference exactly one program. |
 | `UNKNOWN_TASK_PROGRAM` | A task names a program that is not among the sources of the project. |
 | `OUTPUT_OWNERSHIP_CONFLICT` | Two programs write the same physical output. |
+| `INVALID_SAFE_VALUE` | The safe values that the project declares for its outputs cannot be loaded: more of them than the loader takes, an offset outside the output image, a bit past 7, a value that is not 0 or 1, or the same output twice. |
 | `INTERNAL_COMPILER_ERROR` | The compiler stopped on a condition it did not expect; the message names it. It is never a mistake of the program: report it with the source. |
 | `NO_BOARD_CHANNEL` | A located variable sits at an address where the board of the project has no channel; the message names the variable, the address and the board. |
 | `TRANSLATION_FAILED` | A ladder, function block diagram, sequential function chart or instruction list source cannot be translated to Structured Text; the message names the element. |
@@ -1158,6 +1159,21 @@ END_PROGRAM
 ```
 
 Reported at: `src/Other.st` `3:1`. Message: `Physical output 'Other.Out' (src/Other.st) overlaps 'Main.Out' (src/Main.st)`
+
+### INVALID_SAFE_VALUE
+
+The safe values that the project declares for its outputs cannot be loaded: more of them than the loader takes, an offset outside the output image, a bit past 7, a value that is not 0 or 1, or the same output twice.
+
+```text
+PROGRAM Main
+VAR
+  X : INT;
+END_VAR
+  X := 1;
+END_PROGRAM
+```
+
+Reported at: `zplc.json` `1:1`. Message: `Safe value 1 declares output byte 0 bit 3 twice`
 
 ### ASSEMBLER_ERROR
 

@@ -1140,7 +1140,7 @@ export function compileMultiTaskProject(
     const safe = [...(options?.safeOutputs ?? [])].map((entry) => ({ ...entry }));
     const unsafe = safeProblem(safe);
     if (unsafe !== undefined) {
-        throw new CompilerError(unsafe, 0, 0, 'codegen', PROJECT_FILE_NAME);
+        throw new CompilerError('INVALID_SAFE_VALUE', unsafe, 1, 1, 'codegen', PROJECT_FILE_NAME);
     }
     const zplcFile = createMultiTaskZplcFile(asmResult.bytecode, taskDefs, asmResult.tags ?? [], safe);
 

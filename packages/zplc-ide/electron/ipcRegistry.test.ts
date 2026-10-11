@@ -83,6 +83,7 @@ async function harness(options: { toolApi?: Partial<ToolApiModule>; failToolApi?
     projectFiles,
     recoveryStore: () => store('recovery') as never,
     sessionStore: () => store('session') as never,
+    serialPorts: { choose: () => undefined, list: () => null },
     learnProgress: () => store('learn', { read: async () => new Set(['a']), merge: async (ids: string[]) => new Set(ids) }) as never,
     aiProvider: () => store('ai', { cancel: () => ({ requested: false }), request: async () => ({ ok: true }) }) as never,
     toolExecutionAudit: { list: () => ({ schemaVersion: 1, executions: [] }), add: async (envelope: unknown) => { note(`audit.add:${JSON.stringify(envelope)}`); } } as never,

@@ -42,7 +42,7 @@ describe('the code of a checked error is the one the build reports (CMP-006)', (
         built = { code: first.code, line: first.line, column: first.column };
       }
       expect(built).toBeDefined();
-      expect({ code: checked!.code, line: checked!.line, column: checked!.column }).toEqual(built!);
+      expect({ code: String(checked!.code), line: checked!.line, column: checked!.column }).toEqual(built!);
     });
   }
 });

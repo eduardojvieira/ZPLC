@@ -101,6 +101,7 @@ La memoria que un programa puede usar está limitada solo por el perfil del dest
 | `INVALID_TASK_CONFIGURATION` | Las tareas de `zplc.json` no son válidas: ninguna, demasiadas, un disparador no soportado, un intervalo o una prioridad fuera de rango, o una tarea que no referencia exactamente un programa. |
 | `UNKNOWN_TASK_PROGRAM` | Una tarea nombra un programa que no está entre las fuentes del proyecto. |
 | `OUTPUT_OWNERSHIP_CONFLICT` | Dos programas escriben la misma salida física. |
+| `INVALID_SAFE_VALUE` | Los valores seguros que el proyecto declara para sus salidas no se pueden cargar: más de los que admite el cargador, un desplazamiento fuera de la imagen de salidas, un bit mayor que 7, un valor que no es 0 ni 1, o la misma salida dos veces. |
 | `INTERNAL_COMPILER_ERROR` | El compilador se detuvo ante una condición que no esperaba; el mensaje la nombra. Nunca es un error del programa: repórtelo con la fuente. |
 | `NO_BOARD_CHANNEL` | Una variable ubicada está en una dirección donde la placa del proyecto no tiene canal; el mensaje nombra la variable, la dirección y la placa. |
 | `TRANSLATION_FAILED` | Una fuente de escalera, diagrama de bloques de función, diagrama funcional secuencial o lista de instrucciones no se puede traducir a Texto Estructurado; el mensaje nombra el elemento. |
@@ -1158,6 +1159,21 @@ END_PROGRAM
 ```
 
 Se informa en: `src/Other.st` `3:1`. Mensaje: `Physical output 'Other.Out' (src/Other.st) overlaps 'Main.Out' (src/Main.st)`
+
+### INVALID_SAFE_VALUE
+
+Los valores seguros que el proyecto declara para sus salidas no se pueden cargar: más de los que admite el cargador, un desplazamiento fuera de la imagen de salidas, un bit mayor que 7, un valor que no es 0 ni 1, o la misma salida dos veces.
+
+```text
+PROGRAM Main
+VAR
+  X : INT;
+END_VAR
+  X := 1;
+END_PROGRAM
+```
+
+Se informa en: `zplc.json` `1:1`. Mensaje: `Safe value 1 declares output byte 0 bit 3 twice`
 
 ### ASSEMBLER_ERROR
 
