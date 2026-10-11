@@ -7,6 +7,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'bun:test';
 
+import { RULE_TARGET, readUsbIds } from '../../scripts/release/udev-rules';
 import { markdownFiles } from './check_doc_claims';
 
 const ROOT = new URL('../../', import.meta.url).pathname;
@@ -78,6 +79,28 @@ describe('install page: built from the channels and installers that exist today 
       for (const command of ['sha256sum --ignore-missing -c SHA256SUMS', 'shasum -a 256 -c SHA256SUMS', 'Get-FileHash', 'gh attestation verify']) {
         expect({ path, command, present: content.includes(command) }).toEqual({ path, command, present: true });
       }
+    }
+  });
+
+  it('names the udev rule the packages install, the boards it covers and how to apply it without a reboot (REL-013)', () => {
+    const covered = Object.entries(readUsbIds()).filter(([, entry]) => entry.ids.length > 0).flatMap(([, entry]) => entry.ids.map((id) => `${id.vid.toLowerCase()}:${id.pid.toLowerCase()}`));
+    expect(covered.length).toBeGreaterThan(0);
+    for (const [path, content] of page) {
+      expect({ path, rule: content.includes(RULE_TARGET) }).toEqual({ path, rule: true });
+      for (const identifier of new Set(covered)) expect({ path, identifier, named: content.includes(identifier) }).toEqual({ path, identifier, named: true });
+      for (const command of ['udevadm control --reload-rules', 'udevadm trigger', 'usermod -aG dialout']) {
+        expect({ path, command, present: content.includes(command) }).toEqual({ path, command, present: true });
+      }
+    }
+  });
+
+  it('recommends the .deb or the .rpm before the AppImage, and lists the AppImage prerequisites (REL-012)', () => {
+    for (const [path, content] of page) {
+      const start = content.indexOf('### Linux');
+      const linux = content.slice(start, content.indexOf('\n## ', start));
+      const first = (extension: string) => linux.indexOf(extension);
+      expect({ path, packagesFirst: first('.deb') > -1 && first('.rpm') > -1 && first('.deb') < first('AppImage') && first('.rpm') < first('AppImage') }).toEqual({ path, packagesFirst: true });
+      expect({ path, fuse: linux.includes('libfuse2'), extract: linux.includes('--appimage-extract-and-run') }).toEqual({ path, fuse: true, extract: true });
     }
   });
 

@@ -22,12 +22,28 @@ export function noticesCommand(projectDir) {
 }
 
 /**
+ * The command that writes the udev rule of the Linux packages (REL-013). electron-builder.yml maps the file to the
+ * rules folder of the .deb and the .rpm through fpm, so the path is the one it names.
+ *
+ * @param {string} projectDir the folder of the Studio package
+ */
+export function udevRulesCommand(projectDir) {
+  const repoRoot = path.resolve(projectDir, '..', '..');
+  return {
+    command: 'bun',
+    args: [path.join(repoRoot, 'scripts', 'release', 'udev-rules.ts'), '--out', path.join(projectDir, 'build', 'linux', '70-zplc-boards.rules')],
+  };
+}
+
+/**
  * electron-builder beforePack hook: generates THIRD-PARTY-NOTICES.txt, which extraResources then copies into the
- * resources of every installer. The generator fails on a package or font it has no licence for, which stops the build.
+ * resources of every installer, and the udev rule that the Linux packages install. The generators fail on a package
+ * or font they have no licence for, or on an identifier that is not valid, which stops the build.
  *
  * @param {{ packager: { projectDir: string } }} context
  */
 export default async function beforePack(context) {
-  const { command, args } = noticesCommand(context.packager.projectDir);
-  execFileSync(command, args, { stdio: 'inherit' });
+  for (const { command, args } of [noticesCommand(context.packager.projectDir), udevRulesCommand(context.packager.projectDir)]) {
+    execFileSync(command, args, { stdio: 'inherit' });
+  }
 }

@@ -124,29 +124,69 @@ xattr -dr com.apple.quarantine "/Applications/ZPLC IDE.app"
 
 ### Linux
 
-```bash
-# Fedora and the RHEL family (RPM)
-sudo dnf install ./ZPLC.IDE-2.0.0-rc.3-linux-x86_64.rpm
+Install the `.deb` or the `.rpm` first. The package manager brings the
+libraries the application needs, installs the [udev rule of the boards](#linux-serial-port-access)
+and removes everything when you uninstall. Use the AppImage only when neither
+package fits your distribution.
 
-# Ubuntu 22.04 (DEB)
+```bash
+# Debian, Ubuntu and their derivatives (DEB)
 sudo apt install ./ZPLC.IDE-2.0.0-rc.3-linux-amd64.deb
 
-# Any distribution (AppImage)
-chmod +x ZPLC.IDE-2.0.0-rc.3-linux-x86_64.AppImage
-./ZPLC.IDE-2.0.0-rc.3-linux-x86_64.AppImage
+# Fedora and the RHEL family (RPM)
+sudo dnf install ./ZPLC.IDE-2.0.0-rc.3-linux-x86_64.rpm
 ```
 
 The `.deb` of rc.3 declares dependencies that current Debian and Ubuntu releases
-no longer provide, so it installs only on Ubuntu 22.04: use the AppImage on any
-other Debian-based system. The pipeline that builds the later releases installs
-the `.deb` and the `.rpm` in clean containers before it publishes them, and the
-release notes say whether that check passed.
+no longer provide, so it installs only on Ubuntu 22.04. The pipeline that builds
+the later releases installs the `.deb` on Debian 13 and Ubuntu 24.04 and the
+`.rpm` on Fedora, in clean containers, before it publishes them, and the release
+notes say whether that check passed.
+
+The AppImage is published for every release and needs nothing installed, with
+these prerequisites:
+
+- FUSE 2 (`libfuse2` or `libfuse2t64` on Debian and Ubuntu, `fuse-libs` on
+  Fedora). Without it, run the file with `--appimage-extract-and-run`, an option
+  of the AppImage runtime.
+- On Ubuntu 24.04 and later, AppArmor restricts the Chromium sandbox of an
+  application that is not installed by a package. Neither this nor FUSE was tried
+  with ZPLC: this is why the packages come first.
+- It installs nothing outside its own file, so it installs no udev rule: use the
+  group of [serial port access](#linux-serial-port-access).
+
+```bash
+chmod +x ZPLC.IDE-2.0.0-rc.3-linux-x86_64.AppImage
+./ZPLC.IDE-2.0.0-rc.3-linux-x86_64.AppImage
+```
 
 ## Linux: serial port access
 
 Studio opens a serial port only when you connect a board yourself. On Linux a
 board that shows up as `/dev/ttyACM0` or `/dev/ttyUSB0` belongs to a group, and
-your user has to be a member of it:
+your user has to be allowed to open it.
+
+**The `.deb` and the `.rpm` do this for you** for the boards whose USB identifier
+the project has recorded. They install `/usr/lib/udev/rules.d/70-zplc-boards.rules`,
+which tells `systemd-logind` to give the user who is logged in at the machine
+access to those serial devices while the session lasts, with no group and no
+reboot. The rule is generated from the project's list of board USB identifiers
+(`tools/hil/usb-ids.json`), so it covers exactly the boards that list names. Today
+that is the two RP2040 boards, Raspberry Pi Pico and Waveshare RP2040-Zero
+(`2e8a:000a`); the file lists the boards that have no recorded identifier, such as
+the ESP32-S3-DevKitC-1, and they need the group below.
+
+To apply the rule to a board that is already plugged in, without rebooting,
+reload the rules and replay the device events, or unplug the board and plug it in
+again:
+
+```bash
+sudo udevadm control --reload-rules
+sudo udevadm trigger --subsystem-match=tty --action=add
+getfacl /dev/ttyACM0   # an entry for your user means the rule applied
+```
+
+**The group, for the AppImage and for the boards the rule does not name:**
 
 ```bash
 ls -l /dev/ttyACM0

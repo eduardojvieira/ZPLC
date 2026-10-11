@@ -32,6 +32,13 @@ case "$package" in
   *) echo "Unsupported package type: $package" >&2; exit 2 ;;
 esac
 
+# REL-013: the package installs the udev rule that lets the logged-in user open the serial port of a board.
+rule=/usr/lib/udev/rules.d/70-zplc-boards.rules
+[ -f "$rule" ] || { echo "The package did not install $rule." >&2; exit 1; }
+grep -q 'TAG+="uaccess"' "$rule" || { echo "$rule does not tag any device for the logged-in user." >&2; exit 1; }
+if command -v udevadm > /dev/null 2>&1; then udevadm verify "$rule"; fi
+echo "Installed the udev rule: $rule"
+
 executable="$(readlink -f "$(command -v zplc-ide)")"
 echo "Installed executable: $executable"
 unresolved="$(ldd "$executable" 2>&1 | awk '/not found/')"

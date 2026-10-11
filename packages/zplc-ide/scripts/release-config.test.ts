@@ -3,6 +3,7 @@
 import { describe, expect, it } from 'bun:test';
 import { spawnSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
+import { RULE_FILE_NAME, RULE_TARGET } from '../../../scripts/release/udev-rules';
 import { EXPECTED_ARTIFACTS } from './smoke-desktop-builds';
 
 const read = (path: string) => readFileSync(new URL(path, import.meta.url), 'utf8');
@@ -22,8 +23,8 @@ type Builder = {
   };
   dmg: { sign?: boolean };
   win: Record<string, unknown>;
-  deb: Record<string, unknown>;
-  rpm: Record<string, unknown>;
+  deb: Record<string, unknown> & { fpm?: string[] };
+  rpm: Record<string, unknown> & { fpm?: string[] };
   nsis: { artifactName: string };
   portable: { artifactName: string };
 };
@@ -132,6 +133,26 @@ describe('Linux packages use electron-builder defaults and are installed in clea
     expect(refused.status).toBe(2);
     expect(refused.stderr).toContain('outside the CI container');
     expect(readFileSync(script, 'utf8')).not.toContain('--no-sandbox');
+  });
+});
+
+describe('the .deb and the .rpm install the udev rule of the boards (REL-013)', () => {
+  // fpm takes `source=destination` pairs. The source is relative to the Studio package: the file that beforePack writes.
+  const mapping = (fpm: string[] | undefined) => (fpm ?? []).filter((argument) => argument.includes('=') && !argument.startsWith('-'));
+  // a variable path: the hook is plain JavaScript with no declaration file
+  const hookPath = './before-pack.mjs';
+  const udevRulesCommand = async (projectDir: string) => ((await import(hookPath)) as { udevRulesCommand(dir: string): { command: string; args: string[] } }).udevRulesCommand(projectDir);
+
+  it.each(['deb', 'rpm'] as const)('maps the generated rule into the vendor rules folder of the %s', async (target) => {
+    const { args } = await udevRulesCommand('/repo/packages/zplc-ide');
+    const written = args[args.indexOf('--out') + 1]!.replace('/repo/packages/zplc-ide/', '');
+    expect(mapping(builder[target].fpm)).toEqual([`${written}=${RULE_TARGET}`]);
+    expect(RULE_TARGET).toBe(`/usr/lib/udev/rules.d/${RULE_FILE_NAME}`);
+  });
+
+  it('generates the rule from the identifier files, before the packages are made', async () => {
+    const { command, args } = await udevRulesCommand('/repo/packages/zplc-ide');
+    expect({ command, script: args[0] }).toEqual({ command: 'bun', script: '/repo/scripts/release/udev-rules.ts' });
   });
 });
 

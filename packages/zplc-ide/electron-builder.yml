@@ -124,8 +124,12 @@ appImage:
   artifactName: "${productName}-${version}-${os}-${arch}.${ext}"
 
 # No `depends` override: electron-builder's defaults track current Debian, Ubuntu and Fedora (REL-011).
+# The udev rule (REL-013) is written by scripts/release/udev-rules.ts in the beforePack hook, from the USB identifiers of
+# tools/hil/usb-ids.json, and fpm installs it in the vendor rules folder of the package: `source=destination`.
 deb:
   artifactName: "${productName}-${version}-${os}-${arch}.${ext}"
+  fpm:
+    - "build/linux/70-zplc-boards.rules=/usr/lib/udev/rules.d/70-zplc-boards.rules"
 
 rpm:
   artifactName: "${productName}-${version}-${os}-${arch}.${ext}"
@@ -134,3 +138,4 @@ rpm:
   fpm:
     - "--name"
     - "zplc-ide"
+    - "build/linux/70-zplc-boards.rules=/usr/lib/udev/rules.d/70-zplc-boards.rules"
