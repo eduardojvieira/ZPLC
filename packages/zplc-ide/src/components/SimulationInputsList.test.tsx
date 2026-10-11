@@ -32,8 +32,8 @@ describe('the simulation inputs list (IDE-024)', () => {
     expect(html).toContain('1234');
     expect(html).toContain('role="switch"');
     expect(html).toContain('aria-label="Value of Setpoint"');
-    // The checkbox is named by its label, which only a screen reader reads (a hidden label of the kit's Checkbox).
-    expect(html).toContain('>Force input Setpoint<');
+    // The checkbox is named by its label (aria-label of the kit's Checkbox with a hidden label).
+    expect(html).toContain('aria-label="Force input Setpoint"');
     expect(auditMarkup(html)).toEqual([]);
   });
 

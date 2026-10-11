@@ -5,7 +5,7 @@ import { typeahead, type TypeaheadState } from './typeahead';
 import { trapTab } from './focusTrap';
 import { placeOverlay } from './overlayPosition';
 
-describe('keyboard navigation of a composite widget (UX-001, UX-025)', () => {
+describe('keyboard navigation of a composite widget (UX-001, UX-025 stopgap)', () => {
   const horizontal = { orientation: 'horizontal' as const };
 
   it('moves along the axis of the widget and wraps at the ends', () => {
@@ -52,7 +52,7 @@ describe('keyboard navigation of a composite widget (UX-001, UX-025)', () => {
   });
 });
 
-describe('tabs keyboard behaviour (UX-001)', () => {
+describe('tabs keyboard behaviour (UX-001 stopgap)', () => {
   const tabs = [{}, { disabled: true }, {}];
 
   it('moves focus and selects with automatic activation', () => {
@@ -70,7 +70,7 @@ describe('tabs keyboard behaviour (UX-001)', () => {
   });
 });
 
-describe('type-ahead (UX-001)', () => {
+describe('type-ahead (UX-001 stopgap)', () => {
   const labels = ['Compile', 'Copy', 'Debug', 'Download', 'Disabled item'];
   const start: TypeaheadState = { buffer: '', at: 0 };
 
@@ -97,7 +97,7 @@ describe('type-ahead (UX-001)', () => {
   });
 });
 
-describe('focus trap (UX-025: no keyboard trap outside a dialog, no escape from one)', () => {
+describe('focus trap (UX-025 stopgap: no escape from a dialog, no trap outside one)', () => {
   it('wraps Tab from the last control to the first and Shift+Tab from the first to the last', () => {
     expect(trapTab(3, 2, false)).toEqual({ prevent: true, focus: 0 });
     expect(trapTab(3, 0, true)).toEqual({ prevent: true, focus: 2 });
@@ -115,7 +115,7 @@ describe('focus trap (UX-025: no keyboard trap outside a dialog, no escape from 
   });
 });
 
-describe('overlay placement (UX-001)', () => {
+describe('overlay placement (UX-001 stopgap)', () => {
   const viewport = { width: 1000, height: 700 };
   const size = { width: 200, height: 100 };
 

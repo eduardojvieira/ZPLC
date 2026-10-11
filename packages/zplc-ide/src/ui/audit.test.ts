@@ -3,7 +3,7 @@ import { auditMarkup, parseMarkup, textOf } from './audit';
 
 const rules = (html: string): string[] => auditMarkup(html).map((problem) => problem.rule);
 
-describe('structural accessibility audit of markup (UX-024, UX-026)', () => {
+describe('structural accessibility audit of markup (UX-024, UX-026 stopgap)', () => {
   it('parses elements, attributes and text, and reads names from content', () => {
     const tree = parseMarkup('<div><button type="button" aria-label="Close">x</button><p>Hello &amp; <b>bye</b></p></div>');
     const [div] = tree.children;

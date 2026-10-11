@@ -5,7 +5,7 @@
 import { useState } from 'react';
 
 import { inputAddressLabel, type DeclaredInput } from '../runtime/declaredInputs';
-import { Button, Checkbox, NumberField, Switch } from '../ui';
+import { Button, Checkbox, NumberField } from '../ui';
 
 export interface SimulationInputRow {
   input: DeclaredInput;
@@ -67,13 +67,11 @@ export function SimulationInputsList({ rows, unavailable, message, onSet, onForc
                     <td className="px-2 py-1 tabular-nums" data-input-value>{row.value === null ? '—' : typeof row.value === 'boolean' ? (row.value ? 'TRUE' : 'FALSE') : String(row.value)}</td>
                     <td className="px-2 py-1">
                       {row.input.type === 'BOOL' ? (
-                        <Switch
-                          label={`${row.input.name}: ${row.value === true ? 'TRUE' : 'FALSE'}`}
-                          hideLabel
-                          checked={row.value === true}
-                          disabled={disabled}
-                          onChange={() => onSet(row.input, row.value !== true)}
-                        />
+                        <Button
+                          variant="secondary" size="sm" role="switch" aria-checked={row.value === true} disabled={disabled}
+                          aria-label={`${row.input.name}: ${row.value === true ? 'TRUE' : 'FALSE'}`}
+                          onClick={() => onSet(row.input, row.value !== true)}
+                        >{row.value === true ? 'Set FALSE' : 'Set TRUE'}</Button>
                       ) : (
                         <NumberControl row={row} disabled={disabled} onSet={(value) => onSet(row.input, value)} />
                       )}

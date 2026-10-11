@@ -60,6 +60,11 @@
   --syntax-label: var(--color-accent-purple);
   --syntax-operator: var(--text-secondary);
   --syntax-bracket: var(--text-primary);
+  --debug-breakpoint: var(--color-accent-red);
+  --debug-breakpoint-edge: color-mix(in srgb, var(--debug-breakpoint) 65%, var(--text-primary));
+  --debug-breakpoint-line: color-mix(in srgb, var(--color-accent-red) 15%, transparent);
+  --debug-line-bg: color-mix(in srgb, var(--color-accent-red) 16%, transparent);
+  --debug-line-edge: var(--color-accent-red);
   --button-bg: var(--color-surface-700);
   --button-fg: var(--text-primary);
   --button-border: var(--color-surface-400);
@@ -190,6 +195,11 @@
   --syntax-label: var(--color-accent-purple);
   --syntax-operator: var(--text-secondary);
   --syntax-bracket: var(--text-primary);
+  --debug-breakpoint: var(--color-accent-red);
+  --debug-breakpoint-edge: color-mix(in srgb, var(--debug-breakpoint) 65%, var(--text-primary));
+  --debug-breakpoint-line: color-mix(in srgb, var(--color-accent-red) 15%, transparent);
+  --debug-line-bg: color-mix(in srgb, var(--color-accent-red) 16%, transparent);
+  --debug-line-edge: var(--color-accent-red);
   --button-bg: var(--color-surface-700);
   --button-fg: var(--text-primary);
   --button-border: var(--color-surface-400);
@@ -320,6 +330,11 @@
   --syntax-label: var(--color-accent-purple);
   --syntax-operator: var(--text-secondary);
   --syntax-bracket: var(--text-primary);
+  --debug-breakpoint: var(--color-accent-red);
+  --debug-breakpoint-edge: color-mix(in srgb, var(--debug-breakpoint) 65%, var(--text-primary));
+  --debug-breakpoint-line: color-mix(in srgb, var(--color-accent-red) 15%, transparent);
+  --debug-line-bg: color-mix(in srgb, var(--color-accent-red) 16%, transparent);
+  --debug-line-edge: var(--color-accent-red);
   --button-bg: var(--color-surface-700);
   --button-fg: var(--text-primary);
   --button-border: var(--color-surface-400);

@@ -11,7 +11,7 @@ const entries: Array<[string, string | null]> = Object.entries(UX_001_COMPONENTS
 const built = entries.filter((entry): entry is [string, string] => entry[1] !== null);
 
 describe('the component gallery (UX-004)', () => {
-  it('lists only components the kit exports, and names the ones UX-001 asks for that it does not have yet', () => {
+  it('lists only components the kit exports, and names the ones UX-001 asks for that it does not have yet (stopgap)', () => {
     for (const [, exportName] of built) expect({ exportName, exported: exportName in kit }).toEqual({ exportName, exported: true });
     for (const exportName of SUPPORTING_COMPONENTS) expect({ exportName, exported: exportName in kit }).toEqual({ exportName, exported: true });
     const missing = entries.filter(([, exportName]) => exportName === null).map(([name]) => name);

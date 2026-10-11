@@ -121,10 +121,12 @@ export interface CheckboxProps extends Omit<InputHTMLAttributes<HTMLInputElement
 export function Checkbox({ label, hideLabel = false, hint, className, ...rest }: CheckboxProps) {
   const hintId = useId();
   const describedBy = [rest['aria-describedby'], hint === undefined ? undefined : hintId].filter(Boolean).join(' ') || undefined;
+  // A hidden label is the input's own name (aria-label), so the box is named whatever the markup around it is.
+  const hidden = hideLabel && typeof label === 'string';
   return (
     <label className={cx('ui-check', className)}>
-      <input {...rest} aria-describedby={describedBy} type="checkbox" className="ui-check-box" />
-      <span className={cx('ui-check-label', hideLabel && 'ui-visually-hidden')}>{label}</span>
+      <input {...rest} aria-label={hidden ? label : rest['aria-label']} aria-describedby={describedBy} type="checkbox" className="ui-check-box" />
+      {!hidden && <span className={cx('ui-check-label', hideLabel && 'ui-visually-hidden')}>{label}</span>}
       {hint !== undefined && <span id={hintId} className="ui-hint">{hint}</span>}
     </label>
   );
@@ -134,10 +136,11 @@ export function Checkbox({ label, hideLabel = false, hint, className, ...rest }:
 export function Switch({ label, hideLabel = false, hint, className, ...rest }: CheckboxProps) {
   const hintId = useId();
   const describedBy = [rest['aria-describedby'], hint === undefined ? undefined : hintId].filter(Boolean).join(' ') || undefined;
+  const hidden = hideLabel && typeof label === 'string';
   return (
     <label className={cx('ui-check ui-switch', className)}>
-      <input {...rest} aria-describedby={describedBy} type="checkbox" role="switch" className="ui-switch-box" />
-      <span className={cx('ui-check-label', hideLabel && 'ui-visually-hidden')}>{label}</span>
+      <input {...rest} aria-label={hidden ? label : rest['aria-label']} aria-describedby={describedBy} type="checkbox" role="switch" className="ui-switch-box" />
+      {!hidden && <span className={cx('ui-check-label', hideLabel && 'ui-visually-hidden')}>{label}</span>}
       {hint !== undefined && <span id={hintId} className="ui-hint">{hint}</span>}
     </label>
   );

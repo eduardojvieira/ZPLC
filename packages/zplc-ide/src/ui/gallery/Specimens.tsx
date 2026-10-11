@@ -8,7 +8,7 @@ import { Inbox, Plus, Save, Trash2 } from 'lucide-react';
 import { ICON_SIZES } from '../../theme/tokens';
 import { SIGNAL_TONES } from '../../theme/signalTone';
 import {
-  Badge, Button, Checkbox, ContextMenu, DialogSurface, EmptyState, Field, IconButton, MenuButton, NumberField, Popover,
+  AlertDialog, Badge, Button, Checkbox, ContextMenu, Dialog, DialogSurface, EmptyState, Field, IconButton, MenuButton, NumberField, Popover,
   PropertyList, RangeField, Select, SignalChip, Spinner, StatusDot, Switch, TabList, TabPanel, TextField, Textarea, ToggleGroup, Toolbar, Tooltip,
 } from '..';
 
@@ -29,6 +29,10 @@ export function Specimens() {
   const [mode, setMode] = useState('compact');
   const [checked, setChecked] = useState(true);
   const [enabled, setEnabled] = useState(false);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [alertOpen, setAlertOpen] = useState(false);
+  const [lastAction, setLastAction] = useState('none');
+  const tabsId = useId();
   const dialogTitle = useId();
   const dialogDescription = useId();
   const alertTitle = useId();
@@ -96,13 +100,13 @@ export function Specimens() {
         <div style={{ width: '100%' }}>
           <TabList
             label="Result panels"
-            idPrefix="gallery"
+            idPrefix={tabsId}
             value={tab}
             onValueChange={setTab}
             tabs={[{ id: 'output', label: 'Output' }, { id: 'problems', label: 'Problems', badge: '2' }, { id: 'trace', label: 'Trace', disabled: true }]}
           />
-          <TabPanel id="output" idPrefix="gallery" selected={tab === 'output'}>Build output appears here.</TabPanel>
-          <TabPanel id="problems" idPrefix="gallery" selected={tab === 'problems'}>Two problems in Motor.st.</TabPanel>
+          <TabPanel id="output" idPrefix={tabsId} selected={tab === 'output'}>Build output appears here.</TabPanel>
+          <TabPanel id="problems" idPrefix={tabsId} selected={tab === 'problems'}>Two problems in Motor.st.</TabPanel>
         </div>
       </Specimen>
       <Specimen name="Toolbar">
@@ -134,15 +138,22 @@ export function Specimens() {
       </Specimen>
       <Specimen name="Tooltip">
         <Tooltip content="Save the active file" shortcut="Ctrl+S"><Button>Hover or focus me</Button></Tooltip>
-        <span role="tooltip" className="ui-tooltip" style={{ position: 'static' }}>Save the active file <kbd className="ui-tooltip-shortcut">Ctrl+S</kbd></span>
+        <span aria-hidden="true" className="ui-tooltip" style={{ position: 'static' }}>Save the active file <kbd className="ui-tooltip-shortcut">Ctrl+S</kbd></span>
       </Specimen>
       <Specimen name="Dialog">
-        <DialogSurface titleId={dialogTitle} descriptionId={dialogDescription} title="Recover unsaved changes" description="Studio did not close properly last time." size="sm" onClose={noop} footer={<><Button>Discard all</Button><Button variant="primary">Restore all</Button></>}>
+        <Button onClick={() => setDialogOpen(true)} data-open-dialog>Open dialog</Button>
+        <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)} title="Gallery dialog" description="A modal dialog: Tab stays inside, Escape closes, focus returns." size="sm" footer={<Button onClick={() => setDialogOpen(false)}>Done</Button>}>
+          <div style={{ padding: '12px 16px' }}><TextField label="Name" defaultValue="MainTask" /></div>
+        </Dialog>
+        <DialogSurface modal={false} titleId={dialogTitle} descriptionId={dialogDescription} title="Recover unsaved changes" description="Studio did not close properly last time." size="sm" onClose={noop} footer={<><Button>Discard all</Button><Button variant="primary">Restore all</Button></>}>
           <p style={{ padding: '12px 16px', margin: 0 }}>Two files had changes that were not saved.</p>
         </DialogSurface>
       </Specimen>
       <Specimen name="Alert dialog">
-        <DialogSurface role="alertdialog" titleId={alertTitle} descriptionId={alertDescription} title="Discard changes?" description="Three files have changes that are not saved." size="sm" footer={<><Button>Keep editing</Button><Button variant="danger">Discard changes</Button></>}>
+        <Button variant="danger" onClick={() => setAlertOpen(true)} data-open-alert>Open alert dialog</Button>
+        <AlertDialog open={alertOpen} title="Discard the draft?" description="The draft is deleted and cannot be restored." actionLabel="Discard draft" cancelLabel="Keep draft" destructive onAction={() => { setLastAction('discard'); setAlertOpen(false); }} onCancel={() => { setLastAction('keep'); setAlertOpen(false); }} />
+        <output data-alert-result className="ui-hint">{`Last choice: ${lastAction}`}</output>
+        <DialogSurface modal={false} role="alertdialog" titleId={alertTitle} descriptionId={alertDescription} title="Discard changes?" description="Three files have changes that are not saved." size="sm" footer={<><Button>Keep editing</Button><Button variant="danger">Discard changes</Button></>}>
           <p style={{ padding: '12px 16px', margin: 0 }}>Focus starts on Keep editing, so Enter never discards by accident.</p>
         </DialogSurface>
       </Specimen>

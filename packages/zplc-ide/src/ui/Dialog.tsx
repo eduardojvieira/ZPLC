@@ -110,6 +110,8 @@ export interface DialogSurfaceProps {
   description?: ReactNode;
   size?: DialogSize;
   className?: string;
+  /** False for a preview shown in place (the gallery): it is then not announced as a modal over the page. */
+  modal?: boolean;
   /** Renders the close button when given. */
   onClose?: () => void;
   footer?: ReactNode;
@@ -117,12 +119,12 @@ export interface DialogSurfaceProps {
 }
 
 /** The markup of a dialog with none of its behaviour, so the gallery can show it in place without taking focus. */
-export function DialogSurface({ surfaceRef, role = 'dialog', titleId, descriptionId, title, description, size = 'md', className, onClose, footer, children }: DialogSurfaceProps) {
+export function DialogSurface({ surfaceRef, role = 'dialog', titleId, descriptionId, title, description, size = 'md', className, modal = true, onClose, footer, children }: DialogSurfaceProps) {
   return (
     <div
       ref={surfaceRef}
       role={role}
-      aria-modal="true"
+      aria-modal={modal ? 'true' : undefined}
       aria-labelledby={titleId}
       aria-describedby={description === undefined ? undefined : descriptionId}
       tabIndex={-1}
