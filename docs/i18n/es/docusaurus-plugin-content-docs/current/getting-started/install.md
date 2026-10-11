@@ -208,7 +208,10 @@ Studio nunca se actualiza solo. Para saber si existe una versión más reciente,
 active **Check for a newer release when Studio starts** en Preferences, o presione
 **Check now**. La comprobación está desactivada por defecto; consulta las versiones
 de GitHub de este proyecto para obtener la última publicada, no envía nada sobre
-usted y muestra una versión y un enlace. No descarga ni instala nada.
+usted y muestra una versión y un enlace. No descarga ni instala nada. Cuando existe
+una versión más reciente, Studio muestra un aviso con su versión, la dirección de la
+versión y el paso para su sistema; descártelo y volverá solo para una versión aún
+más reciente. Si no hay conexión, o la respuesta no se puede leer, no muestra nada.
 
 Para actualizar, descargue el archivo nuevo y verifíquelo como se indicó, y luego
 instálelo sobre el anterior (instalador de Windows; en macOS, reemplace la

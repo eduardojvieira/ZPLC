@@ -204,7 +204,10 @@ Studio never updates itself. To find out whether a newer release exists, turn on
 **Check for a newer release when Studio starts** in Preferences, or press
 **Check now**. The check is off by default; it asks the GitHub releases of this
 project for the latest published release, sends nothing about you, and shows a
-version and a link. It downloads and installs nothing.
+version and a link. It downloads and installs nothing. When a newer release
+exists, Studio shows a notice with its version, the address of the release and
+the step for your system; dismiss it and it comes back only for a still newer
+release. When you are offline, or the answer cannot be read, it shows nothing.
 
 To update, download the new file and verify it as above, then install it over the
 old one (Windows setup, macOS: replace the app in Applications; Linux: install
