@@ -63,6 +63,8 @@ class DocsPageValidatorTests(unittest.TestCase):
             "numbered list item": "3. Press Run",
             "closing code fence": "```bash\nbun test\n```",
             "admonition end": ":::note\nRead this.\n:::",
+            "image": "![The Build button](./build.png)",
+            "image with a title": '![The Build button](./build.png "Build")',
         }
         for name, ending in endings.items():
             with self.subTest(name):
@@ -76,6 +78,8 @@ class DocsPageValidatorTests(unittest.TestCase):
             "thematic break": "---",
             "colon": "The steps are:",
             "open code fence": "```bash\nbun test",
+            "header of a table with no row": "| Board | Flash |\n|---|---|",
+            "image without a closing parenthesis": "![The Build button](./build.png",
         }
         for name, ending in endings.items():
             with self.subTest(name):
@@ -94,6 +98,12 @@ class DocsPageValidatorTests(unittest.TestCase):
         self.assertEqual(len(errors), 1)
         self.assertIn("guide/orphan", errors[0])
         self.assertIn("sidebar", errors[0])
+
+    def test_page_that_only_a_comment_of_the_sidebar_names_fails(self) -> None:
+        sidebar = "module.exports = { docsSidebar: [\n  'guide/index',\n  // 'guide/orphan',\n  /* 'guide/second' */\n] };\n"
+        pages = {"guide/index.md": GOOD, "guide/second.md": GOOD, "guide/orphan.md": GOOD}
+        errors = self.run_validator(pages, sidebar=sidebar)
+        self.assertEqual(sorted(error.split(":")[0] for error in errors), ["guide/orphan.md", "guide/second.md"])
 
     def test_front_matter_id_names_the_sidebar_entry(self) -> None:
         pages = {"guide/index.md": GOOD, "guide/second.md": "---\nid: renamed\n---\n\nComplete.\n"}

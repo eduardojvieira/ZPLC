@@ -1,7 +1,7 @@
 // REL-034, REL-019: what an installer carries, checked on the unpacked package that electron-builder made. The
 // package is the artifact; the checks read it and never the build configuration.
 import { afterAll, describe, expect, test } from 'bun:test';
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { checkPackagedContent, encodings, readAsarFile } from './packaged-content';
@@ -92,6 +92,44 @@ describe('the encodings of a string in a minified bundle (REL-034)', () => {
     expect(forms).toContain('"a \\"b\\" \'c\'\\nd\\\\e`f${g}"');
     expect(forms).toContain("'a \"b\" \\'c\\'\\nd\\\\e`f${g}'");
     expect(forms).toContain('`a "b" \'c\'\nd\\\\e\\`f\\${g}`');
+  });
+});
+
+describe('the Linux desktop identity of the unpacked package (REL-011)', () => {
+  /** A Linux unpacked package: the manifest of the archive replaced, Electron's chrome-sandbox and the executable beside the resources. */
+  function linux(manifest: string, executable: string) {
+    const made = fixture();
+    const archive = join(made.resources, 'app.asar');
+    const original = readFileSync(archive);
+    const files: Record<string, string> = {};
+    for (const path of listAsarFiles(original)) files[path] = Buffer.from(readAsarFile(original, path)).toString('utf8');
+    writeFileSync(archive, buildAsar({ ...files, 'package.json': manifest }));
+    const root = join(made.resources, '..');
+    writeFileSync(join(root, 'chrome-sandbox'), 'sandbox');
+    writeFileSync(join(root, executable), 'executable');
+    return made;
+  }
+
+  test('passes when the desktopName of the packaged manifest is the executable of the package', () => {
+    const { repo, resources } = linux('{"name":"@zplc/ide","desktopName":"zplc-ide"}', 'zplc-ide');
+    expect(checkPackagedContent({ resources, repoRoot: repo })).toEqual([]);
+  });
+
+  test('accepts the form that names the .desktop file of the entry', () => {
+    const { repo, resources } = linux('{"name":"@zplc/ide","desktopName":"zplc-ide.desktop"}', 'zplc-ide');
+    expect(checkPackagedContent({ resources, repoRoot: repo })).toEqual([]);
+  });
+
+  test('names a package whose desktop entry matches no executable, and one with no desktopName', () => {
+    const wrong = linux('{"name":"@zplc/ide","desktopName":"zplc-studio"}', 'zplc-ide');
+    expect(checkPackagedContent({ resources: wrong.resources, repoRoot: wrong.repo })).toContain('desktopName zplc-studio of app.asar is not the executable of the unpacked package');
+    const none = linux('{"name":"@zplc/ide"}', 'zplc-ide');
+    expect(checkPackagedContent({ resources: none.resources, repoRoot: none.repo })).toContain('the package.json of app.asar has no desktopName: the desktop entry names no executable');
+  });
+
+  test('asks nothing of a package that is not a Linux one', () => {
+    const { repo, resources } = fixture();
+    expect(checkPackagedContent({ resources, repoRoot: repo })).toEqual([]);
   });
 });
 

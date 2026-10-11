@@ -1,0 +1,8 @@
+ZPLC Runtime v2.0.0-rc.3
+Commit:         5ebf45775faaccf2730e543b27b1eee391742abc
+Dirty:          no
+Board:          posix
+Bytecode ABI:   1.0
+Contract draft: 4
+Options hash:   2e02dd07
+Options:        build_type=Release

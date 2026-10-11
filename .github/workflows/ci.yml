@@ -92,10 +92,30 @@ jobs:
       - name: Typecheck every TypeScript program
         run: bun run typecheck
 
+      # IDE-025: tools/wasm-core builds the core of the runtime as WebAssembly with clang and wasm-ld, and the IDE tests run the
+      # conformance cases on it with the loader's verifier. Without the tools those tests fail here; they never skip.
+      - name: Install the WebAssembly toolchain
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes --no-install-recommends clang lld
+
       - name: Build native POSIX simulator for IDE scenarios
         run: |
           cmake -S firmware/lib/zplc_core -B "${RUNNER_TEMP}/zplc-native-sim-build"
           cmake --build "${RUNNER_TEMP}/zplc-native-sim-build" --target zplc_runtime --parallel
+
+      # HIL-001, HIL-004, HIL-007, HIL-008, HIL-009, HIL-012, HIL-017: the Python tests of tools/hil (every device script
+      # exits non-zero when a check fails, the chain command and the run record, the CRC32 cross check of the C loader
+      # and the TypeScript assembler) and the tests of packages/zplc-hil run on fake devices and on the native runtime.
+      # They open no serial port and are not hardware evidence.
+      - name: Test the HIL tools and the HIL package
+        env:
+          ZPLC_NATIVE_SIM_BIN: ${{ runner.temp }}/zplc-native-sim-build/zplc_runtime
+        run: |
+          test -x "$ZPLC_NATIVE_SIM_BIN"
+          python3 -B -m unittest discover -s tools/hil -p 'test_hil_*.py'
+          python3 -B tools/test_crc32_cross.py
+          bun test packages/zplc-hil
 
       - name: Build, test, and lint IDE
         env:
@@ -155,6 +175,16 @@ jobs:
         run: |
           test -x "$ZPLC_NATIVE_SIM_BIN"
           xvfb-run --auto-servernum bun run --cwd packages/zplc-ide smoke:desktop
+
+      # VF-008, VF-009: the journeys drive the real Electron development host on a temporary folder, through input
+      # events only. A journey that fails, or a listed known gap that now passes, fails the job. The same run is made
+      # on macOS and Windows by nightly-quality.yml.
+      - name: Run the end-to-end journeys
+        env:
+          ZPLC_NATIVE_SIM_BIN: ${{ runner.temp }}/zplc-native-sim-build/zplc_runtime
+        run: |
+          test -x "$ZPLC_NATIVE_SIM_BIN"
+          xvfb-run --auto-servernum bun run --cwd packages/zplc-ide smoke:journeys
 
   host-core:
     name: C99 host core
@@ -243,6 +273,22 @@ jobs:
       - name: Test the firmware test report tool
         run: python3 zplc/tools/firmware-test/test_fwtest.py
 
+      # VF-026: the Zephyr checkout, the SDK and the pip downloads are kept between runs under a key of the manifest, so
+      # that a run restores them and `west update` only fetches what changed. A restored workspace is never trusted: the
+      # set-up below still checks the revision of zephyr and the SDK toolchains, and installs the SDK only when it is absent.
+      - name: Restore the Zephyr workspace, the SDK and the pip cache
+        uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684 # v4.2.3
+        with:
+          path: |
+            ${{ github.workspace }}/.west
+            ${{ github.workspace }}/zephyr
+            ${{ github.workspace }}/modules
+            ${{ github.workspace }}/bootloader
+            ${{ github.workspace }}/tools
+            ${{ runner.temp }}/zephyr-sdk-1.0.1
+            ~/.cache/pip
+          key: zephyr-${{ runner.os }}-${{ hashFiles('zplc/west.yml') }}-sdk-1.0.1
+
       - name: Setup pinned Zephyr workspace
         shell: bash
         env:
@@ -254,12 +300,16 @@ jobs:
           VENV_DIR="${RUNNER_TEMP}/zplc-zephyr-venv"
           python3 -m venv "${VENV_DIR}"
           "${VENV_DIR}/bin/pip" install west==1.5.0
-          "${VENV_DIR}/bin/west" init -l "${GITHUB_WORKSPACE}/zplc"
+          if [ ! -d "${GITHUB_WORKSPACE}/.west" ]; then
+            "${VENV_DIR}/bin/west" init -l "${GITHUB_WORKSPACE}/zplc"
+          fi
           "${VENV_DIR}/bin/west" update
           test "$(git -C "${GITHUB_WORKSPACE}/zephyr" rev-parse HEAD)" = "dccb09599635bdff17633fa7e9dab014b91dce90"
           "${VENV_DIR}/bin/west" zephyr-export
           "${VENV_DIR}/bin/west" packages pip --install --ignore-venv-check
-          "${VENV_DIR}/bin/west" sdk install --version 1.0.1 --install-dir "${ZEPHYR_SDK_INSTALL_DIR}" --gnu-toolchains arm-zephyr-eabi xtensa-espressif_esp32s3_zephyr-elf --personal-access-token "${ZPLC_WEST_SDK_GITHUB_TOKEN}"
+          if [ ! -d "${ZEPHYR_SDK_INSTALL_DIR}/gnu/arm-zephyr-eabi" ] || [ ! -d "${ZEPHYR_SDK_INSTALL_DIR}/gnu/xtensa-espressif_esp32s3_zephyr-elf" ]; then
+            "${VENV_DIR}/bin/west" sdk install --version 1.0.1 --install-dir "${ZEPHYR_SDK_INSTALL_DIR}" --gnu-toolchains arm-zephyr-eabi xtensa-espressif_esp32s3_zephyr-elf --personal-access-token "${ZPLC_WEST_SDK_GITHUB_TOKEN}"
+          fi
           test -d "${ZEPHYR_SDK_INSTALL_DIR}/gnu/arm-zephyr-eabi"
           test -d "${ZEPHYR_SDK_INSTALL_DIR}/gnu/xtensa-espressif_esp32s3_zephyr-elf"
           echo "${VENV_DIR}/bin" >> "${GITHUB_PATH}"
@@ -329,6 +379,22 @@ jobs:
         with:
           python-version: "3.12"
 
+      # VF-026: the Zephyr checkout, the SDK and the pip downloads are kept between runs under a key of the manifest, so
+      # that a run restores them and `west update` only fetches what changed. A restored workspace is never trusted: the
+      # set-up below still checks the revision of zephyr and the SDK toolchains, and installs the SDK only when it is absent.
+      - name: Restore the Zephyr workspace, the SDK and the pip cache
+        uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684 # v4.2.3
+        with:
+          path: |
+            ${{ github.workspace }}/.west
+            ${{ github.workspace }}/zephyr
+            ${{ github.workspace }}/modules
+            ${{ github.workspace }}/bootloader
+            ${{ github.workspace }}/tools
+            ${{ runner.temp }}/zephyr-sdk-1.0.1
+            ~/.cache/pip
+          key: zephyr-${{ runner.os }}-${{ hashFiles('zplc/west.yml') }}-sdk-1.0.1
+
       - name: Setup pinned Zephyr workspace
         shell: bash
         env:
@@ -340,12 +406,16 @@ jobs:
           VENV_DIR="${RUNNER_TEMP}/zplc-zephyr-venv"
           python3 -m venv "${VENV_DIR}"
           "${VENV_DIR}/bin/pip" install west==1.5.0
-          "${VENV_DIR}/bin/west" init -l "${GITHUB_WORKSPACE}/zplc"
+          if [ ! -d "${GITHUB_WORKSPACE}/.west" ]; then
+            "${VENV_DIR}/bin/west" init -l "${GITHUB_WORKSPACE}/zplc"
+          fi
           "${VENV_DIR}/bin/west" update
           test "$(git -C "${GITHUB_WORKSPACE}/zephyr" rev-parse HEAD)" = "dccb09599635bdff17633fa7e9dab014b91dce90"
           "${VENV_DIR}/bin/west" zephyr-export
           "${VENV_DIR}/bin/west" packages pip --install --ignore-venv-check
-          "${VENV_DIR}/bin/west" sdk install --version 1.0.1 --install-dir "${ZEPHYR_SDK_INSTALL_DIR}" --gnu-toolchains arm-zephyr-eabi xtensa-espressif_esp32s3_zephyr-elf --personal-access-token "${ZPLC_WEST_SDK_GITHUB_TOKEN}"
+          if [ ! -d "${ZEPHYR_SDK_INSTALL_DIR}/gnu/arm-zephyr-eabi" ] || [ ! -d "${ZEPHYR_SDK_INSTALL_DIR}/gnu/xtensa-espressif_esp32s3_zephyr-elf" ]; then
+            "${VENV_DIR}/bin/west" sdk install --version 1.0.1 --install-dir "${ZEPHYR_SDK_INSTALL_DIR}" --gnu-toolchains arm-zephyr-eabi xtensa-espressif_esp32s3_zephyr-elf --personal-access-token "${ZPLC_WEST_SDK_GITHUB_TOKEN}"
+          fi
           test -d "${ZEPHYR_SDK_INSTALL_DIR}/gnu/arm-zephyr-eabi"
           test -d "${ZEPHYR_SDK_INSTALL_DIR}/gnu/xtensa-espressif_esp32s3_zephyr-elf"
           echo "${VENV_DIR}/bin" >> "${GITHUB_PATH}"
@@ -396,6 +466,16 @@ jobs:
           path: ${{ runner.temp }}/zplc-${{ matrix.id }}/zephyr/zephyr.*
           if-no-files-found: error
 
+      # VF-025: the report of every board is a file of the run as well as a job summary, also when the budget is exceeded.
+      - name: Keep the flash and RAM report
+        if: ${{ always() }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: size-${{ matrix.id }}
+          path: ${{ runner.temp }}/size-${{ matrix.id }}.txt
+          if-no-files-found: ignore
+          retention-days: 30
+
   docs-and-truth:
     name: Docs and truth sources
     runs-on: ubuntu-latest
@@ -421,6 +501,7 @@ jobs:
           python3 tools/hil/audit_specs_scope.py
           python3 tools/hil/validate_release_evidence.py
           python3 tools/hil/validate_supported_boards.py
+          python3 tools/hil/validate_hil_trace_profile.py
           python3 tools/hil/test_validate_supported_boards.py
           python3 tools/hil/test_board_io_description.py
           python3 tools/hil/test_io_table_generator.py

@@ -2,9 +2,9 @@
 // and architecture, built with `bun build --compile`, so that they need no JavaScript runtime and no checkout.
 import { describe, expect, test } from 'bun:test';
 import { spawnSync } from 'node:child_process';
-import { existsSync, mkdtempSync, readFileSync, rmSync, statSync } from 'node:fs';
+import { cpSync, existsSync, mkdtempSync, readFileSync, rmSync, statSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { delimiter, join } from 'node:path';
 import { TARGETS, TOOLS, binaryName, buildCommand, hostTarget } from './binaries';
 
 const root = join(import.meta.dir, '..', '..');
@@ -53,7 +53,7 @@ describe('the release binaries (REL-026)', () => {
   });
 });
 
-describe('the standalone binaries of this machine run without a JavaScript runtime (REL-026)', () => {
+describe('the standalone binaries of this machine run without a JavaScript runtime (REL-026, IDE-026)', () => {
   const host = hostTarget();
   const output = mkdtempSync(join(tmpdir(), 'zplc-binaries-'));
   const run = (args: string[]) => spawnSync('bun', ['scripts/release/binaries.ts', ...args], { cwd: root, encoding: 'utf8' });
@@ -69,8 +69,27 @@ describe('the standalone binaries of this machine run without a JavaScript runti
     expect(built.stdout).toContain(`zplc-cli ${version}`);
     expect(built.stdout).toMatch(/compile passed|"ok":true/);
     expect(built.stdout).toMatch(/tools\/list: \d+ tools/);
-    rmSync(output, { recursive: true, force: true });
-  });
+
+    // IDE-026: the machine of the person has neither Bun nor Node on its PATH and no checkout around the executable, only a
+    // project in a folder of its own. The executable is the one just built; nothing of this repository is read by it.
+    const bare = mkdtempSync(join(tmpdir(), 'zplc-no-runtime-'));
+    try {
+      const path = (process.env.PATH ?? '').split(delimiter)
+        .filter((directory) => directory !== '' && !['bun', 'bun.exe', 'node', 'node.exe'].some((name) => existsSync(join(directory, name))))
+        .join(delimiter);
+      cpSync(join(root, 'packages/zplc-ide/projects/blinky'), join(bare, 'blinky'), { recursive: true });
+      const cli = join(output, binaryName(TOOLS[0]!, version, host!));
+      const environment = { ...process.env, PATH: path };
+      const reported = spawnSync(cli, ['--version'], { cwd: bare, env: environment, encoding: 'utf8' });
+      expect(reported.stdout.trim()).toBe(`zplc-cli ${version}`);
+      const compiled = spawnSync(cli, ['compile', join(bare, 'blinky'), '--json'], { cwd: bare, env: environment, encoding: 'utf8' });
+      expect(compiled.status, `${compiled.stdout}${compiled.stderr}`).toBe(0);
+      expect((JSON.parse(compiled.stdout.trim().split('\n').at(-1)!) as { ok: boolean }).ok).toBe(true);
+    } finally {
+      rmSync(bare, { recursive: true, force: true });
+      rmSync(output, { recursive: true, force: true });
+    }
+  }, 180_000);
 
   test('refuse a version that is not the one of the root package.json, so a file name cannot lie', () => {
     const refused = run(['--targets', 'host', '--out', join(output, 'x'), '--version', '9.9.9']);

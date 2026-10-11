@@ -1,25 +1,61 @@
 {
   "name": "LDSeries",
   "variables": {
-    "outputs": [
-      { "name": "A", "type": "BOOL", "address": "%Q0.0" },
-      { "name": "B", "type": "BOOL", "address": "%Q0.1" },
-      { "name": "Q", "type": "BOOL", "address": "%Q0.2" }
+    "local": [],
+    "inputs": [
+      {
+        "name": "A",
+        "type": "BOOL",
+        "address": "%IX0.0"
+      },
+      {
+        "name": "B",
+        "type": "BOOL",
+        "address": "%IX0.1"
+      }
     ],
-    "local": []
+    "outputs": [
+      {
+        "name": "Q",
+        "type": "BOOL",
+        "address": "%QX0.0"
+      }
+    ]
   },
   "rungs": [
     {
+      "id": "rung1",
       "number": 1,
-      "grid": [
-        [
-          { "element": { "type": "left_rail" } },
-          { "element": { "type": "contact_no", "variable": "A" } },
-          { "element": { "type": "contact_no", "variable": "B" } },
-          { "element": { "type": "coil", "variable": "Q" } },
-          { "element": { "type": "right_rail" } }
-        ]
-      ]
+      "elements": [
+        {
+          "id": "a",
+          "type": "contact_no",
+          "position": {
+            "x": 50,
+            "y": 0
+          },
+          "variable": "A"
+        },
+        {
+          "id": "b",
+          "type": "contact_no",
+          "position": {
+            "x": 150,
+            "y": 0
+          },
+          "variable": "B"
+        },
+        {
+          "id": "k1",
+          "type": "coil",
+          "position": {
+            "x": 250,
+            "y": 0
+          },
+          "variable": "Q"
+        }
+      ],
+      "connections": []
     }
   ]
 }

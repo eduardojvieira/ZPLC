@@ -1,92 +1,24 @@
-from zplc_tester import ZPLCTester
-import struct
+"""Float arithmetic: ADDF, SUBF, MULF, DIVF, NEGF and ABSF.
 
+A table of opcode cases (opcode_cases.py); it exits non-zero when a case fails (HIL-004).
+Needs a firmware image built with CONFIG_ZPLC_HIL_DEBUG=y for the trace frames; exits 77 (skipped) without it.
+"""
+from opcode_cases import *  # noqa: F401,F403
+from zplc_tester import ZPLCTester, cli
 
-def f2h(f):
-    """Float to hex (IEEE754 32-bit)"""
-    return struct.unpack("<I", struct.pack("<f", f))[0] & 0xFFFFFFFF
+OP = ZPLCTester.OP
+CASES = [
+    dict(name='ADDF 1.5+2.5', code=[OP['PUSH32']] + pushf(1.5) + [OP['PUSH32']] + pushf(2.5) + [OP['ADDF'], OP['HALT']], real=4.0),
+    dict(name='SUBF 5.0-2.5', code=[OP['PUSH32']] + pushf(5.0) + [OP['PUSH32']] + pushf(2.5) + [OP['SUBF'], OP['HALT']], real=2.5),
+    dict(name='MULF 2.0*3.5', code=[OP['PUSH32']] + pushf(2.0) + [OP['PUSH32']] + pushf(3.5) + [OP['MULF'], OP['HALT']], real=7.0),
+    dict(name='DIVF 10.0/4.0', code=[OP['PUSH32']] + pushf(10.0) + [OP['PUSH32']] + pushf(4.0) + [OP['DIVF'], OP['HALT']], real=2.5),
+    dict(name='NEGF 1.23', code=[OP['PUSH32']] + pushf(1.23) + [OP['NEGF'], OP['HALT']], real=-1.23),
+    dict(name='ABSF -1.23', code=[OP['PUSH32']] + pushf(-1.23) + [OP['ABSF'], OP['HALT']], real=1.23),
+]
 
-
-def h2f(h):
-    """Hex to float (IEEE754 32-bit)"""
-    if h is None:
-        return 0.0
-    return struct.unpack("<f", struct.pack("<I", h & 0xFFFFFFFF))[0]
-
-
-def test_float_math():
-    tester = ZPLCTester()
-    OP = tester.OP
-
-    print("\n--- Running Float Arithmetic Tests ---")
-
-    # 1. ADDF: 1.5 + 2.5 = 4.0
-    print("Test ADDF (1.5 + 2.5)...", end="", flush=True)
-    b1 = list(struct.pack("<f", 1.5))
-    b2 = list(struct.pack("<f", 2.5))
-    bytecode = [OP["PUSH32"]] + b1 + [OP["PUSH32"]] + b2 + [OP["ADDF"], OP["HALT"]]
-    tos = tester.get_last_tos(tester.run_bytecode(bytecode))
-    if tos == f2h(4.0):
-        print("PASS")
-    else:
-        print(f"FAIL (tos={h2f(tos) if tos else None})")
-
-    # 2. SUBF: 5.0 - 2.5 = 2.5
-    print("Test SUBF (5.0 - 2.5)...", end="", flush=True)
-    b1 = list(struct.pack("<f", 5.0))
-    b2 = list(struct.pack("<f", 2.5))
-    bytecode = [OP["PUSH32"]] + b1 + [OP["PUSH32"]] + b2 + [OP["SUBF"], OP["HALT"]]
-    tos = tester.get_last_tos(tester.run_bytecode(bytecode))
-    if tos == f2h(2.5):
-        print("PASS")
-    else:
-        print(f"FAIL")
-
-    # 3. MULF: 2.0 * 3.5 = 7.0
-    print("Test MULF (2.0 * 3.5)...", end="", flush=True)
-    b1 = list(struct.pack("<f", 2.0))
-    b2 = list(struct.pack("<f", 3.5))
-    bytecode = [OP["PUSH32"]] + b1 + [OP["PUSH32"]] + b2 + [OP["MULF"], OP["HALT"]]
-    tos = tester.get_last_tos(tester.run_bytecode(bytecode))
-    if tos == f2h(7.0):
-        print("PASS")
-    else:
-        print(f"FAIL")
-
-    # 4. DIVF: 10.0 / 4.0 = 2.5
-    print("Test DIVF (10.0 / 4.0)...", end="", flush=True)
-    b1 = list(struct.pack("<f", 10.0))
-    b2 = list(struct.pack("<f", 4.0))
-    bytecode = [OP["PUSH32"]] + b1 + [OP["PUSH32"]] + b2 + [OP["DIVF"], OP["HALT"]]
-    tos = tester.get_last_tos(tester.run_bytecode(bytecode))
-    if tos == f2h(2.5):
-        print("PASS")
-    else:
-        print(f"FAIL")
-
-    # 5. NEGF: 1.23 -> -1.23
-    print("Test NEGF (1.23 -> -1.23)...", end="", flush=True)
-    val = 1.23
-    bytecode = [OP["PUSH32"]] + list(struct.pack("<f", val)) + [OP["NEGF"], OP["HALT"]]
-    tos = tester.get_last_tos(tester.run_bytecode(bytecode))
-    # Usamos round para evitar problemas de precisión float
-    if round(h2f(tos), 5) == round(-val, 5):
-        print("PASS")
-    else:
-        print(f"FAIL (tos={h2f(tos)})")
-
-    # 6. ABSF: -1.23 -> 1.23
-    print("Test ABSF (-1.23 -> 1.23)...", end="", flush=True)
-    val = -1.23
-    bytecode = [OP["PUSH32"]] + list(struct.pack("<f", val)) + [OP["ABSF"], OP["HALT"]]
-    tos = tester.get_last_tos(tester.run_bytecode(bytecode))
-    if round(h2f(tos), 5) == round(abs(val), 5):
-        print("PASS")
-    else:
-        print(f"FAIL")
-
-    tester.close()
+def test_float_math(tester=None):
+    return run(tester or ZPLCTester(), CASES)
 
 
 if __name__ == "__main__":
-    test_float_math()
+    cli(test_float_math)

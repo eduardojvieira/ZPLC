@@ -10,6 +10,9 @@
     { "pattern": "scripts/release/*.test.ts", "job": "typescript", "command": "bun test ./scripts/release" },
     { "pattern": "tools/contract/test_contract.py", "job": "docs-and-truth", "command": "bun run contract:check" },
     { "pattern": "tools/contract/*.test.ts", "job": "docs-and-truth", "command": "bun run contract:check" },
+    { "pattern": "tools/hil/test_hil_*.py", "job": "typescript", "command": "python3 -B -m unittest discover -s tools/hil -p 'test_hil_*.py'" },
+    { "pattern": "tools/test_crc32_cross.py", "job": "typescript", "command": "python3 -B tools/test_crc32_cross.py" },
+    { "pattern": "packages/zplc-hil/tests/**/*.test.ts", "job": "typescript", "command": "bun test packages/zplc-hil" },
     { "pattern": "tools/hil/test_validate_release_evidence.py", "job": "docs-and-truth", "command": "python3 tools/hil/test_validate_release_evidence.py" },
     { "pattern": "tools/hil/test_validate_supported_boards.py", "job": "docs-and-truth", "command": "python3 tools/hil/test_validate_supported_boards.py" },
     { "pattern": "tools/hil/test_board_io_description.py", "job": "docs-and-truth", "command": "python3 tools/hil/test_board_io_description.py" },
@@ -25,9 +28,7 @@
     { "pattern": "firmware/tests/app_shell_identity/test_*.py", "job": "zephyr-twister", "command": "firmware/tests/app_shell_identity/test_app_shell_identity.py" }
   ],
   "notRunInCi": [
-    { "pattern": "packages/zplc-hil/tests/**/*.test.ts", "requirement": "HIL-001", "reason": "case tables for a board runner; the package has no test script and the files contain no tests that run" },
-    { "pattern": "tools/hil/test_*.py", "requirement": "HIL-004", "reason": "device scripts that need a connected board; each must exit with a failure status or be listed as a bench utility" },
-    { "pattern": "tools/test_crc32_cross.py", "requirement": "HIL-017", "reason": "compares a library with itself; it must compare the C implementation with the TypeScript one" },
+    { "pattern": "tools/hil/test_*.py", "requirement": "HIL-004", "reason": "device scripts that need a connected board, which CI cannot run; tools/hil/test_hil_scripts.py runs each against fake devices and shows that it exits non-zero when a check fails" },
     { "pattern": "firmware/app/tests/*.c", "requirement": "VF-022", "reason": "host test that needs nanopb and the protobuf files of a Zephyr board build; tools/firmware-test/run.sh app runs it on a developer machine, but no CI job builds a board and then runs it yet" }
   ]
 }

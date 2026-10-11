@@ -1,4 +1,5 @@
-import { HILTestCase } from '../../src/runner';
+import type { HILTestCase } from '../../src/runner';
+import { describeCases } from '../cases';
 
 export const arithmeticTests: HILTestCase[] = [
   {
@@ -139,3 +140,5 @@ export const arithmeticTests: HILTestCase[] = [
     ]
   }
 ];
+
+describeCases('HIL cases: arithmetic opcodes (HIL-001)', arithmeticTests);

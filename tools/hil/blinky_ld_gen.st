@@ -7,7 +7,7 @@ VAR
 END_VAR
 
 VAR_OUTPUT
-    LED_Output AT %Q0.0 : BOOL; (* Physical LED output *)
+    LED_Output AT %QX0.0 : BOOL; (* Physical LED output *)
 END_VAR
 
 (* LD Execution - Auto-generated *)

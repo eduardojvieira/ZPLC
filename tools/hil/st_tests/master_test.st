@@ -6,10 +6,10 @@ VAR
     trig_r : R_TRIG;
     counter : CTU;
 
-    res_rs AT %Q0.0 : BOOL;
-    res_sr AT %Q0.1 : BOOL;
-    res_trig AT %Q0.2 : BOOL;
-    res_ctu AT %Q0.3 : BOOL;
+    res_rs AT %QX0.0 : BOOL;
+    res_sr AT %QX0.1 : BOOL;
+    res_trig AT %QX0.2 : BOOL;
+    res_ctu AT %QX0.3 : BOOL;
 END_VAR
 
 test_cycle := test_cycle + 1;

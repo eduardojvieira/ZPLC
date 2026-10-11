@@ -1,76 +1,47 @@
-import os
-import sys
+"""Compile every language fixture and every reference project source with the repository compiler (a host check, no device).
+
+The artifacts go to a temporary directory that is removed when the run ends. Exits 1 when any source does not compile (HIL-004, HIL-006).
+"""
 import glob
+import json
+import os
+import shutil
+import subprocess
+import sys
+import tempfile
+
+from zplc_tester import CLI, ROOT
+
+HIL = os.path.dirname(os.path.abspath(__file__))
 
 
-def compile_file(filepath):
-    """Compiles a single file using the ZPLC CLI."""
-    print(f"[{filepath}] Compiling...", end=" ")
+def sources():
+    """Every fixture of fixtures.json, then the program sources of the reference projects."""
+    with open(os.path.join(HIL, "fixtures.json")) as handle:
+        listed = [os.path.join(HIL, fixture["source"]) for fixture in json.load(handle)["fixtures"]]
+    return listed + sorted(glob.glob(os.path.join(ROOT, "packages/zplc-ide/projects/*/src/main.*")))
 
-    # Resolve CLI path
-    root_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
-    cli_path = os.path.join(root_dir, "packages/zplc-ide/src/cli/index.ts")
 
-    # Output path
-    base, _ = os.path.splitext(filepath)
-    if filepath.endswith(".json"):
-        # Remove .ld, .fbd, .sfc intermediate extension if present
-        base, _ = os.path.splitext(base)
-
-    output_bin = base + ".zplc"
-
-    # Command
-    cmd = f"bun {cli_path} compile {filepath} -o {output_bin}"
-
-    result = os.system(cmd + " > /dev/null 2>&1")
-
-    if result == 0:
-        print("OK ✅")
-        return True
-    else:
-        print("FAIL ❌")
-        # Run again to show error
-        os.system(cmd)
-        return False
+def compile_file(bun, source, workdir):
+    out = os.path.join(workdir, os.path.basename(source) + ".zplc")
+    done = subprocess.run([bun, str(CLI), "compile", source, "-o", out], capture_output=True, text=True, cwd=str(ROOT))
+    return done.returncode == 0, (done.stderr or done.stdout).strip()
 
 
 def main():
-    print("====================================================")
-    print("       ZPLC COMPILATION DRY-RUN CHECK               ")
-    print("====================================================")
-
-    base_dir = os.path.dirname(os.path.abspath(__file__))
-
-    # Patterns to check
-    patterns = [
-        "il_tests/*.il",
-        "ld_tests/*.json",
-        "fbd_tests/*.json",
-        "sfc_tests/*.json",
-        "../../packages/zplc-ide/projects/*/src/*.json",
-    ]
-
-    files = []
-    for p in patterns:
-        files.extend(glob.glob(os.path.join(base_dir, p)))
-
-    success_count = 0
-    fail_count = 0
-
-    for f in files:
-        if compile_file(f):
-            success_count += 1
-        else:
-            fail_count += 1
-
-    print("\n====================================================")
-    print(f"Summary: {success_count} Passed, {fail_count} Failed")
-
-    if fail_count > 0:
-        sys.exit(1)
-    else:
-        sys.exit(0)
+    bun = shutil.which("bun")
+    if bun is None:
+        print("error: bun is not on PATH", file=sys.stderr)
+        return 2
+    passed = failed = 0
+    with tempfile.TemporaryDirectory(prefix="zplc-hil-verify-") as workdir:
+        for source in sources():
+            ok, message = compile_file(bun, source, workdir)
+            print(f"{'OK  ' if ok else 'FAIL'} {os.path.relpath(source, ROOT)}" + ("" if ok else f"\n     {message}"))
+            passed, failed = passed + ok, failed + (not ok)
+    print(f"Summary: {passed} compiled, {failed} failed")
+    return 1 if failed else 0
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())

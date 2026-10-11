@@ -128,7 +128,8 @@ def read_cross_build_entries(workflow: Path) -> list[dict[str, str]]:
         if line_indent == 12 and current is not None:
             # board names what is built; tidy_board names the board in clang-tidy-app-baseline.json
             match = re.fullmatch(r"(board|tidy_board):\s*(.*)", stripped)
-            if not match or match.group(1) in current:
+            # tidy_board follows the board it qualifies: before it, the item is as malformed as it was before the key existed
+            if not match or match.group(1) in current or (match.group(1) == "tidy_board" and "board" not in current):
                 raise ValueError(
                     "zephyr-cross-build include items may contain only one board after id"
                 )

@@ -9,6 +9,11 @@ export const nativeRuntimeBinary = process.env.ZPLC_NATIVE_SIM_BIN
 const found = existsSync(nativeRuntimeBinary);
 const inCi = !['', '0', 'false'].includes(process.env.CI ?? '');
 
+// A local run without the binary skips these tests and says so once, with the way to run them: nobody mistakes the skips for passes.
+if (!found && !inCi) {
+  console.warn(`native runtime binary not found: ${nativeRuntimeBinary}. The tests that need it are skipped here and fail in CI; build it with \`bun run build:runtime\` or export ZPLC_NATIVE_SIM_BIN.`);
+}
+
 // Registers a test that needs nativeRuntimeBinary. Without the binary it is skipped on a developer machine,
 // but in CI it is a failing test: a skipped test is a pass nobody sees (VF-023).
 export const itNative = (found || !inCi

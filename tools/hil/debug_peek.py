@@ -1,25 +1,31 @@
-import serial
+"""Bench utility: write the output and input images with `zplc dbg poke` while stopped, then read them back with `peek`.
+
+A person runs it at the bench; it is not a pass or fail check and is listed in tools/hil/non-gating.json (HIL-004).
+It exits 2 when no port can be chosen and 1 when the device does not answer.
+"""
+import argparse
+import sys
 import time
 
-ser = serial.Serial("/dev/tty.usbmodem101", 115200, timeout=1)
-time.sleep(1)
+from zplc_tester import ZPLCTester, cli
 
 
-def send(cmd):
-    print(f"SEND: {cmd}")
-    ser.write(f"{cmd}\r\n".encode())
-    time.sleep(0.5)
-    resp = ser.read(ser.in_waiting).decode("utf-8", errors="ignore")
-    print(f"RECV: {resp}")
-    return resp
+def arguments(argv, description):
+    parser = argparse.ArgumentParser(description=description)
+    parser.add_argument("--port", help="serial port; else ZPLC_SERIAL_PORT, else found from the USB identifiers of --board")
+    parser.add_argument("--board", help="ide_id of the board (rpi_pico, esp32s3_devkitc), to find its port")
+    return parser.parse_args(argv)
 
 
-send("zplc stop")
-send(
-    "zplc dbg poke 0x1000 0xAA"
-)  # Intentamos escribir en OPI (debería fallar o ser ignorado)
-send("zplc dbg poke 0 0xBB")  # Intentamos escribir en IPI
-send("zplc dbg peek 0 16")
-send("zplc dbg peek 0x1000 16")
+def debug_peek(argv=None, tester=None):
+    args = arguments(argv, __doc__)
+    tester = tester or ZPLCTester(port=args.port, board=args.board)
+    for command in ("zplc stop", "zplc dbg poke 0x1000 0xAA", "zplc dbg poke 0 0xBB", "zplc dbg peek 0 16", "zplc dbg peek 0x1000 16"):
+        print(f"SEND: {command}")
+        print(f"RECV: {tester.send(command, timeout=2.0)}")
+    tester.close()
+    return 0
 
-ser.close()
+
+if __name__ == "__main__":
+    cli(debug_peek)

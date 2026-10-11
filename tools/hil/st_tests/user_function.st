@@ -8,8 +8,8 @@ END_FUNCTION
 
 PROGRAM UserFuncTest
 VAR
-    res AT %Q0.0 : REAL; (* 0x1000 *)
-    cycle AT %Q0.4 : INT; (* 0x1004 *)
+    res AT %QD0 : REAL; (* 0x1000 *)
+    cycle AT %QW2 : INT; (* 0x1004 *)
     counter : INT := 0;
 END_VAR
 
