@@ -1402,6 +1402,7 @@
   ],
   "RT-031": [
     {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_native_runtime_session.c","test":"RT-031: a payload with none of the records that say a program was published beside it is not evidence."},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_program_store.c","test":"RT-031 with the rollback found at the start of the upload: a power cut at every operation leaves the old program or the new."},
     {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_program_store.c","test":"RT-031: a power cut at every operation of a first deploy leaves nothing or the program."},
     {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_program_store.c","test":"RT-031: a power cut at every operation of a redeploy leaves the old program or the new."},
     {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_program_store.c","test":"RT-031: a slot half rewritten is never restored, even when it is all that is left."},

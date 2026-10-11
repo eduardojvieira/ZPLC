@@ -926,8 +926,7 @@ static void test_a_store_that_cannot_be_verified_gives_no_rollback(void) {
   CHECK(!key_exists("program_v1_slot_a_payload") && !key_exists("program_v1_active"), "nothing was written");
 }
 
-/* RT-031 with the rollback found at the start of the upload: a power cut at every operation of the probe and the
- * deploy together leaves the old program or the new. */
+/* RT-031 with the rollback found at the start of the upload: a power cut at every operation leaves the old program or the new. */
 static void test_probed_redeploy_power_cut_sweep(void) {
   unsigned long operations;
   unsigned long cut;
