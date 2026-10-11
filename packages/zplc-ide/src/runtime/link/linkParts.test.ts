@@ -7,7 +7,7 @@ import { ShellLineTransport, bytesToLowerHex, hexToBytes, type ShellConsole } fr
 import type { HelloInfo } from './deviceLink';
 
 const hello = (overrides: Partial<HelloInfo> = {}): HelloInfo => ({
-  version: 1, transport: 'SERIAL', maxPayload: 512, sessionState: 'NONE', keyProvisioned: false, idleTimeoutS: 30,
+  version: 1, transport: 'SERIAL', maxPayload: 512, sessionState: 'NONE', keyProvisioned: false, idleTimeoutS: 30, signatureRequired: false,
   capabilities: CAPABILITY.SESSION | CAPABILITY.MEMORY | CAPABILITY.EVENTS | CAPABILITY.PROGRAM, ...overrides,
 });
 
@@ -43,7 +43,7 @@ describe('which firmware this is (COM-029)', () => {
   });
 });
 
-describe('the frames of the shell lines', () => {
+describe('the frames of the shell lines (COM-019)', () => {
   const console_ = (): { shell: ShellConsole; written: string[]; feed: (text: string) => void } => {
     const written: string[] = [];
     const handlers = new Set<(chunk: string) => void>();

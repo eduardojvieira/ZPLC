@@ -84,6 +84,7 @@ static void test_sha512(void) {
   CHECK(1, "no split of the message changes the digest");
 }
 
+/* ---- COM-026: valid and damaged signatures of the reference get the reference's answer ---- */
 static void test_the_signatures_of_the_reference(void) {
   size_t i;
   unsigned accepted = 0U;

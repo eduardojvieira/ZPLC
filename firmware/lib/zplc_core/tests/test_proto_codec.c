@@ -61,6 +61,7 @@ static void on_frame(void *context, const zplc_proto_frame_t *frame) {
   (void)strncat(delivered->names, "stream:?", sizeof(delivered->names) - strlen(delivered->names) - 1U);
 }
 
+/* ---- COM-019: every frame of the definition is encoded to the bytes the generator computed ---- */
 static void test_every_frame_is_encoded_to_the_generated_bytes(void) {
   size_t i;
 
@@ -90,6 +91,7 @@ static void test_every_frame_is_encoded_to_the_generated_bytes(void) {
   }
 }
 
+/* ---- COM-019: a stream gives the generated frames and counters, whole and one byte at a time ---- */
 static void test_streams_give_the_generated_result(void) {
   size_t i;
 
@@ -175,6 +177,7 @@ static void test_the_encoder_refuses_what_does_not_fit(void) {
         "an empty payload fits");
 }
 
+/* ---- COM-019: the decoder is bounded under hostile input ---- */
 static void test_the_decoder_is_bounded_under_hostile_input(void) {
   zplc_proto_decoder_t decoder;
   delivered_t delivered;

@@ -717,6 +717,7 @@ static void test_open_messages_and_the_shape_of_a_response(void) {
   CHECK(last_status(&c) == ZPLC_PROTO_ERR_BAD_REQUEST, "a payload that is not the layout of the message");
 }
 
+/* ---- COM-024: the device refuses and names the region as the adapters of Studio do ---- */
 static void test_the_access_table_is_the_same_as_the_adapters(void) {
   client_t c;
   size_t i;
@@ -766,6 +767,7 @@ static void test_the_access_table_is_the_same_as_the_adapters(void) {
   CHECK(wrong == 0U, "every access case of the definition is accepted or refused as the adapters have it");
 }
 
+/* ---- COM-020: nothing that changes the device works without a session, and none of it reaches the port ---- */
 static void test_state_changing_messages_need_a_session(void) {
   client_t c;
   const uint8_t addr_data[3] = {0x00U, 0x20U, 0xAAU};
@@ -830,6 +832,7 @@ static void test_state_changing_messages_need_a_session(void) {
         "STOP in a session");
 }
 
+/* ---- COM-020: one session at a time; it ends by close, idle time, lost link and takeover, and its forces go with it ---- */
 static void test_one_session_at_a_time_and_how_it_ends(void) {
   client_t a;
   client_t b;
@@ -917,6 +920,7 @@ static void test_one_session_at_a_time_and_how_it_ends(void) {
         "stays when a session that did not set it ends");
 }
 
+/* ---- COM-028: a download checks the CRC-32, reads back, and leaves the runtime stopped ---- */
 static void test_a_download_is_a_session_transaction(void) {
   client_t c;
   uint8_t program[300];
@@ -1020,6 +1024,7 @@ static void test_a_download_is_a_session_transaction(void) {
   }
 }
 
+/* ---- COM-020: configuration and credentials follow the session rule ---- */
 static void test_configuration_and_credentials_follow_the_session_rule(void) {
   client_t c;
   uint8_t config[ZPLC_PROTO_CONFIG_SET_REQ_FIXED + 4U];
@@ -1067,6 +1072,7 @@ static void test_configuration_and_credentials_follow_the_session_rule(void) {
 static int scan_flag;
 static int scan_active_hook(void) { return scan_flag; }
 
+/* ---- COM-023: a multi-byte write is queued whole and lands at the input latch ---- */
 static void test_a_multi_byte_write_lands_whole_at_the_latch(void) {
   client_t c;
   zplc_exchange_hooks_t hooks;
@@ -1149,6 +1155,7 @@ static void *scanner(void *arg) {
   return NULL;
 }
 
+/* ---- COM-023: the value a scan reads is never a mix, against four one-byte writes that are ---- */
 static void test_the_value_a_scan_reads_is_never_a_mix(void) {
   client_t c;
   pthread_t thread;
@@ -1221,6 +1228,7 @@ static void test_the_value_a_scan_reads_is_never_a_mix(void) {
   scan_flag = 0;
 }
 
+/* ---- COM-021: the key is provisioned over the serial link only, and never sent back ---- */
 static void test_serial_trust_and_key_provisioning(void) {
   client_t serial;
   client_t net;
@@ -1277,6 +1285,7 @@ static void test_serial_trust_and_key_provisioning(void) {
   }
 }
 
+/* ---- COM-021: modified, replayed and out-of-order frames of an authenticated session are dropped and counted ---- */
 static void test_a_network_session_authenticates_every_frame(void) {
   client_t net;
   client_t other;
@@ -1543,6 +1552,7 @@ static void test_a_device_with_a_key_accepts_only_signed_programs(void) {
   CHECK(transfer(&c, good->message, good->message_length, NULL) == 0, "and unsigned programs are accepted again");
 }
 
+/* ---- COM-025: status, fault, breakpoint, force, log and watch events, a bounded queue that counts what it drops ---- */
 static void test_events(void) {
   client_t c;
   zplc_proto_link_t *links[1];
@@ -1671,6 +1681,7 @@ static void test_events(void) {
   }
 }
 
+/* ---- COM-021: random bytes on a network link open no session and reach nothing ---- */
 static void test_a_hostile_stream_does_nothing(void) {
   client_t c;
   uint32_t state = 0xDEADBEEFU;

@@ -99,7 +99,7 @@ async function connected(made: Bridge): Promise<FramedSerialAdapter> {
 const program = (): Uint8Array =>
   new Uint8Array(compileToBinary('PROGRAM Adapter\nVAR counter : DINT; END_VAR\n counter := counter + 1;\nEND_PROGRAM\n').zplcFile);
 
-describe('the serial adapter on firmware that speaks the link', () => {
+describe('the serial adapter on firmware that speaks the link (COM-019, COM-023, COM-025, COM-028)', () => {
   itNative('recognises it, writes whole values, forces and releases them, and reports a refused range before any frame', async () => {
     const made = await bridge(true);
     const adapter = await connected(made);
@@ -154,7 +154,7 @@ describe('the serial adapter on firmware that speaks the link', () => {
   });
 });
 
-describe('the serial adapter on firmware that speaks only the text shell', () => {
+describe('the serial adapter on firmware that speaks only the text shell (COM-029)', () => {
   itNative('says so, says what to install, and keeps writing as the text shell does', async () => {
     const made = await bridge(false);
     const adapter = await connected(made);

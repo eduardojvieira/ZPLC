@@ -35,7 +35,7 @@ function fieldsOf(frame: VectorFrame): readonly FieldSpec[] | null {
   return frame.kind === 0 ? spec.request : spec.response;
 }
 
-describe('the frames the generator wrote', () => {
+describe('the frames the generator wrote, in TypeScript (COM-019)', () => {
   test('there is a request and a response of every message and an event of every event', () => {
     for (const name of Object.keys(MESSAGES)) {
       expect(vectors.frames.some((frame) => frame.name === `${name.toLowerCase()}_request`)).toBe(true);
@@ -86,7 +86,7 @@ describe('the frames the generator wrote', () => {
   });
 });
 
-describe('the streams the generator wrote', () => {
+describe('the streams the generator wrote, whole and byte by byte (COM-019)', () => {
   for (const stream of vectors.streams) {
     const run = (chunks: Uint8Array[]) => {
       const decoder = new FrameDecoder(vectors.payloadMax);
@@ -122,7 +122,7 @@ describe('the streams the generator wrote', () => {
   }
 });
 
-describe('parseFrame names why a buffer is not a frame', () => {
+describe('parseFrame names why a buffer is not a frame (COM-019)', () => {
   const good = bytes(vectors.frames[0]!.wire);
   const mutate = (change: (copy: Uint8Array) => void) => {
     const copy = good.slice();
@@ -142,7 +142,7 @@ describe('parseFrame names why a buffer is not a frame', () => {
   });
 });
 
-describe('the signatures the generator wrote (COM-026)', () => {
+describe('the signatures the generator wrote, against the runtime Ed25519 (COM-026)', () => {
   // The vectors are computed by a Python reference of RFC 8032. The runtime's own Ed25519 (the one Studio signs with)
   // has to agree with it on every case, so the C verifier of the firmware, which the same vectors hold, is held to
   // the standard and not to one implementation.

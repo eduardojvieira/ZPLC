@@ -86,7 +86,7 @@ async function perform(adapter: IDebugAdapter, kind: AccessKind, address: number
   else await adapter.forceValue(address, new Uint8Array(length));
 }
 
-describe('the shared address and length check', () => {
+describe('the shared address and length check (COM-024)', () => {
   for (const testCase of cases) {
     it(`${testCase.name}: ${testCase.ok ? 'accepted' : 'refused'}`, () => {
       const refusal = checkMemoryAccess(testCase.address, testCase.length, testCase.kind);
@@ -137,7 +137,7 @@ describe('the shared address and length check', () => {
   });
 });
 
-describe('every adapter applies the same check before it touches the device', () => {
+describe('every adapter applies the same check before it touches the device (COM-024)', () => {
   for (const [adapterName, make] of ADAPTERS) {
     for (const testCase of cases) {
       it(`${adapterName}: ${testCase.name}`, async () => {

@@ -74,8 +74,8 @@ async function until<T>(read: () => Promise<T> | T, ok: (value: T) => boolean, w
   }
 }
 
-describe('the device link over the serial rules (the native runtime on a pipe)', () => {
-  itNative('a hello and an identity recognise the device', async () => {
+describe('the device link over the serial rules, the native runtime on a pipe (COM-019, COM-020, COM-023, COM-024, COM-025, COM-028)', () => {
+  itNative('a hello and an identity recognise the device (COM-019, COM-029)', async () => {
     const { link } = await start(['--device-link']);
     const hello = await link.hello();
     expect(hello).toMatchObject({ version: 1, transport: 'SERIAL', sessionState: 'NONE', keyProvisioned: false, idleTimeoutS: 30 });
@@ -90,7 +90,7 @@ describe('the device link over the serial rules (the native runtime on a pipe)',
     expect(identity.code_size_max).toBeGreaterThan(0);
   });
 
-  itNative('nothing that changes the device works without a session, and nothing of it reaches the runtime', async () => {
+  itNative('nothing that changes the device works without a session, and nothing of it reaches the runtime (COM-020)', async () => {
     const { link } = await start(['--device-link']);
     await link.hello();
     const refused = async (run: () => Promise<unknown>) => {
@@ -113,7 +113,7 @@ describe('the device link over the serial rules (the native runtime on a pipe)',
     expect(link.snapshot().crcErrors).toBe(0);
   });
 
-  itNative('in a session: an atomic write, a refused range with its region, a force that ends with the session', async () => {
+  itNative('in a session: an atomic write, a refused range with its region, a force that ends with the session (COM-020, COM-023, COM-024)', async () => {
     const { link } = await start(['--device-link']);
     await link.hello();
     const events: LinkEvent[] = [];
@@ -147,7 +147,7 @@ describe('the device link over the serial rules (the native runtime on a pipe)',
     expect((again as LinkError).errorName).toBe('NO_SESSION');
   });
 
-  itNative('a second link cannot be given a session while one is open; a takeover from the serial link is', async () => {
+  itNative('one session at a time, replaced by its own link, and taken over from the serial link (COM-020)', async () => {
     const { link } = await start(['--device-link']);
     await link.hello();
     await link.openSession({ name: 'first' });
@@ -158,7 +158,7 @@ describe('the device link over the serial rules (the native runtime on a pipe)',
     expect(await link.request('FORCE_LIST', {})).toMatchObject({ count: 0 });
   });
 
-  itNative('a download: preflight identity, chunks with progress, a read-back that is the announced CRC-32, STOP afterwards', async () => {
+  itNative('a download: chunks with progress, a read-back that is the announced CRC-32, STOP afterwards, RUN as its own request (COM-028, COM-025)', async () => {
     const { link } = await start(['--device-link']);
     const hello = await link.hello();
     await link.openSession({ name: 'deploy' });
@@ -205,7 +205,7 @@ describe('the device link over the serial rules (the native runtime on a pipe)',
     expect((running as LinkError).errorName).toBe('STATE');
   });
 
-  itNative('breakpoints, and a watch batch with the values of one scan', async () => {
+  itNative('breakpoints, and a watch batch with the values of one scan (COM-025)', async () => {
     const { link } = await start(['--device-link']);
     await link.hello();
     await link.openSession({});
@@ -224,8 +224,8 @@ describe('the device link over the serial rules (the native runtime on a pipe)',
   });
 });
 
-describe('the device link over the network rules (every session authenticated)', () => {
-  itNative('a session needs the key, every frame is authenticated, and a frame that is wrong is dropped and counted', async () => {
+describe('the device link over the network rules, every session authenticated (COM-021)', () => {
+  itNative('a session needs the key, and a wrong key is not answered (COM-021)', async () => {
     const { link, transport } = await start(['--device-link-network'], { ZPLC_NATIVE_LINK_KEY_HEX: KEY_HEX });
     const hello = await link.hello();
     expect(hello).toMatchObject({ transport: 'NETWORK', keyProvisioned: true });
@@ -245,7 +245,7 @@ describe('the device link over the network rules (every session authenticated)',
     await wrong.close();
   });
 
-  itNative('the right key opens a session; modified, replayed and out-of-order frames are dropped, counted and not done', async () => {
+  itNative('the right key opens a session; unsigned and wrongly signed frames are dropped, counted and not done (COM-021)', async () => {
     const { link, transport } = await start(['--device-link-network'], { ZPLC_NATIVE_LINK_KEY_HEX: KEY_HEX });
     await link.hello();
     const session = await link.openSession({ key: KEY, name: 'network' });
@@ -279,7 +279,7 @@ describe('the device link over the network rules (every session authenticated)',
   });
 });
 
-describe('signed programs (COM-026) against the real native runtime', () => {
+describe('signed programs against the real native runtime (COM-026)', () => {
   const SEED = Uint8Array.from({ length: 32 }, (_, index) => 0x80 + index);
 
   itNative('a device that holds a public key activates only a program signed with the matching private key', async () => {

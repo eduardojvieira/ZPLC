@@ -161,6 +161,7 @@ static void test_streaming_hmac_equals_one_shot(void) {
   CHECK(memcmp(whole, parts, sizeof(whole)) == 0, "an HMAC computed in parts is the HMAC of the whole");
 }
 
+/* ---- COM-021: the HMAC-SHA-256 of C is the one Python computed for the generated frames ---- */
 static void test_the_codes_of_the_generated_frames(void) {
   size_t i;
   unsigned authenticated = 0U;
