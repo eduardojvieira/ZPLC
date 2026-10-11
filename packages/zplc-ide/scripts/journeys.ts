@@ -560,6 +560,9 @@ export const JOURNEYS: Journey[] = [
       const problems = await app.eval<string>(`document.querySelector('[aria-label="Latest build diagnostics"]')?.innerText ?? ''`);
       assert(problems.includes("Unknown identifier 'UndefinedVariable'"), `The Problems list does not say what is wrong with the program ("Unknown identifier 'UndefinedVariable'" is what the compiler reports): ${JSON.stringify(problems)}`);
       assert(!/(^|[\s'"(])\/[\w.~@+-]|[A-Za-z]:[\\/]/.test(problems), `The Problems list shows an absolute path of the machine: ${JSON.stringify(problems)}`);
+      // and says which kind of problem it is, with the stable code that the CLI and the reference page use (CMP-006)
+      const codes = await app.eval<string[]>(`[...document.querySelectorAll('[aria-label="Latest build diagnostics"] [data-diagnostic-code]')].map((item) => item.textContent)`);
+      assert(codes.includes('UNKNOWN_IDENTIFIER'), `The Problems list does not show the code of the problem: ${JSON.stringify(codes)}`);
     },
   },
   {
@@ -577,8 +580,10 @@ export const JOURNEYS: Journey[] = [
       await app.click(tab('Problems'));
       const live = css('[aria-label="Live Structured Text diagnostics"]');
       await app.until('the live diagnostics to name the undeclared variable, with no build', async () => (await app.eval<string>(`${live}?.innerText ?? ''`)).includes('UndefinedVariable') || undefined);
-      const markers = await monacoEval<Array<{ startLineNumber: number; startColumn: number; endColumn: number; message: string }>>(app, `return monaco.editor.getModelMarkers({ owner: 'zplc.st-live' });`);
+      const markers = await monacoEval<Array<{ startLineNumber: number; startColumn: number; endColumn: number; message: string; code?: string }>>(app, `return monaco.editor.getModelMarkers({ owner: 'zplc.st-live' });`);
       assert(markers.length > 0 && markers[0]!.startLineNumber === last + 1 && markers[0]!.endColumn > markers[0]!.startColumn + 1, `The editor has no squiggle with a range on the faulty line: ${JSON.stringify(markers)}`);
+      // the squiggle carries the code that a build of the same source reports (CMP-006)
+      assert(markers[0]!.code === 'UNKNOWN_IDENTIFIER', `The squiggle does not carry the stable code of the problem: ${JSON.stringify(markers[0])}`);
       // undoing the typing clears it the next time the project is checked
       await clickEditorLine(app, last + 1);
       for (let key = 0; key < 3; key++) await app.press('Ctrl+Z');
@@ -2390,6 +2395,109 @@ export const JOURNEYS: Journey[] = [
       await app.until('the scenario to pass', async () => (await app.text()).includes('Host POSIX scenarios passed.') || undefined, 30_000);
       assert(!(await app.text()).includes('scenario assertions failed'), 'The tutorial scenario reports a failed assertion.');
       await docShot(app, 'blink-6-scenario');
+    },
+  },
+  {
+    // IDE-018: choosing a port is a dialog of the application, not an operating-system message box. The journey only looks at it
+    // and cancels: it never connects, and it does not depend on a port being plugged in (the list is empty on a build machine).
+    name: '42 Choosing a serial port is a dialog of the application', example: 'motor_start_stop', proves: [], partly: ['IDE-018'],
+    run: async (app, { project }) => {
+      const dialog = css('[data-serial-port-dialog]');
+      await openFolder(app, project);
+      await app.click(button('Hardware'), 'the Hardware mode');
+      await app.click(button('Connect'), 'Connect');
+      await app.until('the port dialog', async () => await app.visible(dialog) || undefined)
+        .catch(async (error: Error) => { throw new Error(`${error.message}: the window says ${JSON.stringify((await app.text()).replace(/\s+/g, ' ').slice(-600))}`); });
+
+      const shown = await app.eval<{ title: string; rows: Array<{ kind: string; text: string }>; empty: boolean; modal: boolean }>(`(() => {
+        const root = document.querySelector('[data-serial-port-dialog]');
+        const dialog = root?.closest('[role="dialog"]');
+        return { title: dialog?.textContent?.slice(0, 60) ?? '',
+          rows: [...root.querySelectorAll('[data-serial-port-row]')].map((row) => ({ kind: row.getAttribute('data-serial-port-row'), text: row.innerText })),
+          empty: Boolean(root.querySelector('[data-serial-port-empty]')), modal: dialog?.getAttribute('aria-modal') === 'true' };
+      })()`);
+      assert(shown.title.includes('Choose a serial port'), `The dialog has no title: ${JSON.stringify(shown)}`);
+      assert(shown.modal, `The port dialog is not a modal dialog: ${JSON.stringify(shown)}`);
+      assert(shown.empty || shown.rows.length > 0, `The dialog lists no port and does not say that there is none: ${JSON.stringify(shown)}`);
+      for (const row of shown.rows) assert(/USB [0-9A-F]{4}(:[0-9A-F]{4})?|No USB identifiers/.test(row.text), `A port row does not show its USB identifiers: ${JSON.stringify(row)}`);
+      assert(!(await app.text()).includes('Select the serial port to request'), 'The operating-system message box text is still in use.');
+
+      // It can be refreshed, and it is still there afterwards.
+      await app.click(button('Refresh'), 'Refresh');
+      await app.until('the refresh to end', async () => await app.eval<boolean>(`[...document.querySelectorAll('[data-serial-port-dialog] button')].some((el) => el.textContent?.trim() === 'Refresh')`) || undefined);
+      assert(await app.visible(dialog), 'The dialog is gone after a refresh.');
+
+      // Cancel closes it and the application stays disconnected.
+      await app.click(button('Cancel'), 'Cancel');
+      await app.until('the dialog to close', async () => !await app.visible(dialog) || undefined);
+      await app.until('the application to be disconnected again', async () => await app.visible(button('Connect')) || undefined);
+      assert(!await app.visible(button('Disconnect')), 'The application connected although the dialog was cancelled.');
+    },
+  },
+  {
+    // IDE-030: a change is a difference that is reviewed, in isolation, before a person saves it, and Studio does all this
+    // without the assistant, which is optional and, until it is configured, cannot be asked. The assistant's own proposal
+    // takes the same road (the review of the Changes tab, then the same button); it is not driven here, because the
+    // provider needs the secret store of the system and the headless host has none (electron/aiProvider.test.ts holds it).
+    name: '43 A change is reviewed as a difference and saved by a person, and Studio works without the assistant', example: 'motor_start_stop', proves: [], partly: ['IDE-030'],
+    run: async (app, { project }) => {
+      const file = join(project, 'src', 'Motor.st');
+      await openFolder(app, project);
+      await openFile(app, 'src/Motor.st');
+      const original = disk(file);
+
+      // the assistant is optional: it says so, says it cannot operate hardware, and cannot be asked before it is configured
+      await app.click(tab('Agent'), 'the Agent tab');
+      const agent = await app.until('the Agent panel', async () => {
+        const text = await app.eval<string>(`document.querySelector('[aria-label="Optional Agent"]')?.innerText ?? ''`);
+        return text.includes('Agent') ? text : undefined;
+      });
+      assert(agent.includes('It cannot operate hardware.'), `The Agent panel does not say that it cannot operate hardware: ${JSON.stringify(agent)}`);
+      assert(!await app.clickable(button('Send request')), 'The assistant can be asked although no provider is configured.');
+
+      // a statement of the person's own, added to the open file and not saved: it breaks what the scenario of the project says
+      const before = await editorText(app);
+      const last = await lineWith(app, 'Reverse := FALSE;');
+      assert(last > 0, 'Motor.st no longer has the statement Reverse := FALSE; the journey adds one after it.');
+      await cursorAtEndOfLine(app, last);
+      await app.press('Enter');
+      await app.type('Forward := FALSE;');
+      assert(disk(file) === original, 'The file changed on disk before the person saved it.');
+
+      // Changes: the review is run in isolation and shows the difference; it writes nothing; a change that fails is not offered for saving
+      const reviewed = async () => {
+        await app.click(button('Review active ST change'), 'Review active ST change');
+        await app.until('the review result', async () => await app.visible(css('[aria-label="Candidate review result"]')) || undefined, 60_000)
+          .catch(async (error: Error) => { throw new Error(`${error.message}: the Changes tab says ${JSON.stringify((await app.text()).replace(/\s+/g, ' ').slice(-700))}`); });
+        return app.eval<string>(`document.querySelector('[aria-label="Candidate review result"]').innerText`);
+      };
+      await app.click(tab('Changes'), 'the Changes tab');
+      const refused = await reviewed();
+      assert(refused.includes('Rejected: candidate was not accepted.') && refused.includes('SCENARIO_ASSERTION_FAILED'), `The review does not refuse a change that breaks the scenario: ${JSON.stringify(refused)}`);
+      assert(refused.includes('No file has been written.') && await app.visible(css('[aria-label="Candidate review result"] .monaco-diff-editor')), 'The review of a refused change does not show the difference and say that nothing was written.');
+      assert(!await app.visible(button('Save reviewed change')), 'A change that the review refused is offered for saving.');
+      assert(disk(file) === original, 'Reviewing the change wrote the file.');
+
+      // the person takes the statement back and writes one that is harmless
+      await app.click(tab('Explorer', 'exact'));
+      await clickEditorLine(app, last + 1);
+      for (let attempt = 0; attempt < 6 && (await editorText(app)) !== before; attempt++) await app.press('Ctrl+Z');
+      assert((await editorText(app)) === before, 'The journey could not undo its statement.');
+      await cursorAtEndOfLine(app, last);
+      await app.press('Enter');
+      await app.type('Reverse := FALSE;');
+      await app.click(tab('Changes'), 'the Changes tab');
+      const accepted = await reviewed();
+      assert(accepted.includes('Accepted: isolated host candidate passed.'), `The review does not accept a harmless statement: ${JSON.stringify(accepted)}`);
+      assert(accepted.includes('No file has been written.') && disk(file) === original, 'Reviewing the change wrote the file.');
+
+      // only the person's own click saves it
+      await app.click(button('Save reviewed change'), 'Save reviewed change');
+      await app.until('the reviewed change on disk', () => disk(file) !== original && disk(file).split('Reverse := FALSE;').length > original.split('Reverse := FALSE;').length || undefined);
+
+      // and the rest of Studio, which needs no assistant, still builds the project
+      const built = await compile(app);
+      assert(built.kind === 'built', `The project does not build without the assistant: ${built.kind} ${built.message}`);
     },
   },
 ];

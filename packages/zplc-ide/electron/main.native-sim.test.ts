@@ -604,9 +604,11 @@ describe('NativeSimulationSupervisor', () => {
     expect(mainSource).not.toContain('knownVendors');
     expect(mainSource).not.toContain('portList[0]');
     expect(mainSource).toContain("event.preventDefault();");
-    expect(mainSource).toContain('selectSerialPort({');
+    // the choice is made in the dialog of the window (IDE-018); the main process never picks a port itself
+    expect(mainSource).toContain('serialPorts.open({ ownerId: requestingContents.id, ports: portList, callback });');
+    expect(mainSource).toContain("sess.on('serial-port-added'");
     expect(mainSource).toContain("sess.on('serial-port-removed'");
-    expect(mainSource).toContain("sess.removeListener('serial-port-removed'");
+    expect(mainSource).not.toContain('selectSerialPort');
     expect(mainSource).toContain("contents.setWindowOpenHandler(() => ({ action: 'deny' }))");
     expect(mainSource).toContain("contents.on('will-navigate'");
     expect(mainSource).toContain("contents.on('will-redirect', (details) => {");

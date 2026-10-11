@@ -55,7 +55,7 @@ zplc-cli compile packages/zplc-ide/projects/blinky_st --output blinky.zplc
 zplc-cli compile packages/zplc-ide/projects/blinky_st --emit asm
 ```
 
-The first command writes the program and prints `compile passed (contract draft 5)`:
+The first command writes the program and prints `compile passed (contract draft 6)`:
 the number is the draft of the binary contract, which a runtime of another draft
 refuses. The second prints the assembly listing instead of the program, or writes it
 to `--output`. A diagnostic names the file, the line and the column.

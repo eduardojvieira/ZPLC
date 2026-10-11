@@ -124,7 +124,7 @@ function emitConversion(ctx: CodeGenContext, from: string, to: string): void {
             ctx.emit(`    D2F`);
             return;
         }
-        if (!ctx.callRoutine) ctx.fail('the conversion of an LREAL to an integer needs the routine linker');
+        if (!ctx.callRoutine) ctx.fail('the conversion of an LREAL to an integer needs the routine linker', 'INTERNAL_COMPILER_ERROR');
         const target = INTEGER_TYPES[to]!;
         if (target.bits === 64) {
             ctx.emit(`    RNDD`);
@@ -182,11 +182,11 @@ function emitConversion(ctx: CodeGenContext, from: string, to: string): void {
             return;
         }
         if (target.bits === 32 && !target.signed) {
-            if (!ctx.callRoutine) ctx.fail('the conversion of a REAL to an unsigned integer needs the routine linker');
+            if (!ctx.callRoutine) ctx.fail('the conversion of a REAL to an unsigned integer needs the routine linker', 'INTERNAL_COMPILER_ERROR');
             ctx.callRoutine(F2U32_LABEL);
             return;
         }
-        if (!ctx.callRoutine) ctx.fail('the conversion of a REAL to an integer needs the routine linker');
+        if (!ctx.callRoutine) ctx.fail('the conversion of a REAL to an integer needs the routine linker', 'INTERNAL_COMPILER_ERROR');
         ctx.callRoutine(ROUNDF_LABEL);
         if (target.bits < 32) {
             ctx.emit(pushConstant(target.lo));

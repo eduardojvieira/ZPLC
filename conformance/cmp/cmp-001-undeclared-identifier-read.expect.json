@@ -2,5 +2,6 @@
   "requirement": "CMP-001",
   "title": "reading an undeclared identifier is rejected",
   "build": "fails",
-  "lines": [5]
+  "lines": [5],
+  "codes": ["UNKNOWN_IDENTIFIER"]
 }

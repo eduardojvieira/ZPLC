@@ -248,12 +248,12 @@ type TestOperation = 'test' | 'scenario-run';
 function testFailed(operation: TestOperation, diagnostics: ToolDiagnostic[], artifacts: ToolArtifact[] = []): TestRunResult { return { ok: false, evidence: evidence(operation, 'failed', diagnostics, artifacts) }; }
 function compilerErrorDiagnostic(error: CompilerError): ToolDiagnostic {
   return {
-    code: 'COMPILATION_FAILED',
+    code: error.code,
     message: error.detail.slice(0, 512) || 'Compilation failed',
     phase: error.phase,
     line: error.line,
     column: error.column,
-    // ponytail: error.endLine and error.endColumn hold where the error ends; the MCP schema (src/mcp/server.ts) is strict, so they are not sent yet
+    ...(error.endLine !== undefined && error.endColumn !== undefined ? { endLine: error.endLine, endColumn: error.endColumn } : {}),
     ...(error.sourceRef ? { path: error.sourceRef } : {}),
     ...(error.element ? { element: error.element } : {}),
   };
@@ -271,7 +271,7 @@ export function compilerWarningDiagnostics(warnings: CompilerWarning[]): ToolDia
 /** The first error of a failed compile as one diagnostic. */
 export function safeCompilerDiagnostic(error: unknown): ToolDiagnostic {
   if (error instanceof CompilerError) return compilerErrorDiagnostic(error);
-  return { code: 'COMPILATION_FAILED', message: 'Compilation failed' };
+  return { code: 'INTERNAL_COMPILER_ERROR', message: 'Compilation failed' };
 }
 /** Every independent error of a failed compile, in source order (CMP-007); the same message, line and column as the first alone. */
 export function safeCompilerDiagnostics(error: unknown): ToolDiagnostic[] {

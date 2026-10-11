@@ -11,7 +11,7 @@ afterEach(async () => { await Promise.all(directories.splice(0).map((directory) 
 const vault = (backend = 'gnome_libsecret') => ({ isEncryptionAvailable: () => true, getSelectedStorageBackend: () => backend, encryptString: (value: string) => Buffer.from(`encrypted:${value}`), decryptString: (value: Buffer) => value.toString().replace(/^encrypted:/, '') });
 const request = { workspaceId: '0f2ce877-e0d6-43ca-89a7-df17a4927f51', mode: 'edit' as const, prompt: 'Fix it', activeFile: { fileId: 'file:src/Main.st', path: 'src/Main.st' } };
 
-describe('optional AI provider', () => {
+describe('optional AI provider (IDE-030)', () => {
   it('is unconfigured by default and never uses a plaintext Linux fallback', async () => {
     const directory = await fixture(); const provider = createAiProvider({ userDataPath: directory, vault: vault('basic_text') });
     expect(await provider.getStatus()).toEqual({ configured: false, enabled: false, keyStored: false, vaultAvailable: false, vaultReason: 'insecure-backend' });

@@ -334,7 +334,7 @@ export function Toolbar({ debugController }: ToolbarProps) {
             addCompilerMessage({ type: 'error', message: 'Canonical workspace build failed' });
           }
           for (const diagnostic of canonical.diagnostics) {
-            addCompilerMessage({ type: 'error', message: diagnostic.message, ...(diagnostic.path ? { file: diagnostic.path } : {}), ...(diagnostic.line ? { line: diagnostic.line } : {}), ...(diagnostic.column ? { column: diagnostic.column } : {}), ...(diagnostic.element ? { element: diagnostic.element } : {}) });
+            addCompilerMessage({ type: 'error', message: diagnostic.message, code: diagnostic.code, ...(diagnostic.path ? { file: diagnostic.path } : {}), ...(diagnostic.line ? { line: diagnostic.line } : {}), ...(diagnostic.column ? { column: diagnostic.column } : {}), ...(diagnostic.element ? { element: diagnostic.element } : {}) });
           }
           markCompilerMessagesChecked();
           return;

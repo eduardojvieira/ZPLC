@@ -9,6 +9,9 @@
   "lines": [
     6
   ],
+  "codes": [
+    "INVALID_INHERITANCE"
+  ],
   "messageIncludes": [
     "Lazy",
     "ABSTRACT",

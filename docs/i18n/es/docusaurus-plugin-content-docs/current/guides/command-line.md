@@ -58,7 +58,7 @@ zplc-cli compile packages/zplc-ide/projects/blinky_st --output blinky.zplc
 zplc-cli compile packages/zplc-ide/projects/blinky_st --emit asm
 ```
 
-El primer comando escribe el programa e imprime `compile passed (contract draft 5)`:
+El primer comando escribe el programa e imprime `compile passed (contract draft 6)`:
 el número es el borrador del contrato binario, que un runtime de otro borrador
 rechaza. El segundo imprime el listado de ensamblador en lugar del programa, o lo
 escribe en `--output`. Un diagnóstico nombra el archivo, la línea y la columna.

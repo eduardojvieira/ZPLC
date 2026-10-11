@@ -3,5 +3,6 @@
   "title": "an unknown parameter of a standard block is rejected",
   "matrix": ["pous.function-block-call-with-named-inputs"],
   "build": "fails",
-  "lines": [5]
+  "lines": [5],
+  "codes": ["UNKNOWN_PARAMETER"]
 }

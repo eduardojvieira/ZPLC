@@ -2,5 +2,6 @@
   "requirement": "CMP-018",
   "title": "a constant that does not fit its type is rejected",
   "build": "fails",
-  "lines": [3]
+  "lines": [3],
+  "codes": ["CONSTANT_OUT_OF_RANGE"]
 }

@@ -65,6 +65,14 @@ export function createSessionStore(userDataPath: string) {
     },
 
     /**
+     * Settles once every save accepted so far has finished, written or failed. The process waits on it before it exits,
+     * so the last session a closing window sent is on the disk.
+     */
+    settled(): Promise<void> {
+      return pending.then(() => undefined);
+    },
+
+    /**
      * Deletes the sessions of projects whose key is not in `keep` (the remembered ones) and the leftovers of interrupted
      * writes, so the directory cannot grow without bound. Files it did not create are left alone.
      */

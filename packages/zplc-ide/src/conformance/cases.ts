@@ -8,6 +8,8 @@
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { dirname, join, relative } from 'node:path';
 
+import { isErrorCode } from '@zplc/compiler';
+
 export type CellType = 'BOOL' | 'SINT' | 'INT' | 'DINT' | 'USINT' | 'UINT' | 'UDINT' | 'BYTE' | 'WORD' | 'DWORD' | 'REAL';
 
 // letter: the width in a direct address (%QW0); size in bytes; min and max: the values the type holds.
@@ -192,7 +194,7 @@ export function parseExpectation(text: string, where: string): Expectation {
     if (columns?.some((column) => !isInt(column, 1, Number.MAX_SAFE_INTEGER))) fail(where, 'columns must be column numbers, 1 or more');
     if (columns && (!lines || lines.length !== columns.length)) fail(where, 'columns needs "lines" and one column for each line');
     const codes = reject.codes === undefined ? undefined : list(reject.codes, where, 'codes');
-    if (codes?.some((code) => typeof code !== 'string' || !/^[A-Z][A-Z0-9_]*$/.test(code))) fail(where, 'codes must be diagnostic codes such as COMPILATION_FAILED');
+    if (codes?.some((code) => !isErrorCode(code))) fail(where, 'codes must be codes of the registry of the compiler (packages/zplc-compiler/src/compiler/error-codes.ts), such as UNKNOWN_IDENTIFIER');
     if (codes && lines && codes.length !== lines.length) fail(where, 'codes and lines name one entry for each diagnostic: they must have the same length');
     const elements = reject.elements === undefined ? undefined : list(reject.elements, where, 'elements');
     if (elements?.some((element) => typeof element !== 'string' || !ELEMENT_ID.test(element))) fail(where, 'elements must be ids of the source such as rung:r1/cell:0,1, block:and1, step:s1, transition:t1, action:a1 or line:7');

@@ -46,7 +46,7 @@ describe('COM-030: no AI request can carry a device link', () => {
     expect(built.success).toBe(true);
     const metafile = (built as unknown as { metafile: { inputs: Record<string, { imports: Array<{ path: string }> }> } }).metafile;
     const modules = Object.keys(metafile.inputs);
-    expect(modules.filter((path) => /serialAdapter|serialConsole|connectionManager|deviceHandshake|uploadProtocol|uploader\/|serialPortSelection|electron\/main/.test(path))).toEqual([]);
+    expect(modules.filter((path) => /serialAdapter|serialConsole|connectionManager|deviceHandshake|uploadProtocol|uploader\/|serialPort|electron\/main/.test(path))).toEqual([]);
     const external = new Set<string>();
     for (const input of Object.values(metafile.inputs)) for (const edge of input.imports) if (!edge.path.startsWith('.') && !edge.path.startsWith('/')) external.add(edge.path.replace(/^node:/, ''));
     for (const forbidden of ['net', 'dgram', 'tls', 'serialport', '@serialport/bindings-cpp', 'usb', 'child_process']) {

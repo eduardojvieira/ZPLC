@@ -5,6 +5,7 @@
 
 import type { ProjectFilesBridge } from '../../electron/projectFilesProtocol';
 import type { RecoveryBridge } from '../../electron/recoveryStoreProtocol';
+import type { SerialPortBridge } from '../../electron/serialPortProtocol';
 import type { SessionBridge } from '../../electron/sessionStoreProtocol';
 import type { FirmwareImagesBridge } from '../../electron/firmwareImagesProtocol';
 import type { UpdateCheckBridge } from '../../electron/updateCheckProtocol';
@@ -108,6 +109,8 @@ declare global {
       projectFiles?: ProjectFilesBridge;
       /** The per-project session (open tabs, cursors, panel sizes), kept by the main process (IDE-008). */
       session?: SessionBridge;
+      /** The serial port the user chooses in the in-application dialog: the main process offers the ports, the window answers (IDE-018). */
+      portChoice?: SerialPortBridge;
       /** What the main process keeps of modified files, so that a crash loses nothing the user typed (IDE-006). */
       recovery?: RecoveryBridge;
       /** Asks the main process whether a newer release exists, when the user turned the update check on or pressed Check now (IDE-010). */
