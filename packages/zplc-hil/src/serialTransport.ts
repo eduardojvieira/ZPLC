@@ -50,9 +50,13 @@ export class SerialShellTransport implements ShellTransport {
     this.buffer = '';
     return new Promise((resolve, reject) => {
       const started = Date.now();
+      let answered: number | undefined;
       const timer = setInterval(() => {
-        if (this.buffer.includes(waitFor)) { clearInterval(timer); resolve(this.buffer); }
-        else if (Date.now() - started > (options.timeoutMs ?? 5000)) { clearInterval(timer); reject(new Error(`no ${JSON.stringify(waitFor)} after ${line}`)); }
+        if (this.buffer.includes(waitFor)) {
+          // an answer that comes before its prompt is given the prompt too, or the prompt would end the next command's answer early
+          answered ??= Date.now();
+          if (waitFor === PROMPT || this.buffer.includes(PROMPT) || Date.now() - answered > 300) { clearInterval(timer); resolve(this.buffer); }
+        } else if (Date.now() - started > (options.timeoutMs ?? 5000)) { clearInterval(timer); reject(new Error(`no ${JSON.stringify(waitFor)} after ${line}`)); }
       }, 10);
       this.port.write(`${line}\r\n`, (error) => { if (error) { clearInterval(timer); reject(error); } });
     });

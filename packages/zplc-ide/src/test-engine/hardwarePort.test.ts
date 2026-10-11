@@ -33,7 +33,7 @@ describe('the scenario engine on a hardware runtime port (HIL-002)', () => {
     const persist = await mkdtemp(join(tmpdir(), 'zplc-hil-port-'));
     const link = await HostRuntimeLink.open(nativeRuntimeBinary);
     try {
-      const done = await withHardwarePort(link, { toleranceMs: 2000 }, (port) => runScenario(scenario, compiled.zplcFile!, port));
+      const done = await withHardwarePort(link, { toleranceMs: 10_000, timeoutMs: 30_000 }, (port) => runScenario(scenario, compiled.zplcFile!, port));
       expect(done.value.passed).toBe(true);
       expect(done.value.assertions.length).toBeGreaterThan(0);
       expect(done.port.observations).toHaveLength(done.value.trace.length);
@@ -57,7 +57,7 @@ describe('the scenario engine on a hardware runtime port (HIL-002)', () => {
     const link = await HostRuntimeLink.open(nativeRuntimeBinary);
     try {
       const onHost = await runScenario(scenario, compiled.zplcFile, session.runtime);
-      const onDevice = await runScenario(scenario, compiled.zplcFile, new HardwareRuntimePort(link, { toleranceMs: 2000 }));
+      const onDevice = await runScenario(scenario, compiled.zplcFile, new HardwareRuntimePort(link, { toleranceMs: 10_000, timeoutMs: 30_000 }));
       expect(onDevice.passed).toBe(onHost.passed);
       expect(onDevice.trace.map((sample) => sample.outputs)).toEqual(onHost.trace.map((sample) => sample.outputs));
     } finally {

@@ -4,6 +4,7 @@ import { describe, expect, test } from 'bun:test';
 
 // The HIL package's own tests (packages/zplc-hil/tests) run with the Studio suite, which CI runs: this file imports them so
 // that they are part of it. The test below keeps the list complete, so a test file added there cannot be left out.
+import '../../../zplc-hil/tests/cli.test';
 import '../../../zplc-hil/tests/guard.test';
 import '../../../zplc-hil/tests/hardwarePort.test';
 import '../../../zplc-hil/tests/ports.test';

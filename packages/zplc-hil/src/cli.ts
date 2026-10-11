@@ -97,6 +97,7 @@ export async function main(argv: string[], deps: CliDeps): Promise<number> {
     }
   }
 
+  const operator = values.operator ?? (link === 'serial' ? (await deps.io.ask('Operator name for the record: ')).trim() || 'unknown' : 'rehearsal');
   const started = now();
   const steps: RunStep[] = [];
   const record = (step: Omit<RunStep, 'started_at' | 'ended_at'> & { started_at?: string }): RunStep => {
@@ -153,14 +154,14 @@ export async function main(argv: string[], deps: CliDeps): Promise<number> {
     const info = identity.raw;
     const final: RunRecord = {
       schema: 'zplc.hil.run-record/1', run_id: randomUUID().replaceAll('-', ''), kind: 'scenario',
-      evidence: link === 'serial' ? 'hardware' : 'host-runtime', result: 'incomplete', started_at: started, ended_at: now(),
+      evidence: opened.kind === 'serial' ? 'hardware' : opened.kind, result: 'incomplete', started_at: started, ended_at: now(),
       board: { id: values.board },
-      device: { reported_board: identity.board, board_profile: identity.boardProfile ?? null, zplc_version: identity.zplcVersion ?? null, zephyr_version: identity.zephyrVersion ?? null, link: link === 'serial' ? 'serial' : 'host-runtime' },
+      device: { reported_board: identity.board, board_profile: identity.boardProfile ?? null, zplc_version: identity.zplcVersion ?? null, zephyr_version: identity.zephyrVersion ?? null, link: opened.kind },
       firmware: { ...firmwareIdentity(info), ...(values['firmware-image'] ? { image_sha256: sha256(readFileSync(resolve(values['firmware-image']))) } : {}) },
       programs: [{ id: scenario.id, sha256: sha256(compiled.zplcFile) }],
       scenario: { id: scenario.id, sha256: sha256(scenarioBytes), tolerance_ms: toleranceMs },
       tools: { harness: VERSION_OF_HARNESS, platform: `${platform()} ${release()} ${arch()}`, bun: process.versions.bun ?? null },
-      operator: { name: values.operator ?? (link === 'serial' ? (await deps.io.ask('Operator name for the record: ')).trim() || 'unknown' : 'rehearsal') },
+      operator: { name: operator },
       steps, tests: [], logs: [],
     };
     final.result = summarize(final);

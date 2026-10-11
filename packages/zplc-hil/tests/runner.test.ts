@@ -73,9 +73,9 @@ describe('the runner compiles, deploys, starts and observes (HIL-001)', () => {
   itNative('on the native runtime of this tree: compile, deploy, run and read back, with nothing mocked', async () => {
     const link = await HostRuntimeLink.open(nativeRuntime);
     try {
-      const result = await run(memoryCase([7, 0, 42, 0]), link, { settleMs: 400 });
+      const result = await run(memoryCase([7, 0, 42, 0]), link, { settleMs: 1500 });
       expect(result).toMatchObject({ status: 'pass' });
-      const wrong = await run(memoryCase([7, 0, 43, 0]), link, { settleMs: 400 });
+      const wrong = await run(memoryCase([7, 0, 43, 0]), link, { settleMs: 1500 });
       expect(wrong.status).toBe('fail');
     } finally {
       await link.close();

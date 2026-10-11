@@ -140,6 +140,14 @@ class ZPLCTester:
                     break
             else:
                 time.sleep(0.01)
+        if wait_for != PROMPT and wait_for in response and PROMPT not in response:
+            # the answer came before its prompt: take the prompt too, or it would be taken for the end of the next command's answer
+            quiet = time.time() + 0.3
+            while time.time() < quiet and PROMPT not in response:
+                if self.ser.in_waiting > 0:
+                    response += self.ser.read(self.ser.in_waiting).decode("utf-8", errors="ignore")
+                else:
+                    time.sleep(0.005)
         self.log.append(("rx", response))
         return response
 
