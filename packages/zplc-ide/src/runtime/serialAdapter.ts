@@ -153,16 +153,16 @@ interface CommunicationMapResponse {
 export class SerialAdapter implements IDebugAdapter {
   readonly type = 'serial' as const;
 
-  private connection: SerialConnection | null = null;
+  protected connection: SerialConnection | null = null;
   private port: SerialPort | null = null;
-  private _connected = false;
+  protected _connected = false;
   private _state: VMState = 'disconnected';
-  private events: DebugAdapterEvents = {};
+  protected events: DebugAdapterEvents = {};
   private pollingInterval: ReturnType<typeof setInterval> | null = null;
   private _passthroughMode = false;
   private connectionAttempt = 0;
   private readonly onUnexpectedDisconnect?: (adapter: SerialAdapter, message: string) => void;
-  private systemInfoCache: SystemInfo | null = null;
+  protected systemInfoCache: SystemInfo | null = null;
   private serialConsoleRemainder = '';
   private readonly handleLiveSerialChunk = (chunk: string): void => {
     const result = consumeSerialConsoleChunk(this.serialConsoleRemainder, chunk);
@@ -204,7 +204,7 @@ export class SerialAdapter implements IDebugAdapter {
     return this._passthroughMode;
   }
 
-  private setState(newState: VMState): void {
+  protected setState(newState: VMState): void {
     if (this._state !== newState) {
       this._state = newState;
       this.events.onStateChange?.(newState);
@@ -446,7 +446,7 @@ export class SerialAdapter implements IDebugAdapter {
     this.pollingInterval = setInterval(() => { void poll(); }, 200);
   }
 
-  private stopPolling(): void {
+  protected stopPolling(): void {
     if (this.pollingInterval !== null) {
       clearInterval(this.pollingInterval);
       this.pollingInterval = null;
@@ -611,7 +611,7 @@ export class SerialAdapter implements IDebugAdapter {
    * All three send variants (sendCommand, sendCommandWithOutput, sendJsonCommand)
    * go through this so they are strictly serialized on the single serial port.
    */
-  private withCommandMutex<T>(fn: () => Promise<T>): Promise<T> {
+  protected withCommandMutex<T>(fn: () => Promise<T>): Promise<T> {
     const run = async (): Promise<T> => {
       this.activeCommandCount += 1;
       try {
@@ -921,7 +921,7 @@ export class SerialAdapter implements IDebugAdapter {
   }
 
   /** The sizes of the regions this device reports (`sys info`), or the contract's until it has been asked. */
-  private regionSizes(): RegionSizes {
+  protected regionSizes(): RegionSizes {
     const memory = this.systemInfoCache?.memory;
     return memory
       ? { ipi: memory.ipi_size, opi: memory.opi_size, work: memory.work_size, retain: memory.retain_size }
