@@ -188,6 +188,8 @@ A project declares the value in `zplc.json`, on a row of `io.outputs`:
 
 Here `Brake` is energized whenever the program is not running it, and `Valve` is off. The declaration travels **inside the artifact**, in its `SAFE` segment, so that a program and its safe state are one unit: a device that restores the program restores its declaration, a replaced program replaces it, and an interrupted deploy cannot leave the program of one build with the safe values of another (see [Declared safe values](isa.md#declared-safe-values)).
 
+The confirmation of a deploy to a board shows what the artifact carries: each declared output by its address with the value it takes, or the sentence that every output is off, so that a person sees the safe state before the program is written.
+
 What is checked, and where:
 
 | Where | What is refused |
