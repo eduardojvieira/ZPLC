@@ -320,9 +320,17 @@ def validate_release_workflow(errors: list[str], workflow: str | None = None) ->
 
     reproducibility = workflow_job(workflow, "verify-linux-x64-payload-reproducibility")
     if reproducibility is None:
-        errors.append("release workflow must define a Linux payload reproducibility gate")
-    elif not has_needs(reproducibility, "validate-version", "verify-release-candidate"):
-        errors.append("Linux payload reproducibility must require validate-version and full CI")
+        errors.append("release workflow must define a Linux payload reproducibility check")
+    else:
+        if not has_needs(reproducibility, "validate-version", "verify-release-candidate"):
+            errors.append("Linux payload reproducibility must require validate-version and full CI")
+        # REL-032: the check is kept and never blocks a release run: it does not fail the run, and no job waits for it
+        if normalize_whitespace(job_field(reproducibility, "continue-on-error") or "") != "true":
+            errors.append("Linux payload reproducibility must be continue-on-error: it never blocks a release run (REL-032)")
+        for other in re.findall(r"(?m)^  ([A-Za-z0-9_-]+):\n", workflow):
+            job = workflow_job(workflow, other)
+            if other != "verify-linux-x64-payload-reproducibility" and job is not None and has_needs(job, "verify-linux-x64-payload-reproducibility"):
+                errors.append(f"{other} must not wait for the Linux payload reproducibility check (REL-032)")
 
     for build_name in ("build-macos", "build-windows", "build-linux"):
         build = workflow_job(workflow, build_name)
@@ -368,10 +376,9 @@ def validate_release_workflow(errors: list[str], workflow: str | None = None) ->
         if prepare is None:
             errors.append(f"release workflow must define {prepare_name}")
         else:
-            gate = ("verify-linux-x64-payload-reproducibility",) if platform == "linux" else ()
-            if not has_needs(prepare, "validate-version", build_name, *gate):
-                errors.append(f"{prepare_name} must require validation, its own build{' and the reproducibility gate' if gate else ''}")
-            for other in PLATFORM_SUBJECTS:
+            if not has_needs(prepare, "validate-version", build_name):
+                errors.append(f"{prepare_name} must require validation, its own build")
+            for other in (*PLATFORM_SUBJECTS, "firmware"):
                 if other != platform and has_needs(prepare, f"build-{other}"):
                     errors.append(f"{prepare_name} must not wait for the {other} build")
             if job_field(prepare, "runs-on") != "ubuntu-latest":
@@ -438,6 +445,78 @@ def validate_release_workflow(errors: list[str], workflow: str | None = None) ->
             errors.append(f"{upload_name} must refuse a release that is not a draft")
         if not has_command(commands, 'gh release upload "$RELEASE_TAG" release/* --clobber'):
             errors.append(f"{upload_name} must upload the prepared bundle to the draft release")
+
+    validate_firmware_chain(errors, workflow)
+
+
+def validate_firmware_chain(errors: list[str], workflow: str) -> None:
+    """The runtime firmware of every board (REL-022): built per board from the exact SHA, assembled, attested and uploaded."""
+    publishing_only = "${{ needs.validate-version.outputs.publishing == 'true' }}"
+    names = ("build-firmware", "assemble-firmware", "prepare-release-evidence-firmware", "upload-release-firmware")
+    jobs = {name: workflow_job(workflow, name) for name in names}
+    for name, job in jobs.items():
+        if job is None:
+            errors.append(f"release workflow must define {name}")
+    build, assemble, prepare, upload = (jobs[name] for name in names)
+    if build is not None:
+        if not has_needs(build, "validate-version", "verify-release-candidate"):
+            errors.append("build-firmware must depend on validate-version and full CI")
+        checkout_pinned, checkout_at_sha = has_pinned_checkout_at_sha(build)
+        if not checkout_pinned:
+            errors.append("build-firmware must use exactly one actions/checkout pinned to a 40-character SHA")
+        elif not checkout_at_sha:
+            errors.append("build-firmware must checkout the validated github.sha")
+        commands = run_commands(build)
+        if not (any("firmware-images.ts collect" in command for command in commands) and any('--commit "${{ github.sha }}"' in command for command in commands)):
+            errors.append("build-firmware must collect each board with the checks of firmware-images.ts and the commit of the run")
+    if assemble is not None:
+        if not has_needs(assemble, "validate-version", "build-firmware"):
+            errors.append("assemble-firmware must require validation and the firmware builds")
+        if not any("firmware-images.ts assemble" in command for command in run_commands(assemble)):
+            errors.append("assemble-firmware must assemble the boards with firmware-images.ts")
+    if prepare is not None:
+        if not has_needs(prepare, "validate-version", "assemble-firmware"):
+            errors.append("prepare-release-evidence-firmware must require validation and the assembled set")
+        for platform in PLATFORM_SUBJECTS:
+            if has_needs(prepare, f"build-{platform}"):
+                errors.append(f"prepare-release-evidence-firmware must not wait for the {platform} build")
+        if job_mapping(prepare, "permissions") != {"contents": "read", "id-token": "write", "attestations": "write", "artifact-metadata": "write"}:
+            errors.append("prepare-release-evidence-firmware must use only its minimum evidence permissions")
+        checkout_pinned, checkout_at_sha = has_pinned_checkout_at_sha(prepare)
+        if not checkout_pinned or not checkout_at_sha:
+            errors.append("prepare-release-evidence-firmware must use exactly one pinned actions/checkout of the validated github.sha")
+        commands = run_commands(prepare)
+        if not has_command(commands, 'test "$(git rev-parse HEAD)" = "${{ github.sha }}"'):
+            errors.append("prepare-release-evidence-firmware must bind the bundle to the checked-out github.sha")
+        sbom_file = "artifacts/ZPLC-${{ needs.validate-version.outputs.version }}-firmware.cdx.json"
+        if not has_command(commands, f"bun scripts/release/sbom.ts --out {sbom_file}"):
+            errors.append("prepare-release-evidence-firmware must generate the bill of materials from the lockfile with scripts/release/sbom.ts")
+        if not has_command(commands, "mv release/SHA256SUMS release/SHA256SUMS-firmware") or not has_command(commands, "mv release/release-evidence.json release/release-evidence-firmware.json"):
+            errors.append("prepare-release-evidence-firmware must give its checksum and evidence files a platform-specific name")
+        attestations = action_steps(prepare, "actions/attest@508db95dd578ae2727ebd6217d5ba78e4fbda05d")
+        if len(attestations) != 2 or not all(has_subject_paths(step, ("release/zplc-runtime-*",)) for step in attestations):
+            errors.append("prepare-release-evidence-firmware must attest only its firmware files twice")
+        elif any(normalize_whitespace(step_field(step, "if")[0] if step_field(step, "if") else "") != publishing_only for step in attestations):
+            errors.append("prepare-release-evidence-firmware must attest only when publishing")
+        bundle = action_steps(prepare, "actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02")
+        expected_bundle = "release-bundle-firmware-${{ needs.validate-version.outputs.publishing == 'true' && 'publishable' || 'preview' }}"
+        if len(bundle) != 1 or step_mapping_field(bundle[0], "with", "name") != expected_bundle or step_mapping_field(bundle[0], "with", "path") != "release/":
+            errors.append("prepare-release-evidence-firmware must upload release/ as a publishable-or-preview bundle")
+    if upload is not None:
+        if job_field(upload, "needs") != "[validate-version, create-draft-release, prepare-release-evidence-firmware]":
+            errors.append("upload-release-firmware must require validation, the draft release and its own evidence")
+        if normalize_whitespace(job_field(upload, "if") or "") != publishing_only:
+            errors.append("upload-release-firmware must run only when publishing")
+        if job_mapping(upload, "permissions") != {"contents": "write"}:
+            errors.append("upload-release-firmware must use only contents: write")
+        download = action_steps(upload, "actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093")
+        if len(download) != 1 or step_mapping_field(download[0], "with", "name") != "release-bundle-firmware-publishable":
+            errors.append("upload-release-firmware must download release-bundle-firmware-publishable")
+        commands = run_commands(upload)
+        if not any("gh release view" in command and "--json isDraft" in command and "= true" in command for command in commands):
+            errors.append("upload-release-firmware must refuse a release that is not a draft")
+        if not has_command(commands, 'gh release upload "$RELEASE_TAG" release/* --clobber'):
+            errors.append("upload-release-firmware must upload the prepared bundle to the draft release")
 
 
 def validate_ci_checkouts(errors: list[str], workflow: str | None = None) -> None:
