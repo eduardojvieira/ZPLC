@@ -42,18 +42,18 @@
   {
     "file": "packages/zplc-ide/src/components/settings/IOSection.tsx",
     "rule": "focus-override",
-    "count": 6,
+    "count": 7,
     "requirement": "UX-005",
     "added": "2026-10-11",
-    "reason": "The I/O editor is owned by the I/O description work package (WP-44); it moves to the kit with it."
+    "reason": "The I/O editor is owned by the I/O description work package (WP-44); it moves to the kit with it. The count was raised once, when that package was merged into the integration branch, and only shrinks from here."
   },
   {
     "file": "packages/zplc-ide/src/components/settings/IOSection.tsx",
     "rule": "raw-button",
-    "count": 5,
+    "count": 7,
     "requirement": "UX-002",
     "added": "2026-10-11",
-    "reason": "The I/O editor is owned by the I/O description work package (WP-44); it moves to the kit with it."
+    "reason": "The I/O editor is owned by the I/O description work package (WP-44); it moves to the kit with it. The count was raised once, when that package was merged into the integration branch, and only shrinks from here."
   },
   {
     "file": "packages/zplc-ide/src/components/settings/IOSection.tsx",
@@ -61,23 +61,23 @@
     "count": 5,
     "requirement": "UX-002",
     "added": "2026-10-11",
-    "reason": "The I/O editor is owned by the I/O description work package (WP-44); it moves to the kit with it."
+    "reason": "The I/O editor is owned by the I/O description work package (WP-44); it moves to the kit with it. The count was raised once, when that package was merged into the integration branch, and only shrinks from here."
   },
   {
     "file": "packages/zplc-ide/src/components/settings/IOSection.tsx",
     "rule": "raw-select",
-    "count": 1,
+    "count": 2,
     "requirement": "UX-002",
     "added": "2026-10-11",
-    "reason": "The I/O editor is owned by the I/O description work package (WP-44); it moves to the kit with it."
+    "reason": "The I/O editor is owned by the I/O description work package (WP-44); it moves to the kit with it. The count was raised once, when that package was merged into the integration branch, and only shrinks from here."
   },
   {
     "file": "packages/zplc-ide/src/components/settings/IOSection.tsx",
     "rule": "title-attribute",
-    "count": 5,
+    "count": 9,
     "requirement": "UX-002",
     "added": "2026-10-11",
-    "reason": "The I/O editor is owned by the I/O description work package (WP-44); it moves to the kit with it."
+    "reason": "The I/O editor is owned by the I/O description work package (WP-44); it moves to the kit with it. The count was raised once, when that package was merged into the integration branch, and only shrinks from here."
   },
   {
     "file": "packages/zplc-ide/src/components/settings/IOSection.tsx",
@@ -85,7 +85,7 @@
     "count": 6,
     "requirement": "UX-026",
     "added": "2026-10-11",
-    "reason": "The I/O editor is owned by the I/O description work package (WP-44); it moves to the kit with it."
+    "reason": "The I/O editor is owned by the I/O description work package (WP-44); it moves to the kit with it. The count was raised once, when that package was merged into the integration branch, and only shrinks from here."
   },
   {
     "file": "packages/zplc-ide/src/components/Sidebar.tsx",
