@@ -97,6 +97,19 @@ jobs:
           cmake -S firmware/lib/zplc_core -B "${RUNNER_TEMP}/zplc-native-sim-build"
           cmake --build "${RUNNER_TEMP}/zplc-native-sim-build" --target zplc_runtime --parallel
 
+      # HIL-001, HIL-004, HIL-007, HIL-008, HIL-009, HIL-012, HIL-017: the Python tests of tools/hil (every device script
+      # exits non-zero when a check fails, the chain command and the run record, the CRC32 cross check of the C loader
+      # and the TypeScript assembler) and the tests of packages/zplc-hil run on fake devices and on the native runtime.
+      # They open no serial port and are not hardware evidence.
+      - name: Test the HIL tools and the HIL package
+        env:
+          ZPLC_NATIVE_SIM_BIN: ${{ runner.temp }}/zplc-native-sim-build/zplc_runtime
+        run: |
+          test -x "$ZPLC_NATIVE_SIM_BIN"
+          python3 -B -m unittest discover -s tools/hil -p 'test_hil_*.py'
+          python3 -B tools/test_crc32_cross.py
+          bun test packages/zplc-hil
+
       - name: Build, test, and lint IDE
         env:
           ZPLC_NATIVE_SIM_BIN: ${{ runner.temp }}/zplc-native-sim-build/zplc_runtime
@@ -417,6 +430,7 @@ jobs:
           python3 tools/hil/audit_specs_scope.py
           python3 tools/hil/validate_release_evidence.py
           python3 tools/hil/validate_supported_boards.py
+          python3 tools/hil/validate_hil_trace_profile.py
           python3 tools/hil/test_validate_supported_boards.py
           python3 tools/hil/test_validate_release_evidence.py
           python3 tools/docs/test_validate_docs_pages.py
