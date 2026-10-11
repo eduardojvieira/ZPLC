@@ -1,11 +1,13 @@
 // The documents of a contributor: one task runner, copy-and-paste commands per layer, labelled fixtures, the constitution
-// readable from the contributor pages, and a changelog that says what changed for a user (DOC-023, DOC-024, DOC-026,
-// DOC-029, DOC-030). Each test reads the repository as a contributor meets it and compares it with what it points at.
+// readable from the contributor pages, a changelog that says what changed for a user, the README as a newcomer reads it and
+// the files that agents read (DOC-011, DOC-022, DOC-023, DOC-024, DOC-026, DOC-029, DOC-030). Each test reads the
+// repository as a contributor meets it and compares it with what it points at.
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'bun:test';
 
 import { changelogParts, renderReleaseNotes, type RunResults } from '../../scripts/release/release-notes';
+import { buildIndex, checkClaims, collectClaims, extractClaims } from './check_doc_claims';
 
 const ROOT = new URL('../../', import.meta.url).pathname;
 const text = (path: string) => readFileSync(join(ROOT, path), 'utf8');
@@ -146,5 +148,59 @@ describe('changelog: what changed for a user, what breaks, how to migrate and wh
     expect(notes).toContain('Rebuild every program and reflash every board');
     expect(notes).toContain('### Known issues');
     expect(notes).not.toContain('Details for contributors');
+  });
+});
+
+describe('README: what ZPLC is, what it does today, what it runs on and how to try it, on the first screen (DOC-011)', () => {
+  const readme = text('README.md');
+
+  it('says in its first lines what ZPLC is, gives one status line, a download link and the licence', () => {
+    const firstScreen = readme.split('\n').slice(0, 20).join('\n');
+    expect(firstScreen).toContain('IEC 61131-3 PLC runtime and desktop IDE');
+    expect(firstScreen.match(/^> \*\*Status:\*\*/gm)?.length).toBe(1);
+    expect(firstScreen).toContain('/releases');
+    expect(firstScreen).toContain('MIT');
+  });
+
+  it('has what a user can do today, what it runs on, how to try it and the comparison, in that order', () => {
+    const positions = ['## What you can do today', '## What it runs on', '## Try it', '## How it compares'].map((heading) => readme.indexOf(heading));
+    expect(positions.every((position) => position > 0)).toBe(true);
+    expect(positions).toEqual([...positions].sort((a, b) => a - b));
+  });
+
+  it('compares ZPLC with OpenPLC, Beremiz, CODESYS and the Arduino PLC IDE, with a date and a source in each row', () => {
+    const section = readme.slice(readme.indexOf('## How it compares'), readme.indexOf('## Documentation'));
+    expect(section).toMatch(/Checked on \d{4}-\d{2}-\d{2}/);
+    for (const name of ['OpenPLC', 'Beremiz', 'CODESYS', 'Arduino PLC IDE']) {
+      const row = section.split('\n').find((line) => line.startsWith('|') && line.includes(name));
+      expect({ name, sourced: row?.includes('](http') ?? false }).toEqual({ name, sourced: true });
+    }
+  });
+
+  it('links to pages of the repository that exist', () => {
+    const links = [...readme.matchAll(/\]\(((?:docs|packages|firmware)\/[^)#\s]+|LICENSE|west\.yml)(?:#[^)]*)?\)/g)].map((match) => match[1]!);
+    expect(links.length).toBeGreaterThan(5);
+    for (const link of links) expect({ link, exists: existsSync(join(ROOT, link)) }).toEqual({ link, exists: true });
+  });
+});
+
+describe('agent files: the project skill and AGENTS.md are current, and the contributor guide comes first (DOC-022)', () => {
+  it('tracks only the project skill under .agents', () => {
+    const tracked = Bun.spawnSync(['git', 'ls-files', '.agents'], { cwd: ROOT, stdout: 'pipe' }).stdout.toString().split('\n').filter(Boolean);
+    expect(tracked).toContain('.agents/skills/zplc-plc-programmer/SKILL.md');
+    expect(tracked.filter((file) => !file.startsWith('.agents/skills/zplc-plc-programmer/'))).toEqual([]);
+  });
+
+  it('holds the claims of AGENTS.md, QUICKSTART_AGENTS.md and the skill to the check that the pages pass', () => {
+    const pages = new Set(collectClaims(ROOT).map((claim) => claim.page));
+    for (const page of ['AGENTS.md', 'QUICKSTART_AGENTS.md', '.agents/skills/zplc-plc-programmer/SKILL.md']) expect({ page, checked: pages.has(page) }).toEqual({ page, checked: true });
+    const invented = extractClaims('.agents/skills/zplc-plc-programmer/SKILL.md', 'Run `bun run no-such-recipe-exists` before the build, and read `tools/no/such/file.py`.');
+    expect(invented.length).toBeGreaterThan(0);
+    expect(checkClaims(invented, buildIndex(), []).findings.length).toBe(invented.length);
+  });
+
+  it('has AGENTS.md point to CONTRIBUTING.md, and CONTRIBUTING.md not point back', () => {
+    expect(text('AGENTS.md')).toContain('(CONTRIBUTING.md)');
+    expect(text('CONTRIBUTING.md')).not.toMatch(/AGENTS\.md|QUICKSTART_AGENTS\.md/);
   });
 });

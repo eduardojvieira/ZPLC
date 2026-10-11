@@ -1914,6 +1914,9 @@
     {"kind":"unit","ref":"tools/docs/install_and_status_pages.test.ts","test":"hardware support page: one table, derived from the manifest and its records (DOC-010)"},
     {"kind":"unit","ref":"tools/docs/install_and_status_pages.test.ts","test":"safety page: what ZPLC is not, and limits that the source says (DOC-010)"}
   ],
+  "DOC-011": [
+    {"kind":"unit","ref":"tools/docs/contributor_docs.test.ts","test":"README: what ZPLC is, what it does today, what it runs on and how to try it, on the first screen (DOC-011)"}
+  ],
   "DOC-012": [
     {"kind":"unit","ref":"tools/docs/check_capability_claims.test.ts","test":"capability claims: what the public text says ZPLC can do is backed by a check (DOC-012)"}
   ],
@@ -1932,6 +1935,9 @@
   ],
   "DOC-018": [
     {"kind":"unit","ref":"tools/docs/docs_structure.test.ts","test":"docs site: admonitions in the generator\\'s own syntax and no version selector for one version (DOC-018, stopgap: the site has no search yet)","partial":true}
+  ],
+  "DOC-022": [
+    {"kind":"unit","ref":"tools/docs/contributor_docs.test.ts","test":"agent files: the project skill and AGENTS.md are current, and the contributor guide comes first (DOC-022)"}
   ],
   "DOC-023": [
     {"kind":"unit","ref":"tools/docs/contributor_docs.test.ts","test":"task runner: one entry point, with a recipe for each step a contributor takes (DOC-023)"}
