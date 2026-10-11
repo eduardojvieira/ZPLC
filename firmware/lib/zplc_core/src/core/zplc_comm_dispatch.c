@@ -84,7 +84,7 @@ static int has_state(const uint8_t *fb_mem) {
 /* A failure code of a handler: -(zplc_comm_status_t), or UNKNOWN for any
  * other negative value (the codes 0 and 1 are not failures). */
 static uint32_t failure_status(int result) {
-  if (result <= -(int)ZPLC_COMM_TIMEOUT && result >= -(int)ZPLC_COMM_UNAVAILABLE) {
+  if (result <= -ZPLC_COMM_TIMEOUT && result >= -ZPLC_COMM_UNAVAILABLE) {
     return (uint32_t)(-result);
   }
   return (uint32_t)ZPLC_COMM_UNKNOWN;

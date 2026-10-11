@@ -2467,10 +2467,11 @@ int zplc_mqtt_fb_event_grid(const void *owner, const char *event_type, const cha
   if (rc != ZPLC_COMM_HANDLER_PENDING) {
     return rc;
   }
-  strcpy(req->event_type, event_type);
-  strcpy(req->topic, topic);
-  strcpy((char *)req->payload, data);
+  /* every length was checked against its member above: the terminator goes with the text */
+  memcpy(req->event_type, event_type, strlen(event_type) + 1U);
+  memcpy(req->topic, topic, strlen(topic) + 1U);
   req->payload_len = strlen(data);
+  memcpy(req->payload, data, req->payload_len + 1U);
   return fb_queue(req);
 }
 

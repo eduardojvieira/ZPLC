@@ -278,16 +278,13 @@ class PythonToolsMatchGolden(unittest.TestCase):
         self.assertEqual(self.view["tester"]["opcodes"], self.opcodes)
 
 
-HANDLERS = ROOT / "firmware/app/src"
-
-
 class HandlersTakeTheirLayoutFromTheTable(unittest.TestCase):
-    """What the Zephyr handlers assume of a function-block layout against the generated table (RT-002, COM-005).
+    """The layout the generated table gives a function block is one a handler can use (RT-002, COM-005).
 
-    A handler names no offset of its own: every member is the generated ZPLC_COMM_<BLOCK>_<MEMBER>_OFFSET, so the
-    table is the one place a layout is written. The behaviour is proved by the host tests of the handlers, which
-    build their blocks from the same constants under the address sanitizer, and by string_cross.py, which reads the
-    members of a compiled program with the accessors of the handlers.
+    This reads the contract and no product source. That a handler names no offset of its own is proved by what it
+    does: the host tests of the handlers build their blocks from the generated ZPLC_COMM_<BLOCK>_<MEMBER>_OFFSET
+    constants under the address sanitizer, and string_cross.py compiles a program and reads the members of its
+    blocks with the accessors of the handlers.
     """
 
     KNOWN_LAYOUT_FINDINGS: list[str] = []
@@ -295,26 +292,6 @@ class HandlersTakeTheirLayoutFromTheTable(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.blocks = {b["name"]: b for b in generate.comm_blocks(CONTRACT)}
-
-    def test_no_handler_writes_a_member_offset_or_a_string_layout_as_a_number(self):
-        # The one place the repository has to pin a source text: the handlers are C files of the Zephyr
-        # application and nothing renders them, so a number in a #define is only seen by reading it.
-        found = []
-        for path in sorted(HANDLERS.glob("zplc_comm_*_handler.c")):
-            text = path.read_text()
-            for m in re.finditer(r"^#define\s+(\w*(?:_OFF_|_OFFSET|STR_OFF)\w*)\s+(?:0x[0-9A-Fa-f]+|\d+)U?\b", text, flags=re.M):
-                found.append(f"{path.name}: {m.group(1)}")
-        self.assertEqual(found, [])
-
-    def test_the_string_accessors_take_the_layout_from_the_string_table(self):
-        text = (HANDLERS / "zplc_comm_fb_access.h").read_text()
-        string = CONTRACT["string"]
-        for name, key in (("ZPLC_STRING_LEN_OFFSET", "lenOffset"), ("ZPLC_STRING_CAP_OFFSET", "capOffset"),
-                          ("ZPLC_STRING_DATA_OFFSET", "dataOffset")):
-            self.assertIn(name, text)
-            self.assertIn(name, (ROOT / "firmware/lib/zplc_core/include/zplc_isa.h").read_text())
-            self.assertIsInstance(string[key], int)
-        self.assertNotRegex(text, r"#define\s+ZPLC_FB_STR_(LEN|CAP|DATA)\s+\d")
 
     def test_nominal_string_members_against_the_layout_offsets(self):
         findings = []

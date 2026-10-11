@@ -9,7 +9,7 @@
  *
  * SPDX-License-Identifier: MIT
  */
-#define _POSIX_C_SOURCE 200809L
+#define _POSIX_C_SOURCE 200809L /* NOLINT(bugprone-reserved-identifier,cert-dcl37-c,cert-dcl51-cpp): feature-test macro */
 
 #include <signal.h>
 #include <stdio.h>

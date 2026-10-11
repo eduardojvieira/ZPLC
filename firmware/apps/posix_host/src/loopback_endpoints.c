@@ -3,7 +3,7 @@
  *
  * SPDX-License-Identifier: MIT
  */
-#define _POSIX_C_SOURCE 200809L
+#define _POSIX_C_SOURCE 200809L /* NOLINT(bugprone-reserved-identifier,cert-dcl37-c,cert-dcl51-cpp): feature-test macro */
 
 #include "loopback_endpoints.h"
 
@@ -502,7 +502,7 @@ static void mq_send_publish(struct mq_client *c, const char *topic, const uint8_
   } while (remaining != 0U);
   put_be16(&wire[at], (uint16_t)topic_len);
   at += 2U;
-  memcpy(&wire[at], topic, topic_len);
+  memcpy(&wire[at], topic, topic_len); /* NOLINT(bugprone-not-null-terminated-result): a packet, not a string */
   at += topic_len;
   if (length != 0U) {
     memcpy(&wire[at], payload, length);
@@ -556,7 +556,7 @@ static void mq_keep_retained(struct zplc_loopback_mqtt *b, const char *topic, co
     return;
   }
   slot->used = true;
-  snprintf(slot->topic, sizeof(slot->topic), "%s", topic);
+  (void)snprintf(slot->topic, sizeof(slot->topic), "%s", topic);
   slot->length = length < sizeof(slot->payload) ? length : sizeof(slot->payload);
   memcpy(slot->payload, payload, slot->length);
 }
@@ -636,7 +636,7 @@ static size_t mq_packet(struct zplc_loopback_mqtt *b, struct mq_client *c) {
     }
     b->publishes++;
     b->have_last = true;
-    snprintf(b->last_topic, sizeof(b->last_topic), "%s", topic);
+    (void)snprintf(b->last_topic, sizeof(b->last_topic), "%s", topic);
     b->last_length = length - offset < sizeof(b->last_payload) ? length - offset : sizeof(b->last_payload);
     memcpy(b->last_payload, &body[offset], b->last_length);
     b->last_qos = qos;
@@ -698,7 +698,7 @@ static size_t mq_packet(struct zplc_loopback_mqtt *b, struct mq_client *c) {
         suback[4U + granted++] = 0x80U; /* no room: refused */
       } else {
         c->filters[f].used = true;
-        snprintf(c->filters[f].filter, sizeof(c->filters[f].filter), "%s", filter);
+        (void)snprintf(c->filters[f].filter, sizeof(c->filters[f].filter), "%s", filter);
         suback[4U + granted++] = qos <= 2U ? 0x00U : 0x80U; /* granted at QoS 0: publishes are delivered so */
         for (r = 0U; r < MQ_RETAINED; r++) {
           if (b->retained[r].used && mq_matches(filter, b->retained[r].topic)) {
@@ -909,7 +909,7 @@ bool zplc_loopback_mqtt_last_publish(zplc_loopback_mqtt_t *b, char *topic, size_
     const size_t kept = b->last_length < payload_capacity ? b->last_length : payload_capacity;
 
     if (topic != NULL && topic_capacity != 0U) {
-      snprintf(topic, topic_capacity, "%s", b->last_topic);
+      (void)snprintf(topic, topic_capacity, "%s", b->last_topic);
     }
     if (payload != NULL) {
       memcpy(payload, b->last_payload, kept);

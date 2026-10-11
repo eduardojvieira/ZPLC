@@ -288,7 +288,7 @@ static inline int zplc_comm_req_peek(const zplc_comm_req_pool_t *pool, const voi
         candidate->state = ZPLC_COMM_REQ_FREE;
         candidate->owner = NULL;
       }
-    } else if ((uint32_t)(now_ms - candidate->started_ms) > timeout_ms) {
+    } else if (now_ms - candidate->started_ms > timeout_ms) {
       /* queued, running or still being filled in: too old */
       candidate->state = candidate->state == ZPLC_COMM_REQ_CLAIMED ? ZPLC_COMM_REQ_FREE
                                                                     : ZPLC_COMM_REQ_ABANDONED;

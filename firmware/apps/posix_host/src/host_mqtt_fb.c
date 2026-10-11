@@ -12,7 +12,7 @@
  *
  * SPDX-License-Identifier: MIT
  */
-#define _POSIX_C_SOURCE 200809L
+#define _POSIX_C_SOURCE 200809L /* NOLINT(bugprone-reserved-identifier,cert-dcl37-c,cert-dcl51-cpp): feature-test macro */
 
 #include <errno.h>
 #include <poll.h>
@@ -159,7 +159,7 @@ int zplc_mqtt_fb_publish(const void *owner, const char *topic, const uint8_t *pa
   req->qos = qos;
   req->retain = retain;
   zplc_comm_req_submit(&s_pool, &req->head);
-  if (k_msgq_put(&s_queue, &req, K_NO_WAIT) != 0) {
+  if (k_msgq_put(&s_queue, (const void *)&req, K_NO_WAIT) != 0) {
     zplc_comm_req_cancel(&s_pool, &req->head);
     return ZPLC_COMM_HANDLER_FAIL(ZPLC_COMM_QUEUE_FULL);
   }
@@ -551,7 +551,7 @@ static int send_due_subscriptions(int sock) {
 static void fail_queued(int error) {
   struct fb_req *req = NULL;
 
-  while (k_msgq_get(&s_queue, &req, K_NO_WAIT) == 0) {
+  while (k_msgq_get(&s_queue, (void *)&req, K_NO_WAIT) == 0) {
     if (req != NULL && zplc_comm_req_begin(&s_pool, &req->head)) {
       zplc_comm_req_finish(&s_pool, &req->head,
                            zplc_comm_fail_from_errno(error != 0 ? error : -ENOTCONN));
@@ -562,7 +562,7 @@ static void fail_queued(int error) {
 static int run_queued(int sock) {
   struct fb_req *req = NULL;
 
-  while (k_msgq_get(&s_queue, &req, K_NO_WAIT) == 0) {
+  while (k_msgq_get(&s_queue, (void *)&req, K_NO_WAIT) == 0) {
     int rc;
 
     /* Let go of by its block (reset, or older than its time limit) while it waited: nothing is sent. */
@@ -887,10 +887,10 @@ int zplc_host_mqtt_start(const zplc_host_mqtt_config_t *config) {
   if (strlen(config->host) >= sizeof(s_host)) {
     return -ENAMETOOLONG;
   }
-  strcpy(s_host, config->host);
+  (void)snprintf(s_host, sizeof(s_host), "%s", config->host);
   s_port = config->port != 0U ? config->port : 1883U;
   if (config->client_id != NULL && strlen(config->client_id) < sizeof(s_client_id)) {
-    strcpy(s_client_id, config->client_id);
+    (void)snprintf(s_client_id, sizeof(s_client_id), "%s", config->client_id);
   } else {
     (void)snprintf(s_client_id, sizeof(s_client_id), "zplc-sim-%ld", (long)getpid());
   }
