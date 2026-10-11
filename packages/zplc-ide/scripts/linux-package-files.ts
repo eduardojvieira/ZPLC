@@ -5,7 +5,7 @@
 // The udev rule that lets the logged-in user open the serial port of a board must be in each package, at the vendor
 // rules folder, with the bytes that scripts/release/udev-rules.ts generates from tools/hil/usb-ids.json. A .deb is read
 // with ar and tar, an .rpm with rpm2cpio and cpio: the tools that the Linux runners and every distribution have.
-import { mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { RULE_TARGET, readUsbIds, renderUdevRules, type BoardEntry } from '../../../scripts/release/udev-rules';
@@ -20,12 +20,10 @@ export function fileOfPackage(packagePath: string, path: string): Buffer | null 
   if (packagePath.endsWith('.rpm')) {
     const work = mkdtempSync(join(tmpdir(), 'zplc-rpm-'));
     try {
-      const cpio = run(['rpm2cpio', packagePath]);
-      if (!cpio.ok) throw new Error(`rpm2cpio failed for ${packagePath}: ${cpio.stderr.trim()}`);
-      const archive = join(work, 'payload.cpio');
-      writeFileSync(archive, cpio.stdout);
-      const extracted = run(['cpio', '--quiet', '-i', '--to-stdout', `.${path}`, '-F', archive]);
-      return extracted.ok && extracted.stdout.length > 0 ? extracted.stdout : null;
+      // the payload of the package goes through the pipe and only the one member is written, into the work folder
+      const extracted = run(['sh', '-c', 'rpm2cpio "$1" | cpio -idm --quiet "$2"', 'sh', resolve(packagePath), `.${path}`], work);
+      const file = join(work, path.slice(1));
+      return extracted.ok && existsSync(file) ? readFileSync(file) : null;
     } finally {
       rmSync(work, { recursive: true, force: true });
     }

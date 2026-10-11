@@ -45,3 +45,30 @@ describe.skipIf(!have('ar') || !have('tar'))('the udev rule inside a .deb (REL-0
     expect(() => fileOfPackage('/tmp/x.tar', RULE_TARGET)).toThrow('neither a .deb nor an .rpm');
   });
 });
+
+/** A one-file .rpm made by rpmbuild, which the Fedora family and the runners that build the .rpm have. */
+function fakeRpm(content: string): string {
+  const root = mkdtempSync(join(tmpdir(), 'zplc-fake-rpm-'));
+  roots.push(root);
+  for (const folder of ['BUILD', 'RPMS', 'SOURCES', 'SPECS', 'SRPMS', 'BUILDROOT']) mkdirSync(join(root, folder));
+  writeFileSync(join(root, 'SOURCES/rule'), content);
+  const spec = [
+    'Name: zplc-fake', 'Version: 1', 'Release: 1', 'Summary: a package that holds one rule', 'License: MIT', 'BuildArch: noarch', 'Source0: rule',
+    '%description', 'x', '%install', `mkdir -p %{buildroot}${RULE_TARGET.slice(0, RULE_TARGET.lastIndexOf('/'))}`, `cp %{SOURCE0} %{buildroot}${RULE_TARGET}`,
+    '%files', RULE_TARGET,
+  ].join('\n');
+  writeFileSync(join(root, 'SPECS/fake.spec'), `${spec}\n`);
+  const built = Bun.spawnSync(['rpmbuild', '--define', `_topdir ${root}`, '-bb', join(root, 'SPECS/fake.spec')], { stdout: 'pipe', stderr: 'pipe' });
+  if (built.exitCode !== 0) throw new Error(built.stderr.toString());
+  return join(root, 'RPMS/noarch/zplc-fake-1-1.noarch.rpm');
+}
+
+describe.skipIf(!have('rpmbuild') || !have('rpm2cpio') || !have('cpio'))('the udev rule inside an .rpm (REL-013)', () => {
+  it('reads the file at its installed path, and nothing for a path the package does not hold', () => {
+    const rpm = fakeRpm('TAG+="uaccess"\n');
+    expect(fileOfPackage(rpm, RULE_TARGET)?.toString()).toBe('TAG+="uaccess"\n');
+    expect(fileOfPackage(rpm, '/usr/lib/udev/rules.d/other.rules')).toBeNull();
+    expect(udevRuleProblems(rpm, 'TAG+="uaccess"\n')).toEqual([]);
+    expect(udevRuleProblems(rpm, 'another\n')[0]).toContain('not the rule that scripts/release/udev-rules.ts generates');
+  });
+});
