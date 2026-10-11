@@ -200,6 +200,22 @@ config ZPLC_HARDWARE_WATCHDOG_TIMEOUT_MS
       Exact profile-owned timeout passed to the Zephyr watchdog driver. This
       setting has no evidence value until HIL verifies the selected device.
 
+config ZPLC_DEADLINE_MISS_LIMIT
+    int "Consecutive deadline misses of one task that latch the fault"
+    default 3
+    range 1 1000000
+    help
+      A task misses its deadline when a scan ends more than one interval after
+      its release. A miss raises the warning, is counted and its overrun is
+      recorded (RT-014). This many misses of the same task in a row latch the
+      fault: the outputs go to their safe state and a program has to be loaded
+      or the runtime reset. A scan in time ends the run of misses.
+
+      The default of three tolerates one late activation, which a communication
+      burst or a flash write can cause, and still stops a scan that does not fit
+      its interval. 1 latches at the first miss. This value is a design default
+      until a board's timing record states another (HIL-010).
+
 config ZPLC_MAX_TASKS
     int "Maximum number of concurrent tasks"
     default 8

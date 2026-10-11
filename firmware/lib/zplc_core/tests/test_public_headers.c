@@ -22,6 +22,7 @@
 #include <zplc_isa.h>
 #include <zplc_loader.h>
 #include <zplc_retain.h>
+#include <zplc_sched_core.h>
 #include <zplc_scheduler.h>
 
 #define ZPLC_TEST_HOOK(name) typedef int name;

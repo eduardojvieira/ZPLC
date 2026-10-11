@@ -112,6 +112,17 @@ int zplc_sched_core_add_task(zplc_sched_core_t *core, const zplc_task_def_t *def
   return -1;
 }
 
+int zplc_sched_core_free_slot(const zplc_sched_core_t *core) {
+  uint8_t index;
+
+  for (index = 0U; index < core->capacity; index++) {
+    if (core->slot[index].registered == 0U) {
+      return (int)index;
+    }
+  }
+  return -1;
+}
+
 int zplc_sched_core_remove_task(zplc_sched_core_t *core, int slot_index) {
   zplc_sched_slot_t *slot;
 
@@ -286,6 +297,8 @@ void zplc_sched_core_set_stopped(zplc_sched_core_t *core) {
     }
     if (faulted == 0U) {
       slot->task.state = ZPLC_TASK_STATE_READY;
+      /* A stopped task has no scan left to continue. */
+      slot->first_scan_interrupted = 0U;
     }
     slot->pending = 0U;
   }
@@ -323,8 +336,16 @@ void zplc_sched_core_reset_counters(zplc_sched_core_t *core) {
   uint8_t index;
 
   for (index = 0U; index < core->capacity; ++index) {
-    core->slot[index].task.stats.overrun_count = 0U;
-    core->slot[index].consecutive_misses = 0U;
+    zplc_sched_slot_t *slot = &core->slot[index];
+
+    slot->task.stats.overrun_count = 0U;
+    slot->consecutive_misses = 0U;
+    if (slot->registered != 0U && slot->task.state == ZPLC_TASK_STATE_ERROR) {
+      slot->task.state = ZPLC_TASK_STATE_READY;
+    }
+  }
+  if (core->state == ZPLC_SCHED_STATE_ERROR) {
+    core->state = ZPLC_SCHED_STATE_IDLE;
   }
   core->last_overrun_us = 0U;
   core->fault_latched = 0U;
@@ -337,6 +358,16 @@ void zplc_sched_core_restart_schedule(zplc_sched_core_t *core) {
 
   for (index = 0U; index < core->capacity; ++index) {
     core->slot[index].consecutive_misses = 0U;
+  }
+}
+
+void zplc_sched_core_begin_run(zplc_sched_core_t *core) {
+  uint8_t index;
+
+  for (index = 0U; index < core->capacity; ++index) {
+    core->slot[index].consecutive_misses = 0U;
+    core->slot[index].run_scans = 0U;
+    core->slot[index].first_scan_interrupted = 0U;
   }
 }
 
@@ -484,13 +515,18 @@ static void write_system_registers(const zplc_sched_core_t *core, uint16_t task_
 /*
  * Runs one part of one task's scan. Image lock held. Returns the VM result (negative: the task failed), or
  * ZPLC_VM_PAUSED when a breakpoint stopped it. *latched is set when this part's deadline miss reached the limit.
+ *
+ * The clock is read once after the part ends: a part starts where the one before it ended, and the first starts
+ * at the instant the batch did. The duration of a part therefore includes the little between two tasks, and the
+ * clock is read once per task and not twice.
  */
 static int run_task(zplc_sched_core_t *core, const zplc_sched_port_t *port, zplc_sched_slot_t *slot, int step_mode,
-                    int *latched, zplc_sched_scan_report_t *report) {
+                    uint64_t start_us, uint64_t batch_start_us, uint64_t *ended_us, int *latched,
+                    zplc_sched_scan_report_t *report) {
   zplc_vm_t *vm = slot->vm;
   const uint16_t task_id = slot->task.config.id;
-  uint64_t start_us;
   uint64_t end_us;
+  uint64_t ref_us;
   uint32_t exec_us;
   uint64_t over_us = 0U;
   int result;
@@ -506,9 +542,8 @@ static int run_task(zplc_sched_core_t *core, const zplc_sched_port_t *port, zplc
    * from the preserved pc and stacks instead of starting a new scan. The remainder belongs to the scan it
    * started in and keeps that scan's first-scan flag, however many parts the scan has. */
   continuing = vm->scan_resumed != 0U && vm->paused == 0U && vm->halted == 0U;
-  first_scan = continuing ? slot->first_scan_interrupted != 0U : slot->task.stats.cycle_count == 0U;
+  first_scan = continuing ? slot->first_scan_interrupted != 0U : slot->run_scans == 0U;
 
-  start_us = port->now_us(port->ctx);
   /* Every part of a scan writes its own task id, even when another task ran in between in the same batch. */
   write_system_registers(core, task_id, slot->task.stats.last_exec_time_us, clamp_u32(start_us / 1000U), first_scan);
 
@@ -517,11 +552,13 @@ static int run_task(zplc_sched_core_t *core, const zplc_sched_port_t *port, zplc
   slot->first_scan_interrupted = (breakpoint != 0 && first_scan != 0) ? 1U : 0U;
 
   end_us = port->now_us(port->ctx);
+  *ended_us = end_us;
   exec_us = clamp_u32(end_us > start_us ? end_us - start_us : 0U);
+  ref_us = slot->deadline_ref_us == ZPLC_SCHED_REF_BATCH_START ? batch_start_us : slot->deadline_ref_us;
 
   /* A debugger step and a scan that stopped at a breakpoint are not checked (RT-017). */
   if (step_mode == 0 && breakpoint == 0) {
-    over_us = zplc_sched_core_overrun_us(slot->deadline_ref_us, end_us, slot->task.config.interval_us);
+    over_us = zplc_sched_core_overrun_us(ref_us, end_us, slot->task.config.interval_us);
     if (port->probe != NULL && port->probe(port->ctx, ZPLC_SCHED_PROBE_FORCE_MISS, task_id) != 0) {
       forced = 1;
     }
@@ -529,6 +566,7 @@ static int run_task(zplc_sched_core_t *core, const zplc_sched_port_t *port, zplc
 
   key = enter(port);
   count_up(&slot->task.stats.cycle_count);
+  count_up(&slot->run_scans);
   slot->task.stats.last_exec_time_us = exec_us;
   if (exec_us > slot->task.stats.max_exec_time_us) {
     slot->task.stats.max_exec_time_us = exec_us;
@@ -592,6 +630,8 @@ int zplc_sched_core_scan(zplc_sched_core_t *core, const zplc_sched_port_t *port,
   int pause_safe_result = 0;
   zplc_sched_fault_reason_t fault_reason = ZPLC_SCHED_FAULT_RUNTIME;
   uint16_t fault_task = 0U;
+  uint64_t batch_start_us = 0U;
+  uint64_t cursor_us = 0U;
   unsigned int key;
   uint8_t index;
   int running;
@@ -637,7 +677,7 @@ int zplc_sched_core_scan(zplc_sched_core_t *core, const zplc_sched_port_t *port,
   }
 
   if (sample_result != 0) {
-    result = ZPLC_SCHED_ERR_IO;
+    result = sample_result;
     fault_reason = ZPLC_SCHED_FAULT_IO;
     image_fault_result = zplc_sched_core_latch_fault_image(core, port, fault_reason, 0U);
     faulted = 1;
@@ -651,6 +691,8 @@ int zplc_sched_core_scan(zplc_sched_core_t *core, const zplc_sched_port_t *port,
     for (index = 0U; index < count; ++index) {
       trace(core, ZPLC_SCHED_TRACE_ORDER, core->slot[order[index]].task.config.id, index, 0U);
     }
+    batch_start_us = port->now_us(port->ctx);
+    cursor_us = batch_start_us;
   }
 
   for (index = 0U; faulted == 0 && index < count; ++index) {
@@ -667,7 +709,7 @@ int zplc_sched_core_scan(zplc_sched_core_t *core, const zplc_sched_port_t *port,
       continue;
     }
 
-    task_result = run_task(core, port, slot, step_mode, &latched, report);
+    task_result = run_task(core, port, slot, step_mode, cursor_us, batch_start_us, &cursor_us, &latched, report);
     key = enter(port);
     slot->pending = 0U;
     leave(port, key);

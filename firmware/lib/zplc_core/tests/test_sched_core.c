@@ -396,7 +396,8 @@ static void test_scan_phases_are_ordered(void) {
   uint8_t order[TASKS];
   uint8_t count;
   zplc_sched_scan_report_t report;
-  const uint64_t times[] = {1000U, 1100U, 1100U, 1200U, 1200U, 1300U};
+  /* one read when the batch starts and one after each task */
+  const uint64_t times[] = {1000U, 1100U, 1200U, 1300U};
 
   printf("\n=== Test: phases of a scan (RT-009, RT-010, RT-012) ===\n");
   setup(0U, 0U);
@@ -415,7 +416,7 @@ static void test_scan_phases_are_ordered(void) {
   CHECK(core.slot[0].pending == 0U && core.slot[1].pending == 0U && core.slot[2].pending == 0U,
         "no release is pending afterwards");
   CHECK(core.slot[0].task.stats.cycle_count == 1U && core.slot[0].task.stats.last_exec_time_us == 100U,
-        "the duration of the scan is the difference of the two clock reads");
+        "a task's duration runs from where the previous one ended");
   CHECK(core.state == ZPLC_SCHED_STATE_RUNNING, "the runtime keeps running");
 }
 
@@ -446,7 +447,7 @@ static void miss_scenario(uint32_t limit, uint64_t end_offset, int expected_faul
   order[0] = 0U;
   times[0] = 1000U;
   times[1] = 1000U + 10000U + end_offset;
-  script(times, 2U);
+  script(times, 2U);  /* batch start, end of the task */
   result = zplc_sched_core_scan(&core, &port, order, 1U, 0, &report);
   CHECK((result == ZPLC_SCHED_ERR_DEADLINE) == (expected_fault != 0), what);
 }
@@ -522,11 +523,31 @@ static void test_deadline_reference_is_separate_from_release(void) {
   CHECK(zplc_sched_core_scan(&core, &port, order, 1U, 0, NULL) == 0, "ending an interval after the dispatch is in time");
 }
 
+static void test_batch_start_reference_is_the_dispatch(void) {
+  uint8_t order[1] = {0U};
+  uint64_t times[2];
+
+  printf("\n=== Test: a host counts the deadline from the instant it dispatched the batch ===\n");
+  setup(1U, 0U);
+  run_all();
+  zplc_sched_core_admit(&core, 0, 1000U, ZPLC_SCHED_REF_BATCH_START);
+  times[0] = 50000U; /* the batch starts 49 ms after the release: that lateness is not a miss */
+  times[1] = 50000U + 10000U;
+  script(times, 2U);
+  CHECK(zplc_sched_core_scan(&core, &port, order, 1U, 0, NULL) == 0, "an interval from the batch start is in time");
+  zplc_sched_core_admit(&core, 0, 1000U, ZPLC_SCHED_REF_BATCH_START);
+  times[0] = 60000U;
+  times[1] = 60000U + 10001U;
+  script(times, 2U);
+  CHECK(zplc_sched_core_scan(&core, &port, order, 1U, 0, NULL) == ZPLC_SCHED_ERR_DEADLINE,
+        "and one microsecond more is a miss");
+}
+
 static void test_vm_fault_latches_and_settles(void) {
   uint8_t order[TASKS];
   uint8_t count;
   zplc_sched_scan_report_t report;
-  const uint64_t times[] = {1000U, 1010U, 1010U, 1020U};
+  const uint64_t times[] = {1000U, 1010U, 1020U};
   int result;
 
   printf("\n=== Test: a VM fault drives the outputs safe (RT-007) ===\n");
@@ -559,7 +580,8 @@ static void test_sample_failure_is_an_io_fault(void) {
   admit_all(1000U);
   fake.sample_result = -5;
   result = zplc_sched_core_scan(&core, &port, order, 1U, 0, NULL);
-  CHECK(result == ZPLC_SCHED_ERR_IO && core.fault_reason == (uint8_t)ZPLC_SCHED_FAULT_IO, "the fault is an I/O fault");
+  CHECK(result == -5 && core.fault_reason == (uint8_t)ZPLC_SCHED_FAULT_IO,
+        "the fault is an I/O fault and the caller gets the failure the port returned");
   CHECK(strstr(fake.log, "latch ") == NULL && strstr(fake.log, "write") == NULL, "no input was latched, no output written");
 }
 
@@ -616,7 +638,7 @@ static void test_step_and_breakpoint(void) {
   zplc_sched_scan_report_t report;
   const uint64_t slow[] = {1000U, 900000U};
   /* Task 3 runs first and is quick; task 2 stops at its breakpoint after nearly a second. */
-  const uint64_t slow_breakpoint[] = {1000U, 1100U, 1100U, 900000U};
+  const uint64_t slow_breakpoint[] = {1000U, 1100U, 900000U};
   int result;
 
   printf("\n=== Test: a step and a breakpoint pause the runtime (RT-017) ===\n");
@@ -641,7 +663,7 @@ static void test_step_and_breakpoint(void) {
   run_all();
   admit_all(1000U);
   count = zplc_sched_core_collect(&core, order, TASKS);
-  script(slow_breakpoint, 4U);
+  script(slow_breakpoint, 3U);
   fake.log[0] = '\0';
   result = zplc_sched_core_scan(&core, &port, order, count, 0, &report);
   CHECK(result == 0 && report.paused == 1U && report.paused_task == 2, "a breakpoint pauses the runtime");
@@ -695,6 +717,7 @@ int main(void) {
   test_idle_core_does_nothing();
   test_deadline_accounting();
   test_deadline_reference_is_separate_from_release();
+  test_batch_start_reference_is_the_dispatch();
   test_vm_fault_latches_and_settles();
   test_sample_failure_is_an_io_fault();
   test_write_and_feed_failures();

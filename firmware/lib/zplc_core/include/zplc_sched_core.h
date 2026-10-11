@@ -62,6 +62,12 @@ extern "C" {
  */
 #define ZPLC_SCHED_DEFAULT_MISS_LIMIT 3U
 
+/**
+ * @brief A deadline reference that means "the instant the batch started", for a runtime that has no timer of its
+ *        own: the host dispatches a batch when it polls, and counts each scan's interval from that dispatch.
+ */
+#define ZPLC_SCHED_REF_BATCH_START UINT64_MAX
+
 /** @brief A scan whose task missed its deadline the configured number of times in a row. */
 #define ZPLC_SCHED_ERR_DEADLINE (-110)
 /** @brief A task returned a VM error. */
@@ -128,7 +134,10 @@ typedef enum {
 typedef struct zplc_sched_port {
   void *ctx; /**< passed to every callback */
 
-  /** Monotonic time in microseconds. It is read twice per task part: before it runs and after. */
+  /**
+ * Monotonic time in microseconds. A scan reads it once after its inputs are latched, which is the instant the
+ * batch started, and once after each task part.
+ */
   uint64_t (*now_us)(void *ctx);
 
   /** The critical section of the core's own state. Returns a key that leave() gets back. */
@@ -180,6 +189,7 @@ typedef struct {
   uint64_t release_us;             /**< when the pending release happened: the order key */
   uint64_t deadline_ref_us;        /**< the instant the deadline is counted from */
   uint32_t consecutive_misses;     /**< deadline misses since the last scan that was in time */
+  uint32_t run_scans;              /**< scan parts since the run began; 0 means the next scan is the first */
   uint8_t registered;              /**< the slot holds a task */
   uint8_t pending;                 /**< a release is admitted and not yet run */
   uint8_t first_scan_interrupted;  /**< a breakpoint stopped the task's first scan: its rest is still the first */
@@ -236,6 +246,9 @@ void zplc_sched_core_set_trace(zplc_sched_core_t *core, zplc_sched_trace_fn trac
  */
 int zplc_sched_core_add_task(zplc_sched_core_t *core, const zplc_task_def_t *def, zplc_vm_t *vm);
 
+/** @brief The first free slot, or -1 when every slot is taken. */
+int zplc_sched_core_free_slot(const zplc_sched_core_t *core);
+
 /** @brief Free a slot. @return 0, or -1 when the slot is not registered */
 int zplc_sched_core_remove_task(zplc_sched_core_t *core, int slot);
 
@@ -249,7 +262,8 @@ int zplc_sched_core_remove_task(zplc_sched_core_t *core, int slot);
  *
  * @param release_us      the instant the release happened; tasks of one batch are ordered by it
  * @param deadline_ref_us the instant the deadline of this scan is counted from. A target stamps the release in the
- *                        timer callback and passes it twice; the host stamps the instant it dispatches the batch.
+ *                        timer callback and passes it twice; the host passes ZPLC_SCHED_REF_BATCH_START, the
+ *                        instant it dispatches the batch.
  * @return 1 when the release was admitted, 0 when it was refused (a fault is latched, the task is not running)
  *         or merged into the release that is already pending
  */
@@ -283,8 +297,9 @@ void zplc_sched_core_sort(const zplc_sched_core_t *core, uint8_t *order, uint8_t
  * On a fault the image is reset under the lock, the pins are driven safe after it is released, the watchdog is
  * handled by the profile's policy and the fault is latched; the port's stop_releases() is called.
  *
- * @return 0, or the first failure: ZPLC_SCHED_ERR_DEADLINE, the VM error of a task (negative),
- *         ZPLC_SCHED_ERR_IO, or ZPLC_SCHED_ERR_LOCK when the image lock could not be taken
+ * @return 0, or the first failure: ZPLC_SCHED_ERR_DEADLINE, the VM error of a task (negative), the failure
+ *         the port returned for an input or an output, ZPLC_SCHED_ERR_IO for a watchdog that could not be fed,
+ *         or ZPLC_SCHED_ERR_LOCK when a lock could not be taken
  */
 int zplc_sched_core_scan(zplc_sched_core_t *core, const zplc_sched_port_t *port, const uint8_t *order,
                          uint8_t count, int step_mode, zplc_sched_scan_report_t *report);
@@ -380,11 +395,20 @@ uint32_t zplc_sched_core_total_misses(const zplc_sched_core_t *core);
 /** @brief The longest run of consecutive misses that is still going on. */
 uint32_t zplc_sched_core_consecutive_misses(const zplc_sched_core_t *core);
 
-/** @brief Forget the misses, the run of misses, the last overrun and the fault: a program is (re)loaded. */
+/**
+ * @brief Forget the misses, the run of misses, the last overrun and the fault: a program is (re)loaded. A task
+ *        the fault had put in ERROR is READY again.
+ */
 void zplc_sched_core_reset_counters(zplc_sched_core_t *core);
 
-/** @brief A start or a resume begins a new run of the schedule: a run of misses does not carry over. */
+/** @brief A resume begins a new run of the schedule: a run of misses does not carry over. */
 void zplc_sched_core_restart_schedule(zplc_sched_core_t *core);
+
+/**
+ * @brief A start begins a run: the next scan of every task is its first, and a run of misses does not carry
+ *        over. The miss count and the statistics are the adapter's to keep or to clear.
+ */
+void zplc_sched_core_begin_run(zplc_sched_core_t *core);
 
 /**
  * @brief How far past its deadline a scan ended: 0 when it ended in time. The deadline is the interval after the
