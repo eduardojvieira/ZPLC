@@ -2249,6 +2249,9 @@
     {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_fw_identity.c","test":"REL-023: the identity a firmware image or host runtime reports (version, commit, board, ABI, options)."},
     {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_native_runtime_session.c","test":"REL-023: the runtime says which build it is, so Studio can compare it with its own version."}
   ],
+  "REL-024": [
+    {"kind":"unit","ref":"tools/docs/flashing_page.test.ts","test":"flashing page: every board of the manifest has its image and its command line (REL-024, stopgap: no browser flasher over Web Serial yet)","partial":true,"note":"two thirds of the requirement are delivered and held to the manifest in both languages: the download with the boot-mode steps of the Pico (and the RP2040-Zero), the boot-mode steps and the command of the ESP32-S3, the command line of all seven boards, and the statement that a person starts the flash; the browser flasher over Web Serial for the ESP32-S3 is not built because it needs a library the site does not carry: esptool-js (Espressif, Apache-2.0) as a dependency of docs/package.json, or esp-web-tools, and AGENTS.md rule 5 asks the owner for it; a flasher written by hand against the ROM protocol was not written because it cannot be run without a board (AGENTS.md rule 7)"}
+  ],
   "REL-025": [
     {"kind":"unit","ref":"packages/zplc-ide/electron/firmwareImages.test.ts","test":"the firmware images of an installation (REL-025)"},
     {"kind":"unit","ref":"packages/zplc-ide/scripts/packaged-content.test.ts","test":"the firmware images of the package (REL-025)","partial":true,"note":"reads stand-in resources; the unpacked Linux package that electron-builder made on this machine holds the manifest and the two learner images (packaged-content.ts with ZPLC_REQUIRE_FIRMWARE=1, and the packaged smoke through the preload bridge); the macOS and Windows installers are made only by the hosted jobs"},

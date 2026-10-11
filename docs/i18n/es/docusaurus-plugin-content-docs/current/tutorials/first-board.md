@@ -83,7 +83,9 @@ Una compilación que termina demuestra solo que el firmware compila para la plac
 ## 2. Grábelo (lo hace una persona)
 
 Grabar escribe el firmware en el dispositivo y **nunca lo hacen las funciones de IA
-ni de MCP de Studio**. Use el procedimiento Zephyr propio de la placa:
+ni de MCP de Studio**. [Grabar el firmware](../guides/flash-firmware.md) tiene los pasos
+de cada placa y la línea de comandos; en resumen, use el procedimiento Zephyr propio de
+la placa:
 
 - **Raspberry Pi Pico:** el cargador de arranque del RP2040 acepta un archivo UF2.
   Mantenga pulsado el botón BOOTSEL mientras conecta el cable USB, y copie
