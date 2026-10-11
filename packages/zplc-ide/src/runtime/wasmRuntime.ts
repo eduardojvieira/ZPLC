@@ -349,6 +349,8 @@ export function createWasmSimulationApi(options: WasmSimulationOptions): WasmSim
     },
 
     async startSession() {
+      // a session that is still open (a connect without a disconnect) is closed first: one runtime, one poll loop
+      if (runtime !== null) await this.stopSession();
       const bytes = await options.loadModule();
       runtime = await WasmRuntime.instantiate(bytes, options);
       const profile = wasmCapabilityProfile(options.retainStorage ?? 'memory');

@@ -64,4 +64,5 @@ Nivel de evidencia: host. El módulo corre bajo Bun y, en la jornada 8b, en el r
 
 - El intervalo entre guardados periódicos de retención es de 30 segundos. Un módulo no tiene entorno, así que `ZPLC_RETAIN_SAVE_INTERVAL_MS` no existe aquí; un `STOP` y un cierre siguen guardando.
 - El almacén de programas de la sesión está en memoria: el programa se carga desde el proyecto cada vez, y solo los registros `RETAIN` se guardan con él.
+- La traza de señales y la vista en vivo del ejemplo del motor son funciones de la simulación nativa, y siguen apagadas en el runtime del navegador.
 - La persistencia de la página es asíncrona. Un fallo de escritura se muestra en la consola de Studio como advertencia; la sesión continúa.

@@ -16,7 +16,7 @@
 import { createHash } from 'node:crypto';
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { dirname, join, resolve } from 'node:path';
+import { basename, dirname, join, resolve } from 'node:path';
 import { parseArgs } from 'node:util';
 
 const here = import.meta.dir;
@@ -140,7 +140,7 @@ export function buildCoreWasm(out: string): ModuleManifest {
     ]);
     const bytes = readFileSync(resolve(out));
     return {
-      file: out.split('/').at(-1)!,
+      file: basename(out),
       bytes: bytes.byteLength,
       sha256: createHash('sha256').update(bytes).digest('hex'),
       commit,

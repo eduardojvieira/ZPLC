@@ -64,4 +64,5 @@ Evidence level: host. The module runs under Bun and, in journey 8b, in the Elect
 
 - The interval between periodic retain saves is 30 seconds. A module has no environment, so `ZPLC_RETAIN_SAVE_INTERVAL_MS` does not exist here; a `STOP` and a shutdown still store.
 - The program store of the session is in memory: a program is loaded from the project every time, and only the `RETAIN` records are kept with it.
+- The signal trace and the live view of the motor example are features of the native simulation, and they stay off on the browser runtime.
 - The persistence of the page is asynchronous. A failure to write is shown in the console of Studio as a warning; the session goes on.

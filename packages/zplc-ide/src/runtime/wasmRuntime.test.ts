@@ -155,6 +155,22 @@ describe('a program on the WebAssembly runtime, through the adapter (IDE-025)', 
     await adapter.disconnect();
   });
 
+  itWasm('keeps one poll loop when a session is started again without being stopped', async () => {
+    const live = new Set<number>();
+    let issued = 0;
+    const api = createWasmSimulationApi({
+      loadModule: async () => builtWasmModule().bytes,
+      clock: () => 0,
+      schedule: () => { issued += 1; live.add(issued); return issued; },
+      cancel: (handle) => { live.delete(handle as number); },
+    });
+    await api.startSession();
+    await api.startSession();
+    expect(live.size).toBe(1);
+    await api.stopSession();
+    expect(live.size).toBe(0);
+  });
+
   itWasm('answers a request that is too long with the error of the native runtime and keeps running', async () => {
     const runtime = await WasmRuntime.instantiate(builtWasmModule().bytes, { clock: () => 0 });
     const answer = runtime.request(`{"id":"x","type":"request","method":"program.load","params":{"bytecode_hex":"${'AB'.repeat(200_000)}"}}`);
