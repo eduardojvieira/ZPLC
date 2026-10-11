@@ -144,6 +144,13 @@ role(EDITOR, '--syntax-label', 'IL labels and jump targets (bold).', 'var(--colo
 role(EDITOR, '--syntax-operator', 'Operators and delimiters.', 'var(--text-secondary)');
 role(EDITOR, '--syntax-bracket', 'Brackets and parentheses.', 'var(--text-primary)');
 
+const DEBUG = 'Debugging in the code editor';
+role(DEBUG, '--debug-breakpoint', 'Fill of a breakpoint dot in the editor margin. Red stays the breakpoint colour; the signal vocabulary reserves red for faults, which is an open question for the owner (see DESIGN.md).', 'var(--color-accent-red)');
+role(DEBUG, '--debug-breakpoint-edge', 'Ring around a breakpoint dot: toward the text colour, so the dot keeps its outline on either margin.', 'color-mix(in srgb, var(--debug-breakpoint) 65%, var(--text-primary))');
+role(DEBUG, '--debug-breakpoint-line', 'Tint of the line a breakpoint is on.', 'color-mix(in srgb, var(--color-accent-red) 15%, transparent)');
+role(DEBUG, '--debug-line-bg', 'Background of the line execution is paused on.', 'color-mix(in srgb, var(--color-accent-red) 16%, transparent)');
+role(DEBUG, '--debug-line-edge', 'Left edge and arrow of the line execution is paused on.', 'var(--color-accent-red)');
+
 // ---------------------------------------------------------------------------------------------------------------------
 // Tier 3: components
 // ---------------------------------------------------------------------------------------------------------------------
@@ -361,6 +368,8 @@ export const CONTRAST_PAIRS: readonly ContrastPair[] = [
   ...['--syntax-comment', '--syntax-keyword', '--syntax-type', '--syntax-number', '--syntax-string', '--syntax-address', '--syntax-label', '--syntax-operator', '--syntax-bracket']
     .map((fg) => ({ fg, bg: '--editor-bg', min: 4.5 as const, use: 'Syntax colour on the code editor background' })),
   { fg: '--editor-fg', bg: '--editor-selection-bg', over: '--editor-bg', min: 4.5, use: 'Selected code' },
+  ...graphic(['--debug-breakpoint', '--debug-line-edge'], ['--editor-bg'], 'A breakpoint dot and the marker of the paused line in the editor margin'),
+  { fg: '--editor-fg', bg: '--debug-line-bg', over: '--editor-bg', min: 4.5, use: 'Code on the line execution is paused on' },
 ];
 
 export interface PairResult { pair: ContrastPair; ratio: number; ok: boolean }

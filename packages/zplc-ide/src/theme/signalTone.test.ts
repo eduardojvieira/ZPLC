@@ -8,7 +8,7 @@ const css = readFileSync(new URL('../index.css', import.meta.url), 'utf8');
 const watchPanel = readFileSync(new URL('../components/DebugWatchPanel.tsx', import.meta.url), 'utf8');
 
 /** UX-009: FALSE is neutral, green is confirmed TRUE, amber is forced or a warning, red is fault only, and every state has a cue other than colour. */
-describe('signal tone of a watched value (UX-009)', () => {
+describe('signal tone of a watched value (UX-009 stopgap: Ladder, FBD, SFC, Trace and the I/O faceplate are not on it yet)', () => {
   it('keeps FALSE neutral, shows TRUE as confirmed and forced as attention', () => {
     expect(signalTone({ forced: false, type: 'BOOL', value: false })).toBe('false');
     expect(signalTone({ forced: false, type: 'BOOL', value: true })).toBe('true');

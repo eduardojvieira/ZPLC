@@ -1,151 +1,66 @@
 import type { editor } from 'monaco-editor';
+import { parseColor, toHex } from '../theme/color';
+import { resolveTokens, type ThemeId, type TokenMap } from '../theme/tokens';
 
-// =============================================================================
-// ZPLC Dark Theme - Industrial Control Inspired
-// =============================================================================
+/**
+ * The Monaco themes of Studio (UX-003): generated from the semantic roles of the token source, so the code editor wears the
+ * same colours as the rest of the interface in the light, dark and high-contrast themes and cannot drift from them. A role
+ * with transparency (the selection) becomes the `#rrggbbaa` form Monaco accepts.
+ */
+const hex = (value: string): string => {
+  const colour = parseColor(value);
+  return colour.a < 1 ? `${toHex(colour)}${Math.round(colour.a * 255).toString(16).padStart(2, '0')}` : toHex(colour);
+};
 
-export const ZPLC_DARK_THEME: editor.IStandaloneThemeData = {
-    base: 'vs-dark',
+/** A token rule's foreground is the colour without the leading `#`. */
+const rule = (tokens: TokenMap, token: string, role: string, fontStyle?: string): editor.ITokenThemeRule => ({
+  token,
+  foreground: hex(tokens[role]).slice(1, 7),
+  ...(fontStyle !== undefined && { fontStyle }),
+});
+
+function themeFor(id: ThemeId, base: editor.BuiltinTheme): editor.IStandaloneThemeData {
+  const tokens = resolveTokens(id);
+  const color = (role: string): string => hex(tokens[role]);
+  return {
+    base,
     inherit: true,
     rules: [
-        // Comments - Muted green
-        { token: 'comment', foreground: '6A9955', fontStyle: 'italic' },
-
-        // Keywords - Bold blue (control structures)
-        { token: 'keyword', foreground: '569CD6', fontStyle: 'bold' },
-
-        // Types - Cyan (data types)
-        { token: 'type', foreground: '4EC9B0' },
-
-        // Operators - Light orange
-        { token: 'operator', foreground: 'D4D4D4' },
-
-        // Identifiers - White
-        { token: 'identifier', foreground: 'D4D4D4' },
-
-        // Direct Addresses (%I, %Q, %M) - Bright yellow for visibility
-        { token: 'variable.predefined', foreground: 'DCDCAA', fontStyle: 'bold' },
-
-        // Numbers - Light green
-        { token: 'number', foreground: 'B5CEA8' },
-
-        // Strings - Orange
-        { token: 'string', foreground: 'CE9178' },
-
-        // Delimiters
-        { token: 'delimiter', foreground: 'D4D4D4' },
-
-        // Brackets
-        { token: 'bracket', foreground: 'FFD700' },
-
-        // IL Labels - Bright magenta
-        { token: 'type.identifier', foreground: 'C586C0', fontStyle: 'bold' },
+      rule(tokens, 'comment', '--syntax-comment', 'italic'),
+      // Keywords: control structures.
+      rule(tokens, 'keyword', '--syntax-keyword', 'bold'),
+      rule(tokens, 'type', '--syntax-type'),
+      rule(tokens, 'operator', '--syntax-operator'),
+      rule(tokens, 'identifier', '--editor-fg'),
+      // Direct addresses (%I, %Q, %M) and predefined variables.
+      rule(tokens, 'variable.predefined', '--syntax-address', 'bold'),
+      rule(tokens, 'number', '--syntax-number'),
+      rule(tokens, 'string', '--syntax-string'),
+      rule(tokens, 'delimiter', '--syntax-operator'),
+      rule(tokens, 'bracket', '--syntax-bracket'),
+      // IL labels.
+      rule(tokens, 'type.identifier', '--syntax-label', 'bold'),
     ],
     colors: {
-        // Editor background
-        'editor.background': '#1E1E1E',
-        'editor.foreground': '#D4D4D4',
-
-        // Selection
-        'editor.selectionBackground': '#264F78',
-        'editor.inactiveSelectionBackground': '#3A3D41',
-
-        // Line numbers
-        'editorLineNumber.foreground': '#858585',
-        'editorLineNumber.activeForeground': '#C6C6C6',
-
-        // Cursor
-        'editorCursor.foreground': '#AEAFAD',
-
-        // Gutter (for breakpoints)
-        'editorGutter.background': '#1E1E1E',
-
-        // Current line highlight
-        'editor.lineHighlightBackground': '#2D2D2D',
-        'editor.lineHighlightBorder': '#282828',
+      'editor.background': color('--editor-bg'),
+      'editor.foreground': color('--editor-fg'),
+      'editor.selectionBackground': color('--editor-selection-bg'),
+      'editor.inactiveSelectionBackground': color('--editor-inactive-selection-bg'),
+      'editorLineNumber.foreground': color('--editor-line-number'),
+      'editorLineNumber.activeForeground': color('--editor-line-number-active'),
+      'editorCursor.foreground': color('--editor-cursor'),
+      // The gutter is the editor's own background, so breakpoints sit on it.
+      'editorGutter.background': color('--editor-bg'),
+      'editor.lineHighlightBackground': color('--editor-line-highlight'),
+      'editor.lineHighlightBorder': '#00000000',
     },
-};
+  };
+}
 
-// =============================================================================
-// ZPLC Light Theme - Industrial Control Inspired
-// =============================================================================
-
-export const ZPLC_LIGHT_THEME: editor.IStandaloneThemeData = {
-    base: 'vs',
-    inherit: true,
-    rules: [
-        // Comments - Green
-        { token: 'comment', foreground: '008000', fontStyle: 'italic' },
-
-        // Keywords - Bold blue (control structures)
-        { token: 'keyword', foreground: '0000FF', fontStyle: 'bold' },
-
-        // Types - Teal (data types)
-        { token: 'type', foreground: '267F99' },
-
-        // Operators - Dark gray
-        { token: 'operator', foreground: '000000' },
-
-        // Identifiers - Black
-        { token: 'identifier', foreground: '001080' },
-
-        // Direct Addresses (%I, %Q, %M) - Brown/orange for visibility
-        { token: 'variable.predefined', foreground: 'A31515', fontStyle: 'bold' },
-
-        // Numbers - Dark green
-        { token: 'number', foreground: '098658' },
-
-        // Strings - Red/brown
-        { token: 'string', foreground: 'A31515' },
-
-        // Delimiters
-        { token: 'delimiter', foreground: '000000' },
-
-        // Brackets
-        { token: 'bracket', foreground: '0431FA' },
-
-        // IL Labels - Purple
-        { token: 'type.identifier', foreground: 'AF00DB', fontStyle: 'bold' },
-    ],
-    colors: {
-        // Editor background
-        'editor.background': '#FFFFFF',
-        'editor.foreground': '#000000',
-
-        // Selection
-        'editor.selectionBackground': '#ADD6FF',
-        'editor.inactiveSelectionBackground': '#E5EBF1',
-
-        // Line numbers
-        'editorLineNumber.foreground': '#237893',
-        'editorLineNumber.activeForeground': '#0B216F',
-
-        // Cursor
-        'editorCursor.foreground': '#000000',
-
-        // Gutter (for breakpoints)
-        'editorGutter.background': '#FFFFFF',
-
-        // Current line highlight
-        'editor.lineHighlightBackground': '#EFF4F9',
-        'editor.lineHighlightBorder': '#D3D3D3',
-    },
-};
-
-/** Uses Monaco's native high-contrast palette instead of treating it as dark mode. */
-export const ZPLC_HIGH_CONTRAST_THEME: editor.IStandaloneThemeData = {
-    base: 'hc-black',
-    inherit: true,
-    rules: [],
-    colors: {
-        'editor.background': '#000000',
-        'editor.foreground': '#FFFFFF',
-        'editor.selectionBackground': '#005A9E',
-        'editorLineNumber.foreground': '#FFFFFF',
-        'editorLineNumber.activeForeground': '#FFFFFF',
-        'editorGutter.background': '#000000',
-    },
-};
+export const ZPLC_DARK_THEME: editor.IStandaloneThemeData = themeFor('dark', 'vs-dark');
+export const ZPLC_LIGHT_THEME: editor.IStandaloneThemeData = themeFor('light', 'vs');
+/** High contrast keeps Monaco's own high-contrast base (borders and focus rendering) and takes its colours from the roles. */
+export const ZPLC_HIGH_CONTRAST_THEME: editor.IStandaloneThemeData = themeFor('high-contrast', 'hc-black');
 
 // Theme IDs
 export const ZPLC_DARK_THEME_ID = 'zplc-dark';

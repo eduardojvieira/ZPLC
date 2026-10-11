@@ -2,7 +2,7 @@ import { describe, expect, it } from 'bun:test';
 
 import { contrastProblems, tokenProblems, undefinedTokens } from './ux-tokens';
 
-describe('design token checks (UX-003, UX-024, UX-032)', () => {
+describe('design token checks (UX-003, UX-032)', () => {
   const known = new Set(['--text-primary', '--color-surface-800']);
 
   it('reports a var() that names no token', () => {
@@ -19,7 +19,7 @@ describe('design token checks (UX-003, UX-024, UX-032)', () => {
     expect(undefinedTokens({ path: 'src/c.css', text: '[class*="bg-[var(--color-accent-"] { color: var(--text-primary); }' }, known)).toEqual([]);
   });
 
-  it('finds no declared contrast pair below WCAG 2.2 AA in any theme', () => {
+  it('finds no declared contrast pair below WCAG 2.2 AA in any theme (UX-024 stopgap)', () => {
     expect(contrastProblems()).toEqual([]);
   });
 

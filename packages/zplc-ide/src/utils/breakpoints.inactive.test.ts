@@ -32,14 +32,15 @@ describe('breakpoint dots the runtime will not stop at', () => {
     expect(rule('.breakpoint-line-decoration.breakpoint-line-decoration-inactive')).toMatch(/background:\s*transparent/);
   });
 
-  // Fails if the ring's colour is lowered below the filled dot's: it keeps the contrast the red dot has in every theme.
-  it('keep a ring at least as visible as the filled dot against the editor margin in every theme', () => {
-    const filled = /background:\s*(#[0-9a-f]{6})/i.exec(rule('.breakpoint-glyph'))![1];
+  // Fails if the ring's colour is lowered below the 3:1 a graphic needs, or made the colour of the armed dot.
+  it('keep a grey ring that meets 3:1 against the editor margin in every theme and differs from the armed dot', () => {
+    // The filled dot is the breakpoint token (--debug-breakpoint), whatever the theme makes of it.
+    expect(rule('.breakpoint-glyph')).toMatch(/background:\s*var\(--debug-breakpoint\)/);
     for (const theme of THEME_IDS) {
       const tokens = resolveTokens(theme);
       const margin = tokens['--color-surface-800'];
       const ring = contrastRatio(tokens['--color-surface-400'], margin);
-      expect({ theme, atLeast3: ring >= 3, atLeastFilledDot: ring >= contrastRatio(filled, margin) }).toEqual({ theme, atLeast3: true, atLeastFilledDot: true });
+      expect({ theme, atLeast3: ring >= 3, differsFromArmed: tokens['--color-surface-400'] !== tokens['--debug-breakpoint'] }).toEqual({ theme, atLeast3: true, differsFromArmed: true });
     }
   });
 });

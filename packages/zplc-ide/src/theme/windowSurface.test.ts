@@ -7,7 +7,7 @@ const html = read('../../index.html');
 const main = read('../../electron/main.ts');
 
 /** Window set-up (UX-016): the colours the shell paints before the app's own CSS runs must be the theme's canvas token. */
-describe('window surface (UX-016)', () => {
+describe('window surface', () => {
   const canvas = (theme: 'light' | 'dark') => resolveTokens(theme)['--color-surface-900'];
 
   it('gives the native window the light and dark canvas tokens until the renderer reports its own', () => {

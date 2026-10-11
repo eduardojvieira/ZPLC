@@ -29,7 +29,7 @@ describe('colour parsing', () => {
   });
 });
 
-describe('WCAG 2.2 contrast (UX-024)', () => {
+describe('WCAG 2.2 contrast arithmetic (UX-024 stopgap)', () => {
   it('matches the reference ratios', () => {
     expect(contrastRatio('#000', '#fff')).toBeCloseTo(21, 5);
     expect(contrastRatio('#fff', '#fff')).toBeCloseTo(1, 5);

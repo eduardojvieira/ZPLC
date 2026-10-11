@@ -6,7 +6,7 @@ import { renderTokensCss } from './tokensCss';
 const css = readFileSync(new URL('../index.css', import.meta.url), 'utf8');
 
 /** WCAG 2.2 AA (UX-024): 4.5:1 for text, 3:1 for graphics that carry meaning. Rules and borders that only decorate are exempt. */
-describe('theme token contrast (UX-024)', () => {
+describe('theme token contrast (UX-024 stopgap: the main screens have no automated check yet)', () => {
   for (const theme of THEME_IDS) {
     it(`meets WCAG 2.2 AA for every declared pair in the ${theme} theme`, () => {
       const failures = contrastResults(theme).filter((result) => !result.ok)
