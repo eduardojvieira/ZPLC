@@ -62,7 +62,8 @@ def build(directory: Path) -> Path:
     # the environment of tools/firmware-test/run.sh: PATH with west, ZEPHYR_BASE, the toolchain variant
     command = (
         f'. "{REPO}/tools/firmware-test/env.sh" && cd "{WORKSPACE}" && '
-        f'west build -p always -b native_sim/native zplc/firmware/app -d "{directory}"'
+        # Two program slots of the default code size do not fit the storage partition of native_sim (RT-029).
+        f'west build -p always -b native_sim/native zplc/firmware/app -d "{directory}" -- -DCONFIG_ZPLC_CODE_SIZE_MAX=4096'
     )
     log = directory.with_suffix(".log")
     with open(log, "w", encoding="utf-8") as out:

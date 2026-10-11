@@ -14,7 +14,7 @@ const REQUIRED_ROOT_KEYS = [
  * `io` is the identity of the board I/O description the image was built from (IO-004); an image without it cannot
  * be compared, so Studio refuses a program that uses I/O on it. The device does not report it in `sys info`, whose
  * keys stay exactly as released Studios accept them: the adapter reads it with `sys io` and joins it to the
- * system information it keeps (see parseDeviceIo).
+ * system information it keeps (see joinDeviceIo).
  */
 const OPTIONAL_ROOT_KEYS = ['draft_counter', 'io'] as const;
 const REQUIRED_IO_KEYS = ['schema', 'board_id', 'hash', 'channels', 'input_bytes', 'output_bytes'] as const;
@@ -115,8 +115,7 @@ function readInteger(value: unknown, max: number): number | null {
   return typeof value === 'number' && Number.isSafeInteger(value) && value >= 0 && value <= max ? value : null;
 }
 
-/** Parse the answer of `zplc sys io --json`; null when it is not the exact, bounded object. */
-export function parseDeviceIo(value: unknown): DeviceSystemInfo['io'] | null {
+function parseDeviceIo(value: unknown): DeviceSystemInfo['io'] | null {
   const io = snapshotRecord(value);
   if (!io || !exactKeys(io, REQUIRED_IO_KEYS)) return null;
   const board = readText(io.board_id);
@@ -172,6 +171,20 @@ export function parseDeviceHandshake(value: unknown): DeviceHandshake {
       ? { schema: info.io.schema, boardId: info.io.board_id, hash: info.io.hash, channels: info.io.channels, inputBytes: info.io.input_bytes, outputBytes: info.io.output_bytes }
       : null,
   };
+}
+
+/**
+ * The system information with the I/O identity of the image (IO-004) joined to it: the answer of `sys io`, which is
+ * a command of its own so that the keys of `sys info` stay as released Studios accept them. An image that does not
+ * have the command does not answer it (the caller bounds the wait) and has no identity to compare.
+ */
+export async function joinDeviceIo(info: DeviceSystemInfo, askIo: () => Promise<unknown>): Promise<DeviceSystemInfo> {
+  try {
+    const io = parseDeviceIo(await askIo());
+    return io ? { ...info, io } : info;
+  } catch {
+    return info;
+  }
 }
 
 /** Parse into a detached safe copy for adapter caches and scheduler selection. */

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'bun:test';
 
 import {
   DeviceAdmissionError,
+  joinDeviceIo,
   parseDeviceHandshake,
   parseDeviceSystemInfo,
   validateHardwareDeployAdmission,
@@ -185,6 +186,21 @@ describe('device handshake: the I/O description of the firmware (IO-004)', () =>
     const handshake = parseDeviceHandshake({ ...info, io });
     expect(handshake.io).toEqual({ schema: 1, boardId: identity.boardId, hash: identity.hash, channels: 2, inputBytes: 1, outputBytes: 1 });
     expect(parseDeviceHandshake(info).io).toBeNull();
+  });
+
+  it('joins the answer of `sys io` to the system information, which keeps the keys it had', async () => {
+    const system = parseDeviceSystemInfo(info);
+    const joined = await joinDeviceIo(system, async () => io);
+    expect(joined.io).toEqual(io);
+    expect(Object.keys(system)).not.toContain('io');
+    expect(parseDeviceHandshake(joined).io?.hash).toBe(identity.hash);
+  });
+
+  it('leaves the system information as it is when the image does not answer `sys io` or answers something else', async () => {
+    const system = parseDeviceSystemInfo(info);
+    for (const answer of [async () => { throw new Error('Command timeout'); }, async () => ({ ...io, extra: 1 }), async () => 'ERROR: unknown command']) {
+      expect((await joinDeviceIo(system, answer)).io).toBeUndefined();
+    }
   });
 
   it('rejects an io object that is not exactly the typed v1 shape', () => {

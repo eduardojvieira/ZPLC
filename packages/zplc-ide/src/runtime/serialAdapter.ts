@@ -49,15 +49,13 @@ import type { MpeekRequest } from './peekParser';
 import { debugLog } from '../utils/debugLog';
 import { deriveHardwareDebugState } from './debugStatus';
 import { normalizeSerialRuntimeSnapshot } from './runtimeSnapshot';
-import { parseDeviceIo, parseDeviceSystemInfo, type DeviceSystemInfo } from './deviceHandshake';
+import { joinDeviceIo, parseDeviceSystemInfo, type DeviceSystemInfo } from './deviceHandshake';
 
 /** Command timeout in milliseconds.
  * 10 s to accommodate firmware flash writes (NVS page erase can take ~1 s
  * on ESP32-S3; the firmware fix removes per-setter flushes, but we keep this
  * generous so older firmware images do not regress). */
 const COMMAND_TIMEOUT_MS = 10000;
-/** `sys io` is answered at once by an image that has it; one that does not is not waited for as long. */
-const DEVICE_IO_TIMEOUT_MS = 2000;
 
 /** Line ending for commands */
 const LINE_ENDING = '\r\n';
@@ -740,24 +738,12 @@ export class SerialAdapter implements IDebugAdapter {
    */
   async getSystemInfo(): Promise<SystemInfo> {
     try {
-      const info = parseDeviceSystemInfo(await this.sendJsonCommand('zplc sys info'));
-      // The I/O identity of the image (IO-004) is a command of its own: the keys of `sys info` stay as released
-      // Studios accept them. An image without the command does not answer, and has no identity to compare.
-      const io = await this.readDeviceIo();
-      const result: SystemInfo = io ? { ...info, io } : info;
+      const result = await joinDeviceIo(parseDeviceSystemInfo(await this.sendJsonCommand('zplc sys info')), () => this.sendJsonCommand('zplc sys io', 2000));
       this.systemInfoCache = result;
       return result;
     } catch {
       this.systemInfoCache = null;
       throw new Error('ZPLC_DEVICE_HANDSHAKE_INVALID');
-    }
-  }
-
-  private async readDeviceIo(): Promise<DeviceSystemInfo['io'] | null> {
-    try {
-      return parseDeviceIo(await this.sendJsonCommand('zplc sys io', DEVICE_IO_TIMEOUT_MS));
-    } catch {
-      return null;
     }
   }
 
