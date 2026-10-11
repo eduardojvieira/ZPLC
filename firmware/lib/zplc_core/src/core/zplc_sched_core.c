@@ -950,10 +950,11 @@ void zplc_io_apply_samples(const zplc_io_samples_t *samples) {
 
 void zplc_io_capture_outputs(zplc_io_outputs_t *outputs) {
   const size_t count = zplc_io_channel_count();
+  const uint8_t *opi = zplc_mem_get_region(ZPLC_MEM_OPI_BASE);
   size_t index;
 
   memset(outputs, 0, sizeof(*outputs));
-  if (count > ZPLC_IO_MAX_CHANNELS) {
+  if (count > ZPLC_IO_MAX_CHANNELS || opi == NULL) {
     return;
   }
   for (index = 0U; index < count; index++) {
@@ -962,11 +963,7 @@ void zplc_io_capture_outputs(zplc_io_outputs_t *outputs) {
     if (channel == NULL || channel->direction != ZPLC_IO_DIR_OUTPUT) {
       continue;
     }
-    if (channel->kind == ZPLC_IO_KIND_DIGITAL) {
-      outputs->value[index] = (uint16_t)((zplc_opi_read8(channel->image_offset) >> channel->bit) & 1U);
-    } else {
-      outputs->value[index] = zplc_opi_read16(channel->image_offset);
-    }
+    outputs->value[index] = zplc_io_image_get(opi, ZPLC_MEM_OPI_SIZE, channel);
   }
 }
 
