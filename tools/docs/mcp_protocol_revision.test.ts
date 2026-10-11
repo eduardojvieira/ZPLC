@@ -18,7 +18,7 @@ function jsonFences(path: string): Array<Record<string, any>> {
 async function ask(messages: object[]): Promise<Array<Record<string, any>>> {
   // the server serves one project folder and refuses to start on a folder that is not a project
   const workspace = join(ROOT, 'packages/zplc-ide/projects/blinky_st');
-  const child = Bun.spawn(['bun', 'packages/zplc-ide/src/mcp/index.ts', '--workspace', workspace], { cwd: ROOT, stdin: 'pipe', stdout: 'pipe', stderr: 'ignore' });
+  const child = Bun.spawn(['bun', 'run', '--cwd=packages/zplc-ide', 'mcp', '--workspace', workspace], { cwd: ROOT, stdin: 'pipe', stdout: 'pipe', stderr: 'ignore' });
   const answers: Array<Record<string, any>> = [];
   try {
     const reader = child.stdout.getReader();
