@@ -23,7 +23,6 @@ import {
     ZPLC_CONSTANTS,
     type CompilationResult,
     type CompileOptions,
-    type SafeEntry,
     type TaskDef,
     type DebugMap,
     type ProjectConfig as CoreProjectConfig,
@@ -84,8 +83,7 @@ import type {
 } from '../types/index.ts';
 import { getCompilerMemoryProfile } from '../config/boardProfiles.ts';
 import { checkLocatedVariables, locatedVariablesOf } from '../boards/ioAdmission.ts';
-import { declaredSafeOutputs } from '../boards/safeOutputs.ts';
-import type { DeclaredSafeOutput } from '../boards/safeOutputs.ts';
+import { checkedSafeOutputs, type DeclaredSafeOutput, type DeclaredSafeOutputs } from '../boards/safeOutputs.ts';
 import { normalizeAddress } from '../boards/boardIoMapping.ts';
 import { annotateDebugMapElements } from './debugElements.ts';
 import {
@@ -206,13 +204,8 @@ export interface MultiTaskCompilationResult {
     }[];
     /** Merged debug map for all programs (always present) */
     debugMap: DebugMap;
-    /** The safe values the artifact declares for its outputs, as the loader reads them (RT-023). */
-    safe: SafeEntry[];
-    /**
-     * The same declarations as a person reads them (the output, its address, the value), for the confirmation
-     * of a deploy: what the outputs of the device will do whenever the program does not control them.
-     */
-    declaredSafe: DeclaredSafeOutput[];
+    /** The safe values of the outputs (RT-023): as the artifact holds them, and as a deploy confirmation shows them. */
+    safe: DeclaredSafeOutputs['entries']; declaredSafe: DeclaredSafeOutput[];
 }
 
 /**
@@ -694,15 +687,7 @@ export function compileMultiTaskProject(
         coreSources.push({ name: source.sourceRef ?? source.name, content: source.content, sourceRef: source.sourceRef });
     }
 
-    // The safe values the project declares for its outputs are checked against the board before anything is built:
-    // a declaration for an output the board has not is a build error, so there is no artifact to deploy (RT-023)
-    const safeDeclared = declaredSafeOutputs(config.io, config.target?.board);
-    if (safeDeclared.problems.length > 0) {
-        const errors = safeDeclared.problems.map((message) => new CompilerError(message, 0, 0, 'codegen', 'zplc.json'));
-        errors[0]!.errors = errors;
-        throw errors[0];
-    }
-
+    const safeDeclared = checkedSafeOutputs(config.io, config.target?.board); // a build error when the board lacks one
     const options = buildOptionsOf(config);
     const coreConfig: CoreProjectConfig = {
         name: config.name,

@@ -6,7 +6,7 @@
  * checked here, when the project is built, so that what reaches the device is a declaration for a digital output
  * the board has; the firmware checks the same again when it admits the program.
  */
-import type { SafeEntry } from '@zplc/compiler';
+import { CompilerError, type SafeEntry } from '@zplc/compiler';
 import { getBoardIo, getBoardIoIdentity } from '../config/boardProfiles';
 import type { IOConfig, IOPinConfig } from '../types';
 import { channelAt, mappingProblem, normalizeAddress } from './boardIoMapping';
@@ -91,4 +91,18 @@ export function declaredSafeOutputs(io: IOConfig | undefined, board: string | un
   }
 
   return { entries, declared, problems };
+}
+
+/**
+ * The declared safe values of a project, or the build error of every declaration that cannot be built: one error
+ * for each, the first carrying them all, like the other checks of a build against its board.
+ */
+export function checkedSafeOutputs(io: IOConfig | undefined, board: string | undefined): DeclaredSafeOutputs {
+  const result = declaredSafeOutputs(io, board);
+  if (result.problems.length > 0) {
+    const errors = result.problems.map((message) => new CompilerError(message, 0, 0, 'codegen', 'zplc.json'));
+    errors[0]!.errors = errors;
+    throw errors[0];
+  }
+  return result;
 }
