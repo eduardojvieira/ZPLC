@@ -47,6 +47,50 @@ La primera edición real escribe el archivo completo en la única forma que usa 
 de línea al final (un número escrito `2.0` se escribe `2`; un rung escrito como lista de elementos se escribe como
 cuadrícula).
 
+## Deshacer, rehacer y selección en los editores visuales
+
+Un gesto tuyo es un paso de deshacer (LNG-010): un arrastre, un pegado, un borrado (los nodos y los cables que se fueron con
+ellos), un soltar desde la paleta, un cable trazado o la edición de un nombre o de una condición. Un arrastre de 300 píxeles
+llega al lienzo como unos treinta cambios de posición; el archivo se escribe, y el historial recibe una entrada, una sola
+vez, cuando sueltas el nodo. Las letras escritas en un campo con menos de un segundo entre una y otra son un solo paso. El
+historial guarda los últimos 100 gestos de cada archivo durante la sesión; lo usan los botones Deshacer y Rehacer, `Ctrl+Z` y
+`Ctrl+Shift+Z` (`Ctrl+Y`).
+
+La selección no es parte del archivo, y sobrevive a la edición: lo que está seleccionado sigue seleccionado cuando el lienzo
+se reconstruye desde el archivo tras un cambio. Deshacer y rehacer devuelven la selección junto con el contenido: deshacer
+un borrado devuelve los bloques y los selecciona, deshacer un pegado selecciona lo que estaba seleccionado antes de pegar.
+
+Nivel de evidencia: host. `src/editors/gesture.test.ts` ejercita la regla de commit con un arrastre de 30 pasos, un borrado
+y una serie de cambios de selección, y `src/editors/visualHistory.test.ts` guarda 100 gestos, la fusión de ediciones y la
+selección de cada paso. El recorrido 28j de `bun run test:journeys` arrastra un bloque con eventos de puntero reales, y un solo `Ctrl+Z` deshace todo el arrastre.
+
+## El servicio de lenguaje de Structured Text
+
+El editor de Structured Text lee todo el proyecto, no solo el archivo que tienes delante (LNG-015, LNG-016).
+
+| Función | Qué hace |
+| --- | --- |
+| Diagnósticos | Cada error de sintaxis y cada error semántico de cada archivo Structured Text del proyecto, mientras escribes (con una pausa de 0,3 s), con el rango que dio el propio front end del compilador. Aparecen como subrayados en los archivos abiertos y en **Problemas** (Diagnósticos ST en vivo), y desaparecen la siguiente vez que se comprueba el proyecto y el error ya no está. No son evidencia de compilación; la evidencia es **Build**. |
+| Autocompletado | Las variables, parámetros y métodos en el ámbito; tras un punto, los miembros del tipo de lo que está antes (un bloque, una estructura, un elemento de un arreglo de estructuras, un bloque estándar); los bloques, funciones y tipos de todos los archivos; los tipos donde va un tipo; los parámetros de una llamada como `Nombre := `. Los nombres del proyecto van antes que la biblioteca estándar. |
+| Hover | Qué es un nombre, su tipo y dónde se declara, también en otro archivo. |
+| Ir a la definición, buscar referencias | En todos los archivos del proyecto. Un nombre se encuentra por lo que es, no por cómo se escribe: el `Count` de un programa no es el `Count` de otro. |
+| Esquema | Las declaraciones del archivo como un árbol (un bloque contiene sus entradas, salidas, variables y métodos). |
+| Ayuda de firma | Los parámetros de la función, método o bloque que se llama, y el parámetro en el que está el cursor, también con argumentos con nombre. |
+| Renombrar símbolo (`F2`) | Renombra lo que un nombre representa en todos los archivos del proyecto, por ámbito y por tipo, nunca como texto. Se rechaza, con el motivo, cuando el nombre nuevo ya está declarado donde se usa el anterior, cuando un archivo del proyecto tiene un error de sintaxis (podría contener un uso que no se encontró), cuando el nombre aparece en un archivo Ladder, FBD, SFC o IL (renómbralo también allí) o cuando el nombre es un programa (las tareas de `zplc.json` lo ejecutan por su nombre). Los archivos que cambian se abren como pestañas modificadas; tú las guardas. |
+| Formatear documento (`Shift+Alt+F`) | Sangra cada línea según la profundidad de sus bloques y recorta los extremos de las líneas. Solo cambia espacios al principio y al final de una línea: no añade ni quita líneas (un breakpoint es una línea), no mueve ningún token y deja los comentarios como están. Formatear dos veces da el mismo texto. |
+
+Cada función se responde desde un solo índice del proyecto, construido con el lexer y el parser del compilador, con el
+texto del editor en lugar de su archivo; un archivo que aún no analiza sintácticamente sigue aportando las declaraciones
+que dan sus tokens, así que el autocompletado funciona a mitad de una línea.
+
+No cubierto: un nombre que solo se usa en un archivo Ladder, FBD, SFC o IL no forma parte del índice (renombrar no lo
+adivina, como dice la tabla); la búsqueda de símbolos en todo el espacio de trabajo; las acciones de código.
+
+Nivel de evidencia: host. `packages/zplc-compiler/src/compiler/check.test.ts` compara los diagnósticos con los errores
+de la compilación para los mismos proyectos; `src/langsvc/*.test.ts` cubren el índice, renombrar, autocompletado, ayuda
+de firma, esquema, formato (sobre cada proyecto de ejemplo, token a token), los marcadores y los proveedores de Monaco; el journey 4c
+de `bun run test:journeys` escribe una variable sin declarar en el editor real, la ve con su rango y la deshace.
+
 ## Tipos de pin en FBD
 
 El lienzo FBD rechaza un cable entre pines cuyos tipos no coinciden y explica el motivo en un mensaje sobre el lienzo
@@ -106,6 +150,36 @@ tiene sentencia se rechaza una vez cargado un programa. El elemento en el que es
 amarillo. Los contadores de programa son los que toman el runtime de la simulación y el de una placa; detenerse en una
 placa no se ha comprobado aquí.
 
+## Valores en línea desde el mapa de depuración
+
+Mientras un programa corre bajo Studio, cada editor muestra lo que el programa contiene (LNG-006), leído a través del mapa
+de depuración de la compilación de su archivo. La compilación registra, para cada elemento de una fuente Ladder, FBD o
+SFC, qué variable del programa generado guarda su estado, de modo que ningún editor adivina un nombre a partir del que ve:
+un estado que el mapa no da se muestra como no disponible (un guion, `UNAVAILABLE`), nunca como FALSE o IDLE.
+
+| Lenguaje | Qué se muestra | De dónde sale |
+| --- | --- | --- |
+| ST | El valor de cada variable que nombra una línea, tras la línea (`Count=7  Ready=TRUE`). Un miembro de una instancia de bloque o de una estructura se lee a través de su instancia. | El servicio de lenguaje resuelve qué es un nombre; el mapa del programa del archivo da su dirección y su tipo. Una función o un bloque de función no muestra nada: sus nombres pertenecen a cada instancia. |
+| IL | El valor de cada variable declarada que usa una instrucción, tras la línea. | El parser de IL y el mapa del programa del archivo. |
+| LD | Energía: un elemento se ilumina cuando le llega energía, por caminos en serie y en paralelo y por ramas, y tras un bloque es la salida del propio bloque. El valor de un contacto o una bobina, y las salidas de un bloque, debajo. | El flujo de energía del rung como una expresión de las variables que lo forman (`rung:r/cell:fila,col`), evaluada con los valores leídos. |
+| FBD | El valor de cada cable y las salidas de cada bloque; un bloque de variable muestra el valor de su variable. | El temporal que se dio a cada salida consumida, o el miembro de la instancia. |
+| SFC | Qué pasos están activos y desde cuándo; de cada transición, si su condición se cumple y si disparó en este escaneo. | El estado generado del gráfico: el indicador y el temporizador de cada paso, `_C_` y `_F_` de cada transición. |
+
+Un valor se lee en el programa de su propio archivo: dos programas que tienen cada uno un `_rung1_result` tienen dos
+valores. Las variables que muestra un editor se leen con el sondeo de la tabla Watch, y solo las regiones que muestran un
+valor lo dibujan de nuevo ([Qué se vuelve a dibujar cuando cambia un valor](#qué-se-vuelve-a-dibujar-cuando-cambia-un-valor)).
+
+No cubierto: el cable entre dos elementos de un rung no se ilumina, solo los elementos; un elemento de un arreglo en ST no
+tiene valor en línea; los valores en una placa, la ejecución paso a paso en hardware. El runtime de la simulación es lo
+que leen las pruebas del host.
+
+Nivel de evidencia: host, contra el runtime real. `src/monitoring/runtime.test.ts` compila un Ladder, un FBD y un SFC, los
+carga en el runtime nativo, los escanea con entradas y lee las variables que nombra el mapa, y comprueba el estado de cada
+elemento: la energía por la rama de enclavamiento, los pines de los temporizadores, el paso activo y la transición
+disparada. `src/monitoring/elementStates.test.ts` comprueba que cada variable que nombra una entrada del monitor existe
+en el mapa para cada diagrama de ejemplo. Los journeys 28b a 28e de `bun run test:journeys` muestran los valores en la
+aplicación real.
+
 ## Qué ofrecen las paletas
 
 Una paleta ofrece solo lo que su transpilador traduce (LNG-007), y cada elemento que ofrece se ejecuta en la suite de
@@ -121,6 +195,72 @@ pruebas: se coloca en un programa, se compila, se carga en la máquina virtual y
   `LEN`, `CONCAT`, las conversiones...) todavía no se ofrecen: un diagrama no puede llamarlas y la compilación las
   rechaza por su nombre.
 - **SFC** ofrece el paso, el paso inicial y la transición.
+
+## Edición con el teclado
+
+Toda acción de edición de los editores de Escalera, Bloques de Función y Diagrama Funcional Secuencial se puede hacer con el
+teclado (LNG-012): mover un cursor, insertar un elemento, enlazar una variable entre los símbolos declarados, conectar y
+borrar. La [referencia de teclado](../reference/visual-editor-keyboard.md) lista todas las teclas. Se genera de la tabla de la
+que los editores leen sus teclas, así que una tecla que está en ella funciona, y una tecla que funciona está en ella.
+
+- **El cursor.** En Escalera es una celda de un peldaño, dibujada como un marco azul; un clic en una celda lo pone allí. En los
+  editores de bloques de función y de diagrama es el bloque o elemento seleccionado, y `Alt` con una flecha lo mueve al más
+  cercano en esa dirección. Las flechas sin `Alt` desplazan el bloque seleccionado en el lienzo, como antes.
+- **Insertar.** Una letra inserta en el cursor los elementos más comunes: `C` un contacto, `N` un contacto invertido, `O` una
+  bobina en Escalera, `T` una transición y `S` un paso en un diagrama. `Insert` o `I` abre la paleta como una lista con
+  búsqueda: se escribe para buscar, Arriba y Abajo eligen, Enter inserta. La caja de herramientas de cada editor se alcanza con
+  Tab: sus elementos son botones que insertan en el cursor, y tiene una caja de búsqueda. Arrastrar un elemento sigue
+  funcionando, e inserta con el mismo comando que la tecla.
+- **Enlazar.** `F2` pide la variable del elemento bajo el cursor, de la lista de símbolos que declara el archivo. A un contacto
+  se le ofrecen las variables BOOL y las salidas BOOL de bloques declarados (`Delay.Q`); a una bobina las variables BOOL que no
+  son entradas; a la instancia de un bloque de función las variables de su tipo; a la condición de una transición las
+  variables BOOL. Donde la lista lo permite, se puede escribir un nombre que no está declarado y se ofrece tal como se escribió.
+- **Conectar.** `C` sobre un bloque lista los cables que puede tener, cada uno de una salida a una entrada que la acepta: rigen
+  las reglas de los tipos de pin (LNG-013), y no se ofrece una entrada que ya tiene un cable. Se dibuja el cable elegido.
+  `Shift+C` lista los cables del bloque y quita el elegido. En un diagrama funcional, `T` inserta una transición debajo del paso
+  seleccionado y `S` un paso debajo de la transición seleccionada, cada uno conectado al que sigue.
+- **Borrar.** `Delete` quita el elemento bajo el cursor en Escalera, y los bloques y cables seleccionados en un diagrama o en
+  un diagrama funcional, y se van con el bloque los cables que tenía.
+
+Un comando que cambia el archivo es un paso del historial de deshacer, y la selección vuelve con deshacer y rehacer (LNG-010).
+Lo que hizo cada comando, o por qué se negó, se escribe en una región viva cortés del editor, que lee un lector de pantalla.
+
+Cuatro cosas difieren de lo que hacían antes los editores. Un contacto o una bobina soltados desde la caja de herramientas ya no
+se llaman `NewVar`: quedan sin enlazar y muestran `???` hasta que se enlazan. Un bloque de función soltado o insertado recibe un
+nombre de instancia que nada más tiene, y la instancia se declara como variable local de su tipo. El panel de propiedades de
+Escalera se abre al hacer clic en un elemento o al pulsar Enter sobre él, no cuando un comando del teclado lo selecciona. Un
+doble clic en un bloque de un diagrama de bloques de función pregunta qué contiene el bloque, como hace `F2`.
+
+Nivel de evidencia: host, y la aplicación real en el host de desarrollo. `src/editors/ld/keyboard.test.ts`,
+`src/editors/fbd/keyboard.test.ts` y `src/editors/sfc/keyboard.test.ts` pulsan teclas sobre un modelo, con la tabla de teclas
+en medio, y comprueban el documento, el cursor, las listas que se ofrecen y que la compilación lee lo que se escribió;
+`src/editors/picker.test.ts` y `src/editors/keymap.test.ts` cubren la lista con búsqueda y la tabla. Los recorridos 28f, 28g y
+28h de `bun run test:journeys` construyen un peldaño, editan un diagrama y editan un diagrama funcional con eventos de teclado
+reales, guardan y compilan; el recorrido 28i suelta elementos de la caja de herramientas con eventos de arrastre del DOM. No cubierto: un lector de pantalla real (la región viva existe y su texto se prueba, no su voz), y
+una forma con teclado de poner un bloque en una coordenada exacta (un bloque se pone junto al cursor y luego se desplaza con
+las flechas).
+
+## Qué se vuelve a dibujar cuando cambia un valor
+
+Un valor observado se lee diez veces por segundo mientras corre un programa. Studio vuelve a dibujar solo lo que lo muestra
+(IDE-013): la tabla Watch y el editor del archivo que tiene la variable. El Explorador, la barra de herramientas, los ajustes
+y la barra de pestañas no se suscriben a las lecturas, y una lectura que vale lo mismo que antes no publica nada. Un
+componente que necesita cinco de 200 valores observados se vuelve a dibujar cuando cambia uno de esos cinco, no cuando
+cambia otro.
+
+`bun tools/ci/ide-structure.ts` (lo ejecuta `bun run lint:ide`) falla si un componente o hook fuera de `src/store/` se suscribe
+a todo el store o a su porción `debug`: cada región de la ventana nombra los campos que muestra
+(`src/store/regionSubscriptions.ts`).
+
+Medido sobre el store con 200 valores observados leídos 100 veces y 50 pulsaciones en un archivo de 2.000 líneas: antes, cada
+uno de Explorador, barra de herramientas, Consola, área del editor y ajustes se dibujaba 150 veces y cada lector de valores
+observados 100 veces; ahora las regiones que no muestran ninguno de los dos se dibujan 0 veces, la barra de pestañas y el
+editor 50 veces (una por pulsación), y un lector de cinco valores 10 veces, por las 10 lecturas que los cambiaron.
+
+Nivel de evidencia: host, al nivel del store y de sus selectores (`src/store/regionSubscriptions.test.ts`). Este repositorio
+no tiene un entorno de pruebas con DOM, así que no se cuentan los dibujos de React; la Consola sigue dibujándose en cada
+pulsación, porque la pestaña Problemas muestra lo que escribir borra y sus comprobaciones comparan el contador de la
+compilación.
 
 ## Ruta de compilación
 

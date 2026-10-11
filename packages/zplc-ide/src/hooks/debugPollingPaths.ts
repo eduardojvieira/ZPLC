@@ -1,4 +1,5 @@
 import { findVariable, type DebugMap } from '../compiler';
+import { parseMonitorKey, resolveVariable } from '../monitoring/debugVariables';
 
 export interface PolledDebugVariableDescriptor {
   name: string;
@@ -35,6 +36,20 @@ export function describePolledDebugVariable(
     return null;
   }
 
+  // a variable of an open diagram is named with its file: two programs have a `_rung1_result` (LNG-006)
+  const monitored = parseMonitorKey(varPath);
+  if (monitored) {
+    const variable = resolveVariable(debugMap, monitored.sourceRef, monitored.variable);
+    return variable === undefined ? null : {
+      name: varPath,
+      address: variable.address,
+      type: mapDebugType(variable.type),
+      forceable: false,
+      bitOffset: variable.bitOffset,
+      maxLength: variable.type === 'STRING' && variable.size ? Math.max(0, variable.size - 3) : undefined,
+    };
+  }
+
   const found = findVariable(debugMap, varPath);
   if (!found) {
     return null;
@@ -58,11 +73,13 @@ export function buildPolledDebugPaths(
   debugMap: DebugMap | null,
   livePreviewEnabled: boolean,
   cap = 64,
+  monitored: readonly string[] = [],
 ): string[] {
   const pathSet = new Set<string>(watchVariables);
 
   if (!livePreviewEnabled || !debugMap || pathSet.size >= cap) {
-    return Array.from(pathSet).slice(0, cap);
+    // what the open diagrams show is read in addition: it is what their editors ask for, whatever the preview is
+    return Array.from(new Set([...Array.from(pathSet).slice(0, cap), ...monitored]));
   }
 
   outer: for (const [, pouInfo] of Object.entries(debugMap.pou)) {
@@ -74,5 +91,5 @@ export function buildPolledDebugPaths(
     }
   }
 
-  return Array.from(pathSet);
+  return Array.from(new Set([...pathSet, ...monitored]));
 }

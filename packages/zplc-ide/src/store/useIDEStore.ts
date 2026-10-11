@@ -50,6 +50,7 @@ import { WATCH_FORCE_STATE, type WatchForceEntry } from '../runtime/debugAdapter
 import type { ProjectMigrationChange } from '../project/projectModel';
 import { breakpointFileKey, getBreakpointPCForLine } from '../utils/breakpoints';
 import { appendConsoleEntries, type NewConsoleEntry } from './consoleEntries';
+import { withLiveValues } from './liveValues';
 import { folderErrorReason } from '../utils/errorMessages';
 import type { RecentProject } from '../../electron/projectFilesProtocol';
 import { forgetRecentProject as forgetRecentOnBridge, listRecentProjects, markProjectOpened, openRecentFolder, projectRootId } from '../ipc/projectFilesHandles';
@@ -1557,25 +1558,9 @@ export const useIDEStore = create<IDEState>((set, get) => ({
         },
       })),
 
-  updateLiveValue: (varPath, value) =>
-    set((state) => {
-      const newLiveValues = new Map(state.debug.liveValues);
-      newLiveValues.set(varPath, value);
-      return {
-        debug: { ...state.debug, liveValues: newLiveValues },
-      };
-    }),
+  updateLiveValue: (varPath, value) => set((state) => withLiveValues(state, [[varPath, value]])),
 
-  updateLiveValues: (values) =>
-    set((state) => {
-      const newLiveValues = new Map(state.debug.liveValues);
-      for (const [key, value] of values) {
-        newLiveValues.set(key, value);
-      }
-      return {
-        debug: { ...state.debug, liveValues: newLiveValues },
-      };
-    }),
+  updateLiveValues: (values) => set((state) => withLiveValues(state, values)),
 
   clearLiveValues: () =>
     set((state) => ({

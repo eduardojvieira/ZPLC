@@ -25,6 +25,8 @@ interface StepData {
   // Debug properties
   debugActive?: boolean;
   isActive?: boolean;
+  /** The debug map gave no state for the step, or it was not read: shown as unavailable, never as idle (LNG-006). */
+  stateUnavailable?: boolean;
   timeInStep?: number; // milliseconds
   activationCount?: number;
   readOnly?: boolean;
@@ -51,6 +53,7 @@ const SFCStepNode = memo(({ id, data, selected }: NodeProps) => {
     comment,
     debugActive = false,
     isActive = false,
+    stateUnavailable = false,
     timeInStep,
     activationCount,
     readOnly = false,
@@ -168,7 +171,7 @@ const SFCStepNode = memo(({ id, data, selected }: NodeProps) => {
                 isStepActive ? 'text-green-300' : 'text-[var(--text-secondary)]'
               }`}>
                 <Activity size={10} className={isStepActive ? 'animate-pulse' : ''} />
-                <span>{isStepActive ? 'ACTIVE' : 'IDLE'}</span>
+                <span>{stateUnavailable ? 'UNAVAILABLE' : isStepActive ? 'ACTIVE' : 'IDLE'}</span>
               </div>
               
               {/* Time in step (only when active or has time) */}

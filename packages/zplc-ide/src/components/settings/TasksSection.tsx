@@ -7,7 +7,7 @@ import {
   Plus,
   Trash2,
 } from 'lucide-react';
-import { useIDEStore } from '../../store/useIDEStore';
+import { useFileTreeState } from '../../store/regionSubscriptions';
 import { listTaskPrograms } from '../../utils/fileSystem';
 import { ZPLC_CONSTANTS } from '@zplc/compiler';
 import { getTaskIntervalMs } from './taskFieldAccessors';
@@ -18,7 +18,7 @@ import type {
 import type { SectionProps } from './settingsSectionProps';
 
 export function TasksSection({ config, updateConfig }: SectionProps) {
-  const { fileTree } = useIDEStore();
+  const { fileTree } = useFileTreeState();
   const tasks = config.tasks;
   const taskLimitId = useId();
   const atTaskLimit = tasks.length >= ZPLC_CONSTANTS.MAX_TASKS;

@@ -77,6 +77,7 @@ const sidebars = {
             'reference/language-ld',
             'reference/language-fbd',
             'reference/language-sfc',
+            'reference/visual-editor-keyboard',
           ],
         },
         {

@@ -19,7 +19,7 @@ import { isFunctionBlock, isLogicGate, isComparison, isMathOperator, validateFBD
 import { findProjectBlock, type ProjectBlock } from '../models/projectBlocks';
 import {
   ElementError, Listing, Problems, blockElement,
-  type ElementDiagnostic, type SourceMapRange,
+  type ElementDiagnostic, type MonitorEntry, type SourceMapRange,
 } from '../models/sourceElements';
 
 // =============================================================================
@@ -34,6 +34,8 @@ interface TranspileResult {
   diagnostics?: ElementDiagnostic[];
   /** For each element, the lines of `source` written for it (LNG-004). */
   sourceMap?: SourceMapRange[];
+  /** Where the value of each pin of a block is read online (LNG-006). */
+  monitor?: MonitorEntry[];
 }
 
 interface BlockInput {
@@ -487,11 +489,31 @@ export function transpileFBDToST(model: FBDModel, blocks?: readonly ProjectBlock
     lines.push('');
     lines.push('END_PROGRAM');
 
+    // Where each value that a pin carries is read online (LNG-006): the variable of a block that reads or writes one, the
+    // temporary of an output that something consumes, else the member of the instance. A pin that has none is not shown.
+    const monitor: MonitorEntry[] = [];
+    for (const block of validatedModel.blocks) {
+      const element = blockElement(block.id);
+      const kind = kinds.get(block.id);
+      if ((kind === 'read' || kind === 'variable' || kind === 'output') && block.variableName) {
+        monitor.push({ element, role: 'value', variable: block.variableName });
+        if (kind !== 'output') monitor.push({ element, role: 'output', port: 'OUT', variable: block.variableName });
+        continue;
+      }
+      const instance = block.instanceName && (kind === 'standard' || kind === 'comm' || kind === 'registry' || kind === 'userblock') ? block.instanceName : undefined;
+      for (const port of block.outputs ?? []) {
+        const temporary = (outputMap.get(block.id) ?? []).find((output) => output.port === port.name)?.tempVar;
+        const variable = temporary ?? (instance ? `${instance}.${port.name}` : undefined);
+        if (variable) monitor.push({ element, role: 'output', port: port.name, variable });
+      }
+    }
+
     return {
       success: true,
       source: lines.toString(),
       errors: [],
       sourceMap: lines.sourceMap(),
+      monitor,
     };
   } catch (e) {
     const message = `Transpiler error: ${e instanceof Error ? e.message : String(e)}`;

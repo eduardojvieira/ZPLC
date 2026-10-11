@@ -7,6 +7,7 @@
  * - Drag-and-drop element placement from toolbox
  * - Support for parallel branches (OR logic)
  * - Element selection and property editing
+ * - Every action from the keyboard: a cursor, the element palette, binding from the declared symbols (LNG-012)
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -15,7 +16,6 @@ import {
   type LDModel,
   type LDRung,
   type LDElement as LDElementType,
-  createEmptyRung,
   addRow,
   removeElementAt,
   isGridBasedRung,
@@ -23,12 +23,20 @@ import {
 } from '../../models/ld';
 import LDToolbox from './LDToolbox';
 import LDRungGrid from './LDRungGrid';
-import { copyLDRungFragment, pasteLDRungFragment, type LDClipboardFragment } from './graphModel';
-import { useIDEStore } from '../../store/useIDEStore';
-import { useDebugValues } from '../../hooks/useDebugValue';
+import LDPrompts, { type LDAsk } from './LDPrompts';
+import { insertRungAfter, runLDCommand, type LDCursor, type LDInsert, type LDOutcome } from './keyboard';
+import type { LDDropData } from './ldDragData';
+import { actionFor, keysBelongToControl } from '../keymap';
+import { useProjectBlocks } from '../useProjectBlocks';
+import { declaredSymbols } from '../symbols';
+import { copyLDRungFragment, ldSelectionIds as selectionIds, ldSelectionOfIds as selectionOfIds, NO_LD_SELECTION, pasteLDRungFragment, type LDClipboardFragment, type LDSelection } from './graphModel';
+import { useMonitor } from '../../monitoring/useMonitor';
+import type { DebugValuesMap } from './LDElement';
 import { useElementSelection } from '../elementSelection';
 import { useElementBreakpoints } from '../elementBreakpoints';
 import { parseElement, rungElement, type SourceElementId } from '../../models/sourceElements';
+import { getVisualSelection, setVisualSelection, useVisualFileKey } from '../visualSelection';
+import type { VisualGesture } from '../visualHistory';
 
 // =============================================================================
 // Props
@@ -36,7 +44,8 @@ import { parseElement, rungElement, type SourceElementId } from '../../models/so
 
 interface LDEditorProps {
   model: LDModel;
-  onChange?: (model: LDModel) => void;
+  /** Called once for each gesture of the user (LNG-010), with what the history needs to know of it. */
+  onChange?: (model: LDModel, gesture?: VisualGesture) => void;
   readOnly?: boolean;
 }
 
@@ -46,11 +55,13 @@ interface LDEditorProps {
 
 interface ElementPropertiesProps {
   element: LDElementType;
+  /** The names the variable can be bound to: the declared symbols of the document (LNG-012). */
+  symbols?: string[];
   onChange: (updated: LDElementType) => void;
   onClose: () => void;
 }
 
-function ElementProperties({ element, onChange, onClose }: ElementPropertiesProps) {
+function ElementProperties({ element, symbols = [], onChange, onClose }: ElementPropertiesProps) {
   const [variable, setVariable] = useState(element.variable || '');
   const [fbInstance, setFbInstance] = useState(element.instance || '');
   const [comment, setComment] = useState(element.comment || '');
@@ -99,7 +110,11 @@ function ElementProperties({ element, onChange, onClose }: ElementPropertiesProp
               className="w-full bg-[var(--color-surface-700)] border border-[var(--border-color)] rounded px-2 py-1 text-sm text-[var(--text-secondary)]
                          focus:outline-none focus:border-blue-500"
               placeholder="Variable name"
+              list="ld-declared-symbols"
             />
+            <datalist id="ld-declared-symbols">
+              {symbols.map((name) => <option key={name} value={name} />)}
+            </datalist>
           </div>
         )}
 
@@ -172,13 +187,52 @@ function ElementProperties({ element, onChange, onClose }: ElementPropertiesProp
 // Main Component
 // =============================================================================
 
-export default function LDEditor({ model, onChange, readOnly = false }: LDEditorProps) {
-  const [selectedElement, setSelectedElement] = useState<LDElementType | null>(null);
-  const [selectedRungId, setSelectedRungId] = useState<string | null>(null);
-  const clipboardRef = useRef<LDClipboardFragment | undefined>(undefined);
+const NO_SELECTION = NO_LD_SELECTION;
 
-  // Get debug mode from store
-  const debugMode = useIDEStore((state) => state.debug.mode);
+/** What the keys do in a diagram that is not edited (a program is running): moving, reading and the breakpoint. */
+const READ_ONLY_COMMANDS: ReadonlySet<string> = new Set([
+  'cursorLeft', 'cursorRight', 'cursorUp', 'cursorDown', 'rowStart', 'rowEnd', 'previousRung', 'nextRung', 'firstRung', 'lastRung',
+  'toggleBreakpoint', 'showCommands', 'clearSelection',
+]);
+
+export default function LDEditor({ model, onChange, readOnly = false }: LDEditorProps) {
+  const [selection, setSelection] = useState<LDSelection>(NO_SELECTION);
+  const clipboardRef = useRef<LDClipboardFragment | undefined>(undefined);
+  // The selection is not part of the document: it is remembered by file, and undo gives back the one from before (LNG-010)
+  const fileKey = useVisualFileKey();
+  const selectionRef = useRef(selection);
+  const select = useCallback((next: LDSelection) => {
+    selectionRef.current = next;
+    setSelection(next);
+    setVisualSelection(fileKey, selectionIds(next));
+  }, [fileKey]);
+  // The cursor of the keyboard editing: a cell of a rung (LNG-012)
+  const [cursor, setCursorState] = useState<LDCursor | null>(null);
+  const cursorRef = useRef<LDCursor | null>(null);
+  const placeCursor = useCallback((next: LDCursor | null) => {
+    cursorRef.current = next;
+    setCursorState(next);
+  }, []);
+  const [ask, setAsk] = useState<LDAsk | null>(null);
+  const [status, setStatus] = useState('');
+  // the element whose properties are open: the panel is asked for, selecting an element by keyboard does not open it
+  const [propertiesFor, setPropertiesFor] = useState<string | null>(null);
+  const [commentRequest, setCommentRequest] = useState(0);
+  const [focusRequest, setFocusRequest] = useState(0);
+  const rootRef = useRef<HTMLDivElement>(null);
+  const projectBlocks = useProjectBlocks();
+
+  const lastModelRef = useRef(model);
+  useEffect(() => {
+    if (lastModelRef.current === model) return;
+    lastModelRef.current = model;
+    const remembered = selectionOfIds(getVisualSelection(fileKey));
+    selectionRef.current = remembered;
+    setSelection(remembered);
+  }, [fileKey, model]);
+
+  // Online values and power flow come from the debug map of the build of this file (LNG-006)
+  const monitor = useMonitor();
   // Breakpoints on rungs: execution stops at the first statement of the rung's code (LNG-004)
   const breakpoints = useElementBreakpoints();
 
@@ -195,88 +249,47 @@ export default function LDEditor({ model, onChange, readOnly = false }: LDEditor
     latestModelRef.current = normalizedModel;
   }, [normalizedModel]);
 
-  // Extract all variable names from the model for debug value lookup
-  // This includes FB port paths for rich value display
-  const allVariables = useMemo(() => {
-    const vars: string[] = [];
-    for (const rung of normalizedModel.rungs) {
-      if (!rung.grid) continue;
-      for (const row of rung.grid) {
-        for (const cell of row) {
-          const el = cell.element;
-          if (!el) continue;
-          // Contacts and coils use variable
-          if (el.variable) {
-            vars.push(el.variable);
-          }
-          // Function blocks: get ALL output ports for display
-          if (el.instance && el.fbType) {
-            // Add common output ports based on FB type
-            switch (el.fbType) {
-              case 'TON':
-              case 'TOF':
-              case 'TP':
-                vars.push(`${el.instance}.Q`);
-                vars.push(`${el.instance}.ET`);
-                break;
-              case 'CTU':
-              case 'CTD':
-                vars.push(`${el.instance}.Q`);
-                vars.push(`${el.instance}.CV`);
-                break;
-              case 'CTUD':
-                vars.push(`${el.instance}.QU`);
-                vars.push(`${el.instance}.QD`);
-                vars.push(`${el.instance}.CV`);
-                break;
-              case 'R_TRIG':
-              case 'F_TRIG':
-                vars.push(`${el.instance}.Q`);
-                break;
-              default:
-                vars.push(`${el.instance}.Q`);
-            }
-          }
-        }
-      }
+  // The values of the variables the elements show: what the map says the program holds, and unavailable otherwise
+  const debugValues = useMemo<DebugValuesMap | undefined>(() => {
+    if (!monitor.active) return undefined;
+    const values: DebugValuesMap = new Map();
+    for (const [variable, { reading, type }] of monitor.values) {
+      values.set(variable, { value: reading ?? null, type: type || null, address: null, region: null, size: null, loading: false, exists: true, error: null });
     }
-    return vars;
-  }, [normalizedModel.rungs]);
+    return values;
+  }, [monitor]);
 
-  // Get live values for all variables (only when debugging)
-  const debugValues = useDebugValues(debugMode !== 'none' ? allVariables : []);
+  const symbolNames = useMemo(() => declaredSymbols(normalizedModel.variables).map((symbol) => symbol.name), [normalizedModel.variables]);
+  const askedElement = useMemo<LDElementType | null>(() => {
+    if (ask?.kind !== 'bind') return null;
+    return normalizedModel.rungs.flatMap((rung) => rung.grid?.flat() ?? []).find((cell) => cell.element?.id === ask.elementId)?.element ?? null;
+  }, [ask, normalizedModel]);
 
-  // Build energized map: varName -> boolean
-  const energizedVariables = useMemo(() => {
-    const map = new Map<string, boolean>();
-    if (debugMode === 'none') return map;
+  const selectedRungId = selection.rungId;
+  const selectedElement = useMemo<LDElementType | null>(() => {
+    if (selection.rungId === null || selection.elementId === null) return null;
+    const rung = normalizedModel.rungs.find((candidate) => candidate.id === selection.rungId);
+    return rung?.grid?.flat().find((cell) => cell.element?.id === selection.elementId)?.element ?? null;
+  }, [normalizedModel, selection]);
 
-    for (const varPath of allVariables) {
-      const result = debugValues.get(varPath);
-      if (result?.exists && result.value !== null) {
-        // For BOOL: direct value
-        // For other types: non-zero = true
-        const isEnergized = result.type === 'BOOL'
-          ? !!result.value
-          : Number(result.value) !== 0;
-        map.set(varPath, isEnergized);
-      }
-    }
-    return map;
-  }, [debugMode, allVariables, debugValues]);
+  /** One gesture is one commit: the document, and the selection from before it and after it (LNG-010). */
+  const commit = useCallback((next: LDModel, after: LDSelection = selectionRef.current, coalesce?: string) => {
+    if (readOnly || !onChange) return;
+    onChange(next, {
+      ...(coalesce === undefined ? {} : { coalesce }),
+      selection: { before: selectionIds(selectionRef.current), after: selectionIds(after) },
+    });
+    select(after);
+  }, [onChange, readOnly, select]);
 
   // Add a new rung
   const handleAddRung = useCallback(() => {
     if (readOnly || !onChange) return;
 
-    const newRungNumber = normalizedModel.rungs.length + 1;
-    const newRung = createEmptyRung(newRungNumber);
-
-    onChange({
-      ...normalizedModel,
-      rungs: [...normalizedModel.rungs, newRung],
-    });
-  }, [normalizedModel, onChange, readOnly]);
+    // an id that no rung has, also after one was deleted
+    const { model: next } = insertRungAfter(normalizedModel, null);
+    commit(next);
+  }, [commit, normalizedModel, onChange, readOnly]);
 
   // Delete a rung
   const handleDeleteRung = useCallback((rungId: string) => {
@@ -286,24 +299,21 @@ export default function LDEditor({ model, onChange, readOnly = false }: LDEditor
     const filtered = normalizedModel.rungs.filter(r => r.id !== rungId);
     const renumbered = filtered.map((r, idx) => ({ ...r, number: idx + 1 }));
 
-    onChange({
+    commit({
       ...normalizedModel,
       rungs: renumbered,
-    });
-
-    setSelectedElement(null);
-    setSelectedRungId(null);
-  }, [normalizedModel, onChange, readOnly]);
+    }, NO_SELECTION);
+  }, [commit, normalizedModel, onChange, readOnly]);
 
   // Update a rung
-  const handleRungChange = useCallback((rungId: string, updatedRung: LDRung) => {
+  const handleRungChange = useCallback((rungId: string, updatedRung: LDRung, after?: LDSelection, coalesce?: string) => {
     if (readOnly || !onChange) return;
 
-    onChange({
+    commit({
       ...normalizedModel,
       rungs: normalizedModel.rungs.map(r => r.id === rungId ? updatedRung : r),
-    });
-  }, [normalizedModel, onChange, readOnly]);
+    }, after, coalesce);
+  }, [commit, normalizedModel, onChange, readOnly]);
 
   // Add a row to a rung (for parallel branches)
   const handleAddRow = useCallback((rungId: string) => {
@@ -329,11 +339,11 @@ export default function LDEditor({ model, onChange, readOnly = false }: LDEditor
     // Renumber
     const renumbered = newRungs.map((r, i) => ({ ...r, number: i + 1 }));
 
-    onChange({
+    commit({
       ...normalizedModel,
       rungs: renumbered,
     });
-  }, [normalizedModel, onChange, readOnly]);
+  }, [commit, normalizedModel, onChange, readOnly]);
 
   // Move rung down
   const handleMoveRungDown = useCallback((rungId: string) => {
@@ -348,11 +358,11 @@ export default function LDEditor({ model, onChange, readOnly = false }: LDEditor
     // Renumber
     const renumbered = newRungs.map((r, i) => ({ ...r, number: i + 1 }));
 
-    onChange({
+    commit({
       ...normalizedModel,
       rungs: renumbered,
     });
-  }, [normalizedModel, onChange, readOnly]);
+  }, [commit, normalizedModel, onChange, readOnly]);
 
   // Handle element deletion
   const handleElementDelete = useCallback((rungId: string, element: LDElementType) => {
@@ -362,15 +372,15 @@ export default function LDEditor({ model, onChange, readOnly = false }: LDEditor
     if (!rung || element.row === undefined || element.col === undefined) return;
     
     const updatedRung = removeElementAt(rung, element.row, element.col);
-    handleRungChange(rungId, updatedRung);
-    setSelectedElement(null);
+    handleRungChange(rungId, updatedRung, { rungId, elementId: null });
   }, [normalizedModel, handleRungChange, readOnly, onChange]);
 
   // Handle element selection
   const handleElementSelect = useCallback((element: LDElementType | null, rungId: string) => {
-    setSelectedElement(element);
-    setSelectedRungId(rungId);
-  }, []);
+    select({ rungId, elementId: element?.id ?? null });
+    setPropertiesFor(element?.id ?? null);
+    if (element && element.row !== undefined && element.col !== undefined) placeCursor({ rungId, row: element.row, col: element.col });
+  }, [placeCursor, select]);
 
   // Activating a problem of this diagram selects the rung and the cell it is about, and scrolls to the rung (LNG-003)
   const selectSourceElement = useCallback((element: SourceElementId) => {
@@ -383,13 +393,15 @@ export default function LDEditor({ model, onChange, readOnly = false }: LDEditor
     let selected: LDElementType | null = null;
     if (parsed.kind === 'cell') selected = rung.grid?.[parsed.row!]?.[parsed.col!]?.element ?? null;
     if (parsed.kind === 'element') selected = rung.grid?.flat().find((cell) => cell.element?.id === parsed.id)?.element ?? null;
-    setSelectedElement(selected);
-    setSelectedRungId(rung.id);
+    select({ rungId: rung.id, elementId: selected?.id ?? null });
+    setPropertiesFor(selected?.id ?? null);
+    if (parsed.kind === 'cell') placeCursor({ rungId: rung.id, row: parsed.row!, col: parsed.col! });
+    else if (selected && selected.row !== undefined && selected.col !== undefined) placeCursor({ rungId: rung.id, row: selected.row, col: selected.col });
     requestAnimationFrame(() => {
       [...document.querySelectorAll('[data-ld-rung-id]')].find((node) => node.getAttribute('data-ld-rung-id') === rung.id)
         ?.scrollIntoView?.({ block: 'center' });
     });
-  }, [normalizedModel]);
+  }, [normalizedModel, placeCursor, select]);
   useElementSelection(selectSourceElement);
 
   // Handle element property update
@@ -409,70 +421,119 @@ export default function LDEditor({ model, onChange, readOnly = false }: LDEditor
       })
     );
 
-    handleRungChange(selectedRungId, { ...rung, grid: newGrid });
-    setSelectedElement(updated);
+    handleRungChange(selectedRungId, { ...rung, grid: newGrid }, { rungId: selectedRungId, elementId: updated.id }, `element:${updated.id}`);
   }, [normalizedModel, selectedRungId, handleRungChange, onChange]);
 
-  // Handle element deletion (via keyboard)
-  const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLDivElement>) => {
-    const target = e.target as HTMLElement;
-    if (target.closest('input, textarea, select, [contenteditable="true"]')) return;
-    const shortcut = (e.ctrlKey || e.metaKey) && !e.altKey && !e.shiftKey && e.ctrlKey !== e.metaKey;
-    if (shortcut && e.key.toLowerCase() === 'c') {
-      if (readOnly || !selectedRungId) return;
-      const fragment = copyLDRungFragment(latestModelRef.current, selectedRungId);
-      if (!fragment) return;
-      clipboardRef.current = fragment;
-      e.preventDefault();
-      return;
+  // What a command of the keyboard leaves: the cursor, what is announced, the document as one gesture, and what to ask next
+  const applyOutcome = useCallback((outcome: LDOutcome) => {
+    placeCursor(outcome.cursor);
+    setStatus(outcome.say);
+    if (outcome.changed) {
+      latestModelRef.current = outcome.model;
+      commit(outcome.model, outcome.selection ?? selectionRef.current);
+    } else if (outcome.selection) {
+      select(outcome.selection);
     }
-    if (shortcut && e.key.toLowerCase() === 'v') {
-      if (readOnly || !onChange || !selectedRungId || !clipboardRef.current) return;
-      const pasted = pasteLDRungFragment(latestModelRef.current, clipboardRef.current, selectedRungId);
-      if (!pasted) return;
-      latestModelRef.current = pasted;
-      const copiedRung = pasted.rungs[pasted.rungs.findIndex((rung) => rung.id === selectedRungId) + 1];
-      e.preventDefault();
-      onChange(pasted);
-      setSelectedElement(null);
-      setSelectedRungId(copiedRung?.id ?? null);
-      return;
-    }
-    if (e.key === 'F9') {
-      if (!selectedRungId) return;
-      breakpoints.toggle(rungElement(selectedRungId));
-      e.preventDefault();
-      return;
-    }
-    if (e.key === 'Delete' || e.key === 'Backspace') {
-      if (selectedElement && selectedRungId && !readOnly && onChange) {
-        const rung = normalizedModel.rungs.find(r => r.id === selectedRungId);
-        if (rung && selectedElement.row !== undefined && selectedElement.col !== undefined) {
-          const updatedRung = removeElementAt(rung, selectedElement.row, selectedElement.col);
-          handleRungChange(selectedRungId, updatedRung);
-          setSelectedElement(null);
-          e.preventDefault();
-        }
+    const next = outcome.prompt;
+    if (next?.kind === 'comment') setCommentRequest((count) => count + 1);
+    else if (next?.kind === 'select') setPropertiesFor(next.elementId);
+    else if (next) setAsk(next);
+    // a question has the focus itself; the focus goes to the cursor when there is none
+    if (!next || next.kind === 'select' || next.kind === 'comment') setFocusRequest((count) => count + 1);
+  }, [commit, placeCursor, select]);
+
+  const runCommand = useCallback((command: string, argument?: Parameters<typeof runLDCommand>[3], at: LDCursor | null = cursorRef.current) => {
+    switch (command) {
+      case 'copyRung': {
+        if (readOnly || !selectedRungId) return;
+        const fragment = copyLDRungFragment(latestModelRef.current, selectedRungId);
+        if (fragment) clipboardRef.current = fragment;
+        return;
       }
+      case 'pasteRung': {
+        if (readOnly || !onChange || !selectedRungId || !clipboardRef.current) return;
+        const pasted = pasteLDRungFragment(latestModelRef.current, clipboardRef.current, selectedRungId);
+        if (!pasted) return;
+        latestModelRef.current = pasted;
+        const copiedRung = pasted.rungs[pasted.rungs.findIndex((rung) => rung.id === selectedRungId) + 1];
+        commit(pasted, copiedRung ? { rungId: copiedRung.id, elementId: null } : NO_SELECTION);
+        return;
+      }
+      case 'toggleBreakpoint':
+        if (selectedRungId) breakpoints.toggle(rungElement(selectedRungId));
+        return;
+      case 'showCommands':
+        setAsk({ kind: 'commands' });
+        return;
+      case 'clearSelection':
+        select(NO_SELECTION);
+        setPropertiesFor(null);
+        return;
+      default:
+        applyOutcome(runLDCommand(latestModelRef.current, at, command, argument));
     }
-    if (e.key === 'Escape') {
-      if (!selectedElement && !selectedRungId) return;
-      setSelectedElement(null);
-      setSelectedRungId(null);
-      e.preventDefault();
-    }
-  }, [selectedElement, selectedRungId, normalizedModel, handleRungChange, readOnly, onChange, breakpoints]);
+  }, [applyOutcome, breakpoints, commit, onChange, readOnly, select, selectedRungId]);
+
+  // The keys of the table (../keymap.ts): the cursor and the commands of the ladder
+  const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLDivElement>) => {
+    if (keysBelongToControl(e.target)) return;
+    const command = actionFor('ld', e);
+    if (!command) return;
+    if (readOnly && !READ_ONLY_COMMANDS.has(command)) return;
+    if (command === 'clearSelection' && !selectedElement && !selectedRungId) return;
+    if (command === 'toggleBreakpoint' && !selectedRungId) return;
+    e.preventDefault();
+    runCommand(command);
+  }, [readOnly, runCommand, selectedElement, selectedRungId]);
+
+  // an item of the toolbox, pressed or dropped, is inserted where the cursor (or the drop) is
+  const insertItem = useCallback((item: LDInsert, at: LDCursor | null = cursorRef.current) => {
+    if (readOnly) return;
+    const outcome = runLDCommand(latestModelRef.current, at, 'insertElement', { insert: item });
+    // a drop does not ask for the variable: the element stays unbound, as a dragged one always did
+    applyOutcome(at === cursorRef.current ? outcome : { ...outcome, prompt: undefined });
+  }, [applyOutcome, readOnly]);
+
+  const dropItem = useCallback((item: LDDropData, rungId: string, row: number, col: number) => {
+    insertItem({ type: item.type, fbType: item.fbType, category: item.category }, { rungId, row, col });
+  }, [insertItem]);
+
+  // after a command the cursor is made visible, and the focus is on its element so that a reader announces it
+  useEffect(() => {
+    const at = cursorRef.current;
+    if (focusRequest === 0 || !at) return;
+    let frame = 0;
+    // the list that was just answered is still being removed in the first frame: the focus waits for it
+    const focus = (attempt: number) => {
+      frame = requestAnimationFrame(() => {
+        if (document.querySelector('[data-keyboard-picker]')) {
+          if (attempt < 20) focus(attempt + 1);
+          return;
+        }
+        const rung = [...document.querySelectorAll('[data-ld-rung-id]')].find((node) => node.getAttribute('data-ld-rung-id') === at.rungId);
+        rung?.querySelector('[data-ld-cursor]')?.scrollIntoView?.({ block: 'nearest', inline: 'nearest' });
+        const element = rung?.querySelector(`[data-ld-cell="${at.row},${at.col}"] [data-ld-element-id]`) as HTMLElement | null;
+        (element ?? rootRef.current)?.focus({ preventScroll: true });
+      });
+    };
+    focus(0);
+    return () => cancelAnimationFrame(frame);
+  }, [focusRequest]);
 
   return (
     <div
+      ref={rootRef}
       className="zplc-visual-editor w-full h-full flex overflow-hidden"
       onKeyDown={handleKeyDown}
       tabIndex={0}
       role="region"
       aria-label="Ladder diagram editor"
+      aria-keyshortcuts="F1"
+      data-ld-cursor-at={cursor ? `${cursor.rungId}:${cursor.row},${cursor.col}` : undefined}
+      data-ld-ask={ask?.kind}
     >
       {/* Toolbox sidebar */}
-      {!readOnly && <LDToolbox />}
+      {!readOnly && <LDToolbox onInsert={(item) => { insertItem({ type: item.type, fbType: item.fbType, category: item.category }); rootRef.current?.focus({ preventScroll: true }); }} />}
 
       {/* Main editor area */}
       <div className="flex-1 flex flex-col overflow-hidden relative">
@@ -550,9 +611,13 @@ export default function LDEditor({ model, onChange, readOnly = false }: LDEditor
                     onElementSelect={(el) => handleElementSelect(el, rung.id)}
                     onElementDelete={(el) => handleElementDelete(rung.id, el)}
                     selectedElementId={selectedRungId === rung.id ? selectedElement?.id : null}
+                    onInsert={(item, row, col) => dropItem(item, rung.id, row, col)}
+                    cursor={cursor?.rungId === rung.id ? cursor : null}
+                    onCursor={(row, col) => placeCursor({ rungId: rung.id, row, col })}
+                    commentRequest={cursor?.rungId === rung.id ? commentRequest : undefined}
                     readOnly={readOnly}
-                    energizedVariables={debugMode !== 'none' ? energizedVariables : undefined}
-                    debugValues={debugMode !== 'none' ? debugValues : undefined}
+                    elementStates={monitor.active ? monitor.states : undefined}
+                    debugValues={debugValues}
                   />
 
                   {/* Rung controls */}
@@ -625,20 +690,36 @@ export default function LDEditor({ model, onChange, readOnly = false }: LDEditor
               <span className="font-mono text-orange-400">(R)</span> Reset
             </span>
             <span className="flex items-center gap-1 ml-auto text-[var(--text-tertiary)]">
-              Drag elements from toolbox • Click to select • Ctrl/Cmd+C/V copies the selected rung • Delete to remove
+              Arrows move the cursor • I opens the palette • F2 binds a variable • F1 lists every key • Ctrl/Cmd+C/V copies the selected rung • Delete removes
             </span>
           </div>
         </div>
 
         {/* Element properties panel */}
-        {selectedElement && !readOnly && (
+        {selectedElement && !readOnly && propertiesFor === selectedElement.id && (
           <ElementProperties
             key={selectedElement.id}
             element={selectedElement}
+            symbols={symbolNames}
             onChange={handleElementUpdate}
-            onClose={() => setSelectedElement(null)}
+            onClose={() => { select({ rungId: selectedRungId, elementId: null }); setPropertiesFor(null); }}
           />
         )}
+
+        {/* What the keyboard asks: the element to insert, the variable to bind, the command to run (LNG-012) */}
+        {ask && (!readOnly || ask.kind === 'commands') ? (
+          <LDPrompts
+            ask={ask}
+            model={normalizedModel}
+            element={askedElement}
+            projectBlocks={projectBlocks}
+            onInsert={(item) => { setAsk(null); insertItem(item); }}
+            onBind={(name) => { setAsk(null); runCommand('bindVariable', { variable: name }); }}
+            onCommand={(command) => { setAsk(null); runCommand(command); }}
+            onClose={() => setAsk(null)}
+          />
+        ) : null}
+        <div role="status" aria-live="polite" data-visual-status className="sr-only">{status}</div>
       </div>
     </div>
   );

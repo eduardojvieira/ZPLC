@@ -25,7 +25,7 @@ import { parseIOAddress, parseTimeLiteral, tokenize, TokenType } from '@zplc/com
 import { validateSFCModel, type SFCAction, type SFCModel, type SFCStep, type SFCTransition, type SFCVariable } from '../models/sfc';
 import {
   ElementError, Listing, Problems, actionElement, stepElement, transitionElement,
-  type ElementDiagnostic, type SourceElementId, type SourceMapRange,
+  type ElementDiagnostic, type MonitorEntry, type SourceElementId, type SourceMapRange,
 } from '../models/sourceElements';
 
 // =============================================================================
@@ -40,6 +40,8 @@ interface TranspileResult {
   diagnostics?: ElementDiagnostic[];
   /** For each element, the lines of `source` written for it (LNG-004). */
   sourceMap?: SourceMapRange[];
+  /** Where the state of each step and transition is read online (LNG-006). */
+  monitor?: MonitorEntry[];
 }
 
 // =============================================================================
@@ -126,6 +128,8 @@ export function transpileSFCToST(input: SFCModel): TranspileResult {
     if (model.transitions.length > 0) {
       lines.push('    (* Transitions That Fire In This Scan *)');
       for (const transition of model.transitions) lines.push(`    _F_${transition.id} : BOOL;`, transitionElement(transition.id));
+      lines.push('    (* Transition Conditions, as They Were Evaluated In This Scan *)');
+      for (const transition of model.transitions) lines.push(`    _C_${transition.id} : BOOL;`, transitionElement(transition.id));
       lines.push('');
     }
     if (storedActions.size > 0) {
@@ -214,7 +218,7 @@ export function transpileSFCToST(input: SFCModel): TranspileResult {
       
       // A transition that shares a step with one evaluated before it fires only when that one did not
       const blockers = evaluation.slice(0, position).filter((earlier) => leaves(earlier).some((id) => leaves(transition).includes(id)));
-      const guards = [...from.map((step) => `X_${step.id}`), `(${condition})`, ...blockers.map((earlier) => `NOT _F_${earlier.id}`)];
+      const guards = [...from.map((step) => `X_${step.id}`), `_C_${transition.id}`, ...blockers.map((earlier) => `NOT _F_${earlier.id}`)];
 
       // Build transition comment
       const names = (steps: SFCStep[]) => steps.map((step) => step.name).join(' & ');
@@ -223,6 +227,8 @@ export function transpileSFCToST(input: SFCModel): TranspileResult {
         : `Transition: ${names(from)} -> ${names(to)}`;
       
       lines.push(`(* ${transComment} *)`, transitionElement(transition.id));
+      // the condition is kept apart, so that a display can show whether it holds while the step is not active
+      lines.push(`_C_${transition.id} := (${condition});`, transitionElement(transition.id));
       lines.push(`_F_${transition.id} := ${guards.join(' AND ')};`, transitionElement(transition.id));
     });
     if (evaluation.length > 0) lines.push('');
@@ -251,11 +257,24 @@ export function transpileSFCToST(input: SFCModel): TranspileResult {
       };
     }
     
+    // Where the state of each step and each transition is read online (LNG-006): the generated state of the chart
+    const monitor: MonitorEntry[] = [
+      ...model.steps.flatMap((step): MonitorEntry[] => [
+        { element: stepElement(step.id), role: 'step', variable: `X_${step.id}` },
+        { element: stepElement(step.id), role: 'time', variable: `T_${step.id}.ET` },
+      ]),
+      ...model.transitions.flatMap((transition): MonitorEntry[] => [
+        { element: transitionElement(transition.id), role: 'condition', variable: `_C_${transition.id}` },
+        { element: transitionElement(transition.id), role: 'fired', variable: `_F_${transition.id}` },
+      ]),
+    ];
+
     return {
       success: true,
       source: lines.toString(),
       errors: [],
       sourceMap: lines.sourceMap(),
+      monitor,
     };
   } catch (e) {
     const message = `Transpiler error: ${e instanceof Error ? e.message : String(e)}`;
@@ -343,6 +362,7 @@ function validateSFCForTranspilation(model: SFCModel): Problems {
   const generated = [
     ...steps.flatMap((step) => [`X_${step.id}`, `T_${step.id}`, `_XP_${step.id}`]),
     ...transitions.map((transition) => `_F_${transition.id}`),
+    ...transitions.map((transition) => `_C_${transition.id}`),
     ...actions.filter(isRecord).map((action) => `_S_${String(action.id)}`),
   ];
   const stepReferences = new Set(steps.flatMap((step) => [step.id, step.name]).filter(isNonEmptyString).map((name) => name.toUpperCase()));
