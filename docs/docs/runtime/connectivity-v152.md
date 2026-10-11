@@ -1,5 +1,5 @@
 ---
-unlisted: true
+draft: true
 ---
 
 # Connectivity v1_5_2 — Implementation Spec

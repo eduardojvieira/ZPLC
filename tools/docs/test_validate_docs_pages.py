@@ -16,10 +16,10 @@ SIDEBAR = "module.exports = { docsSidebar: ['guide/index', 'guide/second'] };\n"
 GOOD = "# Title\n\nThis page is complete.\n"
 
 
-def build(root: Path, en: dict[str, str], es: dict[str, str] | None = None, sidebar: str = SIDEBAR) -> None:
+def build(root: Path, en: dict[str, str], es: dict[str, str], sidebar: str = SIDEBAR) -> None:
     (root / "docs").mkdir(parents=True, exist_ok=True)
     (root / "docs/sidebars.js").write_text(sidebar)
-    for base, pages in ((validator.EN_DIR, en), (validator.ES_DIR, es or {})):
+    for base, pages in ((validator.EN_DIR, en), (validator.ES_DIR, es)):
         for relative, text in pages.items():
             path = root / base / relative
             path.parent.mkdir(parents=True, exist_ok=True)
@@ -28,9 +28,11 @@ def build(root: Path, en: dict[str, str], es: dict[str, str] | None = None, side
 
 class DocsPageValidatorTests(unittest.TestCase):
     def run_validator(self, en: dict[str, str], es: dict[str, str] | None = None, sidebar: str = SIDEBAR) -> list[str]:
+        """Without `es` every page has a Spanish twin that repeats it, and only the errors of the English pages are returned."""
         with tempfile.TemporaryDirectory() as directory:
-            build(Path(directory), en, es, sidebar)
-            return validator.validate(Path(directory))
+            build(Path(directory), en, en if es is None else es, sidebar)
+            errors = validator.validate(Path(directory))
+            return errors if es is not None else [error for error in errors if not error.startswith("es:")]
 
     def test_clean_pair_passes(self) -> None:
         pages = {"guide/index.md": GOOD, "guide/second.md": GOOD}
@@ -97,12 +99,12 @@ class DocsPageValidatorTests(unittest.TestCase):
 
     def test_front_matter_id_names_the_sidebar_entry(self) -> None:
         pages = {"guide/index.md": GOOD, "guide/second.md": "---\nid: renamed\n---\n\nComplete.\n"}
-        errors = self.run_validator(pages, sidebar="x = ['guide/index', 'guide/renamed'];")
+        errors = self.run_validator(pages, pages, sidebar="x = ['guide/index', 'guide/renamed'];")
         self.assertEqual(errors, [])
 
     def test_unlisted_page_is_exempt(self) -> None:
         pages = {"guide/index.md": GOOD, "guide/second.md": GOOD, "guide/old.md": "---\nunlisted: true\n---\n\nKept for old links.\n"}
-        self.assertEqual(self.run_validator(pages), [])
+        self.assertEqual(self.run_validator(pages, pages), [])
 
     # Rule 3: English and Spanish pairs have the same shape.
 
@@ -130,9 +132,65 @@ class DocsPageValidatorTests(unittest.TestCase):
         es = {"guide/index.md": "---\ntitle: A\n---\n\n# A\n\nTexto.\n", "guide/second.md": GOOD}
         self.assertEqual(self.run_validator(en, es), [])
 
-    def test_english_page_without_a_twin_is_not_a_pair(self) -> None:
+    # Rule 4 (DOC-016): a page exists in both languages, or it is a draft.
+
+    def test_english_page_without_a_spanish_twin_fails(self) -> None:
         pages = {"guide/index.md": GOOD, "guide/second.md": GOOD}
-        self.assertEqual(self.run_validator(pages, {"guide/index.md": GOOD}), [])
+        errors = self.run_validator(pages, {"guide/index.md": GOOD})
+        self.assertEqual(len(errors), 1)
+        self.assertIn("guide/second.md", errors[0])
+        self.assertIn("no Spanish page", errors[0])
+
+    def test_spanish_page_without_an_english_twin_fails(self) -> None:
+        pages = {"guide/index.md": GOOD, "guide/second.md": GOOD}
+        errors = self.run_validator({"guide/index.md": GOOD}, pages)
+        self.assertEqual(len(errors), 1)
+        self.assertIn("es:guide/second.md", errors[0])
+        self.assertIn("no English page", errors[0])
+
+    def test_a_draft_may_exist_in_one_language(self) -> None:
+        draft = "---\ndraft: true\n---\n\nNot published yet.\n"
+        pages = {"guide/index.md": GOOD, "guide/second.md": GOOD}
+        self.assertEqual(self.run_validator({**pages, "guide/draft.md": draft}, pages), [])
+
+    def test_an_unlisted_page_is_published_so_it_needs_both_languages(self) -> None:
+        unlisted = "---\nunlisted: true\n---\n\nStill reachable by its address.\n"
+        pages = {"guide/index.md": GOOD, "guide/second.md": GOOD}
+        errors = self.run_validator({**pages, "guide/old.md": unlisted}, pages)
+        self.assertEqual(len(errors), 1)
+        self.assertIn("guide/old.md", errors[0])
+
+    # Rule 3, continued: a pair is one page.
+
+    def test_a_pair_has_one_address_and_one_listing(self) -> None:
+        for key, english, spanish in (("slug", "/a", "/b"), ("id", "one", "two"), ("draft", "true", "false"), ("unlisted", "true", "false")):
+            with self.subTest(key):
+                en = {"guide/index.md": f"---\n{key}: {english}\n---\n\nComplete.\n", "guide/second.md": GOOD}
+                es = {"guide/index.md": f"---\n{key}: {spanish}\n---\n\nCompleta.\n", "guide/second.md": GOOD}
+                errors = [error for error in self.run_validator(en, es, sidebar="x = ['guide/index', 'guide/one', 'guide/two', 'guide/second'];") if key in error]
+                self.assertEqual(len(errors), 1, errors)
+
+    def test_table_and_admonition_counts_must_match(self) -> None:
+        table = "| A | B |\n| - | - |\n| 1 | 2 |\n"
+        note = ":::note\nRead this.\n:::\n"
+        en = {"guide/index.md": f"# A\n\n{table}\n{note}\nDone.\n", "guide/second.md": GOOD}
+        es = {"guide/index.md": "# A\n\nHecho.\n", "guide/second.md": GOOD}
+        errors = self.run_validator(en, es)
+        self.assertEqual(sorted(error.split(":")[1].strip().split(" differs")[0] for error in errors), ["number of admonitions", "number of tables"])
+
+    def test_a_table_inside_a_code_block_is_not_a_table(self) -> None:
+        en = {"guide/index.md": "# A\n\n```text\n| A | B |\n```\n", "guide/second.md": GOOD}
+        es = {"guide/index.md": "# A\n\n```text\n| A | B |\n| C | D |\n```\n", "guide/second.md": GOOD}
+        self.assertEqual(self.run_validator(en, es), [])
+
+    def test_a_spanish_page_that_repeats_the_english_prose_is_not_translated(self) -> None:
+        sentences = "\n\n".join(f"This is the sentence number {number} of the page." for number in range(6))
+        page = f"# Title\n\n{sentences}\n"
+        translated = "# Titulo\n\n" + "\n\n".join(f"Esta es la oracion numero {number} de la pagina." for number in range(6)) + "\n"
+        self.assertEqual(self.run_validator({"guide/index.md": page, "guide/second.md": GOOD}, {"guide/index.md": translated, "guide/second.md": GOOD}), [])
+        errors = self.run_validator({"guide/index.md": page, "guide/second.md": GOOD}, {"guide/index.md": page, "guide/second.md": GOOD})
+        self.assertEqual(len(errors), 1)
+        self.assertIn("translate it", errors[0])
 
 
 if __name__ == "__main__":

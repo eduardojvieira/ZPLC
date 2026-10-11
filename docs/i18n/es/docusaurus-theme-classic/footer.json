@@ -1,0 +1,58 @@
+{
+  "link.title.Docs": {
+    "message": "Documentación",
+    "description": "The title of the footer links column with title=Docs in the footer"
+  },
+  "link.title.Project": {
+    "message": "Proyecto",
+    "description": "The title of the footer links column with title=Project in the footer"
+  },
+  "link.title.Community": {
+    "message": "Comunidad",
+    "description": "The title of the footer links column with title=Community in the footer"
+  },
+  "link.item.label.Getting started": {
+    "message": "Primeros pasos",
+    "description": "The label of footer link with label=Getting started linking to /docs/getting-started"
+  },
+  "link.item.label.Hardware support": {
+    "message": "Soporte de hardware",
+    "description": "The label of footer link with label=Hardware support linking to /docs/reference/capabilities-evidence"
+  },
+  "link.item.label.Reference": {
+    "message": "Referencia",
+    "description": "The label of footer link with label=Reference linking to /docs/reference"
+  },
+  "link.item.label.Studio": {
+    "message": "Studio",
+    "description": "The label of footer link with label=Studio linking to /docs/ide"
+  },
+  "link.item.label.Release notes": {
+    "message": "Notas de la versión",
+    "description": "The label of footer link with label=Release notes linking to /docs/release-notes"
+  },
+  "link.item.label.Contributing": {
+    "message": "Contribuir",
+    "description": "The label of footer link with label=Contributing linking to /docs/contributing"
+  },
+  "link.item.label.Roadmap": {
+    "message": "Hoja de ruta",
+    "description": "The label of footer link with label=Roadmap linking to /docs/contributing/roadmap"
+  },
+  "link.item.label.GitHub": {
+    "message": "GitHub",
+    "description": "The label of footer link with label=GitHub linking to https://github.com/eduardojvieira/ZPLC"
+  },
+  "link.item.label.Discussions": {
+    "message": "Discusiones",
+    "description": "The label of footer link with label=Discussions linking to https://github.com/eduardojvieira/ZPLC/discussions"
+  },
+  "link.item.label.Zephyr Project": {
+    "message": "Proyecto Zephyr",
+    "description": "The label of footer link with label=Zephyr Project linking to https://zephyrproject.org/"
+  },
+  "copyright": {
+    "message": "Copyright © 2026 colaboradores de ZPLC. Publicado bajo la licencia MIT.",
+    "description": "The footer copyright"
+  }
+}
