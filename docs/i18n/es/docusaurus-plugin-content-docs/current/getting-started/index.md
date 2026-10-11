@@ -67,7 +67,10 @@ Una placa cuyo nivel es `cross-build` tiene un firmware que compila en integraci
 continua, y nada más: nadie ha demostrado que se grabe, arranque o ejecute un
 programa.
 
-La versión rc.3 no incluye firmware precompilado. Para compilarlo usted mismo,
+La versión rc.3 no incluye firmware precompilado. El pipeline de versiones compila
+una imagen por placa en cada versión que hace, y Studio muestra la imagen de la
+placa elegida, con su suma de verificación y los pasos para grabarla, en **Project
+settings**, **Target**; no la graba. Para compilar el firmware usted mismo,
 siga la [configuración del espacio de trabajo Zephyr](../reference/zephyr-workspace-setup.md).
 Compilar el firmware, grabarlo, desplegar un programa y ejecutarlo son acciones
 separadas que una persona inicia en Studio. Las herramientas de IA y MCP no

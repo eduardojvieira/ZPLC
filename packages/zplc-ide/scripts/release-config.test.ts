@@ -29,7 +29,7 @@ type Builder = {
   portable: { artifactName: string };
 };
 
-type Step = { name?: string; uses?: string; run?: string; if?: string; 'working-directory'?: string; with?: Record<string, string> };
+type Step = { id?: string; name?: string; uses?: string; run?: string; if?: string; 'working-directory'?: string; with?: Record<string, string> };
 type Job = {
   needs?: string | string[];
   if?: string;

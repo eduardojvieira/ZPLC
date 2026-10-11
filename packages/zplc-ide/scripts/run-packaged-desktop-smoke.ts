@@ -3,6 +3,7 @@ import { accessSync, constants, existsSync, lstatSync, mkdtempSync, readFileSync
 import { createServer } from 'node:net';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
+import { parseFirmwareImagesResult } from '../electron/firmwareImagesProtocol';
 import { isElectronHeadlessBootstrapQuarantine } from './electronHeadlessQuarantine';
 
 const HOST = '127.0.0.1';
@@ -235,13 +236,23 @@ async function main(): Promise<void> {
       welcome: document.body.innerText.includes('ZPLC Studio 2.0'),
     }))()`)) as { node: Array<[string, string]>; preload: string[]; welcome: boolean };
     assert(rendererBoundary.node.every(([, value]) => value === 'undefined'), `Node globals leaked into packaged renderer: ${JSON.stringify(rendererBoundary.node)}`);
-    assert(JSON.stringify(rendererBoundary.preload) === JSON.stringify(['aiProvider', 'candidateChangeSet', 'closeGuard', 'firmwareBuild', 'getAppInfo', 'isElectron', 'learnProgress', 'nativeSimulation', 'platform', 'projectFiles', 'recovery', 'session', 'toolExecutionAudit', 'toolchain', 'updateCheck', 'workspaceTests']), `Unexpected packaged preload surface: ${JSON.stringify(rendererBoundary.preload)}`);
+    assert(JSON.stringify(rendererBoundary.preload) === JSON.stringify(['aiProvider', 'candidateChangeSet', 'closeGuard', 'firmwareBuild', 'firmwareImages', 'getAppInfo', 'isElectron', 'learnProgress', 'nativeSimulation', 'platform', 'projectFiles', 'recovery', 'session', 'toolExecutionAudit', 'toolchain', 'updateCheck', 'workspaceTests']), `Unexpected packaged preload surface: ${JSON.stringify(rendererBoundary.preload)}`);
     assert(rendererBoundary.welcome, 'Packaged renderer did not render the folder-backed Welcome screen.');
     // IDE-001, IDE-003: the project bridge of the asar's preload offers exactly its typed operations (the eight file ones, the four of recent projects, the watch and its event, and the three of the project archives) and no path-taking helper; the session bridge, its two.
     const projectOperations = (await cdp.evaluate(`Object.keys(window.electronAPI.projectFiles).sort()`)) as string[];
     assert(JSON.stringify(projectOperations) === JSON.stringify(['chooseFolder', 'exportArchive', 'extractArchive', 'forgetRecent', 'inspectArchive', 'list', 'listRecent', 'markOpened', 'mkdir', 'onChanged', 'openRecent', 'read', 'remove', 'rename', 'stat', 'watch', 'write']), `Unexpected packaged project bridge: ${JSON.stringify(projectOperations)}`);
     const sessionOperations = (await cdp.evaluate(`Object.keys(window.electronAPI.session).sort()`)) as string[];
     assert(JSON.stringify(sessionOperations) === JSON.stringify(['load', 'save']), `Unexpected packaged session bridge: ${JSON.stringify(sessionOperations)}`);
+    // REL-025: the firmware bridge has its one typed listing, and what it answers is a valid answer. When the package was made
+    // with the firmware set at hand (ZPLC_REQUIRE_FIRMWARE=1) the two learner-board images are inside it, with their checksums.
+    const firmwareOperations = (await cdp.evaluate(`Object.keys(window.electronAPI.firmwareImages).sort()`)) as string[];
+    assert(JSON.stringify(firmwareOperations) === JSON.stringify(['list']), `Unexpected packaged firmware bridge: ${JSON.stringify(firmwareOperations)}`);
+    const firmware = parseFirmwareImagesResult(await cdp.evaluate(`window.electronAPI.firmwareImages.list()`));
+    assert(firmware !== null, 'The packaged firmware bridge answered something that is not a firmware answer.');
+    if (process.env.ZPLC_REQUIRE_FIRMWARE === '1') {
+      const learners = firmware.status === 'available' ? firmware.images.filter((image) => image.learner && image.role === 'flash') : [];
+      assert(firmware.status === 'available' && learners.length === 2 && learners.every((image) => image.bundled === 'verified'), `The packaged application does not hold the two learner-board images with their checksums: ${JSON.stringify(firmware)}`);
+    }
     // LX-1: the workspace test bridge registers the folder the main process owns by its opaque id, next to the older file-based registration.
     const workspaceTestOperations = (await cdp.evaluate(`Object.keys(window.electronAPI.workspaceTests).sort()`)) as string[];
     assert(['registerProjectFile', 'registerProjectRoot'].every((operation) => workspaceTestOperations.includes(operation)), `Packaged workspace test bridge lacks registerProjectRoot: ${JSON.stringify(workspaceTestOperations)}`);

@@ -21,6 +21,7 @@ packages/*/electron-dist/
 packages/*/.env
 packages/*/.DS_Store
 packages/zplc-ide/dist-native/
+packages/zplc-ide/dist-firmware/
 
 # HIL local credentials (never commit)
 tools/hil/.env
