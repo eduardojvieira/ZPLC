@@ -195,7 +195,7 @@ typedef struct {
   uint8_t first_scan_interrupted;  /**< a breakpoint stopped the task's first scan: its rest is still the first */
 } zplc_sched_slot_t;
 
-typedef struct {
+typedef struct zplc_sched_core {
   zplc_sched_slot_t *slot;         /**< the adapter's array */
   uint8_t capacity;                /**< entries of slot */
   uint8_t count;                   /**< registered tasks */

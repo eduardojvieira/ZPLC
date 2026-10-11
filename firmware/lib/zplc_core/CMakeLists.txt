@@ -529,6 +529,31 @@ endif()
 
 add_test(NAME test_native_runtime_session COMMAND test_native_runtime_session)
 
+# Test: the host session decides what the firmware decides: the same scenario and the same golden trace as
+# firmware/tests/scheduler_equivalence (RT-008). Also run under the sanitizers.
+add_executable(test_sched_equivalence
+    tests/test_sched_equivalence.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../apps/posix_host/src/native_runtime_session.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../apps/posix_host/src/native_program_store.c
+    src/core/zplc_core.c
+    src/hal/posix/zplc_hal_posix.c
+)
+
+target_include_directories(test_sched_equivalence PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${ZPLC_FW_IDENTITY_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../apps/posix_host/src
+    ${CMAKE_CURRENT_SOURCE_DIR}/tests/include
+)
+
+target_link_libraries(test_sched_equivalence PRIVATE zplc_core)
+
+if(UNIX AND NOT APPLE)
+    target_link_libraries(test_sched_equivalence PRIVATE rt)
+endif()
+
+add_test(NAME test_sched_equivalence COMMAND test_sched_equivalence)
+
 # Test: POSIX host stdio polling behavior
 add_executable(test_host_stdio
     tests/test_host_stdio.c
