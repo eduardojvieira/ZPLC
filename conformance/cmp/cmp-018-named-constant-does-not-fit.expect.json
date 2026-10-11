@@ -8,6 +8,9 @@
   "lines": [
     8
   ],
+  "codes": [
+    "CONSTANT_OUT_OF_RANGE"
+  ],
   "messageIncludes": [
     "40000",
     "INT"

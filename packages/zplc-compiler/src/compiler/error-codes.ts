@@ -160,7 +160,7 @@ export const ERROR_CODE_TABLE = {
         },
     },
     UNKNOWN_TYPE: {
-        phases: ['parser', 'codegen'],
+        phases: ['codegen', 'parser'],
         summary: {
             en: 'A data type, enumeration, function block type or interface is named that is not declared.',
             es: 'Se nombra un tipo de dato, una enumeración, un tipo de bloque de función o una interfaz que no está declarado.',
@@ -258,7 +258,7 @@ export const ERROR_CODE_TABLE = {
         },
     },
     INVALID_ARRAY_ACCESS: {
-        phases: ['parser', 'codegen'],
+        phases: ['codegen', 'parser'],
         summary: {
             en: 'An index is applied to something that is not an array, with the wrong number of indices (more than three is never accepted), or with an index that is not a 32-bit integer.',
             es: 'Se aplica un índice a algo que no es un arreglo, con una cantidad incorrecta de índices, o con un índice que no es un entero de 32 bits.',
@@ -481,16 +481,24 @@ export const ERROR_CODE_TABLE = {
         },
     },
     INTERNAL_COMPILER_ERROR: {
-        phases: ['lexer', 'parser', 'codegen', 'assembler'],
+        phases: ['codegen', 'lexer', 'parser', 'assembler'],
         summary: {
             en: 'The compiler stopped on a condition it did not expect; the message names it. It is never a mistake of the program: report it with the source.',
             es: 'El compilador se detuvo ante una condición que no esperaba; el mensaje la nombra. Nunca es un error del programa: repórtelo con la fuente.',
         },
     },
 
+    NO_BOARD_CHANNEL: {
+        phases: ['codegen'],
+        summary: {
+            en: 'A located variable sits at an address where the board of the project has no channel; the message names the variable, the address and the board.',
+            es: 'Una variable ubicada está en una dirección donde la placa del proyecto no tiene canal; el mensaje nombra la variable, la dirección y la placa.',
+        },
+    },
+
     // ---- Visual languages and instruction list ----------------------------------------------------------------------
     TRANSLATION_FAILED: {
-        phases: ['parser', 'codegen'],
+        phases: ['codegen', 'parser'],
         summary: {
             en: 'A ladder, function block diagram, sequential function chart or instruction list source cannot be translated to Structured Text; the message names the element.',
             es: 'Una fuente de escalera, diagrama de bloques de función, diagrama funcional secuencial o lista de instrucciones no se puede traducir a Texto Estructurado; el mensaje nombra el elemento.',

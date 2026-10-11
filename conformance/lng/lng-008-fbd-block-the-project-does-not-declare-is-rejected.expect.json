@@ -6,6 +6,7 @@
   ],
   "note": "LNG-002 and LNG-008: a block the transpiler cannot translate is an error that names it; declaring the type in the project is what makes it placeable",
   "build": "fails",
+  "codes": ["TRANSLATION_FAILED"],
   "messageIncludes": [
     "nobody",
     "NoSuchBlock"

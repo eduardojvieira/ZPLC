@@ -143,11 +143,11 @@ export function transpileFailure(transpiled: TranspileResult, sourceRef?: string
         ? transpiled.diagnostics
         : transpiled.errors.map((message) => ({ message, ...(transpiled.line === undefined ? {} : { line: transpiled.line }) }));
     const errors = found.map((each) => {
-        const error = new CompilerError(each.message, each.line ?? 0, 0, 'parser', sourceRef);
+        const error = new CompilerError('TRANSLATION_FAILED', each.message, each.line ?? 0, 0, 'parser', sourceRef);
         if (each.element !== undefined) error.element = each.element;
         return error;
     });
-    if (errors.length === 0) errors.push(new CompilerError('The source could not be translated', 0, 0, 'parser', sourceRef));
+    if (errors.length === 0) errors.push(new CompilerError('TRANSLATION_FAILED', 'The source could not be translated', 0, 0, 'parser', sourceRef));
     errors[0]!.errors = errors;
     return errors[0]!;
 }
@@ -377,12 +377,13 @@ function modbusAreaOfNumber(number: number): ModbusAddressSpace | undefined {
 export function modbusTagNumber(area: ModbusAddressSpace | undefined, address: number, what: string, line: number): number {
     if (area === undefined) return address;
     if (!Number.isInteger(address) || address < 0 || address > 65535) {
-        throw new CompilerError(`The Modbus address ${String(address)} of ${what} is not between 0 and 65535`, line, 0, 'codegen');
+        throw new CompilerError('INVALID_TAG', `The Modbus address ${String(address)} of ${what} is not between 0 and 65535`, line, 0, 'codegen');
     }
     const written = modbusAreaOfNumber(address);
     if (written !== undefined) {
         if (written === area) return address;
         throw new CompilerError(
+            'INVALID_TAG',
             `The Modbus address ${String(address)} of ${what} is a ${written.replace('-', ' ')} in Modbus notation, and ${what} is placed in a ${area.replace('-', ' ')}`,
             line, 0, 'codegen');
     }
@@ -390,6 +391,7 @@ export function modbusTagNumber(area: ModbusAddressSpace | undefined, address: n
     if (address <= 9998) return MODBUS_AREA_BASE[area] + address;
     if (area === 'holding-register') return address;
     throw new CompilerError(
+        'INVALID_TAG',
         `The ${area.replace('-', ' ')} address ${String(address)} of ${what} does not fit: an ${area.replace('-', ' ')} is addressed from 0 to 9998`,
         line, 0, 'codegen');
 }
@@ -569,12 +571,12 @@ function relocateToSource(
     const element = origin ? elementAtLine(origin.map, each.line) : undefined;
     const parsed = element ? parseElement(element) : undefined;
     if (origin?.language === 'IL' && element && parsed?.kind === 'line') {
-        const error = new CompilerError(each.detail, Number(parsed.id), 1, each.phase, each.sourceRef);
+        const error = new CompilerError(each.code, each.detail, Number(parsed.id), 1, each.phase, each.sourceRef);
         error.element = element;
         return error;
     }
     const named = element === undefined || origin?.language === 'IL' ? '' : `${describeElement(element)}: `;
-    const error = new CompilerError(`${named}${each.detail} (position in the generated Structured Text)`, each.line, each.column, each.phase, each.sourceRef, each.endLine, each.endColumn);
+    const error = new CompilerError(each.code, `${named}${each.detail} (position in the generated Structured Text)`, each.line, each.column, each.phase, each.sourceRef, each.endLine, each.endColumn);
     if (element !== undefined && origin?.language !== 'IL') error.element = element;
     return error;
 }
@@ -608,12 +610,13 @@ export function compileMultiTaskProject(
     programSources: ProgramSource[]
 ): MultiTaskCompilationResult {
     if (!config.tasks || config.tasks.length === 0) {
-        throw new CompilerError('No tasks defined in project configuration', 0, 0, 'codegen');
+        throw new CompilerError('INVALID_TASK_CONFIGURATION', 'No tasks defined in project configuration', 1, 1, 'codegen', 'zplc.json');
     }
     if (config.tasks.length > ZPLC_CONSTANTS.MAX_TASKS) {
         throw new CompilerError(
+            'INVALID_TASK_CONFIGURATION',
             `Project supports at most ${ZPLC_CONSTANTS.MAX_TASKS} tasks`,
-            0, 0, 'codegen',
+            1, 1, 'codegen', 'zplc.json',
         );
     }
 
@@ -655,7 +658,7 @@ export function compileMultiTaskProject(
 
             const source = findSource(progName);
             if (!source) {
-                throw new CompilerError(`Program '${progName}' referenced by task but not found in sources`, 0, 0, 'codegen');
+                throw new CompilerError('UNKNOWN_TASK_PROGRAM', `Program '${progName}' referenced by task but not found in sources`, 1, 1, 'codegen', 'zplc.json');
             }
             programFiles.add(source);
 
@@ -710,7 +713,7 @@ export function compileMultiTaskProject(
             new Set((config.io?.virtual ?? []).map((row) => normalizeAddress(row.address)).filter((address): address is string => address !== undefined)),
         );
         if (unmapped.length > 0) {
-            const errors = unmapped.map((message) => new CompilerError(message, 0, 0, 'codegen'));
+            const errors = unmapped.map((message) => new CompilerError('NO_BOARD_CHANNEL', message, 0, 0, 'codegen'));
             errors[0]!.errors = errors;
             throw errors[0];
         }

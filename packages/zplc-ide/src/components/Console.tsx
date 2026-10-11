@@ -703,7 +703,7 @@ export function Console({ debugController }: ConsoleProps) {
                     <div className="flex-1">
                       <span className="sr-only">{msg.type === 'warning' ? 'Warning' : 'Error'}: </span>
                       <span className="text-[var(--color-surface-100)]">{msg.message}</span>
-                      {(msg.file ?? activeFile?.path) && <span className="ml-2 text-[var(--color-surface-400)] text-xs">{msg.file ?? activeFile?.path}{msg.line !== undefined && `:${msg.line}`}{msg.column !== undefined && `:${msg.column}`}</span>}
+                      {(msg.file ?? activeFile?.path) && <span className="ml-2 text-[var(--color-surface-400)] text-xs">{msg.file ?? activeFile?.path}{msg.line !== undefined && `:${msg.line}`}{msg.column !== undefined && `:${msg.column}`}</span>}{msg.errorCode && <span data-diagnostic-code className="ml-2 font-mono text-[var(--color-surface-400)] text-xs">{msg.errorCode}</span>}
                     </div>
                   </div>
                 ))}
@@ -740,7 +740,7 @@ export function Console({ debugController }: ConsoleProps) {
                         {msg.line !== undefined && `:${msg.line}`}
                         {msg.column !== undefined && `:${msg.column}`}
                       </span>
-                    )}
+                    )}{msg.code && <span data-diagnostic-code className="ml-2 font-mono text-[var(--color-surface-400)] text-xs">{msg.code}</span>}
                   </div>
                 </>;
                 return navigable ? <button key={idx} type="button" onClick={() => { void activateDiagnostic(msg); }} className="flex w-full items-start gap-2 rounded px-2 py-1 text-left hover:bg-[var(--color-surface-700)] focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[var(--color-accent-blue)]">{content}</button> : <div key={idx} className="flex items-start gap-2 rounded px-2 py-1">{content}</div>;

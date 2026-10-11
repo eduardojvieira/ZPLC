@@ -23,6 +23,30 @@ END_VAR
 END_FUNCTION_BLOCK
 `;
 
+describe('the code of a checked error is the one the build reports (CMP-006)', () => {
+  const task = [{ name: 'Main', trigger: 'cyclic' as const, interval: 10, priority: 1, programs: ['Main'] }];
+  const sources: Array<[string, string]> = [
+    ['syntax', 'PROGRAM Main\nVAR\n  A : INT;\nEND_VAR\n  A := ;\nEND_PROGRAM\n'],
+    ['lexical', 'PROGRAM Main\nVAR\n  A : INT;\nEND_VAR\n  A := 1 @ 2;\nEND_PROGRAM\n'],
+    ['semantic', 'PROGRAM Main\nVAR\n  A : INT;\nEND_VAR\n  A := Missing;\nEND_PROGRAM\n'],
+    ['type', 'PROGRAM Main\nVAR\n  A : INT;\n  B : BOOL;\nEND_VAR\n  B := A;\nEND_PROGRAM\n'],
+  ];
+  for (const [name, source] of sources) {
+    it(`${name}: the same code, line and column as the build`, () => {
+      const [checked] = checkProject([{ ref: 'src/Main.st', content: source }]);
+      let built: { code: string; line: number; column: number } | undefined;
+      try {
+        compileMultiTaskProject({ name: 'P', version: '1.0.0', tasks: task }, [{ name: 'Main', content: source, sourceRef: 'src/Main.st' }]);
+      } catch (error) {
+        const first = (error as { errors: Array<{ code: string; line: number; column: number }> }).errors[0]!;
+        built = { code: first.code, line: first.line, column: first.column };
+      }
+      expect(built).toBeDefined();
+      expect({ code: checked!.code, line: checked!.line, column: checked!.column }).toEqual(built!);
+    });
+  }
+});
+
 describe('checking a project (LNG-015)', () => {
   it('has nothing to say about a project that builds', () => {
     expect(checkProject([{ ref: 'src/main.st', content: MAIN }, { ref: 'src/lib/motor.st', content: LIB }])).toEqual([]);

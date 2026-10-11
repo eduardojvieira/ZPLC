@@ -560,6 +560,9 @@ export const JOURNEYS: Journey[] = [
       const problems = await app.eval<string>(`document.querySelector('[aria-label="Latest build diagnostics"]')?.innerText ?? ''`);
       assert(problems.includes("Unknown identifier 'UndefinedVariable'"), `The Problems list does not say what is wrong with the program ("Unknown identifier 'UndefinedVariable'" is what the compiler reports): ${JSON.stringify(problems)}`);
       assert(!/(^|[\s'"(])\/[\w.~@+-]|[A-Za-z]:[\\/]/.test(problems), `The Problems list shows an absolute path of the machine: ${JSON.stringify(problems)}`);
+      // and says which kind of problem it is, with the stable code that the CLI and the reference page use (CMP-006)
+      const codes = await app.eval<string[]>(`[...document.querySelectorAll('[aria-label="Latest build diagnostics"] [data-diagnostic-code]')].map((item) => item.textContent)`);
+      assert(codes.includes('UNKNOWN_IDENTIFIER'), `The Problems list does not show the code of the problem: ${JSON.stringify(codes)}`);
     },
   },
   {
@@ -577,8 +580,10 @@ export const JOURNEYS: Journey[] = [
       await app.click(tab('Problems'));
       const live = css('[aria-label="Live Structured Text diagnostics"]');
       await app.until('the live diagnostics to name the undeclared variable, with no build', async () => (await app.eval<string>(`${live}?.innerText ?? ''`)).includes('UndefinedVariable') || undefined);
-      const markers = await monacoEval<Array<{ startLineNumber: number; startColumn: number; endColumn: number; message: string }>>(app, `return monaco.editor.getModelMarkers({ owner: 'zplc.st-live' });`);
+      const markers = await monacoEval<Array<{ startLineNumber: number; startColumn: number; endColumn: number; message: string; code?: string }>>(app, `return monaco.editor.getModelMarkers({ owner: 'zplc.st-live' });`);
       assert(markers.length > 0 && markers[0]!.startLineNumber === last + 1 && markers[0]!.endColumn > markers[0]!.startColumn + 1, `The editor has no squiggle with a range on the faulty line: ${JSON.stringify(markers)}`);
+      // the squiggle carries the code that a build of the same source reports (CMP-006)
+      assert(markers[0]!.code === 'UNKNOWN_IDENTIFIER', `The squiggle does not carry the stable code of the problem: ${JSON.stringify(markers[0])}`);
       // undoing the typing clears it the next time the project is checked
       await clickEditorLine(app, last + 1);
       for (let key = 0; key < 3; key++) await app.press('Ctrl+Z');

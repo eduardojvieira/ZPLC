@@ -3,5 +3,6 @@
   "title": "a call with a missing required argument is rejected",
   "matrix": ["pous.function"],
   "build": "fails",
-  "lines": [11]
+  "lines": [11],
+  "codes": ["MISSING_ARGUMENT"]
 }

@@ -13,8 +13,8 @@
     {"kind":"unit","ref":"packages/zplc-ide/src/conformance/cases.test.ts","test":"parseExpectation: matrix rows, tags and located diagnostics (VF-003, VF-005)"}
   ],
   "VF-004": [
-    {"kind":"unit","ref":"tools/ci/conformance-defects.test.ts","test":"the committed map (VF-004)","partial":true,"note":"133 defects of Current failures of CMP, LNG and RT are listed with the case, the test or the reason that shows each (conformance/defect-map.md); 9 are open, and a defect that is open has no case yet because the behaviour is not fixed (a case that fails would join the expected-failure list, which must end empty): codes of diagnostics (CMP-006, the Tool API reports COMPILATION_FAILED for every error), the per-gesture undo and the keyboard access of the visual editors (LNG-010, LNG-012), the language service (LNG-015), the fail-safe of the processor (RT-019 to RT-021), the shared scheduler core (RT-008), the first-miss latch (RT-014) and the per-scan time latch and the charge of data-dependent opcodes (RT-006)"},
-    {"kind":"unit","ref":"tools/ci/conformance-defects.test.ts","test":"the map of defects and cases (VF-004)","partial":true,"note":"133 defects of Current failures of CMP, LNG and RT are listed with the case, the test or the reason that shows each (conformance/defect-map.md); 9 are open, and a defect that is open has no case yet because the behaviour is not fixed (a case that fails would join the expected-failure list, which must end empty): codes of diagnostics (CMP-006, the Tool API reports COMPILATION_FAILED for every error), the per-gesture undo and the keyboard access of the visual editors (LNG-010, LNG-012), the language service (LNG-015), the fail-safe of the processor (RT-019 to RT-021), the shared scheduler core (RT-008), the first-miss latch (RT-014) and the per-scan time latch and the charge of data-dependent opcodes (RT-006)"}
+    {"kind":"unit","ref":"tools/ci/conformance-defects.test.ts","test":"the committed map (VF-004)","partial":true,"note":"133 defects of Current failures of CMP, LNG and RT are listed with the case, the test or the reason that shows each (conformance/defect-map.md); 8 are open, and a defect that is open has no case yet because the behaviour is not fixed (a case that fails would join the expected-failure list, which must end empty): the per-gesture undo and the keyboard access of the visual editors (LNG-010, LNG-012), the language service (LNG-015), the fail-safe of the processor (RT-019 to RT-021), the shared scheduler core (RT-008), the first-miss latch (RT-014) and the per-scan time latch and the charge of data-dependent opcodes (RT-006)"},
+    {"kind":"unit","ref":"tools/ci/conformance-defects.test.ts","test":"the map of defects and cases (VF-004)","partial":true,"note":"133 defects of Current failures of CMP, LNG and RT are listed with the case, the test or the reason that shows each (conformance/defect-map.md); 8 are open, and a defect that is open has no case yet because the behaviour is not fixed (a case that fails would join the expected-failure list, which must end empty): the per-gesture undo and the keyboard access of the visual editors (LNG-010, LNG-012), the language service (LNG-015), the fail-safe of the processor (RT-019 to RT-021), the shared scheduler core (RT-008), the first-miss latch (RT-014) and the per-scan time latch and the charge of data-dependent opcodes (RT-006)"}
   ],
   "VF-005": [
     {"kind":"unit","ref":"packages/zplc-ide/src/conformance/cases.test.ts","test":"parseExpectation: matrix rows, tags and located diagnostics (VF-003, VF-005)"},
@@ -188,12 +188,21 @@
     {"kind":"conformance","ref":"conformance/cmp/cmp-006-unknown-identifier-in-function.expect.json","test":"CMP-006 an error in the body of a function is reported at its line"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-006-unknown-member-position.expect.json","test":"CMP-006 an unknown member of a function block is reported at its own line"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-006-var-access-is-rejected.expect.json","test":"CMP-006 a VAR_ACCESS block is rejected"},
+    {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/check.test.ts","test":"the code of a checked error is the one the build reports (CMP-006)"},
     {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/compiler.test.ts","test":"positions a generation error that has no position of its own at its statement (CMP-006)"},
+    {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/error-codes.test.ts","test":"each code is provoked by a build, with its position and its message (CMP-006)"},
+    {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/error-codes.test.ts","test":"errors that no source provokes (CMP-006)"},
+    {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/error-codes.test.ts","test":"the registry of error codes (CMP-006)"},
     {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/names.test.ts","test":"PERSISTENT is rejected where it is written (CMP-006)"},
     {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/semantic-errors.test.ts","test":"rejects an unknown member of a function block instance (position comes with CMP-006)"},
     {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/syntax.test.ts","test":"compile: every independent error, each positioned (CMP-006, CMP-007)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/cli/toolApi.test.ts","test":"returns every independent error of a source, each with its position (CMP-006, CMP-007)"},
-    {"kind":"unit","ref":"packages/zplc-ide/src/compiler/communication-tags.test.ts","test":"keeps every line of the source where it was, so a diagnostic names the line the author sees (CMP-006)"}
+    {"kind":"unit","ref":"packages/zplc-ide/src/compiler/communication-tags.test.ts","test":"keeps every line of the source where it was, so a diagnostic names the line the author sees (CMP-006)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/compiler/languageWorkflow.test.ts","test":"refuses a located variable where the board has no channel, with the code NO_BOARD_CHANNEL (IO-003, CMP-006)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/compiler/languageWorkflow.test.ts","test":"refuses a source that does not translate, with the code TRANSLATION_FAILED and the element it is about (LNG-003, CMP-006)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/langsvc/markers.test.ts","test":"gives the marker the stable code of the problem, the one a build reports (CMP-006)"},
+    {"kind":"unit","ref":"tools/ci/generate-error-codes.test.ts","test":"the generated list of error codes (CMP-006)"},
+    {"kind":"unit","ref":"tools/docs/generate_diagnostic_codes.test.ts","test":"CMP-006 diagnostic code reference: generated from the registry of the compiler"}
   ],
   "CMP-007": [
     {"kind":"conformance","ref":"conformance/cmp/cmp-007-declarations-and-statements.expect.json","test":"CMP-007 errors of declarations and of statements are reported together"},
@@ -750,7 +759,9 @@
     {"kind":"conformance","ref":"conformance/cmp/cmp-043-program-that-fills-the-region.expect.json","test":"CMP-043 a program that fills the WORK memory of the target exactly builds and runs"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-043-programs-share-the-region.expect.json","test":"CMP-043 two programs of 300 bytes each have their own storage in the one region"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-043-three-strings.expect.json","test":"CMP-043 a program with three STRING variables"},
+    {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/error-codes.test.ts","test":"the over-size failures state what is required, what is available and what takes the most (CMP-043)"},
     {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/unit.test.ts","test":"memory is limited by the target profile only (CMP-043)"},
+    {"kind":"unit","ref":"tools/docs/generate_diagnostic_codes.test.ts","test":"states the over-size failures, which name the bytes required, the bytes available and the largest consumers (CMP-043)"},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"17 Large program, and one over the limit","partial":true}
   ],
   "CMP-044": [
@@ -951,6 +962,7 @@
     {"kind":"unit","ref":"packages/zplc-ide/src/cli/visualDiagnostics.test.ts","test":"LNG-003 an FBD diagnostic names the block or the wire"},
     {"kind":"unit","ref":"packages/zplc-ide/src/cli/visualDiagnostics.test.ts","test":"LNG-003 an IL diagnostic names its line"},
     {"kind":"unit","ref":"packages/zplc-ide/src/cli/visualDiagnostics.test.ts","test":"LNG-003 and LNG-026 an SFC diagnostic names the step, the transition or the action"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/compiler/languageWorkflow.test.ts","test":"refuses a source that does not translate, with the code TRANSLATION_FAILED and the element it is about (LNG-003, CMP-006)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/components/workspaceTestPresentation.test.ts","test":"carries the element of a diagnostic, when it is an element id, and drops it otherwise (LNG-003)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/conformance/cases.test.ts","test":"LNG-003 asserts the element each diagnostic of a rejected diagram or IL program is about, one for each diagnostic"},
     {"kind":"unit","ref":"packages/zplc-ide/src/editors/diagnosticElement.test.ts","test":"LNG-003 Problems selects the element that the build named"},
@@ -1377,6 +1389,7 @@
     {"kind":"unit","ref":"packages/zplc-ide/src/boards/boardBuild.test.ts","test":"mapping a variable to a channel the board does not have is a build error (IO-003)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/boards/boardIoMapping.test.ts","test":"the rows of the I/O mapping editor against the channels of the board (IO-003)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/boards/ioAdmission.test.ts","test":"a located variable the board has no channel for is a build error (IO-003)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/compiler/languageWorkflow.test.ts","test":"refuses a located variable where the board has no channel, with the code NO_BOARD_CHANNEL (IO-003, CMP-006)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/config/boardProfiles.test.ts","test":"board I/O descriptions in the catalogue (IO-001, IO-003, IO-009)"},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"40 The I/O mapping editor lists the channels of the board and flags a row it does not have","partial":true}
   ],
@@ -1657,6 +1670,7 @@
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"21 Preferences apply and persist per user"}
   ],
   "IDE-008": [
+    {"kind":"unit","ref":"packages/zplc-ide/electron/appLifecycle.test.ts","test":"application lifecycle (IDE-008)"},
     {"kind":"unit","ref":"packages/zplc-ide/electron/ipcRegistry.test.ts","test":"recovery and session over the IPC boundary (IDE-006, IDE-008)"},
     {"kind":"unit","ref":"packages/zplc-ide/electron/projectFiles.test.ts","test":"recent projects (IDE-008)"},
     {"kind":"unit","ref":"packages/zplc-ide/electron/projectFilesProtocol.test.ts","test":"recent project message schema (IDE-008)"},
@@ -1734,6 +1748,12 @@
     {"kind":"unit","ref":"packages/zplc-ide/electron/spawnAllowList.test.ts","test":"the spawn allow-list (IDE-017)"},
     {"kind":"unit","ref":"packages/zplc-ide/electron/toolWorkerHost.test.ts","test":"the worker command schema (IDE-012, IDE-017)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/cli/firmwareBuildRunner.test.ts","test":"never starts a process for a board that is not a manifest board id (IDE-017)"}
+  ],
+  "IDE-018": [
+    {"kind":"unit","ref":"packages/zplc-ide/electron/serialPortBroker.test.ts","test":"serial port broker (IDE-018)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/components/SerialPortDialog.test.tsx","test":"serial port dialog (IDE-018)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/utils/serialPortChoice.test.ts","test":"serial port choice (IDE-018)"},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"42 Choosing a serial port is a dialog of the application","partial":true}
   ],
   "IDE-019": [
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"18 Force an input while stopped at a breakpoint","partial":true},

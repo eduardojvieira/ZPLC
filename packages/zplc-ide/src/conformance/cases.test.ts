@@ -152,12 +152,12 @@ describe('parseExpectation: matrix rows, tags and located diagnostics (VF-003, V
   });
 
   it('asserts diagnostic codes and columns of a rejected program, one for each line', () => {
-    expect(parseExpectation(negative({ lines: [4, 7], columns: [3, 9], codes: ['COMPILATION_FAILED', 'COMPILATION_FAILED'] }), 'x'))
-      .toMatchObject({ lines: [4, 7], columns: [3, 9], codes: ['COMPILATION_FAILED', 'COMPILATION_FAILED'] });
+    expect(parseExpectation(negative({ lines: [4, 7], columns: [3, 9], codes: ['UNKNOWN_IDENTIFIER', 'UNKNOWN_IDENTIFIER'] }), 'x'))
+      .toMatchObject({ lines: [4, 7], columns: [3, 9], codes: ['UNKNOWN_IDENTIFIER', 'UNKNOWN_IDENTIFIER'] });
     rejects(negative({ columns: [3] }), 'columns needs "lines"');
     rejects(negative({ lines: [4], columns: [3, 9] }), 'one column for each line');
     rejects(negative({ lines: [4], columns: [0] }), 'columns');
-    rejects(negative({ lines: [4, 7], codes: ['COMPILATION_FAILED'] }), 'same length');
+    rejects(negative({ lines: [4, 7], codes: ['UNKNOWN_IDENTIFIER'] }), 'same length');
     rejects(negative({ codes: ['compilation failed'] }), 'codes');
   });
 
@@ -199,7 +199,7 @@ describe('parseExpectation: matrix rows, tags and located diagnostics (VF-003, V
 
   it('does not let a run-only key sit in a rejected case, nor a reject-only key in a case that runs', () => {
     rejects(negative({ scans: 1 }), 'unknown key "scans"');
-    rejects(runtime({ codes: ['COMPILATION_FAILED'] }), 'unknown key "codes"');
+    rejects(runtime({ codes: ['UNKNOWN_IDENTIFIER'] }), 'unknown key "codes"');
   });
 });
 

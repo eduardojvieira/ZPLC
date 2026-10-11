@@ -41,8 +41,12 @@ function failureOf(example: ErrorExample): CompilerError {
 const PROVOKED_BELOW: Partial<Record<ErrorCode, string>> = {
     INTERNAL_COMPILER_ERROR: 'an error that is not one of the compiler’s own is an internal error',
     ASSEMBLER_ERROR: 'an assembler error is a compiler error at the program that was built',
-    // the translators of the visual languages are in the IDE package: packages/zplc-ide/src/compiler/diagnosticCodes.test.ts
+    // the translators of the visual languages are in the IDE package: src/compiler/languageWorkflow.test.ts and
+    // src/cli/visualDiagnostics.test.ts there
     TRANSLATION_FAILED: 'provoked by the translators, in the IDE package',
+    // the admission of a located variable against the channels of a board is in the IDE package, with the board
+    // manifest: src/compiler/languageWorkflow.test.ts there
+    NO_BOARD_CHANNEL: 'provoked by the admission of located variables, in the IDE package',
 };
 
 describe('the registry of error codes (CMP-006)', () => {

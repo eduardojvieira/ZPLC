@@ -3,6 +3,7 @@
   "title": "an FBD output block with nothing wired to it is rejected, not written as 0",
   "matrix": ["ld-fbd.fbd-unwired-inputs"],
   "build": "fails",
+  "codes": ["TRANSLATION_FAILED"],
   "messageIncludes": [
     "'out'",
     "not wired"

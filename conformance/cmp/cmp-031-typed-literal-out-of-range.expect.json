@@ -5,6 +5,9 @@
   "lines": [
     5
   ],
+  "codes": [
+    "INVALID_TYPED_LITERAL"
+  ],
   "messageIncludes": [
     "out of range"
   ]

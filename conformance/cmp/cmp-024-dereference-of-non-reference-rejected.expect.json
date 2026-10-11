@@ -4,5 +4,8 @@
   "build": "fails",
   "lines": [
     6
+  ],
+  "codes": [
+    "INVALID_REFERENCE"
   ]
 }

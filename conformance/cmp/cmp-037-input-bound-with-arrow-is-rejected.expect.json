@@ -8,6 +8,9 @@
   "lines": [
     6
   ],
+  "codes": [
+    "INVALID_OUTPUT_BINDING"
+  ],
   "messageIncludes": [
     "IN"
   ]

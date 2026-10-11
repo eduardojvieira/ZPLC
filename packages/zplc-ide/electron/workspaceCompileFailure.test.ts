@@ -8,21 +8,21 @@ const first = (value: unknown) => workspaceCompileFailure(value).evidence.diagno
 
 describe('the failure sent to the renderer after a build', () => {
   it('keeps the code, a relative path and the position of each diagnostic', () => {
-    expect(workspaceCompileFailure(failure({ code: 'COMPILATION_FAILED', path: 'src/Motor.st', line: 31, column: 1, phase: 'codegen', extra: 'x' }))).toEqual({
+    expect(workspaceCompileFailure(failure({ code: 'UNKNOWN_IDENTIFIER', path: 'src/Motor.st', line: 31, column: 1, phase: 'codegen', extra: 'x' }))).toEqual({
       ok: false,
-      evidence: { outcome: 'failed', diagnostics: [{ code: 'COMPILATION_FAILED', path: 'src/Motor.st', line: 31, column: 1 }] },
+      evidence: { outcome: 'failed', diagnostics: [{ code: 'UNKNOWN_IDENTIFIER', path: 'src/Motor.st', line: 31, column: 1 }] },
     });
   });
 
   it('drops a path that is absolute or leaves the project, and a position that is not a line number', () => {
     for (const path of ['/etc/passwd', '\\share\\x', 'C:\\x.st', '../x.st', 'src/../../x.st', 'a\0b', '']) {
-      expect(first(failure({ code: 'COMPILATION_FAILED', path }))).toEqual({ code: 'COMPILATION_FAILED' });
+      expect(first(failure({ code: 'UNKNOWN_IDENTIFIER', path }))).toEqual({ code: 'UNKNOWN_IDENTIFIER' });
     }
-    expect(first(failure({ code: 'COMPILATION_FAILED', line: 0, column: 1.5 }))).toEqual({ code: 'COMPILATION_FAILED' });
+    expect(first(failure({ code: 'UNKNOWN_IDENTIFIER', line: 0, column: 1.5 }))).toEqual({ code: 'UNKNOWN_IDENTIFIER' });
   });
 
   it('keeps at most 128 diagnostics and skips one without a usable code', () => {
-    const many = Array.from({ length: 200 }, () => ({ code: 'COMPILATION_FAILED' }));
+    const many = Array.from({ length: 200 }, () => ({ code: 'UNKNOWN_IDENTIFIER' }));
     expect(workspaceCompileFailure(failure(...many)).evidence.diagnostics).toHaveLength(128);
     expect(workspaceCompileFailure(failure({ code: '' }, { code: 7 }, null, { code: 'X'.repeat(97) }, { code: 'OK' })).evidence.diagnostics).toEqual([{ code: 'OK' }]);
   });
@@ -35,11 +35,11 @@ describe('the failure sent to the renderer after a build', () => {
 });
 
 describe('the compiler message of a diagnostic (CMP-010)', () => {
-  const message = (text: unknown) => first(failure({ code: 'COMPILATION_FAILED', message: text })) as { message?: string };
+  const message = (text: unknown) => first(failure({ code: 'UNKNOWN_IDENTIFIER', message: text })) as { message?: string };
 
   it('reaches the renderer with the diagnostic it belongs to', () => {
-    expect(first(failure({ code: 'COMPILATION_FAILED', message: "Unknown identifier 'UndefinedVariable'", path: 'src/Motor.st', line: 31, column: 1 })))
-      .toEqual({ code: 'COMPILATION_FAILED', message: "Unknown identifier 'UndefinedVariable'", path: 'src/Motor.st', line: 31, column: 1 });
+    expect(first(failure({ code: 'UNKNOWN_IDENTIFIER', message: "Unknown identifier 'UndefinedVariable'", path: 'src/Motor.st', line: 31, column: 1 })))
+      .toEqual({ code: 'UNKNOWN_IDENTIFIER', message: "Unknown identifier 'UndefinedVariable'", path: 'src/Motor.st', line: 31, column: 1 });
   });
 
   it('is cut at 300 characters, by character and not in the middle of a pair', () => {
@@ -64,22 +64,22 @@ describe('the compiler message of a diagnostic (CMP-010)', () => {
   });
 
   it('is left out when it is not text or says nothing', () => {
-    for (const text of [undefined, null, 7, {}, [], '', '   ', '\n\u0000']) expect(first(failure({ code: 'COMPILATION_FAILED', message: text }))).toEqual({ code: 'COMPILATION_FAILED' });
+    for (const text of [undefined, null, 7, {}, [], '', '   ', '\n\u0000']) expect(first(failure({ code: 'UNKNOWN_IDENTIFIER', message: text }))).toEqual({ code: 'UNKNOWN_IDENTIFIER' });
   });
 });
 
 describe('the element of a diagnostic (LNG-003)', () => {
   const ELEMENTS = ['line:12', 'rung:rung_1', 'rung:rung_1/cell:0,3', 'rung:r%3A1/element:c1', 'block:and_1', 'connection:w3', 'step:s1', 'step:s1/enter', 'transition:t1/fire', 'action:a1'];
-  const element = (value: unknown) => first(failure({ code: 'COMPILATION_FAILED', message: 'x', element: value })) as { element?: string };
+  const element = (value: unknown) => first(failure({ code: 'UNKNOWN_IDENTIFIER', message: 'x', element: value })) as { element?: string };
 
   it('crosses with the diagnostic it belongs to, whole', () => {
     for (const id of ELEMENTS) expect(element(id).element).toBe(id);
-    expect(first(failure({ code: 'COMPILATION_FAILED', path: 'src/main.ld.json', element: 'rung:rung_1/cell:0,3' }))).toEqual({ code: 'COMPILATION_FAILED', path: 'src/main.ld.json', element: 'rung:rung_1/cell:0,3' });
+    expect(first(failure({ code: 'UNKNOWN_IDENTIFIER', path: 'src/main.ld.json', element: 'rung:rung_1/cell:0,3' }))).toEqual({ code: 'UNKNOWN_IDENTIFIER', path: 'src/main.ld.json', element: 'rung:rung_1/cell:0,3' });
   });
 
   it('is dropped, and only it, when it is not an element id: a path, spaces, a wrong part, an overlong or a non-text value', () => {
     const wrong = ['/etc/passwd', 'C:\\x', '../x', 'rung:a b', 'rung:', 'line', 'rung:r/cell:a,b', 'rung:r/cell:1,2/extra', 'step:s1/extra', 'block:x\n', 'rung:r\u0000', `rung:${'a'.repeat(300)}`, 7, {}, [], null];
-    for (const value of wrong) expect(first(failure({ code: 'COMPILATION_FAILED', line: 3, element: value }))).toEqual({ code: 'COMPILATION_FAILED', line: 3 });
+    for (const value of wrong) expect(first(failure({ code: 'UNKNOWN_IDENTIFIER', line: 3, element: value }))).toEqual({ code: 'UNKNOWN_IDENTIFIER', line: 3 });
     expect(element(`rung:${'a'.repeat(251)}`).element).toBe(`rung:${'a'.repeat(251)}`);
     expect(element(`rung:${'a'.repeat(252)}`).element).toBeUndefined();
   });

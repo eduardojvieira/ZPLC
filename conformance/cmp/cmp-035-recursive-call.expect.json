@@ -2,5 +2,6 @@
   "requirement": "CMP-035",
   "title": "a recursive function is rejected",
   "build": "fails",
-  "lines": [6]
+  "lines": [6],
+  "codes": ["RECURSIVE_CALL"]
 }

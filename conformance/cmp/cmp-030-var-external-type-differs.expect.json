@@ -5,6 +5,9 @@
   "lines": [
     4
   ],
+  "codes": [
+    "INVALID_EXTERNAL_DECLARATION"
+  ],
   "messageIncludes": [
     "G"
   ]

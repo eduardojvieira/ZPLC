@@ -6,10 +6,10 @@ of this suite, by another executed test, or it is listed with the reason that no
 
 | State | Defects |
 |---|---|
-| shown by a conformance case | 93 |
+| shown by a conformance case | 94 |
 | shown by another executed test | 10 |
 | no program shows it on a host | 21 |
-| open: no executed check yet | 9 |
+| open: no executed check yet | 8 |
 | all | 133 |
 
 ## CMP
@@ -76,8 +76,8 @@ of this suite, by another executed test, or it is listed with the reason that no
 | CMP-D12a | Major | CMP-007 | `cmp/cmp-007-three-errors-three-diagnostics`<br>`cmp/cmp-007-undeclared-names-in-every-statement` | One error per compile. |
 | CMP-D12b | Major | CMP-006 | `cmp/cmp-006-duplicate-variable-position`<br>`cmp/cmp-006-unknown-member-position`<br>`cmp/cmp-006-unknown-identifier-in-function`<br>`cmp/cmp-006-missing-base-block` | Many errors are reported at position 0:0. |
 | CMP-D12c | Major | CMP-008 | `cmp/cmp-008-unused-variable-is-reported`<br>`cmp/cmp-008-statement-after-return-is-unreachable`<br>`cmp/cmp-008-real-literal-without-fraction-warns` | No warnings are produced. |
-| CMP-D12d | Major | CMP-006 | - | Diagnostics carry no stable codes. open: The Tool API still reports the one placeholder code COMPILATION_FAILED for every error (toolApi.ts compilerErrorDiagnostic), so a case that asserts a code would pin the placeholder; conformance/README.md says the cases add `codes` the day a code exists (WP-24). |
-| CMP-D12e | Major | CMP-006 | syntax.test.ts (reports a position at the offending token with its end)<br>syntax.test.ts (reports an error found in a declaration at the declaration) | Diagnostics carry no ranges. The compiler records the end of each error (endLine, endColumn) and its own tests assert it; the Tool API does not send it yet (toolApi.ts: the MCP schema is strict), so a conformance case cannot read it. |
+| CMP-D12d | Major | CMP-006 | `cmp/cmp-006-duplicate-variable-position`<br>`cmp/cmp-006-unknown-identifier-in-function`<br>`cmp/cmp-006-unknown-member-position` | Diagnostics carry no stable codes. Every error of a build carries a code of the registry error-codes.ts; each negative case asserts its codes, and error-codes.test.ts builds a source for each code of the registry. |
+| CMP-D12e | Major | CMP-006 | syntax.test.ts (reports a position at the offending token with its end)<br>syntax.test.ts (reports an error found in a declaration at the declaration)<br>toolApi.test.ts (sends where an error ends: endLine and endColumn, with its code) | Diagnostics carry no ranges. The compiler records the end of each error (endLine, endColumn); the Tool API, the CLI JSON and the MCP schema carry them. |
 | CMP-D12f | Major | CMP-009 | `cmp/cmp-009-unterminated-comment-position`<br>`cmp/cmp-009-block-comment-never-closed`<br>`cmp/cmp-009-error-before-an-unterminated-comment` | An unterminated comment reports "Expected END_PROGRAM". |
 | CMP-D13a | Major | CMP-057 | `cmp/cmp-057-tp-not-retriggered`<br>`cmp/cmp-057-tp-new-edge-starts-a-new-pulse` | TP restarts while its input stays true. |
 | CMP-D13b | Major | CMP-057 | `cmp/cmp-057-ton-elapsed-stops-at-preset`<br>`cmp/cmp-057-tof-elapsed-stops-at-preset` | TON.ET counts past PT. |

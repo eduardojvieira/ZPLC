@@ -5,5 +5,8 @@
   "build": "fails",
   "lines": [
     10
+  ],
+  "codes": [
+    "TRANSLATION_FAILED"
   ]
 }

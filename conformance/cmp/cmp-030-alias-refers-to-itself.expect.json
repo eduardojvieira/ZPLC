@@ -5,6 +5,9 @@
   "lines": [
     1
   ],
+  "codes": [
+    "CIRCULAR_TYPE_ALIAS"
+  ],
   "messageIncludes": [
     "refers to itself"
   ]

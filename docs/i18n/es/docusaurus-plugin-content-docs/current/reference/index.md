@@ -28,6 +28,7 @@ prácticas.
 - [Archivo de proyecto (`zplc.json`)](./project-file.md): cada campo.
 - [Formato del archivo de escenario](./scenario-file.md): eventos, expectativas y límites.
 - [Línea de comandos](./cli.md) y [servidor MCP](./mcp.md): cada comando, herramienta y recurso.
+- [Códigos de diagnóstico](./diagnostic-codes.md): el código estable de cada error de una compilación, qué significa y un programa que lo provoca.
 
 ## Runtime y firmware
 

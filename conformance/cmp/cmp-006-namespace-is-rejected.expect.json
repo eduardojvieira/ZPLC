@@ -5,5 +5,6 @@
   "note": "Decision D-04 (2.x recommended): namespaces are a third-edition structure feature left to 2.x",
   "build": "fails",
   "lines": [1],
+  "codes": ["UNSUPPORTED_CONSTRUCT"],
   "messageIncludes": []
 }

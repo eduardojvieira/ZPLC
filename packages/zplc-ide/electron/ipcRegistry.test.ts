@@ -103,7 +103,7 @@ async function harness(options: { toolApi?: Partial<ToolApiModule>; failToolApi?
         note(`worker.${request.operation}${request.operation === 'scenario-run' ? `:${request.scenarioId}` : ''}${signal.aborted ? ':aborted' : ''}`);
         if (options.worker) return options.worker(request);
         switch (request.operation) {
-          case 'compile': return { ok: false, evidence: { diagnostics: [{ code: 'COMPILATION_FAILED', message: 'bad /home/secret/x.st', path: 'src/Main.st', line: 3 }] } };
+          case 'compile': return { ok: false, evidence: { diagnostics: [{ code: 'UNKNOWN_IDENTIFIER', message: 'bad /home/secret/x.st', path: 'src/Main.st', line: 3 }] } };
           case 'safety-check': return { ok: false };
           case 'change-set-review': throw new Error('boom');
           default: return { ok: true };

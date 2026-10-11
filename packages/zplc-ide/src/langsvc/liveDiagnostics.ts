@@ -36,6 +36,7 @@ export function liveDiagnostics(files: readonly ProjectFile[], active: string | 
       found.push({
         code: diagnostic.severity === 'warning' ? 'ST_WARNING' : diagnostic.phase === 'lexer' ? 'ST_LEXER' : diagnostic.phase === 'parser' ? 'ST_PARSER' : 'ST_SEMANTIC',
         type: diagnostic.severity,
+        errorCode: diagnostic.code,
         message: diagnostic.message,
         file: diagnostic.ref,
         line: diagnostic.line,

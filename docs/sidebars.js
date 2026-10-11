@@ -100,6 +100,7 @@ const sidebars = {
             'reference/scenario-file',
             'reference/cli',
             'reference/mcp',
+            'reference/diagnostic-codes',
           ],
         },
         {

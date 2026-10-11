@@ -3,5 +3,6 @@
   "title": "REF() of a REAL assigned to a REF_TO INT is rejected",
   "matrix": ["data-types.ref-to-ref-deref"],
   "build": "fails",
-  "lines": [6]
+  "lines": [6],
+  "codes": ["TYPE_MISMATCH"]
 }

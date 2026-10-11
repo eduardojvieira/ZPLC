@@ -148,7 +148,7 @@ describe('presentWorkspaceTestResult', () => {
     })).toMatchObject({ kind: 'infrastructure-unavailable', message: 'Host POSIX simulation is unavailable.', hasEvidence: true });
   });
 
-  it.each(['COMPILATION_FAILED', 'TEST_SCENARIO_INVALID', 'TEST_BUDGET_EXCEEDED'])('classifies %s as an invalid run', (code) => {
+  it.each(['UNKNOWN_IDENTIFIER', 'TEST_SCENARIO_INVALID', 'TEST_BUDGET_EXCEEDED'])('classifies %s as an invalid run', (code) => {
     expect(presentWorkspaceTestResult({
       ok: false,
       evidence: { ...validEvidence, outcome: 'failed', diagnostics: [{ code, message: 'Test execution failed' }] },
@@ -209,7 +209,7 @@ describe('presentWorkspaceTestResult', () => {
       })).toMatchObject({ kind: 'infrastructure-unavailable', hasEvidence: false });
       expect(presentWorkspaceTestResult({
         ok: false,
-        evidence: { ...validEvidence, outcome: 'failed', artifacts, diagnostics: [{ code: 'COMPILATION_FAILED', message: 'Compilation failed' }] },
+        evidence: { ...validEvidence, outcome: 'failed', artifacts, diagnostics: [{ code: 'UNKNOWN_IDENTIFIER', message: 'Compilation failed' }] },
       })).toMatchObject({ kind: 'invalid', hasEvidence: false });
     }
     expect(presentWorkspaceTestResult({
@@ -696,21 +696,21 @@ describe('saved workspace compilation presentation', () => {
 
   it('shows the compiler message that the main process sends, capped and without a machine path, with its position (CMP-010)', () => {
     const sent = workspaceCompileFailure({ ok: false, evidence: { outcome: 'failed', diagnostics: [
-      { code: 'COMPILATION_FAILED', message: "Unknown identifier 'UndefinedVariable'\n at /home/eve/plant/src/Motor.st", phase: 'codegen', path: 'src/Motor.st', line: 31, column: 1 },
-      { code: 'COMPILATION_FAILED', message: 'x'.repeat(1000), path: 'src/Motor.st', line: 2, column: 3 },
+      { code: 'UNKNOWN_IDENTIFIER', message: "Unknown identifier 'UndefinedVariable'\n at /home/eve/plant/src/Motor.st", phase: 'codegen', path: 'src/Motor.st', line: 31, column: 1 },
+      { code: 'UNKNOWN_IDENTIFIER', message: 'x'.repeat(1000), path: 'src/Motor.st', line: 2, column: 3 },
     ] } });
     expect(presentWorkspaceCompileResult(sent)).toEqual({ ok: false, diagnostics: [
-      { code: 'COMPILATION_FAILED', message: "Unknown identifier 'UndefinedVariable' at <path>", path: 'src/Motor.st', line: 31, column: 1 },
-      { code: 'COMPILATION_FAILED', message: 'x'.repeat(300), path: 'src/Motor.st', line: 2, column: 3 },
+      { code: 'UNKNOWN_IDENTIFIER', message: "Unknown identifier 'UndefinedVariable' at <path>", path: 'src/Motor.st', line: 31, column: 1 },
+      { code: 'UNKNOWN_IDENTIFIER', message: 'x'.repeat(300), path: 'src/Motor.st', line: 2, column: 3 },
     ] });
   });
 
   it('carries the element of a diagnostic, when it is an element id, and drops it otherwise (LNG-003)', () => {
-    const diagnostic = (element: unknown) => ({ code: 'COMPILATION_FAILED', message: 'Unknown variable', path: 'src/main.ld.json', line: 4, column: 1, element });
+    const diagnostic = (element: unknown) => ({ code: 'UNKNOWN_IDENTIFIER', message: 'Unknown variable', path: 'src/main.ld.json', line: 4, column: 1, element });
     const present = (element: unknown) => presentWorkspaceCompileResult({ ok: false, evidence: { outcome: 'failed', diagnostics: [diagnostic(element)] } });
-    expect(present('rung:rung_2/cell:0,1')).toEqual({ ok: false, diagnostics: [{ code: 'COMPILATION_FAILED', message: 'Unknown variable', path: 'src/main.ld.json', line: 4, column: 1, element: 'rung:rung_2/cell:0,1' }] });
+    expect(present('rung:rung_2/cell:0,1')).toEqual({ ok: false, diagnostics: [{ code: 'UNKNOWN_IDENTIFIER', message: 'Unknown variable', path: 'src/main.ld.json', line: 4, column: 1, element: 'rung:rung_2/cell:0,1' }] });
     for (const element of ['/etc/passwd', 'rung:a b', `rung:${'a'.repeat(300)}`, 12, null, undefined]) {
-      expect(present(element)).toEqual({ ok: false, diagnostics: [{ code: 'COMPILATION_FAILED', message: 'Unknown variable', path: 'src/main.ld.json', line: 4, column: 1 }] });
+      expect(present(element)).toEqual({ ok: false, diagnostics: [{ code: 'UNKNOWN_IDENTIFIER', message: 'Unknown variable', path: 'src/main.ld.json', line: 4, column: 1 }] });
     }
   });
 
@@ -728,16 +728,16 @@ describe('saved workspace compilation presentation', () => {
     expect(presentWorkspaceCompileResult({ ok: true, summary: { name: 'Motor', taskCount: 1, codeSize: 4 }, artifact: { zplcFile: [], bytecode: new Uint8Array([2]), assembly: ';', debugMap: { pou: {}, memoryLayout: {} } }, zplcEvidence: { sha256: sha, byteLength: 0 } })).toEqual({ ok: false, diagnostics: [] });
     expect(presentWorkspaceCompileResult({ ok: true, summary: { name: 'Motor', taskCount: 1, codeSize: 4 }, artifact: { zplcFile: new Uint8Array([1]), bytecode: new Uint8Array([2]), assembly: ';', debugMap: { pou: {}, memoryLayout: {} } }, zplcEvidence: { sha256: sha, byteLength: 2 } })).toEqual({ ok: false, diagnostics: [] });
     // The compiler's own message reaches the user with its position; an absolute path never does (CMP-010 stopgap).
-    expect(presentWorkspaceCompileResult({ ok: false, evidence: { outcome: 'failed', diagnostics: [{ code: 'COMPILATION_FAILED', message: "Unknown identifier 'nope'", path: '/private/root.st', line: 2, column: 1 }] } })).toEqual({ ok: false, diagnostics: [{ code: 'COMPILATION_FAILED', message: "Unknown identifier 'nope'", line: 2, column: 1 }] });
+    expect(presentWorkspaceCompileResult({ ok: false, evidence: { outcome: 'failed', diagnostics: [{ code: 'UNKNOWN_IDENTIFIER', message: "Unknown identifier 'nope'", path: '/private/root.st', line: 2, column: 1 }] } })).toEqual({ ok: false, diagnostics: [{ code: 'UNKNOWN_IDENTIFIER', message: "Unknown identifier 'nope'", line: 2, column: 1 }] });
     // A missing, empty, overlong or control-character message falls back to the fixed text.
     for (const message of [undefined, '', 'x'.repeat(513), 'bad\u0000text', 42]) {
-      expect(presentWorkspaceCompileResult({ ok: false, evidence: { outcome: 'failed', diagnostics: [{ code: 'COMPILATION_FAILED', message, line: 2, column: 1 }] } })).toEqual({ ok: false, diagnostics: [{ code: 'COMPILATION_FAILED', message: 'Compilation failed.', line: 2, column: 1 }] });
+      expect(presentWorkspaceCompileResult({ ok: false, evidence: { outcome: 'failed', diagnostics: [{ code: 'UNKNOWN_IDENTIFIER', message, line: 2, column: 1 }] } })).toEqual({ ok: false, diagnostics: [{ code: 'UNKNOWN_IDENTIFIER', message: 'Compilation failed.', line: 2, column: 1 }] });
     }
     // Every other code keeps its fixed text, whatever message arrives.
     expect(presentWorkspaceCompileResult({ ok: false, evidence: { outcome: 'failed', diagnostics: [{ code: 'PROJECT_INVALID', message: '/private/root leaked' }] } })).toEqual({ ok: false, diagnostics: [{ code: 'PROJECT_INVALID', message: 'Project configuration is invalid.' }] });
     // A test run that fails to build shows the same message.
-    expect(presentWorkspaceTestResult({ ok: false, evidence: { ...validEvidence, outcome: 'failed', artifacts: [], diagnostics: [{ code: 'COMPILATION_FAILED', message: "Unknown identifier 'nope'" }] } }))
-      .toMatchObject({ kind: 'invalid', diagnostics: [{ code: 'COMPILATION_FAILED', message: "Unknown identifier 'nope'" }] });
+    expect(presentWorkspaceTestResult({ ok: false, evidence: { ...validEvidence, outcome: 'failed', artifacts: [], diagnostics: [{ code: 'UNKNOWN_IDENTIFIER', message: "Unknown identifier 'nope'" }] } }))
+      .toMatchObject({ kind: 'invalid', diagnostics: [{ code: 'UNKNOWN_IDENTIFIER', message: "Unknown identifier 'nope'" }] });
   });
 });
 

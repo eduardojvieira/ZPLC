@@ -80,7 +80,7 @@ describe('Blinky visual editor replay', () => {
       const built = await compilerCompile(root);
       expect(built.ok).toBe(false);
       expect(built.evidence.diagnostics).toEqual([expect.objectContaining({
-        code: 'COMPILATION_FAILED', path: 'src/main.fbd.json',
+        code: 'TRANSLATION_FAILED', path: 'src/main.fbd.json',
         message: expect.stringContaining("FBD block 'not_led_copy' (NOT): input 'IN' is not wired"),
       })]);
     } finally { await rm(root, { recursive: true, force: true }); }

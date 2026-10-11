@@ -3,5 +3,6 @@
   "title": "a constant array index outside the bounds is rejected",
   "matrix": ["data-types.array-bounds-checking"],
   "build": "fails",
-  "lines": [5]
+  "lines": [5],
+  "codes": ["INDEX_OUT_OF_BOUNDS"]
 }

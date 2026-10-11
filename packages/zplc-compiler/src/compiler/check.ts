@@ -25,6 +25,7 @@ import { CodegenError, DEFAULT_COMPILER_MEMORY_PROFILE, generateProject } from '
 import type { CompilerMemoryProfile } from './codegen.ts';
 import { orderedUniqueErrors, selectWarnings } from './diagnostics.ts';
 import type { CodegenWarning, WarningCode, WarningSelection } from './diagnostics.ts';
+import type { ErrorCode } from './error-codes.ts';
 import { analyzeUnit } from './warnings.ts';
 import type { Program } from './ast.ts';
 
@@ -40,8 +41,8 @@ export interface CheckDiagnostic {
     severity: 'error' | 'warning';
     /** Which phase found it; a warning is `codegen`. */
     phase: 'lexer' | 'parser' | 'codegen';
-    /** The stable identifier of a warning. */
-    code?: WarningCode;
+    /** The stable identifier of the kind of error (`ERROR_CODES`) or of the warning (`WARNING_CODES`), the one a build reports. */
+    code: ErrorCode | WarningCode;
     /** The message, without a position prefix. */
     message: string;
     /** The range, 1-based; the end is the position just after the last character, when the phase knows it. */
@@ -81,7 +82,7 @@ export function checkProject(sources: readonly CheckSource[], options: CheckOpti
         for (const issue of outcome.errors) {
             withSyntaxErrors.add(source.ref);
             found.push({
-                ref: source.ref, severity: 'error', phase: issue.name === 'LexerError' ? 'lexer' : 'parser', message: issue.detail,
+                ref: source.ref, severity: 'error', phase: issue.name === 'LexerError' ? 'lexer' : 'parser', code: issue.code, message: issue.detail,
                 line: issue.line, column: issue.column,
                 ...(issue.endLine === undefined ? {} : { endLine: issue.endLine, endColumn: issue.endColumn }),
             });
@@ -102,7 +103,7 @@ export function checkProject(sources: readonly CheckSource[], options: CheckOpti
             if (earlier === undefined) declaredIn.set(key, ref);
             else {
                 duplicates.push({
-                    ref, severity: 'error', phase: 'codegen',
+                    ref, severity: 'error', phase: 'codegen', code: 'DUPLICATE_DECLARATION',
                     message: `Duplicate PROGRAM name '${each.name}' (already declared by '${earlier}')`,
                     line: each.line, column: each.column,
                     ...(each.endLine === undefined ? {} : { endLine: each.endLine, endColumn: each.endColumn }),
@@ -115,7 +116,7 @@ export function checkProject(sources: readonly CheckSource[], options: CheckOpti
     const merged = mergeUnits(parsed);
     for (const error of merged.errors) {
         found.push({
-            ref: error.sourceRef ?? sources[0]?.ref ?? '', severity: 'error', phase: 'codegen', message: error.message,
+            ref: error.sourceRef ?? sources[0]?.ref ?? '', severity: 'error', phase: 'codegen', code: error.code, message: error.message,
             line: error.line, column: error.column,
             ...(error.endLine === undefined ? {} : { endLine: error.endLine, endColumn: error.endColumn }),
         });
@@ -142,7 +143,7 @@ export function checkProject(sources: readonly CheckSource[], options: CheckOpti
                 const fallback = sources[0]?.ref ?? '';
                 for (const error of orderedUniqueErrors(caught.errors)) {
                     found.push({
-                        ref: error.sourceRef ?? fallback, severity: 'error', phase: 'codegen', message: error.message,
+                        ref: error.sourceRef ?? fallback, severity: 'error', phase: 'codegen', code: error.code, message: error.message,
                         line: error.line, column: error.column,
                         ...(error.endLine === undefined ? {} : { endLine: error.endLine, endColumn: error.endColumn }),
                     });
@@ -150,7 +151,7 @@ export function checkProject(sources: readonly CheckSource[], options: CheckOpti
             } else if (withSyntaxErrors.size === 0) {
                 // a fault of the compiler, not of the sources: say so where the author can see it
                 const message = caught instanceof Error ? caught.message : String(caught);
-                found.push({ ref: sources[0]?.ref ?? '', severity: 'error', phase: 'codegen', message: `The compiler could not check the project: ${message}`, line: 1, column: 1 });
+                found.push({ ref: sources[0]?.ref ?? '', severity: 'error', phase: 'codegen', code: 'INTERNAL_COMPILER_ERROR', message: `The compiler could not check the project: ${message}`, line: 1, column: 1 });
             }
         }
         if (!found.some((diagnostic) => diagnostic.severity === 'error')) {

@@ -9,6 +9,9 @@
   "lines": [
     3
   ],
+  "codes": [
+    "WORK_MEMORY_EXCEEDED"
+  ],
   "messageIncludes": [
     "9005 bytes required",
     "8192 bytes available",
