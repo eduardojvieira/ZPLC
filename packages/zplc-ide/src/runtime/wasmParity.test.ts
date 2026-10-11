@@ -149,12 +149,12 @@ const leftOut = runnable.filter((found) => !cases.includes(found));
 
 describe('the core in WebAssembly gives the results of the conformance cases (IDE-025)', () => {
   for (const found of cases) {
-    itWasm(`IDE-025 ${found.name}`, async () => {
+    itWasm(found.name, async () => {
       expect(await runCase(found)).toEqual([]);
     }, 30_000);
   }
 
-  it('IDE-025 runs every conformance case of one task that builds, and leaves out only the cases of several tasks and of the session', () => {
+  it('runs every conformance case of one task that builds, and leaves out only the cases of several tasks and of the session', () => {
     expect(cases.length).toBeGreaterThan(400);
     expect(leftOut.filter((found) => found.expectation.tasks.length === 0).map((found) => found.name)).toEqual(SESSION_ONLY);
     expect(leftOut.length).toBeLessThan(10);
@@ -162,7 +162,7 @@ describe('the core in WebAssembly gives the results of the conformance cases (ID
 });
 
 describe('the verifier of the loader is on the path that loads a program in WebAssembly (IDE-025)', () => {
-  itWasm('IDE-025 refuses an artifact whose code would take a value from an empty stack, and accepts the one that does not', async () => {
+  itWasm('refuses an artifact whose code would take a value from an empty stack, and accepts the one that does not', async () => {
     const core = await instance();
     // two programs that differ in one instruction, each with a valid container and checksum: the verifier is what tells them apart
     expect(load(core, assemble('    PUSH8 1\n    PUSH8 2\n    ADD\n    HALT\n').zplcFile)).toBe(0);
@@ -170,7 +170,7 @@ describe('the verifier of the loader is on the path that loads a program in WebA
     expect(load(underflow, assemble('    ADD\n    HALT\n').zplcFile)).not.toBe(0);
   });
 
-  itWasm('IDE-025 refuses an artifact that is not a program, whatever the checksum says', async () => {
+  itWasm('refuses an artifact that is not a program, whatever the checksum says', async () => {
     const core = await instance();
     const artifact = assemble('    PUSH8 1\n    HALT\n').zplcFile;
     expect(load(core, artifact)).toBe(0);

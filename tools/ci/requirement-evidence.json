@@ -13,20 +13,8 @@
     {"kind":"unit","ref":"packages/zplc-ide/src/conformance/cases.test.ts","test":"parseExpectation: matrix rows, tags and located diagnostics (VF-003, VF-005)"}
   ],
   "VF-004": [
-    {"kind":"unit","ref":"tools/ci/conformance-defects.test.ts","test":"VF-004 accepts a defect that a case shows, that a test shows, that no program shows with a requirement that has a check, and an open one"},
-    {"kind":"unit","ref":"tools/ci/conformance-defects.test.ts","test":"VF-004 covers each workstream of the review: CMP, LNG and RT"},
-    {"kind":"unit","ref":"tools/ci/conformance-defects.test.ts","test":"VF-004 has a case, a test, a reason or an open mark for every defect of the review, and each of them checks out"},
-    {"kind":"unit","ref":"tools/ci/conformance-defects.test.ts","test":"VF-004 has more defects shown by a case than shown any other way"},
-    {"kind":"unit","ref":"tools/ci/conformance-defects.test.ts","test":"VF-004 is the map that the tool generates from the defects and the cases"},
-    {"kind":"unit","ref":"tools/ci/conformance-defects.test.ts","test":"VF-004 refuses \"no program shows it\" when none of the requirements that fix the defect has a check"},
-    {"kind":"unit","ref":"tools/ci/conformance-defects.test.ts","test":"VF-004 refuses a case that does not exist, and a case filed under a requirement that does not fix the defect"},
-    {"kind":"unit","ref":"tools/ci/conformance-defects.test.ts","test":"VF-004 refuses a defect that nothing shows, and states that exclude each other"},
-    {"kind":"unit","ref":"tools/ci/conformance-defects.test.ts","test":"VF-004 refuses a test whose file or name is not there, so that a rename breaks the map loudly"},
-    {"kind":"unit","ref":"tools/ci/conformance-defects.test.ts","test":"VF-004 refuses an id that is not one, a repeated id, an unknown requirement, an unknown key and a missing statement"},
-    {"kind":"unit","ref":"tools/ci/conformance-defects.test.ts","test":"VF-004 renders each defect with its cases, and each requirement with the defects it fixes"},
-    {"kind":"unit","ref":"tools/ci/conformance-defects.test.ts","test":"VF-004 reports the cases of the map that the expected-failure list holds, and counts the states"},
-    {"kind":"unit","ref":"tools/ci/conformance-defects.test.ts","test":"the committed map (VF-004)"},
-    {"kind":"unit","ref":"tools/ci/conformance-defects.test.ts","test":"the map of defects and cases (VF-004)"}
+    {"kind":"unit","ref":"tools/ci/conformance-defects.test.ts","test":"the committed map (VF-004)","partial":true,"note":"133 defects of Current failures of CMP, LNG and RT are listed with the case, the test or the reason that shows each (conformance/defect-map.md); 9 are open, and a defect that is open has no case yet because the behaviour is not fixed (a case that fails would join the expected-failure list, which must end empty): codes of diagnostics (CMP-006, the Tool API reports COMPILATION_FAILED for every error), the per-gesture undo and the keyboard access of the visual editors (LNG-010, LNG-012), the language service (LNG-015), the fail-safe of the processor (RT-019 to RT-021), the shared scheduler core (RT-008), the first-miss latch (RT-014) and the per-scan time latch and the charge of data-dependent opcodes (RT-006)"},
+    {"kind":"unit","ref":"tools/ci/conformance-defects.test.ts","test":"the map of defects and cases (VF-004)","partial":true,"note":"133 defects of Current failures of CMP, LNG and RT are listed with the case, the test or the reason that shows each (conformance/defect-map.md); 9 are open, and a defect that is open has no case yet because the behaviour is not fixed (a case that fails would join the expected-failure list, which must end empty): codes of diagnostics (CMP-006, the Tool API reports COMPILATION_FAILED for every error), the per-gesture undo and the keyboard access of the visual editors (LNG-010, LNG-012), the language service (LNG-015), the fail-safe of the processor (RT-019 to RT-021), the shared scheduler core (RT-008), the first-miss latch (RT-014) and the per-scan time latch and the charge of data-dependent opcodes (RT-006)"}
   ],
   "VF-005": [
     {"kind":"unit","ref":"packages/zplc-ide/src/conformance/cases.test.ts","test":"parseExpectation: matrix rows, tags and located diagnostics (VF-003, VF-005)"},
@@ -41,6 +29,9 @@
   ],
   "VF-008": [
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"1 Open an existing folder","partial":true}
+  ],
+  "VF-009": [
+    {"kind":"manual","ref":".github/workflows/ci.yml","partial":true,"note":"the journeys run under xvfb in the typescript job (every pull request) and on macOS and Windows in the nightly-quality workflow; configuration only, no hosted run is recorded, and a release is not gated on the macOS and Windows run"}
   ],
   "VF-010": [
     {"kind":"unit","ref":"tools/ci/ci-workflow.test.ts","test":"ci.yml type-check (VF-010, VF-011)"},
@@ -87,6 +78,15 @@
     {"kind":"unit","ref":"packages/zplc-ide/src/cli/nativeRuntimeGuard.test.ts","test":"VF-023 are never skipped in CI when the binary is missing, in any test file that reaches the runtime"},
     {"kind":"unit","ref":"packages/zplc-ide/src/cli/nativeRuntimeGuard.test.ts","test":"VF-023 are skipped outside CI when the binary is missing, and say how to run them"},
     {"kind":"unit","ref":"packages/zplc-ide/src/cli/nativeRuntimeGuard.test.ts","test":"VF-023 fail in CI when the binary is missing"}
+  ],
+  "VF-024": [
+    {"kind":"manual","ref":".github/workflows/nightly-quality.yml","partial":true,"note":"the compiler and IDE unit tests run on macOS and Windows in the desktop-platforms job, nightly; configuration only, no hosted run is recorded and the IDE suite has never been run on those systems"}
+  ],
+  "VF-025": [
+    {"kind":"unit","ref":"tools/firmware-test/test_fwtest.py","test":"BudgetOfTheBoards","partial":true,"note":"the gate fails above the budget of the board (SizeGate in the same file), the budget file covers exactly the boards of the supported-boards manifest, and the cross-build job runs it on the linker table of each board, writes it to the job summary and keeps it as a file; only a hosted run shows the report published for every board"}
+  ],
+  "VF-026": [
+    {"kind":"manual","ref":".github/workflows/ci.yml","partial":true,"note":"the Zephyr workspace, the SDK and the pip downloads are restored under a key of west.yml in the twister and cross-build jobs and in the nightly twister job; configuration only, no hosted run is recorded, and bun's install cache is not cached"}
   ],
   "VF-027": [
     {"kind":"unit","ref":"tools/ci/check-expected-failures.test.ts","test":"check-expected-failures command (VF-027)"},
@@ -1532,23 +1532,17 @@
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"37 Any declared input of the running program can be set"}
   ],
   "IDE-025": [
-    {"kind":"unit","ref":"packages/zplc-ide/src/runtime/wasmParity.test.ts","test":"IDE-025 runs every conformance case of one task that builds, and leaves out only the cases of several tasks and of the session"},
-    {"kind":"unit","ref":"packages/zplc-ide/src/runtime/wasmParity.test.ts","test":"the core in WebAssembly gives the results of the conformance cases (IDE-025)"},
-    {"kind":"unit","ref":"packages/zplc-ide/src/runtime/wasmParity.test.ts","test":"the verifier of the loader is on the path that loads a program in WebAssembly (IDE-025)"}
+    {"kind":"unit","ref":"packages/zplc-ide/src/runtime/wasmParity.test.ts","test":"the core in WebAssembly gives the results of the conformance cases (IDE-025)","partial":true,"note":"the core as WebAssembly built by tools/wasm-core with clang and wasm-ld, loader verifier on the load path, 491 of the single-task conformance cases give their expected values; it is not the Emscripten module of the browser simulation: that module is not built by CI (no Emscripten SDK here), is not shipped, and WASM_SIMULATION_ENABLED stays false, so the degraded label and the capability profile of spec 009 are not shown by anything"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/runtime/wasmParity.test.ts","test":"the verifier of the loader is on the path that loads a program in WebAssembly (IDE-025)","partial":true,"note":"the core as WebAssembly built by tools/wasm-core with clang and wasm-ld, loader verifier on the load path, 491 of the single-task conformance cases give their expected values; it is not the Emscripten module of the browser simulation: that module is not built by CI (no Emscripten SDK here), is not shipped, and WASM_SIMULATION_ENABLED stays false, so the degraded label and the capability profile of spec 009 are not shown by anything"}
   ],
   "IDE-026": [
-    {"kind":"unit","ref":"scripts/release/binaries.test.ts","test":"the standalone binaries of this machine run without a JavaScript runtime (REL-026, IDE-026)"}
+    {"kind":"unit","ref":"scripts/release/binaries.test.ts","test":"the standalone binaries of this machine run without a JavaScript runtime (REL-026, IDE-026)","partial":true,"note":"built and run on Linux with no Bun or Node on the PATH and no checkout; the other five platform and architecture pairs are built and smoked only by the release workflow on their own runners (build-macos, build-windows, build-linux), and no run of it is recorded"}
   ],
   "IDE-027": [
     {"kind":"unit","ref":"packages/zplc-ide/electron/ipcRegistry.test.ts","test":"toolchain inspection and firmware build (IDE-017, IDE-027)"}
   ],
   "IDE-028": [
-    {"kind":"unit","ref":"tools/ci/electron-support.test.ts","test":"IDE-028 accepts a dependency on a supported major, and its latest patch at a release"},
-    {"kind":"unit","ref":"tools/ci/electron-support.test.ts","test":"IDE-028 fails at a release when the dependency is not the latest patch of its line"},
-    {"kind":"unit","ref":"tools/ci/electron-support.test.ts","test":"IDE-028 fails when the dependency is on a major that Electron no longer supports, or one the record does not know"},
-    {"kind":"unit","ref":"tools/ci/electron-support.test.ts","test":"IDE-028 holds for the dependency of this repository: it is on a supported major line, exactly pinned"},
-    {"kind":"unit","ref":"tools/ci/electron-support.test.ts","test":"IDE-028 refuses a range, an installed version that differs, and a record that is not three lines with their patch and end"},
-    {"kind":"unit","ref":"tools/ci/electron-support.test.ts","test":"the Electron line (IDE-028)"}
+    {"kind":"unit","ref":"tools/ci/electron-support.test.ts","test":"the Electron line (IDE-028)","partial":true,"note":"fails when the dependency is outside the supported majors of tools/ci/electron-support.json or is not an exact pin; the latest patch is the release check (bun tools/ci/electron-support.ts --release, RELEASING.md), and it fails today: electron 43.4.1, the latest patch of 43 recorded on 2026-10-10 is 43.7.9"}
   ],
   "IDE-029": [
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"18 Force an input while stopped at a breakpoint","partial":true},
