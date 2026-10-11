@@ -27,7 +27,12 @@ export interface JourneyContext {
  * `proves` lists the requirements whose stated behaviour the journey executes end to end, and `partly` those of which it
  * executes only a leg (tools/ci/requirement-coverage.ts counts the first as covered and the second as partial).
  */
-export interface Journey { name: string; example: string; proves: string[]; partly: string[]; run(app: App, context: JourneyContext): Promise<void> }
+export interface Journey {
+  name: string; example: string; proves: string[]; partly: string[];
+  /** Added to the environment of the app: a journey that needs it started in a particular way (ZPLC_RUNTIME=wasm, for one). */
+  environment?: Record<string, string>;
+  run(app: App, context: JourneyContext): Promise<void>;
+}
 
 // ---------------------------------------------------------------------------------------------------------------------
 // Steps a user performs
@@ -324,7 +329,7 @@ export function writeSecurityFixture(base: string): { project: string; outside: 
 /**
  * The five properties of IDE-016, each shown by what the running application does. The page injects a script, asks for
  * permissions, navigates, opens windows and sends project operations with hostile paths, as a person with DevTools could.
- * `packaged` says that the page runs the production policy (`script-src 'self'`): the development host serves its own
+ * `packaged` says that the page runs the production policy (`script-src 'self' 'wasm-unsafe-eval'`): the development host serves its own
  * scripts inline for hot reload, so the inline-script probe is made only on the packaged application.
  */
 export async function probeSecurity(app: App, options: { packaged: boolean; fixture: { project: string; outside: string; secret: string }; open(): Promise<string> }): Promise<string[]> {
@@ -668,6 +673,41 @@ export const JOURNEYS: Journey[] = [
       await app.click(css('input[aria-label="Force Start"]'), 'the Force checkbox of Start');
       await app.until('the force to be released', async () => !(await app.text()).includes('active force') && await app.eval(`${watchRow('Start')}?.querySelector('input[type="checkbox"]')?.checked === false`) === true || undefined);
       if (await watchValue(app, 'Start') === 'TRUE') app.note('After the release the input keeps the forced value in simulation (Start still reads TRUE)');
+    },
+  },
+  {
+    // IDE-025: the native runtime cannot start, so the simulation runs on the WebAssembly runtime of the build, says that it
+    // is degraded and why, and still runs a bundled project and holds a force. ZPLC_RUNTIME=wasm is the switch of an
+    // unpackaged app that stands in for "the native runtime is not there" (electron/nativeSimulationEnvironment.ts).
+    name: '8b Simulate on the WebAssembly runtime when the native one is off', example: 'motor_start_stop', proves: [], partly: ['IDE-025', 'RT-008', 'IDE-019'],
+    environment: { ZPLC_RUNTIME: 'wasm' },
+    run: async (app, { project }) => {
+      await openFolder(app, project);
+      await openFile(app, 'src/Motor.st');
+      const result = await compile(app);
+      assert(result.kind === 'built', `The Motor example does not build: ${result.message}`);
+      await connectAndRun(app);
+      const status = await app.eval<string>(`document.querySelector('[aria-label="Operational status"]')?.innerText ?? ''`);
+      assert(status.includes('WASM fallback') && status.includes('degraded'), `The status bar does not show the degraded WebAssembly runtime: ${JSON.stringify(status)}`);
+      assert(status.includes('Not available: modbus, mqtt, cloud, serial, physical-io'), `The status bar does not say what the runtime does not have: ${JSON.stringify(status)}`);
+      const before = await cycles(app);
+      await app.until('the cycle counter of the WebAssembly runtime to advance', async () => await cycles(app) > before + 5 || undefined);
+      const output = await outputText(app);
+      assert(output.includes('Native simulation could not start') && output.includes('Running the WebAssembly runtime instead'), `The console does not say that the native simulation did not start and what runs instead: ${JSON.stringify(output.slice(-600))}`);
+      await watch(app, 'Start'); await watch(app, 'Forward');
+      await app.until('Forward to read FALSE', async () => await watchValue(app, 'Forward') === 'FALSE' || undefined);
+      await app.click(css('input[aria-label="Force Start"]'), 'the Force checkbox of Start');
+      await app.until('Start to be forced', async () => await app.eval(`${watchRow('Start')}?.querySelector('[data-forced="true"]') !== null`) === true || undefined);
+      const startValue = `${watchRow('Start')}?.children[1]`;
+      if (!await app.clickable(startValue)) {
+        await app.click(css('[role="separator"]'), 'the separator above the lower panel');
+        for (let step = 0; step < 6; step++) await app.press('ArrowUp');
+      }
+      await app.click(startValue, 'the value of Start', 2);
+      await app.until('the value editor of Start to take focus', async () => await app.eval(`document.activeElement === ${watchRow('Start')}?.querySelector('input[type="text"]')`) || undefined);
+      await app.type('1'); await app.press('Enter');
+      await app.until('Forward to turn TRUE once Start is forced to 1 on the WebAssembly runtime', async () => await watchValue(app, 'Forward') === 'TRUE' || undefined);
+      assert((await app.text()).includes('1 active force'), 'The force banner does not show one active force.');
     },
   },
   {

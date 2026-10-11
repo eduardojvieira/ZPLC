@@ -155,7 +155,8 @@ async function connectApp(target: string, context: { answerFile: string | undefi
   return app;
 }
 
-export async function launchApp(harness: Harness, root: string): Promise<{ app: App; notes: string[]; stop(): Promise<void>; crash(): Promise<void> }> {
+/** `environment` is added to the environment of the app: a journey that needs the app started in a particular way names it. */
+export async function launchApp(harness: Harness, root: string, environment: Record<string, string> = {}): Promise<{ app: App; notes: string[]; stop(): Promise<void>; crash(): Promise<void> }> {
   const notes: string[] = [];
   const answerFile = join(root, 'folder-answer.txt'); writeFileSync(answerFile, '');
   const cdpPort = await freePort();
@@ -163,7 +164,7 @@ export async function launchApp(harness: Harness, root: string): Promise<{ app: 
   const output: string[] = [];
   const electron: OwnedProcess = Bun.spawn([electronPath, '--headless', '--disable-gpu', `--zplc-smoke-port=${harness.vitePort}`, `--remote-debugging-port=${cdpPort}`, `--user-data-dir=${join(root, 'profile')}`, '.'], {
     cwd: packageRoot, stdout: 'pipe', stderr: 'pipe',
-    env: { ...process.env, NODE_ENV: 'development', ZPLC_NATIVE_SIM_BIN: harness.runtime, ZPLC_PERSIST_ROOT: join(root, 'persist'), ZPLC_SMOKE_FOLDER_ANSWER_FILE: answerFile },
+    env: { ...process.env, NODE_ENV: 'development', ZPLC_NATIVE_SIM_BIN: harness.runtime, ZPLC_PERSIST_ROOT: join(root, 'persist'), ZPLC_SMOKE_FOLDER_ANSWER_FILE: answerFile, ...environment },
   });
   drain(electron, output, 'electron');
   let cdp: Cdp | undefined;
