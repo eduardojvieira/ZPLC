@@ -9,10 +9,11 @@ tags: [reference, runtime, generated]
 
 # Runtime API
 
-> [!IMPORTANT]
-> This page is generated from the public C headers under `firmware/lib/zplc_core/include/`. Edit the headers or rerun `python3 tools/docs/generate_runtime_reference.py` instead of editing this file manually.
+:::note
+This page is generated from the public C headers under `firmware/lib/zplc_core/include/`. Edit the headers or rerun `python3 tools/docs/generate_runtime_reference.py` instead of editing this file manually.
+:::
 
-> The Spanish wrapper text is localized, while API names, signatures, and source-derived descriptions remain anchored to the English headers to avoid documentation drift.
+The Spanish wrapper text is localized, while API names, signatures, and source-derived descriptions remain anchored to the English headers to avoid documentation drift.
 
 ## Source headers
 

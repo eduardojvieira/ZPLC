@@ -20,8 +20,9 @@ Unlike simple arithmetic operations, network communication is asynchronous. All 
 - **`ERROR`** (BOOL): True if the request failed or timed out.
 - **`STATUS`** (DINT): Returns the underlying runtime error code for diagnostics.
 
-> [!IMPORTANT]
-> Because these blocks execute asynchronously, avoid placing them inside fast cyclic loops without checking the `BUSY` flag, as this can overwhelm the network stack.
+:::warning
+Because these blocks execute asynchronously, avoid placing them inside fast cyclic loops without checking the `BUSY` flag, as this can overwhelm the network stack.
+:::
 
 ## Supported Function Blocks
 

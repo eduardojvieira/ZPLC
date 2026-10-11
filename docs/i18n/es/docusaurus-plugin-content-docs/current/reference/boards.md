@@ -9,8 +9,9 @@ tags: [reference, boards, generated]
 
 # Placas Soportadas
 
-> [!IMPORTANT]
-> Esta página se genera desde `firmware/app/boards/boards.json`, el único manifiesto de placas. Actualizá el JSON o volvé a ejecutar `python3 tools/docs/generate_board_reference.py` en lugar de editar este archivo manualmente.
+:::note
+Esta página se genera desde `firmware/app/boards/boards.json`, el único manifiesto de placas. Actualizá el JSON o volvé a ejecutar `python3 tools/docs/generate_board_reference.py` en lugar de editar este archivo manualmente.
+:::
 
 ## Topología
 

@@ -98,10 +98,6 @@ const config = {
             label: 'Docs',
           },
           {
-            type: 'docsVersionDropdown',
-            position: 'right',
-          },
-          {
             type: 'localeDropdown',
             position: 'right',
           },

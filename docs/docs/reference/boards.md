@@ -9,8 +9,9 @@ tags: [reference, boards, generated]
 
 # Supported Boards
 
-> [!IMPORTANT]
-> This page is generated from `firmware/app/boards/boards.json`, the one board manifest. Update the JSON or rerun `python3 tools/docs/generate_board_reference.py` instead of editing this file manually.
+:::note
+This page is generated from `firmware/app/boards/boards.json`, the one board manifest. Update the JSON or rerun `python3 tools/docs/generate_board_reference.py` instead of editing this file manually.
+:::
 
 ## Topology
 

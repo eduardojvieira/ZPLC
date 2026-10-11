@@ -145,3 +145,21 @@ describe('docs structure: a page is published only when both languages are compl
     expect({ code: result.exitCode, output: result.stdout.toString() + result.stderr.toString() }).toMatchObject({ code: 0 });
   });
 });
+
+describe('docs site: admonitions in the generator\'s own syntax and no version selector for one version (DOC-018, stopgap: the site has no search yet)', () => {
+  it('uses `:::` admonitions in every page and generated page, and none of the GitHub alert syntax', () => {
+    for (const base of [EN_DIR, ES_DIR]) {
+      for (const file of markdownFiles(ROOT, base)) {
+        const alerts = text(file).split('\n').filter((line) => /^>\s*\[!(?:NOTE|TIP|IMPORTANT|WARNING|CAUTION)\]/i.test(line));
+        expect({ file, alerts }).toEqual({ file, alerts: [] });
+      }
+    }
+  });
+
+  it('shows no version dropdown while one version is published', () => {
+    const versions = JSON.parse(text('docs/versions.json')) as string[];
+    const config = text('docs/docusaurus.config.js');
+    if (versions.length < 2) expect(config).not.toContain("'docsVersionDropdown'");
+  });
+});
+

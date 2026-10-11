@@ -20,8 +20,9 @@ A diferencia de operaciones aritméticas simples, la comunicación de red es as�
 - **`ERROR`** (BOOL): Verdadero si la petición falla o hace timeout.
 - **`STATUS`** (DINT): Devuelve el código de error subyacente del runtime para diagnóstico.
 
-> [!IMPORTANT]
-> Debido a que estos bloques se ejecutan de forma asíncrona, evita colocarlos dentro de bucles cíclicos rápidos sin corroborar el flag `BUSY` para evitar saturar la pila de red.
+:::warning
+Debido a que estos bloques se ejecutan de forma asíncrona, evita colocarlos dentro de bucles cíclicos rápidos sin corroborar el flag `BUSY` para evitar saturar la pila de red.
+:::
 
 ## Bloques de Función Soportados
 
