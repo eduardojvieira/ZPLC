@@ -21,6 +21,8 @@ export interface AssetResult {
   job: string;
   runUrl?: string;
   signing: SigningState;
+  /** The evidence level of the board a firmware image is for, from the manifest of the firmware release (REL-022). */
+  evidenceLevel?: 'cross-build' | 'human-hil';
   checks: { signature: CheckState; launch: CheckState; install: CheckState };
 }
 
@@ -134,7 +136,19 @@ function signingText(asset: AssetResult): string {
   }
 }
 
+/** What a level establishes, in the words of the hardware support page: the level is the board's, and is never implied by a build. */
+const LEVEL_TEXT: Record<NonNullable<AssetResult['evidenceLevel']>, string> = {
+  'cross-build': 'cross-build (the firmware builds for the board and fits its flash and RAM budget; it has not been flashed or run on it)',
+  'human-hil': 'human-hil (a person ran a recorded procedure on the board, and the record names the firmware version and image it covers)',
+};
+
 function checksText(asset: AssetResult): string {
+  if (asset.platform === 'firmware') {
+    // a firmware image is built and checksummed, never launched by the run: the only label that it can carry is its board's level
+    return asset.evidenceLevel === undefined
+      ? 'built for its board; the evidence level of the board is not recorded in this run'
+      : `built for its board. Evidence level of the board: ${LEVEL_TEXT[asset.evidenceLevel]}`;
+  }
   const word = (state: CheckState) => (state === 'not-run' ? 'not run' : state);
   const parts = [`launched on its own system: ${word(asset.checks.launch)}`];
   if (asset.checks.install !== 'not-run') parts.push(`installed and launched in clean containers: ${word(asset.checks.install)}`);

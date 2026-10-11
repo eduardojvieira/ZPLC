@@ -9,7 +9,7 @@
 // of the test suites. A check counts as passed when the job that runs it succeeded; the table below says which
 // checks each job runs, and packages/zplc-ide/scripts/release-config.test.ts proves that against the workflow.
 import { readdirSync, readFileSync, writeFileSync } from 'node:fs';
-import { join, resolve } from 'node:path';
+import { dirname, join, resolve } from 'node:path';
 import { parseJunit } from '../../tools/ci/check-expected-failures';
 import type { AssetResult, CheckState, ChannelStateName, Platform, RunResults, SigningState } from './release-notes';
 
@@ -57,6 +57,18 @@ export interface CollectInput {
   needs: Record<string, { result: string }>;
 }
 
+/** The evidence level of each image that the firmware manifest next to an evidence file lists (REL-022). */
+function firmwareLevels(directory: string): Map<string, NonNullable<AssetResult['evidenceLevel']>> {
+  const levels = new Map<string, NonNullable<AssetResult['evidenceLevel']>>();
+  for (const name of readdirSync(directory).filter((candidate) => /^zplc-runtime-.+\.manifest\.json$/.test(candidate))) {
+    const manifest = JSON.parse(readFileSync(join(directory, name), 'utf8')) as { images?: Array<{ file?: string; evidenceLevel?: string }> };
+    for (const image of manifest.images ?? []) {
+      if (typeof image.file === 'string' && (image.evidenceLevel === 'cross-build' || image.evidenceLevel === 'human-hil')) levels.set(image.file, image.evidenceLevel);
+    }
+  }
+  return levels;
+}
+
 function evidenceFiles(directory: string): string[] {
   const found: string[] = [];
   for (const entry of readdirSync(directory, { withFileTypes: true })) {
@@ -75,6 +87,7 @@ export function collectRunResults(input: CollectInput): RunResults {
   const assets = new Map<string, AssetResult>();
   for (const file of evidenceFiles(input.evidenceDirectory)) {
     const evidence = JSON.parse(readFileSync(file, 'utf8')) as { artifacts?: Array<{ name: string }> };
+    const levels = firmwareLevels(dirname(file));
     for (const { name } of evidence.artifacts ?? []) {
       const { platform, signing, arch } = classifyAsset(name);
       // the checks that the job of this kind of file runs, and only those
@@ -91,7 +104,8 @@ export function collectRunResults(input: CollectInput): RunResults {
         : platform === 'firmware' ? 'build-firmware'
           : platform === 'metadata' ? 'prepare-release-evidence'
             : `build-${platform}${arch ? ` (${arch})` : ''}`;
-      assets.set(name, { name, platform, job, runUrl: input.runUrl, signing, checks });
+      const evidenceLevel = platform === 'firmware' ? levels.get(name) : undefined;
+      assets.set(name, { name, platform, job, runUrl: input.runUrl, signing, ...(evidenceLevel === undefined ? {} : { evidenceLevel }), checks });
     }
   }
 

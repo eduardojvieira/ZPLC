@@ -53,6 +53,18 @@ describe('the signing state of every asset comes from the checks of the run (REL
     }
   });
 
+  test('labels a firmware image with the evidence level of its board and claims no launch (REL-022)', () => {
+    const results = fixture();
+    results.assets.push({ name: 'zplc-runtime-2.0.0-rc.4-rpi-pico-rp2040.uf2', platform: 'firmware', job: 'build-firmware', signing: 'unsigned', evidenceLevel: 'cross-build', checks: { signature: 'not-run', launch: 'not-run', install: 'not-run' } });
+    results.assets.push({ name: 'zplc-runtime-2.0.0-rc.4-nucleo-h743zi.bin', platform: 'firmware', job: 'build-firmware', signing: 'unsigned', checks: { signature: 'not-run', launch: 'not-run', install: 'not-run' } });
+    const text = renderReleaseNotes(results);
+    const row = (name: string) => text.split('\n').find((line) => line.startsWith(`| ${name} |`))!;
+    expect(row('zplc-runtime-2.0.0-rc.4-rpi-pico-rp2040.uf2')).toContain('Evidence level of the board: cross-build');
+    expect(row('zplc-runtime-2.0.0-rc.4-rpi-pico-rp2040.uf2')).toContain('has not been flashed or run on it');
+    expect(row('zplc-runtime-2.0.0-rc.4-rpi-pico-rp2040.uf2')).not.toContain('launched on its own system');
+    expect(row('zplc-runtime-2.0.0-rc.4-nucleo-h743zi.bin')).toContain('evidence level of the board is not recorded in this run');
+  });
+
   test('reports a launch check that failed or did not run as such, never as passed', () => {
     const text = renderReleaseNotes(withAsset({ checks: { signature: 'passed', launch: 'not-run', install: 'not-run' } }));
     expect(text).toMatch(/mac-arm64\.dmg \|[^\n]*launched on its own system: not run/);
