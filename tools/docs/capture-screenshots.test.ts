@@ -29,7 +29,7 @@ describe('documentation screenshots: a page shows only captured pictures (DOC-01
   });
 
   it('finds the images a page shows, and none that a code block only quotes', () => {
-    const text = ['![One](/img/tutorials/a.png)', '', '```md', '![Quoted](/img/tutorials/quoted.png)', '```', '', 'Text ![Two](/img/b.svg "title") and [a link](/img/c.png).'].join('\n');
+    const text = ['![One](/img/tutorials/a.png)', '', '```md', '![Quoted](/img/tutorials/quoted.png)', '```', '', 'Text ![Two](/img/b.svg "title") and [a link](/img/c.png) and `![code](/img/d.png)`.'].join('\n');
     expect(imagesOf(text)).toEqual(['/img/tutorials/a.png', '/img/b.svg']);
     expect(staticPathOf('/img/tutorials/a.png')).toBe('docs/static/img/tutorials/a.png');
     expect(staticPathOf('https://example.org/x.png')).toBeUndefined();

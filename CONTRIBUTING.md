@@ -59,8 +59,11 @@ them.
 | `check:test-sources` | No test reads the text of product source or matches generated assembly, except the files listed for replacement |
 | `simulate <project>` | Run a project's scenario tests on the native runtime |
 | `dev` | Run Studio in development mode against the native runtime |
-| `docs:start`, `check:docs` | Serve the site, or generate, validate and build it |
+| `docs:start`, `check:docs` | Serve the site, or generate, check and build it |
 | `check:docs-samples` | Compile every documentation sample marked runnable, and run those that state a result (needs the compiler and the native runtime built) |
+| `check:docs-config` | Build every configuration fragment of a page (`json zplc-fragment`) and run every scenario of a page (`json zplc-scenario`) |
+| `check:doc-claims`, `check:capability-claims` | Every name a page mentions exists in the source; no sentence of the public text states a capability that nothing executed backs |
+| `docs:screenshots` | Capture the screenshots of the tutorial in the real application (needs a display) and write their manifest |
 | `release:rehearsal` | The checks the release workflow runs before it builds anything |
 
 ## Build
@@ -68,7 +71,7 @@ them.
 ```bash
 bun run build:runtime      # native runtime, about 5 s
 bun run build:compiler     # compiler package, about 1 s
-bun run build:ide          # typecheck and bundle Studio, about 40 s
+bun run build:ide          # typecheck and bundle Studio, about 15 s
 ```
 
 `build:runtime` is these two commands, in case you do not have Bun yet:
@@ -85,14 +88,15 @@ core as the board, on your computer.
 ## Test, layer by layer
 
 Run the command of every layer you touched before you open a pull request. The
-times were measured on a 12-thread Linux x86-64 desktop with warm caches.
+times were measured on 2026-10-10 on a Linux x86-64 desktop with warm caches while
+other jobs were running, so read them as an order of magnitude.
 
 | Layer | Command | Typical time | What a pass shows | What it does not show |
 |---|---|---|---|---|
-| C core, loader, host runtime | `bun run test:core` | about 5 s | The C suites pass with the address and undefined-behaviour sanitizers on a 64-bit host | Behaviour on a 32-bit target or a board |
-| Compiler and assembler | `bun run test:compiler:ci` | about 2 s | The compiler tests pass and every failure is a listed one | Behaviour of the generated code in the VM |
-| Studio, CLI, MCP, conformance | `bun run test:ide:ci` | 30 to 60 s | Compiled programs run in the real VM and give the expected memory; Studio logic and the Tool API behave | A rendered screen in the real application |
-| Lint and types | `bun run lint`, `bun run typecheck` and `bun run build:ide` | about 10 s, 20 s and 40 s | ESLint is clean, including the rules that reject an unhandled promise; every TypeScript program, tests and scripts included, type-checks with the strict flags; and Studio builds | Behaviour |
+| C core, loader, host runtime | `bun run test:core` | about 1 min, the first run included | The C suites pass with the address and undefined-behaviour sanitizers on a 64-bit host | Behaviour on a 32-bit target or a board |
+| Compiler and assembler | `bun run test:compiler:ci` | about 6 s | The compiler tests pass and every failure is a listed one | Behaviour of the generated code in the VM |
+| Studio, CLI, MCP, conformance | `bun run test:ide:ci` | about 1 min | Compiled programs run in the real VM and give the expected memory; Studio logic and the Tool API behave | A rendered screen in the real application |
+| Lint and types | `bun run lint`, `bun run typecheck` and `bun run build:ide` | about 35 s, 20 to 40 s and 15 s | ESLint is clean, including the rules that reject an unhandled promise; every TypeScript program, tests and scripts included, type-checks with the strict flags; and Studio builds | Behaviour |
 | Binary contract | `bun run contract:check` | about 1 s | Generated C, TypeScript, Python and docs files match `contract.json`, and the golden numbers hold | Anything outside the contract |
 | Studio on the real application | `bun run test:journeys` | 70 to 90 s | The end-to-end journeys pass in Electron: open, edit, build, simulate, watch, break, force, save | A physical board |
 | Firmware on Linux | `bun run test:firmware` (after `bun run setup:firmware`) | about 4 min; set-up about 6 min once | The Zephyr suites pass on `native_sim` (64 and 32 bit) and QEMU Cortex-M3 and M0, and every image is inside its flash and RAM budget | Timing, interrupts and drivers of a real board |
@@ -134,15 +138,17 @@ runtime.
 
 ```bash
 bun run docs:start         # serve the site with live reload
-bun run check:docs         # generate, validate and build English and Spanish, about 20 s
+bun run check:docs         # generate, check and build English and Spanish, about 15 s warm, 1 min cold
 ```
 
 `check:docs` regenerates the reference pages from the C headers and the board
-manifest, fails on a page that stops mid-sentence, is missing from the sidebar or
-whose Spanish twin has a different structure, compiles every code sample whose
-fence says `runnable` (and runs the ones that state a result; the convention is
-on the [Contributing](docs/docs/contributing/index.md#runnable-documentation-samples)
-page), and builds both languages. It needs the compiler and the native runtime
+manifest, fails on a page that stops mid-sentence, is missing from the sidebar, has
+no twin in the other language or a twin of a different structure, fails on a name
+that the source does not have and on a sentence that states a capability that no
+executed check backs, compiles every code sample whose fence says `runnable` (and
+runs the ones that state a result; the convention is on the
+[Contributing](docs/docs/contributing/index.md#runnable-documentation-samples)
+page), builds every configuration fragment, and builds both languages. It needs the compiler and the native runtime
 built (`bun run build:compiler`, `bun run build:runtime`). Links between pages
 are relative `.md` paths. A user-visible change updates
 `docs/docs/` and `docs/i18n/es/` in the same pull request.
@@ -150,7 +156,7 @@ are relative `.md` paths. A user-visible change updates
 ## Release rehearsal
 
 ```bash
-bun run release:rehearsal  # about 10 s
+bun run release:rehearsal  # about 5 s
 ```
 
 It runs, without building any installer, what the release workflow checks first:

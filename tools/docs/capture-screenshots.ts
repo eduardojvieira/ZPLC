@@ -68,7 +68,7 @@ export function imagesOf(text: string): string[] {
     const marker = /^\s*(`{3,}|~{3,})/.exec(line);
     if (fence) { if (marker && marker[1]![0] === fence[0]) fence = ''; continue; }
     if (marker) { fence = marker[1]!; continue; }
-    for (const match of line.matchAll(/!\[[^\]]*\]\(([^)\s]+)(?:\s+"[^"]*")?\)/g)) found.push(match[1]!);
+    for (const match of line.replace(/`[^`]*`/g, ' ').matchAll(/!\[[^\]]*\]\(([^)\s]+)(?:\s+"[^"]*")?\)/g)) found.push(match[1]!);
   }
   return found;
 }

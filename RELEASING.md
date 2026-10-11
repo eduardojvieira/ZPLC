@@ -27,7 +27,9 @@ The root `package.json` is the only source of the product version (`VERSIONING.m
 3. `CHANGELOG.md`: rename `## Unreleased` to `## 2.0.0-rc.4 - YYYY-MM-DD` and add an empty `## Unreleased` above it.
    The changelog holds only tagged versions: headings go from newest to oldest, and every heading older than the
    one being cut has its tag (`scripts/release/changelog.ts`; `scripts/release/changelog-untagged.json` lists the
-   exceptions with their reasons, and it can only shrink).
+   exceptions with their reasons, and it can only shrink). Read the section as the person who will install the
+   release: its parts (What changed for you, Breaking changes, Migration, Known limits) are the first four parts
+   of the notes, and Details for contributors is not (`scripts/release/release-notes.ts`, DOC-030).
 4. `scripts/release/release-status.json`: add the entry of the version, with `completeness` (how complete this
    prerelease is: it becomes the title of the release) and `knownIssues`.
 5. `scripts/release/channels.json`: set the state of each Windows channel to `live`, `submitted`, `refused` or

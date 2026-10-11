@@ -38,6 +38,9 @@ export interface RunResults {
   knownFailures: Array<{ id: string; summary: string; tracking?: string }>;
   channels: Array<{ channel: string; state: ChannelStateName }>;
   changes: string[];
+  /** What a user has to do differently after this release, and how to move (DOC-030). */
+  breaking?: string[];
+  migration?: string[];
   knownIssues: string[];
 }
 
@@ -64,6 +67,53 @@ export function changelogSection(text: string, version: string): string[] {
     else if (/^\s+\S/.test(line) && items.length > 0) items[items.length - 1] += ` ${line.trim()}`;
   }
   return items;
+}
+
+export interface ChangelogParts { structured: boolean; changes: string[]; breaking: string[]; migration: string[]; limits: string[] }
+
+const PART_HEADINGS: Record<string, keyof Omit<ChangelogParts, 'structured'> | 'ignore'> = {
+  'what changed for you': 'changes',
+  'breaking changes': 'breaking',
+  'migration': 'migration',
+  'known limits': 'limits',
+  'details for contributors': 'ignore',
+};
+
+/**
+ * The parts of the section of one version (DOC-030). A section with `###` headings that name its parts says, for a user,
+ * what changed, what breaks, how to migrate and what is limited; the details for contributors stay in the changelog. A
+ * section without them (an older release) is all "what changed".
+ */
+export function changelogParts(text: string, version: string): ChangelogParts {
+  const lines = text.split('\n');
+  const start = lines.findIndex((line) => line === `## ${version}` || line.startsWith(`## ${version} - `));
+  const parts: ChangelogParts = { structured: false, changes: [], breaking: [], migration: [], limits: [] };
+  if (start < 0) return parts;
+  const body: string[] = [];
+  for (const line of lines.slice(start + 1)) {
+    if (line.startsWith('## ')) break;
+    body.push(line);
+  }
+  parts.structured = body.some((line) => /^### /.test(line) && PART_HEADINGS[line.slice(4).trim().toLowerCase()] !== undefined);
+  if (!parts.structured) {
+    parts.changes = changelogSection(text, version);
+    return parts;
+  }
+  let target: keyof Omit<ChangelogParts, 'structured'> | 'ignore' | undefined;
+  for (const line of body) {
+    const heading = /^### (.+)$/.exec(line);
+    if (heading) {
+      target = PART_HEADINGS[heading[1]!.trim().toLowerCase()];
+      continue;
+    }
+    if (target === undefined || target === 'ignore') continue;
+    const item = /^(?:-|\d+\.)\s+(.*)$/.exec(line);
+    if (item) { parts[target].push(item[1]!.trim()); continue; }
+    if (/^\s+\S/.test(line) && parts[target].length > 0) parts[target][parts[target].length - 1] += ` ${line.trim()}`;
+  }
+  // "None." under a heading says that nothing is recorded, and is not an item
+  for (const key of ['changes', 'breaking', 'migration', 'limits'] as const) parts[key] = parts[key].filter((item) => item !== '' && !/^none\.?$/i.test(item));
+  return parts;
 }
 
 function signingText(asset: AssetResult): string {
@@ -105,6 +155,12 @@ export function renderReleaseNotes(results: RunResults): string {
 
   out.push('### What changed', '');
   out.push(...(results.changes.length > 0 ? results.changes.map((change) => `- ${change}`) : ['No user-facing change is recorded for this version.']), '');
+
+  out.push('### Breaking changes', '');
+  out.push(...((results.breaking ?? []).length > 0 ? results.breaking!.map((change) => `- ${change}`) : ['No breaking change is recorded for this version.']), '');
+  if ((results.migration ?? []).length > 0) {
+    out.push('### Migration', '', ...results.migration!.map((step) => `- ${step}`), '');
+  }
 
   out.push('### Known issues', '');
   if (results.knownIssues.length === 0 && results.knownFailures.length === 0) {
@@ -194,7 +250,13 @@ function main(argv: string[]): number {
   }
   try {
     const results = parseResults(readFileSync(options.results, 'utf8'));
-    if (results.changes.length === 0 && options.changelog) results.changes = changelogSection(readFileSync(options.changelog, 'utf8'), results.version);
+    if (options.changelog) {
+      const parts = changelogParts(readFileSync(options.changelog, 'utf8'), results.version);
+      if (results.changes.length === 0) results.changes = parts.changes;
+      results.breaking = [...(results.breaking ?? []), ...parts.breaking];
+      results.migration = [...(results.migration ?? []), ...parts.migration];
+      results.knownIssues = [...results.knownIssues, ...parts.limits];
+    }
     const title = releaseTitle(results);
     writeFileSync(options.out, renderReleaseNotes(results));
     if (options['title-out']) writeFileSync(options['title-out'], title);

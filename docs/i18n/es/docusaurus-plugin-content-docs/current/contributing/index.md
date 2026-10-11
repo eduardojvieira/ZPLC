@@ -29,16 +29,17 @@ Esta página es su versión corta para quienes leen el sitio.
 
 ## Verificaciones por capa
 
-Ejecute cada comando desde la raíz del repositorio. Los tiempos se midieron en un
-equipo de escritorio Linux x86-64 de 12 hilos con cachés calientes.
+Ejecute cada comando desde la raíz del repositorio. Los tiempos se midieron el
+2026-10-10 en un equipo de escritorio Linux x86-64 con cachés calientes mientras
+corrían otros trabajos, así que léalos como un orden de magnitud.
 
 | Capa | Comando | Tiempo típico | Qué demuestra un resultado correcto |
 |---|---|---|---|
 | Preparación | `bun run setup` | unos 10 s | Dependencias instaladas, compilador construido, runtime nativo construido |
-| Núcleo C y runtime de host | `bun run test:core` | unos 5 s | Las suites de C pasan con los sanitizers de direcciones y de comportamiento indefinido |
-| Compilador | `bun run test:compiler:ci` | unos 2 s | Pasan las pruebas del compilador y del ensamblador, y todo fallo es uno de los listados |
-| Studio, CLI, conformidad | `bun run test:ide:ci` | de 30 a 60 s | Las suites de Studio y los casos de conformidad se comportan como está listado |
-| Lint y tipos | `bun run lint`, `bun run typecheck` y `bun run build:ide` | unos 10 s, 20 s y 40 s | ESLint no marca nada, incluidas las reglas que rechazan una promesa sin manejar; todo programa TypeScript, con sus pruebas y scripts, pasa el comprobador de tipos; y Studio compila |
+| Núcleo C y runtime de host | `bun run test:core` | cerca de 1 min, la primera ejecución incluida | Las suites de C pasan con los sanitizers de direcciones y de comportamiento indefinido |
+| Compilador | `bun run test:compiler:ci` | unos 6 s | Pasan las pruebas del compilador y del ensamblador, y todo fallo es uno de los listados |
+| Studio, CLI, conformidad | `bun run test:ide:ci` | cerca de 1 min | Las suites de Studio y los casos de conformidad se comportan como está listado |
+| Lint y tipos | `bun run lint`, `bun run typecheck` y `bun run build:ide` | unos 35 s, de 20 a 40 s y 15 s | ESLint no marca nada, incluidas las reglas que rechazan una promesa sin manejar; todo programa TypeScript, con sus pruebas y scripts, pasa el comprobador de tipos; y Studio compila |
 | Estructura de Studio | `bun run lint:ide` (las reglas corren después de ESLint), o `bun tools/ci/ide-structure.ts` | menos de 1 s | Ningún módulo del store importa un componente, ningún módulo de la línea de comandos importa de `electron/`, no hay ciclos de importación estáticos, y ningún módulo escrito a mano tiene más de 800 líneas, salvo los de `tools/ci/module-size-offenders.json`; esa lista y la única importación que admite (`tools/ci/layering-exceptions.json`) solo pueden reducirse |
 | Análisis estático de C | `bun run lint:c` | unos 15 s | `clang-tidy` con `.clang-tidy`, cada hallazgo es un error, no marca nada en el núcleo, el HAL POSIX y la aplicación de host; también se analizan el HAL de Zephyr y `firmware/app` cuando existe una compilación de placa |
 | Fuentes de las pruebas | `bun run check:test-sources` | menos de 1 s | Ninguna prueba lee el texto del código del producto ni compara el ensamblador que emitió el compilador, salvo los archivos listados para reemplazo en `tools/ci/pinned-source-offenders.json` |
@@ -46,8 +47,8 @@ equipo de escritorio Linux x86-64 de 12 hilos con cachés calientes.
 | Simulación | `bun run simulate packages/zplc-ide/projects/motor_plant` | menos de 1 s | Las pruebas de escenario del proyecto pasan en el runtime nativo |
 | Recorridos de Studio | `bun run test:journeys` | de 70 a 90 s | La aplicación real pasa sus recorridos de extremo a extremo (requiere pantalla) |
 | Firmware en Linux | `bun run setup:firmware` y luego `bun run test:firmware` | unos 6 min una vez, luego unos 4 min | Las suites de Zephyr pasan en `native_sim`, QEMU y los presupuestos de tamaño |
-| Documentación | `bun run check:docs` | unos 50 s | Las referencias están al día, las páginas están completas, las páginas en inglés y español coinciden en estructura, todo ejemplo marcado como ejecutable compila y da el resultado que su cerco indica, y el sitio compila |
-| Ensayo de publicación | `bun run release:rehearsal` | unos 10 s | Las verificaciones que el workflow de publicación ejecuta antes de construir nada |
+| Documentación | `bun run check:docs` | unos 15 s en caliente, 1 min en frío | Las referencias están al día, todo nombre que una página menciona existe, ninguna oración afirma una capacidad que nada ejecutado respalde, las páginas están completas, las páginas en inglés y español coinciden en estructura, todo ejemplo y fragmento de configuración marcado como tal compila y da el resultado que su cerco indica, toda imagen es una capturada, y el sitio compila |
+| Ensayo de publicación | `bun run release:rehearsal` | unos 5 s | Las verificaciones que el workflow de publicación ejecuta antes de construir nada |
 
 Un resultado correcto en un nivel nunca prueba uno superior: una prueba de host no
 dice nada sobre una placa. [Pruebas del firmware en Linux](../development/firmware-testing.md)
@@ -145,6 +146,20 @@ La página en inglés y su gemela en español marcan los mismos ejemplos de la m
 mismo resultado. El ejemplo está escrito en código y por eso es igual en ambos idiomas. La
 verificación es `bun run check:docs-samples`; necesita `bun run build:compiler` y, para un ejemplo
 con `expect`, `bun run build:runtime`, y falla en vez de omitirse cuando falta el runtime.
+
+## Fragmentos de configuración, escenarios e imágenes
+
+Una página que muestra un fragmento de `zplc.json`, un escenario o una captura de la
+aplicación se comprueba de la misma manera, según lo que dice el cerco:
+
+| Cerco | Qué hace la comprobación |
+|---|---|
+| `json zplc-fragment` | Las claves se combinan con un proyecto mínimo para el simulador del host, se contrastan con `packages/zplc-ide/zplc.schema.json` (una clave que el esquema no nombra es un error) y se compilan. Un fragmento con `board=<id del IDE>` se combina con un proyecto para esa placa, y toda dirección de `io.inputs` y `io.outputs` debe ser un canal de la placa, salvo que figure en `io.virtual`. |
+| `json zplc-scenario` | El escenario se escribe en la carpeta `tests` de un proyecto cuyo programa es el primer ejemplo `runnable` de Structured Text de la misma página, y toda expectativa debe pasar en el runtime nativo. |
+| `![alt](/img/...)` | La imagen debe figurar en `docs/static/img/manifest.json`, que escribe `bun run docs:screenshots` con el commit del que se construyó la aplicación: una página no muestra ninguna imagen que la automatización no haya capturado. |
+
+La página en inglés y su gemela en español muestran los mismos fragmentos y escenarios.
+Las comprobaciones son `bun run check:docs-config` y `bun tools/docs/capture-screenshots.ts --check`.
 
 ## Documentos del proyecto
 

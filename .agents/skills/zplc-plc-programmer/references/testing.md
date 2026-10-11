@@ -8,8 +8,9 @@ OPI signals. Align all event and assertion times to `tickMs`.
 
 The Tool API in `packages/zplc-ide/src/cli/toolApi.ts` runs scenarios on
 `native-posix` in `logical-cyclic-task-set-scan` mode. It accepts a workspace
-of 1 to 16 cyclic tasks that share one `interval_ms` and run one program each
-(`homogeneousCyclicInterval`), and rejects any other task set. Use
+of 1 to 16 cyclic tasks that run one program each, with intervals from 1 to
+3 600 000 ms; the step of a scenario is the greatest common divisor of the intervals.
+Any other task set is rejected. Use
 `test <workspace>` for all scenarios or `scenario-run <workspace> <scenario-id>`
 for one through an authorized typed ZPLC adapter; these are operation names,
 not instructions to invoke a shell. Inspect the trace artifact and assertion

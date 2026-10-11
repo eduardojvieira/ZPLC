@@ -29,16 +29,17 @@ This page is its short form for readers of the site.
 
 ## Checks by layer
 
-Run every command from the repository root. The times were measured on a
-12-thread Linux x86-64 desktop with warm caches.
+Run every command from the repository root. The times were measured on
+2026-10-10 on a Linux x86-64 desktop with warm caches while other jobs were
+running, so read them as an order of magnitude.
 
 | Layer | Command | Typical time | What a pass shows |
 |---|---|---|---|
 | Set-up | `bun run setup` | about 10 s | Dependencies installed, compiler built, native runtime built |
-| C core and host runtime | `bun run test:core` | about 5 s | The C suites pass under the address and undefined-behaviour sanitizers |
-| Compiler | `bun run test:compiler:ci` | about 2 s | Compiler and assembler tests pass, and every failure is a listed one |
-| Studio, CLI, conformance | `bun run test:ide:ci` | 30 to 60 s | The Studio suites and the conformance cases behave as listed |
-| Lint and types | `bun run lint`, `bun run typecheck` and `bun run build:ide` | about 10 s, 20 s and 40 s | ESLint is clean, including the rules that reject an unhandled promise; every TypeScript program, tests and scripts included, type-checks; and the Studio builds |
+| C core and host runtime | `bun run test:core` | about 1 min, the first run included | The C suites pass under the address and undefined-behaviour sanitizers |
+| Compiler | `bun run test:compiler:ci` | about 6 s | Compiler and assembler tests pass, and every failure is a listed one |
+| Studio, CLI, conformance | `bun run test:ide:ci` | about 1 min | The Studio suites and the conformance cases behave as listed |
+| Lint and types | `bun run lint`, `bun run typecheck` and `bun run build:ide` | about 35 s, 20 to 40 s and 15 s | ESLint is clean, including the rules that reject an unhandled promise; every TypeScript program, tests and scripts included, type-checks; and the Studio builds |
 | Studio structure | `bun run lint:ide` (the rules run after ESLint), or `bun tools/ci/ide-structure.ts` | under 1 s | No store module imports a component, no command-line module imports from `electron/`, no static import cycle exists, and no hand-written module has more than 800 lines, except those on `tools/ci/module-size-offenders.json`; both that list and the one import it allows (`tools/ci/layering-exceptions.json`) can only shrink |
 | C static analysis | `bun run lint:c` | about 15 s | `clang-tidy` with `.clang-tidy`, every finding an error, is clean on the core, the POSIX HAL and the host application; the Zephyr HAL and `firmware/app` are analysed too when a board build exists |
 | Test sources | `bun run check:test-sources` | under 1 s | No test reads the text of product source or matches the assembly the compiler emitted, except the files listed for replacement in `tools/ci/pinned-source-offenders.json` |
@@ -46,8 +47,8 @@ Run every command from the repository root. The times were measured on a
 | Simulation | `bun run simulate packages/zplc-ide/projects/motor_plant` | under 1 s | The project's scenario tests pass on the native runtime |
 | Studio journeys | `bun run test:journeys` | 70 to 90 s | The real application passes its end-to-end journeys (needs a display) |
 | Firmware on Linux | `bun run setup:firmware`, then `bun run test:firmware` | about 6 min once, then about 4 min | Zephyr suites pass on `native_sim`, QEMU and the size budgets |
-| Documentation | `bun run check:docs` | about 50 s | References are fresh, pages are complete, English and Spanish pages match in structure, every sample marked runnable compiles and gives the result its fence states, and the site builds |
-| Release rehearsal | `bun run release:rehearsal` | about 10 s | The checks the release workflow runs before it builds anything |
+| Documentation | `bun run check:docs` | about 15 s warm, 1 min cold | References are fresh, every name a page mentions exists, no sentence claims a capability that nothing executed backs, pages are complete, English and Spanish pages match in structure, every sample and configuration fragment marked as such builds and gives the result its fence states, every image is a captured one, and the site builds |
+| Release rehearsal | `bun run release:rehearsal` | about 5 s | The checks the release workflow runs before it builds anything |
 
 A pass at one level never proves a higher one: a host test says nothing about a
 board. [Firmware testing](../development/firmware-testing.md) explains what each
@@ -143,6 +144,20 @@ result. The sample is written in code and so it is the same in both languages. T
 is `bun run check:docs-samples`; it needs `bun run build:compiler` and, for a sample with
 `expect`, `bun run build:runtime`, and it fails rather than skips when the runtime is
 missing.
+
+## Configuration fragments, scenarios and images
+
+A page that shows a piece of `zplc.json`, a scenario or a picture of the application is
+checked the same way, by what the fence says:
+
+| Fence | What the check does |
+|---|---|
+| `json zplc-fragment` | The keys are merged into a minimal project for the host simulator, checked against `packages/zplc-ide/zplc.schema.json` (a key that the schema does not name is an error) and built. A fragment with `board=<ide id>` is merged into a project for that board, and every address of `io.inputs` and `io.outputs` must be a channel of the board unless it is listed under `io.virtual`. |
+| `json zplc-scenario` | The scenario is written to the `tests` folder of a project whose program is the first `runnable` Structured Text sample of the same page, and every expectation must pass on the native runtime. |
+| `![alt](/img/...)` | The image must be listed in `docs/static/img/manifest.json`, which `bun run docs:screenshots` writes with the commit the application was built from: a page shows no picture that automation did not capture. |
+
+The English page and its Spanish twin show the same fragments and scenarios. The checks
+are `bun run check:docs-config` and `bun tools/docs/capture-screenshots.ts --check`.
 
 ## Project documents
 
