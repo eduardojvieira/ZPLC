@@ -4,7 +4,7 @@ import { mkdtemp, mkdir, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-import boardManifest from '../../../../firmware/app/boards/supported-boards.v1.5.0.json';
+import boardManifest from '../../../../firmware/app/boards/boards.json';
 import { createToolWorkerHost, type ToolWorkerSpawner } from '../../electron/toolWorkerHost';
 import { createMcpDispatcher, openMcpWorkspace } from '../mcp/server';
 import { main } from './index';
@@ -20,7 +20,8 @@ const boards = (boardManifest as Array<{ ide_id: string; memory: { code_size_max
 /** A program whose code is larger than the code memory of the small boards and smaller than that of the large ones. */
 function bigProgram(statements: number): string {
   const body = Array.from({ length: statements }, (_, index) => `  x := x + ${index % 100};`).join('\n');
-  return `PROGRAM Main\nVAR\n  x : DINT;\n  out AT %QD0 : DINT;\nEND_VAR\n${body}\n  out := x;\nEND_PROGRAM\n`;
+  // the first output of every board of the manifest is %QX0.0, which the admission of a program's I/O accepts for each
+  return `PROGRAM Main\nVAR\n  x : DINT;\n  out AT %QX0.0 : BOOL;\nEND_VAR\n${body}\n  out := x > 0;\nEND_PROGRAM\n`;
 }
 
 async function project(root: string, board: string, source: string): Promise<string> {

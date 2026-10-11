@@ -6,8 +6,8 @@ of this suite, by another executed test, or it is listed with the reason that no
 
 | State | Defects |
 |---|---|
-| shown by a conformance case | 94 |
-| shown by another executed test | 9 |
+| shown by a conformance case | 93 |
+| shown by another executed test | 10 |
 | no program shows it on a host | 21 |
 | open: no executed check yet | 9 |
 | all | 133 |
@@ -124,7 +124,7 @@ of this suite, by another executed test, or it is listed with the reason that no
 | LNG-D04c | Major | LNG-005 | - | The debug map records src/main.st while the editor matches on the bare file name: breakpoints may not bind. no program: The binding of a breakpoint is a behaviour of the editor and the debug controller; it is shown by the journey that hits a breakpoint (VF-008), not by a program. |
 | LNG-D05a | Major | LNG-010 | - | Visual editors record every drag step as an edit. open: No executed check yet: LNG-010 has no recorded evidence; the visual history (visualHistory.ts) still commits a position change per drag step. |
 | LNG-D06a | Major | LNG-012 | - | Ladder and FBD are mouse-first: palette items have no keyboard access. open: No executed check yet: LNG-012 has no recorded evidence. |
-| LNG-D07a | Major | LNG-011 | `lng/lng-011-ld-model-that-is-not-a-ladder-is-rejected`<br>visualFileLoad.schema.test.ts (LNG-011) | A malformed Ladder file is cast without validation and can blank the window. |
+| LNG-D07a | Major | LNG-011 | visualFileLoad.schema.test.ts (LNG-011) | A malformed Ladder file is cast without validation and can blank the window. |
 | LNG-D08a | Minor | LNG-013, LNG-023 | `lng/lng-023-fbd-mixed-numeric-types-rejected`<br>pinTypes.test.ts (LNG-013) | FBD accepts any-to-any connections. |
 | LNG-D08b | Minor | LNG-006, LNG-025 | `lng/lng-025-sfc-step-flag-and-step-time` | SFC live state guesses three naming conventions for step flags. The case shows the step flag .X and the step time .T that the live state reads; the guessing of names in the editor (LNG-006) has no executed check yet. |
 | LNG-D08c | Minor | LNG-008 | `lng/lng-008-fbd-calls-a-user-function-block`<br>`lng/lng-008-ld-places-a-user-function-block`<br>`lng/lng-008-fbd-calls-a-user-function` | User function blocks cannot be placed in LD or FBD. |
@@ -227,7 +227,7 @@ The defects that each requirement fixes, and the cases filed under that requirem
 | LNG-008 | LNG-D08c | `lng/lng-008-fbd-calls-a-user-function`<br>`lng/lng-008-fbd-calls-a-user-function-block`<br>`lng/lng-008-ld-places-a-user-function-block` |
 | LNG-009 | LNG-D01a | - |
 | LNG-010 | LNG-D05a | - |
-| LNG-011 | LNG-D07a | `lng/lng-011-ld-model-that-is-not-a-ladder-is-rejected` |
+| LNG-011 | LNG-D07a | - |
 | LNG-012 | LNG-D06a | - |
 | LNG-013 | LNG-D08a | - |
 | LNG-015 | LNG-D08d | - |

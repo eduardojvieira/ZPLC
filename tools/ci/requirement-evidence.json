@@ -998,7 +998,6 @@
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"9 Undo after switching tabs"}
   ],
   "LNG-011": [
-    {"kind":"conformance","ref":"conformance/lng/lng-011-ld-model-that-is-not-a-ladder-is-rejected.expect.json","test":"LNG-011 a Ladder file whose rungs are not a list is rejected with a message, not cast"},
     {"kind":"unit","ref":"packages/zplc-ide/src/models/visualFileLoad.schema.test.ts","test":"LNG-011 a variable is an object with a name and a type, in every language"},
     {"kind":"unit","ref":"packages/zplc-ide/src/models/visualFileLoad.schema.test.ts","test":"LNG-011 the parts of a Ladder file have the shape the editor reads"},
     {"kind":"unit","ref":"packages/zplc-ide/src/models/visualFileLoad.schema.test.ts","test":"LNG-011 the parts of an SFC chart have the shape the editor reads"}

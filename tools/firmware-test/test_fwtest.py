@@ -133,14 +133,14 @@ class SizeGate(unittest.TestCase):
 
 
 class BudgetOfTheBoards(unittest.TestCase):
-    """VF-025: the budget file covers exactly the boards of the supported-boards manifest.
+    """VF-025: the budget file covers exactly the boards of the board manifest (firmware/app/boards/boards.json).
 
     A board that is supported and has no budget would fail the cross-build job (a board without a budget fails the
     gate, above), and a budget for a board that is no longer supported would be a limit that nothing measures.
     """
 
     ROOT = Path(__file__).resolve().parents[2]
-    MANIFEST = ROOT / "firmware" / "app" / "boards" / "supported-boards.v1.5.0.json"
+    MANIFEST = ROOT / "firmware" / "app" / "boards" / "boards.json"
     BUDGET = Path(__file__).with_name("size-budget.json")
 
     def setUp(self) -> None:
