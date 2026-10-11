@@ -90,6 +90,7 @@
   --tab-indicator: var(--color-accent-blue);
   --tab-bg-hover: color-mix(in srgb, var(--text-primary) 8%, transparent);
   --menu-item-bg-active: color-mix(in srgb, var(--color-accent-blue) 22%, transparent);
+  --menu-item-bg-active-danger: color-mix(in srgb, var(--color-accent-red) 14%, transparent);
   --menu-separator: var(--color-surface-500);
   --overlay-bg: var(--color-surface-800);
   --overlay-fg: var(--text-primary);
@@ -219,6 +220,7 @@
   --tab-indicator: var(--color-accent-blue);
   --tab-bg-hover: color-mix(in srgb, var(--text-primary) 8%, transparent);
   --menu-item-bg-active: color-mix(in srgb, var(--color-accent-blue) 22%, transparent);
+  --menu-item-bg-active-danger: color-mix(in srgb, var(--color-accent-red) 14%, transparent);
   --menu-separator: var(--color-surface-500);
   --overlay-bg: var(--color-surface-800);
   --overlay-fg: var(--text-primary);
@@ -348,6 +350,7 @@
   --tab-indicator: var(--color-accent-blue);
   --tab-bg-hover: color-mix(in srgb, var(--text-primary) 8%, transparent);
   --menu-item-bg-active: color-mix(in srgb, var(--color-accent-blue) 22%, transparent);
+  --menu-item-bg-active-danger: color-mix(in srgb, var(--color-accent-red) 14%, transparent);
   --menu-separator: var(--color-surface-500);
   --overlay-bg: var(--color-surface-800);
   --overlay-fg: var(--text-primary);

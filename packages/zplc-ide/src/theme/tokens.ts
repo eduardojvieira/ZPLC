@@ -182,6 +182,7 @@ component(TABS, '--tab-fg-selected', 'The selected tab.', 'var(--text-primary)')
 component(TABS, '--tab-indicator', 'The rule under the selected tab.', 'var(--color-accent-blue)');
 component(TABS, '--tab-bg-hover', 'A tab under the pointer.', 'color-mix(in srgb, var(--text-primary) 8%, transparent)');
 component(TABS, '--menu-item-bg-active', 'The active item of a menu, listbox or tree.', 'color-mix(in srgb, var(--color-accent-blue) 22%, transparent)');
+component(TABS, '--menu-item-bg-active-danger', 'The active item of a menu when the item is destructive: a red tint, so red text keeps its contrast.', 'color-mix(in srgb, var(--color-accent-red) 14%, transparent)');
 component(TABS, '--menu-separator', 'A separator between groups of menu items.', 'var(--color-surface-500)');
 
 const OVERLAY = 'Overlay';
@@ -342,6 +343,8 @@ export const CONTRAST_PAIRS: readonly ContrastPair[] = [
   { fg: '--tab-indicator', bg: '--color-surface-800', min: 3, use: 'The rule under the selected tab' },
   { fg: '--overlay-fg', bg: '--overlay-bg', min: 4.5, use: 'Text of a dialog, a menu or a popover' },
   { fg: '--overlay-fg', bg: '--menu-item-bg-active', over: '--overlay-bg', min: 4.5, use: 'The active item of a menu' },
+  { fg: '--color-accent-red', bg: '--menu-item-bg-active-danger', over: '--overlay-bg', min: 4.5, use: 'A destructive item of a menu when it is active' },
+  { fg: '--color-accent-red', bg: '--overlay-bg', min: 4.5, use: 'A destructive item of a menu' },
   { fg: '--tooltip-fg', bg: '--tooltip-bg', min: 4.5, use: 'Text of a tooltip' },
   ...['info', 'success', 'warning', 'danger', 'neutral'].map((tone) => ({ fg: `--tone-${tone}-fg`, bg: `--tone-${tone}-bg`, over: '--color-surface-800', min: 4.5 as const, use: `A ${tone} badge on a panel` })),
   ...SIGNAL_STATES.flatMap((state) => [

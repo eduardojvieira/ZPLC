@@ -23,6 +23,8 @@ export interface MenuItem {
   disabled?: boolean;
   /** Draws a separator above this item. */
   separatorBefore?: boolean;
+  /** Styles the item as destructive (it still needs an alert dialog when it cannot be undone). */
+  destructive?: boolean;
   onSelect: () => void;
 }
 
@@ -85,6 +87,7 @@ function MenuSurface({ label, items, anchor, placement, initialActive, onClose, 
               aria-disabled={item.disabled || undefined}
               tabIndex={-1}
               data-active={index === active || undefined}
+              data-destructive={item.destructive || undefined}
               className="ui-menu-item"
               onPointerMove={() => { if (!item.disabled && index !== active) setActive(index); }}
               onClick={() => choose(index)}
@@ -153,6 +156,24 @@ export function MenuButton({ label, items, children, variant = 'secondary', size
   );
 }
 
+export interface PointMenuProps {
+  label: string;
+  items: readonly MenuItem[];
+  /** Window coordinates the menu opens at; it is moved back inside the window when it would run off an edge. */
+  x: number;
+  y: number;
+  onClose: () => void;
+}
+
+/** A menu that its owner opens at a point (the Explorer's context menu): the same popup, keys and dismissal as the others. */
+export function PointMenu({ label, items, x, y, onClose }: PointMenuProps) {
+  const menu = useRef<HTMLDivElement>(null);
+  const specs = items.map((item) => ({ label: item.label, disabled: item.disabled }));
+  useDismiss(true, [menu], () => onClose());
+  const anchor = { left: x, top: y, width: 0, height: 0 };
+  return <MenuSurface label={label} items={items} anchor={anchor} placement="bottom-start" initialActive={menuOpenTarget('Enter', specs) ?? 0} onClose={() => onClose()} menuRef={menu} />;
+}
+
 export interface ContextMenuProps {
   label: string;
   items: readonly MenuItem[];
@@ -162,11 +183,7 @@ export interface ContextMenuProps {
 
 /** Wraps a region so that its context-menu gesture (right click, Shift+F10, the menu key) opens `items` at the pointer. */
 export function ContextMenu({ label, items, className, children }: ContextMenuProps) {
-  const menu = useRef<HTMLDivElement>(null);
   const [at, setAt] = useState<{ x: number; y: number } | null>(null);
-  const specs = items.map((item) => ({ label: item.label, disabled: item.disabled }));
-  const close = useCallback(() => setAt(null), []);
-  useDismiss(at !== null, [menu], close);
   return (
     <div
       className={className}
@@ -176,9 +193,7 @@ export function ContextMenu({ label, items, className, children }: ContextMenuPr
       }}
     >
       {children}
-      {at !== null && (
-        <MenuSurface label={label} items={items} anchor={{ left: at.x, top: at.y, width: 0, height: 0 }} placement="bottom-start" initialActive={menuOpenTarget('Enter', specs) ?? 0} onClose={close} menuRef={menu} />
-      )}
+      {at !== null && <PointMenu label={label} items={items} x={at.x} y={at.y} onClose={() => setAt(null)} />}
     </div>
   );
 }

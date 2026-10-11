@@ -411,6 +411,7 @@ What one component reads. They reference roles, so they follow every theme.
 | `--tab-indicator` | The rule under the selected tab. | `#245d8f` | `#5ba7df` | `#55c8ff` |
 | `--tab-bg-hover` | A tab under the pointer. | `color-mix(in srgb, #172127 8%, transparent)` | `color-mix(in srgb, #e5edeb 8%, transparent)` | `color-mix(in srgb, #ffffff 8%, transparent)` |
 | `--menu-item-bg-active` | The active item of a menu, listbox or tree. | `color-mix(in srgb, #245d8f 22%, transparent)` | `color-mix(in srgb, #5ba7df 22%, transparent)` | `color-mix(in srgb, #55c8ff 22%, transparent)` |
+| `--menu-item-bg-active-danger` | The active item of a menu when the item is destructive: a red tint, so red text keeps its contrast. | `color-mix(in srgb, #a33838 14%, transparent)` | `color-mix(in srgb, #ed7070 14%, transparent)` | `color-mix(in srgb, #ff9393 14%, transparent)` |
 | `--menu-separator` | A separator between groups of menu items. | `#a8b5b0` | `#52666e` | `#d7d7d7` |
 
 #### Overlay
@@ -527,7 +528,7 @@ Type, shape, elevation, icons, layers and density. The compact column is the val
 
 ### Contrast
 
-CI computes the WCAG 2.2 ratio of each pair below from the tokens, in all three themes, and fails when one falls under its minimum (4.5:1 for text, 3:1 for a graphic that carries meaning). 92 pairs are declared and listed here with their computed ratios.
+CI computes the WCAG 2.2 ratio of each pair below from the tokens, in all three themes, and fails when one falls under its minimum (4.5:1 for text, 3:1 for a graphic that carries meaning). 94 pairs are declared and listed here with their computed ratios.
 
 | Pair | Use | Minimum | Light | Dark | High contrast |
 |---|---|---|---|---|---|
@@ -586,6 +587,8 @@ CI computes the WCAG 2.2 ratio of each pair below from the tokens, in all three 
 | `--tab-indicator` on `--color-surface-800` | The rule under the selected tab | 3:1 | 6.59:1 | 6.48:1 | 10.58:1 |
 | `--overlay-fg` on `--overlay-bg` | Text of a dialog, a menu or a popover | 4.5:1 | 15.59:1 | 14.23:1 | 20.03:1 |
 | `--overlay-fg` on `--menu-item-bg-active` over `--overlay-bg` | The active item of a menu | 4.5:1 | 11.17:1 | 9.65:1 | 13.36:1 |
+| `--color-accent-red` on `--menu-item-bg-active-danger` over `--overlay-bg` | A destructive item of a menu when it is active | 4.5:1 | 5.08:1 | 4.77:1 | 7.70:1 |
+| `--color-accent-red` on `--overlay-bg` | A destructive item of a menu | 4.5:1 | 6.29:1 | 5.77:1 | 9.39:1 |
 | `--tooltip-fg` on `--tooltip-bg` | Text of a tooltip | 4.5:1 | 13.68:1 | 15.23:1 | 21.00:1 |
 | `--tone-info-fg` on `--tone-info-bg` over `--color-surface-800` | A info badge on a panel | 4.5:1 | 5.35:1 | 5.13:1 | 8.53:1 |
 | `--tone-success-fg` on `--tone-success-bg` over `--color-surface-800` | A success badge on a panel | 4.5:1 | 4.60:1 | 6.31:1 | 11.92:1 |

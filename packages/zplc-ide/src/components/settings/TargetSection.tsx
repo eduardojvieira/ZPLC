@@ -14,6 +14,7 @@ import {
 } from '../../config/boardProfiles';
 import type { SectionProps } from './settingsSectionProps';
 import { ToolchainCard } from './ToolchainCard';
+import { Button, NumberField, Select, TextField } from '../../ui';
 
 export function TargetSection({ config, updateConfig }: SectionProps) {
   // Target is optional in config, so we use a partial type internally
@@ -61,35 +62,19 @@ export function TargetSection({ config, updateConfig }: SectionProps) {
   return (
     <div className="pt-4 space-y-4">
       <div>
-        <label className="block text-xs text-[var(--color-surface-400)] mb-1">
-          Target Board
-        </label>
         {customBoard ? (
-          <div className="flex gap-2">
-            <input
-              type="text"
-              value={target.board || ''}
-              onChange={(e) => updateTarget({ board: e.target.value })}
-              placeholder="e.g., my_custom_board"
-              className="flex-1 px-3 py-2 bg-[var(--color-surface-700)] border border-[var(--color-surface-500)] rounded text-[var(--color-surface-100)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent-blue)]"
-            />
-            <button
-              onClick={() => setCustomBoard(false)}
-              className="px-3 py-2 text-xs bg-[var(--color-surface-600)] hover:bg-[var(--color-surface-500)] text-[var(--color-surface-200)] rounded"
-            >
+          <div className="flex items-end gap-2">
+            <TextField label="Target Board" value={target.board || ''} onChange={(e) => updateTarget({ board: e.target.value })} placeholder="e.g., my_custom_board" fieldClassName="flex-1" />
+            <Button variant="secondary" size="sm" onClick={() => setCustomBoard(false)}>
               Use List
-            </button>
+            </Button>
           </div>
         ) : (
-          <select
-            value={target.board || ''}
-            onChange={(e) => handleBoardChange(e.target.value)}
-            className="w-full px-3 py-2 bg-[var(--color-surface-700)] border border-[var(--color-surface-500)] rounded text-[var(--color-surface-100)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent-blue)]"
-          >
+          <Select label="Target Board" value={target.board || ''} onChange={(e) => handleBoardChange(e.target.value)} className="w-full">
             {BOARD_OPTIONS.map(opt => (
               <option key={opt.value} value={opt.value}>{opt.label}</option>
             ))}
-          </select>
+          </Select>
         )}
       </div>
 
@@ -107,31 +92,10 @@ export function TargetSection({ config, updateConfig }: SectionProps) {
 
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label className="block text-xs text-[var(--color-surface-400)] mb-1">
-            CPU (optional)
-          </label>
-          <input
-            type="text"
-            value={target.cpu || ''}
-            onChange={(e) => updateTarget({ cpu: e.target.value || undefined })}
-            placeholder="e.g., rp2040, stm32h747"
-            className="w-full px-3 py-2 bg-[var(--color-surface-700)] border border-[var(--color-surface-500)] rounded text-[var(--color-surface-100)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent-blue)] placeholder:text-[var(--color-surface-500)]"
-          />
+          <TextField label="CPU (optional)" value={target.cpu || ''} onChange={(e) => updateTarget({ cpu: e.target.value || undefined })} placeholder="e.g., rp2040, stm32h747" className="w-full" />
         </div>
         <div>
-          <label className="block text-xs text-[var(--color-surface-400)] mb-1">
-            <Clock size={10} className="inline mr-1" />
-            Clock Speed (MHz)
-          </label>
-          <input
-            type="number"
-            value={target.clock_mhz || ''}
-            onChange={(e) => updateTarget({ clock_mhz: e.target.value ? parseInt(e.target.value) : undefined })}
-            placeholder="e.g., 133"
-            min={1}
-            max={1000}
-            className="w-full px-3 py-2 bg-[var(--color-surface-700)] border border-[var(--color-surface-500)] rounded text-[var(--color-surface-100)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent-blue)] placeholder:text-[var(--color-surface-500)]"
-          />
+          <NumberField label={<><Clock size={10} className="mr-1 inline" aria-hidden="true" />Clock Speed (MHz)</>} value={target.clock_mhz || ''} onChange={(e) => updateTarget({ clock_mhz: e.target.value ? parseInt(e.target.value) : undefined })} placeholder="e.g., 133" min={1} max={1000} className="w-full" />
         </div>
       </div>
     </div>

@@ -2,10 +2,9 @@
  * Asks what to do with a modified file that changed on disk outside Studio (IDE-004): keep the user's version, or load
  * the one on disk. Nothing is overwritten without the user's choice; Escape keeps every version as it is.
  */
+import { Button } from '../ui';
 import { Modal } from './Modal';
 import { resolveConflict, useExternalConflicts } from '../store/externalChangeWatch';
-
-const BUTTON = 'px-3 py-1.5 text-sm rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent-blue)]';
 
 export function ExternalChangePrompt() {
   const conflicts = useExternalConflicts((state) => state.conflicts);
@@ -22,10 +21,10 @@ export function ExternalChangePrompt() {
                 <p className="truncate text-xs text-[var(--color-surface-400)]">{conflict.disk === null ? 'Deleted on disk' : 'Changed on disk'} · {conflict.path}</p>
               </div>
               <div className="flex shrink-0 gap-2">
-                <button type="button" aria-label={`Keep my version of ${conflict.name}`} onClick={() => resolveConflict(conflict.path, 'mine')} className={`${BUTTON} bg-[var(--color-accent-blue)] text-white hover:bg-[var(--color-accent-blue)]/80`}>Keep my version</button>
-                <button type="button" aria-label={`${conflict.disk === null ? 'Close' : 'Load from disk'} ${conflict.name}`} onClick={() => resolveConflict(conflict.path, 'disk')} className={`${BUTTON} bg-[var(--color-surface-600)] text-[var(--color-surface-100)] hover:bg-[var(--color-surface-500)]`}>
+                <Button variant="primary" aria-label={`Keep my version of ${conflict.name}`} onClick={() => resolveConflict(conflict.path, 'mine')}>Keep my version</Button>
+                <Button aria-label={`${conflict.disk === null ? 'Close' : 'Load from disk'} ${conflict.name}`} onClick={() => resolveConflict(conflict.path, 'disk')}>
                   {conflict.disk === null ? 'Close file' : 'Load from disk'}
-                </button>
+                </Button>
               </div>
             </li>
           ))}

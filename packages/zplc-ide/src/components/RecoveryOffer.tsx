@@ -11,9 +11,8 @@ import { discardRecovery, listRecovery } from '../ipc/recoveryBridge';
 import { projectRootId } from '../ipc/projectFilesHandles';
 import { fileTreeFileId, findFileInTree, readFileContent } from '../utils/fileSystem';
 import { formatKeptAt, offerRows, type OfferRow } from '../utils/recoveryOffer';
+import { Button } from '../ui';
 import { Modal } from './Modal';
-
-const BUTTON = 'px-3 py-1.5 text-sm rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent-blue)] disabled:cursor-not-allowed disabled:opacity-50';
 
 export function RecoveryOffer() {
   const isProjectOpen = useIDEStore((state) => state.isProjectOpen);
@@ -78,16 +77,16 @@ export function RecoveryOffer() {
                 <p className="truncate text-xs text-[var(--color-surface-400)]">{row.path} · kept at {formatKeptAt(row.savedAt)}</p>
               </div>
               <div className="flex shrink-0 gap-2">
-                <button type="button" aria-label={`Discard ${row.name}`} onClick={() => { void discard(row); }} className={`${BUTTON} bg-[var(--color-surface-600)] text-[var(--color-surface-100)] hover:bg-[var(--color-surface-500)]`}>Discard</button>
-                <button type="button" aria-label={`Restore ${row.name}`} onClick={() => { void restore(row); }} className={`${BUTTON} bg-[var(--color-accent-blue)] text-white hover:bg-[var(--color-accent-blue)]/80`}>Restore</button>
+                <Button aria-label={`Discard ${row.name}`} onClick={() => { void discard(row); }}>Discard</Button>
+                <Button variant="primary" aria-label={`Restore ${row.name}`} onClick={() => { void restore(row); }}>Restore</Button>
               </div>
             </li>
           ))}
         </ul>
         {rows.length > 1 && (
           <div className="flex justify-end gap-2">
-            <button type="button" onClick={everyRow(discard)} className={`${BUTTON} bg-[var(--color-surface-600)] text-[var(--color-surface-100)] hover:bg-[var(--color-surface-500)]`}>Discard all</button>
-            <button type="button" onClick={everyRow(restore)} className={`${BUTTON} bg-[var(--color-accent-blue)] text-white hover:bg-[var(--color-accent-blue)]/80`}>Restore all</button>
+            <Button onClick={everyRow(discard)}>Discard all</Button>
+            <Button variant="primary" onClick={everyRow(restore)}>Restore all</Button>
           </div>
         )}
       </div>

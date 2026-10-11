@@ -9,10 +9,11 @@ import type { ArchiveSummary } from '../../electron/projectArchiveProtocol';
 import { extractArchive, inspectArchive } from '../ipc/projectArchiveBridge';
 import { reviewArchive } from '../project/archiveReview';
 import { useIDEStore } from '../store/useIDEStore';
+import { ICON_SIZES } from '../theme/tokens';
+import { Button } from '../ui';
 import { MigrationDifferenceView } from './MigrationDifferenceView';
 import { Modal } from './Modal';
 
-const BUTTON = 'px-4 py-2 text-sm rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent-blue)] disabled:cursor-not-allowed disabled:opacity-50';
 const KIB = 1024;
 const sizeOf = (bytes: number) => (bytes < KIB * KIB ? `${Math.max(1, Math.round(bytes / KIB))} KiB` : `${(bytes / (KIB * KIB)).toFixed(1)} MiB`);
 
@@ -54,16 +55,14 @@ export function ImportArchive({ disabled = false }: { disabled?: boolean }) {
 
   return (
     <div className="mt-3" data-import-archive>
-      <button
-        type="button"
+      <Button
         onClick={() => { void choose(); }}
         disabled={disabled || busy !== null}
         data-import-archive-button
-        className="inline-flex items-center gap-2 border border-[var(--border-color)] px-3 py-2 text-sm text-[var(--text-primary)] transition-colors hover:bg-[var(--color-surface-700)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-accent-blue)] disabled:cursor-not-allowed disabled:opacity-60"
+        icon={<Archive size={ICON_SIZES.md} className="text-[var(--color-accent-blue)]" />}
       >
-        <Archive size={16} aria-hidden="true" className="text-[var(--color-accent-blue)]" />
         {busy === 'reading' ? 'Reading the archive…' : 'Import a project archive…'}
-      </button>
+      </Button>
       {failure && !summary && <p role="alert" data-import-archive-error className="mt-2 break-words text-sm leading-5 text-[var(--color-accent-red)]">{failure}</p>}
 
       {summary && review && (
@@ -88,10 +87,10 @@ export function ImportArchive({ disabled = false }: { disabled?: boolean }) {
             )}
             {failure && <p role="alert" data-import-archive-error className="break-words text-sm text-[var(--color-accent-red)]">{failure}</p>}
             <div className="flex justify-end gap-2">
-              <button type="button" disabled={busy !== null} onClick={() => setSummary(null)} className={`${BUTTON} bg-[var(--color-surface-600)] text-[var(--color-surface-100)] hover:bg-[var(--color-surface-500)]`}>Cancel</button>
-              <button type="button" disabled={busy !== null || !review.openable} onClick={() => { void importIt(); }} data-import-archive-confirm className={`${BUTTON} bg-[var(--color-accent-blue)] text-white hover:bg-[var(--color-accent-blue)]/80`}>
+              <Button disabled={busy !== null} onClick={() => setSummary(null)}>Cancel</Button>
+              <Button variant="primary" disabled={busy !== null || !review.openable} onClick={() => { void importIt(); }} data-import-archive-confirm>
                 {busy === 'importing' ? 'Importing…' : 'Choose a folder and import'}
-              </button>
+              </Button>
             </div>
           </div>
         </Modal>

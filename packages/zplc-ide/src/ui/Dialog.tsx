@@ -55,8 +55,12 @@ export function Dialog({ open, onClose, title, description, size = 'md', classNa
     if (!dialog) return undefined;
     const opener = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     const modal = registerModal();
+    // The control the caller asked for, then one marked data-autofocus, then the first control of the content (the header's
+    // close button is the last resort: a person who opened a form wants to type in it).
+    const body = dialog.querySelector<HTMLElement>('.ui-dialog-body');
+    const [inBody] = body ? focusables(body) : [];
     const [first] = focusables(dialog);
-    (initialFocus?.current ?? first ?? dialog).focus();
+    (initialFocus?.current ?? dialog.querySelector<HTMLElement>('[data-autofocus]') ?? inBody ?? first ?? dialog).focus();
 
     // On the document, not on the dialog: focus is on the page after a click on the scrim or on non-focusable text.
     const onKeyDown = (event: KeyboardEvent): void => {

@@ -9,6 +9,8 @@ import { BookMarked, ChevronDown, ChevronRight, FileCode2, FolderPlus, X } from 
 import { configuredLibraries, addLibrary, libraryProblem, removeLibrary } from '../project/libraries';
 import { useProjectSources } from '../store/projectSources';
 import { useIDEStore } from '../store/useIDEStore';
+import { ICON_SIZES } from '../theme/tokens';
+import { Button, IconButton, Select } from '../ui';
 import { Modal } from './Modal';
 import { declarationKindLabel, libraryChoices, libraryRows } from './projectDeclarationsPresentation';
 
@@ -23,8 +25,6 @@ function writeExpanded(value: boolean): void {
   try { globalThis.sessionStorage?.setItem(EXPANDED_KEY, value ? '1' : '0'); } catch { /* not remembered */ }
 }
 
-const BUTTON = 'px-4 py-2 text-sm rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent-blue)] disabled:cursor-not-allowed disabled:opacity-50';
-const FIELD = 'w-full px-3 py-2 bg-[var(--color-surface-900)] border border-[var(--color-surface-500)] rounded text-sm text-[var(--color-surface-100)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent-blue)]';
 
 function AddLibraryDialog({ onClose }: { onClose: () => void }) {
   const tree = useIDEStore((state) => state.fileTree);
@@ -55,16 +55,14 @@ function AddLibraryDialog({ onClose }: { onClose: () => void }) {
           <p role="status" className="text-sm text-[var(--color-surface-300)]">The project has no other folder to add. Create one in the Explorer first.</p>
         ) : (
           <>
-            <label htmlFor="library-folder" className="mb-1 block text-sm text-[var(--color-surface-200)]">Folder</label>
-            <select id="library-folder" value={folder} onChange={(event) => setFolder(event.target.value)} className={FIELD}>
+            <Select id="library-folder" label="Folder" value={folder} onChange={(event) => setFolder(event.target.value)} error={problem ?? undefined}>
               {choices.map((choice) => <option key={choice.path} value={choice.path}>{choice.label}</option>)}
-            </select>
-            {problem && <p role="alert" className="mt-2 text-sm text-[var(--color-accent-yellow)]">{problem}</p>}
+            </Select>
           </>
         )}
         <div className="flex justify-end gap-2 pt-5">
-          <button type="button" disabled={busy} onClick={onClose} className={`${BUTTON} bg-[var(--color-surface-600)] text-[var(--color-surface-100)] hover:bg-[var(--color-surface-500)]`}>Cancel</button>
-          <button type="submit" disabled={busy || problem !== null} className={`${BUTTON} bg-[var(--color-accent-blue)] text-white hover:bg-[var(--color-accent-blue)]/80`}>{busy ? 'Adding…' : 'Add library'}</button>
+          <Button disabled={busy} onClick={onClose}>Cancel</Button>
+          <Button type="submit" variant="primary" disabled={busy || problem !== null}>{busy ? 'Adding…' : 'Add library'}</Button>
         </div>
       </form>
     </Modal>
@@ -110,32 +108,33 @@ export function ProjectDeclarations() {
     <section aria-label="Project declarations" data-project-declarations className="max-h-[45%] shrink-0 overflow-y-auto border-t border-[var(--color-surface-700)] text-xs">
       <div className="flex items-center justify-between gap-2 px-3 py-1.5">
         <h2 className="font-semibold uppercase tracking-[0.08em] text-[var(--color-surface-200)]">
-          <button
-            type="button"
+          <Button
+            variant="ghost"
+            size="sm"
             aria-expanded={expanded}
             aria-controls="project-declarations-body"
             onClick={() => setExpanded((value) => !value)}
-            className="flex items-center gap-1.5 rounded py-0.5 uppercase hover:text-[var(--color-surface-100)] focus-visible:outline-2 focus-visible:outline-[var(--color-accent-blue)]"
+            className="uppercase"
+            icon={<>{expanded ? <ChevronDown size={ICON_SIZES.sm} /> : <ChevronRight size={ICON_SIZES.sm} />}<BookMarked size={ICON_SIZES.sm} /></>}
           >
-            {expanded ? <ChevronDown size={13} aria-hidden="true" /> : <ChevronRight size={13} aria-hidden="true" />}
-            <BookMarked size={13} aria-hidden="true" />
             Declarations
-            <span className="rounded-full bg-[var(--color-surface-600)] px-1.5 font-normal normal-case text-[var(--color-surface-300)]">{total}</span>
+            <span className="rounded-full bg-[var(--color-surface-600)] px-1.5 font-normal normal-case text-[var(--text-primary)]">{total}</span>
             {unlisted.length > 0 && (
-              <span title="Structured Text files that no build reads" className="rounded-full border border-[var(--color-accent-yellow)] px-1.5 font-normal normal-case text-[var(--color-accent-yellow)]">{unlisted.length} not compiled</span>
+              <span className="rounded-full border border-[var(--color-accent-yellow)] px-1.5 font-normal normal-case text-[var(--color-accent-yellow)]">{unlisted.length} not compiled</span>
             )}
-          </button>
+          </Button>
         </h2>
-        <button
-          type="button"
+        <Button
+          variant="ghost"
+          size="sm"
           onClick={() => { setExpanded(true); setAdding(true); }}
           disabled={migrating}
-          title={migrating ? 'Apply the migration of the project first' : 'Add a library folder'}
+          tooltip={migrating ? 'Apply the migration of the project first' : 'Add a library folder'}
           aria-label="Add library folder"
-          className="flex items-center gap-1 rounded px-1.5 py-1 text-[var(--color-accent-blue)] hover:bg-[var(--color-surface-700)] disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-[var(--color-accent-blue)]"
+          icon={<FolderPlus size={ICON_SIZES.sm} />}
         >
-          <FolderPlus size={13} aria-hidden="true" />Library folder…
-        </button>
+          Library folder…
+        </Button>
       </div>
 
  {expanded && <div id="project-declarations-body">
@@ -144,7 +143,7 @@ export function ProjectDeclarations() {
           {rows.map((row) => (
             <li key={row.path} data-library={row.path} className="flex items-center justify-between gap-2 py-0.5">
               <span className="min-w-0 truncate font-mono text-[var(--color-surface-100)]">{row.path}/ <span className="font-sans text-[var(--color-surface-400)]">{row.missing ? 'not in the project' : `${row.files} file${row.files === 1 ? '' : 's'}`}</span></span>
-              <button type="button" onClick={() => { void remove(row.path); }} aria-label={`Remove library ${row.path}`} title="Stop using as a library" disabled={migrating} className="rounded p-0.5 text-[var(--color-surface-300)] hover:bg-[var(--color-surface-700)] disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-[var(--color-accent-blue)]"><X size={12} aria-hidden="true" /></button>
+              <IconButton size="sm" label={`Remove library ${row.path}`} tooltip="Stop using as a library" icon={<X size={ICON_SIZES.sm} />} disabled={migrating} onClick={() => { void remove(row.path); }} />
             </li>
           ))}
         </ul>
@@ -160,15 +159,16 @@ export function ProjectDeclarations() {
               <ul>
                 {group.declarations.map((entry) => (
                   <li key={`${entry.kind}:${entry.name}`}>
-                    <button
-                      type="button"
+                    <Button
+                      variant="ghost"
+                      size="sm"
                       data-declaration={entry.name}
                       onClick={() => { void open(entry.file, entry.line, entry.column); }}
-                      className="flex w-full items-baseline gap-2 py-0.5 pl-8 pr-3 text-left hover:bg-[var(--color-surface-700)] focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[var(--color-accent-blue)]"
+                      className="w-full justify-start gap-2 pl-8 font-normal"
                     >
-                      <span className="font-medium text-[var(--color-surface-100)]">{entry.name}</span>
-                      <span className="text-[var(--color-surface-400)]">{declarationKindLabel(entry.kind)}</span>
-                    </button>
+                      <span className="font-medium text-[var(--text-primary)]">{entry.name}</span>
+                      <span className="text-[var(--text-tertiary)]">{declarationKindLabel(entry.kind)}</span>
+                    </Button>
                   </li>
                 ))}
               </ul>
@@ -186,16 +186,16 @@ export function ProjectDeclarations() {
               return (
                 <li key={folder} data-unlisted-folder={folder} className="flex items-center justify-between gap-2 py-0.5">
                   <span className="min-w-0 truncate font-mono text-[var(--color-surface-100)]">{folder === '' ? 'project folder' : `${folder}/`} <span className="font-sans text-[var(--color-surface-400)]">{files.length} file{files.length === 1 ? '' : 's'}</span></span>
-                  <button
-                    type="button"
+                  <Button
+                    size="sm"
                     onClick={() => { void list(folder); }}
                     disabled={problem !== null || migrating}
-                    title={problem ?? (migrating ? 'Apply the migration of the project first' : `List ${folder} under libraries of zplc.json`)}
+                    tooltip={problem ?? (migrating ? 'Apply the migration of the project first' : `List ${folder} under libraries of zplc.json`)}
                     aria-label={`List ${folder === '' ? 'the project folder' : folder} as a library`}
-                    className="shrink-0 rounded border border-[var(--color-surface-600)] px-1.5 py-0.5 text-[var(--color-accent-blue)] hover:bg-[var(--color-surface-700)] disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-[var(--color-accent-blue)]"
+                    className="shrink-0"
                   >
                     List as library
-                  </button>
+                  </Button>
                 </li>
               );
             })}

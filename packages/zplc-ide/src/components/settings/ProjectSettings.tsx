@@ -34,6 +34,7 @@ import { NetworkSection } from './NetworkSection';
 import { IOSection } from './IOSection';
 import { CommunicationSection } from './CommunicationSection';
 import { TasksSection } from './TasksSection';
+import { Button } from '../../ui';
 
 export function ProjectSettings() {
   const { projectConfig, saveProjectConfig, updateProjectConfig } = useIDEStore();
@@ -96,13 +97,9 @@ export function ProjectSettings() {
               </p>
             </div>
           </div>
-          <button
-            onClick={() => { void handleSave(); }}
-            className="px-4 py-2 text-sm rounded font-medium transition-colors bg-[var(--color-accent-blue)] hover:bg-[var(--color-accent-blue)]/80 text-white"
-            title="Save changes to zplc.json"
-          >
+          <Button variant="primary" size="sm" tooltip="Save changes to zplc.json" onClick={() => { void handleSave(); }}>
             Save Config
-          </button>
+          </Button>
         </div>
 
         <AppPreferences />
