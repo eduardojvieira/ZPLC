@@ -21,6 +21,29 @@ inicio. No se usa ningún certificado de pago. No use ZPLC para controlar
 maquinaria: [Seguridad y limitaciones](../safety-and-limitations.md).
 :::
 
+## Descarga
+
+Todo instalador es un archivo de una [versión de GitHub](https://github.com/eduardojvieira/ZPLC/releases),
+que es el único canal que existe hoy. Busque la línea de su sistema, compruebe el
+archivo contra `SHA256SUMS` ([Verificar la descarga](#verificar-la-descarga)) y
+ábralo:
+
+- **Windows:** el instalador `setup-unsigned.exe`, o el archivo
+  `portable-unsigned.exe`. No está firmado: Windows muestra **Windows protected
+  your PC**; elija **More info** y luego **Run anyway**. Donde Smart App Control
+  está activado, bloquea el archivo y no ofrece ninguna excepción.
+- **macOS:** el `.dmg`, o el `.zip`, para Apple silicon (`arm64`) o Intel (`x64`).
+  La aplicación está firmada solo ad hoc y no está notarizada, porque la
+  notarización necesita una cuenta de Apple de pago que este proyecto no usa:
+  macOS indica que no pudo verificar la aplicación; elija **Done** y luego **System
+  Settings**, **Privacy & Security**, **Open Anyway**.
+- **Linux:** el `.deb` (Debian, Ubuntu) o el `.rpm` (Fedora), para `x64` o
+  `arm64`; el AppImage solo cuando ninguno sirve. No están firmados y nada le
+  pregunta, así que la suma de verificación es su comprobación. Los paquetes
+  instalan la regla udev de las placas; el AppImage necesita FUSE 2.
+
+Los pasos de cada sistema están en [Primer inicio](#primer-inicio).
+
 ## Canales
 
 | Canal | Estado | Qué es |
@@ -47,7 +70,7 @@ procedencia de compilación, que puede comprobar como se muestra [más abajo](#v
 Las notas de cada versión enumeran el estado de firma de cada archivo, y lo dicen
 cuando una comprobación de esa ejecución no pasó.
 
-## Descarga
+## Archivos de una versión
 
 Abra la [página de versiones](https://github.com/eduardojvieira/ZPLC/releases) y
 elija una versión cuyo nombre empiece por `ZPLC v2.0`. Mientras la 2.0 sea una
@@ -114,7 +137,7 @@ inicio.
 ### macOS
 
 1. Abra el DMG, arrastre **ZPLC IDE** a Aplicaciones y ábralo.
-2. macOS indica que no pudo verificar la aplicación. Elija **Done**, no **Move to Trash**.
+2. macOS indica que no pudo verificar la aplicación, porque no está notarizada: la notarización necesita una membresía de pago del Apple Developer Program, y este proyecto no usa ningún servicio de pago. Elija **Done**, no **Move to Trash**.
 3. Abra **System Settings** y luego **Privacy & Security**. En la sección **Security**, elija **Open Anyway** junto al mensaje de ZPLC IDE, confirme e ingrese su contraseña. El botón queda disponible durante aproximadamente una hora después del intento fallido. Consulte las [instrucciones de Apple](https://support.apple.com/guide/mac-help/open-a-mac-app-from-an-unknown-developer-mh40616/mac).
 
 Si macOS informa que la aplicación está dañada y ofrece solo **Move to Trash**, la

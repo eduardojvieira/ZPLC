@@ -20,6 +20,29 @@ systems ask you to confirm before the first launch. No paid certificate is used.
 Do not use ZPLC to control machinery: [Safety and limitations](../safety-and-limitations.md).
 :::
 
+## Download
+
+Every installer is a file of a [GitHub release](https://github.com/eduardojvieira/ZPLC/releases),
+which is the only channel that exists today. Find the line of your system, check
+the file against `SHA256SUMS` ([Verify the download](#verify-the-download)) and
+open it:
+
+- **Windows:** the `setup-unsigned.exe` installer, or the `portable-unsigned.exe`
+  file. It is unsigned: Windows shows **Windows protected your PC**; choose **More
+  info**, then **Run anyway**. Where Smart App Control is on, it blocks the file
+  and offers no override.
+- **macOS:** the `.dmg`, or the `.zip`, for Apple silicon (`arm64`) or Intel
+  (`x64`). The app is signed only ad hoc and is not notarized, because
+  notarization needs a paid Apple account that this project does not use: macOS
+  says it could not verify the app; choose **Done**, then **System Settings**,
+  **Privacy & Security**, **Open Anyway**.
+- **Linux:** the `.deb` (Debian, Ubuntu) or the `.rpm` (Fedora), for `x64` or
+  `arm64`; the AppImage only when neither fits. They are unsigned and nothing asks
+  you, so the checksum is your check. The packages install the udev rule for the
+  boards; the AppImage needs FUSE 2.
+
+The steps of each system are under [First launch](#first-launch).
+
 ## Channels
 
 | Channel | State | What it is |
@@ -45,7 +68,7 @@ you can check as shown [below](#verify-the-download). The notes of every release
 list the signing state of each file, and say so when a check of that run did not
 pass.
 
-## Download
+## Files of a release
 
 Open the [releases page](https://github.com/eduardojvieira/ZPLC/releases) and
 choose a release whose name starts with `ZPLC v2.0`. While 2.0 is a prerelease,
@@ -111,7 +134,7 @@ neither changes what Windows or macOS ask you at the first launch.
 ### macOS
 
 1. Open the DMG, drag **ZPLC IDE** to Applications and open it.
-2. macOS says it could not verify the app. Choose **Done**, not **Move to Trash**.
+2. macOS says it could not verify the app, because the app is not notarized: notarization needs a paid Apple Developer Program membership, and this project uses no paid service. Choose **Done**, not **Move to Trash**.
 3. Open **System Settings**, then **Privacy & Security**. In the **Security** section, choose **Open Anyway** next to the ZPLC IDE message, confirm, and enter your password. The button stays available for about an hour after the failed attempt. See [Apple's instructions](https://support.apple.com/guide/mac-help/open-a-mac-app-from-an-unknown-developer-mh40616/mac).
 
 If macOS reports that the app is damaged and offers only **Move to Trash**, the

@@ -3,7 +3,7 @@
 // A page of this kind is true only while the release configuration, the board manifest and the limits of the source say
 // what it says, so each test reads the thing the page is about and compares: the installers the build produces, the
 // boards and levels of the manifest (through the library that derives them), and the numbers of the generated references.
-import { readFileSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'bun:test';
 
@@ -72,7 +72,7 @@ describe('install page: built from the channels and installers that exist today 
     const [english, spanish] = page.map(([, content]) => headings(content));
     expect(english!.length).toBe(spanish!.length);
     expect(english!.map((heading) => heading.split(' ')[0])).toEqual(spanish!.map((heading) => heading.split(' ')[0]));
-    for (const wanted of ['2 Channels', '2 Download', '2 Verify the download', '2 First launch', '3 Windows', '3 macOS', '3 Linux', '2 Linux: serial port access', '2 Troubleshooting']) {
+    for (const wanted of ['2 Download', '2 Channels', '2 Files of a release', '2 Verify the download', '2 First launch', '3 Windows', '3 macOS', '3 Linux', '2 Linux: serial port access', '2 Troubleshooting']) {
       expect(english).toContain(wanted);
     }
     for (const [path, content] of page) {
@@ -104,11 +104,70 @@ describe('install page: built from the channels and installers that exist today 
     }
   });
 
+  it('opens with a Download section: one line per system with its first-run note, and no channel that does not exist (REL-028)', () => {
+    const sections = (content: string) => content.split(/\n(?=## )/).filter((section) => section.startsWith('## '));
+    // a list item is its line and the indented lines that continue it
+    const download = (content: string): string[] => {
+      const items: string[] = [];
+      for (const line of sections(content)[0]!.split('\n')) {
+        if (line.startsWith('- **')) items.push(line);
+        else if (/^\s+\S/.test(line) && items.length > 0) items[items.length - 1] += ` ${line.trim()}`;
+      }
+      return items;
+    };
+    const documents: Array<[string, string, string[]]> = [
+      ['README.md', text('README.md'), ['Windows', 'macOS', 'Linux']],
+      [`${EN}/getting-started/install.md`, text(`${EN}/getting-started/install.md`), ['Windows', 'macOS', 'Linux']],
+      [`${ES}/getting-started/install.md`, text(`${ES}/getting-started/install.md`), ['Windows', 'macOS', 'Linux']],
+    ];
+    for (const [path, content, systems] of documents) {
+      const first = sections(content)[0]!;
+      expect({ path, heading: first.split('\n')[0] }).toEqual({ path, heading: path === 'README.md' || path.startsWith(EN) ? '## Download' : '## Descarga' });
+      const lines = download(content);
+      expect({ path, systems: lines.map((line) => /^- \*\*(\w+):\*\*/.exec(line)?.[1]) }).toEqual({ path, systems });
+      // each line says what the system asks the first time: unsigned, or not notarized, with the step
+      expect(lines[0]).toMatch(/Run anyway/);
+      expect(lines[1]).toMatch(/Open Anyway/);
+      expect(lines[1]).toMatch(/notariz|notariz/i);
+      expect(lines[2]).toMatch(/checksum|suma de verificación/i);
+      for (const channel of ['Homebrew', 'winget', 'Microsoft Store', 'Arch User', 'AUR']) {
+        expect({ path, channel, offered: first.includes(channel) }).toEqual({ path, channel, offered: false });
+      }
+    }
+  });
+
+  it('says why the macOS app is not notarized, and the first-run steps in the order the system shows them (REL-005)', () => {
+    for (const [path, content] of page) {
+      const mac = content.slice(content.indexOf('### macOS'), content.indexOf('### Linux'));
+      const order = ['Done', 'System Settings', 'Privacy & Security', 'Open Anyway'].map((step) => mac.indexOf(step));
+      expect({ path, order: order.every((position, index) => position > -1 && (index === 0 || position > order[index - 1]!)) }).toEqual({ path, order: true });
+      expect({ path, why: /paid/i.test(mac) || /de pago/i.test(mac) }).toEqual({ path, why: true });
+      expect({ path, notarized: /not notarized|no está notarizada/i.test(mac) }).toEqual({ path, notarized: true });
+    }
+  });
+
   it('is the page that the first-run steps of the release checklist and the getting started page point to', () => {
     const [english, spanish] = [text(`${EN}/getting-started/index.md`), text(`${ES}/getting-started/index.md`)];
     expect(english).toContain('./install.md');
     expect(spanish).toContain('./install.md');
     expect(english).not.toContain('## Open an unsigned installer');
+  });
+});
+
+describe('no curl | sh installer is recommended or offered (REL-006)', () => {
+  const PIPE = /\b(?:curl|wget|iwr|irm|Invoke-WebRequest|Invoke-RestMethod)\b[^\n]*\|\s*(?:sudo\s+)?(?:ba|z)?sh\b|\b(?:iwr|irm|Invoke-WebRequest|Invoke-RestMethod)\b[^\n]*\|\s*iex\b/i;
+
+  it('is not in the README, the checklist or any page of the documentation, in either language', () => {
+    const files = ['README.md', 'RELEASING.md', 'CHANGELOG.md', ...markdownFiles(ROOT, EN), ...markdownFiles(ROOT, ES)];
+    const found = files.filter((file) => text(file).split('\n').some((line) => PIPE.test(line)));
+    expect(found).toEqual([]);
+  });
+
+  it('is not a script of the repository: no install script exists for a release to offer', () => {
+    for (const folder of ['.', 'scripts', 'scripts/release', 'packages/zplc-ide/scripts', 'tools']) {
+      const names = readdirSync(join(ROOT, folder)).filter((name) => /^(?:install|get|setup)[-_.a-z0-9]*\.(?:sh|ps1|bash)$/i.test(name));
+      expect({ folder, names }).toEqual({ folder, names: [] });
+    }
   });
 });
 

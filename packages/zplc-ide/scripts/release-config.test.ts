@@ -105,6 +105,25 @@ describe('release.yml macOS build jobs prove the signature on both architectures
   });
 });
 
+describe('the DMG and the ZIP are published for each macOS architecture (REL-005)', () => {
+  const job = workflow.jobs['build-macos']!;
+  const uploads = job.steps.find((step) => step.uses?.startsWith('actions/upload-artifact@'))!.with!.path!.split('\n').map((line) => line.trim());
+  const attested = workflow.jobs['prepare-release-evidence-macos']!.steps.filter((step) => step.uses?.startsWith('actions/attest@')).flatMap((step) => step.with!['subject-path']!.split('\n').map((line) => line.trim()));
+
+  it('builds both formats on a runner of each architecture', () => {
+    expect([...builder.mac.target].sort()).toEqual(['dmg', 'zip']);
+    expect(job.strategy!.matrix.include.map((entry) => entry.arch).sort()).toEqual(['arm64', 'x64']);
+  });
+
+  it('uploads, checksums and attests both file types of both architectures', () => {
+    expect(uploads).toEqual(expect.arrayContaining(['packages/zplc-ide/dist-electron/*.dmg', 'packages/zplc-ide/dist-electron/*.zip']));
+    expect(attested).toEqual(expect.arrayContaining(['release/*.dmg', 'release/*.zip']));
+    // one artifact per architecture, so a build of one does not replace the files of the other
+    const upload = job.steps.find((step) => step.uses?.startsWith('actions/upload-artifact@'))!;
+    expect(upload.with!.name).toBe('macos-${{ matrix.arch }}');
+  });
+});
+
 describe('Linux packages use electron-builder defaults and are installed in clean containers (REL-011)', () => {
   const job = workflow.jobs['build-linux']!;
   const script = new URL('./check-linux-package.sh', import.meta.url).pathname;
