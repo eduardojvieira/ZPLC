@@ -3148,10 +3148,126 @@ static int cmd_config_get(const struct shell *sh, size_t argc, char **argv) {
   return 0;
 }
 
+/* The keys of `zplc config set`: how the value is read, and the setter of zplc_config.c that stores it. One row per
+ * key, so that the command is a lookup and the setters keep their own rules (azure_sas_expiry_s clamps, the text
+ * setters truncate). The value of a flag is not read the same way by every key: dhcp is true for "true" and "1",
+ * the others also for "on", and any other text is false without an error. */
+typedef enum {
+  CONFIG_KEY_TEXT,
+  CONFIG_KEY_FLAG,
+  CONFIG_KEY_FLAG_ON,
+  CONFIG_KEY_U8,
+  CONFIG_KEY_U16,
+  CONFIG_KEY_U32,
+  CONFIG_KEY_PARITY,
+  CONFIG_KEY_PROFILE,
+  CONFIG_KEY_PROTOCOL,
+  CONFIG_KEY_TRANSPORT,
+  CONFIG_KEY_QOS,
+  CONFIG_KEY_SECURITY,
+} config_key_kind_t;
+
+struct config_key {
+  const char *name;
+  uint8_t kind;
+  union {
+    void (*text)(const char *);
+    void (*flag)(bool);
+    void (*u8)(uint8_t);
+    void (*u16)(uint16_t);
+    void (*u32)(uint32_t);
+    void (*parity)(zplc_modbus_parity_t);
+    void (*profile)(zplc_mqtt_profile_t);
+    void (*protocol)(zplc_mqtt_protocol_t);
+    void (*transport)(zplc_mqtt_transport_t);
+    void (*qos)(zplc_mqtt_qos_t);
+    void (*security)(zplc_mqtt_security_t);
+  } set;
+};
+
+#define CONFIG_KEY(key, kind, member, setter) {key, kind, {.member = setter}}
+#define CONFIG_TEXT(key, setter) CONFIG_KEY(key, CONFIG_KEY_TEXT, text, setter)
+#define CONFIG_FLAG(key, setter) CONFIG_KEY(key, CONFIG_KEY_FLAG, flag, setter)
+#define CONFIG_FLAG_ON(key, setter) CONFIG_KEY(key, CONFIG_KEY_FLAG_ON, flag, setter)
+
+static const struct config_key config_keys[] = {
+    CONFIG_TEXT("hostname", zplc_config_set_hostname),
+    CONFIG_FLAG("dhcp", zplc_config_set_dhcp),
+    CONFIG_TEXT("ip", zplc_config_set_ip),
+    CONFIG_TEXT("wifi_ssid", zplc_config_set_wifi_ssid),
+    CONFIG_TEXT("wifi_pass", zplc_config_set_wifi_pass),
+    CONFIG_KEY("wifi_security", CONFIG_KEY_U8, u8, zplc_config_set_wifi_security),
+    CONFIG_FLAG_ON("ntp_enabled", zplc_config_set_ntp_enabled),
+    CONFIG_TEXT("ntp_server", zplc_config_set_ntp_server),
+    CONFIG_KEY("modbus_id", CONFIG_KEY_U16, u16, zplc_config_set_modbus_id),
+    CONFIG_FLAG_ON("modbus_tcp_enabled", zplc_config_set_modbus_tcp_enabled),
+    CONFIG_KEY("modbus_tcp_port", CONFIG_KEY_U16, u16, zplc_config_set_modbus_tcp_port),
+    CONFIG_FLAG_ON("modbus_rtu_enabled", zplc_config_set_modbus_rtu_enabled),
+    CONFIG_KEY("modbus_rtu_baud", CONFIG_KEY_U32, u32, zplc_config_set_modbus_rtu_baud),
+    CONFIG_KEY("modbus_rtu_parity", CONFIG_KEY_PARITY, parity, zplc_config_set_modbus_rtu_parity),
+    CONFIG_FLAG_ON("modbus_rtu_client_enabled", zplc_config_set_modbus_rtu_client_enabled),
+    CONFIG_KEY("modbus_rtu_client_slave_id", CONFIG_KEY_U8, u8, zplc_config_set_modbus_rtu_client_slave_id),
+    CONFIG_KEY("modbus_rtu_client_poll_ms", CONFIG_KEY_U32, u32, zplc_config_set_modbus_rtu_client_poll_ms),
+    CONFIG_FLAG_ON("modbus_tcp_client_enabled", zplc_config_set_modbus_tcp_client_enabled),
+    CONFIG_TEXT("modbus_tcp_client_host", zplc_config_set_modbus_tcp_client_host),
+    CONFIG_KEY("modbus_tcp_client_port", CONFIG_KEY_U16, u16, zplc_config_set_modbus_tcp_client_port),
+    CONFIG_KEY("modbus_tcp_client_unit_id", CONFIG_KEY_U8, u8, zplc_config_set_modbus_tcp_client_unit_id),
+    CONFIG_KEY("modbus_tcp_client_poll_ms", CONFIG_KEY_U32, u32, zplc_config_set_modbus_tcp_client_poll_ms),
+    CONFIG_KEY("modbus_tcp_client_timeout_ms", CONFIG_KEY_U32, u32, zplc_config_set_modbus_tcp_client_timeout_ms),
+    CONFIG_FLAG_ON("mqtt_enabled", zplc_config_set_mqtt_enabled),
+    CONFIG_TEXT("mqtt_broker", zplc_config_set_mqtt_broker),
+    CONFIG_TEXT("mqtt_client_id", zplc_config_set_mqtt_client_id),
+    CONFIG_TEXT("mqtt_group_id", zplc_config_set_mqtt_group_id),
+    CONFIG_TEXT("mqtt_topic_namespace", zplc_config_set_mqtt_topic_namespace),
+    CONFIG_KEY("mqtt_profile", CONFIG_KEY_PROFILE, profile, zplc_config_set_mqtt_profile),
+    CONFIG_KEY("mqtt_protocol", CONFIG_KEY_PROTOCOL, protocol, zplc_config_set_mqtt_protocol),
+    CONFIG_KEY("mqtt_transport", CONFIG_KEY_TRANSPORT, transport, zplc_config_set_mqtt_transport),
+    CONFIG_KEY("mqtt_port", CONFIG_KEY_U16, u16, zplc_config_set_mqtt_port),
+    CONFIG_TEXT("mqtt_username", zplc_config_set_mqtt_username),
+    CONFIG_TEXT("mqtt_password", zplc_config_set_mqtt_password),
+    CONFIG_KEY("mqtt_keepalive", CONFIG_KEY_U16, u16, zplc_config_set_mqtt_keepalive_sec),
+    CONFIG_KEY("mqtt_publish_interval", CONFIG_KEY_U32, u32, zplc_config_set_mqtt_publish_interval_ms),
+    CONFIG_KEY("mqtt_publish_qos", CONFIG_KEY_QOS, qos, zplc_config_set_mqtt_publish_qos),
+    CONFIG_KEY("mqtt_subscribe_qos", CONFIG_KEY_QOS, qos, zplc_config_set_mqtt_subscribe_qos),
+    CONFIG_FLAG_ON("mqtt_publish_retain", zplc_config_set_mqtt_publish_retain),
+    CONFIG_FLAG_ON("mqtt_clean_session", zplc_config_set_mqtt_clean_session),
+    CONFIG_KEY("mqtt_session_expiry", CONFIG_KEY_U32, u32, zplc_config_set_mqtt_session_expiry_sec),
+    CONFIG_KEY("mqtt_security", CONFIG_KEY_SECURITY, security, zplc_config_set_mqtt_security),
+    CONFIG_TEXT("mqtt_websocket_path", zplc_config_set_mqtt_websocket_path),
+    CONFIG_TEXT("mqtt_alpn", zplc_config_set_mqtt_alpn),
+    CONFIG_FLAG_ON("mqtt_lwt_enabled", zplc_config_set_mqtt_lwt_enabled),
+    CONFIG_TEXT("mqtt_lwt_topic", zplc_config_set_mqtt_lwt_topic),
+    CONFIG_TEXT("mqtt_lwt_payload", zplc_config_set_mqtt_lwt_payload),
+    CONFIG_KEY("mqtt_lwt_qos", CONFIG_KEY_QOS, qos, zplc_config_set_mqtt_lwt_qos),
+    CONFIG_FLAG_ON("mqtt_lwt_retain", zplc_config_set_mqtt_lwt_retain),
+    CONFIG_TEXT("mqtt_ca_cert_path", zplc_config_set_mqtt_ca_cert_path),
+    CONFIG_TEXT("mqtt_client_cert_path", zplc_config_set_mqtt_client_cert_path),
+    CONFIG_TEXT("mqtt_client_key_path", zplc_config_set_mqtt_client_key_path),
+    CONFIG_TEXT("azure_sas_key", zplc_config_set_azure_sas_key),
+    CONFIG_KEY("azure_sas_expiry_s", CONFIG_KEY_U32, u32, zplc_config_set_azure_sas_expiry_s),
+    CONFIG_FLAG_ON("azure_twin_enabled", zplc_config_set_azure_twin_enabled),
+    CONFIG_FLAG_ON("azure_direct_methods_enabled", zplc_config_set_azure_direct_methods_enabled),
+    CONFIG_FLAG_ON("azure_c2d_enabled", zplc_config_set_azure_c2d_enabled),
+    CONFIG_FLAG_ON("azure_dps_enabled", zplc_config_set_azure_dps_enabled),
+    CONFIG_TEXT("azure_dps_id_scope", zplc_config_set_azure_dps_id_scope),
+    CONFIG_TEXT("azure_dps_registration_id", zplc_config_set_azure_dps_registration_id),
+    CONFIG_TEXT("azure_dps_endpoint", zplc_config_set_azure_dps_endpoint),
+    CONFIG_TEXT("azure_event_grid_topic", zplc_config_set_azure_event_grid_topic),
+    CONFIG_TEXT("azure_event_grid_source", zplc_config_set_azure_event_grid_source),
+    CONFIG_TEXT("azure_event_grid_event_type", zplc_config_set_azure_event_grid_event_type),
+    CONFIG_FLAG_ON("aws_shadow_enabled", zplc_config_set_aws_shadow_enabled),
+    CONFIG_FLAG_ON("aws_jobs_enabled", zplc_config_set_aws_jobs_enabled),
+    CONFIG_FLAG_ON("aws_fleet_enabled", zplc_config_set_aws_fleet_enabled),
+    CONFIG_TEXT("aws_fleet_template_name", zplc_config_set_aws_fleet_template_name),
+    CONFIG_TEXT("aws_claim_cert_path", zplc_config_set_aws_claim_cert_path),
+    CONFIG_TEXT("aws_claim_key_path", zplc_config_set_aws_claim_key_path),
+};
+
 static int cmd_config_set(const struct shell *sh, size_t argc, char **argv) {
+  /* The shell asks for the key and the value (SHELL_CMD_ARG, 3 mandatory) before it calls this: the check guards a
+   * direct call, and the keys are the table above. */
   if (argc < 3) {
     shell_error(sh, "ERROR: Usage: zplc config set <key> <value>");
-    shell_print(sh, "Keys: hostname, dhcp, ip, wifi_ssid, wifi_pass, wifi_security, ntp_enabled, ntp_server, modbus_id, modbus_tcp_enabled, modbus_tcp_port, modbus_rtu_enabled, modbus_rtu_baud, modbus_rtu_parity, modbus_rtu_client_enabled, modbus_rtu_client_slave_id, modbus_rtu_client_poll_ms, modbus_tcp_client_enabled, modbus_tcp_client_host, modbus_tcp_client_port, modbus_tcp_client_unit_id, modbus_tcp_client_poll_ms, modbus_tcp_client_timeout_ms, mqtt_enabled, mqtt_broker, mqtt_client_id, mqtt_group_id, mqtt_topic_namespace, mqtt_profile, mqtt_protocol, mqtt_transport, mqtt_port, mqtt_username, mqtt_password, mqtt_keepalive, mqtt_publish_interval, mqtt_publish_qos, mqtt_subscribe_qos, mqtt_publish_retain, mqtt_clean_session, mqtt_session_expiry, mqtt_security, mqtt_websocket_path, mqtt_alpn, mqtt_lwt_enabled, mqtt_lwt_topic, mqtt_lwt_payload, mqtt_lwt_qos, mqtt_lwt_retain, mqtt_ca_cert_path, mqtt_client_cert_path, mqtt_client_key_path, azure_sas_key, azure_sas_expiry_s, azure_twin_enabled, azure_direct_methods_enabled, azure_c2d_enabled, azure_dps_enabled, azure_dps_id_scope, azure_dps_registration_id, azure_dps_endpoint, azure_event_grid_topic, azure_event_grid_source, azure_event_grid_event_type, aws_shadow_enabled, aws_jobs_enabled, aws_fleet_enabled, aws_fleet_template_name, aws_claim_cert_path, aws_claim_key_path");
     return -EINVAL;
   }
 
@@ -3173,89 +3289,53 @@ static int cmd_config_set(const struct shell *sh, size_t argc, char **argv) {
     return -EINVAL;
   }
 
-  if (strcmp(key, "hostname") == 0) {
-    zplc_config_set_hostname(val);
-  } else if (strcmp(key, "dhcp") == 0) {
-    zplc_config_set_dhcp(strcmp(val, "true") == 0 || strcmp(val, "1") == 0);
-  } else if (strcmp(key, "ip") == 0) {
-    zplc_config_set_ip(val);
-  } else if (strcmp(key, "wifi_ssid") == 0) {
-    zplc_config_set_wifi_ssid(val);
-  } else if (strcmp(key, "wifi_pass") == 0) {
-    zplc_config_set_wifi_pass(val);
-  } else if (strcmp(key, "wifi_security") == 0) {
-    zplc_config_set_wifi_security((uint8_t)number);
-  } else if (strcmp(key, "ntp_enabled") == 0) {
-    zplc_config_set_ntp_enabled(strcmp(val, "true") == 0 || strcmp(val, "1") == 0 || strcmp(val, "on") == 0);
-  } else if (strcmp(key, "ntp_server") == 0) {
-    zplc_config_set_ntp_server(val);
-  } else if (strcmp(key, "modbus_id") == 0) {
-    zplc_config_set_modbus_id((uint16_t)number);
-  } else if (strcmp(key, "modbus_tcp_enabled") == 0) {
-    zplc_config_set_modbus_tcp_enabled(strcmp(val, "true") == 0 || strcmp(val, "1") == 0 || strcmp(val, "on") == 0);
-  } else if (strcmp(key, "modbus_tcp_port") == 0) {
-    zplc_config_set_modbus_tcp_port((uint16_t)number);
-  } else if (strcmp(key, "modbus_rtu_enabled") == 0) {
-    zplc_config_set_modbus_rtu_enabled(strcmp(val, "true") == 0 || strcmp(val, "1") == 0 || strcmp(val, "on") == 0);
-  } else if (strcmp(key, "modbus_rtu_baud") == 0) {
-    zplc_config_set_modbus_rtu_baud(number);
-  } else if (strcmp(key, "modbus_rtu_parity") == 0) {
-    zplc_config_set_modbus_rtu_parity((zplc_modbus_parity_t)number);
-  } else if (strcmp(key, "modbus_rtu_client_enabled") == 0) {
-    zplc_config_set_modbus_rtu_client_enabled(strcmp(val, "true") == 0 || strcmp(val, "1") == 0 || strcmp(val, "on") == 0);
-  } else if (strcmp(key, "modbus_rtu_client_slave_id") == 0) {
-    zplc_config_set_modbus_rtu_client_slave_id((uint8_t)number);
-  } else if (strcmp(key, "modbus_rtu_client_poll_ms") == 0) {
-    zplc_config_set_modbus_rtu_client_poll_ms(number);
-  } else if (strcmp(key, "modbus_tcp_client_enabled") == 0) {
-    zplc_config_set_modbus_tcp_client_enabled(strcmp(val, "true") == 0 || strcmp(val, "1") == 0 || strcmp(val, "on") == 0);
-  } else if (strcmp(key, "modbus_tcp_client_host") == 0) {
-    zplc_config_set_modbus_tcp_client_host(val);
-  } else if (strcmp(key, "modbus_tcp_client_port") == 0) {
-    zplc_config_set_modbus_tcp_client_port((uint16_t)number);
-  } else if (strcmp(key, "modbus_tcp_client_unit_id") == 0) {
-    zplc_config_set_modbus_tcp_client_unit_id((uint8_t)number);
-  } else if (strcmp(key, "modbus_tcp_client_poll_ms") == 0) {
-    zplc_config_set_modbus_tcp_client_poll_ms(number);
-  } else if (strcmp(key, "modbus_tcp_client_timeout_ms") == 0) {
-    zplc_config_set_modbus_tcp_client_timeout_ms(number);
-  } else if (strcmp(key, "mqtt_broker") == 0) {
-    zplc_config_set_mqtt_broker(val);
-  } else if (strcmp(key, "mqtt_client_id") == 0) {
-    zplc_config_set_mqtt_client_id(val);
-  } else if (strcmp(key, "mqtt_group_id") == 0) {
-    zplc_config_set_mqtt_group_id(val);
-  } else if (strcmp(key, "mqtt_topic_namespace") == 0) {
-    zplc_config_set_mqtt_topic_namespace(val);
-  } else if (strcmp(key, "mqtt_profile") == 0) {
-    zplc_config_set_mqtt_profile((zplc_mqtt_profile_t)number);
-  } else if (strcmp(key, "mqtt_protocol") == 0) {
-    zplc_config_set_mqtt_protocol((zplc_mqtt_protocol_t)number);
-  } else if (strcmp(key, "mqtt_transport") == 0) {
-    zplc_config_set_mqtt_transport((zplc_mqtt_transport_t)number);
-  } else if (strcmp(key, "mqtt_port") == 0) {
-    zplc_config_set_mqtt_port((uint16_t)number);
-  } else if (strcmp(key, "mqtt_enabled") == 0) {
-    zplc_config_set_mqtt_enabled(strcmp(val, "true") == 0 || strcmp(val, "1") == 0 || strcmp(val, "on") == 0);
-  } else if (strcmp(key, "mqtt_username") == 0) {
-    zplc_config_set_mqtt_username(val);
-  } else if (strcmp(key, "mqtt_password") == 0) {
-    zplc_config_set_mqtt_password(val);
-  } else if (strcmp(key, "mqtt_keepalive") == 0) {
-    zplc_config_set_mqtt_keepalive_sec((uint16_t)number);
-  } else if (strcmp(key, "mqtt_publish_interval") == 0) {
-    zplc_config_set_mqtt_publish_interval_ms(number);
-  } else if (strcmp(key, "mqtt_publish_qos") == 0) {
-    zplc_config_set_mqtt_publish_qos((zplc_mqtt_qos_t)number);
-  } else if (strcmp(key, "mqtt_subscribe_qos") == 0) {
-    zplc_config_set_mqtt_subscribe_qos((zplc_mqtt_qos_t)number);
-  } else if (strcmp(key, "mqtt_publish_retain") == 0) {
-    zplc_config_set_mqtt_publish_retain(strcmp(val, "true") == 0 || strcmp(val, "1") == 0 || strcmp(val, "on") == 0);
-  } else if (strcmp(key, "mqtt_clean_session") == 0) {
-    zplc_config_set_mqtt_clean_session(strcmp(val, "true") == 0 || strcmp(val, "1") == 0 || strcmp(val, "on") == 0);
-  } else if (strcmp(key, "mqtt_session_expiry") == 0) {
-    zplc_config_set_mqtt_session_expiry_sec(number);
-  } else if (strcmp(key, "mqtt_security") == 0) {
+  const struct config_key *entry = NULL;
+  for (size_t i = 0U; i < ARRAY_SIZE(config_keys); i++) {
+    if (strcmp(key, config_keys[i].name) == 0) {
+      entry = &config_keys[i];
+      break;
+    }
+  }
+  if (entry == NULL) {
+    shell_error(sh, "ERROR: Unknown config key: %s", key);
+    return -EINVAL;
+  }
+
+  switch (entry->kind) {
+  case CONFIG_KEY_TEXT:
+    entry->set.text(val);
+    break;
+  case CONFIG_KEY_FLAG_ON:
+    entry->set.flag(strcmp(val, "true") == 0 || strcmp(val, "1") == 0 || strcmp(val, "on") == 0);
+    break;
+  case CONFIG_KEY_FLAG:
+    entry->set.flag(strcmp(val, "true") == 0 || strcmp(val, "1") == 0);
+    break;
+  case CONFIG_KEY_U8:
+    entry->set.u8((uint8_t)number);
+    break;
+  case CONFIG_KEY_U16:
+    entry->set.u16((uint16_t)number);
+    break;
+  case CONFIG_KEY_U32:
+    entry->set.u32(number);
+    break;
+  case CONFIG_KEY_PARITY:
+    entry->set.parity((zplc_modbus_parity_t)number);
+    break;
+  case CONFIG_KEY_PROFILE:
+    entry->set.profile((zplc_mqtt_profile_t)number);
+    break;
+  case CONFIG_KEY_PROTOCOL:
+    entry->set.protocol((zplc_mqtt_protocol_t)number);
+    break;
+  case CONFIG_KEY_TRANSPORT:
+    entry->set.transport((zplc_mqtt_transport_t)number);
+    break;
+  case CONFIG_KEY_QOS:
+    entry->set.qos((zplc_mqtt_qos_t)number);
+    break;
+  case CONFIG_KEY_SECURITY:
     if (number == (uint32_t)ZPLC_MQTT_SECURITY_TLS_NO_VERIFY) {
 #if defined(CONFIG_ZPLC_MQTT_ALLOW_INSECURE_TLS)
       /* COM-014: the opt-in is explicit, and it is not silent. */
@@ -3269,65 +3349,9 @@ static int cmd_config_set(const struct shell *sh, size_t argc, char **argv) {
       return -EPERM;
 #endif
     }
-    zplc_config_set_mqtt_security((zplc_mqtt_security_t)number);
-  } else if (strcmp(key, "mqtt_websocket_path") == 0) {
-    zplc_config_set_mqtt_websocket_path(val);
-  } else if (strcmp(key, "mqtt_alpn") == 0) {
-    zplc_config_set_mqtt_alpn(val);
-  } else if (strcmp(key, "mqtt_lwt_enabled") == 0) {
-    zplc_config_set_mqtt_lwt_enabled(strcmp(val, "true") == 0 || strcmp(val, "1") == 0 || strcmp(val, "on") == 0);
-  } else if (strcmp(key, "mqtt_lwt_topic") == 0) {
-    zplc_config_set_mqtt_lwt_topic(val);
-  } else if (strcmp(key, "mqtt_lwt_payload") == 0) {
-    zplc_config_set_mqtt_lwt_payload(val);
-  } else if (strcmp(key, "mqtt_lwt_qos") == 0) {
-    zplc_config_set_mqtt_lwt_qos((zplc_mqtt_qos_t)number);
-  } else if (strcmp(key, "mqtt_lwt_retain") == 0) {
-    zplc_config_set_mqtt_lwt_retain(strcmp(val, "true") == 0 || strcmp(val, "1") == 0 || strcmp(val, "on") == 0);
-  } else if (strcmp(key, "mqtt_ca_cert_path") == 0) {
-    zplc_config_set_mqtt_ca_cert_path(val);
-  } else if (strcmp(key, "mqtt_client_cert_path") == 0) {
-    zplc_config_set_mqtt_client_cert_path(val);
-  } else if (strcmp(key, "mqtt_client_key_path") == 0) {
-    zplc_config_set_mqtt_client_key_path(val);
-  } else if (strcmp(key, "azure_sas_key") == 0) {
-    zplc_config_set_azure_sas_key(val);
-  } else if (strcmp(key, "azure_sas_expiry_s") == 0) {
-    zplc_config_set_azure_sas_expiry_s(number);
-  } else if (strcmp(key, "azure_twin_enabled") == 0) {
-    zplc_config_set_azure_twin_enabled(strcmp(val, "true") == 0 || strcmp(val, "1") == 0 || strcmp(val, "on") == 0);
-  } else if (strcmp(key, "azure_direct_methods_enabled") == 0) {
-    zplc_config_set_azure_direct_methods_enabled(strcmp(val, "true") == 0 || strcmp(val, "1") == 0 || strcmp(val, "on") == 0);
-  } else if (strcmp(key, "azure_c2d_enabled") == 0) {
-    zplc_config_set_azure_c2d_enabled(strcmp(val, "true") == 0 || strcmp(val, "1") == 0 || strcmp(val, "on") == 0);
-  } else if (strcmp(key, "azure_dps_enabled") == 0) {
-    zplc_config_set_azure_dps_enabled(strcmp(val, "true") == 0 || strcmp(val, "1") == 0 || strcmp(val, "on") == 0);
-  } else if (strcmp(key, "azure_dps_id_scope") == 0) {
-    zplc_config_set_azure_dps_id_scope(val);
-  } else if (strcmp(key, "azure_dps_registration_id") == 0) {
-    zplc_config_set_azure_dps_registration_id(val);
-  } else if (strcmp(key, "azure_dps_endpoint") == 0) {
-    zplc_config_set_azure_dps_endpoint(val);
-  } else if (strcmp(key, "azure_event_grid_topic") == 0) {
-    zplc_config_set_azure_event_grid_topic(val);
-  } else if (strcmp(key, "azure_event_grid_source") == 0) {
-    zplc_config_set_azure_event_grid_source(val);
-  } else if (strcmp(key, "azure_event_grid_event_type") == 0) {
-    zplc_config_set_azure_event_grid_event_type(val);
-  } else if (strcmp(key, "aws_shadow_enabled") == 0) {
-    zplc_config_set_aws_shadow_enabled(strcmp(val, "true") == 0 || strcmp(val, "1") == 0 || strcmp(val, "on") == 0);
-  } else if (strcmp(key, "aws_jobs_enabled") == 0) {
-    zplc_config_set_aws_jobs_enabled(strcmp(val, "true") == 0 || strcmp(val, "1") == 0 || strcmp(val, "on") == 0);
-  } else if (strcmp(key, "aws_fleet_enabled") == 0) {
-    zplc_config_set_aws_fleet_enabled(strcmp(val, "true") == 0 || strcmp(val, "1") == 0 || strcmp(val, "on") == 0);
-  } else if (strcmp(key, "aws_fleet_template_name") == 0) {
-    zplc_config_set_aws_fleet_template_name(val);
-  } else if (strcmp(key, "aws_claim_cert_path") == 0) {
-    zplc_config_set_aws_claim_cert_path(val);
-  } else if (strcmp(key, "aws_claim_key_path") == 0) {
-    zplc_config_set_aws_claim_key_path(val);
-  } else {
-    shell_error(sh, "ERROR: Unknown config key: %s", key);
+    entry->set.security((zplc_mqtt_security_t)number);
+    break;
+  default:
     return -EINVAL;
   }
 
