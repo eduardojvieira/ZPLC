@@ -52,7 +52,7 @@ export interface Registry {
   schemaVersion: 1;
   rules: Rule[];
   /** Nouns that a number counts, and the truth that the number is held to. */
-  counts: Array<{ id: string; noun: string; truth: 'boards' | 'examples' | 'lessons' | 'functions' | 'function-blocks' | 'languages' }>;
+  counts: Array<{ id: string; noun: string; truth: 'boards' | 'examples' | 'lessons' | 'functions' | 'function-blocks' | 'languages'; requires?: string }>;
 }
 
 export interface Truth {
@@ -188,7 +188,11 @@ export function checkSentence(file: string, line: number, sentence: string, regi
   }
   if (!HISTORICAL.test(sentence)) {
     for (const count of registry.counts) {
-      for (const match of sentence.matchAll(new RegExp(`\\b(\\d+|[A-Za-zéí]+)\\s+(?:[A-Za-z-]+\\s+)?(?:${count.noun})\\b`, 'gi'))) {
+      if (count.requires && !new RegExp(count.requires, 'i').test(sentence)) continue;
+      // "six Zephyr boards", "all seven board profiles", "21 example projects"; "the two boards" is a subset and is not a total
+      const frame = new RegExp(`\\b(\\d+|${Object.keys(NUMBER_WORDS).join('|')})\\s+(?:[\\p{L}-]+\\s+)?(?:${count.noun})\\b`, 'giu');
+      for (const match of sentence.matchAll(frame)) {
+        if (/\b(?:the|these|those|both|of|las|los|esas|esos|estas|estos|del)\s+$/i.test(sentence.slice(0, match.index))) continue;
         const stated = numberOf(match[1]!);
         if (stated === undefined || stated < 2) continue;
         const actual = truth.counts[count.truth];

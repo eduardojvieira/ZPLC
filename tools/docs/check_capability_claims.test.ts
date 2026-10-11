@@ -65,8 +65,12 @@ describe('capability claims: what the public text says ZPLC can do is backed by 
 
   it('holds a number that counts a thing to what the repository has, and a sentence about a release to nothing', () => {
     expect(real.counts.boards).toBeGreaterThanOrEqual(7);
-    expect(ids(`Only ${numberWord(real.counts.boards - 1)} boards cross-build.`)).toEqual([]);
-    expect(ids(`The runtime builds for ${numberWord(real.counts.boards - 1)} Zephyr boards.`)).toEqual(['count-boards']);
+    // a wrong number is wrong in a sentence that limits a capability too
+    expect(ids(`Only ${numberWord(real.counts.boards - 1)} boards cross-build.`)).toEqual(['count-boards']);
+    expect(ids(`The runtime builds for all ${numberWord(real.counts.boards - 1)} Zephyr boards.`)).toEqual(['count-boards']);
+    expect(ids(`The runtime builds for ${numberWord(real.counts.boards)} Zephyr boards.`)).toEqual([]);
+    // a subset is not a total
+    expect(ids('The two boards of the STM32 family use plain TCP.')).toEqual([]);
     expect(ids(`Seis placas tienen un perfil de compilación.`)).toEqual(real.counts.boards === 6 ? [] : ['count-boards']);
     expect(ids('Start from 16 example projects.')).toEqual(['count-examples']);
     expect(ids('Release 2.0.0-rc.3 cross-built the six board profiles.')).toEqual([]);

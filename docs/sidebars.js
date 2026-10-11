@@ -26,6 +26,7 @@ const sidebars = {
         'getting-started/index',
         'getting-started/install',
         'tutorials/blink-without-hardware',
+        'tutorials/first-board',
         'platform-overview/index',
         'reference/capabilities-evidence',
         'safety-and-limitations',

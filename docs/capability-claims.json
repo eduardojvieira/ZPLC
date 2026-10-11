@@ -44,7 +44,7 @@
   ],
   "counts": [
     { "id": "boards", "noun": "boards|board profiles|placas|perfiles de placa", "truth": "boards" },
-    { "id": "examples", "noun": "examples|example projects|ejemplos|proyectos de ejemplo", "truth": "examples" },
+    { "id": "examples", "noun": "examples|example projects|ejemplos|proyectos de ejemplo", "truth": "examples", "requires": "\\b(?:Studio|Welcome|bundled|bundles|start from|ships?|bienvenida|incluye|empiece)\\b" },
     { "id": "lessons", "noun": "lessons|lecciones", "truth": "lessons" },
     { "id": "functions", "noun": "standard functions|library functions|functions in the (?:standard )?library", "truth": "functions" },
     { "id": "function-blocks", "noun": "standard function blocks|library function blocks|function blocks in the (?:standard )?library", "truth": "function-blocks" }

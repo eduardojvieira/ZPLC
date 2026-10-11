@@ -194,3 +194,48 @@ describe('safety page: what ZPLC is not, and limits that the source says (DOC-01
     expect(spanish).toMatch(/No debe controlar maquinaria/i);
   });
 });
+
+// ---------------------------------------------------------------------------------------------------------------------
+// DOC-004
+// ---------------------------------------------------------------------------------------------------------------------
+
+describe('first board page: written from the manifest, and honest that no board has run it (DOC-004, stopgap: the steps have not been executed on a board)', () => {
+  const manifest = JSON.parse(text('firmware/app/boards/boards.json')) as Array<{
+    ide_id: string; zephyr_board: string; build_command: string; io: { channels: Array<{ id: string; address: string; pin: string }> };
+  }>;
+  const levels = JSON.parse(Bun.spawnSync(['python3', '-B', '-c', BOARDS_SCRIPT, ROOT], { stdout: 'pipe' }).stdout.toString()) as Array<{ ide: string; level: string }>;
+  const page = both('tutorials/first-board.md');
+  const boards = ['rpi_pico', 'esp32s3_devkitc'].map((ide) => manifest.find((entry) => entry.ide_id === ide)!);
+
+  it('names the build target, the build command, the first output and its pin of each board as the manifest has them', () => {
+    for (const [path, content] of page) {
+      for (const board of boards) {
+        const output = board.io.channels.find((channel) => channel.id === 'DO0')!;
+        expect({ path, board: board.ide_id, target: content.includes(`\`${board.zephyr_board}\``) }).toEqual({ path, board: board.ide_id, target: true });
+        expect({ path, board: board.ide_id, ide: content.includes(`\`${board.ide_id}\``) }).toEqual({ path, board: board.ide_id, ide: true });
+        expect({ path, board: board.ide_id, output: content.includes(`\`${output.address}\``) && content.includes(output.pin.split(' ')[0]!) }).toEqual({ path, board: board.ide_id, output: true });
+      }
+      expect(content).toContain(boards[0]!.build_command.replace(' --pristine', '').replace('west build ', 'west build '));
+    }
+  });
+
+  it('uses example projects that exist and target the board they are given for', () => {
+    for (const [ide, example] of [['rpi_pico', 'pico_blinky'], ['esp32s3_devkitc', 'esp32s3_blinky']] as const) {
+      const project = JSON.parse(text(`packages/zplc-ide/projects/${example}/zplc.json`)) as { target: { board: string } };
+      expect({ example, board: project.target.board }).toEqual({ example, board: ide });
+      for (const [path, content] of page) expect({ path, example, named: content.includes(`\`${example}\``) }).toEqual({ path, example, named: true });
+    }
+  });
+
+  it('says in a banner that the steps were not executed, for as long as both boards have no hardware record', () => {
+    const levelOf = (ide: string) => levels.find((entry) => entry.ide === ide)!.level;
+    expect([levelOf('rpi_pico'), levelOf('esp32s3_devkitc')]).toEqual(['cross-build', 'cross-build']);
+    const [english, spanish] = page.map(([, content]) => content);
+    expect(english).toMatch(/:::danger Not executed on a board/);
+    expect(spanish).toMatch(/:::danger No ejecutado en una placa/);
+    for (const [path, content] of page) {
+      // no sentence of the page says that a flash or a run worked
+      expect({ path, claims: /\b(?:successfully|successful|exitosamente|con éxito)\b/i.test(content) }).toEqual({ path, claims: false });
+    }
+  });
+});

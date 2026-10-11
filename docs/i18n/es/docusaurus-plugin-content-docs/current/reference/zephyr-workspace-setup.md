@@ -47,8 +47,8 @@ raíz del repositorio. Por ejemplo:
 west build -b rpi_pico/rp2040 firmware/app --pristine
 ```
 
-La página generada de placas es la matriz vigente: contiene los seis profiles,
-targets exactos, comandos de build, niveles de evidencia y cantidad de
+La página generada de placas es la matriz vigente: contiene cada profile del
+manifiesto, su target exacto, comandos de build, niveles de evidencia y cantidad de
 referencias HIL. Cada entrada actual es `cross-build` con cero referencias HIL.
 
 ## Límite de flash y recovery

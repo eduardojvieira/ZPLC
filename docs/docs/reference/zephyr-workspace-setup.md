@@ -47,8 +47,8 @@ repository root. For example:
 west build -b rpi_pico/rp2040 firmware/app --pristine
 ```
 
-The generated board page is the one current matrix: it contains all six
-profiles, their exact targets, build commands, evidence tiers, and HIL-reference
+The generated board page is the one current matrix: it contains every
+profile of the manifest, its exact target, build commands, evidence tiers, and HIL-reference
 counts. Every current entry is `cross-build` with zero HIL evidence references.
 
 ## Flash and recovery boundary
