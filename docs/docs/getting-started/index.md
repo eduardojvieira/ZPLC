@@ -10,7 +10,9 @@ tags: [quickstart]
 # Getting Started
 
 This page takes you from nothing to a program running in the simulator on your
-own computer. You need no PLC and no development board.
+own computer. You need no PLC and no development board. The tutorial
+[Blink without hardware](../tutorials/blink-without-hardware.md) is the slower
+version of this page, with the program explained and a scenario test.
 
 :::warning Prerelease
 ZPLC 2.0.0-rc.3 is an unsigned prerelease for evaluation. Do not use it to
@@ -28,8 +30,8 @@ Which boards have been tested with a physical device is on
 
 ## Open an example
 
-1. Start Studio. The Welcome screen offers **Open project**, **New project** and **Copy example**.
-2. Under **Copy example**, choose **Blinky**.
+1. Start Studio. The Welcome screen offers **Open project**, **New project** and **Learn**, and a list of **Examples**.
+2. Under **Examples**, in the group **First steps**, choose **Blinky**.
 3. Choose an empty destination folder. Studio copies the example there and opens it. The copy stops if a file already exists in the folder.
 
 The folder holds `zplc.json` (the project: target, tasks and sources), the

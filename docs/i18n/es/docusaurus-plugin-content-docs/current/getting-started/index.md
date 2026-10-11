@@ -10,7 +10,9 @@ tags: [quickstart]
 # Primeros pasos
 
 Esta página lo lleva desde cero hasta un programa que se ejecuta en el
-simulador de su propio equipo. No necesita un PLC ni una placa de desarrollo.
+simulador de su propio equipo. No necesita un PLC ni una placa de desarrollo. El
+tutorial [Blink sin hardware](../tutorials/blink-without-hardware.md) es la versión
+más pausada de esta página, con el programa explicado y una prueba de escenario.
 
 :::warning Versión preliminar
 ZPLC 2.0.0-rc.3 es una versión preliminar sin firmar, pensada para evaluación.
@@ -28,8 +30,8 @@ Qué placas se han probado con un dispositivo físico está en
 
 ## Abrir un ejemplo
 
-1. Inicie Studio. La pantalla de bienvenida ofrece **Open project**, **New project** y **Copy example**.
-2. En **Copy example**, elija **Blinky**.
+1. Inicie Studio. La pantalla de bienvenida ofrece **Open project**, **New project** y **Learn**, y una lista de **Examples**.
+2. En **Examples**, en el grupo **First steps**, elija **Blinky**.
 3. Elija una carpeta de destino vacía. Studio copia el ejemplo allí y lo abre. La copia se detiene si ya existe un archivo en la carpeta.
 
 La carpeta contiene `zplc.json` (el proyecto: destino, tareas y fuentes), los

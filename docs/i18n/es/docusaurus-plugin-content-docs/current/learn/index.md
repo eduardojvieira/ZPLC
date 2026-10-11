@@ -34,9 +34,10 @@ descripción completa de lo que hace Learn y de lo que guarda está en
 Studio incluye proyectos de ejemplo en la pantalla de bienvenida, agrupados desde
 los primeros pasos hasta motores, control de procesos, los cinco lenguajes y
 placas. Están en `packages/zplc-ide/projects/`. Para copiar uno a una carpeta
-propia, elíjalo en **Copy example**.
+propia, elíjalo en **Examples**.
 
-[Primeros pasos](../getting-started/index.md) recorre el primero.
+El tutorial [Blink sin hardware](../tutorials/blink-without-hardware.md) recorre
+uno de ellos.
 
 ## Practique con pruebas de escenario
 

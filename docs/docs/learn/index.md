@@ -33,9 +33,10 @@ what Learn does, and what it keeps, is in [Studio workbench](../ide/features.md#
 Studio bundles example projects on the Welcome screen, grouped from first steps
 to motors, process control, the five languages and boards. They live in
 `packages/zplc-ide/projects/`. To copy one into a folder of your own, choose it
-under **Copy example**.
+under **Examples**.
 
-[Getting started](../getting-started/index.md) walks through the first one.
+The tutorial [Blink without hardware](../tutorials/blink-without-hardware.md) walks
+through one of them.
 
 ## Practise with scenario tests
 
