@@ -138,10 +138,24 @@ The runtime hardening of the firmware (RT-010 to RT-034) has its own suites:
 - `modbus_force` writes through the Modbus server over the real core and shows that a forced variable keeps its
   forced value;
 - `scheduler_admission` holds a scan at the commit and at the output write, to show that a write from outside waits
-  for the input latch and never for the scan, and that the image lock is free while the pins are written.
+  for the input latch and never for the scan, and that the image lock is free while the pins are written;
+- `scheduler_equivalence` drives the Zephyr scheduler through the scenarios of the shared scheduler core and compares
+  its decisions with the golden trace the host session is held to (RT-008, RT-018);
+- `single_task` runs the one-task configuration of the core: the input latch of the pins, the deadline, the fault and
+  the safe state (RT-018);
+- `failsafe` takes the fatal-error handler with an intercepted reboot and shows the outputs driven safe, the record of
+  the fault and the cause reported by the next boot; `failsafe_reboot` takes a real fault and a real reboot on
+  `qemu_cortex_m3` and reads the record after it (RT-019, RT-021, RT-022);
+- `scheduler_watchdog` runs the hardware-watchdog policy of a profile over a model of the watchdog: the feed from the
+  completion of a scan, the timeout taken from the task set, a stalled scan that lets it expire, and the policy in
+  STOP, in a pause and in a fault (RT-020).
 
 The host suites of the core add `test_exchange` (a scanner, readers and writers on threads), `test_program_store`
-(a power cut and a torn write at every operation), `test_core_start`, `test_core_lock`, `test_bytes_crc` and the
+(a power cut and a torn write at every operation), `test_sched_core` and `test_sched_equivalence` (the decisions of
+the scheduler core and the golden trace), `test_single_task`, `test_vm_scan` (the time of a scan is read once, and a
+string opcode is charged by its bytes), `test_failsafe` (the reset cause, the record of a fault and the watchdog
+policy), `test_safe_state` (the safe value a project declares decides the level of a pin, over a board of its own),
+`test_core_start`, `test_core_lock`, `test_bytes_crc` and the
 `config_rule_*` tests, each of which builds one configuration rule with a value that breaks it and expects the
 compilation to fail naming the rule. The test-only entry points are declared in
 `firmware/lib/zplc_core/tests/include/zplc_test_hooks.h`, never in a public header; `test_public_headers` fails when

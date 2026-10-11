@@ -9,7 +9,24 @@ description: Task configuration, lifecycle, and diagnostics in the ZPLC runtime.
 
 # Multitask Scheduler
 
-ZPLC schedules configured PLC tasks through runtime-specific adapters. The current Zephyr path admits timer releases into one batch coordinator; the POSIX path runs the same task model for repeatable host-side workflows. These are logical runtime contracts, not evidence of timing or physical-I/O behavior on a board.
+ZPLC schedules configured PLC tasks through runtime-specific adapters around one portable scheduler core. The current Zephyr path admits timer releases into one batch coordinator; the POSIX path runs the same task model for repeatable host-side workflows; the single-task firmware configuration runs one task on the same core. These are logical runtime contracts, not evidence of timing or physical-I/O behavior on a board.
+
+## One scheduler core
+
+The decisions of the scheduler are made in one place, `zplc_sched_core` (`firmware/lib/zplc_core/src/core/zplc_sched_core.c`), and the runtimes only provide what depends on the platform (RT-008, RT-018):
+
+| In the core, the same everywhere | In the adapter |
+|---|---|
+| Which tasks are due and in what order: earlier release first, then priority, then task ID | The clock, the timers and the threads that call the core |
+| The deadline check: a miss is warned, counted and its overrun recorded; a run of `N` misses of one task latches the fault | The locks of the process image and of the output I/O |
+| The fault latch and its reason; the first reason is kept and a VM fault wins over a deadline miss in the same scan | The pins and the hardware watchdog |
+| The input latch, the commit of the outputs and the safe state of STOP, a pause and a fault | The debug protocol and the shell |
+
+Three adapters use it: the POSIX session of the host runtime (`native_runtime_session.c`), the Zephyr scheduler (`zplc_scheduler_zephyr.c`) and the single-task configuration (`zplc_single_task.c`, see [Single-task configuration](#single-task-configuration)). A scenario is a list of tasks and of the instants a batch is due, started and ended; its output is the list of decisions the core took, one line for each. The host test `test_sched_equivalence` and the Zephyr suite `scheduler_equivalence` run the same scenarios and compare the decisions with one golden trace, so a change of the rule in one runtime fails the other. The scenarios are a three-task program (100 and 200 ms tasks, `N` of 3, latching at the fourth batch) and a one-task program. The comparison is of decisions, not of time: the host counts whole milliseconds and the target reads a cycle counter in microseconds.
+
+### Single-task configuration
+
+A firmware built with `CONFIG_ZPLC_SCHEDULER=n` runs one task of one interval. It is the one-task configuration of the core, not another loop: its scan has the same input latch, deadline check and limit (`CONFIG_ZPLC_DEADLINE_MISS_LIMIT`), fault latch and safe state as the multitask scheduler, and its status reports the same fields. Two things differ and are not hidden: the loop holds the runtime lock for the whole scan, so a shell command waits for the scan to end, and it has no snapshot exchange, so a thread outside the scan reads and writes the process image under that lock instead of through the queue.
 
 ## Task model
 
@@ -96,9 +113,9 @@ A scan misses its deadline when its task ends more than one interval after the r
 
 A scan that ends in time ends the run of that task and clears its part of the warning. The count stays until a program is loaded or reset. A debugger step and a scan that stopped at a breakpoint are not checked.
 
-`N`, the consecutive misses that latch the fault, is configurable. In simulation it is the environment variable `ZPLC_DEADLINE_MISS_LIMIT`, an integer from 1 to 1 000 000, read when the session starts; a value outside that range is ignored and a message is written to standard error. The default is 1: the first miss latches the fault, which is what the target scheduler does today.
+`N`, the consecutive misses that latch the fault, is configurable and is **3** by default on every runtime: one late activation, which a communication burst or a flash write can cause, is warned and counted, and a task that keeps missing stops the program. The value 3 is a design default (RT-D05b) that the project owner has not confirmed; 1 is the behaviour of earlier releases. In simulation `N` is the environment variable `ZPLC_DEADLINE_MISS_LIMIT`, an integer from 1 to 1 000 000, read when the session starts; a value outside that range is ignored and a message is written to standard error. On a target it is `CONFIG_ZPLC_DEADLINE_MISS_LIMIT`, in the same range, fixed when the firmware is built.
 
-The simulation reports a miss in the `status.get` result and in every `status.changed` event; a latched fault is also sent as a `runtime.error` event with the code `DEADLINE_MISS`. Fields that were already there keep their meaning.
+The simulation reports a miss in the `status.get` result and in every `status.changed` event; a latched fault is also sent as a `runtime.error` event with the code `DEADLINE_MISS`. A target reports the same fields in `zplc sched status --json`, as the objects `deadline` and `fault` (the microsecond overrun is exact there). Fields that were already there keep their meaning.
 
 | Field | Meaning |
 |---|---|
@@ -126,7 +143,7 @@ The five rules above are the same in simulation and on a target. These are not, 
 | First release | The first scan after a start or a resume is a release of every task: the schedule begins at the start itself. | The first release of each task comes one interval after the start or the resume. |
 | Two tasks of the same tick | Released at the same instant, so ordered by priority, then task ID. | The comparison is the same, but the release is stamped in each timer callback from the cycle counter. What order two timers of one tick get on a board is not stated here. |
 | Speed and jitter | The VM runs on a host processor under a general-purpose operating system. | The VM runs on the board's processor. A program that is in time in simulation can miss on a target, and the reverse. |
-| Reporting of a miss | The warning flag, the count, the last overrun, the configurable limit and the fault reason of the table above. | The count of each task and the total, and the state `error` once latched. The limit is fixed at one miss. The warning flag, the last overrun and the reason are not reported; they move to the target with the shared scheduler core (RT-008, RT-014). |
+| Reporting of a miss | The warning flag, the count, the last overrun, the configurable limit and the fault reason of the table above. | The same fields, from the same core (`deadline` and `fault` of `zplc sched status --json`), with the count of each task, the total and the state `error` once latched. The limit is `CONFIG_ZPLC_DEADLINE_MISS_LIMIT`. |
 
 ## Pause, resume, step and stop
 
@@ -143,11 +160,73 @@ The runtime keeps two things apart: the **physical outputs** (the pins) and the 
 
 Notes on the table:
 
-- Safe means off for every output channel today. The pins are driven from that policy, never from the image, so a paused image that has a bit set does not energize it. A project-declared safe value per output is a separate requirement (RT-023).
+- Safe means off for an output unless the project declares another value for it ([Safe state of an output](#safe-state-of-an-output)). The pins are driven from that policy, never from the image, so a paused image that has a bit set does not energize it.
 - The first normal commit after a resume copies the output image, with the force table applied, to the pins. A resume does not energize anything by itself. A forced output that is on stays off while paused and comes on at that commit.
 - A scan that continues after a resume or a step keeps what the first part of it saw: the instructions already executed, the evaluation stack, the first-scan flag and its own task id. Inputs are latched again at the start of the batch that continues it, so the remainder reads the inputs of that moment.
 - The batch that stops at a breakpoint, and a step, commit the image to the pins once and then drive them safe. The time between the two writes is the driver's and is not measured here.
 - Evidence for this behaviour is the Zephyr test suites on `native_sim` and QEMU (`scheduler_run_control`, `scheduler_admission`). The physical level is observed through the GPIO emulator of `native_sim`; no board has been measured.
+
+## Safe state of an output
+
+An output is **off** whenever the program does not control it: in STOP, while paused or at a breakpoint, in a latched fault, from the boot until the first scan, and while a deploy is in progress. The level is decided in one function, `zplc_io_drive_safe`, and nowhere else (RT-023):
+
+1. The value the **loaded program declares** for that output, when it declares one.
+2. Otherwise **off**, unless the board description (`firmware/app/boards/boards.json`) gives that channel another safe level, which an active-low relay can.
+
+A project declares the value in `zplc.json`, on a row of `io.outputs`:
+
+```json
+{
+  "io": {
+    "outputs": [
+      { "name": "Brake", "address": "%QX0.0", "type": "BOOL", "safe": true },
+      { "name": "Valve", "address": "%QX0.1", "type": "BOOL" }
+    ]
+  }
+}
+```
+
+Here `Brake` is energized whenever the program is not running it, and `Valve` is off. The declaration travels **inside the artifact**, in its `SAFE` segment, so that a program and its safe state are one unit: a device that restores the program restores its declaration, a replaced program replaces it, and an interrupted deploy cannot leave the program of one build with the safe values of another (see [Declared safe values](isa.md#declared-safe-values)).
+
+What is checked, and where:
+
+| Where | What is refused |
+|---|---|
+| The build (Studio, the command line, MCP) | A `safe` that is not `true` or `false`; one on a row that is not a digital output bit (`%QW0`, `%QB0`); one on an input or on a `virtual` row; two rows for one output; an output the selected board has no digital channel for. The message names the output, the address and the board, and there is no artifact to deploy. |
+| The loader | A segment that is not whole entries, an entry outside the output image, a value other than 0 or 1, an output twice, or more than 64 entries. |
+| The firmware, at deploy and at boot restore | A declaration for an output that is not a digital output channel of the board's I/O table (a project for another board). The program is not stored and is not run. |
+
+The declared values are in force from the load that commits the program, before the first scan, and the load drives them to the pins: a restored program waits in STOP with its declared outputs on. Replacing it with a program that declares nothing returns the pins to the board's level at that load. The output process image is the logical state of the program and is zeroed in STOP whatever the pin shows.
+
+What this does not state: the time between a power-on and the instant the firmware drives the pins is the part's reset state, and a board that must have a pin on there needs hardware that does it (see [Boards](../reference/boards.md)); the deploy confirmation that shows a person the declared values before they are written to a device is a Studio screen and is not part of this page.
+
+## Fail-safe runtime: faults, reset cause and watchdog
+
+These are the requirements RT-019 to RT-022. The decisions that do not depend on a platform are in `zplc_failsafe` and are tested on the host; what the platform does (the reset-cause register, a record in RAM that a reset does not clear, the reboot, the watchdog) is `zplc_failsafe_zephyr.c`.
+
+### A fault of the processor (RT-019)
+
+A processor fault, a stack overflow, an assertion or a kernel panic does not leave the outputs where the last scan left them. The fatal-error handler of the firmware (`CONFIG_ZPLC_FATAL_HANDLER`, on by default) takes no lock and allocates nothing: it drives every digital output to its safe level, keeps the reason in a 24-byte record in RAM that a reset does not clear (a magic, a version, the kind, the kernel's reason, the task, the program counter, a sequence number and a CRC-32) and reboots. The next boot finds the record, reports it and consumes it, so that the following reset is not called a fault. A record that is not whole or is not ours is nothing.
+
+### Why the runtime was reset (RT-021)
+
+`zplc sys reset` (and `--json`) reports the cause of the last reset: `power_on`, `brown_out`, `pin`, `software`, `watchdog`, `fault` or `unknown` (a part that does not report one), the raw register, the previous run's fault record and the start policy. When a processor reports several bits the order is fixed: a fault record of the previous run, then power-on, brown-out, watchdog, lock-up, software and, last, the pin, because almost every reset sets it. `zplc sys info --json` keeps exactly its keys; the cause is also the `reset_cause` key of `zplc sched status --json`.
+
+### After a reset the runtime waits in STOP (RT-022)
+
+Whatever the cause, the stored program is restored into STOP with the outputs at their safe values, and **RUN is a person's command**. The runtime never enters RUN on its own because of a reset (the function `zplc_reset_may_run` is 0 for every cause; running again after a clean power-on of a device a person enabled beforehand is a decision of the project owner, D-13, and is not made here). The retained variables are restored only when `CONFIG_ZPLC_RETAIN_PERSIST` is on, which is off by default. A deploy stops the running program before it transfers a byte, so that a transfer never runs beside a program that was in RUN.
+
+### The hardware watchdog (RT-020)
+
+Each board's profile (`watchdog` in `boards.json`) says whether its hardware watchdog is enabled, the timeout its reset timing was recorded at, the longest timeout the part accepts and what the watchdog does in STOP, while paused and in a latched fault. **No board has it enabled**: the options are off until an exact board and revision has a hardware record of the reset timing and of the pins while it resets (HIL-010). When it is enabled:
+
+- It is fed from the completion of a scan, never from a timer, an interrupt, the shell or the idle thread. A scan that stalls stops the feed and the watchdog resets the board.
+- Its timeout is the profile's, made longer when the task set needs it: more than two intervals of the slowest task, up to the longest the part accepts. A task set that does not fit is refused when it is started.
+- The default policy is **disarmed in STOP**, **fed from the control path while paused** (so a long breakpoint does not reset the board) and **left to expire in a latched fault**: the board resets into STOP with the cause recorded, and the record of the fault survives the reset. A part whose watchdog cannot be stopped is profiled to feed in STOP.
+
+### Evidence and what is not shown
+
+The decisions are tested on the host (`test_failsafe`, `test_sched_core`) and the behaviours on the Zephyr emulator and QEMU: `failsafe` (the handler, the record, the intercepted reboot), `failsafe_reboot` (a real undefined-instruction fault and a real reboot on `qemu_cortex_m3`: the record survives the reset with the kernel's reason in it, and the cause is `fault`), `scheduler_watchdog` (the feed, the timeout, the policy and a modelled expiry), `program_boot_restore` and `scheduler_admission`. Not shown, and recorded as needing a hardware record: the time a real part takes to reset, the level of a pin while it resets, that the RAM of a given part survives its watchdog reset, and the watchdog of any board. Nothing here is a board qualification.
 
 ## Diagnostics and evidence
 

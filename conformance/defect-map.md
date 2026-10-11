@@ -7,9 +7,9 @@ of this suite, by another executed test, or it is listed with the reason that no
 | State | Defects |
 |---|---|
 | shown by a conformance case | 93 |
-| shown by another executed test | 14 |
+| shown by another executed test | 15 |
 | no program shows it on a host | 21 |
-| open: no executed check yet | 5 |
+| open: no executed check yet | 4 |
 | all | 133 |
 
 ## CMP
@@ -136,7 +136,7 @@ of this suite, by another executed test, or it is listed with the reason that no
 |---|---|---|---|---|
 | RT-D01a | Blocker | RT-001, RT-002 | - | The communication function-block opcodes escape the VM sandbox. no program: Needs an artifact that no compiler produces (a crafted communication opcode with an address built at run time); shown by the sandbox suite and the run fuzzer of the core under the sanitizers. |
 | RT-D02a | Blocker | RT-010, RT-011 | - | Fieldbus and MQTT threads are not synchronised with the scan; a 32-bit value can be seen half-written. no program: A property of threads around the scan, shown by the exchange suite and the Modbus and MQTT server tests, not by a program. |
-| RT-D03a | Blocker | RT-019, RT-020, RT-021 | - | No fail-safe for a hung or crashed processor: the watchdog defaults to off, there is no fatal-error handler and no reset-cause report. open: Firmware behaviour on a processor: RT-019 to RT-021 have no executed check, and the watchdog needs the hardware record of HIL-010. |
+| RT-D03a | Blocker | RT-019, RT-020, RT-021 | test_failsafe.c (test_reset_cause_decision)<br>main.c (test_a_fault_drives_the_output_safe_records_the_reason_and_reboots)<br>main.c (test_the_next_boot_reports_the_fault_once_and_the_runtime_waits_in_stop)<br>main.c (test_a_stalled_scan_lets_the_watchdog_expire)<br>main.c (test_the_timeout_follows_the_task_set_and_a_set_that_does_not_fit_is_refused) | No fail-safe for a hung or crashed processor: the watchdog defaults to off, there is no fatal-error handler and no reset-cause report. The handler, the record and the reset cause are shown on the emulator and on QEMU, and the watchdog policy over a model of the part. The hardware watchdog stays off in every board profile until HIL-010 records its reset timing and its safe outputs on that board, and no board has that record. |
 | RT-D04a | Blocker | RT-025, RT-026 | - | RETAIN memory is not retentive on the firmware. no program: Persistence across a power cycle is shown by the retain suites of the core, the host runtime and the Zephyr scheduler, not by one program. |
 | RT-D05a | Major | RT-013 | - | The scan coordinator runs at a priority that the MQTT and Modbus threads outrank. no program: A priority of the firmware configuration, shown by the build-time rule of config_check_probe.c. |
 | RT-D05b | Major | RT-014 | test_native_runtime_session.c (test_deadline_default_limit_tolerates_one_late_activation)<br>test_sched_core.c (test_deadline_accounting)<br>main.c (test_the_zephyr_adapter_decides_the_golden_trace) | A single late activation latches a fault that needs a program reload. |

@@ -4,6 +4,25 @@ All notable changes are documented here.
 
 ## Unreleased
 
+- The scheduler is one portable core, and the firmware fails safe (RT-008, RT-014, RT-018 to
+  RT-022). Task order, the deadline check, the fault latch and the safe state are decided in
+  `zplc_sched_core` and used by the host runtime, the Zephyr scheduler and the single-task
+  configuration, which is now a one-task configuration of the core (the same input latch, deadline
+  check and status) and no longer a loop of its own; one trace of decisions holds the host and
+  the firmware to the same answers (`test_sched_equivalence`, `scheduler_equivalence`).
+  **Changed defaults**: the consecutive deadline misses that latch the fault are 3 instead of 1 on
+  every runtime (`CONFIG_ZPLC_DEADLINE_MISS_LIMIT`, `ZPLC_DEADLINE_MISS_LIMIT`; 1 restores the
+  earlier behaviour), the target reports the warning, the miss run, the limit, the last overrun
+  and the fault reason (`zplc sched status`), and a deploy stops the running program before it
+  transfers a byte. The time a scan reads is latched once per scan and the string opcodes are
+  charged to the instruction budget by their bytes (RT-006). A processor fault, a stack overflow
+  or a kernel panic drives the outputs safe, records the reason in RAM that a reset does not
+  clear and reboots; `zplc sys reset [--json]` reports why the part was reset (power-on,
+  brown-out, pin, software, watchdog, fault or unknown) and what the previous run left, and the
+  runtime waits in STOP after every reset. Each board profile in `boards.json` has a `watchdog`
+  object (policy in STOP, paused and in a fault, timeout and its maximum); no board has the
+  hardware watchdog enabled, because none has the hardware record of its reset timing (HIL-010).
+  Not done: the WASM runtime does not use the core yet, and nothing here was run on a board.
 - A project declares the value an output takes in the safe state, and the artifact carries it (RT-023).
   An output is still off whenever the program does not control it (STOP, a pause, a latched
   fault, the boot, a deploy in progress); a row of `io.outputs` with `"safe": true` is on instead,
