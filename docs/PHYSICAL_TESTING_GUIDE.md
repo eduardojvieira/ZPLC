@@ -1,5 +1,10 @@
 # ZPLC Physical Testing Guide
 
+> **Superseded.** This is a proposed procedure from January 2026 with empty results, and it is kept as it was.
+> It is no longer the guide: what a person does at the bench, what each tool checks and the record it writes are in
+> [Hardware in the Loop](./docs/development/hardware-in-the-loop.md), and the boards' build commands are those of
+> `firmware/app/boards/supported-boards.v1.5.0.json`. `ZPLC_PATH` below is the checkout of this repository.
+
 ## Guía Profesional de Pruebas Físicas - HAL & Overlay Verification
 
 **Versión:** 2.0  
@@ -554,7 +559,7 @@ source ~/zephyrproject/activate.sh
 cd ~/zephyrproject
 
 # Compilar
-west build -b rpi_pico $ZEPLC_PATH/apps/zephyr_app --pristine
+west build -b rpi_pico $ZPLC_PATH/firmware/app --pristine
 
 # Flash via BOOTSEL
 # 1. Mantener BOOTSEL, conectar USB
@@ -572,7 +577,7 @@ source ~/zephyrproject/activate.sh
 cd ~/zephyrproject
 
 # Compilar
-west build -b arduino_giga_r1/stm32h747xx/m7 $ZEPLC_PATH/apps/zephyr_app --pristine
+west build -b arduino_giga_r1/stm32h747xx/m7 $ZPLC_PATH/firmware/app --pristine
 
 # Flash via DFU o ST-Link
 west flash
@@ -588,7 +593,7 @@ source ~/zephyrproject/activate.sh
 cd ~/zephyrproject
 
 # Compilar
-west build -b esp32s3_devkitc $ZEPLC_PATH/apps/zephyr_app --pristine
+west build -b esp32s3_devkitc $ZPLC_PATH/firmware/app --pristine
 
 # Flash via USB-Serial
 west flash
@@ -604,7 +609,7 @@ source ~/zephyrproject/activate.sh
 cd ~/zephyrproject
 
 # Compilar
-west build -b nucleo_h743zi $ZEPLC_PATH/apps/zephyr_app --pristine
+west build -b nucleo_h743zi $ZPLC_PATH/firmware/app --pristine
 
 # Flash via ST-Link integrado
 west flash

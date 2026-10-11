@@ -1,7 +1,6 @@
 ---
 slug: /development/hardware-in-the-loop
 title: Hardware in the Loop
-unlisted: true
 sidebar_label: Hardware in the Loop
 description: How a person runs the ZPLC hardware tests at the bench, what each tool checks and writes, which tests also run on the host without a board, and what is still missing before a board has hardware evidence.
 ---
@@ -76,18 +75,23 @@ Scripts that only look at a board and judge nothing (`check_alive.py`,
    compiles with the repository compiler.
 2. **Flash.** You flash the image. The tool does not.
 3. **Identity handshake.** The tool asks the device who it is
-   (`zplc sys info --json`) and records the board, the versions and, when the
-   image reports it, the build.
-4. **Confirm the board.** You type the identity the device reported. Enter
+   (`zplc sys info --json`) and which image it is (`zplc sys build --json`:
+   version, commit, whether the tree was dirty, board, ABI, draft, and the build
+   options with their hash), and records both. The build command the tool told
+   you to run is in the record too.
+4. **Trace option.** The image's options say whether the HIL trace is on.
+   The run fails when that is not what it asked for: release firmware carries
+   no trace, and `--hil-trace` asks for the image with it.
+5. **Confirm the board.** You type the identity the device reported. Enter
    alone does not confirm.
-5. **Outputs are safe to drive.** You type the identity again, saying that
+6. **Outputs are safe to drive.** You type the identity again, saying that
    nothing connected to the outputs can hurt anyone.
-6. **Deploy, run.** A program is uploaded and the scan counter must advance.
-7. **Fixtures.** The fixtures tagged for hardware run, one after another, with
+7. **Deploy, run.** A program is uploaded and the scan counter must advance.
+8. **Fixtures.** The fixtures tagged for hardware run, one after another, with
    their inputs forced and released.
-8. **Force set and release.** A force is set, listed, cleared, and no force
+9. **Force set and release.** A force is set, listed, cleared, and no force
    remains.
-9. **Stop.** The device is not running and the output image is zero.
+10. **Stop.** The device is not running and the output image is zero.
 
 The chain writes a record whether it passes or fails. The steps of the
 hardware tests the chain does not run yet are in the record as `pending`, each
@@ -119,9 +123,17 @@ Values are read while the program runs. STOP puts the outputs in their safe
 state, so an output reads zero after it whatever the program computed.
 
 The opcode-level scripts read HIL trace frames, which only a firmware image
-built with `CONFIG_ZPLC_HIL_DEBUG=y` prints. Release firmware must not carry
-the trace in its VM loop, and on such an image those scripts exit 77. The
-Pico and ESP32-S3 board profiles set the option today.
+built with `CONFIG_ZPLC_HIL_DEBUG=y` prints. Release firmware does not carry
+the trace in its VM loop, and no board profile turns it on; on a release image
+those scripts exit 77. A HIL image is the profile plus `tools/hil/hil_debug.conf`:
+
+```bash
+west build -b rpi_pico/rp2040 firmware/app --pristine -- -DEXTRA_CONF_FILE=$PWD/tools/hil/hil_debug.conf
+```
+
+`run_chain.py <board> --hil-trace` prints the command for the board and
+records it. Do not publish an image built with the overlay: its options hash
+differs from the release's, and the record says the trace is on.
 
 ## Scenarios on a board
 

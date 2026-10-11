@@ -1,7 +1,6 @@
 ---
 slug: /development/hardware-in-the-loop
 title: Hardware en el lazo
-unlisted: true
 sidebar_label: Hardware en el lazo
 description: Cómo una persona ejecuta en el banco las pruebas de hardware de ZPLC, qué comprueba y qué escribe cada herramienta, qué pruebas corren también en el host sin placa y qué falta para que una placa tenga evidencia de hardware.
 ---
@@ -82,19 +81,24 @@ falla:
    hardware compila con el compilador del repositorio.
 2. **Flasheo.** Usted flashea la imagen. La herramienta no lo hace.
 3. **Protocolo de identidad.** La herramienta pregunta al dispositivo quién es
-   (`zplc sys info --json`) y registra la placa, las versiones y, cuando la
-   imagen lo informa, la compilación.
-4. **Confirmar la placa.** Usted escribe la identidad que informó el
+   (`zplc sys info --json`) y qué imagen es (`zplc sys build --json`: versión,
+   commit, si el árbol estaba modificado, placa, ABI, draft y las opciones de
+   compilación con su hash), y registra ambas cosas. El comando de compilación
+   que la herramienta le dijo que ejecutara también queda en el registro.
+4. **Opción de traza.** Las opciones de la imagen dicen si la traza HIL está
+   activa. La ejecución falla cuando no es lo que pidió: el firmware de
+   publicación no lleva traza, y `--hil-trace` pide la imagen que la lleva.
+5. **Confirmar la placa.** Usted escribe la identidad que informó el
    dispositivo. Pulsar Enter solo no confirma.
-5. **Las salidas son seguras de accionar.** Usted escribe la identidad otra vez,
+6. **Las salidas son seguras de accionar.** Usted escribe la identidad otra vez,
    diciendo que nada conectado a las salidas puede lastimar a nadie.
-6. **Desplegar, ejecutar.** Se carga un programa y el contador de scans debe
+7. **Desplegar, ejecutar.** Se carga un programa y el contador de scans debe
    avanzar.
-7. **Fixtures.** Se ejecutan los fixtures marcados para hardware, uno tras otro,
+8. **Fixtures.** Se ejecutan los fixtures marcados para hardware, uno tras otro,
    con sus entradas forzadas y liberadas.
-8. **Fuerza y liberación.** Se fija una fuerza, se lista, se borra, y no queda
+9. **Fuerza y liberación.** Se fija una fuerza, se lista, se borra, y no queda
    ninguna.
-9. **Detener.** El dispositivo no está en ejecución y la imagen de salidas es
+10. **Detener.** El dispositivo no está en ejecución y la imagen de salidas es
    cero.
 
 La cadena escribe un registro, pase o falle. Los pasos de las pruebas de
@@ -132,8 +136,18 @@ que el programa calculó.
 
 Los scripts de nivel de opcode leen tramas de traza HIL, que solo imprime una
 imagen de firmware compilada con `CONFIG_ZPLC_HIL_DEBUG=y`. El firmware de
-publicación no debe llevar la traza en su bucle de VM, y en esa imagen esos
-scripts terminan con 77. Los perfiles de Pico y ESP32-S3 activan hoy la opción.
+publicación no lleva la traza en su bucle de VM y ningún perfil de placa la
+activa; en una imagen de publicación esos scripts terminan con 77. Una imagen
+HIL es el perfil más `tools/hil/hil_debug.conf`:
+
+```bash
+west build -b rpi_pico/rp2040 firmware/app --pristine -- -DEXTRA_CONF_FILE=$PWD/tools/hil/hil_debug.conf
+```
+
+`run_chain.py <placa> --hil-trace` imprime el comando para la placa y lo
+registra. No publique una imagen compilada con la superposición: su hash de
+opciones difiere del de la publicación, y el registro dice que la traza está
+activa.
 
 ## Escenarios en una placa
 

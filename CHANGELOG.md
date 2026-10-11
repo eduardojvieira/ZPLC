@@ -19,7 +19,12 @@ All notable changes are documented here.
   terminal. `tools/test_crc32_cross.py` compares the C implementation with the
   TypeScript one. The page [Hardware in the Loop](docs/docs/development/hardware-in-the-loop.md)
   says what a person does at the bench; the board records of HIL-010 do not
-  exist yet.
+  exist yet. The records carry the firmware identity that the image reports
+  (`zplc sys build --json`: commit, dirty, board, ABI, draft, options and their
+  hash). The Pico and ESP32-S3 profiles no longer turn the HIL trace on (HIL-013);
+  a HIL image adds `tools/hil/hil_debug.conf`, the chain prints and records
+  that build command, and `tools/hil/validate_hil_trace_profile.py` fails a
+  profile that sets it.
 - A controller that was never configured is safe on a plant network, and the
   settings that `zplc config save` reports are the ones it stores (COM-014,
   COM-015, COM-027). The default broker (`test.mosquitto.org`) is gone: MQTT is

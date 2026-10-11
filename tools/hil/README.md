@@ -76,8 +76,11 @@ CI, and the suites run the same phases on a board, waiting for the device's own 
 the program runs: STOP puts the outputs in their safe state, so they read zero after it.
 
 The opcode scripts (`test_system.py` and the ones like it) read the HIL trace frames that only a firmware image built
-with `CONFIG_ZPLC_HIL_DEBUG=y` prints. The shipped profiles of the Pico and the ESP32-S3 set it today; release firmware
-must not (HIL-013), so on a release image those scripts exit 77.
+with `CONFIG_ZPLC_HIL_DEBUG=y` prints. No shipped board profile sets it (HIL-013): the image for these scripts is
+built with `hil_debug.conf` of this directory on top of the profile, `west build -b <board> firmware/app --pristine --
+-DEXTRA_CONF_FILE=<path of hil_debug.conf>`, and `run_chain.py <board> --hil-trace` prints that command with the path
+filled in and records it. The identity the image reports (`zplc sys build --json`, `options`) says whether the trace is
+on, and the record keeps it. On a release image those scripts exit 77.
 
 
 ## Run records (HIL-009)
