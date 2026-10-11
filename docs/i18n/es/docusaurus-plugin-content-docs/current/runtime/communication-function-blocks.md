@@ -111,14 +111,26 @@ Se usan para interactuar con dispositivos de campo sin un mapeo implícito. `COU
 - `AWS_FLEET_PROV`: aprovisionamiento de flota de AWS IoT; `THING_NAME` es el objeto que se registró. Un `TEMPLATE_NAME` no vacío es la plantilla que se usa en la solicitud.
 - `SPB_REBIRTH`: pide a la sesión Sparkplug B que publique de nuevo su certificado de nacimiento (el perfil Sparkplug B).
 
+## En simulación
+
+El runtime nativo que manejan la simulación y la línea de comandos ejecuta los mismos manejadores Modbus y MQTT que un controlador, sobre un cliente Modbus TCP y un cliente MQTT 3.1.1 del host (TCP plano). Está apagado hasta que la sesión lo pide: un runtime que se inicia como siempre responde a todo bloque `STATUS` 3 (sin manejador), como antes.
+
+| Entorno del runtime | Significado |
+| --- | --- |
+| `ZPLC_NATIVE_COMM=1` | Enciende los bloques de comunicación. |
+| `ZPLC_NATIVE_MQTT_BROKER=host:puerto` | El broker que usan `MQTT_CONNECT`, `MQTT_PUBLISH` y `MQTT_SUBSCRIBE`. Sin él responden `STATUS` 10. |
+| `ZPLC_NATIVE_MODBUS_TIMEOUT_MS` | El tiempo que una solicitud Modbus espera para conectar y, otra vez, por la respuesta. 500 por defecto. |
+
+Los pares son los extremos de loopback: `zplc_loopback`, que se compila con el runtime, inicia un servidor Modbus TCP (1024 registros de retención y 1024 bobinas) y un broker MQTT en 127.0.0.1, imprime sus puertos como una línea de JSON y termina cuando se cierra su entrada estándar. Una solicitud Modbus por RTU (no hay dispositivo serie) y todo bloque de un servicio de nube (no hay servicio) responden `STATUS` 10 en simulación. **Studio todavía no inicia los extremos por ti:** la sesión debe iniciarse con el entorno de arriba, y los extremos los inicia quien la inicia.
+
 ## Contra qué se verificó cada bloque
 
-Ningún bloque se verificó contra un servicio real, y verificar uno no necesita una suscripción de pago. La verificación de cada bloque es de uno de tres tipos: el **manejador** (los pines, el handshake, los códigos de estado y la entrega a un trabajador, con el cliente reemplazado por un sustituto que responde lo que dice la prueba), un **doble de protocolo** (los bloques contra un servidor escrito para la prueba que habla el protocolo por un socket de loopback) o un **intercambio grabado** (los mensajes de un servicio, repetidos). Un doble local prueba el comportamiento del bloque y del protocolo. No prueba que un servicio real de nube acepte el intercambio.
+Ningún bloque se verificó contra un servicio real, y verificar uno no necesita una suscripción de pago. La verificación de cada bloque es de uno o dos tipos: el **manejador** (los pines, el handshake, los códigos de estado y la entrega a un trabajador, con el cliente reemplazado por un sustituto que responde lo que dice la prueba) y un **doble de protocolo** (el bloque contra un servidor escrito para la prueba que habla el protocolo por un socket de loopback). Un doble local prueba el comportamiento del bloque y del protocolo. No prueba que un dispositivo, un broker o un servicio de nube reales acepten el intercambio.
 
 | Bloque | Manejador | Doble de protocolo | Servicio real |
 | --- | --- | --- | --- |
-| `MB_READ_HREG`, `MB_WRITE_HREG`, `MB_READ_COIL`, `MB_WRITE_COIL` | Sí | Servidor Modbus TCP en loopback (runtime de host); el cliente RTU se configura con el tiempo en la unidad que lee el cliente Modbus de Zephyr, y no se usa ningún dispositivo serie | No |
-| `MQTT_CONNECT`, `MQTT_PUBLISH`, `MQTT_SUBSCRIBE` | Sí | Broker MQTT en loopback (runtime de host) | No |
+| `MB_READ_HREG`, `MB_WRITE_HREG`, `MB_READ_COIL`, `MB_WRITE_COIL` | Sí | Modbus TCP: el código de la transacción del cliente es un solo archivo compilado en el controlador y en el runtime de simulación, y corre contra un servidor en loopback en ambos (native_sim y el host); éxito, respuesta en pedazos, excepción, silencio, conexión cerrada, puerto rechazado, reset estando ocupado. RTU: solo se comprueban los parámetros de la interfaz (el tiempo se da en la unidad que lee el cliente Modbus de Zephyr); no se usa ningún dispositivo serie | No |
+| `MQTT_CONNECT`, `MQTT_PUBLISH`, `MQTT_SUBSCRIBE` | Sí | El cliente MQTT del runtime de simulación, contra un broker en loopback: sesión, publicación, suscripción, pérdida de la sesión, reconexión, pérdida silenciosa. **El cliente del controlador no se ejecuta contra un broker en la suite de pruebas** | No |
 | `AZURE_C2D_RECV`, `AZURE_EG_PUB`, `SPB_REBIRTH` | Sí | Ninguno | No |
 | `AZURE_DPS_PROV`, `AWS_FLEET_PROV` | Sí, con el servicio de aprovisionamiento reemplazado por uno que espera | Ninguno en la suite de pruebas; `tools/connectivity/` tiene scripts que responden en un broker que ejecutas tú, de uso manual | No |
 

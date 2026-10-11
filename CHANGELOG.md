@@ -1029,6 +1029,28 @@ All notable changes are documented here.
   program with the tags of the four areas, the edges of WORK and RETAIN and
   address 65535 and reads and writes them through the seams both servers end in;
   `firmware/tests/modbus_client_tcp` polls tags against a server on loopback.
+- **The Modbus and MQTT blocks run in simulation, against endpoints on the
+  loopback interface** (COM-009, COM-006). The native runtime answered every
+  communication block `STATUS` 3 and had no peer to talk to. It now links the
+  same Modbus and MQTT handlers as a controller (the sources of `firmware/app`,
+  over a POSIX shim of the few Zephyr kernel calls they make), on a Modbus TCP
+  client whose transaction code is the file the controller compiles too
+  (`zplc_modbus_tcp_client.inc`) and on an MQTT 3.1.1 client of the host. It is
+  off until the session starts the runtime with `ZPLC_NATIVE_COMM=1` (and
+  `ZPLC_NATIVE_MQTT_BROKER=host:port`), so a runtime started the old way
+  answers as before. A Modbus RTU request and every cloud block answer
+  `STATUS` 10 (not available in this runtime). `zplc_loopback`, built with the
+  runtime, starts a Modbus TCP server and an MQTT broker on 127.0.0.1 and ends
+  when its input closes. `test_host_comm` runs every block against them on real
+  sockets (success, timeout, exception, refusal, reset while busy, a scan that
+  never waits for the peer, one request for one rising EN, loss of the MQTT
+  session, a message published while it is down that fails at once and is not
+  sent on the next one, reconnection and
+  the silent loss) and passes under the address, undefined-behaviour and thread
+  sanitizers; `packages/zplc-ide/src/conformance/communication.test.ts` runs a
+  program on the runtime through the session protocol. **Not done: Studio does
+  not start the endpoints for a session yet**, and nothing here was run
+  against a real device, broker or cloud service.
 
 ## 2.0.0-rc.3 - 2026-09-01
 

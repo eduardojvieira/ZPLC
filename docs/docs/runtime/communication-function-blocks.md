@@ -111,14 +111,26 @@ Used to interact with field devices without using implicit auto-mapping. `COUNT`
 - `AWS_FLEET_PROV`: AWS IoT fleet provisioning; `THING_NAME` is the thing that was registered. A non-empty `TEMPLATE_NAME` is the template used for the request.
 - `SPB_REBIRTH`: asks the Sparkplug B session to publish its birth certificate again (the Sparkplug B profile).
 
+## In simulation
+
+The native runtime that the simulation and the command line drive runs the same Modbus and MQTT handlers as a controller, on a Modbus TCP client and an MQTT 3.1.1 client of the host (plain TCP). It is off until the session asks for it: a runtime that is started the old way answers every block `STATUS` 3 (no handler), as it always did.
+
+| Environment of the runtime | Meaning |
+| --- | --- |
+| `ZPLC_NATIVE_COMM=1` | Turns the communication blocks on. |
+| `ZPLC_NATIVE_MQTT_BROKER=host:port` | The broker that `MQTT_CONNECT`, `MQTT_PUBLISH` and `MQTT_SUBSCRIBE` use. Without it they answer `STATUS` 10. |
+| `ZPLC_NATIVE_MODBUS_TIMEOUT_MS` | The time a Modbus request waits to connect and again for the answer. 500 by default. |
+
+The peers are the loopback endpoints: `zplc_loopback`, built with the runtime, starts a Modbus TCP server (1024 holding registers and 1024 coils) and an MQTT broker on 127.0.0.1, prints their ports as one line of JSON and ends when its standard input closes. A Modbus request on RTU (there is no serial device) and every block of a cloud service (there is no service) answer `STATUS` 10 in simulation. **Studio does not start the endpoints for you yet:** the session has to be started with the environment above, and the endpoints started by whoever starts it.
+
 ## What each block was verified against
 
-No block was verified against a live service, and verifying one needs no paid subscription. The verification of each block is one of three kinds: the **handler** (the pins, the handshake, the status codes and the hand-over to a worker, with the client replaced by a stand-in that answers what the test says), a **protocol double** (the blocks against a server written for the test that speaks the protocol on a loopback socket), or a **recorded exchange** (the messages of a service, replayed). A local double proves the behaviour of the block and of the protocol. It does not prove that a real cloud service accepts the exchange.
+No block was verified against a live service, and verifying one needs no paid subscription. The verification of each block is of one or two kinds: the **handler** (the pins, the handshake, the status codes and the hand-over to a worker, with the client replaced by a stand-in that answers what the test says) and a **protocol double** (the block against a server written for the test that speaks the protocol on a loopback socket). A local double proves the behaviour of the block and of the protocol. It does not prove that a real device, broker or cloud service accepts the exchange.
 
 | Block | Handler | Protocol double | Live service |
 | --- | --- | --- | --- |
-| `MB_READ_HREG`, `MB_WRITE_HREG`, `MB_READ_COIL`, `MB_WRITE_COIL` | Yes | Modbus TCP server on loopback (host runtime); the RTU client is configured with the timeout in the unit the Zephyr Modbus client reads, and no serial device is used | No |
-| `MQTT_CONNECT`, `MQTT_PUBLISH`, `MQTT_SUBSCRIBE` | Yes | MQTT broker on loopback (host runtime) | No |
+| `MB_READ_HREG`, `MB_WRITE_HREG`, `MB_READ_COIL`, `MB_WRITE_COIL` | Yes | Modbus TCP: the transaction code of the client is one file compiled in the controller and in the simulation runtime, and runs against a server on loopback in both (native_sim and the host); success, a response in pieces, exception, silence, a closed connection, a refused port, reset while busy. RTU: only the interface parameters are checked (the timeout is given in the unit the Zephyr Modbus client reads); no serial device is used | No |
+| `MQTT_CONNECT`, `MQTT_PUBLISH`, `MQTT_SUBSCRIBE` | Yes | The MQTT client of the simulation runtime, against a broker on loopback: session, publish, subscribe, loss of the session, reconnection, silent loss. **The client of the controller is not run against a broker in the test suite** | No |
 | `AZURE_C2D_RECV`, `AZURE_EG_PUB`, `SPB_REBIRTH` | Yes | None | No |
 | `AZURE_DPS_PROV`, `AWS_FLEET_PROV` | Yes, with the provisioning service replaced by one that waits | None in the test suite; `tools/connectivity/` has scripts that answer on a broker you run yourself, used by hand | No |
 
