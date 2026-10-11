@@ -968,12 +968,38 @@
     {"kind":"unit","ref":"packages/zplc-ide/src/editors/gesture.test.ts","test":"which changes of a canvas end a gesture (LNG-010)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/editors/ld/graphModel.test.ts","test":"LD selection (LNG-010)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/editors/sfc/graphModel.test.ts","test":"SFC selection (LNG-010)"},
-    {"kind":"unit","ref":"packages/zplc-ide/src/editors/visualHistory.test.ts","test":"visual snapshot history (LNG-010)"}
+    {"kind":"unit","ref":"packages/zplc-ide/src/editors/visualHistory.test.ts","test":"visual snapshot history (LNG-010)"},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"28i An element dropped on a rung is inserted as the keyboard inserts it","partial":true},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"28j A block dragged with the pointer is one undo step","partial":true}
   ],
   "LNG-011": [
     {"kind":"unit","ref":"packages/zplc-ide/src/models/visualFileLoad.schema.test.ts","test":"LNG-011 a variable is an object with a name and a type, in every language"},
     {"kind":"unit","ref":"packages/zplc-ide/src/models/visualFileLoad.schema.test.ts","test":"LNG-011 the parts of a Ladder file have the shape the editor reads"},
     {"kind":"unit","ref":"packages/zplc-ide/src/models/visualFileLoad.schema.test.ts","test":"LNG-011 the parts of an SFC chart have the shape the editor reads"}
+  ],
+  "LNG-012": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/editors/fbd/keyboard.test.ts","test":"LNG-012 binding a function block diagram from the declared symbols"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/editors/fbd/keyboard.test.ts","test":"LNG-012 connecting and disconnecting from the keyboard"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/editors/fbd/keyboard.test.ts","test":"LNG-012 deleting and commenting from the keyboard"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/editors/fbd/keyboard.test.ts","test":"LNG-012 function block diagram cursor"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/editors/fbd/keyboard.test.ts","test":"LNG-012 function block diagram keyboard authoring"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/editors/fbd/keyboard.test.ts","test":"LNG-012 function block diagram palette"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/editors/keymap.test.ts","test":"LNG-012 the key table of the visual editors"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/editors/ld/keyboard.test.ts","test":"LNG-012 binding a variable from the declared symbols"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/editors/ld/keyboard.test.ts","test":"LNG-012 ladder cursor"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/editors/ld/keyboard.test.ts","test":"LNG-012 ladder keyboard authoring"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/editors/ld/keyboard.test.ts","test":"LNG-012 ladder structure from the keyboard"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/editors/picker.test.ts","test":"LNG-012 palettes are searchable from the keyboard"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/editors/sfc/keyboard.test.ts","test":"LNG-012 connecting and deleting in the chart from the keyboard"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/editors/sfc/keyboard.test.ts","test":"LNG-012 naming and conditions from the declared symbols"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/editors/sfc/keyboard.test.ts","test":"LNG-012 sequential function chart cursor"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/editors/sfc/keyboard.test.ts","test":"LNG-012 sequential function chart keyboard authoring"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/editors/sfc/keyboard.test.ts","test":"LNG-012 sequential function chart palette"},
+    {"kind":"unit","ref":"tools/docs/generate_keyboard_reference.test.ts","test":"LNG-012 keyboard reference: generated from the key table of the editors"},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"28f A rung is built from the keyboard","partial":true},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"28g A function block diagram is edited from the keyboard","partial":true},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"28h A sequential function chart is edited from the keyboard","partial":true},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"28i An element dropped on a rung is inserted as the keyboard inserts it","partial":true}
   ],
   "LNG-013": [
     {"kind":"unit","ref":"packages/zplc-ide/src/editors/fbd/graphModel.test.ts","test":"LNG-013 drawing a wire between two pins"},

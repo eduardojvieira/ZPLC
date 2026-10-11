@@ -134,6 +134,24 @@ async function openDiagram(app: App, path: string, ready: string): Promise<void>
   await app.until(`${path.split('/').at(-1)} on its canvas`, async () => await app.visible(css(ready)) || undefined);
 }
 
+const searchList = css('[data-keyboard-picker]');
+/**
+ * Answers the search list that a key of a visual editor opened: the text is typed into its search box, a choice that is
+ * named is waited for, and the best match is taken with Enter, as a user does.
+ */
+async function answerSearchList(app: App, text: string, choice?: string): Promise<void> {
+  await app.until('the search list to open', async () => await app.visible(searchList) || undefined)
+    .catch(async (error: Error) => {
+      const state = await app.eval<string>(`JSON.stringify({ status: document.querySelector('[data-visual-status]')?.textContent, focus: document.activeElement?.outerHTML.slice(0, 160), cursor: document.querySelector('[data-ld-cursor-at]')?.getAttribute('data-ld-cursor-at'), ask: document.querySelector('[data-ld-ask]')?.getAttribute('data-ld-ask'), pickers: document.querySelectorAll('[data-keyboard-picker]').length })`);
+      throw new Error(`${error.message}: ${state}`);
+    });
+  await app.until('the search box to have the focus', async () => await app.eval<boolean>(`document.activeElement?.getAttribute('role') === 'combobox'`) || undefined);
+  await app.type(text);
+  if (choice) await app.until(`${choice} among the choices`, async () => await app.visible(css(`[data-picker-item="${choice}"]`)) || undefined);
+  await app.press('Enter');
+  await app.until('the search list to close', async () => !(await app.visible(searchList)) || undefined);
+}
+
 /** Open the Problems panel and activate its first entry with a real click. */
 async function activateFirstProblem(app: App): Promise<void> {
   await app.click(tab('Problems'));
@@ -1545,6 +1563,209 @@ export const JOURNEYS: Journey[] = [
       await app.until('a line to show the value of LED_Output after it', async () => (await shown()).some((text) => /LED_Output=(?:TRUE|FALSE)/.test(text)) || undefined)
         .catch(async (error: Error) => { throw new Error(`${error.message}: the editor shows ${JSON.stringify(await shown())}`); });
       assert(!(await shown()).some((text) => /(?:IF|THEN|END_IF|TON|NOT)=/.test(text)), `A keyword or a function block type was given a value: ${JSON.stringify(await shown())}`);
+    },
+  },
+  {
+    // Every editing action of the ladder is reachable from the keyboard: the cursor, the palette, the list of declared
+    // symbols a contact or a coil is bound from, and the structure. The rung built here is saved and built by the app.
+    name: '28f A rung is built from the keyboard', example: 'blinky', proves: [], partly: ['LNG-012'],
+    run: async (app, { project }) => {
+      // the program has one output and the build lets one rung write it: the rung typed here writes a variable of its own
+      const file = join(project, 'src', 'main.ld.json');
+      const document = JSON.parse(disk(file)) as { variables: { local: Array<{ name: string; type: string }> } };
+      document.variables.local.push({ name: 'Hold', type: 'BOOL' });
+      writeFileSync(file, JSON.stringify(document, null, 2));
+      await openFolder(app, project);
+      await openDiagram(app, 'src/main.ld.json', '[data-ld-rung-id]');
+      const rungs = () => app.eval<number>(`document.querySelectorAll('[data-ld-rung-id]').length`);
+      const before = await rungs();
+      // a click on the label of a rung puts the focus in the editor; from then on the hands stay on the keyboard
+      await app.click(`[...document.querySelectorAll('[data-ld-rung-id="rung_1"] span')].find((node) => node.textContent === 'Rung 1')`, 'the label of rung 1');
+      await app.press('Ctrl+End');
+      await app.press('Ctrl+Enter');
+      await app.until('a rung after the last one', async () => await rungs() === before + 1 || undefined);
+      const last = await app.eval<string>(`[...document.querySelectorAll('[data-ld-rung-id]')].at(-1).getAttribute('data-ld-rung-id')`);
+      await app.until('the cursor in the first cell of the new rung', async () => await app.eval<boolean>(`document.querySelector('[data-ld-rung-id="${last}"] [data-ld-cursor="0,0"]') !== null`) || undefined);
+
+      await app.press('C');
+      await answerSearchList(app, 'OnTimer.Q', 'OnTimer.Q');
+      await app.press('ArrowRight');
+      await app.press('N');
+      await answerSearchList(app, 'OffTimer.Q', 'OffTimer.Q');
+      await app.press('ArrowRight');
+      await app.press('O');
+      await answerSearchList(app, 'Hold', 'Hold');
+      await app.until('the three elements on the new rung', async () => await app.eval<number>(`document.querySelectorAll('[data-ld-rung-id="${last}"] [data-ld-element-id]').length`) === 3 || undefined);
+
+      await app.click(saveButton, 'the Save button');
+      const saved = () => {
+        const model = JSON.parse(disk(join(project, 'src', 'main.ld.json'))) as { variables: { local: Array<{ name: string; type: string }> }; rungs: Array<{ grid: Array<Array<{ element: { type: string; variable?: string; fbType?: string; instance?: string } | null }>> }> };
+        return { model, rung: model.rungs.at(-1)!.grid.flat().flatMap((cell) => (cell.element ? [cell.element] : [])) };
+      };
+      await app.until('the rung to be written to the file', () => saved().rung.length === 3 || undefined);
+      assert(JSON.stringify(saved().rung.map((element) => [element.type, element.variable])) === JSON.stringify([['contact_no', 'OnTimer.Q'], ['contact_nc', 'OffTimer.Q'], ['coil', 'Hold']]),
+        `The rung written to the file is not the one typed: ${JSON.stringify(saved().rung)}`);
+      const result = await compile(app);
+      assert(result.kind === 'built', `The rung built from the keyboard does not build: ${result.message}`);
+
+      // the palette: another rung, a function block found by its name, declared with an instance of its own
+      await app.click(`[...document.querySelectorAll('[data-ld-rung-id="rung_1"] span')].find((node) => node.textContent === 'Rung 1')`, 'the label of rung 1');
+      await app.press('Ctrl+End');
+      await app.press('Ctrl+Enter');
+      await app.until('a rung for the block', async () => await rungs() === before + 2 || undefined);
+      await app.press('I');
+      await answerSearchList(app, 'TON', 'function_block:TON');
+      await app.click(saveButton, 'the Save button');
+      await app.until('the function block and its instance to be written', () => {
+        const { model, rung } = saved();
+        return rung.some((element) => element.type === 'function_block' && element.fbType === 'TON' && element.instance === 'TON_1') && model.variables.local.some((variable) => variable.name === 'TON_1' && variable.type === 'TON') || undefined;
+      });
+    },
+  },
+  {
+    // The wires of a block are listed from the keyboard, each from an output to an input that takes it, and a variable
+    // block is bound from the declared symbols; deleting takes the block and the wires on it in one step.
+    name: '28g A function block diagram is edited from the keyboard', example: 'blinky_fbd', proves: [], partly: ['LNG-012'],
+    run: async (app, { project }) => {
+      await openFolder(app, project);
+      await openDiagram(app, 'src/main.fbd.json', '.react-flow__node');
+      const nodes = () => app.eval<number>(`document.querySelectorAll('.react-flow__node').length`);
+      const before = await nodes();
+      await app.click(css('.react-flow__node[data-id="and_run"]'), 'the AND block');
+      await app.press('I');
+      await answerSearchList(app, 'NOT', 'NOT');
+      await app.until('a block beside the AND, selected', async () => await nodes() === before + 1 && await app.eval<boolean>(`document.querySelectorAll('.react-flow__node.selected').length === 1 && document.querySelector('.react-flow__node.selected').getAttribute('data-id') !== 'and_run'`) || undefined);
+      const inserted = await app.eval<string>(`document.querySelector('.react-flow__node.selected').getAttribute('data-id')`);
+      // the arrow keys without a modifier are the canvas's own: they nudge the selected block
+      const place = () => app.eval<string>(`document.querySelector('.react-flow__node[data-id="${inserted}"]').style.transform`);
+      const placed = await place();
+      await app.until('the focus on the new block', async () => await app.eval<boolean>(`document.activeElement?.getAttribute('data-id') === ${JSON.stringify(inserted)}`) || undefined)
+        .catch(async (error: Error) => { throw new Error(`${error.message}: the focus is on ${await app.eval<string>(`document.activeElement?.outerHTML.slice(0, 200)`)}`); });
+      await app.press('ArrowRight');
+      await app.until('the arrow key to nudge the block', async () => (await place()) !== placed || undefined);
+
+      await app.press('C');
+      await answerSearchList(app, 'AND.OUT');
+      await app.until('the wire of the AND to the new block', async () => await app.eval<boolean>(`document.querySelectorAll('.react-flow__edge[data-id]').length > 11`) || undefined);
+
+      // the cursor goes to the first block in reading order
+      await app.press('Home');
+      await app.until('the first block selected', async () => await app.eval<boolean>(`document.querySelector('.react-flow__node.selected')?.getAttribute('data-id') === 'not_led'`) || undefined);
+
+      // a variable block bound from the declared symbols
+      const withLed = () => app.eval<number>(`[...document.querySelectorAll('.react-flow__node')].filter((node) => node.innerText.includes('LED_Output')).length`);
+      const ledBefore = await withLed();
+      await app.press('V');
+      await answerSearchList(app, 'LED_Output');
+      await app.until('a variable block that holds LED_Output', async () => await withLed() === ledBefore + 1 || undefined);
+
+      await app.click(saveButton, 'the Save button');
+      const saved = () => JSON.parse(disk(join(project, 'src', 'main.fbd.json'))) as { blocks: Array<{ id: string; type: string; variableName?: string }>; connections: Array<{ from: { block: string; port: string }; to: { block: string; port: string } }> };
+      await app.until('the blocks to be written', () => saved().blocks.length === before + 2 || undefined);
+      assert(saved().connections.some((wire) => wire.from.block === 'and_run' && wire.from.port === 'OUT' && wire.to.block === inserted && wire.to.port === 'IN'),
+        `The wire drawn from the keyboard is not in the file: ${JSON.stringify(saved().connections.filter((wire) => wire.to.block === inserted))}`);
+      assert(saved().blocks.some((block) => block.type === 'variable' && block.variableName === 'LED_Output' && block.id !== 'var_led_read'), 'The variable block bound from the keyboard is not in the file.');
+      const result = await compile(app);
+      assert(result.kind === 'built', `The diagram edited from the keyboard does not build: ${result.message}`);
+
+      // Delete takes the selected block with its wires, as one step (a click on the block puts the focus back on the canvas)
+      await app.click(css('.react-flow__node.selected'), 'the selected variable block');
+      await app.press('Delete');
+      await app.until('the variable block to be gone', async () => await nodes() === before + 1 || undefined);
+    },
+  },
+  {
+    // A chart is edited by inserting a transition below a step and a step below a transition, each wired to the one it
+    // follows; a condition is chosen from the declared symbols and a step is named by typing.
+    name: '28h A sequential function chart is edited from the keyboard', example: 'blinky_sfc', proves: [], partly: ['LNG-012'],
+    run: async (app, { project }) => {
+      await openFolder(app, project);
+      await openDiagram(app, 'src/main.sfc.json', '.react-flow__node');
+      const nodes = () => app.eval<number>(`document.querySelectorAll('.react-flow__node').length`);
+      const before = await nodes();
+      await app.click(css('.react-flow__node[data-id="step_led_off"]'), 'the step LED_OFF');
+      await app.press('T');
+      await app.until('a transition below the step', async () => await nodes() === before + 1 || undefined);
+      await app.press('F2');
+      await answerSearchList(app, 'LED_Output', 'LED_Output');
+      await app.press('S');
+      await app.until('a step after the transition', async () => await nodes() === before + 2 || undefined);
+      await app.press('F2');
+      await answerSearchList(app, 'Hold');
+
+      await app.click(saveButton, 'the Save button');
+      const saved = () => JSON.parse(disk(join(project, 'src', 'main.sfc.json'))) as { steps: Array<{ id: string; name: string }>; transitions: Array<{ id: string; fromStep: string; toStep: string; condition: string }> };
+      await app.until('the chart to be written', () => saved().steps.some((step) => step.name === 'Hold') || undefined);
+      const hold = saved().steps.find((step) => step.name === 'Hold')!;
+      const added = saved().transitions.find((transition) => transition.toStep === hold.id);
+      assert(added !== undefined && added.fromStep === 'step_led_off' && added.condition === 'LED_Output',
+        `The transition inserted from the keyboard is not in the file as typed: ${JSON.stringify(saved().transitions)}`);
+      const result = await compile(app);
+      assert(result.kind === 'built', `The chart edited from the keyboard does not build: ${result.message}`);
+    },
+  },
+  {
+    // A toolbox item dropped on a cell is inserted by the command that the key runs, so the two cannot differ: the element
+    // gets an id nothing else has, and a function block an instance that is declared. The drop is made of DOM drag events
+    // with the data the toolbox sets; the pointer itself is not driven.
+    name: '28i An element dropped on a rung is inserted as the keyboard inserts it', example: 'blinky', proves: [], partly: ['LNG-012', 'LNG-010'],
+    run: async (app, { project }) => {
+      await openFolder(app, project);
+      await openDiagram(app, 'src/main.ld.json', '[data-ld-rung-id]');
+      const rungs = () => app.eval<number>(`document.querySelectorAll('[data-ld-rung-id]').length`);
+      const before = await rungs();
+      await app.click(button('Add Rung'), 'the Add Rung button');
+      await app.until('a new rung', async () => await rungs() === before + 1 || undefined);
+      const last = await app.eval<string>(`[...document.querySelectorAll('[data-ld-rung-id]')].at(-1).getAttribute('data-ld-rung-id')`);
+      const drop = async (column: number, item: { type: string; category: string; fbType?: string }) => {
+        await app.eval(`(() => {
+          const transfer = new DataTransfer();
+          transfer.setData('application/zplc-ld-element', ${JSON.stringify(JSON.stringify(item))});
+          document.querySelector('[data-ld-rung-id="${last}"] [data-ld-drop-zone="0,${column}"]').dispatchEvent(new DragEvent('dragover', { bubbles: true, cancelable: true, dataTransfer: transfer }));
+          window.__dropTransfer = transfer;
+        })()`);
+        // the cell under the pointer is state of the grid: the drop is made in the next frame
+        await app.eval(`new Promise((resolve) => requestAnimationFrame(() => resolve(true)))`);
+        await app.eval(`document.querySelector('[data-ld-rung-id="${last}"] [data-ld-drop-zone="0,${column}"]').dispatchEvent(new DragEvent('drop', { bubbles: true, cancelable: true, dataTransfer: window.__dropTransfer }))`);
+      };
+      await drop(1, { type: 'contact_no', category: 'contact' });
+      await app.until('the contact on the rung', async () => await app.eval<boolean>(`document.querySelector('[data-ld-rung-id="${last}"] [data-ld-cell="0,1"] [data-ld-element-id]') !== null`) || undefined);
+      await drop(3, { type: 'function_block', category: 'function_block', fbType: 'TON' });
+      await app.until('the function block on the rung', async () => await app.eval<boolean>(`document.querySelector('[data-ld-rung-id="${last}"] [data-ld-cell="0,3"] [data-ld-element-id]') !== null`) || undefined);
+      await app.click(saveButton, 'the Save button');
+      const saved = () => JSON.parse(disk(join(project, 'src', 'main.ld.json'))) as { variables: { local: Array<{ name: string; type: string }> }; rungs: Array<{ id: string; grid: Array<Array<{ element: { id: string; type: string; variable?: string; instance?: string; col: number } | null }>> }> };
+      await app.until('the new rung to be written', () => saved().rungs.length === before + 1 && saved().rungs.at(-1)!.grid.flat().filter((cell) => cell.element).length === 2 || undefined);
+      const elements = saved().rungs.at(-1)!.grid.flat().flatMap((cell) => (cell.element ? [cell.element] : []));
+      assert(elements.map((element) => [element.type, element.col]).join() === 'contact_no,1,function_block,3', `The rung written to the file is not what was dropped: ${JSON.stringify(elements)}`);
+      assert(elements[0]!.variable === undefined, `A contact that was dropped is bound to a name nobody gave it: ${elements[0]!.variable}`);
+      assert(elements[1]!.instance === 'TON_1' && saved().variables.local.some((variable) => variable.name === 'TON_1' && variable.type === 'TON'), `The function block that was dropped has no declared instance of its own: ${JSON.stringify(elements[1])}`);
+    },
+  },
+  {
+    // A drag with the pointer reaches the canvas as a stream of position changes; the file gets one change when the block
+    // is put down, and one undo takes it back: the pointer is the real one (mouse events from the DevTools protocol).
+    name: '28j A block dragged with the pointer is one undo step', example: 'blinky_fbd', proves: [], partly: ['LNG-010'],
+    run: async (app, { project }) => {
+      await openFolder(app, project);
+      await openDiagram(app, 'src/main.fbd.json', '.react-flow__node');
+      const node = css('.react-flow__node[data-id="and_run"]');
+      const place = () => app.eval<string>(`document.querySelector('.react-flow__node[data-id="and_run"]').style.transform`);
+      const original = await place();
+      const centre = await app.eval<{ x: number; y: number }>(`(() => { const box = document.querySelector('.react-flow__node[data-id="and_run"]').getBoundingClientRect(); return { x: box.x + box.width / 2, y: box.y + box.height / 2 }; })()`);
+      const mouse = (type: string, x: number, buttons: number) => app.cdp.command('Input.dispatchMouseEvent', { type, x, y: centre.y, button: 'left', buttons, clickCount: type === 'mouseMoved' ? 0 : 1 });
+      await mouse('mouseMoved', centre.x, 0);
+      await mouse('mousePressed', centre.x, 1);
+      for (let step = 1; step <= 12; step++) await mouse('mouseMoved', centre.x + step * 12, 1);
+      await mouse('mouseReleased', centre.x + 144, 0);
+      await app.until('the block to be where it was put down', async () => (await place()) !== original || undefined);
+      const moved = await place();
+      // one undo takes the whole drag back, and one redo does it again
+      await app.click(node, 'the dragged block');
+      await app.press('Ctrl+Z');
+      await app.until('the block back where it was', async () => (await place()) === original || undefined)
+        .catch(async (error: Error) => { throw new Error(`${error.message}: the block is at ${await place()}, was at ${original} and was put down at ${moved}`); });
+      await app.press('Ctrl+Shift+Z');
+      await app.until('the drag done again', async () => (await place()) === moved || undefined);
     },
   },
   {
