@@ -118,6 +118,7 @@ None of these is automated yet; each needs an account of the owner (see the tabl
 | `scripts/release/binaries.ts` | standalone CLI and MCP server for each platform and architecture | `scripts/release/binaries.test.ts` |
 | `packages/zplc-ide/scripts/packaged-content.ts` | the unpacked application holds the examples, the lessons and the notices | `packages/zplc-ide/scripts/packaged-content.test.ts` |
 | `scripts/release-artifacts.mjs` | copies the assets of a platform, writes `SHA256SUMS` and the evidence file; merges checksum files | `scripts/release-artifacts.test.mjs` |
+| `scripts/release/verify-bundle.ts` | reads the bundle of a platform as the files produced: every checksum, the evidence file for this run and the bill of materials; a step of each evidence job | `scripts/release/verify-bundle.test.ts` |
 | `scripts/release/run-results.ts`, `scripts/release/release-notes.ts` | the title and the notes of the release, from what the run did | `scripts/release/run-results.test.ts`, `scripts/release/release-notes.test.ts` |
 
 ## Verifying a download

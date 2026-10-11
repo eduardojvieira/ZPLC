@@ -287,6 +287,9 @@ describe('the notes claim only checks that their job runs (REL-027)', () => {
     ['build-macos', 'content', 'smoke:packaged-content'],
     ['build-windows', 'content', 'smoke:packaged-content'],
     ['build-linux', 'content', 'smoke:packaged-content'],
+    ['prepare-release-evidence-macos', 'bundle', 'verify-bundle.ts'],
+    ['prepare-release-evidence-windows', 'bundle', 'verify-bundle.ts'],
+    ['prepare-release-evidence-linux', 'bundle', 'verify-bundle.ts'],
   ];
 
   it.each(CLAIMS)('%s runs the %s check unconditionally', (job, _check, command) => {
@@ -314,5 +317,66 @@ describe('the notes claim only checks that their job runs (REL-027)', () => {
     ]);
     expect(stepRunning('render-release-notes', 'scripts/release/run-results.ts')).toBeDefined();
     expect(stepRunning('render-release-notes', 'scripts/release/release-notes.ts')).toBeDefined();
+  });
+});
+
+// The tests that matched regular expressions against the workflow (scripts/release-artifacts.test.mjs) are replaced by
+// these, which read the parsed workflow, and by the checks that read what was produced: packaged-content.ts for the
+// package and scripts/release/verify-bundle.ts for the bundle (VF-021).
+describe('every release build waits for the full CI and for the evidence of its own platform (REL-016)', () => {
+  const jobs = workflow.jobs;
+  const needsOf = (name: string) => [jobs[name]?.needs ?? []].flat().sort();
+
+  it('calls the CI workflow for the release SHA, before any build', () => {
+    const candidate = jobs['verify-release-candidate'] as unknown as { uses?: string; needs?: string | string[] };
+    expect(candidate.uses).toBe('./.github/workflows/ci.yml');
+    expect([candidate.needs ?? []].flat()).toEqual(['validate-version']);
+  });
+
+  it.each(['build-macos', 'build-windows', 'build-linux'])('%s waits for the version check and for that CI', (name) => {
+    expect(needsOf(name)).toEqual(['validate-version', 'verify-release-candidate']);
+  });
+
+  it('builds two clean Linux x64 payloads of the exact SHA and compares them, after the same CI', () => {
+    expect(needsOf('verify-linux-x64-payload-reproducibility')).toEqual(['validate-version', 'verify-release-candidate']);
+    expect(jobs['verify-linux-x64-payload-reproducibility']!.steps.some((step) => step.run?.includes('verify-reproducible-linux-payload.ts'))).toBe(true);
+    expect(needsOf('prepare-release-evidence-linux')).toEqual(['build-linux', 'validate-version', 'verify-linux-x64-payload-reproducibility']);
+  });
+});
+
+describe('the workflow reads no secret but the job token, and every platform verifies the bundle it made (REL-003)', () => {
+  const strings = (value: unknown): string[] => typeof value === 'string' ? [value]
+    : Array.isArray(value) ? value.flatMap(strings)
+      : value !== null && typeof value === 'object' ? Object.values(value).flatMap(strings) : [];
+
+  it('names no secret other than GITHUB_TOKEN', () => {
+    const names = strings(workflow).flatMap((text) => [...text.matchAll(/\$\{\{\s*secrets\.([A-Za-z0-9_]+)/g)].map((match) => match[1]!));
+    expect([...new Set(names)]).toEqual(['GITHUB_TOKEN']);
+  });
+
+  it.each(['macos', 'windows', 'linux'])('verifies the %s bundle after it is created and before it is attested or uploaded', (platform) => {
+    const job = workflow.jobs[`prepare-release-evidence-${platform}`]!;
+    const create = indexOfStep(job, 'scripts/release-artifacts.mjs');
+    const verify = indexOfStep(job, 'scripts/release/verify-bundle.ts');
+    const upload = indexOfStep(job, 'actions/upload-artifact@');
+    expect(verify).toBeGreaterThan(create);
+    expect(verify).toBeLessThan(upload);
+    expect(job.steps[verify]!.if).toBeUndefined();
+    expect(job.steps[verify]!.run).toContain('--commit-sha "$RELEASE_COMMIT_SHA"');
+  });
+});
+
+describe('the Linux desktop identity of the package follows the executable (REL-011)', () => {
+  it('syncs the desktop name of the entry with the name of the executable, which the manifest sets', () => {
+    const manifest = JSON.parse(read('../package.json')) as { desktopName?: string };
+    expect(manifest.desktopName).toBe('zplc-ide');
+    expect((builder as unknown as { linux: { syncDesktopName?: boolean } }).linux.syncDesktopName).toBe(true);
+  });
+
+  it('has an icon of at least 512 pixels, square, as a PNG file', () => {
+    const icon = readFileSync(new URL('../public/icon.png', import.meta.url));
+    expect([...icon.subarray(0, 8)]).toEqual([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
+    expect(icon.readUInt32BE(16)).toBe(icon.readUInt32BE(20));
+    expect(icon.readUInt32BE(16)).toBeGreaterThanOrEqual(512);
   });
 });

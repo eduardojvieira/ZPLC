@@ -77,6 +77,9 @@
     {"kind":"unit","ref":"tools/docs/check-docs-samples.test.ts","test":"docs samples: the English page and its Spanish twin (VF-020)"},
     {"kind":"unit","ref":"tools/docs/check-docs-samples.test.ts","test":"docs samples: the fence convention (VF-020)"}
   ],
+  "VF-021": [
+    {"kind":"unit","ref":"scripts/release/verify-bundle.test.ts","test":"the release bundle that was produced (VF-021)","partial":true,"note":"covers what can be read from produced files on Linux: the checksum, evidence and bill-of-materials files of every platform bundle (scripts/release/verify-bundle.ts, a step of each evidence job), the unpacked Linux package (packaged-content.ts: examples, lessons, notices and the desktop identity; smoke-desktop-builds.ts: the native runtime), and the standalone CLI run with no Bun or Node on the PATH. Open: the signature kind is inspected only on a macOS runner (verify-mac-signature.ts, REL-002), installers of Windows only by name, the .deb and .rpm installs only in the CI containers (check-linux-package.sh); and the validators of tools/hil (validate_release_evidence.py, validate_supported_boards.py), workflow-action-pins.test.mjs, release-config.test.ts and ci-workflow.test.ts still read the workflow (tools/ci/pinned-source-offenders.json, VF-021). scripts/release-artifacts.test.mjs no longer matches a workflow."}
+  ],
   "VF-022": [
     {"kind":"unit","ref":"tools/ci/test-inventory.test.ts","test":"checkInventory (VF-022)"}
   ],
@@ -1650,7 +1653,7 @@
   ],
   "REL-003": [
     {"kind":"unit","ref":"packages/zplc-ide/scripts/release-config.test.ts","test":"electron-builder.yml Windows signing (REL-003, REL-038)","partial":true,"note":"asserts the parsed electron-builder and workflow configuration, not the produced installer; its own header says a hosted release run is the proof (VF-021)"},
-    {"kind":"unit","ref":"scripts/release-artifacts.test.mjs","test":"contains no paid credential, Developer ID, notarization or Windows certificate path (REL-003)","partial":true,"note":"asserts the text of the release workflow and packaging script by regular expression (VF-006, VF-021); the produced artifact is not inspected"}
+    {"kind":"unit","ref":"packages/zplc-ide/scripts/release-config.test.ts","test":"the workflow reads no secret but the job token, and every platform verifies the bundle it made (REL-003)"}
   ],
   "REL-038": [
     {"kind":"unit","ref":"packages/zplc-ide/scripts/release-config.test.ts","test":"Windows installers carry unsigned in their variant until a channel is live (REL-038)","partial":true,"note":"asserts the parsed electron-builder and workflow configuration, not the produced installer; its own header says a hosted release run is the proof (VF-021)"},
@@ -1659,13 +1662,16 @@
     {"kind":"unit","ref":"scripts/release/release-records.test.ts","test":"what a version bump edits (REL-031, REL-038)"}
   ],
   "REL-011": [
-    {"kind":"unit","ref":"packages/zplc-ide/scripts/release-config.test.ts","test":"Linux packages use electron-builder defaults and are installed in clean containers (REL-011)","partial":true,"note":"asserts the parsed electron-builder and workflow configuration, not the produced installer; its own header says a hosted release run is the proof (VF-021)"}
+    {"kind":"unit","ref":"packages/zplc-ide/scripts/packaged-content.test.ts","test":"the Linux desktop identity of the unpacked package (REL-011)"},
+    {"kind":"unit","ref":"packages/zplc-ide/scripts/release-config.test.ts","test":"Linux packages use electron-builder defaults and are installed in clean containers (REL-011)","partial":true,"note":"asserts the parsed electron-builder and workflow configuration, not the produced installer; its own header says a hosted release run is the proof (VF-021)"},
+    {"kind":"unit","ref":"packages/zplc-ide/scripts/release-config.test.ts","test":"the Linux desktop identity of the package follows the executable (REL-011)"}
   ],
   "REL-015": [
     {"kind":"unit","ref":"packages/zplc-ide/scripts/release-config.test.ts","test":"release.yml publishes each platform independently and only as a draft (REL-015, REL-016)","partial":true,"note":"asserts the parsed electron-builder and workflow configuration, not the produced installer; its own header says a hosted release run is the proof (VF-021)"},
     {"kind":"unit","ref":"scripts/release/release-notes.test.ts","test":"the signing state of every asset comes from the checks of the run (REL-027, REL-015)"}
   ],
   "REL-016": [
+    {"kind":"unit","ref":"packages/zplc-ide/scripts/release-config.test.ts","test":"every release build waits for the full CI and for the evidence of its own platform (REL-016)"},
     {"kind":"unit","ref":"packages/zplc-ide/scripts/release-config.test.ts","test":"release.yml publishes each platform independently and only as a draft (REL-015, REL-016)","partial":true,"note":"asserts the parsed electron-builder and workflow configuration, not the produced installer; its own header says a hosted release run is the proof (VF-021)"}
   ],
   "REL-017": [
