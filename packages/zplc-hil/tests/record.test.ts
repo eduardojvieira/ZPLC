@@ -73,6 +73,15 @@ describe('the run record (HIL-009)', () => {
     expect(parseBuildIdentity({ version: 'x' })).toBeUndefined();
   });
 
+  test('the identity a Zephyr native_sim shell printed is read, in both shapes, and says the HIL trace is off', () => {
+    const read = (name: string) => readFileSync(join(ROOT, 'tools/hil/testdata', name), 'utf8');
+    const json = parseBuildIdentity(JSON.parse(read('identity-native-sim.json')) as Record<string, unknown>)!;
+    expect(json.board).toBe('native_sim/native');
+    expect(parseIdentityText(read('identity-native-sim.txt'))).toEqual(json);
+    expect(firmwareIdentity(json).hil_trace).toBe(false);
+    expect(firmwareIdentity(json).build_options?.CODE_SIZE_MAX).toBe('4096');
+  });
+
   test('a unit is named by a hash that hides its serial number', () => {
     const named = serialHash('2E8A', '000A', 'E6614103E7123456')!;
     expect(named).toMatch(/^[0-9a-f]{64}$/);
