@@ -1030,9 +1030,6 @@ function validateVariableTag(sym: Symbol, tagIdName: string, tagId: number,
     if (width === 0) {
         throw tagAdmissionError(sym, `${tagName} tag on '${sym.name}' does not support ${String(sym.dataType)}`);
     }
-    if ((sym.address & 0xF000) === 0x3000) {
-        throw tagAdmissionError(sym, `${tagName} tag on '${sym.name}' cannot use the unsupported 0x3000 WORK alias`);
-    }
     if (!region) {
         throw tagAdmissionError(sym, `${tagName} tag on '${sym.name}' exceeds a valid VM memory region`);
     }
@@ -3303,6 +3300,8 @@ function isStringExpression(state: CodeGenState, expr: Expression): boolean {
 function stdlibMemberType(fbType: string, member: { name: string; size: number; dataType?: unknown }): string {
     const declared = numericTypeName(member.dataType);
     if (declared !== UNKNOWN_TYPE) return declared;
+    // A STRING member of a communication block holds the string itself (COM-005): a read is its address.
+    if (typeof member.dataType === 'string' && member.dataType.toUpperCase() === 'STRING') return 'STRING';
     if (member.size === 1) return 'BOOL';
     // The counters' PV and CV are the only 2-byte members, and they are INT in IEC 61131-3.
     if (member.size === 2) return 'INT';

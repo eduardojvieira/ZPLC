@@ -20,6 +20,11 @@
       "counter": 4,
       "fingerprint": "d350e9901cd5e56522063fc85a5badbd1f18fb67f39ead7fa114b3baf0d56d34",
       "reason": "TASK call_depth field and BUILD segment: the compiler records the call depth of each task and a build identity that its debug map repeats (CMP-050, CMP-056)"
+    },
+    {
+      "counter": 5,
+      "fingerprint": "aef229245e7b0ba0a01d3896d52a9d66efe8b58afa8889a8220fa2dfd645bc0b",
+      "reason": "Communication blocks (COM-004, COM-005, COM-009): the STRING members of AZURE_DPS_PROV, AZURE_EG_PUB and AWS_FLEET_PROV no longer overlap each other or run past the instance; the last byte of every block with a layout belongs to the dispatcher, which keeps the previous EN there (the blocks AZURE_C2D_RECV, AZURE_DPS_PROV, AZURE_EG_PUB, AWS_FLEET_PROV and SPB_REBIRTH grow by one byte); the status ZPLC_COMM_UNAVAILABLE (10) is new. Artifacts built before this draft are refused."
     }
   ]
 }

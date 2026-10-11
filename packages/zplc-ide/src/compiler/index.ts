@@ -79,6 +79,7 @@ import type { ILProjectSymbols } from './il/ilToST.ts';
 import type {
     ZPLCProjectConfig,
     CommunicationTagConfig,
+    ModbusAddressSpace,
 } from '../types/index.ts';
 import { getCompilerMemoryProfile } from '../config/boardProfiles.ts';
 import { checkLocatedVariables, locatedVariablesOf } from '../boards/ioAdmission.ts';
@@ -350,11 +351,55 @@ function getTagAnnotations(tag: CommunicationTagConfig): string[] {
     }
 
     if (tag.modbusAddress !== undefined || tag.mode === 'modbus') {
-        annotations.push(`{modbus:${tag.modbusAddress ?? 1}}`);
+        annotations.push(`{modbus:${modbusTagNumber(tag.modbusArea, tag.modbusAddress ?? 1, `communication tag '${tag.symbol}'`, 0)}}`);
     }
 
     return annotations;
 }
+
+const MODBUS_AREA_BASE = { 'discrete-input': 10001, 'input-register': 30001, 'holding-register': 40001 } as const;
+
+/** The area the Modbus notation reads a number as, for the three areas that have a prefix. */
+function modbusAreaOfNumber(number: number): ModbusAddressSpace | undefined {
+    if (number >= 40001 && number <= 49999) return 'holding-register';
+    if (number >= 30001 && number <= 39999) return 'input-register';
+    if (number >= 10001 && number <= 19999) return 'discrete-input';
+    return undefined;
+}
+
+/**
+ * The number of the `{modbus:N}` tag that serves a variable at `address` of `area` (COM-011). The four areas of a
+ * Modbus server are four address spaces, and the tag says which with the notation of the Modbus world: 10001 to
+ * 19999 are discrete inputs, 30001 to 39999 input registers, 40001 to 49999 holding registers, and any other
+ * number is a coil (a BOOL) or a holding register at that address. An address that is already written in that
+ * notation, in the area that was chosen, is kept; no area keeps the number as the author wrote it.
+ */
+export function modbusTagNumber(area: ModbusAddressSpace | undefined, address: number, what: string, line: number): number {
+    if (area === undefined) return address;
+    if (!Number.isInteger(address) || address < 0 || address > 65535) {
+        throw new CompilerError(`The Modbus address ${String(address)} of ${what} is not between 0 and 65535`, line, 0, 'codegen');
+    }
+    const written = modbusAreaOfNumber(address);
+    if (written !== undefined) {
+        if (written === area) return address;
+        throw new CompilerError(
+            `The Modbus address ${String(address)} of ${what} is a ${written.replace('-', ' ')} in Modbus notation, and ${what} is placed in a ${area.replace('-', ' ')}`,
+            line, 0, 'codegen');
+    }
+    if (area === 'coil') return address;
+    if (address <= 9998) return MODBUS_AREA_BASE[area] + address;
+    if (area === 'holding-register') return address;
+    throw new CompilerError(
+        `The ${area.replace('-', ' ')} address ${String(address)} of ${what} does not fit: an ${area.replace('-', ' ')} is addressed from 0 to 9998`,
+        line, 0, 'codegen');
+}
+
+const MODBUS_HELPER_AREA: Record<string, ModbusAddressSpace> = {
+    COIL: 'coil',
+    DISCRETE_INPUT: 'discrete-input',
+    INPUT_REGISTER: 'input-register',
+    HOLDING_REGISTER: 'holding-register',
+};
 
 const MODBUS_HELPER_REGEX = /^\s*MODBUS_(COIL|DISCRETE_INPUT|INPUT_REGISTER|HOLDING_REGISTER)\s*\(\s*([A-Za-z_][A-Za-z0-9_]*)\s*,\s*(\d+)\s*\)\s*;\s*$/i;
 
@@ -363,14 +408,15 @@ function applyModbusBindingHelpers(stSource: string): string {
     const bindings = new Map<string, number>();
     const keptLines: string[] = [];
 
-    for (const line of lines) {
+    for (const [index, line] of lines.entries()) {
         const match = line.match(MODBUS_HELPER_REGEX);
         if (!match) {
             keptLines.push(line);
             continue;
         }
 
-        bindings.set(match[2], parseInt(match[3], 10));
+        const area = MODBUS_HELPER_AREA[match[1].toUpperCase()];
+        bindings.set(match[2], modbusTagNumber(area, parseInt(match[3], 10), `'${match[2]}'`, index + 1));
         // the line stays, empty: every diagnostic is reported at the line the author sees (CMP-006)
         keptLines.push('');
     }

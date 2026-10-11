@@ -17,9 +17,6 @@
       }
     },
     "arduino-opta-wifi-m7": {
-      "firmware/app/include/zplc_mqtt.h": {
-        "readability-redundant-declaration": 1
-      },
       "firmware/app/src/shell_cmds.c": {
         "bugprone-reserved-identifier": 1,
         "readability-redundant-declaration": 1,
@@ -30,9 +27,6 @@
       },
       "firmware/app/src/zplc_azure_dps.c": {
         "cert-err33-c": 3
-      },
-      "firmware/app/src/zplc_comm_mqtt_handler.c": {
-        "readability-redundant-declaration": 1
       },
       "firmware/app/src/zplc_config.c": {
         "bugprone-not-null-terminated-result": 1

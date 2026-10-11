@@ -359,15 +359,32 @@ const TIMER_PINS = (inEn: string, inEs: string, qEn: string, qEs: string, etEn: 
 ];
 
 /** The eight-byte handshake that every communication block starts with. */
+const STATUS_CODES_EN = 'Status code of the last request: 0 OK, 1 busy, 2 timeout, 3 no handler, 4 not connected, 5 queue full, 6 invalid address, 7 string overflow, 8 protocol error, 9 authentication failed, 10 service not available in this runtime.';
+const STATUS_CODES_ES = 'Código de estado de la última solicitud: 0 correcto, 1 ocupado, 2 tiempo agotado, 3 sin manejador, 4 sin conexión, 5 cola llena, 6 dirección inválida, 7 desborde de cadena, 8 error de protocolo, 9 autenticación fallida, 10 servicio no disponible en este runtime.';
+
+/** The handshake of a block that makes one request for each rising EN (zplc_comm_dispatch.h). */
 const HANDSHAKE: PinDoc[] = [
-    pin('EN', 'BOOL', 'Enable: the block runs while it is TRUE.', 'Habilitación: el bloque actúa mientras es TRUE.'),
-    pin('BUSY', 'BOOL', 'TRUE while a request is in progress.', 'TRUE mientras una solicitud está en curso.'),
-    pin('DONE', 'BOOL', 'TRUE when the request has finished without error.', 'TRUE cuando la solicitud terminó sin error.'),
-    pin('ERROR', 'BOOL', 'TRUE when the request failed; STATUS says why.', 'TRUE cuando la solicitud falló; STATUS dice por qué.'),
-    pin('STATUS', 'DINT', 'Status code: 0 OK, 1 busy, 2 timeout, 3 no handler, 4 not connected, 5 queue full, 6 invalid address, 7 string overflow, 8 protocol error, 9 authentication failed.',
-        'Código de estado: 0 correcto, 1 ocupado, 2 tiempo agotado, 3 sin manejador, 4 sin conexión, 5 cola llena, 6 dirección inválida, 7 desborde de cadena, 8 error de protocolo, 9 autenticación fallida.'),
+    pin('EN', 'BOOL', 'A rising edge starts one request. While EN stays TRUE the result is held and nothing is repeated; EN FALSE clears DONE and ERROR.',
+        'Un flanco ascendente inicia una solicitud. Mientras EN sigue en TRUE el resultado se mantiene y nada se repite; EN en FALSE borra DONE y ERROR.'),
+    pin('BUSY', 'BOOL', 'TRUE from the rising edge until the request has finished; a request in flight completes even if EN falls.',
+        'TRUE desde el flanco ascendente hasta que la solicitud termina; una solicitud en curso se completa aunque EN baje.'),
+    pin('DONE', 'BOOL', 'TRUE when the request has finished without error; held while EN stays TRUE.',
+        'TRUE cuando la solicitud terminó sin error; se mantiene mientras EN sigue en TRUE.'),
+    pin('ERROR', 'BOOL', 'TRUE when the request failed; STATUS says why; held while EN stays TRUE.',
+        'TRUE cuando la solicitud falló; STATUS dice por qué; se mantiene mientras EN sigue en TRUE.'),
+    pin('STATUS', 'DINT', STATUS_CODES_EN, STATUS_CODES_ES),
 ];
 
+/** The handshake of a block that reports a state on every scan: the session or a subscription. */
+const SERVICE_HANDSHAKE = (busyEn: string, busyEs: string, doneEn: string, doneEs: string): PinDoc[] => [
+    pin('EN', 'BOOL', 'Enable: the block reports its state on every scan while it is TRUE; FALSE clears BUSY, DONE and ERROR.',
+        'Habilitación: el bloque informa su estado en cada ciclo mientras es TRUE; FALSE borra BUSY, DONE y ERROR.'),
+    pin('BUSY', 'BOOL', busyEn, busyEs),
+    pin('DONE', 'BOOL', doneEn, doneEs),
+    pin('ERROR', 'BOOL', 'TRUE while the state cannot be reached (the session is down, or the service is not available); STATUS says why.',
+        'TRUE mientras no se puede alcanzar el estado (la sesión está caída o el servicio no está disponible); STATUS dice por qué.'),
+    pin('STATUS', 'DINT', STATUS_CODES_EN, STATUS_CODES_ES),
+];
 const MODBUS_PINS = (value: PinDoc): PinDoc[] => [
     ...HANDSHAKE,
     pin('PROTO', 'USINT', 'Transport: 0 for RTU, 1 for TCP.', 'Transporte: 0 para RTU, 1 para TCP.'),
@@ -620,7 +637,9 @@ export const BLOCK_DOCS: Record<string, BlockDoc> = {
         NO_PEER('MB_WRITE_COIL', "Link(EN := TRUE, PROTO := 1, SLAVE_ID := 1, ADDR := 0, COUNT := 1, VALUE := TRUE, HOST := '127.0.0.1', PORT := 502);"),
         'Failed=TRUE Code=3', { scans: 3 }),
     MQTT_CONNECT: block('mqtt', [
-        ...HANDSHAKE,
+        ...SERVICE_HANDSHAKE('TRUE while the first connection attempt is in progress.',
+            'TRUE mientras el primer intento de conexión está en curso.',
+            'TRUE while the broker session is up.', 'TRUE mientras la sesión con el broker está activa.'),
         pin('PROFILE', 'USINT', 'Connection profile selector. The session is the one that the device configuration defines; this pin does not change it.', 'Selector del perfil de conexión. La sesión es la que define la configuración del dispositivo; este pin no la cambia.'),
         pin('CONNECTED', 'BOOL', 'TRUE while the broker session is open.', 'TRUE mientras la sesión con el broker está abierta.'),
     ],
@@ -638,9 +657,12 @@ export const BLOCK_DOCS: Record<string, BlockDoc> = {
         'Publica un mensaje en un tema.',
         NO_PEER('MQTT_PUBLISH', "Link(EN := TRUE, QOS := 0, RETAIN := FALSE, TOPIC := 'plant/a', PAYLOAD := '1');"), 'Failed=TRUE Code=3', { scans: 3 }),
     MQTT_SUBSCRIBE: block('mqtt', [
-        ...HANDSHAKE,
+        ...SERVICE_HANDSHAKE('TRUE until the broker has acknowledged the subscription.',
+            'TRUE hasta que el broker confirmó la suscripción.',
+            'TRUE while the subscription holds.', 'TRUE mientras la suscripción se mantiene.'),
         pin('QOS', 'USINT', 'Quality of service: 0, 1 or 2.', 'Calidad de servicio: 0, 1 o 2.'),
-        pin('VALID', 'BOOL', 'TRUE when PAYLOAD holds a new message.', 'TRUE cuando PAYLOAD tiene un mensaje nuevo.'),
+        pin('VALID', 'BOOL', 'TRUE for one scan when a message arrived since the last scan; PAYLOAD holds it.',
+            'TRUE durante un ciclo cuando llegó un mensaje desde el ciclo anterior; PAYLOAD lo contiene.'),
         pin('TOPIC', 'STRING', 'Topic to subscribe to.', 'Tema al que se suscribe.'),
         pin('PAYLOAD', 'STRING', 'The last message received.', 'El último mensaje recibido.'),
     ],
@@ -648,16 +670,21 @@ export const BLOCK_DOCS: Record<string, BlockDoc> = {
         'Se suscribe a un tema y entrega sus mensajes.',
         NO_PEER('MQTT_SUBSCRIBE', "Link(EN := TRUE, QOS := 0, TOPIC := 'plant/cmd');"), 'Failed=TRUE Code=3', { scans: 3 }),
     AZURE_C2D_RECV: block('cloud', [
-        ...HANDSHAKE,
+        ...SERVICE_HANDSHAKE('TRUE while the session with the hub is being established.',
+            'TRUE mientras se establece la sesión con el hub.',
+            'TRUE while the session is up and cloud-to-device messages can arrive.',
+            'TRUE mientras la sesión está activa y pueden llegar mensajes de la nube al dispositivo.'),
         pin('PAYLOAD', 'STRING', 'The cloud-to-device message received.', 'El mensaje de la nube al dispositivo recibido.'),
-        pin('VALID', 'BOOL', 'TRUE when PAYLOAD holds a new message.', 'TRUE cuando PAYLOAD tiene un mensaje nuevo.'),
+        pin('VALID', 'BOOL', 'TRUE for one scan when a message arrived since the last scan; PAYLOAD holds it.',
+            'TRUE durante un ciclo cuando llegó un mensaje desde el ciclo anterior; PAYLOAD lo contiene.'),
     ],
         'Receives a cloud-to-device message of Azure IoT Hub.',
         'Recibe un mensaje de la nube al dispositivo de Azure IoT Hub.',
         NO_PEER('AZURE_C2D_RECV', 'Link(EN := TRUE);'), 'Failed=TRUE Code=3', { scans: 3 }),
     AZURE_DPS_PROV: block('cloud', [
         ...HANDSHAKE,
-        pin('DEVICE_ID', 'STRING', 'Registration identifier of the device.', 'Identificador de registro del dispositivo.'),
+        pin('DEVICE_ID', 'STRING', 'Registration identifier of the device; when it is not empty it is the one used for this request.',
+            'Identificador de registro del dispositivo; cuando no está vacío es el que se usa en esta solicitud.'),
         pin('ASSIGNED_HUB', 'STRING', 'The hub that the service assigned.', 'El hub que asignó el servicio.'),
     ],
         'Registers the device with the Azure Device Provisioning Service.',
@@ -674,7 +701,8 @@ export const BLOCK_DOCS: Record<string, BlockDoc> = {
         NO_PEER('AZURE_EG_PUB', "Link(EN := TRUE, TOPIC := 'plant', EVENT_TYPE := 'alarm', PAYLOAD := '1');"), 'Failed=TRUE Code=3', { scans: 3 }),
     AWS_FLEET_PROV: block('cloud', [
         ...HANDSHAKE,
-        pin('TEMPLATE_NAME', 'STRING', 'Name of the fleet provisioning template.', 'Nombre de la plantilla de aprovisionamiento de flota.'),
+        pin('TEMPLATE_NAME', 'STRING', 'Name of the fleet provisioning template; when it is not empty it is the one used for this request.',
+            'Nombre de la plantilla de aprovisionamiento de flota; cuando no está vacío es el que se usa en esta solicitud.'),
         pin('THING_NAME', 'STRING', 'The name of the thing that the service created.', 'El nombre del objeto que creó el servicio.'),
     ],
         'Provisions the device through AWS IoT fleet provisioning.',
