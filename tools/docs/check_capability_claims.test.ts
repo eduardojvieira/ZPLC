@@ -42,6 +42,9 @@ describe('capability claims: what the public text says ZPLC can do is backed by 
     expect(ids('The Raspberry Pi Pico runs your program.')).toEqual(['board-capability']);
     expect(ids('Modbus TCP is supported on every network board.')).toEqual(['communication-protocols']);
     expect(ids('The browser simulator runs your program.')).toEqual(['browser-simulator']);
+    // WORK is the memory region of the program and not the verb: a sentence that names it makes no claim
+    expect(ids('The Modbus server serves every variable of WORK and RETAIN.')).toEqual([]);
+    expect(ids('Modbus RTU works on every serial board.')).toEqual(['communication-protocols']);
     // the same words, as a limitation, are the honest text
     expect(ids('ZPLC is not SIL 2 certified.')).toEqual([]);
     expect(ids('No board has been tested on real hardware yet.')).toEqual([]);

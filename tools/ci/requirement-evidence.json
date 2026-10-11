@@ -2016,7 +2016,8 @@
   "DOC-009": [
     {"kind":"unit","ref":"tools/docs/check-docs-config.test.ts","test":"docs configuration fragments: a fragment is a piece of a project file that builds (DOC-009)"},
     {"kind":"unit","ref":"tools/docs/check-docs-config.test.ts","test":"finds a board entry of a page by its fence and checks it against the validator of the board manifest (DOC-009)"},
-    {"kind":"unit","ref":"tools/docs/check-docs-config.test.ts","test":"how-to guides: each task has a page in both languages with something that runs (DOC-009)"}
+    {"kind":"unit","ref":"tools/docs/check-docs-config.test.ts","test":"how-to guides: each task has a page in both languages with something that runs (DOC-009)"},
+    {"kind":"unit","ref":"tools/docs/mcp_protocol_revision.test.ts","test":"MCP guide: the protocol revision of the server is the one the page shows (DOC-009)"}
   ],
   "DOC-010": [
     {"kind":"unit","ref":"tools/docs/install_and_status_pages.test.ts","test":"hardware support page: one table, derived from the manifest and its records (DOC-010)"},

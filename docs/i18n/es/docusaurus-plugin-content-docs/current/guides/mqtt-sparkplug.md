@@ -17,16 +17,21 @@ Sparkplug B.
 :::warning Estado de esta página
 Verificado solo en el host y en `native_sim`: el cliente frente a tópicos y cargas
 hostiles bajo cada uno de sus cinco perfiles, la decodificación de las cargas de
-comandos y los manejadores de los bloques de función contra sustitutos. No se ha
-probado ninguna sesión con un broker real, ningún intercambio TLS en una placa ni
-ninguna aplicación anfitriona Sparkplug B. El protocolo de los bloques de función
-MQTT se está reelaborando y se marca como **inestable** más abajo.
+comandos, los manejadores de los bloques de función contra sustitutos y el cliente MQTT
+del runtime de simulación contra un broker escrito para la prueba sobre un socket de
+loopback. El cliente MQTT del controlador no se ha ejecutado contra un broker, y no se ha
+probado ninguna sesión con un broker real, ningún intercambio TLS en una placa ni ninguna
+aplicación anfitriona Sparkplug B.
 :::
 
 ## Qué necesita
 
 - Una placa con interfaz de red, y un broker que usted opere o en el que confíe. El
-  simulador de su equipo no tiene broker ni sesión MQTT.
+  simulador de Studio no tiene broker ni sesión MQTT: inicia el runtime nativo sin los
+  bloques de comunicación. Ese runtime puede ejecutar los bloques MQTT contra un broker
+  cuando se inicia con `ZPLC_NATIVE_COMM=1` y `ZPLC_NATIVE_MQTT_BROKER`
+  ([En simulación](../runtime/communication-function-blocks.md#en-simulación)); Studio
+  todavía no lo inicia así.
 - El certificado de la CA del broker en el dispositivo, porque un controlador que
   nunca se configuró usa TLS en el puerto 8883 y comprueba el certificado del
   broker. MQTT está desactivado y no tiene broker hasta que un operador nombra uno
@@ -145,8 +150,8 @@ renacimiento lo hace publicar de nuevo sus mensajes de nacimiento y nada más.
 ## Use los bloques de función en su lugar
 
 `MQTT_CONNECT` informa el estado de la sesión que abre la configuración del
-dispositivo; `MQTT_PUBLISH` envía un mensaje a un tópico; `MQTT_SUBSCRIBE` entrega
-los mensajes de un tópico.
+dispositivo (no la abre); `MQTT_PUBLISH` envía un mensaje a un tópico por cada flanco
+ascendente de `EN`; `MQTT_SUBSCRIBE` mantiene una suscripción y entrega sus mensajes.
 
 ```st runnable expect="Failed=TRUE Code=3" scans=3 scan_ms=10
 PROGRAM Alarm
@@ -162,15 +167,31 @@ Code := Send.STATUS;
 END_PROGRAM
 ```
 
-En el simulador de su equipo no hay broker, así que el bloque termina con `ERROR`
-en TRUE y `STATUS` 3 (sin manejador): demuestra que el bloque compila e informa un
-estado, no que un mensaje se haya entregado. `STATUS` 4 significa que la sesión no
-está conectada, y 5 que la cola de solicitudes está llena.
+En el simulador de Studio el runtime no tiene manejador para el bloque, así que termina
+con `ERROR` en TRUE y `STATUS` 3: demuestra que el bloque compila e informa un estado, no
+que un mensaje se haya entregado. Con los bloques de comunicación activos y sin broker
+nombrado, el bloque responde `STATUS` 10 (no disponible). `STATUS` 4 significa que la
+sesión no está conectada, y 5 que todas las ranuras de solicitud están en uso.
 
-**Inestable:** el momento de `BUSY`, `DONE` y `ERROR` a lo largo de los ciclos, y lo
-que hace un reinicio a una solicitud en curso, se están fijando como un único
-protocolo para todos los bloques de comunicación. Actúe en el primer ciclo en que
-`DONE` sea TRUE.
+Los bloques siguen el único handshake de los doce bloques de comunicación
+([Bloques de función de comunicación](../runtime/communication-function-blocks.md#el-handshake)):
+
+- `MQTT_PUBLISH` envía un mensaje por cada flanco ascendente de `EN`. Mientras `EN` sigue
+  en TRUE después del resultado, el resultado se mantiene y no se vuelve a enviar nada;
+  deje caer `EN` durante un ciclo para enviar otro. Una solicitud en curso se completa
+  aunque `EN` caiga.
+- `DONE` significa que el cliente aceptó el mensaje para enviarlo. No se espera el acuse
+  de un mensaje QoS 1 o 2.
+- Una publicación sin resultado después de 5 s es `ERROR` con `STATUS` 2, y un resultado
+  tardío se descarta. Un mensaje que estaba en cola cuando la sesión cayó falla y no se
+  envía en la sesión siguiente.
+- `MQTT_CONNECT`, `MQTT_SUBSCRIBE` y `AZURE_C2D_RECV` son bloques de servicio: mientras
+  `EN` es TRUE informan el estado de la sesión en cada ciclo, y una sesión perdida es
+  `ERROR` con `STATUS` 4 en el ciclo siguiente a que el cliente lo nota (dentro del
+  intervalo de keep-alive para una pérdida silenciosa). `VALID` de `MQTT_SUBSCRIBE` es
+  TRUE durante exactamente un ciclo por cada mensaje nuevo, y `PAYLOAD` conserva el último.
+- Tras una pérdida, el cliente hace un intento de reconexión a la vez: espera hasta 5 s la
+  respuesta del broker y luego 2 s, duplicando hasta 60 s, antes del intento siguiente.
 
 ## Qué está verificado y qué no
 
@@ -178,8 +199,10 @@ protocolo para todos los bloques de comunicación. Actúe en el primer ciclo en 
 | --- | --- | --- |
 | Tópicos y cargas hostiles no pueden cambiar el estado de ejecución, los forzados ni el programa cargado, en los cinco perfiles | Prueba del cliente del producto con espías en cada autoridad | Host y `native_sim` |
 | Las cargas de comandos de cada tipo admitido se decodifican, y una malformada se rechaza | Prueba unitaria del decodificador | Host y `native_sim` |
-| Manejadores de bloques: disposición, límites, cola | Prueba con un cliente sustituto | Host y `native_sim` |
+| Manejadores de bloques: pines, handshake, códigos de estado, límites, traspaso al hilo del cliente | Prueba con un cliente sustituto | Host y `native_sim` |
+| El cliente MQTT del runtime de simulación: sesión, publicación, suscripción, pérdida de la sesión, reconexión, pérdida silenciosa, un mensaje publicado con la sesión caída | Ejecutado contra un broker escrito para la prueba en loopback, sobre sockets reales, bajo los sanitizadores de direcciones, de comportamiento indefinido y de hilos | Host |
 | TLS rechaza en la compilación un generador aleatorio no criptográfico | Regla de compilación | Compilación |
+| El cliente MQTT del controlador contra un broker | No se ejecuta en el conjunto de pruebas | Ninguno |
 | Una sesión con un broker real, un intercambio TLS, una aplicación anfitriona Sparkplug B, entrega con QoS 1 | No probado | Ninguno |
 
 ## Vea también

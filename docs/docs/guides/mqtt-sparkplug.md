@@ -16,17 +16,21 @@ Sparkplug B.
 
 :::warning Status of this page
 Verified on the host and on `native_sim` only: the client against hostile topics
-and payloads under each of its five profiles, the decoding of command payloads, and
-the function-block handlers against stand-ins. No session with a real broker, no TLS
-handshake on a board and no Sparkplug B host application has been tested. The
-handshake of the MQTT function blocks is being reworked and is marked **unstable**
-below.
+and payloads under each of its five profiles, the decoding of command payloads, the
+function-block handlers against stand-ins, and the MQTT client of the simulation
+runtime against a broker written for the test on a loopback socket. The MQTT client of
+the controller has not been run against a broker, and no session with a real broker,
+no TLS handshake on a board and no Sparkplug B host application has been tested.
 :::
 
 ## What you need
 
 - A board with a network interface, and a broker you operate or trust.
-  The simulator on your computer has no broker and no MQTT session.
+  Studio's simulator has no broker and no MQTT session: it starts the native runtime
+  without the communication blocks. That runtime can run the MQTT blocks against a
+  broker when it is started with `ZPLC_NATIVE_COMM=1` and `ZPLC_NATIVE_MQTT_BROKER`
+  ([In simulation](../runtime/communication-function-blocks.md#in-simulation)); Studio
+  does not start it that way yet.
 - The broker's CA certificate on the device, because a controller that was never
   configured uses TLS on port 8883 and checks the broker's certificate. MQTT is off
   and has no broker until an operator names one
@@ -143,8 +147,8 @@ publish its birth messages again and nothing else.
 ## Use the function blocks instead
 
 `MQTT_CONNECT` reports the state of the session that the device configuration
-opens; `MQTT_PUBLISH` sends one message to a topic; `MQTT_SUBSCRIBE` delivers the
-messages of a topic.
+opens (it does not open it); `MQTT_PUBLISH` sends one message to a topic for each
+rising edge of `EN`; `MQTT_SUBSCRIBE` keeps a subscription and delivers its messages.
 
 ```st runnable expect="Failed=TRUE Code=3" scans=3 scan_ms=10
 PROGRAM Alarm
@@ -160,14 +164,30 @@ Code := Send.STATUS;
 END_PROGRAM
 ```
 
-On the simulator of your computer there is no broker, so the block ends with `ERROR`
-TRUE and `STATUS` 3 (no handler): it proves that the block compiles and reports a
-status, not that a message was delivered. `STATUS` 4 means that the session is not
-connected, and 5 that the request queue is full.
+In Studio's simulator the runtime has no handler for the block, so it ends with `ERROR`
+TRUE and `STATUS` 3: it proves that the block compiles and reports a status, not that a
+message was delivered. With the communication blocks on and no broker named, the block
+answers `STATUS` 10 (not available). `STATUS` 4 means that the session is not connected,
+and 5 that every request slot is in use.
 
-**Unstable:** the timing of `BUSY`, `DONE` and `ERROR` across scans, and what a
-reset does to a request in flight, are being fixed as one handshake for all the
-communication blocks. Act on the first scan in which `DONE` is TRUE.
+The blocks follow the one handshake of the twelve communication blocks
+([Communication function blocks](../runtime/communication-function-blocks.md#the-handshake)):
+
+- `MQTT_PUBLISH` sends one message for each rising edge of `EN`. While `EN` stays TRUE
+  after the result, the result is held and nothing is sent again; let `EN` fall for one
+  scan to send another. A request in flight completes even if `EN` falls.
+- `DONE` means that the client accepted the message for sending. The acknowledgement of
+  a QoS 1 or 2 message is not waited for.
+- A publish with no result after 5 s is `ERROR` with `STATUS` 2, and a late result is
+  dropped. A message that was queued when the session went down is failed, and is not
+  sent on the next session.
+- `MQTT_CONNECT`, `MQTT_SUBSCRIBE` and `AZURE_C2D_RECV` are service blocks: while `EN`
+  is TRUE they report the state of the session on every scan, and a lost session is
+  `ERROR` with `STATUS` 4 on the scan after the client notices (within the keep-alive
+  interval for a silent loss). `VALID` of `MQTT_SUBSCRIBE` is TRUE for exactly one
+  scan for each new message, and `PAYLOAD` keeps the last one.
+- After a loss the client makes one reconnection attempt at a time: it waits up to 5 s
+  for the broker's answer and then 2 s, doubling up to 60 s, before the next attempt.
 
 ## What is verified, and what is not
 
@@ -175,8 +195,10 @@ communication blocks. Act on the first scan in which `DONE` is TRUE.
 | --- | --- | --- |
 | Hostile topics and payloads cannot change run state, forces or the loaded program, under all five profiles | Test of the product's client with spies on every authority | Host and `native_sim` |
 | Command payloads of every supported type decode, and a malformed one is refused | Unit test of the decoder | Host and `native_sim` |
-| Block handlers: layout, bounds, queue | Test with a stand-in client | Host and `native_sim` |
+| Block handlers: pins, handshake, status codes, bounds, hand-over to the client thread | Test with a stand-in client | Host and `native_sim` |
+| The MQTT client of the simulation runtime: session, publish, subscribe, loss of the session, reconnection, silent loss, a message published while the session is down | Run against a broker written for the test on loopback, on real sockets, under the address, undefined-behaviour and thread sanitizers | Host |
 | TLS refuses a non-cryptographic random generator at build time | Build rule | Build |
+| The MQTT client of the controller against a broker | Not run in the test suite | None |
 | A session with a real broker, a TLS handshake, a Sparkplug B host application, QoS 1 delivery | Not tested | None |
 
 ## See also

@@ -17,10 +17,11 @@ Cinco bloques permiten que un programa hable con un servicio de nube:
 :::warning No verificados contra un servicio
 Ningún bloque de nube ha intercambiado un mensaje con un servicio real de Azure o
 AWS, con un emulador de uno, ni con un intercambio grabado, y ninguno tiene una
-prueba ejecutada del recorrido completo. La tabla de abajo dice qué se ha probado,
-bloque por bloque. No construya sobre un bloque para un fin que necesite que
-funcione contra un servicio hasta que su fila lo diga. El protocolo de los bloques
-se está reelaborando y se marca como **inestable**.
+prueba ejecutada del recorrido completo. El manejador de cada bloque (sus pines, su
+handshake y sus códigos de estado) se prueba con el servicio reemplazado por un
+sustituto. La tabla de abajo dice qué se ha probado, bloque por bloque. No construya
+sobre un bloque para un fin que necesite que funcione contra un servicio hasta que su
+fila lo diga.
 :::
 
 ## Qué hace cada bloque
@@ -116,8 +117,8 @@ soportadas tiene un almacén protegido.
 
 ## Use un bloque en el programa
 
-Active `EN` durante el ciclo en que quiere la operación y lea `STATUS` después de
-`ERROR`.
+Active `EN`: un flanco ascendente hace una solicitud, y el bloque informa su resultado en
+un ciclo posterior. Lea `STATUS` después de `ERROR`.
 
 ```st runnable expect="Failed=TRUE Code=3" scans=3 scan_ms=10
 PROGRAM Provision
@@ -133,14 +134,32 @@ Code := Register.STATUS;
 END_PROGRAM
 ```
 
-En el simulador de su equipo no hay servicio, así que el bloque termina con `ERROR`
-en TRUE y `STATUS` 3 (sin manejador). La verificación de la documentación ejecuta
-esto, lo que demuestra que el bloque compila e informa un estado, nada más.
+En el simulador de Studio el runtime no tiene manejador para el bloque, así que termina
+con `ERROR` en TRUE y `STATUS` 3. Con los bloques de comunicación activos, todo bloque de
+nube responde `STATUS` 10 (no disponible), porque la simulación no tiene servicio de nube.
+La verificación de la documentación ejecuta esto, lo que demuestra que el bloque compila e
+informa un estado, nada más.
 
-**Inestable:** si un bloque actúa una vez por solicitud o sigue actuando mientras
-`EN` permanece en TRUE, y el momento de `BUSY`, `DONE` y `ERROR`, se están fijando
-como un único protocolo documentado para los doce bloques de comunicación. Active
-`EN` durante un solo ciclo y actúe en el primer ciclo en que `DONE` sea TRUE.
+Los bloques siguen el único handshake de los doce bloques de comunicación
+([Bloques de función de comunicación](../runtime/communication-function-blocks.md#el-handshake)):
+
+- Un flanco ascendente de `EN` es una operación. `AZURE_DPS_PROV`, `AZURE_EG_PUB`,
+  `AWS_FLEET_PROV` y `SPB_REBIRTH` no se repiten mientras `EN` sigue en TRUE: el resultado
+  (`DONE`, o `ERROR` con un código de estado) se mantiene mientras `EN` sigue en TRUE y se
+  borra cuando cae. Para hacerlo de nuevo, deje caer `EN` durante un ciclo.
+- Una solicitud en curso se completa aunque `EN` caiga, y un flanco ascendente mientras
+  `BUSY` es TRUE no inicia nada. `BUSY`, `DONE`, `ERROR` y `STATUS` los escribe solo el
+  runtime.
+- Un bloque nunca espera al servicio dentro del ciclo. Los dos bloques de aprovisionamiento
+  se ejecutan en un hilo de trabajo propio (8 KB de RAM en una placa con perfil de nube): se
+  espera al servicio 30 s en cada paso, y el bloque informa `ERROR` con `STATUS` 2 a los
+  90 s. `ASSIGNED_HUB` y `THING_NAME` contienen lo que se asignó.
+- Un `DEVICE_ID` no vacío de `AZURE_DPS_PROV` es el identificador de registro usado para la
+  solicitud, y un `TEMPLATE_NAME` no vacío de `AWS_FLEET_PROV` es la plantilla. Un `TOPIC` o
+  un `EVENT_TYPE` vacío de `AZURE_EG_PUB` es el valor configurado por defecto.
+- `AZURE_C2D_RECV` es un bloque de servicio: mientras `EN` es TRUE informa el estado de la
+  sesión en cada ciclo, y `VALID` es TRUE durante exactamente un ciclo por cada mensaje
+  nuevo, que `PAYLOAD` conserva.
 
 Un mensaje de nube no puede iniciar ni detener el programa, fijar un forzado ni
 descargar un programa. Un método directo de Azure se responde `501` (no
@@ -152,11 +171,11 @@ registran en el log
 
 | Bloque | Un servicio real | Un emulador o un doble local | Un intercambio grabado | Qué se probó en su lugar |
 | --- | --- | --- | --- | --- |
-| `AZURE_C2D_RECV` | No | No | Ninguno registrado | La disposición del bloque y sus límites, con el sanitizador de direcciones, contra un sustituto |
-| `AZURE_DPS_PROV` | No | Existe una herramienta manual; ninguna prueba ejecutada la usa | Ninguno registrado | El generador del token de firma de acceso compartido, contra un vector conocido |
-| `AZURE_EG_PUB` | No | Existe una herramienta manual; ninguna prueba ejecutada la usa | Ninguno registrado | La disposición del bloque y los límites de su texto, contra un sustituto |
-| `AWS_FLEET_PROV` | No | Existe una herramienta manual; ninguna prueba ejecutada la usa | Ninguno registrado | Nada a nivel del bloque |
-| `SPB_REBIRTH` | No | No | Ninguno registrado | Un comando de renacimiento entregado al cliente no hace más que publicar de nuevo los mensajes de nacimiento |
+| `AZURE_C2D_RECV` | No | No | Ninguno registrado | El manejador (pines, handshake, códigos de estado, `VALID` durante un ciclo) y la disposición del bloque con sus límites, contra un sustituto |
+| `AZURE_DPS_PROV` | No | Existe una herramienta manual; ninguna prueba ejecutada la usa | Ninguno registrado | El manejador, con el servicio de aprovisionamiento reemplazado por uno que espera; el generador del token de firma de acceso compartido, contra un vector conocido |
+| `AZURE_EG_PUB` | No | Existe una herramienta manual; ninguna prueba ejecutada la usa | Ninguno registrado | El manejador y la disposición del bloque con los límites de su texto, contra un sustituto |
+| `AWS_FLEET_PROV` | No | Existe una herramienta manual; ninguna prueba ejecutada la usa | Ninguno registrado | El manejador, con el servicio de aprovisionamiento reemplazado por uno que espera |
+| `SPB_REBIRTH` | No | No | Ninguno registrado | El manejador; un comando de renacimiento entregado al cliente no hace más que publicar de nuevo los mensajes de nacimiento |
 
 Las herramientas manuales están en `tools/connectivity/`: `fake_azure_dps.py`,
 `fake_aws_fleet.py` e `inspect_event_grid.py` se ejecutan contra un broker local y

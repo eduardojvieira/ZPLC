@@ -64,7 +64,7 @@ board has a problem that only a board shows: read the rows for connecting.
 | --- | --- | --- |
 | The serial port is refused on Linux | Your user is not in the serial group | [Linux: serial port access](../getting-started/install.md#linux-serial-port-access) |
 | Deploy is refused naming a board | The project was built for another board than the device reports | Select the right board, rebuild, and reflash if the firmware is not the one of the project |
-| Deploy is refused with two draft numbers | The program and the runtime come from different drafts of the binary contract | Rebuild the program and reflash the board together |
+| Deploy is refused with two draft numbers | The program and the runtime come from different drafts of the binary contract. The current draft is 5: a program built before it is refused, and Studio refuses a device whose firmware reports an older one | Rebuild the program and reflash the board together ([Draft contract counter](../contributing/index.md#draft-contract-counter)); `tools/contract/restamp_artifacts.py` moves artifacts committed to a repository |
 | The device received an earlier build | The deploy did not carry the current program | Build, then deploy again before **Run** |
 | A board does not come back after flashing | Firmware recovery is the board's own procedure | [Recovery boundaries](../operations/recovery.md) |
 
@@ -72,9 +72,12 @@ board has a problem that only a board shows: read the rows for connecting.
 
 | Symptom | What it means | What to do |
 | --- | --- | --- |
-| A communication block ends with `ERROR` and `STATUS` 3 | No handler: the simulator has no broker, device or service | Expected on your computer; the exchange needs a board ([Modbus](./modbus.md), [MQTT](./mqtt-sparkplug.md)) |
+| A communication block ends with `ERROR` and `STATUS` 3 | No handler: this runtime has no handler for the block. Studio's simulator starts the runtime without the communication blocks | Expected in Studio; the exchange needs a board ([Modbus](./modbus.md), [MQTT](./mqtt-sparkplug.md)) |
+| `STATUS` 10 | Not available: the service of the block is not in this runtime, or is off in the configuration. With the communication blocks on in simulation, a Modbus RTU request, every cloud block and an MQTT block with no broker answer it | Use a board, or a configuration that turns the service on |
+| `STATUS` 2 | The peer did not answer, or the request outlived its time limit: 8.8 s for Modbus with the default timeout, 5 s for a publish, 90 s for a provisioning | Check the peer and the link; a late result is dropped |
 | `STATUS` 4 | The session or the link is not connected | Check the settings with `zplc mqtt status` and `zplc net status` |
-| `STATUS` 5 | The request queue is full | Do not start a request while `BUSY` is TRUE |
+| `STATUS` 5 | Every request slot is in use | Wait for the requests in flight: a rising `EN` while `BUSY` is TRUE starts nothing |
+| `DONE` or `ERROR` stays TRUE | The result is held while `EN` stays TRUE, and nothing is repeated | Let `EN` fall for one scan to ask again ([The handshake](../runtime/communication-function-blocks.md#the-handshake)) |
 | MQTT does nothing on a device | MQTT is off and has no broker until an operator sets one | [Secure defaults](../runtime/connectivity.md#secure-defaults) |
 | `zplc config set mqtt_security 1` is refused | A release image will not turn certificate verification off | By design; only an image built with `CONFIG_ZPLC_MQTT_ALLOW_INSECURE_TLS` accepts it |
 

@@ -43,7 +43,7 @@ ones of [Hardware support](./reference/capabilities-evidence.md#the-levels).
 | Scheduler, process image, retentive memory, communication handlers | `native_sim` and the QEMU Cortex-M3 and Cortex-M0 targets, which emulate a processor and no board | Timing, interrupts, drivers, flash behaviour and electrical state of a real board |
 | Firmware of each board | Built for the board and held to its flash and RAM budget | Booting, flashing, running a program, any output |
 | Studio and the simulator | The development host on Linux, by the end-to-end journeys; installers are launched on their own system in the release run | A physical board; a clean machine of each system, by a person (the recorded runs of `RELEASING.md` are empty) |
-| Modbus, MQTT, Sparkplug B and the cloud blocks | The handlers against stand-ins, hostile input through the product's own client, and the Modbus server framing | A live broker, a cloud service or a device on a wire |
+| Modbus, MQTT, Sparkplug B and the cloud blocks | The handlers against stand-ins, the Modbus TCP client and the simulation runtime's MQTT client against servers written for the test on a loopback socket, hostile input through the product's own client, and the Modbus server framing and areas | A live broker, a cloud service or a device on a wire; the controller's MQTT client against a broker; Modbus RTU on a wire |
 | Outputs when the program pauses, stops or faults | The host and `native_sim`, which has a GPIO emulator | The physical level of a pin on a board |
 
 The detail, with the commands that produce each result, is in

@@ -15,12 +15,11 @@ SCADA system, an HMI, a test tool) and exposes variables of your program. As a
 This page covers both with the contract that is documented today.
 
 :::warning Status of this page
-Verified on the host and on `native_sim` only: the server framing and mapping, and
-the function-block handlers against stand-ins. No Modbus exchange with a real
-device, a serial wire or a third-party master has been recorded. Two parts are
-being reworked and are marked **unstable** below: the common handshake of the
-communication blocks and the separation of the four data areas. Check the
-[release notes](../release-notes/index.md) before you rely on them.
+Verified on the host and on `native_sim` only: the server framing and mapping, the
+function-block handlers against stand-ins, and the Modbus TCP client against a server
+written for the test on a loopback socket. No Modbus exchange with a real device, a
+serial wire or a third-party master has been recorded, and the RTU client was checked
+at its interface parameters only.
 :::
 
 ## What you need
@@ -29,9 +28,12 @@ communication blocks and the separation of the four data areas. Check the
   (Wi-Fi or Ethernet), and Modbus RTU needs a serial interface that the board's
   profile provides. [Hardware support](../reference/capabilities-evidence.md) lists
   the boards and their network class.
-- A project, in Studio or by hand. The simulator on your computer has no Modbus
-  server or device: a program that uses Modbus is written and checked there, and
-  the exchange itself is possible only on a board.
+- A project, in Studio or by hand. Studio's simulator starts the native runtime
+  without the communication blocks, so a Modbus block answers `STATUS` 3 there: the
+  program is written and checked in Studio, and the exchange is possible on a board.
+  The native runtime can also run the Modbus TCP client against a server on the
+  loopback interface ([In simulation](../runtime/communication-function-blocks.md#in-simulation));
+  Studio does not start those endpoints yet.
 
 ## Make the controller a server
 
@@ -55,12 +57,25 @@ END_PROGRAM
 ```
 
 A variable of 32 bits (`REAL`, `DINT`, `UDINT`, `DWORD`) occupies two consecutive
-registers; the others occupy one. Give an address, `40001` and up for registers
-and `1` and up for coils, and keep the ranges of two variables apart.
+registers; the others occupy one. The number of the tag says the area, in the notation
+of the Modbus world:
+
+| `N` | Area | Address on the wire | A master can |
+| --- | --- | --- | --- |
+| 10001 to 19999 | Discrete input | `N - 10001` | read it (function 2) |
+| 30001 to 39999 | Input register | `N - 30001` | read it (function 4) |
+| 40001 to 49999 | Holding register | `N - 40001` | read it (function 3) and write it (6, 16) |
+| any other number, a `BOOL` | Coil | `N` | read it (function 1) and write it (5, 15) |
+| any other number, another type | Holding register | `N` | read it (function 3) and write it (6, 16) |
+
+In the example, `Pressure` is the holding register at address 0 and `PumpRun` is the
+coil at address 1. Keep the ranges of two variables of the same area apart.
 
 In Studio you can make the same bindings without editing the source: the
 **Communication** section of **Project Settings** lists them as **Communication
-Tags**, and each one is a `communication.bindings` entry of `zplc.json`.
+Tags**, and each one is a `communication.bindings` entry of `zplc.json`. A tag has an
+area and an address on the wire, and the build writes the number of the table: a holding
+register at address 5 is `{modbus:40006}`.
 
 ### 2. Configure the server in the project
 
@@ -116,10 +131,14 @@ applied by the next scan. No Modbus message can start or stop the program, set o
 clear a force, or download a program
 ([What a message from the network can do](../runtime/connectivity.md#what-a-message-from-the-network-can-do)).
 
-**Unstable:** the server answers a bound variable in the area a request names; it
-does not yet keep coils, discrete inputs, input registers and holding registers as
-four separate address spaces. Use holding registers for values and coils for bits,
-and do not rely on an area being separate from another.
+The four areas are four address spaces: a coil, a discrete input, an input register
+and a holding register with the same number are four different variables, and a
+variable is served in one area only. A request for an address that no variable has in
+the area it asks for is answered with exception 2 (illegal data address), even when
+another area has a variable at that number. Discrete inputs and input registers can be
+read and not written. Every variable of WORK and RETAIN can be bound, and the server
+serves the whole of the wire range, up to address 65535, for the addresses that have a
+variable ([Modbus areas and addresses](../runtime/connectivity.md#modbus-areas-and-addresses)).
 
 ## Read or write another device (client)
 
@@ -142,20 +161,32 @@ Code := Link.STATUS;
 END_PROGRAM
 ```
 
-On the simulator of your computer there is no device to answer, so the block ends
-with `ERROR` TRUE and `STATUS` 3 (no handler). That proves that the block compiles,
-runs and reports a status; the exchange with a device is possible on a board.
-Read `STATUS` after `ERROR`: 0 is OK, 2 a timeout, 4 not connected, 5 request queue
-full, 6 invalid address, and the rest are in the
-[function block reference](../reference/function-blocks.md#mb_read_hreg).
+In Studio's simulator the runtime has no handler for the block, so it ends with
+`ERROR` TRUE and `STATUS` 3. That proves that the block compiles, runs and reports a
+status; the exchange with a device is possible on a board. Read `STATUS` after
+`ERROR`: 0 is OK, 2 a timeout, 4 not connected, 5 every request slot in use, 6 invalid
+address, 8 protocol error, 10 not available, and the rest are in the
+[status codes](../runtime/communication-function-blocks.md#status-codes).
 
-A request runs outside the scan, through a bounded queue, so a block never blocks
-the scan. Do not start a new request while `BUSY` is TRUE.
+The block follows the one handshake of the twelve communication blocks
+([Communication function blocks](../runtime/communication-function-blocks.md#the-handshake)):
 
-**Unstable:** the timing of `BUSY`, `DONE` and `ERROR` across scans, and what a
-reset or a disable does to a request in flight, are being fixed as one documented
-handshake for all twelve communication blocks. Write the program so that it works
-whether `DONE` lasts one scan or longer: act on the first scan in which it is TRUE.
+- A rising edge of `EN` makes one request. While `EN` stays TRUE after the result, the
+  result is held and nothing is repeated; let `EN` fall for one scan to ask again.
+- A request in flight completes even if `EN` falls, and a rising edge while `BUSY` is
+  TRUE starts nothing.
+- `BUSY`, `DONE`, `ERROR` and `STATUS` are written by the runtime only. Call the block
+  on every scan, because it advances only when it is called.
+- A request runs outside the scan, so a block never waits for the network inside it.
+  The client waits at most twice the configured timeout, and the block reports `ERROR`
+  with `STATUS` 2 at the latest `(2 x timeout + 100 ms) x 8` after the request: 8.8 s
+  with the default timeout of 500 ms.
+- `COUNT` is 1: a request for more registers or coils is refused with `STATUS` 6.
+
+On the native runtime started with `ZPLC_NATIVE_COMM=1`, with a Modbus TCP server on the
+loopback interface, the same program makes the request; a Modbus RTU request there, with
+no serial device, answers `STATUS` 10. Studio does not start that configuration or the
+endpoints yet.
 
 ## What is verified, and what is not
 
@@ -164,9 +195,12 @@ whether `DONE` lasts one scan or longer: act on the first scan in which it is TR
 | Server framing and mapping of every function code, bad lengths, unmapped ranges | Tests that put frames in front of the server | Host and `native_sim` |
 | A master write cannot change run state, forces or the loaded program | Link-level check and an authority test | Host and `native_sim` |
 | A forced variable keeps its value under a master write | A test with a recording exchange | Host and `native_sim` |
-| Function-block handlers: layout, bounds, reset while a request is in flight | Tests with a stand-in client | Host and `native_sim` |
+| The four areas are four address spaces, and the whole of WORK and RETAIN is served | A firmware test that loads a program with the tags of the four areas, the edges of WORK and RETAIN and address 65535, and reads and writes them through the seams both servers end in | `native_sim` |
+| Function-block handlers: pins, handshake, status codes, reset while a request is in flight | Tests with a stand-in client | Host and `native_sim` |
+| The Modbus TCP client: success, a response in pieces, exception, silence, a closed connection, a refused port, reset while busy | Its transaction code is one file compiled in the controller and in the simulation runtime, and runs against a server written for the test on loopback in both | `native_sim` and host |
+| The Modbus RTU client | Only its interface parameters are checked (the timeout is in the unit the Zephyr Modbus client reads); no serial device is used | `native_sim` |
 | An exchange with a real device, a serial wire, a third-party master | Not tested | None |
-| Timing of a request, behaviour under line errors | Not tested | None |
+| Timing of a request on a real line, behaviour under line errors | Not tested | None |
 
 ## See also
 

@@ -106,6 +106,18 @@ describe('how-to guides: each task has a page in both languages with something t
     expect(markdownFiles(ROOT, 'docs/docs').filter((page) => page.startsWith('docs/docs/guides/')).length).toBe(guides.length);
   });
 
+  it('quotes the draft counter of the contract that the compiler writes, and calls no handshake unstable now that it is one', () => {
+    const contract = JSON.parse(readFileSync(join(ROOT, 'tools/contract/contract.json'), 'utf8')) as { abi: { draftCounter: number } };
+    for (const base of ['docs/docs', 'docs/i18n/es/docusaurus-plugin-content-docs/current']) {
+      const commandLine = readFileSync(join(ROOT, base, 'guides/command-line.md'), 'utf8');
+      expect({ base, quoted: commandLine.includes(`(contract draft ${contract.abi.draftCounter})`) }).toEqual({ base, quoted: true });
+      for (const guide of ['modbus', 'mqtt-sparkplug', 'cloud-blocks']) {
+        const text = readFileSync(join(ROOT, base, 'guides', `${guide}.md`), 'utf8');
+        expect({ base, guide, unstable: /unstable|inestable|being reworked|being fixed|se están (?:reelaborando|fijando)/i.test(text) }).toEqual({ base, guide, unstable: false });
+      }
+    }
+  });
+
   it('lists every guide in the how-to category of the sidebar', async () => {
     const { default: sidebars } = await import(join(ROOT, 'docs/sidebars.js')) as { default: { docsSidebar: Array<{ label: string; items: unknown[] }> } };
     const howTo = sidebars.docsSidebar.find((category) => category.label === 'How-to guides')!.items;

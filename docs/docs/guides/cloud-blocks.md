@@ -17,10 +17,10 @@ MQTT session of the device, so everything on
 :::warning Not verified against a service
 No cloud block has exchanged a message with a real Azure or AWS service, with an
 emulator of one, or with a recorded exchange, and none has an executed test of the
-whole round trip. The table below says what has been tested, block by block. Do not
-build on a block for a purpose that needs it to work against a service until its
-row says so. The handshake of the blocks is being reworked and is marked
-**unstable**.
+whole round trip. The handler of each block (its pins, its handshake and its status
+codes) is tested with the service replaced by a stand-in. The table below says what has
+been tested, block by block. Do not build on a block for a purpose that needs it to work
+against a service until its row says so.
 :::
 
 ## What each block does
@@ -115,8 +115,8 @@ boards has a protected store.
 
 ## Use a block in the program
 
-Raise `EN` for the one scan in which you want the operation, then read `STATUS`
-after `ERROR`.
+Raise `EN`: a rising edge makes one request, and the block reports its result on a later
+scan. Read `STATUS` after `ERROR`.
 
 ```st runnable expect="Failed=TRUE Code=3" scans=3 scan_ms=10
 PROGRAM Provision
@@ -132,14 +132,31 @@ Code := Register.STATUS;
 END_PROGRAM
 ```
 
-On the simulator of your computer there is no service, so the block ends with
-`ERROR` TRUE and `STATUS` 3 (no handler). The documentation check runs this, which
-proves that the block compiles and reports a status, nothing more.
+In Studio's simulator the runtime has no handler for the block, so it ends with `ERROR`
+TRUE and `STATUS` 3. With the communication blocks on, every cloud block answers
+`STATUS` 10 (not available), because the simulation has no cloud service. The
+documentation check runs this, which proves that the block compiles and reports a status,
+nothing more.
 
-**Unstable:** whether a block acts once per request or keeps acting while `EN`
-stays TRUE, and the timing of `BUSY`, `DONE` and `ERROR`, are being fixed as one
-documented handshake for the twelve communication blocks. Pulse `EN` for one scan
-and act on the first scan in which `DONE` is TRUE.
+The blocks follow the one handshake of the twelve communication blocks
+([Communication function blocks](../runtime/communication-function-blocks.md#the-handshake)):
+
+- One rising edge of `EN` is one operation. `AZURE_DPS_PROV`, `AZURE_EG_PUB`,
+  `AWS_FLEET_PROV` and `SPB_REBIRTH` do not repeat while `EN` stays TRUE: the result
+  (`DONE`, or `ERROR` with a status code) is held while `EN` stays TRUE and cleared when
+  it falls. To do it again, let `EN` fall for one scan.
+- A request in flight completes even if `EN` falls, and a rising edge while `BUSY` is TRUE
+  starts nothing. `BUSY`, `DONE`, `ERROR` and `STATUS` are written by the runtime only.
+- A block never waits for the service inside the scan. The two provisioning blocks run on
+  a worker thread of their own (8 KB of RAM on a board that has a cloud profile): the
+  service is waited for 30 s in each step, and the block reports `ERROR` with `STATUS` 2
+  after 90 s. `ASSIGNED_HUB` and `THING_NAME` hold what was assigned.
+- A non-empty `DEVICE_ID` of `AZURE_DPS_PROV` is the registration identifier used for the
+  request, and a non-empty `TEMPLATE_NAME` of `AWS_FLEET_PROV` is the template. An empty
+  `TOPIC` or `EVENT_TYPE` of `AZURE_EG_PUB` is the configured default.
+- `AZURE_C2D_RECV` is a service block: while `EN` is TRUE it reports the state of the
+  session on every scan, and `VALID` is TRUE for exactly one scan for each new message,
+  which `PAYLOAD` keeps.
 
 A cloud message cannot start or stop the program, set a force or download a program.
 An Azure direct method is answered `501` (not implemented), and device twin, AWS
@@ -150,11 +167,11 @@ shadow and jobs messages are only logged
 
 | Block | A real service | An emulator or a local double | A recorded exchange | What was tested instead |
 | --- | --- | --- | --- | --- |
-| `AZURE_C2D_RECV` | No | No | None recorded | The layout of the block and its bounds, with the address sanitizer, against a stand-in |
-| `AZURE_DPS_PROV` | No | A manual helper exists; no executed test uses it | None recorded | The shared-access-signature token generator, against a known vector |
-| `AZURE_EG_PUB` | No | A manual helper exists; no executed test uses it | None recorded | The layout of the block and the bounds of its text, against a stand-in |
-| `AWS_FLEET_PROV` | No | A manual helper exists; no executed test uses it | None recorded | Nothing at the level of the block |
-| `SPB_REBIRTH` | No | No | None recorded | A rebirth command delivered to the client does nothing but publish the birth messages again |
+| `AZURE_C2D_RECV` | No | No | None recorded | The handler (pins, handshake, status codes, `VALID` for one scan) and the layout of the block with its bounds, against a stand-in |
+| `AZURE_DPS_PROV` | No | A manual helper exists; no executed test uses it | None recorded | The handler, with the provisioning service replaced by one that waits; the shared-access-signature token generator, against a known vector |
+| `AZURE_EG_PUB` | No | A manual helper exists; no executed test uses it | None recorded | The handler and the layout of the block with the bounds of its text, against a stand-in |
+| `AWS_FLEET_PROV` | No | A manual helper exists; no executed test uses it | None recorded | The handler, with the provisioning service replaced by one that waits |
+| `SPB_REBIRTH` | No | No | None recorded | The handler; a rebirth command delivered to the client does nothing but publish the birth messages again |
 
 The manual helpers are in `tools/connectivity/`: `fake_azure_dps.py`,
 `fake_aws_fleet.py` and `inspect_event_grid.py` run against a local broker and
