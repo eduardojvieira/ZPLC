@@ -3,7 +3,7 @@
 // decides a render: a component re-renders when the value its selector returns is not the same as the one before
 // (`Object.is`, or a shallow comparison under `useShallow`). The selectors are the ones the components use
 // (src/store/regionSubscriptions.ts and src/hooks/useDebugValue.ts), run against the real store and its real actions.
-import { beforeEach, describe, expect, it, mock } from 'bun:test';
+import { afterEach, beforeEach, describe, expect, it, mock } from 'bun:test';
 import { shallow } from 'zustand/shallow';
 
 await mock.module('../utils/projectLoader', () => ({ getAvailableProjects: () => [], loadProject: () => null, loadProjectAssets: () => null }));
@@ -40,6 +40,15 @@ beforeEach(() => {
   useIDEStore.setState((state) => ({
     loadedFiles: new Map([[file.id, file]]), activeFileId: file.id, openTabs: [file.id],
     debug: { ...state.debug, watchVariables: watched, liveValues: new Map(watched.map((path) => [path, 0])) },
+  }));
+});
+
+// The store is one object for the whole test process, and these tests type into its file: what they leave is not for the
+// next file to find (useIDEStore.test.ts closes a project, which an unsaved file refuses).
+afterEach(() => {
+  useIDEStore.setState((state) => ({
+    loadedFiles: new Map(), activeFileId: null, openTabs: [],
+    debug: { ...state.debug, watchVariables: [], liveValues: new Map() },
   }));
 });
 
