@@ -549,6 +549,11 @@ static int run_task(zplc_sched_core_t *core, const zplc_sched_port_t *port, zplc
   /* Every part of a scan writes its own task id, even when another task ran in between in the same batch. */
   write_system_registers(core, task_id, slot->task.stats.last_exec_time_us, clamp_u32(start_us / 1000U), first_scan);
 
+  /* The scan sees the time the batch read for it: the instant its part starts (RT-006). A scan a breakpoint
+   * stopped keeps the time it latched. */
+  if (continuing == 0) {
+    zplc_vm_set_scan_time(vm, clamp_u32(start_us / 1000U));
+  }
   result = zplc_vm_run_cycle(vm);
   breakpoint = zplc_vm_is_paused(vm) != 0;
   slot->first_scan_interrupted = (breakpoint != 0 && first_scan != 0) ? 1U : 0U;

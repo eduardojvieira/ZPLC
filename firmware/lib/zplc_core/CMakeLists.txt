@@ -391,6 +391,32 @@ endif()
 
 add_test(NAME test_sched_core COMMAND test_sched_core)
 
+# Test: time is latched once per scan, and the instruction budget charges the bytes a string opcode processes
+# (RT-006). Also run under the sanitizers.
+add_executable(test_vm_scan
+    tests/test_vm_scan.c
+    src/core/zplc_core.c
+    src/core/zplc_loader.c
+    src/core/zplc_comm_dispatch.c
+    src/hal/posix/zplc_hal_posix.c
+)
+
+target_include_directories(test_vm_scan PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/tests/include
+)
+
+target_compile_definitions(test_vm_scan PRIVATE
+    ZPLC_CORE_VERSION_STR="${ZPLC_CORE_VERSION_STR}"
+    ZPLC_CORE_TESTING
+)
+
+if(UNIX AND NOT APPLE)
+    target_link_libraries(test_vm_scan PRIVATE rt)
+endif()
+
+add_test(NAME test_vm_scan COMMAND test_vm_scan)
+
 # Test: the single-task configuration runs on the scheduler core and decides like the multitask runtimes (RT-018).
 # Also run under the sanitizers.
 add_executable(test_single_task

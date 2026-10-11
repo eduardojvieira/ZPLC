@@ -31,7 +31,12 @@
 
 /* Logical instruction bound for production scan cycles.  Zephyr projects can
  * override this through Kconfig; standalone hosts use the conservative default.
- * This is not a physical watchdog or a WCET guarantee. */
+ * This is not a physical watchdog or a WCET guarantee.
+ *
+ * The bound is in budget units, not in instructions (RT-006): an instruction costs one unit, and an opcode that
+ * processes data costs one more for every ZPLC_VM_BYTES_PER_BUDGET_UNIT bytes it copies or compares, so that a
+ * loop of string operations ends in a fault after the work a scan can do, not after the number of instructions
+ * a scan of single-cycle opcodes can run. */
 #ifndef ZPLC_VM_CYCLE_INSTRUCTION_BUDGET
 #ifdef CONFIG_ZPLC_VM_CYCLE_INSTRUCTION_BUDGET
 #define ZPLC_VM_CYCLE_INSTRUCTION_BUDGET CONFIG_ZPLC_VM_CYCLE_INSTRUCTION_BUDGET
@@ -39,6 +44,9 @@
 #define ZPLC_VM_CYCLE_INSTRUCTION_BUDGET 100000U
 #endif
 #endif
+
+/** Bytes a string opcode (STRCPY, STRCAT, STRCMP) processes for one unit of the instruction budget (RT-006). */
+#define ZPLC_VM_BYTES_PER_BUDGET_UNIT 4U
 
 /** Maximum number of independent forced ranges. */
 #define ZPLC_FORCE_MAX_ENTRIES 8U
@@ -82,8 +90,15 @@ typedef struct {
                                                    continues it instead of starting a new scan */
     uint8_t breakpoint_count;                 /**< Number of active breakpoints */
     uint16_t breakpoints[ZPLC_MAX_BREAKPOINTS]; /**< Breakpoint PC addresses */
-    uint32_t scan_instructions;               /**< Instructions the interrupted scan already spent of
+    uint32_t scan_instructions;               /**< Budget units the interrupted scan already spent of
                                                    ZPLC_VM_CYCLE_INSTRUCTION_BUDGET */
+    uint32_t step_charge;                     /**< Units the instruction just executed cost beyond its own
+                                                   one: the bytes a string opcode processed (RT-006) */
+    uint32_t run_charge;                      /**< Units the last zplc_vm_run() charged */
+    uint32_t scan_time_ms;                    /**< The time every instruction of the scan in progress sees
+                                                   (RT-006); valid while scan_time_set is non-zero */
+    uint8_t scan_time_set;                    /**< A scan is in progress and has latched its time */
+    uint8_t scan_time_preset;                 /**< The scheduler gave the time of the scan that starts next */
 
     /* Private stacks */
     uint32_t stack[ZPLC_STACK_MAX_DEPTH];     /**< Evaluation stack */
@@ -234,6 +249,15 @@ int zplc_vm_run_bounded(zplc_vm_t *vm, uint32_t max_instructions);
  *         not completed.
  */
 int zplc_vm_run_cycle(zplc_vm_t *vm);
+
+/**
+ * @brief Give the time (milliseconds) the scan that starts next latches, in place of the HAL tick.
+ *
+ * Time is latched once per scan (RT-006): every GET_TICKS of a scan pushes the same value. A scheduler that has
+ * read its clock for the batch gives that reading, so that the system registers and the program agree. It applies
+ * to the next scan zplc_vm_run_cycle() starts and not to one it continues, and only once.
+ */
+void zplc_vm_set_scan_time(zplc_vm_t *vm, uint32_t ms);
 
 /**
  * @brief Reset VM for a new cycle without full init.

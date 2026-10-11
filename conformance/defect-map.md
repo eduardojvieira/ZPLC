@@ -7,9 +7,9 @@ of this suite, by another executed test, or it is listed with the reason that no
 | State | Defects |
 |---|---|
 | shown by a conformance case | 93 |
-| shown by another executed test | 10 |
+| shown by another executed test | 14 |
 | no program shows it on a host | 21 |
-| open: no executed check yet | 9 |
+| open: no executed check yet | 5 |
 | all | 133 |
 
 ## CMP
@@ -139,22 +139,22 @@ of this suite, by another executed test, or it is listed with the reason that no
 | RT-D03a | Blocker | RT-019, RT-020, RT-021 | - | No fail-safe for a hung or crashed processor: the watchdog defaults to off, there is no fatal-error handler and no reset-cause report. open: Firmware behaviour on a processor: RT-019 to RT-021 have no executed check, and the watchdog needs the hardware record of HIL-010. |
 | RT-D04a | Blocker | RT-025, RT-026 | - | RETAIN memory is not retentive on the firmware. no program: Persistence across a power cycle is shown by the retain suites of the core, the host runtime and the Zephyr scheduler, not by one program. |
 | RT-D05a | Major | RT-013 | - | The scan coordinator runs at a priority that the MQTT and Modbus threads outrank. no program: A priority of the firmware configuration, shown by the build-time rule of config_check_probe.c. |
-| RT-D05b | Major | RT-014 | - | A single late activation latches a fault that needs a program reload. open: Still the default: RT-014 makes the number of misses that latch configurable, and the first miss still latches with the default limit; the reporting is on the POSIX runtime only (requirement-evidence.json notes). |
+| RT-D05b | Major | RT-014 | test_native_runtime_session.c (test_deadline_default_limit_tolerates_one_late_activation)<br>test_sched_core.c (test_deadline_accounting)<br>main.c (test_the_zephyr_adapter_decides_the_golden_trace) | A single late activation latches a fault that needs a program reload. |
 | RT-D05c | Major | RT-012 | - | Debug commands hold the scan lock while printing. no program: A locking property of the shell commands of the application, shown by the exchange suite. |
 | RT-D06a | Major | RT-012 | - | The process-image lock is held across hardware I/O, including up to five blocking analog reads. no program: A locking property of the scheduler of the firmware, shown by main.c of the exchange suite (the lock is not held while the physical outputs are written). |
 | RT-D07a | Major | RT-005, CMP-016 | `cmp/cmp-016-dint-min-divided-by-minus-one`<br>`cmp/cmp-016-dint-min-modulo-minus-one` | The most negative integer divided by -1 kills the host runtime with a floating-point exception. |
 | RT-D07b | Major | RT-005, CMP-016 | `cmp/cmp-016-dint-negate-min`<br>`cmp/cmp-016-dint-abs-min` | Negation and absolute value of the most negative integer overflow. |
 | RT-D07c | Major | RT-005, CMP-016 | `cmp/cmp-016-real-out-of-range-to-dint`<br>`cmp/cmp-016-real-nan-to-dint` | Float-to-integer conversion of out-of-range values is undefined. |
 | RT-D07d | Major | RT-004 | - | Status words are written through a cast pointer that may be unaligned. no program: A C-level alignment property of the dispatcher, shown by test_comm_dispatch.c under the alignment check of the undefined-behaviour sanitizer. |
-| RT-D08a | Major | RT-008 | - | All multitask, deadline, safe-state and watchdog logic is one Zephyr file, not portable. open: RT-008 has no executed check: the shared scheduler core is not delivered, so the same scheduler suite cannot yet pass on each runtime. |
+| RT-D08a | Major | RT-008 | test_sched_core.c (test_scan_phases_are_ordered)<br>test_sched_equivalence.c (test_the_session_decides_the_golden_trace)<br>main.c (test_the_zephyr_adapter_decides_the_golden_trace) | All multitask, deadline, safe-state and watchdog logic is one Zephyr file, not portable. |
 | RT-D08b | Major | RT-014 | - | The POSIX host counts deadline misses where the target latches them. no program: A scheduler property of the runtime session, shown by test_native_runtime_session.c (RT-014, partial for the target). |
 | RT-D08c | Major | RT-016 | - | Replacing a program resets variable memory on the host but not on Zephyr. no program: Needs two loads into one session, which a case (one program, one run) cannot state; shown by test_core_start.c and the scheduler suite. |
 | RT-D09a | Major | RT-028 | - | The whole artifact is capped at 4,096 bytes while 45,056 are reserved for code and advertised. no program: A limit of the program store of the firmware, shown by test_program_store.c (the largest artifact the store accepts is the configured code size). |
 | RT-D09b | Major | RT-024 | - | A failed MQTT initialisation returns from main before the runtime starts; the scheduler waits behind time synchronisation. no program: A start-up order of the firmware, shown by the start-up plan test of the application (main.c, RT-024). |
 | RT-D10a | Major | RT-003 | - | The loader does not verify stack effects, so it accepts code with a certain stack underflow. no program: Needs an artifact that no compiler produces (a certain underflow); shown by test_loader_verify.c, test_sandbox.c and the loader fuzzer. |
 | RT-D11a | Minor | RT-017 | - | Pause, breakpoint and step zero the output image and clear forces. no program: Needs a debug session (pause, step), which a case cannot state; shown by test_native_runtime_session.c and the scheduler suite. |
-| RT-D11b | Minor | RT-006 | - | The tick opcode reads the clock on every call: time is not latched once per scan. open: No executed check: the core has no per-scan time latch and no test for it; RT-006 is evidenced for the instruction budget only (rt-006-runaway-loop-ends-in-a-fault). |
-| RT-D11c | Minor | RT-006 | - | One string opcode can loop for thousands of bytes inside the instruction budget. open: No executed check: the budget is not charged by the data a string opcode processes, and no test says so. |
+| RT-D11b | Minor | RT-006 | test_vm_scan.c (test_time_is_latched_once_per_scan) | The tick opcode reads the clock on every call: time is not latched once per scan. |
+| RT-D11c | Minor | RT-006 | test_vm_scan.c (test_string_opcodes_are_charged_by_their_bytes) | One string opcode can loop for thousands of bytes inside the instruction budget. |
 | RT-D11d | Minor | RT-029 | - | Configuration sizes have no ranges. no program: A build-time rule of the firmware configuration, shown by config_check_probe.c. |
 | RT-D11e | Minor | RT-029 | - | Zephyr headers leak into the core. no program: Shown by the host build of the core in CI, which has no Zephyr header, and by test_hil_debug.c, which runs the formatter on the host. |
 | RT-D11f | Minor | RT-030 | - | A failed mutex creation is ignored. no program: Needs a lock that fails to be created, which a program cannot cause; shown by test_core_lock.c. |
