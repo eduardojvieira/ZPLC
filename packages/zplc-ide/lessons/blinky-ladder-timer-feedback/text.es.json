@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "title": "Oscilador TON y realimentación de salida",
+  "summary": "Completá un parpadeo Ladder de {{t:500}} ms hecho con dos temporizadores TON y bobinas SET y RESET, y verificá sus tiempos de encendido y apagado con assertions FOR y AT.",
+  "scope": "La evidencia de Tests es del host nativo POSIX; no es evidencia de LED físico, timing de hardware, HIL ni certificación.",
+  "objectives": [
+    "Leé un oscilador Ladder de dos temporizadores: cada uno corre en un semiperíodo y arranca al siguiente.",
+    "Completalo con una bobina SET y una bobina RESET manejadas por las salidas Q de los temporizadores."
+  ],
+  "stages": [
+    {
+      "key": "objective",
+      "title": "Objetivo",
+      "body": "En src/Blinky.ld.json ya están dibujados los dos peldaños de temporizador: OffTimer corre mientras LED_Output está OFF y OnTimer corre mientras está ON. Agregá los dos peldaños de bobina: un contacto sobre OffTimer.Q que haga SET de LED_Output y un contacto sobre OnTimer.Q que le haga RESET.",
+      "checkpoint": "Las salidas de los temporizadores se realimentan para activar y desactivar el LED, y el LED arranca en OFF."
+    },
+    {
+      "key": "predict",
+      "title": "Predecí",
+      "body": "Antes de ejecutar, anticipá LED_Output a {{t:250}}, {{t:750}}, {{t:1250}} y {{t:1750}} ms.",
+      "checkpoint": "OFF a {{t:250}} ms, ON a {{t:750}}, OFF a {{t:1250}}, ON a {{t:1750}}; el primer flanco ascendente cae entre {{t:400}} y {{t:600}} ms."
+    },
+    {
+      "key": "edit",
+      "title": "Editá",
+      "body": "Corregí esta omisión del starter y guardá antes de ejecutar: El starter tiene los dos temporizadores pero ninguna bobina, así que LED_Output queda en OFF para siempre; agregá una bobina SET manejada por OffTimer.Q y una bobina RESET manejada por OnTimer.Q, de modo que el LED esté OFF unos {{t:500}} ms, luego ON unos {{t:500}} ms, y repita.",
+      "checkpoint": "El escenario visible debe pasar con evidencia host guardada."
+    },
+    {
+      "key": "run",
+      "title": "Ejecutá",
+      "body": "En Tests, elegí el zplc.json guardado y ejecutá únicamente el escenario BlinkyVisual.",
+      "checkpoint": "El escenario requerido se llama BlinkyVisual y contiene {{assertions}} assertions."
+    },
+    {
+      "key": "observe",
+      "title": "Observá",
+      "body": "Revisá la traza y la tabla: OFF hasta unos {{t:500}} ms, ON hasta unos {{t:1000}} ms, OFF de nuevo y ON otra vez desde unos {{t:1500}} ms.",
+      "checkpoint": "Las tres ventanas FOR ({{t:20}}-{{t:400}} ms OFF, {{t:620}}-{{t:900}} ms ON, {{t:1120}}-{{t:1400}} ms OFF) se sostienen, y se encuentran los dos flancos ascendentes y el descendente."
+    },
+    {
+      "key": "reflect",
+      "title": "Reflexioná",
+      "body": "Un programa que invierte la salida en cada scan, parpadea al doble de velocidad o queda ON sólo el 20 % del tiempo falla las assertions FOR y AT.",
+      "checkpoint": "El escenario host evalúa la forma de onda lógica, no la técnica (un semiperíodo de {{t:500}} o {{t:510}} ms pasa); no demuestra período eléctrico, brillo, timing de hardware, HIL ni certificación."
+    }
+  ],
+  "hints": [
+    {
+      "level": 1,
+      "text": "Mirá los dos primeros peldaños: OffTimer sólo corre mientras LED_Output está OFF y OnTimer sólo mientras está ON, así que algo tiene que invertir LED_Output cuando cada uno termina."
+    },
+    {
+      "level": 2,
+      "text": "Agregá un peldaño con un contacto normalmente abierto sobre OffTimer.Q y una bobina SET sobre LED_Output, y otro con un contacto sobre OnTimer.Q y una bobina RESET sobre LED_Output."
+    }
+  ],
+  "faultCases": [
+    "El starter tiene los dos temporizadores pero ninguna bobina, así que LED_Output queda en OFF para siempre; agregá una bobina SET manejada por OffTimer.Q y una bobina RESET manejada por OnTimer.Q, de modo que el LED esté OFF unos 500 ms, luego ON unos 500 ms, y repita."
+  ]
+}

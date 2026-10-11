@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "alsoGreen": [],
+  "wrong": [
+    {
+      "intent": "alarm only mirrors PumpFault: nothing is latched",
+      "files": {
+        "src/TankLevel.st": "PROGRAM TankLevel\nVAR_INPUT AutoEnable AT %I0.0 : BOOL; LevelLow AT %I0.1 : BOOL; LevelHigh AT %I0.2 : BOOL; PumpFault AT %I0.3 : BOOL; EStop AT %I0.4 : BOOL; Reset AT %I0.5 : BOOL; END_VAR\nVAR_OUTPUT Pump AT %Q0.0 : BOOL; Alarm AT %Q0.1 : BOOL; END_VAR\nPump := AutoEnable AND LevelLow AND NOT PumpFault;\nAlarm := PumpFault;\nEND_PROGRAM\n"
+      }
+    },
+    {
+      "intent": "fault clears by itself when the fault input drops, no Reset needed",
+      "files": {
+        "src/TankLevel.st": "PROGRAM TankLevel\nVAR_INPUT AutoEnable AT %I0.0 : BOOL; LevelLow AT %I0.1 : BOOL; LevelHigh AT %I0.2 : BOOL; PumpFault AT %I0.3 : BOOL; EStop AT %I0.4 : BOOL; Reset AT %I0.5 : BOOL; END_VAR\nVAR_OUTPUT Pump AT %Q0.0 : BOOL; Alarm AT %Q0.1 : BOOL; END_VAR\nVAR PumpOn : BOOL := FALSE; Fault : BOOL := FALSE; END_VAR\nFault := EStop OR PumpFault;\nIF Fault OR NOT AutoEnable OR LevelHigh THEN PumpOn := FALSE; ELSIF LevelLow THEN PumpOn := TRUE; END_IF;\nPump := PumpOn AND AutoEnable AND NOT Fault;\nAlarm := Fault;\nEND_PROGRAM\n"
+      }
+    },
+    {
+      "intent": "fault latches but Reset never clears it",
+      "files": {
+        "src/TankLevel.st": "PROGRAM TankLevel\nVAR_INPUT AutoEnable AT %I0.0 : BOOL; LevelLow AT %I0.1 : BOOL; LevelHigh AT %I0.2 : BOOL; PumpFault AT %I0.3 : BOOL; EStop AT %I0.4 : BOOL; Reset AT %I0.5 : BOOL; END_VAR\nVAR_OUTPUT Pump AT %Q0.0 : BOOL; Alarm AT %Q0.1 : BOOL; END_VAR\nVAR PumpOn : BOOL := FALSE; Fault : BOOL := FALSE; END_VAR\nIF EStop OR PumpFault THEN Fault := TRUE; END_IF;\nIF Fault OR NOT AutoEnable OR LevelHigh THEN PumpOn := FALSE; ELSIF LevelLow THEN PumpOn := TRUE; END_IF;\nPump := PumpOn AND AutoEnable AND NOT Fault;\nAlarm := Fault;\nEND_PROGRAM\n"
+      }
+    }
+  ]
+}

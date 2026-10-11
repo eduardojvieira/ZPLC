@@ -16,6 +16,10 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from hil_ports import PortError, resolve_port  # noqa: E402
 
 
+# A public test broker, named on purpose (COM-014). The product names no broker and starts with MQTT off, over TLS with
+# the certificate verified; the security phases need a real TLS endpoint, and this is the one they use. --broker names another.
+TEST_BROKER = "test.mosquitto.org"
+
 ANSI_ESCAPE = re.compile(
     r"\x1b\[[0-9;]*[mJKH]|\[8D|\[J|\[1B|\x1b\[[\d;]*m|\x1b\[[\d;]*[A-Z]"
 )
@@ -351,6 +355,15 @@ def main() -> int:
     parser.add_argument("--wifi-ssid", default=os.getenv("ZPLC_WIFI_SSID", ""))
     parser.add_argument("--wifi-password", default=os.getenv("ZPLC_WIFI_PASSWORD", ""))
     parser.add_argument("--skip-wifi", action="store_true")
+    parser.add_argument("--broker", default=TEST_BROKER, help=f"the TLS test broker the phases connect to (default: {TEST_BROKER})")
+    parser.add_argument(
+        "--insecure-tls-image",
+        action="store_true",
+        help=(
+            "The image under test was built with CONFIG_ZPLC_MQTT_ALLOW_INSECURE_TLS=y, so that the shell accepts "
+            "mqtt_security 1 (TLS, certificate not verified). Without it Phase 3 requires the shell to REFUSE it (COM-014)."
+        ),
+    )
 
     # Timeout tuning knobs — adjustable per environment without code changes
     parser.add_argument(
@@ -489,7 +502,7 @@ def main() -> int:
         # ----------------------------------------------------------------
         print("[HIL] Phase 2: TLS server-verify failure (security=2)")
         send_cmd(ser, "zplc config set mqtt_enabled 1")
-        send_cmd(ser, "zplc config set mqtt_broker test.mosquitto.org")
+        send_cmd(ser, f"zplc config set mqtt_broker {args.broker}")
         send_cmd(ser, "zplc config set mqtt_port 8883")
         send_cmd(ser, "zplc config set mqtt_security 2")
         send_cmd(ser, "zplc config save", wait=1.2, max_read_s=3.0)
@@ -553,8 +566,20 @@ def main() -> int:
         # ----------------------------------------------------------------
         # Phase 3 — TLS no-verify MUST bypass cert gate and attempt connect
         # ----------------------------------------------------------------
-        print("[HIL] Phase 3: TLS no-verify connect attempt (security=1)")
-        send_cmd(ser, "zplc config set mqtt_security 1")
+        if not args.insecure_tls_image:
+            # COM-014: the default image cannot turn certificate verification off, and says so.
+            print("[HIL] Phase 3: the shell refuses TLS without certificate verification (security=1)")
+            refused = send_cmd(ser, "zplc config set mqtt_security 1")
+            assert_contains(refused, "cannot turn TLS certificate verification off")
+            status = send_cmd(ser, "zplc config get")
+            assert_contains(status, "MQTT Security: 2")
+            print("[HIL] Phase 3: PASS — verification stays on")
+            print("PASS: communication security HIL checks")
+            return 0
+
+        print("[HIL] Phase 3: TLS no-verify connect attempt (security=1, an image built to allow it)")
+        warned = send_cmd(ser, "zplc config set mqtt_security 1")
+        assert_contains(warned, "TLS certificate verification is OFF")
         send_cmd(ser, "zplc config save", wait=1.2, max_read_s=3.0)
 
         # Same rationale as Phase 2: reset MQTT backoff before Phase 3.
@@ -615,9 +640,13 @@ def main() -> int:
         # ----------------------------------------------------------------
         # Restore board defaults for the next run
         # ----------------------------------------------------------------
+        # The product starts with MQTT off, over TLS with the certificate verified (COM-014): that is what is put back, and
+        # never a plaintext default. The test broker stays named in the stored settings only while MQTT is off; `zplc config
+        # reset` clears it, and all else.
         try:
-            send_cmd(ser, "zplc config set mqtt_security 0")
-            send_cmd(ser, "zplc config set mqtt_port 1883")
+            send_cmd(ser, "zplc config set mqtt_enabled 0")
+            send_cmd(ser, "zplc config set mqtt_security 2")
+            send_cmd(ser, "zplc config set mqtt_port 8883")
             send_cmd(ser, "zplc config save", wait=1.2, max_read_s=3.0)
         except serial.SerialException:
             pass

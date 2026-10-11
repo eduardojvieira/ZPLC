@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "id": "ScanSnapshot",
+  "tickMs": 10,
+  "durationMs": 30,
+  "events": [
+    { "atMs": 0, "set": { "ScanSnapshot.Button": false } },
+    { "atMs": 10, "set": { "ScanSnapshot.Button": true } },
+    { "atMs": 20, "set": { "ScanSnapshot.Button": false } }
+  ],
+  "expectations": [
+    { "kind": "AT", "atMs": 0, "condition": { "ScanSnapshot.Current": false, "ScanSnapshot.Delayed": false, "ScanSnapshot.RisingPulse": false } },
+    { "kind": "AT", "atMs": 10, "condition": { "ScanSnapshot.Current": true, "ScanSnapshot.Delayed": false, "ScanSnapshot.RisingPulse": true } },
+    { "kind": "AT", "atMs": 20, "condition": { "ScanSnapshot.Current": false, "ScanSnapshot.Delayed": true, "ScanSnapshot.RisingPulse": false } },
+    { "kind": "AT", "atMs": 30, "condition": { "ScanSnapshot.Current": false, "ScanSnapshot.Delayed": false, "ScanSnapshot.RisingPulse": false } },
+    { "kind": "RISING", "fromMs": 10, "withinMs": 0, "condition": { "ScanSnapshot.RisingPulse": true } },
+    { "kind": "FALLING", "fromMs": 20, "withinMs": 0, "condition": { "ScanSnapshot.RisingPulse": false } },
+    { "kind": "RISING", "fromMs": 20, "withinMs": 0, "condition": { "ScanSnapshot.Delayed": true } },
+    { "kind": "FALLING", "fromMs": 30, "withinMs": 0, "condition": { "ScanSnapshot.Delayed": false } },
+    { "kind": "NEVER", "condition": { "ScanSnapshot.RisingPulse": true, "ScanSnapshot.Delayed": true } }
+  ]
+}

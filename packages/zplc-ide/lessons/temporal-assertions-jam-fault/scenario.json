@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "id": "ConveyorJamTiming",
+  "tickMs": 10,
+  "durationMs": 100,
+  "events": [
+    { "atMs": 0, "set": { "Conveyor.Start": true, "Conveyor.Stop": false, "Conveyor.Reset": false, "Conveyor.PartAtClassifier": false, "Conveyor.MetalDetected": false, "Conveyor.PartAtDiverter": false, "Conveyor.JamDetected": false } },
+    { "atMs": 10, "set": { "Conveyor.Start": false } },
+    { "atMs": 30, "set": { "Conveyor.JamDetected": true } },
+    { "atMs": 40, "set": { "Conveyor.Reset": true } },
+    { "atMs": 50, "set": { "Conveyor.Reset": false, "Conveyor.JamDetected": false } },
+    { "atMs": 60, "set": { "Conveyor.Reset": true } },
+    { "atMs": 70, "set": { "Conveyor.Reset": false } },
+    { "atMs": 80, "set": { "Conveyor.Start": true } },
+    { "atMs": 90, "set": { "Conveyor.Start": false } }
+  ],
+  "expectations": [
+    { "kind": "AT", "atMs": 20, "condition": { "Conveyor.BeltCommand": true, "Conveyor.FaultLamp": false } },
+    { "kind": "WITHIN", "fromMs": 30, "withinMs": 0, "condition": { "Conveyor.BeltCommand": false, "Conveyor.FaultLamp": true } },
+    { "kind": "FOR", "fromMs": 30, "forMs": 20, "condition": { "Conveyor.BeltCommand": false, "Conveyor.FaultLamp": true } },
+    { "kind": "AT", "atMs": 50, "condition": { "Conveyor.BeltCommand": false, "Conveyor.FaultLamp": true } },
+    { "kind": "FALLING", "fromMs": 60, "withinMs": 0, "condition": { "Conveyor.FaultLamp": false } },
+    { "kind": "AT", "atMs": 60, "condition": { "Conveyor.BeltCommand": false, "Conveyor.FaultLamp": false } },
+    { "kind": "UNTIL", "fromMs": 30, "condition": { "Conveyor.BeltCommand": false }, "until": { "Conveyor.Start": true } },
+    { "kind": "RISING", "fromMs": 80, "withinMs": 0, "condition": { "Conveyor.BeltCommand": true } },
+    { "kind": "NEVER", "condition": { "Conveyor.BeltCommand": true, "Conveyor.FaultLamp": true } }
+  ]
+}

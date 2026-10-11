@@ -73,8 +73,17 @@ describe('protocol configuration defaults', () => {
     expect(normalized?.ethernet).toBeUndefined();
   });
 
+  it('names no broker and starts with MQTT off, over TLS with the certificate verified (COM-014)', () => {
+    const mqtt = DEFAULT_ZPLC_CONFIG.communication?.mqtt;
+    expect(mqtt?.broker).toBe('');
+    expect(mqtt?.enabled).toBe(false);
+    expect(mqtt?.transport).toBe('tls');
+    expect(mqtt?.port).toBe(8883);
+    expect(mqtt?.securityLevel).toBe('tls-server-verify');
+  });
+
   it('preserves mqtt and modbus defaults for network-capable release boards', () => {
-    expect(DEFAULT_ZPLC_CONFIG.communication?.mqtt?.transport).toBe('tcp');
+    expect(DEFAULT_ZPLC_CONFIG.communication?.mqtt?.transport).toBe('tls');
     expect(DEFAULT_ZPLC_CONFIG.communication?.modbus?.tcpEnabled).toBe(true);
     expect(DEFAULT_ZPLC_CONFIG.communication?.modbus?.rtuEnabled).toBe(false);
   });

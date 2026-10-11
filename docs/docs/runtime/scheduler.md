@@ -53,6 +53,38 @@ In simulation one thread serves the control requests and runs the batches, one a
 
 `STOP`, external pause, unregister, and scheduler faults close admission and drain in-flight coordinator work before returning. These guarantees describe the scheduler implementation and its host/native-sim tests. They do not establish WCET, jitter, electrical state, or board qualification.
 
+### The locks around a scan (RT-010, RT-012)
+
+On the target a batch is three steps. The inputs are read from the HAL with no lock held. Then, under the
+process-image lock, the writes that other threads queued are applied, the samples are written to IPI, the tasks run
+and the image is published as a snapshot. Last, with the image lock released and under a separate lock for the
+output I/O, the physical outputs are written and the hardware watchdog is fed. The image lock is never held while a
+pin is written, a line is printed or any call that can block runs: the log lines of a scan are printed after the lock
+is released.
+
+A thread outside the scan reads the snapshot of the last commit and queues its writes for the next input latch (see
+[Access from outside the scan](memory-model.md#access-from-outside-the-scan-rt-010-rt-011)). A stop, a pause or a
+fault that arrives between the commit of the image and the write of the pins takes the output lock after or before
+it, and the pins end in the state the later of the two decided.
+
+A lock that cannot be created or taken is an error the caller sees (RT-030). A control call returns
+`ZPLC_SCHED_ERR_LOCK` and changes nothing. A scan that cannot take the image lock drives the pins to their safe state
+and latches the fault, so the state is `ERROR`; a replacement program is the way out, as for any fault.
+
+### Priorities and start-up order (RT-013, RT-024)
+
+The scan coordinator, the high-priority work queue or the normal one when there is none, has a lower priority number
+than every communication thread of the application, which all run at `CONFIG_ZPLC_COMM_THREAD_PRIORITY` (8 by
+default), and than the shell and log threads. The build checks it and fails otherwise. Boards with a network stack
+set `CONFIG_NET_TC_THREAD_PREEMPTIVE=y`, because Zephyr's network threads are cooperative by default and would
+outrank the scan.
+
+The firmware starts the runtime before any service. The hardware layer, the core, the scheduler with the program
+store and the restore of the stored program come first, and the shell, which is the control link, is started by
+Zephyr before `main()`. The network, the time service, the fieldbus servers and MQTT or cloud provisioning start
+after them, and each is allowed to fail: a service that does not come up is logged and counted, and the runtime that
+is already up keeps running. The boot log names every step in the order it ran.
+
 ## Deadlines
 
 A scan misses its deadline when its task ends more than one interval after the release of the batch it ran in: the task was released again before it was done, or the tasks ahead of it in the batch used its interval. A miss has these effects, in this order:

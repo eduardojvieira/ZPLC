@@ -86,7 +86,7 @@ línea de resumen por escenario o por placa. Toda la salida queda bajo
 
 | Modo | Qué se ejecuta | Qué muestra un resultado correcto | Qué no muestra |
 |------|----------------|-----------------------------------|----------------|
-| `host` | Las nueve suites CMake de `firmware/lib/zplc_core` bajo ctest, compiladas con los sanitizadores de direcciones y de comportamiento indefinido | La VM, el cargador, el despacho y el runtime de host se comportan en un host de 64 bits sin comportamiento indefinido | Nada sobre un destino de 32 bits ni Cortex-M |
+| `host` | Las suites CMake de `firmware/lib/zplc_core` bajo ctest, compiladas con los sanitizadores de direcciones y de comportamiento indefinido | La VM, el cargador, el despacho y el runtime de host se comportan en un host de 64 bits sin comportamiento indefinido | Nada sobre un destino de 32 bits ni Cortex-M |
 | `host32` | Las mismas suites compiladas con `-m32` | Lo mismo, con `int`, `long` y punteros de 32 bits | El comportamiento de Cortex-M: x86 tolera el acceso no alineado y no tiene enums cortos |
 | `native` | Las suites Zephyr de `firmware/tests` en `native_sim/native/64`, como hace CI | La lógica de la aplicación de firmware, el HAL de Zephyr y el planificador contra el kernel de Zephyr en el host | Tiempos, interrupciones y controladores de una placa real |
 | `native32` | Lo mismo en `native_sim/native`, la variante de 32 bits | Lo mismo, con un modelo de datos de 32 bits | Lo mismo |
@@ -139,6 +139,25 @@ un resultado siempre dice con qué tamaños se obtuvo:
 
 Las imágenes de proceso son de 4 KB cada una en todos los perfiles porque el
 ISA las fija.
+
+El endurecimiento del runtime del firmware (RT-010 a RT-034) tiene sus propias suites:
+
+- `runtime_boot` ejecuta un plan de arranque en orden, rechaza un plan que arranca un servicio antes que el runtime
+  y sigue adelante cuando un servicio falla;
+- `program_store_nvs` ejecuta el program store sobre NVS en el simulador de flash con un artefacto tan grande como
+  la región de código, y corta la energía en cada operación de un deploy;
+- `modbus_force` escribe por el servidor Modbus sobre el core real y muestra que una variable forzada conserva su
+  valor forzado;
+- `scheduler_admission` retiene un scan en el commit y en la escritura de salidas, para mostrar que una escritura de
+  fuera espera al latch de entradas y nunca al scan, y que el lock de la imagen está libre mientras se escriben los
+  pines.
+
+Las suites de host del core suman `test_exchange` (un scanner, lectores y escritores en hilos), `test_program_store`
+(un corte de energía y una escritura truncada en cada operación), `test_core_start`, `test_core_lock`,
+`test_bytes_crc` y las pruebas `config_rule_*`, cada una de las cuales compila una regla de configuración con un
+valor que la rompe y espera que la compilación falle nombrando la regla. Los puntos de entrada solo para pruebas se
+declaran en `firmware/lib/zplc_core/tests/include/zplc_test_hooks.h`, nunca en un header público;
+`test_public_headers` falla si un header público declara uno.
 
 ## Análisis estático
 

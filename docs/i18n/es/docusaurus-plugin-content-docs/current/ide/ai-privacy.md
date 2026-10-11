@@ -46,6 +46,18 @@ programa a hardware, forzar valores, cambiar RUN/STOP, recuperar, abrir serial
 crudo ni ejecutar shell. Esas acciones siguen siendo flujos explícitos de UI
 humana.
 
+### Sin camino al enlace con el dispositivo
+
+Las tools del servidor MCP local son fijas: `project_inspect`, `project_validate`, `compiler_check`,
+`compiler_compile`, `symbols_list`, `safety_check`, `tests_run`, `scenario_run`, `simulation_start`,
+`simulation_step`, `runtime_snapshot`, `trace_get`, `boards_list`, `toolchain_inspect` y `firmware_build`. Ninguna
+recibe un puerto, un dispositivo ni una sesión, ninguna abre un puerto serial ni un socket, y el programa que las
+sirve se compila sin los módulos que lo hacen. Una solicitud al proveedor de IA lleva seis campos (workspace, modo,
+prompt, archivo activo, diagnósticos y muestras de trace) y cualquier otra cosa se rechaza antes de llegar al
+proveedor. Una prueba enumera las tools y resources registrados desde el servidor vivo, revisa el grafo de módulos
+del servidor y del proveedor, y ejecuta las tools con una trampa en cada punto de entrada de sockets y serial
+(`packages/zplc-ide/src/mcp/deviceLink.test.ts`, `packages/zplc-ide/electron/aiDeviceLink.test.ts`).
+
 ## Evidencia antes de aceptar
 
 Un candidato útil incluye diagnósticos, resultado de compilación, resultado de

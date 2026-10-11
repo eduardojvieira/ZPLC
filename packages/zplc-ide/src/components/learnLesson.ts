@@ -1,11 +1,13 @@
 import type { WorkspaceTestPresentation } from './workspaceTestPresentation';
+import { LESSON_IDS, LESSON_INDEX, type LessonId } from '../generated/lessonIndex';
 import { createLearnContentV1, validateLearnContentV1, type VersionedLearnLesson } from './learnContent.v1';
-import { learnLessonContentEsV1 } from './learnContent.es.v1';
-import { learnLessonContentEnV1 } from './learnContent.en.v1';
+import type { FailedAssertion } from '../../electron/learnProgressModel';
+import { failedAssertionsOf } from '../learn/gradeRecord';
 
 export type LearnLocale = 'es' | 'en';
-export type LearnLessonId = 'motor-start-stop-safe' | 'pedestrian-crossing-states' | 'tank-level-fault-reset' | 'conveyor-classification-jam' | 'blinky-ladder-timer-feedback' | 'motor-plant-feedback' | 'edge-counter-pulses' | 'scan-cycle-one-scan-memory' | 'temporal-assertions-jam-fault' | 'conveyor-two-parts-diagnosis';
-const canonicalLessonIds: readonly LearnLessonId[] = ['motor-start-stop-safe', 'pedestrian-crossing-states', 'tank-level-fault-reset', 'conveyor-classification-jam', 'blinky-ladder-timer-feedback', 'motor-plant-feedback', 'edge-counter-pulses', 'scan-cycle-one-scan-memory', 'temporal-assertions-jam-fault', 'conveyor-two-parts-diagnosis'];
+/** One source of lesson ids: the generated index, itself generated from the lesson manifests (LRN-028). */
+export type LearnLessonId = LessonId;
+const canonicalLessonIds: readonly LearnLessonId[] = LESSON_IDS;
 export const LEARN_MASTERY_STORAGE_KEY = 'zplc:learn-mastery:v1';
 const LEARN_MASTERY_MAX_BYTES = 4096;
 
@@ -13,10 +15,11 @@ export type LearnStage = { title: string; body: string; checkpoint: string };
 
 export type LearnLesson = {
   id: LearnLessonId;
-  exampleId: 'motor_start_stop' | 'pedestrian_crossing' | 'tank_level' | 'conveyor_01' | 'blinky_st' | 'motor_plant' | 'edge_counter' | 'scan_snapshot';
-  requiredScenario: 'MotorStartStop' | 'PedestrianCrossing' | 'TankLevel' | 'Conveyor01' | 'ConveyorJamTiming' | 'ConveyorTwoParts' | 'BlinkyVisual' | 'MotorPlant' | 'EdgeCounter' | 'ScanSnapshot';
-  sourcePath: 'src/Motor.st' | 'src/PedestrianCrossing.st' | 'src/TankLevel.st' | 'src/Conveyor.st' | 'src/Blinky.st' | 'src/MotorPlant.st' | 'src/EdgeCounter.st' | 'src/ScanSnapshot.st';
-  scenarioPath: 'tests/motor-start-stop.scenario.json' | 'tests/pedestrian-crossing.scenario.json' | 'tests/tank-level.scenario.json' | 'tests/conveyor-01.scenario.json' | 'tests/conveyor-jam-timing.scenario.json' | 'tests/conveyor-two-parts.scenario.json' | 'tests/blinky-visual.scenario.json' | 'tests/motor-plant.scenario.json' | 'tests/edge-counter.scenario.json' | 'tests/scan-snapshot.scenario.json';
+  /** The example project that holds the reference solution of the lesson. */
+  exampleId: string;
+  requiredScenario: string;
+  sourcePath: string;
+  scenarioPath: string;
   title: string;
   summary: string;
   stages: readonly LearnStage[];
@@ -24,8 +27,9 @@ export type LearnLesson = {
 };
 
 export type LearnLessonGrade =
-  | { kind: 'not-run' | 'unavailable' | 'unrelated' }
-  | { kind: 'passed' | 'failed'; assertions: number };
+  | { kind: 'not-run' | 'unavailable' | 'unrelated' | 'scenario-changed' }
+  | { kind: 'passed'; assertions: number }
+  | { kind: 'failed'; assertions: number; /** Which assertions failed, at what time, expected against observed, and where in the trace (LRN-026). */ failures: readonly FailedAssertion[] };
 
 const sha256 = /^[a-f0-9]{64}$/;
 const savedInputFileCount = (value: number): boolean => Number.isSafeInteger(value) && value >= 3 && value <= 193;
@@ -107,7 +111,8 @@ export function gradeRecordedScenarioLesson(lesson: VersionedLearnLesson, presen
   if (!lesson.rubric.requireSavedEvidence || lesson.rubric.requiredScenarioId !== lesson.requiredScenario) return { kind: 'unavailable' };
   if (!presentation) return { kind: 'not-run' };
   if (presentation.operation !== 'scenario-run') return presentation.operation ? { kind: 'unrelated' } : { kind: 'unavailable' };
-  if (!presentation.hasEvidence || presentation.scenarioCount !== 1 || !presentation.preview || !presentation.savedTestInputIdentity) return { kind: 'unavailable' };
+  // A passed run reports how many scenarios it ran; a failed one does not (it has no summary), so the preview's own count decides.
+  if (!presentation.hasEvidence || (presentation.scenarioCount !== undefined && presentation.scenarioCount !== 1) || !presentation.preview || !presentation.savedTestInputIdentity) return { kind: 'unavailable' };
 
   const { preview, savedTestInputIdentity } = presentation;
   if (preview.totalScenarioCount !== 1 || preview.scenarios.length !== 1) return { kind: 'unavailable' };
@@ -119,15 +124,22 @@ export function gradeRecordedScenarioLesson(lesson: VersionedLearnLesson, presen
     || !presentation.artifacts.some((artifact) => artifact.kind === 'zplc' && sha256.test(artifact.sha256) && Number.isSafeInteger(artifact.byteLength) && artifact.byteLength > 0)
     || !presentation.artifacts.some((artifact) => artifact.kind === 'trace' && artifact.sha256 === preview.traceEvidenceSha256 && sha256.test(artifact.sha256) && Number.isSafeInteger(artifact.byteLength) && artifact.byteLength > 0)) return { kind: 'unavailable' };
 
+  // The scenario of the workspace is the learner's to edit. The lesson's own scenario is in its package, so a run counts only
+  // when it recorded the assertions of that scenario, kind for kind. This catches a weakened or replaced scenario; the grade
+  // that does not depend on the workspace's scenario at all is `lessonCheck` (LRN-022).
+  if (scenario.assertions.map((assertion) => assertion.kind).join() !== lesson.scenario.expectations.map((expectation) => expectation.kind).join()) return { kind: 'scenario-changed' };
   const assertionsPassed = scenario.passed && scenario.assertions.every((assertion) => assertion.passed);
   if (presentation.kind === 'passed') return presentation.diagnostics.length === 0 && assertionsPassed ? { kind: 'passed', assertions: scenario.assertions.length } : { kind: 'unavailable' };
-  if (presentation.kind === 'assertion-failed') return presentation.diagnostics.some((diagnostic) => diagnostic.code === 'SCENARIO_ASSERTION_FAILED') && !assertionsPassed ? { kind: 'failed', assertions: scenario.assertions.length } : { kind: 'unavailable' };
+  if (presentation.kind === 'assertion-failed') {
+    if (!presentation.diagnostics.some((diagnostic) => diagnostic.code === 'SCENARIO_ASSERTION_FAILED') || assertionsPassed) return { kind: 'unavailable' };
+    return { kind: 'failed', assertions: scenario.assertions.length, failures: failedAssertionsOf(lesson.scenario, scenario.assertions, scenario.samples, preview.traceEvidenceSha256) };
+  }
   return { kind: 'unavailable' };
 }
 
 export const learnLessonCatalog: Readonly<Record<LearnLocale, readonly VersionedLearnLesson[]>> = Object.freeze({
-  es: createLearnContentV1('es', learnLessonContentEsV1),
-  en: createLearnContentV1('en', learnLessonContentEnV1),
+  es: createLearnContentV1('es', LESSON_INDEX.lessons),
+  en: createLearnContentV1('en', LESSON_INDEX.lessons),
 });
 
 if (!validateLearnContentV1(learnLessonCatalog)) throw new Error('Learn content v1 locale parity failed');

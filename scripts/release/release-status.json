@@ -1,0 +1,10 @@
+{
+  "schema": 1,
+  "comment": "What a person says about a version that no job can: how complete a prerelease is (it becomes the title of the release, REL-031) and the issues that are known when it ships. Add an entry for the version when you bump it (RELEASING.md); the release notes and the title are refused for a prerelease with no completeness.",
+  "versions": {
+    "2.0.0-rc.3": {
+      "completeness": "an unsigned prerelease for evaluation: no board has a hardware record and the Windows channels are not live",
+      "knownIssues": []
+    }
+  }
+}

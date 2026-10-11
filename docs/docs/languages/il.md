@@ -6,6 +6,8 @@ sidebar_position: 2
 
 Instruction List (IL) is a low-level textual IEC 61131-3-style workflow in ZPLC. It uses an implicit accumulator model and follows the repository's IL parser/transpiler path.
 
+What of Instruction List works today, read off the executed conformance tests, is in the generated [Instruction List reference](../reference/language-il.md).
+
 ## Compilation path
 
 The IDE parses IL and transpiles it to Structured Text (ST), then sends that generated ST through the compiler to produce `.zplc` bytecode.

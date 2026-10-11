@@ -47,6 +47,19 @@ export const stepElement = (id: string): SourceElementId => `step:${encode(id)}`
 export const transitionElement = (id: string): SourceElementId => `transition:${encode(id)}`;
 export const actionElement = (id: string): SourceElementId => `action:${encode(id)}`;
 
+/** The longest element id a diagnostic may carry across the main process and the window. */
+export const SOURCE_ELEMENT_ID_MAX_CHARS = 256;
+const ELEMENT_ID_FORM = /^(?:line|rung|block|connection|step|transition|action):[A-Za-z0-9_%.,!~*'()-]+(?:\/(?:cell:\d+,\d+|element:[A-Za-z0-9_%.,!~*'()-]+|enter|fire))?$/;
+
+/**
+ * Whether a value is an element id as the ids above are written: the part before the first `:` names the kind, the ids are
+ * percent-encoded, at most 256 characters. A diagnostic carries its element across the process boundary only when it is
+ * (`electron/workspaceCompileFailure.ts` keeps a copy of this form, and its test holds the two equal).
+ */
+export function isSourceElementId(value: unknown): value is SourceElementId {
+  return typeof value === 'string' && value.length <= SOURCE_ELEMENT_ID_MAX_CHARS && ELEMENT_ID_FORM.test(value);
+}
+
 const LANGUAGE_OF: Record<string, ElementLanguage> = {
   line: 'IL', rung: 'LD', block: 'FBD', connection: 'FBD', step: 'SFC', transition: 'SFC', action: 'SFC',
 };

@@ -1,10 +1,14 @@
 import { createHash } from 'node:crypto';
 import { createReadStream } from 'node:fs';
-import { copyFile, lstat, mkdir, readdir, stat, writeFile } from 'node:fs/promises';
+import { copyFile, lstat, mkdir, readFile, readdir, stat, writeFile } from 'node:fs/promises';
 import { basename, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const ASSET_EXTENSIONS = ['.dmg', '.zip', '.exe', '.AppImage', '.deb', '.rpm', '.spdx.json'];
+// Installers, the bill of materials and the firmware images (REL-022, `zplc-runtime-<version>-<board>.<ext>`) are
+// recognised by their extension; the standalone CLI and MCP executables (REL-026) have none on Linux and macOS, so
+// they are recognised by the whole scheme `<tool>-<version>-<os>-<arch>[.exe]` of scripts/release/binaries.ts.
+const ASSET_EXTENSIONS = ['.dmg', '.zip', '.exe', '.AppImage', '.deb', '.rpm', '.spdx.json', '.cdx.json', '.uf2', '.bin', '.elf'];
+const EXECUTABLE_NAME = /^zplc-(?:cli|mcp)-(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)(?:-[0-9A-Za-z.-]+)?-(?:linux|mac|win)-(?:x64|arm64)(?:\.exe)?$/;
 const SEMVER = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|[0-9A-Za-z-]*[A-Za-z-][0-9A-Za-z-]*)(?:\.(?:0|[1-9]\d*|[0-9A-Za-z-]*[A-Za-z-][0-9A-Za-z-]*))*))?$/;
 const COMMIT_SHA = /^[a-f0-9]{40}$/;
 const SHA256 = /^[a-f0-9]{64}$/;
@@ -34,7 +38,7 @@ async function collectAssets(inputDir, relative = '') {
     if (!details.isFile()) fail(`non-regular file is not allowed: ${path}`);
     const name = basename(path);
     if (CONTROL.test(name)) fail(`asset basename contains a control character: ${JSON.stringify(name)}`);
-    if (!ASSET_EXTENSIONS.some((extension) => name.endsWith(extension))) fail(`unexpected asset extension: ${path}`);
+    if (!ASSET_EXTENSIONS.some((extension) => name.endsWith(extension)) && !EXECUTABLE_NAME.test(name)) fail(`unexpected asset extension: ${path}`);
     assets.push({ absolutePath, name });
   }
   return assets;
@@ -89,6 +93,28 @@ export async function createReleaseIntegrityBundle({ inputDir, outputDir, versio
   return evidence;
 }
 
+const CHECKSUM_LINE = /^([a-f0-9]{64}) {2}(\S.*)$/;
+
+/**
+ * The checksum files of the platforms as one SHA256SUMS that names every asset once, sorted by name (REL-017). A
+ * name that two files give different hashes is refused: one of them is not the file that was uploaded.
+ */
+export function mergeChecksums(texts) {
+  const hashes = new Map();
+  for (const text of texts) {
+    for (const row of text.split('\n')) {
+      if (row === '') continue;
+      const match = CHECKSUM_LINE.exec(row);
+      if (!match) fail(`malformed checksum line: ${JSON.stringify(row)}`);
+      const [, hash, name] = match;
+      if (hashes.has(name) && hashes.get(name) !== hash) fail(`${name} has two different checksums`);
+      hashes.set(name, hash);
+    }
+  }
+  if (hashes.size === 0) fail('no checksum lines to merge');
+  return [...hashes].sort(([left], [right]) => compareName(left, right)).map(([name, hash]) => `${hash}  ${name}\n`).join('');
+}
+
 function parseArguments(argv) {
   const values = new Map();
   for (let index = 0; index < argv.length; index += 2) {
@@ -104,7 +130,15 @@ function parseArguments(argv) {
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  createReleaseIntegrityBundle(parseArguments(process.argv.slice(2))).catch((error) => {
+  const [mode, output, ...inputs] = process.argv.slice(2);
+  const done = mode === '--merge'
+    ? (async () => {
+      if (!output || inputs.length === 0) fail('expected --merge <output> <checksum file>...');
+      const texts = await Promise.all(inputs.map((path) => readFile(path, 'utf8')));
+      await writeFile(output, mergeChecksums(texts));
+    })()
+    : createReleaseIntegrityBundle(parseArguments(process.argv.slice(2)));
+  done.catch((error) => {
     console.error(error instanceof Error ? error.message : String(error));
     process.exitCode = 1;
   });

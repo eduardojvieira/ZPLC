@@ -22,7 +22,7 @@ Es fundamental mantener la separación de responsabilidades:
 
 ## Método Regular e Instalación
 
-1. Enlace archivos fuentes (extensiones `.c` / `.h`) dentro del proyecto original. Se dispone de la vía `firmware/app/src/custom`.
+1. Enlace archivos fuentes (extensiones `.c` / `.h`) dentro del proyecto original. Se recomienda usar `src/custom/`.
 2. Genere configuraciones de funciones o rutinas con llamados dependientes de Zephyr orientadas al requerimiento en cuestión.
 3. Actualice o llame estos procesos nuevos modificando el entorno base `CMakeLists.txt` en el mismo directorio.
 4. Interactúe recíprocamente entre ZPLC y Zephyr aprovechando directivas expuestas mediante `zplc_hal_*` de ser necesario.

@@ -72,6 +72,31 @@ That is the architectural reason multitask scheduling can share process data wit
 
 That means user memory and runtime metadata are not mixed arbitrarily.
 
+## Start of a program
+
+A program load is a cold start on every runtime (RT-016). IPI, OPI, WORK and RETAIN are set to zero and the force
+table is emptied before the new program is published, so a program never starts on the variables of the one it
+replaced; a runtime that holds a stored `RETAIN` record restores it after that. `zplc_core_cold_start()` is that
+operation, and `zplc_core_warm_start()` is the same without touching `RETAIN`, for a restart that keeps the retained
+values. The code region and the tags are the program and are not touched by either.
+
+## Access from outside the scan (RT-010, RT-011)
+
+While scans run, the scan is the only writer of the process image. A thread outside it (the Modbus server and
+clients, MQTT, the shell debug commands) goes through the exchange (`zplc_exchange.h`):
+
+- a read comes from the snapshot of IPI, OPI, WORK and RETAIN that the scan publishes at its commit. A value is whole
+  and from one scan, and a read never waits for a scan;
+- a write is queued whole and applied by the scan at the input latch of its next scan, through the force-aware
+  interface of the core: a forced variable keeps its forced value whatever a client writes. While no scan runs
+  (stopped, paused or faulted) there is no latch to wait for and the write is applied at once;
+- a write that does not fit the queue (`CONFIG_ZPLC_EXCHANGE_QUEUE_BYTES`, 1024 bytes by default) is refused whole
+  and the caller sees an error; a Modbus TCP client gets exception 6 (server device busy) and may retry;
+- a write to a Modbus tag of two registers sets the half that the register is, so two clients that write the two
+  halves never overwrite each other with a stale value of the other half.
+
+The snapshot is a copy of the four regions, so it costs their total size in RAM (20 KB with the default sizes).
+
 ## How the compiler places variables
 
 The compiler gives the whole project one layout in WORK memory, and the debug map lists it: each variable, with its address and size, in the POU of the file that declares it. The order is the globals, the variables of each function, the variables of the methods, the variables of each program in the order of the tasks, the string literals, and the work buffers of the string functions; the last byte of the region of the target profile is the initialization flag. The memory a program can use is what the target profile has, shared by every program of the project, and a project that does not fit is a build error that states the bytes required, the bytes available and the largest consumers. Variables located with `AT %M` are at `0x2000` plus their offset, and a variable that the compiler places on top of one is a build error.

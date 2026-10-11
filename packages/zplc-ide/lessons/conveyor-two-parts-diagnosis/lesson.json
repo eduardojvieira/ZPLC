@@ -1,0 +1,34 @@
+{
+  "schemaVersion": 1,
+  "id": "conveyor-two-parts-diagnosis",
+  "version": 1,
+  "order": 10,
+  "module": 8,
+  "level": "advanced",
+  "prerequisites": [
+    "conveyor-classification-jam"
+  ],
+  "languages": [
+    "ST"
+  ],
+  "tracks": [
+    "simulation"
+  ],
+  "plant": null,
+  "estimatedMinutes": 20,
+  "starter": {
+    "project": "conveyor_two_parts_starter",
+    "program": "src/Conveyor.st"
+  },
+  "solution": {
+    "project": "conveyor_01",
+    "program": "src/Conveyor.st"
+  },
+  "scenario": {
+    "file": "scenario.json",
+    "id": "ConveyorTwoParts",
+    "path": "tests/conveyor-two-parts.scenario.json",
+    "sha256": "05cf94b51dab40b3db4a5121db7cead3fbf0608d6084517711afd247b98fafed"
+  },
+  "regressionScenarios": []
+}

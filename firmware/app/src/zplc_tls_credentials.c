@@ -3,6 +3,7 @@
 #include <zplc_hal.h>
 
 #include <zephyr/fs/fs.h>
+#include <zephyr/sys/util.h>
 #include <errno.h>
 #include <limits.h>
 #include <string.h>
@@ -109,6 +110,7 @@ close:
 int zplc_tls_credential_replace(sec_tag_t tag, enum tls_credential_type type,
                                 const void *credential, size_t credential_len)
 {
+#if defined(CONFIG_TLS_CREDENTIALS)
     int rc;
 
     if (tag < 0 || type == TLS_CREDENTIAL_NONE || credential == NULL || credential_len == 0U) {
@@ -119,4 +121,12 @@ int zplc_tls_credential_replace(sec_tag_t tag, enum tls_credential_type type,
         return rc;
     }
     return tls_credential_add(tag, type, credential, credential_len);
+#else
+    /* A firmware without TLS (COM-016) has no credential store. */
+    ARG_UNUSED(tag);
+    ARG_UNUSED(type);
+    ARG_UNUSED(credential);
+    ARG_UNUSED(credential_len);
+    return -ENOTSUP;
+#endif
 }

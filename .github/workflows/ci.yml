@@ -66,14 +66,28 @@ jobs:
           bun run test:compiler -- --reporter=junit --reporter-outfile="${RUNNER_TEMP}/junit-compiler.xml" || status=$?
           bun tools/ci/check-expected-failures.ts --exit-code "${status}" "packages/zplc-compiler=${RUNNER_TEMP}/junit-compiler.xml"
 
-      - name: Verify standalone CLI version
+      # The release notes list the suites a run executed with their counts (REL-027): the reports are kept for it.
+      - name: Keep the compiler test report
+        if: ${{ always() }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: junit-compiler
+          path: ${{ runner.temp }}/junit-compiler.xml
+          if-no-files-found: ignore
+          retention-days: 7
+
+      # REL-018: the bill of materials is generated from the lockfile; the check fails when the document would hold
+      # fewer packages than the lockfile lists or than the recorded floor.
+      - name: Check the software bill of materials
+        run: bun scripts/release/sbom.ts --check
+
+      # REL-026: the CLI and the MCP server are built as standalone executables and run from a folder with no
+      # checkout (version, a compile of a bundled project, the list of MCP tools). The tests of the release
+      # scripts need the compiler package built, so they run here and not before it.
+      - name: Test release tooling and smoke the standalone CLI and MCP server
         run: |
-          bun build --compile --minify --target bun-linux-x64 \
-            packages/zplc-ide/src/cli/index.ts \
-            --outfile "${RUNNER_TEMP}/zplc-cli"
-          expected=$(bun -e "console.log(require('./package.json').version)")
-          actual=$(cd "${RUNNER_TEMP}" && ./zplc-cli --version)
-          test "${actual}" = "zplc-cli ${expected}"
+          bun test ./scripts/release
+          bun scripts/release/binaries.ts --targets host --out "${RUNNER_TEMP}/zplc-bin" --smoke
 
       - name: Typecheck every TypeScript program
         run: bun run typecheck
@@ -93,6 +107,15 @@ jobs:
           bun run test:ide -- --reporter=junit --reporter-outfile="${RUNNER_TEMP}/junit-ide.xml" || status=$?
           bun tools/ci/check-expected-failures.ts --exit-code "${status}" "packages/zplc-ide=${RUNNER_TEMP}/junit-ide.xml"
           bun run lint:ide
+
+      - name: Keep the Studio test report
+        if: ${{ always() }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: junit-ide
+          path: ${{ runner.temp }}/junit-ide.xml
+          if-no-files-found: ignore
+          retention-days: 7
 
       - name: Smoke Studio renderer vertical
         env:
@@ -254,6 +277,13 @@ jobs:
           ZPLC_FW_WS: ${{ github.workspace }}
         run: zplc/tools/firmware-test/run.sh native32 qemu-m3 qemu-m0
 
+      # REL-023: the application is built for native_sim and its shell is driven over stdin and stdout, so the
+      # commit, board, ABI and options that `zplc version` and `zplc sys build` report are read from a real shell.
+      - name: Check the firmware identity reported by the application shell
+        env:
+          ZPLC_FW_WS: ${{ github.workspace }}
+        run: python3 zplc/firmware/tests/app_shell_identity/test_app_shell_identity.py
+
   zephyr-cross-build:
     name: Zephyr cross-build (${{ matrix.id }})
     runs-on: ubuntu-latest
@@ -393,6 +423,10 @@ jobs:
           python3 tools/docs/validate_docs_pages.py
           python3 tools/docs/test_generate_known_limits.py
           python3 tools/docs/generate_known_limits.py --check
+          bun tools/docs/generate_function_reference.ts --check
+          bun tools/docs/generate_source_references.ts --check
+          bun tools/docs/generate_language_reference.ts --check
+          bun tools/docs/check_doc_claims.ts
           bun tools/ci/test-inventory.ts
           bun tools/ci/test-source-guard.ts
 
@@ -416,13 +450,6 @@ jobs:
         run: |
           bun run docs:generate
           bun run docs:validate
-          git diff --exit-code -- \
-            docs/docs/reference/runtime-api.md \
-            docs/docs/reference/boards.md \
-            docs/docs/languages/st.md \
-            docs/docs/runtime/stdlib.md \
-            docs/i18n/es/docusaurus-plugin-content-docs/current/reference/runtime-api.md \
-            docs/i18n/es/docusaurus-plugin-content-docs/current/reference/boards.md \
-            docs/i18n/es/docusaurus-plugin-content-docs/current/languages/st.md \
-            docs/i18n/es/docusaurus-plugin-content-docs/current/runtime/stdlib.md
+          # every generated page lives below these two folders: a page that differs from what the generators write fails the job
+          git diff --exit-code -- docs/docs docs/i18n
           bun run docs:build

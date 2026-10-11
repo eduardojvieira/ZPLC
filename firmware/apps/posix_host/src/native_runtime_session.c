@@ -18,6 +18,7 @@
 #include <stdarg.h>
 
 #include <zplc_core.h>
+#include <zplc_fw_identity.h>
 #include <zplc_hal.h>
 #include <zplc_hal_posix.h>
 #include <zplc_isa.h>
@@ -83,9 +84,9 @@ static int narrow_uint16(uint32_t value, uint16_t *out)
     return 0;
 }
 
-static void retain_lock(void)
+static int retain_lock(void)
 {
-    (void)zplc_pi_lock();
+    return zplc_pi_lock();
 }
 
 static void retain_unlock(void)
@@ -323,9 +324,7 @@ static int load_program_artifact(zplc_native_runtime_session_t *session,
         session->tasks[0] = details->tasks[0];
         return 0;
     }
-    /* Match zplc_core_load() replacement semantics before its task-loader commit. */
-    zplc_mem_init();
-    zplc_force_clear_all();
+    /* zplc_core_load_tasks() is a cold start (RT-016): the same replacement semantics as zplc_core_load(). */
     count = zplc_core_load_tasks(program, program_size, session->tasks,
                                  ZPLC_LOADER_MAX_TASKS, workspace, workspace_size);
     if (count <= 0 || (uint8_t)count != details->task_count) return -1;
@@ -1368,12 +1367,19 @@ static int handle_session_hello(const zplc_native_request_t *request,
                                 char *response,
                                 size_t response_size)
 {
+    /* REL-023: which build this is. A formatter that cannot fit reports null rather than half an identity. */
+    const zplc_fw_identity_t identity = zplc_fw_identity();
+    char build[512];
+
+    if (zplc_fw_identity_json(&identity, build, sizeof(build)) < 0) {
+        (void)snprintf(build, sizeof(build), "null");
+    }
     return format_jsonf(
         response,
         response_size,
         "{\"id\":\"%s\",\"type\":\"response\",\"result\":{"
         "\"protocol_version\":\"%s\",\"runtime_kind\":\"%s\","
-        "\"runtime_version\":\"%s\",\"draft_counter\":%u,\"capability_profile\":{"
+        "\"runtime_version\":\"%s\",\"draft_counter\":%u,\"build\":%s,\"capability_profile\":{"
         "\"profile_id\":\"native-posix-mvp\",\"features\":["
         "{\"name\":\"pause\",\"status\":\"supported\"},"
         "{\"name\":\"resume\",\"status\":\"supported\"},"
@@ -1387,7 +1393,8 @@ static int handle_session_hello(const zplc_native_request_t *request,
         ZPLC_NATIVE_PROTOCOL_VERSION,
         ZPLC_NATIVE_RUNTIME_KIND,
         zplc_core_version(),
-        (unsigned)ZPLC_DRAFT_COUNTER);
+        (unsigned)ZPLC_DRAFT_COUNTER,
+        build);
 }
 
 static int handle_program_load(zplc_native_runtime_session_t *session,
@@ -2224,7 +2231,11 @@ void zplc_native_runtime_session_init(zplc_native_runtime_session_t *session)
     session->state = ZPLC_NATIVE_SESSION_IDLE;
     session->scan_interval_ms = 100U;
     session->deadline_miss_limit = deadline_miss_limit();
-    zplc_core_init();
+    if (zplc_core_init() != 0) {
+        /* No process-image lock: the session cannot run a program (RT-030). */
+        session->state = ZPLC_NATIVE_SESSION_ERROR;
+        return;
+    }
     session_retain_configure();
 
     if (zplc_native_program_store_restore(session->program, sizeof(session->program),

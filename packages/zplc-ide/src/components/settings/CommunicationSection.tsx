@@ -16,13 +16,14 @@ import { CommunicationTags } from './CommunicationTags';
 
 export function CommunicationSection({ config, updateConfig }: SectionProps) {
   const boardNetworkType = getBoardNetworkType(config.target?.board);
+  // COM-014: no broker, TLS with the certificate verified: the controller connects nowhere until a broker is named.
   const defaultMqtt: MQTTCommunicationConfig = {
     enabled: false,
     profile: 'sparkplug-b',
     protocolVersion: '5.0',
-    transport: 'tcp',
-    broker: 'test.mosquitto.org',
-    port: 1883,
+    transport: 'tls',
+    broker: '',
+    port: 8883,
     clientId: 'zplc-device',
     keepAliveSec: 60,
     cleanSession: true,
@@ -32,7 +33,7 @@ export function CommunicationSection({ config, updateConfig }: SectionProps) {
     publishQos: 0,
     subscribeQos: 0,
     publishRetain: false,
-    securityLevel: 'none',
+    securityLevel: 'tls-server-verify',
     websocketPath: '/mqtt',
     lwtEnabled: false,
     lwtPayload: 'offline',

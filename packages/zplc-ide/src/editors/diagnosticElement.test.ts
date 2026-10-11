@@ -4,7 +4,7 @@ import { join } from 'node:path';
 
 import { CompilerError, compileMultiTaskProject, type ProgramSource } from '../compiler';
 import type { PLCLanguage } from '../types';
-import { elementOfDiagnostic } from './diagnosticElement';
+import { elementOfDiagnostic, elementToSelect } from './diagnosticElement';
 import { clearElementSelection, pendingElementSelection, requestElementSelection } from './elementSelectionRequests';
 
 const projects = join(import.meta.dir, '../../projects');
@@ -84,5 +84,29 @@ describe('LNG-003 a request to select an element waits for the editor of its fil
     expect(pendingElementSelection('src/a.fbd.json')?.element).toBe('block:two');
     clearElementSelection();
     expect(pendingElementSelection('src/a.fbd.json')).toBeNull();
+  });
+});
+
+describe('LNG-003 the element that came with the diagnostic wins over the one the open file gives', () => {
+  const model = read<{ blocks: Array<{ id: string; type: string; variableName?: string }> }>('blinky_fbd/src/main.fbd.json');
+  model.blocks.find((block) => block.type === 'variable')!.variableName = 'Undeclared';
+  const file = { language: 'FBD' as PLCLanguage, content: JSON.stringify(model) };
+  const error = build('FBD', '.fbd.json', file.content)[0]!;
+  const diagnostic = { message: error.detail, line: error.line };
+
+  it('selects the element the build carried, even when the open file would give another', () => {
+    // From the open file the diagnostic is about the block the build named ...
+    expect(elementToSelect(diagnostic, file)).toBe(error.element);
+    // ... and one that carries its element is about the one it names.
+    expect(elementToSelect({ ...diagnostic, element: 'block:somewhere_else' }, file)).toBe('block:somewhere_else');
+  });
+
+  it('needs no open file when the element came with the diagnostic, and selects nothing without either', () => {
+    expect(elementToSelect({ message: 'm', element: 'rung:r1/cell:0,2' }, undefined)).toBe('rung:r1/cell:0,2');
+    expect(elementToSelect(diagnostic, undefined)).toBeUndefined();
+  });
+
+  it('ignores a carried value that is not an element id and falls back to the open file', () => {
+    expect(elementToSelect({ ...diagnostic, element: '/etc/passwd' }, file)).toBe(error.element);
   });
 });

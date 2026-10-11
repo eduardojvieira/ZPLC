@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "title": "Cruce peatonal y estados seguros",
+  "summary": "Recorré estados de cruce peatonal con salidas de vehículo y peatón mutuamente consistentes.",
+  "scope": "La evidencia de Tests es determinística del host nativo POSIX; no es evidencia de cruce físico, hardware, HIL ni certificación.",
+  "objectives": [
+    "Modelá el cruce como estados numerados, cada uno con una combinación de salidas explícita.",
+    "Mostrá WALK sólo mientras los vehículos están en rojo."
+  ],
+  "stages": [
+    {
+      "key": "objective",
+      "title": "Objetivo",
+      "body": "En src/PedestrianCrossing.st, agregá los estados que coordinan vehículos y peatones; la planta levanta PedRequest desde {{t:10}} ms.",
+      "checkpoint": "Cada estado debe dejar una combinación de salidas explícita."
+    },
+    {
+      "key": "predict",
+      "title": "Predecí",
+      "body": "Antes de ejecutar, anticipá la secuencia de luces y señal peatonal.",
+      "checkpoint": "verde+STOP {{t:0}} ms; amarillo+STOP {{t:20}}; rojo+STOP {{t:40}}; rojo+WALK {{t:60}}; rojo+STOP {{t:90}}; verde+STOP {{t:110}}."
+    },
+    {
+      "key": "edit",
+      "title": "Editá",
+      "body": "Corregí esta omisión del starter y guardá antes de ejecutar: El starter ignora el pedido peatonal; tras PedRequest ejecutá amarillo, despeje en rojo, WALK y rojo de recuperación antes de volver a verde, y mostrá WALK sólo con los vehículos en rojo.",
+      "checkpoint": "El escenario visible debe pasar con evidencia host guardada."
+    },
+    {
+      "key": "run",
+      "title": "Ejecutá",
+      "body": "En Tests, elegí el zplc.json guardado y ejecutá únicamente el escenario PedestrianCrossing.",
+      "checkpoint": "El escenario requerido se llama PedestrianCrossing y contiene {{assertions}} assertions."
+    },
+    {
+      "key": "observe",
+      "title": "Observá",
+      "body": "Revisá la matriz registrada en Tests y compará cada muestra con la predicción.",
+      "checkpoint": "La traza muestra el cambio a WALK sólo durante el estado rojo."
+    },
+    {
+      "key": "reflect",
+      "title": "Reflexioná",
+      "body": "La assertion NEVER cubre salidas incompatibles lógicas sólo en este escenario.",
+      "checkpoint": "No demuestra un cruce físico, temporización de hardware, HIL ni certificación."
+    }
+  ],
+  "hints": [
+    {
+      "level": 1,
+      "text": "Mantené una variable State y un contador de scans; al comienzo de cada scan poné todas las salidas en el valor seguro (vehículos detenidos, peatones en espera) y dejá que cada estado encienda sólo lo que necesita."
+    },
+    {
+      "level": 2,
+      "text": "La secuencia es verde, amarillo, despeje en rojo, WALK, rojo de recuperación y de nuevo verde; salí de verde sólo con PedRequest y pasá al estado siguiente cuando el contador de scans alcance la duración de esa fase."
+    }
+  ],
+  "faultCases": [
+    "El starter ignora el pedido peatonal; tras PedRequest ejecutá amarillo, despeje en rojo, WALK y rojo de recuperación antes de volver a verde, y mostrá WALK sólo con los vehículos en rojo."
+  ]
+}

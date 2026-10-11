@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "title": "Edges and pulse counter",
+  "summary": "Use a CTU counter to count three discrete pulses and reset the count.",
+  "scope": "Tests provide native POSIX host evidence only; they are not physical-sensor, bounce, hardware, HIL, or certification evidence.",
+  "objectives": [
+    "Count three rising edges of PulseInput with a CTU counter.",
+    "Reset the count and CountReached with Reset."
+  ],
+  "stages": [
+    {
+      "key": "objective",
+      "title": "Objective",
+      "body": "In src/EdgeCounter.st, use PulseInput, Reset, and CountReached and add a Count (CTU) instance with PV=3.",
+      "checkpoint": "CTU counts each rising edge of PulseInput once, however long the pulse stays high; Reset clears the count."
+    },
+    {
+      "key": "predict",
+      "title": "Predict",
+      "body": "Before running, predict when the counter reaches PV=3.",
+      "checkpoint": "CountReached stays OFF at {{v:EdgeCounter.CountReached=false@0|0}}, {{v:EdgeCounter.CountReached=false@10|10}}, and {{v:EdgeCounter.CountReached=false@30|30}} ms; turns ON at {{v:EdgeCounter.CountReached=true@50|50}} after the third edge; returns OFF at {{v:EdgeCounter.CountReached=false@70|70}} with Reset."
+    },
+    {
+      "key": "edit",
+      "title": "Edit",
+      "body": "Correct this starter omission, save it, then run: The starter never counts; add a CTU with PV=3 so CountReached turns ON on the third rising edge and Reset turns it OFF.",
+      "checkpoint": "The visible scenario must pass with saved host evidence."
+    },
+    {
+      "key": "run",
+      "title": "Run",
+      "body": "In Tests, choose the saved zplc.json and run only the EdgeCounter scenario.",
+      "checkpoint": "The required scenario is named EdgeCounter and contains {{assertions}} assertions."
+    },
+    {
+      "key": "observe",
+      "title": "Observe",
+      "body": "Compare {{t:10}}, {{t:30}}, {{t:50}}, and {{t:70}} ms with CountReached.",
+      "checkpoint": "The third pulse reaches PV=3; Reset dominates and returns CountReached to OFF."
+    },
+    {
+      "key": "reflect",
+      "title": "Reflect",
+      "body": "The AT/RISING/FALLING assertions cover this discrete logical sequence.",
+      "checkpoint": "They do not establish bounce, electrical pulses, hardware timing, HIL, or certification."
+    }
+  ],
+  "hints": [
+    {
+      "level": 1,
+      "text": "A CTU already counts only rising edges of CU, so a long pulse still counts once; you do not need to detect the edge yourself."
+    },
+    {
+      "level": 2,
+      "text": "Declare Count : CTU, call it every scan as Count(CU := PulseInput, R := Reset, PV := 3) and copy Count.Q to CountReached."
+    }
+  ],
+  "faultCases": [
+    "The starter never counts; add a CTU with PV=3 so CountReached turns ON on the third rising edge and Reset turns it OFF."
+  ]
+}

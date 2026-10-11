@@ -82,6 +82,8 @@ function main() {
     { path: 'firmware/apps/posix_host', directory: true },
     { path: 'examples', directory: true },
     { path: 'scripts/release-version.ts', directory: false },
+    // the licence notices are generated while electron-builder packs (scripts/before-pack.mjs, REL-019)
+    { path: 'scripts/release', directory: true },
   ];
 
   try {

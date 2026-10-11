@@ -412,7 +412,7 @@
                 },
                 "broker": {
                     "type": "string",
-                    "minLength": 1
+                    "description": "Host name or address of the broker. Empty means none: a controller connects nowhere until one is named (COM-014)."
                 },
                 "port": {
                     "type": "integer",

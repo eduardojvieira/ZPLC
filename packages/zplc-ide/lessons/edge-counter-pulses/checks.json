@@ -1,0 +1,43 @@
+{
+  "schemaVersion": 1,
+  "alsoGreen": [
+    {
+      "intent": "CTU alone: it edge-detects CU by itself",
+      "files": {
+        "src/EdgeCounter.st": "PROGRAM EdgeCounter\nVAR_INPUT PulseInput AT %I0.0 : BOOL; Reset AT %I0.1 : BOOL; END_VAR\nVAR_OUTPUT CountReached AT %Q0.0 : BOOL; END_VAR\nVAR Count : CTU; END_VAR\nCount(CU := PulseInput, R := Reset, PV := 3);\nCountReached := Count.Q;\nEND_PROGRAM\n"
+      }
+    },
+    {
+      "intent": "R_TRIG in front of CTU (the form the reference used to teach)",
+      "files": {
+        "src/EdgeCounter.st": "PROGRAM EdgeCounter\nVAR_INPUT PulseInput AT %I0.0 : BOOL; Reset AT %I0.1 : BOOL; END_VAR\nVAR_OUTPUT CountReached AT %Q0.0 : BOOL; END_VAR\nVAR Edge : R_TRIG; Count : CTU; END_VAR\nEdge(CLK := PulseInput);\nCount(CU := Edge.Q, R := Reset, PV := 3);\nCountReached := Count.Q;\nEND_PROGRAM\n"
+      }
+    }
+  ],
+  "wrong": [
+    {
+      "intent": "output simply follows the pulse input",
+      "files": {
+        "src/EdgeCounter.st": "PROGRAM EdgeCounter\nVAR_INPUT PulseInput AT %I0.0 : BOOL; Reset AT %I0.1 : BOOL; END_VAR\nVAR_OUTPUT CountReached AT %Q0.0 : BOOL; END_VAR\nCountReached := PulseInput;\nEND_PROGRAM\n"
+      }
+    },
+    {
+      "intent": "counts to 2 instead of 3",
+      "files": {
+        "src/EdgeCounter.st": "PROGRAM EdgeCounter\nVAR_INPUT PulseInput AT %I0.0 : BOOL; Reset AT %I0.1 : BOOL; END_VAR\nVAR_OUTPUT CountReached AT %Q0.0 : BOOL; END_VAR\nVAR Count : CTU; END_VAR\nCount(CU := PulseInput, R := Reset, PV := 2);\nCountReached := Count.Q;\nEND_PROGRAM\n"
+      }
+    },
+    {
+      "intent": "counts to 4 instead of 3",
+      "files": {
+        "src/EdgeCounter.st": "PROGRAM EdgeCounter\nVAR_INPUT PulseInput AT %I0.0 : BOOL; Reset AT %I0.1 : BOOL; END_VAR\nVAR_OUTPUT CountReached AT %Q0.0 : BOOL; END_VAR\nVAR Count : CTU; END_VAR\nCount(CU := PulseInput, R := Reset, PV := 4);\nCountReached := Count.Q;\nEND_PROGRAM\n"
+      }
+    },
+    {
+      "intent": "Reset is never wired to the counter",
+      "files": {
+        "src/EdgeCounter.st": "PROGRAM EdgeCounter\nVAR_INPUT PulseInput AT %I0.0 : BOOL; Reset AT %I0.1 : BOOL; END_VAR\nVAR_OUTPUT CountReached AT %Q0.0 : BOOL; END_VAR\nVAR Count : CTU; END_VAR\nCount(CU := PulseInput, R := FALSE, PV := 3);\nCountReached := Count.Q;\nEND_PROGRAM\n"
+      }
+    }
+  ]
+}

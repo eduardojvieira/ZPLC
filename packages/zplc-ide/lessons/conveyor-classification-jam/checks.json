@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "alsoGreen": [],
+  "wrong": [
+    {
+      "intent": "belt runs forever and ignores the jam",
+      "files": {
+        "src/Conveyor.st": "PROGRAM Conveyor\nVAR_INPUT Start AT %I0.0 : BOOL; Stop AT %I0.1 : BOOL; Reset AT %I0.2 : BOOL; PartAtClassifier AT %I0.3 : BOOL; MetalDetected AT %I0.4 : BOOL; PartAtDiverter AT %I0.5 : BOOL; JamDetected AT %I0.6 : BOOL; END_VAR\nVAR_OUTPUT BeltCommand AT %Q0.0 : BOOL; DiverterCommand AT %Q0.1 : BOOL; FaultLamp AT %Q0.2 : BOOL; END_VAR\nBeltCommand := TRUE; DiverterCommand := FALSE; FaultLamp := FALSE;\nEND_PROGRAM\n"
+      }
+    },
+    {
+      "intent": "jam stops the belt but the fault lamp stays dark",
+      "files": {
+        "src/Conveyor.st": "PROGRAM Conveyor\nVAR_INPUT Start AT %I0.0 : BOOL; Stop AT %I0.1 : BOOL; Reset AT %I0.2 : BOOL; PartAtClassifier AT %I0.3 : BOOL; MetalDetected AT %I0.4 : BOOL; PartAtDiverter AT %I0.5 : BOOL; JamDetected AT %I0.6 : BOOL; END_VAR\nVAR_OUTPUT BeltCommand AT %Q0.0 : BOOL; DiverterCommand AT %Q0.1 : BOOL; FaultLamp AT %Q0.2 : BOOL; END_VAR\nVAR Requested : BOOL := FALSE; Metal : BOOL := FALSE; END_VAR\nIF JamDetected OR Stop THEN Requested := FALSE; ELSIF Start THEN Requested := TRUE; END_IF;\nIF PartAtClassifier AND MetalDetected THEN Metal := TRUE; END_IF;\nBeltCommand := Requested; DiverterCommand := Requested AND PartAtDiverter AND Metal; FaultLamp := FALSE;\nIF PartAtDiverter THEN Metal := FALSE; END_IF;\nEND_PROGRAM\n"
+      }
+    },
+    {
+      "intent": "classifies and stops on a jam but never fires the diverter",
+      "files": {
+        "src/Conveyor.st": "PROGRAM Conveyor\nVAR_INPUT Start AT %I0.0 : BOOL; Stop AT %I0.1 : BOOL; Reset AT %I0.2 : BOOL; PartAtClassifier AT %I0.3 : BOOL; MetalDetected AT %I0.4 : BOOL; PartAtDiverter AT %I0.5 : BOOL; JamDetected AT %I0.6 : BOOL; END_VAR\nVAR_OUTPUT BeltCommand AT %Q0.0 : BOOL; DiverterCommand AT %Q0.1 : BOOL; FaultLamp AT %Q0.2 : BOOL; END_VAR\nVAR Requested : BOOL := FALSE; END_VAR\nIF JamDetected OR Stop THEN Requested := FALSE; ELSIF Start THEN Requested := TRUE; END_IF;\nBeltCommand := Requested; DiverterCommand := FALSE; FaultLamp := JamDetected;\nEND_PROGRAM\n"
+      }
+    }
+  ]
+}

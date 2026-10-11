@@ -22,6 +22,16 @@ tests:
       - native_sim/native/64
     extra_args:
       - ZPLC_CORE_SUITE=isa
+  zplc.core.bytes_crc:
+    platform_allow:
+      - native_sim/native/64
+      - native_sim/native
+      - qemu_cortex_m3
+      - qemu_cortex_m0
+    integration_platforms:
+      - native_sim/native/64
+    extra_args:
+      - ZPLC_CORE_SUITE=bytes_crc
   zplc.core.comm_dispatch:
     platform_allow:
       - native_sim/native/64

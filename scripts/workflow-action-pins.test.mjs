@@ -16,7 +16,6 @@ const approvedActions = new Map([
   ['oven-sh/setup-bun', ['f4d14e03ff726c06358e5557344e1da148b56cf7', 'v1.2.2']],
   ['actions/upload-artifact', ['ea165f8d65b6e75b540449e92b4886f43607fa02', 'v4.6.2']],
   ['actions/download-artifact', ['d3f86a106a0bac45b974a628896c90dbdf5c8093', 'v4.3.0']],
-  ['anchore/sbom-action', ['e22c389904149dbc22b58101806040fa8d37a610', 'v0.24.0']],
   ['actions/attest', ['508db95dd578ae2727ebd6217d5ba78e4fbda05d', 'v4.2.1']],
   ['actions/upload-pages-artifact', ['56afc609e74202658d3ffba0e8f6dda462b719fa', 'v3.0.1']],
   ['actions/deploy-pages', ['d6db90164ac5ed86f2b6aed7e0febac5b3c0c03e', 'v4.0.5']],

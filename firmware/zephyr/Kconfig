@@ -18,34 +18,55 @@ if ZPLC
 config ZPLC_STACK_DEPTH
     int "Evaluation stack depth"
     default 256
+    range 8 4096
     help
       Maximum depth of the VM evaluation stack.
-      Each entry is 4 bytes (32-bit).
+      Each entry is 4 bytes (32-bit), and every registered task has its own
+      stack. The stack pointer is 16 bits wide; the upper end of the range is
+      a RAM limit long before it is a type limit.
 
 config ZPLC_CALL_STACK_DEPTH
     int "Call stack depth"
     default 32
+    range 1 255
     help
-      Maximum call nesting depth for subroutines.
+      Maximum call nesting depth for subroutines. The call depth is an
+      8-bit counter, so 255 is the largest value the VM can hold.
 
 config ZPLC_WORK_MEMORY_SIZE
     int "Work memory size (bytes)"
     default 8192
+    range 16 8192
     help
-      Size of the work memory region for temporary variables.
+      Size of the work memory region for temporary variables. The region
+      owns the 8 KB window 0x2000..0x3FFF of the PLC address space; a larger
+      value would only waste RAM and is refused.
 
 config ZPLC_RETAIN_MEMORY_SIZE
     int "Retentive memory size (bytes)"
     default 4096
+    range 16 4096
     help
-      Size of the retentive memory region.
-      This memory is persisted across power cycles.
+      Size of the retentive memory region. The region owns the 4 KB window
+      0x4000..0x4FFF of the PLC address space.
+      This memory is persisted across power cycles only when
+      ZPLC_RETAIN_PERSIST is enabled.
 
 config ZPLC_CODE_SIZE_MAX
     int "Maximum code size (bytes)"
     default 45056
+    range 128 45056
     help
-      Maximum size of the bytecode segment.
+      Largest artifact the runtime accepts, in bytes. This one value is the
+      code region of the VM, the largest artifact the program store keeps and
+      restores (RT-028), the size of the staging buffers and the size the
+      shell and the IDE handshake advertise. Program addresses are 16 bits
+      wide and the code region starts at 0x5000, so 45056 (0xB000) is the
+      largest value.
+
+      Two program slots of this size have to fit the storage partition of
+      the board together with the RETAIN records; the build fails when they
+      do not.
 
 config ZPLC_REQUIRED_GPIO_OUTPUT_MASK
     hex "Required logical digital-output mask"
@@ -56,6 +77,33 @@ config ZPLC_REQUIRED_GPIO_OUTPUT_MASK
       DeviceTree for this profile to initialize the Zephyr HAL. A missing or
       unconfigurable required channel fails HAL initialization; this setting
       does not qualify the electrical behavior of any mapped pin.
+
+config ZPLC_PROGRAM_STORE_CHUNK_SIZE
+    int "Largest piece of a stored program kept under one key (bytes)"
+    default 1024
+    range 256 2048
+    help
+      The program store cuts the artifact into chunks of this size and keeps each under its own key, because a
+      flash key-value store holds one entry inside one erase sector and an artifact as large as
+      ZPLC_CODE_SIZE_MAX (45056 bytes by default) does not fit a 4 KB sector. An artifact of at most one chunk is
+      one key, which is the layout of the first version of the store.
+
+      A chunk and the entry overhead of the backend must fit a sector with room for its allocation records:
+      1024 fits the 4 KB sector of every board of this repository. The build checks that the storage partition
+      holds two slots of ZPLC_CODE_SIZE_MAX in chunks of this size.
+
+config ZPLC_EXCHANGE_QUEUE_BYTES
+    int "Bytes of the queue of writes from outside the scan"
+    default 1024
+    range 256 16384
+    help
+      A write from a thread outside the scan (Modbus, MQTT, the shell) is queued whole and applied at the input
+      latch of the next scan (RT-010). Each queued write takes its data and four bytes of header. A write that does
+      not fit is refused, with nothing queued, and the caller sees an error: a Modbus TCP client gets exception 6
+      (server device busy). The default holds a Modbus write of 100 mapped registers.
+
+      The exchange also keeps one copy of IPI, OPI, WORK and RETAIN, the snapshot a reader sees, so it costs the
+      sum of the four region sizes of RAM besides this queue.
 
 config ZPLC_VM_CYCLE_INSTRUCTION_BUDGET
     int "PLC scan instruction budget"
@@ -73,6 +121,20 @@ config ZPLC_LOG_LEVEL
     help
       Log level for ZPLC runtime.
       0=OFF, 1=ERR, 2=WRN, 3=INF, 4=DBG
+
+config ZPLC_COMM_THREAD_PRIORITY
+    int "Priority of the communication threads"
+    default 8
+    range 1 14
+    help
+      Preemptible priority of every thread the application creates to talk
+      to the outside: the MQTT client, the Modbus TCP server, the Modbus
+      clients and the function-block workers. The scan coordinator (the
+      high-priority work queue, or the normal one when there is none) must
+      have a lower number, so that a communication thread never delays a
+      scan (RT-013); the build fails otherwise. Zephyr's shell and log
+      threads run at the lowest application priority unless the build
+      overrides them, and the same rule is checked against the override.
 
 # -----------------------------------------------------------------------------
 # Multitask Scheduler Configuration
@@ -122,6 +184,7 @@ config ZPLC_MAX_TASKS
 config ZPLC_SCHED_WORKQ_STACK_SIZE
     int "Scheduler work queue stack size"
     default 2048
+    range 1024 16384
     help
       Stack size for the scheduler work queue thread.
       Increase if tasks require deeper call stacks.
@@ -146,6 +209,7 @@ config ZPLC_SCHED_HIGH_PRIO_WORKQ
 config ZPLC_SCHED_HIGH_PRIO_STACK_SIZE
     int "High-priority work queue stack size"
     default 2048
+    range 1024 16384
     depends on ZPLC_SCHED_HIGH_PRIO_WORKQ
     help
       Stack size for the high-priority work queue thread.
@@ -157,7 +221,8 @@ config ZPLC_SCHED_HIGH_PRIO_PRIORITY
     depends on ZPLC_SCHED_HIGH_PRIO_WORKQ
     help
       Priority of the high-priority work queue thread.
-      Should be lower (higher priority) than ZPLC_SCHED_WORKQ_PRIORITY.
+      Must be lower (higher priority) than ZPLC_SCHED_WORKQ_PRIORITY; the
+      build fails otherwise.
 
 # -----------------------------------------------------------------------------
 # RETAIN persistence (RT-025, RT-026)
@@ -246,6 +311,38 @@ config ZPLC_RETAIN_CHUNK_SIZE
 endif # ZPLC_RETAIN_PERSIST
 
 endif # ZPLC_SCHEDULER
+
+# -----------------------------------------------------------------------------
+# Communication safety (COM-014, COM-022)
+# -----------------------------------------------------------------------------
+
+config ZPLC_MQTT_ALLOW_INSECURE_TLS
+    bool "Allow MQTT over TLS without verifying the broker certificate"
+    default n
+    help
+      Off by default (COM-014). With it off, `zplc config set mqtt_security 1`
+      is refused and a stored value of 1 stops the client from connecting, so
+      a release image can never run a TLS session that does not authenticate
+      the broker.
+
+      With it on, setting `mqtt_security 1` is the explicit opt-in, and
+      `zplc mqtt status` and `zplc status` show tls-verify OFF for as long as
+      the session is configured that way. Use it for a bench against a broker
+      with a self-signed certificate that you cannot install a CA for.
+
+config ZPLC_SHELL_RAW_MEMORY
+    bool "Raw memory shell commands (diagnostic firmware only)"
+    default n
+    depends on SHELL
+    help
+      Off by default (COM-022). Raw memory access reads and writes any
+      address of the device, not only the PLC regions, so a release image
+      has none: `devmem` of the Zephyr shell is not built.
+
+      The diagnostic image sets this and CONFIG_DEVMEM_SHELL=y together
+      (firmware/app/diagnostic.conf). The application build stops with an
+      error when CONFIG_DEVMEM_SHELL is on and this is off, so the one
+      cannot be switched on by accident behind the other.
 
 # -----------------------------------------------------------------------------
 # HIL Debug Configuration

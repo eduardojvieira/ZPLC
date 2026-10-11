@@ -50,6 +50,37 @@ macOS:    shasum -a 256 <archivo>
 Windows:  Get-FileHash .\<archivo> -Algorithm SHA256
 ```
 
+Cada versión incluye además una atestación de procedencia de compilación para
+cada archivo, que indica qué ejecución del pipeline del proyecto lo construyó.
+Con la CLI de GitHub:
+
+```text
+gh attestation verify <archivo> --repo eduardojvieira/ZPLC
+```
+
+Una atestación demuestra dónde se construyó un archivo, no que sea seguro, y no
+cambia las advertencias que Windows o macOS muestran al abrirlo.
+
+### Línea de comandos y servidor MCP
+
+Las versiones posteriores a 2.0.0-rc.3 publican también la herramienta de línea
+de comandos y el servidor MCP como ejecutables independientes, para Linux, macOS
+y Windows en x64 y arm64. No necesitan Node.js, Bun ni una copia del repositorio.
+Sus nombres siguen los de los instaladores: `zplc-cli-<versión>-<sistema>-<arq>` y
+`zplc-mcp-<versión>-<sistema>-<arq>`, con `linux`, `mac` o `win` como sistema,
+`x64` o `arm64`, y `.exe` en Windows. No tienen firma; verifíquelos como se
+indicó arriba.
+
+```text
+./zplc-cli-<versión>-linux-x64 --version
+./zplc-cli-<versión>-linux-x64 compile <carpeta del proyecto>
+./zplc-mcp-<versión>-linux-x64 --workspace <carpeta absoluta del proyecto>
+```
+
+Los instaladores de esas versiones incluyen además `THIRD-PARTY-NOTICES.txt`, con
+las licencias de los paquetes y las fuentes que contienen, en la carpeta
+`resources` de la aplicación.
+
 ## Abrir un instalador sin firma
 
 Los instaladores de rc.3 no tienen firma de código, por lo que cada sistema pide
