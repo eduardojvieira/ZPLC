@@ -16,7 +16,7 @@ async function copiedMotorWorkspace(): Promise<string> {
   return root;
 }
 
-describe('isolated candidate change sets', () => {
+describe('isolated candidate change sets (IDE-030)', () => {
   itNative('validates a source-only candidate without leaking or mutating its base', async () => {
     const original = await readFile(join(motorStartStop, 'src/Motor.st'), 'utf8');
     const candidateRoots: string[] = [];

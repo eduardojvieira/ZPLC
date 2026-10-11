@@ -264,7 +264,7 @@ describe('recovery and session over the IPC boundary (IDE-006, IDE-008)', () => 
   });
 });
 
-describe('workspace tests, candidate review and the AI provider (IDE-001, IDE-017)', () => {
+describe('workspace tests, candidate review and the AI provider (IDE-001, IDE-017, IDE-030)', () => {
   it('register the folder of the window by its id alone, as <folder>/zplc.json, and refuse any other id (IDE-001)', async () => {
     const h = await harness();
     expect(await h.invoke('workspace-tests:register-project-root', TRUSTED, { rootId: h.rootId })).toEqual({ workspaceId: WORKSPACE_ID });

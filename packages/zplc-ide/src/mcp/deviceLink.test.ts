@@ -55,6 +55,21 @@ async function registered(): Promise<Registered> {
   return record;
 }
 
+describe('IDE-030: the tools an assistant can call are a closed list that names no physical operation (AGENTS.md rule 7)', () => {
+  test('the list is the one below, and no name flashes, deploys, forces, stops, resets or opens a serial line or a shell', () => {
+    expect([...MCP_TOOL_NAMES]).toEqual([
+      'project_inspect', 'project_validate', 'compiler_check', 'compiler_compile', 'symbols_list', 'safety_check', 'tests_run',
+      'scenario_run', 'simulation_start', 'simulation_step', 'runtime_snapshot', 'trace_get', 'boards_list', 'toolchain_inspect',
+      'firmware_build',
+    ]);
+    for (const name of MCP_TOOL_NAMES) expect(name, name).not.toMatch(/flash|deploy|force|upload|connect|serial|shell|poke|write|stop|erase|provision|reset|debug/);
+  });
+
+  test('the resources are read-only documents and snapshots: none of them is a command', () => {
+    for (const uri of MCP_RESOURCE_URIS) expect(uri, uri).toMatch(/^zplc:\/\/(project|target|runtime|course|docs)\/[a-z-]+$/);
+  });
+});
+
 describe('COM-030: the MCP server cannot open the device link', () => {
   test('the registered tools and resources are the fixed list, and none takes a device argument', async () => {
     const { tools, resources } = await registered();

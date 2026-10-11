@@ -22,7 +22,7 @@ describe('workspace manifest registration admission', () => {
   });
 });
 
-describe('presentCandidateChangeSetReview', () => {
+describe('presentCandidateChangeSetReview (IDE-030)', () => {
   const before = 'c'.repeat(64);
   const after = 'd'.repeat(64);
   const input = { path: 'src/Motor.st', beforeSha256: before, afterSha256: after };

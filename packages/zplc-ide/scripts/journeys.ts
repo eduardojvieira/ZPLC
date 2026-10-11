@@ -2434,4 +2434,70 @@ export const JOURNEYS: Journey[] = [
       assert(!await app.visible(button('Disconnect')), 'The application connected although the dialog was cancelled.');
     },
   },
+  {
+    // IDE-030: a change is a difference that is reviewed, in isolation, before a person saves it, and Studio does all this
+    // without the assistant, which is optional and, until it is configured, cannot be asked. The assistant's own proposal
+    // takes the same road (the review of the Changes tab, then the same button); it is not driven here, because the
+    // provider needs the secret store of the system and the headless host has none (electron/aiProvider.test.ts holds it).
+    name: '43 A change is reviewed as a difference and saved by a person, and Studio works without the assistant', example: 'motor_start_stop', proves: [], partly: ['IDE-030'],
+    run: async (app, { project }) => {
+      const file = join(project, 'src', 'Motor.st');
+      await openFolder(app, project);
+      await openFile(app, 'src/Motor.st');
+      const original = disk(file);
+
+      // the assistant is optional: it says so, says it cannot operate hardware, and cannot be asked before it is configured
+      await app.click(tab('Agent'), 'the Agent tab');
+      const agent = await app.until('the Agent panel', async () => {
+        const text = await app.eval<string>(`document.querySelector('[aria-label="Optional Agent"]')?.innerText ?? ''`);
+        return text.includes('Agent') ? text : undefined;
+      });
+      assert(agent.includes('It cannot operate hardware.'), `The Agent panel does not say that it cannot operate hardware: ${JSON.stringify(agent)}`);
+      assert(!await app.clickable(button('Send request')), 'The assistant can be asked although no provider is configured.');
+
+      // a statement of the person's own, added to the open file and not saved: it breaks what the scenario of the project says
+      const before = await editorText(app);
+      const last = await lineWith(app, 'Reverse := FALSE;');
+      assert(last > 0, 'Motor.st no longer has the statement Reverse := FALSE; the journey adds one after it.');
+      await cursorAtEndOfLine(app, last);
+      await app.press('Enter');
+      await app.type('Forward := FALSE;');
+      assert(disk(file) === original, 'The file changed on disk before the person saved it.');
+
+      // Changes: the review is run in isolation and shows the difference; it writes nothing; a change that fails is not offered for saving
+      const reviewed = async () => {
+        await app.click(button('Review active ST change'), 'Review active ST change');
+        await app.until('the review result', async () => await app.visible(css('[aria-label="Candidate review result"]')) || undefined, 60_000)
+          .catch(async (error: Error) => { throw new Error(`${error.message}: the Changes tab says ${JSON.stringify((await app.text()).replace(/\s+/g, ' ').slice(-700))}`); });
+        return app.eval<string>(`document.querySelector('[aria-label="Candidate review result"]').innerText`);
+      };
+      await app.click(tab('Changes'), 'the Changes tab');
+      const refused = await reviewed();
+      assert(refused.includes('Rejected: candidate was not accepted.') && refused.includes('SCENARIO_ASSERTION_FAILED'), `The review does not refuse a change that breaks the scenario: ${JSON.stringify(refused)}`);
+      assert(refused.includes('No file has been written.') && await app.visible(css('[aria-label="Candidate review result"] .monaco-diff-editor')), 'The review of a refused change does not show the difference and say that nothing was written.');
+      assert(!await app.visible(button('Save reviewed change')), 'A change that the review refused is offered for saving.');
+      assert(disk(file) === original, 'Reviewing the change wrote the file.');
+
+      // the person takes the statement back and writes one that is harmless
+      await app.click(tab('Explorer', 'exact'));
+      await clickEditorLine(app, last + 1);
+      for (let attempt = 0; attempt < 6 && (await editorText(app)) !== before; attempt++) await app.press('Ctrl+Z');
+      assert((await editorText(app)) === before, 'The journey could not undo its statement.');
+      await cursorAtEndOfLine(app, last);
+      await app.press('Enter');
+      await app.type('Reverse := FALSE;');
+      await app.click(tab('Changes'), 'the Changes tab');
+      const accepted = await reviewed();
+      assert(accepted.includes('Accepted: isolated host candidate passed.'), `The review does not accept a harmless statement: ${JSON.stringify(accepted)}`);
+      assert(accepted.includes('No file has been written.') && disk(file) === original, 'Reviewing the change wrote the file.');
+
+      // only the person's own click saves it
+      await app.click(button('Save reviewed change'), 'Save reviewed change');
+      await app.until('the reviewed change on disk', () => disk(file) !== original && disk(file).split('Reverse := FALSE;').length > original.split('Reverse := FALSE;').length || undefined);
+
+      // and the rest of Studio, which needs no assistant, still builds the project
+      const built = await compile(app);
+      assert(built.kind === 'built', `The project does not build without the assistant: ${built.kind} ${built.message}`);
+    },
+  },
 ];

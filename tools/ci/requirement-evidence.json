@@ -1604,7 +1604,7 @@
   "IDE-001": [
     {"kind":"unit","ref":"packages/zplc-ide/electron/ipcRegistry.test.ts","test":"project files over the IPC boundary (IDE-001, IDE-016)"},
     {"kind":"unit","ref":"packages/zplc-ide/electron/ipcRegistry.test.ts","test":"register the folder of the window by its id alone, as <folder>/zplc.json, and refuse any other id (IDE-001)"},
-    {"kind":"unit","ref":"packages/zplc-ide/electron/ipcRegistry.test.ts","test":"workspace tests, candidate review and the AI provider (IDE-001, IDE-017)"},
+    {"kind":"unit","ref":"packages/zplc-ide/electron/ipcRegistry.test.ts","test":"workspace tests, candidate review and the AI provider (IDE-001, IDE-017, IDE-030)"},
     {"kind":"unit","ref":"packages/zplc-ide/electron/projectFiles.test.ts","test":"the root held for the main process (IDE-001)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/components/workspaceTestPresentation.test.ts","test":"builds a project the host can link by itself without asking for a zplc.json first (IDE-001)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/utils/workspaceTestLink.test.ts","test":"linking the open project to its workspace without choosing a file (IDE-001)"},
@@ -1743,7 +1743,7 @@
     {"kind":"unit","ref":"packages/zplc-ide/electron/ipcRegistry.test.ts","test":"safety check over the IPC boundary (IDE-017)"},
     {"kind":"unit","ref":"packages/zplc-ide/electron/ipcRegistry.test.ts","test":"the contract and the handler table (IDE-017)"},
     {"kind":"unit","ref":"packages/zplc-ide/electron/ipcRegistry.test.ts","test":"toolchain inspection and firmware build (IDE-017, IDE-027)"},
-    {"kind":"unit","ref":"packages/zplc-ide/electron/ipcRegistry.test.ts","test":"workspace tests, candidate review and the AI provider (IDE-001, IDE-017)"},
+    {"kind":"unit","ref":"packages/zplc-ide/electron/ipcRegistry.test.ts","test":"workspace tests, candidate review and the AI provider (IDE-001, IDE-017, IDE-030)"},
     {"kind":"unit","ref":"packages/zplc-ide/electron/preload.test.ts","test":"preload bridge (IDE-017)"},
     {"kind":"unit","ref":"packages/zplc-ide/electron/spawnAllowList.test.ts","test":"the spawn allow-list (IDE-017)"},
     {"kind":"unit","ref":"packages/zplc-ide/electron/toolWorkerHost.test.ts","test":"the worker command schema (IDE-012, IDE-017)"},
@@ -1820,6 +1820,16 @@
   "IDE-029": [
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"18 Force an input while stopped at a breakpoint","partial":true},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"8 Force an input and release it","partial":true}
+  ],
+  "IDE-030": [
+    {"kind":"unit","ref":"packages/zplc-ide/electron/aiProvider.test.ts","test":"optional AI provider (IDE-030)"},
+    {"kind":"unit","ref":"packages/zplc-ide/electron/ipcRegistry.test.ts","test":"workspace tests, candidate review and the AI provider (IDE-001, IDE-017, IDE-030)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/cli/changeSet.test.ts","test":"isolated candidate change sets (IDE-030)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/components/aiProviderPresentation.test.ts","test":"AI provider presenters (IDE-030)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/components/workspaceTestPresentation.test.ts","test":"presentCandidateChangeSetReview (IDE-030)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/mcp/deviceLink.test.ts","test":"IDE-030: the tools an assistant can call are a closed list that names no physical operation (AGENTS.md rule 7)"},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"43 A change is reviewed as a difference and saved by a person, and Studio works without the assistant","partial":true},
+    {"kind":"manual","ref":"packages/zplc-ide/scripts/journeys.ts","test":"43 A change is reviewed as a difference and saved by a person, and Studio works without the assistant","partial":true,"note":"The assistant's own proposal is not driven end to end by a journey: the provider keeps its key in the secret store of the system, which a headless Linux host does not have. A proposal takes the road that this journey drives (the review of the Changes tab, then the person's own save); the boundary of the provider (an inert answer, no tools, no field that names a device) is held by electron/aiProvider.test.ts and electron/aiDeviceLink.test.ts, and the closed list of MCP tools by src/mcp/deviceLink.test.ts."}
   ],
   "IDE-031": [
     {"kind":"unit","ref":"packages/zplc-ide/src/cli/scenarioParity.test.ts","test":"a project run through the Tool API, the CLI, the MCP tools and Studio gives one result (IDE-031)"}
