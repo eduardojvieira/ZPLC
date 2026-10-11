@@ -25,6 +25,8 @@
 #include <zplc_scheduler.h>
 #include <zplc_test_hooks.h>
 
+#include "zplc_test_safe.h"
+
 #if DT_NODE_EXISTS(DT_ALIAS(led0))
 #if DT_NODE_HAS_COMPAT(DT_GPIO_CTLR(DT_ALIAS(led0), gpios), zephyr_gpio_emul)
 #include <zephyr/drivers/gpio/gpio_emul.h>
@@ -610,6 +612,100 @@ ZTEST(zplc_scheduler_run_control,
                "the remainder of the first scan sees the first-scan flag");
   zplc_sched_test_release_before_commit();
   wait_for_output_commit(before_resume.output_commit_count);
+}
+
+/* RT-023: the safe value a project declares is the level of the pin from the load that committed the program,
+ * through STOP and a pause. The output the tests watch is output 0 (image byte 0, bit 0).
+ * Fails without the declaration being read where the safe level is chosen: the pin goes to the board's level, 0.
+ * Fails without the load driving the safe state: the pin keeps the level it had until the first stop. */
+#define DECLARED_SAFE_CAPACITY (PROGRAM_CAPACITY + 16U)
+
+static size_t build_declaring_program(uint8_t *program, const uint8_t *entries, size_t entries_size,
+                                      uint8_t part_one_value) {
+  int slot;
+  const size_t size = build_run_control_program(program, FAST_INTERVAL_US, part_one_value, false, &slot);
+
+  return entries == NULL ? size : zplc_test_append_safe(program, size, DECLARED_SAFE_CAPACITY, entries, entries_size);
+}
+
+ZTEST(zplc_scheduler_run_control, test_declared_safe_value_is_on_the_pin_from_load_and_in_stop) {
+  const uint8_t on[] = {ZPLC_TEST_SAFE(0, 0, 1)};
+  uint8_t program[DECLARED_SAFE_CAPACITY];
+  size_t size;
+
+  clear_scheduler();
+  zplc_force_clear_all();
+  assert_physical_output(0, "the pin is safe before any program");
+  size = build_declaring_program(program, on, sizeof(on), 0x00U);
+  zassert_true(size != 0U, "the artifact is built");
+  zassert_ok(zplc_sched_validate_program(program, size), "a declaration for an output of the board is admitted");
+  zassert_equal(zplc_sched_load(program, size), 1, "the program is loaded");
+  zassert_equal(zplc_core_declared_safe_count(), 1U, "the core holds the declaration");
+  assert_physical_output(1, "the declared value is on the pin before the first scan");
+  zassert_equal(zplc_opi_read8(0U), 0U, "while the output image is the program's logical state, still zero");
+
+  zassert_ok(zplc_sched_start(), "start scheduler");
+  k_msleep(2U * FAST_INTERVAL_US / 1000U + 50U);
+  assert_physical_output(0, "while the program runs the pin follows the program, which writes 0");
+  zassert_ok(zplc_sched_stop(), "stop scheduler");
+  assert_physical_output(1, "STOP puts the declared value on the pin, not the board's");
+  zassert_equal(zplc_opi_read8(0U), 0U, "and the image is zeroed");
+}
+
+ZTEST(zplc_scheduler_run_control, test_declared_safe_value_is_on_the_pin_while_paused) {
+  const uint8_t on[] = {ZPLC_TEST_SAFE(0, 0, 1)};
+  uint8_t program[DECLARED_SAFE_CAPACITY];
+  zplc_sched_vm_snapshot_t snapshot;
+  size_t size;
+
+  clear_scheduler();
+  zplc_force_clear_all();
+  size = build_declaring_program(program, on, sizeof(on), 0x00U);
+  zassert_equal(zplc_sched_load(program, size), 1, "the program is loaded");
+  zassert_ok(zplc_sched_debug_add_breakpoint(0, REMAINDER_PC), "break at the remainder of the scan");
+  zassert_ok(zplc_sched_start(), "start scheduler");
+  wait_until_paused(0, &snapshot);
+  zassert_equal(zplc_opi_read8(0U), 0U, "the paused image keeps what the scan wrote: 0");
+  assert_physical_output(1, "a pause drives the declared value");
+  zassert_ok(zplc_sched_debug_remove_breakpoint(0, REMAINDER_PC), "remove the breakpoint");
+  zassert_ok(zplc_sched_stop(), "stop scheduler");
+}
+
+ZTEST(zplc_scheduler_run_control, test_a_program_that_declares_nothing_replaces_the_declaration) {
+  const uint8_t on[] = {ZPLC_TEST_SAFE(0, 0, 1)};
+  uint8_t program[DECLARED_SAFE_CAPACITY];
+  size_t size;
+
+  clear_scheduler();
+  zplc_force_clear_all();
+  size = build_declaring_program(program, on, sizeof(on), 0x00U);
+  zassert_equal(zplc_sched_load(program, size), 1, "a program declaring output 0 is loaded");
+  assert_physical_output(1, "its declared value is on the pin");
+  clear_scheduler();
+  size = build_declaring_program(program, NULL, 0U, 0x00U);
+  zassert_equal(zplc_sched_load(program, size), 1, "a program declaring nothing replaces it");
+  zassert_equal(zplc_core_declared_safe_count(), 0U, "the declaration of the replaced program is gone");
+  assert_physical_output(0, "the pin is at the board's level again, from the load");
+}
+
+ZTEST(zplc_scheduler_run_control, test_a_declaration_for_an_output_the_board_does_not_have_is_refused) {
+  const uint8_t nowhere[] = {ZPLC_TEST_SAFE(7, 3, 1)};
+  const uint8_t on[] = {ZPLC_TEST_SAFE(0, 0, 1)};
+  uint8_t program[DECLARED_SAFE_CAPACITY];
+  size_t size;
+
+  clear_scheduler();
+  zplc_force_clear_all();
+  size = build_declaring_program(program, on, sizeof(on), 0x00U);
+  zassert_equal(zplc_sched_load(program, size), 1, "a program declaring output 0 is loaded");
+  clear_scheduler();
+
+  size = build_declaring_program(program, nowhere, sizeof(nowhere), 0x00U);
+  zassert_true(size != 0U, "the artifact is built");
+  zassert_equal(zplc_sched_validate_program(program, size), ZPLC_LOADER_ERR_SAFE,
+                "the declaration of an output that is not on this board is named as such");
+  zassert_equal(zplc_sched_load(program, size), -3, "the load is refused");
+  zassert_equal(zplc_core_declared_safe_count(), 1U, "and the program that was there is untouched");
 }
 
 ZTEST_SUITE(zplc_scheduler_run_control, NULL, scheduler_setup, NULL, NULL,

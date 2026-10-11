@@ -5,8 +5,11 @@
 #include "program_admission.h"
 #include <zplc_isa.h>
 #include <zplc_loader.h>
+#include <zplc_sched_core.h>
 
-#define PROGRAM_CAPACITY 128U
+#include "zplc_test_safe.h"
+
+#define PROGRAM_CAPACITY 160U
 
 static uint8_t workspace[ZPLC_LOADER_VERIFY_WORKSPACE_SIZE];
 
@@ -165,6 +168,29 @@ ZTEST(legacy_program_admission, test_rejects_non_millisecond_intervals) {
     zassert_equal(interval_ms, 0xA5A5A5A5U,
                   "rejection must preserve interval output");
   }
+}
+
+/* RT-023: a declared safe value is admitted for an output of the board and refused for one it does not have, so
+ * that a project written for another board does not run with a safe state that does not exist.
+ * Fails without the admission asking the board: the program is admitted and its declaration means nothing. */
+ZTEST(legacy_program_admission, test_a_declared_safe_value_has_to_be_for_an_output_of_the_board) {
+  uint8_t program[PROGRAM_CAPACITY];
+  uint32_t interval_ms = 0U;
+  const uint8_t on[] = {ZPLC_TEST_SAFE(0, 0, 1)};
+  const uint8_t nowhere[] = {ZPLC_TEST_SAFE(7, 3, 1)};
+  size_t size = build_program(program, 1U, ZPLC_TASK_CYCLIC, 13000U);
+  const size_t plain = size;
+
+  size = zplc_test_append_safe(program, plain, sizeof(program), on, sizeof(on));
+  zassert_true(size != 0U, "the artifact is built");
+  zassert_ok(zplc_program_admit_legacy(program, size, workspace, sizeof(workspace), &interval_ms),
+             "a declaration for output 0 is admitted");
+
+  size = build_program(program, 1U, ZPLC_TASK_CYCLIC, 13000U);
+  size = zplc_test_append_safe(program, size, sizeof(program), nowhere, sizeof(nowhere));
+  zassert_true(size != 0U, "the other artifact is built");
+  zassert_equal(zplc_program_admit_legacy(program, size, workspace, sizeof(workspace), &interval_ms),
+                ZPLC_LOADER_ERR_SAFE, "a declaration for an output the board does not have is refused");
 }
 
 ZTEST_SUITE(legacy_program_admission, NULL, NULL, NULL, NULL, NULL);

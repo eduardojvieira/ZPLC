@@ -9,7 +9,7 @@
 
 import { fitsOperandField, getOperandSize, OPCODE_BY_VALUE, isRelativeJump, operandField, operandRefusal } from './opcodes';
 import { CONTAINER, OPCODE_TABLE } from '../contract.generated';
-import type { Instruction, TaskDef, TagDef } from './types';
+import type { Instruction, SafeEntry, TaskDef, TagDef } from './types';
 import { AssemblerError, TASK_TYPE, ZPLC_CONSTANTS } from './types';
 import type { ParseResult } from './parser';
 
@@ -103,11 +103,45 @@ function validateTags(tags: readonly TagDef[] | undefined): void {
     }
 }
 
-function validateMultiTaskLayout(bytecode: Uint8Array, tasks: TaskDef[], tags?: TagDef[]): void {
+/**
+ * Why the declared safe values could not be loaded, or undefined when they can: each names one bit of the output
+ * image, with the value 0 or 1, once, and there are no more than the loader takes (RT-023).
+ */
+export function safeProblem(safe: readonly SafeEntry[] | undefined): string | undefined {
+    if (safe === undefined || safe.length === 0) return undefined;
+    if (safe.length > ZPLC_CONSTANTS.MAX_SAFE_ENTRIES) {
+        return `An artifact declares a safe value for at most ${ZPLC_CONSTANTS.MAX_SAFE_ENTRIES} outputs, not ${safe.length}`;
+    }
+    const seen = new Set<number>();
+    for (const [index, entry] of safe.entries()) {
+        const label = `Safe value ${index}`;
+        if (!isIntegerInRange(entry.offset, 0, ZPLC_CONSTANTS.OUTPUT_IMAGE_SIZE - 1)) {
+            return `${label} offset must be an integer inside the output image, 0 to ${ZPLC_CONSTANTS.OUTPUT_IMAGE_SIZE - 1}`;
+        }
+        if (!isIntegerInRange(entry.bit, 0, 7)) {
+            return `${label} bit must be an integer from 0 to 7`;
+        }
+        if (entry.value !== 0 && entry.value !== 1) {
+            return `${label} value must be 0 or 1`;
+        }
+        const key = entry.offset * 8 + entry.bit;
+        if (seen.has(key)) {
+            return `${label} declares output byte ${entry.offset} bit ${entry.bit} twice`;
+        }
+        seen.add(key);
+    }
+    return undefined;
+}
+
+function validateMultiTaskLayout(bytecode: Uint8Array, tasks: TaskDef[], tags?: TagDef[], safe?: readonly SafeEntry[]): void {
     if (!(bytecode instanceof Uint8Array)) {
         throw new AssemblerError('Multi-task bytecode must be a Uint8Array');
     }
     validateTags(tags);
+    const unsafe = safeProblem(safe);
+    if (unsafe !== undefined) {
+        throw new AssemblerError(unsafe);
+    }
     if (!Array.isArray(tasks) || tasks.length === 0) {
         throw new AssemblerError('Multi-task programs require at least one task');
     }
@@ -120,12 +154,14 @@ function validateMultiTaskLayout(bytecode: Uint8Array, tasks: TaskDef[], tags?: 
 
     const taskSegmentSize = tasks.length * ZPLC_CONSTANTS.TASK_DEF_SIZE;
     const tagSegmentSize = (tags?.length ?? 0) * ZPLC_CONSTANTS.TAG_ENTRY_SIZE;
-    const segmentCount = tags?.length ? 4 : 3;
+    const safeSegmentSize = (safe?.length ?? 0) * ZPLC_CONSTANTS.SAFE_ENTRY_SIZE;
+    const segmentCount = (tags?.length ? 4 : 3) + (safeSegmentSize > 0 ? 1 : 0);
     const totalSize = ZPLC_CONSTANTS.HEADER_SIZE
         + (ZPLC_CONSTANTS.SEGMENT_ENTRY_SIZE * segmentCount)
         + bytecode.length
         + taskSegmentSize
         + tagSegmentSize
+        + safeSegmentSize
         + ZPLC_CONSTANTS.BUILD_ENTRY_SIZE;
     if (!Number.isSafeInteger(taskSegmentSize) || taskSegmentSize > UINT32_MAX
         || !Number.isSafeInteger(tagSegmentSize) || tagSegmentSize > UINT32_MAX
@@ -441,22 +477,27 @@ export function createZplcFile(bytecode: Uint8Array, entryPoint: number, tags?: 
  * @param tasks - Array of task definitions
  * @returns Complete .zplc file with task segment
  */
-export function createMultiTaskZplcFile(bytecode: Uint8Array, tasks: TaskDef[], tags?: TagDef[]): Uint8Array {
-    validateMultiTaskLayout(bytecode, tasks, tags);
+export function createMultiTaskZplcFile(bytecode: Uint8Array, tasks: TaskDef[], tags?: TagDef[], safe?: readonly SafeEntry[]): Uint8Array {
+    validateMultiTaskLayout(bytecode, tasks, tags, safe);
     const codeSize = bytecode.length;
     const taskCount = tasks.length;
     const taskSegmentSize = taskCount * ZPLC_CONSTANTS.TASK_DEF_SIZE;
     const tagCount = tags?.length ?? 0;
     const tagSegmentSize = tagCount * ZPLC_CONSTANTS.TAG_ENTRY_SIZE;
-    const segmentCount = tagCount > 0 ? 4 : 3; // CODE + TASK (+ TAGS) + BUILD
+    const safeCount = safe?.length ?? 0;
+    const safeSegmentSize = safeCount * ZPLC_CONSTANTS.SAFE_ENTRY_SIZE;
+    // CODE + TASK (+ TAGS) (+ SAFE) + BUILD
+    const segmentCount = (tagCount > 0 ? 4 : 3) + (safeCount > 0 ? 1 : 0);
 
-    // Total file size: header + segment entries + code + task data + optional tags + build identity
+    // Total file size: header + segment entries + code + task data + optional tags + optional safe values +
+    // build identity
     const totalSize =
         ZPLC_CONSTANTS.HEADER_SIZE +
         (ZPLC_CONSTANTS.SEGMENT_ENTRY_SIZE * segmentCount) +
         codeSize +
         taskSegmentSize +
         tagSegmentSize +
+        safeSegmentSize +
         ZPLC_CONSTANTS.BUILD_ENTRY_SIZE;
 
     const output = new Uint8Array(totalSize);
@@ -490,8 +531,8 @@ export function createMultiTaskZplcFile(bytecode: Uint8Array, tasks: TaskDef[], 
     view.setUint32(offset, codeSize, true);
     offset += 4;
 
-    // data_size (task metadata + optional tag metadata + build identity)
-    view.setUint32(offset, taskSegmentSize + tagSegmentSize + ZPLC_CONSTANTS.BUILD_ENTRY_SIZE, true);
+    // data_size (task metadata + optional tag metadata + optional safe values + build identity)
+    view.setUint32(offset, taskSegmentSize + tagSegmentSize + safeSegmentSize + ZPLC_CONSTANTS.BUILD_ENTRY_SIZE, true);
     offset += 4;
 
     // entry_point (first task's entry point for legacy compatibility)
@@ -536,6 +577,18 @@ export function createMultiTaskZplcFile(bytecode: Uint8Array, tasks: TaskDef[], 
         view.setUint16(offset, 0, true); // flags
         offset += 2;
         view.setUint32(offset, tagSegmentSize, true);
+        offset += 4;
+    }
+
+    // =========================================================================
+    // Segment Table Entry: SAFE (if the project declares a safe value for an output, RT-023)
+    // =========================================================================
+    if (safeCount > 0) {
+        view.setUint16(offset, ZPLC_CONSTANTS.SEGMENT_TYPE_SAFE, true);
+        offset += 2;
+        view.setUint16(offset, 0, true); // flags
+        offset += 2;
+        view.setUint32(offset, safeSegmentSize, true);
         offset += 4;
     }
 
@@ -618,6 +671,18 @@ export function createMultiTaskZplcFile(bytecode: Uint8Array, tasks: TaskDef[], 
         }
     }
 
+    // Declared safe values (RT-023), in the order the project wrote them: offset (2), bit (1), value (1)
+    if (safeCount > 0 && safe) {
+        for (const entry of safe) {
+            view.setUint16(offset, entry.offset, true);
+            offset += 2;
+            view.setUint8(offset, entry.bit);
+            offset += 1;
+            view.setUint8(offset, entry.value);
+            offset += 1;
+        }
+    }
+
     // Build identity (CMP-056)
     view.setUint32(offset, buildIdOf(bytecode, taskSegment), true);
     offset += ZPLC_CONSTANTS.BUILD_ENTRY_SIZE;
@@ -636,6 +701,8 @@ export interface ArtifactInfo {
     tasks: TaskDef[];
     /** The build identity, or undefined when the artifact carries none (or is not an artifact). */
     buildId?: number;
+    /** The safe values the artifact declares for its outputs (RT-023); empty when it declares none. */
+    safe: SafeEntry[];
 }
 
 /**
@@ -643,7 +710,7 @@ export interface ArtifactInfo {
  * identity. A byte string that is not an artifact reads as one with no segments. Verification is the loader's.
  */
 export function readArtifact(bytes: Uint8Array): ArtifactInfo {
-    const empty: ArtifactInfo = { draftCounter: 0, codeSize: 0, entryPoint: 0, segments: [], tasks: [] };
+    const empty: ArtifactInfo = { draftCounter: 0, codeSize: 0, entryPoint: 0, segments: [], tasks: [], safe: [] };
     if (bytes.length < ZPLC_CONSTANTS.HEADER_SIZE) return empty;
     const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
     if (view.getUint32(0, true) !== ZPLC_CONSTANTS.MAGIC) return empty;
@@ -653,6 +720,7 @@ export function readArtifact(bytes: Uint8Array): ArtifactInfo {
         entryPoint: view.getUint16(24, true),
         segments: [],
         tasks: [],
+        safe: [],
     };
     const count = view.getUint16(26, true);
     let offset = ZPLC_CONSTANTS.HEADER_SIZE + count * ZPLC_CONSTANTS.SEGMENT_ENTRY_SIZE;
@@ -678,6 +746,15 @@ export function readArtifact(bytes: Uint8Array): ArtifactInfo {
         }
         if (type === ZPLC_CONSTANTS.SEGMENT_TYPE_BUILD && size === ZPLC_CONSTANTS.BUILD_ENTRY_SIZE) {
             info.buildId = view.getUint32(offset, true);
+        }
+        if (type === ZPLC_CONSTANTS.SEGMENT_TYPE_SAFE && size % ZPLC_CONSTANTS.SAFE_ENTRY_SIZE === 0) {
+            for (let at = offset; at < offset + size; at += ZPLC_CONSTANTS.SAFE_ENTRY_SIZE) {
+                info.safe.push({
+                    offset: view.getUint16(at, true),
+                    bit: view.getUint8(at + 2),
+                    value: view.getUint8(at + 3) as 0 | 1,
+                });
+            }
         }
         offset += size;
     }

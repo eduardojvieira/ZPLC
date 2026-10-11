@@ -5,6 +5,7 @@
 #include <zplc_exchange.h>
 #include <zplc_hal.h>
 #include <zplc_isa.h>
+#include <zplc_sched_core.h>
 #include <zplc_scheduler.h>
 #include <zplc_test_hooks.h>
 
@@ -207,6 +208,9 @@ static void clear_scheduler(void) {
   int index;
 
 #ifdef CONFIG_ZTEST
+  /* The cases of this suite are about the feed and the disarm of a profile that disarms the watchdog in STOP, in
+   * a pause and in a latched fault. The policies of the other profiles are those of scheduler_watchdog. */
+  zplc_sched_test_set_watchdog_policy(0U, 0U, 0U);
   zplc_sched_test_fail_next_output_commit(0U, ZPLC_HAL_OK);
   zplc_sched_test_fail_next_gpio_read(0U, ZPLC_HAL_OK);
   zplc_sched_test_fail_safe_outputs(ZPLC_HAL_OK);
@@ -1052,6 +1056,7 @@ ZTEST(zplc_scheduler_admission,
   zassert_equal(zplc_sched_load(program, size), 1, "load overrun task");
   zassert_ok(zplc_sched_get_stats(&before), "read overrun baseline");
   feeds_before = zplc_sched_test_watchdog_feed_count();
+  zplc_sched_test_set_miss_limit(1U);
   zplc_sched_test_force_next_deadline_miss();
   zassert_ok(zplc_sched_start(), "start overrun task");
   k_msleep(20);
@@ -1400,23 +1405,36 @@ ZTEST(zplc_scheduler_admission,
                 "no normal commit occurs after stop returns");
 }
 
-ZTEST(zplc_scheduler_admission, test_release_comparator_is_wrap_safe_and_tied) {
-  zassert_true(
-      zplc_sched_test_release_before(100U, 20U, 1U, 1U, 100U, 30U, 0U, 0U),
-      "earlier release wins before priority");
-  zassert_true(
-      zplc_sched_test_release_before(101U, 1U, 1U, 1U, 102U, 0U, 0U, 0U),
-      "coarse uptime ordering is monotonic");
-  zassert_true(zplc_sched_test_release_before(100U, UINT32_MAX - 10U, 1U, 1U,
-                                              100U, 5U, 0U, 0U),
-               "cycle32 ordering wraps safely within one uptime millisecond");
-  zassert_true(zplc_sched_test_release_before(7U, 10U, 0U, 9U, 7U, 10U, 1U, 1U),
+/* The order of a batch is decided by the portable core (RT-008); the target's wrap-safe clock is checked by
+ * test_cycle_stamp_handles_cycle32_wrap_and_long_elapsed_duration. */
+static int before(uint64_t left_us, uint8_t left_priority, uint16_t left_id,
+                  uint64_t right_us, uint8_t right_priority,
+                  uint16_t right_id) {
+  zplc_sched_slot_t left = {0};
+  zplc_sched_slot_t right = {0};
+
+  left.release_us = left_us;
+  left.task.config.priority = left_priority;
+  left.task.config.id = left_id;
+  right.release_us = right_us;
+  right.task.config.priority = right_priority;
+  right.task.config.id = right_id;
+  return zplc_sched_core_before(&left, &right);
+}
+
+ZTEST(zplc_scheduler_admission, test_release_comparator_is_tied_by_priority_then_id) {
+  zassert_true(before(100U, 1U, 1U, 130U, 0U, 0U),
+               "earlier release wins before priority");
+  zassert_true(before(101000U, 1U, 1U, 102000U, 0U, 0U),
+               "release ordering is monotonic");
+  zassert_true(before(7U, 0U, 9U, 7U, 1U, 1U),
                "lower priority value wins tied release");
-  zassert_true(zplc_sched_test_release_before(7U, 10U, 1U, 2U, 7U, 10U, 1U, 3U),
+  zassert_true(before(7U, 1U, 2U, 7U, 1U, 3U),
                "lower task id wins complete tie");
-  zassert_false(
-      zplc_sched_test_release_before(7U, 10U, 1U, 3U, 7U, 10U, 1U, 2U),
-      "comparator is directional");
+  zassert_false(before(7U, 1U, 3U, 7U, 1U, 2U),
+                "comparator is directional");
+  zassert_false(before(7U, 1U, 2U, 7U, 1U, 2U),
+                "a task is not before itself");
 }
 
 ZTEST(zplc_scheduler_admission,

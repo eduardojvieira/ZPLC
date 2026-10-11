@@ -81,6 +81,38 @@ def validation_summary(board: dict[str, object]) -> str:
     return str(support(board)["level"])
 
 
+def watchdog_line(board: dict[str, object], spanish: bool) -> str:
+    """The hardware watchdog of the profile, and why it is off when it is (RT-020, HIL-011)."""
+    watchdog = board.get("watchdog")
+    label = "Hardware watchdog" if not spanish else "Watchdog de hardware"
+    if not isinstance(watchdog, dict):
+        return f"- **{label}:** " + ("sin declarar" if spanish else "not declared")
+    states = {"disarm": ("disarmed", "desarmado"), "feed": ("kept fed", "alimentado"), "expire": ("left to expire", "se deja expirar")}
+
+    def action(state: str) -> str:
+        return states[str(watchdog[state])][1 if spanish else 0]
+
+    if watchdog.get("enabled") is True:
+        return (
+            f"- **{label}:** "
+            + (
+                "activo, timeout {t} ms (hasta {m} ms según las tareas); en STOP {s}, en pausa o breakpoint {p}, en falla enganchada {f}"
+                if spanish
+                else "on, timeout {t} ms (up to {m} ms for the task set); in STOP {s}, paused or at a breakpoint {p}, in a latched fault {f}"
+            ).format(
+                t=watchdog["timeout_ms"], m=watchdog["max_timeout_ms"], s=action("stop"), p=action("pause"), f=action("fault")
+            )
+        )
+    why = (
+        "apagado: sin registro de hardware (HIL-010), el perfil lo mantiene apagado hasta que el tiempo de reinicio y las "
+        "salidas seguras se registren en esta placa con él encendido"
+        if spanish
+        else "off: no hardware record (HIL-010), the profile keeps it off until the reset timing and the safe outputs are "
+        "recorded on this board with it enabled"
+    )
+    return f"- **{label}:** {why}"
+
+
 def kib(value: object) -> str:
     return f"{int(value) / 1024:.1f}"  # type: ignore[call-overload]
 
@@ -282,6 +314,7 @@ def render_board_reference(boards: list[dict[str, object]], spanish: bool) -> st
                     ),
                 )
             )
+        lines.append(watchdog_line(board, spanish))
         lines.extend(
             [
                 f"- **{build_label}:** `{board['build_command']}`",

@@ -9,7 +9,7 @@ tags: [reference, generated]
 
 {/* >>> GENERATED (tools/docs/generate_source_references.ts): reference/shell-commands. Do not edit. >>> */}
 
-The device shell has one root command, `zplc`, with 77 subcommands. A group only holds subcommands. The arguments are the words after the command name; a command is present only when the Kconfig symbol of the last column is enabled. The runtime of a desktop simulation has no shell: it speaks the [session protocol](./runtime-protocol.md).
+The device shell has one root command, `zplc`, with 78 subcommands. A group only holds subcommands. The arguments are the words after the command name; a command is present only when the Kconfig symbol of the last column is enabled. The runtime of a desktop simulation has no shell: it speaks the [session protocol](./runtime-protocol.md).
 
 This table is read off the source file `firmware/app/src/shell_cmds.c`; its text is the source's own, so it is the same in English and in Spanish.
 
@@ -84,6 +84,7 @@ This table is read off the source file `firmware/app/src/shell_cmds.c`; its text
 | `zplc sys info` | command | 1 optional | System information | `CONFIG_ZPLC_SCHEDULER` |
 | `zplc sys build` | command | 1 optional | Firmware identity: commit, board, ABI, options [--json] | `CONFIG_ZPLC_SCHEDULER` |
 | `zplc sys io` | command | 1 optional | Identity of the board I/O description [--json] | `CONFIG_ZPLC_SCHEDULER` |
+| `zplc sys reset` | command | 1 optional | Why the processor was last reset, and the fault it left [--json] | `CONFIG_ZPLC_SCHEDULER` |
 | `zplc sys reboot` | command | none | Reboot | `CONFIG_ZPLC_SCHEDULER` |
 | `zplc adc` | group |   | ADC commands | `CONFIG_ADC` |
 | `zplc adc temp` | command | none | Read temperature | `CONFIG_ADC` |

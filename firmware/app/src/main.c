@@ -22,9 +22,11 @@
 #include <zplc_core.h>
 #include <zplc_fw_identity.h>
 #include <zplc_debug.h>
+#include <zplc_failsafe.h>
 #include <zplc_hal.h>
 #include <zplc_isa.h>
 #include <zplc_loader.h>
+#include <zplc_single_task.h>
 
 #ifdef CONFIG_ZPLC_SCHEDULER
 #include <zplc_scheduler.h>
@@ -111,61 +113,19 @@ uint32_t legacy_scan_interval_ms = 100U;
 
 void zplc_legacy_wake(void) { k_sem_give(&legacy_runtime_wake); }
 
-/* The physical outputs are the digital outputs of the board I/O table, each
- * read from its bit of the output image (the same map as the scheduler). */
-static int sync_opi_to_gpio(void) {
-  int first_error = 0;
-  const uint8_t *opi = zplc_mem_get_region(ZPLC_MEM_OPI_BASE);
-  size_t index;
-
-  if (opi == NULL) {
-    return -1;
-  }
-  for (index = 0U; index < zplc_io_channel_count(); index++) {
-    const zplc_io_channel_t *channel = zplc_io_channel_at(index);
-    zplc_hal_result_t result;
-
-    if (channel == NULL || channel->direction != ZPLC_IO_DIR_OUTPUT ||
-        channel->kind != ZPLC_IO_KIND_DIGITAL) {
-      continue;
-    }
-    result = zplc_io_write_channel(
-        channel, zplc_io_image_get(opi, ZPLC_MEM_OPI_SIZE, channel));
-    if (result != ZPLC_HAL_OK && result != ZPLC_HAL_NOT_IMPL &&
-        first_error == 0) {
-      first_error = (int)result;
-    }
-  }
-  return first_error;
-}
+/* The one-task configuration of the scheduler core (RT-018): the scan of this runtime is the core's, with the same
+ * input latch, deadline check, fault latch and safe state as the multitask scheduler. The loop below only releases
+ * the task once per interval and keeps the run states. */
+static zplc_single_task_t single_task;
 
 /* Caller owns legacy_runtime_lock. Keep the logical process image and every
  * HAL output de-energized together on stop, reset, and VM faults. */
 int zplc_legacy_apply_safe_outputs_locked(void) {
-  uint8_t *opi = zplc_mem_get_region(ZPLC_MEM_OPI_BASE);
-  int first_error = 0;
+  /* The forces and the output image, then the pins at the safe level of the board description. */
+  const int image_result = zplc_io_reset_image();
+  const zplc_hal_result_t pins_result = zplc_io_drive_safe(NULL);
 
-  zplc_force_clear_all();
-  if (opi == NULL) {
-    first_error = -1;
-  } else {
-    memset(opi, 0, ZPLC_MEM_OPI_SIZE);
-  }
-  for (size_t index = 0U; index < zplc_io_channel_count(); index++) {
-    const zplc_io_channel_t *channel = zplc_io_channel_at(index);
-    zplc_hal_result_t result;
-
-    if (channel == NULL || channel->direction != ZPLC_IO_DIR_OUTPUT ||
-        channel->kind != ZPLC_IO_KIND_DIGITAL) {
-      continue;
-    }
-    result = zplc_io_write_channel(channel, channel->safe);
-    if (result != ZPLC_HAL_OK && result != ZPLC_HAL_NOT_IMPL &&
-        first_error == 0) {
-      first_error = (int)result;
-    }
-  }
-  return first_error;
+  return image_result != 0 ? image_result : (int)pins_result;
 }
 
 static int legacy_latch_boot_restore_failure(void) {
@@ -286,10 +246,10 @@ static int boot_runtime_legacy(void) {
 }
 
 static int run_legacy_mode(void) {
-  int ret;
   uint32_t tick_start, tick_end, elapsed;
   uint32_t scan_interval_ms;
-  int instructions_executed;
+
+  zplc_single_task_init(&single_task, legacy_scan_interval_ms, ZPLC_SCHED_DEFAULT_MISS_LIMIT);
 
 /* Main execution loop */
   while (1) {
@@ -298,9 +258,7 @@ static int run_legacy_mode(void) {
 
     if (zplc_lock_take(&legacy_runtime_lock, "runtime lock") != 0) {
       /* Without the lock the loop cannot tell what the runtime is doing: the pins go safe and it tries again. */
-      for (int channel = 0; channel < ZPLC_GPIO_OUTPUT_COUNT; channel++) {
-        (void)zplc_hal_gpio_write(channel, 0U);
-      }
+      (void)zplc_io_drive_safe(NULL);
       k_msleep(100);
       continue;
     }
@@ -310,30 +268,34 @@ static int run_legacy_mode(void) {
     }
     if (runtime_state == ZPLC_STATE_RUNNING ||
         (runtime_state == ZPLC_STATE_PAUSED && step_requested != 0)) {
+      const bool stepping = runtime_state == ZPLC_STATE_PAUSED;
+      zplc_sched_scan_report_t report;
+      int scan_result;
+
       tick_start = zplc_hal_tick();
-      if (runtime_state == ZPLC_STATE_PAUSED) {
+      if (stepping) {
         step_requested = 0;
       }
-      instructions_executed = zplc_core_run_cycle();
+      if (cycle_count == 0U) {
+        /* A start from READY or a reset: the first scan of a run, with nothing latched or counted before it. */
+        zplc_single_task_clear(&single_task);
+        zplc_single_task_begin(&single_task);
+      }
+      zplc_single_task_set_interval(&single_task, legacy_scan_interval_ms);
+      scan_result = zplc_single_task_scan(&single_task, stepping ? 1 : 0, &report);
 
-      if (instructions_executed < 0) {
-        zplc_hal_log("[ERR] Cycle %u: VM error %d\n", cycle_count,
+      if (scan_result < 0) {
+        /* The image was reset and the pins driven safe by the core before it returned. */
+        zplc_hal_log("[ERR] Cycle %u: scan failed %d (VM error %d)\n", cycle_count, scan_result,
                      zplc_core_get_error());
-        ret = zplc_legacy_apply_safe_outputs_locked();
         runtime_state = ZPLC_STATE_ERROR;
-        if (ret != 0) {
-          zplc_hal_log("[ERR] Failed to apply safe outputs: %d\n", ret);
-        }
-      } else {
-        ret = sync_opi_to_gpio();
-        if (ret != 0) {
-          zplc_hal_log("[ERR] Failed to synchronize outputs: %d\n", ret);
-          ret = zplc_legacy_apply_safe_outputs_locked();
-          runtime_state = ZPLC_STATE_ERROR;
-          if (ret != 0) {
-            zplc_hal_log("[ERR] Failed to apply safe outputs: %d\n", ret);
-          }
-        }
+      } else if (report.paused != 0U) {
+        /* A breakpoint or a step: the pins are safe, the image and the forces stay (RT-017). */
+        runtime_state = ZPLC_STATE_PAUSED;
+      }
+      if (report.warning_task >= 0) {
+        zplc_hal_log("[WARN] Cycle %u: deadline missed (%u of %u in a row)\n", cycle_count,
+                     (unsigned)single_task.slot[0].consecutive_misses, (unsigned)single_task.core.miss_limit);
       }
 
       if (cycle_count % 50 == 0) {
@@ -456,6 +418,27 @@ static int boot_hal(void) {
   return 0;
 }
 
+/* RT-021, RT-022: why the processor was reset, and what the previous run left. Whatever the cause, the runtime
+ * restores the stored program into STOP and waits for a person's RUN command (D-13 option A): there is nothing in
+ * the boot path that could start a scan, and zplc_reset_may_run() is the one place that says so. */
+static int boot_reset_cause(void) {
+  const zplc_reset_report_t *report;
+  char reason[48];
+
+  zplc_failsafe_boot();
+  report = zplc_failsafe_report();
+  zplc_hal_log("[RESET] Cause: %s%s\n", zplc_reset_cause_name(report->cause),
+               report->reported != 0U ? "" : " (this part does not report one)");
+  if (report->has_fault != 0U) {
+    zplc_fault_record_reason_text(&report->fault, reason, sizeof(reason));
+    zplc_hal_log("[RESET] The previous run stopped on a fault: %s (task %u, pc 0x%08x)\n", reason,
+                 (unsigned int)report->fault.task_id, (unsigned int)report->fault.pc);
+  }
+  zplc_hal_log("[RESET] The runtime %s: RUN waits for a person's command\n",
+               zplc_reset_may_run(report->cause) != 0 ? "may run" : "stays in STOP");
+  return 0;
+}
+
 static int boot_core(void) {
   int ret = zplc_core_init();
 
@@ -549,6 +532,7 @@ static int boot_cloud(void) {
 
 static const zplc_boot_step_t boot_runtime_steps[] = {
     {"hal", ZPLC_BOOT_RUNTIME, boot_hal},
+    {"reset cause", ZPLC_BOOT_RUNTIME, boot_reset_cause},
     {"core", ZPLC_BOOT_RUNTIME, boot_core},
     {"scheduler and stored program", ZPLC_BOOT_RUNTIME, boot_runtime},
 };

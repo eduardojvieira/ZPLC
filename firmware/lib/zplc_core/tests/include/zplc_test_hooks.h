@@ -106,15 +106,16 @@ uint32_t zplc_sched_test_watchdog_prepare_count(void);
 uint32_t zplc_sched_test_watchdog_feed_count(void);
 uint32_t zplc_sched_test_watchdog_disarm_count(void);
 void zplc_sched_test_force_next_deadline_miss(void);
+/** @brief Times the model of the hardware watchdog expired: it was not fed within the timeout it was armed with. */
+uint32_t zplc_sched_test_watchdog_expired_count(void);
+/** @brief The timeout the model was last armed with, derived from the task set (RT-020). */
+uint32_t zplc_sched_test_watchdog_timeout_ms(void);
+/** @brief What the watchdog does in STOP, a pause and a latched fault: zplc_wdt_action_t values. */
+void zplc_sched_test_set_watchdog_policy(uint8_t stop, uint8_t pause, uint8_t fault);
 /** @brief Make the next take of a mutex fail with result (RT-030): which is 0 memory, 1 control, 2 output I/O. */
 void zplc_sched_test_fail_next_lock(int result, int which);
 
-/* Seams for the portable release and duration arithmetic. */
-int zplc_sched_test_release_before(uint64_t left_uptime_ms,
-                                   uint32_t left_cycle32, uint8_t left_priority,
-                                   uint16_t left_id, uint64_t right_uptime_ms,
-                                   uint32_t right_cycle32,
-                                   uint8_t right_priority, uint16_t right_id);
+/* Seams for the duration and deadline arithmetic of the target clock. */
 uint32_t zplc_sched_test_elapsed_us(uint64_t start_uptime_ms,
                                     uint32_t start_cycle32,
                                     uint64_t end_uptime_ms,
@@ -124,6 +125,34 @@ int zplc_sched_test_deadline_missed(uint64_t release_uptime_ms,
                                     uint64_t end_uptime_ms,
                                     uint32_t end_cycle32, uint32_t interval_us);
 int zplc_sched_test_admit_release(int task_id);
+
+/*
+ * Seams that drive the Zephyr adapter of the scheduler core with a clock and releases of the test (RT-008):
+ * the same task set and the same clock through this adapter and through the host session must give the same
+ * decisions (tests/include/zplc_sched_trace_cases.h).
+ */
+struct zplc_sched_core;
+/** @brief Replace the kernel clock of the scheduler with one the test owns (microseconds); NULL restores it. */
+void zplc_sched_test_set_clock(uint64_t (*clock_us)(void));
+/** @brief Admit a release of a task at an instant of the test's clock. 1 admitted, 0 merged or refused. */
+int zplc_sched_test_admit_release_at(int task_id, uint64_t release_us);
+/** @brief Run the batch that is due, from the calling thread, as the coordinator would. */
+int zplc_sched_test_run_batch(void);
+/** @brief Stop the k_timers of the tasks and leave the state as it is: releases then come from the test. */
+void zplc_sched_test_stop_timers(void);
+/** @brief Consecutive misses of a task that latch the fault (at least one). */
+void zplc_sched_test_set_miss_limit(uint32_t limit);
+/** @brief The core the adapter drives: a test installs its trace sink there. */
+struct zplc_sched_core *zplc_sched_test_core(void);
+
+/*
+ * Fault injection for the fail-safe adapter (RT-019): the reboot the handler would make, and the RAM as the
+ * previous run left it.
+ */
+struct zplc_fault_record;
+void zplc_failsafe_test_set_reboot(void (*reboot)(void));
+void zplc_failsafe_test_set_retained(const struct zplc_fault_record *record);
+const struct zplc_fault_record *zplc_failsafe_test_retained(void);
 
 #endif /* CONFIG_ZTEST */
 

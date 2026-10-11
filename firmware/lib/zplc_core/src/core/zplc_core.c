@@ -64,6 +64,18 @@ static uint16_t tag_count = 0;
 /** @brief Loaded code size (for bounds checking) */
 static uint32_t code_size = 0;
 
+/* The safe values the loaded program declares (RT-023), copied from its SAFE segment at the commit: the artifact
+ * buffer is not kept, and the pins have to go safe from a fatal handler that cannot parse anything. Written under
+ * the same exclusion as the program (a load happens with the scheduler stopped); read by the safe-state paths. */
+typedef struct {
+  uint16_t offset;
+  uint8_t bit;
+  uint8_t value;
+} declared_safe_t;
+
+static declared_safe_t declared_safe[ZPLC_LOADER_MAX_SAFE];
+static volatile uint32_t declared_safe_entries = 0U;
+
 /** @brief Process Image Mutex for thread-safe access */
 static zplc_hal_mutex_t pi_mutex = NULL;
 
@@ -438,6 +450,7 @@ int zplc_mem_init(void) {
   memset(mem_code, 0, sizeof(mem_code));
   memset(force_entries, 0, sizeof(force_entries));
   code_size = 0;
+  declared_safe_entries = 0U;
   return 0;
 }
 
@@ -1199,6 +1212,11 @@ int zplc_vm_init(zplc_vm_t *vm) {
   vm->resume_skip_breakpoint_once = 0;
   vm->scan_resumed = 0;
   vm->scan_instructions = 0;
+  vm->step_charge = 0;
+  vm->run_charge = 0;
+  vm->scan_time_ms = 0;
+  vm->scan_time_set = 0;
+  vm->scan_time_preset = 0;
   vm->breakpoint_count = 0;
   vm->code = mem_code;
   vm->code_size = code_size;
@@ -1232,6 +1250,14 @@ int zplc_vm_set_entry(zplc_vm_t *vm, uint16_t entry_point,
   return 0;
 }
 
+void zplc_vm_set_scan_time(zplc_vm_t *vm, uint32_t ms) {
+  if (vm == NULL) {
+    return;
+  }
+  vm->scan_time_ms = ms;
+  vm->scan_time_preset = 1U;
+}
+
 void zplc_vm_reset_cycle(zplc_vm_t *vm) {
   const uint8_t resume_skip_breakpoint_once = vm != NULL ? vm->resume_skip_breakpoint_once : 0U;
 
@@ -1246,6 +1272,7 @@ void zplc_vm_reset_cycle(zplc_vm_t *vm) {
   vm->resume_skip_breakpoint_once = resume_skip_breakpoint_once;
   vm->scan_resumed = 0U; /* starting over abandons any interrupted scan */
   vm->scan_instructions = 0U;
+  vm->scan_time_set = 0U;
   vm->error = ZPLC_VM_OK;
   /* Note: breakpoints are preserved across cycles */
 }
@@ -1384,7 +1411,9 @@ int zplc_vm_step(zplc_vm_t *vm) {
 
   case OP_GET_TICKS:
     VM_CHECK_STACK_OVERFLOW(vm);
-    VM_PUSH(vm, zplc_hal_tick());
+    /* One reading per scan: every instruction of a scan sees the same time (RT-006). Outside a scan (a debugger
+     * stepping an instruction) there is nothing to latch to, and the clock is read. */
+    VM_PUSH(vm, vm->scan_time_set != 0U ? vm->scan_time_ms : zplc_hal_tick());
     vm->pc++;
     break;
 
@@ -1600,6 +1629,9 @@ int zplc_vm_step(zplc_vm_t *vm) {
         }
       }
 
+      /* The bytes are the budget's to charge (RT-006) */
+      vm->step_charge = (uint32_t)copy_len / ZPLC_VM_BYTES_PER_BUDGET_UNIT;
+
       /* Null-terminate, then update the destination length */
       mem_result = mem_write8(b + ZPLC_STRING_DATA_OFFSET + copy_len, 0);
       if (mem_result == ZPLC_VM_OK) {
@@ -1666,6 +1698,9 @@ int zplc_vm_step(zplc_vm_t *vm) {
           return mem_result;
         }
       }
+
+      /* The bytes are the budget's to charge (RT-006) */
+      vm->step_charge = (uint32_t)copy_len / ZPLC_VM_BYTES_PER_BUDGET_UNIT;
 
       /* Null-terminate, then update the destination length */
       mem_result =
@@ -1737,6 +1772,9 @@ int zplc_vm_step(zplc_vm_t *vm) {
           break;
         }
       }
+
+      /* The bytes compared are the budget's to charge (RT-006) */
+      vm->step_charge = (uint32_t)min_len / ZPLC_VM_BYTES_PER_BUDGET_UNIT;
 
       /* If all compared chars equal, shorter string is "less" */
       if (strcmp_result == 0) {
@@ -2751,11 +2789,13 @@ int zplc_vm_step(zplc_vm_t *vm) {
 
 int zplc_vm_run(zplc_vm_t *vm, uint32_t max_instructions) {
   uint32_t count = 0;
+  uint32_t charged = 0;
   int result;
 
   if (vm == NULL) {
     return -1;
   }
+  vm->run_charge = 0;
 
   while (!vm->halted && !vm->paused) {
 #ifdef CONFIG_ZPLC_HIL_DEBUG
@@ -2767,6 +2807,7 @@ int zplc_vm_run(zplc_vm_t *vm, uint32_t max_instructions) {
     }
 #endif
 
+    vm->step_charge = 0;
     result = zplc_vm_step(vm);
 
 #ifdef CONFIG_ZPLC_HIL_DEBUG
@@ -2790,8 +2831,12 @@ int zplc_vm_run(zplc_vm_t *vm, uint32_t max_instructions) {
     }
 
     count++;
+    /* An instruction costs one unit, and a string opcode one more for every few bytes it processed. The cost is
+     * charged once the instruction has run, so the scan can end up to one instruction's cost past the bound. */
+    charged = (vm->step_charge >= UINT32_MAX - charged - 1U) ? UINT32_MAX : charged + 1U + vm->step_charge;
+    vm->run_charge = charged;
 
-    if (max_instructions > 0 && count >= max_instructions) {
+    if (max_instructions > 0 && charged >= max_instructions) {
       break;
     }
   }
@@ -2832,13 +2877,22 @@ int zplc_vm_run_cycle(zplc_vm_t *vm) {
     spent = vm->scan_instructions;
     vm->scan_resumed = 0U;
   } else {
-    /* Reset for new cycle */
+    /* Reset for new cycle, and latch the time of the scan once (RT-006). */
     zplc_vm_reset_cycle(vm);
+    if (vm->scan_time_preset == 0U) {
+      vm->scan_time_ms = zplc_hal_tick();
+    }
+    vm->scan_time_preset = 0U;
+    vm->scan_time_set = 1U;
   }
 
   result = zplc_vm_run_bounded(vm, ZPLC_VM_CYCLE_INSTRUCTION_BUDGET - spent);
   vm->scan_instructions =
-      (result >= 0 && vm->paused != 0U) ? spent + (uint32_t)result : 0U;
+      (result >= 0 && vm->paused != 0U) ? spent + vm->run_charge : 0U;
+  if (vm->paused == 0U) {
+    /* The scan is over: what a debugger steps next is outside any scan. */
+    vm->scan_time_set = 0U;
+  }
   return result;
 }
 
@@ -2905,6 +2959,17 @@ static void zplc_core_commit_verified(const zplc_program_view_t *view) {
                             ((uint32_t)tag[6] << 16) |
                             ((uint32_t)tag[7] << 24);
   }
+  /* The declaration of the program that was replaced ends with it; the entries were verified by the loader, which
+   * bounds their number by ZPLC_LOADER_MAX_SAFE. */
+  declared_safe_entries = 0U;
+  for (index = 0U; index < view->safe_count && index < ZPLC_LOADER_MAX_SAFE; index++) {
+    const uint8_t *entry = view->safe + (size_t)index * ZPLC_SAFE_ENTRY_SIZE;
+
+    declared_safe[index].offset = (uint16_t)entry[0] | (uint16_t)((uint16_t)entry[1] << 8);
+    declared_safe[index].bit = entry[2];
+    declared_safe[index].value = entry[3];
+  }
+  declared_safe_entries = index;
   zplc_vm_init(&default_vm);
   default_vm.entry_point = view->entry_point;
   default_vm.pc = view->entry_point;
@@ -2912,6 +2977,23 @@ static void zplc_core_commit_verified(const zplc_program_view_t *view) {
   default_vm.code_size = view->code_size;
   default_program_loaded = 1;
 }
+
+int zplc_core_declared_safe(uint16_t offset, uint8_t bit, uint8_t *value) {
+  const uint32_t count = declared_safe_entries;
+  uint32_t index;
+
+  for (index = 0U; index < count && index < ZPLC_LOADER_MAX_SAFE; index++) {
+    if (declared_safe[index].offset == offset && declared_safe[index].bit == bit) {
+      if (value != NULL) {
+        *value = declared_safe[index].value;
+      }
+      return 1;
+    }
+  }
+  return 0;
+}
+
+uint32_t zplc_core_declared_safe_count(void) { return declared_safe_entries; }
 
 int zplc_core_load(const uint8_t *binary, size_t size, uint8_t *workspace,
                    size_t workspace_size) {
