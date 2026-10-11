@@ -2366,6 +2366,9 @@
   "DOC-020": [
     {"kind":"unit","ref":"tools/docs/repository_hygiene.test.ts","test":"repository hygiene: the non-functional items of the requirement are not in the tree (DOC-020)"}
   ],
+  "DOC-021": [
+    {"kind":"unit","ref":"tools/docs/contributor_docs.test.ts","test":"internal process output is off the public surface (DOC-021)"}
+  ],
   "DOC-022": [
     {"kind":"unit","ref":"tools/docs/contributor_docs.test.ts","test":"agent files: the project skill and AGENTS.md are current, and the contributor guide comes first (DOC-022)"}
   ],
