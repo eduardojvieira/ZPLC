@@ -54,10 +54,13 @@ and version when the release is cut (see `RELEASING.md`).
   MQTT or a cloud service can start or stop the program, set a force or load a program.
 - **New documentation.** An install page, the tutorial *Blink without hardware* with
   real screenshots, how-to guides for Modbus, MQTT and Sparkplug B, the cloud blocks,
-  mapping I/O, forcing values, retained values, scenario tests and project archives,
+  mapping I/O, forcing values, retained values, scenario tests, project archives,
+  the command line, debugging, AI and MCP, porting to a board and troubleshooting,
   one hardware support page and one safety and limitations page, in English and
   Spanish. The language, function, shell, Kconfig, project file and protocol
-  references are generated from the source.
+  references are generated from the source. The project schema names every board of
+  the manifest, so an editor that reads `zplc.schema.json` no longer flags
+  `waveshare_rp2040_zero`, and a test fails when the two lists differ.
 - **The bench procedure is written down and its tools are tested without a board.**
   [Hardware in the loop](docs/docs/development/hardware-in-the-loop.md) says what a
   person does at the bench, one command runs the whole chain and writes a record, and
