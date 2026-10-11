@@ -1,0 +1,299 @@
+{
+  "name": "Blinky",
+  "description": "ZPLC Blinky - Ladder Diagram, two timers and SET/RESET coils (50% duty)",
+  "version": "3.0.0",
+  "variables": {
+    "local": [
+      {
+        "name": "OffTimer",
+        "type": "TON",
+        "comment": "Times the OFF half period (runs while the LED is OFF)"
+      },
+      {
+        "name": "OnTimer",
+        "type": "TON",
+        "comment": "Times the ON half period (runs while the LED is ON)"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "LED_Output",
+        "type": "BOOL",
+        "address": "%Q0.0",
+        "comment": "Physical LED output"
+      }
+    ]
+  },
+  "rungs": [
+    {
+      "id": "rung_1",
+      "number": 1,
+      "comment": "OFF phase - OffTimer runs while the LED is OFF and times 500 ms",
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "nc_led_off",
+              "type": "contact_nc",
+              "variable": "LED_Output",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "ton_off",
+              "type": "function_block",
+              "fbType": "TON",
+              "instance": "OffTimer",
+              "parameters": {
+                "IN": "CONNECTED",
+                "PT": "T#500ms"
+              },
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ]
+      ],
+      "branches": []
+    },
+    {
+      "id": "rung_2",
+      "number": 2,
+      "comment": "ON phase - OnTimer runs while the LED is ON and times 500 ms",
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "no_led_on",
+              "type": "contact_no",
+              "variable": "LED_Output",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "ton_on",
+              "type": "function_block",
+              "fbType": "TON",
+              "instance": "OnTimer",
+              "parameters": {
+                "IN": "CONNECTED",
+                "PT": "T#500ms"
+              },
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ]
+      ],
+      "branches": []
+    },
+    {
+      "id": "rung_3",
+      "number": 3,
+      "comment": "OffTimer done - SET the LED (ON phase starts)",
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "off_done",
+              "type": "contact_no",
+              "variable": "OffTimer.Q",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "coil_led_set",
+              "type": "coil_set",
+              "variable": "LED_Output",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ]
+      ],
+      "branches": []
+    },
+    {
+      "id": "rung_4",
+      "number": 4,
+      "comment": "OnTimer done - RESET the LED (OFF phase starts); RESET is last, so it wins",
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "on_done",
+              "type": "contact_no",
+              "variable": "OnTimer.Q",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "coil_led_reset",
+              "type": "coil_reset",
+              "variable": "LED_Output",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ]
+      ],
+      "branches": []
+    }
+  ],
+  "metadata": {
+    "author": "ZPLC Team",
+    "created": "2024-12-27",
+    "modified": "2026-10-09",
+    "iecStandard": "IEC 61131-3",
+    "notes": [
+      "A true 50% blinker with two TON timers and a SET/RESET output:",
+      "1. Rung 1: while LED_Output is FALSE (NC contact passes power) OffTimer counts 500 ms.",
+      "2. Rung 3: when OffTimer.Q is TRUE the SET coil turns LED_Output ON.",
+      "3. Rung 1 opens (LED is ON), which resets OffTimer; rung 2 closes and OnTimer counts 500 ms.",
+      "4. Rung 4: when OnTimer.Q is TRUE the RESET coil turns LED_Output OFF.",
+      "5. Rung 2 opens, which resets OnTimer; rung 1 closes and the cycle repeats.",
+      "Result: ON about 500 ms, OFF about 500 ms (each phase is 500 ms plus one 10 ms scan).",
+      "",
+      "Why two timers: with a single TON whose IN is the NC contact of its own output,",
+      "the output rising opens the contact and resets the timer on the very next scan,",
+      "so the LED is ON for ONE scan every 520 ms (a blip, not a blink).",
+      "tests/blinky-visual.scenario.json checks both half periods, so a blip fails it."
+    ]
+  }
+}

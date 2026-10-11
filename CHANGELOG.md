@@ -4,6 +4,22 @@ All notable changes are documented here.
 
 ## Unreleased
 
+- The hardware-in-the-loop tools are repaired and tested without a board
+  (HIL-001 to HIL-009, HIL-012, HIL-017). Every script of `tools/hil` exits
+  non-zero when a check fails, or is listed with its reason in
+  `tools/hil/non-gating.json`; none names a device path or needs pyserial to
+  load, and the serial port is a parameter, `ZPLC_SERIAL_PORT`, or found from the
+  USB identifiers of the board. The 50 language fixtures compile with the
+  repository compiler and their expected values, in `tools/hil/fixtures.json`,
+  are checked on the native runtime in CI; the 11 tracked `.bin` files are gone.
+  `packages/zplc-hil` compiles, deploys and observes through a device link, and
+  has a hardware runtime port for the scenario engine. `run_chain.py <board>`
+  runs the whole chain, prompting for each physical step, and writes a run
+  record; it and `zplc-hil run` exit with an error without an interactive
+  terminal. `tools/test_crc32_cross.py` compares the C implementation with the
+  TypeScript one. The page [Hardware in the Loop](docs/docs/development/hardware-in-the-loop.md)
+  says what a person does at the bench; the board records of HIL-010 do not
+  exist yet.
 - Three of the fifteen modules over the new size limit are split (IDE-014): the
   project settings are one module per section (2,181 lines to 213 and eleven
   files of at most 430), the Explorer's context menu and confirmations are

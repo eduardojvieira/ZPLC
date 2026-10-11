@@ -19,7 +19,7 @@ function run(args: string[], env: Record<string, string | undefined> = {}) {
   return { code: done.exitCode, out: `${done.stdout.toString()}${done.stderr.toString()}` };
 }
 
-describe('the Python HIL tools (HIL-004, HIL-007, HIL-017)', () => {
+describe('the Python HIL tools (HIL-004, HIL-007, HIL-008, HIL-009, HIL-012, HIL-017)', () => {
   withPython('tools/test_crc32_cross.py compares the C implementation with the TypeScript one and the Python library (HIL-017)', () => {
     const done = run(['tools/test_crc32_cross.py']);
     expect(done.out.slice(-400)).toContain('All CRC32 implementations agree');

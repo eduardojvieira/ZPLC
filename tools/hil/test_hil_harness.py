@@ -64,6 +64,35 @@ class ChecksTests(QuietCase):
         self.assertEqual(tester.finish(), 77)
 
 
+class TablesAreTheContractTests(QuietCase):
+    """HIL-008: the opcode and error tables of the Python tools are the generated contract, not copies."""
+
+    def test_the_tester_uses_every_opcode_of_the_generated_table_with_its_number(self):
+        import zplc_contract
+
+        self.assertEqual(ZPLCTester.OP, {op.name: int(op) for op in zplc_contract.Opcode})
+        self.assertGreater(len(ZPLCTester.OP), 100)
+
+    def test_the_error_codes_of_the_opcode_scripts_are_the_generated_table(self):
+        import opcode_cases
+        import zplc_contract
+
+        self.assertEqual(opcode_cases.ERR, {error.name: int(error) for error in zplc_contract.VmError})
+
+    def test_inspect_zplc_reads_the_header_layout_of_the_contract(self):
+        import struct
+
+        import inspect_zplc
+        import zplc_contract
+
+        header = struct.pack(zplc_contract.HEADER_STRUCT, zplc_contract.ZPLC_MAGIC, 1, 0, 0, 0, 0, 0, 0, 0, zplc_contract.ZPLC_DRAFT_COUNTER)
+        with redirect_stdout(io.StringIO()) as out:
+            self.assertEqual(inspect_zplc.inspect(header), 0)
+        self.assertIn(f"Contract draft: {zplc_contract.ZPLC_DRAFT_COUNTER}", out.getvalue())
+        with redirect_stdout(io.StringIO()):
+            self.assertEqual(inspect_zplc.inspect(b"\x00" * 64), 1)
+
+
 class NullDeviceTests(QuietCase):
     def test_it_acknowledges_commands_and_shows_zero_memory_and_no_traces(self):
         tester = ZPLCTester(transport=NullDevice())

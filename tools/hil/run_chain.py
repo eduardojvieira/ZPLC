@@ -35,7 +35,6 @@ DEFAULT_OUT = ROOT / "build" / "hil-records"
 
 # What HIL-010 asks for that the chain does not run yet, and what each needs. The record carries this list.
 PENDING = [
-    ("blink-il", "Blink in IL", "no IL blink fixture exists yet (LD, FBD, SFC and ST ones do)"),
     ("digital-loopback", "Digital loopback", "needs the board's I/O description (IO-001) and a wiring step: TO BE FILLED from the bench run"),
     ("analog-read", "Analog read", "needs the I/O description and a known voltage on the analog input: TO BE FILLED from the bench run"),
     ("timer-accuracy", "Timer accuracy", "needs a measurement fixture and a reference clock the person provides"),

@@ -895,6 +895,26 @@
       ]
     },
     {
+      "id": "il.blinky",
+      "source": "il_tests/blinky.il",
+      "language": "IL",
+      "title": "A TON restarted by its own output blinks the LED",
+      "hardware": true,
+      "phases": [
+        {
+          "scans": 100,
+          "expect": [
+            {
+              "at": "%QX0.0",
+              "type": "BOOL",
+              "op": "toggles",
+              "min": 6
+            }
+          ]
+        }
+      ]
+    },
+    {
       "id": "il.basic_il",
       "source": "il_tests/basic_il.il",
       "language": "IL",
@@ -1116,6 +1136,26 @@
               "at": "%QW0",
               "type": "INT",
               "value": 123
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ld.blinky",
+      "source": "ld_tests/blinky.ld.json",
+      "language": "LD",
+      "title": "A TON in a rung blinks the LED output (the Studio blinky)",
+      "hardware": true,
+      "phases": [
+        {
+          "scans": 120,
+          "expect": [
+            {
+              "at": "%QX0.0",
+              "type": "BOOL",
+              "op": "toggles",
+              "min": 6
             }
           ]
         }
@@ -1346,6 +1386,26 @@
       ]
     },
     {
+      "id": "fbd.blinky",
+      "source": "fbd_tests/blinky.fbd.json",
+      "language": "FBD",
+      "title": "A TON block blinks the LED output (the Studio blinky)",
+      "hardware": true,
+      "phases": [
+        {
+          "scans": 120,
+          "expect": [
+            {
+              "at": "%QX0.0",
+              "type": "BOOL",
+              "op": "toggles",
+              "min": 6
+            }
+          ]
+        }
+      ]
+    },
+    {
       "id": "fbd.not_gate",
       "source": "fbd_tests/not_gate.fbd.json",
       "language": "FBD",
@@ -1455,6 +1515,26 @@
               "at": "%QW0",
               "type": "INT",
               "value": 30
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "sfc.blinky",
+      "source": "sfc_tests/blinky.sfc.json",
+      "language": "SFC",
+      "title": "Two steps with timed transitions blink the LED output (the Studio blinky)",
+      "hardware": true,
+      "phases": [
+        {
+          "scans": 120,
+          "expect": [
+            {
+              "at": "%QX0.0",
+              "type": "BOOL",
+              "op": "toggles",
+              "min": 6
             }
           ]
         }

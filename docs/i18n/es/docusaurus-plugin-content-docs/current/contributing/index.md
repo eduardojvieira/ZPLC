@@ -63,6 +63,7 @@ explica qué muestra cada modo del firmware y qué no.
 | Evidencia | Etiquete correctamente los resultados de host, QEMU, compilación para destino, HIL y manuales. |
 | Dependencias | Agregue una sola con una necesidad concreta y una justificación arquitectónica. |
 | Operaciones físicas | Separe compilar, flashear, desplegar y ejecutar o depurar; no automatice el control físico mediante IA o MCP. |
+| Pruebas de hardware | Una persona inicia todo comando que maneje una placa, en un terminal interactivo, y un registro dice qué imagen probó. Véase [Hardware en el lazo](../development/hardware-in-the-loop.md). |
 
 No publique, no flashee hardware, no despliegue un programa PLC ni accione equipos
 sin autorización explícita.
