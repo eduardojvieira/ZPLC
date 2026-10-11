@@ -16,7 +16,7 @@
 import type { FBParameter, DataTypeValue } from '../ast';
 import { DataType } from '../ast';
 import type { CodeGenContext, FunctionBlockDef, MemberDef, MemberSize } from './types';
-import { COMM_BLOCKS, COMM_FB_KIND as GENERATED_COMM_FB_KIND } from '../../contract.generated';
+import { COMM_BLOCKS, COMM_FB_KIND as GENERATED_COMM_FB_KIND, STRING_LAYOUT } from '../../contract.generated';
 
 type CommGenerateCall = {
   (ctx: CodeGenContext, params: FBParameter[]): void;
@@ -87,6 +87,19 @@ function emitCommFB(
   for (const param of params) {
     const member = def.members.find(m => m.name === param.name);
     if (!member || !member.isInput) continue;
+
+    if (member.type === DataType.STRING) {
+      // A STRING member holds the string itself, in the layout of the string table (COM-005): the
+      // capacity the member has room for is written first, then the argument is copied (STRCPY cuts
+      // what does not fit). The handler reads the member as a string at this offset.
+      const capacity = member.size - STRING_LAYOUT.headerSize - 1;
+      ctx.emit(`    PUSH16 ${capacity}`);
+      ctx.emit(`    STORE16 ${baseAddr + member.offset + STRING_LAYOUT.capOffset}`);
+      ctx.emitExpression(param.value);
+      ctx.emit(`    PUSH16 ${baseAddr + member.offset}`);
+      ctx.emit('    STRCPY');
+      continue;
+    }
 
     ctx.emitExpression(param.value);
     switch (member.type) {

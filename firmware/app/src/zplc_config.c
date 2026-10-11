@@ -982,30 +982,6 @@ zplc_mqtt_set_azure_c2d_callback(zplc_azure_c2d_cb_t cb) {
 
 __attribute__((weak)) bool zplc_mqtt_is_connected(void) { return false; }
 
-__attribute__((weak)) int
-zplc_mqtt_enqueue_publish(const char *topic, const uint8_t *payload, size_t len,
-                          uint8_t qos, bool retain) {
-  ARG_UNUSED(topic);
-  ARG_UNUSED(payload);
-  ARG_UNUSED(len);
-  ARG_UNUSED(qos);
-  ARG_UNUSED(retain);
-  LOG_WRN("zplc_mqtt_enqueue_publish: MQTT module not linked");
-  return -ENOTSUP;
-}
-
-__attribute__((weak)) int zplc_azure_event_grid_publish(const char *event_type,
-                                                        const char *source,
-                                                        const char *topic,
-                                                        const char *data) {
-  ARG_UNUSED(event_type);
-  ARG_UNUSED(source);
-  ARG_UNUSED(topic);
-  ARG_UNUSED(data);
-  LOG_WRN("zplc_azure_event_grid_publish: MQTT module not linked");
-  return -ENOTSUP;
-}
-
 void zplc_config_get_mqtt_broker(char *buf, size_t len) {
   strncpy(buf, config.mqtt_broker, len);
   buf[len - 1] = '\0';

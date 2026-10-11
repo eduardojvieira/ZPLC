@@ -17,6 +17,10 @@
 
 #include <zplc_hal.h>
 
+#ifdef ZPLC_HOST_COMM
+#include "host_comm.h"
+#endif
+
 /* ZPLC_NATIVE_REQUEST_MAX, _RESPONSE_MAX and _EVENT_MAX are in native_runtime_session.h. */
 #define ZPLC_NATIVE_REQUEST_POLL_MS 10U
 
@@ -111,6 +115,17 @@ int main(int argc, char **argv)
         (void)fprintf(stderr, "[native-sim] HAL initialization failed\n");
         return 1;
     }
+
+#ifdef ZPLC_HOST_COMM
+    /* The communication blocks answer a peer only when the session was started with ZPLC_NATIVE_COMM=1. */
+    {
+        const int comm_rc = zplc_host_comm_init_from_environment();
+
+        if (comm_rc != 0) {
+            (void)fprintf(stderr, "[native-sim] the communication blocks are not available: %d\n", comm_rc);
+        }
+    }
+#endif
 
     zplc_native_runtime_session_init(&session);
     {

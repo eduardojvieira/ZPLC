@@ -513,23 +513,28 @@ Azure Event Grid's MQTT broker (GA since 2024) uses standard MQTT 5.0 with:
 
 #### CloudEvents publish helper
 
+The CloudEvent is built and published by the MQTT client thread, on the request of
+the `AZURE_EG_PUB` block (`zplc_mqtt_fb_event_grid`, `firmware/app/include/zplc_mqtt_fb.h`):
+the scan queues one request and polls its result, and never touches the client.
+
 ```c
 /**
- * @brief Publish a CloudEvent to Azure Event Grid MQTT broker.
+ * @brief Queue one CloudEvent for the MQTT client thread to publish.
  *
- * Encodes payload as a JSON CloudEvent envelope and publishes with
- * MQTT 5.0 User Properties for CE attributes.
+ * The client encodes the data as a JSON CloudEvent envelope and publishes it
+ * with MQTT 5.0 User Properties for the CE attributes. The source attribute
+ * is the configured one.
  *
+ * @param owner      the block making the request (the key of its slot)
  * @param event_type CE type attribute (e.g. "com.zplc.telemetry.v1")
- * @param source     CE source attribute (e.g. "/devices/{deviceId}")
  * @param topic      MQTT topic to publish to
  * @param data       JSON payload string (will be embedded as "data" field)
- * @return 0 on success, negative on error.
+ * @return ZPLC_COMM_HANDLER_PENDING when queued, or a failure code
+ *         (not connected, queue full, string overflow, not available);
+ *         zplc_mqtt_fb_poll() gives the result.
  */
-int zplc_azure_event_grid_publish(const char *event_type,
-                                  const char *source,
-                                  const char *topic,
-                                  const char *data);
+int zplc_mqtt_fb_event_grid(const void *owner, const char *event_type,
+                            const char *topic, const char *data);
 ```
 
 #### Config fields (new)

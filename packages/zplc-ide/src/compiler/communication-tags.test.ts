@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'bun:test';
-import { applyCommunicationTags, compileMultiTaskProject } from './index';
+import { applyCommunicationTags, compileMultiTaskProject, modbusTagNumber } from './index';
 import type { CommunicationTagConfig } from '../types';
 
 describe('applyCommunicationTags', () => {
@@ -136,6 +136,54 @@ END_PROGRAM`;
     } catch (error) {
       const errors = (error as { errors: Array<{ line: number; column: number }> }).errors;
       expect(errors.map((each) => [each.line, each.column])).toEqual([[6, 8]]);
+    }
+  });
+});
+
+describe('where a Modbus tag is served (COM-011)', () => {
+  const source = (type: string, helper = '') => `PROGRAM Main\nVAR\n    V : ${type};\nEND_VAR\n${helper}\nEND_PROGRAM`;
+
+  it('writes the area of a tag in the notation the server reads', () => {
+    expect(modbusTagNumber('coil', 7, 'V', 0)).toBe(7);
+    expect(modbusTagNumber('discrete-input', 7, 'V', 0)).toBe(10008);
+    expect(modbusTagNumber('input-register', 7, 'V', 0)).toBe(30008);
+    expect(modbusTagNumber('holding-register', 7, 'V', 0)).toBe(40008);
+    expect(modbusTagNumber(undefined, 7, 'V', 0)).toBe(7);
+  });
+
+  it('keeps an address that is already in the notation of its area, and refuses one that is in another', () => {
+    expect(modbusTagNumber('holding-register', 40001, 'V', 0)).toBe(40001);
+    expect(modbusTagNumber('input-register', 30010, 'V', 0)).toBe(30010);
+    expect(() => modbusTagNumber('coil', 40001, 'V', 0)).toThrow(/holding register/);
+    expect(() => modbusTagNumber('input-register', 40001, 'V', 0)).toThrow(/holding register/);
+  });
+
+  it('serves a holding register past the end of its notation as a plain number, and refuses what cannot be written', () => {
+    expect(modbusTagNumber('holding-register', 20000, 'V', 0)).toBe(20000);
+    expect(modbusTagNumber('holding-register', 65535, 'V', 0)).toBe(65535);
+    expect(() => modbusTagNumber('input-register', 20000, 'V', 0)).toThrow(/does not fit/);
+    expect(() => modbusTagNumber('discrete-input', 70000, 'V', 0)).toThrow(/65535/);
+  });
+
+  it('emits the area of a communication tag', () => {
+    const tags: CommunicationTagConfig[] = [
+      { name: 'V', symbol: 'V', type: 'INT', mode: 'modbus', modbusAddress: 3, modbusArea: 'input-register' },
+    ];
+    expect(applyCommunicationTags(source('INT'), tags)).toContain('V : INT {modbus:30004};');
+  });
+
+  it('emits the area of each helper', () => {
+    for (const [helper, number] of [['MODBUS_COIL', 5], ['MODBUS_DISCRETE_INPUT', 10006], ['MODBUS_INPUT_REGISTER', 30006], ['MODBUS_HOLDING_REGISTER', 40006]] as const) {
+      expect(applyCommunicationTags(source('BOOL', `${helper}(V, 5);`), [])).toContain(`V : BOOL {modbus:${number}};`);
+    }
+  });
+
+  it('reports a helper that cannot be written at the line of the author', () => {
+    try {
+      applyCommunicationTags(source('INT', 'MODBUS_COIL(V, 40001);'), []);
+      throw new Error('expected the helper to be refused');
+    } catch (error) {
+      expect((error as { line: number }).line).toBe(5);
     }
   });
 });

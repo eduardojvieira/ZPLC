@@ -58,76 +58,163 @@ static int block_fits(zplc_comm_fb_kind_t kind, const uint8_t *fb_mem,
   return fb_mem != NULL && fb_len >= needed;
 }
 
+int zplc_comm_fb_is_service(zplc_comm_fb_kind_t kind) {
+  return kind == ZPLC_COMM_FB_MQTT_CONNECT ||
+         kind == ZPLC_COMM_FB_MQTT_SUBSCRIBE ||
+         kind == ZPLC_COMM_FB_AZURE_C2D_RECV;
+}
+
+/* The handshake bytes of the block: the dispatcher is their only writer. */
+enum { EN = 0, BUSY = 1, DONE = 2, ERROR = 3, STATUS = 4 };
+
+static void set_status(uint8_t *fb_mem, uint32_t status) {
+  zplc_put_u32_le(&fb_mem[STATUS], status);
+}
+
+static void clear_outputs(uint8_t *fb_mem) {
+  fb_mem[BUSY] = 0;
+  fb_mem[DONE] = 0;
+  fb_mem[ERROR] = 0;
+}
+
+static int has_state(const uint8_t *fb_mem) {
+  return fb_mem[BUSY] != 0 || fb_mem[DONE] != 0 || fb_mem[ERROR] != 0;
+}
+
+/* A failure code of a handler: -(zplc_comm_status_t), or UNKNOWN for any
+ * other negative value (the codes 0 and 1 are not failures). */
+static uint32_t failure_status(int result) {
+  if (result <= -ZPLC_COMM_TIMEOUT && result >= -ZPLC_COMM_UNAVAILABLE) {
+    return (uint32_t)(-result);
+  }
+  return (uint32_t)ZPLC_COMM_UNKNOWN;
+}
+
+/* Publish what a handler returned: the three outputs and STATUS. */
+static void publish(uint8_t *fb_mem, int result) {
+  if (result == ZPLC_COMM_HANDLER_PENDING) {
+    fb_mem[BUSY] = 1;
+    fb_mem[DONE] = 0;
+    fb_mem[ERROR] = 0;
+    set_status(fb_mem, (uint32_t)ZPLC_COMM_BUSY);
+  } else if (result == ZPLC_COMM_HANDLER_DONE) {
+    fb_mem[BUSY] = 0;
+    fb_mem[DONE] = 1;
+    fb_mem[ERROR] = 0;
+    set_status(fb_mem, (uint32_t)ZPLC_COMM_OK);
+  } else {
+    fb_mem[BUSY] = 0;
+    fb_mem[DONE] = 0;
+    fb_mem[ERROR] = 1;
+    set_status(fb_mem, result < 0 ? failure_status(result)
+                                  : (uint32_t)ZPLC_COMM_UNKNOWN);
+  }
+}
+
+static void publish_no_handler(uint8_t *fb_mem) {
+  publish(fb_mem, ZPLC_COMM_HANDLER_FAIL(ZPLC_COMM_NO_HANDLER));
+}
+
+/* The dispatcher's byte of a block: the last one of the layout of its kind (ZPLC_COMM_FB_TAIL_BYTES). It holds the
+ * EN of the previous call, which is what tells a rising edge from an EN that stays TRUE. A kind without a layout
+ * has none. */
+static uint8_t *latch_of(zplc_comm_fb_kind_t kind, uint8_t *fb_mem) {
+  const uint16_t size = zplc_comm_fb_size((uint32_t)kind);
+
+  return size > ZPLC_COMM_FB_TAIL_BYTES ? &fb_mem[size - ZPLC_COMM_FB_TAIL_BYTES]
+                                        : NULL;
+}
+
 int zplc_comm_fb_exec(zplc_comm_fb_kind_t kind, uint8_t *fb_mem,
                       uint16_t fb_len) {
+  zplc_comm_handler_t handler;
+  uint8_t *latch;
+  int enabled;
+  int rising;
+
   if (!block_fits(kind, fb_mem, fb_len)) {
     return -1;
   }
+  enabled = fb_mem[EN] != 0;
+  handler = get_handler(kind);
 
-  uint8_t *en = &fb_mem[0];
-  uint8_t *busy = &fb_mem[1];
-  uint8_t *done = &fb_mem[2];
-  uint8_t *error = &fb_mem[3];
-  uint8_t *status = &fb_mem[4];
-
-  if (!*en) {
-    *busy = 0;
-    *done = 0;
-    *error = 0;
+  /* A service block: its state can change on any scan. */
+  if (zplc_comm_fb_is_service(kind)) {
+    if (!enabled) {
+      if (has_state(fb_mem)) {
+        if (handler != NULL) {
+          (void)handler(kind, fb_mem, fb_len, ZPLC_COMM_CALL_RESET);
+        }
+        clear_outputs(fb_mem);
+      }
+      return 0;
+    }
+    if (handler == NULL) {
+      publish_no_handler(fb_mem);
+      return 0;
+    }
+    publish(fb_mem, handler(kind, fb_mem, fb_len, ZPLC_COMM_CALL_POLL));
     return 0;
   }
 
-  // Clear pulse outputs from previous scan
-  if (*done)
-    *done = 0;
-  if (*error)
-    *error = 0;
+  /* A request block. The EN of this call is what the next one compares with. */
+  latch = latch_of(kind, fb_mem);
+  rising = latch != NULL ? (enabled && *latch == 0)
+                         : (enabled && fb_mem[DONE] == 0 && fb_mem[ERROR] == 0);
+  if (latch != NULL) {
+    *latch = enabled ? 1U : 0U;
+  }
 
-  zplc_comm_handler_t handler = get_handler(kind);
-  if (!handler) {
-    if (!*busy) { // Only report if not already waiting for response
-      *error = 1;
-      zplc_put_u32_le(status, ZPLC_COMM_NO_HANDLER);
+  /* In flight: polled on every scan, whatever EN does. */
+  if (fb_mem[BUSY] != 0) {
+    if (handler == NULL) {
+      publish_no_handler(fb_mem);
+      return 0;
     }
+    publish(fb_mem, handler(kind, fb_mem, fb_len, ZPLC_COMM_CALL_POLL));
     return 0;
   }
 
-  // Only call handler if not already busy
-  if (!*busy) {
-    *busy = 1;
-    int res = handler(kind, fb_mem, fb_len, false);
-    if (res < 0) {
-      *busy = 0;
-      *error = 1;
-      zplc_put_u32_le(status, ZPLC_COMM_UNKNOWN);
-    }
+  if (!enabled) {
+    /* EN is FALSE: the result of the last operation goes with it. */
+    clear_outputs(fb_mem);
+    return 0;
   }
 
-  return 0; // Handler is responsible for clearing BUSY and setting DONE/ERROR
-            // in subsequent scans via async result
+  /* EN is TRUE and a result is held: one trigger is one operation. A new rising edge is a new trigger. */
+  if (!rising && (fb_mem[DONE] != 0 || fb_mem[ERROR] != 0)) {
+    return 0;
+  }
+
+  /* EN rose, or is TRUE on a block with no state: begin one operation. */
+  if (handler == NULL) {
+    publish_no_handler(fb_mem);
+    return 0;
+  }
+  publish(fb_mem, handler(kind, fb_mem, fb_len, ZPLC_COMM_CALL_START));
+  return 0;
 }
 
 int zplc_comm_fb_reset(zplc_comm_fb_kind_t kind, uint8_t *fb_mem,
                        uint16_t fb_len) {
+  zplc_comm_handler_t handler;
+  uint8_t *latch;
+
   if (!block_fits(kind, fb_mem, fb_len)) {
     return -1;
   }
 
-  uint8_t *en = &fb_mem[0];
-  uint8_t *busy = &fb_mem[1];
-  uint8_t *done = &fb_mem[2];
-  uint8_t *error = &fb_mem[3];
-  uint8_t *status = &fb_mem[4];
+  fb_mem[EN] = 0;
+  clear_outputs(fb_mem);
+  set_status(fb_mem, 0);
+  latch = latch_of(kind, fb_mem);
+  if (latch != NULL) {
+    *latch = 0U;
+  }
 
-  *en = 0;
-  *busy = 0;
-  *done = 0;
-  *error = 0;
-  zplc_put_u32_le(status, 0);
-
-  zplc_comm_handler_t handler = get_handler(kind);
+  handler = get_handler(kind);
   if (handler) {
-    handler(kind, fb_mem, fb_len, true);
+    (void)handler(kind, fb_mem, fb_len, ZPLC_COMM_CALL_RESET);
   }
   return 0;
 }
