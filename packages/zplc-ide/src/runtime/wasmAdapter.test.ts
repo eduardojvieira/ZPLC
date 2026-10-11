@@ -6,7 +6,7 @@ import { builtWasmModule, itWasm } from '../cli/wasmModuleGuard';
 import { getWasmCapabilities } from './debugCapabilities';
 import { WASM_SIMULATION_ENABLED, WASMAdapter } from './wasmAdapter';
 
-describe('WASMAdapter', () => {
+describe('WASMAdapter (IDE-025)', () => {
   it('is enabled: the browser runtime is built with the IDE, and a build without it says why on connect', () => {
     expect(WASM_SIMULATION_ENABLED).toBe(true);
   });

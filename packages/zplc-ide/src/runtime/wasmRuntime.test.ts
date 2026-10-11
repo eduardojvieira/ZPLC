@@ -52,7 +52,7 @@ function toHexFile(bytes: Uint8Array): Uint8Array {
   return bytes;
 }
 
-describe('the module of the WebAssembly runtime', () => {
+describe('the module of the WebAssembly runtime (IDE-025)', () => {
   itWasm('imports nothing but the five calls of the host that its HAL port lists', () => {
     const imports = WebAssembly.Module.imports(new WebAssembly.Module(new Uint8Array(builtWasmModule().bytes)))
       .map((entry) => `${entry.module}.${entry.name}`)
@@ -97,7 +97,7 @@ describe('the module of the WebAssembly runtime', () => {
   });
 });
 
-describe('a program on the WebAssembly runtime, through the adapter', () => {
+describe('a program on the WebAssembly runtime, through the adapter (IDE-025)', () => {
   itWasm('is loaded, runs on the poll of the runtime and shows its output', async () => {
     const { adapter, poll } = open();
     await adapter.connect();
@@ -316,7 +316,7 @@ describe('the process image of the WebAssembly runtime (RT-009)', () => {
   });
 });
 
-describe('the communication blocks of the WebAssembly runtime', () => {
+describe('the communication blocks of the WebAssembly runtime (IDE-025)', () => {
   itWasm('answer STATUS 10 (UNAVAILABLE): a browser module has no network', async () => {
     // a Modbus block with EN true: the request fails at once, in the scan of the edge, with the code of the table
     const { compilerCompile } = await import('../cli/toolApi');

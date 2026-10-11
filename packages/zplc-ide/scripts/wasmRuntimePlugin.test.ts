@@ -17,7 +17,7 @@ function wrote(command: string[]): Spawned {
 
 const missing: Spawned = { status: 3, stdout: '', stderr: 'wasm-core: cannot build the WebAssembly runtime: clang and wasm-ld (the lld package) not found on the PATH\n' };
 
-describe('the build of the browser runtime inside the IDE build', () => {
+describe('the build of the browser runtime inside the IDE build (IDE-025)', () => {
   it('embeds the module and its manifest when the tools are there', () => {
     const built = buildWasmRuntime({ root: '/repo', ci: true, spawn: wrote });
     expect(built.manifest).toEqual(MANIFEST);

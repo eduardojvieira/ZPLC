@@ -32,7 +32,7 @@ afterEach(() => {
   delete (globalThis as { window?: unknown }).window;
 });
 
-describe('the runtime a simulation runs on', () => {
+describe('the runtime a simulation runs on (IDE-025)', () => {
   it('is the native runtime when it starts, with nothing reported', async () => {
     installNativeBridge(async () => nativeHello);
     const entries: Entry[] = [];
