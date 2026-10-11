@@ -243,6 +243,21 @@ python3 tools/firmware-test/fwtest.py size \
 The figures are link-time static allocation. They do not include the stacks or
 the heap high-water mark.
 
+To see where the bytes of a board go, run the footprint report on the same
+build trees. It reads each linker map and prints, per board, the used bytes of
+every memory region, the headroom to the budget, the input sections by kind and
+by library, and the largest input sections of flash and RAM with the object
+file that owns each one. The strings of the image are one merged block, so it
+reports that block once and the strings of each object before merging:
+
+```bash
+python3 tools/firmware-test/footprint_report.py \
+  --logs ~/zplc-zephyr-ws/out/size --board rpi-pico-rp2040 --top 25
+```
+
+The report only reads files. Its own tests are
+`tools/firmware-test/test_footprint_report.py`.
+
 ## Adding a test
 
 - Put a Zephyr suite in `firmware/tests/<name>` with a `testcase.yaml`, and
