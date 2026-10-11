@@ -1,5 +1,5 @@
 {
-  "$comment": "The ZPLC device link protocol (COM-019, COM-029): the one definition of the framed protocol that Studio and a device speak. tools/contract/generate_protocol.py writes the C header (firmware/lib/zplc_core/include/zplc_proto_defs.h), the TypeScript tables (packages/zplc-ide/src/runtime/link/protocol.generated.ts), the test frames both codecs run (tools/contract/golden/protocol-vectors.json and firmware/lib/zplc_core/tests/zplc_proto_vectors.h) and, through tools/docs/generate_source_references.ts, the reference page. Change this file, then run `python3 tools/contract/generate_protocol.py`. A change that renumbers a message, an error or a field is a protocol change: increase `version`.",
+  "$comment": "The ZPLC device link protocol (COM-019, COM-029): the one definition of the framed protocol that Studio and a device speak. tools/contract/generate_protocol.py writes the C header (firmware/lib/zplc_core/include/zplc_proto_defs.h), the TypeScript tables (packages/zplc-ide/src/runtime/link/protocol.generated.ts), the test frames both codecs run and the memory access cases the adapters and the device check (tools/contract/golden/protocol-vectors.json and firmware/lib/zplc_core/tests/zplc_proto_vectors.h) and, through tools/docs/generate_source_references.ts, the reference page. Change this file, then run `python3 tools/contract/generate_protocol.py`. A change that renumbers a message, an error or a field is a protocol change: increase `version`.",
   "schema": 1,
   "name": "ZPLC device link",
   "version": 1,
@@ -162,6 +162,25 @@
     { "name": "READ", "doc": { "en": "Reads the PLC and changes nothing: open on the serial link, needs an authenticated session on a network link.", "es": "Lee el PLC y no cambia nada: abierto en el enlace serie, requiere sesión autenticada en un enlace de red." } },
     { "name": "SESSION", "doc": { "en": "Changes the device: needs a session that is open on this link, and an authenticated one on a network link.", "es": "Cambia el dispositivo: requiere una sesión abierta en este enlace, y autenticada en un enlace de red." } },
     { "name": "SERIAL_SESSION", "doc": { "en": "Needs a session and the serial link: a key is never provisioned over the network.", "es": "Requiere una sesión y el enlace serie: una clave nunca se aprovisiona por la red." } }
+  ],
+  "accessCases": [
+    { "name": "first input byte", "address": 0, "length": 1, "kind": "read", "ok": true, "region": "IPI" },
+    { "name": "last input byte", "address": 4095, "length": 1, "kind": "read", "ok": true, "region": "IPI" },
+    { "name": "the whole input image", "address": 0, "length": 4096, "kind": "read", "ok": true, "region": "IPI" },
+    { "name": "a double word at the end of the input image", "address": 4092, "length": 4, "kind": "write", "ok": true, "region": "IPI" },
+    { "name": "a read across input and output", "address": 4095, "length": 2, "kind": "read", "ok": false, "reason": "crosses", "region": "IPI" },
+    { "name": "a write across work and retain", "address": 16382, "length": 4, "kind": "write", "ok": false, "reason": "crosses", "region": "WORK" },
+    { "name": "a write past the end of retain", "address": 20478, "length": 4, "kind": "write", "ok": false, "reason": "crosses", "region": "RETAIN" },
+    { "name": "the code region", "address": 20480, "length": 1, "kind": "read", "ok": false, "reason": "outside", "region": null },
+    { "name": "the last address", "address": 65535, "length": 1, "kind": "read", "ok": false, "reason": "outside", "region": null },
+    { "name": "no bytes", "address": 8192, "length": 0, "kind": "read", "ok": false, "reason": "length", "region": "WORK" },
+    { "name": "an access that wraps the 16-bit space", "address": 65535, "length": 2, "kind": "read", "ok": false, "reason": "length", "region": null },
+    { "name": "a write to an output", "address": 4096, "length": 1, "kind": "write", "ok": false, "reason": "not-writable", "region": "OPI" },
+    { "name": "a force of an output", "address": 4096, "length": 2, "kind": "force", "ok": true, "region": "OPI" },
+    { "name": "a read of an output", "address": 4096, "length": 4, "kind": "read", "ok": true, "region": "OPI" },
+    { "name": "the whole work window", "address": 8192, "length": 8192, "kind": "read", "ok": true, "region": "WORK" },
+    { "name": "a force across the end of retain", "address": 20479, "length": 2, "kind": "force", "ok": false, "reason": "crosses", "region": "RETAIN" },
+    { "name": "the largest force in work", "address": 8192, "length": 260, "kind": "force", "ok": true, "region": "WORK" }
   ],
   "rangeDetail": [
     { "name": "address", "type": "u16", "doc": "The address that was asked for." },

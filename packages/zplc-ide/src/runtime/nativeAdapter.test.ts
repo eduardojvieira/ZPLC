@@ -893,7 +893,7 @@ describe('NativeAdapter', () => {
     const adapter = new NativeAdapter({ startSession, stopSession, request });
     await adapter.connect();
 
-    await adapter.pokeN(0x1000, new Uint8Array([0x2a, 0x00]));
+    await adapter.pokeN(0x2000, new Uint8Array([0x2a, 0x00]));
     const breakpointAdded = await adapter.setBreakpoint(64);
     const breakpointRemoved = await adapter.removeBreakpoint(24);
     await adapter.clearBreakpoints();

@@ -19,6 +19,7 @@ import {
   MEMORY_MAP,
   WATCH_FORCE_STATE,
 } from './debugAdapter';
+import { assertMemoryAccess } from './memoryAccess';
 import {
   createNativeRequest,
   hexToBytes,
@@ -536,6 +537,7 @@ export class NativeAdapter implements IDebugAdapter {
   }
 
   async peek(address: number, length: number): Promise<Uint8Array> {
+    assertMemoryAccess(address, length, 'read');
     const result = await this.request<NativeMemoryReadResult>('memory.read', {
       address,
       length,
@@ -548,6 +550,7 @@ export class NativeAdapter implements IDebugAdapter {
   }
 
   async pokeN(address: number, bytes: Uint8Array): Promise<void> {
+    assertMemoryAccess(address, bytes.length, 'write');
     await this.request('memory.write', {
       address,
       bytes_hex: bytesToHex(bytes),
@@ -559,6 +562,7 @@ export class NativeAdapter implements IDebugAdapter {
   }
 
   async forceValue(address: number, bytes: Uint8Array): Promise<void> {
+    assertMemoryAccess(address, bytes.length, 'force');
     await this.request('force.set', {
       address,
       bytes_hex: bytesToHex(bytes),
@@ -566,6 +570,7 @@ export class NativeAdapter implements IDebugAdapter {
   }
 
   async clearForcedValue(address: number): Promise<void> {
+    assertMemoryAccess(address, 1, 'force');
     await this.request('force.clear', { address });
   }
 

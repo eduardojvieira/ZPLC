@@ -1,5 +1,6 @@
 import type { WatchVariable } from './debugAdapter';
 import { getTypeSize } from './debugAdapter';
+import { sameRegion } from './memoryAccess';
 
 export function parsePeekBytes(lines: string[], length: number): Uint8Array {
   const result = new Uint8Array(length);
@@ -81,7 +82,8 @@ export function groupVariablesForBatchPeek(variables: WatchVariable[]): PeekGrou
       const currentEnd = currentGroup.baseAddress + currentGroup.span;
       const gap = v.address - currentEnd;
 
-      if (gap <= MAX_MERGE_GAP) {
+      // one read stays inside one region: the device refuses an extent that crosses two (COM-024)
+      if (gap <= MAX_MERGE_GAP && sameRegion(currentGroup.baseAddress, varEnd - 1)) {
         // Extend current group to cover this variable
         currentGroup.span = varEnd - currentGroup.baseAddress;
         currentGroup.variables.push(v);

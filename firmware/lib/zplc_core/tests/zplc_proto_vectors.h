@@ -353,4 +353,35 @@ static const zplc_proto_vector_stream_t zplc_proto_vector_streams[] = {
 };
 #define ZPLC_PROTO_VECTOR_STREAM_COUNT 11U
 
+typedef struct {
+  const char *name;
+  uint16_t address;
+  uint16_t length;
+  uint8_t kind;   /* 0 read, 1 write, 2 force */
+  uint8_t ok;
+  uint16_t start; /* the region that holds the address, 0xFFFF when none does */
+  uint16_t end;
+} zplc_proto_access_case_t;
+
+static const zplc_proto_access_case_t zplc_proto_access_cases[] = {
+  { "first input byte", 0U, 1U, 0U, 1U, 0U, 4096U },
+  { "last input byte", 4095U, 1U, 0U, 1U, 0U, 4096U },
+  { "the whole input image", 0U, 4096U, 0U, 1U, 0U, 4096U },
+  { "a double word at the end of the input image", 4092U, 4U, 1U, 1U, 0U, 4096U },
+  { "a read across input and output", 4095U, 2U, 0U, 0U, 0U, 4096U },
+  { "a write across work and retain", 16382U, 4U, 1U, 0U, 8192U, 16384U },
+  { "a write past the end of retain", 20478U, 4U, 1U, 0U, 16384U, 20480U },
+  { "the code region", 20480U, 1U, 0U, 0U, 65535U, 65535U },
+  { "the last address", 65535U, 1U, 0U, 0U, 65535U, 65535U },
+  { "no bytes", 8192U, 0U, 0U, 0U, 8192U, 16384U },
+  { "an access that wraps the 16-bit space", 65535U, 2U, 0U, 0U, 65535U, 65535U },
+  { "a write to an output", 4096U, 1U, 1U, 0U, 4096U, 8192U },
+  { "a force of an output", 4096U, 2U, 2U, 1U, 4096U, 8192U },
+  { "a read of an output", 4096U, 4U, 0U, 1U, 4096U, 8192U },
+  { "the whole work window", 8192U, 8192U, 0U, 1U, 8192U, 16384U },
+  { "a force across the end of retain", 20479U, 2U, 2U, 0U, 16384U, 20480U },
+  { "the largest force in work", 8192U, 260U, 2U, 1U, 8192U, 16384U },
+};
+#define ZPLC_PROTO_ACCESS_CASE_COUNT 17U
+
 #endif /* ZPLC_PROTO_VECTORS_H */

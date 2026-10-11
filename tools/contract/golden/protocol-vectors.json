@@ -1282,5 +1282,186 @@
     "resyncs": 0
    }
   }
+ ],
+ "accessCases": [
+  {
+   "name": "first input byte",
+   "address": 0,
+   "length": 1,
+   "kind": "read",
+   "ok": true,
+   "region": "IPI",
+   "start": 0,
+   "end": 4096
+  },
+  {
+   "name": "last input byte",
+   "address": 4095,
+   "length": 1,
+   "kind": "read",
+   "ok": true,
+   "region": "IPI",
+   "start": 0,
+   "end": 4096
+  },
+  {
+   "name": "the whole input image",
+   "address": 0,
+   "length": 4096,
+   "kind": "read",
+   "ok": true,
+   "region": "IPI",
+   "start": 0,
+   "end": 4096
+  },
+  {
+   "name": "a double word at the end of the input image",
+   "address": 4092,
+   "length": 4,
+   "kind": "write",
+   "ok": true,
+   "region": "IPI",
+   "start": 0,
+   "end": 4096
+  },
+  {
+   "name": "a read across input and output",
+   "address": 4095,
+   "length": 2,
+   "kind": "read",
+   "ok": false,
+   "reason": "crosses",
+   "region": "IPI",
+   "start": 0,
+   "end": 4096
+  },
+  {
+   "name": "a write across work and retain",
+   "address": 16382,
+   "length": 4,
+   "kind": "write",
+   "ok": false,
+   "reason": "crosses",
+   "region": "WORK",
+   "start": 8192,
+   "end": 16384
+  },
+  {
+   "name": "a write past the end of retain",
+   "address": 20478,
+   "length": 4,
+   "kind": "write",
+   "ok": false,
+   "reason": "crosses",
+   "region": "RETAIN",
+   "start": 16384,
+   "end": 20480
+  },
+  {
+   "name": "the code region",
+   "address": 20480,
+   "length": 1,
+   "kind": "read",
+   "ok": false,
+   "reason": "outside",
+   "region": null,
+   "start": 65535,
+   "end": 65535
+  },
+  {
+   "name": "the last address",
+   "address": 65535,
+   "length": 1,
+   "kind": "read",
+   "ok": false,
+   "reason": "outside",
+   "region": null,
+   "start": 65535,
+   "end": 65535
+  },
+  {
+   "name": "no bytes",
+   "address": 8192,
+   "length": 0,
+   "kind": "read",
+   "ok": false,
+   "reason": "length",
+   "region": "WORK",
+   "start": 8192,
+   "end": 16384
+  },
+  {
+   "name": "an access that wraps the 16-bit space",
+   "address": 65535,
+   "length": 2,
+   "kind": "read",
+   "ok": false,
+   "reason": "length",
+   "region": null,
+   "start": 65535,
+   "end": 65535
+  },
+  {
+   "name": "a write to an output",
+   "address": 4096,
+   "length": 1,
+   "kind": "write",
+   "ok": false,
+   "reason": "not-writable",
+   "region": "OPI",
+   "start": 4096,
+   "end": 8192
+  },
+  {
+   "name": "a force of an output",
+   "address": 4096,
+   "length": 2,
+   "kind": "force",
+   "ok": true,
+   "region": "OPI",
+   "start": 4096,
+   "end": 8192
+  },
+  {
+   "name": "a read of an output",
+   "address": 4096,
+   "length": 4,
+   "kind": "read",
+   "ok": true,
+   "region": "OPI",
+   "start": 4096,
+   "end": 8192
+  },
+  {
+   "name": "the whole work window",
+   "address": 8192,
+   "length": 8192,
+   "kind": "read",
+   "ok": true,
+   "region": "WORK",
+   "start": 8192,
+   "end": 16384
+  },
+  {
+   "name": "a force across the end of retain",
+   "address": 20479,
+   "length": 2,
+   "kind": "force",
+   "ok": false,
+   "reason": "crosses",
+   "region": "RETAIN",
+   "start": 16384,
+   "end": 20480
+  },
+  {
+   "name": "the largest force in work",
+   "address": 8192,
+   "length": 260,
+   "kind": "force",
+   "ok": true,
+   "region": "WORK",
+   "start": 8192,
+   "end": 16384
+  }
  ]
 }

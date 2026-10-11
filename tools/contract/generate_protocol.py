@@ -147,6 +147,9 @@ def validate(p: dict) -> None:
     limits = p["limits"]
     if not limits["payloadMaxMin"] <= limits["payloadMaxDefault"] <= limits["payloadMaxHard"] <= 0xFFFF:
         raise ProtocolError("limits: payloadMaxMin <= payloadMaxDefault <= payloadMaxHard <= 65535")
+    for case in p.get("accessCases", []):
+        if case["kind"] not in ("read", "write", "force") or case["region"] not in (None, "IPI", "OPI", "WORK", "RETAIN"):
+            raise ProtocolError(f"access case {case['name']!r}: unknown kind or region")
     # the largest force a frame has to carry: address (2) + ZPLC_FORCE_MAX_BYTES
     if limits["payloadMaxDefault"] < limits["forceBytesMax"] + 2:
         raise ProtocolError("the default payload does not carry the largest force")
@@ -600,7 +603,20 @@ def build_vectors(p: dict) -> dict:
         "keyHex": KEY.hex(),
         "frames": frames,
         "streams": streams,
+        "accessCases": access_cases(p),
     }
+
+
+REGIONS = {"IPI": (0x0000, 0x1000), "OPI": (0x1000, 0x2000), "WORK": (0x2000, 0x4000), "RETAIN": (0x4000, 0x5000)}
+
+
+def access_cases(p: dict) -> list[dict]:
+    """The memory access cases, with the region each one is in: what the adapters and the device have to agree on."""
+    out = []
+    for case in p["accessCases"]:
+        start, end = REGIONS.get(case["region"], (0xFFFF, 0xFFFF))
+        out.append({**case, "start": start, "end": end})
+    return out
 
 
 def render_vectors_json(vectors: dict) -> str:
@@ -676,6 +692,24 @@ def render_vectors_h(vectors: dict) -> str:
             f"{c['crc_errors']}U, {c['version_errors']}U, {c['malformed']}U, {c['oversize']}U, {c['resyncs']}U }},")
     add("};")
     add(f"#define ZPLC_PROTO_VECTOR_STREAM_COUNT {len(vectors['streams'])}U")
+    add("")
+    add("typedef struct {")
+    add("  const char *name;")
+    add("  uint16_t address;")
+    add("  uint16_t length;")
+    add("  uint8_t kind;   /* 0 read, 1 write, 2 force */")
+    add("  uint8_t ok;")
+    add("  uint16_t start; /* the region that holds the address, 0xFFFF when none does */")
+    add("  uint16_t end;")
+    add("} zplc_proto_access_case_t;")
+    add("")
+    add("static const zplc_proto_access_case_t zplc_proto_access_cases[] = {")
+    kinds = {"read": 0, "write": 1, "force": 2}
+    for case in vectors["accessCases"]:
+        add(f"  {{ \"{case['name']}\", {case['address']}U, {case['length']}U, {kinds[case['kind']]}U, "
+            f"{1 if case['ok'] else 0}U, {case['start']}U, {case['end']}U }},")
+    add("};")
+    add(f"#define ZPLC_PROTO_ACCESS_CASE_COUNT {len(vectors['accessCases'])}U")
     add("")
     add("#endif /* ZPLC_PROTO_VECTORS_H */")
     add("")
