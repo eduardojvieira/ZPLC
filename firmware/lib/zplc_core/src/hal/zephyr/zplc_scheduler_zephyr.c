@@ -832,8 +832,6 @@ static int port_write_outputs(void *ctx) {
   return (int)zplc_io_write_outputs(&buffers->outputs, COMMIT_OPS);
 }
 
-static int watchdog_feed_after_commit(void);
-
 static int port_feed_watchdog(void *ctx) {
   ARG_UNUSED(ctx);
   if (watchdog_feed_after_commit() != 0) {
