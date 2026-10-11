@@ -1929,7 +1929,7 @@ describe('useIDEStore recent projects and session restore (IDE-008)', () => {
     recordViewState('src/a.st', { line: 2, column: 3, scrollTop: 10 });
     recordViewState('src/b.st', { line: 1, column: 7, scrollTop: 0 });
     state().setSessionLayout({ editor: 55, console: 45 });
-    flushSession();
+    void flushSession();
     await until(async () => (await savedSession())?.panels?.editor === 55);
   }
 

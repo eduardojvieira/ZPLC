@@ -17,6 +17,7 @@ import { selectSerialPort } from './serialPortSelection.js';
 import { createAiProvider } from './aiProvider.js';
 import { createLearnProgressStore } from './learnProgressStore.js';
 import { createRecentProjects } from './recentProjects.js';
+import { registerAppLifecycle } from './appLifecycle.js';
 import { createSessionStore } from './sessionStore.js';
 import { createRecoveryStore } from './recoveryStore.js';
 import { checkForUpdate } from './updateCheck.js';
@@ -522,14 +523,12 @@ app.whenReady().then(async () => {
   app.exit(1);
 });
 
-// A worker that is still running when the application quits is killed with it.
-app.on('before-quit', () => toolWorkerHost.dispose());
-
-// Quit when all windows are closed (except on macOS)
-app.on('window-all-closed', () => {
-  if (process.platform !== 'darwin') {
-    app.quit();
-  }
+// A worker that is still running when the application quits is killed with it, and the process leaves only once the
+// session that the closing window sent has been written (IDE-008).
+registerAppLifecycle(app, {
+  platform: process.platform,
+  onQuit: () => toolWorkerHost.dispose(),
+  writesSettled: () => sessionStore?.settled() ?? Promise.resolve(),
 });
 
 // Handle second instance (single instance lock)
