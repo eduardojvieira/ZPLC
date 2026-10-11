@@ -92,6 +92,13 @@ jobs:
       - name: Typecheck every TypeScript program
         run: bun run typecheck
 
+      # IDE-025: tools/wasm-core builds the core of the runtime as WebAssembly with clang and wasm-ld, and the IDE tests run the
+      # conformance cases on it with the loader's verifier. Without the tools those tests fail here; they never skip.
+      - name: Install the WebAssembly toolchain
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes --no-install-recommends clang lld
+
       - name: Build native POSIX simulator for IDE scenarios
         run: |
           cmake -S firmware/lib/zplc_core -B "${RUNNER_TEMP}/zplc-native-sim-build"

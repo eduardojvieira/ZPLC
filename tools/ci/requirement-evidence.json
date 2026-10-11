@@ -1528,8 +1528,21 @@
     {"kind":"unit","ref":"packages/zplc-ide/src/runtime/declaredInputs.test.ts","test":"writing a declared input (IDE-024)"},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"37 Any declared input of the running program can be set"}
   ],
+  "IDE-025": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/runtime/wasmParity.test.ts","test":"IDE-025 runs every conformance case of one task that builds, and leaves out only the cases of several tasks and of the session"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/runtime/wasmParity.test.ts","test":"the core in WebAssembly gives the results of the conformance cases (IDE-025)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/runtime/wasmParity.test.ts","test":"the verifier of the loader is on the path that loads a program in WebAssembly (IDE-025)"}
+  ],
   "IDE-027": [
     {"kind":"unit","ref":"packages/zplc-ide/electron/ipcRegistry.test.ts","test":"toolchain inspection and firmware build (IDE-017, IDE-027)"}
+  ],
+  "IDE-028": [
+    {"kind":"unit","ref":"tools/ci/electron-support.test.ts","test":"IDE-028 accepts a dependency on a supported major, and its latest patch at a release"},
+    {"kind":"unit","ref":"tools/ci/electron-support.test.ts","test":"IDE-028 fails at a release when the dependency is not the latest patch of its line"},
+    {"kind":"unit","ref":"tools/ci/electron-support.test.ts","test":"IDE-028 fails when the dependency is on a major that Electron no longer supports, or one the record does not know"},
+    {"kind":"unit","ref":"tools/ci/electron-support.test.ts","test":"IDE-028 holds for the dependency of this repository: it is on a supported major line, exactly pinned"},
+    {"kind":"unit","ref":"tools/ci/electron-support.test.ts","test":"IDE-028 refuses a range, an installed version that differs, and a record that is not three lines with their patch and end"},
+    {"kind":"unit","ref":"tools/ci/electron-support.test.ts","test":"the Electron line (IDE-028)"}
   ],
   "IDE-029": [
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"18 Force an input while stopped at a breakpoint","partial":true},

@@ -1,5 +1,5 @@
 {
-  // The TypeScript that lives outside the package projects: the CI, contract and documentation tooling, the fuzz seed script,
+  // The TypeScript that lives outside the package projects: the CI, contract and documentation tooling, the fuzz seed script, the WebAssembly core build,
   // the release scripts and the HIL package's tests. `bun run typecheck` runs it (tools/ci/typecheck.ts).
   // The tools import the compiler and Studio sources directly, so the browser libraries and JSX are on, as in
   // the Studio projects. The compiler, HIL and Studio keep their own stricter project for their own files.
@@ -28,6 +28,7 @@
     "tools/contract/**/*.ts",
     "tools/docs/**/*.ts",
     "tools/fuzz/**/*.ts",
+    "tools/wasm-core/**/*.ts",
     "scripts/**/*.ts",
     "packages/zplc-hil/tests/**/*.ts",
     // Ambient declarations of the Studio that the sources above rely on without importing.
