@@ -525,6 +525,22 @@ async function main(): Promise<void> {
       await cdp.command('Page.enable');
       await waitFor(description, async () => await cdp!.evaluate(`location.href === ${JSON.stringify(url)} && performance.getEntriesByType('navigation').some((entry) => entry.name === ${JSON.stringify(url)}) && document.readyState === 'complete' ? true : undefined`) === true ? true : undefined);
     };
+    // Another document: a fresh page seeded with the result of one scenario, and waited for until the toolbar is drawn.
+    const seed = async (name: string, result: Extract<TestRunResult, { ok: true }>, initialProgram?: string, modified?: boolean) => {
+      await navigate(`${name} document load`);
+      await page().evaluate(pageSeed(result, compileEnvelope, initialProgram, modified));
+      await waitFor(`${name} renderer seed`, async () => await page().evaluate('window.__zplcSmoke?.ready ? true : undefined') === true ? true : undefined);
+      await waitFor(`${name} Studio toolbar`, async () => await page().evaluate("document.querySelectorAll('button').length > 0 ? true : undefined") === true ? true : undefined);
+    };
+    // A run request is the opaque workspace and, for one scenario, its id; the shown-project bridge adds the id of the folder
+    // the window shows (IDE-002, src/ipc/shownProjectBridge.ts), which is the empty string on a page that has no folder.
+    const assertRunRequests = async (scenarioId: string, message: string) => {
+      const requests = await page().evaluate('window.__zplcSmoke.runRequests');
+      assert(JSON.stringify(requests) === JSON.stringify([
+        { workspaceId: 'opaque-workspace-capability', rootId: '' },
+        { workspaceId: 'opaque-workspace-capability', scenarioId, rootId: '' },
+      ]), `${message}: ${JSON.stringify(requests)}`);
+    };
     await navigate('document load');
     assert(await page().evaluate('window.innerWidth === 1366 && window.innerHeight === 768') === true, 'Viewport is not 1366x768');
     const reviewDir = process.env.ZPLC_STUDIO_REVIEW_DIR?.trim();
@@ -729,7 +745,9 @@ async function main(): Promise<void> {
     const canonicalBuild = await page().evaluate(`(() => { const build = window.__zplcSmoke.getBuildState?.(); return { calls: window.__zplcSmoke.compileCalls, sha: build?.evidence?.zplc?.sha256, bytes: build?.evidence?.zplc?.byteLength, fallback: document.body.innerText.includes('No diagnostics from the latest build') }; })()`);
     assert(JSON.stringify(canonicalBuild) === JSON.stringify({ calls: 1, sha: testedProgram.sha256, bytes: testedProgram.byteLength, fallback: false }), `Second Build must publish exactly one canonical artifact/evidence result without renderer fallback: ${JSON.stringify(canonicalBuild)}`);
 
-    await click('Problems');
+    // The declared-interlock coverage check has a tab of its own (IDE-032): it is not part of Problems.
+    await click('Interlocks');
+    await waitFor('Interlocks view', async () => await page().evaluate(`document.querySelector('[data-interlock-coverage]') ? true : undefined`) === true ? true : undefined);
     await click('Check declared interlocks');
     await waitFor('covered declared interlock', async () => (await text()).includes('Covered') ? true : undefined);
     assert((await text()).includes('Checks exact NEVER coverage in saved scenarios. It does not establish physical safety, timing, or certification.'), 'Interlock coverage must keep its logical scope disclaimer');
@@ -749,9 +767,7 @@ async function main(): Promise<void> {
     assert(!(await text()).includes('Scenario evidence (recorded test result)') && await page().evaluate("!document.querySelector('[data-recorded-motor-output]')") === true, 'Recorded scenario preview leaked into live Trace');
     assert(await page().evaluate("!document.querySelector('[aria-label=\"Live native POSIX motor outputs\"]')") === true, 'Live motor output must remain hidden without a connected native session');
 
-    await navigate('motor plant document load');
-    await page().evaluate(pageSeed(motorPlant, compileEnvelope, validProgram, false));
-    await waitFor('motor plant renderer seed', async () => await page().evaluate('window.__zplcSmoke?.ready ? true : undefined') === true ? true : undefined);
+    await seed('motor plant', motorPlant, validProgram, false);
     await click('Tests');
     assert(await page().evaluate(`(() => {
       const input = document.querySelector('input[data-workspace-manifest-input]');
@@ -783,21 +799,22 @@ async function main(): Promise<void> {
     })()`) === true, 'Motor plant result must auto-open one accessible recorded matrix with golden sample associations and honest host-only copy');
     await click('Run this scenario again');
     await waitFor('single scenario rerun', async () => (await text()).includes('Host POSIX scenario passed.') ? true : undefined);
-    assert(await page().evaluate(`(() => {
-      const requests = window.__zplcSmoke.runRequests;
-      const exact = JSON.stringify(requests) === JSON.stringify([
-        { workspaceId: 'opaque-workspace-capability' },
-        { workspaceId: 'opaque-workspace-capability', scenarioId: 'MotorPlant' },
-      ]);
-      return exact && !document.body.innerText.includes('Host POSIX scenarios passed.') && Boolean(document.querySelector('[data-recorded-motor-plant]'));
-    })()`) === true, 'Scenario rerun must replace Tests evidence through an exact opaque workspace and scenario request');
+    const rerun = await page().evaluate(`(() => ({
+      requests: window.__zplcSmoke.runRequests,
+      wholeRunShown: document.body.innerText.includes('Host POSIX scenarios passed.'),
+      plantShown: Boolean(document.querySelector('[data-recorded-motor-plant]')),
+    }))()`) as { requests: unknown; wholeRunShown: boolean; plantShown: boolean };
+    // Every request carries the id of the folder the window shows (IDE-002, src/ipc/shownProjectBridge.ts); this page has
+    // no folder, so the id is the empty string that the main process would refuse.
+    assert(JSON.stringify(rerun.requests) === JSON.stringify([
+      { workspaceId: 'opaque-workspace-capability', rootId: '' },
+      { workspaceId: 'opaque-workspace-capability', scenarioId: 'MotorPlant', rootId: '' },
+    ]) && !rerun.wholeRunShown && rerun.plantShown, `Scenario rerun must replace Tests evidence through an exact opaque workspace and scenario request: ${JSON.stringify(rerun)}`);
     if (reviewDir) await captureRecordedPlantReviewScreens(page(), reviewDir, 'motor', 'Recorded motor plant matrix');
     await click('Trace');
     assert(await page().evaluate(`!document.querySelector('[data-recorded-motor-plant]')`) === true, 'Recorded motor plant must not leak into live Trace');
 
-    await navigate('conveyor document load');
-    await page().evaluate(pageSeed(conveyor, compileEnvelope, validProgram, false));
-    await waitFor('conveyor renderer seed', async () => await page().evaluate('window.__zplcSmoke?.ready ? true : undefined') === true ? true : undefined);
+    await seed('conveyor', conveyor, validProgram, false);
     await click('Tests');
     assert(await page().evaluate(`(() => {
       const input = document.querySelector('input[data-workspace-manifest-input]');
@@ -828,14 +845,12 @@ async function main(): Promise<void> {
     })()`) === true, 'Conveyor result must auto-open one accessible recorded matrix with golden sample associations and honest host-only copy');
     await page().evaluate(`document.querySelector('button[aria-label="Run Conveyor01 again on native POSIX"]')?.click()`);
     await waitFor('single conveyor scenario rerun', async () => (await text()).includes('Host POSIX scenario passed.') ? true : undefined);
-    assert(await page().evaluate(`JSON.stringify(window.__zplcSmoke.runRequests) === JSON.stringify([{ workspaceId: 'opaque-workspace-capability' }, { workspaceId: 'opaque-workspace-capability', scenarioId: 'Conveyor01' }])`) === true, 'Conveyor rerun must use only the exact scenario aria-label and opaque workspace request');
+    await assertRunRequests('Conveyor01', 'Conveyor rerun must use only the exact scenario aria-label and opaque workspace request');
     if (reviewDir) await captureRecordedPlantReviewScreens(page(), reviewDir, 'conveyor', 'Recorded conveyor plant matrix');
     await click('Trace');
     assert(await page().evaluate(`!document.querySelector('[data-recorded-conveyor-plant]')`) === true, 'Recorded conveyor plant must not leak into live Trace');
 
-    await navigate('pedestrian crossing document load');
-    await page().evaluate(pageSeed(pedestrian, compileEnvelope, validProgram, false));
-    await waitFor('pedestrian crossing renderer seed', async () => await page().evaluate('window.__zplcSmoke?.ready ? true : undefined') === true ? true : undefined);
+    await seed('pedestrian crossing', pedestrian, validProgram, false);
     await click('Tests');
     assert(await page().evaluate(`(() => {
       const input = document.querySelector('input[data-workspace-manifest-input]');
@@ -868,14 +883,12 @@ async function main(): Promise<void> {
     })()`) === true, 'Pedestrian crossing result must auto-open one accessible recorded matrix with golden states and honest host-only copy');
     await page().evaluate(`document.querySelector('button[aria-label="Run PedestrianCrossing again on native POSIX"]')?.click()`);
     await waitFor('single pedestrian crossing scenario rerun', async () => (await text()).includes('Host POSIX scenario passed.') ? true : undefined);
-    assert(await page().evaluate(`JSON.stringify(window.__zplcSmoke.runRequests) === JSON.stringify([{ workspaceId: 'opaque-workspace-capability' }, { workspaceId: 'opaque-workspace-capability', scenarioId: 'PedestrianCrossing' }])`) === true, 'Pedestrian crossing rerun must use only the exact scenario aria-label and opaque workspace request');
+    await assertRunRequests('PedestrianCrossing', 'Pedestrian crossing rerun must use only the exact scenario aria-label and opaque workspace request');
     if (reviewDir) await captureRecordedPlantReviewScreens(page(), reviewDir, 'pedestrian', 'Recorded pedestrian crossing matrix', '[data-recorded-pedestrian-crossing]');
     await click('Trace');
     assert(await page().evaluate(`!document.querySelector('[data-recorded-pedestrian-crossing]')`) === true, 'Recorded pedestrian crossing must not leak into live Trace');
 
-    await navigate('tank level document load');
-    await page().evaluate(pageSeed(tank, compileEnvelope, validProgram, false));
-    await waitFor('tank level renderer seed', async () => await page().evaluate('window.__zplcSmoke?.ready ? true : undefined') === true ? true : undefined);
+    await seed('tank level', tank, validProgram, false);
     await click('Tests');
     assert(await page().evaluate(`(() => {
       const input = document.querySelector('input[data-workspace-manifest-input]');
@@ -906,15 +919,13 @@ async function main(): Promise<void> {
     })()`) === true, 'Tank level result must auto-open one accessible recorded matrix with golden states and honest host-only copy');
     await page().evaluate(`document.querySelector('button[aria-label="Run TankLevel again on native POSIX"]')?.click()`);
     await waitFor('single tank level scenario rerun', async () => (await text()).includes('Host POSIX scenario passed.') ? true : undefined);
-    assert(await page().evaluate(`JSON.stringify(window.__zplcSmoke.runRequests) === JSON.stringify([{ workspaceId: 'opaque-workspace-capability' }, { workspaceId: 'opaque-workspace-capability', scenarioId: 'TankLevel' }])`) === true, 'Tank level rerun must use only the exact scenario aria-label and opaque workspace request');
+    await assertRunRequests('TankLevel', 'Tank level rerun must use only the exact scenario aria-label and opaque workspace request');
     if (reviewDir) await captureRecordedPlantReviewScreens(page(), reviewDir, 'tank', 'Recorded tank level matrix', '[data-recorded-tank-level]');
     await click('Trace');
     assert(await page().evaluate(`!document.querySelector('[data-recorded-tank-level]')`) === true, 'Recorded tank level must not leak into live Trace');
 
     // Restore the existing smoke fixture so subsequent editor-history checks retain their focused tab setup.
-    await navigate('post motor plant document load');
-    await page().evaluate(pageSeed(golden, compileEnvelope));
-    await waitFor('post motor plant renderer seed', async () => await page().evaluate('window.__zplcSmoke?.ready ? true : undefined') === true ? true : undefined);
+    await seed('post motor plant', golden);
     await page().evaluate(`import('/src/store/useIDEStore.ts').then(({ useIDEStore }) => useIDEStore.setState({ activeFileId: 'aux-st', openTabs: ['aux-st'], workspaceScenarioLink: { workspaceId: 'opaque-workspace-capability', projectSession: 7 } }))`);
 
     await setFile(invalidProgram, false); await click('Tests');
