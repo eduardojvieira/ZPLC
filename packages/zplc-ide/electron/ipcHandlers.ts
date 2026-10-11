@@ -16,6 +16,8 @@ import type { createFirmwareBuildGateway } from './firmwareBuildGateway.js';
 import type { createLearnProgressStore } from './learnProgressStore.js';
 import type { createProjectFiles } from './projectFiles.js';
 import type { RecoveryStore } from './recoveryStore.js';
+import type { SerialPortBroker } from './serialPortBroker.js';
+import { isSerialPortChoice, isSerialPortListRequest, type SerialPortChoice, type SerialPortListRequest } from './serialPortProtocol.js';
 import type { SessionStore } from './sessionStore.js';
 import type { createToolExecutionAudit } from './toolExecutionAudit.js';
 import type { createWorkspaceTestGateway } from './workspaceTestGateway.js';
@@ -28,6 +30,7 @@ import {
   NATIVE_SIMULATION_CHANNEL,
   PROJECT_FILES_CHANNEL,
   RECOVERY_CHANNEL,
+  PORT_CHOICE_CHANNEL,
   SESSION_CHANNEL,
   TOOLCHAIN_CHANNEL,
   TOOL_EXECUTION_AUDIT_CHANNEL,
@@ -85,6 +88,8 @@ export interface IpcDeps {
   projectFiles: Pick<ReturnType<typeof createProjectFiles>, 'handle' | 'rootOf' | 'currentRoot'>;
   recoveryStore(): RecoveryStore | null;
   sessionStore(): SessionStore | null;
+  /** The serial-port questions of the windows (IDE-018): the answer and the refresh of the dialog. */
+  serialPorts: Pick<SerialPortBroker, 'choose' | 'list'>;
   learnProgress(): ReturnType<typeof createLearnProgressStore> | null;
   aiProvider(): ReturnType<typeof createAiProvider> | null;
   toolExecutionAudit: Pick<ReturnType<typeof createToolExecutionAudit>, 'list' | 'add'>;
@@ -243,6 +248,16 @@ export function createIpcHandlers(deps: IpcDeps): IpcHandlerTable<RendererOwner>
       await store.save(folderOf(owner, request.rootId), request.state);
       return null;
     }),
+
+    // The serial port the user chose in the dialog of the window (IDE-018): a request id and a port id of the offer, or a cancel.
+    // The broker answers Electron's one-time callback and ignores an answer that is not from the window that was asked.
+    [PORT_CHOICE_CHANNEL.CHOOSE]: handler(oneArgument(isSerialPortChoice), (owner, [choice]: [SerialPortChoice]) => {
+      deps.serialPorts.choose(owner.ownerId, choice.requestId, choice.portId);
+      return null;
+    }),
+    [PORT_CHOICE_CHANNEL.LIST]: handler(oneArgument(isSerialPortListRequest), (owner, [request]: [SerialPortListRequest]) => (
+      deps.serialPorts.list(owner.ownerId, request.requestId)
+    )),
 
     // Update check (IDE-010): one fixed address, no argument from the renderer.
     [UPDATE_CHECK_CHANNEL.RUN]: handler(noArguments, () => deps.checkForUpdate()),

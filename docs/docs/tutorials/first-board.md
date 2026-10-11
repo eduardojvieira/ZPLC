@@ -88,8 +88,11 @@ If a board does not come back, use the recovery procedure of its profile:
 
 1. Open the project of the example, build it (**Build**, **Compile**) and choose
    **Hardware** in the toolbar instead of **Simulate**.
-2. Press **Connect** and choose the serial port of the board. On Linux your user
-   needs the serial group: [Install ZPLC Studio](../getting-started/install.md#linux-serial-port-access).
+2. Press **Connect**. A dialog of Studio lists each serial port with its name and
+   its USB identifiers and marks the boards it knows. If the board is not listed,
+   plug it in and press **Refresh**. Choose its port and press **Use this port**:
+   Studio uses only that port, and choosing it sends nothing to the board. On Linux
+   your user needs the serial group: [Install ZPLC Studio](../getting-started/install.md#linux-serial-port-access).
 3. Studio reads the identity of the runtime: board, profile and ABI. A project built
    for another board is refused.
 

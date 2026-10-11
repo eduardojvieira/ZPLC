@@ -2392,4 +2392,41 @@ export const JOURNEYS: Journey[] = [
       await docShot(app, 'blink-6-scenario');
     },
   },
+  {
+    // IDE-018: choosing a port is a dialog of the application, not an operating-system message box. The journey only looks at it
+    // and cancels: it never connects, and it does not depend on a port being plugged in (the list is empty on a build machine).
+    name: '42 Choosing a serial port is a dialog of the application', example: 'motor_start_stop', proves: [], partly: ['IDE-018'],
+    run: async (app, { project }) => {
+      const dialog = css('[data-serial-port-dialog]');
+      await openFolder(app, project);
+      await app.click(button('Hardware'), 'the Hardware mode');
+      await app.click(button('Connect'), 'Connect');
+      await app.until('the port dialog', async () => await app.visible(dialog) || undefined)
+        .catch(async (error: Error) => { throw new Error(`${error.message}: the window says ${JSON.stringify((await app.text()).replace(/\s+/g, ' ').slice(-600))}`); });
+
+      const shown = await app.eval<{ title: string; rows: Array<{ kind: string; text: string }>; empty: boolean; modal: boolean }>(`(() => {
+        const root = document.querySelector('[data-serial-port-dialog]');
+        const dialog = root?.closest('[role="dialog"]');
+        return { title: dialog?.textContent?.slice(0, 60) ?? '',
+          rows: [...root.querySelectorAll('[data-serial-port-row]')].map((row) => ({ kind: row.getAttribute('data-serial-port-row'), text: row.innerText })),
+          empty: Boolean(root.querySelector('[data-serial-port-empty]')), modal: dialog?.getAttribute('aria-modal') === 'true' };
+      })()`);
+      assert(shown.title.includes('Choose a serial port'), `The dialog has no title: ${JSON.stringify(shown)}`);
+      assert(shown.modal, `The port dialog is not a modal dialog: ${JSON.stringify(shown)}`);
+      assert(shown.empty || shown.rows.length > 0, `The dialog lists no port and does not say that there is none: ${JSON.stringify(shown)}`);
+      for (const row of shown.rows) assert(/USB [0-9A-F]{4}(:[0-9A-F]{4})?|No USB identifiers/.test(row.text), `A port row does not show its USB identifiers: ${JSON.stringify(row)}`);
+      assert(!(await app.text()).includes('Select the serial port to request'), 'The operating-system message box text is still in use.');
+
+      // It can be refreshed, and it is still there afterwards.
+      await app.click(button('Refresh'), 'Refresh');
+      await app.until('the refresh to end', async () => await app.eval<boolean>(`[...document.querySelectorAll('[data-serial-port-dialog] button')].some((el) => el.textContent?.trim() === 'Refresh')`) || undefined);
+      assert(await app.visible(dialog), 'The dialog is gone after a refresh.');
+
+      // Cancel closes it and the application stays disconnected.
+      await app.click(button('Cancel'), 'Cancel');
+      await app.until('the dialog to close', async () => !await app.visible(dialog) || undefined);
+      await app.until('the application to be disconnected again', async () => await app.visible(button('Connect')) || undefined);
+      assert(!await app.visible(button('Disconnect')), 'The application connected although the dialog was cancelled.');
+    },
+  },
 ];
