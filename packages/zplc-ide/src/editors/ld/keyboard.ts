@@ -295,9 +295,9 @@ const NEEDS_CURSOR: ReadonlySet<string> = new Set([
 ]);
 
 /** Runs one command of the table. Unknown ids and refusals leave the document and the cursor as they were. */
-export function runLDCommand(model: LDModel, cursor: LDCursor | null, command: string, argument: LDArgument = {}): LDOutcome {
+export function runLDCommand(model: LDModel, given: LDCursor | null, command: string, argument: LDArgument = {}): LDOutcome {
   // a cursor on a rung that is gone (deleted, or the file changed) is no cursor: it would act on a cell nobody sees
-  if (cursor !== null && !model.rungs.some((rung) => rung.id === cursor.rungId)) cursor = null;
+  const cursor = given !== null && model.rungs.some((rung) => rung.id === given.rungId) ? given : null;
   if (cursor === null && NEEDS_CURSOR.has(command)) {
     return refuse(model, cursor, 'The cursor is not on a cell yet: press an arrow key, or click a cell, and then repeat the key.');
   }
