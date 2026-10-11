@@ -19,6 +19,7 @@ import hil_ports  # noqa: E402
 
 hil_ports.list_serial_ports = lambda: []
 
+import hil_devices  # noqa: E402
 import hil_guard  # noqa: E402
 import hil_record  # noqa: E402
 import run_chain  # noqa: E402
@@ -127,6 +128,75 @@ class DryRunTests(QuietCase):
         physical = [step for step in records[0]["steps"] if step["kind"] == "physical"]
         self.assertTrue(physical)
         self.assertTrue(all("confirmed_at" not in step and "dry run" in step.get("detail", "") for step in physical))
+
+
+class BuildCommandAndTraceTests(QuietCase):
+    """HIL-013: the chain says how to build the image under test, and the record says whether that image has the trace on."""
+
+    def chain(self, *extra, options=None):
+        def opener(name):
+            device = hil_devices.open_fake(name)
+            if options is not None:
+                device.hello["build"]["options"] = options
+            return device
+
+        with tempfile.TemporaryDirectory() as directory:
+            out = io.StringIO()
+            code = run_chain.main(["rpi_pico", "--dry-run", "--out", directory, "--operator", "CI", "--only", "il.minimal", *extra], stdout=out, opener=opener)
+            record = json.loads(next(Path(directory).glob("*.json")).read_text())
+            return code, record, out.getvalue()
+
+    @needs_runtime
+    def test_the_record_carries_the_exact_build_command_and_the_identity_the_image_reports(self):
+        os.environ["ZPLC_NATIVE_SIM_BIN"] = RUNTIME
+        code, record, _ = self.chain()
+        self.assertEqual(code, 0)
+        manifest = json.loads((ROOT / "firmware/app/boards/supported-boards.v1.5.0.json").read_text())
+        wanted = next(b["build_command"] for b in manifest if b["ide_id"] == "rpi_pico")
+        self.assertEqual(record["firmware"]["build_command"], wanted)
+        self.assertNotIn("EXTRA_CONF_FILE", record["firmware"]["build_command"])
+        self.assertRegex(record["firmware"]["commit"], r"^[0-9a-f]{40}$")
+        self.assertRegex(record["firmware"]["options_hash"], r"^[0-9a-f]{8}$")
+        self.assertNotIn("hil_trace", record["firmware"], "a host runtime has no such option, so the record does not say")
+        self.assertIn(wanted, [step.get("detail", "") for step in record["steps"] if step["id"] == "flash"][0])
+
+    def test_with_the_trace_asked_for_the_command_names_the_overlay_and_the_overlay_turns_the_option_on(self):
+        command = run_chain.build_command({"build_command": "west build -b rpi_pico/rp2040 firmware/app --pristine"}, with_trace=True)
+        self.assertTrue(command.startswith("west build -b rpi_pico/rp2040 firmware/app --pristine -- -DEXTRA_CONF_FILE="))
+        overlay = Path(command.split("-DEXTRA_CONF_FILE=")[1])
+        self.assertTrue(overlay.is_file())
+        self.assertEqual([l for l in overlay.read_text().splitlines() if l and not l.startswith("#")], ["CONFIG_ZPLC_HIL_DEBUG=y"])
+
+    @needs_runtime
+    def test_an_image_with_the_trace_on_in_a_run_that_did_not_ask_for_it_fails_the_chain(self):
+        os.environ["ZPLC_NATIVE_SIM_BIN"] = RUNTIME
+        code, record, _ = self.chain(options="HIL_DEBUG=y,SCHEDULER=y")
+        self.assertEqual(code, 1)
+        self.assertIs(record["firmware"]["hil_trace"], True)
+        trace = next(step for step in record["steps"] if step["id"] == "trace-option")
+        self.assertEqual(trace["result"], "fail")
+
+    @needs_runtime
+    def test_an_image_without_the_trace_in_a_run_that_asked_for_it_fails_the_chain(self):
+        os.environ["ZPLC_NATIVE_SIM_BIN"] = RUNTIME
+        code, record, _ = self.chain("--hil-trace", options="SCHEDULER=y")
+        self.assertEqual(code, 1)
+        self.assertIs(record["firmware"]["hil_trace"], False)
+        self.assertIn("EXTRA_CONF_FILE", record["firmware"]["build_command"])
+
+    @needs_runtime
+    def test_an_image_with_the_trace_in_a_run_that_asked_for_it_passes_the_option_check(self):
+        os.environ["ZPLC_NATIVE_SIM_BIN"] = RUNTIME
+        code, record, _ = self.chain("--hil-trace", options="HIL_DEBUG=y,SCHEDULER=y")
+        trace = next(step for step in record["steps"] if step["id"] == "trace-option")
+        self.assertEqual(trace["result"], "pass")
+        self.assertEqual(code, 0)
+
+    def test_a_device_that_reports_no_identity_leaves_the_firmware_fields_out_and_the_option_unchecked(self):
+        code, record, _ = self.chain("--device", "null")
+        self.assertEqual(code, 1)  # nothing it shows passes a fixture
+        self.assertNotIn("commit", record["firmware"])
+        self.assertEqual(next(s for s in record["steps"] if s["id"] == "trace-option")["result"], "skipped")
 
 
 class InteractiveRunTests(QuietCase):

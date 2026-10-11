@@ -242,8 +242,8 @@ class HostRuntimeDevice(ShellDevice):
             return f"OK: Program loaded ({len(self._program)} bytes)"
         if head == "status":
             return self._status("--json" in rest)
-        if head == "version":
-            return f"ZPLC {self.hello.get('runtime_version', '')}"
+        if head == "version" or (head == "sys" and rest[:1] == ["build"]):
+            return self._identity(as_json="--json" in rest)
         if head == "sys" and rest[:1] == ["info"]:
             return self._sys_info()
         if head == "hil" and rest[:1] == ["mode"] and len(rest) == 2:
@@ -302,6 +302,19 @@ class HostRuntimeDevice(ShellDevice):
             }
             return json.dumps(body, separators=(",", ":"))
         return f"ZPLC Status:\r\n  State:   {snapshot.get('state')}\r\n  Cycles:  {stats.get('cycles', 0)}\r\n  Program: {stats.get('program_size', 0)} bytes"
+
+    def _identity(self, as_json: bool) -> str:
+        """`zplc version` and `zplc sys build [--json]`: the identity the runtime reports in its session.hello, in the shell's shapes (REL-023)."""
+        build = self.hello.get("build")
+        if not isinstance(build, dict):
+            raise _NotFound("zplc sys build")
+        if as_json:
+            return json.dumps(build, separators=(",", ":"))
+        return (
+            f"ZPLC Runtime v{build['version']}\r\nCommit:         {build['commit']}\r\nDirty:          {'yes' if build['dirty'] else 'no'}\r\n"
+            f"Board:          {build['board']}\r\nBytecode ABI:   {build['abi_major']}.{build['abi_minor']}\r\n"
+            f"Contract draft: {build['draft_counter']}\r\nOptions hash:   {build['options_hash']}\r\nOptions:        {build['options']}"
+        )
 
     def _sys_info(self) -> str:
         from zplc_contract import ZPLC_DRAFT_COUNTER, ZPLC_VERSION_MAJOR, ZPLC_VERSION_MINOR  # noqa: PLC0415

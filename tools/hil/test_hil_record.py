@@ -60,20 +60,50 @@ class SchemaTests(unittest.TestCase):
         self.assertTrue(validate(value))
 
 
-class IdentityTests(unittest.TestCase):
-    def test_the_commit_is_read_from_the_build_information_when_the_image_has_it(self):
-        info = {"zplc_version": "2.0.0", "bytecode_abi_major": 1, "bytecode_abi_minor": 0, "draft_counter": 4,
-                "build": {"commit": "a" * 40, "options": {"HIL_DEBUG": False}}}
-        found = firmware_identity(info)
-        self.assertEqual(found["commit"], "a" * 40)
-        self.assertEqual(found["version"], "2.0.0")
-        self.assertEqual(found["build_options"], {"HIL_DEBUG": False})
-        self.assertEqual(found["draft_counter"], 4)
+TESTDATA = Path(__file__).resolve().parent / "testdata"
+# What the generated formatter of scripts/release/zplc_fw_identity.h.in printed for a host runtime built from this
+# tree: the JSON of `zplc sys build --json` (and the `build` of the host runtime's session.hello), and the text of
+# `zplc version` and `zplc sys build`.
+HOST_JSON = json.loads((TESTDATA / "identity-host-runtime.json").read_text())
+HOST_TEXT = (TESTDATA / "identity-host-runtime.txt").read_text()
 
-    def test_an_image_that_reports_no_commit_gives_none_not_a_guess(self):
-        found = firmware_identity({"zplc_version": "2.0.0"})
-        self.assertIsNone(found["commit"])
-        self.assertIsNone(found["build_options"])
+
+class IdentityTests(unittest.TestCase):
+    def test_the_real_keys_of_zplc_sys_build_give_the_firmware_fields(self):
+        found = firmware_identity(HOST_JSON)
+        self.assertEqual(found["commit"], HOST_JSON["commit"])
+        self.assertRegex(found["commit"], r"^[0-9a-f]{40}$")
+        self.assertEqual(found["version"], HOST_JSON["version"])
+        self.assertEqual(found["dirty"], HOST_JSON["dirty"])
+        self.assertEqual(found["board_target"], HOST_JSON["board"])
+        self.assertEqual((found["abi_major"], found["abi_minor"], found["draft_counter"]), (HOST_JSON["abi_major"], HOST_JSON["abi_minor"], HOST_JSON["draft_counter"]))
+        self.assertEqual(found["options_hash"], HOST_JSON["options_hash"])
+        self.assertEqual(found["options"], HOST_JSON["options"])
+        self.assertEqual(found["build_options"], {"build_type": "Release"})
+        self.assertEqual(validate({**record(), "firmware": found}), [])
+
+    def test_the_text_of_zplc_version_and_zplc_sys_build_is_the_same_identity(self):
+        self.assertEqual(hil_record.parse_identity_text(HOST_TEXT), HOST_JSON)
+
+    def test_the_text_of_an_image_that_prints_something_else_is_no_identity(self):
+        self.assertEqual(hil_record.parse_identity_text("ZPLC Runtime v1.5.0\nBuilt: Oct 10 2026 12:00:00\n"), {})
+        self.assertEqual(hil_record.parse_identity_text(""), {})
+
+    def test_a_zephyr_image_says_in_its_options_whether_it_carries_the_hil_trace(self):
+        zephyr = {**HOST_JSON, "board": "rpi_pico/rp2040", "options_hash": "0123abcd"}
+        on = firmware_identity({**zephyr, "options": "HIL_DEBUG=y,SCHEDULER=y,WORK_MEMORY_SIZE=8192"})
+        off = firmware_identity({**zephyr, "options": "SCHEDULER=y,WORK_MEMORY_SIZE=8192"})
+        self.assertIs(on["hil_trace"], True)
+        self.assertIs(off["hil_trace"], False)
+        self.assertEqual(on["build_options"], {"HIL_DEBUG": "y", "SCHEDULER": "y", "WORK_MEMORY_SIZE": "8192"})
+        self.assertIsNone(firmware_identity(HOST_JSON)["hil_trace"], "a host build has no such option, so the record does not say")
+
+    def test_a_build_of_a_tree_without_git_names_no_commit(self):
+        self.assertIsNone(firmware_identity({**HOST_JSON, "commit": "unknown"})["commit"])
+
+    def test_an_image_that_reports_no_identity_gives_an_empty_firmware_record_not_a_guess(self):
+        self.assertEqual(firmware_identity({}), {})
+        self.assertEqual(firmware_identity(None), {})
 
     def test_the_unit_is_named_by_a_hash_that_hides_its_serial_number(self):
         named = serial_hash(0x2E8A, 0x000A, "E6614103E7123456")

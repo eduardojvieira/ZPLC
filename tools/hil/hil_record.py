@@ -91,26 +91,79 @@ def serial_hash(vid: int | None, pid: int | None, serial_number: str | None) -> 
     return sha256_hex(f"{vid or 0:04x}:{pid or 0:04x}:{serial_number}")
 
 
-# The names a firmware image may report its build under. The build information of REL-023 is not on the device
-# yet: when it is, these are the one place that learns its field names.
-_COMMIT_KEYS = ("commit", "git_commit", "build_commit", "zplc_commit")
-_VERSION_KEYS = ("zplc_version", "version", "build_version")
+# What an image reports about itself (REL-023): the JSON of `zplc sys build --json`, and the text of `zplc version` and
+# `zplc sys build`, both written by scripts/release/zplc_fw_identity.h.in. A host runtime reports the same object as the
+# `build` of its session.hello.
+IDENTITY_KEYS = ("version", "commit", "dirty", "board", "abi_major", "abi_minor", "draft_counter", "options_hash", "options")
+_TEXT_LABELS = {
+    "Commit": "commit", "Dirty": "dirty", "Board": "board", "Bytecode ABI": "abi", "Contract draft": "draft_counter",
+    "Options hash": "options_hash", "Options": "options",
+}
 
 
-def firmware_identity(info: dict) -> dict:
-    """The firmware fields of a record from the JSON of `zplc sys info`; what the image does not report stays null."""
-    build = info.get("build") if isinstance(info.get("build"), dict) else {}
-    pool = {**info, **build}
-    commit = next((str(pool[k]) for k in _COMMIT_KEYS if pool.get(k)), None)
-    options = build.get("options") or info.get("build_options")
-    return {
-        "commit": commit,
-        "version": next((str(pool[k]) for k in _VERSION_KEYS if pool.get(k)), None),
-        "abi_major": info.get("bytecode_abi_major"),
-        "abi_minor": info.get("bytecode_abi_minor"),
-        "draft_counter": info.get("draft_counter"),
-        "build_options": options if isinstance(options, dict) else None,
+def parse_identity_text(text: str) -> dict:
+    """The identity object from the text of `zplc version`; {} when the text is not one (an older image, or another command)."""
+    lines = [line.strip() for line in text.splitlines() if line.strip()]
+    first = next((line for line in lines if line.startswith("ZPLC Runtime v")), None)
+    if first is None:
+        return {}
+    found: dict = {"version": first[len("ZPLC Runtime v"):]}
+    for line in lines:
+        label, _, value = line.partition(":")
+        key = _TEXT_LABELS.get(label.strip())
+        if key is None:
+            continue
+        value = value.strip()
+        if key == "abi":
+            major, _, minor = value.partition(".")
+            if major.isdigit() and minor.isdigit():
+                found["abi_major"], found["abi_minor"] = int(major), int(minor)
+        elif key == "draft_counter":
+            if value.isdigit():
+                found[key] = int(value)
+        elif key == "dirty":
+            found[key] = value == "yes"
+        else:
+            found[key] = value
+    return found if set(found) == set(IDENTITY_KEYS) else {}
+
+
+def parse_options(options: str | None) -> dict | None:
+    """`A=y,B=8192` as {"A": "y", "B": "8192"}; `none` as {}; None when there is no text to read."""
+    if not isinstance(options, str):
+        return None
+    if options == "none":
+        return {}
+    pairs = [item.partition("=") for item in options.split(",") if item]
+    return {name: value for name, _, value in pairs}
+
+
+def firmware_identity(build: dict | None) -> dict:
+    """The firmware fields of a record from the identity object of `zplc sys build --json`.
+
+    What the image does not report stays out: an image with no identity gives {}. `hil_trace` is read from the
+    options of a Zephyr image, which lists every CONFIG_ZPLC_* symbol that is on: its absence there is off. A host build
+    lists no such symbols, so for it the record does not say.
+    """
+    if not isinstance(build, dict) or not build:
+        return {}
+    options = build.get("options") if isinstance(build.get("options"), str) else None
+    parsed = parse_options(options)
+    commit = build.get("commit")
+    found = {
+        "commit": commit if isinstance(commit, str) and commit != "unknown" else None,
+        "version": build.get("version"),
+        "dirty": build.get("dirty") if isinstance(build.get("dirty"), bool) else None,
+        "board_target": build.get("board"),
+        "abi_major": build.get("abi_major"),
+        "abi_minor": build.get("abi_minor"),
+        "draft_counter": build.get("draft_counter"),
+        "options_hash": build.get("options_hash"),
+        "options": options,
+        "build_options": parsed,
+        "hil_trace": None if not parsed or "y" not in parsed.values() else parsed.get("HIL_DEBUG") == "y",
     }
+    return found
 
 
 def repository_state() -> dict:

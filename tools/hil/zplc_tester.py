@@ -26,6 +26,7 @@ from zplc_contract import Opcode  # noqa: E402
 
 from hil_devices import DeviceError, SerialTransport, open_fake  # noqa: E402
 from hil_ports import PortError, resolve_port  # noqa: E402
+from hil_record import IDENTITY_KEYS, parse_identity_text  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[2]
 CLI = ROOT / "packages/zplc-ide/src/cli/index.ts"
@@ -158,6 +159,20 @@ class ZPLCTester:
             return json.loads(match.group(0)) if match else {}
         except json.JSONDecodeError:
             return {}
+
+    def build_identity(self) -> dict:
+        """Which firmware image this is (REL-023): the object of `zplc sys build --json`, or the one `zplc version` prints.
+
+        {} when the image reports neither (an older image, or a device that shows nothing): the record then says it does not know.
+        """
+        match = re.search(r"\{.*\}", self.send("zplc sys build --json"), re.DOTALL)
+        try:
+            found = json.loads(match.group(0)) if match else {}
+        except json.JSONDecodeError:
+            found = {}
+        if isinstance(found, dict) and set(found) == set(IDENTITY_KEYS):
+            return found
+        return parse_identity_text(self.send("zplc version"))
 
     def reset_state(self):
         self.send("zplc stop")

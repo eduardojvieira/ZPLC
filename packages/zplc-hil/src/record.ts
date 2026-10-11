@@ -1,6 +1,8 @@
 import { readFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 
+import type { BuildIdentity } from './link';
+
 /**
  * The run record (HIL-009). The schema is tools/hil/run-record.schema.json, the file tools/hil/hil_record.py reads
  * too, so that a record written by either tool is one both accept. Only the keywords the schema uses are checked, so
@@ -95,7 +97,11 @@ export interface RunRecord {
   result: 'pass' | 'fail' | 'incomplete'; started_at: string; ended_at: string;
   board: { id: string; zephyr_board?: string | null };
   device: { reported_board: string; board_profile?: string | null; zplc_version?: string | null; zephyr_version?: string | null; serial_hash?: string | null; link?: 'serial' | 'host-runtime' | 'fake' };
-  firmware: { commit?: string | null; version?: string | null; image_sha256?: string | null; abi_major?: number | null; abi_minor?: number | null; draft_counter?: number | null; build_options?: Record<string, Json> | null };
+  firmware: {
+    commit?: string | null; version?: string | null; image_sha256?: string | null; abi_major?: number | null; abi_minor?: number | null; draft_counter?: number | null;
+    dirty?: boolean | null; board_target?: string | null; options_hash?: string | null; options?: string | null; build_options?: Record<string, string> | null;
+    hil_trace?: boolean | null; build_command?: string | null;
+  };
   programs?: Array<{ id: string; sha256: string }>;
   scenario?: { id: string; sha256: string; tolerance_ms?: number };
   repository?: { commit?: string | null; dirty?: boolean | null };
@@ -107,24 +113,38 @@ export interface RunRecord {
   logs: Array<{ name: string; text: string }>;
 }
 
-/** The firmware fields of a record from the JSON of `zplc sys info`; what the image does not report stays null. */
-export function firmwareIdentity(info: Record<string, unknown>): RunRecord['firmware'] {
-  const build = typeof info.build === 'object' && info.build !== null ? (info.build as Record<string, unknown>) : {};
-  const pool = { ...info, ...build };
-  // the names a firmware image may report its build under: REL-023 will fix them, and this is the one place that learns them
-  const text = (keys: string[]): string | null => {
-    for (const key of keys) if (typeof pool[key] === 'string' && pool[key]) return pool[key] as string;
-    return null;
-  };
-  const integer = (key: string): number | null => (Number.isInteger(info[key]) ? (info[key] as number) : null);
-  const options = build.options ?? info.build_options;
+/** `A=y,B=8192` as { A: 'y', B: '8192' }; `none` as {}. */
+export function parseOptions(options: string): Record<string, string> {
+  if (options === 'none') return {};
+  const found: Record<string, string> = {};
+  for (const item of options.split(',')) {
+    if (item === '') continue;
+    const at = item.indexOf('=');
+    found[at < 0 ? item : item.slice(0, at)] = at < 0 ? '' : item.slice(at + 1);
+  }
+  return found;
+}
+
+/**
+ * The firmware fields of a record from the identity of `zplc sys build --json` (REL-023); {} for an image that reports
+ * none. `hil_trace` is read from the options of a Zephyr image, which lists every CONFIG_ZPLC_* symbol that is on, so
+ * the absence of HIL_DEBUG there is off. A host build lists no such symbols, and then the record does not say.
+ */
+export function firmwareIdentity(build: BuildIdentity | undefined): RunRecord['firmware'] {
+  if (build === undefined) return {};
+  const options = parseOptions(build.options);
   return {
-    commit: text(['commit', 'git_commit', 'build_commit', 'zplc_commit']),
-    version: text(['zplc_version', 'version', 'build_version']),
-    abi_major: integer('bytecode_abi_major'),
-    abi_minor: integer('bytecode_abi_minor'),
-    draft_counter: integer('draft_counter'),
-    build_options: typeof options === 'object' && options !== null ? (options as Record<string, Json>) : null,
+    commit: build.commit === 'unknown' ? null : build.commit,
+    version: build.version,
+    dirty: build.dirty,
+    board_target: build.board,
+    abi_major: build.abiMajor,
+    abi_minor: build.abiMinor,
+    draft_counter: build.draftCounter,
+    options_hash: build.optionsHash,
+    options: build.options,
+    build_options: options,
+    hil_trace: Object.values(options).includes('y') ? options.HIL_DEBUG === 'y' : null,
   };
 }
 

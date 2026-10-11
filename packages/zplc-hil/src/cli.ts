@@ -151,13 +151,12 @@ export async function main(argv: string[], deps: CliDeps): Promise<number> {
       measurements: { max_late_ms: outcome.port.maxLateMs, ticks: outcome.port.observations.length } });
     record({ id: 'release', title: 'Forces released, board stopped', kind: 'automatic', result: outcome.release.ok ? 'pass' : 'fail', detail: outcome.release.errors.join('; ') });
 
-    const info = identity.raw;
     const final: RunRecord = {
       schema: 'zplc.hil.run-record/1', run_id: randomUUID().replaceAll('-', ''), kind: 'scenario',
       evidence: opened.kind === 'serial' ? 'hardware' : opened.kind, result: 'incomplete', started_at: started, ended_at: now(),
       board: { id: values.board },
       device: { reported_board: identity.board, board_profile: identity.boardProfile ?? null, zplc_version: identity.zplcVersion ?? null, zephyr_version: identity.zephyrVersion ?? null, link: opened.kind },
-      firmware: { ...firmwareIdentity(info), ...(values['firmware-image'] ? { image_sha256: sha256(readFileSync(resolve(values['firmware-image']))) } : {}) },
+      firmware: { ...firmwareIdentity(identity.build), ...(values['firmware-image'] ? { image_sha256: sha256(readFileSync(resolve(values['firmware-image']))) } : {}) },
       programs: [{ id: scenario.id, sha256: sha256(compiled.zplcFile) }],
       scenario: { id: scenario.id, sha256: sha256(scenarioBytes), tolerance_ms: toleranceMs },
       tools: { harness: VERSION_OF_HARNESS, platform: `${platform()} ${release()} ${arch()}`, bun: process.versions.bun ?? null },

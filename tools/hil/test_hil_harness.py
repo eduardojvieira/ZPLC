@@ -12,7 +12,9 @@ import unittest
 from contextlib import redirect_stdout
 from pathlib import Path
 
+import hil_record
 from hil_devices import HostRuntimeDevice, NullDevice
+from hil_record import IDENTITY_KEYS
 from zplc_tester import ZPLCTester
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -91,6 +93,27 @@ class TablesAreTheContractTests(QuietCase):
         self.assertIn(f"Contract draft: {zplc_contract.ZPLC_DRAFT_COUNTER}", out.getvalue())
         with redirect_stdout(io.StringIO()):
             self.assertEqual(inspect_zplc.inspect(b"\x00" * 64), 1)
+
+
+@needs_runtime
+class IdentityTests(QuietCase):
+    """REL-023 as the tools read it: the same identity object from `zplc sys build --json` and from the text of `zplc version`."""
+
+    def test_the_host_runtime_reports_its_identity_in_the_shapes_of_the_shell(self):
+        device = HostRuntimeDevice(RUNTIME)
+        try:
+            tester = ZPLCTester(transport=device)
+            built = tester.build_identity()
+            self.assertEqual(set(built), set(IDENTITY_KEYS))
+            self.assertRegex(built["commit"], r"^[0-9a-f]{40}$|^unknown$")
+            self.assertEqual(built["draft_counter"], device.hello["draft_counter"])
+            self.assertIn("ZPLC Runtime v", tester.send("zplc version"))
+            self.assertEqual(hil_record.parse_identity_text(tester.send("zplc version")), built)
+        finally:
+            device.close()
+
+    def test_a_device_that_shows_nothing_has_no_identity(self):
+        self.assertEqual(ZPLCTester(transport=NullDevice()).build_identity(), {})
 
 
 class NullDeviceTests(QuietCase):

@@ -1,10 +1,11 @@
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
-import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, test } from 'bun:test';
 
+import { parseBuildIdentity, parseIdentityText } from '../src/link';
 import { firmwareIdentity, serialHash, sha256, summarize, validate } from '../src/record';
 import type { RunRecord } from '../src/record';
 
@@ -36,10 +37,34 @@ describe('the run record (HIL-009)', () => {
     expect(validate({ ...record(), firmware: { image_sha256: 'nope' } }).join(' ')).toContain('image_sha256');
   });
 
-  test('the commit comes from the build information when the image has it, and is null when it does not', () => {
-    expect(firmwareIdentity({ zplc_version: '2.0.0', draft_counter: 4, build: { commit: 'b'.repeat(40), options: { HIL_DEBUG: false } } }))
-      .toMatchObject({ commit: 'b'.repeat(40), version: '2.0.0', draft_counter: 4, build_options: { HIL_DEBUG: false } });
-    expect(firmwareIdentity({ zplc_version: '2.0.0' })).toMatchObject({ commit: null, build_options: null });
+  test('the firmware fields come from the real keys of zplc sys build --json, as the generated formatter printed them', () => {
+    const build = JSON.parse(readFileSync(join(ROOT, 'tools/hil/testdata/identity-host-runtime.json'), 'utf8')) as Record<string, unknown>;
+    const identity = parseBuildIdentity(build)!;
+    expect(identity.commit).toMatch(/^[0-9a-f]{40}$/);
+    const found = firmwareIdentity(identity);
+    expect(found).toMatchObject({
+      commit: build.commit, version: build.version, dirty: build.dirty, board_target: build.board,
+      abi_major: build.abi_major, abi_minor: build.abi_minor, draft_counter: build.draft_counter,
+      options_hash: build.options_hash, options: build.options, build_options: { build_type: 'Release' }, hil_trace: null,
+    });
+    expect(validate({ ...record(), firmware: found })).toEqual([]);
+  });
+
+  test('the text of zplc version is the same identity as the JSON', () => {
+    const text = readFileSync(join(ROOT, 'tools/hil/testdata/identity-host-runtime.txt'), 'utf8');
+    const json = JSON.parse(readFileSync(join(ROOT, 'tools/hil/testdata/identity-host-runtime.json'), 'utf8')) as Record<string, unknown>;
+    expect(parseIdentityText(text)).toEqual(parseBuildIdentity(json));
+    expect(parseIdentityText('ZPLC Runtime v1.5.0\nBuilt: Oct 10 2026 12:00:00\n')).toBeUndefined();
+  });
+
+  test('a Zephyr image says in its options whether it has the HIL trace, and a host build does not say', () => {
+    const base = parseBuildIdentity({ version: '2.0.0', commit: 'a'.repeat(40), dirty: false, board: 'rpi_pico/rp2040', abi_major: 1, abi_minor: 0, draft_counter: 4, options_hash: '0123abcd', options: 'SCHEDULER=y' })!;
+    expect(firmwareIdentity({ ...base, options: 'HIL_DEBUG=y,SCHEDULER=y' }).hil_trace).toBe(true);
+    expect(firmwareIdentity(base).hil_trace).toBe(false);
+    expect(firmwareIdentity({ ...base, options: 'build_type=Release' }).hil_trace).toBeNull();
+    expect(firmwareIdentity({ ...base, commit: 'unknown' }).commit).toBeNull();
+    expect(firmwareIdentity(undefined)).toEqual({});
+    expect(parseBuildIdentity({ version: 'x' })).toBeUndefined();
   });
 
   test('a unit is named by a hash that hides its serial number', () => {
@@ -54,6 +79,13 @@ describe('the run record (HIL-009)', () => {
     expect(summarize({ steps: [{ id: 'a', title: 'a', kind: 'automatic', result: 'pass' }, { id: 'b', title: 'b', kind: 'automatic', result: 'fail' }], tests: [] })).toBe('fail');
     expect(summarize({ steps: [{ id: 'a', title: 'a', kind: 'automatic', result: 'pending' }], tests: [] })).toBe('incomplete');
     expect(summarize({ steps: [{ id: 'a', title: 'a', kind: 'automatic', result: 'pass' }, { id: 'b', title: 'b', kind: 'automatic', result: 'pending' }], tests: [] })).toBe('pass');
+  });
+
+  (python ? test : test.skip)('the Python tool reads the captured identity into the same firmware fields', () => {
+    const sample = JSON.parse(readFileSync(join(ROOT, 'tools/hil/testdata/identity-host-runtime.json'), 'utf8')) as Record<string, unknown>;
+    const done = spawnSync(python!, ['-B', '-c', 'import json, sys; sys.path.insert(0, "tools/hil"); import hil_record as r; print(json.dumps(r.firmware_identity(json.load(open("tools/hil/testdata/identity-host-runtime.json")))))'], { cwd: ROOT, encoding: 'utf8' });
+    expect(done.status).toBe(0);
+    expect(JSON.parse(done.stdout)).toEqual(JSON.parse(JSON.stringify(firmwareIdentity(parseBuildIdentity(sample)))));
   });
 
   (python ? test : test.skip)('a record this tool writes is one the Python tool accepts, and the other way round', () => {

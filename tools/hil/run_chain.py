@@ -31,6 +31,7 @@ from zplc_tester import CompileError, UploadError
 
 ROOT = Path(__file__).resolve().parents[2]
 MANIFEST = ROOT / "firmware/app/boards/supported-boards.v1.5.0.json"
+HIL_OVERLAY = Path(__file__).resolve().with_name("hil_debug.conf")
 DEFAULT_OUT = ROOT / "build" / "hil-records"
 
 # What HIL-010 asks for that the chain does not run yet, and what each needs. The record carries this list.
@@ -58,6 +59,7 @@ def parse(argv=None) -> argparse.Namespace:
     parser.add_argument("--operator", help="who is at the bench; asked for when not given")
     parser.add_argument("--firmware-image", help="the image that was flashed; its SHA-256 goes in the record")
     parser.add_argument("--only", help="comma-separated fixture ids to run instead of every hardware fixture")
+    parser.add_argument("--hil-trace", action="store_true", help="the image under test is built with the HIL trace overlay (tools/hil/hil_debug.conf), for the opcode-level scripts; release firmware has no trace")
     parser.add_argument("--dry-run", action="store_true", help="run on a fake device with nobody asked; the record says so")
     parser.add_argument(
         "--device", choices=("host", "null"),
@@ -65,6 +67,12 @@ def parse(argv=None) -> argparse.Namespace:
         "With --dry-run nobody is asked; without it a person is, as a rehearsal. The record says it is not hardware.",
     )
     return parser.parse_args(argv)
+
+
+def build_command(board: dict, with_trace: bool) -> str:
+    """The command that builds the image under test, from the repository root: the manifest's, and with the HIL trace overlay when asked."""
+    command = board["build_command"]
+    return f"{command} -- -DEXTRA_CONF_FILE={HIL_OVERLAY}" if with_trace else command
 
 
 def find_board(name: str) -> dict:
@@ -76,8 +84,9 @@ def find_board(name: str) -> dict:
 
 
 class Chain:
-    def __init__(self, args, io, board):
-        self.args, self.io, self.board = args, io, board
+    def __init__(self, args, io, board, opener=open_fake):
+        self.args, self.io, self.board, self.opener = args, io, board, opener
+        self.build_command = build_command(board, args.hil_trace)
         self.dry = args.dry_run
         self.record = hil_record.new_record("chain", "hardware", {"id": board["ide_id"], "zephyr_board": board.get("zephyr_board")}, args.operator or "unknown")
         self.tester: LanguageTester | None = None
@@ -140,7 +149,7 @@ class Chain:
     def open_device(self):
         fake = self.args.device or ("host" if self.dry else None)
         if fake:
-            transport = open_fake(fake)
+            transport = self.opener(fake)
         else:
             transport = SerialTransport(resolve_port(self.args.port, self.board["ide_id"], os.environ))
         self.tester = LanguageTester(transport=transport, board=self.board["ide_id"])
@@ -158,10 +167,28 @@ class Chain:
             raise AssertionError("the device did not answer `zplc sys info --json` with a board")
         self.record["device"].update({k: info.get(k) for k in ("board_profile", "zplc_version", "zephyr_version")})
         self.record["device"]["reported_board"] = info["board"]
-        self.record["firmware"] = {k: v for k, v in hil_record.firmware_identity(info).items() if v is not None}
+        build = self.tester.build_identity()
+        self.record["firmware"] = {k: v for k, v in hil_record.firmware_identity(build).items() if v is not None}
+        self.record["firmware"]["build_command"] = self.build_command
         if self.args.firmware_image:
             self.record["firmware"]["image_sha256"] = hil_record.sha256_hex(Path(self.args.firmware_image).read_bytes())
-        return f"the device reports {info['board']}"
+        if not build:
+            return f"the device reports {info['board']}; it reports no build identity (zplc sys build), so the record has no commit"
+        return f"the device reports {info['board']}, built from {build['commit']}, options {build['options_hash']}"
+
+    def trace_step(self):
+        """Say whether the image has the HIL trace on, from its own options, and require it to be what this run asked for."""
+        on = self.record["firmware"].get("hil_trace")
+        asked = self.args.hil_trace
+        if on is None:
+            self.record["steps"][-1]["result"] = "skipped"
+            return "the image's options do not say whether the HIL trace is on" + ("" if not asked else "; the opcode-level scripts will say it themselves")
+        if on != asked:
+            raise AssertionError(
+                "the image has the HIL trace on and this run did not ask for it: release firmware carries none (HIL-013)" if on
+                else "this run asked for the HIL trace, and the image was not built with the overlay"
+            )
+        return f"the image's HIL trace is {'on' if on else 'off'}, as asked"
 
     def deploy(self):
         first = self.fixtures()[0]["id"]
@@ -234,6 +261,7 @@ class Chain:
         # the flash is the person's: asked for before the device is asked who it is
         self.step("flash", "A person flashes the firmware image", "physical", self.flash_prompt, "HIL-010")
         self.step("handshake", "Identity handshake", "automatic", self.handshake, "HIL-010")
+        self.step("trace-option", "The image's HIL trace option is what the run asked for", "automatic", self.trace_step, "HIL-013")
         self.physical("confirm-identity", "Confirm the board", "Check that this is the board you flashed and that it is connected to the port named above.", "HIL-003")
         self.physical("safe-to-drive", "Outputs are safe to drive", "Nothing connected to the outputs can hurt anyone or damage equipment when it is switched on and off.", "HIL-003")
         self.step("deploy", "Deploy a program", "automatic", self.deploy, "HIL-010")
@@ -258,18 +286,20 @@ class Chain:
         return 0 if self.record["result"] == "pass" else 1
 
     def flash_prompt(self):
-        if self.dry:
-            return "dry run: nobody flashes anything"
-        self.io.say(
+        said = (
             f"\nPhysical step: flash the firmware image for {self.board['display_name']}\n"
-            "  Flash it yourself, by the procedure of the bench guide (TO BE FILLED by the person who did the bench run, HIL-014).\n"
+            f"  Build it with exactly this command, from the repository root:\n    {self.build_command}\n"
+            "  and flash it yourself, by the procedure of the bench guide (TO BE FILLED by the person who did the bench run, HIL-014).\n"
             "  Nothing here flashes a board."
         )
+        self.io.say(said)
+        if self.dry:
+            return f"dry run: nobody flashes anything; build command: {self.build_command}"
         self.io.ask("  Press Enter when the board has restarted: ")
-        return None
+        return f"build command: {self.build_command}"
 
 
-def run(args, io, stdout=None) -> int:
+def run(args, io, stdout=None, opener=open_fake) -> int:
     out = stdout or sys.stdout
     try:
         board = find_board(args.board)
@@ -286,7 +316,7 @@ def run(args, io, stdout=None) -> int:
             args.operator = io.ask("Operator name for the record: ").strip() or "unknown"
     elif not args.operator:
         args.operator = os.environ.get("USER") or os.environ.get("USERNAME") or "dry-run"
-    chain = Chain(args, io, board)
+    chain = Chain(args, io, board, opener)
     code = chain.run()
     chain.record["operator"] = {"name": args.operator}
     try:
@@ -298,9 +328,9 @@ def run(args, io, stdout=None) -> int:
     return code
 
 
-def main(argv=None, io=None, stdout=None) -> int:
+def main(argv=None, io=None, stdout=None, opener=open_fake) -> int:
     args = parse(argv)
-    return run(args, io or hil_guard.TerminalIo(), stdout)
+    return run(args, io or hil_guard.TerminalIo(), stdout, opener)
 
 
 if __name__ == "__main__":

@@ -10,6 +10,20 @@
 /** `serial` is hardware. Only a record made on a `serial` link is hardware evidence. */
 export type LinkKind = 'serial' | 'host-runtime' | 'fake';
 
+/** What an image says it is (REL-023): the object of `zplc sys build --json`, or the `build` of a host runtime's session.hello. */
+export interface BuildIdentity {
+  version: string;
+  /** 40 hex digits, or `unknown` for a tree that had no git. */
+  commit: string;
+  dirty: boolean;
+  board: string;
+  abiMajor: number;
+  abiMinor: number;
+  draftCounter: number;
+  optionsHash: string;
+  options: string;
+}
+
 export interface DeviceIdentity {
   /** What the device says it is: `board` of `zplc sys info`. This is what a person types to confirm a step. */
   board: string;
@@ -20,7 +34,9 @@ export interface DeviceIdentity {
   abiMinor?: number;
   draftCounter?: number | null;
   schedulerCommands?: boolean;
-  /** The whole answer, for the record. The firmware's build information (REL-023) is read from it when it lands. */
+  /** The build identity of the image (REL-023), when it reports one: an older image has no `zplc sys build`. */
+  build?: BuildIdentity;
+  /** The whole answer of `zplc sys info --json`, for the record. */
   raw: Record<string, unknown>;
 }
 
@@ -103,4 +119,47 @@ export function parseDump(reply: string, length: number): Uint8Array {
   }
   if (out.length < length) throw new DeviceCommandError(`read ${out.length} of ${length} bytes`);
   return Uint8Array.from(out.slice(0, length));
+}
+
+const BUILD_KEYS = ['version', 'commit', 'dirty', 'board', 'abi_major', 'abi_minor', 'draft_counter', 'options_hash', 'options'];
+
+/** The identity object of `zplc sys build --json`, exactly: anything else is no identity. */
+export function parseBuildIdentity(value: unknown): BuildIdentity | undefined {
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) return undefined;
+  const object = value as Record<string, unknown>;
+  const text = (key: string): string | undefined => (typeof object[key] === 'string' ? (object[key] as string) : undefined);
+  const count = (key: string): number | undefined => (Number.isInteger(object[key]) ? (object[key] as number) : undefined);
+  if (Object.keys(object).length !== BUILD_KEYS.length || BUILD_KEYS.some((key) => !(key in object))) return undefined;
+  const [version, commit, board, optionsHash, options] = [text('version'), text('commit'), text('board'), text('options_hash'), text('options')];
+  const [abiMajor, abiMinor, draftCounter] = [count('abi_major'), count('abi_minor'), count('draft_counter')];
+  if (version === undefined || commit === undefined || board === undefined || optionsHash === undefined || options === undefined
+    || abiMajor === undefined || abiMinor === undefined || draftCounter === undefined || typeof object.dirty !== 'boolean') return undefined;
+  return { version, commit, dirty: object.dirty, board, abiMajor, abiMinor, draftCounter, optionsHash, options };
+}
+
+const TEXT_LABELS: Record<string, string> = {
+  Commit: 'commit', Dirty: 'dirty', Board: 'board', 'Bytecode ABI': 'abi', 'Contract draft': 'draft_counter', 'Options hash': 'options_hash', Options: 'options',
+};
+
+/** The identity from the text of `zplc version` (or `zplc sys build`); undefined for an image that prints something else. */
+export function parseIdentityText(text: string): BuildIdentity | undefined {
+  const lines = text.split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
+  const first = lines.find((line) => line.startsWith('ZPLC Runtime v'));
+  if (first === undefined) return undefined;
+  const found: Record<string, unknown> = { version: first.slice('ZPLC Runtime v'.length) };
+  for (const line of lines) {
+    const at = line.indexOf(':');
+    if (at < 0) continue;
+    const key = TEXT_LABELS[line.slice(0, at).trim()];
+    const value = line.slice(at + 1).trim();
+    if (key === undefined) continue;
+    if (key === 'abi') {
+      const [major, minor] = value.split('.');
+      if (/^\d+$/.test(major ?? '') && /^\d+$/.test(minor ?? '')) { found.abi_major = Number(major); found.abi_minor = Number(minor); }
+    } else if (key === 'draft_counter') {
+      if (/^\d+$/.test(value)) found[key] = Number(value);
+    } else if (key === 'dirty') found[key] = value === 'yes';
+    else found[key] = value;
+  }
+  return parseBuildIdentity(found);
 }

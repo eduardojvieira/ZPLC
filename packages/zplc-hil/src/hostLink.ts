@@ -4,7 +4,7 @@ import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-import { DeviceCommandError, fromHex, toHex } from './link';
+import { DeviceCommandError, fromHex, parseBuildIdentity, toHex } from './link';
 import type { DeviceIdentity, DeviceLink, DeviceStatus, ForceEntry } from './link';
 
 interface Pending {
@@ -74,9 +74,11 @@ export class HostRuntimeLink implements DeviceLink {
 
   identity(): Promise<DeviceIdentity> {
     const version = this.hello.runtime_version;
+    const build = parseBuildIdentity(this.hello.build);
     return Promise.resolve({
       board: 'native_posix', boardProfile: 'host-runtime', zephyrVersion: 'none', schedulerCommands: true,
       ...(typeof version === 'string' ? { zplcVersion: version } : {}),
+      ...(build ? { build } : {}),
       draftCounter: typeof this.hello.draft_counter === 'number' ? this.hello.draft_counter : null,
       raw: this.hello,
     });

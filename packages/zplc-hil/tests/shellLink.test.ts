@@ -6,12 +6,16 @@ import type { ShellTransport } from '../src/shellLink';
 
 const SYS_INFO = '{"board":"rpi_pico","board_profile":"rpi_pico_rp2040","zplc_version":"2.0.0","zephyr_version":"4.0.0","uptime_ms":1,"cpu_freq_mhz":125,"device_protocol_version":1,"bytecode_abi_major":1,"bytecode_abi_minor":0,"draft_counter":4,"capabilities":{"fpu":true,"mpu":false,"scheduler":true,"max_tasks":4},"memory":{"work_size":8192,"retain_size":4096,"ipi_size":4096,"opi_size":4096}}';
 
+const BUILD = '{"version":"2.0.0-rc.3","commit":"5ebf45775faaccf2730e543b27b1eee391742abc","dirty":false,"board":"rpi_pico/rp2040","abi_major":1,"abi_minor":0,"draft_counter":4,"options_hash":"0123abcd","options":"SCHEDULER=y,WORK_MEMORY_SIZE=8192"}';
+const VERSION_TEXT = 'ZPLC Runtime v2.0.0-rc.3\r\nCommit:         5ebf45775faaccf2730e543b27b1eee391742abc\r\nDirty:          no\r\nBoard:          rpi_pico/rp2040\r\nBytecode ABI:   1.0\r\nContract draft: 4\r\nOptions hash:   0123abcd\r\nOptions:        SCHEDULER=y,WORK_MEMORY_SIZE=8192';
+
 /** The firmware shell as a script: a reply for a command, in the shapes of shell_cmds.c. */
 class Shell implements ShellTransport {
   readonly sent: string[] = [];
   readonly memory = new Map<number, number>();
   failDataChunks = 0;
   scheduler = true;
+  build = true;
   forceEntries: Array<{ addr: number; size: number; bytes: string }> = [];
   private readonly lines = new Set<(line: string) => void>();
 
@@ -20,6 +24,8 @@ class Shell implements ShellTransport {
     const echo = `${line}\r\n`;
     const reply = (text: string): Promise<string> => Promise.resolve(`${echo}${text}\r\nzplc:~$ `);
     if (line === 'zplc sys info --json') return reply(SYS_INFO.replace('"scheduler":true', `"scheduler":${this.scheduler}`));
+    if (line === 'zplc sys build --json') return reply(this.build ? BUILD : 'ERROR: unknown command');
+    if (line === 'zplc version') return reply(this.build ? VERSION_TEXT : 'ZPLC Runtime v1.5.0\r\nBuilt: Oct 10 2026 12:00:00');
     if (line === 'zplc status --json') return reply('{"state":"running","uptime_ms":4200,"stats":{"cycles":42,"program_size":10},"opi":[0,0,0,0,0,0,0,0]}');
     if (/^zplc (sched )?load \d+$/.test(line)) return reply('OK: Ready to receive bytes');
     if (/^zplc (sched )?data [0-9a-f]+$/.test(line)) {
@@ -59,13 +65,25 @@ describe('the shell link speaks the firmware grammar (HIL-001)', () => {
     expect(identity).toMatchObject({ board: 'rpi_pico', boardProfile: 'rpi_pico_rp2040', zplcVersion: '2.0.0', abiMajor: 1, draftCounter: 4, schedulerCommands: true });
   });
 
+  test('the identity carries the build the image reports, from zplc sys build --json', async () => {
+    const identity = await new ShellLink(new Shell()).identity();
+    expect(identity.build).toEqual({ version: '2.0.0-rc.3', commit: '5ebf45775faaccf2730e543b27b1eee391742abc', dirty: false, board: 'rpi_pico/rp2040', abiMajor: 1, abiMinor: 0, draftCounter: 4, optionsHash: '0123abcd', options: 'SCHEDULER=y,WORK_MEMORY_SIZE=8192' });
+    expect(identity.board).toBe('rpi_pico');
+  });
+
+  test('an image without zplc sys build reports no build identity, and a version text with a date is none either', async () => {
+    const shell = new Shell();
+    shell.build = false;
+    expect((await new ShellLink(shell).identity()).build).toBeUndefined();
+  });
+
   test('a deploy stops, announces the size, and sends the bytes sixteen at a time through the scheduler commands', async () => {
     const shell = new Shell();
     const link = new ShellLink(shell);
     await link.load(Uint8Array.from({ length: 40 }, (_, i) => i));
-    expect(shell.sent.slice(0, 3)).toEqual(['zplc sys info --json', 'zplc stop', 'zplc sched load 40']);
+    expect(shell.sent.filter((line) => line.startsWith('zplc sys') || line === 'zplc stop' || line.startsWith('zplc sched load'))).toEqual(['zplc sys info --json', 'zplc sys build --json', 'zplc stop', 'zplc sched load 40']);
     expect(shell.sent.filter((line) => line.startsWith('zplc sched data'))).toHaveLength(3);
-    expect(shell.sent[3]).toBe('zplc sched data 000102030405060708090a0b0c0d0e0f');
+    expect(shell.sent.filter((line) => line.startsWith('zplc sched data'))[0]).toBe('zplc sched data 000102030405060708090a0b0c0d0e0f');
   });
 
   test('a board without the scheduler is deployed through the legacy commands', async () => {

@@ -1,5 +1,5 @@
-import { DeviceCommandError, extractJson, fromHex, parseDump, toHex } from './link';
-import type { DeviceIdentity, DeviceLink, DeviceStatus, ForceEntry, LinkKind, TraceListener } from './link';
+import { DeviceCommandError, extractJson, fromHex, parseBuildIdentity, parseDump, parseIdentityText, toHex } from './link';
+import type { BuildIdentity, DeviceIdentity, DeviceLink, DeviceStatus, ForceEntry, LinkKind, TraceListener } from './link';
 
 /** The lines of a serial shell: send one, get what the device printed until a marker. */
 export interface ShellTransport {
@@ -54,8 +54,25 @@ export class ShellLink implements DeviceLink {
     const minor = number('bytecode_abi_minor');
     if (minor !== undefined) identity.abiMinor = minor;
     identity.draftCounter = number('draft_counter') ?? null;
+    const build = await this.buildIdentity();
+    if (build !== undefined) identity.build = build;
     this.cached = identity;
     return identity;
+  }
+
+  /** `zplc sys build --json` (REL-023), else the text of `zplc version`; undefined for an image that reports neither. */
+  private async buildIdentity(): Promise<BuildIdentity | undefined> {
+    try {
+      const parsed = parseBuildIdentity(extractJson(await this.run('zplc sys build --json')));
+      if (parsed) return parsed;
+    } catch {
+      // an image without the command answers an error or nothing parseable; the text of `zplc version` is the next try
+    }
+    try {
+      return parseIdentityText(await this.run('zplc version'));
+    } catch {
+      return undefined;
+    }
   }
 
   async status(): Promise<DeviceStatus> {
