@@ -23,6 +23,9 @@ SYSTEM_REGISTER_OFFSET = 0x0FF0
 """The last 16 bytes of the input image are the system registers: no input channel may reach them."""
 
 RECORD_SCHEMA = "zplc.hil-record/1"
+COMMUNITY_SCHEMA = "zplc.community-report/1"
+COMMUNITY_LEVEL = "community-reported"
+"""A report from a user (HIL-011): listed beside the hardware records of a board, and never one of them."""
 
 ID_PATTERN = re.compile(r"^[A-Za-z][A-Za-z0-9_]{0,15}$")
 NODE_PATTERN = re.compile(r"^[a-z][a-z0-9_]*$")
@@ -381,14 +384,49 @@ def support_level_from_records(board_id: str, records: Iterable[tuple[str, Any]]
     return {"level": "human-hil" if passed else "cross-build", "records": applicable}
 
 
-def support_level(board: dict[str, Any], root: Path) -> dict[str, Any]:
+def community_reports_from_records(board_id: str, records: Iterable[tuple[str, Any]]) -> list[dict[str, Any]]:
+    """The reports from users that name this board, each at the `community-reported` level (HIL-011).
+
+    A report is a lead, not a qualification: it names the firmware version, the commit and the hash of the image it is
+    about and the issue it came from, and it never changes the level that `support_level_from_records` derives.
+    """
+    return [
+        {
+            "ref": ref, "level": COMMUNITY_LEVEL, "firmware_version": record["firmware_version"],
+            "commit": record["commit"], "result": record["result"], "issue": record["issue"],
+        }
+        for ref, record in records
+        if isinstance(record, dict)
+        and record.get("schema") == COMMUNITY_SCHEMA
+        and record.get("level") == COMMUNITY_LEVEL
+        and record.get("board_id") == board_id
+        and _is_text(record.get("firmware_version"))
+        and isinstance(record.get("commit"), str)
+        and re.fullmatch(r"[0-9a-f]{40}", record["commit"]) is not None
+        and isinstance(record.get("image_sha256"), str)
+        and re.fullmatch(r"[0-9a-f]{64}", record["image_sha256"]) is not None
+        and record.get("result") in ("pass", "fail")
+        and isinstance(record.get("issue"), str)
+        and record["issue"].startswith("https://github.com/")
+    ]
+
+
+def _read_records(board: dict[str, Any], root: Path) -> list[tuple[str, Any]]:
     records: list[tuple[str, Any]] = []
     for ref in board.get("evidence_refs", []):
         try:
             records.append((ref, json.loads((root / ref).read_text())))
         except (OSError, ValueError):
             records.append((ref, None))
-    return support_level_from_records(board["board_id"], records)
+    return records
+
+
+def support_level(board: dict[str, Any], root: Path) -> dict[str, Any]:
+    return support_level_from_records(board["board_id"], _read_records(board, root))
+
+
+def community_reports(board: dict[str, Any], root: Path) -> list[dict[str, Any]]:
+    return community_reports_from_records(board["board_id"], _read_records(board, root))
 
 
 def load_manifest(path: Path) -> list[dict[str, Any]]:

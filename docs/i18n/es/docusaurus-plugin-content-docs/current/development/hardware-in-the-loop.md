@@ -141,6 +141,17 @@ a `evidence_refs` de la placa en `boards.json` es una edición suya, después de
 leer el registro de ejecución; una ejecución sobre un sustituto nunca escribe
 uno.
 
+### Un reporte de un usuario
+
+El resultado de otra persona en su placa entra en la misma lista, en un nivel
+inferior. El formulario «Board report» pide la placa, la versión de firmware, el
+commit, el SHA-256 de la imagen y el resultado. Quien mantiene el proyecto, tras
+leer el issue, ejecuta `python3 tools/hil/community_report.py` con esos valores y
+la dirección del issue, lo que escribe un registro `zplc.community-report/1`, y
+agrega el archivo a `evidence_refs` de la placa. La tabla de placas generada lo
+lista como `community-reported`. Es una pista: nunca sube el nivel de soporte y
+nunca enciende el watchdog de hardware del perfil.
+
 Cuando una herramienta se inicia sin un terminal interactivo termina con estado
 2 y dice por qué, antes de abrir un puerto.
 

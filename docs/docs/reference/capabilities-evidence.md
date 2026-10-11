@@ -28,6 +28,7 @@ messages and in pull requests. A higher level is never implied by a lower one.
 | Packaged host | A packaged desktop installer was launched on its own system in the release run. | Installer signing, notarization, or hardware behaviour. | The notes of each release |
 | Emulated target | A Zephyr suite passed on `native_sim` or on a QEMU Cortex-M target. | The exact board, its probe, wiring or electrical output. | The firmware testing page |
 | `cross-build` | The firmware builds for the board and fits its flash and RAM budget. | Flash, boot, deploy, persistence or any output. | **Support level** of a board, below |
+| `community-reported` | A user reported what happened on their own board, with the exact image it ran, through the board report form. | That the project reproduced it, that a procedure was followed, or any support level: a report never changes the level of a board. | The evidence column of a board, below |
 | `human-hil` | A person ran a recorded procedure on the exact board, with the firmware image named by its commit and hash, and it passed. | Production qualification beyond the recorded procedure. | **Support level** of a board, below |
 | Production-qualified | A separately governed production evidence package exists. | Safety certification, unless it says so. | No board has it |
 
@@ -66,6 +67,9 @@ The I/O channels of every board, with their pins and their safe values, are in
 - **`cross-build`:** use the simulator to improve your logic, and the build to
   catch an integration problem. Do not state that a workflow, an output, a timing
   budget, persistence or recovery works on the board.
+- **`community-reported`:** someone else saw that image do that on their board. It is
+  a lead for the same image on the same board. The board stays at `cross-build`, and
+  its hardware watchdog stays off, until a person runs the recorded procedure.
 - **`human-hil`:** the procedure of the record worked on that firmware version of
   that board. A different image, board or procedure needs its own record.
 - **Anything about safety:** read [Safety and limitations](../safety-and-limitations.md).

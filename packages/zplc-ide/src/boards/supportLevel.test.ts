@@ -33,4 +33,11 @@ describe('support level derived from evidence records (IO-015)', () => {
       expect(supportLevelFromRecords('b', [['records/x.json', bad]])).toEqual({ level: 'cross-build', records: [] });
     }
   });
+
+  test('a report from a user is a lead and never raises the level, whatever its result (HIL-011)', () => {
+    for (const result of ['pass', 'fail']) {
+      const report = record({ schema: 'zplc.community-report/1', level: 'community-reported', result, issue: 'https://github.com/eduardojvieira/ZPLC/issues/1' });
+      expect(supportLevelFromRecords('b', [['records/user.json', report]])).toEqual({ level: 'cross-build', records: [] });
+    }
+  });
 });

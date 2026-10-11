@@ -123,6 +123,29 @@ class DryRunTests(QuietCase):
         self.assertEqual(record["device"]["reported_board"], "native_posix")
         self.assertTrue(record["coverage"]["pending"], "the HIL-010 items the chain cannot run yet are listed, not hidden")
 
+    @needs_runtime
+    def test_the_chain_runs_for_every_board_that_has_an_io_description(self):
+        """HIL-011: nothing in the harness is written for one board. Each board of the manifest, named by its IDE id or its
+        manifest id, gets its own record, its own build command and its own I/O description in the loopback step."""
+        os.environ["ZPLC_NATIVE_SIM_BIN"] = RUNTIME
+        manifest = json.loads((ROOT / "firmware/app/boards/boards.json").read_text())
+        self.assertGreaterEqual(len(manifest), 7)
+        for board in manifest:
+            self.assertTrue(board["io"]["channels"], f"{board['board_id']} has no I/O description")
+            for name in (board["ide_id"], board["board_id"]):
+                with self.subTest(name), tempfile.TemporaryDirectory() as directory:
+                    code = run_chain.main([name, "--dry-run", "--device", "host", "--out", directory, "--operator", "CI", "--only", "il.minimal"], stdout=io.StringIO())
+                    (path,) = Path(directory).glob("*.json")
+                    record = json.loads(path.read_text())
+                    self.assertEqual(code, 0)
+                    self.assertEqual(record["board"]["board_id"], board["board_id"])
+                    self.assertEqual(record["evidence"], "host-runtime", "a stand-in is never evidence of a board")
+                    flash = next(step for step in record["steps"] if step["id"] == "flash")
+                    self.assertIn(board["build_command"], flash.get("detail", ""))
+                    loopback = next(step for step in record["steps"] if step["id"] == "digital-loopback")
+                    for channel in (c["id"] for c in board["io"]["channels"] if c["kind"] == "digital"):
+                        self.assertIn(channel, loopback["detail"])
+
     def test_physical_steps_in_a_dry_run_are_not_confirmed_by_anyone(self):
         code, records = self.chain("--device", "null", "--only", "il.minimal")
         physical = [step for step in records[0]["steps"] if step["kind"] == "physical"]
