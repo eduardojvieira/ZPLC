@@ -11,14 +11,13 @@
  * - Shows "armed" transitions (ready to fire)
  */
 
-import { useCallback, useMemo, useRef, useEffect, useReducer, type KeyboardEvent as ReactKeyboardEvent } from 'react';
+import { useCallback, useMemo, useRef, useEffect, useReducer } from 'react';
 import {
   ReactFlow,
   ReactFlowProvider,
   Background,
   Controls,
   MiniMap,
-  addEdge,
   applyEdgeChanges,
   applyNodeChanges,
   useReactFlow,
@@ -35,12 +34,18 @@ import {
 import '@xyflow/react/dist/style.css';
 
 import { type SFCModel, type SFCStep, type SFCTransition } from '../../models/sfc';
-import { copySFCFragment, stepNodeData, transitionNodeData, hasCanonicalEdgeChanges, hasCanonicalNodeChanges, isCanonicalSFCConnection, nodesToSteps, nodesToTransitions, pasteSFCFragment, uniqueNodeId, type SFCClipboardFragment } from './graphModel';
+import { applySFCSelection, connectSFC, copySFCFragment, sfcSelection, stepNodeData, transitionNodeData, isCanonicalSFCConnection, nodesToSteps, nodesToTransitions, pasteSFCFragment, type SFCClipboardFragment } from './graphModel';
+import { sfcCanvasCommands } from './keyboard';
+import { useCanvasKeyboard } from '../useCanvasKeyboard';
+import { edgeChangesCommit, nodeChangesCommit } from '../gesture';
+import { useGestureCommit } from '../useGestureCommit';
+import { getVisualSelection, setVisualSelection, useVisualFileKey } from '../visualSelection';
+import type { VisualGesture } from '../visualHistory';
 import { nodeTypes } from './nodes';
 import { edgeTypes } from './edges';
 import SFCToolbox from './SFCToolbox';
 import { useIDEStore } from '../../store/useIDEStore';
-import { useDebugValues } from '../../hooks/useDebugValue';
+import { useMonitor } from '../../monitoring/useMonitor';
 import { useElementSelection } from '../elementSelection';
 import { useElementBreakpoints } from '../elementBreakpoints';
 import { markBreakpointNodes } from '../breakpointMarks';
@@ -52,7 +57,8 @@ import { parseElement, stepElement, transitionElement, type SourceElementId } fr
 
 interface SFCEditorProps {
   model: SFCModel;
-  onChange?: (model: SFCModel) => void;
+  /** Called once for each gesture of the user (LNG-010), with what the history needs to know of it. */
+  onChange?: (model: SFCModel, gesture?: VisualGesture) => void;
   readOnly?: boolean;
 }
 
@@ -62,6 +68,8 @@ interface SFCEditorProps {
 
 interface DebugStepInfo {
   isActive: boolean;
+  /** The map gave no state for the step, or it was not read. */
+  unavailable?: boolean;
   timeInStep?: number;
   activationCount?: number;
 }
@@ -92,6 +100,7 @@ function stepsToNodes(
         // Debug properties
         debugActive,
         isActive: debugInfo?.isActive || false,
+        stateUnavailable: debugInfo?.unavailable === true,
         timeInStep: debugInfo?.timeInStep,
         activationCount: debugInfo?.activationCount,
       },
@@ -219,32 +228,50 @@ function SFCEditorInner({
   const edgesRef = useRef(edges);
   const clipboardRef = useRef<SFCClipboardFragment | undefined>(undefined);
 
-  const commitGraph = useCallback((nextNodes: Node[], nextEdges: Edge[]) => {
+  // One gesture is one commit (LNG-010): the document is committed once, with the selection from before the gesture and after.
+  const fileKey = useVisualFileKey();
+  const fileKeyRef = useRef(fileKey);
+  useEffect(() => {
+    fileKeyRef.current = fileKey;
+  }, [fileKey]);
+  const commitModel = useGestureCommit<SFCModel>(onChange);
+
+  const commitGraph = useCallback((nextNodes: Node[], nextEdges: Edge[], coalesce?: string) => {
+    const before = sfcSelection(nodesRef.current, edgesRef.current);
+    const after = sfcSelection(nextNodes, nextEdges);
     nodesRef.current = nextNodes;
     edgesRef.current = nextEdges;
     replaceNodes(nextNodes);
     replaceEdges(nextEdges);
+    setVisualSelection(fileKeyRef.current, after);
     if (!readOnly && onChange) {
-      onChange({ ...model, steps: nodesToSteps(nextNodes), transitions: nodesToTransitions(nextNodes, nextEdges) });
+      commitModel({ ...model, steps: nodesToSteps(nextNodes), transitions: nodesToTransitions(nextNodes, nextEdges) },
+        { before, after, ...(coalesce === undefined ? {} : { coalesce }) });
     }
-  }, [model, onChange, readOnly]);
+  }, [commitModel, model, onChange, readOnly]);
 
   const updateNodeData = useCallback((nodeId: string, data: Record<string, unknown>) => {
     if (readOnly) return;
     commitGraph(nodesRef.current.map((node) => node.id === nodeId
       ? { ...node, data: { ...node.data, ...data } }
-      : node), edgesRef.current);
+      : node), edgesRef.current, `data:${nodeId}:${Object.keys(data).sort().join(',')}`);
   }, [commitGraph, readOnly]);
   useEffect(() => {
     updateNodeDataRef.current = updateNodeData;
   }, [updateNodeData]);
 
+  // The canvas is rebuilt from the document after every edit, undo and change made outside; the selection is not part of
+  // the document, so it is put back from where the editor remembers it (LNG-010).
   useEffect(() => {
-    const nextNodes = initialNodes.map((node) => ({ ...node, data: { ...node.data, readOnly, onChangeData: (nodeId: string, data: Record<string, unknown>) => updateNodeDataRef.current?.(nodeId, data) } }));
-    nodesRef.current = nextNodes;
-    edgesRef.current = initialEdges;
-    replaceNodes(nextNodes);
-    replaceEdges(initialEdges);
+    const shown = applySFCSelection(
+      initialNodes.map((node) => ({ ...node, data: { ...node.data, readOnly, onChangeData: (nodeId: string, data: Record<string, unknown>) => updateNodeDataRef.current?.(nodeId, data) } })),
+      initialEdges,
+      getVisualSelection(fileKeyRef.current),
+    );
+    nodesRef.current = shown.nodes;
+    edgesRef.current = shown.edges;
+    replaceNodes(shown.nodes);
+    replaceEdges(shown.edges);
   }, [initialNodes, initialEdges, readOnly]);
 
   // Update nodes when debug info changes
@@ -263,6 +290,7 @@ function SFCEditorInner({
               ...node.data,
               debugActive,
               isActive: debugInfo?.isActive || false,
+              stateUnavailable: debugInfo?.unavailable === true,
               timeInStep: debugInfo?.timeInStep,
               activationCount: debugInfo?.activationCount,
             },
@@ -344,29 +372,17 @@ function SFCEditorInner({
     edgesRef.current = nextEdges;
     replaceNodes(nextNodes);
     replaceEdges(nextEdges);
+    setVisualSelection(fileKeyRef.current, sfcSelection(nextNodes, nextEdges));
     void fitView({ nodes: [{ id: target }], maxZoom: 1, duration: 200 });
   }, [fitView, model.actions]);
   useElementSelection(selectElement);
 
-  // Handle new connections
+  // Handle new connections: a step to a transition and a transition to a step, by the rule the keyboard draws wires by
   const onConnect: OnConnect = useCallback(
     (params) => {
       if (readOnly) return;
-      
-      if (!isCanonicalSFCConnection(params, nodesRef.current)) return;
-      const source = nodesRef.current.find((node) => node.id === params.source);
-      const target = nodesRef.current.find((node) => node.id === params.target);
-      if (!source || !target) return;
-      const nextEdges = edgesRef.current.filter((edge) => {
-        if (target.type === 'transition') return edge.target !== target.id;
-        return edge.source !== source.id;
-      });
-      commitGraph(nodesRef.current, addEdge({
-        ...params,
-        type: 'sfc',
-        style: { stroke: 'var(--visual-wire)', strokeWidth: 2 },
-        markerEnd: { type: MarkerType.ArrowClosed, width: 10, height: 10 },
-      }, nextEdges));
+      const nextEdges = connectSFC(nodesRef.current, edgesRef.current, params);
+      if (nextEdges) commitGraph(nodesRef.current, nextEdges);
     },
     [commitGraph, readOnly]
   );
@@ -378,10 +394,12 @@ function SFCEditorInner({
     (changes: Parameters<typeof applyNodeChanges>[0]) => {
       if (readOnly) return;
       const nextNodes = applyNodeChanges(changes, nodesRef.current);
-      if (hasCanonicalNodeChanges(changes)) commitGraph(nextNodes, edgesRef.current);
+      // the steps of a drag only move the node on the canvas: the document is committed when the node is put down
+      if (nodeChangesCommit(changes)) commitGraph(nextNodes, edgesRef.current);
       else {
         nodesRef.current = nextNodes;
         replaceNodes(nextNodes);
+        if (changes.some((change) => change.type === 'select')) setVisualSelection(fileKeyRef.current, sfcSelection(nextNodes, edgesRef.current));
       }
     },
     [commitGraph, readOnly]
@@ -391,116 +409,45 @@ function SFCEditorInner({
     (changes: Parameters<typeof applyEdgeChanges>[0]) => {
       if (readOnly) return;
       const nextEdges = applyEdgeChanges(changes, edgesRef.current);
-      if (hasCanonicalEdgeChanges(changes)) commitGraph(nodesRef.current, nextEdges);
+      if (edgeChangesCommit(changes)) commitGraph(nodesRef.current, nextEdges);
       else {
         edgesRef.current = nextEdges;
         replaceEdges(nextEdges);
+        if (changes.some((change) => change.type === 'select')) setVisualSelection(fileKeyRef.current, sfcSelection(nodesRef.current, nextEdges));
       }
     },
     [commitGraph, readOnly]
   );
 
-  // Handle drop from toolbox
-  const onDrop = useCallback(
-    (event: React.DragEvent) => {
-      event.preventDefault();
-      if (readOnly) return;
+  // What a command of the keyboard adds to the canvas: the nodes it makes carry what every node of the canvas carries
+  const decorate = useCallback((node: Node): Node => ({
+    ...node,
+    data: { ...node.data, readOnly, onChangeData: (nodeId: string, data: Record<string, unknown>) => updateNodeDataRef.current?.(nodeId, data) },
+  }), [readOnly]);
 
-      const elementType = event.dataTransfer.getData('application/zplc-sfc');
-      if (!elementType) return;
-
-      const position = screenToFlowPosition({
-        x: event.clientX,
-        y: event.clientY,
-      });
-
-      const id = uniqueNodeId(`${elementType}_${Date.now()}`, nodesRef.current);
-
-      let newNode: Node;
-
-      switch (elementType) {
-        case 'step':
-          newNode = {
-            id,
-            type: 'step',
-            position,
-            data: {
-              readOnly,
-              onChangeData: (nodeId: string, data: Record<string, unknown>) => updateNodeDataRef.current?.(nodeId, data),
-              name: `Step_${id}`,
-              isInitial: false,
-              actions: [],
-              debugActive: false,
-            },
-          };
-          break;
-          
-        case 'initial_step':
-          newNode = {
-            id,
-            type: 'step',
-            position,
-            data: {
-              readOnly,
-              onChangeData: (nodeId: string, data: Record<string, unknown>) => updateNodeDataRef.current?.(nodeId, data),
-              name: `Init_${id}`,
-              isInitial: true,
-              actions: [],
-              debugActive: false,
-            },
-          };
-          break;
-          
-        case 'transition':
-          newNode = {
-            id,
-            type: 'transition',
-            position,
-            data: {
-              readOnly,
-              onChangeData: (nodeId: string, data: Record<string, unknown>) => updateNodeDataRef.current?.(nodeId, data),
-              condition: 'TRUE',
-              fromStep: '',
-              toStep: '',
-              debugActive: false,
-            },
-          };
-          break;
-          
-        default:
-          return;
-      }
-
-      commitGraph([...nodesRef.current, newNode], edgesRef.current);
-    },
-    [commitGraph, readOnly, screenToFlowPosition]
-  );
-
-  const onDragOver = useCallback((event: React.DragEvent) => {
-    event.preventDefault();
-    event.dataTransfer.dropEffect = 'move';
+  // The cursor moved, or the selection changed: the canvas shows it and the document does not change
+  const showGraph = useCallback((nextNodes: Node[], nextEdges: Edge[]) => {
+    nodesRef.current = nextNodes;
+    edgesRef.current = nextEdges;
+    replaceNodes(nextNodes);
+    replaceEdges(nextEdges);
+    setVisualSelection(fileKeyRef.current, sfcSelection(nextNodes, nextEdges));
   }, []);
 
-  const onKeyDown = useCallback((event: ReactKeyboardEvent<HTMLDivElement>) => {
-    if (event.key === 'F9') {
-      const selected = nodesRef.current.filter((node) => node.selected);
-      const elements = selected.map(elementOfNode).filter((element): element is SourceElementId => element !== undefined);
-      if (elements.length === 0) return;
+  // The clipboard, and the breakpoints of the selected steps and transitions
+  const editorCommand = useCallback((command: string) => {
+    if (command === 'toggleBreakpoint') {
+      const elements = nodesRef.current.filter((node) => node.selected).map(elementOfNode).filter((element): element is SourceElementId => element !== undefined);
       for (const element of elements) breakpoints.toggle(element);
-      event.preventDefault();
       return;
     }
-    if (readOnly || event.altKey || event.shiftKey || event.ctrlKey === event.metaKey) return;
-    const target = event.target as HTMLElement;
-    if (target.closest('input, textarea, select, [contenteditable="true"]')) return;
-    if (event.key.toLowerCase() === 'c') {
+    if (readOnly) return;
+    if (command === 'copySelection') {
       const fragment = copySFCFragment(nodesRef.current, edgesRef.current);
-      if (!fragment) return;
-      clipboardRef.current = fragment;
-      event.preventDefault();
+      if (fragment) clipboardRef.current = fragment;
       return;
     }
-    if (event.key.toLowerCase() !== 'v' || !clipboardRef.current) return;
+    if (command !== 'pasteSelection' || !clipboardRef.current) return;
     const currentModel = { ...model, steps: nodesToSteps(nodesRef.current), transitions: nodesToTransitions(nodesRef.current, edgesRef.current) };
     const pasted = pasteSFCFragment(currentModel, clipboardRef.current);
     if (!pasted) return;
@@ -512,18 +459,43 @@ function SFCEditorInner({
       ...transitionsToNodes(addedTransitions, debugActive, transitionDebugInfo).map((node) => ({ ...node, selected: true, data: { ...node.data, readOnly, onChangeData: (nodeId: string, data: Record<string, unknown>) => updateNodeDataRef.current?.(nodeId, data) } })),
     ];
     const nextEdges = [...edgesRef.current.map((edge) => ({ ...edge, selected: false })), ...pasted.edges.map((edge) => ({ ...edge, selected: false, style: { stroke: 'var(--visual-wire)', strokeWidth: 2 }, markerEnd: { type: MarkerType.ArrowClosed, width: 10, height: 10 } }))];
-    event.preventDefault();
     commitGraph(nextNodes, nextEdges);
   }, [breakpoints, commitGraph, debugActive, elementOfNode, model, readOnly, stepDebugInfo, transitionDebugInfo]);
 
+  const commands = useMemo(() => sfcCanvasCommands(model), [model]);
+  const keyboard = useCanvasKeyboard({
+    commands, nodesRef, edgesRef, readOnly, wrapperRef: reactFlowWrapper, commit: commitGraph, show: showGraph, decorate, editorCommand,
+    commentOf: (node) => (typeof (node.data as Record<string, unknown>).comment === 'string' ? ((node.data as Record<string, unknown>).comment as string) : undefined),
+  });
+
+  // Handle drop from toolbox: the element is inserted as the keyboard inserts one, at the place of the drop
+  const onDrop = useCallback(
+    (event: React.DragEvent) => {
+      event.preventDefault();
+      if (readOnly) return;
+      const elementType = event.dataTransfer.getData('application/zplc-sfc');
+      if (!elementType) return;
+      keyboard.run('insertElement', { elementType, position: screenToFlowPosition({ x: event.clientX, y: event.clientY }) });
+    },
+    [keyboard, readOnly, screenToFlowPosition]
+  );
+
+  const onDragOver = useCallback((event: React.DragEvent) => {
+    event.preventDefault();
+    event.dataTransfer.dropEffect = 'move';
+  }, []);
+
   return (
+    <>
+    {!readOnly && <SFCToolbox onInsert={(type) => keyboard.run('insertElement', { elementType: type })} />}
     <div 
       ref={reactFlowWrapper}
-      className="flex-1 h-full"
+      className="relative flex-1 h-full"
       tabIndex={0}
       role="region"
       aria-label="Sequential function chart canvas"
-      onKeyDown={onKeyDown}
+      aria-keyshortcuts="F1"
+      onKeyDown={keyboard.onKeyDown}
     >
       <ReactFlow
         nodes={markedNodes}
@@ -540,6 +512,8 @@ function SFCEditorInner({
         nodeTypes={nodeTypes as NodeTypes}
         edgeTypes={edgeTypes as EdgeTypes}
         isValidConnection={isValidConnection}
+        // deleting is a command of the keyboard table, one gesture for the elements and the wires on them
+        deleteKeyCode={null}
         connectionMode={ConnectionMode.Strict}
         defaultViewport={{ x: 50, y: 50, zoom: 1 }}
         fitView
@@ -593,7 +567,10 @@ function SFCEditorInner({
           </div>
         )}
       </ReactFlow>
+      {keyboard.overlay}
+      {keyboard.status}
     </div>
+    </>
   );
 }
 
@@ -602,136 +579,43 @@ function SFCEditorInner({
 // =============================================================================
 
 export default function SFCEditor({ model, onChange, readOnly = false }: SFCEditorProps) {
-  // Debug state from store
+  // The chart is not edited while a program runs under Studio; what it shows online is what the debug map of the build
+  // says, step by step and transition by transition (LNG-006): there is no name to guess.
   const debugMode = useIDEStore((state) => state.debug.mode);
-  const debugActive = debugMode !== 'none';
-  
-  // Build list of variable paths to watch for SFC state
-  // SFC runtime typically exposes: _SFC_<stepName>_X (step active flag)
-  // and _SFC_<stepName>_T (time in step)
-  const variablePaths = useMemo(() => {
-    const paths: string[] = [];
-    
-    for (const step of model.steps) {
-      // Step active flag (common SFC runtime convention)
-      paths.push(`${step.name}.X`);
-      paths.push(`${step.name}_X`);
-      paths.push(`_SFC_${step.name}_X`);
-      
-      // Time in step
-      paths.push(`${step.name}.T`);
-      paths.push(`${step.name}_T`);
-      paths.push(`_SFC_${step.name}_T`);
-    }
-    
-    // Also watch transition condition variables
-    for (const trans of model.transitions) {
-      // Extract variable names from condition
-      const varMatches = trans.condition.match(/[A-Za-z_][A-Za-z0-9_]*/g);
-      if (varMatches) {
-        for (const varName of varMatches) {
-          if (!['TRUE', 'FALSE', 'AND', 'OR', 'NOT', 'XOR'].includes(varName.toUpperCase())) {
-            paths.push(varName);
-          }
-        }
-      }
-    }
-    
-    return [...new Set(paths)]; // Deduplicate
-  }, [model.steps, model.transitions]);
-  
-  // Get live values
-  const liveValues = useDebugValues(debugActive ? variablePaths : []);
-  
-  // Build step debug info from live values
+  const monitor = useMonitor();
+  const debugActive = monitor.active;
+  const running = debugMode !== 'none';
+
   const stepDebugInfo = useMemo(() => {
     const info = new Map<string, DebugStepInfo>();
-    
+    if (!monitor.active) return info;
     for (const step of model.steps) {
-      // Check various naming conventions for step active flag
-      const activeFlag = 
-        liveValues.get(`${step.name}.X`) ||
-        liveValues.get(`${step.name}_X`) ||
-        liveValues.get(`_SFC_${step.name}_X`);
-      
-      const timeValue = 
-        liveValues.get(`${step.name}.T`) ||
-        liveValues.get(`${step.name}_T`) ||
-        liveValues.get(`_SFC_${step.name}_T`);
-      
-      const isActive = activeFlag?.exists && 
-        (activeFlag.value === true || activeFlag.value === 1 || activeFlag.value === 'TRUE');
-      
-      const timeInStep = timeValue?.exists && typeof timeValue.value === 'number' 
-        ? timeValue.value 
-        : undefined;
-      
-      info.set(step.name, {
-        isActive: isActive || false,
-        timeInStep,
-      });
-      
-      // Also set by ID for lookup
-      info.set(step.id, {
-        isActive: isActive || false,
-        timeInStep,
-      });
+      const state = monitor.states.get(stepElement(step.id));
+      info.set(step.id, { isActive: state?.active === true, unavailable: state?.active === undefined, timeInStep: state?.time });
     }
-    
     return info;
-  }, [model.steps, liveValues]);
-  
-  // Build set of active step IDs
-  const activeSteps = useMemo(() => {
-    const active = new Set<string>();
-    
-    for (const step of model.steps) {
-      const debugInfo = stepDebugInfo.get(step.name);
-      if (debugInfo?.isActive) {
-        active.add(step.id);
-        active.add(step.name); // Also add by name for edge matching
-      }
-    }
-    
-    return active;
-  }, [model.steps, stepDebugInfo]);
-  
-  // Build transition debug info
+  }, [model.steps, monitor]);
+
+  const activeSteps = useMemo(
+    () => new Set(model.steps.filter((step) => stepDebugInfo.get(step.id)?.isActive).map((step) => step.id)),
+    [model.steps, stepDebugInfo],
+  );
+
   const transitionDebugInfo = useMemo(() => {
     const info = new Map<string, DebugTransitionInfo>();
-    
-    for (const trans of model.transitions) {
-      // Check if preceding step is active
-      const isArmed = activeSteps.has(trans.fromStep);
-      
-      // Try to evaluate condition from live values
-      // This is a simplified check - just look for the condition variable
-      let conditionResult: boolean | undefined;
-      
-      // Simple variable condition (e.g., "StartButton" or "Timer1.Q")
-      const conditionTrimmed = trans.condition.trim();
-      if (conditionTrimmed.toUpperCase() === 'TRUE') {
-        conditionResult = true;
-      } else if (conditionTrimmed.toUpperCase() === 'FALSE') {
-        conditionResult = false;
-      } else {
-        const conditionValue = liveValues.get(conditionTrimmed);
-        if (conditionValue?.exists) {
-          conditionResult = conditionValue.value === true || 
-            conditionValue.value === 1 || 
-            conditionValue.value === 'TRUE';
-        }
-      }
-      
-      info.set(trans.id, {
-        conditionResult,
-        isArmed,
-        wasFired: false, // Would need runtime event to detect this
+    if (!monitor.active) return info;
+    for (const transition of model.transitions) {
+      const state = monitor.states.get(transitionElement(transition.id));
+      // armed: every step the transition leaves is active
+      const leaves = transition.fromSteps ?? [transition.fromStep];
+      info.set(transition.id, {
+        conditionResult: state?.condition,
+        isArmed: leaves.length > 0 && leaves.every((id) => activeSteps.has(id)),
+        wasFired: state?.fired === true,
       });
     }
-    
     return info;
-  }, [model.transitions, activeSteps, liveValues]);
+  }, [model.transitions, monitor, activeSteps]);
 
   // Convert model to ReactFlow format with debug data
   const initialNodes = useMemo(() => [
@@ -746,15 +630,12 @@ export default function SFCEditor({ model, onChange, readOnly = false }: SFCEdit
 
   return (
     <div className="zplc-visual-editor w-full h-full flex">
-      {/* Toolbox sidebar */}
-      {!readOnly && !debugActive && <SFCToolbox />}
-
-      {/* Main canvas - wrapped in provider */}
+      {/* Main canvas - wrapped in provider (the toolbox is drawn inside it, beside the canvas) */}
       <ReactFlowProvider>
         <SFCEditorInner
           model={model}
           onChange={onChange}
-          readOnly={readOnly || debugActive}
+          readOnly={readOnly || running}
           initialNodes={initialNodes}
           initialEdges={initialEdges}
           debugActive={debugActive}

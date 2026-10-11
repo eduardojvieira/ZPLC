@@ -16,16 +16,12 @@ import Editor, { type OnMount, type Monaco } from '@monaco-editor/react';
 import type * as MonacoEditor from 'monaco-editor';
 import { useIDEStore } from '../store/useIDEStore';
 import { useAppSettings } from '../store/useAppSettings';
-import { useFileBreakpoints, useCurrentExecution, useDebugValues, formatDebugValue } from '../hooks/useDebugValue';
+import { useFileBreakpoints, useCurrentExecution, formatDebugValue } from '../hooks/useDebugValue';
 import { useTheme } from '../hooks/useTheme';
-import { useEditorLiveValues } from '../hooks/useEditorLiveValues';
+import { ilInlineTargets, inlineValues, stInlineTargets } from '../monitoring/inlineValues';
+import { useMonitoredVariables } from '../monitoring/useMonitor';
 import type { PLCLanguage } from '../types';
 import { breakpointDecorationClasses, breakpointFileKey, breakpointHoverMessage, doesCurrentPOUMatchFile, filterEligibleBreakpointLines, isLineBreakpointEligible } from '../utils/breakpoints';
-import {
-  buildInlineWidgets,
-  extractVariablesFromCode,
-  type InlineValueWidget,
-} from './codeEditorInlineValues';
 import { isInlineLivePreviewEnabled } from './codeEditorLivePreview';
 import {
   ST_LANGUAGE_ID, stLanguage, stConf,
@@ -40,7 +36,13 @@ import { projectPathFromModelPath } from '../utils/sessionState';
 import { recordViewState, takePendingViewState } from '../store/sessionPersistence';
 import { compilerMarkersForFile } from './compilerMarkers';
 import { editorModelPath, isMonacoCancellation } from './editorModels';
-import { ensureSTLanguageService, getSTSyntaxDiagnostics } from './stLanguageService';
+import { registerSTProviders } from '../langsvc/monacoProviders';
+import { ideBridge } from '../langsvc/ideBridge';
+import { liveDiagnostics } from '../langsvc/liveDiagnostics';
+import { currentProjectFiles, filesWithBuffer, indexWithBuffer } from '../langsvc/session';
+import { buildOptionsOf } from '../project/buildOptions';
+import { getCompilerMemoryProfile } from '../config/boardProfiles';
+import { applyProjectMarkers } from '../langsvc/markers';
 
 const ST_LIVE_MARKER_OWNER = 'zplc.st-live';
 const ST_LIVE_ANALYSIS_DELAY_MS = 300;
@@ -170,53 +172,19 @@ export function CodeEditor({
       type === monaco.editor.MouseTargetType.GUTTER_LINE_DECORATIONS;
   }, []);
 
-  // Extract variables from code for debug value lookup
-  const variablesInCode = useMemo(() => {
-    if (debugMode === 'none') return new Map();
-    return extractVariablesFromCode(content);
-  }, [content, debugMode]);
-
-  // Viewport-aware variable filtering: only read values for variables whose
-  // declaration line is currently visible in the editor.  Falls back to all
-  // vars when the debug map lacks declarationLine data (older compiler output).
-  const { visibleVarNames } = useEditorLiveValues({
-    editorRef,
-    debugMap,
-    debugActive: inlinePreviewEnabled,
-  });
-
-  // Get live values only for visible variables (or all if no viewport data)
-  const debugValues = useDebugValues(
-    inlinePreviewEnabled
-      ? (visibleVarNames.length > 0 ? visibleVarNames : Array.from(variablesInCode.keys()))
-      : [],
+  // The variables a line names, as the language service reads the project, and their values as the debug map of the
+  // build gives them: a name is never replaced by another, and a value that cannot be read is shown as unavailable (LNG-006)
+  const inlineTargets = useMemo(() => {
+    if (!inlinePreviewEnabled || !filePath) return [];
+    if (language === 'ST') return stInlineTargets(indexWithBuffer(filePath, content), filePath);
+    return language === 'IL' ? ilInlineTargets(content) : [];
+  }, [content, filePath, inlinePreviewEnabled, language]);
+  const inlineVariables = useMemo(() => [...new Set(inlineTargets.map((target) => target.variable))], [inlineTargets]);
+  const inlineReadings = useMonitoredVariables(filePath || undefined, inlineVariables, inlinePreviewEnabled);
+  const inlineWidgets = useMemo(
+    () => inlineValues(inlineTargets, (variable) => inlineReadings.get(variable), (value, type) => formatDebugValue(value, type as Parameters<typeof formatDebugValue>[1])),
+    [inlineReadings, inlineTargets],
   );
-
-  // Build variable value map for widgets
-  const variableValueMap = useMemo(() => {
-    const map = new Map<string, { value: string; type: string | null; isBool: boolean; isTrue?: boolean }>();
-
-    for (const [varPath, result] of debugValues) {
-      if (result.exists && result.value !== null) {
-        const isBool = result.type === 'BOOL';
-        const isTrue = isBool && (result.value === true || result.value === 1);
-        map.set(varPath, {
-          value: formatDebugValue(result.value, result.type),
-          type: result.type,
-          isBool,
-          isTrue,
-        });
-      }
-    }
-
-    return map;
-  }, [debugValues]);
-
-  // Build inline widgets
-  const inlineWidgets = useMemo(() => {
-    if (!inlinePreviewEnabled || variableValueMap.size === 0) return [];
-    return buildInlineWidgets(content, variableValueMap);
-  }, [content, inlinePreviewEnabled, variableValueMap]);
 
   // Handle editor mount
   // The tab size is the user's preference (IDE-010): every model takes it, and the indentation of a file does not override it.
@@ -287,7 +255,7 @@ export function CodeEditor({
       monaco.languages.setMonarchTokensProvider(ST_LANGUAGE_ID, stLanguage);
       monaco.languages.setLanguageConfiguration(ST_LANGUAGE_ID, stConf);
     }
-    ensureSTLanguageService(monaco);
+    registerSTProviders(monaco, ideBridge);
     if (!languages.some((l: { id: string }) => l.id === IL_LANGUAGE_ID)) {
       monaco.languages.register({ id: IL_LANGUAGE_ID });
       monaco.languages.setMonarchTokensProvider(IL_LANGUAGE_ID, ilLanguage);
@@ -392,8 +360,17 @@ export function CodeEditor({
     const identity = { projectSession, compilerRunId, fileId, file: filePath };
     if (state.activeFileId !== fileId || state.projectSession !== projectSession || state.compilerRunId !== compilerRunId) return;
 
+    // The whole project is checked with the compiler's front end, each open file as it is being edited, so an error that
+    // this edit causes in another file is shown, and one that it fixes is cleared (LNG-015).
     const timer = window.setTimeout(() => {
-      const diagnostics = getSTSyntaxDiagnostics(content);
+      const { loadedFiles, projectConfig } = useIDEStore.getState();
+      let files = currentProjectFiles();
+      for (const open of loadedFiles.values()) if (open.language === 'ST') files = filesWithBuffer(open.path, open.id === fileId ? content : open.content, files);
+      if (!files.some((file) => file.path === filePath)) files = filesWithBuffer(filePath, content, files);
+      const diagnostics = liveDiagnostics(files, filePath, {
+        strictTypes: buildOptionsOf(projectConfig).strictTypes,
+        ...(getCompilerMemoryProfile(projectConfig?.target?.board) ? { memoryProfile: getCompilerMemoryProfile(projectConfig?.target?.board)! } : {}),
+      });
       useIDEStore.getState().setSTBufferDiagnostics({ ...identity, diagnostics }, content);
     }, ST_LIVE_ANALYSIS_DELAY_MS);
 
@@ -403,30 +380,14 @@ export function CodeEditor({
     };
   }, [compilerRunId, content, fileId, filePath, language, projectSession]);
 
+  // The diagnostics of the project, as markers on the model of each file that is open: the ranges the front end gave
   useEffect(() => {
-    const editor = editorRef.current;
     const monaco = monacoRef.current;
-    const model = editor?.getModel();
-    if (!editor || !monaco || !model) return;
+    if (!editorReady || !monaco) return;
     const current = stBufferDiagnostics;
     const isCurrent = language === 'ST' && current?.projectSession === projectSession
       && current.compilerRunId === compilerRunId && current.fileId === fileId && current.file === filePath;
-    const markers = !isCurrent ? [] : current.diagnostics.flatMap((diagnostic) => {
-      if (!diagnostic.line || diagnostic.line < 1) return [];
-      const line = Math.min(diagnostic.line, model.getLineCount());
-      const column = Math.min(Math.max(1, diagnostic.column ?? 1), model.getLineMaxColumn(line));
-      const endColumn = Math.min(column + 1, model.getLineMaxColumn(line));
-      return [{
-        message: diagnostic.message,
-        severity: diagnostic.type === 'error' ? monaco.MarkerSeverity.Error : monaco.MarkerSeverity.Warning,
-        startLineNumber: line,
-        startColumn: column,
-        endLineNumber: line,
-        endColumn,
-      }];
-    });
-    monaco.editor.setModelMarkers(model, ST_LIVE_MARKER_OWNER, markers);
-    return () => monaco.editor.setModelMarkers(model, ST_LIVE_MARKER_OWNER, []);
+    return applyProjectMarkers(monaco, ST_LIVE_MARKER_OWNER, isCurrent ? current.diagnostics : [], filePath);
   }, [compilerRunId, editorReady, fileId, filePath, language, projectSession, stBufferDiagnostics]);
 
   // A cursor and a scroll restored with the session are put back once, when the editor first shows the file (IDE-008).
@@ -507,29 +468,29 @@ export function CodeEditor({
 
     if (inlinePreviewEnabled) {
       // Group widgets by line for combined display
-      const widgetsByLine = new Map<number, InlineValueWidget[]>();
+      const widgetsByLine = new Map<number, typeof inlineWidgets>();
       for (const widget of inlineWidgets) {
-        const existing = widgetsByLine.get(widget.lineNumber) || [];
+        const existing = widgetsByLine.get(widget.line) || [];
         existing.push(widget);
-        widgetsByLine.set(widget.lineNumber, existing);
+        widgetsByLine.set(widget.line, existing);
       }
 
       // Create inline decorations for each line
       for (const [lineNum, widgets] of widgetsByLine) {
         // Build combined text for all values on this line
         const valueParts = widgets.map(w => {
-          const label = w.variableName.includes('.')
-            ? w.variableName.split('.').pop()
-            : w.variableName;
-          return `${label}=${w.value}`;
+          const label = w.label.includes('.')
+            ? w.label.split('.').pop()
+            : w.label;
+          return `${label}=${w.text}`;
         });
 
         const combinedText = `  ${valueParts.join('  ·  ')}`;
 
         // Determine CSS class based on bool state
-        const cssClass = widgets.some(w => w.isBool && w.isTrue)
+        const cssClass = widgets.some(w => w.available && w.isBool && w.isTrue)
           ? 'inline-debug-value-true'
-          : widgets.some(w => w.isBool && !w.isTrue)
+          : widgets.some(w => w.available && w.isBool && !w.isTrue)
             ? 'inline-debug-value-false'
             : 'inline-debug-value';
 
@@ -581,9 +542,9 @@ export function CodeEditor({
                         border border-[var(--color-surface-600)]">
           <span className={`w-2 h-2 rounded-full ${isPaused ? 'bg-yellow-500' : 'bg-[var(--color-accent-blue)]'}`} />
           <span>{isPaused ? 'Paused' : debugMode === 'simulation' ? 'Simulation' : 'Hardware'}</span>
-          {variableValueMap.size > 0 && (
+          {inlineWidgets.some((widget) => widget.available) && (
             <span className="text-blue-400">
-              ({variableValueMap.size} values)
+              ({inlineWidgets.filter((widget) => widget.available).length} values)
             </span>
           )}
           {filterEligibleBreakpointLines(debugMap, fileName, breakpoints).length > 0 && (

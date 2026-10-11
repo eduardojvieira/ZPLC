@@ -15,7 +15,7 @@
 // A claim that does not hold is an error that names the page and the line. A claim that is deliberately absent (a path that a
 // build creates, a name that a page says does not exist) is listed in docs/doc-claims-allowlist.json with the reason, and an
 // entry that no page uses any more is an error too, so the list can only shrink.
-import { readFileSync, readdirSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { join, relative } from 'node:path';
 
 import { getAllFBNames, getAllFnNames } from '../../packages/zplc-compiler/src/compiler/stdlib/index.ts';
@@ -266,7 +266,9 @@ export function markdownFiles(root: string, base: string): string[] {
 }
 
 export function collectClaims(root = ROOT): Claim[] {
-  const pages = [...DOC_DIRS.flatMap((directory) => markdownFiles(root, directory)), ...ROOT_DOCUMENTS];
+  // the project skill of the agents is documentation too (DOC-022): its paths and commands must exist
+  const skills = existsSync(join(root, '.agents/skills')) ? markdownFiles(root, '.agents/skills') : [];
+  const pages = [...DOC_DIRS.flatMap((directory) => markdownFiles(root, directory)), ...ROOT_DOCUMENTS, ...skills];
   return pages.flatMap((page) => extractClaims(relative(root, join(root, page)), readFileSync(join(root, page), 'utf8')));
 }
 

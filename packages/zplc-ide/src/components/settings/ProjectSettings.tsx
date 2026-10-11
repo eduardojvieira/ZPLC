@@ -19,7 +19,7 @@ import {
   FileText,
   Radio,
 } from 'lucide-react';
-import { useIDEStore } from '../../store/useIDEStore';
+import { useProjectSettingsState } from '../../store/regionSubscriptions';
 import type {
   ZPLCProjectConfig,
 } from '../../types';
@@ -36,7 +36,7 @@ import { CommunicationSection } from './CommunicationSection';
 import { TasksSection } from './TasksSection';
 
 export function ProjectSettings() {
-  const { projectConfig, saveProjectConfig, updateProjectConfig } = useIDEStore();
+  const { projectConfig, saveProjectConfig, updateProjectConfig } = useProjectSettingsState();
 
   // Section collapse state
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({

@@ -8,6 +8,7 @@
 import { lazy, Suspense, useMemo, useCallback, useEffect, useRef, useState, type KeyboardEvent } from 'react';
 import { X, FileCode, File, Settings, Undo2, Redo2 } from 'lucide-react';
 import { useIDEStore } from '../store/useIDEStore';
+import { useEditorAreaState, useOpenFiles } from '../store/regionSubscriptions';
 import { PLC_LANGUAGES, type PLCLanguage } from '../types';
 import { serializeFBDModel, type FBDModel } from '../models/fbd';
 import { serializeLDModel, type LDModel } from '../models/ld';
@@ -26,8 +27,10 @@ import {
   synchronizeVisualHistory,
   undoVisualSnapshot,
   visualHistoryActions,
+  type VisualGesture,
   type VisualHistories,
 } from '../editors/visualHistory';
+import { setVisualSelection, visualFileKey } from '../editors/visualSelection';
 
 // Each view loads when it is first shown (IDE-015): a project of Structured Text files never fetches the visual editors,
 // one of diagrams never fetches Monaco, and the settings load when they are opened.
@@ -85,7 +88,9 @@ export function EditorArea() {
     getActiveFile,
     getFile,
     projectSession,
-  } = useIDEStore();
+  } = useEditorAreaState();
+  // the files of the open tabs: this region shows them, so it renders again when one of them changes; a watched value does not
+  useOpenFiles();
 
   const [unsavedTabId, setUnsavedTabId] = useState<string | null>(null);
   const [savingTab, setSavingTab] = useState(false);
@@ -116,7 +121,7 @@ export function EditorArea() {
   useEffect(() => useIDEStore.subscribe((state) => {
     const file = state.getActiveFile();
     if (!file || !isVisualWorkflow(file.language)) return;
-    const key = `${state.projectSession}:${file.id}`;
+    const key = visualFileKey(state.projectSession, file.id);
     const current = visualHistoryRef.current;
     const histories = current.projectSession === state.projectSession ? current.histories : new Map<string, never>();
     const synced = synchronizeVisualHistory(histories, key, file.content);
@@ -151,16 +156,16 @@ export function EditorArea() {
     activeFile?.language === 'SFC' ? loadSFCFile(activeFile.path || activeFile.name, activeFile.content) : null
   ), [activeFile]);
 
-  const updateVisualContent = useCallback((expectedProjectSession: number, expectedFileId: string, expectedLanguage: PLCLanguage, content: string) => {
+  const updateVisualContent = useCallback((expectedProjectSession: number, expectedFileId: string, expectedLanguage: PLCLanguage, content: string, gesture?: VisualGesture) => {
     const state = useIDEStore.getState();
     const file = state.getFile(expectedFileId);
     if (!file || !canCommitVisualEditorChange(state.projectSession, expectedProjectSession, state.activeFileId, expectedFileId, expectedLanguage, file) || !isVisualWorkflow(file.language)) return;
     // A commit that leaves the model as the file opened keeps the file's bytes (LNG-014)
     if (isUnchangedVisualDocument(file.language as 'LD' | 'FBD' | 'SFC', file.content, content)) return;
-    const key = `${state.projectSession}:${file.id}`;
+    const key = visualFileKey(state.projectSession, file.id);
     const current = visualHistoryRef.current;
     const histories = current.projectSession === state.projectSession ? current.histories : new Map<string, never>();
-    const recorded = recordVisualSnapshot(histories, key, file.content, content);
+    const recorded = recordVisualSnapshot(histories, key, file.content, content, gesture);
     const next = { projectSession: state.projectSession, histories: recorded.histories };
     visualHistoryRef.current = next;
     setVisualHistoryState(next);
@@ -171,7 +176,7 @@ export function EditorArea() {
     const state = useIDEStore.getState();
     const file = state.getActiveFile();
     if (!file || !isVisualWorkflow(file.language)) return false;
-    const key = `${state.projectSession}:${file.id}`;
+    const key = visualFileKey(state.projectSession, file.id);
     const current = visualHistoryRef.current;
     const histories = current.projectSession === state.projectSession ? current.histories : new Map<string, never>();
     const result = direction === 'undo'
@@ -183,6 +188,8 @@ export function EditorArea() {
       setVisualHistoryState(next);
     }
     if (result.content === undefined) return false;
+    // the editor shows the selection the gesture had: it applies it when it rebuilds the canvas from the content
+    if (result.selection !== undefined) setVisualSelection(key, result.selection);
     state.updateFileContent(file.id, result.content);
     return true;
   }, []);
@@ -199,18 +206,18 @@ export function EditorArea() {
   }, [applyVisualHistory]);
 
   // Handle FBD model changes
-  const handleFBDChange = useCallback((model: FBDModel) => {
-    if (activeFile?.language === 'FBD') updateVisualContent(projectSession, activeFile.id, 'FBD', serializeFBDModel(model));
+  const handleFBDChange = useCallback((model: FBDModel, gesture?: VisualGesture) => {
+    if (activeFile?.language === 'FBD') updateVisualContent(projectSession, activeFile.id, 'FBD', serializeFBDModel(model), gesture);
   }, [activeFile, projectSession, updateVisualContent]);
 
   // Handle LD model changes
-  const handleLDChange = useCallback((model: LDModel) => {
-    if (activeFile?.language === 'LD') updateVisualContent(projectSession, activeFile.id, 'LD', serializeLDModel(model));
+  const handleLDChange = useCallback((model: LDModel, gesture?: VisualGesture) => {
+    if (activeFile?.language === 'LD') updateVisualContent(projectSession, activeFile.id, 'LD', serializeLDModel(model), gesture);
   }, [activeFile, projectSession, updateVisualContent]);
 
   // Handle SFC model changes
-  const handleSFCChange = useCallback((model: SFCModel) => {
-    if (activeFile?.language === 'SFC') updateVisualContent(projectSession, activeFile.id, 'SFC', serializeSFCModel(model));
+  const handleSFCChange = useCallback((model: SFCModel, gesture?: VisualGesture) => {
+    if (activeFile?.language === 'SFC') updateVisualContent(projectSession, activeFile.id, 'SFC', serializeSFCModel(model), gesture);
   }, [activeFile, projectSession, updateVisualContent]);
 
   const focusTab = useCallback((viewId: string | null) => {

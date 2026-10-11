@@ -8,21 +8,23 @@ description: Overview of supported industrial network protocols and board capabi
 
 # Connectivity & Protocols
 
-ZPLC provides built-in support for standard industrial automation protocols, allowing your controllers to interact with field devices, SCADA systems, and cloud platforms.
+ZPLC includes implementations of standard industrial automation protocols, for a controller to exchange data with field devices, SCADA systems and cloud platforms. They have been verified on the host and in emulation only, never on a wire: each how-to page ([Modbus](../guides/modbus.md), [MQTT and Sparkplug B](../guides/mqtt-sparkplug.md), [the cloud blocks](../guides/cloud-blocks.md)) says what was tested.
 
 ## Board Capabilities
 
 Protocol support depends on the physical capabilities of your target board. ZPLC categorizes boards into three levels of connectivity:
 
-- **Serial-only**: Supports protocols like Modbus RTU via UART/RS-485.
-- **Wi-Fi capable**: Supports TCP/UDP protocols (Modbus TCP, MQTT) over wireless networks (e.g., ESP32-S3).
-- **Ethernet capable**: Supports TCP/UDP protocols over wired connections (e.g., STM32 Nucleo/Discovery).
+- **Serial-only**: has a serial interface that Modbus RTU over UART or RS-485 is built for.
+- **Wi-Fi capable**: has a wireless network interface that Modbus TCP and MQTT are built for (for example the ESP32-S3).
+- **Ethernet capable**: has a wired network interface that TCP and UDP protocols are built for (for example STM32 Nucleo and Discovery).
+
+No exchange over any of these interfaces has been tested on a board; what has been verified is in the how-to pages for [Modbus](../guides/modbus.md) and [MQTT](../guides/mqtt-sparkplug.md).
 
 Studio shows the Wi-Fi or Ethernet settings only for boards that have that hardware.
 
 ## Supported Protocols
 
-ZPLC natively supports:
+The firmware implements:
 
 - **Modbus**: Both Modbus RTU (Serial) and Modbus TCP (Network).
 - **MQTT**: Standard MQTT publish/subscribe messaging for IIoT integration, including profiles for Sparkplug B, standard brokers, AWS IoT Core, and Azure IoT Hub.

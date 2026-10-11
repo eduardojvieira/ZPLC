@@ -77,7 +77,7 @@ By restricting everything to the HAL, ZPLC guarantees deep portability.
 ## Working Principles
 
 1. **Keep platform code out of the core**: The core must never talk directly to MCU registers or Zephyr drivers. All hardware requests go through the generic HAL.
-2. **Deterministic execution**: Memory allocation is static at compilation time. The runtime parses and executes bytecode within guaranteed bounds.
+2. **Bounded execution**: Memory allocation is static at compilation time, and the runtime parses and executes bytecode within fixed memory bounds. Timing is a separate matter: no scan time has been measured on a board.
 3. **Multi-task execution**: The system isolates the execution context of individual programs while safely exposing shared global data blocks (like Modbus tags or physical Inputs).
 
 ## Where to Go Next

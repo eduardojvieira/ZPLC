@@ -981,6 +981,20 @@
   "LNG-005": [
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"7 Breakpoint stops execution","partial":true}
   ],
+  "LNG-006": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/monitoring/elementStates.test.ts","test":"a variable is read from the program of its own file (LNG-006)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/monitoring/elementStates.test.ts","test":"every variable that a translated source says it reads exists in the debug map (LNG-006)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/monitoring/elementStates.test.ts","test":"the power of a rung from the values read (LNG-006)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/monitoring/elementStates.test.ts","test":"the states of elements from monitor entries (LNG-006)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/monitoring/inlineValues.test.ts","test":"inline values in Instruction List (LNG-006)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/monitoring/inlineValues.test.ts","test":"inline values in Structured Text (LNG-006)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/monitoring/inlineValues.test.ts","test":"the widgets of a file (LNG-006)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/monitoring/runtime.test.ts","test":"online monitoring of the five languages against the real runtime (LNG-006)"},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"28b Online values of a rung come from the debug map","partial":true},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"28c Online values of an FBD come from the debug map","partial":true},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"28d Online state of an SFC comes from the debug map","partial":true},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"28e Inline values in Structured Text come from the debug map","partial":true}
+  ],
   "LNG-007": [
     {"kind":"unit","ref":"packages/zplc-ide/src/editors/paletteExecution.test.ts","test":"LNG-007 every block of the FBD palette is placed, built and run"},
     {"kind":"unit","ref":"packages/zplc-ide/src/editors/paletteExecution.test.ts","test":"LNG-007 every coil of the Ladder palette is run"},
@@ -999,10 +1013,44 @@
   "LNG-009": [
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"9 Undo after switching tabs"}
   ],
+  "LNG-010": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/editors/gesture.test.ts","test":"one drag is one undo step, and the selection comes back (LNG-010, WP-55)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/editors/gesture.test.ts","test":"which changes of a canvas end a gesture (LNG-010)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/editors/ld/graphModel.test.ts","test":"LD selection (LNG-010)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/editors/sfc/graphModel.test.ts","test":"SFC selection (LNG-010)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/editors/visualHistory.test.ts","test":"visual snapshot history (LNG-010)"},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"28i An element dropped on a rung is inserted as the keyboard inserts it","partial":true},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"28j A block dragged with the pointer is one undo step","partial":true}
+  ],
   "LNG-011": [
     {"kind":"unit","ref":"packages/zplc-ide/src/models/visualFileLoad.schema.test.ts","test":"LNG-011 a variable is an object with a name and a type, in every language"},
     {"kind":"unit","ref":"packages/zplc-ide/src/models/visualFileLoad.schema.test.ts","test":"LNG-011 the parts of a Ladder file have the shape the editor reads"},
     {"kind":"unit","ref":"packages/zplc-ide/src/models/visualFileLoad.schema.test.ts","test":"LNG-011 the parts of an SFC chart have the shape the editor reads"}
+  ],
+  "LNG-012": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/editors/fbd/keyboard.test.ts","test":"LNG-012 binding a function block diagram from the declared symbols"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/editors/fbd/keyboard.test.ts","test":"LNG-012 connecting and disconnecting from the keyboard"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/editors/fbd/keyboard.test.ts","test":"LNG-012 deleting and commenting from the keyboard"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/editors/fbd/keyboard.test.ts","test":"LNG-012 function block diagram cursor"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/editors/fbd/keyboard.test.ts","test":"LNG-012 function block diagram keyboard authoring"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/editors/fbd/keyboard.test.ts","test":"LNG-012 function block diagram palette"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/editors/keymap.test.ts","test":"LNG-012 the key table of the visual editors"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/editors/ld/keyboard.test.ts","test":"LNG-012 binding a variable from the declared symbols"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/editors/ld/keyboard.test.ts","test":"LNG-012 ladder cursor"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/editors/ld/keyboard.test.ts","test":"LNG-012 ladder keyboard authoring"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/editors/ld/keyboard.test.ts","test":"LNG-012 ladder structure from the keyboard"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/editors/ld/keyboard.test.ts","test":"LNG-012 what the keyboard does not do without a cursor to show it"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/editors/picker.test.ts","test":"LNG-012 palettes are searchable from the keyboard"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/editors/sfc/keyboard.test.ts","test":"LNG-012 connecting and deleting in the chart from the keyboard"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/editors/sfc/keyboard.test.ts","test":"LNG-012 naming and conditions from the declared symbols"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/editors/sfc/keyboard.test.ts","test":"LNG-012 sequential function chart cursor"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/editors/sfc/keyboard.test.ts","test":"LNG-012 sequential function chart keyboard authoring"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/editors/sfc/keyboard.test.ts","test":"LNG-012 sequential function chart palette"},
+    {"kind":"unit","ref":"tools/docs/generate_keyboard_reference.test.ts","test":"LNG-012 keyboard reference: generated from the key table of the editors"},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"28f A rung is built from the keyboard","partial":true},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"28g A function block diagram is edited from the keyboard","partial":true},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"28h A sequential function chart is edited from the keyboard","partial":true},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"28i An element dropped on a rung is inserted as the keyboard inserts it","partial":true}
   ],
   "LNG-013": [
     {"kind":"unit","ref":"packages/zplc-ide/src/editors/fbd/graphModel.test.ts","test":"LNG-013 drawing a wire between two pins"},
@@ -1015,6 +1063,22 @@
     {"kind":"unit","ref":"packages/zplc-ide/src/models/visualFileRoundTrip.test.ts","test":"LNG-014 the committed visual files"},
     {"kind":"unit","ref":"packages/zplc-ide/src/models/visualFileRoundTrip.test.ts","test":"LNG-014 the one form of a visual file"},
     {"kind":"unit","ref":"packages/zplc-ide/src/utils/fileSystem.visualRoundTrip.test.ts","test":"LNG-014 open and save without an edit"}
+  ],
+  "LNG-015": [
+    {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/check.test.ts","test":"checking a project (LNG-015)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/langsvc/assist.test.ts","test":"completion in a buffer that is being typed (LNG-015)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/langsvc/assist.test.ts","test":"hover and outline across the project (LNG-015)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/langsvc/liveDiagnostics.test.ts","test":"the live diagnostics of the project (LNG-015)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/langsvc/markers.test.ts","test":"the diagnostics of the project as markers (LNG-015)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/langsvc/monacoProviders.test.ts","test":"the language service providers (LNG-015, LNG-016)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/langsvc/projectIndex.test.ts","test":"the index of a project resolves names by scope (LNG-015)"},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"4c Errors of the project are shown while typing","partial":true}
+  ],
+  "LNG-016": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/langsvc/assist.test.ts","test":"signature help (LNG-016)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/langsvc/format.test.ts","test":"document formatting (LNG-016)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/langsvc/monacoProviders.test.ts","test":"the language service providers (LNG-015, LNG-016)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/langsvc/rename.test.ts","test":"rename symbol (LNG-016)"}
   ],
   "LNG-017": [
     {"kind":"conformance","ref":"conformance/lng/lng-017-il-unbalanced-closing-parenthesis.expect.json","test":"LNG-017 an IL closing parenthesis without an opening one is an error on its line"},
@@ -1738,6 +1802,10 @@
     {"kind":"unit","ref":"packages/zplc-ide/electron/toolWorkerHost.test.ts","test":"the worker command schema (IDE-012, IDE-017)"},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"35 A long test run can be cancelled and leaves no process behind"}
   ],
+  "IDE-013": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/store/regionSubscriptions.test.ts","test":"regions render for what they show (IDE-013)"},
+    {"kind":"unit","ref":"tools/ci/ide-structure.test.ts","test":"a component must not subscribe to the whole store (IDE-013)"}
+  ],
   "IDE-014": [
     {"kind":"unit","ref":"tools/ci/ide-structure.test.ts","test":"module size stopgap (IDE-014): listed modules may stay above the limit until they are split","partial":true}
   ],
@@ -1790,8 +1858,8 @@
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"31 A version 1 project shows its migration before it is applied","partial":true}
   ],
   "IDE-023": [
-    {"kind":"unit","ref":"packages/zplc-ide/src/components/stLanguageService.project.test.ts","test":"completion from the project (IDE-023)"},
-    {"kind":"unit","ref":"packages/zplc-ide/src/components/stLanguageService.project.test.ts","test":"hover over a name of the project (IDE-023)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/langsvc/assist.test.ts","test":"completion from the project (IDE-023)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/langsvc/assist.test.ts","test":"hover over a name of the project and of the library (IDE-023)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/project/libraries.test.ts","test":"addLibrary and removeLibrary (IDE-023)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/project/libraries.test.ts","test":"configuredLibraries (IDE-023)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/project/libraries.test.ts","test":"libraryProblem (IDE-023)"},
@@ -2074,6 +2142,18 @@
   "REL-035": [
     {"kind":"unit","ref":"scripts/release/releasing-md.test.ts","test":"the external services of the release (REL-035)"}
   ],
+  "DOC-002": [
+    {"kind":"unit","ref":"tools/docs/docs_structure.test.ts","test":"docs structure: the sidebar is organised by reader intent (DOC-002)"}
+  ],
+  "DOC-003": [
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"41 Blink without hardware (the tutorial)"}
+  ],
+  "DOC-004": [
+    {"kind":"unit","ref":"tools/docs/install_and_status_pages.test.ts","test":"first board page: written from the manifest, and honest that no board has run it (DOC-004, stopgap: the steps have not been executed on a board)","partial":true}
+  ],
+  "DOC-005": [
+    {"kind":"unit","ref":"tools/docs/install_and_status_pages.test.ts","test":"install page: built from the channels and installers that exist today (DOC-005)"}
+  ],
   "DOC-006": [
     {"kind":"unit","ref":"tools/docs/generate_language_reference.test.ts","test":"language reference: every row of the matrix is on a page, in both languages (DOC-006, stopgap: no editor screenshot yet)","partial":true},
     {"kind":"unit","ref":"tools/docs/generate_language_reference.test.ts","test":"language reference: markup and addressing (DOC-006, stopgap: no editor screenshot yet)","partial":true},
@@ -2097,10 +2177,55 @@
     {"kind":"unit","ref":"tools/docs/source-parsers.test.ts","test":"source readers: the command line, MCP and the protocol (DOC-008)"},
     {"kind":"unit","ref":"tools/docs/source-parsers.test.ts","test":"source readers: the shell command tree (DOC-008)"}
   ],
+  "DOC-009": [
+    {"kind":"unit","ref":"tools/docs/check-docs-config.test.ts","test":"docs configuration fragments: a fragment is a piece of a project file that builds (DOC-009)"},
+    {"kind":"unit","ref":"tools/docs/check-docs-config.test.ts","test":"finds a board entry of a page by its fence and checks it against the validator of the board manifest (DOC-009)"},
+    {"kind":"unit","ref":"tools/docs/check-docs-config.test.ts","test":"how-to guides: each task has a page in both languages with something that runs (DOC-009)"},
+    {"kind":"unit","ref":"tools/docs/mcp_protocol_revision.test.ts","test":"MCP guide: the protocol revision of the server is the one the page shows (DOC-009)"}
+  ],
+  "DOC-010": [
+    {"kind":"unit","ref":"tools/docs/install_and_status_pages.test.ts","test":"hardware support page: one table, derived from the manifest and its records (DOC-010)"},
+    {"kind":"unit","ref":"tools/docs/install_and_status_pages.test.ts","test":"safety page: what ZPLC is not, and limits that the source says (DOC-010)"}
+  ],
+  "DOC-011": [
+    {"kind":"unit","ref":"tools/docs/contributor_docs.test.ts","test":"README: what ZPLC is, what it does today, what it runs on and how to try it, on the first screen (DOC-011)"}
+  ],
+  "DOC-012": [
+    {"kind":"unit","ref":"tools/docs/check_capability_claims.test.ts","test":"capability claims: what the public text says ZPLC can do is backed by a check (DOC-012)"}
+  ],
+  "DOC-013": [
+    {"kind":"unit","ref":"tools/docs/capture-screenshots.test.ts","test":"documentation screenshots: a page shows only captured pictures (DOC-013)"},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"41 Blink without hardware (the tutorial)","partial":true}
+  ],
   "DOC-014": [
     {"kind":"unit","ref":"tools/docs/check_doc_claims.test.ts","test":"doc claims: a claim holds only when the source has the thing (DOC-014)"},
     {"kind":"unit","ref":"tools/docs/check_doc_claims.test.ts","test":"doc claims: the allow-list can only shrink (DOC-014)"},
     {"kind":"unit","ref":"tools/docs/check_doc_claims.test.ts","test":"doc claims: the documents of the repository (DOC-014)"},
     {"kind":"unit","ref":"tools/docs/check_doc_claims.test.ts","test":"doc claims: what a page says is read from its code spans and shell blocks (DOC-014)"}
+  ],
+  "DOC-016": [
+    {"kind":"unit","ref":"tools/docs/docs_structure.test.ts","test":"docs structure: a page is published only when both languages are complete (DOC-016)"}
+  ],
+  "DOC-018": [
+    {"kind":"unit","ref":"tools/docs/docs_structure.test.ts","test":"docs site: admonitions in the generator\\'s own syntax and no version selector for one version (DOC-018, stopgap: the site has no search yet)","partial":true}
+  ],
+  "DOC-022": [
+    {"kind":"unit","ref":"tools/docs/contributor_docs.test.ts","test":"agent files: the project skill and AGENTS.md are current, and the contributor guide comes first (DOC-022)"}
+  ],
+  "DOC-023": [
+    {"kind":"unit","ref":"tools/docs/contributor_docs.test.ts","test":"task runner: one entry point, with a recipe for each step a contributor takes (DOC-023)"}
+  ],
+  "DOC-024": [
+    {"kind":"unit","ref":"tools/docs/contributor_docs.test.ts","test":"CONTRIBUTING.md: copy-and-paste commands per layer, and the files a contributor expects (DOC-024)"}
+  ],
+  "DOC-026": [
+    {"kind":"unit","ref":"tools/docs/contributor_docs.test.ts","test":"examples: the VM fixtures are labelled and the PLC projects are easy to find (DOC-026)"}
+  ],
+  "DOC-029": [
+    {"kind":"unit","ref":"tools/docs/contributor_docs.test.ts","test":"principles: the constitution is readable from the contributor pages (DOC-029)"}
+  ],
+  "DOC-030": [
+    {"kind":"unit","ref":"scripts/release/release-notes.test.ts","test":"what changed for a user, what breaks, how to migrate and what is limited (DOC-030)"},
+    {"kind":"unit","ref":"tools/docs/contributor_docs.test.ts","test":"changelog: what changed for a user, what breaks, how to migrate and what is limited (DOC-030)"}
   ]
 }

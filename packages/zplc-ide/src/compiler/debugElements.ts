@@ -18,6 +18,7 @@ import {
   elementAtLine,
   elementWithin,
   parseElement,
+  type MonitorEntry,
   type SourceElementId,
   type SourceMapRange,
 } from '../models/sourceElements';
@@ -26,6 +27,8 @@ import type { PLCLanguage } from './index';
 export interface TranslatedSource {
   language: PLCLanguage;
   map: readonly SourceMapRange[];
+  /** Where the state of each element is read online (LNG-006). */
+  monitor?: readonly MonitorEntry[];
 }
 
 /**
@@ -37,7 +40,11 @@ export function annotateDebugMapElements(debugMap: DebugMap, translated: Readonl
     const source = pou.sourceRef === undefined ? undefined : translated.get(pou.sourceRef);
     if (!source) continue;
     if (source.language === 'IL') annotateIL(pou, source.map);
-    else annotateDiagram(pou, source.map);
+    else {
+      annotateDiagram(pou, source.map);
+      // the map says which variable holds the state of each element, so a display reads it and does not guess a name
+      if (source.monitor) pou.monitor = source.monitor.map((entry) => ({ ...entry }));
+    }
   }
 }
 
@@ -95,6 +102,11 @@ const sameFile = (a: string, b: string): boolean => {
 
 function pouOf(debugMap: DebugMap | null | undefined, sourceRef: string): DebugPOUInfo | undefined {
   return debugMap ? Object.values(debugMap.pou).find((pou) => pou.sourceRef !== undefined && sameFile(pou.sourceRef, sourceRef)) : undefined;
+}
+
+/** The program of the debug map that was built from the file (LNG-006): the one whose variables its diagram shows. */
+export function debugPouOf(debugMap: DebugMap | null | undefined, sourceRef: string): DebugPOUInfo | undefined {
+  return pouOf(debugMap, sourceRef);
 }
 
 /**

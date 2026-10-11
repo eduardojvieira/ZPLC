@@ -1092,8 +1092,10 @@ describe('SFC scan semantics (LNG-024, LNG-025, LNG-002)', () => {
       ],
     });
     const prioritised = transpileSFCToST(base).source;
-    expect(prioritised).toContain('_F_early := X_a AND (TRUE);');
-    expect(prioritised).toContain('_F_late := X_a AND (TRUE) AND NOT _F_early;');
+    // the condition is evaluated once, into its own state, and the transition reads it (LNG-006 shows it online)
+    expect(prioritised).toContain('_C_early := (TRUE);');
+    expect(prioritised).toContain('_F_early := X_a AND _C_early;');
+    expect(prioritised).toContain('_F_late := X_a AND _C_late AND NOT _F_early;');
 
     const ordered = transpileSFCToST(chart({
       transitions: [
@@ -1101,7 +1103,7 @@ describe('SFC scan semantics (LNG-024, LNG-025, LNG-002)', () => {
         { id: 'second', fromStep: 'a', toStep: 'c', condition: 'TRUE' },
       ],
     })).source;
-    expect(ordered).toContain('_F_second := X_a AND (TRUE) AND NOT _F_first;');
+    expect(ordered).toContain('_F_second := X_a AND _C_second AND NOT _F_first;');
   });
 
   it('leaves all the steps of a convergence and enters all those of a divergence', () => {
@@ -1119,7 +1121,7 @@ describe('SFC scan semantics (LNG-024, LNG-025, LNG-002)', () => {
       actions: [],
     }));
     expect(result.success).toBe(true);
-    expect(result.source).toContain('_F_join := X_b AND X_c AND (TRUE);');
+    expect(result.source).toContain('_F_join := X_b AND X_c AND _C_join;');
     expect(result.source).toContain('IF _F_fork THEN X_b := TRUE; END_IF;');
     expect(result.source).toContain('IF _F_fork THEN X_c := TRUE; END_IF;');
     expect(result.source).toContain('IF _F_join THEN X_c := FALSE; END_IF;');
@@ -1767,7 +1769,8 @@ describe('SFC to ST Transpiler', () => {
       
       expect(result.success).toBe(true);
       // The transition is evaluated into a flag first and applied after: the step is left, the next entered
-      expect(result.source).toContain('_F_t1 := X_step1 AND (TRUE);');
+      expect(result.source).toContain('_C_t1 := (TRUE);');
+      expect(result.source).toContain('_F_t1 := X_step1 AND _C_t1;');
       expect(result.source).toContain('IF _F_t1 THEN X_step1 := FALSE; END_IF;');
       expect(result.source).toContain('IF _F_t1 THEN X_step2 := TRUE; END_IF;');
       expect(assemble(compileST(result.source)).bytecode.length).toBeGreaterThan(0);
@@ -1950,7 +1953,7 @@ describe('SFC to ST Transpiler', () => {
       boundary.transitions[0].condition = 'Xgood.T >= T#1s';
       const result = transpileSFCToST(boundary);
       expect(result.success).toBe(true);
-      expect(result.source).toContain('(Xgood.T >= T#1s)');
+      expect(result.source).toContain('_C_start := (Xgood.T >= T#1s);');
       expect(result.source).not.toContain('XT_good.ET');
 
       const unsafe = validModel();

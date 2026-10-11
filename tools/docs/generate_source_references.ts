@@ -377,6 +377,9 @@ export function cliBody(lang: Lang): string {
 // MCP
 // ---------------------------------------------------------------------------
 
+/** The protocol revision of the MCP SDK that the server is built on; the release smoke test asks for tools with it. */
+const MCP_REVISION = '2026-07-28';
+
 export function mcpBody(lang: Lang): string {
   const mcp = parseMcp(read(SOURCES.mcp));
   const usage = /Usage: (zplc-mcp [^\\']+?)\\n/.exec(read(SOURCES.mcpEntry))?.[1];
@@ -386,8 +389,22 @@ export function mcpBody(lang: Lang): string {
     en: `${code('zplc-mcp')} is a local server of the Model Context Protocol over standard input and output. It exposes ${mcp.tools.length} tools and ${mcp.resources.length} resources for one workspace. Every tool is read-only except ${writers}, which runs a local ephemeral cross-build: no tool flashes, deploys, forces, starts, stops or opens a serial port or a shell. The results are evidence of a recorded host run, not of hardware.`,
     es: `${code('zplc-mcp')} es un servidor local del Model Context Protocol sobre entrada y salida estándar. Expone ${mcp.tools.length} herramientas y ${mcp.resources.length} recursos para un espacio de trabajo. Todas las herramientas son de solo lectura salvo ${writers}, que ejecuta una compilación cruzada local y efímera: ninguna herramienta graba, despliega, fuerza, arranca, detiene ni abre un puerto serie o una consola. Los resultados son evidencia de una ejecución registrada en el host, no del hardware.`,
   };
+  // The entry point asks the SDK to answer a 2025-era opening with an error (`legacy: 'reject'`) or to serve it; the page says which.
+  const legacy = /legacy:\s*'(reject|serve)'/.exec(read(SOURCES.mcpEntry))?.[1];
+  if (!legacy) throw new Error(`${SOURCES.mcpEntry}: the legacy option of the stdio transport was not found`);
+  const revision: Record<'reject' | 'serve', L10n> = {
+    reject: {
+      en: `The server speaks protocol revision ${MCP_REVISION} and no older one: its entry point starts the transport with ${code("legacy: 'reject'")}. A client names the revision and its capabilities in the ${code('_meta')} of every request (${code('io.modelcontextprotocol/protocolVersion')} and ${code('io.modelcontextprotocol/clientCapabilities')}); there is no ${code('initialize')} step. An ${code('initialize')} of an older revision is answered with error ${code('-32022')}, ${code('Unsupported protocol version: <revision>')}, and ${code('data.supported')} lists ${code(MCP_REVISION)}. The exact answers are in [Use an AI assistant and MCP safely](../guides/ai-and-mcp.md#the-protocol-revision).`,
+      es: `El servidor habla la revisión ${MCP_REVISION} del protocolo y ninguna anterior: su punto de entrada inicia el transporte con ${code("legacy: 'reject'")}. Un cliente nombra la revisión y sus capacidades en el ${code('_meta')} de cada solicitud (${code('io.modelcontextprotocol/protocolVersion')} y ${code('io.modelcontextprotocol/clientCapabilities')}); no hay paso ${code('initialize')}. Un ${code('initialize')} de una revisión anterior se responde con el error ${code('-32022')}, ${code('Unsupported protocol version: <revisión>')}, y ${code('data.supported')} lista ${code(MCP_REVISION)}. Las respuestas exactas están en [Usar un asistente de IA y MCP con seguridad](../guides/ai-and-mcp.md#la-revisión-del-protocolo).`,
+    },
+    serve: {
+      en: `The server serves the 2025 handshake (${code('initialize')}) as well as revision ${MCP_REVISION}: its entry point starts the transport with ${code("legacy: 'serve'")}.`,
+      es: `El servidor atiende el apretón de manos de 2025 (${code('initialize')}) además de la revisión ${MCP_REVISION}: su punto de entrada inicia el transporte con ${code("legacy: 'serve'")}.`,
+    },
+  };
   const headings: Record<string, L10n> = {
     start: { en: 'Starting the server', es: 'Arranque del servidor' },
+    revision: { en: 'Protocol revision', es: 'Revisión del protocolo' },
     tools: { en: 'Tools', es: 'Herramientas' },
     resources: { en: 'Resources', es: 'Recursos' },
   };
@@ -401,6 +418,8 @@ export function mcpBody(lang: Lang): string {
     fromSource(SOURCES.mcp, lang),
     `## ${headings.start![lang]}`,
     fence('text', usage),
+    `## ${headings.revision![lang]}`,
+    revision[legacy as 'reject' | 'serve'][lang],
     `## ${headings.tools![lang]}`,
     table(toolHead, mcp.tools.map((tool) => [
       code(tool.name), cell(tool.title), tool.inputs.length > 0 ? tool.inputs.map((input) => code(input)).join(', ') : '', tool.readOnly ? yes[lang] : no[lang], cell(tool.description),

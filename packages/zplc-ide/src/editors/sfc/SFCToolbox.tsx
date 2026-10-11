@@ -1,12 +1,14 @@
 /**
- * SFCToolbox - Sidebar with draggable elements for SFC editor
+ * SFCToolbox - Sidebar with the elements of the SFC editor
  * 
- * Provides Steps, Transitions, and other SFC elements for drag-and-drop.
+ * Provides Steps and Transitions. An element is a button: dragging it onto the canvas places it there, and pressing it
+ * (Enter, Space or a click) inserts it after the selected element (LNG-012). The search box filters the elements.
  */
 
 import { useState } from 'react';
 import { ChevronDown, ChevronRight, Circle, ArrowDown } from 'lucide-react';
 import { SFC_PALETTE, type SFCPaletteElement } from '../../models/sfcSupport';
+import { filterItems } from '../picker';
 
 // =============================================================================
 // Element Categories
@@ -28,7 +30,14 @@ const SFC_CATEGORIES: SFCElementCategory[] = [
 // Component
 // =============================================================================
 
-export default function SFCToolbox() {
+interface SFCToolboxProps {
+  /** An element was pressed: it is inserted after the selected element. */
+  onInsert?: (elementType: SFCPaletteElement['type']) => void;
+}
+
+export default function SFCToolbox({ onInsert }: SFCToolboxProps) {
+  const [query, setQuery] = useState('');
+  const found = new Set(filterItems(SFC_PALETTE.map((element) => ({ id: element.type, label: element.label, detail: element.description, group: element.category })), query).map((item) => item.id));
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(
     new Set(['Steps', 'Transitions']) // Default expanded
   );
@@ -59,10 +68,21 @@ export default function SFCToolbox() {
         </span>
       </div>
 
+      <div className="px-2 pt-2">
+        <input
+          type="search"
+          value={query}
+          onChange={(event) => setQuery(event.target.value)}
+          aria-label="Search the elements"
+          placeholder="Search"
+          className="w-full rounded border border-[var(--border-color)] bg-[var(--color-surface-700)] px-2 py-1 text-xs text-[var(--text-primary)] focus:border-[var(--color-accent-blue)] focus:outline-none"
+        />
+      </div>
+
       {/* Categories */}
       <div className="py-1">
-        {SFC_CATEGORIES.map((category) => {
-          const isExpanded = expandedCategories.has(category.name);
+        {SFC_CATEGORIES.map((category) => ({ ...category, elements: category.elements.filter((element) => found.has(element.type)) })).filter((category) => category.elements.length > 0).map((category) => {
+          const isExpanded = query.trim() !== '' || expandedCategories.has(category.name);
           
           return (
             <div key={category.name} className="select-none">
@@ -84,20 +104,25 @@ export default function SFCToolbox() {
               {isExpanded && (
                 <div className="pb-1">
                   {category.elements.map((element) => (
-                    <div
+                    <button
+                      type="button"
                       key={element.type}
                       draggable
                       onDragStart={(e) => onDragStart(e, element.type)}
-                      className="mx-2 my-0.5 px-2 py-1.5 rounded text-xs 
+                      onClick={() => onInsert?.(element.type)}
+                      data-sfc-toolbox-item={element.type}
+                      aria-label={`Insert ${element.label}`}
+                      className="mx-2 my-0.5 block w-[calc(100%-1rem)] px-2 py-1.5 rounded text-left text-xs 
                                  bg-[var(--color-surface-700)] hover:bg-[var(--color-surface-600)] cursor-grab active:cursor-grabbing
-                                 border border-transparent hover:border-[var(--color-accent-blue)] transition-colors"
-                      title={element.description}
+                                 border border-transparent hover:border-[var(--color-accent-blue)] transition-colors
+                                 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--color-accent-blue)]"
+                      title={`${element.description}: press to insert after the selected element, or drag onto the canvas`}
                     >
                       <div className="text-[var(--text-primary)] font-medium">{element.label}</div>
                       <div className="text-[10px] text-[var(--text-tertiary)] mt-0.5">
                         {element.description}
                       </div>
-                    </div>
+                    </button>
                   ))}
                 </div>
               )}
@@ -109,8 +134,8 @@ export default function SFCToolbox() {
       {/* Help text */}
       <div className="px-3 py-2 border-t border-[var(--border-color)]">
         <p className="text-[10px] text-[var(--text-tertiary)] leading-relaxed">
-          Drag elements onto the canvas. Connect Steps with Transitions.
-          Double-click to edit names and conditions.
+          Press an element to insert it after the selected one, or drag it onto the canvas.
+          Connect Steps with Transitions, or press C on one. Double-click, or press F2, to edit names and conditions.
         </p>
       </div>
 

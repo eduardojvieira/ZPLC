@@ -12,6 +12,9 @@
 //   - import cycles (IDE-033): a static value import that leads back to its module. `import type` is erased and
 //     `import()` is deferred, so neither can create an initialisation cycle and neither is an edge. Each cycle is
 //     reported once, with its path.
+//   - store subscriptions (IDE-013): a component or hook outside src/store/ must not subscribe to the whole store
+//     (`useIDEStore()`, or a selector that returns the state or its `debug` slice): it would render again on every
+//     change of the store, and a watched value changes ten times a second. Select the fields that it shows.
 //   - module size (IDE-014): a hand-written module of src/ or electron/ has at most MODULE_LINE_LIMIT lines.
 //     Tests (.test.ts, .test.tsx) and declaration files (.d.ts) are not modules of the product and are not
 //     measured; there are no generated sources in these two folders. The modules above the limit when the rule
@@ -123,9 +126,27 @@ function findCycles(graph: ReadonlyMap<string, string[]>): string[][] {
   });
 }
 
+const withoutComments = (text: string): string => text.replace(/\/\*[\s\S]*?\*\//g, (comment) => comment.replace(/[^\n]/g, ' ')).replace(/\/\/[^\n]*/g, (comment) => ' '.repeat(comment.length));
+/** `useIDEStore()`, `useIDEStore((state) => state)` and `useIDEStore((state) => state.debug)`: a subscription to everything that changes. */
+const WHOLE_STORE = /\buseIDEStore\s*(?:<[^>()]*>)?\s*\(\s*(?:\)|\(\s*([A-Za-z_$][\w$]*)\s*\)\s*=>\s*\1(?:\.debug)?\s*\))/g;
+
+/** The lines of a module that subscribe to the whole store (IDE-013). */
+export function wholeStoreSubscriptions(text: string): number[] {
+  const code = withoutComments(text);
+  const found: number[] = [];
+  for (const match of code.matchAll(WHOLE_STORE)) found.push(code.slice(0, match.index).split('\n').length);
+  return found;
+}
+
 export function checkIdeStructure(modules: readonly SourceModule[], options: StructureOptions): string[] {
   const problems: string[] = [];
   const product = modules.filter((module) => isProductModule(module.path));
+  for (const module of product) {
+    if (module.path.startsWith(`${IDE_ROOT}/src/store/`) || !module.path.startsWith(`${IDE_ROOT}/src/`)) continue;
+    for (const line of wholeStoreSubscriptions(module.text)) {
+      problems.push(`IDE-013: ${module.path}:${line} subscribes to the whole store, which renders it again on every change, ten times a second while a value is watched; select the fields it shows (src/store/regionSubscriptions.ts)`);
+    }
+  }
   const known = new Set(product.map((module) => module.path));
   const values = new Map<string, string[]>();
   const exceptions = options.exceptions ?? [];

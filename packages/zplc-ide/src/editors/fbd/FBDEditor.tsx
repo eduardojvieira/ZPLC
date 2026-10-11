@@ -9,7 +9,7 @@
  * - Instance Monitor popup for Function Block inspection
  */
 
-import { useCallback, useEffect, useMemo, useReducer, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from 'react';
+import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react';
 import {
   ReactFlow,
   Background,
@@ -32,16 +32,21 @@ import {
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 
-import { type FBDModel, type FBDBlock, type FBDConnection, getDefaultPorts } from '../../models/fbd';
-import { blockNodeData, connectBlocks, copyFBDFragment, type WireEnds, edgesToConnections, hasCanonicalEdgeChanges, hasCanonicalNodeChanges, nodesToBlocks, pasteFBDFragment, uniqueNodeId, type FBDClipboardFragment } from './graphModel';
+import { type FBDModel, type FBDBlock, type FBDConnection } from '../../models/fbd';
+import { applyFBDSelection, blockNodeData, connectBlocks, copyFBDFragment, type WireEnds, edgesToConnections, fbdSelection, nodesToBlocks, pasteFBDFragment, type FBDClipboardFragment } from './graphModel';
+import { edgeChangesCommit, nodeChangesCommit } from '../gesture';
+import { useGestureCommit } from '../useGestureCommit';
+import { getVisualSelection, setVisualSelection, useVisualFileKey } from '../visualSelection';
+import type { VisualGesture } from '../visualHistory';
 import { nodeTypes, getNodeType } from './nodes';
 import { edgeTypes } from './edges';
 import FBDToolbox from './FBDToolbox';
 import InstanceMonitor from './InstanceMonitor';
-import { useDebugValues } from '../../hooks/useDebugValue';
-import { useIDEStore } from '../../store/useIDEStore';
-import { findProjectBlock } from '../../models/projectBlocks';
+import { useMonitor } from '../../monitoring/useMonitor';
+import type { ElementState, Reading } from '../../monitoring/elementStates';
 import { useProjectBlocks } from '../useProjectBlocks';
+import { fbdCanvasCommands } from './keyboard';
+import { useCanvasKeyboard } from '../useCanvasKeyboard';
 import { useElementSelection } from '../elementSelection';
 import { useElementBreakpoints } from '../elementBreakpoints';
 import { markBreakpointNodes } from '../breakpointMarks';
@@ -53,7 +58,8 @@ import { blockElement, parseElement, type SourceElementId } from '../../models/s
 
 interface FBDEditorProps {
   model: FBDModel;
-  onChange?: (model: FBDModel) => void;
+  /** Called once for each gesture of the user (LNG-010), with what the history needs to know of it. */
+  onChange?: (model: FBDModel, gesture?: VisualGesture) => void;
   readOnly?: boolean;
 }
 
@@ -71,12 +77,11 @@ interface MonitorState {
 // =============================================================================
 
 /**
- * Convert FBD blocks to ReactFlow nodes
+ * Convert FBD blocks to ReactFlow nodes. What a node shows online is not part of it: it is put on the nodes that are
+ * drawn (`shownNodes` below), from the monitor of the build, so a rebuilt canvas does not lose it.
  */
 function blocksToNodes(
   blocks: FBDBlock[],
-  debugActive: boolean,
-  liveValues: Map<string, unknown>,
   onOpenMonitor: (instanceName: string, blockType: string) => void
 ): Node[] {
   return blocks.map((block) => ({
@@ -85,9 +90,6 @@ function blocksToNodes(
     position: block.position,
     data: {
       ...blockNodeData(block),
-      // Debug props
-      debugActive,
-      liveValues,
       onOpenMonitor,
     },
   }));
@@ -96,29 +98,38 @@ function blocksToNodes(
 /**
  * Convert FBD connections to ReactFlow edges
  */
-function connectionsToEdges(
-  connections: FBDConnection[],
-  debugActive: boolean,
-  liveValues: Map<string, unknown>
-): Edge[] {
+function connectionsToEdges(connections: FBDConnection[]): Edge[] {
   return connections.map((conn) => ({
     id: conn.id,
     source: conn.from.block,
     sourceHandle: conn.from.port,
     target: conn.to.block,
     targetHandle: conn.to.port,
-    // Use debug edge when debugging, otherwise smoothstep
-    type: debugActive ? 'debug' : 'smoothstep',
+    type: 'smoothstep',
     animated: false,
-    style: debugActive ? undefined : {
+    style: {
       stroke: 'var(--visual-wire)',
       strokeWidth: 2,
     },
-    data: debugActive ? {
-      liveValue: liveValues.get(`${conn.from.block}.${conn.from.port}`),
-      debugActive: true,
-    } : undefined,
   }));
+}
+
+/** The value of each pin of each block online, by block id: its outputs, and its inputs as what is wired to them. */
+function pinValuesOf(
+  blocks: readonly FBDBlock[],
+  connections: readonly FBDConnection[],
+  states: ReadonlyMap<string, ElementState>,
+): Map<string, Record<string, Reading>> {
+  const outputs = (blockId: string): Record<string, Reading> => states.get(blockElement(blockId))?.pins ?? {};
+  const constants = new Map(blocks.filter((block) => block.type === 'constant').map((block) => [block.id, block.value as Reading] as const));
+  const sourceValue = (connection: FBDConnection): Reading =>
+    constants.has(connection.from.block) ? constants.get(connection.from.block) : outputs(connection.from.block)[connection.from.port];
+  const pins = new Map<string, Record<string, Reading>>(blocks.map((block) => [block.id, { ...outputs(block.id) }]));
+  for (const connection of connections) {
+    const own = pins.get(connection.to.block);
+    if (own && !(connection.to.port in own)) own[connection.to.port] = sourceValue(connection);
+  }
+  return pins;
 }
 
 /**
@@ -131,8 +142,8 @@ function connectionsToEdges(
 interface FBDEditorInnerProps extends FBDEditorProps {
   initialNodes: Node[];
   initialEdges: Edge[];
-  debugActive: boolean;
-  liveValues: Map<string, unknown>;
+  /** The value each pin holds online (LNG-006); undefined while the program is not running under Studio. */
+  pins: ReadonlyMap<string, Record<string, Reading>> | undefined;
   onOpenMonitor: (instanceName: string, blockType: string) => void;
 }
 
@@ -142,8 +153,7 @@ function FBDEditorInner({
   readOnly = false, 
   initialNodes, 
   initialEdges,
-  debugActive,
-  liveValues,
+  pins,
   onOpenMonitor,
 }: FBDEditorInnerProps) {
   const { screenToFlowPosition, fitView } = useReactFlow();
@@ -159,72 +169,76 @@ function FBDEditorInner({
   const edgesRef = useRef(edges);
   const clipboardRef = useRef<FBDClipboardFragment | undefined>(undefined);
 
-  const commitGraph = useCallback((nextNodes: Node[], nextEdges: Edge[]) => {
+  // One gesture is one commit (LNG-010): a delete reaches the canvas as the removal of the nodes and then of their
+  // wires in one task, and the document is committed once, with the selection from before the gesture and after it.
+  const fileKey = useVisualFileKey();
+  const fileKeyRef = useRef(fileKey);
+  useEffect(() => {
+    fileKeyRef.current = fileKey;
+  }, [fileKey]);
+  const commitModel = useGestureCommit<FBDModel>(onChange);
+
+  const commitGraph = useCallback((nextNodes: Node[], nextEdges: Edge[], coalesce?: string) => {
+    const before = fbdSelection(nodesRef.current, edgesRef.current);
+    const after = fbdSelection(nextNodes, nextEdges);
     nodesRef.current = nextNodes;
     edgesRef.current = nextEdges;
     replaceNodes(nextNodes);
     replaceEdges(nextEdges);
+    setVisualSelection(fileKeyRef.current, after);
     if (!readOnly && onChange) {
-      onChange({
+      commitModel({
         ...model,
         blocks: nodesToBlocks(nextNodes),
         connections: edgesToConnections(nextEdges),
-      });
+      }, { before, after, ...(coalesce === undefined ? {} : { coalesce }) });
     }
-  }, [model, onChange, readOnly]);
+  }, [commitModel, model, onChange, readOnly]);
 
   const updateNodeData = useCallback((nodeId: string, data: Record<string, unknown>) => {
     if (readOnly) return;
     commitGraph(nodesRef.current.map((node) => node.id === nodeId
       ? { ...node, data: { ...node.data, ...data } }
-      : node), edgesRef.current);
+      : node), edgesRef.current, `data:${nodeId}:${Object.keys(data).sort().join(',')}`);
   }, [commitGraph, readOnly]);
   useEffect(() => {
     updateNodeDataRef.current = updateNodeData;
   }, [updateNodeData]);
 
+  // The canvas is rebuilt from the document after every edit, undo and change made outside; the selection is not part of
+  // the document, so it is put back from where the editor remembers it (LNG-010).
   useEffect(() => {
-    const nextNodes = initialNodes.map((node) => ({ ...node, data: { ...node.data, readOnly, onChangeData: (nodeId: string, data: Record<string, unknown>) => updateNodeDataRef.current?.(nodeId, data) } }));
-    nodesRef.current = nextNodes;
-    edgesRef.current = initialEdges;
-    replaceNodes(nextNodes);
-    replaceEdges(initialEdges);
+    const shown = applyFBDSelection(
+      initialNodes.map((node) => ({ ...node, data: { ...node.data, readOnly, onChangeData: (nodeId: string, data: Record<string, unknown>) => updateNodeDataRef.current?.(nodeId, data) } })),
+      initialEdges,
+      getVisualSelection(fileKeyRef.current),
+    );
+    nodesRef.current = shown.nodes;
+    edgesRef.current = shown.edges;
+    replaceNodes(shown.nodes);
+    replaceEdges(shown.edges);
   }, [initialNodes, initialEdges, readOnly]);
-
-  // Update nodes/edges when debug state changes
-  useEffect(() => {
-    const nextNodes = nodesRef.current.map((node) => ({
-      ...node,
-      data: {
-        ...node.data,
-        debugActive,
-        liveValues,
-        onOpenMonitor,
-      },
-    }));
-    nodesRef.current = nextNodes;
-    replaceNodes(nextNodes);
-  }, [debugActive, liveValues, onOpenMonitor]);
-
-  useEffect(() => {
-    const nextEdges = edgesRef.current.map((edge) => ({
-      ...edge,
-      type: debugActive ? 'debug' : 'smoothstep',
-      style: debugActive ? undefined : { stroke: 'var(--visual-wire)', strokeWidth: 2 },
-      data: debugActive ? {
-        liveValue: liveValues.get(`${edge.source}.${edge.sourceHandle}`),
-        debugActive: true,
-      } : undefined,
-    }));
-    edgesRef.current = nextEdges;
-    replaceEdges(nextEdges);
-  }, [debugActive, liveValues]);
 
   // Breakpoints on blocks: execution stops at the first statement the block generates (LNG-004)
   const breakpoints = useElementBreakpoints();
+  const debugActive = pins !== undefined;
+  // what the nodes and wires show online: put on the ones that are drawn, so that it follows a rebuilt canvas (LNG-006)
   const markedNodes = useMemo(
-    () => markBreakpointNodes(nodes, (node) => blockElement(node.id), breakpoints),
-    [nodes, breakpoints],
+    () => markBreakpointNodes(
+      debugActive ? nodes.map((node) => ({ ...node, data: { ...node.data, debugActive, pinValues: pins.get(node.id) } })) : nodes,
+      (node) => blockElement(node.id),
+      breakpoints,
+    ),
+    [nodes, breakpoints, debugActive, pins],
+  );
+  const shownEdges = useMemo(
+    () => (!debugActive ? edges : edges.map((edge) => ({
+      ...edge,
+      type: 'debug',
+      style: undefined,
+      data: { liveValue: pins.get(edge.source)?.[edge.sourceHandle ?? 'OUT'], debugActive: true },
+    }))),
+    [edges, debugActive, pins],
   );
 
   // Activating a problem of this diagram selects the block or the wire it is about, and brings it into view (LNG-003)
@@ -237,6 +251,7 @@ function FBDEditorInner({
       edgesRef.current = nextEdges;
       replaceNodes(nextNodes);
       replaceEdges(nextEdges);
+      setVisualSelection(fileKeyRef.current, fbdSelection(nextNodes, nextEdges));
       void fitView({ nodes: [{ id: parsed.id }], maxZoom: 1, duration: 200 });
     } else if (parsed?.kind === 'connection' && edgesRef.current.some((edge) => edge.id === parsed.id)) {
       const nextEdges = edgesRef.current.map((edge) => ({ ...edge, selected: edge.id === parsed.id }));
@@ -245,6 +260,7 @@ function FBDEditorInner({
       edgesRef.current = nextEdges;
       replaceNodes(nextNodes);
       replaceEdges(nextEdges);
+      setVisualSelection(fileKeyRef.current, fbdSelection(nextNodes, nextEdges));
     }
   }, [fitView]);
   useElementSelection(selectElement);
@@ -291,10 +307,12 @@ function FBDEditorInner({
     (changes: Parameters<typeof applyNodeChanges>[0]) => {
       if (readOnly) return;
       const nextNodes = applyNodeChanges(changes, nodesRef.current);
-      if (hasCanonicalNodeChanges(changes)) commitGraph(nextNodes, edgesRef.current);
+      // the steps of a drag only move the node on the canvas: the document is committed when the node is put down
+      if (nodeChangesCommit(changes)) commitGraph(nextNodes, edgesRef.current);
       else {
         nodesRef.current = nextNodes;
         replaceNodes(nextNodes);
+        if (changes.some((change) => change.type === 'select')) setVisualSelection(fileKeyRef.current, fbdSelection(nextNodes, edgesRef.current));
       }
     },
     [commitGraph, readOnly]
@@ -304,84 +322,49 @@ function FBDEditorInner({
     (changes: Parameters<typeof applyEdgeChanges>[0]) => {
       if (readOnly) return;
       const nextEdges = applyEdgeChanges(changes, edgesRef.current);
-      if (hasCanonicalEdgeChanges(changes)) commitGraph(nodesRef.current, nextEdges);
+      if (edgeChangesCommit(changes)) commitGraph(nodesRef.current, nextEdges);
       else {
         edgesRef.current = nextEdges;
         replaceEdges(nextEdges);
+        if (changes.some((change) => change.type === 'select')) setVisualSelection(fileKeyRef.current, fbdSelection(nodesRef.current, nextEdges));
       }
     },
     [commitGraph, readOnly]
   );
 
-  // Handle drop from toolbox
-  const onDrop = useCallback(
-    (event: React.DragEvent) => {
-      event.preventDefault();
-      if (readOnly) return;
-
-      const blockType = event.dataTransfer.getData('application/zplc-block');
-      if (!blockType) return;
-
-      // Convert screen coordinates to flow coordinates
-      const position = screenToFlowPosition({
-        x: event.clientX,
-        y: event.clientY,
-      });
-
-      // Generate unique ID
-      const id = uniqueNodeId(`${blockType.toLowerCase()}_${Date.now()}`, nodesRef.current);
-
-      const newNode: Node = {
-        id,
-        type: getNodeType(blockType),
-        position,
-        data: {
-          type: blockType,
-          readOnly,
-          onChangeData: (nodeId: string, data: Record<string, unknown>) => updateNodeDataRef.current?.(nodeId, data),
-          debugActive,
-          liveValues,
-          onOpenMonitor,
-          // a block the project declares has the ports of its declaration (LNG-008)
-          inputs: getDefaultPorts(blockType, projectBlocks).inputs,
-          outputs: getDefaultPorts(blockType, projectBlocks).outputs,
-          variableName: blockType.startsWith('COMM_') ? `${blockType}_TAG` : undefined,
-          instanceName: blockType.match(/^(TON|TOF|TP|CTU|CTD|CTUD|R_TRIG|F_TRIG|SR|RS)$/)
-            || findProjectBlock(projectBlocks, blockType)?.kind === 'FUNCTION_BLOCK'
-            ? `${blockType}_${id}`
-            : undefined,
-        },
-      };
-
-      commitGraph([...nodesRef.current, newNode], edgesRef.current);
+  // What a command of the keyboard adds to the canvas: the nodes it makes carry what every node of the canvas carries
+  const decorate = useCallback((node: Node): Node => ({
+    ...node,
+    data: {
+      ...node.data,
+      readOnly,
+      onChangeData: (nodeId: string, data: Record<string, unknown>) => updateNodeDataRef.current?.(nodeId, data),
+      onOpenMonitor,
     },
-    [commitGraph, debugActive, liveValues, onOpenMonitor, projectBlocks, readOnly, screenToFlowPosition]
-  );
+  }), [onOpenMonitor, readOnly]);
 
-  const onDragOver = useCallback((event: React.DragEvent) => {
-    event.preventDefault();
-    event.dataTransfer.dropEffect = 'move';
+  // The cursor moved, or the selection changed: the canvas shows it and the document does not change
+  const showGraph = useCallback((nextNodes: Node[], nextEdges: Edge[]) => {
+    nodesRef.current = nextNodes;
+    edgesRef.current = nextEdges;
+    replaceNodes(nextNodes);
+    replaceEdges(nextEdges);
+    setVisualSelection(fileKeyRef.current, fbdSelection(nextNodes, nextEdges));
   }, []);
 
-  const onKeyDown = useCallback((event: ReactKeyboardEvent<HTMLDivElement>) => {
-    if (event.key === 'F9') {
-      const selected = nodesRef.current.filter((node) => node.selected);
-      if (selected.length === 0) return;
-      for (const node of selected) breakpoints.toggle(blockElement(node.id));
-      event.preventDefault();
+  // The clipboard, and the breakpoints of the selected blocks
+  const editorCommand = useCallback((command: string) => {
+    if (command === 'toggleBreakpoint') {
+      for (const node of nodesRef.current.filter((candidate) => candidate.selected)) breakpoints.toggle(blockElement(node.id));
       return;
     }
-    if (readOnly || event.altKey || event.shiftKey || event.ctrlKey === event.metaKey) return;
-    const target = event.target as HTMLElement;
-    if (target.closest('input, textarea, select, [contenteditable="true"]')) return;
-    if (event.key.toLowerCase() === 'c') {
+    if (readOnly) return;
+    if (command === 'copySelection') {
       const fragment = copyFBDFragment(nodesRef.current, edgesRef.current);
-      if (!fragment) return;
-      clipboardRef.current = fragment;
-      event.preventDefault();
+      if (fragment) clipboardRef.current = fragment;
       return;
     }
-    if (event.key.toLowerCase() !== 'v' || !clipboardRef.current) return;
+    if (command !== 'pasteSelection' || !clipboardRef.current) return;
     const currentModel = { ...model, blocks: nodesToBlocks(nodesRef.current), connections: edgesToConnections(edgesRef.current) };
     const pasted = pasteFBDFragment(currentModel, clipboardRef.current);
     if (!pasted) return;
@@ -389,35 +372,73 @@ function FBDEditorInner({
     const addedConnections = pasted.connections.slice(currentModel.connections.length);
     const nextNodes = [
       ...nodesRef.current.map((node) => ({ ...node, selected: false })),
-      ...blocksToNodes(added, debugActive, liveValues, onOpenMonitor).map((node) => ({
+      ...blocksToNodes(added, onOpenMonitor).map((node) => ({
         ...node,
         selected: true,
         data: { ...node.data, readOnly, onChangeData: (nodeId: string, data: Record<string, unknown>) => updateNodeDataRef.current?.(nodeId, data) },
       })),
     ];
-    const nextEdges = [...edgesRef.current.map((edge) => ({ ...edge, selected: false })), ...connectionsToEdges(addedConnections, debugActive, liveValues)];
-    event.preventDefault();
+    const nextEdges = [...edgesRef.current.map((edge) => ({ ...edge, selected: false })), ...connectionsToEdges(addedConnections)];
     commitGraph(nextNodes, nextEdges);
-  }, [breakpoints, commitGraph, debugActive, liveValues, model, onOpenMonitor, readOnly]);
+  }, [breakpoints, commitGraph, model, onOpenMonitor, readOnly]);
+
+  const wrapperRef = useRef<HTMLDivElement>(null);
+  const commands = useMemo(() => fbdCanvasCommands(model, projectBlocks), [model, projectBlocks]);
+  const keyboard = useCanvasKeyboard({
+    commands, nodesRef, edgesRef, readOnly, wrapperRef, commit: commitGraph, show: showGraph, decorate, editorCommand,
+    commentOf: (node) => (typeof (node.data as Record<string, unknown>).comment === 'string' ? ((node.data as Record<string, unknown>).comment as string) : undefined),
+  });
+
+  // Handle drop from toolbox: the block is inserted as the keyboard inserts one, at the place of the drop
+  const onDrop = useCallback(
+    (event: React.DragEvent) => {
+      event.preventDefault();
+      if (readOnly) return;
+      const blockType = event.dataTransfer.getData('application/zplc-block');
+      if (!blockType) return;
+      keyboard.run('insertElement', { blockType, position: screenToFlowPosition({ x: event.clientX, y: event.clientY }) });
+    },
+    [keyboard, readOnly, screenToFlowPosition]
+  );
+
+  const onDragOver = useCallback((event: React.DragEvent) => {
+    event.preventDefault();
+    event.dataTransfer.dropEffect = 'move';
+  }, []);
+
+  // A double click on a block asks what it holds, as F2 does
+  const onNodeDoubleClick = useCallback((_event: React.MouseEvent, node: Node) => {
+    if (readOnly) return;
+    const next = nodesRef.current.map((candidate) => ({ ...candidate, selected: candidate.id === node.id }));
+    showGraph(next, edgesRef.current.map((edge) => (edge.selected ? { ...edge, selected: false } : edge)));
+    keyboard.run('bindVariable');
+  }, [keyboard, readOnly, showGraph]);
 
   return (
+    <>
+    {!readOnly && <FBDToolbox onInsert={(type) => keyboard.run('insertElement', { blockType: type })} />}
     <div
-      className="flex-1 h-full"
+      ref={wrapperRef}
+      className="relative flex-1 h-full"
       tabIndex={0}
       role="region"
       aria-label="Function block diagram canvas"
+      aria-keyshortcuts="F1"
       onDrop={onDrop}
       onDragOver={onDragOver}
-      onKeyDown={onKeyDown}
+      onKeyDown={keyboard.onKeyDown}
     >
       <ReactFlow
         nodes={markedNodes}
-        edges={edges}
+        edges={shownEdges}
         onNodesChange={handleNodesChange}
         onEdgesChange={handleEdgesChange}
         onConnect={onConnect}
         onConnectEnd={onConnectEnd}
         isValidConnection={isValidConnection}
+        onNodeDoubleClick={onNodeDoubleClick}
+        // deleting is a command of the keyboard table, one gesture for the blocks and the wires on them
+        deleteKeyCode={null}
         nodesDraggable={!readOnly}
         nodesConnectable={!readOnly}
         elementsSelectable={!readOnly}
@@ -470,46 +491,25 @@ function FBDEditorInner({
           maskColor="var(--color-surface-600)"
         />
       </ReactFlow>
+      {keyboard.overlay}
+      {keyboard.status}
     </div>
+    </>
   );
 }
 
 export default function FBDEditor({ model, onChange, readOnly = false }: FBDEditorProps) {
-  // Debug state
-  const debugMode = useIDEStore((state) => state.debug.mode);
-  const debugActive = debugMode !== 'none';
-  
+  // Online values: the debug map of the build says which variable holds each pin (LNG-006)
+  const monitor = useMonitor();
+
   // Instance monitor state
   const [monitorState, setMonitorState] = useState<MonitorState | null>(null);
-  
-  // Collect all variable paths for live value subscription
-  const variablePaths = useMemo(() => {
-    const paths: string[] = [];
-    for (const block of model.blocks) {
-      if (block.instanceName) {
-        // Add all port paths for function blocks
-        const { inputs, outputs } = block;
-        if (inputs) {
-          for (const inp of inputs) {
-            paths.push(`${block.instanceName}.${inp.name}`);
-          }
-        }
-        if (outputs) {
-          for (const out of outputs) {
-            paths.push(`${block.instanceName}.${out.name}`);
-          }
-        }
-      }
-      if (block.variableName) {
-        paths.push(block.variableName);
-      }
-    }
-    return paths;
-  }, [model.blocks]);
-  
-  // Subscribe to live values
-  const liveValues = useDebugValues(variablePaths);
-  
+
+  const pins = useMemo(
+    () => (monitor.active ? pinValuesOf(model.blocks, model.connections, monitor.states) : undefined),
+    [model.blocks, model.connections, monitor],
+  );
+
   // Handler for opening instance monitor
   const handleOpenMonitor = useCallback((instanceName: string, blockType: string) => {
     setMonitorState({ instanceName, blockType });
@@ -517,20 +517,17 @@ export default function FBDEditor({ model, onChange, readOnly = false }: FBDEdit
   
   // Convert model to ReactFlow format with debug data
   const initialNodes = useMemo(
-    () => blocksToNodes(model.blocks, false, new Map(), handleOpenMonitor),
+    () => blocksToNodes(model.blocks, handleOpenMonitor),
     [model.blocks, handleOpenMonitor]
   );
   const initialEdges = useMemo(
-    () => connectionsToEdges(model.connections, false, new Map()),
+    () => connectionsToEdges(model.connections),
     [model.connections]
   );
 
   return (
     <div className="zplc-visual-editor w-full h-full flex">
-      {/* Toolbox sidebar */}
-      {!readOnly && <FBDToolbox />}
-
-      {/* Main canvas - wrapped in provider */}
+      {/* Main canvas - wrapped in provider (the toolbox is drawn inside it, beside the canvas) */}
       <ReactFlowProvider>
         <FBDEditorInner
           model={model}
@@ -538,8 +535,7 @@ export default function FBDEditor({ model, onChange, readOnly = false }: FBDEdit
           readOnly={readOnly}
           initialNodes={initialNodes}
           initialEdges={initialEdges}
-          debugActive={debugActive}
-          liveValues={liveValues}
+          pins={pins}
           onOpenMonitor={handleOpenMonitor}
         />
       </ReactFlowProvider>

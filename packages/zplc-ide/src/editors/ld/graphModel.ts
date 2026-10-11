@@ -1,5 +1,25 @@
 import { isContact, isFunctionBlock, type LDElement, type LDModel, type LDRung, type LDVariable } from '../../models/ld';
 import { transpileLDToST } from '../../transpiler/ldToST';
+import { parseElement, rungElement, rungItemElement } from '../../models/sourceElements';
+
+/** What is selected in a ladder: a rung, and perhaps an element of it. */
+export interface LDSelection { rungId: string | null; elementId: string | null }
+export const NO_LD_SELECTION: LDSelection = { rungId: null, elementId: null };
+
+/** The selection as the ids the history remembers (LNG-010): `rung:<id>`, or `rung:<id>/element:<id>`. */
+export function ldSelectionIds(selection: LDSelection): string[] {
+  if (selection.rungId === null) return [];
+  return [selection.elementId === null ? rungElement(selection.rungId) : rungItemElement(selection.rungId, selection.elementId)];
+}
+
+export function ldSelectionOfIds(ids: readonly string[]): LDSelection {
+  for (const id of ids) {
+    const parsed = parseElement(id);
+    if (parsed?.kind === 'rung') return { rungId: parsed.id, elementId: null };
+    if (parsed?.kind === 'element') return { rungId: parsed.rung ?? null, elementId: parsed.id };
+  }
+  return NO_LD_SELECTION;
+}
 
 export interface LDClipboardFragment {
   rung: LDRung;

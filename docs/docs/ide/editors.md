@@ -43,6 +43,49 @@ written in. A change that ends where it started, such as dragging an element awa
 either. The first real edit writes the whole file in the one form Studio uses: two-space JSON with a newline at the end
 (a number written `2.0` is written `2`; a Ladder rung written as a list of elements is written as a grid).
 
+## Undo, redo and selection in the visual editors
+
+One gesture of yours is one undo step (LNG-010): a drag, a paste, a delete (the nodes and the wires that went with them), a drop
+from the palette, a wire drawn, or an edit of a name or a condition. A drag that is 300 pixels long reaches the canvas as
+about thirty position changes; the file is written, and the history gets an entry, once, when you put the node down. Letters
+typed into one field within a second of each other are one step. The history keeps the last 100 gestures of each file for the
+session; the Undo and Redo buttons, `Ctrl+Z` and `Ctrl+Shift+Z` (`Ctrl+Y`) use it.
+
+The selection is not part of the file, and it survives the edit: whatever is selected stays selected when the canvas is
+rebuilt from the file after a change. Undo and redo give the selection back with the content: undoing a delete puts the
+deleted blocks back and selects them, undoing a paste selects what was selected before the paste.
+
+Evidence level: host. `src/editors/gesture.test.ts` drives the commit rule with a 30-step drag, a delete and a stream of
+selection changes, and `src/editors/visualHistory.test.ts` holds 100 gestures, the coalescing and the selection of each step.
+Journey 28j of `bun run test:journeys` drags a block with real pointer events, and one `Ctrl+Z` takes the whole drag back.
+
+## The Structured Text language service
+
+The Structured Text editor reads the whole project, not only the file in front of you (LNG-015, LNG-016).
+
+| Feature | What it does |
+| --- | --- |
+| Diagnostics | Every syntax error and every semantic error of every Structured Text file of the project, while you type (a pause of 0.3 s), with the range the compiler's own front end gave. They appear as squiggles in the files that are open and in **Problems** (Live ST diagnostics), and go away the next time the project is checked and the error is gone. They are not build evidence; **Build** is. |
+| Completion | The variables, parameters and methods in scope; after a dot the members of the type of what is before it (a block, a structure, an element of an array of structures, a standard block); the blocks, functions and types of every file; the types where a type goes; the parameters of a call as `Name := `. Project names come before the standard library. |
+| Hover | What a name is, its type and where it is declared, also in another file. |
+| Go to definition, find references | Across the files of the project. A name is found by what it is, not by its spelling: `Count` of one program is not `Count` of another. |
+| Outline | The declarations of the file as a tree (a block holds its inputs, outputs, variables and methods). |
+| Signature help | The parameters of the function, method or block being called, and the one the cursor is at, also when the arguments are named. |
+| Rename symbol (`F2`) | Renames what a name stands for in every file of the project, by scope and by type, never as text. It is refused, with the reason, when the new name is already declared where the old one is used, when a file of the project has a syntax error (it could hold a use that was not found), when the name is mentioned in a Ladder, FBD, SFC or IL file (rename it there too), or when the name is a program (the tasks of `zplc.json` run it by name). The files that change are open as modified tabs; you save them. |
+| Format document (`Shift+Alt+F`) | Indents each line by the depth of its blocks and trims the ends of lines. It changes only white space at the start and end of a line: no line is added or removed (a breakpoint is a line), no token moves, and a comment is left as written. Formatting twice gives the same text. |
+
+Each feature is answered from one index of the project, built from the compiler's lexer and parser, with the text of the
+editor in place of its file; a file that does not parse yet still contributes the declarations that its tokens give, so
+completion works in the middle of a line.
+
+Not covered: a name used only in a Ladder, FBD, SFC or IL file is not part of the index (rename refuses to guess it, as
+the table says); workspace-wide symbol search; code actions.
+
+Evidence level: host. `packages/zplc-compiler/src/compiler/check.test.ts` runs the diagnostics against the build's
+errors for the same projects; `src/langsvc/*.test.ts` cover the index, rename, completion, signature help, outline,
+formatting (over every example project, token for token), the markers and the Monaco providers; journey 4c of
+`bun run test:journeys` types an undeclared variable in the real editor and sees it with its range, and undoes it.
+
 ## Pin types in FBD
 
 The FBD canvas refuses a wire between pins whose types do not match, and says why in a message over the canvas
@@ -98,6 +141,34 @@ changes and is built again; one whose element was deleted is forgotten, and one 
 refused once a program is loaded. The element that the paused program is at is outlined in yellow. The program counters are the
 ones the runtime of the simulation and of a board take; stopping on a board has not been checked here.
 
+## Online values from the debug map
+
+While a program runs under Studio, each editor shows what the program holds (LNG-006), read through the debug map of the
+build of its file. The build records, for each element of a Ladder, FBD or SFC source, which variable of the generated
+program holds its state, so no editor guesses a name from the one it sees: a state that the map does not give is shown as
+unavailable (a dash, `UNAVAILABLE`), never as FALSE or IDLE.
+
+| Language | What is shown | Where it comes from |
+| --- | --- | --- |
+| ST | The value of each variable a line names, after the line (`Count=7  Ready=TRUE`). A member of a block instance or a structure is read through its instance. | The language service resolves what a name is; the map of the program of the file gives its address and type. A function or a function block shows nothing: its names belong to every instance. |
+| IL | The value of each declared variable an instruction uses, after the line. | The IL parser, and the map of the program of the file. |
+| LD | Power: an element is lit when power reaches it, through series and parallel paths and branches, and after a block it is the block's own output. The value of a contact or a coil, and the outputs of a block, below it. | The rung's power flow as an expression of the variables it is made of (`rung:r/cell:row,col`), evaluated with the values read. |
+| FBD | The value on each wire, and the outputs of each block; a variable block shows the value of its variable. | The temporary each consumed output was given, or the member of the instance. |
+| SFC | Which steps are active and for how long; for each transition, whether its condition holds and whether it fired in this scan. | The generated state of the chart: the flag and timer of each step, `_C_` and `_F_` of each transition. |
+
+A value is read in the program of its own file: two programs that each have a `_rung1_result` have two values. The
+variables an editor shows are read with the Watch table's poll, and only the regions that show a value draw it again
+([What is drawn again when a value changes](#what-is-drawn-again-when-a-value-changes)).
+
+Not covered: the wire between two elements of a rung is not lit, only the elements; an element of an array in ST has no
+inline value; the values on a board, stepping on hardware. The runtime of the simulation is what the host tests read.
+
+Evidence level: host, against the real runtime. `src/monitoring/runtime.test.ts` builds a Ladder, an FBD and an SFC,
+loads them into the native runtime, scans them with inputs and reads the variables the map names, and checks the state of
+each element: power through the seal-in branch, the pins of the timers, the active step and the fired transition.
+`src/monitoring/elementStates.test.ts` checks that every variable a monitor entry names exists in the map for each example
+diagram. Journeys 28b to 28e of `bun run test:journeys` show the values in the real application.
+
 ## What the palettes offer
 
 A palette offers only what its transpiler translates (LNG-007), and every element it offers is run in the test suite:
@@ -112,6 +183,69 @@ placed in a program, built, loaded into the virtual machine and scanned.
   carry a value (`constant`, `variable`, `input`, `output`). The functions of the library (`SQRT`, `SIN`, `LEN`,
   `CONCAT`, the conversions...) are not offered yet: a diagram cannot call them, and the build refuses them by name.
 - **SFC** offers the step, the initial step and the transition.
+
+## Editing from the keyboard
+
+Every editing action of the Ladder, Function Block Diagram and Sequential Function Chart editors can be done from the keyboard
+(LNG-012): moving a cursor, inserting an element, binding a variable from the declared symbols, connecting, and deleting. The
+[keyboard reference](../reference/visual-editor-keyboard.md) lists every key. It is generated from the table the editors read
+their keys from, so a key that is in it works, and a key that works is in it.
+
+- **The cursor.** In Ladder it is a cell of a rung, drawn as a blue frame; a click on a cell puts it there. In the function
+  block and chart editors it is the selected block or element, and `Alt` with an arrow key moves it to the nearest one in that
+  direction. The arrow keys without `Alt` nudge the selected block on the canvas, as before.
+- **Inserting.** A letter inserts the common elements at the cursor: `C` a contact, `N` an inverted contact, `O` a coil in
+  Ladder, `T` a transition and `S` a step in a chart. `Insert` or `I` opens the palette as a search list: type to search, Up and
+  Down choose, Enter inserts. The toolbox of each editor is reached with Tab: its items are buttons that insert at the cursor,
+  and it has a search box. Dragging an item still works, and it inserts through the same command as the key.
+- **Binding.** `F2` asks for the variable of the element under the cursor from the list of symbols the file declares. A contact
+  is offered the BOOL variables and the BOOL outputs of declared blocks (`Delay.Q`); a coil the BOOL variables that are not
+  inputs; the instance of a function block the variables of its type; the condition of a transition the BOOL variables. Where a
+  list allows it, a name that is not declared can be typed and is offered as typed.
+- **Connecting.** `C` on a block lists the wires it can have, each from an output to an input that takes it: the rules of the
+  pin types apply (LNG-013), and an input that already has a wire is not offered. The wire chosen is drawn. `Shift+C` lists the
+  wires of the block and removes the one chosen. In a chart, `T` inserts a transition below the selected step and `S` a step
+  below the selected transition, each wired to the one it follows.
+- **Deleting.** `Delete` removes the element under the cursor in Ladder, and the selected blocks and wires in a diagram or a
+  chart, the wires that were on a block going with it.
+
+A command that changes the file is one step of the undo history, and the selection comes back with undo and redo (LNG-010).
+What each command did, or why it refused, is written to a polite live region of the editor, which a screen reader reads.
+
+Four things differ from what the editors did before. A contact or a coil dropped from the toolbox is no longer named `NewVar`:
+it is unbound and shows `???` until it is bound. A function block dropped or inserted gets an instance name that nothing else
+has, and the instance is declared as a local variable of its type. The properties panel of Ladder opens when an element is
+clicked or Enter is pressed on it, not when a command of the keyboard selects it. A double click on a block of a function block
+diagram asks what the block holds, as `F2` does.
+
+Evidence level: host, and the real application on the development host. `src/editors/ld/keyboard.test.ts`,
+`src/editors/fbd/keyboard.test.ts` and `src/editors/sfc/keyboard.test.ts` press keys on a model, with the key table in between,
+and check the document, the cursor, the lists that are offered and that the build reads what was typed;
+`src/editors/picker.test.ts` and `src/editors/keymap.test.ts` hold the search list and the table. Journeys 28f, 28g and 28h of
+`bun run test:journeys` build a rung, edit a diagram and edit a chart with real key events, save, and build; journey 28i drops
+items of the toolbox with DOM drag events. Not covered: a real
+screen reader (the live region is there and its text is tested, not its speech), and a keyboard way to place a block at an exact
+coordinate (a block is put beside the cursor, then nudged with the arrow keys).
+
+## What is drawn again when a value changes
+
+A watched value is read ten times a second while a program runs. Studio draws again only what shows it (IDE-013): the Watch
+table, and the editor of the file that has the variable in it. The Explorer, the toolbar, the settings and the tab bar do not
+subscribe to the readings, and a reading that is the value it was publishes nothing. A component that needs five of 200
+watched values is drawn again when one of those five changes, not when another does.
+
+`bun tools/ci/ide-structure.ts` (run by `bun run lint:ide`) fails a component or hook outside `src/store/` that subscribes to
+the whole store, or to its `debug` slice: each region of the window names the fields it shows
+(`src/store/regionSubscriptions.ts`).
+
+Measured on the store with 200 watched values read 100 times and 50 keystrokes in a 2,000-line file: before, each of the
+Explorer, the toolbar, the Console, the editor area and the settings was drawn again 150 times and each reader of
+watched values 100 times; now the regions that show neither are drawn 0 times, the tab bar and the editor 50 times (once for
+each keystroke), and a reader of five values 10 times, for the 10 readings that changed them.
+
+Evidence level: host, at the level of the store and its selectors (`src/store/regionSubscriptions.test.ts`). This
+repository has no DOM test environment, so the draws themselves of React are not counted; the Console still renders on each
+keystroke, because the Problems tab shows what typing clears and its checks compare the run counter of the build.
 
 ## Compile path
 

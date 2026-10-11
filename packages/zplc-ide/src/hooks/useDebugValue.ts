@@ -20,7 +20,8 @@
  */
 
 import { useMemo } from 'react';
-import { useIDEStore, type LiveValue } from '../store/useIDEStore';
+import { useShallow } from 'zustand/react/shallow';
+import { useIDEStore, type IDEState, type LiveValue } from '../store/useIDEStore';
 import { findVariable, type DebugDataType, type MemoryRegion } from '../compiler';
 
 /**
@@ -71,8 +72,10 @@ export interface DebugValueResult {
  * ```
  */
 export function useDebugValue(varPath: string): DebugValueResult {
-  const debug = useIDEStore((state) => state.debug);
-  const { debugMap, liveValues, isPolling } = debug;
+  // the map, the polling flag and the value of this path: a change of another watched value does not render this (IDE-013)
+  const debugMap = useIDEStore((state) => state.debug.debugMap);
+  const isPolling = useIDEStore((state) => state.debug.isPolling);
+  const liveValue = useIDEStore((state) => state.debug.liveValues.get(varPath) ?? null);
 
   // Look up variable info from debug map
   const varInfo = useMemo(() => {
@@ -81,9 +84,6 @@ export function useDebugValue(varPath: string): DebugValueResult {
     }
     return findVariable(debugMap, varPath);
   }, [debugMap, varPath]);
-
-  // Get live value from cache
-  const liveValue = liveValues.get(varPath) ?? null;
 
   // Build result
   return useMemo((): DebugValueResult => {
@@ -139,6 +139,10 @@ export function useDebugValue(varPath: string): DebugValueResult {
   }, [varPath, debugMap, varInfo, liveValue, isPolling]);
 }
 
+/** The values of `paths` and no others: what `useDebugValues` subscribes to (IDE-013). */
+export const selectLiveValues = (paths: readonly string[]) => (state: IDEState): Array<LiveValue | undefined> =>
+  paths.map((path) => state.debug.liveValues.get(path));
+
 /**
  * Hook to get multiple variable values at once.
  * More efficient than multiple useDebugValue calls.
@@ -149,13 +153,16 @@ export function useDebugValue(varPath: string): DebugValueResult {
 export function useDebugValues(
   varPaths: string[]
 ): Map<string, DebugValueResult> {
-  const debug = useIDEStore((state) => state.debug);
-  const { debugMap, liveValues, isPolling } = debug;
+  const debugMap = useIDEStore((state) => state.debug.debugMap);
+  const isPolling = useIDEStore((state) => state.debug.isPolling);
+  // The values of these paths, and no others: with 200 values read ten times a second, a component that shows five of
+  // them renders again when one of the five changes, not when any of the 200 does (IDE-013).
+  const values = useIDEStore(useShallow(selectLiveValues(varPaths)));
 
   return useMemo(() => {
     const results = new Map<string, DebugValueResult>();
 
-    for (const varPath of varPaths) {
+    for (const [index, varPath] of varPaths.entries()) {
       if (!varPath) {
         results.set(varPath, {
           value: null,
@@ -185,7 +192,7 @@ export function useDebugValues(
       }
 
       const varInfo = findVariable(debugMap, varPath);
-      const liveValue = liveValues.get(varPath) ?? null;
+      const liveValue = values[index] ?? null;
 
       if (!varInfo) {
         results.set(varPath, {
@@ -214,7 +221,7 @@ export function useDebugValues(
     }
 
     return results;
-  }, [varPaths, debugMap, liveValues, isPolling]);
+  }, [varPaths, debugMap, values, isPolling]);
 }
 
 /**
@@ -286,14 +293,11 @@ export function useCurrentExecution(): {
   currentPOU: string | null;
   currentPC: number | null;
 } {
-  const debug = useIDEStore((state) => state.debug);
+  const currentLine = useIDEStore((state) => state.debug.currentLine);
+  const currentPOU = useIDEStore((state) => state.debug.currentPOU);
+  const currentPC = useIDEStore((state) => state.debug.currentPC);
 
-  return {
-    isPaused: debug.currentLine !== null,
-    currentLine: debug.currentLine,
-    currentPOU: debug.currentPOU,
-    currentPC: debug.currentPC,
-  };
+  return { isPaused: currentLine !== null, currentLine, currentPOU, currentPC };
 }
 
 export { formatDebugValue } from './formatDebugValue';

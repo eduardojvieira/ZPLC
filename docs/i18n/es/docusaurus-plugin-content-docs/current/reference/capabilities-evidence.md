@@ -1,53 +1,79 @@
 ---
 slug: /reference/capabilities-evidence
 id: capabilities-evidence
-title: Capacidades y niveles de evidencia
-sidebar_label: Capacidades y evidencia
-description: Leé los claims de capacidad de ZPLC según la evidencia que los respalda.
-tags: [reference, evidencia, placas]
+title: Soporte de hardware
+sidebar_label: Soporte de hardware
+description: "Los niveles de evidencia que usa ZPLC y el nivel de cada placa hoy, derivado de los registros de evidencia."
+tags: [reference, evidence, boards]
 ---
 
-# Capacidades y niveles de evidencia
+# Soporte de hardware
 
-ZPLC etiqueta una capacidad por la evidencia más fuerte realmente registrada.
-Un archivo fuente, run host, build de paquete o entrada de catálogo no es una
-calificación de hardware.
+Esta es la única página que dice hasta dónde se ha demostrado que funciona cada
+placa. Todas las demás páginas que mencionan una placa o un nivel enlazan aquí.
 
-## Leé primero la etiqueta
+ZPLC etiqueta una capacidad con la evidencia más fuerte que está registrada para
+ella. Un archivo fuente, una ejecución en el host, una compilación de paquete o
+una entrada de catálogo no son una calificación de hardware.
 
-| Nivel | Qué establece | Qué no establece |
-| --- | --- | --- |
-| Host / unit | Pasó una función o test unitario host. | Timing, I/O o alimentación del dispositivo. |
-| POSIX nativo | El runtime host nativo ejecutó el escenario. | Equivalencia Zephyr target ni HIL. |
-| Host empaquetado | Un artefacto desktop empaquetado pasó el smoke host registrado. | Firma de instalador, notarización o comportamiento hardware. |
-| Twister / QEMU | Pasó cobertura Zephyr o target emulado. | La placa, probe, cableado o salida eléctrica exactos. |
-| Cross-build | El profile compila para el target Zephyr declarado. | Flash, boot, deploy, persistencia o HIL. |
-| HIL | Pasó un SHA registrado, board/profile exacto, flash/deploy, escenario y resultado observado. | Calificación de producción fuera del procedimiento registrado. |
-| Production-qualified | Existe un paquete de evidencia de producción gobernado aparte. | Certificación de seguridad salvo declaración explícita. |
+## Los niveles
 
-## Verdad actual de placas
+Se usa un solo vocabulario en todas partes: en la documentación, en Studio, en los
+mensajes de commit y en los pull requests. Un nivel superior nunca se deduce de uno
+inferior.
 
-El manifest de placas es la fuente de los siete profiles
-actuales. Cada entrada está en `cross-build` con **cero referencias de
-evidencia HIL**. Ninguna está HIL-verified ni production-qualified.
+| Nivel | Qué establece | Qué no establece | Dónde se ve |
+| --- | --- | --- | --- |
+| Host | Pasó una prueba unitaria, de conformidad o en C en el equipo de desarrollo. | Tiempos, E/S ni alimentación de un dispositivo. | Las líneas de evidencia de la documentación |
+| Simulación nativa | El runtime nativo del host ejecutó el escenario con un reloj virtual. | Equivalencia con el destino Zephyr ni con una placa. | El modo **Simulate** de Studio |
+| Host empaquetado | Un instalador de escritorio empaquetado se inició en su propio sistema en la ejecución de la versión. | Firma del instalador, notarización ni comportamiento del hardware. | Las notas de cada versión |
+| Destino emulado | Una suite de Zephyr pasó en `native_sim` o en un destino QEMU Cortex-M. | La placa exacta, su sonda, el cableado ni la salida eléctrica. | La página de pruebas de firmware |
+| `cross-build` | El firmware compila para la placa y cabe en su presupuesto de flash y RAM. | Grabar, arrancar, desplegar, persistencia ni ninguna salida. | **Nivel de soporte** de una placa, más abajo |
+| `human-hil` | Una persona ejecutó un procedimiento registrado en la placa exacta, con la imagen de firmware identificada por su commit y su hash, y pasó. | Calificación de producción fuera del procedimiento registrado. | **Nivel de soporte** de una placa, más abajo |
+| Calificado para producción | Existe un paquete de evidencia de producción gobernado aparte. | Certificación de seguridad, salvo que lo diga. | Ninguna placa lo tiene |
 
-| Placa | IDE ID | Target Zephyr | Nivel | Refs HIL |
-| --- | --- | --- | --- | --- |
-| Raspberry Pi Pico (RP2040) | `rpi_pico` | `rpi_pico/rp2040` | cross-build | 0 |
-| Arduino GIGA R1 (STM32H747 M7) | `arduino_giga_r1` | `arduino_giga_r1/stm32h747xx/m7` | cross-build | 0 |
-| ESP32-S3-DevKitC-1 (N8R8) | `esp32s3_devkitc` | `esp32s3_devkitc/esp32s3/procpu` | cross-build | 0 |
-| STM32F746G Discovery | `stm32f746g_disco` | `stm32f746g_disco/stm32f746xx` | cross-build | 0 |
-| STM32 Nucleo-H743ZI | `nucleo_h743zi` | `nucleo_h743zi/stm32h743xx` | cross-build | 0 |
-| Arduino Opta WiFi (STM32H747 M7) | `arduino_opta_wifi` | `arduino_opta/stm32h747xx/m7` | cross-build | 0 |
-| Waveshare RP2040-Zero | `waveshare_rp2040_zero` | `rp2040_zero/rp2040` | cross-build | 0 |
+Un resultado que una persona observó en un banco es una pista, no una
+calificación: una placa llega a `human-hil` solo mediante un registro que nombra
+la versión del firmware, el commit y el hash de la imagen que probó.
 
-Los datos salen de `firmware/app/boards/boards.json`. El nivel mostrado se
-deriva de los registros de evidencia que referencia el manifiesto y nombra la
-versión de firmware de cada registro; sin registro una placa es `cross-build`.
+## Placas
 
-## Usá la conclusión correcta
+La tabla se genera desde `firmware/app/boards/boards.json`, el único manifiesto de
+placas. El **Nivel de soporte** se deriva de los registros de evidencia que
+referencia el manifiesto; nunca se fija a mano, y una placa sin ningún registro
+que pase se queda en `cross-build`.
 
-Usá resultados POSIX nativos y Lab para mejorar lógica antes de hardware. Usá
-cross-build para detectar regresiones de integración de profiles. Exigí un run
-HIL registrado en el hardware exacto antes de afirmar que funciona un flujo
-físico, presupuesto de timing, salida, persistencia o recovery.
+{/* >>> GENERATED (tools/docs/generate_board_reference.py): hardware-support-boards. Do not edit. >>> */}
+
+| Placa | ID del IDE | Destino Zephyr | Red | Nivel de soporte | Registros de evidencia |
+| --- | --- | --- | --- | --- | --- |
+| Raspberry Pi Pico (RP2040) | `rpi_pico` | `rpi_pico/rp2040` | Enfoque serial | `cross-build` | ninguno |
+| Arduino GIGA R1 (STM32H747 M7) | `arduino_giga_r1` | `arduino_giga_r1/stm32h747xx/m7` | Enfoque serial | `cross-build` | ninguno |
+| ESP32-S3-DevKitC-1 (N8R8) | `esp32s3_devkitc` | `esp32s3_devkitc/esp32s3/procpu` | Capacidad de red (Wi-Fi) | `cross-build` | ninguno |
+| STM32F746G Discovery | `stm32f746g_disco` | `stm32f746g_disco/stm32f746xx` | Capacidad de red (Ethernet) | `cross-build` | ninguno |
+| STM32 Nucleo-H743ZI | `nucleo_h743zi` | `nucleo_h743zi/stm32h743xx` | Capacidad de red (Ethernet) | `cross-build` | ninguno |
+| Arduino Opta WiFi (STM32H747 M7) | `arduino_opta_wifi` | `arduino_opta/stm32h747xx/m7` | Capacidad de red (Wi-Fi) | `cross-build` | ninguno |
+| Waveshare RP2040-Zero | `waveshare_rp2040_zero` | `rp2040_zero/rp2040` | Enfoque serial | `cross-build` | ninguno |
+
+Ninguna placa tiene un registro de hardware: cada fila dice que el firmware compila para esa placa, y nada más.
+
+{/* <<< END GENERATED: hardware-support-boards <<< */}
+
+Los canales de E/S de cada placa, con sus pines y sus valores seguros, están en
+[Placas soportadas](./boards.md).
+
+## Qué se deduce de un nivel
+
+- **`cross-build`:** use el simulador para mejorar su lógica y la compilación para
+  detectar un problema de integración. No afirme que un flujo de trabajo, una
+  salida, un presupuesto de tiempos, la persistencia o la recuperación funcionan en
+  la placa.
+- **`human-hil`:** el procedimiento del registro funcionó con esa versión del
+  firmware en esa placa. Otra imagen, otra placa u otro procedimiento necesita su
+  propio registro.
+- **Cualquier cosa sobre seguridad:** lea [Seguridad y limitaciones](../safety-and-limitations.md).
+
+Los registros de hardware los hace una persona, nunca un asistente de IA ni el
+servidor MCP. Compilar el firmware, grabarlo, desplegar un programa y ejecutarlo
+siguen siendo operaciones separadas: [Pruebas de firmware](../development/firmware-testing.md)
+explica qué muestran las suites automáticas y qué no.
