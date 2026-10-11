@@ -3,7 +3,7 @@ import {
   DEBUG_CAPABILITY_STATUS,
   getDebugCapabilities,
   getDebugCapabilitiesFromProfile,
-  getLegacyWasmCapabilities,
+  getWasmCapabilities,
   type DebugCapabilities,
   type DebugFeatureSupport,
 } from '../runtime/debugCapabilities';
@@ -25,12 +25,14 @@ export function getDebugCapabilitiesForAdapter(
     return null;
   }
 
-  if (adapter.type === 'native' && hasNativeCapabilityProfile(adapter)) {
+  // the native runtime and the WebAssembly runtime report their profile in the handshake of the same session protocol
+  if ((adapter.type === 'native' || adapter.type === 'wasm') && hasNativeCapabilityProfile(adapter)
+    && (adapter.capabilities !== null || adapter.type === 'native')) {
     return getDebugCapabilitiesFromProfile(adapter.capabilities);
   }
 
   if (adapter.type === 'wasm') {
-    return getLegacyWasmCapabilities();
+    return getWasmCapabilities();
   }
 
   if (debugMode === 'hardware') {

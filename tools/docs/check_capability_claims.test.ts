@@ -63,7 +63,8 @@ describe('capability claims: what the public text says ZPLC can do is backed by 
     expect(ids('The Raspberry Pi Pico runs your program.', truth({ hilBoards: ['rpi_pico'] }))).toEqual([]);
     expect(ids('The browser simulator runs your program.', truth({ wasmAvailable: true }))).toEqual([]);
     expect(real.hilBoards).toEqual([]);
-    expect(real.wasmAvailable).toBe(false);
+    // the browser runtime ships, with a capability profile that has features that are not unavailable (IDE-025)
+    expect(real.wasmAvailable).toBe(true);
   });
 
   it('holds a number that counts a thing to what the repository has, and a sentence about a release to nothing', () => {

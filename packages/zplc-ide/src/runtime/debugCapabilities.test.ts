@@ -5,7 +5,7 @@ import {
   DEBUG_CAPABILITY_STATUS,
   getDebugCapabilities,
   getDebugCapabilitiesFromProfile,
-  getLegacyWasmCapabilities,
+  getWasmCapabilities,
 } from './debugCapabilities';
 import type { SystemInfo } from './serialAdapter';
 
@@ -91,17 +91,11 @@ describe('getDebugCapabilities', () => {
     expect(result.features.breakpoints.status).toBe(DEBUG_CAPABILITY_STATUS.UNAVAILABLE);
   });
 
-  it('marks disabled browser WASM controls as unavailable', () => {
-    const result = getLegacyWasmCapabilities();
+  it('takes the controls of the browser runtime from the profile its handshake reports', () => {
+    const result = getWasmCapabilities();
 
-    expect(result.mode).toBe(DEBUG_CAPABILITY_MODE.LEGACY);
-    expect(result.supportsPause).toBe(false);
-    expect(result.supportsResume).toBe(false);
-    expect(result.supportsStep).toBe(false);
-    expect(result.supportsBreakpoints).toBe(false);
-    expect(result.features.pause.status).toBe(DEBUG_CAPABILITY_STATUS.UNAVAILABLE);
-    expect(result.features.step.recommendedAction).toBe(
-      'Use native simulation',
-    );
+    expect(result.mode).toBe(DEBUG_CAPABILITY_MODE.SCHEDULER);
+    expect(result.supportsPause && result.supportsResume && result.supportsStep && result.supportsBreakpoints).toBe(true);
+    expect(result.features['simulation-inputs']?.status).toBe(DEBUG_CAPABILITY_STATUS.SUPPORTED);
   });
 });

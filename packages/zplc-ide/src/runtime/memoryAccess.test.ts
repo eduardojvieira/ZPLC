@@ -28,16 +28,19 @@ const cases = (JSON.parse(readFileSync(
   fileURLToPath(new URL('../../../../tools/contract/golden/protocol-vectors.json', import.meta.url)), 'utf8',
 )) as { accessCases: AccessCase[] }).accessCases;
 
+/** A session that answers every request the way a runtime does for an access that the adapter let through. */
+const session = {
+  startSession: async () => { throw new Error('not used'); },
+  stopSession: async () => undefined,
+  request: async (message: { method: string; params: Record<string, unknown> }) => {
+    if (message.method === 'memory.read') return { bytes_hex: '00'.repeat(Number(message.params.length)) } as never;
+    if (message.method === 'force.set') return { force_entries: [] } as never;
+    return {} as never;
+  },
+};
+
 function nativeAdapter(): NativeAdapter {
-  const adapter = new NativeAdapter({
-    startSession: async () => { throw new Error('not used'); },
-    stopSession: async () => undefined,
-    request: async (message) => {
-      if (message.method === 'memory.read') return { bytes_hex: '00'.repeat(Number(message.params.length)) } as never;
-      if (message.method === 'force.set') return { force_entries: [] } as never;
-      return {} as never;
-    },
-  });
+  const adapter = new NativeAdapter(session);
   (adapter as unknown as { _connected: boolean })._connected = true;
   return adapter;
 }
@@ -65,12 +68,10 @@ function serialAdapter(): SerialAdapter {
   return adapter;
 }
 
+/** The adapter of the browser runtime is the session adapter over another transport: it makes the same check. */
 function wasmAdapter(): WASMAdapter {
-  const adapter = new WASMAdapter();
-  const internals = adapter as unknown as { _connected: boolean; module: unknown; memGetRegion: (base: number) => number };
-  internals._connected = true;
-  internals.module = { HEAPU8: new Uint8Array(0x20000) };
-  internals.memGetRegion = (base: number) => base + 0x1000;
+  const adapter = new WASMAdapter({ loadModule: async () => { throw new Error('not used'); } });
+  Object.assign(adapter, { _connected: true, api: session });
   return adapter;
 }
 

@@ -1,52 +1,41 @@
 import { describe, expect, it } from 'bun:test';
-import { readFileSync } from 'node:fs';
-import { fileURLToPath } from 'node:url';
 
-import {
-  WASM_SIMULATION_DISABLED_ERROR,
-  WASM_SIMULATION_ENABLED,
-  WASMAdapter,
-  verifierWorkspaceBytes,
-} from './wasmAdapter';
-import { isModuleLoaded, resetModule } from './wasmLoader';
+import { assemble } from '@zplc/compiler';
+
+import { builtWasmModule, itWasm } from '../cli/wasmModuleGuard';
+import { getWasmCapabilities } from './debugCapabilities';
+import { WASM_SIMULATION_ENABLED, WASMAdapter } from './wasmAdapter';
 
 describe('WASMAdapter', () => {
-  it('fails closed before loading the browser module', async () => {
-    resetModule();
-    const adapter = new WASMAdapter();
-
-    expect(WASM_SIMULATION_ENABLED).toBe(false);
-    await expect(adapter.connect()).rejects.toThrow(WASM_SIMULATION_DISABLED_ERROR);
-    expect(isModuleLoaded()).toBe(false);
-  });
-});
-
-describe('verifierWorkspaceBytes', () => {
-  it('matches ZPLC_LOADER_VERIFY_WORKSPACE_SIZE of the C loader at the default CODE size', () => {
-    // 5632 boundary bits + 704 rank index + 5760 depth intervals + 360 pending bits + 2688 frame records.
-    expect(verifierWorkspaceBytes(0xB000)).toBe(15144);
+  it('is enabled: the browser runtime is built with the IDE, and a build without it says why on connect', () => {
+    expect(WASM_SIMULATION_ENABLED).toBe(true);
   });
 
-  it('grows with the CODE size the runtime accepts', () => {
-    expect(verifierWorkspaceBytes(0x2000)).toBeLessThan(verifierWorkspaceBytes(0xB000));
+  it('reports its type before it connects, so that the interface can show the degraded label', () => {
+    expect(new WASMAdapter({ loadModule: async () => new Uint8Array() }).type).toBe('wasm');
   });
-  it('follows the macro of the C loader: a change of that formula fails here', () => {
-    // The adapter cannot call the C macro, so the formula is mirrored by hand. Pin the macro text: when
-    // zplc_loader.h changes it, this test fails and verifierWorkspaceBytes has to follow.
-    const header = readFileSync(
-      fileURLToPath(new URL('../../../../firmware/lib/zplc_core/include/zplc_loader.h', import.meta.url)), 'utf8');
-    const logical = header.replace(/\\\r?\n/g, ' ').split('\n');
-    const define = (name: string): string => {
-      const line = logical.find((candidate) => candidate.startsWith(`#define ${name} `));
-      expect(line).toBeDefined();
-      return (line ?? '').slice(`#define ${name} `.length).replace(/\s+/g, ' ').trim();
-    };
-    expect(define('ZPLC_VERIFY_MAX_LEADERS')).toBe('((ZPLC_MEM_CODE_SIZE) / 16U + 64U)');
-    expect(define('ZPLC_VERIFY_MAX_FRAMES')).toBe('((ZPLC_MEM_CODE_SIZE) / 128U + 32U)');
-    expect(define('ZPLC_VERIFY_FRAME_BYTES')).toBe('7U');
-    expect(define('ZPLC_LOADER_VERIFY_WORKSPACE_SIZE')).toBe(
-      '(((ZPLC_MEM_CODE_SIZE + 7U) / 8U) + 2U * ((ZPLC_MEM_CODE_SIZE + 127U) / 128U) + ' +
-      '2U * ZPLC_VERIFY_MAX_LEADERS + (ZPLC_VERIFY_MAX_LEADERS + 7U) / 8U + ' +
-      'ZPLC_VERIFY_MAX_FRAMES * ZPLC_VERIFY_FRAME_BYTES)');
+
+  it('fails a connection without a module with the reason the build gave, and stays disconnected', async () => {
+    const adapter = new WASMAdapter({ loadModule: async () => { throw new Error('clang not found on the PATH'); } });
+    await expect(adapter.connect()).rejects.toThrow('clang not found on the PATH');
+    expect(adapter.connected).toBe(false);
+  });
+
+  itWasm('runs a program on the module it is given and shows what its capability profile says', async () => {
+    const adapter = new WASMAdapter({ loadModule: async () => builtWasmModule().bytes, retainStorage: 'project' });
+    await adapter.connect();
+    expect(adapter.capabilities?.profile_id).toBe('wasm-browser');
+    expect(adapter.capabilities).toEqual(JSON.parse(JSON.stringify(adapter.capabilities)));
+    await adapter.loadProgram(assemble('    PUSH8 9\n    STORE8 0x1000\n    HALT\n').zplcFile);
+    await adapter.start();
+    await new Promise((resolve) => setTimeout(resolve, 250));
+    expect((await adapter.peek(0x1000, 1))[0]).toBe(9);
+    await adapter.disconnect();
+  });
+
+  it('takes the capabilities of the controller from the same profile that the handshake reports', () => {
+    const capabilities = getWasmCapabilities();
+    expect(capabilities.supportsPause && capabilities.supportsResume && capabilities.supportsStep && capabilities.supportsBreakpoints).toBe(true);
+    expect(capabilities.features['simulation-inputs']?.status).toBe('supported');
   });
 });

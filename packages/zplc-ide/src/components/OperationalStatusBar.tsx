@@ -71,6 +71,11 @@ export function OperationalStatusBar({ mode, adapterType, connected, vmInfo, sta
           {presentation.taskCount !== undefined && <Detail label="tasks" value={String(presentation.taskCount)} numeric />}
           {presentation.overruns !== undefined && <Detail label="overruns" value={presentation.overruns.toLocaleString()} numeric />}
         </div>
+        {presentation.limits && (
+          <div role="note" className="mt-1 border-l-2 border-[var(--color-accent-orange)] px-2 text-xs text-[var(--color-surface-100)]">
+            {presentation.limits}
+          </div>
+        )}
         {presentation.force && (
           <div className={`mt-1 border-l-2 px-2 text-xs text-[var(--color-surface-100)] ${presentation.force.kind === 'unconfirmed' ? 'border-[var(--color-accent-red)]' : 'border-[var(--color-accent-orange)]'}`} {...(presentation.force.kind === 'unconfirmed' ? { role: 'alert' } : {})}>
             {presentation.force.text}

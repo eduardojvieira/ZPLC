@@ -9,7 +9,7 @@ import { app, BrowserWindow, dialog, Menu, nativeTheme, session, ipcMain, safeSt
 import path from 'path';
 import { fileURLToPath, pathToFileURL } from 'url';
 import { NativeSimulationSupervisor } from './nativeSimulationSupervisor.js';
-import { nativeSimulationEnvironment } from './nativeSimulationEnvironment.js';
+import { nativeRuntimeSwitchedOff, nativeSimulationEnvironment } from './nativeSimulationEnvironment.js';
 import { createFirmwareBuildGateway } from './firmwareBuildGateway.js';
 import { createWorkspaceTestGateway } from './workspaceTestGateway.js';
 import { createToolExecutionAudit } from './toolExecutionAudit.js';
@@ -421,6 +421,8 @@ function setupIPC(): void {
     toolWorker: toolWorkerHost,
     nativeSimulation: {
       async start(owner) {
+        const switchedOff = nativeRuntimeSwitchedOff(process.env, isDev);
+        if (switchedOff !== null) throw new Error(switchedOff);
         if (!nativeSimulationSupervisor) {
           nativeSimulationSupervisor = new NativeSimulationSupervisor({
             clientName: 'zplc-ide',

@@ -60,11 +60,12 @@ export function conformanceChecks(path: string, text: string): Array<[string, Ch
   return [[requirement, { kind: 'conformance', ref: path, test: `${requirement} ${title}` }]];
 }
 
-// itNative is the test of a file that needs the native runtime (src/cli/nativeRuntimeGuard.ts): it skips locally and fails in CI
-// when the binary is missing, so a title of it is a check that CI executes.
+// itNative is the test of a file that needs the native runtime (src/cli/nativeRuntimeGuard.ts), and itWasm the one of a file
+// that needs the WebAssembly runtime (src/cli/wasmModuleGuard.ts): each skips locally and fails in CI when what it needs is
+// missing, so a title of either is a check that CI executes.
 // ponytail: a regex over the source, not a parser. A call counts when it starts its line, so a test source held in a string
 // (a fixture) is not mistaken for a test; a name built at run time (a template with ${}) and it.each names are not found.
-const TITLE = /^[ \t]*(?:describe|it|itNative|test)(?:\.(?:only|concurrent))?\(\s*(['"`])((?:\\.|(?!\1)[^\\])*)\1/gm;
+const TITLE = /^[ \t]*(?:describe|it|itNative|itWasm|test)(?:\.(?:only|concurrent))?\(\s*(['"`])((?:\\.|(?!\1)[^\\])*)\1/gm;
 
 export function unitChecks(ref: string, text: string): Array<[string, Check]> {
   const found: Array<[string, Check]> = [];

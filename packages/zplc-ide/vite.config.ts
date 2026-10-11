@@ -4,6 +4,7 @@ import tailwindcss from '@tailwindcss/vite'
 import { readFileSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { wasmRuntimePlugin } from './scripts/wasmRuntimePlugin.ts'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -20,6 +21,8 @@ export default defineConfig({
   plugins: [
     react(),
     tailwindcss(),
+    // the browser runtime (IDE-025): built from tools/wasm-core when the page loads it, embedded in the bundle
+    wasmRuntimePlugin(path.resolve(__dirname, '../..')),
   ],
   // Use relative paths for Electron production build
   base: './',

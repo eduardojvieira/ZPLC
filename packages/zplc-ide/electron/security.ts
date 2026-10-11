@@ -637,7 +637,9 @@ export function sanitizeWorkspaceSafetyCheck(value: unknown): unknown | null {
 export function createContentSecurityPolicy(isDev: boolean, developmentRendererPort = DEFAULT_DEVELOPMENT_RENDERER_PORT): string {
   const sources = [
     "default-src 'self'",
-    "script-src 'self'",
+    // 'wasm-unsafe-eval' lets the page compile WebAssembly, which is all the browser runtime needs (IDE-025). It does not
+    // allow eval, Function or an inline script, and the module is a file of the application's own bundle.
+    "script-src 'self' 'wasm-unsafe-eval'",
     "style-src 'self' 'unsafe-inline'",
     "img-src 'self' data: blob:",
     "font-src 'self' data:",
@@ -651,7 +653,7 @@ export function createContentSecurityPolicy(isDev: boolean, developmentRendererP
   if (isDev) {
     const developmentRendererUrl = trustedDevelopmentRendererUrl(developmentRendererPort);
     const developmentWebSocketUrl = developmentRendererUrl.replace(/^http:/, 'ws:').replace(/\/$/, '');
-    sources[1] = "script-src 'self' 'unsafe-inline'";
+    sources[1] = "script-src 'self' 'wasm-unsafe-eval' 'unsafe-inline'";
     sources[6] = `connect-src 'self' ${developmentRendererUrl.slice(0, -1)} ${developmentWebSocketUrl}`;
   }
 

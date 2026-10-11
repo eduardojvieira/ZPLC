@@ -80,6 +80,14 @@ describe('presentOperationalStatus', () => {
     expect(result.target).toBeUndefined();
   });
 
+  it('says what the browser runtime does not have, from the profile its handshake reports, and only for it', () => {
+    const result = presentOperationalStatus({ ...base, adapterType: 'wasm', connected: true });
+    expect(result.limits).toContain('Not available: modbus, mqtt, cloud, serial, physical-io');
+    expect(result.limits).toContain('Degraded: tasks, timing, retentive-memory');
+    expect(presentOperationalStatus({ ...base, adapterType: 'native', connected: true })).not.toHaveProperty('limits');
+    expect(presentOperationalStatus({ ...base, adapterType: 'wasm', connected: false })).not.toHaveProperty('limits');
+  });
+
   it('omits absent metrics, only names one-task intervals, and otherwise reports task count', () => {
     expect(presentOperationalStatus(base)).not.toHaveProperty('cycles');
     expect(presentOperationalStatus({ ...base, projectTasks: [{ interval_ms: 0 }] })).not.toHaveProperty('taskIntervalMs');
