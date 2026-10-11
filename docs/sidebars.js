@@ -86,6 +86,7 @@ const sidebars = {
         'reference/language-sfc',
         'reference/functions',
         'reference/function-blocks',
+        'reference/visual-editor-keyboard',
         'reference/kconfig',
         'reference/shell-commands',
         'reference/project-file',

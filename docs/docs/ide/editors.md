@@ -57,7 +57,7 @@ deleted blocks back and selects them, undoing a paste selects what was selected 
 
 Evidence level: host. `src/editors/gesture.test.ts` drives the commit rule with a 30-step drag, a delete and a stream of
 selection changes, and `src/editors/visualHistory.test.ts` holds 100 gestures, the coalescing and the selection of each step.
-Dragging with a real pointer is not covered: there is no DOM test environment in this repository.
+Journey 28j of `bun run test:journeys` drags a block with real pointer events, and one `Ctrl+Z` takes the whole drag back.
 
 ## The Structured Text language service
 
@@ -183,6 +183,49 @@ placed in a program, built, loaded into the virtual machine and scanned.
   carry a value (`constant`, `variable`, `input`, `output`). The functions of the library (`SQRT`, `SIN`, `LEN`,
   `CONCAT`, the conversions...) are not offered yet: a diagram cannot call them, and the build refuses them by name.
 - **SFC** offers the step, the initial step and the transition.
+
+## Editing from the keyboard
+
+Every editing action of the Ladder, Function Block Diagram and Sequential Function Chart editors can be done from the keyboard
+(LNG-012): moving a cursor, inserting an element, binding a variable from the declared symbols, connecting, and deleting. The
+[keyboard reference](../reference/visual-editor-keyboard.md) lists every key. It is generated from the table the editors read
+their keys from, so a key that is in it works, and a key that works is in it.
+
+- **The cursor.** In Ladder it is a cell of a rung, drawn as a blue frame; a click on a cell puts it there. In the function
+  block and chart editors it is the selected block or element, and `Alt` with an arrow key moves it to the nearest one in that
+  direction. The arrow keys without `Alt` nudge the selected block on the canvas, as before.
+- **Inserting.** A letter inserts the common elements at the cursor: `C` a contact, `N` an inverted contact, `O` a coil in
+  Ladder, `T` a transition and `S` a step in a chart. `Insert` or `I` opens the palette as a search list: type to search, Up and
+  Down choose, Enter inserts. The toolbox of each editor is reached with Tab: its items are buttons that insert at the cursor,
+  and it has a search box. Dragging an item still works, and it inserts through the same command as the key.
+- **Binding.** `F2` asks for the variable of the element under the cursor from the list of symbols the file declares. A contact
+  is offered the BOOL variables and the BOOL outputs of declared blocks (`Delay.Q`); a coil the BOOL variables that are not
+  inputs; the instance of a function block the variables of its type; the condition of a transition the BOOL variables. Where a
+  list allows it, a name that is not declared can be typed and is offered as typed.
+- **Connecting.** `C` on a block lists the wires it can have, each from an output to an input that takes it: the rules of the
+  pin types apply (LNG-013), and an input that already has a wire is not offered. The wire chosen is drawn. `Shift+C` lists the
+  wires of the block and removes the one chosen. In a chart, `T` inserts a transition below the selected step and `S` a step
+  below the selected transition, each wired to the one it follows.
+- **Deleting.** `Delete` removes the element under the cursor in Ladder, and the selected blocks and wires in a diagram or a
+  chart, the wires that were on a block going with it.
+
+A command that changes the file is one step of the undo history, and the selection comes back with undo and redo (LNG-010).
+What each command did, or why it refused, is written to a polite live region of the editor, which a screen reader reads.
+
+Four things differ from what the editors did before. A contact or a coil dropped from the toolbox is no longer named `NewVar`:
+it is unbound and shows `???` until it is bound. A function block dropped or inserted gets an instance name that nothing else
+has, and the instance is declared as a local variable of its type. The properties panel of Ladder opens when an element is
+clicked or Enter is pressed on it, not when a command of the keyboard selects it. A double click on a block of a function block
+diagram asks what the block holds, as `F2` does.
+
+Evidence level: host, and the real application on the development host. `src/editors/ld/keyboard.test.ts`,
+`src/editors/fbd/keyboard.test.ts` and `src/editors/sfc/keyboard.test.ts` press keys on a model, with the key table in between,
+and check the document, the cursor, the lists that are offered and that the build reads what was typed;
+`src/editors/picker.test.ts` and `src/editors/keymap.test.ts` hold the search list and the table. Journeys 28f, 28g and 28h of
+`bun run test:journeys` build a rung, edit a diagram and edit a chart with real key events, save, and build; journey 28i drops
+items of the toolbox with DOM drag events. Not covered: a real
+screen reader (the live region is there and its text is tested, not its speech), and a keyboard way to place a block at an exact
+coordinate (a block is put beside the cursor, then nudged with the arrow keys).
 
 ## What is drawn again when a value changes
 

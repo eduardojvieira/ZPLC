@@ -62,7 +62,7 @@ un borrado devuelve los bloques y los selecciona, deshacer un pegado selecciona 
 
 Nivel de evidencia: host. `src/editors/gesture.test.ts` ejercita la regla de commit con un arrastre de 30 pasos, un borrado
 y una serie de cambios de selección, y `src/editors/visualHistory.test.ts` guarda 100 gestos, la fusión de ediciones y la
-selección de cada paso. Arrastrar con un puntero real no está cubierto: este repositorio no tiene un entorno de pruebas con DOM.
+selección de cada paso. El recorrido 28j de `bun run test:journeys` arrastra un bloque con eventos de puntero reales, y un solo `Ctrl+Z` deshace todo el arrastre.
 
 ## El servicio de lenguaje de Structured Text
 
@@ -195,6 +195,50 @@ pruebas: se coloca en un programa, se compila, se carga en la máquina virtual y
   `LEN`, `CONCAT`, las conversiones...) todavía no se ofrecen: un diagrama no puede llamarlas y la compilación las
   rechaza por su nombre.
 - **SFC** ofrece el paso, el paso inicial y la transición.
+
+## Edición con el teclado
+
+Toda acción de edición de los editores de Escalera, Bloques de Función y Diagrama Funcional Secuencial se puede hacer con el
+teclado (LNG-012): mover un cursor, insertar un elemento, enlazar una variable entre los símbolos declarados, conectar y
+borrar. La [referencia de teclado](../reference/visual-editor-keyboard.md) lista todas las teclas. Se genera de la tabla de la
+que los editores leen sus teclas, así que una tecla que está en ella funciona, y una tecla que funciona está en ella.
+
+- **El cursor.** En Escalera es una celda de un peldaño, dibujada como un marco azul; un clic en una celda lo pone allí. En los
+  editores de bloques de función y de diagrama es el bloque o elemento seleccionado, y `Alt` con una flecha lo mueve al más
+  cercano en esa dirección. Las flechas sin `Alt` desplazan el bloque seleccionado en el lienzo, como antes.
+- **Insertar.** Una letra inserta en el cursor los elementos más comunes: `C` un contacto, `N` un contacto invertido, `O` una
+  bobina en Escalera, `T` una transición y `S` un paso en un diagrama. `Insert` o `I` abre la paleta como una lista con
+  búsqueda: se escribe para buscar, Arriba y Abajo eligen, Enter inserta. La caja de herramientas de cada editor se alcanza con
+  Tab: sus elementos son botones que insertan en el cursor, y tiene una caja de búsqueda. Arrastrar un elemento sigue
+  funcionando, e inserta con el mismo comando que la tecla.
+- **Enlazar.** `F2` pide la variable del elemento bajo el cursor, de la lista de símbolos que declara el archivo. A un contacto
+  se le ofrecen las variables BOOL y las salidas BOOL de bloques declarados (`Delay.Q`); a una bobina las variables BOOL que no
+  son entradas; a la instancia de un bloque de función las variables de su tipo; a la condición de una transición las
+  variables BOOL. Donde la lista lo permite, se puede escribir un nombre que no está declarado y se ofrece tal como se escribió.
+- **Conectar.** `C` sobre un bloque lista los cables que puede tener, cada uno de una salida a una entrada que la acepta: rigen
+  las reglas de los tipos de pin (LNG-013), y no se ofrece una entrada que ya tiene un cable. Se dibuja el cable elegido.
+  `Shift+C` lista los cables del bloque y quita el elegido. En un diagrama funcional, `T` inserta una transición debajo del paso
+  seleccionado y `S` un paso debajo de la transición seleccionada, cada uno conectado al que sigue.
+- **Borrar.** `Delete` quita el elemento bajo el cursor en Escalera, y los bloques y cables seleccionados en un diagrama o en
+  un diagrama funcional, y se van con el bloque los cables que tenía.
+
+Un comando que cambia el archivo es un paso del historial de deshacer, y la selección vuelve con deshacer y rehacer (LNG-010).
+Lo que hizo cada comando, o por qué se negó, se escribe en una región viva cortés del editor, que lee un lector de pantalla.
+
+Cuatro cosas difieren de lo que hacían antes los editores. Un contacto o una bobina soltados desde la caja de herramientas ya no
+se llaman `NewVar`: quedan sin enlazar y muestran `???` hasta que se enlazan. Un bloque de función soltado o insertado recibe un
+nombre de instancia que nada más tiene, y la instancia se declara como variable local de su tipo. El panel de propiedades de
+Escalera se abre al hacer clic en un elemento o al pulsar Enter sobre él, no cuando un comando del teclado lo selecciona. Un
+doble clic en un bloque de un diagrama de bloques de función pregunta qué contiene el bloque, como hace `F2`.
+
+Nivel de evidencia: host, y la aplicación real en el host de desarrollo. `src/editors/ld/keyboard.test.ts`,
+`src/editors/fbd/keyboard.test.ts` y `src/editors/sfc/keyboard.test.ts` pulsan teclas sobre un modelo, con la tabla de teclas
+en medio, y comprueban el documento, el cursor, las listas que se ofrecen y que la compilación lee lo que se escribió;
+`src/editors/picker.test.ts` y `src/editors/keymap.test.ts` cubren la lista con búsqueda y la tabla. Los recorridos 28f, 28g y
+28h de `bun run test:journeys` construyen un peldaño, editan un diagrama y editan un diagrama funcional con eventos de teclado
+reales, guardan y compilan; el recorrido 28i suelta elementos de la caja de herramientas con eventos de arrastre del DOM. No cubierto: un lector de pantalla real (la región viva existe y su texto se prueba, no su voz), y
+una forma con teclado de poner un bloque en una coordenada exacta (un bloque se pone junto al cursor y luego se desplaza con
+las flechas).
 
 ## Qué se vuelve a dibujar cuando cambia un valor
 
