@@ -25,7 +25,8 @@ runs a local cross-build and stops there.
 ## 1. Start the server for one folder
 
 The server serves the one folder that you name, and nothing outside it. The folder is
-an absolute path of a real directory, not a link:
+the absolute path of a ZPLC project, a real directory and not a link; on any other folder
+the server prints `ZPLC MCP workspace is unavailable` and exits with 1:
 
 ```bash
 zplc-mcp --workspace /home/me/plants/line-3
@@ -65,10 +66,36 @@ and its place are the client's, not ZPLC's:
 }
 ```
 
-The server speaks protocol revision 2026-07-28 and no other: a client that begins with
-the older `initialize` handshake gets error `-32022`, `Unsupported protocol version`,
-with the supported revision in the answer. If a client does that, the client is the one
-to update.
+### The protocol revision
+
+The server speaks one revision of the protocol, 2026-07-28, and no older one. Its entry
+point starts the transport with `legacy: 'reject'`, where the SDK it uses would serve the
+2025 handshake by default; the repository records no reason for that choice, so take it
+as how the server is and not as a promise. A client has no `initialize` step: it names the
+revision and its capabilities in the `_meta` of every request.
+
+```json
+{ "jsonrpc": "2.0", "id": 1, "method": "tools/list",
+  "params": { "_meta": {
+    "io.modelcontextprotocol/protocolVersion": "2026-07-28",
+    "io.modelcontextprotocol/clientCapabilities": {} } } }
+```
+
+A client that opens with `initialize` of an older revision gets this answer, and the
+connection stays open for a request of the supported revision:
+
+```json
+{ "jsonrpc": "2.0", "id": 1, "error": { "code": -32022,
+  "message": "Unsupported protocol version: 2025-06-18",
+  "data": { "supported": ["2026-07-28"], "requested": "2025-06-18" } } }
+```
+
+A request that names no revision gets the same code and the message
+`Unsupported protocol version: the request did not name a protocol version`. One that
+names the revision and leaves out `io.modelcontextprotocol/clientCapabilities` gets
+`-32602` and `Invalid _meta envelope for protocol revision 2026-07-28:
+io.modelcontextprotocol/clientCapabilities: missing`. In each case the client is the one
+to update; the server does not change.
 
 ## 3. Ask for evidence
 
@@ -105,7 +132,7 @@ AI inside Studio follows the same boundary and has its own data rules:
 
 | Part | Verified | Level |
 | --- | --- | --- |
-| The server lists 15 tools when asked; `project_validate`, `compiler_check` and `tests_run` pass on a bundled project; `boards_list` answers with `--repository`; an `initialize` of revision 2025-06-18 is refused with `-32022` | Run by hand with a script that sends the requests over standard input and output, through `bun run --cwd=packages/zplc-ide mcp`, on the bundled project `pico_blinky_ton`; not repeated by CI | Host |
+| The server lists 15 tools when asked; `project_validate`, `compiler_check` and `tests_run` pass on a bundled project; `boards_list` answers with `--repository`; an `initialize` of revision 2025-06-18, and a request with no revision, are refused with `-32022`, and one without `clientCapabilities` with `-32602` | Run by hand with a script that sends the requests over standard input and output, through `bun run --cwd=packages/zplc-ide mcp`, on the bundled project `pico_blinky_ton`; not repeated by CI | Host |
 | The built executable starts and lists its tools the way a 2026-07-28 client asks | The release build starts the executable and counts the tools | Host |
 | No tool reaches a device, a socket or a serial port | A test lists the registered tools and resources of the live server and traps every socket and serial entry point | Host |
 | A named assistant product works with the entry above | Not verified: no client product was run for this page | None |

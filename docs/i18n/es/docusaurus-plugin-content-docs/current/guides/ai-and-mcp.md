@@ -25,7 +25,8 @@ solo lectura, `firmware_build`, hace una compilación cruzada local y ahí termi
 ## 1. Iniciar el servidor para una carpeta
 
 El servidor sirve la única carpeta que usted nombra, y nada fuera de ella. La carpeta es
-una ruta absoluta de un directorio real, no un enlace:
+la ruta absoluta de un proyecto de ZPLC, un directorio real y no un enlace; con cualquier
+otra carpeta el servidor imprime `ZPLC MCP workspace is unavailable` y termina con 1:
 
 ```bash
 zplc-mcp --workspace /home/me/plants/line-3
@@ -64,10 +65,37 @@ clientes leen; el archivo y su lugar son del cliente, no de ZPLC:
 }
 ```
 
-El servidor habla la revisión 2026-07-28 del protocolo y ninguna otra: un cliente que
-empieza con el antiguo apretón de manos `initialize` recibe el error `-32022`,
-`Unsupported protocol version`, con la revisión admitida en la respuesta. Si un cliente
-hace eso, el que debe actualizarse es el cliente.
+### La revisión del protocolo
+
+El servidor habla una sola revisión del protocolo, la 2026-07-28, y ninguna anterior. Su
+punto de entrada inicia el transporte con `legacy: 'reject'`, mientras que el SDK que usa
+serviría por defecto el apretón de manos de 2025; el repositorio no registra el motivo de
+esa elección, así que debe tomarse como la forma en que el servidor es y no como una
+promesa. Un cliente no tiene paso `initialize`: nombra la revisión y sus capacidades en el
+`_meta` de cada solicitud.
+
+```json
+{ "jsonrpc": "2.0", "id": 1, "method": "tools/list",
+  "params": { "_meta": {
+    "io.modelcontextprotocol/protocolVersion": "2026-07-28",
+    "io.modelcontextprotocol/clientCapabilities": {} } } }
+```
+
+Un cliente que abre con `initialize` de una revisión anterior recibe esta respuesta, y la
+conexión sigue abierta para una solicitud de la revisión admitida:
+
+```json
+{ "jsonrpc": "2.0", "id": 1, "error": { "code": -32022,
+  "message": "Unsupported protocol version: 2025-06-18",
+  "data": { "supported": ["2026-07-28"], "requested": "2025-06-18" } } }
+```
+
+Una solicitud que no nombra ninguna revisión recibe el mismo código y el mensaje
+`Unsupported protocol version: the request did not name a protocol version`. Una que
+nombra la revisión y omite `io.modelcontextprotocol/clientCapabilities` recibe `-32602` y
+`Invalid _meta envelope for protocol revision 2026-07-28:
+io.modelcontextprotocol/clientCapabilities: missing`. En cada caso el que debe
+actualizarse es el cliente; el servidor no cambia.
 
 ## 3. Pedir evidencia
 
@@ -105,7 +133,7 @@ La IA dentro de Studio sigue el mismo límite y tiene sus propias reglas de dato
 
 | Parte | Verificado | Nivel |
 | --- | --- | --- |
-| El servidor lista 15 herramientas cuando se le pide; `project_validate`, `compiler_check` y `tests_run` pasan en un proyecto incluido; `boards_list` responde con `--repository`; un `initialize` de la revisión 2025-06-18 se rechaza con `-32022` | Ejecutado a mano con un script que envía las solicitudes por la entrada y la salida estándar, con `bun run --cwd=packages/zplc-ide mcp`, sobre el proyecto incluido `pico_blinky_ton`; CI no lo repite | Host |
+| El servidor lista 15 herramientas cuando se le pide; `project_validate`, `compiler_check` y `tests_run` pasan en un proyecto incluido; `boards_list` responde con `--repository`; un `initialize` de la revisión 2025-06-18 y una solicitud sin revisión se rechazan con `-32022`, y una sin `clientCapabilities` con `-32602` | Ejecutado a mano con un script que envía las solicitudes por la entrada y la salida estándar, con `bun run --cwd=packages/zplc-ide mcp`, sobre el proyecto incluido `pico_blinky_ton`; CI no lo repite | Host |
 | El ejecutable construido arranca y lista sus herramientas como lo pide un cliente 2026-07-28 | La compilación de la versión arranca el ejecutable y cuenta las herramientas | Host |
 | Ninguna herramienta llega a un dispositivo, un socket o un puerto serie | Una prueba lista las herramientas y los recursos registrados del servidor activo y atrapa cada punto de entrada de sockets y de puerto serie | Host |
 | Un producto de asistente concreto funciona con la entrada de arriba | No verificado: no se ejecutó ningún producto cliente para esta página | Ninguno |
