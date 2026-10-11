@@ -1,4 +1,5 @@
 import { mkdtemp, readdir, readFile, rm } from 'node:fs/promises';
+import { fileURLToPath } from 'node:url';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, test } from 'bun:test';
@@ -11,7 +12,7 @@ import { validate } from '../src/record';
 import { FakeLink } from './fakeLink';
 import { itNative, nativeRuntime } from './nativeGuard';
 
-const ROOT = new URL('../../../', import.meta.url).pathname;
+const ROOT = fileURLToPath(new URL('../../../', import.meta.url));
 const WORKSPACE = join(ROOT, 'packages/zplc-ide/projects/motor_start_stop');
 const SCENARIO = join(WORKSPACE, 'tests/motor-start-stop.scenario.json');
 

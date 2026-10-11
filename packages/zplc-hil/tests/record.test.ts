@@ -1,4 +1,5 @@
 import { spawnSync } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -7,7 +8,7 @@ import { describe, expect, test } from 'bun:test';
 import { firmwareIdentity, serialHash, sha256, summarize, validate } from '../src/record';
 import type { RunRecord } from '../src/record';
 
-const ROOT = new URL('../../../', import.meta.url).pathname;
+const ROOT = fileURLToPath(new URL('../../../', import.meta.url));
 const python = Bun.which('python3');
 
 function record(): RunRecord {

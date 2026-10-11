@@ -1,4 +1,5 @@
 import { spawnSync } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -6,7 +7,7 @@ import { join } from 'node:path';
 import { sha256 } from './record';
 
 /** The repository root: packages/zplc-hil/src/../../.. */
-export const REPOSITORY_ROOT = new URL('../../../', import.meta.url).pathname;
+export const REPOSITORY_ROOT = fileURLToPath(new URL('../../../', import.meta.url));
 const CLI = join(REPOSITORY_ROOT, 'packages/zplc-ide/src/cli/index.ts');
 
 export class CompileFailure extends Error {

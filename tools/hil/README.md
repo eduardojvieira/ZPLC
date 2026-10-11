@@ -18,6 +18,8 @@ python3 tools/hil/run_all_languages.py --port /dev/ttyACM0
 python3 tools/hil/test_loop.py
 ```
 
+Talking to a real board needs pyserial (`pip install pyserial`); nothing else here does.
+
 The serial port is, in this order: `--port` (a script that takes one), `ZPLC_SERIAL_PORT`, then found by the USB
 identifiers of the board in `usb-ids.json`. When two devices match, or none does, the script stops and names what it
 saw: it never guesses (HIL-007). No port path is written in any script.
