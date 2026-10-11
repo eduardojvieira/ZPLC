@@ -385,16 +385,14 @@ export function modbusTagNumber(area: ModbusAddressSpace | undefined, address: n
     const written = modbusAreaOfNumber(address);
     if (written !== undefined) {
         if (written === area) return address;
-        throw new CompilerError(
-            'INVALID_TAG',
+        throw new CompilerError('INVALID_TAG',
             `The Modbus address ${String(address)} of ${what} is a ${written.replace('-', ' ')} in Modbus notation, and ${what} is placed in a ${area.replace('-', ' ')}`,
             line, 0, 'codegen');
     }
     if (area === 'coil') return address;
     if (address <= 9998) return MODBUS_AREA_BASE[area] + address;
     if (area === 'holding-register') return address;
-    throw new CompilerError(
-        'INVALID_TAG',
+    throw new CompilerError('INVALID_TAG',
         `The ${area.replace('-', ' ')} address ${String(address)} of ${what} does not fit: an ${area.replace('-', ' ')} is addressed from 0 to 9998`,
         line, 0, 'codegen');
 }
@@ -616,8 +614,7 @@ export function compileMultiTaskProject(
         throw new CompilerError('INVALID_TASK_CONFIGURATION', 'No tasks defined in project configuration', 1, 1, 'codegen', 'zplc.json');
     }
     if (config.tasks.length > ZPLC_CONSTANTS.MAX_TASKS) {
-        throw new CompilerError(
-            'INVALID_TASK_CONFIGURATION',
+        throw new CompilerError('INVALID_TASK_CONFIGURATION',
             `Project supports at most ${ZPLC_CONSTANTS.MAX_TASKS} tasks`,
             1, 1, 'codegen', 'zplc.json',
         );
