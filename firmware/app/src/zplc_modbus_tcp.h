@@ -91,5 +91,9 @@ int zplc_modbus_pdu_write_single_response(const uint8_t *pdu, size_t length, uin
 /* Private app seam shared by TCP/RTU and the native regression suite. */
 int zplc_modbus_write_mapped(uint16_t address, uint16_t count, const uint8_t *data,
                              bool bits, bool multiple, zplc_modbus_area_t area);
+/* One pass of the client over the tags that bind a variable to a remote device (COM-011). */
+int zplc_modbus_client_poll_tags(bool use_tcp);
+int zplc_modbus_read_mapped(uint16_t address, uint16_t count, uint8_t *response, size_t capacity,
+                            bool bits, zplc_modbus_area_t area);
 
 #endif

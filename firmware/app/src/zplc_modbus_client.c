@@ -1,4 +1,5 @@
 #include "zplc_config.h"
+#include "zplc_modbus_map.h"
 #include "zplc_modbus_tcp.h"
 #include "zplc_modbus_timing.h"
 
@@ -613,40 +614,67 @@ int zplc_modbus_tcp_client_write_coil(const char *host, uint16_t port,
 }
 #endif
 
-static int poll_modbus_tags(bool use_tcp)
+int zplc_modbus_client_poll_tags(bool use_tcp)
 {
     uint16_t count = zplc_core_get_tag_count();
     uint16_t regs[2];
     int rc = 0;
+    static bool warned_unreadable;
 
     for (uint16_t i = 0U; i < count; i++) {
         const zplc_tag_entry_t *tag = zplc_core_get_tag(i);
+        zplc_modbus_location_t where;
         uint16_t width;
         uint32_t value;
+        char host[128];
 
         if (tag == NULL || tag->tag_id != ZPLC_TAG_MODBUS) {
             continue;
         }
 
+        /* The number of the tag says where the variable lives, in the notation of zplc_modbus_map.h; the address
+         * on the remote device is the address of that area on the wire, not the number (COM-011). The client has
+         * a read of holding registers and one of coils: a tag of a discrete input or an input register is a
+         * variable the server serves, and is left to it. */
         width = modbus_register_width((zplc_data_type_t)tag->var_type);
+        if (!zplc_modbus_locate(tag->value, tag->var_type == ZPLC_TYPE_BOOL, width, &where)) {
+            continue;
+        }
+        if (where.area != ZPLC_MODBUS_AREA_HOLDING_REGISTER && where.area != ZPLC_MODBUS_AREA_COIL) {
+            if (!warned_unreadable) {
+                warned_unreadable = true;
+                LOG_WRN("Modbus client: tag %u is in an area the client cannot read (discrete or input); skipped", i);
+            }
+            continue;
+        }
+
+        host[0] = '\0';
         if (use_tcp) {
-            char host[128];
             zplc_config_get_modbus_tcp_client_host(host, sizeof(host));
-            rc = zplc_modbus_tcp_client_read_holding(host,
-                                                     zplc_config_get_modbus_tcp_client_port(),
-                                                     zplc_config_get_modbus_tcp_client_unit_id(),
-                                                     (uint16_t)tag->value, width, regs);
+        }
+        if (where.area == ZPLC_MODBUS_AREA_COIL) {
+            uint8_t bit = 0U;
+
+            rc = use_tcp
+                     ? zplc_modbus_tcp_client_read_coils(host, zplc_config_get_modbus_tcp_client_port(),
+                                                         zplc_config_get_modbus_tcp_client_unit_id(),
+                                                         where.address, 1U, &bit)
+                     : zplc_modbus_rtu_client_read_coils(zplc_config_get_modbus_rtu_client_slave_id(),
+                                                         where.address, 1U, &bit);
+            value = bit & 1U;
         } else {
-            rc = zplc_modbus_rtu_client_read_holding(
-                zplc_config_get_modbus_rtu_client_slave_id(), (uint16_t)tag->value,
-                width, regs);
+            rc = use_tcp
+                     ? zplc_modbus_tcp_client_read_holding(host, zplc_config_get_modbus_tcp_client_port(),
+                                                           zplc_config_get_modbus_tcp_client_unit_id(),
+                                                           where.address, width, regs)
+                     : zplc_modbus_rtu_client_read_holding(zplc_config_get_modbus_rtu_client_slave_id(),
+                                                           where.address, width, regs);
+            value = (width == 2U) ? (((uint32_t)regs[0] << 16) | regs[1]) : regs[0];
         }
 
         if (rc < 0) {
             return rc;
         }
-
-        value = (width == 2U) ? (((uint32_t)regs[0] << 16) | regs[1]) : regs[0];
 
         rc = mem_write_val(tag->var_addr, (zplc_data_type_t)tag->var_type, value);
         if (rc != 0) {
@@ -666,7 +694,7 @@ static void modbus_rtu_client_thread(void *arg1, void *arg2, void *arg3)
     ARG_UNUSED(arg3);
 
     while (1) {
-        int rc = poll_modbus_tags(false);
+        int rc = zplc_modbus_client_poll_tags(false);
         if (rc < 0) {
             LOG_WRN("Modbus RTU client poll failed: %d", rc);
             delay_ms = MIN(delay_ms * 2U, 10000U);
@@ -687,7 +715,7 @@ static void modbus_tcp_client_thread(void *arg1, void *arg2, void *arg3)
     ARG_UNUSED(arg3);
 
     while (1) {
-        int rc = poll_modbus_tags(true);
+        int rc = zplc_modbus_client_poll_tags(true);
         if (rc < 0) {
             LOG_WRN("Modbus TCP client poll failed: %d", rc);
             delay_ms = MIN(delay_ms * 2U, 10000U);

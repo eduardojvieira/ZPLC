@@ -37,10 +37,28 @@ void zplc_config_get_modbus_tcp_client_host(char *buf, size_t len) { strncpy(buf
 uint16_t zplc_config_get_modbus_tcp_client_port(void) { return SERVER_PORT; }
 uint8_t zplc_config_get_modbus_tcp_client_unit_id(void) { return 1U; }
 uint32_t zplc_config_get_modbus_tcp_client_poll_ms(void) { return 1000U; }
-uint16_t zplc_core_get_tag_count(void) { return 0U; }
-const zplc_tag_entry_t *zplc_core_get_tag(uint16_t index) { ARG_UNUSED(index); return NULL; }
+/* the tags of the program the client polls for, and what it writes into the image */
+static zplc_tag_entry_t poll_tags[8];
+static uint16_t poll_tag_count;
+static uint16_t written_addr[8];
+static uint32_t written_value[8];
+static int written;
+uint16_t zplc_core_get_tag_count(void) { return poll_tag_count; }
+const zplc_tag_entry_t *zplc_core_get_tag(uint16_t index) { return index < poll_tag_count ? &poll_tags[index] : NULL; }
 int zplc_exchange_write(uint16_t addr, const uint8_t *bytes, uint16_t size)
-{ ARG_UNUSED(addr); ARG_UNUSED(bytes); ARG_UNUSED(size); return 0; }
+{
+	uint32_t value = 0U;
+
+	for (uint16_t i = 0U; i < size && i < 4U; i++) {
+		value |= (uint32_t)bytes[i] << (8U * i);
+	}
+	if (written < 8) {
+		written_addr[written] = addr;
+		written_value[written] = value;
+	}
+	written++;
+	return 0;
+}
 
 /* ---- the server of the test ---- */
 enum mode {
@@ -58,6 +76,7 @@ static volatile enum mode mode;
 static volatile bool stop;
 static uint8_t last_request[300];
 static volatile int last_request_length;
+static volatile uint32_t seen[8]; /* function code << 16 | start address of each request, in order */
 static volatile int requests;
 static struct k_thread server_thread;
 static K_THREAD_STACK_DEFINE(server_stack, 4096);
@@ -134,6 +153,9 @@ static void server(void *a, void *b, void *c)
 			requests++;
 			memcpy(last_request, adu, (size_t)n);
 			last_request_length = n;
+			if (requests <= 8) {
+				seen[requests - 1] = ((uint32_t)adu[7] << 16) | ((uint32_t)adu[8] << 8) | adu[9];
+			}
 			if (mode == MODE_SILENT) {
 				/* no answer: wait for the client to give up and close */
 				struct zsock_pollfd hold = {.fd = conn, .events = ZSOCK_POLLIN};
@@ -202,8 +224,11 @@ static void before(void *fixture)
 	mode = MODE_GOOD;
 	requests = 0;
 	last_request_length = 0;
+	poll_tag_count = 0U;
+	written = 0;
 }
 
+int zplc_modbus_client_poll_tags(bool use_tcp);
 int zplc_modbus_tcp_client_read_holding(const char *host, uint16_t port, uint8_t unit_id,
 					uint16_t start_reg, uint16_t count, uint16_t *out);
 int zplc_modbus_tcp_client_write_register(const char *host, uint16_t port, uint8_t unit_id,
@@ -322,6 +347,39 @@ ZTEST(modbus_client_tcp, test_the_rtu_client_is_given_its_timeout_in_microsecond
 	zassert_equal(param.serial.baud, 9600U);
 	zassert_equal(param.serial.parity, UART_CFG_PARITY_EVEN);
 	zassert_equal(param.serial.stop_bits, UART_CFG_STOP_BITS_1);
+}
+
+static void add_poll_tag(uint16_t var_addr, uint8_t type, uint32_t number)
+{
+	poll_tags[poll_tag_count] = (zplc_tag_entry_t){
+		.var_addr = var_addr, .var_type = type, .tag_id = ZPLC_TAG_MODBUS, .value = number,
+	};
+	poll_tag_count++;
+}
+
+/* The number of a tag says where the variable lives in the notation of the server; the client asks the remote
+ * device at the address of that area, not at the number, and leaves the areas it cannot read to the server
+ * (COM-011). */
+ZTEST(modbus_client_tcp, test_a_polled_tag_is_read_at_the_wire_address_of_its_area)
+{
+	add_poll_tag(0x2000, ZPLC_TYPE_UINT, 40006U); /* holding register 5 */
+	add_poll_tag(0x2002, ZPLC_TYPE_BOOL, 7U);     /* coil 7 */
+	add_poll_tag(0x2004, ZPLC_TYPE_UINT, 30003U); /* input register 2: the client has no read for it */
+	add_poll_tag(0x2006, ZPLC_TYPE_BOOL, 10001U); /* discrete input 0: nor for this */
+	add_poll_tag(0x2008, ZPLC_TYPE_INT, 9U);      /* no prefix: holding register 9 */
+
+	zassert_ok(zplc_modbus_client_poll_tags(true));
+
+	zassert_equal(requests, 3, "requests %d", requests);
+	zassert_equal(seen[0], (0x03UL << 16) | 5U, "seen %x", seen[0]);
+	zassert_equal(seen[1], (0x01UL << 16) | 7U, "seen %x", seen[1]);
+	zassert_equal(seen[2], (0x03UL << 16) | 9U, "seen %x", seen[2]);
+	zassert_equal(written, 3);
+	zassert_equal(written_addr[0], 0x2000U);
+	zassert_equal(written_value[0], 0x1234U);
+	zassert_equal(written_addr[1], 0x2002U);
+	zassert_equal(written_value[1], 1U, "a coil is one bit");
+	zassert_equal(written_addr[2], 0x2008U);
 }
 
 ZTEST_SUITE(modbus_client_tcp, NULL, setup, before, NULL, teardown);

@@ -1008,6 +1008,27 @@ All notable changes are documented here.
   test on the loopback interface of native_sim. No serial device is used by any
   of it: the RTU path is checked at the interface parameters, and the
   hardware record of an RTU exchange on the Pico is not made.
+- **The four Modbus areas are four address spaces, and the server serves the
+  whole of WORK and RETAIN** (COM-011, COM-013). A coil, a discrete input, an
+  input register and a holding register with the same number were one
+  variable: the server found a variable by the number of its tag and did not
+  look at the area of the request. The number of a `{modbus:N}` tag now says the
+  area in the notation of the Modbus world: 10001 to 19999 are discrete inputs,
+  30001 to 39999 input registers, 40001 to 49999 holding registers, and any
+  other number is a coil for a BOOL and a holding register for any other type,
+  at that address, so a project that wrote no prefix keeps its addresses.
+  The IDE writes the number from the area of the communication tag and from the
+  `MODBUS_*` helper (the area of a tag was kept in the project and dropped by the
+  build); a number that cannot be written is a build error at the line of the
+  helper. The Modbus client polls a tag at the address of its area and no
+  longer asks the remote device for the number of the tag. A variable at
+  `0x3000` to `0x3FFF` of WORK could not be bound at all (the loader and the
+  compiler refused the tag because the adapters discarded the high offset);
+  every adapter reaches memory through the exchange with its whole 16-bit
+  address now, and the guard is gone. `firmware/tests/modbus_areas` loads a
+  program with the tags of the four areas, the edges of WORK and RETAIN and
+  address 65535 and reads and writes them through the seams both servers end in;
+  `firmware/tests/modbus_client_tcp` polls tags against a server on loopback.
 
 ## 2.0.0-rc.3 - 2026-09-01
 

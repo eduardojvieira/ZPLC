@@ -1030,9 +1030,6 @@ function validateVariableTag(sym: Symbol, tagIdName: string, tagId: number,
     if (width === 0) {
         throw tagAdmissionError(sym, `${tagName} tag on '${sym.name}' does not support ${String(sym.dataType)}`);
     }
-    if ((sym.address & 0xF000) === 0x3000) {
-        throw tagAdmissionError(sym, `${tagName} tag on '${sym.name}' cannot use the unsupported 0x3000 WORK alias`);
-    }
     if (!region) {
         throw tagAdmissionError(sym, `${tagName} tag on '${sym.name}' exceeds a valid VM memory region`);
     }
