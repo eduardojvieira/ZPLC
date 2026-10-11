@@ -1366,6 +1366,7 @@
     {"kind":"unit","ref":"packages/zplc-ide/src/test-engine/hardwarePort.test.ts","test":"the scenario engine on a hardware runtime port (HIL-002)"}
   ],
   "HIL-003": [
+    {"kind":"unit","ref":"packages/zplc-hil/tests/cli.test.ts","test":"the hardware scenario command (HIL-003)"},
     {"kind":"unit","ref":"packages/zplc-hil/tests/guard.test.ts","test":"the human-presence guard (HIL-003)"},
     {"kind":"unit","ref":"packages/zplc-hil/tests/hardwarePort.test.ts","test":"forces are released by the tool at the end and on abort (HIL-003)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/mcp/hilReach.test.ts","test":"hardware runs are not reachable from MCP or AI tools (HIL-003, COM-030)"},
