@@ -10,8 +10,9 @@ import { nativeRuntimeBinary, itNative } from '../cli/nativeRuntimeGuard';
 import { compilerCompile } from '../cli/toolApi';
 import { NativeAdapter } from '../runtime/nativeAdapter';
 import compilerManifest from '../../../zplc-compiler/package.json';
-import { CASE_TAGS, cellLocation, cellSize, loadCases, type Cell, type CaseTag, type CellType, type ConformanceCase, type RunExpectation } from './cases';
-import { ACCESS, label, workspace } from './harness';
+import { CASE_TAGS, cellLocation, loadCases, type Cell, type CaseTag, type ConformanceCase, type RunExpectation } from './cases';
+import { workspace } from './harness';
+import { runScenario } from './scenarioRun';
 
 // Each conformance case runs end to end: the repository compiler (through the Tool API that Studio, the CLI
 // and MCP share), the loader and VM of the native POSIX runtime on its virtual clock, and a read of VM memory.
@@ -27,7 +28,6 @@ function diagnosticText(diagnostics: Array<{ code: string; message: string; phas
 }
 
 async function execute(name: string, expectation: RunExpectation, zplcFile: Uint8Array, address: (cell: Cell) => { address: number; bit?: number } | string): Promise<string[]> {
-  const failures: string[] = [];
   const persist = await mkdtemp(join(tmpdir(), 'zplc-conformance-run-'));
   // ponytail: one runtime process per case (tens of milliseconds each); share a session and reset between cases if the suite outgrows that.
   const supervisor = new NativeSimulationSupervisor({
@@ -38,45 +38,9 @@ async function execute(name: string, expectation: RunExpectation, zplcFile: Uint
   const adapter = new NativeAdapter(supervisor);
   try {
     await adapter.connect();
-    try {
-      await adapter.loadProgram(zplcFile);
-      loader.accepted.push(name);
-    } catch (error) {
-      loader.refused.push(name);
-      return [`the loader refused the artifact the compiler produced: ${(error as Error).message}`];
-    }
-    let faulted = false;
-    for (let scan = 1; scan <= expectation.scans; scan += 1) {
-      for (const input of expectation.inputs.filter((candidate) => candidate.beforeScan === scan)) {
-        const { address: where, size, bit } = cellLocation(input.at, input.type);
-        if (bit !== undefined) {
-          const [current] = await adapter.peek(where, 1);
-          await adapter.pokeN(where, new Uint8Array([input.value ? current! | (1 << bit) : current! & ~(1 << bit)]));
-        } else {
-          const bytes = new Uint8Array(size);
-          ACCESS[input.type as Exclude<CellType, 'BOOL'>][1](new DataView(bytes.buffer), input.value as number);
-          await adapter.pokeN(where, bytes);
-        }
-      }
-      try {
-        await adapter.scenarioStep((scan - 1) * expectation.scanMs);
-      } catch (error) {
-        if (!expectation.fault || scan !== expectation.scans) return [...failures, `scan ${scan}: the VM faulted: ${(error as Error).message}`];
-        faulted = true;
-      }
-      for (const check of expectation.expect.filter((candidate) => candidate.afterScan === scan)) {
-        const where = address(check);
-        if (typeof where === 'string') { failures.push(`after scan ${scan}: ${label(check)}: ${where}`); continue; }
-        const bytes = await adapter.peek(where.address, cellSize(check.type));
-        const observed = check.type === 'BOOL'
-          ? (bytes[0]! & (1 << (where.bit ?? 0))) !== 0
-          : ACCESS[check.type][0](new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength));
-        const wanted = check.type === 'REAL' ? Math.fround(check.value as number) : check.value;
-        if (observed !== wanted) failures.push(`after scan ${scan}: ${label(check)} expected ${check.value}, observed ${observed}`);
-      }
-    }
-    if (expectation.fault && !faulted) failures.push(`the last scan (${expectation.scans}) was expected to end in a VM fault, and it completed`);
-    return failures;
+    const outcome = await runScenario(adapter, expectation, zplcFile, address);
+    (outcome.loaderRefused ? loader.refused : loader.accepted).push(name);
+    return outcome.failures;
   } finally {
     await adapter.disconnect().catch(() => undefined);
     await supervisor.stopSession().catch(() => undefined);
