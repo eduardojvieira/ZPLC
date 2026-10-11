@@ -233,7 +233,7 @@ export function Console({ debugController }: ConsoleProps) {
     { 
       id: 'watch', 
       label: 'Watch', 
-      icon: <Eye size={14} className={debugMode !== 'none' ? 'text-green-400' : ''} />,
+      icon: <Eye size={14} className={debugMode !== 'none' ? 'text-[var(--color-accent-green)]' : ''} />,
       count: watchCount > 0 ? watchCount : undefined,
     },
     { 

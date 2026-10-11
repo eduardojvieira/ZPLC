@@ -207,17 +207,17 @@ export function ControllerView() {
             {/* Capabilities */}
             <div className="flex gap-1 mt-2">
               {systemInfo.capabilities.fpu && (
-                <span className="px-1.5 py-0.5 bg-[var(--color-accent-purple)] text-white rounded text-xs">
+                <span className="px-1.5 py-0.5 bg-[var(--color-accent-purple)] text-[var(--color-on-accent)] rounded text-xs">
                   FPU
                 </span>
               )}
               {systemInfo.capabilities.scheduler && (
-                <span className="px-1.5 py-0.5 bg-[var(--color-accent-blue)] text-white rounded text-xs">
+                <span className="px-1.5 py-0.5 bg-[var(--color-accent-blue)] text-[var(--color-on-accent)] rounded text-xs">
                   MT
                 </span>
               )}
               {systemInfo.capabilities.mpu && (
-                <span className="px-1.5 py-0.5 bg-[var(--color-accent-green)] text-white rounded text-xs">
+                <span className="px-1.5 py-0.5 bg-[var(--color-accent-green)] text-[var(--color-on-accent)] rounded text-xs">
                   MPU
                 </span>
               )}
@@ -458,7 +458,7 @@ export function ControllerView() {
                       key={idx}
                       className={`w-8 h-6 flex items-center justify-center rounded font-mono ${
                         byte > 0 
-                          ? 'bg-[var(--color-accent-green)] text-white' 
+                          ? 'bg-[var(--color-accent-green)] text-[var(--color-on-accent)]' 
                           : 'bg-[var(--color-surface-700)] text-[var(--color-surface-300)]'
                       }`}
                     >
