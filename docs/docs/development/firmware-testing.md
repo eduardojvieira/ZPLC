@@ -148,7 +148,10 @@ The runtime hardening of the firmware (RT-010 to RT-034) has its own suites:
   `qemu_cortex_m3` and reads the record after it (RT-019, RT-021, RT-022);
 - `scheduler_watchdog` runs the hardware-watchdog policy of a profile over a model of the watchdog: the feed from the
   completion of a scan, the timeout taken from the task set, a stalled scan that lets it expire, and the policy in
-  STOP, in a pause and in a fault (RT-020).
+  STOP, in a pause and in a fault (RT-020);
+- `port_timing` runs the timing self-test of the port conformance suite on the clock of the Zephyr HAL: the tick
+  never goes backwards, a sleep advances it and takes the time it is given. The POSIX host runs the same function in
+  `test_port_timing`, and the [port interface](../runtime/port-interface.md) page lists the whole suite (IO-013).
 
 The host suites of the core add `test_exchange` (a scanner, readers and writers on threads), `test_program_store`
 (a power cut and a torn write at every operation), `test_sched_core` and `test_sched_equivalence` (the decisions of

@@ -117,6 +117,7 @@ const sidebars = {
             'runtime/isa',
             'runtime/hal-contract',
             'runtime/hal',
+            'runtime/port-interface',
           ],
         },
         {

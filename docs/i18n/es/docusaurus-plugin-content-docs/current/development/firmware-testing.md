@@ -160,7 +160,11 @@ El endurecimiento del runtime del firmware (RT-010 a RT-034) tiene sus propias s
   fault real y un reinicio real en `qemu_cortex_m3` y lee el registro después (RT-019, RT-021, RT-022);
 - `scheduler_watchdog` ejecuta la política de watchdog de hardware de un perfil sobre un modelo del watchdog: la
   alimentación desde la finalización de un scan, el timeout tomado del conjunto de tareas, un scan detenido que lo
-  deja expirar, y la política en STOP, en pausa y en un fault (RT-020).
+  deja expirar, y la política en STOP, en pausa y en un fault (RT-020);
+- `port_timing` ejecuta la autoprueba de tiempos de la suite de conformidad de puertos sobre el reloj de la HAL de
+  Zephyr: el tick nunca retrocede, una espera lo avanza y dura el tiempo que se le da. El host POSIX ejecuta la misma
+  función en `test_port_timing`, y la página de la [interfaz de puerto](../runtime/port-interface.md) lista la suite
+  completa (IO-013).
 
 Las suites de host del core suman `test_exchange` (un scanner, lectores y escritores en hilos), `test_program_store`
 (un corte de energía y una escritura truncada en cada operación), `test_sched_core` y `test_sched_equivalence` (las

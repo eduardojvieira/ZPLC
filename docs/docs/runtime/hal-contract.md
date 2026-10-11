@@ -17,6 +17,9 @@ That includes:
 - a browser/WebAssembly port (in the source tree, not shipped in this release)
 - any future board-specific port
 
+The functions below, the scheduler port and the conformance suite that every port passes are on one generated page:
+[Port interface and conformance suite](./port-interface.md).
+
 ## Core rule
 
 The portable core must not reach directly into platform APIs.
