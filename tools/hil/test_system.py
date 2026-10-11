@@ -1,33 +1,20 @@
-from zplc_tester import ZPLCTester
+"""System operations: NOP and GET_TICKS.
 
+A table of opcode cases (opcode_cases.py); it exits non-zero when a case fails (HIL-004).
+Needs a firmware image built with CONFIG_ZPLC_HIL_DEBUG=y for the trace frames; exits 77 (skipped) without it.
+"""
+from opcode_cases import *  # noqa: F401,F403
+from zplc_tester import ZPLCTester, cli
 
-def test_system():
-    tester = ZPLCTester()
-    OP = tester.OP
+OP = ZPLCTester.OP
+CASES = [
+    dict(name='NOP', code=[OP['NOP'], OP['NOP'], OP['HALT']], ops=['NOP']),
+    dict(name='GET_TICKS is a running millisecond count', code=[OP['GET_TICKS'], OP['HALT']], tos_gt=0),
+]
 
-    print("\n--- Running System Operations Tests ---")
-
-    # 1. NOP
-    print("Test NOP...", end="", flush=True)
-    bytecode = [OP["NOP"], OP["NOP"], OP["HALT"]]
-    traces = tester.run_bytecode(bytecode)
-    # PC should advance, no errors
-    if any(t.get("op") == "NOP" for t in traces):
-        print("PASS")
-    else:
-        print("FAIL")
-
-    # 2. GET_TICKS
-    print("Test GET_TICKS...", end="", flush=True)
-    bytecode = [OP["GET_TICKS"], OP["HALT"]]
-    tos = tester.get_last_tos(tester.run_bytecode(bytecode))
-    if tos is not None and tos > 0:
-        print(f"PASS ({tos} ms)")
-    else:
-        print("FAIL")
-
-    tester.close()
+def test_system(tester=None):
+    return run(tester or ZPLCTester(), CASES)
 
 
 if __name__ == "__main__":
-    test_system()
+    cli(test_system)

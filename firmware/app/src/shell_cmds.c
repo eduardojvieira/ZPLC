@@ -611,6 +611,7 @@ static int sched_reset_runtime(const uint8_t *binary, size_t size);
 static int sched_latch_ambiguous_program_publication(void);
 static int cmd_sys_info(const struct shell *sh, size_t argc, char **argv);
 static int cmd_sys_build(const struct shell *sh, size_t argc, char **argv);
+static int cmd_sys_io(const struct shell *sh, size_t argc, char **argv);
 static int cmd_sys_reboot(const struct shell *sh, size_t argc, char **argv);
 #endif
 
@@ -1050,6 +1051,12 @@ static int cmd_sys_info(const struct shell *sh, size_t argc, char **argv) {
               ZPLC_MEM_OPI_SIZE);
   shell_print(sh, "  Program Size:   CODE=%d, largest artifact=%u bytes",
               ZPLC_MEM_CODE_SIZE, (unsigned int)ZPLC_PROGRAM_STORE_MAX_ARTIFACT_SIZE);
+  shell_print(sh, "  I/O table:      %s, %u channels, hash %08x, %u B in, %u B out",
+              zplc_io_table()->board_id,
+              (unsigned int)zplc_io_table()->channel_count,
+              (unsigned int)zplc_io_table()->description_hash,
+              (unsigned int)zplc_io_table()->input_bytes,
+              (unsigned int)zplc_io_table()->output_bytes);
 
   return 0;
 }
@@ -1069,6 +1076,37 @@ static int cmd_sys_build(const struct shell *sh, size_t argc, char **argv) {
     return 0;
   }
   (void)zplc_fw_identity_emit_text(&identity, identity_to_shell, (void *)sh);
+  return 0;
+}
+
+/**
+ * @brief Handler for 'zplc sys io [--json]': the identity of the board I/O description this image was built from
+ * (IO-004).
+ *
+ * Studio compares the hash with the description it holds for the board before it deploys a program that uses
+ * I/O. A command of its own and not a key of `sys info --json`: Studio's handshake parser accepts exactly the
+ * keys of that object, so a new key would make every released Studio refuse a device that reports it.
+ */
+static int cmd_sys_io(const struct shell *sh, size_t argc, char **argv) {
+  const zplc_io_table_t *table = zplc_io_table();
+  char io_hash[9];
+
+  (void)snprintf(io_hash, sizeof(io_hash), "%08x", (unsigned int)table->description_hash); /* 8 digits always fit */
+  if (argc > 1 && strcmp(argv[1], "--json") == 0) {
+    JSON_OBJ_START(sh);
+    JSON_UINT(sh, "schema", 1U, true);
+    JSON_STR(sh, "board_id", table->board_id, true);
+    JSON_STR(sh, "hash", io_hash, true);
+    JSON_UINT(sh, "channels", table->channel_count, true);
+    JSON_UINT(sh, "input_bytes", table->input_bytes, true);
+    JSON_UINT(sh, "output_bytes", table->output_bytes, false);
+    JSON_OBJ_END(sh);
+    JSON_NEWLINE(sh);
+    return 0;
+  }
+  shell_print(sh, "I/O description: %s, %u channels, hash %s, %u B in, %u B out", table->board_id,
+              (unsigned int)table->channel_count, io_hash, (unsigned int)table->input_bytes,
+              (unsigned int)table->output_bytes);
   return 0;
 }
 
@@ -3855,6 +3893,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
     sub_sys,
     SHELL_CMD_ARG(info, NULL, "System information", cmd_sys_info, 1, 1),
     SHELL_CMD_ARG(build, NULL, "Firmware identity: commit, board, ABI, options [--json]", cmd_sys_build, 1, 1),
+    SHELL_CMD_ARG(io, NULL, "Identity of the board I/O description [--json]", cmd_sys_io, 1, 1),
     SHELL_CMD(reboot, NULL, "Reboot", cmd_sys_reboot),
     SHELL_SUBCMD_SET_END);
 #endif

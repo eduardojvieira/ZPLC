@@ -1,25 +1,52 @@
 #!/usr/bin/env python3
+"""Generate docs/docs/reference/boards.md (EN) and its Spanish copy from firmware/app/boards/boards.json.
+
+The board table is one source for Studio, the docs, CI and the MCP tools (IO-012). This generator adds what the
+manifest derives: the I/O description of each board (IO-001), the image sizes its channels need (IO-005), the
+footprint from the size budget file that the CI size reports maintain (IO-014) and the support level derived from the
+evidence records the manifest references (IO-015).
+"""
 from __future__ import annotations
 
 import argparse
+import importlib.util
 import json
 import sys
 from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[2]
-SOURCE = ROOT / "firmware/app/boards/supported-boards.v1.5.0.json"
+SOURCE = ROOT / "firmware/app/boards/boards.json"
+LIBRARY = ROOT / "firmware/zephyr/scripts/zplc_boards.py"
+SIZE_BUDGET = ROOT / "tools/firmware-test/size-budget.json"
 OUTPUT_EN = ROOT / "docs/docs/reference/boards.md"
 OUTPUT_ES = (
     ROOT / "docs/i18n/es/docusaurus-plugin-content-docs/current/reference/boards.md"
 )
 
 
+def _library():
+    spec = importlib.util.spec_from_file_location("zplc_boards", LIBRARY)
+    assert spec and spec.loader
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+boards_lib = _library()
+
+
 def load_boards() -> list[dict[str, object]]:
     data = json.loads(SOURCE.read_text())
     if not isinstance(data, list):
-        raise ValueError("supported board manifest must contain a list")
+        raise ValueError("the board manifest must contain a list")
     return data
+
+
+def load_budget() -> dict[str, dict[str, object]]:
+    if not SIZE_BUDGET.is_file():
+        return {}
+    return json.loads(SIZE_BUDGET.read_text()).get("boards", {})
 
 
 def network_summary(board: dict[str, object], spanish: bool) -> str:
@@ -36,8 +63,17 @@ def network_summary(board: dict[str, object], spanish: bool) -> str:
     return "Capacidad de red" if spanish else "Network-capable"
 
 
+def support(board: dict[str, object]) -> dict[str, object]:
+    """The support level of a board: derived from its evidence records, never read from a field (IO-015)."""
+    return boards_lib.support_level(board, ROOT)
+
+
 def validation_summary(board: dict[str, object]) -> str:
-    return str(board["validation_level"])
+    return str(support(board)["level"])
+
+
+def kib(value: object) -> str:
+    return f"{int(value) / 1024:.1f}"  # type: ignore[call-overload]
 
 
 def mermaid_diagram(boards: list[dict[str, object]], spanish: bool) -> list[str]:
@@ -61,7 +97,12 @@ def mermaid_diagram(boards: list[dict[str, object]], spanish: bool) -> list[str]
     return lines
 
 
+def cell(text: object) -> str:
+    return str(text).replace("|", "\\|")
+
+
 def render_board_reference(boards: list[dict[str, object]], spanish: bool) -> str:
+    budget = load_budget()
     title = "Supported Boards" if not spanish else "Placas Soportadas"
     description = (
         "Generated board reference for the ZPLC 2.0 candidate."
@@ -69,11 +110,33 @@ def render_board_reference(boards: list[dict[str, object]], spanish: bool) -> st
         else "Referencia generada de placas para el candidato ZPLC 2.0."
     )
     intro = (
-        "This page is generated from `firmware/app/boards/supported-boards.v1.5.0.json`. Update the JSON or rerun `python3 tools/docs/generate_board_reference.py` instead of editing this file manually."
+        "This page is generated from `firmware/app/boards/boards.json`, the one board manifest. Update the JSON or rerun `python3 tools/docs/generate_board_reference.py` instead of editing this file manually."
         if not spanish
-        else "Esta página se genera desde `firmware/app/boards/supported-boards.v1.5.0.json`. Actualizá el JSON o volvé a ejecutar `python3 tools/docs/generate_board_reference.py` en lugar de editar este archivo manualmente."
+        else "Esta página se genera desde `firmware/app/boards/boards.json`, el único manifiesto de placas. Actualizá el JSON o volvé a ejecutar `python3 tools/docs/generate_board_reference.py` en lugar de editar este archivo manualmente."
+    )
+    description_title = "The I/O description" if not spanish else "La descripción de E/S"
+    description_lines = (
+        [
+            "Each board entry of the manifest has an `io` object that lists the channels of the board. A channel has an `id`, a `direction` (`input` or `output`), a `kind` (`digital` or `analog`), the IEC `address` of its place in the process image (`%QX0.0`, `%IW4`), the `pin` or terminal printed on the board, its `electrical` notes, the `safe` value of an output, and a `dt` object with the devicetree alias, GPIO controller and pin (or the converter and channel) that the build checks.",
+            "`pin_status` says where the pin comes from: `devicetree` is a pin that the board's own devicetree or the profile overlay defines and the build proves; `profile` is a header pin this profile chose, which needs the loopback bench of HIL-010 to be confirmed.",
+            "To add a channel to a board, add the alias to its overlay and the entry to its description. The firmware I/O table is generated from the description at build time, so no C source changes, and the build fails when the description and the devicetree disagree. A word of the process image that no pin drives is not a channel: a project lists it under `io.virtual`.",
+            "Studio reads the same file. The I/O mapping editor of the project settings lists the channels of the selected board with their pin names and marks a row on an address the board does not have; a build fails with an error that names the board and the variable when a variable is located where the board has no channel; and a hardware deploy is refused, with a message that names the board, when the firmware reports another description or the program touches an address without a channel.",
+        ]
+        if not spanish
+        else [
+            "Cada entrada de placa del manifiesto tiene un objeto `io` que lista los canales de la placa. Un canal tiene un `id`, una `direction` (`input` u `output`), un `kind` (`digital` o `analog`), la `address` IEC de su lugar en la imagen de proceso (`%QX0.0`, `%IW4`), el `pin` o borne impreso en la placa, sus notas `electrical`, el valor `safe` de una salida y un objeto `dt` con el alias de devicetree, el controlador GPIO y el pin (o el conversor y el canal) que el build verifica.",
+            "`pin_status` dice de dónde sale el pin: `devicetree` es un pin que el devicetree de la placa o el overlay del perfil define y el build comprueba; `profile` es un pin de header que este perfil eligió y que necesita el banco de lazo de HIL-010 para confirmarse.",
+            "Para agregar un canal a una placa, agregá el alias a su overlay y la entrada a su descripción. La tabla de E/S del firmware se genera desde la descripción al compilar, así que ningún fuente C cambia, y el build falla cuando la descripción y el devicetree no coinciden. Una palabra de la imagen de proceso que ningún pin maneja no es un canal: un proyecto la lista en `io.virtual`.",
+            "Studio lee el mismo archivo. El editor de mapeo de E/S de la configuración del proyecto lista los canales de la placa seleccionada con sus nombres de pin y marca una fila en una dirección que la placa no tiene; un build falla con un error que nombra la placa y la variable cuando una variable está ubicada donde la placa no tiene canal; y un despliegue a hardware se rechaza, con un mensaje que nombra la placa, cuando el firmware informa otra descripción o el programa toca una dirección sin canal.",
+        ]
     )
     summary_title = "Board matrix" if not spanish else "Matriz de placas"
+    footprint_title = "Footprint" if not spanish else "Huella de memoria"
+    footprint_intro = (
+        "Flash and RAM of `firmware/app` per board, from the linker memory table of the CI size report (`tools/firmware-test/size-budget.json`). They are host-build measurements, not hardware evidence. The last three columns are the memory regions the runtime configures for the board (work, retentive, code)."
+        if not spanish
+        else "Flash y RAM de `firmware/app` por placa, de la tabla de memoria del enlazador en el reporte de tamaño de CI (`tools/firmware-test/size-budget.json`). Son mediciones de compilación en host, no evidencia de hardware. Las últimas tres columnas son las regiones de memoria que el runtime configura para la placa (trabajo, retentiva, código)."
+    )
     details_title = "Board details" if not spanish else "Detalle por placa"
     topology_title = "Topology" if not spanish else "Topología"
     assets_label = "Support assets" if not spanish else "Assets de soporte"
@@ -82,8 +145,10 @@ def render_board_reference(boards: list[dict[str, object]], spanish: bool) -> st
     board_col = "Display name" if not spanish else "Nombre visible"
     zephyr_col = "Zephyr target" if not spanish else "Target Zephyr"
     network_col = "Network" if not spanish else "Red"
-    validation_col = "Evidence tier" if not spanish else "Nivel de evidencia"
-    evidence_col = "HIL evidence" if not spanish else "Evidencia HIL"
+    validation_col = "Support level" if not spanish else "Nivel de soporte"
+    evidence_col = "Evidence records" if not spanish else "Registros de evidencia"
+    io_title = "I/O channels" if not spanish else "Canales de E/S"
+    unmapped_title = "Not mapped" if not spanish else "Sin mapear"
 
     lines = [
         "---",
@@ -104,6 +169,10 @@ def render_board_reference(boards: list[dict[str, object]], spanish: bool) -> st
         "",
     ]
     lines.extend(mermaid_diagram(boards, spanish))
+    lines.extend(["", f"## {description_title}", ""])
+    for paragraph in description_lines:
+        lines.extend([paragraph, ""])
+    lines.pop()
     lines.extend(
         [
             "",
@@ -115,18 +184,53 @@ def render_board_reference(boards: list[dict[str, object]], spanish: bool) -> st
     )
     for board in boards:
         lines.append(
-            "| {display_name} | `{board_id}` | `{ide_id}` | `{zephyr_board}` | {network} | {validation} | {evidence_count} refs |".format(
-                display_name=str(board["display_name"]),
+            "| {display_name} | `{board_id}` | `{ide_id}` | `{zephyr_board}` | {network} | {validation} | {evidence_count} |".format(
+                display_name=cell(board["display_name"]),
                 board_id=str(board["board_id"]),
                 ide_id=str(board["ide_id"]),
                 zephyr_board=str(board["zephyr_board"]),
                 network=network_summary(board, spanish),
                 validation=validation_summary(board),
-                evidence_count=len(board.get("evidence_refs", [])),
+                evidence_count=len(support(board)["records"]),  # type: ignore[arg-type]
+            )
+        )
+    lines.extend(
+        [
+            "",
+            f"## {footprint_title}",
+            "",
+            footprint_intro,
+            "",
+            "| Board ID | Flash (KiB) | Flash budget (KiB) | RAM (KiB) | RAM budget (KiB) | Work (KiB) | RETAIN (KiB) | Code (KiB) |",
+            "| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |",
+        ]
+    )
+    not_measured = "not measured" if not spanish else "sin medir"
+    for board in boards:
+        entry = budget.get(str(board["board_id"]), {})
+        measured = entry.get("measured") if isinstance(entry, dict) else None
+        limits = entry.get("budget") if isinstance(entry, dict) else None
+        memory = board["memory"]
+        assert isinstance(memory, dict)
+        if isinstance(measured, dict) and isinstance(limits, dict):
+            sizes = [kib(measured["flash"]), kib(limits["flash"]), kib(measured["ram"]), kib(limits["ram"])]
+        else:
+            sizes = [not_measured] * 4
+        lines.append(
+            "| `{board_id}` | {sizes} | {work} | {retain} | {code} |".format(
+                board_id=str(board["board_id"]),
+                sizes=" | ".join(sizes),
+                work=kib(memory["work_size"]),
+                retain=kib(memory["retain_size"]),
+                code=kib(memory["code_size_max"]),
             )
         )
     lines.extend(["", f"## {details_title}"])
     for board in boards:
+        level = support(board)
+        records = level["records"]
+        assert isinstance(records, list)
+        input_bytes, output_bytes = boards_lib.image_extent(board)
         lines.extend(
             [
                 "",
@@ -137,15 +241,106 @@ def render_board_reference(boards: list[dict[str, object]], spanish: bool) -> st
                 f"- **Zephyr target:** `{board['zephyr_board']}`",
                 f"- **Variant:** `{board['variant']}`",
                 f"- **Network:** {network_summary(board, spanish)}",
-                f"- **{validation_col}:** {validation_summary(board)}",
-                f"- **{evidence_col}:** {len(board.get('evidence_refs', []))} references",
+                f"- **{validation_col}:** {level['level']}"
+                + (
+                    ""
+                    if records
+                    else (
+                        " (sin registro de hardware)" if spanish else " (no hardware record)"
+                    )
+                ),
+            ]
+        )
+        for record in records:
+            lines.append(
+                f"  - `{record['ref']}`: firmware {record['firmware_version']}, commit `{str(record['commit'])[:12]}`, {record['result']}"
+            )
+        hardware = board.get("hardware")
+        if isinstance(hardware, dict):
+            lines.append(
+                "- **{label}:** {module}, {flash} MB flash, {psram} MB PSRAM{confirmed}".format(
+                    label="Module" if not spanish else "Módulo",
+                    module=hardware["module"],
+                    flash=hardware["flash_mb"],
+                    psram=hardware["psram_mb"],
+                    confirmed=""
+                    if hardware.get("variant_confirmed")
+                    else (
+                        " (variante por confirmar en el módulo)"
+                        if spanish
+                        else " (variant to be confirmed on the module)"
+                    ),
+                )
+            )
+        lines.extend(
+            [
                 f"- **{build_label}:** `{board['build_command']}`",
                 f"- **{docs_ref_label}:** `{board['docs_ref']}`",
+                "- **{label}:** {inp} B, {out} B".format(
+                    label="Process image used (input, output)"
+                    if not spanish
+                    else "Imagen de proceso usada (entrada, salida)",
+                    inp=input_bytes,
+                    out=output_bytes,
+                ),
+                "- **{label}:** `{hash}`".format(
+                    label="I/O description hash" if not spanish else "Hash de la descripción de E/S",
+                    hash=boards_lib.description_hash(board),
+                ),
                 f"- **{assets_label}:**",
             ]
         )
-        for asset in board["support_assets"]:
+        for asset in board["support_assets"]:  # type: ignore[union-attr]
             lines.append(f"  - `{asset}`")
+        io = board["io"]
+        assert isinstance(io, dict)
+        lines.extend(
+            [
+                "",
+                f"#### {io_title}",
+                "",
+                "| Channel | Direction | Kind | Address | Pin | Location | Pin status | Safe | Electrical |"
+                if not spanish
+                else "| Canal | Dirección | Tipo | Dirección IEC | Pin | Ubicación | Estado del pin | Seguro | Eléctrico |",
+                "| --- | --- | --- | --- | --- | --- | --- | --- | --- |",
+            ]
+        )
+        for channel in boards_lib.sorted_channels(board):
+            kind = str(channel["kind"])
+            direction = str(channel["direction"])
+            if spanish:
+                kind = {"digital": "digital", "analog": "analógico"}[kind]
+                direction = {"input": "entrada", "output": "salida"}[direction]
+            note = str(channel["electrical"])
+            scale = channel.get("range")
+            if isinstance(scale, dict):
+                note += " {raw} -> {lo} {to} {hi} {unit}.".format(
+                    raw=f"{scale['raw_min']}..{scale['raw_max']}",
+                    lo=scale["eng_min"],
+                    hi=scale["eng_max"],
+                    unit=scale["unit"],
+                    to="a" if spanish else "to",
+                )
+            if channel.get("scaling"):
+                note += f" {channel['scaling']}."
+            lines.append(
+                "| {id} | {direction} | {kind} | `{address}` | {pin} | {location} | {status} | {safe} | {note} |".format(
+                    id=channel["id"],
+                    direction=direction,
+                    kind=kind,
+                    address=channel["address"],
+                    pin=cell(channel["pin"]),
+                    location=cell(channel.get("location", "")),
+                    status=channel["pin_status"],
+                    safe=channel.get("safe", ""),
+                    note=cell(note),
+                )
+            )
+        unmapped = io.get("unmapped", [])
+        if unmapped:
+            lines.extend(["", f"#### {unmapped_title}", ""])
+            for item in unmapped:
+                lines.append(f"- `{item['terminal']}`: {item['reason']}")
     return "\n".join(line.rstrip() for line in lines).strip() + "\n"
 
 

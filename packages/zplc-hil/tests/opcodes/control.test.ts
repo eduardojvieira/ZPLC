@@ -1,4 +1,5 @@
-import { HILTestCase } from '../../src/runner';
+import type { HILTestCase } from '../../src/runner';
+import { describeCases } from '../cases';
 
 export const controlTests: HILTestCase[] = [
   {
@@ -10,11 +11,13 @@ export const controlTests: HILTestCase[] = [
       PROGRAM Test
       VAR
         res : INT := 0;
+        i : INT := 0;
       END_VAR
-      GOTO Label1;
-      res := 1;
-      Label1:
-      res := 2;
+      (* a loop jumps back to its test: the unconditional jump of the VM *)
+      WHILE i < 3 DO
+        i := i + 1;
+      END_WHILE;
+      res := i;
       END_PROGRAM
     `,
     debugMode: 'verbose',
@@ -52,3 +55,5 @@ export const controlTests: HILTestCase[] = [
     ]
   }
 ];
+
+describeCases('HIL cases: control-flow opcodes (HIL-001)', controlTests);

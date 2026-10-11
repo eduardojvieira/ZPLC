@@ -2,9 +2,9 @@ PROGRAM ComplexTypes
 VAR
     matrix : ARRAY[0..1, 0..1] OF INT;
     sum : INT;
-    
-    (* Results mapped to OPI *)
-    res_x AT %Q0.0 : INT;  (* 0x1000 *)
+
+    (* Result on the output image, byte 0 (0x1000) *)
+    res_x AT %QW0 : INT;
 END_VAR
 
 (* Initialize Matrix *)

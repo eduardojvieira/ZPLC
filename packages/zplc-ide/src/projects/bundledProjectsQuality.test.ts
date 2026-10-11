@@ -108,9 +108,10 @@ describe('hardware demos read their pins from the board overlay', () => {
   };
 
   it('the overlay parser finds the pins it is checked against', () => {
-    expect([...overlayPins('rpi_pico_rp2040.overlay').outputs]).toEqual([[0, 0], [1, 1], [2, 2], [3, 3]]);
-    expect([...overlayPins('rpi_pico_rp2040.overlay').inputs]).toEqual([[0, 15]]);
-    expect([...overlayPins('esp32s3_devkitc_esp32s3_procpu.overlay').outputs]).toEqual([[0, 38], [1, 15]]);
+    // IO-009: the Pico maps its on-board LED (GP25) as the fifth output and has four inputs; the DevKitC-1 has four outputs
+    expect([...overlayPins('rpi_pico_rp2040.overlay').outputs]).toEqual([[0, 0], [1, 1], [2, 2], [3, 3], [4, 25]]);
+    expect([...overlayPins('rpi_pico_rp2040.overlay').inputs]).toEqual([[0, 15], [1, 14], [2, 13], [3, 12]]);
+    expect([...overlayPins('esp32s3_devkitc_esp32s3_procpu.overlay').outputs]).toEqual([[0, 38], [1, 15], [2, 16], [3, 17]]);
   });
 
   for (const name of hardwareDemos) {

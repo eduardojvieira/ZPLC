@@ -34,15 +34,16 @@ Ensure you have the Zephyr environment activated.
 ```bash
 # Activate environment
 source ~/zephyrproject/activate.sh
+export ZPLC_PATH=/path/to/this/checkout
 
 # Build for Raspberry Pi Pico
-west build -b rpi_pico $ZEPLC_PATH/apps/zephyr_app --pristine
+west build -b rpi_pico $ZPLC_PATH/firmware/app --pristine
 
 # Flash via BOOTSEL mode
 cp build/zephyr/zephyr.uf2 /Volumes/RPI-RP2/
 
 # Or build for QEMU
-west build -b mps2/an385 $ZEPLC_PATH/apps/zephyr_app
+west build -b mps2/an385 $ZPLC_PATH/firmware/app
 west build -t run
 ```
 
@@ -168,7 +169,7 @@ CONFIG_NVS=y
 
 ## 🎯 Board support
 
-The canonical [board manifest](boards/supported-boards.v1.5.0.json) and the
+The canonical [board manifest](boards/boards.json) and the
 published board reference define each profile's hardware revision, capabilities
 and evidence tier (`catalogued`, `build-verified`, `HIL-verified`, or
 `production-qualified`). Source presence or a successful cross-build does not

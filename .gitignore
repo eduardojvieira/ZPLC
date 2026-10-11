@@ -51,6 +51,9 @@ venv/
 !examples/*.zplc
 !tools/fuzz/findings/*.zplc
 
+# The HIL fixtures are compiled when a run needs them, into a temporary directory (HIL-006)
+tools/hil/**/*.bin
+
 # Third-party agent skills installed for local use are not part of the repository;
 # the project skill zplc-plc-programmer is.
 /.agents/skills/*

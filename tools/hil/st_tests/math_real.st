@@ -8,8 +8,8 @@ VAR
     (* 0x1000: result_ok (INT, 2 bytes) *)
     (* 0x1004: debug_val (REAL, 4 bytes) *)
     
-    result_ok AT %Q0.0 : INT; 
-    debug_val AT %Q4.0 : REAL; 
+    result_ok AT %QW0 : INT;
+    debug_val AT %QD1 : REAL;
 END_VAR
 
 angles[0] := 0.0;

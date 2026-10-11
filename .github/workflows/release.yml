@@ -657,6 +657,15 @@ jobs:
           mv release/SHA256SUMS release/SHA256SUMS-macos
           mv release/release-evidence.json release/release-evidence-macos.json
 
+      # VF-021: the bundle is read as the files that were produced: every checksum, the evidence for this run, and the bill
+      # of materials that the bundle holds.
+      - name: Verify the bundle that was produced
+        env:
+          RELEASE_VERSION: ${{ needs.validate-version.outputs.version }}
+          RELEASE_TAG: ${{ needs.validate-version.outputs.tag }}
+          RELEASE_COMMIT_SHA: ${{ github.sha }}
+        run: bun scripts/release/verify-bundle.ts release --version "$RELEASE_VERSION" --tag "$RELEASE_TAG" --commit-sha "$RELEASE_COMMIT_SHA"
+
       - name: Attest installer provenance
         if: ${{ needs.validate-version.outputs.publishing == 'true' }}
         uses: actions/attest@508db95dd578ae2727ebd6217d5ba78e4fbda05d # v4.2.1
@@ -760,6 +769,15 @@ jobs:
           mv release/SHA256SUMS release/SHA256SUMS-windows
           mv release/release-evidence.json release/release-evidence-windows.json
 
+      # VF-021: the bundle is read as the files that were produced: every checksum, the evidence for this run, and the bill
+      # of materials that the bundle holds.
+      - name: Verify the bundle that was produced
+        env:
+          RELEASE_VERSION: ${{ needs.validate-version.outputs.version }}
+          RELEASE_TAG: ${{ needs.validate-version.outputs.tag }}
+          RELEASE_COMMIT_SHA: ${{ github.sha }}
+        run: bun scripts/release/verify-bundle.ts release --version "$RELEASE_VERSION" --tag "$RELEASE_TAG" --commit-sha "$RELEASE_COMMIT_SHA"
+
       - name: Attest installer provenance
         if: ${{ needs.validate-version.outputs.publishing == 'true' }}
         uses: actions/attest@508db95dd578ae2727ebd6217d5ba78e4fbda05d # v4.2.1
@@ -856,6 +874,15 @@ jobs:
             --commit-sha "$RELEASE_COMMIT_SHA"
           mv release/SHA256SUMS release/SHA256SUMS-linux
           mv release/release-evidence.json release/release-evidence-linux.json
+
+      # VF-021: the bundle is read as the files that were produced: every checksum, the evidence for this run, and the bill
+      # of materials that the bundle holds.
+      - name: Verify the bundle that was produced
+        env:
+          RELEASE_VERSION: ${{ needs.validate-version.outputs.version }}
+          RELEASE_TAG: ${{ needs.validate-version.outputs.tag }}
+          RELEASE_COMMIT_SHA: ${{ github.sha }}
+        run: bun scripts/release/verify-bundle.ts release --version "$RELEASE_VERSION" --tag "$RELEASE_TAG" --commit-sha "$RELEASE_COMMIT_SHA"
 
       - name: Attest installer provenance
         if: ${{ needs.validate-version.outputs.publishing == 'true' }}

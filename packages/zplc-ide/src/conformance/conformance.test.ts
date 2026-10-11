@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'bun:test';
-import { copyFile, mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { basename, join } from 'node:path';
+import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import productManifest from '../../../../package.json';
@@ -10,46 +10,20 @@ import { nativeRuntimeBinary, itNative } from '../cli/nativeRuntimeGuard';
 import { compilerCompile } from '../cli/toolApi';
 import { NativeAdapter } from '../runtime/nativeAdapter';
 import compilerManifest from '../../../zplc-compiler/package.json';
-import { CASE_TAGS, cellLocation, cellSize, loadCases, type Cell, type CaseTag, type CellType, type ConformanceCase, type RunExpectation, type TaskSpec } from './cases';
+import { CASE_TAGS, cellLocation, cellSize, loadCases, type Cell, type CaseTag, type CellType, type ConformanceCase, type RunExpectation } from './cases';
+import { ACCESS, label, workspace } from './harness';
 
 // Each conformance case runs end to end: the repository compiler (through the Tool API that Studio, the CLI
 // and MCP share), the loader and VM of the native POSIX runtime on its virtual clock, and a read of VM memory.
 // runCase returns what differed from the expectation; an empty list is a pass. This file stays a test file
 // on purpose: the IDE build (tsc -b) skips test files, and the runner imports the CLI and Electron code it does not build.
 
-type Access = [read: (view: DataView) => number, write: (view: DataView, value: number) => void];
-const ACCESS: Record<Exclude<CellType, 'BOOL'>, Access> = {
-  SINT: [(v) => v.getInt8(0), (v, x) => v.setInt8(0, x)],
-  USINT: [(v) => v.getUint8(0), (v, x) => v.setUint8(0, x)],
-  BYTE: [(v) => v.getUint8(0), (v, x) => v.setUint8(0, x)],
-  INT: [(v) => v.getInt16(0, true), (v, x) => v.setInt16(0, x, true)],
-  UINT: [(v) => v.getUint16(0, true), (v, x) => v.setUint16(0, x, true)],
-  WORD: [(v) => v.getUint16(0, true), (v, x) => v.setUint16(0, x, true)],
-  DINT: [(v) => v.getInt32(0, true), (v, x) => v.setInt32(0, x, true)],
-  UDINT: [(v) => v.getUint32(0, true), (v, x) => v.setUint32(0, x, true)],
-  DWORD: [(v) => v.getUint32(0, true), (v, x) => v.setUint32(0, x, true)],
-  REAL: [(v) => v.getFloat32(0, true), (v, x) => v.setFloat32(0, x, true)],
-};
-
 // CMP-051: what the loader said about each artifact the compiler produced for a case. The count is part of the check, so
 // a loader that refused everything, or a suite that stopped producing artifacts, cannot pass by having nothing to look at.
 const loader = { accepted: [] as string[], refused: [] as string[] };
 
-const label = (cell: Cell) => `${cell.at ?? cell.var} (${cell.type})`;
-
 function diagnosticText(diagnostics: Array<{ code: string; message: string; phase?: string; line?: number; element?: string }>): string {
   return diagnostics.map(({ code, message, phase, line, element }) => `${code}${phase ? ` in ${phase}` : ''}${line === undefined ? '' : ` at line ${line}`}${element === undefined ? '' : ` on ${element}`}: ${message}`).join('; ');
-}
-
-async function workspace(found: Pick<ConformanceCase, 'source' | 'extension' | 'extras'> & { tasks: TaskSpec[] }, scanMs: number): Promise<string> {
-  const root = await mkdtemp(join(tmpdir(), 'zplc-conformance-'));
-  await mkdir(join(root, 'src'));
-  const program = `main${found.extension}`;
-  await copyFile(found.source, join(root, 'src', program));
-  for (const extra of found.extras) await copyFile(extra, join(root, 'src', basename(extra)));
-  const tasks = found.tasks.length > 0 ? found.tasks : [{ name: 'MainTask', trigger: 'cyclic', interval_ms: scanMs, priority: 1, programs: [program] }];
-  await writeFile(join(root, 'zplc.json'), JSON.stringify({ schemaVersion: 2, name: 'conformance', version: '1.0.0', target: { board: 'posix' }, tasks }));
-  return root;
 }
 
 async function execute(name: string, expectation: RunExpectation, zplcFile: Uint8Array, address: (cell: Cell) => { address: number; bit?: number } | string): Promise<string[]> {
@@ -165,7 +139,10 @@ const conformanceRoot = fileURLToPath(new URL('../../../../conformance', import.
 const selectedTags = (process.env.ZPLC_CONFORMANCE_TAGS ?? '').split(',').map((tag) => tag.trim()).filter(Boolean);
 const unknownTags = selectedTags.filter((tag) => !CASE_TAGS.includes(tag as CaseTag));
 if (unknownTags.length > 0) throw new Error(`ZPLC_CONFORMANCE_TAGS names ${unknownTags.join(', ')}; the tags are ${CASE_TAGS.join(', ')}`);
-const selected = loadCases(conformanceRoot).filter((found) => selectedTags.length === 0 || found.expectation.tags.some((tag) => selectedTags.includes(tag)));
+// ZPLC_CONFORMANCE_ROOT points the runner at another folder of cases (VF-002): addCase.test.ts runs a case that exists
+// only in a temporary folder, to show that a source file and an expected-values file are all a new case needs.
+const casesRoot = process.env.ZPLC_CONFORMANCE_ROOT ?? conformanceRoot;
+const selected = loadCases(casesRoot).filter((found) => selectedTags.length === 0 || found.expectation.tags.some((tag) => selectedTags.includes(tag)));
 
 // One test per case in conformance/, named "<requirement> <title>": that name is what
 // tools/ci/expected-failures.json lists while a known defect keeps the case red.

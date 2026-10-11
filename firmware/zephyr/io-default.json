@@ -1,0 +1,242 @@
+{
+  "board_id": "default-aliases",
+  "display_name": "Devicetree alias profile",
+  "description": "The I/O map every build had before the board description: led0 to led3 are the outputs DO0 to DO3, sw0 to sw3 the inputs DI0 to DI3 and the converter node labelled adc is read as AI0 to AI4. A channel is bound when the board devicetree has its node. It is the profile of a board that has no entry in firmware/app/boards/boards.json (native_sim, a custom board).",
+  "io": {
+    "schema_version": 1,
+    "channels": [
+      {
+        "id": "DO0",
+        "direction": "output",
+        "kind": "digital",
+        "address": "%QX0.0",
+        "pin": "alias led0",
+        "dt": {
+          "alias": "led0"
+        },
+        "safe": 0,
+        "electrical": "Defined by the board devicetree; not described here",
+        "pin_status": "profile",
+        "source": "firmware/zephyr/io-default.json",
+        "optional": true
+      },
+      {
+        "id": "DO1",
+        "direction": "output",
+        "kind": "digital",
+        "address": "%QX0.1",
+        "pin": "alias led1",
+        "dt": {
+          "alias": "led1"
+        },
+        "safe": 0,
+        "electrical": "Defined by the board devicetree; not described here",
+        "pin_status": "profile",
+        "source": "firmware/zephyr/io-default.json",
+        "optional": true
+      },
+      {
+        "id": "DO2",
+        "direction": "output",
+        "kind": "digital",
+        "address": "%QX0.2",
+        "pin": "alias led2",
+        "dt": {
+          "alias": "led2"
+        },
+        "safe": 0,
+        "electrical": "Defined by the board devicetree; not described here",
+        "pin_status": "profile",
+        "source": "firmware/zephyr/io-default.json",
+        "optional": true
+      },
+      {
+        "id": "DO3",
+        "direction": "output",
+        "kind": "digital",
+        "address": "%QX0.3",
+        "pin": "alias led3",
+        "dt": {
+          "alias": "led3"
+        },
+        "safe": 0,
+        "electrical": "Defined by the board devicetree; not described here",
+        "pin_status": "profile",
+        "source": "firmware/zephyr/io-default.json",
+        "optional": true
+      },
+      {
+        "id": "DI0",
+        "direction": "input",
+        "kind": "digital",
+        "address": "%IX0.0",
+        "pin": "alias sw0",
+        "dt": {
+          "alias": "sw0"
+        },
+        "electrical": "Defined by the board devicetree; not described here",
+        "pin_status": "profile",
+        "source": "firmware/zephyr/io-default.json",
+        "optional": true
+      },
+      {
+        "id": "DI1",
+        "direction": "input",
+        "kind": "digital",
+        "address": "%IX0.1",
+        "pin": "alias sw1",
+        "dt": {
+          "alias": "sw1"
+        },
+        "electrical": "Defined by the board devicetree; not described here",
+        "pin_status": "profile",
+        "source": "firmware/zephyr/io-default.json",
+        "optional": true
+      },
+      {
+        "id": "DI2",
+        "direction": "input",
+        "kind": "digital",
+        "address": "%IX0.2",
+        "pin": "alias sw2",
+        "dt": {
+          "alias": "sw2"
+        },
+        "electrical": "Defined by the board devicetree; not described here",
+        "pin_status": "profile",
+        "source": "firmware/zephyr/io-default.json",
+        "optional": true
+      },
+      {
+        "id": "DI3",
+        "direction": "input",
+        "kind": "digital",
+        "address": "%IX0.3",
+        "pin": "alias sw3",
+        "dt": {
+          "alias": "sw3"
+        },
+        "electrical": "Defined by the board devicetree; not described here",
+        "pin_status": "profile",
+        "source": "firmware/zephyr/io-default.json",
+        "optional": true
+      },
+      {
+        "id": "AI0",
+        "direction": "input",
+        "kind": "analog",
+        "address": "%IW4",
+        "pin": "adc channel 0",
+        "dt": {
+          "controller": "adc",
+          "channel": 0
+        },
+        "resolution_bits": 12,
+        "range": {
+          "raw_min": 0,
+          "raw_max": 4095,
+          "eng_min": 0,
+          "eng_max": 4095,
+          "unit": "counts"
+        },
+        "electrical": "Defined by the board devicetree; not described here",
+        "pin_status": "profile",
+        "source": "firmware/zephyr/io-default.json",
+        "optional": true
+      },
+      {
+        "id": "AI1",
+        "direction": "input",
+        "kind": "analog",
+        "address": "%IW5",
+        "pin": "adc channel 1",
+        "dt": {
+          "controller": "adc",
+          "channel": 1
+        },
+        "resolution_bits": 12,
+        "range": {
+          "raw_min": 0,
+          "raw_max": 4095,
+          "eng_min": 0,
+          "eng_max": 4095,
+          "unit": "counts"
+        },
+        "electrical": "Defined by the board devicetree; not described here",
+        "pin_status": "profile",
+        "source": "firmware/zephyr/io-default.json",
+        "optional": true
+      },
+      {
+        "id": "AI2",
+        "direction": "input",
+        "kind": "analog",
+        "address": "%IW6",
+        "pin": "adc channel 2",
+        "dt": {
+          "controller": "adc",
+          "channel": 2
+        },
+        "resolution_bits": 12,
+        "range": {
+          "raw_min": 0,
+          "raw_max": 4095,
+          "eng_min": 0,
+          "eng_max": 4095,
+          "unit": "counts"
+        },
+        "electrical": "Defined by the board devicetree; not described here",
+        "pin_status": "profile",
+        "source": "firmware/zephyr/io-default.json",
+        "optional": true
+      },
+      {
+        "id": "AI3",
+        "direction": "input",
+        "kind": "analog",
+        "address": "%IW7",
+        "pin": "adc channel 3",
+        "dt": {
+          "controller": "adc",
+          "channel": 3
+        },
+        "resolution_bits": 12,
+        "range": {
+          "raw_min": 0,
+          "raw_max": 4095,
+          "eng_min": 0,
+          "eng_max": 4095,
+          "unit": "counts"
+        },
+        "electrical": "Defined by the board devicetree; not described here",
+        "pin_status": "profile",
+        "source": "firmware/zephyr/io-default.json",
+        "optional": true
+      },
+      {
+        "id": "AI4",
+        "direction": "input",
+        "kind": "analog",
+        "address": "%IW8",
+        "pin": "adc channel 4",
+        "dt": {
+          "controller": "adc",
+          "channel": 4
+        },
+        "resolution_bits": 12,
+        "range": {
+          "raw_min": 0,
+          "raw_max": 4095,
+          "eng_min": 0,
+          "eng_max": 4095,
+          "unit": "counts"
+        },
+        "electrical": "Defined by the board devicetree; not described here",
+        "pin_status": "profile",
+        "source": "firmware/zephyr/io-default.json",
+        "optional": true
+      }
+    ],
+    "unmapped": []
+  }
+}

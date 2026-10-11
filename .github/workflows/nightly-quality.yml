@@ -54,6 +54,22 @@ jobs:
         with:
           python-version: "3.12"
 
+      # VF-026: the Zephyr checkout, the SDK and the pip downloads are kept between runs under a key of the manifest, so
+      # that a run restores them and `west update` only fetches what changed. A restored workspace is never trusted: the
+      # set-up below still checks the revision of zephyr and the SDK toolchains, and installs the SDK only when it is absent.
+      - name: Restore the Zephyr workspace, the SDK and the pip cache
+        uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684 # v4.2.3
+        with:
+          path: |
+            ${{ github.workspace }}/.west
+            ${{ github.workspace }}/zephyr
+            ${{ github.workspace }}/modules
+            ${{ github.workspace }}/bootloader
+            ${{ github.workspace }}/tools
+            ${{ runner.temp }}/zephyr-sdk-1.0.1
+            ~/.cache/pip
+          key: zephyr-${{ runner.os }}-${{ hashFiles('zplc/west.yml') }}-sdk-1.0.1
+
       - name: Setup pinned Zephyr workspace
         shell: bash
         env:
@@ -65,12 +81,16 @@ jobs:
           VENV_DIR="${RUNNER_TEMP}/zplc-zephyr-venv"
           python3 -m venv "${VENV_DIR}"
           "${VENV_DIR}/bin/pip" install west==1.5.0
-          "${VENV_DIR}/bin/west" init -l "${GITHUB_WORKSPACE}/zplc"
+          if [ ! -d "${GITHUB_WORKSPACE}/.west" ]; then
+            "${VENV_DIR}/bin/west" init -l "${GITHUB_WORKSPACE}/zplc"
+          fi
           "${VENV_DIR}/bin/west" update
           test "$(git -C "${GITHUB_WORKSPACE}/zephyr" rev-parse HEAD)" = "dccb09599635bdff17633fa7e9dab014b91dce90"
           "${VENV_DIR}/bin/west" zephyr-export
           "${VENV_DIR}/bin/west" packages pip --install --ignore-venv-check
-          "${VENV_DIR}/bin/west" sdk install --version 1.0.1 --install-dir "${ZEPHYR_SDK_INSTALL_DIR}" --gnu-toolchains arm-zephyr-eabi xtensa-espressif_esp32s3_zephyr-elf --personal-access-token "${ZPLC_WEST_SDK_GITHUB_TOKEN}"
+          if [ ! -d "${ZEPHYR_SDK_INSTALL_DIR}/gnu/arm-zephyr-eabi" ] || [ ! -d "${ZEPHYR_SDK_INSTALL_DIR}/gnu/xtensa-espressif_esp32s3_zephyr-elf" ]; then
+            "${VENV_DIR}/bin/west" sdk install --version 1.0.1 --install-dir "${ZEPHYR_SDK_INSTALL_DIR}" --gnu-toolchains arm-zephyr-eabi xtensa-espressif_esp32s3_zephyr-elf --personal-access-token "${ZPLC_WEST_SDK_GITHUB_TOKEN}"
+          fi
           test -d "${ZEPHYR_SDK_INSTALL_DIR}/gnu/arm-zephyr-eabi"
           test -d "${ZEPHYR_SDK_INSTALL_DIR}/gnu/xtensa-espressif_esp32s3_zephyr-elf"
           echo "${VENV_DIR}/bin" >> "${GITHUB_PATH}"
@@ -79,3 +99,74 @@ jobs:
         run: |
           west twister -T zplc/firmware/tests -p native_sim/native/64 --inline-logs --outdir "${RUNNER_TEMP}/zplc-twister-1"
           west twister -T zplc/firmware/tests -p native_sim/native/64 --inline-logs --outdir "${RUNNER_TEMP}/zplc-twister-2"
+
+  # VF-024, VF-009: the compiler and IDE unit tests, and the end-to-end journeys, on the desktop systems that the
+  # pull-request jobs (Linux) do not cover. The commands are those of the typescript job of ci.yml. A result here is
+  # the evidence of the system it ran on and no other: nothing in it is hardware, timing or a signed installer.
+  desktop-platforms:
+    name: Unit tests and journeys (${{ matrix.name }})
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: macOS arm64
+            id: macos-arm64
+            runner: macos-15
+          - name: Windows x64
+            id: windows-x64
+            runner: windows-2025
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Checkout
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: '20'
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@f4d14e03ff726c06358e5557344e1da148b56cf7 # v1.2.2
+        with:
+          bun-version: 1.3.14
+
+      - name: Install dependencies
+        run: |
+          test -f bun.lock
+          bun install --filter '@zplc/ide' --filter '@zplc/compiler' --frozen-lockfile
+
+      - name: Build the compiler and the native POSIX runtime
+        run: |
+          bun run build:compiler
+          build="${RUNNER_TEMP}/zplc-native-sim-build"
+          cmake -S firmware/lib/zplc_core -B "${build}" -DCMAKE_BUILD_TYPE=Release
+          cmake --build "${build}" --target zplc_runtime --config Release
+          runtime=''
+          for candidate in "${build}/zplc_runtime" "${build}/zplc_runtime.exe" "${build}/Release/zplc_runtime.exe"; do
+            if [ -f "${candidate}" ]; then runtime="${candidate}"; break; fi
+          done
+          test -n "${runtime}" || { echo "the native runtime was not built"; exit 1; }
+          echo "ZPLC_NATIVE_SIM_BIN=${runtime}" >> "${GITHUB_ENV}"
+
+      - name: Test the compiler
+        run: |
+          status=0
+          bun run test:compiler -- --reporter=junit --reporter-outfile="${RUNNER_TEMP}/junit-compiler.xml" || status=$?
+          bun tools/ci/check-expected-failures.ts --exit-code "${status}" "packages/zplc-compiler=${RUNNER_TEMP}/junit-compiler.xml"
+
+      - name: Build and test the IDE
+        run: |
+          bun run build:ide
+          status=0
+          bun run test:ide -- --reporter=junit --reporter-outfile="${RUNNER_TEMP}/junit-ide.xml" || status=$?
+          bun tools/ci/check-expected-failures.ts --exit-code "${status}" "packages/zplc-ide=${RUNNER_TEMP}/junit-ide.xml"
+
+      - name: Run the end-to-end journeys
+        run: |
+          bun run --cwd packages/zplc-ide electron:compile
+          bun run --cwd packages/zplc-ide smoke:journeys
+

@@ -4,17 +4,17 @@
  * clocks), and against real child processes (a worker stuck in a busy loop is killed and is really gone, while the
  * caller's event loop keeps ticking; the real tool worker answers a compile with the artifact bytes).
  */
-import { afterEach, describe, expect, it } from 'bun:test';
+import { afterEach, describe, expect, it, onTestFinished } from 'bun:test';
 import { fork } from 'node:child_process';
-import { cpSync, existsSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { cpSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 
+import { itNative, nativeRuntimeBinary } from '../src/cli/nativeRuntimeGuard';
 import { compilerCompile } from '../src/cli/toolApi';
 import { createToolWorkerHost, ToolWorkerError, type ToolWorkerProcess, type ToolWorkerSpawner } from './toolWorkerHost';
 import { parseToolWorkerCommand } from './toolWorkerProtocol';
 
-const NATIVE_RUNTIME = process.env.ZPLC_NATIVE_SIM_BIN;
 const scratches: string[] = [];
 afterEach(() => { for (const directory of scratches.splice(0)) rmSync(directory, { recursive: true, force: true }); });
 const scratch = (): string => { const directory = mkdtempSync(path.join(tmpdir(), 'zplc-tool-worker-')); scratches.push(directory); return directory; };
@@ -229,7 +229,11 @@ describe('real worker processes (IDE-012)', () => {
     expect(answer.evidence.diagnostics.length).toBeGreaterThan(0);
   });
 
-  it.skipIf(!NATIVE_RUNTIME || !existsSync(NATIVE_RUNTIME))('cancels a run of scenarios in the real worker and leaves neither the worker nor the runtime behind', async () => {
+  itNative('cancels a run of scenarios in the real worker and leaves neither the worker nor the runtime behind', async () => {
+    // the forked worker inherits this process's environment, and the runtime it spawns is the one the guard found
+    const earlier = process.env.ZPLC_NATIVE_SIM_BIN;
+    process.env.ZPLC_NATIVE_SIM_BIN = nativeRuntimeBinary;
+    onTestFinished(() => { if (earlier === undefined) delete process.env.ZPLC_NATIVE_SIM_BIN; else process.env.ZPLC_NATIVE_SIM_BIN = earlier; });
     const root = path.join(scratch(), 'motor');
     cpSync(path.join(import.meta.dir, '..', 'projects', 'motor_start_stop'), root, { recursive: true });
     // Three scenarios of the longest allowed length (10,000 samples): about 70,000 runtime operations, seconds of work in

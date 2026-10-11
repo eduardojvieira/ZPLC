@@ -318,6 +318,8 @@ export interface CompilerConfig {
 export interface IOConfig {
   inputs?: IOPinConfig[];
   outputs?: IOPinConfig[];
+  /** Image words or bits no pin of the board drives; exempt from the board channel check (IO-003). */
+  virtual?: IOPinConfig[];
 }
 
 export type CommunicationTagMode = 'publish' | 'subscribe' | 'modbus';

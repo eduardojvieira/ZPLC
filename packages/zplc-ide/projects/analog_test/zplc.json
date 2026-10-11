@@ -24,6 +24,14 @@
                 "description": "GP0 in the Pico overlay: ON while the reading is not a plausible temperature"
             }
         ],
+        "virtual": [
+            {
+                "name": "TempC",
+                "address": "%QW4",
+                "type": "WORD",
+                "description": "Temperature in whole degrees C. A word of the output image that no pin drives (the Pico has no DAC): watch it in the debugger"
+            }
+        ],
         "analog": {
             "adc": [
                 {

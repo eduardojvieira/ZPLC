@@ -886,3 +886,20 @@ zplc_hal_result_t zplc_hal_shutdown(void) {
   hal_initialized = 0;
   return ZPLC_HAL_OK;
 }
+
+/* ============================================================================
+ * I/O Table (IO-001, IO-007)
+ * ============================================================================
+ * This port has no pins: the host runtime exchanges the process image with
+ * Studio, so its board description lists no channel. The accessors are the
+ * same on every port.
+ */
+
+static const zplc_io_table_t zplc_io_empty_description = {
+    "posix", 0U, 0U, 0U, 0U, NULL};
+
+const zplc_io_table_t *zplc_io_table(void) {
+  return &zplc_io_empty_description;
+}
+
+#include "../common/zplc_io_common.inc"

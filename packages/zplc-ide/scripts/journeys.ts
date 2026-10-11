@@ -1985,7 +1985,7 @@ export const JOURNEYS: Journey[] = [
     // The development gallery (UX-004) in the real window: every kit component in the three themes and two densities. The
     // structure is audited on the rendered DOM, the colours are the ones the browser computes from the generated stylesheet,
     // and the keyboard behaviour is driven with real key events (the pure logic is proven in src/ui/logic).
-    name: '40 The component kit behaves from the keyboard in a real window', example: 'none', proves: ['UX-004'], partly: ['UX-001', 'UX-005', 'UX-008', 'UX-024', 'UX-025', 'UX-026'],
+    name: '41 The component kit behaves from the keyboard in a real window', example: 'none', proves: ['UX-004'], partly: ['UX-001', 'UX-005', 'UX-008', 'UX-024', 'UX-025', 'UX-026'],
     run: async (app) => {
       await app.eval(`location.hash = '#ui-gallery'; location.reload();`).catch(() => undefined);
       await app.until('the component gallery', async () => await app.visible(css('main.ui-gallery')) || undefined, 30_000);
@@ -2104,6 +2104,40 @@ export const JOURNEYS: Journey[] = [
       await app.until('the alert dialog', async () => await app.visible(css('body > .ui-scrim [role="alertdialog"]')) || undefined);
       await app.click(button('Discard draft'), 'the Discard draft action');
       await app.until('the action to be taken', async () => await app.eval<boolean>(`document.querySelector(${JSON.stringify(panel('light', 'comfortable') + ' [data-alert-result]')}).textContent === 'Last choice: discard'`) || undefined);
+    },
+  },
+  {
+    name: '40 The I/O mapping editor lists the channels of the board and flags a row it does not have', example: 'pico_blinky', proves: [], partly: ['IO-003', 'IO-009'],
+    run: async (app, { project }) => {
+      // A project from an older Studio that maps an output where the Pico has no channel.
+      const manifestPath = join(project, 'zplc.json');
+      const manifest = JSON.parse(disk(manifestPath)) as { io: { outputs: Array<{ name: string; address: string }> } };
+      manifest.io.outputs[1]!.address = '%QX0.6';
+      writeFileSync(manifestPath, JSON.stringify(manifest, null, 2));
+      await openFolder(app, project);
+      await app.click(button('Project Settings'), 'the Project Settings button');
+
+      // The I/O Mapping section is open with the settings. The editor lists what the board has, with the pin names
+      // printed on it, the on-board LED among them.
+      await app.until('the channels of the selected board', async () => await app.eval<boolean>(`document.querySelector('ul[aria-label="Channels of Raspberry Pi Pico (RP2040)"]') !== null`) || undefined);
+      const listed = await app.eval<string>(`document.querySelector('ul[aria-label^="Channels of"]').innerText`);
+      for (const wanted of ['%QX0.0', 'GP0', '%QX0.4', 'GP25', '%IX0.0', 'GP15', '%IW4', 'GP26']) assert(listed.includes(wanted), `The channel list of the Pico does not show ${wanted}: ${listed}`);
+
+      // The row on a channel the board has is quiet; the row on the address it does not have says so and names the board.
+      await app.until('the problem of the row', async () => await app.eval<boolean>(`document.querySelector('[role="alert"]') !== null`) || undefined);
+      const problem = await app.eval<string>(`document.querySelector('[role="alert"]').innerText`);
+      assert(problem.includes('Raspberry Pi Pico (RP2040)') && problem.includes('%QX0.6') && problem.includes('DO4 %QX0.4'), `The problem does not name the board, the address and the channels: ${problem}`);
+      assert(await app.eval<number>(`document.querySelectorAll('[role="alert"]').length`) === 1, 'Only the row that has no channel should be flagged.');
+
+      // The choice of a channel is a list of the board's channels, so a row cannot be put where the board has nothing.
+      const options = await app.eval<string[]>(`[...document.querySelector('select[aria-label="Channel of LED_Output"]').options].map((option) => option.value)`);
+      assert(options.join() === '%QX0.0,%QX0.1,%QX0.2,%QX0.3,%QX0.4', `The output channels offered are ${options.join()}.`);
+
+      // Keeping the address as a virtual one (an image word no pin drives) takes the flag away and lists it apart.
+      await app.click(button('Keep as virtual (no pin)'), 'Keep as virtual (no pin)');
+      await app.until('the flag gone', async () => await app.eval<boolean>(`document.querySelector('[role="alert"]') === null`) || undefined);
+      const virtual = await app.eval<string>(`document.body.innerText`);
+      assert(virtual.includes('Virtual (no pin)') && virtual.includes('%QX0.6'), 'The address was not listed as virtual.');
     },
   },
 ];

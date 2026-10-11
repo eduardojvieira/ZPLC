@@ -3,7 +3,7 @@ VAR
     buffer : ARRAY[0..4] OF INT;
     i : INT;
     sum : DINT;
-    avg AT %Q0.0 : INT; (* Result at 0x1000 *)
+    avg AT %QW0 : INT; (* Result at 0x1000 *)
     
     raw_val : INT := 0;
     counter : INT := 0;

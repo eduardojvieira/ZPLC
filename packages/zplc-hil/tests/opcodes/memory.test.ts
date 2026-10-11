@@ -1,4 +1,5 @@
-import { HILTestCase } from '../../src/runner';
+import type { HILTestCase } from '../../src/runner';
+import { describeCases } from '../cases';
 
 export const memoryTests: HILTestCase[] = [
   {
@@ -35,11 +36,12 @@ export const memoryTests: HILTestCase[] = [
     source: `
       PROGRAM Test
       VAR
-        p : POINTER TO INT;
+        values : ARRAY[0..3] OF INT;
+        index : INT := 1000;
         res : INT;
       END_VAR
-      p := 16#FFFF; // Invalid address
-      res := p^;
+      (* an index far outside the array reads outside the program's memory *)
+      res := values[index];
       END_PROGRAM
     `,
     debugMode: 'verbose',
@@ -51,3 +53,5 @@ export const memoryTests: HILTestCase[] = [
     ]
   }
 ];
+
+describeCases('HIL cases: memory opcodes (HIL-001)', memoryTests);

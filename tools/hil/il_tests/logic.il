@@ -1,11 +1,11 @@
 PROGRAM Logic
 VAR
-  t AT %Q0.0 : BOOL := TRUE;
-  f AT %Q1.0 : BOOL := FALSE;
-  res_and AT %Q2.0 : BOOL;
-  res_or AT %Q3.0 : BOOL;
-  res_xor AT %Q4.0 : BOOL;
-  res_not AT %Q5.0 : BOOL;
+  t AT %QX0.0 : BOOL := TRUE;
+  f AT %QX1.0 : BOOL := FALSE;
+  res_and AT %QX2.0 : BOOL;
+  res_or AT %QX3.0 : BOOL;
+  res_xor AT %QX4.0 : BOOL;
+  res_not AT %QX5.0 : BOOL;
 END_VAR
 
 (* Explicit Init *)

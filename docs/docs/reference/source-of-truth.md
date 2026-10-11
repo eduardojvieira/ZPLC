@@ -24,7 +24,7 @@ recorded evidence outrank prose.
 | Bytecode/ISA compatibility | `zplc_isa.h`, compiler output, and compatibility tests | Product version is not the ABI version. |
 | Native desktop session contract | `packages/zplc-ide/src/runtime/` and spec 009 | Capabilities define supported versus degraded behavior. |
 | Current project schema and migration | `packages/zplc-ide/zplc.schema.json` and its current migrator | Current format authority; do not infer automatic consumer updates. |
-| Board profile data | `firmware/app/boards/supported-boards.v1.5.0.json` | Entry presence is not HIL qualification. |
+| Board profile data | `firmware/app/boards/boards.json` | Entry presence is not HIL qualification. |
 | Board/release qualification | `specs/008-release-foundation/artifacts/` | Evidence level controls the public claim. |
 | Versioning policy | `VERSIONING.md` | Product, schema, ABI, and protocol are separate axes. |
 | Public documentation parity | `docs/docs/` and `docs/i18n/es/` | Both sources must be updated together. |

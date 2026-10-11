@@ -4,8 +4,8 @@ VAR
     j : INT;
     sum : INT := 0;
     
-    res_exit AT %Q0.0 : INT;    (* 0x1000 *)
-    res_cont AT %Q2.0 : INT;    (* 0x1002 *)
+    res_exit AT %QW0 : INT;    (* 0x1000 *)
+    res_cont AT %QW1 : INT;    (* 0x1002 *)
 END_VAR
 
 (* EXIT Test: Stop at 5 *)

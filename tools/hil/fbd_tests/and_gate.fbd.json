@@ -1,22 +1,95 @@
 {
   "name": "FBDAnd",
   "variables": {
+    "local": [],
     "outputs": [
-      { "name": "InA", "type": "BOOL", "address": "%Q0.0" },
-      { "name": "InB", "type": "BOOL", "address": "%Q1.0" },
-      { "name": "OutQ", "type": "BOOL", "address": "%Q2.0" }
-    ],
-    "local": []
+      {
+        "name": "InA",
+        "type": "BOOL",
+        "address": "%IX0.0"
+      },
+      {
+        "name": "InB",
+        "type": "BOOL",
+        "address": "%IX0.1"
+      },
+      {
+        "name": "OutQ",
+        "type": "BOOL",
+        "address": "%QX0.0"
+      }
+    ]
   },
   "blocks": [
-    { "id": "1", "type": "variable", "variableName": "InA", "direction": "read", "outputs": [{ "name": "OUT", "type": "BOOL" }] },
-    { "id": "2", "type": "variable", "variableName": "InB", "direction": "read", "outputs": [{ "name": "OUT", "type": "BOOL" }] },
-    { "id": "3", "type": "AND", "outputs": [{ "name": "OUT", "type": "BOOL" }] },
-    { "id": "4", "type": "output", "variableName": "OutQ", "inputs": [{ "name": "IN", "type": "BOOL" }] }
+    {
+      "id": "a",
+      "type": "input",
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "variableName": "InA"
+    },
+    {
+      "id": "b",
+      "type": "input",
+      "position": {
+        "x": 0,
+        "y": 1
+      },
+      "variableName": "InB"
+    },
+    {
+      "id": "and1",
+      "type": "AND",
+      "position": {
+        "x": 1,
+        "y": 0
+      }
+    },
+    {
+      "id": "q",
+      "type": "output",
+      "position": {
+        "x": 2,
+        "y": 0
+      },
+      "variableName": "OutQ"
+    }
   ],
   "connections": [
-    { "from": { "block": "1", "port": "OUT" }, "to": { "block": "3", "port": "IN1" } },
-    { "from": { "block": "2", "port": "OUT" }, "to": { "block": "3", "port": "IN2" } },
-    { "from": { "block": "3", "port": "OUT" }, "to": { "block": "4", "port": "IN" } }
+    {
+      "id": "w_a_and1",
+      "from": {
+        "block": "a",
+        "port": "OUT"
+      },
+      "to": {
+        "block": "and1",
+        "port": "IN1"
+      }
+    },
+    {
+      "id": "w_b_and1",
+      "from": {
+        "block": "b",
+        "port": "OUT"
+      },
+      "to": {
+        "block": "and1",
+        "port": "IN2"
+      }
+    },
+    {
+      "id": "w_and1_q",
+      "from": {
+        "block": "and1",
+        "port": "OUT"
+      },
+      "to": {
+        "block": "q",
+        "port": "IN"
+      }
+    }
   ]
 }
