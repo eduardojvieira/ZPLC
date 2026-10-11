@@ -18,3 +18,9 @@ target_include_directories(app PRIVATE
 # The store is as large as the code region (RT-028) and the suite's programs are a few hundred bytes: a small code
 # region keeps the working buffers inside the 64 KB of qemu_cortex_m3.
 target_compile_definitions(app PRIVATE CONFIG_ZPLC_CODE_SIZE_MAX=4096)
+
+# The files of the runtime compiled into this application are optimized across files as the product's are
+# (CONFIG_ZPLC_LTO), so that the suite exercises the code that ships.
+if(COMMAND zplc_target_lto)
+  zplc_target_lto(app)
+endif()

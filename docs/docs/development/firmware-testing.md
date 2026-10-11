@@ -243,6 +243,13 @@ python3 tools/firmware-test/fwtest.py size \
 The figures are link-time static allocation. They do not include the stacks or
 the heap high-water mark.
 
+The ZPLC library and the application are compiled with link-time optimization (`CONFIG_ZPLC_LTO`, on by default),
+which is worth about 3 percent of the flash of an image. Zephyr's own code is not part of it. The `native_sim`
+targets link their image as a relocatable object, which the optimizer cannot be part of, so they run without it; the
+suites of `firmware/tests` link the library the same way as the boards on `qemu-m3` and `qemu-m0`, which is where
+the code that ships is exercised. To compare, or to debug a fault with the inlining out of the way, build with
+`-DCONFIG_ZPLC_LTO=n`.
+
 To see where the bytes of a board go, run the footprint report on the same
 build trees. It reads each linker map and prints, per board, the used bytes of
 every memory region, the headroom to the budget, the input sections by kind and
