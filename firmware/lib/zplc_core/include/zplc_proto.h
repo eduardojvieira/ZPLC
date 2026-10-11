@@ -97,6 +97,14 @@ static inline size_t zplc_proto_frame_size(size_t length, int authenticated) {
 }
 
 /**
+ * @brief Write the header of a frame whose payload is already at out + ZPLC_PROTO_HEADER_BYTES.
+ *
+ * For a sender that builds the payload in place. Returns the number of header bytes.
+ */
+size_t zplc_proto_write_header(uint8_t *out, uint8_t kind, uint8_t message, uint32_t sequence, uint16_t length,
+                               int authenticated);
+
+/**
  * @brief Write the header and the payload of a frame.
  *
  * @return bytes used (the header and the payload), or 0 when @p capacity cannot hold the whole frame (with the

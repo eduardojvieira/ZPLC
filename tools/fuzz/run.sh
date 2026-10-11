@@ -8,8 +8,10 @@
 #   target    loader: zplc_loader_verify on mutated containers (the CRC is repaired so mutations reach the verifier)
 #             run:    load accepted artifacts, run them for a few scans under the sanitizers and check the
 #                     invariants listed in firmware/lib/zplc_core/tests/fuzz_run_program.c
-#             proto:  the frame decoder of the device link protocol (COM-019), on mutated frames and streams; the
-#                     invariants are in firmware/lib/zplc_core/tests/fuzz_proto_frame.c
+#             proto:  the frame decoder of the device link protocol (COM-019), on mutated frames and streams, and
+#                     its device engine (COM-020, COM-021) over a port that counts the calls that change the
+#                     device; the invariants are in firmware/lib/zplc_core/tests/fuzz_proto_frame.c and
+#                     fuzz_proto_link.c
 #             both:   every target above, in parallel (default; the name is older than the third target)
 #
 # Environment (all optional):
@@ -48,7 +50,7 @@ command -v ninja > /dev/null && generator=(-G Ninja)
 cmake -S "$root/firmware/lib/zplc_core" -B "$work/build" ${generator[@]+"${generator[@]}"} -DCMAKE_C_COMPILER="$cc" \
   -DCMAKE_BUILD_TYPE=RelWithDebInfo -DZPLC_BUILD_FUZZER=ON > "$work/configure.log" 2>&1 \
   || { cat "$work/configure.log" >&2; exit 2; }
-cmake --build "$work/build" --target fuzz_loader_verify fuzz_run_program fuzz_proto_frame --parallel > "$work/build.log" 2>&1 \
+cmake --build "$work/build" --target fuzz_loader_verify fuzz_run_program fuzz_proto_frame fuzz_proto_link --parallel > "$work/build.log" 2>&1 \
   || { cat "$work/build.log" >&2; exit 2; }
 
 # Seed corpus: one directory both targets read (a target only adds what reaches new coverage to it).
@@ -86,7 +88,11 @@ from pathlib import Path
 root, corpus = Path(sys.argv[1]), Path(sys.argv[2])
 vectors = json.loads((root / "tools/contract/golden/protocol-vectors.json").read_text())
 for frame in vectors["frames"]:
-    (corpus / ("frame-" + frame["name"])).write_bytes(bytes.fromhex(frame["wire"]))
+    wire = bytes.fromhex(frame["wire"])
+    (corpus / ("frame-" + frame["name"])).write_bytes(wire)
+    # the engine target reads its mode from the first byte: serial and network, with and without a key
+    for mode in (0, 1, 2, 3):
+        (corpus / ("link%d-%s" % (mode, frame["name"]))).write_bytes(bytes([mode]) + wire)
 for stream in vectors["streams"]:
     (corpus / ("stream-" + stream["name"])).write_bytes(bytes.fromhex(stream["hex"]))
 print("proto seed corpus: %d frames, %d streams" % (len(vectors["frames"]), len(vectors["streams"])))
@@ -107,7 +113,7 @@ pids=()
 names=()
 launch() { # name, binary, max_len, [dictionary]
   local name="$1" binary="$2" max_len="$3" dict="${4:-$work/zplc.dict}" seeds="$corpus"
-  [ "$name" = proto ] && seeds="$proto_corpus"
+  case "$name" in proto | proto-link) seeds="$proto_corpus" ;; esac
   # A private copy of the corpus per target: they all add to it.
   cp -R "$seeds" "$work/corpus-$name"
   (cd "$work" && exec "$binary" "$work/corpus-$name" -dict="$dict" -max_len="$max_len" -timeout=5 -rss_limit_mb=2048 \
@@ -120,6 +126,7 @@ launch() { # name, binary, max_len, [dictionary]
 [ "$targets" = loader ] || [ "$targets" = both ] && launch loader "$work/build/fuzz_loader_verify" 65536
 [ "$targets" = run ] || [ "$targets" = both ] && launch run "$work/build/fuzz_run_program" 6144
 [ "$targets" = proto ] || [ "$targets" = both ] && launch proto "$work/build/fuzz_proto_frame" 1200 "$work/proto.dict"
+[ "$targets" = proto ] || [ "$targets" = both ] && launch proto-link "$work/build/fuzz_proto_link" 1200 "$work/proto.dict"
 
 status=0
 for index in "${!pids[@]}"; do

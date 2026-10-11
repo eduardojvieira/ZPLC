@@ -88,6 +88,8 @@ add_library(zplc_core STATIC
     src/core/zplc_program_store.c
     src/core/zplc_exchange.c
     src/core/zplc_proto.c
+    src/core/zplc_proto_dev.c
+    src/core/zplc_sha256.c
 )
 
 target_compile_definitions(zplc_core PUBLIC ZPLC_CORE_VERSION_STR="${ZPLC_CORE_VERSION_STR}")
@@ -203,6 +205,21 @@ if(ZPLC_BUILD_FUZZER)
 
     target_compile_options(fuzz_proto_frame PRIVATE ${ZPLC_FUZZ_FLAGS})
     target_link_options(fuzz_proto_frame PRIVATE ${ZPLC_FUZZ_FLAGS})
+
+    # COM-020, COM-021, VF-014: the device engine, over a port that counts the calls that change the device.
+    add_executable(fuzz_proto_link
+        tests/fuzz_proto_link.c
+        src/core/zplc_proto.c
+        src/core/zplc_proto_dev.c
+        src/core/zplc_sha256.c
+    )
+
+    target_include_directories(fuzz_proto_link PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/include
+    )
+
+    target_compile_options(fuzz_proto_link PRIVATE ${ZPLC_FUZZ_FLAGS})
+    target_link_options(fuzz_proto_link PRIVATE ${ZPLC_FUZZ_FLAGS})
 endif()
 
 enable_testing()
@@ -416,6 +433,51 @@ target_include_directories(test_proto_codec PRIVATE
 )
 
 add_test(NAME test_proto_codec COMMAND test_proto_codec)
+
+# Test: SHA-256 and HMAC-SHA-256 against FIPS 180-4, RFC 4231 and the codes of the generated frames (COM-021).
+# Also run under the sanitizers.
+add_executable(test_sha256
+    tests/test_sha256.c
+    src/core/zplc_sha256.c
+    src/core/zplc_proto.c
+)
+
+target_include_directories(test_sha256 PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/tests
+)
+
+add_test(NAME test_sha256 COMMAND test_sha256)
+
+# Test: the device side of the device link protocol: sessions, authenticated frames, atomic writes, events and
+# program transfer (COM-020, COM-021, COM-023, COM-025, COM-028). Also run under the sanitizers.
+add_executable(test_proto_session
+    tests/test_proto_session.c
+    src/core/zplc_proto.c
+    src/core/zplc_proto_dev.c
+    src/core/zplc_sha256.c
+    src/core/zplc_exchange.c
+    src/core/zplc_core.c
+    src/core/zplc_loader.c
+    src/core/zplc_comm_dispatch.c
+    src/hal/posix/zplc_hal_posix.c
+)
+
+target_include_directories(test_proto_session PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/tests
+)
+
+target_compile_definitions(test_proto_session PRIVATE ZPLC_CORE_VERSION_STR="${ZPLC_CORE_VERSION_STR}")
+
+find_package(Threads REQUIRED)
+target_link_libraries(test_proto_session PRIVATE Threads::Threads)
+
+if(UNIX AND NOT APPLE)
+    target_link_libraries(test_proto_session PRIVATE rt)
+endif()
+
+add_test(NAME test_proto_session COMMAND test_proto_session)
 
 # Test: the identity a firmware image or the runtime reports (REL-023)
 add_executable(test_fw_identity

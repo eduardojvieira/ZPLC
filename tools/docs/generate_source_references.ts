@@ -503,6 +503,47 @@ const FRAME_RULES: Record<'en' | 'es', string[]> = {
   ],
 };
 
+const SESSION_TEXT: Record<Lang, string[]> = {
+  en: [
+    'Everything that changes the device needs a session that is open on the link the request arrives on: a download, RUN and STOP and the other run controls, a memory write, a force, a configuration change, a credential upload and the key. A request that needs one and has none is answered `NO_SESSION` and reaches nothing. Reads of the runtime need no session on the serial link.',
+    'One session is open at a time. It ends when its client closes it, when nothing arrives for the idle time (reported in the hello, 30 seconds by default; every frame of the session, a `KEEPALIVE` included, restarts it), when its link is lost, when a person at the serial link takes it over (`SESSION_OPEN` with the takeover flag; a network link cannot take a session over) and when the key is changed. The device sends a `EVT_SESSION_END` to the link that held it, and a second `SESSION_OPEN` while one is open is answered `SESSION_BUSY`.',
+    'The forces a session set end with it, whatever the reason, and the outputs follow the program again. A force that was set outside a session (by the shell) is not the session\'s to release. A force that must survive is set again in the next session.',
+    'A multi-byte value is written with one `MEM_WRITE`: the device queues it whole and the scan applies it at its next input latch, so a program never reads half of it. A download is `PROGRAM_BEGIN` (size and CRC-32), `PROGRAM_CHUNK` in order, and `PROGRAM_COMMIT`, which checks the CRC-32, verifies and activates the artifact and answers with the size and CRC-32 that the device read back from what it holds. The runtime is stopped before, and stays stopped after: RUN is another request.',
+  ],
+  es: [
+    'Todo lo que cambia el dispositivo necesita una sesión abierta en el enlace por el que llega la solicitud: una descarga, RUN y STOP y los demás controles de ejecución, una escritura de memoria, un forzado, un cambio de configuración, la subida de una credencial y la clave. Una solicitud que la necesita y no la tiene recibe `NO_SESSION` y no llega a nada. Las lecturas del runtime no necesitan sesión en el enlace serie.',
+    'Hay una sola sesión abierta a la vez. Termina cuando su cliente la cierra, cuando no llega nada durante el tiempo de inactividad (se informa en el saludo, 30 segundos por defecto; cada trama de la sesión, un `KEEPALIVE` incluido, lo reinicia), cuando se pierde su enlace, cuando una persona en el enlace serie la toma (`SESSION_OPEN` con la bandera de toma de control; un enlace de red no puede tomar una sesión) y cuando se cambia la clave. El dispositivo envía un `EVT_SESSION_END` al enlace que la tenía, y un segundo `SESSION_OPEN` con una abierta recibe `SESSION_BUSY`.',
+    'Los forzados que fijó una sesión terminan con ella, sea cual sea el motivo, y las salidas vuelven a seguir al programa. Un forzado fijado fuera de una sesión (por la consola) no le corresponde liberarlo a la sesión. Un forzado que debe sobrevivir se fija otra vez en la sesión siguiente.',
+    'Un valor de varios bytes se escribe con un solo `MEM_WRITE`: el dispositivo lo encola completo y el ciclo lo aplica en su siguiente latch de entradas, de modo que un programa nunca lee la mitad. Una descarga es `PROGRAM_BEGIN` (tamaño y CRC-32), `PROGRAM_CHUNK` en orden y `PROGRAM_COMMIT`, que comprueba el CRC-32, verifica y activa el artefacto y responde con el tamaño y el CRC-32 que el dispositivo leyó de lo que tiene. El runtime está detenido antes y sigue detenido después: RUN es otra solicitud.',
+  ],
+};
+
+const AUTH_TEXT: Record<Lang, string[]> = {
+  en: [
+    'A link is `SERIAL` (UART or USB serial) or `NETWORK` (TCP, or any link a network reaches); the device decides which, and says so in the hello. On a network link every message except `HELLO`, `IDENTITY`, `CHALLENGE` and `LINK_STATS` needs a session that was opened with a code, and every frame of that session carries a code: HMAC-SHA-256, 32 bytes, over the header and the payload, so over the kind, the message number and the sequence number as well.',
+    'The key (32 bytes) is provisioned over the serial link, inside a session, with `KEY_SET`; it is never accepted over a network link and the device never sends it back. To open a session over the network the client asks for a `CHALLENGE` (a 16-byte number the device will accept once, in the next ten seconds, and keeps until it is used or has expired), then sends `SESSION_OPEN` with that number, a number of its own, and a code under the key. The device derives the key of the session as HMAC-SHA-256 of the string `ZPLC-LINK-SK1`, the number of the device and the number of the client, under the key of the device; its answer and every later frame, in both directions, carry a code under that session key. The session key is erased when the session ends.',
+    'The sequence number of the first frame after the open is the one of the open plus one, and each request after it is the previous plus one. A frame whose code is wrong or missing, whose sequence number is one that was already accepted (a replay), or is not the next one (out of order), is dropped, counted in `LINK_STATS` (`auth_drops`, `replay_drops`, `order_drops`) and not answered; it does not move the sequence. An open that carries a challenge that is not the current one is a replay too: it is counted and answered `CHALLENGE_STALE`.',
+  ],
+  es: [
+    'Un enlace es `SERIAL` (UART o USB serie) o `NETWORK` (TCP, o cualquier enlace al que llegue una red); el dispositivo decide cuál, y lo dice en el saludo. En un enlace de red todos los mensajes salvo `HELLO`, `IDENTITY`, `CHALLENGE` y `LINK_STATS` necesitan una sesión que se abrió con un código, y cada trama de esa sesión lleva un código: HMAC-SHA-256, 32 bytes, sobre el encabezado y la carga útil, es decir también sobre la clase, el número de mensaje y el número de secuencia.',
+    'La clave (32 bytes) se aprovisiona por el enlace serie, dentro de una sesión, con `KEY_SET`; nunca se acepta por un enlace de red y el dispositivo nunca la devuelve. Para abrir una sesión por la red el cliente pide un `CHALLENGE` (un número de 16 bytes que el dispositivo aceptará una vez, en los próximos diez segundos, y conserva hasta que se usa o vence), y envía `SESSION_OPEN` con ese número, un número propio y un código bajo la clave. El dispositivo deriva la clave de la sesión como HMAC-SHA-256 de la cadena `ZPLC-LINK-SK1`, el número del dispositivo y el número del cliente, bajo la clave del dispositivo; su respuesta y cada trama posterior, en ambos sentidos, llevan un código bajo esa clave de sesión. La clave de sesión se borra cuando la sesión termina.',
+    'El número de secuencia de la primera trama tras la apertura es el de la apertura más uno, y cada solicitud posterior es la anterior más uno. Una trama cuyo código es erróneo o falta, cuyo número de secuencia ya fue aceptado (una repetición) o no es el siguiente (fuera de orden), se descarta, se cuenta en `LINK_STATS` (`auth_drops`, `replay_drops`, `order_drops`) y no se responde; no mueve la secuencia. Una apertura con un desafío que no es el vigente también es una repetición: se cuenta y se responde `CHALLENGE_STALE`.',
+  ],
+};
+
+const TRUST_TEXT: Record<Lang, string[]> = {
+  en: [
+    '**The serial link is trusted like the person who holds the cable.** A UART or USB port is physical access: whoever has it can already stop the device, read its memory through the shell and reflash it. The session on the serial link keeps two clients from writing at once and makes a write, a force or a download an explicit step; it is not a defence against someone at the port, and it does not need a code. The key of the network sessions is provisioned over this link, and only over this link, for the same reason: the person at the cable is the one who decides who may reach the device over the network.',
+    '**The network link is not trusted.** A peer without the key can send anything it likes: it reaches nothing, is not answered and is counted. What the code does not give is secrecy (frames are not encrypted: where confidentiality matters, run the link inside a TLS tunnel), availability (a peer on the network can flood the link and make the device spend time dropping frames, below the priority of the scan) or a hidden device: the hello, the identity and the counters are answered to anyone.',
+    '**The key.** It is 256 bits, held by the device in its persistent store where the board has protected storage and in plain flash where it does not; the documentation of each board says which. It is not in any answer, any log line or the hello (which says only whether one is held), the buffers that held it are cleared, and erasing or changing it ends a session. The numbers of a challenge and of a session come from the cryptographic source of the platform: a build that has none does not offer authenticated sessions.',
+  ],
+  es: [
+    '**El enlace serie es confiable como la persona que sostiene el cable.** Un puerto UART o USB es acceso físico: quien lo tiene ya puede detener el dispositivo, leer su memoria con la consola y regrabarlo. La sesión del enlace serie evita que dos clientes escriban a la vez y hace de una escritura, un forzado o una descarga un paso explícito; no es una defensa contra alguien en el puerto, y no necesita un código. La clave de las sesiones de red se aprovisiona por este enlace, y solo por este enlace, por la misma razón: la persona que está en el cable es quien decide quién puede llegar al dispositivo por la red.',
+    '**El enlace de red no es confiable.** Un par sin la clave puede enviar lo que quiera: no llega a nada, no recibe respuesta y se cuenta. Lo que el código no da es secreto (las tramas no se cifran: donde importa la confidencialidad, el enlace va dentro de un túnel TLS), disponibilidad (un par en la red puede inundar el enlace y hacer que el dispositivo gaste tiempo descartando tramas, por debajo de la prioridad del ciclo) ni un dispositivo oculto: el saludo, la identidad y los contadores se responden a cualquiera.',
+    '**La clave.** Tiene 256 bits, y el dispositivo la guarda en su almacén persistente donde la placa tiene almacenamiento protegido y en flash sin proteger donde no lo tiene; la documentación de cada placa dice cuál. No está en ninguna respuesta, ninguna línea de registro ni en el saludo (que solo dice si hay una), los búferes que la contuvieron se borran, y borrarla o cambiarla termina una sesión. Los números de un desafío y de una sesión salen de la fuente criptográfica de la plataforma: una compilación que no la tiene no ofrece sesiones autenticadas.',
+  ],
+};
+
 export function deviceProtocolBody(lang: Lang): string {
   const p = parseDeviceProtocol();
   const intro: L10n = {
@@ -527,8 +568,20 @@ export function deviceProtocolBody(lang: Lang): string {
     return parts.join('\n\n');
   };
   const enumRows = p.enums.flatMap((e) => e.members.map((m) => [code(e.name), code(m.name), String(m.value), cell(m.doc)]));
+  const sessionRows = p.messages.filter((m) => m.access === 'SESSION' || m.access === 'SERIAL_SESSION').map((m) => code(m.name)).join(', ');
+  const sessionList: L10n = {
+    en: `The messages that need a session: ${sessionRows}. ${code('KEY_SET')} and ${code('KEY_CLEAR')} also need the serial link.`,
+    es: `Los mensajes que necesitan una sesión: ${sessionRows}. ${code('KEY_SET')} y ${code('KEY_CLEAR')} necesitan además el enlace serie.`,
+  };
   return [
     intro[lang],
+    h('Sessions', 'Sesiones'),
+    SESSION_TEXT[lang].join('\n\n'),
+    sessionList[lang],
+    h('Authentication on a network link', 'Autenticación en un enlace de red'),
+    AUTH_TEXT[lang].join('\n\n'),
+    h('Trust model', 'Modelo de confianza'),
+    TRUST_TEXT[lang].join('\n\n'),
     h('Frame', 'Trama'),
     table(lang === 'en' ? ['Field', 'Offset', 'Bytes', 'Meaning'] : ['Campo', 'Desplazamiento', 'Bytes', 'Significado'],
       p.frame.header.map((f) => [code(f.name), String(f.offset), bytesOf(f.size), cell(f.doc)])),

@@ -11,6 +11,34 @@ tags: [reference, generated]
 
 The device link protocol is how Studio and a device talk: a framed, versioned binary protocol with a length, a sequence number and a checksum on every frame, capability negotiation and explicit error codes. It runs over UART, USB serial and TCP. This is protocol version `1`: 41 messages and 8 events. The text shell of the device stays: it is the older protocol and the recovery console, and `zplc sys info --json` keeps its keys. This page is read off `tools/contract/protocol.json`, the one definition the C codec of the firmware and the TypeScript codec of Studio are generated from.
 
+## Sessions
+
+Everything that changes the device needs a session that is open on the link the request arrives on: a download, RUN and STOP and the other run controls, a memory write, a force, a configuration change, a credential upload and the key. A request that needs one and has none is answered `NO_SESSION` and reaches nothing. Reads of the runtime need no session on the serial link.
+
+One session is open at a time. It ends when its client closes it, when nothing arrives for the idle time (reported in the hello, 30 seconds by default; every frame of the session, a `KEEPALIVE` included, restarts it), when its link is lost, when a person at the serial link takes it over (`SESSION_OPEN` with the takeover flag; a network link cannot take a session over) and when the key is changed. The device sends a `EVT_SESSION_END` to the link that held it, and a second `SESSION_OPEN` while one is open is answered `SESSION_BUSY`.
+
+The forces a session set end with it, whatever the reason, and the outputs follow the program again. A force that was set outside a session (by the shell) is not the session's to release. A force that must survive is set again in the next session.
+
+A multi-byte value is written with one `MEM_WRITE`: the device queues it whole and the scan applies it at its next input latch, so a program never reads half of it. A download is `PROGRAM_BEGIN` (size and CRC-32), `PROGRAM_CHUNK` in order, and `PROGRAM_COMMIT`, which checks the CRC-32, verifies and activates the artifact and answers with the size and CRC-32 that the device read back from what it holds. The runtime is stopped before, and stays stopped after: RUN is another request.
+
+The messages that need a session: `MEM_WRITE`, `FORCE_SET`, `FORCE_CLEAR`, `FORCE_CLEAR_ALL`, `SESSION_CLOSE`, `KEEPALIVE`, `RUN`, `STOP`, `PAUSE`, `RESUME`, `STEP`, `RESET`, `BP_ADD`, `BP_REMOVE`, `BP_CLEAR`, `PROGRAM_BEGIN`, `PROGRAM_CHUNK`, `PROGRAM_COMMIT`, `PROGRAM_ABORT`, `CONFIG_SET`, `CONFIG_SAVE`, `CONFIG_RESET`, `CRED_BEGIN`, `CRED_CHUNK`, `CRED_COMMIT`, `CRED_ERASE`, `KEY_SET`, `KEY_CLEAR`. `KEY_SET` and `KEY_CLEAR` also need the serial link.
+
+## Authentication on a network link
+
+A link is `SERIAL` (UART or USB serial) or `NETWORK` (TCP, or any link a network reaches); the device decides which, and says so in the hello. On a network link every message except `HELLO`, `IDENTITY`, `CHALLENGE` and `LINK_STATS` needs a session that was opened with a code, and every frame of that session carries a code: HMAC-SHA-256, 32 bytes, over the header and the payload, so over the kind, the message number and the sequence number as well.
+
+The key (32 bytes) is provisioned over the serial link, inside a session, with `KEY_SET`; it is never accepted over a network link and the device never sends it back. To open a session over the network the client asks for a `CHALLENGE` (a 16-byte number the device will accept once, in the next ten seconds, and keeps until it is used or has expired), then sends `SESSION_OPEN` with that number, a number of its own, and a code under the key. The device derives the key of the session as HMAC-SHA-256 of the string `ZPLC-LINK-SK1`, the number of the device and the number of the client, under the key of the device; its answer and every later frame, in both directions, carry a code under that session key. The session key is erased when the session ends.
+
+The sequence number of the first frame after the open is the one of the open plus one, and each request after it is the previous plus one. A frame whose code is wrong or missing, whose sequence number is one that was already accepted (a replay), or is not the next one (out of order), is dropped, counted in `LINK_STATS` (`auth_drops`, `replay_drops`, `order_drops`) and not answered; it does not move the sequence. An open that carries a challenge that is not the current one is a replay too: it is counted and answered `CHALLENGE_STALE`.
+
+## Trust model
+
+**The serial link is trusted like the person who holds the cable.** A UART or USB port is physical access: whoever has it can already stop the device, read its memory through the shell and reflash it. The session on the serial link keeps two clients from writing at once and makes a write, a force or a download an explicit step; it is not a defence against someone at the port, and it does not need a code. The key of the network sessions is provisioned over this link, and only over this link, for the same reason: the person at the cable is the one who decides who may reach the device over the network.
+
+**The network link is not trusted.** A peer without the key can send anything it likes: it reaches nothing, is not answered and is counted. What the code does not give is secrecy (frames are not encrypted: where confidentiality matters, run the link inside a TLS tunnel), availability (a peer on the network can flood the link and make the device spend time dropping frames, below the priority of the scan) or a hidden device: the hello, the identity and the counters are answered to anyone.
+
+**The key.** It is 256 bits, held by the device in its persistent store where the board has protected storage and in plain flash where it does not; the documentation of each board says which. It is not in any answer, any log line or the hello (which says only whether one is held), the buffers that held it are cleared, and erasing or changing it ends a session. The numbers of a challenge and of a session come from the cryptographic source of the platform: a build that has none does not offer authenticated sessions.
+
 ## Frame
 
 | Field | Offset | Bytes | Meaning |

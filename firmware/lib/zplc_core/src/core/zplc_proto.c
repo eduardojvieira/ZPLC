@@ -65,12 +65,8 @@ static void open_frame(const uint8_t *buf, size_t total, zplc_proto_frame_t *fra
   (void)total;
 }
 
-size_t zplc_proto_begin(uint8_t *out, size_t capacity, uint8_t kind, uint8_t message, uint32_t sequence,
-                        const uint8_t *payload, uint16_t length, int authenticated) {
-  if (out == NULL || length > ZPLC_PROTO_PAYLOAD_MAX_HARD || (length != 0U && payload == NULL) ||
-      capacity < zplc_proto_frame_size(length, authenticated)) {
-    return 0U;
-  }
+size_t zplc_proto_write_header(uint8_t *out, uint8_t kind, uint8_t message, uint32_t sequence, uint16_t length,
+                               int authenticated) {
   out[ZPLC_PROTO_OFFSET_SYNC] = ZPLC_PROTO_SYNC0;
   out[ZPLC_PROTO_OFFSET_SYNC + 1U] = ZPLC_PROTO_SYNC1;
   out[ZPLC_PROTO_OFFSET_VERSION] = (uint8_t)ZPLC_PROTO_VERSION;
@@ -79,6 +75,16 @@ size_t zplc_proto_begin(uint8_t *out, size_t capacity, uint8_t kind, uint8_t mes
   out[ZPLC_PROTO_OFFSET_MESSAGE] = message;
   zplc_put_u32_le(out + ZPLC_PROTO_OFFSET_SEQUENCE, sequence);
   zplc_put_u16_le(out + ZPLC_PROTO_OFFSET_LENGTH, length);
+  return ZPLC_PROTO_HEADER_BYTES;
+}
+
+size_t zplc_proto_begin(uint8_t *out, size_t capacity, uint8_t kind, uint8_t message, uint32_t sequence,
+                        const uint8_t *payload, uint16_t length, int authenticated) {
+  if (out == NULL || length > ZPLC_PROTO_PAYLOAD_MAX_HARD || (length != 0U && payload == NULL) ||
+      capacity < zplc_proto_frame_size(length, authenticated)) {
+    return 0U;
+  }
+  (void)zplc_proto_write_header(out, kind, message, sequence, length, authenticated);
   if (length != 0U) {
     (void)memcpy(out + ZPLC_PROTO_HEADER_BYTES, payload, length);
   }
