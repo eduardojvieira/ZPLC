@@ -16,16 +16,12 @@ import Editor, { type OnMount, type Monaco } from '@monaco-editor/react';
 import type * as MonacoEditor from 'monaco-editor';
 import { useIDEStore } from '../store/useIDEStore';
 import { useAppSettings } from '../store/useAppSettings';
-import { useFileBreakpoints, useCurrentExecution, useDebugValues, formatDebugValue } from '../hooks/useDebugValue';
+import { useFileBreakpoints, useCurrentExecution, formatDebugValue } from '../hooks/useDebugValue';
 import { useTheme } from '../hooks/useTheme';
-import { useEditorLiveValues } from '../hooks/useEditorLiveValues';
+import { ilInlineTargets, inlineValues, stInlineTargets } from '../monitoring/inlineValues';
+import { useMonitoredVariables } from '../monitoring/useMonitor';
 import type { PLCLanguage } from '../types';
 import { breakpointDecorationClasses, breakpointFileKey, breakpointHoverMessage, doesCurrentPOUMatchFile, filterEligibleBreakpointLines, isLineBreakpointEligible } from '../utils/breakpoints';
-import {
-  buildInlineWidgets,
-  extractVariablesFromCode,
-  type InlineValueWidget,
-} from './codeEditorInlineValues';
 import { isInlineLivePreviewEnabled } from './codeEditorLivePreview';
 import {
   ST_LANGUAGE_ID, stLanguage, stConf,
@@ -43,7 +39,7 @@ import { editorModelPath, isMonacoCancellation } from './editorModels';
 import { registerSTProviders } from '../langsvc/monacoProviders';
 import { ideBridge } from '../langsvc/ideBridge';
 import { liveDiagnostics } from '../langsvc/liveDiagnostics';
-import { currentProjectFiles, filesWithBuffer } from '../langsvc/session';
+import { currentProjectFiles, filesWithBuffer, indexWithBuffer } from '../langsvc/session';
 import { buildOptionsOf } from '../project/buildOptions';
 import { getCompilerMemoryProfile } from '../config/boardProfiles';
 import { applyProjectMarkers } from '../langsvc/markers';
@@ -176,53 +172,19 @@ export function CodeEditor({
       type === monaco.editor.MouseTargetType.GUTTER_LINE_DECORATIONS;
   }, []);
 
-  // Extract variables from code for debug value lookup
-  const variablesInCode = useMemo(() => {
-    if (debugMode === 'none') return new Map();
-    return extractVariablesFromCode(content);
-  }, [content, debugMode]);
-
-  // Viewport-aware variable filtering: only read values for variables whose
-  // declaration line is currently visible in the editor.  Falls back to all
-  // vars when the debug map lacks declarationLine data (older compiler output).
-  const { visibleVarNames } = useEditorLiveValues({
-    editorRef,
-    debugMap,
-    debugActive: inlinePreviewEnabled,
-  });
-
-  // Get live values only for visible variables (or all if no viewport data)
-  const debugValues = useDebugValues(
-    inlinePreviewEnabled
-      ? (visibleVarNames.length > 0 ? visibleVarNames : Array.from(variablesInCode.keys()))
-      : [],
+  // The variables a line names, as the language service reads the project, and their values as the debug map of the
+  // build gives them: a name is never replaced by another, and a value that cannot be read is shown as unavailable (LNG-006)
+  const inlineTargets = useMemo(() => {
+    if (!inlinePreviewEnabled || !filePath) return [];
+    if (language === 'ST') return stInlineTargets(indexWithBuffer(filePath, content), filePath);
+    return language === 'IL' ? ilInlineTargets(content) : [];
+  }, [content, filePath, inlinePreviewEnabled, language]);
+  const inlineVariables = useMemo(() => [...new Set(inlineTargets.map((target) => target.variable))], [inlineTargets]);
+  const inlineReadings = useMonitoredVariables(filePath || undefined, inlineVariables, inlinePreviewEnabled);
+  const inlineWidgets = useMemo(
+    () => inlineValues(inlineTargets, (variable) => inlineReadings.get(variable), (value, type) => formatDebugValue(value, type as Parameters<typeof formatDebugValue>[1])),
+    [inlineReadings, inlineTargets],
   );
-
-  // Build variable value map for widgets
-  const variableValueMap = useMemo(() => {
-    const map = new Map<string, { value: string; type: string | null; isBool: boolean; isTrue?: boolean }>();
-
-    for (const [varPath, result] of debugValues) {
-      if (result.exists && result.value !== null) {
-        const isBool = result.type === 'BOOL';
-        const isTrue = isBool && (result.value === true || result.value === 1);
-        map.set(varPath, {
-          value: formatDebugValue(result.value, result.type),
-          type: result.type,
-          isBool,
-          isTrue,
-        });
-      }
-    }
-
-    return map;
-  }, [debugValues]);
-
-  // Build inline widgets
-  const inlineWidgets = useMemo(() => {
-    if (!inlinePreviewEnabled || variableValueMap.size === 0) return [];
-    return buildInlineWidgets(content, variableValueMap);
-  }, [content, inlinePreviewEnabled, variableValueMap]);
 
   // Handle editor mount
   // The tab size is the user's preference (IDE-010): every model takes it, and the indentation of a file does not override it.
@@ -506,29 +468,29 @@ export function CodeEditor({
 
     if (inlinePreviewEnabled) {
       // Group widgets by line for combined display
-      const widgetsByLine = new Map<number, InlineValueWidget[]>();
+      const widgetsByLine = new Map<number, typeof inlineWidgets>();
       for (const widget of inlineWidgets) {
-        const existing = widgetsByLine.get(widget.lineNumber) || [];
+        const existing = widgetsByLine.get(widget.line) || [];
         existing.push(widget);
-        widgetsByLine.set(widget.lineNumber, existing);
+        widgetsByLine.set(widget.line, existing);
       }
 
       // Create inline decorations for each line
       for (const [lineNum, widgets] of widgetsByLine) {
         // Build combined text for all values on this line
         const valueParts = widgets.map(w => {
-          const label = w.variableName.includes('.')
-            ? w.variableName.split('.').pop()
-            : w.variableName;
-          return `${label}=${w.value}`;
+          const label = w.label.includes('.')
+            ? w.label.split('.').pop()
+            : w.label;
+          return `${label}=${w.text}`;
         });
 
         const combinedText = `  ${valueParts.join('  ·  ')}`;
 
         // Determine CSS class based on bool state
-        const cssClass = widgets.some(w => w.isBool && w.isTrue)
+        const cssClass = widgets.some(w => w.available && w.isBool && w.isTrue)
           ? 'inline-debug-value-true'
-          : widgets.some(w => w.isBool && !w.isTrue)
+          : widgets.some(w => w.available && w.isBool && !w.isTrue)
             ? 'inline-debug-value-false'
             : 'inline-debug-value';
 
@@ -580,9 +542,9 @@ export function CodeEditor({
                         border border-[var(--color-surface-600)]">
           <span className={`w-2 h-2 rounded-full ${isPaused ? 'bg-yellow-500' : 'bg-[var(--color-accent-blue)]'}`} />
           <span>{isPaused ? 'Paused' : debugMode === 'simulation' ? 'Simulation' : 'Hardware'}</span>
-          {variableValueMap.size > 0 && (
+          {inlineWidgets.some((widget) => widget.available) && (
             <span className="text-blue-400">
-              ({variableValueMap.size} values)
+              ({inlineWidgets.filter((widget) => widget.available).length} values)
             </span>
           )}
           {filterEligibleBreakpointLines(debugMap, fileName, breakpoints).length > 0 && (

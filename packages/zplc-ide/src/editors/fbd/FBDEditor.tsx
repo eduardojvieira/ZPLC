@@ -42,8 +42,8 @@ import { nodeTypes, getNodeType } from './nodes';
 import { edgeTypes } from './edges';
 import FBDToolbox from './FBDToolbox';
 import InstanceMonitor from './InstanceMonitor';
-import { useDebugValues } from '../../hooks/useDebugValue';
-import { useIDEStore } from '../../store/useIDEStore';
+import { useMonitor } from '../../monitoring/useMonitor';
+import type { ElementState, Reading } from '../../monitoring/elementStates';
 import { findProjectBlock } from '../../models/projectBlocks';
 import { useProjectBlocks } from '../useProjectBlocks';
 import { useElementSelection } from '../elementSelection';
@@ -76,12 +76,11 @@ interface MonitorState {
 // =============================================================================
 
 /**
- * Convert FBD blocks to ReactFlow nodes
+ * Convert FBD blocks to ReactFlow nodes. What a node shows online is not part of it: it is put on the nodes that are
+ * drawn (`shownNodes` below), from the monitor of the build, so a rebuilt canvas does not lose it.
  */
 function blocksToNodes(
   blocks: FBDBlock[],
-  debugActive: boolean,
-  liveValues: Map<string, unknown>,
   onOpenMonitor: (instanceName: string, blockType: string) => void
 ): Node[] {
   return blocks.map((block) => ({
@@ -90,9 +89,6 @@ function blocksToNodes(
     position: block.position,
     data: {
       ...blockNodeData(block),
-      // Debug props
-      debugActive,
-      liveValues,
       onOpenMonitor,
     },
   }));
@@ -101,29 +97,38 @@ function blocksToNodes(
 /**
  * Convert FBD connections to ReactFlow edges
  */
-function connectionsToEdges(
-  connections: FBDConnection[],
-  debugActive: boolean,
-  liveValues: Map<string, unknown>
-): Edge[] {
+function connectionsToEdges(connections: FBDConnection[]): Edge[] {
   return connections.map((conn) => ({
     id: conn.id,
     source: conn.from.block,
     sourceHandle: conn.from.port,
     target: conn.to.block,
     targetHandle: conn.to.port,
-    // Use debug edge when debugging, otherwise smoothstep
-    type: debugActive ? 'debug' : 'smoothstep',
+    type: 'smoothstep',
     animated: false,
-    style: debugActive ? undefined : {
+    style: {
       stroke: 'var(--visual-wire)',
       strokeWidth: 2,
     },
-    data: debugActive ? {
-      liveValue: liveValues.get(`${conn.from.block}.${conn.from.port}`),
-      debugActive: true,
-    } : undefined,
   }));
+}
+
+/** The value of each pin of each block online, by block id: its outputs, and its inputs as what is wired to them. */
+function pinValuesOf(
+  blocks: readonly FBDBlock[],
+  connections: readonly FBDConnection[],
+  states: ReadonlyMap<string, ElementState>,
+): Map<string, Record<string, Reading>> {
+  const outputs = (blockId: string): Record<string, Reading> => states.get(blockElement(blockId))?.pins ?? {};
+  const constants = new Map(blocks.filter((block) => block.type === 'constant').map((block) => [block.id, block.value as Reading] as const));
+  const sourceValue = (connection: FBDConnection): Reading =>
+    constants.has(connection.from.block) ? constants.get(connection.from.block) : outputs(connection.from.block)[connection.from.port];
+  const pins = new Map<string, Record<string, Reading>>(blocks.map((block) => [block.id, { ...outputs(block.id) }]));
+  for (const connection of connections) {
+    const own = pins.get(connection.to.block);
+    if (own && !(connection.to.port in own)) own[connection.to.port] = sourceValue(connection);
+  }
+  return pins;
 }
 
 /**
@@ -136,8 +141,8 @@ function connectionsToEdges(
 interface FBDEditorInnerProps extends FBDEditorProps {
   initialNodes: Node[];
   initialEdges: Edge[];
-  debugActive: boolean;
-  liveValues: Map<string, unknown>;
+  /** The value each pin holds online (LNG-006); undefined while the program is not running under Studio. */
+  pins: ReadonlyMap<string, Record<string, Reading>> | undefined;
   onOpenMonitor: (instanceName: string, blockType: string) => void;
 }
 
@@ -147,8 +152,7 @@ function FBDEditorInner({
   readOnly = false, 
   initialNodes, 
   initialEdges,
-  debugActive,
-  liveValues,
+  pins,
   onOpenMonitor,
 }: FBDEditorInnerProps) {
   const { screenToFlowPosition, fitView } = useReactFlow();
@@ -214,40 +218,26 @@ function FBDEditorInner({
     replaceEdges(shown.edges);
   }, [initialNodes, initialEdges, readOnly]);
 
-  // Update nodes/edges when debug state changes
-  useEffect(() => {
-    const nextNodes = nodesRef.current.map((node) => ({
-      ...node,
-      data: {
-        ...node.data,
-        debugActive,
-        liveValues,
-        onOpenMonitor,
-      },
-    }));
-    nodesRef.current = nextNodes;
-    replaceNodes(nextNodes);
-  }, [debugActive, liveValues, onOpenMonitor]);
-
-  useEffect(() => {
-    const nextEdges = edgesRef.current.map((edge) => ({
-      ...edge,
-      type: debugActive ? 'debug' : 'smoothstep',
-      style: debugActive ? undefined : { stroke: 'var(--visual-wire)', strokeWidth: 2 },
-      data: debugActive ? {
-        liveValue: liveValues.get(`${edge.source}.${edge.sourceHandle}`),
-        debugActive: true,
-      } : undefined,
-    }));
-    edgesRef.current = nextEdges;
-    replaceEdges(nextEdges);
-  }, [debugActive, liveValues]);
-
   // Breakpoints on blocks: execution stops at the first statement the block generates (LNG-004)
   const breakpoints = useElementBreakpoints();
+  const debugActive = pins !== undefined;
+  // what the nodes and wires show online: put on the ones that are drawn, so that it follows a rebuilt canvas (LNG-006)
   const markedNodes = useMemo(
-    () => markBreakpointNodes(nodes, (node) => blockElement(node.id), breakpoints),
-    [nodes, breakpoints],
+    () => markBreakpointNodes(
+      debugActive ? nodes.map((node) => ({ ...node, data: { ...node.data, debugActive, pinValues: pins.get(node.id) } })) : nodes,
+      (node) => blockElement(node.id),
+      breakpoints,
+    ),
+    [nodes, breakpoints, debugActive, pins],
+  );
+  const shownEdges = useMemo(
+    () => (!debugActive ? edges : edges.map((edge) => ({
+      ...edge,
+      type: 'debug',
+      style: undefined,
+      data: { liveValue: pins.get(edge.source)?.[edge.sourceHandle ?? 'OUT'], debugActive: true },
+    }))),
+    [edges, debugActive, pins],
   );
 
   // Activating a problem of this diagram selects the block or the wire it is about, and brings it into view (LNG-003)
@@ -367,8 +357,6 @@ function FBDEditorInner({
           type: blockType,
           readOnly,
           onChangeData: (nodeId: string, data: Record<string, unknown>) => updateNodeDataRef.current?.(nodeId, data),
-          debugActive,
-          liveValues,
           onOpenMonitor,
           // a block the project declares has the ports of its declaration (LNG-008)
           inputs: getDefaultPorts(blockType, projectBlocks).inputs,
@@ -383,7 +371,7 @@ function FBDEditorInner({
 
       commitGraph([...nodesRef.current, newNode], edgesRef.current);
     },
-    [commitGraph, debugActive, liveValues, onOpenMonitor, projectBlocks, readOnly, screenToFlowPosition]
+    [commitGraph, onOpenMonitor, projectBlocks, readOnly, screenToFlowPosition]
   );
 
   const onDragOver = useCallback((event: React.DragEvent) => {
@@ -417,16 +405,16 @@ function FBDEditorInner({
     const addedConnections = pasted.connections.slice(currentModel.connections.length);
     const nextNodes = [
       ...nodesRef.current.map((node) => ({ ...node, selected: false })),
-      ...blocksToNodes(added, debugActive, liveValues, onOpenMonitor).map((node) => ({
+      ...blocksToNodes(added, onOpenMonitor).map((node) => ({
         ...node,
         selected: true,
         data: { ...node.data, readOnly, onChangeData: (nodeId: string, data: Record<string, unknown>) => updateNodeDataRef.current?.(nodeId, data) },
       })),
     ];
-    const nextEdges = [...edgesRef.current.map((edge) => ({ ...edge, selected: false })), ...connectionsToEdges(addedConnections, debugActive, liveValues)];
+    const nextEdges = [...edgesRef.current.map((edge) => ({ ...edge, selected: false })), ...connectionsToEdges(addedConnections)];
     event.preventDefault();
     commitGraph(nextNodes, nextEdges);
-  }, [breakpoints, commitGraph, debugActive, liveValues, model, onOpenMonitor, readOnly]);
+  }, [breakpoints, commitGraph, model, onOpenMonitor, readOnly]);
 
   return (
     <div
@@ -440,7 +428,7 @@ function FBDEditorInner({
     >
       <ReactFlow
         nodes={markedNodes}
-        edges={edges}
+        edges={shownEdges}
         onNodesChange={handleNodesChange}
         onEdgesChange={handleEdgesChange}
         onConnect={onConnect}
@@ -503,41 +491,17 @@ function FBDEditorInner({
 }
 
 export default function FBDEditor({ model, onChange, readOnly = false }: FBDEditorProps) {
-  // Debug state
-  const debugMode = useIDEStore((state) => state.debug.mode);
-  const debugActive = debugMode !== 'none';
-  
+  // Online values: the debug map of the build says which variable holds each pin (LNG-006)
+  const monitor = useMonitor();
+
   // Instance monitor state
   const [monitorState, setMonitorState] = useState<MonitorState | null>(null);
-  
-  // Collect all variable paths for live value subscription
-  const variablePaths = useMemo(() => {
-    const paths: string[] = [];
-    for (const block of model.blocks) {
-      if (block.instanceName) {
-        // Add all port paths for function blocks
-        const { inputs, outputs } = block;
-        if (inputs) {
-          for (const inp of inputs) {
-            paths.push(`${block.instanceName}.${inp.name}`);
-          }
-        }
-        if (outputs) {
-          for (const out of outputs) {
-            paths.push(`${block.instanceName}.${out.name}`);
-          }
-        }
-      }
-      if (block.variableName) {
-        paths.push(block.variableName);
-      }
-    }
-    return paths;
-  }, [model.blocks]);
-  
-  // Subscribe to live values
-  const liveValues = useDebugValues(variablePaths);
-  
+
+  const pins = useMemo(
+    () => (monitor.active ? pinValuesOf(model.blocks, model.connections, monitor.states) : undefined),
+    [model.blocks, model.connections, monitor],
+  );
+
   // Handler for opening instance monitor
   const handleOpenMonitor = useCallback((instanceName: string, blockType: string) => {
     setMonitorState({ instanceName, blockType });
@@ -545,11 +509,11 @@ export default function FBDEditor({ model, onChange, readOnly = false }: FBDEdit
   
   // Convert model to ReactFlow format with debug data
   const initialNodes = useMemo(
-    () => blocksToNodes(model.blocks, false, new Map(), handleOpenMonitor),
+    () => blocksToNodes(model.blocks, handleOpenMonitor),
     [model.blocks, handleOpenMonitor]
   );
   const initialEdges = useMemo(
-    () => connectionsToEdges(model.connections, false, new Map()),
+    () => connectionsToEdges(model.connections),
     [model.connections]
   );
 
@@ -566,8 +530,7 @@ export default function FBDEditor({ model, onChange, readOnly = false }: FBDEdit
           readOnly={readOnly}
           initialNodes={initialNodes}
           initialEdges={initialEdges}
-          debugActive={debugActive}
-          liveValues={liveValues}
+          pins={pins}
           onOpenMonitor={handleOpenMonitor}
         />
       </ReactFlowProvider>

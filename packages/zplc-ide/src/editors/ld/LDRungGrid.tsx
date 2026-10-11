@@ -26,6 +26,8 @@ import {
   type LDBranch,
 } from '../../models/ld';
 import LDElement, { CELL_WIDTH, CELL_HEIGHT, WIRE_Y, COLORS, type DebugValuesMap } from './LDElement';
+import { cellElement } from '../../models/sourceElements';
+import type { ElementState } from '../../monitoring/elementStates';
 import { parseLDDropData, DRAG_MIME_TYPE } from './ldDragData';
 
 // =============================================================================
@@ -48,8 +50,8 @@ interface LDRungGridProps {
   onElementDelete?: (element: LDElementType) => void;
   selectedElementId?: string | null;
   readOnly?: boolean;
-  /** Map of variable names to their energized (TRUE) state for power flow visualization */
-  energizedVariables?: Map<string, boolean>;
+  /** The state of each element online, by element id: the power that reaches it comes from the debug map (LNG-006). */
+  elementStates?: ReadonlyMap<string, ElementState>;
   /** Full debug values map for rich value display on elements */
   debugValues?: DebugValuesMap;
 }
@@ -456,38 +458,19 @@ export default function LDRungGrid({
   onElementDelete,
   selectedElementId,
   readOnly = false,
-  energizedVariables,
+  elementStates,
   debugValues,
 }: LDRungGridProps) {
   const [hoverCell, setHoverCell] = useState<{ col: number; row: number } | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [draggedElementId, setDraggedElementId] = useState<string | null>(null);
 
-  // Helper function to check if an element is energized based on its variable value
-  const isElementEnergized = useCallback((element: LDElementType | null): boolean => {
-    if (!element || !energizedVariables) return false;
-
-    // For contacts: use the variable value directly
-    // NO contact: energized when variable is TRUE
-    // NC contact: energized when variable is FALSE
-    if (element.variable) {
-      const value = energizedVariables.get(element.variable);
-      if (value === undefined) return false;
-
-      if (element.type === 'contact_nc') {
-        return !value; // NC is energized when variable is FALSE
-      }
-      return !!value; // NO and others are energized when TRUE
-    }
-
-    // For function blocks: check the instance Q output
-    if (element.instance) {
-      const qValue = energizedVariables.get(`${element.instance}.Q`);
-      return !!qValue;
-    }
-
-    return false;
-  }, [energizedVariables]);
+  // Whether power reaches an element, from the power flow of its rung as the debug map states it (LNG-006): an element
+  // whose state was not read is not shown as energized
+  const isElementEnergized = useCallback((element: LDElementType | null, row: number, col: number): boolean => {
+    if (!element || !elementStates) return false;
+    return elementStates.get(cellElement(rung.id, row, col))?.power === true;
+  }, [elementStates, rung.id]);
 
   // Convert legacy rung to grid-based if needed, then normalize
   const gridRung = useMemo(() => {
@@ -995,6 +978,8 @@ export default function LDRungGrid({
                 cell.element ? (
                   <g
                     key={cell.element.id}
+                    data-ld-cell={`${rowIdx},${colIdx}`}
+                    data-powered={elementStates ? isElementEnergized(cell.element, rowIdx, colIdx) : undefined}
                     style={{
                       opacity: draggedElementId === cell.element.id ? 0.4 : 1,
                       transition: 'opacity 0.15s ease',
@@ -1005,7 +990,7 @@ export default function LDRungGrid({
                       x={colIdx}
                       y={rowIdx}
                       selected={cell.element.id === selectedElementId}
-                      energized={isElementEnergized(cell.element)}
+                      energized={isElementEnergized(cell.element, rowIdx, colIdx)}
                       debugValues={debugValues}
                       onClick={readOnly ? undefined : () => handleElementClick(cell.element!)}
                       draggable={!readOnly}

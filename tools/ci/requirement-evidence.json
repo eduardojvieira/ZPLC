@@ -931,6 +931,20 @@
   "LNG-005": [
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"7 Breakpoint stops execution","partial":true}
   ],
+  "LNG-006": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/monitoring/elementStates.test.ts","test":"a variable is read from the program of its own file (LNG-006)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/monitoring/elementStates.test.ts","test":"every variable that a translated source says it reads exists in the debug map (LNG-006)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/monitoring/elementStates.test.ts","test":"the power of a rung from the values read (LNG-006)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/monitoring/elementStates.test.ts","test":"the states of elements from monitor entries (LNG-006)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/monitoring/inlineValues.test.ts","test":"inline values in Instruction List (LNG-006)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/monitoring/inlineValues.test.ts","test":"inline values in Structured Text (LNG-006)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/monitoring/inlineValues.test.ts","test":"the widgets of a file (LNG-006)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/monitoring/runtime.test.ts","test":"online monitoring of the five languages against the real runtime (LNG-006)"},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"28b Online values of a rung come from the debug map","partial":true},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"28c Online values of an FBD come from the debug map","partial":true},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"28d Online state of an SFC comes from the debug map","partial":true},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"28e Inline values in Structured Text come from the debug map","partial":true}
+  ],
   "LNG-007": [
     {"kind":"unit","ref":"packages/zplc-ide/src/editors/paletteExecution.test.ts","test":"LNG-007 every block of the FBD palette is placed, built and run"},
     {"kind":"unit","ref":"packages/zplc-ide/src/editors/paletteExecution.test.ts","test":"LNG-007 every coil of the Ladder palette is run"},
@@ -980,7 +994,8 @@
     {"kind":"unit","ref":"packages/zplc-ide/src/langsvc/liveDiagnostics.test.ts","test":"the live diagnostics of the project (LNG-015)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/langsvc/markers.test.ts","test":"the diagnostics of the project as markers (LNG-015)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/langsvc/monacoProviders.test.ts","test":"the language service providers (LNG-015, LNG-016)"},
-    {"kind":"unit","ref":"packages/zplc-ide/src/langsvc/projectIndex.test.ts","test":"the index of a project resolves names by scope (LNG-015)"}
+    {"kind":"unit","ref":"packages/zplc-ide/src/langsvc/projectIndex.test.ts","test":"the index of a project resolves names by scope (LNG-015)"},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"4c Errors of the project are shown while typing","partial":true}
   ],
   "LNG-016": [
     {"kind":"unit","ref":"packages/zplc-ide/src/langsvc/assist.test.ts","test":"signature help (LNG-016)"},

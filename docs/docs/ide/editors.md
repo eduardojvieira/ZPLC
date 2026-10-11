@@ -83,8 +83,8 @@ the table says); workspace-wide symbol search; code actions.
 
 Evidence level: host. `packages/zplc-compiler/src/compiler/check.test.ts` runs the diagnostics against the build's
 errors for the same projects; `src/langsvc/*.test.ts` cover the index, rename, completion, signature help, outline,
-formatting (over every example project, token for token), the markers and the Monaco providers. Typing in the real editor
-is not driven by a test.
+formatting (over every example project, token for token), the markers and the Monaco providers; journey 4c of
+`bun run test:journeys` types an undeclared variable in the real editor and sees it with its range, and undoes it.
 
 ## Pin types in FBD
 
@@ -140,6 +140,34 @@ A breakpoint is kept on the element, not on a generated line, so it follows its 
 changes and is built again; one whose element was deleted is forgotten, and one on an element that has no statement is
 refused once a program is loaded. The element that the paused program is at is outlined in yellow. The program counters are the
 ones the runtime of the simulation and of a board take; stopping on a board has not been checked here.
+
+## Online values from the debug map
+
+While a program runs under Studio, each editor shows what the program holds (LNG-006), read through the debug map of the
+build of its file. The build records, for each element of a Ladder, FBD or SFC source, which variable of the generated
+program holds its state, so no editor guesses a name from the one it sees: a state that the map does not give is shown as
+unavailable (a dash, `UNAVAILABLE`), never as FALSE or IDLE.
+
+| Language | What is shown | Where it comes from |
+| --- | --- | --- |
+| ST | The value of each variable a line names, after the line (`Count=7  Ready=TRUE`). A member of a block instance or a structure is read through its instance. | The language service resolves what a name is; the map of the program of the file gives its address and type. A function or a function block shows nothing: its names belong to every instance. |
+| IL | The value of each declared variable an instruction uses, after the line. | The IL parser, and the map of the program of the file. |
+| LD | Power: an element is lit when power reaches it, through series and parallel paths and branches, and after a block it is the block's own output. The value of a contact or a coil, and the outputs of a block, below it. | The rung's power flow as an expression of the variables it is made of (`rung:r/cell:row,col`), evaluated with the values read. |
+| FBD | The value on each wire, and the outputs of each block; a variable block shows the value of its variable. | The temporary each consumed output was given, or the member of the instance. |
+| SFC | Which steps are active and for how long; for each transition, whether its condition holds and whether it fired in this scan. | The generated state of the chart: the flag and timer of each step, `_C_` and `_F_` of each transition. |
+
+A value is read in the program of its own file: two programs that each have a `_rung1_result` have two values. The
+variables an editor shows are read with the Watch table's poll, and only the regions that show a value draw it again
+([What is drawn again when a value changes](#what-is-drawn-again-when-a-value-changes)).
+
+Not covered: the wire between two elements of a rung is not lit, only the elements; an element of an array in ST has no
+inline value; the values on a board, stepping on hardware. The runtime of the simulation is what the host tests read.
+
+Evidence level: host, against the real runtime. `src/monitoring/runtime.test.ts` builds a Ladder, an FBD and an SFC,
+loads them into the native runtime, scans them with inputs and reads the variables the map names, and checks the state of
+each element: power through the seal-in branch, the pins of the timers, the active step and the fired transition.
+`src/monitoring/elementStates.test.ts` checks that every variable a monitor entry names exists in the map for each example
+diagram. Journeys 28b to 28e of `bun run test:journeys` show the values in the real application.
 
 ## What the palettes offer
 

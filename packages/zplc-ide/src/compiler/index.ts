@@ -89,6 +89,7 @@ import {
     ilLineElement,
     parseElement,
     type ElementDiagnostic,
+    type MonitorEntry,
     type SourceMapRange,
 } from '../models/sourceElements.ts';
 import { buildOptionsOf } from '../project/buildOptions.ts';
@@ -117,6 +118,8 @@ export interface TranspileResult {
     diagnostics?: ElementDiagnostic[];
     /** For each element, the lines of the generated Structured Text that were written for it (LNG-004). */
     sourceMap?: SourceMapRange[];
+    /** Where the state of each element is read online, in terms of the variables of the generated program (LNG-006). */
+    monitor?: MonitorEntry[];
 }
 
 function failure(error: unknown, line?: number): TranspileResult {
@@ -594,7 +597,7 @@ export function compileMultiTaskProject(
     const compiledPrograms = new Set<string>();
     const visualSourceRefs = new Set<string>();
     // what each visual or IL source was translated from: the language, and the element of every generated line
-    const translated = new Map<string, { language: PLCLanguage; map: readonly SourceMapRange[] }>();
+    const translated = new Map<string, { language: PLCLanguage; map: readonly SourceMapRange[]; monitor?: readonly MonitorEntry[] }>();
     const programFiles = new Set<ProgramSource>();
 
     for (const task of config.tasks) {
@@ -615,7 +618,7 @@ export function compileMultiTaskProject(
             if (!transpiled.success) throw transpileFailure(transpiled, source.sourceRef);
             if (source.language !== 'ST') {
                 visualSourceRefs.add(source.sourceRef ?? progName);
-                if (transpiled.sourceMap) translated.set(source.sourceRef ?? progName, { language: source.language, map: transpiled.sourceMap });
+                if (transpiled.sourceMap) translated.set(source.sourceRef ?? progName, { language: source.language, map: transpiled.sourceMap, ...(transpiled.monitor ? { monitor: transpiled.monitor } : {}) });
             }
 
             coreSources.push({

@@ -24,8 +24,8 @@ import {
 import LDToolbox from './LDToolbox';
 import LDRungGrid from './LDRungGrid';
 import { copyLDRungFragment, ldSelectionIds as selectionIds, ldSelectionOfIds as selectionOfIds, NO_LD_SELECTION, pasteLDRungFragment, type LDClipboardFragment, type LDSelection } from './graphModel';
-import { useIDEStore } from '../../store/useIDEStore';
-import { useDebugValues } from '../../hooks/useDebugValue';
+import { useMonitor } from '../../monitoring/useMonitor';
+import type { DebugValuesMap } from './LDElement';
 import { useElementSelection } from '../elementSelection';
 import { useElementBreakpoints } from '../elementBreakpoints';
 import { parseElement, rungElement, type SourceElementId } from '../../models/sourceElements';
@@ -197,8 +197,8 @@ export default function LDEditor({ model, onChange, readOnly = false }: LDEditor
     setSelection(remembered);
   }, [fileKey, model]);
 
-  // Get debug mode from store
-  const debugMode = useIDEStore((state) => state.debug.mode);
+  // Online values and power flow come from the debug map of the build of this file (LNG-006)
+  const monitor = useMonitor();
   // Breakpoints on rungs: execution stops at the first statement of the rung's code (LNG-004)
   const breakpoints = useElementBreakpoints();
 
@@ -215,75 +215,15 @@ export default function LDEditor({ model, onChange, readOnly = false }: LDEditor
     latestModelRef.current = normalizedModel;
   }, [normalizedModel]);
 
-  // Extract all variable names from the model for debug value lookup
-  // This includes FB port paths for rich value display
-  const allVariables = useMemo(() => {
-    const vars: string[] = [];
-    for (const rung of normalizedModel.rungs) {
-      if (!rung.grid) continue;
-      for (const row of rung.grid) {
-        for (const cell of row) {
-          const el = cell.element;
-          if (!el) continue;
-          // Contacts and coils use variable
-          if (el.variable) {
-            vars.push(el.variable);
-          }
-          // Function blocks: get ALL output ports for display
-          if (el.instance && el.fbType) {
-            // Add common output ports based on FB type
-            switch (el.fbType) {
-              case 'TON':
-              case 'TOF':
-              case 'TP':
-                vars.push(`${el.instance}.Q`);
-                vars.push(`${el.instance}.ET`);
-                break;
-              case 'CTU':
-              case 'CTD':
-                vars.push(`${el.instance}.Q`);
-                vars.push(`${el.instance}.CV`);
-                break;
-              case 'CTUD':
-                vars.push(`${el.instance}.QU`);
-                vars.push(`${el.instance}.QD`);
-                vars.push(`${el.instance}.CV`);
-                break;
-              case 'R_TRIG':
-              case 'F_TRIG':
-                vars.push(`${el.instance}.Q`);
-                break;
-              default:
-                vars.push(`${el.instance}.Q`);
-            }
-          }
-        }
-      }
+  // The values of the variables the elements show: what the map says the program holds, and unavailable otherwise
+  const debugValues = useMemo<DebugValuesMap | undefined>(() => {
+    if (!monitor.active) return undefined;
+    const values: DebugValuesMap = new Map();
+    for (const [variable, { reading, type }] of monitor.values) {
+      values.set(variable, { value: reading ?? null, type: type || null, address: null, region: null, size: null, loading: false, exists: true, error: null });
     }
-    return vars;
-  }, [normalizedModel.rungs]);
-
-  // Get live values for all variables (only when debugging)
-  const debugValues = useDebugValues(debugMode !== 'none' ? allVariables : []);
-
-  // Build energized map: varName -> boolean
-  const energizedVariables = useMemo(() => {
-    const map = new Map<string, boolean>();
-    if (debugMode === 'none') return map;
-
-    for (const varPath of allVariables) {
-      const result = debugValues.get(varPath);
-      if (result?.exists && result.value !== null) {
-        // For BOOL: direct value
-        // For other types: non-zero = true
-        const isEnergized = result.type === 'BOOL'
-          ? !!result.value
-          : Number(result.value) !== 0;
-        map.set(varPath, isEnergized);
-      }
-    }
-    return map;
-  }, [debugMode, allVariables, debugValues]);
+    return values;
+  }, [monitor]);
 
   const selectedRungId = selection.rungId;
   const selectedElement = useMemo<LDElementType | null>(() => {
@@ -577,8 +517,8 @@ export default function LDEditor({ model, onChange, readOnly = false }: LDEditor
                     onElementDelete={(el) => handleElementDelete(rung.id, el)}
                     selectedElementId={selectedRungId === rung.id ? selectedElement?.id : null}
                     readOnly={readOnly}
-                    energizedVariables={debugMode !== 'none' ? energizedVariables : undefined}
-                    debugValues={debugMode !== 'none' ? debugValues : undefined}
+                    elementStates={monitor.active ? monitor.states : undefined}
+                    debugValues={debugValues}
                   />
 
                   {/* Rung controls */}

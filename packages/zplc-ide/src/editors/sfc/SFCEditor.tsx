@@ -44,7 +44,7 @@ import { nodeTypes } from './nodes';
 import { edgeTypes } from './edges';
 import SFCToolbox from './SFCToolbox';
 import { useIDEStore } from '../../store/useIDEStore';
-import { useDebugValues } from '../../hooks/useDebugValue';
+import { useMonitor } from '../../monitoring/useMonitor';
 import { useElementSelection } from '../elementSelection';
 import { useElementBreakpoints } from '../elementBreakpoints';
 import { markBreakpointNodes } from '../breakpointMarks';
@@ -67,6 +67,8 @@ interface SFCEditorProps {
 
 interface DebugStepInfo {
   isActive: boolean;
+  /** The map gave no state for the step, or it was not read. */
+  unavailable?: boolean;
   timeInStep?: number;
   activationCount?: number;
 }
@@ -97,6 +99,7 @@ function stepsToNodes(
         // Debug properties
         debugActive,
         isActive: debugInfo?.isActive || false,
+        stateUnavailable: debugInfo?.unavailable === true,
         timeInStep: debugInfo?.timeInStep,
         activationCount: debugInfo?.activationCount,
       },
@@ -286,6 +289,7 @@ function SFCEditorInner({
               ...node.data,
               debugActive,
               isActive: debugInfo?.isActive || false,
+              stateUnavailable: debugInfo?.unavailable === true,
               timeInStep: debugInfo?.timeInStep,
               activationCount: debugInfo?.activationCount,
             },
@@ -629,136 +633,43 @@ function SFCEditorInner({
 // =============================================================================
 
 export default function SFCEditor({ model, onChange, readOnly = false }: SFCEditorProps) {
-  // Debug state from store
+  // The chart is not edited while a program runs under Studio; what it shows online is what the debug map of the build
+  // says, step by step and transition by transition (LNG-006): there is no name to guess.
   const debugMode = useIDEStore((state) => state.debug.mode);
-  const debugActive = debugMode !== 'none';
-  
-  // Build list of variable paths to watch for SFC state
-  // SFC runtime typically exposes: _SFC_<stepName>_X (step active flag)
-  // and _SFC_<stepName>_T (time in step)
-  const variablePaths = useMemo(() => {
-    const paths: string[] = [];
-    
-    for (const step of model.steps) {
-      // Step active flag (common SFC runtime convention)
-      paths.push(`${step.name}.X`);
-      paths.push(`${step.name}_X`);
-      paths.push(`_SFC_${step.name}_X`);
-      
-      // Time in step
-      paths.push(`${step.name}.T`);
-      paths.push(`${step.name}_T`);
-      paths.push(`_SFC_${step.name}_T`);
-    }
-    
-    // Also watch transition condition variables
-    for (const trans of model.transitions) {
-      // Extract variable names from condition
-      const varMatches = trans.condition.match(/[A-Za-z_][A-Za-z0-9_]*/g);
-      if (varMatches) {
-        for (const varName of varMatches) {
-          if (!['TRUE', 'FALSE', 'AND', 'OR', 'NOT', 'XOR'].includes(varName.toUpperCase())) {
-            paths.push(varName);
-          }
-        }
-      }
-    }
-    
-    return [...new Set(paths)]; // Deduplicate
-  }, [model.steps, model.transitions]);
-  
-  // Get live values
-  const liveValues = useDebugValues(debugActive ? variablePaths : []);
-  
-  // Build step debug info from live values
+  const monitor = useMonitor();
+  const debugActive = monitor.active;
+  const running = debugMode !== 'none';
+
   const stepDebugInfo = useMemo(() => {
     const info = new Map<string, DebugStepInfo>();
-    
+    if (!monitor.active) return info;
     for (const step of model.steps) {
-      // Check various naming conventions for step active flag
-      const activeFlag = 
-        liveValues.get(`${step.name}.X`) ||
-        liveValues.get(`${step.name}_X`) ||
-        liveValues.get(`_SFC_${step.name}_X`);
-      
-      const timeValue = 
-        liveValues.get(`${step.name}.T`) ||
-        liveValues.get(`${step.name}_T`) ||
-        liveValues.get(`_SFC_${step.name}_T`);
-      
-      const isActive = activeFlag?.exists && 
-        (activeFlag.value === true || activeFlag.value === 1 || activeFlag.value === 'TRUE');
-      
-      const timeInStep = timeValue?.exists && typeof timeValue.value === 'number' 
-        ? timeValue.value 
-        : undefined;
-      
-      info.set(step.name, {
-        isActive: isActive || false,
-        timeInStep,
-      });
-      
-      // Also set by ID for lookup
-      info.set(step.id, {
-        isActive: isActive || false,
-        timeInStep,
-      });
+      const state = monitor.states.get(stepElement(step.id));
+      info.set(step.id, { isActive: state?.active === true, unavailable: state?.active === undefined, timeInStep: state?.time });
     }
-    
     return info;
-  }, [model.steps, liveValues]);
-  
-  // Build set of active step IDs
-  const activeSteps = useMemo(() => {
-    const active = new Set<string>();
-    
-    for (const step of model.steps) {
-      const debugInfo = stepDebugInfo.get(step.name);
-      if (debugInfo?.isActive) {
-        active.add(step.id);
-        active.add(step.name); // Also add by name for edge matching
-      }
-    }
-    
-    return active;
-  }, [model.steps, stepDebugInfo]);
-  
-  // Build transition debug info
+  }, [model.steps, monitor]);
+
+  const activeSteps = useMemo(
+    () => new Set(model.steps.filter((step) => stepDebugInfo.get(step.id)?.isActive).map((step) => step.id)),
+    [model.steps, stepDebugInfo],
+  );
+
   const transitionDebugInfo = useMemo(() => {
     const info = new Map<string, DebugTransitionInfo>();
-    
-    for (const trans of model.transitions) {
-      // Check if preceding step is active
-      const isArmed = activeSteps.has(trans.fromStep);
-      
-      // Try to evaluate condition from live values
-      // This is a simplified check - just look for the condition variable
-      let conditionResult: boolean | undefined;
-      
-      // Simple variable condition (e.g., "StartButton" or "Timer1.Q")
-      const conditionTrimmed = trans.condition.trim();
-      if (conditionTrimmed.toUpperCase() === 'TRUE') {
-        conditionResult = true;
-      } else if (conditionTrimmed.toUpperCase() === 'FALSE') {
-        conditionResult = false;
-      } else {
-        const conditionValue = liveValues.get(conditionTrimmed);
-        if (conditionValue?.exists) {
-          conditionResult = conditionValue.value === true || 
-            conditionValue.value === 1 || 
-            conditionValue.value === 'TRUE';
-        }
-      }
-      
-      info.set(trans.id, {
-        conditionResult,
-        isArmed,
-        wasFired: false, // Would need runtime event to detect this
+    if (!monitor.active) return info;
+    for (const transition of model.transitions) {
+      const state = monitor.states.get(transitionElement(transition.id));
+      // armed: every step the transition leaves is active
+      const leaves = transition.fromSteps ?? [transition.fromStep];
+      info.set(transition.id, {
+        conditionResult: state?.condition,
+        isArmed: leaves.length > 0 && leaves.every((id) => activeSteps.has(id)),
+        wasFired: state?.fired === true,
       });
     }
-    
     return info;
-  }, [model.transitions, activeSteps, liveValues]);
+  }, [model.transitions, monitor, activeSteps]);
 
   // Convert model to ReactFlow format with debug data
   const initialNodes = useMemo(() => [
@@ -774,14 +685,14 @@ export default function SFCEditor({ model, onChange, readOnly = false }: SFCEdit
   return (
     <div className="zplc-visual-editor w-full h-full flex">
       {/* Toolbox sidebar */}
-      {!readOnly && !debugActive && <SFCToolbox />}
+      {!readOnly && !running && <SFCToolbox />}
 
       {/* Main canvas - wrapped in provider */}
       <ReactFlowProvider>
         <SFCEditorInner
           model={model}
           onChange={onChange}
-          readOnly={readOnly || debugActive}
+          readOnly={readOnly || running}
           initialNodes={initialNodes}
           initialEdges={initialEdges}
           debugActive={debugActive}

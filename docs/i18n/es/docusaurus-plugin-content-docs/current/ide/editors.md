@@ -88,8 +88,8 @@ adivina, como dice la tabla); la búsqueda de símbolos en todo el espacio de tr
 
 Nivel de evidencia: host. `packages/zplc-compiler/src/compiler/check.test.ts` compara los diagnósticos con los errores
 de la compilación para los mismos proyectos; `src/langsvc/*.test.ts` cubren el índice, renombrar, autocompletado, ayuda
-de firma, esquema, formato (sobre cada proyecto de ejemplo, token a token), los marcadores y los proveedores de Monaco.
-Escribir en el editor real no lo ejecuta ninguna prueba.
+de firma, esquema, formato (sobre cada proyecto de ejemplo, token a token), los marcadores y los proveedores de Monaco; el journey 4c
+de `bun run test:journeys` escribe una variable sin declarar en el editor real, la ve con su rango y la deshace.
 
 ## Tipos de pin en FBD
 
@@ -149,6 +149,36 @@ diagrama cambia y se compila de nuevo; si se borra el elemento, el breakpoint se
 tiene sentencia se rechaza una vez cargado un programa. El elemento en el que está detenido el programa se resalta en
 amarillo. Los contadores de programa son los que toman el runtime de la simulación y el de una placa; detenerse en una
 placa no se ha comprobado aquí.
+
+## Valores en línea desde el mapa de depuración
+
+Mientras un programa corre bajo Studio, cada editor muestra lo que el programa contiene (LNG-006), leído a través del mapa
+de depuración de la compilación de su archivo. La compilación registra, para cada elemento de una fuente Ladder, FBD o
+SFC, qué variable del programa generado guarda su estado, de modo que ningún editor adivina un nombre a partir del que ve:
+un estado que el mapa no da se muestra como no disponible (un guion, `UNAVAILABLE`), nunca como FALSE o IDLE.
+
+| Lenguaje | Qué se muestra | De dónde sale |
+| --- | --- | --- |
+| ST | El valor de cada variable que nombra una línea, tras la línea (`Count=7  Ready=TRUE`). Un miembro de una instancia de bloque o de una estructura se lee a través de su instancia. | El servicio de lenguaje resuelve qué es un nombre; el mapa del programa del archivo da su dirección y su tipo. Una función o un bloque de función no muestra nada: sus nombres pertenecen a cada instancia. |
+| IL | El valor de cada variable declarada que usa una instrucción, tras la línea. | El parser de IL y el mapa del programa del archivo. |
+| LD | Energía: un elemento se ilumina cuando le llega energía, por caminos en serie y en paralelo y por ramas, y tras un bloque es la salida del propio bloque. El valor de un contacto o una bobina, y las salidas de un bloque, debajo. | El flujo de energía del rung como una expresión de las variables que lo forman (`rung:r/cell:fila,col`), evaluada con los valores leídos. |
+| FBD | El valor de cada cable y las salidas de cada bloque; un bloque de variable muestra el valor de su variable. | El temporal que se dio a cada salida consumida, o el miembro de la instancia. |
+| SFC | Qué pasos están activos y desde cuándo; de cada transición, si su condición se cumple y si disparó en este escaneo. | El estado generado del gráfico: el indicador y el temporizador de cada paso, `_C_` y `_F_` de cada transición. |
+
+Un valor se lee en el programa de su propio archivo: dos programas que tienen cada uno un `_rung1_result` tienen dos
+valores. Las variables que muestra un editor se leen con el sondeo de la tabla Watch, y solo las regiones que muestran un
+valor lo dibujan de nuevo ([Qué se vuelve a dibujar cuando cambia un valor](#qué-se-vuelve-a-dibujar-cuando-cambia-un-valor)).
+
+No cubierto: el cable entre dos elementos de un rung no se ilumina, solo los elementos; un elemento de un arreglo en ST no
+tiene valor en línea; los valores en una placa, la ejecución paso a paso en hardware. El runtime de la simulación es lo
+que leen las pruebas del host.
+
+Nivel de evidencia: host, contra el runtime real. `src/monitoring/runtime.test.ts` compila un Ladder, un FBD y un SFC, los
+carga en el runtime nativo, los escanea con entradas y lee las variables que nombra el mapa, y comprueba el estado de cada
+elemento: la energía por la rama de enclavamiento, los pines de los temporizadores, el paso activo y la transición
+disparada. `src/monitoring/elementStates.test.ts` comprueba que cada variable que nombra una entrada del monitor existe
+en el mapa para cada diagrama de ejemplo. Los journeys 28b a 28e de `bun run test:journeys` muestran los valores en la
+aplicación real.
 
 ## Qué ofrecen las paletas
 

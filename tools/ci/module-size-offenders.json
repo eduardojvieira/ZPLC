@@ -38,7 +38,7 @@
     "file": "packages/zplc-ide/src/hooks/useDebugController.ts",
     "requirement": "IDE-014",
     "added": "2026-10-10",
-    "lines": 1128,
+    "lines": 1068,
     "reason": "Connection, polling, forces, breakpoints and trace in one hook. Split by concern; the worker and notification work (WS-24a) edits it first. Recorded size raised from 1107 to 1128 once, by the merge of ws-integration (WS-20, WS-21, WS-22a added code here); from now on it can only shrink."
   },
   {
@@ -52,14 +52,14 @@
     "file": "packages/zplc-ide/src/editors/ld/LDRungGrid.tsx",
     "requirement": "IDE-014",
     "added": "2026-10-10",
-    "lines": 1043,
+    "lines": 1028,
     "reason": "Rung grid layout, drag and drop and cell rendering in one component; the visual-language work (WS-22a) edits it. Split after that lands."
   },
   {
     "file": "packages/zplc-ide/src/transpiler/ldToST.ts",
     "requirement": "IDE-014",
     "added": "2026-10-10",
-    "lines": 917,
+    "lines": 829,
     "reason": "Ladder to ST transpilation in one module; the visual-language work (WS-22a) edits it. Split by pass after that lands. Recorded size raised from 895 to 917 once, by the merge of ws-integration (WS-20, WS-21, WS-22a added code here); from now on it can only shrink."
   },
   {

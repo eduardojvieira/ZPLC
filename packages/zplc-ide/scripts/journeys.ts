@@ -536,6 +536,29 @@ export const JOURNEYS: Journey[] = [
     },
   },
   {
+    // The editor checks the whole project with the compiler's front end while the author types, and does not need a build:
+    // the error appears with its range, and goes away when it is undone.
+    name: '4c Errors of the project are shown while typing', example: 'motor_start_stop', proves: [], partly: ['LNG-015'],
+    run: async (app, { project }) => {
+      await openFolder(app, project);
+      await openFile(app, 'src/Motor.st');
+      const last = await lineWith(app, 'Reverse := FALSE;');
+      assert(last > 0, 'Motor.st no longer has the statement Reverse := FALSE; the journey adds a faulty statement after.');
+      await cursorAtEndOfLine(app, last);
+      await app.press('Enter');
+      await app.type('UndefinedVariable := 1;');
+      await app.click(tab('Problems'));
+      const live = css('[aria-label="Live Structured Text diagnostics"]');
+      await app.until('the live diagnostics to name the undeclared variable, with no build', async () => (await app.eval<string>(`${live}?.innerText ?? ''`)).includes('UndefinedVariable') || undefined);
+      const markers = await monacoEval<Array<{ startLineNumber: number; startColumn: number; endColumn: number; message: string }>>(app, `return monaco.editor.getModelMarkers({ owner: 'zplc.st-live' });`);
+      assert(markers.length > 0 && markers[0]!.startLineNumber === last + 1 && markers[0]!.endColumn > markers[0]!.startColumn + 1, `The editor has no squiggle with a range on the faulty line: ${JSON.stringify(markers)}`);
+      // undoing the typing clears it the next time the project is checked
+      await clickEditorLine(app, last + 1);
+      for (let key = 0; key < 3; key++) await app.press('Ctrl+Z');
+      await app.until('the live diagnostics to be gone', async () => !(await app.eval<string>(`${live}?.innerText ?? ''`)).includes('UndefinedVariable') || undefined);
+    },
+  },
+  {
     name: '5 Build successfully', example: 'motor_start_stop', proves: [], partly: ['LNG-001'],
     run: async (app, { project }) => {
       await openFolder(app, project);
@@ -1457,6 +1480,73 @@ export const JOURNEYS: Journey[] = [
     },
   },
 
+  {
+    // The build records which variable holds the state of each element, so the editor shows what the program holds and
+    // not what a name suggests: power through the rung, the value of each contact, and a dash where nothing was read.
+    name: '28b Online values of a rung come from the debug map', example: 'blinky', proves: [], partly: ['LNG-006'],
+    run: async (app, { project }) => {
+      await openFolder(app, project);
+      await openDiagram(app, 'src/main.ld.json', '[data-ld-rung-id]');
+      const result = await compile(app);
+      assert(result.kind === 'built', `The Blinky Ladder example does not build: ${result.message}`);
+      await connectAndRun(app);
+      const cells = (powered: boolean) => `document.querySelectorAll('[data-ld-cell][data-powered="${powered}"]').length`;
+      await app.until('power to reach an element of a rung', async () => await app.eval<number>(cells(true)) > 0 || undefined);
+      await app.until('an element that power does not reach', async () => await app.eval<number>(cells(false)) > 0 || undefined);
+      // the values arrive with the first complete poll, and then every variable the example declares has one
+      const texts = () => app.eval<string[]>(`[...document.querySelectorAll('[data-ld-cell] text')].map((node) => node.textContent ?? '')`);
+      await app.until('a contact to show the value of its variable', async () => (await texts()).some((text) => text === 'T' || text === 'F') || undefined);
+      const shown = await texts();
+      assert(!shown.includes('—'), `A variable that the example declares is shown as unavailable: ${JSON.stringify(shown)}`);
+    },
+  },
+  {
+    name: '28c Online values of an FBD come from the debug map', example: 'blinky_fbd', proves: [], partly: ['LNG-006'],
+    run: async (app, { project }) => {
+      await openFolder(app, project);
+      await openDiagram(app, 'src/main.fbd.json', '.react-flow__node');
+      const result = await compile(app);
+      assert(result.kind === 'built', `The Blinky FBD example does not build: ${result.message}`);
+      await connectAndRun(app);
+      const variable = css('.react-flow__node[data-id="var_led_read"] [data-live-value]');
+      await app.until('the variable block to show a value', async () => ['TRUE', 'FALSE'].includes(await app.eval<string>(`${variable}?.textContent?.trim() ?? ''`)) || undefined)
+        .catch(async (error: Error) => { throw new Error(`${error.message}: the block is ${await app.eval<string>(`document.querySelector('.react-flow__node[data-id="var_led_read"]')?.outerHTML.slice(0, 600) ?? 'not on the canvas'`)}`); });
+      // the timers of the blinker complete in turn: the pin of a block shows it, 500 ms after the program starts
+      await app.until('a timer block to show its output as TRUE', async () => await app.eval<boolean>(`[...document.querySelectorAll('.react-flow__node[data-id^="ton_"]')].some((node) => node.innerText.includes('TRUE'))`) || undefined, 30_000);
+    },
+  },
+  {
+    name: '28d Online state of an SFC comes from the debug map', example: 'blinky_sfc', proves: [], partly: ['LNG-006'],
+    run: async (app, { project }) => {
+      await openFolder(app, project);
+      await openDiagram(app, 'src/main.sfc.json', '.react-flow__node');
+      const result = await compile(app);
+      assert(result.kind === 'built', `The Blinky SFC example does not build: ${result.message}`);
+      await connectAndRun(app);
+      const active = (id: string) => app.eval<boolean>(`document.querySelector('.react-flow__node[data-id="${id}"]')?.innerText.includes('ACTIVE') === true`);
+      await app.until('the first step to be active', async () => await active('step_led_on') || undefined);
+      await app.until('the chart to move to the second step', async () => await active('step_led_off') || undefined, 30_000);
+      const text = await app.eval<string>(`document.querySelector('.react-flow')?.innerText ?? ''`);
+      assert(!text.includes('UNAVAILABLE'), `A step of the chart is shown as unavailable: ${text}`);
+    },
+  },
+  {
+    // The editor names the variables of a line with the language service and reads them through the debug map of the
+    // build: the value shown after the line is the one the runtime holds, and a keyword or a function has none.
+    name: '28e Inline values in Structured Text come from the debug map', example: 'blinky_st', proves: [], partly: ['LNG-006'],
+    run: async (app, { project }) => {
+      await openFolder(app, project);
+      await openFile(app, 'src/main.st');
+      const result = await compile(app);
+      assert(result.kind === 'built', `The Blinky (Structured Text) example does not build: ${result.message}`);
+      await connectAndRun(app);
+      // the text that the editor puts after a line is an injected decoration of the model
+      const shown = () => monacoEval<string[]>(app, `return editor.getModel().getAllDecorations().filter((decoration) => decoration.options.after).map((decoration) => decoration.options.after.content);`);
+      await app.until('a line to show the value of LED_Output after it', async () => (await shown()).some((text) => /LED_Output=(?:TRUE|FALSE)/.test(text)) || undefined)
+        .catch(async (error: Error) => { throw new Error(`${error.message}: the editor shows ${JSON.stringify(await shown())}`); });
+      assert(!(await shown()).some((text) => /(?:IF|THEN|END_IF|TON|NOT)=/.test(text)), `A keyword or a function block type was given a value: ${JSON.stringify(await shown())}`);
+    },
+  },
   {
     name: '29 The Welcome screen loads no editor', example: 'motor_start_stop', proves: [], partly: ['IDE-015'],
     run: async (app, { project }) => {

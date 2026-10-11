@@ -22,6 +22,9 @@ interface VariableData {
   readOnly?: boolean;
   inputs?: FBDPort[];
   outputs?: FBDPort[];
+  /** Online: whether the program is running under Studio, and the value of each pin from the debug map (LNG-006). */
+  debugActive?: boolean;
+  pinValues?: Record<string, number | boolean | string | undefined>;
 }
 
 const VariableNode = memo(({ id, data, selected }: NodeProps) => {
@@ -31,8 +34,11 @@ const VariableNode = memo(({ id, data, selected }: NodeProps) => {
     dataType,
     address,
     comment,
-    onChangeData, readOnly, inputs, outputs,
+    onChangeData, readOnly, inputs, outputs, debugActive, pinValues,
   } = data as unknown as VariableData;
+  // a value the map does not give is unavailable, shown with a dash and not as FALSE
+  const live = pinValues?.OUT ?? pinValues?.IN;
+  const liveText = live === undefined ? '—' : typeof live === 'boolean' ? (live ? 'TRUE' : 'FALSE') : String(live);
 
   const isInput = outputs ? outputs.length > 0 : type === 'input' || type === 'variable';
   const isOutput = inputs ? inputs.length > 0 : type === 'output' || type === 'variable';
@@ -97,6 +103,12 @@ const VariableNode = memo(({ id, data, selected }: NodeProps) => {
             />
           )}
         </div>
+
+        {debugActive && (
+          <div className="px-2 py-0.5 text-center font-mono text-xs text-[var(--text-primary)] border-t border-[var(--border-color)]" data-live-value>
+            {liveText}
+          </div>
+        )}
 
         {/* Footer with type/address info */}
         {(dataType || address) && (

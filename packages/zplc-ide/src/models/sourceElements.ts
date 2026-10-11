@@ -18,7 +18,18 @@
  * Ids written by the author are percent-encoded where they hold `:`, `/` or `,`, so the form is unambiguous.
  */
 
+import type { DebugMonitorEntry, DebugPowerExpr } from '@zplc/compiler';
+
 export type SourceElementId = string;
+
+/**
+ * How an online display reads the state of an element: which variable of the program holds it (LNG-006). A transpiler
+ * returns these beside its source map; the build puts them in the debug map, so the display reads what the map says
+ * and not what the name of a variable suggests.
+ */
+export type MonitorEntry = DebugMonitorEntry;
+/** The power at a point of a Ladder rung, as an expression of the variables that make it up. */
+export type PowerExpr = DebugPowerExpr;
 
 export type ElementLanguage = 'IL' | 'LD' | 'FBD' | 'SFC';
 

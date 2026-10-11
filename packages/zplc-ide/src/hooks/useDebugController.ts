@@ -12,7 +12,8 @@
  * - Cleanup on unmount or mode change
  */
 
-import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef, useSyncExternalStore } from 'react';
+import { monitoredKeys, subscribeMonitorKeys } from '../monitoring/registry';
 import { useIDEStore, type LiveValue } from '../store/useIDEStore';
 import type {
   IDebugAdapter,
@@ -28,7 +29,6 @@ import { createSimulationAdapter } from '../runtime/simulationAdapterFactory';
 import { NativeAdapter } from '../runtime/nativeAdapter';
 import { connectionManager } from '../runtime/connectionManager';
 import type { DebugMap } from '../compiler';
-import type { SystemInfo } from '../runtime/serialAdapter';
 import { findVariable, judgeDebugMapAttachment } from '../compiler';
 import { reconcileElementBreakpoints } from '../editors/elementBreakpoints';
 import type { UploadTraceEvent } from '../runtime/uploadTrace';
@@ -74,71 +74,8 @@ export function describeBreakpointHit(debugMap: DebugMap | null, pc: number, lin
 // Types
 // =============================================================================
 
-export interface DebugControllerState {
-  /** Current debug adapter instance */
-  adapter: IDebugAdapter | null;
-  /** Current VM state */
-  vmState: VMState;
-  /** Current VM info (PC, SP, cycles, etc.) */
-  vmInfo: VMInfo | null;
-  /** Whether currently polling for live values */
-  isPolling: boolean;
-  /** Last error message */
-  lastError: string | null;
-  /** Capability model for the active adapter/runtime */
-  debugCapabilities: DebugCapabilities | null;
-}
-
-export interface DebugControllerActions {
-  /** Start simulation mode with the local runtime adapter */
-  startSimulation: () => Promise<void>;
-  /** Connect to hardware via WebSerial */
-  connectHardware: () => Promise<void>;
-  /** Disconnect from current adapter */
-  disconnect: () => Promise<void>;
-  /** Load bytecode into the adapter */
-  loadProgram: (bytecode: Uint8Array, debugMap?: DebugMap, projectBoard?: string) => Promise<void>;
-  /** Start/resume execution */
-  start: () => Promise<void>;
-  /** Stop execution */
-  stop: () => Promise<void>;
-  /** Pause execution */
-  pause: () => Promise<void>;
-  /** Resume from pause */
-  resume: () => Promise<void>;
-  /** Execute single step */
-  step: () => Promise<void>;
-  /** Reset VM */
-  reset: () => Promise<void>;
-  /** Force a value in IPI */
-  setValue: (
-    address: number,
-    value: number | boolean | string,
-    type: WatchVariable['type'],
-    maxLength?: number
-  ) => Promise<void>;
-  /** Enable or disable a runtime-owned forced value (a release needs no value, a force needs one) */
-  toggleForceValue: (
-    path: string,
-    address: number,
-    value: number | boolean | string | null,
-    type: WatchVariable['type'],
-    force: boolean,
-    maxLength?: number
-  ) => Promise<void>;
-  /** Clear all forced values before disconnecting */
-  clearAllForcedValues: () => Promise<void>;
-  /** Set virtual input (WASM only) */
-  setVirtualInput: (channel: number, value: number) => Promise<void>;
-  /** Get virtual output (WASM only) */
-  getVirtualOutput: (channel: number) => Promise<number>;
-  /** Stage a closed native-POSIX simulation input and publish its observed snapshot. */
-  setSimulationInput: (inputId: 'motor.start' | 'motor.stop' | 'motor.estop', active: boolean) => Promise<void>;
-  /** Current hardware handshake cache only; no serial transport is exposed. */
-  getHardwareSystemInfo: () => Readonly<SystemInfo> | null;
-}
-
-export type DebugController = DebugControllerState & DebugControllerActions;
+export type { DebugControllerActions, DebugControllerState, DebugController } from './debugControllerTypes';
+import type { DebugController } from './debugControllerTypes';
 
 // =============================================================================
 // Hook Implementation
@@ -173,6 +110,8 @@ export function useDebugController(): DebugController {
   const pollingInterval = useIDEStore((state) => state.debug.pollingInterval);
   const isPolling = useIDEStore((state) => state.debug.isPolling);
   const mpeekEnabled = useIDEStore((state) => state.debug.mpeekEnabled);
+  // the variables the open diagrams show (LNG-006): the poll restarts when they change
+  const monitored = useSyncExternalStore(subscribeMonitorKeys, monitoredKeys);
   const compilerRunId = useIDEStore((state) => state.compilerRunId);
   const setControllerStatus = useIDEStore((state) => state.setControllerStatus);
   const controllerInfo = useIDEStore((state) => state.controllerInfo);
@@ -986,7 +925,7 @@ export function useDebugController(): DebugController {
           // 2. Inline editor preview variables are added only when the Live
           //    button is enabled.
           const pathSet = new Set<string>(
-            buildPolledDebugPaths(watchVariables, debugMap, mpeekEnabled, 64),
+            buildPolledDebugPaths(watchVariables, debugMap, mpeekEnabled, 64, monitoredKeys()),
           );
 
           const variables = Array.from(pathSet)
@@ -1041,6 +980,7 @@ export function useDebugController(): DebugController {
     pollingInterval,
     debugMap,
     mpeekEnabled,
+    monitored,
     setPolling,
     updateLiveValues,
   ]);

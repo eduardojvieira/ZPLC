@@ -80,8 +80,9 @@ interface LDElementProps {
  * Format a debug value for display
  */
 function formatValue(info: DebugValueResult | undefined): string {
+  // a value that was not read is unavailable: the dash says so, and it is not a FALSE (LNG-006)
   if (!info || !info.exists || info.value === undefined || info.value === null) {
-    return '';
+    return '—';
   }
 
   if (info.type === 'BOOL') {
@@ -735,7 +736,6 @@ export default function LDElement({ element, x, y, selected, energized, debugVal
   const getElementDebug = (): { display: string; color: string } | undefined => {
     if (!debugValues || !element.variable) return undefined;
     const info = debugValues.get(element.variable);
-    if (!info || !info.exists) return undefined;
     return {
       display: formatValue(info),
       color: getValueColor(info),
