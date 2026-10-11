@@ -67,4 +67,9 @@ describe('documentation screenshots: a page shows only captured pictures (DOC-01
   it('wants the commit of the build, in full', () => {
     expect(checkManifest({ ...manifest(), commit: 'main' }, [], read, ['docs/static/img/tutorials/a.png'])[0]!.message).toContain('40 hexadecimal digits');
   });
+
+  it('holds for the pages and the pictures of this repository', () => {
+    const result = Bun.spawnSync(['bun', 'tools/docs/capture-screenshots.ts', '--check'], { cwd: new URL('../../', import.meta.url).pathname, stdout: 'pipe', stderr: 'pipe' });
+    expect({ code: result.exitCode, output: result.stdout.toString() + result.stderr.toString() }).toMatchObject({ code: 0 });
+  });
 });

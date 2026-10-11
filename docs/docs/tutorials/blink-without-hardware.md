@@ -36,6 +36,8 @@ Open ZPLC Studio. The Welcome screen offers **Open project**, **New project** an
 **Learn**, and under **Examples** a list of example projects, grouped by what
 they teach.
 
+![The Welcome screen of ZPLC Studio, scrolled to the group Language tour, which holds Blinky (Structured Text)](/img/tutorials/blink-1-welcome.png)
+
 ## 2. Copy the example
 
 1. Under **Examples**, in the group **Language tour**, choose **Blinky (Structured Text)**.
@@ -50,7 +52,11 @@ scenario test.
 ## 3. Read the program
 
 Open `src/main.st` from the project tree, in the **Explorer** tab of the bottom
-panel. Without its comments, the program is this:
+panel. It opens in the editor:
+
+![The program Blinky open in the editor of Studio](/img/tutorials/blink-2-program.png)
+
+Without its comments, the program is this:
 
 ```st runnable expect="LED_Output=TRUE" scans=75 scan_ms=10
 PROGRAM Blinky
@@ -86,6 +92,8 @@ the simulator's virtual clock: after 75 scans of 10 ms, 750 ms, `LED_Output` is 
 2. Open the **Output** tab. It says `Built saved workspace locally`, with the size
    of the program. The **Problems** tab says `0 errors`.
 
+![The Output tab after the build, with the size of the program and the notification Build succeeded](/img/tutorials/blink-3-built.png)
+
 If the build fails, **Problems** lists each error with its line and column.
 
 ## 5. Run it in the simulator
@@ -103,6 +111,10 @@ not model the electrical side of a board or its real timing.
 1. Open the **Watch** tab. If the table has no row, press **+** and enter `LED_Output`.
 2. Look at the **Value** column. It changes between `TRUE` and `FALSE` about every
    half second.
+
+![The Watch tab with LED_Output TRUE while the program runs](/img/tutorials/blink-4-output-true.png)
+
+![The same table half a second later, with LED_Output FALSE](/img/tutorials/blink-5-output-false.png)
 
 If the Watch table is cut off, drag the divider above the bottom panel upward.
 
@@ -122,6 +134,8 @@ every field, and its example is this project's scenario.
 The tab says **Host POSIX scenarios passed.** and `1 scenario passed.` This ran
 your saved program on the simulator, headless and on a virtual clock, so it takes
 a moment and does not wait 2.1 seconds.
+
+![The Tests tab reporting Host POSIX scenarios passed](/img/tutorials/blink-6-scenario.png)
 
 You can run the same test without Studio, from a terminal at the root of a
 checkout of the repository once `bun run setup` has built the runtime:

@@ -36,6 +36,8 @@ Abra ZPLC Studio. La pantalla de bienvenida ofrece **Open project**, **New proje
 y **Learn**, y bajo **Examples** una lista de proyectos de ejemplo, agrupados por lo
 que enseñan.
 
+![La pantalla de bienvenida de ZPLC Studio, desplazada hasta el grupo Language tour, que contiene Blinky (Structured Text)](/img/tutorials/blink-1-welcome.png)
+
 ## 2. Copie el ejemplo
 
 1. Bajo **Examples**, en el grupo **Language tour**, elija **Blinky (Structured Text)**.
@@ -50,7 +52,11 @@ de escenario.
 ## 3. Lea el programa
 
 Abra `src/main.st` desde el árbol del proyecto, en la pestaña **Explorer** del panel
-inferior. Sin sus comentarios, el programa es este:
+inferior. Se abre en el editor:
+
+![El programa Blinky abierto en el editor de Studio](/img/tutorials/blink-2-program.png)
+
+Sin sus comentarios, el programa es este:
 
 ```st runnable expect="LED_Output=TRUE" scans=75 scan_ms=10
 PROGRAM Blinky
@@ -87,6 +93,8 @@ de 10 ms, 750 ms, `LED_Output` es TRUE.
 2. Abra la pestaña **Output**. Dice `Built saved workspace locally`, con el tamaño
    del programa. La pestaña **Problems** dice `0 errors`.
 
+![La pestaña Output después de la compilación, con el tamaño del programa y la notificación Build succeeded](/img/tutorials/blink-3-built.png)
+
 Si la compilación falla, **Problems** enumera cada error con su línea y su columna.
 
 ## 5. Ejecútelo en el simulador
@@ -105,6 +113,10 @@ temporizador. No modela el lado eléctrico de una placa ni sus tiempos reales.
    ingrese `LED_Output`.
 2. Mire la columna **Value**. Cambia entre `TRUE` y `FALSE` aproximadamente cada
    medio segundo.
+
+![La pestaña Watch con LED_Output en TRUE mientras el programa se ejecuta](/img/tutorials/blink-4-output-true.png)
+
+![La misma tabla medio segundo después, con LED_Output en FALSE](/img/tutorials/blink-5-output-false.png)
 
 Si la tabla Watch queda cortada, arrastre hacia arriba el divisor que está sobre el
 panel inferior.
@@ -126,6 +138,8 @@ campo, y su ejemplo es el escenario de este proyecto.
 La pestaña dice **Host POSIX scenarios passed.** y `1 scenario passed.` Esto ejecutó
 su programa guardado en el simulador, sin interfaz y con un reloj virtual, así que
 tarda un momento y no espera 2,1 segundos.
+
+![La pestaña Tests informando Host POSIX scenarios passed](/img/tutorials/blink-6-scenario.png)
 
 Puede ejecutar la misma prueba sin Studio, desde una terminal en la raíz de una copia
 del repositorio, una vez que `bun run setup` haya construido el runtime:
