@@ -26,7 +26,8 @@
 /* How long a thread that must wait is given to prove that it does not. A verification takes microseconds. */
 #define WAIT_MS 200
 
-static uint8_t store_workspace[PROGRAM_CAPACITY + ZPLC_PROGRAM_STORE_FOOTER_SIZE];
+/* As large as the code region, like the staging buffer of the firmware: the rollback is found in it (WS-42). */
+static uint8_t store_workspace[ZPLC_PROGRAM_STORE_MAX_ARTIFACT_SIZE + ZPLC_PROGRAM_STORE_FOOTER_SIZE];
 static size_t program_size;
 static uint8_t program[PROGRAM_CAPACITY];
 
@@ -113,6 +114,7 @@ static void taker_entry(void *a, void *b, void *c) {
   if (taker_mode == VALIDATE) {
     taker_result = zplc_sched_validate_program(program, program_size);
   } else {
+    (void)zplc_program_store_prepare(store_workspace, sizeof(store_workspace));
     memset(store_workspace, 0, sizeof(store_workspace));
     memcpy(store_workspace, program, program_size);
     taker_result = zplc_program_store_commit(store_workspace, program_size, sizeof(store_workspace));
@@ -209,6 +211,7 @@ ZTEST(verify_scratch, test_a_commit_and_a_validation_one_after_the_other_agree_w
   zplc_program_store_restore_t result;
 
   zassert_equal(zplc_sched_validate_program(program, program_size), ZPLC_LOADER_OK, "valid alone");
+  (void)zplc_program_store_prepare(store_workspace, sizeof(store_workspace));
   memset(store_workspace, 0, sizeof(store_workspace));
   memcpy(store_workspace, program, program_size);
   zassert_equal(zplc_program_store_commit(store_workspace, program_size, sizeof(store_workspace)),
@@ -218,6 +221,8 @@ ZTEST(verify_scratch, test_a_commit_and_a_validation_one_after_the_other_agree_w
   /* A damaged artifact is refused by both, and the refusal leaves the scratch free for the next one. */
   program[program_size - 1U] ^= 0xFFU;
   zassert_not_equal(zplc_sched_validate_program(program, program_size), ZPLC_LOADER_OK, "damaged is refused");
+  (void)zplc_program_store_prepare(store_workspace, sizeof(store_workspace));
+  memset(store_workspace, 0, sizeof(store_workspace));
   memcpy(store_workspace, program, program_size);
   zassert_not_equal(zplc_program_store_commit(store_workspace, program_size, sizeof(store_workspace)),
                     ZPLC_PROGRAM_STORE_COMMIT_OK, "a damaged artifact is not committed");

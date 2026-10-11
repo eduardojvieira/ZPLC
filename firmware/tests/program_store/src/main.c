@@ -245,13 +245,30 @@ static void reset_store(void)
   k_sem_init(&release_first_payload_save, 0U, 1U);
 }
 
+/* The deploy the way the firmware makes it (WS-42): the store finds its rollback when the upload starts, in the
+ * staging buffer while it is free, and the program arrives afterwards. The staging buffer of the firmware is as
+ * large as the code region; the buffers of these cases are the size of a small program, so the rollback is found
+ * in a buffer of the full size that stands for it. `stage` is that first step and `deploy` is both steps. */
+static uint8_t staging[ZPLC_PROGRAM_STORE_MAX_ARTIFACT_SIZE + ZPLC_PROGRAM_STORE_FOOTER_SIZE];
+
+static int stage(void)
+{
+  return zplc_program_store_prepare(staging, sizeof(staging));
+}
+
+static int deploy(uint8_t *buffer, size_t size, size_t capacity)
+{
+  (void)stage();
+  return zplc_program_store_commit(buffer, size, capacity);
+}
+
 static void commit_thread(void *arg1, void *arg2, void *arg3)
 {
   commit_thread_t *commit = arg1;
   (void)arg2;
   (void)arg3;
   k_sem_give(&commit->started);
-  commit->result = zplc_program_store_commit(commit->workspace, commit->size,
+  commit->result = deploy(commit->workspace, commit->size,
                                               sizeof(commit->workspace));
   k_sem_give(&commit->done);
 }
@@ -260,7 +277,7 @@ static size_t commit_program(uint8_t tag)
 {
   uint8_t workspace[WORKSPACE_CAPACITY];
   size_t size = build_program(workspace, tag);
-  zassert_ok(zplc_program_store_commit(workspace, size, sizeof(workspace)), "commit");
+  zassert_ok(deploy(workspace, size, sizeof(workspace)), "commit");
   return size;
 }
 
@@ -293,6 +310,7 @@ ZTEST(program_store, test_second_commit_failure_preserves_a_until_active_publish
     reset_store();
     (void)commit_program(OP_NOP);
     candidate_size = build_program(candidate, OP_HALT);
+    (void)stage();
     fail_operation = failure;
     operation = 0;
     int commit = zplc_program_store_commit(candidate, candidate_size, sizeof(candidate));
@@ -314,7 +332,7 @@ ZTEST(program_store, test_active_publish_commit_unknown_has_dedicated_result)
   candidate_size = build_program(candidate, OP_HALT);
   copy_active_then_commit_unknown = 1;
 
-  zassert_equal(zplc_program_store_commit(candidate, candidate_size,
+  zassert_equal(deploy(candidate, candidate_size,
                                           sizeof(candidate)),
                 ZPLC_PROGRAM_STORE_COMMIT_UNKNOWN,
                 "ambiguous active publish must be distinguished");
@@ -384,7 +402,7 @@ ZTEST(program_store, test_semantically_invalid_candidate_never_persists_or_publi
   memcpy(before, records, sizeof(before));
   candidate_size = build_control_flow_invalid_program(candidate);
 
-  zassert_true(zplc_program_store_commit(candidate, candidate_size, sizeof(candidate)) != 0,
+  zassert_true(deploy(candidate, candidate_size, sizeof(candidate)) != 0,
                "control-flow-invalid candidate must fail closed");
   zassert_mem_equal(records, before, sizeof(records),
                     "invalid candidate must not mutate durable records");
@@ -440,7 +458,7 @@ ZTEST(program_store, test_active_semantic_corruption_does_not_destroy_valid_roll
 
   candidate_size = build_distinct_program(candidate);
   fail_save_key = "program_v1_active"; /* Interrupt exactly before active publish. */
-  zassert_true(zplc_program_store_commit(candidate, candidate_size, sizeof(candidate)) != 0,
+  zassert_true(deploy(candidate, candidate_size, sizeof(candidate)) != 0,
                "C must not publish when active write fails");
   fail_save_key = NULL;
 
@@ -484,7 +502,7 @@ ZTEST(program_store, test_active_semantic_corruption_reuses_corrupt_slot_for_suc
 
   candidate_size = build_distinct_program(candidate);
   memcpy(expected, candidate, candidate_size);
-  zassert_ok(zplc_program_store_commit(candidate, candidate_size, sizeof(candidate)),
+  zassert_ok(deploy(candidate, candidate_size, sizeof(candidate)),
              "C can replace semantically corrupt B");
   zassert_equal(zplc_program_store_restore(restored, sizeof(restored), &restored_size),
                 ZPLC_PROGRAM_STORE_OK, "C restores after publication");
@@ -505,7 +523,7 @@ ZTEST(program_store, test_rollback_discovery_io_error_writes_nothing)
   candidate_size = build_program(candidate, OP_NOP);
   fail_load_key = "program_v1_slot_b_payload";
 
-  zassert_true(zplc_program_store_commit(candidate, candidate_size, sizeof(candidate)) != 0,
+  zassert_true(deploy(candidate, candidate_size, sizeof(candidate)) != 0,
                "rollback discovery I/O failure must fail closed");
   zassert_mem_equal(records, before, sizeof(records),
                     "discovery failure must occur before any durable write");
@@ -520,7 +538,7 @@ ZTEST(program_store, test_empty_store_still_accepts_first_commit)
 
   reset_store();
   candidate_size = build_program(candidate, OP_NOP);
-  zassert_ok(zplc_program_store_commit(candidate, candidate_size, sizeof(candidate)),
+  zassert_ok(deploy(candidate, candidate_size, sizeof(candidate)),
              "empty store first commit");
   zassert_equal(zplc_program_store_restore(restored, sizeof(restored), &restored_size),
                 ZPLC_PROGRAM_STORE_OK, "first commit restores");
@@ -541,7 +559,7 @@ ZTEST(program_store, test_corrupt_durable_state_never_bootstraps_over_evidence)
   memcpy(before, records, sizeof(before));
   candidate_size = build_program(candidate, OP_NOP);
 
-  zassert_true(zplc_program_store_commit(candidate, candidate_size, sizeof(candidate)) != 0,
+  zassert_true(deploy(candidate, candidate_size, sizeof(candidate)) != 0,
                "corrupt durable state must not become a fresh store");
   zassert_mem_equal(records, before, sizeof(records),
                     "failed bootstrap must preserve durable evidence");
@@ -634,7 +652,7 @@ ZTEST(program_store, test_short_metadata_length_and_coherent_readback_fail_close
   memcpy(readback_override + size, "ZPE1", 4U);
   put_u32(readback_override + size + 4U, (uint32_t)size);
   readback_override_length = size + ZPLC_PROGRAM_STORE_FOOTER_SIZE;
-  zassert_true(zplc_program_store_commit(workspace, build_program(workspace, OP_NOP),
+  zassert_true(deploy(workspace, build_program(workspace, OP_NOP),
                                          sizeof(workspace)) != 0,
                "coherent wrong readback must fail");
 }

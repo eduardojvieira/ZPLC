@@ -631,19 +631,11 @@ int zplc_pstore_commit_probed(const zplc_pstore_config_t *config, const zplc_pst
       !artifact_fits(program_size, workspace_capacity) || !admits(config, workspace, program_size)) {
     return ZPLC_PROGRAM_STORE_COMMIT_ERROR;
   }
-  switch (rollback->kind) {
-  case ZPLC_PSTORE_ROLLBACK_SLOT:
-    current = 0;
-    break;
-  case ZPLC_PSTORE_ROLLBACK_EMPTY:
-    current = 1;
-    break;
-  case ZPLC_PSTORE_ROLLBACK_LEGACY:
-    current = 2;
-    break;
-  default:
+  if (rollback->kind < ZPLC_PSTORE_ROLLBACK_SLOT || rollback->kind > ZPLC_PSTORE_ROLLBACK_LEGACY) {
     return ZPLC_PROGRAM_STORE_COMMIT_ERROR; /* nothing was found, or it was found unverifiable: fail closed */
   }
+  /* the kinds are in the order of discover_rollback_slot()'s answers: a slot, an empty store, the first version */
+  current = (int)rollback->kind - (int)ZPLC_PSTORE_ROLLBACK_SLOT;
   if (records_digest(&digest) != 0 || digest != rollback->digest) {
     return ZPLC_PROGRAM_STORE_COMMIT_ERROR; /* the store changed since the rollback was found */
   }

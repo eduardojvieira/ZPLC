@@ -799,6 +799,13 @@ static int cmd_sched_tasks(const struct shell *sh, size_t argc, char **argv) {
   return 0;
 }
 
+/* The rollback of the commit that ends an upload is found when the upload starts, in the staging buffer, which is
+ * free until the first byte of the new program arrives: the store has no buffer of the code size of its own
+ * (RT-028). When nothing can be found the commit that follows refuses and writes nothing. */
+static void begin_upload_rollback(void) {
+  (void)zplc_program_store_prepare(program_staging_buffer, program_buffer_size + ZPLC_PROGRAM_STORE_FOOTER_SIZE);
+}
+
 static int cmd_sched_load(const struct shell *sh, size_t argc, char **argv) {
   if (argc != 2) {
     shell_error(sh, "Usage: zplc sched load <size>");
@@ -830,6 +837,7 @@ static int cmd_sched_load(const struct shell *sh, size_t argc, char **argv) {
       return stopped;
     }
   }
+  begin_upload_rollback();
   memset(program_staging_buffer, 0, program_buffer_size);
   program_expected_size = size;
   program_staging_received_size = 0;
@@ -1854,6 +1862,7 @@ static int cmd_zplc_load(const struct shell *sh, size_t argc, char **argv) {
                 program_buffer_size);
     return -ENOMEM;
   }
+  begin_upload_rollback();
   memset(program_staging_buffer, 0, program_buffer_size);
   program_expected_size = size;
   program_staging_received_size = 0;
@@ -3167,101 +3176,101 @@ typedef enum {
   CONFIG_KEY_SECURITY,
 } config_key_kind_t;
 
-struct config_key {
-  const char *name;
-  uint8_t kind;
-  union {
-    void (*text)(const char *);
-    void (*flag)(bool);
-    void (*u8)(uint8_t);
-    void (*u16)(uint16_t);
-    void (*u32)(uint32_t);
-    void (*parity)(zplc_modbus_parity_t);
-    void (*profile)(zplc_mqtt_profile_t);
-    void (*protocol)(zplc_mqtt_protocol_t);
-    void (*transport)(zplc_mqtt_transport_t);
-    void (*qos)(zplc_mqtt_qos_t);
-    void (*security)(zplc_mqtt_security_t);
-  } set;
+union config_setter {
+  void (*text)(const char *);
+  void (*flag)(bool);
+  void (*u8)(uint8_t);
+  void (*u16)(uint16_t);
+  void (*u32)(uint32_t);
+  void (*parity)(zplc_modbus_parity_t);
+  void (*profile)(zplc_mqtt_profile_t);
+  void (*protocol)(zplc_mqtt_protocol_t);
+  void (*transport)(zplc_mqtt_transport_t);
+  void (*qos)(zplc_mqtt_qos_t);
+  void (*security)(zplc_mqtt_security_t);
 };
 
-#define CONFIG_KEY(key, kind, member, setter) {key, kind, {.member = setter}}
-#define CONFIG_TEXT(key, setter) CONFIG_KEY(key, CONFIG_KEY_TEXT, text, setter)
-#define CONFIG_FLAG(key, setter) CONFIG_KEY(key, CONFIG_KEY_FLAG, flag, setter)
-#define CONFIG_FLAG_ON(key, setter) CONFIG_KEY(key, CONFIG_KEY_FLAG_ON, flag, setter)
+/* name, how the value is read, the member of the union and the setter. Three parallel arrays are made from it: one
+ * row of a structure would take twelve bytes for nine of data. */
+#define CONFIG_KEYS(X) \
+  X("hostname", CONFIG_KEY_TEXT, text, zplc_config_set_hostname) \
+  X("dhcp", CONFIG_KEY_FLAG, flag, zplc_config_set_dhcp) \
+  X("ip", CONFIG_KEY_TEXT, text, zplc_config_set_ip) \
+  X("wifi_ssid", CONFIG_KEY_TEXT, text, zplc_config_set_wifi_ssid) \
+  X("wifi_pass", CONFIG_KEY_TEXT, text, zplc_config_set_wifi_pass) \
+  X("wifi_security", CONFIG_KEY_U8, u8, zplc_config_set_wifi_security) \
+  X("ntp_enabled", CONFIG_KEY_FLAG_ON, flag, zplc_config_set_ntp_enabled) \
+  X("ntp_server", CONFIG_KEY_TEXT, text, zplc_config_set_ntp_server) \
+  X("modbus_id", CONFIG_KEY_U16, u16, zplc_config_set_modbus_id) \
+  X("modbus_tcp_enabled", CONFIG_KEY_FLAG_ON, flag, zplc_config_set_modbus_tcp_enabled) \
+  X("modbus_tcp_port", CONFIG_KEY_U16, u16, zplc_config_set_modbus_tcp_port) \
+  X("modbus_rtu_enabled", CONFIG_KEY_FLAG_ON, flag, zplc_config_set_modbus_rtu_enabled) \
+  X("modbus_rtu_baud", CONFIG_KEY_U32, u32, zplc_config_set_modbus_rtu_baud) \
+  X("modbus_rtu_parity", CONFIG_KEY_PARITY, parity, zplc_config_set_modbus_rtu_parity) \
+  X("modbus_rtu_client_enabled", CONFIG_KEY_FLAG_ON, flag, zplc_config_set_modbus_rtu_client_enabled) \
+  X("modbus_rtu_client_slave_id", CONFIG_KEY_U8, u8, zplc_config_set_modbus_rtu_client_slave_id) \
+  X("modbus_rtu_client_poll_ms", CONFIG_KEY_U32, u32, zplc_config_set_modbus_rtu_client_poll_ms) \
+  X("modbus_tcp_client_enabled", CONFIG_KEY_FLAG_ON, flag, zplc_config_set_modbus_tcp_client_enabled) \
+  X("modbus_tcp_client_host", CONFIG_KEY_TEXT, text, zplc_config_set_modbus_tcp_client_host) \
+  X("modbus_tcp_client_port", CONFIG_KEY_U16, u16, zplc_config_set_modbus_tcp_client_port) \
+  X("modbus_tcp_client_unit_id", CONFIG_KEY_U8, u8, zplc_config_set_modbus_tcp_client_unit_id) \
+  X("modbus_tcp_client_poll_ms", CONFIG_KEY_U32, u32, zplc_config_set_modbus_tcp_client_poll_ms) \
+  X("modbus_tcp_client_timeout_ms", CONFIG_KEY_U32, u32, zplc_config_set_modbus_tcp_client_timeout_ms) \
+  X("mqtt_enabled", CONFIG_KEY_FLAG_ON, flag, zplc_config_set_mqtt_enabled) \
+  X("mqtt_broker", CONFIG_KEY_TEXT, text, zplc_config_set_mqtt_broker) \
+  X("mqtt_client_id", CONFIG_KEY_TEXT, text, zplc_config_set_mqtt_client_id) \
+  X("mqtt_group_id", CONFIG_KEY_TEXT, text, zplc_config_set_mqtt_group_id) \
+  X("mqtt_topic_namespace", CONFIG_KEY_TEXT, text, zplc_config_set_mqtt_topic_namespace) \
+  X("mqtt_profile", CONFIG_KEY_PROFILE, profile, zplc_config_set_mqtt_profile) \
+  X("mqtt_protocol", CONFIG_KEY_PROTOCOL, protocol, zplc_config_set_mqtt_protocol) \
+  X("mqtt_transport", CONFIG_KEY_TRANSPORT, transport, zplc_config_set_mqtt_transport) \
+  X("mqtt_port", CONFIG_KEY_U16, u16, zplc_config_set_mqtt_port) \
+  X("mqtt_username", CONFIG_KEY_TEXT, text, zplc_config_set_mqtt_username) \
+  X("mqtt_password", CONFIG_KEY_TEXT, text, zplc_config_set_mqtt_password) \
+  X("mqtt_keepalive", CONFIG_KEY_U16, u16, zplc_config_set_mqtt_keepalive_sec) \
+  X("mqtt_publish_interval", CONFIG_KEY_U32, u32, zplc_config_set_mqtt_publish_interval_ms) \
+  X("mqtt_publish_qos", CONFIG_KEY_QOS, qos, zplc_config_set_mqtt_publish_qos) \
+  X("mqtt_subscribe_qos", CONFIG_KEY_QOS, qos, zplc_config_set_mqtt_subscribe_qos) \
+  X("mqtt_publish_retain", CONFIG_KEY_FLAG_ON, flag, zplc_config_set_mqtt_publish_retain) \
+  X("mqtt_clean_session", CONFIG_KEY_FLAG_ON, flag, zplc_config_set_mqtt_clean_session) \
+  X("mqtt_session_expiry", CONFIG_KEY_U32, u32, zplc_config_set_mqtt_session_expiry_sec) \
+  X("mqtt_security", CONFIG_KEY_SECURITY, security, zplc_config_set_mqtt_security) \
+  X("mqtt_websocket_path", CONFIG_KEY_TEXT, text, zplc_config_set_mqtt_websocket_path) \
+  X("mqtt_alpn", CONFIG_KEY_TEXT, text, zplc_config_set_mqtt_alpn) \
+  X("mqtt_lwt_enabled", CONFIG_KEY_FLAG_ON, flag, zplc_config_set_mqtt_lwt_enabled) \
+  X("mqtt_lwt_topic", CONFIG_KEY_TEXT, text, zplc_config_set_mqtt_lwt_topic) \
+  X("mqtt_lwt_payload", CONFIG_KEY_TEXT, text, zplc_config_set_mqtt_lwt_payload) \
+  X("mqtt_lwt_qos", CONFIG_KEY_QOS, qos, zplc_config_set_mqtt_lwt_qos) \
+  X("mqtt_lwt_retain", CONFIG_KEY_FLAG_ON, flag, zplc_config_set_mqtt_lwt_retain) \
+  X("mqtt_ca_cert_path", CONFIG_KEY_TEXT, text, zplc_config_set_mqtt_ca_cert_path) \
+  X("mqtt_client_cert_path", CONFIG_KEY_TEXT, text, zplc_config_set_mqtt_client_cert_path) \
+  X("mqtt_client_key_path", CONFIG_KEY_TEXT, text, zplc_config_set_mqtt_client_key_path) \
+  X("azure_sas_key", CONFIG_KEY_TEXT, text, zplc_config_set_azure_sas_key) \
+  X("azure_sas_expiry_s", CONFIG_KEY_U32, u32, zplc_config_set_azure_sas_expiry_s) \
+  X("azure_twin_enabled", CONFIG_KEY_FLAG_ON, flag, zplc_config_set_azure_twin_enabled) \
+  X("azure_direct_methods_enabled", CONFIG_KEY_FLAG_ON, flag, zplc_config_set_azure_direct_methods_enabled) \
+  X("azure_c2d_enabled", CONFIG_KEY_FLAG_ON, flag, zplc_config_set_azure_c2d_enabled) \
+  X("azure_dps_enabled", CONFIG_KEY_FLAG_ON, flag, zplc_config_set_azure_dps_enabled) \
+  X("azure_dps_id_scope", CONFIG_KEY_TEXT, text, zplc_config_set_azure_dps_id_scope) \
+  X("azure_dps_registration_id", CONFIG_KEY_TEXT, text, zplc_config_set_azure_dps_registration_id) \
+  X("azure_dps_endpoint", CONFIG_KEY_TEXT, text, zplc_config_set_azure_dps_endpoint) \
+  X("azure_event_grid_topic", CONFIG_KEY_TEXT, text, zplc_config_set_azure_event_grid_topic) \
+  X("azure_event_grid_source", CONFIG_KEY_TEXT, text, zplc_config_set_azure_event_grid_source) \
+  X("azure_event_grid_event_type", CONFIG_KEY_TEXT, text, zplc_config_set_azure_event_grid_event_type) \
+  X("aws_shadow_enabled", CONFIG_KEY_FLAG_ON, flag, zplc_config_set_aws_shadow_enabled) \
+  X("aws_jobs_enabled", CONFIG_KEY_FLAG_ON, flag, zplc_config_set_aws_jobs_enabled) \
+  X("aws_fleet_enabled", CONFIG_KEY_FLAG_ON, flag, zplc_config_set_aws_fleet_enabled) \
+  X("aws_fleet_template_name", CONFIG_KEY_TEXT, text, zplc_config_set_aws_fleet_template_name) \
+  X("aws_claim_cert_path", CONFIG_KEY_TEXT, text, zplc_config_set_aws_claim_cert_path) \
+  X("aws_claim_key_path", CONFIG_KEY_TEXT, text, zplc_config_set_aws_claim_key_path)
 
-static const struct config_key config_keys[] = {
-    CONFIG_TEXT("hostname", zplc_config_set_hostname),
-    CONFIG_FLAG("dhcp", zplc_config_set_dhcp),
-    CONFIG_TEXT("ip", zplc_config_set_ip),
-    CONFIG_TEXT("wifi_ssid", zplc_config_set_wifi_ssid),
-    CONFIG_TEXT("wifi_pass", zplc_config_set_wifi_pass),
-    CONFIG_KEY("wifi_security", CONFIG_KEY_U8, u8, zplc_config_set_wifi_security),
-    CONFIG_FLAG_ON("ntp_enabled", zplc_config_set_ntp_enabled),
-    CONFIG_TEXT("ntp_server", zplc_config_set_ntp_server),
-    CONFIG_KEY("modbus_id", CONFIG_KEY_U16, u16, zplc_config_set_modbus_id),
-    CONFIG_FLAG_ON("modbus_tcp_enabled", zplc_config_set_modbus_tcp_enabled),
-    CONFIG_KEY("modbus_tcp_port", CONFIG_KEY_U16, u16, zplc_config_set_modbus_tcp_port),
-    CONFIG_FLAG_ON("modbus_rtu_enabled", zplc_config_set_modbus_rtu_enabled),
-    CONFIG_KEY("modbus_rtu_baud", CONFIG_KEY_U32, u32, zplc_config_set_modbus_rtu_baud),
-    CONFIG_KEY("modbus_rtu_parity", CONFIG_KEY_PARITY, parity, zplc_config_set_modbus_rtu_parity),
-    CONFIG_FLAG_ON("modbus_rtu_client_enabled", zplc_config_set_modbus_rtu_client_enabled),
-    CONFIG_KEY("modbus_rtu_client_slave_id", CONFIG_KEY_U8, u8, zplc_config_set_modbus_rtu_client_slave_id),
-    CONFIG_KEY("modbus_rtu_client_poll_ms", CONFIG_KEY_U32, u32, zplc_config_set_modbus_rtu_client_poll_ms),
-    CONFIG_FLAG_ON("modbus_tcp_client_enabled", zplc_config_set_modbus_tcp_client_enabled),
-    CONFIG_TEXT("modbus_tcp_client_host", zplc_config_set_modbus_tcp_client_host),
-    CONFIG_KEY("modbus_tcp_client_port", CONFIG_KEY_U16, u16, zplc_config_set_modbus_tcp_client_port),
-    CONFIG_KEY("modbus_tcp_client_unit_id", CONFIG_KEY_U8, u8, zplc_config_set_modbus_tcp_client_unit_id),
-    CONFIG_KEY("modbus_tcp_client_poll_ms", CONFIG_KEY_U32, u32, zplc_config_set_modbus_tcp_client_poll_ms),
-    CONFIG_KEY("modbus_tcp_client_timeout_ms", CONFIG_KEY_U32, u32, zplc_config_set_modbus_tcp_client_timeout_ms),
-    CONFIG_FLAG_ON("mqtt_enabled", zplc_config_set_mqtt_enabled),
-    CONFIG_TEXT("mqtt_broker", zplc_config_set_mqtt_broker),
-    CONFIG_TEXT("mqtt_client_id", zplc_config_set_mqtt_client_id),
-    CONFIG_TEXT("mqtt_group_id", zplc_config_set_mqtt_group_id),
-    CONFIG_TEXT("mqtt_topic_namespace", zplc_config_set_mqtt_topic_namespace),
-    CONFIG_KEY("mqtt_profile", CONFIG_KEY_PROFILE, profile, zplc_config_set_mqtt_profile),
-    CONFIG_KEY("mqtt_protocol", CONFIG_KEY_PROTOCOL, protocol, zplc_config_set_mqtt_protocol),
-    CONFIG_KEY("mqtt_transport", CONFIG_KEY_TRANSPORT, transport, zplc_config_set_mqtt_transport),
-    CONFIG_KEY("mqtt_port", CONFIG_KEY_U16, u16, zplc_config_set_mqtt_port),
-    CONFIG_TEXT("mqtt_username", zplc_config_set_mqtt_username),
-    CONFIG_TEXT("mqtt_password", zplc_config_set_mqtt_password),
-    CONFIG_KEY("mqtt_keepalive", CONFIG_KEY_U16, u16, zplc_config_set_mqtt_keepalive_sec),
-    CONFIG_KEY("mqtt_publish_interval", CONFIG_KEY_U32, u32, zplc_config_set_mqtt_publish_interval_ms),
-    CONFIG_KEY("mqtt_publish_qos", CONFIG_KEY_QOS, qos, zplc_config_set_mqtt_publish_qos),
-    CONFIG_KEY("mqtt_subscribe_qos", CONFIG_KEY_QOS, qos, zplc_config_set_mqtt_subscribe_qos),
-    CONFIG_FLAG_ON("mqtt_publish_retain", zplc_config_set_mqtt_publish_retain),
-    CONFIG_FLAG_ON("mqtt_clean_session", zplc_config_set_mqtt_clean_session),
-    CONFIG_KEY("mqtt_session_expiry", CONFIG_KEY_U32, u32, zplc_config_set_mqtt_session_expiry_sec),
-    CONFIG_KEY("mqtt_security", CONFIG_KEY_SECURITY, security, zplc_config_set_mqtt_security),
-    CONFIG_TEXT("mqtt_websocket_path", zplc_config_set_mqtt_websocket_path),
-    CONFIG_TEXT("mqtt_alpn", zplc_config_set_mqtt_alpn),
-    CONFIG_FLAG_ON("mqtt_lwt_enabled", zplc_config_set_mqtt_lwt_enabled),
-    CONFIG_TEXT("mqtt_lwt_topic", zplc_config_set_mqtt_lwt_topic),
-    CONFIG_TEXT("mqtt_lwt_payload", zplc_config_set_mqtt_lwt_payload),
-    CONFIG_KEY("mqtt_lwt_qos", CONFIG_KEY_QOS, qos, zplc_config_set_mqtt_lwt_qos),
-    CONFIG_FLAG_ON("mqtt_lwt_retain", zplc_config_set_mqtt_lwt_retain),
-    CONFIG_TEXT("mqtt_ca_cert_path", zplc_config_set_mqtt_ca_cert_path),
-    CONFIG_TEXT("mqtt_client_cert_path", zplc_config_set_mqtt_client_cert_path),
-    CONFIG_TEXT("mqtt_client_key_path", zplc_config_set_mqtt_client_key_path),
-    CONFIG_TEXT("azure_sas_key", zplc_config_set_azure_sas_key),
-    CONFIG_KEY("azure_sas_expiry_s", CONFIG_KEY_U32, u32, zplc_config_set_azure_sas_expiry_s),
-    CONFIG_FLAG_ON("azure_twin_enabled", zplc_config_set_azure_twin_enabled),
-    CONFIG_FLAG_ON("azure_direct_methods_enabled", zplc_config_set_azure_direct_methods_enabled),
-    CONFIG_FLAG_ON("azure_c2d_enabled", zplc_config_set_azure_c2d_enabled),
-    CONFIG_FLAG_ON("azure_dps_enabled", zplc_config_set_azure_dps_enabled),
-    CONFIG_TEXT("azure_dps_id_scope", zplc_config_set_azure_dps_id_scope),
-    CONFIG_TEXT("azure_dps_registration_id", zplc_config_set_azure_dps_registration_id),
-    CONFIG_TEXT("azure_dps_endpoint", zplc_config_set_azure_dps_endpoint),
-    CONFIG_TEXT("azure_event_grid_topic", zplc_config_set_azure_event_grid_topic),
-    CONFIG_TEXT("azure_event_grid_source", zplc_config_set_azure_event_grid_source),
-    CONFIG_TEXT("azure_event_grid_event_type", zplc_config_set_azure_event_grid_event_type),
-    CONFIG_FLAG_ON("aws_shadow_enabled", zplc_config_set_aws_shadow_enabled),
-    CONFIG_FLAG_ON("aws_jobs_enabled", zplc_config_set_aws_jobs_enabled),
-    CONFIG_FLAG_ON("aws_fleet_enabled", zplc_config_set_aws_fleet_enabled),
-    CONFIG_TEXT("aws_fleet_template_name", zplc_config_set_aws_fleet_template_name),
-    CONFIG_TEXT("aws_claim_cert_path", zplc_config_set_aws_claim_cert_path),
-    CONFIG_TEXT("aws_claim_key_path", zplc_config_set_aws_claim_key_path),
-};
+#define CONFIG_KEY_NAME(name, kind, member, setter) name,
+#define CONFIG_KEY_KIND(name, kind, member, setter) (uint8_t)kind,
+#define CONFIG_KEY_SETTER(name, kind, member, setter) {.member = setter},
+
+static const char *const config_key_names[] = {CONFIG_KEYS(CONFIG_KEY_NAME)};
+static const uint8_t config_key_kinds[] = {CONFIG_KEYS(CONFIG_KEY_KIND)};
+static const union config_setter config_key_setters[] = {CONFIG_KEYS(CONFIG_KEY_SETTER)};
 
 static int cmd_config_set(const struct shell *sh, size_t argc, char **argv) {
   /* The shell asks for the key and the value (SHELL_CMD_ARG, 3 mandatory) before it calls this: the check guards a
@@ -3289,51 +3298,49 @@ static int cmd_config_set(const struct shell *sh, size_t argc, char **argv) {
     return -EINVAL;
   }
 
-  const struct config_key *entry = NULL;
-  for (size_t i = 0U; i < ARRAY_SIZE(config_keys); i++) {
-    if (strcmp(key, config_keys[i].name) == 0) {
-      entry = &config_keys[i];
-      break;
-    }
+  size_t entry = 0U;
+  while (entry < ARRAY_SIZE(config_key_names) && strcmp(key, config_key_names[entry]) != 0) {
+    entry++;
   }
-  if (entry == NULL) {
+  if (entry == ARRAY_SIZE(config_key_names)) {
     shell_error(sh, "ERROR: Unknown config key: %s", key);
     return -EINVAL;
   }
+  const union config_setter *set = &config_key_setters[entry];
 
-  switch (entry->kind) {
+  switch (config_key_kinds[entry]) {
   case CONFIG_KEY_TEXT:
-    entry->set.text(val);
+    set->text(val);
     break;
   case CONFIG_KEY_FLAG_ON:
-    entry->set.flag(strcmp(val, "true") == 0 || strcmp(val, "1") == 0 || strcmp(val, "on") == 0);
+    set->flag(strcmp(val, "true") == 0 || strcmp(val, "1") == 0 || strcmp(val, "on") == 0);
     break;
   case CONFIG_KEY_FLAG:
-    entry->set.flag(strcmp(val, "true") == 0 || strcmp(val, "1") == 0);
+    set->flag(strcmp(val, "true") == 0 || strcmp(val, "1") == 0);
     break;
   case CONFIG_KEY_U8:
-    entry->set.u8((uint8_t)number);
+    set->u8((uint8_t)number);
     break;
   case CONFIG_KEY_U16:
-    entry->set.u16((uint16_t)number);
+    set->u16((uint16_t)number);
     break;
   case CONFIG_KEY_U32:
-    entry->set.u32(number);
+    set->u32(number);
     break;
   case CONFIG_KEY_PARITY:
-    entry->set.parity((zplc_modbus_parity_t)number);
+    set->parity((zplc_modbus_parity_t)number);
     break;
   case CONFIG_KEY_PROFILE:
-    entry->set.profile((zplc_mqtt_profile_t)number);
+    set->profile((zplc_mqtt_profile_t)number);
     break;
   case CONFIG_KEY_PROTOCOL:
-    entry->set.protocol((zplc_mqtt_protocol_t)number);
+    set->protocol((zplc_mqtt_protocol_t)number);
     break;
   case CONFIG_KEY_TRANSPORT:
-    entry->set.transport((zplc_mqtt_transport_t)number);
+    set->transport((zplc_mqtt_transport_t)number);
     break;
   case CONFIG_KEY_QOS:
-    entry->set.qos((zplc_mqtt_qos_t)number);
+    set->qos((zplc_mqtt_qos_t)number);
     break;
   case CONFIG_KEY_SECURITY:
     if (number == (uint32_t)ZPLC_MQTT_SECURITY_TLS_NO_VERIFY) {
@@ -3349,7 +3356,7 @@ static int cmd_config_set(const struct shell *sh, size_t argc, char **argv) {
       return -EPERM;
 #endif
     }
-    entry->set.security((zplc_mqtt_security_t)number);
+    set->security((zplc_mqtt_security_t)number);
     break;
   default:
     return -EINVAL;
@@ -4367,6 +4374,7 @@ static int lk_program_begin(void *context, uint32_t size) {
   if (size > program_buffer_size) {
     return (int)ZPLC_PROTO_ERR_TOO_LARGE;
   }
+  begin_upload_rollback();
   memset(program_staging_buffer, 0, program_buffer_size);
   program_expected_size = size;
   program_staging_received_size = 0U;
