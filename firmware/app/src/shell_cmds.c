@@ -819,6 +819,17 @@ static int cmd_sched_load(const struct shell *sh, size_t argc, char **argv) {
                 program_buffer_size);
     return -ENOMEM;
   }
+  /* RT-023: a deploy stops the program that is running before it transfers a byte, and the outputs are at their
+   * safe values from then until a person starts the new program: the transfer is not made with the old program
+   * driving the pins. A runtime that is already stopped or faulted stays as it is. */
+  {
+    const int stopped = zplc_sched_stop();
+
+    if (stopped != 0) {
+      shell_error(sh, "ERROR: Could not stop the program before the transfer (%d)", stopped);
+      return stopped;
+    }
+  }
   memset(program_staging_buffer, 0, program_buffer_size);
   program_expected_size = size;
   program_staging_received_size = 0;

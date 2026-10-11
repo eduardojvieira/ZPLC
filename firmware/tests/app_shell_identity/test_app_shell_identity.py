@@ -18,11 +18,13 @@ import json
 import os
 import re
 import shutil
+import struct
 import subprocess
 import sys
 import tempfile
 import threading
 import time
+import zlib
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[3]
@@ -35,9 +37,22 @@ HANDSHAKE_KEYS = {
     "device_protocol_version", "bytecode_abi_major", "bytecode_abi_minor", "capabilities", "memory", "draft_counter",
 }
 IO_KEYS = {"schema", "board_id", "hash", "channels", "input_bytes", "output_bytes"}
+RESET_KEYS = {"schema", "cause", "reported", "raw", "supported", "run_policy", "fault"}
+RESET_CAUSES = {"power_on", "brown_out", "pin", "software", "watchdog", "fault", "unknown"}
 IDENTITY_KEYS = {
     "version", "commit", "dirty", "board", "abi_major", "abi_minor", "draft_counter", "options_hash", "options",
 }
+
+
+def artifact(abi_major: int, abi_minor: int, draft: int, output: int) -> bytes:
+    """A container with one cyclic 100 ms task: PUSH8 output; STORE8 OPI[0]; HALT."""
+    code = bytes([0x40, output, 0x84, 0x00, 0x10, 0x01])
+    task = struct.pack("<HBBIHHHH", 0, 0, 0, 100000, 0, 16, 0, 0)
+    segments = struct.pack("<HHI", 0x01, 0, len(code)) + struct.pack("<HHI", 0x20, 0, len(task))
+    header = struct.pack("<4sHHIIIIHHI", b"ZPLC", abi_major, abi_minor, 0, 0, len(code), len(task), 0, 2, draft)
+    body = header + segments + code + task
+    crc = zlib.crc32(body[16:], zlib.crc32(body[:12])) & 0xFFFFFFFF
+    return body[:12] + struct.pack("<I", crc) + body[16:]
 
 
 def fail(message: str) -> None:
@@ -179,6 +194,37 @@ def main() -> int:
             "zplc sys io --json reports the identity of the I/O description",
         )
         check("io" not in handshake, "the handshake does not carry the I/O identity")
+
+        # RT-021, RT-019: why the processor was reset is a command of its own, and after any reset the runtime is in STOP.
+        reset = json.loads(shell.run("zplc sys reset --json"))
+        check(set(reset) == RESET_KEYS and reset["schema"] == 1, "zplc sys reset --json reports the reset cause and the fault")
+        check(reset["cause"] in RESET_CAUSES, "the cause is one of the seven the status names")
+        check(reset["run_policy"] == "stop", "whatever the cause, the runtime waits in STOP for a person's RUN (RT-022)")
+        check("reset" not in handshake and "cause" not in handshake, "the handshake does not carry the reset cause")
+        reset_text = shell.run("zplc sys reset")
+        check(re.search(r"^Reset cause:\s+\S+", reset_text, re.M) is not None and "stop" in reset_text, "the text form says the same")
+        status = json.loads(shell.run("zplc status --json"))
+        check(status["state"] in ("idle", "ready"), "a boot leaves the runtime in STOP, never running")
+        check(status["reset_cause"] == reset["cause"], "the status reports the reset cause (RT-021)")
+        check(
+            status["deadline"]["miss_limit"] == 3 and status["deadline"]["misses"] == 0 and status["fault"]["reason"] == "none",
+            "the status reports the deadline miss count, limit and the fault reason (RT-014)",
+        )
+
+        # RT-023: a deploy stops the running program before the transfer, and outputs are safe until a person starts.
+        program = artifact(identity["abi_major"], identity["abi_minor"], identity["draft_counter"], 0x01)
+        shell.run(f"zplc load {len(program)}")
+        for offset in range(0, len(program), 96):
+            shell.run("zplc data " + program[offset : offset + 96].hex())
+        loaded = shell.run("zplc status --json")
+        check('"state":"idle"' in loaded.replace(" ", "") or json.loads(loaded)["state"] == "idle", "a loaded program waits in STOP")
+        shell.run("zplc start")
+        time.sleep(0.4)
+        check(json.loads(shell.run("zplc status --json"))["state"] == "running", "a person's start runs it")
+        again = shell.run(f"zplc load {len(program)}")
+        check("Ready" in again, "a deploy begins")
+        during = json.loads(shell.run("zplc status --json"))
+        check(during["state"] == "idle", "and the program was stopped before the first byte of the transfer (outputs safe)")
     finally:
         if shell is not None:
             shell.close()
