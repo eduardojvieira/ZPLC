@@ -136,8 +136,21 @@ void zplc_config_set_azure_dps_registration_id(const char *id) {
 void zplc_config_set_aws_fleet_template_name(const char *name) {
   snprintf(svc.template_name, sizeof(svc.template_name), "%s", name);
 }
-void zplc_config_get_mqtt_broker(char *buf, size_t len) { snprintf(buf, len, "%s", svc.broker); }
-void zplc_config_get_mqtt_client_id(char *buf, size_t len) { snprintf(buf, len, "%s", svc.client_id); }
+/* Bounded copy: the caller's buffer may be smaller than the stub's 96-byte fields, which a
+   "%s" snprintf reports as -Wformat-truncation under -Werror at -O2. */
+static void copy_out(char *buf, size_t len, const char *text) {
+  size_t n = strlen(text);
+  if (len == 0U) {
+    return;
+  }
+  if (n >= len) {
+    n = len - 1U;
+  }
+  memcpy(buf, text, n);
+  buf[n] = '\0';
+}
+void zplc_config_get_mqtt_broker(char *buf, size_t len) { copy_out(buf, len, svc.broker); }
+void zplc_config_get_mqtt_client_id(char *buf, size_t len) { copy_out(buf, len, svc.client_id); }
 
 zplc_mqtt_fb_session_t zplc_mqtt_fb_session(int *last_error) {
   if (last_error != NULL) {

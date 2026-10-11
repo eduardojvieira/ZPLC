@@ -55,7 +55,7 @@ beforeAll(async () => {
   const file = join(workDirectory, 'core.wasm');
   buildCoreWasm(file);
   compiled = await WebAssembly.compile(readFileSync(file));
-});
+}, 180_000);
 afterAll(() => { if (workDirectory !== '') rmSync(workDirectory, { recursive: true, force: true }); });
 
 async function instance(): Promise<CoreExports> {

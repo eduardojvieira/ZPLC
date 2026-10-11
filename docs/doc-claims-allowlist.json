@@ -20,31 +20,6 @@
     "reason": "The Electron binary that `bun install` downloads; installed packages are never tracked."
   },
   {
-    "kind": "path",
-    "token": ".agents/skills/embedded-systems/SKILL.md",
-    "reason": "QUICKSTART_AGENTS.md still lists generic agent skills that DOC-022 removes from the tree; the entry goes stale when the file is rewritten."
-  },
-  {
-    "kind": "path",
-    "token": ".agents/skills/arm-cortex-expert/SKILL.md",
-    "reason": "QUICKSTART_AGENTS.md still lists generic agent skills that DOC-022 removes from the tree; the entry goes stale when the file is rewritten."
-  },
-  {
-    "kind": "path",
-    "token": ".agents/skills/electron-pro/SKILL.md",
-    "reason": "QUICKSTART_AGENTS.md still lists generic agent skills that DOC-022 removes from the tree; the entry goes stale when the file is rewritten."
-  },
-  {
-    "kind": "path",
-    "token": ".agents/skills/react-flow/SKILL.md",
-    "reason": "QUICKSTART_AGENTS.md still lists generic agent skills that DOC-022 removes from the tree; the entry goes stale when the file is rewritten."
-  },
-  {
-    "kind": "path",
-    "token": ".agents/skills/javascript-testing-patterns/SKILL.md",
-    "reason": "QUICKSTART_AGENTS.md still lists generic agent skills that DOC-022 removes from the tree; the entry goes stale when the file is rewritten."
-  },
-  {
     "kind": "kconfig",
     "token": "ZPLC_MAX_BREAKPOINTS",
     "reason": "zplc_isa.h reads this symbol when it is defined and no Kconfig file defines it; the generated runtime API reference lists the conditional as the header has it. The firmware owner either defines the symbol or drops the hook."

@@ -29,7 +29,12 @@ are evidence-gated; source presence alone is not a product qualification.
    result, and report the command and what it printed.
 5. **Documentation in two languages**: a user-visible change updates
    `docs/docs/` and `docs/i18n/es/` together, and says which evidence level
-   backs each claim (host, QEMU, target build, bench or manual).
+   backs each claim (host, QEMU, target build, bench or manual). Run
+   `bun run check:docs` before you report a documentation change: it fails on a
+   name that the source does not have, on a page without its twin, and on a
+   sentence that states a capability that no executed check backs
+   (`docs/capability-claims.json`). A reference page that is generated says so at
+   its top; change its source and regenerate it with `bun run docs:generate`.
 6. **No new dependency** (npm or bun packages, Zephyr modules) without a
    concrete need and a recorded decision.
 7. **Style**: follow the surrounding code. C is ANSI C99 and builds with
@@ -38,7 +43,18 @@ are evidence-gated; source presence alone is not a product qualification.
    program: sources, tests, scripts and CI tooling). A warning is a failure.
 8. **Physical operations**: building firmware, flashing, deploying a program,
    forcing I/O, RUN/STOP, raw serial and shell access are separate operations
-   that a person starts. An AI assistant or MCP never initiates them.
+   that a person starts. An AI assistant or MCP never initiates them. A hardware
+   record (a bench run bound to a firmware commit and image hash) is made by a
+   person; never write one, and never raise a board above `cross-build` by hand:
+   the level is derived from the records that `boards.json` references.
+9. **Pins and I/O have one source**: `firmware/app/boards/boards.json` holds the
+   channels, addresses, pins and safe values of every board. Studio, the build,
+   the firmware and the generated board reference read it, and the build fails
+   when it disagrees with a board's devicetree. Change the file, not a copy.
+10. **A network message has no authority over the controller**: nothing that
+    arrives by Modbus, MQTT or a cloud block may change RUN or STOP, set a force
+    or load a program. Writes go through the exchange of the runtime
+    (`zplc_exchange_write`), which respects forces.
 
 ## Layout
 
@@ -52,6 +68,7 @@ are evidence-gated; source presence alone is not a product qualification.
 | `packages/zplc-hil/`, `tools/hil/` | Hardware-in-the-loop tools; they need a bench |
 | `tools/contract/` | The generated binary contract |
 | `tools/firmware-test/` | The firmware test method on Linux |
+| `tools/docs/` | The reference generators and the documentation checks (names, samples, fragments, screenshots, capability claims) |
 | `conformance/` | Language conformance programs with expected results |
 | `examples/` | VM assembly fixtures used by the C tests; the PLC example projects are in `packages/zplc-ide/projects/` |
 | `docs/` | The documentation site, English and Spanish |

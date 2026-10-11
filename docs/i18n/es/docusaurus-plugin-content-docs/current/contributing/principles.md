@@ -69,7 +69,7 @@ Los resultados de host, QEMU, compilación para el destino, banco
 (hardware-in-the-loop) y manuales son niveles distintos, y un nivel inferior
 nunca prueba uno superior. Indique qué nivel respalda cada afirmación en la
 documentación, en un mensaje de commit y en un pull request. Véase
-[Capacidades y niveles de evidencia](../reference/capabilities-evidence.md).
+[Soporte de hardware](../reference/capabilities-evidence.md).
 
 ### 8. Inglés y español avanzan juntos, y una dependencia necesita una razón
 

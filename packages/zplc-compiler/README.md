@@ -4,7 +4,7 @@ IEC 61131-3 Structured Text compiler that generates bytecode for the ZPLC runtim
 
 ## Features
 
-- **Full ST Support**: Variables, arrays, structs, functions, function blocks
+- **Structured Text**: the elements that the [language reference](https://eduardojvieira.github.io/ZPLC/docs/reference/language-st) lists as working, each proven by an executed conformance case; what does not work yet is listed on the same page
 - **Standard Library**: TON, TOF, TP, CTU, CTD, RS, SR, and more
 - **Multi-task**: Compile multiple programs with task scheduling
 - **Debug Maps**: Source-level debugging support

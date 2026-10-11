@@ -1,10 +1,9 @@
 ---
 id: intro
 title: Introducción al runtime
-sidebar_label: Generalidades del runtime
+sidebar_label: Introducción al runtime
 description: Runtime ZPLC portable, artefactos verificados y límites de evidencia.
 tags: [runtime, embedded, vm]
-unlisted: true
 ---
 
 # Runtime ZPLC

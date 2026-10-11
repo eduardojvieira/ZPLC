@@ -23,6 +23,23 @@ actualiza su `zplc.json` en el workspace seleccionado a schema v2.
    **Close** para dejar la carpeta como está.
 4. Volvé a compilar y ejecutar el escenario después de guardar.
 
+## Desde una terminal
+
+Para ver qué cambiaría la migración sin abrir Studio, y para escribir el archivo de
+proyecto versión 2 donde se elija, se usa la línea de comandos
+([Usar la línea de comandos](../guides/command-line.md)):
+
+```bash
+zplc-cli migrate-preview path/to/project
+zplc-cli migrate path/to/project --output zplc.v2.json
+```
+
+`migrate-preview` no escribe nada e imprime `migrate-preview passed`; con `--json` da la
+lista de cambios. `migrate` escribe el archivo de proyecto versión 2 en `--output`, que
+no puede ser el archivo del proyecto ni un archivo de `src` o de `tests`, y deja la
+carpeta del proyecto como estaba. Se revisa el archivo y, si se acepta, se copia sobre
+`zplc.json`.
+
 ## Qué cambia
 
 | Área | Comportamiento v2 |
@@ -45,6 +62,15 @@ Hacé un backup de la carpeta del proyecto o un commit en control de versiones
 antes de guardar, y revisá el diff. Usá los diagnósticos para resolver fuente o
 configuración no soportada antes de adoptar la migración. No edites JSON de
 modelos visuales generado a mano para evitar un diagnóstico.
+
+## Qué está verificado y qué no
+
+| Parte | Verificado | Nivel |
+| --- | --- | --- |
+| `migrate-preview` no escribe nada, y `migrate` escribe solo el archivo de `--output` y deja la carpeta idéntica byte a byte | Pruebas unitarias de la línea de comandos, y los dos comandos de arriba ejecutados sobre una copia del proyecto incluido `motor_start_stop` sin su `schemaVersion` | Host |
+| Studio muestra la diferencia antes de escribir, y la aplica con **Apply migration** | Recorrido 31 en la aplicación real | Host |
+| La forma versión 2 guardada conserva lo que hace el proyecto | Una prueba exporta la migración del proyecto de arranque y parada de motor y comprueba que su escenario golden da el mismo observable en el runtime nativo | Host |
+| El proyecto migrado se comporta igual en una placa | No se afirma: no hay equivalencia de destino, eléctrica ni de tiempos | Ninguno |
 
 ## Próximo paso
 

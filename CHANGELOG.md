@@ -2,7 +2,127 @@
 
 All notable changes are documented here.
 
+Each version has a section with up to five parts, in this order. The release notes
+of a version are built from the first four, so write them for a person who uses
+ZPLC and not for one who changes it:
+
+- `### What changed for you`: what a user can now do, or sees differently, in a
+  sentence each. No requirement identifiers, no file names unless the user types them.
+- `### Breaking changes`: what stops working or must be done differently. Say
+  what, and what to do instead. `None.` when nothing breaks.
+- `### Migration`: the steps to move from the previous release, in order.
+- `### Known limits`: what does not work or has not been verified in this release,
+  at the evidence level it is known to hold at.
+- `### Details for contributors`: the engineering record, with the requirement
+  identifiers and the evidence. It stays in this file and is not in the release notes.
+
+A section of an older release that has none of these headings is read as a list of
+changes. The entry of a release is written under `## Unreleased` and takes its date
+and version when the release is cut (see `RELEASING.md`).
+
 ## Unreleased
+
+### What changed for you
+
+- **Studio saves your work and tells you what happened.** It keeps a copy of every
+  modified file and offers it back after a crash, shows each build, save, deploy
+  and test result as a notification that opens its details, can cancel a long
+  operation, and keeps the preferences you set. A project exports to one archive
+  and imports back byte for byte.
+- **The project tree does more.** New folder, rename, move and duplicate keep the
+  open tabs and breakpoints, a change made outside Studio is picked up, and a
+  folder of library blocks is offered to every editor.
+- **The language is more correct.** `LREAL` and the 64-bit integers work, structures,
+  enumerations and arrays keep their declared width, strings no longer modify
+  their arguments, the timers and counters follow IEC 61131-3, and a build says
+  which element of an IL, ladder, FBD or SFC file a message is about. A project
+  keeps its Structured Text files as one compilation unit.
+- **Simulation is closer to the target.** Tasks of different intervals run, each
+  released on its own interval, a deadline miss is counted, any input of the
+  running program can be set or forced from Studio, and `VAR RETAIN` values are
+  kept from one run to the next.
+- **Scenario tests give the same answer everywhere.** Studio, the command line and
+  the MCP server run them the same way, and the **Interlocks** tab lists which
+  pairs of outputs are asserted never to be on together.
+- **Boards are described once.** `firmware/app/boards/boards.json` holds the
+  channels, addresses and safe values of each board, Studio's I/O mapping editor
+  reads it, a variable on an address the board does not have is a build error, and
+  the firmware's I/O table is generated from it.
+- **A controller is safe on a plant network by default.** MQTT is off and names no
+  broker until an operator sets one, TLS verifies the certificate, no command prints
+  a credential, `zplc config save` writes what it says, and no message from Modbus,
+  MQTT or a cloud service can start or stop the program, set a force or load a program.
+- **New documentation.** An install page, the tutorial *Blink without hardware* with
+  real screenshots, how-to guides for Modbus, MQTT and Sparkplug B, the cloud blocks,
+  mapping I/O, forcing values, retained values, scenario tests, project archives,
+  the command line, debugging, AI and MCP, porting to a board and troubleshooting,
+  one hardware support page and one safety and limitations page, in English and
+  Spanish. The language, function, shell, Kconfig, project file and protocol
+  references are generated from the source. The project schema names every board of
+  the manifest, so an editor that reads `zplc.schema.json` no longer flags
+  `waveshare_rp2040_zero`, and a test fails when the two lists differ.
+- **The bench procedure is written down and its tools are tested without a board.**
+  [Hardware in the loop](docs/docs/development/hardware-in-the-loop.md) says what a
+  person does at the bench, one command runs the whole chain and writes a record, and
+  no record of a board exists yet.
+- **Releases are made by a pipeline you can read.** A rehearsal runs everything and
+  publishes nothing, the notes say which check each file passed, a bill of materials
+  is written from the lockfile, the command line and the MCP server are standalone
+  executables, and every file has a checksum and a build attestation.
+
+### Breaking changes
+
+- **Rebuild every program and reflash every board.** The binary contract has a draft
+  counter (now 4), and a program or a firmware image of another draft is refused
+  by the loader, the runtime, the firmware shell and Studio, with both numbers.
+- **A `VAR_IN_OUT` of a function block is passed by reference.** A block called
+  without binding it faults; rebuild programs that declare one.
+- **Event and interrupt tasks fail the build.** A task with `trigger` `event` or
+  `interrupt` is an error at its definition in `zplc.json`; use `cyclic`.
+- **The default MQTT broker is gone.** A controller that relied on `test.mosquitto.org`
+  has MQTT off until its operator names a broker, and the default transport is TLS on
+  port 8883 with the certificate verified.
+- **The board file moved.** `supported-boards.v1.5.0.json` is replaced by
+  `firmware/app/boards/boards.json`, which has no version in its name.
+- **A text no longer converts to a number, a `BOOL` or a time**, and a constant array
+  index outside the bounds is a build error: programs that relied on either now fail
+  to build, with the line.
+- **A rebuild discards retained values**, because a program that differs by one
+  byte has another identity.
+
+### Migration
+
+1. Rebuild every program with this version and reflash every board with firmware of
+   the same version; both numbers appear in the refusal if you do not.
+2. Run `zplc-cli migrate-preview` on a version 1 project and read the diff before
+   you accept it: [Migrate a version 1 project](docs/docs/ide/migration-v1-to-v2.md).
+3. Name the MQTT broker of every controller that used the old default, and install
+   its CA certificate, or set the transport you need explicitly.
+4. Change a task that used `event` or `interrupt` to a cyclic task.
+5. Read the board file from `firmware/app/boards/boards.json` in any tool of yours
+   that read the versioned file.
+
+### Known limits
+
+- No board has been flashed, booted or run: every board is at the `cross-build`
+  level, and nothing is verified on a physical device
+  ([Hardware support](docs/docs/reference/capabilities-evidence.md)).
+- No Modbus, MQTT, Sparkplug B or cloud exchange has been tested with a real device,
+  broker or service, and no cloud block was verified against a service, an emulator or
+  a recorded exchange. The handshake of the communication blocks and the separation of
+  the four Modbus data areas are not final.
+- Retained values are proven on the host and the simulator only, and are off by default
+  on firmware.
+- TLS is off on the Nucleo-H743ZI and the Arduino Opta until their random generator is
+  verified on the board, so MQTT runs over plain TCP there.
+- The browser simulator is unavailable: simulation needs the desktop application.
+- The installers are not signed with a paid identity: Windows asks you to confirm the
+  first launch and macOS needs **Open Anyway**
+  ([Install ZPLC Studio](docs/docs/getting-started/install.md)).
+- Timing is not measured on any board, and ZPLC is not a safety PLC
+  ([Safety and limitations](docs/docs/safety-and-limitations.md)).
+
+### Details for contributors
 
 - The hardware-in-the-loop tools are repaired and tested without a board
   (HIL-001 to HIL-009, HIL-012, HIL-017). Every script of `tools/hil` exits
