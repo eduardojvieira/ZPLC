@@ -3,7 +3,7 @@ slug: /guides/cloud-blocks
 id: cloud-blocks
 title: Use the cloud blocks
 sidebar_label: Cloud blocks
-description: "Provision a device and exchange messages with Azure and AWS from the program, with an exact statement of what each block has been verified against."
+description: "Provision a device and exchange messages with Azure and AWS from the program, with what each block has not been tested against."
 tags: [how-to, cloud, azure, aws, sparkplug]
 ---
 

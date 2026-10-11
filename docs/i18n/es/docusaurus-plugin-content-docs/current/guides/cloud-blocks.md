@@ -3,7 +3,7 @@ slug: /guides/cloud-blocks
 id: cloud-blocks
 title: Usar los bloques de nube
 sidebar_label: Bloques de nube
-description: "Aprovisione un dispositivo e intercambie mensajes con Azure y AWS desde el programa, con una declaración exacta de contra qué se ha verificado cada bloque."
+description: "Aprovisione un dispositivo e intercambie mensajes con Azure y AWS desde el programa, con lo que cada bloque no ha sido probado contra."
 tags: [how-to, cloud, azure, aws, sparkplug]
 ---
 

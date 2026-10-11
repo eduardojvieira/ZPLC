@@ -1,0 +1,7 @@
+[
+  {
+    "file": "docs/docs/contributing/roadmap.md",
+    "startsWith": "Sandbox closure for programs that read or write outside their regions",
+    "reason": "A list of work that is planned, not a statement of what ZPLC does: it names the Raspberry Pi Pico as the board on which a cost is still to be measured."
+  }
+]

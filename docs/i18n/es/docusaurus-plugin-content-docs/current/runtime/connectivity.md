@@ -8,21 +8,23 @@ description: Resumen de los protocolos de red industrial soportados y capacidade
 
 # Conectividad y Protocolos
 
-ZPLC provee soporte integrado para protocolos de automatización industrial estándar, permitiendo que tus controladores interactúen con dispositivos de campo, sistemas SCADA y plataformas en la nube.
+ZPLC incluye implementaciones de protocolos estándar de automatización industrial, para que un controlador intercambie datos con dispositivos de campo, sistemas SCADA y plataformas en la nube. Se han verificado solo en el host y en emulación, nunca en un cable: cada guía práctica ([Modbus](../guides/modbus.md), [MQTT y Sparkplug B](../guides/mqtt-sparkplug.md), [los bloques de nube](../guides/cloud-blocks.md)) dice qué se probó.
 
 ## Capacidades de la Placa
 
 El soporte de protocolos depende de las capacidades físicas de tu placa objetivo. ZPLC categoriza las placas en tres niveles de conectividad:
 
-- **Solo Serial**: Soporta protocolos como Modbus RTU a través de UART/RS-485.
-- **Con capacidad Wi-Fi**: Soporta protocolos TCP/UDP (Modbus TCP, MQTT) mediante redes inalámbricas (ej. ESP32-S3).
-- **Con capacidad Ethernet**: Soporta protocolos TCP/UDP sobre conexiones cableadas (ej. STM32 Nucleo/Discovery).
+- **Solo serial**: tiene una interfaz serie para la que está construido Modbus RTU sobre UART o RS-485.
+- **Con capacidad Wi-Fi**: tiene una interfaz de red inalámbrica para la que están construidos Modbus TCP y MQTT (por ejemplo, el ESP32-S3).
+- **Con capacidad Ethernet**: tiene una interfaz de red cableada para la que están construidos los protocolos TCP y UDP (por ejemplo, STM32 Nucleo y Discovery).
+
+Ningún intercambio por estas interfaces se ha probado en una placa; lo que se ha verificado está en las guías prácticas de [Modbus](../guides/modbus.md) y de [MQTT](../guides/mqtt-sparkplug.md).
 
 Studio muestra la configuración de Wi-Fi o Ethernet solo para las placas que tienen ese hardware.
 
 ## Protocolos Soportados
 
-ZPLC soporta de forma nativa:
+El firmware implementa:
 
 - **Modbus**: Tanto Modbus RTU (Serial) como Modbus TCP (Red).
 - **MQTT**: Mensajería estándar MQTT publicación/suscripción para integración IIoT, incluyendo perfiles para Sparkplug B, brokers estándar, AWS IoT Core y Azure IoT Hub.
