@@ -57,12 +57,18 @@ describe('the run record (HIL-009)', () => {
     expect(parseIdentityText('ZPLC Runtime v1.5.0\nBuilt: Oct 10 2026 12:00:00\n')).toBeUndefined();
   });
 
-  test('a Zephyr image says in its options whether it has the HIL trace, and a host build does not say', () => {
-    const base = parseBuildIdentity({ version: '2.0.0', commit: 'a'.repeat(40), dirty: false, board: 'rpi_pico/rp2040', abi_major: 1, abi_minor: 0, draft_counter: 4, options_hash: '0123abcd', options: 'SCHEDULER=y' })!;
-    expect(firmwareIdentity({ ...base, options: 'HIL_DEBUG=y,SCHEDULER=y' }).hil_trace).toBe(true);
-    expect(firmwareIdentity(base).hil_trace).toBe(false);
-    expect(firmwareIdentity({ ...base, options: 'build_type=Release' }).hil_trace).toBeNull();
-    expect(firmwareIdentity({ ...base, commit: 'unknown' }).commit).toBeNull();
+  test('a Zephyr image says in its options whether it has the HIL trace, from the identity of the Pico built with and without the overlay', () => {
+    const read = (name: string) => JSON.parse(readFileSync(join(ROOT, 'tools/hil/testdata', name), 'utf8')) as Record<string, unknown>;
+    const release = parseBuildIdentity(read('identity-rpi-pico-release.json'))!;
+    const traced = parseBuildIdentity(read('identity-rpi-pico-hil-trace.json'))!;
+    expect(release.optionsHash).not.toBe(traced.optionsHash);
+    expect(firmwareIdentity(release).hil_trace).toBe(false);
+    expect(firmwareIdentity(traced).hil_trace).toBe(true);
+    expect(firmwareIdentity(traced).board_target).toBe('rpi_pico/rp2040');
+    expect(parseIdentityText(readFileSync(join(ROOT, 'tools/hil/testdata/identity-rpi-pico-hil-trace.txt'), 'utf8'))).toEqual(traced);
+    const host = parseBuildIdentity(read('identity-host-runtime.json'))!;
+    expect(firmwareIdentity(host).hil_trace).toBeNull();
+    expect(firmwareIdentity({ ...host, commit: 'unknown' }).commit).toBeNull();
     expect(firmwareIdentity(undefined)).toEqual({});
     expect(parseBuildIdentity({ version: 'x' })).toBeUndefined();
   });

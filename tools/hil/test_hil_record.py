@@ -90,12 +90,19 @@ class IdentityTests(unittest.TestCase):
         self.assertEqual(hil_record.parse_identity_text(""), {})
 
     def test_a_zephyr_image_says_in_its_options_whether_it_carries_the_hil_trace(self):
-        zephyr = {**HOST_JSON, "board": "rpi_pico/rp2040", "options_hash": "0123abcd"}
-        on = firmware_identity({**zephyr, "options": "HIL_DEBUG=y,SCHEDULER=y,WORK_MEMORY_SIZE=8192"})
-        off = firmware_identity({**zephyr, "options": "SCHEDULER=y,WORK_MEMORY_SIZE=8192"})
-        self.assertIs(on["hil_trace"], True)
+        # the identity of the Pico image built without and with tools/hil/hil_debug.conf, as the generated header of each build printed it
+        release = json.loads((TESTDATA / "identity-rpi-pico-release.json").read_text())
+        traced = json.loads((TESTDATA / "identity-rpi-pico-hil-trace.json").read_text())
+        self.assertNotIn("HIL_DEBUG", release["options"])
+        self.assertIn("HIL_DEBUG=y", traced["options"])
+        self.assertNotEqual(release["options_hash"], traced["options_hash"], "the overlay makes another image, and its hash says so")
+        off, on = firmware_identity(release), firmware_identity(traced)
         self.assertIs(off["hil_trace"], False)
-        self.assertEqual(on["build_options"], {"HIL_DEBUG": "y", "SCHEDULER": "y", "WORK_MEMORY_SIZE": "8192"})
+        self.assertIs(on["hil_trace"], True)
+        self.assertEqual(on["build_options"]["HIL_DEBUG"], "y")
+        self.assertEqual(on["board_target"], "rpi_pico/rp2040")
+        self.assertEqual(validate({**record(), "firmware": on}), [])
+        self.assertEqual(hil_record.parse_identity_text((TESTDATA / "identity-rpi-pico-hil-trace.txt").read_text()), traced)
         self.assertIsNone(firmware_identity(HOST_JSON)["hil_trace"], "a host build has no such option, so the record does not say")
 
     def test_a_build_of_a_tree_without_git_names_no_commit(self):
