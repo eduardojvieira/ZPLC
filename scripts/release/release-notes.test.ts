@@ -67,6 +67,14 @@ describe('the signing state of every asset comes from the checks of the run (REL
     expect(renderReleaseNotes(results).split('\n').find((line) => line.startsWith('| zplc-runtime-2.0.0-rc.4.manifest.json |'))).toContain('lists the firmware images of this release');
   });
 
+  test('says which firmware job to read when the run published no firmware image (REL-022)', () => {
+    const results = fixture();
+    results.jobs.push({ job: 'build-firmware', result: 'failure' }, { job: 'assemble-firmware', result: 'skipped' });
+    expect(renderReleaseNotes(results)).toContain('No firmware image was published: build-firmware ended in failure, assemble-firmware ended in skipped.');
+    results.assets.push({ name: 'zplc-runtime-2.0.0-rc.4-rpi-pico-rp2040.uf2', platform: 'firmware', job: 'build-firmware', signing: 'unsigned', checks: { signature: 'not-run', launch: 'not-run', install: 'not-run' } });
+    expect(renderReleaseNotes(results)).not.toContain('No firmware image was published');
+  });
+
   test('reports a launch check that failed or did not run as such, never as passed', () => {
     const text = renderReleaseNotes(withAsset({ checks: { signature: 'passed', launch: 'not-run', install: 'not-run' } }));
     expect(text).toMatch(/mac-arm64\.dmg \|[^\n]*launched on its own system: not run/);

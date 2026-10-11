@@ -203,6 +203,11 @@ export function renderReleaseNotes(results: RunResults): string {
     const job = results.jobs.find((candidate) => candidate.job === `build-${platform}`);
     out.push(`No files were published for ${PLATFORM_NAMES[platform]}: its build job ${job ? `ended in ${job.result}` : 'did not report a result'}.`, '');
   }
+  // the images of every board or none (REL-022): the notes say which job to read when there are none
+  if (!results.assets.some((asset) => asset.platform === 'firmware')) {
+    const failed = results.jobs.filter((candidate) => /^(?:build|assemble)-firmware$|^prepare-release-evidence-firmware$/.test(candidate.job) && candidate.result !== 'success');
+    out.push(`No firmware image was published: ${failed.length > 0 ? failed.map((candidate) => `${candidate.job} ended in ${candidate.result}`).join(', ') : 'the firmware jobs did not report a result'}.`, '');
+  }
 
   out.push('### Tests executed in this run', '');
   if (results.suites.length === 0) {
