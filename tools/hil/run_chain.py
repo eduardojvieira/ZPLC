@@ -8,6 +8,11 @@ the person confirms what the device reports -> the person confirms the outputs a
 the language fixtures -> force set and release -> stop. A run record is written for it (HIL-009), and the steps of
 HIL-010 that the tools cannot run yet are listed in the record as pending, with what each lacks, not left out.
 
+The board's I/O description comes from firmware/app/boards/boards.json, the one manifest: the handshake compares it
+with what the image reports (`zplc sys io`, IO-004), and the pending loopback and analog items name its channels. A
+run on real hardware that ends in pass or fail, of an image named by --firmware-image, also writes the flat evidence
+record the manifest derives a support level from; adding it to `evidence_refs` stays a person's edit.
+
 This is a command for a person: it exits with an error when it has no interactive terminal, and AI tools and MCP
 do not start it (HIL-003). `--dry-run` is the one way to run it without a person, and it can only use a fake
 device (`--device host` is the native runtime of this tree and the default, `--device null` shows nothing): it asks
@@ -29,15 +34,44 @@ from hil_ports import PortError, resolve_port
 from language_tester import LanguageTester, fixtures_of
 from zplc_tester import CompileError, UploadError
 
+# the board manifest's library (description hash, image extent): one description of a board, not a copy of it here
+sys.path.append(str(Path(__file__).resolve().parents[2] / "firmware" / "zephyr" / "scripts"))
+import zplc_boards  # noqa: E402
+
 ROOT = Path(__file__).resolve().parents[2]
 MANIFEST = ROOT / "firmware/app/boards/boards.json"
 HIL_OVERLAY = Path(__file__).resolve().with_name("hil_debug.conf")
 DEFAULT_OUT = ROOT / "build" / "hil-records"
 
-# What HIL-010 asks for that the chain does not run yet, and what each needs. The record carries this list.
+
+def _channels(board: dict, kind: str, direction: str | None = None) -> str:
+    found = [
+        f"{c['id']} ({c['pin']})" if c.get("pin") else c["id"]
+        for c in (board.get("io") or {}).get("channels", [])
+        if c["kind"] == kind and (direction is None or c["direction"] == direction)
+    ]
+    return ", ".join(found) or "none"
+
+
+def pending_items(board: dict) -> list[tuple[str, str, str]]:
+    """What HIL-010 asks for that the chain does not run yet, and what each needs. The record carries this list.
+
+    The loopback and analog items name the channels of the board's I/O description. Which output is wired to which
+    input, and which voltage is applied, is not in the manifest and is not invented here: it is the bench run's.
+    """
+    loopback = (
+        f"digital outputs {_channels(board, 'digital', 'output')} and digital inputs {_channels(board, 'digital', 'input')} "
+        "of the board's I/O description; which output is wired to which input is a wiring step: TO BE FILLED from the bench run"
+    )
+    analog = (
+        f"analog inputs {_channels(board, 'analog')} of the board's I/O description; "
+        "the known voltage applied to each is a bench step: TO BE FILLED from the bench run"
+    )
+    return [("digital-loopback", "Digital loopback", loopback), ("analog-read", "Analog read", analog), *PENDING]
+
+
+# The rest of what HIL-010 asks for that the chain does not run yet, and what each needs.
 PENDING = [
-    ("digital-loopback", "Digital loopback", "needs the board's I/O description (IO-001) and a wiring step: TO BE FILLED from the bench run"),
-    ("analog-read", "Analog read", "needs the I/O description and a known voltage on the analog input: TO BE FILLED from the bench run"),
     ("timer-accuracy", "Timer accuracy", "needs a measurement fixture and a reference clock the person provides"),
     ("scan-jitter-10min", "Scan jitter over ten minutes", "needs device-side scan timing (RT-0xx) the shell does not report"),
     ("overrun-fault-outputs-off", "Outputs off after an overrun fault", "needs a fault-injection fixture and RT-019"),
@@ -75,6 +109,28 @@ def build_command(board: dict, with_trace: bool) -> str:
     return f"{command} -- -DEXTRA_CONF_FILE={HIL_OVERLAY}" if with_trace else command
 
 
+def board_io(board: dict) -> dict | None:
+    """What boards.json says the board has: the hash of its description, the channel counts and the image bytes (IO-004, IO-005)."""
+    if not (board.get("io") or {}).get("channels"):
+        return None
+    channels = board["io"]["channels"]
+
+    def count(kind: str, direction: str) -> int:
+        return sum(1 for c in channels if c["kind"] == kind and c["direction"] == direction)
+
+    input_bytes, output_bytes = zplc_boards.image_extent(board)
+    return {
+        "hash": zplc_boards.description_hash(board),
+        "channels": len(channels),
+        "digital_inputs": count("digital", "input"),
+        "digital_outputs": count("digital", "output"),
+        "analog_inputs": count("analog", "input"),
+        "analog_outputs": count("analog", "output"),
+        "input_bytes": input_bytes,
+        "output_bytes": output_bytes,
+    }
+
+
 def find_board(name: str) -> dict:
     boards = json.loads(MANIFEST.read_text())
     for board in boards:
@@ -88,7 +144,12 @@ class Chain:
         self.args, self.io, self.board, self.opener = args, io, board, opener
         self.build_command = build_command(board, args.hil_trace)
         self.dry = args.dry_run
-        self.record = hil_record.new_record("chain", "hardware", {"id": board["ide_id"], "zephyr_board": board.get("zephyr_board")}, args.operator or "unknown")
+        self.description = board_io(board)
+        self.record = hil_record.new_record(
+            "chain", "hardware",
+            {"id": board["ide_id"], "zephyr_board": board.get("zephyr_board"), "board_id": board.get("board_id"), "io": self.description},
+            args.operator or "unknown",
+        )
         self.tester: LanguageTester | None = None
         self.compiled: dict[str, list[int]] = {}
         self.stop = False
@@ -176,6 +237,26 @@ class Chain:
             return f"the device reports {info['board']}; it reports no build identity (zplc sys build), so the record has no commit"
         return f"the device reports {info['board']}, built from {build['commit']}, options {build['options_hash']}"
 
+    def io_step(self):
+        """The image's I/O description is the one boards.json has for this board (IO-004); an image that reports none is skipped, not passed."""
+        found = self.tester.io_identity()
+        if not found:
+            self.record["steps"][-1]["result"] = "skipped"
+            return "the image reports no I/O description (`zplc sys io`): it predates IO-004, so its channels were not compared"
+        self.record["device"]["io"] = found
+        if self.description is None:
+            self.record["steps"][-1]["result"] = "skipped"
+            return f"the image reports {found['board_id']}, hash {found['hash']}; boards.json has no I/O description for this board to compare it with"
+        differences = []
+        if found["board_id"] != self.board["board_id"]:
+            differences.append(f"the image reports board {found['board_id']}, this run is for {self.board['board_id']}")
+        for key in ("hash", "channels", "input_bytes", "output_bytes"):
+            if found[key] != self.description[key]:
+                differences.append(f"{key}: the image reports {found[key]}, boards.json has {self.description[key]}")
+        if differences:
+            raise AssertionError("the image was not built from the I/O description of boards.json for this board: " + "; ".join(differences))
+        return f"the image's I/O description is the one of boards.json: {found['channels']} channels, hash {found['hash']}"
+
     def trace_step(self):
         """Say whether the image has the HIL trace on, from its own options, and require it to be what this run asked for."""
         on = self.record["firmware"].get("hil_trace")
@@ -261,6 +342,7 @@ class Chain:
         # the flash is the person's: asked for before the device is asked who it is
         self.step("flash", "A person flashes the firmware image", "physical", self.flash_prompt, "HIL-010")
         self.step("handshake", "Identity handshake", "automatic", self.handshake, "HIL-010")
+        self.step("io-description", "The image's I/O description is the one of boards.json", "automatic", self.io_step, "IO-004")
         self.step("trace-option", "The image's HIL trace option is what the run asked for", "automatic", self.trace_step, "HIL-013")
         self.physical("confirm-identity", "Confirm the board", "Check that this is the board you flashed and that it is connected to the port named above.", "HIL-003")
         self.physical("safe-to-drive", "Outputs are safe to drive", "Nothing connected to the outputs can hurt anyone or damage equipment when it is switched on and off.", "HIL-003")
@@ -270,7 +352,7 @@ class Chain:
         self.step("force", "Force set and release", "automatic", self.force_step, "HIL-010")
         self.step("stop", "Stop: not running, outputs off", "automatic", self.stop_step, "HIL-010")
         self.release()
-        for item, title, reason in PENDING:
+        for item, title, reason in pending_items(self.board):
             self.record["steps"].append({"id": item, "title": title, "kind": "automatic", "result": "pending", "requirement": "HIL-010", "detail": reason})
         self.record["coverage"] = {
             "requirement": "HIL-010",
@@ -319,12 +401,21 @@ def run(args, io, stdout=None, opener=open_fake) -> int:
     chain = Chain(args, io, board, opener)
     code = chain.run()
     chain.record["operator"] = {"name": args.operator}
+    stem = hil_record.record_stem(chain.record)
+    summary, reason = hil_record.evidence_summary(chain.record, f"{stem}.json")
+    chain.record["logs"].append({"name": "evidence-record", "text": f"written: {stem}.evidence.json" if summary else f"not written: {reason}"})
     try:
         path = hil_record.write_record(chain.record, args.out)
     except ValueError as error:
         print(f"error: {error}", file=sys.stderr)
         return 2
     print(f"{chain.record['result'].upper()}: {path}", file=out)
+    if summary:
+        evidence_path = path.with_name(f"{stem}.evidence.json")
+        evidence_path.write_text(json.dumps(summary, indent=2) + "\n")
+        print(f"EVIDENCE: {evidence_path} (a person adds it to evidence_refs of {board['board_id']} in boards.json after reading the run record)", file=out)
+    else:
+        print(f"no evidence record: {reason}", file=out)
     return code
 
 

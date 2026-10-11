@@ -105,6 +105,29 @@ class IdentityTests(unittest.TestCase):
         self.assertEqual(hil_record.parse_identity_text((TESTDATA / "identity-rpi-pico-hil-trace.txt").read_text()), traced)
         self.assertIsNone(firmware_identity(HOST_JSON)["hil_trace"], "a host build has no such option, so the record does not say")
 
+    def test_the_identity_of_the_real_shell_of_the_firmware_on_native_sim_is_read(self):
+        # captured from `zplc version`, `zplc sys build --json`, `zplc sys io --json` and `zplc sys io` of firmware/app built for native_sim/native
+        build = json.loads((TESTDATA / "identity-native-sim.json").read_text())
+        self.assertEqual(hil_record.parse_identity_text((TESTDATA / "identity-native-sim.txt").read_text()), build)
+        found = firmware_identity(build)
+        self.assertEqual(found["board_target"], "native_sim/native")
+        self.assertIs(found["hil_trace"], False)
+        self.assertEqual(found["build_options"]["SCHEDULER"], "y")
+        self.assertEqual(found["build_options"]["REQUIRED_GPIO_OUTPUT_MASK"], "0x0")
+        self.assertEqual(validate({**record(), "firmware": found}), [])
+
+    def test_the_io_description_identity_of_the_real_shell_is_read_from_the_json_and_from_the_text(self):
+        as_json = json.loads((TESTDATA / "io-native-sim.json").read_text())
+        found = hil_record.parse_io_identity(as_json)
+        self.assertEqual(found, {"board_id": "default-aliases", "hash": "87889780", "channels": 13, "input_bytes": 18, "output_bytes": 1})
+        self.assertEqual(hil_record.parse_io_identity_text((TESTDATA / "io-native-sim.txt").read_text()), found)
+        self.assertEqual(validate({**record(), "device": {"reported_board": "native_sim", "io": found}}), [])
+
+    def test_a_reply_that_is_not_the_io_identity_is_none(self):
+        self.assertEqual(hil_record.parse_io_identity({"schema": 2, "board_id": "x"}), {})
+        self.assertEqual(hil_record.parse_io_identity("nope"), {})
+        self.assertEqual(hil_record.parse_io_identity_text("sys: command not found"), {})
+
     def test_a_build_of_a_tree_without_git_names_no_commit(self):
         self.assertIsNone(firmware_identity({**HOST_JSON, "commit": "unknown"})["commit"])
 

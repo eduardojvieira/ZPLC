@@ -199,6 +199,171 @@ class BuildCommandAndTraceTests(QuietCase):
         self.assertEqual(next(s for s in record["steps"] if s["id"] == "trace-option")["result"], "skipped")
 
 
+def pico():
+    boards = json.loads((ROOT / "firmware/app/boards/boards.json").read_text())
+    return next(b for b in boards if b["ide_id"] == "rpi_pico")
+
+
+def boards_library():
+    import importlib.util
+
+    spec = importlib.util.spec_from_file_location("zplc_boards_under_test", ROOT / "firmware/zephyr/scripts/zplc_boards.py")
+    library = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(library)
+    return library
+
+
+class IoDescriptionDevice(hil_devices.HostRuntimeDevice):
+    """The native runtime that also answers `zplc sys io` with the identity it is given: what a board whose image carries an I/O description says.
+
+    Given `kind="serial"` it only pretends to be a flashed board, with a clean 40-digit commit: no port is opened.
+    """
+
+    def __init__(self, io_identity=None, kind="host-runtime"):
+        super().__init__(RUNTIME)
+        self.io_identity, self.kind = io_identity, kind
+        if kind == "serial":
+            self.hello["build"] = {**self.hello["build"], "commit": "ab" * 20, "dirty": False}
+
+    def handle(self, line):
+        if line.startswith("zplc sys io"):
+            if self.io_identity is None:
+                return "zplc: command not found\r\n"
+            if "--json" in line:
+                return json.dumps({"schema": 1, **self.io_identity}, separators=(",", ":")) + "\r\n"
+            i = self.io_identity
+            return f"I/O description: {i['board_id']}, {i['channels']} channels, hash {i['hash']}, {i['input_bytes']} B in, {i['output_bytes']} B out\r\n"
+        return super().handle(line)
+
+
+@needs_runtime
+class IoDescriptionTests(QuietCase):
+    """IO-004 as the chain uses it: the image's description must be the one boards.json has for the board, and nothing about wiring is invented."""
+
+    def setUp(self):
+        self.library = boards_library()
+        self.board = pico()
+        inputs, outputs = self.library.image_extent(self.board)
+        self.good = {
+            "board_id": self.board["board_id"], "hash": self.library.description_hash(self.board),
+            "channels": len(self.board["io"]["channels"]), "input_bytes": inputs, "output_bytes": outputs,
+        }
+
+    def chain(self, identity, *extra, kind="host-runtime"):
+        """Returns the exit code, the run records and the flat evidence records the chain wrote."""
+        with tempfile.TemporaryDirectory() as directory:
+            code = run_chain.main(
+                ["rpi_pico", "--dry-run", "--out", directory, "--operator", "CI", "--only", "il.minimal", *extra],
+                stdout=io.StringIO(), opener=lambda name: IoDescriptionDevice(identity, kind),
+            )
+            names = sorted(p.name for p in Path(directory).glob("*.json"))
+            load = lambda name: json.loads((Path(directory) / name).read_text())  # noqa: E731
+            return (
+                code,
+                [load(n) for n in names if not n.endswith(".evidence.json")],
+                {n: load(n) for n in names if n.endswith(".evidence.json")},
+            )
+
+    def step(self, record, step_id="io-description"):
+        return next(s for s in record["steps"] if s["id"] == step_id)
+
+    def test_an_image_built_from_the_description_of_the_board_passes_and_both_sides_are_recorded(self):
+        code, (record,), _ = self.chain(self.good)
+        self.assertEqual(code, 0)
+        self.assertEqual(self.step(record)["result"], "pass")
+        self.assertEqual(record["device"]["io"], self.good)
+        self.assertEqual(record["board"]["board_id"], "rpi-pico-rp2040")
+        self.assertEqual(record["board"]["io"]["hash"], self.good["hash"])
+        self.assertEqual(record["board"]["io"]["channels"], len(self.board["io"]["channels"]))
+        self.assertEqual(hil_record.validate(record), [])
+
+    def test_an_image_of_another_boards_description_fails_the_chain(self):
+        code, (record,), _ = self.chain({**self.good, "board_id": "nucleo-h743zi"})
+        self.assertEqual(code, 1)
+        self.assertEqual(self.step(record)["result"], "fail")
+        self.assertIn("nucleo-h743zi", self.step(record)["detail"])
+
+    def test_an_image_with_another_hash_or_size_fails_the_chain(self):
+        for changed in ({"hash": "00000000"}, {"channels": self.good["channels"] + 1}, {"input_bytes": self.good["input_bytes"] + 1}):
+            with self.subTest(changed=changed):
+                code, (record,), _ = self.chain({**self.good, **changed})
+                self.assertEqual((code, self.step(record)["result"]), (1, "fail"))
+
+    def test_an_image_that_reports_no_description_is_skipped_not_passed(self):
+        code, (record,), _ = self.chain(None)
+        self.assertEqual(self.step(record)["result"], "skipped")
+        self.assertNotIn("io", record["device"])
+        self.assertEqual(code, 0)
+
+    def test_the_loopback_item_names_the_channels_of_the_description_and_leaves_the_wiring_to_the_person(self):
+        _, (record,), _ = self.chain(self.good)
+        item = self.step(record, "digital-loopback")
+        channels = self.board["io"]["channels"]
+        digital = [c["id"] for c in channels if c["kind"] == "digital"]
+        self.assertEqual(item["result"], "pending")
+        for channel_id in digital:
+            self.assertIn(channel_id, item["detail"])
+        self.assertIn("TO BE FILLED", item["detail"])
+        self.assertNotRegex(item["detail"], r"(?i)\bwire\b[^.]* to ", "no wiring is invented")
+        analog = self.step(record, "analog-read")
+        for channel_id in (c["id"] for c in channels if c["kind"] == "analog"):
+            self.assertIn(channel_id, analog["detail"])
+
+    def test_a_hardware_run_writes_the_evidence_record_the_manifest_derives_its_support_level_from(self):
+        with tempfile.TemporaryDirectory() as scratch:
+            image = Path(scratch) / "zephyr.uf2"
+            image.write_bytes(b"an image that was flashed")
+            code, (full,), written = self.chain(self.good, "--firmware-image", str(image), kind="serial")
+        self.assertEqual(full["evidence"], "hardware")
+        (name, evidence), = written.items()
+        self.assertEqual(evidence["schema"], "zplc.hil-record/1")
+        self.assertEqual(evidence["board_id"], "rpi-pico-rp2040")
+        self.assertEqual(evidence["firmware_version"], full["firmware"]["version"])
+        self.assertEqual(evidence["commit"], "ab" * 20)
+        self.assertEqual(evidence["image_sha256"], hil_record.sha256_hex(b"an image that was flashed"))
+        self.assertEqual(evidence["result"], full["result"])
+        self.assertEqual(evidence["run_id"], full["run_id"])
+        self.assertTrue(name.startswith(evidence["run_record"].removesuffix(".json")))
+        self.assertTrue(evidence["coverage"]["pending"], "a record says what it did not run")
+        # the manifest's consumer takes it: schema, board id, version, 40-digit commit, 64-digit image hash and a result
+        derived = boards_library().support_level_from_records("rpi-pico-rp2040", [(name, evidence)])
+        self.assertEqual([r["result"] for r in derived["records"]], [evidence["result"]])
+        self.assertEqual(derived["level"], "human-hil" if evidence["result"] == "pass" else "cross-build")
+        why = next(log for log in full["logs"] if log["name"] == "evidence-record")
+        self.assertIn(name, why["text"])
+
+    def test_a_run_on_a_stand_in_writes_no_evidence_record_and_says_so(self):
+        _, (record,), written = self.chain(self.good)
+        self.assertEqual(written, {})
+        why = next(log for log in record["logs"] if log["name"] == "evidence-record")
+        self.assertIn("not written", why["text"])
+        self.assertIn("host-runtime", why["text"])
+
+    def test_a_hardware_run_that_cannot_name_its_image_writes_no_evidence_record_and_says_why(self):
+        _, (record,), written = self.chain(self.good, kind="serial")
+        self.assertEqual(written, {})
+        why = next(log for log in record["logs"] if log["name"] == "evidence-record")
+        self.assertIn("--firmware-image", why["text"])
+
+    def test_an_image_from_an_uncommitted_tree_is_not_evidence_of_a_commit(self):
+        class Dirty(IoDescriptionDevice):
+            def __init__(self, *a, **k):
+                super().__init__(*a, **k)
+                self.hello["build"] = {**self.hello["build"], "dirty": True}
+
+        with tempfile.TemporaryDirectory() as scratch:
+            image = Path(scratch) / "zephyr.uf2"
+            image.write_bytes(b"x")
+            with tempfile.TemporaryDirectory() as directory:
+                run_chain.main(
+                    ["rpi_pico", "--dry-run", "--out", directory, "--operator", "CI", "--only", "il.minimal", "--firmware-image", str(image)],
+                    stdout=io.StringIO(), opener=lambda name: Dirty(self.good, "serial"),
+                )
+                self.assertEqual(list(Path(directory).glob("*.evidence.json")), [])
+                record = json.loads(next(Path(directory).glob("*.json")).read_text())
+        self.assertIn("uncommitted", next(log for log in record["logs"] if log["name"] == "evidence-record")["text"])
+
+
 class InteractiveRunTests(QuietCase):
     @needs_runtime
     def test_a_person_confirms_each_physical_step_by_typing_what_the_device_reports(self):

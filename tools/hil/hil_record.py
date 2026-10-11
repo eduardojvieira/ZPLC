@@ -128,6 +128,32 @@ def parse_identity_text(text: str) -> dict:
     return found if set(found) == set(IDENTITY_KEYS) else {}
 
 
+IO_IDENTITY_KEYS = ("schema", "board_id", "hash", "channels", "input_bytes", "output_bytes")
+_IO_TEXT = re.compile(r"^I/O description: (?P<board_id>\S+), (?P<channels>\d+) channels, hash (?P<hash>[0-9a-f]{8}), (?P<input_bytes>\d+) B in, (?P<output_bytes>\d+) B out$")
+
+
+def parse_io_identity(value) -> dict:
+    """The identity of the I/O description from the object of `zplc sys io --json` (IO-004); {} when it is not one."""
+    if not isinstance(value, dict) or set(value) != set(IO_IDENTITY_KEYS) or value.get("schema") != 1:
+        return {}
+    ok = (
+        isinstance(value["board_id"], str) and value["board_id"] != ""
+        and isinstance(value["hash"], str) and re.fullmatch(r"[0-9a-f]{8}", value["hash"]) is not None
+        and all(isinstance(value[k], int) and not isinstance(value[k], bool) and value[k] >= 0 for k in ("channels", "input_bytes", "output_bytes"))
+    )
+    return {k: value[k] for k in IO_IDENTITY_KEYS if k != "schema"} if ok else {}
+
+
+def parse_io_identity_text(text: str) -> dict:
+    """The same from the line `zplc sys io` prints."""
+    for line in text.splitlines():
+        match = _IO_TEXT.match(line.strip())
+        if match:
+            found = match.groupdict()
+            return {"board_id": found["board_id"], "hash": found["hash"], **{k: int(found[k]) for k in ("channels", "input_bytes", "output_bytes")}}
+    return {}
+
+
 def parse_options(options: str | None) -> dict | None:
     """`A=y,B=8192` as {"A": "y", "B": "8192"}; `none` as {}; None when there is no text to read."""
     if not isinstance(options, str):
@@ -225,6 +251,11 @@ def summarize(record: dict) -> str:
     return "pass" if any(step["result"] == "pass" for step in steps) else "incomplete"
 
 
+def record_stem(record: dict) -> str:
+    """<board>-<date>-<run id>: the file name of a run record without its suffix."""
+    return f"{record['board']['id']}-{record['started_at'][:10]}-{record['run_id'][:8]}"
+
+
 def write_record(record: dict, directory: str | Path) -> Path:
     """Validate and write a record as <directory>/<board>-<date>-<run id>.json; an invalid record is refused, not written."""
     problems = validate(record)
@@ -232,10 +263,53 @@ def write_record(record: dict, directory: str | Path) -> Path:
         raise ValueError("the run record does not fit the schema:\n  " + "\n  ".join(problems))
     folder = Path(directory)
     folder.mkdir(parents=True, exist_ok=True)
-    stamp = record["started_at"][:10]
-    path = folder / f"{record['board']['id']}-{stamp}-{record['run_id'][:8]}.json"
+    path = folder / f"{record_stem(record)}.json"
     path.write_text(json.dumps(record, indent=2) + "\n")
     return path
+
+
+EVIDENCE_SCHEMA = "zplc.hil-record/1"  # the flat record firmware/zephyr/scripts/zplc_boards.py derives a support level from
+
+
+def evidence_summary(record: dict, run_record: str) -> tuple[dict | None, str]:
+    """The flat evidence record of a run for the board manifest, or why there is none.
+
+    Only a run on real hardware that ended in pass or fail, of an image that was built from a clean tree, reports a
+    40-digit commit and is named by its hash, is evidence of a board. A person reads the run record and adds the file
+    to the board's `evidence_refs`; nothing here edits the manifest.
+    """
+    firmware, board = record.get("firmware", {}), record.get("board", {})
+    if record.get("evidence") != "hardware":
+        return None, f"the run was on a stand-in ({record.get('evidence')}), which is not evidence of a board"
+    if record.get("result") not in ("pass", "fail"):
+        return None, f"the run is {record.get('result')}: nothing was proven either way"
+    if not board.get("board_id"):
+        return None, "the board has no board_id in boards.json"
+    if not firmware.get("version"):
+        return None, "the device reports no firmware version"
+    commit = firmware.get("commit")
+    if not (isinstance(commit, str) and re.fullmatch(r"[0-9a-f]{40}", commit)):
+        return None, "the device reports no 40-digit commit"
+    if firmware.get("dirty") is not False:
+        return None, "the image was not shown to be built from a tree without uncommitted changes, so its commit does not name what ran"
+    image = firmware.get("image_sha256")
+    if not (isinstance(image, str) and re.fullmatch(r"[0-9a-f]{64}", image)):
+        return None, "no --firmware-image was given, so the record cannot name the image that was flashed"
+    return {
+        "schema": EVIDENCE_SCHEMA,
+        "board_id": board["board_id"],
+        "firmware_version": firmware["version"],
+        "commit": commit,
+        "image_sha256": image,
+        "result": record["result"],
+        "evidence": "hardware",
+        "hil_trace": firmware.get("hil_trace"),
+        "options_hash": firmware.get("options_hash"),
+        "run_id": record["run_id"],
+        "run_record": run_record,
+        "started_at": record["started_at"],
+        "coverage": record.get("coverage"),
+    }, ""
 
 
 if __name__ == "__main__":  # python3 tools/hil/hil_record.py <record.json>: check a record against the schema

@@ -79,26 +79,34 @@ Scripts that only look at a board and judge nothing (`check_alive.py`,
    version, commit, whether the tree was dirty, board, ABI, draft, and the build
    options with their hash), and records both. The build command the tool told
    you to run is in the record too.
-4. **Trace option.** The image's options say whether the HIL trace is on.
+4. **I/O description.** The device says which board I/O description its
+   image was built from (`zplc sys io --json`: board id, hash, channel count and
+   image bytes). The tool compares it with `boards.json` for the board and
+   fails the run when they differ. An image that reports none is recorded as
+   skipped, not passed.
+5. **Trace option.** The image's options say whether the HIL trace is on.
    The run fails when that is not what it asked for: release firmware carries
    no trace, and `--hil-trace` asks for the image with it.
-5. **Confirm the board.** You type the identity the device reported. Enter
+6. **Confirm the board.** You type the identity the device reported. Enter
    alone does not confirm.
-6. **Outputs are safe to drive.** You type the identity again, saying that
+7. **Outputs are safe to drive.** You type the identity again, saying that
    nothing connected to the outputs can hurt anyone.
-7. **Deploy, run.** A program is uploaded and the scan counter must advance.
-8. **Fixtures.** The fixtures tagged for hardware run, one after another, with
+8. **Deploy, run.** A program is uploaded and the scan counter must advance.
+9. **Fixtures.** The fixtures tagged for hardware run, one after another, with
    their inputs forced and released.
-9. **Force set and release.** A force is set, listed, cleared, and no force
-   remains.
-10. **Stop.** The device is not running and the output image is zero.
+10. **Force set and release.** A force is set, listed, cleared, and no force
+    remains.
+11. **Stop.** The device is not running and the output image is zero.
 
 The chain writes a record whether it passes or fails. The steps of the
 hardware tests the chain does not run yet are in the record as `pending`, each
 with what it lacks:
 
-- digital loopback, analog read, timer accuracy and scan jitter over ten
-  minutes, which need the board's I/O description and a wiring step;
+- digital loopback and analog read, which name the channels of the board's
+  I/O description in `boards.json` and need a wiring step and a known voltage,
+  neither of which is in the manifest (the record says `TO BE FILLED`);
+- timer accuracy and scan jitter over ten minutes, which need a reference
+  clock and device-side scan timing;
 - the fault and watchdog behaviours, which need fault-injection fixtures and
   the runtime behaviours they measure;
 - STOP and RETAIN after a power cycle, and no partial program after twenty
@@ -106,6 +114,19 @@ with what it lacks:
 - the atomic multi-byte write, which needs the framed protocol on the device;
 - one fieldbus exchange per board, which the Modbus scripts do against a local
   endpoint that you provide.
+
+### The evidence record
+
+A run on real hardware that ends in pass or fail, of a firmware image named
+with `--firmware-image` whose device reports a 40-digit commit from a tree
+without uncommitted changes, also writes `<run>.evidence.json` next to the run
+record. It is the flat record `firmware/zephyr/scripts/zplc_boards.py` derives
+a board's support level from: schema `zplc.hil-record/1`, `board_id`, firmware
+version, commit, the SHA-256 of the image, and the result, with the list of what
+the run did not cover. When one of those is missing the run record says why no
+evidence record was written (log `evidence-record`). Adding the file to
+`evidence_refs` of the board in `boards.json` is your edit, after you have read
+the run record; a run on a stand-in never writes one.
 
 When a tool is started without an interactive terminal it exits with status 2
 and says why, before it opens a port.

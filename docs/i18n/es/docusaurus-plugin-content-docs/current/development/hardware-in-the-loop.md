@@ -85,29 +85,37 @@ falla:
    commit, si el árbol estaba modificado, placa, ABI, draft y las opciones de
    compilación con su hash), y registra ambas cosas. El comando de compilación
    que la herramienta le dijo que ejecutara también queda en el registro.
-4. **Opción de traza.** Las opciones de la imagen dicen si la traza HIL está
+4. **Descripción de E/S.** El dispositivo dice de qué descripción de E/S de la
+   placa se compiló su imagen (`zplc sys io --json`: id de placa, hash, cantidad
+   de canales y bytes de imagen). La herramienta la compara con `boards.json`
+   para la placa y falla la ejecución cuando difieren. Una imagen que no
+   informa ninguna queda registrada como omitida, no como aprobada.
+5. **Opción de traza.** Las opciones de la imagen dicen si la traza HIL está
    activa. La ejecución falla cuando no es lo que pidió: el firmware de
    publicación no lleva traza, y `--hil-trace` pide la imagen que la lleva.
-5. **Confirmar la placa.** Usted escribe la identidad que informó el
+6. **Confirmar la placa.** Usted escribe la identidad que informó el
    dispositivo. Pulsar Enter solo no confirma.
-6. **Las salidas son seguras de accionar.** Usted escribe la identidad otra vez,
+7. **Las salidas son seguras de accionar.** Usted escribe la identidad otra vez,
    diciendo que nada conectado a las salidas puede lastimar a nadie.
-7. **Desplegar, ejecutar.** Se carga un programa y el contador de scans debe
+8. **Desplegar, ejecutar.** Se carga un programa y el contador de scans debe
    avanzar.
-8. **Fixtures.** Se ejecutan los fixtures marcados para hardware, uno tras otro,
+9. **Fixtures.** Se ejecutan los fixtures marcados para hardware, uno tras otro,
    con sus entradas forzadas y liberadas.
-9. **Fuerza y liberación.** Se fija una fuerza, se lista, se borra, y no queda
-   ninguna.
-10. **Detener.** El dispositivo no está en ejecución y la imagen de salidas es
-   cero.
+10. **Fuerza y liberación.** Se fija una fuerza, se lista, se borra, y no queda
+    ninguna.
+11. **Detener.** El dispositivo no está en ejecución y la imagen de salidas es
+    cero.
 
 La cadena escribe un registro, pase o falle. Los pasos de las pruebas de
 hardware que la cadena todavía no ejecuta figuran en el registro como
 `pending`, cada uno con lo que le falta:
 
-- lazo digital, lectura analógica, exactitud de temporizador y jitter de scan
-  durante diez minutos, que requieren la descripción de E/S de la placa y un
-  paso de cableado;
+- lazo digital y lectura analógica, que nombran los canales de la descripción
+  de E/S de la placa en `boards.json` y requieren un paso de cableado y una
+  tensión conocida, que no están en el manifiesto (el registro dice
+  `TO BE FILLED`);
+- exactitud de temporizador y jitter de scan durante diez minutos, que
+  requieren un reloj de referencia y tiempos de scan medidos en el dispositivo;
 - los comportamientos de falla y de watchdog, que requieren fixtures de
   inyección de fallas y los comportamientos de runtime que miden;
 - STOP y RETAIN tras un ciclo de energía, y ningún programa parcial tras veinte
@@ -117,6 +125,21 @@ hardware que la cadena todavía no ejecuta figuran en el registro como
   el dispositivo;
 - un intercambio de bus de campo por placa, que los scripts Modbus hacen contra
   un extremo local que usted provee.
+
+### El registro de evidencia
+
+Una ejecución en hardware real que termina en pass o fail, de una imagen de
+firmware indicada con `--firmware-image` cuyo dispositivo informa un commit de
+40 dígitos de un árbol sin cambios sin confirmar, escribe además
+`<ejecución>.evidence.json` junto al registro de ejecución. Es el registro plano
+del que `firmware/zephyr/scripts/zplc_boards.py` deriva el nivel de soporte de
+una placa: esquema `zplc.hil-record/1`, `board_id`, versión de firmware, commit,
+el SHA-256 de la imagen y el resultado, con la lista de lo que la ejecución no
+cubrió. Cuando falta alguno de esos datos, el registro de ejecución dice por qué
+no se escribió registro de evidencia (log `evidence-record`). Agregar el archivo
+a `evidence_refs` de la placa en `boards.json` es una edición suya, después de
+leer el registro de ejecución; una ejecución sobre un sustituto nunca escribe
+uno.
 
 Cuando una herramienta se inicia sin un terminal interactivo termina con estado
 2 y dice por qué, antes de abrir un puerto.

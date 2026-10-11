@@ -87,13 +87,19 @@ on, and the record keeps it. On a release image those scripts exit 77.
 
 Every hardware run writes a machine-readable record, `run-record.schema.json` in this directory, to
 `build/hil-records/` (or `--out`). It carries the board and what the device reported about itself, the firmware
-commit, version and ABI as the image reports them (fields that the image does not report yet are null, not guessed;
-REL-023 will add them), the SHA-256 of every program and of the image the person says was flashed, each step with its
+commit, version, ABI and build options as the image reports them (`zplc sys build --json`, REL-023; a field the image
+does not report is absent, not guessed), the I/O description it reports (`zplc sys io --json`, IO-004) next to the one
+`firmware/app/boards/boards.json` has for the board, the SHA-256 of every program and of the image the person says was flashed, each step with its
 result and the time a person confirmed it by typing the identity the device reported, the tests with their results,
 the tool versions, the operator and the raw shell log. `evidence` says how it was made: `hardware` only for a serial
 link to a board, never for the host runtime or a fake. A record is bound to the image it tested and is committed
 afterwards, never in the commit the image was built from; the steps of HIL-010 that the chain cannot run yet are in it
 as `pending`, each with what it lacks.
+
+A hardware run that ends in pass or fail, of an image named with `--firmware-image` whose device reports a 40-digit
+commit and a clean tree, also writes `<run>.evidence.json`: the flat `zplc.hil-record/1` record that
+`firmware/zephyr/scripts/zplc_boards.py` reads for the support level of a board. The run record's `evidence-record`
+log says when it was not written and why. Adding it to `evidence_refs` of the board is a person's edit.
 
 ## What a person must do
 

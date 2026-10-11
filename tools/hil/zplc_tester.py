@@ -26,7 +26,7 @@ from zplc_contract import Opcode  # noqa: E402
 
 from hil_devices import DeviceError, SerialTransport, open_fake  # noqa: E402
 from hil_ports import PortError, resolve_port  # noqa: E402
-from hil_record import IDENTITY_KEYS, parse_identity_text  # noqa: E402
+from hil_record import IDENTITY_KEYS, parse_identity_text, parse_io_identity, parse_io_identity_text  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[2]
 CLI = ROOT / "packages/zplc-ide/src/cli/index.ts"
@@ -173,6 +173,15 @@ class ZPLCTester:
         if isinstance(found, dict) and set(found) == set(IDENTITY_KEYS):
             return found
         return parse_identity_text(self.send("zplc version"))
+
+    def io_identity(self) -> dict:
+        """Which board I/O description the image was built from (IO-004): `zplc sys io --json`, else the line `zplc sys io` prints; {} when it reports none."""
+        match = re.search(r"\{.*\}", self.send("zplc sys io --json"), re.DOTALL)
+        try:
+            found = parse_io_identity(json.loads(match.group(0))) if match else {}
+        except json.JSONDecodeError:
+            found = {}
+        return found or parse_io_identity_text(self.send("zplc sys io"))
 
     def reset_state(self):
         self.send("zplc stop")

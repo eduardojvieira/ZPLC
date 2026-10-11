@@ -73,6 +73,55 @@
             "string",
             "null"
           ]
+        },
+        "board_id": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "$comment": "board_id of boards.json: the id the evidence records of the manifest name"
+        },
+        "io": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "additionalProperties": false,
+          "$comment": "what boards.json says the board has: the hash of its description and the channel counts",
+          "properties": {
+            "hash": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{8}$"
+            },
+            "channels": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "digital_inputs": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "digital_outputs": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "analog_inputs": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "analog_outputs": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "input_bytes": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "output_bytes": {
+              "type": "integer",
+              "minimum": 0
+            }
+          }
         }
       }
     },
@@ -119,6 +168,40 @@
             "host-runtime",
             "fake"
           ]
+        },
+        "io": {
+          "type": "object",
+          "required": [
+            "board_id",
+            "hash",
+            "channels",
+            "input_bytes",
+            "output_bytes"
+          ],
+          "additionalProperties": false,
+          "$comment": "`zplc sys io --json` (IO-004): the board I/O description the image was built from",
+          "properties": {
+            "board_id": {
+              "type": "string",
+              "minLength": 1
+            },
+            "hash": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{8}$"
+            },
+            "channels": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "input_bytes": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "output_bytes": {
+              "type": "integer",
+              "minimum": 0
+            }
+          }
         }
       }
     },
