@@ -4,8 +4,29 @@
     {"kind":"conformance","ref":"conformance/harness/vf-001-input-reaches-output.expect.json","test":"VF-001 an input set before a scan reaches the output on that scan"},
     {"kind":"conformance","ref":"conformance/harness/vf-001-vm-fault-is-observed.expect.json","test":"VF-001 a division by zero ends the scan in a VM fault and stores nothing"}
   ],
+  "VF-002": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/conformance/addCase.test.ts","test":"VF-002 a source file and an expected-values file are a new case: the runner runs it, passes it, and fails a wrong one"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/conformance/addCase.test.ts","test":"VF-002 a source file without its expected values is refused loudly, so a half-written case cannot assert less than it says"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/conformance/addCase.test.ts","test":"adding a conformance case (VF-002)"}
+  ],
   "VF-003": [
     {"kind":"unit","ref":"packages/zplc-ide/src/conformance/cases.test.ts","test":"parseExpectation: matrix rows, tags and located diagnostics (VF-003, VF-005)"}
+  ],
+  "VF-004": [
+    {"kind":"unit","ref":"tools/ci/conformance-defects.test.ts","test":"VF-004 accepts a defect that a case shows, that a test shows, that no program shows with a requirement that has a check, and an open one"},
+    {"kind":"unit","ref":"tools/ci/conformance-defects.test.ts","test":"VF-004 covers each workstream of the review: CMP, LNG and RT"},
+    {"kind":"unit","ref":"tools/ci/conformance-defects.test.ts","test":"VF-004 has a case, a test, a reason or an open mark for every defect of the review, and each of them checks out"},
+    {"kind":"unit","ref":"tools/ci/conformance-defects.test.ts","test":"VF-004 has more defects shown by a case than shown any other way"},
+    {"kind":"unit","ref":"tools/ci/conformance-defects.test.ts","test":"VF-004 is the map that the tool generates from the defects and the cases"},
+    {"kind":"unit","ref":"tools/ci/conformance-defects.test.ts","test":"VF-004 refuses \"no program shows it\" when none of the requirements that fix the defect has a check"},
+    {"kind":"unit","ref":"tools/ci/conformance-defects.test.ts","test":"VF-004 refuses a case that does not exist, and a case filed under a requirement that does not fix the defect"},
+    {"kind":"unit","ref":"tools/ci/conformance-defects.test.ts","test":"VF-004 refuses a defect that nothing shows, and states that exclude each other"},
+    {"kind":"unit","ref":"tools/ci/conformance-defects.test.ts","test":"VF-004 refuses a test whose file or name is not there, so that a rename breaks the map loudly"},
+    {"kind":"unit","ref":"tools/ci/conformance-defects.test.ts","test":"VF-004 refuses an id that is not one, a repeated id, an unknown requirement, an unknown key and a missing statement"},
+    {"kind":"unit","ref":"tools/ci/conformance-defects.test.ts","test":"VF-004 renders each defect with its cases, and each requirement with the defects it fixes"},
+    {"kind":"unit","ref":"tools/ci/conformance-defects.test.ts","test":"VF-004 reports the cases of the map that the expected-failure list holds, and counts the states"},
+    {"kind":"unit","ref":"tools/ci/conformance-defects.test.ts","test":"the committed map (VF-004)"},
+    {"kind":"unit","ref":"tools/ci/conformance-defects.test.ts","test":"the map of defects and cases (VF-004)"}
   ],
   "VF-005": [
     {"kind":"unit","ref":"packages/zplc-ide/src/conformance/cases.test.ts","test":"parseExpectation: matrix rows, tags and located diagnostics (VF-003, VF-005)"},
@@ -48,6 +69,9 @@
   "VF-018": [
     {"kind":"unit","ref":"tools/ci/test_run_clang_tidy.py","test":"HostUnits","partial":true,"note":"the host pass of clang-tidy runs in CI over the core, the POSIX HAL and the host application with warnings as errors; the Zephyr HAL and firmware/app are analysed only where a west build tree exists (run.sh tidy) and firmware/app carries a per-board baseline of findings; -Werror on the Zephyr library was applied without a Zephyr build"}
   ],
+  "VF-019": [
+    {"kind":"unit","ref":"tools/docs/test_validate_docs_pages.py","test":"test_endings_the_spec_rejects","note":"run by the docs-and-truth job of ci.yml (python3 tools/docs/test_validate_docs_pages.py) and by bun run check:docs: one fixture per rule of VF-019 (a page that stops mid-sentence, in the header of a table or inside a code block; a page that no sidebar entry names; an English and Spanish pair whose heading levels or number of code blocks differ), run over the English and the Spanish tree"}
+  ],
   "VF-020": [
     {"kind":"unit","ref":"tools/docs/check-docs-samples.test.ts","test":"docs samples: expected results (VF-020)"},
     {"kind":"unit","ref":"tools/docs/check-docs-samples.test.ts","test":"docs samples: the English page and its Spanish twin (VF-020)"},
@@ -55,6 +79,11 @@
   ],
   "VF-022": [
     {"kind":"unit","ref":"tools/ci/test-inventory.test.ts","test":"checkInventory (VF-022)"}
+  ],
+  "VF-023": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/cli/nativeRuntimeGuard.test.ts","test":"VF-023 are never skipped in CI when the binary is missing, in any test file that reaches the runtime"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/cli/nativeRuntimeGuard.test.ts","test":"VF-023 are skipped outside CI when the binary is missing, and say how to run them"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/cli/nativeRuntimeGuard.test.ts","test":"VF-023 fail in CI when the binary is missing"}
   ],
   "VF-027": [
     {"kind":"unit","ref":"tools/ci/check-expected-failures.test.ts","test":"check-expected-failures command (VF-027)"},
@@ -708,6 +737,7 @@
     {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/unit.test.ts","test":"a declaration made twice is an error at every place it is made (CMP-042)"},
     {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/unit.test.ts","test":"the debug map of a unit (CMP-042, CMP-054)"},
     {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/unit.test.ts","test":"what every file of a project sees of the others (CMP-042)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/cli/toolApi.test.ts","test":"drives and observes a global that another file declares, by program or by name alone (CMP-042)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/cli/toolApi.test.ts","test":"lists a global of a library file once, under a POU name the MCP symbol schema accepts (CMP-042)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/test-engine/globals.test.ts","test":"scenario signals that name a global (CMP-042)"}
   ],
@@ -724,6 +754,11 @@
     {"kind":"conformance","ref":"conformance/cmp/cmp-044-located-memory-overlap.expect.json","test":"CMP-044 a variable that overlaps an AT %M variable is rejected"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-044-located-memory-variable.expect.json","test":"CMP-044 a variable located in the work memory (%MW0) keeps its value between scans"}
   ],
+  "CMP-045": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/cli/compileEntryPoint.test.ts","test":"CMP-045 Studio, the CLI, the MCP tools and the tests give one result for every board of the manifest"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/cli/compileEntryPoint.test.ts","test":"CMP-045 the single-file build of the CLI refuses a program for the same limit as the project build"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/cli/compileEntryPoint.test.ts","test":"one compile entry point with one set of limits (CMP-045)"}
+  ],
   "CMP-046": [
     {"kind":"unit","ref":"packages/zplc-ide/src/cli/libraries.test.ts","test":"a library folder of the project (CMP-046)"}
   ],
@@ -732,16 +767,26 @@
     {"kind":"conformance","ref":"conformance/cmp/cmp-047-two-cyclic-tasks-of-one-interval.expect.json","test":"CMP-047 two cyclic tasks of one interval each run their program on every scan"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-047-two-programs-writing-one-output-are-rejected.expect.json","test":"CMP-047 two programs that write the same physical output are rejected at the second declaration"}
   ],
+  "CMP-048": [
+    {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/asm-line.test.ts","test":"AsmLine, the type of what the generator writes (CMP-048)"},
+    {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/asm-line.test.ts","test":"the assembly of every conformance program passes the check (CMP-048)"},
+    {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/asm-line.test.ts","test":"what is written is checked when it is written (CMP-048)"}
+  ],
   "CMP-049": [
+    {"kind":"conformance","ref":"conformance/cmp/cmp-049-direct-address-beyond-the-operand-field-is-rejected.expect.json","test":"CMP-049 a direct address beyond the 16-bit operand field is rejected, not truncated"},
     {"kind":"unit","ref":"packages/zplc-compiler/src/assembler/assembler.test.ts","test":"relocateBytecode refuses a relocation past 16 bits instead of wrapping it (CMP-049)"},
     {"kind":"unit","ref":"packages/zplc-compiler/src/assembler/fields.test.ts","test":"an operand that does not fit its field is an error, not a truncation (CMP-049)"},
     {"kind":"unit","ref":"packages/zplc-compiler/src/assembler/fields.test.ts","test":"the container fields are checked, not masked (CMP-049)"}
   ],
   "CMP-050": [
+    {"kind":"conformance","ref":"conformance/cmp/cmp-050-expression-too-deep-for-the-stack-is-rejected.expect.json","test":"CMP-050 an expression deeper than the evaluation stack of the target is rejected at build time"},
     {"kind":"unit","ref":"packages/zplc-compiler/src/assembler/artifact.test.ts","test":"the call depth of a task is a field of its definition (CMP-050)"},
     {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/depths.test.ts","test":"a depth over the limit of the target fails the build (CMP-050)"},
     {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/depths.test.ts","test":"the depth of a task is measured and recorded in the artifact (CMP-050)"},
     {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_loader_verify.c","test":"CMP-050: the depth a task declares is proved, and 0 declares nothing. A"}
+  ],
+  "CMP-051": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/conformance/conformance.test.ts","test":"CMP-051 the loader accepts every artifact the compiler produced for a conformance case"}
   ],
   "CMP-052": [
     {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/compiler.test.ts","test":"records the draft contract counter in the artifact of every entry point (CMP-052)"},
@@ -950,6 +995,7 @@
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"9 Undo after switching tabs"}
   ],
   "LNG-011": [
+    {"kind":"conformance","ref":"conformance/lng/lng-011-ld-model-that-is-not-a-ladder-is-rejected.expect.json","test":"LNG-011 a Ladder file whose rungs are not a list is rejected with a message, not cast"},
     {"kind":"unit","ref":"packages/zplc-ide/src/models/visualFileLoad.schema.test.ts","test":"LNG-011 a variable is an object with a name and a type, in every language"},
     {"kind":"unit","ref":"packages/zplc-ide/src/models/visualFileLoad.schema.test.ts","test":"LNG-011 the parts of a Ladder file have the shape the editor reads"},
     {"kind":"unit","ref":"packages/zplc-ide/src/models/visualFileLoad.schema.test.ts","test":"LNG-011 the parts of an SFC chart have the shape the editor reads"}
@@ -1127,6 +1173,7 @@
     {"kind":"conformance","ref":"conformance/rt/rt-015-two-cyclic-tasks-with-different-intervals.expect.json","test":"RT-015 two cyclic tasks with different intervals load in simulation and each runs at its own interval","partial":true,"note":"covers the model in simulation and the documentation: the Zephyr scheduler still differs in how it reports a deadline miss (RT-014), and the differences that remain are listed in the scheduler page, so RT-015 stays open until the target is checked against the same suite"},
     {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/compiler.test.ts","test":"rejects an event-triggered or interrupt-triggered task at its definition in zplc.json (RT-015)","partial":true,"note":"covers the model in simulation and the documentation: the Zephyr scheduler still differs in how it reports a deadline miss (RT-014), and the differences that remain are listed in the scheduler page, so RT-015 stays open until the target is checked against the same suite"},
     {"kind":"unit","ref":"packages/zplc-ide/src/cli/toolApi.test.ts","test":"rejects an event-triggered task at its definition in zplc.json (RT-015)","partial":true,"note":"covers the model in simulation and the documentation: the Zephyr scheduler still differs in how it reports a deadline miss (RT-014), and the differences that remain are listed in the scheduler page, so RT-015 stays open until the target is checked against the same suite"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/cli/toolApi.test.ts","test":"runs cyclic tasks of different intervals, each on its own interval, in a POSIX scenario (RT-015)"},
     {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_native_runtime_session.c","test":"RT-015, RT-017: pause, resume, stop and reset keep the schedule of the tasks coherent.","partial":true,"note":"covers the model in simulation and the documentation: the Zephyr scheduler still differs in how it reports a deadline miss (RT-014), and the differences that remain are listed in the scheduler page, so RT-015 stays open until the target is checked against the same suite"},
     {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_native_runtime_session.c","test":"RT-015: a scenario steps by the common divisor of the intervals and releases each task on its own interval.","partial":true,"note":"covers the model in simulation and the documentation: the Zephyr scheduler still differs in how it reports a deadline miss (RT-014), and the differences that remain are listed in the scheduler page, so RT-015 stays open until the target is checked against the same suite"},
     {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_native_runtime_session.c","test":"RT-015: a task released earlier runs first, whatever its priority.","partial":true,"note":"covers the model in simulation and the documentation: the Zephyr scheduler still differs in how it reports a deadline miss (RT-014), and the differences that remain are listed in the scheduler page, so RT-015 stays open until the target is checked against the same suite"},
