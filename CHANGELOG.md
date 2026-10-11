@@ -987,6 +987,27 @@ All notable changes are documented here.
   failed, not sent on the next session. `STATUS` holds one of the documented
   codes, not a raw errno. The handshake and the time limits of each block are
   in `docs/docs/runtime/communication-function-blocks.md`.
+- **A Modbus RTU request to a responsive device succeeds within the configured
+  timeout, and the TCP client takes a response whole** (COM-012, COM-006,
+  COM-018). The RTU client passed its timeout in milliseconds into the field
+  the Zephyr Modbus client reads in microseconds, so the interface waited a
+  thousandth of the configured time (0.5 ms for the default 500 ms) and every
+  request to a device timed out before the first byte of an answer could arrive.
+  The TCP client read the response with one `recv()`, so an answer that came in
+  two segments was refused, did not check the transaction, the unit, the length or
+  the count it had asked for, took any exception for `-EIO`, and connected
+  without a time limit. It now connects without blocking past the configured
+  time, sends all of the request, puts the response together from the stream,
+  and accepts only the answer to its request: another transaction, another unit,
+  a short frame or a count that is not the one asked for is a protocol error
+  (`STATUS` 8), an exception response is a protocol error too, and silence is a
+  timeout (`STATUS` 2) after the configured time. The frames are built and read
+  by `zplc_modbus_tcp.c`, which the server of the product already used, so the
+  host tests run the client's requests through the server. `firmware/tests/
+  modbus_client_tcp` runs the client against a Modbus TCP server written for the
+  test on the loopback interface of native_sim. No serial device is used by any
+  of it: the RTU path is checked at the interface parameters, and the
+  hardware record of an RTU exchange on the Pico is not made.
 
 ## 2.0.0-rc.3 - 2026-09-01
 

@@ -68,7 +68,7 @@ static struct k_msgq s_tx_queue;
 static struct modbus_req *s_tx_queue_buf[MAX_ASYNC_TX];
 
 static struct k_thread s_handler_thread;
-static K_THREAD_STACK_DEFINE(s_handler_stack, 2048);
+static K_THREAD_STACK_DEFINE(s_handler_stack, 3072);
 
 static void tx_lock(void *context) {
   ARG_UNUSED(context);

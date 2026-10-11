@@ -708,6 +708,15 @@ target_include_directories(test_parse PRIVATE
 )
 add_test(NAME test_parse COMMAND test_parse)
 
+# Test: the frames of the Modbus clients, and the unit of their timeouts (COM-006, COM-012). The server of the
+# product is compiled with it, so the request of the client is checked against what the server accepts.
+add_executable(test_modbus_client_pdu
+    tests/test_modbus_client_pdu.c
+    ${ZPLC_APP_SRC}/zplc_modbus_tcp.c
+)
+target_include_directories(test_modbus_client_pdu PRIVATE ${ZPLC_APP_SRC})
+add_test(NAME test_modbus_client_pdu COMMAND test_modbus_client_pdu)
+
 add_executable(test_comm_handler_modbus
     tests/test_comm_handler_modbus.c
 )

@@ -1,4 +1,6 @@
 #include "zplc_config.h"
+#include "zplc_modbus_tcp.h"
+#include "zplc_modbus_timing.h"
 
 #include <zplc_core.h>
 #include <zplc_exchange.h>
@@ -9,6 +11,7 @@
 #include <zephyr/modbus/modbus.h>
 #if defined(CONFIG_NET_SOCKETS)
 #include <zephyr/net/socket.h>
+#include <zephyr/sys/fdtable.h>
 #endif
 #include <zephyr/sys/byteorder.h>
 
@@ -19,14 +22,13 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(zplc_modbus_client, LOG_LEVEL_INF);
 
-#define ZPLC_MODBUS_TCP_MBAP_LEN 7U
-#define ZPLC_MODBUS_TCP_MAX_PDU 253U
+#define ZPLC_MODBUS_TCP_MAX_PDU ZPLC_MODBUS_PDU_MAX
 #define ZPLC_MODBUS_TCP_MAX_ADU (ZPLC_MODBUS_TCP_MBAP_LEN + ZPLC_MODBUS_TCP_MAX_PDU)
 
-#define FC_READ_COILS 0x01U
-#define FC_READ_HOLDING_REGISTERS 0x03U
-#define FC_WRITE_SINGLE_COIL 0x05U
-#define FC_WRITE_SINGLE_REGISTER 0x06U
+#define FC_READ_COILS ZPLC_MODBUS_FC_READ_COILS
+#define FC_READ_HOLDING_REGISTERS ZPLC_MODBUS_FC_READ_HOLDING_REGISTERS
+#define FC_WRITE_SINGLE_COIL ZPLC_MODBUS_FC_WRITE_SINGLE_COIL
+#define FC_WRITE_SINGLE_REGISTER ZPLC_MODBUS_FC_WRITE_SINGLE_REGISTER
 #define FC_WRITE_MULTIPLE_REGISTERS 0x10U
 
 #if DT_HAS_COMPAT_STATUS_OKAY(zephyr_modbus_serial)
@@ -95,7 +97,6 @@ static int mem_write_val(uint16_t addr, zplc_data_type_t type, uint32_t val)
     return zplc_exchange_write(addr, bytes, size) == 0 ? 0 : -EINVAL;
 }
 
-#if ZPLC_HAS_MODBUS_RTU
 static enum uart_config_parity zplc_modbus_parity_to_uart(zplc_modbus_parity_t parity)
 {
     switch (parity) {
@@ -108,23 +109,31 @@ static enum uart_config_parity zplc_modbus_parity_to_uart(zplc_modbus_parity_t p
         return UART_CFG_PARITY_NONE;
     }
 }
-#endif
+
+/**
+ * @brief The parameters of the RTU client interface (COM-012).
+ *
+ * The wait for a response is the configured timeout of the clients, given to the Zephyr client in the unit
+ * it reads: microseconds. It is not tied to the devicetree, so a test can read what an interface is given.
+ */
+void zplc_modbus_rtu_client_params(struct modbus_iface_param *param)
+{
+    memset(param, 0, sizeof(*param));
+    param->mode = MODBUS_MODE_RTU;
+    param->rx_timeout = zplc_modbus_rtu_rx_timeout_us(zplc_config_get_modbus_tcp_client_timeout_ms());
+    param->serial.baud = zplc_config_get_modbus_rtu_baud();
+    param->serial.parity = zplc_modbus_parity_to_uart(zplc_config_get_modbus_rtu_parity());
+    param->serial.stop_bits = UART_CFG_STOP_BITS_1;
+}
 
 static int zplc_modbus_rtu_client_iface_init(void)
 {
 #if ZPLC_HAS_MODBUS_RTU
     const char iface_name[] = DEVICE_DT_NAME(ZPLC_MODBUS_RTU_NODE);
-    struct modbus_iface_param client_param = {
-        .mode = MODBUS_MODE_RTU,
-        .rx_timeout = MAX(zplc_config_get_modbus_tcp_client_timeout_ms(), 100U),
-        .serial = {
-            .baud = zplc_config_get_modbus_rtu_baud(),
-            .parity = zplc_modbus_parity_to_uart(zplc_config_get_modbus_rtu_parity()),
-            .stop_bits = UART_CFG_STOP_BITS_1,
-        },
-    };
+    struct modbus_iface_param client_param;
     int iface = modbus_iface_get_by_name(iface_name);
 
+    zplc_modbus_rtu_client_params(&client_param);
     if (iface < 0) {
         return iface;
     }
@@ -141,7 +150,20 @@ static int zplc_modbus_rtu_client_iface_init(void)
 }
 
 #if defined(CONFIG_NET_SOCKETS)
-static int tcp_connect_socket(const char *host, uint16_t port, uint32_t timeout_ms)
+/* Milliseconds left until `deadline`, 0 when it has passed. */
+static int32_t ms_left(int64_t deadline)
+{
+    const int64_t left = deadline - k_uptime_get();
+
+    return left > 0 ? (int32_t)left : 0;
+}
+
+/**
+ * Connect to host:port within the time left. The connect does not block past the deadline: the socket is
+ * non-blocking and the wait is a poll, so a host that does not answer is -ETIMEDOUT after the configured
+ * time, not after the network stack gives up (COM-018).
+ */
+static int tcp_connect_socket(const char *host, uint16_t port, int64_t deadline)
 {
     struct zsock_addrinfo hints = {
         .ai_family = AF_INET,
@@ -149,10 +171,11 @@ static int tcp_connect_socket(const char *host, uint16_t port, uint32_t timeout_
         .ai_protocol = IPPROTO_TCP,
     };
     struct zsock_addrinfo *res = NULL;
+    struct zsock_pollfd fd;
     char port_buf[8];
     int sock;
     int rc;
-    struct zsock_timeval tv;
+    int flags;
 
     snprintf(port_buf, sizeof(port_buf), "%u", (unsigned int)port);
     rc = zsock_getaddrinfo(host, port_buf, &hints, &res);
@@ -166,80 +189,177 @@ static int tcp_connect_socket(const char *host, uint16_t port, uint32_t timeout_
         return -errno;
     }
 
-    tv.tv_sec = (timeout_ms / 1000U);
-    tv.tv_usec = (timeout_ms % 1000U) * 1000U;
-    (void)zsock_setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv));
-    (void)zsock_setsockopt(sock, SOL_SOCKET, SO_SNDTIMEO, &tv, sizeof(tv));
+    flags = zsock_fcntl(sock, ZVFS_F_GETFL, 0);
+    if (flags < 0 || zsock_fcntl(sock, ZVFS_F_SETFL, flags | ZVFS_O_NONBLOCK) < 0) {
+        rc = -errno;
+        zsock_freeaddrinfo(res);
+        zsock_close(sock);
+        return rc;
+    }
 
     rc = zsock_connect(sock, res->ai_addr, res->ai_addrlen);
     zsock_freeaddrinfo(res);
-    if (rc < 0) {
+    if (rc == 0) {
+        return sock;
+    }
+    if (errno != EINPROGRESS && errno != EAGAIN) {
         rc = -errno;
         zsock_close(sock);
         return rc;
     }
 
+    fd.fd = sock;
+    fd.events = ZSOCK_POLLOUT;
+    fd.revents = 0;
+    rc = zsock_poll(&fd, 1, ms_left(deadline));
+    if (rc == 0) {
+        zsock_close(sock);
+        return -ETIMEDOUT;
+    }
+    if (rc < 0) {
+        rc = -errno;
+        zsock_close(sock);
+        return rc;
+    }
+    {
+        int error = 0;
+        socklen_t length = sizeof(error);
+
+        if (zsock_getsockopt(sock, SOL_SOCKET, SO_ERROR, &error, &length) < 0) {
+            error = errno;
+        }
+        if (error != 0 || (fd.revents & (ZSOCK_POLLERR | ZSOCK_POLLHUP)) != 0) {
+            zsock_close(sock);
+            return error != 0 ? -error : -ECONNREFUSED;
+        }
+    }
     return sock;
 }
 
+/** Send all of `data` within the time left. */
+static int tcp_send_all(int sock, const uint8_t *data, size_t length, int64_t deadline)
+{
+    size_t sent = 0U;
+
+    while (sent < length) {
+        struct zsock_pollfd fd = {.fd = sock, .events = ZSOCK_POLLOUT, .revents = 0};
+        int rc = zsock_poll(&fd, 1, ms_left(deadline));
+
+        if (rc == 0) {
+            return -ETIMEDOUT;
+        }
+        if (rc < 0) {
+            return -errno;
+        }
+        rc = (int)zsock_send(sock, data + sent, length - sent, 0);
+        if (rc < 0) {
+            if (errno == EAGAIN || errno == EWOULDBLOCK) {
+                continue;
+            }
+            return -errno;
+        }
+        sent += (size_t)rc;
+    }
+    return 0;
+}
+
+/** What the reassembly of a response gives: the one ADU the server sent. */
+struct tcp_response {
+    uint8_t adu[ZPLC_MODBUS_TCP_MAX_ADU];
+    size_t length;
+    bool complete;
+};
+
+static int tcp_response_cb(const uint8_t *adu, size_t length, void *context)
+{
+    struct tcp_response *response = context;
+
+    if (length > sizeof(response->adu) || response->complete) {
+        return -EPROTO;
+    }
+    memcpy(response->adu, adu, length);
+    response->length = length;
+    response->complete = true;
+    return 0;
+}
+
+/**
+ * One transaction on a connection of its own: the request, then the response, whole, whatever the way the
+ * segments of the stream fall (a response may come in pieces). Everything, connect included, is inside the
+ * configured timeout (COM-018). The PDU of the response is the checked one: its transaction, protocol, unit
+ * and length are the ones of the request.
+ */
 static int tcp_transaction(const char *host, uint16_t port, uint8_t unit_id,
                            const uint8_t *req_pdu, size_t req_pdu_len,
                            uint8_t *resp_pdu, size_t *resp_pdu_len,
                            uint32_t timeout_ms)
 {
     uint8_t adu[ZPLC_MODBUS_TCP_MAX_ADU];
-    uint8_t rx[ZPLC_MODBUS_TCP_MAX_ADU];
-    uint16_t trans_id = ++s_tcp_transaction_id;
-    size_t rx_len;
+    zplc_modbus_tcp_stream_t stream;
+    struct tcp_response response = {.length = 0U, .complete = false};
+    const uint16_t trans_id = ++s_tcp_transaction_id;
+    const int64_t deadline = k_uptime_get() + (int64_t)timeout_ms;
+    const uint8_t *pdu = NULL;
+    size_t pdu_length = 0U;
+    size_t adu_length;
     int sock;
     int rc;
 
     if (req_pdu_len > ZPLC_MODBUS_TCP_MAX_PDU || resp_pdu == NULL || resp_pdu_len == NULL) {
         return -EINVAL;
     }
+    adu_length = zplc_modbus_tcp_build_request(adu, sizeof(adu), trans_id, unit_id, req_pdu, req_pdu_len);
+    if (adu_length == 0U) {
+        return -EINVAL;
+    }
 
-    adu[0] = (uint8_t)(trans_id >> 8);
-    adu[1] = (uint8_t)(trans_id & 0xFFU);
-    adu[2] = 0U;
-    adu[3] = 0U;
-    adu[4] = (uint8_t)(((req_pdu_len + 1U) >> 8) & 0xFFU);
-    adu[5] = (uint8_t)((req_pdu_len + 1U) & 0xFFU);
-    adu[6] = unit_id;
-    memcpy(&adu[7], req_pdu, req_pdu_len);
-
-    sock = tcp_connect_socket(host, port, timeout_ms);
+    sock = tcp_connect_socket(host, port, deadline);
     if (sock < 0) {
         return sock;
     }
 
-    rc = zsock_send(sock, adu, req_pdu_len + ZPLC_MODBUS_TCP_MBAP_LEN, 0);
-    if (rc < 0) {
-        rc = -errno;
-        zsock_close(sock);
+    rc = tcp_send_all(sock, adu, adu_length, deadline);
+    zplc_modbus_tcp_stream_reset(&stream);
+    while (rc == 0 && !response.complete) {
+        uint8_t chunk[64];
+        struct zsock_pollfd fd = {.fd = sock, .events = ZSOCK_POLLIN, .revents = 0};
+        int received;
+
+        rc = zsock_poll(&fd, 1, ms_left(deadline));
+        if (rc == 0) {
+            rc = -ETIMEDOUT;
+            break;
+        }
+        if (rc < 0) {
+            rc = -errno;
+            break;
+        }
+        received = (int)zsock_recv(sock, chunk, sizeof(chunk), 0);
+        if (received == 0) {
+            rc = -ECONNRESET; /* the server closed before the response was whole */
+            break;
+        }
+        if (received < 0) {
+            if (errno == EAGAIN || errno == EWOULDBLOCK) {
+                rc = 0;
+                continue;
+            }
+            rc = -errno;
+            break;
+        }
+        rc = zplc_modbus_tcp_stream_feed(&stream, chunk, (size_t)received, tcp_response_cb, &response);
+    }
+    zsock_close(sock);
+    if (rc != 0) {
         return rc;
     }
 
-    rc = zsock_recv(sock, rx, sizeof(rx), 0);
-    zsock_close(sock);
-    if (rc <= 0) {
-        return (rc == 0) ? -ECONNRESET : -errno;
+    rc = zplc_modbus_tcp_response_pdu(response.adu, response.length, trans_id, unit_id, &pdu, &pdu_length);
+    if (rc != 0) {
+        return rc;
     }
-
-    rx_len = (size_t)rc;
-    if (rx_len < ZPLC_MODBUS_TCP_MBAP_LEN + 2U) {
-        return -EMSGSIZE;
-    }
-
-    if (rx[0] != adu[0] || rx[1] != adu[1]) {
-        return -EIO;
-    }
-
-    *resp_pdu_len = rx_len - ZPLC_MODBUS_TCP_MBAP_LEN;
-    memcpy(resp_pdu, &rx[7], *resp_pdu_len);
-    if ((resp_pdu[0] & 0x80U) != 0U) {
-        return -EIO;
-    }
-
+    memcpy(resp_pdu, pdu, pdu_length);
+    *resp_pdu_len = pdu_length;
     return 0;
 }
 #endif
@@ -305,7 +425,7 @@ int zplc_modbus_tcp_client_read_holding(const char *host, uint16_t port,
                                          uint16_t count, uint16_t *out)
 {
     uint8_t req[5];
-    uint8_t resp[ZPLC_MODBUS_TCP_MAX_ADU];
+    uint8_t resp[ZPLC_MODBUS_TCP_MAX_PDU];
     size_t resp_len = 0U;
     int rc;
 
@@ -313,61 +433,47 @@ int zplc_modbus_tcp_client_read_holding(const char *host, uint16_t port,
         return -EINVAL;
     }
 
-    req[0] = FC_READ_HOLDING_REGISTERS;
-    req[1] = (uint8_t)(start_reg >> 8);
-    req[2] = (uint8_t)(start_reg & 0xFFU);
-    req[3] = (uint8_t)(count >> 8);
-    req[4] = (uint8_t)(count & 0xFFU);
+    (void)zplc_modbus_pdu_read(req, FC_READ_HOLDING_REGISTERS, start_reg, count);
     rc = tcp_transaction(host, port, unit_id, req, sizeof(req), resp, &resp_len,
                          zplc_config_get_modbus_tcp_client_timeout_ms());
     if (rc < 0) {
         return rc;
     }
 
-    if (resp_len < 2U || resp[0] != FC_READ_HOLDING_REGISTERS || resp[1] != count * 2U) {
-        return -EIO;
-    }
-
-    for (uint16_t i = 0U; i < count; i++) {
-        out[i] = ((uint16_t)resp[2U + (i * 2U)] << 8) | resp[3U + (i * 2U)];
-    }
-
-    return 0;
+    return zplc_modbus_pdu_read_registers_response(resp, resp_len, count, out);
 }
 
 int zplc_modbus_tcp_client_write_register(const char *host, uint16_t port,
                                           uint8_t unit_id, uint16_t reg,
                                           uint16_t value)
 {
-    uint8_t req[5] = {
-        FC_WRITE_SINGLE_REGISTER,
-        (uint8_t)(reg >> 8),
-        (uint8_t)(reg & 0xFFU),
-        (uint8_t)(value >> 8),
-        (uint8_t)(value & 0xFFU),
-    };
-    uint8_t resp[ZPLC_MODBUS_TCP_MAX_ADU];
+    uint8_t req[5];
+    uint8_t resp[ZPLC_MODBUS_TCP_MAX_PDU];
     size_t resp_len = 0U;
+    int rc;
 
     if (host == NULL) {
         return -EINVAL;
     }
 
-    if (tcp_transaction(host, port, unit_id, req, sizeof(req), resp, &resp_len,
-                        zplc_config_get_modbus_tcp_client_timeout_ms()) < 0) {
-        return -EIO;
+    (void)zplc_modbus_pdu_write_single(req, FC_WRITE_SINGLE_REGISTER, reg, value);
+    rc = tcp_transaction(host, port, unit_id, req, sizeof(req), resp, &resp_len,
+                         zplc_config_get_modbus_tcp_client_timeout_ms());
+    if (rc < 0) {
+        return rc;
     }
 
-    return 0;
+    return zplc_modbus_pdu_write_single_response(resp, resp_len, FC_WRITE_SINGLE_REGISTER, reg, value);
 }
 
 int zplc_modbus_tcp_client_write_multiple(const char *host, uint16_t port,
                                           uint8_t unit_id, uint16_t start_reg,
                                           uint16_t count, const uint16_t *values)
 {
-    uint8_t req[ZPLC_MODBUS_TCP_MAX_ADU];
-    uint8_t resp[ZPLC_MODBUS_TCP_MAX_ADU];
+    uint8_t req[ZPLC_MODBUS_TCP_MAX_PDU];
+    uint8_t resp[ZPLC_MODBUS_TCP_MAX_PDU];
     size_t resp_len = 0U;
+    int rc;
 
     if (host == NULL || values == NULL || count == 0U || count > 123U) {
         return -EINVAL;
@@ -384,64 +490,64 @@ int zplc_modbus_tcp_client_write_multiple(const char *host, uint16_t port,
         req[7U + (i * 2U)] = (uint8_t)(values[i] & 0xFFU);
     }
 
-    return tcp_transaction(host, port, unit_id, req, 6U + (count * 2U), resp, &resp_len,
-                           zplc_config_get_modbus_tcp_client_timeout_ms());
+    rc = tcp_transaction(host, port, unit_id, req, 6U + (count * 2U), resp, &resp_len,
+                         zplc_config_get_modbus_tcp_client_timeout_ms());
+    if (rc < 0) {
+        return rc;
+    }
+    if (resp_len >= 1U && resp[0] == (uint8_t)(FC_WRITE_MULTIPLE_REGISTERS | 0x80U)) {
+        return -EBADMSG;
+    }
+    /* the echo of the start address and the count */
+    return (resp_len == 5U && resp[0] == FC_WRITE_MULTIPLE_REGISTERS && resp[1] == req[1] &&
+            resp[2] == req[2] && resp[3] == req[3] && resp[4] == req[4])
+               ? 0
+               : -EPROTO;
 }
 
 int zplc_modbus_tcp_client_read_coils(const char *host, uint16_t port,
                                       uint8_t unit_id, uint16_t start_addr,
                                       uint16_t count, uint8_t *out_bits)
 {
-    uint8_t req[5] = {
-        FC_READ_COILS,
-        (uint8_t)(start_addr >> 8),
-        (uint8_t)(start_addr & 0xFFU),
-        (uint8_t)(count >> 8),
-        (uint8_t)(count & 0xFFU),
-    };
-    uint8_t resp[ZPLC_MODBUS_TCP_MAX_ADU];
+    uint8_t req[5];
+    uint8_t resp[ZPLC_MODBUS_TCP_MAX_PDU];
     size_t resp_len = 0U;
-    size_t byte_count;
     int rc;
 
     if (host == NULL || out_bits == NULL || count == 0U || count > 2000U) {
         return -EINVAL;
     }
 
+    (void)zplc_modbus_pdu_read(req, FC_READ_COILS, start_addr, count);
     rc = tcp_transaction(host, port, unit_id, req, sizeof(req), resp, &resp_len,
                          zplc_config_get_modbus_tcp_client_timeout_ms());
     if (rc < 0) {
         return rc;
     }
 
-    byte_count = (count + 7U) / 8U;
-    if (resp_len < 2U || resp[0] != FC_READ_COILS || resp[1] < byte_count) {
-        return -EIO;
-    }
-
-    memcpy(out_bits, &resp[2], byte_count);
-    return 0;
+    return zplc_modbus_pdu_read_coils_response(resp, resp_len, count, out_bits, ((size_t)count + 7U) / 8U);
 }
 
 int zplc_modbus_tcp_client_write_coil(const char *host, uint16_t port,
                                       uint8_t unit_id, uint16_t addr, bool state)
 {
-    uint8_t req[5] = {
-        FC_WRITE_SINGLE_COIL,
-        (uint8_t)(addr >> 8),
-        (uint8_t)(addr & 0xFFU),
-        state ? 0xFFU : 0x00U,
-        0x00U,
-    };
-    uint8_t resp[ZPLC_MODBUS_TCP_MAX_ADU];
+    uint8_t req[5];
+    uint8_t resp[ZPLC_MODBUS_TCP_MAX_PDU];
     size_t resp_len = 0U;
+    int rc;
 
     if (host == NULL) {
         return -EINVAL;
     }
 
-    return tcp_transaction(host, port, unit_id, req, sizeof(req), resp, &resp_len,
-                           zplc_config_get_modbus_tcp_client_timeout_ms());
+    (void)zplc_modbus_pdu_write_single(req, FC_WRITE_SINGLE_COIL, addr, state ? 1U : 0U);
+    rc = tcp_transaction(host, port, unit_id, req, sizeof(req), resp, &resp_len,
+                         zplc_config_get_modbus_tcp_client_timeout_ms());
+    if (rc < 0) {
+        return rc;
+    }
+
+    return zplc_modbus_pdu_write_single_response(resp, resp_len, FC_WRITE_SINGLE_COIL, addr, state ? 1U : 0U);
 }
 #else
 int zplc_modbus_tcp_client_read_holding(const char *host, uint16_t port,
