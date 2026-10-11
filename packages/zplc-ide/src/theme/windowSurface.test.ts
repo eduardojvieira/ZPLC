@@ -1,15 +1,14 @@
 import { describe, expect, it } from 'bun:test';
 import { readFileSync } from 'node:fs';
-import { resolveThemeTokens } from './themeTokens';
+import { resolveTokens } from './tokens';
 
 const read = (path: string): string => readFileSync(new URL(path, import.meta.url), 'utf8');
-const css = read('../index.css');
 const html = read('../../index.html');
 const main = read('../../electron/main.ts');
 
 /** Window set-up (UX-016): the colours the shell paints before the app's own CSS runs must be the theme's canvas token. */
-describe('window surface', () => {
-  const canvas = (theme: 'light' | 'dark') => resolveThemeTokens(css, theme)['--color-surface-900'];
+describe('window surface (UX-016)', () => {
+  const canvas = (theme: 'light' | 'dark') => resolveTokens(theme)['--color-surface-900'];
 
   it('gives the native window the light and dark canvas tokens until the renderer reports its own', () => {
     const table = /WINDOW_SURFACE\s*=\s*\{\s*light:\s*'(#[0-9a-fA-F]{6})',\s*dark:\s*'(#[0-9a-fA-F]{6})'/.exec(main);

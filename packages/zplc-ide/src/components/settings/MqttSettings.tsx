@@ -113,7 +113,7 @@ export function MqttSettings({ boardNetworkType, mqtt, updateCommunication }: { 
                   className="px-2 py-1 text-sm bg-[var(--color-surface-700)] border border-[var(--color-surface-500)] rounded font-mono disabled:cursor-not-allowed disabled:opacity-60"
                 />
                 <div className="flex items-center gap-2">
-                  <label className="text-xs text-[var(--color-text-muted)] whitespace-nowrap">Token expiry (s)</label>
+                  <label className="text-xs text-[var(--text-muted)] whitespace-nowrap">Token expiry (s)</label>
                   <input
                     type="number"
                     min={300}
@@ -123,39 +123,39 @@ export function MqttSettings({ boardNetworkType, mqtt, updateCommunication }: { 
                     className="w-24 px-2 py-1 text-sm bg-[var(--color-surface-700)] border border-[var(--color-surface-500)] rounded"
                   />
                 </div>
-                <label className="flex items-center gap-2 text-xs text-[var(--color-text-muted)] cursor-pointer">
+                <label className="flex items-center gap-2 text-xs text-[var(--text-muted)] cursor-pointer">
                   <input
                     type="checkbox"
                     checked={mqtt.azureTwinEnabled ?? false}
                     onChange={(e) => updateCommunication({ mqtt: { ...mqtt, azureTwinEnabled: e.target.checked } })}
-                    className="accent-[var(--color-primary)]"
+                    className="accent-[var(--color-accent-blue)]"
                   />
                   Device Twins
                 </label>
-                <label className="flex items-center gap-2 text-xs text-[var(--color-text-muted)] cursor-pointer">
+                <label className="flex items-center gap-2 text-xs text-[var(--text-muted)] cursor-pointer">
                   <input
                     type="checkbox"
                     checked={mqtt.azureDirectMethodsEnabled ?? false}
                     onChange={(e) => updateCommunication({ mqtt: { ...mqtt, azureDirectMethodsEnabled: e.target.checked } })}
-                    className="accent-[var(--color-primary)]"
+                    className="accent-[var(--color-accent-blue)]"
                   />
                   Direct Methods
                 </label>
-                <label className="flex items-center gap-2 text-xs text-[var(--color-text-muted)] cursor-pointer">
+                <label className="flex items-center gap-2 text-xs text-[var(--text-muted)] cursor-pointer">
                   <input
                     type="checkbox"
                     checked={mqtt.azureC2dEnabled ?? false}
                     onChange={(e) => updateCommunication({ mqtt: { ...mqtt, azureC2dEnabled: e.target.checked } })}
-                    className="accent-[var(--color-primary)]"
+                    className="accent-[var(--color-accent-blue)]"
                   />
                   C2D Messaging
                 </label>
-                <label className="flex items-center gap-2 text-xs text-[var(--color-text-muted)] cursor-pointer">
+                <label className="flex items-center gap-2 text-xs text-[var(--text-muted)] cursor-pointer">
                   <input
                     type="checkbox"
                     checked={mqtt.azureDpsEnabled ?? false}
                     onChange={(e) => updateCommunication({ mqtt: { ...mqtt, azureDpsEnabled: e.target.checked } })}
-                    className="accent-[var(--color-primary)]"
+                    className="accent-[var(--color-accent-blue)]"
                   />
                   DPS
                 </label>
@@ -213,30 +213,30 @@ export function MqttSettings({ boardNetworkType, mqtt, updateCommunication }: { 
             )}
             {mqtt.profile === 'aws-iot-core' && (
               <>
-                <label className="flex items-center gap-2 text-xs text-[var(--color-text-muted)] cursor-pointer">
+                <label className="flex items-center gap-2 text-xs text-[var(--text-muted)] cursor-pointer">
                   <input
                     type="checkbox"
                     checked={mqtt.awsShadowEnabled ?? false}
                     onChange={(e) => updateCommunication({ mqtt: { ...mqtt, awsShadowEnabled: e.target.checked } })}
-                    className="accent-[var(--color-primary)]"
+                    className="accent-[var(--color-accent-blue)]"
                   />
                   Device Shadows
                 </label>
-                <label className="flex items-center gap-2 text-xs text-[var(--color-text-muted)] cursor-pointer">
+                <label className="flex items-center gap-2 text-xs text-[var(--text-muted)] cursor-pointer">
                   <input
                     type="checkbox"
                     checked={mqtt.awsJobsEnabled ?? false}
                     onChange={(e) => updateCommunication({ mqtt: { ...mqtt, awsJobsEnabled: e.target.checked } })}
-                    className="accent-[var(--color-primary)]"
+                    className="accent-[var(--color-accent-blue)]"
                   />
                   IoT Jobs
                 </label>
-                <label className="flex items-center gap-2 text-xs text-[var(--color-text-muted)] cursor-pointer">
+                <label className="flex items-center gap-2 text-xs text-[var(--text-muted)] cursor-pointer">
                   <input
                     type="checkbox"
                     checked={mqtt.awsFleetEnabled ?? false}
                     onChange={(e) => updateCommunication({ mqtt: { ...mqtt, awsFleetEnabled: e.target.checked } })}
-                    className="accent-[var(--color-primary)]"
+                    className="accent-[var(--color-accent-blue)]"
                   />
                   Fleet Provisioning
                 </label>
