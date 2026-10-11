@@ -2051,7 +2051,8 @@
   ],
   "REL-003": [
     {"kind":"unit","ref":"packages/zplc-ide/scripts/release-config.test.ts","test":"electron-builder.yml Windows signing (REL-003, REL-038)","partial":true,"note":"asserts the parsed electron-builder and workflow configuration, not the produced installer; its own header says a hosted release run is the proof (VF-021)"},
-    {"kind":"unit","ref":"packages/zplc-ide/scripts/release-config.test.ts","test":"the workflow reads no secret but the job token, and every platform verifies the bundle it made (REL-003)"}
+    {"kind":"unit","ref":"packages/zplc-ide/scripts/release-config.test.ts","test":"the workflow reads no secret but the job token, and every platform verifies the bundle it made (REL-003)"},
+    {"kind":"unit","ref":"tools/docs/check_capability_claims.test.ts","test":"flags a channel or a signature that does not exist, and not the sentence that limits it (REL-028, REL-003)"}
   ],
   "REL-005": [
     {"kind":"unit","ref":"packages/zplc-ide/scripts/release-config.test.ts","test":"the DMG and the ZIP are published for each macOS architecture (REL-005)","partial":true,"note":"asserts the parsed electron-builder and workflow configuration, not the produced installer or a run of the workflow; only a hosted release run proves it (VF-021). The first run of a downloaded DMG on a real Mac, Apple silicon and Intel, is manual evidence of the release checklist (RELEASING.md step 6) and is not recorded."},
@@ -2164,6 +2165,7 @@
     {"kind":"unit","ref":"scripts/release/run-results.test.ts","test":"countJunit (REL-027)"}
   ],
   "REL-028": [
+    {"kind":"unit","ref":"tools/docs/check_capability_claims.test.ts","test":"flags a channel or a signature that does not exist, and not the sentence that limits it (REL-028, REL-003)"},
     {"kind":"unit","ref":"tools/docs/install_and_status_pages.test.ts","test":"opens with a Download section: one line per system with its first-run note, and no channel that does not exist (REL-028)"}
   ],
   "REL-029": [
