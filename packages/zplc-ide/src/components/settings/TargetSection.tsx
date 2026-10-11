@@ -13,6 +13,7 @@ import {
   normalizeNetworkConfigForBoard,
 } from '../../config/boardProfiles';
 import type { SectionProps } from './settingsSectionProps';
+import { FirmwareImageCard } from './FirmwareImageCard';
 import { ToolchainCard } from './ToolchainCard';
 
 export function TargetSection({ config, updateConfig }: SectionProps) {
@@ -97,11 +98,13 @@ export function TargetSection({ config, updateConfig }: SectionProps) {
         <div className="border-y border-[var(--color-surface-600)] py-3 text-xs leading-5 text-[var(--color-surface-300)]" aria-label="Board evidence tier">
           <p><span className="font-medium text-[var(--color-surface-100)]">Evidence tier:</span> {evidence.validationLevel}</p>
           <p><span className="font-medium text-[var(--color-surface-100)]">{evidence.evidenceCount} HIL evidence records</span></p>
-          <p className="mt-1 text-[var(--color-surface-400)]">Flash runtime firmware unavailable until this exact profile is HIL-qualified.</p>
+          <p className="mt-1 text-[var(--color-surface-400)]">The firmware image for this board is listed below with this evidence level. Studio never flashes a board: you follow the steps yourself.</p>
         </div>
       ) : target.board ? (
         <p className="border-y border-[var(--color-surface-600)] py-3 text-xs leading-5 text-[var(--color-surface-400)]">No catalogued evidence for this custom target.</p>
       ) : null}
+
+      <FirmwareImageCard ideId={customBoard ? undefined : target.board} />
 
       <ToolchainCard ideId={customBoard ? undefined : target.board} />
 

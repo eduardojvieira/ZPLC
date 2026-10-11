@@ -20,6 +20,7 @@ import { createRecentProjects } from './recentProjects.js';
 import { createSessionStore } from './sessionStore.js';
 import { createRecoveryStore } from './recoveryStore.js';
 import { checkForUpdate } from './updateCheck.js';
+import { loadFirmwareImages } from './firmwareImages.js';
 import { buildApplicationMenu, describeApplicationMenu, isReloadShortcut } from './appMenu.js';
 import { createCloseGuard } from './closeGuard.js';
 import { createProjectFiles } from './projectFiles.js';
@@ -482,6 +483,8 @@ function setupIPC(): void {
       return response.response === 1;
     },
     checkForUpdate: () => checkForUpdate({ currentVersion: appVersion, fetch: (url, init) => fetch(url, init) }),
+    // The images the installer put beside the application (REL-025); a build with no firmware folder answers `absent`.
+    firmwareImages: () => loadFirmwareImages(path.join(process.resourcesPath, 'firmware')),
   });
   registerIpcHandlers(ipcMain, handlers, {
     authorize: (event) => currentRendererOwner(event as IpcMainInvokeEvent),

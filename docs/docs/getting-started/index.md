@@ -65,7 +65,10 @@ channels of each are in [Supported boards](../reference/boards.md). A board whos
 level is `cross-build` has firmware that builds in continuous integration, and
 nothing more: no one has shown it to flash, boot or run a program.
 
-The rc.3 release has no prebuilt firmware. To build it yourself, follow
+The rc.3 release has no prebuilt firmware. The release pipeline builds one image
+per board for each release it makes, and Studio shows the image of the selected
+board, with its checksum and the flashing steps, in **Project settings**,
+**Target**; it does not flash. To build the firmware yourself, follow
 [Zephyr workspace setup](../reference/zephyr-workspace-setup.md). Building
 firmware, flashing it, deploying a program and running it are separate actions
 that a person starts in Studio. AI and MCP tools cannot start any of them.

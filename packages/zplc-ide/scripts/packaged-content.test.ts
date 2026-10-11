@@ -4,7 +4,8 @@ import { afterAll, describe, expect, test } from 'bun:test';
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { checkPackagedContent, encodings, readAsarFile } from './packaged-content';
+import { createHash } from 'node:crypto';
+import { checkFirmware, checkPackagedContent, encodings, readAsarFile } from './packaged-content';
 import { listAsarFiles } from './run-packaged-desktop-smoke';
 
 /** An asar archive of `files`: four little-endian words, the header JSON padded to 4 bytes, then the file bytes. */
@@ -171,5 +172,55 @@ describe('packaged content (REL-034)', () => {
     const { repo, resources } = fixture();
     rmSync(join(resources, 'THIRD-PARTY-NOTICES.txt'));
     expect(checkPackagedContent({ resources, repoRoot: repo })).toContain('THIRD-PARTY-NOTICES.txt is not in the resources');
+  });
+});
+
+describe('the firmware images of the package (REL-025)', () => {
+  const sha = (text: string) => createHash('sha256').update(text).digest('hex');
+  const image = (board: string, file: string, learner: boolean, content: string, role = 'flash') => ({ board, file, learner, role, sha256: sha(content), bytes: content.length });
+  /** A resources folder with a firmware folder: the manifest, the files it names, and what a test then breaks. */
+  function resources(options: { omit?: string[]; extra?: Record<string, string>; boards?: string[] } = {}): string {
+    const root = mkdtempSync(join(tmpdir(), 'zplc-firmware-'));
+    roots.push(root);
+    const folder = join(root, 'firmware');
+    mkdirSync(folder, { recursive: true });
+    const contents: Record<string, string> = {
+      'zplc-runtime-2.0.0-rc.4-rpi-pico-rp2040.uf2': 'pico', 'zplc-runtime-2.0.0-rc.4-esp32-s3-devkitc.bin': 'esp',
+      'zplc-runtime-2.0.0-rc.4-nucleo-h743zi.bin': 'nucleo',
+    };
+    const boards = options.boards ?? ['rpi_pico', 'esp32s3_devkitc'];
+    const images = [
+      ...(boards.includes('rpi_pico') ? [image('rpi_pico', 'zplc-runtime-2.0.0-rc.4-rpi-pico-rp2040.uf2', true, 'pico')] : []),
+      ...(boards.includes('esp32s3_devkitc') ? [image('esp32s3_devkitc', 'zplc-runtime-2.0.0-rc.4-esp32-s3-devkitc.bin', true, 'esp')] : []),
+      image('nucleo_h743zi', 'zplc-runtime-2.0.0-rc.4-nucleo-h743zi.bin', false, 'nucleo'),
+    ];
+    writeFileSync(join(folder, 'zplc-runtime-2.0.0-rc.4.manifest.json'), JSON.stringify({ schema: 'zplc.firmware-release/1', version: '2.0.0-rc.4', commit: 'a'.repeat(40), images, builds: {} }));
+    for (const [name, content] of Object.entries({ ...contents, ...options.extra })) {
+      if (!(options.omit ?? []).includes(name) && (name in (options.extra ?? {}) || images.some((entry) => entry.file === name && entry.learner))) writeFileSync(join(folder, name), content);
+    }
+    return root;
+  }
+
+  test('a package with the manifest and the two learner images, and no other image, has no problem', () => {
+    expect(checkFirmware(resources(), true)).toEqual([]);
+  });
+
+  test('a package made while no firmware bundle was available is a problem only when one was', () => {
+    const root = mkdtempSync(join(tmpdir(), 'zplc-firmware-'));
+    roots.push(root);
+    expect(checkFirmware(root, false)).toEqual([]);
+    expect(checkFirmware(root, true)).toEqual(['firmware/ is not in the resources, and a firmware bundle was available']);
+  });
+
+  test('names a learner image that is missing, one that differs from the manifest, and an image that should not be there', () => {
+    expect(checkFirmware(resources({ omit: ['zplc-runtime-2.0.0-rc.4-esp32-s3-devkitc.bin'] }), true)).toEqual(['firmware/zplc-runtime-2.0.0-rc.4-esp32-s3-devkitc.bin is not in the resources']);
+    const changed = resources({ extra: { 'zplc-runtime-2.0.0-rc.4-rpi-pico-rp2040.uf2': 'changed' } });
+    expect(checkFirmware(changed, true).join('\n')).toContain('does not have the checksum or size that the manifest states');
+    const extra = resources({ extra: { 'zplc-runtime-2.0.0-rc.4-nucleo-h743zi.bin': 'nucleo' } });
+    expect(checkFirmware(extra, true).join('\n')).toContain('is not a learner-board image of the manifest');
+  });
+
+  test('refuses a manifest that names no image for a learner board', () => {
+    expect(checkFirmware(resources({ boards: ['rpi_pico'] }), true).join('\n')).toContain('no image for the learner board esp32s3_devkitc');
   });
 });

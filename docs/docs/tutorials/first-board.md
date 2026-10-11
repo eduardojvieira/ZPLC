@@ -48,8 +48,16 @@ the board.
 
 ## 1. Get the firmware
 
-There is no prebuilt firmware in the releases: you build it from the source, with
-the same script that continuous integration runs. Set up the Zephyr workspace once
+The rc.3 release has no prebuilt firmware: it was uploaded by hand. The release
+pipeline builds one image of the runtime for every board of the manifest for each
+release it makes, named `zplc-runtime-<version>-<board>.<ext>`, with the checksum
+in `SHA256SUMS` and the evidence level of the board in the release notes. Its
+installers carry the images of the Raspberry Pi Pico and the ESP32-S3: in Studio,
+open **Project settings**, **Target**, choose the board, and Studio shows the file,
+its SHA-256, where it is and the steps to flash it. Studio only shows them: you
+flash (step 2). The pipeline has not made a release yet, so today you build the
+firmware from the source, with the same script that continuous integration runs.
+Set up the Zephyr workspace once
 (about 6 GB, see [Firmware testing](../development/firmware-testing.md#one-time-setup)),
 then build the board:
 

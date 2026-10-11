@@ -79,6 +79,9 @@ export const RECOVERY_CHANNEL = { WRITE: 'recovery:write', LIST: 'recovery:list'
 /** The update check (IDE-010). */
 export const UPDATE_CHECK_CHANNEL = { RUN: 'update-check:run' } as const;
 
+/** The firmware images that this installation carries, with their checksums and flashing steps (REL-025). Read-only. */
+export const FIRMWARE_IMAGES_CHANNEL = { LIST: 'firmware-images:list' } as const;
+
 /**
  * Project archives (IDE-022): three operations of the project-files bridge. They are part of `PROJECT_FILES_CHANNEL`,
  * so the one registration of the project-files handlers, with its sender check, covers them.
@@ -127,6 +130,7 @@ export const IPC_INVOKE_CHANNELS: readonly string[] = [
   CLOSE_GUARD_CHANNEL.SET_DIRTY, CLOSE_GUARD_CHANNEL.CLOSE_NOW,
   ...values(RECOVERY_CHANNEL),
   ...values(UPDATE_CHECK_CHANNEL),
+  ...values(FIRMWARE_IMAGES_CHANNEL),
   ...values(PROJECT_FILES_CHANNEL),
 ];
 

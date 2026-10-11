@@ -21,6 +21,19 @@ tests and simulates projects.
 [![C99](https://img.shields.io/badge/C-C99-green.svg)](https://en.wikipedia.org/wiki/C99)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.9-blue.svg)](https://www.typescriptlang.org/)
 
+## Download
+
+Installers are files of a [GitHub release](https://github.com/eduardojvieira/ZPLC/releases),
+the only channel that exists today. Check the file against `SHA256SUMS`, then open it
+([Install ZPLC Studio](docs/docs/getting-started/install.md)):
+
+- **Windows:** the `setup-unsigned.exe` installer. It is unsigned: choose **More info**,
+  then **Run anyway** when SmartScreen warns; Smart App Control blocks it outright.
+- **macOS:** the `.dmg` or `.zip` for your chip. The app is signed ad hoc and not
+  notarized: choose **Done**, then **Privacy & Security**, **Open Anyway**.
+- **Linux:** the `.deb` or `.rpm`; the AppImage if neither fits. They are unsigned, so
+  the checksum is your check.
+
 ## What you can do today
 
 - Write programs in Structured Text, Instruction List, Ladder, FBD or SFC in Studio.

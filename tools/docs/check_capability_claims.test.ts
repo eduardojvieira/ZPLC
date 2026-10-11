@@ -52,6 +52,17 @@ describe('capability claims: what the public text says ZPLC can do is backed by 
     expect(ids('The browser simulator is disabled until a verified artifact exists.')).toEqual([]);
   });
 
+  it('flags a channel or a signature that does not exist, and not the sentence that limits it (REL-028, REL-003)', () => {
+    expect(ids('Install ZPLC with Homebrew.')).toEqual(['distribution-channel']);
+    expect(ids('ZPLC is on the Microsoft Store and in winget.')).toEqual(['distribution-channel']);
+    expect(ids('The macOS app is notarized and opens on every Mac.')).toEqual(['notarized-or-developer-signed']);
+    expect(ids('The installer is signed through SignPath.')).toEqual(['notarized-or-developer-signed']);
+    // the honest text of the install page
+    expect(ids('Homebrew cask, Arch User Repository: not set up.')).toEqual([]);
+    expect(ids('The app is signed only ad hoc and is not notarized, because notarization needs a paid Apple account.')).toEqual([]);
+    expect(ids('Never notarized: macOS treats it as an app from an unidentified developer.')).toEqual([]);
+  });
+
   it('takes the state of a language element from the executed cases, so a row that works backs its claim', () => {
     const rule: Registry = { schemaVersion: 1, counts: [], rules: [{ id: 'structures', pattern: '\\bstructs?\\b', evidence: { rows: ['data-types.struct'] } }] };
     expect(findings('Structs are supported.', truth({ rows: new Map([['data-types.struct', 'works']]) }), rule)).toEqual([]);

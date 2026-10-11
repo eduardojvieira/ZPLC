@@ -41,6 +41,20 @@
       "id": "cloud-verified",
       "pattern": "^(?=.*\\b(?:Azure|AWS|IoT Hub|IoT Core|Event Grid|Sparkplug)\\b)(?=.*\\b(?:verified|tested|validated|compatible|certified|interoperab\\w*)\\b)",
       "evidence": { "none": "no cloud block has been exchanged with a real service, an emulator or a recorded exchange" }
+    },
+    {
+      "id": "notarized-or-developer-signed",
+      "pattern": "\\b(?:notariz\\w+|notaris\\w+|Developer ID|Authenticode|SignPath)\\b",
+      "evidence": {
+        "none": "no installer is notarized or signed with a paid identity: the macOS bundles are signed ad hoc and the Windows installers are unsigned (REL-003, REL-038)"
+      }
+    },
+    {
+      "id": "distribution-channel",
+      "pattern": "\\b(?:Homebrew|brew\\s+install|winget|Microsoft Store|Arch User Repository|AUR|Chocolatey|Flatpak|Snap\\s+Store)\\b",
+      "evidence": {
+        "none": "GitHub releases are the only distribution channel: the tap, the AUR package, the Store listing and the winget manifest are not set up (REL-004, REL-007, REL-009, REL-010, REL-014)"
+      }
     }
   ],
   "counts": [

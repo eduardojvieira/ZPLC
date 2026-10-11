@@ -11,6 +11,7 @@
 #
 # Artifacts:
 #   - IDE: macOS (x64, arm64), Windows (x64, arm64), Linux (x64, arm64)
+#   - Runtime firmware: one image set for every board of firmware/app/boards/boards.json (REL-022)
 #
 # Publication:
 #   The release is created only here, as a draft, from the run of its own tag (REL-016). Each platform
@@ -91,11 +92,14 @@ jobs:
     needs: validate-version
     uses: ./.github/workflows/ci.yml
 
-  # This checks only the unpacked Linux x64 application payload (app.asar plus
-  # native POSIX runtime). Installers and other operating systems are out of scope.
+  # This checks only the unpacked Linux x64 application payload (app.asar plus native POSIX runtime). Installers and
+  # other operating systems are out of scope. The check is kept and it never blocks a release run (REL-032): it covers
+  # one of six targets, so the job does not fail the run (continue-on-error) and no other job waits for it, the notes
+  # included: its result is read in the run, and the notes make no claim about it.
   verify-linux-x64-payload-reproducibility:
     needs: [validate-version, verify-release-candidate]
     runs-on: ubuntu-24.04
+    continue-on-error: true
     steps:
       - name: Checkout
         uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
@@ -164,10 +168,165 @@ jobs:
             "$RUNNER_TEMP/zplc-linux-x64-reproducibility/second/packages/zplc-ide"
 
   # ===========================================================================
+  # Prebuilt runtime firmware for every board of the manifest (REL-022). One job per board builds firmware/app from the
+  # exact SHA, and scripts/release/firmware-images.ts refuses an image made for another board, version or commit, from
+  # a dirty tree or with the HIL trace. The matrix is the board list of firmware/app/boards/boards.json (a test of
+  # packages/zplc-ide/scripts/release-config.test.ts compares them). Nothing here flashes a board.
+  # ===========================================================================
+  build-firmware:
+    needs: [validate-version, verify-release-candidate]
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - ide_id: rpi_pico
+            board: rpi_pico/rp2040
+          - ide_id: arduino_giga_r1
+            board: arduino_giga_r1/stm32h747xx/m7
+          - ide_id: esp32s3_devkitc
+            board: esp32s3_devkitc/esp32s3/procpu
+          - ide_id: stm32f746g_disco
+            board: stm32f746g_disco/stm32f746xx
+          - ide_id: nucleo_h743zi
+            board: nucleo_h743zi/stm32h743xx
+          - ide_id: arduino_opta_wifi
+            board: arduino_opta/stm32h747xx/m7
+          - ide_id: waveshare_rp2040_zero
+            board: rp2040_zero/rp2040
+    env:
+      ZEPHYR_TOOLCHAIN_VARIANT: zephyr
+    steps:
+      - name: Checkout
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
+        with:
+          ref: ${{ github.sha }}
+          path: zplc
+
+      - name: Setup Python
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
+        with:
+          python-version: "3.12"
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@f4d14e03ff726c06358e5557344e1da148b56cf7 # v1.2.2
+        with:
+          bun-version: 1.3.14
+
+      # The same workspace, cache key and revision check as the cross-build of ci.yml: a restored workspace is never trusted.
+      - name: Restore the Zephyr workspace, the SDK and the pip cache
+        uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684 # v4.2.3
+        with:
+          path: |
+            ${{ github.workspace }}/.west
+            ${{ github.workspace }}/zephyr
+            ${{ github.workspace }}/modules
+            ${{ github.workspace }}/bootloader
+            ${{ github.workspace }}/tools
+            ${{ runner.temp }}/zephyr-sdk-1.0.1
+            ~/.cache/pip
+          key: zephyr-${{ runner.os }}-${{ hashFiles('zplc/west.yml') }}-sdk-1.0.1
+
+      - name: Setup pinned Zephyr workspace
+        shell: bash
+        env:
+          ZPLC_WEST_SDK_GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          ZEPHYR_SDK_INSTALL_DIR="${RUNNER_TEMP}/zephyr-sdk-1.0.1"
+          echo "ZEPHYR_SDK_INSTALL_DIR=${ZEPHYR_SDK_INSTALL_DIR}" >> "${GITHUB_ENV}"
+          VENV_DIR="${RUNNER_TEMP}/zplc-zephyr-venv"
+          python3 -m venv "${VENV_DIR}"
+          "${VENV_DIR}/bin/pip" install west==1.5.0
+          if [ ! -d "${GITHUB_WORKSPACE}/.west" ]; then
+            "${VENV_DIR}/bin/west" init -l "${GITHUB_WORKSPACE}/zplc"
+          fi
+          "${VENV_DIR}/bin/west" update
+          test "$(git -C "${GITHUB_WORKSPACE}/zephyr" rev-parse HEAD)" = "dccb09599635bdff17633fa7e9dab014b91dce90"
+          "${VENV_DIR}/bin/west" zephyr-export
+          "${VENV_DIR}/bin/west" packages pip --install --ignore-venv-check
+          if [ ! -d "${ZEPHYR_SDK_INSTALL_DIR}/gnu/arm-zephyr-eabi" ] || [ ! -d "${ZEPHYR_SDK_INSTALL_DIR}/gnu/xtensa-espressif_esp32s3_zephyr-elf" ]; then
+            "${VENV_DIR}/bin/west" sdk install --version 1.0.1 --install-dir "${ZEPHYR_SDK_INSTALL_DIR}" --gnu-toolchains arm-zephyr-eabi xtensa-espressif_esp32s3_zephyr-elf --personal-access-token "${ZPLC_WEST_SDK_GITHUB_TOKEN}"
+          fi
+          test -d "${ZEPHYR_SDK_INSTALL_DIR}/gnu/arm-zephyr-eabi"
+          test -d "${ZEPHYR_SDK_INSTALL_DIR}/gnu/xtensa-espressif_esp32s3_zephyr-elf"
+          echo "${VENV_DIR}/bin" >> "${GITHUB_PATH}"
+
+      - name: Fetch ESP32 HAL blobs
+        if: matrix.ide_id == 'esp32s3_devkitc'
+        run: west blobs fetch hal_espressif
+
+      # Pristine, and with no overlay: an image that carries the HIL trace is refused by the collect step below.
+      - name: Build the runtime firmware
+        shell: bash
+        run: |
+          set -o pipefail
+          west build -p always -b "${{ matrix.board }}" zplc/firmware/app -d "${RUNNER_TEMP}/zplc-firmware"
+
+      - name: Check the build and name its images
+        shell: bash
+        env:
+          RELEASE_VERSION: ${{ needs.validate-version.outputs.version }}
+        run: |
+          set -euo pipefail
+          bun zplc/scripts/release/firmware-images.ts collect \
+            --board "${{ matrix.ide_id }}" \
+            --build-dir "${RUNNER_TEMP}/zplc-firmware" \
+            --version "$RELEASE_VERSION" \
+            --commit "${{ github.sha }}" \
+            --out "${RUNNER_TEMP}/firmware-out"
+
+      - name: Upload the images of the board
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: release-firmware-board-${{ matrix.ide_id }}
+          path: ${{ runner.temp }}/firmware-out
+          if-no-files-found: error
+          retention-days: 7
+
+  # Joins the boards into one set and one manifest. It refuses a set with a board missing: a release holds the images
+  # of every board or none (REL-022). The desktop builds take the learner images from this set.
+  assemble-firmware:
+    needs: [validate-version, build-firmware]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout release tooling
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
+        with:
+          ref: ${{ github.sha }}
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@f4d14e03ff726c06358e5557344e1da148b56cf7 # v1.2.2
+        with:
+          bun-version: 1.3.14
+
+      - name: Download the images of every board
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          pattern: release-firmware-board-*
+          path: firmware-boards
+
+      - name: Assemble the release set and its manifest
+        env:
+          RELEASE_VERSION: ${{ needs.validate-version.outputs.version }}
+        run: bun scripts/release/firmware-images.ts assemble --in firmware-boards --out firmware-set --version "$RELEASE_VERSION"
+
+      - name: Upload the release set
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: release-firmware-set
+          path: firmware-set/
+          if-no-files-found: error
+          retention-days: 7
+
+  # ===========================================================================
   # Build IDE for macOS (x64 and arm64)
   # ===========================================================================
   build-macos:
-    needs: [validate-version, verify-release-candidate]
+    # The installers carry the two learner-board images (REL-025) and so wait for the firmware set, but not for its
+    # success: when a board fails to build the installers are still built, without the images, and the notes say so.
+    needs: [validate-version, verify-release-candidate, assemble-firmware]
+    if: ${{ !cancelled() && needs.validate-version.result == 'success' && needs.verify-release-candidate.result == 'success' }}
     runs-on: ${{ matrix.runner }}
     strategy:
       fail-fast: false
@@ -211,6 +370,20 @@ jobs:
         run: |
           cd packages/zplc-compiler && bun run build
 
+      # REL-025: the manifest of the release firmware and the two learner-board images go inside the installer, so that
+      # Studio shows them with no network. The step is skipped when the firmware set is not available.
+      - name: Download the release firmware set
+        id: firmware
+        continue-on-error: true
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: release-firmware-set
+          path: firmware-set
+
+      - name: Stage the learner-board firmware images for the installer
+        if: ${{ steps.firmware.outcome == 'success' }}
+        run: bun scripts/release/firmware-images.ts stage --bundle firmware-set --out packages/zplc-ide/dist-firmware
+
       - name: Build Electron app (macOS ${{ matrix.arch }})
         working-directory: packages/zplc-ide
         run: |
@@ -232,9 +405,50 @@ jobs:
         working-directory: packages/zplc-ide
         run: bun run smoke:desktop-packaged
 
+      # REL-036: the DMG is mounted and the application is copied out of it, as a person does with "drag to
+      # Applications"; the ZIP is unpacked. The application that each one holds is verified and launched on this
+      # architecture, so each published macOS format is opened on its own system before the draft exists.
+      - name: Mount the DMG, copy the application out and launch it
+        working-directory: packages/zplc-ide
+        shell: bash
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          images=(dist-electron/*.dmg)
+          [ "${#images[@]}" -eq 1 ] || { echo "Expected exactly one .dmg, found ${#images[@]}"; exit 1; }
+          mount_point="$RUNNER_TEMP/zplc-dmg"
+          install_dir="$RUNNER_TEMP/zplc-dmg-install"
+          mkdir -p "$mount_point" "$install_dir"
+          hdiutil attach -nobrowse -readonly -mountpoint "$mount_point" "${images[0]}"
+          trap 'hdiutil detach "$mount_point" -force || true' EXIT
+          apps=("$mount_point"/*.app)
+          [ "${#apps[@]}" -eq 1 ] || { echo "Expected exactly one .app in the disk image, found ${#apps[@]}"; exit 1; }
+          app="$install_dir/$(basename "${apps[0]}")"
+          ditto "${apps[0]}" "$app"
+          codesign --verify --deep --strict "$app"
+          ZPLC_PACKAGED_EXECUTABLE="$app/Contents/MacOS/zplc-ide" bun run smoke:desktop-packaged
+
+      - name: Unpack the ZIP and launch the application
+        working-directory: packages/zplc-ide
+        shell: bash
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          archives=(dist-electron/*.zip)
+          [ "${#archives[@]}" -eq 1 ] || { echo "Expected exactly one .zip, found ${#archives[@]}"; exit 1; }
+          target="$RUNNER_TEMP/zplc-zip"
+          mkdir -p "$target"
+          ditto -x -k "${archives[0]}" "$target"
+          apps=("$target"/*.app)
+          [ "${#apps[@]}" -eq 1 ] || { echo "Expected exactly one .app in the archive, found ${#apps[@]}"; exit 1; }
+          codesign --verify --deep --strict "${apps[0]}"
+          ZPLC_PACKAGED_EXECUTABLE="${apps[0]}/Contents/MacOS/zplc-ide" bun run smoke:desktop-packaged
+
       # REL-034, REL-019: the unpacked application holds the example projects, the lessons and the licence notices.
       - name: Check the content of the packaged application
         working-directory: packages/zplc-ide
+        env:
+          ZPLC_REQUIRE_FIRMWARE: ${{ steps.firmware.outcome == 'success' && '1' || '0' }}
         run: bun run smoke:packaged-content
 
       # REL-026: the CLI and the MCP server as standalone executables, built and run on this architecture.
@@ -255,7 +469,10 @@ jobs:
   # Build IDE for Windows (x64 and arm64)
   # ===========================================================================
   build-windows:
-    needs: [validate-version, verify-release-candidate]
+    # The installers carry the two learner-board images (REL-025) and so wait for the firmware set, but not for its
+    # success: when a board fails to build the installers are still built, without the images, and the notes say so.
+    needs: [validate-version, verify-release-candidate, assemble-firmware]
+    if: ${{ !cancelled() && needs.validate-version.result == 'success' && needs.verify-release-candidate.result == 'success' }}
     runs-on: ${{ matrix.runner }}
     strategy:
       fail-fast: false
@@ -300,6 +517,20 @@ jobs:
         run: |
           cd packages/zplc-compiler && bun run build
 
+      # REL-025: the manifest of the release firmware and the two learner-board images go inside the installer, so that
+      # Studio shows them with no network. The step is skipped when the firmware set is not available.
+      - name: Download the release firmware set
+        id: firmware
+        continue-on-error: true
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: release-firmware-set
+          path: firmware-set
+
+      - name: Stage the learner-board firmware images for the installer
+        if: ${{ steps.firmware.outcome == 'success' }}
+        run: bun scripts/release/firmware-images.ts stage --bundle firmware-set --out packages/zplc-ide/dist-firmware
+
       - name: Build native simulator runtime
         shell: bash
         run: |
@@ -330,9 +561,38 @@ jobs:
         working-directory: packages/zplc-ide
         run: bun run smoke:desktop-packaged
 
+      # REL-036: the setup is run silently (NSIS: /S, and /D= last, the folder it installs to) and the installed
+      # application is launched; the portable executable is launched as it is. Both on this architecture.
+      - name: Install the setup silently and launch the installed application
+        working-directory: packages/zplc-ide
+        shell: pwsh
+        run: |
+          $setup = @(Get-ChildItem dist-electron -Filter '*-setup-unsigned.exe')
+          if ($setup.Count -ne 1) { throw "Expected exactly one setup executable, found $($setup.Count)" }
+          $target = Join-Path $env:RUNNER_TEMP 'zplc-installed'
+          $install = Start-Process -FilePath $setup[0].FullName -ArgumentList '/S', "/D=$target" -Wait -PassThru
+          if ($install.ExitCode -ne 0) { throw "The silent install exited with $($install.ExitCode)" }
+          $executable = Join-Path $target 'zplc-ide.exe'
+          if (-not (Test-Path $executable)) { throw "The installer left no $executable" }
+          $env:ZPLC_PACKAGED_EXECUTABLE = $executable
+          bun run smoke:desktop-packaged
+          if ($LASTEXITCODE -ne 0) { throw "The installed application did not launch" }
+
+      - name: Launch the portable executable
+        working-directory: packages/zplc-ide
+        shell: pwsh
+        run: |
+          $portable = @(Get-ChildItem dist-electron -Filter '*-portable-unsigned.exe')
+          if ($portable.Count -ne 1) { throw "Expected exactly one portable executable, found $($portable.Count)" }
+          $env:ZPLC_PACKAGED_EXECUTABLE = $portable[0].FullName
+          bun run smoke:desktop-packaged
+          if ($LASTEXITCODE -ne 0) { throw "The portable executable did not launch" }
+
       # REL-034, REL-019: the unpacked application holds the example projects, the lessons and the licence notices.
       - name: Check the content of the packaged application
         working-directory: packages/zplc-ide
+        env:
+          ZPLC_REQUIRE_FIRMWARE: ${{ steps.firmware.outcome == 'success' && '1' || '0' }}
         run: bun run smoke:packaged-content
 
       # REL-026: the CLI and the MCP server as standalone executables, built and run on this architecture.
@@ -353,7 +613,10 @@ jobs:
   # Build IDE for Linux (x64 and arm64)
   # ===========================================================================
   build-linux:
-    needs: [validate-version, verify-release-candidate]
+    # The installers carry the two learner-board images (REL-025) and so wait for the firmware set, but not for its
+    # success: when a board fails to build the installers are still built, without the images, and the notes say so.
+    needs: [validate-version, verify-release-candidate, assemble-firmware]
+    if: ${{ !cancelled() && needs.validate-version.result == 'success' && needs.verify-release-candidate.result == 'success' }}
     runs-on: ${{ matrix.runner }}
     strategy:
       fail-fast: false
@@ -401,6 +664,20 @@ jobs:
           mkdir -p packages/zplc-ide/dist-native
           cp firmware/lib/zplc_core/build/zplc_runtime packages/zplc-ide/dist-native/
 
+      # REL-025: the manifest of the release firmware and the two learner-board images go inside the installer, so that
+      # Studio shows them with no network. The step is skipped when the firmware set is not available.
+      - name: Download the release firmware set
+        id: firmware
+        continue-on-error: true
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: release-firmware-set
+          path: firmware-set
+
+      - name: Stage the learner-board firmware images for the installer
+        if: ${{ steps.firmware.outcome == 'success' }}
+        run: bun scripts/release/firmware-images.ts stage --bundle firmware-set --out packages/zplc-ide/dist-firmware
+
       - name: Install Linux build tools
         run: |
           sudo apt-get update
@@ -419,6 +696,12 @@ jobs:
       - name: Validate Linux build artifacts
         working-directory: packages/zplc-ide
         run: bun run smoke:desktop-builds linux ${{ matrix.arch }}
+
+      # REL-013: the packages that were made hold the udev rule of the boards, with the bytes that the identifier files
+      # generate (read with ar and tar, rpm2cpio and cpio, from the files and not from the configuration).
+      - name: Check the udev rule inside the .deb and the .rpm
+        working-directory: packages/zplc-ide
+        run: bun run scripts/linux-package-files.ts dist-electron
 
       - name: Prepare Linux Electron sandbox
         working-directory: packages/zplc-ide
@@ -444,6 +727,8 @@ jobs:
       # REL-034, REL-019: the unpacked application holds the example projects, the lessons and the licence notices.
       - name: Check the content of the packaged application
         working-directory: packages/zplc-ide
+        env:
+          ZPLC_REQUIRE_FIRMWARE: ${{ steps.firmware.outcome == 'success' && '1' || '0' }}
         run: bun run smoke:packaged-content
 
       # REL-026: the CLI and the MCP server as standalone executables, built and run on this architecture.
@@ -480,6 +765,18 @@ jobs:
           docker run --rm --cap-add=SYS_ADMIN --shm-size=512m -e ZPLC_CONTAINER_CHECK=1 \
             -v "$PWD/scripts:/scripts:ro" -v "$PWD/dist-electron:/dist:ro" \
             fedora:latest bash /scripts/check-linux-package.sh "/dist/$(basename "${packages[0]}")"
+
+      - name: Launch the AppImage in a clean Ubuntu 24.04 container
+        working-directory: packages/zplc-ide
+        shell: bash
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          packages=(dist-electron/*.AppImage)
+          [ "${#packages[@]}" -eq 1 ] || { echo "Expected exactly one .AppImage, found ${#packages[@]}"; exit 1; }
+          docker run --rm --cap-add=SYS_ADMIN --shm-size=512m -e ZPLC_CONTAINER_CHECK=1 \
+            -v "$PWD/scripts:/scripts:ro" -v "$PWD/dist-electron:/dist:ro" \
+            ubuntu:24.04 bash /scripts/check-linux-package.sh "/dist/$(basename "${packages[0]}")"
 
       - name: Upload Linux artifacts
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
@@ -533,10 +830,12 @@ jobs:
     needs:
       - validate-version
       - verify-release-candidate
-      - verify-linux-x64-payload-reproducibility
+      - build-firmware
+      - assemble-firmware
       - build-macos
       - build-windows
       - build-linux
+      - prepare-release-evidence-firmware
       - prepare-release-evidence-macos
       - prepare-release-evidence-windows
       - prepare-release-evidence-linux
@@ -855,7 +1154,7 @@ jobs:
   # Neither job waits for another platform (REL-015).
   # ===========================================================================
   prepare-release-evidence-linux:
-    needs: [validate-version, verify-linux-x64-payload-reproducibility, build-linux]
+    needs: [validate-version, build-linux]
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -952,6 +1251,115 @@ jobs:
         uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
           name: release-bundle-linux-publishable
+          path: release/
+
+      - name: Upload the bundle to the draft release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_TAG: ${{ needs.validate-version.outputs.tag }}
+        run: |
+          set -euo pipefail
+          [ "$(gh release view "$RELEASE_TAG" --json isDraft --jq .isDraft)" = true ] || { echo "Release $RELEASE_TAG is not a draft. The pipeline only uploads to drafts."; exit 1; }
+          gh release upload "$RELEASE_TAG" release/* --clobber
+
+  # ===========================================================================
+  # Firmware: integrity evidence for every candidate, including dry-runs, then the upload to the draft. The images are
+  # covered by SHA256SUMS and by the build provenance attestation like every other asset (REL-017). The bundle holds
+  # the images of every board and the manifest that lists them, or this job fails and the draft has no firmware.
+  # ===========================================================================
+  prepare-release-evidence-firmware:
+    needs: [validate-version, assemble-firmware]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+      attestations: write
+      artifact-metadata: write
+    steps:
+      - name: Checkout release tooling
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
+        with:
+          ref: ${{ github.sha }}
+
+      - name: Download the release firmware set
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: release-firmware-set
+          path: artifacts
+
+      - name: Bind evidence to the checked-out SHA
+        run: test "$(git rev-parse HEAD)" = "${{ github.sha }}"
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@f4d14e03ff726c06358e5557344e1da148b56cf7 # v1.2.2
+        with:
+          bun-version: 1.3.14
+
+      # The manifest must be what its images are: every checksum and size, before anything is attested.
+      - name: Check the firmware set against its manifest
+        run: |
+          set -euo pipefail
+          bun scripts/release/firmware-images.ts stage --bundle artifacts --out "${RUNNER_TEMP}/firmware-learner-check"
+
+      - name: Generate the bill of materials
+        run: bun scripts/release/sbom.ts --out artifacts/ZPLC-${{ needs.validate-version.outputs.version }}-firmware.cdx.json
+
+      - name: Create release integrity bundle
+        env:
+          RELEASE_VERSION: ${{ needs.validate-version.outputs.version }}
+          RELEASE_TAG: ${{ needs.validate-version.outputs.tag }}
+          RELEASE_COMMIT_SHA: ${{ github.sha }}
+        run: |
+          node scripts/release-artifacts.mjs \
+            --input-dir artifacts \
+            --output-dir release \
+            --version "$RELEASE_VERSION" \
+            --tag "$RELEASE_TAG" \
+            --commit-sha "$RELEASE_COMMIT_SHA"
+          mv release/SHA256SUMS release/SHA256SUMS-firmware
+          mv release/release-evidence.json release/release-evidence-firmware.json
+
+      - name: Verify the bundle that was produced
+        env:
+          RELEASE_VERSION: ${{ needs.validate-version.outputs.version }}
+          RELEASE_TAG: ${{ needs.validate-version.outputs.tag }}
+          RELEASE_COMMIT_SHA: ${{ github.sha }}
+        run: bun scripts/release/verify-bundle.ts release --version "$RELEASE_VERSION" --tag "$RELEASE_TAG" --commit-sha "$RELEASE_COMMIT_SHA"
+
+      - name: Attest firmware provenance
+        if: ${{ needs.validate-version.outputs.publishing == 'true' }}
+        uses: actions/attest@508db95dd578ae2727ebd6217d5ba78e4fbda05d # v4.2.1
+        with:
+          subject-path: |
+            release/zplc-runtime-*
+
+      - name: Attest firmware SBOM
+        if: ${{ needs.validate-version.outputs.publishing == 'true' }}
+        uses: actions/attest@508db95dd578ae2727ebd6217d5ba78e4fbda05d # v4.2.1
+        with:
+          subject-path: |
+            release/zplc-runtime-*
+          sbom-path: artifacts/ZPLC-${{ needs.validate-version.outputs.version }}-firmware.cdx.json
+
+      - name: Upload release bundle
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: release-bundle-firmware-${{ needs.validate-version.outputs.publishing == 'true' && 'publishable' || 'preview' }}
+          path: release/
+          retention-days: 7
+
+  upload-release-firmware:
+    needs: [validate-version, create-draft-release, prepare-release-evidence-firmware]
+    if: ${{ needs.validate-version.outputs.publishing == 'true' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download release bundle
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: release-bundle-firmware-publishable
           path: release/
 
       - name: Upload the bundle to the draft release

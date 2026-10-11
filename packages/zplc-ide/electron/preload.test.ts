@@ -59,7 +59,7 @@ beforeAll(async () => {
 describe('preload bridge (IDE-017)', () => {
   it('exposes the same top-level objects as the packaged smoke expects, and nothing else', () => {
     expect(Object.keys(api).sort()).toEqual([
-      'aiProvider', 'candidateChangeSet', 'closeGuard', 'firmwareBuild', 'getAppInfo', 'isElectron', 'learnProgress',
+      'aiProvider', 'candidateChangeSet', 'closeGuard', 'firmwareBuild', 'firmwareImages', 'getAppInfo', 'isElectron', 'learnProgress',
       'nativeSimulation', 'platform', 'projectFiles', 'recovery', 'session', 'toolExecutionAudit', 'toolchain',
       'updateCheck', 'workspaceTests',
     ]);
@@ -76,6 +76,7 @@ describe('preload bridge (IDE-017)', () => {
     expect(methods('recovery')).toEqual(['write', 'list', 'discard']);
     expect(methods('session')).toEqual(['load', 'save']);
     expect(methods('updateCheck')).toEqual(['run']);
+    expect(methods('firmwareImages')).toEqual(['list']);
     expect(methods('closeGuard')).toEqual(['setDirty', 'closeNow', 'onCloseRequested']);
     expect(methods('workspaceTests')).toEqual(['registerProjectFile', 'registerProjectRoot', 'run', 'cancel', 'compile', 'safetyCheck', 'lessonCheck']);
     expect(methods('candidateChangeSet')).toEqual(['review']);
