@@ -943,16 +943,6 @@ zplc_hal_result_t zplc_hal_mutex_unlock(zplc_hal_mutex_t mutex) {
   return ZPLC_HAL_OK;
 }
 
-/* The handle is the k_malloc'd k_mutex of zplc_hal_mutex_create(); a k_mutex has
- * no teardown beyond giving its memory back. The caller must not hold it. */
-zplc_hal_result_t zplc_hal_mutex_destroy(zplc_hal_mutex_t mutex) {
-  if (mutex == NULL) {
-    return ZPLC_HAL_ERROR;
-  }
-  k_free(mutex);
-  return ZPLC_HAL_OK;
-}
-
 /* ============================================================================
  * Network Functions (Phase 1.4.1+)
  * ============================================================================
