@@ -43,24 +43,29 @@ components:
 
 # Design System: ZPLC Studio 2.0
 
+This document describes the interface Studio ships. The colour, type, shape and density values are printed from the token
+source (`src/theme/tokens.ts`) by `bun tools/ci/ux-tokens.ts --write`, and CI fails when the tables below differ from it, so
+a value written here is a value the application uses.
+
 ## Overview
 
 **Creative North Star: "Wiring Ledger"**
 
 Wiring Ledger treats the PLC workbench as a calm, active technical drawing: named work regions, measured labels, technical rules, and one dominant editing surface. It is dense enough for commissioning work without becoming a card dashboard or a neon control-room fantasy.
 
-The geometry follows the approved Ledger Grid reference. Drawing Sheet supplies the light material and Commissioning Spine supplies the dark material; both preserve the same information hierarchy and interaction meaning. The approved references are provenance, not production UI assets: `wiring-ledger.webp`, `wiring-ledger-drawing-sheet.webp`, and `wiring-ledger-commissioning-spine.webp` were selected under direction seed `3c2d8cb8`.
+Drawing Sheet supplies the light material, Commissioning Spine the dark one, and a high-contrast theme keeps the same hierarchy in black and white; all three preserve the same information hierarchy and interaction meaning. The approved references are provenance, not production UI assets: `wiring-ledger.webp`, `wiring-ledger-drawing-sheet.webp`, and `wiring-ledger-commissioning-spine.webp` were selected under direction seed `3c2d8cb8`.
 
 **Key Characteristics:**
 
 - Flat, cross-referenced technical regions instead of decorative cards.
 - One persistent lower tool ledger holds factual and operational panels, so the editor stays primary.
 - Operational truth remains persistent and readable while editing.
+- One owned component kit (`src/ui`) and one token source: no component draws its own colour, radius, shadow or focus ring.
 - Evidence is named accurately: host/POSIX screenshots and tests are not hardware or HIL evidence.
 
 ## Colors
 
-Drawing Sheet pairs a warm technical canvas with graphite ink; Commissioning Spine preserves that restraint in charcoal steel with pale gray-green ink.
+Colour is a role, not a decoration. A component reads a semantic role (`--color-surface-800`, `--text-primary`, `--color-accent-blue`) or one of its own component tokens (`--button-bg`, `--signal-true-fg`); the roles map to raw ramp steps once per theme. The three tiers and every value are in the token tables at the end of this document.
 
 ### Primary
 
@@ -68,33 +73,60 @@ Drawing Sheet pairs a warm technical canvas with graphite ink; Commissioning Spi
 
 ### Secondary
 
-- **Confirmed green:** communicates confirmed RUN, pass, or safe state only.
+- **Confirmed green:** communicates confirmed RUN, pass, or a TRUE value only.
 - **Amber attention:** communicates warning, force, or attention only.
-- **Red fault:** communicates fault or danger only.
+- **Red fault:** communicates fault or danger only. FALSE is never red.
 
 ### Neutral
 
 - **Drawing Sheet:** canvas, panels, rules, and ink provide the light technical drawing material.
 - **Commissioning Spine:** canvas, panels, rules, and ink provide the dark commissioning material.
+- **High contrast:** a black canvas with white rules and ink, a thicker focus ring, and no shadows.
 - **STOP and idle:** stay neutral.
 
-### Visual editors
+### Code editor
 
-- **Canvas, panel, node, and wire:** FBD, LD, and SFC share the Drawing Sheet and Commissioning Spine surface tokens.
-- **Signal state:** idle/FALSE stays neutral; energized/TRUE is active green; armed is amber; delete/fault is red.
+The Monaco themes are generated from the roles (`src/utils/monaco-themes.ts`): the editor background, text, selection, line numbers and the syntax colours (`--syntax-*`) of each theme are tokens, every syntax colour meets 4.5:1 on the editor background, and the breakpoint and paused-line markers are tokens too (`--debug-*`). Red stays the breakpoint colour; whether a breakpoint should be red, given that the vocabulary keeps red for faults, is an open decision.
+
+### Themes
+
+The theme is light, dark or high contrast, chosen in the Welcome screen header, the project settings and the toolbar; with no choice the operating-system preference applies. An explicit high-contrast choice is never overridden by the system preference. Under `forced-colors: active` the operating system supplies Canvas, CanvasText, Highlight and HighlightText, and the focus indicator follows Highlight.
+
+### Contrast
+
+Text and meaningful graphics meet WCAG 2.2 AA in the three themes: 4.5:1 for text, 3:1 for a graphic that carries meaning (a field border, the focus ring, a signal border). CI computes the ratio of every declared foreground and background pair from the tokens; the pairs and their ratios are in the Contrast table below.
 
 **The Evidence-Over-Color Rule.** Every status also has text, iconography, or another non-color cue; color never carries a state alone.
 
+## Signal vocabulary
+
+One vocabulary shows the state of a value, defined once in `src/theme/signalTone.ts` and coloured by the `--signal-*` tokens. The inline values of the code editor, the Watch table, the status dot of the operational truth rail and the kit's signal chip read it.
+
+| State | Word | Glyph | Colour | Means |
+|---|---|---|---|---|
+| TRUE | `TRUE` | `●` | green | A confirmed TRUE value |
+| FALSE | `FALSE` | `○` | neutral | A FALSE value, never red |
+| Unknown | `---` | `◌` | neutral, dashed outline | A value that has not been read |
+| Forced | `FORCED` | `◆` | amber | A value the user forced; a forced Watch value also says "(forced)" |
+| Fault | `FAULT` | `▲` | red | A fault, and only a fault |
+| Value | `VALUE` | `#` | cobalt | A number or a string that is not a state |
+
+Ladder, FBD, SFC, Trace and the I/O faceplate keep their own element styling today; they adopt the tokens and `signalTone` when their editors move to the kit.
+
 ## Typography
 
-**Body Font:** Bahnschrift, Aptos, Segoe UI, system-ui, sans-serif.
-**Label/Mono Font:** JetBrains Mono, Fira Code, Consolas, monospace.
+**Body Font:** Inter, bundled with the application, then the system sans.
+**Label/Mono Font:** JetBrains Mono, bundled with the application, then the system monospace.
 
-**Character:** The UI uses a workhorse sans for compact controls and prose, while code, identifiers, paths, timings, hashes, trace values, and tabular facts use monospace.
+**Character:** The UI uses a workhorse sans for compact controls and prose, while code, identifiers, paths, timings, hashes, trace values, and tabular facts use monospace. Values, addresses and times use tabular numerals (`.ui-tabular`).
+
+### Scale
+
+The scale is fixed and its floor is 11 pixels: caption 11, label 12, body 13, title 14, heading 16 (`--font-size-*`). A class that sets a size under 11 pixels fails the kit guard outside the visual editors, which are listed until their own package moves them.
 
 ### Hierarchy
 
-- **Inspector section label** (700, 10px, 0.08em tracking, uppercase): names a compact technical group.
+- **Inspector section label** (700, 11px, 0.08em tracking, uppercase): names a compact technical group.
 - **Inspector header** (700, 11px, 0.08em tracking, uppercase): identifies the read-only region.
 - **Inspector row** (12px, 1.35 line-height): presents one legible operational fact.
 
@@ -102,25 +134,37 @@ Drawing Sheet pairs a warm technical canvas with graphite ink; Commissioning Spi
 
 ## Layout
 
-Ledger Grid keeps the command band and operational truth rail above a dominant editor and one persistent resizable lower tool ledger. Explorer, Inspector, Output, Problems, Tests, Trace, Watch, and Terminal are roving tabs in that ledger; they never cover or reflow the editor.
+Ledger Grid keeps the toolbar and the operational truth rail above a dominant editor area and one persistent resizable lower tool ledger. Explorer, Inspector, Output, Problems, Tests, Lab, Learn, Changes, Trace, Watch, and Terminal are roving tabs in that ledger; they never cover or reflow the editor. A project opens with the Output tab selected; the Explorer is one of the ledger tabs.
 
-Technical regions are separated with 1px rules; resizable panel handles are 4px and turn cobalt only on hover or active resize. Results remains available in the existing bottom ledger through Output, Problems, Tests, Trace, Watch, and Terminal. No command palette, global search, or Devices dashboard is present because there is not yet a shared command or device contract to make those controls real.
+Technical regions are separated with 1px rules; resizable panel handles are 4px, show cobalt on hover, while dragging and on keyboard focus, and move with the arrow keys. No command palette, global search, or Devices dashboard is present because there is not yet a shared command or device contract to make those controls real.
+
+### Density
+
+Comfortable and compact (Preferences). The attribute `data-density` on the document root scales every spacing utility through `--spacing` and gives the kit its control and row heights (`--control-height`, `--row-height`); it is applied before the first frame and kept per user. Sizes written as fixed pixels in a surface that is not on the kit do not scale yet.
 
 ## Elevation & Depth
 
-Depth is tonal, not card-based. Surfaces sit flat at rest and use borders and canvas/panel separation to establish structure. The existing small and medium shadows are reserved for transient raised UI, not for turning persistent work regions into floating cards.
+Depth is tonal, not card-based. Surfaces sit flat at rest and use borders and canvas/panel separation to establish structure. The shadow tokens belong to transient overlays only: dialogs, menus, popovers and tooltips (`--elevation-overlay`, `--elevation-tooltip`). The high-contrast theme draws a border instead of a shadow.
 
 **The Flat-At-Rest Rule.** Persistent workbench regions use tonal layers and technical rules; only transient interaction surfaces may use restrained shadow.
 
 ## Shapes
 
-The shell is square by default. Technical tabs use 2px corners and 1px borders; status dots and existing compact runtime chips may be rounded where their state needs a compact marker. Tabs expose a visible 2px cobalt focus outline with a 2px offset.
+The shell is square by default (`--radius-surface`). Controls, tabs and chips use the 2px control radius (`--radius-control`), overlays 4px (`--radius-overlay`); status dots are round. Icons are 12, 16 and 20 pixels (`--icon-size-*`).
 
 ## Components
 
+The kit lives in `src/ui` and is the only place a raw `button`, `input`, `select` or `textarea`, a `title` tooltip or a native `confirm` or `alert` may be written (`tools/ci/ui-kit-guard.ts`). It provides: button, icon button, toggle group, field, text field, number field, range field, text area, select, checkbox, switch, tabs, toolbar, menu button, context menu, dialog, alert dialog, popover, tooltip, badge, status dot, signal chip, spinner, empty state and property list. A combo box, a toast, a tree and a data grid are not built yet. The primitives are owned: no headless library is installed.
+
+Every form control has a programmatically associated label (a `Field`, a wrapping label or an `aria-label`), an icon button has a required accessible name that is also its tooltip, errors are announced, and keyboard behaviour (arrows, Home and End, type-ahead, Escape, Tab wrap in a dialog, focus return) is pure logic with tests (`src/ui/logic`).
+
+### Component gallery
+
+A development build serves every component in every theme and density, six panels on one page, at the `#ui-gallery` address: `http://localhost:3000/#ui-gallery` while `bun run dev` serves Studio (in the Electron development window, set `location.hash = '#ui-gallery'` and reload). The page, its scoped theme stylesheet and its text are not in a production build (`scripts/galleryBundle.test.ts`), and journey 40 drives it with real key events.
+
 ### Lower tool ledger
 
-The lower ledger is the only auxiliary navigation surface. Its tabs use the same 2px cobalt focus outline and expose actual content, not placeholder tools. Explorer owns project/tree operations; Inspector remains factual and read-only.
+The lower ledger is the only auxiliary navigation surface. Its tabs are roving, with the arrow keys, Home and End, and expose actual content, not placeholder tools. Explorer owns project/tree operations; Inspector remains factual and read-only.
 
 ### Operational truth rail
 
@@ -128,23 +172,15 @@ The truth rail is a persistent, read-only status strip with a 34px minimum heigh
 
 ### Explorer and Inspector
 
-Explorer owns project, migration, tree, and file operations only. Inspector is factual context: it is read-only, uses 1px-rule sections, and each fact uses a 72px label column with a wrapping value column. Inspector shows Controller only when a real connection and board are present, and its evidence note explicitly distinguishes host trace from hardware/HIL evidence.
+Explorer owns project, migration, tree, and file operations only. Inspector is factual context: it is read-only, uses 1px-rule sections, and each fact uses a label column and a wrapping value column. Inspector shows Controller only when a real connection and board are present, and its evidence note explicitly distinguishes host trace from hardware/HIL evidence.
 
 ### Active tab and selection
 
 Active references use cobalt consistently across the lower ledger, focus ring, and resizable-handle interaction. The selected state is always accompanied by structure such as a border, label, pressed state, or focus ring.
 
-### Activity badges
+### Focus
 
-Activity badges come only from real migration, diagnostics, native trace, or forces data. Cobalt identifies reference or trace, amber identifies migration, warning, or force, and red identifies actual errors or unconfirmed forces.
-
-### Visual editor surface
-
-FBD, LD, and SFC use the shared Drawing Sheet/Commissioning Spine canvas, panel, node, and wire tokens. Their boolean and operational color states follow the same neutral, green, amber, and red meanings as the rest of Studio.
-
-### Buttons
-
-Generic buttons, role buttons, and tabs transition background, border, and text color over 0.12s. The existing industrial-button variant instead transitions all properties over 0.1s and may translate upward by 1px on hover; active returns it to rest. These transitions are effectively removed under reduced-motion preferences.
+One focus indicator: a 2px cobalt outline with a 2px offset (3px in high contrast, Highlight under forced colours), drawn by the single `:focus-visible` rule. No control removes it or draws a second one; the kit guard fails on an outline or ring utility on `focus:` or `focus-visible:`.
 
 ### Accessibility modes
 
@@ -154,11 +190,11 @@ Under `forced-colors: active`, the ledger regions and visual editors accept the 
 
 ### Do:
 
+- **Do** use a kit component for a control, and a token for a colour.
 - **Do** use cobalt for a real selection, focus, or technical reference.
-- **Do** reserve green for confirmed RUN, pass, or safe states; reserve amber for warning or force; reserve red for fault or danger.
-- **Do** use the same semantic state colors in FBD, LD, and SFC.
+- **Do** reserve green for confirmed RUN, pass, or a TRUE value; reserve amber for warning or force; reserve red for fault or danger.
 - **Do** keep operational truth and evidence wording explicit about its source and scope.
-- **Do** preserve the same hierarchy in Drawing Sheet light, Commissioning Spine dark, forced-colors, and reduced-motion modes.
+- **Do** preserve the same hierarchy in Drawing Sheet light, Commissioning Spine dark, high contrast, forced-colors, and reduced-motion modes.
 
 ### Don't:
 
@@ -166,6 +202,7 @@ Under `forced-colors: active`, the ledger regions and visual editors accept the 
 - **Don't** imply hardware, HIL, selected-symbol, or causal evidence that the current data contract does not provide.
 - **Don't** add a command palette, global search, or Devices dashboard before a shared contract makes it functional.
 - **Don't** encode RUN, STOP, fault, force, or connection only through color.
+- **Don't** write a font size under 11 pixels, a `title` tooltip, or a raw control outside the kit.
 
 ## Design tokens
 
@@ -363,6 +400,16 @@ What a colour is for, per theme. A value written `= light` is the light value; t
 | `--syntax-operator` | Operators and delimiters. | `#4c5a59` | `#b7c4c0` | `#f2f2f2` |
 | `--syntax-bracket` | Brackets and parentheses. | `#172127` | `#e5edeb` | `#ffffff` |
 
+#### Debugging in the code editor
+
+| Token | Use | Light | Dark | High contrast |
+|---|---|---|---|---|
+| `--debug-breakpoint` | Fill of a breakpoint dot in the editor margin. Red stays the breakpoint colour; the signal vocabulary reserves red for faults, which is an open question for the owner (see DESIGN.md). | `#a33838` | `#ed7070` | `#ff9393` |
+| `--debug-breakpoint-edge` | Ring around a breakpoint dot: toward the text colour, so the dot keeps its outline on either margin. | `color-mix(in srgb, #a33838 65%, #172127)` | `color-mix(in srgb, #ed7070 65%, #e5edeb)` | `color-mix(in srgb, #ff9393 65%, #ffffff)` |
+| `--debug-breakpoint-line` | Tint of the line a breakpoint is on. | `color-mix(in srgb, #a33838 15%, transparent)` | `color-mix(in srgb, #ed7070 15%, transparent)` | `color-mix(in srgb, #ff9393 15%, transparent)` |
+| `--debug-line-bg` | Background of the line execution is paused on. | `color-mix(in srgb, #a33838 16%, transparent)` | `color-mix(in srgb, #ed7070 16%, transparent)` | `color-mix(in srgb, #ff9393 16%, transparent)` |
+| `--debug-line-edge` | Left edge and arrow of the line execution is paused on. | `#a33838` | `#ed7070` | `#ff9393` |
+
 ### Tier 3: component tokens
 
 What one component reads. They reference roles, so they follow every theme.
@@ -528,7 +575,7 @@ Type, shape, elevation, icons, layers and density. The compact column is the val
 
 ### Contrast
 
-CI computes the WCAG 2.2 ratio of each pair below from the tokens, in all three themes, and fails when one falls under its minimum (4.5:1 for text, 3:1 for a graphic that carries meaning). 94 pairs are declared and listed here with their computed ratios.
+CI computes the WCAG 2.2 ratio of each pair below from the tokens, in all three themes, and fails when one falls under its minimum (4.5:1 for text, 3:1 for a graphic that carries meaning). 97 pairs are declared and listed here with their computed ratios.
 
 | Pair | Use | Minimum | Light | Dark | High contrast |
 |---|---|---|---|---|---|
@@ -626,5 +673,8 @@ CI computes the WCAG 2.2 ratio of each pair below from the tokens, in all three 
 | `--syntax-operator` on `--editor-bg` | Syntax colour on the code editor background | 4.5:1 | 6.87:1 | 9.41:1 | 17.89:1 |
 | `--syntax-bracket` on `--editor-bg` | Syntax colour on the code editor background | 4.5:1 | 15.59:1 | 14.23:1 | 20.03:1 |
 | `--editor-fg` on `--editor-selection-bg` over `--editor-bg` | Selected code | 4.5:1 | 10.13:1 | 7.87:1 | 5.35:1 |
+| `--debug-breakpoint` on `--editor-bg` | A breakpoint dot and the marker of the paused line in the editor margin | 3:1 | 6.29:1 | 5.77:1 | 9.39:1 |
+| `--debug-line-edge` on `--editor-bg` | A breakpoint dot and the marker of the paused line in the editor margin | 3:1 | 6.29:1 | 5.77:1 | 9.39:1 |
+| `--editor-fg` on `--debug-line-bg` over `--editor-bg` | Code on the line execution is paused on | 4.5:1 | 12.18:1 | 11.39:1 | 15.78:1 |
 
 <!-- tokens:end -->

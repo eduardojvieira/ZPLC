@@ -4,7 +4,7 @@
 
 ## Platform
 
-web
+desktop
 
 ## Users
 
@@ -55,7 +55,9 @@ human-controlled.
 
 The product is named ZPLC Studio 2.0. Its voice is direct, calm, and aware of
 industrial evidence. The user requires a “calma industrial” character; the
-specific visual language remains a later design decision.
+visual language is the Wiring Ledger direction, described as shipped in
+`DESIGN.md`: its tokens, signal vocabulary and component kit are the single
+source of the interface's colours, type and controls.
 
 ## Evidence on Hand
 
@@ -81,3 +83,11 @@ as proof.
 The Studio golden path must be operable by keyboard and meet WCAG AA. Status
 cannot rely on color alone. Light, dark, high-contrast, and reduced-motion
 experiences are required for published workflows.
+
+What is enforced today: CI computes the WCAG 2.2 contrast ratio of every
+declared foreground and background pair from the design tokens in the light,
+dark and high-contrast themes; the kit guard fails on a form control without a
+label, an icon-only button without an accessible name, a focus indicator other
+than the global one, and text under 11 pixels outside the visual editors that
+are listed. A screen-reader check of the main path on Windows and macOS is a
+manual release step and is not yet recorded.
