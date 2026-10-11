@@ -112,15 +112,19 @@ static void suite_teardown(void *fixture) {
   zassert_equal(zplc_hal_shutdown(), ZPLC_HAL_OK, "shutdown HAL");
 }
 
-static void load_and_start_tasks(zplc_trace_log_t *log, const zplc_trace_task_t *tasks, unsigned count) {
+/* One log for every test: it is 3.8 KB, and the RAM of qemu_cortex_m3 holds the regions of the core as well. Each test
+ * clears it when it starts its scenario. */
+static zplc_trace_log_t trace_log;
+
+static void load_and_start_tasks(zplc_trace_log_t *trace, const zplc_trace_task_t *tasks, unsigned count) {
   uint8_t program[PROGRAM_CAPACITY];
   size_t size;
 
   clear_scheduler();
   size = build_artifact(program, sizeof(program), tasks, count);
   zassert_equal(zplc_sched_load(program, size), (int)count, "load the tasks");
-  memset(log, 0, sizeof(*log));
-  zplc_sched_core_set_trace(zplc_sched_test_core(), zplc_trace_render, log);
+  memset(trace, 0, sizeof(*trace));
+  zplc_sched_core_set_trace(zplc_sched_test_core(), zplc_trace_render, trace);
   zplc_sched_test_set_clock(scripted_clock_us);
   zassert_ok(zplc_sched_start(), "start the scheduler");
   /* The releases of this test come from the test: the kernel timers must not add any. They are 100 ms and
@@ -128,8 +132,8 @@ static void load_and_start_tasks(zplc_trace_log_t *log, const zplc_trace_task_t 
   zplc_sched_test_stop_timers();
 }
 
-static void load_and_start(zplc_trace_log_t *log) {
-  load_and_start_tasks(log, ZPLC_TRACE_TASKS, ZPLC_TRACE_TASK_COUNT);
+static void load_and_start(zplc_trace_log_t *trace) {
+  load_and_start_tasks(trace, ZPLC_TRACE_TASKS, ZPLC_TRACE_TASK_COUNT);
 }
 
 static void run_batch(unsigned batch) {
@@ -147,14 +151,13 @@ static void run_batch(unsigned batch) {
 }
 
 ZTEST(zplc_scheduler_equivalence, test_the_zephyr_adapter_decides_the_golden_trace) {
-  static zplc_trace_log_t log;
   zplc_sched_stats_t stats;
   zplc_sched_stats_t before;
   unsigned batch;
   unsigned line;
   zplc_task_t task;
 
-  load_and_start(&log);
+  load_and_start(&trace_log);
   zassert_ok(zplc_sched_get_stats(&before), "read the baseline");
   zassert_equal(zplc_sched_test_core()->miss_limit, ZPLC_SCHED_DEFAULT_MISS_LIMIT,
                 "the firmware runs with the default limit of the core");
@@ -164,10 +167,10 @@ ZTEST(zplc_scheduler_equivalence, test_the_zephyr_adapter_decides_the_golden_tra
     run_batch(batch);
   }
 
-  zassert_equal(log.count, ZPLC_TRACE_GOLDEN_COUNT, "as many decisions as the golden trace");
-  for (line = 0U; line < log.count && line < ZPLC_TRACE_GOLDEN_COUNT; line++) {
-    zassert_true(strcmp(log.line[line], ZPLC_TRACE_GOLDEN[line]) == 0, "line %u: got \"%s\", want \"%s\"", line,
-                 log.line[line], ZPLC_TRACE_GOLDEN[line]);
+  zassert_equal(trace_log.count, ZPLC_TRACE_GOLDEN_COUNT, "as many decisions as the golden trace");
+  for (line = 0U; line < trace_log.count && line < ZPLC_TRACE_GOLDEN_COUNT; line++) {
+    zassert_true(strcmp(trace_log.line[line], ZPLC_TRACE_GOLDEN[line]) == 0, "line %u: got \"%s\", want \"%s\"", line,
+                 trace_log.line[line], ZPLC_TRACE_GOLDEN[line]);
   }
 
   zassert_equal(zplc_sched_get_state(), ZPLC_SCHED_STATE_ERROR, "the third miss in a row latches");
@@ -188,13 +191,12 @@ ZTEST(zplc_scheduler_equivalence, test_the_zephyr_adapter_decides_the_golden_tra
 /* RT-018: a program of one task is a one-task configuration of the same scheduler, and decides what the
  * single-task configuration of the firmware and the host session decide for it. */
 ZTEST(zplc_scheduler_equivalence, test_one_task_decides_the_one_task_golden_trace) {
-  static zplc_trace_log_t log;
   static const zplc_trace_task_t one = {ZPLC_TRACE_ONE_TASK_ID, 0U, ZPLC_TRACE_ONE_INTERVAL_MS,
                                         ZPLC_TRACE_ONE_OUTPUT};
   unsigned batch;
   unsigned line;
 
-  load_and_start_tasks(&log, &one, 1U);
+  load_and_start_tasks(&trace_log, &one, 1U);
   for (batch = 0U; batch < ZPLC_TRACE_ONE_BATCH_COUNT; batch++) {
     static zplc_trace_batch_t scripted;
 
@@ -208,23 +210,22 @@ ZTEST(zplc_scheduler_equivalence, test_one_task_decides_the_one_task_golden_trac
     zassert_equal(zplc_sched_test_admit_release_at(0, (uint64_t)scripted.at_ms * 1000U), 1, "the release is admitted");
     (void)zplc_sched_test_run_batch();
   }
-  zassert_equal(log.count, ZPLC_TRACE_ONE_GOLDEN_COUNT, "as many decisions as the one-task golden trace");
-  for (line = 0U; line < log.count && line < ZPLC_TRACE_ONE_GOLDEN_COUNT; line++) {
-    zassert_true(strcmp(log.line[line], ZPLC_TRACE_ONE_GOLDEN[line]) == 0, "line %u: got \"%s\", want \"%s\"", line,
-                 log.line[line], ZPLC_TRACE_ONE_GOLDEN[line]);
+  zassert_equal(trace_log.count, ZPLC_TRACE_ONE_GOLDEN_COUNT, "as many decisions as the one-task golden trace");
+  for (line = 0U; line < trace_log.count && line < ZPLC_TRACE_ONE_GOLDEN_COUNT; line++) {
+    zassert_true(strcmp(trace_log.line[line], ZPLC_TRACE_ONE_GOLDEN[line]) == 0, "line %u: got \"%s\", want \"%s\"", line,
+                 trace_log.line[line], ZPLC_TRACE_ONE_GOLDEN[line]);
   }
   zassert_equal(zplc_sched_get_state(), ZPLC_SCHED_STATE_ERROR, "the third miss in a row latches");
 }
 
 ZTEST(zplc_scheduler_equivalence, test_a_second_release_of_a_pending_task_is_merged) {
-  static zplc_trace_log_t log;
 
-  load_and_start(&log);
+  load_and_start(&trace_log);
   zassert_equal(zplc_sched_test_admit_release_at(0, 1000U), 1, "the first release is admitted");
   zassert_equal(zplc_sched_test_admit_release_at(0, 2000U), 0, "the second merges into it");
-  zassert_equal(log.count, 2U, "two decisions");
-  zassert_true(strcmp(log.line[0], "ADMIT t3 1000") == 0, "admitted at the first instant");
-  zassert_true(strcmp(log.line[1], "COALESCE t3") == 0, "merged, not queued");
+  zassert_equal(trace_log.count, 2U, "two decisions");
+  zassert_true(strcmp(trace_log.line[0], "ADMIT t3 1000") == 0, "admitted at the first instant");
+  zassert_true(strcmp(trace_log.line[1], "COALESCE t3") == 0, "merged, not queued");
 }
 
 ZTEST_SUITE(zplc_scheduler_equivalence, NULL, suite_setup, NULL, NULL, suite_teardown);
