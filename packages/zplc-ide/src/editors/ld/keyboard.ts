@@ -285,8 +285,22 @@ export function bindingChoices(model: LDModel, element: LDElement, projectBlocks
 // The commands
 // ---------------------------------------------------------------------------
 
+/**
+ * The commands that delete, move or change what is in a cell. They act only on a cell the cursor is on, which the user
+ * can see: with no cursor placed they do not fall back on the first cell, which would be one the user did not choose.
+ */
+const NEEDS_CURSOR: ReadonlySet<string> = new Set([
+  'deleteElement', 'deleteRung', 'moveElementLeft', 'moveElementRight', 'moveElementUp', 'moveElementDown', 'moveRungUp', 'moveRungDown',
+  'bindVariable', 'widenBranch', 'narrowBranch', 'removeBranch', 'addRow',
+]);
+
 /** Runs one command of the table. Unknown ids and refusals leave the document and the cursor as they were. */
 export function runLDCommand(model: LDModel, cursor: LDCursor | null, command: string, argument: LDArgument = {}): LDOutcome {
+  // a cursor on a rung that is gone (deleted, or the file changed) is no cursor: it would act on a cell nobody sees
+  if (cursor !== null && !model.rungs.some((rung) => rung.id === cursor.rungId)) cursor = null;
+  if (cursor === null && NEEDS_CURSOR.has(command)) {
+    return refuse(model, cursor, 'The cursor is not on a cell yet: press an arrow key, or click a cell, and then repeat the key.');
+  }
   switch (command) {
     case 'cursorLeft': case 'cursorRight': case 'cursorUp': case 'cursorDown': case 'rowStart': case 'rowEnd':
     case 'previousRung': case 'nextRung': case 'firstRung': case 'lastRung':

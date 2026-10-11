@@ -196,6 +196,42 @@ describe('LNG-012 ladder keyboard authoring', () => {
   });
 });
 
+describe('LNG-012 what the keyboard does not do without a cursor to show it', () => {
+  const withElement = (): Session => {
+    const session = start();
+    press(session, ['C'], ['Start']);
+    // the cursor is not on a cell: the editor was left, and the document is still there
+    session.cursor = null;
+    return session;
+  };
+
+  it('refuses to delete, move, bind or restructure what the user has not put the cursor on', () => {
+    for (const command of ['deleteElement', 'deleteRung', 'moveElementRight', 'moveRungDown', 'bindVariable', 'widenBranch', 'narrowBranch', 'removeBranch', 'addRow']) {
+      const session = withElement();
+      const before = session.model;
+      const outcome = runLDCommand(session.model, session.cursor, command);
+      expect([command, outcome.refused, outcome.model === before, outcome.changed]).toEqual([command, true, true, false]);
+      expect(outcome.say).toContain('The cursor is not on a cell yet');
+    }
+  });
+
+  it('takes a cursor on a rung that is gone for no cursor', () => {
+    const session = withElement();
+    const outcome = runLDCommand(session.model, { rungId: 'rung_deleted', row: 0, col: 0 }, 'deleteElement');
+    expect(outcome.refused).toBe(true);
+    expect(outcome.model).toBe(session.model);
+  });
+
+  it('still inserts into the first cell, which it then shows, and adds a rung at the end', () => {
+    const session = start();
+    const inserted = runLDCommand(session.model, null, 'insertContact');
+    expect(inserted.changed).toBe(true);
+    expect(inserted.cursor).toEqual({ rungId: 'rung_1', row: 0, col: 0 });
+    const added = runLDCommand(session.model, null, 'addRung');
+    expect(added.model.rungs.map((rung) => rung.id)).toEqual(['rung_1', 'rung_2']);
+  });
+});
+
 describe('LNG-012 binding a variable from the declared symbols', () => {
   const withTimer = (): LDModel => {
     const session = start();
@@ -282,7 +318,7 @@ describe('LNG-012 ladder structure from the keyboard', () => {
 
   it('moves a rung with Alt and Up or Down, renumbering, and refuses at the ends', () => {
     const session = start({ ...empty(), rungs: [createEmptyRung(1), { ...createEmptyRung(2), id: 'rung_2' }] });
-    press(session, ['Alt+ArrowDown']);
+    press(session, ['Home', 'Alt+ArrowDown']);
     expect(session.model.rungs.map((rung) => [rung.id, rung.number])).toEqual([['rung_2', 1], ['rung_1', 2]]);
     press(session, ['Alt+ArrowDown']);
     expect(session.said.at(-1)).toBe('This is the last rung.');
@@ -322,13 +358,13 @@ describe('LNG-012 ladder structure from the keyboard', () => {
 
   it('refuses a branch command when the cursor is not inside a branch', () => {
     const session = start();
-    press(session, ['Alt+ArrowRight']);
+    press(session, ['Home', 'Alt+ArrowRight']);
     expect(session.said.at(-1)).toBe('The cursor is not inside a parallel branch.');
   });
 
   it('adds a row, and asks for the comment of the rung with Shift+F2', () => {
     const session = start();
-    press(session, ['Ctrl+Shift+Enter']);
+    press(session, ['Home', 'Ctrl+Shift+Enter']);
     expect(session.model.rungs[0]!.grid).toHaveLength(2);
     press(session, ['Shift+F2']);
     expect(session.last?.prompt).toEqual({ kind: 'comment', rungId: 'rung_1' });
