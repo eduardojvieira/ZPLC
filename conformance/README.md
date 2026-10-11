@@ -73,6 +73,8 @@ cd packages/zplc-ide && bun test src/conformance          # only the cases
 
 Without the binary the cases that run a program are skipped on a developer machine; with `CI` set they fail. Cases that must not build never need it.
 
+`ZPLC_CONFORMANCE_ROOT=<folder> bun test src/conformance/conformance.test.ts` runs the cases of another folder instead of this one. `packages/zplc-ide/src/conformance/addCase.test.ts` uses it to prove VF-002: a folder that holds only a source file and an expected-values file is a case the runner finds, runs and judges, with no edit to test code.
+
 `ZPLC_CONFORMANCE_TAGS=arch-sensitive,alignment bun test src/conformance` runs only the cases that carry one of the tags, which is how the firmware test method selects the architecture-sensitive subset (VF-005). `bun tools/ci/conformance-coverage.ts --tag alignment` lists those cases, one path for each.
 
 ### On a 32-bit host

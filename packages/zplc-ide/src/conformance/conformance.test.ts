@@ -165,7 +165,10 @@ const conformanceRoot = fileURLToPath(new URL('../../../../conformance', import.
 const selectedTags = (process.env.ZPLC_CONFORMANCE_TAGS ?? '').split(',').map((tag) => tag.trim()).filter(Boolean);
 const unknownTags = selectedTags.filter((tag) => !CASE_TAGS.includes(tag as CaseTag));
 if (unknownTags.length > 0) throw new Error(`ZPLC_CONFORMANCE_TAGS names ${unknownTags.join(', ')}; the tags are ${CASE_TAGS.join(', ')}`);
-const selected = loadCases(conformanceRoot).filter((found) => selectedTags.length === 0 || found.expectation.tags.some((tag) => selectedTags.includes(tag)));
+// ZPLC_CONFORMANCE_ROOT points the runner at another folder of cases (VF-002): addCase.test.ts runs a case that exists
+// only in a temporary folder, to show that a source file and an expected-values file are all a new case needs.
+const casesRoot = process.env.ZPLC_CONFORMANCE_ROOT ?? conformanceRoot;
+const selected = loadCases(casesRoot).filter((found) => selectedTags.length === 0 || found.expectation.tags.some((tag) => selectedTags.includes(tag)));
 
 // One test per case in conformance/, named "<requirement> <title>": that name is what
 // tools/ci/expected-failures.json lists while a known defect keeps the case red.
