@@ -53,6 +53,7 @@ if(CONFIG_ZPLC)
   # Zephyr HAL implementation
   zephyr_library_sources(
     ${CMAKE_CURRENT_LIST_DIR}/lib/zplc_core/src/hal/zephyr/zplc_hal_zephyr.c
+    ${CMAKE_CURRENT_LIST_DIR}/lib/zplc_core/src/hal/zephyr/zplc_verify_scratch_zephyr.c
   )
 
   # The board I/O table (IO-001, IO-002): one C file generated at build time from the board's entry in

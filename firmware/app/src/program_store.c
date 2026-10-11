@@ -2,13 +2,14 @@
 
 #include <zephyr/kernel.h>
 #include <zplc_loader.h>
+#include <zplc_verify_scratch.h>
 
 #include "zplc_lock.h"
 
-/* This mutex owns complete thread-context store transactions and the verifier
- * scratch, which stays out of target task stacks. */
+/* This mutex owns complete thread-context store transactions. The verifier scratch is the image's one, taken for
+ * each admission check and given back before the next store operation (zplc_verify_scratch.h): it is a leaf lock
+ * below this mutex, as it is below the scheduler's control lock. */
 K_MUTEX_DEFINE(program_store_mutex);
-static uint8_t program_store_verify_workspace[ZPLC_LOADER_VERIFY_WORKSPACE_SIZE];
 static zplc_program_view_t program_store_verified_view;
 /* The commit mutex owns this second bounded workspace while the store verifies a durable rollback artifact
  * without overwriting the incoming candidate. It is as large as the largest artifact (RT-028). */
@@ -17,12 +18,18 @@ static uint8_t program_store_rollback_workspace
 
 static int admit_with_loader(const uint8_t *program, size_t length,
                              void *context) {
+  uint8_t *workspace = zplc_verify_scratch_take();
+  int result;
+
   (void)context;
-  return zplc_loader_verify(program, length, program_store_verify_workspace,
-                            sizeof(program_store_verify_workspace),
-                            &program_store_verified_view) == ZPLC_LOADER_OK
-             ? 0
-             : -1;
+  if (workspace == NULL) {
+    return -1;
+  }
+  result = zplc_loader_verify(program, length, workspace,
+                              ZPLC_LOADER_VERIFY_WORKSPACE_SIZE,
+                              &program_store_verified_view);
+  zplc_verify_scratch_give();
+  return result == ZPLC_LOADER_OK ? 0 : -1;
 }
 
 static const zplc_pstore_config_t store_config = {

@@ -1,0 +1,13 @@
+tests:
+  zplc.verify_scratch:
+    tags:
+      - zplc
+      - persistence
+      - scheduler
+    platform_allow:
+      - native_sim/native/64
+      - native_sim/native
+    integration_platforms:
+      - native_sim/native/64
+    harness: ztest
+    timeout: 60

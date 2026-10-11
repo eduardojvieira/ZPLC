@@ -8,6 +8,7 @@ target_sources(app PRIVATE
   ${CMAKE_CURRENT_SOURCE_DIR}/../../app/src/program_store.c
   ${CMAKE_CURRENT_SOURCE_DIR}/../../lib/zplc_core/src/core/zplc_loader.c
   ${CMAKE_CURRENT_SOURCE_DIR}/../../lib/zplc_core/src/core/zplc_program_store.c
+  ${CMAKE_CURRENT_SOURCE_DIR}/../../lib/zplc_core/src/hal/zephyr/zplc_verify_scratch_zephyr.c
 )
 target_include_directories(app PRIVATE
   ${CMAKE_CURRENT_SOURCE_DIR}/../../app/src

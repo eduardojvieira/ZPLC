@@ -46,6 +46,7 @@
 #include <zplc_isa.h>
 #include <zplc_sched_core.h>
 #include <zplc_scheduler.h>
+#include <zplc_verify_scratch.h>
 #ifdef CONFIG_ZPLC_RETAIN_PERSIST
 #include <zplc_retain.h>
 #endif
@@ -99,10 +100,8 @@ static struct k_timer timers[CONFIG_ZPLC_MAX_TASKS];
  * until a validated program is materialized into an empty scheduler. */
 static zplc_sched_core_t core;
 
-/* Caller-owned verifier scratch; never allocate this from a task stack. */
-static uint8_t load_workspace[ZPLC_LOADER_VERIFY_WORKSPACE_SIZE];
-
-/* Serializes thread-context control-plane operations and verifier scratch. */
+/* Serializes thread-context control-plane operations. The verifier scratch is not owned here: the image has one,
+ * with its own leaf lock, shared with the program store (zplc_verify_scratch.h). */
 static struct k_mutex control_mutex;
 
 /* Serializes timer admission against stop/unregister on SMP and in ISRs. It is the critical section of the core. */
@@ -1398,11 +1397,18 @@ static int scheduler_called_from_workqueue(void) {
 
 static int validate_program_locked(const uint8_t *binary, size_t size) {
   zplc_program_view_t view;
+  uint8_t *workspace;
   uint32_t index;
   int result;
 
-  result = zplc_loader_verify(binary, size, load_workspace,
-                              sizeof(load_workspace), &view);
+  workspace = zplc_verify_scratch_take();
+  if (workspace == NULL) {
+    return ZPLC_SCHED_ERR_LOCK;
+  }
+  /* The view points into the artifact, not into the workspace: it is read after the scratch is given back. */
+  result = zplc_loader_verify(binary, size, workspace,
+                              ZPLC_LOADER_VERIFY_WORKSPACE_SIZE, &view);
+  zplc_verify_scratch_give();
   if (result != ZPLC_LOADER_OK) {
     return result;
   }
@@ -1869,6 +1875,7 @@ int zplc_sched_validate_program(const uint8_t *binary, size_t size) {
 
 int zplc_sched_load(const uint8_t *binary, size_t size) {
   zplc_task_def_t defs[CONFIG_ZPLC_MAX_TASKS];
+  uint8_t *workspace;
   int count;
   uint32_t total_code_size;
   k_spinlock_key_t key;
@@ -1903,8 +1910,15 @@ int zplc_sched_load(const uint8_t *binary, size_t size) {
     control_unlock();
     return ZPLC_SCHED_ERR_LOCK;
   }
+  workspace = zplc_verify_scratch_take();
+  if (workspace == NULL) {
+    mem_unlock();
+    control_unlock();
+    return ZPLC_SCHED_ERR_LOCK;
+  }
   count = zplc_core_load_tasks(binary, size, defs, CONFIG_ZPLC_MAX_TASKS,
-                               load_workspace, sizeof(load_workspace));
+                               workspace, ZPLC_LOADER_VERIFY_WORKSPACE_SIZE);
+  zplc_verify_scratch_give();
   mem_unlock();
   if (count < 0) {
     zplc_hal_log("[SCHED] Failed to parse .zplc file: %d\n", count);
