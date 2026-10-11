@@ -1237,14 +1237,14 @@
   "RT-010": [
     {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_exchange.c","test":"The exchange between the scan and the threads outside it (RT-010, RT-011, RT-012)."},
     {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_sched_core.c","test":"RT-010, RT-012): the image lock is taken before the latch and released before the pins are written."},
-    {"kind":"c-test","ref":"firmware/tests/modbus_tcp/src/main.c","test":"RT-010: a write the scan's queue has no room for is a busy server (exception 6), not an invalid address."},
+    {"kind":"c-test","ref":"firmware/tests/modbus_tcp/src/main.c","test":"RT-010, COM-010: a write the scan's queue has no room for is a busy server (exception 6), not an invalid address;"},
     {"kind":"c-test","ref":"firmware/tests/modbus_tcp/src/main.c","test":"RT-010: the exchange the server reads and writes through is a fake that records how it was used."},
     {"kind":"c-test","ref":"firmware/tests/scheduler_admission/src/main.c","test":"RT-010, RT-012: an outside write waits for the input latch and never for the scan, and a read sees the last commit."},
     {"kind":"c-test","ref":"firmware/tests/scheduler_admission/src/main.c","test":"RT-010, RT-030: with no scan a write applies at once, and a lock that cannot be taken is reported."}
   ],
   "RT-011": [
     {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_exchange.c","test":"The exchange between the scan and the threads outside it (RT-010, RT-011, RT-012)."},
-    {"kind":"c-test","ref":"firmware/tests/modbus_force/src/main.c","test":"RT-011: a write from Modbus goes through the exchange and the force-aware memory interface of the core, so a"}
+    {"kind":"c-test","ref":"firmware/tests/modbus_force/src/main.c","test":"RT-011, COM-010: a write from Modbus goes through the exchange and the force-aware memory interface of the core,"}
   ],
   "RT-012": [
     {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_exchange.c","test":"The exchange between the scan and the threads outside it (RT-010, RT-011, RT-012)."},
@@ -1585,6 +1585,11 @@
   "COM-009": [
     {"kind":"unit","ref":"packages/zplc-ide/src/conformance/communication.test.ts","test":"COM-009 the communication blocks in simulation","partial":true,"note":"the runtime reaches loopback endpoints that a test starts (zplc_loopback, in-process doubles); Studio does not start or stop them for a session, does not show the status, and the program has to be given their ports"},
     {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_host_comm.c","test":"The communication blocks in the simulation runtime, on real sockets (COM-006, COM-009, COM-018).","partial":true,"note":"the runtime reaches loopback endpoints that a test starts (zplc_loopback, in-process doubles); Studio does not start or stop them for a session, does not show the status, and the program has to be given their ports"}
+  ],
+  "COM-010": [
+    {"kind":"c-test","ref":"firmware/tests/modbus_client_tcp/src/main.c","test":"COM-010: a value that the client polls from a remote device is a write from outside the scan, and the only way it"},
+    {"kind":"c-test","ref":"firmware/tests/modbus_force/src/main.c","test":"RT-011, COM-010: a write from Modbus goes through the exchange and the force-aware memory interface of the core,"},
+    {"kind":"c-test","ref":"firmware/tests/modbus_tcp/src/main.c","test":"RT-010, COM-010: a write the scan's queue has no room for is a busy server (exception 6), not an invalid address;"}
   ],
   "COM-011": [
     {"kind":"unit","ref":"packages/zplc-ide/src/compiler/communication-tags.test.ts","test":"where a Modbus tag is served (COM-011)"},

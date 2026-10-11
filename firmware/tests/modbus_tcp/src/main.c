@@ -245,7 +245,8 @@ ZTEST(modbus_tcp, test_production_mapped_write_preflights_entire_range)
   zassert_equal(exchange_end_calls, 1U, "and the reservation is closed");
 }
 
-/* RT-010: a write the scan's queue has no room for is a busy server (exception 6), not an invalid address. */
+/* RT-010, COM-010: a write the scan's queue has no room for is a busy server (exception 6), not an invalid address;
+ * every write of the server is a reservation of the exchange, made whole before anything is added to it. */
 static int busy_write(uint16_t address, uint16_t count, const uint8_t *data, bool bits,
                       bool multiple, zplc_modbus_area_t area, void *arg)
 {

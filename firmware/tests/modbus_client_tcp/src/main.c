@@ -41,6 +41,7 @@ uint32_t zplc_config_get_modbus_tcp_client_poll_ms(void) { return 1000U; }
 static zplc_tag_entry_t poll_tags[8];
 static uint16_t poll_tag_count;
 static uint16_t written_addr[8];
+static uint16_t written_size[8];
 static uint32_t written_value[8];
 static int written;
 uint16_t zplc_core_get_tag_count(void) { return poll_tag_count; }
@@ -54,6 +55,7 @@ int zplc_exchange_write(uint16_t addr, const uint8_t *bytes, uint16_t size)
 	}
 	if (written < 8) {
 		written_addr[written] = addr;
+		written_size[written] = size;
 		written_value[written] = value;
 	}
 	written++;
@@ -380,6 +382,28 @@ ZTEST(modbus_client_tcp, test_a_polled_tag_is_read_at_the_wire_address_of_its_ar
 	zassert_equal(written_addr[1], 0x2002U);
 	zassert_equal(written_value[1], 1U, "a coil is one bit");
 	zassert_equal(written_addr[2], 0x2008U);
+}
+
+/* COM-010: a value that the client polls from a remote device is a write from outside the scan, and the only way it
+ * reaches the image of the program is zplc_exchange_write(): this suite links no other function that writes the
+ * memory of the core, so a client that wrote it directly would not link. The exchange queues the write whole and the
+ * scan applies it at its next input latch through the force-aware interface (the exchange suite of the core and
+ * modbus_force prove that half). Here the client must hand over a 32-bit value as ONE write of four bytes, and a
+ * 16-bit value as one write of two, so that the scan can never see half of it. */
+ZTEST(modbus_client_tcp, test_a_polled_value_is_one_whole_write_through_the_exchange)
+{
+	add_poll_tag(0x2010, ZPLC_TYPE_REAL, 40010U); /* holding registers 9 and 10 */
+	add_poll_tag(0x2020, ZPLC_TYPE_UINT, 40021U); /* holding register 20 */
+
+	zassert_ok(zplc_modbus_client_poll_tags(true));
+
+	zassert_equal(written, 2, "one write for each tag, not one for each word: %d", written);
+	zassert_equal(written_addr[0], 0x2010U);
+	zassert_equal(written_size[0], 4U, "a REAL is written whole");
+	zassert_equal(written_value[0], 0x12341235U, "the two registers, high word first: %x", written_value[0]);
+	zassert_equal(written_addr[1], 0x2020U);
+	zassert_equal(written_size[1], 2U, "an INT is written whole");
+	zassert_equal(written_value[1], 0x1234U);
 }
 
 ZTEST_SUITE(modbus_client_tcp, NULL, setup, before, NULL, teardown);
