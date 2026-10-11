@@ -32,9 +32,14 @@ LOG_MODULE_REGISTER(zplc_comm_modbus, LOG_LEVEL_INF);
 
 typedef enum {
   TX_STATE_FREE = 0,
+  /* Taken by the scan thread, being filled in; not yet in the queue. */
+  TX_STATE_CLAIMED,
   TX_STATE_QUEUED,
   TX_STATE_PROCESSING,
-  TX_STATE_DONE
+  TX_STATE_DONE,
+  /* The block was reset while the request was queued or running: the worker
+   * still owns the slot, and frees it itself when it is through (COM-008). */
+  TX_STATE_ABANDONED
 } tx_state_t;
 
 struct modbus_async_tx {
@@ -55,6 +60,9 @@ struct modbus_async_tx {
 };
 
 static struct modbus_async_tx s_tx_pool[MAX_ASYNC_TX];
+/* Guards the state of a slot: the scan thread (reset, allocate, complete) and
+ * the worker both move it. */
+static struct k_spinlock s_tx_lock;
 static struct k_msgq s_tx_queue;
 static struct modbus_async_tx *s_tx_queue_buf[MAX_ASYNC_TX];
 
@@ -105,7 +113,16 @@ static void modbus_async_thread(void *p1, void *p2, void *p3) {
   while (1) {
     struct modbus_async_tx *tx = NULL;
     if (k_msgq_get(&s_tx_queue, (void *)&tx, K_FOREVER) == 0) {
+      k_spinlock_key_t key = k_spin_lock(&s_tx_lock);
+
+      if (tx->state == TX_STATE_ABANDONED) {
+        /* Reset while it waited in the queue: nothing is sent. */
+        tx->state = TX_STATE_FREE;
+        k_spin_unlock(&s_tx_lock, key);
+        continue;
+      }
       tx->state = TX_STATE_PROCESSING;
+      k_spin_unlock(&s_tx_lock, key);
 
       int rc = -ENOTSUP;
 
@@ -173,7 +190,13 @@ static void modbus_async_thread(void *p1, void *p2, void *p3) {
 
       // Memory barrier to ensure VM sees the done state after result
       barrier_dmem_fence_full();
-      tx->state = TX_STATE_DONE;
+      key = k_spin_lock(&s_tx_lock);
+      /* The block was reset while this request ran: its result belongs to
+       * nobody, and the slot is free again only now that the worker has
+       * stopped using it. */
+      tx->state = (tx->state == TX_STATE_ABANDONED) ? TX_STATE_FREE
+                                                    : TX_STATE_DONE;
+      k_spin_unlock(&s_tx_lock, key);
     }
   }
 }
@@ -245,12 +268,22 @@ int zplc_comm_modbus_handler(zplc_comm_fb_kind_t kind, uint8_t *fb_mem,
     fb_mem[6] = 0;
     fb_mem[7] = 0; // STATUS
 
-    // Find and free pending transaction
+    // Release the transaction of this block. A slot that is queued or being
+    // processed is still in use by the worker (its buffers, and its place in
+    // the queue): it is abandoned and the worker frees it; only a finished
+    // one is freed here (COM-008).
     for (int i = 0; i < MAX_ASYNC_TX; i++) {
-      if (s_tx_pool[i].state != TX_STATE_FREE &&
-          s_tx_pool[i].fb_mem_ptr == fb_mem) {
-        s_tx_pool[i].state = TX_STATE_FREE;
+      k_spinlock_key_t key = k_spin_lock(&s_tx_lock);
+
+      if (s_tx_pool[i].fb_mem_ptr == fb_mem) {
+        if (s_tx_pool[i].state == TX_STATE_QUEUED ||
+            s_tx_pool[i].state == TX_STATE_PROCESSING) {
+          s_tx_pool[i].state = TX_STATE_ABANDONED;
+        } else if (s_tx_pool[i].state == TX_STATE_DONE) {
+          s_tx_pool[i].state = TX_STATE_FREE;
+        }
       }
+      k_spin_unlock(&s_tx_lock, key);
     }
     return 0;
   }
@@ -261,10 +294,12 @@ int zplc_comm_modbus_handler(zplc_comm_fb_kind_t kind, uint8_t *fb_mem,
   fb_mem[2] = 0; // DONE
   fb_mem[3] = 0; // ERROR
 
-  // Check if there is an active transaction for this FB
+  // Check if there is an active transaction for this FB. An abandoned one
+  // belongs to the worker until it frees it, and is not this block's.
   struct modbus_async_tx *tx = NULL;
   for (int i = 0; i < MAX_ASYNC_TX; i++) {
     if (s_tx_pool[i].state != TX_STATE_FREE &&
+        s_tx_pool[i].state != TX_STATE_ABANDONED &&
         s_tx_pool[i].fb_mem_ptr == fb_mem) {
       tx = &s_tx_pool[i];
       break;
@@ -320,18 +355,30 @@ int zplc_comm_modbus_handler(zplc_comm_fb_kind_t kind, uint8_t *fb_mem,
   // No active transaction. Should we start one?
   if (en) {
     // Allocate transaction
-    for (int i = 0; i < MAX_ASYNC_TX; i++) {
-      if (s_tx_pool[i].state == TX_STATE_FREE) {
-        tx = &s_tx_pool[i];
-        break;
+    {
+      k_spinlock_key_t key = k_spin_lock(&s_tx_lock);
+
+      for (int i = 0; i < MAX_ASYNC_TX; i++) {
+        if (s_tx_pool[i].state == TX_STATE_FREE) {
+          tx = &s_tx_pool[i];
+          /* Taken before the lock is released: a slot is free or owned. */
+          tx->state = TX_STATE_CLAIMED;
+          break;
+        }
       }
+      k_spin_unlock(&s_tx_lock, key);
     }
 
     if (tx == NULL) {
+      // A full queue is an error with a status code, not a silent wait
+      // (COM-008). The whole STATUS word is written, so no byte of an
+      // earlier status stays in it.
+      fb_mem[1] = 0; // BUSY=false
       fb_mem[3] = 1; // ERROR=true
-      // Status ZPLC_COMM_QUEUE_FULL = 5
       fb_mem[4] = ZPLC_COMM_QUEUE_FULL;
       fb_mem[5] = 0;
+      fb_mem[6] = 0;
+      fb_mem[7] = 0;
       return 0;
     }
 
@@ -383,7 +430,9 @@ int zplc_comm_modbus_handler_init(void) {
 
   k_thread_create(&s_handler_thread, s_handler_stack,
                   K_THREAD_STACK_SIZEOF(s_handler_stack), modbus_async_thread,
-                  NULL, NULL, NULL, K_PRIO_PREEMPT(8), 0, K_NO_WAIT);
+                  NULL, NULL, NULL,
+                  K_PRIO_PREEMPT(ZPLC_COMM_THREAD_PRIORITY), 0,
+                  K_NO_WAIT);
   k_thread_name_set(&s_handler_thread, "modbus_fb_worker");
 
   zplc_comm_register_handler(ZPLC_COMM_FB_MB_READ_HREG,

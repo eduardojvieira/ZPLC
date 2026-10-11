@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "title": "Nivel de tanque, fallas y reset",
+  "summary": "Recorré el control de nivel y los enclavamientos de falla y reset del ejemplo Tank Level.",
+  "scope": "La evidencia de Tests es determinística del host nativo POSIX; no es evidencia de proceso físico, hardware, HIL ni certificación.",
+  "objectives": [
+    "Mantené la bomba encendida desde LevelLow hasta LevelHigh con un enclavamiento.",
+    "Enclavá la alarma con PumpFault o EStop y liberala sólo con un Reset nuevo tras despejarse la falla."
+  ],
+  "stages": [
+    {
+      "key": "objective",
+      "title": "Objetivo",
+      "body": "En src/TankLevel.st, agregá las memorias PumpLatched, FaultLatched y ResetArmed (o equivalentes); la planta es dueña de LevelLow y LevelHigh.",
+      "checkpoint": "Las memorias de bomba, falla y reset deben tener estados explícitos."
+    },
+    {
+      "key": "predict",
+      "title": "Predecí",
+      "body": "Antes de ejecutar, anticipá la bomba y alarma durante los cambios de nivel y falla.",
+      "checkpoint": "Pump ON/Alarm NORMAL {{t:10}}–{{t:60}} ms; Pump OFF/Alarm NORMAL {{t:70}} ms; OFF/ALARM {{t:80}}–{{t:90}}; OFF/NORMAL {{t:100}}–{{t:110}}; OFF/ALARM {{t:120}}–{{t:130}}; OFF/NORMAL {{t:140}}–{{t:150}}."
+    },
+    {
+      "key": "edit",
+      "title": "Editá",
+      "body": "Corregí esta omisión del starter y guardá antes de ejecutar: El starter no tiene histéresis de bomba y sigue funcionando ante una falla de bomba; mantené la bomba desde LevelLow hasta LevelHigh, enclavá la alarma con PumpFault o EStop y liberala sólo con un Reset pulsado tras despejarse la falla.",
+      "checkpoint": "El escenario visible debe pasar con evidencia host guardada."
+    },
+    {
+      "key": "run",
+      "title": "Ejecutá",
+      "body": "En Tests, elegí el zplc.json guardado y ejecutá únicamente el escenario TankLevel.",
+      "checkpoint": "El escenario requerido se llama TankLevel y contiene {{assertions}} assertions."
+    },
+    {
+      "key": "observe",
+      "title": "Observá",
+      "body": "Relacioná {{t:80}}/{{t:100}}/{{t:120}}/{{t:140}} ms con fault, reset, EStop y la recuperación; nunca deben coexistir Pump+Alarm.",
+      "checkpoint": "La matriz registrada en Tests muestra cada transición de bomba y alarma."
+    },
+    {
+      "key": "reflect",
+      "title": "Reflexioná",
+      "body": "La assertion NEVER cubre Pump+Alarm sólo en este escenario registrado.",
+      "checkpoint": "No demuestra un proceso físico, temporización de hardware, HIL ni certificación."
+    }
+  ],
+  "hints": [
+    {
+      "level": 1,
+      "text": "LevelLow cae a FALSE apenas sube el nivel, así que la bomba necesita su propia memoria (PumpLatched) que LevelLow active y LevelHigh borre."
+    },
+    {
+      "level": 2,
+      "text": "Agregá FaultLatched, activada por PumpFault o EStop y conservada cuando la entrada desaparece, y ResetArmed, activada sólo cuando Reset se ve suelto con la falla enclavada; borrá FaultLatched con un Reset pulsado estando armado y sin entradas de falla, y condicioná Pump con NOT FaultLatched."
+    }
+  ],
+  "faultCases": [
+    "El starter no tiene histéresis de bomba y sigue funcionando ante una falla de bomba; mantené la bomba desde LevelLow hasta LevelHigh, enclavá la alarma con PumpFault o EStop y liberala sólo con un Reset pulsado tras despejarse la falla."
+  ]
+}

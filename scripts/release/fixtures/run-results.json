@@ -1,0 +1,66 @@
+{
+  "schemaVersion": 1,
+  "version": "2.0.0-rc.4",
+  "tag": "v2.0.0-rc.4",
+  "commit": "0123456789abcdef0123456789abcdef01234567",
+  "runUrl": "https://github.com/example/zplc/actions/runs/1",
+  "completeness": "the Windows channels are not live and no board has a hardware record yet",
+  "jobs": [
+    { "job": "verify-release-candidate", "result": "success" },
+    { "job": "build-macos", "result": "success" },
+    { "job": "build-windows", "result": "success" },
+    { "job": "build-linux", "result": "success" }
+  ],
+  "assets": [
+    {
+      "name": "ZPLC IDE-2.0.0-rc.4-mac-arm64.dmg",
+      "platform": "macos",
+      "job": "build-macos (arm64)",
+      "runUrl": "https://github.com/example/zplc/actions/runs/1/job/10",
+      "signing": "adhoc",
+      "checks": { "signature": "passed", "launch": "passed", "install": "not-run" }
+    },
+    {
+      "name": "ZPLC IDE-2.0.0-rc.4-win-x64-setup-unsigned.exe",
+      "platform": "windows",
+      "job": "build-windows (x64)",
+      "runUrl": "https://github.com/example/zplc/actions/runs/1/job/11",
+      "signing": "unsigned",
+      "checks": { "signature": "not-run", "launch": "passed", "install": "not-run" }
+    },
+    {
+      "name": "ZPLC IDE-2.0.0-rc.4-linux-x64.deb",
+      "platform": "linux",
+      "job": "build-linux (x64)",
+      "runUrl": "https://github.com/example/zplc/actions/runs/1/job/12",
+      "signing": "unsigned",
+      "checks": { "signature": "not-run", "launch": "passed", "install": "passed" }
+    },
+    {
+      "name": "zplc-cli-2.0.0-rc.4-linux-x64",
+      "platform": "cli",
+      "job": "build-cli (linux-x64)",
+      "runUrl": "https://github.com/example/zplc/actions/runs/1/job/13",
+      "signing": "unsigned",
+      "checks": { "signature": "not-run", "launch": "passed", "install": "not-run" }
+    }
+  ],
+  "suites": [
+    { "suite": "compiler", "job": "typescript", "executed": 330, "failed": 0, "skipped": 2 },
+    { "suite": "studio", "job": "typescript", "executed": 1200, "failed": 0, "skipped": 0 }
+  ],
+  "knownFailures": [
+    { "id": "conformance/lng/LNG-017 il jump", "summary": "an Instruction List jump to a label past a call lands one instruction late", "tracking": "LNG-018" }
+  ],
+  "channels": [
+    { "channel": "Microsoft Store (MSIX package)", "state": "not yet submittable" },
+    { "channel": "SignPath Foundation signing of the setup and portable executables", "state": "submitted" }
+  ],
+  "changes": [
+    "Studio shows the compiler message, line and column of a build error.",
+    "The CLI and the MCP server are published as standalone executables."
+  ],
+  "knownIssues": [
+    "Studio cannot open a project folder whose path holds a newline."
+  ]
+}

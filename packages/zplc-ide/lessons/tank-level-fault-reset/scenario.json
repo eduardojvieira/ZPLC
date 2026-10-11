@@ -1,0 +1,34 @@
+{
+  "schemaVersion": 1,
+  "id": "TankLevel",
+  "plant": "tank-v1",
+  "tickMs": 10,
+  "durationMs": 150,
+  "events": [
+    { "atMs": 0, "set": { "TankLevel.AutoEnable": false, "TankLevel.PumpFault": false, "TankLevel.EStop": false, "TankLevel.Reset": false } },
+    { "atMs": 10, "set": { "TankLevel.AutoEnable": true } },
+    { "atMs": 80, "set": { "TankLevel.PumpFault": true } },
+    { "atMs": 90, "set": { "TankLevel.PumpFault": false, "TankLevel.Reset": false } },
+    { "atMs": 100, "set": { "TankLevel.Reset": true } },
+    { "atMs": 110, "set": { "TankLevel.Reset": false } },
+    { "atMs": 120, "set": { "TankLevel.EStop": true } },
+    { "atMs": 130, "set": { "TankLevel.EStop": false, "TankLevel.Reset": false } },
+    { "atMs": 140, "set": { "TankLevel.Reset": true } },
+    { "atMs": 150, "set": { "TankLevel.Reset": false } }
+  ],
+  "expectations": [
+    { "kind": "AT", "atMs": 0, "condition": { "TankLevel.Pump": false, "TankLevel.Alarm": false } },
+    { "kind": "AT", "atMs": 10, "condition": { "TankLevel.Pump": true, "TankLevel.Alarm": false } },
+    { "kind": "AT", "atMs": 70, "condition": { "TankLevel.Pump": false, "TankLevel.Alarm": false } },
+    { "kind": "AT", "atMs": 80, "condition": { "TankLevel.Pump": false, "TankLevel.Alarm": true } },
+    { "kind": "AT", "atMs": 100, "condition": { "TankLevel.Pump": false, "TankLevel.Alarm": false } },
+    { "kind": "AT", "atMs": 120, "condition": { "TankLevel.Pump": false, "TankLevel.Alarm": true } },
+    { "kind": "AT", "atMs": 140, "condition": { "TankLevel.Pump": false, "TankLevel.Alarm": false } },
+    { "kind": "EVENTUALLY", "fromMs": 0, "withinMs": 10, "condition": { "TankLevel.Pump": true } },
+    { "kind": "FOR", "fromMs": 80, "forMs": 10, "condition": { "TankLevel.Pump": false, "TankLevel.Alarm": true } },
+    { "kind": "UNTIL", "fromMs": 80, "condition": { "TankLevel.Alarm": true }, "until": { "TankLevel.Reset": true } },
+    { "kind": "RISING", "fromMs": 10, "withinMs": 0, "condition": { "TankLevel.Pump": true } },
+    { "kind": "FALLING", "fromMs": 70, "withinMs": 0, "condition": { "TankLevel.Pump": false } },
+    { "kind": "NEVER", "condition": { "TankLevel.Pump": true, "TankLevel.Alarm": true } }
+  ]
+}

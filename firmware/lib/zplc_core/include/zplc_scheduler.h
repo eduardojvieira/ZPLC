@@ -42,6 +42,26 @@ extern "C" {
 #define ZPLC_MAX_TASKS 8
 #endif
 
+#ifdef CONFIG_ZPLC_SCHEDULER
+/**
+ * @brief Zephyr priority of the scan coordinator: the high-priority work queue when the build has one, the normal
+ *        queue otherwise. A lower number runs first (RT-013).
+ */
+#ifdef CONFIG_ZPLC_SCHED_HIGH_PRIO_WORKQ
+#define ZPLC_SCAN_COORDINATOR_PRIORITY CONFIG_ZPLC_SCHED_HIGH_PRIO_PRIORITY
+#else
+#define ZPLC_SCAN_COORDINATOR_PRIORITY CONFIG_ZPLC_SCHED_WORKQ_PRIORITY
+#endif
+#endif
+
+/**
+ * @brief A lock the scheduler needed could not be taken or created (RT-030).
+ *
+ * Returned by the control-plane calls, which change nothing in that case, and by a scan or a control path that
+ * had to reach the safe state without the memory lock: the outputs are driven safe and the fault is latched.
+ */
+#define ZPLC_SCHED_ERR_LOCK (-100)
+
 /** @brief Minimum task interval in microseconds (1ms) */
 #define ZPLC_MIN_INTERVAL_US 1000
 
@@ -295,27 +315,6 @@ zplc_sched_state_t zplc_sched_get_state(void);
  */
 int zplc_sched_get_stats(zplc_sched_stats_t *stats);
 
-#ifdef CONFIG_ZTEST
-void zplc_sched_test_hold_before_commit(void);
-int zplc_sched_test_wait_before_commit(int timeout_ms);
-void zplc_sched_test_release_before_commit(void);
-void zplc_sched_test_reset_debug_before_mem(void);
-int zplc_sched_test_wait_debug_before_mem(int timeout_ms);
-void zplc_sched_test_fail_next_output_commit(uint8_t channel,
-                                             zplc_hal_result_t result);
-uint8_t zplc_sched_test_output_commit_write_count(void);
-void zplc_sched_test_fail_next_gpio_read(uint8_t channel,
-                                         zplc_hal_result_t result);
-void zplc_sched_test_fail_next_watchdog_prepare(int result);
-void zplc_sched_test_fail_next_watchdog_setup(int result);
-void zplc_sched_test_fail_next_watchdog_feed(int result);
-void zplc_sched_test_fail_next_watchdog_disarm(int result);
-void zplc_sched_test_fail_safe_outputs(int result);
-uint32_t zplc_sched_test_watchdog_prepare_count(void);
-uint32_t zplc_sched_test_watchdog_feed_count(void);
-uint32_t zplc_sched_test_watchdog_disarm_count(void);
-void zplc_sched_test_force_next_deadline_miss(void);
-#endif
 
 /**
  * @brief Get task information.
@@ -385,23 +384,6 @@ int zplc_sched_lock(int timeout_ms);
  */
 int zplc_sched_unlock(void);
 
-#ifdef CONFIG_ZTEST
-/* Test-only seams for portable release and duration arithmetic. */
-int zplc_sched_test_release_before(uint64_t left_uptime_ms,
-                                   uint32_t left_cycle32, uint8_t left_priority,
-                                   uint16_t left_id, uint64_t right_uptime_ms,
-                                   uint32_t right_cycle32,
-                                   uint8_t right_priority, uint16_t right_id);
-uint32_t zplc_sched_test_elapsed_us(uint64_t start_uptime_ms,
-                                    uint32_t start_cycle32,
-                                    uint64_t end_uptime_ms,
-                                    uint32_t end_cycle32);
-int zplc_sched_test_deadline_missed(uint64_t release_uptime_ms,
-                                    uint32_t release_cycle32,
-                                    uint64_t end_uptime_ms,
-                                    uint32_t end_cycle32, uint32_t interval_us);
-int zplc_sched_test_admit_release(int task_id);
-#endif
 
 #ifdef __cplusplus
 }

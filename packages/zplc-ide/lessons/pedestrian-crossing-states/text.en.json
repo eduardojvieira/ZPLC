@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "title": "Pedestrian crossing and safe states",
+  "summary": "Walk through pedestrian-crossing states with mutually consistent vehicle and pedestrian outputs.",
+  "scope": "Tests provide deterministic native POSIX host evidence only; they are not physical crossing, hardware, HIL, or certification evidence.",
+  "objectives": [
+    "Model the crossing as numbered states, each with an explicit output combination.",
+    "Show WALK only while the vehicles are red."
+  ],
+  "stages": [
+    {
+      "key": "objective",
+      "title": "Objective",
+      "body": "In src/PedestrianCrossing.st, add the states that coordinate vehicles and pedestrians; the plant raises PedRequest from {{t:10}} ms.",
+      "checkpoint": "Each state must leave an explicit output combination."
+    },
+    {
+      "key": "predict",
+      "title": "Predict",
+      "body": "Before running, predict the light and pedestrian-signal sequence.",
+      "checkpoint": "green+STOP {{t:0}} ms; yellow+STOP {{t:20}}; red+STOP {{t:40}}; red+WALK {{t:60}}; red+STOP {{t:90}}; green+STOP {{t:110}}."
+    },
+    {
+      "key": "edit",
+      "title": "Edit",
+      "body": "Correct this starter omission, save it, then run: The starter ignores the pedestrian request; after PedRequest run yellow, red clearance, WALK, and red recovery before returning to green, and show WALK only while the vehicles are red.",
+      "checkpoint": "The visible scenario must pass with saved host evidence."
+    },
+    {
+      "key": "run",
+      "title": "Run",
+      "body": "In Tests, choose the saved zplc.json and run only the PedestrianCrossing scenario.",
+      "checkpoint": "The required scenario is named PedestrianCrossing and contains {{assertions}} assertions."
+    },
+    {
+      "key": "observe",
+      "title": "Observe",
+      "body": "Review the recorded matrix in Tests and compare every sample with the prediction.",
+      "checkpoint": "The trace shows WALK only during the red state."
+    },
+    {
+      "key": "reflect",
+      "title": "Reflect",
+      "body": "The NEVER assertion covers logically incompatible outputs only in this scenario.",
+      "checkpoint": "It does not establish a physical crossing, hardware timing, HIL, or certification."
+    }
+  ],
+  "hints": [
+    {
+      "level": 1,
+      "text": "Keep one State variable and one counter of scans; at the top of every scan set all outputs to the safe default (vehicles stopped, pedestrians told to wait) and let each state turn on only what it needs."
+    },
+    {
+      "level": 2,
+      "text": "The sequence is green, yellow, red clearance, WALK, red recovery, then green again; leave green only on PedRequest and move to the next state when the scan counter reaches that phase's length."
+    }
+  ],
+  "faultCases": [
+    "The starter ignores the pedestrian request; after PedRequest run yellow, red clearance, WALK, and red recovery before returning to green, and show WALK only while the vehicles are red."
+  ]
+}

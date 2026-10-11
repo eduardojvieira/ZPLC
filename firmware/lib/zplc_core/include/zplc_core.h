@@ -571,11 +571,33 @@ const char* zplc_core_version(void);
 /**
  * @brief Initialize the ZPLC core.
  *
- * Initializes shared memory and default VM instance.
+ * Initializes shared memory and default VM instance, and creates the
+ * process-image lock.
  *
- * @return 0 on success
+ * @return 0 on success, -1 when the process-image lock could not be created.
+ *         In that case the memory and the VM are initialised but the runtime
+ *         must not start: external threads cannot be synchronised with the
+ *         scan. A later call tries again.
  */
 int zplc_core_init(void);
+
+/**
+ * @brief Cold start: every variable of the program is initialised (RT-016).
+ *
+ * IPI, OPI, WORK and RETAIN are set to zero and the force table is emptied. The CODE region and the tags are the
+ * program and are not touched. A program load is a cold start: zplc_core_load() and zplc_core_load_tasks() call
+ * this before they publish the new program, so a new program never starts on the variables of the one it
+ * replaced, on any runtime. A runtime that has a stored RETAIN record restores it after the load.
+ */
+void zplc_core_cold_start(void);
+
+/**
+ * @brief Warm start: the retentive variables are kept and the rest is initialised (RT-016).
+ *
+ * IPI, OPI and WORK are set to zero and the force table is emptied; RETAIN keeps its bytes. For a runtime that
+ * restarts the program it already holds, after a reset, with its retained values valid.
+ */
+void zplc_core_warm_start(void);
 
 /**
  * @brief Shutdown the ZPLC core.

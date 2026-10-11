@@ -31,6 +31,17 @@ describe('runFirmwareBuild', () => {
     )).toBe(false);
   });
 
+  it('never starts a process for a board that is not a manifest board id (IDE-017)', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'zplc-runner-root-')); let spawned = 0;
+    try {
+      for (const board of ['x; rm -rf /', '$(id)', 'a b', '--help', '']) {
+        const result = await runFirmwareBuild(root, board, { spawnProcess: (() => { spawned += 1; return new FakeChild() as never; }) as never });
+        expect(result).toMatchObject({ ok: false, failure: 'unavailable' });
+      }
+      expect(spawned).toBe(0);
+    } finally { await rm(root, { recursive: true, force: true }); }
+  });
+
   it('uses only fixed west argv, hashes the ELF, and never runs catalog text', async () => {
     const root = await mkdtemp(join(tmpdir(), 'zplc-runner-root-')); let observed: unknown;
     try {

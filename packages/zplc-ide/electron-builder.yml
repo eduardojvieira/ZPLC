@@ -17,6 +17,8 @@ directories:
 
 afterExtract: scripts/after-extract.mjs
 afterPack: scripts/after-pack.mjs
+# Writes build/THIRD-PARTY-NOTICES.txt from the lockfile and the installed packages (REL-019).
+beforePack: scripts/before-pack.mjs
 
 # Files to include in the app
 files:
@@ -39,6 +41,9 @@ extraResources:
     to: native-runtime
     filter:
       - "**/*"
+  # The licence notices of every third-party package and font in the application (REL-019).
+  - from: build/THIRD-PARTY-NOTICES.txt
+    to: THIRD-PARTY-NOTICES.txt
 
 # Asset Index - for faster builds
 asar: true

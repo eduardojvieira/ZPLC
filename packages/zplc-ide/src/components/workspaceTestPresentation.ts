@@ -1,3 +1,4 @@
+import { isSourceElementId } from '../models/sourceElements';
 import type { ScenarioKind } from '../test-engine';
 import type { CanonicalWorkspaceBuildEvidence, WorkspaceTestArtifact } from '../store/buildEvidence';
 
@@ -88,6 +89,8 @@ export interface WorkspaceCompileDiagnostic {
   path?: string;
   line?: number;
   column?: number;
+  /** The element of a diagram or IL source the diagnostic is about (LNG-003), when it is an element id. */
+  element?: string;
 }
 
 export type WorkspaceCompilePresentation =
@@ -276,6 +279,7 @@ export function presentWorkspaceCompileResult(value: unknown): WorkspaceCompileP
           ...diagnostic,
           ...(safeCompilerLocation(raw?.line) ? { line: safeCompilerLocation(raw?.line) } : {}),
           ...(safeCompilerLocation(raw?.column) ? { column: safeCompilerLocation(raw?.column) } : {}),
+          ...(isSourceElementId(raw?.element) ? { element: raw.element } : {}),
         };
       }),
     };

@@ -62,7 +62,7 @@ export function MqttSettings({ boardNetworkType, mqtt, updateCommunication }: { 
               min={1}
               max={65535}
               value={mqtt.port}
-              onChange={(e) => updateCommunication({ mqtt: { ...mqtt, port: parseInt(e.target.value, 10) || 1883 } })}
+              onChange={(e) => updateCommunication({ mqtt: { ...mqtt, port: parseInt(e.target.value, 10) || 8883 } })}
               className="px-2 py-1 text-sm bg-[var(--color-surface-700)] border border-[var(--color-surface-500)] rounded"
             />
             <input

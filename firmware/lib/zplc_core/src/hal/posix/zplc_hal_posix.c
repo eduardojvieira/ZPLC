@@ -60,6 +60,13 @@ static int persist_failure_triggered = 0;
 static zplc_hal_result_t persist_failure_result = ZPLC_HAL_ERROR;
 static unsigned long persist_parent_sync_attempt_count = 0UL;
 static unsigned long persist_parent_sync_fail_at = 0UL;
+/* RT-031: a power cut. From this operation on (1-based, 0 = none) every operation fails until the next call of
+ * zplc_hal_persist_test_fail_at(), which is the reset. */
+static unsigned long persist_power_cut_at = 0UL;
+static int persist_power_is_cut = 0;
+/* The save at this operation writes only persist_tear_bytes of its data, straight into the final file. */
+static unsigned long persist_tear_at = 0UL;
+static size_t persist_tear_bytes = 0U;
 
 void zplc_hal_persist_test_fail_at(unsigned long operation)
 {
@@ -67,6 +74,23 @@ void zplc_hal_persist_test_fail_at(unsigned long operation)
   persist_fail_at = operation;
   persist_failure_triggered = 0;
   persist_failure_result = ZPLC_HAL_ERROR;
+  persist_power_cut_at = 0UL;
+  persist_power_is_cut = 0;
+  persist_tear_at = 0UL;
+  persist_tear_bytes = 0U;
+}
+
+void zplc_hal_persist_test_power_cut_at(unsigned long operation)
+{
+  zplc_hal_persist_test_fail_at(0UL);
+  persist_power_cut_at = operation;
+}
+
+void zplc_hal_persist_test_tear_at(unsigned long operation, size_t bytes)
+{
+  zplc_hal_persist_test_fail_at(0UL);
+  persist_tear_at = operation;
+  persist_tear_bytes = bytes;
 }
 
 void zplc_hal_persist_test_fail_result(zplc_hal_result_t result)
@@ -104,6 +128,12 @@ unsigned long zplc_hal_persist_test_parent_sync_attempts(void)
 static zplc_hal_result_t persist_test_result(void)
 {
   persist_operation_count++;
+  if (persist_power_is_cut != 0 ||
+      (persist_power_cut_at != 0UL && persist_operation_count >= persist_power_cut_at)) {
+    persist_power_is_cut = 1;
+    persist_failure_triggered = 1;
+    return ZPLC_HAL_ERROR;
+  }
   if (persist_fail_at != 0UL && persist_operation_count == persist_fail_at) {
     persist_failure_triggered = 1;
     return persist_failure_result;
@@ -438,6 +468,24 @@ zplc_hal_result_t zplc_hal_persist_save(const char *key, const void *data,
   if (tmp_path_length < 0 || (size_t)tmp_path_length >= sizeof(tmp_path)) {
     return ZPLC_HAL_ERROR;
   }
+
+#ifdef ZPLC_HAL_PERSIST_TESTING
+  if (persist_tear_at != 0UL && persist_operation_count == persist_tear_at) {
+    /* A write the power cut in the middle: the record is a prefix of what was being written, and nothing after
+     * this operation happens. */
+    FILE *torn = fopen(path, "wb");
+
+    persist_power_is_cut = 1;
+    persist_failure_triggered = 1;
+    if (torn != NULL) {
+      if (persist_tear_bytes != 0U) {
+        (void)fwrite(data, 1, persist_tear_bytes < len ? persist_tear_bytes : len, torn);
+      }
+      (void)fclose(torn);
+    }
+    return ZPLC_HAL_ERROR;
+  }
+#endif
 
   /* Write to temporary file first */
   fp = fopen(tmp_path, "wb");

@@ -9,6 +9,8 @@ stdlib registry in `packages/zplc-compiler/src/compiler/stdlib/index.ts`.
 
 That registry is what the IDE/compiler uses to resolve built-in functions and function blocks.
 
+Every registered function and function block, with its signature or pin table and an example that CI runs, is in the generated [function reference](../reference/functions.md) and [function block reference](../reference/function-blocks.md).
+
 ## High-value categories
 
 | Category | Grounding source | Examples |

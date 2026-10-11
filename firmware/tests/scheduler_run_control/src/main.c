@@ -23,6 +23,7 @@
 #include <zplc_hal.h>
 #include <zplc_isa.h>
 #include <zplc_scheduler.h>
+#include <zplc_test_hooks.h>
 
 #if DT_NODE_EXISTS(DT_ALIAS(led0))
 #if DT_NODE_HAS_COMPAT(DT_GPIO_CTLR(DT_ALIAS(led0), gpios), zephyr_gpio_emul)

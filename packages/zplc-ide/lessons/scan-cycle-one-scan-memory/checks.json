@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "alsoGreen": [],
+  "wrong": [
+    {
+      "intent": "no memory: Delayed stays off and the pulse follows the button",
+      "files": {
+        "src/ScanSnapshot.st": "PROGRAM ScanSnapshot\nVAR_INPUT Button AT %I0.0 : BOOL; END_VAR\nVAR_OUTPUT Current AT %Q0.0 : BOOL; Delayed AT %Q0.1 : BOOL; RisingPulse AT %Q0.2 : BOOL; END_VAR\nCurrent := Button; Delayed := FALSE; RisingPulse := Button;\nEND_PROGRAM\n"
+      }
+    },
+    {
+      "intent": "updates Previous before reading it, so the edge detector never fires",
+      "files": {
+        "src/ScanSnapshot.st": "PROGRAM ScanSnapshot\nVAR_INPUT Button AT %I0.0 : BOOL; END_VAR\nVAR_OUTPUT Current AT %Q0.0 : BOOL; Delayed AT %Q0.1 : BOOL; RisingPulse AT %Q0.2 : BOOL; END_VAR\nVAR Previous : BOOL := FALSE; END_VAR\nPrevious := Button;\nCurrent := Button; Delayed := Previous; RisingPulse := Current AND NOT Delayed;\nEND_PROGRAM\n"
+      }
+    }
+  ]
+}

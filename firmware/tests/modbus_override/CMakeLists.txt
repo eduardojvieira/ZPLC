@@ -5,9 +5,12 @@ project(zplc_modbus_override)
 
 target_sources(app PRIVATE
   src/main.c
+  src/public_header_check.c
   ${CMAKE_CURRENT_SOURCE_DIR}/../../app/src/zplc_config.c
 )
 target_include_directories(app PRIVATE
   ${CMAKE_CURRENT_SOURCE_DIR}/../../app/include
+  ${CMAKE_CURRENT_SOURCE_DIR}/../../app/src
+  ${CMAKE_CURRENT_SOURCE_DIR}/../../app/tests/include
   ${CMAKE_CURRENT_SOURCE_DIR}/../../lib/zplc_core/include
 )

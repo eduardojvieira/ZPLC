@@ -8,7 +8,7 @@
     "memory": {
       "work_size": 8192,
       "retain_size": 4096,
-      "code_size_max": 45056
+      "code_size_max": 24576
     },
     "support_assets": [
       "firmware/app/boards/rpi_pico_rp2040.conf",
@@ -575,7 +575,7 @@
     "memory": {
       "work_size": 8192,
       "retain_size": 4096,
-      "code_size_max": 45056
+      "code_size_max": 16384
     },
     "support_assets": [
       "firmware/app/boards/stm32f746g_disco.conf",
@@ -707,7 +707,7 @@
     "memory": {
       "work_size": 8192,
       "retain_size": 4096,
-      "code_size_max": 45056
+      "code_size_max": 32768
     },
     "support_assets": [
       "firmware/app/boards/arduino_opta_stm32h747xx_m7.conf",
@@ -886,7 +886,7 @@
     "memory": {
       "work_size": 8192,
       "retain_size": 4096,
-      "code_size_max": 45056
+      "code_size_max": 24576
     },
     "support_assets": [
       "firmware/app/boards/rp2040_zero_rp2040.conf",

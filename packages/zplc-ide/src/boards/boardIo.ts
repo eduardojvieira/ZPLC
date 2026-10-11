@@ -184,7 +184,7 @@ export function fnv1a32(value: string): number {
 
 /**
  * The identity of a description: FNV-1a 32 over the board id and the id, direction, kind and address of each
- * channel, eight hex digits. The firmware reports it in its handshake and Studio compares it (IO-004); the Python
+ * channel, eight hex digits. The firmware reports it with `zplc sys io` and Studio compares it (IO-004); the Python
  * library computes the same text and hash.
  */
 export function descriptionHash(boardId: string, io: BoardIoDescription): string {

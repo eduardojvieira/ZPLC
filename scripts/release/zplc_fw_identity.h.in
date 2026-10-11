@@ -1,0 +1,219 @@
+/**
+ * @file zplc_fw_identity.h
+ * @brief What a firmware image or host runtime is: version, commit, board, ABI and build options (REL-023).
+ *
+ * GENERATED at CMake configure time from scripts/release/zplc_fw_identity.h.in by
+ * scripts/release/zplc_fw_identity.cmake. Do not edit the generated file.
+ *
+ * Not to be confused with zplc_build_info_t of zplc_isa.h, which is the 4-byte build id inside a .zplc program.
+ *
+ * Every value that CMake writes is restricted to [A-Za-z0-9_.,=+:/-], so the formatters need no JSON escaping.
+ */
+
+#ifndef ZPLC_FW_IDENTITY_H
+#define ZPLC_FW_IDENTITY_H
+
+#include <stddef.h>
+#include <stdio.h>
+#include <string.h>
+
+#include <zplc_isa.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/** Product version of the root package.json, with its prerelease suffix. */
+#define ZPLC_FW_VERSION "@ZPLC_FW_VERSION@"
+/** 40 lowercase hex digits of the commit this was configured from, or "unknown" (a source archive has no git). */
+#define ZPLC_FW_COMMIT "@ZPLC_FW_COMMIT@"
+/** 1 when tracked files differed from that commit at configure time. */
+#define ZPLC_FW_DIRTY @ZPLC_FW_DIRTY@
+/** The board a Zephyr image was built for (CONFIG_BOARD_TARGET), or the host runtime's own name. */
+#define ZPLC_FW_BOARD "@ZPLC_FW_BOARD@"
+/** The first 8 hex digits of the SHA-256 of ZPLC_FW_OPTIONS. */
+#define ZPLC_FW_OPTIONS_HASH "@ZPLC_FW_OPTIONS_HASH@"
+/** The build options that decide behaviour, sorted: the CONFIG_ZPLC_* symbols (without the prefix) of a Zephyr build, the build type of a host build. */
+#define ZPLC_FW_OPTIONS "@ZPLC_FW_OPTIONS@"
+
+typedef struct zplc_fw_identity {
+    const char *version;
+    const char *commit;
+    int dirty;
+    const char *board;
+    unsigned abi_major;
+    unsigned abi_minor;
+    unsigned draft_counter;
+    const char *options_hash;
+    const char *options;
+} zplc_fw_identity_t;
+
+/** The identity of this build. */
+static inline zplc_fw_identity_t zplc_fw_identity(void)
+{
+    zplc_fw_identity_t identity;
+
+    identity.version = ZPLC_FW_VERSION;
+    identity.commit = ZPLC_FW_COMMIT;
+    identity.dirty = ZPLC_FW_DIRTY;
+#ifdef CONFIG_BOARD_TARGET
+    identity.board = CONFIG_BOARD_TARGET;
+#else
+    identity.board = ZPLC_FW_BOARD;
+#endif
+    identity.abi_major = (unsigned)ZPLC_VERSION_MAJOR;
+    identity.abi_minor = (unsigned)ZPLC_VERSION_MINOR;
+    identity.draft_counter = (unsigned)ZPLC_DRAFT_COUNTER;
+    identity.options_hash = ZPLC_FW_OPTIONS_HASH;
+    identity.options = ZPLC_FW_OPTIONS;
+    return identity;
+}
+
+/**
+ * Where a formatter writes: called with consecutive pieces of the text, in order. Returns 0, or a negative value to
+ * stop. The shell prints each piece as it comes, so no buffer for the whole identity (about 1 KB) is needed on the
+ * small stack of the shell thread; the host runtime collects the pieces into a buffer.
+ */
+typedef int (*zplc_fw_identity_sink_t)(void *context, const char *text);
+
+#define ZPLC_FW_EMIT(piece)                                                                                           \
+    do {                                                                                                              \
+        if (sink(context, (piece)) != 0) {                                                                            \
+            return -1;                                                                                                \
+        }                                                                                                             \
+    } while (0)
+
+/** `value` as decimal text in the caller's buffer, for a sink that takes strings. */
+static inline const char *zplc_fw_identity_number(char *buffer, size_t size, unsigned value)
+{
+    (void)snprintf(buffer, size, "%u", value);
+    return buffer;
+}
+
+/** The identity as one JSON object, written to `sink`. Returns 0, or -1 when the sink stopped. */
+static inline int zplc_fw_identity_emit_json(const zplc_fw_identity_t *identity, zplc_fw_identity_sink_t sink, void *context)
+{
+    char number[16];
+
+    if (identity == NULL || sink == NULL) {
+        return -1;
+    }
+    ZPLC_FW_EMIT("{\"version\":\"");
+    ZPLC_FW_EMIT(identity->version);
+    ZPLC_FW_EMIT("\",\"commit\":\"");
+    ZPLC_FW_EMIT(identity->commit);
+    ZPLC_FW_EMIT(identity->dirty != 0 ? "\",\"dirty\":true,\"board\":\"" : "\",\"dirty\":false,\"board\":\"");
+    ZPLC_FW_EMIT(identity->board);
+    ZPLC_FW_EMIT("\",\"abi_major\":");
+    ZPLC_FW_EMIT(zplc_fw_identity_number(number, sizeof(number), identity->abi_major));
+    ZPLC_FW_EMIT(",\"abi_minor\":");
+    ZPLC_FW_EMIT(zplc_fw_identity_number(number, sizeof(number), identity->abi_minor));
+    ZPLC_FW_EMIT(",\"draft_counter\":");
+    ZPLC_FW_EMIT(zplc_fw_identity_number(number, sizeof(number), identity->draft_counter));
+    ZPLC_FW_EMIT(",\"options_hash\":\"");
+    ZPLC_FW_EMIT(identity->options_hash);
+    ZPLC_FW_EMIT("\",\"options\":\"");
+    ZPLC_FW_EMIT(identity->options);
+    ZPLC_FW_EMIT("\"}");
+    return 0;
+}
+
+/**
+ * The identity as lines of text, written to `sink`. The first line is "ZPLC Runtime v<version>", as `zplc version`
+ * has always printed it. There is no build date: a date makes two builds of one commit differ.
+ */
+static inline int zplc_fw_identity_emit_text(const zplc_fw_identity_t *identity, zplc_fw_identity_sink_t sink, void *context)
+{
+    char number[16];
+
+    if (identity == NULL || sink == NULL) {
+        return -1;
+    }
+    ZPLC_FW_EMIT("ZPLC Runtime v");
+    ZPLC_FW_EMIT(identity->version);
+    ZPLC_FW_EMIT("\nCommit:         ");
+    ZPLC_FW_EMIT(identity->commit);
+    ZPLC_FW_EMIT(identity->dirty != 0 ? "\nDirty:          yes\nBoard:          " : "\nDirty:          no\nBoard:          ");
+    ZPLC_FW_EMIT(identity->board);
+    ZPLC_FW_EMIT("\nBytecode ABI:   ");
+    ZPLC_FW_EMIT(zplc_fw_identity_number(number, sizeof(number), identity->abi_major));
+    ZPLC_FW_EMIT(".");
+    ZPLC_FW_EMIT(zplc_fw_identity_number(number, sizeof(number), identity->abi_minor));
+    ZPLC_FW_EMIT("\nContract draft: ");
+    ZPLC_FW_EMIT(zplc_fw_identity_number(number, sizeof(number), identity->draft_counter));
+    ZPLC_FW_EMIT("\nOptions hash:   ");
+    ZPLC_FW_EMIT(identity->options_hash);
+    ZPLC_FW_EMIT("\nOptions:        ");
+    ZPLC_FW_EMIT(identity->options);
+    ZPLC_FW_EMIT("\n");
+    return 0;
+}
+
+#undef ZPLC_FW_EMIT
+
+typedef struct zplc_fw_identity_buffer {
+    char *out;
+    size_t size;
+    size_t used;
+} zplc_fw_identity_buffer_t;
+
+/** A sink that appends to a buffer and refuses the piece that would not fit with its terminating NUL. */
+static inline int zplc_fw_identity_buffer_sink(void *context, const char *text)
+{
+    zplc_fw_identity_buffer_t *buffer = (zplc_fw_identity_buffer_t *)context;
+    const size_t length = strlen(text);
+
+    if (length >= buffer->size - buffer->used) {
+        return -1;
+    }
+    memcpy(buffer->out + buffer->used, text, length + 1U);
+    buffer->used += length;
+    return 0;
+}
+
+/**
+ * The identity as one JSON object in `out`. Returns the length written without the terminating NUL, or -1 when
+ * `out` is too small (it then holds an empty string): a truncated identity is never reported.
+ */
+static inline int zplc_fw_identity_json(const zplc_fw_identity_t *identity, char *out, size_t size)
+{
+    zplc_fw_identity_buffer_t buffer;
+
+    if (out == NULL || size == 0) {
+        return -1;
+    }
+    buffer.out = out;
+    buffer.size = size;
+    buffer.used = 0;
+    out[0] = '\0';
+    if (zplc_fw_identity_emit_json(identity, zplc_fw_identity_buffer_sink, &buffer) != 0) {
+        out[0] = '\0';
+        return -1;
+    }
+    return (int)buffer.used;
+}
+
+/** The text of zplc_fw_identity_emit_text() in `out`, with the return value of zplc_fw_identity_json(). */
+static inline int zplc_fw_identity_text(const zplc_fw_identity_t *identity, char *out, size_t size)
+{
+    zplc_fw_identity_buffer_t buffer;
+
+    if (out == NULL || size == 0) {
+        return -1;
+    }
+    buffer.out = out;
+    buffer.size = size;
+    buffer.used = 0;
+    out[0] = '\0';
+    if (zplc_fw_identity_emit_text(identity, zplc_fw_identity_buffer_sink, &buffer) != 0) {
+        out[0] = '\0';
+        return -1;
+    }
+    return (int)buffer.used;
+}
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif /* ZPLC_FW_IDENTITY_H */

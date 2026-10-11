@@ -1,11 +1,14 @@
 import { createHash, randomUUID } from 'node:crypto';
-import { spawn } from 'node:child_process';
+import type { ChildProcessWithoutNullStreams } from 'node:child_process';
+import { spawnAllowed, type SpawnEntry, type ToolchainProbe } from '../../electron/spawnAllowList';
 import { lstat, mkdir, mkdtemp, readFile, realpath, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { isAbsolute, join, relative, resolve, sep, win32 } from 'node:path';
 import { load } from 'js-yaml';
 import { ZPLC_CONSTANTS } from '@zplc/compiler';
-import { CompilerError, assertTaskProgramCardinality, compileMultiTaskProject, compilerErrorsOf, parse, selectWarnings, transpileFailure, transpileToST, type CompilerWarning, type DebugMap, type DebugVarInfo, type Statement } from '../compiler';
+import { markProgramInputs } from './programInputs';
+import { collectUnboundedLoopDiagnostics, safetyDiagnostic } from './safetyDiagnostics';
+import { CompilerError, assertTaskProgramCardinality, compileMultiTaskProject, compilerErrorsOf, parse, selectWarnings, transpileFailure, transpileToST, type CompilerWarning, type DebugMap, type DebugVarInfo } from '../compiler';
 import { supportLevelFromFiles } from '../boards/supportLevel';
 import { buildOptionsOf } from '../project/buildOptions';
 import type { ProjectMigrationChange } from '../project/projectModel';
@@ -44,7 +47,7 @@ export interface ToolExecutionStart {
   startedAt: string;
 }
 const EXECUTION_JOB_ID = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-const CANCELLED_DIAGNOSTIC_CODES = new Set(['TEST_CANCELLED', 'FIRMWARE_BUILD_CANCELLED']);
+const CANCELLED_DIAGNOSTIC_CODES = new Set(['TEST_CANCELLED', 'FIRMWARE_BUILD_CANCELLED', 'TOOL_CANCELLED']);
 export function executionPermission(operation: ToolOperation): ToolExecutionPermission {
   switch (operation) {
     case 'inspect': case 'migrate-preview': case 'validate': return 'project:read';
@@ -386,6 +389,7 @@ async function compile<Operation extends CompileOperation>(root: string, operati
     const warnings = [...notCompiled, ...result.warnings].map((warning) => compilerWarningDiagnostics([warning])[0]!);
     const response: CompilerCompileResult = { ok: true, summary: { name: loaded.workspace.project.name, version: loaded.workspace.project.version, taskCount: loaded.workspace.project.tasks.length, codeSize: result.codeSize, draftCounter: ZPLC_CONSTANTS.DRAFT_COUNTER }, evidence: evidence(operation, 'passed', warnings, operation === 'symbols-list' ? [] : [artifact]) };
     if (operation === 'compile') {
+      markProgramInputs(result.debugMap, compilationSources(loaded.workspace));
       Object.defineProperties(response, {
         bytes: { value: bytes, enumerable: false },
         zplcFile: { value: result.zplcFile, enumerable: false },
@@ -404,16 +408,6 @@ export function symbolsList(root: string): Promise<SymbolsListResult> { return c
 
 type SafetyOutput = { signal: string; address: number; bitOffset: number };
 function safetyLocation(output: Pick<SafetyOutput, 'address' | 'bitOffset'>): string { return `${output.address}:${output.bitOffset}`; }
-type SafetyDiagnosticCode = 'SAFETY_OUTPUT_INVALID' | 'SAFETY_OUTPUT_DUPLICATE' | 'SAFETY_INTERLOCK_UNCOVERED' | 'SAFETY_SCENARIO_INVALID' | 'SAFETY_SCENARIOS_UNAVAILABLE' | 'SAFETY_UNBOUNDED_WHILE' | 'SAFETY_UNBOUNDED_REPEAT';
-function safetyDiagnostic(code: SafetyDiagnosticCode, path?: string, line?: number, element?: string): ToolDiagnostic {
-  const message = code === 'SAFETY_INTERLOCK_UNCOVERED' ? 'Declared incompatible outputs lack exact NEVER coverage'
-    : code === 'SAFETY_SCENARIO_INVALID' ? 'Scenario cannot be used for safety coverage'
-      : code === 'SAFETY_SCENARIOS_UNAVAILABLE' ? 'Scenarios are unavailable for safety coverage'
-        : code === 'SAFETY_UNBOUNDED_WHILE' ? 'WHILE has no provable static iteration bound'
-          : code === 'SAFETY_UNBOUNDED_REPEAT' ? 'REPEAT has no provable static iteration bound'
-            : 'Declared safety output is invalid';
-  return { code, message, ...(path ? { path } : {}), ...(line === undefined ? {} : { line }), ...(element === undefined ? {} : { element }) };
-}
 function safetyOutput(debugMap: DebugMap, signal: string): SafetyOutput | undefined {
   // a global that another file declares is the variable of every program (CMP-042)
   const variable: DebugVarInfo | undefined = findSignalVariable(debugMap, signal)?.variable;
@@ -424,41 +418,6 @@ function safetyOutput(debugMap: DebugMap, signal: string): SafetyOutput | undefi
   return { signal, address: variable.addr, bitOffset };
 }
 function safetyPairKey(left: SafetyOutput, right: SafetyOutput): string { return [safetyLocation(left), safetyLocation(right)].sort().join('\u0000'); }
-
-/**
- * `elementOf` gives, for a line of the generated Structured Text of a diagram, the element it was written for: the loop of
- * an SFC action is reported against the action (LNG-026), and has no line of its own.
- */
-function collectUnboundedLoopDiagnostics(
-  statements: Statement[], path: string, includeLine: boolean, diagnostics: ToolDiagnostic[],
-  elementOf?: (line: number) => string | undefined,
-): void {
-  const visit = (inner: Statement[]) => collectUnboundedLoopDiagnostics(inner, path, includeLine, diagnostics, elementOf);
-  for (const statement of statements) {
-    switch (statement.kind) {
-      case 'WhileStatement':
-        diagnostics.push(safetyDiagnostic('SAFETY_UNBOUNDED_WHILE', path, includeLine ? statement.line : undefined, elementOf?.(statement.line)));
-        visit(statement.body);
-        break;
-      case 'RepeatStatement':
-        diagnostics.push(safetyDiagnostic('SAFETY_UNBOUNDED_REPEAT', path, includeLine ? statement.line : undefined, elementOf?.(statement.line)));
-        visit(statement.body);
-        break;
-      case 'IfStatement':
-        visit(statement.thenBranch);
-        for (const branch of statement.elsifBranches) visit(branch.statements);
-        if (statement.elseBranch) visit(statement.elseBranch);
-        break;
-      case 'ForStatement':
-        visit(statement.body);
-        break;
-      case 'CaseStatement':
-        for (const branch of statement.branches) visit(branch.statements);
-        if (statement.elseBranch) visit(statement.elseBranch);
-        break;
-    }
-  }
-}
 
 /**
  * Parses authored/transpiled ST before compiler-only communication-tag insertion so ST source
@@ -966,11 +925,11 @@ async function sdkToolchain(sdk: string | undefined, relativePath: string): Prom
   } catch { return false; }
 }
 function versionFrom(output: string): string | undefined { return output.match(/\b\d+(?:\.\d+){1,3}(?:[-+][0-9A-Za-z.-]+)?\b/)?.[0]; }
-type FixedCommand = { command: 'west' | 'python3' | 'cmake' | 'ninja' | 'git' | 'py' | 'python'; args: readonly string[] };
-async function inspectCommand({ command, args }: FixedCommand, cwd: string, revision = false): Promise<{ status: ToolchainCheckStatus; version?: string; observedRevision?: string }> {
+async function inspectCommand(entry: SpawnEntry, cwd: string, revision = false): Promise<{ status: ToolchainCheckStatus; version?: string; observedRevision?: string }> {
   return new Promise((resolve) => {
     let settled = false; let output = ''; let exceeded = false;
-    const child = spawn(command, args, { cwd, shell: false, stdio: ['ignore', 'pipe', 'pipe'], windowsHide: true });
+    // The command and its arguments come from the allow-list of spawnAllowList.ts, never from a value of this file (IDE-017).
+    const child = spawnAllowed(entry, { cwd, stdio: ['ignore', 'pipe', 'pipe'], windowsHide: true }) as ChildProcessWithoutNullStreams;
     const settle = (value: { status: ToolchainCheckStatus; version?: string; observedRevision?: string }) => { if (!settled) { settled = true; clearTimeout(timeout); resolve(value); } };
     const append = (chunk: Buffer) => {
       if (exceeded) return;
@@ -1109,18 +1068,19 @@ export async function toolchainInspect(repositoryRoot: string): Promise<Toolchai
     if (!parsedBoards) { replaceCheck(checks, { id: 'repository-manifest', status: 'malformed' }); diagnostics.push(toolchainDiagnostic('TOOLCHAIN_BOARDS_MALFORMED')); }
     else { boards = parsedBoards.map(({ ideId, zephyrBoard, validationLevel }) => ({ ideId, zephyrBoard, validationLevel })); replaceCheck(checks, { id: 'repository-manifest', status: 'ready' }); }
   }
-  for (const [id, probe] of [['west', { command: 'west', args: ['--version'] }], ['cmake', { command: 'cmake', args: ['--version'] }], ['ninja', { command: 'ninja', args: ['--version'] }]] as const) {
-    const observed = await inspectCommand(probe, root);
+  for (const probe of ['west', 'cmake', 'ninja'] as const) {
+    const id = probe;
+    const observed = await inspectCommand({ kind: 'toolchain-probe', probe }, root);
     replaceCheck(checks, { id, ...observed });
     if (observed.status !== 'ready') diagnostics.push(toolchainDiagnostic(`TOOLCHAIN_${id.toUpperCase()}_${observed.status.toUpperCase()}`));
   }
-  const pythonProbes: FixedCommand[] = process.platform === 'win32' ? [{ command: 'py', args: ['-3', '--version'] }, { command: 'python', args: ['--version'] }] : [{ command: 'python3', args: ['--version'] }];
-  let python = await inspectCommand(pythonProbes[0]!, root);
-  if (process.platform === 'win32' && python.status !== 'ready') python = await inspectCommand(pythonProbes[1]!, root);
+  const pythonProbes: ToolchainProbe[] = process.platform === 'win32' ? ['python-launcher', 'python'] : ['python3'];
+  let python = await inspectCommand({ kind: 'toolchain-probe', probe: pythonProbes[0]! }, root);
+  if (process.platform === 'win32' && python.status !== 'ready') python = await inspectCommand({ kind: 'toolchain-probe', probe: pythonProbes[1]! }, root);
   replaceCheck(checks, { id: 'python3', ...python });
   if (python.status !== 'ready') diagnostics.push(toolchainDiagnostic(`TOOLCHAIN_PYTHON3_${python.status.toUpperCase()}`));
   const zephyrBase = await realDirectory(process.env.ZEPHYR_BASE);
-  const revision = zephyrBase && requiredRevision ? await inspectCommand({ command: 'git', args: ['-C', zephyrBase, 'rev-parse', '--verify', 'HEAD'] }, root, true) : undefined;
+  const revision = zephyrBase && requiredRevision ? await inspectCommand({ kind: 'zephyr-revision', zephyrBase }, root, true) : undefined;
   const zephyrStatus: ToolchainCheckStatus = !zephyrBase ? process.env.ZEPHYR_BASE ? 'invalid' : 'missing' : !requiredRevision ? 'invalid' : revision?.status !== 'ready' ? revision?.status ?? 'unavailable' : revision.observedRevision === requiredRevision ? 'ready' : 'invalid';
   replaceCheck(checks, { id: 'zephyr-base', status: zephyrStatus, ...(requiredRevision ? { requiredRevision } : {}), ...(revision?.observedRevision ? { observedRevision: revision.observedRevision } : {}) });
   if (zephyrStatus !== 'ready') diagnostics.push(toolchainDiagnostic('TOOLCHAIN_ZEPHYR_BASE_INVALID'));

@@ -12,6 +12,17 @@ function safeRelativePath(value: unknown): string | undefined {
   return value.split(/[\\/]/).some((part) => part === '..') ? undefined : value;
 }
 
+/**
+ * The element of a diagram or IL source that a diagnostic is about (LNG-003): `rung:rung_1/cell:0,3`, `block:and_1`,
+ * `step:s1/enter`, at most 256 characters. Anything else is dropped, as a path that leaves the project is.
+ * Repeats `isSourceElementId` of `src/models/sourceElements.ts`: electron/ is compiled apart from src/ and cannot import
+ * it. workspaceCompileFailure.test.ts keeps the two equal.
+ */
+const ELEMENT_ID_FORM = /^(?:line|rung|block|connection|step|transition|action):[A-Za-z0-9_%.,!~*'()-]+(?:\/(?:cell:\d+,\d+|element:[A-Za-z0-9_%.,!~*'()-]+|enter|fire))?$/;
+function safeElement(value: unknown): string | undefined {
+  return typeof value === 'string' && value.length <= 256 && ELEMENT_ID_FORM.test(value) ? value : undefined;
+}
+
 function safeLocation(value: unknown): number | undefined {
   return typeof value === 'number' && Number.isSafeInteger(value) && value >= 1 && value <= 1_000_000 ? value : undefined;
 }
@@ -33,7 +44,7 @@ function safeMessage(value: unknown): string | undefined {
   return text === '' ? undefined : [...text].slice(0, MAX_MESSAGE_CHARS).join('').trim();
 }
 
-export type WorkspaceCompileFailure = { ok: false; evidence: { outcome: 'failed'; diagnostics: Array<{ code: string; message?: string; path?: string; line?: number; column?: number }> } };
+export type WorkspaceCompileFailure = { ok: false; evidence: { outcome: 'failed'; diagnostics: Array<{ code: string; message?: string; path?: string; line?: number; column?: number; element?: string }> } };
 
 export function workspaceCompileFailure(value: unknown): WorkspaceCompileFailure {
   const evidence = record(record(value)?.evidence);
@@ -47,6 +58,7 @@ export function workspaceCompileFailure(value: unknown): WorkspaceCompileFailure
       ...(safeRelativePath(diagnostic.path) ? { path: safeRelativePath(diagnostic.path) } : {}),
       ...(safeLocation(diagnostic.line) ? { line: safeLocation(diagnostic.line) } : {}),
       ...(safeLocation(diagnostic.column) ? { column: safeLocation(diagnostic.column) } : {}),
+      ...(safeElement(diagnostic.element) ? { element: safeElement(diagnostic.element) } : {}),
     }];
   }) : [];
   return { ok: false, evidence: { outcome: 'failed', diagnostics } };

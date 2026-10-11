@@ -85,8 +85,8 @@ changes no C source.
   `CONFIG_ZPLC_IO_OUTPUT_IMAGE_BYTES` to reserve more. The memory behind the images is still the 4 KB of the
   instruction set: shrinking it changes the binary contract and is a separate step.
 
-The firmware reports the identity of its description in `sys info --json` (`io`: board id, hash, channel count and
-image bytes), and Studio refuses to deploy a program that uses I/O to firmware whose description is not the one it
+The firmware reports the identity of its description with `sys io --json` (board id, hash, channel count and
+image bytes; a command of its own, so that the keys of `sys info --json` do not change), and Studio refuses to deploy a program that uses I/O to firmware whose description is not the one it
 holds, or to a board that has no channel for what the program touches.
 
 ### Not supported

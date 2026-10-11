@@ -15,7 +15,7 @@ export type IoAdmissionCode =
   | 'ZPLC_DEVICE_IO_DESCRIPTION_MISMATCH'
   | 'ZPLC_DEVICE_PROGRAM_IO_MISMATCH';
 
-/** The `io` object of the firmware's `sys info` handshake. */
+/** The identity of the I/O description of the firmware image, as `zplc sys io --json` reports it. */
 export interface DeviceIoIdentity {
   readonly schema: number;
   readonly boardId: string;

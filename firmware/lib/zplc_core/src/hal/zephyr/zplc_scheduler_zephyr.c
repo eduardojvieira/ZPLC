@@ -38,8 +38,10 @@
 #include <zephyr/devicetree.h>
 #include <zephyr/drivers/watchdog.h>
 #endif
+#include <zplc_bytes.h>
 #include <zplc_core.h>
 #include <zplc_debug.h>
+#include <zplc_exchange.h>
 #include <zplc_hal.h>
 #include <zplc_isa.h>
 #include <zplc_scheduler.h>
@@ -134,8 +136,23 @@ static struct k_mutex control_mutex;
 /* Serializes timer admission against stop/unregister on SMP and in ISRs. */
 static struct k_spinlock admission_lock;
 
-/** @brief Shared memory mutex */
+/** @brief Shared memory mutex: the lock of the process image (RT-012: never held across hardware I/O or a log). */
 static struct k_mutex mem_mutex;
+
+/* Serialises every write of the physical outputs and the watchdog feed: the commit of a scan, the safe state of a
+ * stop, a pause or a fault. It is taken with the image lock released, so the image is never held while a pin is
+ * written, and a stop that races a commit finds the commit finished or refused: the pins end in the safe state. */
+static struct k_mutex io_mutex;
+
+#define ZPLC_LOCK_MEMORY 0
+#define ZPLC_LOCK_CONTROL 1
+#define ZPLC_LOCK_IO 2
+
+#ifdef CONFIG_ZTEST
+/* Test seam (RT-030): the next take of the selected mutex fails with this result. */
+static int test_lock_failure;
+static uint8_t test_lock_failure_kind;
+#endif
 
 /* One non-reentrant Zephyr work item owns every normal scheduler batch. */
 static struct k_work coordinator_work;
@@ -150,6 +167,10 @@ static int hardware_watchdog_channel = -1;
 static struct k_sem test_before_commit_entered;
 static struct k_sem test_before_commit_release;
 static uint8_t test_hold_before_commit;
+/* Holds the scan with the pins about to be written: the image lock must be free there (RT-012). */
+static struct k_sem test_output_write_entered;
+static struct k_sem test_output_write_release;
+static uint8_t test_hold_output_write;
 static struct k_sem test_debug_before_mem_entered;
 static zplc_hal_result_t test_output_commit_failure;
 static uint8_t test_output_commit_failure_channel;
@@ -228,14 +249,51 @@ static struct k_work_q high_workq;
 /** @brief The work queue threads exist; they are started once per boot. */
 static bool workqueues_started;
 
-static uint16_t read_u16_le(const uint8_t *data) {
-  return (uint16_t)data[0] | ((uint16_t)data[1] << 8);
+/* ============================================================================
+ * Locks (RT-030)
+ * ============================================================================
+ *
+ * Taking a lock with K_FOREVER fails only when the mutex object is not valid. The scheduler never continues past a
+ * lock it did not get: a control-plane call returns ZPLC_SCHED_ERR_LOCK having changed nothing, and a path that
+ * needs the memory lock to reach the safe state puts the physical outputs in it without the lock and latches the
+ * fault (lock_failure_fault).
+ */
+
+static int take_lock(struct k_mutex *mutex, int kind) {
+  int result;
+
+#ifndef CONFIG_ZTEST
+  ARG_UNUSED(kind);
+#endif
+#ifdef CONFIG_ZTEST
+  if (test_lock_failure != 0 && test_lock_failure_kind == (uint8_t)kind) {
+    result = test_lock_failure;
+    test_lock_failure = 0;
+    zplc_hal_log("[SCHED] Lock could not be taken: %d\n", result);
+    return result;
+  }
+#endif
+  result = k_mutex_lock(mutex, K_FOREVER);
+  if (result != 0) {
+    zplc_hal_log("[SCHED] Lock could not be taken: %d\n", result);
+  }
+  return result;
 }
 
-static uint32_t read_u32_le(const uint8_t *data) {
-  return (uint32_t)data[0] | ((uint32_t)data[1] << 8) |
-         ((uint32_t)data[2] << 16) | ((uint32_t)data[3] << 24);
+static void release_lock(struct k_mutex *mutex) {
+  int result = k_mutex_unlock(mutex);
+
+  if (result != 0) {
+    zplc_hal_log("[SCHED] Lock could not be released: %d\n", result);
+  }
 }
+
+static int control_lock(void) { return take_lock(&control_mutex, ZPLC_LOCK_CONTROL); }
+static void control_unlock(void) { release_lock(&control_mutex); }
+static int mem_lock(void) { return take_lock(&mem_mutex, ZPLC_LOCK_MEMORY); }
+static void mem_unlock(void) { release_lock(&mem_mutex); }
+static int io_lock(void) { return take_lock(&io_mutex, ZPLC_LOCK_IO); }
+static void io_unlock(void) { release_lock(&io_mutex); }
 
 static int scheduler_slots_empty(void) {
   int index;
@@ -265,15 +323,34 @@ static int scheduler_slots_empty(void) {
  */
 
 /**
- * @brief Synchronize inputs from the physical channels to IPI (Input Process Image).
+ * @brief The physical inputs of one scan, read before the scan takes the image lock (RT-012).
  *
- * Reads the physical inputs of the board table and writes them to the shared
- * memory IPI region. Called once at the beginning of an ordered scheduler batch.
+ * Reading a pin or a converter is hardware I/O and can block; the image is not touched by it. The values are
+ * kept by table index and are written into IPI at the input latch, under the image lock, by
+ * apply_input_samples_locked().
  */
-static zplc_hal_result_t sync_inputs_to_ipi(void) {
+typedef struct {
+  uint16_t value[ZPLC_IO_MAX_CHANNELS];                    /* by table index: pin level (0/1) or converter word */
+  uint8_t valid[(ZPLC_IO_MAX_CHANNELS + 7U) / 8U];         /* bit set: the channel answered */
+} input_samples_t;
+
+static void sample_mark_valid(input_samples_t *samples, size_t index) {
+  samples->valid[index / 8U] |= (uint8_t)(1U << (index % 8U));
+}
+
+static bool sample_is_valid(const input_samples_t *samples, size_t index) {
+  return (samples->valid[index / 8U] & (1U << (index % 8U))) != 0U;
+}
+
+static zplc_hal_result_t sample_inputs(input_samples_t *samples) {
   size_t index;
   size_t count = zplc_io_channel_count();
-  uint8_t digital_ordinal = 0U; /* input channels counted in table order */
+  uint8_t digital_ordinal = 0U; /* digital input channels counted in table order */
+
+  memset(samples, 0, sizeof(*samples));
+  if (count > ZPLC_IO_MAX_CHANNELS) {
+    return ZPLC_HAL_ERROR;
+  }
 
   for (index = 0U; index < count; index++) {
     const zplc_io_channel_t *channel = zplc_io_channel_at(index);
@@ -309,19 +386,8 @@ static zplc_hal_result_t sync_inputs_to_ipi(void) {
       return result;
     }
     if (result == ZPLC_HAL_OK) {
-      if (channel->kind == ZPLC_IO_KIND_DIGITAL) {
-        uint8_t current = zplc_ipi_read8(channel->image_offset);
-
-        if (value != 0U) {
-          current = (uint8_t)(current | (uint8_t)(1U << channel->bit));
-        } else {
-          current = (uint8_t)(current & (uint8_t)~(1U << channel->bit));
-        }
-        (void)zplc_ipi_write8(channel->image_offset, current);
-      } else if ((size_t)channel->image_offset + 1U < ZPLC_MEM_IPI_SIZE) {
-        /* 16-bit Little Endian store */
-        (void)zplc_ipi_write16(channel->image_offset, value);
-      }
+      samples->value[index] = value;
+      sample_mark_valid(samples, index);
     }
     if (channel->kind == ZPLC_IO_KIND_DIGITAL) {
       digital_ordinal++;
@@ -330,22 +396,85 @@ static zplc_hal_result_t sync_inputs_to_ipi(void) {
   return ZPLC_HAL_OK;
 }
 
+/* The input latch: image lock held. Every input channel that answered is written to the input image at its
+ * address: a digital channel is one bit of its byte, an analog one a 16-bit little-endian word. */
+static void apply_input_samples_locked(const input_samples_t *samples) {
+  size_t index;
+  size_t count = zplc_io_channel_count();
+
+  if (count > ZPLC_IO_MAX_CHANNELS) {
+    return;
+  }
+  for (index = 0U; index < count; index++) {
+    const zplc_io_channel_t *channel = zplc_io_channel_at(index);
+
+    if (channel == NULL || channel->direction != ZPLC_IO_DIR_INPUT ||
+        !sample_is_valid(samples, index)) {
+      continue;
+    }
+    if (channel->kind == ZPLC_IO_KIND_DIGITAL) {
+      uint8_t current = zplc_ipi_read8(channel->image_offset);
+
+      if (samples->value[index] != 0U) {
+        current = (uint8_t)(current | (uint8_t)(1U << channel->bit));
+      } else {
+        current = (uint8_t)(current & (uint8_t)~(1U << channel->bit));
+      }
+      (void)zplc_ipi_write8(channel->image_offset, current);
+    } else if ((size_t)channel->image_offset + 1U < ZPLC_MEM_IPI_SIZE) {
+      (void)zplc_ipi_write16(channel->image_offset, samples->value[index]);
+    }
+  }
+}
+
 /**
- * @brief Synchronize outputs from OPI (Output Process Image) to the physical channels.
+ * @brief The values the physical outputs are given at the end of one scan.
  *
- * Reads the OPI region and writes the digital outputs of the board table.
- * Called once at the end of an ordered scheduler batch.
+ * Captured under the image lock, by capture_outputs_locked(), and written to the pins by write_physical_outputs()
+ * after the lock is released (RT-012). The values are by table index.
  */
-static zplc_hal_result_t sync_opi_to_outputs(void) {
-  uint8_t *opi = zplc_mem_get_region(ZPLC_MEM_OPI_BASE);
+typedef struct {
+  uint16_t value[ZPLC_IO_MAX_CHANNELS];
+} output_samples_t;
+
+/* Image lock held: the output image as it is at the end of the scan, forces applied, for every output channel. */
+static void capture_outputs_locked(output_samples_t *outputs) {
+  size_t index;
+  size_t count = zplc_io_channel_count();
+
+  memset(outputs, 0, sizeof(*outputs));
+  if (count > ZPLC_IO_MAX_CHANNELS) {
+    return;
+  }
+  for (index = 0U; index < count; index++) {
+    const zplc_io_channel_t *channel = zplc_io_channel_at(index);
+
+    if (channel == NULL || channel->direction != ZPLC_IO_DIR_OUTPUT) {
+      continue;
+    }
+    if (channel->kind == ZPLC_IO_KIND_DIGITAL) {
+      outputs->value[index] =
+          (uint16_t)((zplc_opi_read8(channel->image_offset) >> channel->bit) & 1U);
+    } else {
+      outputs->value[index] = zplc_opi_read16(channel->image_offset);
+    }
+  }
+}
+
+/**
+ * @brief Write the committed output image to the physical outputs.
+ *
+ * Hardware I/O: called with io_mutex held and the image lock released, with the output values as they were at
+ * the end of the scan. Every output channel of the board table is written, at the level its address holds.
+ */
+static zplc_hal_result_t write_physical_outputs(const output_samples_t *outputs) {
   size_t index;
   size_t count = zplc_io_channel_count();
   uint8_t ordinal = 0U; /* output channels counted in table order */
 
-  if (opi == NULL) {
+  if (count > ZPLC_IO_MAX_CHANNELS) {
     return ZPLC_HAL_ERROR;
   }
-
   for (index = 0U; index < count; index++) {
     const zplc_io_channel_t *channel = zplc_io_channel_at(index);
     zplc_hal_result_t result;
@@ -373,8 +502,7 @@ static zplc_hal_result_t sync_opi_to_outputs(void) {
       continue;
     }
 #endif
-    result = zplc_io_write_channel(
-        channel, zplc_io_image_get(opi, ZPLC_MEM_OPI_SIZE, channel));
+    result = zplc_io_write_channel(channel, outputs->value[index]);
 #ifdef CONFIG_ZTEST
     {
       k_spinlock_key_t key = k_spin_lock(&admission_lock);
@@ -435,11 +563,21 @@ static void update_system_registers(uint8_t task_id, uint32_t cycle_time_us,
 
 static void task_timer_handler(struct k_timer *timer);
 static void coordinator_work_handler(struct k_work *work);
+/* What a scan has to say, kept while the image lock is held and printed after it is released (RT-012). */
+typedef struct {
+  int error_task;      /* a task returned an error; -1 when none */
+  int error_code;
+  int paused_task;     /* a task stopped at a breakpoint; -1 when none */
+  unsigned paused_pc;
+  int deadline_task;   /* a task overran its activation deadline; -1 when none */
+} batch_log_t;
+
 static int execute_task_cycle_locked(zplc_task_internal_t *t,
                                      bool single_step_mode,
-                                     bool *deadline_missed);
-static int drive_safe_outputs_with_mem_locked(void);
-static int apply_safe_outputs_with_mem_locked(void);
+                                     bool *deadline_missed,
+                                     batch_log_t *log);
+static int drive_safe_pins(void);
+static int reset_image_locked(void);
 static void increment_counter(uint32_t *counter);
 static int watchdog_disarm(void);
 
@@ -556,10 +694,13 @@ static int watchdog_feed_after_commit(void) {
  * already-safe system deliberately receives no more feeds and will reset. */
 static int watchdog_disarm(void) {
   int result = 0;
+  int locked;
 
   if (hardware_watchdog_channel < 0) {
     return 0;
   }
+  /* The feed is made with io_mutex held; a disarm does not interleave with it. The mutex is recursive. */
+  locked = io_lock();
 #ifdef CONFIG_ZTEST
   increment_counter(&test_watchdog_disarm_count);
   if (test_watchdog_disarm_failure != 0) {
@@ -574,6 +715,9 @@ static int watchdog_disarm(void) {
 #endif
 #endif
   hardware_watchdog_channel = -1;
+  if (locked == 0) {
+    io_unlock();
+  }
   return result;
 }
 
@@ -647,6 +791,20 @@ static int admit_task_release_locked(zplc_task_internal_t *t,
   return 1;
 }
 
+/* The exchange (RT-010) asks the scheduler three things: whether scans are running, so that an external write
+ * waits for the input latch; and, when none are, the image lock to apply a write at once. */
+static int exchange_scan_active(void) {
+  int active;
+  k_spinlock_key_t key = k_spin_lock(&admission_lock);
+
+  active = sched_state == ZPLC_SCHED_STATE_RUNNING && scheduler_fault_latched == 0U;
+  k_spin_unlock(&admission_lock, key);
+  return active;
+}
+
+static int exchange_lock_image(void) { return mem_lock(); }
+static void exchange_unlock_image(void) { mem_unlock(); }
+
 static int scheduler_fault_is_latched(void) {
   int latched;
   k_spinlock_key_t key = k_spin_lock(&admission_lock);
@@ -659,8 +817,8 @@ static int scheduler_fault_is_latched(void) {
 /* The module copies the region under the memory lock, which is held by a scan
  * batch from input latch to output commit: a copy is always at a scan boundary.
  * It never holds the lock across a backend call (RT-012). */
-static void retain_lock(void) { k_mutex_lock(&mem_mutex, K_FOREVER); }
-static void retain_unlock(void) { k_mutex_unlock(&mem_mutex); }
+static int retain_lock(void) { return mem_lock(); }
+static void retain_unlock(void) { mem_unlock(); }
 
 static void retain_arm_periodic(void) {
   if (CONFIG_ZPLC_RETAIN_SAVE_INTERVAL_S > 0) {
@@ -682,7 +840,7 @@ static void retain_work_handler(struct k_work *work) {
       (void)zplc_retain_save(&retain_identity, k_uptime_get_32(),
                              ZPLC_RETAIN_SAVE_PERIODIC);
     }
-    k_mutex_unlock(&control_mutex);
+    control_unlock();
   }
   retain_arm_periodic();
 }
@@ -766,7 +924,8 @@ static void task_timer_handler(struct k_timer *timer) {
 
 static int execute_task_cycle_locked(zplc_task_internal_t *t,
                                      bool single_step_mode,
-                                     bool *deadline_missed) {
+                                     bool *deadline_missed,
+                                     batch_log_t *log) {
   scheduler_stamp_t start_stamp;
   scheduler_stamp_t end_stamp;
   uint64_t exec_time_us;
@@ -852,15 +1011,16 @@ static int execute_task_cycle_locked(zplc_task_internal_t *t,
     result = 0;
   }
 
-  /* Handle errors */
+  /* Handle errors; the line is printed once the image lock is released. */
   if (result < 0) {
-    zplc_hal_log("[SCHED] Task %d error: %d\n", t->task.config.id, t->vm.error);
+    log->error_task = t->task.config.id;
+    log->error_code = t->vm.error;
     return result;
   }
 
   if (zplc_vm_is_paused(&t->vm)) {
-    zplc_hal_log("[SCHED] Task %d paused at PC=%u\n", t->task.config.id,
-                 zplc_vm_get_pc(&t->vm));
+    log->paused_task = t->task.config.id;
+    log->paused_pc = zplc_vm_get_pc(&t->vm);
     return ZPLC_VM_PAUSED;
   }
   return result;
@@ -967,8 +1127,10 @@ static void stop_all_task_timers(void) {
   }
 }
 
-/* mem_mutex is held. The caller stops timers after releasing admission_lock. */
-static int latch_fault_locked(void) {
+/* The fault state and the output image; mem_mutex is held. The pins, the watchdog and the log are settled by the
+ * caller once it has released the lock (settle_outputs), because they are hardware I/O (RT-012). The caller stops
+ * the timers after releasing admission_lock. */
+static int latch_fault_image_locked(void) {
   int index;
   k_spinlock_key_t key = k_spin_lock(&admission_lock);
 
@@ -982,50 +1144,184 @@ static int latch_fault_locked(void) {
     }
   }
   k_spin_unlock(&admission_lock, key);
-  {
-    int safe_result = apply_safe_outputs_with_mem_locked();
-    int watchdog_result = safe_result == 0 ? watchdog_disarm() : 0;
-    if (safe_result != 0) {
-      zplc_hal_log("[SCHED] Failed to apply safe outputs: %d\n", safe_result);
+  return reset_image_locked();
+}
+
+/* No lock held: the physical outputs go safe, the hardware watchdog is disarmed when that worked, and what failed
+ * is logged. Returns the first failure, the image's before the pins', the pins' before the watchdog's. */
+static int settle_outputs(int image_result) {
+  int pins_result = drive_safe_pins();
+  int safe_result = image_result != 0 ? image_result : pins_result;
+  int watchdog_result = safe_result == 0 ? watchdog_disarm() : 0;
+
+  if (safe_result != 0) {
+    zplc_hal_log("[SCHED] Failed to apply safe outputs: %d\n", safe_result);
+  }
+  if (watchdog_result != 0) {
+    zplc_hal_log("[SCHED] Failed to disarm hardware watchdog: %d\n",
+                 watchdog_result);
+  }
+  return safe_result != 0 ? safe_result : watchdog_result;
+}
+
+/* The memory lock could not be taken, so the output image cannot be touched coherently. The pins are not part of
+ * the image: they are driven to their safe level without the lock, the fault is latched and the timers stop.
+ * Returns ZPLC_SCHED_ERR_LOCK, or the first failure of the safe-state write. */
+static int lock_failure_fault(void) {
+  int index;
+  int safe_result;
+  int watchdog_result;
+  k_spinlock_key_t key = k_spin_lock(&admission_lock);
+
+  scheduler_fault_latched = 1U;
+  sched_state = ZPLC_SCHED_STATE_ERROR;
+  for (index = 0; index < CONFIG_ZPLC_MAX_TASKS; ++index) {
+    if (tasks[index].registered != 0U) {
+      tasks[index].task.state = ZPLC_TASK_STATE_ERROR;
+      tasks[index].timer_running = 0U;
+      tasks[index].work_pending = 0U;
     }
-    if (watchdog_result != 0) {
-      zplc_hal_log("[SCHED] Failed to disarm hardware watchdog: %d\n",
-                   watchdog_result);
-    }
-    return safe_result != 0 ? safe_result : watchdog_result;
+  }
+  k_spin_unlock(&admission_lock, key);
+  stop_all_task_timers();
+  safe_result = drive_safe_pins();
+  watchdog_result = safe_result == 0 ? watchdog_disarm() : 0;
+  if (safe_result != 0 || watchdog_result != 0) {
+    zplc_hal_log("[SCHED] Safe state after a lock failure: %d, watchdog %d\n",
+                 safe_result, watchdog_result);
+  }
+  return ZPLC_SCHED_ERR_LOCK;
+}
+
+/* Control path: takes the memory lock, latches the fault, releases it and settles the outputs. */
+static int latch_fault_with_mem_lock(void) {
+  int image_result;
+
+  if (mem_lock() != 0) {
+    return lock_failure_fault();
+  }
+  image_result = latch_fault_image_locked();
+  mem_unlock();
+  return settle_outputs(image_result);
+}
+
+/* Control path: the safe state of a STOP or of the removal of the last task: the image is reset under the lock,
+ * the pins are driven after it is released, and a fault is latched when that failed. Returns 0 only when the
+ * outputs are safe. */
+static int apply_safe_outputs_with_mem_lock(void) {
+  int image_result;
+  int pins_result;
+  int result;
+
+  if (mem_lock() != 0) {
+    return lock_failure_fault();
+  }
+  image_result = reset_image_locked();
+  mem_unlock();
+  pins_result = drive_safe_pins();
+  result = image_result != 0 ? image_result : pins_result;
+  if (result != 0) {
+    (void)latch_fault_with_mem_lock();
+  }
+  return result;
+}
+
+/* The same for a pause: the pins only, the image and the forces stay. */
+static int drive_safe_outputs_with_mem_lock(void) {
+  int result = drive_safe_pins();
+
+  if (result != 0) {
+    (void)latch_fault_with_mem_lock();
+  }
+  return result;
+}
+
+static void increment_counter_locked(uint32_t *counter) {
+  k_spinlock_key_t key = k_spin_lock(&admission_lock);
+
+  increment_counter(counter);
+  k_spin_unlock(&admission_lock, key);
+}
+
+/* Prints what a scan recorded while it held the image lock. */
+static void print_batch_log(const batch_log_t *log) {
+  if (log->error_task >= 0) {
+    zplc_hal_log("[SCHED] Task %d error: %d\n", log->error_task, log->error_code);
+  }
+  if (log->paused_task >= 0) {
+    zplc_hal_log("[SCHED] Task %d paused at PC=%u\n", log->paused_task, log->paused_pc);
+  }
+  if (log->deadline_task >= 0) {
+    zplc_hal_log("[SCHED] Task %d exceeded its activation deadline\n", log->deadline_task);
   }
 }
 
-/* Executes one ordered process-image batch. mem_mutex is acquired once. */
+/* Executes one ordered process-image batch.
+ *
+ * The scan has three phases, and the image lock is held in one of them only (RT-012):
+ *
+ *   1. the physical inputs are read, with no lock: a pin or a converter can block;
+ *   2. under the image lock: the input latch (the queued external writes, then the inputs), every task of the
+ *      batch, the publication of the snapshot (RT-010) and the copy of the output byte. No hardware I/O and no
+ *      log line runs here;
+ *   3. with the lock released, under io_mutex: the physical outputs and the watchdog feed.
+ *
+ * A stop, a pause or a fault that arrives between 2 and 3 takes io_mutex after the commit or before it, and the
+ * commit re-checks the state under io_mutex: the pins end in the state the later of the two decided. */
 static int execute_batch(zplc_task_internal_t *const *batch, uint8_t count,
                          bool single_step_mode) {
+  input_samples_t samples;
+  batch_log_t log = {-1, 0, -1, 0U, -1};
+  zplc_hal_result_t sample_result;
   uint8_t index;
+  output_samples_t outputs = {{0U}};
   int result = 0;
   int faulted = 0;
   int paused = 0;
+  int commit_requested = 0;
+  int image_fault_result = 0;
   int pause_safe_result = 0;
 
   if (count == 0U) {
     return 0;
   }
 
-  k_mutex_lock(&mem_mutex, K_FOREVER);
+  /* Phase 1: nothing is read for a runtime that is not running or has faulted. */
+  {
+    k_spinlock_key_t key = k_spin_lock(&admission_lock);
+    int idle = scheduler_fault_latched != 0U ||
+               sched_state != ZPLC_SCHED_STATE_RUNNING;
+
+    k_spin_unlock(&admission_lock, key);
+    if (idle) {
+      return 0;
+    }
+  }
+  sample_result = sample_inputs(&samples);
+
+  /* Phase 2 */
+  if (mem_lock() != 0) {
+    /* No scan can run without the image lock: the runtime goes to its safe state. */
+    return lock_failure_fault();
+  }
   {
     k_spinlock_key_t key = k_spin_lock(&admission_lock);
     if (scheduler_fault_latched != 0U ||
         sched_state != ZPLC_SCHED_STATE_RUNNING) {
       k_spin_unlock(&admission_lock, key);
-      k_mutex_unlock(&mem_mutex);
+      mem_unlock();
       return 0;
     }
     k_spin_unlock(&admission_lock, key);
   }
 
-  result = (int)sync_inputs_to_ipi();
-  if (result != ZPLC_HAL_OK) {
-    latch_fault_locked();
+  if (sample_result != ZPLC_HAL_OK) {
+    result = (int)sample_result;
+    image_fault_result = latch_fault_image_locked();
     faulted = 1;
   } else {
+    (void)zplc_exchange_latch();
+    apply_input_samples_locked(&samples);
     increment_counter(&input_latch_count);
   }
   for (index = 0U; !faulted && index < count; ++index) {
@@ -1046,7 +1342,8 @@ static int execute_batch(zplc_task_internal_t *const *batch, uint8_t count,
 
     bool deadline_missed;
 
-    result = execute_task_cycle_locked(t, single_step_mode, &deadline_missed);
+    result = execute_task_cycle_locked(t, single_step_mode, &deadline_missed,
+                                       &log);
     {
       k_spinlock_key_t key = k_spin_lock(&admission_lock);
       t->work_pending = 0U;
@@ -1055,10 +1352,9 @@ static int execute_batch(zplc_task_internal_t *const *batch, uint8_t count,
     if (result < 0 || deadline_missed) {
       if (deadline_missed) {
         result = -ETIMEDOUT;
-        zplc_hal_log("[SCHED] Task %d exceeded its activation deadline\n",
-                     t->task.config.id);
+        log.deadline_task = t->task.config.id;
       }
-      latch_fault_locked();
+      image_fault_result = latch_fault_image_locked();
       faulted = 1;
       break;
     }
@@ -1090,37 +1386,85 @@ static int execute_batch(zplc_task_internal_t *const *batch, uint8_t count,
   if (!faulted) {
     int commit_allowed;
     k_spinlock_key_t key = k_spin_lock(&admission_lock);
-    /* mem_mutex prevents stop/pause from closing admission before this commit.
-     */
+    /* mem_mutex prevents stop/pause from closing admission before the image is captured. */
     commit_allowed = scheduler_fault_latched == 0U &&
                      sched_state == ZPLC_SCHED_STATE_RUNNING;
     k_spin_unlock(&admission_lock, key);
     if (commit_allowed) {
-      result = (int)sync_opi_to_outputs();
-      if (result == ZPLC_HAL_OK) {
-        increment_counter(&output_commit_count);
-        if (!paused && watchdog_feed_after_commit() != 0) {
-          zplc_hal_log("[SCHED] Hardware watchdog feed failed\n");
-          result = -EIO;
-          latch_fault_locked();
-          faulted = 1;
+      capture_outputs_locked(&outputs);
+      commit_requested = 1;
+    }
+  }
+  /* The snapshot is this scan's image: whole, between two scans (RT-010). */
+  zplc_exchange_publish();
+  mem_unlock();
+
+  print_batch_log(&log);
+
+  /* Phase 3: the physical outputs, with the image lock released. */
+  if (commit_requested) {
+    int commit_allowed;
+    int commit_failed = 0;
+
+    if (io_lock() != 0) {
+      commit_failed = 1;
+      result = ZPLC_SCHED_ERR_LOCK;
+    } else {
+      k_spinlock_key_t key = k_spin_lock(&admission_lock);
+      /* A stop, a pause or a fault may have taken the outputs while the lock was free: it has the last word. */
+      commit_allowed = scheduler_fault_latched == 0U &&
+                       sched_state == ZPLC_SCHED_STATE_RUNNING;
+      k_spin_unlock(&admission_lock, key);
+      if (commit_allowed) {
+#ifdef CONFIG_ZTEST
+        {
+          int hold_write;
+          k_spinlock_key_t hold_key = k_spin_lock(&admission_lock);
+
+          hold_write = test_hold_output_write != 0U;
+          test_hold_output_write = 0U;
+          k_spin_unlock(&admission_lock, hold_key);
+          if (hold_write) {
+            k_sem_give(&test_output_write_entered);
+            (void)k_sem_take(&test_output_write_release, K_SECONDS(1));
+          }
         }
-      } else {
-        latch_fault_locked();
-        faulted = 1;
+#endif
+        result = (int)write_physical_outputs(&outputs);
+        if (result == ZPLC_HAL_OK) {
+          increment_counter_locked(&output_commit_count);
+          if (!paused && watchdog_feed_after_commit() != 0) {
+            zplc_hal_log("[SCHED] Hardware watchdog feed failed\n");
+            result = -EIO;
+            commit_failed = 1;
+          }
+        } else {
+          commit_failed = 1;
+        }
       }
+      io_unlock();
+    }
+    if (commit_failed) {
+      faulted = 1;
+      (void)latch_fault_with_mem_lock();
     }
   }
 
-  /* A breakpoint or a step pauses the runtime (RT-017). The batch has just
-   * committed its image to the pins; the pause drives them back to the safe
-   * level and keeps the output image and the force table, so a resume or a
-   * step continues from them. PAUSED is announced and the pins are driven under
-   * one hold of the memory lock: a thread that sees PAUSED and then takes the
-   * lock never sees a pin that still holds the committed image. */
+  if (faulted && !commit_requested) {
+    /* The scan itself faulted: the image was reset under the lock; the pins and the watchdog follow it. */
+    (void)settle_outputs(image_fault_result);
+  }
+
+  /* A breakpoint or a step pauses the runtime (RT-017). The batch has just committed its image to the pins; the
+   * pause drives them back to the safe level and keeps the output image and the force table, so a resume or a step
+   * continues from them. The pins are driven first and PAUSED is announced after: a thread that sees PAUSED never
+   * sees a pin that still holds the committed image. */
   if (paused && !faulted) {
     int task_index;
-    k_spinlock_key_t key = k_spin_lock(&admission_lock);
+    k_spinlock_key_t key;
+
+    pause_safe_result = drive_safe_pins();
+    key = k_spin_lock(&admission_lock);
     if (scheduler_fault_latched == 0U &&
         sched_state == ZPLC_SCHED_STATE_RUNNING) {
       sched_state = ZPLC_SCHED_STATE_PAUSED;
@@ -1133,12 +1477,10 @@ static int execute_batch(zplc_task_internal_t *const *batch, uint8_t count,
       }
     }
     k_spin_unlock(&admission_lock, key);
-    pause_safe_result = drive_safe_outputs_with_mem_locked();
     if (pause_safe_result != 0) {
-      (void)latch_fault_locked();
+      (void)latch_fault_with_mem_lock();
     }
   }
-  k_mutex_unlock(&mem_mutex);
 
   if (faulted) {
     stop_all_task_timers();
@@ -1147,9 +1489,7 @@ static int execute_batch(zplc_task_internal_t *const *batch, uint8_t count,
   if (paused) {
     stop_all_task_timers();
     if (pause_safe_result == 0 && watchdog_disarm() != 0) {
-      k_mutex_lock(&mem_mutex, K_FOREVER);
-      (void)latch_fault_locked();
-      k_mutex_unlock(&mem_mutex);
+      (void)latch_fault_with_mem_lock();
       result = -EIO;
     }
   }
@@ -1174,6 +1514,23 @@ void zplc_sched_test_release_before_commit(void) {
   k_sem_give(&test_before_commit_release);
 }
 
+void zplc_sched_test_hold_output_write(void) {
+  k_sem_reset(&test_output_write_entered);
+  k_sem_reset(&test_output_write_release);
+  k_spinlock_key_t key = k_spin_lock(&admission_lock);
+
+  test_hold_output_write = 1U;
+  k_spin_unlock(&admission_lock, key);
+}
+
+int zplc_sched_test_wait_output_write(int timeout_ms) {
+  return k_sem_take(&test_output_write_entered, K_MSEC(timeout_ms));
+}
+
+void zplc_sched_test_release_output_write(void) {
+  k_sem_give(&test_output_write_release);
+}
+
 void zplc_sched_test_reset_debug_before_mem(void) {
   k_sem_reset(&test_debug_before_mem_entered);
 }
@@ -1186,36 +1543,42 @@ void zplc_sched_test_fail_next_output_commit(uint8_t channel,
                                              zplc_hal_result_t result) {
   k_spinlock_key_t key;
 
-  k_mutex_lock(&mem_mutex, K_FOREVER);
+  if (mem_lock() != 0) {
+    return;
+  }
   key = k_spin_lock(&admission_lock);
   test_output_commit_failure_channel = channel;
   test_output_commit_failure = result;
   test_output_commit_write_count = 0U;
   k_spin_unlock(&admission_lock, key);
-  k_mutex_unlock(&mem_mutex);
+  mem_unlock();
 }
 
 void zplc_sched_test_fail_next_gpio_read(uint8_t channel,
                                          zplc_hal_result_t result) {
   k_spinlock_key_t key;
 
-  k_mutex_lock(&mem_mutex, K_FOREVER);
+  if (mem_lock() != 0) {
+    return;
+  }
   key = k_spin_lock(&admission_lock);
   test_gpio_read_failure_channel = channel;
   test_gpio_read_failure = result;
   k_spin_unlock(&admission_lock, key);
-  k_mutex_unlock(&mem_mutex);
+  mem_unlock();
 }
 
 uint8_t zplc_sched_test_output_commit_write_count(void) {
   uint8_t count;
   k_spinlock_key_t key;
 
-  k_mutex_lock(&mem_mutex, K_FOREVER);
+  if (mem_lock() != 0) {
+    return 0U;
+  }
   key = k_spin_lock(&admission_lock);
   count = test_output_commit_write_count;
   k_spin_unlock(&admission_lock, key);
-  k_mutex_unlock(&mem_mutex);
+  mem_unlock();
   return count;
 }
 
@@ -1253,6 +1616,11 @@ uint32_t zplc_sched_test_watchdog_disarm_count(void) {
 
 void zplc_sched_test_force_next_deadline_miss(void) {
   test_force_next_deadline_miss = 1U;
+}
+
+void zplc_sched_test_fail_next_lock(int result, int which) {
+  test_lock_failure_kind = (uint8_t)which;
+  test_lock_failure = result;
 }
 #endif
 
@@ -1319,26 +1687,25 @@ static int validate_program_locked(const uint8_t *binary, size_t size) {
   for (index = 0U; index < view.task_count; index++) {
     const uint8_t *task = view.tasks + index * ZPLC_TASK_DEF_SIZE;
     uint8_t type = task[2];
-    uint32_t interval_us = read_u32_le(task + 4U);
+    uint32_t interval_us = zplc_get_u32_le(task + 4U);
 
     if (type != ZPLC_TASK_CYCLIC || interval_us < ZPLC_MIN_INTERVAL_US ||
         interval_us > ZPLC_MAX_INTERVAL_US || interval_us % 1000U != 0U ||
-        read_u16_le(task + 8U) >= view.code_size) {
+        zplc_get_u16_le(task + 8U) >= view.code_size) {
       return ZPLC_LOADER_ERR_TASK;
     }
   }
   return ZPLC_LOADER_OK;
 }
 
-/* mem_mutex is held. Drives every physical output channel to its safe level and
- * touches nothing else: the output process image and the force table are the
- * logical state of the program, not the physical one, and stay as they are.
- * This is the whole safe state of a paused runtime (RT-017): the commit that
- * copies the image to the pins does not run while paused, so the pins stay at
- * the safe level until the next normal commit after a resume.
- * The level is off for every channel; RT-023 will let a project declare
- * another one, and that choice belongs here and nowhere else. */
-static int drive_safe_outputs_with_mem_locked(void) {
+/* Drives every physical output channel to its safe level and touches nothing else: the output process image and
+ * the force table are the logical state of the program, not the physical one, and stay as they are. io_mutex is
+ * held by the caller; the image lock is not (RT-012).
+ * This is the whole safe state of a paused runtime (RT-017): the commit that copies the image to the pins does
+ * not run while paused, so the pins stay at the safe level until the next normal commit after a resume.
+ * The level is off for every channel; RT-023 will let a project declare another one, and that choice belongs
+ * here and nowhere else. */
+static int drive_safe_pins_io_locked(void) {
   int first_error = 0;
   int index;
 
@@ -1366,25 +1733,39 @@ static int drive_safe_outputs_with_mem_locked(void) {
   return first_error;
 }
 
+/* The safe state of the pins, taking io_mutex. Hardware I/O: never call it with the image lock held. A lock that
+ * cannot be taken does not leave an output energised: the pins are driven all the same, and the failure is
+ * reported (RT-030). */
+static int drive_safe_pins(void) {
+  int locked = io_lock();
+  int result = drive_safe_pins_io_locked();
+
+  if (locked == 0) {
+    io_unlock();
+  }
+  if (result == 0 && locked != 0) {
+    result = ZPLC_SCHED_ERR_LOCK;
+  }
+  return result;
+}
+
 /* mem_mutex is held after admission was closed or a local fault was latched.
- * STOP, a fault and the removal of the last task end the run: the physical
- * outputs go safe and the program's logical state is discarded with them (the
- * output image is zeroed and the force table cleared). A pause does not end the
- * run and must use drive_safe_outputs_with_mem_locked() instead. */
-static int apply_safe_outputs_with_mem_locked(void) {
+ * STOP, a fault and the removal of the last task end the run: the program's logical state is discarded (the
+ * output image is zeroed and the force table cleared) and the snapshot follows it. The physical outputs go safe
+ * after the image lock is released, with drive_safe_pins(). A pause does not end the run and only drives the pins. */
+static int reset_image_locked(void) {
   uint8_t *opi;
-  int first_error = 0;
-  int drive_result;
+  int result = 0;
 
   zplc_force_clear_all();
   opi = zplc_mem_get_region(ZPLC_MEM_OPI_BASE);
   if (opi == NULL) {
-    first_error = -1;
+    result = -1;
   } else {
     memset(opi, 0, ZPLC_MEM_OPI_SIZE);
   }
-  drive_result = drive_safe_outputs_with_mem_locked();
-  return first_error != 0 ? first_error : drive_result;
+  zplc_exchange_publish();
+  return result;
 }
 
 static int stop_locked(void) {
@@ -1393,7 +1774,9 @@ static int stop_locked(void) {
   int faulted;
   struct k_work_sync sync;
 
-  k_mutex_lock(&mem_mutex, K_FOREVER);
+  if (mem_lock() != 0) {
+    return lock_failure_fault();
+  }
   {
     k_spinlock_key_t key = k_spin_lock(&admission_lock);
     faulted = scheduler_fault_latched != 0U;
@@ -1427,20 +1810,24 @@ static int stop_locked(void) {
       t->first_scan_interrupted = 0U;
     }
   }
-  safe_result = apply_safe_outputs_with_mem_locked();
-  k_mutex_unlock(&mem_mutex);
+  safe_result = reset_image_locked();
+  mem_unlock();
+  {
+    /* The pins follow the image, with the lock released (RT-012). */
+    int pins_result = drive_safe_pins();
+
+    if (safe_result == 0) {
+      safe_result = pins_result;
+    }
+  }
   stop_all_task_timers();
   (void)k_work_cancel_sync(&coordinator_work, &sync);
   if (safe_result != 0) {
-    k_mutex_lock(&mem_mutex, K_FOREVER);
-    (void)latch_fault_locked();
-    k_mutex_unlock(&mem_mutex);
+    (void)latch_fault_with_mem_lock();
   } else if (watchdog_disarm() != 0) {
     /* Outputs are already safe; no further feed makes an unsupported WDT
      * reset fail-safe rather than silently remaining armed. */
-    k_mutex_lock(&mem_mutex, K_FOREVER);
-    (void)latch_fault_locked();
-    k_mutex_unlock(&mem_mutex);
+    (void)latch_fault_with_mem_lock();
     if (safe_result == 0) {
       safe_result = -EIO;
     }
@@ -1480,18 +1867,24 @@ static int unregister_task_locked(int task_id) {
   k_spin_unlock(&admission_lock, key);
   if (last_task) {
     int safe_result;
+    int pins_result;
 
-    k_mutex_lock(&mem_mutex, K_FOREVER);
-    safe_result = apply_safe_outputs_with_mem_locked();
+    if (mem_lock() != 0) {
+      return lock_failure_fault();
+    }
+    safe_result = reset_image_locked();
+    mem_unlock();
+    pins_result = drive_safe_pins();
+    if (safe_result == 0) {
+      safe_result = pins_result;
+    }
     if (safe_result != 0 || watchdog_disarm() != 0) {
-      (void)latch_fault_locked();
-      k_mutex_unlock(&mem_mutex);
+      (void)latch_fault_with_mem_lock();
       return safe_result != 0 ? safe_result : -EIO;
     }
     key = k_spin_lock(&admission_lock);
     sched_state = ZPLC_SCHED_STATE_IDLE;
     k_spin_unlock(&admission_lock, key);
-    k_mutex_unlock(&mem_mutex);
 #ifdef CONFIG_ZPLC_RETAIN_PERSIST
     retain_active = false;
 #endif
@@ -1520,13 +1913,15 @@ static int pause_locked(void) {
   int safe_result;
   struct k_work_sync sync;
 
-  k_mutex_lock(&mem_mutex, K_FOREVER);
+  if (mem_lock() != 0) {
+    return lock_failure_fault();
+  }
   {
     k_spinlock_key_t key = k_spin_lock(&admission_lock);
     if (scheduler_fault_latched != 0U ||
         sched_state != ZPLC_SCHED_STATE_RUNNING) {
       k_spin_unlock(&admission_lock, key);
-      k_mutex_unlock(&mem_mutex);
+      mem_unlock();
       return -1;
     }
     sched_state = ZPLC_SCHED_STATE_PAUSED;
@@ -1544,19 +1939,15 @@ static int pause_locked(void) {
     }
     k_spin_unlock(&admission_lock, key);
   }
-  /* RT-017: pause keeps the output image and the force table. */
-  safe_result = drive_safe_outputs_with_mem_locked();
-  k_mutex_unlock(&mem_mutex);
+  mem_unlock();
+  /* RT-017: pause keeps the output image and the force table; only the pins go safe, with the lock released. */
+  safe_result = drive_safe_pins();
   stop_all_task_timers();
   (void)k_work_cancel_sync(&coordinator_work, &sync);
   if (safe_result != 0) {
-    k_mutex_lock(&mem_mutex, K_FOREVER);
-    (void)latch_fault_locked();
-    k_mutex_unlock(&mem_mutex);
+    (void)latch_fault_with_mem_lock();
   } else if (watchdog_disarm() != 0) {
-    k_mutex_lock(&mem_mutex, K_FOREVER);
-    (void)latch_fault_locked();
-    k_mutex_unlock(&mem_mutex);
+    (void)latch_fault_with_mem_lock();
     if (safe_result == 0) {
       safe_result = -EIO;
     }
@@ -1574,9 +1965,11 @@ int zplc_sched_init(void) {
     return -1; /* Already initialized */
   }
 
-  /* Initialize mutex */
-  k_mutex_init(&mem_mutex);
-  k_mutex_init(&control_mutex);
+  /* Initialize mutexes; a scheduler without them cannot run (RT-030). */
+  if (k_mutex_init(&mem_mutex) != 0 || k_mutex_init(&control_mutex) != 0 ||
+      k_mutex_init(&io_mutex) != 0) {
+    return ZPLC_SCHED_ERR_LOCK;
+  }
 
   /* The work queue threads are started once and keep running across
    * shutdown and init: they use static stacks and static queue objects, and
@@ -1611,6 +2004,9 @@ int zplc_sched_init(void) {
   k_sem_init(&test_before_commit_entered, 0U, 1U);
   k_sem_init(&test_before_commit_release, 0U, 1U);
   test_hold_before_commit = 0U;
+  k_sem_init(&test_output_write_entered, 0U, 1U);
+  k_sem_init(&test_output_write_release, 0U, 1U);
+  test_hold_output_write = 0U;
   k_sem_init(&test_debug_before_mem_entered, 0U, 1U);
   test_output_commit_failure = ZPLC_HAL_OK;
   test_output_commit_failure_channel = 0U;
@@ -1626,10 +2022,26 @@ int zplc_sched_init(void) {
   test_watchdog_feed_count = 0U;
   test_watchdog_disarm_count = 0U;
   test_force_next_deadline_miss = 0U;
+  test_lock_failure = 0;
+  test_lock_failure_kind = 0U;
 #endif
 
   /* Initialize shared memory */
   zplc_mem_init();
+
+  /* The exchange between the scan and the threads outside it: a write queue applied at the input latch and a
+   * snapshot published at the commit (RT-010, RT-011). */
+  {
+    const zplc_exchange_hooks_t exchange_hooks = {
+        .lock_image = exchange_lock_image,
+        .unlock_image = exchange_unlock_image,
+        .scan_active = exchange_scan_active,
+    };
+
+    if (zplc_exchange_init(&exchange_hooks) != 0) {
+      return ZPLC_SCHED_ERR_LOCK;
+    }
+  }
 
 #ifdef CONFIG_ZPLC_RETAIN_PERSIST
   {
@@ -1662,10 +2074,12 @@ int zplc_sched_shutdown(void) {
       scheduler_called_from_workqueue()) {
     return -1;
   }
-  k_mutex_lock(&control_mutex, K_FOREVER);
+  if (control_lock() != 0) {
+    return ZPLC_SCHED_ERR_LOCK;
+  }
   result = stop_locked();
   if (result != 0) {
-    k_mutex_unlock(&control_mutex);
+    control_unlock();
     return result;
   }
   for (index = 0; index < CONFIG_ZPLC_MAX_TASKS; index++) {
@@ -1684,7 +2098,7 @@ int zplc_sched_shutdown(void) {
     (void)k_work_cancel_delayable_sync(&retain_work, &retain_sync);
   }
 #endif
-  k_mutex_unlock(&control_mutex);
+  control_unlock();
 
   zplc_hal_log("[SCHED] Scheduler shutdown\n");
 
@@ -1701,16 +2115,18 @@ int zplc_sched_register_task(const zplc_task_def_t *def, const uint8_t *code,
     return -1;
   }
 
-  k_mutex_lock(&control_mutex, K_FOREVER);
+  if (control_lock() != 0) {
+    return ZPLC_SCHED_ERR_LOCK;
+  }
 
   if (def == NULL || code != NULL || code_size != 0U ||
       sched_state != ZPLC_SCHED_STATE_IDLE) {
-    k_mutex_unlock(&control_mutex);
+    control_unlock();
     return -2;
   }
 
   if (task_count >= CONFIG_ZPLC_MAX_TASKS) {
-    k_mutex_unlock(&control_mutex);
+    control_unlock();
     return -3; /* No slots available */
   }
 
@@ -1720,7 +2136,7 @@ int zplc_sched_register_task(const zplc_task_def_t *def, const uint8_t *code,
       def->interval_us > ZPLC_MAX_INTERVAL_US ||
       def->interval_us % 1000U != 0U || def->stack_size == 0U ||
       def->stack_size > ZPLC_STACK_MAX_DEPTH) {
-    k_mutex_unlock(&control_mutex);
+    control_unlock();
     return -4;
   }
 
@@ -1733,19 +2149,19 @@ int zplc_sched_register_task(const zplc_task_def_t *def, const uint8_t *code,
   }
 
   if (slot < 0) {
-    k_mutex_unlock(&control_mutex);
+    control_unlock();
     return -3;
   }
 
   total_code_size = zplc_mem_get_code_size();
   if (total_code_size == 0U || def->entry_point >= total_code_size) {
-    k_mutex_unlock(&control_mutex);
+    control_unlock();
     return -2;
   }
   zplc_vm_init(&vm);
   if (zplc_vm_set_entry(&vm, def->entry_point,
                         total_code_size - def->entry_point) != 0) {
-    k_mutex_unlock(&control_mutex);
+    control_unlock();
     return -2;
   }
 
@@ -1778,7 +2194,7 @@ int zplc_sched_register_task(const zplc_task_def_t *def, const uint8_t *code,
   zplc_hal_log("[SCHED] Task %d registered: interval=%u us, priority=%d\n",
                def->id, def->interval_us, def->priority);
 
-  k_mutex_unlock(&control_mutex);
+  control_unlock();
   return slot;
 }
 
@@ -1788,9 +2204,11 @@ int zplc_sched_validate_program(const uint8_t *binary, size_t size) {
   if (sched_state == ZPLC_SCHED_STATE_UNINIT) {
     return ZPLC_LOADER_ERR_SIZE;
   }
-  k_mutex_lock(&control_mutex, K_FOREVER);
+  if (control_lock() != 0) {
+    return ZPLC_SCHED_ERR_LOCK;
+  }
   result = validate_program_locked(binary, size);
-  k_mutex_unlock(&control_mutex);
+  control_unlock();
   return result;
 }
 
@@ -1808,31 +2226,38 @@ int zplc_sched_load(const uint8_t *binary, size_t size) {
     return -2;
   }
 
-  k_mutex_lock(&control_mutex, K_FOREVER);
+  if (control_lock() != 0) {
+    return ZPLC_SCHED_ERR_LOCK;
+  }
 
   if ((sched_state != ZPLC_SCHED_STATE_IDLE &&
        sched_state != ZPLC_SCHED_STATE_ERROR) ||
       !scheduler_slots_empty()) {
-    k_mutex_unlock(&control_mutex);
+    control_unlock();
     return -4;
   }
 
   if (validate_program_locked(binary, size) != ZPLC_LOADER_OK) {
-    k_mutex_unlock(&control_mutex);
+    control_unlock();
     return -3;
   }
 
-  /* Validation above makes this one core commit and task materialization safe.
-   */
+  /* Validation above makes this one core commit and task materialization safe. The commit is a cold start of the
+   * variable memory (RT-016), so it is made under the image lock, with no external writer in the middle of it. */
+  if (mem_lock() != 0) {
+    control_unlock();
+    return ZPLC_SCHED_ERR_LOCK;
+  }
   count = zplc_core_load_tasks(binary, size, defs, CONFIG_ZPLC_MAX_TASKS,
                                load_workspace, sizeof(load_workspace));
+  mem_unlock();
   if (count < 0) {
     zplc_hal_log("[SCHED] Failed to parse .zplc file: %d\n", count);
-    k_mutex_unlock(&control_mutex);
+    control_unlock();
     return -3;
   }
   if (sched_state == ZPLC_SCHED_STATE_ERROR && count == 0) {
-    k_mutex_unlock(&control_mutex);
+    control_unlock();
     return -3;
   }
 
@@ -1888,7 +2313,13 @@ int zplc_sched_load(const uint8_t *binary, size_t size) {
   retain_program_loaded(binary, size);
 #endif
 
-  k_mutex_unlock(&control_mutex);
+  /* What a reader of the exchange sees is the new program's initial memory, RETAIN as restored. */
+  if (mem_lock() == 0) {
+    zplc_exchange_publish();
+    mem_unlock();
+  }
+
+  control_unlock();
   return count;
 }
 
@@ -1899,9 +2330,11 @@ int zplc_sched_unregister_task(int task_id) {
       scheduler_called_from_workqueue()) {
     return -1;
   }
-  k_mutex_lock(&control_mutex, K_FOREVER);
+  if (control_lock() != 0) {
+    return ZPLC_SCHED_ERR_LOCK;
+  }
   result = unregister_task_locked(task_id);
-  k_mutex_unlock(&control_mutex);
+  control_unlock();
   return result;
 }
 
@@ -1913,33 +2346,32 @@ int zplc_sched_start(void) {
   if (sched_state == ZPLC_SCHED_STATE_UNINIT) {
     return -1;
   }
-  k_mutex_lock(&control_mutex, K_FOREVER);
+  if (control_lock() != 0) {
+    return ZPLC_SCHED_ERR_LOCK;
+  }
   if (sched_state != ZPLC_SCHED_STATE_IDLE || scheduler_fault_is_latched()) {
-    k_mutex_unlock(&control_mutex);
+    control_unlock();
     return -1;
   }
   if (task_count == 0U) {
-    k_mutex_unlock(&control_mutex);
+    control_unlock();
     return -2;
   }
   /* Arm before RUN/timers. A failed prepare leaves the logical scheduler idle
    * and explicitly re-applies safe outputs; no background feeder exists. */
   if (watchdog_prepare() != 0) {
-    int safe_result;
+    int safe_result = apply_safe_outputs_with_mem_lock();
 
-    k_mutex_lock(&mem_mutex, K_FOREVER);
-    safe_result = apply_safe_outputs_with_mem_locked();
-    if (safe_result != 0) {
-      (void)latch_fault_locked();
-    }
-    k_mutex_unlock(&mem_mutex);
     if (safe_result == 0) {
       (void)watchdog_disarm();
     }
-    k_mutex_unlock(&control_mutex);
+    control_unlock();
     return -3;
   }
-  k_mutex_lock(&mem_mutex, K_FOREVER);
+  if (mem_lock() != 0) {
+    control_unlock();
+    return lock_failure_fault();
+  }
   for (index = 0; index < CONFIG_ZPLC_MAX_TASKS; index++) {
     if (tasks[index].registered != 0U &&
         (tasks[index].task.state == ZPLC_TASK_STATE_READY ||
@@ -1952,23 +2384,18 @@ int zplc_sched_start(void) {
       started_count++;
     }
   }
-  k_mutex_unlock(&mem_mutex);
+  mem_unlock();
   key = k_spin_lock(&admission_lock);
   if (scheduler_fault_latched != 0U || sched_state != ZPLC_SCHED_STATE_IDLE) {
     int safe_result;
 
     k_spin_unlock(&admission_lock, key);
     stop_all_task_timers();
-    k_mutex_lock(&mem_mutex, K_FOREVER);
-    safe_result = apply_safe_outputs_with_mem_locked();
-    if (safe_result != 0) {
-      (void)latch_fault_locked();
-    }
-    k_mutex_unlock(&mem_mutex);
+    safe_result = apply_safe_outputs_with_mem_lock();
     if (safe_result == 0) {
       (void)watchdog_disarm();
     }
-    k_mutex_unlock(&control_mutex);
+    control_unlock();
     return -1;
   }
   sched_state = ZPLC_SCHED_STATE_RUNNING;
@@ -1990,7 +2417,7 @@ int zplc_sched_start(void) {
     zplc_hal_log("[SCHED] Scheduler started with %d tasks\n", task_count);
   }
 
-  k_mutex_unlock(&control_mutex);
+  control_unlock();
   return 0;
 }
 
@@ -2006,7 +2433,9 @@ int zplc_sched_stop(void) {
       scheduler_called_from_workqueue()) {
     return -1;
   }
-  k_mutex_lock(&control_mutex, K_FOREVER);
+  if (control_lock() != 0) {
+    return ZPLC_SCHED_ERR_LOCK;
+  }
   result = stop_locked();
 #ifdef CONFIG_ZPLC_RETAIN_PERSIST
   /* The timers are stopped and the coordinator cancelled: no scan runs, so the
@@ -2016,7 +2445,7 @@ int zplc_sched_stop(void) {
                            ZPLC_RETAIN_SAVE_FORCED);
   }
 #endif
-  k_mutex_unlock(&control_mutex);
+  control_unlock();
   return result;
 }
 
@@ -2031,13 +2460,13 @@ int zplc_sched_enter_safe_error(void) {
 
   /* Control-plane ownership is control -> memory -> admission. The
    * coordinator only owns memory -> admission, so it cannot deadlock here. */
-  k_mutex_lock(&control_mutex, K_FOREVER);
-  k_mutex_lock(&mem_mutex, K_FOREVER);
-  safe_result = latch_fault_locked();
-  k_mutex_unlock(&mem_mutex);
+  if (control_lock() != 0) {
+    return ZPLC_SCHED_ERR_LOCK;
+  }
+  safe_result = latch_fault_with_mem_lock();
   stop_all_task_timers();
   (void)k_work_cancel_sync(&coordinator_work, &sync);
-  k_mutex_unlock(&control_mutex);
+  control_unlock();
   return safe_result;
 }
 
@@ -2051,9 +2480,11 @@ int zplc_sched_pause(void) {
       scheduler_called_from_workqueue()) {
     return -1;
   }
-  k_mutex_lock(&control_mutex, K_FOREVER);
+  if (control_lock() != 0) {
+    return ZPLC_SCHED_ERR_LOCK;
+  }
   result = pause_locked();
-  k_mutex_unlock(&control_mutex);
+  control_unlock();
   return result;
 }
 
@@ -2068,28 +2499,28 @@ int zplc_sched_resume(void) {
   if (sched_state != ZPLC_SCHED_STATE_PAUSED) {
     return -1;
   }
-  k_mutex_lock(&control_mutex, K_FOREVER);
+  if (control_lock() != 0) {
+    return ZPLC_SCHED_ERR_LOCK;
+  }
   if (sched_state != ZPLC_SCHED_STATE_PAUSED || scheduler_fault_is_latched()) {
-    k_mutex_unlock(&control_mutex);
+    control_unlock();
     return -1;
   }
   if (watchdog_prepare() != 0) {
     int safe_result;
 
     /* The scheduler stays paused: its image and forces stay with it. */
-    k_mutex_lock(&mem_mutex, K_FOREVER);
-    safe_result = drive_safe_outputs_with_mem_locked();
-    if (safe_result != 0) {
-      (void)latch_fault_locked();
-    }
-    k_mutex_unlock(&mem_mutex);
+    safe_result = drive_safe_outputs_with_mem_lock();
     if (safe_result == 0) {
       (void)watchdog_disarm();
     }
-    k_mutex_unlock(&control_mutex);
+    control_unlock();
     return -2;
   }
-  k_mutex_lock(&mem_mutex, K_FOREVER);
+  if (mem_lock() != 0) {
+    control_unlock();
+    return lock_failure_fault();
+  }
   for (index = 0; index < CONFIG_ZPLC_MAX_TASKS; index++) {
     if (tasks[index].registered != 0U &&
         tasks[index].task.state == ZPLC_TASK_STATE_PAUSED) {
@@ -2103,23 +2534,18 @@ int zplc_sched_resume(void) {
                     K_MSEC(tasks[index].task.config.interval_us / 1000U));
     }
   }
-  k_mutex_unlock(&mem_mutex);
+  mem_unlock();
   key = k_spin_lock(&admission_lock);
   if (scheduler_fault_latched != 0U || sched_state != ZPLC_SCHED_STATE_PAUSED) {
     int safe_result;
 
     k_spin_unlock(&admission_lock, key);
     stop_all_task_timers();
-    k_mutex_lock(&mem_mutex, K_FOREVER);
-    safe_result = apply_safe_outputs_with_mem_locked();
-    if (safe_result != 0) {
-      (void)latch_fault_locked();
-    }
-    k_mutex_unlock(&mem_mutex);
+    safe_result = apply_safe_outputs_with_mem_lock();
     if (safe_result == 0) {
       (void)watchdog_disarm();
     }
-    k_mutex_unlock(&control_mutex);
+    control_unlock();
     return -1;
   }
   sched_state = ZPLC_SCHED_STATE_RUNNING;
@@ -2133,7 +2559,7 @@ int zplc_sched_resume(void) {
   }
   k_spin_unlock(&admission_lock, key);
 
-  k_mutex_unlock(&control_mutex);
+  control_unlock();
   return 0;
 }
 
@@ -2151,21 +2577,23 @@ int zplc_sched_step(void) {
       sched_state != ZPLC_SCHED_STATE_IDLE) {
     return -1;
   }
-  k_mutex_lock(&control_mutex, K_FOREVER);
+  if (control_lock() != 0) {
+    return ZPLC_SCHED_ERR_LOCK;
+  }
   if (sched_state != ZPLC_SCHED_STATE_PAUSED &&
       sched_state != ZPLC_SCHED_STATE_IDLE) {
-    k_mutex_unlock(&control_mutex);
+    control_unlock();
     return -1;
   }
   if (scheduler_fault_is_latched()) {
-    k_mutex_unlock(&control_mutex);
+    control_unlock();
     return -1;
   }
   {
     k_spinlock_key_t key = k_spin_lock(&admission_lock);
     if (scheduler_fault_latched != 0U) {
       k_spin_unlock(&admission_lock, key);
-      k_mutex_unlock(&control_mutex);
+      control_unlock();
       return -1;
     }
     release = scheduler_stamp_now();
@@ -2187,7 +2615,7 @@ int zplc_sched_step(void) {
     k_spin_unlock(&admission_lock, key);
   }
   if (count == 0U) {
-    k_mutex_unlock(&control_mutex);
+    control_unlock();
     return -2;
   }
   for (index = 1; index < count; ++index) {
@@ -2202,15 +2630,18 @@ int zplc_sched_step(void) {
   /* A task that is stopped at a breakpoint finishes its scan in this step;
    * one between scans runs a whole scan. Either way the step ends at the next
    * cycle boundary, or at a breakpoint the rest of the scan reaches. */
-  k_mutex_lock(&mem_mutex, K_FOREVER);
+  if (mem_lock() != 0) {
+    control_unlock();
+    return lock_failure_fault();
+  }
   for (index = 0; index < count; ++index) {
     if (zplc_vm_is_paused(&batch[index]->vm) != 0) {
       (void)zplc_vm_resume(&batch[index]->vm);
     }
   }
-  k_mutex_unlock(&mem_mutex);
+  mem_unlock();
   result = execute_batch(batch, count, true);
-  k_mutex_unlock(&control_mutex);
+  control_unlock();
   return result < 0 ? result : 0;
 }
 
@@ -2228,7 +2659,9 @@ int zplc_sched_get_stats(zplc_sched_stats_t *stats) {
   }
 
   memset(stats, 0, sizeof(zplc_sched_stats_t));
-  k_mutex_lock(&mem_mutex, K_FOREVER);
+  if (mem_lock() != 0) {
+    return ZPLC_SCHED_ERR_LOCK;
+  }
   {
     k_spinlock_key_t key = k_spin_lock(&admission_lock);
     for (int i = 0; i < CONFIG_ZPLC_MAX_TASKS; i++) {
@@ -2246,7 +2679,7 @@ int zplc_sched_get_stats(zplc_sched_stats_t *stats) {
     stats->output_commit_count = output_commit_count;
     k_spin_unlock(&admission_lock, key);
   }
-  k_mutex_unlock(&mem_mutex);
+  mem_unlock();
 
   return 0;
 }
@@ -2263,17 +2696,19 @@ int zplc_sched_get_task(int task_id, zplc_task_t *task) {
   }
 
   t = &tasks[task_id];
-  k_mutex_lock(&mem_mutex, K_FOREVER);
+  if (mem_lock() != 0) {
+    return ZPLC_SCHED_ERR_LOCK;
+  }
   key = k_spin_lock(&admission_lock);
   if (!t->registered) {
     k_spin_unlock(&admission_lock, key);
-    k_mutex_unlock(&mem_mutex);
+    mem_unlock();
     return -3;
   }
 
   memcpy(task, &t->task, sizeof(zplc_task_t));
   k_spin_unlock(&admission_lock, key);
-  k_mutex_unlock(&mem_mutex);
+  mem_unlock();
 
   return 0;
 }
@@ -2294,16 +2729,21 @@ static int scheduler_debug_lock_task(int task_id, zplc_task_internal_t **task) {
       task_id >= CONFIG_ZPLC_MAX_TASKS) {
     return -1;
   }
-  k_mutex_lock(&control_mutex, K_FOREVER);
+  if (control_lock() != 0) {
+    return ZPLC_SCHED_ERR_LOCK;
+  }
 #ifdef CONFIG_ZTEST
   k_sem_give(&test_debug_before_mem_entered);
 #endif
-  k_mutex_lock(&mem_mutex, K_FOREVER);
+  if (mem_lock() != 0) {
+    control_unlock();
+    return ZPLC_SCHED_ERR_LOCK;
+  }
   key = k_spin_lock(&admission_lock);
   if (!tasks[task_id].registered) {
     k_spin_unlock(&admission_lock, key);
-    k_mutex_unlock(&mem_mutex);
-    k_mutex_unlock(&control_mutex);
+    mem_unlock();
+    control_unlock();
     return -2;
   }
   *task = &tasks[task_id];
@@ -2312,8 +2752,8 @@ static int scheduler_debug_lock_task(int task_id, zplc_task_internal_t **task) {
 }
 
 static void scheduler_debug_unlock_task(void) {
-  k_mutex_unlock(&mem_mutex);
-  k_mutex_unlock(&control_mutex);
+  mem_unlock();
+  control_unlock();
 }
 
 int zplc_sched_debug_snapshot(int task_id, zplc_sched_vm_snapshot_t *snapshot) {

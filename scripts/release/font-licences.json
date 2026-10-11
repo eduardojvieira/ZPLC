@@ -1,0 +1,12 @@
+{
+  "schema": 1,
+  "fonts": [
+    {
+      "pattern": "^codicon(-[A-Za-z0-9_]+)?\\.ttf$",
+      "name": "Codicons (the icon font of the Monaco editor)",
+      "licence": "CC-BY-4.0",
+      "source": "https://github.com/microsoft/vscode-codicons",
+      "copyright": "Copyright (c) Microsoft Corporation. Licensed under Creative Commons Attribution 4.0 International: https://creativecommons.org/licenses/by/4.0/"
+    }
+  ]
+}

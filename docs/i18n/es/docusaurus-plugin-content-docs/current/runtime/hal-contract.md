@@ -70,8 +70,8 @@ cambia ningún fuente C.
   `CONFIG_ZPLC_IO_OUTPUT_IMAGE_BYTES` para reservar más. La memoria detrás de las imágenes sigue siendo los 4 KB del
   conjunto de instrucciones: reducirla cambia el contrato binario y es un paso aparte.
 
-El firmware informa la identidad de su descripción en `sys info --json` (`io`: id de placa, hash, cantidad de canales
-y bytes de imagen), y Studio se niega a desplegar un programa que usa E/S en un firmware cuya descripción no es la
+El firmware informa la identidad de su descripción con `sys io --json` (id de placa, hash, cantidad de canales
+y bytes de imagen; un comando aparte, para que las claves de `sys info --json` no cambien), y Studio se niega a desplegar un programa que usa E/S en un firmware cuya descripción no es la
 que él tiene, o en una placa que no tiene canal para lo que el programa toca.
 
 ### No soportado

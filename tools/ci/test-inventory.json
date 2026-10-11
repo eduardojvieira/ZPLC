@@ -7,6 +7,7 @@
     { "pattern": "scripts/release-artifacts.test.mjs", "job": "typescript", "command": "node --test scripts/release-artifacts.test.mjs" },
     { "pattern": "scripts/workflow-action-pins.test.mjs", "job": "typescript", "command": "node --test scripts/workflow-action-pins.test.mjs" },
     { "pattern": "scripts/release-version.test.ts", "job": "typescript", "command": "bun test scripts/release-version.test.ts" },
+    { "pattern": "scripts/release/*.test.ts", "job": "typescript", "command": "bun test ./scripts/release" },
     { "pattern": "tools/contract/test_contract.py", "job": "docs-and-truth", "command": "bun run contract:check" },
     { "pattern": "tools/contract/*.test.ts", "job": "docs-and-truth", "command": "bun run contract:check" },
     { "pattern": "tools/hil/test_validate_release_evidence.py", "job": "docs-and-truth", "command": "python3 tools/hil/test_validate_release_evidence.py" },
@@ -20,7 +21,8 @@
     { "pattern": "firmware/lib/zplc_core/tests/*.c", "job": "host-core", "command": "ctest --test-dir" },
     { "pattern": "firmware/tests/**/*.c", "job": "zephyr-twister", "command": "west twister -T zplc/firmware/tests" },
     { "pattern": "tools/ci/test_run_clang_tidy.py", "job": "host-core-sanitized", "command": "python3 tools/ci/test_run_clang_tidy.py" },
-    { "pattern": "tools/firmware-test/test_*.py", "job": "zephyr-twister", "command": "python3 zplc/tools/firmware-test/test_fwtest.py" }
+    { "pattern": "tools/firmware-test/test_*.py", "job": "zephyr-twister", "command": "python3 zplc/tools/firmware-test/test_fwtest.py" },
+    { "pattern": "firmware/tests/app_shell_identity/test_*.py", "job": "zephyr-twister", "command": "firmware/tests/app_shell_identity/test_app_shell_identity.py" }
   ],
   "notRunInCi": [
     { "pattern": "packages/zplc-hil/tests/**/*.test.ts", "requirement": "HIL-001", "reason": "case tables for a board runner; the package has no test script and the files contain no tests that run" },

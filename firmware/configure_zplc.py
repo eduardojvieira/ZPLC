@@ -57,13 +57,20 @@ def main() -> int:
         "--port", default=os.getenv("ZPLC_SERIAL_PORT", "/dev/cu.usbmodem11403")
     )
     parser.add_argument("--baud", type=int, default=115200)
-    parser.add_argument("--broker", default="test.mosquitto.org")
-    parser.add_argument("--mqtt-port", type=int, default=1883)
+    # COM-014: there is no default broker, and the defaults are TLS with the certificate verified.
+    parser.add_argument("--broker", required=True, help="host name or address of the MQTT broker (no default)")
+    parser.add_argument("--mqtt-port", type=int, default=8883)
+    parser.add_argument(
+        "--transport",
+        type=int,
+        default=1,
+        help="0=tcp (plain, no TLS),1=tls,2=ws,3=wss",
+    )
     parser.add_argument(
         "--security",
         type=int,
-        default=0,
-        help="0=none,1=tls-no-verify,2=tls-server-verify,3=tls-mutual",
+        default=2,
+        help="0=none,1=tls-no-verify (needs a firmware built for it),2=tls-server-verify,3=tls-mutual",
     )
     parser.add_argument("--username", default="")
     parser.add_argument("--password", default="")
@@ -90,6 +97,7 @@ def main() -> int:
             )
         send_cmd(ser, f"zplc config set mqtt_broker {args.broker}")
         send_cmd(ser, f"zplc config set mqtt_port {args.mqtt_port}")
+        send_cmd(ser, f"zplc config set mqtt_transport {args.transport}")
         send_cmd(ser, f"zplc config set mqtt_security {args.security}")
         send_cmd(ser, "zplc config set mqtt_enabled 1")
 

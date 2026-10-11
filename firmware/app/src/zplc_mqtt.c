@@ -34,6 +34,7 @@
 #include <zephyr/net/tls_credentials.h>
 #include <zephyr/net/websocket.h>
 #include <zplc_core.h>
+#include <zplc_exchange.h>
 #include <zplc_hal.h>
 #include <zplc_isa.h>
 
@@ -106,7 +107,9 @@ static uint8_t s_rx_buf[MQTT_BUFFER_SIZE];
 static uint8_t s_tx_buf[MQTT_BUFFER_SIZE];
 static uint8_t s_payload_buf[PAYLOAD_BUFFER_SIZE];
 static uint8_t s_metric_buf[PAYLOAD_BUFFER_SIZE];
+#if defined(CONFIG_MQTT_LIB_WEBSOCKET)
 static uint8_t s_ws_tmp_buf[512];
+#endif
 
 static struct mqtt_client s_client;
 static struct sockaddr_storage s_broker_addr;
@@ -117,12 +120,14 @@ static bool s_subscribed;
 
 static uint8_t s_publish_buf[512];
 
+#if defined(CONFIG_MQTT_LIB_TLS)
 static EXT_RAM_BSS_ATTR uint8_t s_tls_ca_buf[MQTT_CRED_BUF_SIZE];
 static EXT_RAM_BSS_ATTR uint8_t s_tls_cert_buf[MQTT_CRED_BUF_SIZE];
 static EXT_RAM_BSS_ATTR uint8_t s_tls_key_buf[MQTT_CRED_BUF_SIZE];
 
 static sec_tag_t s_mqtt_sec_tags[3];
 static uint8_t s_mqtt_sec_tag_count;
+#endif
 
 /* s_mqtt_username must hold the Azure IoT Hub MQTT username:
  *   "{hostname}/{device_id}/?api-version=2021-04-12"
@@ -136,11 +141,17 @@ static char s_mqtt_hostname[192];
 static char s_mqtt_client_id[128];
 static char s_mqtt_topic_namespace[128];
 static char s_mqtt_group_id[64];
+#if defined(CONFIG_MQTT_LIB_WEBSOCKET)
 static char s_mqtt_websocket_path[128];
+#endif
+#if defined(CONFIG_MQTT_LIB_TLS_USE_ALPN)
 static char s_mqtt_alpn[128];
+#endif
+#if defined(CONFIG_MQTT_LIB_TLS)
 static char s_mqtt_ca_cert_path[96];
 static char s_mqtt_client_cert_path[96];
 static char s_mqtt_client_key_path[96];
+#endif
 static char s_lwt_topic[160];
 static char s_lwt_payload[256];
 static uint8_t s_ndeath_payload[64];
@@ -150,8 +161,10 @@ static struct mqtt_utf8 s_lwt_payload_utf8;
 static struct mqtt_topic s_will_topic;
 static struct mqtt_utf8 s_mqtt_username_utf8;
 static struct mqtt_utf8 s_mqtt_password_utf8;
+#if defined(CONFIG_MQTT_LIB_TLS)
 static const char *s_alpn_list[4];
 static uint32_t s_alpn_count;
+#endif
 
 #define ZPLC_MQTT_REQ_MAX_TOPIC 128
 #define ZPLC_MQTT_REQ_MAX_PAYLOAD 128
@@ -546,11 +559,13 @@ static void setup_websocket(struct mqtt_client *client) {
 }
 
 static int setup_tls(struct mqtt_client *client) {
-  zplc_mqtt_security_t security = zplc_config_get_mqtt_security();
   zplc_mqtt_transport_t transport = zplc_config_get_mqtt_transport();
+#if defined(CONFIG_MQTT_LIB_TLS)
+  zplc_mqtt_security_t security = zplc_config_get_mqtt_security();
 
   s_mqtt_sec_tag_count = 0U;
   s_alpn_count = 0U;
+#endif
 
   if (transport == ZPLC_MQTT_TRANSPORT_TCP ||
       transport == ZPLC_MQTT_TRANSPORT_WS) {
@@ -566,6 +581,13 @@ static int setup_tls(struct mqtt_client *client) {
     return 0;
   }
 
+#if !defined(CONFIG_MQTT_LIB_TLS)
+  /* COM-016: this firmware has no TLS (the board has no verified
+   * cryptographic random source yet): a TLS transport is refused rather
+   * than silently downgraded to plain TCP. */
+  LOG_ERR("MQTT transport needs TLS, which this firmware does not include");
+  return -ENOTSUP;
+#else
   if (security == ZPLC_MQTT_SECURITY_NONE) {
     return -EINVAL;
   }
@@ -579,11 +601,20 @@ static int setup_tls(struct mqtt_client *client) {
 #endif
 
   if (security == ZPLC_MQTT_SECURITY_TLS_NO_VERIFY) {
+#if defined(CONFIG_ZPLC_MQTT_ALLOW_INSECURE_TLS)
+    /* COM-014: reported by `zplc mqtt status` as tls-verify OFF for as
+     * long as it stays this way. */
+    LOG_WRN("MQTT TLS certificate verification is OFF: the broker is not "
+            "authenticated");
     client->transport.tls.config.peer_verify = TLS_PEER_VERIFY_NONE;
     client->transport.tls.config.sec_tag_list = NULL;
     client->transport.tls.config.sec_tag_count = 0;
     setup_websocket(client);
     return 0;
+#else
+    LOG_ERR("MQTT TLS verification cannot be switched off in this build");
+    return -EPERM;
+#endif
   }
 
   zplc_config_get_mqtt_ca_cert_path(s_mqtt_ca_cert_path,
@@ -662,6 +693,7 @@ static int setup_tls(struct mqtt_client *client) {
 
   setup_websocket(client);
   return 0;
+#endif /* CONFIG_MQTT_LIB_TLS */
 }
 
 /**
@@ -682,37 +714,33 @@ static int encode_sparkplug_payload(const zplc_tag_entry_t *tag,
     return -1;
   }
 
-  zplc_pi_lock();
+  /* The value comes from the snapshot the scan published at its last commit (RT-010): the tag is read whole,
+   * between two scans, and the read never waits for one. Its extent is checked by the exchange against the
+   * regions of PLC memory (RT-001). */
+  uint8_t raw[4] = {0U, 0U, 0U, 0U};
+  uint16_t value_size = 0U;
+  bool have_value = false;
 
-  uint16_t base = tag->var_addr & 0xF000U;
-  uint16_t offset = tag->var_addr & 0x0FFFU;
-
-  /* Normalise %QX/%MX region aliases */
-  if (base == 0x3000U) {
-    base = 0x2000U;
-  }
-
-  uint8_t *region = zplc_mem_get_region(base);
-
-  /* Determine the size of the resolved region for bounds validation */
-  uint32_t region_size;
-  switch (base) {
-  case ZPLC_MEM_IPI_BASE:
-    region_size = ZPLC_MEM_IPI_SIZE;
+  switch (tag->var_type) {
+  case ZPLC_TYPE_BOOL:
+    value_size = 1U;
     break;
-  case ZPLC_MEM_OPI_BASE:
-    region_size = ZPLC_MEM_OPI_SIZE;
+  case ZPLC_TYPE_INT:
+  case ZPLC_TYPE_UINT:
+  case ZPLC_TYPE_WORD:
+    value_size = 2U;
     break;
-  case ZPLC_MEM_WORK_BASE:
-    region_size = ZPLC_MEM_WORK_SIZE;
-    break;
-  case ZPLC_MEM_RETAIN_BASE:
-    region_size = ZPLC_MEM_RETAIN_SIZE;
+  case ZPLC_TYPE_REAL:
+    value_size = 4U;
     break;
   default:
-    LOG_ERR("Unknown memory region base 0x%04x", base);
-    zplc_pi_unlock();
-    return -1;
+    break;
+  }
+  if (value_size != 0U) {
+    have_value = zplc_exchange_read(tag->var_addr, raw, value_size) == 0;
+    if (!have_value) {
+      LOG_ERR("Tag %04x out of bounds", tag->var_addr);
+    }
   }
 
   /* Use the shared file-scope payload workspace (single MQTT thread, no
@@ -724,7 +752,7 @@ static int encode_sparkplug_payload(const zplc_tag_entry_t *tag,
   payload->seq = (uint64_t)s_spb_seq;
   s_spb_seq = (s_spb_seq + 1U) % SPB_SEQ_MAX;
 
-  if (region) {
+  {
     payload->metrics_count = 1U;
     org_eclipse_tahu_protobuf_Metric *m = &payload->metrics[0];
 
@@ -734,55 +762,43 @@ static int encode_sparkplug_payload(const zplc_tag_entry_t *tag,
     switch (tag->var_type) {
 
     case ZPLC_TYPE_BOOL:
-      /* Single byte — offset must be within region */
-      if ((uint32_t)offset + 1U > region_size) {
-        LOG_ERR("BOOL offset %u out of bounds", offset);
-        region = NULL;
+      if (!have_value) {
         break;
       }
       m->datatype = 11U; /* Sparkplug DataType_Boolean */
       m->which_value = org_eclipse_tahu_protobuf_Metric_boolean_value_tag;
-      m->value.boolean_value = (region[offset] != 0U);
+      m->value.boolean_value = (raw[0] != 0U);
       break;
 
     case ZPLC_TYPE_INT:
     case ZPLC_TYPE_UINT:
     case ZPLC_TYPE_WORD:
-      /* Two bytes — explicit bounds before read */
-      if ((uint32_t)offset + 2U > region_size) {
-        LOG_ERR("INT/WORD offset %u out of bounds", offset);
-        region = NULL;
+      if (!have_value) {
         break;
       }
       {
-        uint16_t raw =
-            (uint16_t)region[offset] | ((uint16_t)region[offset + 1U] << 8U);
+        uint16_t word = (uint16_t)raw[0] | ((uint16_t)raw[1] << 8U);
         m->datatype = 5U; /* Sparkplug DataType_Int32 */
         m->which_value = org_eclipse_tahu_protobuf_Metric_int_value_tag;
         /* Preserve sign for ZPLC_TYPE_INT */
         if (tag->var_type == ZPLC_TYPE_INT) {
-          m->value.int_value = (int32_t)(int16_t)raw;
+          m->value.int_value = (int32_t)(int16_t)word;
         } else {
-          m->value.int_value = (int32_t)raw;
+          m->value.int_value = (int32_t)word;
         }
       }
       break;
 
     case ZPLC_TYPE_REAL:
-      /* Four bytes */
-      if ((uint32_t)offset + 4U > region_size) {
-        LOG_ERR("REAL offset %u out of bounds", offset);
-        region = NULL;
+      if (!have_value) {
         break;
       }
       {
-        uint32_t raw = (uint32_t)region[offset] |
-                       ((uint32_t)region[offset + 1U] << 8U) |
-                       ((uint32_t)region[offset + 2U] << 16U) |
-                       ((uint32_t)region[offset + 3U] << 24U);
+        uint32_t bits = (uint32_t)raw[0] | ((uint32_t)raw[1] << 8U) |
+                        ((uint32_t)raw[2] << 16U) | ((uint32_t)raw[3] << 24U);
         float fval;
         /* Type-punning via memcpy — the only safe way in C99 */
-        memcpy(&fval, &raw, sizeof(float));
+        memcpy(&fval, &bits, sizeof(float));
         m->datatype = 9U; /* Sparkplug DataType_Float */
         m->which_value = org_eclipse_tahu_protobuf_Metric_float_value_tag;
         m->value.float_value = fval;
@@ -796,10 +812,8 @@ static int encode_sparkplug_payload(const zplc_tag_entry_t *tag,
     }
   }
 
-  zplc_pi_unlock();
-
-  if (!region && !payload->metrics[0].is_null) {
-    /* Region was invalidated by a bounds-check failure above */
+  if (value_size != 0U && !have_value) {
+    /* The extent was not inside PLC memory */
     payload->metrics[0].is_null = true;
   }
 
@@ -827,7 +841,9 @@ static int mqtt_socket_fd(const struct mqtt_client *client) {
 #endif
 #if defined(CONFIG_MQTT_LIB_WEBSOCKET)
   case MQTT_TRANSPORT_NON_SECURE_WEBSOCKET:
+#if defined(CONFIG_MQTT_LIB_TLS)
   case MQTT_TRANSPORT_SECURE_WEBSOCKET:
+#endif
     return client->transport.websocket.sock;
 #endif
   default:
@@ -1171,16 +1187,34 @@ static int publish_ddata(struct mqtt_client *client) {
   }
 }
 
+/* Reads one tag of a telemetry payload from the snapshot. The caller holds the exchange read lock, so every tag of
+ * the payload is of one scan (RT-010). */
+static int read_tag_value(const zplc_tag_entry_t *tag, uint8_t raw[4]) {
+  uint16_t size;
+
+  switch (tag->var_type) {
+  case ZPLC_TYPE_BOOL:
+    size = 1U;
+    break;
+  case ZPLC_TYPE_INT:
+  case ZPLC_TYPE_UINT:
+  case ZPLC_TYPE_WORD:
+    size = 2U;
+    break;
+  case ZPLC_TYPE_REAL:
+    size = 4U;
+    break;
+  default:
+    return 0; /* published as null; nothing to read */
+  }
+  return zplc_exchange_read_locked(tag->var_addr, raw, size) == 0 ? 0 : -EINVAL;
+}
+
 static int append_json_tag(char *buf, size_t buf_len, size_t *used,
                            const zplc_tag_entry_t *tag, bool *first) {
-  uint16_t base = tag->var_addr & 0xF000U;
-  uint16_t offset = tag->var_addr & 0x0FFFU;
-  if (base == 0x3000U) {
-    base = 0x2000U;
-  }
+  uint8_t raw[4] = {0U, 0U, 0U, 0U};
 
-  uint8_t *region = zplc_mem_get_region(base);
-  if (!region) {
+  if (read_tag_value(tag, raw) != 0) {
     return -EINVAL;
   }
 
@@ -1195,26 +1229,23 @@ static int append_json_tag(char *buf, size_t buf_len, size_t *used,
   switch (tag->var_type) {
   case ZPLC_TYPE_BOOL:
     written = snprintf(buf + *used, buf_len - *used, "%s",
-                       region[offset] != 0U ? "true" : "false");
+                       raw[0] != 0U ? "true" : "false");
     break;
   case ZPLC_TYPE_INT:
     written = snprintf(buf + *used, buf_len - *used, "%d",
-                       (int)((int16_t)((uint16_t)region[offset] |
-                                       ((uint16_t)region[offset + 1U] << 8U))));
+                       (int)((int16_t)((uint16_t)raw[0] |
+                                       ((uint16_t)raw[1] << 8U))));
     break;
   case ZPLC_TYPE_UINT:
   case ZPLC_TYPE_WORD:
     written = snprintf(buf + *used, buf_len - *used, "%u",
-                       (unsigned)((uint16_t)region[offset] |
-                                  ((uint16_t)region[offset + 1U] << 8U)));
+                       (unsigned)((uint16_t)raw[0] | ((uint16_t)raw[1] << 8U)));
     break;
   case ZPLC_TYPE_REAL: {
-    uint32_t raw = (uint32_t)region[offset] |
-                   ((uint32_t)region[offset + 1U] << 8U) |
-                   ((uint32_t)region[offset + 2U] << 16U) |
-                   ((uint32_t)region[offset + 3U] << 24U);
+    uint32_t bits = (uint32_t)raw[0] | ((uint32_t)raw[1] << 8U) |
+                    ((uint32_t)raw[2] << 16U) | ((uint32_t)raw[3] << 24U);
     float f = 0.0f;
-    memcpy(&f, &raw, sizeof(f));
+    memcpy(&f, &bits, sizeof(f));
     written = snprintf(buf + *used, buf_len - *used, "%g", (double)f);
     break;
   }
@@ -1248,7 +1279,9 @@ static int publish_generic_telemetry(struct mqtt_client *client) {
   }
   used = (size_t)written;
 
-  zplc_pi_lock();
+  if (zplc_exchange_read_lock() != 0) {
+    return -EBUSY;
+  }
   uint16_t count = zplc_core_get_tag_count();
   for (uint16_t i = 0U; i < count; i++) {
     const zplc_tag_entry_t *tag = zplc_core_get_tag(i);
@@ -1258,11 +1291,11 @@ static int publish_generic_telemetry(struct mqtt_client *client) {
 
     if (append_json_tag((char *)s_payload_buf, sizeof(s_payload_buf), &used,
                         tag, &first) < 0) {
-      zplc_pi_unlock();
+      zplc_exchange_read_unlock();
       return -ENOSPC;
     }
   }
-  zplc_pi_unlock();
+  zplc_exchange_read_unlock();
 
   written = snprintf((char *)s_payload_buf + used, sizeof(s_payload_buf) - used,
                      "}}");
@@ -1391,13 +1424,8 @@ static int parse_payload_to_tag(const zplc_tag_entry_t *tag,
     return -EINVAL;
   }
 
-  rc = zplc_pi_lock();
-  if (rc != 0) {
-    return rc;
-  }
-  rc = zplc_force_write_bytes(tag->var_addr, bytes, (uint16_t)size);
-  zplc_pi_unlock();
-  return rc;
+  /* Queued whole and applied by the scan at its next input latch, force-aware (RT-010, RT-011). */
+  return zplc_exchange_write(tag->var_addr, bytes, (uint16_t)size);
 }
 
 static int abort_incoming_publish(struct mqtt_client *client, int error) {
@@ -1407,6 +1435,10 @@ static int abort_incoming_publish(struct mqtt_client *client, int error) {
   (void)mqtt_abort(client);
   return error;
 }
+
+static int dispatch_incoming_message(struct mqtt_client *client,
+                                     const struct mqtt_publish_param *pub,
+                                     const char *topic, size_t payload_len);
 
 static int handle_incoming_publish(struct mqtt_client *client,
                                    const struct mqtt_publish_param *pub) {
@@ -1439,7 +1471,24 @@ static int handle_incoming_publish(struct mqtt_client *client,
   }
   topic[topic_len] = '\0';
 
+  return dispatch_incoming_message(client, pub, topic, payload_len);
+}
+
+/*
+ * What an arrived message does, once its payload is in s_publish_buf and its
+ * topic is a C string. Everything an inbound message can cause is below this
+ * line: a write to a subscribed variable through the force-aware write, a
+ * rebirth, a log line, a reply. None of it reaches RUN/STOP, the force table
+ * or the program (COM-017), and the test of firmware/tests/inbound_mqtt
+ * drives this function with hostile topics and payloads of every profile.
+ * `pub` carries the MQTT v5 properties and may be NULL.
+ */
+static int dispatch_incoming_message(struct mqtt_client *client,
+                                     const struct mqtt_publish_param *pub,
+                                     const char *topic, size_t payload_len) {
   uint16_t count = zplc_core_get_tag_count();
+
+  ARG_UNUSED(pub);
 
   if (mqtt_profile_is_azure_iot_hub()) {
     /*
@@ -1458,7 +1507,9 @@ static int handle_incoming_publish(struct mqtt_client *client,
     /*
      * Azure IoT Hub Direct Methods:
      *   $iothub/methods/POST/{methodName}/?$rid={rid}
-     * Respond immediately with HTTP 200 and an empty JSON body.
+     * No method is implemented on the device: respond 501 (not
+     * implemented) so the service does not read a success for a method
+     * that did nothing (COM-027, COM-017).
      */
     if (zplc_config_get_azure_direct_methods_enabled() &&
         strncmp(topic, "$iothub/methods/POST/", 21) == 0) {
@@ -1477,7 +1528,7 @@ static int handle_incoming_publish(struct mqtt_client *client,
 
       char resp_topic[TOPIC_WILDCARD_BUFFER_SIZE];
       int n = snprintf(resp_topic, sizeof(resp_topic),
-                       "$iothub/methods/res/200/?$rid=%s", rid_val);
+                       "$iothub/methods/res/501/?$rid=%s", rid_val);
       if (n > 0 && (size_t)n < sizeof(resp_topic)) {
         static const char empty_body[] = "{}";
         struct mqtt_publish_param resp = {
@@ -1508,7 +1559,7 @@ static int handle_incoming_publish(struct mqtt_client *client,
         }
       }
 
-      LOG_INF("Azure Direct Method on '%s' — responded 200/$rid=%s", topic,
+      LOG_INF("Azure Direct Method on '%s': responded 501/$rid=%s", topic,
               rid_val);
       return 0;
     }
@@ -1570,6 +1621,9 @@ static int handle_incoming_publish(struct mqtt_client *client,
       if (mqtt_profile_is_azure_event_grid()) {
 #if defined(CONFIG_MQTT_VERSION_5_0)
         const struct mqtt_publish_param *publish = pub;
+        if (publish == NULL) {
+          return 0;
+        }
         if (publish->prop.rx.has_content_type) {
           LOG_INF("Event Grid content-type: %.*s",
                   (int)publish->prop.content_type.size,
@@ -2018,6 +2072,16 @@ static void resolve_broker(struct sockaddr_in *out) {
  */
 
 static int client_init(struct mqtt_client *client) {
+  char broker[2];
+
+  /* COM-014: there is no default broker. Nothing connects, and nothing is
+   * resolved, until an operator has named one. */
+  zplc_config_get_mqtt_broker(broker, sizeof(broker));
+  if (broker[0] == '\0') {
+    LOG_ERR("MQTT is enabled but no broker is configured");
+    return -EDESTADDRREQ;
+  }
+
   mqtt_client_init(client);
   setup_auth(client);
   if (s_mqtt_client_id[0] == '\0') {
@@ -2211,7 +2275,8 @@ int zplc_mqtt_init(void) {
 
   k_tid_t tid = k_thread_create(
       &s_mqtt_thread, s_mqtt_stack, K_THREAD_STACK_SIZEOF(s_mqtt_stack),
-      mqtt_client_thread, NULL, NULL, NULL, K_PRIO_COOP(8), 0, K_NO_WAIT);
+      mqtt_client_thread, NULL, NULL, NULL,
+      K_PRIO_PREEMPT(ZPLC_COMM_THREAD_PRIORITY), 0, K_NO_WAIT);
 
   if (!tid) {
     LOG_ERR("Failed to create MQTT thread");
@@ -2325,6 +2390,7 @@ void zplc_mqtt_get_status(zplc_mqtt_status_t *status) {
   status->profile = (uint8_t)zplc_config_get_mqtt_profile();
   status->protocol = (uint8_t)zplc_config_get_mqtt_protocol();
   status->transport = (uint8_t)zplc_config_get_mqtt_transport();
+  status->tls_verify = (uint8_t)zplc_config_get_mqtt_tls_verify();
   status->publish_qos = (uint8_t)zplc_config_get_mqtt_publish_qos();
   status->subscribe_qos = (uint8_t)zplc_config_get_mqtt_subscribe_qos();
   status->retain_enabled = zplc_config_get_mqtt_publish_retain();
@@ -2335,3 +2401,20 @@ void zplc_mqtt_get_status(zplc_mqtt_status_t *status) {
   zplc_config_get_mqtt_broker(status->broker, sizeof(status->broker));
   zplc_config_get_mqtt_client_id(status->client_id, sizeof(status->client_id));
 }
+
+#if defined(CONFIG_ZTEST)
+/* Test seam (COM-017): delivers a message as the client would, without a
+ * broker. The payload goes through the same buffer and the same dispatch
+ * as a PUBLISH that arrived from the network. */
+int zplc_mqtt_test_inject(const char *topic, const uint8_t *payload,
+                          size_t payload_len) {
+  if (payload_len > ZPLC_MQTT_COMMAND_MAX_PAYLOAD) {
+    return -EMSGSIZE;
+  }
+  if (payload_len != 0U) {
+    memcpy(s_publish_buf, payload, payload_len);
+  }
+  s_publish_buf[payload_len] = '\0';
+  return dispatch_incoming_message(NULL, NULL, topic, payload_len);
+}
+#endif

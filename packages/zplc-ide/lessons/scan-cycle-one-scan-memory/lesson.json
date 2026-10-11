@@ -1,0 +1,32 @@
+{
+  "schemaVersion": 1,
+  "id": "scan-cycle-one-scan-memory",
+  "version": 1,
+  "order": 8,
+  "module": 1,
+  "level": "foundation",
+  "prerequisites": [],
+  "languages": [
+    "ST"
+  ],
+  "tracks": [
+    "simulation"
+  ],
+  "plant": null,
+  "estimatedMinutes": 10,
+  "starter": {
+    "project": "scan_snapshot_starter",
+    "program": "src/ScanSnapshot.st"
+  },
+  "solution": {
+    "project": "scan_snapshot",
+    "program": "src/ScanSnapshot.st"
+  },
+  "scenario": {
+    "file": "scenario.json",
+    "id": "ScanSnapshot",
+    "path": "tests/scan-snapshot.scenario.json",
+    "sha256": "3b92ab17ceffb8983942c1c5aae7efbf001afdadce99d7f8db02418c3f7797e2"
+  },
+  "regressionScenarios": []
+}

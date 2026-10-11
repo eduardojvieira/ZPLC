@@ -75,6 +75,17 @@ el panel Problems de Studio lo selecciona cuando usted activa el problema:
 La línea y la columna de un diagnóstico de diagrama siguen siendo las del Structured Text generado, y el mensaje lo
 dice. Un diagrama que no es válido da un diagnóstico por cada elemento incorrecto, no uno para todo el archivo.
 
+El elemento viaja con el diagnóstico desde la compilación hasta el panel Problems (la compilación corre en su propio
+proceso y lo envía, verificado, junto con el código, la ruta y la posición). Por eso el problema selecciona el
+elemento que la compilación nombró, también cuando el archivo del editor cambió después de compilar; un diagnóstico
+que llegó sin elemento (un host más antiguo, un texto que no es un id de elemento) se ubica desde el archivo abierto,
+como antes.
+
+Nivel de evidencia: host. `electron/workspaceCompileFailure.test.ts` y `src/components/workspaceTestPresentation.test.ts`
+cubren el elemento entre los dos procesos, `src/editors/diagnosticElement.test.ts` la elección entre el elemento
+transportado y el archivo abierto, y el recorrido 25 de `bun run test:journeys` devuelve el cable al disco después de
+una compilación fallida y aun así obtiene el bloque que la compilación nombró.
+
 ## Breakpoints en un diagrama
 
 Se puede poner un breakpoint en el elemento del diagrama o en la línea IL que usted editó (LNG-004); el mapa de

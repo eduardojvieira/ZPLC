@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "title": "Safe motor start-stop",
+  "summary": "Walk through a motor with seal-in, stop, and overload handling using the Motor Start Stop example.",
+  "scope": "Tests provide native POSIX host evidence only; they are not hardware or HIL evidence.",
+  "objectives": [
+    "Hold the motor on after Start is released with a seal-in.",
+    "Drop the motor out on Stop, EStop and Overload, and never let a held Start restart it by itself."
+  ],
+  "stages": [
+    {
+      "key": "objective",
+      "title": "Objective",
+      "body": "In src/Motor.st, replace Forward := Start with a seal-in built from Start, Stop, EStop, and Overload; verify that Reverse remains FALSE.",
+      "checkpoint": "Forward stays ON after Start is released and drops on Stop, EStop, or Overload."
+    },
+    {
+      "key": "predict",
+      "title": "Predict",
+      "body": "Before running, predict Motor.Forward at {{t:0}}, {{t:20}}, {{t:40}}, {{t:50}}, {{t:90}}, and {{t:140}} ms.",
+      "checkpoint": "OFF at {{t:0}} ms even though Start is held; ON at {{t:20}}; OFF at {{t:40}} (EStop) and still OFF at {{t:50}} while Start is held; OFF at {{t:90}} (Overload) and {{t:140}} (Stop). It turns ON again only after Start is released and pressed again, at {{t:70}}, {{t:120}}, and {{t:170}} ms. Motor.Reverse remains OFF."
+    },
+    {
+      "key": "edit",
+      "title": "Edit",
+      "body": "Correct this starter omission, save it, then run: The starter loses seal-in when Start is released; implement Stop, EStop, and Overload dropout, and never start or restart while Start is still held after power-up or a stop.",
+      "checkpoint": "The visible scenario must pass with saved host evidence."
+    },
+    {
+      "key": "run",
+      "title": "Run",
+      "body": "In Tests, choose the saved zplc.json and run only the MotorStartStop scenario.",
+      "checkpoint": "The required scenario is named MotorStartStop and contains {{assertions}} assertions."
+    },
+    {
+      "key": "observe",
+      "title": "Observe",
+      "body": "Compare the trace: EStop at {{t:40}} ms, overload at {{t:90}} ms, and stop at {{t:140}} ms.",
+      "checkpoint": "EStop, Overload, and Stop force Motor.Forward OFF, and holding Start does not restart it."
+    },
+    {
+      "key": "reflect",
+      "title": "Reflect",
+      "body": "The exact NEVER assertion checks logical coverage for this scenario.",
+      "checkpoint": "It does not establish physical safety, hardware timing, or certification."
+    }
+  ],
+  "hints": [
+    {
+      "level": 1,
+      "text": "The output has to remember that Start was pressed: keep a memory variable that Start sets and that holds itself until a stop condition clears it."
+    },
+    {
+      "level": 2,
+      "text": "Clear the memory first when Stop, EStop or Overload is TRUE; only then let Start set it, and only if Start was seen released since the last stop, so a held Start cannot restart the motor."
+    }
+  ],
+  "faultCases": [
+    "The starter loses seal-in when Start is released; implement Stop, EStop, and Overload dropout, and never start or restart while Start is still held after power-up or a stop."
+  ]
+}

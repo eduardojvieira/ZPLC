@@ -1,8 +1,9 @@
-import { spawn, type ChildProcessWithoutNullStreams } from 'node:child_process';
+import type { ChildProcessWithoutNullStreams } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import path from 'node:path';
 import { EventEmitter } from 'node:events';
 import { fileURLToPath } from 'node:url';
+import { spawnAllowed } from './spawnAllowList.js';
 import type {
   NativeSimulationEvent as NativeEventMessage,
   NativeSimulationHelloResult as NativeHelloResult,
@@ -201,7 +202,7 @@ function createDefaultSpawnProcess(environment: NodeJS.ProcessEnv): NativeSimula
     );
   }
 
-  return spawn(binaryPath, [], {
+  return spawnAllowed({ kind: 'native-runtime', binary: binaryPath }, {
     env: environment,
     stdio: ['pipe', 'pipe', 'pipe'],
   }) as ChildProcessWithoutNullStreams;

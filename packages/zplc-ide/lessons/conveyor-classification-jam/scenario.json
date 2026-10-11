@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "id": "Conveyor01",
+  "plant": "conveyor-v1",
+  "tickMs": 10,
+  "durationMs": 80,
+  "events": [
+    { "atMs": 0, "set": { "Conveyor.Start": false, "Conveyor.Stop": false, "Conveyor.Reset": false } },
+    { "atMs": 10, "set": { "Conveyor.Start": true } },
+    { "atMs": 20, "set": { "Conveyor.Start": false } },
+    { "atMs": 60, "set": { "Conveyor.Reset": true } },
+    { "atMs": 70, "set": { "Conveyor.Reset": false } }
+  ],
+  "expectations": [
+    { "kind": "AT", "atMs": 0, "condition": { "Conveyor.BeltCommand": false, "Conveyor.DiverterCommand": false, "Conveyor.FaultLamp": false } },
+    { "kind": "AT", "atMs": 10, "condition": { "Conveyor.BeltCommand": true } },
+    { "kind": "RISING", "fromMs": 20, "withinMs": 10, "condition": { "Conveyor.DiverterCommand": true } },
+    { "kind": "NEVER", "condition": { "Conveyor.DiverterCommand": true, "Conveyor.BeltCommand": false } },
+    { "kind": "WITHIN", "fromMs": 50, "withinMs": 0, "condition": { "Conveyor.BeltCommand": false, "Conveyor.FaultLamp": true } },
+    { "kind": "FOR", "fromMs": 50, "forMs": 30, "condition": { "Conveyor.BeltCommand": false, "Conveyor.FaultLamp": true } }
+  ]
+}

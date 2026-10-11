@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 1,
+  "alsoGreen": [],
+  "wrong": [
+    {
+      "intent": "latches Start and has no Stop, EStop or Overload dropout",
+      "files": {
+        "src/Motor.st": "PROGRAM Motor\nVAR_INPUT Start AT %I0.0 : BOOL; Stop AT %I0.1 : BOOL; EStop AT %I0.2 : BOOL; Overload AT %I0.3 : BOOL; END_VAR\nVAR_OUTPUT Forward AT %Q0.0 : BOOL; Reverse AT %Q0.1 : BOOL; END_VAR\nIF Start THEN Forward := TRUE; END_IF;\nReverse := FALSE;\nEND_PROGRAM\n"
+      }
+    },
+    {
+      "intent": "drops out on Stop and Overload but ignores EStop",
+      "files": {
+        "src/Motor.st": "PROGRAM Motor\nVAR_INPUT Start AT %I0.0 : BOOL; Stop AT %I0.1 : BOOL; EStop AT %I0.2 : BOOL; Overload AT %I0.3 : BOOL; END_VAR\nVAR_OUTPUT Forward AT %Q0.0 : BOOL; Reverse AT %Q0.1 : BOOL; END_VAR\nIF Stop OR Overload THEN Forward := FALSE; ELSIF Start THEN Forward := TRUE; END_IF;\nReverse := FALSE;\nEND_PROGRAM\n"
+      }
+    },
+    {
+      "intent": "drops out on Stop and EStop but ignores Overload",
+      "files": {
+        "src/Motor.st": "PROGRAM Motor\nVAR_INPUT Start AT %I0.0 : BOOL; Stop AT %I0.1 : BOOL; EStop AT %I0.2 : BOOL; Overload AT %I0.3 : BOOL; END_VAR\nVAR_OUTPUT Forward AT %Q0.0 : BOOL; Reverse AT %Q0.1 : BOOL; END_VAR\nIF Stop OR EStop THEN Forward := FALSE; ELSIF Start THEN Forward := TRUE; END_IF;\nReverse := FALSE;\nEND_PROGRAM\n"
+      }
+    },
+    {
+      "intent": "restarts by itself while Start is still held after a stop",
+      "files": {
+        "src/Motor.st": "PROGRAM Motor\nVAR_INPUT Start AT %I0.0 : BOOL; Stop AT %I0.1 : BOOL; EStop AT %I0.2 : BOOL; Overload AT %I0.3 : BOOL; END_VAR\nVAR_OUTPUT Forward AT %Q0.0 : BOOL; Reverse AT %Q0.1 : BOOL; END_VAR\nIF Stop OR EStop OR Overload THEN Forward := FALSE; ELSIF Start THEN Forward := TRUE; END_IF;\nReverse := FALSE;\nEND_PROGRAM\n"
+      }
+    }
+  ]
+}

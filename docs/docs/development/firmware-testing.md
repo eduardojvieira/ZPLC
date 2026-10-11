@@ -77,7 +77,7 @@ output is under `$ZPLC_FW_WS/out`, with one log per mode.
 
 | Mode | What runs | What a pass shows | What it does not show |
 |------|-----------|-------------------|-----------------------|
-| `host` | The nine CMake suites of `firmware/lib/zplc_core` under ctest, built with the address and undefined-behaviour sanitizers | VM, loader, dispatch and host runtime behave on a 64-bit host without undefined behaviour | Anything about a 32-bit or Cortex-M target |
+| `host` | The CMake suites of `firmware/lib/zplc_core` under ctest, built with the address and undefined-behaviour sanitizers | VM, loader, dispatch and host runtime behave on a 64-bit host without undefined behaviour | Anything about a 32-bit or Cortex-M target |
 | `host32` | The same suites built with `-m32` | The same, with 32-bit `int`, `long` and pointers | Cortex-M behaviour: x86 tolerates unaligned access and has no short enums |
 | `native` | The Zephyr suites of `firmware/tests` on `native_sim/native/64`, as CI does | The firmware application logic, the Zephyr HAL and the scheduler against the Zephyr kernel on the host | Timing, interrupts and drivers of a real board |
 | `native32` | The same on `native_sim/native`, the 32-bit variant | The same, with a 32-bit data model | The same |
@@ -128,6 +128,24 @@ which sizes it was made with:
   stack, used on `qemu_cortex_m0`.
 
 The process images are 4 KB each in every profile because the ISA fixes them.
+
+The runtime hardening of the firmware (RT-010 to RT-034) has its own suites:
+
+- `runtime_boot` runs a start-up plan in order, refuses a plan that starts a service before the runtime, and keeps
+  going when a service fails;
+- `program_store_nvs` runs the program store over NVS on the flash simulator with an artifact as large as the code
+  region, and cuts the power at each operation of a deploy;
+- `modbus_force` writes through the Modbus server over the real core and shows that a forced variable keeps its
+  forced value;
+- `scheduler_admission` holds a scan at the commit and at the output write, to show that a write from outside waits
+  for the input latch and never for the scan, and that the image lock is free while the pins are written.
+
+The host suites of the core add `test_exchange` (a scanner, readers and writers on threads), `test_program_store`
+(a power cut and a torn write at every operation), `test_core_start`, `test_core_lock`, `test_bytes_crc` and the
+`config_rule_*` tests, each of which builds one configuration rule with a value that breaks it and expects the
+compilation to fail naming the rule. The test-only entry points are declared in
+`firmware/lib/zplc_core/tests/include/zplc_test_hooks.h`, never in a public header; `test_public_headers` fails when
+a public header declares one.
 
 ### The board I/O description
 

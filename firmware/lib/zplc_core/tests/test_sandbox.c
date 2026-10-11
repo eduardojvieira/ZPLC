@@ -24,9 +24,8 @@
 #include <zplc_isa.h>
 #include <zplc_loader.h>
 
-/* Available because this target is built with ZPLC_CORE_TESTING. */
-int zplc_test_load_raw(const uint8_t *bytecode, size_t size);
-int zplc_test_mem_load_code(const uint8_t *code, size_t size, uint16_t offset);
+/* Available because this target is built with ZPLC_CORE_TESTING (RT-033). */
+#include <zplc_test_hooks.h>
 
 static int failures;
 static int checks;
@@ -1255,12 +1254,8 @@ static void test_call_nesting(void) {
  * RT-003: the work of the verifier is bounded by the size of the CODE
  * ------------------------------------------------------------------------- */
 
-/* Test hooks of the loader (this target is built with ZPLC_CORE_TESTING): what
- * the last zplc_loader_verify() was charged, in the units of
- * ZPLC_VERIFY_STEPS_PER_BYTE, and, counted apart from the charge, the
- * iterations its loops made. */
-uint32_t zplc_test_verify_work(void);
-uint32_t zplc_test_verify_iterations(void);
+/* Test hooks of the loader (zplc_test_hooks.h): what the last zplc_loader_verify() was charged, in the units of
+ * ZPLC_VERIFY_STEPS_PER_BYTE, and, counted apart from the charge, the iterations its loops made. */
 
 static uint32_t last_limit, last_work;
 static uint8_t big_code[ZPLC_MEM_CODE_SIZE];

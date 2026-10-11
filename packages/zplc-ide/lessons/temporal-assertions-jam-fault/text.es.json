@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "title": "Assertions temporales y falla por atasco",
+  "summary": "Enclavá la falla por atasco y probá su temporización con assertions AT, WITHIN, FOR, UNTIL, RISING y FALLING.",
+  "scope": "La evidencia de Tests es del runtime nativo POSIX host y de inputs discretos; el atasco programado no es una falla física, despeje físico, timing de target, HIL ni certificación.",
+  "objectives": [
+    "Enclavá la falla por atasco y probá su temporización con assertions temporales.",
+    "Exigí un Start nuevo antes de mover la cinta otra vez tras liberar la falla."
+  ],
+  "stages": [
+    {
+      "key": "objective",
+      "title": "Objetivo",
+      "body": "Leé tests/conveyor-jam-timing.scenario.json junto a src/Conveyor.st. Start se pulsa a {{t:0}} ms, un atasco aparece a {{t:30}} ms y se despeja a {{t:50}} ms, Reset se pulsa a {{t:40}} ms (atasco presente) y a {{t:60}} ms (atasco despejado), y Start se pulsa de nuevo a {{t:80}} ms.",
+      "checkpoint": "El starter debe enclavar la falla por atasco (a partir de la lección 4) antes de aprobar el escenario."
+    },
+    {
+      "key": "predict",
+      "title": "Predecí",
+      "body": "Antes de ejecutar, anticipá BeltCommand y FaultLamp a {{t:20}}, {{t:30}}, {{t:50}}, {{t:60}} y {{t:80}} ms.",
+      "checkpoint": "Belt ON y FaultLamp OFF a {{t:20}}; Belt OFF y FaultLamp ON a {{t:30}} y todavía a {{t:50}} (Reset a {{t:40}} se ignora y despejar el atasco no libera la falla); ambos OFF a {{t:60}}; Belt ON de nuevo a {{t:80}} sólo tras el nuevo Start."
+    },
+    {
+      "key": "edit",
+      "title": "Editá",
+      "body": "Corregí esta omisión del starter y guardá antes de ejecutar: El starter omite el enclavamiento del atasco; enclavá la falla con JamDetected, ignorá Reset mientras el atasco esté presente, liberala sólo con Reset tras despejarse el atasco y exigí un nuevo Start para volver a mover la cinta.",
+      "checkpoint": "El escenario visible debe pasar con evidencia host guardada."
+    },
+    {
+      "key": "run",
+      "title": "Ejecutá",
+      "body": "En Tests, elegí el zplc.json guardado y ejecutá únicamente ConveyorJamTiming; Conveyor01 es el escenario de la lección 4 y queda como chequeo de regresión.",
+      "checkpoint": "El escenario requerido se llama ConveyorJamTiming y contiene {{assertions}} assertions."
+    },
+    {
+      "key": "observe",
+      "title": "Contrastá",
+      "body": "Relacioná cada assertion con la traza: AT a {{t:20}}, {{t:50}} y {{t:60}} ms fija los estados exactos; WITHIN a {{t:30}} ms prueba que la falla aparece en el mismo scan que el atasco; FOR de {{t:30}} a {{t:50}} ms se sostiene a través del Reset temprano; FALLING a {{t:60}} ms muestra que Reset liberó la lámpara; UNTIL mantiene la cinta OFF hasta el nuevo Start; RISING a {{t:80}} ms encuentra el rearranque.",
+      "checkpoint": "La traza registrada muestra la secuencia discreta, no una medición física."
+    },
+    {
+      "key": "reflect",
+      "title": "Reflexioná",
+      "body": "NEVER prohíbe BeltCommand y FaultLamp ON a la vez en este escenario. Un Reset con el atasco presente no debe liberar la falla, y liberarla no debe rearrancar la cinta.",
+      "checkpoint": "Un atasco inyectado no demuestra falla física, despeje físico, timing de target, HIL ni certificación."
+    }
+  ],
+  "hints": [
+    {
+      "level": 1,
+      "text": "Partí de la lección 4: JamDetected enclava Faulted, y un Reset sólo cuenta cuando la entrada de atasco ya no está; leé los tiempos del escenario para ver qué Reset debe ignorarse."
+    },
+    {
+      "level": 2,
+      "text": "Borrá Requested y StartArmed cuando aparece el atasco, liberá Faulted sólo con Reset estando JamDetected en FALSE, y dejá que Requested vuelva sólo con un Start pulsado después de haber visto Start suelto."
+    }
+  ],
+  "faultCases": [
+    "El starter omite el enclavamiento del atasco; enclavá la falla con JamDetected, ignorá Reset mientras el atasco esté presente, liberala sólo con Reset tras despejarse el atasco y exigí un nuevo Start para volver a mover la cinta."
+  ]
+}

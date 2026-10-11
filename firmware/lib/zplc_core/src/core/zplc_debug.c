@@ -5,7 +5,10 @@
  * SPDX-License-Identifier: MIT
  *
  * Implements the HIL debug output functions for trace and diagnostics.
- * All output is JSON-formatted, line-based, via the Zephyr shell.
+ * All output is JSON-formatted and line-based. The lines go to a sink the
+ * target registers (hil_set_sink); the Zephyr shell binding is in
+ * src/hal/zephyr/zplc_hil_debug_zephyr.c, so that this file includes no Zephyr
+ * header and compiles on the host (RT-029).
  *
  * This file is only compiled when CONFIG_ZPLC_HIL_DEBUG is enabled.
  */
@@ -15,8 +18,6 @@
 
 #ifdef CONFIG_ZPLC_HIL_DEBUG
 
-#include <zephyr/shell/shell.h>
-#include <zephyr/kernel.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -30,8 +31,9 @@ static char hil_buf[256];
 /** Current debug mode */
 static hil_mode_t hil_mode = HIL_MODE_OFF;
 
-/** Shell instance for output */
-static const struct shell *hil_shell = NULL;
+/** Line sink for output; NULL until the target registers one */
+static hil_sink_fn hil_sink = NULL;
+static void *hil_sink_context = NULL;
 
 /* ============================================================================
  * Opcode Name Lookup Table
@@ -204,9 +206,10 @@ hil_mode_t hil_get_mode(void)
     return hil_mode;
 }
 
-void hil_set_shell(const struct shell *sh)
+void hil_set_sink(hil_sink_fn sink, void *context)
 {
-    hil_shell = sh;
+    hil_sink = sink;
+    hil_sink_context = context;
 }
 
 /* ============================================================================
@@ -214,16 +217,12 @@ void hil_set_shell(const struct shell *sh)
  * ============================================================================ */
 
 /**
- * @brief Print the buffer contents to the shell.
- *
- * Uses shell_print which adds a newline automatically.
+ * @brief Hand the buffer contents to the sink, one line, no newline.
  */
 static inline void hil_output(void)
 {
-    if (hil_shell != NULL) {
-        shell_print(hil_shell, "%s", hil_buf);
-    } else {
-        printk("%s\n", hil_buf);
+    if (hil_sink != NULL) {
+        hil_sink(hil_sink_context, hil_buf);
     }
 }
 
@@ -233,7 +232,7 @@ static inline void hil_output(void)
 
 void hil_trace_opcode(uint8_t op, uint16_t pc, uint8_t sp, int32_t tos)
 {
-    if (hil_mode != HIL_MODE_VERBOSE || hil_shell == NULL) {
+    if (hil_mode != HIL_MODE_VERBOSE || hil_sink == NULL) {
         return;
     }
 
@@ -245,7 +244,7 @@ void hil_trace_opcode(uint8_t op, uint16_t pc, uint8_t sp, int32_t tos)
 
 void hil_trace_fb(const char *name, uint8_t id, bool q, int32_t et_or_cv)
 {
-    if (hil_mode == HIL_MODE_OFF || hil_shell == NULL) {
+    if (hil_mode == HIL_MODE_OFF || hil_sink == NULL) {
         return;
     }
 
@@ -264,7 +263,7 @@ void hil_trace_fb(const char *name, uint8_t id, bool q, int32_t et_or_cv)
 void hil_trace_task(uint8_t id, uint32_t start_ms, uint32_t end_ms,
                     uint32_t us, bool overrun)
 {
-    if (hil_mode == HIL_MODE_OFF || hil_shell == NULL) {
+    if (hil_mode == HIL_MODE_OFF || hil_sink == NULL) {
         return;
     }
 
@@ -276,7 +275,7 @@ void hil_trace_task(uint8_t id, uint32_t start_ms, uint32_t end_ms,
 
 void hil_trace_cycle(uint32_t n, uint32_t us, uint8_t tasks)
 {
-    if (hil_mode == HIL_MODE_OFF || hil_shell == NULL) {
+    if (hil_mode == HIL_MODE_OFF || hil_sink == NULL) {
         return;
     }
 
@@ -289,7 +288,7 @@ void hil_trace_cycle(uint32_t n, uint32_t us, uint8_t tasks)
 void hil_trace_error(uint8_t code, const char *msg, uint16_t pc)
 {
     /* Errors are always output regardless of mode */
-    if (hil_shell == NULL) {
+    if (hil_sink == NULL) {
         return;
     }
 
@@ -302,7 +301,7 @@ void hil_trace_error(uint8_t code, const char *msg, uint16_t pc)
 void hil_trace_break(uint16_t pc)
 {
     /* Breakpoints are always output regardless of mode */
-    if (hil_shell == NULL) {
+    if (hil_sink == NULL) {
         return;
     }
 
@@ -313,7 +312,7 @@ void hil_trace_break(uint16_t pc)
 
 void hil_trace_watch(uint16_t addr, const char *type, int32_t val)
 {
-    if (hil_mode == HIL_MODE_OFF || hil_shell == NULL) {
+    if (hil_mode == HIL_MODE_OFF || hil_sink == NULL) {
         return;
     }
 
@@ -325,7 +324,7 @@ void hil_trace_watch(uint16_t addr, const char *type, int32_t val)
 
 void hil_send_ready(const char *fw_version, const char *caps)
 {
-    if (hil_shell == NULL) {
+    if (hil_sink == NULL) {
         return;
     }
 
@@ -370,7 +369,7 @@ void hil_send_ready(const char *fw_version, const char *caps)
 
 void hil_send_ack(const char *cmd, const char *val, bool ok, const char *err)
 {
-    if (hil_shell == NULL) {
+    if (hil_sink == NULL) {
         return;
     }
 

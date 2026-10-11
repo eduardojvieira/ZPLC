@@ -173,6 +173,59 @@ Si el editor, el panel inferior o la barra de herramientas lanzan una excepción
 
 Nivel de evidencia: host. El recorrido 20 (una región que falla no deja la ventana en blanco) de `bun run test:journeys` hace fallar cada una de las tres regiones en la aplicación real, comprueba que las otras dos siguen funcionando y que Retry devuelve la región caída; `packages/zplc-ide/src/components/ErrorBoundary.test.tsx` cubre la lógica de la región.
 
+## Entradas de la simulación
+
+En la simulación nativa, la pestaña **Watch** empieza con **Simulation inputs**:
+todas las entradas que declara el programa en ejecución, con su propio nombre. Es
+decir, cada variable mapeada a la imagen de entrada (`AT %IX0.3`, `AT %IW2`, como
+la haya llamado) y cada `VAR_INPUT` de un programa, con su tipo, su dirección y el
+valor leído del runtime. Un BOOL tiene un interruptor **Set TRUE / Set FALSE** que
+cambia solo su propio bit, y cada otro tipo numérico tiene una casilla numérica con
+**Set**; un valor que no cabe en el tipo se rechaza con un mensaje antes de
+escribir nada. **Force** mantiene la entrada en su valor actual (y **Set** cambia
+entonces el valor forzado), para los tipos de hasta 32 bits que transporta un
+force; al liberarlo la entrada vuelve a quedar libre.
+
+El propio runtime sigue aceptando solo los tres nombres de motor de su petición
+`simulation.input.set`; cualquier otra entrada se escribe con la escritura de
+memoria tipada, en la dirección y con el ancho del mapa de depuración. En hardware,
+las entradas se fuerzan desde la tabla Watch.
+
+Nivel de evidencia: host. `packages/zplc-ide/src/runtime/declaredInputs.test.ts`
+cubre la lista, la codificación de cada tipo numérico y la escritura sin tocar los
+demás bits, contra un mapa de depuración del compilador real;
+`src/cli/toolApi.test.ts` cubre el marcado de las entradas de programa, y el
+recorrido 37 de `bun run test:journeys` fija un bit, una palabra y una entrada de
+programa de un proyecto con nombres propios en la aplicación real y ve que la salida
+del programa los sigue (requisito IDE-024). Evidencia de host con POSIX nativo, no
+de hardware.
+
+## Notificaciones
+
+El resultado de una compilación, un guardado, un despliegue, un cambio de conexión
+y una ejecución de pruebas aparece abajo a la derecha de la ventana como una
+notificación. Cada una dice qué pasó y tiene **Details**, que abre el panel con la
+evidencia: **Output** para un guardado, una compilación correcta, un despliegue y
+una conexión; **Problems** para una compilación fallida; **Tests** para una
+ejecución de pruebas. Una operación larga (una compilación, una ejecución de
+escenarios, un despliegue, una conexión) muestra una barra de progreso mientras
+corre, y una compilación y una ejecución de pruebas muestran además **Cancel**: una
+compilación cancelada no conserva ningún artefacto, y una ejecución cancelada
+detiene su runtime nativo.
+
+Un éxito se va solo tras unos segundos. Un fallo, una advertencia (por ejemplo un
+dispositivo que recibió una compilación anterior) y una cancelación permanecen
+hasta que usted las descarta. La notificación es un resumen: todos los mensajes que
+Studio escribía antes en el panel Output siguen ahí.
+
+Nivel de evidencia: host. `packages/zplc-ide/src/store/notifications.test.ts` cubre
+el modelo (progreso, la acción de cancelar, cuánto permanece cada resultado, el
+límite de la lista) y `src/components/NotificationsList.test.tsx` el dibujo; el
+recorrido 36 de `bun run test:journeys` guarda, compila, conecta, ejecuta y cancela
+una ejecución larga de pruebas y rompe la compilación en la aplicación real, y
+sigue **Details** de cada notificación hasta su panel (requisito IDE-021). Una
+notificación de despliegue necesita un dispositivo y no la cubre ningún recorrido.
+
 ## Qué se carga al iniciar
 
 La pantalla de bienvenida es lo primero que muestra Studio, y se carga sin el editor de código, los editores visuales
@@ -206,15 +259,16 @@ programa compilado y, después, ejecutar o depurar. Una persona inicia cada una.
 
 Learn es una pestaña del panel inferior. La acción **Learn** de la pantalla de bienvenida copia la primera lección en una carpeta que usted elige y abre esa pestaña. Esto es lo que ofrece hoy:
 
-- Diez lecciones, en español y en inglés (el selector está en el panel, y el español es el valor por defecto). Cada lección trae su propio proyecto de ejemplo: un archivo fuente en Structured Text y un archivo de escenario.
-- Cada lección recorre seis etapas (en inglés Objective, Predict, Edit, Run, Observe y Reflect), y el punto de control esperado de cada etapa permanece oculto hasta que usted lo pide.
-- Usted edita el proyecto copiado y ejecuta solo el escenario de esa lección desde **Tests**. El panel califica la ejecución registrada: una lección se da por completada cuando su escenario pasó con todas sus aserciones guardadas. Studio recuerda las lecciones completadas, y **Exportar progreso** e **Importar progreso** (**Export progress** e **Import progress** en inglés) las trasladan como un archivo pequeño.
+- Diez lecciones, en español y en inglés (el selector está en el panel, y el español es el valor por defecto). Cada lección es un paquete de datos, `packages/zplc-ide/lessons/<id>/`, con su texto en ambos idiomas, objetivos de aprendizaje, dos niveles de pista, un escenario de referencia con su hash de contenido y el proyecto de ejemplo del que usted parte: un archivo en Structured Text, o un archivo Ladder en la lección 5.
+- Cada lección recorre seis etapas (en inglés Objective, Predict, Edit, Run, Observe y Reflect), el punto de control esperado de cada etapa permanece oculto hasta que usted lo pide, y las dos pistas se abren a pedido.
+- Usted edita el proyecto copiado, lo guarda y presiona **Verificar** (**Check** en inglés). Studio ejecuta su programa guardado contra el escenario del paquete de la lección, identificado por su hash de contenido, en un proceso propio que **Cancelar** detiene; los archivos de escenario de su carpeta nunca se leen, de modo que editar un escenario allí no produce un aprobado. Una lección se da por completada cuando todas las aserciones de ese escenario pasaron. Una verificación que falla enumera cada aserción que falló con su instante, los valores esperados y observados, y la dirección de esa muestra en la traza registrada. El registro de calificación contiene el identificador y la versión de la lección, el hash del escenario, el hash del programa, la versión del runtime y la hora. Todavía puede ejecutar el escenario de su carpeta desde **Tests**; esa ejecución no es la calificación.
+- Studio guarda su progreso en un único archivo versionado de su directorio de datos de usuario: lecciones aprobadas con su registro de calificación, lecciones en curso, la última lección (el panel la vuelve a abrir), y las pistas y soluciones usadas (la solución de referencia se abre a pedido). El archivo de progreso de una versión anterior se migra y se deja donde estaba. **Exportar progreso** e **Importar progreso** (**Export progress** e **Import progress** en inglés) trasladan el documento completo como un archivo; una importación se valida, se combina con la calificación más reciente primero y conserva las lecciones que esta versión no conoce.
 - Todas las lecciones están desbloqueadas y se pueden tomar en cualquier orden. Learn nunca inicia una operación física: solo copia un proyecto y abre **Tests**.
 - Un resultado es evidencia de host de la simulación nativa, no evidencia de hardware.
 
-Un curso con niveles, prerrequisitos y un orden fijo, una superficie de lección que permanece junto al editor y una vía para una placa de aprendizaje son trabajo futuro (los requisitos LRN). Nada de esta página los promete.
+Un curso con niveles, prerrequisitos y un orden fijo, una superficie de lección que permanece junto al editor y una vía para una placa de aprendizaje son trabajo futuro (los requisitos LRN). Nada de esta página los promete. Para agregar una lección, vea [Contribuir](../contributing/index.md#agregar-una-lección).
 
-Nivel de evidencia: host. `packages/zplc-ide/src/components/learnLesson.test.ts` y `LearnPanel.test.ts` cubren las lecciones y la calificación, y `packages/zplc-ide/src/learn/starterGrading.test.ts` ejecuta cada starter contra su escenario.
+Nivel de evidencia: host. `packages/zplc-ide/src/learn/lessonCi.test.ts` ejecuta cada paquete de lección en ambos idiomas (el starter falla su escenario, la solución lo pasa y cada tiempo y valor que cita el texto está en el escenario), `packages/zplc-ide/src/learn/lessonCheck.test.ts` califica programas en el runtime nativo, `packages/zplc-ide/electron/ipcRegistry.test.ts` cubre la verificación de lección y los canales de progreso en el borde IPC, y los recorridos 39 y 39b ejecutan la verificación en la aplicación real.
 
 ## Límite de la depuración
 

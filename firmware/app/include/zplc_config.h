@@ -46,6 +46,13 @@ typedef enum {
   ZPLC_MQTT_QOS2 = 2,
 } zplc_mqtt_qos_t;
 
+/** What the session does about the broker's certificate (COM-014). */
+typedef enum {
+  ZPLC_MQTT_TLS_VERIFY_NOT_APPLICABLE = 0, /**< Plain TCP or WS: no TLS at all. */
+  ZPLC_MQTT_TLS_VERIFY_ON = 1,             /**< TLS; the certificate is checked. */
+  ZPLC_MQTT_TLS_VERIFY_OFF = 2,            /**< TLS; the certificate is NOT checked. */
+} zplc_mqtt_tls_verify_t;
+
 typedef struct {
   bool connected;
   bool subscribed;
@@ -53,6 +60,7 @@ typedef struct {
   uint8_t profile;
   uint8_t protocol;
   uint8_t transport;
+  uint8_t tls_verify; /**< zplc_mqtt_tls_verify_t, from the configured transport and security. */
   uint8_t publish_qos;
   uint8_t subscribe_qos;
   bool retain_enabled;
@@ -211,8 +219,12 @@ int zplc_config_set_modbus_tag_override(uint16_t index,
                                          uint16_t register_count);
 int zplc_config_clear_modbus_tag_override(uint16_t index);
 
-#if defined(CONFIG_ZTEST)
-void zplc_config_test_set_modbus_override_publish_hook(void (*hook)(void));
+/* Priority of the application threads that talk to the outside (RT-013): CONFIG_ZPLC_COMM_THREAD_PRIORITY
+ * when the module is configured, its default for a test build that compiles one source of the application. */
+#ifdef CONFIG_ZPLC_COMM_THREAD_PRIORITY
+#define ZPLC_COMM_THREAD_PRIORITY CONFIG_ZPLC_COMM_THREAD_PRIORITY
+#else
+#define ZPLC_COMM_THREAD_PRIORITY 8
 #endif
 
 int zplc_modbus_init(void);
@@ -279,6 +291,17 @@ void zplc_config_set_mqtt_session_expiry_sec(uint32_t session_expiry_sec);
 
 zplc_mqtt_security_t zplc_config_get_mqtt_security(void);
 void zplc_config_set_mqtt_security(zplc_mqtt_security_t security);
+
+/**
+ * @brief What the configured transport and security mean for the broker's certificate.
+ *
+ * The security setting only applies to a TLS transport (TLS or WSS): with TCP or WS the session carries no
+ * TLS whatever the security setting says, and the answer is NOT_APPLICABLE.
+ */
+zplc_mqtt_tls_verify_t zplc_config_get_mqtt_tls_verify(void);
+
+/** @brief True while MQTT is enabled over TLS with certificate verification switched off (COM-014 warning). */
+bool zplc_config_mqtt_tls_verify_off(void);
 
 void zplc_config_get_mqtt_websocket_path(char *buf, size_t len);
 void zplc_config_set_mqtt_websocket_path(const char *path);

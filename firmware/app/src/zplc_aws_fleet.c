@@ -39,9 +39,11 @@ static struct sockaddr_storage s_aws_broker;
 static uint8_t s_aws_rx_buf[AWS_FLEET_RX_BUF_SIZE];
 static uint8_t s_aws_tx_buf[AWS_FLEET_TX_BUF_SIZE];
 static EXT_RAM_BSS_ATTR uint8_t s_aws_payload_buf[AWS_FLEET_PAYLOAD_MAX];
+#if defined(CONFIG_MQTT_LIB_TLS)
 static EXT_RAM_BSS_ATTR uint8_t s_aws_ca_buf[4096];
 static EXT_RAM_BSS_ATTR uint8_t s_aws_cert_buf[4096];
 static EXT_RAM_BSS_ATTR uint8_t s_aws_key_buf[4096];
+#endif
 static struct zsock_pollfd s_aws_fds[1];
 static struct k_sem s_aws_sem;
 static volatile bool s_aws_connected;
@@ -586,7 +588,10 @@ static int zplc_aws_fleet_provision_locked(void)
         return -ENOMEM;
     }
 
-    k_sem_init(&s_aws_sem, 0, 1);
+    rc = k_sem_init(&s_aws_sem, 0, 1);
+    if (rc != 0) {
+        return rc;
+    }
     s_aws_connected = false;
     s_aws_subscribed = false;
     s_aws_done = false;

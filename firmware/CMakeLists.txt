@@ -20,6 +20,16 @@ if(CONFIG_ZPLC)
     message(FATAL_ERROR "package.json must contain a valid ZPLC product semver version")
   endif()
 
+  # What this image is: version, commit, board, ABI and the CONFIG_ZPLC_* options, as a generated header that the
+  # shell reports (REL-023). The generator is shared with the host runtime build.
+  include(${CMAKE_CURRENT_LIST_DIR}/../scripts/release/zplc_fw_identity.cmake)
+  zplc_generate_fw_identity(
+    OUT_DIR ${CMAKE_CURRENT_BINARY_DIR}/zplc_generated
+    REPO_ROOT ${CMAKE_CURRENT_LIST_DIR}/..
+    VERSION ${ZPLC_CORE_VERSION_STR}
+    BOARD "${BOARD}"
+  )
+
   zephyr_library_named(zplc)
 
   # VF-018: a warning in the ZPLC library is an error, as it is for the application (firmware/app/CMakeLists.txt) and
@@ -33,6 +43,8 @@ if(CONFIG_ZPLC)
   zephyr_library_sources(
     ${CMAKE_CURRENT_LIST_DIR}/lib/zplc_core/src/core/zplc_core.c
     ${CMAKE_CURRENT_LIST_DIR}/lib/zplc_core/src/core/zplc_comm_dispatch.c
+    ${CMAKE_CURRENT_LIST_DIR}/lib/zplc_core/src/core/zplc_program_store.c
+    ${CMAKE_CURRENT_LIST_DIR}/lib/zplc_core/src/core/zplc_exchange.c
   )
 
   # Zephyr HAL implementation
@@ -85,6 +97,7 @@ if(CONFIG_ZPLC)
   # HIL Debug support (optional - enabled via CONFIG_ZPLC_HIL_DEBUG)
   zephyr_library_sources_ifdef(CONFIG_ZPLC_HIL_DEBUG
     ${CMAKE_CURRENT_LIST_DIR}/lib/zplc_core/src/core/zplc_debug.c
+    ${CMAKE_CURRENT_LIST_DIR}/lib/zplc_core/src/hal/zephyr/zplc_hil_debug_zephyr.c
   )
 
   # RETAIN persistence (optional - enabled via CONFIG_ZPLC_RETAIN_PERSIST)
@@ -105,6 +118,7 @@ if(CONFIG_ZPLC)
   # Make headers available to applications
   zephyr_include_directories(
     ${CMAKE_CURRENT_LIST_DIR}/lib/zplc_core/include
+    ${ZPLC_FW_IDENTITY_DIR}
   )
 
 endif()

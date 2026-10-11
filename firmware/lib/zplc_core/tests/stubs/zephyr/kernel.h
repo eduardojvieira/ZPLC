@@ -20,6 +20,27 @@ struct k_thread {
 };
 typedef void (*k_thread_entry_t)(void *, void *, void *);
 
+/* The handler's slot states are guarded by a spinlock; the host test is one
+ * thread, so locking has nothing to do here. */
+struct k_spinlock {
+  int unused;
+};
+typedef struct {
+  int key;
+} k_spinlock_key_t;
+
+static inline k_spinlock_key_t k_spin_lock(struct k_spinlock *lock) {
+  k_spinlock_key_t key = {0};
+
+  (void)lock;
+  return key;
+}
+
+static inline void k_spin_unlock(struct k_spinlock *lock, k_spinlock_key_t key) {
+  (void)lock;
+  (void)key;
+}
+
 #define K_FOREVER 0
 #define K_NO_WAIT 0
 #define K_PRIO_PREEMPT(priority) (priority)

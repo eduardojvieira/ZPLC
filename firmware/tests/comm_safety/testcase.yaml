@@ -1,0 +1,24 @@
+common:
+  tags:
+    - zplc
+    - safety
+    - comm
+  platform_allow:
+    - native_sim/native/64
+    - native_sim/native
+  integration_platforms:
+    - native_sim/native/64
+  harness: ztest
+  timeout: 60
+tests:
+  # The release image: no raw memory command, no way to switch TLS
+  # verification off, no stored broker (COM-014, COM-022, COM-027).
+  zplc.comm_safety.release: {}
+  # The diagnostic image: the raw memory command is there, and an operator
+  # who built it with the insecure-TLS switch can use the opt-in, which then
+  # shows in the status.
+  zplc.comm_safety.diagnostic:
+    extra_configs:
+      - CONFIG_DEVMEM_SHELL=y
+      - CONFIG_ZPLC_SHELL_RAW_MEMORY=y
+      - CONFIG_ZPLC_MQTT_ALLOW_INSECURE_TLS=y

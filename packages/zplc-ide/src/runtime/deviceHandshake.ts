@@ -12,7 +12,9 @@ const REQUIRED_ROOT_KEYS = [
 /**
  * Firmware images from before the draft counter (CMP-052) do not report it; Studio refuses to deploy to them.
  * `io` is the identity of the board I/O description the image was built from (IO-004); an image without it cannot
- * be compared, so Studio refuses a program that uses I/O on it.
+ * be compared, so Studio refuses a program that uses I/O on it. The device does not report it in `sys info`, whose
+ * keys stay exactly as released Studios accept them: the adapter reads it with `sys io` and joins it to the
+ * system information it keeps (see parseDeviceIo).
  */
 const OPTIONAL_ROOT_KEYS = ['draft_counter', 'io'] as const;
 const REQUIRED_IO_KEYS = ['schema', 'board_id', 'hash', 'channels', 'input_bytes', 'output_bytes'] as const;
@@ -113,7 +115,8 @@ function readInteger(value: unknown, max: number): number | null {
   return typeof value === 'number' && Number.isSafeInteger(value) && value >= 0 && value <= max ? value : null;
 }
 
-function parseDeviceIo(value: unknown): DeviceSystemInfo['io'] | null {
+/** Parse the answer of `zplc sys io --json`; null when it is not the exact, bounded object. */
+export function parseDeviceIo(value: unknown): DeviceSystemInfo['io'] | null {
   const io = snapshotRecord(value);
   if (!io || !exactKeys(io, REQUIRED_IO_KEYS)) return null;
   const board = readText(io.board_id);

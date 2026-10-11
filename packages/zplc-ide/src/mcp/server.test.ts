@@ -1,7 +1,9 @@
 import { createHash } from 'node:crypto';
-import { mkdtemp, mkdir, rm, symlink, writeFile } from 'node:fs/promises';
+import { mkdtemp, mkdir, readFile, readdir, rm, symlink, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { ZPLC_CONSTANTS } from '@zplc/compiler';
 import { afterEach, describe, expect, test } from 'bun:test';
 import { parseMcpWorkspaceArgument } from './index';
 import { MCP_RESOURCE_URIS, MCP_SERVER_VERSION, MCP_TOOL_NAMES, courseProgressResource, createMcpDispatcher, openMcpRepository, openMcpUserData, openMcpWorkspace, projectResource, toMcpToolResult, type McpOperations } from './server';
@@ -75,13 +77,49 @@ describe('local MCP adapter', () => {
   test('projects explicit current Learn progress and fails closed for malformed or linked data', async () => {
     const root = await workspace(); const userData = await mkdtemp(join(tmpdir(), 'zplc-mcp-user-data-')); temporary.push(userData);
     const bound = await openMcpWorkspace(root); const user = await openMcpUserData(userData); expect(bound).toBeDefined(); expect(user).toBeDefined(); if (!bound || !user) return;
-    await expect(courseProgressResource({ ...bound, userData: user })).resolves.toEqual({ ok: true, schemaVersion: 1, mastered: [], completed: 0, total: 10 });
+    const progress = (extra: Record<string, unknown> = {}) => ({ ok: true, schemaVersion: 1, mastered: [], completed: 0, total: 10, ...extra });
+    await expect(courseProgressResource({ ...bound, userData: user })).resolves.toEqual(progress());
+    // The file of the first release is read as it is: migrated in memory, never written back.
     await writeFile(join(userData, 'zplc-learn-mastery.v1.json'), '{"schemaVersion":1,"mastered":["motor-start-stop-safe"]}');
-    await expect(courseProgressResource({ ...bound, userData: user })).resolves.toEqual({ ok: true, schemaVersion: 1, mastered: ['motor-start-stop-safe'], completed: 1, total: 10 });
-    await writeFile(join(userData, 'zplc-learn-mastery.v1.json'), '{"schemaVersion":1,"mastered":["unknown"]}');
+    await expect(courseProgressResource({ ...bound, userData: user })).resolves.toEqual(progress({ mastered: ['motor-start-stop-safe'], completed: 1 }));
+    expect(await readdir(userData)).toEqual(['zplc-learn-mastery.v1.json']);
+    // A lesson this build does not know is kept inert: it is not reported and it is not an error.
+    await writeFile(join(userData, 'zplc-learn-mastery.v1.json'), '{"schemaVersion":1,"mastered":["a-lesson-of-a-newer-build"]}');
+    await expect(courseProgressResource({ ...bound, userData: user })).resolves.toEqual(progress());
+    await writeFile(join(userData, 'zplc-learn-mastery.v1.json'), '{"schemaVersion":1,"mastered":["Not A Lesson Id"]}');
     await expect(courseProgressResource({ ...bound, userData: user })).resolves.toEqual({ ok: false, error: 'MCP_INTERNAL_ERROR' });
-    await rm(join(userData, 'zplc-learn-mastery.v1.json')); await symlink('/etc/passwd', join(userData, 'zplc-learn-mastery.v1.json'));
+    // The current file wins over the file of the first release.
+    const lesson = { state: 'passed', grade: null, passedAt: null, startedAt: null, hintsUsed: 0, solutionShown: false };
+    await writeFile(join(userData, 'zplc-learn-progress.v2.json'), JSON.stringify({ schemaVersion: 2, last: null, lessons: { 'edge-counter-pulses': lesson, 'scan-cycle-one-scan-memory': lesson } }));
+    await expect(courseProgressResource({ ...bound, userData: user })).resolves.toEqual(progress({ mastered: ['edge-counter-pulses', 'scan-cycle-one-scan-memory'], completed: 2 }));
+    await writeFile(join(userData, 'zplc-learn-progress.v2.json'), '{"schemaVersion":2,"last":null,"lessons":{"x":{}}}');
     await expect(courseProgressResource({ ...bound, userData: user })).resolves.toEqual({ ok: false, error: 'MCP_INTERNAL_ERROR' });
+    await rm(join(userData, 'zplc-learn-progress.v2.json')); await rm(join(userData, 'zplc-learn-mastery.v1.json')); await symlink('/etc/passwd', join(userData, 'zplc-learn-mastery.v1.json'));
+    await expect(courseProgressResource({ ...bound, userData: user })).resolves.toEqual({ ok: false, error: 'MCP_INTERNAL_ERROR' });
+  });
+
+  test('cannot mark a lesson passed: no tool takes a lesson or progress, and no tool or resource read changes the progress files (LRN-034)', async () => {
+    const root = await workspace(); const userData = await mkdtemp(join(tmpdir(), 'zplc-mcp-user-data-')); temporary.push(userData);
+    const progressText = JSON.stringify({ schemaVersion: 2, last: null, lessons: { 'edge-counter-pulses': { state: 'passed', grade: null, passedAt: null, startedAt: null, hintsUsed: 0, solutionShown: false } } });
+    await writeFile(join(userData, 'zplc-learn-progress.v2.json'), progressText);
+    await writeFile(join(userData, 'zplc-learn-mastery.v1.json'), '{"schemaVersion":1,"mastered":["motor-start-stop-safe"]}');
+    const bound = await openMcpWorkspace(root); const user = await openMcpUserData(userData); expect(bound).toBeDefined(); expect(user).toBeDefined(); if (!bound || !user) return;
+    const withUserData = { ...bound, userData: user };
+    const snapshot = async () => Object.fromEntries(await Promise.all((await readdir(userData)).sort().map(async (name) => [name, await readFile(join(userData, name), 'utf8')])));
+    const before = await snapshot();
+    const dispatcher = createMcpDispatcher(withUserData, operations()); const signal = new AbortController().signal;
+    const argumentsOf: Record<string, Record<string, unknown>> = {
+      scenario_run: { scenarioId: 'smoke' }, simulation_start: { scenarioId: 'smoke' }, trace_get: { scenarioId: 'smoke' },
+      simulation_step: { scenarioId: 'smoke', cursor: 0, traceSha256: hash }, runtime_snapshot: { scenarioId: 'smoke', cursor: 0, traceSha256: hash },
+    };
+    for (const tool of MCP_TOOL_NAMES.filter((name) => name !== 'firmware_build')) {
+      await dispatcher(tool, argumentsOf[tool] ?? {}, signal);
+      // A tool refuses an argument that names a lesson, so a client cannot pass one in.
+      expect(await dispatcher(tool, { lessonId: 'edge-counter-pulses', passed: true }, signal)).toMatchObject({ isError: true, structuredContent: { error: 'MCP_INVALID_ARGUMENTS' } });
+    }
+    expect(MCP_TOOL_NAMES.filter((name) => /lesson|learn|progress|course|mastery|grade/i.test(name))).toEqual([]);
+    for (let read = 0; read < 3; read += 1) await courseProgressResource(withUserData);
+    expect(await snapshot()).toEqual(before);
   });
 
   test('serializes only public data and rejects accessors, buffers, prototypes, symbols, and oversize results', () => {
@@ -137,6 +175,21 @@ describe('local MCP adapter', () => {
     // an element is a short id of the source: a path, a command or free text is not one, and the result is refused whole
     for (const element of ['/etc/passwd', '../x', 'rung 1', 'block:a b', '', 'x'.repeat(300), 'block:']) {
       expect(failed({ element }).structuredContent).toEqual({ ok: false, error: 'MCP_INTERNAL_ERROR' });
+    }
+  });
+
+  test('the real project and compiler operations answer through the dispatcher over a bundled project', async () => {
+    // Fakes cannot catch a summary the strict result schema does not know (the compiler gained draftCounter and
+    // compiler_check answered MCP_INTERNAL_ERROR): run the shipped operations, not stand-ins.
+    const bound = await openMcpWorkspace(fileURLToPath(new URL('../../projects/multitask_demo', import.meta.url)));
+    expect(bound).toBeDefined(); if (!bound) return;
+    const dispatcher = createMcpDispatcher(bound); const signal = new AbortController().signal;
+    for (const tool of ['project_inspect', 'project_validate', 'compiler_check', 'compiler_compile', 'symbols_list', 'safety_check'] as const) {
+      const result = await dispatcher(tool, {}, signal);
+      expect({ tool, error: (result.structuredContent as { error?: string } | undefined)?.error, isError: result.isError }).toEqual({ tool, error: undefined, isError: undefined });
+    }
+    for (const tool of ['compiler_check', 'compiler_compile'] as const) {
+      expect((await dispatcher(tool, {}, signal)).structuredContent).toMatchObject({ ok: true, summary: { draftCounter: ZPLC_CONSTANTS.DRAFT_COUNTER, codeSize: expect.any(Number) } });
     }
   });
 
