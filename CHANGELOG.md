@@ -58,6 +58,10 @@ and version when the release is cut (see `RELEASING.md`).
   one hardware support page and one safety and limitations page, in English and
   Spanish. The language, function, shell, Kconfig, project file and protocol
   references are generated from the source.
+- **The bench procedure is written down and its tools are tested without a board.**
+  [Hardware in the loop](docs/docs/development/hardware-in-the-loop.md) says what a
+  person does at the bench, one command runs the whole chain and writes a record, and
+  no record of a board exists yet.
 - **Releases are made by a pipeline you can read.** A rehearsal runs everything and
   publishes nothing, the notes say which check each file passed, a bill of materials
   is written from the lockfile, the command line and the MCP server are standalone
@@ -117,6 +121,35 @@ and version when the release is cut (see `RELEASING.md`).
 
 ### Details for contributors
 
+- The hardware-in-the-loop tools are repaired and tested without a board
+  (HIL-001 to HIL-009, HIL-012, HIL-017). Every script of `tools/hil` exits
+  non-zero when a check fails, or is listed with its reason in
+  `tools/hil/non-gating.json`; none names a device path or needs pyserial to
+  load, and the serial port is a parameter, `ZPLC_SERIAL_PORT`, or found from the
+  USB identifiers of the board. The 50 language fixtures compile with the
+  repository compiler and their expected values, in `tools/hil/fixtures.json`,
+  are checked on the native runtime in CI; the 11 tracked `.bin` files are gone.
+  `packages/zplc-hil` compiles, deploys and observes through a device link, and
+  has a hardware runtime port for the scenario engine. `run_chain.py <board>`
+  runs the whole chain, prompting for each physical step, and writes a run
+  record; it and `zplc-hil run` exit with an error without an interactive
+  terminal. `tools/test_crc32_cross.py` compares the C implementation with the
+  TypeScript one. The page [Hardware in the Loop](docs/docs/development/hardware-in-the-loop.md)
+  says what a person does at the bench; the board records of HIL-010 do not
+  exist yet. The records carry the firmware identity that the image reports
+  (`zplc sys build --json`: commit, dirty, board, ABI, draft, options and their
+  hash). The Pico and ESP32-S3 profiles no longer turn the HIL trace on (HIL-013);
+  a HIL image adds `tools/hil/hil_debug.conf`, the chain prints and records
+  that build command, and `tools/hil/validate_hil_trace_profile.py` fails a
+  profile that sets it: the `.conf` files of the single manifest
+  `firmware/app/boards/boards.json`, the ones Zephyr applies for each of its
+  board names, every `.conf` of `firmware/app/boards` and `prj.conf`. The chain
+  compares the I/O description the image reports (`zplc sys io --json`) with
+  the one of `boards.json` and fails on another board, hash or size; its pending loopback
+  and analog items name the channels of that description and leave the wiring
+  `TO BE FILLED`. A run on real hardware of a named, clean image also writes the
+  flat evidence record the manifest derives a support level from; no run on a
+  stand-in does, and adding it to `evidence_refs` is a person's edit.
 - A controller that was never configured is safe on a plant network, and the
   settings that `zplc config save` reports are the ones it stores (COM-014,
   COM-015, COM-027). The default broker (`test.mosquitto.org`) is gone: MQTT is

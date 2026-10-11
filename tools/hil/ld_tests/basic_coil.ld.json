@@ -1,23 +1,47 @@
 {
   "name": "LDBasicCoil",
   "variables": {
-    "outputs": [
-      { "name": "InButton", "type": "BOOL", "address": "%Q0.0" },
-      { "name": "OutLamp", "type": "BOOL", "address": "%Q0.1" }
+    "local": [],
+    "inputs": [
+      {
+        "name": "InButton",
+        "type": "BOOL",
+        "address": "%IX0.0"
+      }
     ],
-    "local": []
+    "outputs": [
+      {
+        "name": "OutLamp",
+        "type": "BOOL",
+        "address": "%QX0.0"
+      }
+    ]
   },
   "rungs": [
     {
+      "id": "rung1",
       "number": 1,
-      "grid": [
-        [
-          { "element": { "type": "left_rail" } },
-          { "element": { "type": "contact_no", "variable": "InButton" } },
-          { "element": { "type": "coil", "variable": "OutLamp" } },
-          { "element": { "type": "right_rail" } }
-        ]
-      ]
+      "elements": [
+        {
+          "id": "c1",
+          "type": "contact_no",
+          "position": {
+            "x": 50,
+            "y": 0
+          },
+          "variable": "InButton"
+        },
+        {
+          "id": "k1",
+          "type": "coil",
+          "position": {
+            "x": 150,
+            "y": 0
+          },
+          "variable": "OutLamp"
+        }
+      ],
+      "connections": []
     }
   ]
 }

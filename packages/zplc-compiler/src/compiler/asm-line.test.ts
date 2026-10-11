@@ -12,7 +12,7 @@ import { AsmEmissionError, asmLineProblem, emitLine, emitLines } from './asm-lin
 import type { AsmLine, Mnemonic } from './asm-line.ts';
 import { compileToBinary } from './index.ts';
 
-describe('AsmLine, the type of what the generator writes', () => {
+describe('AsmLine, the type of what the generator writes (CMP-048)', () => {
     test('a mnemonic that is not in the table does not type-check', () => {
         const known: AsmLine = '    LOAD8 0x2000';
         // @ts-expect-error FOO is not an instruction of the generated table
@@ -26,7 +26,7 @@ describe('AsmLine, the type of what the generator writes', () => {
     });
 });
 
-describe('what is written is checked when it is written', () => {
+describe('what is written is checked when it is written (CMP-048)', () => {
     test('every instruction of the table is accepted, with and without operand and comment', () => {
         for (const name of Object.keys(Opcode)) {
             expect(asmLineProblem(`    ${name}`)).toBeUndefined();
@@ -66,7 +66,7 @@ describe('what is written is checked when it is written', () => {
     });
 });
 
-describe('the assembly of every conformance program passes the check', () => {
+describe('the assembly of every conformance program passes the check (CMP-048)', () => {
     const root = join(import.meta.dir, '..', '..', '..', '..', 'conformance');
 
     test('each line is a blank, a comment, a label, a directive or an instruction of the table', () => {

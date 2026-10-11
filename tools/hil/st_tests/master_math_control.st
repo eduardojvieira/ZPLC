@@ -1,14 +1,14 @@
 PROGRAM MathControlTest
 VAR
     (* Math Results *)
-    res_sqrt AT %Q0.4 : REAL;   (* 0x1004 *)
-    res_ln AT %Q0.8 : REAL;     (* 0x1008 *)
-    res_sin AT %Q0.12 : REAL;   (* 0x100C *)
-    res_expt AT %Q0.16 : INT;   (* 0x1010 *)
+    res_sqrt AT %QD1 : REAL;   (* 0x1004 *)
+    res_ln AT %QD2 : REAL;     (* 0x1008 *)
+    res_sin AT %QD3 : REAL;   (* 0x100C *)
+    res_expt AT %QW8 : INT;   (* 0x1010 *)
     
     (* Control Results *)
-    res_for AT %Q0.18 : INT;    (* 0x1012 *)
-    res_case AT %Q0.20 : INT;   (* 0x1014 *)
+    res_for AT %QW9 : INT;    (* 0x1012 *)
+    res_case AT %QW10 : INT;   (* 0x1014 *)
     
     (* Internal vars *)
     i : INT;
@@ -20,7 +20,7 @@ END_VAR
 res_sqrt := SQRT(2.0);
 res_ln := LN(2.7182818);
 res_sin := SIN(1.570796);
-res_expt := EXPT(2, 8);
+res_expt := REAL_TO_INT(EXPT(2.0, 8));
 
 (* 2. FOR loop test *)
 temp_sum := 0;

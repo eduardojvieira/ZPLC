@@ -14,6 +14,7 @@ const approvedActions = new Map([
   ['actions/setup-node', ['49933ea5288caeca8642d1e84afbd3f7d6820020', 'v4.4.0']],
   ['actions/setup-python', ['a26af69be951a213d495a4c3e4e4022e16d87065', 'v5.6.0']],
   ['oven-sh/setup-bun', ['f4d14e03ff726c06358e5557344e1da148b56cf7', 'v1.2.2']],
+  ['actions/cache', ['5a3ec84eff668545956fd18022155c47e93e2684', 'v4.2.3']],
   ['actions/upload-artifact', ['ea165f8d65b6e75b540449e92b4886f43607fa02', 'v4.6.2']],
   ['actions/download-artifact', ['d3f86a106a0bac45b974a628896c90dbdf5c8093', 'v4.3.0']],
   ['actions/attest', ['508db95dd578ae2727ebd6217d5ba78e4fbda05d', 'v4.2.1']],
@@ -117,7 +118,7 @@ test('rejects an altered SHA or version comment', () => {
 test('requires every frozen Bun install to guard the checked-out root lockfile', async () => {
   const expectedInstallCounts = new Map([
     ['.github/workflows/ci.yml', 2],
-    ['.github/workflows/nightly-quality.yml', 0],
+    ['.github/workflows/nightly-quality.yml', 1],
     ['.github/workflows/release.yml', 4],
     ['.github/workflows/deploy-docs.yml', 1],
   ]);
@@ -162,7 +163,7 @@ test('binds every reusable-CI checkout to the caller SHA without losing Zephyr p
   assert.throws(() => validateCiCheckoutsUseExactSha(workflow.replace('ref: ${{ github.sha }}', 'ref: ${{ github.ref }}')));
 });
 
-test('keeps nightly quality read-only and limited to extended fuzzing plus repeated native simulation', async () => {
+test('keeps nightly quality read-only: extended fuzzing, repeated native simulation and the tests of the desktop systems', async () => {
   const workflow = await readFile(new URL('../.github/workflows/nightly-quality.yml', import.meta.url), 'utf8');
 
   assert.match(workflow, /^on:\n  schedule:\n    - cron:/m);

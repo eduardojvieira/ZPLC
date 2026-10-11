@@ -1,4 +1,4 @@
-import { DebugFrame, OpcodePayload, WatchPayload, ErrorPayload } from './protocol';
+import type { DebugFrame, WatchPayload, ErrorPayload } from './protocol';
 
 export interface TimingSpec {
   afterMs: number;
@@ -9,7 +9,7 @@ export function assertPattern(frames: DebugFrame[], pattern: RegExp): boolean {
   return frames.some(f => pattern.test(f.raw));
 }
 
-export function assertValue(frames: DebugFrame[], addr: number, expected: any): boolean {
+export function assertValue(frames: DebugFrame[], addr: number, expected: unknown): boolean {
   // Look for WATCH frames or memory dumps (if implemented)
   // For now, assume WATCH frames
   const watches = frames.filter(f => f.type === 'watch') as DebugFrame[];

@@ -1,9 +1,9 @@
 PROGRAM TestRS
 VAR
     latch : RS;
-    s_in : BOOL;
-    r_in : BOOL;
-    q_out : BOOL;
+    s_in AT %IX0.0 : BOOL;
+    r_in AT %IX0.1 : BOOL;
+    q_out AT %QX0.0 : BOOL;
 END_VAR
 
 latch(S := s_in, R1 := r_in);

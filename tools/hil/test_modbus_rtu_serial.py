@@ -12,7 +12,10 @@ import struct
 import sys
 import time
 
-import serial
+try:
+    import serial  # pyserial: running these scripts needs it, importing them does not (so that they can be tested without a port)
+except ImportError:
+    serial = None
 
 
 UNIT_ID = 1
@@ -199,13 +202,16 @@ def assert_no_response(ser: serial.Serial, frame: bytes, label: str) -> None:
 
 
 def main() -> int:
+    global UNIT_ID  # declared first: the default of --unit-id reads it
     parser = argparse.ArgumentParser(description="Modbus RTU serial HIL test")
     parser.add_argument("--port", required=True)
     parser.add_argument("--baud", type=int, default=115200)
     parser.add_argument("--unit-id", type=int, default=UNIT_ID)
     args = parser.parse_args()
+    if serial is None:
+        print("error: pyserial is not installed (pip install pyserial)", file=sys.stderr)
+        return 2
 
-    global UNIT_ID
     UNIT_ID = args.unit_id
 
     print(f"[RTU] Opening {args.port} @ {args.baud} baud")

@@ -64,6 +64,7 @@ firmware mode shows and what it does not.
 | Evidence | Label host, QEMU, target build, HIL, and manual results accurately. |
 | Dependencies | Add one only with a concrete need and architectural justification. |
 | Physical operations | Keep build, flash, deploy, and run/debug separate; do not automate physical control through AI or MCP. |
+| Hardware tests | A person starts every command that drives a board, at an interactive terminal, and a record says which image it tested. See [Hardware in the Loop](../development/hardware-in-the-loop.md). |
 
 Do not publish, flash hardware, deploy a PLC program, or actuate equipment
 without explicit authorization.

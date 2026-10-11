@@ -132,6 +132,55 @@ class SizeGate(unittest.TestCase):
         self.assertEqual(board["budget"]["flash"] % 256, 0)
 
 
+class BudgetOfTheBoards(unittest.TestCase):
+    """VF-025: the budget file covers exactly the boards of the board manifest (firmware/app/boards/boards.json).
+
+    A board that is supported and has no budget would fail the cross-build job (a board without a budget fails the
+    gate, above), and a budget for a board that is no longer supported would be a limit that nothing measures.
+    """
+
+    ROOT = Path(__file__).resolve().parents[2]
+    MANIFEST = ROOT / "firmware" / "app" / "boards" / "boards.json"
+    BUDGET = Path(__file__).with_name("size-budget.json")
+
+    def setUp(self) -> None:
+        self.boards = json.loads(self.MANIFEST.read_text())
+        self.budget = json.loads(self.BUDGET.read_text())
+
+    def test_every_supported_board_has_a_budget_under_its_board_id(self) -> None:
+        self.assertEqual(sorted(self.budget["boards"]), sorted(board["board_id"] for board in self.boards))
+
+    def test_each_budget_is_for_the_zephyr_board_of_the_manifest(self) -> None:
+        for board in self.boards:
+            with self.subTest(board["board_id"]):
+                self.assertEqual(self.budget["boards"][board["board_id"]]["zephyr_board"], board["zephyr_board"])
+
+    def test_each_budget_states_flash_and_ram_regions_and_limits_that_hold_what_was_measured(self) -> None:
+        for board_id, entry in self.budget["boards"].items():
+            with self.subTest(board_id):
+                for kind in ("flash", "ram"):
+                    self.assertTrue(entry["regions"][kind], f"{board_id} names no {kind} region")
+                    self.assertGreaterEqual(entry["budget"][kind], entry["measured"][kind])
+
+    def test_the_gate_run_by_ci_fails_a_board_that_the_manifest_names_when_its_log_is_over(self) -> None:
+        # the invocation of the cross-build job: one build log, the board by its Zephyr name
+        board = self.boards[0]
+        entry = self.budget["boards"][board["board_id"]]
+        directory = Path(tempfile.mkdtemp())
+        log = directory / "build.log"
+        regions = {name: 1 for kind in ("flash", "ram") for name in entry["regions"][kind]}
+        regions[entry["regions"]["flash"][-1]] = entry["budget"]["flash"] + 1
+        log.write_text(
+            "Memory region         Used Size  Region Size  %age Used\n"
+            + "".join(f"{name:>16}: {used:>10} B {used + 1:>10} B    1.00%\n" for name, used in regions.items())
+        )
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out):
+            rc = fwtest.size_report(self.BUDGET, None, [], False, log, board["zephyr_board"])
+        self.assertEqual(rc, 1, out.getvalue())
+        self.assertIn("flash", out.getvalue())
+
+
 class TwisterSummary(unittest.TestCase):
     def report(self, suites: list[dict]) -> Path:
         directory = Path(tempfile.mkdtemp())

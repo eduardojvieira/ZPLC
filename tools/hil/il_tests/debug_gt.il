@@ -1,6 +1,6 @@
 PROGRAM DebugGT
 VAR
-  res_gt AT %Q0.0 : BOOL;
+  res_gt AT %QX0.0 : BOOL;
 END_VAR
 
 LD 50

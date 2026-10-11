@@ -8,7 +8,7 @@ END_TYPE
 PROGRAM StructTest
 VAR
     p1 : Point;
-    sum AT %Q0.0 : INT; (* 0x1000 *)
+    sum AT %QW0 : INT; (* 0x1000 *)
 END_VAR
 
 p1.x := 10;
