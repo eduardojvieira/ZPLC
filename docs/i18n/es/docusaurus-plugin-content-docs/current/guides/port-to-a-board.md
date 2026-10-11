@@ -165,9 +165,10 @@ de referencia de placas contiene la tabla de pines. Ambas se generan:
 python3 tools/docs/generate_board_reference.py
 ```
 
-La placa nueva aparece en `cross-build`. Agregue también su nombre a la lista
+La placa nueva aparece en `cross-build`. Agregue también su `ide_id` a la lista
 `target.board` de `packages/zplc-ide/zplc.schema.json`, para que un archivo de proyecto
-pueda nombrarla.
+pueda nombrarla: el archivo se escribe a mano, y una prueba del modelo de proyecto falla
+hasta que la lista y el manifiesto coinciden.
 
 ## Qué está verificado y qué no
 

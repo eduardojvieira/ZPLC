@@ -160,8 +160,9 @@ board reference page holds the pin table. Both are generated:
 python3 tools/docs/generate_board_reference.py
 ```
 
-The new board appears at `cross-build`. Add its name to the `target.board` list of
-`packages/zplc-ide/zplc.schema.json` too, so that a project file may name it.
+The new board appears at `cross-build`. Add its `ide_id` to the `target.board` list of
+`packages/zplc-ide/zplc.schema.json` too, so that a project file may name it: the file is
+written by hand, and a test of the project model fails until the list and the manifest agree.
 
 ## What is verified, and what is not
 
