@@ -27,6 +27,7 @@ tags: [reference, runtime, generated]
 - `firmware/lib/zplc_core/include/zplc_isa.h`
 - `firmware/lib/zplc_core/include/zplc_loader.h`
 - `firmware/lib/zplc_core/include/zplc_program_store.h`
+- `firmware/lib/zplc_core/include/zplc_proto.h`
 - `firmware/lib/zplc_core/include/zplc_retain.h`
 - `firmware/lib/zplc_core/include/zplc_scheduler.h`
 
@@ -2712,6 +2713,180 @@ zplc_program_store_restore_t zplc_pstore_restore( const zplc_pstore_config_t *co
 | `ZPLC_PROGRAM_STORE_ENTRY_OVERHEAD` | `64U` | Backend bytes one stored entry takes beyond its data: the entry header and the padding to the write block. An engineering estimate used by the build-time capacity rule of the Zephyr HAL. |
 | `ZPLC_PROGRAM_STORE_WORST_CASE_BYTES` | `\\ (2U * ((size_t)ZPLC_PROGRAM_STORE_MAX_CHUNKS * \\ (ZPLC_PROGRAM_STORE_CHUNK_SIZE + ZPLC_PROGRAM_STORE_ENTRY_OVERHEAD)) +\\ 3U * (32U + ZPLC_PROGRAM_STORE_ENTRY_OVERHEAD))` | Storage, in bytes, the two slots of the largest artifact and their records take, worst case. |
 | `ZPLC_PROGRAM_STORE_KEY_MAX` | `40U` | The longest key the store uses, with its terminator. |
+
+## `zplc_proto.h`
+
+The codec of the device link protocol: frames, and a decoder that finds them in a byte stream (COM-019).
+
+A frame is a header (sync, version, flags, message, sequence, length), a payload, an optional 32-byte message authentication code and a CRC-32. The numbers and layouts are in zplc_proto_defs.h, generated from tools/contract/protocol.json; the rules (what a decoder discards and counts) are written there too, and the TypeScript codec of Studio follows the same rules. Both run the same generated frames (zplc_proto_vectors.h). Portable C99: no Zephyr header, no allocation, no clock. A decoder owns one buffer of ZPLC_PROTO_FRAME_MAX bytes.
+
+Source: `firmware/lib/zplc_core/include/zplc_proto.h`
+
+### Functions
+
+#### `zplc_proto_frame_size`
+
+```c
+static inline size_t zplc_proto_frame_size(size_t length, int authenticated);
+```
+
+**Source summary:** Bytes of a frame with a payload of @p length bytes.
+
+**Parameters**
+
+| Name | Type | Source description |
+| --- | --- | --- |
+| `length` | `size_t` | — |
+| `authenticated` | `int` | — |
+
+#### `zplc_proto_begin`
+
+```c
+size_t zplc_proto_begin(uint8_t *out, size_t capacity, uint8_t kind, uint8_t message, uint32_t sequence, const uint8_t *payload, uint16_t length, int authenticated);
+```
+
+**Source summary:** Write the header and the payload of a frame.
+
+The caller computes the code over the returned bytes and hands it to zplc_proto_finish().
+
+**Parameters**
+
+| Name | Type | Source description |
+| --- | --- | --- |
+| `out` | `uint8_t *` | — |
+| `capacity` | `size_t` | — |
+| `kind` | `uint8_t` | — |
+| `message` | `uint8_t` | — |
+| `sequence` | `uint32_t` | — |
+| `payload` | `const uint8_t *` | — |
+| `length` | `uint16_t` | — |
+| `authenticated` | `int` | — |
+
+**Source return value:** bytes used (the header and the payload), or 0 when @p capacity cannot hold the whole frame (with the code, when @p authenticated) or @p length is above ZPLC_PROTO_PAYLOAD_MAX_HARD.
+
+#### `zplc_proto_finish`
+
+```c
+size_t zplc_proto_finish(uint8_t *out, size_t used, const uint8_t *mac);
+```
+
+**Source summary:** Append the code (when the frame was begun authenticated) and the checksum.
+
+**Parameters**
+
+| Name | Type | Source description |
+| --- | --- | --- |
+| `out` | `uint8_t *` | — |
+| `used` | `size_t` | bytes zplc_proto_begin() returned |
+| `mac` | `const uint8_t *` | ZPLC_PROTO_MAC_BYTES bytes for an authenticated frame, NULL otherwise |
+
+**Source return value:** the size of the whole frame
+
+#### `zplc_proto_encode`
+
+```c
+size_t zplc_proto_encode(uint8_t *out, size_t capacity, uint8_t kind, uint8_t message, uint32_t sequence, const uint8_t *payload, uint16_t length);
+```
+
+**Source summary:** A frame without a code in one call; returns its size, or 0 when it does not fit.
+
+**Parameters**
+
+| Name | Type | Source description |
+| --- | --- | --- |
+| `out` | `uint8_t *` | — |
+| `capacity` | `size_t` | — |
+| `kind` | `uint8_t` | — |
+| `message` | `uint8_t` | — |
+| `sequence` | `uint32_t` | — |
+| `payload` | `const uint8_t *` | — |
+| `length` | `uint16_t` | — |
+
+#### `zplc_proto_parse`
+
+```c
+int zplc_proto_parse(const uint8_t *data, size_t length, size_t payload_max, zplc_proto_frame_t *frame);
+```
+
+**Source summary:** Check and open one whole frame (a transport that frames its own lines).
+
+**Parameters**
+
+| Name | Type | Source description |
+| --- | --- | --- |
+| `data` | `const uint8_t *` | — |
+| `length` | `size_t` | — |
+| `payload_max` | `size_t` | — |
+| `frame` | `zplc_proto_frame_t *` | — |
+
+**Source return value:** 0 and @p frame filled, or a ZPLC_PROTO_PARSE_* code
+
+#### `zplc_proto_decoder_init`
+
+```c
+void zplc_proto_decoder_init(zplc_proto_decoder_t *decoder, size_t payload_max);
+```
+
+**Source summary:** Start a decoder. @p payload_max is the limit of this link (at most ZPLC_PROTO_PAYLOAD_MAX).
+
+**Parameters**
+
+| Name | Type | Source description |
+| --- | --- | --- |
+| `decoder` | `zplc_proto_decoder_t *` | — |
+| `payload_max` | `size_t` | — |
+
+#### `zplc_proto_decoder_reset`
+
+```c
+void zplc_proto_decoder_reset(zplc_proto_decoder_t *decoder);
+```
+
+**Source summary:** Forget the bytes of a frame that is being assembled (a link that was reopened). Counters stay.
+
+**Parameters**
+
+| Name | Type | Source description |
+| --- | --- | --- |
+| `decoder` | `zplc_proto_decoder_t *` | — |
+
+#### `zplc_proto_decoder_feed`
+
+```c
+void zplc_proto_decoder_feed(zplc_proto_decoder_t *decoder, const uint8_t *data, size_t length, zplc_proto_frame_fn on_frame, void *context);
+```
+
+**Source summary:** Take bytes from the stream.
+
+Discards noise, assembles candidates and calls @p on_frame for each frame whose header and checksum are valid, in order. A candidate that is not valid costs its first byte and the decoder looks for the next sync pair among the bytes it holds, so a frame inside a damaged one is delivered and a damaged frame costs nothing after itself. The work per input byte is bounded by ZPLC_PROTO_FRAME_MAX.
+
+**Parameters**
+
+| Name | Type | Source description |
+| --- | --- | --- |
+| `decoder` | `zplc_proto_decoder_t *` | — |
+| `data` | `const uint8_t *` | — |
+| `length` | `size_t` | — |
+| `on_frame` | `zplc_proto_frame_fn` | — |
+| `context` | `void *` | — |
+
+### Types
+
+| Name | Kind | Source summary |
+| --- | --- | --- |
+| `kind` | Struct | A frame that passed the checks of the codec. The pointers point into the buffer that was parsed. |
+| `frames` | Struct | What a decoder discarded, and why. Counted since init. |
+| `ZPLC_PROTO_FRAME_MAX` | Struct | — |
+| `zplc_proto_frame_fn` | Typedef | Called once for each valid frame. The frame is valid until the callback returns. |
+
+### Constants and macros
+
+| Name | Value | Source summary |
+| --- | --- | --- |
+| `ZPLC_PROTO_H` | `—` | — |
+| `ZPLC_PROTO_PAYLOAD_MAX_CONFIGURED` | `CONFIG_ZPLC_PROTO_PAYLOAD_MAX` | — |
+| `ZPLC_PROTO_PAYLOAD_MAX_CONFIGURED` | `ZPLC_PROTO_PAYLOAD_MAX_DEFAULT` | — |
+| `ZPLC_PROTO_FRAME_MAX` | `\\ (ZPLC_PROTO_HEADER_BYTES + ZPLC_PROTO_PAYLOAD_MAX + ZPLC_PROTO_MAC_BYTES + ZPLC_PROTO_CRC_BYTES)` | Bytes of the largest frame: header, payload, code and checksum. |
 
 ## `zplc_retain.h`
 

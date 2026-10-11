@@ -87,6 +87,7 @@ add_library(zplc_core STATIC
     src/core/zplc_retain.c
     src/core/zplc_program_store.c
     src/core/zplc_exchange.c
+    src/core/zplc_proto.c
 )
 
 target_compile_definitions(zplc_core PUBLIC ZPLC_CORE_VERSION_STR="${ZPLC_CORE_VERSION_STR}")
@@ -189,6 +190,19 @@ if(ZPLC_BUILD_FUZZER)
     if(UNIX AND NOT APPLE)
         target_link_libraries(fuzz_run_program PRIVATE rt)
     endif()
+
+    # COM-019, VF-014: the frame decoder of the device link protocol, on mutated frames and streams.
+    add_executable(fuzz_proto_frame
+        tests/fuzz_proto_frame.c
+        src/core/zplc_proto.c
+    )
+
+    target_include_directories(fuzz_proto_frame PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/include
+    )
+
+    target_compile_options(fuzz_proto_frame PRIVATE ${ZPLC_FUZZ_FLAGS})
+    target_link_options(fuzz_proto_frame PRIVATE ${ZPLC_FUZZ_FLAGS})
 endif()
 
 enable_testing()
@@ -388,6 +402,20 @@ if(UNIX AND NOT APPLE)
 endif()
 
 add_test(NAME test_exchange COMMAND test_exchange)
+
+# Test: the codec of the device link protocol against the frames generated from tools/contract/protocol.json
+# (COM-019). Also run under the sanitizers.
+add_executable(test_proto_codec
+    tests/test_proto_codec.c
+    src/core/zplc_proto.c
+)
+
+target_include_directories(test_proto_codec PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/tests
+)
+
+add_test(NAME test_proto_codec COMMAND test_proto_codec)
 
 # Test: the identity a firmware image or the runtime reports (REL-023)
 add_executable(test_fw_identity

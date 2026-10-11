@@ -1,8 +1,9 @@
 // The references that are read off a source file (DOC-008): Kconfig options, shell commands, the zplc.json schema, the
-// scenario file format, the command line, the MCP server and the runtime session protocol. (The runtime C API and the
-// boards have their own generators, tools/docs/generate_runtime_reference.py and generate_board_reference.py.)
+// scenario file format, the command line, the MCP server, the runtime session protocol and the device link protocol
+// (COM-029). (The runtime C API and the boards have their own generators,
+// tools/docs/generate_runtime_reference.py and generate_board_reference.py.)
 //
-//   bun tools/docs/generate_source_references.ts           write the seven pages and their Spanish twins
+//   bun tools/docs/generate_source_references.ts           write the eight pages and their Spanish twins
 //   bun tools/docs/generate_source_references.ts --check   exit 1 when a page is stale, or when a source holds something
 //                                                          that the page cannot say (a command without a description)
 //
@@ -26,6 +27,7 @@ export const SOURCES = {
   engine: 'packages/zplc-ide/src/test-engine/index.ts',
   workspace: 'packages/zplc-ide/src/cli/workspace.ts',
   protocol: 'firmware/apps/posix_host/src/native_runtime_session.c',
+  deviceProtocol: 'tools/contract/protocol.json',
   scenarioExample: 'packages/zplc-ide/projects/blinky_st/tests/blinky-st.scenario.json',
 } as const;
 
@@ -458,6 +460,112 @@ export function protocolBody(lang: Lang): string {
 }
 
 // ---------------------------------------------------------------------------
+// The device link protocol (COM-019, COM-029)
+// ---------------------------------------------------------------------------
+
+interface DeviceProtocolField { name: string; type: string; enum?: string; doc: string }
+interface DeviceProtocolMessage { name: string; id: number; access: string; summary: L10n; request: DeviceProtocolField[]; response: DeviceProtocolField[] }
+interface DeviceProtocolEvent { name: string; id: number; mask: string | null; summary: L10n; fields: DeviceProtocolField[] }
+interface DeviceProtocolEnum { name: string; doc: string; members: { name: string; value: number; doc: string }[] }
+interface DeviceProtocol {
+  version: number;
+  frame: {
+    sync: number[]; headerBytes: number; macBytes: number; crcBytes: number;
+    header: { name: string; offset: number; size: number; doc: string }[];
+    kinds: { name: string; value: number; doc: string }[];
+  };
+  limits: Record<string, number>;
+  enums: DeviceProtocolEnum[];
+  errors: { name: string; value: number; doc: L10n }[];
+  capabilities: { name: string; bit: number; doc: L10n }[];
+  eventMask: { name: string; bit: number; doc: string }[];
+  access: { name: string; doc: L10n }[];
+  rangeDetail: { name: string; type: string; doc: string }[];
+  messages: DeviceProtocolMessage[];
+  events: DeviceProtocolEvent[];
+}
+
+const hexByte = (value: number, width = 2) => `0x${value.toString(16).toUpperCase().padStart(width, '0')}`;
+const parseDeviceProtocol = (): DeviceProtocol => JSON.parse(read(SOURCES.deviceProtocol)) as DeviceProtocol;
+
+const FRAME_RULES: Record<'en' | 'es', string[]> = {
+  en: [
+    'All numbers are little-endian. A frame is the header, the payload, a 32-byte HMAC-SHA-256 code when the AUTH flag is set, and a CRC-32 (the CRC of the artifact container, ISO-HDLC) of every byte before it.',
+    'A decoder that reads a stream keeps the bytes of the frame it is assembling. When the header is not valid (sync, version, reserved bits, kind 3, length above its limit) or the checksum does not match, it discards the first byte of that candidate, looks for the next sync pair among the bytes it already holds, and goes on from there. A frame that was hidden inside the bytes of a damaged one is therefore delivered, and no frame after a damaged one is lost. Bytes that are not a sync pair are noise and are not counted; every abandoned candidate is counted, by reason.',
+    'A transport that frames its own lines (one frame per line, in hexadecimal, as the device shell does) hands each line to the decoder whole.',
+    'The code covers the header and the payload, so the sequence number and the direction of the frame are inside it. The checksum covers everything before it, the code included.',
+  ],
+  es: [
+    'Todos los números son little-endian. Una trama es el encabezado, la carga útil, un código HMAC-SHA-256 de 32 bytes cuando la bandera AUTH está activa, y un CRC-32 (el CRC del contenedor de artefacto, ISO-HDLC) de todos los bytes anteriores.',
+    'Un decodificador que lee un flujo conserva los bytes de la trama que está armando. Cuando el encabezado no es válido (sincronía, versión, bits reservados, clase 3, longitud sobre su límite) o la suma de verificación no coincide, descarta el primer byte de ese candidato, busca el siguiente par de sincronía entre los bytes que ya tiene y continúa desde ahí. Una trama escondida dentro de los bytes de una dañada se entrega, y ninguna trama posterior a una dañada se pierde. Los bytes que no son un par de sincronía son ruido y no se cuentan; cada candidato abandonado se cuenta, por motivo.',
+    'Un transporte que enmarca sus propias líneas (una trama por línea, en hexadecimal, como hace la consola del dispositivo) entrega cada línea completa al decodificador.',
+    'El código cubre el encabezado y la carga útil, de modo que el número de secuencia y el sentido de la trama quedan dentro. La suma de verificación cubre todo lo anterior, el código incluido.',
+  ],
+};
+
+export function deviceProtocolBody(lang: Lang): string {
+  const p = parseDeviceProtocol();
+  const intro: L10n = {
+    en: `The device link protocol is how Studio and a device talk: a framed, versioned binary protocol with a length, a sequence number and a checksum on every frame, capability negotiation and explicit error codes. It runs over UART, USB serial and TCP. This is protocol version ${code(String(p.version))}: ${p.messages.length} messages and ${p.events.length} events. The text shell of the device stays: it is the older protocol and the recovery console, and ${code('zplc sys info --json')} keeps its keys. This page is read off ${code(SOURCES.deviceProtocol)}, the one definition the C codec of the firmware and the TypeScript codec of Studio are generated from.`,
+    es: `El protocolo de enlace con el dispositivo es como hablan Studio y un dispositivo: un protocolo binario con tramas y versión, con longitud, número de secuencia y suma de verificación en cada trama, negociación de capacidades y códigos de error explícitos. Funciona sobre UART, USB serie y TCP. Esta es la versión ${code(String(p.version))} del protocolo: ${p.messages.length} mensajes y ${p.events.length} eventos. La consola de texto del dispositivo se mantiene: es el protocolo anterior y la consola de recuperación, y ${code('zplc sys info --json')} conserva sus claves. Esta página se lee de ${code(SOURCES.deviceProtocol)}, la definición única de la que se generan el códec C del firmware y el códec TypeScript de Studio.`,
+  };
+  const h = (en: string, es: string) => `## ${lang === 'en' ? en : es}`;
+  const h3 = (text: string) => `### ${text}`;
+  const fieldHead = lang === 'en' ? ['Field', 'Type', 'Meaning'] : ['Campo', 'Tipo', 'Significado'];
+  const bytesOf = (size: number) => (size === 1 ? '1 byte' : `${size} bytes`);
+  const typeOf = (field: DeviceProtocolField) => {
+    const named = field.enum ? `${field.type} (${field.enum})` : field.type;
+    return code(named);
+  };
+  const messageSection = (message: DeviceProtocolMessage): string => {
+    const parts = [h3(`${message.name} (${hexByte(message.id)})`), `${prose(loc(message.summary, lang))} ${lang === 'en' ? 'Access' : 'Acceso'}: ${code(message.access)}.`];
+    const none = lang === 'en' ? 'no fields' : 'sin campos';
+    parts.push(lang === 'en' ? '**Request**' : '**Solicitud**');
+    parts.push(message.request.length === 0 ? none : table(fieldHead, message.request.map((f) => [code(f.name), typeOf(f), cell(f.doc)])));
+    parts.push(lang === 'en' ? '**Response** (after the status byte)' : '**Respuesta** (después del byte de estado)');
+    parts.push(message.response.length === 0 ? none : table(fieldHead, message.response.map((f) => [code(f.name), typeOf(f), cell(f.doc)])));
+    return parts.join('\n\n');
+  };
+  const enumRows = p.enums.flatMap((e) => e.members.map((m) => [code(e.name), code(m.name), String(m.value), cell(m.doc)]));
+  return [
+    intro[lang],
+    h('Frame', 'Trama'),
+    table(lang === 'en' ? ['Field', 'Offset', 'Bytes', 'Meaning'] : ['Campo', 'Desplazamiento', 'Bytes', 'Significado'],
+      p.frame.header.map((f) => [code(f.name), String(f.offset), bytesOf(f.size), cell(f.doc)])),
+    table(lang === 'en' ? ['Kind', 'Value', 'Meaning'] : ['Clase', 'Valor', 'Significado'],
+      p.frame.kinds.map((k) => [code(k.name), String(k.value), cell(k.doc)])),
+    `${lang === 'en' ? 'Sync bytes' : 'Bytes de sincronía'}: ${p.frame.sync.map((b) => code(hexByte(b))).join(' ')}. ${lang === 'en' ? 'Code' : 'Código'}: ${bytesOf(p.frame.macBytes)}. CRC-32: ${bytesOf(p.frame.crcBytes)}.`,
+    FRAME_RULES[lang].join('\n\n'),
+    h('Limits', 'Límites'),
+    table(lang === 'en' ? ['Limit', 'Value'] : ['Límite', 'Valor'], Object.entries(p.limits).map(([name, value]) => [code(name), String(value)])),
+    h('Capabilities', 'Capacidades'),
+    table(lang === 'en' ? ['Capability', 'Bit', 'Meaning'] : ['Capacidad', 'Bit', 'Significado'],
+      p.capabilities.map((c) => [code(c.name), String(c.bit), cell(loc(c.doc, lang))])),
+    h('Access classes', 'Clases de acceso'),
+    table(lang === 'en' ? ['Class', 'Meaning'] : ['Clase', 'Significado'], p.access.map((a) => [code(a.name), cell(loc(a.doc, lang))])),
+    h('Error codes', 'Códigos de error'),
+    table(lang === 'en' ? ['Error', 'Value', 'Meaning'] : ['Error', 'Valor', 'Significado'],
+      p.errors.map((e) => [code(e.name), String(e.value), cell(loc(e.doc, lang))])),
+    (lang === 'en'
+      ? `A response starts with its status byte. After ${code('RANGE')} the response carries ${p.rangeDetail.map((d) => code(d.name)).join(', ')} (${code('u16')} each): the access that was refused and the region that holds the address.`
+      : `Una respuesta empieza con su byte de estado. Tras ${code('RANGE')} la respuesta lleva ${p.rangeDetail.map((d) => code(d.name)).join(', ')} (${code('u16')} cada uno): el acceso que se rechazó y la región que contiene la dirección.`),
+    h('Enumerations', 'Enumeraciones'),
+    table(lang === 'en' ? ['Enumeration', 'Name', 'Value', 'Meaning'] : ['Enumeración', 'Nombre', 'Valor', 'Significado'], enumRows),
+    h('Event mask', 'Máscara de eventos'),
+    table(lang === 'en' ? ['Event kind', 'Bit', 'Meaning'] : ['Clase de evento', 'Bit', 'Significado'],
+      p.eventMask.map((m) => [code(m.name), String(m.bit), cell(m.doc)])),
+    h('Messages', 'Mensajes'),
+    table(lang === 'en' ? ['Message', 'Number', 'Access', 'Meaning'] : ['Mensaje', 'Número', 'Acceso', 'Significado'],
+      p.messages.map((m) => [code(m.name), hexByte(m.id), code(m.access), cell(loc(m.summary, lang))])),
+    ...p.messages.map(messageSection),
+    h('Events', 'Eventos'),
+    table(lang === 'en' ? ['Event', 'Number', 'Mask bit', 'Fields', 'Meaning'] : ['Evento', 'Número', 'Bit de máscara', 'Campos', 'Significado'],
+      p.events.map((e) => [code(e.name), hexByte(e.id), e.mask === null ? (lang === 'en' ? 'always' : 'siempre') : code(e.mask),
+        e.fields.map((f) => `${code(f.name)} (${code(f.type)})`).join(', '), cell(loc(e.summary, lang))])),
+  ].join('\n\n');
+}
+
+// ---------------------------------------------------------------------------
 // Pages
 // ---------------------------------------------------------------------------
 
@@ -510,6 +618,13 @@ export const PAGES: ReferencePage[] = [
     label: { en: 'Session protocol', es: 'Protocolo de sesión' },
     description: { en: 'The request methods of the native POSIX runtime session, read off its source.', es: 'Los métodos de solicitud de la sesión del runtime POSIX nativo, leídos de su fuente.' },
     body: protocolBody,
+  },
+  {
+    path: 'reference/device-protocol.md',
+    title: { en: 'Device link protocol', es: 'Protocolo de enlace con el dispositivo' },
+    label: { en: 'Device link protocol', es: 'Protocolo de enlace' },
+    description: { en: 'The framed protocol that Studio and a device speak: frame, limits, capabilities, errors, messages and events, read off its definition.', es: 'El protocolo con tramas que hablan Studio y un dispositivo: trama, límites, capacidades, errores, mensajes y eventos, leídos de su definición.' },
+    body: deviceProtocolBody,
   },
 ];
 

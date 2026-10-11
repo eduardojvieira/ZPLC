@@ -93,6 +93,7 @@ const sidebars = {
         'reference/cli',
         'reference/mcp',
         'reference/runtime-protocol',
+        'reference/device-protocol',
       ],
     },
     {

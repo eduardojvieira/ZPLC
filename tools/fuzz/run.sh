@@ -1,14 +1,16 @@
 #!/usr/bin/env bash
-# Build the two libFuzzer targets with Clang and the address and undefined-behaviour sanitizers, and run them
+# Build the libFuzzer targets with Clang and the address and undefined-behaviour sanitizers, and run them
 # (VF-014). Exits non-zero when a target finds anything and leaves the reproducer files in the artifact directory.
 #
-#   tools/fuzz/run.sh [seconds] [loader|run|both]
+#   tools/fuzz/run.sh [seconds] [loader|run|proto|both]
 #
 #   seconds   time per target, default 60 (the pull-request gate; the nightly run passes 1800 or more)
 #   target    loader: zplc_loader_verify on mutated containers (the CRC is repaired so mutations reach the verifier)
 #             run:    load accepted artifacts, run them for a few scans under the sanitizers and check the
 #                     invariants listed in firmware/lib/zplc_core/tests/fuzz_run_program.c
-#             both:   the two, in parallel (default)
+#             proto:  the frame decoder of the device link protocol (COM-019), on mutated frames and streams; the
+#                     invariants are in firmware/lib/zplc_core/tests/fuzz_proto_frame.c
+#             both:   every target above, in parallel (default; the name is older than the third target)
 #
 # Environment (all optional):
 #   ZPLC_FUZZ_WORK        build and corpus directory (default: a fresh temporary directory)
@@ -27,7 +29,7 @@ set -euo pipefail
 
 seconds="${1:-60}"
 targets="${2:-both}"
-case "$targets" in loader | run | both) ;; *) echo "usage: $0 [seconds] [loader|run|both]" >&2; exit 2 ;; esac
+case "$targets" in loader | run | proto | both) ;; *) echo "usage: $0 [seconds] [loader|run|proto|both]" >&2; exit 2 ;; esac
 case "$seconds" in '' | *[!0-9]*) echo "seconds must be a whole number" >&2; exit 2 ;; esac
 
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
@@ -46,7 +48,7 @@ command -v ninja > /dev/null && generator=(-G Ninja)
 cmake -S "$root/firmware/lib/zplc_core" -B "$work/build" ${generator[@]+"${generator[@]}"} -DCMAKE_C_COMPILER="$cc" \
   -DCMAKE_BUILD_TYPE=RelWithDebInfo -DZPLC_BUILD_FUZZER=ON > "$work/configure.log" 2>&1 \
   || { cat "$work/configure.log" >&2; exit 2; }
-cmake --build "$work/build" --target fuzz_loader_verify fuzz_run_program --parallel > "$work/build.log" 2>&1 \
+cmake --build "$work/build" --target fuzz_loader_verify fuzz_run_program fuzz_proto_frame --parallel > "$work/build.log" 2>&1 \
   || { cat "$work/build.log" >&2; exit 2; }
 
 # Seed corpus: one directory both targets read (a target only adds what reaches new coverage to it).
@@ -72,6 +74,25 @@ print("seed corpus: %d compiler artifacts, 1 fixture, %d finding reproducers" % 
 PY
 python3 "$root/tools/fuzz/make_dict.py" > "$work/zplc.dict"
 
+# The frames and streams of the device link protocol are the seeds of the proto target, with the sync pair and
+# the version as its dictionary.
+proto_corpus="$work/corpus-proto-seed"
+rm -rf "$proto_corpus"
+mkdir -p "$proto_corpus"
+python3 - "$root" "$proto_corpus" << 'PY'
+import json, sys
+from pathlib import Path
+
+root, corpus = Path(sys.argv[1]), Path(sys.argv[2])
+vectors = json.loads((root / "tools/contract/golden/protocol-vectors.json").read_text())
+for frame in vectors["frames"]:
+    (corpus / ("frame-" + frame["name"])).write_bytes(bytes.fromhex(frame["wire"]))
+for stream in vectors["streams"]:
+    (corpus / ("stream-" + stream["name"])).write_bytes(bytes.fromhex(stream["hex"]))
+print("proto seed corpus: %d frames, %d streams" % (len(vectors["frames"]), len(vectors["streams"])))
+PY
+printf '"\\x5a\\xa5\\x01"\n"\\x5a\\xa5"\n' > "$work/proto.dict"
+
 export ASAN_OPTIONS="${ASAN_OPTIONS:-detect_leaks=1:abort_on_error=0:symbolize=1}"
 export UBSAN_OPTIONS="${UBSAN_OPTIONS:-halt_on_error=1:print_stacktrace=1}"
 
@@ -84,11 +105,12 @@ seed_flags=()
 
 pids=()
 names=()
-launch() { # name, binary, max_len
-  local name="$1" binary="$2" max_len="$3"
-  # A private copy of the corpus per target: they both add to it.
-  cp -R "$corpus" "$work/corpus-$name"
-  (cd "$work" && exec "$binary" "$work/corpus-$name" -dict="$work/zplc.dict" -max_len="$max_len" -timeout=5 -rss_limit_mb=2048 \
+launch() { # name, binary, max_len, [dictionary]
+  local name="$1" binary="$2" max_len="$3" dict="${4:-$work/zplc.dict}" seeds="$corpus"
+  [ "$name" = proto ] && seeds="$proto_corpus"
+  # A private copy of the corpus per target: they all add to it.
+  cp -R "$seeds" "$work/corpus-$name"
+  (cd "$work" && exec "$binary" "$work/corpus-$name" -dict="$dict" -max_len="$max_len" -timeout=5 -rss_limit_mb=2048 \
     -max_total_time="$seconds" -artifact_prefix="$artifacts/$name-" -print_final_stats=1 \
     ${fork_flags[@]+"${fork_flags[@]}"} ${seed_flags[@]+"${seed_flags[@]}"}) > "$work/$name.log" 2>&1 &
   pids+=("$!")
@@ -97,6 +119,7 @@ launch() { # name, binary, max_len
 
 [ "$targets" = loader ] || [ "$targets" = both ] && launch loader "$work/build/fuzz_loader_verify" 65536
 [ "$targets" = run ] || [ "$targets" = both ] && launch run "$work/build/fuzz_run_program" 6144
+[ "$targets" = proto ] || [ "$targets" = both ] && launch proto "$work/build/fuzz_proto_frame" 1200 "$work/proto.dict"
 
 status=0
 for index in "${!pids[@]}"; do

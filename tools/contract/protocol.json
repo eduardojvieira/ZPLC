@@ -1,0 +1,623 @@
+{
+  "$comment": "The ZPLC device link protocol (COM-019, COM-029): the one definition of the framed protocol that Studio and a device speak. tools/contract/generate_protocol.py writes the C header (firmware/lib/zplc_core/include/zplc_proto_defs.h), the TypeScript tables (packages/zplc-ide/src/runtime/link/protocol.generated.ts), the test frames both codecs run (tools/contract/golden/protocol-vectors.json and firmware/lib/zplc_core/tests/zplc_proto_vectors.h) and, through tools/docs/generate_source_references.ts, the reference page. Change this file, then run `python3 tools/contract/generate_protocol.py`. A change that renumbers a message, an error or a field is a protocol change: increase `version`.",
+  "schema": 1,
+  "name": "ZPLC device link",
+  "version": 1,
+  "frame": {
+    "byteOrder": "little-endian",
+    "sync": [90, 165],
+    "headerBytes": 11,
+    "macBytes": 32,
+    "crcBytes": 4,
+    "header": [
+      { "name": "sync", "offset": 0, "size": 2, "doc": "The two bytes 0x5A 0xA5. A stream decoder looks for them to find the start of a frame." },
+      { "name": "version", "offset": 2, "size": 1, "doc": "The protocol version the sender speaks. A frame of another version is dropped and counted; its payload is never read." },
+      { "name": "flags", "offset": 3, "size": 1, "doc": "Bits 0 and 1: the kind of the frame. Bit 2: a message authentication code follows the payload. Bits 3 to 7 are zero." },
+      { "name": "message", "offset": 4, "size": 1, "doc": "The message number (a request and its response carry the same number)." },
+      { "name": "sequence", "offset": 5, "size": 4, "doc": "A request carries the sequence number of the sender; its response repeats it. An event carries the device's own event counter. Inside an authenticated session the sequence is covered by the code and must follow the one before it by exactly one." },
+      { "name": "length", "offset": 9, "size": 2, "doc": "Bytes of the payload." }
+    ],
+    "kinds": [
+      { "name": "REQUEST", "value": 0, "doc": "Studio asks the device to do something." },
+      { "name": "RESPONSE", "value": 1, "doc": "The device answers one request, with the same message number and sequence." },
+      { "name": "EVENT", "value": 2, "doc": "The device reports something that happened, without being asked." }
+    ],
+    "flagBits": [
+      { "name": "AUTH", "bit": 2, "doc": "A 32-byte HMAC-SHA-256 follows the payload." }
+    ],
+    "macCovers": "Every byte of the frame before the code: the header and the payload.",
+    "crcCovers": "Every byte of the frame before the checksum: the header, the payload and the code when there is one. CRC-32/ISO-HDLC, the CRC of the artifact container.",
+    "resync": "A decoder that reads a stream keeps the bytes of the frame it is assembling. When the header is not valid (sync, version, reserved bits, length above its limit) or the checksum does not match, it discards the first byte of that candidate, looks for the next sync pair among the bytes it already holds, and goes on from there. A frame that was hidden inside the bytes of a damaged one is therefore delivered, and no frame after a damaged one is lost. A transport that frames its own lines (one frame per line, in hexadecimal) hands each line to the decoder whole and needs no resynchronisation."
+  },
+  "limits": {
+    "payloadMaxDefault": 512,
+    "payloadMaxHard": 1024,
+    "payloadMaxMin": 64,
+    "sessionIdleSecondsDefault": 30,
+    "challengeSeconds": 10,
+    "eventQueueDefault": 16,
+    "eventPayloadMax": 64,
+    "watchEntriesMax": 8,
+    "forceBytesMax": 260,
+    "sessionNameBytes": 16,
+    "keyBytes": 32,
+    "nonceBytes": 16
+  },
+  "enums": [
+    {
+      "name": "TRANSPORT", "doc": "How a link reaches the device.",
+      "members": [
+        { "name": "SERIAL", "value": 0, "doc": "UART or USB serial: the local engineering link. Whoever holds the cable holds the device." },
+        { "name": "NETWORK", "value": 1, "doc": "TCP or any other link that a network reaches. Every frame of a session is authenticated." }
+      ]
+    },
+    {
+      "name": "RUN_STATE", "doc": "The state of the PLC runtime.",
+      "members": [
+        { "name": "STOPPED", "value": 0, "doc": "No program is running." },
+        { "name": "RUNNING", "value": 1, "doc": "The program is scanning." },
+        { "name": "PAUSED", "value": 2, "doc": "Held at a cycle boundary or at a breakpoint." },
+        { "name": "FAULT", "value": 3, "doc": "A fault is latched; the outputs are at their safe values." }
+      ]
+    },
+    {
+      "name": "FAULT", "doc": "Why the runtime is in FAULT.",
+      "members": [
+        { "name": "NONE", "value": 0, "doc": "No fault." },
+        { "name": "DEADLINE", "value": 1, "doc": "A task missed its deadline too many times in a row." },
+        { "name": "VM", "value": 2, "doc": "A task faulted: a VM error or the instruction budget." },
+        { "name": "RUNTIME", "value": 3, "doc": "Any other failure of the runtime." }
+      ]
+    },
+    {
+      "name": "SESSION_STATE", "doc": "What the device says about its session in a hello.",
+      "members": [
+        { "name": "NONE", "value": 0, "doc": "No session is open." },
+        { "name": "THIS_LINK", "value": 1, "doc": "The session is open on the link that asks." },
+        { "name": "OTHER_LINK", "value": 2, "doc": "A session is open on another link." }
+      ]
+    },
+    {
+      "name": "SESSION_END", "doc": "Why a session ended (the reason of the session-ended event).",
+      "members": [
+        { "name": "CLOSED", "value": 0, "doc": "The client closed it." },
+        { "name": "IDLE", "value": 1, "doc": "Nothing arrived for the idle time." },
+        { "name": "TAKEN_OVER", "value": 2, "doc": "A person at the serial link took the session over." },
+        { "name": "LINK_LOST", "value": 3, "doc": "The link went away." },
+        { "name": "KEY_CHANGED", "value": 4, "doc": "The key of the device was changed or erased." }
+      ]
+    },
+    {
+      "name": "FORCE_CHANGE", "doc": "What happened to the forces (the change of the force event).",
+      "members": [
+        { "name": "SET", "value": 0, "doc": "A force was set." },
+        { "name": "CLEARED", "value": 1, "doc": "One force was cleared." },
+        { "name": "CLEARED_ALL", "value": 2, "doc": "Every force was cleared." },
+        { "name": "RELEASED", "value": 3, "doc": "The forces of a session were released because it ended." },
+        { "name": "CHANGED", "value": 4, "doc": "The forces changed by another path (the shell)." }
+      ]
+    },
+    {
+      "name": "LOG_LEVEL", "doc": "The level of a log line.",
+      "members": [
+        { "name": "ERROR", "value": 0, "doc": "An error." },
+        { "name": "WARNING", "value": 1, "doc": "A warning." },
+        { "name": "INFO", "value": 2, "doc": "An information line." },
+        { "name": "DEBUG", "value": 3, "doc": "A debug line." }
+      ]
+    },
+    {
+      "name": "CREDENTIAL", "doc": "The kind of a credential that is uploaded.",
+      "members": [
+        { "name": "CA", "value": 0, "doc": "The certificate authority certificate." },
+        { "name": "CLIENT", "value": 1, "doc": "The client certificate." },
+        { "name": "KEY", "value": 2, "doc": "The client private key." }
+      ]
+    }
+  ],
+  "errors": [
+    { "name": "OK", "value": 0, "doc": { "en": "The request was done.", "es": "La solicitud se cumplió." } },
+    { "name": "UNKNOWN_MESSAGE", "value": 1, "doc": { "en": "The device does not know the message number.", "es": "El dispositivo no conoce el número de mensaje." } },
+    { "name": "BAD_REQUEST", "value": 2, "doc": { "en": "The payload does not have the layout of the message.", "es": "La carga útil no tiene el formato del mensaje." } },
+    { "name": "UNSUPPORTED", "value": 3, "doc": { "en": "This build does not have the capability the message needs (see the capabilities of the hello).", "es": "Esta compilación no tiene la capacidad que el mensaje necesita (véanse las capacidades del saludo)." } },
+    { "name": "NO_SESSION", "value": 4, "doc": { "en": "The message needs a session that is open on this link.", "es": "El mensaje necesita una sesión abierta en este enlace." } },
+    { "name": "SESSION_BUSY", "value": 5, "doc": { "en": "A session is already open on another link.", "es": "Ya hay una sesión abierta en otro enlace." } },
+    { "name": "AUTH_REQUIRED", "value": 6, "doc": { "en": "A network link has no authenticated session: open one with a key that was provisioned over the serial link.", "es": "Un enlace de red no tiene sesión autenticada: abra una con una clave que se aprovisionó por el enlace serie." } },
+    { "name": "AUTH_FAILED", "value": 7, "doc": { "en": "The device holds no key, or the session could not be authenticated.", "es": "El dispositivo no tiene clave, o no se pudo autenticar la sesión." } },
+    { "name": "CHALLENGE_STALE", "value": 8, "doc": { "en": "The challenge of the open request was not the one the device issued last, or it expired: ask for a new one.", "es": "El desafío de la solicitud de apertura no era el último que emitió el dispositivo, o venció: pida uno nuevo." } },
+    { "name": "RANGE", "value": 9, "doc": { "en": "The access is not inside one region of PLC memory, or the region is not writable. The response carries the requested address and length and the region that holds the address.", "es": "El acceso no está dentro de una región de la memoria del PLC, o la región no admite escritura. La respuesta lleva la dirección y la longitud pedidas y la región que contiene la dirección." } },
+    { "name": "FULL", "value": 10, "doc": { "en": "A queue has no room; nothing was done.", "es": "Una cola no tiene espacio; no se hizo nada." } },
+    { "name": "STATE", "value": 11, "doc": { "en": "The runtime is not in a state where the message applies (a program transfer while running, RUN with no program).", "es": "El runtime no está en un estado donde el mensaje aplica (una transferencia de programa en marcha, RUN sin programa)." } },
+    { "name": "REFUSED", "value": 12, "doc": { "en": "A rule of the device forbids it on this link (a takeover from the network, a key over the network).", "es": "Una regla del dispositivo lo prohíbe en este enlace (una toma de control desde la red, una clave por la red)." } },
+    { "name": "PROGRAM_INVALID", "value": 13, "doc": { "en": "The loader refused the artifact.", "es": "El cargador rechazó el artefacto." } },
+    { "name": "TOO_LARGE", "value": 14, "doc": { "en": "The program is larger than the device accepts.", "es": "El programa es más grande de lo que el dispositivo acepta." } },
+    { "name": "CRC", "value": 15, "doc": { "en": "The CRC-32 of the transferred program is not the one announced.", "es": "El CRC-32 del programa transferido no es el anunciado." } },
+    { "name": "BUSY", "value": 16, "doc": { "en": "A resource the message needs is in use; try again.", "es": "Un recurso que el mensaje necesita está en uso; reintente." } },
+    { "name": "FAILED", "value": 17, "doc": { "en": "The device tried and could not do it.", "es": "El dispositivo lo intentó y no pudo." } }
+  ],
+  "capabilities": [
+    { "name": "SESSION", "bit": 0, "doc": { "en": "Sessions: one writer at a time, with an idle timeout.", "es": "Sesiones: un solo escritor a la vez, con tiempo de inactividad." } },
+    { "name": "MEMORY", "bit": 1, "doc": { "en": "Read and write PLC memory; a write is whole with respect to the scan.", "es": "Leer y escribir la memoria del PLC; una escritura es completa respecto al ciclo." } },
+    { "name": "FORCE", "bit": 2, "doc": { "en": "Set, clear and list forces; the forces of a session end with it.", "es": "Fijar, borrar y listar forzados; los forzados de una sesión terminan con ella." } },
+    { "name": "RUN_CONTROL", "bit": 3, "doc": { "en": "RUN, STOP, PAUSE, RESUME, STEP and RESET.", "es": "RUN, STOP, PAUSE, RESUME, STEP y RESET." } },
+    { "name": "BREAKPOINTS", "bit": 4, "doc": { "en": "Add, remove, clear and list breakpoints.", "es": "Agregar, quitar, borrar y listar puntos de interrupción." } },
+    { "name": "PROGRAM", "bit": 5, "doc": { "en": "Transfer a program, with a checksum and a read-back.", "es": "Transferir un programa, con suma de verificación y lectura de vuelta." } },
+    { "name": "EVENTS", "bit": 6, "doc": { "en": "The device pushes events.", "es": "El dispositivo envía eventos por iniciativa propia." } },
+    { "name": "WATCH", "bit": 7, "doc": { "en": "The device pushes batches of watched values.", "es": "El dispositivo envía lotes de valores observados." } },
+    { "name": "AUTH", "bit": 8, "doc": { "en": "Authenticated sessions (HMAC-SHA-256) and key provisioning over the serial link.", "es": "Sesiones autenticadas (HMAC-SHA-256) y aprovisionamiento de clave por el enlace serie." } },
+    { "name": "CONFIG", "bit": 9, "doc": { "en": "Change, save and reset the configuration.", "es": "Cambiar, guardar y restablecer la configuración." } },
+    { "name": "CREDENTIALS", "bit": 10, "doc": { "en": "Upload and erase credentials.", "es": "Subir y borrar credenciales." } },
+    { "name": "SIGNATURE", "bit": 11, "doc": { "en": "The device accepts only artifacts signed with the key it holds (COM-026).", "es": "El dispositivo acepta solo artefactos firmados con la clave que tiene (COM-026)." } }
+  ],
+  "eventMask": [
+    { "name": "STATUS", "bit": 0, "doc": "The state of the runtime changed." },
+    { "name": "FAULT", "bit": 1, "doc": "A fault was latched." },
+    { "name": "BREAKPOINT", "bit": 2, "doc": "Execution stopped at a breakpoint." },
+    { "name": "FORCE", "bit": 3, "doc": "A force was set, cleared or released." },
+    { "name": "LOG", "bit": 4, "doc": "The device wrote a log line." },
+    { "name": "WATCH", "bit": 5, "doc": "A batch of watched values." }
+  ],
+  "access": [
+    { "name": "OPEN", "doc": { "en": "Answered on any link, with no session: what a client needs to recognise the device.", "es": "Se responde en cualquier enlace, sin sesión: lo que un cliente necesita para reconocer el dispositivo." } },
+    { "name": "READ", "doc": { "en": "Reads the PLC and changes nothing: open on the serial link, needs an authenticated session on a network link.", "es": "Lee el PLC y no cambia nada: abierto en el enlace serie, requiere sesión autenticada en un enlace de red." } },
+    { "name": "SESSION", "doc": { "en": "Changes the device: needs a session that is open on this link, and an authenticated one on a network link.", "es": "Cambia el dispositivo: requiere una sesión abierta en este enlace, y autenticada en un enlace de red." } },
+    { "name": "SERIAL_SESSION", "doc": { "en": "Needs a session and the serial link: a key is never provisioned over the network.", "es": "Requiere una sesión y el enlace serie: una clave nunca se aprovisiona por la red." } }
+  ],
+  "rangeDetail": [
+    { "name": "address", "type": "u16", "doc": "The address that was asked for." },
+    { "name": "length", "type": "u16", "doc": "The number of bytes that was asked for." },
+    { "name": "region_start", "type": "u16", "doc": "The first address of the region that holds the address, or 0xFFFF when no region does." },
+    { "name": "region_end", "type": "u16", "doc": "One past the last address the access may reach in that region." }
+  ],
+  "messages": [
+    {
+      "name": "HELLO", "id": 1, "access": "OPEN",
+      "summary": { "en": "Recognise the device: protocol version, link kind, largest payload, capabilities, session state.", "es": "Reconocer el dispositivo: versión del protocolo, tipo de enlace, carga útil máxima, capacidades, estado de la sesión." },
+      "request": [
+        { "name": "client_version", "type": "u8", "doc": "The protocol version the client speaks." },
+        { "name": "client_max_payload", "type": "u16", "doc": "The largest payload the client accepts in one frame." }
+      ],
+      "response": [
+        { "name": "version", "type": "u8", "doc": "The protocol version of the device." },
+        { "name": "transport", "type": "u8", "enum": "TRANSPORT", "doc": "What the device takes this link to be." },
+        { "name": "max_payload", "type": "u16", "doc": "The largest payload the device accepts in one frame; both sides use the smaller of the two maxima." },
+        { "name": "capabilities", "type": "u32", "doc": "Bit mask of the capabilities of this build." },
+        { "name": "session_state", "type": "u8", "enum": "SESSION_STATE", "doc": "The state of the session as this link sees it." },
+        { "name": "key_provisioned", "type": "u8", "doc": "1 when the device holds a key for authenticated sessions." },
+        { "name": "idle_timeout_s", "type": "u16", "doc": "Seconds of silence after which a session ends." }
+      ]
+    },
+    {
+      "name": "IDENTITY", "id": 2, "access": "OPEN",
+      "summary": { "en": "Which firmware this is: product, board, ABI, I/O description, sizes. What a deploy preflight compares.", "es": "Qué firmware es: producto, placa, ABI, descripción de E/S, tamaños. Lo que compara la verificación previa de un despliegue." },
+      "request": [],
+      "response": [
+        { "name": "abi_major", "type": "u16", "doc": "Major number of the bytecode ABI." },
+        { "name": "abi_minor", "type": "u16", "doc": "Minor number of the bytecode ABI." },
+        { "name": "draft_counter", "type": "u32", "doc": "Draft counter of the artifact contract (CMP-052)." },
+        { "name": "io_hash", "type": "u32", "doc": "Hash of the board I/O description the image was built from (IO-004)." },
+        { "name": "io_input_bytes", "type": "u16", "doc": "Bytes of the input process image." },
+        { "name": "io_output_bytes", "type": "u16", "doc": "Bytes of the output process image." },
+        { "name": "io_channels", "type": "u16", "doc": "Channels of the I/O description." },
+        { "name": "code_size_max", "type": "u32", "doc": "The largest artifact the device accepts." },
+        { "name": "work_size", "type": "u32", "doc": "Bytes of WORK memory." },
+        { "name": "retain_size", "type": "u32", "doc": "Bytes of RETAIN memory." },
+        { "name": "ipi_size", "type": "u32", "doc": "Bytes of the input image." },
+        { "name": "opi_size", "type": "u32", "doc": "Bytes of the output image." },
+        { "name": "product_version", "type": "str:24", "doc": "The product version of the firmware." },
+        { "name": "board", "type": "str:32", "doc": "The board the firmware was built for." },
+        { "name": "board_profile", "type": "str:40", "doc": "The Zephyr board target of the build (or posix for the simulator)." },
+        { "name": "io_board_id", "type": "str:32", "doc": "The identifier of the board I/O description." }
+      ]
+    },
+    {
+      "name": "STATUS", "id": 3, "access": "READ",
+      "summary": { "en": "The state of the runtime and its counters.", "es": "El estado del runtime y sus contadores." },
+      "request": [],
+      "response": [
+        { "name": "state", "type": "u8", "enum": "RUN_STATE", "doc": "The state of the runtime." },
+        { "name": "fault", "type": "u8", "enum": "FAULT", "doc": "Why the runtime is in FAULT, or NONE." },
+        { "name": "program_loaded", "type": "u8", "doc": "1 when a program is loaded." },
+        { "name": "forces", "type": "u8", "doc": "Number of active forces." },
+        { "name": "cycles", "type": "u32", "doc": "Scans completed since the program started." },
+        { "name": "overruns", "type": "u32", "doc": "Deadline misses counted." },
+        { "name": "program_size", "type": "u32", "doc": "Bytes of the loaded artifact." },
+        { "name": "program_generation", "type": "u32", "doc": "Increases every time a program is activated." },
+        { "name": "uptime_ms", "type": "u32", "doc": "Milliseconds since the device started." }
+      ]
+    },
+    {
+      "name": "CHALLENGE", "id": 4, "access": "OPEN",
+      "summary": { "en": "Ask for a one-time challenge to open an authenticated session.", "es": "Pedir un desafío de un solo uso para abrir una sesión autenticada." },
+      "request": [],
+      "response": [
+        { "name": "nonce", "type": "bytes:16", "doc": "A number the device will accept once, in the next ten seconds." }
+      ]
+    },
+    {
+      "name": "LINK_STATS", "id": 5, "access": "OPEN",
+      "summary": { "en": "The counters of this link: frames, and every kind of frame that was dropped.", "es": "Los contadores de este enlace: tramas y cada tipo de trama descartada." },
+      "request": [],
+      "response": [
+        { "name": "frames_in", "type": "u32", "doc": "Valid frames received." },
+        { "name": "frames_out", "type": "u32", "doc": "Frames sent." },
+        { "name": "crc_errors", "type": "u32", "doc": "Candidate frames whose checksum did not match." },
+        { "name": "resyncs", "type": "u32", "doc": "Times the decoder discarded bytes to find the next frame." },
+        { "name": "version_errors", "type": "u32", "doc": "Frames of another protocol version." },
+        { "name": "oversize", "type": "u32", "doc": "Frames that announced a payload above the limit." },
+        { "name": "auth_drops", "type": "u32", "doc": "Frames dropped for a missing or wrong authentication code." },
+        { "name": "replay_drops", "type": "u32", "doc": "Frames dropped for a sequence number already seen." },
+        { "name": "order_drops", "type": "u32", "doc": "Frames dropped for a sequence number ahead of the expected one." },
+        { "name": "events_sent", "type": "u32", "doc": "Events sent on this link." },
+        { "name": "events_dropped", "type": "u32", "doc": "Events lost because the queue was full." },
+        { "name": "sessions_opened", "type": "u32", "doc": "Sessions opened on this link." }
+      ]
+    },
+    {
+      "name": "MEM_READ", "id": 16, "access": "READ",
+      "summary": { "en": "Read bytes of PLC memory from the snapshot of the last scan.", "es": "Leer bytes de la memoria del PLC desde la instantánea del último ciclo." },
+      "request": [
+        { "name": "address", "type": "u16", "doc": "The first address." },
+        { "name": "length", "type": "u16", "doc": "The number of bytes; the extent has to lie inside one region." }
+      ],
+      "response": [
+        { "name": "data", "type": "tail", "doc": "The bytes." }
+      ]
+    },
+    {
+      "name": "MEM_WRITE", "id": 17, "access": "SESSION",
+      "summary": { "en": "Write a multi-byte value, whole with respect to the scan: queued and applied at the input latch of the next scan.", "es": "Escribir un valor de varios bytes, completo respecto al ciclo: se encola y se aplica en el latch de entradas del próximo ciclo." },
+      "request": [
+        { "name": "address", "type": "u16", "doc": "The first address; the extent has to lie inside one writable region." },
+        { "name": "data", "type": "tail", "doc": "The value, in memory order." }
+      ],
+      "response": []
+    },
+    {
+      "name": "FORCE_SET", "id": 18, "access": "SESSION",
+      "summary": { "en": "Force a value until it is cleared or the session ends.", "es": "Forzar un valor hasta que se borre o termine la sesión." },
+      "request": [
+        { "name": "address", "type": "u16", "doc": "The first address." },
+        { "name": "data", "type": "tail", "doc": "The forced bytes." }
+      ],
+      "response": [
+        { "name": "forces", "type": "u8", "doc": "Active forces afterwards." }
+      ]
+    },
+    {
+      "name": "FORCE_CLEAR", "id": 19, "access": "SESSION",
+      "summary": { "en": "Clear the force that starts at an address.", "es": "Borrar el forzado que empieza en una dirección." },
+      "request": [
+        { "name": "address", "type": "u16", "doc": "The first address of the force." }
+      ],
+      "response": [
+        { "name": "forces", "type": "u8", "doc": "Active forces afterwards." }
+      ]
+    },
+    {
+      "name": "FORCE_CLEAR_ALL", "id": 20, "access": "SESSION",
+      "summary": { "en": "Clear every force.", "es": "Borrar todos los forzados." },
+      "request": [],
+      "response": []
+    },
+    {
+      "name": "FORCE_LIST", "id": 21, "access": "READ",
+      "summary": { "en": "List the active forces.", "es": "Listar los forzados activos." },
+      "request": [],
+      "response": [
+        { "name": "count", "type": "u8", "doc": "Number of entries." },
+        { "name": "entries", "type": "tail", "doc": "For each entry: address (u16), size (u16), then size bytes." }
+      ]
+    },
+    {
+      "name": "SESSION_OPEN", "id": 32, "access": "OPEN",
+      "summary": { "en": "Open the session. On a network link the frame carries a code under the device key and the nonce of the last challenge.", "es": "Abrir la sesión. En un enlace de red la trama lleva un código bajo la clave del dispositivo y el nonce del último desafío." },
+      "request": [
+        { "name": "flags", "type": "u8", "doc": "Bit 0: take over a session that is open on another link (the serial link only)." },
+        { "name": "client_nonce", "type": "bytes:16", "doc": "A number the client picks; it goes into the session key." },
+        { "name": "device_nonce", "type": "bytes:16", "doc": "The nonce of the challenge the device issued; zero on a serial link." },
+        { "name": "name", "type": "str:16", "doc": "A name for the client, shown to a person at the device." }
+      ],
+      "response": [
+        { "name": "session_id", "type": "u32", "doc": "The number of the session." },
+        { "name": "idle_timeout_s", "type": "u16", "doc": "Seconds of silence after which the session ends." },
+        { "name": "authenticated", "type": "u8", "doc": "1 when the frames of the session carry a code." }
+      ]
+    },
+    {
+      "name": "SESSION_CLOSE", "id": 33, "access": "SESSION",
+      "summary": { "en": "Close the session; its forces are released.", "es": "Cerrar la sesión; sus forzados se liberan." },
+      "request": [],
+      "response": [
+        { "name": "forces_released", "type": "u8", "doc": "Forces that ended with the session." }
+      ]
+    },
+    {
+      "name": "KEEPALIVE", "id": 34, "access": "SESSION",
+      "summary": { "en": "Keep an idle session open.", "es": "Mantener abierta una sesión inactiva." },
+      "request": [],
+      "response": [
+        { "name": "remaining_s", "type": "u16", "doc": "Seconds left before the session would end." }
+      ]
+    },
+    {
+      "name": "EVENTS_SET", "id": 35, "access": "READ",
+      "summary": { "en": "Choose which events this link receives.", "es": "Elegir qué eventos recibe este enlace." },
+      "request": [
+        { "name": "mask", "type": "u32", "doc": "Bit mask of the events wanted (see the event mask)." }
+      ],
+      "response": [
+        { "name": "mask", "type": "u32", "doc": "The mask in force: the events of this build only." }
+      ]
+    },
+    {
+      "name": "WATCH_SET", "id": 36, "access": "READ",
+      "summary": { "en": "Watch addresses: the device pushes a batch of their values every period and when one changes.", "es": "Observar direcciones: el dispositivo envía un lote de sus valores cada período y cuando uno cambia." },
+      "request": [
+        { "name": "period_ms", "type": "u16", "doc": "Milliseconds between batches; 0 sends a batch only when a value changed." },
+        { "name": "entries", "type": "tail", "doc": "For each entry: address (u16), length (u8). At most eight entries." }
+      ],
+      "response": [
+        { "name": "count", "type": "u8", "doc": "Entries accepted." }
+      ]
+    },
+    {
+      "name": "WATCH_CLEAR", "id": 37, "access": "READ",
+      "summary": { "en": "Stop watching.", "es": "Dejar de observar." },
+      "request": [],
+      "response": []
+    },
+    {
+      "name": "RUN", "id": 48, "access": "SESSION",
+      "summary": { "en": "Start the program.", "es": "Iniciar el programa." },
+      "request": [],
+      "response": [
+        { "name": "state", "type": "u8", "enum": "RUN_STATE", "doc": "The state afterwards." }
+      ]
+    },
+    {
+      "name": "STOP", "id": 49, "access": "SESSION",
+      "summary": { "en": "Stop the program; the outputs go to their safe values.", "es": "Detener el programa; las salidas pasan a sus valores seguros." },
+      "request": [],
+      "response": [
+        { "name": "state", "type": "u8", "enum": "RUN_STATE", "doc": "The state afterwards." }
+      ]
+    },
+    {
+      "name": "PAUSE", "id": 50, "access": "SESSION",
+      "summary": { "en": "Hold the program at the next cycle boundary.", "es": "Detener el programa en el próximo límite de ciclo." },
+      "request": [],
+      "response": [
+        { "name": "state", "type": "u8", "enum": "RUN_STATE", "doc": "The state afterwards." }
+      ]
+    },
+    {
+      "name": "RESUME", "id": 51, "access": "SESSION",
+      "summary": { "en": "Continue a paused program.", "es": "Continuar un programa en pausa." },
+      "request": [],
+      "response": [
+        { "name": "state", "type": "u8", "enum": "RUN_STATE", "doc": "The state afterwards." }
+      ]
+    },
+    {
+      "name": "STEP", "id": 52, "access": "SESSION",
+      "summary": { "en": "Execute one cycle of a paused program.", "es": "Ejecutar un ciclo de un programa en pausa." },
+      "request": [],
+      "response": [
+        { "name": "state", "type": "u8", "enum": "RUN_STATE", "doc": "The state afterwards." }
+      ]
+    },
+    {
+      "name": "RESET", "id": 53, "access": "SESSION",
+      "summary": { "en": "Reset the loaded program to its initial state; the program stays loaded and stopped.", "es": "Restablecer el programa cargado a su estado inicial; el programa sigue cargado y detenido." },
+      "request": [],
+      "response": [
+        { "name": "state", "type": "u8", "enum": "RUN_STATE", "doc": "The state afterwards." }
+      ]
+    },
+    {
+      "name": "BP_ADD", "id": 56, "access": "SESSION",
+      "summary": { "en": "Add a breakpoint.", "es": "Agregar un punto de interrupción." },
+      "request": [ { "name": "pc", "type": "u16", "doc": "The program counter." } ],
+      "response": [ { "name": "count", "type": "u8", "doc": "Breakpoints afterwards." } ]
+    },
+    {
+      "name": "BP_REMOVE", "id": 57, "access": "SESSION",
+      "summary": { "en": "Remove a breakpoint.", "es": "Quitar un punto de interrupción." },
+      "request": [ { "name": "pc", "type": "u16", "doc": "The program counter." } ],
+      "response": [ { "name": "count", "type": "u8", "doc": "Breakpoints afterwards." } ]
+    },
+    {
+      "name": "BP_CLEAR", "id": 58, "access": "SESSION",
+      "summary": { "en": "Remove every breakpoint.", "es": "Quitar todos los puntos de interrupción." },
+      "request": [],
+      "response": []
+    },
+    {
+      "name": "BP_LIST", "id": 59, "access": "READ",
+      "summary": { "en": "List the breakpoints.", "es": "Listar los puntos de interrupción." },
+      "request": [],
+      "response": [
+        { "name": "count", "type": "u8", "doc": "Number of breakpoints." },
+        { "name": "pcs", "type": "tail", "doc": "The program counters, u16 each." }
+      ]
+    },
+    {
+      "name": "PROGRAM_BEGIN", "id": 64, "access": "SESSION",
+      "summary": { "en": "Start a program transfer: announce its size and CRC-32. The runtime must be stopped.", "es": "Iniciar una transferencia de programa: anunciar su tamaño y CRC-32. El runtime debe estar detenido." },
+      "request": [
+        { "name": "size", "type": "u32", "doc": "Bytes of the artifact." },
+        { "name": "crc32", "type": "u32", "doc": "CRC-32 of the artifact." }
+      ],
+      "response": [
+        { "name": "chunk_max", "type": "u16", "doc": "The largest chunk the device takes in one frame." }
+      ]
+    },
+    {
+      "name": "PROGRAM_CHUNK", "id": 65, "access": "SESSION",
+      "summary": { "en": "One chunk of the program, at its offset. Chunks arrive in order.", "es": "Un fragmento del programa, en su desplazamiento. Los fragmentos llegan en orden." },
+      "request": [
+        { "name": "offset", "type": "u32", "doc": "Where the chunk starts; it must be the number of bytes received so far." },
+        { "name": "data", "type": "tail", "doc": "The bytes." }
+      ],
+      "response": [
+        { "name": "received", "type": "u32", "doc": "Bytes received so far." }
+      ]
+    },
+    {
+      "name": "PROGRAM_COMMIT", "id": 66, "access": "SESSION",
+      "summary": { "en": "Check the CRC-32, verify the artifact and activate it. The runtime stays stopped.", "es": "Comprobar el CRC-32, verificar el artefacto y activarlo. El runtime sigue detenido." },
+      "request": [],
+      "response": [
+        { "name": "size", "type": "u32", "doc": "Bytes of the stored program, read back." },
+        { "name": "crc32", "type": "u32", "doc": "CRC-32 of the stored program, computed over what the device holds." },
+        { "name": "generation", "type": "u32", "doc": "The program generation after the activation." }
+      ]
+    },
+    {
+      "name": "PROGRAM_ABORT", "id": 67, "access": "SESSION",
+      "summary": { "en": "Drop a transfer that is in progress.", "es": "Descartar una transferencia en curso." },
+      "request": [],
+      "response": []
+    },
+    {
+      "name": "PROGRAM_INFO", "id": 68, "access": "READ",
+      "summary": { "en": "Size, CRC-32 and generation of the loaded program, computed over what the device holds.", "es": "Tamaño, CRC-32 y generación del programa cargado, calculados sobre lo que el dispositivo tiene." },
+      "request": [],
+      "response": [
+        { "name": "loaded", "type": "u8", "doc": "1 when a program is loaded." },
+        { "name": "size", "type": "u32", "doc": "Bytes of the loaded program." },
+        { "name": "crc32", "type": "u32", "doc": "CRC-32 of the loaded program." },
+        { "name": "generation", "type": "u32", "doc": "The program generation." }
+      ]
+    },
+    {
+      "name": "CONFIG_SET", "id": 80, "access": "SESSION",
+      "summary": { "en": "Change one configuration value.", "es": "Cambiar un valor de configuración." },
+      "request": [
+        { "name": "key", "type": "str:24", "doc": "The name of the setting." },
+        { "name": "value", "type": "tail", "doc": "The value, as text." }
+      ],
+      "response": []
+    },
+    {
+      "name": "CONFIG_SAVE", "id": 81, "access": "SESSION",
+      "summary": { "en": "Persist the configuration.", "es": "Guardar la configuración." },
+      "request": [],
+      "response": []
+    },
+    {
+      "name": "CONFIG_RESET", "id": 82, "access": "SESSION",
+      "summary": { "en": "Reset the configuration to its defaults.", "es": "Restablecer la configuración a sus valores por defecto." },
+      "request": [],
+      "response": []
+    },
+    {
+      "name": "CRED_BEGIN", "id": 88, "access": "SESSION",
+      "summary": { "en": "Start a credential upload.", "es": "Iniciar la subida de una credencial." },
+      "request": [
+        { "name": "kind", "type": "u8", "enum": "CREDENTIAL", "doc": "Which credential." },
+        { "name": "size", "type": "u16", "doc": "Bytes of the credential." }
+      ],
+      "response": []
+    },
+    {
+      "name": "CRED_CHUNK", "id": 89, "access": "SESSION",
+      "summary": { "en": "One chunk of the credential.", "es": "Un fragmento de la credencial." },
+      "request": [ { "name": "data", "type": "tail", "doc": "The bytes." } ],
+      "response": []
+    },
+    {
+      "name": "CRED_COMMIT", "id": 90, "access": "SESSION",
+      "summary": { "en": "Store the credential.", "es": "Guardar la credencial." },
+      "request": [],
+      "response": []
+    },
+    {
+      "name": "CRED_ERASE", "id": 91, "access": "SESSION",
+      "summary": { "en": "Erase a credential.", "es": "Borrar una credencial." },
+      "request": [ { "name": "kind", "type": "u8", "enum": "CREDENTIAL", "doc": "Which credential." } ],
+      "response": []
+    },
+    {
+      "name": "KEY_SET", "id": 96, "access": "SERIAL_SESSION",
+      "summary": { "en": "Provision the key of authenticated sessions. The device never sends the key back.", "es": "Aprovisionar la clave de las sesiones autenticadas. El dispositivo nunca devuelve la clave." },
+      "request": [ { "name": "key", "type": "bytes:32", "doc": "The 256-bit key." } ],
+      "response": []
+    },
+    {
+      "name": "KEY_CLEAR", "id": 97, "access": "SERIAL_SESSION",
+      "summary": { "en": "Erase the key; authenticated sessions are no longer possible.", "es": "Borrar la clave; ya no son posibles las sesiones autenticadas." },
+      "request": [],
+      "response": []
+    }
+  ],
+  "events": [
+    {
+      "name": "EVT_STATUS", "id": 128, "mask": "STATUS",
+      "summary": { "en": "The state of the runtime changed.", "es": "El estado del runtime cambió." },
+      "fields": [
+        { "name": "state", "type": "u8", "enum": "RUN_STATE", "doc": "The new state." },
+        { "name": "fault", "type": "u8", "enum": "FAULT", "doc": "The fault, or NONE." },
+        { "name": "cycles", "type": "u32", "doc": "Scans completed." }
+      ]
+    },
+    {
+      "name": "EVT_FAULT", "id": 129, "mask": "FAULT",
+      "summary": { "en": "A fault was latched.", "es": "Se enclavó una falla." },
+      "fields": [
+        { "name": "fault", "type": "u8", "enum": "FAULT", "doc": "The kind of fault." },
+        { "name": "task", "type": "u8", "doc": "The task that faulted, 0 when none." },
+        { "name": "code", "type": "u16", "doc": "The VM error code." }
+      ]
+    },
+    {
+      "name": "EVT_BREAKPOINT", "id": 130, "mask": "BREAKPOINT",
+      "summary": { "en": "Execution stopped at a breakpoint.", "es": "La ejecución se detuvo en un punto de interrupción." },
+      "fields": [
+        { "name": "task", "type": "u8", "doc": "The task." },
+        { "name": "pc", "type": "u16", "doc": "The program counter." }
+      ]
+    },
+    {
+      "name": "EVT_FORCE", "id": 131, "mask": "FORCE",
+      "summary": { "en": "A force was set, cleared or released.", "es": "Se fijó, borró o liberó un forzado." },
+      "fields": [
+        { "name": "change", "type": "u8", "enum": "FORCE_CHANGE", "doc": "What happened." },
+        { "name": "address", "type": "u16", "doc": "The address of the force, 0 when it does not apply." },
+        { "name": "forces", "type": "u8", "doc": "Active forces afterwards." }
+      ]
+    },
+    {
+      "name": "EVT_LOG", "id": 132, "mask": "LOG",
+      "summary": { "en": "A log line of the device.", "es": "Una línea de registro del dispositivo." },
+      "fields": [
+        { "name": "level", "type": "u8", "enum": "LOG_LEVEL", "doc": "The level." },
+        { "name": "text", "type": "tail", "doc": "The text, UTF-8, cut to fit." }
+      ]
+    },
+    {
+      "name": "EVT_WATCH", "id": 133, "mask": "WATCH",
+      "summary": { "en": "A batch of watched values, taken from one scan.", "es": "Un lote de valores observados, tomados de un mismo ciclo." },
+      "fields": [
+        { "name": "cycle", "type": "u32", "doc": "The scan the values come from." },
+        { "name": "data", "type": "tail", "doc": "The bytes of the watched entries, one after the other, in the order of WATCH_SET." }
+      ]
+    },
+    {
+      "name": "EVT_SESSION_END", "id": 134, "mask": null,
+      "summary": { "en": "The session ended. Always sent to the link that held it.", "es": "La sesión terminó. Siempre se envía al enlace que la tenía." },
+      "fields": [
+        { "name": "reason", "type": "u8", "enum": "SESSION_END", "doc": "Why it ended." },
+        { "name": "forces_released", "type": "u8", "doc": "Forces that ended with it." }
+      ]
+    },
+    {
+      "name": "EVT_DROPPED", "id": 135, "mask": null,
+      "summary": { "en": "Events were lost because the queue was full. Sent when there is room again.", "es": "Se perdieron eventos porque la cola estaba llena. Se envía cuando vuelve a haber espacio." },
+      "fields": [
+        { "name": "count", "type": "u32", "doc": "Events lost since the last report." }
+      ]
+    }
+  ]
+}
