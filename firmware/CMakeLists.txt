@@ -45,6 +45,7 @@ if(CONFIG_ZPLC)
     ${CMAKE_CURRENT_LIST_DIR}/lib/zplc_core/src/core/zplc_comm_dispatch.c
     ${CMAKE_CURRENT_LIST_DIR}/lib/zplc_core/src/core/zplc_program_store.c
     ${CMAKE_CURRENT_LIST_DIR}/lib/zplc_core/src/core/zplc_exchange.c
+    ${CMAKE_CURRENT_LIST_DIR}/lib/zplc_core/src/core/zplc_sched_core.c
   )
 
   # Zephyr HAL implementation
