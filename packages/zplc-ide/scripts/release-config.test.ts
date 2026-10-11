@@ -198,6 +198,59 @@ describe('the release builds the firmware of every board and ships it in its own
   });
 });
 
+describe('every published installer format is installed or mounted and launched on its own system before the draft (REL-036)', () => {
+  const jobs = workflow.jobs;
+  const create = 'create-draft-release';
+  const stepNamed = (job: string, text: string) => jobs[job]!.steps.findIndex((step) => step.name?.includes(text));
+  const upload = (job: string) => indexOfStep(jobs[job]!, 'actions/upload-artifact@');
+
+  it('launches the AppImage in a clean container, with the sandbox on, before the Linux files are uploaded', () => {
+    const step = stepNamed('build-linux', 'AppImage');
+    expect(step).toBeGreaterThan(-1);
+    expect(step).toBeLessThan(upload('build-linux'));
+    const run = jobs['build-linux']!.steps[step]!.run!;
+    expect(run).toContain('dist-electron/*.AppImage');
+    expect(run).toContain('check-linux-package.sh');
+    expect(run).not.toContain('--no-sandbox');
+    expect(jobs['build-linux']!.steps[step]!.if).toBeUndefined();
+  });
+
+  it('mounts the DMG and unpacks the ZIP on the architecture they were built for, and launches the application each holds', () => {
+    for (const [name, extension] of [['DMG', 'dmg'], ['ZIP', 'zip']] as const) {
+      const step = stepNamed('build-macos', name);
+      expect(step, name).toBeGreaterThan(stepNamed('build-macos', 'Launch packaged macOS app'));
+      expect(step, name).toBeLessThan(upload('build-macos'));
+      const text = jobs['build-macos']!.steps[step]!;
+      expect(text.run).toContain(`dist-electron/*.${extension}`);
+      expect(text.run).toContain('smoke:desktop-packaged');
+      expect(text.if).toBeUndefined();
+    }
+    expect(jobs['build-macos']!.steps[stepNamed('build-macos', 'DMG')]!.run).toContain('hdiutil attach');
+  });
+
+  it('installs the Windows setup silently, launches the installed application, and launches the portable executable', () => {
+    const setup = stepNamed('build-windows', 'setup');
+    const portable = stepNamed('build-windows', 'portable');
+    for (const step of [setup, portable]) {
+      expect(step).toBeGreaterThan(stepNamed('build-windows', 'Launch packaged Windows app'));
+      expect(step).toBeLessThan(upload('build-windows'));
+      expect(jobs['build-windows']!.steps[step]!.if).toBeUndefined();
+      expect(jobs['build-windows']!.steps[step]!.run).toContain('smoke:desktop-packaged');
+    }
+    expect(jobs['build-windows']!.steps[setup]!.run).toContain('/S');
+    expect(jobs['build-windows']!.steps[setup]!.run).toContain('ZPLC_PACKAGED_EXECUTABLE');
+  });
+
+  it('is done in the build jobs, which the draft release does not depend on, but every upload does through the evidence of its platform', () => {
+    expect(needsOf(create)).toEqual(['validate-version', 'verify-release-candidate']);
+    for (const platform of ['macos', 'windows', 'linux']) {
+      expect([jobs[`prepare-release-evidence-${platform}`]!.needs].flat()).toContain(`build-${platform}`);
+    }
+  });
+
+  function needsOf(name: string): string[] { return [jobs[name]?.needs ?? []].flat().sort(); }
+});
+
 describe('the .deb and the .rpm install the udev rule of the boards (REL-013)', () => {
   // fpm takes `source=destination` pairs. The source is relative to the Studio package: the file that beforePack writes.
   const mapping = (fpm: string[] | undefined) => (fpm ?? []).filter((argument) => argument.includes('=') && !argument.startsWith('-'));

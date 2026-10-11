@@ -391,6 +391,45 @@ jobs:
         working-directory: packages/zplc-ide
         run: bun run smoke:desktop-packaged
 
+      # REL-036: the DMG is mounted and the application is copied out of it, as a person does with "drag to
+      # Applications"; the ZIP is unpacked. The application that each one holds is verified and launched on this
+      # architecture, so each published macOS format is opened on its own system before the draft exists.
+      - name: Mount the DMG, copy the application out and launch it
+        working-directory: packages/zplc-ide
+        shell: bash
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          images=(dist-electron/*.dmg)
+          [ "${#images[@]}" -eq 1 ] || { echo "Expected exactly one .dmg, found ${#images[@]}"; exit 1; }
+          mount_point="$RUNNER_TEMP/zplc-dmg"
+          install_dir="$RUNNER_TEMP/zplc-dmg-install"
+          mkdir -p "$mount_point" "$install_dir"
+          hdiutil attach -nobrowse -readonly -mountpoint "$mount_point" "${images[0]}"
+          trap 'hdiutil detach "$mount_point" -force || true' EXIT
+          apps=("$mount_point"/*.app)
+          [ "${#apps[@]}" -eq 1 ] || { echo "Expected exactly one .app in the disk image, found ${#apps[@]}"; exit 1; }
+          app="$install_dir/$(basename "${apps[0]}")"
+          ditto "${apps[0]}" "$app"
+          codesign --verify --deep --strict "$app"
+          ZPLC_PACKAGED_EXECUTABLE="$app/Contents/MacOS/zplc-ide" bun run smoke:desktop-packaged
+
+      - name: Unpack the ZIP and launch the application
+        working-directory: packages/zplc-ide
+        shell: bash
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          archives=(dist-electron/*.zip)
+          [ "${#archives[@]}" -eq 1 ] || { echo "Expected exactly one .zip, found ${#archives[@]}"; exit 1; }
+          target="$RUNNER_TEMP/zplc-zip"
+          mkdir -p "$target"
+          ditto -x -k "${archives[0]}" "$target"
+          apps=("$target"/*.app)
+          [ "${#apps[@]}" -eq 1 ] || { echo "Expected exactly one .app in the archive, found ${#apps[@]}"; exit 1; }
+          codesign --verify --deep --strict "${apps[0]}"
+          ZPLC_PACKAGED_EXECUTABLE="${apps[0]}/Contents/MacOS/zplc-ide" bun run smoke:desktop-packaged
+
       # REL-034, REL-019: the unpacked application holds the example projects, the lessons and the licence notices.
       - name: Check the content of the packaged application
         working-directory: packages/zplc-ide
@@ -500,6 +539,33 @@ jobs:
       - name: Launch packaged Windows app
         working-directory: packages/zplc-ide
         run: bun run smoke:desktop-packaged
+
+      # REL-036: the setup is run silently (NSIS: /S, and /D= last, the folder it installs to) and the installed
+      # application is launched; the portable executable is launched as it is. Both on this architecture.
+      - name: Install the setup silently and launch the installed application
+        working-directory: packages/zplc-ide
+        shell: pwsh
+        run: |
+          $setup = @(Get-ChildItem dist-electron -Filter '*-setup-unsigned.exe')
+          if ($setup.Count -ne 1) { throw "Expected exactly one setup executable, found $($setup.Count)" }
+          $target = Join-Path $env:RUNNER_TEMP 'zplc-installed'
+          $install = Start-Process -FilePath $setup[0].FullName -ArgumentList '/S', "/D=$target" -Wait -PassThru
+          if ($install.ExitCode -ne 0) { throw "The silent install exited with $($install.ExitCode)" }
+          $executable = Join-Path $target 'zplc-ide.exe'
+          if (-not (Test-Path $executable)) { throw "The installer left no $executable" }
+          $env:ZPLC_PACKAGED_EXECUTABLE = $executable
+          bun run smoke:desktop-packaged
+          if ($LASTEXITCODE -ne 0) { throw "The installed application did not launch" }
+
+      - name: Launch the portable executable
+        working-directory: packages/zplc-ide
+        shell: pwsh
+        run: |
+          $portable = @(Get-ChildItem dist-electron -Filter '*-portable-unsigned.exe')
+          if ($portable.Count -ne 1) { throw "Expected exactly one portable executable, found $($portable.Count)" }
+          $env:ZPLC_PACKAGED_EXECUTABLE = $portable[0].FullName
+          bun run smoke:desktop-packaged
+          if ($LASTEXITCODE -ne 0) { throw "The portable executable did not launch" }
 
       # REL-034, REL-019: the unpacked application holds the example projects, the lessons and the licence notices.
       - name: Check the content of the packaged application
@@ -666,6 +732,18 @@ jobs:
           docker run --rm --cap-add=SYS_ADMIN --shm-size=512m -e ZPLC_CONTAINER_CHECK=1 \
             -v "$PWD/scripts:/scripts:ro" -v "$PWD/dist-electron:/dist:ro" \
             fedora:latest bash /scripts/check-linux-package.sh "/dist/$(basename "${packages[0]}")"
+
+      - name: Launch the AppImage in a clean Ubuntu 24.04 container
+        working-directory: packages/zplc-ide
+        shell: bash
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          packages=(dist-electron/*.AppImage)
+          [ "${#packages[@]}" -eq 1 ] || { echo "Expected exactly one .AppImage, found ${#packages[@]}"; exit 1; }
+          docker run --rm --cap-add=SYS_ADMIN --shm-size=512m -e ZPLC_CONTAINER_CHECK=1 \
+            -v "$PWD/scripts:/scripts:ro" -v "$PWD/dist-electron:/dist:ro" \
+            ubuntu:24.04 bash /scripts/check-linux-package.sh "/dist/$(basename "${packages[0]}")"
 
       - name: Upload Linux artifacts
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2

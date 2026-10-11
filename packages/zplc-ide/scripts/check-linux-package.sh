@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Installs a ZPLC IDE .deb or .rpm in a clean container and checks that the installed application starts
-# (REL-011). It installs packages and creates a user, so it runs only in the CI container:
+# (REL-011), or extracts an AppImage there and checks that it starts (REL-036). It installs packages and creates
+# a user, so it runs only in the CI container:
 #
 #   docker run --rm --cap-add=SYS_ADMIN -e ZPLC_CONTAINER_CHECK=1 \
 #     -v "$PWD/scripts:/scripts:ro" -v "$PWD/dist-electron:/dist:ro" <image> bash /scripts/check-linux-package.sh /dist/<package>
@@ -9,7 +10,7 @@
 set -euo pipefail
 
 [ "${ZPLC_CONTAINER_CHECK:-}" = 1 ] || { echo "Refusing to install packages outside the CI container (set ZPLC_CONTAINER_CHECK=1)." >&2; exit 2; }
-package="${1:?usage: check-linux-package.sh <package.deb|package.rpm>}"
+package="${1:?usage: check-linux-package.sh <package.deb|package.rpm|package.AppImage>}"
 [ -f "$package" ] || { echo "No such package: $package" >&2; exit 2; }
 
 port=9222
@@ -29,17 +30,35 @@ case "$package" in
     dnf install -y /tmp/zplc-ide.rpm
     install_display() { dnf install -y xorg-x11-server-Xvfb xorg-x11-xauth; }
     ;;
+  *.AppImage)
+    # An AppImage carries the application and not the system libraries: these are the ones that the .deb declares. It is
+    # extracted rather than mounted, so that the container needs no FUSE; the Chromium sandbox stays on.
+    cp "$package" /tmp/zplc-ide.AppImage && chmod 755 /tmp/zplc-ide.AppImage
+    export DEBIAN_FRONTEND=noninteractive
+    apt-get update
+    apt-get install -y libgtk-3-0 libnotify4 libnss3 libxss1 libxtst6 xdg-utils libatspi2.0-0 libuuid1 libsecret-1-0
+    (cd /tmp && ./zplc-ide.AppImage --appimage-extract > /dev/null)
+    appimage_dir=/tmp/squashfs-root
+    install_display() { apt-get install -y xvfb xauth; }
+    ;;
   *) echo "Unsupported package type: $package" >&2; exit 2 ;;
 esac
 
-# REL-013: the package installs the udev rule that lets the logged-in user open the serial port of a board.
-rule=/usr/lib/udev/rules.d/70-zplc-boards.rules
-[ -f "$rule" ] || { echo "The package did not install $rule." >&2; exit 1; }
-grep -q 'TAG+="uaccess"' "$rule" || { echo "$rule does not tag any device for the logged-in user." >&2; exit 1; }
-if command -v udevadm > /dev/null 2>&1; then udevadm verify "$rule"; fi
-echo "Installed the udev rule: $rule"
+# REL-013: the package installs the udev rule that lets the logged-in user open the serial port of a board. An AppImage
+# installs nothing outside its own file, so it has none.
+if [ -z "${appimage_dir:-}" ]; then
+  rule=/usr/lib/udev/rules.d/70-zplc-boards.rules
+  [ -f "$rule" ] || { echo "The package did not install $rule." >&2; exit 1; }
+  grep -q 'TAG+="uaccess"' "$rule" || { echo "$rule does not tag any device for the logged-in user." >&2; exit 1; }
+  if command -v udevadm > /dev/null 2>&1; then udevadm verify "$rule"; fi
+  echo "Installed the udev rule: $rule"
+fi
 
-executable="$(readlink -f "$(command -v zplc-ide)")"
+if [ -n "${appimage_dir:-}" ]; then
+  executable="$appimage_dir/zplc-ide"
+else
+  executable="$(readlink -f "$(command -v zplc-ide)")"
+fi
 echo "Installed executable: $executable"
 unresolved="$(ldd "$executable" 2>&1 | awk '/not found/')"
 [ -z "$unresolved" ] || { echo "Libraries the package does not provide:" >&2; echo "$unresolved" >&2; exit 1; }
@@ -49,7 +68,7 @@ install_display
 useradd -m "$user"
 profile="$(runuser -u "$user" -- mktemp -d)"
 log=/tmp/zplc-ide.log
-runuser -u "$user" -- env HOME="/home/$user" xvfb-run -a zplc-ide --headless --disable-gpu \
+runuser -u "$user" -- env HOME="/home/$user" xvfb-run -a "$executable" --headless --disable-gpu \
   --remote-debugging-port="$port" --user-data-dir="$profile" >"$log" 2>&1 &
 pid=$!
 

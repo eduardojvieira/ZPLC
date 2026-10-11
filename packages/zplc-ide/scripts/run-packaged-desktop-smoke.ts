@@ -46,6 +46,21 @@ export function discoverPackagedExecutable(distDir: string, platform: NodeJS.Pla
   return executable;
 }
 
+/**
+ * The executable of an installed or extracted copy of the application (REL-036): the one that a silent install, a mounted
+ * disk image or an extracted archive left, named by ZPLC_PACKAGED_EXECUTABLE. It must be a real file, not a link, and
+ * executable where the system has that notion.
+ */
+export function installedExecutable(path: string, platform: NodeJS.Platform = process.platform): string {
+  const executable = resolve(path);
+  const stat = existsSync(executable) ? lstatSync(executable) : null;
+  assert(stat?.isFile() && !stat.isSymbolicLink(), `The installed application is not a real file: ${executable}`);
+  if (platform !== 'win32') {
+    try { accessSync(executable, constants.X_OK); } catch { throw new Error(`The installed application is not executable: ${executable}`); }
+  }
+  return executable;
+}
+
 /** What exists only in a build made for the suite (VF-008): a released installer contains none of it. */
 export const DEV_ONLY_VARIABLE = 'ZPLC_SMOKE_FOLDER_ANSWER_FILE';
 const DEV_ONLY_MODULE = /(^|\/)devFolderDialogHook\.js(\.map)?$/;
@@ -182,9 +197,12 @@ async function press(cdp: Cdp, key: string, code = key): Promise<void> {
 
 async function main(): Promise<void> {
   // ZPLC_PACKAGED_DIST points at another output directory of electron-builder, for a package built outside the repository tree.
-  const executable = discoverPackagedExecutable(process.env.ZPLC_PACKAGED_DIST ?? join(packageRoot, 'dist-electron'));
-  // VF-008: the folder dialog test hook never ships. Checked on the archive itself, before anything is launched.
-  assertAsarHasNoDevOnlyCode(readFileSync(packagedAsarPath(executable)));
+  // ZPLC_PACKAGED_EXECUTABLE points at the application that an installer or an archive left on this machine (REL-036).
+  const installed = process.env.ZPLC_PACKAGED_EXECUTABLE;
+  const executable = installed ? installedExecutable(installed) : discoverPackagedExecutable(process.env.ZPLC_PACKAGED_DIST ?? join(packageRoot, 'dist-electron'));
+  // VF-008: the folder dialog test hook never ships. Checked on the archive itself, before anything is launched. The
+  // portable Windows executable unpacks itself at run time, so it has no archive beside it to read.
+  if (!installed || existsSync(packagedAsarPath(executable))) assertAsarHasNoDevOnlyCode(readFileSync(packagedAsarPath(executable)));
   const tempRoot = mkdtempSync(join(tmpdir(), 'zplc-packaged-smoke-'));
   const output: string[] = [];
   let electron: OwnedProcess | undefined;
