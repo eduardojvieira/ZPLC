@@ -1,0 +1,13 @@
+{
+  "requirement": "CMP-050",
+  "title": "an expression deeper than the evaluation stack of the target is rejected at build time",
+  "note": "CMP-050: the compiler measures the depth of the stack of each task and fails the build when it exceeds what the target holds (127 values), instead of declaring a fixed depth and leaving the loader or the VM to refuse it",
+  "build": "fails",
+  "lines": [
+    1
+  ],
+  "messageIncludes": [
+    "evaluation stack",
+    "the target holds 127"
+  ]
+}

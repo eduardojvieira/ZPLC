@@ -1,0 +1,9 @@
+{
+  "requirement": "LNG-011",
+  "title": "a Ladder file whose rungs are not a list is rejected with a message, not cast",
+  "note": "LNG-011: a malformed LD file is validated before it is read as a model; the build names what is wrong instead of failing inside the transpiler",
+  "build": "fails",
+  "messageIncludes": [
+    "rungs must be an array"
+  ]
+}

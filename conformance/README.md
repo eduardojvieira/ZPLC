@@ -59,6 +59,17 @@ The build must fail and produce no artifact. `lines` (optional) lists the line o
 
 VF-003 asks a negative case to assert the diagnostic code and its position. Every failed build reports the one code `COMPILATION_FAILED` until the compiler has stable codes (CMP-006), and a case that asserted it would pin the placeholder, so the cases assert the position (`lines`) and, where the requirement says the message names the construct (CMP-003), the words. A case adds `codes` the day a code exists, and WP-24 does that for all of them.
 
+## Which defect a case shows
+
+VF-004 asks for one case for every defect that the review lists under "Current failures" of CMP, LNG and RT and that a program can show on a host. `defects.json` lists those defects (the spec may be untracked, so CI cannot read them from it), each with the requirements that fix it and the evidence that shows it: the cases, another executed test, the reason that no program shows it, or the mark that it is still open. `defect-map.md` is generated from it:
+
+```
+bun tools/ci/conformance-defects.ts --write      # regenerate defect-map.md
+bun tools/ci/conformance-defects.ts --check      # CI: the list is well formed and the map is current
+```
+
+A new case that shows a listed defect is named in that defect's `cases`, and its requirement must be one of the requirements that fix it. A defect that is open gets its case the day the behaviour is fixed, and its entry changes from `open` to `cases` in the same commit.
+
 ## Run the cases
 
 The cases need the native POSIX runtime, built out of the repository tree:

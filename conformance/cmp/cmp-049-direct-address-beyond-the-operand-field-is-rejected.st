@@ -1,0 +1,6 @@
+PROGRAM Main
+VAR
+  far AT %MW40000 : INT;
+END_VAR
+far := 1;
+END_PROGRAM
