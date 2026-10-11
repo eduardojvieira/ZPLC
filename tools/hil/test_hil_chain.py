@@ -151,7 +151,7 @@ class BuildCommandAndTraceTests(QuietCase):
         os.environ["ZPLC_NATIVE_SIM_BIN"] = RUNTIME
         code, record, _ = self.chain()
         self.assertEqual(code, 0)
-        manifest = json.loads((ROOT / "firmware/app/boards/supported-boards.v1.5.0.json").read_text())
+        manifest = json.loads((ROOT / "firmware/app/boards/boards.json").read_text())
         wanted = next(b["build_command"] for b in manifest if b["ide_id"] == "rpi_pico")
         self.assertEqual(record["firmware"]["build_command"], wanted)
         self.assertNotIn("EXTRA_CONF_FILE", record["firmware"]["build_command"])

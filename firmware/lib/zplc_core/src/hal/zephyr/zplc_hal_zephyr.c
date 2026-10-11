@@ -5,8 +5,9 @@
  * SPDX-License-Identifier: MIT
  *
  * This is the Zephyr-native implementation of the ZPLC HAL.
- * It uses Zephyr kernel APIs for timing, GPIO subsystem for I/O,
- * and the Settings subsystem for persistence.
+ * It uses Zephyr kernel APIs for timing, the GPIO and ADC subsystems for I/O
+ * (the channels come from the board I/O description, see zplc_io_zephyr.h) and
+ * the NVS subsystem for persistence.
  *
  * Build: This file is compiled when CONFIG_ZPLC is enabled.
  */
@@ -14,6 +15,8 @@
 #include <zplc_hal.h>
 #include <zplc_isa.h>
 #include <zplc_program_store.h>
+
+#include "zplc_io_zephyr.h"
 
 #include <zephyr/device.h>
 #include <zephyr/devicetree.h>
@@ -44,34 +47,21 @@
  * GPIO Configuration
  * ============================================================================
  *
- * We use Zephyr's standard DeviceTree aliases for GPIO:
- *   - led0, led1, led2, led3   -> Digital Outputs (DO0-DO3)
- *   - sw0, sw1, sw2, sw3       -> Digital Inputs (DI0-DI3)
- *
- * This maps to the standard aliases most Zephyr boards define.
- * The overlay can remap these as needed.
+ * The digital channels are the board I/O description (firmware/app/boards/
+ * boards.json), turned at build time into zplc_io_gpio_bindings[]: one
+ * devicetree GPIO spec per channel, outputs first and then inputs. HAL gpio
+ * channel n is entry n. The build fails when the description and the
+ * devicetree disagree (IO-001), so a pin is never silently missing; only a
+ * channel of the default alias profile (a board without a description) may be
+ * absent, and its entry then has no port.
  */
 
-/** @brief Maximum GPIO channels supported */
-#define ZPLC_GPIO_MAX_CHANNELS 8
-
-/** @brief Number of output channels (LEDs) */
-#define ZPLC_GPIO_OUTPUT_COUNT 4
-
-/** @brief Number of input channels (buttons/switches) */
-#define ZPLC_GPIO_INPUT_COUNT 4
-
-/**
- * @brief GPIO channel descriptor
- */
+/** @brief Run-time state of one digital channel */
 typedef struct {
-  struct gpio_dt_spec spec; /**< DeviceTree GPIO spec */
-  bool configured;          /**< Successfully configured */
-  bool is_output;           /**< true=output, false=input */
-} zplc_gpio_channel_t;
+  bool configured; /**< Successfully configured */
+} zplc_gpio_state_t;
 
-/** @brief GPIO channel table - outputs first, then inputs */
-static zplc_gpio_channel_t gpio_channels[ZPLC_GPIO_MAX_CHANNELS];
+static zplc_gpio_state_t gpio_state[ZPLC_IO_MAX_CHANNELS];
 
 /** @brief HAL initialization state */
 static bool hal_initialized = false;
@@ -83,69 +73,8 @@ static bool test_fail_next_safe_off;
 void zplc_hal_test_fail_next_safe_off(void) { test_fail_next_safe_off = true; }
 #endif
 
-/* ============================================================================
- * DeviceTree GPIO Specifications
- * ============================================================================
- * Using conditional macros to handle boards that don't define all aliases.
- */
-
-/* Output channels (LEDs) */
-#if DT_NODE_EXISTS(DT_ALIAS(led0))
-#define ZPLC_LED0_SPEC GPIO_DT_SPEC_GET(DT_ALIAS(led0), gpios)
-#define ZPLC_HAS_LED0 1
-#else
-#define ZPLC_HAS_LED0 0
-#endif
-
-#if DT_NODE_EXISTS(DT_ALIAS(led1))
-#define ZPLC_LED1_SPEC GPIO_DT_SPEC_GET(DT_ALIAS(led1), gpios)
-#define ZPLC_HAS_LED1 1
-#else
-#define ZPLC_HAS_LED1 0
-#endif
-
-#if DT_NODE_EXISTS(DT_ALIAS(led2))
-#define ZPLC_LED2_SPEC GPIO_DT_SPEC_GET(DT_ALIAS(led2), gpios)
-#define ZPLC_HAS_LED2 1
-#else
-#define ZPLC_HAS_LED2 0
-#endif
-
-#if DT_NODE_EXISTS(DT_ALIAS(led3))
-#define ZPLC_LED3_SPEC GPIO_DT_SPEC_GET(DT_ALIAS(led3), gpios)
-#define ZPLC_HAS_LED3 1
-#else
-#define ZPLC_HAS_LED3 0
-#endif
-
-/* Input channels (buttons/switches) */
-#if DT_NODE_EXISTS(DT_ALIAS(sw0))
-#define ZPLC_SW0_SPEC GPIO_DT_SPEC_GET(DT_ALIAS(sw0), gpios)
-#define ZPLC_HAS_SW0 1
-#else
-#define ZPLC_HAS_SW0 0
-#endif
-
-#if DT_NODE_EXISTS(DT_ALIAS(sw1))
-#define ZPLC_SW1_SPEC GPIO_DT_SPEC_GET(DT_ALIAS(sw1), gpios)
-#define ZPLC_HAS_SW1 1
-#else
-#define ZPLC_HAS_SW1 0
-#endif
-
-#if DT_NODE_EXISTS(DT_ALIAS(sw2))
-#define ZPLC_SW2_SPEC GPIO_DT_SPEC_GET(DT_ALIAS(sw2), gpios)
-#define ZPLC_HAS_SW2 1
-#else
-#define ZPLC_HAS_SW2 0
-#endif
-
-#if DT_NODE_EXISTS(DT_ALIAS(sw3))
-#define ZPLC_SW3_SPEC GPIO_DT_SPEC_GET(DT_ALIAS(sw3), gpios)
-#define ZPLC_HAS_SW3 1
-#else
-#define ZPLC_HAS_SW3 0
-#endif
+/* The accessors of the I/O table are the same on every port. */
+#include "../common/zplc_io_common.inc"
 
 /* ============================================================================
  * Timing Functions
@@ -172,150 +101,112 @@ void zplc_hal_sleep(uint32_t ms) { k_msleep((int32_t)ms); }
  * ============================================================================
  */
 
+/** @brief Number of digital channels (outputs first) of the board. */
+static uint16_t gpio_channel_count(void) {
+  return zplc_io_gpio_binding_count;
+}
+
+/** @brief Whether channel `channel` must configure for the HAL to initialize. */
+static bool gpio_channel_required(uint16_t channel) {
+  const struct zplc_io_gpio_binding *binding = &zplc_io_gpio_bindings[channel];
+
+  if (binding->required != 0U) {
+    return true;
+  }
+  /* The Kconfig mask counts outputs from the first one, which is channel 0. */
+  return binding->is_output != 0U && channel < 32U &&
+         (CONFIG_ZPLC_REQUIRED_GPIO_OUTPUT_MASK & BIT(channel)) != 0U;
+}
+
 /**
  * @brief Configure a single GPIO channel.
  *
- * @param idx Channel index in gpio_channels array
- * @param spec GPIO DeviceTree spec
- * @param is_output true for output, false for input
+ * @param idx Channel index in zplc_io_gpio_bindings
  * @return 0 on success, negative error code on failure
  */
-static int __maybe_unused gpio_channel_configure(
-    uint8_t idx, const struct gpio_dt_spec *spec, bool is_output) {
-  int ret;
+static int gpio_channel_configure(uint16_t idx) {
+  const struct zplc_io_gpio_binding *binding = &zplc_io_gpio_bindings[idx];
   gpio_flags_t flags;
+  int ret;
 
-  if (idx >= ZPLC_GPIO_MAX_CHANNELS) {
-    return -EINVAL;
-  }
-
-  /* Copy spec to channel table */
-  gpio_channels[idx].spec = *spec;
-  gpio_channels[idx].is_output = is_output;
-  gpio_channels[idx].configured = false;
+  gpio_state[idx].configured = false;
 
   /* Check if device is ready */
-  if (!gpio_is_ready_dt(spec)) {
-    zplc_hal_log("[HAL] GPIO channel %d: device not ready\n", idx);
+  if (!gpio_is_ready_dt(&binding->spec)) {
+    zplc_hal_log("[HAL] GPIO channel %u: device not ready\n", (unsigned)idx);
     return -ENODEV;
   }
 
-  /* Configure pin direction */
-  if (is_output) {
-    flags = GPIO_OUTPUT_INACTIVE;
+  /* Configure pin direction; an output starts at its safe level */
+  if (binding->is_output != 0U) {
+    flags = binding->safe != 0U ? GPIO_OUTPUT_ACTIVE : GPIO_OUTPUT_INACTIVE;
   } else {
     flags = GPIO_INPUT;
   }
 
-  ret = gpio_pin_configure_dt(spec, flags);
+  ret = gpio_pin_configure_dt(&binding->spec, flags);
   if (ret < 0) {
-    zplc_hal_log("[HAL] GPIO channel %d: configure failed (%d)\n", idx, ret);
+    zplc_hal_log("[HAL] GPIO channel %u: configure failed (%d)\n",
+                 (unsigned)idx, ret);
     return ret;
   }
 
-  gpio_channels[idx].configured = true;
-  zplc_hal_log("[HAL] GPIO channel %d: configured as %s\n", idx,
-               is_output ? "OUTPUT" : "INPUT");
+  gpio_state[idx].configured = true;
+  zplc_hal_log("[HAL] GPIO channel %u: configured as %s\n", (unsigned)idx,
+               binding->is_output != 0U ? "OUTPUT" : "INPUT");
 
   return 0;
 }
 
 /**
- * @brief Initialize all GPIO channels from DeviceTree.
+ * @brief Configure every digital channel of the board description.
  *
  * @return Number of channels successfully configured
  */
 static int gpio_init_all(void) {
   int configured = 0;
+  uint16_t channel;
 
   zplc_hal_log("[HAL] Configuring GPIO channels...\n");
 
-  /* Clear channel table */
-  memset(gpio_channels, 0, sizeof(gpio_channels));
+  memset(gpio_state, 0, sizeof(gpio_state));
 
-  /* Configure output channels (DO0-DO3 mapped to led0-led3) */
-#if ZPLC_HAS_LED0
-  {
-    static const struct gpio_dt_spec led0 = ZPLC_LED0_SPEC;
-    if (gpio_channel_configure(0, &led0, true) == 0)
+  for (channel = 0U; channel < gpio_channel_count(); channel++) {
+    /* An optional channel the devicetree does not define has no port */
+    if (zplc_io_gpio_bindings[channel].spec.port == NULL) {
+      continue;
+    }
+    if (gpio_channel_configure(channel) == 0) {
       configured++;
+    }
   }
-#endif
-#if ZPLC_HAS_LED1
-  {
-    static const struct gpio_dt_spec led1 = ZPLC_LED1_SPEC;
-    if (gpio_channel_configure(1, &led1, true) == 0)
-      configured++;
-  }
-#endif
-#if ZPLC_HAS_LED2
-  {
-    static const struct gpio_dt_spec led2 = ZPLC_LED2_SPEC;
-    if (gpio_channel_configure(2, &led2, true) == 0)
-      configured++;
-  }
-#endif
-#if ZPLC_HAS_LED3
-  {
-    static const struct gpio_dt_spec led3 = ZPLC_LED3_SPEC;
-    if (gpio_channel_configure(3, &led3, true) == 0)
-      configured++;
-  }
-#endif
-
-  /* Configure input channels (DI0-DI3 mapped to sw0-sw3) */
-#if ZPLC_HAS_SW0
-  {
-    static const struct gpio_dt_spec sw0 = ZPLC_SW0_SPEC;
-    if (gpio_channel_configure(4, &sw0, false) == 0)
-      configured++;
-  }
-#endif
-#if ZPLC_HAS_SW1
-  {
-    static const struct gpio_dt_spec sw1 = ZPLC_SW1_SPEC;
-    if (gpio_channel_configure(5, &sw1, false) == 0)
-      configured++;
-  }
-#endif
-#if ZPLC_HAS_SW2
-  {
-    static const struct gpio_dt_spec sw2 = ZPLC_SW2_SPEC;
-    if (gpio_channel_configure(6, &sw2, false) == 0)
-      configured++;
-  }
-#endif
-#if ZPLC_HAS_SW3
-  {
-    static const struct gpio_dt_spec sw3 = ZPLC_SW3_SPEC;
-    if (gpio_channel_configure(7, &sw3, false) == 0)
-      configured++;
-  }
-#endif
 
   zplc_hal_log("[HAL] GPIO: %d channels configured\n", configured);
   return configured;
 }
 
-static uint8_t gpio_output_configured_mask(void) {
-  uint8_t mask = 0U;
-  uint8_t channel;
+/** @brief Whether every required digital channel configured. */
+static bool gpio_required_configured(void) {
+  uint16_t channel;
+  bool all = true;
 
-  for (channel = 0U; channel < ZPLC_GPIO_OUTPUT_COUNT; channel++) {
-    if (gpio_channels[channel].configured) {
-      mask |= (uint8_t)BIT(channel);
+  for (channel = 0U; channel < gpio_channel_count(); channel++) {
+    if (gpio_channel_required(channel) && !gpio_state[channel].configured) {
+      zplc_hal_log("[HAL] Required GPIO channel %u (%s) is missing\n",
+                   (unsigned)channel,
+                   zplc_io_gpio_bindings[channel].is_output != 0U ? "output"
+                                                                  : "input");
+      all = false;
     }
   }
-
-  return mask;
+  return all;
 }
 
 /**
- * @brief Read a digital input channel.
+ * @brief Read a digital channel.
  *
- * Channel mapping:
- *   0-3: Output channels (can read back state)
- *   4-7: Input channels (buttons/switches)
+ * Channel mapping: outputs first (they can be read back), then inputs, in the
+ * order of the generated I/O table.
  */
 zplc_hal_result_t zplc_hal_gpio_read(uint8_t channel, uint8_t *value) {
   int ret;
@@ -324,17 +215,17 @@ zplc_hal_result_t zplc_hal_gpio_read(uint8_t channel, uint8_t *value) {
     return ZPLC_HAL_ERROR;
   }
 
-  if (channel >= ZPLC_GPIO_MAX_CHANNELS) {
+  if (channel >= gpio_channel_count()) {
     *value = 0;
     return ZPLC_HAL_ERROR;
   }
 
-  if (!gpio_channels[channel].configured) {
+  if (!gpio_state[channel].configured) {
     *value = 0;
     return ZPLC_HAL_NOT_IMPL;
   }
 
-  ret = gpio_pin_get_dt(&gpio_channels[channel].spec);
+  ret = gpio_pin_get_dt(&zplc_io_gpio_bindings[channel].spec);
   if (ret < 0) {
     *value = 0;
     return ZPLC_HAL_ERROR;
@@ -347,7 +238,7 @@ zplc_hal_result_t zplc_hal_gpio_read(uint8_t channel, uint8_t *value) {
 /**
  * @brief Write to a digital output channel.
  *
- * Only channels 0-3 (outputs) can be written.
+ * Only output channels can be written.
  */
 zplc_hal_result_t zplc_hal_gpio_write(uint8_t channel, uint8_t value) {
   int ret;
@@ -356,22 +247,19 @@ zplc_hal_result_t zplc_hal_gpio_write(uint8_t channel, uint8_t value) {
     return ZPLC_HAL_ERROR;
   }
 
-  if (channel >= ZPLC_GPIO_OUTPUT_COUNT) {
+  if (channel >= gpio_channel_count() ||
+      zplc_io_gpio_bindings[channel].is_output == 0U) {
     return ZPLC_HAL_ERROR;
   }
 
-  if (!gpio_channels[channel].configured) {
-    if ((CONFIG_ZPLC_REQUIRED_GPIO_OUTPUT_MASK & BIT(channel)) != 0U) {
+  if (!gpio_state[channel].configured) {
+    if (gpio_channel_required(channel)) {
       return ZPLC_HAL_ERROR;
     }
     return ZPLC_HAL_NOT_IMPL;
   }
 
-  if (!gpio_channels[channel].is_output) {
-    return ZPLC_HAL_ERROR;
-  }
-
-  ret = gpio_pin_set_dt(&gpio_channels[channel].spec, value ? 1 : 0);
+  ret = gpio_pin_set_dt(&zplc_io_gpio_bindings[channel].spec, value ? 1 : 0);
   if (ret < 0) {
     return ZPLC_HAL_ERROR;
   }
@@ -382,167 +270,116 @@ zplc_hal_result_t zplc_hal_gpio_write(uint8_t channel, uint8_t value) {
 /* ============================================================================
  * Analog I/O Functions
  * ============================================================================
+ *
+ * The analog inputs are the analog channels of the board description,
+ * zplc_io_adc_bindings[]: the converter, the channel setup and the resolution
+ * of each. Every channel is set up in zplc_hal_init(), before the runtime can
+ * enter RUN (IO-018); a read never configures a converter.
  */
 
 #ifdef CONFIG_ADC
 
-#include <zephyr/drivers/adc.h>
-
-/* Get ADC device from DeviceTree */
-#define ADC_NODE DT_NODELABEL(adc)
-
-#if DT_NODE_EXISTS(ADC_NODE)
-
-static const struct device *adc_dev = DEVICE_DT_GET(ADC_NODE);
-
-/* Maximum number of ADC channels to support */
-#define ZPLC_ADC_MAX_CHANNELS 5
-
-/* Channel configuration for each channel */
-static struct adc_channel_cfg adc_channel_cfgs[ZPLC_ADC_MAX_CHANNELS];
-
-/* Track which channels have been configured */
-static bool adc_channel_configured[ZPLC_ADC_MAX_CHANNELS] = {false};
-
-/** @brief ADC initialized flag */
-static bool adc_initialized = false;
+static bool adc_state_configured[ZPLC_IO_MAX_CHANNELS];
 
 /**
- * @brief Initialize ADC device.
+ * @brief Set up every analog channel of the board description.
+ *
+ * @return Number of channels successfully set up
  */
-static int adc_init_device(void) {
-  if (adc_initialized) {
-    return 0;
-  }
+static int adc_init_all(void) {
+  int configured = 0;
+  uint16_t channel;
 
-  if (!device_is_ready(adc_dev)) {
-    zplc_hal_log("[HAL] ADC device not ready\n");
-    return -ENODEV;
-  }
+  memset(adc_state_configured, 0, sizeof(adc_state_configured));
 
-  adc_initialized = true;
-  zplc_hal_log("[HAL] ADC device initialized\n");
-  return 0;
+  for (channel = 0U; channel < zplc_io_adc_binding_count; channel++) {
+    const struct zplc_io_adc_binding *binding = &zplc_io_adc_bindings[channel];
+    int ret;
+
+    /* An optional converter that the devicetree does not enable is absent */
+    if (binding->dev == NULL) {
+      continue;
+    }
+    if (!device_is_ready(binding->dev)) {
+      zplc_hal_log("[HAL] ADC channel %u: device not ready\n",
+                   (unsigned)channel);
+      continue;
+    }
+    ret = adc_channel_setup(binding->dev, &binding->cfg);
+    if (ret < 0) {
+      zplc_hal_log("[HAL] ADC channel %u setup failed: %d\n",
+                   (unsigned)channel, ret);
+      continue;
+    }
+    adc_state_configured[channel] = true;
+    configured++;
+    zplc_hal_log("[HAL] ADC channel %u configured\n", (unsigned)channel);
+  }
+  return configured;
 }
 
-/**
- * @brief Configure an ADC channel if not already configured.
- */
-static int adc_ensure_channel_configured(uint8_t channel) {
-  int ret;
+/** @brief Whether every required analog channel was set up. */
+static bool adc_required_configured(void) {
+  uint16_t channel;
+  bool all = true;
 
-  if (channel >= ZPLC_ADC_MAX_CHANNELS) {
-    return -EINVAL;
+  for (channel = 0U; channel < zplc_io_adc_binding_count; channel++) {
+    if (zplc_io_adc_bindings[channel].required != 0U &&
+        !adc_state_configured[channel]) {
+      zplc_hal_log("[HAL] Required ADC channel %u is missing\n",
+                   (unsigned)channel);
+      all = false;
+    }
   }
-
-  if (adc_channel_configured[channel]) {
-    return 0;
-  }
-
-  /* Configure channel settings */
-  if (channel == 4) {
-    /* Channel 4 is the internal temperature sensor on RP2040.
-     * On Zephyr, the sensor is enabled automatically when channel 4 is read.
-     * No explicit enable call is needed (unlike Pico SDK). */
-
-    adc_channel_cfgs[channel] = (struct adc_channel_cfg){
-        .gain = ADC_GAIN_1,
-        .reference = ADC_REF_INTERNAL,
-        .acquisition_time =
-            ADC_ACQ_TIME_DEFAULT, /* 20us rejected by driver, using default */
-        .channel_id = channel,
-        .differential = 0,
-    };
-  } else {
-    /* Default for external channels */
-    adc_channel_cfgs[channel] = (struct adc_channel_cfg){
-        .gain = ADC_GAIN_1,
-        .reference = ADC_REF_INTERNAL,
-        .acquisition_time = ADC_ACQ_TIME_DEFAULT,
-        .channel_id = channel,
-        .differential = 0,
-    };
-  }
-
-  ret = adc_channel_setup(adc_dev, &adc_channel_cfgs[channel]);
-  if (ret < 0) {
-    zplc_hal_log("[HAL] ADC channel %u setup failed: %d\n", channel, ret);
-    return ret;
-  }
-
-  adc_channel_configured[channel] = true;
-  zplc_hal_log("[HAL] ADC channel %u configured\n", channel);
-  return 0;
+  return all;
 }
 
 zplc_hal_result_t zplc_hal_adc_read(uint8_t channel, uint16_t *value) {
-  int ret;
+  const struct zplc_io_adc_binding *binding;
   int16_t sample_buffer;
+  int ret;
 
   if (value == NULL) {
     return ZPLC_HAL_ERROR;
   }
 
-  if (channel >= ZPLC_ADC_MAX_CHANNELS) {
+  if (channel >= zplc_io_adc_binding_count) {
     *value = 0;
     return ZPLC_HAL_ERROR;
   }
 
-  /* Initialize ADC device if not done yet */
-  ret = adc_init_device();
-  if (ret < 0) {
+  if (!adc_state_configured[channel]) {
     *value = 0;
-    return ZPLC_HAL_ERROR;
+    return ZPLC_HAL_NOT_IMPL;
   }
 
-  /* Ensure channel is configured */
-  ret = adc_ensure_channel_configured(channel);
-  if (ret < 0) {
-    *value = 0;
-    return ZPLC_HAL_ERROR;
+  binding = &zplc_io_adc_bindings[channel];
+  {
+    struct adc_sequence sequence = {
+        .channels = BIT(binding->cfg.channel_id),
+        .buffer = &sample_buffer,
+        .buffer_size = sizeof(sample_buffer),
+        .resolution = binding->resolution,
+        .oversampling = 0,
+    };
+
+    ret = adc_read(binding->dev, &sequence);
   }
-
-  /* Configure and execute ADC sequence */
-  struct adc_sequence sequence = {
-      .channels = BIT(channel),
-      .buffer = &sample_buffer,
-      .buffer_size = sizeof(sample_buffer),
-      .resolution = 12, /* 12-bit resolution for RP2040 */
-      .oversampling = 0,
-  };
-
-  ret = adc_read(adc_dev, &sequence);
   if (ret < 0) {
     zplc_hal_log("[HAL] ADC read failed: %d\n", ret);
     *value = 0;
     return ZPLC_HAL_ERROR;
   }
 
-  /* Return raw value (12-bit, 0-4095) */
+  /* The raw converter value; its scaling is the range of the description */
   *value = (uint16_t)sample_buffer;
   return ZPLC_HAL_OK;
 }
 
-#else /* No ADC node in DT */
-
-zplc_hal_result_t zplc_hal_adc_read(uint8_t channel, uint16_t *value) {
-  static bool adc_missing_warned = false;
-
-  (void)channel;
-  if (value)
-    *value = 0;
-
-  if (!adc_missing_warned) {
-    zplc_hal_log("[HAL] ADC: No ADC device in DeviceTree\n");
-    adc_missing_warned = true;
-  }
-
-  return ZPLC_HAL_NOT_IMPL;
-}
-
-#endif /* DT_NODE_EXISTS(ADC_NODE) */
-
 #else /* !CONFIG_ADC */
+
+static int adc_init_all(void) { return 0; }
+static bool adc_required_configured(void) { return true; }
 
 zplc_hal_result_t zplc_hal_adc_read(uint8_t channel, uint16_t *value) {
   (void)channel;
@@ -553,11 +390,17 @@ zplc_hal_result_t zplc_hal_adc_read(uint8_t channel, uint16_t *value) {
 
 #endif /* CONFIG_ADC */
 
+/**
+ * @brief Write an analog output channel.
+ *
+ * No port drives an analog output and no board description lists one (IO-006):
+ * the call returns ZPLC_HAL_NOT_IMPL, which zplc_io_write_channel() passes to
+ * its caller.
+ */
 zplc_hal_result_t zplc_hal_dac_write(uint8_t channel, uint16_t value) {
   (void)channel;
   (void)value;
 
-  /* TODO: Implement via PWM for Pico (no native DAC) */
   return ZPLC_HAL_NOT_IMPL;
 }
 
@@ -656,9 +499,13 @@ BUILD_ASSERT(NVS_ID_PROGRAM_CHUNKS + 2U * ZPLC_PROGRAM_STORE_MAX_CHUNKS <= NVS_I
              "the program chunk identifiers run into those of the device settings");
 
 /** @brief The AWS IoT fleet-provisioned device certificate and key (PEM).
- *         The keys were never mapped, so the save always failed on a board. */
+ *         The keys were never mapped, so the save always failed on a board. Every key the runtime stores has an
+ *         identifier (IO-008): a key without one is an error, not a silent drop. They sit above the device
+ *         settings, which the assertion keeps true. */
 #define NVS_ID_AWS_CERT_PEM 640
 #define NVS_ID_AWS_KEY_PEM 641
+BUILD_ASSERT(NVS_ID_CONFIG_BASE + 100U <= NVS_ID_AWS_CERT_PEM,
+             "the device setting identifiers run into those of the AWS credentials");
 
 /** @brief NVS filesystem handle */
 static struct nvs_fs nvs_handle;
@@ -1263,12 +1110,14 @@ void zplc_hal_log(const char *fmt, ...) {
 /**
  * @brief Initialize the Zephyr HAL.
  *
- * Initializes GPIO channels from DeviceTree and prepares other subsystems.
+ * Configures every digital and analog channel of the board I/O description
+ * (IO-018): the peripherals are ready before the scheduler can enter RUN, not
+ * on the first scan. A required channel that cannot be configured fails the
+ * initialization and leaves the HAL not ready.
  */
 zplc_hal_result_t zplc_hal_init(void) {
   int gpio_count;
-  uint8_t configured_output_mask;
-  uint8_t missing_output_mask;
+  int adc_count;
 
   if (hal_initialized) {
     return ZPLC_HAL_OK;
@@ -1276,21 +1125,18 @@ zplc_hal_result_t zplc_hal_init(void) {
 
   zplc_hal_log("[HAL] Zephyr HAL initializing...\n");
 
-  /* Initialize GPIO from DeviceTree */
+  /* Configure the channels of the board description */
   gpio_count = gpio_init_all();
-  configured_output_mask = gpio_output_configured_mask();
-  missing_output_mask = (uint8_t)(CONFIG_ZPLC_REQUIRED_GPIO_OUTPUT_MASK &
-                                  ~configured_output_mask);
+  adc_count = adc_init_all();
 
-  if (missing_output_mask != 0U) {
-    zplc_hal_log("[HAL] Required output mask 0x%x missing 0x%x\n",
-                 CONFIG_ZPLC_REQUIRED_GPIO_OUTPUT_MASK, missing_output_mask);
+  if (!gpio_required_configured() || !adc_required_configured()) {
+    zplc_hal_log("[HAL] A required I/O channel of the board is missing\n");
     return ZPLC_HAL_ERROR;
   }
 
-  if (gpio_count == 0) {
-    zplc_hal_log("[HAL] Warning: No GPIO channels configured\n");
-    zplc_hal_log("[HAL] Add led0/sw0 aliases to board overlay\n");
+  if (gpio_count == 0 && adc_count == 0) {
+    zplc_hal_log("[HAL] Warning: No I/O channels configured\n");
+    zplc_hal_log("[HAL] Describe the board in firmware/app/boards/boards.json\n");
   }
 
   hal_initialized = true;
@@ -1302,16 +1148,19 @@ zplc_hal_result_t zplc_hal_init(void) {
 /**
  * @brief Shutdown the Zephyr HAL.
  *
- * Releases resources and turns off outputs.
+ * Releases resources and drives every output to its safe level.
  */
 zplc_hal_result_t zplc_hal_shutdown(void) {
   zplc_hal_result_t result = ZPLC_HAL_OK;
+  uint16_t channel;
 
   zplc_hal_log("[HAL] Zephyr HAL shutting down...\n");
 
-  /* Turn off all outputs */
-  for (int i = 0; i < ZPLC_GPIO_OUTPUT_COUNT; i++) {
-    if (gpio_channels[i].configured) {
+  /* Drive all outputs to their safe level */
+  for (channel = 0U; channel < gpio_channel_count(); channel++) {
+    const struct zplc_io_gpio_binding *binding = &zplc_io_gpio_bindings[channel];
+
+    if (binding->is_output != 0U && gpio_state[channel].configured) {
       int ret;
 
 #ifdef CONFIG_ZTEST
@@ -1321,7 +1170,7 @@ zplc_hal_result_t zplc_hal_shutdown(void) {
       } else
 #endif
       {
-        ret = gpio_pin_set_dt(&gpio_channels[i].spec, 0);
+        ret = gpio_pin_set_dt(&binding->spec, binding->safe != 0U ? 1 : 0);
       }
 
       if (ret < 0) {

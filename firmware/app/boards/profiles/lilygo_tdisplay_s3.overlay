@@ -1,0 +1,26 @@
+/*
+ * ZPLC profile - LilyGo T-Display S3 on top of the ESP32-S3-DevKitC-1 profile
+ * SPDX-License-Identifier: MIT
+ *
+ * The T-Display S3 carries the ESP32-S3R8 with 16 MB flash and 8 MB octal PSRAM.
+ * Everything else is the ESP32-S3 profile of esp32s3_devkitc_esp32s3_procpu.overlay,
+ * so this file only holds what is specific to the T-Display S3:
+ *
+ *   - the 16 MB flash (the base board DTS targets the 8 MB N8 module);
+ *   - GPIO15 is the LCD power rail on this board: DO1 switches the display.
+ *
+ * Build with the DevKitC-1 profile and this one layered on it:
+ *
+ *   west build -b esp32s3_devkitc/esp32s3/procpu firmware/app --pristine -- \
+ *     -DEXTRA_DTC_OVERLAY_FILE=boards/profiles/lilygo_tdisplay_s3.overlay
+ *
+ * This profile is not in the board manifest and is not cross-built in CI.
+ */
+
+&flash0 {
+    reg = <0x0 DT_SIZE_M(16)>;
+};
+
+&led1 {
+    label = "ZPLC Output 1 (LCD power, GPIO15)";
+};

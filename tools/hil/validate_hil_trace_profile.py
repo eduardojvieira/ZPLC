@@ -16,25 +16,24 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
-MANIFEST = ROOT / "firmware/app/boards/supported-boards.v1.5.0.json"
+MANIFEST = ROOT / "firmware/app/boards/boards.json"
 OVERLAY = Path(__file__).resolve().with_name("hil_debug.conf")
 ON = re.compile(r"^\s*CONFIG_ZPLC_HIL_DEBUG\s*=\s*y\s*$")
 
 
-def problems(manifest: list[dict], root: Path, overlay: Path) -> list[str]:
+def problems(manifest: list[dict], root: Path, overlay: Path, profile_dir: Path | None = None) -> list[str]:
+    """What breaks the rule: every .conf the manifest lists, and every .conf of `profile_dir` (a profile the manifest forgot is checked too)."""
     found = []
-    seen: set[str] = set()
-    for board in manifest:
-        for asset in board.get("support_assets", []):
-            if not asset.endswith(".conf") or asset in seen:
-                continue
-            seen.add(asset)
-            path = root / asset
-            if not path.is_file():
-                continue
-            for number, line in enumerate(path.read_text().splitlines(), start=1):
-                if ON.match(line):
-                    found.append(f"{asset}:{number} sets CONFIG_ZPLC_HIL_DEBUG=y: release firmware carries no HIL trace (HIL-013); use the overlay")
+    assets = [asset for board in manifest for asset in board.get("support_assets", [])]
+    if profile_dir is not None:
+        assets += [path.relative_to(root).as_posix() for path in sorted(profile_dir.glob("*.conf"))]
+    for asset in dict.fromkeys(a for a in assets if a.endswith(".conf")):
+        path = root / asset
+        if not path.is_file():
+            continue
+        for number, line in enumerate(path.read_text().splitlines(), start=1):
+            if ON.match(line):
+                found.append(f"{asset}:{number} sets CONFIG_ZPLC_HIL_DEBUG=y: release firmware carries no HIL trace (HIL-013); use the overlay")
     if not overlay.is_file() or not any(ON.match(line) for line in overlay.read_text().splitlines()):
         found.append(f"{overlay.name} does not set CONFIG_ZPLC_HIL_DEBUG=y, so a HIL build has no trace")
     return found
@@ -47,7 +46,8 @@ def main(argv=None) -> int:
     parser.add_argument("--overlay", default=str(OVERLAY))
     args = parser.parse_args(argv)
     manifest = json.loads(Path(args.manifest).read_text())
-    found = problems(manifest, Path(args.root), Path(args.overlay))
+    root = Path(args.root)
+    found = problems(manifest, root, Path(args.overlay), root / "firmware/app/boards" if (root / "firmware/app/boards").is_dir() else None)
     for line in found:
         print(f"ERROR: {line}")
     if not found:

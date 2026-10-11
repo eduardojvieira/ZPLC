@@ -81,6 +81,8 @@ import type {
     CommunicationTagConfig,
 } from '../types/index.ts';
 import { getCompilerMemoryProfile } from '../config/boardProfiles.ts';
+import { checkLocatedVariables, locatedVariablesOf } from '../boards/ioAdmission.ts';
+import { normalizeAddress } from '../boards/boardIoMapping.ts';
 import { annotateDebugMapElements } from './debugElements.ts';
 import {
     ElementError,
@@ -653,6 +655,16 @@ export function compileMultiTaskProject(
             debug: options.debug,
             reportWarnings: options.reportWarnings,
         });
+        // IO-003: a variable located where the board has no channel is a build error that names the board
+        const unmapped = checkLocatedVariables(
+            config.target?.board, locatedVariablesOf(result.debugMap),
+            new Set((config.io?.virtual ?? []).map((row) => normalizeAddress(row.address)).filter((address): address is string => address !== undefined)),
+        );
+        if (unmapped.length > 0) {
+            const errors = unmapped.map((message) => new CompilerError(message, 0, 0, 'codegen'));
+            errors[0]!.errors = errors;
+            throw errors[0];
+        }
         // the map names what the author edited, not the generated lines (LNG-004)
         annotateDebugMapElements(result.debugMap, translated);
         // a graphical source has no lines: its warnings would point into the generated Structured Text

@@ -1,0 +1,18 @@
+tests:
+  # IO-006, IO-018: analog inputs of the board description are configured in zplc_hal_init, on the ADC emulator.
+  zplc.io_analog.ok:
+    tags: [zplc, hal, io, adc]
+    platform_allow: [native_sim/native/64, native_sim/native]
+    integration_platforms: [native_sim/native/64]
+    harness: ztest
+    timeout: 30
+    extra_args:
+      - ZPLC_IO_VARIANT=ok
+  zplc.io_analog.missing:
+    tags: [zplc, hal, io, adc]
+    platform_allow: [native_sim/native/64, native_sim/native]
+    integration_platforms: [native_sim/native/64]
+    harness: ztest
+    timeout: 30
+    extra_args:
+      - ZPLC_IO_VARIANT=missing

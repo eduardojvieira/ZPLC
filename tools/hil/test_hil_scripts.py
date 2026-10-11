@@ -55,6 +55,8 @@ FIXTURE_SCRIPTS = {
 SERIAL_SCRIPTS = ["test_modbus_rtu_serial", "test_modbus_tcp", "test_comm_security"]
 # what a script is when it is not a device script: libraries, host checks with their own exit status, and unit tests
 LIBRARIES = {"zplc_tester", "language_tester", "fixture_script", "opcode_cases", "hil_ports", "hil_devices", "hil_record", "hil_guard"}
+# unit tests of the board I/O description (WS-29, IO-001): unittest modules of their own, not device scripts
+OTHER_UNIT_TESTS = {"test_board_io_description", "test_io_table_generator"}
 HOST_CHECKS = {
     "audit_repo_hygiene", "audit_specs_scope", "validate_docs_parity", "validate_release_evidence", "validate_supported_boards",
     "run_board_matrix", "verify_compilation", "run_all_hil_tests", "run_all_languages",
@@ -157,7 +159,7 @@ class BenchUtilitiesTests(QuietCase):
         non_gating = set(json.loads((HERE / "non-gating.json").read_text())["scripts"])
         gating = {f"{m}.py" for m in [*OPCODE_SCRIPTS, *FIXTURE_SCRIPTS, *SERIAL_SCRIPTS]}
         known = non_gating | gating | {f"{m}.py" for m in [*LIBRARIES, *HOST_CHECKS]}
-        scripts = {p.name for p in HERE.glob("*.py") if not p.name.startswith("test_hil_") and not p.name.startswith("test_validate_")}
+        scripts = {p.name for p in HERE.glob("*.py") if not p.name.startswith(("test_hil_", "test_validate_")) and p.stem not in OTHER_UNIT_TESTS}
         self.assertEqual(sorted(scripts - known), [], "a script of tools/hil is neither gating nor on tools/hil/non-gating.json")
         self.assertEqual(sorted(non_gating & gating), [], "a script is both gating and non-gating")
         self.assertEqual(sorted(known - scripts), [], "a script that the lists name is gone")

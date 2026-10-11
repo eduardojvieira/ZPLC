@@ -30,7 +30,7 @@ from language_tester import LanguageTester, fixtures_of
 from zplc_tester import CompileError, UploadError
 
 ROOT = Path(__file__).resolve().parents[2]
-MANIFEST = ROOT / "firmware/app/boards/supported-boards.v1.5.0.json"
+MANIFEST = ROOT / "firmware/app/boards/boards.json"
 HIL_OVERLAY = Path(__file__).resolve().with_name("hil_debug.conf")
 DEFAULT_OUT = ROOT / "build" / "hil-records"
 
@@ -53,7 +53,7 @@ PENDING = [
 
 def parse(argv=None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("board", help="ide_id or board_id of the board in firmware/app/boards/supported-boards.v1.5.0.json")
+    parser.add_argument("board", help="ide_id or board_id of the board in firmware/app/boards/boards.json")
     parser.add_argument("--port", help="serial port; else ZPLC_SERIAL_PORT, else found from the USB identifiers of the board")
     parser.add_argument("--out", default=str(DEFAULT_OUT), help="directory for the run record (default: build/hil-records)")
     parser.add_argument("--operator", help="who is at the bench; asked for when not given")

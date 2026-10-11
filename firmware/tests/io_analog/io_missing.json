@@ -1,0 +1,59 @@
+{
+  "board_id": "io-analog-missing",
+  "io": {
+    "schema_version": 1,
+    "unmapped": [],
+    "channels": [
+      {
+        "id": "AI0",
+        "direction": "input",
+        "kind": "analog",
+        "address": "%IW4",
+        "pin": "CH0",
+        "dt": {
+          "controller": "adc",
+          "channel": 0,
+          "gain": "ADC_GAIN_1",
+          "reference": "ADC_REF_INTERNAL",
+          "acquisition_time": "ADC_ACQ_TIME_DEFAULT"
+        },
+        "resolution_bits": 12,
+        "range": {
+          "raw_min": 0,
+          "raw_max": 4095,
+          "eng_min": 0.0,
+          "eng_max": 3.3,
+          "unit": "V"
+        },
+        "electrical": "emulated converter",
+        "pin_status": "devicetree",
+        "source": "firmware/zephyr/io-default.json"
+      },
+      {
+        "id": "AI1",
+        "direction": "input",
+        "kind": "analog",
+        "address": "%IW5",
+        "pin": "CH5",
+        "dt": {
+          "controller": "adc",
+          "channel": 5,
+          "gain": "ADC_GAIN_1",
+          "reference": "ADC_REF_INTERNAL",
+          "acquisition_time": "ADC_ACQ_TIME_DEFAULT"
+        },
+        "resolution_bits": 12,
+        "range": {
+          "raw_min": 0,
+          "raw_max": 4095,
+          "eng_min": 0.0,
+          "eng_max": 3.3,
+          "unit": "V"
+        },
+        "electrical": "emulated converter",
+        "pin_status": "devicetree",
+        "source": "firmware/zephyr/io-default.json"
+      }
+    ]
+  }
+}

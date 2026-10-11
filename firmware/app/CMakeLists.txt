@@ -33,10 +33,10 @@ else()
 endif()
 zplc_check_tls_random("${_zplc_tls}" "${CONFIG_TEST_RANDOM_GENERATOR}" "${CONFIG_CSPRNG_ENABLED}")
 
-# RT-028, RT-029: the sizes a board profile advertises to the IDE (supported-boards.v1.5.0.json) are the sizes the
+# RT-028, RT-029: the sizes a board profile advertises to the IDE (boards.json) are the sizes the
 # build was configured with. The largest artifact the program store accepts is CONFIG_ZPLC_CODE_SIZE_MAX, and a
 # manifest that says another number would make the IDE offer a program the board refuses, or refuse one it holds.
-file(READ "${CMAKE_CURRENT_SOURCE_DIR}/boards/supported-boards.v1.5.0.json" ZPLC_BOARD_MANIFEST)
+file(READ "${CMAKE_CURRENT_SOURCE_DIR}/boards/boards.json" ZPLC_BOARD_MANIFEST)
 string(JSON ZPLC_BOARD_COUNT LENGTH "${ZPLC_BOARD_MANIFEST}")
 if(ZPLC_BOARD_COUNT GREATER 0)
   math(EXPR ZPLC_BOARD_LAST "${ZPLC_BOARD_COUNT} - 1")
@@ -59,7 +59,7 @@ if(ZPLC_BOARD_COUNT GREATER 0)
         list(GET ZPLC_PAIR 3 ZPLC_SYMBOL)
         if(NOT ZPLC_ADVERTISED EQUAL ZPLC_CONFIGURED)
           message(FATAL_ERROR
-            "boards/supported-boards.v1.5.0.json advertises ${ZPLC_KEY}=${ZPLC_ADVERTISED} for ${ZPLC_BOARD_ID} "
+            "boards/boards.json advertises ${ZPLC_KEY}=${ZPLC_ADVERTISED} for ${ZPLC_BOARD_ID} "
             "but the build is configured with ${ZPLC_SYMBOL}=${ZPLC_CONFIGURED}: the IDE would offer a program "
             "size the board does not accept. Make the two agree.")
         endif()

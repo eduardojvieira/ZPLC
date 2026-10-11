@@ -1,6 +1,9 @@
 import type { NetworkConfig } from '../types';
 import type { CompilerMemoryProfile } from '@zplc/compiler';
-import supportedBoardsManifest from '../../../../firmware/app/boards/supported-boards.v1.5.0.json';
+import boardManifest from '../../../../firmware/app/boards/boards.json';
+import { descriptionHash, imageExtent, readBoardIo, type BoardIoDescription } from '../boards/boardIo';
+import { EVIDENCE_RECORDS } from '../boards/evidenceRecords';
+import { supportLevelFromRecords } from '../boards/supportLevel';
 
 export const NETWORK_INTERFACE = {
   NONE: 'none',
@@ -16,12 +19,18 @@ export interface BoardOption {
 }
 
 interface BoardProfile {
+  boardId: string;
   label: string;
   network: NetworkInterfaceKind;
   zephyrBoard: string;
   memory: CompilerMemoryProfile;
   validationLevel: 'cross-build' | 'human-hil';
+  /** Records that name this board, the firmware version and the image they were made on (IO-015). */
   evidenceCount: number;
+  /** The channels of the board with their pins (IO-001, IO-003). */
+  io: BoardIoDescription;
+  /** The identity of the description, as the firmware reports it in the handshake (IO-004). */
+  ioHash: string;
 }
 
 interface SupportedBoardManifestEntry {
@@ -32,17 +41,17 @@ interface SupportedBoardManifestEntry {
   network_class: 'serial-focused' | 'network-capable' | 'other';
   network_interface: 'none' | 'wifi' | 'ethernet';
   memory: { work_size: number; retain_size: number; code_size_max: number };
-  validation_level: 'cross-build' | 'human-hil';
   evidence_refs: string[];
+  io: unknown;
 }
 
+/** The support level is derived from the records the manifest references; a hand-set field is not read (IO-015). */
 function boardEvidence(board: SupportedBoardManifestEntry): Pick<BoardProfile, 'validationLevel' | 'evidenceCount'> | undefined {
-  if ((board.validation_level !== 'cross-build' && board.validation_level !== 'human-hil')
-    || !Array.isArray(board.evidence_refs)
+  if (!Array.isArray(board.evidence_refs)
     || board.evidence_refs.length > 16
-    || !board.evidence_refs.every((reference) => typeof reference === 'string' && reference.length > 0 && reference.length <= 256)
-    || (board.validation_level === 'human-hil' && board.evidence_refs.length === 0)) return undefined;
-  return { validationLevel: board.validation_level, evidenceCount: board.evidence_refs.length };
+    || !board.evidence_refs.every((reference) => typeof reference === 'string' && reference.length > 0 && reference.length <= 256)) return undefined;
+  const derived = supportLevelFromRecords(board.board_id, board.evidence_refs.map((reference) => [reference, EVIDENCE_RECORDS[reference] ?? null] as const));
+  return { validationLevel: derived.level, evidenceCount: derived.records.length };
 }
 
 function mapNetworkClassToInterface(
@@ -60,9 +69,13 @@ function mapNetworkClassToInterface(
 }
 
 const BOARD_PROFILES: Record<string, BoardProfile> = Object.fromEntries(
-  (supportedBoardsManifest as SupportedBoardManifestEntry[]).flatMap((board) => {
+  (boardManifest as unknown as SupportedBoardManifestEntry[]).flatMap((board) => {
     const evidence = boardEvidence(board);
-    return evidence ? [[board.ide_id, {
+    const io = readBoardIo(board.io);
+    return evidence && io ? [[board.ide_id, {
+      boardId: board.board_id,
+      io,
+      ioHash: descriptionHash(board.board_id, io),
       label: board.display_name,
       network: mapNetworkClassToInterface(board.network_interface),
       zephyrBoard: board.zephyr_board,
@@ -107,6 +120,24 @@ export function getBoardEvidenceSummary(board: string | undefined): Readonly<{
     validationLevel: profile.validationLevel,
     evidenceCount: profile.evidenceCount,
   };
+}
+
+/** The I/O description of a catalogue board: undefined for host, custom and unknown selectors (IO-003). */
+export function getBoardIo(board: string | undefined): BoardIoDescription | undefined {
+  return board ? BOARD_PROFILES[board]?.io : undefined;
+}
+
+/** What the firmware of the board reports about its I/O description, as Studio expects it (IO-004). */
+export function getBoardIoIdentity(board: string | undefined): Readonly<{
+  boardId: string; displayName: string; hash: string; inputBytes: number; outputBytes: number;
+}> | undefined {
+  const profile = board ? BOARD_PROFILES[board] : undefined;
+  return profile && { boardId: profile.boardId, displayName: profile.label, hash: profile.ioHash, ...imageExtent(profile.io) };
+}
+
+/** The IDE board identifier of a full Zephyr board target the device reports, when the catalogue has it. */
+export function getBoardByZephyrTarget(target: string | undefined): string | undefined {
+  return Object.entries(BOARD_PROFILES).find(([, profile]) => profile.zephyrBoard === target)?.[0];
 }
 
 /** Effective compiler limits for a catalogue board; host/custom remain default. */

@@ -314,100 +314,149 @@ static int scheduler_slots_empty(void) {
  * ============================================================================
  */
 
-/** @brief Number of digital I/O channels to sync */
-#define ZPLC_DIO_CHANNEL_COUNT 4
-
-/** @brief Number of ADC channels to sync (0-4) */
-#define ZPLC_ADC_CHANNEL_COUNT 5
+/*
+ * The channels that are synchronized are the I/O table of the board
+ * (zplc_io_table(), generated from the board description): every input channel
+ * is written to the input image at its address and every output channel is
+ * read from the output image, so a channel added to a board needs no change
+ * here.
+ */
 
 /**
  * @brief The physical inputs of one scan, read before the scan takes the image lock (RT-012).
  *
  * Reading a pin or a converter is hardware I/O and can block; the image is not touched by it. The values are
- * written into IPI at the input latch, under the image lock, by apply_input_samples_locked().
+ * kept by table index and are written into IPI at the input latch, under the image lock, by
+ * apply_input_samples_locked().
  */
 typedef struct {
-  uint8_t digital;       /* bit i: digital input channel i reads high */
-  uint8_t digital_valid; /* bit i: the channel answered */
-  uint16_t analog[ZPLC_ADC_CHANNEL_COUNT];
-  uint8_t analog_valid;  /* bit ch: the converter channel answered */
+  uint16_t value[ZPLC_IO_MAX_CHANNELS];                    /* by table index: pin level (0/1) or converter word */
+  uint8_t valid[(ZPLC_IO_MAX_CHANNELS + 7U) / 8U];         /* bit set: the channel answered */
 } input_samples_t;
 
+static void sample_mark_valid(input_samples_t *samples, size_t index) {
+  samples->valid[index / 8U] |= (uint8_t)(1U << (index % 8U));
+}
+
+static bool sample_is_valid(const input_samples_t *samples, size_t index) {
+  return (samples->valid[index / 8U] & (1U << (index % 8U))) != 0U;
+}
+
 static zplc_hal_result_t sample_inputs(input_samples_t *samples) {
-  uint8_t value;
-  uint16_t adc_val;
+  size_t index;
+  size_t count = zplc_io_channel_count();
+  uint8_t digital_ordinal = 0U; /* digital input channels counted in table order */
 
   memset(samples, 0, sizeof(*samples));
+  if (count > ZPLC_IO_MAX_CHANNELS) {
+    return ZPLC_HAL_ERROR;
+  }
 
-  /* Read GPIO inputs (channels 4-7 are inputs) */
-  /* Maps to IPI[0] bits 0-3 -> %IX0.0..%IX0.3 (or %I0..%I3) */
-  for (int i = 0; i < ZPLC_DIO_CHANNEL_COUNT; i++) {
+  for (index = 0U; index < count; index++) {
+    const zplc_io_channel_t *channel = zplc_io_channel_at(index);
     zplc_hal_result_t result;
+    uint16_t value = 0U;
+
+    if (channel == NULL || channel->direction != ZPLC_IO_DIR_INPUT) {
+      continue;
+    }
 
 #ifdef CONFIG_ZTEST
-    {
+    if (channel->kind == ZPLC_IO_KIND_DIGITAL) {
       k_spinlock_key_t key = k_spin_lock(&admission_lock);
 
       result = ZPLC_HAL_OK;
       if (test_gpio_read_failure != ZPLC_HAL_OK &&
-          test_gpio_read_failure_channel == (uint8_t)i) {
+          test_gpio_read_failure_channel == digital_ordinal) {
         result = test_gpio_read_failure;
         test_gpio_read_failure = ZPLC_HAL_OK;
       }
       k_spin_unlock(&admission_lock, key);
-    }
-    if (result != ZPLC_HAL_OK && result != ZPLC_HAL_NOT_IMPL) {
-      return result;
-    }
-    if (result == ZPLC_HAL_NOT_IMPL) {
-      continue;
-    }
-#endif
-    result = zplc_hal_gpio_read(4 + i, &value);
-    if (result != ZPLC_HAL_OK && result != ZPLC_HAL_NOT_IMPL) {
-      return result;
-    }
-    if (result == ZPLC_HAL_OK) {
-      samples->digital_valid |= (uint8_t)(1U << i);
-      if (value) {
-        samples->digital |= (uint8_t)(1U << i);
+      if (result != ZPLC_HAL_OK && result != ZPLC_HAL_NOT_IMPL) {
+        return result;
+      }
+      if (result == ZPLC_HAL_NOT_IMPL) {
+        digital_ordinal++;
+        continue;
       }
     }
-  }
-
-  /* Read ADC inputs (channels 0-4) */
-  /* Maps to IPI[8..] -> %IW4 (Offset 8), %IW5 (Offset 10), etc. */
-  for (int ch = 0; ch < ZPLC_ADC_CHANNEL_COUNT; ch++) {
-    zplc_hal_result_t result = zplc_hal_adc_read(ch, &adc_val);
-
+#endif
+    result = zplc_io_read_channel(channel, &value);
     if (result != ZPLC_HAL_OK && result != ZPLC_HAL_NOT_IMPL) {
       return result;
     }
     if (result == ZPLC_HAL_OK) {
-      samples->analog[ch] = adc_val;
-      samples->analog_valid |= (uint8_t)(1U << ch);
+      samples->value[index] = value;
+      sample_mark_valid(samples, index);
+    }
+    if (channel->kind == ZPLC_IO_KIND_DIGITAL) {
+      digital_ordinal++;
     }
   }
   return ZPLC_HAL_OK;
 }
 
-/* The input latch: image lock held. We start at offset 8 to avoid overlapping with digital inputs (bytes 0-3) and
- * alignment padding; a 16-bit value is little endian. */
+/* The input latch: image lock held. Every input channel that answered is written to the input image at its
+ * address: a digital channel is one bit of its byte, an analog one a 16-bit little-endian word. */
 static void apply_input_samples_locked(const input_samples_t *samples) {
-  if (samples->digital_valid != 0U) {
-    uint8_t current = zplc_ipi_read8(0);
+  size_t index;
+  size_t count = zplc_io_channel_count();
 
-    current = (uint8_t)((current & (uint8_t)~samples->digital_valid) |
-                        (samples->digital & samples->digital_valid));
-    (void)zplc_ipi_write8(0, current);
+  if (count > ZPLC_IO_MAX_CHANNELS) {
+    return;
   }
-  for (int ch = 0; ch < ZPLC_ADC_CHANNEL_COUNT; ch++) {
-    if ((samples->analog_valid & (1U << ch)) != 0U) {
-      int offset = 8 + (ch * 2);
+  for (index = 0U; index < count; index++) {
+    const zplc_io_channel_t *channel = zplc_io_channel_at(index);
 
-      if (offset + 1 < ZPLC_MEM_IPI_SIZE) {
-        (void)zplc_ipi_write16((uint16_t)offset, samples->analog[ch]);
+    if (channel == NULL || channel->direction != ZPLC_IO_DIR_INPUT ||
+        !sample_is_valid(samples, index)) {
+      continue;
+    }
+    if (channel->kind == ZPLC_IO_KIND_DIGITAL) {
+      uint8_t current = zplc_ipi_read8(channel->image_offset);
+
+      if (samples->value[index] != 0U) {
+        current = (uint8_t)(current | (uint8_t)(1U << channel->bit));
+      } else {
+        current = (uint8_t)(current & (uint8_t)~(1U << channel->bit));
       }
+      (void)zplc_ipi_write8(channel->image_offset, current);
+    } else if ((size_t)channel->image_offset + 1U < ZPLC_MEM_IPI_SIZE) {
+      (void)zplc_ipi_write16(channel->image_offset, samples->value[index]);
+    }
+  }
+}
+
+/**
+ * @brief The values the physical outputs are given at the end of one scan.
+ *
+ * Captured under the image lock, by capture_outputs_locked(), and written to the pins by write_physical_outputs()
+ * after the lock is released (RT-012). The values are by table index.
+ */
+typedef struct {
+  uint16_t value[ZPLC_IO_MAX_CHANNELS];
+} output_samples_t;
+
+/* Image lock held: the output image as it is at the end of the scan, forces applied, for every output channel. */
+static void capture_outputs_locked(output_samples_t *outputs) {
+  size_t index;
+  size_t count = zplc_io_channel_count();
+
+  memset(outputs, 0, sizeof(*outputs));
+  if (count > ZPLC_IO_MAX_CHANNELS) {
+    return;
+  }
+  for (index = 0U; index < count; index++) {
+    const zplc_io_channel_t *channel = zplc_io_channel_at(index);
+
+    if (channel == NULL || channel->direction != ZPLC_IO_DIR_OUTPUT) {
+      continue;
+    }
+    if (channel->kind == ZPLC_IO_KIND_DIGITAL) {
+      outputs->value[index] =
+          (uint16_t)((zplc_opi_read8(channel->image_offset) >> channel->bit) & 1U);
+    } else {
+      outputs->value[index] = zplc_opi_read16(channel->image_offset);
     }
   }
 }
@@ -415,19 +464,31 @@ static void apply_input_samples_locked(const input_samples_t *samples) {
 /**
  * @brief Write the committed output image to the physical outputs.
  *
- * Hardware I/O: called with io_mutex held and the image lock released, with the first byte of OPI as it was at
- * the end of the scan. Channels 0-3 are outputs: %QX0.0..%QX0.3.
+ * Hardware I/O: called with io_mutex held and the image lock released, with the output values as they were at
+ * the end of the scan. Every output channel of the board table is written, at the level its address holds.
  */
-static zplc_hal_result_t write_physical_outputs(uint8_t opi0) {
-  for (int i = 0; i < ZPLC_DIO_CHANNEL_COUNT; i++) {
+static zplc_hal_result_t write_physical_outputs(const output_samples_t *outputs) {
+  size_t index;
+  size_t count = zplc_io_channel_count();
+  uint8_t ordinal = 0U; /* output channels counted in table order */
+
+  if (count > ZPLC_IO_MAX_CHANNELS) {
+    return ZPLC_HAL_ERROR;
+  }
+  for (index = 0U; index < count; index++) {
+    const zplc_io_channel_t *channel = zplc_io_channel_at(index);
     zplc_hal_result_t result;
+
+    if (channel == NULL || channel->direction != ZPLC_IO_DIR_OUTPUT) {
+      continue;
+    }
 
 #ifdef CONFIG_ZTEST
     {
       k_spinlock_key_t key = k_spin_lock(&admission_lock);
       result = ZPLC_HAL_OK;
       if (test_output_commit_failure != ZPLC_HAL_OK &&
-          test_output_commit_failure_channel == (uint8_t)i) {
+          test_output_commit_failure_channel == ordinal) {
         result = test_output_commit_failure;
         test_output_commit_failure = ZPLC_HAL_OK;
       }
@@ -437,10 +498,11 @@ static zplc_hal_result_t write_physical_outputs(uint8_t opi0) {
       return result;
     }
     if (result == ZPLC_HAL_NOT_IMPL) {
+      ordinal++;
       continue;
     }
 #endif
-    result = zplc_hal_gpio_write(i, (opi0 & (1 << i)) ? 1 : 0);
+    result = zplc_io_write_channel(channel, outputs->value[index]);
 #ifdef CONFIG_ZTEST
     {
       k_spinlock_key_t key = k_spin_lock(&admission_lock);
@@ -450,6 +512,7 @@ static zplc_hal_result_t write_physical_outputs(uint8_t opi0) {
       k_spin_unlock(&admission_lock, key);
     }
 #endif
+    ordinal++;
     if (result != ZPLC_HAL_OK && result != ZPLC_HAL_NOT_IMPL) {
       return result;
     }
@@ -1211,7 +1274,7 @@ static int execute_batch(zplc_task_internal_t *const *batch, uint8_t count,
   batch_log_t log = {-1, 0, -1, 0U, -1};
   zplc_hal_result_t sample_result;
   uint8_t index;
-  uint8_t opi0 = 0U;
+  output_samples_t outputs = {{0U}};
   int result = 0;
   int faulted = 0;
   int paused = 0;
@@ -1328,7 +1391,7 @@ static int execute_batch(zplc_task_internal_t *const *batch, uint8_t count,
                      sched_state == ZPLC_SCHED_STATE_RUNNING;
     k_spin_unlock(&admission_lock, key);
     if (commit_allowed) {
-      opi0 = zplc_opi_read8(0);
+      capture_outputs_locked(&outputs);
       commit_requested = 1;
     }
   }
@@ -1367,7 +1430,7 @@ static int execute_batch(zplc_task_internal_t *const *batch, uint8_t count,
           }
         }
 #endif
-        result = (int)write_physical_outputs(opi0);
+        result = (int)write_physical_outputs(&outputs);
         if (result == ZPLC_HAL_OK) {
           increment_counter_locked(&output_commit_count);
           if (!paused && watchdog_feed_after_commit() != 0) {
@@ -1646,14 +1709,21 @@ static int drive_safe_pins_io_locked(void) {
   int first_error = 0;
   int index;
 
-  for (index = 0; index < ZPLC_DIO_CHANNEL_COUNT; ++index) {
+  /* Every digital output of the board table goes to its safe level. */
+  for (index = 0; index < (int)zplc_io_channel_count(); ++index) {
+    const zplc_io_channel_t *channel = zplc_io_channel_at((size_t)index);
     zplc_hal_result_t result;
 
+    if (channel == NULL || channel->direction != ZPLC_IO_DIR_OUTPUT ||
+        channel->kind != ZPLC_IO_KIND_DIGITAL) {
+      continue;
+    }
 #ifdef CONFIG_ZTEST
-    result = test_safe_output_failure != 0 ? test_safe_output_failure
-                                           : zplc_hal_gpio_write(index, 0U);
+    result = test_safe_output_failure != 0
+                 ? test_safe_output_failure
+                 : zplc_io_write_channel(channel, channel->safe);
 #else
-    result = zplc_hal_gpio_write(index, 0U);
+    result = zplc_io_write_channel(channel, channel->safe);
 #endif
     if (result != ZPLC_HAL_OK && result != ZPLC_HAL_NOT_IMPL &&
         first_error == 0) {

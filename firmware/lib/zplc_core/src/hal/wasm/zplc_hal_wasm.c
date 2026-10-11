@@ -303,6 +303,12 @@ zplc_hal_result_t zplc_hal_mutex_unlock(zplc_hal_mutex_t mutex)
     return ZPLC_HAL_OK;
 }
 
+zplc_hal_result_t zplc_hal_mutex_destroy(zplc_hal_mutex_t mutex)
+{
+    /* The handle of zplc_hal_mutex_create() is a token: there is nothing to release. */
+    return mutex != NULL ? ZPLC_HAL_OK : ZPLC_HAL_ERROR;
+}
+
 /* ============================================================================
  * Network Functions (Not implemented in WASM)
  * ============================================================================ */
@@ -320,6 +326,7 @@ zplc_hal_result_t zplc_hal_net_get_ip(char *buf, size_t len)
 
 zplc_hal_result_t zplc_hal_dns_resolve(const char *hostname, char *ip_buf, size_t len)
 {
+    (void)hostname;
     if (ip_buf && len > 0) ip_buf[0] = '\0';
     return ZPLC_HAL_NOT_IMPL;
 }
@@ -455,3 +462,20 @@ int zplc_wasm_get_output(int channel)
 }
 
 #endif /* __EMSCRIPTEN__ */
+
+/* ============================================================================
+ * I/O Table (IO-001, IO-007)
+ * ============================================================================
+ * This port has no pins: the host runtime exchanges the process image with
+ * Studio, so its board description lists no channel. The accessors are the
+ * same on every port.
+ */
+
+static const zplc_io_table_t zplc_io_empty_description = {
+    "wasm", 0U, 0U, 0U, 0U, NULL};
+
+const zplc_io_table_t *zplc_io_table(void) {
+  return &zplc_io_empty_description;
+}
+
+#include "../common/zplc_io_common.inc"

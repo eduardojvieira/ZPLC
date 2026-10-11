@@ -40,7 +40,7 @@ requiere el nivel de placa.
 | `python3 tools/hil/verify_compilation.py` | Compila cada fixture y proyecto de referencia. Sin dispositivo. |
 
 `<placa>` es el `ide_id` de la placa en
-`firmware/app/boards/supported-boards.v1.5.0.json`, por ejemplo `rpi_pico`.
+`firmware/app/boards/boards.json`, por ejemplo `rpi_pico`.
 
 ### El puerto serie
 

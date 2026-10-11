@@ -42,6 +42,16 @@ class ProfileTests(unittest.TestCase):
         with root:
             self.assertEqual(len(validator.problems(manifest, base, base / "hil_debug.conf")), 1)
 
+    def test_a_profile_the_manifest_does_not_list_is_checked_too(self):
+        root, base, manifest = tree({"a.conf": "CONFIG_FOO=y\n", "unlisted.conf": "CONFIG_ZPLC_HIL_DEBUG=y\n"})
+        with root:
+            manifest = [m for m in manifest if m["ide_id"] == "a"]
+            self.assertEqual(validator.problems(manifest, base, base / "hil_debug.conf"), [])
+            self.assertEqual(
+                validator.problems(manifest, base, base / "hil_debug.conf", profile_dir=base / "boards"),
+                ["boards/unlisted.conf:1 sets CONFIG_ZPLC_HIL_DEBUG=y: release firmware carries no HIL trace (HIL-013); use the overlay"],
+            )
+
     def test_main_exits_1_on_a_problem_and_0_without(self):
         root, base, manifest = tree({"a.conf": "CONFIG_ZPLC_HIL_DEBUG=y\n"})
         with root:

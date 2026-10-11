@@ -37,7 +37,7 @@ on real silicon, or that a watchdog resets in time. Those need the board level.
 | `python3 tools/hil/verify_compilation.py` | Compiles every fixture and reference project. No device. |
 
 `<board>` is the `ide_id` of the board in
-`firmware/app/boards/supported-boards.v1.5.0.json`, for example `rpi_pico`.
+`firmware/app/boards/boards.json`, for example `rpi_pico`.
 
 ### The serial port
 

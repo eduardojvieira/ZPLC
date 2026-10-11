@@ -34,6 +34,7 @@ HANDSHAKE_KEYS = {
     "board", "board_profile", "zplc_version", "zephyr_version", "uptime_ms", "cpu_freq_mhz",
     "device_protocol_version", "bytecode_abi_major", "bytecode_abi_minor", "capabilities", "memory", "draft_counter",
 }
+IO_KEYS = {"schema", "board_id", "hash", "channels", "input_bytes", "output_bytes"}
 IDENTITY_KEYS = {
     "version", "commit", "dirty", "board", "abi_major", "abi_minor", "draft_counter", "options_hash", "options",
 }
@@ -61,7 +62,8 @@ def build(directory: Path) -> Path:
     # the environment of tools/firmware-test/run.sh: PATH with west, ZEPHYR_BASE, the toolchain variant
     command = (
         f'. "{REPO}/tools/firmware-test/env.sh" && cd "{WORKSPACE}" && '
-        f'west build -p always -b native_sim/native zplc/firmware/app -d "{directory}"'
+        # Two program slots of the default code size do not fit the storage partition of native_sim (RT-029).
+        f'west build -p always -b native_sim/native zplc/firmware/app -d "{directory}" -- -DCONFIG_ZPLC_CODE_SIZE_MAX=4096'
     )
     log = directory.with_suffix(".log")
     with open(log, "w", encoding="utf-8") as out:
@@ -169,6 +171,14 @@ def main() -> int:
             == (identity["abi_major"], identity["abi_minor"], identity["draft_counter"]),
             "the handshake and zplc sys build report the same ABI version and draft counter",
         )
+
+        # The identity of the board I/O description is a command of its own (IO-004), not a key of the handshake.
+        io = json.loads(shell.run("zplc sys io --json"))
+        check(
+            set(io) == IO_KEYS and io["schema"] == 1 and re.fullmatch(r"[0-9a-f]{8}", io["hash"]) is not None,
+            "zplc sys io --json reports the identity of the I/O description",
+        )
+        check("io" not in handshake, "the handshake does not carry the I/O identity")
     finally:
         if shell is not None:
             shell.close()

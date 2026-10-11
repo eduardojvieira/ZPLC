@@ -145,7 +145,68 @@ All notable changes are documented here.
   file in the renderer bundle inside `app.asar`, the id of every lesson (found
   by pattern, so a lesson package that is added is covered), every bytecode
   example, and a licence notice for every package and font of the archive.
-
+- Analog inputs and persisted keys have native_sim tests (IO-006, IO-008,
+  IO-018). `io_analog` runs the analog inputs of a description over the ADC
+  emulator and shows that a required channel that cannot be configured fails
+  `zplc_hal_init()`, not the first scan. `hal_persist_keys` stores, reads and
+  deletes every key the runtime uses over the NVS of the flash simulator; the
+  two AWS fleet credential keys had no NVS identifier on Zephyr, so the
+  credentials were never persisted, and now have one. What the boards do with
+  these needs the bench of HIL-010 and is not claimed here.
+- Studio reads the board I/O description (IO-003, IO-004, IO-017). The I/O
+  mapping editor of the project settings lists the channels of the selected
+  board with their pin names, offers only those channels for a row and flags
+  a row on an address the board does not have; a build fails with an error
+  that names the variable, the address and the board when a variable is
+  located where the board has no channel. An image word that no pin drives is
+  listed under `io.virtual` in `zplc.json` (the `analog_test` temperature in
+  `%QW4` is one). Hardware deploy admission compares the `io` identity that
+  the firmware reports in `sys info --json` with the description Studio holds
+  and the process-image bytes the program's code touches with the channels of
+  the board, and refuses a mismatch with a message that names the board; a
+  program that touches no I/O is not held back. The bundled examples are
+  checked in CI: each targets the board its name and text state, its rows are
+  channels of that board and it builds for it. The Waveshare RP2040-Zero also
+  has its size budget and clang-tidy baseline for the cross-build matrix.
+- Firmware I/O is driven by the board description, not by C source (IO-002,
+  IO-005, IO-007, IO-018). `firmware/zephyr/scripts/gen_io_table.py` turns the
+  board's entry of `boards.json` into the I/O table at build time and the
+  scheduler, the HAL and the single-task loop synchronize the process image
+  through it, so a channel is an edit of the JSON and of the overlay and no
+  C change; a board that is not in the manifest keeps the old `led0`-`led3`,
+  `sw0`-`sw3` and `adc` map as a default profile. The generated file asserts
+  that every described alias, pin and controller is the devicetree's and
+  stops the build with a message that names the channel when they differ. The
+  GPIO and the analog inputs are configured in `zplc_hal_init()`, before the
+  runtime can enter RUN, and a required channel that cannot be configured
+  fails it. The image sizes are what the channels need, with Kconfig
+  overrides and a build assertion; the memory behind the images stays the 4 KB
+  of the instruction set (shrinking it is a contract change). `sys info
+  --json` reports the identity of the description (`io`). The native_sim suite
+  `io_table` runs the same test over two descriptions, one with three outputs
+  and an input more, and a host test covers the accessors every port shares.
+  `tools/ci/check_hal_contract.py` fails when a HAL function lacks an
+  implementation on a port or a caller, and `zplc_hal_mutex_destroy()` is now
+  implemented on the Zephyr and WebAssembly ports. Six functions have no caller
+  yet and are listed in `tools/ci/hal-contract.json` with the decision they
+  wait for.
+- The board manifest is one unversioned file with an I/O description per board
+  (IO-001, IO-009 to IO-012, IO-014, IO-015). `firmware/app/boards/boards.json`
+  replaces `supported-boards.v1.5.0.json` and is the only source of the board
+  table for Studio, the docs, CI and the MCP `boards_list` tool. Each of the
+  seven profiles lists its channels with direction, kind, IEC address, pin or
+  terminal name, devicetree binding, electrical notes and safe value; the
+  Raspberry Pi Pico maps its on-board LED (GP25) and four inputs, the ESP32-S3
+  profile describes the ESP32-S3-DevKitC-1 (N8R8; the LilyGo T-Display S3
+  settings moved to `boards/profiles/lilygo_tdisplay_s3.overlay`), the Arduino
+  Opta maps its four relay outputs, and the Waveshare RP2040-Zero profile is a
+  valid configuration listed in the manifest, built in CI and in the size
+  budget. The support level is derived from the evidence records the manifest
+  references and is no longer a field; with no record a board is
+  `cross-build`. The reference page now shows each board's channels, the
+  image bytes they need, the footprint from the size budget and the
+  description hash. `tools/hil/validate_supported_boards.py` also accepts the
+  `tidy_board` key of the cross-build matrix, which it rejected.
 - Three of the fifteen modules over the new size limit are split (IDE-014): the
   project settings are one module per section (2,181 lines to 213 and eleven
   files of at most 430), the Explorer's context menu and confirmations are
