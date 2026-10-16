@@ -3,5 +3,6 @@
   "title": "a call with an unknown argument name is rejected",
   "matrix": ["pous.function"],
   "build": "fails",
-  "lines": [11]
+  "lines": [11],
+  "codes": ["UNKNOWN_PARAMETER"]
 }

@@ -174,9 +174,11 @@ the `REAL` conversions are.
 Until the contract is frozen (CMP-052), header word 28 of every `.zplc` artifact
 holds the draft counter (`ZPLC_DRAFT_COUNTER`) and the loader refuses an artifact
 that carries another value, with both numbers. Every change of an opcode, layout
-or size increases it. The counter is **4** since the call depth of a task and the
-build identity: programs built before are refused and must be rebuilt (it was 3
-with the 64-bit and double-precision opcodes). The
+or size increases it. The counter is **6** since the declared safe values (the
+`ZPLC_SEG_SAFE` segment): programs built before are refused and must be rebuilt
+(it was 5 with the layout of the strings of the communication blocks, 4 with the
+call depth of a task and the build identity, and 3 with the 64-bit and
+double-precision opcodes). The
 `tools/contract/restamp_artifacts.py` tool moves the artifacts committed to the
 repository to the current counter.
 
@@ -205,6 +207,7 @@ The `.zplc` binary format uses packed public structures from the same header:
 - `zplc_iomap_entry_t`
 - `zplc_tag_entry_t`
 - `zplc_build_info_t`
+- `zplc_safe_entry_t`
 
 Public segment identifiers defined today include:
 
@@ -218,6 +221,7 @@ Public segment identifiers defined today include:
 - `ZPLC_SEG_TASK`
 - `ZPLC_SEG_TAGS`
 - `ZPLC_SEG_BUILD`
+- `ZPLC_SEG_SAFE`
 
 ## Task depth and build identity
 
@@ -237,6 +241,32 @@ The compiler measures what the loader will prove, and records it in the artifact
   The debug map of the same build records it as `buildId` in 8 hexadecimal
   digits, so that a tool can tell a map that does not belong to the program that
   runs. An artifact without the segment reads as not identified.
+
+## Declared safe values
+
+The state of an output while the program does not control it (STOP, a pause, a
+latched fault, the boot, a deploy in progress) is off, unless the project
+declares another value for it (RT-023). The declaration travels in the artifact,
+in the `ZPLC_SEG_SAFE` segment, so that a program and its safe state are one
+unit: a device that restores the program restores its declaration, and an
+interrupted deploy cannot leave the program of one build with the safe values of
+another.
+
+- Each entry is a `zplc_safe_entry_t` of `ZPLC_SAFE_ENTRY_SIZE` (4) bytes: the
+  byte `offset` of the output in the output image, the `bit` (0 to 7) and the
+  `value` (0 or 1).
+- The loader refuses the artifact with `ZPLC_LOADER_ERR_SAFE` when the segment is
+  not whole entries, an entry names a bit outside the output image or a value
+  other than 0 or 1, an output is declared twice, or there are more than
+  `ZPLC_LOADER_MAX_SAFE` (64) entries; a second `ZPLC_SEG_SAFE` segment is
+  refused as a segment error. An artifact without the segment declares nothing.
+- The runtime refuses, at deploy and at boot restore, a declaration for an
+  output the board does not have (an entry has to name a digital output channel
+  of the board description by its image offset and bit). A program of another
+  board is not run with a safe state that does not exist.
+- A value declared for an output replaces the level the board description gives
+  that output in the safe state, in both directions. It is in force from the load
+  that committed the program, before the first scan.
 
 ## Related pages
 

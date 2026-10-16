@@ -187,7 +187,7 @@ function emitRealCall(ctx: CodeGenContext, name: string, args: Expression[], cou
     if (args.length !== count) {
         ctx.fail(`${name} requires ${count} argument${count === 1 ? '' : 's'}`);
     }
-    if (!ctx.callRoutine) ctx.fail(`${name} needs the routine linker`);
+    if (!ctx.callRoutine) ctx.fail(`${name} needs the routine linker`, 'INTERNAL_COMPILER_ERROR');
 
     ctx.emit(`    ; ${name}(${args.length === 1 ? 'IN' : 'IN1, IN2'})`);
     for (const arg of args) {
@@ -286,7 +286,7 @@ export const TRUNC_FN: FunctionDef = {
         if (args.length !== 1) {
             ctx.fail('TRUNC requires 1 argument');
         }
-        if (!ctx.callRoutine) ctx.fail('TRUNC needs the routine linker');
+        if (!ctx.callRoutine) ctx.fail('TRUNC needs the routine linker', 'INTERNAL_COMPILER_ERROR');
 
         ctx.emit(`    ; TRUNC(IN)`);
         if (ctx.typeOf?.(args[0]) === 'LREAL') {
@@ -322,7 +322,7 @@ export const ROUND_FN: FunctionDef = {
         if (args.length !== 1) {
             ctx.fail('ROUND requires 1 argument');
         }
-        if (!ctx.callRoutine) ctx.fail('ROUND needs the routine linker');
+        if (!ctx.callRoutine) ctx.fail('ROUND needs the routine linker', 'INTERNAL_COMPILER_ERROR');
 
         ctx.emit(`    ; ROUND(IN)`);
         if (ctx.typeOf?.(args[0]) === 'LREAL') {
@@ -354,7 +354,7 @@ export const SIN_FN: FunctionDef = {
 
     generateInline(ctx: CodeGenContext, args: Expression[]): void {
         if (args.length !== 1) ctx.fail('SIN requires 1 argument');
-        if (!ctx.callRoutine) ctx.fail('SIN needs the routine linker');
+        if (!ctx.callRoutine) ctx.fail('SIN needs the routine linker', 'INTERNAL_COMPILER_ERROR');
         ctx.emit(`    ; SIN(IN)`);
         if (ctx.emitOperand) ctx.emitOperand(args[0]!, 'REAL');
         else ctx.emitExpression(args[0]!);
@@ -371,7 +371,7 @@ export const COS_FN: FunctionDef = {
 
     generateInline(ctx: CodeGenContext, args: Expression[]): void {
         if (args.length !== 1) ctx.fail('COS requires 1 argument');
-        if (!ctx.callRoutine) ctx.fail('COS needs the routine linker');
+        if (!ctx.callRoutine) ctx.fail('COS needs the routine linker', 'INTERNAL_COMPILER_ERROR');
         ctx.emit(`    ; COS(IN)`);
         if (ctx.emitOperand) ctx.emitOperand(args[0]!, 'REAL');
         else ctx.emitExpression(args[0]!);

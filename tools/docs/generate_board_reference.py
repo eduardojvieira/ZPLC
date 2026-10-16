@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-"""Generate docs/docs/reference/boards.md (EN) and its Spanish copy from firmware/app/boards/boards.json.
+"""Generate docs/docs/reference/boards.md (EN) and its Spanish copy from firmware/app/boards/boards.json,
+and the board table inside the hardware support page (DOC-010, between its GENERATED markers).
 
 The board table is one source for Studio, the docs, CI and the MCP tools (IO-012). This generator adds what the
 manifest derives: the I/O description of each board (IO-001), the image sizes its channels need (IO-005), the
@@ -23,6 +24,14 @@ OUTPUT_EN = ROOT / "docs/docs/reference/boards.md"
 OUTPUT_ES = (
     ROOT / "docs/i18n/es/docusaurus-plugin-content-docs/current/reference/boards.md"
 )
+# The hardware support page is written by hand; only the board table inside it is generated.
+SUPPORT_EN = ROOT / "docs/docs/reference/capabilities-evidence.md"
+SUPPORT_ES = (
+    ROOT
+    / "docs/i18n/es/docusaurus-plugin-content-docs/current/reference/capabilities-evidence.md"
+)
+GENERATOR = "tools/docs/generate_board_reference.py"
+SUPPORT_BLOCK = "hardware-support-boards"
 
 
 def _library():
@@ -70,6 +79,38 @@ def support(board: dict[str, object]) -> dict[str, object]:
 
 def validation_summary(board: dict[str, object]) -> str:
     return str(support(board)["level"])
+
+
+def watchdog_line(board: dict[str, object], spanish: bool) -> str:
+    """The hardware watchdog of the profile, and why it is off when it is (RT-020, HIL-011)."""
+    watchdog = board.get("watchdog")
+    label = "Hardware watchdog" if not spanish else "Watchdog de hardware"
+    if not isinstance(watchdog, dict):
+        return f"- **{label}:** " + ("sin declarar" if spanish else "not declared")
+    states = {"disarm": ("disarmed", "desarmado"), "feed": ("kept fed", "alimentado"), "expire": ("left to expire", "se deja expirar")}
+
+    def action(state: str) -> str:
+        return states[str(watchdog[state])][1 if spanish else 0]
+
+    if watchdog.get("enabled") is True:
+        return (
+            f"- **{label}:** "
+            + (
+                "activo, timeout {t} ms (hasta {m} ms según las tareas); en STOP {s}, en pausa o breakpoint {p}, en falla enganchada {f}"
+                if spanish
+                else "on, timeout {t} ms (up to {m} ms for the task set); in STOP {s}, paused or at a breakpoint {p}, in a latched fault {f}"
+            ).format(
+                t=watchdog["timeout_ms"], m=watchdog["max_timeout_ms"], s=action("stop"), p=action("pause"), f=action("fault")
+            )
+        )
+    why = (
+        "apagado: sin registro de hardware (HIL-010), el perfil lo mantiene apagado hasta que el tiempo de reinicio y las "
+        "salidas seguras se registren en esta placa con él encendido"
+        if spanish
+        else "off: no hardware record (HIL-010), the profile keeps it off until the reset timing and the safe outputs are "
+        "recorded on this board with it enabled"
+    )
+    return f"- **{label}:** {why}"
 
 
 def kib(value: object) -> str:
@@ -162,8 +203,9 @@ def render_board_reference(boards: list[dict[str, object]], spanish: bool) -> st
         "",
         f"# {title}",
         "",
-        "> [!IMPORTANT]",
-        f"> {intro}",
+        ":::note",
+        intro,
+        ":::",
         "",
         f"## {topology_title}",
         "",
@@ -272,6 +314,7 @@ def render_board_reference(boards: list[dict[str, object]], spanish: bool) -> st
                     ),
                 )
             )
+        lines.append(watchdog_line(board, spanish))
         lines.extend(
             [
                 f"- **{build_label}:** `{board['build_command']}`",
@@ -344,12 +387,78 @@ def render_board_reference(boards: list[dict[str, object]], spanish: bool) -> st
     return "\n".join(line.rstrip() for line in lines).strip() + "\n"
 
 
+def render_support_table(boards: list[dict[str, object]], spanish: bool) -> str:
+    """The one board status table (DOC-010): the level of each board comes from its evidence records, never by hand."""
+    head = (
+        "| Board | IDE ID | Zephyr target | Network | Support level | Evidence records |"
+        if not spanish
+        else "| Placa | ID del IDE | Destino Zephyr | Red | Nivel de soporte | Registros de evidencia |"
+    )
+    none = "ninguno" if spanish else "none"
+    lines = [head, "| --- | --- | --- | --- | --- | --- |"]
+    for board in boards:
+        status = support(board)
+        records = [
+            f"{item['result']} on {item['firmware_version']} (`{str(item['commit'])[:7]}`)"
+            if not spanish
+            else f"{item['result']} en {item['firmware_version']} (`{str(item['commit'])[:7]}`)"
+            for item in status["records"]  # type: ignore[union-attr]
+        ]
+        lines.append(
+            "| {name} | `{ide}` | `{target}` | {network} | `{level}` | {records} |".format(
+                name=cell(board["display_name"]),
+                ide=board["ide_id"],
+                target=board["zephyr_board"],
+                network=network_summary(board, spanish),
+                level=status["level"],
+                records=cell("; ".join(records)) if records else none,
+            )
+        )
+    verified = sum(1 for board in boards if support(board)["level"] != "cross-build")
+    if verified == 0:
+        summary = (
+            "Ninguna placa tiene un registro de hardware: cada fila dice que el firmware compila para esa placa, y nada más."
+            if spanish
+            else "No board has a hardware record: each row says that the firmware builds for that board, and nothing more."
+        )
+    else:
+        summary = (
+            f"{verified} de {len(boards)} placas tienen un registro de hardware que pasó; las demás solo compilan."
+            if spanish
+            else f"{verified} of {len(boards)} boards have a passing hardware record; the others only build."
+        )
+    return "\n".join(lines) + "\n\n" + summary
+
+
+def block_markers(name: str) -> tuple[str, str]:
+    return (
+        f"{{/* >>> GENERATED ({GENERATOR}): {name}. Do not edit. >>> */}}",
+        f"{{/* <<< END GENERATED: {name} <<< */}}",
+    )
+
+
+def replace_block(text: str, name: str, body: str, path: Path) -> str:
+    begin, end = block_markers(name)
+    start = text.find(begin)
+    stop = text.find(end)
+    if start < 0 or stop < start:
+        raise ValueError(
+            f"{path.relative_to(ROOT)} has no `{begin}` ... `{end}` markers for the generated board table"
+        )
+    return text[: start + len(begin)] + "\n\n" + body + "\n\n" + text[stop:]
+
+
 def expected_outputs() -> dict[Path, str]:
     boards = load_boards()
-    return {
+    outputs = {
         OUTPUT_EN: render_board_reference(boards, False),
         OUTPUT_ES: render_board_reference(boards, True),
     }
+    for path, spanish in ((SUPPORT_EN, False), (SUPPORT_ES, True)):
+        outputs[path] = replace_block(
+            path.read_text(), SUPPORT_BLOCK, render_support_table(boards, spanish), path
+        )
+    return outputs
 
 
 def write_outputs(outputs: dict[Path, str]) -> None:

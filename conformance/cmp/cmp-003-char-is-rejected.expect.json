@@ -5,5 +5,6 @@
   "note": "Decision D-04 (2.x recommended): CHAR and WCHAR are rejected with a message that names the type (CMP-003); today CHAR is accepted with size 0",
   "build": "fails",
   "lines": [3],
+  "codes": ["UNSUPPORTED_CONSTRUCT"],
   "messageIncludes": ["CHAR"]
 }

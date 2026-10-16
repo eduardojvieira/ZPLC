@@ -17,9 +17,11 @@ MANIFEST_ES = (
 )
 BOARD_MANIFEST = ROOT / "firmware/app/boards/boards.json"
 BOARDS_LIBRARY = ROOT / "firmware/zephyr/scripts/zplc_boards.py"
-REFERENCE_INDEX_EN = ROOT / "docs/docs/reference/index.md"
+# The one board status table lives in the hardware support page (DOC-010); its generated block is checked here.
+REFERENCE_INDEX_EN = ROOT / "docs/docs/reference/capabilities-evidence.md"
 REFERENCE_INDEX_ES = (
-    ROOT / "docs/i18n/es/docusaurus-plugin-content-docs/current/reference/index.md"
+    ROOT
+    / "docs/i18n/es/docusaurus-plugin-content-docs/current/reference/capabilities-evidence.md"
 )
 RUNTIME_REFERENCE_EN = ROOT / "docs/docs/reference/runtime-api.md"
 RUNTIME_REFERENCE_ES = (
@@ -120,7 +122,7 @@ def parse_section_table(path: Path, heading: str) -> list[list[str]]:
         if in_section and line.startswith("## "):
             break
         if in_section and line.startswith("|"):
-            if set(line.replace("|", "").strip()) == {"-"}:
+            if set(line.replace("|", "").replace(" ", "").replace(":", "")) == {"-"}:
                 continue
             parts = [part.strip() for part in line.strip().strip("|").split("|")]
             if parts and parts[0].lower() in {"board", "placa"}:
@@ -142,7 +144,7 @@ def validate_reference_index(errors: list[str]) -> None:
             f"`{entry['ide_id']}`",
             f"`{entry['zephyr_board']}`",
             network_summary(entry, False),
-            library.support_level(entry, ROOT)["level"],
+            f"`{library.support_level(entry, ROOT)['level']}`",
         ]
         for entry in boards
     ]
@@ -152,19 +154,20 @@ def validate_reference_index(errors: list[str]) -> None:
             f"`{entry['ide_id']}`",
             f"`{entry['zephyr_board']}`",
             network_summary(entry, True),
-            library.support_level(entry, ROOT)["level"],
+            f"`{library.support_level(entry, ROOT)['level']}`",
         ]
         for entry in boards
     ]
-    actual_en = parse_section_table(REFERENCE_INDEX_EN, "## Supported Boards")
-    actual_es = parse_section_table(REFERENCE_INDEX_ES, "## Placas Soportadas")
+    # The last column of the page (the evidence records) is generated text; the five before it are compared.
+    actual_en = [row[:5] for row in parse_section_table(REFERENCE_INDEX_EN, "## Boards")]
+    actual_es = [row[:5] for row in parse_section_table(REFERENCE_INDEX_ES, "## Placas")]
     if actual_en != expected_en:
         errors.append(
-            "docs/docs/reference/index.md board summary drifts from firmware/app/boards/boards.json"
+            "docs/docs/reference/capabilities-evidence.md board table drifts from firmware/app/boards/boards.json"
         )
     if actual_es != expected_es:
         errors.append(
-            "docs/i18n/es/.../reference/index.md board summary drifts from firmware/app/boards/boards.json"
+            "docs/i18n/es/.../reference/capabilities-evidence.md board table drifts from firmware/app/boards/boards.json"
         )
 
 

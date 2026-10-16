@@ -46,6 +46,11 @@ INBOUND = (
     "zplc_azure_sas",
     "zplc_aws_fleet",
     "zplc_tls_credentials",
+    # The framed device link (COM-019 to COM-021): its frames come from the serial link and from the network. The
+    # engine reaches run control, forces and the program store only through the port that the application hands
+    # it, so it cannot name them; what a frame may do is decided by the session rule inside it.
+    "zplc_proto",
+    "zplc_proto_dev",
 )
 
 #: The sources of the core that apply what the inbound ones queue.

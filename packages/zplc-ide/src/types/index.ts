@@ -129,6 +129,8 @@ export type CompilerMessageType = 'info' | 'warning' | 'error';
 export interface CompilerMessage {
   type: CompilerMessageType;
   message: string;
+  /** The stable code of the kind of problem, as the build reported it (`ERROR_CODES` of the compiler; CMP-006). */
+  code?: string;
   file?: string;
   line?: number;
   column?: number;
@@ -137,13 +139,20 @@ export interface CompilerMessage {
   timestamp: Date;
 }
 
-/** Ephemeral syntax feedback for the current ST editor buffer. Never build evidence. */
+/** Ephemeral feedback for the project's ST files, from the compiler's front end while typing. Never build evidence. */
 export interface STLiveDiagnostic {
-  code: 'ST_LEXER' | 'ST_PARSER' | 'ST_SOURCE_LIMIT' | 'ST_ANALYSIS_UNAVAILABLE';
+  code: 'ST_LEXER' | 'ST_PARSER' | 'ST_SEMANTIC' | 'ST_WARNING' | 'ST_SOURCE_LIMIT' | 'ST_ANALYSIS_UNAVAILABLE';
   type: Extract<CompilerMessageType, 'warning' | 'error'>;
   message: string;
+  /** The project-relative file the diagnostic is in; absent for the buffer of the editor alone. */
+  file?: string;
   line?: number;
   column?: number;
+  /** The position just after the last character, when the front end knows the extent. */
+  endLine?: number;
+  endColumn?: number;
+  /** The stable code of the kind of problem: the one the build reports for the same source (CMP-006). */
+  errorCode?: string;
 }
 
 /** Identity-fenced result for one active Structured Text buffer. */
@@ -264,6 +273,11 @@ export interface IOPinConfig {
   pin?: number;          // Physical GPIO pin
   channel?: number;      // ADC/DAC channel index (e.g., 0 for ADC0/GP26)
   type?: 'BOOL' | 'INT' | 'REAL';
+  /**
+   * Digital outputs only (RT-023): the value the output takes whenever the program does not control it (STOP, a
+   * pause, a fault, the boot, a deploy in progress). Absent is off, unless the board description says otherwise.
+   */
+  safe?: boolean;
 }
 
 /** Target hardware configuration */

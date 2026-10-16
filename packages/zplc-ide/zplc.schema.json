@@ -51,6 +51,7 @@
                         "stm32f746g_disco",
                         "esp32s3_devkitc",
                         "nucleo_h743zi",
+                        "waveshare_rp2040_zero",
                         "posix"
                     ]
                 },
@@ -329,6 +330,10 @@
                     "type": "integer",
                     "minimum": 0,
                     "description": "GPIO pin number (hardware-specific)"
+                },
+                "safe": {
+                    "type": "boolean",
+                    "description": "Digital outputs only: the value the output takes whenever the program does not control it (STOP, a pause, a latched fault, the boot, a deploy in progress). Absent is off, unless the board description says otherwise. The build refuses a value for an output the selected board does not have, and the value travels in the artifact with the program."
                 },
                 "description": {
                     "type": "string",

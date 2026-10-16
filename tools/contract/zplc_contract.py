@@ -11,7 +11,7 @@ from enum import IntEnum
 ZPLC_MAGIC = 0x434C505A
 ZPLC_VERSION_MAJOR = 1
 ZPLC_VERSION_MINOR = 0
-ZPLC_DRAFT_COUNTER = 4
+ZPLC_DRAFT_COUNTER = 6
 HEADER_SIZE = 32
 SEGMENT_ENTRY_SIZE = 8
 TASK_DEF_SIZE = 16
@@ -20,6 +20,8 @@ TAG_ENTRY_SIZE = 8
 MAX_TASKS = 16
 MAX_VERIFIED_DEPTH = 127
 BUILD_ENTRY_SIZE = 4
+SAFE_ENTRY_SIZE = 4
+MAX_SAFE_ENTRIES = 64
 CRC_OFFSET = 12
 CRC_SIZE = 4
 
@@ -40,6 +42,7 @@ SEGMENT_TYPE = {
     "TASK": 0x20,
     "TAGS": 0x30,
     "BUILD": 0x40,
+    "SAFE": 0x41,
 }
 
 TASK_TYPE = {
@@ -400,6 +403,7 @@ class LoaderError(IntEnum):
     ERR_COMM = -16
     ERR_DRAFT = -17
     ERR_STACK = -18
+    ERR_SAFE = -19
 
 
 class CommKind(IntEnum):
@@ -434,6 +438,7 @@ class CommStatus(IntEnum):
     STRING_OVERFLOW = 7
     PROTO_ERROR = 8
     AUTH_FAILED = 9
+    UNAVAILABLE = 10
     UNKNOWN = 255
 
 
@@ -558,7 +563,7 @@ COMM_BLOCKS = {
     },
     "AZURE_C2D_RECV": {
         "kind": 0x0020,
-        "size": 94,
+        "size": 95,
         "members": [
             {"name": "EN", "type": "BOOL", "offset": 0, "size": 1, "direction": "in"},
             {"name": "BUSY", "type": "BOOL", "offset": 1, "size": 1, "direction": "out"},
@@ -571,7 +576,7 @@ COMM_BLOCKS = {
     },
     "AZURE_DPS_PROV": {
         "kind": 0x0021,
-        "size": 201,
+        "size": 179,
         "members": [
             {"name": "EN", "type": "BOOL", "offset": 0, "size": 1, "direction": "in"},
             {"name": "BUSY", "type": "BOOL", "offset": 1, "size": 1, "direction": "out"},
@@ -579,12 +584,12 @@ COMM_BLOCKS = {
             {"name": "ERROR", "type": "BOOL", "offset": 3, "size": 1, "direction": "out"},
             {"name": "STATUS", "type": "DINT", "offset": 4, "size": 4, "direction": "out"},
             {"name": "DEVICE_ID", "type": "STRING", "offset": 8, "size": 85, "direction": "in"},
-            {"name": "ASSIGNED_HUB", "type": "STRING", "offset": 73, "size": 85, "direction": "out"},
+            {"name": "ASSIGNED_HUB", "type": "STRING", "offset": 93, "size": 85, "direction": "out"},
         ],
     },
     "AZURE_EG_PUB": {
         "kind": 0x0022,
-        "size": 266,
+        "size": 264,
         "members": [
             {"name": "EN", "type": "BOOL", "offset": 0, "size": 1, "direction": "in"},
             {"name": "BUSY", "type": "BOOL", "offset": 1, "size": 1, "direction": "out"},
@@ -592,13 +597,13 @@ COMM_BLOCKS = {
             {"name": "ERROR", "type": "BOOL", "offset": 3, "size": 1, "direction": "out"},
             {"name": "STATUS", "type": "DINT", "offset": 4, "size": 4, "direction": "out"},
             {"name": "TOPIC", "type": "STRING", "offset": 8, "size": 85, "direction": "in"},
-            {"name": "EVENT_TYPE", "type": "STRING", "offset": 73, "size": 85, "direction": "in"},
-            {"name": "PAYLOAD", "type": "STRING", "offset": 138, "size": 85, "direction": "in"},
+            {"name": "EVENT_TYPE", "type": "STRING", "offset": 93, "size": 85, "direction": "in"},
+            {"name": "PAYLOAD", "type": "STRING", "offset": 178, "size": 85, "direction": "in"},
         ],
     },
     "AWS_FLEET_PROV": {
         "kind": 0x0030,
-        "size": 137,
+        "size": 179,
         "members": [
             {"name": "EN", "type": "BOOL", "offset": 0, "size": 1, "direction": "in"},
             {"name": "BUSY", "type": "BOOL", "offset": 1, "size": 1, "direction": "out"},
@@ -606,12 +611,12 @@ COMM_BLOCKS = {
             {"name": "ERROR", "type": "BOOL", "offset": 3, "size": 1, "direction": "out"},
             {"name": "STATUS", "type": "DINT", "offset": 4, "size": 4, "direction": "out"},
             {"name": "TEMPLATE_NAME", "type": "STRING", "offset": 8, "size": 85, "direction": "in"},
-            {"name": "THING_NAME", "type": "STRING", "offset": 73, "size": 85, "direction": "out"},
+            {"name": "THING_NAME", "type": "STRING", "offset": 93, "size": 85, "direction": "out"},
         ],
     },
     "SPB_REBIRTH": {
         "kind": 0x0040,
-        "size": 8,
+        "size": 9,
         "members": [
             {"name": "EN", "type": "BOOL", "offset": 0, "size": 1, "direction": "in"},
             {"name": "BUSY", "type": "BOOL", "offset": 1, "size": 1, "direction": "out"},

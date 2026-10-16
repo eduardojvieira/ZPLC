@@ -36,6 +36,8 @@ import { DiffEditor, type Monaco } from './monacoRuntime';
 import { shownProjectBridge } from '../ipc/shownProjectBridge';
 import { trackTestRun } from './workspaceTestNotifications';
 import { useIDEStore } from '../store/useIDEStore';
+import { useConsoleState } from '../store/regionSubscriptions';
+import { isCandidateSTPath, sha256Text } from './candidateSources';
 import type { ConsoleEntry, ConsoleTab } from '../types';
 import { TerminalTab } from './TerminalTab';
 import { WatchTab } from './WatchTab';
@@ -68,16 +70,6 @@ type CandidateReviewSnapshot = { origin: 'manual' | 'agent'; projectSession: num
 type CandidateReviewState = { kind: 'idle' | 'matches-disk' | 'running' | 'cancelling' | 'saving' | 'stale' | 'error' | 'saved' } | { kind: 'result'; snapshot: CandidateReviewSnapshot; presentation: CandidateChangeSetReviewPresentation };
 type AgentEditIdentity = { projectSession: number; compilerRunId: number; workspaceId: string; fileId: string; path: string; content: string; handle: FileSystemFileHandle; baselineSha256: string };
 type AgentState = 'idle' | 'loading' | 'sending' | 'cancelling' | 'unavailable' | 'error' | { kind: 'response'; presentation: AiProviderResponsePresentation; expectedEdit?: AgentEditIdentity };
-
-async function sha256Text(value: string): Promise<string> {
-  const bytes = new TextEncoder().encode(value);
-  const digest = await crypto.subtle.digest('SHA-256', bytes);
-  return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, '0')).join('');
-}
-
-function isCandidateSTPath(path: string): boolean {
-  return path.length <= 512 && /^src\/[^/\\\0\r\n]+\.st$/.test(path);
-}
 
 interface ConsoleProps {
   debugController?: DebugController;
@@ -121,7 +113,7 @@ export function Console({ debugController }: ConsoleProps) {
     saveProjectConfig,
     saveFile,
     updateFileContent,
-  } = useIDEStore();
+  } = useConsoleState();
   const { effectiveTheme } = useTheme();
   const projectBlocks = useProjectBlocks();
   const [workspaceTestBusy, setWorkspaceTestBusy] = useState(false);
@@ -682,15 +674,15 @@ export function Console({ debugController }: ConsoleProps) {
               {problemSummary}
             </div>
             {liveSTDiagnostics.length > 0 && (
-              <section aria-label="Live Structured Text syntax diagnostics" className="space-y-1 pb-2 border-b border-[var(--color-surface-700)]">
-                <div className="px-2 text-xs text-[var(--color-surface-300)]">Live ST syntax · not build evidence</div>
+              <section aria-label="Live Structured Text diagnostics" className="space-y-1 pb-2 border-b border-[var(--color-surface-700)]">
+                <div className="px-2 text-xs text-[var(--color-surface-300)]">Live ST diagnostics · not build evidence</div>
                 {liveSTDiagnostics.map((msg, idx) => (
                   <div key={`${msg.code}-${idx}`} className="flex items-start gap-2 rounded px-2 py-1">
                     {msg.type === 'error' ? <XCircle size={14} className="text-[var(--color-accent-red)] mt-0.5 flex-shrink-0" /> : <AlertCircle size={14} className="text-[var(--color-accent-yellow)] mt-0.5 flex-shrink-0" />}
                     <div className="flex-1">
                       <span className="sr-only">{msg.type === 'warning' ? 'Warning' : 'Error'}: </span>
                       <span className="text-[var(--color-surface-100)]">{msg.message}</span>
-                      {activeFile?.path && <span className="ml-2 text-[var(--color-surface-400)] text-xs">{activeFile.path}{msg.line !== undefined && `:${msg.line}`}{msg.column !== undefined && `:${msg.column}`}</span>}
+                      {(msg.file ?? activeFile?.path) && <span className="ml-2 text-[var(--color-surface-400)] text-xs">{msg.file ?? activeFile?.path}{msg.line !== undefined && `:${msg.line}`}{msg.column !== undefined && `:${msg.column}`}</span>}{msg.errorCode && <span data-diagnostic-code className="ml-2 font-mono text-[var(--color-surface-400)] text-xs">{msg.errorCode}</span>}
                     </div>
                   </div>
                 ))}
@@ -727,7 +719,7 @@ export function Console({ debugController }: ConsoleProps) {
                         {msg.line !== undefined && `:${msg.line}`}
                         {msg.column !== undefined && `:${msg.column}`}
                       </span>
-                    )}
+                    )}{msg.code && <span data-diagnostic-code className="ml-2 font-mono text-[var(--color-surface-400)] text-xs">{msg.code}</span>}
                   </div>
                 </>;
                 return navigable ? <Button variant="ghost" size="sm" key={idx} onClick={() => { void activateDiagnostic(msg); }} className="h-auto w-full items-start justify-start whitespace-normal py-1 text-left">{content}</Button> : <div key={idx} className="flex items-start gap-2 rounded px-2 py-1">{content}</div>;

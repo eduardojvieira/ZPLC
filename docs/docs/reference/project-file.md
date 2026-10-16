@@ -9,7 +9,7 @@ tags: [reference, generated]
 
 {/* >>> GENERATED (tools/docs/generate_source_references.ts): reference/project-file. Do not edit. >>> */}
 
-Every field of the project file `zplc.json` that the schema `packages/zplc-ide/zplc.schema.json` defines, 156 in all. A field of an array is written with `[]`: `tasks[].name` is the `name` of each task. A field is required only inside an object that is present.
+Every field of the project file `zplc.json` that the schema `packages/zplc-ide/zplc.schema.json` defines, 159 in all. A field of an array is written with `[]`: `tasks[].name` is the `name` of each task. A field is required only inside an object that is present.
 
 A project file must have `name`, `version`, `tasks`. The editor and the tools validate a file against this schema before they use it.
 
@@ -24,7 +24,7 @@ This table is read off the source file `packages/zplc-ide/zplc.schema.json`; its
 | `description` | `string` |   |   | Optional project description |
 | `author` | `string` |   |   | Project author |
 | `target` | `object` |   |   | Target hardware configuration |
-| `target.board` | `string: "rpi_pico" \| "arduino_giga_r1" \| "arduino_opta_wifi" \| "stm32f746g_disco" \| "esp32s3_devkitc" \| "nucleo_h743zi" \| "posix"` |   |   | Target board (e.g., rpi_pico, posix) |
+| `target.board` | `string: "rpi_pico" \| "arduino_giga_r1" \| "arduino_opta_wifi" \| "stm32f746g_disco" \| "esp32s3_devkitc" \| "nucleo_h743zi" \| "waveshare_rp2040_zero" \| "posix"` |   |   | Target board (e.g., rpi_pico, posix) |
 | `target.cpu` | `string` |   |   | CPU identifier |
 | `target.clock_mhz` | `integer (>= 1)` |   |   | CPU clock frequency in MHz |
 | `compiler` | `object` |   |   | Compiler settings |
@@ -38,18 +38,21 @@ This table is read off the source file `packages/zplc-ide/zplc.schema.json`; its
 | `io.inputs[].address` | `string` | yes |   | IEC 61131-3 address (e.g., %I0.0, %Q0.1, %MW0) |
 | `io.inputs[].type` | `string: "BOOL" \| "BYTE" \| "WORD" \| "DWORD"` |   | `"BOOL"` | Data type |
 | `io.inputs[].pin` | `integer (>= 0)` |   |   | GPIO pin number (hardware-specific) |
+| `io.inputs[].safe` | `boolean` |   |   | Digital outputs only: the value the output takes whenever the program does not control it (STOP, a pause, a latched fault, the boot, a deploy in progress). Absent is off, unless the board description says otherwise. The build refuses a value for an output the selected board does not have, and the value travels in the artifact with the program. |
 | `io.inputs[].description` | `string` |   |   | Optional description |
 | `io.outputs` | `array of object` |   |   | Digital output definitions |
 | `io.outputs[].name` | `string (length >= 1)` | yes |   | Variable name |
 | `io.outputs[].address` | `string` | yes |   | IEC 61131-3 address (e.g., %I0.0, %Q0.1, %MW0) |
 | `io.outputs[].type` | `string: "BOOL" \| "BYTE" \| "WORD" \| "DWORD"` |   | `"BOOL"` | Data type |
 | `io.outputs[].pin` | `integer (>= 0)` |   |   | GPIO pin number (hardware-specific) |
+| `io.outputs[].safe` | `boolean` |   |   | Digital outputs only: the value the output takes whenever the program does not control it (STOP, a pause, a latched fault, the boot, a deploy in progress). Absent is off, unless the board description says otherwise. The build refuses a value for an output the selected board does not have, and the value travels in the artifact with the program. |
 | `io.outputs[].description` | `string` |   |   | Optional description |
 | `io.virtual` | `array of object` |   |   | Words or bits of the process image that no pin of the board drives, read in the debugger or by a test. A variable located where the selected board has no channel is a build error that names the board unless its address is listed here. |
 | `io.virtual[].name` | `string (length >= 1)` | yes |   | Variable name |
 | `io.virtual[].address` | `string` | yes |   | IEC 61131-3 address (e.g., %I0.0, %Q0.1, %MW0) |
 | `io.virtual[].type` | `string: "BOOL" \| "BYTE" \| "WORD" \| "DWORD"` |   | `"BOOL"` | Data type |
 | `io.virtual[].pin` | `integer (>= 0)` |   |   | GPIO pin number (hardware-specific) |
+| `io.virtual[].safe` | `boolean` |   |   | Digital outputs only: the value the output takes whenever the program does not control it (STOP, a pause, a latched fault, the boot, a deploy in progress). Absent is off, unless the board description says otherwise. The build refuses a value for an output the selected board does not have, and the value travels in the artifact with the program. |
 | `io.virtual[].description` | `string` |   |   | Optional description |
 | `io.analog` | `object` |   |   | Analog I/O configuration |
 | `io.analog.adc` | `array of object` |   |   | ADC channel definitions |

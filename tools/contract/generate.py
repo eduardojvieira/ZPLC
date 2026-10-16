@@ -266,6 +266,23 @@ def validate(c: dict) -> None:
         header = flatten_members(comm, ["@COMM_HEADER"])
         if members[: len(header)] != header:
             raise ContractError(f"block {b['name']}: must start with the common handshake")
+        # The compiler reserves comm.memberSizes bytes for a member of each type (COM-005): a member must end
+        # inside the instance and before the next one begins, or a write to it lands in a neighbour.
+        # The last comm.tail.bytes bytes of a block are the dispatcher's: no member covers them.
+        ordered = sorted(members, key=lambda m: m["offset"])
+        usable = b["size"] - comm["tail"]["bytes"]
+        for index, m in enumerate(ordered):
+            size = comm["memberSizes"][m["type"]]
+            end = m["offset"] + size
+            if end > usable:
+                raise ContractError(
+                    f"block {b['name']}.{m['name']}: {size} bytes at {m['offset']} end at {end}, past the instance size "
+                    f"{b['size']} less the {comm['tail']['bytes']} byte(s) of the dispatcher")
+            if index + 1 < len(ordered) and end > ordered[index + 1]["offset"]:
+                following = ordered[index + 1]
+                raise ContractError(
+                    f"block {b['name']}.{m['name']}: {size} bytes at {m['offset']} end at {end}, "
+                    f"over {following['name']} at {following['offset']}")
         if b["size"] > 0xFFFF:
             raise ContractError(f"block {b['name']}: size does not fit 16 bits")
 
@@ -639,7 +656,11 @@ def region_loader_errors(c: dict) -> list[str]:
 
 
 def region_loader_max_tasks(c: dict) -> list[str]:
-    return [f"#define ZPLC_LOADER_MAX_TASKS {c['container']['maxTasks']['value']}U"]
+    return [
+        f"#define ZPLC_LOADER_MAX_TASKS {c['container']['maxTasks']['value']}U",
+        f"/** @brief {c['container']['maxSafeEntries']['doc']} */",
+        f"#define ZPLC_LOADER_MAX_SAFE {c['container']['maxSafeEntries']['value']}U",
+    ]
 
 
 def region_loader_verified_depth(c: dict) -> list[str]:
@@ -708,6 +729,9 @@ def region_comm_blocks(c: dict) -> list[str]:
     for i, b in enumerate(blocks):
         tail = " \\" if i < len(blocks) - 1 else ""
         lines.append(f"  X({b['name']}, {hexw(b['kind'], 4)}, {b['size']}){tail}")
+    lines.append("")
+    lines += c_doc_block(comm["tail"]["doc"])
+    lines.append(f"#define ZPLC_COMM_FB_TAIL_BYTES {comm['tail']['bytes']}U")
     lines.append("")
     lines += [
         "/**",
@@ -834,6 +858,8 @@ def render_ts(c: dict) -> str:
         f"  maxTasks: {cont['maxTasks']['value']},",
         f"  maxVerifiedDepth: {cont['maxVerifiedDepth']['value']},",
         f"  buildEntrySize: {structs['build']['size']},",
+        f"  safeEntrySize: {structs['safe']['size']},",
+        f"  maxSafeEntries: {cont['maxSafeEntries']['value']},",
         f"  crcOffset: {cont['crc']['offset']},",
         f"  crcSize: {cont['crc']['size']},",
         "} as const;",
@@ -1086,6 +1112,8 @@ def render_py(c: dict) -> str:
         f"MAX_TASKS = {cont['maxTasks']['value']}",
         f"MAX_VERIFIED_DEPTH = {cont['maxVerifiedDepth']['value']}",
         f"BUILD_ENTRY_SIZE = {structs['build']['size']}",
+        f"SAFE_ENTRY_SIZE = {structs['safe']['size']}",
+        f"MAX_SAFE_ENTRIES = {cont['maxSafeEntries']['value']}",
         f"CRC_OFFSET = {cont['crc']['offset']}",
         f"CRC_SIZE = {cont['crc']['size']}",
         "",
@@ -1221,7 +1249,8 @@ DOC_TEXT = {
         "headerSize": "File header size (bytes)",
         "segmentSize": "Segment entry size (bytes)", "taskSize": "Task definition size (bytes)",
         "iomapSize": "I/O map entry size (bytes)", "tagSize": "Tag entry size (bytes)", "maxTasks": "Maximum tasks in an artifact",
-        "buildSize": "Build identity size (bytes)", "maxDepth": "Deepest evaluation stack the loader proves",
+        "buildSize": "Build identity size (bytes)", "safeSize": "Safe-state entry size (bytes)",
+        "maxSafe": "Most outputs an artifact may declare a safe value for", "maxDepth": "Deepest evaluation stack the loader proves",
         "depthNote": "A task that needs more is refused, whatever the target stack allows; the compiler fails the build above it.",
         "crc": "CRC32", "crcNote": "IEEE 802.3 polynomial {poly}, over the whole file except the 4 bytes at offset {off}.",
         "layout": "Layout of {name}", "offset": "Offset", "field": "Field", "type": "Type", "bytes": "Bytes", "description": "Description",
@@ -1234,7 +1263,7 @@ DOC_TEXT = {
         "opcodes": "Opcodes", "opcodesIntro": "The operand size follows the opcode range (0x00-0x3F none, 0x40-0x7F 8-bit, 0x80-0xBF 16-bit, 0xC0-0xFF 32-bit), except `RET` and the opcodes `I2F` to `GED` (conversions and double-precision arithmetic and comparison), which carry no operand. Stack effects list the top of the stack on the right.",
         "hex": "Code", "mnemonic": "Mnemonic", "operand": "Operand", "effect": "Stack effect", "flagsCol": "Flags", "none": "none",
         "vmErrors": "VM error codes", "loaderErrors": "Loader error codes", "code": "Code",
-        "comm": "Communication function blocks", "commIntro": "Each function-block instance is a byte block in work or retentive memory. Every block starts with the same 8-byte handshake. The core takes the size of a block from this table.",
+        "comm": "Communication function blocks", "commIntro": "Each function-block instance is a byte block in work or retentive memory. Every block starts with the same 8-byte handshake and ends with one byte that belongs to the dispatcher (it keeps the previous EN there); no member covers it. The core takes the size of a block from this table.",
         "kind": "Kind", "instanceSize": "Instance size (bytes)", "member": "Member", "direction": "Direction",
         "commStatus": "Communication status codes", "kindMax": "Kinds at or above {value} are refused by the loader and by handler registration.",
         "in": "input", "out": "output", "blockLayout": "Layout of {name}",
@@ -1249,7 +1278,8 @@ DOC_TEXT = {
         "headerSize": "Tamaño de la cabecera del archivo (bytes)",
         "segmentSize": "Tamaño de la entrada de segmento (bytes)", "taskSize": "Tamaño de la definición de tarea (bytes)",
         "iomapSize": "Tamaño de la entrada del mapa de E/S (bytes)", "tagSize": "Tamaño de la entrada de etiqueta (bytes)", "maxTasks": "Máximo de tareas en un artefacto",
-        "buildSize": "Tamaño de la identidad de compilación (bytes)", "maxDepth": "Pila de evaluación más profunda que el loader demuestra",
+        "buildSize": "Tamaño de la identidad de compilación (bytes)", "safeSize": "Tamaño de la entrada de estado seguro (bytes)",
+        "maxSafe": "Máximo de salidas para las que un artefacto puede declarar un valor seguro", "maxDepth": "Pila de evaluación más profunda que el loader demuestra",
         "depthNote": "Una tarea que necesita más es rechazada, aunque la pila del destino lo permita; el compilador falla la compilación por encima.",
         "crc": "CRC32", "crcNote": "Polinomio IEEE 802.3 {poly}, sobre todo el archivo salvo los 4 bytes en el offset {off}.",
         "layout": "Layout de {name}", "offset": "Offset", "field": "Campo", "type": "Tipo", "bytes": "Bytes", "description": "Descripción",
@@ -1262,7 +1292,7 @@ DOC_TEXT = {
         "opcodes": "Opcodes", "opcodesIntro": "El tamaño del operando sigue el rango del opcode (0x00-0x3F ninguno, 0x40-0x7F 8 bits, 0x80-0xBF 16 bits, 0xC0-0xFF 32 bits), salvo `RET` y los opcodes de `I2F` a `GED` (conversiones, aritmética y comparación de doble precisión), que no llevan operando. Los efectos sobre la pila ponen el tope a la derecha.",
         "hex": "Código", "mnemonic": "Mnemónico", "operand": "Operando", "effect": "Efecto en la pila", "flagsCol": "Flags", "none": "ninguno",
         "vmErrors": "Códigos de error de la VM", "loaderErrors": "Códigos de error del loader", "code": "Código",
-        "comm": "Bloques de función de comunicación", "commIntro": "Cada instancia de bloque de función es un bloque de bytes en memoria de trabajo o retentiva. Todos los bloques empiezan con el mismo handshake de 8 bytes. El core toma el tamaño de un bloque de esta tabla.",
+        "comm": "Bloques de función de comunicación", "commIntro": "Cada instancia de bloque de función es un bloque de bytes en memoria de trabajo o retentiva. Todos los bloques empiezan con el mismo handshake de 8 bytes y terminan con un byte que pertenece al despachador (guarda ahí el EN anterior); ningún miembro lo cubre. El core toma el tamaño de un bloque de esta tabla.",
         "kind": "Kind", "instanceSize": "Tamaño de la instancia (bytes)", "member": "Miembro", "direction": "Dirección",
         "commStatus": "Códigos de estado de comunicación", "kindMax": "El loader y el registro de handlers rechazan los kinds iguales o mayores que {value}.",
         "in": "entrada", "out": "salida", "blockLayout": "Layout de {name}",
@@ -1305,6 +1335,8 @@ def render_docs(c: dict, lang: str) -> str:
         [t["tagSize"], f"`{structs['tag']['size']}`", ""],
         [t["maxTasks"], f"`{cont['maxTasks']['value']}`", ""],
         [t["buildSize"], f"`{structs['build']['size']}`", ""],
+        [t["safeSize"], f"`{structs['safe']['size']}`", ""],
+        [t["maxSafe"], f"`{cont['maxSafeEntries']['value']}`", ""],
         [t["maxDepth"], f"`{cont['maxVerifiedDepth']['value']}`", t["depthNote"]],
         [t["crc"], f"`{cont['crc']['polynomial']}`",
          t["crcNote"].format(poly=cont["crc"]["polynomial"], off=cont["crc"]["offset"])],

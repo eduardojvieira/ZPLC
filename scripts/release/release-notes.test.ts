@@ -1,11 +1,11 @@
-// REL-027, REL-031, REL-038, REL-017: the notes of a release are rendered from what the run recorded, and make no
+// REL-027, REL-031, REL-038, REL-017, DOC-030: the notes of a release are rendered from what the run recorded, and make no
 // claim that a check of that run does not support.
 import { describe, expect, test } from 'bun:test';
 import { spawnSync } from 'node:child_process';
 import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { changelogSection, releaseTitle, renderReleaseNotes, type RunResults } from './release-notes';
+import { changelogParts, changelogSection, releaseTitle, renderReleaseNotes, type RunResults } from './release-notes';
 
 const root = join(import.meta.dir, '..', '..');
 const fixture = (): RunResults => JSON.parse(readFileSync(join(import.meta.dir, 'fixtures', 'run-results.json'), 'utf8')) as RunResults;
@@ -51,6 +51,28 @@ describe('the signing state of every asset comes from the checks of the run (REL
       expect(text).toMatch(/mac-arm64\.dmg \|[^\n]*Intended to be signed ad hoc; the signature check did not pass in this run/);
       expect(text).not.toMatch(/mac-arm64\.dmg \|[^\n]*Signed ad hoc and sealed/);
     }
+  });
+
+  test('labels a firmware image with the evidence level of its board and claims no launch (REL-022)', () => {
+    const results = fixture();
+    results.assets.push({ name: 'zplc-runtime-2.0.0-rc.4-rpi-pico-rp2040.uf2', platform: 'firmware', job: 'build-firmware', signing: 'unsigned', evidenceLevel: 'cross-build', checks: { signature: 'not-run', launch: 'not-run', install: 'not-run' } });
+    results.assets.push({ name: 'zplc-runtime-2.0.0-rc.4-nucleo-h743zi.bin', platform: 'firmware', job: 'build-firmware', signing: 'unsigned', checks: { signature: 'not-run', launch: 'not-run', install: 'not-run' } });
+    const text = renderReleaseNotes(results);
+    const row = (name: string) => text.split('\n').find((line) => line.startsWith(`| ${name} |`))!;
+    expect(row('zplc-runtime-2.0.0-rc.4-rpi-pico-rp2040.uf2')).toContain('Evidence level of the board: cross-build');
+    expect(row('zplc-runtime-2.0.0-rc.4-rpi-pico-rp2040.uf2')).toContain('has not been flashed or run on it');
+    expect(row('zplc-runtime-2.0.0-rc.4-rpi-pico-rp2040.uf2')).not.toContain('launched on its own system');
+    expect(row('zplc-runtime-2.0.0-rc.4-nucleo-h743zi.bin')).toContain('evidence level of the board is not recorded in this run');
+    results.assets.push({ name: 'zplc-runtime-2.0.0-rc.4.manifest.json', platform: 'firmware', job: 'build-firmware', signing: 'unsigned', checks: { signature: 'not-run', launch: 'not-run', install: 'not-run' } });
+    expect(renderReleaseNotes(results).split('\n').find((line) => line.startsWith('| zplc-runtime-2.0.0-rc.4.manifest.json |'))).toContain('lists the firmware images of this release');
+  });
+
+  test('says which firmware job to read when the run published no firmware image (REL-022)', () => {
+    const results = fixture();
+    results.jobs.push({ job: 'build-firmware', result: 'failure' }, { job: 'assemble-firmware', result: 'skipped' });
+    expect(renderReleaseNotes(results)).toContain('No firmware image was published: build-firmware ended in failure, assemble-firmware ended in skipped.');
+    results.assets.push({ name: 'zplc-runtime-2.0.0-rc.4-rpi-pico-rp2040.uf2', platform: 'firmware', job: 'build-firmware', signing: 'unsigned', checks: { signature: 'not-run', launch: 'not-run', install: 'not-run' } });
+    expect(renderReleaseNotes(results)).not.toContain('No firmware image was published');
   });
 
   test('reports a launch check that failed or did not run as such, never as passed', () => {
@@ -107,6 +129,63 @@ describe('tests, known failures and changes (REL-027)', () => {
     const changelog = '# Changelog\n\n## Unreleased\n\n- Not yet.\n\n## 2.0.0-rc.4 - 2026-10-20\n\n- First change.\n  continued here.\n- Second change.\n\n## 2.0.0-rc.3 - 2026-09-01\n\n- Old.\n';
     expect(changelogSection(changelog, '2.0.0-rc.4')).toEqual(['First change. continued here.', 'Second change.']);
     expect(changelogSection(changelog, '9.9.9')).toEqual([]);
+  });
+});
+
+describe('what changed for a user, what breaks, how to migrate and what is limited (DOC-030)', () => {
+  const changelog = [
+    '# Changelog', '', '## Unreleased', '', '- Not yet.', '',
+    '## 2.0.0-rc.4 - 2026-10-20', '',
+    '### What changed for you', '', '- The simulator runs tasks of different intervals.', '  Each is released on its own.', '- Archives export and import.', '',
+    '### Breaking changes', '', '- Programs built before contract draft 4 are refused.', '',
+    '### Migration', '', '1. Rebuild every program and reflash every board together.', '2. Name the broker of every controller.', '',
+    '### Known limits', '', '- No board has a hardware record.', '',
+    '### Details for contributors', '', '- `tools/contract/contract.json` carries the counter (CMP-052).', '',
+    '## 2.0.0-rc.3 - 2026-09-01', '', '- Old.', '',
+  ].join('\n');
+
+  test('splits a section that names its parts, and leaves the details for contributors in the changelog', () => {
+    expect(changelogParts(changelog, '2.0.0-rc.4')).toEqual({
+      structured: true,
+      changes: ['The simulator runs tasks of different intervals. Each is released on its own.', 'Archives export and import.'],
+      breaking: ['Programs built before contract draft 4 are refused.'],
+      migration: ['Rebuild every program and reflash every board together.', 'Name the broker of every controller.'],
+      limits: ['No board has a hardware record.'],
+    });
+  });
+
+  test('takes every bullet of an older section as a change, and says nothing is recorded under "None."', () => {
+    expect(changelogParts(changelog, '2.0.0-rc.3')).toEqual({ structured: false, changes: ['Old.'], breaking: [], migration: [], limits: [] });
+    const none = '## 2.0.0 - 2026-11-01\n\n### What changed for you\n\n- A change.\n\n### Breaking changes\n\nNone.\n\n- None.\n';
+    expect(changelogParts(none, '2.0.0').breaking).toEqual([]);
+  });
+
+  test('prints the breaking changes and the migration, and says when no breaking change is recorded', () => {
+    const results = fixture();
+    expect(renderReleaseNotes(results)).toContain('No breaking change is recorded for this version.');
+    results.breaking = ['Programs built before contract draft 4 are refused.'];
+    results.migration = ['Rebuild every program and reflash every board together.'];
+    const notes = renderReleaseNotes(results);
+    expect(notes).toContain('### Breaking changes\n\n- Programs built before contract draft 4 are refused.');
+    expect(notes).toContain('### Migration\n\n- Rebuild every program and reflash every board together.');
+    expect(notes.indexOf('### Breaking changes')).toBeLessThan(notes.indexOf('### Known issues'));
+  });
+
+  test('the command line adds the parts of the changelog to the notes of its version', () => {
+    const directory = mkdtempSync(join(tmpdir(), 'zplc-notes-'));
+    const log = join(directory, 'CHANGELOG.md');
+    writeFileSync(log, changelog);
+    const results = fixture();
+    results.changes = [];
+    const resultsPath = join(directory, 'results.json');
+    writeFileSync(resultsPath, JSON.stringify(results));
+    const run = spawnSync('bun', ['scripts/release/release-notes.ts', '--results', resultsPath, '--out', join(directory, 'notes.md'), '--changelog', log], { cwd: root, encoding: 'utf8' });
+    expect(run.status, run.stderr).toBe(0);
+    const notes = readFileSync(join(directory, 'notes.md'), 'utf8');
+    expect(notes).toContain('- Archives export and import.');
+    expect(notes).toContain('- Programs built before contract draft 4 are refused.');
+    expect(notes).toContain('- No board has a hardware record.');
+    expect(notes).not.toContain('tools/contract/contract.json');
   });
 });
 

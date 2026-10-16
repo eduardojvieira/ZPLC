@@ -166,11 +166,9 @@ const SFCTransitionNode = memo(({ id, data, selected }: NodeProps) => {
           ) : (
             <span className="text-[var(--text-tertiary)]">Waiting</span>
           )}
-          {conditionResult !== undefined && (
-            <span className={isConditionTrue ? 'text-green-400' : 'text-[var(--text-secondary)]'}>
-              = {conditionResult ? 'TRUE' : 'FALSE'}
-            </span>
-          )}
+          <span className={isConditionTrue ? 'text-green-400' : 'text-[var(--text-secondary)]'}>
+            = {conditionResult === undefined ? 'unavailable' : conditionResult ? 'TRUE' : 'FALSE'}
+          </span>
         </div>
       )}
 

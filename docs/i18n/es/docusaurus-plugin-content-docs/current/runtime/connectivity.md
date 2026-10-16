@@ -8,21 +8,23 @@ description: Resumen de los protocolos de red industrial soportados y capacidade
 
 # Conectividad y Protocolos
 
-ZPLC provee soporte integrado para protocolos de automatización industrial estándar, permitiendo que tus controladores interactúen con dispositivos de campo, sistemas SCADA y plataformas en la nube.
+ZPLC incluye implementaciones de protocolos estándar de automatización industrial, para que un controlador intercambie datos con dispositivos de campo, sistemas SCADA y plataformas en la nube. Se han verificado solo en el host y en emulación, nunca en un cable: cada guía práctica ([Modbus](../guides/modbus.md), [MQTT y Sparkplug B](../guides/mqtt-sparkplug.md), [los bloques de nube](../guides/cloud-blocks.md)) dice qué se probó.
 
 ## Capacidades de la Placa
 
 El soporte de protocolos depende de las capacidades físicas de tu placa objetivo. ZPLC categoriza las placas en tres niveles de conectividad:
 
-- **Solo Serial**: Soporta protocolos como Modbus RTU a través de UART/RS-485.
-- **Con capacidad Wi-Fi**: Soporta protocolos TCP/UDP (Modbus TCP, MQTT) mediante redes inalámbricas (ej. ESP32-S3).
-- **Con capacidad Ethernet**: Soporta protocolos TCP/UDP sobre conexiones cableadas (ej. STM32 Nucleo/Discovery).
+- **Solo serial**: tiene una interfaz serie para la que está construido Modbus RTU sobre UART o RS-485.
+- **Con capacidad Wi-Fi**: tiene una interfaz de red inalámbrica para la que están construidos Modbus TCP y MQTT (por ejemplo, el ESP32-S3).
+- **Con capacidad Ethernet**: tiene una interfaz de red cableada para la que están construidos los protocolos TCP y UDP (por ejemplo, STM32 Nucleo y Discovery).
+
+Ningún intercambio por estas interfaces se ha probado en una placa; lo que se ha verificado está en las guías prácticas de [Modbus](../guides/modbus.md) y de [MQTT](../guides/mqtt-sparkplug.md).
 
 Studio muestra la configuración de Wi-Fi o Ethernet solo para las placas que tienen ese hardware.
 
 ## Protocolos Soportados
 
-ZPLC soporta de forma nativa:
+El firmware implementa:
 
 - **Modbus**: Tanto Modbus RTU (Serial) como Modbus TCP (Red).
 - **MQTT**: Mensajería estándar MQTT publicación/suscripción para integración IIoT, incluyendo perfiles para Sparkplug B, brokers estándar, AWS IoT Core y Azure IoT Hub.
@@ -35,6 +37,24 @@ La conectividad se define en el archivo `zplc.json` de tu proyecto. A través de
 3. Mapear variables de PLC internas directamente hacia registros/bobinas Modbus o tópicos MQTT a través de **Bindings de Comunicación**.
 
 El runtime maneja automáticamente la retransmisión del protocolo por debajo mientras tu lógica de PLC ejecuta.
+
+### Áreas y direcciones Modbus
+
+Las cuatro áreas de un servidor Modbus son cuatro espacios de direcciones: una bobina, una entrada discreta, un registro de entrada y un registro de retención con el mismo número son cuatro variables distintas. El número del tag `{modbus:N}` de una variable dice cuál es, en la notación del mundo Modbus:
+
+| `N` | Área | Dirección en el cable | Un cliente puede |
+| --- | --- | --- | --- |
+| 10001 a 19999 | Entrada discreta | `N - 10001` | leerla (función 2) |
+| 30001 a 39999 | Registro de entrada | `N - 30001` | leerlo (función 4) |
+| 40001 a 49999 | Registro de retención | `N - 40001` | leerlo (función 3) y escribirlo (6, 16) |
+| cualquier otro número, un `BOOL` | Bobina | `N` | leerla (función 1) y escribirla (5, 15) |
+| cualquier otro número, otro tipo | Registro de retención | `N` | leerlo (función 3) y escribirlo (6, 16) |
+
+Una variable se sirve en una sola área. Un pedido de una dirección que ninguna variable tiene en el área que pide se responde con la excepción 2 (dirección de datos ilegal), aunque otra área tenga una variable con ese número. Las entradas discretas y los registros de entrada no tienen función de escritura, y el servidor no los escribe. Una variable de 32 bits ocupa dos registros consecutivos; un área de bits lleva un bit por variable.
+
+El proyecto dice el área con los ayudantes `MODBUS_COIL`, `MODBUS_DISCRETE_INPUT`, `MODBUS_INPUT_REGISTER` y `MODBUS_HOLDING_REGISTER` y con el área de un tag de comunicación: la dirección que das es la dirección en el cable, y la compilación escribe el número de la tabla (un registro de retención en la dirección 5 es `{modbus:40006}`). Una dirección que ya está en la notación de su área (40001 para un registro de retención) se conserva; una que está en la notación de otra área, o que la notación no puede escribir (un registro de entrada pasada la 9998), es un error de compilación en la línea del ayudante.
+
+Toda variable de WORK (`0x2000` a `0x3FFF`) y de RETAIN se puede enlazar, y el servidor sirve todo el rango del cable, hasta la dirección 65535, para las direcciones que tienen una variable. El cliente Modbus TCP del controlador lee un tag con la dirección de su área en el dispositivo remoto: un registro de retención con la función 3 y una bobina con la función 1; el cliente no tiene lectura de entradas discretas ni de registros de entrada, y un tag en esas áreas lo sirve solo el servidor.
 
 ### Overrides de mapeo del servidor Modbus
 

@@ -9,26 +9,37 @@ tags: [reference, runtime, generated]
 
 # Runtime API
 
-> [!IMPORTANT]
-> This page is generated from the public C headers under `firmware/lib/zplc_core/include/`. Edit the headers or rerun `python3 tools/docs/generate_runtime_reference.py` instead of editing this file manually.
+:::note
+This page is generated from the public C headers under `firmware/lib/zplc_core/include/`. Edit the headers or rerun `python3 tools/docs/generate_runtime_reference.py` instead of editing this file manually.
+:::
 
-> The Spanish wrapper text is localized, while API names, signatures, and source-derived descriptions remain anchored to the English headers to avoid documentation drift.
+The Spanish wrapper text is localized, while API names, signatures, and source-derived descriptions remain anchored to the English headers to avoid documentation drift.
 
 ## Source headers
 
 - `firmware/lib/zplc_core/include/zplc_bytes.h`
 - `firmware/lib/zplc_core/include/zplc_comm_dispatch.h`
+- `firmware/lib/zplc_core/include/zplc_comm_req.h`
 - `firmware/lib/zplc_core/include/zplc_core.h`
 - `firmware/lib/zplc_core/include/zplc_crc32.h`
 - `firmware/lib/zplc_core/include/zplc_debug.h`
+- `firmware/lib/zplc_core/include/zplc_ed25519.h`
 - `firmware/lib/zplc_core/include/zplc_exchange.h`
+- `firmware/lib/zplc_core/include/zplc_failsafe.h`
 - `firmware/lib/zplc_core/include/zplc_hal.h`
 - `firmware/lib/zplc_core/include/zplc_hal_posix.h`
 - `firmware/lib/zplc_core/include/zplc_isa.h`
 - `firmware/lib/zplc_core/include/zplc_loader.h`
 - `firmware/lib/zplc_core/include/zplc_program_store.h`
+- `firmware/lib/zplc_core/include/zplc_proto.h`
+- `firmware/lib/zplc_core/include/zplc_proto_dev.h`
 - `firmware/lib/zplc_core/include/zplc_retain.h`
+- `firmware/lib/zplc_core/include/zplc_sched_core.h`
 - `firmware/lib/zplc_core/include/zplc_scheduler.h`
+- `firmware/lib/zplc_core/include/zplc_sha256.h`
+- `firmware/lib/zplc_core/include/zplc_sha512.h`
+- `firmware/lib/zplc_core/include/zplc_single_task.h`
+- `firmware/lib/zplc_core/include/zplc_verify_scratch.h`
 
 ## `zplc_bytes.h`
 
@@ -147,6 +158,20 @@ int zplc_comm_register_handler(zplc_comm_fb_kind_t kind, zplc_comm_handler_t fn)
 | `kind` | `zplc_comm_fb_kind_t` | — |
 | `fn` | `zplc_comm_handler_t` | — |
 
+#### `zplc_comm_fb_is_service`
+
+```c
+int zplc_comm_fb_is_service(zplc_comm_fb_kind_t kind);
+```
+
+**Source summary:** True for the blocks that report a state that can change on any scan: MQTT_CONNECT, MQTT_SUBSCRIBE and AZURE_C2D_RECV. Their handler is called on every scan while EN is TRUE; the others make one request for each rising EN.
+
+**Parameters**
+
+| Name | Type | Source description |
+| --- | --- | --- |
+| `kind` | `zplc_comm_fb_kind_t` | — |
+
 #### `zplc_comm_fb_exec`
 
 ```c
@@ -154,6 +179,8 @@ int zplc_comm_fb_exec(zplc_comm_fb_kind_t kind, uint8_t *fb_mem, uint16_t fb_len
 ```
 
 **Source summary:** Execute a communication FB instance (called by VM from OP_COMM_EXEC).
+
+The one handshake of the twelve blocks (COM-002, COM-004). The block is the only writer of BUSY, DONE, ERROR and STATUS; a handler returns its result and the dispatcher publishes it. A request block (the Modbus blocks, MQTT_PUBLISH, AZURE_DPS_PROV, AZURE_EG_PUB, AWS_FLEET_PROV, SPB_REBIRTH): EN        0 0 1 1 1 1 1 1 1 1 0 0 1 1 1 1 BUSY      0 0 0 1 1 1 0 0 0 0 0 0 0 1 1 0       one operation, begun by the rising edge DONE      0 0 0 0 0 0 1 1 1 1 0 0 0 0 0 1       the result, held while EN stays TRUE ERROR     0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0       (a failed operation holds ERROR instead of DONE) handler       . . S P P R . . . . . . S P R         S START, P POLL, R the result - EN is FALSE and the block idle: all three outputs are 0 and the handler is not called. - EN rises on an idle block (BUSY, DONE and ERROR all 0): START. A handler that finishes at once gives DONE or ERROR in the same scan; one that returns PENDING gives BUSY, STATUS = ZPLC_COMM_BUSY. - BUSY: the handler is called on every scan, whatever EN does, until it returns a result. A trigger that is a one-scan pulse still completes, and a rising EN while BUSY starts nothing. - The result is DONE (STATUS 0) or ERROR (STATUS a zplc_comm_status_t code). It is held while EN stays TRUE, and the handler is not called: one rising edge causes exactly one operation. It is shown for one scan when EN had already fallen. - EN FALSE with DONE or ERROR set: both are cleared. STATUS keeps the code of the last operation until the next START or a COMM_RESET. - COMM_RESET (zplc_comm_fb_reset): EN, BUSY, DONE, ERROR and STATUS are 0 and the handler is called with RESET to release what it holds; an operation still in flight completes unseen. A service block reports a state: the handler is called with POLL on every scan while EN is TRUE and its result is published as it is: PENDING is BUSY (it has not reached its state yet), DONE is DONE while the state holds, a failure is ERROR. When EN falls on a block that reports a state, the handler is called once with RESET and the outputs are cleared. A kind with no handler gives ERROR with STATUS ZPLC_COMM_NO_HANDLER (3).
 
 **Parameters**
 
@@ -189,6 +216,7 @@ int zplc_comm_fb_reset(zplc_comm_fb_kind_t kind, uint8_t *fb_mem, uint16_t fb_le
 | --- | --- | --- |
 | `zplc_comm_fb_kind_t` | Enum | Communication function block kind identifiers. |
 | `zplc_comm_status_t` | Enum | Communication status codes written to FB.STATUS. |
+| `zplc_comm_call_t` | Enum | Why a handler is called (COM-002). |
 | `zplc_comm_handler_t` | Typedef | Comm FB handler function type. |
 
 ### Constants and macros
@@ -196,6 +224,249 @@ int zplc_comm_fb_reset(zplc_comm_fb_kind_t kind, uint8_t *fb_mem, uint16_t fb_le
 | Name | Value | Source summary |
 | --- | --- | --- |
 | `ZPLC_COMM_FB_HANDSHAKE_SIZE` | `8U` | Size in bytes of the handshake every communication block starts with (EN, BUSY, DONE, ERROR, STATUS). |
+| `ZPLC_COMM_HANDLER_DONE` | `0` | The operation finished successfully: BUSY 0, DONE 1, STATUS 0. |
+| `ZPLC_COMM_HANDLER_PENDING` | `1` | The operation is in flight: BUSY 1, STATUS ZPLC_COMM_BUSY; the handler is called again on the next scan. |
+| `ZPLC_COMM_FB_TAIL_BYTES` | `1U` | Bytes at the end of every block that has a layout. They belong to the dispatcher, which keeps there the value EN had on the previous call to tell a rising edge from an EN that stays TRUE (COM-004). No member covers them and a program does not name them; a kind without a layout has none. |
+
+## `zplc_comm_req.h`
+
+Request slots between the scan and a worker (COM-003, COM-004, COM-008, COM-018).
+
+A communication block never waits for a peer. When it begins an operation it takes a slot, fills in what the worker needs and queues the slot; the worker (a thread, the MQTT client, a transport callback) runs it and writes the result into the slot; the scan reads the result on a later call. The slot is the only thing the two sides share, and it is only ever changed under the lock of its pool: FREE --claim--> CLAIMED --submit--> QUEUED --begin--> RUNNING --finish--> DONE --release--> FREE |                 | +--- abandon -----+--> ABANDONED --(worker is through)--> FREE A block that is reset, a request that outlives its timeout, or a program that is replaced abandons its slot. An abandoned slot is not released: the worker may be reading its payload, so it stays taken until the worker has finished with it (COM-008). The result of an abandoned request belongs to nobody and is dropped, never delivered to the next block that uses the slot (COM-018). The header has no state of its own and no dependency on an operating system: a pool is an array of structures whose first member is a zplc_comm_req_t, and a pair of lock functions. The host tests drive it with a pthread mutex or none; the firmware uses a spinlock.
+
+Source: `firmware/lib/zplc_core/include/zplc_comm_req.h`
+
+### Functions
+
+#### `zplc_comm_req_at`
+
+```c
+static inline zplc_comm_req_t *zplc_comm_req_at(const zplc_comm_req_pool_t *pool, size_t index);
+```
+
+**Source summary:** No summary found in the header comment.
+
+**Parameters**
+
+| Name | Type | Source description |
+| --- | --- | --- |
+| `pool` | `const zplc_comm_req_pool_t *` | — |
+| `index` | `size_t` | — |
+
+#### `zplc_comm_req_lock`
+
+```c
+static inline void zplc_comm_req_lock(const zplc_comm_req_pool_t *pool);
+```
+
+**Source summary:** No summary found in the header comment.
+
+**Parameters**
+
+| Name | Type | Source description |
+| --- | --- | --- |
+| `pool` | `const zplc_comm_req_pool_t *` | — |
+
+#### `zplc_comm_req_unlock`
+
+```c
+static inline void zplc_comm_req_unlock(const zplc_comm_req_pool_t *pool);
+```
+
+**Source summary:** No summary found in the header comment.
+
+**Parameters**
+
+| Name | Type | Source description |
+| --- | --- | --- |
+| `pool` | `const zplc_comm_req_pool_t *` | — |
+
+#### `zplc_comm_status_from_errno`
+
+```c
+static inline int zplc_comm_status_from_errno(int error);
+```
+
+**Source summary:** The status code a failure of the platform maps to (the documented codes of the blocks).
+
+The status code a failure of the platform maps to (the documented codes of the blocks).
+
+**Parameters**
+
+| Name | Type | Source description |
+| --- | --- | --- |
+| `error` | `int` | — |
+
+#### `zplc_comm_fail_from_errno`
+
+```c
+static inline int zplc_comm_fail_from_errno(int error);
+```
+
+**Source summary:** A handler result for a failure of the platform, as a -errno or a zplc_comm_status_t.
+
+A handler result for a failure of the platform, as a -errno or a zplc_comm_status_t.
+
+**Parameters**
+
+| Name | Type | Source description |
+| --- | --- | --- |
+| `error` | `int` | — |
+
+#### `zplc_comm_req_claim`
+
+```c
+static inline zplc_comm_req_t *zplc_comm_req_claim(const zplc_comm_req_pool_t *pool, const void *owner, uint32_t now_ms);
+```
+
+**Source summary:** Take a free slot for a request of the block `owner` (scan side).
+
+A slot that this block still holds is let go first: a request in flight is abandoned, a finished one is freed. A request therefore never sees the result of an earlier one. Returns NULL when every slot is taken: the block reports ZPLC_COMM_QUEUE_FULL (COM-008).
+
+**Parameters**
+
+| Name | Type | Source description |
+| --- | --- | --- |
+| `pool` | `const zplc_comm_req_pool_t *` | — |
+| `owner` | `const void *` | — |
+| `now_ms` | `uint32_t` | — |
+
+#### `zplc_comm_req_submit`
+
+```c
+static inline void zplc_comm_req_submit(const zplc_comm_req_pool_t *pool, zplc_comm_req_t *slot);
+```
+
+**Source summary:** The slot is filled in: hand it to the worker (scan side).
+
+The slot is filled in: hand it to the worker (scan side).
+
+**Parameters**
+
+| Name | Type | Source description |
+| --- | --- | --- |
+| `pool` | `const zplc_comm_req_pool_t *` | — |
+| `slot` | `zplc_comm_req_t *` | — |
+
+#### `zplc_comm_req_cancel`
+
+```c
+static inline void zplc_comm_req_cancel(const zplc_comm_req_pool_t *pool, zplc_comm_req_t *slot);
+```
+
+**Source summary:** The request could not be queued after all: give the slot back (scan side).
+
+The request could not be queued after all: give the slot back (scan side).
+
+**Parameters**
+
+| Name | Type | Source description |
+| --- | --- | --- |
+| `pool` | `const zplc_comm_req_pool_t *` | — |
+| `slot` | `zplc_comm_req_t *` | — |
+
+#### `zplc_comm_req_begin`
+
+```c
+static inline int zplc_comm_req_begin(const zplc_comm_req_pool_t *pool, zplc_comm_req_t *slot);
+```
+
+**Source summary:** The worker takes the request (worker side).
+
+Returns 1 when the request is to be run. Returns 0 when its block let go of it while it waited: the slot is free again and nothing is sent.
+
+**Parameters**
+
+| Name | Type | Source description |
+| --- | --- | --- |
+| `pool` | `const zplc_comm_req_pool_t *` | — |
+| `slot` | `zplc_comm_req_t *` | — |
+
+#### `zplc_comm_req_finish`
+
+```c
+static inline void zplc_comm_req_finish(const zplc_comm_req_pool_t *pool, zplc_comm_req_t *slot, int result);
+```
+
+**Source summary:** The worker is through (worker side).
+
+The result is kept for the block, or dropped, and the slot freed, when the block let go of the request while it ran.
+
+**Parameters**
+
+| Name | Type | Source description |
+| --- | --- | --- |
+| `pool` | `const zplc_comm_req_pool_t *` | — |
+| `slot` | `zplc_comm_req_t *` | — |
+| `result` | `int` | — |
+
+#### `zplc_comm_req_peek`
+
+```c
+static inline int zplc_comm_req_peek(const zplc_comm_req_pool_t *pool, const void *owner, uint32_t now_ms, uint32_t timeout_ms, zplc_comm_req_t **slot);
+```
+
+**Source summary:** Where the request of a block stands (scan side).
+
+Returns ZPLC_COMM_HANDLER_PENDING while the request is queued or running and younger than `timeout_ms`; ZPLC_COMM_HANDLER_DONE with *slot set when it finished (the caller reads the outputs from the slot and then calls zplc_comm_req_release); ZPLC_COMM_HANDLER_FAIL(...) when it failed (the slot is freed here). A request older than the timeout is abandoned and reported as ZPLC_COMM_TIMEOUT: its late result is dropped, not replayed (COM-018). A block that has no request, which is the case of a block that was BUSY across a program reload, is reported as ZPLC_COMM_UNKNOWN.
+
+**Parameters**
+
+| Name | Type | Source description |
+| --- | --- | --- |
+| `pool` | `const zplc_comm_req_pool_t *` | — |
+| `owner` | `const void *` | — |
+| `now_ms` | `uint32_t` | — |
+| `timeout_ms` | `uint32_t` | — |
+| `slot` | `zplc_comm_req_t **` | — |
+
+#### `zplc_comm_req_release`
+
+```c
+static inline void zplc_comm_req_release(const zplc_comm_req_pool_t *pool, zplc_comm_req_t *slot);
+```
+
+**Source summary:** The block has read the result: free the slot (scan side).
+
+The block has read the result: free the slot (scan side).
+
+**Parameters**
+
+| Name | Type | Source description |
+| --- | --- | --- |
+| `pool` | `const zplc_comm_req_pool_t *` | — |
+| `slot` | `zplc_comm_req_t *` | — |
+
+#### `zplc_comm_req_abort`
+
+```c
+static inline void zplc_comm_req_abort(const zplc_comm_req_pool_t *pool, const void *owner);
+```
+
+**Source summary:** The block is reset, or its program is going away (scan side).
+
+A request in flight is abandoned, a finished one freed. Nothing the worker is using is released before the worker is through with it (COM-008).
+
+**Parameters**
+
+| Name | Type | Source description |
+| --- | --- | --- |
+| `pool` | `const zplc_comm_req_pool_t *` | — |
+| `owner` | `const void *` | — |
+
+### Types
+
+| Name | Kind | Source summary |
+| --- | --- | --- |
+| `zplc_comm_req_state_t` | Enum | — |
+| `state` | Struct | The head of every slot of a pool. |
+| `slots` | Struct | — |
+
+### Constants and macros
+
+| Name | Value | Source summary |
+| --- | --- | --- |
+| `ZPLC_COMM_REQ_H` | `—` | — |
 
 ## `zplc_core.h`
 
@@ -382,6 +653,23 @@ Normally this starts a new scan: it resets PC to the entry point and executes wi
 | `vm` | `zplc_vm_t *` | Pointer to VM instance |
 
 **Source return value:** Number of instructions executed by this call (only the remainder when a scan is continued), or negative error code. A non-negative result with zplc_vm_is_paused() true means the scan was interrupted, not completed.
+
+#### `zplc_vm_set_scan_time`
+
+```c
+void zplc_vm_set_scan_time(zplc_vm_t *vm, uint32_t ms);
+```
+
+**Source summary:** Give the time (milliseconds) the scan that starts next latches, in place of the HAL tick.
+
+Time is latched once per scan (RT-006): every GET_TICKS of a scan pushes the same value. A scheduler that has read its clock for the batch gives that reading, so that the system registers and the program agree. It applies to the next scan zplc_vm_run_cycle() starts and not to one it continues, and only once.
+
+**Parameters**
+
+| Name | Type | Source description |
+| --- | --- | --- |
+| `vm` | `zplc_vm_t *` | — |
+| `ms` | `uint32_t` | — |
 
 #### `zplc_vm_reset_cycle`
 
@@ -1015,6 +1303,40 @@ On success this replaces the loaded program and resets process/work/retain memor
 
 **Source return value:** 0 on success, ZPLC_LOADER_* error otherwise
 
+#### `zplc_core_declared_safe`
+
+```c
+int zplc_core_declared_safe(uint16_t offset, uint8_t bit, uint8_t *value);
+```
+
+**Source summary:** The safe value the loaded program declares for one digital output (RT-023).
+
+The declaration is part of the artifact (its SAFE segment): it is in force from the load that committed the program until the program is replaced or the memory is initialised, whether the program is running, stopped, paused or latched in a fault. An output the program declares nothing for is off in the safe state, unless the board description says otherwise; the choice between the two is made in zplc_io_drive_safe() and nowhere else.
+
+**Parameters**
+
+| Name | Type | Source description |
+| --- | --- | --- |
+| `offset` | `uint16_t` | byte offset of the output in the output image |
+| `bit` | `uint8_t` | bit in that byte, 0 to 7 |
+| `value` | `uint8_t *` | receives 0 or 1 when the program declares one; may be NULL |
+
+**Source return value:** 1 when the program declares a value for this output, 0 when it does not
+
+#### `zplc_core_declared_safe_count`
+
+```c
+uint32_t zplc_core_declared_safe_count(void);
+```
+
+**Source summary:** How many outputs the loaded program declares a safe value for; 0 when it declares none.
+
+**Parameters**
+
+| Name | Type | Source description |
+| --- | --- | --- |
+| — | — | None. |
+
 #### `zplc_core_step`
 
 ```c
@@ -1310,6 +1632,7 @@ static inline uint8_t zplc_task_get_priority(const zplc_task_def_t *task);
 | --- | --- | --- |
 | `ZPLC_VM_CYCLE_INSTRUCTION_BUDGET` | `CONFIG_ZPLC_VM_CYCLE_INSTRUCTION_BUDGET` | — |
 | `ZPLC_VM_CYCLE_INSTRUCTION_BUDGET` | `100000U` | — |
+| `ZPLC_VM_BYTES_PER_BUDGET_UNIT` | `4U` | Bytes a string opcode (STRCPY, STRCAT, STRCMP) processes for one unit of the instruction budget (RT-006). |
 | `ZPLC_FORCE_MAX_ENTRIES` | `8U` | Maximum number of independent forced ranges. |
 | `ZPLC_FORCE_MAX_BYTES` | `260U` | Maximum byte length of one forced range. |
 
@@ -1646,6 +1969,47 @@ const char *hil_error_name(uint8_t code);
 
 None.
 
+## `zplc_ed25519.h`
+
+Ed25519 signature verification (RFC 8032), for the signed artifact of COM-026.
+
+A device that holds a public key accepts a program only when its signature verifies under that key. This is verification only: it holds no secret, so it is neither constant-time nor does it need to be. It is the field arithmetic of TweetNaCl (16 limbs of 16 bits) with the checks of RFC 8032 (the point must decode, and the scalar of the signature must be below the order of the group), about 2 KB of stack and no table. Time: a verification is two scalar multiplications; on a Cortex-M0+ at 125 MHz it takes seconds, which a deploy can afford and a scan cannot: it runs in the command that commits a program, never in the scan.
+
+Source: `firmware/lib/zplc_core/include/zplc_ed25519.h`
+
+### Functions
+
+#### `zplc_ed25519_verify`
+
+```c
+int zplc_ed25519_verify(const uint8_t signature[ZPLC_ED25519_SIGNATURE_BYTES], const uint8_t public_key[ZPLC_ED25519_PUBLIC_BYTES], const uint8_t *message, size_t length);
+```
+
+**Source summary:** Verify the signature of a message.
+
+**Parameters**
+
+| Name | Type | Source description |
+| --- | --- | --- |
+| `const uint8_t signature[ZPLC_ED25519_SIGNATURE_BYTES]` | `—` | — |
+| `const uint8_t public_key[ZPLC_ED25519_PUBLIC_BYTES]` | `—` | — |
+| `message` | `const uint8_t *` | — |
+| `length` | `size_t` | — |
+
+**Source return value:** 0 when it is valid under the key, a negative number when it is not (or the key is not a point)
+
+### Types
+
+None.
+
+### Constants and macros
+
+| Name | Value | Source summary |
+| --- | --- | --- |
+| `ZPLC_ED25519_H` | `—` | — |
+| `ZPLC_ED25519_PUBLIC_BYTES` | `32U` | — |
+| `ZPLC_ED25519_SIGNATURE_BYTES` | `64U` | — |
+
 ## `zplc_exchange.h`
 
 The exchange between the scan and everything outside it: a write queue and a published snapshot (RT-010, RT-011, RT-012).
@@ -1863,6 +2227,241 @@ void zplc_exchange_get_stats(zplc_exchange_stats_t *stats);
 | Name | Value | Source summary |
 | --- | --- | --- |
 | `ZPLC_EXCHANGE_H` | `—` | — |
+
+## `zplc_failsafe.h`
+
+Fail-safe decisions that do not depend on a platform: the reset cause, the record of a fault that survives a reset, the watchdog policy of a profile and the timeout the task set needs (RT-019, RT-020, RT-021, RT-022).
+
+What the platform does (reading the reset-cause register, keeping a record in RAM that a reset does not clear, rebooting, driving the pins and feeding the hardware watchdog) lives in the adapter: for the firmware, src/hal/zephyr/zplc_failsafe_zephyr.c. What it means lives here, so that a host test can state it: - a reset has one cause out of seven, and when a processor reports several bits the order in which they are read is fixed (a pin reset flag is set by almost every reset, so it comes last); - a fault the firmware handled leaves a record, with a checksum, that the next boot finds, reports and consumes; a record that is not whole, or is not ours, is nothing; - the runtime never enters RUN because of a reset, whatever its cause (decision D-13, option A); - a profile says what its hardware watchdog does in STOP, while paused and in a latched fault.
+
+Source: `firmware/lib/zplc_core/include/zplc_failsafe.h`
+
+### Functions
+
+#### `zplc_reset_cause_name`
+
+```c
+const char *zplc_reset_cause_name(zplc_reset_cause_t cause);
+```
+
+**Source summary:** The name the status reports: power_on, brown_out, pin, software, watchdog, fault or unknown.
+
+**Parameters**
+
+| Name | Type | Source description |
+| --- | --- | --- |
+| `cause` | `zplc_reset_cause_t` | — |
+
+#### `zplc_fault_record_make`
+
+```c
+void zplc_fault_record_make(zplc_fault_record_t *record, zplc_fault_kind_t kind, uint8_t reason, uint16_t task_id, uint32_t pc, uint32_t sequence);
+```
+
+**Source summary:** Fill a record. The checksum is computed; nothing else is touched.
+
+**Parameters**
+
+| Name | Type | Source description |
+| --- | --- | --- |
+| `record` | `zplc_fault_record_t *` | — |
+| `kind` | `zplc_fault_kind_t` | — |
+| `reason` | `uint8_t` | — |
+| `task_id` | `uint16_t` | — |
+| `pc` | `uint32_t` | — |
+| `sequence` | `uint32_t` | — |
+
+#### `zplc_fault_record_valid`
+
+```c
+int zplc_fault_record_valid(const zplc_fault_record_t *record);
+```
+
+**Source summary:** 1 when the record is whole, is ours and names a kind; 0 for RAM that holds anything else.
+
+**Parameters**
+
+| Name | Type | Source description |
+| --- | --- | --- |
+| `record` | `const zplc_fault_record_t *` | — |
+
+#### `zplc_fault_record_reason_text`
+
+```c
+void zplc_fault_record_reason_text(const zplc_fault_record_t *record, char *out, size_t size);
+```
+
+**Source summary:** The name of the reason of a record: a scheduler reason by name, a kernel reason by number.
+
+**Parameters**
+
+| Name | Type | Source description |
+| --- | --- | --- |
+| `record` | `const zplc_fault_record_t *` | — |
+| `out` | `char *` | — |
+| `size` | `size_t` | — |
+
+#### `zplc_reset_cause_decide`
+
+```c
+zplc_reset_cause_t zplc_reset_cause_decide(uint32_t bits, const zplc_fault_record_t *record);
+```
+
+**Source summary:** The cause of a reset, from what the processor reported and the record the previous run left.
+
+A valid processor-fault record is a fault reset: the firmware rebooted the part itself. Otherwise the neutral bits are read in this order: power-on, brown-out, watchdog, lockup (a fault), software, pin. Power-on comes first because it sets most of the others as well; the pin comes last because a software or watchdog reset drives the reset line and sets it. A scheduler-fault record does not change the cause: the part was reset by its watchdog, and the record is reported next to it.
+
+**Parameters**
+
+| Name | Type | Source description |
+| --- | --- | --- |
+| `bits` | `uint32_t` | — |
+| `record` | `const zplc_fault_record_t *` | — |
+
+#### `zplc_reset_may_run`
+
+```c
+int zplc_reset_may_run(zplc_reset_cause_t cause);
+```
+
+**Source summary:** Whether the runtime may enter RUN on its own after a reset of this cause.
+
+Never: whatever the cause, the stored program is restored into STOP with the outputs at their safe values and RUN waits for a person's command. This is a function so that the rule has one place, a test that runs it over every cause, and the point where option B (a clean power-on of a device a person enabled beforehand) would be written if the owner chooses it.
+
+**Parameters**
+
+| Name | Type | Source description |
+| --- | --- | --- |
+| `cause` | `zplc_reset_cause_t` | — |
+
+#### `zplc_wdt_policy_default`
+
+```c
+zplc_wdt_policy_t zplc_wdt_policy_default(void);
+```
+
+**Source summary:** The design default of RT-020: disarm in STOP, keep a pause or a breakpoint fed so that a long one does not reset the board, and in a latched fault stay armed and unfed so that the board resets into STOP with the cause recorded. A profile states another policy when its hardware needs one (a watchdog that cannot be stopped feeds in STOP).
+
+**Parameters**
+
+| Name | Type | Source description |
+| --- | --- | --- |
+| — | — | None. |
+
+#### `zplc_wdt_action`
+
+```c
+zplc_wdt_action_t zplc_wdt_action(const zplc_wdt_policy_t *policy, zplc_wdt_state_t state);
+```
+
+**Source summary:** What to do with the watchdog in @p state under @p policy. Out-of-range values are the safe choice.
+
+**Parameters**
+
+| Name | Type | Source description |
+| --- | --- | --- |
+| `policy` | `const zplc_wdt_policy_t *` | — |
+| `state` | `zplc_wdt_state_t` | — |
+
+#### `zplc_wdt_timeout_for`
+
+```c
+uint32_t zplc_wdt_timeout_for(uint32_t profile_ms, uint32_t hardware_max_ms, uint32_t longest_interval_us);
+```
+
+**Source summary:** The timeout the hardware watchdog is armed with for a task set.
+
+It has to be longer than two intervals of the slowest task (a scan that is one interval late is not yet a reset), and is never shorter than the profile's timeout, the one its reset timing was recorded at.
+
+**Parameters**
+
+| Name | Type | Source description |
+| --- | --- | --- |
+| `profile_ms` | `uint32_t` | the profile's timeout |
+| `hardware_max_ms` | `uint32_t` | the longest timeout the part can be given |
+| `longest_interval_us` | `uint32_t` | the interval of the slowest task |
+
+**Source return value:** the timeout in milliseconds, or 0 when the task set does not fit the hardware: the program is refused
+
+#### `zplc_failsafe_boot`
+
+```c
+void zplc_failsafe_boot(void);
+```
+
+**Source summary:** Read the reset cause and find the record of the previous run's fault. Once per boot, before the scheduler starts. The record is consumed: a second boot does not see it again.
+
+**Parameters**
+
+| Name | Type | Source description |
+| --- | --- | --- |
+| — | — | None. |
+
+#### `zplc_failsafe_report`
+
+```c
+const zplc_reset_report_t *zplc_failsafe_report(void);
+```
+
+**Source summary:** What zplc_failsafe_boot() found; all zero (cause unknown) before it ran.
+
+**Parameters**
+
+| Name | Type | Source description |
+| --- | --- | --- |
+| — | — | None. |
+
+#### `zplc_failsafe_note_scheduler_fault`
+
+```c
+void zplc_failsafe_note_scheduler_fault(uint8_t reason, uint16_t task_id);
+```
+
+**Source summary:** The scheduler latched a fault: keep it in the RAM a reset does not clear, so that a watchdog reset that follows does not erase it (RT-020).
+
+**Parameters**
+
+| Name | Type | Source description |
+| --- | --- | --- |
+| `reason` | `uint8_t` | — |
+| `task_id` | `uint16_t` | — |
+
+#### `zplc_failsafe_fatal`
+
+```c
+void zplc_failsafe_fatal(unsigned int reason, uint32_t pc);
+```
+
+**Source summary:** The body of the fatal-error handler (RT-019): drive the outputs to their safe state, keep the reason so that it survives the reset, and reboot. The handler of the kernel calls it; a test calls it with a reboot it intercepts.
+
+It takes no lock and allocates nothing: it runs in a fault.
+
+**Parameters**
+
+| Name | Type | Source description |
+| --- | --- | --- |
+| `reason` | `unsigned int` | — |
+| `pc` | `uint32_t` | — |
+
+### Types
+
+| Name | Kind | Source summary |
+| --- | --- | --- |
+| `zplc_reset_cause_t` | Enum | Why the processor was reset. |
+| `zplc_fault_kind_t` | Enum | What kind of fault a record holds. |
+| `magic` | Struct | The record that survives a reset: in RAM the reset does not clear. 24 bytes. |
+| `zplc_wdt_action_t` | Enum | What the profile's watchdog does while the runtime is in a state. |
+| `zplc_wdt_state_t` | Enum | The runtime states a policy covers. |
+| `stop` | Struct | — |
+| `cause` | Struct | What the previous run and the reset left, read once at boot. |
+
+### Constants and macros
+
+| Name | Value | Source summary |
+| --- | --- | --- |
+| `ZPLC_FAILSAFE_H` | `—` | — |
+| `ZPLC_FAULT_RECORD_MAGIC` | `0x5A504C46UL` | — |
+| `ZPLC_FAULT_RECORD_VERSION` | `1U` | — |
 
 ## `zplc_hal.h`
 
@@ -2508,6 +3107,7 @@ static inline int zplc_opcode_is_valid(uint8_t opcode);
 | `id` | Struct | Task definition (16 bytes). |
 | `zplc_task_type_t` | Enum | Task types. |
 | `build_id` | Struct | Build identity, the payload of the BUILD segment (4 bytes). |
+| `offset` | Struct | Declared safe value of one digital output, an entry of the SAFE segment (4 bytes) (RT-023). |
 | `var_addr` | Struct | I/O map entry (8 bytes). |
 | `zplc_io_direction_t` | Enum | I/O direction. |
 | `var_addr` | Struct | Variable tag entry (8 bytes). Used for mapping variables to communication protocols. |
@@ -2523,7 +3123,7 @@ static inline int zplc_opcode_is_valid(uint8_t opcode);
 | `ZPLC_MAGIC` | `0x434C505AU` | Magic number for .zplc files. |
 | `ZPLC_VERSION_MAJOR` | `1` | Current ISA major version |
 | `ZPLC_VERSION_MINOR` | `0` | Current ISA minor version |
-| `ZPLC_DRAFT_COUNTER` | `4U` | Draft contract counter (CMP-052). |
+| `ZPLC_DRAFT_COUNTER` | `6U` | Draft contract counter (CMP-052). |
 | `ZPLC_MEM_IPI_BASE` | `0x0000U` | Base address of Input Process Image |
 | `ZPLC_MEM_IPI_SIZE` | `0x1000U` | Size of Input Process Image (4 KB, fixed by spec) |
 | `ZPLC_MEM_OPI_BASE` | `0x1000U` | Base address of Output Process Image |
@@ -2558,6 +3158,7 @@ static inline int zplc_opcode_is_valid(uint8_t opcode);
 | `ZPLC_SEGMENT_ENTRY_SIZE` | `8` | Expected size of segment entry |
 | `ZPLC_TASK_DEF_SIZE` | `16` | Expected size of task definition |
 | `ZPLC_BUILD_ENTRY_SIZE` | `4` | Expected size of the build identity |
+| `ZPLC_SAFE_ENTRY_SIZE` | `4` | Expected size of a safe-state entry |
 | `ZPLC_IOMAP_ENTRY_SIZE` | `8` | Expected size of I/O map entry |
 | `ZPLC_TAG_ENTRY_SIZE` | `8` | Expected size of tag entry |
 
@@ -2565,7 +3166,7 @@ static inline int zplc_opcode_is_valid(uint8_t opcode);
 
 ZPLC Binary File Loader
 
-Verifies the structural and bytecode integrity of .zplc files without changing runtime state. The current v1 subset accepts flags=0 and CODE, TASK, TAGS and BUILD segments only. The returned view borrows the input buffer.
+Verifies the structural and bytecode integrity of .zplc files without changing runtime state. The current v1 subset accepts flags=0 and CODE, TASK, TAGS, BUILD and SAFE segments only. The returned view borrows the input buffer.
 
 Source: `firmware/lib/zplc_core/include/zplc_loader.h`
 
@@ -2641,7 +3242,9 @@ Reads header word 28 and nothing else. The magic, the CRC and the rest of the ar
 | `ZPLC_LOADER_ERR_COMM` | `-16` | Communication function-block kind is NONE or at or above the kind limit, or a block at a statically known address does not fit one memory region |
 | `ZPLC_LOADER_ERR_DRAFT` | `-17` | Draft contract counter of the artifact differs from the loader's, or the artifact has none |
 | `ZPLC_LOADER_ERR_STACK` | `-18` | The evaluation stack can underflow, or exceed the depth the task declares, on some path, or the verifier cannot prove that it cannot |
+| `ZPLC_LOADER_ERR_SAFE` | `-19` | A declared safe value is invalid: the segment is not whole entries, an entry names no bit of the output image or a value other than 0 or 1, an output is declared twice, or there are too many |
 | `ZPLC_LOADER_MAX_TASKS` | `16U` | — |
+| `ZPLC_LOADER_MAX_SAFE` | `64U` | Most outputs one artifact may declare a safe value for, in the SAFE segment (loader). |
 | `ZPLC_VERIFY_MAX_DEPTH` | `127` | — |
 | `ZPLC_VERIFY_FRAME_BYTES` | `7U` | — |
 | `ZPLC_VERIFY_STEPS_PER_BYTE` | `64U` | — |
@@ -2676,6 +3279,45 @@ int zplc_pstore_commit(const zplc_pstore_config_t *config, uint8_t *workspace, s
 
 **Source return value:** ZPLC_PROGRAM_STORE_COMMIT_OK, _ERROR (nothing was published), or _UNKNOWN
 
+#### `zplc_pstore_probe`
+
+```c
+int zplc_pstore_probe(const zplc_pstore_config_t *config, uint8_t *buffer, size_t capacity, zplc_pstore_rollback_t *rollback);
+```
+
+**Source summary:** Find the rollback of the next commit, using @p buffer as the working buffer (the one of zplc_pstore_config_t::scratch, which this call does not need and ignores).
+
+Reads and admits the program that a commit would fall back to, exactly as zplc_pstore_commit() does before it writes. @p buffer is overwritten.
+
+**Parameters**
+
+| Name | Type | Source description |
+| --- | --- | --- |
+| `config` | `const zplc_pstore_config_t *` | — |
+| `buffer` | `uint8_t *` | — |
+| `capacity` | `size_t` | at least ZPLC_PROGRAM_STORE_MAX_ARTIFACT_SIZE + ZPLC_PROGRAM_STORE_FOOTER_SIZE |
+| `rollback` | `zplc_pstore_rollback_t *` | — |
+
+**Source return value:** 0 and the rollback, or ZPLC_PROGRAM_STORE_COMMIT_ERROR with @p rollback left as "nothing found": the backend failed, or records exist and none verifies (a commit then refuses to write over them)
+
+#### `zplc_pstore_commit_probed`
+
+```c
+int zplc_pstore_commit_probed(const zplc_pstore_config_t *config, const zplc_pstore_rollback_t *rollback, uint8_t *workspace, size_t program_size, size_t workspace_capacity);
+```
+
+**Source summary:** zplc_pstore_commit() with the rollback of zplc_pstore_probe(), which has to be the answer for the store as it is now: when a record changed in between, nothing is written.
+
+**Parameters**
+
+| Name | Type | Source description |
+| --- | --- | --- |
+| `config` | `const zplc_pstore_config_t *` | — |
+| `rollback` | `const zplc_pstore_rollback_t *` | — |
+| `workspace` | `uint8_t *` | — |
+| `program_size` | `size_t` | — |
+| `workspace_capacity` | `size_t` | — |
+
 #### `zplc_pstore_restore`
 
 ```c
@@ -2693,6 +3335,26 @@ zplc_program_store_restore_t zplc_pstore_restore( const zplc_pstore_config_t *co
 | `workspace_capacity` | `size_t` | bytes the buffer holds (an artifact of the largest size needs ZPLC_PROGRAM_STORE_MAX_ARTIFACT_SIZE + ZPLC_PROGRAM_STORE_FOOTER_SIZE) |
 | `program_size` | `size_t *` | receives the artifact length when the result is OK or LEGACY, otherwise 0 |
 
+#### `zplc_pstore_restore_probed`
+
+```c
+zplc_program_store_restore_t zplc_pstore_restore_probed(const zplc_pstore_config_t *config, uint8_t *workspace, size_t workspace_capacity, size_t *program_size, zplc_pstore_rollback_t *rollback);
+```
+
+**Source summary:** zplc_pstore_restore() that also leaves the rollback of the commit that follows a LEGACY result.
+
+The program of the first firmware was read and admitted into @p workspace by the call, so it is the rollback of the commit that migrates it. For any other result @p rollback is "nothing found": the commit of an upload finds its rollback with zplc_pstore_probe() when the upload starts.
+
+**Parameters**
+
+| Name | Type | Source description |
+| --- | --- | --- |
+| `config` | `const zplc_pstore_config_t *` | — |
+| `workspace` | `uint8_t *` | — |
+| `workspace_capacity` | `size_t` | — |
+| `program_size` | `size_t *` | — |
+| `rollback` | `zplc_pstore_rollback_t *` | — |
+
 ### Types
 
 | Name | Kind | Source summary |
@@ -2701,6 +3363,7 @@ zplc_program_store_restore_t zplc_pstore_restore( const zplc_pstore_config_t *co
 | `zplc_program_store_commit_result_t` | Enum | — |
 | `zplc_pstore_admit_fn` | Typedef | Decides whether an artifact may be run: the loader's verification and the policy of the runtime. |
 | `admit` | Struct | What the store needs from the runtime that uses it. |
+| `digest` | Struct | The rollback a commit relies on, found before the upload and checked again when it is committed. |
 
 ### Constants and macros
 
@@ -2712,6 +3375,403 @@ zplc_program_store_restore_t zplc_pstore_restore( const zplc_pstore_config_t *co
 | `ZPLC_PROGRAM_STORE_ENTRY_OVERHEAD` | `64U` | Backend bytes one stored entry takes beyond its data: the entry header and the padding to the write block. An engineering estimate used by the build-time capacity rule of the Zephyr HAL. |
 | `ZPLC_PROGRAM_STORE_WORST_CASE_BYTES` | `\\ (2U * ((size_t)ZPLC_PROGRAM_STORE_MAX_CHUNKS * \\ (ZPLC_PROGRAM_STORE_CHUNK_SIZE + ZPLC_PROGRAM_STORE_ENTRY_OVERHEAD)) +\\ 3U * (32U + ZPLC_PROGRAM_STORE_ENTRY_OVERHEAD))` | Storage, in bytes, the two slots of the largest artifact and their records take, worst case. |
 | `ZPLC_PROGRAM_STORE_KEY_MAX` | `40U` | The longest key the store uses, with its terminator. |
+| `ZPLC_PSTORE_ROLLBACK_NONE` | `0U` | What the rollback of a commit is: a value of zplc_pstore_rollback_t.kind. 0 is "nothing found". |
+| `ZPLC_PSTORE_ROLLBACK_SLOT` | `1U` | — |
+| `ZPLC_PSTORE_ROLLBACK_EMPTY` | `2U` | — |
+| `ZPLC_PSTORE_ROLLBACK_LEGACY` | `3U` | — |
+
+## `zplc_proto.h`
+
+The codec of the device link protocol: frames, and a decoder that finds them in a byte stream (COM-019).
+
+A frame is a header (sync, version, flags, message, sequence, length), a payload, an optional 32-byte message authentication code and a CRC-32. The numbers and layouts are in zplc_proto_defs.h, generated from tools/contract/protocol.json; the rules (what a decoder discards and counts) are written there too, and the TypeScript codec of Studio follows the same rules. Both run the same generated frames (zplc_proto_vectors.h). Portable C99: no Zephyr header, no allocation, no clock. A decoder owns one buffer of ZPLC_PROTO_FRAME_MAX bytes.
+
+Source: `firmware/lib/zplc_core/include/zplc_proto.h`
+
+### Functions
+
+#### `zplc_proto_frame_size`
+
+```c
+static inline size_t zplc_proto_frame_size(size_t length, int authenticated);
+```
+
+**Source summary:** Bytes of a frame with a payload of @p length bytes.
+
+**Parameters**
+
+| Name | Type | Source description |
+| --- | --- | --- |
+| `length` | `size_t` | — |
+| `authenticated` | `int` | — |
+
+#### `zplc_proto_write_header`
+
+```c
+size_t zplc_proto_write_header(uint8_t *out, uint8_t kind, uint8_t message, uint32_t sequence, uint16_t length, int authenticated);
+```
+
+**Source summary:** Write the header of a frame whose payload is already at out + ZPLC_PROTO_HEADER_BYTES.
+
+For a sender that builds the payload in place. Returns the number of header bytes.
+
+**Parameters**
+
+| Name | Type | Source description |
+| --- | --- | --- |
+| `out` | `uint8_t *` | — |
+| `kind` | `uint8_t` | — |
+| `message` | `uint8_t` | — |
+| `sequence` | `uint32_t` | — |
+| `length` | `uint16_t` | — |
+| `authenticated` | `int` | — |
+
+#### `zplc_proto_begin`
+
+```c
+size_t zplc_proto_begin(uint8_t *out, size_t capacity, uint8_t kind, uint8_t message, uint32_t sequence, const uint8_t *payload, uint16_t length, int authenticated);
+```
+
+**Source summary:** Write the header and the payload of a frame.
+
+The caller computes the code over the returned bytes and hands it to zplc_proto_finish().
+
+**Parameters**
+
+| Name | Type | Source description |
+| --- | --- | --- |
+| `out` | `uint8_t *` | — |
+| `capacity` | `size_t` | — |
+| `kind` | `uint8_t` | — |
+| `message` | `uint8_t` | — |
+| `sequence` | `uint32_t` | — |
+| `payload` | `const uint8_t *` | — |
+| `length` | `uint16_t` | — |
+| `authenticated` | `int` | — |
+
+**Source return value:** bytes used (the header and the payload), or 0 when @p capacity cannot hold the whole frame (with the code, when @p authenticated) or @p length is above ZPLC_PROTO_PAYLOAD_MAX_HARD.
+
+#### `zplc_proto_finish`
+
+```c
+size_t zplc_proto_finish(uint8_t *out, size_t used, const uint8_t *mac);
+```
+
+**Source summary:** Append the code (when the frame was begun authenticated) and the checksum.
+
+**Parameters**
+
+| Name | Type | Source description |
+| --- | --- | --- |
+| `out` | `uint8_t *` | — |
+| `used` | `size_t` | bytes zplc_proto_begin() returned |
+| `mac` | `const uint8_t *` | ZPLC_PROTO_MAC_BYTES bytes for an authenticated frame, NULL otherwise |
+
+**Source return value:** the size of the whole frame
+
+#### `zplc_proto_encode`
+
+```c
+size_t zplc_proto_encode(uint8_t *out, size_t capacity, uint8_t kind, uint8_t message, uint32_t sequence, const uint8_t *payload, uint16_t length);
+```
+
+**Source summary:** A frame without a code in one call; returns its size, or 0 when it does not fit.
+
+**Parameters**
+
+| Name | Type | Source description |
+| --- | --- | --- |
+| `out` | `uint8_t *` | — |
+| `capacity` | `size_t` | — |
+| `kind` | `uint8_t` | — |
+| `message` | `uint8_t` | — |
+| `sequence` | `uint32_t` | — |
+| `payload` | `const uint8_t *` | — |
+| `length` | `uint16_t` | — |
+
+#### `zplc_proto_parse`
+
+```c
+int zplc_proto_parse(const uint8_t *data, size_t length, size_t payload_max, zplc_proto_frame_t *frame);
+```
+
+**Source summary:** Check and open one whole frame (a transport that frames its own lines).
+
+**Parameters**
+
+| Name | Type | Source description |
+| --- | --- | --- |
+| `data` | `const uint8_t *` | — |
+| `length` | `size_t` | — |
+| `payload_max` | `size_t` | — |
+| `frame` | `zplc_proto_frame_t *` | — |
+
+**Source return value:** 0 and @p frame filled, or a ZPLC_PROTO_PARSE_* code
+
+#### `zplc_proto_decoder_init`
+
+```c
+void zplc_proto_decoder_init(zplc_proto_decoder_t *decoder, size_t payload_max);
+```
+
+**Source summary:** Start a decoder. @p payload_max is the limit of this link (at most ZPLC_PROTO_PAYLOAD_MAX).
+
+**Parameters**
+
+| Name | Type | Source description |
+| --- | --- | --- |
+| `decoder` | `zplc_proto_decoder_t *` | — |
+| `payload_max` | `size_t` | — |
+
+#### `zplc_proto_decoder_reset`
+
+```c
+void zplc_proto_decoder_reset(zplc_proto_decoder_t *decoder);
+```
+
+**Source summary:** Forget the bytes of a frame that is being assembled (a link that was reopened). Counters stay.
+
+**Parameters**
+
+| Name | Type | Source description |
+| --- | --- | --- |
+| `decoder` | `zplc_proto_decoder_t *` | — |
+
+#### `zplc_proto_decoder_feed`
+
+```c
+void zplc_proto_decoder_feed(zplc_proto_decoder_t *decoder, const uint8_t *data, size_t length, zplc_proto_frame_fn on_frame, void *context);
+```
+
+**Source summary:** Take bytes from the stream.
+
+Discards noise, assembles candidates and calls @p on_frame for each frame whose header and checksum are valid, in order. A candidate that is not valid costs its first byte and the decoder looks for the next sync pair among the bytes it holds, so a frame inside a damaged one is delivered and a damaged frame costs nothing after itself. The work per input byte is bounded by ZPLC_PROTO_FRAME_MAX.
+
+**Parameters**
+
+| Name | Type | Source description |
+| --- | --- | --- |
+| `decoder` | `zplc_proto_decoder_t *` | — |
+| `data` | `const uint8_t *` | — |
+| `length` | `size_t` | — |
+| `on_frame` | `zplc_proto_frame_fn` | — |
+| `context` | `void *` | — |
+
+### Types
+
+| Name | Kind | Source summary |
+| --- | --- | --- |
+| `kind` | Struct | A frame that passed the checks of the codec. The pointers point into the buffer that was parsed. |
+| `frames` | Struct | What a decoder discarded, and why. Counted since init. |
+| `ZPLC_PROTO_FRAME_MAX` | Struct | — |
+| `zplc_proto_frame_fn` | Typedef | Called once for each valid frame. The frame is valid until the callback returns. |
+
+### Constants and macros
+
+| Name | Value | Source summary |
+| --- | --- | --- |
+| `ZPLC_PROTO_H` | `—` | — |
+| `ZPLC_PROTO_PAYLOAD_MAX_CONFIGURED` | `CONFIG_ZPLC_PROTO_PAYLOAD_MAX` | — |
+| `ZPLC_PROTO_PAYLOAD_MAX_CONFIGURED` | `ZPLC_PROTO_PAYLOAD_MAX_DEFAULT` | — |
+| `ZPLC_PROTO_FRAME_MAX` | `\\ (ZPLC_PROTO_HEADER_BYTES + ZPLC_PROTO_PAYLOAD_MAX + ZPLC_PROTO_MAC_BYTES + ZPLC_PROTO_CRC_BYTES)` | Bytes of the largest frame: header, payload, code and checksum. |
+
+## `zplc_proto_dev.h`
+
+The device side of the device link protocol: sessions, authenticated frames, atomic writes, events (COM-020, COM-021, COM-023, COM-025, COM-028).
+
+The engine takes frames from one or more links (a UART, a USB serial port, a TCP connection), answers them, and turns them into calls of the port it was given (zplc_proto_ops_t). It knows nothing of Zephyr, of the scheduler or of the host runtime: a port fills the table, so the same engine runs on a board, on the host runtime and in the tests, and the rules below are proved once. The rules: - Everything that changes the device (download, RUN/STOP, memory write, force, configuration, credentials, the key) needs a session that is open on the link it arrives on. One session is open at a time. A session ends when its client closes it, when nothing arrives for the idle time, when the link is lost, when a person at the serial link takes it over, and when the key is changed. The forces the session set end with it and the outputs follow the program again. - A link is SERIAL (whoever holds the cable holds the device) or NETWORK. On a network link every message except HELLO, IDENTITY, CHALLENGE and LINK_STATS needs a session that was opened with a code under the key that was provisioned over the serial link, and every frame of that session carries a code (HMAC-SHA-256) that covers its header, its payload and so its sequence number. A frame with a wrong or missing code, a repeated sequence number or one that is not the next, is dropped, counted and not answered. - A write of a multi-byte value goes through ops->mem_write, which a port binds to the write queue of the exchange: it is applied at the input latch of the next scan, whole. - The engine is called from one thread at a time (the port serialises it); zplc_proto_log() and zplc_proto_event_post() may be called from any thread when the port gives the event try-lock. - Nothing the engine does is on the scan: it has no hook in the scheduler. Telemetry is read by the engine's own service call, from a low priority context, and a queue that is full drops and counts. Portable C99: no Zephyr header, no allocation.
+
+Source: `firmware/lib/zplc_core/include/zplc_proto_dev.h`
+
+### Functions
+
+#### `zplc_proto_dev_init`
+
+```c
+int zplc_proto_dev_init(zplc_proto_dev_t *dev, const zplc_proto_ops_t *ops, uint16_t idle_timeout_s);
+```
+
+**Source summary:** Start the engine over a port.
+
+**Parameters**
+
+| Name | Type | Source description |
+| --- | --- | --- |
+| `dev` | `zplc_proto_dev_t *` | — |
+| `ops` | `const zplc_proto_ops_t *` | — |
+| `idle_timeout_s` | `uint16_t` | — |
+
+**Source return value:** 0, or -1 when the port has no clock
+
+#### `zplc_proto_link_init`
+
+```c
+void zplc_proto_link_init(zplc_proto_link_t *link, zplc_proto_dev_t *dev, uint8_t transport, zplc_proto_write_fn write, void *write_context);
+```
+
+**Source summary:** Attach a link. `write` is called once per frame.
+
+**Parameters**
+
+| Name | Type | Source description |
+| --- | --- | --- |
+| `link` | `zplc_proto_link_t *` | — |
+| `dev` | `zplc_proto_dev_t *` | — |
+| `transport` | `uint8_t` | — |
+| `write` | `zplc_proto_write_fn` | — |
+| `write_context` | `void *` | — |
+
+#### `zplc_proto_link_feed`
+
+```c
+void zplc_proto_link_feed(zplc_proto_link_t *link, const uint8_t *data, size_t length);
+```
+
+**Source summary:** Bytes that arrived on a stream link.
+
+**Parameters**
+
+| Name | Type | Source description |
+| --- | --- | --- |
+| `link` | `zplc_proto_link_t *` | — |
+| `data` | `const uint8_t *` | — |
+| `length` | `size_t` | — |
+
+#### `zplc_proto_link_feed_frame`
+
+```c
+int zplc_proto_link_feed_frame(zplc_proto_link_t *link, uint8_t *frame, size_t length);
+```
+
+**Source summary:** One whole frame that arrived on a link that frames its own lines.
+
+The payload of a KEY_SET frame is overwritten once it has been used: the caller's buffer does not keep a key.
+
+**Parameters**
+
+| Name | Type | Source description |
+| --- | --- | --- |
+| `link` | `zplc_proto_link_t *` | — |
+| `frame` | `uint8_t *` | — |
+| `length` | `size_t` | — |
+
+**Source return value:** 0 when the frame was valid and handled (a refusal is a valid frame), or a ZPLC_PROTO_PARSE_* code
+
+#### `zplc_proto_link_lost`
+
+```c
+void zplc_proto_link_lost(zplc_proto_link_t *link);
+```
+
+**Source summary:** The link is gone: its session ends, its forces are released.
+
+**Parameters**
+
+| Name | Type | Source description |
+| --- | --- | --- |
+| `link` | `zplc_proto_link_t *` | — |
+
+#### `zplc_proto_dev_service`
+
+```c
+void zplc_proto_dev_service(zplc_proto_dev_t *dev, zplc_proto_link_t *const *links, size_t link_count);
+```
+
+**Source summary:** Time passes: idle timeouts, telemetry produced from the runtime's status, watch batches, and the events in the queue sent to the links that asked for them.
+
+Call it about every 20 ms from a context that is not the scan. @p links is an array of @p link_count links.
+
+**Parameters**
+
+| Name | Type | Source description |
+| --- | --- | --- |
+| `dev` | `zplc_proto_dev_t *` | — |
+| `links` | `zplc_proto_link_t *const *` | — |
+| `link_count` | `size_t` | — |
+
+#### `zplc_proto_event_post`
+
+```c
+int zplc_proto_event_post(zplc_proto_dev_t *dev, uint8_t id, const uint8_t *data, size_t length);
+```
+
+**Source summary:** Queue an event. Returns 0, or -1 when it was dropped (and counted). Callable from any thread.
+
+**Parameters**
+
+| Name | Type | Source description |
+| --- | --- | --- |
+| `dev` | `zplc_proto_dev_t *` | — |
+| `id` | `uint8_t` | — |
+| `data` | `const uint8_t *` | — |
+| `length` | `size_t` | — |
+
+#### `zplc_proto_log`
+
+```c
+void zplc_proto_log(zplc_proto_dev_t *dev, uint8_t level, const char *text);
+```
+
+**Source summary:** Queue a log line (cut to fit). Callable from any thread.
+
+**Parameters**
+
+| Name | Type | Source description |
+| --- | --- | --- |
+| `dev` | `zplc_proto_dev_t *` | — |
+| `level` | `uint8_t` | — |
+| `text` | `const char *` | — |
+
+#### `zplc_proto_session_is_open`
+
+```c
+int zplc_proto_session_is_open(const zplc_proto_dev_t *dev);
+```
+
+**Source summary:** Whether a session is open (a port uses it to apply the same rule to its own commands).
+
+**Parameters**
+
+| Name | Type | Source description |
+| --- | --- | --- |
+| `dev` | `const zplc_proto_dev_t *` | — |
+
+#### `zplc_proto_session_end`
+
+```c
+void zplc_proto_session_end(zplc_proto_dev_t *dev, uint8_t reason);
+```
+
+**Source summary:** End the session now (a port that must, for example before a reboot).
+
+**Parameters**
+
+| Name | Type | Source description |
+| --- | --- | --- |
+| `dev` | `zplc_proto_dev_t *` | — |
+| `reason` | `uint8_t` | — |
+
+### Types
+
+| Name | Kind | Source summary |
+| --- | --- | --- |
+| `state` | Struct | What the port tells about the runtime. The engine compares successive values to produce events. |
+| `abi_major` | Struct | — |
+| `loaded` | Struct | — |
+| `address` | Struct | One extent of a batched read. |
+| `context` | Struct | What a port gives the engine. Every call returns 0, or a ZPLC_PROTO_ERR_* number that the engine sends as the status of the response. A member that is NULL means the capability is not there: the engine clears its bit in the hello and answers ERR_UNSUPPORTED. |
+| `zplc_proto_dev_t` | Struct | — |
+| `zplc_proto_link_t` | Struct | — |
+| `zplc_proto_write_fn` | Typedef | Send one whole frame; returns 0 when it was handed to the transport. |
+| `frames_in` | Struct | The counters of one link (the LINK_STATS message). |
+| `id` | Struct | — |
+
+### Constants and macros
+
+| Name | Value | Source summary |
+| --- | --- | --- |
+| `ZPLC_PROTO_DEV_H` | `—` | — |
+| `ZPLC_PROTO_OWNED_FORCES` | `8U` | Forces one session can own (the force table of the core has this many entries). |
 
 ## `zplc_retain.h`
 
@@ -2857,6 +3917,608 @@ const char *zplc_retain_reason_string(zplc_retain_reason_t reason);
 | `ZPLC_RETAIN_CHUNK_SIZE` | `CONFIG_ZPLC_RETAIN_CHUNK_SIZE` | — |
 | `ZPLC_RETAIN_CHUNK_SIZE` | `1024U` | — |
 | `ZPLC_RETAIN_MAX_CHUNKS` | `8U` | Chunks per slot; the keys use the digits '0'..'7'. |
+
+## `zplc_sched_core.h`
+
+The portable scheduler core: task admission, ordering, the phases of a scan, deadline handling, the fault latch and the safe state, written once (RT-008, RT-018).
+
+Three runtimes run PLC tasks: the Zephyr firmware, the POSIX host runtime and the single-task configuration of the firmware. They differ in the mechanism that releases a task (a kernel timer, a polled host clock, a sleep), in how they lock and in what hardware they touch. They do not differ in what a release, an order, a deadline miss or a fault means. That meaning is this file and zplc_sched_core.c, which compile without any Zephyr or POSIX header; each runtime is an adapter that supplies a zplc_sched_port_t. What the core owns: - admission:      one pending release per task; a release that arrives while the task is pending coalesces; - ordering:       a batch runs the task released earlier first, then the lower priority number, then the lower task id; - scan phases:    inputs are sampled with no lock, latched under the image lock together with the queued external writes, every task of the batch runs, the output image is captured and the snapshot published under the image lock, and the physical outputs are written after it is released, under the output lock (RT-009, RT-010, RT-012); - deadlines:      a task misses its deadline when it ends more than its interval after its reference instant; a miss raises the warning, is counted and its overrun recorded; the configured number of consecutive misses latches the fault (RT-014); - fault latch:    the first fault is the reason that is kept until a program is loaded; - safe state:     what happens to the image, the pins and the hardware watchdog when a fault latches, a task stops or the runtime pauses (RT-007, RT-017). What an adapter owns: its clock, its locks, the physical I/O, the timers or the poll loop that call zplc_sched_core_admit(), the logging, the persistence and the control plane (load, start, stop, pause). Synchronization: the core has none of its own. Every function documented "critical" must be called with the adapter's state lock held (a spin lock on a target, nothing on a single thread). zplc_sched_core_scan() takes that lock itself through the port, and never holds it across a callback that can block.
+
+Source: `firmware/lib/zplc_core/include/zplc_sched_core.h`
+
+### Functions
+
+#### `zplc_sched_fault_reason_name`
+
+```c
+const char *zplc_sched_fault_reason_name(zplc_sched_fault_reason_t reason);
+```
+
+**Source summary:** The name the status reports for a fault reason ("none", "deadline_miss", "vm_fault", ...).
+
+**Parameters**
+
+| Name | Type | Source description |
+| --- | --- | --- |
+| `reason` | `zplc_sched_fault_reason_t` | — |
+
+#### `zplc_sched_core_init`
+
+```c
+void zplc_sched_core_init(zplc_sched_core_t *core, zplc_sched_slot_t *slots, uint8_t capacity, uint32_t miss_limit);
+```
+
+**Source summary:** Prepare a core over the adapter's slot array. Every slot is cleared; the state is IDLE.
+
+**Parameters**
+
+| Name | Type | Source description |
+| --- | --- | --- |
+| `core` | `zplc_sched_core_t *` | — |
+| `slots` | `zplc_sched_slot_t *` | — |
+| `capacity` | `uint8_t` | — |
+| `miss_limit` | `uint32_t` | consecutive misses that latch the fault; 0 selects ZPLC_SCHED_DEFAULT_MISS_LIMIT. |
+
+#### `zplc_sched_core_set_trace`
+
+```c
+void zplc_sched_core_set_trace(zplc_sched_core_t *core, zplc_sched_trace_fn trace, void *ctx);
+```
+
+**Source summary:** Install or remove the trace sink.
+
+**Parameters**
+
+| Name | Type | Source description |
+| --- | --- | --- |
+| `core` | `zplc_sched_core_t *` | — |
+| `trace` | `zplc_sched_trace_fn` | — |
+| `ctx` | `void *` | — |
+
+#### `zplc_sched_core_add_task`
+
+```c
+int zplc_sched_core_add_task(zplc_sched_core_t *core, const zplc_task_def_t *def, zplc_vm_t *vm);
+```
+
+**Source summary:** Register a task in the first free slot. The slot is cleared first; its state is READY.
+
+**Parameters**
+
+| Name | Type | Source description |
+| --- | --- | --- |
+| `core` | `zplc_sched_core_t *` | — |
+| `def` | `const zplc_task_def_t *` | — |
+| `vm` | `zplc_vm_t *` | — |
+
+**Source return value:** the slot index, or -1 when every slot is taken
+
+#### `zplc_sched_core_free_slot`
+
+```c
+int zplc_sched_core_free_slot(const zplc_sched_core_t *core);
+```
+
+**Source summary:** The first free slot, or -1 when every slot is taken.
+
+**Parameters**
+
+| Name | Type | Source description |
+| --- | --- | --- |
+| `core` | `const zplc_sched_core_t *` | — |
+
+#### `zplc_sched_core_remove_task`
+
+```c
+int zplc_sched_core_remove_task(zplc_sched_core_t *core, int slot);
+```
+
+**Source summary:** Free a slot. @return 0, or -1 when the slot is not registered
+
+**Parameters**
+
+| Name | Type | Source description |
+| --- | --- | --- |
+| `core` | `zplc_sched_core_t *` | — |
+| `slot` | `int` | — |
+
+#### `zplc_sched_core_admit`
+
+```c
+int zplc_sched_core_admit(zplc_sched_core_t *core, int slot, uint64_t release_us, uint64_t deadline_ref_us);
+```
+
+**Source summary:** Admit a release of a task.
+
+**Parameters**
+
+| Name | Type | Source description |
+| --- | --- | --- |
+| `core` | `zplc_sched_core_t *` | — |
+| `slot` | `int` | — |
+| `release_us` | `uint64_t` | the instant the release happened; tasks of one batch are ordered by it |
+| `deadline_ref_us` | `uint64_t` | the instant the deadline of this scan is counted from. A target stamps the release in the timer callback and passes it twice; the host passes ZPLC_SCHED_REF_BATCH_START, the instant it dispatches the batch. |
+
+**Source return value:** 1 when the release was admitted, 0 when it was refused (a fault is latched, the task is not running) or merged into the release that is already pending
+
+#### `zplc_sched_core_collect`
+
+```c
+uint8_t zplc_sched_core_collect(const zplc_sched_core_t *core, uint8_t *order, uint8_t capacity);
+```
+
+**Source summary:** The pending tasks of a running core, in the order they run.
+
+**Parameters**
+
+| Name | Type | Source description |
+| --- | --- | --- |
+| `core` | `const zplc_sched_core_t *` | — |
+| `order` | `uint8_t *` | — |
+| `capacity` | `uint8_t` | — |
+
+**Source return value:** the number of slots written to @p order
+
+#### `zplc_sched_core_before`
+
+```c
+int zplc_sched_core_before(const zplc_sched_slot_t *a, const zplc_sched_slot_t *b);
+```
+
+**Source summary:** True when task @p a runs before task @p b: released earlier, then lower priority number, then lower id.
+
+**Parameters**
+
+| Name | Type | Source description |
+| --- | --- | --- |
+| `a` | `const zplc_sched_slot_t *` | — |
+| `b` | `const zplc_sched_slot_t *` | — |
+
+#### `zplc_sched_core_sort`
+
+```c
+void zplc_sched_core_sort(const zplc_sched_core_t *core, uint8_t *order, uint8_t count);
+```
+
+**Source summary:** Sort @p order (slot indices) by zplc_sched_core_before(). A stable insertion sort.
+
+**Parameters**
+
+| Name | Type | Source description |
+| --- | --- | --- |
+| `core` | `const zplc_sched_core_t *` | — |
+| `order` | `uint8_t *` | — |
+| `count` | `uint8_t` | — |
+
+#### `zplc_sched_core_scan`
+
+```c
+int zplc_sched_core_scan(zplc_sched_core_t *core, const zplc_sched_port_t *port, const uint8_t *order, uint8_t count, int step_mode, zplc_sched_scan_report_t *report);
+```
+
+**Source summary:** Run one batch: the phases of a scan in the order that RT-009, RT-010 and RT-012 fix.
+
+Does nothing (returns 0) when the core is not RUNNING or has latched a fault. A single-step scan (@p step_mode) does no deadline accounting and ends paused (RT-017). On a fault the image is reset under the lock, the pins are driven safe after it is released, the watchdog is handled by the profile's policy and the fault is latched; the port's stop_releases() is called.
+
+**Parameters**
+
+| Name | Type | Source description |
+| --- | --- | --- |
+| `core` | `zplc_sched_core_t *` | — |
+| `port` | `const zplc_sched_port_t *` | — |
+| `order` | `const uint8_t *` | — |
+| `count` | `uint8_t` | — |
+| `step_mode` | `int` | — |
+| `report` | `zplc_sched_scan_report_t *` | — |
+
+**Source return value:** 0, or the first failure: ZPLC_SCHED_ERR_DEADLINE, the VM error of a task (negative), the failure the port returned for an input or an output, ZPLC_SCHED_ERR_IO for a watchdog that could not be fed, or ZPLC_SCHED_ERR_LOCK when a lock could not be taken
+
+#### `zplc_sched_core_latch_fault_image`
+
+```c
+int zplc_sched_core_latch_fault_image(zplc_sched_core_t *core, const zplc_sched_port_t *port, zplc_sched_fault_reason_t reason, uint16_t task_id);
+```
+
+**Source summary:** Latch the fault and reset the output image. The image lock is held by the caller (a scan in progress).
+
+**Parameters**
+
+| Name | Type | Source description |
+| --- | --- | --- |
+| `core` | `zplc_sched_core_t *` | — |
+| `port` | `const zplc_sched_port_t *` | — |
+| `reason` | `zplc_sched_fault_reason_t` | — |
+| `task_id` | `uint16_t` | — |
+
+**Source return value:** the failure of the image reset, or 0. The pins are the caller's next step: zplc_sched_core_settle().
+
+#### `zplc_sched_core_settle`
+
+```c
+zplc_sched_safe_result_t zplc_sched_core_settle(const zplc_sched_core_t *core, const zplc_sched_port_t *port, int image_result);
+```
+
+**Source summary:** The pins and the watchdog after the image was reset. No lock held.
+
+**Parameters**
+
+| Name | Type | Source description |
+| --- | --- | --- |
+| `core` | `const zplc_sched_core_t *` | — |
+| `port` | `const zplc_sched_port_t *` | — |
+| `image_result` | `int` | what zplc_sched_core_latch_fault_image() or the image reset returned |
+
+#### `zplc_sched_core_fault`
+
+```c
+int zplc_sched_core_fault(zplc_sched_core_t *core, const zplc_sched_port_t *port, zplc_sched_fault_reason_t reason, uint16_t task_id);
+```
+
+**Source summary:** Latch the fault from the control plane: take the image lock, latch, reset the image, release it, then settle the pins and the watchdog.
+
+**Parameters**
+
+| Name | Type | Source description |
+| --- | --- | --- |
+| `core` | `zplc_sched_core_t *` | — |
+| `port` | `const zplc_sched_port_t *` | — |
+| `reason` | `zplc_sched_fault_reason_t` | — |
+| `task_id` | `uint16_t` | — |
+
+**Source return value:** the first failure of the safe state, or ZPLC_SCHED_ERR_LOCK when the lock failed (the pins were still driven safe)
+
+#### `zplc_sched_core_lock_failure`
+
+```c
+int zplc_sched_core_lock_failure(zplc_sched_core_t *core, const zplc_sched_port_t *port);
+```
+
+**Source summary:** The image lock could not be taken, so the image cannot be touched coherently: latch the fault, stop the releases and put the pins in their safe state without it.
+
+**Parameters**
+
+| Name | Type | Source description |
+| --- | --- | --- |
+| `core` | `zplc_sched_core_t *` | — |
+| `port` | `const zplc_sched_port_t *` | — |
+
+**Source return value:** ZPLC_SCHED_ERR_LOCK
+
+#### `zplc_sched_core_apply_safe_outputs`
+
+```c
+int zplc_sched_core_apply_safe_outputs(zplc_sched_core_t *core, const zplc_sched_port_t *port);
+```
+
+**Source summary:** The safe state of a STOP or of the removal of the last task: reset the image under the lock, drive the pins after it is released, and latch the fault when that failed.
+
+**Parameters**
+
+| Name | Type | Source description |
+| --- | --- | --- |
+| `core` | `zplc_sched_core_t *` | — |
+| `port` | `const zplc_sched_port_t *` | — |
+
+**Source return value:** 0 only when the outputs are safe
+
+#### `zplc_sched_core_drive_safe_outputs`
+
+```c
+int zplc_sched_core_drive_safe_outputs(zplc_sched_core_t *core, const zplc_sched_port_t *port);
+```
+
+**Source summary:** The safe state of a pause: the pins only; the image and the forces stay (RT-017). Latches the fault when the pins could not be driven.
+
+**Parameters**
+
+| Name | Type | Source description |
+| --- | --- | --- |
+| `core` | `zplc_sched_core_t *` | — |
+| `port` | `const zplc_sched_port_t *` | — |
+
+**Source return value:** 0 only when the outputs are safe
+
+#### `zplc_sched_core_is_running`
+
+```c
+int zplc_sched_core_is_running(const zplc_sched_core_t *core);
+```
+
+**Source summary:** True while a scan may run: the state is RUNNING and no fault is latched.
+
+**Parameters**
+
+| Name | Type | Source description |
+| --- | --- | --- |
+| `core` | `const zplc_sched_core_t *` | — |
+
+#### `zplc_sched_core_set_running`
+
+```c
+uint8_t zplc_sched_core_set_running(zplc_sched_core_t *core);
+```
+
+**Source summary:** Start or resume: every READY or PAUSED task runs, with no release pending, and the state is RUNNING.
+
+**Parameters**
+
+| Name | Type | Source description |
+| --- | --- | --- |
+| `core` | `zplc_sched_core_t *` | — |
+
+**Source return value:** the number of tasks moved
+
+#### `zplc_sched_core_set_paused`
+
+```c
+void zplc_sched_core_set_paused(zplc_sched_core_t *core);
+```
+
+**Source summary:** Pause: running tasks are PAUSED, releases are dropped, the state is PAUSED. Image and forces stay.
+
+**Parameters**
+
+| Name | Type | Source description |
+| --- | --- | --- |
+| `core` | `zplc_sched_core_t *` | — |
+
+#### `zplc_sched_core_set_stopped`
+
+```c
+void zplc_sched_core_set_stopped(zplc_sched_core_t *core);
+```
+
+**Source summary:** Stop: tasks are READY again with no release pending, the state is IDLE. A latched fault stays latched, with its tasks in ERROR, so that what it reports stays readable until a program is loaded.
+
+**Parameters**
+
+| Name | Type | Source description |
+| --- | --- | --- |
+| `core` | `zplc_sched_core_t *` | — |
+
+#### `zplc_sched_core_begin_step`
+
+```c
+uint8_t zplc_sched_core_begin_step(zplc_sched_core_t *core, uint64_t release_us, uint8_t *order, uint8_t capacity);
+```
+
+**Source summary:** A manual step: every READY or PAUSED task is released now, in one batch, and the state is RUNNING.
+
+**Parameters**
+
+| Name | Type | Source description |
+| --- | --- | --- |
+| `core` | `zplc_sched_core_t *` | — |
+| `release_us` | `uint64_t` | — |
+| `order` | `uint8_t *` | — |
+| `capacity` | `uint8_t` | — |
+
+**Source return value:** the number of tasks written to @p order, in the order they run; 0 when none is ready or a fault is latched
+
+#### `zplc_sched_core_total_misses`
+
+```c
+uint32_t zplc_sched_core_total_misses(const zplc_sched_core_t *core);
+```
+
+**Source summary:** Misses of every registered task, saturating.
+
+**Parameters**
+
+| Name | Type | Source description |
+| --- | --- | --- |
+| `core` | `const zplc_sched_core_t *` | — |
+
+#### `zplc_sched_core_consecutive_misses`
+
+```c
+uint32_t zplc_sched_core_consecutive_misses(const zplc_sched_core_t *core);
+```
+
+**Source summary:** The longest run of consecutive misses that is still going on.
+
+**Parameters**
+
+| Name | Type | Source description |
+| --- | --- | --- |
+| `core` | `const zplc_sched_core_t *` | — |
+
+#### `zplc_sched_core_reset_counters`
+
+```c
+void zplc_sched_core_reset_counters(zplc_sched_core_t *core);
+```
+
+**Source summary:** Forget the misses, the run of misses, the last overrun and the fault: a program is (re)loaded. A task the fault had put in ERROR is READY again.
+
+**Parameters**
+
+| Name | Type | Source description |
+| --- | --- | --- |
+| `core` | `zplc_sched_core_t *` | — |
+
+#### `zplc_sched_core_restart_schedule`
+
+```c
+void zplc_sched_core_restart_schedule(zplc_sched_core_t *core);
+```
+
+**Source summary:** A resume begins a new run of the schedule: a run of misses does not carry over.
+
+**Parameters**
+
+| Name | Type | Source description |
+| --- | --- | --- |
+| `core` | `zplc_sched_core_t *` | — |
+
+#### `zplc_sched_core_begin_run`
+
+```c
+void zplc_sched_core_begin_run(zplc_sched_core_t *core);
+```
+
+**Source summary:** A start begins a run: the next scan of every task is its first, and a run of misses does not carry over. The miss count and the statistics are the adapter's to keep or to clear.
+
+**Parameters**
+
+| Name | Type | Source description |
+| --- | --- | --- |
+| `core` | `zplc_sched_core_t *` | — |
+
+#### `zplc_sched_core_overrun_us`
+
+```c
+uint64_t zplc_sched_core_overrun_us(uint64_t ref_us, uint64_t end_us, uint32_t interval_us);
+```
+
+**Source summary:** How far past its deadline a scan ended: 0 when it ended in time. The deadline is the interval after the reference instant, and ending exactly on it is in time.
+
+**Parameters**
+
+| Name | Type | Source description |
+| --- | --- | --- |
+| `ref_us` | `uint64_t` | — |
+| `end_us` | `uint64_t` | — |
+| `interval_us` | `uint32_t` | — |
+
+#### `zplc_io_sample`
+
+```c
+zplc_hal_result_t zplc_io_sample(zplc_io_samples_t *samples, const zplc_io_ops_t *ops);
+```
+
+**Source summary:** Phase 1: read every input channel. Hardware I/O: no lock is held. A channel that is not available on this build (ZPLC_HAL_NOT_IMPL) is skipped; any other failure ends the sampling and is returned.
+
+**Parameters**
+
+| Name | Type | Source description |
+| --- | --- | --- |
+| `samples` | `zplc_io_samples_t *` | — |
+| `ops` | `const zplc_io_ops_t *` | — |
+
+#### `zplc_io_apply_samples`
+
+```c
+void zplc_io_apply_samples(const zplc_io_samples_t *samples);
+```
+
+**Source summary:** Phase 2, image lock held: write the channels that answered into the input image.
+
+**Parameters**
+
+| Name | Type | Source description |
+| --- | --- | --- |
+| `samples` | `const zplc_io_samples_t *` | — |
+
+#### `zplc_io_capture_outputs`
+
+```c
+void zplc_io_capture_outputs(zplc_io_outputs_t *outputs);
+```
+
+**Source summary:** Phase 2, image lock held: the output image as it is at the end of the scan, for every output channel.
+
+**Parameters**
+
+| Name | Type | Source description |
+| --- | --- | --- |
+| `outputs` | `zplc_io_outputs_t *` | — |
+
+#### `zplc_io_write_outputs`
+
+```c
+zplc_hal_result_t zplc_io_write_outputs(const zplc_io_outputs_t *outputs, const zplc_io_ops_t *ops);
+```
+
+**Source summary:** Phase 3, image lock released, output lock held: write the captured values to the pins.
+
+**Parameters**
+
+| Name | Type | Source description |
+| --- | --- | --- |
+| `outputs` | `const zplc_io_outputs_t *` | — |
+| `ops` | `const zplc_io_ops_t *` | — |
+
+**Source return value:** the first failure; ZPLC_HAL_NOT_IMPL channels are skipped
+
+#### `zplc_io_drive_safe`
+
+```c
+zplc_hal_result_t zplc_io_drive_safe(const zplc_io_ops_t *ops);
+```
+
+**Source summary:** The safe state of the pins: every digital output at its safe level. The output image and the force table are the logical state of the program and are not touched (RT-017).
+
+The level of an output is the one the loaded program declares for it (zplc_core_declared_safe(), RT-023), or the board description's `safe` for an output the program declares nothing for: off, unless the board says another level. This is the one place the level is chosen.
+
+**Parameters**
+
+| Name | Type | Source description |
+| --- | --- | --- |
+| `ops` | `const zplc_io_ops_t *` | — |
+
+**Source return value:** the first failure; every channel is attempted
+
+#### `zplc_io_declared_safe_fits_board`
+
+```c
+int zplc_io_declared_safe_fits_board(const uint8_t *safe, uint32_t count);
+```
+
+**Source summary:** Whether every safe value a program declares is for an output this board has (RT-023).
+
+An entry has to name a digital output channel of the board's I/O table by its image offset and bit. A declaration for an output the board does not have is a project for another board, or a typing mistake: the program is refused instead of being run with a safe state that does not exist. A runtime with no I/O table (the host simulator, which has no pins) accepts every entry the loader accepted.
+
+**Parameters**
+
+| Name | Type | Source description |
+| --- | --- | --- |
+| `safe` | `const uint8_t *` | the entries of the SAFE segment, ZPLC_SAFE_ENTRY_SIZE bytes each; may be NULL when @p count is 0 |
+| `count` | `uint32_t` | number of entries |
+
+**Source return value:** ZPLC_LOADER_OK, or ZPLC_LOADER_ERR_SAFE
+
+#### `zplc_io_reset_image`
+
+```c
+int zplc_io_reset_image(void);
+```
+
+**Source summary:** The safe state of the image: forces cleared and the output image zeroed. Image lock held by the caller.
+
+**Parameters**
+
+| Name | Type | Source description |
+| --- | --- | --- |
+| — | — | None. |
+
+**Source return value:** 0, or -1 when the output image does not exist
+
+### Types
+
+| Name | Kind | Source summary |
+| --- | --- | --- |
+| `zplc_sched_fault_reason_t` | Enum | Why the runtime latched its fault. The first reason is the one that is kept. |
+| `zplc_sched_trace_kind_t` | Enum | What the core decided, in the order it decided it. |
+| `zplc_sched_trace_fn` | Typedef | — |
+| `zplc_sched_probe_t` | Enum | Points at which a test may look at, or steer, a scan. A product adapter leaves the probe NULL. |
+| `ctx` | Struct | The services of the platform. Every member is optional except now_us; an absent callback is a step the platform does not have (the host runtime has no pins, a single thread has no locks). |
+| `task` | Struct | One task as the core sees it. The VM belongs to the adapter; the core runs it. |
+| `slot` | Struct | — |
+| `error_task` | Struct | What a scan has to say: kept while the image lock is held and printed after it is released. |
+| `safe_result` | Struct | The outcome of putting the outputs in their safe state. |
+| `ZPLC_IO_MAX_CHANNELS` | Struct | The physical inputs of one scan, kept by table index until they are latched into the image. |
+| `ZPLC_IO_MAX_CHANNELS` | Struct | The values the physical outputs are given at the end of one scan, by table index. |
+| `read` | Struct | Replaces the HAL access of the helpers below: a test makes a channel fail. NULL members, and a NULL table, are the HAL (zplc_io_read_channel, zplc_io_write_channel). |
+
+### Constants and macros
+
+| Name | Value | Source summary |
+| --- | --- | --- |
+| `ZPLC_SCHED_CORE_H` | `—` | — |
+| `ZPLC_SCHED_CORE_MAX_SLOTS` | `16U` | The most task slots a core can drive (the loader admits at most this many tasks). |
+| `ZPLC_SCHED_DEFAULT_MISS_LIMIT` | `3U` | Consecutive deadline misses of one task that latch the fault, unless the profile says otherwise. |
+| `ZPLC_SCHED_REF_BATCH_START` | `UINT64_MAX` | A deadline reference that means "the instant the batch started", for a runtime that has no timer of its own: the host dispatches a batch when it polls, and counts each scan's interval from that dispatch. |
 
 ## `zplc_scheduler.h`
 
@@ -3277,6 +4939,406 @@ int zplc_sched_unlock(void);
 | `ZPLC_MIN_INTERVAL_US` | `1000` | Minimum task interval in microseconds (1ms) |
 | `ZPLC_MAX_INTERVAL_US` | `3600000000UL` | Maximum task interval in microseconds (1 hour) |
 
+## `zplc_sha256.h`
+
+SHA-256 and HMAC-SHA-256 (FIPS 180-4, RFC 2104), and the two helpers that key material needs (COM-021).
+
+The authentication code of a frame in a network session is HMAC-SHA-256 under a key that was provisioned over the local serial link. This is a small portable implementation, no table but the 64 round constants and no allocation, that the core and every port share; the test of it runs the vectors of FIPS 180-4 and RFC 4231. Two helpers belong to it because of what they protect: zplc_ct_equal() compares two codes in time that does not depend on where they differ, and zplc_secure_zero() clears key material in a way the compiler may not remove.
+
+Source: `firmware/lib/zplc_core/include/zplc_sha256.h`
+
+### Functions
+
+#### `zplc_sha256_init`
+
+```c
+void zplc_sha256_init(zplc_sha256_t *context);
+```
+
+**Source summary:** No summary found in the header comment.
+
+**Parameters**
+
+| Name | Type | Source description |
+| --- | --- | --- |
+| `context` | `zplc_sha256_t *` | — |
+
+#### `zplc_sha256_update`
+
+```c
+void zplc_sha256_update(zplc_sha256_t *context, const uint8_t *data, size_t length);
+```
+
+**Source summary:** No summary found in the header comment.
+
+**Parameters**
+
+| Name | Type | Source description |
+| --- | --- | --- |
+| `context` | `zplc_sha256_t *` | — |
+| `data` | `const uint8_t *` | — |
+| `length` | `size_t` | — |
+
+#### `zplc_sha256_final`
+
+```c
+void zplc_sha256_final(zplc_sha256_t *context, uint8_t digest[ZPLC_SHA256_DIGEST_BYTES]);
+```
+
+**Source summary:** Write the digest and clear the context.
+
+**Parameters**
+
+| Name | Type | Source description |
+| --- | --- | --- |
+| `context` | `zplc_sha256_t *` | — |
+| `uint8_t digest[ZPLC_SHA256_DIGEST_BYTES]` | `—` | — |
+
+#### `zplc_sha256`
+
+```c
+void zplc_sha256(const uint8_t *data, size_t length, uint8_t digest[ZPLC_SHA256_DIGEST_BYTES]);
+```
+
+**Source summary:** No summary found in the header comment.
+
+**Parameters**
+
+| Name | Type | Source description |
+| --- | --- | --- |
+| `data` | `const uint8_t *` | — |
+| `length` | `size_t` | — |
+| `uint8_t digest[ZPLC_SHA256_DIGEST_BYTES]` | `—` | — |
+
+#### `zplc_hmac_sha256_init`
+
+```c
+void zplc_hmac_sha256_init(zplc_hmac_sha256_t *context, const uint8_t *key, size_t key_length);
+```
+
+**Source summary:** No summary found in the header comment.
+
+**Parameters**
+
+| Name | Type | Source description |
+| --- | --- | --- |
+| `context` | `zplc_hmac_sha256_t *` | — |
+| `key` | `const uint8_t *` | — |
+| `key_length` | `size_t` | — |
+
+#### `zplc_hmac_sha256_update`
+
+```c
+void zplc_hmac_sha256_update(zplc_hmac_sha256_t *context, const uint8_t *data, size_t length);
+```
+
+**Source summary:** No summary found in the header comment.
+
+**Parameters**
+
+| Name | Type | Source description |
+| --- | --- | --- |
+| `context` | `zplc_hmac_sha256_t *` | — |
+| `data` | `const uint8_t *` | — |
+| `length` | `size_t` | — |
+
+#### `zplc_hmac_sha256_final`
+
+```c
+void zplc_hmac_sha256_final(zplc_hmac_sha256_t *context, uint8_t mac[ZPLC_SHA256_DIGEST_BYTES]);
+```
+
+**Source summary:** Write the code and clear the context (the key pads included).
+
+**Parameters**
+
+| Name | Type | Source description |
+| --- | --- | --- |
+| `context` | `zplc_hmac_sha256_t *` | — |
+| `uint8_t mac[ZPLC_SHA256_DIGEST_BYTES]` | `—` | — |
+
+#### `zplc_hmac_sha256`
+
+```c
+void zplc_hmac_sha256(const uint8_t *key, size_t key_length, const uint8_t *data, size_t length, uint8_t mac[ZPLC_SHA256_DIGEST_BYTES]);
+```
+
+**Source summary:** No summary found in the header comment.
+
+**Parameters**
+
+| Name | Type | Source description |
+| --- | --- | --- |
+| `key` | `const uint8_t *` | — |
+| `key_length` | `size_t` | — |
+| `data` | `const uint8_t *` | — |
+| `length` | `size_t` | — |
+| `uint8_t mac[ZPLC_SHA256_DIGEST_BYTES]` | `—` | — |
+
+#### `zplc_ct_equal`
+
+```c
+int zplc_ct_equal(const uint8_t *a, const uint8_t *b, size_t length);
+```
+
+**Source summary:** 1 when the two buffers are equal; the time taken depends on @p length only.
+
+**Parameters**
+
+| Name | Type | Source description |
+| --- | --- | --- |
+| `a` | `const uint8_t *` | — |
+| `b` | `const uint8_t *` | — |
+| `length` | `size_t` | — |
+
+#### `zplc_secure_zero`
+
+```c
+void zplc_secure_zero(void *buffer, size_t length);
+```
+
+**Source summary:** Clear @p length bytes in a way the compiler does not optimise away.
+
+**Parameters**
+
+| Name | Type | Source description |
+| --- | --- | --- |
+| `buffer` | `void *` | — |
+| `length` | `size_t` | — |
+
+### Types
+
+| Name | Kind | Source summary |
+| --- | --- | --- |
+| `state` | Struct | — |
+| `inner` | Struct | — |
+
+### Constants and macros
+
+| Name | Value | Source summary |
+| --- | --- | --- |
+| `ZPLC_SHA256_H` | `—` | — |
+| `ZPLC_SHA256_DIGEST_BYTES` | `32U` | — |
+| `ZPLC_SHA256_BLOCK_BYTES` | `64U` | — |
+
+## `zplc_sha512.h`
+
+SHA-512 (FIPS 180-4), the hash of Ed25519 (COM-026).
+
+Source: `firmware/lib/zplc_core/include/zplc_sha512.h`
+
+### Functions
+
+#### `zplc_sha512_init`
+
+```c
+void zplc_sha512_init(zplc_sha512_t *context);
+```
+
+**Source summary:** No summary found in the header comment.
+
+**Parameters**
+
+| Name | Type | Source description |
+| --- | --- | --- |
+| `context` | `zplc_sha512_t *` | — |
+
+#### `zplc_sha512_update`
+
+```c
+void zplc_sha512_update(zplc_sha512_t *context, const uint8_t *data, size_t length);
+```
+
+**Source summary:** No summary found in the header comment.
+
+**Parameters**
+
+| Name | Type | Source description |
+| --- | --- | --- |
+| `context` | `zplc_sha512_t *` | — |
+| `data` | `const uint8_t *` | — |
+| `length` | `size_t` | — |
+
+#### `zplc_sha512_final`
+
+```c
+void zplc_sha512_final(zplc_sha512_t *context, uint8_t digest[ZPLC_SHA512_DIGEST_BYTES]);
+```
+
+**Source summary:** Write the digest and clear the context.
+
+**Parameters**
+
+| Name | Type | Source description |
+| --- | --- | --- |
+| `context` | `zplc_sha512_t *` | — |
+| `uint8_t digest[ZPLC_SHA512_DIGEST_BYTES]` | `—` | — |
+
+### Types
+
+| Name | Kind | Source summary |
+| --- | --- | --- |
+| `state` | Struct | — |
+
+### Constants and macros
+
+| Name | Value | Source summary |
+| --- | --- | --- |
+| `ZPLC_SHA512_H` | `—` | — |
+| `ZPLC_SHA512_DIGEST_BYTES` | `64U` | — |
+| `ZPLC_SHA512_BLOCK_BYTES` | `128U` | — |
+
+## `zplc_single_task.h`
+
+The single-task configuration of the scheduler core (RT-018).
+
+A firmware built without the multitask scheduler runs one program on the default VM of the core, from a loop that releases it once per interval. That loop used to have a scan of its own: no input latch, no deadline check, and the outputs written from the middle of the loop. It now runs on the same core as the multitask scheduler, as a core with one task: the same phases, the same input latch, the same deadline accounting and the same fault latch and safe state. What the caller keeps: the release of the task (its own sleep until the next interval), the lock around a scan (the single-task runtime holds its runtime lock for the whole scan, so the image lock of the core is not needed here) and its own run states.
+
+Source: `firmware/lib/zplc_core/include/zplc_single_task.h`
+
+### Functions
+
+#### `zplc_single_task_init`
+
+```c
+void zplc_single_task_init(zplc_single_task_t *single, uint32_t interval_ms, uint32_t miss_limit);
+```
+
+**Source summary:** Prepare the one-task configuration over the default VM of the core.
+
+**Parameters**
+
+| Name | Type | Source description |
+| --- | --- | --- |
+| `single` | `zplc_single_task_t *` | — |
+| `interval_ms` | `uint32_t` | the task's interval, in whole milliseconds, at least 1 |
+| `miss_limit` | `uint32_t` | consecutive deadline misses that latch the fault; 0 selects ZPLC_SCHED_DEFAULT_MISS_LIMIT |
+
+#### `zplc_single_task_set_interval`
+
+```c
+void zplc_single_task_set_interval(zplc_single_task_t *single, uint32_t interval_ms);
+```
+
+**Source summary:** The interval of the task changed (a program with another scan interval was loaded).
+
+**Parameters**
+
+| Name | Type | Source description |
+| --- | --- | --- |
+| `single` | `zplc_single_task_t *` | — |
+| `interval_ms` | `uint32_t` | — |
+
+#### `zplc_single_task_begin`
+
+```c
+void zplc_single_task_begin(zplc_single_task_t *single);
+```
+
+**Source summary:** A start: the next scan is the first one, and a run of misses does not carry over.
+
+**Parameters**
+
+| Name | Type | Source description |
+| --- | --- | --- |
+| `single` | `zplc_single_task_t *` | — |
+
+#### `zplc_single_task_clear`
+
+```c
+void zplc_single_task_clear(zplc_single_task_t *single);
+```
+
+**Source summary:** A load or a reset: the misses, the run of them and a latched fault are forgotten.
+
+**Parameters**
+
+| Name | Type | Source description |
+| --- | --- | --- |
+| `single` | `zplc_single_task_t *` | — |
+
+#### `zplc_single_task_scan`
+
+```c
+int zplc_single_task_scan(zplc_single_task_t *single, int step_mode, zplc_sched_scan_report_t *report);
+```
+
+**Source summary:** One scan of the task: the inputs are sampled and latched, the program runs, the outputs are captured and written (RT-009). A step (@p step_mode) has no deadline and ends paused, with the pins safe (RT-017).
+
+The caller holds its runtime lock. On a VM fault, a failed input or output, or the miss limit, the image is reset and the pins are driven safe before this returns, and the result is negative.
+
+**Parameters**
+
+| Name | Type | Source description |
+| --- | --- | --- |
+| `single` | `zplc_single_task_t *` | — |
+| `step_mode` | `int` | — |
+| `report` | `zplc_sched_scan_report_t *` | what happened (breakpoint, committed, warning); may be NULL |
+
+**Source return value:** 0, or the first failure
+
+### Types
+
+| Name | Kind | Source summary |
+| --- | --- | --- |
+| `slot` | Struct | — |
+
+### Constants and macros
+
+| Name | Value | Source summary |
+| --- | --- | --- |
+| `ZPLC_SINGLE_TASK_H` | `—` | — |
+
+## `zplc_verify_scratch.h`
+
+The one verifier workspace of a Zephyr image, and the lock that owns it.
+
+zplc_loader_verify() needs ZPLC_LOADER_VERIFY_WORKSPACE_SIZE bytes of caller-owned scratch while it runs and keeps nothing in it afterwards: the view it returns points into the artifact, not into the workspace. The image has two callers that can run in different threads, the admission of a program by the scheduler (validation and load) and the admission check of the program store, and a workspace each cost the same RAM twice (about 15 KB on a board with the default code size). They share this one. The rule: a caller takes the scratch, makes one verification (or one zplc_core_load_tasks(), which verifies and then uses the same buffer to stage the task table), and gives it back before it does anything that can wait. The lock is a leaf: nothing else is acquired while it is held, so it adds no edge to the lock order of the image (control, memory and program-store locks all come before it, and none comes after). Verification is bounded by ZPLC_VERIFY_STEPS_PER_BYTE, so another caller waits a bounded time, and only in thread context: the scan never touches it.
+
+Source: `firmware/lib/zplc_core/include/zplc_verify_scratch.h`
+
+### Functions
+
+#### `zplc_verify_scratch_take`
+
+```c
+uint8_t *zplc_verify_scratch_take(void);
+```
+
+**Source summary:** Take the verifier workspace, waiting for its current owner.
+
+**Parameters**
+
+| Name | Type | Source description |
+| --- | --- | --- |
+| — | — | None. |
+
+**Source return value:** ZPLC_LOADER_VERIFY_WORKSPACE_SIZE bytes owned by the caller until zplc_verify_scratch_give(), or NULL when the lock cannot be taken (the mutex object is not valid, which is a defect). The contents are whatever the last owner left; the verifier clears what it reads.
+
+#### `zplc_verify_scratch_give`
+
+```c
+void zplc_verify_scratch_give(void);
+```
+
+**Source summary:** Give the workspace back. Only the owner calls it, once per successful take.
+
+**Parameters**
+
+| Name | Type | Source description |
+| --- | --- | --- |
+| — | — | None. |
+
+### Types
+
+None.
+
+### Constants and macros
+
+| Name | Value | Source summary |
+| --- | --- | --- |
+| `ZPLC_VERIFY_SCRATCH_H` | `—` | — |
+
 ## Binary contract tables
 
 These tables are generated from `tools/contract/contract.json`, the single source of the opcodes, container constants, error codes, memory regions and communication function-block layouts. The C headers, the TypeScript compiler tables and the Python tools are generated from the same file, so they cannot drift.
@@ -3287,7 +5349,7 @@ These tables are generated from `tools/contract/contract.json`, the single sourc
 | --- | --- | --- |
 | Magic number | `0x434C505A` | `5A 50 4C 43` = "ZPLC" |
 | ISA version (major.minor) | `1.0` |  |
-| Draft contract counter | `4` | Written in header word 28 of every artifact. The loader and Studio refuse an artifact, or a device image, whose counter differs from their own and show both numbers; 0 means an artifact built before the counter. It increases with every contract change until the freeze. |
+| Draft contract counter | `6` | Written in header word 28 of every artifact. The loader and Studio refuse an artifact, or a device image, whose counter differs from their own and show both numbers; 0 means an artifact built before the counter. It increases with every contract change until the freeze. |
 | File header size (bytes) | `32` |  |
 | Segment entry size (bytes) | `8` |  |
 | Task definition size (bytes) | `16` |  |
@@ -3295,6 +5357,8 @@ These tables are generated from `tools/contract/contract.json`, the single sourc
 | Tag entry size (bytes) | `8` |  |
 | Maximum tasks in an artifact | `16` |  |
 | Build identity size (bytes) | `4` |  |
+| Safe-state entry size (bytes) | `4` |  |
+| Most outputs an artifact may declare a safe value for | `64` |  |
 | Deepest evaluation stack the loader proves | `127` | A task that needs more is refused, whatever the target stack allows; the compiler fails the build above it. |
 | CRC32 | `0xEDB88320` | IEEE 802.3 polynomial 0xEDB88320, over the whole file except the 4 bytes at offset 12. |
 
@@ -3340,6 +5404,14 @@ These tables are generated from `tools/contract/contract.json`, the single sourc
 | --- | --- | --- | --- | --- |
 | `0` | `build_id` | `uint32_t` | 4 | CRC-32 of CODE then TASK; never 0 (0 = not identified) |
 
+### Layout of `zplc_safe_entry_t`
+
+| Offset | Field | Type | Bytes | Description |
+| --- | --- | --- | --- | --- |
+| `0` | `offset` | `uint16_t` | 2 | Byte offset of the output in the output image |
+| `2` | `bit` | `uint8_t` | 1 | Bit of the byte, 0 to 7 |
+| `3` | `value` | `uint8_t` | 1 | The output's value in the safe state: 0 or 1 |
+
 ### Layout of `zplc_iomap_entry_t`
 
 | Offset | Field | Type | Bytes | Description |
@@ -3382,6 +5454,7 @@ These tables are generated from `tools/contract/contract.json`, the single sourc
 | `ZPLC_SEG_TASK` | `0x20` | Task definitions |
 | `ZPLC_SEG_TAGS` | `0x30` | Variable tags (networking metadata) |
 | `ZPLC_SEG_BUILD` | `0x40` | Build identity of the artifact (CMP-056) |
+| `ZPLC_SEG_SAFE` | `0x41` | Declared safe values of digital outputs (RT-023) |
 
 ### Task types
 
@@ -3627,10 +5700,11 @@ The operand size follows the opcode range (0x00-0x3F none, 0x40-0x7F 8-bit, 0x80
 | `ZPLC_LOADER_ERR_COMM` | `-16` | Communication function-block kind is NONE or at or above the kind limit, or a block at a statically known address does not fit one memory region |
 | `ZPLC_LOADER_ERR_DRAFT` | `-17` | Draft contract counter of the artifact differs from the loader's, or the artifact has none |
 | `ZPLC_LOADER_ERR_STACK` | `-18` | The evaluation stack can underflow, or exceed the depth the task declares, on some path, or the verifier cannot prove that it cannot |
+| `ZPLC_LOADER_ERR_SAFE` | `-19` | A declared safe value is invalid: the segment is not whole entries, an entry names no bit of the output image or a value other than 0 or 1, an output is declared twice, or there are too many |
 
 ### Communication function blocks
 
-Each function-block instance is a byte block in work or retentive memory. Every block starts with the same 8-byte handshake. The core takes the size of a block from this table.
+Each function-block instance is a byte block in work or retentive memory. Every block starts with the same 8-byte handshake and ends with one byte that belongs to the dispatcher (it keeps the previous EN there); no member covers it. The core takes the size of a block from this table.
 
 | Name | Kind | Instance size (bytes) | Description |
 | --- | --- | --- | --- |
@@ -3641,11 +5715,11 @@ Each function-block instance is a byte block in work or retentive memory. Every 
 | `MQTT_CONNECT` | `0x000A` | 12 | MQTT connect |
 | `MQTT_PUBLISH` | `0x000B` | 190 | MQTT publish |
 | `MQTT_SUBSCRIBE` | `0x000C` | 190 | MQTT subscribe; PAYLOAD is an output |
-| `AZURE_C2D_RECV` | `0x0020` | 94 | Azure cloud-to-device receive |
-| `AZURE_DPS_PROV` | `0x0021` | 201 | Azure DPS provisioning |
-| `AZURE_EG_PUB` | `0x0022` | 266 | Azure Event Grid publish |
-| `AWS_FLEET_PROV` | `0x0030` | 137 | AWS fleet provisioning |
-| `SPB_REBIRTH` | `0x0040` | 8 | Sparkplug B rebirth; a rising EN triggers REBIRTH |
+| `AZURE_C2D_RECV` | `0x0020` | 95 | Azure cloud-to-device receive |
+| `AZURE_DPS_PROV` | `0x0021` | 179 | Azure DPS provisioning |
+| `AZURE_EG_PUB` | `0x0022` | 264 | Azure Event Grid publish |
+| `AWS_FLEET_PROV` | `0x0030` | 179 | AWS fleet provisioning |
+| `SPB_REBIRTH` | `0x0040` | 9 | Sparkplug B rebirth; a rising EN triggers REBIRTH |
 
 Kinds at or above `0x00FF` are refused by the loader and by handler registration.
 
@@ -3779,7 +5853,7 @@ Kinds at or above `0x00FF` are refused by the loader and by handler registration
 | 3 | `ERROR` | `BOOL` | output |
 | 4 | `STATUS` | `DINT` | output |
 | 8 | `DEVICE_ID` | `STRING` | input |
-| 73 | `ASSIGNED_HUB` | `STRING` | output |
+| 93 | `ASSIGNED_HUB` | `STRING` | output |
 
 #### Layout of `AZURE_EG_PUB`
 
@@ -3791,8 +5865,8 @@ Kinds at or above `0x00FF` are refused by the loader and by handler registration
 | 3 | `ERROR` | `BOOL` | output |
 | 4 | `STATUS` | `DINT` | output |
 | 8 | `TOPIC` | `STRING` | input |
-| 73 | `EVENT_TYPE` | `STRING` | input |
-| 138 | `PAYLOAD` | `STRING` | input |
+| 93 | `EVENT_TYPE` | `STRING` | input |
+| 178 | `PAYLOAD` | `STRING` | input |
 
 #### Layout of `AWS_FLEET_PROV`
 
@@ -3804,7 +5878,7 @@ Kinds at or above `0x00FF` are refused by the loader and by handler registration
 | 3 | `ERROR` | `BOOL` | output |
 | 4 | `STATUS` | `DINT` | output |
 | 8 | `TEMPLATE_NAME` | `STRING` | input |
-| 73 | `THING_NAME` | `STRING` | output |
+| 93 | `THING_NAME` | `STRING` | output |
 
 #### Layout of `SPB_REBIRTH`
 
@@ -3830,4 +5904,5 @@ Kinds at or above `0x00FF` are refused by the loader and by handler registration
 | `ZPLC_COMM_STRING_OVERFLOW` | `7` |
 | `ZPLC_COMM_PROTO_ERROR` | `8` |
 | `ZPLC_COMM_AUTH_FAILED` | `9` |
+| `ZPLC_COMM_UNAVAILABLE` | `10` |
 | `ZPLC_COMM_UNKNOWN` | `255` |

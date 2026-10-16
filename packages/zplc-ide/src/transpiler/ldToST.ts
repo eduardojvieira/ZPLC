@@ -27,9 +27,10 @@ import { getFunctionBlockNamesForVisualEditors } from '../catalog/blockCatalog';
 import { getDefaultPorts } from '../models/fbd';
 import { findProjectBlock, type ProjectBlock } from '../models/projectBlocks';
 import { LD_COIL_TYPES, LD_CONTACT_TYPES, LD_MODBUS_HELPERS } from '../models/ldSupport';
+import { TRUE_POWER, and, atom, or, powerExpr, printPower, walkRung, type Power } from './ldPower';
 import {
   ElementError, Listing, Problems, cellElement, rungElement, rungItemElement,
-  type ElementDiagnostic, type SourceElementId, type SourceMapRange,
+  type ElementDiagnostic, type MonitorEntry, type SourceElementId, type SourceMapRange,
 } from '../models/sourceElements';
 
 // =============================================================================
@@ -44,6 +45,8 @@ interface TranspileResult {
   diagnostics?: ElementDiagnostic[];
   /** For each element, the lines of `source` written for it (LNG-004). */
   sourceMap?: SourceMapRange[];
+  /** Where the state of each element is read online: the variable that holds it, or the power that reaches it (LNG-006). */
+  monitor?: MonitorEntry[];
 }
 
 type UnknownRecord = Record<string, unknown>;
@@ -540,119 +543,6 @@ function validateBranches(rung: UnknownRecord, errors: Problems): void {
 }
 
 // =============================================================================
-// Power flow
-// =============================================================================
-
-interface WalkHooks<T> {
-  /** The power at the left rail. */
-  rail: T;
-  /** The power that leaves a branch, from the power of each of its rows. */
-  join(values: T[]): T;
-  /** An element on a row that has power: returns the power that leaves it. */
-  element(element: LDElement, row: number, col: number, power: T): T;
-  /** Something that no power reaches (an element after its branch ended, a branch off a dead row), and its cell when it is one. */
-  unpowered(what: string, row?: number, col?: number): void;
-}
-
-/**
- * Follows the power through a rung column by column, left to right, top to bottom in a column.
- * A branch splits the power of its source row (its first row) into all its rows at its first column
- * and joins them back into the source row after its last column; the innermost branch joins first.
- * Returns the power at the right end of the main line.
- */
-function walkRung<T>(grid: LDCell[][], branches: LDBranch[], cols: number, hooks: WalkHooks<T>): T | undefined {
-  const power: Array<T | undefined> = grid.map(() => undefined);
-  power[0] = hooks.rail;
-  // The innermost branch joins first: depth is the number of parents above a branch
-  const depth = (branch: LDBranch): number => {
-    let found = 0;
-    for (let next = branch.parentBranchId; next !== undefined && found <= branches.length;) {
-      found++;
-      next = branches.find((candidate) => candidate.id === next)?.parentBranchId;
-    }
-    return found;
-  };
-  const byDepth = (a: LDBranch, b: LDBranch) => depth(a) - depth(b);
-  for (let col = 0; col < cols; col++) {
-    const starting = branches.filter((branch) => branch.startCol === col).sort(byDepth);
-    for (const branch of starting) {
-      const source = power[branch.rows[0]];
-      if (source === undefined) hooks.unpowered(`branch '${branch.id}' starts on row ${branch.rows[0]}, which no power reaches at column ${col}`);
-      for (const row of branch.rows.slice(1)) power[row] = source;
-    }
-    for (let row = 0; row < grid.length; row++) {
-      const element = grid[row]?.[col]?.element;
-      if (!element) continue;
-      const incoming = power[row];
-      if (incoming === undefined) {
-        hooks.unpowered(`element '${element.id}' (row ${row}, column ${col}) is on a path that no power reaches`, row, col);
-        continue;
-      }
-      power[row] = hooks.element(element, row, col, incoming);
-    }
-    const ending = branches.filter((branch) => branch.endCol === col).sort((a, b) => byDepth(b, a));
-    for (const branch of ending) {
-      const values = branch.rows.map((row) => power[row]).filter((value): value is T => value !== undefined);
-      for (const row of branch.rows.slice(1)) power[row] = undefined;
-      power[branch.rows[0]] = values.length > 0 ? hooks.join(values) : undefined;
-    }
-  }
-  return power[0];
-}
-
-// =============================================================================
-// Power expressions
-// =============================================================================
-
-/** A boolean power expression: AND of series elements, OR of parallel paths. */
-type Power =
-  | { kind: 'true' }
-  | { kind: 'atom'; text: string }
-  | { kind: 'and'; terms: Power[] }
-  | { kind: 'or'; terms: Power[] };
-
-const TRUE_POWER: Power = { kind: 'true' };
-const atom = (text: string): Power => ({ kind: 'atom', text });
-
-function and(...parts: Power[]): Power {
-  const terms: Power[] = [];
-  for (const part of parts) {
-    if (part.kind === 'true') continue;
-    if (part.kind === 'and') terms.push(...part.terms);
-    else terms.push(part);
-  }
-  if (terms.length === 0) return TRUE_POWER;
-  return terms.length === 1 ? terms[0] : { kind: 'and', terms };
-}
-
-function printPower(power: Power): string {
-  switch (power.kind) {
-    case 'true': return 'TRUE';
-    case 'atom': return power.text;
-    case 'and': return power.terms.map((term) => term.kind === 'or' ? `(${printPower(term)})` : printPower(term)).join(' AND ');
-    case 'or': return power.terms.map((term) => term.kind === 'and' ? `(${printPower(term)})` : printPower(term)).join(' OR ');
-  }
-}
-
-/** OR of parallel paths; the series elements that all of them share are taken out in front. */
-function or(values: Power[]): Power {
-  const terms: Power[] = [];
-  const printed = new Set<string>();
-  for (const value of values.flatMap((entry) => entry.kind === 'or' ? entry.terms : [entry])) {
-    const text = printPower(value);
-    if (!printed.has(text)) { printed.add(text); terms.push(value); }
-  }
-  if (terms.some((term) => term.kind === 'true')) return TRUE_POWER;
-  if (terms.length === 1) return terms[0];
-  const chains = terms.map((term) => term.kind === 'and' ? term.terms : [term]);
-  let shared = 0;
-  while (chains.every((chain) => shared < chain.length && printPower(chain[shared]) === printPower(chains[0][shared]))) shared++;
-  if (shared === 0) return { kind: 'or', terms };
-  const rests = chains.map((chain) => and(...chain.slice(shared)));
-  return and(...chains[0].slice(0, shared), or(rests));
-}
-
-// =============================================================================
 // Transpiler
 // =============================================================================
 
@@ -666,6 +556,7 @@ export function transpileLDToST(input: unknown, blocks: readonly ProjectBlock[] 
     const model = input as LDModel;
     // The rungs are generated first: the state they need is declared with the program's variables
     const rungCodes = model.rungs.map((rung, index) => generateRungCode(rung, rungKeyOf(rung as unknown as UnknownRecord, index)));
+    const monitor = rungCodes.flatMap((code) => code.monitor);
     // Generate program header
     lines.push(`PROGRAM ${model.name}`);
     lines.push('');
@@ -735,7 +626,7 @@ export function transpileLDToST(input: unknown, blocks: readonly ProjectBlock[] 
 
     lines.push('END_PROGRAM');
 
-    return { success: true, source: lines.toString(), errors: [], sourceMap: lines.sourceMap() };
+    return { success: true, source: lines.toString(), errors: [], sourceMap: lines.sourceMap(), monitor };
   } catch (e) {
     const message = `Transpiler error: ${e instanceof Error ? e.message : String(e)}`;
     return {
@@ -766,6 +657,8 @@ interface RungCode {
   /** State variables this rung needs: BOOL stages of the power flow, and the edge detectors. */
   stages: string[];
   edges: Array<{ name: string; type: 'R_TRIG' | 'F_TRIG' }>;
+  /** Where the state of each element of the rung is read online (LNG-006). */
+  monitor: MonitorEntry[];
 }
 
 function generateRungCode(rung: LDRung, rungKey: string): RungCode {
@@ -777,6 +670,7 @@ function generateRungCode(rung: LDRung, rungKey: string): RungCode {
   const lines = new Listing();
   const stages: string[] = [];
   const edges: RungCode['edges'] = [];
+  const monitor: MonitorEntry[] = [];
   /** The element whose statements are being written. */
   let current: SourceElementId = rungElement(rungKey);
 
@@ -829,11 +723,8 @@ function generateRungCode(rung: LDRung, rungKey: string): RungCode {
     return out ? atom(`${fb.instance}.${out}`) : flow ? atom(flow) : power;
   };
 
-  const output = walkRung(grid, gridRung.branches ?? [], cols, {
-    rail: TRUE_POWER,
-    join: or,
-    unpowered: (what, row, col) => { throw new ElementError(`Rung '${rung.id}' ${what}`, row === undefined || col === undefined ? rungElement(rungKey) : cellElement(rungKey, row, col)); },
-    element: (element, row, col, power) => {
+  /** The statements of one element of the rung, and the power that leaves it. */
+  const emit = (element: LDElement, row: number, col: number, power: Power): Power => {
       current = cellElement(rungKey, row, col);
       switch (element.type) {
         case 'contact_no':
@@ -866,6 +757,27 @@ function generateRungCode(rung: LDRung, rungKey: string): RungCode {
         default:
           throw new ElementError(`Rung '${rung.id}' element '${element.id}' has the unsupported type '${element.type}'`, current);
       }
+  };
+
+  const output = walkRung(grid, gridRung.branches ?? [], cols, {
+    rail: TRUE_POWER,
+    join: or,
+    unpowered: (what, row, col) => { throw new ElementError(`Rung '${rung.id}' ${what}`, row === undefined || col === undefined ? rungElement(rungKey) : cellElement(rungKey, row, col)); },
+    element: (element, row, col, power) => {
+      const out = emit(element, row, col, power);
+      const at = cellElement(rungKey, row, col);
+      // the power that reaches the element and the power that leaves it, and the variables whose state it shows (LNG-006)
+      monitor.push({ element: at, role: 'power', in: powerExpr(power), out: powerExpr(out) });
+      if (element.type === 'function_block') {
+        if (element.instance) {
+          for (const port of getDefaultPorts(String(element.fbType), projectBlocks.filter((block) => block.name === element.fbType)).outputs) {
+            monitor.push({ element: at, role: 'output', port: port.name, variable: `${element.instance}.${port.name}` });
+          }
+        }
+      } else if (element.variable) {
+        monitor.push({ element: at, role: 'value', variable: element.variable });
+      }
+      return out;
     },
   });
 
@@ -874,7 +786,7 @@ function generateRungCode(rung: LDRung, rungKey: string): RungCode {
     stages.push(`_rung${rung.number}_result`);
     lines.push(`_rung${rung.number}_result := ${printPower(output ?? TRUE_POWER)};`, rungElement(rungKey));
   }
-  return { lines, stages, edges };
+  return { lines, stages, edges, monitor };
 }
 
 function defaultPowerInput(fbType: string): string | undefined {

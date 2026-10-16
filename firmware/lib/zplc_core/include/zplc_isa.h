@@ -51,7 +51,7 @@ extern "C" {
  *
  * Increases by one with every change of an opcode, layout, size or code until the contract freeze. The compiler writes it in header word 28 of every artifact and the loader refuses an artifact whose counter differs from this value (ZPLC_LOADER_ERR_DRAFT). 0 is what an artifact built before the counter carries and is never accepted.
  */
-#define ZPLC_DRAFT_COUNTER 4U
+#define ZPLC_DRAFT_COUNTER 6U
 /* <<< END GENERATED: version <<< */
 
 /* ============================================================================
@@ -606,7 +606,8 @@ typedef enum {
   ZPLC_SEG_DEBUG = 0x11, /**< Debug information */
   ZPLC_SEG_TASK = 0x20, /**< Task definitions */
   ZPLC_SEG_TAGS = 0x30, /**< Variable tags (networking metadata) */
-  ZPLC_SEG_BUILD = 0x40 /**< Build identity of the artifact (CMP-056) */
+  ZPLC_SEG_BUILD = 0x40, /**< Build identity of the artifact (CMP-056) */
+  ZPLC_SEG_SAFE = 0x41 /**< Declared safe values of digital outputs (RT-023) */
 } zplc_segment_type_t;
 
 /** @brief Task definition (16 bytes). */
@@ -657,6 +658,26 @@ typedef struct ZPLC_PACKED {
 /* Layout check generated from the contract: dividing by zero in an enumerator breaks the build. */
 enum { zplc_assert_sizeof_build = 1 / (sizeof(zplc_build_info_t) == 4U) };
 enum { zplc_assert_offsetof_build_build_id = 1 / (offsetof(zplc_build_info_t, build_id) == 0U) };
+
+/**
+ * @brief Declared safe value of one digital output, an entry of the SAFE segment (4 bytes) (RT-023).
+ *
+ * The safe state of an output is off unless the project declares another value for it. The declaration travels in the artifact, so a program and its safe state are one unit: a device that restores the program restores its declaration, and an interrupted deploy cannot leave the program of one build with the safe values of another.
+ */
+typedef struct ZPLC_PACKED {
+  uint16_t offset; /**< Byte offset of the output in the output image */
+  uint8_t bit; /**< Bit of the byte, 0 to 7 */
+  uint8_t value; /**< The output's value in the safe state: 0 or 1 */
+} zplc_safe_entry_t;
+
+/** @brief Expected size of a safe-state entry */
+#define ZPLC_SAFE_ENTRY_SIZE 4
+
+/* Layout check generated from the contract: dividing by zero in an enumerator breaks the build. */
+enum { zplc_assert_sizeof_safe = 1 / (sizeof(zplc_safe_entry_t) == 4U) };
+enum { zplc_assert_offsetof_safe_offset = 1 / (offsetof(zplc_safe_entry_t, offset) == 0U) };
+enum { zplc_assert_offsetof_safe_bit = 1 / (offsetof(zplc_safe_entry_t, bit) == 2U) };
+enum { zplc_assert_offsetof_safe_value = 1 / (offsetof(zplc_safe_entry_t, value) == 3U) };
 
 /** @brief I/O map entry (8 bytes). */
 typedef struct ZPLC_PACKED {

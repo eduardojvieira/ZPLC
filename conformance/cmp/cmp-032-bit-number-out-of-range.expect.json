@@ -5,6 +5,9 @@
   "lines": [
     6
   ],
+  "codes": [
+    "INVALID_BIT_ACCESS"
+  ],
   "messageIncludes": [
     "Bit 8 is out of range for BYTE"
   ]

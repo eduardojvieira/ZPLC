@@ -17,12 +17,15 @@
 #include <zplc_comm_dispatch.h>
 #include <zplc_core.h>
 #include <zplc_debug.h>
+#include <zplc_failsafe.h>
 #include <zplc_hal.h>
 #include <zplc_hal_posix.h>
 #include <zplc_isa.h>
 #include <zplc_loader.h>
 #include <zplc_retain.h>
+#include <zplc_sched_core.h>
 #include <zplc_scheduler.h>
+#include <zplc_single_task.h>
 
 #define ZPLC_TEST_HOOK(name) typedef int name;
 #include "zplc_test_hook_names.def"

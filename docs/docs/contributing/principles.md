@@ -67,7 +67,7 @@ generic shell and no generic filesystem access.
 Host, QEMU, target build, bench (hardware-in-the-loop) and manual results are
 different levels, and a lower level never proves a higher one. Say which level
 backs each claim in documentation, in a commit message and in a pull request.
-See [Capabilities and evidence tiers](../reference/capabilities-evidence.md).
+See [Hardware support](../reference/capabilities-evidence.md).
 
 ### 8. English and Spanish stay in step, and a dependency needs a reason
 

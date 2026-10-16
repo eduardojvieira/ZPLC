@@ -23,8 +23,10 @@ import type {
     VarDecl,
 } from './ast.ts';
 import type { SourceSpan } from './diagnostics.ts';
+import type { ErrorCode } from './error-codes.ts';
 
 export interface AliasIssue extends SourceSpan {
+    code: ErrorCode;
     message: string;
 }
 
@@ -70,7 +72,7 @@ export function resolveTypeNames(unit: CompilationUnit): AliasIssue[] {
     for (const alias of aliases) {
         const key = alias.name.toUpperCase();
         if (byName.has(key) || otherTypes.has(key)) {
-            issues.push({ message: `The type name '${alias.name}' is already declared`, line: alias.line, column: alias.column });
+            issues.push({ code: 'DUPLICATE_DECLARATION', message: `The type name '${alias.name}' is already declared`, line: alias.line, column: alias.column });
             continue;
         }
         byName.set(key, alias);
@@ -97,7 +99,7 @@ export function resolveTypeNames(unit: CompilationUnit): AliasIssue[] {
         if (isArrayType(type)) {
             const element = resolveType(type.elementType, at);
             if (typeof element !== 'string') {
-                issues.push({ message: `An array of '${type.elementType}' is an array of arrays; declare one ARRAY with several dimensions`, line: at.line, column: at.column });
+                issues.push({ code: 'UNSUPPORTED_CONSTRUCT', message: `An array of '${type.elementType}' is an array of arrays; declare one ARRAY with several dimensions`, line: at.line, column: at.column });
                 return type;
             }
             return element === type.elementType ? type : { ...type, elementType: element as typeof type.elementType };
@@ -112,7 +114,7 @@ export function resolveTypeNames(unit: CompilationUnit): AliasIssue[] {
     const resolveAlias = (key: string, alias: AliasDecl): ResolvedAlias | null => {
         if (resolved.has(key)) return resolved.get(key)!;
         if (resolving.has(key)) {
-            issues.push({ message: `The type alias '${alias.name}' refers to itself`, line: alias.line, column: alias.column });
+            issues.push({ code: 'CIRCULAR_TYPE_ALIAS', message: `The type alias '${alias.name}' refers to itself`, line: alias.line, column: alias.column });
             return null;
         }
         resolving.add(key);

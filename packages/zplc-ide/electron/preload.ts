@@ -26,10 +26,12 @@ import {
   PROJECT_FILES_CHANNEL,
   PROJECT_FILES_EVENT,
   RECOVERY_CHANNEL,
+  PORT_CHOICE_CHANNEL,
   SESSION_CHANNEL,
   TOOLCHAIN_CHANNEL,
   TOOL_EXECUTION_AUDIT_CHANNEL,
   UPDATE_CHECK_CHANNEL,
+  FIRMWARE_IMAGES_CHANNEL,
   WORKSPACE_TESTS_CHANNEL,
 } from './ipcContract.js';
 
@@ -135,6 +137,17 @@ contextBridge.exposeInMainWorld('electronAPI', {
     load: (request: unknown) => ipcRenderer.invoke(SESSION_CHANNEL.LOAD, request) as Promise<unknown>,
     save: (request: unknown) => ipcRenderer.invoke(SESSION_CHANNEL.SAVE, request) as Promise<unknown>,
   },
+  // The serial port (IDE-018): the main process offers the ports the system lists, the window answers with one of them or
+  // a cancel. What crosses is an opaque port id and numbers and text to show, never a path.
+  portChoice: {
+    choose: (choice: { requestId: string; portId: string | null }) => ipcRenderer.invoke(PORT_CHOICE_CHANNEL.CHOOSE, choice) as Promise<unknown>,
+    list: (request: { requestId: string }) => ipcRenderer.invoke(PORT_CHOICE_CHANNEL.LIST, request) as Promise<unknown>,
+    onRequested: (callback: (offer: unknown) => void) => {
+      const listener = (_event: Electron.IpcRendererEvent, offer: unknown) => { callback(offer); };
+      ipcRenderer.on(PORT_CHOICE_CHANNEL.REQUESTED, listener);
+      return () => { ipcRenderer.removeListener(PORT_CHOICE_CHANNEL.REQUESTED, listener); };
+    },
+  },
   // Recovery of modified files (IDE-006): the folder is named by the opaque id that projectFiles gave out; what crosses
   // is a relative path and the text of one file. The main process validates it and keeps it under the user-data directory.
   recovery: {
@@ -145,6 +158,11 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // Update check (IDE-010): one call with no argument; the main process asks one fixed address and answers a version and a link.
   updateCheck: {
     run: () => ipcRenderer.invoke(UPDATE_CHECK_CHANNEL.RUN) as Promise<unknown>,
+  },
+  // Firmware images (REL-025): one call with no argument; the main process lists the manifest of this installation and
+  // the files beside it. Nothing here flashes: the answer is data that Studio shows.
+  firmwareImages: {
+    list: () => ipcRenderer.invoke(FIRMWARE_IMAGES_CHANNEL.LIST) as Promise<unknown>,
   },
   // Learn progress (LRN-031, LRN-032): ids, one grade record, one lesson note, or the text of a file the learner chose. The
   // main process keeps the document under the user-data directory; results are documents the renderer validates again.
@@ -235,6 +253,11 @@ declare global {
         setDirty: (dirty: boolean) => Promise<void>;
         closeNow: () => Promise<void>;
         onCloseRequested: (callback: (action: GuardedAction) => void) => () => void;
+      };
+      portChoice: {
+        choose: (choice: { requestId: string; portId: string | null }) => Promise<unknown>;
+        list: (request: { requestId: string }) => Promise<unknown>;
+        onRequested: (callback: (offer: unknown) => void) => () => void;
       };
       candidateChangeSet: {
         review: (request: { workspaceId: string; edit: { path: string; content: string } }) => Promise<unknown>;

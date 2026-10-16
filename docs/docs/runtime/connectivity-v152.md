@@ -1,5 +1,6 @@
 ---
-unlisted: true
+draft: true
+draft_reason: "A planning snapshot of March 2026, not a description of the product: its status column (In Progress, Partial) is a point in time, it names Kconfig symbols (ZPLC_MODBUS_RTU_CLIENT, ZPLC_MODBUS_TCP_CLIENT) that do not exist, and the communication handshake and block set it plans were rewritten since. The published pages are the how-to guides (Modbus, MQTT and Sparkplug B, cloud blocks), the connectivity page, the communication function blocks page and the generated Kconfig and function-block references."
 ---
 
 # Connectivity v1_5_2 — Implementation Spec
@@ -513,23 +514,28 @@ Azure Event Grid's MQTT broker (GA since 2024) uses standard MQTT 5.0 with:
 
 #### CloudEvents publish helper
 
+The CloudEvent is built and published by the MQTT client thread, on the request of
+the `AZURE_EG_PUB` block (`zplc_mqtt_fb_event_grid`, `firmware/app/include/zplc_mqtt_fb.h`):
+the scan queues one request and polls its result, and never touches the client.
+
 ```c
 /**
- * @brief Publish a CloudEvent to Azure Event Grid MQTT broker.
+ * @brief Queue one CloudEvent for the MQTT client thread to publish.
  *
- * Encodes payload as a JSON CloudEvent envelope and publishes with
- * MQTT 5.0 User Properties for CE attributes.
+ * The client encodes the data as a JSON CloudEvent envelope and publishes it
+ * with MQTT 5.0 User Properties for the CE attributes. The source attribute
+ * is the configured one.
  *
+ * @param owner      the block making the request (the key of its slot)
  * @param event_type CE type attribute (e.g. "com.zplc.telemetry.v1")
- * @param source     CE source attribute (e.g. "/devices/{deviceId}")
  * @param topic      MQTT topic to publish to
  * @param data       JSON payload string (will be embedded as "data" field)
- * @return 0 on success, negative on error.
+ * @return ZPLC_COMM_HANDLER_PENDING when queued, or a failure code
+ *         (not connected, queue full, string overflow, not available);
+ *         zplc_mqtt_fb_poll() gives the result.
  */
-int zplc_azure_event_grid_publish(const char *event_type,
-                                  const char *source,
-                                  const char *topic,
-                                  const char *data);
+int zplc_mqtt_fb_event_grid(const void *owner, const char *event_type,
+                            const char *topic, const char *data);
 ```
 
 #### Config fields (new)

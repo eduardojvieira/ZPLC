@@ -4,10 +4,10 @@ import { copyFile, lstat, mkdir, readFile, readdir, stat, writeFile } from 'node
 import { basename, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-// Installers, the bill of materials and the firmware images (REL-022, `zplc-runtime-<version>-<board>.<ext>`) are
-// recognised by their extension; the standalone CLI and MCP executables (REL-026) have none on Linux and macOS, so
+// Installers, the bill of materials and the firmware images (REL-022, `zplc-runtime-<version>-<board>.<ext>` and the
+// `zplc-runtime-<version>.manifest.json` that lists them) are recognised by their extension; the standalone CLI and MCP executables (REL-026) have none on Linux and macOS, so
 // they are recognised by the whole scheme `<tool>-<version>-<os>-<arch>[.exe]` of scripts/release/binaries.ts.
-const ASSET_EXTENSIONS = ['.dmg', '.zip', '.exe', '.AppImage', '.deb', '.rpm', '.spdx.json', '.cdx.json', '.uf2', '.bin', '.elf'];
+const ASSET_EXTENSIONS = ['.dmg', '.zip', '.exe', '.AppImage', '.deb', '.rpm', '.spdx.json', '.cdx.json', '.manifest.json', '.uf2', '.bin', '.elf'];
 const EXECUTABLE_NAME = /^zplc-(?:cli|mcp)-(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)(?:-[0-9A-Za-z.-]+)?-(?:linux|mac|win)-(?:x64|arm64)(?:\.exe)?$/;
 const SEMVER = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|[0-9A-Za-z-]*[A-Za-z-][0-9A-Za-z-]*)(?:\.(?:0|[1-9]\d*|[0-9A-Za-z-]*[A-Za-z-][0-9A-Za-z-]*))*))?$/;
 const COMMIT_SHA = /^[a-f0-9]{40}$/;

@@ -179,10 +179,13 @@ class Rc3CrossBuildGuardTests(unittest.TestCase):
         aws_fleet = (ROOT / "firmware/app/src/zplc_aws_fleet.c").read_text()
         mqtt = (ROOT / "firmware/app/src/zplc_mqtt.c").read_text()
 
-        self.assertIn(
-            "#if ZPLC_HAS_MODBUS_RTU\nstatic enum uart_config_parity zplc_modbus_parity_to_uart",
-            modbus_client,
-        )
+        # The parity helper must never be an unused static function (-Werror): either it sits under the RTU
+        # guard, or the always-compiled interface parameters (`zplc_modbus_rtu_client_params`, COM-012) call it.
+        helper = "static enum uart_config_parity zplc_modbus_parity_to_uart"
+        self.assertIn(helper, modbus_client)
+        guarded = "#if ZPLC_HAS_MODBUS_RTU\n" + helper in modbus_client
+        called = "zplc_modbus_parity_to_uart(zplc_config_get_modbus_rtu_parity())" in modbus_client
+        self.assertTrue(guarded or called)
         self.assertIn(
             "#ifndef CONFIG_ZPLC_SCHEDULER\nstatic const char *state_name", shell
         )
@@ -226,8 +229,17 @@ class Rc3CrossBuildGuardTests(unittest.TestCase):
             re.compile(
                 r"#if defined\(CONFIG_NET_SOCKETS\)\s*"
                 r"static struct k_thread s_tcp_client_thread;\s*"
-                r"static K_THREAD_STACK_DEFINE\(s_tcp_client_stack, 3072\);\s*"
-                r"static uint16_t s_tcp_transaction_id;\s*#endif",
+                r"static K_THREAD_STACK_DEFINE\(s_tcp_client_stack, 3072\);\s*#endif",
+                re.DOTALL,
+            ),
+        )
+        # The TCP transaction code is one file shared by the controller and the host runtime (COM-006), and
+        # it is only compiled where sockets exist.
+        self.assertRegex(
+            modbus_client,
+            re.compile(
+                r"#if defined\(CONFIG_NET_SOCKETS\)\s*"
+                r"#include \"zplc_modbus_tcp_client\.inc\"\s*#endif",
                 re.DOTALL,
             ),
         )

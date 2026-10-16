@@ -81,8 +81,8 @@ const landingPageContent = {
     },
     hardwareSection: {
       label: 'BOARDS',
-      title: 'Six board profiles',
-      subtitle: 'All six cross-build in CI. None has been tested on hardware yet.',
+      title: 'Seven board profiles',
+      subtitle: 'All seven cross-build in CI. None has been tested on hardware yet.',
       boards: [
         { value: 'RP2040', label: 'Raspberry Pi Pico' },
         { value: 'STM32H747', label: 'Arduino GIGA R1' },
@@ -90,6 +90,7 @@ const landingPageContent = {
         { value: 'STM32F746', label: 'STM32F746G Discovery' },
         { value: 'STM32H743', label: 'Nucleo-H743ZI' },
         { value: 'STM32H747', label: 'Arduino Opta WiFi' },
+        { value: 'RP2040', label: 'Waveshare RP2040-Zero' },
       ],
       architectures: 'Evidence level for every board: cross-build',
     },
@@ -233,8 +234,8 @@ const landingPageContent = {
     },
     hardwareSection: {
       label: 'PLACAS',
-      title: 'Seis perfiles de placa',
-      subtitle: 'Las seis se compilan en CI. Ninguna se ha probado todavía con hardware.',
+      title: 'Siete perfiles de placa',
+      subtitle: 'Las siete se compilan en CI. Ninguna se ha probado todavía con hardware.',
       boards: [
         { value: 'RP2040', label: 'Raspberry Pi Pico' },
         { value: 'STM32H747', label: 'Arduino GIGA R1' },
@@ -242,6 +243,7 @@ const landingPageContent = {
         { value: 'STM32F746', label: 'STM32F746G Discovery' },
         { value: 'STM32H743', label: 'Nucleo-H743ZI' },
         { value: 'STM32H747', label: 'Arduino Opta WiFi' },
+        { value: 'RP2040', label: 'Waveshare RP2040-Zero' },
       ],
       architectures: 'Nivel de evidencia de todas las placas: cross-build',
     },

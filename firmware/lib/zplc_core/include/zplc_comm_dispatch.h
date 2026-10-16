@@ -46,6 +46,7 @@ typedef enum {
   ZPLC_COMM_STRING_OVERFLOW = 7,
   ZPLC_COMM_PROTO_ERROR = 8,
   ZPLC_COMM_AUTH_FAILED = 9,
+  ZPLC_COMM_UNAVAILABLE = 10,
   ZPLC_COMM_UNKNOWN = 0xFF
 } zplc_comm_status_t;
 /* <<< END GENERATED: comm-status <<< */
@@ -59,7 +60,37 @@ typedef enum {
 #define ZPLC_COMM_FB_HANDSHAKE_SIZE 8U
 
 /**
+ * @brief Why a handler is called (COM-002).
+ *
+ * START and POLL are the two calls of a block that is enabled; RESET releases
+ * the instance. The values keep a caller that still passes `true` for "reset"
+ * a reset.
+ */
+typedef enum {
+  /** EN is TRUE and the block is idle: begin one operation. Once per rising EN. */
+  ZPLC_COMM_CALL_START = 0,
+  /** COMM_RESET, or EN fell on a block that reports a state: let go of what is held for this instance. */
+  ZPLC_COMM_CALL_RESET = 1,
+  /** The operation is in flight (BUSY), or the block reports a state (a service block, every scan). */
+  ZPLC_COMM_CALL_POLL = 2
+} zplc_comm_call_t;
+
+/**
+ * Results of a handler call. A handler never writes EN, BUSY, DONE, ERROR or STATUS: it returns one of these and
+ * the dispatcher publishes it. It writes only the outputs of its own block (VALUE, PAYLOAD, ASSIGNED_HUB...).
+ */
+/** The operation finished successfully: BUSY 0, DONE 1, STATUS 0. */
+#define ZPLC_COMM_HANDLER_DONE 0
+/** The operation is in flight: BUSY 1, STATUS ZPLC_COMM_BUSY; the handler is called again on the next scan. */
+#define ZPLC_COMM_HANDLER_PENDING 1
+/** The operation failed with a zplc_comm_status_t code: BUSY 0, ERROR 1, STATUS the code. Any other negative value is UNKNOWN. */
+#define ZPLC_COMM_HANDLER_FAIL(status) (-(int)(status))
+
+/**
  * @brief Comm FB handler function type.
+ *
+ * Every call returns within a bounded time (COM-003): a handler takes a lock held for a few instructions and hands
+ * anything that waits for a peer, a socket or a flash to a worker it does not wait for.
  *
  * @param kind   The function-block kind
  * @param fb_mem The block, fb_len bytes; the handler must not read or write
@@ -67,11 +98,12 @@ typedef enum {
  *               from the block against fb_len (COM-001)
  * @param fb_len Length of the block in bytes: the size of the kind from the
  *               table, or ZPLC_COMM_FB_HANDSHAKE_SIZE for a kind without layout
- * @param reset  true to reset the instance, false to execute it
- * @return 0 on success, negative on error
+ * @param call   Why the handler is called (zplc_comm_call_t)
+ * @return ZPLC_COMM_HANDLER_DONE, ZPLC_COMM_HANDLER_PENDING or
+ *         ZPLC_COMM_HANDLER_FAIL(status); the result of a RESET call is ignored
  */
 typedef int (*zplc_comm_handler_t)(zplc_comm_fb_kind_t kind, uint8_t *fb_mem,
-                                   uint16_t fb_len, bool reset);
+                                   uint16_t fb_len, zplc_comm_call_t call);
 
 /* >>> GENERATED (tools/contract/generate.py): comm-blocks. Do not edit. >>> */
 /**
@@ -89,11 +121,14 @@ typedef int (*zplc_comm_handler_t)(zplc_comm_fb_kind_t kind, uint8_t *fb_mem,
   X(MQTT_CONNECT, 0x000A, 12) \
   X(MQTT_PUBLISH, 0x000B, 190) \
   X(MQTT_SUBSCRIBE, 0x000C, 190) \
-  X(AZURE_C2D_RECV, 0x0020, 94) \
-  X(AZURE_DPS_PROV, 0x0021, 201) \
-  X(AZURE_EG_PUB, 0x0022, 266) \
-  X(AWS_FLEET_PROV, 0x0030, 137) \
-  X(SPB_REBIRTH, 0x0040, 8)
+  X(AZURE_C2D_RECV, 0x0020, 95) \
+  X(AZURE_DPS_PROV, 0x0021, 179) \
+  X(AZURE_EG_PUB, 0x0022, 264) \
+  X(AWS_FLEET_PROV, 0x0030, 179) \
+  X(SPB_REBIRTH, 0x0040, 9)
+
+/** @brief Bytes at the end of every block that has a layout. They belong to the dispatcher, which keeps there the value EN had on the previous call to tell a rising edge from an EN that stays TRUE (COM-004). No member covers them and a program does not name them; a kind without a layout has none. */
+#define ZPLC_COMM_FB_TAIL_BYTES 1U
 
 /**
  * @brief Members of every function block, as an X-macro.
@@ -188,22 +223,22 @@ typedef int (*zplc_comm_handler_t)(zplc_comm_fb_kind_t kind, uint8_t *fb_mem,
   X(AZURE_DPS_PROV, ERROR, 3, 1) \
   X(AZURE_DPS_PROV, STATUS, 4, 4) \
   X(AZURE_DPS_PROV, DEVICE_ID, 8, 85) \
-  X(AZURE_DPS_PROV, ASSIGNED_HUB, 73, 85) \
+  X(AZURE_DPS_PROV, ASSIGNED_HUB, 93, 85) \
   X(AZURE_EG_PUB, EN, 0, 1) \
   X(AZURE_EG_PUB, BUSY, 1, 1) \
   X(AZURE_EG_PUB, DONE, 2, 1) \
   X(AZURE_EG_PUB, ERROR, 3, 1) \
   X(AZURE_EG_PUB, STATUS, 4, 4) \
   X(AZURE_EG_PUB, TOPIC, 8, 85) \
-  X(AZURE_EG_PUB, EVENT_TYPE, 73, 85) \
-  X(AZURE_EG_PUB, PAYLOAD, 138, 85) \
+  X(AZURE_EG_PUB, EVENT_TYPE, 93, 85) \
+  X(AZURE_EG_PUB, PAYLOAD, 178, 85) \
   X(AWS_FLEET_PROV, EN, 0, 1) \
   X(AWS_FLEET_PROV, BUSY, 1, 1) \
   X(AWS_FLEET_PROV, DONE, 2, 1) \
   X(AWS_FLEET_PROV, ERROR, 3, 1) \
   X(AWS_FLEET_PROV, STATUS, 4, 4) \
   X(AWS_FLEET_PROV, TEMPLATE_NAME, 8, 85) \
-  X(AWS_FLEET_PROV, THING_NAME, 73, 85) \
+  X(AWS_FLEET_PROV, THING_NAME, 93, 85) \
   X(SPB_REBIRTH, EN, 0, 1) \
   X(SPB_REBIRTH, BUSY, 1, 1) \
   X(SPB_REBIRTH, DONE, 2, 1) \
@@ -234,15 +269,15 @@ static inline uint16_t zplc_comm_fb_size(uint32_t kind) {
   case ZPLC_COMM_FB_MQTT_SUBSCRIBE:
     return 190U;
   case ZPLC_COMM_FB_AZURE_C2D_RECV:
-    return 94U;
+    return 95U;
   case ZPLC_COMM_FB_AZURE_DPS_PROV:
-    return 201U;
+    return 179U;
   case ZPLC_COMM_FB_AZURE_EG_PUB:
-    return 266U;
+    return 264U;
   case ZPLC_COMM_FB_AWS_FLEET_PROV:
-    return 137U;
+    return 179U;
   case ZPLC_COMM_FB_SPB_REBIRTH:
-    return 8U;
+    return 9U;
   default:
     return 0U;
   }
@@ -332,7 +367,7 @@ enum {
   ZPLC_COMM_MQTT_SUBSCRIBE_VALID_OFFSET = 9,
   ZPLC_COMM_MQTT_SUBSCRIBE_TOPIC_OFFSET = 12,
   ZPLC_COMM_MQTT_SUBSCRIBE_PAYLOAD_OFFSET = 97,
-  ZPLC_COMM_AZURE_C2D_RECV_SIZE = 94,
+  ZPLC_COMM_AZURE_C2D_RECV_SIZE = 95,
   ZPLC_COMM_AZURE_C2D_RECV_EN_OFFSET = 0,
   ZPLC_COMM_AZURE_C2D_RECV_BUSY_OFFSET = 1,
   ZPLC_COMM_AZURE_C2D_RECV_DONE_OFFSET = 2,
@@ -340,32 +375,32 @@ enum {
   ZPLC_COMM_AZURE_C2D_RECV_STATUS_OFFSET = 4,
   ZPLC_COMM_AZURE_C2D_RECV_PAYLOAD_OFFSET = 8,
   ZPLC_COMM_AZURE_C2D_RECV_VALID_OFFSET = 93,
-  ZPLC_COMM_AZURE_DPS_PROV_SIZE = 201,
+  ZPLC_COMM_AZURE_DPS_PROV_SIZE = 179,
   ZPLC_COMM_AZURE_DPS_PROV_EN_OFFSET = 0,
   ZPLC_COMM_AZURE_DPS_PROV_BUSY_OFFSET = 1,
   ZPLC_COMM_AZURE_DPS_PROV_DONE_OFFSET = 2,
   ZPLC_COMM_AZURE_DPS_PROV_ERROR_OFFSET = 3,
   ZPLC_COMM_AZURE_DPS_PROV_STATUS_OFFSET = 4,
   ZPLC_COMM_AZURE_DPS_PROV_DEVICE_ID_OFFSET = 8,
-  ZPLC_COMM_AZURE_DPS_PROV_ASSIGNED_HUB_OFFSET = 73,
-  ZPLC_COMM_AZURE_EG_PUB_SIZE = 266,
+  ZPLC_COMM_AZURE_DPS_PROV_ASSIGNED_HUB_OFFSET = 93,
+  ZPLC_COMM_AZURE_EG_PUB_SIZE = 264,
   ZPLC_COMM_AZURE_EG_PUB_EN_OFFSET = 0,
   ZPLC_COMM_AZURE_EG_PUB_BUSY_OFFSET = 1,
   ZPLC_COMM_AZURE_EG_PUB_DONE_OFFSET = 2,
   ZPLC_COMM_AZURE_EG_PUB_ERROR_OFFSET = 3,
   ZPLC_COMM_AZURE_EG_PUB_STATUS_OFFSET = 4,
   ZPLC_COMM_AZURE_EG_PUB_TOPIC_OFFSET = 8,
-  ZPLC_COMM_AZURE_EG_PUB_EVENT_TYPE_OFFSET = 73,
-  ZPLC_COMM_AZURE_EG_PUB_PAYLOAD_OFFSET = 138,
-  ZPLC_COMM_AWS_FLEET_PROV_SIZE = 137,
+  ZPLC_COMM_AZURE_EG_PUB_EVENT_TYPE_OFFSET = 93,
+  ZPLC_COMM_AZURE_EG_PUB_PAYLOAD_OFFSET = 178,
+  ZPLC_COMM_AWS_FLEET_PROV_SIZE = 179,
   ZPLC_COMM_AWS_FLEET_PROV_EN_OFFSET = 0,
   ZPLC_COMM_AWS_FLEET_PROV_BUSY_OFFSET = 1,
   ZPLC_COMM_AWS_FLEET_PROV_DONE_OFFSET = 2,
   ZPLC_COMM_AWS_FLEET_PROV_ERROR_OFFSET = 3,
   ZPLC_COMM_AWS_FLEET_PROV_STATUS_OFFSET = 4,
   ZPLC_COMM_AWS_FLEET_PROV_TEMPLATE_NAME_OFFSET = 8,
-  ZPLC_COMM_AWS_FLEET_PROV_THING_NAME_OFFSET = 73,
-  ZPLC_COMM_SPB_REBIRTH_SIZE = 8,
+  ZPLC_COMM_AWS_FLEET_PROV_THING_NAME_OFFSET = 93,
+  ZPLC_COMM_SPB_REBIRTH_SIZE = 9,
   ZPLC_COMM_SPB_REBIRTH_EN_OFFSET = 0,
   ZPLC_COMM_SPB_REBIRTH_BUSY_OFFSET = 1,
   ZPLC_COMM_SPB_REBIRTH_DONE_OFFSET = 2,
@@ -385,7 +420,45 @@ int zplc_comm_register_handler(zplc_comm_fb_kind_t kind,
                                zplc_comm_handler_t fn);
 
 /**
+ * @brief True for the blocks that report a state that can change on any scan: MQTT_CONNECT, MQTT_SUBSCRIBE and
+ *        AZURE_C2D_RECV. Their handler is called on every scan while EN is TRUE; the others make one request
+ *        for each rising EN.
+ */
+int zplc_comm_fb_is_service(zplc_comm_fb_kind_t kind);
+
+/**
  * @brief Execute a communication FB instance (called by VM from OP_COMM_EXEC).
+ *
+ * The one handshake of the twelve blocks (COM-002, COM-004). The block is the only writer of BUSY, DONE, ERROR and
+ * STATUS; a handler returns its result and the dispatcher publishes it.
+ *
+ * A request block (the Modbus blocks, MQTT_PUBLISH, AZURE_DPS_PROV, AZURE_EG_PUB, AWS_FLEET_PROV, SPB_REBIRTH):
+ *
+ *   EN        0 0 1 1 1 1 1 1 1 1 0 0 1 1 1 1
+ *   BUSY      0 0 0 1 1 1 0 0 0 0 0 0 0 1 1 0       one operation, begun by the rising edge
+ *   DONE      0 0 0 0 0 0 1 1 1 1 0 0 0 0 0 1       the result, held while EN stays TRUE
+ *   ERROR     0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0       (a failed operation holds ERROR instead of DONE)
+ *   handler       . . S P P R . . . . . . S P R         S START, P POLL, R the result
+ *
+ * - EN is FALSE and the block idle: all three outputs are 0 and the handler is not called.
+ * - EN rises on an idle block (BUSY, DONE and ERROR all 0): START. A handler that finishes at once gives DONE or
+ *   ERROR in the same scan; one that returns PENDING gives BUSY, STATUS = ZPLC_COMM_BUSY.
+ * - BUSY: the handler is called on every scan, whatever EN does, until it returns a result. A trigger that is a
+ *   one-scan pulse still completes, and a rising EN while BUSY starts nothing.
+ * - The result is DONE (STATUS 0) or ERROR (STATUS a zplc_comm_status_t code). It is held while EN stays TRUE, and
+ *   the handler is not called: one rising edge causes exactly one operation. It is shown for one scan when EN had
+ *   already fallen.
+ * - EN FALSE with DONE or ERROR set: both are cleared. STATUS keeps the code of the last operation until the next
+ *   START or a COMM_RESET.
+ * - COMM_RESET (zplc_comm_fb_reset): EN, BUSY, DONE, ERROR and STATUS are 0 and the handler is called with RESET to
+ *   release what it holds; an operation still in flight completes unseen.
+ *
+ * A service block reports a state: the handler is called with POLL on every scan while EN is TRUE and its result is
+ * published as it is: PENDING is BUSY (it has not reached its state yet), DONE is DONE while the state holds, a
+ * failure is ERROR. When EN falls on a block that reports a state, the handler is called once with RESET and the
+ * outputs are cleared.
+ *
+ * A kind with no handler gives ERROR with STATUS ZPLC_COMM_NO_HANDLER (3).
  *
  * @param kind   The function-block kind
  * @param fb_mem The block; the caller has placed all of it in PLC memory

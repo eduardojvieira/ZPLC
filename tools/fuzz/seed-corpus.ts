@@ -63,6 +63,27 @@ export async function generate(): Promise<Map<string, Uint8Array>> {
       rmSync(root, { recursive: true, force: true });
     }
   }
+  // The SAFE segment (RT-023) is in no example project: a program that declares the safe value of its outputs.
+  const safe = mkdtempSync(join(tmpdir(), 'zplc-seed-safe-'));
+  try {
+    mkdirSync(join(safe, 'src'));
+    writeFileSync(join(safe, 'src', 'main.st'),
+      'PROGRAM Main\nVAR\n  relay AT %QX0.0 : BOOL;\n  valve AT %QX0.5 : BOOL;\n  lamp AT %QX1.7 : BOOL;\nEND_VAR\n  relay := TRUE;\n  valve := FALSE;\n  lamp := relay;\nEND_PROGRAM\n');
+    writeFileSync(join(safe, 'zplc.json'), JSON.stringify({
+      schemaVersion: 2, name: 'safe-declared', version: '1.0.0', target: { board: 'posix' },
+      io: { outputs: [
+        { name: 'relay', address: '%QX0.0', type: 'BOOL', safe: true },
+        { name: 'valve', address: '%QX0.5', type: 'BOOL', safe: false },
+        { name: 'lamp', address: '%QX1.7', type: 'BOOL', safe: true },
+      ] },
+      tasks: [{ name: 'MainTask', trigger: 'cyclic', interval_ms: 10, priority: 1, programs: ['main.st'] }],
+    }));
+    const result = await compilerCompile(safe);
+    if (result.ok && result.zplcFile) seeds.set('safe-declared-outputs.zplc', result.zplcFile);
+    else skipped.push('safe-declared-outputs');
+  } finally {
+    rmSync(safe, { recursive: true, force: true });
+  }
   if (skipped.length > 0) console.error(`seed-corpus: ${skipped.length} sources produced no artifact (templates, or sources the compiler rejects):\n  ${skipped.join('\n  ')}`);
   return seeds;
 }

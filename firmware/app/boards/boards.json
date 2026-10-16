@@ -18,7 +18,16 @@
     "network_class": "serial-focused",
     "network_interface": "none",
     "evidence_refs": [],
-    "docs_ref": "docs/docs/reference/index.md#supported-boards",
+    "watchdog": {
+      "enabled": false,
+      "reason": "No hardware record yet (HIL-010): the hardware watchdog stays off in this profile until the reset timing and the safe outputs are recorded on this board with it enabled (RT-020).",
+      "timeout_ms": 1000,
+      "max_timeout_ms": 8000,
+      "stop": "disarm",
+      "pause": "feed",
+      "fault": "expire"
+    },
+    "docs_ref": "docs/docs/reference/capabilities-evidence.md",
     "io": {
       "schema_version": 1,
       "channels": [
@@ -311,7 +320,16 @@
     "network_class": "serial-focused",
     "network_interface": "none",
     "evidence_refs": [],
-    "docs_ref": "docs/docs/reference/index.md#supported-boards",
+    "watchdog": {
+      "enabled": false,
+      "reason": "No hardware record yet (HIL-010): the hardware watchdog stays off in this profile until the reset timing and the safe outputs are recorded on this board with it enabled (RT-020).",
+      "timeout_ms": 1000,
+      "max_timeout_ms": 8000,
+      "stop": "disarm",
+      "pause": "feed",
+      "fault": "expire"
+    },
+    "docs_ref": "docs/docs/reference/capabilities-evidence.md",
     "io": {
       "schema_version": 1,
       "channels": [
@@ -394,7 +412,16 @@
     "network_class": "network-capable",
     "network_interface": "wifi",
     "evidence_refs": [],
-    "docs_ref": "docs/docs/reference/index.md#supported-boards",
+    "watchdog": {
+      "enabled": false,
+      "reason": "No hardware record yet (HIL-010): the hardware watchdog stays off in this profile until the reset timing and the safe outputs are recorded on this board with it enabled (RT-020).",
+      "timeout_ms": 1000,
+      "max_timeout_ms": 8000,
+      "stop": "disarm",
+      "pause": "feed",
+      "fault": "expire"
+    },
+    "docs_ref": "docs/docs/reference/capabilities-evidence.md",
     "io": {
       "schema_version": 1,
       "channels": [
@@ -585,7 +612,16 @@
     "network_class": "network-capable",
     "network_interface": "ethernet",
     "evidence_refs": [],
-    "docs_ref": "docs/docs/reference/index.md#supported-boards",
+    "watchdog": {
+      "enabled": false,
+      "reason": "No hardware record yet (HIL-010): the hardware watchdog stays off in this profile until the reset timing and the safe outputs are recorded on this board with it enabled (RT-020).",
+      "timeout_ms": 1000,
+      "max_timeout_ms": 8000,
+      "stop": "disarm",
+      "pause": "feed",
+      "fault": "expire"
+    },
+    "docs_ref": "docs/docs/reference/capabilities-evidence.md",
     "io": {
       "schema_version": 1,
       "channels": [
@@ -643,7 +679,16 @@
     "network_class": "network-capable",
     "network_interface": "ethernet",
     "evidence_refs": [],
-    "docs_ref": "docs/docs/reference/index.md#supported-boards",
+    "watchdog": {
+      "enabled": false,
+      "reason": "No hardware record yet (HIL-010): the hardware watchdog stays off in this profile until the reset timing and the safe outputs are recorded on this board with it enabled (RT-020).",
+      "timeout_ms": 1000,
+      "max_timeout_ms": 8000,
+      "stop": "disarm",
+      "pause": "feed",
+      "fault": "expire"
+    },
+    "docs_ref": "docs/docs/reference/capabilities-evidence.md",
     "io": {
       "schema_version": 1,
       "channels": [
@@ -717,7 +762,16 @@
     "network_class": "network-capable",
     "network_interface": "wifi",
     "evidence_refs": [],
-    "docs_ref": "docs/docs/reference/index.md#supported-boards",
+    "watchdog": {
+      "enabled": false,
+      "reason": "No hardware record yet (HIL-010): the hardware watchdog stays off in this profile until the reset timing and the safe outputs are recorded on this board with it enabled (RT-020).",
+      "timeout_ms": 1000,
+      "max_timeout_ms": 8000,
+      "stop": "disarm",
+      "pause": "feed",
+      "fault": "expire"
+    },
+    "docs_ref": "docs/docs/reference/capabilities-evidence.md",
     "io": {
       "schema_version": 1,
       "channels": [
@@ -896,7 +950,16 @@
     "network_class": "serial-focused",
     "network_interface": "none",
     "evidence_refs": [],
-    "docs_ref": "docs/docs/reference/index.md#supported-boards",
+    "watchdog": {
+      "enabled": false,
+      "reason": "No hardware record yet (HIL-010): the hardware watchdog stays off in this profile until the reset timing and the safe outputs are recorded on this board with it enabled (RT-020).",
+      "timeout_ms": 1000,
+      "max_timeout_ms": 8000,
+      "stop": "disarm",
+      "pause": "feed",
+      "fault": "expire"
+    },
+    "docs_ref": "docs/docs/reference/capabilities-evidence.md",
     "io": {
       "schema_version": 1,
       "channels": [

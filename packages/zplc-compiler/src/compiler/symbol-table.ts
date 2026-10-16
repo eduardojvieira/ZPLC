@@ -311,12 +311,12 @@ export class SymbolTable {
         // a variable of a program is stored under the name of the program; it may not share a name with a global
         const key = scope.program === undefined ? decl.name : `${scope.program}.${decl.name}`;
         if (this.symbols.has(key) || (scope.program !== undefined && this.symbols.has(decl.name))) {
-            throw new CodegenError(`Symbol '${decl.name}' already defined`, decl.line, decl.column, decl.line, decl.column + decl.name.length);
+            throw new CodegenError('DUPLICATE_DECLARATION', `Symbol '${decl.name}' already defined`, decl.line, decl.column, decl.line, decl.column + decl.name.length);
         }
 
         const instanceType = isArrayType(decl.dataType) ? (decl.dataType as ArrayType).elementType : decl.dataType;
         if (typeof instanceType === 'string' && this.userFBs.get(instanceType)?.isAbstract) {
-            throw new CodegenError(`'${decl.name}' is an instance of the ABSTRACT function block '${instanceType}'`, decl.line, decl.column, decl.line, decl.column + decl.name.length);
+            throw new CodegenError('ABSTRACT_INSTANTIATION', `'${decl.name}' is an instance of the ABSTRACT function block '${instanceType}'`, decl.line, decl.column, decl.line, decl.column + decl.name.length);
         }
 
         const varSize = this.sizeOf(decl.dataType);
@@ -414,10 +414,10 @@ export class SymbolTable {
         const global = this.symbols.get(decl.name);
         const at = [decl.line, decl.column, decl.line, decl.column + decl.name.length] as const;
         if (!global) {
-            throw new CodegenError(`VAR_EXTERNAL '${decl.name}' has no VAR_GLOBAL declaration`, ...at);
+            throw new CodegenError('INVALID_EXTERNAL_DECLARATION', `VAR_EXTERNAL '${decl.name}' has no VAR_GLOBAL declaration`, ...at);
         }
         if (JSON.stringify(global.dataType).toUpperCase() !== JSON.stringify(decl.dataType).toUpperCase()) {
-            throw new CodegenError(`VAR_EXTERNAL '${decl.name}' is declared with another type than its VAR_GLOBAL`, ...at);
+            throw new CodegenError('INVALID_EXTERNAL_DECLARATION', `VAR_EXTERNAL '${decl.name}' is declared with another type than its VAR_GLOBAL`, ...at);
         }
         return global;
     }
@@ -433,14 +433,14 @@ export class SymbolTable {
     getMemberAddress(parentName: string, memberName: string): number {
         const symbol = this.get(parentName);
         if (!symbol) {
-            throw new Error(`Unknown symbol: ${parentName}`);
+            throw new CodegenError('UNKNOWN_IDENTIFIER', `Unknown symbol: ${parentName}`, 0, 0);
         }
         if (!symbol.members) {
-            throw new Error(`Symbol '${parentName}' is not a function block instance or struct`);
+            throw new CodegenError('INVALID_MEMBER_ACCESS', `Symbol '${parentName}' is not a function block instance or struct`, 0, 0);
         }
         const offset = symbol.members.get(memberName);
         if (offset === undefined) {
-            throw new Error(`Unknown member '${memberName}' on instance '${parentName}'`);
+            throw new CodegenError('UNKNOWN_MEMBER', `Unknown member '${memberName}' on instance '${parentName}'`, 0, 0);
         }
         return symbol.address + offset;
     }
@@ -452,7 +452,7 @@ export class SymbolTable {
     resolveMemberPath(expr: Expression): { address: number; dataType: STDataType } {
         if (expr.kind === 'Identifier') {
             const sym = this.get(expr.name);
-            if (!sym) throw new Error(`Unknown variable: ${expr.name}`);
+            if (!sym) throw new CodegenError('UNKNOWN_IDENTIFIER', `Unknown variable: ${expr.name}`, 0, 0);
             return { address: sym.address, dataType: sym.dataType };
         }
 
@@ -461,14 +461,14 @@ export class SymbolTable {
             const typeName = (typeof parent.dataType === 'string') ? parent.dataType : null;
 
             if (!typeName) {
-                throw new Error(`Cannot access member '${expr.member}' on non-struct type`);
+                throw new CodegenError('INVALID_MEMBER_ACCESS', `Cannot access member '${expr.member}' on non-struct type`, 0, 0);
             }
 
             // 1. Check user-defined structs
             const structDef = this.userStructs.get(typeName);
             if (structDef) {
                 const member = structDef.members.get(expr.member);
-                if (!member) throw new Error(`Unknown member '${expr.member}' on struct '${typeName}'`);
+                if (!member) throw new CodegenError('UNKNOWN_MEMBER', `Unknown member '${expr.member}' on struct '${typeName}'`, 0, 0);
                 return {
                     address: parent.address + member.offset,
                     dataType: member.dataType
@@ -479,7 +479,7 @@ export class SymbolTable {
             const fbDef = this.userFBs.get(typeName);
             if (fbDef) {
                 const member = fbDef.members.get(expr.member);
-                if (!member) throw new Error(`Unknown member '${expr.member}' on FB '${typeName}'`);
+                if (!member) throw new CodegenError('UNKNOWN_MEMBER', `Unknown member '${expr.member}' on FB '${typeName}'`, 0, 0);
                 return {
                     address: parent.address + member.offset,
                     dataType: member.dataType
@@ -490,29 +490,29 @@ export class SymbolTable {
             const stdFB = getFB(typeName as DataTypeValue);
             if (stdFB) {
                 const member = stdFB.members.find(m => sameName(m.name, expr.member));
-                if (!member) throw new Error(`Unknown member '${expr.member}' on FB '${typeName}'`);
+                if (!member) throw new CodegenError('UNKNOWN_MEMBER', `Unknown member '${expr.member}' on FB '${typeName}'`, 0, 0);
                 return {
                     address: parent.address + member.offset,
                     dataType: member.dataType as STDataType
                 };
             }
 
-            throw new Error(`Type '${typeName}' is not a struct or function block`);
+            throw new CodegenError('INVALID_MEMBER_ACCESS', `Type '${typeName}' is not a struct or function block`, 0, 0);
         }
 
         if (expr.kind === 'ArrayAccess') {
             // Only a path whose indices are all constants has one address; the code generator
             // computes the others at run time (it does not use this method for them).
             const array = this.resolveMemberPath(expr.array);
-            if (!isArrayType(array.dataType as STDataType)) throw new Error('Indexed value is not an array');
+            if (!isArrayType(array.dataType as STDataType)) throw new CodegenError('INVALID_ARRAY_ACCESS', 'Indexed value is not an array', 0, 0);
             const type = array.dataType as unknown as ArrayType;
             const stride = this.sizeOf(type.elementType);
             let element = 0;
             type.dimensions.forEach((dimension, d) => {
                 const index = expr.indices[d];
-                if (!index || index.kind !== 'IntLiteral') throw new Error('Array index is not a constant');
+                if (!index || index.kind !== 'IntLiteral') throw new CodegenError('INVALID_ARRAY_ACCESS', 'Array index is not a constant', 0, 0);
                 if (index.value < dimension.lowerBound || index.value > dimension.upperBound) {
-                    throw new Error(`Index ${index.value} is outside the array bounds ${dimension.lowerBound}..${dimension.upperBound}`);
+                    throw new CodegenError('INDEX_OUT_OF_BOUNDS', `Index ${index.value} is outside the array bounds ${dimension.lowerBound}..${dimension.upperBound}`, 0, 0);
                 }
                 const inner = type.dimensions.slice(d + 1).reduce((n, dim) => n * (dim.upperBound - dim.lowerBound + 1), 1);
                 element += (index.value - dimension.lowerBound) * inner;
@@ -520,7 +520,7 @@ export class SymbolTable {
             return { address: array.address + element * stride, dataType: type.elementType };
         }
 
-        throw new Error(`Invalid expression kind in member path: ${expr.kind}`);
+        throw new CodegenError('INTERNAL_COMPILER_ERROR', `Invalid expression kind in member path: ${expr.kind}`, 0, 0);
     }
 
     /**
@@ -712,7 +712,7 @@ export class SymbolTable {
     getTypeSize(name: string): number {
         const symbol = this.get(name);
         if (!symbol) {
-            throw new Error(`Unknown symbol: ${name}`);
+            throw new CodegenError('UNKNOWN_IDENTIFIER', `Unknown symbol: ${name}`, 0, 0);
         }
         return symbol.size;
     }
@@ -917,7 +917,7 @@ export function buildSymbolTable(unit: CompilationUnit | Program, workMemoryBase
             if (fbIndex === -1) {
                 const missing = unprocessedFBs.map(fb => `${fb.name} (extends ${fb.extends})`).join(', ');
                 const first = unprocessedFBs[0]!;
-                throw new CodegenError(`Circular inheritance or missing base FB in definitions: ${missing}`, first.line, first.column);
+                throw new CodegenError('INVALID_INHERITANCE', `Circular inheritance or missing base FB in definitions: ${missing}`, first.line, first.column);
             }
 
             const fb = unprocessedFBs[fbIndex];
@@ -928,7 +928,7 @@ export function buildSymbolTable(unit: CompilationUnit | Program, workMemoryBase
             if (fb.extends) {
                 const base = unit.functionBlocks.find((candidate) => sameName(candidate.name, fb.extends!));
                 if (base?.isFinal) {
-                    throw new CodegenError(`Function block '${fb.name}' extends '${base.name}', which is FINAL`, fb.line, fb.column);
+                    throw new CodegenError('INVALID_INHERITANCE', `Function block '${fb.name}' extends '${base.name}', which is FINAL`, fb.line, fb.column);
                 }
             }
 
@@ -959,7 +959,7 @@ export function buildSymbolTable(unit: CompilationUnit | Program, workMemoryBase
                 // a member that is an instance of an ABSTRACT block has no code to run
                 const memberType = isArrayType(v.dataType as STDataType) ? (v.dataType as ArrayType).elementType : v.dataType;
                 if (typeof memberType === 'string' && v.section !== VarSection.VAR_IN_OUT && table.getFBDefinition(memberType)?.isAbstract) {
-                    throw new CodegenError(`'${v.name}' is an instance of the ABSTRACT function block '${memberType}'`, v.line, v.column);
+                    throw new CodegenError('ABSTRACT_INSTANTIATION', `'${v.name}' is an instance of the ABSTRACT function block '${memberType}'`, v.line, v.column);
                 }
                 // A member with the name of an inherited one hides it in lookups; both keep their own storage,
                 // the members of the base coming first.
@@ -1012,16 +1012,16 @@ export function buildSymbolTable(unit: CompilationUnit | Program, workMemoryBase
                 
                 if (method.isOverride) {
                     if (!baseMethod) {
-                        throw new CodegenError(`Method '${method.name}' marked as OVERRIDE but no base method found in '${fb.name}'`, method.line, method.column);
+                        throw new CodegenError('INVALID_OVERRIDE', `Method '${method.name}' marked as OVERRIDE but no base method found in '${fb.name}'`, method.line, method.column);
                     }
                     if (baseMethod.isFinal) {
-                        throw new CodegenError(`Cannot override FINAL method '${method.name}' in '${fb.name}'`, method.line, method.column);
+                        throw new CodegenError('INVALID_OVERRIDE', `Cannot override FINAL method '${method.name}' in '${fb.name}'`, method.line, method.column);
                     }
                     if (method.returnType !== baseMethod.returnType) {
-                        throw new CodegenError(`Override method '${method.name}' return type '${method.returnType}' does not match base '${baseMethod.returnType}'`, method.line, method.column);
+                        throw new CodegenError('INVALID_OVERRIDE', `Override method '${method.name}' return type '${method.returnType}' does not match base '${baseMethod.returnType}'`, method.line, method.column);
                     }
                 } else if (baseMethod) {
-                    throw new CodegenError(`Method '${method.name}' in '${fb.name}' hides inherited method. Use OVERRIDE explicitly.`, method.line, method.column);
+                    throw new CodegenError('INVALID_OVERRIDE', `Method '${method.name}' in '${fb.name}' hides inherited method. Use OVERRIDE explicitly.`, method.line, method.column);
                 }
                 
                 // If overriding, we replace the entry in the map
@@ -1047,7 +1047,7 @@ export function buildSymbolTable(unit: CompilationUnit | Program, workMemoryBase
                 for (const ifaceName of fb.implements) {
                     const validateInterface = (name: string) => {
                         const iface = table.getInterfaceDefinition(name);
-                        if (!iface) throw new CodegenError(`Unknown interface '${name}' implemented by '${fb.name}'`, fb.line, fb.column);
+                        if (!iface) throw new CodegenError('UNKNOWN_TYPE', `Unknown interface '${name}' implemented by '${fb.name}'`, fb.line, fb.column);
                         
                         // Check base interfaces
                         for (const base of iface.extends) {
@@ -1058,31 +1058,31 @@ export function buildSymbolTable(unit: CompilationUnit | Program, workMemoryBase
                         for (const [methodName, sig] of iface.methods) {
                             const method = methods.get(methodName);
                             if (!method) {
-                                throw new CodegenError(`Function Block '${fb.name}' implements interface '${ifaceName}' but is missing required method '${methodName}'`, fb.line, fb.column);
+                                throw new CodegenError('INTERFACE_NOT_IMPLEMENTED', `Function Block '${fb.name}' implements interface '${ifaceName}' but is missing required method '${methodName}'`, fb.line, fb.column);
                             }
                             
                             // Check signature
                             if (method.returnType !== sig.returnType) {
-                                throw new CodegenError(`Method '${methodName}' in '${fb.name}' has return type '${method.returnType}' but interface '${ifaceName}' requires '${sig.returnType}'`, fb.line, fb.column);
+                                throw new CodegenError('INTERFACE_NOT_IMPLEMENTED', `Method '${methodName}' in '${fb.name}' has return type '${method.returnType}' but interface '${ifaceName}' requires '${sig.returnType}'`, fb.line, fb.column);
                             }
                             
                             // Check inputs
                             if (method.inputs.length !== sig.inputs.length) {
-                                throw new CodegenError(`Method '${methodName}' has different number of inputs than required by interface '${ifaceName}'`, fb.line, fb.column);
+                                throw new CodegenError('INTERFACE_NOT_IMPLEMENTED', `Method '${methodName}' has different number of inputs than required by interface '${ifaceName}'`, fb.line, fb.column);
                             }
                             for (let i = 0; i < method.inputs.length; i++) {
                                 if (!sameName(method.inputs[i].name, sig.inputs[i].name) || method.inputs[i].dataType !== sig.inputs[i].dataType) {
-                                    throw new CodegenError(`Input ${i} of method '${methodName}' does not match interface '${ifaceName}' signature`, fb.line, fb.column);
+                                    throw new CodegenError('INTERFACE_NOT_IMPLEMENTED', `Input ${i} of method '${methodName}' does not match interface '${ifaceName}' signature`, fb.line, fb.column);
                                 }
                             }
                             
                             // Check outputs
                             if (method.outputs.length !== sig.outputs.length) {
-                                throw new CodegenError(`Method '${methodName}' has different number of outputs than required by interface '${ifaceName}'`, fb.line, fb.column);
+                                throw new CodegenError('INTERFACE_NOT_IMPLEMENTED', `Method '${methodName}' has different number of outputs than required by interface '${ifaceName}'`, fb.line, fb.column);
                             }
                             for (let i = 0; i < method.outputs.length; i++) {
                                 if (!sameName(method.outputs[i].name, sig.outputs[i].name) || method.outputs[i].dataType !== sig.outputs[i].dataType) {
-                                    throw new CodegenError(`Output ${i} of method '${methodName}' does not match interface '${ifaceName}' signature`, fb.line, fb.column);
+                                    throw new CodegenError('INTERFACE_NOT_IMPLEMENTED', `Output ${i} of method '${methodName}' does not match interface '${ifaceName}' signature`, fb.line, fb.column);
                                 }
                             }
                         }
@@ -1097,6 +1097,7 @@ export function buildSymbolTable(unit: CompilationUnit | Program, workMemoryBase
                 for (const [methodName, info] of methods) {
                     if (info.isAbstract) {
                         throw new CodegenError(
+                            'INVALID_INHERITANCE',
                             info.owner === fb.name
                                 ? `Method '${methodName}' of '${fb.name}' is ABSTRACT, so the function block must be declared FUNCTION_BLOCK ABSTRACT`
                                 : `Function block '${fb.name}' does not implement the ABSTRACT method '${methodName}' of '${info.owner}'`,

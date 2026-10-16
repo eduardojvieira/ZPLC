@@ -44,9 +44,11 @@ function emitFailure(output: Output, json: boolean, operation: ToolEvidence['ope
   if (json) emitJson(output, cliExecution(operation, value, start)); else output.error(`Error: ${message}`); return 1;
 }
 /** `path:line:column: message`; the position is left out when the diagnostic has none (line 0 is "unknown"). */
-function describeDiagnostic(diagnostic: { message: string; path?: string; line?: number; column?: number }, file?: string): string {
-  if (!diagnostic.line) return diagnostic.message;
-  return `${[diagnostic.path ?? file, diagnostic.line, diagnostic.column ?? 0].filter((part) => part !== undefined).join(':')}: ${diagnostic.message}`;
+function describeDiagnostic(diagnostic: { message: string; code?: string; path?: string; line?: number; column?: number }, file?: string): string {
+  // the stable code ends the line, so that a person can search the reference for it and a script can match on it (CMP-006)
+  const code = diagnostic.code ? ` [${diagnostic.code}]` : '';
+  if (!diagnostic.line) return `${diagnostic.message}${code}`;
+  return `${[diagnostic.path ?? file, diagnostic.line, diagnostic.column ?? 0].filter((part) => part !== undefined).join(':')}: ${diagnostic.message}${code}`;
 }
 /** A single-file build failure with the compiler's own message, line and column (CMP-010 stopgap). */
 function emitCompilerFailure(output: Output, json: boolean, operation: ToolEvidence['operation'], error: unknown, file: string, start: ToolExecutionStart): number {

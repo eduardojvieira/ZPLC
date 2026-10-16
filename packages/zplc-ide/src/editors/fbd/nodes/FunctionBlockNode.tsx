@@ -20,8 +20,8 @@ interface FunctionBlockData {
   type: string;
   instanceName?: string;
   comment?: string;
-  /** Live values for ports (from debug adapter) */
-  liveValues?: Map<string, unknown>;
+  /** The value each pin holds online, by port: what the debug map says the program holds (LNG-006). */
+  pinValues?: Record<string, number | boolean | string | undefined>;
   /** Whether debug mode is active */
   debugActive?: boolean;
   /** Callback to open instance monitor */
@@ -78,7 +78,7 @@ const FunctionBlockNode = memo(({ id, data, selected }: NodeProps) => {
     type, 
     instanceName, 
     comment,
-    liveValues,
+    pinValues,
     debugActive,
     onOpenMonitor,
     onChangeData,
@@ -123,11 +123,10 @@ const FunctionBlockNode = memo(({ id, data, selected }: NodeProps) => {
     const port = [...ports.inputs, ...ports.outputs].find(p => p.name === portName);
     const portType = port?.type || 'INT';
     
-    if (!debugActive || !liveValues || !instanceName) {
+if (!debugActive) {
       return { display: '', raw: undefined, type: portType };
     }
-    const key = `${instanceName}.${portName}`;
-    const value = liveValues.get(key);
+    const value = pinValues?.[portName];
     return { 
       display: formatLiveValue(value, portType), 
       raw: value, 
@@ -136,11 +135,7 @@ const FunctionBlockNode = memo(({ id, data, selected }: NodeProps) => {
   };
   
   // Check if any output is TRUE (for visual feedback)
-  const hasActiveOutput = debugActive && instanceName && liveValues && ports.outputs.some(port => {
-    const key = `${instanceName}.${port.name}`;
-    const value = liveValues.get(key);
-    return port.type === 'BOOL' && !!value;
-  });
+  const hasActiveOutput = debugActive && ports.outputs.some((port) => port.type === 'BOOL' && pinValues?.[port.name] === true);
 
   return (
     <div className="zplc-visual-node flex flex-col items-center relative">

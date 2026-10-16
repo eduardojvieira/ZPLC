@@ -2,7 +2,7 @@ import { chmodSync, mkdtempSync, mkdirSync, readFileSync, rmSync, symlinkSync, w
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { expect, test } from 'bun:test';
-import { discoverPackagedExecutable } from './run-packaged-desktop-smoke';
+import { discoverPackagedExecutable, installedExecutable } from './run-packaged-desktop-smoke';
 
 function unpacked(root: string, platform: NodeJS.Platform, name: string): string {
   const directory = platform === 'darwin'
@@ -47,6 +47,26 @@ test('discovers exactly one real platform executable and rejects unsafe candidat
     expect(() => discoverPackagedExecutable(symlinkRoot, 'linux')).toThrow('symlink');
   } finally {
     rmSync(symlinkRoot, { recursive: true, force: true });
+  }
+});
+
+test('names an installed application by its executable, and refuses a missing file, a directory and a link (REL-036)', () => {
+  const root = mkdtempSync(join(tmpdir(), 'zplc-packaged-smoke-'));
+  try {
+    const executable = join(root, 'zplc-ide');
+    writeFileSync(executable, 'binary');
+    chmodSync(executable, 0o755);
+    expect(installedExecutable(executable, 'linux')).toBe(executable);
+    expect(() => installedExecutable(join(root, 'missing'), 'linux')).toThrow('not a real file');
+    expect(() => installedExecutable(root, 'linux')).toThrow('not a real file');
+    symlinkSync(executable, join(root, 'link'));
+    expect(() => installedExecutable(join(root, 'link'), 'linux')).toThrow('not a real file');
+    chmodSync(executable, 0o644);
+    expect(() => installedExecutable(executable, 'linux')).toThrow('not executable');
+    // Windows has no executable bit: the file is enough
+    expect(installedExecutable(executable, 'win32')).toBe(executable);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
   }
 });
 

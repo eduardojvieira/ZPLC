@@ -40,6 +40,7 @@
 #include <zplc_hal.h>
 #include <zplc_isa.h>
 #include <zplc_debug.h>
+#include <zplc_failsafe.h>
 #include <zplc_fw_identity.h>
 #ifdef CONFIG_ZPLC_RETAIN_PERSIST
 #include <zplc_retain.h>
@@ -56,6 +57,7 @@
 extern void zplc_mqtt_request_backoff_reset(void);
 
 #ifdef CONFIG_ZPLC_SCHEDULER
+#include <zplc_sched_core.h>
 #include <zplc_scheduler.h>
 #include <zplc_exchange.h>
 #endif
@@ -612,6 +614,7 @@ static int sched_latch_ambiguous_program_publication(void);
 static int cmd_sys_info(const struct shell *sh, size_t argc, char **argv);
 static int cmd_sys_build(const struct shell *sh, size_t argc, char **argv);
 static int cmd_sys_io(const struct shell *sh, size_t argc, char **argv);
+static int cmd_sys_reset(const struct shell *sh, size_t argc, char **argv);
 static int cmd_sys_reboot(const struct shell *sh, size_t argc, char **argv);
 #endif
 
@@ -683,6 +686,23 @@ static int cmd_sched_status(const struct shell *sh, size_t argc, char **argv) {
     JSON_OBJ_START(sh);
     JSON_STR(sh, "state", sched_state_name(zplc_sched_get_state()), true);
     JSON_UINT(sh, "uptime_ms", stats.uptime_ms, true);
+    /* RT-014: the miss count, its run, the limit, the last overrun and the reason of a latched fault; RT-021: why
+     * the processor was last reset. The same objects the host runtime reports. */
+    shell_fprintf(sh, SHELL_NORMAL,
+                  "\"deadline\":{\"warning\":%s,\"misses\":%u,\"consecutive_misses\":%u,\"miss_limit\":%u,"
+                  "\"last_overrun_us\":%u},",
+                  stats.consecutive_misses != 0U ? "true" : "false", (unsigned int)stats.total_overruns,
+                  (unsigned int)stats.consecutive_misses, (unsigned int)stats.miss_limit,
+                  (unsigned int)stats.last_overrun_us);
+    if (stats.fault_reason == (uint8_t)ZPLC_SCHED_FAULT_NONE) {
+      shell_fprintf(sh, SHELL_NORMAL, "\"fault\":{\"reason\":\"none\",\"task_id\":null},");
+    } else {
+      shell_fprintf(sh, SHELL_NORMAL, "\"fault\":{\"reason\":\"%s\",\"task_id\":%u},",
+                    zplc_sched_fault_reason_name((zplc_sched_fault_reason_t)stats.fault_reason),
+                    (unsigned int)stats.fault_task_id);
+    }
+    shell_fprintf(sh, SHELL_NORMAL, "\"reset_cause\":\"%s\",",
+                  zplc_reset_cause_name(zplc_failsafe_report()->cause));
     /* COM-014: a standing warning, not an event: present for as long as
      * the session is configured to skip the certificate check. */
     shell_fprintf(sh, SHELL_NORMAL, "\"warnings\":[%s],",
@@ -733,6 +753,11 @@ static int cmd_sched_status(const struct shell *sh, size_t argc, char **argv) {
   shell_print(sh, "  Tasks:      %u active", stats.active_tasks);
   shell_print(sh, "  Tot Cycles: %u", stats.total_cycles);
   shell_print(sh, "  Tot Ovr:    %u", stats.total_overruns);
+  shell_print(sh, "  Deadline:   %s, run %u of %u, last overrun %u us", stats.consecutive_misses != 0U ? "WARNING" : "ok",
+              (unsigned int)stats.consecutive_misses, (unsigned int)stats.miss_limit,
+              (unsigned int)stats.last_overrun_us);
+  shell_print(sh, "  Fault:      %s", zplc_sched_fault_reason_name((zplc_sched_fault_reason_t)stats.fault_reason));
+  shell_print(sh, "  Reset:      %s", zplc_reset_cause_name(zplc_failsafe_report()->cause));
   if (zplc_config_mqtt_tls_verify_off()) {
     shell_warn(sh, "  WARNING: MQTT tls-verify: OFF (the broker certificate "
                    "is not checked)");
@@ -774,6 +799,13 @@ static int cmd_sched_tasks(const struct shell *sh, size_t argc, char **argv) {
   return 0;
 }
 
+/* The rollback of the commit that ends an upload is found when the upload starts, in the staging buffer, which is
+ * free until the first byte of the new program arrives: the store has no buffer of the code size of its own
+ * (RT-028). When nothing can be found the commit that follows refuses and writes nothing. */
+static void begin_upload_rollback(void) {
+  (void)zplc_program_store_prepare(program_staging_buffer, program_buffer_size + ZPLC_PROGRAM_STORE_FOOTER_SIZE);
+}
+
 static int cmd_sched_load(const struct shell *sh, size_t argc, char **argv) {
   if (argc != 2) {
     shell_error(sh, "Usage: zplc sched load <size>");
@@ -794,6 +826,18 @@ static int cmd_sched_load(const struct shell *sh, size_t argc, char **argv) {
                 program_buffer_size);
     return -ENOMEM;
   }
+  /* RT-023: a deploy stops the program that is running before it transfers a byte, and the outputs are at their
+   * safe values from then until a person starts the new program: the transfer is not made with the old program
+   * driving the pins. A runtime that is already stopped or faulted stays as it is. */
+  {
+    const int stopped = zplc_sched_stop();
+
+    if (stopped != 0) {
+      shell_error(sh, "ERROR: Could not stop the program before the transfer (%d)", stopped);
+      return stopped;
+    }
+  }
+  begin_upload_rollback();
   memset(program_staging_buffer, 0, program_buffer_size);
   program_expected_size = size;
   program_staging_received_size = 0;
@@ -820,6 +864,20 @@ static int cmd_sched_data(const struct shell *sh, size_t argc, char **argv) {
   }
   program_staging_received_size += decoded;
   if (program_staging_received_size >= program_expected_size) {
+#ifdef CONFIG_ZPLC_PROTO_SIGNATURE
+    {
+      uint8_t signing_key[32];
+
+      /* COM-026: while the device holds a public key, a program that nobody signed does not come in by this door */
+      if (zplc_hal_persist_load("link_signkey", signing_key, sizeof(signing_key)) == ZPLC_HAL_OK) {
+        shell_error(sh, "ERROR: this device accepts only signed programs; send it through the device link");
+        program_expected_size = 0;
+        program_staging_received_size = 0;
+        memset(program_staging_buffer, 0, program_buffer_size);
+        return -EACCES;
+      }
+    }
+#endif
     int validation = zplc_sched_validate_program(program_staging_buffer,
                                                  program_staging_received_size);
     if (validation != ZPLC_LOADER_OK) {
@@ -1107,6 +1165,59 @@ static int cmd_sys_io(const struct shell *sh, size_t argc, char **argv) {
   shell_print(sh, "I/O description: %s, %u channels, hash %s, %u B in, %u B out", table->board_id,
               (unsigned int)table->channel_count, io_hash, (unsigned int)table->input_bytes,
               (unsigned int)table->output_bytes);
+  return 0;
+}
+
+/**
+ * @brief Handler for 'zplc sys reset [--json]': why the processor was last reset and what the previous run left
+ * (RT-019, RT-021).
+ *
+ * The cause is one of power_on, brown_out, pin, software, watchdog, fault or unknown (a part that does not report
+ * one). `fault` is the previous run's own record: a processor fault, a stack overflow or a kernel panic that the
+ * firmware handled with the outputs driven safe, or a fault the scheduler latched before a watchdog reset. After
+ * any reset the runtime is in STOP: `run_policy` says so (D-13). A command of its own and not keys of
+ * `sys info --json`: Studio's handshake parser accepts exactly the keys of that object.
+ */
+static int cmd_sys_reset(const struct shell *sh, size_t argc, char **argv) {
+  const zplc_reset_report_t *report = zplc_failsafe_report();
+  const char *cause = zplc_reset_cause_name(report->cause);
+  char reason[48];
+
+  zplc_fault_record_reason_text(&report->fault, reason, sizeof(reason));
+  if (argc > 1 && strcmp(argv[1], "--json") == 0) {
+    JSON_OBJ_START(sh);
+    JSON_UINT(sh, "schema", 1U, true);
+    JSON_STR(sh, "cause", cause, true);
+    JSON_BOOL(sh, "reported", report->reported != 0U, true);
+    JSON_UINT(sh, "raw", report->raw_bits, true);
+    JSON_UINT(sh, "supported", report->supported_bits, true);
+    JSON_STR(sh, "run_policy", zplc_reset_may_run(report->cause) != 0 ? "run" : "stop", true);
+    JSON_KEY(sh, "fault");
+    if (report->has_fault != 0U) {
+      JSON_OBJ_START(sh);
+      JSON_STR(sh, "kind", report->fault.kind == (uint8_t)ZPLC_FAULT_SCHEDULER ? "scheduler" : "processor", true);
+      JSON_STR(sh, "reason", reason, true);
+      JSON_UINT(sh, "task_id", report->fault.task_id, true);
+      JSON_UINT(sh, "pc", report->fault.pc, true);
+      JSON_UINT(sh, "sequence", report->fault.sequence, false);
+      JSON_OBJ_END(sh);
+    } else {
+      shell_fprintf(sh, SHELL_NORMAL, "null");
+    }
+    JSON_OBJ_END(sh);
+    JSON_NEWLINE(sh);
+    return 0;
+  }
+  shell_print(sh, "Reset cause:  %s%s", cause, report->reported != 0U ? "" : " (this part does not report one)");
+  if (report->has_fault != 0U) {
+    shell_print(sh, "Last fault:   %s (%s, task %u, pc 0x%08x)", reason,
+                report->fault.kind == (uint8_t)ZPLC_FAULT_SCHEDULER ? "scheduler" : "processor",
+                (unsigned int)report->fault.task_id, (unsigned int)report->fault.pc);
+  } else {
+    shell_print(sh, "Last fault:   none recorded");
+  }
+  shell_print(sh, "Run policy:   %s: the runtime waits in STOP for a person's RUN command",
+              zplc_reset_may_run(report->cause) != 0 ? "run" : "stop");
   return 0;
 }
 
@@ -1751,6 +1862,7 @@ static int cmd_zplc_load(const struct shell *sh, size_t argc, char **argv) {
                 program_buffer_size);
     return -ENOMEM;
   }
+  begin_upload_rollback();
   memset(program_staging_buffer, 0, program_buffer_size);
   program_expected_size = size;
   program_staging_received_size = 0;
@@ -3045,10 +3157,126 @@ static int cmd_config_get(const struct shell *sh, size_t argc, char **argv) {
   return 0;
 }
 
+/* The keys of `zplc config set`: how the value is read, and the setter of zplc_config.c that stores it. One row per
+ * key, so that the command is a lookup and the setters keep their own rules (azure_sas_expiry_s clamps, the text
+ * setters truncate). The value of a flag is not read the same way by every key: dhcp is true for "true" and "1",
+ * the others also for "on", and any other text is false without an error. */
+typedef enum {
+  CONFIG_KEY_TEXT,
+  CONFIG_KEY_FLAG,
+  CONFIG_KEY_FLAG_ON,
+  CONFIG_KEY_U8,
+  CONFIG_KEY_U16,
+  CONFIG_KEY_U32,
+  CONFIG_KEY_PARITY,
+  CONFIG_KEY_PROFILE,
+  CONFIG_KEY_PROTOCOL,
+  CONFIG_KEY_TRANSPORT,
+  CONFIG_KEY_QOS,
+  CONFIG_KEY_SECURITY,
+} config_key_kind_t;
+
+union config_setter {
+  void (*text)(const char *);
+  void (*flag)(bool);
+  void (*u8)(uint8_t);
+  void (*u16)(uint16_t);
+  void (*u32)(uint32_t);
+  void (*parity)(zplc_modbus_parity_t);
+  void (*profile)(zplc_mqtt_profile_t);
+  void (*protocol)(zplc_mqtt_protocol_t);
+  void (*transport)(zplc_mqtt_transport_t);
+  void (*qos)(zplc_mqtt_qos_t);
+  void (*security)(zplc_mqtt_security_t);
+};
+
+/* name, how the value is read, the member of the union and the setter. Three parallel arrays are made from it: one
+ * row of a structure would take twelve bytes for nine of data. */
+#define CONFIG_KEYS(X) \
+  X("hostname", CONFIG_KEY_TEXT, text, zplc_config_set_hostname) \
+  X("dhcp", CONFIG_KEY_FLAG, flag, zplc_config_set_dhcp) \
+  X("ip", CONFIG_KEY_TEXT, text, zplc_config_set_ip) \
+  X("wifi_ssid", CONFIG_KEY_TEXT, text, zplc_config_set_wifi_ssid) \
+  X("wifi_pass", CONFIG_KEY_TEXT, text, zplc_config_set_wifi_pass) \
+  X("wifi_security", CONFIG_KEY_U8, u8, zplc_config_set_wifi_security) \
+  X("ntp_enabled", CONFIG_KEY_FLAG_ON, flag, zplc_config_set_ntp_enabled) \
+  X("ntp_server", CONFIG_KEY_TEXT, text, zplc_config_set_ntp_server) \
+  X("modbus_id", CONFIG_KEY_U16, u16, zplc_config_set_modbus_id) \
+  X("modbus_tcp_enabled", CONFIG_KEY_FLAG_ON, flag, zplc_config_set_modbus_tcp_enabled) \
+  X("modbus_tcp_port", CONFIG_KEY_U16, u16, zplc_config_set_modbus_tcp_port) \
+  X("modbus_rtu_enabled", CONFIG_KEY_FLAG_ON, flag, zplc_config_set_modbus_rtu_enabled) \
+  X("modbus_rtu_baud", CONFIG_KEY_U32, u32, zplc_config_set_modbus_rtu_baud) \
+  X("modbus_rtu_parity", CONFIG_KEY_PARITY, parity, zplc_config_set_modbus_rtu_parity) \
+  X("modbus_rtu_client_enabled", CONFIG_KEY_FLAG_ON, flag, zplc_config_set_modbus_rtu_client_enabled) \
+  X("modbus_rtu_client_slave_id", CONFIG_KEY_U8, u8, zplc_config_set_modbus_rtu_client_slave_id) \
+  X("modbus_rtu_client_poll_ms", CONFIG_KEY_U32, u32, zplc_config_set_modbus_rtu_client_poll_ms) \
+  X("modbus_tcp_client_enabled", CONFIG_KEY_FLAG_ON, flag, zplc_config_set_modbus_tcp_client_enabled) \
+  X("modbus_tcp_client_host", CONFIG_KEY_TEXT, text, zplc_config_set_modbus_tcp_client_host) \
+  X("modbus_tcp_client_port", CONFIG_KEY_U16, u16, zplc_config_set_modbus_tcp_client_port) \
+  X("modbus_tcp_client_unit_id", CONFIG_KEY_U8, u8, zplc_config_set_modbus_tcp_client_unit_id) \
+  X("modbus_tcp_client_poll_ms", CONFIG_KEY_U32, u32, zplc_config_set_modbus_tcp_client_poll_ms) \
+  X("modbus_tcp_client_timeout_ms", CONFIG_KEY_U32, u32, zplc_config_set_modbus_tcp_client_timeout_ms) \
+  X("mqtt_enabled", CONFIG_KEY_FLAG_ON, flag, zplc_config_set_mqtt_enabled) \
+  X("mqtt_broker", CONFIG_KEY_TEXT, text, zplc_config_set_mqtt_broker) \
+  X("mqtt_client_id", CONFIG_KEY_TEXT, text, zplc_config_set_mqtt_client_id) \
+  X("mqtt_group_id", CONFIG_KEY_TEXT, text, zplc_config_set_mqtt_group_id) \
+  X("mqtt_topic_namespace", CONFIG_KEY_TEXT, text, zplc_config_set_mqtt_topic_namespace) \
+  X("mqtt_profile", CONFIG_KEY_PROFILE, profile, zplc_config_set_mqtt_profile) \
+  X("mqtt_protocol", CONFIG_KEY_PROTOCOL, protocol, zplc_config_set_mqtt_protocol) \
+  X("mqtt_transport", CONFIG_KEY_TRANSPORT, transport, zplc_config_set_mqtt_transport) \
+  X("mqtt_port", CONFIG_KEY_U16, u16, zplc_config_set_mqtt_port) \
+  X("mqtt_username", CONFIG_KEY_TEXT, text, zplc_config_set_mqtt_username) \
+  X("mqtt_password", CONFIG_KEY_TEXT, text, zplc_config_set_mqtt_password) \
+  X("mqtt_keepalive", CONFIG_KEY_U16, u16, zplc_config_set_mqtt_keepalive_sec) \
+  X("mqtt_publish_interval", CONFIG_KEY_U32, u32, zplc_config_set_mqtt_publish_interval_ms) \
+  X("mqtt_publish_qos", CONFIG_KEY_QOS, qos, zplc_config_set_mqtt_publish_qos) \
+  X("mqtt_subscribe_qos", CONFIG_KEY_QOS, qos, zplc_config_set_mqtt_subscribe_qos) \
+  X("mqtt_publish_retain", CONFIG_KEY_FLAG_ON, flag, zplc_config_set_mqtt_publish_retain) \
+  X("mqtt_clean_session", CONFIG_KEY_FLAG_ON, flag, zplc_config_set_mqtt_clean_session) \
+  X("mqtt_session_expiry", CONFIG_KEY_U32, u32, zplc_config_set_mqtt_session_expiry_sec) \
+  X("mqtt_security", CONFIG_KEY_SECURITY, security, zplc_config_set_mqtt_security) \
+  X("mqtt_websocket_path", CONFIG_KEY_TEXT, text, zplc_config_set_mqtt_websocket_path) \
+  X("mqtt_alpn", CONFIG_KEY_TEXT, text, zplc_config_set_mqtt_alpn) \
+  X("mqtt_lwt_enabled", CONFIG_KEY_FLAG_ON, flag, zplc_config_set_mqtt_lwt_enabled) \
+  X("mqtt_lwt_topic", CONFIG_KEY_TEXT, text, zplc_config_set_mqtt_lwt_topic) \
+  X("mqtt_lwt_payload", CONFIG_KEY_TEXT, text, zplc_config_set_mqtt_lwt_payload) \
+  X("mqtt_lwt_qos", CONFIG_KEY_QOS, qos, zplc_config_set_mqtt_lwt_qos) \
+  X("mqtt_lwt_retain", CONFIG_KEY_FLAG_ON, flag, zplc_config_set_mqtt_lwt_retain) \
+  X("mqtt_ca_cert_path", CONFIG_KEY_TEXT, text, zplc_config_set_mqtt_ca_cert_path) \
+  X("mqtt_client_cert_path", CONFIG_KEY_TEXT, text, zplc_config_set_mqtt_client_cert_path) \
+  X("mqtt_client_key_path", CONFIG_KEY_TEXT, text, zplc_config_set_mqtt_client_key_path) \
+  X("azure_sas_key", CONFIG_KEY_TEXT, text, zplc_config_set_azure_sas_key) \
+  X("azure_sas_expiry_s", CONFIG_KEY_U32, u32, zplc_config_set_azure_sas_expiry_s) \
+  X("azure_twin_enabled", CONFIG_KEY_FLAG_ON, flag, zplc_config_set_azure_twin_enabled) \
+  X("azure_direct_methods_enabled", CONFIG_KEY_FLAG_ON, flag, zplc_config_set_azure_direct_methods_enabled) \
+  X("azure_c2d_enabled", CONFIG_KEY_FLAG_ON, flag, zplc_config_set_azure_c2d_enabled) \
+  X("azure_dps_enabled", CONFIG_KEY_FLAG_ON, flag, zplc_config_set_azure_dps_enabled) \
+  X("azure_dps_id_scope", CONFIG_KEY_TEXT, text, zplc_config_set_azure_dps_id_scope) \
+  X("azure_dps_registration_id", CONFIG_KEY_TEXT, text, zplc_config_set_azure_dps_registration_id) \
+  X("azure_dps_endpoint", CONFIG_KEY_TEXT, text, zplc_config_set_azure_dps_endpoint) \
+  X("azure_event_grid_topic", CONFIG_KEY_TEXT, text, zplc_config_set_azure_event_grid_topic) \
+  X("azure_event_grid_source", CONFIG_KEY_TEXT, text, zplc_config_set_azure_event_grid_source) \
+  X("azure_event_grid_event_type", CONFIG_KEY_TEXT, text, zplc_config_set_azure_event_grid_event_type) \
+  X("aws_shadow_enabled", CONFIG_KEY_FLAG_ON, flag, zplc_config_set_aws_shadow_enabled) \
+  X("aws_jobs_enabled", CONFIG_KEY_FLAG_ON, flag, zplc_config_set_aws_jobs_enabled) \
+  X("aws_fleet_enabled", CONFIG_KEY_FLAG_ON, flag, zplc_config_set_aws_fleet_enabled) \
+  X("aws_fleet_template_name", CONFIG_KEY_TEXT, text, zplc_config_set_aws_fleet_template_name) \
+  X("aws_claim_cert_path", CONFIG_KEY_TEXT, text, zplc_config_set_aws_claim_cert_path) \
+  X("aws_claim_key_path", CONFIG_KEY_TEXT, text, zplc_config_set_aws_claim_key_path)
+
+#define CONFIG_KEY_NAME(name, kind, member, setter) name,
+#define CONFIG_KEY_KIND(name, kind, member, setter) (uint8_t)kind,
+#define CONFIG_KEY_SETTER(name, kind, member, setter) {.member = setter},
+
+static const char *const config_key_names[] = {CONFIG_KEYS(CONFIG_KEY_NAME)};
+static const uint8_t config_key_kinds[] = {CONFIG_KEYS(CONFIG_KEY_KIND)};
+static const union config_setter config_key_setters[] = {CONFIG_KEYS(CONFIG_KEY_SETTER)};
+
 static int cmd_config_set(const struct shell *sh, size_t argc, char **argv) {
+  /* The shell asks for the key and the value (SHELL_CMD_ARG, 3 mandatory) before it calls this: the check guards a
+   * direct call, and the keys are the table above. */
   if (argc < 3) {
     shell_error(sh, "ERROR: Usage: zplc config set <key> <value>");
-    shell_print(sh, "Keys: hostname, dhcp, ip, wifi_ssid, wifi_pass, wifi_security, ntp_enabled, ntp_server, modbus_id, modbus_tcp_enabled, modbus_tcp_port, modbus_rtu_enabled, modbus_rtu_baud, modbus_rtu_parity, modbus_rtu_client_enabled, modbus_rtu_client_slave_id, modbus_rtu_client_poll_ms, modbus_tcp_client_enabled, modbus_tcp_client_host, modbus_tcp_client_port, modbus_tcp_client_unit_id, modbus_tcp_client_poll_ms, modbus_tcp_client_timeout_ms, mqtt_enabled, mqtt_broker, mqtt_client_id, mqtt_group_id, mqtt_topic_namespace, mqtt_profile, mqtt_protocol, mqtt_transport, mqtt_port, mqtt_username, mqtt_password, mqtt_keepalive, mqtt_publish_interval, mqtt_publish_qos, mqtt_subscribe_qos, mqtt_publish_retain, mqtt_clean_session, mqtt_session_expiry, mqtt_security, mqtt_websocket_path, mqtt_alpn, mqtt_lwt_enabled, mqtt_lwt_topic, mqtt_lwt_payload, mqtt_lwt_qos, mqtt_lwt_retain, mqtt_ca_cert_path, mqtt_client_cert_path, mqtt_client_key_path, azure_sas_key, azure_sas_expiry_s, azure_twin_enabled, azure_direct_methods_enabled, azure_c2d_enabled, azure_dps_enabled, azure_dps_id_scope, azure_dps_registration_id, azure_dps_endpoint, azure_event_grid_topic, azure_event_grid_source, azure_event_grid_event_type, aws_shadow_enabled, aws_jobs_enabled, aws_fleet_enabled, aws_fleet_template_name, aws_claim_cert_path, aws_claim_key_path");
     return -EINVAL;
   }
 
@@ -3070,89 +3298,51 @@ static int cmd_config_set(const struct shell *sh, size_t argc, char **argv) {
     return -EINVAL;
   }
 
-  if (strcmp(key, "hostname") == 0) {
-    zplc_config_set_hostname(val);
-  } else if (strcmp(key, "dhcp") == 0) {
-    zplc_config_set_dhcp(strcmp(val, "true") == 0 || strcmp(val, "1") == 0);
-  } else if (strcmp(key, "ip") == 0) {
-    zplc_config_set_ip(val);
-  } else if (strcmp(key, "wifi_ssid") == 0) {
-    zplc_config_set_wifi_ssid(val);
-  } else if (strcmp(key, "wifi_pass") == 0) {
-    zplc_config_set_wifi_pass(val);
-  } else if (strcmp(key, "wifi_security") == 0) {
-    zplc_config_set_wifi_security((uint8_t)number);
-  } else if (strcmp(key, "ntp_enabled") == 0) {
-    zplc_config_set_ntp_enabled(strcmp(val, "true") == 0 || strcmp(val, "1") == 0 || strcmp(val, "on") == 0);
-  } else if (strcmp(key, "ntp_server") == 0) {
-    zplc_config_set_ntp_server(val);
-  } else if (strcmp(key, "modbus_id") == 0) {
-    zplc_config_set_modbus_id((uint16_t)number);
-  } else if (strcmp(key, "modbus_tcp_enabled") == 0) {
-    zplc_config_set_modbus_tcp_enabled(strcmp(val, "true") == 0 || strcmp(val, "1") == 0 || strcmp(val, "on") == 0);
-  } else if (strcmp(key, "modbus_tcp_port") == 0) {
-    zplc_config_set_modbus_tcp_port((uint16_t)number);
-  } else if (strcmp(key, "modbus_rtu_enabled") == 0) {
-    zplc_config_set_modbus_rtu_enabled(strcmp(val, "true") == 0 || strcmp(val, "1") == 0 || strcmp(val, "on") == 0);
-  } else if (strcmp(key, "modbus_rtu_baud") == 0) {
-    zplc_config_set_modbus_rtu_baud(number);
-  } else if (strcmp(key, "modbus_rtu_parity") == 0) {
-    zplc_config_set_modbus_rtu_parity((zplc_modbus_parity_t)number);
-  } else if (strcmp(key, "modbus_rtu_client_enabled") == 0) {
-    zplc_config_set_modbus_rtu_client_enabled(strcmp(val, "true") == 0 || strcmp(val, "1") == 0 || strcmp(val, "on") == 0);
-  } else if (strcmp(key, "modbus_rtu_client_slave_id") == 0) {
-    zplc_config_set_modbus_rtu_client_slave_id((uint8_t)number);
-  } else if (strcmp(key, "modbus_rtu_client_poll_ms") == 0) {
-    zplc_config_set_modbus_rtu_client_poll_ms(number);
-  } else if (strcmp(key, "modbus_tcp_client_enabled") == 0) {
-    zplc_config_set_modbus_tcp_client_enabled(strcmp(val, "true") == 0 || strcmp(val, "1") == 0 || strcmp(val, "on") == 0);
-  } else if (strcmp(key, "modbus_tcp_client_host") == 0) {
-    zplc_config_set_modbus_tcp_client_host(val);
-  } else if (strcmp(key, "modbus_tcp_client_port") == 0) {
-    zplc_config_set_modbus_tcp_client_port((uint16_t)number);
-  } else if (strcmp(key, "modbus_tcp_client_unit_id") == 0) {
-    zplc_config_set_modbus_tcp_client_unit_id((uint8_t)number);
-  } else if (strcmp(key, "modbus_tcp_client_poll_ms") == 0) {
-    zplc_config_set_modbus_tcp_client_poll_ms(number);
-  } else if (strcmp(key, "modbus_tcp_client_timeout_ms") == 0) {
-    zplc_config_set_modbus_tcp_client_timeout_ms(number);
-  } else if (strcmp(key, "mqtt_broker") == 0) {
-    zplc_config_set_mqtt_broker(val);
-  } else if (strcmp(key, "mqtt_client_id") == 0) {
-    zplc_config_set_mqtt_client_id(val);
-  } else if (strcmp(key, "mqtt_group_id") == 0) {
-    zplc_config_set_mqtt_group_id(val);
-  } else if (strcmp(key, "mqtt_topic_namespace") == 0) {
-    zplc_config_set_mqtt_topic_namespace(val);
-  } else if (strcmp(key, "mqtt_profile") == 0) {
-    zplc_config_set_mqtt_profile((zplc_mqtt_profile_t)number);
-  } else if (strcmp(key, "mqtt_protocol") == 0) {
-    zplc_config_set_mqtt_protocol((zplc_mqtt_protocol_t)number);
-  } else if (strcmp(key, "mqtt_transport") == 0) {
-    zplc_config_set_mqtt_transport((zplc_mqtt_transport_t)number);
-  } else if (strcmp(key, "mqtt_port") == 0) {
-    zplc_config_set_mqtt_port((uint16_t)number);
-  } else if (strcmp(key, "mqtt_enabled") == 0) {
-    zplc_config_set_mqtt_enabled(strcmp(val, "true") == 0 || strcmp(val, "1") == 0 || strcmp(val, "on") == 0);
-  } else if (strcmp(key, "mqtt_username") == 0) {
-    zplc_config_set_mqtt_username(val);
-  } else if (strcmp(key, "mqtt_password") == 0) {
-    zplc_config_set_mqtt_password(val);
-  } else if (strcmp(key, "mqtt_keepalive") == 0) {
-    zplc_config_set_mqtt_keepalive_sec((uint16_t)number);
-  } else if (strcmp(key, "mqtt_publish_interval") == 0) {
-    zplc_config_set_mqtt_publish_interval_ms(number);
-  } else if (strcmp(key, "mqtt_publish_qos") == 0) {
-    zplc_config_set_mqtt_publish_qos((zplc_mqtt_qos_t)number);
-  } else if (strcmp(key, "mqtt_subscribe_qos") == 0) {
-    zplc_config_set_mqtt_subscribe_qos((zplc_mqtt_qos_t)number);
-  } else if (strcmp(key, "mqtt_publish_retain") == 0) {
-    zplc_config_set_mqtt_publish_retain(strcmp(val, "true") == 0 || strcmp(val, "1") == 0 || strcmp(val, "on") == 0);
-  } else if (strcmp(key, "mqtt_clean_session") == 0) {
-    zplc_config_set_mqtt_clean_session(strcmp(val, "true") == 0 || strcmp(val, "1") == 0 || strcmp(val, "on") == 0);
-  } else if (strcmp(key, "mqtt_session_expiry") == 0) {
-    zplc_config_set_mqtt_session_expiry_sec(number);
-  } else if (strcmp(key, "mqtt_security") == 0) {
+  size_t entry = 0U;
+  while (entry < ARRAY_SIZE(config_key_names) && strcmp(key, config_key_names[entry]) != 0) {
+    entry++;
+  }
+  if (entry == ARRAY_SIZE(config_key_names)) {
+    shell_error(sh, "ERROR: Unknown config key: %s", key);
+    return -EINVAL;
+  }
+  const union config_setter *set = &config_key_setters[entry];
+
+  switch (config_key_kinds[entry]) {
+  case CONFIG_KEY_TEXT:
+    set->text(val);
+    break;
+  case CONFIG_KEY_FLAG_ON:
+    set->flag(strcmp(val, "true") == 0 || strcmp(val, "1") == 0 || strcmp(val, "on") == 0);
+    break;
+  case CONFIG_KEY_FLAG:
+    set->flag(strcmp(val, "true") == 0 || strcmp(val, "1") == 0);
+    break;
+  case CONFIG_KEY_U8:
+    set->u8((uint8_t)number);
+    break;
+  case CONFIG_KEY_U16:
+    set->u16((uint16_t)number);
+    break;
+  case CONFIG_KEY_U32:
+    set->u32(number);
+    break;
+  case CONFIG_KEY_PARITY:
+    set->parity((zplc_modbus_parity_t)number);
+    break;
+  case CONFIG_KEY_PROFILE:
+    set->profile((zplc_mqtt_profile_t)number);
+    break;
+  case CONFIG_KEY_PROTOCOL:
+    set->protocol((zplc_mqtt_protocol_t)number);
+    break;
+  case CONFIG_KEY_TRANSPORT:
+    set->transport((zplc_mqtt_transport_t)number);
+    break;
+  case CONFIG_KEY_QOS:
+    set->qos((zplc_mqtt_qos_t)number);
+    break;
+  case CONFIG_KEY_SECURITY:
     if (number == (uint32_t)ZPLC_MQTT_SECURITY_TLS_NO_VERIFY) {
 #if defined(CONFIG_ZPLC_MQTT_ALLOW_INSECURE_TLS)
       /* COM-014: the opt-in is explicit, and it is not silent. */
@@ -3166,65 +3356,9 @@ static int cmd_config_set(const struct shell *sh, size_t argc, char **argv) {
       return -EPERM;
 #endif
     }
-    zplc_config_set_mqtt_security((zplc_mqtt_security_t)number);
-  } else if (strcmp(key, "mqtt_websocket_path") == 0) {
-    zplc_config_set_mqtt_websocket_path(val);
-  } else if (strcmp(key, "mqtt_alpn") == 0) {
-    zplc_config_set_mqtt_alpn(val);
-  } else if (strcmp(key, "mqtt_lwt_enabled") == 0) {
-    zplc_config_set_mqtt_lwt_enabled(strcmp(val, "true") == 0 || strcmp(val, "1") == 0 || strcmp(val, "on") == 0);
-  } else if (strcmp(key, "mqtt_lwt_topic") == 0) {
-    zplc_config_set_mqtt_lwt_topic(val);
-  } else if (strcmp(key, "mqtt_lwt_payload") == 0) {
-    zplc_config_set_mqtt_lwt_payload(val);
-  } else if (strcmp(key, "mqtt_lwt_qos") == 0) {
-    zplc_config_set_mqtt_lwt_qos((zplc_mqtt_qos_t)number);
-  } else if (strcmp(key, "mqtt_lwt_retain") == 0) {
-    zplc_config_set_mqtt_lwt_retain(strcmp(val, "true") == 0 || strcmp(val, "1") == 0 || strcmp(val, "on") == 0);
-  } else if (strcmp(key, "mqtt_ca_cert_path") == 0) {
-    zplc_config_set_mqtt_ca_cert_path(val);
-  } else if (strcmp(key, "mqtt_client_cert_path") == 0) {
-    zplc_config_set_mqtt_client_cert_path(val);
-  } else if (strcmp(key, "mqtt_client_key_path") == 0) {
-    zplc_config_set_mqtt_client_key_path(val);
-  } else if (strcmp(key, "azure_sas_key") == 0) {
-    zplc_config_set_azure_sas_key(val);
-  } else if (strcmp(key, "azure_sas_expiry_s") == 0) {
-    zplc_config_set_azure_sas_expiry_s(number);
-  } else if (strcmp(key, "azure_twin_enabled") == 0) {
-    zplc_config_set_azure_twin_enabled(strcmp(val, "true") == 0 || strcmp(val, "1") == 0 || strcmp(val, "on") == 0);
-  } else if (strcmp(key, "azure_direct_methods_enabled") == 0) {
-    zplc_config_set_azure_direct_methods_enabled(strcmp(val, "true") == 0 || strcmp(val, "1") == 0 || strcmp(val, "on") == 0);
-  } else if (strcmp(key, "azure_c2d_enabled") == 0) {
-    zplc_config_set_azure_c2d_enabled(strcmp(val, "true") == 0 || strcmp(val, "1") == 0 || strcmp(val, "on") == 0);
-  } else if (strcmp(key, "azure_dps_enabled") == 0) {
-    zplc_config_set_azure_dps_enabled(strcmp(val, "true") == 0 || strcmp(val, "1") == 0 || strcmp(val, "on") == 0);
-  } else if (strcmp(key, "azure_dps_id_scope") == 0) {
-    zplc_config_set_azure_dps_id_scope(val);
-  } else if (strcmp(key, "azure_dps_registration_id") == 0) {
-    zplc_config_set_azure_dps_registration_id(val);
-  } else if (strcmp(key, "azure_dps_endpoint") == 0) {
-    zplc_config_set_azure_dps_endpoint(val);
-  } else if (strcmp(key, "azure_event_grid_topic") == 0) {
-    zplc_config_set_azure_event_grid_topic(val);
-  } else if (strcmp(key, "azure_event_grid_source") == 0) {
-    zplc_config_set_azure_event_grid_source(val);
-  } else if (strcmp(key, "azure_event_grid_event_type") == 0) {
-    zplc_config_set_azure_event_grid_event_type(val);
-  } else if (strcmp(key, "aws_shadow_enabled") == 0) {
-    zplc_config_set_aws_shadow_enabled(strcmp(val, "true") == 0 || strcmp(val, "1") == 0 || strcmp(val, "on") == 0);
-  } else if (strcmp(key, "aws_jobs_enabled") == 0) {
-    zplc_config_set_aws_jobs_enabled(strcmp(val, "true") == 0 || strcmp(val, "1") == 0 || strcmp(val, "on") == 0);
-  } else if (strcmp(key, "aws_fleet_enabled") == 0) {
-    zplc_config_set_aws_fleet_enabled(strcmp(val, "true") == 0 || strcmp(val, "1") == 0 || strcmp(val, "on") == 0);
-  } else if (strcmp(key, "aws_fleet_template_name") == 0) {
-    zplc_config_set_aws_fleet_template_name(val);
-  } else if (strcmp(key, "aws_claim_cert_path") == 0) {
-    zplc_config_set_aws_claim_cert_path(val);
-  } else if (strcmp(key, "aws_claim_key_path") == 0) {
-    zplc_config_set_aws_claim_key_path(val);
-  } else {
-    shell_error(sh, "ERROR: Unknown config key: %s", key);
+    set->security((zplc_mqtt_security_t)number);
+    break;
+  default:
     return -EINVAL;
   }
 
@@ -3838,6 +3972,606 @@ static int cmd_wifi_connect(const struct shell *sh, size_t argc, char **argv)
 }
 
 /* ============================================================================
+ * The framed device link (COM-019 to COM-025, COM-028)
+ * ============================================================================
+ *
+ * The engine of the protocol (zplc_proto_dev.c) knows nothing of this file: it takes frames, applies the rules of
+ * sessions and authentication, and calls the port below. The port is the one place where a frame reaches the
+ * scheduler, the force table and the program store, and it does so with the same functions as the commands
+ * above, so a program that is loaded through the link is loaded by the same code as one that is loaded through
+ * `zplc sched data`.
+ *
+ * The transport is the shell: one frame per line, in hexadecimal, `zplc link <hex>`; a response or an event is a
+ * line `ZF:<hex>`. The text shell stays, as the older protocol and the recovery console.
+ */
+#ifdef CONFIG_ZPLC_DEVICE_LINK /* depends on the scheduler (Kconfig) */
+
+#include <zplc_crc32.h>
+#include <zplc_proto_dev.h>
+#include <zplc_sha256.h>
+#if defined(CONFIG_CSPRNG_ENABLED)
+#include <zephyr/random/random.h>
+#endif
+#ifdef CONFIG_ZPLC_PROTO_SIGNATURE
+#include <zplc_ed25519.h>
+#endif
+
+#define LINK_KEY_NAME "link_key"
+#define LINK_SIGNING_KEY_NAME "link_signkey"
+#define LINK_SERVICE_MS 20
+
+static zplc_proto_dev_t link_dev;
+static zplc_proto_link_t link_shell_link;
+static zplc_proto_ops_t link_ops;
+static bool link_started;
+static const struct shell *link_sh;
+static uint32_t link_generation;
+static char link_line[ZPLC_PROTO_FRAME_MAX * 2U + 4U];
+
+/* A frame arrives as one line of the shell, `zplc link ` and the frame in hexadecimal. The shell drops the
+ * characters of a line that does not fit its command buffer (data_insert() in shell_ops.c: a line takes at most
+ * CONFIG_SHELL_CMD_BUFF_SIZE - 1 of them) and then runs what is left, so a frame longer than that is never seen
+ * whole. The buffer therefore has to hold the largest frame this build accepts; a board that lowers it to save RAM
+ * lowers ZPLC_PROTO_PAYLOAD_MAX with it, and the build says so. */
+BUILD_ASSERT(CONFIG_SHELL_CMD_BUFF_SIZE >= sizeof("zplc link ") - 1U + 2U * ZPLC_PROTO_FRAME_MAX + 1U,
+             "CONFIG_SHELL_CMD_BUFF_SIZE cannot hold a frame of the device link in hexadecimal: raise it or lower "
+             "CONFIG_ZPLC_PROTO_PAYLOAD_MAX (2 * (payload + 47) + 11 characters)");
+static struct k_work_delayable link_service_work;
+static K_MUTEX_DEFINE(link_mutex);
+
+static uint32_t lk_now(void *context) {
+  ARG_UNUSED(context);
+  return k_uptime_get_32();
+}
+
+#if defined(CONFIG_CSPRNG_ENABLED)
+static int lk_random(void *context, uint8_t *out, size_t length) {
+  ARG_UNUSED(context);
+  return sys_csrand_get(out, length);
+}
+#endif
+
+static int lk_key_load(void *context, uint8_t key[ZPLC_PROTO_KEY_BYTES]) {
+  ARG_UNUSED(context);
+  return zplc_hal_persist_load(LINK_KEY_NAME, key, ZPLC_PROTO_KEY_BYTES) == ZPLC_HAL_OK ? 0 : 1;
+}
+
+static int lk_key_store(void *context, const uint8_t key[ZPLC_PROTO_KEY_BYTES]) {
+  ARG_UNUSED(context);
+  return zplc_hal_persist_save(LINK_KEY_NAME, key, ZPLC_PROTO_KEY_BYTES) == ZPLC_HAL_OK
+             ? 0
+             : (int)ZPLC_PROTO_ERR_FAILED;
+}
+
+static int lk_key_erase(void *context) {
+  ARG_UNUSED(context);
+  (void)zplc_hal_persist_delete(LINK_KEY_NAME);
+  return 0;
+}
+
+#ifdef CONFIG_ZPLC_PROTO_SIGNATURE
+static int lk_signing_key_load(void *context, uint8_t key[ZPLC_PROTO_KEY_BYTES]) {
+  ARG_UNUSED(context);
+  return zplc_hal_persist_load(LINK_SIGNING_KEY_NAME, key, ZPLC_PROTO_KEY_BYTES) == ZPLC_HAL_OK ? 0 : 1;
+}
+
+static int lk_signing_key_store(void *context, const uint8_t key[ZPLC_PROTO_KEY_BYTES]) {
+  ARG_UNUSED(context);
+  return zplc_hal_persist_save(LINK_SIGNING_KEY_NAME, key, ZPLC_PROTO_KEY_BYTES) == ZPLC_HAL_OK
+             ? 0
+             : (int)ZPLC_PROTO_ERR_FAILED;
+}
+
+static int lk_signing_key_erase(void *context) {
+  ARG_UNUSED(context);
+  (void)zplc_hal_persist_delete(LINK_SIGNING_KEY_NAME);
+  return 0;
+}
+
+/* The staging buffer holds what the loader is given: the signature is of those bytes. */
+static int lk_program_verify(void *context, const uint8_t key[ZPLC_PROTO_KEY_BYTES], const uint8_t signature[64]) {
+  ARG_UNUSED(context);
+  if (program_expected_size == 0U || program_staging_received_size != program_expected_size) {
+    return (int)ZPLC_PROTO_ERR_STATE;
+  }
+  return zplc_ed25519_verify(signature, key, program_staging_buffer, program_staging_received_size) == 0
+             ? 0
+             : (int)ZPLC_PROTO_ERR_SIGNATURE_INVALID;
+}
+#endif /* CONFIG_ZPLC_PROTO_SIGNATURE */
+
+static int lk_status(void *context, zplc_proto_status_t *status) {
+  zplc_sched_stats_t stats;
+  zplc_sched_state_t state = zplc_sched_get_state();
+  int task;
+
+  ARG_UNUSED(context);
+  memset(status, 0, sizeof(*status));
+  (void)zplc_sched_get_stats(&stats);
+  switch (state) {
+  case ZPLC_SCHED_STATE_RUNNING:
+    status->state = ZPLC_PROTO_RUN_STATE_RUNNING;
+    break;
+  case ZPLC_SCHED_STATE_PAUSED:
+    status->state = ZPLC_PROTO_RUN_STATE_PAUSED;
+    break;
+  case ZPLC_SCHED_STATE_ERROR:
+    status->state = ZPLC_PROTO_RUN_STATE_FAULT;
+    status->fault = ZPLC_PROTO_FAULT_RUNTIME;
+    break;
+  default:
+    status->state = ZPLC_PROTO_RUN_STATE_STOPPED;
+    break;
+  }
+  for (task = 0; task < CONFIG_ZPLC_MAX_TASKS; task++) {
+    zplc_sched_vm_snapshot_t vm;
+
+    if (zplc_sched_debug_snapshot(task, &vm) != 0) {
+      continue;
+    }
+    if (vm.error != 0 && state == ZPLC_SCHED_STATE_ERROR) {
+      status->fault = ZPLC_PROTO_FAULT_VM;
+      status->fault_task = (uint8_t)task;
+      status->fault_code = (uint16_t)vm.error;
+    }
+    if (vm.paused != 0U && state == ZPLC_SCHED_STATE_RUNNING) {
+      status->break_hit = 1U; /* a task is held while the scheduler runs: a breakpoint */
+      status->break_task = (uint8_t)task;
+      status->break_pc = vm.pc;
+    }
+  }
+  status->program_loaded = program_received_size != 0U ? 1U : 0U;
+  status->forces = zplc_force_get_count();
+  status->cycles = stats.total_cycles;
+  status->overruns = stats.total_overruns;
+  status->program_size = (uint32_t)program_received_size;
+  status->program_generation = link_generation;
+  status->uptime_ms = k_uptime_get_32();
+  return 0;
+}
+
+static int lk_identity(void *context, zplc_proto_identity_t *id) {
+  const zplc_fw_identity_t identity = zplc_fw_identity();
+  const zplc_io_table_t *table = zplc_io_table();
+
+  ARG_UNUSED(context);
+  id->abi_major = (uint16_t)identity.abi_major;
+  id->abi_minor = (uint16_t)identity.abi_minor;
+  id->draft_counter = identity.draft_counter;
+  id->io_hash = table->description_hash;
+  id->io_input_bytes = table->input_bytes;
+  id->io_output_bytes = table->output_bytes;
+  id->io_channels = table->channel_count;
+  id->code_size_max = (uint32_t)ZPLC_PROGRAM_STORE_MAX_ARTIFACT_SIZE;
+  id->work_size = ZPLC_MEM_WORK_SIZE;
+  id->retain_size = ZPLC_MEM_RETAIN_SIZE;
+  id->ipi_size = ZPLC_MEM_IPI_SIZE;
+  id->opi_size = ZPLC_MEM_OPI_SIZE;
+  id->product_version = identity.version;
+  id->board = CONFIG_BOARD;
+  id->board_profile = identity.board;
+  id->io_board_id = table->board_id;
+  return 0;
+}
+
+/* A read is from the snapshot a scan published: whole values, between two scans (RT-010). */
+static int lk_mem_read(void *context, uint16_t address, uint8_t *out, uint16_t length) {
+  ARG_UNUSED(context);
+  return zplc_exchange_read(address, out, length) == 0 ? 0 : (int)ZPLC_PROTO_ERR_RANGE;
+}
+
+static int lk_mem_read_many(void *context, const zplc_proto_extent_t *extents, size_t count, uint8_t *out,
+                            uint32_t *scan) {
+  zplc_sched_stats_t stats;
+  size_t i;
+  int result = 0;
+
+  ARG_UNUSED(context);
+  if (zplc_exchange_read_lock() != 0) {
+    return (int)ZPLC_PROTO_ERR_BUSY;
+  }
+  /* every extent comes from one publication, which is the scan the counter belongs to */
+  (void)zplc_sched_get_stats(&stats);
+  *scan = stats.total_cycles;
+  for (i = 0U; i < count && result == 0; i++) {
+    result = zplc_exchange_read_locked(extents[i].address, out, extents[i].length);
+    out += extents[i].length;
+  }
+  zplc_exchange_read_unlock();
+  return result == 0 ? 0 : (int)ZPLC_PROTO_ERR_RANGE;
+}
+
+/* One write, queued whole through the exchange and applied at the input latch of the next scan (COM-023). */
+static int lk_mem_write(void *context, uint16_t address, const uint8_t *data, uint16_t length) {
+  const int rc = zplc_exchange_write(address, data, length);
+
+  ARG_UNUSED(context);
+  if (rc == 0) {
+    return 0;
+  }
+  return rc == ZPLC_EXCHANGE_ERR_FULL ? (int)ZPLC_PROTO_ERR_FULL
+         : rc == ZPLC_EXCHANGE_ERR_LOCK ? (int)ZPLC_PROTO_ERR_BUSY
+                                        : (int)ZPLC_PROTO_ERR_RANGE;
+}
+
+static int lk_force_set(void *context, uint16_t address, const uint8_t *data, uint16_t length) {
+  int rc;
+
+  ARG_UNUSED(context);
+  if (zplc_sched_lock(5) != 0) {
+    return (int)ZPLC_PROTO_ERR_BUSY;
+  }
+  rc = zplc_force_set_bytes(address, data, length);
+  zplc_exchange_publish();
+  (void)zplc_sched_unlock();
+  switch (rc) {
+  case 0:
+    return 0;
+  case -2:
+    return (int)ZPLC_PROTO_ERR_RANGE;
+  case -4:
+    return (int)ZPLC_PROTO_ERR_FULL;
+  default:
+    return (int)ZPLC_PROTO_ERR_STATE;
+  }
+}
+
+static int lk_force_clear(void *context, uint16_t address) {
+  int rc;
+
+  ARG_UNUSED(context);
+  if (zplc_sched_lock(5) != 0) {
+    return (int)ZPLC_PROTO_ERR_BUSY;
+  }
+  rc = zplc_force_clear(address);
+  zplc_exchange_publish();
+  (void)zplc_sched_unlock();
+  return rc == 0 ? 0 : (int)ZPLC_PROTO_ERR_RANGE;
+}
+
+static int lk_force_clear_all(void *context) {
+  ARG_UNUSED(context);
+  if (zplc_sched_lock(5) != 0) {
+    return (int)ZPLC_PROTO_ERR_BUSY;
+  }
+  zplc_force_clear_all();
+  zplc_exchange_publish();
+  (void)zplc_sched_unlock();
+  return 0;
+}
+
+static int lk_force_get(void *context, uint8_t index, uint16_t *address, uint16_t *size, uint8_t *data) {
+  ARG_UNUSED(context);
+  return zplc_force_get(index, address, size, data, ZPLC_FORCE_MAX_BYTES) == 0 ? 0 : (int)ZPLC_PROTO_ERR_FAILED;
+}
+
+static int lk_control(int rc) {
+  if (rc == 0) {
+    return 0;
+  }
+  return rc == ZPLC_SCHED_ERR_LOCK ? (int)ZPLC_PROTO_ERR_BUSY : (int)ZPLC_PROTO_ERR_STATE;
+}
+
+static int lk_run(void *context) {
+  ARG_UNUSED(context);
+  if (program_received_size == 0U) {
+    return (int)ZPLC_PROTO_ERR_STATE; /* nothing to run */
+  }
+  return lk_control(zplc_sched_start());
+}
+
+static int lk_stop(void *context) {
+  ARG_UNUSED(context);
+  return lk_control(zplc_sched_stop());
+}
+
+static int lk_pause(void *context) {
+  ARG_UNUSED(context);
+  return lk_control(zplc_sched_pause());
+}
+
+static int lk_resume(void *context) {
+  ARG_UNUSED(context);
+  return lk_control(zplc_sched_resume());
+}
+
+static int lk_step(void *context) {
+  ARG_UNUSED(context);
+  return lk_control(zplc_sched_step() == -1 ? -1 : 0);
+}
+
+static int lk_reset(void *context) {
+  ARG_UNUSED(context);
+  return sched_reset_loaded_program() < 0 ? (int)ZPLC_PROTO_ERR_FAILED : 0;
+}
+
+static int lk_breakpoint(uint16_t pc, bool add) {
+  bool found = false;
+  int last = 0;
+  int task;
+
+  for (task = 0; task < CONFIG_ZPLC_MAX_TASKS; task++) {
+    zplc_sched_vm_snapshot_t vm;
+
+    if (zplc_sched_debug_snapshot(task, &vm) != 0) {
+      continue;
+    }
+    found = true;
+    {
+      const int rc = add ? zplc_sched_debug_add_breakpoint(task, pc) : zplc_sched_debug_remove_breakpoint(task, pc);
+
+      if (rc < 0) {
+        last = rc;
+      }
+    }
+  }
+  if (!found) {
+    return (int)ZPLC_PROTO_ERR_STATE;
+  }
+  return last == 0 ? 0 : (last == -2 ? (int)ZPLC_PROTO_ERR_FULL : (int)ZPLC_PROTO_ERR_STATE);
+}
+
+static int lk_bp_add(void *context, uint16_t pc) {
+  ARG_UNUSED(context);
+  return lk_breakpoint(pc, true);
+}
+
+static int lk_bp_remove(void *context, uint16_t pc) {
+  ARG_UNUSED(context);
+  return lk_breakpoint(pc, false);
+}
+
+static int lk_bp_clear(void *context) {
+  int task;
+
+  ARG_UNUSED(context);
+  for (task = 0; task < CONFIG_ZPLC_MAX_TASKS; task++) {
+    (void)zplc_sched_debug_clear_breakpoints(task);
+  }
+  return 0;
+}
+
+static int lk_bp_list(void *context, uint16_t *pcs, size_t capacity, size_t *count) {
+  size_t total = 0U;
+  int task;
+
+  ARG_UNUSED(context);
+  for (task = 0; task < CONFIG_ZPLC_MAX_TASKS; task++) {
+    zplc_sched_vm_snapshot_t vm;
+    uint8_t i;
+
+    if (zplc_sched_debug_snapshot(task, &vm) != 0) {
+      continue;
+    }
+    for (i = 0U; i < vm.breakpoint_count; i++) {
+      size_t seen;
+      bool duplicate = false;
+
+      for (seen = 0U; seen < total && seen < capacity; seen++) {
+        duplicate = duplicate || pcs[seen] == vm.breakpoints[i];
+      }
+      if (!duplicate) {
+        if (total < capacity) {
+          pcs[total] = vm.breakpoints[i];
+        }
+        total++;
+      }
+    }
+  }
+  *count = total;
+  return 0;
+}
+
+/* The one buffer of the code size is the staging buffer of the shell upload as well: a transfer by the link and a
+ * transfer by `zplc sched data` cannot be in progress together, and starting one cancels the other. */
+static int lk_program_begin(void *context, uint32_t size) {
+  const zplc_sched_state_t state = zplc_sched_get_state();
+
+  ARG_UNUSED(context);
+  if (state == ZPLC_SCHED_STATE_RUNNING || state == ZPLC_SCHED_STATE_PAUSED) {
+    return (int)ZPLC_PROTO_ERR_STATE; /* a program is replaced while the runtime is stopped */
+  }
+  if (size > program_buffer_size) {
+    return (int)ZPLC_PROTO_ERR_TOO_LARGE;
+  }
+  begin_upload_rollback();
+  memset(program_staging_buffer, 0, program_buffer_size);
+  program_expected_size = size;
+  program_staging_received_size = 0U;
+  return 0;
+}
+
+static int lk_program_chunk(void *context, uint32_t offset, const uint8_t *data, uint16_t length) {
+  ARG_UNUSED(context);
+  if (program_expected_size == 0U || (size_t)offset + length > program_expected_size) {
+    return (int)ZPLC_PROTO_ERR_STATE;
+  }
+  memcpy(program_staging_buffer + offset, data, length);
+  program_staging_received_size = (size_t)offset + length;
+  return 0;
+}
+
+static void lk_program_forget(void) {
+  program_expected_size = 0U;
+  program_staging_received_size = 0U;
+  memset(program_staging_buffer, 0, program_buffer_size);
+}
+
+static int lk_program_commit(void *context, zplc_proto_program_info_t *info) {
+  size_t size = program_staging_received_size;
+  int rc;
+
+  ARG_UNUSED(context);
+  if (program_expected_size == 0U || size != program_expected_size) {
+    return (int)ZPLC_PROTO_ERR_STATE;
+  }
+  rc = zplc_sched_validate_program(program_staging_buffer, size);
+  if (rc != ZPLC_LOADER_OK) {
+    lk_program_forget();
+    return (int)ZPLC_PROTO_ERR_PROGRAM_INVALID;
+  }
+  rc = zplc_program_store_commit(program_staging_buffer, size, program_buffer_size + ZPLC_PROGRAM_STORE_FOOTER_SIZE);
+  if (rc != ZPLC_PROGRAM_STORE_COMMIT_OK) {
+    if (rc == ZPLC_PROGRAM_STORE_COMMIT_UNKNOWN) {
+      (void)sched_latch_ambiguous_program_publication();
+    } else {
+      lk_program_forget();
+    }
+    return (int)ZPLC_PROTO_ERR_FAILED;
+  }
+  rc = sched_reset_runtime(program_staging_buffer, size);
+  if (rc < 0) {
+    program_expected_size = 0U;
+    program_received_size = 0U;
+    return (int)ZPLC_PROTO_ERR_FAILED;
+  }
+  program_received_size = size;
+  program_expected_size = 0U;
+  program_staging_received_size = 0U;
+  link_generation++;
+  info->loaded = 1U;
+  info->size = (uint32_t)size;
+  info->crc32 = zplc_crc32(program_staging_buffer, size); /* the copy the runtime executes, as stored */
+  info->generation = link_generation;
+  return 0;
+}
+
+static void lk_program_abort(void *context) {
+  ARG_UNUSED(context);
+  if (program_expected_size != 0U) {
+    lk_program_forget();
+  }
+}
+
+static int lk_program_info(void *context, zplc_proto_program_info_t *info) {
+  ARG_UNUSED(context);
+  memset(info, 0, sizeof(*info));
+  info->loaded = program_received_size != 0U ? 1U : 0U;
+  info->size = (uint32_t)program_received_size;
+  info->crc32 = program_received_size != 0U ? zplc_crc32(program_staging_buffer, program_received_size) : 0U;
+  info->generation = link_generation;
+  return 0;
+}
+
+/* The frame goes out as one line in one call: another thread's output does not land inside it. */
+static int link_write(void *context, const uint8_t *frame, size_t length) {
+  static const char digits[] = "0123456789abcdef";
+  size_t i;
+
+  ARG_UNUSED(context);
+  if (link_sh == NULL || length * 2U + 4U > sizeof(link_line)) {
+    return -1;
+  }
+  link_line[0] = 'Z';
+  link_line[1] = 'F';
+  link_line[2] = ':';
+  for (i = 0U; i < length; i++) {
+    link_line[3U + 2U * i] = digits[frame[i] >> 4];
+    link_line[4U + 2U * i] = digits[frame[i] & 0x0FU];
+  }
+  link_line[3U + 2U * length] = '\0';
+  /* A line that starts with a newline, so that an event that lands in the middle of a line of text that another
+   * thread is printing (a JSON answer is printed in pieces) is a line of its own that a reader can take out. */
+  shell_fprintf(link_sh, SHELL_NORMAL, "\n%s\n", link_line);
+  return 0;
+}
+
+static void link_service(struct k_work *work) {
+  zplc_proto_link_t *links[1] = {&link_shell_link};
+
+  ARG_UNUSED(work);
+  if (k_mutex_lock(&link_mutex, K_MSEC(5)) == 0) {
+    zplc_proto_dev_service(&link_dev, links, 1U);
+    k_mutex_unlock(&link_mutex);
+  }
+  (void)k_work_reschedule(&link_service_work, K_MSEC(LINK_SERVICE_MS));
+}
+
+static void link_start(void) {
+  if (link_started) {
+    return;
+  }
+  memset(&link_ops, 0, sizeof(link_ops));
+  link_ops.now_ms = lk_now;
+#if defined(CONFIG_CSPRNG_ENABLED)
+  link_ops.random = lk_random;
+  link_ops.key_load = lk_key_load;
+  link_ops.key_store = lk_key_store;
+  link_ops.key_erase = lk_key_erase;
+#else
+  /* no cryptographic generator on this board: no authenticated session, and no key to hold (COM-016) */
+  (void)lk_key_load;
+  (void)lk_key_store;
+  (void)lk_key_erase;
+#endif
+  link_ops.status = lk_status;
+  link_ops.identity = lk_identity;
+  link_ops.mem_read = lk_mem_read;
+  link_ops.mem_read_many = lk_mem_read_many;
+  link_ops.mem_write = lk_mem_write;
+  link_ops.force_set = lk_force_set;
+  link_ops.force_clear = lk_force_clear;
+  link_ops.force_clear_all = lk_force_clear_all;
+  link_ops.force_get = lk_force_get;
+  link_ops.run = lk_run;
+  link_ops.stop = lk_stop;
+  link_ops.pause = lk_pause;
+  link_ops.resume = lk_resume;
+  link_ops.step = lk_step;
+  link_ops.reset = lk_reset;
+  link_ops.bp_add = lk_bp_add;
+  link_ops.bp_remove = lk_bp_remove;
+  link_ops.bp_clear = lk_bp_clear;
+  link_ops.bp_list = lk_bp_list;
+  link_ops.program_begin = lk_program_begin;
+  link_ops.program_chunk = lk_program_chunk;
+  link_ops.program_commit = lk_program_commit;
+  link_ops.program_abort = lk_program_abort;
+  link_ops.program_info = lk_program_info;
+#ifdef CONFIG_ZPLC_PROTO_SIGNATURE
+  link_ops.signing_key_load = lk_signing_key_load;
+  link_ops.signing_key_store = lk_signing_key_store;
+  link_ops.signing_key_erase = lk_signing_key_erase;
+  link_ops.program_verify = lk_program_verify;
+#endif
+  (void)zplc_proto_dev_init(&link_dev, &link_ops, CONFIG_ZPLC_PROTO_SESSION_IDLE_S);
+  zplc_proto_link_init(&link_shell_link, &link_dev, ZPLC_PROTO_TRANSPORT_SERIAL, link_write, NULL);
+  k_work_init_delayable(&link_service_work, link_service);
+  (void)k_work_reschedule(&link_service_work, K_MSEC(LINK_SERVICE_MS));
+  link_started = true;
+}
+
+/* `zplc link <hex frame>`: one frame of the protocol; the response is a line ZF:<hex>. Nothing is printed for a
+ * frame that is not a frame (the counters say what was dropped). */
+static int cmd_link(const struct shell *sh, size_t argc, char **argv) {
+  uint8_t frame[ZPLC_PROTO_FRAME_MAX];
+  int decoded;
+  int rc;
+
+  if (argc != 2) {
+    shell_error(sh, "Usage: zplc link <hex frame>");
+    return -EINVAL;
+  }
+  decoded = hex_decode(argv[1], frame, sizeof(frame));
+  if (decoded <= 0) {
+    return -EINVAL;
+  }
+  k_mutex_lock(&link_mutex, K_FOREVER);
+  link_sh = sh;
+  link_start();
+  rc = zplc_proto_link_feed_frame(&link_shell_link, frame, (size_t)decoded);
+  k_mutex_unlock(&link_mutex);
+  /* the line of a command is in the buffer of the shell: a key that came in it does not stay there */
+  if (decoded > ZPLC_PROTO_OFFSET_MESSAGE && frame[ZPLC_PROTO_OFFSET_MESSAGE] == ZPLC_PROTO_MSG_KEY_SET) {
+    zplc_secure_zero(argv[1], strlen(argv[1]));
+  }
+  zplc_secure_zero(frame, sizeof(frame));
+  return rc == 0 ? 0 : -EINVAL;
+}
+
+#endif /* CONFIG_ZPLC_DEVICE_LINK */
+
+/* ============================================================================
  * Shell Command Registration
  * ============================================================================
  */
@@ -3894,6 +4628,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
     SHELL_CMD_ARG(info, NULL, "System information", cmd_sys_info, 1, 1),
     SHELL_CMD_ARG(build, NULL, "Firmware identity: commit, board, ABI, options [--json]", cmd_sys_build, 1, 1),
     SHELL_CMD_ARG(io, NULL, "Identity of the board I/O description [--json]", cmd_sys_io, 1, 1),
+    SHELL_CMD_ARG(reset, NULL, "Why the processor was last reset, and the fault it left [--json]", cmd_sys_reset, 1, 1),
     SHELL_CMD(reboot, NULL, "Reboot", cmd_sys_reboot),
     SHELL_SUBCMD_SET_END);
 #endif
@@ -4047,6 +4782,9 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
     SHELL_CMD_ARG(status, NULL, "Runtime status", cmd_zplc_status, 1, 1),
     SHELL_CMD(reset, NULL, "Reset VM", cmd_zplc_reset),
     SHELL_CMD(version, NULL, "Version info", cmd_zplc_version),
+#ifdef CONFIG_ZPLC_DEVICE_LINK /* depends on the scheduler (Kconfig) */
+    SHELL_CMD_ARG(link, NULL, "One frame of the device link protocol, in hexadecimal", cmd_link, 2, 0),
+#endif
     SHELL_CMD(dbg, &sub_dbg, "Debug commands", NULL),
     SHELL_CMD(config, &sub_config, "Configuration commands", NULL),
     SHELL_CMD(cert, &sub_cert, "Certificate management", NULL),

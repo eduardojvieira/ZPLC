@@ -4633,17 +4633,19 @@ static void test_deadline_miss_warns_counts_and_latches(void)
     zplc_native_runtime_session_shutdown(&session);
 }
 
-/* RT-014: with the default limit the first miss latches the fault, as the target scheduler does. */
-static void test_deadline_default_limit_latches_the_first_miss_of_a_single_task(void)
+/* RT-014, RT-D05b: with the default limit one late activation is a warning and a count, and the third in a row
+ * latches the fault: the limit of the firmware scheduler is the same number, because it is the same core. */
+static void test_deadline_default_limit_tolerates_one_late_activation(void)
 {
     zplc_native_runtime_session_t session;
     uint8_t artifact[128], code[32];
     size_t n = mr_emit_counter(code, 0U, MR_CELL(0));
     char response[2048], event[2048];
 
-    printf("\n=== Test: the default limit latches at the first miss, as the target does (RT-014) ===\n");
+    printf("\n=== Test: the default limit tolerates one late activation (RT-014) ===\n");
     zplc_native_runtime_session_init(&session);
-    TEST_ASSERT(session.deadline_miss_limit == 1U, "the default limit is one miss");
+    TEST_ASSERT(session.deadline_miss_limit == ZPLC_SCHED_DEFAULT_MISS_LIMIT && session.deadline_miss_limit == 3U,
+                "the default limit is the one of the scheduler core: three misses in a row");
     session.clock_ms = mr_clock;
     TEST_ASSERT(mr_load(&session, artifact, build_task_zplc(artifact, sizeof(artifact), code, n, 10000U)),
                 "a single 10 ms task loads");
@@ -4653,6 +4655,40 @@ static void test_deadline_default_limit_latches_the_first_miss_of_a_single_task(
     TEST_ASSERT(zplc_native_runtime_session_tick(&session, 10U, event, sizeof(event)) == 0 &&
                     session.state == ZPLC_NATIVE_SESSION_RUNNING && session.overrun_count == 0U,
                 "a scan that ends exactly at its interval is in time");
+    mr_clock_step_ms = 11U;
+    mr_clock_now_ms = 0U;
+    TEST_ASSERT(zplc_native_runtime_session_tick(&session, 20U, event, sizeof(event)) == 0 &&
+                    session.state == ZPLC_NATIVE_SESSION_RUNNING && session.overrun_count == 1U &&
+                    session.last_overrun_us == 1000U && session.fault_reason == ZPLC_NATIVE_FAULT_NONE,
+                "a scan one millisecond past its interval is a warning and a count: the first late activation does "
+                "not stop the machine");
+    mr_clock_now_ms = 0U;
+    TEST_ASSERT(zplc_native_runtime_session_tick(&session, 30U, event, sizeof(event)) == 0 &&
+                    session.state == ZPLC_NATIVE_SESSION_RUNNING && session.task_consecutive_misses[0] == 2U,
+                "the second in a row is still below the limit");
+    mr_clock_now_ms = 0U;
+    TEST_ASSERT(zplc_native_runtime_session_tick(&session, 40U, event, sizeof(event)) < 0 &&
+                    session.state == ZPLC_NATIVE_SESSION_ERROR && session.overrun_count == 3U &&
+                    session.fault_reason == ZPLC_NATIVE_FAULT_DEADLINE_MISS && session.fault_task_id == 0U,
+                "the third in a row latches the fault");
+    zplc_native_runtime_session_shutdown(&session);
+}
+
+/* RT-014: a limit of one latches at the first miss, as the firmware did before the limit was configurable. */
+static void test_deadline_limit_of_one_latches_the_first_miss(void)
+{
+    zplc_native_runtime_session_t session;
+    uint8_t artifact[128], code[32];
+    size_t n = mr_emit_counter(code, 0U, MR_CELL(0));
+    char response[2048], event[2048];
+
+    printf("\n=== Test: a limit of one latches at the first miss (RT-014) ===\n");
+    zplc_native_runtime_session_init(&session);
+    session.deadline_miss_limit = 1U;
+    session.clock_ms = mr_clock;
+    TEST_ASSERT(mr_load(&session, artifact, build_task_zplc(artifact, sizeof(artifact), code, n, 10000U)),
+                "a single 10 ms task loads");
+    mr_request(&session, "execution.start", response, sizeof(response), event, sizeof(event));
     mr_clock_step_ms = 11U;
     mr_clock_now_ms = 0U;
     TEST_ASSERT(zplc_native_runtime_session_tick(&session, 20U, event, sizeof(event)) < 0 &&
@@ -4676,15 +4712,16 @@ static void test_deadline_limit_comes_from_the_environment(void)
     zplc_native_runtime_session_shutdown(&session);
     setenv("ZPLC_DEADLINE_MISS_LIMIT", "0", 1);
     zplc_native_runtime_session_init(&session);
-    TEST_ASSERT(session.deadline_miss_limit == 1U, "a limit of 0 is ignored: a deadline miss cannot be tolerated for ever");
+    TEST_ASSERT(session.deadline_miss_limit == ZPLC_SCHED_DEFAULT_MISS_LIMIT,
+                "a limit of 0 is ignored: a deadline miss cannot be tolerated for ever");
     zplc_native_runtime_session_shutdown(&session);
     setenv("ZPLC_DEADLINE_MISS_LIMIT", "many", 1);
     zplc_native_runtime_session_init(&session);
-    TEST_ASSERT(session.deadline_miss_limit == 1U, "a value that is not a number is ignored");
+    TEST_ASSERT(session.deadline_miss_limit == ZPLC_SCHED_DEFAULT_MISS_LIMIT, "a value that is not a number is ignored");
     zplc_native_runtime_session_shutdown(&session);
     setenv("ZPLC_DEADLINE_MISS_LIMIT", "1000001", 1);
     zplc_native_runtime_session_init(&session);
-    TEST_ASSERT(session.deadline_miss_limit == 1U, "a limit above the maximum is ignored");
+    TEST_ASSERT(session.deadline_miss_limit == ZPLC_SCHED_DEFAULT_MISS_LIMIT, "a limit above the maximum is ignored");
     zplc_native_runtime_session_shutdown(&session);
     if (old != NULL) setenv("ZPLC_DEADLINE_MISS_LIMIT", old, 1); else unsetenv("ZPLC_DEADLINE_MISS_LIMIT");
 }
@@ -4840,7 +4877,8 @@ int main(void)
     test_multirate_poll_timeout_is_the_nearest_release();
     test_multirate_pause_resume_stop_and_reset_keep_the_schedule();
     test_deadline_miss_warns_counts_and_latches();
-    test_deadline_default_limit_latches_the_first_miss_of_a_single_task();
+    test_deadline_default_limit_tolerates_one_late_activation();
+    test_deadline_limit_of_one_latches_the_first_miss();
     test_deadline_limit_comes_from_the_environment();
     test_step_and_breakpoint_scans_are_not_deadline_checked();
     test_status_of_sixteen_multirate_tasks_and_eight_forces_fits_the_response();

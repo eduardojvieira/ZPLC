@@ -25,7 +25,7 @@ import {
   ChevronDown,
   ChevronRight,
 } from 'lucide-react';
-import { connectionManager } from '../runtime/connectionManager';
+import { connectionManager, type LinkInfo } from '../runtime/connectionManager';
 import type { CommunicationMapEntry, MqttRuntimeStatus, SystemInfo, StatusInfo } from '../runtime/serialAdapter';
 import { Button, NumberField } from '../ui';
 
@@ -37,6 +37,7 @@ export function ControllerView() {
   const [communicationMap, setCommunicationMap] = useState<CommunicationMapEntry[]>(connectionManager.communicationMap);
   const [mqttStatus, setMqttStatus] = useState<MqttRuntimeStatus | null>(connectionManager.mqttStatus);
   const [lastUpdateTime, setLastUpdateTime] = useState<Date | null>(null);
+  const [linkInfo, setLinkInfo] = useState<LinkInfo>(connectionManager.linkInfo);
   const [modbusDrafts, setModbusDrafts] = useState<Record<number, string>>({});
   
   // UI state
@@ -77,7 +78,10 @@ export function ControllerView() {
       setMqttStatus(nextStatus);
     });
 
+    const unsubLink = connectionManager.onLinkInfoUpdate(setLinkInfo);
+
     return () => {
+      unsubLink();
       unsubConnection();
       unsubSystemInfo();
       unsubStatus();
@@ -204,6 +208,33 @@ export function ControllerView() {
                 {formatUptime(status?.uptime_ms || systemInfo.uptime_ms)}
               </span>
             </div>
+            {/* How the firmware is talked to and how its state is known (COM-025, COM-029) */}
+            {linkInfo.firmware && (
+              <div className="flex justify-between">
+                <span className="text-[var(--color-surface-400)]">Link</span>
+                <span className="text-[var(--color-surface-200)]" data-testid="device-link-protocol">
+                  {linkInfo.firmware.protocol.kind === 'framed'
+                    ? `framed protocol ${linkInfo.firmware.protocol.version}`
+                    : linkInfo.firmware.protocol.kind === 'shell-only' ? 'text shell (older protocol)' : 'unknown'}
+                </span>
+              </div>
+            )}
+            {linkInfo.router && linkInfo.router.source !== 'none' && (
+              <div className="flex justify-between gap-2">
+                <span className="text-[var(--color-surface-400)]">State</span>
+                <span className="text-[var(--color-surface-200)] text-right" data-testid="device-link-source">
+                  {linkInfo.router.label}
+                  {linkInfo.router.dropped + linkInfo.router.lostByDevice > 0
+                    ? ` (${linkInfo.router.dropped + linkInfo.router.lostByDevice} events dropped)`
+                    : ''}
+                </span>
+              </div>
+            )}
+            {linkInfo.firmware?.action === 'use-shell-and-offer-update' && (
+              <p className="text-xs text-[var(--color-accent-yellow)]" data-testid="device-link-update">
+                {linkInfo.firmware.message}
+              </p>
+            )}
             {/* Capabilities */}
             <div className="flex gap-1 mt-2">
               {systemInfo.capabilities.fpu && (

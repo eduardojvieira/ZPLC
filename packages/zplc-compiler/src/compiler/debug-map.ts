@@ -125,6 +125,38 @@ export interface BreakpointLocation {
 // ============================================================================
 
 /**
+ * The power at a point of a Ladder rung, as an expression of the variables that hold the states that make it up
+ * (LNG-006): what an online display evaluates with the values it reads, so that it shows the power that really
+ * reaches an element and not a guess from the name of its variable.
+ */
+export type DebugPowerExpr =
+    | { op: 'true' }
+    | { op: 'var'; variable: string; not?: boolean }
+    | { op: 'and' | 'or'; terms: DebugPowerExpr[] };
+
+/**
+ * How an online display reads one element of a source that was translated to Structured Text (LNG-006): which
+ * variable of this POU holds its state. The front end that translated the source writes it, so no tool has to
+ * know the names it generated.
+ *
+ *  - `value`     the variable an element names: a contact, a coil, a variable block (`variable`)
+ *  - `output`    the value an output pin of a block holds (`port`, `variable`)
+ *  - `power`     the power that reaches an element of a rung, and the power that leaves it (`in`, `out`)
+ *  - `step`      the active flag of an SFC step (`variable`); `time`, how long it has been active
+ *  - `condition` whether the condition of an SFC transition holds (`variable`); `fired`, that it fired in this scan
+ */
+export interface DebugMonitorEntry {
+    /** The element of the source: `rung:r1/cell:0,2`, `block:and_1`, `step:s1`, `transition:t1`. */
+    element: string;
+    role: 'value' | 'output' | 'power' | 'step' | 'time' | 'condition' | 'fired';
+    port?: string;
+    /** A variable of the POU, as `vars` names it: `X_s1`, `T_s1.ET`, `Motor.Running`. */
+    variable?: string;
+    in?: DebugPowerExpr;
+    out?: DebugPowerExpr;
+}
+
+/**
  * Debug information for a Program Organization Unit (POU).
  */
 export interface DebugPOUInfo {
@@ -143,6 +175,11 @@ export interface DebugPOUInfo {
     breakpoints: BreakpointLocation[];
     /** Physical source reference used to compile this POU, when available. */
     sourceRef?: string;
+    /**
+     * For a source translated to Structured Text by a front end: where the state of each of its elements is read
+     * online (LNG-006). Absent for a plain Structured Text source.
+     */
+    monitor?: DebugMonitorEntry[];
 }
 
 // ============================================================================

@@ -176,14 +176,18 @@ describe('Communication tag admission', () => {
         }
     });
 
-    it('rejects a tag emitted from the unsupported 0x3000 WORK alias', () => {
-        expect(() => compileToBinary(`
+    // COM-013: a variable in the upper half of WORK is bound like any other; the adapters reach it through
+    // the exchange with its whole address.
+    it('binds a tag on a variable in the upper half of WORK', () => {
+        const result = compileToBinary(`
             PROGRAM Tags
             VAR
                 Published : BOOL {publish};
+                Served : UINT {modbus:40001};
             END_VAR
             END_PROGRAM
-        `, { workMemoryBase: 0x3000 })).toThrow(/0x3000/);
+        `, { workMemoryBase: 0x3000 });
+        expect(result.zplcFile.length).toBeGreaterThan(0);
     });
 });
 
@@ -786,9 +790,11 @@ describe('Canonical PROGRAM admission', () => {
             } catch (error) {
                 const diagnostic = error as CompilerError;
                 expect(diagnostic.phase).toBe('codegen');
-                expect(diagnostic.line).toBe(0);
-                expect(diagnostic.column).toBe(0);
-                expect(diagnostic.sourceRef).toBeUndefined();
+                // the project file is where a task is declared; it has no line of its own that the compiler knows (CMP-006)
+                expect(diagnostic.line).toBe(1);
+                expect(diagnostic.column).toBe(1);
+                expect(diagnostic.sourceRef).toBe('zplc.json');
+                expect(diagnostic.code).toBe('INVALID_TASK_CONFIGURATION');
                 expect(diagnostic.detail).toBe("Task 'MainTask' must reference exactly one PROGRAM");
             }
         }
@@ -1556,9 +1562,10 @@ describe('Multi-Task Compiler', () => {
         } catch (error) {
             expect(error).toMatchObject({
                 phase: 'codegen',
-                line: 0,
-                column: 0,
-                sourceRef: undefined,
+                code: 'INVALID_TASK_CONFIGURATION',
+                line: 1,
+                column: 1,
+                sourceRef: 'zplc.json',
             });
         }
     });
@@ -1651,9 +1658,10 @@ describe('Multi-Task Compiler', () => {
         } catch (error) {
             expect(error).toMatchObject({
                 phase: 'codegen',
-                line: 0,
-                column: 0,
-                sourceRef: undefined,
+                code: 'INVALID_TASK_CONFIGURATION',
+                line: 1,
+                column: 1,
+                sourceRef: 'zplc.json',
             });
         }
     });

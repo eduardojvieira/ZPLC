@@ -3,5 +3,6 @@
   "title": "an FBD block with an unwired required input is rejected",
   "matrix": ["ld-fbd.fbd-unwired-inputs"],
   "build": "fails",
+  "codes": ["TRANSLATION_FAILED"],
   "elements": ["block:and1"]
 }

@@ -19,6 +19,7 @@ import { useEffect, useState, type ComponentType } from 'react';
 import { Group, Panel, Separator, useGroupCallbackRef, usePanelCallbackRef } from 'react-resizable-panels';
 import { WelcomeScreen } from './components/WelcomeScreen';
 import { CloseGuard } from './components/CloseGuard';
+import { SerialPortChooser } from './components/SerialPortChooser';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { DevFaultProbe } from './components/DevFaultProbe';
 import { RecoveryOffer } from './components/RecoveryOffer';
@@ -34,7 +35,9 @@ import { startAutosave } from './store/autosave';
 import { trackProjectSources } from './store/projectSources';
 import { startExternalChangeWatch } from './store/externalChangeWatch';
 import { initializeSettings, useAppSettings } from './store/useAppSettings';
-import { describeUpdateCheck, runUpdateCheck } from './ipc/updateCheckBridge';
+import { runUpdateCheck } from './ipc/updateCheckBridge';
+import { UpdateNoticeBanner } from './components/UpdateNotice';
+import { useUpdateNotice } from './store/updateNotice';
 import { ZPLC_REPO_VERSION } from './version';
 import { Button } from './ui';
 
@@ -109,7 +112,8 @@ function App() {
     if (!checkForUpdates) return undefined;
     let current = true;
     void runUpdateCheck(window.electronAPI?.updateCheck, ZPLC_REPO_VERSION).then((result) => {
-      if (current && result.status === 'available') useIDEStore.getState().addConsoleEntry({ type: 'info', message: describeUpdateCheck(result), source: 'system' });
+      // A newer release shows the dismissible notice; an answer that says nothing, or that could not be had, shows nothing (REL-021).
+      if (current) useUpdateNotice.getState().report(result);
     });
     return () => { current = false; };
   }, [checkForUpdates]);
@@ -147,8 +151,10 @@ function App() {
   if (!isProjectOpen) {
     return (
       <div className="h-screen w-screen flex flex-col overflow-hidden bg-[var(--color-surface-900)]">
+        <UpdateNoticeBanner />
         <WelcomeScreen />
         <CloseGuard />
+        <SerialPortChooser />
       </div>
     );
   }
@@ -158,6 +164,7 @@ function App() {
     return (
       <div className="h-screen w-screen flex flex-col overflow-hidden bg-[var(--color-surface-900)]">
         <CloseGuard />
+        <SerialPortChooser />
         <div role={failed ? 'alert' : 'status'} className="flex flex-1 flex-col items-center justify-center gap-3 text-sm text-[var(--text-secondary)]">
           <p>{failed ? `Studio could not load the workbench: ${workbenchFailure.message}` : 'Loading the workbench…'}</p>
           {failed && (
@@ -172,8 +179,10 @@ function App() {
   return (
     <div className="h-screen w-screen flex flex-col overflow-hidden bg-[var(--color-surface-900)]">
       <CloseGuard />
+      <SerialPortChooser />
       <RecoveryOffer />
       <ExternalChangePrompt />
+      <UpdateNoticeBanner />
       {/* Unified Toolbar */}
       <ErrorBoundary region="Toolbar">
         <DevFaultProbe region="Toolbar" />

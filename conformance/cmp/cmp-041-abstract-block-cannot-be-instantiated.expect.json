@@ -9,6 +9,9 @@
   "lines": [
     8
   ],
+  "codes": [
+    "ABSTRACT_INSTANTIATION"
+  ],
   "messageIncludes": [
     "ABSTRACT",
     "Template"

@@ -1,0 +1,15 @@
+/* Devicetree of the single-task test: the input switch of the default alias profile (DI0) on the native_sim GPIO
+ * emulator. The LED of the board is its output (DO0). */
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+    zplc_test_inputs {
+        compatible = "gpio-keys";
+        sw0: sw_0 { gpios = <&gpio0 8 0>; zephyr,code = <INPUT_KEY_0>; };
+    };
+
+    aliases {
+        sw0 = &sw0;
+    };
+};

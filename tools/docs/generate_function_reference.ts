@@ -215,8 +215,8 @@ const BLOCKS_INTRO: L10n = {
 };
 
 const PEERLESS: L10n = {
-  en: 'The examples of these blocks run on the native host runtime, which has no Modbus server, MQTT broker or cloud service to talk to: each block ends with `ERROR` TRUE and `STATUS` 3 (no handler). They prove that the block compiles, runs and reports its status; the exchange with a peer is verified separately, against protocol doubles.',
-  es: 'Los ejemplos de estos bloques se ejecutan en el runtime nativo del host, que no tiene servidor Modbus, broker MQTT ni servicio en la nube con quien hablar: cada bloque termina con `ERROR` en TRUE y `STATUS` 3 (sin manejador). Prueban que el bloque compila, se ejecuta e informa su estado; el intercambio con un par se verifica por separado, contra dobles de protocolo.',
+  en: 'The examples of these blocks run on the native host runtime, which has no Modbus server, MQTT broker or cloud service to talk to: each block ends with `ERROR` TRUE and `STATUS` 3 (no handler). They prove that the block compiles, runs and reports its status, and nothing about an exchange with a peer: what has been verified for each block, and against what, is stated in the how-to pages for [Modbus](../guides/modbus.md), [MQTT and Sparkplug B](../guides/mqtt-sparkplug.md) and [the cloud blocks](../guides/cloud-blocks.md).',
+  es: 'Los ejemplos de estos bloques se ejecutan en el runtime nativo del host, que no tiene servidor Modbus, broker MQTT ni servicio en la nube con quien hablar: cada bloque termina con `ERROR` en TRUE y `STATUS` 3 (sin manejador). Prueban que el bloque compila, se ejecuta e informa su estado, y nada sobre un intercambio con un par: lo que se ha verificado de cada bloque, y contra qué, se indica en las guías prácticas de [Modbus](../guides/modbus.md), [MQTT y Sparkplug B](../guides/mqtt-sparkplug.md) y [los bloques de nube](../guides/cloud-blocks.md).',
 };
 
 export function blocksBody(lang: Lang): string {

@@ -7,6 +7,7 @@
 
 #include <zplc_isa.h>
 #include <zplc_loader.h>
+#include <zplc_sched_core.h>
 
 int zplc_program_admit_legacy(const uint8_t *binary, size_t size,
                               uint8_t *workspace, size_t workspace_size,
@@ -36,6 +37,11 @@ int zplc_program_admit_legacy(const uint8_t *binary, size_t size,
       return ZPLC_LOADER_ERR_TASK;
     }
     candidate_interval_ms = interval_us / 1000U;
+  }
+  /* A declared safe value has to be for an output of this board (RT-023). */
+  result = zplc_io_declared_safe_fits_board(view.safe, view.safe_count);
+  if (result != ZPLC_LOADER_OK) {
+    return result;
   }
   if (scan_interval_ms != NULL) {
     *scan_interval_ms = candidate_interval_ms;

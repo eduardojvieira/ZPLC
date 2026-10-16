@@ -8,6 +8,9 @@
   "lines": [
     10
   ],
+  "codes": [
+    "RECURSIVE_CALL"
+  ],
   "messageIncludes": [
     "Ping",
     "Pong"

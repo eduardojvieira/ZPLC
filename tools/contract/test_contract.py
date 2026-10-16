@@ -28,7 +28,9 @@ sys.path.insert(0, str(HERE))
 import crc_cross  # noqa: E402
 import depth_cross  # noqa: E402
 import generate  # noqa: E402
+import safe_cross  # noqa: E402
 import snapshot  # noqa: E402
+import string_cross  # noqa: E402
 import zplc_contract as zc  # noqa: E402
 
 GOLDEN = json.loads((HERE / "golden/contract.golden.json").read_text())
@@ -277,114 +279,20 @@ class PythonToolsMatchGolden(unittest.TestCase):
         self.assertEqual(self.view["tester"]["opcodes"], self.opcodes)
 
 
-HANDLERS = ROOT / "firmware/app/src"
+class HandlersTakeTheirLayoutFromTheTable(unittest.TestCase):
+    """The layout the generated table gives a function block is one a handler can use (RT-002, COM-005).
 
-
-def c_defines(path: Path) -> dict[str, int]:
-    text = path.read_text()
-    return {m.group(1): int(m.group(2), 0)
-            for m in re.finditer(r"^#define\s+(\w+)\s+(0x[0-9A-Fa-f]+|\d+)U?\b", text, flags=re.M)}
-
-
-class HandlersAgreeWithTheBlockTable(unittest.TestCase):
-    """What the Zephyr handlers assume of a function-block layout against the generated table (RT-002).
-
-    The handlers were not edited by WP-11. Every disagreement is a finding; the KNOWN lists hold them,
-    so a new one fails here and a fixed one has to be removed from the list (WP-18, WP-86). WP-18 fixed
-    the Modbus counts (a result no longer runs over HOST, PORT and the block), the cloud STRING layout
-    and the MQTT CONNECTED offset; what is left is the nominal STRING sizes of the layout table, which
-    are a layout (contract) change.
+    This reads the contract and no product source. That a handler names no offset of its own is proved by what it
+    does: the host tests of the handlers build their blocks from the generated ZPLC_COMM_<BLOCK>_<MEMBER>_OFFSET
+    constants under the address sanitizer, and string_cross.py compiles a program and reads the members of its
+    blocks with the accessors of the handlers.
     """
 
-    KNOWN_FINDINGS: list[str] = []
-
-    KNOWN_LAYOUT_FINDINGS = [
-        "AWS_FLEET_PROV.TEMPLATE_NAME: 85 reserved bytes at 8 reach 93, past THING_NAME at 73",
-        "AWS_FLEET_PROV.THING_NAME: 85 reserved bytes at 73 reach 158, past the instance size 137",
-        "AZURE_DPS_PROV.DEVICE_ID: 85 reserved bytes at 8 reach 93, past ASSIGNED_HUB at 73",
-        "AZURE_EG_PUB.EVENT_TYPE: 85 reserved bytes at 73 reach 158, past PAYLOAD at 138",
-        "AZURE_EG_PUB.TOPIC: 85 reserved bytes at 8 reach 93, past EVENT_TYPE at 73",
-    ]
+    KNOWN_LAYOUT_FINDINGS: list[str] = []
 
     @classmethod
     def setUpClass(cls):
         cls.blocks = {b["name"]: b for b in generate.comm_blocks(CONTRACT)}
-
-    def offset(self, block: str, member: str) -> int:
-        return next(m["offset"] for m in self.blocks[block]["members"] if m["name"] == member)
-
-    KNOWN_OFFSET_FINDINGS: list[str] = []
-
-    def test_members_the_handlers_name_sit_where_the_table_puts_them(self):
-        header = {"FB_OFF_EN": "EN", "FB_OFF_BUSY": "BUSY", "FB_OFF_DONE": "DONE", "FB_OFF_ERROR": "ERROR", "FB_OFF_STATUS": "STATUS"}
-        named = {
-            "zplc_comm_mqtt_handler.c": {
-                "FB_CONNECT_OFF_CONNECTED": ("MQTT_CONNECT", "CONNECTED"),
-                "FB_PUB_OFF_QOS": ("MQTT_PUBLISH", "QOS"), "FB_PUB_OFF_RETAIN": ("MQTT_PUBLISH", "RETAIN"),
-                "FB_PUB_OFF_TOPIC": ("MQTT_PUBLISH", "TOPIC"), "FB_PUB_OFF_PAYLOAD": ("MQTT_PUBLISH", "PAYLOAD"),
-                "FB_SUB_OFF_QOS": ("MQTT_SUBSCRIBE", "QOS"), "FB_SUB_OFF_VALID": ("MQTT_SUBSCRIBE", "VALID"),
-                "FB_SUB_OFF_TOPIC": ("MQTT_SUBSCRIBE", "TOPIC"), "FB_SUB_OFF_PAYLOAD": ("MQTT_SUBSCRIBE", "PAYLOAD"),
-            },
-            "zplc_comm_cloud_handler.c": {
-                "C2D_OFF_PAYLOAD": ("AZURE_C2D_RECV", "PAYLOAD"), "C2D_OFF_VALID": ("AZURE_C2D_RECV", "VALID"),
-                "DPS_OFF_DEVICE_ID": ("AZURE_DPS_PROV", "DEVICE_ID"), "DPS_OFF_ASSIGNED_HUB": ("AZURE_DPS_PROV", "ASSIGNED_HUB"),
-                "EG_OFF_TOPIC": ("AZURE_EG_PUB", "TOPIC"), "EG_OFF_EVENT_TYPE": ("AZURE_EG_PUB", "EVENT_TYPE"),
-                "EG_OFF_PAYLOAD": ("AZURE_EG_PUB", "PAYLOAD"),
-                "AWS_OFF_TEMPLATE_NAME": ("AWS_FLEET_PROV", "TEMPLATE_NAME"), "AWS_OFF_THING_NAME": ("AWS_FLEET_PROV", "THING_NAME"),
-            },
-        }
-        findings = []
-        for filename, mapping in named.items():
-            defines = c_defines(HANDLERS / filename)
-            for name, (block, member) in mapping.items():
-                self.assertIn(name, defines, f"{filename} no longer defines {name}")
-                expected = self.offset(block, member)
-                if defines[name] != expected:
-                    findings.append(f"{filename}: {name} is {defines[name]}, {block}.{member} is at {expected}"
-                                    + (" (PROFILE is at 8)" if (block, member) == ("MQTT_CONNECT", "CONNECTED") else ""))
-            for name, member in header.items():
-                self.assertEqual(defines[name], self.offset("MQTT_CONNECT", member), f"{filename}: {name}")
-        self.assertEqual(sorted(findings), sorted(self.KNOWN_OFFSET_FINDINGS))
-
-    def test_modbus_handler_layout_comment_matches_the_four_modbus_blocks(self):
-        text = (HANDLERS / "zplc_comm_modbus_handler.c").read_text()
-        comment = text[text.index("// Memory layout offsets:"):text.index("if (is_reset)")]
-        offsets = {name: int(off) for off, name in re.findall(r"\+(\d+):\s*([A-Z_]+)", comment)}
-        self.assertEqual(sorted(offsets), sorted(["EN", "BUSY", "DONE", "ERROR", "PROTO", "SLAVE_ID", "ADDR", "COUNT", "VALUE", "HOST", "PORT"]))
-        for block in ("MB_READ_HREG", "MB_WRITE_HREG", "MB_READ_COIL", "MB_WRITE_COIL"):
-            for member, offset in offsets.items():
-                self.assertEqual(offset, self.offset(block, member), f"{block}.{member}")
-
-    def test_the_findings_are_exactly_the_known_ones(self):
-        findings = []
-        string = CONTRACT["string"]
-        mqtt = c_defines(HANDLERS / "zplc_comm_mqtt_handler.c")
-        cloud = c_defines(HANDLERS / "zplc_comm_cloud_handler.c")
-        isa = (string["lenOffset"], string["capOffset"], string["dataOffset"])
-        layouts = {
-            "mqtt": (mqtt["STR_OFF_LEN"], mqtt["STR_OFF_CAPACITY"], mqtt["STR_OFF_DATA"]),
-            "cloud": (cloud["STR_OFF_LEN"], cloud["STR_OFF_CAP"], cloud["STR_OFF_DATA"]),
-        }
-        self.assertEqual(layouts["mqtt"], isa)
-        if layouts["cloud"] != isa:
-            findings.append("cloud handler STRING layout is [len u8][cap u8][data at 2]; the contract and the MQTT and Modbus handlers use [len u16][cap u16][data at 4]")
-        modbus = (HANDLERS / "zplc_comm_modbus_handler.c").read_text()
-        reg_limit = int(re.search(r"#define MAX_MODBUS_REG_COUNT (\d+)", modbus).group(1))
-        coil_limit = int(re.search(r"#define MAX_MODBUS_COIL_COUNT (\d+)", modbus).group(1))
-        value = self.offset("MB_READ_HREG", "VALUE")
-        for block, extent, verb, unit in (
-            ("MB_READ_HREG", value + 2 * reg_limit, "writes", f"{value} + 2 * {reg_limit} registers"),
-            ("MB_WRITE_HREG", value + 2 * reg_limit, "reads", f"{value} + 2 * {reg_limit} registers"),
-            ("MB_READ_COIL", value + coil_limit, "writes", f"{value} + {coil_limit} coils"),
-        ):
-            size = self.blocks[block]["size"]
-            # COM-001: inside the block, and a result buffer does not overlap the block's own parameters
-            following = min((m["offset"] for m in self.blocks[block]["members"] if m["offset"] > value), default=size)
-            if extent > size:
-                findings.append(f"{block}: handler {verb} up to offset {extent} ({unit}), instance size is {size}")
-            elif extent > following:
-                findings.append(f"{block}: handler {verb} up to offset {extent} ({unit}), over the member at {following}")
-        self.assertEqual(sorted(findings), sorted(self.KNOWN_FINDINGS))
 
     def test_nominal_string_members_against_the_layout_offsets(self):
         findings = []
@@ -452,6 +360,38 @@ class DeclaredDepthIsTheLoadersMeasure(unittest.TestCase):
         self.assertEqual(self.result["wrong"], [])
 
 
+class DeclaredSafeValuesAreWhatTheLoaderReads(unittest.TestCase):
+    """RT-023: the SAFE segment the compiler writes is the one the C loader reads, and the loader refuses what it must not."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.result = safe_cross.run()
+
+    def test_artifacts_that_declare_nothing_a_few_and_the_most_are_looked_at_with_every_refusal(self):
+        self.assertGreaterEqual(self.result["checked"], 10)
+
+    def test_the_loader_reads_every_entry_and_refuses_each_one_it_must_not_take(self):
+        self.assertEqual(self.result["wrong"], [])
+
+
+class StringArgumentsReachTheHandlers(unittest.TestCase):
+    """COM-005: the compiler, the VM and the handlers read one STRING layout.
+
+    A program passes a different text to every STRING input of all twelve blocks; the probe handlers read each
+    member at the offset of the generated table, with the accessors of the product handlers.
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        cls.result = string_cross.run()
+
+    def test_every_block_with_a_string_input_is_looked_at(self):
+        self.assertGreaterEqual(self.result["blocks"], 10)
+
+    def test_every_string_member_reads_back_as_the_text_the_program_passed(self):
+        self.assertEqual(self.result["wrong"], [])
+
+
 class ValidationRejectsADriftedSource(unittest.TestCase):
     """The generator refuses a contract.json that contradicts itself."""
 
@@ -494,6 +434,27 @@ class ValidationRejectsADriftedSource(unittest.TestCase):
         def edit(c):
             c["comm"]["memberSizes"]["STRING"] = 84
         with self.assertRaisesRegex(generate.ContractError, "STRING"):
+            generate.validate(self.mutate(edit))
+
+    def test_a_member_that_reaches_into_the_next_one_is_refused(self):
+        def edit(c):
+            block = next(b for b in c["comm"]["blocks"] if b["name"] == "MQTT_PUBLISH")
+            next(m for m in block["members"] if isinstance(m, dict) and m["name"] == "PAYLOAD")["offset"] = 96
+        with self.assertRaisesRegex(generate.ContractError, "over PAYLOAD at 96"):
+            generate.validate(self.mutate(edit))
+
+    def test_a_member_that_reaches_past_the_instance_is_refused(self):
+        def edit(c):
+            block = next(b for b in c["comm"]["blocks"] if b["name"] == "MQTT_PUBLISH")
+            block["size"] = 181
+        with self.assertRaisesRegex(generate.ContractError, "past the instance size"):
+            generate.validate(self.mutate(edit))
+
+    def test_a_member_that_covers_the_byte_of_the_dispatcher_is_refused(self):
+        def edit(c):
+            block = next(b for b in c["comm"]["blocks"] if b["name"] == "MQTT_PUBLISH")
+            block["size"] = 182  # PAYLOAD ends at 182: it would hold the last byte
+        with self.assertRaisesRegex(generate.ContractError, "byte.s. of the dispatcher"):
             generate.validate(self.mutate(edit))
 
     def test_a_kind_at_or_above_the_limit_is_refused(self):

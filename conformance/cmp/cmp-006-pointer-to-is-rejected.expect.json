@@ -5,5 +5,6 @@
   "note": "Decision D-04 (2.x recommended): POINTER TO and ADR are vendor extensions left to 2.x; REF_TO is the standard form",
   "build": "fails",
   "lines": [4],
+  "codes": ["UNEXPECTED_TOKEN"],
   "messageIncludes": []
 }

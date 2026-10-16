@@ -9,6 +9,9 @@
   "lines": [
     7
   ],
+  "codes": [
+    "TYPE_MISMATCH"
+  ],
   "messageIncludes": [
     "STRING",
     "INT"

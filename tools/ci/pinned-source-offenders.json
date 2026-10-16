@@ -535,16 +535,6 @@
     "reason": "Reads the journey table in packages/zplc-ide/scripts/journeys.ts as text. Replace by importing the journey list from the module that exports it."
   },
   {
-    "file": "tools/contract/test_contract.py",
-    "requirement": "VF-006",
-    "added": "2026-10-10",
-    "reads": [
-      "firmware/app/src/zplc_comm_modbus_handler.c"
-    ],
-    "replacement": "contract",
-    "reason": "Reads the #define constants of three Zephyr communication handlers to compare them with the generated block table (RT-002). Replace by C static assertions in the handler tests, which already include the handler sources, against the generated header."
-  },
-  {
     "file": "tools/hil/test_validate_release_evidence.py",
     "requirement": "VF-021",
     "added": "2026-10-10",

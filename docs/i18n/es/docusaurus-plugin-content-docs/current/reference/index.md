@@ -1,37 +1,42 @@
 ---
 slug: /reference
 id: index
-title: Referencias
-sidebar_label: Referencias
-description: APIs, profiles de placa, niveles de evidencia y setup Zephyr de ZPLC 2.0.
+title: Referencia
+sidebar_label: Referencia
+description: "Consulte un dato: los lenguajes, las funciones y los bloques de función, los archivos de proyecto y de escenario, la línea de comandos, el runtime y las placas."
 tags: [reference]
 ---
 
-# Referencias
+# Referencia
 
-Usá esta sección para identificar el contrato actual y la evidencia detrás de un
-claim. Que exista un profile no es calificación HIL ni de producción.
+Use esta sección para consultar un dato. La mayoría de las páginas se generan a
+partir de la fuente que describen, por lo que no pueden separarse de ella; cada
+una dice de qué fuente se lee. Para aprender a hacer algo, empiece por las guías
+prácticas.
 
-## Empezá acá
+## Lenguajes
 
-- [Capacidades y evidencia](./capabilities-evidence.md) — cómo leer resultados host, POSIX, paquete, Twister/QEMU, cross-build y HIL.
-- [Profiles de placa](./boards.md) — datos generados desde el nombre histórico del manifest.
-- [API del runtime](./runtime-api.md) — referencia C generada desde headers.
-- [Preparar workspace Zephyr](./zephyr-workspace-setup.md) — inputs de build reproducible.
+- [Referencia de Structured Text](./language-st.md): qué funciona, elemento por elemento, y qué no.
+- [Instruction List](./language-il.md), [Ladder Diagram](./language-ld.md), [Function Block Diagram](./language-fbd.md) y [Sequential Function Chart](./language-sfc.md): lo mismo, por lenguaje.
 
-## Placas Soportadas
+## Funciones y bloques de función
 
-| Placa | IDE ID | Target Zephyr | Capacidad de red | Validación |
-|-------|--------|---------------|------------------|------------|
-| Raspberry Pi Pico (RP2040) | `rpi_pico` | `rpi_pico/rp2040` | Enfoque serial | cross-build |
-| Arduino GIGA R1 (STM32H747 M7) | `arduino_giga_r1` | `arduino_giga_r1/stm32h747xx/m7` | Enfoque serial | cross-build |
-| ESP32-S3-DevKitC-1 (N8R8) | `esp32s3_devkitc` | `esp32s3_devkitc/esp32s3/procpu` | Capacidad de red (Wi-Fi) | cross-build |
-| STM32F746G Discovery | `stm32f746g_disco` | `stm32f746g_disco/stm32f746xx` | Capacidad de red (Ethernet) | cross-build |
-| STM32 Nucleo-H743ZI | `nucleo_h743zi` | `nucleo_h743zi/stm32h743xx` | Capacidad de red (Ethernet) | cross-build |
-| Arduino Opta WiFi (STM32H747 M7) | `arduino_opta_wifi` | `arduino_opta/stm32h747xx/m7` | Capacidad de red (Wi-Fi) | cross-build |
-| Waveshare RP2040-Zero | `waveshare_rp2040_zero` | `rp2040_zero/rp2040` | Enfoque serial | cross-build |
+- [Funciones](./functions.md) y [bloques de función](./function-blocks.md): cada nombre del registro del compilador, con su firma o sus pines y un ejemplo que ejecuta la verificación de la documentación.
 
-La tabla refleja `firmware/app/boards/boards.json`, el único manifiesto de placas.
-El nivel de validación se deriva de los registros de evidencia que referencia el
-manifiesto, nunca se fija a mano, y ninguna fila actual tiene registros. Los
-canales de E/S de cada placa están en [Placas Soportadas](./boards.md).
+## Proyectos y herramientas
+
+- [Archivo de proyecto (`zplc.json`)](./project-file.md): cada campo.
+- [Formato del archivo de escenario](./scenario-file.md): eventos, expectativas y límites.
+- [Línea de comandos](./cli.md) y [servidor MCP](./mcp.md): cada comando, herramienta y recurso.
+- [Códigos de diagnóstico](./diagnostic-codes.md): el código estable de cada error de una compilación, qué significa y un programa que lo provoca.
+
+## Runtime y firmware
+
+- [API del runtime](./runtime-api.md): los encabezados en C.
+- [Protocolo de sesión del runtime](./runtime-protocol.md), [opciones de Kconfig](./kconfig.md) y [comandos de la consola](./shell-commands.md).
+
+## Placas
+
+- [Soporte de hardware](./capabilities-evidence.md): los niveles de evidencia y el nivel de cada placa.
+- [Placas soportadas](./boards.md): los canales de E/S, los pines y la huella de cada placa, generados desde el manifiesto de placas.
+- [Preparación del workspace de Zephyr](./zephyr-workspace-setup.md): las entradas de una compilación de firmware reproducible.

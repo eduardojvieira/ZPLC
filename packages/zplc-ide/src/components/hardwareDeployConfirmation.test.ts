@@ -42,6 +42,22 @@ describe('hardware deploy confirmation', () => {
     expect(confirmation.message).toContain('does not prove hardware or HIL behavior');
   });
 
+  it('states the size against what the device accepts, and how the program travels (COM-028)', async () => {
+    const withCapacity = { ...systemInfo, memory: { ...systemInfo.memory, code_size: 4096, max_artifact_size: 4096 } };
+    const framed = await createHardwareDeployConfirmation({
+      bytecode: artifact(), projectBoard: 'stm32f746g_disco', systemInfo: withCapacity, taskCount: 1, transfer: 'framed',
+    });
+    expect(framed).toMatchObject({ deviceCapacityBytes: 4096, transfer: 'framed' });
+    expect(framed.message).toContain(`${ZPLC_CONSTANTS.HEADER_SIZE} bytes of the 4096 this device accepts`);
+    expect(framed.message).toContain('CRC-32 of what it holds');
+    expect(framed.message).toContain('Run is a separate action');
+    const shell = await createHardwareDeployConfirmation({
+      bytecode: artifact(), projectBoard: 'stm32f746g_disco', systemInfo, taskCount: 1, transfer: 'text-shell',
+    });
+    expect(shell.deviceCapacityBytes).toBeNull();
+    expect(shell.message).toContain('the program is not read back');
+  });
+
   it('refuses a board on another contract draft before confirmation and names both numbers (CMP-052)', async () => {
     const board = { ...systemInfo, draft_counter: ZPLC_CONSTANTS.DRAFT_COUNTER + 1 };
     const refused = await createHardwareDeployConfirmation({ bytecode: artifact(), projectBoard: 'stm32f746g_disco', systemInfo: board, taskCount: 1 })

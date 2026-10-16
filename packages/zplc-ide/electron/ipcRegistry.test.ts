@@ -83,6 +83,7 @@ async function harness(options: { toolApi?: Partial<ToolApiModule>; failToolApi?
     projectFiles,
     recoveryStore: () => store('recovery') as never,
     sessionStore: () => store('session') as never,
+    serialPorts: { choose: () => undefined, list: () => null },
     learnProgress: () => store('learn', { read: async () => new Set(['a']), merge: async (ids: string[]) => new Set(ids) }) as never,
     aiProvider: () => store('ai', { cancel: () => ({ requested: false }), request: async () => ({ ok: true }) }) as never,
     toolExecutionAudit: { list: () => ({ schemaVersion: 1, executions: [] }), add: async (envelope: unknown) => { note(`audit.add:${JSON.stringify(envelope)}`); } } as never,
@@ -103,7 +104,7 @@ async function harness(options: { toolApi?: Partial<ToolApiModule>; failToolApi?
         note(`worker.${request.operation}${request.operation === 'scenario-run' ? `:${request.scenarioId}` : ''}${signal.aborted ? ':aborted' : ''}`);
         if (options.worker) return options.worker(request);
         switch (request.operation) {
-          case 'compile': return { ok: false, evidence: { diagnostics: [{ code: 'COMPILATION_FAILED', message: 'bad /home/secret/x.st', path: 'src/Main.st', line: 3 }] } };
+          case 'compile': return { ok: false, evidence: { diagnostics: [{ code: 'UNKNOWN_IDENTIFIER', message: 'bad /home/secret/x.st', path: 'src/Main.st', line: 3 }] } };
           case 'safety-check': return { ok: false };
           case 'change-set-review': throw new Error('boom');
           default: return { ok: true };
@@ -118,6 +119,7 @@ async function harness(options: { toolApi?: Partial<ToolApiModule>; failToolApi?
     pickToolchainRepository: async () => { note('dialog.toolchain'); return null; },
     confirmFirmwareBuild: async () => { note('dialog.firmwareBuild'); return false; },
     checkForUpdate: async () => { note('update.check'); return { status: 'unavailable', current: '9.9.9' }; },
+    firmwareImages: async () => { note('firmware.images'); return { status: 'absent' }; },
   };
   const listeners = new Map<string, (event: unknown, ...args: unknown[]) => unknown>();
   const ipc: IpcMainLike = { handle: (channel, listener) => { if (listeners.has(channel)) throw new Error(`registered twice: ${channel}`); listeners.set(channel, listener); } };
@@ -202,7 +204,9 @@ describe('every invoke channel (IDE-017)', () => {
     expect(await settle(h.invoke('get-app-info', TRUSTED, 'x'))).toEqual({ ok: false, message: IPC_DENIED });
     expect(await h.invoke('update-check:run', TRUSTED)).toEqual({ status: 'unavailable', current: '9.9.9' });
     expect(await settle(h.invoke('update-check:run', TRUSTED, 'https://example.invalid/'))).toEqual({ ok: false, message: IPC_DENIED });
-    expect(h.touched).toEqual(['update.check']);
+    expect(await h.invoke('firmware-images:list', TRUSTED)).toEqual({ status: 'absent' });
+    expect(await settle(h.invoke('firmware-images:list', TRUSTED, { path: '/etc' }))).toEqual({ ok: false, message: IPC_DENIED });
+    expect(h.touched).toEqual(['update.check', 'firmware.images']);
   });
 
   it('does not release an answer once the document that asked is no longer the window owner', async () => {
@@ -264,7 +268,7 @@ describe('recovery and session over the IPC boundary (IDE-006, IDE-008)', () => 
   });
 });
 
-describe('workspace tests, candidate review and the AI provider (IDE-001, IDE-017)', () => {
+describe('workspace tests, candidate review and the AI provider (IDE-001, IDE-017, IDE-030)', () => {
   it('register the folder of the window by its id alone, as <folder>/zplc.json, and refuse any other id (IDE-001)', async () => {
     const h = await harness();
     expect(await h.invoke('workspace-tests:register-project-root', TRUSTED, { rootId: h.rootId })).toEqual({ workspaceId: WORKSPACE_ID });

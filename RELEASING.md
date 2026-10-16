@@ -27,7 +27,9 @@ The root `package.json` is the only source of the product version (`VERSIONING.m
 3. `CHANGELOG.md`: rename `## Unreleased` to `## 2.0.0-rc.4 - YYYY-MM-DD` and add an empty `## Unreleased` above it.
    The changelog holds only tagged versions: headings go from newest to oldest, and every heading older than the
    one being cut has its tag (`scripts/release/changelog.ts`; `scripts/release/changelog-untagged.json` lists the
-   exceptions with their reasons, and it can only shrink).
+   exceptions with their reasons, and it can only shrink). Read the section as the person who will install the
+   release: its parts (What changed for you, Breaking changes, Migration, Known limits) are the first four parts
+   of the notes, and Details for contributors is not (`scripts/release/release-notes.ts`, DOC-030).
 4. `scripts/release/release-status.json`: add the entry of the version, with `completeness` (how complete this
    prerelease is: it becomes the title of the release) and `knownIssues`.
 5. `scripts/release/channels.json`: set the state of each Windows channel to `live`, `submitted`, `refused` or
@@ -54,8 +56,13 @@ The root `package.json` is the only source of the product version (`VERSIONING.m
 
 Actions, **Release Build**, **Run workflow**: choose the branch (any ref), the version, and leave **Rehearsal**
 ticked. Every job runs, including the packaging, the signature and launch checks on each platform, the
-installation of the `.deb` and `.rpm` in clean containers, the standalone CLI and MCP server, the bill of
+installation of the `.deb` and `.rpm` and the launch of the AppImage in clean containers, the mount of the DMG,
+the unpacking of the ZIP, the silent install of the Windows setup and the launch of the portable executable
+(each on its own system), the firmware build of every board, the standalone CLI and MCP server, the bill of
 materials and the notes. Nothing is published.
+
+The Linux payload reproducibility check runs too and never blocks the run (REL-032): it is `continue-on-error`
+and nothing waits for it. Read its job in the run before tagging; a failure there is a lead, not a stop.
 
 - Read the artifact `release-notes-rehearsal`: `notes.md`, `title.txt`, `run-results.json` and the merged
   `SHA256SUMS`. Every signing sentence must be backed by a check that the run executed.
@@ -77,10 +84,14 @@ platform simply has no files in the draft and the notes say so.
 
 ### 5. Read the draft
 
-The draft release has: the installers per platform, the standalone `zplc-cli` and `zplc-mcp` executables, the bill
-of materials, `SHA256SUMS` (all assets), the per-platform checksum and evidence files, the notes and a title that
-says how complete the prerelease is. Check that every asset the release should have is listed and that the
-signing state of each is the one you expect.
+The draft release has: the installers per platform, the standalone `zplc-cli` and `zplc-mcp` executables, the
+firmware images of every board (`zplc-runtime-<version>-<board>.<ext>`) with their manifest
+`zplc-runtime-<version>.manifest.json`, the bill of materials, `SHA256SUMS` (all assets), the per-platform checksum
+and evidence files, the notes and a title that says how complete the prerelease is. Check that every asset the
+release should have is listed and that the signing state of each is the one you expect. A draft with no
+firmware images is a draft whose firmware job failed: the images are all of the boards or none, so do not publish
+it as a release that has them; the notes name the job. Each firmware image is labelled with the evidence level of
+its board in the notes, and no board has a level above `cross-build` until a person records a hardware run.
 
 ### 6. Manual checks
 
@@ -116,6 +127,8 @@ None of these is automated yet; each needs an account of the owner (see the tabl
 | `scripts/release/sbom.ts` | CycloneDX bill of materials from `bun.lock`, the manifests and `west.yml`; fails below the lockfile and the floor | `scripts/release/sbom.test.ts` |
 | `scripts/release/licenses.ts` | third-party notices of the packages and fonts that ship, written while packaging | `scripts/release/licenses.test.ts`, `packages/zplc-ide/scripts/packaged-content.test.ts` |
 | `scripts/release/binaries.ts` | standalone CLI and MCP server for each platform and architecture | `scripts/release/binaries.test.ts` |
+| `scripts/release/firmware-images.ts` | collects one `west build` per board (refusing another board, version or commit, a dirty tree or the HIL trace), assembles every board into one set with its manifest, stages the learner-board images for the installers; `build` runs it on a machine with the Zephyr SDK | `scripts/release/firmware-images.test.ts`, `packages/zplc-ide/scripts/packaged-content.test.ts` |
+| `scripts/release/udev-rules.ts` | the udev rule that the `.deb` and `.rpm` install, from `tools/hil/usb-ids.json` | `scripts/release/udev-rules.test.ts` |
 | `packages/zplc-ide/scripts/packaged-content.ts` | the unpacked application holds the examples, the lessons and the notices | `packages/zplc-ide/scripts/packaged-content.test.ts` |
 | `scripts/release-artifacts.mjs` | copies the assets of a platform, writes `SHA256SUMS` and the evidence file; merges checksum files | `scripts/release-artifacts.test.mjs` |
 | `scripts/release/verify-bundle.ts` | reads the bundle of a platform as the files produced: every checksum, the evidence file for this run and the bill of materials; a step of each evidence job | `scripts/release/verify-bundle.test.ts` |

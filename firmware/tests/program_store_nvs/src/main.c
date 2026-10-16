@@ -85,7 +85,10 @@ static void build_artifact(uint8_t *out, size_t total, uint8_t tag) {
   put_u32(out + 12U, crc);
 }
 
+/* A deploy the way the firmware makes it (WS-42): the rollback is found in the buffer while it is free, before the
+ * program arrives in it, and the commit has no scratch of its own. */
 static int commit(const uint8_t *program, size_t size) {
+  (void)zplc_program_store_prepare(store_workspace, sizeof(store_workspace));
   memset(store_workspace, 0xA5, sizeof(store_workspace));
   memcpy(store_workspace, program, size);
   return zplc_program_store_commit(store_workspace, size, sizeof(store_workspace));

@@ -9,8 +9,9 @@ tags: [reference, boards, generated]
 
 # Supported Boards
 
-> [!IMPORTANT]
-> This page is generated from `firmware/app/boards/boards.json`, the one board manifest. Update the JSON or rerun `python3 tools/docs/generate_board_reference.py` instead of editing this file manually.
+:::note
+This page is generated from `firmware/app/boards/boards.json`, the one board manifest. Update the JSON or rerun `python3 tools/docs/generate_board_reference.py` instead of editing this file manually.
+:::
 
 ## Topology
 
@@ -62,13 +63,13 @@ Flash and RAM of `firmware/app` per board, from the linker memory table of the C
 
 | Board ID | Flash (KiB) | Flash budget (KiB) | RAM (KiB) | RAM budget (KiB) | Work (KiB) | RETAIN (KiB) | Code (KiB) |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| `rpi-pico-rp2040` | 151.5 | 159.2 | 199.9 | 210.0 | 8.0 | 4.0 | 24.0 |
-| `arduino-giga-r1-m7` | 199.1 | 209.2 | 287.7 | 302.2 | 8.0 | 4.0 | 44.0 |
-| `esp32-s3-devkitc` | 981.8 | 1031.0 | 2374.2 | 2493.0 | 2.0 | 1.0 | 8.0 |
-| `stm32f746g-disco` | 282.8 | 297.0 | 230.2 | 241.8 | 8.0 | 4.0 | 16.0 |
-| `nucleo-h743zi` | 414.3 | 435.0 | 478.0 | 502.0 | 8.0 | 4.0 | 44.0 |
-| `arduino-opta-wifi-m7` | 434.0 | 455.8 | 458.4 | 481.5 | 8.0 | 4.0 | 32.0 |
-| `waveshare-rp2040-zero` | 156.4 | 164.5 | 200.7 | 210.8 | 8.0 | 4.0 | 24.0 |
+| `rpi-pico-rp2040` | 162.5 | 170.2 | 166.1 | 174.5 | 8.0 | 4.0 | 24.0 |
+| `arduino-giga-r1-m7` | 212.8 | 223.5 | 229.9 | 241.5 | 8.0 | 4.0 | 44.0 |
+| `esp32-s3-devkitc` | 987.0 | 1031.0 | 2381.1 | 2493.0 | 2.0 | 1.0 | 8.0 |
+| `stm32f746g-disco` | 297.7 | 312.8 | 209.7 | 220.2 | 8.0 | 4.0 | 16.0 |
+| `nucleo-h743zi` | 353.3 | 371.2 | 397.1 | 417.0 | 8.0 | 4.0 | 44.0 |
+| `arduino-opta-wifi-m7` | 372.5 | 391.2 | 392.4 | 412.2 | 8.0 | 4.0 | 32.0 |
+| `waveshare-rp2040-zero` | 162.8 | 171.0 | 166.2 | 174.5 | 8.0 | 4.0 | 24.0 |
 
 ## Board details
 
@@ -80,8 +81,9 @@ Flash and RAM of `firmware/app` per board, from the linker memory table of the C
 - **Variant:** `rp2040`
 - **Network:** Serial-focused
 - **Support level:** cross-build (no hardware record)
+- **Hardware watchdog:** off: no hardware record (HIL-010), the profile keeps it off until the reset timing and the safe outputs are recorded on this board with it enabled
 - **Build command:** `west build -b rpi_pico/rp2040 firmware/app --pristine`
-- **Reference anchor:** `docs/docs/reference/index.md#supported-boards`
+- **Reference anchor:** `docs/docs/reference/capabilities-evidence.md`
 - **Process image used (input, output):** 18 B, 1 B
 - **I/O description hash:** `d27196be`
 - **Support assets:**
@@ -115,8 +117,9 @@ Flash and RAM of `firmware/app` per board, from the linker memory table of the C
 - **Variant:** `stm32h747xx/m7`
 - **Network:** Serial-focused
 - **Support level:** cross-build (no hardware record)
+- **Hardware watchdog:** off: no hardware record (HIL-010), the profile keeps it off until the reset timing and the safe outputs are recorded on this board with it enabled
 - **Build command:** `west build -b arduino_giga_r1/stm32h747xx/m7 firmware/app --pristine`
-- **Reference anchor:** `docs/docs/reference/index.md#supported-boards`
+- **Reference anchor:** `docs/docs/reference/capabilities-evidence.md`
 - **Process image used (input, output):** 1 B, 1 B
 - **I/O description hash:** `77271dae`
 - **Support assets:**
@@ -140,8 +143,9 @@ Flash and RAM of `firmware/app` per board, from the linker memory table of the C
 - **Network:** Network-capable (Wi-Fi)
 - **Support level:** cross-build (no hardware record)
 - **Module:** ESP32-S3-WROOM-1-N8R8, 8 MB flash, 8 MB PSRAM (variant to be confirmed on the module)
+- **Hardware watchdog:** off: no hardware record (HIL-010), the profile keeps it off until the reset timing and the safe outputs are recorded on this board with it enabled
 - **Build command:** `west build -b esp32s3_devkitc/esp32s3/procpu firmware/app --pristine`
-- **Reference anchor:** `docs/docs/reference/index.md#supported-boards`
+- **Reference anchor:** `docs/docs/reference/capabilities-evidence.md`
 - **Process image used (input, output):** 10 B, 1 B
 - **I/O description hash:** `2e9abb09`
 - **Support assets:**
@@ -174,8 +178,9 @@ Flash and RAM of `firmware/app` per board, from the linker memory table of the C
 - **Variant:** `stm32f746xx`
 - **Network:** Network-capable (Ethernet)
 - **Support level:** cross-build (no hardware record)
+- **Hardware watchdog:** off: no hardware record (HIL-010), the profile keeps it off until the reset timing and the safe outputs are recorded on this board with it enabled
 - **Build command:** `west build -b stm32f746g_disco/stm32f746xx firmware/app --pristine`
-- **Reference anchor:** `docs/docs/reference/index.md#supported-boards`
+- **Reference anchor:** `docs/docs/reference/capabilities-evidence.md`
 - **Process image used (input, output):** 1 B, 1 B
 - **I/O description hash:** `80927f2e`
 - **Support assets:**
@@ -197,8 +202,9 @@ Flash and RAM of `firmware/app` per board, from the linker memory table of the C
 - **Variant:** `stm32h743xx`
 - **Network:** Network-capable (Ethernet)
 - **Support level:** cross-build (no hardware record)
+- **Hardware watchdog:** off: no hardware record (HIL-010), the profile keeps it off until the reset timing and the safe outputs are recorded on this board with it enabled
 - **Build command:** `west build -b nucleo_h743zi/stm32h743xx firmware/app --pristine`
-- **Reference anchor:** `docs/docs/reference/index.md#supported-boards`
+- **Reference anchor:** `docs/docs/reference/capabilities-evidence.md`
 - **Process image used (input, output):** 1 B, 1 B
 - **I/O description hash:** `4193575e`
 - **Support assets:**
@@ -221,8 +227,9 @@ Flash and RAM of `firmware/app` per board, from the linker memory table of the C
 - **Variant:** `stm32h747xx/m7`
 - **Network:** Network-capable (Wi-Fi)
 - **Support level:** cross-build (no hardware record)
+- **Hardware watchdog:** off: no hardware record (HIL-010), the profile keeps it off until the reset timing and the safe outputs are recorded on this board with it enabled
 - **Build command:** `west build -b arduino_opta/stm32h747xx/m7 firmware/app --pristine`
-- **Reference anchor:** `docs/docs/reference/index.md#supported-boards`
+- **Reference anchor:** `docs/docs/reference/capabilities-evidence.md`
 - **Process image used (input, output):** 1 B, 1 B
 - **I/O description hash:** `6ce9cc7a`
 - **Support assets:**
@@ -255,8 +262,9 @@ Flash and RAM of `firmware/app` per board, from the linker memory table of the C
 - **Variant:** `rp2040`
 - **Network:** Serial-focused
 - **Support level:** cross-build (no hardware record)
+- **Hardware watchdog:** off: no hardware record (HIL-010), the profile keeps it off until the reset timing and the safe outputs are recorded on this board with it enabled
 - **Build command:** `west build -b rp2040_zero/rp2040 firmware/app --pristine`
-- **Reference anchor:** `docs/docs/reference/index.md#supported-boards`
+- **Reference anchor:** `docs/docs/reference/capabilities-evidence.md`
 - **Process image used (input, output):** 1 B, 1 B
 - **I/O description hash:** `0d5edb3c`
 - **Support assets:**

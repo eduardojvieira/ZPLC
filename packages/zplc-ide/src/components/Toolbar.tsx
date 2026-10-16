@@ -38,6 +38,7 @@ import {
   Zap,
 } from 'lucide-react';
 import { useIDEStore } from '../store/useIDEStore';
+import { useActiveFileInfo, useToolbarState } from '../store/regionSubscriptions';
 import { useTheme } from '../hooks/useTheme';
 import { useDebugController } from '../hooks/useDebugController';
 import { ZPLC_CONSTANTS } from '@zplc/compiler';
@@ -93,8 +94,7 @@ export function Toolbar({ debugController }: ToolbarProps) {
     projectSession,
     workspaceScenarioLink,
     hasUnsavedChanges,
-  } = useIDEStore();
-  const compilerRunId = useIDEStore((s) => s.compilerRunId);
+  } = useToolbarState();
   const isProjectOpen = useIDEStore((s) => s.isProjectOpen);
   const recordCanonicalWorkspaceBuildEvidence = useIDEStore((s) => s.recordCanonicalWorkspaceBuildEvidence);
 
@@ -171,8 +171,8 @@ export function Toolbar({ debugController }: ToolbarProps) {
   // State for last successful compilation result
   const [lastCompileResult, setLastCompileResult] = useState<LastCompileResult | null>(null);
 
-  // Get the active file
-  const activeFile = getActiveFile();
+  // What the toolbar shows of the active file: its name and language, not its content (IDE-013)
+  const activeFile = useActiveFileInfo();
   const isVisualLanguage = activeFile?.language === 'FBD' || activeFile?.language === 'LD' || activeFile?.language === 'SFC';
 
   // Derived state from adapter
@@ -181,7 +181,7 @@ export function Toolbar({ debugController }: ToolbarProps) {
   const isPaused = vmState === 'paused';
   const isIdle = vmState === 'idle';
   const controlsBusy = isConnecting || isUploading || isModeTransitioning;
-  const hasCurrentCompileResult = isCompileResultCurrent(lastCompileResult?.compilerRunId ?? null, compilerRunId);
+  const hasCurrentCompileResult = useIDEStore((s) => isCompileResultCurrent(lastCompileResult?.compilerRunId ?? null, s.compilerRunId));
   const currentCompileResult = () => {
     const result = lastCompileResult;
     return result && isCompileResultCurrent(result.compilerRunId, useIDEStore.getState().compilerRunId)
@@ -242,14 +242,14 @@ export function Toolbar({ debugController }: ToolbarProps) {
   // ==========================================================================
 
   const handleGenerateST = () => {
-    if (!activeFile) return;
-    addConsoleEntry({ type: 'info', message: `Transpiling ${activeFile.language} to Structured Text...`, source: 'transpiler' });
+    const file = getActiveFile(); if (!file) return;
+    addConsoleEntry({ type: 'info', message: `Transpiling ${file.language} to Structured Text...`, source: 'transpiler' });
 
-    const source = generateStructuredText(activeFile, addConsoleEntry);
+    const source = generateStructuredText(file, addConsoleEntry);
     if (source !== null) {
       addConsoleEntry({ type: 'success', message: `Generated ${source.split('\n').length} lines of Structured Text`, source: 'transpiler' });
       setGeneratedCode(source);
-      setGeneratedCodeType(activeFile.language as 'FBD' | 'LD' | 'SFC');
+      setGeneratedCodeType(file.language as 'FBD' | 'LD' | 'SFC');
       setShowGeneratedCode(true);
     }
   };
@@ -334,7 +334,7 @@ export function Toolbar({ debugController }: ToolbarProps) {
             addCompilerMessage({ type: 'error', message: 'Canonical workspace build failed' });
           }
           for (const diagnostic of canonical.diagnostics) {
-            addCompilerMessage({ type: 'error', message: diagnostic.message, ...(diagnostic.path ? { file: diagnostic.path } : {}), ...(diagnostic.line ? { line: diagnostic.line } : {}), ...(diagnostic.column ? { column: diagnostic.column } : {}), ...(diagnostic.element ? { element: diagnostic.element } : {}) });
+            addCompilerMessage({ type: 'error', message: diagnostic.message, code: diagnostic.code, ...(diagnostic.path ? { file: diagnostic.path } : {}), ...(diagnostic.line ? { line: diagnostic.line } : {}), ...(diagnostic.column ? { column: diagnostic.column } : {}), ...(diagnostic.element ? { element: diagnostic.element } : {}) });
           }
           markCompilerMessagesChecked();
           return;

@@ -16,6 +16,8 @@ import type { createFirmwareBuildGateway } from './firmwareBuildGateway.js';
 import type { createLearnProgressStore } from './learnProgressStore.js';
 import type { createProjectFiles } from './projectFiles.js';
 import type { RecoveryStore } from './recoveryStore.js';
+import type { SerialPortBroker } from './serialPortBroker.js';
+import { isSerialPortChoice, isSerialPortListRequest, type SerialPortChoice, type SerialPortListRequest } from './serialPortProtocol.js';
 import type { SessionStore } from './sessionStore.js';
 import type { createToolExecutionAudit } from './toolExecutionAudit.js';
 import type { createWorkspaceTestGateway } from './workspaceTestGateway.js';
@@ -25,9 +27,11 @@ import {
   CANDIDATE_CHANGE_SET_CHANNEL,
   CLOSE_GUARD_CHANNEL,
   FIRMWARE_BUILD_CHANNEL,
+  FIRMWARE_IMAGES_CHANNEL,
   NATIVE_SIMULATION_CHANNEL,
   PROJECT_FILES_CHANNEL,
   RECOVERY_CHANNEL,
+  PORT_CHOICE_CHANNEL,
   SESSION_CHANNEL,
   TOOLCHAIN_CHANNEL,
   TOOL_EXECUTION_AUDIT_CHANNEL,
@@ -85,6 +89,8 @@ export interface IpcDeps {
   projectFiles: Pick<ReturnType<typeof createProjectFiles>, 'handle' | 'rootOf' | 'currentRoot'>;
   recoveryStore(): RecoveryStore | null;
   sessionStore(): SessionStore | null;
+  /** The serial-port questions of the windows (IDE-018): the answer and the refresh of the dialog. */
+  serialPorts: Pick<SerialPortBroker, 'choose' | 'list'>;
   learnProgress(): ReturnType<typeof createLearnProgressStore> | null;
   aiProvider(): ReturnType<typeof createAiProvider> | null;
   toolExecutionAudit: Pick<ReturnType<typeof createToolExecutionAudit>, 'list' | 'add'>;
@@ -103,6 +109,8 @@ export interface IpcDeps {
   /** The native confirmation before a local firmware build: true only when the user chose to build. */
   confirmFirmwareBuild(ideId: string): Promise<boolean>;
   checkForUpdate(): Promise<unknown>;
+  /** The firmware images of this installation (REL-025): read-only, with no argument from the renderer. */
+  firmwareImages(): Promise<unknown>;
 }
 
 const WORKSPACE_FAILED = 'Workspace operation failed';
@@ -244,8 +252,21 @@ export function createIpcHandlers(deps: IpcDeps): IpcHandlerTable<RendererOwner>
       return null;
     }),
 
+    // The serial port the user chose in the dialog of the window (IDE-018): a request id and a port id of the offer, or a cancel.
+    // The broker answers Electron's one-time callback and ignores an answer that is not from the window that was asked.
+    [PORT_CHOICE_CHANNEL.CHOOSE]: handler(oneArgument(isSerialPortChoice), (owner, [choice]: [SerialPortChoice]) => {
+      deps.serialPorts.choose(owner.ownerId, choice.requestId, choice.portId);
+      return null;
+    }),
+    [PORT_CHOICE_CHANNEL.LIST]: handler(oneArgument(isSerialPortListRequest), (owner, [request]: [SerialPortListRequest]) => (
+      deps.serialPorts.list(owner.ownerId, request.requestId)
+    )),
+
     // Update check (IDE-010): one fixed address, no argument from the renderer.
     [UPDATE_CHECK_CHANNEL.RUN]: handler(noArguments, () => deps.checkForUpdate()),
+
+    // Firmware images (REL-025): the manifest and files of this installation. Listing only: Studio never flashes a board.
+    [FIRMWARE_IMAGES_CHANNEL.LIST]: handler(noArguments, () => deps.firmwareImages()),
 
     // Recovery of modified files (IDE-006): kept under the user-data directory, named by the real path of the window's folder.
     [RECOVERY_CHANNEL.WRITE]: handler(oneArgument(isAllowedRecoveryWriteRequest), async (owner, [request]: [{ rootId: string; path: string; content: string }]) => {

@@ -5,5 +5,6 @@
   "note": "IEC 61131-3 ed. 3, access specifiers of methods: a PROTECTED method is accessible inside its function block and the blocks that extend it, not from outside",
   "build": "fails",
   "lines": [12],
+  "codes": ["ACCESS_VIOLATION"],
   "messageIncludes": []
 }

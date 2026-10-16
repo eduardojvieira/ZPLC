@@ -1,11 +1,29 @@
-import { readdir } from 'node:fs/promises';
+import { mkdir, mkdtemp, readdir, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { describe, expect, it } from 'bun:test';
+import { afterAll, beforeAll, describe, expect, it } from 'bun:test';
 
 import type { WatchForceEntry } from '../runtime/debugAdapter';
 import { itNative, nativeRuntimeBinary } from './nativeRuntimeGuard';
 import { createNativeScenarioRuntime, createNativeScenarioSession } from './nativeScenarioRuntime';
+
+// The sessions of this file create their persistence roots under a temporary directory of their own, so that the
+// roots another process (a second suite, the CLI of a developer) keeps in the shared temporary directory are never
+// counted here. `tmpdir()` reads TMPDIR on every call, and the native runtime inherits it.
+const sharedTemp = tmpdir();
+const previousTemp = process.env.TMPDIR;
+let privateTemp = '';
+
+beforeAll(async () => {
+  privateTemp = await mkdtemp(join(sharedTemp, 'zplc-scenario-suite-'));
+  process.env.TMPDIR = privateTemp;
+});
+
+afterAll(async () => {
+  if (previousTemp === undefined) delete process.env.TMPDIR;
+  else process.env.TMPDIR = previousTemp;
+  await rm(privateTemp, { recursive: true, force: true });
+});
 
 async function scenarioRoots(): Promise<string[]> {
   return (await readdir(tmpdir())).filter((entry) => entry.startsWith('zplc-scenario-')).sort();
@@ -87,6 +105,42 @@ describe('createNativeScenarioRuntime', () => {
 });
 
 describe('createNativeScenarioSession', () => {
+  it('does not count the scenario directories that other processes keep in the shared temporary directory', async () => {
+    expect(tmpdir()).toBe(privateTemp);
+    const before = await scenarioRoots();
+    const foreign = join(sharedTemp, `zplc-scenario-foreign-${process.pid}-${Date.now()}`);
+    let root = '';
+    const session = await createNativeScenarioSession(process.env, {
+      createLifecycle: (persistRoot) => {
+        root = persistRoot;
+        return {
+          adapter: {
+            // another suite creates its root while this one connects
+            connect: async () => { await mkdir(foreign); },
+            disconnect: async () => undefined,
+            loadProgram: async () => undefined,
+            reset: async () => undefined,
+            scenarioStep: async () => undefined,
+            listForcedValues: async () => [],
+            peek: async () => new Uint8Array([0]),
+            poke: async () => undefined,
+          },
+          supervisor: { stopSession: async () => undefined },
+        };
+      },
+    });
+    try {
+      const during = await scenarioRoots();
+      expect(during.filter((entry) => !before.includes(entry))).toHaveLength(1);
+      expect(root.startsWith(privateTemp)).toBe(true);
+      expect(during).not.toContain(foreign.slice(sharedTemp.length + 1));
+    } finally {
+      await session.close();
+      await rm(foreign, { recursive: true, force: true });
+    }
+    expect(await scenarioRoots()).toEqual(before);
+  });
+
   it('removes its private persistence root after a missing simulator failure', async () => {
     const before = await scenarioRoots();
     const environment = {

@@ -156,6 +156,32 @@ static int tag_memory_access_valid(uint16_t address, uint8_t width,
     return 1;
   return region == ZPLC_MEM_REGION_WORK || region == ZPLC_MEM_REGION_RETAIN;
 }
+/* The declared safe values (RT-023): each names one bit of the output image,
+ * with 0 or 1, and no output is declared twice. Which of those bits is an
+ * output of the board is the runtime's to say: the loader knows no board. */
+static int verify_safe(const zplc_program_view_t *view) {
+  uint32_t index, previous;
+
+  if (view->safe_count > ZPLC_LOADER_MAX_SAFE)
+    return ZPLC_LOADER_ERR_SAFE;
+  for (index = 0U; index < view->safe_count; index++) {
+    const uint8_t *entry = view->safe + (size_t)index * ZPLC_SAFE_ENTRY_SIZE;
+
+    if (zplc_get_u16_le(entry) >= ZPLC_MEM_OPI_SIZE || entry[2U] > 7U ||
+        entry[3U] > 1U)
+      return ZPLC_LOADER_ERR_SAFE;
+    for (previous = 0U; previous < index; previous++) {
+      const uint8_t *other =
+          view->safe + (size_t)previous * ZPLC_SAFE_ENTRY_SIZE;
+
+      if (zplc_get_u16_le(other) == zplc_get_u16_le(entry) &&
+          other[2U] == entry[2U])
+        return ZPLC_LOADER_ERR_SAFE;
+    }
+  }
+  return ZPLC_LOADER_OK;
+}
+
 static int verify_tags(const zplc_program_view_t *view) {
   uint32_t index;
 
@@ -166,10 +192,10 @@ static int verify_tags(const zplc_program_view_t *view) {
     const uint8_t width = tag_type_width(tag_id, tag[2U]);
     const int writable = tag_id != ZPLC_TAG_PUBLISH;
 
+    /* A variable anywhere in WORK or RETAIN may be bound: every adapter reaches it through the exchange with its
+     * whole 16-bit address (COM-013). */
     if (width == 0U ||
         !tag_memory_access_valid(address, width, writable) ||
-        /* Current communication adapters discard this high WORK offset. */
-        (address & 0xF000U) == 0x3000U ||
         (tag_id == ZPLC_TAG_MODBUS && zplc_get_u32_le(tag + 4U) > UINT16_MAX))
       return ZPLC_LOADER_ERR_TAGS;
   }
@@ -866,6 +892,16 @@ int zplc_loader_verify(const uint8_t *data, size_t length, uint8_t *workspace,
         return ZPLC_LOADER_ERR_SEGMENT;
       candidate.build_id = zplc_get_u32_le(data + offset);
       segment = &candidate.segments[3];
+    } else if (type == ZPLC_SEG_SAFE) {
+      /* the declared safe values (RT-023): whole entries, once; what each
+       * entry says is checked by verify_safe() */
+      if (candidate.safe != NULL || size == 0U)
+        return ZPLC_LOADER_ERR_SEGMENT;
+      if (size % ZPLC_SAFE_ENTRY_SIZE != 0U)
+        return ZPLC_LOADER_ERR_SAFE;
+      candidate.safe = data + offset;
+      candidate.safe_count = size / ZPLC_SAFE_ENTRY_SIZE;
+      segment = &candidate.segments[4];
     } else {
       return ZPLC_LOADER_ERR_SEGMENT;
     }
@@ -892,6 +928,9 @@ int zplc_loader_verify(const uint8_t *data, size_t length, uint8_t *workspace,
   if (candidate.tag_count > ZPLC_MAX_TAGS)
     return ZPLC_LOADER_ERR_TAGS;
   result = verify_tags(&candidate);
+  if (result != ZPLC_LOADER_OK)
+    return result;
+  result = verify_safe(&candidate);
   if (result != ZPLC_LOADER_OK)
     return result;
   result = verify_tasks(&candidate);

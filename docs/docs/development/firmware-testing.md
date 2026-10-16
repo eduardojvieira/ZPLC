@@ -15,7 +15,7 @@ Zephyr workspace that lives outside the repository.
 Everything here is host, simulator or build evidence. A passing run does not
 show that a board boots, that its pins behave, or that a scan keeps its period
 on real silicon. Those claims need the hardware-in-the-loop procedures in
-[Capabilities and Evidence Tiers](../reference/capabilities-evidence.md).
+[Hardware support](../reference/capabilities-evidence.md).
 
 ## What you need
 
@@ -138,10 +138,24 @@ The runtime hardening of the firmware (RT-010 to RT-034) has its own suites:
 - `modbus_force` writes through the Modbus server over the real core and shows that a forced variable keeps its
   forced value;
 - `scheduler_admission` holds a scan at the commit and at the output write, to show that a write from outside waits
-  for the input latch and never for the scan, and that the image lock is free while the pins are written.
+  for the input latch and never for the scan, and that the image lock is free while the pins are written;
+- `scheduler_equivalence` drives the Zephyr scheduler through the scenarios of the shared scheduler core and compares
+  its decisions with the golden trace the host session is held to (RT-008, RT-018);
+- `single_task` runs the one-task configuration of the core: the input latch of the pins, the deadline, the fault and
+  the safe state (RT-018);
+- `failsafe` takes the fatal-error handler with an intercepted reboot and shows the outputs driven safe, the record of
+  the fault and the cause reported by the next boot; `failsafe_reboot` takes a real fault and a real reboot on
+  `qemu_cortex_m3` and reads the record after it (RT-019, RT-021, RT-022);
+- `scheduler_watchdog` runs the hardware-watchdog policy of a profile over a model of the watchdog: the feed from the
+  completion of a scan, the timeout taken from the task set, a stalled scan that lets it expire, and the policy in
+  STOP, in a pause and in a fault (RT-020).
 
 The host suites of the core add `test_exchange` (a scanner, readers and writers on threads), `test_program_store`
-(a power cut and a torn write at every operation), `test_core_start`, `test_core_lock`, `test_bytes_crc` and the
+(a power cut and a torn write at every operation), `test_sched_core` and `test_sched_equivalence` (the decisions of
+the scheduler core and the golden trace), `test_single_task`, `test_vm_scan` (the time of a scan is read once, and a
+string opcode is charged by its bytes), `test_failsafe` (the reset cause, the record of a fault and the watchdog
+policy), `test_safe_state` (the safe value a project declares decides the level of a pin, over a board of its own),
+`test_core_start`, `test_core_lock`, `test_bytes_crc` and the
 `config_rule_*` tests, each of which builds one configuration rule with a value that breaks it and expects the
 compilation to fail naming the rule. The test-only entry points are declared in
 `firmware/lib/zplc_core/tests/include/zplc_test_hooks.h`, never in a public header; `test_public_headers` fails when
@@ -229,6 +243,28 @@ python3 tools/firmware-test/fwtest.py size \
 The figures are link-time static allocation. They do not include the stacks or
 the heap high-water mark.
 
+The ZPLC library and the application are compiled with link-time optimization (`CONFIG_ZPLC_LTO`, on by default),
+which is worth about 3 percent of the flash of an image. Zephyr's own code is not part of it. The `native_sim`
+targets link their image as a relocatable object, which the optimizer cannot be part of, so they run without it; the
+suites of `firmware/tests` link the library the same way as the boards on `qemu-m3` and `qemu-m0`, which is where
+the code that ships is exercised. To compare, or to debug a fault with the inlining out of the way, build with
+`-DCONFIG_ZPLC_LTO=n`.
+
+To see where the bytes of a board go, run the footprint report on the same
+build trees. It reads each linker map and prints, per board, the used bytes of
+every memory region, the headroom to the budget, the input sections by kind and
+by library, and the largest input sections of flash and RAM with the object
+file that owns each one. The strings of the image are one merged block, so it
+reports that block once and the strings of each object before merging:
+
+```bash
+python3 tools/firmware-test/footprint_report.py \
+  --logs ~/zplc-zephyr-ws/out/size --board rpi-pico-rp2040 --top 25
+```
+
+The report only reads files. Its own tests are
+`tools/firmware-test/test_footprint_report.py`.
+
 ## Adding a test
 
 - Put a Zephyr suite in `firmware/tests/<name>` with a `testcase.yaml`, and
@@ -271,4 +307,4 @@ the heap high-water mark.
 
 - [Zephyr Workspace Setup](../reference/zephyr-workspace-setup.md)
 - [Supported Boards](../reference/boards.md)
-- [Capabilities and Evidence Tiers](../reference/capabilities-evidence.md)
+- [Hardware support](../reference/capabilities-evidence.md)

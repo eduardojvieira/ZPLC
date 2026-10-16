@@ -3,5 +3,6 @@
   "title": "a failed build reports why, not only where",
   "build": "fails",
   "lines": [5],
+  "codes": ["UNEXPECTED_TOKEN"],
   "messageIncludes": ["expression"]
 }

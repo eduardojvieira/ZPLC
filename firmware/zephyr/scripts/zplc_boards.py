@@ -33,8 +33,11 @@ PIN_STATUSES = ("devicetree", "profile")
 CHANNEL_REQUIRED = ("id", "direction", "kind", "address", "pin", "dt", "electrical", "pin_status", "source")
 BOARD_REQUIRED = (
     "board_id", "display_name", "ide_id", "zephyr_board", "variant", "memory", "support_assets", "build_command",
-    "network_class", "network_interface", "evidence_refs", "docs_ref", "io",
+    "network_class", "network_interface", "evidence_refs", "docs_ref", "io", "watchdog",
 )
+WATCHDOG_STATES = {"stop": ("disarm", "feed"), "pause": ("disarm", "feed"), "fault": ("disarm", "expire")}
+"""What the hardware watchdog of a profile does in STOP, while paused or at a breakpoint, and in a latched fault (RT-020)."""
+WATCHDOG_DEFAULT_POLICY = {"stop": "disarm", "pause": "feed", "fault": "expire"}
 NETWORK_CLASSES = ("serial-focused", "network-capable", "other")
 NETWORK_INTERFACES = ("none", "wifi", "ethernet")
 ADC_ENUM = re.compile(r"^ADC_(GAIN|REF|ACQ_TIME)_[A-Z0-9_]+$")
@@ -216,6 +219,45 @@ def validate_io_description(board: dict[str, Any], root: Path | None = None) -> 
     return errors
 
 
+def validate_watchdog(board: dict[str, Any], root: Path | None = None) -> list[str]:
+    """The hardware watchdog rule of a profile (RT-020).
+
+    It is enabled in every profile that has a hardware record and off, with the reason, in every other: a
+    watchdog enabled before its reset timing and safe outputs were recorded could reset a board in the field. The
+    record is one the manifest lists in `evidence_refs` and whose result is a pass.
+    """
+    name = board.get("board_id", "?")
+    watchdog = board.get("watchdog")
+    if not isinstance(watchdog, dict):
+        return [f"{name}: watchdog is missing: say whether the hardware watchdog is on in this profile (RT-020)"]
+    errors: list[str] = []
+    enabled = watchdog.get("enabled")
+    if not isinstance(enabled, bool):
+        errors.append(f"{name}: watchdog.enabled must be true or false")
+    for key in ("timeout_ms", "max_timeout_ms"):
+        value = watchdog.get(key)
+        if not _is_int(value) or not 100 <= value <= 60000:
+            errors.append(f"{name}: watchdog.{key} must be a whole number of milliseconds from 100 to 60000")
+    if _is_int(watchdog.get("timeout_ms")) and _is_int(watchdog.get("max_timeout_ms")):
+        if watchdog["timeout_ms"] > watchdog["max_timeout_ms"]:
+            errors.append(f"{name}: watchdog.timeout_ms is longer than watchdog.max_timeout_ms")
+    for state, choices in WATCHDOG_STATES.items():
+        if watchdog.get(state) not in choices:
+            errors.append(f"{name}: watchdog.{state} must be one of {', '.join(choices)}")
+    has_record = False
+    if root is not None:
+        has_record = support_level(board, root)["level"] == "human-hil"
+    else:
+        has_record = bool(board.get("evidence_refs"))
+    if enabled is True and not has_record:
+        errors.append(f"{name}: the hardware watchdog is enabled but the profile has no passing hardware record (RT-020, HIL-010)")
+    if enabled is False and has_record:
+        errors.append(f"{name}: the profile has a hardware record, so its hardware watchdog must be enabled (RT-020)")
+    if enabled is False and not _is_text(watchdog.get("reason")):
+        errors.append(f"{name}: a profile with the hardware watchdog off says why in watchdog.reason (RT-020)")
+    return errors
+
+
 def validate_manifest(boards: Any, root: Path | None = None) -> list[str]:
     """The structural rules of the manifest; the CI matrix and the support assets are checked by the validator tool."""
     if not isinstance(boards, list) or not boards:
@@ -246,6 +288,7 @@ def validate_manifest(boards: Any, root: Path | None = None) -> list[str]:
                 f"{label}: evidence record {ref} does not exist" for ref in entry["evidence_refs"] if not (root / ref).is_file()
             )
         errors.extend(validate_io_description(entry, root))
+        errors.extend(validate_watchdog(entry, root))
     return errors
 
 

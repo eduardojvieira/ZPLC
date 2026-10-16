@@ -172,9 +172,11 @@ conversiones de `REAL`.
 Hasta que el contrato se congele (CMP-052), la palabra 28 del encabezado de cada artefacto
 `.zplc` guarda el contador de borrador (`ZPLC_DRAFT_COUNTER`) y el loader rechaza un artefacto
 con otro valor, mostrando ambos números. Cada cambio de un opcode, de un layout o de un tamaño
-lo incrementa. El contador es **4** desde la profundidad de llamadas de una tarea y la
-identidad de compilación: los programas compilados antes se rechazan y hay que recompilarlos
-(era 3 con los opcodes de 64 bits y de doble precisión). La herramienta
+lo incrementa. El contador es **6** desde los valores seguros declarados (el segmento
+`ZPLC_SEG_SAFE`): los programas compilados antes se rechazan y hay que recompilarlos (era 5
+con el layout de los textos de los bloques de comunicación, 4 con la profundidad de llamadas
+de una tarea y la identidad de compilación, y 3 con los opcodes de 64 bits y de doble
+precisión). La herramienta
 `tools/contract/restamp_artifacts.py` lleva los artefactos versionados en el repositorio al
 contador actual.
 
@@ -203,6 +205,7 @@ El binario `.zplc` usa estructuras públicas empaquetadas en el mismo header:
 - `zplc_iomap_entry_t`
 - `zplc_tag_entry_t`
 - `zplc_build_info_t`
+- `zplc_safe_entry_t`
 
 Segmentos públicos definidos hoy:
 
@@ -216,6 +219,7 @@ Segmentos públicos definidos hoy:
 - `ZPLC_SEG_TASK`
 - `ZPLC_SEG_TAGS`
 - `ZPLC_SEG_BUILD`
+- `ZPLC_SEG_SAFE`
 
 ## Profundidad de las tareas e identidad de compilación
 
@@ -235,6 +239,30 @@ El compilador mide lo que el loader va a demostrar y lo registra en el artefacto
   depuración de la misma compilación la registra como `buildId` en 8 dígitos hexadecimales,
   para que una herramienta distinga un mapa que no pertenece al programa que se ejecuta. Un
   artefacto sin el segmento se lee como no identificado.
+
+## Valores seguros declarados
+
+El estado de una salida mientras el programa no la controla (STOP, una pausa, una falla
+latcheada, el arranque, un deploy en curso) es apagado, salvo que el proyecto declare otro
+valor para ella (RT-023). La declaración viaja en el artefacto, en el segmento
+`ZPLC_SEG_SAFE`, de modo que un programa y su estado seguro son una sola unidad: un
+dispositivo que restaura el programa restaura su declaración, y un deploy interrumpido no
+puede dejar el programa de una compilación con los valores seguros de otra.
+
+- Cada entrada es un `zplc_safe_entry_t` de `ZPLC_SAFE_ENTRY_SIZE` (4) bytes: el `offset` en
+  bytes de la salida en la imagen de salidas, el `bit` (0 a 7) y el `value` (0 o 1).
+- El loader rechaza el artefacto con `ZPLC_LOADER_ERR_SAFE` cuando el segmento no son
+  entradas completas, una entrada nombra un bit fuera de la imagen de salidas o un valor que
+  no es 0 ni 1, una salida está declarada dos veces, o hay más de `ZPLC_LOADER_MAX_SAFE`
+  (64) entradas; un segundo segmento `ZPLC_SEG_SAFE` se rechaza como error de segmento. Un
+  artefacto sin el segmento no declara nada.
+- El runtime rechaza, en el deploy y en la restauración de arranque, una declaración para una
+  salida que la placa no tiene (una entrada tiene que nombrar un canal de salida digital de
+  la descripción de la placa por su offset de imagen y su bit). El programa de otra placa no
+  se ejecuta con un estado seguro que no existe.
+- Un valor declarado para una salida reemplaza el nivel que la descripción de la placa le da
+  en el estado seguro, en ambos sentidos. Rige desde la carga que confirmó el programa, antes
+  del primer scan.
 
 ## Páginas relacionadas
 

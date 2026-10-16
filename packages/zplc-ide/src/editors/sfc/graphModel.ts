@@ -1,5 +1,6 @@
-import type { Edge, EdgeChange, Node, NodeChange } from '@xyflow/react';
+import { addEdge, MarkerType, type Edge, type Node } from '@xyflow/react';
 import { findAction, type SFCModel, type SFCStep, type SFCTransition, validateSFCModel } from '../../models/sfc';
+import { stepElement, transitionElement } from '../../models/sourceElements';
 
 const STEP_FIELDS = new Set(['id', 'name', 'isInitial', 'position', 'actions', 'comment']);
 const TRANSITION_FIELDS = new Set(['id', 'fromStep', 'toStep', 'fromSteps', 'toSteps', 'priority', 'condition', 'position', 'comment']);
@@ -51,12 +52,24 @@ export function nodesToTransitions(nodes: Node[], edges: Edge[]): SFCTransition[
   });
 }
 
-export function hasCanonicalNodeChanges(changes: NodeChange[]): boolean {
-  return changes.some((change) => change.type === 'position' || change.type === 'add' || change.type === 'remove' || change.type === 'replace');
+/** Whether the changes of the canvas are a commit of the document: a node put down, not one dragged (LNG-010). */
+export { edgeChangesCommit as hasCanonicalEdgeChanges, nodeChangesCommit as hasCanonicalNodeChanges } from '../gesture';
+
+/** The ids of what is selected on the canvas: `step:<id>`, `transition:<id>`, and `edge:<id>` for a wire (LNG-010). */
+export function sfcSelection(nodes: readonly Node[], edges: readonly Edge[]): string[] {
+  return [
+    ...nodes.filter((node) => node.selected).map((node) => (node.type === 'transition' ? transitionElement(node.id) : stepElement(node.id))),
+    ...edges.filter((edge) => edge.selected).map((edge) => `edge:${edge.id}`),
+  ];
 }
 
-export function hasCanonicalEdgeChanges(changes: EdgeChange[]): boolean {
-  return changes.some((change) => change.type === 'add' || change.type === 'remove' || change.type === 'replace');
+/** The nodes and wires with the selection set to `ids`; what is not on the canvas any more is not selected. */
+export function applySFCSelection(nodes: Node[], edges: Edge[], ids: readonly string[]): { nodes: Node[]; edges: Edge[] } {
+  const wanted = new Set(ids);
+  return {
+    nodes: nodes.map((node) => ({ ...node, selected: wanted.has(node.type === 'transition' ? transitionElement(node.id) : stepElement(node.id)) })),
+    edges: edges.map((edge) => ({ ...edge, selected: wanted.has(`edge:${edge.id}`) })),
+  };
 }
 
 export function uniqueNodeId(base: string, nodes: Node[]): string {
@@ -153,4 +166,30 @@ export function isCanonicalSFCConnection(connection: { source: string; sourceHan
 
 function sourceHandleIsOut(handle: string | null | undefined): boolean {
   return handle === 'out';
+}
+
+const WIRE_STYLE = { stroke: 'var(--visual-wire)', strokeWidth: 2 };
+const ARROW = { type: MarkerType.ArrowClosed, width: 10, height: 10 } as const;
+
+/** A wire of the chart from the output of `source` to the input of `target`, drawn as the canvas draws one loaded from a file. */
+export function sfcEdge(source: string, target: string): Edge {
+  return { id: `${source}_to_${target}`, source, sourceHandle: 'out', target, targetHandle: 'in', type: 'sfc', style: WIRE_STYLE, markerEnd: ARROW };
+}
+
+/**
+ * The wires after a wire is drawn from `source` to `target`, or undefined when it is not one a chart has (a step joins a
+ * transition and a transition joins a step). A transition has one source and one target: the wire it had is replaced.
+ * The canvas and the keyboard draw wires with this one rule.
+ */
+export function connectSFC(
+  nodes: Node[],
+  edges: Edge[],
+  wire: { source: string; sourceHandle?: string | null; target: string; targetHandle?: string | null },
+): Edge[] | undefined {
+  if (!isCanonicalSFCConnection(wire, nodes)) return undefined;
+  const source = nodes.find((node) => node.id === wire.source);
+  const target = nodes.find((node) => node.id === wire.target);
+  if (!source || !target) return undefined;
+  const kept = edges.filter((edge) => (target.type === 'transition' ? edge.target !== target.id : edge.source !== source.id));
+  return addEdge({ ...sfcEdge(wire.source, wire.target), sourceHandle: wire.sourceHandle ?? 'out', targetHandle: wire.targetHandle ?? 'in' }, kept);
 }

@@ -17,7 +17,7 @@ Todo lo que se describe aquí es evidencia de host, de simulador o de
 compilación. Una ejecución correcta no demuestra que una placa arranque, que
 sus pines se comporten ni que un ciclo de scan mantenga su período en silicio
 real. Esas afirmaciones requieren los procedimientos de hardware en el lazo
-descritos en [Capacidades y niveles de evidencia](../reference/capabilities-evidence.md).
+descritos en [Soporte de hardware](../reference/capabilities-evidence.md).
 
 ## Qué necesita
 
@@ -150,10 +150,24 @@ El endurecimiento del runtime del firmware (RT-010 a RT-034) tiene sus propias s
   valor forzado;
 - `scheduler_admission` retiene un scan en el commit y en la escritura de salidas, para mostrar que una escritura de
   fuera espera al latch de entradas y nunca al scan, y que el lock de la imagen está libre mientras se escriben los
-  pines.
+  pines;
+- `scheduler_equivalence` conduce el scheduler Zephyr por los escenarios del núcleo común del scheduler y compara sus
+  decisiones con la traza de referencia a la que se somete la sesión de host (RT-008, RT-018);
+- `single_task` ejecuta la configuración de una tarea del núcleo: el latch de entradas de los pines, el plazo, el
+  fault y el estado seguro (RT-018);
+- `failsafe` ejercita el manejador de error fatal con un reinicio interceptado y muestra las salidas llevadas al
+  estado seguro, el registro del fault y la causa que informa el arranque siguiente; `failsafe_reboot` provoca un
+  fault real y un reinicio real en `qemu_cortex_m3` y lee el registro después (RT-019, RT-021, RT-022);
+- `scheduler_watchdog` ejecuta la política de watchdog de hardware de un perfil sobre un modelo del watchdog: la
+  alimentación desde la finalización de un scan, el timeout tomado del conjunto de tareas, un scan detenido que lo
+  deja expirar, y la política en STOP, en pausa y en un fault (RT-020).
 
 Las suites de host del core suman `test_exchange` (un scanner, lectores y escritores en hilos), `test_program_store`
-(un corte de energía y una escritura truncada en cada operación), `test_core_start`, `test_core_lock`,
+(un corte de energía y una escritura truncada en cada operación), `test_sched_core` y `test_sched_equivalence` (las
+decisiones del núcleo del scheduler y la traza de referencia), `test_single_task`, `test_vm_scan` (el tiempo de un
+scan se lee una vez y un opcode de texto se cobra por sus bytes), `test_failsafe` (la causa de reset, el registro de
+un fault y la política de watchdog), `test_safe_state` (el valor seguro que declara un proyecto decide el nivel de un
+pin, sobre una placa propia), `test_core_start`, `test_core_lock`,
 `test_bytes_crc` y las pruebas `config_rule_*`, cada una de las cuales compila una regla de configuración con un
 valor que la rompe y espera que la compilación falle nombrando la regla. Los puntos de entrada solo para pruebas se
 declaran en `firmware/lib/zplc_core/tests/include/zplc_test_hooks.h`, nunca en un header público;
@@ -244,6 +258,30 @@ python3 tools/firmware-test/fwtest.py size \
 Las cifras son asignación estática en tiempo de enlace. No incluyen las pilas
 ni la marca máxima del heap.
 
+La biblioteca de ZPLC y la aplicación se compilan con optimización en tiempo de enlace (`CONFIG_ZPLC_LTO`, activa
+por defecto), que vale cerca del 3 por ciento de la flash de una imagen. El código propio de Zephyr no entra en ella.
+Los destinos `native_sim` enlazan su imagen como un objeto relocatable, del que el optimizador no puede formar parte,
+así que corren sin ella; las suites de `firmware/tests` enlazan la biblioteca del mismo modo que las placas en
+`qemu-m3` y `qemu-m0`, que es donde se ejercita el código que se entrega. Para comparar, o para depurar una falla
+sin el inlining de por medio, compile con `-DCONFIG_ZPLC_LTO=n`.
+
+Para ver adónde van los bytes de una placa, ejecute el informe de huella sobre
+los mismos árboles de compilación. Lee cada mapa del enlazador e imprime, por
+placa, los bytes usados de cada región de memoria, el margen frente al
+presupuesto, las secciones de entrada por tipo y por biblioteca, y las secciones
+de entrada más grandes de flash y RAM con el archivo objeto al que pertenece
+cada una. Las cadenas de la imagen son un solo bloque fusionado, así que el
+informe lo muestra una vez y muestra las cadenas de cada objeto antes de
+fusionarlas:
+
+```bash
+python3 tools/firmware-test/footprint_report.py \
+  --logs ~/zplc-zephyr-ws/out/size --board rpi-pico-rp2040 --top 25
+```
+
+El informe solo lee archivos. Sus propias pruebas son
+`tools/firmware-test/test_footprint_report.py`.
+
 ## Agregar una prueba
 
 - Ponga una suite Zephyr en `firmware/tests/<nombre>` con un `testcase.yaml`
@@ -292,4 +330,4 @@ ni la marca máxima del heap.
 
 - [Configuración del Workspace Zephyr](../reference/zephyr-workspace-setup.md)
 - [Placas Soportadas](../reference/boards.md)
-- [Capacidades y niveles de evidencia](../reference/capabilities-evidence.md)
+- [Soporte de hardware](../reference/capabilities-evidence.md)

@@ -8,9 +8,9 @@ C99 runtime executes it: on microcontroller boards as a Zephyr module, and on
 your computer as a simulator. ZPLC Studio, the desktop app, edits, compiles,
 tests and simulates projects.
 
-> **Status:** 2.0.0-rc.3 is a preview for evaluation. Six boards cross-build in
+> **Status:** 2.0.0-rc.3 is a preview for evaluation. Seven boards cross-build in
 > CI and none has been tested on hardware yet. It is not a safety PLC and must
-> not be used to control machinery.
+> not be used to control machinery: [Safety and limitations](docs/docs/safety-and-limitations.md).
 
 [Download ZPLC Studio](https://github.com/eduardojvieira/ZPLC/releases) ·
 [Getting started](docs/docs/getting-started/index.md) ·
@@ -21,13 +21,26 @@ tests and simulates projects.
 [![C99](https://img.shields.io/badge/C-C99-green.svg)](https://en.wikipedia.org/wiki/C99)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.9-blue.svg)](https://www.typescriptlang.org/)
 
+## Download
+
+Installers are files of a [GitHub release](https://github.com/eduardojvieira/ZPLC/releases),
+the only channel that exists today. Check the file against `SHA256SUMS`, then open it
+([Install ZPLC Studio](docs/docs/getting-started/install.md)):
+
+- **Windows:** the `setup-unsigned.exe` installer. It is unsigned: choose **More info**,
+  then **Run anyway** when SmartScreen warns; Smart App Control blocks it outright.
+- **macOS:** the `.dmg` or `.zip` for your chip. The app is signed ad hoc and not
+  notarized: choose **Done**, then **Privacy & Security**, **Open Anyway**.
+- **Linux:** the `.deb` or `.rpm`; the AppImage if neither fits. They are unsigned, so
+  the checksum is your check.
+
 ## What you can do today
 
 - Write programs in Structured Text, Instruction List, Ladder, FBD or SFC in Studio.
 - Compile them to `.zplc` bytecode and run them in the simulator, with no hardware.
 - Test them with scenarios: scripted inputs and timed checks on outputs, run from Studio's Tests tab.
-- Start from 16 example projects, such as a tank level controller, a conveyor, motor start/stop and a pedestrian crossing.
-- Build the runtime for six Zephyr boards.
+- Start from one of 21 example projects, such as a tank level controller, a conveyor, motor start/stop and a pedestrian crossing. They are in [`packages/zplc-ide/projects/`](packages/zplc-ide/projects/) and on Studio's Welcome screen.
+- Build the runtime for seven Zephyr boards.
 
 ## What it runs on
 
@@ -35,13 +48,13 @@ tests and simulates projects.
 | --- | --- |
 | Studio | Windows, macOS and Linux. The rc.3 installers are unsigned. |
 | Simulator | Your computer, as a host build of the same C runtime. Studio bundles it. |
-| Boards | Raspberry Pi Pico (RP2040), Arduino GIGA R1, ESP32-S3 DevKitC, STM32F746G Discovery, STM32 Nucleo-H743ZI and Arduino Opta WiFi. All six cross-build only: the firmware builds in CI and has not been run on a board. |
+| Boards | Raspberry Pi Pico (RP2040), Arduino GIGA R1, ESP32-S3 DevKitC, STM32F746G Discovery, STM32 Nucleo-H743ZI, Arduino Opta WiFi and Waveshare RP2040-Zero. All seven cross-build only: the firmware builds in CI and has not been run on a board ([Hardware support](docs/docs/reference/capabilities-evidence.md)). |
 
 ## Try it
 
-1. Download the installer for your system from [GitHub Releases](https://github.com/eduardojvieira/ZPLC/releases).
-2. Open it. Windows and macOS warn about unsigned apps; [Getting started](docs/docs/getting-started/index.md) shows how to continue.
-3. In Studio, copy the **Blinky** example, compile it, choose **Simulate**, press **Connect** and then **Run**.
+1. Download the installer for your system from [GitHub Releases](https://github.com/eduardojvieira/ZPLC/releases) and check it: [Install ZPLC Studio](docs/docs/getting-started/install.md).
+2. Open it. Windows and macOS warn about unsigned apps; the install page shows how to continue.
+3. In Studio, copy the **Blinky (Structured Text)** example, compile it, choose **Simulate**, press **Connect** and then **Run**. The tutorial [Blink without hardware](docs/docs/tutorials/blink-without-hardware.md) walks through it, ending in a passing scenario test.
 
 ## How it compares
 
@@ -50,7 +63,7 @@ what each project says about itself; we did not install or test the others.
 
 | Project | Licence and cost | Languages | Where it runs |
 | --- | --- | --- | --- |
-| ZPLC | MIT ([LICENSE](LICENSE)) | ST, IL, LD, FBD, SFC | Studio on Windows, macOS, Linux. Runtime on six Zephyr boards (cross-build only) and as a host simulator. |
+| ZPLC | MIT ([LICENSE](LICENSE)) | ST, IL, LD, FBD, SFC | Studio on Windows, macOS, Linux. Runtime on seven Zephyr boards (cross-build only) and as a host simulator. |
 | [OpenPLC](https://github.com/Autonomy-Logic/openplc-runtime) (Editor and Runtime v4) | [Editor](https://github.com/Autonomy-Logic/openplc-editor): GPL-3.0. Runtime: MIT. The v3 runtime repository is [marked end of life](https://github.com/thiagoralves/OpenPLC_v3). | Ladder, Structured Text, Function Block Diagram and other IEC 61131-3 languages | Editor: desktop app for macOS, Windows and Linux. Runtime: Linux on x86_64, ARM64 and ARMv7, or Docker. |
 | [Beremiz](https://github.com/beremiz/beremiz) | IDE: GPL v2 or later. Python runtime: LGPL v2 or later. C++ runtime: GPL v3 or later. | LD, FBD, SFC, IL, ST ([Beremiz](https://beremiz.org/)) | Compiles PLC programs to C and then to native code, for a bare-metal microcontroller, an industrial controller or a Linux PC. IDE: Windows installer and Linux Snap package. |
 | [CODESYS](https://store.codesys.com/en/codesys.html) | [Development System: free of charge in the CODESYS Store](https://store.codesys.com/en/engineering/ide.html); a licence agreement applies. | FBD, LD, IL, ST, SFC editors (IL is no longer maintained but can be enabled) | Integrated compilers for many CPU platforms. A web-based CODESYS 4 is available for Windows x64, Linux x64 and Linux ARM64. |

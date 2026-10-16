@@ -1,3 +1,5 @@
+import { isErrorCode } from '@zplc/compiler';
+
 export type WorkspaceSafetyPair = { outputs: [string, string] };
 
 export type WorkspaceSafetyPresentation =
@@ -9,7 +11,7 @@ export type WorkspaceSafetyPresentation =
 export type WorkspaceSafetyDiagnostic = { code: string; path?: string; line?: number; column?: number };
 
 const SIGNAL = /^[A-Za-z_][A-Za-z0-9_]{0,63}\.[A-Za-z_][A-Za-z0-9_]{0,63}$/;
-const DIAGNOSTICS = new Set(['SAFETY_OUTPUT_INVALID', 'SAFETY_OUTPUT_DUPLICATE', 'SAFETY_INTERLOCK_UNCOVERED', 'SAFETY_SCENARIO_INVALID', 'SAFETY_SCENARIOS_UNAVAILABLE', 'SAFETY_UNBOUNDED_WHILE', 'SAFETY_UNBOUNDED_REPEAT', 'WORKSPACE_INVALID', 'WORKSPACE_MISSING', 'WORKSPACE_INVALID_DIRECTORY', 'WORKSPACE_SYMLINK', 'WORKSPACE_INVALID_FILE', 'WORKSPACE_READ_FAILED', 'WORKSPACE_LIMIT', 'PROJECT_INVALID', 'PROGRAM_NOT_FOUND', 'COMPILATION_FAILED']);
+const DIAGNOSTICS = new Set(['SAFETY_OUTPUT_INVALID', 'SAFETY_OUTPUT_DUPLICATE', 'SAFETY_INTERLOCK_UNCOVERED', 'SAFETY_SCENARIO_INVALID', 'SAFETY_SCENARIOS_UNAVAILABLE', 'SAFETY_UNBOUNDED_WHILE', 'SAFETY_UNBOUNDED_REPEAT', 'WORKSPACE_INVALID', 'WORKSPACE_MISSING', 'WORKSPACE_INVALID_DIRECTORY', 'WORKSPACE_SYMLINK', 'WORKSPACE_INVALID_FILE', 'WORKSPACE_READ_FAILED', 'WORKSPACE_LIMIT', 'PROJECT_INVALID', 'PROGRAM_NOT_FOUND']);
 
 function record(value: unknown): Record<string, unknown> | null {
   try {
@@ -58,7 +60,7 @@ function diagnostics(value: unknown): WorkspaceSafetyDiagnostic[] | null {
   const result: WorkspaceSafetyDiagnostic[] = [];
   for (const value of values) {
     const item = record(value); const code = item && valueOf(item, 'code'); const path = item && valueOf(item, 'path'); const line = item && valueOf(item, 'line'); const column = item && valueOf(item, 'column');
-    if (!item || typeof code !== 'string' || !DIAGNOSTICS.has(code) || (path !== undefined && (typeof path !== 'string' || path.length === 0 || path.length > 512 || path.includes('\0') || path.startsWith('/') || path.startsWith('\\') || /^[A-Za-z]:/.test(path) || path.split(/[\\/]/).includes('..')))) return null;
+    if (!item || typeof code !== 'string' || !(DIAGNOSTICS.has(code) || isErrorCode(code)) || (path !== undefined && (typeof path !== 'string' || path.length === 0 || path.length > 512 || path.includes('\0') || path.startsWith('/') || path.startsWith('\\') || /^[A-Za-z]:/.test(path) || path.split(/[\\/]/).includes('..')))) return null;
     if ((line !== undefined && (typeof line !== 'number' || !Number.isSafeInteger(line) || line < 1 || line > 1_000_000)) || (column !== undefined && (typeof column !== 'number' || !Number.isSafeInteger(column) || column < 1 || column > 1_000_000))) return null;
     const keys = ['code', ...(path === undefined ? [] : ['path']), ...(line === undefined ? [] : ['line']), ...(column === undefined ? [] : ['column'])];
     if (Object.keys(item).length !== keys.length || !keys.every((key) => Object.hasOwn(item, key))) return null;

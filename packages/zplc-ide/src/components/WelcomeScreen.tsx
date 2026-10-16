@@ -6,6 +6,7 @@
 import React from 'react';
 import { BookOpen, FolderOpen, FolderPlus, History } from 'lucide-react';
 import { useIDEStore } from '../store/useIDEStore';
+import { useWelcomeState } from '../store/regionSubscriptions';
 import { LANGUAGE_NAMES, LEVEL_NAMES, boardName, buildExampleSections, type ExampleListing } from '../utils/exampleCatalog';
 import { isFileSystemAccessSupported } from '../types';
 import { ZPLC_REPO_VERSION } from '../version';
@@ -49,7 +50,7 @@ export function WelcomeScreen() {
     refreshRecentProjects,
     openRecentProject,
     forgetRecentProject,
-  } = useIDEStore();
+  } = useWelcomeState();
   const fsApiSupported = isFileSystemAccessSupported();
   const exampleSections = React.useMemo(() => buildExampleSections(getExampleProjects()), [getExampleProjects]);
   const [appVersion, setAppVersion] = React.useState(ZPLC_REPO_VERSION);

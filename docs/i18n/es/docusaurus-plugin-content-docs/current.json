@@ -1,0 +1,58 @@
+{
+  "version.label": {
+    "message": "ZPLC 2.0",
+    "description": "The label for version current"
+  },
+  "sidebar.docsSidebar.category.Start here": {
+    "message": "Empiece aquí",
+    "description": "The label for category 'Start here' in sidebar 'docsSidebar'"
+  },
+  "sidebar.docsSidebar.category.How-to guides": {
+    "message": "Guías prácticas",
+    "description": "The label for category 'How-to guides' in sidebar 'docsSidebar'"
+  },
+  "sidebar.docsSidebar.category.Reference": {
+    "message": "Referencia",
+    "description": "The label for category 'Reference' in sidebar 'docsSidebar'"
+  },
+  "sidebar.docsSidebar.category.Languages": {
+    "message": "Lenguajes",
+    "description": "The label for category 'Languages' in sidebar 'docsSidebar'"
+  },
+  "sidebar.docsSidebar.category.Functions and function blocks": {
+    "message": "Funciones y bloques de función",
+    "description": "The label for category 'Functions and function blocks' in sidebar 'docsSidebar'"
+  },
+  "sidebar.docsSidebar.category.Projects and tools": {
+    "message": "Proyectos y herramientas",
+    "description": "The label for category 'Projects and tools' in sidebar 'docsSidebar'"
+  },
+  "sidebar.docsSidebar.category.Runtime and firmware": {
+    "message": "Runtime y firmware",
+    "description": "The label for category 'Runtime and firmware' in sidebar 'docsSidebar'"
+  },
+  "sidebar.docsSidebar.category.Boards": {
+    "message": "Placas",
+    "description": "The label for category 'Boards' in sidebar 'docsSidebar'"
+  },
+  "sidebar.docsSidebar.category.Concepts": {
+    "message": "Conceptos",
+    "description": "The label for category 'Concepts' in sidebar 'docsSidebar'"
+  },
+  "sidebar.docsSidebar.category.Studio": {
+    "message": "Studio",
+    "description": "The label for category 'Studio' in sidebar 'docsSidebar'"
+  },
+  "sidebar.docsSidebar.category.Runtime": {
+    "message": "Runtime",
+    "description": "The label for category 'Runtime' in sidebar 'docsSidebar'"
+  },
+  "sidebar.docsSidebar.category.Learn": {
+    "message": "Aprender",
+    "description": "The label for category 'Learn' in sidebar 'docsSidebar'"
+  },
+  "sidebar.docsSidebar.category.Project": {
+    "message": "Proyecto",
+    "description": "The label for category 'Project' in sidebar 'docsSidebar'"
+  }
+}

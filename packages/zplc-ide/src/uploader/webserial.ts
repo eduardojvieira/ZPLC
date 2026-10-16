@@ -73,6 +73,7 @@ declare global {
 }
 
 import { getUploadCommandSet } from '../runtime/uploadProtocol';
+import { SERIAL_VENDORS } from './serialVendors';
 import { formatChunkTrace, sanitizeUploadTraceCommand, sanitizeUploadTraceText, type UploadTraceCallback } from '../runtime/uploadTrace';
 
 /** Maximum bytes per data chunk (16 bytes = 32 hex characters) - reduced for stability */
@@ -134,18 +135,7 @@ export async function requestPort(): Promise<SerialPort | null> {
 
   try {
     const port = await navigator.serial.requestPort({
-      filters: [
-        { usbVendorId: 0x0403 }, // FTDI
-        { usbVendorId: 0x10C4 }, // Silicon Labs CP210x
-        { usbVendorId: 0x1A86 }, // CH340
-        { usbVendorId: 0x0483 }, // STMicroelectronics (ST-Link, Nucleo)
-        { usbVendorId: 0x239A }, // Adafruit
-        { usbVendorId: 0x2341 }, // Arduino
-        { usbVendorId: 0x1366 }, // SEGGER J-Link
-        { usbVendorId: 0x303A }, // Espressif
-        { usbVendorId: 0x2E8A }, // Raspberry Pi (Pico, RP2040)
-        { usbVendorId: 0x2FE3 }, // Zephyr USB CDC ACM (Arduino Opta, etc.)
-      ]
+      filters: SERIAL_VENDORS.map((vendor) => ({ usbVendorId: vendor.id })),
     });
     return port;
   } catch (e) {

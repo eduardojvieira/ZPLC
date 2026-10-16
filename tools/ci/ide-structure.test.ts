@@ -2,7 +2,7 @@
 // The fixtures are small in-memory projects; the last block runs the rules over the repository itself.
 import { describe, expect, it } from 'bun:test';
 
-import { checkIdeStructure, checkRepository, ratchetOffenders, type LayeringException, type Offender, type SourceModule } from './ide-structure';
+import { checkIdeStructure, checkRepository, ratchetOffenders, wholeStoreSubscriptions, type LayeringException, type Offender, type SourceModule } from './ide-structure';
 
 const IDE = 'packages/zplc-ide/';
 const mod = (path: string, text = ''): SourceModule => ({ path: `${IDE}${path}`, text });
@@ -47,6 +47,33 @@ describe('layering stopgap (IDE-033): one command-line import of electron/ is li
       mod('src/cli/run.ts', "import { shared } from '../project/shared';\n"),
       mod('src/project/shared.ts', 'export const shared = 1;\n'),
     ])).toEqual([]);
+  });
+});
+
+describe('a component must not subscribe to the whole store (IDE-013)', () => {
+  it('finds the three forms of a subscription to everything', () => {
+    const text = [
+      'const all = useIDEStore();',
+      'const { a } = useIDEStore();',
+      'const state = useIDEStore((s) => s);',
+      'const debug = useIDEStore((state) => state.debug);',
+      'const ok = useIDEStore((state) => state.debug.mpeekEnabled);',
+      'const fields = useIDEStore(useShallow(selectToolbarState));',
+      'const stateOf = useIDEStore.getState();',
+      '// const commented = useIDEStore();',
+    ].join('\n');
+    expect(wholeStoreSubscriptions(text)).toEqual([1, 2, 3, 4]);
+  });
+
+  it('is reported with the module and the line, for a module outside the store', () => {
+    const problems = check([mod('src/components/Panel.tsx', "import { useIDEStore } from '../store/useIDEStore';\nexport const P = () => useIDEStore();\n"), mod('src/store/useIDEStore.ts', 'export const useIDEStore = () => 1;\n')]);
+    expect(problems).toHaveLength(1);
+    expect(problems[0]).toContain('IDE-013');
+    expect(problems[0]).toContain('src/components/Panel.tsx:2');
+  });
+
+  it('accepts a module of the store that reads its own state', () => {
+    expect(check([mod('src/store/other.ts', 'const state = useIDEStore();\n')])).toEqual([]);
   });
 });
 

@@ -55,14 +55,40 @@ describe('debounced session saver (IDE-008)', () => {
   it('sends at once on flush, cancels the timer, and sends nothing when nothing is queued', () => {
     const timer = manualTimer();
     const saver = createSessionSaver({ send, schedule: timer.schedule, cancel: timer.cancel });
-    saver.flush();
+    void saver.flush();
     expect(sent).toEqual([]);
     saver.queue(() => ({ rootId: 'r1', state: state(4) }));
-    saver.flush();
+    void saver.flush();
     expect(timer.pending()).toBe(0);
     expect(sent).toEqual([['r1', state(4)]]);
-    saver.flush();
+    void saver.flush();
     expect(sent).toHaveLength(1);
+  });
+
+  it('lets a caller that is about to destroy the window wait until the main process has stored the session', async () => {
+    const timer = manualTimer();
+    let store!: () => void;
+    const stored = new Promise<void>((resolve) => { store = resolve; });
+    const saver = createSessionSaver({ send: async (rootId, document) => { sent.push([rootId, document]); await stored; }, schedule: timer.schedule, cancel: timer.cancel });
+    saver.queue(() => ({ rootId: 'r1', state: state(12) }));
+    let done = false;
+    const flushed = saver.flush().then(() => { done = true; });
+    await Promise.resolve();
+    expect(sent).toEqual([['r1', state(12)]]);
+    expect(done).toBe(false); // the message has been sent, the main process has not answered yet
+    store();
+    await flushed;
+    expect(done).toBe(true);
+  });
+
+  it('answers a flush with nothing queued, and a flush whose send fails, without throwing', async () => {
+    const timer = manualTimer();
+    const errors: unknown[] = [];
+    const saver = createSessionSaver({ send: async () => { throw new Error('refused'); }, schedule: timer.schedule, cancel: timer.cancel, onError: (error) => errors.push(error) });
+    await expect(saver.flush()).resolves.toBeUndefined();
+    saver.queue(() => ({ rootId: 'r1', state: state(1) }));
+    await expect(saver.flush()).resolves.toBeUndefined();
+    expect(errors).toHaveLength(1);
   });
 
   it('sends nothing when there is no project to snapshot', () => {
@@ -172,7 +198,7 @@ describe('what triggers a save (IDE-008)', () => {
     const { store, sent, timer } = setup();
     store.set({ activeFileId: 'file:old.st' });
     expect(sent).toEqual([]);
-    flushSession();
+    void flushSession();
     expect(sent.map((item) => item.state.activePath)).toEqual(['file:old.st']);
     expect(timer.pending()).toBe(0);
   });
@@ -183,7 +209,7 @@ describe('what triggers a save (IDE-008)', () => {
     expect(store.listeners()).toBe(0);
     store.set({ openTabs: ['file:a.st'] });
     expect(timer.pending()).toBe(0);
-    flushSession();
+    void flushSession();
     expect(sent).toEqual([]);
   });
 });

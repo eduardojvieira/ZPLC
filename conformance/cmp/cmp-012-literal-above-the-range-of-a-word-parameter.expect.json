@@ -8,6 +8,9 @@
   "lines": [
     5
   ],
+  "codes": [
+    "CONSTANT_OUT_OF_RANGE"
+  ],
   "messageIncludes": [
     "65536",
     "WORD"

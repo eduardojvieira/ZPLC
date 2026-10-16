@@ -2,6 +2,7 @@
   "requirement": "LNG-003",
   "title": "an error the compiler finds in the code of an FBD block is reported against the block",
   "build": "fails",
+  "codes": ["UNKNOWN_IDENTIFIER"],
   "elements": [
     "block:not1"
   ],

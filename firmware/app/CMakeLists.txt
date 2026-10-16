@@ -19,6 +19,9 @@ find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 
 project(zplc_zephyr_app)
 
+# The application is optimized across its files with the runtime (CONFIG_ZPLC_LTO; the module does the library).
+zplc_target_lto(app)
+
 # COM-022: the raw memory command of the Zephyr shell is built only into the
 # diagnostic image (firmware/app/diagnostic.conf).
 include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/zplc_shell_rules.cmake)
@@ -64,6 +67,60 @@ if(ZPLC_BOARD_COUNT GREATER 0)
             "size the board does not accept. Make the two agree.")
         endif()
       endforeach()
+
+      # RT-020: the hardware watchdog of a profile is what its manifest entry says. It is on in a profile that has a
+      # hardware record and off in every other (the manifest validator checks that rule); the build is configured
+      # the same way, with the same timeouts and the same policy for STOP, a pause and a latched fault.
+      string(JSON ZPLC_WDT GET "${ZPLC_BOARD_ENTRY}" watchdog)
+      string(JSON ZPLC_WDT_ENABLED GET "${ZPLC_WDT}" enabled)
+      string(JSON ZPLC_WDT_TIMEOUT GET "${ZPLC_WDT}" timeout_ms)
+      string(JSON ZPLC_WDT_MAX GET "${ZPLC_WDT}" max_timeout_ms)
+      string(JSON ZPLC_WDT_STOP GET "${ZPLC_WDT}" stop)
+      string(JSON ZPLC_WDT_PAUSE GET "${ZPLC_WDT}" pause)
+      string(JSON ZPLC_WDT_FAULT GET "${ZPLC_WDT}" fault)
+      if(ZPLC_WDT_ENABLED)
+        if(NOT CONFIG_ZPLC_HARDWARE_WATCHDOG)
+          message(FATAL_ERROR
+            "boards/boards.json enables the hardware watchdog of ${ZPLC_BOARD_ID} (it has a hardware record) "
+            "but the build has CONFIG_ZPLC_HARDWARE_WATCHDOG off: set it in the board configuration (RT-020).")
+        endif()
+        foreach(ZPLC_PAIR
+                "timeout_ms;${ZPLC_WDT_TIMEOUT};${CONFIG_ZPLC_HARDWARE_WATCHDOG_TIMEOUT_MS};CONFIG_ZPLC_HARDWARE_WATCHDOG_TIMEOUT_MS"
+                "max_timeout_ms;${ZPLC_WDT_MAX};${CONFIG_ZPLC_HARDWARE_WATCHDOG_TIMEOUT_MAX_MS};CONFIG_ZPLC_HARDWARE_WATCHDOG_TIMEOUT_MAX_MS")
+          list(GET ZPLC_PAIR 0 ZPLC_KEY)
+          list(GET ZPLC_PAIR 1 ZPLC_ADVERTISED)
+          list(GET ZPLC_PAIR 2 ZPLC_CONFIGURED)
+          list(GET ZPLC_PAIR 3 ZPLC_SYMBOL)
+          if(NOT ZPLC_ADVERTISED EQUAL ZPLC_CONFIGURED)
+            message(FATAL_ERROR
+              "boards/boards.json says watchdog.${ZPLC_KEY}=${ZPLC_ADVERTISED} for ${ZPLC_BOARD_ID} "
+              "but the build is configured with ${ZPLC_SYMBOL}=${ZPLC_CONFIGURED}. Make the two agree.")
+          endif()
+        endforeach()
+        if((ZPLC_WDT_STOP STREQUAL "feed") AND NOT CONFIG_ZPLC_WATCHDOG_STOP_FEED)
+          message(FATAL_ERROR "boards/boards.json: ${ZPLC_BOARD_ID} feeds its watchdog in STOP; set CONFIG_ZPLC_WATCHDOG_STOP_FEED=y.")
+        endif()
+        if((ZPLC_WDT_STOP STREQUAL "disarm") AND CONFIG_ZPLC_WATCHDOG_STOP_FEED)
+          message(FATAL_ERROR "boards/boards.json: ${ZPLC_BOARD_ID} disarms its watchdog in STOP; unset CONFIG_ZPLC_WATCHDOG_STOP_FEED.")
+        endif()
+        if((ZPLC_WDT_PAUSE STREQUAL "disarm") AND NOT CONFIG_ZPLC_WATCHDOG_PAUSE_DISARM)
+          message(FATAL_ERROR "boards/boards.json: ${ZPLC_BOARD_ID} disarms its watchdog in a pause; set CONFIG_ZPLC_WATCHDOG_PAUSE_DISARM=y.")
+        endif()
+        if((ZPLC_WDT_PAUSE STREQUAL "feed") AND CONFIG_ZPLC_WATCHDOG_PAUSE_DISARM)
+          message(FATAL_ERROR "boards/boards.json: ${ZPLC_BOARD_ID} feeds its watchdog in a pause; unset CONFIG_ZPLC_WATCHDOG_PAUSE_DISARM.")
+        endif()
+        if((ZPLC_WDT_FAULT STREQUAL "disarm") AND NOT CONFIG_ZPLC_WATCHDOG_FAULT_DISARM)
+          message(FATAL_ERROR "boards/boards.json: ${ZPLC_BOARD_ID} disarms its watchdog in a fault; set CONFIG_ZPLC_WATCHDOG_FAULT_DISARM=y.")
+        endif()
+        if((ZPLC_WDT_FAULT STREQUAL "expire") AND CONFIG_ZPLC_WATCHDOG_FAULT_DISARM)
+          message(FATAL_ERROR "boards/boards.json: ${ZPLC_BOARD_ID} lets its watchdog expire in a fault; unset CONFIG_ZPLC_WATCHDOG_FAULT_DISARM.")
+        endif()
+      elseif(CONFIG_ZPLC_HARDWARE_WATCHDOG)
+        message(FATAL_ERROR
+          "boards/boards.json keeps the hardware watchdog of ${ZPLC_BOARD_ID} off (no hardware record: RT-020, "
+          "HIL-010) but the build enables CONFIG_ZPLC_HARDWARE_WATCHDOG. A watchdog enabled before its reset "
+          "timing and safe outputs are recorded could reset a board in the field.")
+      endif()
     endif()
   endforeach()
 endif()

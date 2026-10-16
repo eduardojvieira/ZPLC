@@ -126,6 +126,7 @@ test('covers the standalone CLI and MCP executables, the bill of materials and t
     'zplc-runtime-2.0.0-rc.4-rpi-pico-rp2040.uf2',
     'zplc-runtime-2.0.0-rc.4-nucleo-h743zi.bin',
     'zplc-runtime-2.0.0-rc.4-nucleo-h743zi.elf',
+    'zplc-runtime-2.0.0-rc.4.manifest.json',
   ];
   for (const name of names) await writeAsset(input, name, name);
   const result = await createReleaseIntegrityBundle({ inputDir: input, outputDir: output, ...identity });

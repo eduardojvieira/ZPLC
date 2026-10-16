@@ -3,6 +3,7 @@ import { accessSync, constants, existsSync, lstatSync, mkdtempSync, readFileSync
 import { createServer } from 'node:net';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
+import { parseFirmwareImagesResult } from '../electron/firmwareImagesProtocol';
 import { isElectronHeadlessBootstrapQuarantine } from './electronHeadlessQuarantine';
 
 const HOST = '127.0.0.1';
@@ -42,6 +43,21 @@ export function discoverPackagedExecutable(distDir: string, platform: NodeJS.Pla
   assert(stat?.isFile() && !stat.isSymbolicLink(), `Packaged desktop smoke requires a real zplc-ide executable: ${executable}`);
   if (platform !== 'win32') {
     try { accessSync(executable, constants.X_OK); } catch { throw new Error(`Packaged desktop smoke executable is not executable: ${executable}`); }
+  }
+  return executable;
+}
+
+/**
+ * The executable of an installed or extracted copy of the application (REL-036): the one that a silent install, a mounted
+ * disk image or an extracted archive left, named by ZPLC_PACKAGED_EXECUTABLE. It must be a real file, not a link, and
+ * executable where the system has that notion.
+ */
+export function installedExecutable(path: string, platform: NodeJS.Platform = process.platform): string {
+  const executable = resolve(path);
+  const stat = existsSync(executable) ? lstatSync(executable) : null;
+  assert(stat?.isFile() && !stat.isSymbolicLink(), `The installed application is not a real file: ${executable}`);
+  if (platform !== 'win32') {
+    try { accessSync(executable, constants.X_OK); } catch { throw new Error(`The installed application is not executable: ${executable}`); }
   }
   return executable;
 }
@@ -182,9 +198,12 @@ async function press(cdp: Cdp, key: string, code = key): Promise<void> {
 
 async function main(): Promise<void> {
   // ZPLC_PACKAGED_DIST points at another output directory of electron-builder, for a package built outside the repository tree.
-  const executable = discoverPackagedExecutable(process.env.ZPLC_PACKAGED_DIST ?? join(packageRoot, 'dist-electron'));
-  // VF-008: the folder dialog test hook never ships. Checked on the archive itself, before anything is launched.
-  assertAsarHasNoDevOnlyCode(readFileSync(packagedAsarPath(executable)));
+  // ZPLC_PACKAGED_EXECUTABLE points at the application that an installer or an archive left on this machine (REL-036).
+  const installed = process.env.ZPLC_PACKAGED_EXECUTABLE;
+  const executable = installed ? installedExecutable(installed) : discoverPackagedExecutable(process.env.ZPLC_PACKAGED_DIST ?? join(packageRoot, 'dist-electron'));
+  // VF-008: the folder dialog test hook never ships. Checked on the archive itself, before anything is launched. The
+  // portable Windows executable unpacks itself at run time, so it has no archive beside it to read.
+  if (!installed || existsSync(packagedAsarPath(executable))) assertAsarHasNoDevOnlyCode(readFileSync(packagedAsarPath(executable)));
   const tempRoot = mkdtempSync(join(tmpdir(), 'zplc-packaged-smoke-'));
   const output: string[] = [];
   let electron: OwnedProcess | undefined;
@@ -217,13 +236,23 @@ async function main(): Promise<void> {
       welcome: document.body.innerText.includes('ZPLC Studio 2.0'),
     }))()`)) as { node: Array<[string, string]>; preload: string[]; welcome: boolean };
     assert(rendererBoundary.node.every(([, value]) => value === 'undefined'), `Node globals leaked into packaged renderer: ${JSON.stringify(rendererBoundary.node)}`);
-    assert(JSON.stringify(rendererBoundary.preload) === JSON.stringify(['aiProvider', 'candidateChangeSet', 'closeGuard', 'firmwareBuild', 'getAppInfo', 'isElectron', 'learnProgress', 'nativeSimulation', 'platform', 'projectFiles', 'recovery', 'session', 'toolExecutionAudit', 'toolchain', 'updateCheck', 'workspaceTests']), `Unexpected packaged preload surface: ${JSON.stringify(rendererBoundary.preload)}`);
+    assert(JSON.stringify(rendererBoundary.preload) === JSON.stringify(['aiProvider', 'candidateChangeSet', 'closeGuard', 'firmwareBuild', 'firmwareImages', 'getAppInfo', 'isElectron', 'learnProgress', 'nativeSimulation', 'platform', 'portChoice', 'projectFiles', 'recovery', 'session', 'toolExecutionAudit', 'toolchain', 'updateCheck', 'workspaceTests']), `Unexpected packaged preload surface: ${JSON.stringify(rendererBoundary.preload)}`);
     assert(rendererBoundary.welcome, 'Packaged renderer did not render the folder-backed Welcome screen.');
     // IDE-001, IDE-003: the project bridge of the asar's preload offers exactly its typed operations (the eight file ones, the four of recent projects, the watch and its event, and the three of the project archives) and no path-taking helper; the session bridge, its two.
     const projectOperations = (await cdp.evaluate(`Object.keys(window.electronAPI.projectFiles).sort()`)) as string[];
     assert(JSON.stringify(projectOperations) === JSON.stringify(['chooseFolder', 'exportArchive', 'extractArchive', 'forgetRecent', 'inspectArchive', 'list', 'listRecent', 'markOpened', 'mkdir', 'onChanged', 'openRecent', 'read', 'remove', 'rename', 'stat', 'watch', 'write']), `Unexpected packaged project bridge: ${JSON.stringify(projectOperations)}`);
     const sessionOperations = (await cdp.evaluate(`Object.keys(window.electronAPI.session).sort()`)) as string[];
     assert(JSON.stringify(sessionOperations) === JSON.stringify(['load', 'save']), `Unexpected packaged session bridge: ${JSON.stringify(sessionOperations)}`);
+    // REL-025: the firmware bridge has its one typed listing, and what it answers is a valid answer. When the package was made
+    // with the firmware set at hand (ZPLC_REQUIRE_FIRMWARE=1) the two learner-board images are inside it, with their checksums.
+    const firmwareOperations = (await cdp.evaluate(`Object.keys(window.electronAPI.firmwareImages).sort()`)) as string[];
+    assert(JSON.stringify(firmwareOperations) === JSON.stringify(['list']), `Unexpected packaged firmware bridge: ${JSON.stringify(firmwareOperations)}`);
+    const firmware = parseFirmwareImagesResult(await cdp.evaluate(`window.electronAPI.firmwareImages.list()`));
+    assert(firmware !== null, 'The packaged firmware bridge answered something that is not a firmware answer.');
+    if (process.env.ZPLC_REQUIRE_FIRMWARE === '1') {
+      const learners = firmware.status === 'available' ? firmware.images.filter((image) => image.learner && image.role === 'flash') : [];
+      assert(firmware.status === 'available' && learners.length === 2 && learners.every((image) => image.bundled === 'verified'), `The packaged application does not hold the two learner-board images with their checksums: ${JSON.stringify(firmware)}`);
+    }
     // LX-1: the workspace test bridge registers the folder the main process owns by its opaque id, next to the older file-based registration.
     const workspaceTestOperations = (await cdp.evaluate(`Object.keys(window.electronAPI.workspaceTests).sort()`)) as string[];
     assert(['registerProjectFile', 'registerProjectRoot'].every((operation) => workspaceTestOperations.includes(operation)), `Packaged workspace test bridge lacks registerProjectRoot: ${JSON.stringify(workspaceTestOperations)}`);
@@ -241,6 +270,9 @@ async function main(): Promise<void> {
     assert(registeredAccelerators.every((accelerator) => !/^(F5|F12|.*\+(R|I))$/i.test(accelerator)), `Packaged application menu has a reload or developer-tools accelerator: ${menuReport}`);
     const closeGuard = (await cdp.evaluate(`(async () => { const guard = window.electronAPI.closeGuard; return { keys: Object.keys(guard).sort(), accepted: await guard.setDirty(false).then(() => true, () => false), rejected: await guard.setDirty('yes').then(() => false, () => true) }; })()`)) as { keys: string[]; accepted: boolean; rejected: boolean };
     assert(JSON.stringify(closeGuard.keys) === JSON.stringify(['closeNow', 'onCloseRequested', 'setDirty']) && closeGuard.accepted && closeGuard.rejected, `Packaged close guard bridge is not narrow and validated: ${JSON.stringify(closeGuard)}`);
+    // IDE-018: the port-choice bridge is two typed calls and the push of the offer; a message that is not exactly an answer is refused.
+    const portChoice = (await cdp.evaluate(`(async () => { const bridge = window.electronAPI.portChoice; return { keys: Object.keys(bridge).sort(), rejected: await bridge.choose({ requestId: 'r', portId: '/dev/ttyUSB0', path: '/dev/ttyUSB0' }).then(() => false, () => true), unknownRequest: await bridge.list({ requestId: 'no-such-request' }).then((value) => value, () => 'refused') }; })()`)) as { keys: string[]; rejected: boolean; unknownRequest: unknown };
+    assert(JSON.stringify(portChoice.keys) === JSON.stringify(['choose', 'list', 'onRequested']) && portChoice.rejected && portChoice.unknownRequest === null, `Packaged port-choice bridge is not narrow and validated: ${JSON.stringify(portChoice)}`);
     assert(await cdp.evaluate(`(() => { const control = document.querySelector('select[data-theme-control]'); control?.focus(); return Boolean(control && document.activeElement === control && control.matches(':focus-visible') && getComputedStyle(control).outlineStyle !== 'none'); })()`), 'Packaged Welcome theme control is not keyboard focusable.');
     await press(cdp, 'End'); // the last option of the theme select is High contrast
     await waitFor('packaged high-contrast keyboard activation', async () => await cdp!.evaluate(`document.documentElement.classList.contains('high-contrast') && getComputedStyle(document.body).backgroundColor === 'rgb(0, 0, 0)'`) === true ? true : undefined);

@@ -153,6 +153,55 @@ int zplc_pstore_commit(const zplc_pstore_config_t *config,
                               uint8_t *workspace, size_t program_size,
                               size_t workspace_capacity);
 
+/** @brief What the rollback of a commit is: a value of zplc_pstore_rollback_t.kind. 0 is "nothing found". */
+#define ZPLC_PSTORE_ROLLBACK_NONE 0U
+#define ZPLC_PSTORE_ROLLBACK_SLOT 1U   /**< a v1 slot that read back and was admitted */
+#define ZPLC_PSTORE_ROLLBACK_EMPTY 2U  /**< a store that never held a program */
+#define ZPLC_PSTORE_ROLLBACK_LEGACY 3U /**< the single-key program of the first firmware, read and admitted */
+
+/**
+ * @brief The rollback a commit relies on, found before the upload and checked again when it is committed.
+ *
+ * A commit must know, before it writes, that there is a real program to fall back to (or that the store is empty),
+ * and that costs a buffer of the code size to read it into and admit it. zplc_pstore_commit() does that at the time
+ * of the commit, so every caller owns a second buffer of the code size for it. A caller that has a buffer that is
+ * free at the start of an upload (the staging buffer, before the first byte arrives) finds the rollback there with
+ * zplc_pstore_probe(), and commits with zplc_pstore_commit_probed(), which needs no scratch: it checks that the
+ * records the answer was read from are unchanged (a digest of the active record, both metadata records and what the
+ * backend said for the keys of the first version) and goes on exactly as zplc_pstore_commit() does. The
+ * only writer of those records is a commit, so unchanged records are an unchanged rollback; what the probe verified
+ * is the payload as it was at the start of the upload.
+ *
+ * Zero-initialised is "nothing found", which a commit refuses. The members are the store's, not the caller's.
+ */
+typedef struct {
+  uint32_t digest;     /**< of the records the answer was read from */
+  uint32_t generation; /**< of the rollback slot, for ZPLC_PSTORE_ROLLBACK_SLOT */
+  uint8_t kind;        /**< ZPLC_PSTORE_ROLLBACK_* */
+  uint8_t slot;        /**< the rollback slot, for ZPLC_PSTORE_ROLLBACK_SLOT */
+} zplc_pstore_rollback_t;
+
+/**
+ * @brief Find the rollback of the next commit, using @p buffer as the working buffer (the one of
+ *        zplc_pstore_config_t::scratch, which this call does not need and ignores).
+ *
+ * Reads and admits the program that a commit would fall back to, exactly as zplc_pstore_commit() does before it
+ * writes. @p buffer is overwritten.
+ *
+ * @param capacity  at least ZPLC_PROGRAM_STORE_MAX_ARTIFACT_SIZE + ZPLC_PROGRAM_STORE_FOOTER_SIZE
+ * @return 0 and the rollback, or ZPLC_PROGRAM_STORE_COMMIT_ERROR with @p rollback left as "nothing found": the
+ *         backend failed, or records exist and none verifies (a commit then refuses to write over them)
+ */
+int zplc_pstore_probe(const zplc_pstore_config_t *config, uint8_t *buffer, size_t capacity,
+                      zplc_pstore_rollback_t *rollback);
+
+/**
+ * @brief zplc_pstore_commit() with the rollback of zplc_pstore_probe(), which has to be the answer for the store as
+ *        it is now: when a record changed in between, nothing is written.
+ */
+int zplc_pstore_commit_probed(const zplc_pstore_config_t *config, const zplc_pstore_rollback_t *rollback,
+                              uint8_t *workspace, size_t program_size, size_t workspace_capacity);
+
 /**
  * @brief Find the program to run after a reset.
  *
@@ -164,6 +213,17 @@ int zplc_pstore_commit(const zplc_pstore_config_t *config,
 zplc_program_store_restore_t zplc_pstore_restore(
     const zplc_pstore_config_t *config, uint8_t *workspace,
     size_t workspace_capacity, size_t *program_size);
+
+/**
+ * @brief zplc_pstore_restore() that also leaves the rollback of the commit that follows a LEGACY result.
+ *
+ * The program of the first firmware was read and admitted into @p workspace by the call, so it is the rollback of
+ * the commit that migrates it. For any other result @p rollback is "nothing found": the commit of an upload finds
+ * its rollback with zplc_pstore_probe() when the upload starts.
+ */
+zplc_program_store_restore_t zplc_pstore_restore_probed(const zplc_pstore_config_t *config, uint8_t *workspace,
+                                                        size_t workspace_capacity, size_t *program_size,
+                                                        zplc_pstore_rollback_t *rollback);
 
 #ifdef __cplusplus
 }

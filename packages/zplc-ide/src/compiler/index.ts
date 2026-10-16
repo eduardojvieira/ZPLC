@@ -79,9 +79,11 @@ import type { ILProjectSymbols } from './il/ilToST.ts';
 import type {
     ZPLCProjectConfig,
     CommunicationTagConfig,
+    ModbusAddressSpace,
 } from '../types/index.ts';
 import { getCompilerMemoryProfile } from '../config/boardProfiles.ts';
 import { checkLocatedVariables, locatedVariablesOf } from '../boards/ioAdmission.ts';
+import { checkedSafeOutputs, type DeclaredSafeOutput, type DeclaredSafeOutputs } from '../boards/safeOutputs.ts';
 import { normalizeAddress } from '../boards/boardIoMapping.ts';
 import { annotateDebugMapElements } from './debugElements.ts';
 import {
@@ -91,6 +93,7 @@ import {
     ilLineElement,
     parseElement,
     type ElementDiagnostic,
+    type MonitorEntry,
     type SourceMapRange,
 } from '../models/sourceElements.ts';
 import { buildOptionsOf } from '../project/buildOptions.ts';
@@ -119,6 +122,8 @@ export interface TranspileResult {
     diagnostics?: ElementDiagnostic[];
     /** For each element, the lines of the generated Structured Text that were written for it (LNG-004). */
     sourceMap?: SourceMapRange[];
+    /** Where the state of each element is read online, in terms of the variables of the generated program (LNG-006). */
+    monitor?: MonitorEntry[];
 }
 
 function failure(error: unknown, line?: number): TranspileResult {
@@ -139,11 +144,11 @@ export function transpileFailure(transpiled: TranspileResult, sourceRef?: string
         ? transpiled.diagnostics
         : transpiled.errors.map((message) => ({ message, ...(transpiled.line === undefined ? {} : { line: transpiled.line }) }));
     const errors = found.map((each) => {
-        const error = new CompilerError(each.message, each.line ?? 0, 0, 'parser', sourceRef);
+        const error = new CompilerError('TRANSLATION_FAILED', each.message, each.line ?? 0, 0, 'parser', sourceRef);
         if (each.element !== undefined) error.element = each.element;
         return error;
     });
-    if (errors.length === 0) errors.push(new CompilerError('The source could not be translated', 0, 0, 'parser', sourceRef));
+    if (errors.length === 0) errors.push(new CompilerError('TRANSLATION_FAILED', 'The source could not be translated', 0, 0, 'parser', sourceRef));
     errors[0]!.errors = errors;
     return errors[0]!;
 }
@@ -199,6 +204,8 @@ export interface MultiTaskCompilationResult {
     }[];
     /** Merged debug map for all programs (always present) */
     debugMap: DebugMap;
+    /** The safe values of the outputs (RT-023): as the artifact holds them, and as a deploy confirmation shows them. */
+    safe: DeclaredSafeOutputs['entries']; declaredSafe: DeclaredSafeOutput[];
 }
 
 /**
@@ -347,11 +354,55 @@ function getTagAnnotations(tag: CommunicationTagConfig): string[] {
     }
 
     if (tag.modbusAddress !== undefined || tag.mode === 'modbus') {
-        annotations.push(`{modbus:${tag.modbusAddress ?? 1}}`);
+        annotations.push(`{modbus:${modbusTagNumber(tag.modbusArea, tag.modbusAddress ?? 1, `communication tag '${tag.symbol}'`, 0)}}`);
     }
 
     return annotations;
 }
+
+const MODBUS_AREA_BASE = { 'discrete-input': 10001, 'input-register': 30001, 'holding-register': 40001 } as const;
+
+/** The area the Modbus notation reads a number as, for the three areas that have a prefix. */
+function modbusAreaOfNumber(number: number): ModbusAddressSpace | undefined {
+    if (number >= 40001 && number <= 49999) return 'holding-register';
+    if (number >= 30001 && number <= 39999) return 'input-register';
+    if (number >= 10001 && number <= 19999) return 'discrete-input';
+    return undefined;
+}
+
+/**
+ * The number of the `{modbus:N}` tag that serves a variable at `address` of `area` (COM-011). The four areas of a
+ * Modbus server are four address spaces, and the tag says which with the notation of the Modbus world: 10001 to
+ * 19999 are discrete inputs, 30001 to 39999 input registers, 40001 to 49999 holding registers, and any other
+ * number is a coil (a BOOL) or a holding register at that address. An address that is already written in that
+ * notation, in the area that was chosen, is kept; no area keeps the number as the author wrote it.
+ */
+export function modbusTagNumber(area: ModbusAddressSpace | undefined, address: number, what: string, line: number): number {
+    if (area === undefined) return address;
+    if (!Number.isInteger(address) || address < 0 || address > 65535) {
+        throw new CompilerError('INVALID_TAG', `The Modbus address ${String(address)} of ${what} is not between 0 and 65535`, line, 0, 'codegen');
+    }
+    const written = modbusAreaOfNumber(address);
+    if (written !== undefined) {
+        if (written === area) return address;
+        throw new CompilerError('INVALID_TAG',
+            `The Modbus address ${String(address)} of ${what} is a ${written.replace('-', ' ')} in Modbus notation, and ${what} is placed in a ${area.replace('-', ' ')}`,
+            line, 0, 'codegen');
+    }
+    if (area === 'coil') return address;
+    if (address <= 9998) return MODBUS_AREA_BASE[area] + address;
+    if (area === 'holding-register') return address;
+    throw new CompilerError('INVALID_TAG',
+        `The ${area.replace('-', ' ')} address ${String(address)} of ${what} does not fit: an ${area.replace('-', ' ')} is addressed from 0 to 9998`,
+        line, 0, 'codegen');
+}
+
+const MODBUS_HELPER_AREA: Record<string, ModbusAddressSpace> = {
+    COIL: 'coil',
+    DISCRETE_INPUT: 'discrete-input',
+    INPUT_REGISTER: 'input-register',
+    HOLDING_REGISTER: 'holding-register',
+};
 
 const MODBUS_HELPER_REGEX = /^\s*MODBUS_(COIL|DISCRETE_INPUT|INPUT_REGISTER|HOLDING_REGISTER)\s*\(\s*([A-Za-z_][A-Za-z0-9_]*)\s*,\s*(\d+)\s*\)\s*;\s*$/i;
 
@@ -360,14 +411,15 @@ function applyModbusBindingHelpers(stSource: string): string {
     const bindings = new Map<string, number>();
     const keptLines: string[] = [];
 
-    for (const line of lines) {
+    for (const [index, line] of lines.entries()) {
         const match = line.match(MODBUS_HELPER_REGEX);
         if (!match) {
             keptLines.push(line);
             continue;
         }
 
-        bindings.set(match[2], parseInt(match[3], 10));
+        const area = MODBUS_HELPER_AREA[match[1].toUpperCase()];
+        bindings.set(match[2], modbusTagNumber(area, parseInt(match[3], 10), `'${match[2]}'`, index + 1));
         // the line stays, empty: every diagnostic is reported at the line the author sees (CMP-006)
         keptLines.push('');
     }
@@ -520,12 +572,12 @@ function relocateToSource(
     const element = origin ? elementAtLine(origin.map, each.line) : undefined;
     const parsed = element ? parseElement(element) : undefined;
     if (origin?.language === 'IL' && element && parsed?.kind === 'line') {
-        const error = new CompilerError(each.detail, Number(parsed.id), 1, each.phase, each.sourceRef);
+        const error = new CompilerError(each.code, each.detail, Number(parsed.id), 1, each.phase, each.sourceRef);
         error.element = element;
         return error;
     }
     const named = element === undefined || origin?.language === 'IL' ? '' : `${describeElement(element)}: `;
-    const error = new CompilerError(`${named}${each.detail} (position in the generated Structured Text)`, each.line, each.column, each.phase, each.sourceRef, each.endLine, each.endColumn);
+    const error = new CompilerError(each.code, `${named}${each.detail} (position in the generated Structured Text)`, each.line, each.column, each.phase, each.sourceRef, each.endLine, each.endColumn);
     if (element !== undefined && origin?.language !== 'IL') error.element = element;
     return error;
 }
@@ -559,12 +611,12 @@ export function compileMultiTaskProject(
     programSources: ProgramSource[]
 ): MultiTaskCompilationResult {
     if (!config.tasks || config.tasks.length === 0) {
-        throw new CompilerError('No tasks defined in project configuration', 0, 0, 'codegen');
+        throw new CompilerError('INVALID_TASK_CONFIGURATION', 'No tasks defined in project configuration', 1, 1, 'codegen', 'zplc.json');
     }
     if (config.tasks.length > ZPLC_CONSTANTS.MAX_TASKS) {
-        throw new CompilerError(
+        throw new CompilerError('INVALID_TASK_CONFIGURATION',
             `Project supports at most ${ZPLC_CONSTANTS.MAX_TASKS} tasks`,
-            0, 0, 'codegen',
+            1, 1, 'codegen', 'zplc.json',
         );
     }
 
@@ -596,7 +648,7 @@ export function compileMultiTaskProject(
     const compiledPrograms = new Set<string>();
     const visualSourceRefs = new Set<string>();
     // what each visual or IL source was translated from: the language, and the element of every generated line
-    const translated = new Map<string, { language: PLCLanguage; map: readonly SourceMapRange[] }>();
+    const translated = new Map<string, { language: PLCLanguage; map: readonly SourceMapRange[]; monitor?: readonly MonitorEntry[] }>();
     const programFiles = new Set<ProgramSource>();
 
     for (const task of config.tasks) {
@@ -606,7 +658,7 @@ export function compileMultiTaskProject(
 
             const source = findSource(progName);
             if (!source) {
-                throw new CompilerError(`Program '${progName}' referenced by task but not found in sources`, 0, 0, 'codegen');
+                throw new CompilerError('UNKNOWN_TASK_PROGRAM', `Program '${progName}' referenced by task but not found in sources`, 1, 1, 'codegen', 'zplc.json');
             }
             programFiles.add(source);
 
@@ -617,7 +669,7 @@ export function compileMultiTaskProject(
             if (!transpiled.success) throw transpileFailure(transpiled, source.sourceRef);
             if (source.language !== 'ST') {
                 visualSourceRefs.add(source.sourceRef ?? progName);
-                if (transpiled.sourceMap) translated.set(source.sourceRef ?? progName, { language: source.language, map: transpiled.sourceMap });
+                if (transpiled.sourceMap) translated.set(source.sourceRef ?? progName, { language: source.language, map: transpiled.sourceMap, ...(transpiled.monitor ? { monitor: transpiled.monitor } : {}) });
             }
 
             coreSources.push({
@@ -635,6 +687,7 @@ export function compileMultiTaskProject(
         coreSources.push({ name: source.sourceRef ?? source.name, content: source.content, sourceRef: source.sourceRef });
     }
 
+    const safeDeclared = checkedSafeOutputs(config.io, config.target?.board); // a build error when the board lacks one
     const options = buildOptionsOf(config);
     const coreConfig: CoreProjectConfig = {
         name: config.name,
@@ -654,6 +707,7 @@ export function compileMultiTaskProject(
             strictTypes: options.strictTypes,
             debug: options.debug,
             reportWarnings: options.reportWarnings,
+            safeOutputs: safeDeclared.entries,
         });
         // IO-003: a variable located where the board has no channel is a build error that names the board
         const unmapped = checkLocatedVariables(
@@ -661,7 +715,7 @@ export function compileMultiTaskProject(
             new Set((config.io?.virtual ?? []).map((row) => normalizeAddress(row.address)).filter((address): address is string => address !== undefined)),
         );
         if (unmapped.length > 0) {
-            const errors = unmapped.map((message) => new CompilerError(message, 0, 0, 'codegen'));
+            const errors = unmapped.map((message) => new CompilerError('NO_BOARD_CHANNEL', message, 0, 0, 'codegen'));
             errors[0]!.errors = errors;
             throw errors[0];
         }
@@ -669,7 +723,7 @@ export function compileMultiTaskProject(
         annotateDebugMapElements(result.debugMap, translated);
         // a graphical source has no lines: its warnings would point into the generated Structured Text
         const found = result.warnings.filter((warning) => !warning.sourceRef || !visualSourceRefs.has(warning.sourceRef));
-        return { ...result, warnings: selectWarnings([...optionWarnings(options), ...found], options.reportWarnings) };
+        return { ...result, warnings: selectWarnings([...optionWarnings(options), ...found], options.reportWarnings), declaredSafe: safeDeclared.declared };
     } catch (error) {
         if (error instanceof CompilerError) {
             const relocated = error.errors.map((each) => relocateToSource(each, translated, visualSourceRefs));

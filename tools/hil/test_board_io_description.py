@@ -11,6 +11,7 @@ import copy
 import importlib.util
 import json
 from pathlib import Path
+import tempfile
 import unittest
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -246,6 +247,76 @@ class ManifestTests(unittest.TestCase):
     def test_the_support_level_is_not_set_by_hand(self) -> None:
         for entry in self.boards:
             self.assertNotIn("validation_level", entry, entry["board_id"])
+
+
+class WatchdogProfileTests(unittest.TestCase):
+    """RT-020: the hardware watchdog is on in a profile that has a hardware record, and off, with the reason, in every
+    other. The shipped manifest has no record, so it is off everywhere; these cases show the rule both ways."""
+
+    def watchdog(self, **overrides: object) -> dict[str, object]:
+        base: dict[str, object] = {
+            "enabled": False, "reason": "no hardware record yet", "timeout_ms": 1000, "max_timeout_ms": 8000,
+            "stop": "disarm", "pause": "feed", "fault": "expire",
+        }
+        base.update(overrides)
+        return base
+
+    def board(self, watchdog: dict[str, object], refs: list[str] | None = None) -> dict[str, object]:
+        return {"board_id": "b", "evidence_refs": refs or [], "watchdog": watchdog}
+
+    def root_with_record(self, directory: str, result: str = "pass") -> None:
+        record = {
+            "schema": "zplc.hil-record/1", "board_id": "b", "firmware_version": "2.0.0",
+            "commit": "0" * 40, "image_sha256": "a" * 64, "result": result,
+        }
+        path = Path(directory) / "records"
+        path.mkdir()
+        (path / "b.json").write_text(json.dumps(record))
+
+    def test_every_shipped_profile_has_the_watchdog_off_and_says_why(self) -> None:
+        for entry in json.loads(MANIFEST.read_text()):
+            self.assertEqual([], boards_lib.validate_watchdog(entry, ROOT), entry["board_id"])
+            self.assertIs(False, entry["watchdog"]["enabled"], entry["board_id"])
+            self.assertEqual([], entry["evidence_refs"], f"{entry['board_id']} has a record: its watchdog must be on")
+
+    def test_a_profile_without_a_record_may_not_enable_it(self) -> None:
+        errors = boards_lib.validate_watchdog(self.board(self.watchdog(enabled=True)), None)
+        self.assertTrue(any("no passing hardware record" in e for e in errors), errors)
+
+    def test_a_profile_with_a_passing_record_must_enable_it(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            self.root_with_record(directory)
+            board = self.board(self.watchdog(), ["records/b.json"])
+            errors = boards_lib.validate_watchdog(board, Path(directory))
+            self.assertTrue(any("must be enabled" in e for e in errors), errors)
+            board = self.board(self.watchdog(enabled=True), ["records/b.json"])
+            self.assertEqual([], boards_lib.validate_watchdog(board, Path(directory)))
+
+    def test_a_failed_record_is_not_a_record(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            self.root_with_record(directory, "fail")
+            board = self.board(self.watchdog(), ["records/b.json"])
+            self.assertEqual([], boards_lib.validate_watchdog(board, Path(directory)))
+            board = self.board(self.watchdog(enabled=True), ["records/b.json"])
+            self.assertTrue(boards_lib.validate_watchdog(board, Path(directory)))
+
+    def test_a_profile_with_it_off_says_why(self) -> None:
+        errors = boards_lib.validate_watchdog(self.board(self.watchdog(reason="")), None)
+        self.assertTrue(any("watchdog.reason" in e for e in errors), errors)
+
+    def test_the_timeouts_and_the_policies_are_checked(self) -> None:
+        errors = boards_lib.validate_watchdog(self.board(self.watchdog(timeout_ms=50)), None)
+        self.assertTrue(any("timeout_ms" in e for e in errors), errors)
+        errors = boards_lib.validate_watchdog(self.board(self.watchdog(timeout_ms=9000, max_timeout_ms=8000)), None)
+        self.assertTrue(any("longer than" in e for e in errors), errors)
+        errors = boards_lib.validate_watchdog(self.board(self.watchdog(fault="feed")), None)
+        self.assertTrue(any("watchdog.fault" in e for e in errors), errors)
+        errors = boards_lib.validate_watchdog(self.board(self.watchdog(stop="expire")), None)
+        self.assertTrue(any("watchdog.stop" in e for e in errors), errors)
+
+    def test_a_manifest_entry_without_the_object_is_refused(self) -> None:
+        errors = boards_lib.validate_watchdog({"board_id": "b", "evidence_refs": []}, None)
+        self.assertTrue(any("watchdog is missing" in e for e in errors), errors)
 
 
 class SupportLevelTests(unittest.TestCase):

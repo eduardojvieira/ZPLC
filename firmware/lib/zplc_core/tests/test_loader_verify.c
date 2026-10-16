@@ -747,11 +747,28 @@ static void test_tag_semantics(void) {
                             ZPLC_TAG_SUBSCRIBE, 0U);
   expect_rejection(file, length, ZPLC_LOADER_ERR_TAGS,
                    "SUBSCRIBE write-capable tag cannot target OPI");
-  length =
-      make_tag_program(file, 0x3000U, ZPLC_TYPE_BOOL, ZPLC_TAG_PUBLISH, 0U);
-  expect_rejection(
-      file, length, ZPLC_LOADER_ERR_TAGS,
-      "WORK 0x3000 alias is rejected until adapters preserve its offset");
+  /* COM-013: the whole of WORK and of RETAIN can be bound. The upper half of WORK was refused "until the
+   * adapters preserve its offset"; every adapter reaches memory through the exchange with its whole address. */
+  {
+    static const uint16_t addresses[] = {
+        0x2000U, 0x2FFEU, 0x3000U, 0x3001U, 0x3FFCU, 0x3FFEU, ZPLC_MEM_RETAIN_BASE,
+        (uint16_t)(ZPLC_MEM_RETAIN_BASE + ZPLC_MEM_RETAIN_SIZE - 4U)};
+    static const uint8_t kinds[] = {ZPLC_TAG_PUBLISH, ZPLC_TAG_MODBUS, ZPLC_TAG_SUBSCRIBE};
+    size_t a, k;
+
+    for (a = 0U; a < sizeof(addresses) / sizeof(addresses[0]); a++) {
+      for (k = 0U; k < sizeof(kinds) / sizeof(kinds[0]); k++) {
+        zplc_program_view_t view;
+
+        length = make_tag_program(file, addresses[a], ZPLC_TYPE_UINT, kinds[k], 40001U);
+        CHECK(zplc_loader_verify(file, length, workspace, sizeof(workspace), &view) == ZPLC_LOADER_OK,
+              "a tag anywhere in WORK or RETAIN is accepted");
+      }
+    }
+    length = make_tag_program(file, (uint16_t)(ZPLC_MEM_WORK_BASE + ZPLC_MEM_WORK_SIZE - 1U), ZPLC_TYPE_UINT,
+                              ZPLC_TAG_MODBUS, 40001U);
+    expect_rejection(file, length, ZPLC_LOADER_ERR_TAGS, "a 16-bit tag that ends past WORK is rejected");
+  }
   length = make_tag_program(file, ZPLC_MEM_WORK_BASE, ZPLC_TYPE_BOOL,
                             ZPLC_TAG_MODBUS, UINT16_MAX + 1U);
   expect_rejection(
@@ -865,6 +882,109 @@ static void test_build_identity(void) {
   expect_rejection(file, length, ZPLC_LOADER_ERR_SEGMENT, "a second BUILD segment is rejected");
 }
 
+/* RT-023: the declared safe values travel in a SAFE segment of entries
+ * {offset u16, bit u8, value u8}. `entries` are written once per segment,
+ * `segments` times. */
+static size_t make_safe_program(uint8_t *file, const uint8_t *entries,
+                                uint32_t entries_size, uint32_t segments) {
+  const uint8_t code[] = {OP_HALT};
+  const size_t code_offset =
+      ZPLC_FILE_HEADER_SIZE + (2U + segments) * ZPLC_SEGMENT_ENTRY_SIZE;
+  const size_t task_offset = code_offset + sizeof(code);
+  const size_t safe_offset = task_offset + ZPLC_TASK_DEF_SIZE;
+  const size_t length = safe_offset + segments * entries_size;
+  uint32_t index;
+
+  memset(file, 0, length);
+  memcpy(file, "ZPLC", 4U);
+  write_u16_le(file + 4U, ZPLC_VERSION_MAJOR);
+  write_u16_le(file + 6U, ZPLC_VERSION_MINOR);
+  write_u32_le(file + 28U, ZPLC_DRAFT_COUNTER);
+  write_u32_le(file + 16U, (uint32_t)sizeof(code));
+  write_u32_le(file + 20U, ZPLC_TASK_DEF_SIZE + segments * entries_size);
+  write_u16_le(file + 26U, (uint16_t)(2U + segments));
+  file[32U] = ZPLC_SEG_CODE;
+  write_u32_le(file + 36U, (uint32_t)sizeof(code));
+  file[40U] = ZPLC_SEG_TASK;
+  write_u32_le(file + 44U, ZPLC_TASK_DEF_SIZE);
+  for (index = 0U; index < segments; index++) {
+    file[48U + index * ZPLC_SEGMENT_ENTRY_SIZE] = ZPLC_SEG_SAFE;
+    write_u32_le(file + 52U + index * ZPLC_SEGMENT_ENTRY_SIZE, entries_size);
+    memcpy(file + safe_offset + index * entries_size, entries, entries_size);
+  }
+  file[code_offset] = code[0];
+  write_u32_le(file + task_offset + 4U, 10000U);
+  write_u16_le(file + task_offset + 10U, 1U);
+  refresh_crc(file, length);
+  return length;
+}
+
+static void test_declared_safe_values(void) {
+  uint8_t file[512];
+  uint8_t entries[(ZPLC_LOADER_MAX_SAFE + 1U) * ZPLC_SAFE_ENTRY_SIZE];
+  zplc_program_view_t view;
+  size_t length;
+  uint32_t index;
+  const uint8_t two[] = {0x00, 0x00, 0x00, 0x01, 0x03, 0x00, 0x07, 0x00};
+
+  memset(&view, 0xA5, sizeof(view));
+  length = make_program(file, (const uint8_t[]){OP_HALT}, 1U);
+  CHECK(zplc_loader_verify(file, length, workspace, sizeof(workspace), &view) == ZPLC_LOADER_OK &&
+            view.safe == NULL && view.safe_count == 0U,
+        "an artifact that declares nothing reads as no declaration: every output is off");
+
+  length = make_safe_program(file, two, sizeof(two), 1U);
+  memset(&view, 0, sizeof(view));
+  CHECK(zplc_loader_verify(file, length, workspace, sizeof(workspace), &view) == ZPLC_LOADER_OK,
+        "an artifact with a SAFE segment is accepted");
+  CHECK(view.safe_count == 2U && view.safe != NULL && view.safe[3U] == 1U && view.safe[7U] == 0U &&
+            view.segments[4].type == ZPLC_SEG_SAFE,
+        "the view exposes the declared entries and lists the SAFE segment");
+
+  length = make_safe_program(file, two, sizeof(two), 2U);
+  expect_rejection(file, length, ZPLC_LOADER_ERR_SEGMENT, "a second SAFE segment is rejected");
+  length = make_safe_program(file, two, 0U, 1U);
+  expect_rejection(file, length, ZPLC_LOADER_ERR_SEGMENT, "an empty SAFE segment is rejected");
+  length = make_safe_program(file, two, 6U, 1U);
+  expect_rejection(file, length, ZPLC_LOADER_ERR_SAFE, "a SAFE segment that is not whole entries is rejected");
+
+  {
+    const uint8_t beyond[] = {0x00, 0x10, 0x00, 0x01}; /* offset 0x1000: one past the output image */
+    const uint8_t last[] = {0xFF, 0x0F, 0x07, 0x01};   /* the last bit of the image */
+    const uint8_t bit8[] = {0x00, 0x00, 0x08, 0x01};
+    const uint8_t value2[] = {0x00, 0x00, 0x00, 0x02};
+    const uint8_t twice[] = {0x02, 0x00, 0x05, 0x01, 0x02, 0x00, 0x05, 0x00};
+    const uint8_t same_byte[] = {0x02, 0x00, 0x05, 0x01, 0x02, 0x00, 0x06, 0x00};
+
+    length = make_safe_program(file, last, sizeof(last), 1U);
+    CHECK(zplc_loader_verify(file, length, workspace, sizeof(workspace), &view) == ZPLC_LOADER_OK,
+          "the last bit of the output image can be declared");
+    length = make_safe_program(file, beyond, sizeof(beyond), 1U);
+    expect_rejection(file, length, ZPLC_LOADER_ERR_SAFE, "an offset outside the output image is rejected");
+    length = make_safe_program(file, bit8, sizeof(bit8), 1U);
+    expect_rejection(file, length, ZPLC_LOADER_ERR_SAFE, "a bit above 7 is rejected");
+    length = make_safe_program(file, value2, sizeof(value2), 1U);
+    expect_rejection(file, length, ZPLC_LOADER_ERR_SAFE, "a value other than 0 or 1 is rejected");
+    length = make_safe_program(file, twice, sizeof(twice), 1U);
+    expect_rejection(file, length, ZPLC_LOADER_ERR_SAFE, "an output declared twice is rejected, whatever its values");
+    length = make_safe_program(file, same_byte, sizeof(same_byte), 1U);
+    CHECK(zplc_loader_verify(file, length, workspace, sizeof(workspace), &view) == ZPLC_LOADER_OK,
+          "two bits of one byte are two outputs");
+  }
+
+  for (index = 0U; index <= ZPLC_LOADER_MAX_SAFE; index++) {
+    write_u16_le(entries + index * ZPLC_SAFE_ENTRY_SIZE, (uint16_t)(index / 8U));
+    entries[index * ZPLC_SAFE_ENTRY_SIZE + 2U] = (uint8_t)(index % 8U);
+    entries[index * ZPLC_SAFE_ENTRY_SIZE + 3U] = (uint8_t)(index & 1U);
+  }
+  length = make_safe_program(file, entries, ZPLC_LOADER_MAX_SAFE * ZPLC_SAFE_ENTRY_SIZE, 1U);
+  CHECK(zplc_loader_verify(file, length, workspace, sizeof(workspace), &view) == ZPLC_LOADER_OK &&
+            view.safe_count == ZPLC_LOADER_MAX_SAFE,
+        "the most an artifact may declare is accepted");
+  length = make_safe_program(file, entries, (ZPLC_LOADER_MAX_SAFE + 1U) * ZPLC_SAFE_ENTRY_SIZE, 1U);
+  expect_rejection(file, length, ZPLC_LOADER_ERR_SAFE, "one declaration more than the most is rejected");
+}
+
 static void test_draft_counter(void) {
   uint8_t file[128];
   uint8_t code[1] = {OP_RET};
@@ -926,6 +1046,7 @@ int main(void) {
   test_draft_counter();
   test_declared_call_depth();
   test_build_identity();
+  test_declared_safe_values();
   if (failures != 0)
     return 1;
   puts("All loader verifier tests passed.");

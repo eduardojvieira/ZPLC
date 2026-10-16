@@ -44,7 +44,7 @@ function safeMessage(value: unknown): string | undefined {
   return text === '' ? undefined : [...text].slice(0, MAX_MESSAGE_CHARS).join('').trim();
 }
 
-export type WorkspaceCompileFailure = { ok: false; evidence: { outcome: 'failed'; diagnostics: Array<{ code: string; message?: string; path?: string; line?: number; column?: number; element?: string }> } };
+export type WorkspaceCompileFailure = { ok: false; evidence: { outcome: 'failed'; diagnostics: Array<{ code: string; message?: string; path?: string; line?: number; column?: number; endLine?: number; endColumn?: number; element?: string }> } };
 
 export function workspaceCompileFailure(value: unknown): WorkspaceCompileFailure {
   const evidence = record(record(value)?.evidence);
@@ -58,6 +58,8 @@ export function workspaceCompileFailure(value: unknown): WorkspaceCompileFailure
       ...(safeRelativePath(diagnostic.path) ? { path: safeRelativePath(diagnostic.path) } : {}),
       ...(safeLocation(diagnostic.line) ? { line: safeLocation(diagnostic.line) } : {}),
       ...(safeLocation(diagnostic.column) ? { column: safeLocation(diagnostic.column) } : {}),
+      ...(safeLocation(diagnostic.endLine) ? { endLine: safeLocation(diagnostic.endLine) } : {}),
+      ...(safeLocation(diagnostic.endColumn) ? { endColumn: safeLocation(diagnostic.endColumn) } : {}),
       ...(safeElement(diagnostic.element) ? { element: safeElement(diagnostic.element) } : {}),
     }];
   }) : [];

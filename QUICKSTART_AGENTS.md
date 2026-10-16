@@ -1,34 +1,39 @@
-# Quickstart: AI Agents for ZPLC
+# Quickstart: AI agents for ZPLC
 
-This guide explains how to use the AI agents and skills defined in this repository.
+This page is the short version of [AGENTS.md](AGENTS.md), which has the rules.
+People start from [CONTRIBUTING.md](CONTRIBUTING.md).
 
-## 1. Role Personas
-We have defined four primary personas in `AGENTS.md`:
-- **FirmwareEngineer**: C99, HAL discipline, Zephyr RTOS, memory safety, determinism.
-- **IDE_Craftsman**: TypeScript/React/Electron work with strict typing and UI performance.
-- **QA_Industrial**: Verification, CI/CD, coverage, HIL readiness.
-- **ArchitectureKeeper**: Cross-cutting review authority for HAL, ISA, and constitutional compliance.
+## 1. Pick a role
 
-**Usage**: At the start of your session, tell the agent:
-> "Read `AGENTS.md` and adopt the `FirmwareEngineer` role."
+`AGENTS.md` defines four roles. At the start of a session, say which one you take:
 
-## 2. Skills
-Repository-specific skills live under `.agents/skills/`. Each skill provides focused
-instructions for a domain or workflow.
+- **FirmwareEngineer**: the C core, the HAL and the Zephyr application. Memory safety and determinism.
+- **IDE_Craftsman**: Studio and the compiler in TypeScript. Strict types, the narrow IPC surface.
+- **QA_Industrial**: tests, CI and hardware validation, with the evidence level stated exactly.
+- **ArchitectureKeeper**: layer boundaries, the binary contract and structural review.
 
-Useful examples in this repo:
+## 2. Load the project skill
 
-- **Embedded work**: `.agents/skills/embedded-systems/SKILL.md`
-- **ARM Cortex specifics**: `.agents/skills/arm-cortex-expert/SKILL.md`
-- **Electron app work**: `.agents/skills/electron-pro/SKILL.md`
-- **React Flow editors**: `.agents/skills/react-flow/SKILL.md`
-- **JavaScript/TypeScript testing**: `.agents/skills/javascript-testing-patterns/SKILL.md`
+The repository carries one skill, for work on PLC projects:
 
-Always pair skill guidance with the constitution and the current spec/plan.
+- **PLC programming**: `.agents/skills/zplc-plc-programmer/SKILL.md`, with its
+  references under `.agents/skills/zplc-plc-programmer/references/`. Read it
+  before you inspect, edit, compile or test a ZPLC project.
 
-## 3. Workflow for Agents
-1. **Load Persona**: Read `AGENTS.md` and adopt the role that matches the task.
-2. **Read the Constitution**: Enforce `.specify/memory/constitution.md` before touching code.
-3. **Open the Active Spec/Plan**: For non-trivial work, use the active files under `.specify/` or `specs/`.
-4. **Consult Skills**: Read the relevant `.agents/skills/*/SKILL.md` file before specialized work.
-5. **Verify Rigorously**: Use test-first workflow, warnings-as-errors, cross-builds, and HIL when the change touches firmware/runtime behavior.
+## 3. Work in this order
+
+1. Read the constitution, `.specify/memory/constitution.md`, or its plain-language
+   form in [Engineering principles](docs/docs/contributing/principles.md).
+2. Read the page of `docs/docs/` closest to the area you change.
+3. Write the test that fails for the right reason, then the change.
+4. Run the command of each layer you touched; the table is in
+   [CONTRIBUTING.md](CONTRIBUTING.md#test-layer-by-layer). Report the command and
+   what it printed.
+5. Update the English and Spanish documentation together, and run
+   `bun run check:docs`.
+
+## 4. What you never do
+
+Build firmware, flash a board, deploy a program, force I/O, start or stop a
+program, open a serial port or run a shell on a device. A person does those, and
+a person makes every hardware record.

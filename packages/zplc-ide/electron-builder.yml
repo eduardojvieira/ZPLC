@@ -44,6 +44,13 @@ extraResources:
   # The licence notices of every third-party package and font in the application (REL-019).
   - from: build/THIRD-PARTY-NOTICES.txt
     to: THIRD-PARTY-NOTICES.txt
+  # The manifest of the release firmware and the images of the two learner boards, so that Studio shows them with no
+  # network (REL-025). scripts/release/firmware-images.ts `stage` writes the folder in the release workflow; a local
+  # build has none and the application then says that it holds no firmware image.
+  - from: dist-firmware
+    to: firmware
+    filter:
+      - "**/*"
 
 # Asset Index - for faster builds
 asar: true
@@ -124,8 +131,12 @@ appImage:
   artifactName: "${productName}-${version}-${os}-${arch}.${ext}"
 
 # No `depends` override: electron-builder's defaults track current Debian, Ubuntu and Fedora (REL-011).
+# The udev rule (REL-013) is written by scripts/release/udev-rules.ts in the beforePack hook, from the USB identifiers of
+# tools/hil/usb-ids.json, and fpm installs it in the vendor rules folder of the package: `source=destination`.
 deb:
   artifactName: "${productName}-${version}-${os}-${arch}.${ext}"
+  fpm:
+    - "build/linux/70-zplc-boards.rules=/usr/lib/udev/rules.d/70-zplc-boards.rules"
 
 rpm:
   artifactName: "${productName}-${version}-${os}-${arch}.${ext}"
@@ -134,3 +145,4 @@ rpm:
   fpm:
     - "--name"
     - "zplc-ide"
+    - "build/linux/70-zplc-boards.rules=/usr/lib/udev/rules.d/70-zplc-boards.rules"

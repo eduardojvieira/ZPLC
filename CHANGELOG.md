@@ -2,7 +2,180 @@
 
 All notable changes are documented here.
 
+Each version has a section with up to five parts, in this order. The release notes
+of a version are built from the first four, so write them for a person who uses
+ZPLC and not for one who changes it:
+
+- `### What changed for you`: what a user can now do, or sees differently, in a
+  sentence each. No requirement identifiers, no file names unless the user types them.
+- `### Breaking changes`: what stops working or must be done differently. Say
+  what, and what to do instead. `None.` when nothing breaks.
+- `### Migration`: the steps to move from the previous release, in order.
+- `### Known limits`: what does not work or has not been verified in this release,
+  at the evidence level it is known to hold at.
+- `### Details for contributors`: the engineering record, with the requirement
+  identifiers and the evidence. It stays in this file and is not in the release notes.
+
+A section of an older release that has none of these headings is read as a list of
+changes. The entry of a release is written under `## Unreleased` and takes its date
+and version when the release is cut (see `RELEASING.md`).
+
 ## Unreleased
+
+- The scheduler is one portable core, and the firmware fails safe (RT-008, RT-014, RT-018 to
+  RT-022). Task order, the deadline check, the fault latch and the safe state are decided in
+  `zplc_sched_core` and used by the host runtime, the Zephyr scheduler and the single-task
+  configuration, which is now a one-task configuration of the core (the same input latch, deadline
+  check and status) and no longer a loop of its own; one trace of decisions holds the host and
+  the firmware to the same answers (`test_sched_equivalence`, `scheduler_equivalence`).
+  **Changed defaults**: the consecutive deadline misses that latch the fault are 3 instead of 1 on
+  every runtime (`CONFIG_ZPLC_DEADLINE_MISS_LIMIT`, `ZPLC_DEADLINE_MISS_LIMIT`; 1 restores the
+  earlier behaviour), the target reports the warning, the miss run, the limit, the last overrun
+  and the fault reason (`zplc sched status`), and a deploy stops the running program before it
+  transfers a byte. The time a scan reads is latched once per scan and the string opcodes are
+  charged to the instruction budget by their bytes (RT-006). A processor fault, a stack overflow
+  or a kernel panic drives the outputs safe, records the reason in RAM that a reset does not
+  clear and reboots; `zplc sys reset [--json]` reports why the part was reset (power-on,
+  brown-out, pin, software, watchdog, fault or unknown) and what the previous run left, and the
+  runtime waits in STOP after every reset. Each board profile in `boards.json` has a `watchdog`
+  object (policy in STOP, paused and in a fault, timeout and its maximum); no board has the
+  hardware watchdog enabled, because none has the hardware record of its reset timing (HIL-010).
+  Not done: the WASM runtime does not use the core yet, and nothing here was run on a board.
+- A project declares the value an output takes in the safe state, and the artifact carries it (RT-023).
+  An output is still off whenever the program does not control it (STOP, a pause, a latched
+  fault, the boot, a deploy in progress); a row of `io.outputs` with `"safe": true` is on instead,
+  and the board's own level for the channel is replaced in both directions. The declaration is a
+  new `SAFE` segment (`0x41`, entries of offset, bit and value) so that a program and its safe
+  state are one unit: a restored program restores its declaration, and a replaced program
+  replaces it. **Contract change, draft counter 5 to 6**: artifacts built before are refused and
+  must be rebuilt, the committed ones and the fuzz seeds are restamped, and `ZPLC_LOADER_ERR_SAFE`
+  (`-19`) and `ZPLC_LOADER_MAX_SAFE` (64) are new. The build refuses a `safe` that is not `true` or
+  `false`, one on a row that is not a digital output bit or is an input, a duplicate, and an output
+  the selected board has no digital channel for, naming the output and the board; the firmware
+  refuses the same declaration at deploy and at boot restore. The compile result lists the declared
+  values (`declaredSafe`) for a deploy confirmation; the screen is not part of this change.
+  `tools/contract/safe_cross.py` has the C loader read what the compiler writes. The hardware
+  state of a pin between power-on and the first instruction of the firmware is the part's own and
+  is not claimed.
+### What changed for you
+
+- **Studio saves your work and tells you what happened.** It keeps a copy of every
+  modified file and offers it back after a crash, shows each build, save, deploy
+  and test result as a notification that opens its details, can cancel a long
+  operation, and keeps the preferences you set. A project exports to one archive
+  and imports back byte for byte.
+- **The project tree does more.** New folder, rename, move and duplicate keep the
+  open tabs and breakpoints, a change made outside Studio is picked up, and a
+  folder of library blocks is offered to every editor.
+- **The language is more correct.** `LREAL` and the 64-bit integers work, structures,
+  enumerations and arrays keep their declared width, strings no longer modify
+  their arguments, the timers and counters follow IEC 61131-3, and a build says
+  which element of an IL, ladder, FBD or SFC file a message is about. A project
+  keeps its Structured Text files as one compilation unit.
+- **Simulation is closer to the target.** Tasks of different intervals run, each
+  released on its own interval, a deadline miss is counted, any input of the
+  running program can be set or forced from Studio, and `VAR RETAIN` values are
+  kept from one run to the next.
+- **Scenario tests give the same answer everywhere.** Studio, the command line and
+  the MCP server run them the same way, and the **Interlocks** tab lists which
+  pairs of outputs are asserted never to be on together.
+- **Boards are described once.** `firmware/app/boards/boards.json` holds the
+  channels, addresses and safe values of each board, Studio's I/O mapping editor
+  reads it, a variable on an address the board does not have is a build error, and
+  the firmware's I/O table is generated from it.
+- **A controller is safe on a plant network by default.** MQTT is off and names no
+  broker until an operator sets one, TLS verifies the certificate, no command prints
+  a credential, `zplc config save` writes what it says, and no message from Modbus,
+  MQTT or a cloud service can start or stop the program, set a force or load a program.
+- **New documentation.** An install page, the tutorial *Blink without hardware* with
+  real screenshots, how-to guides for Modbus, MQTT and Sparkplug B, the cloud blocks,
+  mapping I/O, forcing values, retained values, scenario tests, project archives,
+  the command line, debugging, AI and MCP, porting to a board and troubleshooting,
+  one hardware support page and one safety and limitations page, in English and
+  Spanish. The language, function, shell, Kconfig, project file and protocol
+  references are generated from the source. The project schema names every board of
+  the manifest, so an editor that reads `zplc.schema.json` no longer flags
+  `waveshare_rp2040_zero`, and a test fails when the two lists differ.
+- **The bench procedure is written down and its tools are tested without a board.**
+  [Hardware in the loop](docs/docs/development/hardware-in-the-loop.md) says what a
+  person does at the bench, one command runs the whole chain and writes a record, and
+  no record of a board exists yet.
+- **Releases are made by a pipeline you can read.** A rehearsal runs everything and
+  publishes nothing, the notes say which check each file passed, a bill of materials
+  is written from the lockfile, the command line and the MCP server are standalone
+  executables, and every file has a checksum and a build attestation.
+- **A release carries the firmware of every board, and Studio shows the one you need.**
+  The release pipeline builds one image per board of the manifest in the format the
+  board flashes (UF2 for the two RP2040 boards, one binary for the ESP32-S3, binary
+  and ELF for the others), with its checksum, the version and commit it was built
+  from and the evidence level of its board. In **Project settings**, **Target**,
+  Studio shows the image of the board of your project, its SHA-256, where the file is
+  and the steps to flash it; the images of the Raspberry Pi Pico and the ESP32-S3
+  travel inside the installers. Studio does not flash: you do.
+- **The Linux packages let you open a board's serial port.** The `.deb` and the `.rpm`
+  install a udev rule that gives the user who is logged in access to the USB serial
+  device of the boards whose identifier the project has recorded (the two RP2040
+  boards today); the install page says how to apply it without a reboot, and the
+  group that the other boards need.
+- **Studio tells you about a newer release.** With the optional check turned on, or when
+  you press **Check now**, a dismissible notice names the release, its address and the
+  update step of your system. Nothing is downloaded or installed.
+- **The README and the install page open with a Download section** with one line per
+  system and what that system asks the first time you open the file.
+
+### Breaking changes
+
+- **Rebuild every program and reflash every board.** The binary contract has a draft
+  counter (now 4), and a program or a firmware image of another draft is refused
+  by the loader, the runtime, the firmware shell and Studio, with both numbers.
+- **A `VAR_IN_OUT` of a function block is passed by reference.** A block called
+  without binding it faults; rebuild programs that declare one.
+- **Event and interrupt tasks fail the build.** A task with `trigger` `event` or
+  `interrupt` is an error at its definition in `zplc.json`; use `cyclic`.
+- **The default MQTT broker is gone.** A controller that relied on `test.mosquitto.org`
+  has MQTT off until its operator names a broker, and the default transport is TLS on
+  port 8883 with the certificate verified.
+- **The board file moved.** `supported-boards.v1.5.0.json` is replaced by
+  `firmware/app/boards/boards.json`, which has no version in its name.
+- **A text no longer converts to a number, a `BOOL` or a time**, and a constant array
+  index outside the bounds is a build error: programs that relied on either now fail
+  to build, with the line.
+- **A rebuild discards retained values**, because a program that differs by one
+  byte has another identity.
+
+### Migration
+
+1. Rebuild every program with this version and reflash every board with firmware of
+   the same version; both numbers appear in the refusal if you do not.
+2. Run `zplc-cli migrate-preview` on a version 1 project and read the diff before
+   you accept it: [Migrate a version 1 project](docs/docs/ide/migration-v1-to-v2.md).
+3. Name the MQTT broker of every controller that used the old default, and install
+   its CA certificate, or set the transport you need explicitly.
+4. Change a task that used `event` or `interrupt` to a cyclic task.
+5. Read the board file from `firmware/app/boards/boards.json` in any tool of yours
+   that read the versioned file.
+
+### Known limits
+
+- No board has been flashed, booted or run: every board is at the `cross-build`
+  level, and nothing is verified on a physical device
+  ([Hardware support](docs/docs/reference/capabilities-evidence.md)).
+- No Modbus, MQTT, Sparkplug B or cloud exchange has been tested with a real device,
+  broker or service, and no cloud block was verified against a service, an emulator or
+  a recorded exchange. The handshake of the communication blocks and the separation of
+  the four Modbus data areas are not final.
+- Retained values are proven on the host and the simulator only, and are off by default
+  on firmware.
+- TLS is off on the Nucleo-H743ZI and the Arduino Opta until their random generator is
+  verified on the board, so MQTT runs over plain TCP there.
+- The browser simulator is unavailable: simulation needs the desktop application.
+- The installers are not signed with a paid identity: Windows asks you to confirm the
+  first launch and macOS needs **Open Anyway**
+  ([Install ZPLC Studio](docs/docs/getting-started/install.md)).
+- Timing is not measured on any board, and ZPLC is not a safety PLC
+  ([Safety and limitations](docs/docs/safety-and-limitations.md)).
+
+### Details for contributors
 
 - The hardware-in-the-loop tools are repaired and tested without a board
   (HIL-001 to HIL-009, HIL-012, HIL-017). Every script of `tools/hil` exits
@@ -967,6 +1140,143 @@ All notable changes are documented here.
   build; `compiler.warnings` selects it (the level `default` reports it). The
   bundled `kitchen_sink` fixture keeps its call, which exercises the function,
   and already selects no warnings.
+- **Contract change, draft counter 4 -> 5.** A STRING argument of a communication
+  block reaches the handler (COM-005). The compiler stored the *address* of
+  the literal into the first four bytes of the member, so the handler of
+  `MQTT_PUBLISH` read an empty topic and an empty payload, and every other
+  STRING input (`HOST`, `DEVICE_ID`, `TOPIC`, `EVENT_TYPE`, `TEMPLATE_NAME`)
+  was empty too. It now writes the capacity the member has room for and copies
+  the string into it (`STRCPY`), in the `[len u16][cap u16][data][terminator]`
+  layout of the string table, and reading a STRING member (`LEN(Pub.TOPIC)`)
+  is the address of the member like any other string. The layout table
+  itself put the STRING members of `AZURE_DPS_PROV`, `AZURE_EG_PUB` and
+  `AWS_FLEET_PROV` over one another, and `THING_NAME` past the end of its
+  block: the second member began 65 bytes after the first and each takes 85.
+  The blocks are 179, 264 and 179 bytes now (`ASSIGNED_HUB` and
+  `THING_NAME` at 93, `EVENT_TYPE` at 93, `PAYLOAD` of the event at 178), the
+  contract generator refuses a member that ends past its block or over the
+  next member, and the new status `ZPLC_COMM_UNAVAILABLE` (10) is the answer of
+  a block whose service this runtime does not have. The last byte of every
+  block that has a layout belongs to the dispatcher, which keeps there the EN
+  of the previous call to tell a rising edge from an EN that stays TRUE (one
+  trigger, one operation: COM-004); `AZURE_C2D_RECV`, `AZURE_DPS_PROV`,
+  `AZURE_EG_PUB`, `AWS_FLEET_PROV` and `SPB_REBIRTH` grow by that byte. Artifacts built before
+  this draft are refused and must be rebuilt; a device with the older
+  firmware is refused by Studio and must be reflashed.
+  `tools/contract/string_cross.py` compiles a program that gives every STRING
+  input of the twelve blocks its own text and reads each member back with the
+  accessors of the handlers.
+- **The twelve communication and cloud blocks have one handshake and none of them
+  waits inside the scan** (COM-002, COM-003, COM-004, COM-008, COM-018). A Modbus
+  block was BUSY for ever: the dispatcher never called the handler again once
+  BUSY was set, so the worker's result was never taken, and a falling and rising
+  EN gave back the old result without a new request. The cloud blocks repeated
+  their operation on every scan while EN stayed TRUE, and `AWS_FLEET_PROV`,
+  `AZURE_DPS_PROV` and the Event Grid publish waited for a broker for up to 30
+  seconds inside the scan. Now a rising EN is one request; the handler is called
+  on every scan while it is in flight; the result (DONE, or ERROR with a status
+  code) is held while EN stays TRUE and cleared when it falls; a request in
+  flight completes even when EN falls, and a reset lets go of it without
+  releasing what the worker still uses. A request goes to a slot
+  (`zplc_comm_req.h`) that a worker thread answers: the Modbus client, the MQTT
+  client thread and, for the two provisioning services, a worker thread of their
+  own (8 KB of RAM on the boards that have a cloud profile). `ASSIGNED_HUB` and
+  `THING_NAME` are filled in; `MQTT_SUBSCRIBE` and `AZURE_C2D_RECV` deliver their
+  messages in `PAYLOAD` with `VALID` for one scan (they never did);
+  `SPB_REBIRTH` publishes the birth certificate again once for each rising
+  edge. A request older than its time limit is `ERROR` with `STATUS` 2 and its
+  late result is dropped; a message queued when the session goes down is
+  failed, not sent on the next session. `STATUS` holds one of the documented
+  codes, not a raw errno. The handshake and the time limits of each block are
+  in `docs/docs/runtime/communication-function-blocks.md`.
+- **A Modbus RTU request to a responsive device succeeds within the configured
+  timeout, and the TCP client takes a response whole** (COM-012, COM-006,
+  COM-018). The RTU client passed its timeout in milliseconds into the field
+  the Zephyr Modbus client reads in microseconds, so the interface waited a
+  thousandth of the configured time (0.5 ms for the default 500 ms) and every
+  request to a device timed out before the first byte of an answer could arrive.
+  The TCP client read the response with one `recv()`, so an answer that came in
+  two segments was refused, did not check the transaction, the unit, the length or
+  the count it had asked for, took any exception for `-EIO`, and connected
+  without a time limit. It now connects without blocking past the configured
+  time, sends all of the request, puts the response together from the stream,
+  and accepts only the answer to its request: another transaction, another unit,
+  a short frame or a count that is not the one asked for is a protocol error
+  (`STATUS` 8), an exception response is a protocol error too, and silence is a
+  timeout (`STATUS` 2) after the configured time. The frames are built and read
+  by `zplc_modbus_tcp.c`, which the server of the product already used, so the
+  host tests run the client's requests through the server. `firmware/tests/
+  modbus_client_tcp` runs the client against a Modbus TCP server written for the
+  test on the loopback interface of native_sim. No serial device is used by any
+  of it: the RTU path is checked at the interface parameters, and the
+  hardware record of an RTU exchange on the Pico is not made.
+- **The four Modbus areas are four address spaces, and the server serves the
+  whole of WORK and RETAIN** (COM-011, COM-013). A coil, a discrete input, an
+  input register and a holding register with the same number were one
+  variable: the server found a variable by the number of its tag and did not
+  look at the area of the request. The number of a `{modbus:N}` tag now says the
+  area in the notation of the Modbus world: 10001 to 19999 are discrete inputs,
+  30001 to 39999 input registers, 40001 to 49999 holding registers, and any
+  other number is a coil for a BOOL and a holding register for any other type,
+  at that address, so a project that wrote no prefix keeps its addresses.
+  The IDE writes the number from the area of the communication tag and from the
+  `MODBUS_*` helper (the area of a tag was kept in the project and dropped by the
+  build); a number that cannot be written is a build error at the line of the
+  helper. The Modbus client polls a tag at the address of its area and no
+  longer asks the remote device for the number of the tag. A variable at
+  `0x3000` to `0x3FFF` of WORK could not be bound at all (the loader and the
+  compiler refused the tag because the adapters discarded the high offset);
+  every adapter reaches memory through the exchange with its whole 16-bit
+  address now, and the guard is gone. `firmware/tests/modbus_areas` loads a
+  program with the tags of the four areas, the edges of WORK and RETAIN and
+  address 65535 and reads and writes them through the seams both servers end in;
+  `firmware/tests/modbus_client_tcp` polls tags against a server on loopback.
+- **The Modbus and MQTT blocks run in simulation, against endpoints on the
+  loopback interface** (COM-009, COM-006). The native runtime answered every
+  communication block `STATUS` 3 and had no peer to talk to. It now links the
+  same Modbus and MQTT handlers as a controller (the sources of `firmware/app`,
+  over a POSIX shim of the few Zephyr kernel calls they make), on a Modbus TCP
+  client whose transaction code is the file the controller compiles too
+  (`zplc_modbus_tcp_client.inc`) and on an MQTT 3.1.1 client of the host. It is
+  off until the session starts the runtime with `ZPLC_NATIVE_COMM=1` (and
+  `ZPLC_NATIVE_MQTT_BROKER=host:port`), so a runtime started the old way
+  answers as before. A Modbus RTU request and every cloud block answer
+  `STATUS` 10 (not available in this runtime). `zplc_loopback`, built with the
+  runtime, starts a Modbus TCP server and an MQTT broker on 127.0.0.1 and ends
+  when its input closes. `test_host_comm` runs every block against them on real
+  sockets (success, timeout, exception, refusal, reset while busy, a scan that
+  never waits for the peer, one request for one rising EN, loss of the MQTT
+  session, a message published while it is down that fails at once and is not
+  sent on the next one, reconnection and
+  the silent loss) and passes under the address, undefined-behaviour and thread
+  sanitizers; `packages/zplc-ide/src/conformance/communication.test.ts` runs a
+  program on the runtime through the session protocol. **Not done: Studio does
+  not start the endpoints for a session yet**, and nothing here was run
+  against a real device, broker or cloud service.
+- Release engineering that a Linux machine can prove (REL-005, REL-006, REL-012,
+  REL-013, REL-021, REL-022, REL-025, REL-028, REL-032, REL-036).
+  `scripts/release/firmware-images.ts` collects one `west build` of `firmware/app`
+  per board (it refuses an image made for another board, version or commit, from a
+  dirty tree or with the HIL trace), assembles the boards into one
+  `zplc-runtime-<version>.manifest.json` with each image's SHA-256, build identity,
+  flash runner and address (read from the build's own `runners.yaml` and `.config`)
+  and the evidence level of its board, and stages the manifest and the two learner
+  images for the installers (`extraResources` `firmware`). The release workflow
+  builds the seven boards (`build-firmware`), assembles them (`assemble-firmware`),
+  and checksums, attests and uploads them in a chain of their own; the three desktop
+  builds wait for the set but not for its success. The main process lists the
+  installation's images through one typed, argument-free channel
+  (`firmware-images:list`), the renderer validates the answer again, and the card has
+  no operation that writes to a board. `scripts/release/udev-rules.ts` writes the
+  udev rule from `tools/hil/usb-ids.json` in the `beforePack` hook and fpm installs it
+  in both packages; `linux-package-files.ts` reads it out of the packages that were
+  made. The Linux payload reproducibility check is `continue-on-error` and no job
+  waits for it. The workflow launches the AppImage in a clean container, mounts the
+  DMG, unpacks the ZIP, installs the NSIS setup silently and launches the portable
+  executable. **Not done: none of those workflow steps has run** (they need hosted
+  macOS and Windows runners and Docker), no release has been made by the pipeline, no
+  board has a hardware record, and the udev rule covers only the boards with a
+  recorded USB identifier.
 
 ## 2.0.0-rc.3 - 2026-09-01
 

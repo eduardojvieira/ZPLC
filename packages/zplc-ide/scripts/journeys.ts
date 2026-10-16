@@ -136,6 +136,24 @@ async function openDiagram(app: App, path: string, ready: string): Promise<void>
   await app.until(`${path.split('/').at(-1)} on its canvas`, async () => await app.visible(css(ready)) || undefined);
 }
 
+const searchList = css('[data-keyboard-picker]');
+/**
+ * Answers the search list that a key of a visual editor opened: the text is typed into its search box, a choice that is
+ * named is waited for, and the best match is taken with Enter, as a user does.
+ */
+async function answerSearchList(app: App, text: string, choice?: string): Promise<void> {
+  await app.until('the search list to open', async () => await app.visible(searchList) || undefined)
+    .catch(async (error: Error) => {
+      const state = await app.eval<string>(`JSON.stringify({ status: document.querySelector('[data-visual-status]')?.textContent, focus: document.activeElement?.outerHTML.slice(0, 160), cursor: document.querySelector('[data-ld-cursor-at]')?.getAttribute('data-ld-cursor-at'), ask: document.querySelector('[data-ld-ask]')?.getAttribute('data-ld-ask'), pickers: document.querySelectorAll('[data-keyboard-picker]').length })`);
+      throw new Error(`${error.message}: ${state}`);
+    });
+  await app.until('the search box to have the focus', async () => await app.eval<boolean>(`document.activeElement?.getAttribute('role') === 'combobox'`) || undefined);
+  await app.type(text);
+  if (choice) await app.until(`${choice} among the choices`, async () => await app.visible(css(`[data-picker-item="${choice}"]`)) || undefined);
+  await app.press('Enter');
+  await app.until('the search list to close', async () => !(await app.visible(searchList)) || undefined);
+}
+
 /** Open the Problems panel and activate its first entry with a real click. */
 async function activateFirstProblem(app: App): Promise<void> {
   await app.click(tab('Problems'));
@@ -162,7 +180,8 @@ async function connectAndRun(app: App): Promise<void> {
   await app.click(button('Connect'));
   await app.until('the simulation to connect', async () => await app.visible(button('Disconnect')) || undefined);
   await app.click(button('Run (F5)', 'prefix'));
-  await app.until('the program to run', async () => await app.visible(button('Pause (F6)', 'prefix')) || undefined);
+  await app.until('the program to run', async () => await app.visible(button('Pause (F6)', 'prefix')) || undefined)
+    .catch(async (error: Error) => { throw new Error(`${error.message}: the window says ${JSON.stringify((await app.text()).replace(/\s+/g, ' ').slice(-900))}`); });
 }
 
 const cycles = async (app: App) => Number((/cycles\s+(\d[\d,]*)/.exec(await app.eval<string>(`document.querySelector('[aria-label="Operational status"]')?.innerText ?? ''`))?.[1] ?? 'NaN').replace(/,/g, ''));
@@ -206,6 +225,14 @@ const editorView = (app: App) => monacoEval<{ line: number; column: number; scro
 const activeTabId = (app: App) => app.eval<string | null>(`document.querySelector('[role="tab"][aria-selected="true"][id^="editor-tab-"]')?.id ?? null`);
 /** How tall the editor is: with the lower panel it makes the split that a project keeps. */
 const editorHeight = (app: App) => app.eval<number>(`document.getElementById('editor')?.getBoundingClientRect().height ?? 0`);
+/** DOC-013: when ZPLC_DOC_SHOTS names a folder, the picture of the window at this step is saved there as `<name>.png`. */
+const docShot = async (app: App, name: string): Promise<void> => {
+  const directory = process.env.ZPLC_DOC_SHOTS;
+  if (!directory) return;
+  mkdirSync(directory, { recursive: true });
+  const png = await app.cdp.command('Page.captureScreenshot', { format: 'png' }) as { data: string };
+  writeFileSync(join(directory, `${name}.png`), Buffer.from(png.data, 'base64'));
+};
 const savePicture = async (app: App, variable: string) => {
   const file = process.env[variable];
   if (file) { const png = await app.cdp.command('Page.captureScreenshot', { format: 'png' }) as { data: string }; writeFileSync(file, Buffer.from(png.data, 'base64')); }
@@ -535,6 +562,34 @@ export const JOURNEYS: Journey[] = [
       const problems = await app.eval<string>(`document.querySelector('[aria-label="Latest build diagnostics"]')?.innerText ?? ''`);
       assert(problems.includes("Unknown identifier 'UndefinedVariable'"), `The Problems list does not say what is wrong with the program ("Unknown identifier 'UndefinedVariable'" is what the compiler reports): ${JSON.stringify(problems)}`);
       assert(!/(^|[\s'"(])\/[\w.~@+-]|[A-Za-z]:[\\/]/.test(problems), `The Problems list shows an absolute path of the machine: ${JSON.stringify(problems)}`);
+      // and says which kind of problem it is, with the stable code that the CLI and the reference page use (CMP-006)
+      const codes = await app.eval<string[]>(`[...document.querySelectorAll('[aria-label="Latest build diagnostics"] [data-diagnostic-code]')].map((item) => item.textContent)`);
+      assert(codes.includes('UNKNOWN_IDENTIFIER'), `The Problems list does not show the code of the problem: ${JSON.stringify(codes)}`);
+    },
+  },
+  {
+    // The editor checks the whole project with the compiler's front end while the author types, and does not need a build:
+    // the error appears with its range, and goes away when it is undone.
+    name: '4c Errors of the project are shown while typing', example: 'motor_start_stop', proves: [], partly: ['LNG-015'],
+    run: async (app, { project }) => {
+      await openFolder(app, project);
+      await openFile(app, 'src/Motor.st');
+      const last = await lineWith(app, 'Reverse := FALSE;');
+      assert(last > 0, 'Motor.st no longer has the statement Reverse := FALSE; the journey adds a faulty statement after.');
+      await cursorAtEndOfLine(app, last);
+      await app.press('Enter');
+      await app.type('UndefinedVariable := 1;');
+      await app.click(tab('Problems'));
+      const live = css('[aria-label="Live Structured Text diagnostics"]');
+      await app.until('the live diagnostics to name the undeclared variable, with no build', async () => (await app.eval<string>(`${live}?.innerText ?? ''`)).includes('UndefinedVariable') || undefined);
+      const markers = await monacoEval<Array<{ startLineNumber: number; startColumn: number; endColumn: number; message: string; code?: string }>>(app, `return monaco.editor.getModelMarkers({ owner: 'zplc.st-live' });`);
+      assert(markers.length > 0 && markers[0]!.startLineNumber === last + 1 && markers[0]!.endColumn > markers[0]!.startColumn + 1, `The editor has no squiggle with a range on the faulty line: ${JSON.stringify(markers)}`);
+      // the squiggle carries the code that a build of the same source reports (CMP-006)
+      assert(markers[0]!.code === 'UNKNOWN_IDENTIFIER', `The squiggle does not carry the stable code of the problem: ${JSON.stringify(markers[0])}`);
+      // undoing the typing clears it the next time the project is checked
+      await clickEditorLine(app, last + 1);
+      for (let key = 0; key < 3; key++) await app.press('Ctrl+Z');
+      await app.until('the live diagnostics to be gone', async () => !(await app.eval<string>(`${live}?.innerText ?? ''`)).includes('UndefinedVariable') || undefined);
     },
   },
   {
@@ -1460,6 +1515,276 @@ export const JOURNEYS: Journey[] = [
   },
 
   {
+    // The build records which variable holds the state of each element, so the editor shows what the program holds and
+    // not what a name suggests: power through the rung, the value of each contact, and a dash where nothing was read.
+    name: '28b Online values of a rung come from the debug map', example: 'blinky', proves: [], partly: ['LNG-006'],
+    run: async (app, { project }) => {
+      await openFolder(app, project);
+      await openDiagram(app, 'src/main.ld.json', '[data-ld-rung-id]');
+      const result = await compile(app);
+      assert(result.kind === 'built', `The Blinky Ladder example does not build: ${result.message}`);
+      await connectAndRun(app);
+      const cells = (powered: boolean) => `document.querySelectorAll('[data-ld-cell][data-powered="${powered}"]').length`;
+      await app.until('power to reach an element of a rung', async () => await app.eval<number>(cells(true)) > 0 || undefined);
+      await app.until('an element that power does not reach', async () => await app.eval<number>(cells(false)) > 0 || undefined);
+      // the values arrive with the first complete poll, and then every variable the example declares has one
+      const texts = () => app.eval<string[]>(`[...document.querySelectorAll('[data-ld-cell] text')].map((node) => node.textContent ?? '')`);
+      await app.until('a contact to show the value of its variable', async () => (await texts()).some((text) => text === 'T' || text === 'F') || undefined);
+      const shown = await texts();
+      assert(!shown.includes('—'), `A variable that the example declares is shown as unavailable: ${JSON.stringify(shown)}`);
+    },
+  },
+  {
+    name: '28c Online values of an FBD come from the debug map', example: 'blinky_fbd', proves: [], partly: ['LNG-006'],
+    run: async (app, { project }) => {
+      await openFolder(app, project);
+      await openDiagram(app, 'src/main.fbd.json', '.react-flow__node');
+      const result = await compile(app);
+      assert(result.kind === 'built', `The Blinky FBD example does not build: ${result.message}`);
+      await connectAndRun(app);
+      const variable = css('.react-flow__node[data-id="var_led_read"] [data-live-value]');
+      await app.until('the variable block to show a value', async () => ['TRUE', 'FALSE'].includes(await app.eval<string>(`${variable}?.textContent?.trim() ?? ''`)) || undefined)
+        .catch(async (error: Error) => { throw new Error(`${error.message}: the block is ${await app.eval<string>(`document.querySelector('.react-flow__node[data-id="var_led_read"]')?.outerHTML.slice(0, 600) ?? 'not on the canvas'`)}`); });
+      // the timers of the blinker complete in turn: the pin of a block shows it, 500 ms after the program starts
+      await app.until('a timer block to show its output as TRUE', async () => await app.eval<boolean>(`[...document.querySelectorAll('.react-flow__node[data-id^="ton_"]')].some((node) => node.innerText.includes('TRUE'))`) || undefined, 30_000);
+    },
+  },
+  {
+    name: '28d Online state of an SFC comes from the debug map', example: 'blinky_sfc', proves: [], partly: ['LNG-006'],
+    run: async (app, { project }) => {
+      await openFolder(app, project);
+      await openDiagram(app, 'src/main.sfc.json', '.react-flow__node');
+      const result = await compile(app);
+      assert(result.kind === 'built', `The Blinky SFC example does not build: ${result.message}`);
+      await connectAndRun(app);
+      const active = (id: string) => app.eval<boolean>(`document.querySelector('.react-flow__node[data-id="${id}"]')?.innerText.includes('ACTIVE') === true`);
+      await app.until('the first step to be active', async () => await active('step_led_on') || undefined);
+      await app.until('the chart to move to the second step', async () => await active('step_led_off') || undefined, 30_000);
+      const text = await app.eval<string>(`document.querySelector('.react-flow')?.innerText ?? ''`);
+      assert(!text.includes('UNAVAILABLE'), `A step of the chart is shown as unavailable: ${text}`);
+    },
+  },
+  {
+    // The editor names the variables of a line with the language service and reads them through the debug map of the
+    // build: the value shown after the line is the one the runtime holds, and a keyword or a function has none.
+    name: '28e Inline values in Structured Text come from the debug map', example: 'blinky_st', proves: [], partly: ['LNG-006'],
+    run: async (app, { project }) => {
+      await openFolder(app, project);
+      await openFile(app, 'src/main.st');
+      const result = await compile(app);
+      assert(result.kind === 'built', `The Blinky (Structured Text) example does not build: ${result.message}`);
+      await connectAndRun(app);
+      // the text that the editor puts after a line is an injected decoration of the model
+      const shown = () => monacoEval<string[]>(app, `return editor.getModel().getAllDecorations().filter((decoration) => decoration.options.after).map((decoration) => decoration.options.after.content);`);
+      await app.until('a line to show the value of LED_Output after it', async () => (await shown()).some((text) => /LED_Output=(?:TRUE|FALSE)/.test(text)) || undefined)
+        .catch(async (error: Error) => { throw new Error(`${error.message}: the editor shows ${JSON.stringify(await shown())}`); });
+      assert(!(await shown()).some((text) => /(?:IF|THEN|END_IF|TON|NOT)=/.test(text)), `A keyword or a function block type was given a value: ${JSON.stringify(await shown())}`);
+    },
+  },
+  {
+    // Every editing action of the ladder is reachable from the keyboard: the cursor, the palette, the list of declared
+    // symbols a contact or a coil is bound from, and the structure. The rung built here is saved and built by the app.
+    name: '28f A rung is built from the keyboard', example: 'blinky', proves: [], partly: ['LNG-012'],
+    run: async (app, { project }) => {
+      // the program has one output and the build lets one rung write it: the rung typed here writes a variable of its own
+      const file = join(project, 'src', 'main.ld.json');
+      const document = JSON.parse(disk(file)) as { variables: { local: Array<{ name: string; type: string }> } };
+      document.variables.local.push({ name: 'Hold', type: 'BOOL' });
+      writeFileSync(file, JSON.stringify(document, null, 2));
+      await openFolder(app, project);
+      await openDiagram(app, 'src/main.ld.json', '[data-ld-rung-id]');
+      const rungs = () => app.eval<number>(`document.querySelectorAll('[data-ld-rung-id]').length`);
+      const before = await rungs();
+      // a click on the label of a rung puts the focus in the editor; from then on the hands stay on the keyboard
+      await app.click(`[...document.querySelectorAll('[data-ld-rung-id="rung_1"] span')].find((node) => node.textContent === 'Rung 1')`, 'the label of rung 1');
+      await app.press('Ctrl+End');
+      await app.press('Ctrl+Enter');
+      await app.until('a rung after the last one', async () => await rungs() === before + 1 || undefined);
+      const last = await app.eval<string>(`[...document.querySelectorAll('[data-ld-rung-id]')].at(-1).getAttribute('data-ld-rung-id')`);
+      await app.until('the cursor in the first cell of the new rung', async () => await app.eval<boolean>(`document.querySelector('[data-ld-rung-id="${last}"] [data-ld-cursor="0,0"]') !== null`) || undefined);
+
+      await app.press('C');
+      await answerSearchList(app, 'OnTimer.Q', 'OnTimer.Q');
+      await app.press('ArrowRight');
+      await app.press('N');
+      await answerSearchList(app, 'OffTimer.Q', 'OffTimer.Q');
+      await app.press('ArrowRight');
+      await app.press('O');
+      await answerSearchList(app, 'Hold', 'Hold');
+      await app.until('the three elements on the new rung', async () => await app.eval<number>(`document.querySelectorAll('[data-ld-rung-id="${last}"] [data-ld-element-id]').length`) === 3 || undefined);
+
+      await app.click(saveButton, 'the Save button');
+      const saved = () => {
+        const model = JSON.parse(disk(join(project, 'src', 'main.ld.json'))) as { variables: { local: Array<{ name: string; type: string }> }; rungs: Array<{ grid: Array<Array<{ element: { type: string; variable?: string; fbType?: string; instance?: string } | null }>> }> };
+        return { model, rung: model.rungs.at(-1)!.grid.flat().flatMap((cell) => (cell.element ? [cell.element] : [])) };
+      };
+      await app.until('the rung to be written to the file', () => saved().rung.length === 3 || undefined);
+      assert(JSON.stringify(saved().rung.map((element) => [element.type, element.variable])) === JSON.stringify([['contact_no', 'OnTimer.Q'], ['contact_nc', 'OffTimer.Q'], ['coil', 'Hold']]),
+        `The rung written to the file is not the one typed: ${JSON.stringify(saved().rung)}`);
+      const result = await compile(app);
+      assert(result.kind === 'built', `The rung built from the keyboard does not build: ${result.message}`);
+
+      // the palette: another rung, a function block found by its name, declared with an instance of its own
+      await app.click(`[...document.querySelectorAll('[data-ld-rung-id="rung_1"] span')].find((node) => node.textContent === 'Rung 1')`, 'the label of rung 1');
+      await app.press('Ctrl+End');
+      await app.press('Ctrl+Enter');
+      await app.until('a rung for the block', async () => await rungs() === before + 2 || undefined);
+      await app.press('I');
+      await answerSearchList(app, 'TON', 'function_block:TON');
+      await app.click(saveButton, 'the Save button');
+      await app.until('the function block and its instance to be written', () => {
+        const { model, rung } = saved();
+        return rung.some((element) => element.type === 'function_block' && element.fbType === 'TON' && element.instance === 'TON_1') && model.variables.local.some((variable) => variable.name === 'TON_1' && variable.type === 'TON') || undefined;
+      });
+    },
+  },
+  {
+    // The wires of a block are listed from the keyboard, each from an output to an input that takes it, and a variable
+    // block is bound from the declared symbols; deleting takes the block and the wires on it in one step.
+    name: '28g A function block diagram is edited from the keyboard', example: 'blinky_fbd', proves: [], partly: ['LNG-012'],
+    run: async (app, { project }) => {
+      await openFolder(app, project);
+      await openDiagram(app, 'src/main.fbd.json', '.react-flow__node');
+      const nodes = () => app.eval<number>(`document.querySelectorAll('.react-flow__node').length`);
+      const before = await nodes();
+      await app.click(css('.react-flow__node[data-id="and_run"]'), 'the AND block');
+      await app.press('I');
+      await answerSearchList(app, 'NOT', 'NOT');
+      await app.until('a block beside the AND, selected', async () => await nodes() === before + 1 && await app.eval<boolean>(`document.querySelectorAll('.react-flow__node.selected').length === 1 && document.querySelector('.react-flow__node.selected').getAttribute('data-id') !== 'and_run'`) || undefined);
+      const inserted = await app.eval<string>(`document.querySelector('.react-flow__node.selected').getAttribute('data-id')`);
+      // the arrow keys without a modifier are the canvas's own: they nudge the selected block
+      const place = () => app.eval<string>(`document.querySelector('.react-flow__node[data-id="${inserted}"]').style.transform`);
+      const placed = await place();
+      await app.until('the focus on the new block', async () => await app.eval<boolean>(`document.activeElement?.getAttribute('data-id') === ${JSON.stringify(inserted)}`) || undefined)
+        .catch(async (error: Error) => { throw new Error(`${error.message}: the focus is on ${await app.eval<string>(`document.activeElement?.outerHTML.slice(0, 200)`)}`); });
+      await app.press('ArrowRight');
+      await app.until('the arrow key to nudge the block', async () => (await place()) !== placed || undefined);
+
+      await app.press('C');
+      await answerSearchList(app, 'AND.OUT');
+      await app.until('the wire of the AND to the new block', async () => await app.eval<boolean>(`document.querySelectorAll('.react-flow__edge[data-id]').length > 11`) || undefined);
+
+      // the cursor goes to the first block in reading order
+      await app.press('Home');
+      await app.until('the first block selected', async () => await app.eval<boolean>(`document.querySelector('.react-flow__node.selected')?.getAttribute('data-id') === 'not_led'`) || undefined);
+
+      // a variable block bound from the declared symbols
+      const withLed = () => app.eval<number>(`[...document.querySelectorAll('.react-flow__node')].filter((node) => node.innerText.includes('LED_Output')).length`);
+      const ledBefore = await withLed();
+      await app.press('V');
+      await answerSearchList(app, 'LED_Output');
+      await app.until('a variable block that holds LED_Output', async () => await withLed() === ledBefore + 1 || undefined);
+
+      await app.click(saveButton, 'the Save button');
+      const saved = () => JSON.parse(disk(join(project, 'src', 'main.fbd.json'))) as { blocks: Array<{ id: string; type: string; variableName?: string }>; connections: Array<{ from: { block: string; port: string }; to: { block: string; port: string } }> };
+      await app.until('the blocks to be written', () => saved().blocks.length === before + 2 || undefined);
+      assert(saved().connections.some((wire) => wire.from.block === 'and_run' && wire.from.port === 'OUT' && wire.to.block === inserted && wire.to.port === 'IN'),
+        `The wire drawn from the keyboard is not in the file: ${JSON.stringify(saved().connections.filter((wire) => wire.to.block === inserted))}`);
+      assert(saved().blocks.some((block) => block.type === 'variable' && block.variableName === 'LED_Output' && block.id !== 'var_led_read'), 'The variable block bound from the keyboard is not in the file.');
+      const result = await compile(app);
+      assert(result.kind === 'built', `The diagram edited from the keyboard does not build: ${result.message}`);
+
+      // Delete takes the selected block with its wires, as one step (a click on the block puts the focus back on the canvas)
+      await app.click(css('.react-flow__node.selected'), 'the selected variable block');
+      await app.press('Delete');
+      await app.until('the variable block to be gone', async () => await nodes() === before + 1 || undefined);
+    },
+  },
+  {
+    // A chart is edited by inserting a transition below a step and a step below a transition, each wired to the one it
+    // follows; a condition is chosen from the declared symbols and a step is named by typing.
+    name: '28h A sequential function chart is edited from the keyboard', example: 'blinky_sfc', proves: [], partly: ['LNG-012'],
+    run: async (app, { project }) => {
+      await openFolder(app, project);
+      await openDiagram(app, 'src/main.sfc.json', '.react-flow__node');
+      const nodes = () => app.eval<number>(`document.querySelectorAll('.react-flow__node').length`);
+      const before = await nodes();
+      await app.click(css('.react-flow__node[data-id="step_led_off"]'), 'the step LED_OFF');
+      await app.press('T');
+      await app.until('a transition below the step', async () => await nodes() === before + 1 || undefined);
+      await app.press('F2');
+      await answerSearchList(app, 'LED_Output', 'LED_Output');
+      await app.press('S');
+      await app.until('a step after the transition', async () => await nodes() === before + 2 || undefined);
+      await app.press('F2');
+      await answerSearchList(app, 'Hold');
+
+      await app.click(saveButton, 'the Save button');
+      const saved = () => JSON.parse(disk(join(project, 'src', 'main.sfc.json'))) as { steps: Array<{ id: string; name: string }>; transitions: Array<{ id: string; fromStep: string; toStep: string; condition: string }> };
+      await app.until('the chart to be written', () => saved().steps.some((step) => step.name === 'Hold') || undefined);
+      const hold = saved().steps.find((step) => step.name === 'Hold')!;
+      const added = saved().transitions.find((transition) => transition.toStep === hold.id);
+      assert(added !== undefined && added.fromStep === 'step_led_off' && added.condition === 'LED_Output',
+        `The transition inserted from the keyboard is not in the file as typed: ${JSON.stringify(saved().transitions)}`);
+      const result = await compile(app);
+      assert(result.kind === 'built', `The chart edited from the keyboard does not build: ${result.message}`);
+    },
+  },
+  {
+    // A toolbox item dropped on a cell is inserted by the command that the key runs, so the two cannot differ: the element
+    // gets an id nothing else has, and a function block an instance that is declared. The drop is made of DOM drag events
+    // with the data the toolbox sets; the pointer itself is not driven.
+    name: '28i An element dropped on a rung is inserted as the keyboard inserts it', example: 'blinky', proves: [], partly: ['LNG-012', 'LNG-010'],
+    run: async (app, { project }) => {
+      await openFolder(app, project);
+      await openDiagram(app, 'src/main.ld.json', '[data-ld-rung-id]');
+      const rungs = () => app.eval<number>(`document.querySelectorAll('[data-ld-rung-id]').length`);
+      const before = await rungs();
+      await app.click(button('Add Rung'), 'the Add Rung button');
+      await app.until('a new rung', async () => await rungs() === before + 1 || undefined);
+      const last = await app.eval<string>(`[...document.querySelectorAll('[data-ld-rung-id]')].at(-1).getAttribute('data-ld-rung-id')`);
+      const drop = async (column: number, item: { type: string; category: string; fbType?: string }) => {
+        await app.eval(`(() => {
+          const transfer = new DataTransfer();
+          transfer.setData('application/zplc-ld-element', ${JSON.stringify(JSON.stringify(item))});
+          document.querySelector('[data-ld-rung-id="${last}"] [data-ld-drop-zone="0,${column}"]').dispatchEvent(new DragEvent('dragover', { bubbles: true, cancelable: true, dataTransfer: transfer }));
+          window.__dropTransfer = transfer;
+        })()`);
+        // the cell under the pointer is state of the grid: the drop is made in the next frame
+        await app.eval(`new Promise((resolve) => requestAnimationFrame(() => resolve(true)))`);
+        await app.eval(`document.querySelector('[data-ld-rung-id="${last}"] [data-ld-drop-zone="0,${column}"]').dispatchEvent(new DragEvent('drop', { bubbles: true, cancelable: true, dataTransfer: window.__dropTransfer }))`);
+      };
+      await drop(1, { type: 'contact_no', category: 'contact' });
+      await app.until('the contact on the rung', async () => await app.eval<boolean>(`document.querySelector('[data-ld-rung-id="${last}"] [data-ld-cell="0,1"] [data-ld-element-id]') !== null`) || undefined);
+      await drop(3, { type: 'function_block', category: 'function_block', fbType: 'TON' });
+      await app.until('the function block on the rung', async () => await app.eval<boolean>(`document.querySelector('[data-ld-rung-id="${last}"] [data-ld-cell="0,3"] [data-ld-element-id]') !== null`) || undefined);
+      await app.click(saveButton, 'the Save button');
+      const saved = () => JSON.parse(disk(join(project, 'src', 'main.ld.json'))) as { variables: { local: Array<{ name: string; type: string }> }; rungs: Array<{ id: string; grid: Array<Array<{ element: { id: string; type: string; variable?: string; instance?: string; col: number } | null }>> }> };
+      await app.until('the new rung to be written', () => saved().rungs.length === before + 1 && saved().rungs.at(-1)!.grid.flat().filter((cell) => cell.element).length === 2 || undefined);
+      const elements = saved().rungs.at(-1)!.grid.flat().flatMap((cell) => (cell.element ? [cell.element] : []));
+      assert(elements.map((element) => [element.type, element.col]).join() === 'contact_no,1,function_block,3', `The rung written to the file is not what was dropped: ${JSON.stringify(elements)}`);
+      assert(elements[0]!.variable === undefined, `A contact that was dropped is bound to a name nobody gave it: ${elements[0]!.variable}`);
+      assert(elements[1]!.instance === 'TON_1' && saved().variables.local.some((variable) => variable.name === 'TON_1' && variable.type === 'TON'), `The function block that was dropped has no declared instance of its own: ${JSON.stringify(elements[1])}`);
+    },
+  },
+  {
+    // A drag with the pointer reaches the canvas as a stream of position changes; the file gets one change when the block
+    // is put down, and one undo takes it back: the pointer is the real one (mouse events from the DevTools protocol).
+    name: '28j A block dragged with the pointer is one undo step', example: 'blinky_fbd', proves: [], partly: ['LNG-010'],
+    run: async (app, { project }) => {
+      await openFolder(app, project);
+      await openDiagram(app, 'src/main.fbd.json', '.react-flow__node');
+      const node = css('.react-flow__node[data-id="and_run"]');
+      const place = () => app.eval<string>(`document.querySelector('.react-flow__node[data-id="and_run"]').style.transform`);
+      const original = await place();
+      const centre = await app.eval<{ x: number; y: number }>(`(() => { const box = document.querySelector('.react-flow__node[data-id="and_run"]').getBoundingClientRect(); return { x: box.x + box.width / 2, y: box.y + box.height / 2 }; })()`);
+      const mouse = (type: string, x: number, buttons: number) => app.cdp.command('Input.dispatchMouseEvent', { type, x, y: centre.y, button: 'left', buttons, clickCount: type === 'mouseMoved' ? 0 : 1 });
+      await mouse('mouseMoved', centre.x, 0);
+      await mouse('mousePressed', centre.x, 1);
+      for (let step = 1; step <= 12; step++) await mouse('mouseMoved', centre.x + step * 12, 1);
+      await mouse('mouseReleased', centre.x + 144, 0);
+      await app.until('the block to be where it was put down', async () => (await place()) !== original || undefined);
+      const moved = await place();
+      // one undo takes the whole drag back, and one redo does it again
+      await app.click(node, 'the dragged block');
+      await app.press('Ctrl+Z');
+      await app.until('the block back where it was', async () => (await place()) === original || undefined)
+        .catch(async (error: Error) => { throw new Error(`${error.message}: the block is at ${await place()}, was at ${original} and was put down at ${moved}`); });
+      await app.press('Ctrl+Shift+Z');
+      await app.until('the drag done again', async () => (await place()) === moved || undefined);
+    },
+  },
+  {
     name: '29 The Welcome screen loads no editor', example: 'motor_start_stop', proves: [], partly: ['IDE-015'],
     run: async (app, { project }) => {
       // What the page has fetched, as modules (the development host serves each one by its path). The page keeps the first
@@ -2138,6 +2463,168 @@ export const JOURNEYS: Journey[] = [
       await app.until('the flag gone', async () => await app.eval<boolean>(`document.querySelector('[role="alert"]') === null`) || undefined);
       const virtual = await app.eval<string>(`document.body.innerText`);
       assert(virtual.includes('Virtual (no pin)') && virtual.includes('%QX0.6'), 'The address was not listed as virtual.');
+    },
+  },
+
+  {
+    // DOC-003: the tutorial "Blink without hardware" (docs/docs/tutorials/blink-without-hardware.md), step for step: the
+    // example is copied from the Welcome screen into an empty folder, read, built, run in the simulator with its output
+    // watched while it toggles, and its scenario test run. With ZPLC_DOC_SHOTS=<folder> the picture of each step is
+    // saved too, which is where the screenshots of the tutorial come from (DOC-013, tools/docs/capture-screenshots.ts).
+    name: '41 Blink without hardware (the tutorial)', example: 'none', proves: ['DOC-003'], partly: ['DOC-013'],
+    run: async (app, { root }) => {
+      const folder = join(root, 'blink'); mkdirSync(folder);
+      await app.until('the Welcome screen with the example', async () => await app.visible(css('button[data-welcome-example="blinky_st"]')) || undefined);
+      await app.eval(`document.querySelector('button[data-welcome-example="blinky_st"]')?.scrollIntoView({ block: 'center' })`);
+      await docShot(app, 'blink-1-welcome');
+
+      // Step 2: copy the example into an empty folder; Studio opens it.
+      app.answer(folder);
+      await app.click(css('button[data-welcome-example="blinky_st"]'), 'the Blinky (Structured Text) example');
+      await app.until('the project workbench to appear', async () => await app.visible(toolbar) || undefined);
+      for (const file of ['zplc.json', 'src/main.st', 'tests/blinky-st.scenario.json']) {
+        assert(existsSync(join(folder, ...file.split('/'))), `The copied example has no ${file}.`);
+      }
+
+      // Step 3: read the program.
+      await openFile(app, 'src/main.st');
+      assert(hasProgram(await editorText(app), 'Blinky'), 'The example does not open its program Blinky.');
+      await docShot(app, 'blink-2-program');
+
+      // Step 4: build it.
+      const built = await compile(app);
+      assert(built.kind === 'built', `The example does not build: ${built.message}`);
+      await docShot(app, 'blink-3-built');
+
+      // Steps 5 and 6: connect to the simulator, run, and watch the output change.
+      await connectAndRun(app);
+      await watch(app, 'LED_Output');
+      // The divider above the lower panel is dragged up so that the Watch table has room (the user's own choice).
+      await app.click(css('[role="separator"]'), 'the divider above the lower panel');
+      for (let step = 0; step < 6; step++) await app.press('ArrowUp');
+      // The output changes every 500 ms: a picture counts when the table showed the value before and after it was taken.
+      const outputShot = async (name: string, value: 'TRUE' | 'FALSE') => {
+        for (let attempt = 0; attempt < 20; attempt++) {
+          await app.until(`LED_Output to be ${value}`, async () => await watchValue(app, 'LED_Output') === value || undefined);
+          await docShot(app, name);
+          if (await watchValue(app, 'LED_Output') === value) return;
+        }
+        throw new Error(`The picture of LED_Output = ${value} could not be taken while the table showed it.`);
+      };
+      await outputShot('blink-4-output-true', 'TRUE');
+      await outputShot('blink-5-output-false', 'FALSE');
+      await app.click(button('Stop (Shift+F5)', 'prefix'), 'Stop');
+      await app.until('the program to stop', async () => await app.visible(button('Run (F5)', 'prefix')) || undefined);
+
+      // Step 7: run the scenario test of the project.
+      await app.click(tab('Tests'));
+      await app.click(button('Run host scenarios'));
+      await app.until('the scenario to pass', async () => (await app.text()).includes('Host POSIX scenarios passed.') || undefined, 30_000);
+      assert(!(await app.text()).includes('scenario assertions failed'), 'The tutorial scenario reports a failed assertion.');
+      await docShot(app, 'blink-6-scenario');
+    },
+  },
+  {
+    // IDE-018: choosing a port is a dialog of the application, not an operating-system message box. The journey only looks at it
+    // and cancels: it never connects, and it does not depend on a port being plugged in (the list is empty on a build machine).
+    name: '42 Choosing a serial port is a dialog of the application', example: 'motor_start_stop', proves: [], partly: ['IDE-018'],
+    run: async (app, { project }) => {
+      const dialog = css('[data-serial-port-dialog]');
+      await openFolder(app, project);
+      await app.click(button('Hardware'), 'the Hardware mode');
+      await app.click(button('Connect'), 'Connect');
+      await app.until('the port dialog', async () => await app.visible(dialog) || undefined)
+        .catch(async (error: Error) => { throw new Error(`${error.message}: the window says ${JSON.stringify((await app.text()).replace(/\s+/g, ' ').slice(-600))}`); });
+
+      const shown = await app.eval<{ title: string; rows: Array<{ kind: string; text: string }>; empty: boolean; modal: boolean }>(`(() => {
+        const root = document.querySelector('[data-serial-port-dialog]');
+        const dialog = root?.closest('[role="dialog"]');
+        return { title: dialog?.textContent?.slice(0, 60) ?? '',
+          rows: [...root.querySelectorAll('[data-serial-port-row]')].map((row) => ({ kind: row.getAttribute('data-serial-port-row'), text: row.innerText })),
+          empty: Boolean(root.querySelector('[data-serial-port-empty]')), modal: dialog?.getAttribute('aria-modal') === 'true' };
+      })()`);
+      assert(shown.title.includes('Choose a serial port'), `The dialog has no title: ${JSON.stringify(shown)}`);
+      assert(shown.modal, `The port dialog is not a modal dialog: ${JSON.stringify(shown)}`);
+      assert(shown.empty || shown.rows.length > 0, `The dialog lists no port and does not say that there is none: ${JSON.stringify(shown)}`);
+      for (const row of shown.rows) assert(/USB [0-9A-F]{4}(:[0-9A-F]{4})?|No USB identifiers/.test(row.text), `A port row does not show its USB identifiers: ${JSON.stringify(row)}`);
+      assert(!(await app.text()).includes('Select the serial port to request'), 'The operating-system message box text is still in use.');
+
+      // It can be refreshed, and it is still there afterwards.
+      await app.click(button('Refresh'), 'Refresh');
+      await app.until('the refresh to end', async () => await app.eval<boolean>(`[...document.querySelectorAll('[data-serial-port-dialog] button')].some((el) => el.textContent?.trim() === 'Refresh')`) || undefined);
+      assert(await app.visible(dialog), 'The dialog is gone after a refresh.');
+
+      // Cancel closes it and the application stays disconnected.
+      await app.click(button('Cancel'), 'Cancel');
+      await app.until('the dialog to close', async () => !await app.visible(dialog) || undefined);
+      await app.until('the application to be disconnected again', async () => await app.visible(button('Connect')) || undefined);
+      assert(!await app.visible(button('Disconnect')), 'The application connected although the dialog was cancelled.');
+    },
+  },
+  {
+    // IDE-030: a change is a difference that is reviewed, in isolation, before a person saves it, and Studio does all this
+    // without the assistant, which is optional and, until it is configured, cannot be asked. The assistant's own proposal
+    // takes the same road (the review of the Changes tab, then the same button); it is not driven here, because the
+    // provider needs the secret store of the system and the headless host has none (electron/aiProvider.test.ts holds it).
+    name: '43 A change is reviewed as a difference and saved by a person, and Studio works without the assistant', example: 'motor_start_stop', proves: [], partly: ['IDE-030'],
+    run: async (app, { project }) => {
+      const file = join(project, 'src', 'Motor.st');
+      await openFolder(app, project);
+      await openFile(app, 'src/Motor.st');
+      const original = disk(file);
+
+      // the assistant is optional: it says so, says it cannot operate hardware, and cannot be asked before it is configured
+      await app.click(tab('Agent'), 'the Agent tab');
+      const agent = await app.until('the Agent panel', async () => {
+        const text = await app.eval<string>(`document.querySelector('[aria-label="Optional Agent"]')?.innerText ?? ''`);
+        return text.includes('Agent') ? text : undefined;
+      });
+      assert(agent.includes('It cannot operate hardware.'), `The Agent panel does not say that it cannot operate hardware: ${JSON.stringify(agent)}`);
+      assert(!await app.clickable(button('Send request')), 'The assistant can be asked although no provider is configured.');
+
+      // a statement of the person's own, added to the open file and not saved: it breaks what the scenario of the project says
+      const before = await editorText(app);
+      const last = await lineWith(app, 'Reverse := FALSE;');
+      assert(last > 0, 'Motor.st no longer has the statement Reverse := FALSE; the journey adds one after it.');
+      await cursorAtEndOfLine(app, last);
+      await app.press('Enter');
+      await app.type('Forward := FALSE;');
+      assert(disk(file) === original, 'The file changed on disk before the person saved it.');
+
+      // Changes: the review is run in isolation and shows the difference; it writes nothing; a change that fails is not offered for saving
+      const reviewed = async () => {
+        await app.click(button('Review active ST change'), 'Review active ST change');
+        await app.until('the review result', async () => await app.visible(css('[aria-label="Candidate review result"]')) || undefined, 60_000)
+          .catch(async (error: Error) => { throw new Error(`${error.message}: the Changes tab says ${JSON.stringify((await app.text()).replace(/\s+/g, ' ').slice(-700))}`); });
+        return app.eval<string>(`document.querySelector('[aria-label="Candidate review result"]').innerText`);
+      };
+      await app.click(tab('Changes'), 'the Changes tab');
+      const refused = await reviewed();
+      assert(refused.includes('Rejected: candidate was not accepted.') && refused.includes('SCENARIO_ASSERTION_FAILED'), `The review does not refuse a change that breaks the scenario: ${JSON.stringify(refused)}`);
+      assert(refused.includes('No file has been written.') && await app.visible(css('[aria-label="Candidate review result"] .monaco-diff-editor')), 'The review of a refused change does not show the difference and say that nothing was written.');
+      assert(!await app.visible(button('Save reviewed change')), 'A change that the review refused is offered for saving.');
+      assert(disk(file) === original, 'Reviewing the change wrote the file.');
+
+      // the person takes the statement back and writes one that is harmless
+      await app.click(tab('Explorer', 'exact'));
+      await clickEditorLine(app, last + 1);
+      for (let attempt = 0; attempt < 6 && (await editorText(app)) !== before; attempt++) await app.press('Ctrl+Z');
+      assert((await editorText(app)) === before, 'The journey could not undo its statement.');
+      await cursorAtEndOfLine(app, last);
+      await app.press('Enter');
+      await app.type('Reverse := FALSE;');
+      await app.click(tab('Changes'), 'the Changes tab');
+      const accepted = await reviewed();
+      assert(accepted.includes('Accepted: isolated host candidate passed.'), `The review does not accept a harmless statement: ${JSON.stringify(accepted)}`);
+      assert(accepted.includes('No file has been written.') && disk(file) === original, 'Reviewing the change wrote the file.');
+
+      // only the person's own click saves it
+      await app.click(button('Save reviewed change'), 'Save reviewed change');
+      await app.until('the reviewed change on disk', () => disk(file) !== original && disk(file).split('Reverse := FALSE;').length > original.split('Reverse := FALSE;').length || undefined);
+
+      // and the rest of Studio, which needs no assistant, still builds the project
+      const built = await compile(app);
+      assert(built.kind === 'built', `The project does not build without the assistant: ${built.kind} ${built.message}`);
     },
   },
 ];

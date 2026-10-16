@@ -9,6 +9,9 @@
   "lines": [
     3
   ],
+  "codes": [
+    "UNKNOWN_IDENTIFIER"
+  ],
   "messageIncludes": [
     "hidden"
   ]

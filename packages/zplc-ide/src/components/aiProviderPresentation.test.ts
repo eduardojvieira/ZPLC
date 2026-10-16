@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'bun:test';
 import { presentAiProviderConfig, presentAiProviderMutation, presentAiProviderResponse, presentAiProviderStatus } from './aiProviderPresentation';
 
-describe('AI provider presenters', () => {
+describe('AI provider presenters (IDE-030)', () => {
   it('accepts only a bounded inert answer and a replacement bound to the active saved ST file', () => {
     const expected = { workspaceId: 'workspace-1', fileId: 'file:src/Main.st', path: 'src/Main.st', baselineSha256: 'a'.repeat(64) };
     expect(presentAiProviderResponse({ ok: true, answer: 'Explain the timer.', replacement: { path: 'src/Main.st', content: 'PROGRAM Main\nEND_PROGRAM' }, ...expected }, expected))
