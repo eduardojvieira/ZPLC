@@ -1,5 +1,8 @@
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { beforeAll, describe, expect, it } from 'bun:test';
+import { afterAll, beforeAll, describe, expect, it } from 'bun:test';
 
 import { compilerCompile } from '../cli/toolApi';
 import type { DebugMap } from '../compiler';
@@ -208,6 +211,48 @@ describe('breakpoint binding against the real compiler output of motor_start_sto
     const otherId = 'file:src/Other.st';
     const otherKey = breakpointFileKey({ name: 'Other.st', path: 'src/Other.st' }, otherId);
     expect(doesCurrentPOUMatchFile(motorMap, 'Motor', otherKey, otherId)).toBe(false);
+  });
+});
+
+describe('a breakpoint binds in every ST file of a project, by the project-relative path of its own file (LNG-005)', () => {
+  const scratch = mkdtempSync(join(tmpdir(), 'zplc-breakpoints-'));
+  afterAll(() => rmSync(scratch, { recursive: true, force: true }));
+  let map: DebugMap;
+
+  // Two tasks and two program files: the lines of each belong to its own file, whatever the order of the tasks.
+  beforeAll(async () => {
+    mkdirSync(join(scratch, 'src'), { recursive: true });
+    writeFileSync(join(scratch, 'zplc.json'), JSON.stringify({
+      schemaVersion: 2, name: 'Two files', version: '1.0.0', target: { board: 'posix' },
+      tasks: [
+        { name: 'FastTask', trigger: 'cyclic', interval_ms: 10, priority: 1, programs: ['Fast.st'] },
+        { name: 'SlowTask', trigger: 'cyclic', interval_ms: 20, priority: 2, programs: ['Slow.st'] },
+      ],
+    }));
+    writeFileSync(join(scratch, 'src', 'Fast.st'), [
+      'PROGRAM Fast', 'VAR', '  Counter : INT;', 'END_VAR', 'Counter := Counter + 1;', 'IF Counter > 100 THEN', '  Counter := 0;', 'END_IF;', 'END_PROGRAM', '',
+    ].join('\n'));
+    writeFileSync(join(scratch, 'src', 'Slow.st'), [
+      '(* the slow task *)', 'PROGRAM Slow', 'VAR', '  Beat : BOOL;', '  Ticks : INT;', 'END_VAR', 'Ticks := Ticks + 1;', 'Beat := Ticks > 5;', 'END_PROGRAM', '',
+    ].join('\n'));
+    const built = await compilerCompile(scratch);
+    if (!built.ok || !built.debugMap) throw new Error(`the two-file project did not compile: ${JSON.stringify((built as { evidence?: unknown }).evidence ?? built)}`);
+    map = built.debugMap;
+  });
+
+  it('records the project-relative path of each file that holds executable lines', () => {
+    expect(map.pou.Fast!.sourceRef).toBe('src/Fast.st');
+    expect(map.pou.Slow!.sourceRef).toBe('src/Slow.st');
+  });
+
+  it('makes the executable lines of each file eligible under its own path, and no line of the other file', () => {
+    const fast = breakpointFileKey({ name: 'Fast.st', path: 'src/Fast.st' }, 'file:src/Fast.st');
+    const slow = breakpointFileKey({ name: 'Slow.st', path: 'src/Slow.st' }, 'file:src/Slow.st');
+    expect(getEligibleBreakpointLines(map, fast)).toEqual([5, 6, 7]);
+    expect(getEligibleBreakpointLines(map, slow)).toEqual([7, 8]);
+    for (const key of [fast, slow]) expect(getBreakpointPCForLine(map, key, 1)).toBeNull();
+    // the same name in another folder is another file
+    expect(isLineBreakpointEligible(map, 'src/other/Slow.st', 7)).toBe(false);
   });
 });
 
