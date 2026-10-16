@@ -2,6 +2,7 @@
  * A dismissible notice that a newer release exists (REL-021): the version, the address of the release and the step that
  * updates this installation. It downloads and installs nothing; the person follows the step.
  */
+import { Button } from '../ui';
 import { updateNotice, type UpdateNotice as Notice } from '../ipc/updateNotice';
 import { useUpdateNotice } from '../store/updateNotice';
 
@@ -18,14 +19,9 @@ export function UpdateNoticeView({ notice, onDismiss }: { notice: Notice; onDism
           <strong className="text-[var(--text-primary)]">ZPLC Studio {notice.latest} is available</strong> (this is {notice.current}).
           Release: <span className="font-mono break-all select-text">{notice.releaseUrl}</span>
         </p>
-        <button
-          type="button"
-          onClick={onDismiss}
-          aria-label={`Dismiss the notice about ZPLC Studio ${notice.latest}`}
-          className="h-7 shrink-0 border border-[var(--border-color)] px-2 text-[var(--text-primary)] hover:bg-[var(--color-surface-700)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-accent-blue)]"
-        >
+        <Button size="sm" onClick={onDismiss} aria-label={`Dismiss the notice about ZPLC Studio ${notice.latest}`} className="shrink-0">
           Dismiss
-        </button>
+        </Button>
       </div>
       <details className="mt-1">
         <summary className="cursor-pointer text-[var(--text-primary)]">How to update</summary>

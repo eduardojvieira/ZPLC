@@ -7,6 +7,7 @@
  */
 
 import { useEffect, useId, useMemo, useRef, useState, type KeyboardEvent } from 'react';
+import { TextField } from '../ui';
 import { INITIAL_PICKER, pickerKey, pickerQuery, visibleItems, type PickerItem, type PickerKey, type PickerOptions, type PickerState } from './picker';
 
 export interface SearchListProps extends PickerOptions {
@@ -66,13 +67,12 @@ export default function SearchList({ title, items, placeholder, emptyText, allow
       role="dialog"
       aria-label={title}
       data-keyboard-picker
-      className="absolute left-1/2 top-10 z-50 w-96 max-w-[90%] -translate-x-1/2 rounded-lg border border-[var(--border-color)] bg-[var(--color-surface-800)] text-[var(--text-primary)] shadow-xl"
+      className="absolute left-1/2 top-10 z-50 w-96 max-w-[90%] -translate-x-1/2 rounded-lg border border-[var(--border-color)] bg-[var(--color-surface-800)] text-[var(--text-primary)]"
     >
       <div className="px-3 pt-2 text-xs font-semibold text-[var(--text-secondary)]">{title}</div>
       <div className="p-2">
-        <input
+        <TextField
           ref={input}
-          type="text"
           role="combobox"
           aria-expanded="true"
           aria-controls={listId}
@@ -89,7 +89,7 @@ export default function SearchList({ title, items, placeholder, emptyText, allow
             const next = event.relatedTarget as Element | null;
             if (!next || !event.currentTarget.closest('[data-keyboard-picker]')?.contains(next)) onCancel();
           }}
-          className="w-full rounded border border-[var(--border-color)] bg-[var(--color-surface-700)] px-2 py-1 text-sm text-[var(--text-primary)] focus:border-[var(--color-accent-blue)] focus:outline-none"
+          className="w-full"
         />
       </div>
       <ul id={listId} role="listbox" aria-label={`${title}: choices`} className="max-h-64 overflow-y-auto pb-1">
@@ -110,7 +110,7 @@ export default function SearchList({ title, items, placeholder, emptyText, allow
             className={`flex cursor-pointer items-baseline justify-between gap-3 px-3 py-1 text-sm ${index === active ? 'bg-[var(--color-surface-600)]' : ''}`}
           >
             <span className="min-w-0 truncate font-mono">{item.label}</span>
-            {item.detail ? <span className="shrink-0 text-[10px] text-[var(--text-tertiary)]">{item.detail}</span> : null}
+            {item.detail ? <span className="shrink-0 text-[length:var(--font-size-caption)] text-[var(--text-tertiary)]">{item.detail}</span> : null}
           </li>
         ))}
       </ul>

@@ -8,7 +8,11 @@
 import { useState } from 'react';
 import { ChevronDown, ChevronRight, Circle, ArrowDown } from 'lucide-react';
 import { SFC_PALETTE, type SFCPaletteElement } from '../../models/sfcSupport';
+import { Button, TextField } from '../../ui';
 import { filterItems } from '../picker';
+
+/** The smallest text of the scale (UX-006): captions and notes. */
+const CAPTION = 'text-[length:var(--font-size-caption)]';
 
 // =============================================================================
 // Element Categories
@@ -69,13 +73,13 @@ export default function SFCToolbox({ onInsert }: SFCToolboxProps) {
       </div>
 
       <div className="px-2 pt-2">
-        <input
+        <TextField
           type="search"
           value={query}
           onChange={(event) => setQuery(event.target.value)}
           aria-label="Search the elements"
           placeholder="Search"
-          className="w-full rounded border border-[var(--border-color)] bg-[var(--color-surface-700)] px-2 py-1 text-xs text-[var(--text-primary)] focus:border-[var(--color-accent-blue)] focus:outline-none"
+          className="w-full"
         />
       </div>
 
@@ -87,9 +91,11 @@ export default function SFCToolbox({ onInsert }: SFCToolboxProps) {
           return (
             <div key={category.name} className="select-none">
               {/* Category header */}
-              <button
+              <Button
+                variant="ghost"
+                size="sm"
                 onClick={() => toggleCategory(category.name)}
-                className="w-full flex items-center gap-2 px-3 py-1.5 text-left hover:bg-[var(--color-surface-700)] transition-colors"
+                className="w-full justify-start gap-2 px-3 py-1.5 text-left"
               >
                 <span className="text-[var(--text-tertiary)]">
                   {isExpanded ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
@@ -98,31 +104,30 @@ export default function SFCToolbox({ onInsert }: SFCToolboxProps) {
                 <span className="text-xs text-[var(--text-secondary)] font-medium">
                   {category.name}
                 </span>
-              </button>
+              </Button>
 
               {/* Elements */}
               {isExpanded && (
                 <div className="pb-1">
                   {category.elements.map((element) => (
-                    <button
-                      type="button"
+                    <Button
+                      size="sm"
                       key={element.type}
                       draggable
                       onDragStart={(e) => onDragStart(e, element.type)}
                       onClick={() => onInsert?.(element.type)}
                       data-sfc-toolbox-item={element.type}
                       aria-label={`Insert ${element.label}`}
-                      className="mx-2 my-0.5 block w-[calc(100%-1rem)] px-2 py-1.5 rounded text-left text-xs 
+                      tooltip={`${element.description}: press to insert after the selected element, or drag onto the canvas`}
+                      className="mx-2 my-0.5 w-[calc(100%-1rem)] flex-col items-start justify-center whitespace-normal px-2 py-1.5 text-left text-xs
                                  bg-[var(--color-surface-700)] hover:bg-[var(--color-surface-600)] cursor-grab active:cursor-grabbing
-                                 border border-transparent hover:border-[var(--color-accent-blue)] transition-colors
-                                 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--color-accent-blue)]"
-                      title={`${element.description}: press to insert after the selected element, or drag onto the canvas`}
+                                 border border-transparent hover:border-[var(--color-accent-blue)]"
                     >
                       <div className="text-[var(--text-primary)] font-medium">{element.label}</div>
-                      <div className="text-[10px] text-[var(--text-tertiary)] mt-0.5">
+                      <div className={`${CAPTION} font-normal text-[var(--text-tertiary)] mt-0.5`}>
                         {element.description}
                       </div>
-                    </button>
+                    </Button>
                   ))}
                 </div>
               )}
@@ -133,7 +138,7 @@ export default function SFCToolbox({ onInsert }: SFCToolboxProps) {
 
       {/* Help text */}
       <div className="px-3 py-2 border-t border-[var(--border-color)]">
-        <p className="text-[10px] text-[var(--text-tertiary)] leading-relaxed">
+        <p className={`${CAPTION} text-[var(--text-tertiary)] leading-relaxed`}>
           Press an element to insert it after the selected one, or drag it onto the canvas.
           Connect Steps with Transitions, or press C on one. Double-click, or press F2, to edit names and conditions.
         </p>
@@ -141,8 +146,8 @@ export default function SFCToolbox({ onInsert }: SFCToolboxProps) {
 
       {/* Legend */}
       <div className="px-3 py-2 border-t border-[var(--border-color)]">
-        <div className="text-[10px] text-[var(--text-tertiary)] mb-1">Action Qualifiers:</div>
-        <div className="grid grid-cols-2 gap-1 text-[9px]">
+        <div className={`${CAPTION} text-[var(--text-tertiary)] mb-1`}>Action Qualifiers:</div>
+        <div className={`grid grid-cols-2 gap-1 ${CAPTION}`}>
           <div className="text-[var(--text-tertiary)]"><span className="font-mono bg-[var(--color-surface-700)] px-1 rounded">N</span> Non-stored</div>
           <div className="text-[var(--text-tertiary)]"><span className="font-mono bg-[var(--color-surface-700)] px-1 rounded">S</span> Set</div>
           <div className="text-[var(--text-tertiary)]"><span className="font-mono bg-[var(--color-surface-700)] px-1 rounded">R</span> Reset</div>
