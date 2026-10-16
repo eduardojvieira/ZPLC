@@ -23,16 +23,19 @@ describe('Learn panel contract', () => {
     expect(source).toContain("setActiveConsoleTab('tests')");
     expect(source).toContain('copyingRef.current');
     expect(source).toContain('isFileSystemAccessSupported()');
-    expect(source).toContain('aria-pressed={lessonId === candidate.id}');
-    expect(source).toContain("disabled={copyStatus === 'copying'}");
-    expect(source).toContain('{candidate.title}');
+    // The two choices are the kit's ToggleGroup (aria-pressed, roving focus: ui/kit.test.tsx): one value per lesson, locked while copying.
+    expect(source).toContain('<ToggleGroup');
+    expect(source).toContain('value={lessonId}');
+    expect(source).toContain("disabled: copyStatus === 'copying'");
+    expect(source).toContain('label: candidate.title');
     expect(source).toContain("setCopyStatus('idle')");
     expect(source).toContain('gradeRecordedScenarioLesson(lesson, workspaceTestPresentation)');
     expect(source).toContain('readLearnMastery()');
     expect(source).toContain("recordLearnMastery(lesson.id, { kind: 'passed', assertions: 0 }, previous)");
-    expect(source).toContain('text-[var(--color-surface-900)]');
     expect(source).not.toContain('text-white');
-    expect((source.match(/role="group"/g) ?? [])).toHaveLength(2);
+    expect(source).not.toContain('<button');
+    expect(source).not.toContain('<input');
+    expect((source.match(/<ToggleGroup/g) ?? [])).toHaveLength(2);
     expect(source).not.toContain('setTimeout');
     expect(source).not.toContain('clearTimeout');
     expect(source).toContain('Completada anteriormente');

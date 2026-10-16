@@ -146,11 +146,10 @@ describe('Console tab boundary', () => {
     expect(source).toContain("Relink zplc.json");
     expect(source).toContain("Linked saved workspace ready for host scenarios.");
     expect(source).toContain("Select the saved workspace zplc.json whose scenarios you want to run.");
-    expect(source).toContain('type="file"');
+    // The chooser is the kit's FileInput: a hidden input (ui/Field.tsx) that the visible buttons open.
+    expect(source).toContain('<FileInput');
     expect(source).toContain('data-workspace-manifest-input');
-    expect(source).toContain('hidden');
-    expect(source).toContain('tabIndex={-1}');
-    expect(source).toContain('aria-hidden="true"');
+    expect(source).not.toContain('<input');
     expect(source).not.toContain('aria-label="Choose saved workspace zplc.json"');
     expect(source).toContain('input.value = \'\';');
     expect(source).toContain('Tests use saved workspace files and do not include changes that are not saved.');
@@ -219,7 +218,8 @@ describe('Console tab boundary', () => {
     expect(source).toContain('aria-label="Recorded pedestrian crossing matrix"');
     expect(source).toContain('data-recorded-tank-level');
     expect(source).toContain('aria-label="Recorded tank level matrix"');
-    expect(source).toContain('focus-visible:outline-[var(--color-accent-blue)]');
+    // One focus indicator for every control (UX-005): the global :focus-visible rule, not a class of the panel.
+    expect(source).not.toContain('focus-visible:outline');
     expect(source).toContain("'text-[var(--color-accent-blue)]'");
     expect(source).toContain("'text-[var(--color-accent-green)]'");
     expect(source).toContain("'text-[var(--color-surface-300)]'");

@@ -5,6 +5,7 @@
 
 import { Component, type ReactNode } from 'react';
 import { describeRenderError, shouldResetBoundary } from '../utils/errorMessages';
+import { Button } from '../ui';
 
 interface ErrorBoundaryProps {
   /** Name shown to the user: "Editor", "Panel", "ZPLC Studio". */
@@ -21,8 +22,6 @@ interface ErrorBoundaryState {
   error: Error | null;
   resetKey: unknown;
 }
-
-const BUTTON = 'px-4 py-2 text-sm rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent-blue)]';
 
 export function RegionError({ region, error, onRetry, recovery, fullWindow = false }: {
   region: string;
@@ -41,12 +40,8 @@ export function RegionError({ region, error, onRetry, recovery, fullWindow = fal
         <p className="text-lg font-medium text-[var(--color-accent-red)]">{region} stopped working</p>
         <p className="mt-2 break-words text-sm text-[var(--color-surface-300)]">{describeRenderError(error)}</p>
         <div className="mt-4 flex justify-center gap-2">
-          <button type="button" onClick={onRetry} className={`${BUTTON} bg-[var(--color-accent-blue)] text-white hover:bg-[var(--color-accent-blue)]/80`}>Retry</button>
-          {recovery && (
-            <button type="button" onClick={() => { recovery.run(); onRetry(); }} className={`${BUTTON} bg-[var(--color-surface-600)] text-[var(--color-surface-100)] hover:bg-[var(--color-surface-500)]`}>
-              {recovery.label}
-            </button>
-          )}
+          <Button variant="primary" onClick={onRetry}>Retry</Button>
+          {recovery && <Button onClick={() => { recovery.run(); onRetry(); }}>{recovery.label}</Button>}
         </div>
       </div>
     </div>

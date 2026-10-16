@@ -14,11 +14,11 @@ export function TreeMarkBadge({ path }: { path: string }) {
   const { text, title } = LABEL[mark];
   return (
     <span
-      title={title}
       data-tree-mark={mark}
-      className={`ml-1 shrink-0 rounded border px-1 text-[10px] leading-4 ${mark === 'library' ? 'border-[var(--color-accent-blue)] text-[var(--color-accent-blue)]' : 'border-[var(--color-accent-yellow)] text-[var(--color-accent-yellow)]'}`}
+      className={`ml-1 shrink-0 rounded border px-1 text-[11px] leading-4 ${mark === 'library' ? 'border-[var(--color-accent-blue)] text-[var(--color-accent-blue)]' : 'border-[var(--color-accent-yellow)] text-[var(--color-accent-yellow)]'}`}
     >
       {text}
+      <span className="ui-visually-hidden">: {title}</span>
     </span>
   );
 }

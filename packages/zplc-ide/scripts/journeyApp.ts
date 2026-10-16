@@ -27,7 +27,8 @@ export const css = (selector: string): Target => `document.querySelector(${JSON.
 const centre = (target: Target) => `(() => { const el = ${target}; if (!el || el.disabled || el.getAttribute('aria-disabled') === 'true') return null; el.scrollIntoView({ block: 'nearest', inline: 'nearest' }); const box = el.getBoundingClientRect(); if (box.width === 0 || box.height === 0) return null; const x = box.x + box.width / 2; const y = box.y + box.height / 2; const hit = document.elementFromPoint(x, y); return hit && (el === hit || el.contains(hit)) ? { x, y } : null; })()`;
 
 const KEYS: Record<string, { key: string; code: string; keyCode: number }> = {
-  ArrowUp: { key: 'ArrowUp', code: 'ArrowUp', keyCode: 38 }, ArrowDown: { key: 'ArrowDown', code: 'ArrowDown', keyCode: 40 }, Enter: { key: 'Enter', code: 'Enter', keyCode: 13 }, Escape: { key: 'Escape', code: 'Escape', keyCode: 27 },
+  ArrowUp: { key: 'ArrowUp', code: 'ArrowUp', keyCode: 38 }, ArrowDown: { key: 'ArrowDown', code: 'ArrowDown', keyCode: 40 }, ArrowLeft: { key: 'ArrowLeft', code: 'ArrowLeft', keyCode: 37 }, ArrowRight: { key: 'ArrowRight', code: 'ArrowRight', keyCode: 39 },
+  Tab: { key: 'Tab', code: 'Tab', keyCode: 9 }, Enter: { key: 'Enter', code: 'Enter', keyCode: 13 }, Escape: { key: 'Escape', code: 'Escape', keyCode: 27 },
   F2: { key: 'F2', code: 'F2', keyCode: 113 }, F5: { key: 'F5', code: 'F5', keyCode: 116 }, F6: { key: 'F6', code: 'F6', keyCode: 117 },
   S: { key: 's', code: 'KeyS', keyCode: 83 }, B: { key: 'b', code: 'KeyB', keyCode: 66 }, Z: { key: 'z', code: 'KeyZ', keyCode: 90 },
   A: { key: 'a', code: 'KeyA', keyCode: 65 }, R: { key: 'r', code: 'KeyR', keyCode: 82 }, End: { key: 'End', code: 'End', keyCode: 35 }, Home: { key: 'Home', code: 'Home', keyCode: 36 },

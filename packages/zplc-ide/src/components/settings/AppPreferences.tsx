@@ -5,6 +5,7 @@
  * keyboard operable, with its label.
  */
 import { useState } from 'react';
+import { Button, Checkbox, Select } from '../../ui';
 import { ThemeControl } from '../ThemeControl';
 import { useAppSettings } from '../../store/useAppSettings';
 import { AUTOSAVE_CHOICES, DENSITY_CHOICES, LANGUAGE_CHOICES, TAB_SIZE_CHOICES, type AppSettings } from '../../utils/appSettings';
@@ -14,8 +15,6 @@ import type { UpdateCheckResult } from '../../../electron/updateCheckProtocol';
 import { useUpdateNotice } from '../../store/updateNotice';
 
 const FONT_SIZES = [10, 11, 12, 13, 14, 16, 18, 20, 24, 28, 32] as const;
-const SELECT = 'h-9 border border-[var(--border-color)] bg-[var(--color-surface-800)] px-2 text-sm text-[var(--text-primary)] hover:bg-[var(--color-surface-700)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-accent-blue)]';
-const LABEL = 'flex flex-col gap-1 text-xs font-medium text-[var(--text-secondary)]';
 const LANGUAGE_NAMES = { en: 'English', es: 'Español' } as const;
 const DENSITY_NAMES = { comfortable: 'Comfortable', compact: 'Compact' } as const;
 const autosaveName = (seconds: number) => (seconds === 0 ? 'Off' : `After ${seconds} seconds without typing`);
@@ -29,17 +28,14 @@ function Choice<K extends keyof AppSettings>({ label, field, options, name }: {
   const value = useAppSettings((state) => state.settings[field]);
   const update = useAppSettings((state) => state.update);
   return (
-    <label className={LABEL}>
-      <span>{label}</span>
-      <select
-        value={String(value)}
-        onChange={(event) => update({ [field]: options.find((option) => String(option) === event.target.value) } as Partial<AppSettings>)}
-        data-setting={field}
-        className={SELECT}
-      >
-        {options.map((option) => <option key={String(option)} value={String(option)}>{name(option)}</option>)}
-      </select>
-    </label>
+    <Select
+      label={label}
+      value={String(value)}
+      onChange={(event) => update({ [field]: options.find((option) => String(option) === event.target.value) } as Partial<AppSettings>)}
+      data-setting={field}
+    >
+      {options.map((option) => <option key={String(option)} value={String(option)}>{name(option)}</option>)}
+    </Select>
   );
 }
 
@@ -73,13 +69,10 @@ export function AppPreferences({ includeTheme = true }: { includeTheme?: boolean
         <Choice label="Autosave" field="autosaveSeconds" options={AUTOSAVE_CHOICES} name={autosaveName} />
       </div>
       <div className="mt-4 flex flex-wrap items-center gap-3 border-t border-[var(--color-surface-600)] pt-3">
-        <label className="flex items-center gap-2 text-sm text-[var(--text-primary)]">
-          <input type="checkbox" checked={checkForUpdates} onChange={(event) => update({ checkForUpdates: event.target.checked })} data-setting="checkForUpdates" />
-          Check for a newer release when Studio starts
-        </label>
-        <button type="button" onClick={checkNow} disabled={checking} className="h-8 border border-[var(--border-color)] px-3 text-sm text-[var(--text-primary)] hover:bg-[var(--color-surface-700)] disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-accent-blue)]">
+        <Checkbox label="Check for a newer release when Studio starts" checked={checkForUpdates} onChange={(event) => update({ checkForUpdates: event.target.checked })} data-setting="checkForUpdates" />
+        <Button onClick={checkNow} disabled={checking}>
           {checking ? 'Checking…' : 'Check now'}
-        </button>
+        </Button>
         {result && <p role="status" className="text-xs text-[var(--text-secondary)]">{describeUpdateCheck(result)}</p>}
       </div>
       <p className="mt-2 text-xs text-[var(--text-tertiary)]">The check asks the GitHub releases of this project for the latest version. It sends nothing about you, downloads nothing and is off until you turn it on.</p>

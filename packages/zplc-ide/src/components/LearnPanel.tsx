@@ -10,6 +10,7 @@ import { exportProgress, importProgress, noteLesson, readProgress, recordGrade }
 import { useLessonCheck } from '../learn/useLessonCheck';
 import { getFileContent } from '../utils/projectLoader';
 import { gradeRecordedScenarioLesson, learnLessonCatalog, parseLearnMasteryImport, readLearnMastery, recordLearnMastery, replaceLearnMastery, serializeLearnMastery, type LearnLessonGrade, type LearnLessonId, type LearnLocale } from './learnLesson';
+import { Button, FileInput, ToggleGroup } from '../ui';
 
 export function LearnPanel({ workspaceTestPresentation }: { workspaceTestPresentation?: WorkspaceTestPresentation }) {
   const copyExampleProjectToFolder = useIDEStore((state) => state.copyExampleProjectToFolder);
@@ -172,13 +173,20 @@ export function LearnPanel({ workspaceTestPresentation }: { workspaceTestPresent
                 {lesson.objectives.map((objective) => <li key={objective}>{objective}</li>)}
               </ul>
             </div>
-            <div role="group" className="inline-flex border border-[var(--color-surface-600)]" aria-label={locale === 'es' ? 'Idioma de la lección' : 'Lesson language'}>
-              {(['es', 'en'] as const).map((value) => <button key={value} type="button" aria-pressed={locale === value} onClick={() => setLocale(value)} className={`px-2.5 py-1 text-xs font-medium focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-accent-blue)] ${locale === value ? 'bg-[var(--color-surface-700)] text-[var(--color-surface-100)]' : 'text-[var(--color-surface-300)] hover:bg-[var(--color-surface-700)]'}`}>{value === 'es' ? 'Español' : 'English'}</button>)}
-            </div>
+            <ToggleGroup
+              label={locale === 'es' ? 'Idioma de la lección' : 'Lesson language'}
+              value={locale}
+              onValueChange={(value) => setLocale(value as LearnLocale)}
+              options={[{ value: 'es', label: 'Español' }, { value: 'en', label: 'English' }]}
+            />
           </div>
-          <div role="group" className="mt-3 flex flex-wrap gap-1.5" aria-label={locale === 'es' ? 'Lección' : 'Lesson'}>
-            {lessons.map((candidate) => <button key={candidate.id} type="button" aria-pressed={lessonId === candidate.id} disabled={copyStatus === 'copying'} onClick={() => { chosenRef.current = true; setLessonId(candidate.id); setCopyStatus('idle'); note({ lessonId: candidate.id, started: true, last: true }); }} className={`border px-2.5 py-1 text-xs font-medium focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-accent-blue)] disabled:cursor-not-allowed disabled:opacity-60 ${lessonId === candidate.id ? 'border-[var(--color-accent-blue)] bg-[var(--color-surface-700)] text-[var(--color-surface-100)]' : 'border-[var(--color-surface-600)] text-[var(--color-surface-300)] hover:bg-[var(--color-surface-700)]'}`}>{candidate.title}</button>)}
-          </div>
+          <ToggleGroup
+            label={locale === 'es' ? 'Lección' : 'Lesson'}
+            className="mt-3 flex-wrap"
+            value={lessonId}
+            onValueChange={(id) => { chosenRef.current = true; setLessonId(id as LearnLessonId); setCopyStatus('idle'); note({ lessonId: id as LearnLessonId, started: true, last: true }); }}
+            options={lessons.map((candidate) => ({ value: candidate.id, label: candidate.title, disabled: copyStatus === 'copying' }))}
+          />
           <p className="mt-3 break-words font-mono text-xs text-[var(--color-surface-400)]">{lesson.sourcePath} · {lesson.scenarioPath}</p>
           <p className="mt-1 text-xs leading-5 text-[var(--color-surface-400)]">{locale === 'es' ? 'El starter falla este escenario host hasta corregir la omisión indicada.' : 'The starter fails this host scenario until the stated omission is corrected.'}</p>
           <p aria-label={locale === 'es' ? 'Progreso de la lección' : 'Lesson progress'} className="mt-2 text-xs text-[var(--color-surface-400)]">{masteryCopy} · {mastered.size}/{lessons.length}</p>
@@ -213,7 +221,7 @@ export function LearnPanel({ workspaceTestPresentation }: { workspaceTestPresent
               <h3 className="font-medium text-[var(--color-surface-100)]">{stage.title}</h3>
               <p className="mt-1 leading-5 text-[var(--color-surface-300)]">{stage.body}</p>
               <details className="mt-2 text-xs text-[var(--color-surface-300)]">
-                <summary className="cursor-pointer select-none font-medium text-[var(--color-accent-blue)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-accent-blue)]">{locale === 'es' ? 'Ver checkpoint esperado' : 'Show expected checkpoint'}</summary>
+                <summary className="cursor-pointer select-none font-medium text-[var(--color-accent-blue)]">{locale === 'es' ? 'Ver checkpoint esperado' : 'Show expected checkpoint'}</summary>
                 <p className="mt-1 leading-5">{stage.checkpoint}</p>
               </details>
             </li>
@@ -223,12 +231,12 @@ export function LearnPanel({ workspaceTestPresentation }: { workspaceTestPresent
         <section aria-label={locale === 'es' ? 'Pistas' : 'Hints'} className="border-b border-[var(--color-surface-700)] pb-3">
           {lesson.hints.map((hint, index) => (
             <details key={index} onToggle={(event) => { if (event.currentTarget.open) note({ lessonId: lesson.id, hint: index === 0 ? 1 : 2 }); }} className="mt-1 text-xs text-[var(--color-surface-300)]">
-              <summary className="cursor-pointer select-none font-medium text-[var(--color-accent-blue)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-accent-blue)]">{locale === 'es' ? `Pista ${index + 1}` : `Hint ${index + 1}`}</summary>
+              <summary className="cursor-pointer select-none font-medium text-[var(--color-accent-blue)]">{locale === 'es' ? `Pista ${index + 1}` : `Hint ${index + 1}`}</summary>
               <p className="mt-1 leading-5">{hint}</p>
             </details>
           ))}
           <details onToggle={(event) => { if (event.currentTarget.open) note({ lessonId: lesson.id, solution: true }); }} className="mt-1 text-xs text-[var(--color-surface-300)]">
-            <summary className="cursor-pointer select-none font-medium text-[var(--color-accent-blue)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-accent-blue)]">{locale === 'es' ? 'Ver la solución de referencia' : 'Show the reference solution'}</summary>
+            <summary className="cursor-pointer select-none font-medium text-[var(--color-accent-blue)]">{locale === 'es' ? 'Ver la solución de referencia' : 'Show the reference solution'}</summary>
             {solutionText !== null
               ? <pre data-learn-solution className="mt-1 overflow-x-auto bg-[var(--color-surface-800)] p-2 font-mono leading-5">{solutionText}</pre>
               : <p className="mt-1 leading-5">{locale === 'es' ? `La solución de referencia es el ejemplo ${lesson.referenceExampleId}; abrilo desde la pantalla de bienvenida.` : `The reference solution is the ${lesson.referenceExampleId} example; open it from the Welcome screen.`}</p>}
@@ -237,13 +245,13 @@ export function LearnPanel({ workspaceTestPresentation }: { workspaceTestPresent
 
         <section aria-label={locale === 'es' ? 'Acciones de la lección' : 'Lesson actions'} className="border-t border-[var(--color-surface-600)] pt-3">
           <div className="flex flex-wrap gap-2">
-            <button type="button" onClick={copyExample} disabled={!folderAccess || copyStatus === 'copying'} className="inline-flex items-center gap-1.5 border border-[var(--color-surface-600)] px-2.5 py-1.5 text-xs font-medium text-[var(--color-surface-100)] hover:bg-[var(--color-surface-700)] disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-accent-blue)]"><Copy size={14} aria-hidden="true" />{copyStatus === 'copying' ? (locale === 'es' ? 'Copiando…' : 'Copying…') : copyLabel}</button>
-            {checkAvailable && <button type="button" data-learn-check onClick={() => { void lessonCheck.run(lesson.id); }} disabled={!lessonCheck.canRun || lessonCheck.running(lesson.id)} className="inline-flex items-center gap-1.5 border border-[var(--color-accent-blue)] px-2.5 py-1.5 text-xs font-medium text-[var(--color-surface-100)] hover:bg-[var(--color-surface-700)] disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-accent-blue)]"><FlaskConical size={14} aria-hidden="true" />{lessonCheck.running(lesson.id) ? (locale === 'es' ? 'Verificando…' : 'Checking…') : (locale === 'es' ? 'Verificar' : 'Check')}</button>}
-            {checkAvailable && lessonCheck.running(lesson.id) && <button type="button" onClick={lessonCheck.cancel} className="border border-[var(--color-surface-600)] px-2.5 py-1.5 text-xs font-medium text-[var(--color-surface-100)] hover:bg-[var(--color-surface-700)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-accent-blue)]">{locale === 'es' ? 'Cancelar' : 'Cancel'}</button>}
-            <button type="button" onClick={() => setActiveConsoleTab('tests')} className="inline-flex items-center gap-1.5 bg-[var(--color-accent-blue)] px-2.5 py-1.5 text-xs font-medium text-[var(--color-surface-900)] hover:bg-[var(--color-accent-blue)]/80 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-accent-blue)]"><FlaskConical size={14} aria-hidden="true" />{testsLabel}</button>
-            <button type="button" disabled={Boolean(desktopProgress && !hydrated)} onClick={() => { void exportMastery(); }} className="border border-[var(--color-surface-600)] px-2.5 py-1.5 text-xs font-medium text-[var(--color-surface-100)] hover:bg-[var(--color-surface-700)] disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-accent-blue)]">{locale === 'es' ? 'Exportar progreso' : 'Export progress'}</button>
-            <button type="button" disabled={Boolean(desktopProgress && !hydrated)} onClick={() => importRef.current?.click()} className="border border-[var(--color-surface-600)] px-2.5 py-1.5 text-xs font-medium text-[var(--color-surface-100)] hover:bg-[var(--color-surface-700)] disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-accent-blue)]">{locale === 'es' ? 'Importar progreso' : 'Import progress'}</button>
-            <input ref={importRef} type="file" accept="application/json,.json" className="sr-only" aria-label={locale === 'es' ? 'Seleccionar progreso para importar' : 'Select progress to import'} onChange={(event) => { void importMastery(event); }} />
+            <Button variant="secondary" size="sm" onClick={copyExample} disabled={!folderAccess || copyStatus === 'copying'}><Copy size={14} aria-hidden="true" />{copyStatus === 'copying' ? (locale === 'es' ? 'Copiando…' : 'Copying…') : copyLabel}</Button>
+            {checkAvailable && <Button variant="secondary" size="sm" data-learn-check onClick={() => { void lessonCheck.run(lesson.id); }} disabled={!lessonCheck.canRun || lessonCheck.running(lesson.id)}><FlaskConical size={14} aria-hidden="true" />{lessonCheck.running(lesson.id) ? (locale === 'es' ? 'Verificando…' : 'Checking…') : (locale === 'es' ? 'Verificar' : 'Check')}</Button>}
+            {checkAvailable && lessonCheck.running(lesson.id) && <Button variant="secondary" size="sm" onClick={lessonCheck.cancel}>{locale === 'es' ? 'Cancelar' : 'Cancel'}</Button>}
+            <Button variant="primary" size="sm" onClick={() => setActiveConsoleTab('tests')}><FlaskConical size={14} aria-hidden="true" />{testsLabel}</Button>
+            <Button variant="secondary" size="sm" disabled={Boolean(desktopProgress && !hydrated)} onClick={() => { void exportMastery(); }}>{locale === 'es' ? 'Exportar progreso' : 'Export progress'}</Button>
+            <Button variant="secondary" size="sm" disabled={Boolean(desktopProgress && !hydrated)} onClick={() => importRef.current?.click()}>{locale === 'es' ? 'Importar progreso' : 'Import progress'}</Button>
+            <FileInput ref={importRef} accept="application/json,.json" label={locale === 'es' ? 'Seleccionar progreso para importar' : 'Select progress to import'} onChange={(event) => { void importMastery(event); }} />
           </div>
           <p role="status" className="mt-2 text-xs text-[var(--color-surface-400)]">{!folderAccess ? (locale === 'es' ? 'El acceso a carpetas no está disponible en este entorno.' : 'Folder access is unavailable in this environment.') : copyStatus === 'copying' ? (locale === 'es' ? 'Copiando el ejemplo en la carpeta elegida…' : 'Copying the example into the chosen folder…') : copyStatus === 'copied' ? (locale === 'es' ? 'Ejemplo copiado.' : 'Example copied.') : (locale === 'es' ? `Elegí zplc.json guardado en Tests y ejecutá solamente ${lesson.requiredScenario}.` : `Choose the saved zplc.json in Tests and run only ${lesson.requiredScenario}.`)}</p>
           {checkAvailable && <p role="status" data-learn-check-status className="mt-2 text-xs text-[var(--color-surface-400)]">{!lessonCheck.isProjectOpen ? (locale === 'es' ? 'Abrí la carpeta del ejercicio para verificar.' : 'Open the exercise folder to check it.') : lessonCheck.unsaved ? (locale === 'es' ? 'Guardá los cambios (Ctrl+S) antes de verificar.' : 'Save your changes (Ctrl+S) before checking.') : refusalText}</p>}

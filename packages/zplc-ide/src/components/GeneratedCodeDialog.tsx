@@ -7,6 +7,8 @@
 
 import { useState } from 'react';
 import { Copy, Check, Download, FileText } from 'lucide-react';
+import { ICON_SIZES } from '../theme/tokens';
+import { Button } from '../ui';
 import { Modal } from './Modal';
 
 interface GeneratedCodeDialogProps {
@@ -75,31 +77,18 @@ export function GeneratedCodeDialog({
         </div>
         
         <div className="flex items-center gap-2">
-          <button
+          <Button
+            size="sm"
             onClick={() => { void handleCopy(); }}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded text-sm bg-[var(--color-surface-600)] hover:bg-[var(--color-surface-500)] text-[var(--color-surface-100)] transition-colors"
+            icon={copied ? <Check size={ICON_SIZES.sm} className="text-[var(--color-accent-green)]" /> : <Copy size={ICON_SIZES.sm} />}
           >
-            {copied ? (
-              <>
-                <Check size={14} className="text-green-400" />
-                Copied!
-              </>
-            ) : (
-              <>
-                <Copy size={14} />
-                Copy
-              </>
-            )}
-          </button>
-          
+            {copied ? 'Copied' : 'Copy'}
+          </Button>
+
           {onCreateFile && (
-            <button
-              onClick={handleCreateFile}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded text-sm bg-[var(--color-accent-blue)] hover:opacity-90 text-white transition-colors"
-            >
-              <Download size={14} />
+            <Button size="sm" variant="primary" onClick={handleCreateFile} icon={<Download size={ICON_SIZES.sm} />}>
               Create {fileExtension} File
-            </button>
+            </Button>
           )}
         </div>
       </div>

@@ -1995,6 +1995,58 @@
     {"kind":"unit","ref":"tools/ci/ide-structure.test.ts","test":"layering exceptions stopgap (IDE-033)","partial":true},
     {"kind":"unit","ref":"tools/ci/ide-structure.test.ts","test":"layering stopgap (IDE-033): one command-line import of electron/ is listed","partial":true}
   ],
+  "UX-001": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/ui/gallery/gallery.test.tsx","test":"lists only components the kit exports, and names the ones UX-001 asks for that it does not have yet (stopgap)","partial":true},
+    {"kind":"unit","ref":"packages/zplc-ide/src/ui/kit.test.tsx","test":"kit buttons (UX-001, UX-026 stopgap)","partial":true},
+    {"kind":"unit","ref":"packages/zplc-ide/src/ui/kit.test.tsx","test":"kit dialogs (UX-001, UX-025 stopgap)","partial":true},
+    {"kind":"unit","ref":"packages/zplc-ide/src/ui/kit.test.tsx","test":"kit display components (UX-001, UX-009 stopgap)","partial":true},
+    {"kind":"unit","ref":"packages/zplc-ide/src/ui/kit.test.tsx","test":"kit form fields (UX-001, UX-026 stopgap)","partial":true},
+    {"kind":"unit","ref":"packages/zplc-ide/src/ui/kit.test.tsx","test":"kit menu and tooltip (UX-001 stopgap)","partial":true},
+    {"kind":"unit","ref":"packages/zplc-ide/src/ui/kit.test.tsx","test":"kit tabs and toggle group (UX-001, UX-025 stopgap)","partial":true},
+    {"kind":"unit","ref":"packages/zplc-ide/src/ui/logic/keyboard.test.ts","test":"keyboard navigation of a composite widget (UX-001, UX-025 stopgap)","partial":true},
+    {"kind":"unit","ref":"packages/zplc-ide/src/ui/logic/keyboard.test.ts","test":"overlay placement (UX-001 stopgap)","partial":true},
+    {"kind":"unit","ref":"packages/zplc-ide/src/ui/logic/keyboard.test.ts","test":"tabs keyboard behaviour (UX-001 stopgap)","partial":true},
+    {"kind":"unit","ref":"packages/zplc-ide/src/ui/logic/keyboard.test.ts","test":"type-ahead (UX-001 stopgap)","partial":true},
+    {"kind":"unit","ref":"packages/zplc-ide/src/ui/logic/overlays.test.ts","test":"menu keyboard behaviour (UX-001, UX-025 stopgap)","partial":true},
+    {"kind":"unit","ref":"packages/zplc-ide/src/ui/logic/overlays.test.ts","test":"tooltip behaviour (UX-001, UX-025 stopgap)","partial":true},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"41 The component kit behaves from the keyboard in a real window","partial":true}
+  ],
+  "UX-002": [
+    {"kind":"unit","ref":"tools/ci/ui-kit-guard.test.ts","test":"kit guard: the shrink-only list (UX-002 stopgap)","partial":true},
+    {"kind":"unit","ref":"tools/ci/ui-kit-guard.test.ts","test":"kit guard: what breaks the kit rules (UX-002 stopgap: the list of offenders is not empty)","partial":true}
+  ],
+  "UX-003": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/theme/contrast.test.ts","test":"theme token consistency (UX-003)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/theme/tokens.test.ts","test":"design tokens (UX-003)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/utils/monaco-themes.test.ts","test":"Monaco themes are generated from the semantic roles (UX-003)"},
+    {"kind":"unit","ref":"tools/ci/ux-tokens.test.ts","test":"design token checks (UX-003, UX-032)"},
+    {"kind":"unit","ref":"tools/ci/ux-tokens.test.ts","test":"finds this repository current: the generated stylesheet, DESIGN.md and every token used (UX-003, UX-032)"}
+  ],
+  "UX-004": [
+    {"kind":"unit","ref":"packages/zplc-ide/scripts/galleryBundle.test.ts","test":"the component gallery is a development-build page (UX-004)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/ui/gallery/gallery.test.tsx","test":"the component gallery (UX-004)"},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"41 The component kit behaves from the keyboard in a real window"}
+  ],
+  "UX-005": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/theme/focusRing.test.ts","test":"focus ring (UX-005 stopgap: the visual editors still carry their own classes)","partial":true},
+    {"kind":"unit","ref":"tools/ci/ui-kit-guard.test.ts","test":"kit guard: focus and text size (UX-005, UX-006 stopgap)","partial":true},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"41 The component kit behaves from the keyboard in a real window","partial":true}
+  ],
+  "UX-006": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/theme/tokens.test.ts","test":"type, shape and density tokens (UX-006, UX-007, UX-008 stopgap)","partial":true},
+    {"kind":"unit","ref":"tools/ci/ui-kit-guard.test.ts","test":"kit guard: focus and text size (UX-005, UX-006 stopgap)","partial":true}
+  ],
+  "UX-007": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/theme/tokens.test.ts","test":"type, shape and density tokens (UX-006, UX-007, UX-008 stopgap)","partial":true}
+  ],
+  "UX-008": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/theme/tokens.test.ts","test":"type, shape and density tokens (UX-006, UX-007, UX-008 stopgap)","partial":true},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"41 The component kit behaves from the keyboard in a real window","partial":true}
+  ],
+  "UX-009": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/theme/signalTone.test.ts","test":"signal tone of a watched value (UX-009 stopgap: Ladder, FBD, SFC, Trace and the I/O faceplate are not on it yet)","partial":true},
+    {"kind":"unit","ref":"packages/zplc-ide/src/ui/kit.test.tsx","test":"kit display components (UX-001, UX-009 stopgap)","partial":true}
+  ],
   "UX-022": [
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"13 Welcome helps a newcomer choose","partial":true},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"14 A recent project that is gone","partial":true}
@@ -2002,8 +2054,35 @@
   "UX-023": [
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"13 Welcome helps a newcomer choose","partial":true}
   ],
+  "UX-024": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/theme/color.test.ts","test":"WCAG 2.2 contrast arithmetic (UX-024 stopgap)","partial":true},
+    {"kind":"unit","ref":"packages/zplc-ide/src/theme/contrast.test.ts","test":"theme token contrast (UX-024 stopgap: the main screens have no automated check yet)","partial":true},
+    {"kind":"unit","ref":"packages/zplc-ide/src/ui/audit.test.ts","test":"structural accessibility audit of markup (UX-024, UX-026 stopgap)","partial":true},
+    {"kind":"unit","ref":"tools/ci/ux-tokens.test.ts","test":"finds no declared contrast pair below WCAG 2.2 AA in any theme (UX-024 stopgap)","partial":true},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"41 The component kit behaves from the keyboard in a real window","partial":true}
+  ],
+  "UX-025": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/ui/kit.test.tsx","test":"kit dialogs (UX-001, UX-025 stopgap)","partial":true},
+    {"kind":"unit","ref":"packages/zplc-ide/src/ui/kit.test.tsx","test":"kit tabs and toggle group (UX-001, UX-025 stopgap)","partial":true},
+    {"kind":"unit","ref":"packages/zplc-ide/src/ui/logic/keyboard.test.ts","test":"focus trap (UX-025 stopgap: no escape from a dialog, no trap outside one)","partial":true},
+    {"kind":"unit","ref":"packages/zplc-ide/src/ui/logic/keyboard.test.ts","test":"keyboard navigation of a composite widget (UX-001, UX-025 stopgap)","partial":true},
+    {"kind":"unit","ref":"packages/zplc-ide/src/ui/logic/overlays.test.ts","test":"menu keyboard behaviour (UX-001, UX-025 stopgap)","partial":true},
+    {"kind":"unit","ref":"packages/zplc-ide/src/ui/logic/overlays.test.ts","test":"tooltip behaviour (UX-001, UX-025 stopgap)","partial":true},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"41 The component kit behaves from the keyboard in a real window","partial":true}
+  ],
+  "UX-026": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/ui/audit.test.ts","test":"structural accessibility audit of markup (UX-024, UX-026 stopgap)","partial":true},
+    {"kind":"unit","ref":"packages/zplc-ide/src/ui/kit.test.tsx","test":"kit buttons (UX-001, UX-026 stopgap)","partial":true},
+    {"kind":"unit","ref":"packages/zplc-ide/src/ui/kit.test.tsx","test":"kit form fields (UX-001, UX-026 stopgap)","partial":true},
+    {"kind":"unit","ref":"tools/ci/ui-kit-guard.test.ts","test":"kit guard: names (UX-026 stopgap)","partial":true},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"41 The component kit behaves from the keyboard in a real window","partial":true}
+  ],
   "UX-027": [
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"13 Welcome helps a newcomer choose","partial":true}
+  ],
+  "UX-032": [
+    {"kind":"unit","ref":"tools/ci/ux-tokens.test.ts","test":"design token checks (UX-003, UX-032)"},
+    {"kind":"unit","ref":"tools/ci/ux-tokens.test.ts","test":"finds this repository current: the generated stylesheet, DESIGN.md and every token used (UX-003, UX-032)"}
   ],
   "LRN-001": [
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"11 Learn with no project open","partial":true}

@@ -4,10 +4,9 @@
  * closing, so the user can correct the name or choose another folder. Escape and the backdrop cancel.
  */
 import { useState, type FormEvent } from 'react';
+import { Button, Select, TextField } from '../ui';
 import { Modal } from './Modal';
 
-const BUTTON = 'px-4 py-2 text-sm rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent-blue)] disabled:cursor-not-allowed disabled:opacity-50';
-const FIELD = 'w-full px-3 py-2 bg-[var(--color-surface-900)] border border-[var(--color-surface-500)] rounded text-sm text-[var(--color-surface-100)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent-blue)]';
 const messageOf = (error: unknown) => (error instanceof Error ? error.message : 'The operation failed. Try again.');
 
 export interface FolderChoice { path: string; label: string }
@@ -15,8 +14,8 @@ export interface FolderChoice { path: string; label: string }
 function Actions({ busy, submitLabel, onCancel, danger = false }: { busy: boolean; submitLabel: string; onCancel: () => void; danger?: boolean }) {
   return (
     <div className="flex justify-end gap-2 pt-5">
-      <button type="button" disabled={busy} onClick={onCancel} className={`${BUTTON} bg-[var(--color-surface-600)] hover:bg-[var(--color-surface-500)] text-[var(--color-surface-100)]`}>Cancel</button>
-      <button type="submit" disabled={busy} className={`${BUTTON} text-white ${danger ? 'bg-[var(--color-accent-red)] hover:bg-[var(--color-accent-red)]/80' : 'bg-[var(--color-accent-blue)] hover:bg-[var(--color-accent-blue)]/80'}`}>{busy ? 'Working…' : submitLabel}</button>
+      <Button disabled={busy} onClick={onCancel}>Cancel</Button>
+      <Button type="submit" variant={danger ? 'danger' : 'primary'} disabled={busy}>{busy ? 'Working…' : submitLabel}</Button>
     </div>
   );
 }
@@ -51,16 +50,21 @@ export function EntryNameDialog({ title, initialName, submitLabel, folders, init
     <Modal isOpen onClose={() => { if (!busy) onCancel(); }} title={title} widthClass="max-w-md" showCloseButton={!busy}>
       <form className="p-4" onSubmit={submit} data-entry-dialog>
         {folders && (
-          <div className="mb-3">
-            <label htmlFor="entry-folder" className="block text-sm text-[var(--color-surface-200)] mb-1">Folder</label>
-            <select id="entry-folder" value={folder} onChange={(event) => setFolder(event.target.value)} className={FIELD}>
-              {folders.map((choice) => <option key={choice.path} value={choice.path}>{choice.label}</option>)}
-            </select>
-          </div>
+          <Select id="entry-folder" label="Folder" fieldClassName="mb-3" value={folder} onChange={(event) => setFolder(event.target.value)}>
+            {folders.map((choice) => <option key={choice.path} value={choice.path}>{choice.label}</option>)}
+          </Select>
         )}
-        <label htmlFor="entry-name" className="block text-sm text-[var(--color-surface-200)] mb-1">Name</label>
-        <input id="entry-name" autoFocus value={name} onChange={(event) => setName(event.target.value)} onFocus={(event) => event.currentTarget.select()} autoComplete="off" spellCheck={false} aria-invalid={error !== null} aria-describedby={error ? 'entry-error' : undefined} className={FIELD} />
-        {error && <p id="entry-error" role="alert" className="mt-2 text-sm text-[var(--color-accent-red)]">{error}</p>}
+        <TextField
+          id="entry-name"
+          label="Name"
+          data-autofocus
+          value={name}
+          onChange={(event) => setName(event.target.value)}
+          onFocus={(event) => event.currentTarget.select()}
+          autoComplete="off"
+          spellCheck={false}
+          error={error ?? undefined}
+        />
         <Actions busy={busy} submitLabel={submitLabel} onCancel={onCancel} />
       </form>
     </Modal>
@@ -81,11 +85,9 @@ export function MoveDialog({ name, folders, initialFolder, onMove, onCancel }: {
   return (
     <Modal isOpen onClose={() => { if (!busy) onCancel(); }} title={`Move ${name}`} widthClass="max-w-md" showCloseButton={!busy}>
       <form className="p-4" onSubmit={submit} data-entry-dialog>
-        <label htmlFor="entry-folder" className="block text-sm text-[var(--color-surface-200)] mb-1">Move to folder</label>
-        <select id="entry-folder" autoFocus value={folder} onChange={(event) => setFolder(event.target.value)} className={FIELD}>
+        <Select id="entry-folder" label="Move to folder" data-autofocus value={folder} onChange={(event) => setFolder(event.target.value)} error={error ?? undefined}>
           {folders.map((choice) => <option key={choice.path} value={choice.path}>{choice.label}</option>)}
-        </select>
-        {error && <p role="alert" className="mt-2 text-sm text-[var(--color-accent-red)]">{error}</p>}
+        </Select>
         <Actions busy={busy} submitLabel="Move" onCancel={onCancel} />
       </form>
     </Modal>
@@ -104,10 +106,10 @@ export function DeleteFolderDialog({ name, modifiedFiles, onConfirm, onCancel }:
   return (
     <Modal isOpen onClose={() => { if (!busy) onCancel(); }} title="Delete folder" widthClass="max-w-sm" showCloseButton={!busy}>
       <form className="p-4" onSubmit={submit} data-entry-dialog>
-        <p className="text-[var(--color-surface-200)]">Delete <strong>{name}</strong> and everything in it?</p>
-        <p className="mt-1 text-sm text-[var(--color-surface-400)]">This permanently removes the folder from disk and cannot be undone.</p>
+        <p className="text-[var(--text-primary)]">Delete <strong>{name}</strong> and everything in it?</p>
+        <p className="mt-1 text-sm text-[var(--text-secondary)]">This permanently removes the folder from disk and cannot be undone.</p>
         {modifiedFiles.length > 0 && (
-          <div className="mt-3 text-sm text-[var(--color-accent-orange)]">
+          <div className="mt-3 text-sm text-[var(--color-accent-yellow)]">
             <p>These files have changes that are not saved and will be lost:</p>
             <ul className="mt-1 list-disc pl-5">{modifiedFiles.map((file) => <li key={file}>{file}</li>)}</ul>
           </div>

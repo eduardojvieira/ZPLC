@@ -11,8 +11,9 @@ describe('Sidebar migration disclosure', () => {
     expect(source).toContain('Review the difference (');
     expect(source).toContain('<MigrationPreviewDialog onClose={() => setIsMigrationOpen(false)} />');
     expect(source).toContain('aria-label="Explorer actions"');
-    expect(source).toContain('aria-label="New File"');
-    expect(source).toContain('aria-label="Refresh"');
+    // The icon buttons are the kit's IconButton: `label` is the accessible name, and the kit's tests prove it (ui/kit.test.tsx).
+    expect(source).toContain('label="New File"');
+    expect(source).toContain('label="Refresh"');
     expect(source).not.toContain('Close Explorer');
     expect(source).not.toContain('Apply migration');
   });
@@ -28,9 +29,10 @@ describe('Sidebar migration disclosure', () => {
   it('keeps a failed new-file creation visible and accessible', () => {
     const source = readFileSync(join(import.meta.dir, 'Sidebar.tsx'), 'utf8');
 
-    expect(source).toContain('role="alert"');
-    expect(source).toContain('aria-describedby={error ?');
-    expect(source).toContain("aria-invalid={error ? 'true' : undefined}");
+    // The error goes to the kit's TextField, whose Field announces it (role="alert"), marks the input invalid and describes it
+    // (aria-invalid, aria-describedby): ui/kit.test.tsx proves those, so the dialog only has to hand the message over.
+    expect(source).toContain('error={error ?? undefined}');
+    expect(source).not.toContain('<input');
     expect(source).toContain("disabled={!fileName.trim() || isCreating}");
     expect(source).toContain("setTimeout(() => inputRef.current?.select(), 0)");
     expect(source).toContain("setError(null); onFileNameChange(e.target.value);");

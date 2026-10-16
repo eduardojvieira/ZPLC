@@ -18,7 +18,7 @@
     "build": "tsc -b && vite build",
     "build:wasm": "cd ../.. && ./scripts/build_wasm.sh",
     "build:assets": "bun run scripts/prepare-build-assets.mjs",
-    "lint": "eslint . && bun ../../tools/ci/ide-structure.ts",
+    "lint": "eslint . && bun ../../tools/ci/ide-structure.ts && bun ../../tools/ci/ux-tokens.ts && bun ../../tools/ci/ui-kit-guard.ts",
     "preview": "vite preview",
     "test": "bun test",
     "test:watch": "bun test --watch",
