@@ -38,6 +38,8 @@ export type Evidence =
   | { rows: string[] }
   | { boards: 'human-hil' }
   | { wasm: true }
+  /** The sentence itself links a hardware record that the board manifest lists (HIL-016). */
+  | { record: true }
   | { none: string };
 
 export interface Rule {
@@ -57,6 +59,8 @@ export interface Registry {
 
 export interface Truth {
   rows: Map<string, string>;
+  /** The record files that the board manifest lists, as paths of the repository. */
+  recordRefs: string[];
   hilBoards: string[];
   boardCount: number;
   wasmAvailable: boolean;
@@ -83,9 +87,11 @@ const LIMITS = new RegExp(
 /** A sentence that is about a release or a commit says what that release did. */
 const HISTORICAL = /\b\d+\.\d+\.\d+(?:-[\w.]+)?\b|\b[0-9a-f]{7,40}\b|\brc\.\d+\b/;
 
-export function sentencesOf(text: string): Array<{ line: number; sentence: string }> {
-  const out: Array<{ line: number; sentence: string }> = [];
+export function sentencesOf(text: string): Array<{ line: number; sentence: string; cites: string[] }> {
+  const out: Array<{ line: number; sentence: string; cites: string[] }> = [];
   const emit = (line: number, raw: string) => {
+    // the targets of the links of the block: what a sentence cites, which the words of a link do not say
+    const cites = [...raw.matchAll(/\]\(([^)\s]+)\)/g)].map((match) => match[1]!);
     const prose = raw
       .replace(/`[^`]*`/g, ' ')                       // code is a name, not a claim
       .replace(/\[([^\]]*)\]\([^)]*\)/g, '$1')      // a link keeps its words
@@ -95,7 +101,7 @@ export function sentencesOf(text: string): Array<{ line: number; sentence: strin
     const parts = raw.trimStart().startsWith('|') ? [prose.replace(/\|/g, ' ')] : prose.split(/(?<=[.!?])\s+/);
     for (const part of parts) {
       const sentence = part.replace(/\s+/g, ' ').trim();
-      if (sentence.length > 2 && /[A-Za-z]/.test(sentence)) out.push({ line, sentence });
+      if (sentence.length > 2 && /[A-Za-z]/.test(sentence)) out.push({ line, sentence, cites });
     }
   };
   let fence = '';
@@ -137,13 +143,13 @@ export function sentencesOf(text: string): Array<{ line: number; sentence: strin
 }
 
 /** The title and the description of a page, which are public text of their own (the metadata of the site). */
-function metadataOf(text: string): Array<{ line: number; sentence: string }> {
+function metadataOf(text: string): Array<{ line: number; sentence: string; cites: string[] }> {
   const front = /^---\n([\s\S]*?)\n---/.exec(text)?.[1];
   if (!front) return [];
-  const out: Array<{ line: number; sentence: string }> = [];
+  const out: Array<{ line: number; sentence: string; cites: string[] }> = [];
   front.split('\n').forEach((raw, index) => {
     const match = /^(title|description|sidebar_label):\s*(.*)$/.exec(raw);
-    if (match) out.push({ line: index + 2, sentence: match[2]!.replace(/^["']|["']$/g, '') });
+    if (match) out.push({ line: index + 2, sentence: match[2]!.replace(/^["']|["']$/g, ''), cites: [] });
   });
   return out;
 }
@@ -165,7 +171,7 @@ export function numberOf(word: string): number | undefined {
   return NUMBER_WORDS[lower];
 }
 
-function holds(evidence: Evidence, truth: Truth): { ok: boolean; why: string } {
+function holds(evidence: Evidence, truth: Truth, cites: string[]): { ok: boolean; why: string } {
   if ('rows' in evidence) {
     const states = evidence.rows.map((id) => [id, truth.rows.get(id) ?? 'unknown'] as const);
     const bad = states.filter(([, state]) => state !== 'works');
@@ -173,16 +179,20 @@ function holds(evidence: Evidence, truth: Truth): { ok: boolean; why: string } {
   }
   if ('boards' in evidence) return { ok: truth.hilBoards.length > 0, why: 'no board has a passing hardware record' };
   if ('wasm' in evidence) return { ok: truth.wasmAvailable, why: 'the browser simulator is unavailable in its capability profile' };
+  if ('record' in evidence) {
+    const cited = cites.some((target) => truth.recordRefs.some((ref) => target.endsWith(ref)));
+    return { ok: cited, why: truth.recordRefs.length === 0 ? 'no board has a hardware record to cite' : 'the sentence links no hardware record that the board manifest lists' };
+  }
   return { ok: false, why: evidence.none };
 }
 
-export function checkSentence(file: string, line: number, sentence: string, registry: Registry, truth: Truth): Finding[] {
+export function checkSentence(file: string, line: number, sentence: string, registry: Registry, truth: Truth, cites: string[] = []): Finding[] {
   const findings: Finding[] = [];
   const limited = LIMITS.test(sentence);
   if (!limited) {
     for (const rule of registry.rules) {
       if (!new RegExp(rule.pattern, rule.caseSensitive ? '' : 'i').test(sentence)) continue;
-      const verdict = holds(rule.evidence, truth);
+      const verdict = holds(rule.evidence, truth, cites);
       if (!verdict.ok) findings.push({ file, line, rule: rule.id, sentence, message: `states a capability that the evidence does not back (${verdict.why})` });
     }
   }
@@ -205,7 +215,7 @@ export function checkSentence(file: string, line: number, sentence: string, regi
 
 export function checkSurface(surface: Surface, registry: Registry, truth: Truth): Finding[] {
   const parts = [...(surface.kind === 'page' ? metadataOf(surface.text) : []), ...sentencesOf(surface.text)];
-  return parts.flatMap(({ line, sentence }) => checkSentence(surface.file, line, sentence, registry, truth));
+  return parts.flatMap(({ line, sentence, cites }) => checkSentence(surface.file, line, sentence, registry, truth, cites));
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -259,6 +269,7 @@ print(json.dumps([b["ide_id"] for b in boards if library.support_level(b, root)[
   const wasm = getWasmCapabilities();
   return {
     rows,
+    recordRefs: (JSON.parse(readFileSync(join(root, 'firmware/app/boards/boards.json'), 'utf8')) as Array<{ evidence_refs: string[] }>).flatMap((board) => board.evidence_refs),
     hilBoards: JSON.parse(run.stdout.toString()) as string[],
     boardCount: boards.length,
     wasmAvailable: Object.values(wasm.features).some((feature) => feature.status !== 'unavailable'),

@@ -29,6 +29,7 @@ inferior.
 | Host empaquetado | Un instalador de escritorio empaquetado se inició en su propio sistema en la ejecución de la versión. | Firma del instalador, notarización ni comportamiento del hardware. | Las notas de cada versión |
 | Destino emulado | Una suite de Zephyr pasó en `native_sim` o en un destino QEMU Cortex-M. | La placa exacta, su sonda, el cableado ni la salida eléctrica. | La página de pruebas de firmware |
 | `cross-build` | El firmware compila para la placa y cabe en su presupuesto de flash y RAM. | Grabar, arrancar, desplegar, persistencia ni ninguna salida. | **Nivel de soporte** de una placa, más abajo |
+| `community-reported` | Un usuario informó qué ocurrió en su propia placa, con la imagen exacta que ejecutó, mediante el formulario de reporte de placa. | Que el proyecto lo reprodujo, que se siguió un procedimiento ni ningún nivel de soporte: un reporte nunca cambia el nivel de una placa. | La columna de evidencia de una placa, más abajo |
 | `human-hil` | Una persona ejecutó un procedimiento registrado en la placa exacta, con la imagen de firmware identificada por su commit y su hash, y pasó. | Calificación de producción fuera del procedimiento registrado. | **Nivel de soporte** de una placa, más abajo |
 | Calificado para producción | Existe un paquete de evidencia de producción gobernado aparte. | Certificación de seguridad, salvo que lo diga. | Ninguna placa lo tiene |
 
@@ -68,6 +69,10 @@ Los canales de E/S de cada placa, con sus pines y sus valores seguros, están en
   detectar un problema de integración. No afirme que un flujo de trabajo, una
   salida, un presupuesto de tiempos, la persistencia o la recuperación funcionan en
   la placa.
+- **`community-reported`:** otra persona vio que esa imagen hacía eso en su placa. Es
+  una pista para la misma imagen en la misma placa. La placa se queda en
+  `cross-build`, y su watchdog de hardware sigue apagado, hasta que una persona
+  ejecute el procedimiento registrado.
 - **`human-hil`:** el procedimiento del registro funcionó con esa versión del
   firmware en esa placa. Otra imagen, otra placa u otro procedimiento necesita su
   propio registro.

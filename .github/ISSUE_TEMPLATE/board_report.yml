@@ -7,9 +7,10 @@ body:
     attributes:
       value: |
         A report is useful evidence only when it names the exact board, the firmware
-        and the steps. One bench is a lead, not a qualification. ZPLC does not flash
-        or deploy for you: list what you did yourself. Never paste credentials, Wi-Fi
-        names or tokens.
+        and the steps. The project records it as a community-reported result of that
+        image: a lead, not a qualification, and it never changes the support level of
+        the board. ZPLC does not flash or deploy for you: list what you did yourself.
+        Never paste credentials, Wi-Fi names or tokens.
   - type: dropdown
     id: board
     attributes:
@@ -21,6 +22,7 @@ body:
         - STM32F746G Discovery (stm32f746g_disco)
         - STM32 Nucleo-H743ZI (nucleo_h743zi)
         - Arduino Opta WiFi (arduino_opta_wifi)
+        - Waveshare RP2040-Zero (waveshare_rp2040_zero)
         - A board that is not in this list
     validations:
       required: true
@@ -32,10 +34,35 @@ body:
     validations:
       required: true
   - type: input
-    id: firmware
+    id: firmware_version
     attributes:
-      label: Firmware
-      description: The release asset name and its SHA-256, or the commit you built from, and the output of `zplc version`.
+      label: Firmware version
+      description: The version that `zplc version` prints on the board.
+      placeholder: 2.0.0-rc.4
+    validations:
+      required: true
+  - type: input
+    id: commit
+    attributes:
+      label: Firmware commit
+      description: The 40-digit commit that `zplc version` prints, so that the report is bound to the source that was built.
+    validations:
+      required: true
+  - type: input
+    id: image_sha256
+    attributes:
+      label: SHA-256 of the image you flashed
+      description: The 64-digit checksum of the release asset, or of the file you built. A report without it cannot be recorded.
+    validations:
+      required: true
+  - type: dropdown
+    id: result
+    attributes:
+      label: Result
+      description: Did the board do what the steps below should show?
+      options:
+        - It worked
+        - It did not work
     validations:
       required: true
   - type: input

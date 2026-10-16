@@ -99,6 +99,27 @@ describe('docs structure: the sidebar is organised by reader intent (DOC-002)', 
   });
 });
 
+describe('docs structure: the navigation and the footer are localised through the translation files (DOC-015, stopgap: no fluent reviewer has read the Spanish pages in the register of D-10)', () => {
+  interface Label { label?: string; title?: string; type?: string; items?: Label[] }
+  interface Config { themeConfig: { navbar: { title: string; logo: { alt: string }; items: Label[] }; footer: { copyright: string; links: Label[] } } }
+  const messages = (file: string) => JSON.parse(text(`docs/i18n/es/docusaurus-theme-classic/${file}.json`)) as Record<string, { message: string }>;
+
+  it('has a Spanish message for every label, title and the copyright of the configuration, and none for a label that is gone', async () => {
+    const { default: config } = await import(join(ROOT, 'docs/docusaurus.config.js')) as { default: Config };
+    const { navbar, footer } = config.themeConfig;
+    const navbarKeys = ['title', 'logo.alt', ...navbar.items.filter((item) => item.type !== 'localeDropdown').map((item) => `item.label.${item.label}`)];
+    const footerKeys = [
+      'copyright',
+      ...footer.links.flatMap((group) => [`link.title.${group.title}`, ...(group.items ?? []).map((item) => `link.item.label.${item.label}`)]),
+    ];
+    expect(Object.keys(messages('navbar')).sort()).toEqual([...navbarKeys].sort());
+    expect(Object.keys(messages('footer')).sort()).toEqual([...footerKeys].sort());
+    for (const file of ['navbar', 'footer']) {
+      for (const [key, { message }] of Object.entries(messages(file))) expect({ file, key, translated: message.trim().length > 0 }).toEqual({ file, key, translated: true });
+    }
+  });
+});
+
 describe('docs structure: a page is published only when both languages are complete (DOC-016)', () => {
   const scratch: string[] = [];
   afterAll(() => { for (const directory of scratch) rmSync(directory, { recursive: true, force: true }); });

@@ -81,7 +81,8 @@ A build that finishes proves only that the firmware builds for the board.
 ## 2. Flash it (a person does this)
 
 Flashing writes the firmware to the device and is **never done by Studio's AI or MCP
-features**. Use the board's own Zephyr procedure:
+features**. [Flash the firmware](../guides/flash-firmware.md) has the steps of every
+board and the command line; in short, use the board's own Zephyr procedure:
 
 - **Raspberry Pi Pico:** the RP2040 boot loader accepts a UF2 file. Hold the BOOTSEL
   button while you plug the USB cable in, and copy `zephyr.uf2` to the drive that

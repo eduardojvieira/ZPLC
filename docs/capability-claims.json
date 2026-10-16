@@ -4,43 +4,68 @@
     {
       "id": "full-language",
       "pattern": "\\b(?:full|complete|entire)\\s+(?:ST|Structured Text|IEC(?:\\s*61131-3)?|language|standard)\\s+(?:support|coverage|implementation|compliance|compatib)|\\bfully\\s+(?:supports?|compliant|compatible|conform|implements?)\\b|\\b100\\s?%\\s+(?:IEC|compliant|compatible)",
-      "evidence": { "none": "the conformance matrix has elements that are rejected on purpose, decided or not yet proven, so no page may claim the whole language" }
+      "evidence": {
+        "none": "the conformance matrix has elements that are rejected on purpose, decided or not yet proven, so no page may claim the whole language"
+      }
     },
     {
       "id": "communication-protocols",
       "pattern": "^(?=.*\\b(?:Modbus|MQTT|Sparkplug|Azure|AWS|Event Grid|OPC)\\b)(?=.*\\b(?:[Ss]upports?|[Ss]upported|[Ww]orks?|[Cc]ompatible|[Ii]nteroperab\\w*|[Vv]erified|[Tt]ested|[Cc]ertified|[Bb]uilt-in)\\b)",
       "caseSensitive": true,
-      "evidence": { "rows": ["blocks.communication-and-cloud-blocks"] }
+      "evidence": {
+        "rows": [
+          "blocks.communication-and-cloud-blocks"
+        ]
+      }
     },
     {
       "id": "board-capability",
       "pattern": "^(?=.*\\b(?:Raspberry Pi Pico|RP2040|ESP32|STM32|Nucleo|GIGA|Opta|Waveshare)\\b)(?=.*\\b(?:runs?|running|works?|supports?|supported|tested|verified|validated|qualified|certified|ready)\\b)",
-      "evidence": { "boards": "human-hil" }
+      "evidence": {
+        "boards": "human-hil"
+      }
     },
     {
       "id": "hardware-tested",
       "pattern": "\\b(?:tested|verified|validated|proven|qualified)\\s+(?:on|with|against)\\s+(?:real\\s+|physical\\s+)?(?:hardware|boards?|devices?|controllers?|PLCs?)\\b",
-      "evidence": { "boards": "human-hil" }
+      "evidence": {
+        "boards": "human-hil"
+      }
     },
     {
       "id": "timing",
       "pattern": "\\bhard[- ]real[- ]time\\b|\\breal[- ]time\\s+(?:guarantee|determinis|performance|control|capabilit)|\\bdeterministic\\s+(?:scan|cycle|timing|execution|response|behaviou?r)|\\bguaranteed\\s+(?:scan|cycle|response|timing|latency)",
-      "evidence": { "none": "no scan time, jitter or latency has been measured on any board, so a timing claim has no record behind it" }
+      "evidence": {
+        "none": "no scan time, jitter or latency has been measured on any board, so a timing claim has no record behind it"
+      }
+    },
+    {
+      "id": "timing-figure",
+      "pattern": "(?=.*\\b\\d[\\d.,]*\\s?(?:µs|μs|us|ns|ms|milliseconds?|microseconds?|milisegundos?|microsegundos?)\\b)(?=.*\\b(?:takes?|took|scan time|scan cycle|cycle time|jitter|latency|worst[- ]case|WCET|response time|reset time|boot time|measured|per scan|execution time|round[- ]trip|tiempo de (?:scan|ciclo|respuesta|reinicio|arranque|ejecuci[oó]n)|latencia|peor caso|medid[oa]s?|por scan)\\b)",
+      "evidence": {
+        "record": true
+      }
     },
     {
       "id": "safety",
       "pattern": "\\bSIL\\s?[1-4]\\b|\\bIEC\\s?61508\\b|\\bISO\\s?13849\\b|\\bsafety[- ](?:rated|certified|integrity|critical|related)\\b|\\bcertified\\b|\\bcertification\\b|\\bproduction[- ](?:ready|grade|qualified)\\b|\\bindustrial[- ]grade\\b|\\bmission[- ]critical\\b",
-      "evidence": { "none": "no part of ZPLC has been certified or assessed against a safety standard, and no board is production-qualified" }
+      "evidence": {
+        "none": "no part of ZPLC has been certified or assessed against a safety standard, and no board is production-qualified"
+      }
     },
     {
       "id": "browser-simulator",
       "pattern": "\\b(?:WebAssembly|WASM)\\b[^.]{0,60}\\b(?:runs?|available|supported|works?|ready|enabled|simulates?)\\b|\\b(?:in the browser|browser[- ]based)\\b[^.]{0,40}\\b(?:simulat\\w*|runs?|executes?)|\\bbrowser\\s+simulat\\w*\\b[^.]{0,40}\\b(?:runs?|executes?|available|works?)\\b",
-      "evidence": { "wasm": true }
+      "evidence": {
+        "wasm": true
+      }
     },
     {
       "id": "cloud-verified",
       "pattern": "^(?=.*\\b(?:Azure|AWS|IoT Hub|IoT Core|Event Grid|Sparkplug)\\b)(?=.*\\b(?:verified|tested|validated|compatible|certified|interoperab\\w*)\\b)",
-      "evidence": { "none": "no cloud block has been exchanged with a real service, an emulator or a recorded exchange" }
+      "evidence": {
+        "none": "no cloud block has been exchanged with a real service, an emulator or a recorded exchange"
+      }
     },
     {
       "id": "notarized-or-developer-signed",
@@ -58,10 +83,31 @@
     }
   ],
   "counts": [
-    { "id": "boards", "noun": "boards|board profiles|placas|perfiles de placa", "truth": "boards" },
-    { "id": "examples", "noun": "examples|example projects|ejemplos|proyectos de ejemplo", "truth": "examples", "requires": "\\b(?:Studio|Welcome|bundled|bundles|start from|ships?|bienvenida|incluye|empiece)\\b" },
-    { "id": "lessons", "noun": "lessons|lecciones", "truth": "lessons" },
-    { "id": "functions", "noun": "standard functions|library functions|functions in the (?:standard )?library", "truth": "functions" },
-    { "id": "function-blocks", "noun": "standard function blocks|library function blocks|function blocks in the (?:standard )?library", "truth": "function-blocks" }
+    {
+      "id": "boards",
+      "noun": "boards|board profiles|placas|perfiles de placa",
+      "truth": "boards"
+    },
+    {
+      "id": "examples",
+      "noun": "examples|example projects|ejemplos|proyectos de ejemplo",
+      "truth": "examples",
+      "requires": "\\b(?:Studio|Welcome|bundled|bundles|start from|ships?|bienvenida|incluye|empiece)\\b"
+    },
+    {
+      "id": "lessons",
+      "noun": "lessons|lecciones",
+      "truth": "lessons"
+    },
+    {
+      "id": "functions",
+      "noun": "standard functions|library functions|functions in the (?:standard )?library",
+      "truth": "functions"
+    },
+    {
+      "id": "function-blocks",
+      "noun": "standard function blocks|library function blocks|function blocks in the (?:standard )?library",
+      "truth": "function-blocks"
+    }
   ]
 }

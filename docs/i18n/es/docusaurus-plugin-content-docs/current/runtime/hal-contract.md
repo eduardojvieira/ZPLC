@@ -4,6 +4,8 @@
 
 Eso incluye los destinos Zephyr, los runtimes host/POSIX, un port para navegador con WebAssembly (el runtime de la simulación en el navegador, compilado con el IDE) y los futuros ports de placa.
 
+Las funciones de abajo, el puerto del planificador y la suite de conformidad que pasa cada puerto están en una página generada: [Interfaz de puerto y suite de conformidad](./port-interface.md).
+
 ## Regla central
 
 El core portable no debe llamar directamente a las APIs de la plataforma.

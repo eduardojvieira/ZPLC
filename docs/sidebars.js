@@ -48,6 +48,7 @@ const sidebars = {
         'guides/simulate-and-debug',
         'guides/command-line',
         'guides/ai-and-mcp',
+        'guides/flash-firmware',
         'guides/port-to-a-board',
         'guides/troubleshooting',
         'integration/index',
@@ -117,6 +118,7 @@ const sidebars = {
             'runtime/isa',
             'runtime/hal-contract',
             'runtime/hal',
+            'runtime/port-interface',
           ],
         },
         {

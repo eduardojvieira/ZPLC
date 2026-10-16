@@ -7,9 +7,9 @@ of this suite, by another executed test, or it is listed with the reason that no
 | State | Defects |
 |---|---|
 | shown by a conformance case | 94 |
-| shown by another executed test | 15 |
+| shown by another executed test | 18 |
 | no program shows it on a host | 21 |
-| open: no executed check yet | 3 |
+| open: no executed check yet | 0 |
 | all | 133 |
 
 ## CMP
@@ -122,13 +122,13 @@ of this suite, by another executed test, or it is listed with the reason that no
 | LNG-D04a | Major | LNG-004 | debugElements.test.ts (LNG-004)<br>debugElementsRuntime.test.ts (LNG-004) | There is no map from generated text back to rungs, blocks or steps. |
 | LNG-D04b | Major | LNG-001 | - | The support table declares debug: true for all five languages. no program: The per-language capability table is a product statement; LNG-001 asks that it be produced from passing end-to-end tests, which the journeys of VF-008 are partly (requirement-evidence.json). |
 | LNG-D04c | Major | LNG-005 | - | The debug map records src/main.st while the editor matches on the bare file name: breakpoints may not bind. no program: The binding of a breakpoint is a behaviour of the editor and the debug controller; it is shown by the journey that hits a breakpoint (VF-008), not by a program. |
-| LNG-D05a | Major | LNG-010 | - | Visual editors record every drag step as an edit. open: No executed check yet: LNG-010 has no recorded evidence; the visual history (visualHistory.ts) still commits a position change per drag step. |
-| LNG-D06a | Major | LNG-012 | - | Ladder and FBD are mouse-first: palette items have no keyboard access. open: No executed check yet: LNG-012 has no recorded evidence. |
+| LNG-D05a | Major | LNG-010 | gesture.test.ts (one drag is one undo step, and the selection comes back)<br>visualHistory.test.ts (visual snapshot history) | Visual editors record every drag step as an edit. |
+| LNG-D06a | Major | LNG-012 | keyboard.test.ts (ladder keyboard authoring)<br>keyboard.test.ts (function block diagram palette)<br>picker.test.ts (palettes are searchable from the keyboard) | Ladder and FBD are mouse-first: palette items have no keyboard access. |
 | LNG-D07a | Major | LNG-011 | visualFileLoad.schema.test.ts (LNG-011) | A malformed Ladder file is cast without validation and can blank the window. |
 | LNG-D08a | Minor | LNG-013, LNG-023 | `lng/lng-023-fbd-mixed-numeric-types-rejected`<br>pinTypes.test.ts (LNG-013) | FBD accepts any-to-any connections. |
 | LNG-D08b | Minor | LNG-006, LNG-025 | `lng/lng-025-sfc-step-flag-and-step-time` | SFC live state guesses three naming conventions for step flags. The case shows the step flag .X and the step time .T that the live state reads; the guessing of names in the editor (LNG-006) has no executed check yet. |
 | LNG-D08c | Minor | LNG-008 | `lng/lng-008-fbd-calls-a-user-function-block`<br>`lng/lng-008-ld-places-a-user-function-block`<br>`lng/lng-008-fbd-calls-a-user-function` | User function blocks cannot be placed in LD or FBD. |
-| LNG-D08d | Minor | LNG-015 | - | The ST language service reports only the first syntax error and sees one file. open: No executed check yet: LNG-015 has no recorded evidence; stLanguageService.ts is the language service of the editor, not a program. |
+| LNG-D08d | Minor | LNG-015 | check.test.ts (checking a project)<br>liveDiagnostics.test.ts (the live diagnostics of the project) | The ST language service reports only the first syntax error and sees one file. |
 
 ## RT
 

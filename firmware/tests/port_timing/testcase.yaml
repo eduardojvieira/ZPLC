@@ -1,0 +1,15 @@
+tests:
+  # IO-013: the timing self-test of the port conformance suite, on the clock of the Zephyr HAL.
+  zplc.port_timing:
+    tags:
+      - zplc
+      - hal
+      - port
+    platform_allow:
+      - native_sim/native/64
+      - native_sim/native
+      - qemu_cortex_m3
+    integration_platforms:
+      - native_sim/native/64
+    harness: ztest
+    timeout: 30

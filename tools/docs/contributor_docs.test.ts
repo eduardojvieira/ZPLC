@@ -7,7 +7,7 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'bun:test';
 
 import { changelogParts, renderReleaseNotes, type RunResults } from '../../scripts/release/release-notes';
-import { buildIndex, checkClaims, collectClaims, extractClaims } from './check_doc_claims';
+import { buildIndex, checkClaims, collectClaims, extractClaims, type AllowEntry } from './check_doc_claims';
 
 const ROOT = new URL('../../', import.meta.url).pathname;
 const text = (path: string) => readFileSync(join(ROOT, path), 'utf8');
@@ -202,5 +202,35 @@ describe('agent files: the project skill and AGENTS.md are current, and the cont
   it('has AGENTS.md point to CONTRIBUTING.md, and CONTRIBUTING.md not point back', () => {
     expect(text('AGENTS.md')).toContain('(CONTRIBUTING.md)');
     expect(text('CONTRIBUTING.md')).not.toMatch(/AGENTS\.md|QUICKSTART_AGENTS\.md/);
+  });
+});
+
+describe('internal process output is off the public surface (DOC-021)', () => {
+  it('has an architecture overview whose paths, commands and symbols exist, and that is signed by no tool', () => {
+    const claims = collectClaims(ROOT).filter((claim) => claim.page === 'ARCHITECTURE.md');
+    expect(claims.length).toBeGreaterThan(10);
+    const allow = JSON.parse(text('docs/doc-claims-allowlist.json')) as AllowEntry[];
+    expect(checkClaims(claims, buildIndex(), allow).findings).toEqual([]);
+    expect(text('ARCHITECTURE.md')).not.toMatch(/\b(generated|written|signed|authored) by (an? )?(AI|Claude|Gemini|ChatGPT|Copilot|LLM)\b|\ba lie\b/i);
+  });
+
+  it('files the documentation tracker and the source-of-truth map under Project, with the contributor pages, and not under Reference', async () => {
+    const { default: sidebars } = await import(join(ROOT, 'docs/sidebars.js')) as { default: { docsSidebar: Array<{ label: string; items: unknown[] }> } };
+    const flat = (items: unknown[]): string[] => items.flatMap((item) => (typeof item === 'string' ? [item] : flat((item as { items: unknown[] }).items)));
+    const category = (label: string) => flat(sidebars.docsSidebar.find((entry) => entry.label === label)!.items);
+    for (const page of ['reference/source-of-truth', 'reference/v1-5-canonical-docs-manifest']) {
+      expect({ page, project: category('Project').includes(page), reference: category('Reference').includes(page) }).toEqual({ page, project: true, reference: false });
+    }
+    expect(category('Project')).toContain('contributing/index');
+  });
+
+  it('names a team or a role as the owner of every gate of the release record, never the tool that runs the check', () => {
+    const rows = text('specs/008-release-foundation/artifacts/release-evidence-matrix.md').split('\n').filter((line) => /^\| REL-\d+ /.test(line));
+    expect(rows.length).toBeGreaterThanOrEqual(7);
+    for (const row of rows) {
+      const cells = row.split('|').map((cell) => cell.trim());
+      const [gate, owner] = [cells[1]!, cells[5]!];
+      expect({ gate, owner: owner.length > 0 && !/^(AI|Claude|Gemini|ChatGPT|Copilot|LLM|bot|agent)$/i.test(owner) }).toEqual({ gate, owner: true });
+    }
   });
 });

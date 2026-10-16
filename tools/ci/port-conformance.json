@@ -1,0 +1,248 @@
+{
+  "description": "The port conformance suite (IO-013): what a port of the runtime has to pass, and the check that runs it on each port. Every leg names real suites, or says why it is open and who owns it. tools/ci/port-conformance.test.ts checks the names against the tree; tools/docs/generate_port_interface.ts prints this file in the port interface page.",
+  "ports": [
+    {
+      "id": "posix",
+      "name": {
+        "en": "POSIX host",
+        "es": "Host POSIX"
+      },
+      "how": {
+        "en": "`bun run test:core` (CMake and ctest, with the sanitizers in CI)",
+        "es": "`bun run test:core` (CMake y ctest, con los sanitizadores en CI)"
+      }
+    },
+    {
+      "id": "zephyr",
+      "name": {
+        "en": "Zephyr (`native_sim`, QEMU)",
+        "es": "Zephyr (`native_sim`, QEMU)"
+      },
+      "how": {
+        "en": "`bun run test:firmware` (Twister on `native_sim` 64 and 32 bits, `qemu_cortex_m3` and `qemu_cortex_m0`)",
+        "es": "`bun run test:firmware` (Twister en `native_sim` de 64 y 32 bits, `qemu_cortex_m3` y `qemu_cortex_m0`)"
+      }
+    },
+    {
+      "id": "wasm",
+      "name": {
+        "en": "WebAssembly",
+        "es": "WebAssembly"
+      },
+      "how": {
+        "en": "`bun test packages/zplc-ide/src/runtime/wasmParity.test.ts` (the core built by `tools/wasm-core`)",
+        "es": "`bun test packages/zplc-ide/src/runtime/wasmParity.test.ts` (el núcleo que construye `tools/wasm-core`)"
+      }
+    }
+  ],
+  "categories": [
+    {
+      "id": "opcodes",
+      "title": {
+        "en": "Per-opcode tests",
+        "es": "Pruebas por opcode"
+      },
+      "what": {
+        "en": "Every opcode of the instruction set gives its result on the port, including the edges of the arithmetic.",
+        "es": "Cada opcode del conjunto de instrucciones da su resultado en el puerto, incluidos los bordes de la aritmética."
+      },
+      "legs": {
+        "posix": {
+          "ctest": [
+            "test_isa",
+            "test_vm_core",
+            "test_vm_arith_edges",
+            "test_opcode_coverage"
+          ]
+        },
+        "zephyr": {
+          "twister": [
+            "zplc.core.isa",
+            "zplc.core.vm_core",
+            "zplc.core.vm_arith_edges"
+          ]
+        },
+        "wasm": {
+          "bun": [
+            {
+              "file": "packages/zplc-ide/src/runtime/wasmParity.test.ts",
+              "test": "the core in WebAssembly gives the results of the conformance cases (IDE-025)"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "loader",
+      "title": {
+        "en": "Loader negative tests",
+        "es": "Pruebas negativas del cargador"
+      },
+      "what": {
+        "en": "A program that is malformed, out of bounds or built for another contract is refused before any state changes.",
+        "es": "Un programa mal formado, fuera de límites o construido para otro contrato se rechaza antes de que cambie ningún estado."
+      },
+      "legs": {
+        "posix": {
+          "ctest": [
+            "test_loader_verify",
+            "test_sandbox",
+            "test_sandbox_regions"
+          ]
+        },
+        "zephyr": {
+          "twister": [
+            "zplc.core.loader_verify",
+            "zplc.legacy_program_admission"
+          ]
+        },
+        "wasm": {
+          "bun": [
+            {
+              "file": "packages/zplc-ide/src/runtime/wasmParity.test.ts",
+              "test": "the verifier of the loader is on the path that loads a program in WebAssembly (IDE-025)"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "scheduler",
+      "title": {
+        "en": "Scheduler phase and fault tests",
+        "es": "Pruebas de fases y fallos del planificador"
+      },
+      "what": {
+        "en": "Admission, order, the phases of a scan, deadline misses, the fault latch and the safe state decide the same on every port.",
+        "es": "La admisión, el orden, las fases de un scan, los incumplimientos de plazo, el enganche de fallo y el estado seguro deciden lo mismo en cada puerto."
+      },
+      "legs": {
+        "posix": {
+          "ctest": [
+            "test_sched_core",
+            "test_sched_equivalence",
+            "test_single_task",
+            "test_failsafe",
+            "test_native_runtime_session"
+          ]
+        },
+        "zephyr": {
+          "twister": [
+            "zplc.scheduler_admission",
+            "zplc.scheduler_equivalence",
+            "zplc.scheduler_run_control",
+            "zplc.scheduler_watchdog",
+            "zplc.single_task",
+            "zplc.failsafe"
+          ]
+        },
+        "wasm": {
+          "open": {
+            "en": "The WebAssembly runtime does not use the scheduler core yet: its adapter drives the VM directly, so no scheduler suite can run on it.",
+            "es": "El runtime WebAssembly todavía no usa el núcleo del planificador: su adaptador maneja la VM directamente, de modo que ninguna suite del planificador puede correr en él.",
+            "owner": "WP-92 (RT-008, RT-027, IDE-025)"
+          }
+        }
+      }
+    },
+    {
+      "id": "timing",
+      "title": {
+        "en": "Timing self-test",
+        "es": "Autoprueba de tiempos"
+      },
+      "what": {
+        "en": "The clock of the port counts milliseconds, never goes backwards, advances through a sleep and sleeps the time it is given.",
+        "es": "El reloj del puerto cuenta milisegundos, nunca retrocede, avanza durante una espera y espera el tiempo que se le da."
+      },
+      "legs": {
+        "posix": {
+          "ctest": [
+            "test_port_timing"
+          ]
+        },
+        "zephyr": {
+          "twister": [
+            "zplc.port_timing"
+          ]
+        },
+        "wasm": {
+          "open": {
+            "en": "The module that CI builds links the core with a shim whose clock the embedder sets (tools/wasm-core), not with the WebAssembly HAL, and no test of the repository calls that HAL without a browser engine.",
+            "es": "El módulo que construye CI enlaza el núcleo con un shim cuyo reloj fija el anfitrión (tools/wasm-core), no con la HAL de WebAssembly, y ninguna prueba del repositorio llama a esa HAL sin un motor de navegador.",
+            "owner": "WP-92 (IDE-025: the browser-engine test of the adapter)"
+          }
+        }
+      }
+    },
+    {
+      "id": "io-table",
+      "title": {
+        "en": "I/O table",
+        "es": "Tabla de E/S"
+      },
+      "what": {
+        "en": "The channels of the board description reach the process image through the table, and a channel the port cannot serve is a defined result.",
+        "es": "Los canales de la descripción de la placa llegan a la imagen de proceso a través de la tabla, y un canal que el puerto no puede atender es un resultado definido."
+      },
+      "legs": {
+        "posix": {
+          "ctest": [
+            "test_io_table",
+            "test_hal_posix_io_table"
+          ]
+        },
+        "zephyr": {
+          "twister": [
+            "zplc.io_table.base",
+            "zplc.io_table.extended",
+            "zplc.io_analog.ok",
+            "zplc.io_analog.missing"
+          ]
+        },
+        "wasm": {
+          "open": {
+            "en": "The WebAssembly HAL lists no channel, so its table is empty by design (the page of the HAL contract), and no suite calls its table functions: the module that CI builds links the core with a shim, not with that HAL.",
+            "es": "La HAL de WebAssembly no lista ningún canal, de modo que su tabla está vacía por diseño (la página del contrato de la HAL), y ninguna suite llama a sus funciones de tabla: el módulo que construye CI enlaza el núcleo con un shim, no con esa HAL.",
+            "owner": "WP-92 (IDE-025, with the HAL of the module that is shipped)"
+          }
+        }
+      }
+    },
+    {
+      "id": "storage",
+      "title": {
+        "en": "Non-volatile storage",
+        "es": "Almacenamiento no volátil"
+      },
+      "what": {
+        "en": "The program, the retentive memory, the configuration and the credentials are stored, restored and refused when they are not whole.",
+        "es": "El programa, la memoria retentiva, la configuración y las credenciales se guardan, se restauran y se rechazan cuando no están completos."
+      },
+      "legs": {
+        "posix": {
+          "ctest": [
+            "test_hal_posix_persist",
+            "test_program_store",
+            "test_retain"
+          ]
+        },
+        "zephyr": {
+          "twister": [
+            "zplc.hal_persist_keys",
+            "zplc.program_store",
+            "zplc.program_store_nvs",
+            "zplc.retain_persist"
+          ]
+        },
+        "wasm": {
+          "open": {
+            "en": "The retain rules are not linked into the WebAssembly build and its storage is the page's local storage, which no repository test reaches.",
+            "es": "Las reglas de retención no están enlazadas en la compilación WebAssembly y su almacenamiento es el almacenamiento local de la página, al que ninguna prueba del repositorio llega.",
+            "owner": "WP-92 (RT-027)"
+          }
+        }
+      }
+    }
+  ]
+}

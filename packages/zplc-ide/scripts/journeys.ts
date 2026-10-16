@@ -791,6 +791,13 @@ export const JOURNEYS: Journey[] = [
       await app.until('the Learn tab to show the first lesson', async () => await app.eval<boolean>(`document.getElementById('console-tab-learn')?.getAttribute('aria-selected') === 'true' && ${JSON.stringify([learnLessonCatalog.es[0]!.title, first.title])}.includes(document.getElementById('learn-title')?.textContent?.trim() ?? '')`) || undefined);
       assert(await app.eval<boolean>(`[...document.querySelectorAll('[aria-label="Lesson"] button, [aria-label="Lección"] button')][0]?.getAttribute('aria-pressed') === 'true'`), 'The first lesson is not the one selected in the Learn tab.');
       assert(!(await app.text()).includes('The project could not be opened'), 'The workbench shows an open error.');
+      // ... and passes the first lesson (VF-008): the reference solution goes where the learner's program is, and Check grades
+      // the program of the project that Learn created, with no project open before it
+      writeFileSync(join(folder, 'src', 'Motor.st'), disk(join(packageRoot, 'projects', first.referenceExampleId, first.solutionProgram)));
+      await app.until('the Check button to be enabled', async () => await app.eval<boolean>(`document.querySelector('[data-learn-check]')?.disabled === false`) || undefined);
+      await app.click(css('[data-learn-check]'), 'the Check button');
+      await app.until('Learn to grade the first lesson as passed', async () => await app.eval<boolean>(`document.querySelector('[data-learn-grade="passed"]') !== null`) || undefined)
+        .catch(async (error: Error) => { throw new Error(`${error.message}: the grade shown is ${await app.eval<string>(`document.querySelector('[data-learn-grade]')?.getAttribute('data-learn-grade') ?? 'none'`)}; ${await app.eval<string>(`document.querySelector('[data-learn-check-status]')?.textContent ?? ''`)}`); });
     },
   },
   {

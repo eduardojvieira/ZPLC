@@ -77,6 +77,11 @@ def support(board: dict[str, object]) -> dict[str, object]:
     return boards_lib.support_level(board, ROOT)
 
 
+def community(board: dict[str, object]) -> list[dict[str, object]]:
+    """The reports from users that name the board, at the community-reported level (HIL-011): leads, never records."""
+    return boards_lib.community_reports(board, ROOT)
+
+
 def validation_summary(board: dict[str, object]) -> str:
     return str(support(board)["level"])
 
@@ -297,6 +302,12 @@ def render_board_reference(boards: list[dict[str, object]], spanish: bool) -> st
             lines.append(
                 f"  - `{record['ref']}`: firmware {record['firmware_version']}, commit `{str(record['commit'])[:12]}`, {record['result']}"
             )
+        for report in community(board):
+            lines.append(
+                f"  - `{report['ref']}`: "
+                + ("reportado por la comunidad" if spanish else "community-reported")
+                + f", firmware {report['firmware_version']}, commit `{str(report['commit'])[:12]}`, {report['result']}"
+            )
         hardware = board.get("hardware")
         if isinstance(hardware, dict):
             lines.append(
@@ -403,6 +414,12 @@ def render_support_table(boards: list[dict[str, object]], spanish: bool) -> str:
             if not spanish
             else f"{item['result']} en {item['firmware_version']} (`{str(item['commit'])[:7]}`)"
             for item in status["records"]  # type: ignore[union-attr]
+        ]
+        # a report from a user is listed beside the records and is never one of them (HIL-011)
+        records += [
+            f"{'reportado por la comunidad' if spanish else 'community-reported'}: {item['result']} "
+            f"{'en' if spanish else 'on'} {item['firmware_version']} (`{str(item['commit'])[:7]}`)"
+            for item in community(board)
         ]
         lines.append(
             "| {name} | `{ide}` | `{target}` | {network} | `{level}` | {records} |".format(

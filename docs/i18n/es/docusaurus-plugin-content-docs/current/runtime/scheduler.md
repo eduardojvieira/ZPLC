@@ -191,6 +191,8 @@ Un proyecto declara el valor en `zplc.json`, en una fila de `io.outputs`:
 
 Aquí `Brake` está energizada siempre que el programa no la maneja, y `Valve` está apagada. La declaración viaja **dentro del artefacto**, en su segmento `SAFE`, de modo que un programa y su estado seguro son una sola unidad: un dispositivo que restaura el programa restaura su declaración, un programa reemplazado la reemplaza, y un deploy interrumpido no puede dejar el programa de una compilación con los valores seguros de otra (véase [Valores seguros declarados](isa.md#valores-seguros-declarados)).
 
+La confirmación de un deploy a una placa muestra lo que lleva el artefacto: cada salida declarada por su dirección con el valor que toma, o la frase de que toda salida está apagada, de modo que una persona ve el estado seguro antes de que se escriba el programa.
+
 Qué se verifica, y dónde:
 
 | Dónde | Qué se rechaza |

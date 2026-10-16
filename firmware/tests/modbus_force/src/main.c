@@ -1,6 +1,8 @@
 /*
- * RT-011: a write from Modbus goes through the exchange and the force-aware memory interface of the core, so a
- * forced variable keeps its forced value whatever a Modbus client writes.
+ * RT-011, COM-010: a write from Modbus goes through the exchange and the force-aware memory interface of the core,
+ * so a forced variable keeps its forced value whatever a Modbus client writes. The server of the product is the
+ * code under test, over the real core: a write that reached the memory of the program by another way would
+ * overwrite the force and fail these tests.
  *
  * The program holds three tags the server maps: a 16-bit register at WORK+0x10 (Modbus address 0), a 32-bit value
  * at WORK+0x20 (registers 10 and 11) and a BOOL at WORK+0x30 (coil 20). The writes are made through

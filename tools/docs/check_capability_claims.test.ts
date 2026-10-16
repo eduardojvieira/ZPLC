@@ -55,6 +55,25 @@ describe('capability claims: what the public text says ZPLC can do is backed by 
     expect(ids('The browser simulator is disabled until a verified artifact exists.')).toEqual([]);
   });
 
+  it('flags a published timing figure that cites no hardware record, and passes one that links a record of a board (HIL-016)', () => {
+    const cited = (sentence: string, cites: string[], using: Truth = real) => checkSentence('p.md', 1, sentence, registry, using, cites).map((finding) => finding.rule);
+    const withRecord = truth({ recordRefs: ['records/rpi-pico-rp2040-2026-10-11-ab12cd34.json'] });
+    // a figure that was measured, said as a fact
+    expect(ids('A scan of the blink program takes 120 µs on the Pico.')).toEqual(['timing-figure']);
+    expect(ids('The measured jitter of the scan is 40 µs.')).toEqual(['timing-figure']);
+    expect(ids('El jitter medido del scan es de 40 µs.')).toEqual(['timing-figure']);
+    // with no record of any board there is nothing to cite, and a link to something else is not a record
+    expect(cited('A scan takes 120 µs on the Pico.', ['../reference/boards.md'], withRecord)).toEqual(['timing-figure']);
+    expect(cited('A scan takes 120 µs on the Pico.', [], withRecord)).toEqual(['timing-figure']);
+    expect(cited('A scan takes 120 µs on the Pico.', ['records/rpi-pico-rp2040-2026-10-11-ab12cd34.json'], real)).toEqual(['timing-figure']);
+    // the figure cites a record that the manifest lists
+    expect(cited('A scan takes 120 µs on the Pico.', ['../../records/rpi-pico-rp2040-2026-10-11-ab12cd34.json'], withRecord)).toEqual([]);
+    // a value that a person configures, a limit, or a sentence that limits what it says is not a measured figure
+    expect(ids('A task interval is a whole number of milliseconds, from 1 to 3 600 000 ms.')).toEqual([]);
+    expect(ids('The timeout of the watchdog is 1000 ms by default.')).toEqual([]);
+    expect(ids('No scan time has been measured: a sleep of 20 ms is not a result.')).toEqual([]);
+  });
+
   it('flags a channel or a signature that does not exist, and not the sentence that limits it (REL-028, REL-003)', () => {
     expect(ids('Install ZPLC with Homebrew.')).toEqual(['distribution-channel']);
     expect(ids('ZPLC is on the Microsoft Store and in winget.')).toEqual(['distribution-channel']);

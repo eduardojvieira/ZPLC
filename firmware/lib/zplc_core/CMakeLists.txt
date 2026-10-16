@@ -462,6 +462,24 @@ endif()
 
 add_test(NAME test_sched_core COMMAND test_sched_core)
 
+# Test: the timing self-test of the port conformance suite, on the clock of the POSIX HAL (IO-013). The same
+# function runs on the Zephyr HAL in firmware/tests/port_timing. Also run under the sanitizers.
+add_executable(test_port_timing
+    tests/test_port_timing.c
+    src/hal/posix/zplc_hal_posix.c
+)
+
+target_include_directories(test_port_timing PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/tests/include
+)
+
+if(UNIX AND NOT APPLE)
+    target_link_libraries(test_port_timing PRIVATE rt)
+endif()
+
+add_test(NAME test_port_timing COMMAND test_port_timing)
+
 # Test: time is latched once per scan, and the instruction budget charges the bytes a string opcode processes
 # (RT-006). Also run under the sanitizers.
 add_executable(test_vm_scan

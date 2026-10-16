@@ -128,6 +128,17 @@ evidence record was written (log `evidence-record`). Adding the file to
 `evidence_refs` of the board in `boards.json` is your edit, after you have read
 the run record; a run on a stand-in never writes one.
 
+### A report from a user
+
+Someone else's result on their board enters the same list at a lower level. The
+"Board report" form asks for the board, the firmware version, the commit and the
+SHA-256 of the image, and the result. A maintainer who has read the issue runs
+`python3 tools/hil/community_report.py` with those values and the address of the
+issue, which writes a `zplc.community-report/1` record, and adds the file to
+`evidence_refs` of the board. The generated board table lists it as
+`community-reported`. It is a lead: it never raises the support level, and it
+never turns the hardware watchdog of the profile on.
+
 When a tool is started without an interactive terminal it exits with status 2
 and says why, before it opens a port.
 

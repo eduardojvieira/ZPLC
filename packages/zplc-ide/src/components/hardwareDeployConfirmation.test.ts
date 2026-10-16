@@ -2,7 +2,7 @@ import { describe, expect, it } from 'bun:test';
 import { createHash } from 'node:crypto';
 
 import { createHardwareDeployConfirmation } from './hardwareDeployConfirmation';
-import { ZPLC_CONSTANTS } from '@zplc/compiler';
+import { ZPLC_CONSTANTS, createMultiTaskZplcFile } from '@zplc/compiler';
 
 function artifact(): Uint8Array {
   const bytes = new Uint8Array(ZPLC_CONSTANTS.HEADER_SIZE);
@@ -56,6 +56,26 @@ describe('hardware deploy confirmation', () => {
     });
     expect(shell.deviceCapacityBytes).toBeNull();
     expect(shell.message).toContain('the program is not read back');
+  });
+
+  it('shows the safe value that the artifact carries for an output, by its address, and says that every other output is off (RT-023)', async () => {
+    const bytecode = createMultiTaskZplcFile(
+      new Uint8Array([0x00]), [{ id: 0, type: 0, priority: 1, intervalUs: 10000, entryPoint: 0, stackSize: 32, callDepth: 8 }], undefined,
+      [{ offset: 0, bit: 1, value: 1 }, { offset: 0, bit: 3, value: 0 }],
+    );
+    const confirmation = await createHardwareDeployConfirmation({
+      bytecode, projectBoard: 'stm32f746g_disco', systemInfo, taskCount: 1,
+    });
+    expect(confirmation.declaredSafe).toEqual([{ address: '%QX0.1', value: true }, { address: '%QX0.3', value: false }]);
+    expect(confirmation.message).toContain('Safe state declared by the project: %QX0.1: ON; %QX0.3: OFF;');
+    expect(confirmation.message).toContain('every other output is OFF');
+  });
+
+  it('says that every output is off in the safe state when the artifact carries no other value (RT-023)', async () => {
+    const confirmation = await createHardwareDeployConfirmation({ bytecode: artifact(), projectBoard: 'stm32f746g_disco', systemInfo, taskCount: 1 });
+    expect(confirmation.declaredSafe).toEqual([]);
+    expect(confirmation.message).toContain('Safe state: every output is OFF');
+    expect(confirmation.message).not.toContain('declared by the project');
   });
 
   it('refuses a board on another contract draft before confirmation and names both numbers (CMP-052)', async () => {
