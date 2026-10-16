@@ -1040,6 +1040,8 @@
     {"kind":"unit","ref":"packages/zplc-ide/src/models/visualFileLoad.schema.test.ts","test":"LNG-011 the parts of an SFC chart have the shape the editor reads"}
   ],
   "LNG-012": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/editors/SearchList.test.tsx","test":"the search list of the visual editors (LNG-012) on the component kit"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/editors/fbd/FBDToolbox.test.tsx","test":"the FBD toolbox (LNG-012) on the component kit"},
     {"kind":"unit","ref":"packages/zplc-ide/src/editors/fbd/keyboard.test.ts","test":"LNG-012 binding a function block diagram from the declared symbols"},
     {"kind":"unit","ref":"packages/zplc-ide/src/editors/fbd/keyboard.test.ts","test":"LNG-012 connecting and disconnecting from the keyboard"},
     {"kind":"unit","ref":"packages/zplc-ide/src/editors/fbd/keyboard.test.ts","test":"LNG-012 deleting and commenting from the keyboard"},
@@ -1047,12 +1049,14 @@
     {"kind":"unit","ref":"packages/zplc-ide/src/editors/fbd/keyboard.test.ts","test":"LNG-012 function block diagram keyboard authoring"},
     {"kind":"unit","ref":"packages/zplc-ide/src/editors/fbd/keyboard.test.ts","test":"LNG-012 function block diagram palette"},
     {"kind":"unit","ref":"packages/zplc-ide/src/editors/keymap.test.ts","test":"LNG-012 the key table of the visual editors"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/editors/ld/LDToolbox.test.tsx","test":"the Ladder toolbox (LNG-012) on the component kit"},
     {"kind":"unit","ref":"packages/zplc-ide/src/editors/ld/keyboard.test.ts","test":"LNG-012 binding a variable from the declared symbols"},
     {"kind":"unit","ref":"packages/zplc-ide/src/editors/ld/keyboard.test.ts","test":"LNG-012 ladder cursor"},
     {"kind":"unit","ref":"packages/zplc-ide/src/editors/ld/keyboard.test.ts","test":"LNG-012 ladder keyboard authoring"},
     {"kind":"unit","ref":"packages/zplc-ide/src/editors/ld/keyboard.test.ts","test":"LNG-012 ladder structure from the keyboard"},
     {"kind":"unit","ref":"packages/zplc-ide/src/editors/ld/keyboard.test.ts","test":"LNG-012 what the keyboard does not do without a cursor to show it"},
     {"kind":"unit","ref":"packages/zplc-ide/src/editors/picker.test.ts","test":"LNG-012 palettes are searchable from the keyboard"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/editors/sfc/SFCToolbox.test.tsx","test":"the SFC toolbox (LNG-012) on the component kit"},
     {"kind":"unit","ref":"packages/zplc-ide/src/editors/sfc/keyboard.test.ts","test":"LNG-012 connecting and deleting in the chart from the keyboard"},
     {"kind":"unit","ref":"packages/zplc-ide/src/editors/sfc/keyboard.test.ts","test":"LNG-012 naming and conditions from the declared symbols"},
     {"kind":"unit","ref":"packages/zplc-ide/src/editors/sfc/keyboard.test.ts","test":"LNG-012 sequential function chart cursor"},
