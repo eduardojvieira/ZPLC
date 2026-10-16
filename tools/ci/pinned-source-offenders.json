@@ -559,5 +559,26 @@
     ],
     "replacement": "artifact",
     "reason": "Asserts on the text of ci.yml, nightly-quality.yml, CMakeLists.txt, board configuration and firmware sources. VF-021 requires the validator to be rewritten in place to inspect produced artifacts, with its tests."
+  },
+  {
+    "file": "tools/ci/port-conformance.test.ts",
+    "requirement": "VF-006",
+    "added": "2026-10-16",
+    "reads": [
+      "firmware/lib/zplc_core/CMakeLists.txt"
+    ],
+    "replacement": "artifact",
+    "reason": "Checks that every category of the port conformance manifest names a ctest and a scenario that exist, by matching add_test(NAME ...) in CMakeLists.txt as text. Replace by the list printed by ctest -N for the built suite, so the check compares the manifest with the produced test list."
+  },
+  {
+    "file": "tools/docs/generate_port_interface.test.ts",
+    "requirement": "VF-006",
+    "added": "2026-10-16",
+    "reads": [
+      "firmware/lib/zplc_core/include/zplc_hal.h",
+      "firmware/lib/zplc_core/include/zplc_sched_core.h"
+    ],
+    "replacement": "contract",
+    "reason": "Feeds the real zplc_hal.h and zplc_sched_core.h to the port interface generator to prove that every documented function and its contract text come from the headers. Replace by exporting the port interface through the generated contract, so the check compares data with data."
   }
 ]
