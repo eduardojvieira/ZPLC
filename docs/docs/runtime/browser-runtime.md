@@ -4,7 +4,7 @@ slug: /runtime/browser-runtime
 id: browser-runtime
 title: Browser Runtime (WebAssembly)
 sidebar_label: Browser runtime
-description: The WebAssembly runtime of Studio: when it runs instead of the native simulation, what it shares with the firmware, what it does not have, and the evidence for each statement.
+description: "The WebAssembly runtime of Studio: when it runs instead of the native simulation, what it shares with the firmware, what it does not have, and the evidence for each statement."
 ---
 
 # Browser Runtime (WebAssembly)
