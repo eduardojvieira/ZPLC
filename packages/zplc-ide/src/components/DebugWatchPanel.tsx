@@ -15,6 +15,15 @@ import { useIDEStore } from '../store/useIDEStore';
 import { buildDebugWatchRows } from './debugWatchRows';
 import { WATCH_FORCE_STATE, type WatchVariable } from '../runtime/debugAdapter';
 import { canEditWatchValue, canReleaseForces, canToggleForce, resolveWatchCommitAction, WATCH_COMMIT_ACTION } from './debugWatchPanelLogic';
+import { Button, Checkbox, IconButton, TextField, Tooltip } from '../ui';
+
+/** What the force checkbox of a row says when the pointer or the focus is on it. */
+function forceHint(state: string | undefined, forcesUnconfirmed: boolean, forceable: boolean): string {
+  if (forcesUnconfirmed) return 'Force state unconfirmed. Reconnect and verify before operating.';
+  if (state === WATCH_FORCE_STATE.FORCED) return 'Forced until cleared';
+  if (!forceable) return 'Waiting for the first value of this variable';
+  return 'Force current value';
+}
 
 /**
  * Format address for display
@@ -248,10 +257,10 @@ export function DebugWatchPanel({ setValue, toggleForceValue, clearAllForcedValu
 
   // Status indicator color
   const statusColor = debugMode === 'none'
-    ? 'bg-gray-500'
+    ? 'bg-[var(--color-status-stopped)]'
     : isPolling
-      ? 'bg-green-500 animate-pulse'
-      : 'bg-yellow-500';
+      ? 'bg-[var(--color-status-running)] animate-pulse motion-reduce:animate-none'
+      : 'bg-[var(--color-status-warning)]';
 
   return (
     <div className="flex flex-col h-full bg-[var(--color-surface-800)] text-sm">
@@ -260,26 +269,12 @@ export function DebugWatchPanel({ setValue, toggleForceValue, clearAllForcedValu
         <div className="flex items-center gap-2">
           <Eye size={14} className="text-[var(--color-surface-300)]" />
           <span className="font-medium text-[var(--color-surface-100)]">Watch</span>
-          <span className={`w-2 h-2 rounded-full ${statusColor}`} title={debugMode} />
+          <span role="img" aria-label={`Debug mode: ${debugMode}`} className={`w-2 h-2 rounded-full ${statusColor}`} />
         </div>
         <div className="flex items-center gap-1">
-          <button
-            onClick={() => setShowAddForm(!showAddForm)}
-            className="p-1 rounded hover:bg-[var(--color-surface-600)] text-[var(--color-surface-300)]
-                       hover:text-[var(--color-surface-100)] transition-colors"
-            title="Add variable"
-          >
-            <Plus size={14} />
-          </button>
+          <IconButton label="Add variable" variant="ghost" size="sm" icon={<Plus size={14} />} onClick={() => setShowAddForm(!showAddForm)} />
           {variables.length > 0 && (
-            <button
-              onClick={clearAll}
-              className="p-1 rounded hover:bg-[var(--color-surface-600)] text-[var(--color-surface-300)]
-                         hover:text-red-400 transition-colors"
-              title="Clear all"
-            >
-              <Trash2 size={14} />
-            </button>
+            <IconButton label="Clear all" variant="ghost" size="sm" icon={<Trash2 size={14} />} onClick={clearAll} />
           )}
         </div>
       </div>
@@ -301,7 +296,7 @@ export function DebugWatchPanel({ setValue, toggleForceValue, clearAllForcedValu
           aria-live={forcesUnconfirmed ? 'assertive' : 'polite'}
         >
           <div className="flex items-start gap-2">
-            <AlertTriangle size={16} className={forcesUnconfirmed ? 'mt-0.5 shrink-0 text-[var(--color-accent-yellow)]' : 'mt-0.5 shrink-0 text-amber-300'} aria-hidden="true" />
+            <AlertTriangle size={16} className={forcesUnconfirmed ? 'mt-0.5 shrink-0 text-[var(--color-accent-yellow)]' : 'mt-0.5 shrink-0 text-[var(--color-accent-yellow)]'} aria-hidden="true" />
             <div className="min-w-0 flex-1">
               <p className="text-xs font-semibold">
                 {forcesUnconfirmed
@@ -316,15 +311,10 @@ export function DebugWatchPanel({ setValue, toggleForceValue, clearAllForcedValu
             </div>
           </div>
           <div className="mt-2 flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => { void handleReleaseAllForces(); }}
-              disabled={!clearAllForcedValues || !releaseEnabled}
-              className="inline-flex items-center gap-1.5 rounded bg-[var(--color-surface-600)] px-2 py-1 text-[11px] font-medium text-[var(--color-surface-100)] transition-colors hover:bg-[var(--color-surface-500)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent-yellow)] disabled:cursor-not-allowed disabled:opacity-50 motion-reduce:transition-none"
-            >
+            <Button variant="secondary" size="sm" onClick={() => { void handleReleaseAllForces(); }} disabled={!clearAllForcedValues || !releaseEnabled} className="motion-reduce:transition-none">
               {releaseBusy && <LoaderCircle size={12} className="animate-spin motion-reduce:animate-none" aria-hidden="true" />}
               Release all forces
-            </button>
+            </Button>
             {releaseError && <span className="text-[11px] text-[var(--color-accent-yellow)]">{releaseError}</span>}
           </div>
         </div>
@@ -333,30 +323,11 @@ export function DebugWatchPanel({ setValue, toggleForceValue, clearAllForcedValu
       {/* Add Form */}
       {showAddForm && (
         <div className="flex items-center gap-2 px-3 py-2 bg-[var(--color-surface-700)] border-b border-[var(--color-surface-600)]">
-          <input
-            type="text"
-            value={newVarInput}
-            onChange={(e) => setNewVarInput(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder="Variable path (e.g., Counter, Timer1.ET)"
-            className="flex-1 bg-[var(--color-surface-800)] border border-[var(--color-surface-500)] 
-                       rounded px-2 py-1 text-xs text-[var(--color-surface-100)] 
-                       placeholder:text-[var(--color-surface-400)]
-                       focus:outline-none focus:border-blue-500"
-            autoFocus
-          />
-          <button
-            onClick={handleAddVariable}
-            className="px-2 py-1 bg-blue-600 hover:bg-blue-500 text-white text-xs rounded transition-colors"
-          >
+          <TextField value={newVarInput} onChange={(e) => setNewVarInput(e.target.value)} onKeyDown={handleKeyDown} placeholder="Variable path (e.g., Counter, Timer1.ET)" className="flex-1" autoFocus aria-label="Variable path (e.g., Counter, Timer1.ET)" />
+          <Button variant="primary" size="sm" onClick={handleAddVariable}>
             Add
-          </button>
-          <button
-            onClick={() => { setShowAddForm(false); setNewVarInput(''); }}
-            className="p-1 rounded hover:bg-[var(--color-surface-600)] text-[var(--color-surface-400)]"
-          >
-            <X size={14} />
-          </button>
+          </Button>
+          <IconButton label="Close the add variable form" variant="ghost" size="sm" icon={<X size={14} />} onClick={() => { setShowAddForm(false); setNewVarInput(''); }} />
         </div>
       )}
 
@@ -374,7 +345,7 @@ export function DebugWatchPanel({ setValue, toggleForceValue, clearAllForcedValu
         ) : (
           <table className="w-full">
             <thead className="sticky top-0 bg-[var(--color-surface-700)]">
-              <tr className="text-left text-[10px] text-[var(--color-surface-400)] uppercase tracking-wide">
+              <tr className="text-left text-[11px] text-[var(--text-tertiary)] uppercase tracking-wide">
                 <th className="px-3 py-1.5 font-medium">Name</th>
                 <th className="px-3 py-1.5 font-medium">Value</th>
                 <th className="px-3 py-1.5 font-medium w-16">Force</th>
@@ -399,14 +370,7 @@ export function DebugWatchPanel({ setValue, toggleForceValue, clearAllForcedValu
                     {path}
                   </td>
                   <td
-                    className="px-3 py-1.5 font-mono"
-                    title={
-                      valueEditable
-                        ? result.forceEntry?.state === WATCH_FORCE_STATE.FORCED
-                          ? 'Double-click to update forced value'
-                          : 'Double-click to set value'
-                        : undefined
-                    }
+                    className="px-3 py-1.5 font-mono ui-tabular"
                     onDoubleClick={() =>
                       handleValueDoubleClick(
                         path,
@@ -418,25 +382,17 @@ export function DebugWatchPanel({ setValue, toggleForceValue, clearAllForcedValu
                     }
                   >
                     {editing?.path === path ? (
-                      <input
-                        ref={inputRef}
-                        type="text"
-                        value={editing.draft}
-                        onChange={(e) =>
+                      <TextField aria-label={`New value of ${path}`} ref={inputRef} value={editing.draft} onChange={(e) =>
                           setEditing((prev) => prev ? { ...prev, draft: e.target.value } : null)
-                        }
-                        onKeyDown={(event) => { void handleSetKeyDown(event); }}
-                        onBlur={() => setEditing(null)}
-                        className="w-full bg-[var(--color-surface-900)] border border-amber-500
-                                   rounded px-1 py-0 text-xs text-amber-300
-                                   focus:outline-none focus:border-amber-400"
-                      />
+                        } onKeyDown={(event) => { void handleSetKeyDown(event); }} onBlur={() => setEditing(null)} className="w-full" />
                     ) : result.loading ? (
                       <span className="text-[var(--color-surface-400)] animate-pulse">...</span>
                     ) : result.error ? (
-                      <span className="text-red-400 text-xs" title={result.error}>
-                        {result.exists ? '???' : 'N/A'}
-                      </span>
+                      <Tooltip content={result.error}>
+                        <span tabIndex={0} className={`${SIGNAL_TEXT_CLASS.fault} text-xs`}>
+                          {result.exists ? '???' : 'N/A'}
+                        </span>
+                      </Tooltip>
                     ) : (
                       <span
                         className={`${SIGNAL_TEXT_CLASS[signalTone(result)]} ${
@@ -454,23 +410,10 @@ export function DebugWatchPanel({ setValue, toggleForceValue, clearAllForcedValu
                   </td>
                   <td className="px-3 py-1.5 text-[var(--color-surface-400)] text-xs">
                     {result.forceEntry?.state === WATCH_FORCE_STATE.UNCONFIRMED ? (
-                      <span className="font-medium text-[var(--color-accent-yellow)]" title="Force state unconfirmed">Unconfirmed</span>
+                      <span className="font-medium text-[var(--color-accent-yellow)]">Unconfirmed</span>
                     ) : (
-                      <input
-                        type="checkbox"
-                        checked={result.forced}
-                        disabled={!toggleForceValue || result.address === null || controlsBlocked || !result.exists || !forceable}
-                        title={
-                          forcesUnconfirmed
-                            ? 'Force state unconfirmed. Reconnect and verify before operating.'
-                            : result.forceEntry?.state === WATCH_FORCE_STATE.FORCED
-                              ? 'Forced until cleared'
-                              : !forceable
-                                ? 'Waiting for the first value of this variable'
-                                : 'Force current value'
-                        }
-                        aria-label={`Force ${path}`}
-                        onChange={(e) => {
+                      <Tooltip content={forceHint(result.forceEntry?.state, forcesUnconfirmed, forceable)}>
+                      <Checkbox label={`Force ${path}`} hideLabel checked={result.forced} disabled={!toggleForceValue || result.address === null || controlsBlocked || !result.exists || !forceable} onChange={(e) => {
                           void handleForceToggle(
                             path,
                             result.address,
@@ -479,8 +422,8 @@ export function DebugWatchPanel({ setValue, toggleForceValue, clearAllForcedValu
                             e.target.checked,
                             result.maxLength,
                           );
-                        }}
-                      />
+                        }} />
+                      </Tooltip>
                     )}
                   </td>
                   <td className="px-3 py-1.5 text-[var(--color-surface-400)] text-xs">
@@ -490,14 +433,7 @@ export function DebugWatchPanel({ setValue, toggleForceValue, clearAllForcedValu
                     {formatAddress(result.address)}
                   </td>
                   <td className="px-1">
-                    <button
-                      onClick={() => removeWatch(path)}
-                      className="p-1 rounded hover:bg-[var(--color-surface-600)] 
-                                 text-[var(--color-surface-500)] hover:text-red-400 transition-colors"
-                      title="Remove"
-                    >
-                      <X size={12} />
-                    </button>
+                    <IconButton label="Remove" variant="ghost" size="sm" icon={<X size={12} />} onClick={() => removeWatch(path)} />
                   </td>
                 </tr>;
               })}
@@ -509,13 +445,13 @@ export function DebugWatchPanel({ setValue, toggleForceValue, clearAllForcedValu
       {/* Footer with hints */}
       {debugMode === 'none' && variables.length > 0 && (
         <div className="px-3 py-2 bg-[var(--color-surface-700)] border-t border-[var(--color-surface-600)]
-                        text-[10px] text-[var(--color-surface-400)]">
+                        text-[11px] text-[var(--text-tertiary)]">
           Start debugging to see live values
         </div>
       )}
       {debugMode !== 'none' && (setValue || toggleForceValue) && variables.length > 0 && (
         <div className="px-3 py-2 bg-[var(--color-surface-700)] border-t border-[var(--color-surface-600)]
-                        text-[10px] text-[var(--color-surface-400)]">
+                        text-[11px] text-[var(--text-tertiary)]">
           {hasActiveSerialSession
             ? 'Direct value edits are simulation-only. Use Force for hardware.'
             : 'Double-click a value to set it once · Use Force to hold the value until cleared'}

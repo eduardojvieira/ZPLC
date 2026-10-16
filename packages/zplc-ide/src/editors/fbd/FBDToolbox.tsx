@@ -8,6 +8,7 @@
 
 import { useState, type ReactElement } from 'react';
 import { ChevronDown, ChevronRight, Timer, Binary, Hash, GitBranch, Calculator, ToggleLeft, Zap, ArrowRightLeft, Repeat, Gauge, Database, Type, Radio } from 'lucide-react';
+import { Button, TextField } from '../../ui';
 import { FBD_VALUE_BLOCKS, fbdPaletteCategories } from './palette';
 import { describeProjectBlock, projectPalette } from '../../models/projectBlocks';
 import { filterItems } from '../picker';
@@ -59,10 +60,12 @@ interface FBDToolboxProps {
   onInsert?: (blockType: string) => void;
 }
 
-const ITEM_CLASS = `mx-2 my-0.5 block w-[calc(100%-1rem)] px-2 py-1 rounded text-left text-xs font-mono text-[var(--text-primary)]
+/** The smallest text of the scale (UX-006): captions and notes. */
+const CAPTION = 'text-[length:var(--font-size-caption)]';
+
+const ITEM_CLASS = `mx-2 my-0.5 w-[calc(100%-1rem)] justify-start whitespace-normal break-all px-2 py-1 text-left text-xs font-mono text-[var(--text-primary)]
   bg-[var(--color-surface-700)] hover:bg-[var(--color-surface-600)] cursor-grab active:cursor-grabbing
-  border border-transparent hover:border-[var(--color-accent-blue)] transition-colors
-  focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--color-accent-blue)]`;
+  border border-transparent hover:border-[var(--color-accent-blue)]`;
 
 export default function FBDToolbox({ onInsert }: FBDToolboxProps) {
   const [query, setQuery] = useState('');
@@ -109,13 +112,13 @@ export default function FBDToolbox({ onInsert }: FBDToolboxProps) {
       </div>
 
       <div className="px-2 pt-2">
-        <input
+        <TextField
           type="search"
           value={query}
           onChange={(event) => setQuery(event.target.value)}
           aria-label="Search the blocks"
           placeholder="Search"
-          className="w-full rounded border border-[var(--border-color)] bg-[var(--color-surface-700)] px-2 py-1 text-xs text-[var(--text-primary)] focus:border-[var(--color-accent-blue)] focus:outline-none"
+          className="w-full"
         />
       </div>
 
@@ -127,9 +130,11 @@ export default function FBDToolbox({ onInsert }: FBDToolboxProps) {
           return (
             <div key={category.name} className="select-none">
               {/* Category header */}
-              <button
+              <Button
+                variant="ghost"
+                size="sm"
                 onClick={() => toggleCategory(category.name)}
-                className="w-full flex items-center gap-2 px-3 py-1.5 text-left hover:bg-[var(--color-surface-700)] transition-colors"
+                className="w-full justify-start gap-2 px-3 py-1.5 text-left"
               >
                 <span className="text-[var(--text-tertiary)]">
                   {isExpanded ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
@@ -138,25 +143,25 @@ export default function FBDToolbox({ onInsert }: FBDToolboxProps) {
                 <span className="text-xs text-[var(--text-secondary)] font-medium">
                   {category.name}
                 </span>
-              </button>
+              </Button>
 
               {/* Blocks */}
               {isExpanded && (
                 <div className="pb-1">
                   {category.blocks.map((block) => (
-                    <button
-                      type="button"
+                    <Button
+                      size="sm"
                       key={block}
                       draggable
                       onDragStart={(e) => onDragStart(e, block)}
                       onClick={() => onInsert?.(block)}
                       data-fbd-toolbox-item={block}
                       aria-label={`Insert ${block}`}
-                      title={category.name === 'Project' ? descriptions.get(block) : `${block}: press to insert beside the selected block, or drag onto the canvas`}
+                      tooltip={category.name === 'Project' ? descriptions.get(block) : `${block}: press to insert beside the selected block, or drag onto the canvas`}
                       className={ITEM_CLASS}
                     >
                       {block}
-                    </button>
+                    </Button>
                   ))}
                 </div>
               )}
@@ -173,8 +178,8 @@ export default function FBDToolbox({ onInsert }: FBDToolboxProps) {
           </span>
         </div>
         {ioBlocks.map((block) => (
-          <button
-            type="button"
+          <Button
+            size="sm"
             key={block}
             draggable
             onDragStart={(e) => onDragStart(e, block)}
@@ -184,14 +189,14 @@ export default function FBDToolbox({ onInsert }: FBDToolboxProps) {
             className={ITEM_CLASS}
           >
             {block.toUpperCase()}
-          </button>
+          </Button>
         ))}
-        {searching && shown.length === 0 && ioBlocks.length === 0 ? <p className="px-3 py-1 text-[10px] text-[var(--text-tertiary)]">Nothing matches.</p> : null}
+        {searching && shown.length === 0 && ioBlocks.length === 0 ? <p className={`px-3 py-1 ${CAPTION} text-[var(--text-tertiary)]`}>Nothing matches.</p> : null}
       </div>
 
       {/* Help text */}
       <div className="px-3 py-2 border-t border-[var(--border-color)]">
-        <p className="text-[10px] text-[var(--text-tertiary)] leading-relaxed">
+        <p className={`${CAPTION} text-[var(--text-tertiary)] leading-relaxed`}>
           Press a block to insert it beside the selected one, or drag it onto the canvas. Connect outputs (green) to inputs (blue), or press C on a block.
         </p>
       </div>

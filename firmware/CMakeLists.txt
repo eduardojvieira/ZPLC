@@ -37,6 +37,20 @@ if(CONFIG_ZPLC)
   # pinned Zephyr revision print no compiler warning from these sources.
   zephyr_library_compile_options(-Werror)
 
+  # Link-time optimization of the ZPLC library and of the application, and of nothing else (CONFIG_ZPLC_LTO). The
+  # objects are fat (they hold the ordinary code as well as the intermediate form), so that ar and the link-level
+  # checks of the build read them as before; the link, which runs the optimizer, is the only step that differs.
+  # A test application that compiles files of the runtime into its own target calls zplc_target_lto() on it.
+  if(CONFIG_ZPLC_LTO)
+    zephyr_library_compile_options(-flto -ffat-lto-objects)
+    zephyr_ld_options(-flto)
+  endif()
+  function(zplc_target_lto target)
+    if(CONFIG_ZPLC_LTO)
+      target_compile_options(${target} PRIVATE -flto -ffat-lto-objects)
+    endif()
+  endfunction()
+
   zephyr_library_compile_definitions(ZPLC_CORE_VERSION_STR="${ZPLC_CORE_VERSION_STR}")
 
   # Core VM sources (platform-independent C99)
@@ -53,6 +67,7 @@ if(CONFIG_ZPLC)
   # Zephyr HAL implementation
   zephyr_library_sources(
     ${CMAKE_CURRENT_LIST_DIR}/lib/zplc_core/src/hal/zephyr/zplc_hal_zephyr.c
+    ${CMAKE_CURRENT_LIST_DIR}/lib/zplc_core/src/hal/zephyr/zplc_verify_scratch_zephyr.c
   )
 
   # The board I/O table (IO-001, IO-002): one C file generated at build time from the board's entry in

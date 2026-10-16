@@ -54,6 +54,7 @@ static uint8_t scratch[BUFFER_SIZE];
 static uint8_t workspace[BUFFER_SIZE];
 static uint8_t expect_a[BUFFER_SIZE];
 static uint8_t expect_b[BUFFER_SIZE];
+static uint8_t candidate[BUFFER_SIZE];
 static char root[128];
 
 /* ------------------------------------------------------------------------- */
@@ -181,6 +182,100 @@ static zplc_program_store_restore_t restore(size_t *size) {
 
   memset(workspace, 0x5A, sizeof(workspace));
   return zplc_pstore_restore(&c, workspace, sizeof(workspace), size);
+}
+
+/* A deploy the way the firmware makes it (WS-42): the rollback is found while the buffer is free, before the
+ * upload, and the commit has no scratch of its own. The buffer is the same one in both steps. */
+static zplc_pstore_config_t probed_config(void) {
+  zplc_pstore_config_t c = config(0U);
+
+  c.scratch = NULL;
+  c.scratch_capacity = 0U;
+  return c;
+}
+
+static int probe(zplc_pstore_rollback_t *rollback) {
+  zplc_pstore_config_t c = probed_config();
+
+  memset(workspace, 0xC3, sizeof(workspace));
+  return zplc_pstore_probe(&c, workspace, sizeof(workspace), rollback);
+}
+
+static int commit_probed(const zplc_pstore_rollback_t *rollback, const uint8_t *program, size_t size) {
+  zplc_pstore_config_t c = probed_config();
+
+  memset(workspace, 0xA5, sizeof(workspace));
+  memcpy(workspace, program, size);
+  return zplc_pstore_commit_probed(&c, rollback, workspace, size, sizeof(workspace));
+}
+
+static int probe_then_commit(const uint8_t *program, size_t size) {
+  zplc_pstore_rollback_t rollback;
+
+  (void)probe(&rollback);
+  return commit_probed(&rollback, program, size);
+}
+
+/* The files of the store, byte for byte, to compare two stores that went through the same steps. */
+#define SNAP_FILES 24
+#define SNAP_BYTES 4400
+struct snapshot {
+  size_t count;
+  char name[SNAP_FILES][64];
+  size_t length[SNAP_FILES];
+  uint8_t data[SNAP_FILES][SNAP_BYTES];
+};
+
+static int snapshot_name_order(const void *a, const void *b) { return strcmp((const char *)a, (const char *)b); }
+
+static int snapshot_take(struct snapshot *snap) {
+  DIR *directory = opendir(root);
+  struct dirent *entry;
+
+  snap->count = 0U;
+  if (directory == NULL) {
+    return -1;
+  }
+  while ((entry = readdir(directory)) != NULL && snap->count < SNAP_FILES) {
+    if (strcmp(entry->d_name, ".") != 0 && strcmp(entry->d_name, "..") != 0) {
+      size_t length = strlen(entry->d_name);
+
+      if (length >= sizeof(snap->name[0])) {
+        length = sizeof(snap->name[0]) - 1U; /* the names of the store are far shorter */
+      }
+      memcpy(snap->name[snap->count], entry->d_name, length);
+      snap->name[snap->count][length] = '\0';
+      snap->count++;
+    }
+  }
+  (void)closedir(directory);
+  qsort(snap->name, snap->count, sizeof(snap->name[0]), snapshot_name_order);
+  for (size_t i = 0U; i < snap->count; i++) {
+    char path[512];
+    FILE *file;
+
+    (void)snprintf(path, sizeof(path), "%s/%s", root, snap->name[i]);
+    file = fopen(path, "rb");
+    if (file == NULL) {
+      return -1;
+    }
+    snap->length[i] = fread(snap->data[i], 1U, SNAP_BYTES, file);
+    (void)fclose(file);
+  }
+  return 0;
+}
+
+static int snapshot_same(const struct snapshot *a, const struct snapshot *b) {
+  if (a->count != b->count) {
+    return 0;
+  }
+  for (size_t i = 0U; i < a->count; i++) {
+    if (strcmp(a->name[i], b->name[i]) != 0 || a->length[i] != b->length[i] ||
+        memcmp(a->data[i], b->data[i], a->length[i]) != 0) {
+      return 0;
+    }
+  }
+  return 1;
 }
 
 /* ------------------------------------------------------------------------- */
@@ -659,6 +754,308 @@ static void test_inadmissible_programs_never_persist(void) {
         "the damaged program is not restored, and the store says it cannot verify what it holds");
 }
 
+/* ------------------------------------------------------------------------- */
+/* The rollback found before the upload (WS-42)                                */
+/* ------------------------------------------------------------------------- */
+
+enum { STATE_EMPTY, STATE_ONE, STATE_TWO, STATE_ACTIVE_DAMAGED, STATE_NEWER_PAYLOAD_DAMAGED, STATE_BOTH_DAMAGED,
+       STATE_LEGACY, STATE_LEGACY_AND_DAMAGED_V1, STATE_ORPHAN_PAYLOAD, STATE_ONLY_PAYLOAD_DAMAGED, STATE_COUNT };
+
+static int make_state(int state) {
+  uint8_t damaged[32];
+  uint8_t length[4];
+
+  memset(damaged, 0xCC, sizeof(damaged));
+  if (fresh_root() != 0) {
+    return -1;
+  }
+  build(expect_a, 2500U, 51U);
+  build(expect_b, 3500U, 52U);
+  switch (state) {
+  case STATE_EMPTY:
+    return 0;
+  case STATE_ONE:
+    return commit(expect_a, 2500U);
+  case STATE_TWO:
+    return commit(expect_a, 2500U) == 0 ? commit(expect_b, 3500U) : -1;
+  case STATE_ACTIVE_DAMAGED:
+    return commit(expect_a, 2500U) == 0 && commit(expect_b, 3500U) == 0
+               ? write_file("program_v1_active", damaged, sizeof(damaged))
+               : -1;
+  case STATE_NEWER_PAYLOAD_DAMAGED:
+    return commit(expect_a, 2500U) == 0 && commit(expect_b, 3500U) == 0
+               ? write_file("program_v1_slot_b_payload_2", damaged, sizeof(damaged))
+               : -1;
+  case STATE_BOTH_DAMAGED:
+    return write_file("program_v1_slot_a_meta", damaged, sizeof(damaged));
+  case STATE_LEGACY:
+    zplc_put_u32_le(length, 2500U);
+    return write_file("code_len", length, 4U) == 0 && write_file("code", expect_a, 2500U) == 0 ? 0 : -1;
+  case STATE_LEGACY_AND_DAMAGED_V1:
+    zplc_put_u32_le(length, 2500U);
+    return write_file("code_len", length, 4U) == 0 && write_file("code", expect_a, 2500U) == 0 &&
+                   write_file("program_v1_slot_a_meta", damaged, sizeof(damaged)) == 0
+               ? 0
+               : -1;
+  case STATE_ORPHAN_PAYLOAD:
+    return write_file("program_v1_slot_a_payload", damaged, sizeof(damaged));
+  case STATE_ONLY_PAYLOAD_DAMAGED:
+    return commit(expect_a, 2500U) == 0 ? write_file("program_v1_slot_a_payload_1", damaged, sizeof(damaged)) : -1;
+  default:
+    return -1;
+  }
+}
+
+/* The commit that finds its rollback at the start of the upload is the commit that finds it at the end of it: the
+ * same answer, and the very same bytes in the store, for every state a store can be in. */
+static void test_probed_commit_is_the_commit_for_every_state(void) {
+  static struct snapshot with_scratch;
+  static struct snapshot probed;
+  int state;
+  int same = 1;
+  int same_answer = 1;
+  int refused = 0;
+
+  printf("\n=== Test: finding the rollback before the upload gives the commit it would have given (WS-42) ===\n");
+  build(candidate, 800U, 61U);
+  for (state = 0; state < STATE_COUNT; state++) {
+    int plain;
+    int early;
+    size_t restored_plain = 0U;
+    size_t restored_probed = 0U;
+    zplc_program_store_restore_t result_plain;
+    zplc_program_store_restore_t result_probed;
+
+    CHECK(make_state(state) == 0, "the store is made");
+    plain = commit(candidate, 800U);
+    CHECK(snapshot_take(&with_scratch) == 0, "its files are read");
+    result_plain = restore(&restored_plain);
+
+    CHECK(make_state(state) == 0, "the same store is made again");
+    early = probe_then_commit(candidate, 800U);
+    CHECK(snapshot_take(&probed) == 0, "its files are read");
+    result_probed = restore(&restored_probed);
+
+    if (plain != early || result_plain != result_probed || restored_plain != restored_probed) {
+      same_answer = 0;
+      fprintf(stderr, "state %d: commit %d / %d, restore %d / %d\n", state, plain, early, (int)result_plain,
+              (int)result_probed);
+    }
+    if (!snapshot_same(&with_scratch, &probed)) {
+      same = 0;
+      fprintf(stderr, "state %d: the files differ\n", state);
+    }
+    refused += plain != ZPLC_PROGRAM_STORE_COMMIT_OK;
+  }
+  CHECK(same_answer, "the commit, and what restore finds afterwards, are the same in every state");
+  CHECK(same, "and so are the files of the store, byte for byte");
+  CHECK(refused == 2, "two states refuse a deploy (damaged records, and nothing verifiable behind them), the rest take it");
+}
+
+static void test_probe_writes_nothing(void) {
+  static struct snapshot before;
+  static struct snapshot after;
+  zplc_pstore_rollback_t rollback;
+  int state;
+  int unchanged = 1;
+
+  printf("\n=== Test: finding the rollback reads the store and writes nothing (WS-42) ===\n");
+  for (state = 0; state < STATE_COUNT; state++) {
+    CHECK(make_state(state) == 0, "the store is made");
+    CHECK(snapshot_take(&before) == 0, "its files are read");
+    zplc_hal_persist_test_fail_at(0UL);
+    (void)probe(&rollback);
+    CHECK(snapshot_take(&after) == 0, "and again after the probe");
+    unchanged = unchanged && snapshot_same(&before, &after);
+  }
+  CHECK(unchanged, "no file of the store changed in any state");
+}
+
+static void test_probed_commit_refuses_a_store_that_changed_since_the_probe(void) {
+  static struct snapshot before;
+  static struct snapshot after;
+  zplc_pstore_rollback_t rollback;
+  size_t restored = 0U;
+
+  printf("\n=== Test: a rollback found for another store is not used (WS-42) ===\n");
+  build(expect_a, 1200U, 71U);
+  build(expect_b, 1700U, 72U);
+  CHECK(fresh_root() == 0 && commit(expect_a, 1200U) == 0, "a program is stored");
+  CHECK(probe(&rollback) == 0 && rollback.kind == ZPLC_PSTORE_ROLLBACK_SLOT, "its slot is the rollback");
+
+  /* Another deploy goes in between (this is what the single writer of the records does). */
+  CHECK(commit(expect_b, 1700U) == 0, "a second deploy commits");
+  CHECK(snapshot_take(&before) == 0, "the files are read");
+  CHECK(commit_probed(&rollback, expect_a, 1200U) == ZPLC_PROGRAM_STORE_COMMIT_ERROR,
+        "the old answer is refused");
+  CHECK(snapshot_take(&after) == 0 && snapshot_same(&before, &after), "and nothing was written");
+  CHECK(restore(&restored) == ZPLC_PROGRAM_STORE_OK && restored == 1700U && memcmp(workspace, expect_b, 1700U) == 0,
+        "the program of the second deploy is the one stored");
+
+  /* A new answer is the right one. */
+  CHECK(probe(&rollback) == 0 && commit_probed(&rollback, expect_a, 1200U) == ZPLC_PROGRAM_STORE_COMMIT_OK,
+        "a rollback found again is accepted");
+  /* An answer is for one commit: after it the records are another's, and the digest says so. */
+  CHECK(commit_probed(&rollback, expect_b, 1700U) == ZPLC_PROGRAM_STORE_COMMIT_ERROR, "and used once");
+}
+
+static void test_a_store_that_cannot_be_verified_gives_no_rollback(void) {
+  static struct snapshot before;
+  static struct snapshot after;
+  zplc_pstore_rollback_t rollback;
+  zplc_pstore_rollback_t none;
+
+  printf("\n=== Test: records that verify as nothing give no rollback, and a commit does not write (WS-42) ===\n");
+  memset(&none, 0, sizeof(none));
+  build(candidate, 500U, 81U);
+  CHECK(make_state(STATE_BOTH_DAMAGED) == 0, "a store with a damaged record and nothing behind it");
+  CHECK(snapshot_take(&before) == 0, "its files are read");
+  CHECK(probe(&rollback) == ZPLC_PROGRAM_STORE_COMMIT_ERROR && rollback.kind == ZPLC_PSTORE_ROLLBACK_NONE,
+        "the probe finds no rollback");
+  CHECK(commit_probed(&rollback, candidate, 500U) == ZPLC_PROGRAM_STORE_COMMIT_ERROR, "a commit with it refuses");
+  CHECK(commit_probed(&none, candidate, 500U) == ZPLC_PROGRAM_STORE_COMMIT_ERROR,
+        "so does a commit with no answer at all (a zeroed one)");
+  CHECK(snapshot_take(&after) == 0 && snapshot_same(&before, &after), "and the evidence is still there");
+
+  /* An answer that says nothing was found is never used, even for a store whose records are what it was read from. */
+  CHECK(fresh_root() == 0 && probe(&rollback) == 0 && rollback.kind == ZPLC_PSTORE_ROLLBACK_EMPTY,
+        "an empty store has an empty rollback");
+  rollback.kind = ZPLC_PSTORE_ROLLBACK_NONE;
+  CHECK(commit_probed(&rollback, candidate, 500U) == ZPLC_PROGRAM_STORE_COMMIT_ERROR,
+        "and 'nothing found' is refused by its kind, not by the records");
+  CHECK(!key_exists("program_v1_slot_a_payload") && !key_exists("program_v1_active"), "nothing was written");
+}
+
+/* RT-031 with the rollback found at the start of the upload: a power cut at every operation leaves the old program or the new. */
+static void test_probed_redeploy_power_cut_sweep(void) {
+  unsigned long operations;
+  unsigned long cut;
+  int only_old_or_new = 1;
+  int saw_old = 0;
+  int saw_new = 0;
+  int went_back = 0;
+  size_t restored = 0U;
+  const size_t old_size = 2700U;
+  const size_t new_size = 3900U;
+
+  printf("\n=== Test: a power cut at every operation of a probed redeploy leaves the old program or the new (RT-031) ===\n");
+  build(expect_a, old_size, 11U);
+  build(expect_b, new_size, 12U);
+  CHECK(fresh_root() == 0 && commit(expect_a, old_size) == 0, "the old program is stored");
+  zplc_hal_persist_test_fail_at(0UL);
+  CHECK(probe_then_commit(expect_b, new_size) == ZPLC_PROGRAM_STORE_COMMIT_OK, "the redeploy, uninterrupted");
+  operations = zplc_hal_persist_test_operation_count();
+  CHECK(operations > 10UL, "it is many persistence operations");
+
+  for (cut = 1UL; cut <= operations; cut++) {
+    int is_new;
+    int is_old;
+    zplc_program_store_restore_t result;
+
+    if (fresh_root() != 0 || commit(expect_a, old_size) != 0) {
+      only_old_or_new = 0;
+      break;
+    }
+    zplc_hal_persist_test_power_cut_at(cut);
+    (void)probe_then_commit(expect_b, new_size);
+    zplc_hal_persist_test_fail_at(0UL);
+    result = restore(&restored);
+    is_new = result == ZPLC_PROGRAM_STORE_OK && restored == new_size && memcmp(workspace, expect_b, new_size) == 0;
+    is_old = result == ZPLC_PROGRAM_STORE_OK && restored == old_size && memcmp(workspace, expect_a, old_size) == 0;
+    if (!is_new && !is_old) {
+      only_old_or_new = 0;
+      fprintf(stderr, "probed redeploy cut at operation %lu restored result %d size %zu\n", cut, (int)result,
+              restored);
+    }
+    if (is_old) {
+      saw_old = 1;
+      went_back = went_back || saw_new;
+    }
+    saw_new = saw_new || is_new;
+  }
+  CHECK(only_old_or_new, "every cut leaves exactly the old program or exactly the new one");
+  CHECK(saw_old && saw_new, "both occur");
+  CHECK(!went_back, "once a cut leaves the new program, every later cut does too");
+}
+
+/* The same, with a torn write: every save of the deploy cut in the middle. */
+static void test_probed_torn_write_sweep(void) {
+  unsigned long operations;
+  unsigned long at;
+  unsigned tears = 0U;
+  int only_old_or_new = 1;
+  size_t restored = 0U;
+  const size_t old_size = 2700U;
+  const size_t new_size = 3900U;
+
+  printf("\n=== Test: a torn write at every save of a probed redeploy leaves the old program or the new (RT-031) ===\n");
+  build(expect_a, old_size, 21U);
+  build(expect_b, new_size, 22U);
+  CHECK(fresh_root() == 0 && commit(expect_a, old_size) == 0, "the old program is stored");
+  zplc_hal_persist_test_fail_at(0UL);
+  CHECK(probe_then_commit(expect_b, new_size) == 0, "the redeploy, uninterrupted");
+  operations = zplc_hal_persist_test_operation_count();
+
+  for (at = 1UL; at <= operations; at++) {
+    const size_t prefixes[] = {0U, 1U, 7U, 100U, 513U};
+    size_t index;
+
+    for (index = 0U; index < sizeof(prefixes) / sizeof(prefixes[0]); index++) {
+      zplc_program_store_restore_t result;
+      int is_new;
+      int is_old;
+
+      if (fresh_root() != 0 || commit(expect_a, old_size) != 0) {
+        only_old_or_new = 0;
+        break;
+      }
+      zplc_hal_persist_test_tear_at(at, prefixes[index]);
+      (void)probe_then_commit(expect_b, new_size);
+      if (zplc_hal_persist_test_failure_triggered() == 0) {
+        zplc_hal_persist_test_fail_at(0UL);
+        break; /* operation `at` is not a save: no torn write to try */
+      }
+      tears++;
+      zplc_hal_persist_test_fail_at(0UL);
+      result = restore(&restored);
+      is_new = result == ZPLC_PROGRAM_STORE_OK && restored == new_size && memcmp(workspace, expect_b, new_size) == 0;
+      is_old = result == ZPLC_PROGRAM_STORE_OK && restored == old_size && memcmp(workspace, expect_a, old_size) == 0;
+      if (!is_new && !is_old) {
+        only_old_or_new = 0;
+        fprintf(stderr, "write torn at operation %lu after %zu bytes restored result %d size %zu\n", at,
+                prefixes[index], (int)result, restored);
+      }
+    }
+  }
+  CHECK(tears > 20U, "many writes were torn (every save, several prefixes each)");
+  CHECK(only_old_or_new, "after every torn write the old program or the new one is restored, byte for byte");
+}
+
+static void test_the_legacy_rollback_comes_with_the_restore(void) {
+  zplc_pstore_config_t c = probed_config();
+  zplc_pstore_rollback_t rollback;
+  size_t restored = 0U;
+
+  printf("\n=== Test: the program of the first firmware is its own rollback when it migrates (WS-42) ===\n");
+  CHECK(make_state(STATE_LEGACY) == 0, "a store that holds the single-key program");
+  memset(workspace, 0x5A, sizeof(workspace));
+  CHECK(zplc_pstore_restore_probed(&c, workspace, sizeof(workspace), &restored, &rollback) ==
+                ZPLC_PROGRAM_STORE_LEGACY &&
+            restored == 2500U && rollback.kind == ZPLC_PSTORE_ROLLBACK_LEGACY,
+        "restore returns it with its rollback");
+  CHECK(zplc_pstore_commit_probed(&c, &rollback, workspace, 2500U, sizeof(workspace)) ==
+            ZPLC_PROGRAM_STORE_COMMIT_OK,
+        "committing it migrates it with no scratch");
+  CHECK(!key_exists("code") && !key_exists("code_len"), "and the legacy keys are gone");
+  CHECK(restore(&restored) == ZPLC_PROGRAM_STORE_OK && restored == 2500U, "after which it restores from a slot");
+
+  /* Any other result leaves no answer: the upload finds its own. */
+  CHECK(zplc_pstore_restore_probed(&c, workspace, sizeof(workspace), &restored, &rollback) ==
+                ZPLC_PROGRAM_STORE_OK &&
+            rollback.kind == ZPLC_PSTORE_ROLLBACK_NONE,
+        "a restore of a slot gives none");
+}
+
 int main(void) {
   root[0] = '\0';
   test_sizes_round_trip();
@@ -672,6 +1069,13 @@ int main(void) {
   test_unverifiable_state_is_not_empty();
   test_legacy_program();
   test_inadmissible_programs_never_persist();
+  test_probed_commit_is_the_commit_for_every_state();
+  test_probe_writes_nothing();
+  test_probed_commit_refuses_a_store_that_changed_since_the_probe();
+  test_a_store_that_cannot_be_verified_gives_no_rollback();
+  test_probed_redeploy_power_cut_sweep();
+  test_probed_torn_write_sweep();
+  test_the_legacy_rollback_comes_with_the_restore();
   remove_root();
   printf("\n%d checks, %d failed\n", test_count, fail_count);
   return fail_count == 0 ? 0 : 1;

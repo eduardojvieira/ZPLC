@@ -18,7 +18,9 @@ describe('Welcome screen contract', () => {
     expect(source).toContain('sm:grid-cols-3');
     expect(source).toContain('Choose or create a destination folder');
     expect(source).toContain('The copy stops if a destination file already exists');
-    expect(source).toContain('cursor-not-allowed text-[var(--text-primary)] opacity-60');
+    // A disabled start action is the kit button's disabled state (ui/kit.css), not a class of the screen.
+    expect(source).toContain('disabled={unavailable}');
+    expect(source).not.toContain('<button');
     expect(source).not.toContain('local-first');
     expect(source).not.toContain('Temporary project');
     expect(source).not.toContain('Examples open in memory');

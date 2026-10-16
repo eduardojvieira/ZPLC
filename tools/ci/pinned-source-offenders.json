@@ -462,22 +462,11 @@
     "reason": "signalTone is behavioural; two groups match index.css rules and the Watch panel source as text. Replace by computed-style assertions and a render test (VF-007)."
   },
   {
-    "file": "packages/zplc-ide/src/theme/themeTokens.test.ts",
-    "requirement": "VF-006",
-    "added": "2026-10-10",
-    "reads": [
-      "packages/zplc-ide/src/index.css"
-    ],
-    "replacement": "behaviour",
-    "reason": "Tests the token reader against the real index.css text, which is its input by design. Replace by a fixture stylesheet for the reader and move the real-stylesheet checks to computed styles (VF-007)."
-  },
-  {
     "file": "packages/zplc-ide/src/theme/windowSurface.test.ts",
     "requirement": "VF-006",
     "added": "2026-10-10",
     "reads": [
-      "packages/zplc-ide/electron/main.ts",
-      "packages/zplc-ide/src/index.css"
+      "packages/zplc-ide/electron/main.ts"
     ],
     "replacement": "behaviour",
     "reason": "Matches index.html, index.css and the BrowserWindow options in electron/main.ts as text. Replace by a main-process test against a stub electron module and a page-load check (VF-008)."

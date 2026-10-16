@@ -18,7 +18,7 @@ export function MigrationDifferenceView({ difference }: { difference: MigrationD
       <p className="mt-0.5 text-xs text-[var(--color-surface-300)]">
         {difference.removed} {difference.removed === 1 ? 'line' : 'lines'} removed, {difference.added} {difference.added === 1 ? 'line' : 'lines'} added
       </p>
-      <div role="group" aria-label={`Difference in ${difference.file}`} tabIndex={0} className="mt-2 max-h-72 overflow-auto border border-[var(--color-surface-600)] bg-[var(--color-surface-900)] focus-visible:outline-2 focus-visible:outline-[var(--color-accent-blue)]">
+      <div role="group" aria-label={`Difference in ${difference.file}`} tabIndex={0} className="mt-2 max-h-72 overflow-auto border border-[var(--color-surface-600)] bg-[var(--color-surface-900)]">
         {difference.hunks.map((hunk, index) => (
           <pre key={index} className="border-b border-[var(--color-surface-700)] py-1 font-mono text-xs leading-5 last:border-b-0">
             {hunk.map((line, lineIndex) => (

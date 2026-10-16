@@ -1,19 +1,20 @@
 import { describe, expect, it } from 'bun:test';
 import { readFileSync } from 'node:fs';
-import { contrastRatio, resolveThemeTokens, type ThemeName } from './themeTokens';
+import { contrastRatio } from './color';
+import { THEME_IDS, resolveTokens } from './tokens';
+import { renderTokensCss } from './tokensCss';
 
 const raw = readFileSync(new URL('../index.css', import.meta.url), 'utf8');
 const css = raw.replace(/\/\*[\s\S]*?\*\//g, '');
-const THEMES: ThemeName[] = ['light', 'dark', 'high-contrast', 'system-dark'];
 const SURFACES = ['--color-surface-900', '--color-surface-800', '--color-surface-700'] as const;
 
 /** Innermost `selector { body }` pairs, whether or not they sit inside an @media block. */
 const rules = [...css.matchAll(/([^{}]+)\{([^{}]*)\}/g)].map(([, selector, body]) => ({ selector: selector.trim(), body }));
 
 /** UX-005: one focus indicator, defined once, visible in every theme and never removed without a replacement. */
-describe('focus ring', () => {
+describe('focus ring (UX-005 stopgap: the visual editors still carry their own classes)', () => {
   it('is defined as three tokens', () => {
-    const light = resolveThemeTokens(raw, 'light');
+    const light = resolveTokens('light');
     expect(light['--focus-ring-color']).toBeDefined();
     expect(light['--focus-ring-width']).toBe('2px');
     expect(light['--focus-ring-offset']).toBe('2px');
@@ -37,14 +38,13 @@ describe('focus ring', () => {
   });
 
   it('is thicker in the high-contrast theme and follows the system colour in forced-colors mode', () => {
-    expect(resolveThemeTokens(raw, 'high-contrast')['--focus-ring-width']).toBe('3px');
-    const forced = /@media \(forced-colors: active\) \{[\s\S]*$/.exec(css)?.[0] ?? '';
-    expect(forced).toMatch(/--focus-ring-color:\s*Highlight/);
+    expect(resolveTokens('high-contrast')['--focus-ring-width']).toBe('3px');
+    expect(renderTokensCss()).toMatch(/@media \(forced-colors: active\) \{\s*:root \{\s*--focus-ring-color:\s*Highlight/);
   });
 
-  for (const theme of THEMES) {
+  for (const theme of THEME_IDS) {
     it(`has at least 3:1 contrast against the canvas, panel and node surfaces of the ${theme} theme`, () => {
-      const tokens = resolveThemeTokens(raw, theme);
+      const tokens = resolveTokens(theme);
       for (const surface of SURFACES) expect({ surface, ratio: contrastRatio(tokens['--focus-ring-color'], tokens[surface]) >= 3 }).toEqual({ surface, ratio: true });
     });
   }

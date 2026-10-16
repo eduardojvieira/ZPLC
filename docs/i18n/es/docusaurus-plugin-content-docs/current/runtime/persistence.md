@@ -77,14 +77,23 @@ loader, el tamaño de los buffers de recepción y de restore, el tamaño que inf
 (`max_artifact_size`) y el tamaño que se comunica al IDE para la placa (RT-028). La compilación falla si dos slots
 de ese tamaño, en trozos, no caben en la partición de almacenamiento. Por eso el perfil Raspberry Pi Pico fija 24576
 bytes (su partición de 64 KB), el perfil STM32F746G Discovery 16384 y el perfil Arduino Opta WiFi 32768 (su RAM), y
-el perfil ESP32-S3 mantiene sus 8192; los demás perfiles mantienen 45056. El program store (como memoria de trabajo
-de su comprobación de rollback), el buffer de staging de carga y la VM guardan cada uno un programa en RAM, así que
-un perfil gasta tres veces su tamaño de código. No hay una cuarta copia residente: el buffer de staging conserva el
-artefacto cargado, y `zplc reset` recarga el programa desde el store, que guarda el mismo (un reset cancela una
-carga en curso).
+el perfil ESP32-S3 mantiene sus 8192; los demás perfiles mantienen 45056. El buffer de staging de carga y la VM
+guardan cada uno un programa en RAM, así que un perfil gasta dos veces su tamaño de código. No hay una tercera copia
+residente: el buffer de staging conserva el artefacto cargado, y `zplc reset` recarga el programa desde el store, que
+guarda el mismo (un reset cancela una carga en curso).
+
+Un deploy tiene que saber, antes de escribir, que existe un programa real al que volver, y eso significa leer ese
+programa y admitirlo, lo que necesita un buffer del tamaño de código. El store no tiene uno propio: lee el rollback
+en el buffer de staging cuando empieza una carga, mientras ese buffer está libre (`zplc load`, `zplc sched load` y el
+inicio de una transferencia de programa del enlace de dispositivo), y el commit al final de la carga sigue adelante
+solo si el registro activo y los dos registros de metadatos son todavía los de los que se leyó la respuesta. El
+único que escribe esos registros es un commit, así que son los mismos salvo que la carga haya sido adelantada, y
+entonces no se escribe nada. Un store cuyos registros no verifican nada no da rollback, y el commit se niega como
+siempre. El payload del rollback se admitió cuando empezó la carga, no cuando terminó.
 
 Lo que se ha demostrado: un corte de energía inyectado en cada operación de un deploy y una escritura truncada en
-cada registro, en el host (`test_program_store`), y un corte de energía en cada operación de un deploy del tamaño
+cada registro, en el host (`test_program_store`, que también barre el deploy como lo hace el firmware, con el rollback
+encontrado al inicio de la carga), y un corte de energía en cada operación de un deploy del tamaño
 máximo sobre el simulador de flash de NVS en `native_sim` (`program_store_nvs`), restaurado en el mismo buffer que
 usó el deploy. Lo que no: un corte de energía en una placa. El driver de flash, el
 tiempo de borrado y el comportamiento de la alimentación de cada perfil necesitan el registro de hardware de ese

@@ -8,6 +8,8 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { readZip } from '../electron/projectArchiveZip';
 import { learnLessonCatalog } from '../src/components/learnLesson';
+import { contrastRatio } from '../src/theme/color';
+import { auditMarkup } from '../src/ui/audit';
 import { compilerCompile } from '../src/cli/toolApi';
 import { NATIVE_PROGRAM_MAX_BYTES } from '../electron/security';
 import { assert, MONACO_MODULE_URL, packageRoot } from './run-desktop-smoke';
@@ -191,7 +193,7 @@ const cycles = async (app: App) => Number((/cycles\s+(\d[\d,]*)/.exec(await app.
 
 async function watch(app: App, variable: string): Promise<void> {
   await app.click(tab('Watch', 'prefix'));
-  if (!await app.visible(css('input[placeholder^="Variable path"]'))) await app.click(css('button[title="Add variable"]'));
+  if (!await app.visible(css('input[placeholder^="Variable path"]'))) await app.click(button('Add variable'));
   await app.click(css('input[placeholder^="Variable path"]'));
   await app.type(variable);
   await app.press('Enter');
@@ -269,7 +271,7 @@ async function newFile(app: App, name: string, language: 'ST' | 'IL' | 'LD' | 'F
   await app.until(`${language} in the language field`, async () => await app.eval<string>(`document.getElementById('new-file-language').value`) === language || undefined);
   if (create) await app.click(button('Create'), 'the Create button');
 }
-const newFileError = (app: App) => app.eval<string | null>(`document.getElementById('new-file-error')?.innerText ?? null`);
+const newFileError = (app: App) => app.eval<string | null>(`document.getElementById('new-file-name-error')?.innerText ?? null`);
 const ladderRungs = (app: App) => app.eval<number | null>(`(() => { const editor = document.querySelector('[aria-label="Ladder diagram editor"]'); const text = editor?.querySelector('.border-b span.text-xs')?.textContent ?? ''; const match = /(\\d+) rungs?/.exec(text); return editor ? (match ? Number(match[1]) : -1) : null; })()`);
 
 /** The size in bytes of the .zplc file the compiler makes of a project with this body in its only program. */
@@ -1096,7 +1098,7 @@ export const JOURNEYS: Journey[] = [
       // table polls every 100 ms). A click then did nothing and said nothing: the handler dropped it for want of a value. The box must
       // not offer itself until it can work, and the click that waits for it must then force the input.
       await app.click(tab('Watch', 'prefix'));
-      if (!await app.visible(css('input[placeholder^="Variable path"]'))) await app.click(css('button[title="Add variable"]'));
+      if (!await app.visible(css('input[placeholder^="Variable path"]'))) await app.click(button('Add variable'));
       await app.click(css('input[placeholder^="Variable path"]'));
       await app.type('Start');
       const forceBox = css('input[aria-label="Force Start"]');
@@ -2342,6 +2344,131 @@ export const JOURNEYS: Journey[] = [
       const grade = progress.lessons['motor-start-stop-safe']?.grade;
       assert(grade && grade.result === 'passed' && grade.lessonId === lesson.id && grade.lessonVersion === lesson.version && grade.scenarioSha256 === lesson.scenarioSha256, `The grade record is not the one of this lesson: ${JSON.stringify(grade)}`);
       assert(/^[0-9a-f]{64}$/.test(grade.programSha256) && grade.runtimeVersion.length > 0 && !Number.isNaN(Date.parse(grade.time)), `The grade record lacks the program hash, the runtime version or the time: ${JSON.stringify(grade)}`);
+    },
+  },
+  {
+    // The development gallery (UX-004) in the real window: every kit component in the three themes and two densities. The
+    // structure is audited on the rendered DOM, the colours are the ones the browser computes from the generated stylesheet,
+    // and the keyboard behaviour is driven with real key events (the pure logic is proven in src/ui/logic).
+    name: '41 The component kit behaves from the keyboard in a real window', example: 'none', proves: ['UX-004'], partly: ['UX-001', 'UX-005', 'UX-008', 'UX-024', 'UX-025', 'UX-026'],
+    run: async (app) => {
+      await app.eval(`location.hash = '#ui-gallery'; location.reload();`).catch(() => undefined);
+      await app.until('the component gallery', async () => await app.visible(css('main.ui-gallery')) || undefined, 30_000);
+      const panel = (theme: string, density: string) => `[data-ui-theme="${theme}"][data-ui-density="${density}"]`;
+      const inPanel = (theme: string, density: string, selector: string) => css(`${panel(theme, density)} ${selector}`);
+      const active = () => app.eval<{ tag: string; role: string | null; text: string; inDialog: boolean; label: string | null }>(`(() => { const el = document.activeElement; return { tag: el.tagName.toLowerCase(), role: el.getAttribute('role'), text: (el.textContent ?? '').trim(), inDialog: el.closest('[role="dialog"], [role="alertdialog"]') !== null, label: el.getAttribute('aria-label') }; })()`);
+      const focus = (target: Target) => app.eval(`${target}.focus()`);
+
+      // Structure: every control of the rendered gallery is named, ids are unique, references resolve.
+      const markup = await app.eval<string>(`document.querySelector('main.ui-gallery').outerHTML`);
+      const problems = auditMarkup(markup);
+      assert(problems.length === 0, `The rendered gallery has accessibility problems: ${JSON.stringify(problems.slice(0, 5))}`);
+      const sections = await app.eval<number>(`document.querySelectorAll('.ui-gallery-panel').length`);
+      assert(sections === 6, `The gallery shows ${sections} panels, not 3 themes x 2 densities.`);
+
+      // Type: the two bundled faces are what the page uses and they have loaded (UX-006); values use tabular numerals.
+      const faces = await app.eval<string[]>(`(async () => { await document.fonts.ready; return [...document.fonts].filter((face) => face.status === 'loaded').map((face) => face.family.replace(/"/g, '') + ' ' + face.weight); })()`);
+      assert(faces.some((face) => face.startsWith('Inter ')), `The bundled Inter did not load: ${JSON.stringify(faces)}`);
+      assert(faces.some((face) => face.startsWith('JetBrains Mono')), `The bundled JetBrains Mono did not load: ${JSON.stringify(faces)}`);
+      const type = await app.eval<{ body: string; mono: string; numerals: string; caption: string }>(`(() => ({ body: getComputedStyle(document.body).fontFamily, mono: getComputedStyle(document.querySelector('.ui-signal')).fontFamily, numerals: getComputedStyle(document.querySelector('.ui-tabular')).fontVariantNumeric, caption: getComputedStyle(document.querySelector('.ui-hint')).fontSize }))()`);
+      assert(type.body.startsWith('Inter') && type.mono.includes('JetBrains Mono'), `The page does not use the bundled faces first: ${JSON.stringify(type)}`);
+      assert(type.numerals.includes('tabular-nums'), `A value does not use tabular numerals: ${type.numerals}`);
+      assert(Number.parseFloat(type.caption) >= 11, `The smallest text is under 11px: ${type.caption}`);
+
+      // Colour, as computed by the browser in each theme: the label of a primary button, body text on the panel, the
+      // forced and fault chips, and the focus ring of a control that has keyboard focus.
+      const computed = (target: Target) => app.eval<{ color: string; background: string; outline: string; outlineWidth: string; outlineStyle: string; minHeight: string }>(`(() => { const el = ${target}; const s = getComputedStyle(el); return { color: s.color, background: s.backgroundColor, outline: s.outlineColor, outlineWidth: s.outlineWidth, outlineStyle: s.outlineStyle, minHeight: s.minHeight }; })()`);
+      const heights: Record<string, string> = {};
+      for (const theme of ['light', 'dark', 'high-contrast']) {
+        for (const density of ['comfortable', 'compact']) {
+          const primary = await computed(inPanel(theme, density, '.ui-button[data-variant="primary"]'));
+          const ratio = contrastRatio(primary.color, primary.background);
+          assert(ratio >= 4.5, `The primary button label is ${ratio.toFixed(2)}:1 in ${theme} (${primary.color} on ${primary.background}).`);
+          const panelColours = await app.eval<{ color: string; background: string }>(`(() => { const s = getComputedStyle(document.querySelector(${JSON.stringify(panel(theme, density))})); return { color: s.color, background: s.backgroundColor }; })()`);
+          assert(contrastRatio(panelColours.color, panelColours.background) >= 4.5, `Body text on the panel is under 4.5:1 in ${theme}.`);
+          for (const state of ['forced', 'fault', 'false']) {
+            const chip = await computed(inPanel(theme, density, `.ui-signal[data-signal="${state}"]`));
+            const over = chip.background === 'rgba(0, 0, 0, 0)' ? panelColours.background : chip.background;
+            assert(contrastRatio(chip.color, over) >= 3, `The ${state} chip is unreadable in ${theme}: ${chip.color} on ${over}.`);
+          }
+          heights[`${theme}/${density}`] = primary.minHeight;
+        }
+        assert(Number.parseFloat(heights[`${theme}/compact`]!) < Number.parseFloat(heights[`${theme}/comfortable`]!), `Compact density does not make the controls of the ${theme} panel shorter: ${JSON.stringify(heights)}`);
+      }
+
+      // Focus: a real Tab lands on a control of each theme and it shows the one ring, at least 3:1 against its surface.
+      for (const [theme, width] of [['light', '2px'], ['dark', '2px'], ['high-contrast', '3px']] as const) {
+        await focus(inPanel(theme, 'comfortable', '.ui-button[data-variant="primary"]'));
+        await app.press('Tab');
+        await app.press('Shift+Tab');
+        const ring = await computed(inPanel(theme, 'comfortable', '.ui-button[data-variant="primary"]'));
+        const surface = await app.eval<string>(`getComputedStyle(document.querySelector(${JSON.stringify(panel(theme, 'comfortable'))})).backgroundColor`);
+        assert(ring.outlineStyle === 'solid' && ring.outlineWidth === width, `The focus ring in ${theme} is ${ring.outlineStyle} ${ring.outlineWidth}, not solid ${width}.`);
+        assert(contrastRatio(ring.outline, surface) >= 3, `The focus ring in ${theme} is under 3:1 (${ring.outline} on ${surface}).`);
+      }
+
+      // Tabs: the arrows move focus and selection, skip the disabled tab and wrap.
+      const tabs = (selector: string) => inPanel('light', 'comfortable', selector);
+      await focus(tabs('[role="tab"]'));
+      await app.press('ArrowRight');
+      let now = await active();
+      assert(now.role === 'tab' && now.text.startsWith('Problems'), `ArrowRight on the Output tab should focus Problems: ${JSON.stringify(now)}`);
+      assert(await app.eval<boolean>(`document.activeElement.getAttribute('aria-selected') === 'true'`), 'A tab that takes focus from an arrow key should be selected.');
+      await app.press('ArrowRight');
+      now = await active();
+      assert(now.role === 'tab' && now.text.startsWith('Output'), `ArrowRight on Problems should skip the disabled Trace tab and wrap to Output: ${JSON.stringify(now)}`);
+
+      // Menu: ArrowDown opens it on the first enabled item, the arrows skip a disabled item, Escape closes it and returns focus.
+      await focus(tabs('[aria-haspopup="menu"]'));
+      await app.press('ArrowDown');
+      await app.until('the menu', async () => await app.visible(css('[role="menu"][aria-label="Build options"]')) || undefined);
+      await app.until('the first item to have focus', async () => (await active()).role === 'menuitem' || undefined);
+      assert((await active()).text.startsWith('Compile'), `The menu should open on its first item: ${JSON.stringify(await active())}`);
+      await app.press('ArrowDown');
+      now = await active();
+      assert(now.text.startsWith('Project settings'), `ArrowDown should skip the disabled item: ${JSON.stringify(now)}`);
+      await app.press('Escape');
+      await app.until('the menu to close', async () => !await app.visible(css('[role="menu"][aria-label="Build options"]')) || undefined);
+      now = await active();
+      assert(now.tag === 'button' && now.text.startsWith('Build options'), `Escape should return focus to the menu button: ${JSON.stringify(now)}`);
+
+      // Tooltip: it appears on keyboard focus, describes the control, and Escape dismisses it without moving focus.
+      await app.eval(`document.activeElement.blur()`);
+      const trigger = await app.eval<string>(`(() => { const el = [...document.querySelectorAll(${JSON.stringify(panel('light', 'comfortable'))} + ' button')].find((b) => b.textContent === 'Hover or focus me'); el.focus(); return el.textContent; })()`);
+      assert(trigger === 'Hover or focus me', 'The tooltip specimen is missing.');
+      await app.until('the tooltip', async () => await app.visible(css('[role="tooltip"]')) || undefined);
+      assert(await app.eval<boolean>(`document.activeElement.getAttribute('aria-describedby') === document.querySelector('[role="tooltip"]').id`), 'The control should be described by its tooltip while it is open.');
+      await app.press('Escape');
+      await app.until('the tooltip to go', async () => !await app.visible(css('[role="tooltip"]')) || undefined);
+      assert((await active()).text === 'Hover or focus me', 'Escape on a tooltip must not move focus.');
+
+      // Dialog: focus moves in, Tab wraps inside, Escape closes and focus returns to the opener.
+      await app.click(inPanel('light', 'comfortable', '[data-open-dialog]'), 'the Open dialog button');
+      await app.until('the dialog', async () => await app.visible(css('body > .ui-scrim [role="dialog"]')) || undefined);
+      assert((await active()).inDialog, `Focus should move into the dialog: ${JSON.stringify(await active())}`);
+      for (let step = 0; step < 6; step++) {
+        await app.press('Tab');
+        assert((await active()).inDialog, `Tab left the dialog at step ${step}: ${JSON.stringify(await active())}`);
+      }
+      for (let step = 0; step < 6; step++) {
+        await app.press('Shift+Tab');
+        assert((await active()).inDialog, `Shift+Tab left the dialog at step ${step}: ${JSON.stringify(await active())}`);
+      }
+      await app.press('Escape');
+      await app.until('the dialog to close', async () => !await app.visible(css('body > .ui-scrim [role="dialog"]')) || undefined);
+      assert((await active()).text === 'Open dialog', `Focus should return to the Open dialog button: ${JSON.stringify(await active())}`);
+
+      // Alert dialog: focus starts on the safe answer, Escape cancels, and the action is its own named button.
+      await app.click(inPanel('light', 'comfortable', '[data-open-alert]'), 'the Open alert dialog button');
+      await app.until('the alert dialog', async () => await app.visible(css('body > .ui-scrim [role="alertdialog"]')) || undefined);
+      assert((await active()).text === 'Keep draft', `An alert dialog should start on its cancel button: ${JSON.stringify(await active())}`);
+      await app.press('Escape');
+      await app.until('the alert dialog to close', async () => !await app.visible(css('body > .ui-scrim [role="alertdialog"]')) || undefined);
+      assert(await app.eval<boolean>(`document.querySelector(${JSON.stringify(panel('light', 'comfortable') + ' [data-alert-result]')}).textContent === 'Last choice: keep'`), 'Escape on an alert dialog should cancel it.');
+      await app.click(inPanel('light', 'comfortable', '[data-open-alert]'), 'the Open alert dialog button');
+      await app.until('the alert dialog', async () => await app.visible(css('body > .ui-scrim [role="alertdialog"]')) || undefined);
+      await app.click(button('Discard draft'), 'the Discard draft action');
+      await app.until('the action to be taken', async () => await app.eval<boolean>(`document.querySelector(${JSON.stringify(panel('light', 'comfortable') + ' [data-alert-result]')}).textContent === 'Last choice: discard'`) || undefined);
     },
   },
   {

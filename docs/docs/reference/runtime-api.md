@@ -39,6 +39,7 @@ The Spanish wrapper text is localized, while API names, signatures, and source-d
 - `firmware/lib/zplc_core/include/zplc_sha256.h`
 - `firmware/lib/zplc_core/include/zplc_sha512.h`
 - `firmware/lib/zplc_core/include/zplc_single_task.h`
+- `firmware/lib/zplc_core/include/zplc_verify_scratch.h`
 
 ## `zplc_bytes.h`
 
@@ -3278,6 +3279,45 @@ int zplc_pstore_commit(const zplc_pstore_config_t *config, uint8_t *workspace, s
 
 **Source return value:** ZPLC_PROGRAM_STORE_COMMIT_OK, _ERROR (nothing was published), or _UNKNOWN
 
+#### `zplc_pstore_probe`
+
+```c
+int zplc_pstore_probe(const zplc_pstore_config_t *config, uint8_t *buffer, size_t capacity, zplc_pstore_rollback_t *rollback);
+```
+
+**Source summary:** Find the rollback of the next commit, using @p buffer as the working buffer (the one of zplc_pstore_config_t::scratch, which this call does not need and ignores).
+
+Reads and admits the program that a commit would fall back to, exactly as zplc_pstore_commit() does before it writes. @p buffer is overwritten.
+
+**Parameters**
+
+| Name | Type | Source description |
+| --- | --- | --- |
+| `config` | `const zplc_pstore_config_t *` | — |
+| `buffer` | `uint8_t *` | — |
+| `capacity` | `size_t` | at least ZPLC_PROGRAM_STORE_MAX_ARTIFACT_SIZE + ZPLC_PROGRAM_STORE_FOOTER_SIZE |
+| `rollback` | `zplc_pstore_rollback_t *` | — |
+
+**Source return value:** 0 and the rollback, or ZPLC_PROGRAM_STORE_COMMIT_ERROR with @p rollback left as "nothing found": the backend failed, or records exist and none verifies (a commit then refuses to write over them)
+
+#### `zplc_pstore_commit_probed`
+
+```c
+int zplc_pstore_commit_probed(const zplc_pstore_config_t *config, const zplc_pstore_rollback_t *rollback, uint8_t *workspace, size_t program_size, size_t workspace_capacity);
+```
+
+**Source summary:** zplc_pstore_commit() with the rollback of zplc_pstore_probe(), which has to be the answer for the store as it is now: when a record changed in between, nothing is written.
+
+**Parameters**
+
+| Name | Type | Source description |
+| --- | --- | --- |
+| `config` | `const zplc_pstore_config_t *` | — |
+| `rollback` | `const zplc_pstore_rollback_t *` | — |
+| `workspace` | `uint8_t *` | — |
+| `program_size` | `size_t` | — |
+| `workspace_capacity` | `size_t` | — |
+
 #### `zplc_pstore_restore`
 
 ```c
@@ -3295,6 +3335,26 @@ zplc_program_store_restore_t zplc_pstore_restore( const zplc_pstore_config_t *co
 | `workspace_capacity` | `size_t` | bytes the buffer holds (an artifact of the largest size needs ZPLC_PROGRAM_STORE_MAX_ARTIFACT_SIZE + ZPLC_PROGRAM_STORE_FOOTER_SIZE) |
 | `program_size` | `size_t *` | receives the artifact length when the result is OK or LEGACY, otherwise 0 |
 
+#### `zplc_pstore_restore_probed`
+
+```c
+zplc_program_store_restore_t zplc_pstore_restore_probed(const zplc_pstore_config_t *config, uint8_t *workspace, size_t workspace_capacity, size_t *program_size, zplc_pstore_rollback_t *rollback);
+```
+
+**Source summary:** zplc_pstore_restore() that also leaves the rollback of the commit that follows a LEGACY result.
+
+The program of the first firmware was read and admitted into @p workspace by the call, so it is the rollback of the commit that migrates it. For any other result @p rollback is "nothing found": the commit of an upload finds its rollback with zplc_pstore_probe() when the upload starts.
+
+**Parameters**
+
+| Name | Type | Source description |
+| --- | --- | --- |
+| `config` | `const zplc_pstore_config_t *` | — |
+| `workspace` | `uint8_t *` | — |
+| `workspace_capacity` | `size_t` | — |
+| `program_size` | `size_t *` | — |
+| `rollback` | `zplc_pstore_rollback_t *` | — |
+
 ### Types
 
 | Name | Kind | Source summary |
@@ -3303,6 +3363,7 @@ zplc_program_store_restore_t zplc_pstore_restore( const zplc_pstore_config_t *co
 | `zplc_program_store_commit_result_t` | Enum | — |
 | `zplc_pstore_admit_fn` | Typedef | Decides whether an artifact may be run: the loader's verification and the policy of the runtime. |
 | `admit` | Struct | What the store needs from the runtime that uses it. |
+| `digest` | Struct | The rollback a commit relies on, found before the upload and checked again when it is committed. |
 
 ### Constants and macros
 
@@ -3314,6 +3375,10 @@ zplc_program_store_restore_t zplc_pstore_restore( const zplc_pstore_config_t *co
 | `ZPLC_PROGRAM_STORE_ENTRY_OVERHEAD` | `64U` | Backend bytes one stored entry takes beyond its data: the entry header and the padding to the write block. An engineering estimate used by the build-time capacity rule of the Zephyr HAL. |
 | `ZPLC_PROGRAM_STORE_WORST_CASE_BYTES` | `\\ (2U * ((size_t)ZPLC_PROGRAM_STORE_MAX_CHUNKS * \\ (ZPLC_PROGRAM_STORE_CHUNK_SIZE + ZPLC_PROGRAM_STORE_ENTRY_OVERHEAD)) +\\ 3U * (32U + ZPLC_PROGRAM_STORE_ENTRY_OVERHEAD))` | Storage, in bytes, the two slots of the largest artifact and their records take, worst case. |
 | `ZPLC_PROGRAM_STORE_KEY_MAX` | `40U` | The longest key the store uses, with its terminator. |
+| `ZPLC_PSTORE_ROLLBACK_NONE` | `0U` | What the rollback of a commit is: a value of zplc_pstore_rollback_t.kind. 0 is "nothing found". |
+| `ZPLC_PSTORE_ROLLBACK_SLOT` | `1U` | — |
+| `ZPLC_PSTORE_ROLLBACK_EMPTY` | `2U` | — |
+| `ZPLC_PSTORE_ROLLBACK_LEGACY` | `3U` | — |
 
 ## `zplc_proto.h`
 
@@ -5223,6 +5288,56 @@ The caller holds its runtime lock. On a VM fault, a failed input or output, or t
 | Name | Value | Source summary |
 | --- | --- | --- |
 | `ZPLC_SINGLE_TASK_H` | `—` | — |
+
+## `zplc_verify_scratch.h`
+
+The one verifier workspace of a Zephyr image, and the lock that owns it.
+
+zplc_loader_verify() needs ZPLC_LOADER_VERIFY_WORKSPACE_SIZE bytes of caller-owned scratch while it runs and keeps nothing in it afterwards: the view it returns points into the artifact, not into the workspace. The image has two callers that can run in different threads, the admission of a program by the scheduler (validation and load) and the admission check of the program store, and a workspace each cost the same RAM twice (about 15 KB on a board with the default code size). They share this one. The rule: a caller takes the scratch, makes one verification (or one zplc_core_load_tasks(), which verifies and then uses the same buffer to stage the task table), and gives it back before it does anything that can wait. The lock is a leaf: nothing else is acquired while it is held, so it adds no edge to the lock order of the image (control, memory and program-store locks all come before it, and none comes after). Verification is bounded by ZPLC_VERIFY_STEPS_PER_BYTE, so another caller waits a bounded time, and only in thread context: the scan never touches it.
+
+Source: `firmware/lib/zplc_core/include/zplc_verify_scratch.h`
+
+### Functions
+
+#### `zplc_verify_scratch_take`
+
+```c
+uint8_t *zplc_verify_scratch_take(void);
+```
+
+**Source summary:** Take the verifier workspace, waiting for its current owner.
+
+**Parameters**
+
+| Name | Type | Source description |
+| --- | --- | --- |
+| — | — | None. |
+
+**Source return value:** ZPLC_LOADER_VERIFY_WORKSPACE_SIZE bytes owned by the caller until zplc_verify_scratch_give(), or NULL when the lock cannot be taken (the mutex object is not valid, which is a defect). The contents are whatever the last owner left; the verifier clears what it reads.
+
+#### `zplc_verify_scratch_give`
+
+```c
+void zplc_verify_scratch_give(void);
+```
+
+**Source summary:** Give the workspace back. Only the owner calls it, once per successful take.
+
+**Parameters**
+
+| Name | Type | Source description |
+| --- | --- | --- |
+| — | — | None. |
+
+### Types
+
+None.
+
+### Constants and macros
+
+| Name | Value | Source summary |
+| --- | --- | --- |
+| `ZPLC_VERIFY_SCRATCH_H` | `—` | — |
 
 ## Binary contract tables
 

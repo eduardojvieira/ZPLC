@@ -258,6 +258,30 @@ python3 tools/firmware-test/fwtest.py size \
 Las cifras son asignación estática en tiempo de enlace. No incluyen las pilas
 ni la marca máxima del heap.
 
+La biblioteca de ZPLC y la aplicación se compilan con optimización en tiempo de enlace (`CONFIG_ZPLC_LTO`, activa
+por defecto), que vale cerca del 3 por ciento de la flash de una imagen. El código propio de Zephyr no entra en ella.
+Los destinos `native_sim` enlazan su imagen como un objeto relocatable, del que el optimizador no puede formar parte,
+así que corren sin ella; las suites de `firmware/tests` enlazan la biblioteca del mismo modo que las placas en
+`qemu-m3` y `qemu-m0`, que es donde se ejercita el código que se entrega. Para comparar, o para depurar una falla
+sin el inlining de por medio, compile con `-DCONFIG_ZPLC_LTO=n`.
+
+Para ver adónde van los bytes de una placa, ejecute el informe de huella sobre
+los mismos árboles de compilación. Lee cada mapa del enlazador e imprime, por
+placa, los bytes usados de cada región de memoria, el margen frente al
+presupuesto, las secciones de entrada por tipo y por biblioteca, y las secciones
+de entrada más grandes de flash y RAM con el archivo objeto al que pertenece
+cada una. Las cadenas de la imagen son un solo bloque fusionado, así que el
+informe lo muestra una vez y muestra las cadenas de cada objeto antes de
+fusionarlas:
+
+```bash
+python3 tools/firmware-test/footprint_report.py \
+  --logs ~/zplc-zephyr-ws/out/size --board rpi-pico-rp2040 --top 25
+```
+
+El informe solo lee archivos. Sus propias pruebas son
+`tools/firmware-test/test_footprint_report.py`.
+
 ## Agregar una prueba
 
 - Ponga una suite Zephyr en `firmware/tests/<nombre>` con un `testcase.yaml`

@@ -7,9 +7,8 @@ import { useEffect, useState } from 'react';
 import { useIDEStore } from '../store/useIDEStore';
 import { describeMigration, type MigrationDifference } from '../project/migrationDiff';
 import { MigrationDifferenceView } from './MigrationDifferenceView';
+import { Button } from '../ui';
 import { Modal } from './Modal';
-
-const BUTTON = 'px-4 py-2 text-sm rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent-blue)] disabled:cursor-not-allowed disabled:opacity-50';
 
 export function MigrationPreviewDialog({ onClose }: { onClose: () => void }) {
   const directoryHandle = useIDEStore((state) => state.directoryHandle);
@@ -53,10 +52,10 @@ export function MigrationPreviewDialog({ onClose }: { onClose: () => void }) {
           ? <MigrationDifferenceView difference={difference} />
           : <p role="status" className="text-sm text-[var(--color-surface-300)]">Nothing in zplc.json differs from what Save writes.</p>)}
         <div className="flex justify-end gap-2">
-          <button type="button" disabled={applying} onClick={onClose} className={`${BUTTON} bg-[var(--color-surface-600)] text-[var(--color-surface-100)] hover:bg-[var(--color-surface-500)]`}>Close</button>
-          <button type="button" disabled={applying || !difference} onClick={() => { void apply(); }} className={`${BUTTON} bg-[var(--color-accent-blue)] text-white hover:bg-[var(--color-accent-blue)]/80`}>
+          <Button disabled={applying} onClick={onClose}>Close</Button>
+          <Button variant="primary" disabled={applying || !difference} onClick={() => { void apply(); }}>
             {applying ? 'Applying…' : 'Apply migration'}
-          </button>
+          </Button>
         </div>
       </div>
     </Modal>

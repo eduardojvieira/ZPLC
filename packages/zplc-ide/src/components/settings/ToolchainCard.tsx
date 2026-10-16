@@ -12,6 +12,7 @@ import {
   BOARD_OPTIONS,
 } from '../../config/boardProfiles';
 import { presentFirmwareBuildResult, presentToolchainInspectResult, type FirmwareBuildPresentation, type ToolchainPresentation } from './toolchainPresentation';
+import { Button } from '../../ui';
 
 type BuildState = 'idle' | 'building' | 'cancelling' | 'not-started' | FirmwareBuildPresentation['kind'];
 
@@ -105,7 +106,7 @@ export function ToolchainCard({ ideId }: { ideId: string | undefined }) {
 
   return (
     <details onToggle={(event) => setOpen(event.currentTarget.open)} className="rounded border border-[var(--color-surface-600)] bg-[var(--color-surface-800)]/60">
-      <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-3 py-2.5 text-sm font-medium text-[var(--color-surface-100)] marker:content-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--color-accent-blue)]">
+      <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-3 py-2.5 text-sm font-medium text-[var(--color-surface-100)] marker:content-none">
         <span className="inline-flex items-center gap-2"><ChevronRight size={15} className={`transition-transform motion-reduce:transition-none ${open ? 'rotate-90' : ''}`} aria-hidden="true" />Firmware toolchain</span>
         <span id={statusId} role="status" aria-live="polite" className={`inline-flex items-center gap-1.5 text-xs ${statusClass}`}>
           <StatusIcon size={14} className={state.kind === 'checking' ? 'animate-spin motion-reduce:animate-none' : ''} aria-hidden="true" />
@@ -116,17 +117,10 @@ export function ToolchainCard({ ideId }: { ideId: string | undefined }) {
         <p id={descriptionId} className="max-w-[68ch] text-xs leading-5 text-[var(--color-surface-400)]">
           Checks only local firmware build prerequisites. It does not build, flash, deploy, connect to hardware, or qualify hardware.
         </p>
-        <button
-          ref={buttonRef}
-          type="button"
-          onClick={() => { void inspect(); }}
-          disabled={checking || !bridgeAvailable || buildInFlight}
-          aria-describedby={`${descriptionId} ${statusId}`}
-          className="inline-flex items-center gap-2 rounded bg-[var(--color-surface-600)] px-3 py-2 text-xs font-medium text-[var(--color-surface-100)] transition-colors hover:bg-[var(--color-surface-500)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent-blue)] disabled:cursor-not-allowed disabled:opacity-50 motion-reduce:transition-none"
-        >
+        <Button variant="secondary" size="sm" ref={buttonRef} onClick={() => { void inspect(); }} disabled={checking || !bridgeAvailable || buildInFlight} aria-describedby={`${descriptionId} ${statusId}`} className="motion-reduce:transition-none">
           {checking && <LoaderCircle size={14} className="animate-spin motion-reduce:animate-none" aria-hidden="true" />}
           Choose checkout &amp; check
-        </button>
+        </Button>
         {presentation?.checks.length ? (
           <ul className="space-y-2 border-t border-[var(--color-surface-700)] pt-3" aria-label="Firmware toolchain checks">
             {presentation.checks.map((check) => (
@@ -151,22 +145,14 @@ export function ToolchainCard({ ideId }: { ideId: string | undefined }) {
             </div>
             {canBuild ? (
               <div className="flex flex-wrap items-center gap-2">
-                <button
-                  ref={buildButtonRef}
-                  type="button"
-                  onClick={() => { void build(); }}
-                  aria-disabled={buildInFlight}
-                  aria-label="Build runtime locally"
-                  aria-describedby={`${descriptionId} ${statusId}`}
-                  className={`inline-flex items-center gap-2 rounded bg-[var(--color-accent-blue)] px-3 py-2 text-xs font-medium text-white transition-colors hover:bg-[var(--color-accent-blue)]/80 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent-blue)] motion-reduce:transition-none ${buildInFlight ? 'cursor-not-allowed opacity-50' : ''}`}
-                >
+                <Button variant="primary" size="sm" ref={buildButtonRef} onClick={() => { void build(); }} aria-disabled={buildInFlight} aria-label="Build runtime locally" aria-describedby={`${descriptionId} ${statusId}`} className={buildInFlight ? 'cursor-not-allowed opacity-50' : undefined}>
                   {buildState === 'building' && <LoaderCircle size={14} className="animate-spin motion-reduce:animate-none" aria-hidden="true" />}
                   {buildState === 'building' || buildState === 'cancelling' ? 'Building locally…' : 'Build runtime locally'}
-                </button>
+                </Button>
                 {(buildState === 'building' || buildState === 'cancelling') ? (
-                  <button type="button" onClick={() => { void cancel(); }} disabled={buildState === 'cancelling'} className="inline-flex items-center gap-2 rounded bg-[var(--color-surface-600)] px-3 py-2 text-xs font-medium text-[var(--color-surface-100)] transition-colors hover:bg-[var(--color-surface-500)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent-blue)] disabled:cursor-not-allowed disabled:opacity-50 motion-reduce:transition-none">
+                  <Button variant="secondary" size="sm" onClick={() => { void cancel(); }} disabled={buildState === 'cancelling'} className="motion-reduce:transition-none">
                     {buildState === 'cancelling' ? 'Cancelling safely…' : 'Cancel build'}
-                  </button>
+                  </Button>
                 ) : null}
               </div>
             ) : (
