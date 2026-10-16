@@ -991,6 +991,7 @@
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"28 A breakpoint on a rung stops execution","partial":true}
   ],
   "LNG-005": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/utils/breakpoints.test.ts","test":"a breakpoint binds in every ST file of a project, by the project-relative path of its own file (LNG-005)"},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"7 Breakpoint stops execution","partial":true}
   ],
   "LNG-006": [
@@ -2487,6 +2488,9 @@
     {"kind":"unit","ref":"tools/docs/check_doc_claims.test.ts","test":"doc claims: the allow-list can only shrink (DOC-014)"},
     {"kind":"unit","ref":"tools/docs/check_doc_claims.test.ts","test":"doc claims: the documents of the repository (DOC-014)"},
     {"kind":"unit","ref":"tools/docs/check_doc_claims.test.ts","test":"doc claims: what a page says is read from its code spans and shell blocks (DOC-014)"}
+  ],
+  "DOC-015": [
+    {"kind":"unit","ref":"tools/docs/docs_structure.test.ts","test":"docs structure: the navigation and the footer are localised through the translation files (DOC-015, stopgap: no fluent reviewer has read the Spanish pages in the register of D-10)","partial":true}
   ],
   "DOC-016": [
     {"kind":"unit","ref":"tools/docs/docs_structure.test.ts","test":"docs structure: a page is published only when both languages are complete (DOC-016)"}
