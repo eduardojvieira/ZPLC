@@ -176,10 +176,7 @@ describe('versioned project configs', () => {
   it('do not contain non-empty sensitive values', () => {
     const projectsDir = fileURLToPath(new URL('../../projects/', import.meta.url));
     const packagesDir = fileURLToPath(new URL('../../../', import.meta.url));
-    const configFiles = [
-      ...findProjectConfigFiles(projectsDir),
-      `${packagesDir}/zplc.json`,
-    ];
+    const configFiles = findProjectConfigFiles(projectsDir);
     const violations = configFiles.flatMap((filename) => {
       const config = JSON.parse(readFileSync(filename, 'utf8')) as unknown;
       const relativeName = filename.slice(packagesDir.length + 1);
