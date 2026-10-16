@@ -21,10 +21,8 @@
 #    west build -b rpi_pico $ZPLC_PATH/firmware/app --pristine
 #
 # 3. WebAssembly Build (browser simulation):
-#    cd firmware/lib/zplc_core
-#    mkdir build_wasm && cd build_wasm
-#    emcmake cmake .. -DWASM_BUILD=ON
-#    emmake make
+#    bun tools/wasm-core/build.ts --out build/zplc-runtime.wasm
+#    (clang and wasm-ld, no Emscripten; the IDE build runs it)
 #
 # =============================================================================
 
@@ -48,111 +46,23 @@ project(zplc_workspace
 message(STATUS "ZPLC product version: ${ZPLC_CORE_VERSION_STR}")
 
 # =============================================================================
-# Build Mode Detection
+# Build modes
 # =============================================================================
+# This file only points at the build of each target; nothing is built from here.
 
-option(WASM_BUILD "Build for WebAssembly (requires Emscripten)" OFF)
-
-if(EMSCRIPTEN OR WASM_BUILD)
-    # =========================================================================
-    # WASM BUILD - Delegate to firmware/lib/zplc_core
-    # =========================================================================
-    message(STATUS "==============================================")
-    message(STATUS "ZPLC: WebAssembly build mode")
-    message(STATUS "==============================================")
-
-    set(CMAKE_C_STANDARD 99)
-    set(CMAKE_C_STANDARD_REQUIRED ON)
-    set(CMAKE_C_EXTENSIONS OFF)
-
-    set(ZPLC_CORE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/firmware/lib/zplc_core)
-
-    add_executable(zplc_sim
-        ${ZPLC_CORE_DIR}/src/core/zplc_core.c
-        ${ZPLC_CORE_DIR}/src/core/zplc_comm_dispatch.c
-        ${ZPLC_CORE_DIR}/src/core/zplc_loader.c
-        ${ZPLC_CORE_DIR}/src/hal/wasm/zplc_hal_wasm.c
-    )
-
-    target_include_directories(zplc_sim PRIVATE
-        ${ZPLC_CORE_DIR}/include
-    )
-
-    target_compile_definitions(zplc_sim PRIVATE ZPLC_CORE_VERSION_STR="${ZPLC_CORE_VERSION_STR}")
-
-    set_target_properties(zplc_sim PROPERTIES
-        SUFFIX ".js"
-        LINK_FLAGS "\
-            -s WASM=1 \
-            -s MODULARIZE=1 \
-            -s EXPORT_NAME='ZPLCModule' \
-            -s EXPORTED_FUNCTIONS='[ \
-                \"_zplc_core_init\", \
-                \"_zplc_core_shutdown\", \
-                \"_zplc_core_load\", \
-                \"_zplc_core_step\", \
-                \"_zplc_core_run\", \
-                \"_zplc_core_run_cycle\", \
-                \"_zplc_core_get_state\", \
-                \"_zplc_core_get_sp\", \
-                \"_zplc_core_get_pc\", \
-                \"_zplc_core_get_stack\", \
-                \"_zplc_core_get_error\", \
-                \"_zplc_core_is_halted\", \
-                \"_zplc_core_set_ipi\", \
-                \"_zplc_core_get_opi\", \
-                \"_zplc_hal_init\", \
-                \"_zplc_hal_shutdown\", \
-                \"_zplc_hal_tick\", \
-                \"_zplc_wasm_set_input\", \
-                \"_zplc_wasm_get_output\", \
-                \"_zplc_ipi_read8\", \
-                \"_zplc_opi_read8\", \
-                \"_zplc_ipi_write8\", \
-                \"_zplc_mem_get_region\", \
-                \"_zplc_core_get_default_vm\", \
-                \"_zplc_vm_add_breakpoint\", \
-                \"_zplc_vm_remove_breakpoint\", \
-                \"_zplc_vm_clear_breakpoints\", \
-                \"_zplc_vm_is_paused\", \
-                \"_zplc_vm_resume\", \
-                \"_zplc_vm_get_breakpoint_count\", \
-                \"_zplc_vm_get_breakpoint\", \
-                \"_malloc\", \
-                \"_free\" \
-            ]' \
-            -s EXPORTED_RUNTIME_METHODS='[\"ccall\", \"cwrap\", \"getValue\", \"setValue\", \"UTF8ToString\", \"stringToUTF8\", \"HEAPU8\"]' \
-            -s ALLOW_MEMORY_GROWTH=1 \
-            -s INITIAL_MEMORY=1048576 \
-            -s STACK_SIZE=65536 \
-            -s NO_EXIT_RUNTIME=1 \
-            -s ASSERTIONS=1 \
-            --no-entry \
-        "
-    )
-
-    message(STATUS "  Output: zplc_sim.js + zplc_sim.wasm")
-
-else()
-    # =========================================================================
-    # DEFAULT: Provide instructions
-    # =========================================================================
-    message(STATUS "==============================================")
-    message(STATUS "ZPLC Workspace")
-    message(STATUS "==============================================")
-    message(STATUS "")
-    message(STATUS "For POSIX build (development/testing):")
-    message(STATUS "  cd firmware/lib/zplc_core")
-    message(STATUS "  mkdir build && cd build")
-    message(STATUS "  cmake .. && make && ctest")
-    message(STATUS "")
-    message(STATUS "For Zephyr build (embedded):")
-    message(STATUS "  source ~/zephyrproject/activate.sh")
-    message(STATUS "  west build -b rpi_pico firmware/app")
-    message(STATUS "")
-    message(STATUS "For WASM build (browser):")
-    message(STATUS "  mkdir build_wasm && cd build_wasm")
-    message(STATUS "  emcmake cmake .. -DWASM_BUILD=ON && emmake make")
-    message(STATUS "==============================================")
-
-endif()
+message(STATUS "==============================================")
+message(STATUS "ZPLC Workspace")
+message(STATUS "==============================================")
+message(STATUS "")
+message(STATUS "For POSIX build (development/testing):")
+message(STATUS "  cd firmware/lib/zplc_core")
+message(STATUS "  mkdir build && cd build")
+message(STATUS "  cmake .. && make && ctest")
+message(STATUS "")
+message(STATUS "For Zephyr build (embedded):")
+message(STATUS "  source ~/zephyrproject/activate.sh")
+message(STATUS "  west build -b rpi_pico firmware/app")
+message(STATUS "")
+message(STATUS "For WebAssembly (the browser runtime of the IDE; clang and wasm-ld, no Emscripten):")
+message(STATUS "  bun tools/wasm-core/build.ts --out build/zplc-runtime.wasm")
+message(STATUS "==============================================")

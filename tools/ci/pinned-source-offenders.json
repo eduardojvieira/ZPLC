@@ -410,16 +410,6 @@
     "reason": "The VM error table is now compared with the generated contract. One case still reads Console.tsx to prove the Error column calls describeVmError. Replace by a render test of the trace table (VF-007)."
   },
   {
-    "file": "packages/zplc-ide/src/runtime/wasmAdapter.test.ts",
-    "requirement": "VF-006",
-    "added": "2026-10-10",
-    "reads": [
-      "firmware/lib/zplc_core/include/zplc_loader.h"
-    ],
-    "replacement": "contract",
-    "reason": "Reads the verifier workspace macro of zplc_loader.h to keep verifierWorkspaceBytes equal to the C formula. Replace by exporting the C value through the generated contract."
-  },
-  {
     "file": "packages/zplc-ide/src/store/sessionWiring.test.ts",
     "requirement": "VF-006",
     "added": "2026-10-10",

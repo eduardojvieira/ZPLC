@@ -23,7 +23,7 @@ El core del runtime ZPLC depende de una Capa de Abstracción de Hardware (HAL) a
 |---|---|
 | **Perfil Zephyr** | Backend program-store cuando está habilitado y operativo; NVS es una implementación, no una garantía universal de placa. Los registros `RETAIN` usan las mismas llamadas HAL. |
 | **Simulación Nativa (PC)** | Archivos en el directorio de persistencia (`ZPLC_PERSIST_ROOT`, por defecto `~/.zplc`): el program store y los registros `RETAIN`. |
-| **Simulador WASM** | `localStorage` del navegador, mediante las mismas llamadas HAL. El simulador todavía no lo usa para `RETAIN`. |
+| **Simulador WASM** | Los registros del módulo de retención (`retain_a0` a `retain_b7`) pasan por las llamadas HAL del módulo a la página anfitriona, que los guarda en la carpeta `build/retain` del proyecto abierto y, sin proyecto abierto, en la memoria de la página. El almacén de programas de la sesión está en memoria. Ver [Runtime del navegador](./browser-runtime.md). |
 
 ## Persistencia de Programa en Hardware
 
@@ -194,11 +194,18 @@ conservan por eso sus valores `RETAIN` de una sesión a la siguiente, como lo
 hace un controlador; usa `execution.reset`, u otro directorio de persistencia,
 para partir de los valores declarados.
 
-El simulador WASM todavía no aplica estas reglas. Su almacenamiento es
-`localStorage` y el módulo portable solo necesita las llamadas HAL, pero el
-módulo no está enlazado en la compilación WASM y su adaptador no llama a un
-guardado en stop ni a un restore en la carga. Mientras eso no esté conectado, un
-programa en el simulador WASM parte de los valores declarados en cada carga.
+El runtime WASM aplica el mismo módulo y las mismas reglas: el módulo es el que
+ejecutan el firmware y el host, enlazado en la compilación WebAssembly, y la
+sesión guarda en `STOP`, en `execution.reset` y al cerrar, y restaura cuando se
+carga un programa. Lo que cambia es el almacenamiento y el intervalo. La página
+guarda los registros en la carpeta `build/retain` del proyecto abierto (los
+archivos `retain_a0.bin` a `retain_b7.bin`) y, sin proyecto abierto, en la
+memoria de la página. El intervalo periódico es de 30 segundos, porque un módulo
+no tiene una variable de entorno para cambiarlo. La escritura en la carpeta
+sigue a la llamada que guarda, así que una página que se cierra entre ambas
+puede perder ese registro, y el anterior sigue siendo válido porque se alternan
+dos registros. [Runtime del navegador](./browser-runtime.md) lista los
+escenarios que lo comparan con el del host.
 
 ### Activarlo en una placa de firmware
 

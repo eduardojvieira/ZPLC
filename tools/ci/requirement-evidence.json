@@ -1228,13 +1228,16 @@
     {"kind":"c-test","ref":"firmware/tests/single_task/src/main.c","test":"and the image safe (RT-014, RT-007);"}
   ],
   "RT-008": [
-    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_sched_core.c","test":"(RT-008, RT-014, RT-018).","partial":true,"note":"the portable core runs under the POSIX host runtime, the Zephyr scheduler and the single-task configuration, and the equivalence suites hold them to one trace; the WASM runtime does not use the core yet (WP-92), and RT-008 asks for the same suite on each port, so it stays open until it does"},
-    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_sched_equivalence.c","test":"The host runtime decides what the firmware decides (RT-008).","partial":true,"note":"the portable core runs under the POSIX host runtime, the Zephyr scheduler and the single-task configuration, and the equivalence suites hold them to one trace; the WASM runtime does not use the core yet (WP-92), and RT-008 asks for the same suite on each port, so it stays open until it does"},
-    {"kind":"c-test","ref":"firmware/tests/scheduler_admission/src/main.c","test":"The order of a batch is decided by the portable core (RT-008); the target's wrap-safe clock is checked by","partial":true,"note":"the portable core runs under the POSIX host runtime, the Zephyr scheduler and the single-task configuration, and the equivalence suites hold them to one trace; the WASM runtime does not use the core yet (WP-92), and RT-008 asks for the same suite on each port, so it stays open until it does"},
-    {"kind":"c-test","ref":"firmware/tests/scheduler_equivalence/src/main.c","test":"The Zephyr scheduler decides what the host runtime decides (RT-008).","partial":true,"note":"the portable core runs under the POSIX host runtime, the Zephyr scheduler and the single-task configuration, and the equivalence suites hold them to one trace; the WASM runtime does not use the core yet (WP-92), and RT-008 asks for the same suite on each port, so it stays open until it does"}
+    {"kind":"unit","ref":"packages/zplc-ide/src/runtime/wasmRuntime.test.ts","test":"the scheduler of the WebAssembly runtime decides what the native runtime decides (RT-008)"},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"8b Simulate on the WebAssembly runtime when the native one is off","partial":true},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_sched_core.c","test":"(RT-008, RT-014, RT-018)."},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_sched_equivalence.c","test":"The host runtime decides what the firmware decides (RT-008)."},
+    {"kind":"c-test","ref":"firmware/tests/scheduler_admission/src/main.c","test":"The order of a batch is decided by the portable core (RT-008); the target's wrap-safe clock is checked by"},
+    {"kind":"c-test","ref":"firmware/tests/scheduler_equivalence/src/main.c","test":"The Zephyr scheduler decides what the host runtime decides (RT-008)."}
   ],
   "RT-009": [
-    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_native_runtime_session.c","test":"RT-009: the tasks of a batch read one input image, and a simulation pulse lasts one batch.","partial":true,"note":"covers the POSIX host runtime, and the Zephyr scheduler through the equivalence suite of the shared scheduler core (firmware/tests/scheduler_equivalence); the WASM runtime has no scheduler test yet (WP-92), so RT-009 stays open until one suite runs on every port (RT-008)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/runtime/wasmRuntime.test.ts","test":"the process image of the WebAssembly runtime (RT-009)"},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_native_runtime_session.c","test":"RT-009: the tasks of a batch read one input image, and a simulation pulse lasts one batch."},
     {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_sched_core.c","test":"callbacks that write what they did to a log. The log is the evidence of the order of the phases (RT-009,"},
     {"kind":"c-test","ref":"firmware/tests/single_task/src/main.c","test":"end, from the image (the same latch and commit as the multitask scheduler, RT-009);"}
   ],
@@ -1350,6 +1353,7 @@
     {"kind":"c-test","ref":"firmware/tests/runtime_boot/src/main.c","test":"RT-024: the start-up plan. The scheduler, the program store and the control link start before any network or"}
   ],
   "RT-025": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/runtime/wasmRetain.test.ts","test":"RETAIN on the WebAssembly runtime follows the rules of the firmware (RT-025, RT-027)"},
     {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_native_runtime_session.c","test":"RETAIN persistence of the host runtime (RT-025, RT-026, RT-027)"},
     {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_native_runtime_session.c","test":"RT-025, RT-027: a counter in RETAIN continues in a new session, and another program starts from an initialised region."},
     {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_native_runtime_session.c","test":"RT-025, RT-027: reset is a cold restart, and a faulted session stores nothing."},
@@ -1377,10 +1381,12 @@
     {"kind":"c-test","ref":"firmware/tests/retain_persist/src/main.c","test":"RT-026: a periodic save keeps the minimum interval (1 s in this suite)."}
   ],
   "RT-027": [
-    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_native_runtime_session.c","test":"RETAIN persistence of the host runtime (RT-025, RT-026, RT-027)","partial":true,"note":"covers the POSIX host runtime only: the WASM runtime does not apply the retain rules yet (the module is not linked into the WASM build and the adapter does not call it), so RT-027 stays open for WASM"},
-    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_native_runtime_session.c","test":"RT-025, RT-027: a counter in RETAIN continues in a new session, and another program starts from an initialised region.","partial":true,"note":"covers the POSIX host runtime only: the WASM runtime does not apply the retain rules yet (the module is not linked into the WASM build and the adapter does not call it), so RT-027 stays open for WASM"},
-    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_native_runtime_session.c","test":"RT-025, RT-027: reset is a cold restart, and a faulted session stores nothing.","partial":true,"note":"covers the POSIX host runtime only: the WASM runtime does not apply the retain rules yet (the module is not linked into the WASM build and the adapter does not call it), so RT-027 stays open for WASM"},
-    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_native_runtime_session.c","test":"RT-026, RT-027: periodic saves follow the interval of the environment, skip an unchanged region, and 0 turns them off.","partial":true,"note":"covers the POSIX host runtime only: the WASM runtime does not apply the retain rules yet (the module is not linked into the WASM build and the adapter does not call it), so RT-027 stays open for WASM"}
+    {"kind":"unit","ref":"packages/zplc-ide/src/runtime/wasmRetain.test.ts","test":"RETAIN on the WebAssembly runtime follows the rules of the firmware (RT-025, RT-027)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/runtime/wasmRetain.test.ts","test":"RETAIN records kept with the project (RT-027)"},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_native_runtime_session.c","test":"RETAIN persistence of the host runtime (RT-025, RT-026, RT-027)"},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_native_runtime_session.c","test":"RT-025, RT-027: a counter in RETAIN continues in a new session, and another program starts from an initialised region."},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_native_runtime_session.c","test":"RT-025, RT-027: reset is a cold restart, and a faulted session stores nothing."},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_native_runtime_session.c","test":"RT-026, RT-027: periodic saves follow the interval of the environment, skip an unchanged region, and 0 turns them off."}
   ],
   "RT-028": [
     {"kind":"unit","ref":"packages/zplc-ide/src/runtime/deviceHandshake.test.ts","test":"accepts what the firmware prints from RT-028 on: the code size and the largest artifact"},
@@ -1523,6 +1529,7 @@
   "COM-002": [
     {"kind":"conformance","ref":"conformance/com/com-002-a-failed-request-holds-error-while-en-stays-true.expect.json","test":"COM-002 a failed request holds ERROR while EN stays TRUE, EN FALSE clears it and STATUS keeps the code"},
     {"kind":"conformance","ref":"conformance/com/com-002-a-request-is-one-for-each-rising-edge.expect.json","test":"COM-002 a result is shown once for each rising edge of EN, and a held EN makes no second request"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/runtime/wasmConformance.test.ts","test":"differs from the native runtime in exactly the two COM-002 cases that read the STATUS of a block with no network"},
     {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_comm_dispatch.c","test":"COM-002: BUSY sticks while the handler is pending, the handler is called on"},
     {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_comm_dispatch.c","test":"and cannot replay the finished one (COM-002)."},
     {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_comm_handler_cloud.c","test":"(COM-001, COM-002, COM-003, COM-004, COM-005, COM-008, COM-018)."},
@@ -1913,7 +1920,8 @@
   ],
   "IDE-019": [
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"18 Force an input while stopped at a breakpoint","partial":true},
-    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"8 Force an input and release it","partial":true}
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"8 Force an input and release it","partial":true},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"8b Simulate on the WebAssembly runtime when the native one is off","partial":true}
   ],
   "IDE-020": [
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"4 Build with an error, reach it from Problems","partial":true}
@@ -1961,8 +1969,16 @@
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"37 Any declared input of the running program can be set"}
   ],
   "IDE-025": [
-    {"kind":"unit","ref":"packages/zplc-ide/src/runtime/wasmParity.test.ts","test":"the core in WebAssembly gives the results of the conformance cases (IDE-025)","partial":true,"note":"the core as WebAssembly built by tools/wasm-core with clang and wasm-ld, loader verifier on the load path, 491 of the single-task conformance cases give their expected values; it is not the Emscripten module of the browser simulation: that module is not built by CI (no Emscripten SDK here), is not shipped, and WASM_SIMULATION_ENABLED stays false, so the degraded label and the capability profile of spec 009 are not shown by anything"},
-    {"kind":"unit","ref":"packages/zplc-ide/src/runtime/wasmParity.test.ts","test":"the verifier of the loader is on the path that loads a program in WebAssembly (IDE-025)","partial":true,"note":"the core as WebAssembly built by tools/wasm-core with clang and wasm-ld, loader verifier on the load path, 491 of the single-task conformance cases give their expected values; it is not the Emscripten module of the browser simulation: that module is not built by CI (no Emscripten SDK here), is not shipped, and WASM_SIMULATION_ENABLED stays false, so the degraded label and the capability profile of spec 009 are not shown by anything"}
+    {"kind":"unit","ref":"packages/zplc-ide/scripts/wasmRuntimePlugin.test.ts","test":"the build of the browser runtime inside the IDE build (IDE-025)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/runtime/simulationAdapterFactory.test.ts","test":"the runtime a simulation runs on (IDE-025)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/runtime/wasmAdapter.test.ts","test":"WASMAdapter (IDE-025)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/runtime/wasmConformance.test.ts","test":"the conformance cases on the WebAssembly runtime, through the adapter (IDE-025)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/runtime/wasmParity.test.ts","test":"the core in WebAssembly gives the results of the conformance cases (IDE-025)","note":"the bare core of the module that tools/wasm-core builds with clang and wasm-ld, loader verifier on the load path: 491 single-task conformance cases give their values; the session, the scheduler and the retain rules of the same module are held by wasmRuntime.test.ts, wasmConformance.test.ts and wasmRetain.test.ts"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/runtime/wasmParity.test.ts","test":"the verifier of the loader is on the path that loads a program in WebAssembly (IDE-025)","note":"the bare core of the module that tools/wasm-core builds with clang and wasm-ld, loader verifier on the load path: 491 single-task conformance cases give their values; the session, the scheduler and the retain rules of the same module are held by wasmRuntime.test.ts, wasmConformance.test.ts and wasmRetain.test.ts"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/runtime/wasmRuntime.test.ts","test":"a program on the WebAssembly runtime, through the adapter (IDE-025)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/runtime/wasmRuntime.test.ts","test":"the communication blocks of the WebAssembly runtime (IDE-025)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/runtime/wasmRuntime.test.ts","test":"the module of the WebAssembly runtime (IDE-025)"},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"8b Simulate on the WebAssembly runtime when the native one is off","partial":true}
   ],
   "IDE-026": [
     {"kind":"unit","ref":"scripts/release/binaries.test.ts","test":"the standalone binaries of this machine run without a JavaScript runtime (REL-026, IDE-026)","partial":true,"note":"built and run on Linux with no Bun or Node on the PATH and no checkout; the other five platform and architecture pairs are built and smoked only by the release workflow on their own runners (build-macos, build-windows, build-linux), and no run of it is recorded"}

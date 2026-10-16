@@ -41,10 +41,10 @@ async function runJourney(harness: Harness, journey: Journey, scratch: string): 
   if (journey.example !== 'none') cpSync(join(packageRoot, 'projects', journey.example), project, { recursive: true });
   let launched: Awaited<ReturnType<typeof launchApp>> | undefined;
   try {
-    launched = await launchApp(harness, root);
+    launched = await launchApp(harness, root, journey.environment);
     const notes: string[] = [];
-    const relaunch = async () => { notes.push(...launched!.notes); await launched!.stop(); launched = await launchApp(harness, root); return launched.app; };
-    const crash = async () => { notes.push(...launched!.notes); await launched!.crash(); launched = await launchApp(harness, root); return launched.app; };
+    const relaunch = async () => { notes.push(...launched!.notes); await launched!.stop(); launched = await launchApp(harness, root, journey.environment); return launched.app; };
+    const crash = async () => { notes.push(...launched!.notes); await launched!.crash(); launched = await launchApp(harness, root, journey.environment); return launched.app; };
     await journey.run(launched.app, { root, project, relaunch, crash });
     notes.push(...launched.notes);
     return { status: 'pass', detail: '', notes };

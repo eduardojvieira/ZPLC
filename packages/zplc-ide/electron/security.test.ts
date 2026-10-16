@@ -437,6 +437,8 @@ describe('Electron security boundary', () => {
     const production = createContentSecurityPolicy(false);
     expect(production).toContain("default-src 'self'");
     expect(production).not.toContain("'unsafe-eval'");
+    // WebAssembly may be compiled (the browser runtime), and nothing else may be evaluated or run inline
+    expect(production).toContain("script-src 'self' 'wasm-unsafe-eval';");
     expect(production).not.toContain('http:');
     expect(production).not.toContain('ws:');
     expect(production).toContain("worker-src 'self' blob:");

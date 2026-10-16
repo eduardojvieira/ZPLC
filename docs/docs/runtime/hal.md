@@ -39,10 +39,10 @@ graph TB
 | | Zephyr | POSIX | WebAssembly |
 | --- | --- | --- | --- |
 | Source | `zephyr/zplc_hal_zephyr.c` | `posix/zplc_hal_posix.c` | `wasm/zplc_hal_wasm.c` |
-| Used by | The firmware of every board | The native simulator, `zplc_runtime`, that Studio and the command line run programs and scenarios on | A browser build; in the source tree and not shipped in this release |
-| Time | `k_uptime_get()`, and `k_msleep()` to sleep | `CLOCK_MONOTONIC`; a scenario can replace it with a logical clock (`zplc_hal_posix_set_tick_override`) | `performance.now()` through JavaScript |
-| Digital and analog I/O | GPIO and ADC drivers, for the channels of the board description in `boards.json`: outputs are numbered first, then inputs. Analog outputs answer `ZPLC_HAL_NOT_IMPL` | None: the functions answer `ZPLC_HAL_NOT_IMPL`, because the host runtime exchanges the process image with Studio | Four outputs and four inputs, bridged to JavaScript callbacks |
-| Persistence | NVS on the `storage_partition` of the board when `CONFIG_NVS` is on, and `ZPLC_HAL_NOT_IMPL` when it is off | One file `<key>.bin` per key, in `$ZPLC_PERSIST_ROOT` when that variable is set, and in `~/.zplc` otherwise | The browser's `localStorage`, under the key `zplc_<key>` |
+| Used by | The firmware of every board | The native simulator, `zplc_runtime`, that Studio and the command line run programs and scenarios on | The browser runtime of Studio (`tools/wasm-core` builds it with `clang` and `wasm-ld`): the web build, and the desktop app where the native runtime cannot start. See [Browser runtime](./browser-runtime.md) |
+| Time | `k_uptime_get()`, and `k_msleep()` to sleep | `CLOCK_MONOTONIC`; a scenario can replace it with a logical clock (`zplc_hal_posix_set_tick_override`) | The page's clock, through the import `zplc_host.clock_ms` (`performance.now()` in Studio); the scenario clock of the POSIX port is also here |
+| Digital and analog I/O | GPIO and ADC drivers, for the channels of the board description in `boards.json`: outputs are numbered first, then inputs. Analog outputs answer `ZPLC_HAL_NOT_IMPL` | None: the functions answer `ZPLC_HAL_NOT_IMPL`, because the host runtime exchanges the process image with Studio | None: the functions answer `ZPLC_HAL_NOT_IMPL` and the I/O table is empty, as on the POSIX port |
+| Persistence | NVS on the `storage_partition` of the board when `CONFIG_NVS` is on, and `ZPLC_HAL_NOT_IMPL` when it is off | One file `<key>.bin` per key, in `$ZPLC_PERSIST_ROOT` when that variable is set, and in `~/.zplc` otherwise | The imports `persist_save`, `persist_load` and `persist_delete` of the page, which keeps the `RETAIN` records in the `build/retain` folder of the open project |
 | Network and sockets | The Zephyr network stack when `CONFIG_NETWORKING` is on, and `ZPLC_HAL_NOT_IMPL` when it is off | `ZPLC_HAL_NOT_IMPL` | `ZPLC_HAL_NOT_IMPL` |
 
 A function that a platform cannot perform returns `ZPLC_HAL_NOT_IMPL`, which is the

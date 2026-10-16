@@ -113,7 +113,7 @@ describe('getDebugCapabilitiesForAdapter', () => {
     expect(result?.features.breakpoints.status).toBe(DEBUG_CAPABILITY_STATUS.UNAVAILABLE);
   });
 
-  it('treats disabled browser WASM simulation as unavailable', () => {
+  it('takes the browser runtime from its profile: the controls it has are allowed, what it lacks is unavailable', () => {
     const result = getDebugCapabilitiesForAdapter(
       {
         type: 'wasm',
@@ -122,10 +122,26 @@ describe('getDebugCapabilitiesForAdapter', () => {
       null,
     );
 
-    expect(result?.features.pause.status).toBe(DEBUG_CAPABILITY_STATUS.UNAVAILABLE);
-    expect(result?.features.resume.status).toBe(DEBUG_CAPABILITY_STATUS.UNAVAILABLE);
+    expect(result?.features.pause.status).toBe(DEBUG_CAPABILITY_STATUS.SUPPORTED);
+    expect(result?.features.resume.status).toBe(DEBUG_CAPABILITY_STATUS.SUPPORTED);
+    expect(result?.features.step.status).toBe(DEBUG_CAPABILITY_STATUS.SUPPORTED);
+    expect(result?.features.breakpoints.status).toBe(DEBUG_CAPABILITY_STATUS.SUPPORTED);
+    expect(result?.features.modbus?.status).toBe(DEBUG_CAPABILITY_STATUS.UNAVAILABLE);
+    expect(result?.features.timing?.status).toBe(DEBUG_CAPABILITY_STATUS.DEGRADED);
+  });
+
+  it('takes the profile that a connected browser runtime reported', () => {
+    const result = getDebugCapabilitiesForAdapter(
+      {
+        type: 'wasm',
+        capabilities: { profile_id: 'reported', features: [{ name: 'pause', status: 'supported' }] },
+      } as never,
+      'simulation',
+      null,
+    );
+
+    expect(result?.features.pause.status).toBe(DEBUG_CAPABILITY_STATUS.SUPPORTED);
     expect(result?.features.step.status).toBe(DEBUG_CAPABILITY_STATUS.UNAVAILABLE);
-    expect(result?.features.breakpoints.status).toBe(DEBUG_CAPABILITY_STATUS.UNAVAILABLE);
   });
 });
 

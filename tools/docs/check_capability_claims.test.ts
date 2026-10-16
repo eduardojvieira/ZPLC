@@ -41,7 +41,10 @@ describe('capability claims: what the public text says ZPLC can do is backed by 
     expect(ids('ZPLC is tested on real hardware.')).toEqual(['hardware-tested']);
     expect(ids('The Raspberry Pi Pico runs your program.')).toEqual(['board-capability']);
     expect(ids('Modbus TCP is supported on every network board.')).toEqual(['communication-protocols']);
-    expect(ids('The browser simulator runs your program.')).toEqual(['browser-simulator']);
+    // the browser runtime ships with a capability profile whose features are not all unavailable (IDE-025): the claim is
+    // backed by it, and it is flagged again when a build has no such runtime
+    expect(ids('The browser simulator runs your program.')).toEqual([]);
+    expect(ids('The browser simulator runs your program.', truth({ wasmAvailable: false }))).toEqual(['browser-simulator']);
     // WORK is the memory region of the program and not the verb: a sentence that names it makes no claim
     expect(ids('The Modbus server serves every variable of WORK and RETAIN.')).toEqual([]);
     expect(ids('Modbus RTU works on every serial board.')).toEqual(['communication-protocols']);
@@ -74,7 +77,8 @@ describe('capability claims: what the public text says ZPLC can do is backed by 
     expect(ids('The Raspberry Pi Pico runs your program.', truth({ hilBoards: ['rpi_pico'] }))).toEqual([]);
     expect(ids('The browser simulator runs your program.', truth({ wasmAvailable: true }))).toEqual([]);
     expect(real.hilBoards).toEqual([]);
-    expect(real.wasmAvailable).toBe(false);
+    // the browser runtime ships, with a capability profile that has features that are not unavailable (IDE-025)
+    expect(real.wasmAvailable).toBe(true);
   });
 
   it('holds a number that counts a thing to what the repository has, and a sentence about a release to nothing', () => {

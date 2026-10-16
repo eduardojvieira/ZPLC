@@ -32,7 +32,7 @@ operacional.
 | Core y loader | VM C99, ISA, modelo de memoria y verificación `.zplc` | La evidencia host/unit no califica comportamiento físico. |
 | Simulación nativa POSIX | Runtime local/headless para flujos de compile, test, trace y replay | Comportamiento host; no evidencia temporal target ni HIL. |
 | Perfiles Zephyr | Runtime firmware y adaptadores HAL para revisiones de placa nombradas | Capabilities y calificación varían por perfil. |
-| WASM | Superficie de fallback | Falla cerrado o no está disponible hasta verificar un artefacto. |
+| WASM | Fallback degradado para simulación cuando el runtime nativo no puede arrancar, y en la compilación web | Evidencia de host; la sesión, el núcleo del scheduler y las reglas de retención del runtime nativo, sin bloques de red, sin serie, sin pines y con el timing de un navegador. Ver [Runtime del navegador](./browser-runtime.md). |
 
 ## Contratos y referencias
 

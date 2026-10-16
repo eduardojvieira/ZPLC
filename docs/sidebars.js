@@ -159,6 +159,7 @@ const sidebars = {
             'runtime/scheduler',
             'runtime/memory-model',
             'runtime/persistence',
+            'runtime/browser-runtime',
             'runtime/connectivity',
             'runtime/communication-function-blocks',
             'runtime/native-c',

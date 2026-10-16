@@ -10,7 +10,7 @@ with the CLI and local MCP adapter.
 - A canonical compile path, temporal tests, and native POSIX simulation.
 - Explicit, human-controlled build, flash, deploy, and RUN/STOP boundaries.
 - Optional AI candidate changes with review, tool evidence, and human save.
-- A degraded WASM fallback only where native simulation is unavailable.
+- A degraded WebAssembly runtime (built with the IDE) only where native simulation is unavailable.
 
 Host simulation, a package build, and a board cross-build do not establish HIL,
 electrical behavior, target timing, or production qualification. See the
