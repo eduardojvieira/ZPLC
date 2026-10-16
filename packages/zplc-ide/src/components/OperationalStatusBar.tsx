@@ -11,12 +11,13 @@ interface OperationalStatusBarProps {
   status: { text: string; tone: OperationalStatusTone };
 }
 
+// The status dot is a tone of the signal vocabulary (UX-009): the same borders as a TRUE chip, a forced chip and a fault chip.
 const TONE_DOT: Record<OperationalStatusTone, string> = {
-  neutral: 'bg-[var(--color-surface-500)]',
-  info: 'bg-[var(--color-accent-blue)]',
-  success: 'bg-[var(--color-accent-green)]',
-  attention: 'bg-[var(--color-accent-orange)]',
-  danger: 'bg-[var(--color-accent-red)]',
+  neutral: 'bg-[var(--tone-neutral-border)]',
+  info: 'bg-[var(--tone-info-border)]',
+  success: 'bg-[var(--signal-true-border)]',
+  attention: 'bg-[var(--signal-forced-border)]',
+  danger: 'bg-[var(--signal-fault-border)]',
 };
 
 function Detail({ label, value, numeric = false }: { label: string; value: string; numeric?: boolean }) {
@@ -71,8 +72,13 @@ export function OperationalStatusBar({ mode, adapterType, connected, vmInfo, sta
           {presentation.taskCount !== undefined && <Detail label="tasks" value={String(presentation.taskCount)} numeric />}
           {presentation.overruns !== undefined && <Detail label="overruns" value={presentation.overruns.toLocaleString()} numeric />}
         </div>
+        {presentation.limits && (
+          <div role="note" className="mt-1 border-l-2 border-[var(--color-accent-orange)] px-2 text-xs text-[var(--color-surface-100)]">
+            {presentation.limits}
+          </div>
+        )}
         {presentation.force && (
-          <div className={`mt-1 border-l-2 px-2 text-xs text-[var(--color-surface-100)] ${presentation.force.kind === 'unconfirmed' ? 'border-[var(--color-accent-red)]' : 'border-[var(--color-accent-orange)]'}`} {...(presentation.force.kind === 'unconfirmed' ? { role: 'alert' } : {})}>
+          <div className={`mt-1 border-l-2 px-2 text-xs text-[var(--color-surface-100)] ${presentation.force.kind === 'unconfirmed' ? 'border-[var(--signal-fault-border)]' : 'border-[var(--signal-forced-border)]'}`} {...(presentation.force.kind === 'unconfirmed' ? { role: 'alert' } : {})}>
             {presentation.force.text}
           </div>
         )}

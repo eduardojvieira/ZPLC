@@ -145,6 +145,8 @@ The five rules above are the same in simulation and on a target. These are not, 
 | Speed and jitter | The VM runs on a host processor under a general-purpose operating system. | The VM runs on the board's processor. A program that is in time in simulation can miss on a target, and the reverse. |
 | Reporting of a miss | The warning flag, the count, the last overrun, the configurable limit and the fault reason of the table above. | The same fields, from the same core (`deadline` and `fault` of `zplc sched status --json`), with the count of each task, the total and the state `error` once latched. The limit is `CONFIG_ZPLC_DEADLINE_MISS_LIMIT`. |
 
+The WebAssembly runtime of Studio runs the same scheduler core and the same session as the native simulation, and a test holds its decisions to the shared trace of the core (admission, order, input latch, deadline misses, fault latch and commit, for three tasks and for one). Its clock is the clock of the page, in whole milliseconds, so the rows above that name the host clock apply to the clock of the browser, and a background tab can run late. See [Browser runtime](./browser-runtime.md).
+
 ## Pause, resume, step and stop
 
 The runtime keeps two things apart: the **physical outputs** (the pins) and the **logical state of the program** (the output process image, the force table and each task's program counter and stacks). A pause makes the first one safe and keeps the second one, so that a resume or a step continues the program from where it stopped (requirement RT-017). `STOP` ends the run and discards both.

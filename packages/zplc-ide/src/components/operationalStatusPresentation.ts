@@ -1,3 +1,5 @@
+import { wasmCapabilityProfile } from '../runtime/wasmCapabilities';
+
 export type OperationalStatusTone = 'neutral' | 'info' | 'success' | 'attention' | 'danger';
 
 export interface OperationalStatusPresentation {
@@ -10,6 +12,8 @@ export interface OperationalStatusPresentation {
   taskCount?: number;
   overruns?: number;
   force?: { kind: 'active' | 'unconfirmed'; text: string };
+  /** What the connected runtime does not have or has only in part, when it is the browser runtime (IDE-025). */
+  limits?: string;
 }
 
 export interface OperationalStatusInput {
@@ -85,6 +89,13 @@ function reportedOverruns({ adapterType, connected, nativeTrace, controllerStatu
   return undefined;
 }
 
+/** The limits of the browser runtime, from the same profile its handshake reports, so that this text cannot claim more. */
+function browserRuntimeLimits(): string {
+  const features = wasmCapabilityProfile().features;
+  const named = (status: string) => features.filter((feature) => feature.status === status).map((feature) => feature.name).join(', ');
+  return `Browser runtime. Not available: ${named('unavailable')}. Degraded: ${named('degraded')}. Timing follows the browser clock.`;
+}
+
 /** Reduces runtime and store state to bounded operational copy; untrusted data is omitted. */
 export function presentOperationalStatus(input: OperationalStatusInput): OperationalStatusPresentation {
   const mode = input.mode === 'hardware' ? 'HARDWARE' : 'SIMULATION';
@@ -136,5 +147,6 @@ export function presentOperationalStatus(input: OperationalStatusInput): Operati
     ...taskMetrics(input.projectTasks),
     ...(overruns !== undefined ? { overruns } : {}),
     ...(force ? { force } : {}),
+    ...(wasmConnected ? { limits: browserRuntimeLimits() } : {}),
   };
 }

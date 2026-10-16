@@ -20,6 +20,7 @@ import {
   WATCH_FORCE_STATE,
 } from './debugAdapter';
 import { assertMemoryAccess } from './memoryAccess';
+import { WASM_PROFILE_ID, WASM_RUNTIME_KIND } from './wasmCapabilities';
 import {
   createNativeRequest,
   hexToBytes,
@@ -57,7 +58,8 @@ interface NativeForceListResult {
   }>;
 }
 
-interface NativeSimulationApi {
+/** The transport of a simulation session: the Electron bridge of the native runtime, or a WebAssembly runtime (wasmRuntime.ts). */
+export interface NativeSimulationApi {
   startSession: () => Promise<NativeHelloResult>;
   stopSession: () => Promise<void>;
   request: <TResult = unknown>(request: ReturnType<typeof createNativeRequest>) => Promise<TResult>;
@@ -206,8 +208,16 @@ function isNativeRuntimeSnapshot(value: unknown): value is NativeRuntimeSnapshot
   );
 }
 
+/**
+ * The adapter of a simulation session: the protocol of the native runtime over a transport. The transport is the
+ * process of the desktop app, or the WebAssembly runtime of wasmRuntime.ts; the runtime says which in its handshake, and
+ * the adapter reports it as its `type`, so that the interface shows the degraded label of the browser runtime and not the
+ * native one (IDE-025).
+ */
 export class NativeAdapter implements IDebugAdapter {
-  readonly type = DEBUG_ADAPTER_TYPE.NATIVE;
+  get type(): typeof DEBUG_ADAPTER_TYPE.NATIVE | typeof DEBUG_ADAPTER_TYPE.WASM {
+    return this.runtimeKind === WASM_RUNTIME_KIND ? DEBUG_ADAPTER_TYPE.WASM : DEBUG_ADAPTER_TYPE.NATIVE;
+  }
 
   private readonly api: NativeSimulationApi;
   private events: DebugAdapterEvents = {};
@@ -278,10 +288,13 @@ export class NativeAdapter implements IDebugAdapter {
   }
 
   private supportsSimulationInputs(): boolean {
-    if (this.runtimeKind !== 'native-posix' || this.capabilityProfile?.profile_id !== 'native-posix-mvp') {
+    const profile = this.capabilityProfile;
+    const known = (this.runtimeKind === 'native-posix' && profile?.profile_id === 'native-posix-mvp')
+      || (this.runtimeKind === WASM_RUNTIME_KIND && profile?.profile_id === WASM_PROFILE_ID);
+    if (!known || profile === null) {
       return false;
     }
-    const matches = this.capabilityProfile.features.filter((feature) => feature.name === 'simulation-inputs');
+    const matches = profile.features.filter((feature) => feature.name === 'simulation-inputs');
     return matches.length === 1 && matches[0]?.status === 'supported';
   }
 

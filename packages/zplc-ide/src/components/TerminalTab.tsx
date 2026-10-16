@@ -22,6 +22,7 @@ import {
   isTerminalForceMutation,
   TERMINAL_FORCE_COMMAND_BLOCKED_MESSAGE,
 } from './terminalForceCommandPolicy';
+import { Button, IconButton, TextField } from '../ui';
 
 /** Line ending for commands */
 const LINE_ENDING = '\r\n';
@@ -323,28 +324,13 @@ export function TerminalTab({ isActive }: TerminalTabProps) {
         <div className="flex-1" />
         
         {/* Connect/Disconnect Button */}
-        <button
-          onClick={() => { void handleConnect(); }}
-          disabled={isConnecting}
-          className={`flex items-center gap-1 px-2 py-0.5 rounded text-xs transition-colors ${
-            isConnected
-              ? 'bg-[var(--color-accent-green)] text-white hover:opacity-90'
-              : 'bg-[var(--color-surface-700)] hover:bg-[var(--color-surface-600)] text-[var(--color-surface-200)]'
-          } disabled:opacity-50`}
-          title={isConnected ? 'Disconnect' : 'Connect to device'}
-        >
+        <Button variant={isConnected ? 'secondary' : 'primary'} size="sm" onClick={() => { void handleConnect(); }} disabled={isConnecting}>
           {isConnected ? <PlugZap size={12} /> : <Plug size={12} />}
           <span>{isConnecting ? 'Connecting...' : isConnected ? 'Disconnect' : 'Connect'}</span>
-        </button>
+        </Button>
         
         {/* Clear Button */}
-        <button
-          onClick={handleClear}
-          className="p-1 rounded hover:bg-[var(--color-surface-700)] text-[var(--color-surface-400)] hover:text-[var(--color-surface-200)]"
-          title="Clear terminal"
-        >
-          <Trash2 size={12} />
-        </button>
+        <IconButton label="Clear terminal" variant="ghost" size="sm" icon={<Trash2 size={12} />} onClick={handleClear} />
       </div>
 
       {/* Terminal Output */}
@@ -374,18 +360,7 @@ export function TerminalTab({ isActive }: TerminalTabProps) {
       {/* Input Line */}
       <form onSubmit={handleSubmit} className="flex items-center border-t border-[var(--color-surface-700)]">
         <span className="px-2 text-[var(--color-accent-green)] font-mono text-sm">$</span>
-        <input
-          ref={inputRef}
-          type="text"
-          value={inputValue}
-          onChange={(e) => setInputValue(e.target.value)}
-          onKeyDown={handleKeyDown}
-          placeholder={isConnected ? 'Type a command...' : 'Connect to send commands'}
-          disabled={!isConnected}
-          className="flex-1 bg-transparent border-none outline-none py-2 pr-2 font-mono text-sm text-[var(--color-surface-100)] placeholder:text-[var(--color-surface-500)] disabled:opacity-50"
-          spellCheck={false}
-          autoComplete="off"
-        />
+        <TextField aria-label="Terminal command" ref={inputRef} value={inputValue} onChange={(e) => setInputValue(e.target.value)} onKeyDown={handleKeyDown} placeholder={isConnected ? 'Type a command...' : 'Connect to send commands'} disabled={!isConnected} className="flex-1 font-mono" spellCheck={false} autoComplete="off" />
       </form>
     </div>
   );

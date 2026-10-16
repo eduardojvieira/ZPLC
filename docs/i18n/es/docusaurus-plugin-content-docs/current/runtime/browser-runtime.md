@@ -1,0 +1,68 @@
+---
+sidebar_position: 4
+slug: /runtime/browser-runtime
+id: browser-runtime
+title: Runtime del navegador (WebAssembly)
+sidebar_label: Runtime del navegador
+description: "El runtime WebAssembly de Studio: cuándo se ejecuta en lugar de la simulación nativa, qué comparte con el firmware, qué no tiene y la evidencia de cada afirmación."
+---
+
+# Runtime del navegador (WebAssembly)
+
+Studio simula un programa en el runtime nativo de la aplicación de escritorio. Cuando ese runtime no puede arrancar, o donde no existe (la compilación web de Studio), la simulación se ejecuta en el **runtime del navegador**: el mismo código de sesión, compilado a WebAssembly. Es una simulación degradada, y Studio lo dice dondequiera que muestra el runtime.
+
+## Qué es
+
+El módulo se compila a partir de los archivos del runtime nativo y del firmware, no de una copia:
+
+| Parte | Fuente | Qué aporta |
+|---|---|---|
+| La VM y el cargador con su verificador | `firmware/lib/zplc_core/src/core` | El resultado de cada scan y el rechazo de un programa cuyo código el verificador no puede demostrar |
+| El núcleo del scheduler | `zplc_sched_core.c` | Admisión, orden, fases de un scan, plazos, el latch de falla y el estado seguro (RT-008, RT-009) |
+| Las reglas de retención | `zplc_retain.c` | El registro, su checksum, el hash de layout, la identidad del programa y dos ranuras alternadas (RT-025, RT-027) |
+| La sesión | `firmware/apps/posix_host/src/native_runtime_session.c` | Las mismas solicitudes y respuestas que el runtime nativo: cargar, iniciar, pausar, paso, breakpoints, forzados, entradas de simulación |
+| El puerto del HAL | `firmware/lib/zplc_core/src/hal/wasm/zplc_hal_wasm.c` | Cinco llamadas hacia la página: un reloj, tres de persistencia y una línea de log |
+
+`tools/wasm-core/build.ts` lo compila con `clang` y `wasm-ld`, sin biblioteca C y sin Emscripten. La compilación de Studio lo ejecuta (la compilación Vite de `packages/zplc-ide`): el módulo queda embebido en el bundle y su manifiesto (tamaño, SHA-256, commit, versión del producto y compilador) se escribe en `dist/wasm-runtime.json`. Nada de lo compilado se versiona. Una máquina sin `clang` y `wasm-ld` produce un Studio sin runtime del navegador y dice por qué; donde `CI` está definido, la compilación falla.
+
+## Cuándo se ejecuta
+
+- En la compilación web de Studio, que no tiene runtime nativo.
+- En la aplicación de escritorio cuando el runtime nativo no arranca: falta su binario, no fue compilado para la plataforma o falló su handshake. La consola dice que la simulación nativa no pudo arrancar y que en su lugar se ejecuta el runtime WebAssembly.
+
+Un Studio sin empaquetar apaga el runtime nativo con `ZPLC_RUNTIME=wasm`, para que una prueba muestre el runtime del navegador en una máquina que tiene el nativo. Un Studio instalado ignora la variable.
+
+## Qué muestra Studio
+
+La barra de estado muestra **Runtime: WASM fallback · degraded** y, debajo, la lista de lo que el runtime no tiene y de lo que tiene en parte. La lista es el perfil de capacidades que el runtime informa en su handshake, con el vocabulario del [contrato de sesión nativa](./intro.md): cada capacidad es `supported`, `degraded` o `unavailable`, y una capacidad que no es `supported` dice por qué y qué usar en su lugar.
+
+| Capacidad | Estado | Qué significa |
+|---|---|---|
+| `pause`, `resume`, `step`, `breakpoints` | supported | El código de sesión es el del runtime nativo: un breakpoint detiene el scan, un paso ejecuta uno, reanudar continúa desde donde se detuvo |
+| `simulation-inputs` | supported | Las entradas de arranque, parada y paro de emergencia del motor preparan un batch, como en el runtime nativo |
+| `tasks` | degraded | Las tareas cíclicas corren sobre el núcleo del scheduler del firmware, pero el navegador las libera desde sus propios timers; las tareas de evento e interrupción no existen en simulación |
+| `timing` | degraded | El período del scan sigue el reloj de la página y sus timers, que se frenan en una pestaña en segundo plano y no ofrecen garantía de tiempo real. Lo determinista es el resultado de cada scan, no el momento en que ocurre |
+| `retentive-memory` | degraded | Las reglas son las del firmware. Los registros van a la carpeta `build/retain` del proyecto abierto después del scan que los guarda, así que una página que se cierra entre el guardado y la escritura puede perder ese registro, y el anterior sigue siendo válido. Sin proyecto abierto viven en la memoria de la página |
+| `modbus`, `mqtt`, `cloud` | unavailable | Un módulo no tiene red: todo bloque de comunicación responde `STATUS` 10 (UNAVAILABLE) y nunca informa éxito |
+| `serial` | unavailable | El runtime no tiene puerto serie ni habla el enlace de dispositivo |
+| `physical-io` | unavailable | No hay pines: las entradas y salidas son la imagen de proceso que Studio lee y escribe |
+
+## Qué es igual, y la evidencia
+
+| Afirmación | Evidencia |
+|---|---|
+| El verificador del cargador está en el único camino que carga un programa | `wasmParity.test.ts` rechaza un programa que toma un valor de una pila vacía, y los 491 casos de conformidad de una tarea dan sus valores por el núcleo desnudo |
+| Todo caso de conformidad que compila da sus valores en la sesión, a través del adaptador de Studio, con sus tareas y sus fallas | `wasmConformance.test.ts` ejecuta los mismos pasos que el ejecutor nativo (`scenarioRun.ts`); la única diferencia declarada es el `STATUS` de un bloque sin red (10 aquí, 3 donde un runtime no registra manejador) |
+| El scheduler decide lo que deciden el runtime nativo y el scheduler de Zephyr | `wasmRuntime.test.ts` conduce el módulo con el reloj de los casos de traza compartidos (`zplc_sched_trace_cases.h`) y compara las decisiones con la traza dorada, para tres tareas y para una |
+| Un batch lee una sola imagen de entrada y un pulso dura un batch | `wasmRuntime.test.ts`, el mismo escenario que `test_native_runtime_session.c` |
+| Un valor retenido sobrevive a una sesión nueva, un programa distinto parte de una región inicializada, se rechazan un registro dañado y un registro de otro layout, los guardados siguen el intervalo y omiten una región sin cambios, un reset es un reinicio en frío | `wasmRetain.test.ts`, con los programas y los campos de estado de los escenarios de retención de `test_native_runtime_session.c` |
+| Los registros se guardan con el proyecto | `wasmRetain.test.ts` sobre un handle de carpeta, y la jornada 8b en la aplicación real |
+
+Nivel de evidencia: host. El módulo corre bajo Bun y, en la jornada 8b, en el renderer de Electron en Linux. No se usó otro motor de navegador, ni un teléfono, ni hardware, y no se midió el timing del navegador.
+
+## Límites que conviene conocer
+
+- El intervalo entre guardados periódicos de retención es de 30 segundos. Un módulo no tiene entorno, así que `ZPLC_RETAIN_SAVE_INTERVAL_MS` no existe aquí; un `STOP` y un cierre siguen guardando.
+- El almacén de programas de la sesión está en memoria: el programa se carga desde el proyecto cada vez, y solo los registros `RETAIN` se guardan con él.
+- La traza de señales y la vista en vivo del ejemplo del motor son funciones de la simulación nativa, y siguen apagadas en el runtime del navegador.
+- La persistencia de la página es asíncrona. Un fallo de escritura se muestra en la consola de Studio como advertencia; la sesión continúa.

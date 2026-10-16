@@ -30,13 +30,14 @@ describe('theme control component', () => {
 
   it('is one labelled native select that uses the shared theme hook', () => {
     expect(source).toContain('useTheme');
-    expect(source).toContain('<select');
-    expect(source).toContain('Theme');
+    // The kit's Select is the native select with its label associated by the Field (ui/kit.test.tsx proves that).
+    expect(source).toContain('<Select label="Theme"');
+    expect(source).not.toContain('<select');
     expect(source).toContain('THEME_CHOICES.map');
     expect(source).toContain('chooseTheme(event.target.value, setTheme)');
     // 'system' is not an option, so the select shows the theme the system resolves to.
     expect(source).toContain('value={effectiveTheme}');
-    expect(source).toContain('focus-visible:outline-2');
+    expect(source).not.toContain('focus-visible:outline');
     expect(source).not.toContain('Contrast');
     expect(source).not.toContain('<button');
   });

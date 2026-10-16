@@ -215,6 +215,23 @@ config ZPLC_VM_CYCLE_INSTRUCTION_BUDGET
       the limit is a controlled logical VM watchdog fault. It is not a physical
       watchdog, timing measurement, or WCET guarantee.
 
+config ZPLC_LTO
+    bool "Link-time optimization of the ZPLC runtime and the application"
+    default y
+    depends on !ARCH_POSIX
+    help
+      Compiles the ZPLC library and the application with -flto (as fat objects, so that the archives and the link
+      checks of the build still read them) and lets the final link optimize across them: what is called from one
+      file of the runtime, the scheduler, the program store or the shell is inlined and merged across files.
+      Zephyr is compiled as it always was and its interrupt tables are generated as they always were:
+      CONFIG_LTO, which does both for all of the image, needs the interrupt-table generator that not every
+      architecture of the repository has, and is not used.
+
+      It saves about 3 percent of the flash of an image (about 5 KB on a Raspberry Pi Pico) and changes no line of
+      code. Turn it off to debug a fault with the inlining out of the way. The simulator targets that run on the
+      host (native_sim) link their image as a relocatable object, which the optimizer cannot be part of: the
+      suites of firmware/tests exercise it on the Cortex-M targets of QEMU.
+
 config ZPLC_LOG_LEVEL
     int "Log level"
     default 3

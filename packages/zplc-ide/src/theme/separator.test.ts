@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'bun:test';
 import { readFileSync } from 'node:fs';
-import { contrastRatio, resolveThemeTokens, type ThemeName } from './themeTokens';
+import { contrastRatio } from './color';
+import { THEME_IDS, resolveTokens } from './tokens';
 
 const raw = readFileSync(new URL('../index.css', import.meta.url), 'utf8');
 const css = raw.replace(/\/\*[\s\S]*?\*\//g, '');
-const THEMES: ThemeName[] = ['light', 'dark', 'high-contrast', 'system-dark'];
 const rules = [...css.matchAll(/([^{}]+)\{([^{}]*)\}/g)].map(([, selector, body]) => ({ selector: selector.trim(), body }));
 const rule = (selector: string) => rules.filter((item) => item.selector === selector).map((item) => item.body).join('\n');
 
@@ -29,8 +29,8 @@ describe('panel separator styles', () => {
 
   it('keep a rule at rest that is visible against the panels in every theme', () => {
     expect(rule('[data-separator]')).toMatch(/var\(--separator-rule\)/);
-    for (const theme of THEMES) {
-      const tokens = resolveThemeTokens(raw, theme);
+    for (const theme of THEME_IDS) {
+      const tokens = resolveTokens(theme);
       for (const surface of ['--color-surface-900', '--color-surface-800']) {
         expect({ theme, surface, visible: contrastRatio(tokens['--separator-rule'], tokens[surface]) >= 3 }).toEqual({ theme, surface, visible: true });
       }

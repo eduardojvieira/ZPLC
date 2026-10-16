@@ -23,7 +23,7 @@ The ZPLC runtime core relies on an abstract Hardware Abstraction Layer (HAL) for
 |---|---|
 | **Zephyr profile** | Program-store backend when enabled and operational; NVS is one implementation, not a universal board guarantee. The `RETAIN` records use the same HAL calls. |
 | **Native Sim (Desktop)** | Files in the persistence directory (`ZPLC_PERSIST_ROOT`, default `~/.zplc`): the program store and the `RETAIN` records. |
-| **WASM simulator** | `localStorage` of the browser, through the same HAL calls. The simulator does not use it for `RETAIN` yet. |
+| **WASM simulator** | The records of the retain module (`retain_a0` to `retain_b7`) go through the HAL calls of the module to the host page, which keeps them in the `build/retain` folder of the open project, and in the memory of the page when no project is open. The program store of the session is in memory. See [Browser runtime](./browser-runtime.md). |
 
 ## Program Persistence on Hardware
 
@@ -75,13 +75,22 @@ staging and restore buffers, the size `zplc sys info` reports (`max_artifact_siz
 the board (RT-028). The build fails when two slots of that size, in chunks, do not fit the storage partition. The
 Raspberry Pi Pico profile therefore sets 24576 bytes (its 64 KB partition), the STM32F746G Discovery
 profile 16384 and the Arduino Opta WiFi profile 32768 (their RAM), and the ESP32-S3 profile keeps its 8192; the
-other profiles keep 45056. The program store (scratch for its rollback check), the upload staging buffer and the VM each
-hold one program in RAM, so a profile spends three times its code size. There is no fourth, resident copy: the staging
-buffer keeps the loaded artifact, and `zplc reset` reloads the program from the store, which holds the same one
-(an upload in progress is cancelled by a reset).
+other profiles keep 45056. The upload staging buffer and the VM each hold one program in RAM, so a profile spends
+twice its code size. There is no third, resident copy: the staging buffer keeps the loaded artifact, and `zplc reset`
+reloads the program from the store, which holds the same one (an upload in progress is cancelled by a reset).
+
+A deploy has to know, before it writes, that there is a real program to fall back to, which means reading that
+program and admitting it, and that needs a buffer of the code size. The store has none of its own: it reads the
+rollback into the staging buffer when an upload starts, while that buffer is free (`zplc load`, `zplc sched load`
+and the start of a program transfer of the device link), and the commit at the end of the upload goes ahead only
+when the active record and the two metadata records are still the ones the answer was read from. The only writer of
+those records is a commit, so they are the same unless the upload was overtaken, and then nothing is written. A store
+whose records verify as nothing gives no rollback, and the commit refuses as it always did. The payload of the
+rollback was admitted when the upload started, not when it ended.
 
 What has been shown: a power cut injected at every operation of a deploy and a torn write at every record, on the
-host (`test_program_store`), and a power cut at every operation of a deploy of the largest size over the NVS flash
+host (`test_program_store`, which also sweeps the deploy the way the firmware makes it, with the rollback found at the
+start of the upload), and a power cut at every operation of a deploy of the largest size over the NVS flash
 simulator on `native_sim` (`program_store_nvs`), restored into the same buffer the deploy used. What has not: a power cut on a board. The flash driver, the erase time
 and the supply behaviour of each profile need the hardware record of that profile (HIL-010).
 
@@ -176,11 +185,17 @@ host simulator therefore keep their `RETAIN` values from one session to the
 next, as a controller does; use `execution.reset`, or another persistence
 directory, to start from the declared values.
 
-The WASM simulator does not apply these rules yet. Its storage is `localStorage`
-and the portable module needs only the HAL calls, but the module is not linked
-into the WASM build and its adapter does not call a save on stop or a restore on
-load. Until that is wired, a program on the WASM simulator starts from the
-declared values at every load.
+The WASM runtime applies the same module and the same rules: the module is the
+one the firmware and the host run, linked into the WebAssembly build, and the
+session saves on `STOP`, on `execution.reset` and at shutdown, and restores when
+a program loads. What differs is the storage and the interval. The page keeps
+the records in the `build/retain` folder of the open project (the files
+`retain_a0.bin` to `retain_b7.bin`), and in the memory of the page when no
+project is open. The periodic interval is 30 seconds, because a module has no
+environment variable to change it. The write to the folder follows the call that
+saves, so a page closed between the two can lose that one record, and the
+previous one stays valid because two records alternate. [Browser
+runtime](./browser-runtime.md) lists the scenarios that hold it to the host's.
 
 ### Enabling it on a firmware board
 

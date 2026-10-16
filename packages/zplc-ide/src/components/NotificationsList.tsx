@@ -6,6 +6,7 @@ import { AlertCircle, CheckCircle, CircleSlash, LoaderCircle, TriangleAlert, X }
 
 import type { AppNotification, NotificationStatus } from '../store/notifications';
 import type { ConsoleTab } from '../types';
+import { Button, IconButton } from '../ui';
 
 const PANEL_NAMES: Partial<Record<ConsoleTab, string>> = { output: 'Output', problems: 'Problems', tests: 'Tests', trace: 'Trace', watch: 'Watch' };
 
@@ -25,8 +26,6 @@ function Icon({ status }: { status: NotificationStatus }) {
   if (status === 'error') return <AlertCircle {...common} className="mt-0.5 shrink-0 text-[var(--color-accent-red)]" />;
   return <CircleSlash {...common} className="mt-0.5 shrink-0 text-[var(--color-surface-300)]" />;
 }
-
-const BUTTON = 'border border-[var(--color-surface-600)] bg-[var(--color-surface-800)] px-2 py-0.5 text-xs text-[var(--color-surface-100)] hover:bg-[var(--color-surface-700)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-accent-blue)]';
 
 export function NotificationList({ items, onOpenDetails, onDismiss }: {
   items: AppNotification[];
@@ -53,7 +52,7 @@ export function NotificationList({ items, onOpenDetails, onDismiss }: {
                 <p className="font-medium break-words">{entry.title}</p>
                 {entry.detail && <p className="mt-0.5 text-xs break-words text-[var(--color-surface-300)]">{entry.detail}</p>}
               </div>
-              <button type="button" className="shrink-0 p-0.5 text-[var(--color-surface-300)] hover:text-[var(--color-surface-100)] focus-visible:outline-2 focus-visible:outline-[var(--color-accent-blue)]" aria-label={`Dismiss: ${entry.title}`} onClick={() => onDismiss(entry.id)}><X size={14} aria-hidden="true" /></button>
+              <IconButton label={`Dismiss: ${entry.title}`} variant="ghost" size="sm" icon={<X size={14} aria-hidden="true" />} className="shrink-0" onClick={() => onDismiss(entry.id)} />
             </div>
             {entry.status === 'running' && (
               <div role="progressbar" aria-label={entry.title} aria-valuetext="In progress" className="mt-2 h-1 w-full overflow-hidden bg-[var(--color-surface-700)]">
@@ -61,9 +60,9 @@ export function NotificationList({ items, onOpenDetails, onDismiss }: {
               </div>
             )}
             <div className="mt-2 flex items-center gap-2">
-              <button type="button" data-details={entry.details} className={BUTTON} aria-label={`Details: ${entry.title} (${panel})`} onClick={() => onOpenDetails(entry.details)}>Details</button>
+              <Button variant="ghost" size="sm" data-details={entry.details} aria-label={`Details: ${entry.title} (${panel})`} onClick={() => onOpenDetails(entry.details)}>Details</Button>
               {entry.status === 'running' && entry.cancel && (
-                <button type="button" className={BUTTON} aria-label={`Cancel: ${entry.title}`} onClick={entry.cancel}>Cancel</button>
+                <Button variant="ghost" size="sm" aria-label={`Cancel: ${entry.title}`} onClick={entry.cancel}>Cancel</Button>
               )}
             </div>
           </div>

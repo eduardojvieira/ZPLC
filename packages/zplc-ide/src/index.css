@@ -1,119 +1,13 @@
 @import "tailwindcss";
+@import "./theme/tokens.generated.css";
+@import "./theme/fonts.css";
+@import "./ui/kit.css";
 
 /* =============================================================================
-   ZPLC Industrial Theme System
-   Supports: Light, Dark, and System preference
+   ZPLC design tokens (UX-003)
+   The tokens of every theme (light, dark, high contrast), the scales and the density live in src/theme/tokens.ts and
+   are rendered to src/theme/tokens.generated.css; this file holds the rules that read them. Never declare a colour here.
    ============================================================================= */
-
-/* Drawing Sheet light; aliases keep existing Studio components on one vocabulary. */
-:root {
-  color-scheme: light;
-  --color-surface-900: #e7ece8;
-  --color-surface-800: #f8faf7;
-  --color-surface-700: #ffffff;
-  --color-surface-600: #d7dfda;
-  --color-surface-500: #a8b5b0;
-  --color-surface-400: #5f6d6b;
-  --color-surface-300: #4c5a59;
-  --color-surface-200: #273537;
-  --color-surface-100: #172127;
-  --color-accent-blue: #245d8f;
-  --color-accent-cyan: #245d8f;
-  --color-accent-green: #177344;
-  --color-accent-yellow: #8a5800;
-  --color-accent-orange: #8a5800;
-  --color-accent-red: #a33838;
-  --color-accent-purple: #635b95;
-  --color-status-running: var(--color-accent-green);
-  --color-status-stopped: var(--color-surface-400);
-  --color-status-warning: var(--color-accent-orange);
-  --color-status-connected: var(--color-accent-blue);
-  --color-status-disconnected: var(--color-surface-400);
-  --font-mono: 'JetBrains Mono', 'Fira Code', Consolas, monospace;
-  --font-sans: Bahnschrift, Aptos, 'Segoe UI', system-ui, sans-serif;
-  --text-primary: var(--color-surface-100);
-  --text-secondary: var(--color-surface-300);
-  --text-tertiary: var(--color-surface-400);
-  --text-muted: var(--color-surface-400);
-  --border-color: var(--color-surface-600);
-  --shadow-sm: 0 1px 2px rgb(23 33 39 / 0.08);
-  --shadow-md: 0 8px 20px rgb(23 33 39 / 0.14);
-  --visual-canvas: var(--color-surface-900);
-  --visual-panel: var(--color-surface-800);
-  --visual-node: var(--color-surface-700);
-  --visual-muted: var(--color-surface-400);
-  --visual-wire: var(--color-surface-400);
-  /* Text on a solid accent fill: the light theme's accents are dark, the dark and high-contrast ones are light. */
-  --color-on-accent: #ffffff;
-  /* The one focus indicator (UX-005): applied by the global :focus-visible rule below. */
-  --focus-ring-color: var(--color-accent-blue);
-  --focus-ring-width: 2px;
-  --focus-ring-offset: 2px;
-  --separator-rule: var(--color-surface-400);
-}
-
-/* Commissioning Spine dark. */
-:root.dark {
-  color-scheme: dark;
-  --color-surface-900: #0f171b;
-  --color-surface-800: #141e23;
-  --color-surface-700: #19262c;
-  --color-surface-600: #34464d;
-  --color-surface-500: #52666e;
-  --color-surface-400: #8e9e9a;
-  --color-surface-300: #b7c4c0;
-  --color-surface-200: #d3ddda;
-  --color-surface-100: #e5edeb;
-  --color-accent-blue: #5ba7df;
-  --color-accent-cyan: #5ba7df;
-  --color-accent-green: #65c98e;
-  --color-accent-yellow: #e0ae4f;
-  --color-accent-orange: #e0ae4f;
-  --color-accent-red: #ed7070;
-  --color-accent-purple: #b9a8ef;
-  --color-status-running: var(--color-accent-green);
-  --color-status-stopped: var(--color-surface-400);
-  --color-status-warning: var(--color-accent-orange);
-  --color-status-connected: var(--color-accent-blue);
-  --color-status-disconnected: var(--color-surface-400);
-  --text-primary: var(--color-surface-100);
-  --text-secondary: var(--color-surface-300);
-  --text-tertiary: var(--color-surface-400);
-  --text-muted: var(--color-surface-400);
-  --border-color: var(--color-surface-600);
-  --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.3);
-  --shadow-md: 0 8px 20px rgb(0 0 0 / 0.42);
-  --visual-wire: var(--color-surface-500);
-  --color-on-accent: var(--color-surface-900);
-}
-
-/* High contrast is an explicit author choice; forced-colors remains the OS override below. */
-:root.high-contrast {
-  color-scheme: dark;
-  --color-surface-900: #000;
-  --color-surface-800: #080808;
-  --color-surface-700: #111;
-  --color-surface-600: #fff;
-  --color-surface-500: #d7d7d7;
-  --color-surface-400: #e5e5e5;
-  --color-surface-300: #f2f2f2;
-  --color-surface-200: #fff;
-  --color-surface-100: #fff;
-  --color-accent-blue: #55c8ff;
-  --color-accent-cyan: #55c8ff;
-  --color-accent-green: #7dff9a;
-  --color-accent-yellow: #ffe16b;
-  --color-accent-orange: #ffe16b;
-  --color-accent-red: #ff9393;
-  --color-accent-purple: #d0b8ff;
-  --text-primary: #fff;
-  --text-secondary: #f2f2f2;
-  --text-tertiary: #e5e5e5;
-  --text-muted: #d7d7d7;
-  --border-color: #fff;
-  --focus-ring-width: 3px;
-  --color-on-accent: #000;
-}
 
 .zplc-visual-editor { background: var(--visual-canvas); color: var(--text-primary); }
 .zplc-visual-toolbox { background: var(--visual-panel); border-color: var(--border-color); color: var(--text-primary); }
@@ -136,23 +30,6 @@
   .sfc-transition-axis { border-color: CanvasText !important; }
   .zplc-visual-editor .react-flow__controls-button { background: Canvas !important; color: CanvasText !important; border-color: CanvasText !important; }
   .zplc-visual-editor .react-flow__controls-button:hover { background: Highlight !important; color: HighlightText !important; }
-}
-
-/* System preference detection - applies if no explicit theme set */
-@media (prefers-color-scheme: dark) {
-  :root:not(.light):not(.dark) {
-    color-scheme: dark;
-    --color-surface-900: #0f171b; --color-surface-800: #141e23; --color-surface-700: #19262c;
-    --color-surface-600: #34464d; --color-surface-500: #52666e; --color-surface-400: #8e9e9a;
-    --color-surface-300: #b7c4c0; --color-surface-200: #d3ddda; --color-surface-100: #e5edeb;
-    --color-accent-blue: #5ba7df; --color-accent-cyan: #5ba7df; --color-accent-green: #65c98e;
-    --color-accent-yellow: #e0ae4f; --color-accent-orange: #e0ae4f; --color-accent-red: #ed7070; --color-accent-purple: #b9a8ef;
-    --color-status-running: var(--color-accent-green); --color-status-stopped: var(--color-surface-400);
-    --color-status-warning: var(--color-accent-orange); --color-status-connected: var(--color-accent-blue); --color-status-disconnected: var(--color-surface-400);
-    --text-primary: var(--color-surface-100); --text-secondary: var(--color-surface-300); --text-tertiary: var(--color-surface-400); --text-muted: var(--color-surface-400);
-    --border-color: var(--color-surface-600); --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.3); --shadow-md: 0 8px 20px rgb(0 0 0 / 0.42);
-    --visual-wire: var(--color-surface-500); --color-on-accent: var(--color-surface-900);
-  }
 }
 
 /* =============================================================================
@@ -278,13 +155,12 @@ html, body, #root {
    document's CSSOM before Monaco reads them for injected-text spans.
    ============================================================================= */
 
-/* Breakpoint glyph (red dot in gutter margin) */
+/* Breakpoint glyph (a dot in the gutter margin) */
 .breakpoint-glyph {
   display: block !important;
-  background: #ef4444;
-  border: 1px solid #991b1b;
+  background: var(--debug-breakpoint);
+  border: 1px solid var(--debug-breakpoint-edge);
   box-sizing: border-box;
-  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.18);
   border-radius: 50%;
   width: 12px !important;
   height: 12px !important;
@@ -293,9 +169,9 @@ html, body, #root {
   cursor: pointer;
 }
 
-/* Breakpoint line decoration (subtle red left bar) */
+/* Breakpoint line decoration (a subtle bar on the left) */
 .breakpoint-line-decoration {
-  background: rgba(239, 68, 68, 0.15);
+  background: var(--debug-breakpoint-line);
   width: 3px !important;
 }
 
@@ -304,49 +180,27 @@ html, body, #root {
 .breakpoint-glyph.breakpoint-glyph-inactive {
   background: transparent;
   border: 2px solid var(--color-surface-400);
-  box-shadow: none;
 }
 
 .breakpoint-line-decoration.breakpoint-line-decoration-inactive {
   background: transparent;
 }
 
-/* Current execution line (yellow highlight when paused) */
+/* Current execution line (the line execution is paused on) */
 .current-line-highlight {
-  background: rgba(239, 68, 68, 0.18) !important;
-  border-left: 3px solid #ef4444;
+  background: var(--debug-line-bg) !important;
+  border-left: 3px solid var(--debug-line-edge);
 }
 
-/* Current line glyph (yellow arrow) */
+/* Current line glyph (an arrow) */
 .current-line-glyph {
-  background: #ef4444;
+  background: var(--debug-line-edge);
   clip-path: polygon(0 0, 100% 50%, 0 100%);
   width: 10px !important;
   height: 14px !important;
   margin-left: 5px;
   margin-top: 3px;
 }
-
-:root[data-theme='light'] .current-line-highlight {
-  background: rgba(220, 38, 38, 0.14) !important;
-  border-left-color: #b91c1c;
-}
-
-:root[data-theme='dark'] .current-line-highlight {
-  background: rgba(248, 113, 113, 0.16) !important;
-  border-left-color: #f87171;
-}
-
-:root[data-theme='light'] .current-line-glyph {
-  background: #b91c1c;
-}
-
-:root[data-theme='dark'] .current-line-glyph {
-  background: #f87171;
-}
-
-:root[data-theme='high-contrast'] .current-line-highlight { background: #fff !important; border-left-color: #000; }
-:root[data-theme='high-contrast'] .current-line-glyph { background: #fff; }
 
 /*
  * Inline debug value decorations.
@@ -358,99 +212,39 @@ html, body, #root {
  * Keep them readable, high-contrast, and visually secondary to the source code.
  */
 
-/* Theme tokens for live-value chips */
-:root {
-  --debug-chip-bg: rgba(37, 99, 235, 0.12);
-  --debug-chip-border: rgba(37, 99, 235, 0.35);
-  --debug-chip-text: #1d4ed8;
-
-  --debug-chip-true-bg: rgba(22, 163, 74, 0.14);
-  --debug-chip-true-border: rgba(22, 163, 74, 0.38);
-  --debug-chip-true-text: #166534;
-
-  /* FALSE is neutral (UX-009): red is reserved for faults. */
-  --debug-chip-false-bg: rgba(95, 109, 107, 0.12);
-  --debug-chip-false-border: rgba(95, 109, 107, 0.4);
-  --debug-chip-false-text: var(--color-surface-200);
-}
-
-:root.dark {
-  --debug-chip-bg: rgba(59, 130, 246, 0.18);
-  --debug-chip-border: rgba(96, 165, 250, 0.34);
-  --debug-chip-text: #bfdbfe;
-
-  --debug-chip-true-bg: rgba(34, 197, 94, 0.18);
-  --debug-chip-true-border: rgba(74, 222, 128, 0.34);
-  --debug-chip-true-text: #dcfce7;
-
-  --debug-chip-false-bg: rgba(142, 158, 154, 0.16);
-  --debug-chip-false-border: rgba(142, 158, 154, 0.4);
-  --debug-chip-false-text: var(--color-surface-200);
-}
-
-/* High contrast: no tinted fills; the border and text colour carry the state next to the TRUE / FALSE text. */
-:root.high-contrast {
-  --debug-chip-bg: rgba(255, 255, 255, 0.1);
-  --debug-chip-border: var(--color-accent-blue);
-  --debug-chip-text: var(--color-accent-blue);
-
-  --debug-chip-true-bg: rgba(255, 255, 255, 0.1);
-  --debug-chip-true-border: var(--color-accent-green);
-  --debug-chip-true-text: var(--color-accent-green);
-
-  --debug-chip-false-bg: rgba(255, 255, 255, 0.1);
-  --debug-chip-false-border: var(--color-surface-200);
-  --debug-chip-false-text: var(--color-surface-200);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root:not(.light):not(.dark) {
-    --debug-chip-bg: rgba(59, 130, 246, 0.18);
-    --debug-chip-border: rgba(96, 165, 250, 0.34);
-    --debug-chip-text: #bfdbfe;
-
-    --debug-chip-true-bg: rgba(34, 197, 94, 0.18);
-    --debug-chip-true-border: rgba(74, 222, 128, 0.34);
-    --debug-chip-true-text: #dcfce7;
-
-    --debug-chip-false-bg: rgba(142, 158, 154, 0.16);
-    --debug-chip-false-border: rgba(142, 158, 154, 0.4);
-    --debug-chip-false-text: var(--color-surface-200);
-  }
-}
-
 .monaco-editor .inline-debug-value,
 .monaco-editor .inline-debug-value-true,
 .monaco-editor .inline-debug-value-false {
-  border-radius: 6px;
+  border-radius: var(--radius-control);
   border: 1px solid transparent;
   padding: 1px 7px;
   font-size: 0.82em;
-  font-weight: 600;
+  font-weight: var(--font-weight-strong);
   letter-spacing: 0.01em;
   vertical-align: middle;
-  box-shadow: 0 1px 1px rgb(15 23 42 / 0.08);
+  font-variant-numeric: tabular-nums;
 }
 
+/* The signal vocabulary (UX-009): the same tokens colour the Watch table, the status bar and these chips. */
 /* Default: numeric / string values */
 .monaco-editor .inline-debug-value {
-  color: var(--debug-chip-text) !important;
-  background: var(--debug-chip-bg);
-  border-color: var(--debug-chip-border);
+  color: var(--signal-value-fg) !important;
+  background: var(--signal-value-bg);
+  border-color: var(--signal-value-border);
 }
 
-/* BOOL TRUE */
+/* BOOL TRUE: confirmed green; the chip text says TRUE. */
 .monaco-editor .inline-debug-value-true {
-  color: var(--debug-chip-true-text) !important;
-  background: var(--debug-chip-true-bg);
-  border-color: var(--debug-chip-true-border);
+  color: var(--signal-true-fg) !important;
+  background: var(--signal-true-bg);
+  border-color: var(--signal-true-border);
 }
 
-/* BOOL FALSE: neutral; the chip text says FALSE. */
+/* BOOL FALSE: neutral, never red; the chip text says FALSE. */
 .monaco-editor .inline-debug-value-false {
-  color: var(--debug-chip-false-text) !important;
-  background: var(--debug-chip-false-bg);
-  border-color: var(--debug-chip-false-border);
+  color: var(--signal-false-fg) !important;
+  background: var(--signal-false-bg);
+  border-color: var(--signal-false-border);
 }
 
 /* A forced Watch value says so in text, not only in amber (UX-009). */
@@ -464,27 +258,12 @@ html, body, #root {
    Utility Classes
    ============================================================================= */
 
-/* `.focus-ring` carries no rules of its own any more: the global :focus-visible rule draws the ring. */
-
-/* Industrial button hover */
-.btn-industrial {
-  transition: all 0.1s ease;
-}
-
-.btn-industrial:hover {
-  transform: translateY(-1px);
-}
-
-.btn-industrial:active {
-  transform: translateY(0);
-}
-
 /* Wiring Ledger shell: flat technical regions, not a card dashboard. */
 .ledger-workspace { min-width: 0; }
 .ledger-inspector { height: 100%; overflow: auto; background: var(--color-surface-800); color: var(--text-primary); }
 .ledger-index { color: var(--text-tertiary); font-family: var(--font-mono); font-weight: 500; }
 .ledger-inspector section { border-bottom: 1px solid var(--border-color); padding: 10px; }
-.ledger-inspector h2 { margin: 0 0 7px; color: var(--color-accent-blue); font-size: 10px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+.ledger-inspector h2 { margin: 0 0 7px; color: var(--color-accent-blue); font-size: var(--font-size-caption); font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
 .ledger-inspector p { margin: 0; color: var(--text-secondary); font-size: 12px; line-height: 1.45; }
 .ledger-inspector dl { margin: 0; }
 .ledger-inspector-row { display: grid; grid-template-columns: 72px minmax(0, 1fr); gap: 8px; padding: 3px 0; font-size: 12px; line-height: 1.35; }
@@ -516,14 +295,11 @@ button, [role="button"], [role="tab"] { transition: background-color .12s ease, 
   .ledger-index { color: CanvasText; }
   [data-separator] { background-color: CanvasText; background-image: none; }
   [data-separator="hover"], [data-separator="active"], [data-separator="focus"] { background-color: Highlight; }
-  :root { --focus-ring-color: Highlight; }
 }
 
 /* =============================================================================
    Density (IDE-010, UX-008)
-   Every Tailwind spacing utility (padding, margin, gap, and the sizes written as numbers) is a multiple of --spacing, so
-   one value makes the whole application compact. The attribute is set from the saved preference before the first frame.
+   The attribute is set from the saved preference before the first frame (store/useAppSettings). Every Tailwind spacing
+   utility is a multiple of --spacing, and the kit reads --control-height and --row-height; the compact values of those
+   tokens are declared in src/theme/tokens.ts, not here.
    ============================================================================= */
-html[data-density="compact"] {
-  --spacing: 0.1875rem;
-}

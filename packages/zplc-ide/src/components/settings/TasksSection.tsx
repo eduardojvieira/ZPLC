@@ -16,6 +16,7 @@ import type {
   TaskTrigger,
 } from '../../types';
 import type { SectionProps } from './settingsSectionProps';
+import { Button, IconButton, NumberField, Select, TextField } from '../../ui';
 
 export function TasksSection({ config, updateConfig }: SectionProps) {
   const { fileTree } = useFileTreeState();
@@ -52,16 +53,10 @@ export function TasksSection({ config, updateConfig }: SectionProps) {
         <p className="text-xs text-[var(--color-surface-400)]">
           Define how and when your programs execute (IEC 61131-3 task model)
         </p>
-        <button
-          type="button"
-          onClick={addTask}
-          disabled={atTaskLimit}
-          aria-describedby={atTaskLimit ? taskLimitId : undefined}
-          className="flex items-center gap-1 px-2 py-1 text-xs rounded bg-[var(--color-surface-600)] hover:bg-[var(--color-surface-500)] text-[var(--color-surface-200)] disabled:cursor-not-allowed disabled:opacity-60"
-        >
+        <Button variant="secondary" size="sm" onClick={addTask} disabled={atTaskLimit} aria-describedby={atTaskLimit ? taskLimitId : undefined}>
           <Plus size={12} />
           Add Task
-        </button>
+        </Button>
       </div>
       {atTaskLimit && <p id={taskLimitId} role="status" className="mb-3 text-xs text-[var(--color-accent-yellow)]">Task limit reached: {tasks.length} of {ZPLC_CONSTANTS.MAX_TASKS}. Remove a task before adding another.</p>}
 
@@ -102,92 +97,44 @@ function TaskCard({ task, availablePrograms, onUpdate, onRemove }: TaskCardProps
   return (
     <div className="bg-[var(--color-surface-700)] rounded-lg p-3 border border-[var(--color-surface-500)]">
       <div className="flex items-center justify-between mb-3">
-        <input
-          type="text"
-          value={task.name}
-          onChange={(e) => onUpdate({ name: e.target.value })}
-          className="text-sm font-medium bg-transparent text-[var(--color-surface-100)] border-b border-transparent focus:border-[var(--color-accent-blue)] focus:outline-none"
-        />
-        <button
-          onClick={onRemove}
-          className="p-1 rounded hover:bg-[var(--color-surface-600)] text-[var(--color-accent-red)]"
-          title="Remove Task"
-        >
-          <Trash2 size={14} />
-        </button>
+        <TextField aria-label="Task name" value={task.name} onChange={(e) => onUpdate({ name: e.target.value })} />
+        <IconButton label="Remove Task" variant="ghost" size="sm" icon={<Trash2 size={14} />} onClick={onRemove} />
       </div>
 
       <div className="grid grid-cols-4 gap-3">
         {/* Trigger */}
         <div>
-          <label className="block text-xs text-[var(--color-surface-400)] mb-1">
-            Trigger
-          </label>
-          <select
-            value={task.trigger}
-            onChange={(e) => onUpdate({ trigger: e.target.value as TaskTrigger })}
-            className="w-full px-2 py-1 text-sm bg-[var(--color-surface-600)] border border-[var(--color-surface-500)] rounded text-[var(--color-surface-100)] focus:outline-none"
-          >
+          <Select label="Trigger" value={task.trigger} onChange={(e) => onUpdate({ trigger: e.target.value as TaskTrigger })} className="w-full">
             <option value="cyclic">Cyclic</option>
             <option value="event">Event</option>
             <option value="freewheeling">Freewheeling</option>
-          </select>
+          </Select>
         </div>
 
         {/* Interval */}
         <div>
-          <label className="block text-xs text-[var(--color-surface-400)] mb-1">
-            <Clock size={10} className="inline mr-1" />
-            Interval (ms)
-          </label>
-          <input
-            type="number"
-            min={1}
-            max={10000}
-            value={getTaskIntervalMs(task)}
-            onChange={(e) => onUpdate({ interval_ms: parseInt(e.target.value) || 100 })}
-            disabled={task.trigger !== 'cyclic'}
-            className="w-full px-2 py-1 text-sm bg-[var(--color-surface-600)] border border-[var(--color-surface-500)] rounded text-[var(--color-surface-100)] focus:outline-none disabled:opacity-50"
-          />
+          <NumberField label={<><Clock size={10} className="mr-1 inline" aria-hidden="true" />Interval (ms)</>} min={1} max={10000} value={getTaskIntervalMs(task)} onChange={(e) => onUpdate({ interval_ms: parseInt(e.target.value) || 100 })} disabled={task.trigger !== 'cyclic'} className="w-full" />
         </div>
 
         {/* Priority */}
         <div>
-          <label className="block text-xs text-[var(--color-surface-400)] mb-1">
-            Priority
-          </label>
-          <input
-            type="number"
-            min={0}
-            max={255}
-            value={task.priority}
-            onChange={(e) => onUpdate({ priority: parseInt(e.target.value) || 1 })}
-            className="w-full px-2 py-1 text-sm bg-[var(--color-surface-600)] border border-[var(--color-surface-500)] rounded text-[var(--color-surface-100)] focus:outline-none"
-          />
+          <NumberField label="Priority" min={0} max={255} value={task.priority} onChange={(e) => onUpdate({ priority: parseInt(e.target.value) || 1 })} className="w-full" />
         </div>
 
       </div>
 
       {/* Program */}
       <div className="mt-3">
-        <label className="block text-xs text-[var(--color-surface-400)] mb-1">
-          <Play size={10} className="inline mr-1" />
-          Program
-        </label>
-        <select
-          value={selectedProgram}
-          onChange={(e) => onUpdate({
+        <Select label={<><Play size={10} className="mr-1 inline" aria-hidden="true" />Program</>} value={selectedProgram} onChange={(e) => onUpdate({
             programs: e.target.value ? [e.target.value] : []
-          })}
-          className="w-full px-2 py-1 text-sm bg-[var(--color-surface-600)] border border-[var(--color-surface-500)] rounded text-[var(--color-surface-100)] focus:outline-none"
-        >
+          })} className="w-full">
           <option value="">Select a program...</option>
           {availablePrograms.map((prog) => (
             <option key={prog} value={prog}>
               {prog}
             </option>
           ))}
-        </select>
+        </Select>
         {availablePrograms.length === 0 && (
           <p className="mt-1 text-xs text-[var(--color-accent-yellow)]">
             No program files found. Create a .st, .fbd, .ld, or .sfc file first.

@@ -13,3 +13,9 @@ target_include_directories(app PRIVATE
   ${CMAKE_CURRENT_SOURCE_DIR}/../../app/include
   ${CMAKE_CURRENT_SOURCE_DIR}/../../lib/zplc_core/include
 )
+
+# The files of the runtime compiled into this application are optimized across files as the product's are
+# (CONFIG_ZPLC_LTO), so that the suite exercises the code that ships.
+if(COMMAND zplc_target_lto)
+  zplc_target_lto(app)
+endif()

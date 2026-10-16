@@ -30,7 +30,20 @@ describe('serial port dialog (IDE-018)', () => {
     expect(html).toContain('USB vendor: FTDI');
     expect(html).toContain('No USB identifiers');
     expect(html.match(/data-serial-port-row="known-board"/g)).toHaveLength(1);
-    expect(html.match(/type="radio"/g)).toHaveLength(3);
+    expect(html.match(/role="radio"/g)).toHaveLength(3);
+    expect(html).not.toContain('<input');
+  });
+
+  it('is a radio group with one tab stop: the chosen port, or the first one when none is chosen', () => {
+    const rows = [row({ portId: 'a' }), row({ portId: 'b' })];
+    const none = render({ rows });
+    expect(none).toContain('role="radiogroup"');
+    const radios = (html: string) => html.match(/<button[^>]*role="radio"[^>]*>/g) ?? [];
+    expect(radios(none).map((tag) => tag.includes('aria-checked="false"') && tag.includes('tabindex="0"'))).toEqual([true, false]);
+    expect(radios(none).every((tag) => tag.includes('aria-checked="false"'))).toBe(true);
+    const chosen = radios(render({ rows, selectedPortId: 'b' }));
+    expect(chosen.map((tag) => tag.includes('aria-checked="true"'))).toEqual([false, true]);
+    expect(chosen.map((tag) => tag.includes('tabindex="0"'))).toEqual([false, true]);
   });
 
   it('says so when two boards share the identifiers, instead of naming one of them', () => {

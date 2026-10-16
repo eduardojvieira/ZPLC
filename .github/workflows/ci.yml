@@ -273,6 +273,9 @@ jobs:
       - name: Test the firmware test report tool
         run: python3 zplc/tools/firmware-test/test_fwtest.py
 
+      - name: Test the footprint report
+        run: python3 zplc/tools/firmware-test/test_footprint_report.py
+
       # VF-026: the Zephyr checkout, the SDK and the pip downloads are kept between runs under a key of the manifest, so
       # that a run restores them and `west update` only fetches what changed. A restored workspace is never trusted: the
       # set-up below still checks the revision of zephyr and the SDK toolchains, and installs the SDK only when it is absent.

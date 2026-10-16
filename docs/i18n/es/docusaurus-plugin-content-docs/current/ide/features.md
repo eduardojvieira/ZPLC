@@ -250,8 +250,11 @@ la medida en que el compilador la acepta.
 ## Simulación y hardware
 
 La simulación POSIX nativa es la forma de ejecutar un programa en su equipo.
-Requiere la aplicación de escritorio, que incluye el runtime nativo; en esta
-versión no hay un simulador WebAssembly en el navegador. Las acciones de hardware
+Requiere la aplicación de escritorio, que incluye el runtime nativo. Donde el
+runtime nativo no puede arrancar, y en la compilación web, la simulación corre en
+el runtime WebAssembly, y la barra de estado lo dice y lista lo que no tiene (sin
+bloques de comunicación, sin serie, sin pines, con el timing de un navegador):
+ver [Runtime del navegador](../runtime/browser-runtime.md). Las acciones de hardware
 están separadas: compilar el firmware del runtime, grabarlo, desplegar un
 programa compilado y, después, ejecutar o depurar. Una persona inicia cada una.
 

@@ -25,7 +25,7 @@ import type {
   WatchForceState,
 } from '../runtime/debugAdapter';
 import { WATCH_FORCE_STATE, bytesToHex, valueToBytes } from '../runtime/debugAdapter';
-import { createSimulationAdapter } from '../runtime/simulationAdapterFactory';
+import { connectSimulationAdapter } from '../runtime/simulationAdapterFactory';
 import { NativeAdapter } from '../runtime/nativeAdapter';
 import { connectionManager } from '../runtime/connectionManager';
 import type { DebugMap } from '../compiler';
@@ -487,8 +487,7 @@ export function useDebugController(): DebugController {
       }
 
       invalidateNativeTrace();
-      const simulationAdapter = createSimulationAdapter();
-      await simulationAdapter.connect();
+      const simulationAdapter = await connectSimulationAdapter({ directory: useIDEStore.getState().directoryHandle, report: addConsoleEntry });
 
       adapterRef.current = simulationAdapter;
       setAdapter(simulationAdapter);
@@ -502,7 +501,7 @@ export function useDebugController(): DebugController {
       resetConnectionState();
       throw err;
     }
-  }, [bindAdapterEventHandlers, disconnect, invalidateNativeTrace, resetConnectionState, setDebugMode]);
+  }, [addConsoleEntry, bindAdapterEventHandlers, disconnect, invalidateNativeTrace, resetConnectionState, setDebugMode]);
 
   const connectHardware = useCallback(async () => {
     try {

@@ -23,6 +23,11 @@
 
 #include <zplc_core.h>
 
+#include <zplc_hal.h>
+#include <zplc_isa.h>
+#include <zplc_scheduler.h>
+
+#include "program_store.h"
 #include "zplc_app_test_hooks.h"
 #include "zplc_config.h"
 #include "zplc_exchange.h"
@@ -537,6 +542,197 @@ ZTEST(comm_safety, test_save_persists_every_setting_across_a_reboot)
 		zassert_false(same_row(&defaults, &rebooted, i),
 			      "setting '%s' came back as its default", changed.name[i]);
 	}
+}
+
+/* The value a flag key takes is not the same for every key, and a refactor of the command is where that gets lost:
+ * `dhcp` is true for "true" and "1" only, the rest also for "on", and any other text is false without an error. The
+ * expected texts are what the command printed before its key table (WS-42). */
+static const char *const flag_keys[] = {
+	"dhcp", "ntp_enabled", "modbus_tcp_enabled", "modbus_rtu_enabled", "modbus_rtu_client_enabled",
+	"modbus_tcp_client_enabled", "mqtt_enabled", "mqtt_publish_retain", "mqtt_clean_session",
+	"mqtt_lwt_enabled", "mqtt_lwt_retain", "azure_twin_enabled", "azure_direct_methods_enabled",
+	"azure_c2d_enabled", "azure_dps_enabled", "aws_shadow_enabled", "aws_jobs_enabled",
+	"aws_fleet_enabled",
+};
+
+static bool flag_row(const char *row)
+{
+	uint8_t value[VALUE_MAX];
+	size_t length = 0U;
+
+	for (size_t i = 0; i < zplc_config_test_row_count(); i++) {
+		const char *name = zplc_config_test_row(i, value, &length);
+
+		if (name != NULL && strcmp(name, row) == 0) {
+			zassert_equal(length, 1U, "%s is one byte", row);
+			return value[0] != 0U;
+		}
+	}
+	zassert_unreachable("row %s", row);
+	return false;
+}
+
+static bool set_flag(const char *key, const char *value)
+{
+	char cmd[96];
+
+	snprintf(cmd, sizeof(cmd), "zplc config set %s %s", key, value);
+	zassert_ok(run(cmd), "%s: %s", cmd, out);
+	zassert_not_null(strstr(out, "OK: Config updated"), "%s", out);
+	return flag_row(key);
+}
+
+ZTEST(comm_safety, test_config_set_flags_keep_the_values_they_accept)
+{
+	for (size_t i = 0; i < ARRAY_SIZE(flag_keys); i++) {
+		const char *key = flag_keys[i];
+		const bool takes_on = strcmp(key, "dhcp") != 0;
+
+		zassert_true(set_flag(key, "1"), "%s 1", key);
+		zassert_false(set_flag(key, "0"), "%s 0", key);
+		zassert_true(set_flag(key, "true"), "%s true", key);
+		zassert_false(set_flag(key, "false"), "%s false", key);
+		zassert_equal(set_flag(key, "on"), takes_on, "%s on", key);
+		(void)set_flag(key, "1");
+		zassert_false(set_flag(key, "yes"), "%s yes is false, not an error", key);
+		(void)set_flag(key, "1");
+		zassert_false(set_flag(key, "TRUE"), "%s TRUE is false: the match is exact", key);
+	}
+}
+
+ZTEST(comm_safety, test_config_set_keeps_its_messages)
+{
+	/* The shell asks for the key and the value before the handler runs: one argument short never reaches it. */
+	zassert_not_equal(run("zplc config set mqtt_port"), 0, "a value is required");
+	zassert_not_null(strstr(out, "set: wrong parameter count"), "%s", out);
+	zassert_is_null(strstr(out, "Keys:"), "%s", out);
+
+	zassert_equal(run("zplc config set no_such_key 1"), -EINVAL, "unknown key");
+	zassert_not_null(strstr(out, "ERROR: Unknown config key: no_such_key"), "%s", out);
+
+	/* A number is checked before anything is stored, and the value a setter clamps is still clamped by it. */
+	zassert_equal(run("zplc config set mqtt_port 70000"), -EINVAL, "range");
+	zassert_not_null(strstr(out, "ERROR: mqtt_port must be a whole number from 0 to 65535, got '70000'"), "%s", out);
+	zassert_equal(run("zplc config set mqtt_port 12x"), -EINVAL, "not a number");
+	zassert_not_null(strstr(out, "ERROR: mqtt_port must be a whole decimal number, got '12x'"), "%s", out);
+	zassert_ok(run("zplc config set azure_sas_expiry_s 10"), "clamped, not refused");
+	zassert_equal(zplc_config_get_azure_sas_expiry_s(), 300U, "the setter's lower bound");
+}
+
+/* ------------------------------------------------------------ WS-42 */
+
+static uint32_t upload_crc32(const uint8_t *data, size_t length, uint32_t crc)
+{
+	for (size_t i = 0; i < length; i++) {
+		crc ^= data[i];
+		for (unsigned bit = 0; bit < 8U; bit++) {
+			crc = (crc & 1U) != 0U ? (crc >> 1) ^ 0xEDB88320U : crc >> 1;
+		}
+	}
+	return crc;
+}
+
+/* One cyclic task of 10 ms over six bytes of code: PUSH8 <tag>, STORE8 OPI, HALT. */
+static size_t upload_program(uint8_t *out, uint8_t tag)
+{
+	const size_t header = ZPLC_FILE_HEADER_SIZE + 2U * ZPLC_SEGMENT_ENTRY_SIZE;
+	const size_t total = header + 6U + ZPLC_TASK_DEF_SIZE;
+	uint8_t *code = out + header;
+	uint8_t *task = code + 6U;
+	uint32_t crc;
+
+	memset(out, 0, total);
+	memcpy(out, "ZPLC", 4U);
+	out[4] = (uint8_t)ZPLC_VERSION_MAJOR;
+	out[5] = (uint8_t)(ZPLC_VERSION_MAJOR >> 8);
+	out[6] = (uint8_t)ZPLC_VERSION_MINOR;
+	out[7] = (uint8_t)(ZPLC_VERSION_MINOR >> 8);
+	out[28] = (uint8_t)ZPLC_DRAFT_COUNTER;
+	out[29] = (uint8_t)(ZPLC_DRAFT_COUNTER >> 8);
+	out[30] = (uint8_t)(ZPLC_DRAFT_COUNTER >> 16);
+	out[31] = (uint8_t)(ZPLC_DRAFT_COUNTER >> 24);
+	out[16] = 6U;
+	out[20] = (uint8_t)ZPLC_TASK_DEF_SIZE;
+	out[26] = 2U;
+	out[32] = (uint8_t)ZPLC_SEG_CODE;
+	out[36] = 6U;
+	out[40] = (uint8_t)ZPLC_SEG_TASK;
+	out[44] = (uint8_t)ZPLC_TASK_DEF_SIZE;
+	code[0] = OP_PUSH8;
+	code[1] = tag;
+	code[2] = OP_STORE8;
+	code[3] = (uint8_t)ZPLC_MEM_OPI_BASE;
+	code[4] = (uint8_t)(ZPLC_MEM_OPI_BASE >> 8);
+	code[5] = OP_HALT;
+	task[2] = ZPLC_TASK_CYCLIC;
+	task[3] = 1U;
+	task[4] = 0x10U; /* 10000 us */
+	task[5] = 0x27U;
+	task[10] = 64U;
+	crc = upload_crc32(out, 12U, 0xFFFFFFFFU);
+	crc = upload_crc32(out + 16U, total - 16U, crc) ^ 0xFFFFFFFFU;
+	out[12] = (uint8_t)crc;
+	out[13] = (uint8_t)(crc >> 8);
+	out[14] = (uint8_t)(crc >> 16);
+	out[15] = (uint8_t)(crc >> 24);
+	return total;
+}
+
+/* `zplc sched load` and `zplc sched data`, 16 bytes a line, as Studio's text upload sends them. */
+static int upload(const uint8_t *program, size_t size)
+{
+	static const char digits[] = "0123456789abcdef";
+	char cmd[96];
+	int rc;
+
+	snprintf(cmd, sizeof(cmd), "zplc sched load %zu", size);
+	rc = run(cmd);
+	if (rc != 0) {
+		return rc;
+	}
+	for (size_t at = 0; at < size; at += 16U) {
+		size_t n = size - at < 16U ? size - at : 16U;
+		size_t len = (size_t)snprintf(cmd, sizeof(cmd), "zplc sched data ");
+
+		for (size_t i = 0; i < n; i++) {
+			cmd[len++] = digits[program[at + i] >> 4];
+			cmd[len++] = digits[program[at + i] & 0x0FU];
+		}
+		cmd[len] = '\0';
+		rc = run(cmd);
+		if (rc != 0) {
+			return rc;
+		}
+	}
+	return 0;
+}
+
+/* The store has no buffer of the code size for its rollback check: the shell finds the rollback when the upload
+ * starts, and the commit at the end of it has to go through, for a first program and for a replacement, and
+ * has to refuse (writing nothing) when the store cannot be verified. */
+ZTEST(comm_safety, test_a_text_upload_is_stored_and_a_second_one_replaces_it)
+{
+	static uint8_t first[128];
+	static uint8_t second[128];
+	static uint8_t restored[ZPLC_PROGRAM_STORE_MAX_ARTIFACT_SIZE + ZPLC_PROGRAM_STORE_FOOTER_SIZE];
+	size_t first_size = upload_program(first, 0x11U);
+	size_t second_size = upload_program(second, 0x22U);
+	size_t restored_size = 0U;
+
+	zassert_equal(zplc_hal_init(), ZPLC_HAL_OK, "HAL");
+	zassert_ok(zplc_sched_init(), "scheduler");
+	zassert_ok(upload(first, first_size), "first upload: %s", out);
+	zassert_not_null(strstr(out, "OK: Program loaded"), "%s", out);
+	zassert_equal(zplc_program_store_restore(restored, sizeof(restored), &restored_size), ZPLC_PROGRAM_STORE_OK,
+		      "the program is stored");
+	zassert_equal(restored_size, first_size, "at its size");
+	zassert_mem_equal(restored, first, first_size, "byte for byte");
+
+	zassert_ok(upload(second, second_size), "second upload: %s", out);
+	zassert_not_null(strstr(out, "OK: Program loaded"), "%s", out);
+	zassert_equal(zplc_program_store_restore(restored, sizeof(restored), &restored_size), ZPLC_PROGRAM_STORE_OK,
+		      "the replacement is stored");
+	zassert_mem_equal(restored, second, second_size, "and it is the one that restores");
 }
 
 ZTEST(comm_safety, test_a_failed_store_is_reported_and_never_ok)

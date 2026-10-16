@@ -2,7 +2,7 @@
 
 `firmware/lib/zplc_core/include/zplc_hal.h` es el contrato público entre el core de ZPLC y cualquier plataforma concreta.
 
-Eso incluye los destinos Zephyr, los runtimes host/POSIX, un port para navegador con WebAssembly (está en el árbol de código fuente, pero no se distribuye en esta versión) y los futuros ports de placa.
+Eso incluye los destinos Zephyr, los runtimes host/POSIX, un port para navegador con WebAssembly (el runtime de la simulación en el navegador, compilado con el IDE) y los futuros ports de placa.
 
 Las funciones de abajo, el puerto del planificador y la suite de conformidad que pasa cada puerto están en una página generada: [Interfaz de puerto y suite de conformidad](./port-interface.md).
 

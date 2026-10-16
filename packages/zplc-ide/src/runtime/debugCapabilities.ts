@@ -1,5 +1,6 @@
 import type { SystemInfo } from './serialAdapter';
 import type { NativeCapabilityProfile } from './nativeProtocol';
+import { wasmCapabilityProfile } from './wasmCapabilities';
 
 export const DEBUG_CAPABILITY_MODE = {
   LEGACY: 'legacy',
@@ -31,29 +32,6 @@ export interface DebugCapabilities {
   supportsBreakpoints: boolean;
   features: Record<string, DebugFeatureSupport>;
 }
-
-export const LEGACY_WASM_FEATURES = {
-  pause: {
-    status: DEBUG_CAPABILITY_STATUS.UNAVAILABLE,
-    reason: 'Browser WASM simulation is disabled until a verifier-enabled artifact is built',
-    recommendedAction: 'Use native simulation',
-  },
-  resume: {
-    status: DEBUG_CAPABILITY_STATUS.UNAVAILABLE,
-    reason: 'Browser WASM simulation is disabled until a verifier-enabled artifact is built',
-    recommendedAction: 'Use native simulation',
-  },
-  step: {
-    status: DEBUG_CAPABILITY_STATUS.UNAVAILABLE,
-    reason: 'Browser WASM simulation is disabled until a verifier-enabled artifact is built',
-    recommendedAction: 'Use native simulation',
-  },
-  breakpoints: {
-    status: DEBUG_CAPABILITY_STATUS.UNAVAILABLE,
-    reason: 'Browser WASM simulation is disabled until a verifier-enabled artifact is built',
-    recommendedAction: 'Use native simulation',
-  },
-} as const satisfies Record<string, DebugFeatureSupport>;
 
 export function getDebugCapabilities(systemInfo: SystemInfo | null): DebugCapabilities {
   const supported: DebugFeatureSupport = {
@@ -91,20 +69,12 @@ export function getDebugCapabilities(systemInfo: SystemInfo | null): DebugCapabi
   };
 }
 
-export function getLegacyWasmCapabilities(): DebugCapabilities {
-  return {
-    mode: DEBUG_CAPABILITY_MODE.LEGACY,
-    supportsPause: false,
-    supportsResume: false,
-    supportsStep: false,
-    supportsBreakpoints: false,
-    features: {
-      pause: LEGACY_WASM_FEATURES.pause,
-      resume: LEGACY_WASM_FEATURES.resume,
-      step: LEGACY_WASM_FEATURES.step,
-      breakpoints: LEGACY_WASM_FEATURES.breakpoints,
-    },
-  };
+/**
+ * What the WebAssembly runtime can do, from the profile its handshake reports (wasmCapabilities.ts): the same source
+ * for the controller, for the status bar and for the check of public claims about the browser simulator (DOC-012).
+ */
+export function getWasmCapabilities(): DebugCapabilities {
+  return getDebugCapabilitiesFromProfile(wasmCapabilityProfile('project'));
 }
 
 export function getDebugCapabilitiesFromProfile(
@@ -134,6 +104,13 @@ export function getDebugCapabilitiesFromProfile(
   const step = buildSupport('step');
   const breakpoints = buildSupport('breakpoints');
   const simulationInputs = buildSupport('simulation-inputs');
+  // every other feature the runtime names is carried as it reported it: the controller asks about the ones it knows
+  const others: Record<string, DebugFeatureSupport> = {};
+  for (const entry of profile?.features ?? []) {
+    if (!['pause', 'resume', 'step', 'breakpoints', 'simulation-inputs'].includes(entry.name)) {
+      others[entry.name] = buildSupport(entry.name);
+    }
+  }
 
   return {
     mode: DEBUG_CAPABILITY_MODE.SCHEDULER,
@@ -142,6 +119,7 @@ export function getDebugCapabilitiesFromProfile(
     supportsStep: step.status === DEBUG_CAPABILITY_STATUS.SUPPORTED,
     supportsBreakpoints: breakpoints.status === DEBUG_CAPABILITY_STATUS.SUPPORTED,
     features: {
+      ...others,
       pause,
       resume,
       step,

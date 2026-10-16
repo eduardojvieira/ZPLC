@@ -24,7 +24,7 @@ reference pages already say.
         v
  HAL       (zplc_hal.h)               time, I/O, persistence, mutexes, network
         v
- Zephyr board  |  POSIX host (the simulator)  |  WASM (disabled in Studio)
+ Zephyr board  |  POSIX host (the simulator)  |  WASM (the browser runtime of Studio)
 ```
 
 ## Parts
@@ -81,9 +81,12 @@ and show both numbers. The procedure is in
 Studio supervises `zplc_runtime` from the Electron main process. The renderer is
 sandboxed and reaches the main process only through a narrow, typed preload API.
 The command line (`zplc-cli test`), the MCP server and the scenario engine use
-the same runtime contract, so a scenario gives the same result in each. A WASM
-build of the core exists (`scripts/build_wasm.sh`), but browser simulation is
-disabled in Studio until a verifier-enabled artifact is built.
+the same runtime contract, so a scenario gives the same result in each. The
+session of that runtime is also built to WebAssembly (`tools/wasm-core`, with the
+verifier of the loader, the scheduler core and the retain rules) and shipped in
+Studio as a degraded fallback: it runs where the native runtime cannot start,
+says so in the status bar, and has no network blocks, serial or pins (see
+[Browser runtime](docs/docs/runtime/browser-runtime.md)).
 
 Studio can also connect to a board over serial and upload a program. Building
 firmware, flashing, deploying and running are separate operations, and the AI

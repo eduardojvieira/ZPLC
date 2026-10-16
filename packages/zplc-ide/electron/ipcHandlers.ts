@@ -287,7 +287,12 @@ export function createIpcHandlers(deps: IpcDeps): IpcHandlerTable<RendererOwner>
       return null;
     }),
 
-    [NATIVE_SIMULATION_CHANNEL.START_SESSION]: handler(noArguments, (owner) => deps.nativeSimulation.start(owner)),
+    [NATIVE_SIMULATION_CHANNEL.START_SESSION]: handler(
+      noArguments,
+      (owner) => deps.nativeSimulation.start(owner),
+      // the renderer falls back to the WebAssembly runtime on this and shows the text (IDE-025); the internal error stays here
+      'the native runtime did not start: it is missing, was not built for this platform, or is switched off.',
+    ),
     [NATIVE_SIMULATION_CHANNEL.STOP_SESSION]: handler(noArguments, (owner) => deps.nativeSimulation.stop(owner)),
     [NATIVE_SIMULATION_CHANNEL.REQUEST]: handler(oneArgument(isAllowedNativeSimulationRequest), (owner, [request]: [NativeSimulationRequest]) => deps.nativeSimulation.request(owner, request)),
 

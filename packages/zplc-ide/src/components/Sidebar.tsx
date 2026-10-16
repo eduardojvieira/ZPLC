@@ -27,6 +27,8 @@ import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { useIDEStore } from '../store/useIDEStore';
 import { useSidebarState } from '../store/regionSubscriptions';
 import { PLC_LANGUAGES, type PLCLanguage, type FileTreeNode } from '../types';
+import { ICON_SIZES } from '../theme/tokens';
+import { Button, IconButton, Select, TextField } from '../ui';
 import { Modal } from './Modal';
 import { MigrationPreviewDialog } from './MigrationPreviewDialog';
 import { TreeMarkBadge } from './treeMarks';
@@ -104,63 +106,38 @@ function NewFileModal({
   return (
     <Modal isOpen={isOpen} onClose={handleClose} title="New File" widthClass="max-w-md" showCloseButton={!isCreating}>
       <div className="p-4 space-y-4">
-        <div>
-          <label htmlFor="new-file-name" className="block text-sm font-medium text-[var(--color-surface-200)] mb-1">
-            File Name
-          </label>
-          <input
-            id="new-file-name"
-            ref={inputRef}
-            type="text"
-            value={fileName}
-            onChange={(e) => { setError(null); onFileNameChange(e.target.value); }}
-            onKeyDown={handleKeyDown}
-            readOnly={isCreating}
-            placeholder="my_program"
-            aria-invalid={error ? 'true' : undefined}
-            aria-describedby={error ? 'new-file-name-help new-file-error' : 'new-file-name-help'}
-            className="w-full px-3 py-2 bg-[var(--color-surface-700)] border border-[var(--color-surface-500)] rounded text-[var(--color-surface-100)] placeholder:text-[var(--color-surface-400)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent-blue)]"
-          />
-          <p id="new-file-name-help" className="mt-1 text-xs text-[var(--color-surface-400)]">
-            Extension will be added automatically
-          </p>
-          {error && <p id="new-file-error" role="alert" className="mt-2 text-sm text-[var(--color-accent-red)]">{error}</p>}
-        </div>
+        <TextField
+          id="new-file-name"
+          ref={inputRef}
+          label="File Name"
+          value={fileName}
+          onChange={(e) => { setError(null); onFileNameChange(e.target.value); }}
+          onKeyDown={handleKeyDown}
+          readOnly={isCreating}
+          placeholder="my_program"
+          hint="Extension will be added automatically"
+          error={error ?? undefined}
+        />
 
-        <div>
-          <label htmlFor="new-file-language" className="block text-sm font-medium text-[var(--color-surface-200)] mb-1">
-            Language
-          </label>
-          <select
-            id="new-file-language"
-            value={language}
-            onChange={(e) => { setError(null); onLanguageChange(e.target.value as PLCLanguage); }}
-            disabled={isCreating}
-            className="w-full px-3 py-2 bg-[var(--color-surface-700)] border border-[var(--color-surface-500)] rounded text-[var(--color-surface-100)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent-blue)]"
-          >
-            {Object.values(PLC_LANGUAGES).map((lang) => (
-              <option key={lang.id} value={lang.id}>
-                {lang.fullName} ({lang.extension})
-              </option>
-            ))}
-          </select>
-        </div>
+        <Select
+          id="new-file-language"
+          label="Language"
+          value={language}
+          onChange={(e) => { setError(null); onLanguageChange(e.target.value as PLCLanguage); }}
+          disabled={isCreating}
+        >
+          {Object.values(PLC_LANGUAGES).map((lang) => (
+            <option key={lang.id} value={lang.id}>
+              {lang.fullName} ({lang.extension})
+            </option>
+          ))}
+        </Select>
 
         <div className="flex justify-end gap-2 pt-2">
-          <button
-            onClick={handleClose}
-            disabled={isCreating}
-            className="px-4 py-2 text-sm rounded bg-[var(--color-surface-600)] hover:bg-[var(--color-surface-500)] text-[var(--color-surface-200)] disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={() => { void handleCreate(); }}
-            disabled={!fileName.trim() || isCreating}
-            className="px-4 py-2 text-sm rounded bg-[var(--color-accent-blue)] hover:bg-[var(--color-accent-blue)]/80 text-white disabled:opacity-50 disabled:cursor-not-allowed"
-          >
+          <Button onClick={handleClose} disabled={isCreating}>Cancel</Button>
+          <Button variant="primary" onClick={() => { void handleCreate(); }} disabled={!fileName.trim() || isCreating}>
             {isCreating ? 'Creating…' : 'Create'}
-          </button>
+          </Button>
         </div>
       </div>
     </Modal>
@@ -539,39 +516,10 @@ export function Sidebar() {
           <span className="truncate text-sm font-medium text-[var(--color-surface-100)]">{projectName || 'Project'}</span>
         </div>
         <div className="flex items-center gap-1">
-          <button
-            onClick={handleOpenNewFileModal}
-            className="p-1 rounded hover:bg-[var(--color-surface-700)] text-[var(--color-surface-300)]"
-            title="New File"
-            aria-label="New File"
-          >
-            <Plus size={14} />
-          </button>
-          <button
-            onClick={() => setTreeQuestion({ kind: 'new-folder', parent: 'src' })}
-            className="p-1 rounded hover:bg-[var(--color-surface-700)] text-[var(--color-surface-300)]"
-            title="New Folder"
-            aria-label="New Folder"
-          >
-            <FolderPlus size={14} />
-          </button>
-          <button
-            onClick={() => { void refreshFileTree(); }}
-            className="p-1 rounded hover:bg-[var(--color-surface-700)] text-[var(--color-surface-300)]"
-            title="Refresh"
-            aria-label="Refresh"
-          >
-            <RefreshCw size={14} />
-          </button>
-          <button
-            type="button"
-            onClick={handleCloseProject}
-            className="p-1 rounded hover:bg-[var(--color-surface-700)] text-[var(--color-surface-300)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent-blue)]"
-            title="Close Project"
-            aria-label="Close Project"
-          >
-            <X size={14} />
-          </button>
+          <IconButton size="sm" label="New File" icon={<Plus size={ICON_SIZES.sm} />} onClick={handleOpenNewFileModal} />
+          <IconButton size="sm" label="New Folder" icon={<FolderPlus size={ICON_SIZES.sm} />} onClick={() => setTreeQuestion({ kind: 'new-folder', parent: 'src' })} />
+          <IconButton size="sm" label="Refresh" icon={<RefreshCw size={ICON_SIZES.sm} />} onClick={() => { void refreshFileTree(); }} />
+          <IconButton size="sm" label="Close Project" icon={<X size={ICON_SIZES.sm} />} onClick={handleCloseProject} />
         </div>
       </div>
 
@@ -586,9 +534,9 @@ export function Sidebar() {
                 <div className="mt-0.5 text-[var(--color-surface-200)]">No project files were changed.</div>
               </div>
             </div>
-            <button type="button" onClick={() => setIsMigrationOpen(true)} className="mt-2 text-[var(--color-accent-blue)] underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent-blue)]">
+            <Button variant="ghost" size="sm" onClick={() => setIsMigrationOpen(true)} className="mt-2 text-[var(--color-accent-blue)] underline">
               Review the difference ({projectMigrationPreview.changes.length} change{projectMigrationPreview.changes.length === 1 ? '' : 's'})
-            </button>
+            </Button>
           </div>
           {isMigrationOpen && <MigrationPreviewDialog onClose={() => setIsMigrationOpen(false)} />}
         </div>

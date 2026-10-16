@@ -25,7 +25,7 @@ import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
 
 import { getAllFBNames, getAllFnNames } from '../../packages/zplc-compiler/src/compiler/stdlib/index.ts';
-import { getLegacyWasmCapabilities } from '../../packages/zplc-ide/src/runtime/debugCapabilities';
+import { getWasmCapabilities } from '../../packages/zplc-ide/src/runtime/debugCapabilities';
 import { markdownFiles } from './check_doc_claims';
 import { loadInputs, type RowFacts } from './generate_language_reference';
 
@@ -266,7 +266,7 @@ print(json.dumps([b["ide_id"] for b in boards if library.support_level(b, root)[
   const run = Bun.spawnSync(['python3', '-B', '-c', script, root], { stdout: 'pipe', stderr: 'pipe' });
   if (run.exitCode !== 0) throw new Error(`the board levels could not be read: ${run.stderr.toString()}`);
   const lessons = (JSON.parse(readFileSync(join(root, 'packages/zplc-ide/src/generated/lessonIndex.json'), 'utf8')) as { lessons: unknown[] }).lessons.length;
-  const wasm = getLegacyWasmCapabilities();
+  const wasm = getWasmCapabilities();
   return {
     rows,
     recordRefs: (JSON.parse(readFileSync(join(root, 'firmware/app/boards/boards.json'), 'utf8')) as Array<{ evidence_refs: string[] }>).flatMap((board) => board.evidence_refs),
