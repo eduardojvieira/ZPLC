@@ -13,9 +13,13 @@
 
 import { useState } from 'react';
 import { getToolboxItems, type LDToolboxItem } from '../../models/ld';
+import { Button, TextField } from '../../ui';
 import { filterItems } from '../picker';
 import { useProjectBlocks } from '../useProjectBlocks';
 import { DRAG_MIME_TYPE } from './ldDragData';
+
+/** The smallest text of the scale (UX-006): captions and notes. */
+const CAPTION = 'text-[length:var(--font-size-caption)]';
 
 // =============================================================================
 // Toolbox Item Component
@@ -55,24 +59,18 @@ function ToolboxItem({ item, onInsert }: ToolboxItemProps) {
   };
 
   return (
-    <button
-      type="button"
+    <Button
       draggable
       onDragStart={handleDragStart}
       onClick={() => onInsert?.(item)}
       data-ld-toolbox-item={`${item.type}${item.fbType ? `:${item.fbType}` : ''}`}
       aria-label={`Insert ${item.label}`}
-      className={`
-        flex flex-col items-center justify-center p-2 
-        border-2 rounded cursor-grab active:cursor-grabbing
-        transition-colors select-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--color-accent-blue)]
-        ${getCategoryStyles()}
-      `}
-      title={`${item.label}: press to insert at the cursor, or drag onto the grid`}
+      tooltip={`${item.label}: press to insert at the cursor, or drag onto the grid`}
+      className={`flex-col whitespace-normal border-2 bg-transparent p-2 cursor-grab active:cursor-grabbing select-none ${getCategoryStyles()}`}
     >
       <span className="max-w-full break-all text-center font-mono text-xs font-bold leading-tight">{item.symbol}</span>
-      <span className="max-w-full break-words text-center text-[9px] leading-tight text-[var(--color-surface-200)] mt-0.5">{item.label}</span>
-    </button>
+      <span className={`mt-0.5 max-w-full break-words text-center ${CAPTION} leading-tight text-[var(--color-surface-200)]`}>{item.label}</span>
+    </Button>
   );
 }
 
@@ -91,7 +89,7 @@ function ToolboxSection({ title, items, onInsert }: ToolboxSectionProps) {
   
   return (
     <div className="mb-3">
-      <h3 className="text-[10px] font-semibold text-[var(--color-surface-300)] uppercase tracking-wider mb-1.5 px-1">
+      <h3 className={`${CAPTION} font-semibold text-[var(--color-surface-300)] uppercase tracking-wider mb-1.5 px-1`}>
         {title}
       </h3>
       <div className="grid grid-cols-2 gap-1.5">
@@ -130,24 +128,24 @@ export default function LDToolbox({ onInsert }: LDToolboxProps) {
   return (
     <div className="w-40 h-full bg-[var(--color-surface-800)] border-r border-[var(--color-surface-600)] p-2 overflow-y-auto flex-shrink-0" data-ld-toolbox>
       <h2 className="text-xs font-bold text-[var(--color-surface-100)] mb-2 px-1">Toolbox</h2>
-      <input
+      <TextField
         type="search"
         value={query}
         onChange={(event) => setQuery(event.target.value)}
         aria-label="Search the toolbox"
         placeholder="Search"
-        className="mb-3 w-full rounded border border-[var(--border-color)] bg-[var(--color-surface-700)] px-2 py-1 text-xs text-[var(--text-primary)] focus:border-[var(--color-accent-blue)] focus:outline-none"
+        className="mb-3 w-full"
       />
 
       <ToolboxSection title="Contacts" items={contacts} onInsert={onInsert} />
       <ToolboxSection title="Coils" items={coils} onInsert={onInsert} />
       <ToolboxSection title="Structure" items={structure} onInsert={onInsert} />
       <ToolboxSection title="Function Blocks" items={functionBlocks} onInsert={onInsert} />
-      {allItems.length === 0 ? <p className="px-1 text-[10px] text-[var(--color-surface-300)]">Nothing matches.</p> : null}
+      {allItems.length === 0 ? <p className={`px-1 ${CAPTION} text-[var(--color-surface-300)]`}>Nothing matches.</p> : null}
 
       {/* Instructions */}
       <div className="mt-4 pt-3 border-t border-[var(--color-surface-700)]">
-        <p className="text-[9px] text-[var(--color-surface-300)] leading-relaxed">
+        <p className={`${CAPTION} text-[var(--color-surface-300)] leading-relaxed`}>
           Press an item to insert it at the cursor, or drag it onto the grid. Use Branch to create parallel paths.
         </p>
       </div>
