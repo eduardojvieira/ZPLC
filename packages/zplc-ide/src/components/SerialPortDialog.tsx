@@ -4,6 +4,8 @@
  * It only shows rows and reports what the user did; `SerialPortChooser` holds the state and talks to the main process.
  */
 
+import type { KeyboardEvent } from 'react';
+import { Button } from '../ui';
 import { Modal } from './Modal';
 import { boardNote, type SerialPortRow } from '../utils/serialPortChoice';
 
@@ -17,9 +19,17 @@ export interface SerialPortDialogProps {
   onCancel(): void;
 }
 
-const BUTTON = 'px-4 py-2 text-sm rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent-blue)] disabled:cursor-not-allowed disabled:opacity-50';
-
 export function SerialPortDialog({ rows, selectedPortId, refreshing, onSelect, onChoose, onRefresh, onCancel }: SerialPortDialogProps) {
+  // A radio group the way a native one behaves: one tab stop (the chosen port, else the first), and the arrow keys move
+  // the choice and the focus together.
+  const onRowKey = (event: KeyboardEvent<HTMLElement>, index: number) => {
+    const step = event.key === 'ArrowDown' || event.key === 'ArrowRight' ? 1 : event.key === 'ArrowUp' || event.key === 'ArrowLeft' ? -1 : 0;
+    if (step === 0) return;
+    event.preventDefault();
+    const target = (index + step + rows.length) % rows.length;
+    onSelect(rows[target].portId);
+    event.currentTarget.parentElement?.querySelectorAll<HTMLElement>('[role="radio"]')[target]?.focus();
+  };
   return (
     <Modal isOpen onClose={onCancel} title="Choose a serial port" widthClass="max-w-xl" showCloseButton={false}>
       <div className="p-4" data-serial-port-dialog>
@@ -32,40 +42,41 @@ export function SerialPortDialog({ rows, selectedPortId, refreshing, onSelect, o
           </p>
         ) : (
           <div role="radiogroup" aria-label="Serial ports" className="mb-4 flex max-h-72 flex-col gap-2 overflow-y-auto">
-            {rows.map((row) => {
+            {rows.map((row, index) => {
               const note = boardNote(row);
               const checked = row.portId === selectedPortId;
               return (
-                <label
+                <Button
                   key={row.portId}
+                  role="radio"
+                  aria-checked={checked}
+                  tabIndex={checked || (selectedPortId === null && index === 0) ? 0 : -1}
                   data-serial-port-row={row.kind}
-                  className={`flex cursor-pointer items-start gap-3 rounded border p-3 text-sm ${checked ? 'border-[var(--color-accent-blue)] bg-[var(--color-surface-700)]' : 'border-[var(--border-color)] hover:bg-[var(--color-surface-700)]'}`}
+                  onClick={() => onSelect(row.portId)}
+                  onKeyDown={(event) => onRowKey(event, index)}
+                  className={`items-start justify-start gap-3 whitespace-normal p-3 text-left text-sm ${checked ? 'border-[var(--color-accent-blue)] bg-[var(--color-surface-700)]' : ''}`}
                 >
-                  <input type="radio" name="serial-port" checked={checked} onChange={() => onSelect(row.portId)} className="mt-1" />
+                  <span aria-hidden="true" className={`mt-1 h-3.5 w-3.5 shrink-0 rounded-full border border-[var(--color-accent-blue)] ${checked ? 'bg-[var(--color-accent-blue)]' : ''}`} />
                   <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-                    <span className="break-words font-medium text-[var(--color-surface-50)]">{row.name}</span>
-                    <span className="text-xs text-[var(--color-surface-200)]">
+                    <span className="break-words font-medium text-[var(--color-surface-100)]">{row.name}</span>
+                    <span className="text-xs font-normal text-[var(--color-surface-200)]">
                       {row.usbId === null ? 'No USB identifiers' : `USB ${row.usbId}`}
                       {row.serialNumber === null ? '' : ` · serial number ${row.serialNumber}`}
                     </span>
-                    {note === null ? null : <span className={`text-xs ${row.kind === 'known-board' ? 'text-[var(--color-accent-green)]' : 'text-[var(--color-surface-200)]'}`}>{note}</span>}
+                    {note === null ? null : <span className={`text-xs font-normal ${row.kind === 'known-board' ? 'text-[var(--color-accent-green)]' : 'text-[var(--color-surface-200)]'}`}>{note}</span>}
                   </span>
-                </label>
+                </Button>
               );
             })}
           </div>
         )}
         <div className="flex justify-between gap-2">
-          <button type="button" disabled={refreshing} onClick={onRefresh} className={`${BUTTON} bg-[var(--color-surface-600)] hover:bg-[var(--color-surface-500)] text-[var(--color-surface-100)]`}>
+          <Button disabled={refreshing} onClick={onRefresh}>
             {refreshing ? 'Refreshing…' : 'Refresh'}
-          </button>
+          </Button>
           <div className="flex gap-2">
-            <button type="button" onClick={onCancel} className={`${BUTTON} bg-[var(--color-surface-600)] hover:bg-[var(--color-surface-500)] text-[var(--color-surface-100)]`}>
-              Cancel
-            </button>
-            <button type="button" disabled={selectedPortId === null || refreshing} onClick={onChoose} className={`${BUTTON} bg-[var(--color-accent-blue)] hover:bg-[var(--color-accent-blue)]/80 text-white`}>
-              Use this port
-            </button>
+            <Button onClick={onCancel}>Cancel</Button>
+            <Button variant="primary" disabled={selectedPortId === null || refreshing} onClick={onChoose}>Use this port</Button>
           </div>
         </div>
       </div>
