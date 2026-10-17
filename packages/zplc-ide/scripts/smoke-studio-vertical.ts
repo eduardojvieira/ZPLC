@@ -1035,10 +1035,10 @@ async function main(): Promise<void> {
     await waitFor('dirty project before close', async () => await page().evaluate('window.__zplcSmoke.closeDirty ? true : undefined') === true ? true : undefined);
     await page().evaluate(`document.querySelector('button[aria-label="Explorer"]')?.click()`);
     await waitFor('Explorer lower ledger before close project', async () => await page().evaluate(`Boolean(document.querySelector('#console-panel-explorer [role="tree"]')) ? true : undefined`) === true ? true : undefined);
-    assert(await page().evaluate(`Boolean(document.querySelector('button[aria-label="Close Project"]'))`) === true, 'Close Project control is unavailable');
-    await page().evaluate(`document.querySelector('button[aria-label="Close Project"]')?.focus(); document.querySelector('button[aria-label="Close Project"]')?.click()`);
+    assert(await page().evaluate(`Boolean(document.querySelector('button[aria-label="Close project"]'))`) === true, 'Close Project control is unavailable');
+    await page().evaluate(`document.querySelector('button[aria-label="Close project"]')?.focus(); document.querySelector('button[aria-label="Close project"]')?.click()`);
     await Bun.sleep(100);
-    const closeDialog = await page().evaluate(`(() => { const dialog = document.querySelector('[role="dialog"]'); return { dialog: dialog?.textContent ?? null, project: document.querySelector('button[aria-label="Close Project"]') !== null }; })()`) as { dialog: string | null; project: boolean };
+    const closeDialog = await page().evaluate(`(() => { const dialog = document.querySelector('[role="dialog"]'); return { dialog: dialog?.textContent ?? null, project: document.querySelector('button[aria-label="Close project"]') !== null }; })()`) as { dialog: string | null; project: boolean };
     assert(closeDialog.dialog?.includes('Discard unsaved changes?'), `Unsaved close confirmation did not open: ${JSON.stringify(closeDialog)}`);
     assert(await page().evaluate(`(() => { const dialog = document.querySelector('[role="dialog"]'); return dialog?.textContent?.includes('Changes to this project will be lost when it closes.') && [...dialog.querySelectorAll('button')].some((button) => button.textContent?.trim() === 'Continue editing') && [...dialog.querySelectorAll('button')].some((button) => button.textContent?.trim() === 'Save all and close') && [...dialog.querySelectorAll('button')].some((button) => button.textContent?.trim() === 'Discard changes and close'); })()`) === true, 'Unsaved close confirmation must explain the loss and offer save, discard and cancel');
     assert(await page().evaluate(`(() => { const dialog = document.querySelector('[role="dialog"]'); return Boolean(dialog?.contains(document.activeElement)) && document.activeElement?.getAttribute('aria-label') === 'Close'; })()`) === true, 'Modal must initially focus a safe control inside the dialog');
@@ -1051,10 +1051,10 @@ async function main(): Promise<void> {
     assert(await page().evaluate(`document.activeElement?.textContent?.trim() === 'Continue editing'`) === true, 'Tab must stay within the dialog controls');
     await press('Escape');
     await waitFor('unsaved close cancellation focus recovery', async () => await page().evaluate(`!document.querySelector('[role="dialog"]') && document.activeElement?.getAttribute('aria-label') === 'Close Project' && window.__zplcSmoke.getState?.().activeFileId === 'aux-st' ? true : undefined`) === true ? true : undefined);
-    await page().evaluate(`document.querySelector('button[aria-label="Close Project"]')?.click()`);
+    await page().evaluate(`document.querySelector('button[aria-label="Close project"]')?.click()`);
     await waitFor('unsaved close confirmation reopened', async () => await page().evaluate(`document.querySelector('[role="dialog"]') ? true : undefined`) === true ? true : undefined);
     await click('Discard changes and close');
-    await waitFor('explicit unsaved project discard', async () => await page().evaluate(`!document.querySelector('[role="dialog"]') && !document.querySelector('button[aria-label="Close Project"]') ? true : undefined`) === true ? true : undefined);
+    await waitFor('explicit unsaved project discard', async () => await page().evaluate(`!document.querySelector('[role="dialog"]') && !document.querySelector('button[aria-label="Close project"]') ? true : undefined`) === true ? true : undefined);
     assert([...browserErrors, ...page().errors].length === 0, `Browser errors: ${[...browserErrors, ...page().errors].join(' | ')}`);
     console.log('Studio renderer vertical smoke passed at 1366x768 (mock bridge backed by a real native POSIX Tool API result; not HIL).');
   } finally {

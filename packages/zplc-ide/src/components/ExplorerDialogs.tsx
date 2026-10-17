@@ -5,6 +5,7 @@
  */
 import { useState, type FormEvent } from 'react';
 import { Button, Select, TextField } from '../ui';
+import { useT } from '../i18n';
 import { Modal } from './Modal';
 
 const messageOf = (error: unknown) => (error instanceof Error ? error.message : 'The operation failed. Try again.');
@@ -12,10 +13,11 @@ const messageOf = (error: unknown) => (error instanceof Error ? error.message : 
 export interface FolderChoice { path: string; label: string }
 
 function Actions({ busy, submitLabel, onCancel, danger = false }: { busy: boolean; submitLabel: string; onCancel: () => void; danger?: boolean }) {
+  const { t } = useT();
   return (
     <div className="flex justify-end gap-2 pt-5">
-      <Button disabled={busy} onClick={onCancel}>Cancel</Button>
-      <Button type="submit" variant={danger ? 'danger' : 'primary'} disabled={busy}>{busy ? 'Working…' : submitLabel}</Button>
+      <Button disabled={busy} onClick={onCancel}>{t('common.cancel')}</Button>
+      <Button type="submit" variant={danger ? 'danger' : 'primary'} disabled={busy}>{busy ? t('common.working') : submitLabel}</Button>
     </div>
   );
 }
@@ -42,6 +44,7 @@ export function EntryNameDialog({ title, initialName, submitLabel, folders, init
   onSubmit: (name: string, folder: string) => Promise<void>;
   onCancel: () => void;
 }) {
+  const { t } = useT();
   const [name, setName] = useState(initialName);
   const [folder, setFolder] = useState(initialFolder ?? '');
   const { busy, error, attempt } = useAttempt();
@@ -50,13 +53,13 @@ export function EntryNameDialog({ title, initialName, submitLabel, folders, init
     <Modal isOpen onClose={() => { if (!busy) onCancel(); }} title={title} widthClass="max-w-md" showCloseButton={!busy}>
       <form className="p-4" onSubmit={submit} data-entry-dialog>
         {folders && (
-          <Select id="entry-folder" label="Folder" fieldClassName="mb-3" value={folder} onChange={(event) => setFolder(event.target.value)}>
+          <Select id="entry-folder" label={t('dialog.folder')} fieldClassName="mb-3" value={folder} onChange={(event) => setFolder(event.target.value)}>
             {folders.map((choice) => <option key={choice.path} value={choice.path}>{choice.label}</option>)}
           </Select>
         )}
         <TextField
           id="entry-name"
-          label="Name"
+          label={t('dialog.name')}
           data-autofocus
           value={name}
           onChange={(event) => setName(event.target.value)}
@@ -79,16 +82,17 @@ export function MoveDialog({ name, folders, initialFolder, onMove, onCancel }: {
   onMove: (folder: string) => Promise<void>;
   onCancel: () => void;
 }) {
+  const { t } = useT();
   const [folder, setFolder] = useState(initialFolder);
   const { busy, error, attempt } = useAttempt();
   const submit = (event: FormEvent) => { event.preventDefault(); void attempt(() => onMove(folder)); };
   return (
-    <Modal isOpen onClose={() => { if (!busy) onCancel(); }} title={`Move ${name}`} widthClass="max-w-md" showCloseButton={!busy}>
+    <Modal isOpen onClose={() => { if (!busy) onCancel(); }} title={t('dialog.moveTitle', { name })} widthClass="max-w-md" showCloseButton={!busy}>
       <form className="p-4" onSubmit={submit} data-entry-dialog>
-        <Select id="entry-folder" label="Move to folder" data-autofocus value={folder} onChange={(event) => setFolder(event.target.value)} error={error ?? undefined}>
+        <Select id="entry-folder" label={t('dialog.moveTo')} data-autofocus value={folder} onChange={(event) => setFolder(event.target.value)} error={error ?? undefined}>
           {folders.map((choice) => <option key={choice.path} value={choice.path}>{choice.label}</option>)}
         </Select>
-        <Actions busy={busy} submitLabel="Move" onCancel={onCancel} />
+        <Actions busy={busy} submitLabel={t('common.move')} onCancel={onCancel} />
       </form>
     </Modal>
   );
@@ -101,21 +105,22 @@ export function DeleteFolderDialog({ name, modifiedFiles, onConfirm, onCancel }:
   onConfirm: () => Promise<void>;
   onCancel: () => void;
 }) {
+  const { t } = useT();
   const { busy, error, attempt } = useAttempt();
   const submit = (event: FormEvent) => { event.preventDefault(); void attempt(onConfirm); };
   return (
-    <Modal isOpen onClose={() => { if (!busy) onCancel(); }} title="Delete folder" widthClass="max-w-sm" showCloseButton={!busy}>
+    <Modal isOpen onClose={() => { if (!busy) onCancel(); }} title={t('fileMenu.deleteFolder')} widthClass="max-w-sm" showCloseButton={!busy}>
       <form className="p-4" onSubmit={submit} data-entry-dialog>
-        <p className="text-[var(--text-primary)]">Delete <strong>{name}</strong> and everything in it?</p>
-        <p className="mt-1 text-sm text-[var(--text-secondary)]">This permanently removes the folder from disk and cannot be undone.</p>
+        <p className="text-[var(--text-primary)]">{t('dialog.deleteFolder.confirm', { name })}</p>
+        <p className="mt-1 text-sm text-[var(--text-secondary)]">{t('dialog.deleteFolder.permanent')}</p>
         {modifiedFiles.length > 0 && (
           <div className="mt-3 text-sm text-[var(--color-accent-yellow)]">
-            <p>These files have changes that are not saved and will be lost:</p>
+            <p>{t('dialog.deleteFolder.unsaved')}</p>
             <ul className="mt-1 list-disc pl-5">{modifiedFiles.map((file) => <li key={file}>{file}</li>)}</ul>
           </div>
         )}
         {error && <p role="alert" className="mt-2 text-sm text-[var(--color-accent-red)]">{error}</p>}
-        <Actions busy={busy} submitLabel="Delete folder" onCancel={onCancel} danger />
+        <Actions busy={busy} submitLabel={t('fileMenu.deleteFolder')} onCancel={onCancel} danger />
       </form>
     </Modal>
   );

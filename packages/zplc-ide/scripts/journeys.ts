@@ -259,7 +259,7 @@ function findOnDisk(folder: string, name: string): string[] {
 /** Explorer > New File: type a name, pick the language with the keyboard, and press Create (or stop at the dialog when `create` is false). */
 async function newFile(app: App, name: string, language: 'ST' | 'IL' | 'LD' | 'FBD' | 'SFC', create = true): Promise<void> {
   await app.click(tab('Explorer', 'exact'));
-  await app.click(button('New File'), 'the New File button of the Explorer');
+  await app.click(button('New file'), 'the New file button of the Explorer');
   const nameField = css('#new-file-name');
   await app.until('the New File dialog', async () => await app.visible(nameField) || undefined);
   await app.click(nameField, 'the file name field');

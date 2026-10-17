@@ -1,4 +1,5 @@
 import { useIDEStore } from '../store/useIDEStore';
+import { useT } from '../i18n';
 import type { DebugAdapterType, VMInfo } from '../runtime/debugAdapter';
 import type { ExecutionMode } from './runtimeArtifactSelection';
 import { presentOperationalStatus, type OperationalStatusTone } from './operationalStatusPresentation';
@@ -31,6 +32,7 @@ function Detail({ label, value, numeric = false }: { label: string; value: strin
 
 /** Persistent, read-only operational truth for the current project session. */
 export function OperationalStatusBar({ mode, adapterType, connected, vmInfo, status }: OperationalStatusBarProps) {
+  const { t } = useT();
   const isProjectOpen = useIDEStore((state) => state.isProjectOpen);
   const projectConfig = useIDEStore((state) => state.projectConfig);
   const controllerInfo = useIDEStore((state) => state.controllerInfo);
@@ -56,21 +58,21 @@ export function OperationalStatusBar({ mode, adapterType, connected, vmInfo, sta
   });
 
   return (
-    <section aria-label="Operational status" className="min-h-[34px] border-b border-[var(--color-surface-700)] bg-[var(--color-surface-900)] px-3 py-1.5">
+    <section aria-label={t('status.label')} className="min-h-[34px] border-b border-[var(--color-surface-700)] bg-[var(--color-surface-900)] px-3 py-1.5">
       <div className="overflow-x-auto [scrollbar-width:thin]">
         <div className="flex min-w-max items-center gap-3 whitespace-nowrap">
-          <Detail label="Mode" value={presentation.mode} />
+          <Detail label={t('status.mode')} value={presentation.mode} />
           <span className="h-3.5 w-px bg-[var(--color-surface-700)]" aria-hidden="true" />
-          <Detail label="Runtime" value={presentation.runtime} />
-          {presentation.target && <Detail label="Target" value={presentation.target} />}
+          <Detail label={t('status.runtime')} value={presentation.runtime} />
+          {presentation.target && <Detail label={t('status.target')} value={presentation.target} />}
           <span role="status" aria-live="polite" aria-atomic="true" className="flex items-center gap-1.5 text-xs font-medium text-[var(--color-surface-100)]">
             <span className={`h-1.5 w-1.5 rounded-full ring-1 ring-[var(--color-surface-100)] ${TONE_DOT[presentation.status.tone]}`} aria-hidden="true" />
             <span>{presentation.status.text}</span>
           </span>
-          {presentation.cycles !== undefined && <Detail label="cycles" value={presentation.cycles.toLocaleString()} numeric />}
-          {presentation.taskIntervalMs !== undefined && <Detail label="task interval" value={`${presentation.taskIntervalMs.toLocaleString()} ms`} numeric />}
-          {presentation.taskCount !== undefined && <Detail label="tasks" value={String(presentation.taskCount)} numeric />}
-          {presentation.overruns !== undefined && <Detail label="overruns" value={presentation.overruns.toLocaleString()} numeric />}
+          {presentation.cycles !== undefined && <Detail label={t('status.cycles')} value={presentation.cycles.toLocaleString()} numeric />}
+          {presentation.taskIntervalMs !== undefined && <Detail label={t('status.taskInterval')} value={`${presentation.taskIntervalMs.toLocaleString()} ms`} numeric />}
+          {presentation.taskCount !== undefined && <Detail label={t('status.tasks')} value={String(presentation.taskCount)} numeric />}
+          {presentation.overruns !== undefined && <Detail label={t('status.overruns')} value={presentation.overruns.toLocaleString()} numeric />}
         </div>
         {presentation.limits && (
           <div role="note" className="mt-1 border-l-2 border-[var(--color-accent-orange)] px-2 text-xs text-[var(--color-surface-100)]">

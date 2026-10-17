@@ -2,18 +2,24 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'bun:test';
 
+import { en } from '../i18n/en';
+
 describe('Sidebar migration disclosure', () => {
   it('keeps the migration notice read-only and discoverable in the lower Explorer ledger tab, with the difference in a dialog of its own', () => {
     const source = readFileSync(join(import.meta.dir, 'Sidebar.tsx'), 'utf8');
 
-    expect(source).toContain('Migration preview');
-    expect(source).toContain('No project files were changed.');
-    expect(source).toContain('Review the difference (');
+    // The texts are in the catalog (UX-029); the explorer writes them through t().
+    expect(en['explorer.migration.heading']).toBe('Migration preview');
+    expect(en['explorer.migration.unchanged']).toBe('No project files were changed.');
+    expect(en['explorer.migration.review.other']).toContain('Review the difference (');
+    for (const key of ['explorer.migration.heading', 'explorer.migration.unchanged']) expect(source).toContain(`t('${key}')`);
+    expect(source).toContain("tn('explorer.migration.review'");
     expect(source).toContain('<MigrationPreviewDialog onClose={() => setIsMigrationOpen(false)} />');
-    expect(source).toContain('aria-label="Explorer actions"');
+    expect(source).toContain("aria-label={t('explorer.actions')}");
+    expect(en['explorer.actions']).toBe('Explorer actions');
     // The icon buttons are the kit's IconButton: `label` is the accessible name, and the kit's tests prove it (ui/kit.test.tsx).
-    expect(source).toContain('label="New File"');
-    expect(source).toContain('label="Refresh"');
+    expect(source).toContain("label={t('explorer.newFile')}");
+    expect(source).toContain("label={t('explorer.refresh')}");
     expect(source).not.toContain('Close Explorer');
     expect(source).not.toContain('Apply migration');
   });

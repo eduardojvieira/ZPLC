@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, mock, spyOn } from 'bun:test';
 import { renderToStaticMarkup } from 'react-dom/server';
 
 import { SerialPortDialog } from '../components/SerialPortDialog';
+import { UnsavedChangesDialog } from '../components/UnsavedChangesDialog';
 import { UpdateNoticeView } from '../components/UpdateNotice';
 import { updateSteps } from '../ipc/updateNotice';
 import { useAppSettings } from '../store/useAppSettings';
@@ -122,5 +123,19 @@ describe('UX-029 migrated components render in the language of the setting', () 
     const preferences = renderToStaticMarkup(<AppPreferences includeTheme={false} />);
     expect(preferences).toContain('>Preferences<');
     expect(preferences).toMatch(/data-setting="language"[\s\S]*?<option value="auto"[^>]*>Automatic \(system language\)<\/option><option value="en"[^>]*>English<\/option><option value="es"[^>]*>Español<\/option>/);
+  });
+
+  it('UX-029 draws the unsaved changes dialog with its default buttons in each language, and keeps the labels a caller passes', () => {
+    const draw = (extra: { saveLabel?: string } = {}) => renderToStaticMarkup(<UnsavedChangesDialog title="T" items={['Motor.st']} onChoice={() => undefined} {...extra} />);
+    expect(draw()).toContain('>Cancel<');
+    expect(draw()).toContain('>Discard<');
+    expect(draw()).toContain('>Save<');
+    setLanguage('es');
+    const spanish = draw();
+    expect(spanish).toContain('Estos elementos tienen cambios sin guardar:');
+    expect(spanish).toContain('>Cancelar<');
+    expect(spanish).toContain('>Descartar<');
+    expect(spanish).toContain('>Guardar<');
+    expect(draw({ saveLabel: 'Guardar todo y cerrar' })).toContain('>Guardar todo y cerrar<');
   });
 });
