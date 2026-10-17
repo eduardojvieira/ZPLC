@@ -1,8 +1,12 @@
+import { useEffect, useState } from 'react';
 import { useIDEStore } from '../store/useIDEStore';
 import { useT } from '../i18n';
+import { connectionManager, type LinkInfo } from '../runtime/connectionManager';
+import { ConnectionIndicator } from './ConnectionIndicator';
+import { presentConnection, type ConnectionIndicatorView } from './connectionPresentation';
 import type { DebugAdapterType, VMInfo } from '../runtime/debugAdapter';
 import type { ExecutionMode } from './runtimeArtifactSelection';
-import { presentOperationalStatus, type OperationalStatusTone } from './operationalStatusPresentation';
+import { presentOperationalStatus, reportedBoardOf, type OperationalStatusPresentation, type OperationalStatusTone } from './operationalStatusPresentation';
 
 interface OperationalStatusBarProps {
   mode: ExecutionMode;
@@ -10,6 +14,10 @@ interface OperationalStatusBarProps {
   connected: boolean;
   vmInfo: VMInfo | null;
   status: { text: string; tone: OperationalStatusTone };
+  /** A connection to hardware is being made (UX-018). */
+  connecting: boolean;
+  /** The runtime reports a fault. */
+  faulted: boolean;
 }
 
 // The status dot is a tone of the signal vocabulary (UX-009): the same borders as a TRUE chip, a forced chip and a fault chip.
@@ -31,7 +39,7 @@ function Detail({ label, value, numeric = false }: { label: string; value: strin
 }
 
 /** Persistent, read-only operational truth for the current project session. */
-export function OperationalStatusBar({ mode, adapterType, connected, vmInfo, status }: OperationalStatusBarProps) {
+export function OperationalStatusBar({ mode, adapterType, connected, vmInfo, status, connecting, faulted }: OperationalStatusBarProps) {
   const { t } = useT();
   const isProjectOpen = useIDEStore((state) => state.isProjectOpen);
   const projectConfig = useIDEStore((state) => state.projectConfig);
@@ -40,6 +48,8 @@ export function OperationalStatusBar({ mode, adapterType, connected, vmInfo, sta
   const forcedValues = useIDEStore((state) => state.debug.forcedValues);
   const forcesUnconfirmed = useIDEStore((state) => state.debug.forcesUnconfirmed);
   const nativeTrace = useIDEStore((state) => state.debug.nativeTrace);
+  const [linkInfo, setLinkInfo] = useState<LinkInfo>(connectionManager.linkInfo);
+  useEffect(() => connectionManager.onLinkInfoUpdate(setLinkInfo), []);
 
   if (!isProjectOpen) return null;
   const presentation = presentOperationalStatus({
@@ -56,11 +66,29 @@ export function OperationalStatusBar({ mode, adapterType, connected, vmInfo, sta
     forcesUnconfirmed,
     nativeTrace,
   });
+  const protocol = linkInfo.firmware?.protocol.kind;
+  const board = adapterType === 'serial' ? reportedBoardOf(controllerInfo) : undefined;
+  const indicator = presentConnection({
+    mode,
+    adapterType,
+    connected,
+    connecting,
+    faulted,
+    ...(board ? { board } : {}),
+    ...(protocol === 'framed' ? { link: 'framed' as const } : protocol === 'shell-only' ? { link: 'shell' as const } : {}),
+  }, t);
+  return <OperationalStatusView presentation={presentation} indicator={indicator} />;
+}
 
+/** What the status bar shows, from values already worked out: the container above reads the store, this one only draws. */
+export function OperationalStatusView({ presentation, indicator }: { presentation: OperationalStatusPresentation; indicator: ConnectionIndicatorView }) {
+  const { t } = useT();
   return (
     <section aria-label={t('status.label')} className="min-h-[34px] border-b border-[var(--color-surface-700)] bg-[var(--color-surface-900)] px-3 py-1.5">
       <div className="overflow-x-auto [scrollbar-width:thin]">
         <div className="flex min-w-max items-center gap-3 whitespace-nowrap">
+          <ConnectionIndicator indicator={indicator} />
+          <span className="h-3.5 w-px bg-[var(--color-surface-700)]" aria-hidden="true" />
           <Detail label={t('status.mode')} value={presentation.mode} />
           <span className="h-3.5 w-px bg-[var(--color-surface-700)]" aria-hidden="true" />
           <Detail label={t('status.runtime')} value={presentation.runtime} />

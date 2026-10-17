@@ -1104,6 +1104,8 @@ export function Toolbar({ debugController }: ToolbarProps) {
               return (
                 <button
                   key={option.id}
+      connecting={isConnecting}
+      faulted={vmState === 'error'}
                   ref={option.id === themeOptions[0].id ? themeMenuFirstItemRef : undefined}
                   type="button"
                   role="menuitemradio"
