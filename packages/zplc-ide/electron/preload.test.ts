@@ -60,8 +60,8 @@ describe('preload bridge (IDE-017)', () => {
   it('exposes the same top-level objects as the packaged smoke expects, and nothing else', () => {
     expect(Object.keys(api).sort()).toEqual([
       'aiProvider', 'candidateChangeSet', 'closeGuard', 'firmwareBuild', 'firmwareImages', 'getAppInfo', 'isElectron', 'learnProgress',
-      'nativeSimulation', 'platform', 'portChoice', 'projectFiles', 'recovery', 'session', 'toolExecutionAudit', 'toolchain',
-      'updateCheck', 'workspaceTests',
+      'menu', 'nativeSimulation', 'platform', 'portChoice', 'projectFiles', 'recovery', 'session', 'toolExecutionAudit', 'toolchain',
+      'updateCheck', 'windowPreferences', 'workspaceTests',
     ]);
   });
 
@@ -78,6 +78,9 @@ describe('preload bridge (IDE-017)', () => {
     expect(methods('portChoice')).toEqual(['choose', 'list', 'onRequested']);
     expect(methods('updateCheck')).toEqual(['run']);
     expect(methods('firmwareImages')).toEqual(['list']);
+    // The application menu (UX-014): one subscription that carries a command id, and nothing that sends one back.
+    expect(methods('menu')).toEqual(['onCommand']);
+    expect(methods('windowPreferences')).toEqual(['report']);
     expect(methods('closeGuard')).toEqual(['setDirty', 'closeNow', 'onCloseRequested']);
     expect(methods('workspaceTests')).toEqual(['registerProjectFile', 'registerProjectRoot', 'run', 'cancel', 'compile', 'safetyCheck', 'lessonCheck']);
     expect(methods('candidateChangeSet')).toEqual(['review']);

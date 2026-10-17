@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'bun:test';
 import type { MenuItemConstructorOptions } from 'electron';
-import { buildApplicationMenu, describeApplicationMenu, isReloadShortcut, type InputLike } from './appMenu';
+import { buildMenuTemplate, describeApplicationMenu, isReloadShortcut, type InputLike, type MenuBuildOptions, type MenuCategory, type MenuCommand } from './appMenu';
 
 const RELOAD_ACCELERATORS = ['F5', 'CmdOrCtrl+R', 'CmdOrCtrl+Shift+R', 'Ctrl+R', 'Ctrl+Shift+R', 'Cmd+R', 'F12', 'CmdOrCtrl+Shift+I', 'Ctrl+Shift+I', 'CmdOrCtrl+Alt+I', 'Alt+Cmd+I'];
-const RELOAD_ROLES = ['reload', 'forceReload', 'toggleDevTools'];
+const DEBUG_ROLES = ['reload', 'forceReload', 'toggleDevTools', 'zoomIn', 'zoomOut', 'resetZoom'];
 
 function flatten(items: MenuItemConstructorOptions[]): MenuItemConstructorOptions[] {
   return items.flatMap((item) => [item, ...(Array.isArray(item.submenu) ? flatten(item.submenu) : [])]);
@@ -13,37 +13,82 @@ function topLevelLabels(template: MenuItemConstructorOptions[]): string[] {
   return template.map((item) => String(item.label));
 }
 
+const CATEGORIES: MenuCategory[] = ['file', 'edit', 'view', 'project', 'build', 'online', 'debug', 'help'].map((id) => ({ id, titleKey: `menu.${id}` }));
+const COMMANDS: MenuCommand[] = [
+  { id: 'file.save', titleKey: 'command.file.save', category: 'file', accelerator: 'CmdOrCtrl+S' },
+  { id: 'build.compile', titleKey: 'command.build.compile', category: 'build', accelerator: 'CmdOrCtrl+B' },
+  { id: 'online.deploy', titleKey: 'command.online.deploy', category: 'online', accelerator: null },
+  { id: 'debug.run', titleKey: 'command.debug.run', category: 'debug', accelerator: 'F5' },
+];
+const t = (key: string): string => `«${key}»`;
 const noop = () => undefined;
+const build = (platform: NodeJS.Platform, overrides: Partial<MenuBuildOptions> = {}) => buildMenuTemplate(platform, COMMANDS, t, {
+  isPackaged: true, appName: 'ZPLC Studio', categories: CATEGORIES, run: noop, requestReload: noop, ...overrides,
+});
 
-describe('application menu', () => {
+describe('application menu (UX-014)', () => {
   for (const platform of ['linux', 'win32', 'darwin'] as const) {
-    it(`has no reload or developer-tools entry in a packaged ${platform} build`, () => {
-      const items = flatten(buildApplicationMenu({ platform, isPackaged: true, appName: 'ZPLC IDE', requestReload: noop }));
-      expect(items.filter((item) => RELOAD_ROLES.includes(String(item.role)))).toEqual([]);
-      expect(items.filter((item) => RELOAD_ACCELERATORS.includes(String(item.accelerator)))).toEqual([]);
-      expect(items.filter((item) => item.click !== undefined)).toEqual([]);
+    it(`UX-014 has no reload, zoom or developer-tools entry in a packaged ${platform} build`, () => {
+      const items = flatten(build(platform));
+      expect(items.filter((item) => DEBUG_ROLES.includes(String(item.role)))).toEqual([]);
+      expect(items.filter((item) => RELOAD_ACCELERATORS.includes(String(item.accelerator)) && item.registerAccelerator !== false && item.label !== t('command.debug.run'))).toEqual([]);
     });
   }
 
-  it('keeps File, Edit, View, Window and Help in a packaged build', () => {
-    const labels = topLevelLabels(buildApplicationMenu({ platform: 'linux', isPackaged: true, appName: 'ZPLC IDE', requestReload: noop }));
-    expect(labels).toEqual(['File', 'Edit', 'View', 'Window', 'Help']);
+  it('UX-014 holds File, Edit, View, Project, Build, Online, Debug and Help on Windows and Linux', () => {
+    for (const platform of ['linux', 'win32'] as const) {
+      expect(topLevelLabels(build(platform))).toEqual(CATEGORIES.map((category) => t(category.titleKey)));
+    }
   });
 
-  it('puts the application menu first on macOS', () => {
-    const labels = topLevelLabels(buildApplicationMenu({ platform: 'darwin', isPackaged: true, appName: 'ZPLC IDE', requestReload: noop }));
-    expect(labels).toEqual(['ZPLC IDE', 'File', 'Edit', 'View', 'Window', 'Help']);
+  it('UX-014 puts the application menu first and a Window menu before Help on macOS', () => {
+    expect(topLevelLabels(build('darwin'))).toEqual(['ZPLC Studio', ...CATEGORIES.slice(0, 7).map((c) => t(c.titleKey)), t('menu.window'), t('menu.help')]);
   });
 
-  it('keeps the clipboard and undo accelerators the editor needs', () => {
-    const roles: Array<string | undefined> = flatten(buildApplicationMenu({ platform: 'darwin', isPackaged: true, appName: 'ZPLC IDE', requestReload: noop })).map((item) => item.role);
-    for (const role of ['undo', 'redo', 'cut', 'copy', 'paste', 'selectAll', 'quit']) expect(roles).toContain(role);
+  it('UX-014 gives the macOS application menu the standard roles', () => {
+    const app = build('darwin')[0]!;
+    const roles = (app.submenu as MenuItemConstructorOptions[]).map((item) => item.role).filter(Boolean);
+    expect(roles).toEqual(['about', 'services', 'hide', 'hideOthers', 'unhide', 'quit']);
   });
 
-  it('routes the reload of a development build through the unsaved-work guard', () => {
+  it('UX-014 keeps the clipboard and undo roles the editor needs, labelled in the language of the menu', () => {
+    const edit = flatten(build('linux')).filter((item) => ['undo', 'redo', 'cut', 'copy', 'paste', 'selectAll'].includes(String(item.role)));
+    expect(edit.map((item) => item.role)).toEqual(['undo', 'redo', 'cut', 'copy', 'paste', 'selectAll']);
+    expect(edit.every((item) => typeof item.label === 'string' && item.label.startsWith('«menu.'))).toBe(true);
+  });
+
+  it('UX-015 builds every command item from the registry: label from the translator, accelerator, and a click that sends only its id', () => {
+    const sent: string[] = [];
+    const items = flatten(build('linux', { run: (id) => { sent.push(id); } }));
+    const run = items.find((item) => item.label === t('command.debug.run'))!;
+    expect(run.accelerator).toBe('F5');
+    run.click?.({} as never, undefined, {} as never);
+    const save = items.find((item) => item.label === t('command.file.save'))!;
+    save.click?.({} as never, undefined, {} as never);
+    expect(sent).toEqual(['debug.run', 'file.save']);
+  });
+
+  it('UX-015 lists a physical command like the button it stands for, with no accelerator it does not have', () => {
+    const deploy = flatten(build('win32')).find((item) => item.label === t('command.online.deploy'))!;
+    expect(deploy.accelerator).toBeUndefined();
+  });
+
+  it('UX-015 leaves the key to the window on Windows and Linux (shown, not registered) and to the menu on macOS', () => {
+    const accelerated = (platform: NodeJS.Platform) => flatten(build(platform)).filter((item) => item.accelerator === 'F5').map((item) => item.registerAccelerator);
+    expect(accelerated('linux')).toEqual([false]);
+    expect(accelerated('win32')).toEqual([false]);
+    expect(accelerated('darwin')).toEqual([true]);
+  });
+
+  it('UX-014 translates every menu label with the translator it is given', () => {
+    const labels = flatten(build('linux')).map((item) => item.label).filter((label): label is string => label !== undefined && label !== 'ZPLC Studio');
+    expect(labels.every((label) => label.startsWith('«'))).toBe(true);
+  });
+
+  it('UX-014 adds the developer items only to a development build, and routes its reload through the unsaved-work guard', () => {
     let reloads = 0;
-    const items = flatten(buildApplicationMenu({ platform: 'linux', isPackaged: false, appName: 'ZPLC IDE', requestReload: () => { reloads += 1; } }));
-    expect(items.filter((item) => RELOAD_ROLES.includes(String(item.role))).map((item) => item.role)).toEqual(['toggleDevTools']);
+    const items = flatten(build('linux', { isPackaged: false, requestReload: () => { reloads += 1; } }));
+    expect(items.filter((item) => DEBUG_ROLES.includes(String(item.role))).map((item) => item.role)).toEqual(['toggleDevTools']);
     const reload = items.find((item) => item.accelerator === 'CmdOrCtrl+R');
     expect(reload?.role).toBeUndefined();
     reload?.click?.({} as never, undefined, {} as never);
@@ -67,9 +112,9 @@ describe('application menu description', () => {
     const toMenuLike = (items: MenuItemConstructorOptions[]): { items: Array<{ role?: string; accelerator?: unknown; submenu?: unknown }> } => ({
       items: items.map((item) => ({ role: item.role, accelerator: item.accelerator, submenu: Array.isArray(item.submenu) ? toMenuLike(item.submenu) : null })),
     });
-    const line = describeApplicationMenu(toMenuLike(buildApplicationMenu({ platform: 'linux', isPackaged: true, appName: 'ZPLC IDE', requestReload: noop })) as never);
-    expect(line).toContain('roles=quit,undo,redo,cut,copy,paste,selectAll,resetZoom,zoomIn,zoomOut,togglefullscreen,minimize,close');
-    expect(line).toEndWith('accelerators=');
+    const line = describeApplicationMenu(toMenuLike(build('linux')) as never);
+    expect(line).toContain('roles=quit,undo,redo,cut,copy,paste,selectAll,togglefullscreen');
+    expect(line).toEndWith('accelerators=CmdOrCtrl+S,CmdOrCtrl+B,F5');
   });
 });
 

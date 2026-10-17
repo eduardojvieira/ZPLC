@@ -40,6 +40,9 @@ import { UpdateNoticeBanner } from './components/UpdateNotice';
 import { useUpdateNotice } from './store/updateNotice';
 import { ZPLC_REPO_VERSION } from './version';
 import { Button } from './ui';
+import { CommandPalette } from './commands/CommandPalette';
+import { ShortcutReference } from './commands/ShortcutReference';
+import { useCommandShortcuts, useMainProcessBridge, useShellCommands } from './commands/useCommandHost';
 import { useT } from './i18n';
 
 interface WorkbenchParts {
@@ -70,6 +73,10 @@ initializeSettings();
 function App() {
   const { t } = useT();
   useTheme();
+  // The keyboard, the shell's own commands and the application menu all run the same registered commands (UX-014, UX-015).
+  useCommandShortcuts();
+  useShellCommands();
+  useMainProcessBridge();
 
   const isProjectOpen = useIDEStore((s) => s.isProjectOpen);
   const isConsoleCollapsed = useIDEStore((s) => s.isConsoleCollapsed);
@@ -157,6 +164,8 @@ function App() {
         <WelcomeScreen />
         <CloseGuard />
         <SerialPortChooser />
+        <CommandPalette />
+        <ShortcutReference />
       </div>
     );
   }
@@ -167,6 +176,8 @@ function App() {
       <div className="h-screen w-screen flex flex-col overflow-hidden bg-[var(--color-surface-900)]">
         <CloseGuard />
         <SerialPortChooser />
+        <CommandPalette />
+        <ShortcutReference />
         <div role={failed ? 'alert' : 'status'} className="flex flex-1 flex-col items-center justify-center gap-3 text-sm text-[var(--text-secondary)]">
           <p>{failed ? t('app.workbenchFailed', { message: workbenchFailure.message }) : t('app.workbenchLoading')}</p>
           {failed && (
@@ -182,6 +193,8 @@ function App() {
     <div className="h-screen w-screen flex flex-col overflow-hidden bg-[var(--color-surface-900)]">
       <CloseGuard />
       <SerialPortChooser />
+        <CommandPalette />
+        <ShortcutReference />
       <RecoveryOffer />
       <ExternalChangePrompt />
       <UpdateNoticeBanner />

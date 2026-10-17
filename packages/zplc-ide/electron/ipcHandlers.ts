@@ -19,6 +19,7 @@ import type { RecoveryStore } from './recoveryStore.js';
 import type { SerialPortBroker } from './serialPortBroker.js';
 import { isSerialPortChoice, isSerialPortListRequest, type SerialPortChoice, type SerialPortListRequest } from './serialPortProtocol.js';
 import type { SessionStore } from './sessionStore.js';
+import { parseShellPreferences, type ShellPreferences } from './shellPreferences.js';
 import type { createToolExecutionAudit } from './toolExecutionAudit.js';
 import type { createWorkspaceTestGateway } from './workspaceTestGateway.js';
 import {
@@ -33,6 +34,7 @@ import {
   RECOVERY_CHANNEL,
   PORT_CHOICE_CHANNEL,
   SESSION_CHANNEL,
+  WINDOW_PREFERENCES_CHANNEL,
   TOOLCHAIN_CHANNEL,
   TOOL_EXECUTION_AUDIT_CHANNEL,
   UPDATE_CHECK_CHANNEL,
@@ -111,6 +113,8 @@ export interface IpcDeps {
   checkForUpdate(): Promise<unknown>;
   /** The firmware images of this installation (REL-025): read-only, with no argument from the renderer. */
   firmwareImages(): Promise<unknown>;
+  /** The window reported its language and theme (UX-014, UX-016): remembered for the menu and the next window colour. */
+  reportShellPreferences(preferences: ShellPreferences): void;
 }
 
 const WORKSPACE_FAILED = 'Workspace operation failed';
@@ -264,6 +268,12 @@ export function createIpcHandlers(deps: IpcDeps): IpcHandlerTable<RendererOwner>
 
     // Update check (IDE-010): one fixed address, no argument from the renderer.
     [UPDATE_CHECK_CHANNEL.RUN]: handler(noArguments, () => deps.checkForUpdate()),
+
+    // The language and theme of the window (UX-014, UX-016): two values of closed lists, nothing else.
+    [WINDOW_PREFERENCES_CHANNEL.REPORT]: handler(oneArgument((value) => parseShellPreferences(value) !== null), (_owner, [preferences]: [ShellPreferences]) => {
+      deps.reportShellPreferences(parseShellPreferences(preferences)!);
+      return null;
+    }),
 
     // Firmware images (REL-025): the manifest and files of this installation. Listing only: Studio never flashes a board.
     [FIRMWARE_IMAGES_CHANNEL.LIST]: handler(noArguments, () => deps.firmwareImages()),

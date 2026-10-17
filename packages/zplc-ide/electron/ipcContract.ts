@@ -128,6 +128,12 @@ export const PROJECT_FILES_CHANNEL = {
 /** What the main process pushes to the window when files under its folder changed (IDE-004). */
 export const PROJECT_FILES_EVENT = { changed: 'project-files:changed' } as const;
 
+/** The application menu (UX-014, UX-015): the id of the command that a menu item chose, pushed to the window. */
+export const MENU_CHANNEL = { COMMAND: 'menu:command' } as const;
+
+/** The window reports its language and theme, which the main process needs for the menu and the window colour (UX-014, UX-016). */
+export const WINDOW_PREFERENCES_CHANNEL = { REPORT: 'window-preferences:report' } as const;
+
 const values = (group: Record<string, string>): string[] => Object.values(group);
 
 /** Every channel the renderer may invoke: the main process answers each of them, behind the sender and message checks. */
@@ -148,6 +154,7 @@ export const IPC_INVOKE_CHANNELS: readonly string[] = [
   ...values(UPDATE_CHECK_CHANNEL),
   ...values(FIRMWARE_IMAGES_CHANNEL),
   ...values(PROJECT_FILES_CHANNEL),
+  ...values(WINDOW_PREFERENCES_CHANNEL),
 ];
 
 /** Every channel the main process pushes to the renderer; the renderer never sends on them and no handler answers them. */
@@ -156,4 +163,5 @@ export const IPC_EVENT_CHANNELS: readonly string[] = [
   PORT_CHOICE_CHANNEL.REQUESTED,
   CLOSE_GUARD_CHANNEL.CLOSE_REQUESTED,
   PROJECT_FILES_EVENT.changed,
+  MENU_CHANNEL.COMMAND,
 ];

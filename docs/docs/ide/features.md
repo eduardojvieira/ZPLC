@@ -62,6 +62,32 @@ The text is in sentence case, has no exclamation mark and uses no internal term.
 
 Evidence level: host. `packages/zplc-ide/src/i18n/i18n.test.tsx`, `tools/ci/i18n-guard.test.ts` and `src/utils/appSettings.test.ts` cover the catalogs, the language setting and the guard (requirements UX-029, UX-030 and UX-031).
 
+## Application menu, command palette and shortcuts
+
+Studio keeps one list of commands, and every way to start a command reads it: the application menu, the command palette, the keyboard shortcuts, the shortcut hints in the tooltips and the shortcut reference. A command therefore does the same thing wherever you start it.
+
+- **Application menu.** File, Edit, View, Project, Build, Online, Debug and Help, on Windows, Linux and macOS alike (macOS adds its application menu and a Window menu). The menu is in the language of the **Language** preference and changes with it. A packaged build has no reload, zoom or developer-tools item. The Edit menu holds the system clipboard and undo items that the editors and text fields use.
+- **Command palette.** Press Ctrl+Shift+P (Cmd+Shift+P on macOS), type a few letters of a command, choose with the arrow keys and press Enter. The palette lists every command, so each one is reachable from the keyboard even when it has no shortcut. A command that does not apply now (for example Deploy without a connection) is listed as not available and does not run.
+- **Shortcut reference.** Open **Help** > **Keyboard shortcuts**, or press Ctrl+K and then Ctrl+S, to see every command with its shortcut. The tooltips of the toolbar show the same shortcut after the name of the button.
+
+| Shortcut | Command |
+|---|---|
+| Ctrl+S | Save |
+| Ctrl+B | Compile the project |
+| F5 | Run, or resume when paused |
+| Shift+F5 | Stop |
+| F6 | Pause |
+| F10 | Step one cycle |
+| F8 | Reset the runtime |
+| Ctrl+Shift+P | Command palette |
+| Ctrl+K, then Ctrl+S | Keyboard shortcuts |
+
+Cmd replaces Ctrl on macOS. The shortcuts that act on a program (F5, F6, F10, F8, Shift+F5) leave a text field its own keys.
+
+**Commands that act on a device.** Connect, Disconnect, Deploy, Run, Pause, Stop, Step and Reset run the same action as the toolbar button of the same name, with the same checks and the same confirmation: Deploy still asks before it sends a program. Choosing one from the menu or the palette adds no way around them. They are controls for the person at the keyboard: the MCP tools and the optional AI provider have no access to the commands, and cannot flash, deploy, force, run or stop anything. A menu item for a command that the current state does not offer is not run, and Output says so.
+
+Evidence level: host. `packages/zplc-ide/src/commands/commands.test.ts` and `electron/appMenu.test.ts` (requirements UX-014 and UX-015) check that no two commands share a shortcut, that every menu item and palette entry is a registered command, that every command has a title in both languages, and the shape of the menu on Windows, Linux and macOS with a stand-in for the platform. The native menu has not been run on Windows or macOS.
+
 ## Files and folders in the project tree
 
 The Explorer header has **New File** and **New Folder**. A right click on a file or a folder (or F2 for a rename) opens its actions:

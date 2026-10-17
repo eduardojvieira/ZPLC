@@ -23,7 +23,8 @@ import { createSessionStore } from './sessionStore.js';
 import { createRecoveryStore } from './recoveryStore.js';
 import { checkForUpdate } from './updateCheck.js';
 import { loadFirmwareImages } from './firmwareImages.js';
-import { buildApplicationMenu, describeApplicationMenu, isReloadShortcut } from './appMenu.js';
+import { buildMenuTemplate, describeApplicationMenu, isReloadShortcut, type MenuCategory, type MenuCommand } from './appMenu.js';
+import { createShellPreferencesStore, windowSurface, type ShellPreferences } from './shellPreferences.js';
 import { createCloseGuard } from './closeGuard.js';
 import { createProjectFiles } from './projectFiles.js';
 import { createIpcHandlers, type RendererOwner, type ToolApiModule } from './ipcHandlers.js';
@@ -32,6 +33,7 @@ import { createToolWorkerHost, type ToolWorkerProcess } from './toolWorkerHost.j
 import { registerIpcHandlers } from './ipcRegistry.js';
 import {
   CLOSE_GUARD_CHANNEL,
+  MENU_CHANNEL,
   PORT_CHOICE_CHANNEL,
   NATIVE_SIMULATION_CHANNEL,
   PROJECT_FILES_EVENT,
@@ -84,6 +86,16 @@ const projectWatcher = createProjectWatcher({
 });
 const projectFiles = createProjectFiles(chooseProjectDirectory, () => recentProjects, projectWatcher, { dialog, getWindow: () => mainWindow, isPackaged: app.isPackaged, env: process.env });
 const toolApiUrl = pathToFileURL(path.join(__dirname, 'toolApi.js')).href;
+/** The command registry's menu data, bundled from src/commands/menuEntry.ts by `electron:compile` (UX-014, UX-015). */
+const commandMenuUrl = pathToFileURL(path.join(__dirname, 'commandMenu.js')).href;
+interface CommandMenuModule {
+  menuCommands: MenuCommand[];
+  menuCategories: MenuCategory[];
+  isRegisteredCommandId(value: unknown): boolean;
+  menuTranslator(locale: ShellPreferences['language']): (key: string) => string;
+}
+let commandMenu: CommandMenuModule | null = null;
+const shellPreferences = createShellPreferencesStore(app.getPath('userData'));
 
 /**
  * Compile, safety check, tests and candidate review run in a utility process of their own, one per request (IDE-012), from
@@ -218,10 +230,43 @@ async function chooseProjectDirectory(ownerId: number): Promise<string | null> {
 }
 
 const APP_WINDOW_TITLE = 'ZPLC Studio';
-/** --color-surface-900 of the light and dark themes in src/index.css (src/theme/windowSurface.test.ts keeps them equal). */
-const WINDOW_SURFACE = { light: '#e7ece8', dark: '#0f171b' } as const;
 /** The canvas colour of the theme the renderer applied from its stored preference (light, dark, high contrast or system). */
 const RENDERER_SURFACE_SCRIPT = 'getComputedStyle(document.documentElement).backgroundColor';
+
+/** The application menu in the language the window last reported (UX-014); rebuilt when the language changes. */
+function installApplicationMenu(): void {
+  if (!commandMenu) return;
+  const menu = commandMenu;
+  const template = buildMenuTemplate(process.platform, menu.menuCommands, menu.menuTranslator(shellPreferences.get().language), {
+    isPackaged: app.isPackaged, appName: app.getName(), categories: menu.menuCategories, run: sendMenuCommand, requestReload,
+  });
+  Menu.setApplicationMenu(Menu.buildFromTemplate(template));
+  const registeredMenu = Menu.getApplicationMenu();
+  if (registeredMenu) console.info(describeApplicationMenu(registeredMenu));
+}
+
+/**
+ * A menu item was chosen: its command id goes to the window, which runs it through its own registry and the gates of the
+ * button it stands for. Only an id of the registry is sent, and only to the window's trusted page; the menu holds no
+ * handler of its own, so it cannot start a device action that the toolbar would not.
+ */
+function sendMenuCommand(id: string): void {
+  const win = mainWindow;
+  if (!commandMenu?.isRegisteredCommandId(id) || !win || win.isDestroyed()) return;
+  const contents = win.webContents;
+  if (contents.isDestroyed() || !isExpectedRendererDocument(contents.getURL(), expectedRendererUrl())) return;
+  if (win.isMinimized()) win.restore();
+  win.focus();
+  contents.send(MENU_CHANNEL.COMMAND, id);
+}
+
+/** The window reported its language and theme: the menu follows the language and the window colour follows the theme. */
+function applyShellPreferences(next: ShellPreferences): void {
+  const before = shellPreferences.get();
+  if (!shellPreferences.save(next)) return;
+  if (before.language !== next.language) installApplicationMenu();
+  if (before.theme !== next.theme && mainWindow && !mainWindow.isDestroyed()) mainWindow.setBackgroundColor(windowSurface(next.theme, nativeTheme.shouldUseDarkColors));
+}
 
 /**
  * Create the main application window
@@ -233,9 +278,9 @@ function createWindow(): void {
     minWidth: 1024,
     minHeight: 768,
     title: APP_WINDOW_TITLE,
-    // Hidden until the page has painted; the colour below only shows if the renderer never reports one.
+    // Hidden until the page has painted; the colour is the one of the theme the window last reported (shellPreferences.ts).
     show: false,
-    backgroundColor: nativeTheme.shouldUseDarkColors ? WINDOW_SURFACE.dark : WINDOW_SURFACE.light,
+    backgroundColor: windowSurface(shellPreferences.get().theme, nativeTheme.shouldUseDarkColors),
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
@@ -252,7 +297,7 @@ function createWindow(): void {
   const win = mainWindow;
 
   // Show the window once the page has painted, in the canvas colour of the stored theme (UX-016).
-  // ponytail: read once at show time; a theme switched later reaches the native colour on the next launch (upgrade: an IPC from the theme setter).
+  // The colour is also corrected once from the page that painted; a theme switched later reaches the window through the report of shellPreferences.
   const reveal = (): void => { if (!win.isDestroyed() && !win.isVisible()) win.show(); };
   win.once('ready-to-show', () => {
     void webContents.executeJavaScript(RENDERER_SURFACE_SCRIPT).then(
@@ -487,6 +532,7 @@ function setupIPC(): void {
     checkForUpdate: () => checkForUpdate({ currentVersion: appVersion, fetch: (url, init) => fetch(url, init) }),
     // The images the installer put beside the application (REL-025); a build with no firmware folder answers `absent`.
     firmwareImages: () => loadFirmwareImages(path.join(process.resourcesPath, 'firmware')),
+    reportShellPreferences: applyShellPreferences,
   });
   registerIpcHandlers(ipcMain, handlers, {
     authorize: (event) => currentRendererOwner(event as IpcMainInvokeEvent),
@@ -510,11 +556,9 @@ app.whenReady().then(async () => {
   setupWebSerial();
   setupSerialPortSelection();
   setupIPC();
-  Menu.setApplicationMenu(Menu.buildFromTemplate(buildApplicationMenu({
-    platform: process.platform, isPackaged: app.isPackaged, appName: app.getName(), requestReload,
-  })));
-  const registeredMenu = Menu.getApplicationMenu();
-  if (registeredMenu) console.info(describeApplicationMenu(registeredMenu));
+  await shellPreferences.load();
+  commandMenu = await import(commandMenuUrl) as CommandMenuModule;
+  installApplicationMenu();
   createWindow();
 
   // macOS: Re-create window when dock icon is clicked
@@ -534,7 +578,7 @@ app.whenReady().then(async () => {
 registerAppLifecycle(app, {
   platform: process.platform,
   onQuit: () => toolWorkerHost.dispose(),
-  writesSettled: () => sessionStore?.settled() ?? Promise.resolve(),
+  writesSettled: () => Promise.all([sessionStore?.settled(), shellPreferences.settled()]).then(() => undefined),
 });
 
 // Handle second instance (single instance lock)

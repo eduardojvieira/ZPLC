@@ -22,12 +22,14 @@ import {
   CLOSE_GUARD_CHANNEL,
   FIRMWARE_BUILD_CHANNEL,
   LEARN_PROGRESS_CHANNEL,
+  MENU_CHANNEL,
   NATIVE_SIMULATION_CHANNEL,
   PROJECT_FILES_CHANNEL,
   PROJECT_FILES_EVENT,
   RECOVERY_CHANNEL,
   PORT_CHOICE_CHANNEL,
   SESSION_CHANNEL,
+  WINDOW_PREFERENCES_CHANNEL,
   TOOLCHAIN_CHANNEL,
   TOOL_EXECUTION_AUDIT_CHANNEL,
   UPDATE_CHECK_CHANNEL,
@@ -88,6 +90,19 @@ contextBridge.exposeInMainWorld('electronAPI', {
     // Grades the shown project against the scenario of a lesson package: a lesson id crosses, never a scenario (LRN-022).
     lessonCheck: (request: { workspaceId: string; rootId: string; lessonId: string }) =>
       ipcRenderer.invoke(WORKSPACE_TESTS_CHANNEL.LESSON_CHECK, request) as Promise<unknown>,
+  },
+  // The application menu (UX-014): the id of the command a menu item chose. The window runs it through its command
+  // registry, behind the same gates as the button of the toolbar; the preload carries an id and nothing else.
+  menu: {
+    onCommand: (callback: (commandId: unknown) => void) => {
+      const listener = (_event: Electron.IpcRendererEvent, commandId: unknown) => { callback(commandId); };
+      ipcRenderer.on(MENU_CHANNEL.COMMAND, listener);
+      return () => { ipcRenderer.removeListener(MENU_CHANNEL.COMMAND, listener); };
+    },
+  },
+  // The language and theme of the window, for the language of the menu and the colour of the next window (UX-014, UX-016).
+  windowPreferences: {
+    report: (preferences: { language: string; theme: string }) => ipcRenderer.invoke(WINDOW_PREFERENCES_CHANNEL.REPORT, preferences) as Promise<null>,
   },
   closeGuard: {
     setDirty: (dirty: boolean) => ipcRenderer.invoke(CLOSE_GUARD_CHANNEL.SET_DIRTY, dirty) as Promise<void>,

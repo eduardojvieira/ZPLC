@@ -62,6 +62,32 @@ El texto va en minúsculas salvo la inicial (sentence case), sin signos de excla
 
 Nivel de evidencia: host. `packages/zplc-ide/src/i18n/i18n.test.tsx`, `tools/ci/i18n-guard.test.ts` y `src/utils/appSettings.test.ts` cubren los catálogos, la preferencia de idioma y la guarda (requisitos UX-029, UX-030 y UX-031).
 
+## Menú de la aplicación, paleta de comandos y atajos
+
+Studio mantiene una sola lista de comandos, y toda forma de iniciar un comando la lee: el menú de la aplicación, la paleta de comandos, los atajos de teclado, las indicaciones de atajo de las descripciones emergentes y la referencia de atajos. Por eso un comando hace lo mismo desde cualquier lugar.
+
+- **Menú de la aplicación.** Archivo, Edición, Ver, Proyecto, Compilación, En línea, Depuración y Ayuda, en Windows, Linux y macOS por igual (macOS agrega su menú de la aplicación y un menú Ventana). El menú está en el idioma de la preferencia **Idioma** y cambia con ella. Una compilación empaquetada no tiene elementos de recarga, zoom ni herramientas de desarrollo. El menú Edición contiene los elementos del portapapeles y de deshacer del sistema que usan los editores y los campos de texto.
+- **Paleta de comandos.** Pulse Ctrl+Mayús+P (Cmd+Mayús+P en macOS), escriba unas letras de un comando, elija con las flechas y pulse «Intro». La paleta lista todos los comandos, de modo que cada uno se alcanza desde el teclado aunque no tenga atajo. Un comando que no aplica ahora (por ejemplo Cargar sin conexión) aparece como no disponible y no se ejecuta.
+- **Referencia de atajos.** Abra **Ayuda** > **Atajos de teclado**, o pulse Ctrl+K y después Ctrl+S, para ver cada comando con su atajo. Las descripciones emergentes de la barra de herramientas muestran el mismo atajo después del nombre del botón.
+
+| Atajo | Comando |
+|---|---|
+| Ctrl+S | Guardar |
+| Ctrl+B | Compilar el proyecto |
+| F5 | Ejecutar, o reanudar si está en pausa |
+| Mayús+F5 | Detener |
+| F6 | Pausar |
+| F10 | Avanzar un ciclo |
+| F8 | Reiniciar el runtime |
+| Ctrl+Mayús+P | Paleta de comandos |
+| Ctrl+K, después Ctrl+S | Atajos de teclado |
+
+En macOS, Cmd reemplaza a Ctrl. Los atajos que actúan sobre un programa (F5, F6, F10, F8, Mayús+F5) dejan a los campos de texto sus propias teclas.
+
+**Comandos que actúan sobre un dispositivo.** Conectar, Desconectar, Cargar, Ejecutar, Pausar, Detener, Avanzar y Reiniciar ejecutan la misma acción que el botón de la barra de herramientas del mismo nombre, con las mismas comprobaciones y la misma confirmación: Cargar sigue pidiendo confirmación antes de enviar un programa. Elegirlos desde el menú o la paleta no agrega ninguna forma de evitarlas. Son controles para la persona que está ante el teclado: las herramientas MCP y el proveedor de IA opcional no tienen acceso a los comandos y no pueden grabar, cargar, forzar, ejecutar ni detener nada. Un elemento de menú de un comando que el estado actual no ofrece no se ejecuta, y la salida lo indica.
+
+Nivel de evidencia: host. `packages/zplc-ide/src/commands/commands.test.ts` y `electron/appMenu.test.ts` (requisitos UX-014 y UX-015) comprueban que dos comandos no comparten atajo, que cada elemento de menú y cada entrada de la paleta es un comando registrado, que cada comando tiene título en ambos idiomas y la forma del menú en Windows, Linux y macOS con un sustituto de la plataforma. El menú nativo no se ha ejecutado en Windows ni en macOS.
+
 ## Archivos y carpetas en el árbol del proyecto
 
 El encabezado del Explorer tiene **New File** y **New Folder**. Un clic derecho sobre un archivo o una carpeta (o F2 para renombrar) abre sus acciones:

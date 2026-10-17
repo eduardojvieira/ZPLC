@@ -41,6 +41,9 @@ import { useIDEStore } from '../store/useIDEStore';
 import { useActiveFileInfo, useToolbarState } from '../store/regionSubscriptions';
 import { useTheme } from '../hooks/useTheme';
 import { useT } from '../i18n';
+import { bindCommands, publishCommandState } from '../commands/bus';
+import type { CommandId } from '../commands/registry';
+import { shortcutText, withShortcut } from '../commands/shortcutLabels';
 import { useDebugController } from '../hooks/useDebugController';
 import { ZPLC_CONSTANTS } from '@zplc/compiler';
 import type { DebugMap } from '../compiler';
@@ -72,6 +75,13 @@ import { DeviceAdmissionError, DEVICE_ADMISSION_CODE } from '../runtime/deviceHa
 // =============================================================================
 // Types
 // =============================================================================
+
+/** The commands whose behaviour lives in the toolbar (UX-015). */
+const TOOLBAR_COMMANDS = [
+  'file.save', 'build.compile', 'build.generateSt', 'build.downloadProgram', 'build.viewAssembly', 'online.simulation', 'online.hardware',
+  'online.connect', 'online.disconnect', 'online.deploy', 'debug.run', 'debug.pause', 'debug.stop', 'debug.step', 'debug.reset', 'debug.liveValues',
+] as const satisfies readonly CommandId[];
+type ToolbarCommandId = (typeof TOOLBAR_COMMANDS)[number];
 
 interface ToolbarProps {
   /** Debug controller instance from App */
@@ -674,96 +684,42 @@ export function Toolbar({ debugController }: ToolbarProps) {
   };
 
   // ==========================================================================
-  // Keyboard Shortcuts - Industrial-critical: operators need fast reactions
-  // ==========================================================================
-  // F5        = Run/Resume
-  // Shift+F5  = Stop
-  // F6        = Pause
-  // F10       = Step
-  // F8        = Reset
-  // Ctrl+B    = Compile
-  // Ctrl+S    = Save
+  // Commands (UX-015): the registry binds the keyboard, the application menu and the palette to the handlers above.
+  // Industrial-critical: operators need fast reactions. Each command keeps the guard its keyboard shortcut always had;
+  // physical ones (connect, deploy, run, pause, stop, step, reset) are the same actions as the buttons, with the same
+  // confirmation, and the menu or palette adds no way around them.
   // ==========================================================================
 
-  const onGlobalKeyDown = useEffectEvent((event: KeyboardEvent) => {
-      // Ignore if user is typing in an input/textarea (but not Monaco - it handles its own shortcuts)
-      const target = event.target as HTMLElement;
-      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') {
-        return;
-      }
-
-      const key = event.key;
-      const ctrl = event.ctrlKey || event.metaKey;
-      const shift = event.shiftKey;
-
-      // Ctrl+S - Save
-      if (ctrl && key === 's') {
-        event.preventDefault();
-        void handleSaveFile();
-        return;
-      }
-
-      // Ctrl+B - Compile
-      if (ctrl && key === 'b') {
-        event.preventDefault();
-        void handleCompile();
-        return;
-      }
-
-      // F5 - Run/Resume (without shift)
-      if (key === 'F5' && !shift) {
-        event.preventDefault();
-        if (isRunning) {
-          // Already running, do nothing
-        } else if (isPaused) {
-          void handleResume(true);
-        } else {
-          void handleStart(true);
-        }
-        return;
-      }
-
-      // Shift+F5 - Stop
-      if (key === 'F5' && shift) {
-        event.preventDefault();
-        if (isRunning || isPaused) {
-          void handleStop();
-        }
-        return;
-      }
-
-      // F6 - Pause
-      if (key === 'F6') {
-        event.preventDefault();
-        if (isRunning) {
-          void handlePause(true);
-        }
-        return;
-      }
-
-      // F10 - Step
-      if (key === 'F10') {
-        event.preventDefault();
-        if (isPaused || isIdle) {
-          void handleStep();
-        }
-        return;
-      }
-
-      // F8 - Reset
-      if (key === 'F8') {
-        event.preventDefault();
-        if (isConnected) {
-          void handleReset();
-        }
-        return;
-      }
+  const runToolbarCommand = useEffectEvent((id: ToolbarCommandId) => {
+    const handlers: Record<ToolbarCommandId, () => void | Promise<void>> = {
+      'file.save': handleSaveFile,
+      'build.compile': handleCompile,
+      'build.generateSt': () => { if (isVisualLanguage) handleGenerateST(); },
+      'build.downloadProgram': handleDownloadBytecode,
+      'build.viewAssembly': handleViewAssembly,
+      'online.simulation': () => handleExecutionModeChange(EXECUTION_MODE.SIMULATE),
+      'online.hardware': () => handleExecutionModeChange(EXECUTION_MODE.HARDWARE),
+      'online.connect': () => { if (!isConnected) return handleConnect(); },
+      'online.disconnect': () => { if (isConnected) return handleConnect(); },
+      'online.deploy': handleUpload,
+      // Already running: nothing to do. Paused: resume. Otherwise start.
+      'debug.run': () => { if (isRunning) return; return isPaused ? handleResume(true) : handleStart(true); },
+      'debug.pause': () => { if (isRunning) return handlePause(true); },
+      'debug.stop': () => { if (isRunning || isPaused) return handleStop(); },
+      'debug.step': () => { if (isPaused || isIdle) return handleStep(); },
+      'debug.reset': () => { if (isConnected) return handleReset(); },
+      'debug.liveValues': () => { if (isConnected) toggleMpeek(); },
+    };
+    return handlers[id]();
   });
 
+  useEffect(() => bindCommands(Object.fromEntries(TOOLBAR_COMMANDS.map((id) => [id, () => runToolbarCommand(id)]))), []);
+
+  // What the registry's rules need to know about the toolbar: the menu and the palette offer a command only when it can work.
   useEffect(() => {
-    window.addEventListener('keydown', onGlobalKeyDown);
-    return () => window.removeEventListener('keydown', onGlobalKeyDown);
-  }, []);
+    publishCommandState({ hasActiveFile: activeFile !== null, visualFile: isVisualLanguage, mode: executionMode, connected: isConnected, vmState, compiled: hasCurrentCompileResult, busy: controlsBusy });
+  }, [activeFile, isVisualLanguage, executionMode, isConnected, vmState, hasCurrentCompileResult, controlsBusy]);
+  useEffect(() => () => publishCommandState({ hasActiveFile: false, visualFile: false, connected: false, vmState: 'idle', compiled: false, busy: false }), []);
 
   // ==========================================================================
   // Render Helpers
@@ -840,8 +796,8 @@ export function Toolbar({ debugController }: ToolbarProps) {
         onClick={() => { void handleSaveFile(); }}
         disabled={!activeFile}
         className="focus-ring p-2 rounded hover:bg-[var(--color-surface-700)] text-[var(--color-surface-200)] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-        aria-label={t('toolbar.save.label')}
-        title={t('toolbar.save.title')}
+        aria-label={withShortcut(t('toolbar.save.label'), 'file.save')}
+        title={withShortcut(t('toolbar.save.title'), 'file.save')}
       >
         <Save size={18} />
       </button>
@@ -889,11 +845,11 @@ export function Toolbar({ debugController }: ToolbarProps) {
               role="menuitem"
               onClick={() => { void handleCompile(); }}
               className="focus-ring w-full flex items-center gap-2 px-3 py-2 text-sm text-[var(--color-surface-100)] hover:bg-[var(--color-surface-600)] transition-colors"
-              aria-label={t('toolbar.compile.label')}
+              aria-label={withShortcut(t('toolbar.compile.label'), 'build.compile')}
             >
               <Hammer size={14} />
               <span>{t('toolbar.compile.text')}</span>
-              <span className="ml-auto text-xs text-[var(--color-surface-400)]">{t('toolbar.compile.shortcut')}</span>
+              <span className="ml-auto text-xs text-[var(--color-surface-400)]">{shortcutText('build.compile')}</span>
             </button>
             <div className="h-px bg-[var(--color-surface-600)] my-1" />
             <button
@@ -1041,8 +997,8 @@ export function Toolbar({ debugController }: ToolbarProps) {
                 onClick={(event) => { void handlePause(event.detail === 0); }}
                 disabled={controlsBusy}
                 className="focus-ring flex items-center gap-1.5 px-2.5 py-1.5 rounded bg-amber-600 hover:bg-amber-500 text-white text-xs font-medium transition-colors"
-                aria-label={t('toolbar.pause.label')}
-                title={t('toolbar.pause.label')}
+                aria-label={withShortcut(t('toolbar.pause.label'), 'debug.pause')}
+                title={withShortcut(t('toolbar.pause.label'), 'debug.pause')}
               >
                 <Pause size={14} />
                 <span className="hidden sm:inline">{t('toolbar.pause.text')}</span>
@@ -1054,8 +1010,8 @@ export function Toolbar({ debugController }: ToolbarProps) {
                 onClick={(event) => { void handleResume(event.detail === 0); }}
                 disabled={!canRunCurrentProgram(executionMode, hasCurrentCompileResult, programLoadState) || controlsBusy}
                 className="focus-ring flex items-center gap-1.5 px-2.5 py-1.5 rounded bg-green-600 hover:bg-green-500 text-white text-xs font-medium transition-colors"
-                aria-label={t('toolbar.resume.label')}
-                title={t('toolbar.resume.label')}
+                aria-label={withShortcut(t('toolbar.resume.label'), 'debug.run')}
+                title={withShortcut(t('toolbar.resume.label'), 'debug.run')}
               >
                 <Play size={14} />
                 <span className="hidden sm:inline">{t('toolbar.resume.text')}</span>
@@ -1067,8 +1023,8 @@ export function Toolbar({ debugController }: ToolbarProps) {
                 onClick={(event) => { void handleStart(event.detail === 0); }}
                 disabled={!canRunCurrentProgram(executionMode, hasCurrentCompileResult, programLoadState) || controlsBusy}
                 className="focus-ring flex items-center gap-1.5 px-2.5 py-1.5 rounded bg-green-600 hover:bg-green-500 text-white text-xs font-medium transition-colors disabled:opacity-40"
-                aria-label={t('toolbar.run.label')}
-                title={t('toolbar.run.label')}
+                aria-label={withShortcut(t('toolbar.run.label'), 'debug.run')}
+                title={withShortcut(t('toolbar.run.label'), 'debug.run')}
               >
                 <Play size={14} />
                 <span className="hidden sm:inline">{t('toolbar.run.text')}</span>
@@ -1082,8 +1038,8 @@ export function Toolbar({ debugController }: ToolbarProps) {
                 onClick={() => { void handleStep(); }}
                 disabled={!canRunCurrentProgram(executionMode, hasCurrentCompileResult, programLoadState) || controlsBusy}
                 className="focus-ring flex items-center gap-1.5 px-2 py-1.5 rounded bg-[var(--color-surface-700)] hover:bg-[var(--color-surface-600)] text-[var(--color-surface-200)] text-xs font-medium transition-colors"
-                aria-label={t('toolbar.step.label')}
-                title={t('toolbar.step.label')}
+                aria-label={withShortcut(t('toolbar.step.label'), 'debug.step')}
+                title={withShortcut(t('toolbar.step.label'), 'debug.step')}
               >
                 <SkipForward size={14} />
               </button>
@@ -1096,8 +1052,8 @@ export function Toolbar({ debugController }: ToolbarProps) {
                 onClick={() => { void handleStop(); }}
                 disabled={controlsBusy}
                 className="focus-ring flex items-center gap-1.5 px-2.5 py-1.5 rounded bg-red-600 hover:bg-red-500 text-white text-xs font-medium transition-colors"
-                aria-label={t('toolbar.stop.label')}
-                title={t('toolbar.stop.label')}
+                aria-label={withShortcut(t('toolbar.stop.label'), 'debug.stop')}
+                title={withShortcut(t('toolbar.stop.label'), 'debug.stop')}
               >
                 <Square size={14} />
               </button>
@@ -1109,8 +1065,8 @@ export function Toolbar({ debugController }: ToolbarProps) {
               onClick={() => { void handleReset(); }}
               disabled={controlsBusy}
               className="focus-ring flex items-center gap-1.5 px-2 py-1.5 rounded bg-[var(--color-surface-700)] hover:bg-[var(--color-surface-600)] text-[var(--color-surface-200)] text-xs font-medium transition-colors"
-              aria-label={t('toolbar.reset.label')}
-              title={t('toolbar.reset.title')}
+              aria-label={withShortcut(t('toolbar.reset.label'), 'debug.reset')}
+              title={withShortcut(t('toolbar.reset.title'), 'debug.reset')}
             >
               <RotateCcw size={14} />
             </button>
