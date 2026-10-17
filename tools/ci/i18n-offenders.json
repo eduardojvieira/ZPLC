@@ -72,22 +72,6 @@
     "reason": "Not yet moved to the catalogs of src/i18n; the surface's own work package moves it."
   },
   {
-    "file": "packages/zplc-ide/src/components/ExternalChangePrompt.tsx",
-    "rule": "hard-coded-attribute",
-    "count": 2,
-    "requirement": "UX-029",
-    "added": "2026-10-17",
-    "reason": "Not yet moved to the catalogs of src/i18n; the surface's own work package moves it."
-  },
-  {
-    "file": "packages/zplc-ide/src/components/ExternalChangePrompt.tsx",
-    "rule": "hard-coded-text",
-    "count": 4,
-    "requirement": "UX-029",
-    "added": "2026-10-17",
-    "reason": "Not yet moved to the catalogs of src/i18n; the surface's own work package moves it."
-  },
-  {
     "file": "packages/zplc-ide/src/components/GeneratedCodeDialog.tsx",
     "rule": "hard-coded-text",
     "count": 5,
@@ -192,22 +176,6 @@
     "reason": "Not yet moved to the catalogs of src/i18n; the surface's own work package moves it."
   },
   {
-    "file": "packages/zplc-ide/src/components/NotificationsList.tsx",
-    "rule": "hard-coded-attribute",
-    "count": 4,
-    "requirement": "UX-029",
-    "added": "2026-10-17",
-    "reason": "Not yet moved to the catalogs of src/i18n; the surface's own work package moves it."
-  },
-  {
-    "file": "packages/zplc-ide/src/components/NotificationsList.tsx",
-    "rule": "hard-coded-text",
-    "count": 2,
-    "requirement": "UX-029",
-    "added": "2026-10-17",
-    "reason": "Not yet moved to the catalogs of src/i18n; the surface's own work package moves it."
-  },
-  {
     "file": "packages/zplc-ide/src/components/ProjectDeclarations.tsx",
     "rule": "hard-coded-attribute",
     "count": 12,
@@ -235,22 +203,6 @@
     "file": "packages/zplc-ide/src/components/ProjectExportItems.tsx",
     "rule": "hard-coded-text",
     "count": 2,
-    "requirement": "UX-029",
-    "added": "2026-10-17",
-    "reason": "Not yet moved to the catalogs of src/i18n; the surface's own work package moves it."
-  },
-  {
-    "file": "packages/zplc-ide/src/components/RecoveryOffer.tsx",
-    "rule": "hard-coded-attribute",
-    "count": 3,
-    "requirement": "UX-029",
-    "added": "2026-10-17",
-    "reason": "Not yet moved to the catalogs of src/i18n; the surface's own work package moves it."
-  },
-  {
-    "file": "packages/zplc-ide/src/components/RecoveryOffer.tsx",
-    "rule": "hard-coded-text",
-    "count": 6,
     "requirement": "UX-029",
     "added": "2026-10-17",
     "reason": "Not yet moved to the catalogs of src/i18n; the surface's own work package moves it."

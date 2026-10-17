@@ -232,6 +232,38 @@ export const en = {
   'status.taskInterval': 'task interval',
   'status.tasks': 'tasks',
   'status.overruns': 'overruns',
+  // Notifications
+  'panel.output': 'Output',
+  'panel.problems': 'Problems',
+  'panel.tests': 'Tests',
+  'panel.trace': 'Trace',
+  'panel.watch': 'Watch',
+  'notifications.label': 'Notifications',
+  'notifications.dismiss': 'Dismiss: {title}',
+  'notifications.inProgress': 'In progress',
+  'notifications.details': 'Details',
+  'notifications.detailsLabel': 'Details: {title} ({panel})',
+  'notifications.cancelLabel': 'Cancel: {title}',
+  // Recovery of unsaved work
+  'recovery.title': 'Recover unsaved changes',
+  'recovery.intro': 'Studio did not close properly last time. These files had changes that were not saved. Restore puts the changes back in the editor, still unsaved; Discard removes them.',
+  'recovery.keptAt': '{path} · kept at {time}',
+  'recovery.discardLabel': 'Discard {name}',
+  'recovery.restore': 'Restore',
+  'recovery.restoreLabel': 'Restore {name}',
+  'recovery.discardAll': 'Discard all',
+  'recovery.restoreAll': 'Restore all',
+  // A file changed outside Studio
+  'externalChange.title': 'Changed outside Studio',
+  'externalChange.intro': 'These files have changes that are not saved, and they also changed on disk. Choose which version to keep.',
+  'externalChange.deleted': 'Deleted on disk',
+  'externalChange.changed': 'Changed on disk',
+  'externalChange.keep': 'Keep my version',
+  'externalChange.keepLabel': 'Keep my version of {name}',
+  'externalChange.close': 'Close file',
+  'externalChange.closeLabel': 'Close {name}',
+  'externalChange.load': 'Load from disk',
+  'externalChange.loadLabel': 'Load from disk {name}',
 } as const;
 
 export type MessageKey = keyof typeof en;
