@@ -523,7 +523,7 @@ export const JOURNEYS: Journey[] = [
       assert(disk(file) === original, 'Typing alone must not write the file.');
       await app.click(saveButton, 'the Save button');
       await app.until('the edited file on disk', () => disk(file) === edited || undefined);
-      await app.click(button('Close Project'));
+      await app.click(button('Close project'));
       await app.until('the Welcome screen', async () => await app.visible(button('Open project', 'contains')) || undefined);
       await openFolder(app, project);
       await openFile(app, 'src/Motor.st');
@@ -726,7 +726,7 @@ export const JOURNEYS: Journey[] = [
       await cursorAtEndOfLine(app, 1);
       await app.type(' AB');
       await app.click(tab('Explorer', 'exact'));
-      await app.click(button('New File'));
+      await app.click(button('New file'));
       await app.click(css('#new-file-name'));
       await app.type('Second');
       await app.click(button('Create'));
@@ -910,7 +910,7 @@ export const JOURNEYS: Journey[] = [
     run: async (app, { project, root, relaunch }) => {
       await openFolder(app, project);
       await app.click(tab('Explorer', 'exact'));
-      await app.click(button('Close Project'));
+      await app.click(button('Close project'));
       await app.until('the Welcome screen with the project under Recent', async () => await app.visible(recentRow) || undefined);
 
       // The folder disappears while the Welcome screen still lists it as available.
@@ -963,7 +963,7 @@ export const JOURNEYS: Journey[] = [
 
       // Close the project and open it again: the Explorer lists the file and a click opens it in the Ladder editor, with its rung.
       await app.click(tab('Explorer', 'exact'));
-      await app.click(button('Close Project'));
+      await app.click(button('Close project'));
       await app.until('the Welcome screen', async () => await app.visible(button('Open project', 'contains')) || undefined);
       await openFolder(app, project);
       await app.click(tab('Explorer', 'exact'));
@@ -1316,7 +1316,7 @@ export const JOURNEYS: Journey[] = [
       const welcome = async () => await app.until('the Welcome screen', async () => (await app.text()).includes('ZPLC Studio 2.0') && !await app.visible(toolbar) || undefined);
       const questionTitle = () => app.eval<string | null>(`document.querySelector('[role="dialog"] h2')?.textContent ?? null`);
       const choice = (label: string) => `[...document.querySelectorAll('[role="dialog"] button')].find((item) => item.textContent?.trim() === ${JSON.stringify(label)})`;
-      const askToClose = async () => { await app.click(tab('Explorer', 'exact')); await app.click(button('Close Project')); await app.until('the question before the project closes', async () => await questionTitle() === 'Discard unsaved changes?' || undefined); };
+      const askToClose = async () => { await app.click(tab('Explorer', 'exact')); await app.click(button('Close project')); await app.until('the question before the project closes', async () => await questionTitle() === 'Discard unsaved changes?' || undefined); };
 
       // Cancel keeps the project and its changes.
       await openFolder(app, project);
@@ -1375,7 +1375,7 @@ export const JOURNEYS: Journey[] = [
 
       // New folder, in the folder the dialog starts on (src).
       await app.click(tab('Explorer', 'exact'));
-      await app.click(button('New Folder'));
+      await app.click(button('New folder'));
       await typeName('drivers');
       await app.click(button('Create'));
       await app.until('the new empty folder in the tree', async () => await inTree('src/drivers', 'dir') || undefined);
@@ -1886,7 +1886,7 @@ export const JOURNEYS: Journey[] = [
 
       // Import from the Welcome screen: choosing the archive writes nothing, the dialog says what is in it.
       await app.click(tab('Explorer', 'exact'));
-      await app.click(button('Close Project'));
+      await app.click(button('Close project'));
       await app.until('the Welcome screen', async () => await app.visible(button('Import a project archive', 'contains')) || undefined);
       app.answer(archive);
       await app.click(button('Import a project archive', 'contains'), 'the Import a project archive button');

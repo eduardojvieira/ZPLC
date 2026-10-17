@@ -17,12 +17,10 @@ await mock.module('../utils/projectLoader', () => ({ getAvailableProjects: () =>
 const { AppPreferences } = await import('../components/settings/AppPreferences');
 
 const setLanguage = (language: 'auto' | 'en' | 'es') => useAppSettings.getState().update({ language });
-const setSystemLanguage = (value: string | undefined) => {
-  if (value === undefined) delete (globalThis.navigator as { language?: string }).language;
-  else Object.defineProperty(globalThis.navigator, 'language', { value, configurable: true });
-};
+const setSystemLanguage = (value: string | undefined) => Object.defineProperty(globalThis.navigator, 'language', { value, configurable: true });
 
-afterEach(() => { setLanguage('auto'); setSystemLanguage(undefined); });
+// bunfig.toml pins the system language of every test to English; each test restores it.
+afterEach(() => { setLanguage('auto'); setSystemLanguage('en-US'); });
 
 describe('UX-029 translation: interpolation, plural and fallback', () => {
   it('UX-029 interpolates {name} values and leaves an unsupplied one visible', () => {
@@ -58,6 +56,8 @@ describe('UX-029 the language setting: auto, en and es', () => {
   });
 
   it('UX-029 reads navigator.language when the setting is auto, and is English where there is none', () => {
+    expect(currentLocale()).toBe('en');
+    setSystemLanguage(undefined);
     expect(currentLocale()).toBe('en');
     setSystemLanguage('es-AR');
     expect(t('preferences.heading')).toBe('Preferencias');
