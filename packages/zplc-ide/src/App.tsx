@@ -22,6 +22,7 @@ import { CloseGuard } from './components/CloseGuard';
 import { SerialPortChooser } from './components/SerialPortChooser';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { DevFaultProbe } from './components/DevFaultProbe';
+import { ActionConfirmHost } from './components/ActionConfirmHost';
 import { RecoveryOffer } from './components/RecoveryOffer';
 import { ExternalChangePrompt } from './components/ExternalChangePrompt';
 import { useTheme } from './hooks/useTheme';
@@ -196,6 +197,7 @@ function App() {
         <ShortcutReference />
       <RecoveryOffer />
       <ExternalChangePrompt />
+      <ActionConfirmHost />
       <UpdateNoticeBanner />
       {/* Unified Toolbar */}
       <ErrorBoundary region="Toolbar">

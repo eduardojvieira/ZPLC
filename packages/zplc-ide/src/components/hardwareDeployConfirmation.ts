@@ -2,7 +2,9 @@ import { readArtifact } from '@zplc/compiler';
 
 import { BOARD_OPTIONS, getZephyrBoardTarget } from '../config/boardProfiles';
 import { connectionManager } from '../runtime/connectionManager';
-import { parseDeviceHandshake, validateHardwareDeployAdmission } from '../runtime/deviceHandshake';
+import { parseDeviceHandshake, parseDeviceSystemInfo, readArtifactAbi, validateHardwareDeployAdmission } from '../runtime/deviceHandshake';
+
+import type { DeployFacts } from './deployComparison';
 
 export interface HardwareDeployConfirmation {
   readonly projectBoard: string;
@@ -17,7 +19,8 @@ export interface HardwareDeployConfirmation {
   readonly transfer: 'framed' | 'text-shell';
   /** The safe values that the artifact carries, as the device will apply them; an output not listed is off (RT-023). */
   readonly declaredSafe: ReadonlyArray<{ readonly address: string; readonly value: boolean }>;
-  readonly message: string;
+  /** Project and device side by side, for the deploy dialog (UX-019). */
+  readonly facts: DeployFacts;
 }
 
 function hex(bytes: ArrayBuffer): string {
@@ -34,23 +37,66 @@ function declaredSafeOf(bytecode: Uint8Array): HardwareDeployConfirmation['decla
   return readArtifact(bytecode).safe.map((entry) => ({ address: `%QX${entry.offset}.${entry.bit}`, value: entry.value === 1 }));
 }
 
-function safeStateLine(declared: HardwareDeployConfirmation['declaredSafe']): string {
-  const when = 'while the program is stopped, paused, faulted or being replaced';
-  if (declared.length === 0) return `Safe state: every output is OFF ${when}.`;
-  const values = declared.map((output) => `${output.address}: ${output.value ? 'ON' : 'OFF'}`).join('; ');
-  return `Safe state declared by the project: ${values}; every other output is OFF ${when}.`;
+async function sha256Of(bytecode: Uint8Array): Promise<string> {
+  const digestInput = new Uint8Array(bytecode.byteLength);
+  digestInput.set(bytecode);
+  return hex(await globalThis.crypto.subtle.digest('SHA-256', digestInput.buffer));
 }
 
-/** Preflight the exact program bytes before a human can approve a hardware deploy. */
-export async function createHardwareDeployConfirmation({
+/**
+ * The project and the device side by side, whatever they are: unlike the confirmation it never refuses, so that the
+ * dialog can show a board that does not match, or one that said nothing, as the cause of a refused deploy (UX-019).
+ */
+export async function gatherDeployFacts({
   bytecode,
   projectBoard,
+  projectName = null,
   systemInfo,
   taskCount,
   transfer = connectionManager.linkInfo.firmware?.protocol.kind === 'framed' ? 'framed' : 'text-shell',
 }: {
   bytecode: Uint8Array;
   projectBoard: string | undefined;
+  projectName?: string | null;
+  systemInfo: unknown;
+  taskCount: number;
+  transfer?: 'framed' | 'text-shell';
+}): Promise<DeployFacts> {
+  const attempt = <T>(read: () => T, otherwise: T): T => { try { return read(); } catch { return otherwise; } };
+  const info = attempt(() => parseDeviceSystemInfo(systemInfo), null);
+  const artifactAbi = attempt(() => { const abi = readArtifactAbi(bytecode); return { major: abi.major, minor: abi.minor, draft: abi.draftCounter }; }, null);
+  return {
+    project: {
+      name: projectName,
+      board: BOARD_OPTIONS.find((board) => board.value === projectBoard)?.label ?? projectBoard ?? '',
+      boardProfile: getZephyrBoardTarget(projectBoard) ?? null,
+      abi: artifactAbi,
+      sha256: await sha256Of(bytecode),
+      byteLength: bytecode.byteLength,
+      taskCount,
+    },
+    device: info === null ? null : {
+      board: info.board, boardProfile: info.board_profile, zplcVersion: info.zplc_version, zephyrVersion: info.zephyr_version,
+      abi: { major: info.bytecode_abi_major, minor: info.bytecode_abi_minor }, draft: info.draft_counter ?? null,
+      maxArtifactBytes: info.memory.max_artifact_size ?? null, maxTasks: info.capabilities.max_tasks,
+    },
+    declaredSafe: attempt(() => declaredSafeOf(bytecode), []),
+    transfer,
+  };
+}
+
+/** Preflight the exact program bytes before a human can approve a hardware deploy. */
+export async function createHardwareDeployConfirmation({
+  bytecode,
+  projectBoard,
+  projectName = null,
+  systemInfo,
+  taskCount,
+  transfer = connectionManager.linkInfo.firmware?.protocol.kind === 'framed' ? 'framed' : 'text-shell',
+}: {
+  bytecode: Uint8Array;
+  projectBoard: string | undefined;
+  projectName?: string | null;
   systemInfo: unknown;
   taskCount: number;
   transfer?: 'framed' | 'text-shell';
@@ -62,27 +108,9 @@ export async function createHardwareDeployConfirmation({
   if (!zephyrBoard || !option || !Number.isSafeInteger(taskCount) || taskCount < 1) {
     throw new Error('ZPLC_DEVICE_ARTIFACT_INVALID');
   }
-  const digestInput = new Uint8Array(bytecode.byteLength);
-  digestInput.set(bytecode);
-  const sha256 = hex(await globalThis.crypto.subtle.digest('SHA-256', digestInput.buffer));
-  const byteLength = bytecode.byteLength;
-  const declaredSafe = declaredSafeOf(bytecode);
-  const message = [
-    'Confirm PLC program deploy.',
-    `Project board: ${option.label} (${zephyrBoard})`,
-    `Device board: ${handshake.board}`,
-    `Device board profile: ${handshake.boardProfile}`,
-    ...(handshake.io ? [`Device I/O description: ${handshake.io.boardId} (hash ${handshake.io.hash}, ${handshake.io.channels} channels)`] : []),
-    `Payload SHA-256: ${sha256}`,
-    `Payload size: ${byteLength} bytes${handshake.maxArtifactBytes === null ? '' : ` of the ${handshake.maxArtifactBytes} this device accepts`}; tasks: ${taskCount}`,
-    safeStateLine(declaredSafe),
-    transfer === 'framed'
-      ? 'Transfer: the device link. The chunks go in order, and the device reports the size and CRC-32 of what it holds, which have to be the ones announced.'
-      : 'Transfer: the text shell of an older firmware. The device answers each line; the program is not read back.',
-    'Deploy stops the current PLC program and leaves the runtime stopped; Run is a separate action. This does not prove hardware or HIL behavior.',
-  ].join('\n');
+  const facts = await gatherDeployFacts({ bytecode, projectBoard, projectName, systemInfo, taskCount, transfer });
   return {
-    projectBoard: option.label, deviceBoard: handshake.board, boardProfile: handshake.boardProfile, sha256, byteLength, taskCount,
-    deviceCapacityBytes: handshake.maxArtifactBytes, transfer, declaredSafe, message,
+    projectBoard: option.label, deviceBoard: handshake.board, boardProfile: handshake.boardProfile, sha256: facts.project.sha256,
+    byteLength: bytecode.byteLength, taskCount, deviceCapacityBytes: handshake.maxArtifactBytes, transfer, declaredSafe: facts.declaredSafe, facts,
   };
 }

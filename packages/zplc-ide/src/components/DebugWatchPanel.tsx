@@ -14,6 +14,7 @@ import { SIGNAL_TEXT_CLASS, signalTone } from '../theme/signalTone';
 import { useIDEStore } from '../store/useIDEStore';
 import { buildDebugWatchRows } from './debugWatchRows';
 import { WATCH_FORCE_STATE, type WatchVariable } from '../runtime/debugAdapter';
+import { confirmForce, confirmForceChange, confirmRelease, confirmReleaseAll, proceedAfterConfirmation } from './physicalActions';
 import { canEditWatchValue, canReleaseForces, canToggleForce, resolveWatchCommitAction, WATCH_COMMIT_ACTION } from './debugWatchPanelLogic';
 import { Button, Checkbox, IconButton, TextField, Tooltip } from '../ui';
 import { useT } from '../i18n';
@@ -95,6 +96,8 @@ export function DebugWatchPanel({ setValue, toggleForceValue, clearAllForcedValu
   const hasForceEvidence = forcedValues.size > 0 || forcesUnconfirmed;
   const controlsBlocked = debugMode === 'none' || forcesUnconfirmed;
   const releaseEnabled = canReleaseForces(hasActiveSerialSession, hasForceEvidence, releaseBusy);
+  // Only a real device is asked before a force changes (UX-020); a simulation has nothing physical to protect.
+  const device = hasActiveSerialSession ? 'hardware' : 'simulate';
 
   // Handle adding a new watch variable
   const handleAddVariable = () => {
@@ -190,6 +193,10 @@ export function DebugWatchPanel({ setValue, toggleForceValue, clearAllForcedValu
             setEditing(null);
             return;
           }
+          if (!await proceedAfterConfirmation(device, () => confirmForceChange(editing.path, coerced))) {
+            setEditing(null);
+            return;
+          }
           await toggleForceValue(
             editing.path,
             editing.address,
@@ -239,6 +246,7 @@ export function DebugWatchPanel({ setValue, toggleForceValue, clearAllForcedValu
 
     setForceChangeError(null);
     try {
+      if (!await proceedAfterConfirmation(device, () => (nextForced ? confirmForce(path, draftValue) : confirmRelease(path)))) return;
       await toggleForceValue(path, address, draftValue, type, nextForced, maxLength);
     } catch {
       setForceChangeError('Force change could not be confirmed. Verify device state before operating.');
@@ -247,6 +255,7 @@ export function DebugWatchPanel({ setValue, toggleForceValue, clearAllForcedValu
 
   const handleReleaseAllForces = async () => {
     if (!clearAllForcedValues || !releaseEnabled) return;
+    if (!await proceedAfterConfirmation(device, confirmReleaseAll)) return;
     setReleaseBusy(true);
     setReleaseError(null);
     try {

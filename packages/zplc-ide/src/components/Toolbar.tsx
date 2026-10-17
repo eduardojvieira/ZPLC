@@ -51,10 +51,8 @@ import { GeneratedCodeDialog } from './GeneratedCodeDialog';
 import { ProjectExportItems } from './ProjectExportItems';
 import {
   canRunCurrentProgram,
-  HARDWARE_DEPLOY_UNCONFIRMED_MESSAGE,
   isCompileResultCurrent,
   type LastCompileResult,
-  nextProgramLoadStateAfterDeploy,
   nextProgramLoadStateAfterCompile,
   nextProgramLoadStateAfterConnect,
   PROGRAM_LOAD_STATE,
@@ -69,8 +67,8 @@ import { shownProjectBridge } from '../ipc/shownProjectBridge';
 import { useNotifications } from '../store/notifications';
 import { Notifications } from './Notifications';
 import { canLinkProjectWorkspace, linkProjectWorkspace } from '../utils/workspaceTestLink';
-import { createHardwareDeployConfirmation } from './hardwareDeployConfirmation';
-import { DeviceAdmissionError, DEVICE_ADMISSION_CODE } from '../runtime/deviceHandshake';
+import { performHardwareDeploy } from './deployFlow';
+import { confirmReset, confirmStop, proceedAfterConfirmation } from './physicalActions';
 
 // =============================================================================
 // Types
@@ -502,69 +500,24 @@ export function Toolbar({ debugController }: ToolbarProps) {
       addConsoleEntry({ type: 'error', message: 'No current compiled bytecode. Build the current source first.', source: 'runtime' });
       return;
     }
-    const deployProjectSession = useIDEStore.getState().projectSession;
-    const deployTargetBoard = useIDEStore.getState().projectConfig?.target?.board;
     uploadInFlightRef.current = true;
     setIsUploading(true);
-    let programSendStarted = false;
-    let deployOperation = '';
     try {
-      const deployedRevision = result.revision;
-      const deployedCompilerRunId = result.compilerRunId;
-      const dataToUpload = selectRuntimeArtifact({
-        bytecode: result.bytecode,
-        zplcFile: result.zplcFile,
+      await performHardwareDeploy({
+        result,
+        running: isRunning || isPaused,
+        project: () => {
+          const state = useIDEStore.getState();
+          return { session: state.projectSession, board: state.projectConfig?.target?.board, name: state.projectConfig?.name ?? null };
+        },
+        currentResult: currentCompileResult,
+        compilerRunId: () => useIDEStore.getState().compilerRunId,
+        compileRevision: () => compileRevisionRef.current,
+        systemInfo: getHardwareSystemInfo,
+        loadProgram,
+        setProgramLoadState,
+        log: addConsoleEntry,
       });
-      const confirmation = await createHardwareDeployConfirmation({
-        bytecode: dataToUpload,
-        projectBoard: deployTargetBoard,
-        systemInfo: getHardwareSystemInfo(),
-        taskCount: result.taskCount,
-      });
-      if (!window.confirm(confirmation.message)) {
-        addConsoleEntry({ type: 'info', message: 'Hardware deploy cancelled; no program was sent.', source: 'runtime' });
-        useNotifications.getState().report({ kind: 'deploy', status: 'cancelled', title: 'Deploy cancelled', detail: 'No program was sent.', details: 'output' });
-        return;
-      }
-      const current = currentCompileResult();
-      const latest = useIDEStore.getState();
-      if (current !== result || latest.projectSession !== deployProjectSession || latest.projectConfig?.target?.board !== deployTargetBoard) {
-        addConsoleEntry({ type: 'warning', message: 'Project changed before deploy confirmation. Build the current source before deploying.', source: 'runtime' });
-        useNotifications.getState().report({ kind: 'deploy', status: 'warning', title: 'Deploy refused', detail: 'The project changed before you confirmed. Build the current source before deploying.', details: 'output' });
-        return;
-      }
-
-      const description = `Deploying admitted .zplc (${confirmation.byteLength} bytes, ${confirmation.taskCount} task(s)); execution remains stopped...`;
-
-      addConsoleEntry({ type: 'info', message: description, source: 'runtime' });
-      programSendStarted = true;
-      deployOperation = useNotifications.getState().begin({ kind: 'deploy', title: 'Deploying program', detail: description, details: 'output' });
-      await loadProgram(dataToUpload, result.debugMap, deployTargetBoard);
-      if (nextProgramLoadStateAfterDeploy(deployedRevision, compileRevisionRef.current, deployedCompilerRunId, useIDEStore.getState().compilerRunId) === PROGRAM_LOAD_STATE.LOADED) {
-        setProgramLoadState(PROGRAM_LOAD_STATE.LOADED);
-        addConsoleEntry({ type: 'success', message: 'Program deployed and stopped.', source: 'runtime' });
-        useNotifications.getState().finish(deployOperation, { kind: 'deploy', status: 'success', title: 'Program deployed and stopped', details: 'output' });
-      } else {
-        setProgramLoadState(PROGRAM_LOAD_STATE.EMPTY);
-        addConsoleEntry({
-          type: 'warning',
-          message: 'Device received an earlier build. Deploy the current build before Run.',
-          source: 'runtime',
-        });
-        useNotifications.getState().finish(deployOperation, { kind: 'deploy', status: 'warning', title: 'Device received an earlier build', detail: 'Deploy the current build before Run.', details: 'output' });
-      }
-    } catch (error) {
-      const preflightDenied = error instanceof DeviceAdmissionError && error.code !== DEVICE_ADMISSION_CODE.RESULT_UNKNOWN;
-      setProgramLoadState(PROGRAM_LOAD_STATE.EMPTY);
-      const failure = programSendStarted && !preflightDenied
-          ? HARDWARE_DEPLOY_UNCONFIRMED_MESSAGE
-          : error instanceof DeviceAdmissionError && error.detail
-            ? `Hardware deploy refused: ${error.detail}. Rebuild the program or reflash the board. No program was sent.`
-            : 'Hardware deploy preflight failed. No program was sent.';
-      addConsoleEntry({ type: 'error', message: failure, source: 'runtime' });
-      const refusal = { kind: 'deploy' as const, status: 'error' as const, title: 'Deploy failed', detail: failure, details: 'output' as const };
-      if (deployOperation) useNotifications.getState().finish(deployOperation, refusal);
-      else useNotifications.getState().report(refusal);
     } finally {
       uploadInFlightRef.current = false;
       setIsUploading(false);
@@ -651,7 +604,7 @@ export function Toolbar({ debugController }: ToolbarProps) {
   };
 
   const handleStop = async () => {
-    if (controlsBusy) return;
+    if (controlsBusy || !await proceedAfterConfirmation(executionMode, confirmStop)) return;
     try {
       await stop();
       addConsoleEntry({ type: 'info', message: 'Stopped', source: 'runtime' });
@@ -674,7 +627,7 @@ export function Toolbar({ debugController }: ToolbarProps) {
   };
 
   const handleReset = async () => {
-    if (controlsBusy) return;
+    if (controlsBusy || !await proceedAfterConfirmation(executionMode, confirmReset)) return;
     try {
       await reset();
       addConsoleEntry({ type: 'info', message: 'Reset', source: 'runtime' });
@@ -1151,6 +1104,8 @@ export function Toolbar({ debugController }: ToolbarProps) {
       connected={isConnected}
       vmInfo={vmInfo}
       status={status}
+      connecting={isConnecting}
+      faulted={vmState === 'error'}
     />
     </>
   );

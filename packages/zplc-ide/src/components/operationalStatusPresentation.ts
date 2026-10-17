@@ -55,7 +55,8 @@ function safeStatus(value: OperationalStatusInput['status']): OperationalStatusP
     : { text: 'Status unavailable', tone: 'neutral' };
 }
 
-function controllerBoard(value: unknown): string | undefined {
+/** The board that a connected controller reported, when it is a plain label. */
+export function reportedBoardOf(value: unknown): string | undefined {
   return record(value) ? safeLabel(value.board) : undefined;
 }
 
@@ -105,7 +106,7 @@ export function presentOperationalStatus(input: OperationalStatusInput): Operati
   const compatibleSession = nativeConnected || serialConnected || wasmConnected;
   const runtimeMismatch = input.connected && !compatibleSession;
   const configuredBoard = safeLabel(input.projectTargetBoard);
-  const reportedBoard = serialConnected ? controllerBoard(input.controllerInfo) : undefined;
+  const reportedBoard = serialConnected ? reportedBoardOf(input.controllerInfo) : undefined;
   const version = serialConnected ? controllerVersion(input.controllerInfo) : undefined;
   const runtime = runtimeMismatch
     ? 'No compatible runtime session'
