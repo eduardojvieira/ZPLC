@@ -7,7 +7,7 @@ import React from 'react';
 import { BookOpen, FolderOpen, FolderPlus, History } from 'lucide-react';
 import { useIDEStore } from '../store/useIDEStore';
 import { useWelcomeState } from '../store/regionSubscriptions';
-import { LANGUAGE_NAMES, LEVEL_NAMES, boardName, buildExampleSections, type ExampleListing } from '../utils/exampleCatalog';
+import { boardName, buildExampleSections, groupByLevel, languageName, levelName, type ExampleListing } from '../utils/exampleCatalog';
 import { isFileSystemAccessSupported } from '../types';
 import { ZPLC_REPO_VERSION } from '../version';
 import { learnLessonCatalog } from './learnLesson';
@@ -31,10 +31,10 @@ function ExampleBadges({ example }: { example: ExampleListing }) {
       {example.languages.map((language) => (
         <span key={language} className={`${badgeClass} font-mono`}>
           <span aria-hidden="true">{language}</span>
-          <span className="sr-only">{LANGUAGE_NAMES[language]}</span>
+          <span className="sr-only">{languageName(language)}</span>
         </span>
       ))}
-      {example.level && <span className={badgeClass}><span className="sr-only">{t('welcome.example.level')} </span>{LEVEL_NAMES[example.level]}</span>}
+      {example.level && <span className={badgeClass}><span className="sr-only">{t('welcome.example.level')} </span>{levelName(example.level)}</span>}
       {example.board && <span className={badgeClass}><span className="sr-only">{t('welcome.example.board')} </span>{boardName(example.board)}</span>}
     </span>
   );
@@ -198,17 +198,25 @@ export function WelcomeScreen() {
               <section key={section.id} aria-labelledby={`examples-${section.id}`} data-example-group={section.id} className="mt-6">
                 <h3 id={`examples-${section.id}`} className="font-medium">{section.title}</h3>
                 {section.blurb && <p className="mt-0.5 text-sm leading-5 text-[var(--text-secondary)]">{section.blurb}</p>}
-                <ul className="mt-3 grid gap-2 sm:grid-cols-2">
-                  {section.examples.map((example) => (
-                    <li key={example.id} className="flex">
-                      <Button variant="secondary" size="sm" onClick={() => startCopy(() => copyExampleProjectToFolder(example.id))} disabled={unavailable || isCopyingExample} data-welcome-example={example.id} className="w-full flex-col items-start text-left duration-150">
-                        <span className="font-medium">{example.title}</span>
-                        <ExampleBadges example={example} />
-                        {example.summary && <span data-example-summary className="text-sm leading-5 text-[var(--text-secondary)]">{example.summary}</span>}
-                      </Button>
-                    </li>
-                  ))}
-                </ul>
+                {groupByLevel(section.examples).map((levelGroup) => (
+                  <div key={levelGroup.level ?? 'unlevelled'} data-example-level={levelGroup.level ?? undefined}>
+                    {/* A topic that holds one level needs no level heading: the card carries the level badge. */}
+                    {levelGroup.level && groupByLevel(section.examples).length > 1 && (
+                      <h4 className="mt-3 text-xs font-bold uppercase tracking-[0.08em] text-[var(--text-secondary)]">{levelName(levelGroup.level)}</h4>
+                    )}
+                    <ul className="mt-3 grid gap-2 sm:grid-cols-2">
+                      {levelGroup.examples.map((example) => (
+                        <li key={example.id} className="flex">
+                          <Button variant="secondary" size="sm" onClick={() => startCopy(() => copyExampleProjectToFolder(example.id))} disabled={unavailable || isCopyingExample} data-welcome-example={example.id} className="w-full flex-col items-start text-left duration-150">
+                            <span className="font-medium">{example.title}</span>
+                            <ExampleBadges example={example} />
+                            {example.summary && <span data-example-summary className="text-sm leading-5 text-[var(--text-secondary)]">{example.summary}</span>}
+                          </Button>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ))}
               </section>
             ))}
           </section>

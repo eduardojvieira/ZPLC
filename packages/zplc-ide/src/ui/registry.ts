@@ -32,4 +32,4 @@ export const UX_001_COMPONENTS = {
 } as const satisfies Record<string, string | null>;
 
 /** Beyond UX-001's list: the kit's own supporting components. */
-export const SUPPORTING_COMPONENTS = ['Textarea', 'RangeField', 'FileInput', 'PointMenu', 'DialogSurface', 'SignalChip', 'Spinner', 'TabPanel'] as const;
+export const SUPPORTING_COMPONENTS = ['Textarea', 'RangeField', 'FileInput', 'PointMenu', 'DialogSurface', 'SignalChip', 'Spinner', 'TabPanel', 'LoadingState', 'ErrorState'] as const;

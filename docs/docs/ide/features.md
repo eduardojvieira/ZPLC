@@ -22,6 +22,8 @@ Terminal in one bottom panel.
 
 ## Recent projects and session restore
 
+The Welcome screen offers **Open project**, **New project**, **Learn** and the bundled examples. The examples are grouped by topic and, inside a topic that holds several levels, by level (Beginner, Intermediate, Advanced); the names of levels, languages, boards and topics follow the interface language. A project that cannot be opened is reported on the screen, next to the action, never in a system message box.
+
 The Welcome screen lists, under **Recent**, up to ten folders that you opened before, most recent first, each with its name and when it was last opened. Choosing one reopens it without a folder dialog. A folder that was moved, deleted or replaced by a link is shown as not found, with a **Forget** button that removes it from the list. Only a folder that you chose through the system folder dialog is ever remembered.
 
 For each project, Studio also remembers the open tabs, the active tab, the cursor and scroll position of each file, and the size of the editor and lower panels (and whether the lower panel was collapsed). It puts them back the next time that folder is opened, from **Recent** or with **Open project**. Only paths and positions are stored in the session: unsaved text is kept separately and offered back only after a crash (see Recovering unsaved work), and a tab whose file no longer exists is dropped without a message. The list and the sessions are kept in Studio's private user-data directory, never in the project folder, and the session of a project that leaves the list is deleted the next time Studio starts.
@@ -61,6 +63,44 @@ Every text of the interface is in two catalogs, `packages/zplc-ide/src/i18n/en.t
 The text is in sentence case, has no exclamation mark and uses no internal term. `bun run lint:ide` runs the guard: it fails on a text hard-coded in a component (JSX text, or a string in `aria-label`, `placeholder`, `alt`, `label`, `tooltip`, `title` or `description`) and on a catalog that breaks those rules. The components that still hold hard-coded text are on `tools/ci/i18n-offenders.json`, a list that only shrinks.
 
 Evidence level: host. `packages/zplc-ide/src/i18n/i18n.test.tsx`, `tools/ci/i18n-guard.test.ts` and `src/utils/appSettings.test.ts` cover the catalogs, the language setting and the guard (requirements UX-029, UX-030 and UX-031).
+
+## Application menu, command palette and shortcuts
+
+Studio keeps one list of commands, and every way to start a command reads it: the application menu, the command palette, the keyboard shortcuts, the shortcut hints in the tooltips and the shortcut reference. A command therefore does the same thing wherever you start it.
+
+- **Application menu.** File, Edit, View, Project, Build, Online, Debug and Help, on Windows, Linux and macOS alike (macOS adds its application menu and a Window menu). The menu is in the language of the **Language** preference and changes with it. A packaged build has no reload, zoom or developer-tools item. The Edit menu holds the system clipboard and undo items that the editors and text fields use.
+- **Command palette.** Press Ctrl+Shift+P (Cmd+Shift+P on macOS), type a few letters of a command, choose with the arrow keys and press Enter. The palette lists every command, so each one is reachable from the keyboard even when it has no shortcut. A command that does not apply now (for example Deploy without a connection) is listed as not available and does not run.
+- **Shortcut reference.** Open **Help** > **Keyboard shortcuts**, or press Ctrl+K and then Ctrl+S, to see every command with its shortcut. The tooltips of the toolbar show the same shortcut after the name of the button.
+
+| Shortcut | Command |
+|---|---|
+| Ctrl+S | Save |
+| Ctrl+B | Compile the project |
+| F5 | Run, or resume when paused |
+| Shift+F5 | Stop |
+| F6 | Pause |
+| F10 | Step one cycle |
+| F8 | Reset the runtime |
+| Ctrl+Shift+P | Command palette |
+| Ctrl+K, then Ctrl+S | Keyboard shortcuts |
+
+Cmd replaces Ctrl on macOS. The shortcuts that act on a program (F5, F6, F10, F8, Shift+F5) leave a text field its own keys.
+
+**Commands that act on a device.** Connect, Disconnect, Deploy, Run, Pause, Stop, Step and Reset run the same action as the toolbar button of the same name, with the same checks and the same confirmation: Deploy still asks before it sends a program. Choosing one from the menu or the palette adds no way around them. They are controls for the person at the keyboard: the MCP tools and the optional AI provider have no access to the commands, and cannot flash, deploy, force, run or stop anything. A menu item for a command that the current state does not offer is not run, and Output says so.
+
+Evidence level: host. `packages/zplc-ide/src/commands/commands.test.ts` and `electron/appMenu.test.ts` (requirements UX-014 and UX-015) check that no two commands share a shortcut, that every menu item and palette entry is a registered command, that every command has a title in both languages, and the shape of the menu on Windows, Linux and macOS with a stand-in for the platform. The native menu has not been run on Windows or macOS.
+
+## Empty, loading and error states
+
+A panel that has nothing to show says why and offers the next step, instead of staying blank. Output, Problems, Trace, Watch, the project Explorer, the Inspector and the Tests tab (when no project folder is open) show a title, one sentence and a button. When the button stands for a command (Compile the project, Step one cycle, Connect, Open project) it is that command, so it does the same as the menu and the palette and is disabled while the command is not available. Watch offers **Add a variable**, and the Explorer offers **New file**.
+
+A loading indicator appears only when an operation takes longer than 300 ms, so a fast panel never flashes a spinner. An error state names what went wrong and has a recovery button; the workbench that fails to load shows one with **Retry**. The three states are components of the kit (`EmptyState`, `LoadingState`, `ErrorState`) and appear in the component gallery of development builds.
+
+## Window start
+
+Studio opens its window hidden and shows it once the page has painted, in the colour of the theme you chose, so a dark theme does not flash white on start. The window title is the product name. The language and the theme are reported to the main process whenever they change and kept in a small file in Studio's private user-data directory, so the next start already has the right menu language and window colour; a missing or damaged file falls back to English and the system theme.
+
+Evidence level: host. `packages/zplc-ide/electron/shellPreferences.test.ts`, `src/components/panelStates.test.tsx`, `src/ui/kit.test.tsx` and `src/ui/logic/delay.test.ts` (requirements UX-016 and UX-021) cover the window colour, the stored preferences, the empty, loading and error states and the 300 ms delay. The window has not been observed on Windows or macOS.
 
 ## Files and folders in the project tree
 

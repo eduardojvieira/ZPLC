@@ -1,4 +1,6 @@
 import { useIDEStore } from '../store/useIDEStore';
+import { useT } from '../i18n';
+import { PanelEmptyState } from './panelStates';
 import { presentWorkbenchInspector } from './workbenchInspectorPresentation';
 import { ControllerView } from './ControllerView';
 
@@ -13,6 +15,7 @@ function Row({ label, value, mono = false }: { label: string; value: string; mon
 
 /** Read-only summary of facts already held in the current project session. */
 export function WorkbenchInspector() {
+  const { t } = useT();
   const activeFile = useIDEStore((state) => state.getActiveFile());
   const projectName = useIDEStore((state) => state.projectName);
   const target = useIDEStore((state) => state.projectConfig?.target?.board ?? null);
@@ -46,7 +49,7 @@ export function WorkbenchInspector() {
             <Row label="Language" value={summary.file.language} />
             <Row label="Path" value={summary.file.path} mono />
           </dl>
-        ) : <p>No file selected.</p>}
+        ) : <PanelEmptyState title={t('panel.inspector.empty.title')} description={t('panel.inspector.empty.description')} actionLabel={t('panel.inspector.empty.action')} onAction={() => useIDEStore.getState().setActiveConsoleTab('explorer')} />}
       </section>
       <section aria-labelledby="inspector-project">
         <h2 id="inspector-project">Project</h2>

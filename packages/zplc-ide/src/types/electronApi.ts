@@ -61,6 +61,14 @@ declare global {
         /** Grades the shown project against the reference scenario of a lesson package (LRN-022); the answer is validated by the caller. */
         lessonCheck: (request: { workspaceId: string; rootId: string; lessonId: string }) => Promise<unknown>;
       };
+      /** The application menu (UX-014): the id of the command a menu item chose; the window validates it against its registry. */
+      menu?: {
+        onCommand: (callback: (commandId: unknown) => void) => () => void;
+      };
+      /** The language and theme of the window, for the language of the menu and the colour of the next window (UX-014, UX-016). */
+      windowPreferences?: {
+        report: (preferences: { language: string; theme: string }) => Promise<null>;
+      };
       closeGuard?: {
         setDirty: (dirty: boolean) => Promise<void>;
         closeNow: () => Promise<void>;

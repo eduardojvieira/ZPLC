@@ -2,7 +2,8 @@ import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'bun:test';
 
-import { EXAMPLE_CATALOG, EXAMPLE_GROUPS, boardName, buildExampleSections } from './exampleCatalog';
+import { EXAMPLE_CATALOG, EXAMPLE_GROUPS, boardName, buildExampleSections, groupByLevel, languageName, levelName, type ExampleListing } from './exampleCatalog';
+import { useAppSettings } from '../store/useAppSettings';
 
 const projectsDir = join(import.meta.dir, '..', '..', 'projects');
 
@@ -188,5 +189,33 @@ describe('Welcome example sections', () => {
     expect(boards.examples.find((example) => example.id === 'pico_blinky')?.board).toBe('rpi_pico');
     expect(boards.examples.find((example) => example.id === 'esp32s3_blinky')?.board).toBe('esp32s3_devkitc');
     expect(sections.find((section) => section.id === 'motors')!.examples.every((example) => example.board === undefined)).toBe(true);
+  });
+});
+
+describe('the Welcome examples by level and topic (UX-022)', () => {
+  const listing = (id: string, level?: ExampleListing['level']): ExampleListing => ({ id, title: id, summary: '', languages: ['ST'], ...(level ? { level } : {}) });
+
+  it('UX-022 splits a topic by level, the easiest first, and puts an example with no level last', () => {
+    const groups = groupByLevel([listing('c', 'advanced'), listing('x'), listing('a', 'beginner'), listing('b', 'intermediate'), listing('a2', 'beginner')]);
+    expect(groups.map((group) => group.level)).toEqual(['beginner', 'intermediate', 'advanced', null]);
+    expect(groups[0]!.examples.map((example) => example.id)).toEqual(['a', 'a2']);
+    expect(groupByLevel([])).toEqual([]);
+    expect(groupByLevel([listing('only', 'intermediate')]).map((group) => group.level)).toEqual(['intermediate']);
+  });
+
+  it('UX-022 names levels, languages, boards and groups in the language of the interface', () => {
+    const before = useAppSettings.getState().settings.language;
+    try {
+      useAppSettings.getState().update({ language: 'en' });
+      expect([levelName('beginner'), languageName('LD'), boardName('rpi_pico'), buildExampleSections([{ id: 'blinky', name: 'Blinky', description: '' }])[0]!.title]).toEqual(['Beginner', 'Ladder diagram', 'Raspberry Pi Pico', 'First steps']);
+      useAppSettings.getState().update({ language: 'es' });
+      expect([levelName('beginner'), levelName('advanced'), languageName('ST'), buildExampleSections([{ id: 'blinky', name: 'Blinky', description: '' }])[0]!.title]).toEqual(['Principiante', 'Avanzado', 'Texto estructurado', 'Primeros pasos']);
+    } finally {
+      useAppSettings.getState().update({ language: before });
+    }
+  });
+
+  it('UX-022 shows a board id the catalogs do not know as written', () => {
+    expect(boardName('some_new_board')).toBe('some_new_board');
   });
 });

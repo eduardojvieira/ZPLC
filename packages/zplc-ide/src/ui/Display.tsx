@@ -3,9 +3,10 @@
  * None of them carries meaning by colour alone: a badge has text, a status dot has a label, a signal chip has the word and
  * the glyph of its state (UX-009), an empty state has a title and a next action.
  */
-import type { ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { SIGNAL_CHIP_CLASS, SIGNAL_CUES, type SignalTone } from '../theme/signalTone';
 import { cx } from './cx';
+import { LOADING_DELAY_MS, startDelay } from './logic/delay';
 
 export type Tone = 'neutral' | 'info' | 'success' | 'warning' | 'danger';
 
@@ -62,6 +63,55 @@ export function EmptyState({ icon, title, description, action, headingLevel = 3,
       <Heading className="ui-empty-title">{title}</Heading>
       {description !== undefined && <p className="ui-empty-description">{description}</p>}
       {action !== undefined && <div className="ui-empty-action">{action}</div>}
+    </div>
+  );
+}
+
+export interface LoadingStateProps {
+  /** What is happening, as a short phrase: "Loading the workbench". */
+  label: string;
+  /** How long to wait before showing anything; 300 ms by default, so an operation that is quick shows no indicator (UX-021). */
+  delayMs?: number;
+  className?: string;
+}
+
+/** True once `delayMs` has passed since the component mounted. */
+function useAfterDelay(delayMs: number): boolean {
+  const [elapsed, setElapsed] = useState(delayMs <= 0);
+  useEffect(() => (delayMs <= 0 ? undefined : startDelay(() => setElapsed(true), delayMs)), [delayMs]);
+  return elapsed;
+}
+
+/** The loading state of a panel: nothing for the first 300 ms, then a spinner with the phrase, announced politely. */
+export function LoadingState({ label, delayMs = LOADING_DELAY_MS, className }: LoadingStateProps) {
+  const visible = useAfterDelay(delayMs);
+  if (!visible) return null;
+  return (
+    <div className={cx('ui-empty', className)} data-state="loading">
+      <Spinner label={label} />
+      <p className="ui-empty-description" aria-hidden="true">{label}</p>
+    </div>
+  );
+}
+
+export interface ErrorStateProps {
+  title: string;
+  /** What went wrong, in words the person can act on. */
+  message: ReactNode;
+  /** The way out: a retry or the step that fixes it. Every error state offers one (UX-021). */
+  action: ReactNode;
+  headingLevel?: 2 | 3 | 4;
+  className?: string;
+}
+
+/** The error state of a panel: a heading, the reason, and a recovery action; announced as an alert. */
+export function ErrorState({ title, message, action, headingLevel = 3, className }: ErrorStateProps) {
+  const Heading = `h${headingLevel}` as const;
+  return (
+    <div role="alert" className={cx('ui-empty', className)} data-state="error">
+      <Heading className="ui-empty-title">{title}</Heading>
+      <p className="ui-empty-description">{message}</p>
+      <div className="ui-empty-action">{action}</div>
     </div>
   );
 }

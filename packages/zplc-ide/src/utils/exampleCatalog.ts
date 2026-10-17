@@ -12,6 +12,8 @@
  *   is several parts that depend on each other (faults, state, feedback, a board), advanced is the library as a whole.
  * - The order of the entries is the order they are shown in within their group.
  */
+import { t } from '../i18n';
+import type { MessageKey } from '../i18n/en';
 import type { ProjectInfo } from './projectLoader';
 
 export type ExampleLanguage = 'ST' | 'LD' | 'IL' | 'FBD' | 'SFC';
@@ -30,34 +32,31 @@ export interface ExampleEntry {
   showOnWelcome: boolean;
 }
 
-export const EXAMPLE_GROUPS: ReadonlyArray<{ id: ExampleGroupId; title: string; blurb: string }> = [
-  { id: 'first-steps', title: 'First steps', blurb: 'One idea each. Start here.' },
-  { id: 'motors', title: 'Motors and drives', blurb: 'Start, stop, feedback and safety inputs.' },
-  { id: 'process', title: 'Process and sequences', blurb: 'Level control, fault handling and sequences.' },
-  { id: 'languages', title: 'Language tour', blurb: 'The same 50% LED blinker in four more languages (the Ladder one is Blinky, above).' },
-  { id: 'boards', title: 'Boards and hardware', blurb: 'Each one targets a named board.' },
-  { id: 'fixtures', title: 'Test fixtures', blurb: '' },
-  { id: 'more', title: 'More examples', blurb: '' },
+/** The groups of the Welcome screen; their titles and lines are catalog keys, so they follow the language of the interface (UX-022, UX-029). */
+export const EXAMPLE_GROUPS: ReadonlyArray<{ id: ExampleGroupId; titleKey: MessageKey; blurbKey: MessageKey | null }> = [
+  { id: 'first-steps', titleKey: 'welcome.group.first-steps.title', blurbKey: 'welcome.group.first-steps.blurb' },
+  { id: 'motors', titleKey: 'welcome.group.motors.title', blurbKey: 'welcome.group.motors.blurb' },
+  { id: 'process', titleKey: 'welcome.group.process.title', blurbKey: 'welcome.group.process.blurb' },
+  { id: 'languages', titleKey: 'welcome.group.languages.title', blurbKey: 'welcome.group.languages.blurb' },
+  { id: 'boards', titleKey: 'welcome.group.boards.title', blurbKey: 'welcome.group.boards.blurb' },
+  { id: 'fixtures', titleKey: 'welcome.group.fixtures.title', blurbKey: null },
+  { id: 'more', titleKey: 'welcome.group.more.title', blurbKey: null },
 ];
 
-export const LANGUAGE_NAMES: Readonly<Record<ExampleLanguage, string>> = {
-  ST: 'Structured Text',
-  LD: 'Ladder Diagram',
-  IL: 'Instruction List',
-  FBD: 'Function Block Diagram',
-  SFC: 'Sequential Function Chart',
+export const EXAMPLE_LEVELS: readonly ExampleLevel[] = ['beginner', 'intermediate', 'advanced'];
+
+/** The name of a language, of a level or of a board in the language of the interface. */
+export const languageName = (language: ExampleLanguage): string => t(`welcome.language.${language}`);
+export const levelName = (level: ExampleLevel): string => t(`welcome.level.${level}`);
+
+const BOARD_KEYS: Readonly<Record<string, MessageKey>> = {
+  rpi_pico: 'welcome.board.rpi_pico',
+  esp32s3_devkitc: 'welcome.board.esp32s3_devkitc',
+  arduino_opta_wifi: 'welcome.board.arduino_opta_wifi',
 };
 
-export const LEVEL_NAMES: Readonly<Record<ExampleLevel, string>> = { beginner: 'Beginner', intermediate: 'Intermediate', advanced: 'Advanced' };
-
-const BOARD_NAMES: Readonly<Record<string, string>> = {
-  rpi_pico: 'Raspberry Pi Pico',
-  esp32s3_devkitc: 'ESP32-S3 DevKitC',
-  arduino_opta_wifi: 'Arduino Opta WiFi',
-};
-
-/** The name of a manifest board id; an id this table does not know is shown as written. */
-export const boardName = (board: string): string => BOARD_NAMES[board] ?? board;
+/** The name of a manifest board id; an id the catalogs do not know is shown as written. */
+export const boardName = (board: string): string => (board in BOARD_KEYS ? t(BOARD_KEYS[board]!) : board);
 
 export const EXAMPLE_CATALOG: Readonly<Record<string, ExampleEntry>> = {
   // First steps
@@ -114,7 +113,7 @@ export interface ExampleSection { id: ExampleGroupId; title: string; blurb: stri
  */
 export function buildExampleSections(projects: ReadonlyArray<Pick<ProjectInfo, 'id' | 'name' | 'description'>>): ExampleSection[] {
   const present = new Map(projects.map((project) => [project.id, project]));
-  const sections: ExampleSection[] = EXAMPLE_GROUPS.map((group) => ({ ...group, examples: [] }));
+  const sections: ExampleSection[] = EXAMPLE_GROUPS.map((group) => ({ id: group.id, title: t(group.titleKey), blurb: group.blurbKey ? t(group.blurbKey) : '', examples: [] }));
   const section = (id: ExampleGroupId) => sections.find((candidate) => candidate.id === id)!;
 
   for (const [id, entry] of Object.entries(EXAMPLE_CATALOG)) {
@@ -125,4 +124,15 @@ export function buildExampleSections(projects: ReadonlyArray<Pick<ProjectInfo, '
   for (const project of uncatalogued) section('more').examples.push({ id: project.id, title: project.name, summary: project.description ?? '', languages: [] });
 
   return sections.filter((candidate) => candidate.examples.length > 0);
+}
+
+export interface ExampleLevelGroup { level: ExampleLevel | null; examples: ExampleListing[] }
+
+/**
+ * The examples of one topic split by level, easiest first (UX-022): the Welcome screen groups them by topic and, inside a topic
+ * that holds more than one level, by level. An example with no level (a project the catalogue does not know) comes last.
+ */
+export function groupByLevel(examples: readonly ExampleListing[]): ExampleLevelGroup[] {
+  const groups: ExampleLevelGroup[] = [...EXAMPLE_LEVELS, null].map((level) => ({ level, examples: examples.filter((example) => (example.level ?? null) === level) }));
+  return groups.filter((group) => group.examples.length > 0);
 }

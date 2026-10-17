@@ -1,49 +1,73 @@
 import type { MenuItemConstructorOptions } from 'electron';
 
-interface ApplicationMenuOptions {
-  platform: NodeJS.Platform;
+/** What the menu needs of a registered command (the registry's `menuEntry.ts` builds the list; this file imports nothing from the renderer). */
+export interface MenuCommand { id: string; titleKey: string; category: string; accelerator: string | null }
+export interface MenuCategory { id: string; titleKey: string }
+export type MenuTranslate = (key: string) => string;
+
+export interface MenuBuildOptions {
   isPackaged: boolean;
   appName: string;
+  /** The menus in order; each holds the commands of its category. */
+  categories: readonly MenuCategory[];
+  /** A menu item was chosen: the id goes to the window, which runs the command behind the same gates as its button. */
+  run: (id: string) => void;
   /** Reload of a development build; the caller routes it through the unsaved-work guard. */
   requestReload: () => void;
 }
 
+const SEPARATOR: MenuItemConstructorOptions = { type: 'separator' };
+
 /**
- * The application menu replaces Electron's default one, whose View menu carries reload and
- * developer-tools accelerators. A packaged build has neither; a development build keeps them,
- * with reload going through the unsaved-work guard.
+ * The application menu (UX-014, UX-015), built from the command registry: File, Edit, View, Project, Build, Online, Debug
+ * and Help on every operating system, with macOS adding its application menu and a Window menu. It replaces Electron's
+ * default menu, so there is no zoom, reload or developer-tools item in a packaged build; a development build keeps reload
+ * (through the unsaved-work guard) and the developer tools. Every item that is not a standard role carries only a command
+ * id. On Windows and Linux the accelerators are shown but not registered, so the window's own key handler stays the one
+ * place that reacts to a key (it ignores text fields, as before); macOS has no such option and routes the key through the
+ * menu.
  */
-export function buildApplicationMenu({ platform, isPackaged, appName, requestReload }: ApplicationMenuOptions): MenuItemConstructorOptions[] {
+export function buildMenuTemplate(platform: NodeJS.Platform, commands: readonly MenuCommand[], t: MenuTranslate, options: MenuBuildOptions): MenuItemConstructorOptions[] {
   const isMac = platform === 'darwin';
-  const view: MenuItemConstructorOptions[] = [
-    { role: 'resetZoom' },
-    { role: 'zoomIn' },
-    { role: 'zoomOut' },
-    { type: 'separator' },
-    { role: 'togglefullscreen' },
-  ];
-  if (!isPackaged) {
-    view.unshift(
-      { label: 'Reload', accelerator: 'CmdOrCtrl+R', click: requestReload },
-      { label: 'Force Reload', accelerator: 'CmdOrCtrl+Shift+R', click: requestReload },
-      { role: 'toggleDevTools' },
-      { type: 'separator' },
-    );
-  }
-  return [
-    ...(isMac ? [{
-      label: appName,
-      submenu: [{ role: 'about' }, { type: 'separator' }, { role: 'services' }, { type: 'separator' }, { role: 'hide' }, { role: 'hideOthers' }, { role: 'unhide' }, { type: 'separator' }, { role: 'quit' }] satisfies MenuItemConstructorOptions[],
-    } satisfies MenuItemConstructorOptions] : []),
-    { label: 'File', submenu: [isMac ? { role: 'close' } : { role: 'quit' }] },
-    {
-      label: 'Edit',
-      submenu: [{ role: 'undo' }, { role: 'redo' }, { type: 'separator' }, { role: 'cut' }, { role: 'copy' }, { role: 'paste' }, { role: 'selectAll' }],
-    },
-    { label: 'View', submenu: view },
-    { label: 'Window', submenu: isMac ? [{ role: 'minimize' }, { role: 'zoom' }, { type: 'separator' }, { role: 'front' }] : [{ role: 'minimize' }, { role: 'close' }] },
-    { label: 'Help', submenu: [{ label: appName, enabled: false }] },
-  ];
+  const itemsOf = (category: string): MenuItemConstructorOptions[] => commands.filter((command) => command.category === category).map((command) => ({
+    label: t(command.titleKey),
+    ...(command.accelerator ? { accelerator: command.accelerator, registerAccelerator: isMac } : {}),
+    click: () => options.run(command.id),
+  }));
+  const withTail = (items: MenuItemConstructorOptions[], tail: MenuItemConstructorOptions[]): MenuItemConstructorOptions[] =>
+    items.length > 0 && tail.length > 0 ? [...items, SEPARATOR, ...tail] : [...items, ...tail];
+
+  const tails: Record<string, MenuItemConstructorOptions[]> = {
+    file: [isMac ? { role: 'close', label: t('menu.closeWindow') } : { role: 'quit', label: t('menu.quit') }],
+    edit: [
+      { role: 'undo', label: t('menu.undo') }, { role: 'redo', label: t('menu.redo') }, SEPARATOR,
+      { role: 'cut', label: t('menu.cut') }, { role: 'copy', label: t('menu.copy') }, { role: 'paste', label: t('menu.paste') }, { role: 'selectAll', label: t('menu.selectAll') },
+    ],
+    view: [
+      ...(options.isPackaged ? [] : [
+        { label: t('menu.reload'), accelerator: 'CmdOrCtrl+R', click: options.requestReload },
+        { label: t('menu.forceReload'), accelerator: 'CmdOrCtrl+Shift+R', click: options.requestReload },
+        { role: 'toggleDevTools', label: t('menu.developerTools') } satisfies MenuItemConstructorOptions,
+        SEPARATOR,
+      ]),
+      { role: 'togglefullscreen', label: t('menu.fullScreen') },
+    ],
+    help: [{ label: options.appName, enabled: false }],
+  };
+  const menus = options.categories.map((category): MenuItemConstructorOptions => ({
+    label: t(category.titleKey),
+    submenu: withTail(itemsOf(category.id), tails[category.id] ?? []),
+  }));
+  if (!isMac) return menus;
+  const windowMenu: MenuItemConstructorOptions = { label: t('menu.window'), submenu: [{ role: 'minimize', label: t('menu.minimize') }, { role: 'zoom', label: t('menu.zoomWindow') }, SEPARATOR, { role: 'front' }] };
+  const appMenu: MenuItemConstructorOptions = {
+    label: options.appName,
+    submenu: [{ role: 'about' }, SEPARATOR, { role: 'services' }, SEPARATOR, { role: 'hide' }, { role: 'hideOthers' }, { role: 'unhide' }, SEPARATOR, { role: 'quit' }],
+  };
+  // The Window menu comes before Help, the last menu, as on macOS applications.
+  const helpAt = options.categories.findIndex((category) => category.id === 'help');
+  const before = helpAt < 0 ? menus.length : helpAt;
+  return [appMenu, ...menus.slice(0, before), windowMenu, ...menus.slice(before)];
 }
 
 /** The part of an Electron `Input` that decides whether it is a reload chord. */

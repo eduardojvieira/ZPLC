@@ -3,7 +3,7 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { Plus } from 'lucide-react';
 import { auditMarkup } from './audit';
 import {
-  AlertDialog, Badge, Button, Checkbox, Dialog, EmptyState, Field, IconButton, MenuButton, NumberField, PropertyList, Select,
+  AlertDialog, Badge, Button, Checkbox, Dialog, EmptyState, ErrorState, Field, IconButton, MenuButton, NumberField, LoadingState, PropertyList, Select,
   SignalChip, Spinner, StatusDot, Switch, TabList, TabPanel, TextField, Textarea, ToggleGroup, Tooltip,
 } from './index';
 
@@ -189,6 +189,23 @@ describe('kit display components (UX-001, UX-009 stopgap)', () => {
     const out = html(<EmptyState title="No tasks yet" description="Add a task to run a program." action={<Button>Add task</Button>} />);
     expect(out).toContain('<h3');
     expect(out).toContain('>Add task<');
+    expect(auditMarkup(out)).toEqual([]);
+  });
+
+  it('UX-021 renders an error state as an alert with its reason and a recovery action', () => {
+    const out = html(<ErrorState title="Build failed" message="The compiler stopped." action={<Button>Try again</Button>} />);
+    expect(out).toContain('role="alert"');
+    expect(out).toContain('<h3');
+    expect(out).toContain('>The compiler stopped.<');
+    expect(out).toContain('>Try again<');
+    expect(auditMarkup(out)).toEqual([]);
+  });
+
+  it('UX-021 shows nothing for a loading state before its delay, and the spinner with its phrase once there is none', () => {
+    expect(html(<LoadingState label="Loading the workbench" />)).toBe('');
+    const out = html(<LoadingState label="Loading the workbench" delayMs={0} />);
+    expect(out).toContain('role="status"');
+    expect(out).toContain('Loading the workbench');
     expect(auditMarkup(out)).toEqual([]);
   });
 

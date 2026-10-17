@@ -25,7 +25,7 @@ describe('close guard window wiring', () => {
     expect(mainSource).toContain("mainWindow.on('close', (event) => {");
     expect(mainSource).toContain("closeGuard.request('close') === 'ask'");
     expect(mainSource).toContain('event.preventDefault();');
-    expect(mainSource).toContain('Menu.setApplicationMenu(Menu.buildFromTemplate(buildApplicationMenu(');
+    expect(mainSource).toContain('Menu.setApplicationMenu(Menu.buildFromTemplate(template));');
     expect(mainSource).toContain('setPermissionRequestHandler((_webContents, _permission, callback) => {\n    callback(false);');
   });
 });

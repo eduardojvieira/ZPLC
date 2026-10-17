@@ -8,7 +8,7 @@
  */
 
 import { useRef, useState } from 'react';
-import { Plus, X, Trash2, Eye, EyeOff, AlertTriangle, LoaderCircle } from 'lucide-react';
+import { Plus, X, Trash2, Eye, AlertTriangle, LoaderCircle } from 'lucide-react';
 import { formatDebugValue } from '../hooks/useDebugValue';
 import { SIGNAL_TEXT_CLASS, signalTone } from '../theme/signalTone';
 import { useIDEStore } from '../store/useIDEStore';
@@ -16,6 +16,8 @@ import { buildDebugWatchRows } from './debugWatchRows';
 import { WATCH_FORCE_STATE, type WatchVariable } from '../runtime/debugAdapter';
 import { canEditWatchValue, canReleaseForces, canToggleForce, resolveWatchCommitAction, WATCH_COMMIT_ACTION } from './debugWatchPanelLogic';
 import { Button, Checkbox, IconButton, TextField, Tooltip } from '../ui';
+import { useT } from '../i18n';
+import { PanelEmptyState } from './panelStates';
 
 /** What the force checkbox of a row says when the pointer or the focus is on it. */
 function forceHint(state: string | undefined, forcesUnconfirmed: boolean, forceable: boolean): string {
@@ -69,6 +71,7 @@ interface EditingCell {
  * Debug Watch Panel Component
  */
 export function DebugWatchPanel({ setValue, toggleForceValue, clearAllForcedValues, hasActiveSerialSession = false }: DebugWatchPanelProps): React.ReactElement {
+  const { t } = useT();
   const [newVarInput, setNewVarInput] = useState('');
   const [showAddForm, setShowAddForm] = useState(false);
   const [editing, setEditing] = useState<EditingCell | null>(null);
@@ -334,14 +337,7 @@ export function DebugWatchPanel({ setValue, toggleForceValue, clearAllForcedValu
       {/* Variable List */}
       <div className="flex-1 overflow-y-auto">
         {variables.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-full text-[var(--color-surface-400)] p-4">
-            <EyeOff size={24} className="mb-2 opacity-50" />
-            <p className="text-xs text-center">
-              No variables being watched.
-              <br />
-              Click + to add variables.
-            </p>
-          </div>
+          <PanelEmptyState title={t('panel.watch.empty.title')} description={t('panel.watch.empty.description')} actionLabel={t('panel.watch.empty.action')} onAction={() => setShowAddForm(true)} />
         ) : (
           <table className="w-full">
             <thead className="sticky top-0 bg-[var(--color-surface-700)]">

@@ -546,6 +546,25 @@ export const JOURNEYS: Journey[] = [
     },
   },
   {
+    name: '3c The command palette runs commands from the keyboard', example: 'motor_start_stop', proves: [], partly: ['UX-015'],
+    run: async (app, { project }) => {
+      await openFolder(app, project);
+      await openFile(app, 'src/Motor.st');
+      const paletteOpen = () => app.eval<boolean>(`Boolean(document.querySelector('[role="dialog"] [role="combobox"]'))`);
+      await app.press('Ctrl+Shift+P');
+      await app.until('the command palette to open with the keyboard', async () => await paletteOpen() || undefined);
+      await app.type('problems');
+      await app.until('the palette to list Show problems', async () => await app.eval<boolean>(`Boolean(document.querySelector('[role="option"][data-command="view.problems"]'))`) || undefined);
+      await app.press('Enter');
+      await app.until('the palette to close and the Problems list to show', async () => !(await paletteOpen()) && await app.visible(css('[aria-label="Latest build diagnostics"]')) || undefined);
+      await app.press('Ctrl+Shift+P');
+      await app.until('the command palette to open again', async () => await paletteOpen() || undefined);
+      await app.type('keyboard shortcuts');
+      await app.press('Enter');
+      await app.until('the shortcut reference to list the commands with their shortcuts', async () => await app.eval<boolean>(`Boolean(document.querySelector('[data-command="debug.run"] kbd')?.textContent === 'F5' && document.querySelector('[data-command="file.save"] kbd')?.textContent === 'Ctrl+S')`) || undefined);
+    },
+  },
+  {
     name: '4 Build with an error, reach it from Problems', example: 'motor_start_stop', proves: [], partly: ['IDE-020', 'CMP-001'],
     run: async (app, { project }) => {
       await buildWithUndeclaredVariable(app, project);

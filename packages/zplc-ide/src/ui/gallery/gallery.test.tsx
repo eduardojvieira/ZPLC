@@ -27,7 +27,7 @@ describe('the component gallery (UX-004)', () => {
       'empty state': 'empty state', 'property list': 'property list',
     };
     for (const [name] of built) expect({ name, shown: specimens.includes(expected[name]) }).toEqual({ name, shown: true });
-    for (const extra of ['textarea', 'range', 'signal chip', 'spinner']) expect(specimens).toContain(extra);
+    for (const extra of ['textarea', 'range', 'signal chip', 'spinner', 'loading state', 'error state']) expect(specimens).toContain(extra);
   });
 
   it('passes the structural accessibility audit: every control named, no duplicate id, no dangling reference', () => {

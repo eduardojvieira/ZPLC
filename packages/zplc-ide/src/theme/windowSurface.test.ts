@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'bun:test';
 import { readFileSync } from 'node:fs';
+import { WINDOW_SURFACE } from '../../electron/shellPreferences';
 import { resolveTokens } from './tokens';
 
 const read = (path: string): string => readFileSync(new URL(path, import.meta.url), 'utf8');
@@ -8,13 +9,12 @@ const main = read('../../electron/main.ts');
 
 /** Window set-up (UX-016): the colours the shell paints before the app's own CSS runs must be the theme's canvas token. */
 describe('window surface', () => {
-  const canvas = (theme: 'light' | 'dark') => resolveTokens(theme)['--color-surface-900'];
+  const canvas = (theme: 'light' | 'dark' | 'high-contrast') => resolveTokens(theme)['--color-surface-900'];
 
-  it('gives the native window the light and dark canvas tokens until the renderer reports its own', () => {
-    const table = /WINDOW_SURFACE\s*=\s*\{\s*light:\s*'(#[0-9a-fA-F]{6})',\s*dark:\s*'(#[0-9a-fA-F]{6})'/.exec(main);
-    expect(table).not.toBeNull();
-    expect(table![1].toLowerCase()).toBe(canvas('light'));
-    expect(table![2].toLowerCase()).toBe(canvas('dark'));
+  it('UX-016 gives the native window the canvas token of each theme until the renderer reports its own', () => {
+    expect(WINDOW_SURFACE.light.toLowerCase()).toBe(canvas('light'));
+    expect(WINDOW_SURFACE.dark.toLowerCase()).toBe(canvas('dark'));
+    expect(WINDOW_SURFACE['high-contrast'].toLowerCase()).toBe(canvas('high-contrast'));
   });
 
   it('paints the page in the system theme canvas before any script or stylesheet loads', () => {
