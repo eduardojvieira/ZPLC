@@ -38,7 +38,7 @@ Preferences belong to you, not to a project: they apply to every project and are
 | Editor font size | 10 to 32 px | 14 px |
 | Tab size | 2, 3, 4 or 8 spaces | 4; a file's own indentation does not override it |
 | Density | Comfortable, Compact | Comfortable; compact scales the spacing of the whole window |
-| Language | English, Español | Español, as the Learn lessons have always begun; it sets the Learn lessons today and the rest of the interface is English |
+| Language | Automatic, English, Español | Automatic: it follows the language of the operating system, and sets the whole interface and the Learn lessons (see [Interface language](#interface-language)) |
 | Autosave | Off, or after 5, 15, 30 or 60 seconds without typing | Off |
 | Check for a newer release when Studio starts | On or off, and a **Check now** button | Off |
 
@@ -47,6 +47,20 @@ Autosave writes the modified files with the same save as **Save all**, without a
 The update check asks the GitHub releases of this project for the latest published release and says whether it is newer than the running build. It sends nothing about you, downloads nothing and installs nothing; the answer is a version and a link. It never runs until you turn it on or press **Check now**.
 
 Evidence level: host. `packages/zplc-ide/src/utils/appSettings.test.ts`, `src/store/useAppSettings.test.ts`, `src/store/autosave.test.ts`, `electron/updateCheck.test.ts` and `electron/updateCheckIpc.test.ts` cover the settings, autosave and the update check (requirements IDE-007 and IDE-010), and journey 21 (preferences apply and persist per user) of `bun run test:journeys` changes them in the real application and restarts it.
+
+## Interface language
+
+The **Language** preference chooses the language of Studio: **Automatic**, **English** or **Español**. Automatic, the default, follows the language of the operating system (`es`, `es-AR` and `es-MX` give Spanish; every other language gives English). The choice applies at once, without a restart, and also sets the language of the Learn lessons and the `lang` of the window. The Spanish text is neutral Latin American Spanish with impersonal or "usted" forms, as in an industrial manual.
+
+Every text of the interface is in two catalogs, `packages/zplc-ide/src/i18n/en.ts` (the source) and `es.ts`. To add a text:
+
+1. Add the key and its English text to `en.ts`: a dotted name from the screen to the text (`welcome.open.title`), `{name}` where a value goes, and a `.one` and `.other` pair for a count.
+2. Add the same key to `es.ts`. A missing or an extra key is a TypeScript error, and a different `{name}` is a failure of `tools/ci/i18n-guard.ts`.
+3. Write it in the component with `const { t, tn } = useT()` and `t('welcome.open.title')`, or `tn('explorer.migration.review', count)` for a plural. Outside a component (a menu, a dialog, an error) use `t` from `src/i18n`.
+
+The text is in sentence case, has no exclamation mark and uses no internal term. `bun run lint:ide` runs the guard: it fails on a text hard-coded in a component (JSX text, or a string in `aria-label`, `placeholder`, `alt`, `label`, `tooltip`, `title` or `description`) and on a catalog that breaks those rules. The components that still hold hard-coded text are on `tools/ci/i18n-offenders.json`, a list that only shrinks.
+
+Evidence level: host. `packages/zplc-ide/src/i18n/i18n.test.tsx`, `tools/ci/i18n-guard.test.ts` and `src/utils/appSettings.test.ts` cover the catalogs, the language setting and the guard (requirements UX-029, UX-030 and UX-031).
 
 ## Files and folders in the project tree
 
@@ -251,7 +265,7 @@ run/debug. A person starts each of them.
 
 Learn is a tab of the bottom panel. The **Learn** action on the Welcome screen copies the first lesson into a folder that you choose and opens that tab. This is what it offers today:
 
-- Ten lessons, in Spanish and in English (the toggle is in the panel, and Spanish is the default). Each lesson is a data package, `packages/zplc-ide/lessons/<id>/`, with its text in both languages, learning objectives, two levels of hint, a reference scenario with its content hash, and the example project you start from: a Structured Text file, or a Ladder file in lesson 5.
+- Ten lessons, in Spanish and in English (the toggle is in the panel; by default it follows the language of the application). Each lesson is a data package, `packages/zplc-ide/lessons/<id>/`, with its text in both languages, learning objectives, two levels of hint, a reference scenario with its content hash, and the example project you start from: a Structured Text file, or a Ladder file in lesson 5.
 - Every lesson goes through the stages Objective, Predict, Edit, Run, Observe and Reflect, the expected checkpoint of each stage stays hidden until you ask for it, and the two hints open on request.
 - You edit the copied project, save it and press **Check**. Studio runs your saved program against the scenario of the lesson package, identified by its content hash, in a process of its own that **Cancel** stops; the scenario files of your folder are never read, so editing a scenario there does not produce a pass. A lesson counts as completed when every assertion of that scenario passed. A failed check lists each failed assertion with its instant, the values expected and observed, and the address of that sample in the recorded trace. The grade record holds the lesson id and version, the scenario hash, the program hash, the runtime version and the time. You can still run the scenario of your folder from **Tests**; that run is not the grade.
 - Studio keeps your progress in one versioned file in its user-data directory: passed lessons with their grade record, lessons in progress, the last lesson (the panel opens it again), and the hints and solutions used (the reference solution opens on request). The progress file of an earlier release is migrated, and left where it was. **Export progress** and **Import progress** move the whole document as a file; an import is validated, merged with the newest grade first, and keeps lessons this build does not know.
