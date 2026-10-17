@@ -1,23 +1,25 @@
 /**
- * Application settings of the user (IDE-007, IDE-010): editor font size and tab size, density, language, autosave and
+ * Application settings of the user (IDE-007, IDE-010): editor font size and tab size, density, language (`auto` follows the operating system), autosave and
  * the update check. The theme is the one setting that has always lived in the store of the shell (`useIDEStore`), and
  * stays there. The settings are one JSON entry of the storage of the user (the renderer's local storage lives in the
  * user's profile directory, so they persist per user). Every field is validated when it is read: a missing, corrupt
  * or out-of-range value reads as its default, never as an error.
  */
 
+import { LANGUAGE_SETTINGS, type LanguageSetting } from '../i18n/locale';
+
 export const SETTINGS_STORAGE_KEY = 'zplc-ide-settings';
 
 export const FONT_SIZE_RANGE = { min: 10, max: 32 } as const;
 export const TAB_SIZE_CHOICES = [2, 3, 4, 8] as const;
 export const DENSITY_CHOICES = ['comfortable', 'compact'] as const;
-export const LANGUAGE_CHOICES = ['en', 'es'] as const;
+export const LANGUAGE_CHOICES = LANGUAGE_SETTINGS;
 /** Seconds after the last change before a modified file is saved; 0 is off. */
 export const AUTOSAVE_CHOICES = [0, 5, 15, 30, 60] as const;
 
 export type TabSize = (typeof TAB_SIZE_CHOICES)[number];
 export type Density = (typeof DENSITY_CHOICES)[number];
-export type Language = (typeof LANGUAGE_CHOICES)[number];
+export type Language = LanguageSetting;
 export type AutosaveSeconds = (typeof AUTOSAVE_CHOICES)[number];
 
 export interface AppSettings {
@@ -33,8 +35,8 @@ export const DEFAULT_SETTINGS: AppSettings = {
   editorFontSize: 14,
   editorTabSize: 4,
   density: 'comfortable',
-  // Spanish, as the Learn lessons have always begun (the rest of the interface is English until the UX package).
-  language: 'es',
+  // Follow the operating system (UX-029): Spanish where the system is Spanish, English elsewhere.
+  language: 'auto',
   autosaveSeconds: 0,
   checkForUpdates: false,
 };

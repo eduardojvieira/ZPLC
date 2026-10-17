@@ -1,0 +1,4 @@
+[test]
+# The tests that read English text run with the system language pinned to English (UX-029): `auto` resolves from
+# navigator.language, and a test must not depend on the language of the machine that runs it.
+preload = ["./src/i18n/pinTestLanguage.ts"]

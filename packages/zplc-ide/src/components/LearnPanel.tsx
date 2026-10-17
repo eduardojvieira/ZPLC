@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import { isFileSystemAccessSupported } from '../types';
 import { useIDEStore } from '../store/useIDEStore';
 import { useAppSettings } from '../store/useAppSettings';
+import { useT } from '../i18n';
 import type { WorkspaceTestPresentation } from './workspaceTestPresentation';
 import { describeFailure } from '../learn/gradeRecord';
 import { LEARN_PROGRESS_MAX_BYTES, passedLessonIds, type GradeRecord, type LessonNote } from '../../electron/learnProgressModel';
@@ -19,8 +20,8 @@ export function LearnPanel({ workspaceTestPresentation }: { workspaceTestPresent
   const desktopProgress = window.electronAPI?.learnProgress;
   // What the learner did with a lesson (opened it, showed a hint or the solution) goes to the progress store of the main process.
   const note = (entry: LessonNote) => { if (desktopProgress) void noteLesson(desktopProgress, entry); };
-  // The lesson language is the language preference: one choice for the application, changed here or in Preferences.
-  const locale: LearnLocale = useAppSettings((state) => state.settings.language);
+  // The lesson language is the language of the application (UX-029, LRN-029): one setting, `auto` resolved from the system, changed here or in Preferences.
+  const { locale }: { locale: LearnLocale } = useT();
   const updateSettings = useAppSettings((state) => state.update);
   const setLocale = (language: LearnLocale) => updateSettings({ language });
   const [lessonId, setLessonId] = useState<LearnLessonId>('motor-start-stop-safe');

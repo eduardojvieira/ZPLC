@@ -6,6 +6,7 @@
 import { Component, type ReactNode } from 'react';
 import { describeRenderError, shouldResetBoundary } from '../utils/errorMessages';
 import { Button } from '../ui';
+import { useT } from '../i18n';
 
 interface ErrorBoundaryProps {
   /** Name shown to the user: "Editor", "Panel", "ZPLC Studio". */
@@ -30,6 +31,7 @@ export function RegionError({ region, error, onRetry, recovery, fullWindow = fal
   recovery?: { label: string; run: () => void };
   fullWindow?: boolean;
 }) {
+  const { t } = useT();
   return (
     <div
       role="alert"
@@ -37,10 +39,10 @@ export function RegionError({ region, error, onRetry, recovery, fullWindow = fal
       className={`${fullWindow ? 'h-screen w-screen' : 'h-full w-full'} flex items-center justify-center overflow-auto bg-[var(--color-surface-900)] p-6 text-center`}
     >
       <div className="max-w-md">
-        <p className="text-lg font-medium text-[var(--color-accent-red)]">{region} stopped working</p>
+        <p className="text-lg font-medium text-[var(--color-accent-red)]">{t('errorBoundary.stopped', { region })}</p>
         <p className="mt-2 break-words text-sm text-[var(--color-surface-300)]">{describeRenderError(error)}</p>
         <div className="mt-4 flex justify-center gap-2">
-          <Button variant="primary" onClick={onRetry}>Retry</Button>
+          <Button variant="primary" onClick={onRetry}>{t('common.retry')}</Button>
           {recovery && <Button onClick={() => { recovery.run(); onRetry(); }}>{recovery.label}</Button>}
         </div>
       </div>

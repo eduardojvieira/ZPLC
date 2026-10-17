@@ -29,6 +29,7 @@ import { useSidebarState } from '../store/regionSubscriptions';
 import { PLC_LANGUAGES, type PLCLanguage, type FileTreeNode } from '../types';
 import { ICON_SIZES } from '../theme/tokens';
 import { Button, IconButton, Select, TextField } from '../ui';
+import { useT } from '../i18n';
 import { Modal } from './Modal';
 import { MigrationPreviewDialog } from './MigrationPreviewDialog';
 import { TreeMarkBadge } from './treeMarks';
@@ -63,6 +64,7 @@ function NewFileModal({
   onFileNameChange,
   onLanguageChange,
 }: NewFileModalProps) {
+  const { t } = useT();
   const createFile = useIDEStore((s) => s.createFile);
   const inputRef = useRef<HTMLInputElement>(null);
   const [error, setError] = useState<string | null>(null);
@@ -104,24 +106,24 @@ function NewFileModal({
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={handleClose} title="New File" widthClass="max-w-md" showCloseButton={!isCreating}>
+    <Modal isOpen={isOpen} onClose={handleClose} title={t('newFile.title')} widthClass="max-w-md" showCloseButton={!isCreating}>
       <div className="p-4 space-y-4">
         <TextField
           id="new-file-name"
           ref={inputRef}
-          label="File Name"
+          label={t('newFile.name')}
           value={fileName}
           onChange={(e) => { setError(null); onFileNameChange(e.target.value); }}
           onKeyDown={handleKeyDown}
           readOnly={isCreating}
-          placeholder="my_program"
-          hint="Extension will be added automatically"
+          placeholder={t('newFile.placeholder')}
+          hint={t('newFile.hint')}
           error={error ?? undefined}
         />
 
         <Select
           id="new-file-language"
-          label="Language"
+          label={t('newFile.language')}
           value={language}
           onChange={(e) => { setError(null); onLanguageChange(e.target.value as PLCLanguage); }}
           disabled={isCreating}
@@ -134,9 +136,9 @@ function NewFileModal({
         </Select>
 
         <div className="flex justify-end gap-2 pt-2">
-          <Button onClick={handleClose} disabled={isCreating}>Cancel</Button>
+          <Button onClick={handleClose} disabled={isCreating}>{t('common.cancel')}</Button>
           <Button variant="primary" onClick={() => { void handleCreate(); }} disabled={!fileName.trim() || isCreating}>
-            {isCreating ? 'Creating…' : 'Create'}
+            {isCreating ? t('common.creating') : t('common.create')}
           </Button>
         </div>
       </div>
@@ -306,6 +308,7 @@ function TreeNode({ node, depth, activeFileId, focusedTreeId, onFileClick, onTog
 // =============================================================================
 
 export function Sidebar() {
+  const { t, tn } = useT();
   const {
     projectName,
     projectMigrationPreview,
@@ -510,16 +513,16 @@ export function Sidebar() {
 
   return (
     <div className="w-full h-full bg-[var(--color-surface-800)] font-sans flex flex-col">
-      <div role="toolbar" className="h-10 flex items-center justify-between gap-2 px-3 border-b border-[var(--color-surface-600)]" aria-label="Explorer actions">
+      <div role="toolbar" className="h-10 flex items-center justify-between gap-2 px-3 border-b border-[var(--color-surface-600)]" aria-label={t('explorer.actions')}>
         <div className="min-w-0 flex items-center gap-2">
           <FolderOpen size={16} className="shrink-0 text-[var(--color-accent-yellow)]" />
-          <span className="truncate text-sm font-medium text-[var(--color-surface-100)]">{projectName || 'Project'}</span>
+          <span className="truncate text-sm font-medium text-[var(--color-surface-100)]">{projectName || t('explorer.project')}</span>
         </div>
         <div className="flex items-center gap-1">
-          <IconButton size="sm" label="New File" icon={<Plus size={ICON_SIZES.sm} />} onClick={handleOpenNewFileModal} />
-          <IconButton size="sm" label="New Folder" icon={<FolderPlus size={ICON_SIZES.sm} />} onClick={() => setTreeQuestion({ kind: 'new-folder', parent: 'src' })} />
-          <IconButton size="sm" label="Refresh" icon={<RefreshCw size={ICON_SIZES.sm} />} onClick={() => { void refreshFileTree(); }} />
-          <IconButton size="sm" label="Close Project" icon={<X size={ICON_SIZES.sm} />} onClick={handleCloseProject} />
+          <IconButton size="sm" label={t('explorer.newFile')} icon={<Plus size={ICON_SIZES.sm} />} onClick={handleOpenNewFileModal} />
+          <IconButton size="sm" label={t('explorer.newFolder')} icon={<FolderPlus size={ICON_SIZES.sm} />} onClick={() => setTreeQuestion({ kind: 'new-folder', parent: 'src' })} />
+          <IconButton size="sm" label={t('explorer.refresh')} icon={<RefreshCw size={ICON_SIZES.sm} />} onClick={() => { void refreshFileTree(); }} />
+          <IconButton size="sm" label={t('explorer.closeProject')} icon={<X size={ICON_SIZES.sm} />} onClick={handleCloseProject} />
         </div>
       </div>
 
@@ -529,13 +532,13 @@ export function Sidebar() {
             <div className="flex items-start gap-2">
               <TriangleAlert size={15} className="mt-0.5 shrink-0 text-[var(--color-accent-yellow)]" aria-hidden="true" />
               <div className="min-w-0">
-                <div className="font-medium text-[var(--color-surface-100)]">Migration preview</div>
-                <div className="mt-0.5">v{projectMigrationPreview.sourceSchemaVersion} → v2</div>
-                <div className="mt-0.5 text-[var(--color-surface-200)]">No project files were changed.</div>
+                <div className="font-medium text-[var(--color-surface-100)]">{t('explorer.migration.heading')}</div>
+                <div className="mt-0.5">{t('explorer.migration.versions', { from: projectMigrationPreview.sourceSchemaVersion })}</div>
+                <div className="mt-0.5 text-[var(--color-surface-200)]">{t('explorer.migration.unchanged')}</div>
               </div>
             </div>
             <Button variant="ghost" size="sm" onClick={() => setIsMigrationOpen(true)} className="mt-2 text-[var(--color-accent-blue)] underline">
-              Review the difference ({projectMigrationPreview.changes.length} change{projectMigrationPreview.changes.length === 1 ? '' : 's'})
+              {tn('explorer.migration.review', projectMigrationPreview.changes.length)}
             </Button>
           </div>
           {isMigrationOpen && <MigrationPreviewDialog onClose={() => setIsMigrationOpen(false)} />}
@@ -543,7 +546,7 @@ export function Sidebar() {
       )}
 
       {/* File Tree */}
-      <div className="flex-1 overflow-y-auto py-1" role="tree" aria-label="Project files">
+      <div className="flex-1 overflow-y-auto py-1" role="tree" aria-label={t('explorer.files')}>
         <TreeMarksContext.Provider value={marks}>
         {fileTree ? (
           fileTree.children && fileTree.children.length > 0 ? (
@@ -565,12 +568,12 @@ export function Sidebar() {
             ))
           ) : (
             <div className="px-3 py-4 text-xs text-[var(--color-surface-400)] text-center">
-              No files. Click + to create one.
+              {t('explorer.empty')}
             </div>
           )
         ) : (
           <div className="px-3 py-4 text-xs text-[var(--color-surface-400)] text-center">
-            Loading...
+            {t('explorer.loading')}
           </div>
         )}
         </TreeMarksContext.Provider>
@@ -627,9 +630,9 @@ export function Sidebar() {
       {/* Project tree questions (IDE-004) */}
       {treeQuestion?.kind === 'new-folder' && fileTreeRoot && (
         <EntryNameDialog
-          title="New Folder"
+          title={t('explorer.newFolder')}
           initialName=""
-          submitLabel="Create"
+          submitLabel={t('common.create')}
           folders={collectFolders(fileTreeRoot)}
           initialFolder={treeQuestion.parent === '/' ? '' : treeQuestion.parent}
           onSubmit={async (name, folder) => { await createFolder(folder, name); setTreeQuestion(null); }}
@@ -638,9 +641,9 @@ export function Sidebar() {
       )}
       {treeQuestion?.kind === 'rename' && (
         <EntryNameDialog
-          title={`Rename ${treeQuestion.node.name}`}
+          title={t('explorer.renameTitle', { name: treeQuestion.node.name })}
           initialName={treeQuestion.node.name}
-          submitLabel="Rename"
+          submitLabel={t('common.rename')}
           onSubmit={async (name) => { await renameEntry(treeQuestion.node.path, name); setTreeQuestion(null); }}
           onCancel={() => setTreeQuestion(null)}
         />

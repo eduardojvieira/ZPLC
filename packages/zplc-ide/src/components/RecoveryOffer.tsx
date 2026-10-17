@@ -4,6 +4,7 @@
  * except an entry that equals the file on disk or whose file is gone. Closing the dialog decides nothing: the entries
  * stay for the next start.
  */
+import { useT } from '../i18n';
 import { useCallback, useEffect, useState } from 'react';
 import { useIDEStore } from '../store/useIDEStore';
 import { adoptRecovered } from '../store/recoveryPersistence';
@@ -15,6 +16,7 @@ import { Button } from '../ui';
 import { Modal } from './Modal';
 
 export function RecoveryOffer() {
+  const { t } = useT();
   const isProjectOpen = useIDEStore((state) => state.isProjectOpen);
   const projectSession = useIDEStore((state) => state.projectSession);
   const directoryHandle = useIDEStore((state) => state.directoryHandle);
@@ -63,30 +65,29 @@ export function RecoveryOffer() {
   if (rows.length === 0) return null;
   const everyRow = (action: (row: OfferRow) => Promise<void>) => () => { void (async () => { for (const row of rows) await action(row); })(); };
   return (
-    <Modal isOpen onClose={() => setRows(() => [])} title="Recover unsaved changes" widthClass="max-w-lg" showCloseButton={false}>
+    <Modal isOpen onClose={() => setRows(() => [])} title={t('recovery.title')} widthClass="max-w-lg" showCloseButton={false}>
       <div className="p-4" data-recovery-offer>
         <p className="mb-3 text-sm text-[var(--color-surface-200)]">
-          Studio did not close properly last time. These files had changes that were not saved. Restore puts the changes
-          back in the editor, still unsaved; Discard removes them.
+          {t('recovery.intro')}
         </p>
         <ul className="mb-4 space-y-2">
           {rows.map((row) => (
             <li key={row.path} data-recovery-file={row.path} className="flex items-center justify-between gap-3 rounded border border-[var(--color-surface-600)] px-3 py-2">
               <div className="min-w-0">
                 <p className="truncate text-sm font-medium text-[var(--color-surface-100)]">{row.name}</p>
-                <p className="truncate text-xs text-[var(--color-surface-400)]">{row.path} · kept at {formatKeptAt(row.savedAt)}</p>
+                <p className="truncate text-xs text-[var(--color-surface-400)]">{t('recovery.keptAt', { path: row.path, time: formatKeptAt(row.savedAt) })}</p>
               </div>
               <div className="flex shrink-0 gap-2">
-                <Button aria-label={`Discard ${row.name}`} onClick={() => { void discard(row); }}>Discard</Button>
-                <Button variant="primary" aria-label={`Restore ${row.name}`} onClick={() => { void restore(row); }}>Restore</Button>
+                <Button aria-label={t('recovery.discardLabel', { name: row.name })} onClick={() => { void discard(row); }}>{t('common.discard')}</Button>
+                <Button variant="primary" aria-label={t('recovery.restoreLabel', { name: row.name })} onClick={() => { void restore(row); }}>{t('recovery.restore')}</Button>
               </div>
             </li>
           ))}
         </ul>
         {rows.length > 1 && (
           <div className="flex justify-end gap-2">
-            <Button onClick={everyRow(discard)}>Discard all</Button>
-            <Button variant="primary" onClick={everyRow(restore)}>Restore all</Button>
+            <Button onClick={everyRow(discard)}>{t('recovery.discardAll')}</Button>
+            <Button variant="primary" onClick={everyRow(restore)}>{t('recovery.restoreAll')}</Button>
           </div>
         )}
       </div>

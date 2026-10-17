@@ -40,6 +40,7 @@ import { UpdateNoticeBanner } from './components/UpdateNotice';
 import { useUpdateNotice } from './store/updateNotice';
 import { ZPLC_REPO_VERSION } from './version';
 import { Button } from './ui';
+import { useT } from './i18n';
 
 interface WorkbenchParts {
   Toolbar: ComponentType<{ debugController: DebugController }>;
@@ -67,6 +68,7 @@ initializeTheme();
 initializeSettings();
 
 function App() {
+  const { t } = useT();
   useTheme();
 
   const isProjectOpen = useIDEStore((s) => s.isProjectOpen);
@@ -166,9 +168,9 @@ function App() {
         <CloseGuard />
         <SerialPortChooser />
         <div role={failed ? 'alert' : 'status'} className="flex flex-1 flex-col items-center justify-center gap-3 text-sm text-[var(--text-secondary)]">
-          <p>{failed ? `Studio could not load the workbench: ${workbenchFailure.message}` : 'Loading the workbench…'}</p>
+          <p>{failed ? t('app.workbenchFailed', { message: workbenchFailure.message }) : t('app.workbenchLoading')}</p>
           {failed && (
-            <Button onClick={() => setWorkbenchAttempt((attempt) => attempt + 1)}>Retry</Button>
+            <Button onClick={() => setWorkbenchAttempt((attempt) => attempt + 1)}>{t('common.retry')}</Button>
           )}
         </div>
       </div>
@@ -212,7 +214,7 @@ function App() {
             </ErrorBoundary>
           </Panel>
 
-          <Separator id="workspace-separator" aria-label="Resize editor and lower panel" />
+          <Separator id="workspace-separator" aria-label={t('app.resize')} />
 
           {/* Lower workbench panel */}
           <Panel

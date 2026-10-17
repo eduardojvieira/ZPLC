@@ -3,6 +3,7 @@
  * reload while files are modified; this asks the user and answers with save, discard or cancel.
  */
 
+import { useT } from '../i18n';
 import { useCallback, useEffect, useState } from 'react';
 import { useIDEStore } from '../store/useIDEStore';
 import { flushSession } from '../store/sessionPersistence';
@@ -13,6 +14,7 @@ import { UnsavedChangesDialog } from './UnsavedChangesDialog';
 const SESSION_FLUSH_WAIT_MS = 1_500;
 
 export function CloseGuard() {
+  const { t } = useT();
   const [guard] = useState(() => window.electronAPI?.closeGuard);
   const [action, setAction] = useState<'close' | 'reload' | null>(null);
   const [saving, setSaving] = useState(false);
@@ -45,11 +47,11 @@ export function CloseGuard() {
   const verb = action === 'reload' ? 'reload' : 'close';
   return (
     <UnsavedChangesDialog
-      title={`Unsaved changes before you ${verb}`}
+      title={t(`closeGuard.title.${verb}`)}
       items={unsavedItems(loadedFiles.values(), projectConfigDirty)}
       busy={saving}
-      saveLabel={`Save all and ${verb}`}
-      discardLabel={`Discard and ${verb}`}
+      saveLabel={t(`closeGuard.save.${verb}`)}
+      discardLabel={t(`closeGuard.discard.${verb}`)}
       onChoice={(choice) => void answer(choice)}
     />
   );

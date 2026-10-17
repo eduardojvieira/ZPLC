@@ -223,7 +223,7 @@ export function EditorArea() {
   const focusTab = useCallback((viewId: string | null) => {
     requestAnimationFrame(() => {
       if (viewId) document.getElementById(`editor-tab-${viewId}`)?.focus();
-      else document.querySelector<HTMLButtonElement>('button[title="Project Settings"]')?.focus();
+      else document.querySelector<HTMLButtonElement>('button[data-project-settings]')?.focus();
     });
   }, []);
 

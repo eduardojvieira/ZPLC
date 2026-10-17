@@ -2,22 +2,23 @@ import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'bun:test';
 
+import { en } from '../i18n/en';
 import { learnLessonCatalog } from './learnLesson';
 
 const source = readFileSync(join(import.meta.dir, 'WelcomeScreen.tsx'), 'utf8');
 
 describe('Welcome screen contract', () => {
   it('offers only folder-backed project starts: Open, New and Learn in one row, then the examples', () => {
-    expect(source).toContain('ZPLC Studio 2.0');
-    expect(source).toContain('Open project');
-    expect(source).toContain('New project');
-    expect(source).toContain('>Learn<');
-    expect(source.indexOf('Open project</span>')).toBeLessThan(source.indexOf('New project</span>'));
-    expect(source.indexOf('New project</span>')).toBeLessThan(source.indexOf('>Learn</span>'));
-    expect(source.indexOf('>Learn</span>')).toBeLessThan(source.indexOf('id="examples-heading"'));
+    // The texts are in the catalog (UX-029); the screen writes them through t().
+    expect([en['welcome.title'], en['welcome.open.title'], en['welcome.new.title'], en['welcome.learn.title']]).toEqual(['ZPLC Studio 2.0', 'Open project', 'New project', 'Learn']);
+    for (const key of ['welcome.title', 'welcome.open.title', 'welcome.new.title', 'welcome.learn.title']) expect(source).toContain(`t('${key}')`);
+    expect(source.indexOf("t('welcome.open.title')")).toBeLessThan(source.indexOf("t('welcome.new.title')"));
+    expect(source.indexOf("t('welcome.new.title')")).toBeLessThan(source.indexOf("t('welcome.learn.title')"));
+    expect(source.indexOf("t('welcome.learn.title')")).toBeLessThan(source.indexOf('id="examples-heading"'));
     expect(source).toContain('sm:grid-cols-3');
-    expect(source).toContain('Choose or create a destination folder');
-    expect(source).toContain('The copy stops if a destination file already exists');
+    expect(en['welcome.examples.hint']).toContain('Choose or create a destination folder');
+    expect(en['welcome.examples.hint']).toContain('The copy stops if a destination file already exists');
+    expect(source).toContain("t('welcome.examples.hint')");
     // A disabled start action is the kit button's disabled state (ui/kit.css), not a class of the screen.
     expect(source).toContain('disabled={unavailable}');
     expect(source).not.toContain('<button');
@@ -78,7 +79,7 @@ describe('Welcome screen contract', () => {
     expect(source).toContain('data-recent-projects');
     expect(source.indexOf('projectOpenError &&')).toBeLessThan(source.indexOf('id="recent-heading"'));
     expect(source.indexOf('id="recent-heading"')).toBeLessThan(source.indexOf('id="examples-heading"'));
-    expect(source).toContain('recentRows(recentProjects, now)');
+    expect(source).toContain('recentRows(recentProjects, now, translator)');
     expect(source).toContain('data-recent-project={row.recentId}');
     expect(source).toContain('onClick={() => reopen(row.recentId)}');
     expect(source).toContain('openRecentProject(recentId)');
@@ -89,7 +90,7 @@ describe('Welcome screen contract', () => {
     expect(source).toContain('disabled={!row.available || busy}');
     expect(source).toContain(': row.reason}');
     expect(source).toContain('forgetRecentProject(row.recentId)');
-    expect(source).toContain('aria-label={`Forget ${row.name}`}');
+    expect(source).toContain("aria-label={t('welcome.recent.forgetLabel', { name: row.name })}");
     expect(source).toContain('data-recent-error');
     // The same message is not also shown in the general alert above.
     expect(source).toContain('projectOpenError && !recentError');

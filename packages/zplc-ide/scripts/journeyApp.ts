@@ -163,7 +163,7 @@ export async function launchApp(harness: Harness, root: string, environment: Rec
   const cdpPort = await freePort();
   const electronPath = join(packageRoot, 'node_modules', 'electron', 'dist', process.platform === 'win32' ? 'electron.exe' : 'electron');
   const output: string[] = [];
-  const electron: OwnedProcess = Bun.spawn([electronPath, '--headless', '--disable-gpu', `--zplc-smoke-port=${harness.vitePort}`, `--remote-debugging-port=${cdpPort}`, `--user-data-dir=${join(root, 'profile')}`, '.'], {
+  const electron: OwnedProcess = Bun.spawn([electronPath, '--headless', '--disable-gpu', '--lang=en-US', `--zplc-smoke-port=${harness.vitePort}`, `--remote-debugging-port=${cdpPort}`, `--user-data-dir=${join(root, 'profile')}`, '.'], {
     cwd: packageRoot, stdout: 'pipe', stderr: 'pipe',
     env: { ...process.env, NODE_ENV: 'development', ZPLC_NATIVE_SIM_BIN: harness.runtime, ZPLC_PERSIST_ROOT: join(root, 'persist'), ZPLC_SMOKE_FOLDER_ANSWER_FILE: answerFile, ...environment },
   });

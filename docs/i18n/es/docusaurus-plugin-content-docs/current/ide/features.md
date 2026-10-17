@@ -38,7 +38,7 @@ Las preferencias son suyas, no de un proyecto: se aplican a todos los proyectos 
 | Editor font size | De 10 a 32 px | 14 px |
 | Tab size | 2, 3, 4 u 8 espacios | 4; la sangría propia de un archivo no la reemplaza |
 | Density | Comfortable, Compact | Comfortable; compact reduce el espaciado de toda la ventana |
-| Language | English, Español | Español, como siempre han empezado las lecciones de Learn; hoy fija el de las lecciones de Learn y el resto de la interfaz está en inglés |
+| Language | Automático, English, Español | Automático: sigue el idioma del sistema operativo y fija toda la interfaz y las lecciones de Learn (vea [Idioma de la interfaz](#idioma-de-la-interfaz)) |
 | Autosave | Desactivado, o tras 5, 15, 30 o 60 segundos sin escribir | Desactivado |
 | Check for a newer release when Studio starts | Activada o desactivada, y un botón **Check now** | Desactivada |
 
@@ -47,6 +47,20 @@ El autoguardado escribe los archivos modificados con el mismo guardado que **Sav
 La comprobación de actualizaciones consulta las versiones publicadas de este proyecto en GitHub y dice si la última es más nueva que la compilación en ejecución. No envía nada sobre usted, no descarga nada ni instala nada; la respuesta es una versión y un enlace. No se ejecuta hasta que usted la activa o pulsa **Check now**.
 
 Nivel de evidencia: host. `packages/zplc-ide/src/utils/appSettings.test.ts`, `src/store/useAppSettings.test.ts`, `src/store/autosave.test.ts`, `electron/updateCheck.test.ts` y `electron/updateCheckIpc.test.ts` cubren las preferencias, el autoguardado y la comprobación de actualizaciones (requisitos IDE-007 e IDE-010), y el recorrido 21 (las preferencias se aplican y persisten por usuario) de `bun run test:journeys` las cambia en la aplicación real y la reinicia.
+
+## Idioma de la interfaz
+
+La preferencia **Language** elige el idioma de Studio: **Automático**, **English** o **Español**. Automático, el valor por defecto, sigue el idioma del sistema operativo (`es`, `es-AR` y `es-MX` dan español; cualquier otro idioma da inglés). La elección se aplica de inmediato, sin reiniciar, y fija también el idioma de las lecciones de Learn y el `lang` de la ventana. El texto en español es español latinoamericano neutro, con formas impersonales o de «usted», como en un manual industrial.
+
+Todo texto de la interfaz está en dos catálogos, `packages/zplc-ide/src/i18n/en.ts` (la fuente) y `es.ts`. Para agregar un texto:
+
+1. Agregue la clave y su texto en inglés a `en.ts`: un nombre con puntos desde la pantalla hasta el texto (`welcome.open.title`), `{name}` donde va un valor, y un par `.one` y `.other` para una cantidad.
+2. Agregue la misma clave a `es.ts`. Una clave que falta o que sobra es un error de TypeScript, y un `{name}` distinto es un fallo de `tools/ci/i18n-guard.ts`.
+3. Escríbalo en el componente con `const { t, tn } = useT()` y `t('welcome.open.title')`, o `tn('explorer.migration.review', count)` para un plural. Fuera de un componente (un menú, un diálogo, un error) use `t` de `src/i18n`.
+
+El texto va en minúsculas salvo la inicial (sentence case), sin signos de exclamación y sin términos internos. `bun run lint:ide` ejecuta la guarda: falla ante un texto escrito en un componente (texto JSX, o una cadena en `aria-label`, `placeholder`, `alt`, `label`, `tooltip`, `title` o `description`) y ante un catálogo que incumple esas reglas. Los componentes que aún tienen texto escrito dentro están en `tools/ci/i18n-offenders.json`, una lista que solo puede disminuir.
+
+Nivel de evidencia: host. `packages/zplc-ide/src/i18n/i18n.test.tsx`, `tools/ci/i18n-guard.test.ts` y `src/utils/appSettings.test.ts` cubren los catálogos, la preferencia de idioma y la guarda (requisitos UX-029, UX-030 y UX-031).
 
 ## Archivos y carpetas en el árbol del proyecto
 
@@ -262,7 +276,7 @@ programa compilado y, después, ejecutar o depurar. Una persona inicia cada una.
 
 Learn es una pestaña del panel inferior. La acción **Learn** de la pantalla de bienvenida copia la primera lección en una carpeta que usted elige y abre esa pestaña. Esto es lo que ofrece hoy:
 
-- Diez lecciones, en español y en inglés (el selector está en el panel, y el español es el valor por defecto). Cada lección es un paquete de datos, `packages/zplc-ide/lessons/<id>/`, con su texto en ambos idiomas, objetivos de aprendizaje, dos niveles de pista, un escenario de referencia con su hash de contenido y el proyecto de ejemplo del que usted parte: un archivo en Structured Text, o un archivo Ladder en la lección 5.
+- Diez lecciones, en español y en inglés (el selector está en el panel; por defecto sigue el idioma de la aplicación). Cada lección es un paquete de datos, `packages/zplc-ide/lessons/<id>/`, con su texto en ambos idiomas, objetivos de aprendizaje, dos niveles de pista, un escenario de referencia con su hash de contenido y el proyecto de ejemplo del que usted parte: un archivo en Structured Text, o un archivo Ladder en la lección 5.
 - Cada lección recorre seis etapas (en inglés Objective, Predict, Edit, Run, Observe y Reflect), el punto de control esperado de cada etapa permanece oculto hasta que usted lo pide, y las dos pistas se abren a pedido.
 - Usted edita el proyecto copiado, lo guarda y presiona **Verificar** (**Check** en inglés). Studio ejecuta su programa guardado contra el escenario del paquete de la lección, identificado por su hash de contenido, en un proceso propio que **Cancelar** detiene; los archivos de escenario de su carpeta nunca se leen, de modo que editar un escenario allí no produce un aprobado. Una lección se da por completada cuando todas las aserciones de ese escenario pasaron. Una verificación que falla enumera cada aserción que falló con su instante, los valores esperados y observados, y la dirección de esa muestra en la traza registrada. El registro de calificación contiene el identificador y la versión de la lección, el hash del escenario, el hash del programa, la versión del runtime y la hora. Todavía puede ejecutar el escenario de su carpeta desde **Tests**; esa ejecución no es la calificación.
 - Studio guarda su progreso en un único archivo versionado de su directorio de datos de usuario: lecciones aprobadas con su registro de calificación, lecciones en curso, la última lección (el panel la vuelve a abrir), y las pistas y soluciones usadas (la solución de referencia se abre a pedido). El archivo de progreso de una versión anterior se migra y se deja donde estaba. **Exportar progreso** e **Importar progreso** (**Export progress** e **Import progress** en inglés) trasladan el documento completo como un archivo; una importación se valida, se combina con la calificación más reciente primero y conserva las lecciones que esta versión no conoce.
