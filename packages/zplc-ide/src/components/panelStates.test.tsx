@@ -3,7 +3,7 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { publishCommandState, resetCommandsForTest } from '../commands/bus';
 import { auditMarkup } from '../ui/audit';
 import { CommandEmptyState, PanelEmptyState } from './panelStates';
-import '../i18n/pinTestLanguage';
+
 
 afterEach(() => resetCommandsForTest());
 
