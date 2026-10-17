@@ -703,7 +703,7 @@ export function Toolbar({ debugController }: ToolbarProps) {
       'online.disconnect': () => { if (isConnected) return handleConnect(); },
       'online.deploy': handleUpload,
       // Already running: nothing to do. Paused: resume. Otherwise start.
-      'debug.run': () => { if (isRunning) return; return isPaused ? handleResume(true) : handleStart(true); },
+      'debug.run': () => { if (isRunning) return; if (isPaused) return handleResume(true); return handleStart(true); },
       'debug.pause': () => { if (isRunning) return handlePause(true); },
       'debug.stop': () => { if (isRunning || isPaused) return handleStop(); },
       'debug.step': () => { if (isPaused || isIdle) return handleStep(); },
