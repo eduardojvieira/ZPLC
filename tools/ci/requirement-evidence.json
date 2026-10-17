@@ -2121,6 +2121,43 @@
   "UX-027": [
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"13 Welcome helps a newcomer choose","partial":true}
   ],
+  "UX-029": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/components/welcomeRecent.test.ts","test":"UX-029 gives an unavailable folder the reason in Spanish"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/components/welcomeRecent.test.ts","test":"UX-029 says the time in Spanish with the Spanish plural, and the month of an older date"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/components/welcomeRecent.test.ts","test":"UX-029 the Recent section speaks the language of the interface"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/i18n/i18n.test.tsx","test":"UX-029 draws the serial port dialog in English by default and in Spanish when the setting is es"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/i18n/i18n.test.tsx","test":"UX-029 draws the unsaved changes dialog with its default buttons in each language, and keeps the labels a caller passes"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/i18n/i18n.test.tsx","test":"UX-029 draws the update notice, its steps and the preferences in Spanish, with the plural of the tab size"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/i18n/i18n.test.tsx","test":"UX-029 falls back to English for a key a catalog lacks, and never renders the raw key silently"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/i18n/i18n.test.tsx","test":"UX-029 hold the same keys and the same {placeholders} in English and Spanish"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/i18n/i18n.test.tsx","test":"UX-029 interpolates {name} values and leaves an unsupplied one visible"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/i18n/i18n.test.tsx","test":"UX-029 migrated components render in the language of the setting"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/i18n/i18n.test.tsx","test":"UX-029 offers the three language choices, and the English default leaves the preferences in English"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/i18n/i18n.test.tsx","test":"UX-029 picks the plural form of the language with Intl.PluralRules"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/i18n/i18n.test.tsx","test":"UX-029 reads navigator.language when the setting is auto, and is English where there is none"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/i18n/i18n.test.tsx","test":"UX-029 resolves auto from the language of the system and falls back to English"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/i18n/i18n.test.tsx","test":"UX-029 switches at runtime without a restart: the same non-React t and hook answer in the new language"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/i18n/i18n.test.tsx","test":"UX-029 the catalogs"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/i18n/i18n.test.tsx","test":"UX-029 the language setting: auto, en and es"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/i18n/i18n.test.tsx","test":"UX-029 translation: interpolation, plural and fallback"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/utils/appSettings.test.ts","test":"UX-029 start with autosave off, the update check off, the language following the operating system and a 14 px editor with 4-space tabs"},
+    {"kind":"unit","ref":"tools/ci/i18n-guard.test.ts","test":"UX-029 --write lowers counts and drops entries, and never raises a count"},
+    {"kind":"unit","ref":"tools/ci/i18n-guard.test.ts","test":"UX-029 fails for a file that is not listed, a count that grew, a count that shrank and an entry that reached zero"},
+    {"kind":"unit","ref":"tools/ci/i18n-guard.test.ts","test":"UX-029 fails on a key in English and not in Spanish, a key only in Spanish, and different placeholders"},
+    {"kind":"unit","ref":"tools/ci/i18n-guard.test.ts","test":"UX-029 finds JSX text with letters, a literal shown as a child and a template shown as a child"},
+    {"kind":"unit","ref":"tools/ci/i18n-guard.test.ts","test":"UX-029 finds a string literal in each user-visible attribute"},
+    {"kind":"unit","ref":"tools/ci/i18n-guard.test.ts","test":"UX-029 guards components only: not tests, the i18n module, the gallery or plain modules"},
+    {"kind":"unit","ref":"tools/ci/i18n-guard.test.ts","test":"UX-029 holds on the repository: the sources and both catalogs pass with the list as it is"},
+    {"kind":"unit","ref":"tools/ci/i18n-guard.test.ts","test":"UX-029 i18n guard: a hard-coded string in a component"},
+    {"kind":"unit","ref":"tools/ci/i18n-guard.test.ts","test":"UX-029 i18n guard: the catalogs as data"},
+    {"kind":"unit","ref":"tools/ci/i18n-guard.test.ts","test":"UX-029 i18n guard: the list of offenders only shrinks"},
+    {"kind":"unit","ref":"tools/ci/i18n-guard.test.ts","test":"UX-029 stays quiet on a component that writes its text through t()"},
+    {"kind":"unit","ref":"tools/ci/i18n-guard.test.ts","test":"UX-029 stays quiet on a correct pair of catalogs"}
+  ],
+  "UX-031": [
+    {"kind":"unit","ref":"tools/ci/i18n-guard.test.ts","test":"UX-031 fails on an exclamation mark and on an internal term, in either language"},
+    {"kind":"unit","ref":"tools/ci/i18n-guard.test.ts","test":"UX-031 fails on text that is not in sentence case, and passes acronyms, names, quoted labels and code tokens"}
+  ],
   "UX-032": [
     {"kind":"unit","ref":"tools/ci/ux-tokens.test.ts","test":"design token checks (UX-003, UX-032)"},
     {"kind":"unit","ref":"tools/ci/ux-tokens.test.ts","test":"finds this repository current: the generated stylesheet, DESIGN.md and every token used (UX-003, UX-032)"}
