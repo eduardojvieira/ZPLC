@@ -6,6 +6,7 @@
 
 import type { KeyboardEvent } from 'react';
 import { Button } from '../ui';
+import { useT } from '../i18n';
 import { Modal } from './Modal';
 import { boardNote, type SerialPortRow } from '../utils/serialPortChoice';
 
@@ -20,6 +21,7 @@ export interface SerialPortDialogProps {
 }
 
 export function SerialPortDialog({ rows, selectedPortId, refreshing, onSelect, onChoose, onRefresh, onCancel }: SerialPortDialogProps) {
+  const { t } = useT();
   // A radio group the way a native one behaves: one tab stop (the chosen port, else the first), and the arrow keys move
   // the choice and the focus together.
   const onRowKey = (event: KeyboardEvent<HTMLElement>, index: number) => {
@@ -31,19 +33,19 @@ export function SerialPortDialog({ rows, selectedPortId, refreshing, onSelect, o
     event.currentTarget.parentElement?.querySelectorAll<HTMLElement>('[role="radio"]')[target]?.focus();
   };
   return (
-    <Modal isOpen onClose={onCancel} title="Choose a serial port" widthClass="max-w-xl" showCloseButton={false}>
+    <Modal isOpen onClose={onCancel} title={t('serialPort.title')} widthClass="max-w-xl" showCloseButton={false}>
       <div className="p-4" data-serial-port-dialog>
         <p className="mb-3 text-sm text-[var(--color-surface-200)]">
-          Studio uses only the port you choose, for this connection. Choosing a port does not send a program or start anything.
+          {t('serialPort.intro')}
         </p>
         {rows.length === 0 ? (
           <p role="status" className="mb-4 rounded border border-[var(--border-color)] p-3 text-sm text-[var(--color-surface-100)]" data-serial-port-empty>
-            No serial port was found. Plug in the board, then choose Refresh.
+            {t('serialPort.empty')}
           </p>
         ) : (
-          <div role="radiogroup" aria-label="Serial ports" className="mb-4 flex max-h-72 flex-col gap-2 overflow-y-auto">
+          <div role="radiogroup" aria-label={t('serialPort.list')} className="mb-4 flex max-h-72 flex-col gap-2 overflow-y-auto">
             {rows.map((row, index) => {
-              const note = boardNote(row);
+              const note = boardNote(row, t);
               const checked = row.portId === selectedPortId;
               return (
                 <Button
@@ -60,8 +62,8 @@ export function SerialPortDialog({ rows, selectedPortId, refreshing, onSelect, o
                   <span className="flex min-w-0 flex-1 flex-col gap-0.5">
                     <span className="break-words font-medium text-[var(--color-surface-100)]">{row.name}</span>
                     <span className="text-xs font-normal text-[var(--color-surface-200)]">
-                      {row.usbId === null ? 'No USB identifiers' : `USB ${row.usbId}`}
-                      {row.serialNumber === null ? '' : ` · serial number ${row.serialNumber}`}
+                      {row.usbId === null ? t('serialPort.noUsbId') : t('serialPort.usb', { id: row.usbId })}
+                      {row.serialNumber === null ? '' : ` · ${t('serialPort.serialNumber', { serial: row.serialNumber })}`}
                     </span>
                     {note === null ? null : <span className={`text-xs font-normal ${row.kind === 'known-board' ? 'text-[var(--color-accent-green)]' : 'text-[var(--color-surface-200)]'}`}>{note}</span>}
                   </span>
@@ -72,11 +74,11 @@ export function SerialPortDialog({ rows, selectedPortId, refreshing, onSelect, o
         )}
         <div className="flex justify-between gap-2">
           <Button disabled={refreshing} onClick={onRefresh}>
-            {refreshing ? 'Refreshing…' : 'Refresh'}
+            {refreshing ? t('serialPort.refreshing') : t('serialPort.refresh')}
           </Button>
           <div className="flex gap-2">
-            <Button onClick={onCancel}>Cancel</Button>
-            <Button variant="primary" disabled={selectedPortId === null || refreshing} onClick={onChoose}>Use this port</Button>
+            <Button onClick={onCancel}>{t('common.cancel')}</Button>
+            <Button variant="primary" disabled={selectedPortId === null || refreshing} onClick={onChoose}>{t('serialPort.use')}</Button>
           </div>
         </div>
       </div>

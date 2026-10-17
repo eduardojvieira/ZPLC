@@ -3,10 +3,12 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'bun:test';
 
 import { THEME_CHOICES, chooseTheme } from './ThemeControlChoices';
+import { translate } from '../i18n/translate';
 
 describe('theme control choices', () => {
   it('offers Light, Dark and High contrast, once each and in that order', () => {
-    expect(THEME_CHOICES.map((choice) => choice.label)).toEqual(['Light', 'Dark', 'High contrast']);
+    expect(THEME_CHOICES.map((choice) => translate('en', choice.label))).toEqual(['Light', 'Dark', 'High contrast']);
+    expect(THEME_CHOICES.map((choice) => translate('es', choice.label))).toEqual(['Claro', 'Oscuro', 'Alto contraste']);
     expect(THEME_CHOICES.map((choice) => choice.id)).toEqual(['light', 'dark', 'high-contrast']);
   });
 
@@ -31,7 +33,7 @@ describe('theme control component', () => {
   it('is one labelled native select that uses the shared theme hook', () => {
     expect(source).toContain('useTheme');
     // The kit's Select is the native select with its label associated by the Field (ui/kit.test.tsx proves that).
-    expect(source).toContain('<Select label="Theme"');
+    expect(source).toContain("<Select label={t('theme.label')}");
     expect(source).not.toContain('<select');
     expect(source).toContain('THEME_CHOICES.map');
     expect(source).toContain('chooseTheme(event.target.value, setTheme)');

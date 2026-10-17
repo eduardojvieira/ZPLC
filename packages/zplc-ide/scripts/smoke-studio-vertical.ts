@@ -264,6 +264,8 @@ async function captureLearnReviewScreens(cdp: Cdp, reviewDir: string): Promise<v
     writeFileSync(join(reviewDir, name), Buffer.from(result.data, 'base64'));
   };
   await cdp.command('Emulation.setDeviceMetricsOverride', { width: 1366, height: 768, deviceScaleFactor: 1, mobile: false });
+  // The lessons are checked in Spanish; the application language is `auto` now (UX-029), so the run asks for it.
+  await cdp.evaluate(`import('/src/store/useAppSettings.ts').then(({ useAppSettings }) => useAppSettings.getState().update({ language: 'es' }))`);
   await cdp.evaluate(`import('/src/store/useIDEStore.ts').then(({ useIDEStore }) => useIDEStore.getState().setActiveConsoleTab('learn'))`);
   await waitFor('Learn panel', async () => await cdp.evaluate(`document.getElementById('console-panel-learn')?.textContent?.includes('Arranque y parada seguros') ? true : undefined`) === true ? true : undefined);
   const assertLesson = async (title: string, copy: string, details = 6) => assert(await cdp.evaluate(`(() => { const panel = document.getElementById('console-panel-learn'); const controls = [...document.querySelectorAll('#console-panel-learn button')]; return Boolean(panel) && document.body.scrollWidth <= window.innerWidth && panel.textContent?.includes(${JSON.stringify(title)}) && controls.some((button) => button.textContent?.includes(${JSON.stringify(copy)})) && [...document.querySelectorAll('#console-panel-learn details')].length === ${details}; })()`) === true, `Learn ${title} is clipped or incomplete`);

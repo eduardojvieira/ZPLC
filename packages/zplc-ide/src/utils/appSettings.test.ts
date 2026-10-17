@@ -16,8 +16,8 @@ const memory = (initial: Record<string, string> = {}): SettingsStorage & { data:
 };
 
 describe('application settings (IDE-007, IDE-010)', () => {
-  it('start with autosave off, the update check off, Spanish lessons as before and a 14 px editor with 4-space tabs', () => {
-    expect(DEFAULT_SETTINGS).toEqual({ editorFontSize: 14, editorTabSize: 4, density: 'comfortable', language: 'es', autosaveSeconds: 0, checkForUpdates: false });
+  it('UX-029 start with autosave off, the update check off, the language following the operating system and a 14 px editor with 4-space tabs', () => {
+    expect(DEFAULT_SETTINGS).toEqual({ editorFontSize: 14, editorTabSize: 4, density: 'comfortable', language: 'auto', autosaveSeconds: 0, checkForUpdates: false });
     expect(AUTOSAVE_CHOICES[0]).toBe(0);
   });
 

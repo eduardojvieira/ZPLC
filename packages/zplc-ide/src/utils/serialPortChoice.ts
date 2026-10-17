@@ -8,6 +8,7 @@
  * the RP2040-Zero do): the row then names both and says that the identifiers do not tell them apart.
  */
 import type { SerialPortOffered } from '../../electron/serialPortProtocol';
+import { currentLocale, t as translateNow, type Translator } from '../i18n';
 
 export interface SerialBoardCatalog {
   /** `VVVV:PPPP` (upper-case hexadecimal) to the display names of the boards that declare it, in the order of the manifest. */
@@ -63,13 +64,13 @@ export function buildSerialBoardCatalog(
 }
 
 /** The line that says what is known about the board behind a row, or what is not. */
-export function boardNote(row: SerialPortRow): string | null {
+export function boardNote(row: SerialPortRow, t: Translator['t'] = translateNow): string | null {
   if (row.kind === 'known-board') {
     return row.ambiguous
-      ? `Known boards with these USB identifiers: ${row.boards.join(' or ')}. The port does not say which one it is.`
-      : `Known board: ${row.boards[0]}`;
+      ? t('serialPort.knownBoards', { boards: new Intl.ListFormat(currentLocale(), { type: 'disjunction' }).format(row.boards) })
+      : t('serialPort.knownBoard', { board: row.boards[0]! });
   }
-  return row.vendor === null ? null : `USB vendor: ${row.vendor}`;
+  return row.vendor === null ? null : t('serialPort.vendor', { vendor: row.vendor });
 }
 
 const ORDER: Record<SerialPortRow['kind'], number> = { 'known-board': 0, 'known-vendor': 1, other: 2 };

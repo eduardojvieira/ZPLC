@@ -7,6 +7,7 @@
  * The renderer opens no link (the window opens no other window and navigates nowhere), so the link is the address of
  * the release, shown to be read or copied.
  */
+import { t as translateNow, type Translator } from '../i18n';
 import type { UpdateCheckResult } from '../../electron/updateCheckProtocol';
 
 export interface UpdateNotice {
@@ -19,23 +20,16 @@ export interface UpdateNotice {
 }
 
 /** One line per format that the platform installs from; the same steps as the Update section of the install page. */
-export function updateSteps(platform: string): string[] {
+export function updateSteps(platform: string, t: Translator['t'] = translateNow): string[] {
   switch (platform) {
     case 'win32':
-      return [
-        'Setup: download the new `setup-unsigned.exe` file, check its checksum and run it over the installed version.',
-        'Portable: download the new `portable-unsigned.exe` file and replace the old one.',
-      ];
+      return [t('updateNotice.step.win32Setup'), t('updateNotice.step.win32Portable')];
     case 'darwin':
-      return ['Download the new `.dmg` (or `.zip`) file, check its checksum and drag the new application into Applications, replacing the old one.'];
+      return [t('updateNotice.step.darwin')];
     case 'linux':
-      return [
-        '`.deb`: download the new package, check its checksum and install it with `sudo apt install ./<file>.deb`.',
-        '`.rpm`: download the new package, check its checksum and install it with `sudo dnf install ./<file>.rpm`.',
-        'AppImage: download the new file, check its checksum and replace the old one.',
-      ];
+      return [t('updateNotice.step.deb'), t('updateNotice.step.rpm'), t('updateNotice.step.appImage')];
     default:
-      return ['Download the new installer of your system from the release, check its checksum and install it over the old one.'];
+      return [t('updateNotice.step.other')];
   }
 }
 
@@ -43,10 +37,10 @@ export function updateSteps(platform: string): string[] {
  * The notice for an answer, or null: only a release that is newer than this one and has not been dismissed. A
  * dismissal is of one version, so a still newer release shows again.
  */
-export function updateNotice(result: UpdateCheckResult | null, platform: string, dismissedVersion: string | null): UpdateNotice | null {
+export function updateNotice(result: UpdateCheckResult | null, platform: string, dismissedVersion: string | null, t: Translator['t'] = translateNow): UpdateNotice | null {
   if (result === null || result.status !== 'available') return null;
   if (dismissedVersion === result.latest) return null;
-  return { current: result.current, latest: result.latest, releaseUrl: result.url, steps: updateSteps(platform) };
+  return { current: result.current, latest: result.latest, releaseUrl: result.url, steps: updateSteps(platform, t) };
 }
 
 export const DISMISSED_STORAGE_KEY = 'zplc-ide-update-dismissed';

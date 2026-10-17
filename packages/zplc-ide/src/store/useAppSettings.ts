@@ -11,6 +11,7 @@ import {
   type AppSettings,
   type SettingsStorage,
 } from '../utils/appSettings';
+import { resolveLanguage, systemLanguage } from '../i18n/locale';
 
 export interface AppSettingsState {
   settings: AppSettings;
@@ -38,7 +39,7 @@ export const useAppSettings = createAppSettingsStore(browserStorage());
 /** What the settings change outside React: the density (a CSS hook, UX-008) and the language of the document. */
 export function applyDisplaySettings(settings: AppSettings, root: { dataset: Record<string, string | undefined>; lang: string }): void {
   root.dataset.density = settings.density;
-  root.lang = settings.language;
+  root.lang = resolveLanguage(settings.language, systemLanguage());
 }
 
 /** Applies the saved display settings before the first paint and keeps them applied. Call once, at start-up. */

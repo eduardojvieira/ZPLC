@@ -4,13 +4,15 @@
  */
 import { useTheme } from '../hooks/useTheme';
 import { Select } from '../ui';
+import { useT } from '../i18n';
 import { THEME_CHOICES, chooseTheme } from './ThemeControlChoices';
 
 export function ThemeControl() {
+  const { t } = useT();
   const { effectiveTheme, setTheme } = useTheme();
   return (
-    <Select label="Theme" layout="inline" value={effectiveTheme} onChange={(event) => chooseTheme(event.target.value, setTheme)} data-theme-control>
-      {THEME_CHOICES.map((choice) => <option key={choice.id} value={choice.id}>{choice.label}</option>)}
+    <Select label={t('theme.label')} layout="inline" value={effectiveTheme} onChange={(event) => chooseTheme(event.target.value, setTheme)} data-theme-control>
+      {THEME_CHOICES.map((choice) => <option key={choice.id} value={choice.id}>{t(choice.label)}</option>)}
     </Select>
   );
 }

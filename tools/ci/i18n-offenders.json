@@ -1,0 +1,826 @@
+[
+  {
+    "file": "packages/zplc-ide/src/App.tsx",
+    "rule": "hard-coded-attribute",
+    "count": 1,
+    "requirement": "UX-029",
+    "added": "2026-10-17",
+    "reason": "Not yet moved to the catalogs of src/i18n; the surface's own work package moves it."
+  },
+  {
+    "file": "packages/zplc-ide/src/App.tsx",
+    "rule": "hard-coded-text",
+    "count": 2,
+    "requirement": "UX-029",
+    "added": "2026-10-17",
+    "reason": "Not yet moved to the catalogs of src/i18n; the surface's own work package moves it."
+  },
+  {
+    "file": "packages/zplc-ide/src/components/CloseGuard.tsx",
+    "rule": "hard-coded-attribute",
+    "count": 1,
+    "requirement": "UX-029",
+    "added": "2026-10-17",
+    "reason": "Not yet moved to the catalogs of src/i18n; the surface's own work package moves it."
+  },
+  {
+    "file": "packages/zplc-ide/src/components/CodeEditor.tsx",
+    "rule": "hard-coded-text",
+    "count": 5,
+    "requirement": "UX-029",
+    "added": "2026-10-17",
+    "reason": "Not yet moved to the catalogs of src/i18n; the surface's own work package moves it."
+  },
+  {
+    "file": "packages/zplc-ide/src/components/Console.tsx",
+    "rule": "hard-coded-attribute",
+    "count": 47,
+    "requirement": "UX-029",
+    "added": "2026-10-17",
+    "reason": "Not yet moved to the catalogs of src/i18n; the surface's own work package moves it."
+  },
+  {
+    "file": "packages/zplc-ide/src/components/Console.tsx",
+    "rule": "hard-coded-text",
+    "count": 168,
+    "requirement": "UX-029",
+    "added": "2026-10-17",
+    "reason": "Not yet moved to the catalogs of src/i18n; the surface's own work package moves it."
+  },
+  {
+    "file": "packages/zplc-ide/src/components/ControllerView.tsx",
+    "rule": "hard-coded-attribute",
+    "count": 1,
+    "requirement": "UX-029",
+    "added": "2026-10-17",
+    "reason": "Not yet moved to the catalogs of src/i18n; the surface's own work package moves it."
+  },
+  {
+    "file": "packages/zplc-ide/src/components/ControllerView.tsx",
+    "rule": "hard-coded-text",
+    "count": 63,
+    "requirement": "UX-029",
+    "added": "2026-10-17",
+    "reason": "Not yet moved to the catalogs of src/i18n; the surface's own work package moves it."
+  },
+  {
+    "file": "packages/zplc-ide/src/components/DebugWatchPanel.tsx",
+    "rule": "hard-coded-attribute",
+    "count": 9,
+    "requirement": "UX-029",
+    "added": "2026-10-17",
+    "reason": "Not yet moved to the catalogs of src/i18n; the surface's own work package moves it."
+  },
+  {
+    "file": "packages/zplc-ide/src/components/DebugWatchPanel.tsx",
+    "rule": "hard-coded-text",
+    "count": 16,
+    "requirement": "UX-029",
+    "added": "2026-10-17",
+    "reason": "Not yet moved to the catalogs of src/i18n; the surface's own work package moves it."
+  },
+  {
+    "file": "packages/zplc-ide/src/components/EditorArea.tsx",
+    "rule": "hard-coded-attribute",
+    "count": 11,
+    "requirement": "UX-029",
+    "added": "2026-10-17",
+    "reason": "Not yet moved to the catalogs of src/i18n; the surface's own work package moves it."
+  },
+  {
+    "file": "packages/zplc-ide/src/components/EditorArea.tsx",
+    "rule": "hard-coded-text",
+    "count": 11,
+    "requirement": "UX-029",
+    "added": "2026-10-17",
+    "reason": "Not yet moved to the catalogs of src/i18n; the surface's own work package moves it."
+  },
+  {
+    "file": "packages/zplc-ide/src/components/ErrorBoundary.tsx",
+    "rule": "hard-coded-text",
+    "count": 2,
+    "requirement": "UX-029",
+    "added": "2026-10-17",
+    "reason": "Not yet moved to the catalogs of src/i18n; the surface's own work package moves it."
+  },
+  {
+    "file": "packages/zplc-ide/src/components/ExplorerDialogs.tsx",
+    "rule": "hard-coded-attribute",
+    "count": 5,
+    "requirement": "UX-029",
+    "added": "2026-10-17",
+    "reason": "Not yet moved to the catalogs of src/i18n; the surface's own work package moves it."
+  },
+  {
+    "file": "packages/zplc-ide/src/components/ExplorerDialogs.tsx",
+    "rule": "hard-coded-text",
+    "count": 6,
+    "requirement": "UX-029",
+    "added": "2026-10-17",
+    "reason": "Not yet moved to the catalogs of src/i18n; the surface's own work package moves it."
+  },
+  {
+    "file": "packages/zplc-ide/src/components/ExternalChangePrompt.tsx",
+    "rule": "hard-coded-attribute",
+    "count": 2,
+    "requirement": "UX-029",
+    "added": "2026-10-17",
+    "reason": "Not yet moved to the catalogs of src/i18n; the surface's own work package moves it."
+  },
+  {
+    "file": "packages/zplc-ide/src/components/ExternalChangePrompt.tsx",
+    "rule": "hard-coded-text",
+    "count": 4,
+    "requirement": "UX-029",
+    "added": "2026-10-17",
+    "reason": "Not yet moved to the catalogs of src/i18n; the surface's own work package moves it."
+  },
+  {
+    "file": "packages/zplc-ide/src/components/GeneratedCodeDialog.tsx",
+    "rule": "hard-coded-text",
+    "count": 5,
+    "requirement": "UX-029",
+    "added": "2026-10-17",
+    "reason": "Not yet moved to the catalogs of src/i18n; the surface's own work package moves it."
+  },
+  {
+    "file": "packages/zplc-ide/src/components/ImportArchive.tsx",
+    "rule": "hard-coded-attribute",
+    "count": 1,
+    "requirement": "UX-029",
+    "added": "2026-10-17",
+    "reason": "Not yet moved to the catalogs of src/i18n; the surface's own work package moves it."
+  },
+  {
+    "file": "packages/zplc-ide/src/components/ImportArchive.tsx",
+    "rule": "hard-coded-text",
+    "count": 15,
+    "requirement": "UX-029",
+    "added": "2026-10-17",
+    "reason": "Not yet moved to the catalogs of src/i18n; the surface's own work package moves it."
+  },
+  {
+    "file": "packages/zplc-ide/src/components/InterlockCoverage.tsx",
+    "rule": "hard-coded-attribute",
+    "count": 2,
+    "requirement": "UX-029",
+    "added": "2026-10-17",
+    "reason": "Not yet moved to the catalogs of src/i18n; the surface's own work package moves it."
+  },
+  {
+    "file": "packages/zplc-ide/src/components/InterlockCoverage.tsx",
+    "rule": "hard-coded-text",
+    "count": 15,
+    "requirement": "UX-029",
+    "added": "2026-10-17",
+    "reason": "Not yet moved to the catalogs of src/i18n; the surface's own work package moves it."
+  },
+  {
+    "file": "packages/zplc-ide/src/components/LabPanel.tsx",
+    "rule": "hard-coded-attribute",
+    "count": 8,
+    "requirement": "UX-029",
+    "added": "2026-10-17",
+    "reason": "Not yet moved to the catalogs of src/i18n; the surface's own work package moves it."
+  },
+  {
+    "file": "packages/zplc-ide/src/components/LabPanel.tsx",
+    "rule": "hard-coded-text",
+    "count": 49,
+    "requirement": "UX-029",
+    "added": "2026-10-17",
+    "reason": "Not yet moved to the catalogs of src/i18n; the surface's own work package moves it."
+  },
+  {
+    "file": "packages/zplc-ide/src/components/LearnPanel.tsx",
+    "rule": "hard-coded-attribute",
+    "count": 10,
+    "requirement": "UX-029",
+    "added": "2026-10-17",
+    "reason": "Not yet moved to the catalogs of src/i18n; the surface's own work package moves it."
+  },
+  {
+    "file": "packages/zplc-ide/src/components/LearnPanel.tsx",
+    "rule": "hard-coded-text",
+    "count": 15,
+    "requirement": "UX-029",
+    "added": "2026-10-17",
+    "reason": "Not yet moved to the catalogs of src/i18n; the surface's own work package moves it."
+  },
+  {
+    "file": "packages/zplc-ide/src/components/MigrationDifferenceView.tsx",
+    "rule": "hard-coded-attribute",
+    "count": 2,
+    "requirement": "UX-029",
+    "added": "2026-10-17",
+    "reason": "Not yet moved to the catalogs of src/i18n; the surface's own work package moves it."
+  },
+  {
+    "file": "packages/zplc-ide/src/components/MigrationDifferenceView.tsx",
+    "rule": "hard-coded-text",
+    "count": 4,
+    "requirement": "UX-029",
+    "added": "2026-10-17",
+    "reason": "Not yet moved to the catalogs of src/i18n; the surface's own work package moves it."
+  },
+  {
+    "file": "packages/zplc-ide/src/components/MigrationPreviewDialog.tsx",
+    "rule": "hard-coded-attribute",
+    "count": 1,
+    "requirement": "UX-029",
+    "added": "2026-10-17",
+    "reason": "Not yet moved to the catalogs of src/i18n; the surface's own work package moves it."
+  },
+  {
+    "file": "packages/zplc-ide/src/components/MigrationPreviewDialog.tsx",
+    "rule": "hard-coded-text",
+    "count": 7,
+    "requirement": "UX-029",
+    "added": "2026-10-17",
+    "reason": "Not yet moved to the catalogs of src/i18n; the surface's own work package moves it."
+  },
+  {
+    "file": "packages/zplc-ide/src/components/NotificationsList.tsx",
+    "rule": "hard-coded-attribute",
+    "count": 4,
+    "requirement": "UX-029",
+    "added": "2026-10-17",
+    "reason": "Not yet moved to the catalogs of src/i18n; the surface's own work package moves it."
+  },
+  {
+    "file": "packages/zplc-ide/src/components/NotificationsList.tsx",
+    "rule": "hard-coded-text",
+    "count": 2,
+    "requirement": "UX-029",
+    "added": "2026-10-17",
+    "reason": "Not yet moved to the catalogs of src/i18n; the surface's own work package moves it."
+  },
+  {
+    "file": "packages/zplc-ide/src/components/OperationalStatusBar.tsx",
+    "rule": "hard-coded-attribute",
+    "count": 8,
+    "requirement": "UX-029",
+    "added": "2026-10-17",
+    "reason": "Not yet moved to the catalogs of src/i18n; the surface's own work package moves it."
+  },
+  {
+    "file": "packages/zplc-ide/src/components/ProjectDeclarations.tsx",
+    "rule": "hard-coded-attribute",
+    "count": 12,
+    "requirement": "UX-029",
+    "added": "2026-10-17",
+    "reason": "Not yet moved to the catalogs of src/i18n; the surface's own work package moves it."
+  },
+  {
+    "file": "packages/zplc-ide/src/components/ProjectDeclarations.tsx",
+    "rule": "hard-coded-text",
+    "count": 14,
+    "requirement": "UX-029",
+    "added": "2026-10-17",
+    "reason": "Not yet moved to the catalogs of src/i18n; the surface's own work package moves it."
+  },
+  {
+    "file": "packages/zplc-ide/src/components/ProjectExportItems.tsx",
+    "rule": "hard-coded-attribute",
+    "count": 2,
+    "requirement": "UX-029",
+    "added": "2026-10-17",
+    "reason": "Not yet moved to the catalogs of src/i18n; the surface's own work package moves it."
+  },
+  {
+    "file": "packages/zplc-ide/src/components/ProjectExportItems.tsx",
+    "rule": "hard-coded-text",
+    "count": 2,
+    "requirement": "UX-029",
+    "added": "2026-10-17",
+    "reason": "Not yet moved to the catalogs of src/i18n; the surface's own work package moves it."
+  },
+  {
+    "file": "packages/zplc-ide/src/components/RecoveryOffer.tsx",
+    "rule": "hard-coded-attribute",
+    "count": 3,
+    "requirement": "UX-029",
+    "added": "2026-10-17",
+    "reason": "Not yet moved to the catalogs of src/i18n; the surface's own work package moves it."
+  },
+  {
+    "file": "packages/zplc-ide/src/components/RecoveryOffer.tsx",
+    "rule": "hard-coded-text",
+    "count": 6,
+    "requirement": "UX-029",
+    "added": "2026-10-17",
+    "reason": "Not yet moved to the catalogs of src/i18n; the surface's own work package moves it."
+  },
+  {
+    "file": "packages/zplc-ide/src/components/settings/CommunicationSection.tsx",
+    "rule": "hard-coded-text",
+    "count": 3,
+    "requirement": "UX-029",
+    "added": "2026-10-17",
+    "reason": "Not yet moved to the catalogs of src/i18n; the surface's own work package moves it."
+  },
+  {
+    "file": "packages/zplc-ide/src/components/settings/CommunicationTags.tsx",
+    "rule": "hard-coded-attribute",
+    "count": 9,
+    "requirement": "UX-029",
+    "added": "2026-10-17",
+    "reason": "Not yet moved to the catalogs of src/i18n; the surface's own work package moves it."
+  },
+  {
+    "file": "packages/zplc-ide/src/components/settings/CommunicationTags.tsx",
+    "rule": "hard-coded-text",
+    "count": 17,
+    "requirement": "UX-029",
+    "added": "2026-10-17",
+    "reason": "Not yet moved to the catalogs of src/i18n; the surface's own work package moves it."
+  },
+  {
+    "file": "packages/zplc-ide/src/components/settings/FirmwareImageCard.tsx",
+    "rule": "hard-coded-attribute",
+    "count": 4,
+    "requirement": "UX-029",
+    "added": "2026-10-17",
+    "reason": "Not yet moved to the catalogs of src/i18n; the surface's own work package moves it."
+  },
+  {
+    "file": "packages/zplc-ide/src/components/settings/FirmwareImageCard.tsx",
+    "rule": "hard-coded-text",
+    "count": 14,
+    "requirement": "UX-029",
+    "added": "2026-10-17",
+    "reason": "Not yet moved to the catalogs of src/i18n; the surface's own work package moves it."
+  },
+  {
+    "file": "packages/zplc-ide/src/components/settings/IOSection.tsx",
+    "rule": "hard-coded-attribute",
+    "count": 11,
+    "requirement": "UX-029",
+    "added": "2026-10-17",
+    "reason": "Not yet moved to the catalogs of src/i18n; the surface's own work package moves it."
+  },
+  {
+    "file": "packages/zplc-ide/src/components/settings/IOSection.tsx",
+    "rule": "hard-coded-text",
+    "count": 25,
+    "requirement": "UX-029",
+    "added": "2026-10-17",
+    "reason": "Not yet moved to the catalogs of src/i18n; the surface's own work package moves it."
+  },
+  {
+    "file": "packages/zplc-ide/src/components/settings/MetadataSection.tsx",
+    "rule": "hard-coded-attribute",
+    "count": 5,
+    "requirement": "UX-029",
+    "added": "2026-10-17",
+    "reason": "Not yet moved to the catalogs of src/i18n; the surface's own work package moves it."
+  },
+  {
+    "file": "packages/zplc-ide/src/components/settings/MetadataSection.tsx",
+    "rule": "hard-coded-text",
+    "count": 1,
+    "requirement": "UX-029",
+    "added": "2026-10-17",
+    "reason": "Not yet moved to the catalogs of src/i18n; the surface's own work package moves it."
+  },
+  {
+    "file": "packages/zplc-ide/src/components/settings/ModbusSettings.tsx",
+    "rule": "hard-coded-attribute",
+    "count": 28,
+    "requirement": "UX-029",
+    "added": "2026-10-17",
+    "reason": "Not yet moved to the catalogs of src/i18n; the surface's own work package moves it."
+  },
+  {
+    "file": "packages/zplc-ide/src/components/settings/ModbusSettings.tsx",
+    "rule": "hard-coded-text",
+    "count": 7,
+    "requirement": "UX-029",
+    "added": "2026-10-17",
+    "reason": "Not yet moved to the catalogs of src/i18n; the surface's own work package moves it."
+  },
+  {
+    "file": "packages/zplc-ide/src/components/settings/MqttSettings.tsx",
+    "rule": "hard-coded-attribute",
+    "count": 73,
+    "requirement": "UX-029",
+    "added": "2026-10-17",
+    "reason": "Not yet moved to the catalogs of src/i18n; the surface's own work package moves it."
+  },
+  {
+    "file": "packages/zplc-ide/src/components/settings/MqttSettings.tsx",
+    "rule": "hard-coded-text",
+    "count": 26,
+    "requirement": "UX-029",
+    "added": "2026-10-17",
+    "reason": "Not yet moved to the catalogs of src/i18n; the surface's own work package moves it."
+  },
+  {
+    "file": "packages/zplc-ide/src/components/settings/NetworkSection.tsx",
+    "rule": "hard-coded-attribute",
+    "count": 38,
+    "requirement": "UX-029",
+    "added": "2026-10-17",
+    "reason": "Not yet moved to the catalogs of src/i18n; the surface's own work package moves it."
+  },
+  {
+    "file": "packages/zplc-ide/src/components/settings/NetworkSection.tsx",
+    "rule": "hard-coded-text",
+    "count": 7,
+    "requirement": "UX-029",
+    "added": "2026-10-17",
+    "reason": "Not yet moved to the catalogs of src/i18n; the surface's own work package moves it."
+  },
+  {
+    "file": "packages/zplc-ide/src/components/settings/ProjectSettings.tsx",
+    "rule": "hard-coded-attribute",
+    "count": 7,
+    "requirement": "UX-029",
+    "added": "2026-10-17",
+    "reason": "Not yet moved to the catalogs of src/i18n; the surface's own work package moves it."
+  },
+  {
+    "file": "packages/zplc-ide/src/components/settings/ProjectSettings.tsx",
+    "rule": "hard-coded-text",
+    "count": 21,
+    "requirement": "UX-029",
+    "added": "2026-10-17",
+    "reason": "Not yet moved to the catalogs of src/i18n; the surface's own work package moves it."
+  },
+  {
+    "file": "packages/zplc-ide/src/components/settings/TargetSection.tsx",
+    "rule": "hard-coded-attribute",
+    "count": 7,
+    "requirement": "UX-029",
+    "added": "2026-10-17",
+    "reason": "Not yet moved to the catalogs of src/i18n; the surface's own work package moves it."
+  },
+  {
+    "file": "packages/zplc-ide/src/components/settings/TargetSection.tsx",
+    "rule": "hard-coded-text",
+    "count": 6,
+    "requirement": "UX-029",
+    "added": "2026-10-17",
+    "reason": "Not yet moved to the catalogs of src/i18n; the surface's own work package moves it."
+  },
+  {
+    "file": "packages/zplc-ide/src/components/settings/TasksSection.tsx",
+    "rule": "hard-coded-attribute",
+    "count": 4,
+    "requirement": "UX-029",
+    "added": "2026-10-17",
+    "reason": "Not yet moved to the catalogs of src/i18n; the surface's own work package moves it."
+  },
+  {
+    "file": "packages/zplc-ide/src/components/settings/TasksSection.tsx",
+    "rule": "hard-coded-text",
+    "count": 13,
+    "requirement": "UX-029",
+    "added": "2026-10-17",
+    "reason": "Not yet moved to the catalogs of src/i18n; the surface's own work package moves it."
+  },
+  {
+    "file": "packages/zplc-ide/src/components/settings/ToolchainCard.tsx",
+    "rule": "hard-coded-attribute",
+    "count": 2,
+    "requirement": "UX-029",
+    "added": "2026-10-17",
+    "reason": "Not yet moved to the catalogs of src/i18n; the surface's own work package moves it."
+  },
+  {
+    "file": "packages/zplc-ide/src/components/settings/ToolchainCard.tsx",
+    "rule": "hard-coded-text",
+    "count": 17,
+    "requirement": "UX-029",
+    "added": "2026-10-17",
+    "reason": "Not yet moved to the catalogs of src/i18n; the surface's own work package moves it."
+  },
+  {
+    "file": "packages/zplc-ide/src/components/Sidebar.tsx",
+    "rule": "hard-coded-attribute",
+    "count": 12,
+    "requirement": "UX-029",
+    "added": "2026-10-17",
+    "reason": "Not yet moved to the catalogs of src/i18n; the surface's own work package moves it."
+  },
+  {
+    "file": "packages/zplc-ide/src/components/Sidebar.tsx",
+    "rule": "hard-coded-text",
+    "count": 12,
+    "requirement": "UX-029",
+    "added": "2026-10-17",
+    "reason": "Not yet moved to the catalogs of src/i18n; the surface's own work package moves it."
+  },
+  {
+    "file": "packages/zplc-ide/src/components/SidebarDialogs.tsx",
+    "rule": "hard-coded-attribute",
+    "count": 3,
+    "requirement": "UX-029",
+    "added": "2026-10-17",
+    "reason": "Not yet moved to the catalogs of src/i18n; the surface's own work package moves it."
+  },
+  {
+    "file": "packages/zplc-ide/src/components/SidebarDialogs.tsx",
+    "rule": "hard-coded-text",
+    "count": 8,
+    "requirement": "UX-029",
+    "added": "2026-10-17",
+    "reason": "Not yet moved to the catalogs of src/i18n; the surface's own work package moves it."
+  },
+  {
+    "file": "packages/zplc-ide/src/components/SimulationInputsList.tsx",
+    "rule": "hard-coded-attribute",
+    "count": 4,
+    "requirement": "UX-029",
+    "added": "2026-10-17",
+    "reason": "Not yet moved to the catalogs of src/i18n; the surface's own work package moves it."
+  },
+  {
+    "file": "packages/zplc-ide/src/components/SimulationInputsList.tsx",
+    "rule": "hard-coded-text",
+    "count": 14,
+    "requirement": "UX-029",
+    "added": "2026-10-17",
+    "reason": "Not yet moved to the catalogs of src/i18n; the surface's own work package moves it."
+  },
+  {
+    "file": "packages/zplc-ide/src/components/TerminalTab.tsx",
+    "rule": "hard-coded-attribute",
+    "count": 3,
+    "requirement": "UX-029",
+    "added": "2026-10-17",
+    "reason": "Not yet moved to the catalogs of src/i18n; the surface's own work package moves it."
+  },
+  {
+    "file": "packages/zplc-ide/src/components/TerminalTab.tsx",
+    "rule": "hard-coded-text",
+    "count": 3,
+    "requirement": "UX-029",
+    "added": "2026-10-17",
+    "reason": "Not yet moved to the catalogs of src/i18n; the surface's own work package moves it."
+  },
+  {
+    "file": "packages/zplc-ide/src/components/Toolbar.tsx",
+    "rule": "hard-coded-attribute",
+    "count": 40,
+    "requirement": "UX-029",
+    "added": "2026-10-17",
+    "reason": "Not yet moved to the catalogs of src/i18n; the surface's own work package moves it."
+  },
+  {
+    "file": "packages/zplc-ide/src/components/Toolbar.tsx",
+    "rule": "hard-coded-text",
+    "count": 16,
+    "requirement": "UX-029",
+    "added": "2026-10-17",
+    "reason": "Not yet moved to the catalogs of src/i18n; the surface's own work package moves it."
+  },
+  {
+    "file": "packages/zplc-ide/src/components/UnsavedChangesDialog.tsx",
+    "rule": "hard-coded-text",
+    "count": 3,
+    "requirement": "UX-029",
+    "added": "2026-10-17",
+    "reason": "Not yet moved to the catalogs of src/i18n; the surface's own work package moves it."
+  },
+  {
+    "file": "packages/zplc-ide/src/components/WelcomeScreen.tsx",
+    "rule": "hard-coded-attribute",
+    "count": 1,
+    "requirement": "UX-029",
+    "added": "2026-10-17",
+    "reason": "Not yet moved to the catalogs of src/i18n; the surface's own work package moves it."
+  },
+  {
+    "file": "packages/zplc-ide/src/components/WelcomeScreen.tsx",
+    "rule": "hard-coded-text",
+    "count": 21,
+    "requirement": "UX-029",
+    "added": "2026-10-17",
+    "reason": "Not yet moved to the catalogs of src/i18n; the surface's own work package moves it."
+  },
+  {
+    "file": "packages/zplc-ide/src/components/WorkbenchInspector.tsx",
+    "rule": "hard-coded-attribute",
+    "count": 11,
+    "requirement": "UX-029",
+    "added": "2026-10-17",
+    "reason": "Not yet moved to the catalogs of src/i18n; the surface's own work package moves it."
+  },
+  {
+    "file": "packages/zplc-ide/src/components/WorkbenchInspector.tsx",
+    "rule": "hard-coded-text",
+    "count": 5,
+    "requirement": "UX-029",
+    "added": "2026-10-17",
+    "reason": "Not yet moved to the catalogs of src/i18n; the surface's own work package moves it."
+  },
+  {
+    "file": "packages/zplc-ide/src/editors/fbd/FBDEditor.tsx",
+    "rule": "hard-coded-attribute",
+    "count": 1,
+    "requirement": "UX-029",
+    "added": "2026-10-17",
+    "reason": "Not yet moved to the catalogs of src/i18n; the surface's own work package moves it."
+  },
+  {
+    "file": "packages/zplc-ide/src/editors/fbd/FBDEditor.tsx",
+    "rule": "hard-coded-text",
+    "count": 2,
+    "requirement": "UX-029",
+    "added": "2026-10-17",
+    "reason": "Not yet moved to the catalogs of src/i18n; the surface's own work package moves it."
+  },
+  {
+    "file": "packages/zplc-ide/src/editors/fbd/FBDToolbox.tsx",
+    "rule": "hard-coded-attribute",
+    "count": 5,
+    "requirement": "UX-029",
+    "added": "2026-10-17",
+    "reason": "Not yet moved to the catalogs of src/i18n; the surface's own work package moves it."
+  },
+  {
+    "file": "packages/zplc-ide/src/editors/fbd/FBDToolbox.tsx",
+    "rule": "hard-coded-text",
+    "count": 4,
+    "requirement": "UX-029",
+    "added": "2026-10-17",
+    "reason": "Not yet moved to the catalogs of src/i18n; the surface's own work package moves it."
+  },
+  {
+    "file": "packages/zplc-ide/src/editors/fbd/InstanceMonitor.tsx",
+    "rule": "hard-coded-text",
+    "count": 4,
+    "requirement": "UX-029",
+    "added": "2026-10-17",
+    "reason": "Not yet moved to the catalogs of src/i18n; the surface's own work package moves it."
+  },
+  {
+    "file": "packages/zplc-ide/src/editors/fbd/nodes/FunctionBlockNode.tsx",
+    "rule": "hard-coded-text",
+    "count": 1,
+    "requirement": "UX-029",
+    "added": "2026-10-17",
+    "reason": "Not yet moved to the catalogs of src/i18n; the surface's own work package moves it."
+  },
+  {
+    "file": "packages/zplc-ide/src/editors/fbd/nodes/NodeComment.tsx",
+    "rule": "hard-coded-attribute",
+    "count": 2,
+    "requirement": "UX-029",
+    "added": "2026-10-17",
+    "reason": "Not yet moved to the catalogs of src/i18n; the surface's own work package moves it."
+  },
+  {
+    "file": "packages/zplc-ide/src/editors/fbd/nodes/NodeComment.tsx",
+    "rule": "hard-coded-text",
+    "count": 1,
+    "requirement": "UX-029",
+    "added": "2026-10-17",
+    "reason": "Not yet moved to the catalogs of src/i18n; the surface's own work package moves it."
+  },
+  {
+    "file": "packages/zplc-ide/src/editors/ld/LDEditor.tsx",
+    "rule": "hard-coded-attribute",
+    "count": 12,
+    "requirement": "UX-029",
+    "added": "2026-10-17",
+    "reason": "Not yet moved to the catalogs of src/i18n; the surface's own work package moves it."
+  },
+  {
+    "file": "packages/zplc-ide/src/editors/ld/LDEditor.tsx",
+    "rule": "hard-coded-text",
+    "count": 21,
+    "requirement": "UX-029",
+    "added": "2026-10-17",
+    "reason": "Not yet moved to the catalogs of src/i18n; the surface's own work package moves it."
+  },
+  {
+    "file": "packages/zplc-ide/src/editors/ld/LDElement.tsx",
+    "rule": "hard-coded-text",
+    "count": 2,
+    "requirement": "UX-029",
+    "added": "2026-10-17",
+    "reason": "Not yet moved to the catalogs of src/i18n; the surface's own work package moves it."
+  },
+  {
+    "file": "packages/zplc-ide/src/editors/ld/LDPrompts.tsx",
+    "rule": "hard-coded-attribute",
+    "count": 5,
+    "requirement": "UX-029",
+    "added": "2026-10-17",
+    "reason": "Not yet moved to the catalogs of src/i18n; the surface's own work package moves it."
+  },
+  {
+    "file": "packages/zplc-ide/src/editors/ld/LDRungGrid.tsx",
+    "rule": "hard-coded-attribute",
+    "count": 3,
+    "requirement": "UX-029",
+    "added": "2026-10-17",
+    "reason": "Not yet moved to the catalogs of src/i18n; the surface's own work package moves it."
+  },
+  {
+    "file": "packages/zplc-ide/src/editors/ld/LDRungGrid.tsx",
+    "rule": "hard-coded-text",
+    "count": 3,
+    "requirement": "UX-029",
+    "added": "2026-10-17",
+    "reason": "Not yet moved to the catalogs of src/i18n; the surface's own work package moves it."
+  },
+  {
+    "file": "packages/zplc-ide/src/editors/ld/LDToolbox.tsx",
+    "rule": "hard-coded-attribute",
+    "count": 8,
+    "requirement": "UX-029",
+    "added": "2026-10-17",
+    "reason": "Not yet moved to the catalogs of src/i18n; the surface's own work package moves it."
+  },
+  {
+    "file": "packages/zplc-ide/src/editors/ld/LDToolbox.tsx",
+    "rule": "hard-coded-text",
+    "count": 3,
+    "requirement": "UX-029",
+    "added": "2026-10-17",
+    "reason": "Not yet moved to the catalogs of src/i18n; the surface's own work package moves it."
+  },
+  {
+    "file": "packages/zplc-ide/src/editors/SearchList.tsx",
+    "rule": "hard-coded-attribute",
+    "count": 2,
+    "requirement": "UX-029",
+    "added": "2026-10-17",
+    "reason": "Not yet moved to the catalogs of src/i18n; the surface's own work package moves it."
+  },
+  {
+    "file": "packages/zplc-ide/src/editors/SearchList.tsx",
+    "rule": "hard-coded-text",
+    "count": 1,
+    "requirement": "UX-029",
+    "added": "2026-10-17",
+    "reason": "Not yet moved to the catalogs of src/i18n; the surface's own work package moves it."
+  },
+  {
+    "file": "packages/zplc-ide/src/editors/sfc/nodes/SFCStepNode.tsx",
+    "rule": "hard-coded-text",
+    "count": 2,
+    "requirement": "UX-029",
+    "added": "2026-10-17",
+    "reason": "Not yet moved to the catalogs of src/i18n; the surface's own work package moves it."
+  },
+  {
+    "file": "packages/zplc-ide/src/editors/sfc/nodes/SFCTransitionNode.tsx",
+    "rule": "hard-coded-text",
+    "count": 4,
+    "requirement": "UX-029",
+    "added": "2026-10-17",
+    "reason": "Not yet moved to the catalogs of src/i18n; the surface's own work package moves it."
+  },
+  {
+    "file": "packages/zplc-ide/src/editors/sfc/SFCEditor.tsx",
+    "rule": "hard-coded-attribute",
+    "count": 1,
+    "requirement": "UX-029",
+    "added": "2026-10-17",
+    "reason": "Not yet moved to the catalogs of src/i18n; the surface's own work package moves it."
+  },
+  {
+    "file": "packages/zplc-ide/src/editors/sfc/SFCEditor.tsx",
+    "rule": "hard-coded-text",
+    "count": 4,
+    "requirement": "UX-029",
+    "added": "2026-10-17",
+    "reason": "Not yet moved to the catalogs of src/i18n; the surface's own work package moves it."
+  },
+  {
+    "file": "packages/zplc-ide/src/editors/sfc/SFCToolbox.tsx",
+    "rule": "hard-coded-attribute",
+    "count": 4,
+    "requirement": "UX-029",
+    "added": "2026-10-17",
+    "reason": "Not yet moved to the catalogs of src/i18n; the surface's own work package moves it."
+  },
+  {
+    "file": "packages/zplc-ide/src/editors/sfc/SFCToolbox.tsx",
+    "rule": "hard-coded-text",
+    "count": 11,
+    "requirement": "UX-029",
+    "added": "2026-10-17",
+    "reason": "Not yet moved to the catalogs of src/i18n; the surface's own work package moves it."
+  },
+  {
+    "file": "packages/zplc-ide/src/editors/useCanvasKeyboard.tsx",
+    "rule": "hard-coded-attribute",
+    "count": 1,
+    "requirement": "UX-029",
+    "added": "2026-10-17",
+    "reason": "Not yet moved to the catalogs of src/i18n; the surface's own work package moves it."
+  },
+  {
+    "file": "packages/zplc-ide/src/ui/Dialog.tsx",
+    "rule": "hard-coded-attribute",
+    "count": 1,
+    "requirement": "UX-029",
+    "added": "2026-10-17",
+    "reason": "Not yet moved to the catalogs of src/i18n; the surface's own work package moves it."
+  }
+]
