@@ -62,6 +62,8 @@ import { presentAiProviderConfig, presentAiProviderMutation, presentAiProviderRe
 import { useTheme } from '../hooks/useTheme';
 import { ZPLC_DARK_THEME, ZPLC_DARK_THEME_ID, ZPLC_HIGH_CONTRAST_THEME, ZPLC_HIGH_CONTRAST_THEME_ID, ZPLC_LIGHT_THEME, ZPLC_LIGHT_THEME_ID } from '../utils/monaco-themes';
 import { Button, Checkbox, FileInput, IconButton, TextField, Textarea, Tooltip } from '../ui';
+import { useT } from '../i18n';
+import { CommandEmptyState } from './panelStates';
 
 type WorkspaceTestResultState = { presentation: WorkspaceTestPresentation; projectSession: number; compilerRunId: number; workspaceId: string };
 type WorkspaceSafetyTextState = { status: 'running' | 'unavailable'; projectSession: number; compilerRunId: number; workspaceId: string };
@@ -86,6 +88,7 @@ function consoleTabAfterKey(tabs: ConsoleTab[], activeTab: ConsoleTab, key: stri
 }
 
 export function Console({ debugController }: ConsoleProps) {
+  const { t } = useT();
   const {
     consoleEntries,
     activeConsoleTab,
@@ -637,9 +640,7 @@ export function Console({ debugController }: ConsoleProps) {
         {activeConsoleTab === 'output' && (
           <div className="p-2 space-y-0.5">
             {consoleEntries.length === 0 ? (
-              <div className="text-[var(--color-surface-400)] italic">
-                No output yet
-              </div>
+              <CommandEmptyState title={t('panel.output.empty.title')} description={t('panel.output.empty.description')} actions={['build.compile']} />
             ) : (
               consoleEntries.map((entry) => (
                 <div
@@ -690,11 +691,7 @@ export function Console({ debugController }: ConsoleProps) {
             )}
             <section aria-label="Latest build diagnostics" className="space-y-1">
               <div className="px-2 text-xs text-[var(--color-surface-300)]">Latest build diagnostics</div>
-              {compilerMessages.length === 0 ? (
-                <div className="px-2 text-[var(--color-surface-400)] italic">
-                  {compilerMessagesChecked ? 'No diagnostics from the latest build' : 'Build to check project diagnostics'}
-                </div>
-              ) : (
+              {compilerMessages.length === 0 ? null : (
               compilerMessages.map((msg, idx) => {
                 const node = msg.file && fileTree ? findFileInTree(fileTree, msg.file) : null;
                 // a diagram has no lines: a finding of its translation has no position, and its element is found on activation
@@ -726,6 +723,9 @@ export function Console({ debugController }: ConsoleProps) {
               })
               )}
             </section>
+            {compilerMessages.length === 0 && (
+              <CommandEmptyState title={t('panel.problems.empty.title')} description={compilerMessagesChecked ? t('panel.problems.empty.checked') : t('panel.problems.empty.unchecked')} actions={['build.compile']} />
+            )}
           </div>
         )}
 
@@ -734,7 +734,7 @@ export function Console({ debugController }: ConsoleProps) {
             {workspaceTestAvailabilityState === 'desktop-unavailable' ? (
               <p role="status" aria-live="polite" className="flex items-center gap-2 text-[var(--color-surface-400)]"><Info size={15} aria-hidden="true" />Workspace tests require the desktop app.</p>
             ) : workspaceTestAvailabilityState === 'project-required' ? (
-              <p role="status" aria-live="polite" className="flex items-center gap-2 text-[var(--color-surface-400)]"><Info size={15} aria-hidden="true" />Open a local project before linking workspace tests.</p>
+              <CommandEmptyState title={t('panel.tests.empty.title')} description={t('panel.tests.empty.description')} actions={['file.open']} />
             ) : (
               <>
                 <div className="flex flex-wrap items-center gap-2">
@@ -872,7 +872,7 @@ export function Console({ debugController }: ConsoleProps) {
               setSimulationInput={debugController?.setSimulationInput}
             />
             {nativeTrace.length === 0 ? (
-              <p className="text-[var(--color-surface-400)]">Step the native POSIX simulation to collect trace samples.</p>
+              <CommandEmptyState title={t('panel.trace.empty.title')} description={t('panel.trace.empty.description')} actions={['debug.step', 'online.connect']} />
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full min-w-[560px] text-left text-xs tabular-nums">

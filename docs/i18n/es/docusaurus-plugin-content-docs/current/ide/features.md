@@ -22,6 +22,8 @@ Trace, Watch y Terminal en un solo panel inferior.
 
 ## Proyectos recientes y restauración de sesión
 
+La pantalla de bienvenida ofrece **Abrir proyecto**, **Nuevo proyecto**, **Aprender** y los ejemplos incluidos. Los ejemplos se agrupan por tema y, dentro de un tema con varios niveles, por nivel (Principiante, Intermedio, Avanzado); los nombres de niveles, lenguajes, placas y temas siguen el idioma de la interfaz. Un proyecto que no se puede abrir se informa en la pantalla, junto a la acción, nunca en un cuadro de mensaje del sistema.
+
 La pantalla de bienvenida lista, en **Recent**, hasta diez carpetas que usted abrió antes, la más reciente primero, cada una con su nombre y la fecha de su última apertura. Al elegir una, se reabre sin diálogo de carpeta. Una carpeta que se movió, se borró o se reemplazó por un enlace aparece como no encontrada, con un botón **Forget** que la quita de la lista. Solo se recuerda una carpeta que usted eligió con el diálogo de carpetas del sistema.
 
 Para cada proyecto, Studio recuerda además las pestañas abiertas, la pestaña activa, la posición del cursor y del desplazamiento de cada archivo, y el tamaño de los paneles del editor y del panel inferior (y si el panel inferior estaba contraído). Los vuelve a poner la próxima vez que se abre esa carpeta, desde **Recent** o con **Open project**. En la sesión solo se guardan rutas y posiciones: el texto sin guardar se conserva aparte y solo se ofrece de nuevo tras un fallo (véase Recuperar trabajo sin guardar), y una pestaña cuyo archivo ya no existe se descarta sin avisar. La lista y las sesiones se guardan en el directorio privado de datos de usuario de Studio, nunca en la carpeta del proyecto, y la sesión de un proyecto que sale de la lista se borra la próxima vez que arranca Studio.
@@ -87,6 +89,18 @@ En macOS, Cmd reemplaza a Ctrl. Los atajos que actúan sobre un programa (F5, F6
 **Comandos que actúan sobre un dispositivo.** Conectar, Desconectar, Cargar, Ejecutar, Pausar, Detener, Avanzar y Reiniciar ejecutan la misma acción que el botón de la barra de herramientas del mismo nombre, con las mismas comprobaciones y la misma confirmación: Cargar sigue pidiendo confirmación antes de enviar un programa. Elegirlos desde el menú o la paleta no agrega ninguna forma de evitarlas. Son controles para la persona que está ante el teclado: las herramientas MCP y el proveedor de IA opcional no tienen acceso a los comandos y no pueden grabar, cargar, forzar, ejecutar ni detener nada. Un elemento de menú de un comando que el estado actual no ofrece no se ejecuta, y la salida lo indica.
 
 Nivel de evidencia: host. `packages/zplc-ide/src/commands/commands.test.ts` y `electron/appMenu.test.ts` (requisitos UX-014 y UX-015) comprueban que dos comandos no comparten atajo, que cada elemento de menú y cada entrada de la paleta es un comando registrado, que cada comando tiene título en ambos idiomas y la forma del menú en Windows, Linux y macOS con un sustituto de la plataforma. El menú nativo no se ha ejecutado en Windows ni en macOS.
+
+## Estados vacío, de carga y de error
+
+Un panel que no tiene nada que mostrar dice por qué y ofrece el paso siguiente, en lugar de quedar en blanco. Salida, Problemas, Trazado, Variables vigiladas, el Explorador del proyecto, el Inspector y la pestaña Pruebas (cuando no hay una carpeta de proyecto abierta) muestran un título, una frase y un botón. Cuando el botón representa un comando (Compilar el proyecto, Avanzar un ciclo, Conectar, Abrir proyecto) es ese comando, de modo que hace lo mismo que el menú y la paleta y se deshabilita mientras el comando no está disponible. Variables vigiladas ofrece **Agregar una variable** y el Explorador ofrece **Nuevo archivo**.
+
+Un indicador de carga aparece solo cuando una operación tarda más de 300 ms, de modo que un panel rápido nunca muestra un indicador intermitente. Un estado de error nombra lo que falló y tiene un botón de recuperación; el banco de trabajo que no se carga muestra uno con **Reintentar**. Los tres estados son componentes del kit (`EmptyState`, `LoadingState`, `ErrorState`) y aparecen en la galería de componentes de las compilaciones de desarrollo.
+
+## Inicio de la ventana
+
+Studio abre la ventana oculta y la muestra cuando la página ya se pintó, con el color del tema que usted eligió, de modo que un tema oscuro no parpadea en blanco al iniciar. El título de la ventana es el nombre del producto. El idioma y el tema se informan al proceso principal cada vez que cambian y se guardan en un archivo pequeño del directorio privado de datos de Studio, de modo que el siguiente inicio ya tiene el idioma del menú y el color de ventana correctos; un archivo ausente o dañado vuelve al inglés y al tema del sistema.
+
+Nivel de evidencia: host. `packages/zplc-ide/electron/shellPreferences.test.ts`, `src/components/panelStates.test.tsx`, `src/ui/kit.test.tsx` y `src/ui/logic/delay.test.ts` (requisitos UX-016 y UX-021) cubren el color de la ventana, las preferencias guardadas, los estados vacío, de carga y de error y el retraso de 300 ms. La ventana no se ha observado en Windows ni en macOS.
 
 ## Archivos y carpetas en el árbol del proyecto
 

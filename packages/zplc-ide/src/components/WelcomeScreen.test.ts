@@ -44,8 +44,9 @@ describe('Welcome screen contract', () => {
     expect(source).toContain('data-welcome-example={example.id}');
     expect(source).toContain('{example.title}');
     expect(source).toContain('{example.summary}');
-    expect(source).toContain('LANGUAGE_NAMES[language]');
-    expect(source).toContain('LEVEL_NAMES[example.level]');
+    expect(source).toContain('languageName(language)');
+    expect(source).toContain('levelName(example.level)');
+    expect(source).toContain('groupByLevel(section.examples)');
     expect(source).toContain('boardName(example.board)');
     expect(source).not.toContain('{project.name}');
     expect(source).not.toContain('Copy example');

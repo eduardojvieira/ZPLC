@@ -28,7 +28,8 @@ import { useIDEStore } from '../store/useIDEStore';
 import { useSidebarState } from '../store/regionSubscriptions';
 import { PLC_LANGUAGES, type PLCLanguage, type FileTreeNode } from '../types';
 import { ICON_SIZES } from '../theme/tokens';
-import { Button, IconButton, Select, TextField } from '../ui';
+import { Button, IconButton, LoadingState, Select, TextField } from '../ui';
+import { PanelEmptyState } from './panelStates';
 import { useT } from '../i18n';
 import { Modal } from './Modal';
 import { MigrationPreviewDialog } from './MigrationPreviewDialog';
@@ -567,14 +568,10 @@ export function Sidebar() {
               />
             ))
           ) : (
-            <div className="px-3 py-4 text-xs text-[var(--color-surface-400)] text-center">
-              {t('explorer.empty')}
-            </div>
+            <PanelEmptyState title={t('panel.explorer.empty.title')} description={t('panel.explorer.empty.description')} actionLabel={t('explorer.newFile')} onAction={handleOpenNewFileModal} />
           )
         ) : (
-          <div className="px-3 py-4 text-xs text-[var(--color-surface-400)] text-center">
-            {t('explorer.loading')}
-          </div>
+          <LoadingState label={t('explorer.loading')} />
         )}
         </TreeMarksContext.Provider>
       </div>

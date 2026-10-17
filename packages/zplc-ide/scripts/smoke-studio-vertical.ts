@@ -744,7 +744,7 @@ async function main(): Promise<void> {
     await waitFor('canonical saved workspace build', async () => await page().evaluate(`window.__zplcSmoke.compileCalls === 1 && Boolean(window.__zplcSmoke.getBuildState?.().evidence) ? true : undefined`) === true ? true : undefined);
     await click('Output');
     await waitFor('canonical saved workspace build output', async () => (await text()).includes('Built saved workspace locally:') ? true : undefined);
-    const canonicalBuild = await page().evaluate(`(() => { const build = window.__zplcSmoke.getBuildState?.(); return { calls: window.__zplcSmoke.compileCalls, sha: build?.evidence?.zplc?.sha256, bytes: build?.evidence?.zplc?.byteLength, fallback: document.body.innerText.includes('No diagnostics from the latest build') }; })()`);
+    const canonicalBuild = await page().evaluate(`(() => { const build = window.__zplcSmoke.getBuildState?.(); return { calls: window.__zplcSmoke.compileCalls, sha: build?.evidence?.zplc?.sha256, bytes: build?.evidence?.zplc?.byteLength, fallback: document.body.innerText.includes('The latest build reported no diagnostics.') }; })()`);
     assert(JSON.stringify(canonicalBuild) === JSON.stringify({ calls: 1, sha: testedProgram.sha256, bytes: testedProgram.byteLength, fallback: false }), `Second Build must publish exactly one canonical artifact/evidence result without renderer fallback: ${JSON.stringify(canonicalBuild)}`);
 
     // The declared-interlock coverage check has a tab of its own (IDE-032): it is not part of Problems.

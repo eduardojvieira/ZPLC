@@ -8,8 +8,8 @@ import { Inbox, Plus, Save, Trash2 } from 'lucide-react';
 import { ICON_SIZES } from '../../theme/tokens';
 import { SIGNAL_TONES } from '../../theme/signalTone';
 import {
-  AlertDialog, Badge, Button, Checkbox, ContextMenu, Dialog, DialogSurface, EmptyState, Field, IconButton, MenuButton, NumberField, Popover,
-  PropertyList, RangeField, Select, SignalChip, Spinner, StatusDot, Switch, TabList, TabPanel, TextField, Textarea, ToggleGroup, Toolbar, Tooltip,
+  AlertDialog, Badge, Button, Checkbox, ContextMenu, Dialog, DialogSurface, EmptyState, ErrorState, Field, IconButton, MenuButton, NumberField, Popover,
+  LoadingState, PropertyList, RangeField, Select, SignalChip, Spinner, StatusDot, Switch, TabList, TabPanel, TextField, Textarea, ToggleGroup, Toolbar, Tooltip,
 } from '..';
 
 const noop = (): void => undefined;
@@ -174,6 +174,12 @@ export function Specimens() {
       </Specimen>
       <Specimen name="Empty state">
         <EmptyState icon={<Inbox size={ICON_SIZES.lg} />} title="No tasks yet" description="Add a task to choose which program runs and how often." action={<Button variant="primary" icon={<Plus size={ICON_SIZES.md} />}>Add task</Button>} />
+      </Specimen>
+      <Specimen name="Loading state">
+        <LoadingState label="Loading the workbench" delayMs={0} />
+      </Specimen>
+      <Specimen name="Error state">
+        <ErrorState title="The workbench did not load" message="The editor code could not be fetched." action={<Button variant="primary">Try again</Button>} />
       </Specimen>
       <Specimen name="Property list">
         <PropertyList label="Controller" items={[{ label: 'Board', value: 'native_sim' }, { label: 'Program', value: 'Motor.zplc' }, { label: 'Tasks', value: '2' }]} />

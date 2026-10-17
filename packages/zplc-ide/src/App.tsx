@@ -39,7 +39,7 @@ import { runUpdateCheck } from './ipc/updateCheckBridge';
 import { UpdateNoticeBanner } from './components/UpdateNotice';
 import { useUpdateNotice } from './store/updateNotice';
 import { ZPLC_REPO_VERSION } from './version';
-import { Button } from './ui';
+import { Button, ErrorState, LoadingState } from './ui';
 import { CommandPalette } from './commands/CommandPalette';
 import { ShortcutReference } from './commands/ShortcutReference';
 import { useCommandShortcuts, useMainProcessBridge, useShellCommands } from './commands/useCommandHost';
@@ -178,11 +178,10 @@ function App() {
         <SerialPortChooser />
         <CommandPalette />
         <ShortcutReference />
-        <div role={failed ? 'alert' : 'status'} className="flex flex-1 flex-col items-center justify-center gap-3 text-sm text-[var(--text-secondary)]">
-          <p>{failed ? t('app.workbenchFailed', { message: workbenchFailure.message }) : t('app.workbenchLoading')}</p>
-          {failed && (
-            <Button onClick={() => setWorkbenchAttempt((attempt) => attempt + 1)}>{t('common.retry')}</Button>
-          )}
+        <div className="flex flex-1 items-center justify-center">
+          {failed
+            ? <ErrorState title={t('app.workbenchFailedTitle')} message={t('app.workbenchFailed', { message: workbenchFailure.message })} action={<Button onClick={() => setWorkbenchAttempt((attempt) => attempt + 1)}>{t('common.retry')}</Button>} />
+            : <LoadingState label={t('app.workbenchLoading')} />}
         </div>
       </div>
     );

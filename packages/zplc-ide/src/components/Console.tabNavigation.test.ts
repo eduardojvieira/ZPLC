@@ -115,7 +115,7 @@ describe('Console tab boundary', () => {
 
     expect(source).toContain('Live ST diagnostics · not build evidence');
     expect(source).toContain('Latest build diagnostics');
-    expect(source).toContain('Build to check project diagnostics');
+    expect(source).toContain("t('panel.problems.empty.unchecked')");
     expect(source).toContain('stBufferDiagnostics.compilerRunId === compilerRunId');
   });
 

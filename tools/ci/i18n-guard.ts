@@ -130,7 +130,7 @@ export function ratchetOffenders(files: readonly SourceFile[], offenders: readon
 /** Names and technical words that keep their capital inside a sentence, in both languages. */
 export const PROPER_NOUNS: ReadonlySet<string> = new Set([
   'ZPLC', 'Studio', 'Learn', 'Tests', 'English', 'Español', 'GitHub', 'Modbus', 'MQTT', 'Zephyr', 'Windows', 'macOS', 'Linux',
-  'Electron', 'Raspberry', 'Pi', 'Pico', 'Arduino', 'Docusaurus', 'AppImage', 'Setup', 'Portable',
+  'Electron', 'Raspberry', 'Pi', 'Pico', 'Arduino', 'Docusaurus', 'AppImage', 'Setup', 'Portable', 'DevKitC', 'Opta', 'WiFi',
 ]);
 export const INTERNAL_TERMS: readonly string[] = ['candidate', 'link zplc.json', 'stopgap', 'candidato', 'vincular zplc.json'];
 
