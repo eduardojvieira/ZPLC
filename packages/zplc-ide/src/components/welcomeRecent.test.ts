@@ -1,7 +1,11 @@
 import { describe, expect, it } from 'bun:test';
 
 import type { RecentProject } from '../../electron/projectFilesProtocol';
-import { UNAVAILABLE_REASON, formatLastOpened, recentRows } from './welcomeRecent';
+import { en } from '../i18n/en';
+import { translatorFor } from '../i18n';
+import { formatLastOpened, recentRows } from './welcomeRecent';
+
+const UNAVAILABLE_REASON = en['welcome.recent.unavailable'];
 
 const NOW = Date.UTC(2026, 9, 9, 12, 0, 0);
 const MINUTE = 60_000;
@@ -53,5 +57,23 @@ describe('the rows of the Recent section (IDE-008)', () => {
 
   it('uses a generic name when the folder name is empty', () => {
     expect(recentRows([entry('', MINUTE)], NOW)[0]!.name).toBe('Project');
+  });
+});
+
+describe('UX-029 the Recent section speaks the language of the interface', () => {
+  it('UX-029 says the time in Spanish with the Spanish plural, and the month of an older date', () => {
+    const es = translatorFor('es');
+    expect(formatLastOpened(NOW, NOW, es)).toBe('hace un momento');
+    expect(formatLastOpened(NOW - MINUTE, NOW, es)).toBe('hace 1 minuto');
+    expect(formatLastOpened(NOW - 5 * MINUTE, NOW, es)).toBe('hace 5 minutos');
+    expect(formatLastOpened(NOW - 23 * HOUR, NOW, es)).toBe('hace 23 horas');
+    expect(formatLastOpened(NOW - DAY, NOW, es)).toBe('ayer');
+    expect(formatLastOpened(NOW - 6 * DAY, NOW, es)).toBe('hace 6 días');
+    expect(formatLastOpened(Date.UTC(2026, 3, 2, 8, 0, 0), NOW, es)).toBe('2 abr 2026');
+  });
+
+  it('UX-029 gives an unavailable folder the reason in Spanish', () => {
+    const [row] = recentRows([{ recentId: 'a', displayName: '', lastOpenedAt: NOW, available: false }], NOW, translatorFor('es'));
+    expect(row).toMatchObject({ name: 'Proyecto', reason: 'No se encontró la carpeta. Puede haberse movido o eliminado.' });
   });
 });

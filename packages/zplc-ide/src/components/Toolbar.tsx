@@ -40,6 +40,7 @@ import {
 import { useIDEStore } from '../store/useIDEStore';
 import { useActiveFileInfo, useToolbarState } from '../store/regionSubscriptions';
 import { useTheme } from '../hooks/useTheme';
+import { useT } from '../i18n';
 import { useDebugController } from '../hooks/useDebugController';
 import { ZPLC_CONSTANTS } from '@zplc/compiler';
 import type { DebugMap } from '../compiler';
@@ -82,6 +83,7 @@ interface ToolbarProps {
 // =============================================================================
 
 export function Toolbar({ debugController }: ToolbarProps) {
+  const { t } = useT();
   const {
     addConsoleEntry,
     addCompilerMessage,
@@ -768,10 +770,10 @@ export function Toolbar({ debugController }: ToolbarProps) {
   // ==========================================================================
 
   const themeOptions = [
-    { id: 'light' as const, label: 'Light', icon: Sun },
-    { id: 'dark' as const, label: 'Dark', icon: Moon },
-    { id: 'high-contrast' as const, label: 'High contrast', icon: Contrast },
-    { id: 'system' as const, label: 'System', icon: Monitor },
+    { id: 'light' as const, label: t('theme.light'), icon: Sun },
+    { id: 'dark' as const, label: t('theme.dark'), icon: Moon },
+    { id: 'high-contrast' as const, label: t('theme.highContrast'), icon: Contrast },
+    { id: 'system' as const, label: t('theme.system'), icon: Monitor },
   ];
 
   // Status text and color
@@ -822,13 +824,11 @@ export function Toolbar({ debugController }: ToolbarProps) {
 
   return (
     <>
-    <div role="toolbar" aria-label="Project operations" className={`h-12 bg-[var(--color-surface-800)] border-b border-[var(--color-surface-600)] flex items-center px-3 gap-1.5 ${isElectronMac ? 'pl-20' : ''}`}>
+    <div role="toolbar" aria-label={t('toolbar.label')} className={`h-12 bg-[var(--color-surface-800)] border-b border-[var(--color-surface-600)] flex items-center px-3 gap-1.5 ${isElectronMac ? 'pl-20' : ''}`}>
       {/* Logo */}
       <div className="flex items-center gap-2 mr-2">
-        <div className="w-7 h-7 bg-[var(--color-accent-blue)] rounded flex items-center justify-center font-bold text-white text-xs">
-          Z
-        </div>
-        <span className="font-semibold text-[var(--color-surface-100)] text-sm hidden sm:inline">ZPLC</span>
+        <div className="w-7 h-7 bg-[var(--color-accent-blue)] rounded flex items-center justify-center font-bold text-white text-xs">{t('toolbar.brandInitial')}</div>
+        <span className="font-semibold text-[var(--color-surface-100)] text-sm hidden sm:inline">{t('toolbar.brand')}</span>
       </div>
 
       {/* Separator */}
@@ -840,8 +840,8 @@ export function Toolbar({ debugController }: ToolbarProps) {
         onClick={() => { void handleSaveFile(); }}
         disabled={!activeFile}
         className="focus-ring p-2 rounded hover:bg-[var(--color-surface-700)] text-[var(--color-surface-200)] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-        aria-label="Save active file (Ctrl+S)"
-        title="Save (Ctrl+S)"
+        aria-label={t('toolbar.save.label')}
+        title={t('toolbar.save.title')}
       >
         <Save size={18} />
       </button>
@@ -855,11 +855,11 @@ export function Toolbar({ debugController }: ToolbarProps) {
           type="button"
           onClick={handleGenerateST}
           className="focus-ring flex items-center gap-1.5 px-2.5 py-1.5 rounded bg-purple-600 hover:bg-purple-500 text-white text-xs font-medium transition-colors"
-          aria-label="Generate Structured Text"
-          title="Generate Structured Text"
+          aria-label={t('toolbar.toSt.label')}
+          title={t('toolbar.toSt.label')}
         >
           <FileCode size={14} />
-          <span className="hidden md:inline">To ST</span>
+          <span className="hidden md:inline">{t('toolbar.toSt.text')}</span>
         </button>
       )}
 
@@ -870,30 +870,30 @@ export function Toolbar({ debugController }: ToolbarProps) {
           type="button"
           onClick={() => isCompileMenuOpen ? closeCompileMenu() : openCompileMenu()}
           className="focus-ring flex items-center gap-1.5 px-2.5 py-1.5 rounded bg-[var(--color-surface-700)] hover:bg-[var(--color-surface-600)] text-[var(--color-surface-100)] text-xs font-medium transition-colors"
-          aria-label="Build options"
+          aria-label={t('toolbar.build.label')}
           aria-haspopup="menu"
           aria-expanded={isCompileMenuOpen}
           aria-controls="toolbar-build-menu"
-          title="Build options"
+          title={t('toolbar.build.label')}
         >
           <Hammer size={14} />
-          <span>Build</span>
+          <span>{t('toolbar.build.text')}</span>
           <ChevronDown size={12} className={`transition-transform ${isCompileMenuOpen ? 'rotate-180' : ''}`} />
         </button>
 
         {isCompileMenuOpen && (
-          <div id="toolbar-build-menu" role="menu" aria-label="Build options" className="absolute left-0 top-full mt-1 py-1 w-44 bg-[var(--color-surface-700)] border border-[var(--color-surface-600)] rounded-lg shadow-lg z-50">
+          <div id="toolbar-build-menu" role="menu" aria-label={t('toolbar.build.label')} className="absolute left-0 top-full mt-1 py-1 w-44 bg-[var(--color-surface-700)] border border-[var(--color-surface-600)] rounded-lg shadow-lg z-50">
             <button
               ref={compileMenuFirstItemRef}
               type="button"
               role="menuitem"
               onClick={() => { void handleCompile(); }}
               className="focus-ring w-full flex items-center gap-2 px-3 py-2 text-sm text-[var(--color-surface-100)] hover:bg-[var(--color-surface-600)] transition-colors"
-              aria-label="Compile current project (Ctrl+B)"
+              aria-label={t('toolbar.compile.label')}
             >
               <Hammer size={14} />
-              <span>Compile</span>
-              <span className="ml-auto text-xs text-[var(--color-surface-400)]">Ctrl+B</span>
+              <span>{t('toolbar.compile.text')}</span>
+              <span className="ml-auto text-xs text-[var(--color-surface-400)]">{t('toolbar.compile.shortcut')}</span>
             </button>
             <div className="h-px bg-[var(--color-surface-600)] my-1" />
             <button
@@ -902,10 +902,10 @@ export function Toolbar({ debugController }: ToolbarProps) {
               onClick={handleDownloadBytecode}
               disabled={!hasCurrentCompileResult}
               className="focus-ring w-full flex items-center gap-2 px-3 py-2 text-sm text-[var(--color-surface-100)] hover:bg-[var(--color-surface-600)] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-              aria-label="Download current .zplc program"
+              aria-label={t('toolbar.download.label')}
             >
               <Download size={14} />
-              <span>Download .zplc</span>
+              <span>{t('toolbar.download.text')}</span>
             </button>
             <button
               type="button"
@@ -913,10 +913,10 @@ export function Toolbar({ debugController }: ToolbarProps) {
               onClick={handleViewAssembly}
               disabled={!hasCurrentCompileResult}
               className="focus-ring w-full flex items-center gap-2 px-3 py-2 text-sm text-[var(--color-surface-100)] hover:bg-[var(--color-surface-600)] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-              aria-label="View current assembly"
+              aria-label={t('toolbar.assembly.label')}
             >
               <FileCode size={14} />
-              <span>View Assembly</span>
+              <span>{t('toolbar.assembly.text')}</span>
             </button>
             <div className="h-px bg-[var(--color-surface-600)] my-1" />
             <ProjectExportItems />
@@ -928,7 +928,7 @@ export function Toolbar({ debugController }: ToolbarProps) {
       <div className="w-px h-6 bg-[var(--color-surface-600)]" />
 
       {/* Mode Toggle */}
-      <div role="group" aria-label="Execution mode" className="flex items-center bg-[var(--color-surface-700)] rounded overflow-hidden">
+      <div role="group" aria-label={t('toolbar.mode.label')} className="flex items-center bg-[var(--color-surface-700)] rounded overflow-hidden">
         <button
             type="button"
             onClick={() => { void handleExecutionModeChange(EXECUTION_MODE.SIMULATE); }}
@@ -937,12 +937,12 @@ export function Toolbar({ debugController }: ToolbarProps) {
             ? 'bg-[var(--color-accent-blue)] text-white'
             : 'text-[var(--color-surface-300)] hover:bg-[var(--color-surface-600)]'
             } disabled:opacity-50`}
-          aria-label="Simulation mode"
+          aria-label={t('toolbar.simulation.label')}
           aria-pressed={executionMode === EXECUTION_MODE.SIMULATE}
-          title="Simulation Mode (local native runtime)"
+          title={t('toolbar.simulation.title')}
         >
           <Cpu size={14} />
-          <span className="hidden sm:inline">Simulate</span>
+          <span className="hidden sm:inline">{t('toolbar.simulation.text')}</span>
         </button>
         <button
             type="button"
@@ -952,12 +952,12 @@ export function Toolbar({ debugController }: ToolbarProps) {
             ? 'bg-[var(--color-accent-blue)] text-white'
             : 'text-[var(--color-surface-300)] hover:bg-[var(--color-surface-600)]'
             } disabled:opacity-50`}
-          aria-label="Hardware mode"
+          aria-label={t('toolbar.hardware.label')}
           aria-pressed={executionMode === EXECUTION_MODE.HARDWARE}
-          title="Hardware Mode (Serial)"
+          title={t('toolbar.hardware.title')}
         >
           <Radio size={14} />
-          <span className="hidden sm:inline">Hardware</span>
+          <span className="hidden sm:inline">{t('toolbar.hardware.text')}</span>
         </button>
       </div>
 
@@ -978,8 +978,8 @@ export function Toolbar({ debugController }: ToolbarProps) {
               ? 'bg-cyan-600 hover:bg-cyan-500 text-white'
               : 'bg-[var(--color-accent-blue)] hover:bg-blue-500 text-white'
           } disabled:opacity-50`}
-          aria-label={isConnected ? 'Disconnect' : 'Connect'}
-          title={isConnected ? 'Disconnect' : 'Connect'}
+          aria-label={isConnected ? t('toolbar.disconnect') : t('toolbar.connect')}
+          title={isConnected ? t('toolbar.disconnect') : t('toolbar.connect')}
         >
           {isConnecting ? (
             <Loader2 size={14} className="animate-spin" />
@@ -990,7 +990,7 @@ export function Toolbar({ debugController }: ToolbarProps) {
           ) : (
             <Usb size={14} />
           )}
-          <span className="hidden md:inline">{isConnected ? 'Disconnect' : 'Connect'}</span>
+          <span className="hidden md:inline">{isConnected ? t('toolbar.disconnect') : t('toolbar.connect')}</span>
         </button>
 
         {/* Upload - only for hardware mode when connected */}
@@ -1000,11 +1000,11 @@ export function Toolbar({ debugController }: ToolbarProps) {
             onClick={() => { void handleUpload(); }}
             disabled={!hasCurrentCompileResult || controlsBusy}
             className="focus-ring flex items-center gap-1.5 px-2.5 py-1.5 rounded bg-[var(--color-surface-700)] hover:bg-[var(--color-surface-600)] text-[var(--color-surface-200)] text-xs font-medium transition-colors disabled:opacity-40"
-            aria-label="Deploy current .zplc program to connected device; execution remains stopped"
-            title="Deploy current .zplc to device; execution remains stopped"
+            aria-label={t('toolbar.deploy.label')}
+            title={t('toolbar.deploy.title')}
           >
             {isUploading ? <Loader2 size={14} className="animate-spin" /> : <Upload size={14} />}
-            <span className="hidden md:inline">Deploy</span>
+            <span className="hidden md:inline">{t('toolbar.deploy.text')}</span>
           </button>
         )}
 
@@ -1019,13 +1019,11 @@ export function Toolbar({ debugController }: ToolbarProps) {
                 ? 'bg-amber-500 hover:bg-amber-400 text-black'
                 : 'bg-[var(--color-surface-700)] hover:bg-[var(--color-surface-600)] text-[var(--color-surface-400)]'
             }`}
-            aria-label={mpeekEnabled ? 'Disable inline live preview' : 'Enable inline live preview'}
-            title={mpeekEnabled
-              ? 'Inline live preview enabled. Click to disable editor live preview.'
-              : 'Inline live preview disabled. Watch table still updates. Click to enable editor live preview.'}
+            aria-label={mpeekEnabled ? t('toolbar.live.disable') : t('toolbar.live.enable')}
+            title={mpeekEnabled ? t('toolbar.live.enabledTitle') : t('toolbar.live.disabledTitle')}
           >
             <Zap size={13} />
-            <span className="hidden lg:inline">Live</span>
+            <span className="hidden lg:inline">{t('toolbar.live.text')}</span>
           </button>
         )}
 
@@ -1043,11 +1041,11 @@ export function Toolbar({ debugController }: ToolbarProps) {
                 onClick={(event) => { void handlePause(event.detail === 0); }}
                 disabled={controlsBusy}
                 className="focus-ring flex items-center gap-1.5 px-2.5 py-1.5 rounded bg-amber-600 hover:bg-amber-500 text-white text-xs font-medium transition-colors"
-                aria-label="Pause (F6)"
-                title="Pause (F6)"
+                aria-label={t('toolbar.pause.label')}
+                title={t('toolbar.pause.label')}
               >
                 <Pause size={14} />
-                <span className="hidden sm:inline">Pause</span>
+                <span className="hidden sm:inline">{t('toolbar.pause.text')}</span>
               </button>
             ) : isPaused ? (
               <button
@@ -1056,11 +1054,11 @@ export function Toolbar({ debugController }: ToolbarProps) {
                 onClick={(event) => { void handleResume(event.detail === 0); }}
                 disabled={!canRunCurrentProgram(executionMode, hasCurrentCompileResult, programLoadState) || controlsBusy}
                 className="focus-ring flex items-center gap-1.5 px-2.5 py-1.5 rounded bg-green-600 hover:bg-green-500 text-white text-xs font-medium transition-colors"
-                aria-label="Resume (F5)"
-                title="Resume (F5)"
+                aria-label={t('toolbar.resume.label')}
+                title={t('toolbar.resume.label')}
               >
                 <Play size={14} />
-                <span className="hidden sm:inline">Resume</span>
+                <span className="hidden sm:inline">{t('toolbar.resume.text')}</span>
               </button>
             ) : (
               <button
@@ -1069,11 +1067,11 @@ export function Toolbar({ debugController }: ToolbarProps) {
                 onClick={(event) => { void handleStart(event.detail === 0); }}
                 disabled={!canRunCurrentProgram(executionMode, hasCurrentCompileResult, programLoadState) || controlsBusy}
                 className="focus-ring flex items-center gap-1.5 px-2.5 py-1.5 rounded bg-green-600 hover:bg-green-500 text-white text-xs font-medium transition-colors disabled:opacity-40"
-                aria-label="Run (F5)"
-                title="Run (F5)"
+                aria-label={t('toolbar.run.label')}
+                title={t('toolbar.run.label')}
               >
                 <Play size={14} />
-                <span className="hidden sm:inline">Run</span>
+                <span className="hidden sm:inline">{t('toolbar.run.text')}</span>
               </button>
             )}
 
@@ -1084,8 +1082,8 @@ export function Toolbar({ debugController }: ToolbarProps) {
                 onClick={() => { void handleStep(); }}
                 disabled={!canRunCurrentProgram(executionMode, hasCurrentCompileResult, programLoadState) || controlsBusy}
                 className="focus-ring flex items-center gap-1.5 px-2 py-1.5 rounded bg-[var(--color-surface-700)] hover:bg-[var(--color-surface-600)] text-[var(--color-surface-200)] text-xs font-medium transition-colors"
-                aria-label="Step one cycle (F10)"
-                title="Step one cycle (F10)"
+                aria-label={t('toolbar.step.label')}
+                title={t('toolbar.step.label')}
               >
                 <SkipForward size={14} />
               </button>
@@ -1098,8 +1096,8 @@ export function Toolbar({ debugController }: ToolbarProps) {
                 onClick={() => { void handleStop(); }}
                 disabled={controlsBusy}
                 className="focus-ring flex items-center gap-1.5 px-2.5 py-1.5 rounded bg-red-600 hover:bg-red-500 text-white text-xs font-medium transition-colors"
-                aria-label="Stop (Shift+F5)"
-                title="Stop (Shift+F5)"
+                aria-label={t('toolbar.stop.label')}
+                title={t('toolbar.stop.label')}
               >
                 <Square size={14} />
               </button>
@@ -1111,8 +1109,8 @@ export function Toolbar({ debugController }: ToolbarProps) {
               onClick={() => { void handleReset(); }}
               disabled={controlsBusy}
               className="focus-ring flex items-center gap-1.5 px-2 py-1.5 rounded bg-[var(--color-surface-700)] hover:bg-[var(--color-surface-600)] text-[var(--color-surface-200)] text-xs font-medium transition-colors"
-              aria-label="Reset runtime (F8)"
-              title="Reset (F8)"
+              aria-label={t('toolbar.reset.label')}
+              title={t('toolbar.reset.title')}
             >
               <RotateCcw size={14} />
             </button>
@@ -1133,17 +1131,17 @@ export function Toolbar({ debugController }: ToolbarProps) {
           type="button"
           onClick={() => isThemeMenuOpen ? closeThemeMenu() : openThemeMenu()}
           className="focus-ring flex items-center gap-1 p-1.5 rounded hover:bg-[var(--color-surface-700)] text-[var(--color-surface-200)] transition-colors"
-          aria-label="Theme options"
+          aria-label={t('toolbar.theme.label')}
           aria-haspopup="menu"
           aria-expanded={isThemeMenuOpen}
           aria-controls="toolbar-theme-menu"
-          title={`Theme: ${theme}`}
+          title={t('toolbar.theme.title', { theme: themeOptions.find((option) => option.id === theme)?.label ?? theme })}
         >
           {isDark ? <Moon size={16} /> : <Sun size={16} />}
         </button>
 
         {isThemeMenuOpen && (
-          <div id="toolbar-theme-menu" role="menu" aria-label="Theme options" className="absolute right-0 top-full mt-1 py-1 w-32 bg-[var(--color-surface-700)] border border-[var(--color-surface-600)] rounded-lg shadow-lg z-50">
+          <div id="toolbar-theme-menu" role="menu" aria-label={t('toolbar.theme.label')} className="absolute right-0 top-full mt-1 py-1 w-32 bg-[var(--color-surface-700)] border border-[var(--color-surface-600)] rounded-lg shadow-lg z-50">
             {themeOptions.map((option) => {
               const Icon = option.icon;
               const isActive = theme === option.id;
@@ -1154,7 +1152,7 @@ export function Toolbar({ debugController }: ToolbarProps) {
                   type="button"
                   role="menuitemradio"
                   aria-checked={isActive}
-                  aria-label={`Use ${option.label.toLowerCase()} theme`}
+                  aria-label={t('toolbar.theme.use', { theme: option.label.toLowerCase() })}
                   onClick={() => { setTheme(option.id); closeThemeMenu(true); }}
                   className={`focus-ring w-full flex items-center gap-2 px-3 py-1.5 text-xs transition-colors ${isActive
                     ? 'bg-[var(--color-accent-blue)] text-white'
@@ -1175,8 +1173,9 @@ export function Toolbar({ debugController }: ToolbarProps) {
         type="button"
         onClick={toggleSettings}
         className="focus-ring p-1.5 rounded hover:bg-[var(--color-surface-700)] text-[var(--color-surface-200)] transition-colors"
-        aria-label="Project Settings"
-        title="Project Settings"
+        aria-label={t('toolbar.settings')}
+        title={t('toolbar.settings')}
+        data-project-settings
       >
         <Settings size={16} />
       </button>

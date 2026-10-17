@@ -145,7 +145,7 @@ export function midSentenceCapitals(text: string): string[] {
     if (/^["“«`]/.test(word)) return; // the label of a control or a file, quoted
     const bare = word.replace(/^[("'`¿¡]+|[)"'`.,;:?!…]+$/g, '');
     if (!/^\p{Lu}/u.test(bare)) return;
-    if (/^\p{Lu}+$/u.test(bare) || /[\d./_\\-]/.test(bare)) return; // an acronym (ST, USB) or a code token (zplc.json, I/O)
+    if (/^\p{Lu}+$/u.test(bare) || /[\d./_\\+-]/.test(bare)) return; // an acronym (ST, USB), a code token (zplc.json, I/O) or a key combination (Ctrl+S)
     if (PROPER_NOUNS.has(bare)) return;
     found.push(bare);
   });

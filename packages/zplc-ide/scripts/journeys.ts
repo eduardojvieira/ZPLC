@@ -1276,7 +1276,7 @@ export const JOURNEYS: Journey[] = [
       await openFolder(app, project);
       await openFile(app, 'src/Motor.st');
       assert(JSON.stringify(await editorOptions(app)) === JSON.stringify({ fontSize: 14, tabSize: 4 }), `The editor should start at 14 px and 4 spaces: ${JSON.stringify(await editorOptions(app))}`);
-      await app.click(button('Project Settings'), 'the Project Settings button');
+      await app.click(button('Project settings'), 'the Project settings button');
       await app.until('the preferences in the settings tab', async () => await app.visible(css('[data-app-preferences]')) || undefined);
       await choose(app, '[data-setting="editorFontSize"]', '20 px');
       await choose(app, '[data-setting="editorTabSize"]', '2 spaces');
@@ -1858,7 +1858,7 @@ export const JOURNEYS: Journey[] = [
       assert(!await has(VISUAL_EDITOR) && !await has(SETTINGS), 'A Structured Text file loaded a visual editor or the settings.');
 
       // The settings load when they are opened.
-      await app.click(button('Project Settings'), 'the Project Settings button');
+      await app.click(button('Project settings'), 'the Project settings button');
       await app.until('the settings', async () => await has(SETTINGS) && await app.visible(css('[data-app-preferences]')) || undefined);
     },
   },
@@ -2487,7 +2487,7 @@ export const JOURNEYS: Journey[] = [
       manifest.io.outputs[1]!.address = '%QX0.6';
       writeFileSync(manifestPath, JSON.stringify(manifest, null, 2));
       await openFolder(app, project);
-      await app.click(button('Project Settings'), 'the Project Settings button');
+      await app.click(button('Project settings'), 'the Project settings button');
 
       // The I/O Mapping section is open with the settings. The editor lists what the board has, with the pin names
       // printed on it, the on-board LED among them.

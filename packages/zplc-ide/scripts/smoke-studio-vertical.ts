@@ -948,7 +948,7 @@ async function main(): Promise<void> {
     const body = await text();
     assert(!body.includes('opaque-workspace-capability') && !body.includes('do-not-render'), 'Opaque token or secret reached DOM');
 
-    const settingsOpened = await page().evaluate(`(() => { const button = document.querySelector('button[title="Project Settings"]'); if (!button) return false; button.click(); return true; })()`);
+    const settingsOpened = await page().evaluate(`(() => { const button = document.querySelector('button[data-project-settings]'); if (!button) return false; button.click(); return true; })()`);
     assert(settingsOpened === true, 'Could not open Project Settings');
     await waitFor('Project Settings', async () => (await text()).includes('Project Settings') ? true : undefined);
     await page().evaluate(`import('/src/store/useIDEStore.ts').then(({ useIDEStore }) => { const state = useIDEStore.getState(); window.__zplcSmoke.taskLimitOriginalConfig = state.projectConfig; window.__zplcSmoke.taskLimitSeeded = Boolean(state.projectConfig); if (state.projectConfig) useIDEStore.setState({ projectConfig: { ...state.projectConfig, tasks: Array.from({ length: 16 }, (_, index) => ({ name: 'Task' + (index + 1), trigger: 'cyclic', interval: 100, priority: 5, programs: [] })) } }); })`);
@@ -998,7 +998,7 @@ async function main(): Promise<void> {
     assert(await page().evaluate(`document.activeElement?.id === 'editor-tab-settings'`) === true, 'Terminal build focus recovery must not override a later Settings focus');
     await press('ArrowRight');
     await waitFor('settings keyboard file selection', async () => await page().evaluate(`document.activeElement?.id === 'editor-tab-aux-st' && document.getElementById('editor-tab-aux-st')?.getAttribute('aria-selected') === 'true' && !document.getElementById('editor-tab-settings') ? true : undefined`) === true ? true : undefined);
-    await page().evaluate(`document.querySelector('button[title="Project Settings"]')?.click()`);
+    await page().evaluate(`document.querySelector('button[data-project-settings]')?.click()`);
     await waitFor('settings reopened', async () => await page().evaluate(`document.getElementById('editor-tab-settings') ? true : undefined`) === true ? true : undefined);
     await page().evaluate(`document.querySelector('button[aria-label="Close Settings"]')?.click()`);
     await waitFor('settings close focus recovery', async () => await page().evaluate(`document.activeElement?.id === 'editor-tab-aux-st' && document.getElementById('editor-tab-aux-st')?.getAttribute('aria-selected') === 'true' ? true : undefined`) === true ? true : undefined);
@@ -1023,7 +1023,7 @@ async function main(): Promise<void> {
     assert(burstUndo === true, 'Two Ctrl+Z events in one task must traverse C → B → A');
     const burstRedo = await page().evaluate(`(() => { const wrapper = document.querySelector('[role="toolbar"][aria-label="Visual editor history"]')?.parentElement; const first = new KeyboardEvent('keydown', { key: 'z', ctrlKey: true, shiftKey: true, bubbles: true, cancelable: true }); const second = new KeyboardEvent('keydown', { key: 'z', ctrlKey: true, shiftKey: true, bubbles: true, cancelable: true }); wrapper?.dispatchEvent(first); wrapper?.dispatchEvent(second); return first.defaultPrevented && second.defaultPrevented && window.__zplcSmoke.getFileContent?.('motor-ld') === ${JSON.stringify(rungTwo)}; })()`);
     assert(burstRedo === true, 'Two Ctrl+Shift+Z events in one task must traverse A → B → C');
-    await page().evaluate(`document.querySelector('button[title="Project Settings"]')?.click()`);
+    await page().evaluate(`document.querySelector('button[data-project-settings]')?.click()`);
     await waitFor('settings over LD', async () => await page().evaluate(`document.getElementById('editor-tab-settings') ? true : undefined`) === true ? true : undefined);
     assert(await page().evaluate(`(() => { const event = new KeyboardEvent('keydown', { key: 'z', ctrlKey: true, bubbles: true, cancelable: true }); document.getElementById('editor-panel')?.dispatchEvent(event); return !event.defaultPrevented && window.__zplcSmoke.getFileContent?.('motor-ld') === ${JSON.stringify(rungTwo)}; })()`) === true, 'Settings must not receive visual undo shortcuts from an underlying LD tab');
     await page().evaluate(`document.querySelector('button[aria-label="Close Settings"]')?.click()`);
