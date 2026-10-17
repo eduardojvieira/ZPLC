@@ -550,7 +550,7 @@ async function main(): Promise<void> {
     await page().evaluate(pageSeed(golden, compileEnvelope));
     await waitFor('renderer seed', async () => await page().evaluate('window.__zplcSmoke?.ready ? true : undefined') === true ? true : undefined);
     await waitFor('Studio toolbar', async () => await page().evaluate("document.querySelectorAll('button').length > 0 ? true : undefined") === true ? true : undefined);
-    assert(await page().evaluate(`(() => { const bar = document.querySelector('[aria-label="Operational status"]'); const live = bar?.querySelectorAll('[role="status"][aria-live="polite"][aria-atomic="true"]') ?? []; return Boolean(bar) && bar?.textContent?.includes('SIMULATION') && bar?.textContent?.includes('No runtime session') && bar.getBoundingClientRect().width <= 1366 && !bar?.hasAttribute('aria-live') && live.length === 1 && !live[0]?.textContent?.includes('cycles') && !live[0]?.textContent?.includes('overruns'); })()`) === true, 'Operational status must isolate its polite live announcement at 1366x768');
+    assert(await page().evaluate(`(() => { const bar = document.querySelector('[aria-label="Operational status"]'); const live = bar?.querySelectorAll('[role="status"][aria-live="polite"][aria-atomic="true"]') ?? []; return Boolean(bar) && bar?.textContent?.includes('SIMULATION') && bar?.textContent?.includes('No runtime session') && bar.getBoundingClientRect().width <= 1366 && !bar?.hasAttribute('aria-live') && live.length === 2 && [...live].some((region) => region.getAttribute('data-connection') !== null) && [...live].every((region) => !region.textContent?.includes('cycles') && !region.textContent?.includes('overruns')); })()`) === true, 'Operational status must announce only the connection and the state, and no counters, at 1366x768');
     if (reviewDir) {
       await captureReviewScreens(page(), reviewDir);
       await navigate('review reset document load');
@@ -714,7 +714,7 @@ async function main(): Promise<void> {
     });
     // Closing a tab with unsaved changes asks first (IDE-005): Motor.st is seeded modified, so the question comes up and Cancel keeps the tab.
     await page().evaluate(`document.querySelector('button[aria-label="Close Motor.st"]')?.click()`);
-    await waitFor('unsaved tab question', async () => await page().evaluate(`document.querySelector('[data-unsaved-changes-dialog]')?.closest('[role="dialog"]')?.textContent?.includes('Unsaved changes in this tab') && document.querySelector('[data-unsaved-changes-dialog]')?.textContent?.includes('Motor.st') ? true : undefined`) === true ? true : undefined);
+    await waitFor('unsaved tab question', async () => await page().evaluate(`document.querySelector('[data-unsaved-changes-dialog]')?.closest('[role="alertdialog"]')?.textContent?.includes('Unsaved changes in this tab') && document.querySelector('[data-unsaved-changes-dialog]')?.textContent?.includes('Motor.st') ? true : undefined`) === true ? true : undefined);
     await click('Cancel');
     await waitFor('unsaved tab question closed', async () => await page().evaluate(`!document.querySelector('[data-unsaved-changes-dialog]') && window.__zplcSmoke.getState?.().activeFileId === 'motor-st' && window.__zplcSmoke.getState?.().openTabs.includes('motor-st') ? true : undefined`) === true ? true : undefined);
     // With nothing unsaved the tab closes at once and focus moves to the next tab. The buffer is made clean the way a save does, and stays loaded.
@@ -1038,23 +1038,23 @@ async function main(): Promise<void> {
     assert(await page().evaluate(`Boolean(document.querySelector('button[aria-label="Close project"]'))`) === true, 'Close Project control is unavailable');
     await page().evaluate(`document.querySelector('button[aria-label="Close project"]')?.focus(); document.querySelector('button[aria-label="Close project"]')?.click()`);
     await Bun.sleep(100);
-    const closeDialog = await page().evaluate(`(() => { const dialog = document.querySelector('[role="dialog"]'); return { dialog: dialog?.textContent ?? null, project: document.querySelector('button[aria-label="Close project"]') !== null }; })()`) as { dialog: string | null; project: boolean };
+    const closeDialog = await page().evaluate(`(() => { const dialog = document.querySelector('[role="alertdialog"]'); return { dialog: dialog?.textContent ?? null, project: document.querySelector('button[aria-label="Close project"]') !== null }; })()`) as { dialog: string | null; project: boolean };
     assert(closeDialog.dialog?.includes('Discard unsaved changes?'), `Unsaved close confirmation did not open: ${JSON.stringify(closeDialog)}`);
-    assert(await page().evaluate(`(() => { const dialog = document.querySelector('[role="dialog"]'); return dialog?.textContent?.includes('Changes to this project will be lost when it closes.') && [...dialog.querySelectorAll('button')].some((button) => button.textContent?.trim() === 'Continue editing') && [...dialog.querySelectorAll('button')].some((button) => button.textContent?.trim() === 'Save all and close') && [...dialog.querySelectorAll('button')].some((button) => button.textContent?.trim() === 'Discard changes and close'); })()`) === true, 'Unsaved close confirmation must explain the loss and offer save, discard and cancel');
-    assert(await page().evaluate(`(() => { const dialog = document.querySelector('[role="dialog"]'); return Boolean(dialog?.contains(document.activeElement)) && document.activeElement?.getAttribute('aria-label') === 'Close'; })()`) === true, 'Modal must initially focus a safe control inside the dialog');
+    assert(await page().evaluate(`(() => { const dialog = document.querySelector('[role="alertdialog"]'); return dialog?.textContent?.includes('Changes to this project will be lost when it closes.') && [...dialog.querySelectorAll('button')].some((button) => button.textContent?.trim() === 'Continue editing') && [...dialog.querySelectorAll('button')].some((button) => button.textContent?.trim() === 'Save all and close') && [...dialog.querySelectorAll('button')].some((button) => button.textContent?.trim() === 'Discard changes and close'); })()`) === true, 'Unsaved close confirmation must explain the loss and offer save, discard and cancel');
+    assert(await page().evaluate(`(() => { const dialog = document.querySelector('[role="alertdialog"]'); return Boolean(dialog?.contains(document.activeElement)) && document.activeElement?.textContent?.trim() === 'Continue editing'; })()`) === true, 'An alert dialog must start with focus on Cancel, inside the dialog');
     await page().command('Input.dispatchKeyEvent', { type: 'keyDown', key: 'Tab', code: 'Tab', modifiers: 8 });
     await page().command('Input.dispatchKeyEvent', { type: 'keyUp', key: 'Tab', code: 'Tab', modifiers: 8 });
-    assert(await page().evaluate(`document.activeElement?.textContent?.trim() === 'Discard changes and close'`) === true, 'Shift+Tab must wrap inside the dialog');
+    assert(await page().evaluate(`document.activeElement?.textContent?.trim() === 'Save all and close'`) === true, 'Shift+Tab must wrap inside the dialog');
     await press('Tab');
-    assert(await page().evaluate(`document.activeElement?.getAttribute('aria-label') === 'Close'`) === true, 'Tab must wrap inside the dialog');
+    assert(await page().evaluate(`document.activeElement?.textContent?.trim() === 'Continue editing'`) === true, 'Tab must wrap inside the dialog');
     await press('Tab');
-    assert(await page().evaluate(`document.activeElement?.textContent?.trim() === 'Continue editing'`) === true, 'Tab must stay within the dialog controls');
+    assert(await page().evaluate(`document.activeElement?.textContent?.trim() === 'Discard changes and close'`) === true, 'Tab must stay within the dialog controls');
     await press('Escape');
-    await waitFor('unsaved close cancellation focus recovery', async () => await page().evaluate(`!document.querySelector('[role="dialog"]') && document.activeElement?.getAttribute('aria-label') === 'Close Project' && window.__zplcSmoke.getState?.().activeFileId === 'aux-st' ? true : undefined`) === true ? true : undefined);
+    await waitFor('unsaved close cancellation focus recovery', async () => await page().evaluate(`!document.querySelector('[role="alertdialog"]') && document.activeElement?.getAttribute('aria-label') === 'Close Project' && window.__zplcSmoke.getState?.().activeFileId === 'aux-st' ? true : undefined`) === true ? true : undefined);
     await page().evaluate(`document.querySelector('button[aria-label="Close project"]')?.click()`);
-    await waitFor('unsaved close confirmation reopened', async () => await page().evaluate(`document.querySelector('[role="dialog"]') ? true : undefined`) === true ? true : undefined);
+    await waitFor('unsaved close confirmation reopened', async () => await page().evaluate(`document.querySelector('[role="alertdialog"]') ? true : undefined`) === true ? true : undefined);
     await click('Discard changes and close');
-    await waitFor('explicit unsaved project discard', async () => await page().evaluate(`!document.querySelector('[role="dialog"]') && !document.querySelector('button[aria-label="Close project"]') ? true : undefined`) === true ? true : undefined);
+    await waitFor('explicit unsaved project discard', async () => await page().evaluate(`!document.querySelector('[role="alertdialog"]') && !document.querySelector('button[aria-label="Close project"]') ? true : undefined`) === true ? true : undefined);
     assert([...browserErrors, ...page().errors].length === 0, `Browser errors: ${[...browserErrors, ...page().errors].join(' | ')}`);
     console.log('Studio renderer vertical smoke passed at 1366x768 (mock bridge backed by a real native POSIX Tool API result; not HIL).');
   } finally {

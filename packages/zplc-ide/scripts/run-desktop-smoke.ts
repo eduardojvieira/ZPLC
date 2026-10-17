@@ -89,8 +89,8 @@ async function showFile(cdp: Cdp, id: string): Promise<void> {
     return active === id && await monacoEval(cdp, 'return editor?.getModel()?.getValue();') === expected ? true : undefined;
   });
 }
-const dialogTitle = `document.querySelector('[data-unsaved-changes-dialog]')?.closest('[role="dialog"]')?.querySelector('h2')?.textContent ?? null`;
-const dialogButton = (label: string) => `(() => { const dialog = document.querySelector('[data-unsaved-changes-dialog]'); const button = [...(dialog?.querySelectorAll('button') ?? [])].find((item) => item.textContent === ${JSON.stringify(label)}); if (!button || button.disabled) return false; button.click(); return true; })()`;
+const dialogTitle = `document.querySelector('[data-unsaved-changes-dialog]')?.closest('[role="alertdialog"]')?.querySelector('h2')?.textContent ?? null`;
+const dialogButton = (label: string) => `(() => { const dialog = document.querySelector('[data-unsaved-changes-dialog]')?.closest('[role="alertdialog"]'); const button = [...(dialog?.querySelectorAll('button') ?? [])].find((item) => item.textContent === ${JSON.stringify(label)}); if (!button || button.disabled) return false; button.click(); return true; })()`;
 async function expectPrompt(cdp: Cdp, title: string): Promise<void> {
   await waitFor(`unsaved-changes prompt "${title}"`, async () => await cdp.evaluate(dialogTitle) === title ? true : undefined);
 }

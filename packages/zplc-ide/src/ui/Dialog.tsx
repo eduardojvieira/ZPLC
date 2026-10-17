@@ -150,18 +150,23 @@ export interface AlertDialogProps {
   open: boolean;
   title: ReactNode;
   description: ReactNode;
-  /** The name of the action, a verb phrase: "Stop PLC and deploy", never "OK". */
-  actionLabel: string;
-  cancelLabel?: string;
+  /** The name of the action, a verb phrase: "Stop PLC and deploy", never "OK". Null when there is nothing to confirm and the dialog only informs. */
+  actionLabel: string | null;
+  /** Always given by the caller, in the language of the page: the kit has no catalogue of its own. */
+  cancelLabel: string;
+  /** A second way forward, between Cancel and the action: "Discard changes" beside "Save all". */
+  secondary?: { label: string; onSelect: () => void; destructive?: boolean };
   /** Styles the action as destructive. */
   destructive?: boolean;
+  /** The width; a short question is small, a comparison table is large. */
+  size?: DialogSize;
   onAction: () => void;
   onCancel: () => void;
   busy?: boolean;
   children?: ReactNode;
 }
 
-export function AlertDialog({ open, title, description, actionLabel, cancelLabel = 'Cancel', destructive = false, onAction, onCancel, busy = false, children }: AlertDialogProps) {
+export function AlertDialog({ open, title, description, actionLabel, cancelLabel, secondary, destructive = false, size = 'sm', onAction, onCancel, busy = false, children }: AlertDialogProps) {
   const cancel = useRef<HTMLButtonElement>(null);
   return (
     <Dialog
@@ -169,7 +174,7 @@ export function AlertDialog({ open, title, description, actionLabel, cancelLabel
       onClose={() => { if (!busy) onCancel(); }}
       title={title}
       description={description}
-      size="sm"
+      size={size}
       role="alertdialog"
       closeButton={false}
       dismissOnScrim={false}
@@ -177,7 +182,8 @@ export function AlertDialog({ open, title, description, actionLabel, cancelLabel
       footer={(
         <>
           <Button ref={cancel} onClick={onCancel} disabled={busy}>{cancelLabel}</Button>
-          <Button variant={destructive ? 'danger' : 'primary'} onClick={onAction} disabled={busy}>{actionLabel}</Button>
+          {secondary && <Button variant={secondary.destructive ? 'danger' : 'secondary'} onClick={secondary.onSelect} disabled={busy}>{secondary.label}</Button>}
+          {actionLabel !== null && <Button variant={destructive ? 'danger' : 'primary'} onClick={onAction} disabled={busy}>{actionLabel}</Button>}
         </>
       )}
     >

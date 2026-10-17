@@ -203,8 +203,8 @@ const watchRow = (name: string) => `[...document.querySelectorAll('tbody tr')].f
 const watchValue = (app: App, name: string) => app.eval<string | null>(`${watchRow(name)}?.children[1]?.innerText.trim() ?? null`);
 
 /** The prompt that asks what to do with unsaved changes, by its title; null when none is open. */
-const dialogTitle = (app: App) => app.eval<string | null>(`document.querySelector('[data-unsaved-changes-dialog]')?.closest('[role="dialog"]')?.querySelector('h2')?.textContent ?? null`);
-const dialogChoice = (label: string) => `(() => { const dialog = document.querySelector('[data-unsaved-changes-dialog]'); return [...(dialog?.querySelectorAll('button') ?? [])].find((item) => item.textContent === ${JSON.stringify(label)}); })()`;
+const dialogTitle = (app: App) => app.eval<string | null>(`document.querySelector('[data-unsaved-changes-dialog]')?.closest('[role="alertdialog"]')?.querySelector('h2')?.textContent ?? null`);
+const dialogChoice = (label: string) => `(() => { const dialog = document.querySelector('[data-unsaved-changes-dialog]')?.closest('[role="alertdialog"]'); return [...(dialog?.querySelectorAll('button') ?? [])].find((item) => item.textContent === ${JSON.stringify(label)}); })()`;
 
 /** The sessions the app keeps under its user-data directory (the journey's private profile), read the way a maintainer would. */
 function savedSessions(root: string): Array<{ tabs: Array<{ path: string; line: number; column: number; scrollTop: number }>; activePath: string | null; panels: { editor: number; console: number; consoleCollapsed: boolean } | null }> {
@@ -1333,8 +1333,8 @@ export const JOURNEYS: Journey[] = [
       const file = join(project, 'src', 'Motor.st'); const original = disk(file);
       const edit = async () => { await openFile(app, 'src/Motor.st'); await cursorAtEndOfLine(app, 1); await app.type(EDIT); await app.until('the typed text', async () => (await editorText(app)).includes(EDIT) || undefined); };
       const welcome = async () => await app.until('the Welcome screen', async () => (await app.text()).includes('ZPLC Studio 2.0') && !await app.visible(toolbar) || undefined);
-      const questionTitle = () => app.eval<string | null>(`document.querySelector('[role="dialog"] h2')?.textContent ?? null`);
-      const choice = (label: string) => `[...document.querySelectorAll('[role="dialog"] button')].find((item) => item.textContent?.trim() === ${JSON.stringify(label)})`;
+      const questionTitle = () => app.eval<string | null>(`document.querySelector('[role="alertdialog"] h2')?.textContent ?? null`);
+      const choice = (label: string) => `[...document.querySelectorAll('[role="alertdialog"] button')].find((item) => item.textContent?.trim() === ${JSON.stringify(label)})`;
       const askToClose = async () => { await app.click(tab('Explorer', 'exact')); await app.click(button('Close project')); await app.until('the question before the project closes', async () => await questionTitle() === 'Discard unsaved changes?' || undefined); };
 
       // Cancel keeps the project and its changes.
@@ -1440,7 +1440,14 @@ export const JOURNEYS: Journey[] = [
       await app.until('the copy in the folder', async () => await app.visible(node('src/drivers/Drive_copy.st', 'file')) || undefined);
       assert(!existsSync(join(project, 'src', 'Drive_copy.st')) && existsSync(join(project, 'src', 'drivers', 'Drive_copy.st')), 'The copy was not moved on disk.');
       await contextMenu('src/drivers', 'dir', 'Delete folder');
-      await app.until('the confirmation', async () => (await app.text()).includes('Delete folder') && await app.visible(entryDialog) || undefined);
+      await app.until('the confirmation', async () => (await app.text()).includes('Delete folder') && await app.visible(css('[role="alertdialog"]')) || undefined);
+      // UX-020: the question starts on Cancel and Escape keeps the folder.
+      assert(await app.eval<boolean>(`document.activeElement?.textContent?.trim() === 'Cancel' && document.activeElement.closest('[role="alertdialog"]') !== null`), 'The delete confirmation must start with focus on Cancel.');
+      await app.press('Escape');
+      await app.until('the confirmation to close', async () => !await app.visible(css('[role="alertdialog"]')) || undefined);
+      assert(existsSync(join(project, 'src', 'drivers')), 'Cancelling the delete must keep the folder.');
+      await contextMenu('src/drivers', 'dir', 'Delete folder');
+      await app.until('the confirmation again', async () => await app.visible(css('[role="alertdialog"]')) || undefined);
       await app.click(button('Delete folder', 'prefix'), 'the Delete folder button');
       await app.until('the folder gone from the tree', async () => !await inTree('src/drivers', 'dir') || undefined);
       assert(!existsSync(join(project, 'src', 'drivers')), 'The folder is still on disk.');
@@ -2625,6 +2632,69 @@ export const JOURNEYS: Journey[] = [
       await app.until('the dialog to close', async () => !await app.visible(dialog) || undefined);
       await app.until('the application to be disconnected again', async () => await app.visible(button('Connect')) || undefined);
       assert(!await app.visible(button('Disconnect')), 'The application connected although the dialog was cancelled.');
+    },
+  },
+  {
+    // UX-019 and UX-020: the deploy dialog and the alert dialogs start with focus on Cancel, Escape cancels and a cancelled
+    // question leaves the running program alone. No hardware is involved: the dialog is asked for a deploy of a made-up device
+    // through the same host that the deploy handler uses, and what it shows and does is read from the window.
+    name: '44 The connection indicator, the deploy dialog and the alert dialogs', example: 'motor_start_stop', proves: [], partly: ['UX-018', 'UX-019', 'UX-020', 'COM-028'],
+    run: async (app, { project }) => {
+      const alert = css('[role="alertdialog"]');
+      const ask = (running: boolean, device: string) => app.eval(`(async () => {
+        const { confirmDeploy } = await import('/src/components/deployConfirm.tsx');
+        const facts = { project: { name: 'Pump station', board: 'STM32F746G Discovery', boardProfile: 'stm32f746g_disco/stm32f746xx', abi: { major: 1, minor: 0, draft: 6 }, sha256: 'a1b2c3d4e5f6a7b8c9d0', byteLength: 512, taskCount: 2 }, device: ${device}, declaredSafe: [], transfer: 'framed' };
+        window.__deployAnswer = 'asking';
+        confirmDeploy({ facts }, ${running}).then((answer) => { window.__deployAnswer = answer; });
+      })()`);
+      const matching = '{ board: "stm32f746g_disco", boardProfile: "stm32f746g_disco/stm32f746xx", zplcVersion: "1.0.0", zephyrVersion: "4.0.0", abi: { major: 1, minor: 0 }, draft: 6, maxArtifactBytes: 4096, maxTasks: 4 }';
+      const other = '{ board: "rpi_pico", boardProfile: "rpi_pico/rp2040", zplcVersion: "1.0.0", zephyrVersion: "4.0.0", abi: { major: 1, minor: 0 }, draft: 6, maxArtifactBytes: 4096, maxTasks: 4 }';
+      const answer = () => app.eval<unknown>('window.__deployAnswer');
+      const focusText = () => app.eval<string | null>(`document.activeElement?.closest('[role="alertdialog"]') ? document.activeElement.textContent?.trim() ?? null : null`);
+
+      await openFolder(app, project);
+      const built = await compile(app);
+      assert(built.kind === 'built', `The example does not build: ${built.message}`);
+      await connectAndRun(app);
+
+      // UX-018: the status bar says in words and icon that this is a simulation, not real hardware.
+      const indicator = await app.eval<{ state: string | null; text: string; icon: boolean }>(`(() => { const el = document.querySelector('[aria-label="Operational status"] [data-connection]'); return { state: el?.getAttribute('data-connection') ?? null, text: el?.textContent?.trim() ?? '', icon: Boolean(el?.querySelector('svg[aria-hidden="true"]')) }; })()`);
+      assert(indicator.state === 'simulation-native' && indicator.text === 'Simulation · native runtime' && indicator.icon, `The status bar must say that Studio is attached to the native simulation: ${JSON.stringify(indicator)}`);
+
+      // The question names its action by the effect and starts on Cancel.
+      await ask(true, matching);
+      await app.until('the deploy dialog', async () => await app.visible(alert) || undefined);
+      const shown = await app.eval<{ title: string; buttons: string[]; table: string; modal: boolean }>(`(() => { const dialog = document.querySelector('[role="alertdialog"]'); return { title: dialog.querySelector('h2')?.textContent ?? '', buttons: [...dialog.querySelectorAll('button')].map((b) => b.textContent.trim()), table: dialog.querySelector('table')?.innerText ?? '', modal: dialog.getAttribute('aria-modal') === 'true' }; })()`);
+      assert(shown.title === 'Deploy to the device?' && shown.modal, `The deploy dialog has no title or is not modal: ${JSON.stringify(shown)}`);
+      assert(JSON.stringify(shown.buttons) === JSON.stringify(['Cancel', 'Stop PLC and deploy']), `The deploy dialog must offer Cancel and the named action: ${JSON.stringify(shown.buttons)}`);
+      for (const row of ['Board', 'Board profile', 'Firmware version', 'ABI version', 'Program', 'Size', 'Tasks']) assert(shown.table.includes(row), `The deploy dialog does not compare ${row}: ${shown.table}`);
+      assert(shown.table.includes('Not reported by the device'), 'The deploy dialog must say what the device does not report.');
+      assert(await focusText() === 'Cancel', `Focus must start on Cancel, it is on ${JSON.stringify(await focusText())}`);
+
+      // Tab stays inside the dialog and Escape cancels, without touching the running program.
+      await app.press('Tab'); await app.press('Tab');
+      assert(await focusText() === 'Cancel', 'Tab must wrap inside the dialog.');
+      await app.press('Escape');
+      await app.until('the dialog to close', async () => !await app.visible(alert) || undefined);
+      assert(await answer() === false, `Escape must answer no, it answered ${JSON.stringify(await answer())}`);
+      assert(await app.visible(button('Stop (Shift+F5)', 'prefix')), 'A cancelled deploy question must leave the program running.');
+
+      // The action button answers yes, and Cancel answers no.
+      await ask(false, matching);
+      await app.until('the dialog again', async () => await app.visible(alert) || undefined);
+      assert(await app.eval<boolean>(`[...document.querySelectorAll('[role="alertdialog"] button')].some((b) => b.textContent.trim() === 'Deploy')`), 'A stopped PLC must be offered "Deploy".');
+      await app.click(button('Deploy', 'exact'), 'Deploy');
+      await app.until('the answer', async () => await answer() === true || undefined);
+
+      // A device that does not match cannot be confirmed: the rows say why and the only button is Close.
+      await ask(false, other);
+      await app.until('the blocked dialog', async () => await app.visible(alert) || undefined);
+      const blocked = await app.eval<{ title: string; buttons: string[]; mismatch: string }>(`(() => { const dialog = document.querySelector('[role="alertdialog"]'); return { title: dialog.querySelector('h2')?.textContent ?? '', buttons: [...dialog.querySelectorAll('button')].map((b) => b.textContent.trim()), mismatch: dialog.querySelector('[data-status="mismatch"]')?.innerText ?? '' }; })()`);
+      assert(blocked.title === 'Deploy blocked' && JSON.stringify(blocked.buttons) === JSON.stringify(['Close']), `A mismatch must block the deploy: ${JSON.stringify(blocked)}`);
+      assert(blocked.mismatch.includes('Does not match'), `A mismatched row must say so in words: ${JSON.stringify(blocked)}`);
+      await app.press('Escape');
+      await app.until('the blocked dialog to close', async () => !await app.visible(alert) || undefined);
+      assert(await answer() === false, 'A blocked deploy must never answer yes.');
     },
   },
   {

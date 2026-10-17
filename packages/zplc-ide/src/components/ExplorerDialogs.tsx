@@ -4,7 +4,7 @@
  * closing, so the user can correct the name or choose another folder. Escape and the backdrop cancel.
  */
 import { useState, type FormEvent } from 'react';
-import { Button, Select, TextField } from '../ui';
+import { AlertDialog, Button, Select, TextField } from '../ui';
 import { useT } from '../i18n';
 import { Modal } from './Modal';
 
@@ -12,12 +12,12 @@ const messageOf = (error: unknown) => (error instanceof Error ? error.message : 
 
 export interface FolderChoice { path: string; label: string }
 
-function Actions({ busy, submitLabel, onCancel, danger = false }: { busy: boolean; submitLabel: string; onCancel: () => void; danger?: boolean }) {
+function Actions({ busy, submitLabel, onCancel }: { busy: boolean; submitLabel: string; onCancel: () => void }) {
   const { t } = useT();
   return (
     <div className="flex justify-end gap-2 pt-5">
       <Button disabled={busy} onClick={onCancel}>{t('common.cancel')}</Button>
-      <Button type="submit" variant={danger ? 'danger' : 'primary'} disabled={busy}>{busy ? t('common.working') : submitLabel}</Button>
+      <Button type="submit" variant="primary" disabled={busy}>{busy ? t('common.working') : submitLabel}</Button>
     </div>
   );
 }
@@ -107,21 +107,25 @@ export function DeleteFolderDialog({ name, modifiedFiles, onConfirm, onCancel }:
 }) {
   const { t } = useT();
   const { busy, error, attempt } = useAttempt();
-  const submit = (event: FormEvent) => { event.preventDefault(); void attempt(onConfirm); };
   return (
-    <Modal isOpen onClose={() => { if (!busy) onCancel(); }} title={t('fileMenu.deleteFolder')} widthClass="max-w-sm" showCloseButton={!busy}>
-      <form className="p-4" onSubmit={submit} data-entry-dialog>
-        <p className="text-[var(--text-primary)]">{t('dialog.deleteFolder.confirm', { name })}</p>
-        <p className="mt-1 text-sm text-[var(--text-secondary)]">{t('dialog.deleteFolder.permanent')}</p>
-        {modifiedFiles.length > 0 && (
-          <div className="mt-3 text-sm text-[var(--color-accent-yellow)]">
-            <p>{t('dialog.deleteFolder.unsaved')}</p>
-            <ul className="mt-1 list-disc pl-5">{modifiedFiles.map((file) => <li key={file}>{file}</li>)}</ul>
-          </div>
-        )}
-        {error && <p role="alert" className="mt-2 text-sm text-[var(--color-accent-red)]">{error}</p>}
-        <Actions busy={busy} submitLabel={t('fileMenu.deleteFolder')} onCancel={onCancel} danger />
-      </form>
-    </Modal>
+    <AlertDialog
+      open
+      title={t('fileMenu.deleteFolder')}
+      description={`${t('dialog.deleteFolder.confirm', { name })} ${t('dialog.deleteFolder.permanent')}`}
+      cancelLabel={t('common.cancel')}
+      actionLabel={t('fileMenu.deleteFolder')}
+      destructive
+      busy={busy}
+      onAction={() => { void attempt(onConfirm); }}
+      onCancel={onCancel}
+    >
+      {modifiedFiles.length > 0 && (
+        <div className="text-sm text-[var(--color-accent-yellow)]">
+          <p>{t('dialog.deleteFolder.unsaved')}</p>
+          <ul className="mt-1 list-disc pl-5">{modifiedFiles.map((file) => <li key={file}>{file}</li>)}</ul>
+        </div>
+      )}
+      {error && <p role="alert" className="mt-2 text-sm text-[var(--color-accent-red)]">{error}</p>}
+    </AlertDialog>
   );
 }

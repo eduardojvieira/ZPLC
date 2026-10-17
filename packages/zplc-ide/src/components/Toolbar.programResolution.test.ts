@@ -80,30 +80,17 @@ describe('resolveProgramSource', () => {
 });
 
 describe('canonical workspace build failures', () => {
-  it('requires an admitted human confirmation for every hardware deploy and leaves cancellation inert', () => {
-    expect(toolbarSource).toContain('createHardwareDeployConfirmation');
-    expect(toolbarSource).toContain('const confirmation = await createHardwareDeployConfirmation');
-    expect(toolbarSource).toContain('if (!window.confirm(confirmation.message)) {');
-    expect(toolbarSource).toContain('const current = currentCompileResult();');
-    expect(toolbarSource).toContain('const deployProjectSession = useIDEStore.getState().projectSession;');
-    expect(toolbarSource).toContain('const deployTargetBoard = useIDEStore.getState().projectConfig?.target?.board;');
-    expect(toolbarSource).toContain('latest.projectSession !== deployProjectSession || latest.projectConfig?.target?.board !== deployTargetBoard');
-    expect(toolbarSource).toContain('projectBoard: deployTargetBoard');
-    expect(toolbarSource).toContain("message: 'Hardware deploy cancelled; no program was sent.'");
-    expect(toolbarSource.indexOf('if (!window.confirm(confirmation.message)) {')).toBeLessThan(toolbarSource.indexOf('await loadProgram(dataToUpload'));
-    expect(toolbarSource).toContain('programSendStarted && !preflightDenied');
+  it('sends every hardware deploy through the one flow that asks in the deploy dialog, and keeps no native confirm', () => {
+    // The behaviour (preflight, dialog, cancellation, stale project, transfer outcome) is tested in deployFlow.test.ts.
+    expect(toolbarSource).toContain('await performHardwareDeploy({');
+    expect(toolbarSource).not.toContain('window.confirm');
   });
 
-  it('does not label a denied fresh admission as an unknown device state', () => {
-    expect(toolbarSource).toContain("error instanceof DeviceAdmissionError && error.code !== DEVICE_ADMISSION_CODE.RESULT_UNKNOWN");
-    expect(toolbarSource).toContain("'Hardware deploy preflight failed. No program was sent.'");
-  });
-
-  it('claims hardware deploy synchronously before hashing or confirmation can yield', () => {
+  it('claims hardware deploy synchronously before hashing or the dialog can yield', () => {
     expect(toolbarSource).toContain('const uploadInFlightRef = useRef(false);');
     expect(toolbarSource).toContain('if (executionMode !== EXECUTION_MODE.HARDWARE || controlsBusy || uploadInFlightRef.current) return;');
     expect(toolbarSource).toContain('uploadInFlightRef.current = true;');
-    expect(toolbarSource.indexOf('uploadInFlightRef.current = true;')).toBeLessThan(toolbarSource.indexOf('await createHardwareDeployConfirmation'));
+    expect(toolbarSource.indexOf('uploadInFlightRef.current = true;')).toBeLessThan(toolbarSource.indexOf('await performHardwareDeploy({'));
     expect(toolbarSource).toContain('uploadInFlightRef.current = false;');
   });
   it('reveals Problems for real build failures without changing canonical precondition guidance', () => {

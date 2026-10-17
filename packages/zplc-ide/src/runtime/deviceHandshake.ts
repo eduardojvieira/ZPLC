@@ -210,7 +210,8 @@ export function parseDeviceSystemInfo(value: unknown): DeviceSystemInfo {
   return parseDeviceSystemInfoSnapshot(value) ?? fail(DEVICE_ADMISSION_CODE.HANDSHAKE_INVALID);
 }
 
-function readArtifactAbi(bytes: Uint8Array): { major: number; minor: number; draftCounter: number } {
+/** The ABI version and contract draft that an artifact was built for; refuses bytes that are not an artifact. */
+export function readArtifactAbi(bytes: Uint8Array): { major: number; minor: number; draftCounter: number } {
   if (bytes.byteLength < 8) fail(DEVICE_ADMISSION_CODE.ARTIFACT_INVALID);
   const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
   if (view.getUint32(0, true) !== ZPLC_CONSTANTS.MAGIC) fail(DEVICE_ADMISSION_CODE.ARTIFACT_INVALID);

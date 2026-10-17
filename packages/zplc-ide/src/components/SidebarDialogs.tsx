@@ -1,11 +1,8 @@
-/** The context menu and the confirmations of the Explorer: delete a file, and close the project with unsaved changes. */
+/** The context menu and the confirmations of the Explorer: delete a file, and close the project with unsaved changes (UX-020). */
 
-import { Trash2 } from 'lucide-react';
 import type { FileTreeNode } from '../types';
-import { ICON_SIZES } from '../theme/tokens';
-import { Button, PointMenu, type MenuItem } from '../ui';
+import { AlertDialog, PointMenu, type MenuItem } from '../ui';
 import { useT } from '../i18n';
-import { Modal } from './Modal';
 
 // =============================================================================
 // Context Menu
@@ -52,21 +49,19 @@ export interface DeleteModalProps {
 export function DeleteModal({ isOpen, fileName, isDeleting, error, onConfirm, onCancel }: DeleteModalProps) {
   const { t } = useT();
   return (
-    <Modal isOpen={isOpen} onClose={isDeleting ? () => {} : onCancel} title={t('deleteFile.title')} widthClass="max-w-sm" showCloseButton={!isDeleting}>
-      <div className="p-4">
-        <p className="mb-4 text-[var(--text-primary)]">
-          {t('deleteFile.confirm', { name: fileName })}
-        </p>
-        <p className="mb-4 text-sm text-[var(--text-secondary)]">
-          {t('deleteFile.permanent')}
-        </p>
-        {error && <p role="alert" aria-live="assertive" className="mb-4 text-sm text-[var(--color-accent-red)]">{error}</p>}
-        <div className="flex justify-end gap-2">
-          <Button onClick={onCancel} disabled={isDeleting}>{t('common.cancel')}</Button>
-          <Button variant="danger" onClick={onConfirm} disabled={isDeleting} icon={<Trash2 size={ICON_SIZES.sm} />}>{isDeleting ? t('common.deleting') : t('common.delete')}</Button>
-        </div>
-      </div>
-    </Modal>
+    <AlertDialog
+      open={isOpen}
+      title={t('deleteFile.title')}
+      description={`${t('deleteFile.confirm', { name: fileName })} ${t('deleteFile.permanent')}`}
+      cancelLabel={t('common.cancel')}
+      actionLabel={isDeleting ? t('common.deleting') : t('deleteFile.action')}
+      destructive
+      busy={isDeleting}
+      onAction={onConfirm}
+      onCancel={onCancel}
+    >
+      {error && <p role="alert" aria-live="assertive" className="text-sm text-[var(--color-accent-red)]">{error}</p>}
+    </AlertDialog>
   );
 }
 
@@ -81,17 +76,16 @@ export interface CloseProjectModalProps {
 export function CloseProjectModal({ isOpen, busy, onConfirm, onSave, onCancel }: CloseProjectModalProps) {
   const { t } = useT();
   return (
-    <Modal isOpen={isOpen} onClose={onCancel} title={t('closeProject.title')} widthClass="max-w-sm">
-      <div className="p-4">
-        <p className="text-[var(--text-primary)]">
-          {t('closeProject.body')}
-        </p>
-        <div className="flex justify-end gap-2 pt-5">
-          <Button onClick={onCancel}>{t('closeProject.continue')}</Button>
-          <Button variant="primary" disabled={busy} onClick={onSave}>{busy ? t('common.saving') : t('closeProject.saveAll')}</Button>
-          <Button variant="danger" disabled={busy} onClick={onConfirm}>{t('closeProject.discard')}</Button>
-        </div>
-      </div>
-    </Modal>
+    <AlertDialog
+      open={isOpen}
+      title={t('closeProject.title')}
+      description={t('closeProject.body')}
+      cancelLabel={t('closeProject.continue')}
+      secondary={{ label: t('closeProject.discard'), destructive: true, onSelect: onConfirm }}
+      actionLabel={busy ? t('common.saving') : t('closeProject.saveAll')}
+      busy={busy}
+      onAction={onSave}
+      onCancel={onCancel}
+    />
   );
 }
