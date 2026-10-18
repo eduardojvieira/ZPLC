@@ -138,11 +138,23 @@ html, body, #root {
   cursor: col-resize;
 }
 
-[data-separator="hover"],
-[data-separator="active"],
-[data-separator="focus"] {
+/* Three states a user can tell apart (UX-017): under the pointer a lighter bar with a stronger rule, while it is dragged the
+   accent fill, and with the keyboard focus the same focus ring as every other control. */
+[data-separator="hover"] {
+  background-color: var(--color-surface-500);
+  background-image: linear-gradient(var(--color-surface-300), var(--color-surface-300));
+}
+
+[data-separator="active"] {
   background-color: var(--color-accent-blue);
   background-image: none;
+}
+
+[data-separator="focus"],
+[data-separator]:focus-visible {
+  background-color: var(--color-surface-500);
+  outline: var(--focus-ring-width) solid var(--focus-ring-color);
+  outline-offset: 0;
 }
 
 [data-separator="disabled"] {

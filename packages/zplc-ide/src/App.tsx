@@ -16,7 +16,8 @@
  */
 
 import { useEffect, useState, type ComponentType } from 'react';
-import { Group, Panel, Separator, useGroupCallbackRef, usePanelCallbackRef } from 'react-resizable-panels';
+import { Group, Panel, useGroupCallbackRef, usePanelCallbackRef } from 'react-resizable-panels';
+import { PanelSeparator } from './components/PanelSeparator';
 import { WelcomeScreen } from './components/WelcomeScreen';
 import { CloseGuard } from './components/CloseGuard';
 import { SerialPortChooser } from './components/SerialPortChooser';
@@ -228,7 +229,7 @@ function App() {
             </ErrorBoundary>
           </Panel>
 
-          <Separator id="workspace-separator" aria-label={t('app.resize')} />
+          <PanelSeparator id="workspace-separator" label={t('app.resize')} group={groupPanel} leading="editor" trailing="console" />
 
           {/* Lower workbench panel */}
           <Panel
