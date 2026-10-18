@@ -6,6 +6,7 @@
  */
 
 import { useState, useRef, useEffect, useCallback, memo } from 'react';
+import { t } from '../../../i18n';
 
 interface NodeCommentProps {
   nodeId: string;
@@ -66,6 +67,7 @@ const NodeComment = memo(({ nodeId, comment, onChange, readOnly = false }: NodeC
     return (
       <div className="absolute top-full left-1/2 z-10 mt-1 w-[120px] -translate-x-1/2 px-1" onClick={(e) => e.stopPropagation()}>
         <input
+          aria-label={t('a11y.fbd.comment')}
           ref={inputRef}
           type="text"
           value={draft}

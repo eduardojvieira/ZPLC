@@ -15,6 +15,7 @@
 import { create } from 'zustand';
 
 import type { ConsoleTab } from '../types';
+import { announce } from '../utils/announce';
 
 export type NotificationKind = 'build' | 'save' | 'deploy' | 'connection' | 'tests';
 export type NotificationStatus = 'running' | 'success' | 'warning' | 'error' | 'cancelled';
@@ -109,15 +110,25 @@ interface NotificationState {
   clear(): void;
 }
 
+/**
+ * What a screen reader hears of a notification (UX-026): the title and detail, through the shared announcer. The list on
+ * screen has no live region of its own, because a region inserted together with its text is not reliably read; an error
+ * is a fault and is read at once.
+ */
+function say(entry: { status: NotificationStatus; title: string; detail?: string | undefined }): void {
+  announce([entry.title, entry.detail].filter(Boolean).join('. '), entry.status === 'error' ? 'assertive' : 'polite');
+}
+
 export const useNotifications = create<NotificationState>((set) => ({
   items: [],
   begin: (start) => {
     const id = crypto.randomUUID();
+    say({ status: 'running', title: start.title });
     set((state) => ({ items: beginNotification(state.items, start, id, Date.now()) }));
     return id;
   },
-  finish: (id, result) => set((state) => ({ items: finishNotification(state.items, id, result, Date.now()) })),
-  report: (result) => set((state) => ({ items: finishNotification(state.items, crypto.randomUUID(), result, Date.now()) })),
+  finish: (id, result) => { say(result); set((state) => ({ items: finishNotification(state.items, id, result, Date.now()) })); },
+  report: (result) => { say(result); set((state) => ({ items: finishNotification(state.items, crypto.randomUUID(), result, Date.now()) })); },
   dismiss: (id) => set((state) => ({ items: dismissNotification(state.items, id) })),
   expire: () => set((state) => { const items = expireNotifications(state.items, Date.now()); return items === state.items ? state : { items }; }),
   clear: () => set({ items: [] }),

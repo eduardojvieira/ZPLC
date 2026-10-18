@@ -38,6 +38,7 @@ import { useElementBreakpoints } from '../elementBreakpoints';
 import { parseElement, rungElement, type SourceElementId } from '../../models/sourceElements';
 import { getVisualSelection, setVisualSelection, useVisualFileKey } from '../visualSelection';
 import type { VisualGesture } from '../visualHistory';
+import { t } from '../../i18n';
 
 // =============================================================================
 // Props
@@ -105,6 +106,7 @@ function ElementProperties({ element, symbols = [], onChange, onClose }: Element
           <div>
             <label className="block text-xs text-[var(--text-tertiary)] mb-1">Variable</label>
             <input
+              aria-label={t('a11y.ld.variable')}
               type="text"
               value={variable}
               onChange={(e) => setVariable(e.target.value)}
@@ -123,6 +125,7 @@ function ElementProperties({ element, symbols = [], onChange, onClose }: Element
             <div>
               <label className="block text-xs text-[var(--text-tertiary)] mb-1">Instance Name</label>
               <input
+                aria-label={t('a11y.ld.fbInstance')}
                 type="text"
                 value={fbInstance}
                 onChange={(e) => setFbInstance(e.target.value)}
@@ -151,6 +154,7 @@ function ElementProperties({ element, symbols = [], onChange, onClose }: Element
         <div>
           <label className="block text-xs text-[var(--text-tertiary)] mb-1">Comment</label>
           <textarea
+            aria-label={t('a11y.ld.comment')}
             value={comment}
             onChange={(e) => setComment(e.target.value)}
             rows={2}

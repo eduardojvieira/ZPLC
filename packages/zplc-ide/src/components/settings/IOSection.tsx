@@ -11,6 +11,7 @@ import { BOARD_OPTIONS, getBoardIo } from '../../config/boardProfiles';
 import type { BoardChannel, BoardIoDescription } from '../../boards/boardIo';
 import { channelAt, channelsFor, mappingProblem, nextFreeChannel, type IoSection } from '../../boards/boardIoMapping';
 import type { SectionProps } from './settingsSectionProps';
+import { t } from '../../i18n';
 
 export function IOSection({ config, updateConfig }: SectionProps) {
   const io = config.io || { inputs: [], outputs: [] };
@@ -319,6 +320,7 @@ function IOTable({ items, onUpdate, onRemove, onMakeVirtual, section, boardIo, b
         >
           <div className="col-span-3">
             <input
+              aria-label={t('a11y.io.name', { row: index + 1 })}
               type="text"
               value={item.name}
               onChange={(e) => onUpdate(index, { name: e.target.value })}
@@ -347,6 +349,7 @@ function IOTable({ items, onUpdate, onRemove, onMakeVirtual, section, boardIo, b
               </select>
             ) : (
               <input
+                aria-label={t('a11y.io.address', { row: index + 1 })}
                 type="text"
                 value={item.address}
                 onChange={(e) => onUpdate(index, { address: e.target.value })}
@@ -357,6 +360,7 @@ function IOTable({ items, onUpdate, onRemove, onMakeVirtual, section, boardIo, b
           </div>
           <div className="col-span-1">
             <input
+              aria-label={t('a11y.io.channel', { row: index + 1 })}
               type="number"
               value={item.channel ?? ''}
               onChange={(e) => onUpdate(index, { channel: e.target.value ? parseInt(e.target.value) : undefined })}
@@ -373,6 +377,7 @@ function IOTable({ items, onUpdate, onRemove, onMakeVirtual, section, boardIo, b
               </span>
             ) : (
               <input
+                aria-label={t('a11y.io.pin', { row: index + 1 })}
                 type="number"
                 value={item.pin ?? ''}
                 onChange={(e) => onUpdate(index, { pin: e.target.value ? parseInt(e.target.value) : undefined })}
@@ -385,6 +390,7 @@ function IOTable({ items, onUpdate, onRemove, onMakeVirtual, section, boardIo, b
           </div>
           <div className="col-span-2">
             <select
+              aria-label={t('a11y.io.type', { row: index + 1 })}
               value={item.type || 'BOOL'}
               onChange={(e) => onUpdate(index, { type: e.target.value as 'BOOL' | 'INT' | 'REAL' })}
               className="w-full px-2 py-1 text-xs bg-[var(--color-surface-600)] border border-[var(--color-surface-500)] rounded text-[var(--color-surface-100)] focus:outline-none"
@@ -396,6 +402,7 @@ function IOTable({ items, onUpdate, onRemove, onMakeVirtual, section, boardIo, b
           </div>
           <div className="col-span-2">
             <input
+              aria-label={t('a11y.io.description', { row: index + 1 })}
               type="text"
               value={item.description || ''}
               onChange={(e) => onUpdate(index, { description: e.target.value || undefined })}

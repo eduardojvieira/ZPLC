@@ -418,3 +418,12 @@ Pause, resume and step keep the logical state of the program where it is, and St
 | Stop | Zeroed | Cleared | Every task is back at its entry point, and a scan that a breakpoint interrupted is discarded. |
 
 A fault clears the image and the forces as Stop does. On a board, Pause, Step and Stop also drive the physical outputs to their safe state, off. [Pause, resume, step and stop](../runtime/scheduler.md#pause-resume-step-and-stop) has the full table and the Zephyr tests behind it, run on `native_sim` and QEMU with no board measured. For the native simulation the checks are in `firmware/lib/zplc_core/tests/test_native_runtime_session.c`, where Stop also zeroes the input image.
+
+## Accessibility
+
+Studio is built so that its main path can be used with a keyboard and a screen reader. What the automated checks prove is stated here, and what they do not.
+
+- **Names.** Every field of a form has a label that a screen reader reads with it, and every button that shows only an icon has a name. A CI rule (the component-kit guard) fails the build for a field or an icon-only button without one, and a check in the running application lists any control without a name on the main screens.
+- **Announcements.** Studio keeps two hidden live regions for the whole window: a polite one for results and an assertive one for faults. The result of a build, a save, a deploy, a test run and a connection change is announced through them, with its detail, and so is a variable that is forced or released. An error, and a force that is no longer confirmed, is announced at once. Whether the program is running or stopped is read from the status bar, which keeps its own persistent status.
+- **Zoom.** Ctrl and plus, Ctrl and minus, and Ctrl and 0 (Cmd on macOS) enlarge, shrink and reset the page. They are in the **View** menu.
+- **What is checked.** Contrast is computed from the colours of the light, dark and high-contrast themes. These checks are structural and computed, not a test with a screen reader. Checking the main path with a screen reader on Windows and on macOS is a manual task that is done before the general release, and its result is recorded in the release checklist.

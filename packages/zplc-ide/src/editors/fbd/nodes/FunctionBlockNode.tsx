@@ -17,6 +17,7 @@ import { getDefaultPorts, isFunctionBlock, type FBDPort } from '../../../models/
 import NodeComment from './NodeComment';
 import { SignalValue } from '../../../ui';
 import { sampleTone, type SignalTone } from '../../../theme/signalTone';
+import { t } from '../../../i18n';
 
 interface FunctionBlockData {
   type: string;
@@ -151,6 +152,7 @@ if (!debugActive) {
           {/* Menu button */}
           {isFunctionBlock(type) && instanceName && (
             <button
+              aria-label={t('a11y.fbd.blockMenu')}
               onClick={(e) => { e.stopPropagation(); setShowMenu(!showMenu); }}
               className="focus-ring absolute right-1 top-1/2 -translate-y-1/2 p-0.5 rounded hover:bg-[color-mix(in_srgb,var(--text-primary)_12%,transparent)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
             >

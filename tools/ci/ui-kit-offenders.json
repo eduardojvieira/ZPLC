@@ -80,14 +80,6 @@
     "reason": "The I/O editor is owned by the I/O description work package (WP-44); it moves to the kit with it. The count was raised once, when that package was merged into the integration branch, and only shrinks from here."
   },
   {
-    "file": "packages/zplc-ide/src/components/settings/IOSection.tsx",
-    "rule": "unnamed-control",
-    "count": 6,
-    "requirement": "UX-026",
-    "added": "2026-10-11",
-    "reason": "The I/O editor is owned by the I/O description work package (WP-44); it moves to the kit with it. The count was raised once, when that package was merged into the integration branch, and only shrinks from here."
-  },
-  {
     "file": "packages/zplc-ide/src/components/Sidebar.tsx",
     "rule": "focus-override",
     "count": 2,
@@ -140,14 +132,6 @@
     "rule": "small-text",
     "count": 3,
     "requirement": "UX-006",
-    "added": "2026-10-11",
-    "reason": "A visual editor: owned by the editor work packages (the language service and editor writers, WP-45 for UX-009, UX-010 and UX-027). It moves to the kit and the tokens with the editor, not here."
-  },
-  {
-    "file": "packages/zplc-ide/src/editors/fbd/InstanceMonitor.tsx",
-    "rule": "unnamed-icon-button",
-    "count": 1,
-    "requirement": "UX-026",
     "added": "2026-10-11",
     "reason": "A visual editor: owned by the editor work packages (the language service and editor writers, WP-45 for UX-009, UX-010 and UX-027). It moves to the kit and the tokens with the editor, not here."
   },
@@ -208,14 +192,6 @@
     "reason": "A visual editor: owned by the editor work packages (the language service and editor writers, WP-45 for UX-009, UX-010 and UX-027). It moves to the kit and the tokens with the editor, not here."
   },
   {
-    "file": "packages/zplc-ide/src/editors/fbd/nodes/FunctionBlockNode.tsx",
-    "rule": "unnamed-icon-button",
-    "count": 1,
-    "requirement": "UX-026",
-    "added": "2026-10-11",
-    "reason": "A visual editor: owned by the editor work packages (the language service and editor writers, WP-45 for UX-009, UX-010 and UX-027). It moves to the kit and the tokens with the editor, not here."
-  },
-  {
     "file": "packages/zplc-ide/src/editors/fbd/nodes/LogicGateNode.tsx",
     "rule": "small-text",
     "count": 1,
@@ -268,14 +244,6 @@
     "rule": "title-attribute",
     "count": 1,
     "requirement": "UX-002",
-    "added": "2026-10-11",
-    "reason": "A visual editor: owned by the editor work packages (the language service and editor writers, WP-45 for UX-009, UX-010 and UX-027). It moves to the kit and the tokens with the editor, not here."
-  },
-  {
-    "file": "packages/zplc-ide/src/editors/fbd/nodes/NodeComment.tsx",
-    "rule": "unnamed-control",
-    "count": 1,
-    "requirement": "UX-026",
     "added": "2026-10-11",
     "reason": "A visual editor: owned by the editor work packages (the language service and editor writers, WP-45 for UX-009, UX-010 and UX-027). It moves to the kit and the tokens with the editor, not here."
   },
@@ -336,14 +304,6 @@
     "reason": "A visual editor: owned by the editor work packages (the language service and editor writers, WP-45 for UX-009, UX-010 and UX-027). It moves to the kit and the tokens with the editor, not here."
   },
   {
-    "file": "packages/zplc-ide/src/editors/ld/LDEditor.tsx",
-    "rule": "unnamed-control",
-    "count": 3,
-    "requirement": "UX-026",
-    "added": "2026-10-11",
-    "reason": "A visual editor: owned by the editor work packages (the language service and editor writers, WP-45 for UX-009, UX-010 and UX-027). It moves to the kit and the tokens with the editor, not here."
-  },
-  {
     "file": "packages/zplc-ide/src/editors/ld/LDRungGrid.tsx",
     "rule": "raw-button",
     "count": 1,
@@ -376,14 +336,6 @@
     "reason": "A visual editor: owned by the editor work packages (the language service and editor writers, WP-45 for UX-009, UX-010 and UX-027). It moves to the kit and the tokens with the editor, not here."
   },
   {
-    "file": "packages/zplc-ide/src/editors/ld/LDRungGrid.tsx",
-    "rule": "unnamed-control",
-    "count": 1,
-    "requirement": "UX-026",
-    "added": "2026-10-11",
-    "reason": "A visual editor: owned by the editor work packages (the language service and editor writers, WP-45 for UX-009, UX-010 and UX-027). It moves to the kit and the tokens with the editor, not here."
-  },
-  {
     "file": "packages/zplc-ide/src/editors/sfc/nodes/SFCStepNode.tsx",
     "rule": "raw-input",
     "count": 1,
@@ -408,14 +360,6 @@
     "reason": "A visual editor: owned by the editor work packages (the language service and editor writers, WP-45 for UX-009, UX-010 and UX-027). It moves to the kit and the tokens with the editor, not here."
   },
   {
-    "file": "packages/zplc-ide/src/editors/sfc/nodes/SFCStepNode.tsx",
-    "rule": "unnamed-control",
-    "count": 1,
-    "requirement": "UX-026",
-    "added": "2026-10-11",
-    "reason": "A visual editor: owned by the editor work packages (the language service and editor writers, WP-45 for UX-009, UX-010 and UX-027). It moves to the kit and the tokens with the editor, not here."
-  },
-  {
     "file": "packages/zplc-ide/src/editors/sfc/nodes/SFCTransitionNode.tsx",
     "rule": "raw-input",
     "count": 1,
@@ -436,14 +380,6 @@
     "rule": "title-attribute",
     "count": 1,
     "requirement": "UX-002",
-    "added": "2026-10-11",
-    "reason": "A visual editor: owned by the editor work packages (the language service and editor writers, WP-45 for UX-009, UX-010 and UX-027). It moves to the kit and the tokens with the editor, not here."
-  },
-  {
-    "file": "packages/zplc-ide/src/editors/sfc/nodes/SFCTransitionNode.tsx",
-    "rule": "unnamed-control",
-    "count": 1,
-    "requirement": "UX-026",
     "added": "2026-10-11",
     "reason": "A visual editor: owned by the editor work packages (the language service and editor writers, WP-45 for UX-009, UX-010 and UX-027). It moves to the kit and the tokens with the editor, not here."
   },

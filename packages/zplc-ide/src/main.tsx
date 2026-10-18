@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App.tsx'
 import { ErrorBoundary } from './components/ErrorBoundary.tsx'
+import { LiveRegions } from './ui'
 import { useIDEStore } from './store/useIDEStore.ts'
 
 const container = document.getElementById('root')!
@@ -23,6 +24,7 @@ if (import.meta.env.DEV && window.location.hash === '#ui-gallery') {
         recovery={{ label: 'Close project and discard changes', run: () => { useIDEStore.getState().closeProject({ discardUnsaved: true }); } }}
       >
         <App />
+        <LiveRegions />
       </ErrorBoundary>
     </StrictMode>,
   )

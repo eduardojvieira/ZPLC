@@ -17,6 +17,7 @@ import { useIDEStore } from '../../store/useIDEStore';
 import { getDefaultPorts } from '../../models/fbd';
 import { SignalValue } from '../../ui';
 import { sampleTone } from '../../theme/signalTone';
+import { t } from '../../i18n';
 
 // =============================================================================
 // Types
@@ -143,6 +144,7 @@ export function InstanceMonitor({
             <p className="text-[var(--text-secondary)] text-sm font-mono">{instanceName}</p>
           </div>
           <button
+            aria-label={t('a11y.fbd.closeMonitor')}
             onClick={onClose}
             className="focus-ring p-1 rounded hover:bg-[color-mix(in_srgb,var(--text-primary)_12%,transparent)] text-[var(--text-primary)] transition-colors"
           >

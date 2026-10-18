@@ -1,5 +1,6 @@
-import { afterEach, describe, expect, it } from 'bun:test';
+import { afterEach, beforeEach, describe, expect, it } from 'bun:test';
 
+import { announcementsSnapshot, resetAnnouncements } from '../utils/announce';
 import {
   NOTIFICATION_LIMIT,
   SUCCESS_VISIBLE_MS,
@@ -95,5 +96,31 @@ describe('the notification store (IDE-021)', () => {
   it('reports a result that had no running phase', () => {
     useNotifications.getState().report({ kind: 'save', status: 'error', title: 'Could not save Motor.st', details: 'output' });
     expect(useNotifications.getState().items[0]).toMatchObject({ kind: 'save', status: 'error', title: 'Could not save Motor.st' });
+  });
+});
+
+describe('what the notification store says to the shared announcer (UX-026)', () => {
+  beforeEach(resetAnnouncements);
+  afterEach(() => useNotifications.getState().clear());
+
+  it('announces the start of a long operation, and its result with the detail, for a build, a save, a deploy, a connection and a test run', () => {
+    const store = useNotifications.getState();
+    const id = store.begin({ kind: 'build', title: 'Building project', details: 'output' });
+    expect(announcementsSnapshot().polite.message).toBe('Building project');
+    store.finish(id, { kind: 'build', status: 'success', title: 'Build succeeded', detail: 'main.st compiled', details: 'output' });
+    expect(announcementsSnapshot().polite.message).toBe('Build succeeded. main.st compiled');
+    for (const kind of ['save', 'deploy', 'connection', 'tests'] as const) {
+      store.report({ kind, status: 'success', title: `Result of ${kind}`, details: 'output' });
+      expect(announcementsSnapshot().polite.message).toBe(`Result of ${kind}`);
+    }
+  });
+
+  it('raises an error as a fault, in the assertive region, and a warning or a cancellation politely', () => {
+    const store = useNotifications.getState();
+    store.report({ kind: 'build', status: 'error', title: 'Canonical workspace build failed', details: 'problems' });
+    expect(announcementsSnapshot().assertive.message).toBe('Canonical workspace build failed');
+    expect(announcementsSnapshot().polite.message).toBe('');
+    store.report({ kind: 'deploy', status: 'cancelled', title: 'Deploy cancelled', details: 'output' });
+    expect(announcementsSnapshot().polite.message).toBe('Deploy cancelled');
   });
 });

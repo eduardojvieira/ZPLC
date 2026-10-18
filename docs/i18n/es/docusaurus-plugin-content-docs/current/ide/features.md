@@ -431,3 +431,12 @@ La pausa, la reanudación y el paso conservan donde está el estado lógico del 
 | Stop | Se pone a cero | Se borran | Cada tarea vuelve a su punto de entrada, y se descarta un scan que un breakpoint interrumpió. |
 
 Una falla borra la imagen y los forzados igual que Stop. En una placa, la pausa, el paso y Stop además llevan las salidas físicas a su estado seguro, apagadas. [Pausa, reanudación, paso y parada](../runtime/scheduler.md#pausa-reanudación-paso-y-parada) tiene la tabla completa y las pruebas de Zephyr que la respaldan, ejecutadas en `native_sim` y QEMU sin medición en una placa. Para la simulación nativa, las verificaciones están en `firmware/lib/zplc_core/tests/test_native_runtime_session.c`, donde Stop además pone a cero la imagen de entradas.
+
+## Accesibilidad
+
+Studio está construido para que su recorrido principal pueda usarse con teclado y con un lector de pantalla. Aquí se indica qué demuestran las comprobaciones automáticas y qué no.
+
+- **Nombres.** Cada campo de un formulario tiene una etiqueta que el lector de pantalla lee con él, y cada botón que muestra solo un icono tiene un nombre. Una regla de CI (la guarda del kit de componentes) hace fallar la compilación ante un campo o un botón de solo icono sin nombre, y una comprobación en la aplicación en ejecución enumera cualquier control sin nombre en las pantallas principales.
+- **Anuncios.** Studio mantiene dos regiones vivas ocultas para toda la ventana: una cortés para los resultados y una asertiva para las fallas. El resultado de una compilación, un guardado, un despliegue, una ejecución de pruebas y un cambio de conexión se anuncia por ellas, con su detalle, igual que una variable que se fuerza o se libera. Un error, y un forzado que ya no está confirmado, se anuncian de inmediato. Si el programa está en ejecución o detenido se lee de la barra de estado, que conserva su propio estado persistente.
+- **Zoom.** Ctrl y más, Ctrl y menos, y Ctrl y 0 (Cmd en macOS) amplían, reducen y restablecen la página. Están en el menú **Ver**.
+- **Qué se comprueba.** El contraste se calcula a partir de los colores de los temas claro, oscuro y de alto contraste. Estas comprobaciones son estructurales y calculadas; no son una prueba con un lector de pantalla. Revisar el recorrido principal con un lector de pantalla en Windows y en macOS es una tarea manual que se hace antes del lanzamiento general, y su resultado se registra en la lista de verificación de la versión.

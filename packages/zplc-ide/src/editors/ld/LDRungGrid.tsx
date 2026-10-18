@@ -26,6 +26,7 @@ import LDElement, { CELL_WIDTH, CELL_HEIGHT, WIRE_Y, COLORS, type DebugValuesMap
 import { cellElement } from '../../models/sourceElements';
 import type { ElementState } from '../../monitoring/elementStates';
 import { parseLDDropData, DRAG_MIME_TYPE, type LDDropData } from './ldDragData';
+import { t } from '../../i18n';
 
 // =============================================================================
 // Constants
@@ -439,8 +440,7 @@ function RungHeader({ rung, cols, rows, readOnly, onChange, editRequest }: RungH
 
       {isEditing ? (
         <input
-          ref={inputRef}
-          type="text"
+          aria-label={t('a11y.ld.comment')} ref={inputRef} type="text"
           value={commentDraft}
           onChange={(e) => setCommentDraft(e.target.value)}
           onBlur={handleSave}

@@ -13,4 +13,5 @@ export { MenuButton, ContextMenu, PointMenu, type MenuItem, type MenuButtonProps
 export { Popover, type PopoverProps } from './Popover';
 export { SIGNAL_TEXT_CLASS } from '../theme/signalTone';
 export { Badge, StatusDot, SignalChip, SignalValue, Spinner, EmptyState, LoadingState, ErrorState, PropertyList, type Tone, type EmptyStateProps, type LoadingStateProps, type ErrorStateProps, type PropertyItem } from './Display';
+export { LiveRegions } from './LiveRegions';
 export { cx } from './cx';
