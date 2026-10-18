@@ -8,7 +8,7 @@ import { redactProjectConfigForExport } from '../project/sensitiveConfig';
 import { exportOpenProjectArchive } from '../utils/projectArchiveActions';
 import { collectProjectFilesForExport } from '../utils/projectExport';
 
-const ITEM = 'focus-ring w-full flex items-center gap-2 px-3 py-2 text-sm text-[var(--color-surface-100)] hover:bg-[var(--color-surface-600)] transition-colors';
+const ITEM = 'focus-ring w-full flex items-center gap-2 px-3 py-2 text-sm text-[var(--color-surface-100)] hover:bg-[var(--menu-item-bg-active)] transition-colors';
 
 async function exportProjectAsJson(): Promise<void> {
   const snapshot = useIDEStore.getState();

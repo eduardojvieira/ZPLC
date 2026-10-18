@@ -114,9 +114,11 @@ export function WorkbenchShell({ EditorArea, Console, debugController }: Workben
             }}
           >
             <Panel id="editor" defaultSize="72%" minSize="30%" className="overflow-hidden">
-              <ErrorBoundary region="Editor">
-                <EditorArea />
-              </ErrorBoundary>
+              <main aria-label={t('shell.editor.label')} className="h-full min-h-0">
+                <ErrorBoundary region="Editor">
+                  <EditorArea />
+                </ErrorBoundary>
+              </main>
             </Panel>
             <PanelSeparator id="workspace-separator" label={t('app.resize')} group={groupPanel} leading="editor" trailing="console" />
             <Panel id="console" panelRef={setConsolePanel} defaultSize="28%" minSize="5%" maxSize="65%" collapsible collapsedSize={32} className="overflow-hidden">

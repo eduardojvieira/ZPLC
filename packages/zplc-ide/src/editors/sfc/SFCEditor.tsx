@@ -52,6 +52,7 @@ import { useElementSelection } from '../elementSelection';
 import { useElementBreakpoints } from '../elementBreakpoints';
 import { markBreakpointNodes } from '../breakpointMarks';
 import { parseElement, stepElement, transitionElement, type SourceElementId } from '../../models/sourceElements';
+import { t } from '../../i18n';
 
 // =============================================================================
 // Props
@@ -96,6 +97,7 @@ function stepsToNodes(
     return {
       id: step.id,
       type: 'step',
+      ariaLabel: t('a11y.sfc.step', { name: step.name }),
       position: step.position,
       data: {
         ...stepNodeData(step),
@@ -124,6 +126,7 @@ function transitionsToNodes(
     return {
       id: trans.id,
       type: 'transition',
+      ariaLabel: t('a11y.sfc.transition', { condition: String(trans.condition ?? trans.id) }),
       position: trans.position || { x: 200, y: 150 },
       data: {
         ...transitionNodeData(trans),

@@ -15,6 +15,7 @@ import { compilerCompile } from '../src/cli/toolApi';
 import { NATIVE_PROGRAM_MAX_BYTES } from '../electron/security';
 import { assert, MONACO_MODULE_URL, packageRoot } from './run-desktop-smoke';
 import { button, css, launchPackagedApp, menuItem, tab, type App, type Target } from './journeyApp';
+import { domAuditExpression, type DomAuditResult } from './domAudit';
 
 export interface JourneyContext {
   root: string;
@@ -2953,6 +2954,102 @@ export const JOURNEYS: Journey[] = [
         assert(slow.length === 0, `${editor.name} keeps a transition or animation under reduced motion: ${JSON.stringify(slow)}.`);
       }
       await app.cdp.command('Emulation.setEmulatedMedia', { features: [] });
+    },
+  },
+  {
+    // UX-024, UX-026: the rendered-DOM check (scripts/domAudit.ts) over the main screens in the three themes. It is a structural
+    // and computed check, not a screen-reader test (UX-028 is a manual task on Windows and macOS).
+    name: '48 The main screens pass the rendered accessibility check in light, dark and high contrast', example: 'blinky', proves: ['UX-024'], partly: ['UX-026', 'UX-005'],
+    run: async (app, { project }) => {
+      cpSync(join(packageRoot, 'projects', 'blinky_fbd', 'src', 'main.fbd.json'), join(project, 'src', 'second.fbd.json'));
+      cpSync(join(packageRoot, 'projects', 'blinky_sfc', 'src', 'main.sfc.json'), join(project, 'src', 'second.sfc.json'));
+      writeFileSync(join(project, 'src', 'note.st'), 'PROGRAM Note\nVAR\n  Lamp : BOOL;\nEND_VAR\nLamp := TRUE;\nEND_PROGRAM\n');
+      const themes: Array<{ id: ThemeId; command: string }> = [{ id: 'light', command: 'Use the light theme' }, { id: 'dark', command: 'Use the dark theme' }, { id: 'high-contrast', command: 'Use the high contrast theme' }];
+      const paletteOpen = () => app.eval<boolean>(`Boolean(document.querySelector('[role="dialog"] [role="combobox"]'))`);
+      const useTheme = async (theme: (typeof themes)[number]) => {
+        await app.press('Ctrl+Shift+P');
+        await app.until('the command palette', async () => await paletteOpen() || undefined);
+        await app.type(theme.command);
+        await app.press('Enter');
+        await app.until(`the ${theme.id} theme to apply`, async () => await app.eval<string>(`document.documentElement.getAttribute('data-theme')`) === theme.id || undefined);
+      };
+      const found: string[] = [];
+      const covered: string[] = [];
+      let theme = themes[0]!;
+      /** One screen, as it is now: the audit runs in the page after a key press, so that a focus given by script is a keyboard focus. */
+      const audit = async (screen: string) => {
+        await app.press('Tab');
+        // a colour read in the middle of a transition is not the colour the screen settles on: wait for the finite ones
+        await app.eval('Promise.race([Promise.allSettled(document.getAnimations().filter((animation) => animation.effect?.getComputedTiming().iterations !== Infinity).map((animation) => animation.finished)), new Promise((resolve) => setTimeout(resolve, 1500))]).then(() => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))))');
+        const result = await app.eval<DomAuditResult>(domAuditExpression);
+        covered.push(`${theme.id} | ${screen}: ${result.checked.text} texts, ${result.checked.interactive} controls, ${result.checked.focus} focus (${result.unchecked.focus} unverified), ${result.unchecked.background} on an image`);
+        for (const finding of result.findings.slice(0, 40)) found.push(`${theme.id} | ${screen} | ${finding.rule} | ${finding.where} | ${finding.detail}`);
+      };
+      const withDialog = async (screen: string, open: () => Promise<void>, shown: Target) => {
+        await open();
+        await app.until(`${screen} to show`, async () => await app.visible(shown) || undefined);
+        await audit(screen);
+        await app.press('Escape');
+        await app.until(`${screen} to close`, async () => !await app.visible(shown) || undefined);
+      };
+
+      // the audit can fail: a page with an unlabelled field, a duplicate id and pale text is reported for each rule
+      await app.eval(`(() => { const host = document.createElement('div'); host.id = 'audit-fixture'; host.innerHTML = '<input type="text" id="fx"><p id="fx">pale</p><p style="color:#bbb;background:#fff">pale text</p>'; document.body.append(host); })()`);
+      const fixture = await app.eval<DomAuditResult>(domAuditExpression);
+      await app.eval(`document.getElementById('audit-fixture').remove()`);
+      for (const rule of ['name', 'duplicate-id', 'contrast']) assert(fixture.findings.some((finding) => finding.rule === rule), `The audit does not report a ${rule} problem it was given: ${JSON.stringify(fixture.findings.map((finding) => finding.rule))}`);
+
+      // Welcome
+      for (theme of themes) { await useTheme(theme); await audit('Welcome'); }
+
+      await openFolder(app, project);
+      const EDITORS = [
+        { file: 'src/main.ld.json', ready: '[data-ld-rung-id]', name: 'Ladder' },
+        { file: 'src/second.fbd.json', ready: '.react-flow__node', name: 'Function block diagram' },
+        { file: 'src/second.sfc.json', ready: '.react-flow__node', name: 'Sequential function chart' },
+      ];
+      for (const editor of EDITORS) await openDiagram(app, editor.file, editor.ready);
+      await openFile(app, 'src/note.st');
+      for (theme of themes) {
+        await useTheme(theme);
+        await app.click(editorTab('file:src/note.st'), 'the Structured Text tab');
+        await audit('Editor, Structured Text');
+        for (const editor of EDITORS) {
+          await app.click(editorTab(`file:${editor.file}`), `the ${editor.name} tab`);
+          await app.until(`${editor.name} on its canvas`, async () => await app.visible(css(editor.ready)) || undefined);
+          await audit(`Editor, ${editor.name}`);
+        }
+        for (const panel of ['Problems', 'Output', 'Watch', 'Trace', 'Tests', 'Terminal']) {
+          if (!await app.visible(tab(panel, 'prefix'))) continue;
+          await app.click(tab(panel, 'prefix'), `the ${panel} tab`);
+          await audit(`Results panel, ${panel}`);
+        }
+        for (const view of ['project', 'search', 'tests', 'learn']) {
+          await app.click(css(`[data-activity="${view}"]`), `the ${view} view of the rail`);
+          await audit(`Sidebar, ${view}`);
+        }
+        await app.click(button('Project settings'), 'the Project settings button');
+        await app.until('the preferences', async () => await app.visible(css('[data-app-preferences]')) || undefined);
+        await audit('Settings');
+        await withDialog('The command palette', () => app.press('Ctrl+Shift+P'), css('[role="dialog"] [role="combobox"]'));
+        await withDialog('The shortcut reference', async () => { await app.press('Ctrl+K'); await app.press('Ctrl+S'); }, css('[data-command="debug.run"] kbd'));
+        // the deploy question, asked as the toolbar asks it (the journey never answers it with a device)
+        await withDialog('The deploy dialog', async () => { await app.eval(`(async () => {
+          const { confirmDeploy } = await import('/src/components/deployConfirm.tsx');
+          const facts = { project: { name: 'Pump station', board: 'STM32F746G Discovery', boardProfile: 'stm32f746g_disco/stm32f746xx', abi: { major: 1, minor: 0, draft: 6 }, sha256: 'a1b2c3d4e5f6a7b8c9d0', byteLength: 512, taskCount: 2 }, device: { board: 'rpi_pico', boardProfile: 'rpi_pico/rp2040', zplcVersion: '1.0.0', zephyrVersion: '4.0.0', abi: { major: 1, minor: 0 }, draft: 6, maxArtifactBytes: 4096, maxTasks: 4 }, declaredSafe: [], transfer: 'framed' };
+          confirmDeploy({ facts }, false);
+        })()`); }, css('[role="alertdialog"]'));
+      }
+      // the same element on many screens and in three themes is one problem: group by rule and element
+      const groups = new Map<string, { sample: string; themes: Set<string>; screens: Set<string> }>();
+      for (const line of found) {
+        const [themeId = '', screen = '', rule = '', where = '', detail = ''] = line.split(' | ');
+        const key = `${rule} | ${where} | ${rule === 'contrast' ? detail.replace(/^[\d.]+:1/, '').replace(/ rgb.*$/, '') : detail}`;
+        const group = groups.get(key) ?? { sample: detail, themes: new Set<string>(), screens: new Set<string>() };
+        group.themes.add(themeId); group.screens.add(screen); groups.set(key, group);
+      }
+      const report = [...groups].map(([key, group]) => `${key} [${group.sample}] themes=${[...group.themes].join('/')} screens=${group.screens.size} (${[...group.screens].slice(0, 3).join('; ')})`);
+      assert(found.length === 0, `The rendered accessibility check found ${found.length} findings, ${report.length} distinct, on ${covered.length} screens:\n${report.slice(0, 90).join('\n')}`);
     },
   },
 ];

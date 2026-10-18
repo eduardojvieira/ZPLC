@@ -118,7 +118,7 @@ export function ProjectDeclarations() {
             icon={<>{expanded ? <ChevronDown size={ICON_SIZES.sm} /> : <ChevronRight size={ICON_SIZES.sm} />}<BookMarked size={ICON_SIZES.sm} /></>}
           >
             Declarations
-            <span className="rounded-full bg-[var(--color-surface-600)] px-1.5 font-normal normal-case text-[var(--text-primary)]">{total}</span>
+            <span className="rounded-full bg-[var(--tone-neutral-bg)] px-1.5 font-normal normal-case text-[var(--tone-neutral-fg)]">{total}</span>
             {unlisted.length > 0 && (
               <span className="rounded-full border border-[var(--color-accent-yellow)] px-1.5 font-normal normal-case text-[var(--color-accent-yellow)]">{unlisted.length} not compiled</span>
             )}

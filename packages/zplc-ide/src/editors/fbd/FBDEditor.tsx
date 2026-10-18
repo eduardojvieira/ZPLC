@@ -52,6 +52,7 @@ import { useElementSelection } from '../elementSelection';
 import { useElementBreakpoints } from '../elementBreakpoints';
 import { markBreakpointNodes } from '../breakpointMarks';
 import { blockElement, parseElement, type SourceElementId } from '../../models/sourceElements';
+import { t } from '../../i18n';
 
 // =============================================================================
 // Props
@@ -88,6 +89,7 @@ function blocksToNodes(
   return blocks.map((block) => ({
     id: block.id,
     type: getNodeType(block.type),
+    ariaLabel: t('a11y.fbd.node', { kind: block.type, name: block.instanceName ?? block.variableName ?? (block.value === undefined ? block.id : String(block.value)) }),
     position: block.position,
     data: {
       ...blockNodeData(block),
