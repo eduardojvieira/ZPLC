@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'bun:test';
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync, statSync } from 'node:fs';
+import { join } from 'node:path';
 import { contrastRatio } from './color';
 import { THEME_IDS, resolveTokens } from './tokens';
 import { renderTokensCss } from './tokensCss';
@@ -12,7 +13,7 @@ const SURFACES = ['--color-surface-900', '--color-surface-800', '--color-surface
 const rules = [...css.matchAll(/([^{}]+)\{([^{}]*)\}/g)].map(([, selector, body]) => ({ selector: selector.trim(), body }));
 
 /** UX-005: one focus indicator, defined once, visible in every theme and never removed without a replacement. */
-describe('focus ring (UX-005 stopgap: the visual editors still carry their own classes)', () => {
+describe('focus ring (UX-005)', () => {
   it('is defined as three tokens', () => {
     const light = resolveTokens('light');
     expect(light['--focus-ring-color']).toBeDefined();
@@ -22,7 +23,9 @@ describe('focus ring (UX-005 stopgap: the visual editors still carry their own c
 
   it('is applied by one global :focus-visible rule built from those tokens', () => {
     const outlines = rules.filter(({ selector, body }) => selector.includes(':focus-visible') && /outline/.test(body));
-    expect(outlines.map(({ selector }) => selector)).toEqual([':focus-visible']);
+    // one rule; its selector list also names the nodes and edges of the diagrams, whose library style removes the outline
+    expect(outlines).toHaveLength(1);
+    expect(outlines[0].selector.split(',').map((part) => part.trim())[0]).toBe(':focus-visible');
     expect(outlines[0].body).toMatch(/outline:\s*var\(--focus-ring-width\)\s+solid\s+var\(--focus-ring-color\)/);
     expect(outlines[0].body).toMatch(/outline-offset:\s*var\(--focus-ring-offset\)/);
   });
@@ -48,4 +51,34 @@ describe('focus ring (UX-005 stopgap: the visual editors still carry their own c
       for (const surface of SURFACES) expect({ surface, ratio: contrastRatio(tokens['--focus-ring-color'], tokens[surface]) >= 3 }).toEqual({ surface, ratio: true });
     });
   }
+});
+
+/** UX-005 (visual editors): a node, an edge and a control of Ladder, FBD and SFC show the same ring as the rest of the shell. */
+describe('focus ring in the visual editors (UX-005)', () => {
+  const walk = (dir: string): string[] => readdirSync(dir).flatMap((name) => {
+    const path = join(dir, name);
+    return statSync(path).isDirectory() ? walk(path) : [path];
+  });
+  const editorsDir = new URL('../editors', import.meta.url).pathname;
+  const sources = walk(editorsDir).filter((path) => /\.tsx?$/.test(path) && !/\.test\.tsx?$/.test(path));
+  // a class that removes the ring or draws a second one
+  const OWN_FOCUS = /(?<![\w-])(?:outline-none|outline-hidden|(?:focus|focus-visible|focus-within):(?:outline|ring|border|shadow)[\w-]*)(?![\w-])/;
+
+  it('re-applies the shared ring to the nodes and edges that the diagram library switches off', () => {
+    const rule = rules.find(({ selector, body }) => selector.includes(':focus-visible') && /outline/.test(body));
+    const selectors = rule!.selector.split(',').map((part) => part.trim());
+    expect(selectors).toContain('.zplc-visual-editor .react-flow__node.selectable:focus-visible');
+    expect(selectors).toContain('.zplc-visual-editor .react-flow__edge:focus-visible');
+    expect(rule!.body).toMatch(/outline:\s*var\(--focus-ring-width\)\s+solid\s+var\(--focus-ring-color\)/);
+  });
+
+  it('pinned source: no visual-editor source removes the ring or draws a focus style of its own', () => {
+    const offenders = sources.filter((path) => OWN_FOCUS.test(readFileSync(path, 'utf8'))).map((path) => path.slice(editorsDir.length + 1));
+    expect(offenders).toEqual([]);
+  });
+
+  it('keeps no visual-editor source on the list of focus overrides of the kit guard', () => {
+    const listed = JSON.parse(readFileSync(new URL('../../../../tools/ci/ui-kit-offenders.json', import.meta.url), 'utf8')) as Array<{ file: string; rule: string }>;
+    expect(listed.filter(({ file, rule }) => rule === 'focus-override' && file.includes('/src/editors/'))).toEqual([]);
+  });
 });

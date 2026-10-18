@@ -198,6 +198,12 @@ Nada en los editores visuales, la vista del controlador, la tabla Watch ni la li
 
 Nivel de evidencia: host. `src/editors/signalVocabulary.test.tsx` dibuja un contacto y una bobina de Ladder, un bloque FBD, un paso SFC y una transición SFC con cada uno de los cinco estados y comprueba tanto el token como el glifo, y `src/theme/signalTone.test.ts` comprueba el contraste de cada estado en los tres temas. La paleta y los glifos son para que una persona los juzgue a simple vista.
 
+## Foco en los editores visuales
+
+Un nodo, una arista, un botón de la caja de herramientas y el campo que edita un nombre en Ladder, FBD y SFC muestran el mismo anillo de foco que cualquier otro control de Studio, en todos los temas: dos píxeles en los temas claro y oscuro, tres en alto contraste y el color de resaltado del sistema en el modo de colores forzados. La biblioteca de diagramas quita el contorno de sus nodos y aristas, así que `src/index.css` vuelve a ponerlo en ellos, y ningún archivo de los editores visuales lleva una clase de foco propia. `src/theme/focusRing.test.ts` falla cuando alguno la lleva, o cuando el anillo falta en los nodos.
+
+Nivel de evidencia: host. La prueba lee la hoja de estilos y los archivos fuente; un recorrido que llega con el tabulador a un nodo y lee su contorno calculado está en el recorrido de temas (UX-027).
+
 ## Qué ofrecen las paletas
 
 Una paleta ofrece solo lo que su transpilador traduce (LNG-007), y cada elemento que ofrece se ejecuta en la suite de

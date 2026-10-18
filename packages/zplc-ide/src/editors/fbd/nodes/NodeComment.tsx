@@ -73,7 +73,7 @@ const NodeComment = memo(({ nodeId, comment, onChange, readOnly = false }: NodeC
           onBlur={handleSave}
           onKeyDown={handleKeyDown}
           className="w-full text-[10px] italic bg-[var(--color-surface-700)] border border-[var(--border-color)]
-                     rounded px-1 py-0.5 text-[var(--text-secondary)] focus:outline-none focus:border-[var(--color-accent-blue)]
+                     rounded px-1 py-0.5 text-[var(--text-secondary)]
                      text-center"
           placeholder="Add comment..."
         />

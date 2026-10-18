@@ -446,7 +446,7 @@ function RungHeader({ rung, cols, rows, readOnly, onChange, editRequest }: RungH
           onBlur={handleSave}
           onKeyDown={handleKeyDown}
           className="flex-1 min-w-0 text-xs italic bg-[var(--color-surface-800)] border border-[var(--color-surface-500)] 
-                     rounded px-2 py-0.5 text-[var(--color-surface-100)] focus:outline-none focus:border-blue-500"
+                     rounded px-2 py-0.5 text-[var(--color-surface-100)]"
           placeholder="Add rung comment..."
         />
       ) : (

@@ -187,6 +187,12 @@ Nothing in the visual editors, the controller view, the Watch table or the notif
 
 Evidence level: host. `src/editors/signalVocabulary.test.tsx` renders a Ladder contact and coil, an FBD block, an SFC step and an SFC transition with each of the five states and checks both the token and the glyph, and `src/theme/signalTone.test.ts` checks the contrast of each state in the three themes. The palette and the glyphs are for a person to judge by eye.
 
+## Focus in the visual editors
+
+A node, an edge, a toolbox button and the field that edits a name in Ladder, FBD and SFC show the same focus ring as every other control of Studio, in every theme: two pixels in the light and dark themes, three in high contrast, and the system highlight colour in forced-colours mode. The diagram library removes the outline of its nodes and edges, so `src/index.css` puts the ring back on them, and no visual-editor source carries a focus class of its own. `src/theme/focusRing.test.ts` fails when one does, or when the ring is missing from the nodes.
+
+Evidence level: host. The test reads the stylesheet and the sources; a journey that tabs to a node and reads its computed outline is in the themes journey (UX-027).
+
 ## What the palettes offer
 
 A palette offers only what its transpiler translates (LNG-007), and every element it offers is run in the test suite:

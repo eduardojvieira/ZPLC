@@ -136,7 +136,7 @@ const SFCTransitionNode = memo(({ id, data, selected }: NodeProps) => {
               onChange={(e) => setEditCondition(e.target.value)}
               onBlur={handleSave}
               onKeyDown={handleKeyDown}
-              className="w-full border-b border-[var(--border-color)] bg-transparent px-1 py-0.5 font-mono text-xs text-[var(--text-primary)] outline-none focus:border-[var(--color-accent-blue)]"
+              className="w-full border-b border-[var(--border-color)] bg-transparent px-1 py-0.5 font-mono text-xs text-[var(--text-primary)]"
               onClick={(e) => e.stopPropagation()}
             />
           ) : (

@@ -151,7 +151,7 @@ const SFCStepNode = memo(({ id, data, selected }: NodeProps) => {
               onBlur={handleSave}
               onKeyDown={handleKeyDown}
               className="w-full bg-transparent text-center text-[var(--text-primary)] font-semibold
-                         border-b border-[var(--border-color)] outline-none"
+                         border-b border-[var(--border-color)]"
               onClick={(e) => e.stopPropagation()}
             />
           ) : (

@@ -108,8 +108,7 @@ function ElementProperties({ element, symbols = [], onChange, onClose }: Element
               type="text"
               value={variable}
               onChange={(e) => setVariable(e.target.value)}
-              className="w-full bg-[var(--color-surface-700)] border border-[var(--border-color)] rounded px-2 py-1 text-sm text-[var(--text-secondary)]
-                         focus:outline-none focus:border-blue-500"
+              className="w-full bg-[var(--color-surface-700)] border border-[var(--border-color)] rounded px-2 py-1 text-sm text-[var(--text-secondary)]"
               placeholder="Variable name"
               list="ld-declared-symbols"
             />
@@ -127,8 +126,7 @@ function ElementProperties({ element, symbols = [], onChange, onClose }: Element
                 type="text"
                 value={fbInstance}
                 onChange={(e) => setFbInstance(e.target.value)}
-                className="w-full bg-[var(--color-surface-700)] border border-[var(--border-color)] rounded px-2 py-1 text-sm text-[var(--text-secondary)]
-                           focus:outline-none focus:border-blue-500"
+                className="w-full bg-[var(--color-surface-700)] border border-[var(--border-color)] rounded px-2 py-1 text-sm text-[var(--text-secondary)]"
                 placeholder="Instance name"
               />
             </div>
@@ -141,8 +139,7 @@ function ElementProperties({ element, symbols = [], onChange, onClose }: Element
                   value={presetTime}
                   onChange={(e) => setPresetTime(e.target.value)}
                   aria-label="Preset Time (PT)"
-                  className="w-full bg-[var(--color-surface-700)] border border-[var(--border-color)] rounded px-2 py-1 text-sm text-[var(--text-secondary)]
-                             focus:outline-none focus:border-blue-500 font-mono"
+                  className="w-full bg-[var(--color-surface-700)] border border-[var(--border-color)] rounded px-2 py-1 text-sm text-[var(--text-secondary)] font-mono"
                   placeholder="T#1s"
                 />
               </div>
@@ -157,8 +154,7 @@ function ElementProperties({ element, symbols = [], onChange, onClose }: Element
             value={comment}
             onChange={(e) => setComment(e.target.value)}
             rows={2}
-            className="w-full bg-[var(--color-surface-700)] border border-[var(--border-color)] rounded px-2 py-1 text-sm text-[var(--text-secondary)]
-                       focus:outline-none focus:border-blue-500 resize-none"
+            className="w-full bg-[var(--color-surface-700)] border border-[var(--border-color)] rounded px-2 py-1 text-sm text-[var(--text-secondary)] resize-none"
             placeholder="Optional description..."
           />
         </div>
