@@ -3,7 +3,8 @@ import type { MenuItemConstructorOptions } from 'electron';
 import { buildMenuTemplate, describeApplicationMenu, isReloadShortcut, type InputLike, type MenuBuildOptions, type MenuCategory, type MenuCommand } from './appMenu';
 
 const RELOAD_ACCELERATORS = ['F5', 'CmdOrCtrl+R', 'CmdOrCtrl+Shift+R', 'Ctrl+R', 'Ctrl+Shift+R', 'Cmd+R', 'F12', 'CmdOrCtrl+Shift+I', 'Ctrl+Shift+I', 'CmdOrCtrl+Alt+I', 'Alt+Cmd+I'];
-const DEBUG_ROLES = ['reload', 'forceReload', 'toggleDevTools', 'zoomIn', 'zoomOut', 'resetZoom'];
+const DEBUG_ROLES = ['reload', 'forceReload', 'toggleDevTools'];
+const ZOOM_ROLES = ['zoomIn', 'zoomOut', 'resetZoom'];
 
 function flatten(items: MenuItemConstructorOptions[]): MenuItemConstructorOptions[] {
   return items.flatMap((item) => [item, ...(Array.isArray(item.submenu) ? flatten(item.submenu) : [])]);
@@ -28,10 +29,19 @@ const build = (platform: NodeJS.Platform, overrides: Partial<MenuBuildOptions> =
 
 describe('application menu (UX-014)', () => {
   for (const platform of ['linux', 'win32', 'darwin'] as const) {
-    it(`UX-014 has no reload, zoom or developer-tools entry in a packaged ${platform} build`, () => {
+    it(`UX-014 has no reload or developer-tools entry in a packaged ${platform} build`, () => {
       const items = flatten(build(platform));
       expect(items.filter((item) => DEBUG_ROLES.includes(String(item.role)))).toEqual([]);
       expect(items.filter((item) => RELOAD_ACCELERATORS.includes(String(item.accelerator)) && item.registerAccelerator !== false && item.label !== t('command.debug.run'))).toEqual([]);
+    });
+  }
+
+  for (const platform of ['linux', 'win32', 'darwin'] as const) {
+    it(`UX-025 keeps page zoom (zoom in, zoom out, actual size) in the View menu of a packaged ${platform} build`, () => {
+      const view = build(platform).find((menu) => menu.label === t('menu.view'))!;
+      const zoom = (view.submenu as MenuItemConstructorOptions[]).filter((item) => ZOOM_ROLES.includes(String(item.role)));
+      expect(zoom.map((item) => item.role)).toEqual(ZOOM_ROLES);
+      expect(zoom.map((item) => item.label)).toEqual([t('menu.zoomIn'), t('menu.zoomOut'), t('menu.resetZoom')]);
     });
   }
 
@@ -113,7 +123,7 @@ describe('application menu description', () => {
       items: items.map((item) => ({ role: item.role, accelerator: item.accelerator, submenu: Array.isArray(item.submenu) ? toMenuLike(item.submenu) : null })),
     });
     const line = describeApplicationMenu(toMenuLike(build('linux')) as never);
-    expect(line).toContain('roles=quit,undo,redo,cut,copy,paste,selectAll,togglefullscreen');
+    expect(line).toContain('roles=quit,undo,redo,cut,copy,paste,selectAll,zoomIn,zoomOut,resetZoom,togglefullscreen');
     expect(line).toEndWith('accelerators=CmdOrCtrl+S,CmdOrCtrl+B,F5');
   });
 });
