@@ -21,10 +21,16 @@ describe('panel separator styles', () => {
     expect(rule('[data-separator][aria-orientation="vertical"]')).toMatch(/width:\s*4px/);
   });
 
-  it('turn cobalt on hover, while dragging and on focus', () => {
-    for (const state of ['hover', 'active', 'focus']) {
-      expect(rules.some((item) => item.selector.split(',').map((part) => part.trim()).includes(`[data-separator="${state}"]`) && /background-color:\s*var\(--color-accent-blue\)/.test(item.body))).toBe(true);
-    }
+  it('UX-017 show hover, active and focus as three different looks, from tokens only', () => {
+    const fill = (state: string): string | undefined => /background-color:\s*(var\(--[a-z0-9-]+\))/.exec(rule(`[data-separator="${state}"]`))?.[1];
+    expect(fill('hover')).toBe('var(--color-surface-500)');
+    expect(fill('active')).toBe('var(--color-accent-blue)');
+    expect(fill('focus')).toBe('var(--color-surface-500)');
+    // under the pointer the rule stays and gets stronger; while dragged and on focus the bar is a plain fill
+    expect(rule('[data-separator="hover"]')).toMatch(/linear-gradient\(var\(--color-surface-300\)/);
+    expect(rule('[data-separator="active"]')).toMatch(/background-image:\s*none/);
+    expect(fill('active')).not.toBe(fill('hover'));
+    expect(css).not.toMatch(/\[data-separator[^{]*\{[^}]*#[0-9a-fA-F]{3,8}/);
   });
 
   it('keep a rule at rest that is visible against the panels in every theme', () => {

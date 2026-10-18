@@ -67,7 +67,8 @@ const editorPoint = (app: App, line: number, where: 'text' | 'gutter') => monaco
   const model = editor.getModel(); const box = editor.getDomNode().getBoundingClientRect(); const layout = editor.getLayoutInfo();
   const pos = editor.getScrolledVisiblePosition({ lineNumber: ${line}, column: model.getLineMaxColumn(${line}) });
   if (!pos || pos.top < 0 || pos.top + pos.height > layout.height) return null;
-  const x = ${where === 'gutter' ? 'layout.glyphMarginLeft + layout.glyphMarginWidth / 2' : 'pos.left + 40'};
+  // a line longer than the editor is wide is clicked at the right edge of what shows, before the minimap and the scrollbar
+  const x = ${where === 'gutter' ? 'layout.glyphMarginLeft + layout.glyphMarginWidth / 2' : 'Math.min(pos.left + 40, layout.width - layout.minimap.minimapWidth - layout.verticalScrollbarWidth - 12)'};
   const point = { x: box.left + x, y: box.top + pos.top + pos.height / 2 };
   return Number.isFinite(point.x) && Number.isFinite(point.y) ? point : null;`); // the position is NaN until the editor has measured its font
 
@@ -83,9 +84,15 @@ async function clickEditorLine(app: App, line: number, where: 'text' | 'gutter' 
   await app.clickAt(point.x, point.y);
 }
 
+/** The project navigator in its Files mode (the file tree), which is where the journeys click files: the Project activity of the rail, then the Files toggle. */
+async function showExplorer(app: App): Promise<void> {
+  await app.click(css('[data-activity="project"]'), 'the Project activity of the rail');
+  await app.click(css('[aria-label="Navigator view"] button:nth-of-type(2)'), 'the Files mode of the navigator');
+}
+
 /** Click a project file in the Explorer tree, expanding its folders first. */
 async function clickTreeFile(app: App, path: string): Promise<void> {
-  await app.click(tab('Explorer', 'exact'));
+  await showExplorer(app);
   const folders = path.split('/').slice(0, -1);
   for (let depth = 1; depth <= folders.length; depth++) {
     const id = `dir:${folders.slice(0, depth).join('/')}`;
@@ -258,7 +265,7 @@ function findOnDisk(folder: string, name: string): string[] {
 
 /** Explorer > New File: type a name, pick the language with the keyboard, and press Create (or stop at the dialog when `create` is false). */
 async function newFile(app: App, name: string, language: 'ST' | 'IL' | 'LD' | 'FBD' | 'SFC', create = true): Promise<void> {
-  await app.click(tab('Explorer', 'exact'));
+  await showExplorer(app);
   await app.click(button('New file'), 'the New file button of the Explorer');
   const nameField = css('#new-file-name');
   await app.until('the New File dialog', async () => await app.visible(nameField) || undefined);
@@ -480,7 +487,7 @@ export const JOURNEYS: Journey[] = [
     name: '1 Open an existing folder', example: 'motor_start_stop', proves: [], partly: ['IDE-001', 'IDE-003', 'VF-008'],
     run: async (app, { project }) => {
       await openFolder(app, project);
-      await app.click(tab('Explorer', 'exact'));
+      await showExplorer(app);
       await app.until('the src folder of the project in the tree', async () => await app.visible(treeItem('dir:src')) || undefined);
       assert(!(await app.text()).includes('The project could not be opened'), 'The workbench shows an open error.');
       assert((await outputText(app)).includes('Opened project: Motor Start Stop'), 'Output does not report the opened project.');
@@ -506,7 +513,7 @@ export const JOURNEYS: Journey[] = [
       await app.click(button('New project', 'contains'), 'the New project button');
       await app.until('the project workbench to appear', async () => await app.visible(toolbar) || undefined);
       assert(existsSync(join(folder, 'zplc.json')), 'The chosen folder holds no zplc.json.');
-      await app.click(tab('Explorer', 'exact'));
+      await showExplorer(app);
       await app.until('a source file in the tree of the new project', async () => await app.visible(treeItem('dir:src')) || undefined);
     },
   },
@@ -687,7 +694,7 @@ export const JOURNEYS: Journey[] = [
       const startValue = `${watchRow('Start')}?.children[1]`;
       if (!await app.clickable(startValue)) {
         app.note('With a force active the Watch table has no visible row at the default panel size');
-        await app.click(css('[role="separator"]'), 'the separator above the lower panel');
+        await app.click(css('#workspace-separator'), 'the separator above the lower panel');
         for (let step = 0; step < 6; step++) await app.press('ArrowUp');
       }
       await app.click(startValue, 'the value of Start', 2);
@@ -697,7 +704,7 @@ export const JOURNEYS: Journey[] = [
       assert((await app.text()).includes('1 active force'), 'The force banner does not show one active force.');
       if (await app.eval(`[...document.querySelectorAll('button')].find((item) => item.textContent === 'Release all forces')?.disabled === true`)) app.note('Release all forces is disabled in simulation; the Force checkbox of the row releases');
       await app.click(css('input[aria-label="Force Start"]'), 'the Force checkbox of Start');
-      await app.until('the force to be released', async () => !(await app.text()).includes('active force') && await app.eval(`${watchRow('Start')}?.querySelector('input[type="checkbox"]')?.checked === false`) === true || undefined);
+      await app.until('the force to be released', async () => !/\d+ active forces?/.test(await app.text()) && await app.eval(`${watchRow('Start')}?.querySelector('input[type="checkbox"]')?.checked === false`) === true || undefined);
       if (await watchValue(app, 'Start') === 'TRUE') app.note('After the release the input keeps the forced value in simulation (Start still reads TRUE)');
     },
   },
@@ -726,7 +733,7 @@ export const JOURNEYS: Journey[] = [
       await app.until('Start to be forced', async () => await app.eval(`${watchRow('Start')}?.querySelector('[data-forced="true"]') !== null`) === true || undefined);
       const startValue = `${watchRow('Start')}?.children[1]`;
       if (!await app.clickable(startValue)) {
-        await app.click(css('[role="separator"]'), 'the separator above the lower panel');
+        await app.click(css('#workspace-separator'), 'the separator above the lower panel');
         for (let step = 0; step < 6; step++) await app.press('ArrowUp');
       }
       await app.click(startValue, 'the value of Start', 2);
@@ -744,7 +751,7 @@ export const JOURNEYS: Journey[] = [
       const original = await editorText(app);
       await cursorAtEndOfLine(app, 1);
       await app.type(' AB');
-      await app.click(tab('Explorer', 'exact'));
+      await showExplorer(app);
       await app.click(button('New file'));
       await app.click(css('#new-file-name'));
       await app.type('Second');
@@ -807,7 +814,7 @@ export const JOURNEYS: Journey[] = [
       await app.until('the project workbench to appear', async () => await app.visible(toolbar) || undefined);
       const starter = JSON.parse(disk(join(packageRoot, 'projects', first.starterExampleId, 'zplc.json'))) as { name: string };
       assert(existsSync(join(folder, 'zplc.json')) && (JSON.parse(disk(join(folder, 'zplc.json'))) as { name: string }).name === starter.name, `The chosen folder does not hold the first lesson's starter project (${first.starterExampleId}).`);
-      await app.until('the Learn tab to show the first lesson', async () => await app.eval<boolean>(`document.getElementById('console-tab-learn')?.getAttribute('aria-selected') === 'true' && ${JSON.stringify([learnLessonCatalog.es[0]!.title, first.title])}.includes(document.getElementById('learn-title')?.textContent?.trim() ?? '')`) || undefined);
+      await app.until('the Learn tab to show the first lesson', async () => await app.eval<boolean>(`document.querySelector('[data-activity="learn"]')?.getAttribute('aria-current') === 'true' && ${JSON.stringify([learnLessonCatalog.es[0]!.title, first.title])}.includes(document.getElementById('learn-title')?.textContent?.trim() ?? '')`) || undefined);
       assert(await app.eval<boolean>(`[...document.querySelectorAll('[aria-label="Lesson"] button, [aria-label="Lección"] button')][0]?.getAttribute('aria-pressed') === 'true'`), 'The first lesson is not the one selected in the Learn tab.');
       assert(!(await app.text()).includes('The project could not be opened'), 'The workbench shows an open error.');
       // ... and passes the first lesson (VF-008): the reference solution goes where the learner's program is, and Check grades
@@ -840,7 +847,7 @@ export const JOURNEYS: Journey[] = [
       assert(long.scrollTop > 500, `Long.st did not scroll: ${JSON.stringify(long)}`);
       await app.click(editorTab('file:src/Motor.st'));
       await app.until('Motor.st in the editor', async () => hasProgram(await editorText(app), 'Motor') || undefined);
-      await app.click(css('[role="separator"]'), 'the separator above the lower panel');
+      await app.click(css('#workspace-separator'), 'the separator above the lower panel');
       for (let step = 0; step < 3; step++) await app.press('ArrowUp');
       const heightBefore = await editorHeight(app);
       await app.until('a session with both tabs, the active tab and the panel split on disk', () => {
@@ -928,7 +935,7 @@ export const JOURNEYS: Journey[] = [
     name: '14 A recent project that is gone', example: 'motor_start_stop', proves: [], partly: ['UX-022', 'IDE-003', 'IDE-008'],
     run: async (app, { project, root, relaunch }) => {
       await openFolder(app, project);
-      await app.click(tab('Explorer', 'exact'));
+      await showExplorer(app);
       await app.click(button('Close project'));
       await app.until('the Welcome screen with the project under Recent', async () => await app.visible(recentRow) || undefined);
 
@@ -981,11 +988,11 @@ export const JOURNEYS: Journey[] = [
       assert(findOnDisk(project, 'valve.ld.ld.json').length === 0, 'A typed .ld was added to again: valve.ld.ld.json exists.');
 
       // Close the project and open it again: the Explorer lists the file and a click opens it in the Ladder editor, with its rung.
-      await app.click(tab('Explorer', 'exact'));
+      await showExplorer(app);
       await app.click(button('Close project'));
       await app.until('the Welcome screen', async () => await app.visible(button('Open project', 'contains')) || undefined);
       await openFolder(app, project);
-      await app.click(tab('Explorer', 'exact'));
+      await showExplorer(app);
       const listed = await app.until('pump in the Explorer after reopening', async () => {
         const folders = saved.split('/').slice(0, -1);
         for (let depth = 1; depth <= folders.length; depth++) { const id = `dir:${folders.slice(0, depth).join('/')}`; if (await app.eval(`${treeItem(id)}?.getAttribute('aria-expanded') === 'false'`)) await app.click(treeItem(id)); }
@@ -1140,7 +1147,7 @@ export const JOURNEYS: Journey[] = [
       const startValue = `${watchRow('Start')}?.children[1]`;
       if (!await app.clickable(startValue)) {
         app.note('With a force active the Watch table has no visible row at the default panel size');
-        await app.click(css('[role="separator"]'), 'the separator above the lower panel');
+        await app.click(css('#workspace-separator'), 'the separator above the lower panel');
         for (let step = 0; step < 6; step++) await app.press('ArrowUp');
       }
       await app.click(startValue, 'the value of Start', 2);
@@ -1163,7 +1170,7 @@ export const JOURNEYS: Journey[] = [
 
       // The force stays until the user releases it, here with the same checkbox, while stopped.
       await app.click(forceBox, 'the Force checkbox of Start');
-      await app.until('the force to be released', async () => !(await app.text()).includes('active force') && await app.eval(`${watchRow('Start')}?.querySelector('input[type="checkbox"]')?.checked === false`) === true || undefined);
+      await app.until('the force to be released', async () => !/\d+ active forces?/.test(await app.text()) && await app.eval(`${watchRow('Start')}?.querySelector('input[type="checkbox"]')?.checked === false`) === true || undefined);
     },
   },
 
@@ -1235,7 +1242,7 @@ export const JOURNEYS: Journey[] = [
       const retry = (region: string) => css(`[data-region-error="${region}"] button`);
       const regions = {
         Editor: async () => hasProgram(await editorText(app), 'Motor'),
-        Panel: async () => await app.visible(tab('Explorer', 'exact')) && await app.visible(treeItem('dir:src')),
+        Panel: async () => await app.visible(tab('Output', 'exact')),
         Toolbar: async () => await app.visible(toolbar),
       } as const;
       // The other two regions keep working while one shows its error, and Retry brings that one back without reopening anything.
@@ -1335,7 +1342,7 @@ export const JOURNEYS: Journey[] = [
       const welcome = async () => await app.until('the Welcome screen', async () => (await app.text()).includes('ZPLC Studio 2.0') && !await app.visible(toolbar) || undefined);
       const questionTitle = () => app.eval<string | null>(`document.querySelector('[role="alertdialog"] h2')?.textContent ?? null`);
       const choice = (label: string) => `[...document.querySelectorAll('[role="alertdialog"] button')].find((item) => item.textContent?.trim() === ${JSON.stringify(label)})`;
-      const askToClose = async () => { await app.click(tab('Explorer', 'exact')); await app.click(button('Close project')); await app.until('the question before the project closes', async () => await questionTitle() === 'Discard unsaved changes?' || undefined); };
+      const askToClose = async () => { await showExplorer(app); await app.click(button('Close project')); await app.until('the question before the project closes', async () => await questionTitle() === 'Discard unsaved changes?' || undefined); };
 
       // Cancel keeps the project and its changes.
       await openFolder(app, project);
@@ -1393,7 +1400,7 @@ export const JOURNEYS: Journey[] = [
       await app.until('the typed text', async () => (await editorText(app)).includes(EDIT) || undefined);
 
       // New folder, in the folder the dialog starts on (src).
-      await app.click(tab('Explorer', 'exact'));
+      await showExplorer(app);
       await app.click(button('New folder'));
       await typeName('drivers');
       await app.click(button('Create'));
@@ -1496,7 +1503,7 @@ export const JOURNEYS: Journey[] = [
 
       // A new file made outside shows up in the tree, and a deleted unmodified file closes.
       writeFileSync(join(project, 'src', 'Outside.st'), 'PROGRAM Outside\nEND_PROGRAM\n');
-      await app.click(tab('Explorer', 'exact'));
+      await showExplorer(app);
       await app.until('the new file in the tree', async () => await app.visible(treeItem('file:src/Outside.st')) || undefined, 10_000);
       await openFile(app, 'src/Outside.st');
       rmSync(join(project, 'src', 'Outside.st'));
@@ -1911,7 +1918,7 @@ export const JOURNEYS: Journey[] = [
       assert(!entries.some((path) => path.startsWith('.git/') || path.startsWith('node_modules/')), 'The archive holds files that are not part of the project.');
 
       // Import from the Welcome screen: choosing the archive writes nothing, the dialog says what is in it.
-      await app.click(tab('Explorer', 'exact'));
+      await showExplorer(app);
       await app.click(button('Close project'));
       await app.until('the Welcome screen', async () => await app.visible(button('Import a project archive', 'contains')) || undefined);
       app.answer(archive);
@@ -1941,7 +1948,7 @@ export const JOURNEYS: Journey[] = [
       writeFileSync(join(project, 'src', 'main.st'), 'PROGRAM Main\nEND_PROGRAM\n');
 
       await openFolder(app, project);
-      await app.click(tab('Explorer', 'exact'));
+      await showExplorer(app);
       await app.until('the migration notice', async () => (await app.text()).includes('Migration preview') || undefined);
       assert(disk(join(project, 'zplc.json')) === legacy, 'Opening a version 1 project changed zplc.json.');
 
@@ -1977,7 +1984,7 @@ export const JOURNEYS: Journey[] = [
 
       // The tree lists what the files of src declare, grouped under their file, before any library exists.
       await openFolder(app, project);
-      await app.click(tab('Explorer', 'exact'));
+      await showExplorer(app);
       await app.click(button('Declarations', 'prefix'), 'the Declarations heading');
       await app.until('the declarations of the project', async () => await app.visible(declaration('Motor')) || undefined);
       assert(await app.visible(declarations) && !await app.visible(declaration('Debounce')), 'A file outside src and the libraries was listed.');
@@ -1993,7 +2000,7 @@ export const JOURNEYS: Journey[] = [
       assert(!await app.eval<boolean>(`${toolbox}.innerText.includes('Debounce')`), 'The palette offered a block that no library or src file declares.');
 
       // Adding the folder as a library: zplc.json names it, the tree lists the block, and the palette offers it.
-      await app.click(tab('Explorer', 'exact'));
+      await showExplorer(app);
       await app.click(button('Add library folder'), 'the Add library folder button');
       await app.until('the library dialog', async () => await app.visible(css('[data-library-dialog]')) || undefined);
       await app.eval(`document.getElementById('library-folder').focus()`);
@@ -2018,7 +2025,7 @@ export const JOURNEYS: Journey[] = [
       assert(built.kind === 'built', `The project with its library did not build: ${built.message}`);
 
       // Taking the library away takes the block away from the tree and the palette, and the file is not compiled again.
-      await app.click(tab('Explorer', 'exact'));
+      await showExplorer(app);
       await app.click(button('Remove library lib'), 'Remove library lib');
       await app.until('the block gone from the tree', async () => !await app.visible(declaration('Debounce')) || undefined);
       assert((JSON.parse(disk(join(project, 'zplc.json'))) as { libraries?: string[] }).libraries?.length === 0, 'zplc.json still names the library.');
@@ -2342,7 +2349,7 @@ export const JOURNEYS: Journey[] = [
     name: '39 Learn reports the failed assertion of a lesson', example: 'motor_start_stop_starter', proves: [], partly: ['LRN-022', 'LRN-026', 'LRN-031'],
     run: async (app, { project, root }) => {
       await openFolder(app, project);
-      await app.click(css('#console-tab-learn'), 'the Learn tab');
+      await app.click(css('[data-activity="learn"]'), 'the Learn activity');
       await app.until('the Check button to be enabled', async () => await app.eval<boolean>(`document.querySelector('[data-learn-check]')?.disabled === false`) || undefined);
       await app.click(css('[data-learn-check]'), 'the Check button');
       await app.until('Learn to grade the program as failed', async () => await app.eval<boolean>(`document.querySelector('[data-learn-grade="failed"]') !== null`) || undefined)
@@ -2366,7 +2373,7 @@ export const JOURNEYS: Journey[] = [
       const lesson = learnLessonCatalog.en.find(({ id }) => id === 'motor-start-stop-safe')!;
       writeFileSync(join(project, 'src', 'Motor.st'), disk(join(packageRoot, 'projects', lesson.referenceExampleId, lesson.solutionProgram)));
       await openFolder(app, project);
-      await app.click(css('#console-tab-learn'), 'the Learn tab');
+      await app.click(css('[data-activity="learn"]'), 'the Learn activity');
       await app.until('the Check button to be enabled', async () => await app.eval<boolean>(`document.querySelector('[data-learn-check]')?.disabled === false`) || undefined);
       await app.click(css('[data-learn-check]'), 'the Check button');
       await app.until('Learn to grade the program as passed', async () => await app.eval<boolean>(`document.querySelector('[data-learn-grade="passed"]') !== null`) || undefined)
@@ -2514,8 +2521,9 @@ export const JOURNEYS: Journey[] = [
       writeFileSync(manifestPath, JSON.stringify(manifest, null, 2));
       await openFolder(app, project);
       await app.click(button('Project settings'), 'the Project settings button');
+      await app.click(css('[data-open-config-editor="io"]'), 'the I/O mapping editor');
 
-      // The I/O Mapping section is open with the settings. The editor lists what the board has, with the pin names
+      // The I/O Mapping section is the I/O mapping editor, a tab. The editor lists what the board has, with the pin names
       // printed on it, the on-board LED among them.
       await app.until('the channels of the selected board', async () => await app.eval<boolean>(`document.querySelector('ul[aria-label="Channels of Raspberry Pi Pico (RP2040)"]') !== null`) || undefined);
       const listed = await app.eval<string>(`document.querySelector('ul[aria-label^="Channels of"]').innerText`);
@@ -2573,7 +2581,7 @@ export const JOURNEYS: Journey[] = [
       await connectAndRun(app);
       await watch(app, 'LED_Output');
       // The divider above the lower panel is dragged up so that the Watch table has room (the user's own choice).
-      await app.click(css('[role="separator"]'), 'the divider above the lower panel');
+      await app.click(css('#workspace-separator'), 'the divider above the lower panel');
       for (let step = 0; step < 6; step++) await app.press('ArrowUp');
       // The output changes every 500 ms: a picture counts when the table showed the value before and after it was taken.
       const outputShot = async (name: string, value: 'TRUE' | 'FALSE') => {
@@ -2742,7 +2750,7 @@ export const JOURNEYS: Journey[] = [
       assert(disk(file) === original, 'Reviewing the change wrote the file.');
 
       // the person takes the statement back and writes one that is harmless
-      await app.click(tab('Explorer', 'exact'));
+      await showExplorer(app);
       await clickEditorLine(app, last + 1);
       for (let attempt = 0; attempt < 6 && (await editorText(app)) !== before; attempt++) await app.press('Ctrl+Z');
       assert((await editorText(app)) === before, 'The journey could not undo its statement.');
@@ -2761,6 +2769,109 @@ export const JOURNEYS: Journey[] = [
       // and the rest of Studio, which needs no assistant, still builds the project
       const built = await compile(app);
       assert(built.kind === 'built', `The project does not build without the assistant: ${built.kind} ${built.message}`);
+    },
+  },
+  {
+    name: '45 The shell fits 1366 by 768 and 1024 by 768, and its separators move from the keyboard', example: 'blinky_st', proves: ['UX-023'], partly: ['UX-011', 'UX-012', 'UX-017'],
+    run: async (app, { project }) => {
+      const resize = async (width: number) => {
+        await app.cdp.command('Emulation.setDeviceMetricsOverride', { width, height: 768, deviceScaleFactor: 1, mobile: false });
+        await app.until(`the window to be ${width} wide`, async () => await app.eval<number>('window.innerWidth') === width || undefined);
+      };
+      // Every control of the main path has a box inside the window, and none overlaps another.
+      const assertFits = async (when: string) => {
+        const problems = await app.eval<string[]>(`(() => {
+          const vw = window.innerWidth, vh = window.innerHeight;
+          const controls = [...document.querySelectorAll('[role="toolbar"][aria-label="Project operations"] button, [data-activity-rail] button, [aria-label="Navigator view"] button, [role="tab"][id^="editor-tab-"], #console-tab-output, #console-tab-problems, #console-tab-watch')]
+            .map((element) => ({ element, rect: element.getBoundingClientRect(), name: element.getAttribute('aria-label') || element.textContent?.trim() || element.id }))
+            .filter(({ rect, element }) => rect.width > 0 && rect.height > 0 && getComputedStyle(element).visibility !== 'hidden');
+          const found = [];
+          // a tab of a strip that scrolls sideways (the results panel has ten) is reached by scrolling it: it is not clipped, and the selected one is always in view
+          const scrolledOut = (element, rect) => { for (let parent = element.parentElement; parent; parent = parent.parentElement) { if (['auto', 'scroll'].includes(getComputedStyle(parent).overflowX) && parent.scrollWidth > parent.clientWidth) { const box = parent.getBoundingClientRect(); return element.getAttribute('aria-selected') !== 'true' && (rect.left < box.left - 0.5 || rect.right > box.right + 0.5); } } return false; };
+          for (let index = controls.length - 1; index >= 0; index--) if (scrolledOut(controls[index].element, controls[index].rect)) controls.splice(index, 1);
+          for (const { rect, name } of controls) if (rect.left < -0.5 || rect.top < -0.5 || rect.right > vw + 0.5 || rect.bottom > vh + 0.5) found.push('clipped: ' + name + ' ' + Math.round(rect.left) + '..' + Math.round(rect.right) + ' of ' + vw);
+          for (let first = 0; first < controls.length; first++) for (let second = first + 1; second < controls.length; second++) {
+            const a = controls[first], b = controls[second];
+            if (a.element.contains(b.element) || b.element.contains(a.element)) continue;
+            const across = Math.min(a.rect.right, b.rect.right) - Math.max(a.rect.left, b.rect.left), down = Math.min(a.rect.bottom, b.rect.bottom) - Math.max(a.rect.top, b.rect.top);
+            if (across > 1 && down > 1) found.push('overlap: ' + a.name + ' and ' + b.name);
+          }
+          if (document.documentElement.scrollWidth > vw) found.push('the page scrolls sideways');
+          return found;
+        })()`);
+        assert(problems.length === 0, `At ${when}: ${problems.slice(0, 6).join('; ')}`);
+      };
+      const value = (id: string) => app.eval<number>(`Number(document.getElementById(${JSON.stringify(id)})?.getAttribute('aria-valuenow'))`);
+      const press = async (id: string, chord: string) => { await app.eval(`document.getElementById(${JSON.stringify(id)})?.focus()`); await app.press(chord); };
+
+      await resize(1366);
+      await openFolder(app, project);
+
+      // the regions of the shell (UX-011), with the navigator showing the project's objects as soon as it opens (UX-012)
+      for (const region of ['[data-activity-rail]', '[aria-label="Primary sidebar"]', '#editor', '[aria-label="Workbench panels"]', '[aria-label="Operational status"]']) {
+        assert(await app.visible(css(region)), `The region ${region} is not shown at 1366 by 768.`);
+      }
+      assert(await app.eval<boolean>(`document.querySelectorAll('[data-object-navigator] [data-navigator-group]').length === 9`), 'The navigator does not list the nine groups of PLC objects when the project opens.');
+      assert(await app.eval<boolean>(`[...document.querySelectorAll('[data-activity-rail] button')].map((button) => button.getAttribute('aria-label')).join() === 'Project,Search,Tests,Learn'`), 'The activity rail does not offer Project, Search, Tests and Learn.');
+      assert(await app.eval<boolean>(`document.querySelector('[data-activity="project"]')?.getAttribute('aria-current') === 'true'`), 'The selected activity is not marked.');
+      // the secondary sidebar starts hidden, and the command bar has the button that shows it
+      assert(!await app.visible(css('[aria-label="Secondary sidebar"]')), 'The secondary sidebar is shown before it was asked for.');
+      await app.click(css('[data-toggle-inspector]'), 'the Inspector button of the command bar');
+      await app.until('the Inspector in the secondary sidebar', async () => await app.visible(css('[aria-label="Secondary sidebar"] [aria-label="Workbench inspector"]')) || undefined);
+      await assertFits('1366 by 768 with the project open');
+
+      // the separators (UX-017): named, valued, moved by arrow, Shift+arrow, Home and End, restored by a double click
+      for (const id of ['primary-separator', 'secondary-separator', 'workspace-separator']) {
+        assert(await app.eval<boolean>(`(() => { const element = document.getElementById(${JSON.stringify(id)}); return element?.getAttribute('role') === 'separator' && Boolean(element.getAttribute('aria-label')) && ['aria-orientation', 'aria-valuenow', 'aria-valuemin', 'aria-valuemax'].every((name) => element.hasAttribute(name)); })()`), `The separator ${id} lacks its role, name, orientation or value.`);
+      }
+      const start = await value('primary-separator');
+      await press('primary-separator', 'ArrowRight');
+      await app.until('the arrow key to move the primary separator', async () => await value('primary-separator') > start + 0.5 || undefined);
+      const small = (await value('primary-separator')) - start;
+      await press('primary-separator', 'Shift+ArrowRight');
+      await app.until('Shift+arrow to move it further', async () => (await value('primary-separator')) - start > small + 5 || undefined);
+      await press('primary-separator', 'Home');
+      const lowest = await app.until('Home to reach the limit', async () => (await value('primary-separator')) < start - 0.5 ? await value('primary-separator') : undefined);
+      await press('primary-separator', 'End');
+      await app.until('End to reach the other limit', async () => await value('primary-separator') > lowest + 5 || undefined);
+      await press('primary-separator', 'ArrowLeft');
+      const moved = await value('primary-separator');
+      const hover = await app.eval<string>(`(() => { const rect = document.getElementById('primary-separator').getBoundingClientRect(); return JSON.stringify([rect.left + rect.width / 2, rect.top + rect.height / 2]); })()`);
+      const [x, y] = JSON.parse(hover) as [number, number];
+      await app.clickAt(x, y, 2);
+      await app.until('the double click to restore the default size', async () => Math.abs(await value('primary-separator') - moved) > 0.5 || undefined);
+      await press('primary-separator', 'ArrowRight');
+      const saved = await value('primary-separator');
+      const stored = await app.eval<number | null>(`(() => { try { return JSON.parse(localStorage.getItem('react-resizable-panels:zplc-ide-shell.v1') ?? 'null')?.primary ?? null; } catch { return null; } })()`);
+      assert(stored !== null && Math.abs(stored - saved) < 1, `The separator position is not kept: stored ${stored}, shown ${saved}.`);
+
+      // the main path at 1366: edit, save, build, simulate, watch
+      await openFile(app, 'src/main.st');
+      // an empty line is short enough to click at both window sizes, unlike the comment on the first line
+      await cursorAtEndOfLine(app, 9);
+      await app.type('  ');
+      await app.until('the typed text in the editor', async () => (await editorText(app)).split('\n')[8] === '  ' || undefined);
+      await app.press('Ctrl+S');
+      const built = await compile(app);
+      assert(built.kind === 'built', `The example does not build at 1366: ${built.message}`);
+      await connectAndRun(app);
+      await watch(app, 'LED_Output');
+      await assertFits('1366 by 768 while the simulation runs and the Watch table shows');
+
+      // one lesson of Learn opens from the rail (UX-011)
+      await app.click(css('[data-activity="learn"]'), 'the Learn activity');
+      await app.until('the lessons in the primary sidebar', async () => await app.visible(css('[aria-label="Primary sidebar"] [aria-label="Lesson"] button, [aria-label="Primary sidebar"] [aria-label="Lección"] button')) || undefined);
+      await assertFits('1366 by 768 with the lessons shown');
+
+      // the minimum window: the rail is icons only, the secondary sidebar hides itself, the command bar still fits (UX-023)
+      await resize(1024);
+      await app.until('the compact shell', async () => await app.eval<boolean>(`document.querySelector('[data-activity-rail]')?.getAttribute('data-density') === 'compact' && !document.querySelector('[aria-label="Secondary sidebar"]')`) || undefined);
+      assert(await app.eval<boolean>(`!document.querySelector('.activity-rail-label')`), 'The rail keeps its labels at the minimum window.');
+      await assertFits('1024 by 768 while the simulation runs');
+      await app.click(css('[data-activity="project"]'), 'the Project activity');
+      await app.until('the navigator at 1024', async () => await app.visible(css('[aria-label="Navigator view"]')) || undefined);
+      await assertFits('1024 by 768 with the navigator shown');
+      await app.cdp.command('Emulation.clearDeviceMetricsOverride');
     },
   },
 ];

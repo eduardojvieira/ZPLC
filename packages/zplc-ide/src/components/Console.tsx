@@ -1,7 +1,8 @@
 /**
  * Console Component
  * 
- * Lower workbench panel with Explorer, Inspector, Output, Problems, Tests, Watch, and Terminal tabs.
+ * The results panel under the editor (UX-011): Output, Problems, Tests, Interlocks, Lab, Changes, Agent, Trace, Watch and Terminal tabs.
+ * The Explorer, the Inspector and the lessons are views of the sidebars (shell/Sidebars.tsx).
  * The Terminal tab provides direct shell access to ZPLC devices.
  * The Watch tab shows live debug values.
  */
@@ -22,9 +23,7 @@ import {
   LoaderCircle,
   Play,
   Activity,
-  PanelRight,
   FileDiff,
-  BookOpen,
   Bot,
   Send,
   CircleStop,
@@ -49,11 +48,10 @@ import { NativeAdapter } from '../runtime/nativeAdapter';
 import { claimMotorInputCommand, shouldClearMotorInputFailure } from './liveNativeMotorPanel';
 import { presentWorkspaceSafetyCheck, type WorkspaceSafetyPresentation } from './workspaceSafetyPresentation';
 import { InterlockCoverage } from './InterlockCoverage';
-import { ProjectExplorer } from './ProjectExplorer';
 import { ErrorBoundary } from './ErrorBoundary';
 import { DevFaultProbe } from './DevFaultProbe';
-import { WorkbenchInspector } from './WorkbenchInspector';
-import { LearnPanel } from './LearnPanel';
+import { resultsTabFor } from '../shell/shellRouting';
+import { usePublishWorkspaceTestResult } from '../shell/workspaceTestResult';
 import { LabPanel } from './LabPanel';
 import { elementToSelect } from '../editors/diagnosticElement';
 import { requestElementSelection } from '../editors/elementSelectionRequests';
@@ -91,7 +89,7 @@ export function Console({ debugController }: ConsoleProps) {
   const { t } = useT();
   const {
     consoleEntries,
-    activeConsoleTab,
+    activeConsoleTab: storedConsoleTab,
     compilerMessages,
     compilerMessagesChecked,
     stBufferDiagnostics,
@@ -117,6 +115,8 @@ export function Console({ debugController }: ConsoleProps) {
     saveFile,
     updateFileContent,
   } = useConsoleState();
+  // a request for a view that left this panel (the explorer, the inspector, the lessons) is shown by the sidebars; this panel keeps its own tab
+  const activeConsoleTab = resultsTabFor(storedConsoleTab);
   const { effectiveTheme } = useTheme();
   const projectBlocks = useProjectBlocks();
   const [workspaceTestBusy, setWorkspaceTestBusy] = useState(false);
@@ -152,6 +152,9 @@ export function Console({ debugController }: ConsoleProps) {
   const workspaceSafetyStateForLink = workspaceSafetyState === 'idle' || !isWorkspaceTestRunCurrent({ projectSession, compilerRunId, workspaceScenarioLink }, workspaceSafetyState)
     ? 'idle'
     : 'status' in workspaceSafetyState ? workspaceSafetyState.status : workspaceSafetyState;
+
+  // The lessons live in the sidebar and read the latest scenario run from here.
+  usePublishWorkspaceTestResult(typeof workspaceTestStateForLink === 'object' ? workspaceTestStateForLink.presentation : undefined);
 
   // Get watch count for badge
   const watchCount = useIDEStore((state) => state.debug.watchVariables.length);
@@ -193,8 +196,6 @@ export function Console({ debugController }: ConsoleProps) {
   };
 
   const tabs: { id: ConsoleTab; label: string; icon: React.ReactNode; count?: React.ReactNode; ariaLabel?: string }[] = [
-    { id: 'explorer', label: 'Explorer', icon: <FolderOpen size={14} />, ariaLabel: 'Explorer' },
-    { id: 'inspector', label: 'Inspector', icon: <PanelRight size={14} />, ariaLabel: 'Inspector' },
     { 
       id: 'output', 
       label: 'Output', 
@@ -215,7 +216,6 @@ export function Console({ debugController }: ConsoleProps) {
     },
     { id: 'interlocks', label: 'Interlocks', icon: <ShieldCheck size={14} />, ariaLabel: 'Interlocks, declared output interlock coverage' },
     { id: 'lab', label: 'Lab', icon: <Boxes size={14} />, ariaLabel: 'Lab, recorded host scenario playback' },
-    { id: 'learn', label: 'Learn', icon: <BookOpen size={14} />, ariaLabel: 'Learn, safe motor start-stop lesson' },
     { id: 'changes', label: 'Changes', icon: <FileDiff size={14} />, ariaLabel: 'Changes, candidate review' },
     { id: 'agent', label: 'Agent', icon: <Bot size={14} />, ariaLabel: 'Agent, optional provider' },
     {
@@ -454,7 +454,7 @@ export function Console({ debugController }: ConsoleProps) {
       setAgentStatus(status); if (config) setAgentConfig(config);
       setAgentState(status.kind === 'invalid' ? 'unavailable' : 'idle');
     } catch { setAgentState('unavailable'); }
-  }, [aiProvider]);
+  }, [aiProvider, setAgentState, setAgentStatus, setAgentConfig]);
 
   const agentEditFile = activeFile && activeFile.language === 'ST' && isCandidateSTPath(activeFile.path) && activeFile.handle && !activeFile.isModified ? activeFile : undefined;
   const agentBusy = agentState === 'sending' || agentState === 'cancelling';
@@ -665,10 +665,6 @@ export function Console({ debugController }: ConsoleProps) {
           </div>
         )}
 
-        {activeConsoleTab === 'explorer' && <ProjectExplorer />}
-
-        {activeConsoleTab === 'inspector' && <WorkbenchInspector />}
-
         {activeConsoleTab === 'problems' && (
           <div className="p-2 space-y-1">
             <div className="pb-1 text-xs tabular-nums text-[var(--color-surface-300)] border-b border-[var(--color-surface-700)]">
@@ -800,8 +796,6 @@ export function Console({ debugController }: ConsoleProps) {
         )}
 
         {activeConsoleTab === 'interlocks' && <InterlockCoverage availability={workspaceTestAvailabilityState} state={workspaceSafetyStateForLink} busy={workspaceTestBusy} onCheck={() => { void runWorkspaceSafetyCheck(); }} />}
-
-        {activeConsoleTab === 'learn' && <LearnPanel workspaceTestPresentation={typeof workspaceTestStateForLink === 'object' ? workspaceTestStateForLink.presentation : undefined} />}
 
         {activeConsoleTab === 'changes' && (
           <div className="min-h-full p-3 font-sans text-sm text-[var(--color-surface-200)]">

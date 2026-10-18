@@ -4,7 +4,8 @@ import { join } from 'node:path';
 
 const source = (...parts: string[]) => readFileSync(join(import.meta.dir, '..', ...parts), 'utf8');
 const editor = source('components', 'CodeEditor.tsx');
-const app = source('App.tsx');
+// the app starts the saving; the workbench shell, which App renders, holds the split
+const app = source('App.tsx') + source('shell', 'WorkbenchShell.tsx');
 
 describe('the editor reports and applies the session (IDE-008)', () => {
   it('reports the cursor and the scroll of the file behind the shown model, not of whichever file the component was last given', () => {

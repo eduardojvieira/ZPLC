@@ -182,7 +182,7 @@ async function captureReviewScreens(cdp: Cdp, reviewDir: string): Promise<void> 
   const assertReviewFrame = async (width: number, requireRun: boolean) => {
     const valid = await cdp.evaluate(`(() => {
       const viewport = window.innerWidth;
-      const required = [document.querySelector('[aria-label="Workbench panels"]'), document.querySelector('button[aria-label="Inspector"]'), document.querySelector('[aria-label="Operational status"]')];
+      const required = [document.querySelector('[aria-label="Workbench panels"]'), document.querySelector('[data-activity-rail]'), document.querySelector('[aria-label="Operational status"]')];
       const inViewport = required.every((element) => { const rect = element?.getBoundingClientRect(); return Boolean(rect) && rect.left >= 0 && rect.right <= viewport && rect.top >= 0 && rect.bottom <= window.innerHeight; });
       const truthRail = document.querySelector('[aria-label="Operational status"]')?.getBoundingClientRect();
       const controls = !${requireRun} || Boolean(document.querySelector('button[aria-label="Disconnect"]') && document.querySelector('button[aria-label="Run (F5)"]'));
@@ -207,10 +207,10 @@ async function captureReviewScreens(cdp: Cdp, reviewDir: string): Promise<void> 
     await assertReviewFrame(width, width === 1024);
     await screenshot(`${theme}-${width}.png`);
   }
-  await cdp.evaluate(`document.querySelector('button[aria-label="Explorer"]')?.click()`);
-  await waitFor('review Explorer lower panel', async () => await cdp.evaluate(`Boolean(document.querySelector('#console-panel-explorer [role="tree"]')) ? true : undefined`) === true ? true : undefined);
-  assert(await cdp.evaluate(`(() => { const panel = document.getElementById('console-panel-explorer')?.getBoundingClientRect(); const editor = document.getElementById('editor-panel')?.getBoundingClientRect(); return Boolean(panel && editor && panel.top >= editor.bottom); })()`) === true, 'Explorer must live in the lower ledger');
-  await screenshot('explorer-ledger-1024.png');
+  await cdp.evaluate(`import('/src/store/useShellLayout.ts').then(({ useShellLayout }) => { const shell = useShellLayout.getState(); shell.showActivity('project'); shell.setNavigatorMode('files'); })`);
+  await waitFor('review Explorer in the primary sidebar', async () => await cdp.evaluate(`Boolean(document.querySelector('[aria-label="Primary sidebar"] [role="tree"]')) ? true : undefined`) === true ? true : undefined);
+  assert(await cdp.evaluate(`(() => { const panel = document.querySelector('[aria-label="Primary sidebar"]')?.getBoundingClientRect(); const editor = document.getElementById('editor-panel')?.getBoundingClientRect(); return Boolean(panel && editor && panel.right <= editor.left + 1); })()`) === true, 'Explorer must live in the primary sidebar, left of the editor');
+  await screenshot('explorer-sidebar-1024.png');
   for (const [kind, fileId] of [['fbd', 'blinky-fbd'], ['ld', 'blinky-ld'], ['sfc', 'blinky-sfc']] as const) {
     for (const theme of ['light', 'dark'] as const) {
       await cdp.command('Emulation.setDeviceMetricsOverride', { width: 1366, height: 768, deviceScaleFactor: 1, mobile: false });
@@ -638,8 +638,8 @@ async function main(): Promise<void> {
       await waitFor('restored visual smoke state', async () => await page().evaluate(`JSON.stringify(window.__zplcSmoke?.visualStateRestored) === JSON.stringify(${JSON.stringify(visualState)}) ? true : undefined`) === true ? true : undefined);
     }
 
-    await page().evaluate(`document.querySelector('button[aria-label^="Explorer"]')?.click()`);
-    await waitFor('Explorer lower ledger', async () => await page().evaluate(`Boolean(document.querySelector('#console-panel-explorer [role="tree"]')) ? true : undefined`) === true ? true : undefined);
+    await page().evaluate(`import('/src/store/useShellLayout.ts').then(({ useShellLayout }) => { const shell = useShellLayout.getState(); shell.showActivity('project'); shell.setNavigatorMode('files'); })`);
+    await waitFor('Explorer in the primary sidebar', async () => await page().evaluate(`Boolean(document.querySelector('[aria-label="Primary sidebar"] [role="tree"]')) ? true : undefined`) === true ? true : undefined);
     assert(await page().evaluate(`(() => { const tree = document.querySelector('[role="tree"]'); const items = [...document.querySelectorAll('[role="treeitem"]')]; const group = tree?.querySelector('[role="group"]'); return tree?.getAttribute('aria-label') === 'Project files' && items.length === 3 && items.filter((item) => item.tabIndex === 0).length === 1 && items.every((item) => !item.firstElementChild?.classList.contains('ring-2')) && group?.closest('[role="treeitem"]')?.getAttribute('data-tree-node-id') === 'src'; })()`) === true, 'Explorer must own its group beneath src with one roving tab stop and no persistent focus ring');
     await page().evaluate(`document.querySelector('[data-tree-node-id="src"]')?.focus()`);
     await press('ArrowLeft');
@@ -663,8 +663,8 @@ async function main(): Promise<void> {
     await waitFor('mouse collapsed src focus', async () => await page().evaluate(`(() => { const src = document.querySelector('[data-tree-node-id="src"]'); return src?.getAttribute('aria-expanded') === 'false' && document.activeElement === src && [...document.querySelectorAll('[role="treeitem"]')].filter((item) => item.tabIndex === 0).length === 1 ? true : undefined; })()`) === true ? true : undefined);
     await page().evaluate(`document.querySelector('[data-tree-node-id="src"] > div')?.click()`);
     await waitFor('mouse expanded src treeitem', async () => await page().evaluate(`document.querySelector('[data-tree-node-id="src"]')?.getAttribute('aria-expanded') === 'true' ? true : undefined`) === true ? true : undefined);
-    await page().evaluate(`document.querySelector('button[aria-label="Inspector"]')?.click()`);
-    await waitFor('Inspector lower ledger', async () => await page().evaluate(`Boolean(document.querySelector('#console-panel-inspector [aria-label="Workbench inspector"]')) ? true : undefined`) === true ? true : undefined);
+    await page().evaluate(`import('/src/store/useShellLayout.ts').then(({ useShellLayout }) => useShellLayout.getState().setSecondaryVisible(true))`);
+    await waitFor('Inspector in the secondary sidebar', async () => await page().evaluate(`Boolean(document.querySelector('[aria-label="Secondary sidebar"] [aria-label="Workbench inspector"]')) ? true : undefined`) === true ? true : undefined);
 
     assert(await page().evaluate(`(() => { const list = [...document.querySelectorAll('[role="tablist"]')].find((item) => item.getAttribute('aria-label') === 'Editor views'); const tabs = [...list?.querySelectorAll('[role="tab"]') ?? []]; const selected = tabs.filter((tab) => tab.getAttribute('aria-selected') === 'true'); return tabs.length === 2 && selected.length === 1 && selected[0]?.id === 'editor-tab-motor-st' && tabs.filter((tab) => tab.tabIndex === 0).length === 1 && tabs.every((tab) => tab.getAttribute('aria-controls') === 'editor-panel') && document.getElementById('editor-panel')?.getAttribute('aria-labelledby') === 'editor-tab-motor-st' && [...list?.children ?? []].every((item) => item.getAttribute('role') === 'presentation'); })()`) === true, 'Editor tabs must expose one selected roving tab with a shared labelled panel');
     await page().evaluate(`document.getElementById('editor-tab-motor-st')?.focus()`);
@@ -952,6 +952,9 @@ async function main(): Promise<void> {
     const settingsOpened = await page().evaluate(`(() => { const button = document.querySelector('button[data-project-settings]'); if (!button) return false; button.click(); return true; })()`);
     assert(settingsOpened === true, 'Could not open Project Settings');
     await waitFor('Project Settings', async () => (await text()).includes('Project Settings') ? true : undefined);
+    // the task form is the Tasks editor, a tab of its own (UX-013)
+    await page().evaluate(`document.querySelector('[data-open-config-editor="tasks"]')?.click()`);
+    await waitFor('the Tasks editor', async () => await page().evaluate(`Boolean(document.querySelector('[data-config-editor="tasks"]')) ? true : undefined`) === true ? true : undefined);
     await page().evaluate(`import('/src/store/useIDEStore.ts').then(({ useIDEStore }) => { const state = useIDEStore.getState(); window.__zplcSmoke.taskLimitOriginalConfig = state.projectConfig; window.__zplcSmoke.taskLimitSeeded = Boolean(state.projectConfig); if (state.projectConfig) useIDEStore.setState({ projectConfig: { ...state.projectConfig, tasks: Array.from({ length: 16 }, (_, index) => ({ name: 'Task' + (index + 1), trigger: 'cyclic', interval: 100, priority: 5, programs: [] })) } }); })`);
     await waitFor('task-limit smoke fixture', async () => await page().evaluate(`window.__zplcSmoke?.taskLimitSeeded && window.__zplcSmoke.taskLimitOriginalConfig ? true : undefined`) === true ? true : undefined);
     await waitFor('task limit UI', async () => (await text()).includes('Task limit reached: 16 of 16. Remove a task before adding another.') ? true : undefined);
@@ -959,7 +962,10 @@ async function main(): Promise<void> {
     await waitFor('task-limit functional guard', async () => await page().evaluate(`window.__zplcSmoke?.taskLimitUi === true ? true : undefined`) === true ? true : undefined);
     await page().evaluate(`import('/src/store/useIDEStore.ts').then(({ useIDEStore }) => { useIDEStore.setState({ projectConfig: window.__zplcSmoke.taskLimitOriginalConfig }); window.__zplcSmoke.taskLimitRestored = useIDEStore.getState().projectConfig === window.__zplcSmoke.taskLimitOriginalConfig; })`);
     await waitFor('restored task-limit smoke fixture', async () => await page().evaluate(`window.__zplcSmoke?.taskLimitRestored === true ? true : undefined`) === true ? true : undefined);
-    assert(await page().evaluate(`(() => { const list = [...document.querySelectorAll('[role="tablist"]')].find((item) => item.getAttribute('aria-label') === 'Editor views'); const tabs = [...list?.querySelectorAll('[role="tab"]') ?? []]; return tabs.filter((tab) => tab.getAttribute('aria-selected') === 'true').length === 1 && document.getElementById('editor-tab-settings')?.getAttribute('aria-selected') === 'true' && document.getElementById('editor-tab-settings')?.tabIndex === 0 && document.getElementById('editor-panel')?.getAttribute('aria-labelledby') === 'editor-tab-settings'; })()`) === true, 'Settings must remain the selected editor tab');
+    assert(await page().evaluate(`(() => { const list = [...document.querySelectorAll('[role="tablist"]')].find((item) => item.getAttribute('aria-label') === 'Editor views'); const tabs = [...list?.querySelectorAll('[role="tab"]') ?? []]; return tabs.filter((tab) => tab.getAttribute('aria-selected') === 'true').length === 1 && document.getElementById('editor-tab-config:tasks')?.getAttribute('aria-selected') === 'true' && document.getElementById('editor-tab-config:tasks')?.tabIndex === 0 && document.getElementById('editor-panel')?.getAttribute('aria-labelledby') === 'editor-tab-config:tasks'; })()`) === true, 'The Tasks editor must remain the selected editor tab');
+    // the toolchain card is part of the Target editor
+    await page().evaluate(`import('/src/navigator/openConfigEditor.ts').then(({ openConfigEditorFromNavigator }) => openConfigEditorFromNavigator('target'))`);
+    await waitFor('the Target editor', async () => await page().evaluate(`Boolean(document.querySelector('[data-config-editor="target"]')) ? true : undefined`) === true ? true : undefined);
     assert((await text()).includes('Firmware toolchain') && (await text()).includes('Not checked'), 'Toolchain card did not start in its honest idle state');
     assert(await page().evaluate(`(() => { const card = [...document.querySelectorAll('details')].find((item) => item.textContent?.includes('Firmware toolchain')); card?.querySelector('summary')?.click(); const button = [...card?.querySelectorAll('button') ?? []].find((item) => item.textContent?.includes('Choose checkout & check')); return Boolean(card?.open && button?.getAttribute('type') === 'button' && button?.getAttribute('aria-describedby')); })()`) === true, 'Toolchain card must expose an accessible human check action');
     await page().evaluate(`([...document.querySelectorAll('button')].find((item) => item.textContent?.includes('Choose checkout & check')))?.focus()`); await click('Choose checkout & check');
@@ -994,6 +1000,9 @@ async function main(): Promise<void> {
     await page().evaluate(`window.__zplcSmoke.buildMode = 'malformed'; document.querySelector('button[aria-label="Build runtime locally"]')?.focus()`); await click('Build runtime locally');
     await waitFor('malformed local build failure', async () => (await text()).includes('Firmware build did not complete.') ? true : undefined);
     assert(!(await text()).includes('do-not-render'), 'Malformed firmware build result reached the DOM');
+    // back to the settings tab alone, as the rest of the journey expects
+    await page().evaluate(`import('/src/store/useConfigEditors.ts').then(({ useConfigEditors }) => useConfigEditors.getState().reset()).then(() => document.querySelector('button[data-project-settings]')?.click())`);
+    await waitFor('the settings tab again', async () => await page().evaluate(`document.getElementById('editor-tab-settings') ? true : undefined`) === true ? true : undefined);
     await page().evaluate(`document.getElementById('editor-tab-settings')?.focus()`);
     await Bun.sleep(50);
     assert(await page().evaluate(`document.activeElement?.id === 'editor-tab-settings'`) === true, 'Terminal build focus recovery must not override a later Settings focus');
@@ -1034,8 +1043,8 @@ async function main(): Promise<void> {
     await waitFor('Aux ST after visual history smoke', async () => await page().evaluate(`window.__zplcSmoke.getState?.().activeFileId === 'aux-st' ? true : undefined`) === true ? true : undefined);
     await page().evaluate(`import('/src/store/useIDEStore.ts').then(({ useIDEStore }) => { const state = useIDEStore.getState(); useIDEStore.setState({ projectConfigDirty: true, debug: { ...state.debug, forcedValues: new Map(), forcesUnconfirmed: false } }); window.__zplcSmoke.closeDirty = useIDEStore.getState().hasUnsavedChanges(); })`);
     await waitFor('dirty project before close', async () => await page().evaluate('window.__zplcSmoke.closeDirty ? true : undefined') === true ? true : undefined);
-    await page().evaluate(`document.querySelector('button[aria-label="Explorer"]')?.click()`);
-    await waitFor('Explorer lower ledger before close project', async () => await page().evaluate(`Boolean(document.querySelector('#console-panel-explorer [role="tree"]')) ? true : undefined`) === true ? true : undefined);
+    await page().evaluate(`import('/src/store/useShellLayout.ts').then(({ useShellLayout }) => { const shell = useShellLayout.getState(); shell.showActivity('project'); shell.setNavigatorMode('files'); })`);
+    await waitFor('Explorer in the primary sidebar before close project', async () => await page().evaluate(`Boolean(document.querySelector('[aria-label="Primary sidebar"] [role="tree"]')) ? true : undefined`) === true ? true : undefined);
     assert(await page().evaluate(`Boolean(document.querySelector('button[aria-label="Close project"]'))`) === true, 'Close Project control is unavailable');
     await page().evaluate(`document.querySelector('button[aria-label="Close project"]')?.focus(); document.querySelector('button[aria-label="Close project"]')?.click()`);
     await Bun.sleep(100);

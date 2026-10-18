@@ -60,6 +60,7 @@ import {
 } from './debugSessionState';
 import { EXECUTION_MODE, selectRuntimeArtifact, type ExecutionMode } from './runtimeArtifactSelection';
 import { OperationalStatusBar } from './OperationalStatusBar';
+import { CommandBarCenter } from '../shell/CommandBarCenter';
 import { generateStructuredText } from './visualToStructuredText';
 import { downloadBlob } from '../utils/downloadBlob';
 import { isWorkspaceTestRunCurrent, presentWorkspaceCompileResult, resolveWorkspaceCompileRoute } from './workspaceTestPresentation';
@@ -1027,14 +1028,13 @@ export function Toolbar({ debugController }: ToolbarProps) {
         )}
       </div>
 
-      {/* Spacer */}
-      <div className="flex-1" />
+      <CommandBarCenter />
 
       {/* Separator */}
       <div className="w-px h-6 bg-[var(--color-surface-600)]" />
 
       {/* Theme Switcher */}
-      <div className="relative" ref={themeMenuRef} onKeyDown={(event) => { if (event.key === 'Escape') { event.preventDefault(); closeThemeMenu(true); } }}>
+      <div className="relative max-[1100px]:hidden" ref={themeMenuRef} onKeyDown={(event) => { if (event.key === 'Escape') { event.preventDefault(); closeThemeMenu(true); } }}>
         <button
           ref={themeMenuTriggerRef}
           type="button"
@@ -1081,7 +1081,7 @@ export function Toolbar({ debugController }: ToolbarProps) {
       <button
         type="button"
         onClick={toggleSettings}
-        className="focus-ring p-1.5 rounded hover:bg-[var(--color-surface-700)] text-[var(--color-surface-200)] transition-colors"
+        className="focus-ring p-1.5 rounded hover:bg-[var(--color-surface-700)] text-[var(--color-surface-200)] transition-colors max-[1100px]:hidden"
         aria-label={t('toolbar.settings')}
         title={t('toolbar.settings')}
         data-project-settings

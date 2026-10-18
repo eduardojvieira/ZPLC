@@ -9,9 +9,11 @@ tags: [ide, user-guide]
 
 # Entorno de trabajo de Studio
 
-El entorno de trabajo mantiene la edición en el centro y reúne Explorer,
-Inspector, Output, Problems, Tests, Interlocks, Lab, Learn, Changes, Agent,
-Trace, Watch y Terminal en un solo panel inferior.
+El entorno de trabajo mantiene la edición en el centro. Una barra de actividades y una
+barra lateral principal, a la izquierda, contienen el navegador del proyecto, la
+búsqueda, las pruebas y las lecciones; una barra lateral secundaria opcional, a la
+derecha, contiene el Inspector; y un panel de resultados bajo el editor contiene
+Output, Problems, Tests, Interlocks, Lab, Changes, Agent, Trace, Watch y Terminal.
 
 ## Flujo diario
 
@@ -19,6 +21,87 @@ Trace, Watch y Terminal en un solo panel inferior.
 2. Compile y resuelva los diagnósticos.
 3. Ejecute una prueba temporal o un escenario POSIX nativo y revise su trace.
 4. Verifique el origen de los resultados antes de sacar una conclusión.
+
+## Disposición, navegador y editores de configuración
+
+La ventana tiene estas regiones, de arriba abajo: el menú de la aplicación, la barra de
+comandos (los controles de compilar, conectar y ejecutar, el nombre del proyecto y el botón
+de la paleta de comandos) y, una junto a otra, la **barra de actividades**, la **barra
+lateral principal**, el **área del editor** sobre el **panel de resultados** y la **barra
+lateral secundaria**; al final, la barra de estado.
+
+- **Barra de actividades.** Proyecto, Buscar, Pruebas y Aprender. Al elegir una, cambia la
+  barra lateral principal; la elegida se marca con una barra en su borde y un botón
+  relleno, no solo con el color. Pruebas muestra además el panel de resultados de las pruebas.
+- **Barra lateral principal.** Permanece visible junto con el panel de resultados. Proyecto
+  muestra el navegador; Buscar encuentra texto en el proyecto; Pruebas explica los
+  escenarios y abre los resultados; Aprender contiene las lecciones.
+- **Barra lateral secundaria.** El Inspector. Es opcional y empieza oculta, para que el editor
+  conserve su ancho: se muestra o se oculta con el botón Inspector de la barra de comandos o con
+  **Ver > Mostrar u ocultar la barra lateral secundaria**. Las paletas de bloques de los editores de escalera y
+  de diagrama de bloques de función permanecen dentro de esos editores.
+- **Panel de resultados.** Output, Problems, Tests, Interlocks, Lab, Changes, Agent, Trace,
+  Watch y Terminal. Se oculta con **Ver > Mostrar u ocultar el panel de resultados**.
+
+**Ver > Mostrar u ocultar la barra lateral principal** es `Ctrl+Alt+B`, la secundaria es
+`Ctrl+Alt+I` y el panel de resultados es `Ctrl+Alt+J` (⌘⌥ en macOS). **Mostrar el navegador
+del proyecto** es `Ctrl+Mayús+E` y **Buscar en el proyecto** es `Ctrl+Mayús+F`. Las barras
+laterales visibles y la actividad elegida se conservan entre sesiones.
+
+### Navegador por objetos PLC
+
+El navegador tiene dos modos, que se eligen con el conmutador de su encabezado y se recuerdan:
+
+- **Objetos** (el predeterminado) agrupa el proyecto en **Programas**, **Bloques de función**,
+  **Funciones**, **Tipos de datos**, **Variables globales**, **Tareas**, **Mapeo de E/S**,
+  **Comunicación** y **Dispositivo**. Los cinco primeros salen de la lectura que el compilador
+  hace de los archivos de texto estructurado (un archivo que declara varios objetos aparece
+  en cada tipo que declara) y, para Programas, de los archivos de diagramas y de lista de
+  instrucciones. Los demás salen de `zplc.json`. Al elegir un objeto, se abre su archivo en
+  su línea o su editor de configuración.
+- **Archivos** es el árbol de archivos con la sección de declaraciones y las carpetas de bibliotecas.
+
+### Editores de configuración
+
+**Tareas**, **Mapeo de E/S**, **Red**, **Comunicación** y **Destino** se abren cada uno en una
+pestaña del área del editor, desde el navegador o desde la lista de la pestaña de ajustes.
+Cada pestaña contiene el mismo formulario que tenía la página de ajustes, con todos los
+ajustes que ofrecía; la pestaña de ajustes conserva los metadatos del proyecto y las
+preferencias de la aplicación. Todas las pestañas editan un solo documento, `zplc.json`:
+**Guardar la configuración** lo escribe, y cerrar la última pestaña que lo muestra con
+cambios sin guardar pregunta si guardar, descartar o seguir editando.
+
+### Búsqueda
+
+La búsqueda encuentra texto en los archivos de texto estructurado y de lista de instrucciones
+del proyecto, incluidos los cambios sin guardar, distinguiendo o no mayúsculas, y lista las
+coincidencias por archivo. Al elegir una coincidencia, se abre el archivo en esa línea. No
+busca en los diagramas, que se guardan como modelos.
+
+### Mover los separadores
+
+Cada separador entre dos regiones es una barra delgada que se resalta bajo el puntero, se
+rellena mientras se arrastra y muestra el anillo de foco cuando tiene el foco del teclado.
+Con el foco en un separador, las flechas lo mueven 5 puntos, Mayús con una flecha lo mueve 15,
+Inicio y Fin lo llevan a sus límites y Intro contrae o restaura el panel contiguo. Un doble
+clic restaura el tamaño predeterminado. Cada uno tiene un nombre accesible e informa su
+tamaño a las tecnologías de asistencia. Los tamaños de las barras laterales se conservan
+entre sesiones, y la división entre el editor y el panel de resultados se conserva por proyecto.
+
+### Tamaños de ventana
+
+La ruta principal (abrir un proyecto, editar, compilar, simular, vigilar) cabe en una ventana
+de 1366 por 768 píxeles sin controles recortados. La ventana puede ser tan pequeña como
+1024 por 768: por debajo de 1100 píxeles de ancho la barra de actividades muestra solo
+iconos, la barra lateral secundaria se oculta y los comandos de tema, ajustes y atajos pasan
+al menú **Más comandos** de la barra de comandos.
+
+Nivel de evidencia: host. Las pruebas unitarias de los requisitos UX-011, UX-012, UX-013 y UX-017
+(`packages/zplc-ide/src/shell/`, `src/navigator/`, `src/layout/separatorSteps.test.ts`,
+`src/store/useConfigEditors.test.ts`, `src/store/useShellLayout.test.ts`) y el recorrido
+"The shell fits 1366 by 768 and 1024 by 768, and its separators move from the keyboard"
+(`packages/zplc-ide/scripts/journeys.ts`, UX-023) los cubren en el equipo de desarrollo.
+No se midió ninguna ventana empaquetada, de macOS ni de Windows.
 
 ## Proyectos recientes y restauración de sesión
 
@@ -104,7 +187,7 @@ Nivel de evidencia: host. `packages/zplc-ide/electron/shellPreferences.test.ts`,
 
 ## Archivos y carpetas en el árbol del proyecto
 
-El encabezado del Explorer tiene **New File** y **New Folder**. Un clic derecho sobre un archivo o una carpeta (o F2 para renombrar) abre sus acciones:
+En el modo Archivos del navegador, el encabezado tiene **New File** y **New Folder**. Un clic derecho sobre un archivo o una carpeta (o F2 para renombrar) abre sus acciones:
 
 | Acción | Qué hace |
 |---|---|
@@ -149,7 +232,7 @@ Studio, y compara los resultados. No cubre una placa.
 
 ## Declaraciones y carpetas de biblioteca
 
-Bajo el árbol de archivos, el Explorer tiene una sección **Declarations** (cerrada hasta que usted la abre con su
+Bajo el árbol de archivos, el modo Archivos del navegador tiene una sección **Declarations** (cerrada hasta que usted la abre con su
 encabezado, que muestra cuántas hay y cuántos archivos no se compilan). Lista las declaraciones del proyecto: los
 programas, bloques de función, funciones, interfaces y tipos de datos que declaran sus archivos Structured Text,
 agrupados bajo su archivo. Elegir una abre su archivo con el cursor en su nombre. La lista cubre los archivos que lee la

@@ -9,9 +9,11 @@ tags: [ide, user-guide]
 
 # Studio Workbench
 
-The workbench keeps editing central and puts Explorer, Inspector, Output,
-Problems, Tests, Interlocks, Lab, Learn, Changes, Agent, Trace, Watch, and
-Terminal in one bottom panel.
+The workbench keeps editing central. An activity rail and a primary sidebar on the
+left hold the project navigator, search, tests, and the lessons; an optional
+secondary sidebar on the right holds the Inspector; and a results panel under the
+editor holds Output, Problems, Tests, Interlocks, Lab, Changes, Agent, Trace,
+Watch, and Terminal.
 
 ## Daily workflow
 
@@ -19,6 +21,86 @@ Terminal in one bottom panel.
 2. Compile and resolve diagnostics.
 3. Run a temporal test or native POSIX scenario and inspect its trace.
 4. Review the evidence source before drawing a conclusion.
+
+## Layout, navigator, and configuration editors
+
+The window has these regions, from the top: the application menu, the command bar
+(the build, connect, and run controls, the project name, and the command palette
+button), then, side by side, the **activity rail**, the **primary sidebar**, the
+**editor area** over the **results panel**, and the **secondary sidebar**, and
+last the status bar.
+
+- **Activity rail.** Project, Search, Tests, and Learn. Choosing one swaps the
+  primary sidebar; the chosen one is marked by a bar at its edge and a filled
+  button, not by colour alone. Tests also shows the test results panel.
+- **Primary sidebar.** Stays visible together with the results panel. Project shows
+  the navigator; Search finds text in the project; Tests explains the scenarios and
+  opens the results; Learn holds the lessons.
+- **Secondary sidebar.** The Inspector. It is optional and starts hidden, so that the
+  editor keeps its width: show or hide it with the Inspector button of the command bar or
+  **View > Show or hide the secondary sidebar**. The function-block palettes of the
+  Ladder and function block diagram editors stay inside those editors.
+- **Results panel.** Output, Problems, Tests, Interlocks, Lab, Changes, Agent,
+  Trace, Watch, and Terminal. Hide it with **View > Show or hide the results panel**.
+
+**View > Show or hide the primary sidebar** is `Ctrl+Alt+B`, the secondary sidebar is
+`Ctrl+Alt+I`, and the results panel is `Ctrl+Alt+J` (⌘⌥ on macOS). **Show the project
+navigator** is `Ctrl+Shift+E` and **Search in the project** is `Ctrl+Shift+F`. Which
+sidebars are shown and which activity is selected are kept between sessions.
+
+### Navigator by PLC objects
+
+The navigator has two modes, chosen with the toggle in its header and remembered:
+
+- **Objects** (the default) groups the project as **Programs**, **Function blocks**,
+  **Functions**, **Data types**, **Global variables**, **Tasks**, **I/O mapping**,
+  **Communication**, and **Device**. The first five come from the compiler's reading
+  of the Structured Text files (a file that declares several objects is listed under
+  each kind it declares) and, for Programs, from the diagram and instruction list
+  files. The others come from `zplc.json`. Choosing an object opens its file at its line,
+  or its configuration editor.
+- **Files** is the file tree with the Declarations section and the library folders.
+
+### Configuration editors
+
+**Tasks**, **I/O mapping**, **Network**, **Communication**, and **Target** each open as
+a tab of the editor area, from the navigator or from the list in the Settings tab.
+Each tab holds the same form the settings page held, with every setting it offered;
+the Settings tab keeps the project metadata and the application preferences. All the
+tabs edit one document, `zplc.json`: **Save configuration** writes it, and closing the
+last tab that shows it with unsaved edits asks whether to save, discard, or keep editing.
+
+### Search
+
+Search looks for text in the Structured Text and instruction list files of the project,
+including the changes that are not saved, with or without matching case, and lists the
+matches by file. Choosing a match opens the file at that line. It does not search
+diagrams, which are stored as models.
+
+### Moving the separators
+
+Each separator between two regions is a thin bar that lights up under the pointer, fills
+while you drag it, and shows the focus ring when it has the keyboard focus. With the
+focus on a separator, the arrow keys move it by 5 points, Shift with an arrow moves it
+by 15, Home and End take it to its limits, and Enter collapses or restores the panel
+next to it. A double click restores the default size. Each has an accessible name and
+reports its size to assistive technology. The sizes of the sidebars are kept between
+sessions, and the split of the editor and the results panel is kept for each project.
+
+### Window sizes
+
+The main path (open a project, edit, build, simulate, watch) fits a window of 1366 by 768
+pixels with no clipped control. The window can be as small as 1024 by 768: below
+1100 pixels wide the rail shows icons only, the secondary sidebar hides itself, and the
+theme, settings, and shortcut commands move into the **More commands** menu of the
+command bar.
+
+Evidence level: host. The unit tests of requirements UX-011, UX-012, UX-013 and UX-017
+(`packages/zplc-ide/src/shell/`, `src/navigator/`, `src/layout/separatorSteps.test.ts`,
+`src/store/useConfigEditors.test.ts`, `src/store/useShellLayout.test.ts`) and the journey
+"The shell fits 1366 by 768 and 1024 by 768, and its separators move from the keyboard"
+(`packages/zplc-ide/scripts/journeys.ts`, UX-023) cover them on the development host.
+No packaged, macOS, or Windows window was measured.
 
 ## Recent projects and session restore
 
@@ -104,7 +186,7 @@ Evidence level: host. `packages/zplc-ide/electron/shellPreferences.test.ts`, `sr
 
 ## Files and folders in the project tree
 
-The Explorer header has **New File** and **New Folder**. A right click on a file or a folder (or F2 for a rename) opens its actions:
+In the Files mode of the navigator, the header has **New File** and **New Folder**. A right click on a file or a folder (or F2 for a rename) opens its actions:
 
 | Action | What it does |
 |---|---|
@@ -148,7 +230,7 @@ compares the results. It does not cover a board.
 
 ## Declarations and library folders
 
-Under the file tree, the Explorer has a **Declarations** section (closed until you open it with its heading, which
+Under the file tree, the Files mode of the navigator has a **Declarations** section (closed until you open it with its heading, which
 shows how many there are and how many files are not compiled). It lists the declarations of the project: the programs,
 function blocks, functions, interfaces and data types that its Structured Text files declare, grouped under their
 file. Choosing one opens its file with the cursor on its name. The list covers the files the build reads and follows

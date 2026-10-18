@@ -31,12 +31,17 @@ import {
   type VisualHistories,
 } from '../editors/visualHistory';
 import { setVisualSelection, visualFileKey } from '../editors/visualSelection';
+import { useConfigEditors } from '../store/useConfigEditors';
+import { ConfigEditorTab, ConfigCloseDialog } from '../navigator/ConfigEditorTab';
+import { configCloseNeedsConfirmation, configEditorViewId, type ConfigEditorKind } from '../navigator/configEditors';
+import { discardProjectConfigEdits } from '../navigator/discardConfigEdits';
 
 // Each view loads when it is first shown (IDE-015): a project of Structured Text files never fetches the visual editors,
 // one of diagrams never fetches Monaco, and the settings load when they are opened.
 const FBDEditor = lazy(() => import('../editors/fbd').then((module) => ({ default: module.FBDEditor })));
 const LDEditor = lazy(() => import('../editors/ld').then((module) => ({ default: module.LDEditor })));
 const SFCEditor = lazy(() => import('../editors/sfc').then((module) => ({ default: module.SFCEditor })));
+const ConfigEditorHost = lazy(() => import('../navigator/ConfigEditorHost').then((module) => ({ default: module.ConfigEditorHost })));
 const ProjectSettings = lazy(() => import('./settings/ProjectSettings').then((module) => ({ default: module.ProjectSettings })));
 const CodeEditor = lazy(() => import('./CodeEditor').then((module) => ({ default: module.CodeEditor })));
 
@@ -99,7 +104,11 @@ export function EditorArea() {
     .map((id) => getFile(id))
     .filter((f): f is NonNullable<typeof f> => f !== undefined);
   const selectedFileId = tabFiles.some((file) => file.id === activeFileId) ? activeFileId : (tabFiles[0]?.id ?? null);
-  const selectedViewId = showSettings ? SETTINGS_TAB_ID : selectedFileId;
+  const configOpen = useConfigEditors((state) => state.open);
+  const configActive = useConfigEditors((state) => state.active);
+  const selectedViewId = showSettings ? SETTINGS_TAB_ID : configActive ? configEditorViewId(configActive) : selectedFileId;
+  const [closingConfig, setClosingConfig] = useState<ConfigEditorKind | null>(null);
+  const [savingConfig, setSavingConfig] = useState(false);
   const activeVisualFile = activeFile && isVisualWorkflow(activeFile.language) ? activeFile : null;
   const visualHistoryKey = activeVisualFile ? `${projectSession}:${activeVisualFile.id}` : null;
   const initialVisualHistoryState: VisualHistoryState = {
@@ -112,6 +121,12 @@ export function EditorArea() {
     () => visualHistoryState.projectSession === projectSession ? visualHistoryState.histories : new Map<string, never>(),
     [projectSession, visualHistoryState],
   );
+
+  // Another file shown, by any path (a tab, the navigator, a problem, a search result), leaves the configuration tab; a project of its own starts with none.
+  useEffect(() => useIDEStore.subscribe((state, previous) => {
+    if (state.activeFileId !== previous.activeFileId || state.compilerNavigationTarget !== previous.compilerNavigationTarget) useConfigEditors.getState().deselect();
+    if (state.projectSession !== previous.projectSession) useConfigEditors.getState().reset();
+  }), []);
 
   // Text files keep their Monaco model while their tab is open; closing the tab or the project drops it.
   useEffect(() => {
@@ -229,13 +244,45 @@ export function EditorArea() {
 
   const selectFileTab = useCallback((fileId: string) => {
     if (showSettings) toggleSettings();
+    useConfigEditors.getState().deselect();
     setActiveFile(fileId);
   }, [setActiveFile, showSettings, toggleSettings]);
+
+  const selectConfigTab = useCallback((kind: ConfigEditorKind) => {
+    if (showSettings) toggleSettings();
+    useConfigEditors.getState().show(kind);
+  }, [showSettings, toggleSettings]);
+
+  const closeConfigTab = (kind: ConfigEditorKind) => {
+    useConfigEditors.getState().close(kind);
+    requestAnimationFrame(() => document.querySelector<HTMLElement>('[role="tab"][aria-selected="true"]')?.focus());
+  };
+
+  // The configuration is one document shared by its tabs and the settings tab: the last view to close asks about unsaved edits.
+  const handleCloseConfigTab = (kind: ConfigEditorKind) => {
+    const others = configOpen.length - 1 + (showSettings ? 1 : 0);
+    if (configCloseNeedsConfirmation(useIDEStore.getState().projectConfigDirty, others)) setClosingConfig(kind);
+    else closeConfigTab(kind);
+  };
+
+  const answerConfigClose = async (choice: 'save' | 'discard' | 'cancel') => {
+    const kind = closingConfig;
+    if (!kind) return;
+    if (choice === 'save') {
+      setSavingConfig(true);
+      await useIDEStore.getState().saveProjectConfig();
+      setSavingConfig(false);
+    }
+    const discarded = choice === 'discard' ? await discardProjectConfigEdits() : false;
+    const stillDirty = useIDEStore.getState().projectConfigDirty;
+    if (choice !== 'cancel' && (choice === 'save' ? !stillDirty : discarded)) closeConfigTab(kind);
+    setClosingConfig(null);
+  };
 
   const handleTabKeyDown = useCallback((event: KeyboardEvent<HTMLButtonElement>, viewId: string) => {
     if (!['Home', 'End', 'ArrowLeft', 'ArrowRight'].includes(event.key)) return;
     event.preventDefault();
-    const editorViews = showSettings ? [SETTINGS_TAB_ID, ...tabFiles.map((file) => file.id)] : tabFiles.map((file) => file.id);
+    const editorViews = [...(showSettings ? [SETTINGS_TAB_ID] : []), ...configOpen.map(configEditorViewId), ...tabFiles.map((file) => file.id)];
     const index = editorViews.indexOf(viewId);
     if (index < 0) return;
     const destination = event.key === 'Home'
@@ -248,9 +295,11 @@ export function EditorArea() {
             ? editorViews[(index + 1) % editorViews.length]
             : undefined;
     if (!destination || destination === viewId) return;
-    if (destination !== SETTINGS_TAB_ID) selectFileTab(destination);
+    const config = configOpen.find((kind) => configEditorViewId(kind) === destination);
+    if (config) selectConfigTab(config);
+    else if (destination !== SETTINGS_TAB_ID) selectFileTab(destination);
     focusTab(destination);
-  }, [focusTab, selectFileTab, showSettings, tabFiles]);
+  }, [configOpen, focusTab, selectConfigTab, selectFileTab, showSettings, tabFiles]);
 
   const closeTabAndFocus = useCallback((fileId: string, discard: boolean) => {
     const remainingFileIds = tabFiles.filter((file) => file.id !== fileId).map((file) => file.id);
@@ -353,7 +402,7 @@ export function EditorArea() {
   );
 
   // No open tabs state (only if settings not shown)
-  if (tabFiles.length === 0 && !showSettings) {
+  if (tabFiles.length === 0 && !showSettings && configOpen.length === 0) {
     return (
       <div className="w-full h-full flex items-center justify-center bg-[var(--color-surface-900)]">
         <div className="text-center">
@@ -403,6 +452,11 @@ export function EditorArea() {
           </div>
         )}
         
+        {/* Configuration editors (UX-013) */}
+        {configOpen.map((kind) => (
+          <ConfigEditorTab key={kind} kind={kind} selected={!showSettings && configActive === kind} panelId={EDITOR_PANEL_ID} onSelect={selectConfigTab} onClose={handleCloseConfigTab} onKeyDown={handleTabKeyDown} />
+        ))}
+
         {/* File Tabs */}
         {tabFiles.map((file) => {
           if (!file) return null;
@@ -464,6 +518,8 @@ export function EditorArea() {
         {showSettings ? (
           /* Project Settings Panel */
           <ProjectSettings />
+        ) : configActive ? (
+          <ConfigEditorHost kind={configActive} />
         ) : activeFile ? (
           !supportsTextWorkflow(activeFile.language) && PLC_LANGUAGES[activeFile.language]?.isVisual ? (
             /* Visual Editors (FBD, LD, SFC) */
@@ -511,6 +567,7 @@ export function EditorArea() {
         </Suspense>
         </ErrorBoundary>
       </div>
+      {closingConfig && <ConfigCloseDialog busy={savingConfig} onChoice={(choice) => void answerConfigClose(choice)} />}
       {unsavedTabId && (
         <UnsavedChangesDialog
           title="Unsaved changes in this tab"
