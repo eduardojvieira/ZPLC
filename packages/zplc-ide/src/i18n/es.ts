@@ -10,6 +10,10 @@ import { toolchainEs } from './catalog/toolchain';
 import { commtagsEs } from './catalog/commtags';
 import { projectEs } from './catalog/project';
 import { labEs } from './catalog/lab';
+import { ldEs } from './catalog/ld';
+import { importArchiveEs } from './catalog/importArchive';
+import { interlockEs } from './catalog/interlock';
+import { learnEs } from './catalog/learn';
 
 /**
  * The Spanish catalog (UX-029, UX-030): neutral Latin American Spanish with impersonal or "usted" forms, as in
@@ -577,4 +581,8 @@ export const es: Record<MessageKey, string> = {
   ...commtagsEs,
   ...projectEs,
   ...labEs,
+  ...ldEs,
+  ...importArchiveEs,
+  ...interlockEs,
+  ...learnEs,
 };

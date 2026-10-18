@@ -40,38 +40,6 @@
     "reason": "Not yet moved to the catalogs of src/i18n; the surface's own work package moves it."
   },
   {
-    "file": "packages/zplc-ide/src/components/ImportArchive.tsx",
-    "rule": "hard-coded-attribute",
-    "count": 1,
-    "requirement": "UX-029",
-    "added": "2026-10-17",
-    "reason": "Not yet moved to the catalogs of src/i18n; the surface's own work package moves it."
-  },
-  {
-    "file": "packages/zplc-ide/src/components/ImportArchive.tsx",
-    "rule": "hard-coded-text",
-    "count": 15,
-    "requirement": "UX-029",
-    "added": "2026-10-17",
-    "reason": "Not yet moved to the catalogs of src/i18n; the surface's own work package moves it."
-  },
-  {
-    "file": "packages/zplc-ide/src/components/InterlockCoverage.tsx",
-    "rule": "hard-coded-attribute",
-    "count": 2,
-    "requirement": "UX-029",
-    "added": "2026-10-17",
-    "reason": "Not yet moved to the catalogs of src/i18n; the surface's own work package moves it."
-  },
-  {
-    "file": "packages/zplc-ide/src/components/InterlockCoverage.tsx",
-    "rule": "hard-coded-text",
-    "count": 15,
-    "requirement": "UX-029",
-    "added": "2026-10-17",
-    "reason": "Not yet moved to the catalogs of src/i18n; the surface's own work package moves it."
-  },
-  {
     "file": "packages/zplc-ide/src/components/LabPanel.tsx",
     "rule": "hard-coded-attribute",
     "count": 4,
@@ -83,22 +51,6 @@
     "file": "packages/zplc-ide/src/components/LabPanel.tsx",
     "rule": "hard-coded-text",
     "count": 19,
-    "requirement": "UX-029",
-    "added": "2026-10-17",
-    "reason": "Not yet moved to the catalogs of src/i18n; the surface's own work package moves it."
-  },
-  {
-    "file": "packages/zplc-ide/src/components/LearnPanel.tsx",
-    "rule": "hard-coded-attribute",
-    "count": 10,
-    "requirement": "UX-029",
-    "added": "2026-10-17",
-    "reason": "Not yet moved to the catalogs of src/i18n; the surface's own work package moves it."
-  },
-  {
-    "file": "packages/zplc-ide/src/components/LearnPanel.tsx",
-    "rule": "hard-coded-text",
-    "count": 15,
     "requirement": "UX-029",
     "added": "2026-10-17",
     "reason": "Not yet moved to the catalogs of src/i18n; the surface's own work package moves it."
@@ -347,22 +299,6 @@
     "file": "packages/zplc-ide/src/editors/fbd/nodes/NodeComment.tsx",
     "rule": "hard-coded-text",
     "count": 1,
-    "requirement": "UX-029",
-    "added": "2026-10-17",
-    "reason": "Not yet moved to the catalogs of src/i18n; the surface's own work package moves it."
-  },
-  {
-    "file": "packages/zplc-ide/src/editors/ld/LDEditor.tsx",
-    "rule": "hard-coded-attribute",
-    "count": 12,
-    "requirement": "UX-029",
-    "added": "2026-10-17",
-    "reason": "Not yet moved to the catalogs of src/i18n; the surface's own work package moves it."
-  },
-  {
-    "file": "packages/zplc-ide/src/editors/ld/LDEditor.tsx",
-    "rule": "hard-coded-text",
-    "count": 21,
     "requirement": "UX-029",
     "added": "2026-10-17",
     "reason": "Not yet moved to the catalogs of src/i18n; the surface's own work package moves it."

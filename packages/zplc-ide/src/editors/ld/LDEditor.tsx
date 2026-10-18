@@ -38,7 +38,7 @@ import { useElementBreakpoints } from '../elementBreakpoints';
 import { parseElement, rungElement, type SourceElementId } from '../../models/sourceElements';
 import { getVisualSelection, setVisualSelection, useVisualFileKey } from '../visualSelection';
 import type { VisualGesture } from '../visualHistory';
-import { t } from '../../i18n';
+import { useT } from '../../i18n';
 
 // =============================================================================
 // Props
@@ -64,6 +64,7 @@ interface ElementPropertiesProps {
 }
 
 function ElementProperties({ element, symbols = [], onChange, onClose }: ElementPropertiesProps) {
+  const { t } = useT();
   const [variable, setVariable] = useState(element.variable || '');
   const [fbInstance, setFbInstance] = useState(element.instance || '');
   const [comment, setComment] = useState(element.comment || '');
@@ -85,7 +86,7 @@ function ElementProperties({ element, symbols = [], onChange, onClose }: Element
   return (
     <div className="zplc-visual-node absolute top-0 right-0 w-64 border rounded-lg z-50 p-3">
       <div className="flex items-center justify-between mb-3">
-        <h3 className="text-sm font-bold text-[var(--text-primary)]">Element Properties</h3>
+        <h3 className="text-sm font-bold text-[var(--text-primary)]">{t('ld.elementProperties')}</h3>
         <button
           onClick={onClose}
           className="text-[var(--text-tertiary)] hover:text-[var(--text-primary)] text-lg"
@@ -96,7 +97,7 @@ function ElementProperties({ element, symbols = [], onChange, onClose }: Element
 
       <div className="space-y-3">
         <div>
-          <label className="block text-xs text-[var(--text-tertiary)] mb-1">Type</label>
+          <label className="block text-xs text-[var(--text-tertiary)] mb-1">{t('io.type')}</label>
           <div className="text-sm text-[var(--text-secondary)] font-mono bg-[var(--color-surface-700)] px-2 py-1 rounded">
             {isFB ? element.fbType : element.type}
           </div>
@@ -104,14 +105,14 @@ function ElementProperties({ element, symbols = [], onChange, onClose }: Element
 
         {!isFB && (
           <div>
-            <label className="block text-xs text-[var(--text-tertiary)] mb-1">Variable</label>
+            <label className="block text-xs text-[var(--text-tertiary)] mb-1">{t('a11y.ld.variable')}</label>
             <input
               aria-label={t('a11y.ld.variable')}
               type="text"
               value={variable}
               onChange={(e) => setVariable(e.target.value)}
               className="w-full bg-[var(--color-surface-700)] border border-[var(--border-color)] rounded px-2 py-1 text-sm text-[var(--text-secondary)]"
-              placeholder="Variable name"
+              placeholder={t('ld.variableName')}
               list="ld-declared-symbols"
             />
             <datalist id="ld-declared-symbols">
@@ -123,27 +124,27 @@ function ElementProperties({ element, symbols = [], onChange, onClose }: Element
         {isFB && (
           <>
             <div>
-              <label className="block text-xs text-[var(--text-tertiary)] mb-1">Instance Name</label>
+              <label className="block text-xs text-[var(--text-tertiary)] mb-1">{t('ld.instanceName')}</label>
               <input
                 aria-label={t('a11y.ld.fbInstance')}
                 type="text"
                 value={fbInstance}
                 onChange={(e) => setFbInstance(e.target.value)}
                 className="w-full bg-[var(--color-surface-700)] border border-[var(--border-color)] rounded px-2 py-1 text-sm text-[var(--text-secondary)]"
-                placeholder="Instance name"
+                placeholder={t('ld.instanceName')}
               />
             </div>
 
             {isTimer ? (
               <div>
-                <label className="block text-xs text-[var(--text-tertiary)] mb-1">Preset Time (PT)</label>
+                <label className="block text-xs text-[var(--text-tertiary)] mb-1">{t('ld.presetTimePt')}</label>
                 <input
                   type="text"
                   value={presetTime}
                   onChange={(e) => setPresetTime(e.target.value)}
-                  aria-label="Preset Time (PT)"
+                  aria-label={t('ld.presetTimePt')}
                   className="w-full bg-[var(--color-surface-700)] border border-[var(--border-color)] rounded px-2 py-1 text-sm text-[var(--text-secondary)] font-mono"
-                  placeholder="T#1s"
+                  placeholder={t('ld.t1s')}
                 />
               </div>
             ) : null}
@@ -152,14 +153,14 @@ function ElementProperties({ element, symbols = [], onChange, onClose }: Element
 
         {/* Comment field - available for all element types */}
         <div>
-          <label className="block text-xs text-[var(--text-tertiary)] mb-1">Comment</label>
+          <label className="block text-xs text-[var(--text-tertiary)] mb-1">{t('ld.comment')}</label>
           <textarea
             aria-label={t('a11y.ld.comment')}
             value={comment}
             onChange={(e) => setComment(e.target.value)}
             rows={2}
             className="w-full bg-[var(--color-surface-700)] border border-[var(--border-color)] rounded px-2 py-1 text-sm text-[var(--text-secondary)] resize-none"
-            placeholder="Optional description..."
+            placeholder={t('ld.optionalDescription')}
           />
         </div>
 
@@ -169,14 +170,14 @@ function ElementProperties({ element, symbols = [], onChange, onClose }: Element
             className="flex-1 bg-[var(--color-accent-blue)] hover:opacity-90 text-[var(--color-on-accent)] text-sm py-1.5 rounded
                        transition-colors"
           >
-            Save
+            {t('toolbar.save.title')}
           </button>
           <button
             onClick={onClose}
             className="flex-1 bg-[var(--color-surface-700)] hover:bg-[color-mix(in_srgb,var(--text-primary)_12%,transparent)] text-[var(--text-secondary)] text-sm py-1.5 rounded
                        transition-colors"
           >
-            Cancel
+            {t('common.cancel')}
           </button>
         </div>
       </div>
@@ -197,6 +198,7 @@ const READ_ONLY_COMMANDS: ReadonlySet<string> = new Set([
 ]);
 
 export default function LDEditor({ model, onChange, readOnly = false }: LDEditorProps) {
+  const { t, tn } = useT();
   const [selection, setSelection] = useState<LDSelection>(NO_SELECTION);
   const clipboardRef = useRef<LDClipboardFragment | undefined>(undefined);
   // The selection is not part of the document: it is remembered by file, and undo gives back the one from before (LNG-010)
@@ -530,7 +532,7 @@ export default function LDEditor({ model, onChange, readOnly = false }: LDEditor
       onKeyDown={handleKeyDown}
       tabIndex={0}
       role="region"
-      aria-label="Ladder diagram editor"
+      aria-label={t('ld.ladderDiagramEditor')}
       aria-keyshortcuts="F1"
       data-ld-cursor-at={cursor ? `${cursor.rungId}:${cursor.row},${cursor.col}` : undefined}
       data-ld-ask={ask?.kind}
@@ -547,7 +549,7 @@ export default function LDEditor({ model, onChange, readOnly = false }: LDEditor
               {normalizedModel.name}
             </span>
             <span className="text-xs text-[var(--text-tertiary)]">
-              {normalizedModel.rungs.length} rung{normalizedModel.rungs.length !== 1 ? 's' : ''}
+              {tn('ld.rungCount', normalizedModel.rungs.length)}
             </span>
           </div>
 
@@ -559,7 +561,7 @@ export default function LDEditor({ model, onChange, readOnly = false }: LDEditor
                          transition-colors"
             >
               <Plus size={14} />
-              Add Rung
+              {t('ld.addRung')}
             </button>
           )}
         </div>
@@ -569,13 +571,13 @@ export default function LDEditor({ model, onChange, readOnly = false }: LDEditor
           {normalizedModel.rungs.length === 0 ? (
             <div className="flex items-center justify-center h-full">
               <div className="text-center">
-                <p className="text-[var(--text-tertiary)] text-sm">No rungs defined</p>
+                <p className="text-[var(--text-tertiary)] text-sm">{t('ld.noRungsDefined')}</p>
                 {!readOnly && (
                   <button
                     onClick={handleAddRung}
                     className="mt-2 text-[var(--color-accent-blue)] hover:opacity-80 text-sm underline"
                   >
-                    Add your first rung
+                    {t('ld.addYourFirstRung')}
                   </button>
                 )}
               </div>
@@ -593,11 +595,11 @@ export default function LDEditor({ model, onChange, readOnly = false }: LDEditor
                     type="button"
                     data-breakpoint-rung={rung.id}
                     aria-pressed={armed}
-                    aria-label={`Breakpoint on rung ${rung.number}`}
-                    title={!settable ? 'This rung has no statement to stop at'
-                        : armed && breakpoints.inactiveReason ? `Breakpoint on rung ${rung.number} is not active: ${breakpoints.inactiveReason}`
-                          : !breakpoints.mapped ? `Toggle the breakpoint on rung ${rung.number}: it is armed when the program is loaded (F9 on the selected rung)`
-                            : `Toggle the breakpoint on rung ${rung.number} (F9 on the selected rung)`}
+                    aria-label={t('ld.breakpointOnRung', { number: rung.number })}
+                    title={!settable ? t('ld.thisRungHasNo')
+                        : armed && breakpoints.inactiveReason ? t('ld.breakpointOnRungIs', { number: rung.number, inactiveReason: breakpoints.inactiveReason })
+                          : !breakpoints.mapped ? t('ld.toggleTheBreakpointOn', { number: rung.number })
+                            : t('ld.toggleTheBreakpointOn2', { number: rung.number })}
                     disabled={!settable && !armed}
                     onClick={() => breakpoints.toggle(at)}
                     className={`absolute -left-3 top-2 z-10 h-3 w-3 rounded-full border transition-opacity disabled:opacity-30 ${
@@ -630,7 +632,7 @@ export default function LDEditor({ model, onChange, readOnly = false }: LDEditor
                       <button
                         onClick={() => handleAddRow(rung.id)}
                         className="p-1 rounded bg-[var(--color-accent-blue)] hover:opacity-90 text-[var(--color-on-accent)]"
-                        title="Add parallel branch"
+                        title={t('ld.addParallelBranch')}
                       >
                         <Rows3 size={12} />
                       </button>
@@ -640,7 +642,7 @@ export default function LDEditor({ model, onChange, readOnly = false }: LDEditor
                         <button
                           onClick={() => handleMoveRungUp(rung.id)}
                         className="p-1 rounded bg-[var(--visual-panel)] border border-[var(--border-color)] hover:bg-[color-mix(in_srgb,var(--text-primary)_12%,transparent)] text-[var(--text-primary)]"
-                          title="Move rung up"
+                          title={t('ld.moveRungUp')}
                         >
                           <ChevronUp size={12} />
                         </button>
@@ -651,7 +653,7 @@ export default function LDEditor({ model, onChange, readOnly = false }: LDEditor
                         <button
                           onClick={() => handleMoveRungDown(rung.id)}
                         className="p-1 rounded bg-[var(--visual-panel)] border border-[var(--border-color)] hover:bg-[color-mix(in_srgb,var(--text-primary)_12%,transparent)] text-[var(--text-primary)]"
-                          title="Move rung down"
+                          title={t('ld.moveRungDown')}
                         >
                           <ChevronDown size={12} />
                         </button>
@@ -661,7 +663,7 @@ export default function LDEditor({ model, onChange, readOnly = false }: LDEditor
                       <button
                         onClick={() => handleDeleteRung(rung.id)}
                         className="focus-ring p-1 rounded bg-[var(--color-accent-red)] hover:opacity-90 text-[var(--color-on-accent)]"
-                        title="Delete rung"
+                        title={t('ld.deleteRung')}
                       >
                         <Trash2 size={12} />
                       </button>
@@ -678,22 +680,22 @@ export default function LDEditor({ model, onChange, readOnly = false }: LDEditor
         <div className="px-4 py-2 bg-[var(--color-surface-800)] border-t border-[var(--border-color)]">
           <div className="flex items-center gap-4 text-[10px] text-[var(--text-tertiary)]">
             <span className="flex items-center gap-1">
-              <span className="font-mono text-[var(--text-primary)]">| |</span> NO Contact
+              <span className="font-mono text-[var(--text-primary)]">| |</span>{' '}{t('ld.noContact')}
             </span>
             <span className="flex items-center gap-1">
-              <span className="font-mono text-[var(--text-primary)]">|/|</span> NC Contact
+              <span className="font-mono text-[var(--text-primary)]">|/|</span>{' '}{t('ld.ncContact')}
             </span>
             <span className="flex items-center gap-1">
-              <span className="font-mono text-[var(--text-primary)]">( )</span> Coil
+              <span className="font-mono text-[var(--text-primary)]">( )</span>{' '}{t('commtags.coil')}
             </span>
             <span className="flex items-center gap-1">
-              <span className="font-mono text-[var(--text-primary)]">(S)</span> Set
+              <span className="font-mono text-[var(--text-primary)]">{t('ld.s')}</span>{' '}{t('ld.set')}
             </span>
             <span className="flex items-center gap-1">
-              <span className="font-mono text-[var(--text-primary)]">(R)</span> Reset
+              <span className="font-mono text-[var(--text-primary)]">{t('ld.r')}</span>{' '}{t('ld.reset')}
             </span>
             <span className="flex items-center gap-1 ml-auto text-[var(--text-tertiary)]">
-              Arrows move the cursor • I opens the palette • F2 binds a variable • F1 lists every key • Ctrl/Cmd+C/V copies the selected rung • Delete removes
+              {t('ld.arrowsMoveTheCursor')}
             </span>
           </div>
         </div>

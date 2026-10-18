@@ -1,4 +1,6 @@
 import { readFileSync } from 'node:fs';
+import { es } from '../i18n/es';
+import { withEnglishMessages } from '../i18n/inlineMessages';
 import { join } from 'node:path';
 import { describe, expect, it } from 'bun:test';
 
@@ -8,7 +10,7 @@ import * as learnLesson from './learnLesson';
 
 describe('Learn panel failures', () => {
   it('shows why the exercise could not be copied, in the panel where the action started, and nothing for a cancelled dialog', () => {
-    const source = readFileSync(join(import.meta.dir, 'LearnPanel.tsx'), 'utf8');
+    const source = withEnglishMessages(readFileSync(join(import.meta.dir, 'LearnPanel.tsx'), 'utf8'));
     expect(source).toContain("const projectOpenError = useIDEStore((state) => state.projectOpenError);");
     expect(source).toContain("else if (useIDEStore.getState().projectOpenError) setCopyStatus('failed');");
     expect(source).toContain("copyStatus === 'failed' && projectOpenError && <p role=\"alert\" data-learn-copy-error");
@@ -18,7 +20,7 @@ describe('Learn panel failures', () => {
 
 describe('Learn panel contract', () => {
   it('selects either canonical example, copies it only through the folder action, and opens Tests without running anything', () => {
-    const source = readFileSync(join(import.meta.dir, 'LearnPanel.tsx'), 'utf8');
+    const source = withEnglishMessages(readFileSync(join(import.meta.dir, 'LearnPanel.tsx'), 'utf8'));
     expect(source).toContain('copyExampleProjectToFolder(lesson.starterExampleId)');
     expect(source).toContain("setActiveConsoleTab('tests')");
     expect(source).toContain('copyingRef.current');
@@ -38,7 +40,7 @@ describe('Learn panel contract', () => {
     expect((source.match(/<ToggleGroup/g) ?? [])).toHaveLength(2);
     expect(source).not.toContain('setTimeout');
     expect(source).not.toContain('clearTimeout');
-    expect(source).toContain('Completada anteriormente');
+    expect(es['learn.previouslyCompleted']).toBe('Completada anteriormente');
     expect(source).toContain('Previously completed');
     expect(source).toContain('data-learn-grade={shownGrade.kind}');
     expect(source).toContain('{lesson.scope}');
@@ -49,10 +51,10 @@ describe('Learn panel contract', () => {
     expect(source).toContain('void desktopProgress.merge([...next])');
     expect(source).toContain('file.size > 4096');
     expect(source).toContain('aria-live="polite"');
-    expect(source).toContain('Exportar progreso');
-    expect(source).toContain('Importar progreso');
-    expect(source).toContain("'Falla a corregir:'");
-    expect(source).toContain("'Regresiones incluidas:'");
+    expect(es['learn.exportProgress']).toBe('Exportar progreso');
+    expect(es['learn.importProgress']).toBe('Importar progreso');
+    expect(es['learn.faultToCorrect']).toBe('Falla por corregir:');
+    expect(es['learn.includedRegressions']).toBe('Regresiones incluidas:');
     expect(source).not.toMatch(/localStorage|workspaceTests\.|runWorkspaceTests|flash|deploy|force|RUN\/STOP|local-first|LLM|mark complete|reset mastery/i);
     // LRN-038: the panel shows the package text as it is; no lesson string goes through a replacement.
     expect(source).not.toMatch(/\.replace(?:All)?\(/);

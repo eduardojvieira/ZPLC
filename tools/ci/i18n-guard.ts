@@ -146,7 +146,7 @@ export function midSentenceCapitals(text: string): string[] {
   words.forEach((word, index) => {
     if (index === 0) return;
     const previous = words[index - 1]!;
-    if (/[.?!:;·–—]$/.test(previous)) return;
+    if (/[.?!:;·•–—]$/.test(previous) || previous === '•') return;
     if (/^["“«`]/.test(word)) return; // the label of a control or a file, quoted
     const bare = word.replace(/^[("'`¿¡]+|[)"'`.,;:?!…]+$/g, '');
     if (!/^\p{Lu}/u.test(bare)) return;
