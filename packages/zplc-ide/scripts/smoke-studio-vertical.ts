@@ -691,7 +691,8 @@ async function main(): Promise<void> {
       await waitFor('file update', async () => await page().evaluate('window.__zplcSmoke.changed ? true : undefined') === true ? true : undefined);
       await page().evaluate('window.__zplcSmoke.changed = false');
     };
-    await click('Learn');
+    // The new document starts in the system language (`auto`, UX-029); the first Learn check is in Spanish, so the run asks for it.
+    await page().evaluate(`import('/src/store/useAppSettings.ts').then(({ useAppSettings }) => useAppSettings.getState().update({ language: 'es' })).then(() => import('/src/store/useIDEStore.ts')).then(({ useIDEStore }) => useIDEStore.getState().setActiveConsoleTab('learn'))`);
     await waitFor('Spanish Learn lesson', async () => (await text()).includes('Arranque y parada seguros') ? true : undefined);
     assert((await text()).includes('MotorStartStop') && (await text()).includes('0, 20, 40, 50, 90 y 140 ms') && !(await text()).includes('auto-graded'), 'Learn must begin in Spanish with the exact host-only guided path');
     await click('English');
@@ -1050,7 +1051,7 @@ async function main(): Promise<void> {
     await press('Tab');
     assert(await page().evaluate(`document.activeElement?.textContent?.trim() === 'Discard changes and close'`) === true, 'Tab must stay within the dialog controls');
     await press('Escape');
-    await waitFor('unsaved close cancellation focus recovery', async () => await page().evaluate(`!document.querySelector('[role="alertdialog"]') && document.activeElement?.getAttribute('aria-label') === 'Close Project' && window.__zplcSmoke.getState?.().activeFileId === 'aux-st' ? true : undefined`) === true ? true : undefined);
+    await waitFor('unsaved close cancellation focus recovery', async () => await page().evaluate(`!document.querySelector('[role="alertdialog"]') && document.activeElement?.getAttribute('aria-label') === 'Close project' && window.__zplcSmoke.getState?.().activeFileId === 'aux-st' ? true : undefined`) === true ? true : undefined);
     await page().evaluate(`document.querySelector('button[aria-label="Close project"]')?.click()`);
     await waitFor('unsaved close confirmation reopened', async () => await page().evaluate(`document.querySelector('[role="alertdialog"]') ? true : undefined`) === true ? true : undefined);
     await click('Discard changes and close');
