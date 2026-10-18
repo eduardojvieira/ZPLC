@@ -11,5 +11,6 @@ export { Toolbar, type ToolbarProps } from './Toolbar';
 export { Tooltip, type TooltipProps } from './Tooltip';
 export { MenuButton, ContextMenu, PointMenu, type MenuItem, type MenuButtonProps, type ContextMenuProps, type PointMenuProps } from './Menu';
 export { Popover, type PopoverProps } from './Popover';
-export { Badge, StatusDot, SignalChip, Spinner, EmptyState, LoadingState, ErrorState, PropertyList, type Tone, type EmptyStateProps, type LoadingStateProps, type ErrorStateProps, type PropertyItem } from './Display';
+export { SIGNAL_TEXT_CLASS } from '../theme/signalTone';
+export { Badge, StatusDot, SignalChip, SignalValue, Spinner, EmptyState, LoadingState, ErrorState, PropertyList, type Tone, type EmptyStateProps, type LoadingStateProps, type ErrorStateProps, type PropertyItem } from './Display';
 export { cx } from './cx';

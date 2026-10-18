@@ -10,7 +10,10 @@
 
 import { memo, useState, useCallback, useRef, useEffect } from 'react';
 import { Handle, Position, type NodeProps } from '@xyflow/react';
-import { CheckCircle, XCircle, Zap } from 'lucide-react';
+import { Zap } from 'lucide-react';
+import { SignalChip } from '../../../ui';
+import { useT } from '../../../i18n';
+import { SIGNAL_CUES, SIGNAL_TEXT_CLASS, signalTone } from '../../../theme/signalTone';
 
 interface TransitionData {
   condition: string;
@@ -20,6 +23,9 @@ interface TransitionData {
   conditionResult?: boolean; // Current evaluation of the condition
   isArmed?: boolean; // True if preceding step is active
   wasFired?: boolean; // True if this transition just fired
+  /** A variable of the condition is forced or could not be read (UX-009). */
+  forced?: boolean;
+  fault?: boolean;
   readOnly?: boolean;
   onChangeData?: (nodeId: string, data: Record<string, unknown>) => void;
 }
@@ -32,10 +38,13 @@ const SFCTransitionNode = memo(({ id, data, selected }: NodeProps) => {
     conditionResult,
     isArmed = false,
     wasFired = false,
+    forced = false,
+    fault = false,
     readOnly = false,
     onChangeData,
   } = data as unknown as TransitionData;
   
+  const { t } = useT();
   const [isEditing, setIsEditing] = useState(false);
   const [editCondition, setEditCondition] = useState(condition || 'TRUE');
   const inputRef = useRef<HTMLInputElement>(null);
@@ -74,21 +83,16 @@ const SFCTransitionNode = memo(({ id, data, selected }: NodeProps) => {
     e.stopPropagation();
   }, [handleSave, condition]);
 
-  // Determine visual state
-  const isConditionTrue = debugActive && conditionResult === true;
-  const isConditionFalse = debugActive && conditionResult === false;
-  const showFiredAnimation = debugActive && wasFired;
+  // Determine visual state: the condition in the signal vocabulary (a result that was not read is unknown, never FALSE)
+  const tone = signalTone({ forced, fault, type: 'BOOL', value: conditionResult ?? null });
+  const isConditionTrue = debugActive && tone === 'true';
+  const showFired = debugActive && wasFired;
+  const resultWord = tone === 'forced' || tone === 'fault' ? SIGNAL_CUES[tone].label : conditionResult === undefined ? 'unavailable' : conditionResult ? 'TRUE' : 'FALSE';
 
-  // Bar color based on state
-  const barColorClass = showFiredAnimation
-    ? 'bg-yellow-400 animate-pulse shadow-lg shadow-yellow-500/50'
-    : isArmed && isConditionTrue
-      ? 'bg-green-400'
-      : isArmed
-        ? 'bg-amber-400'
-        : debugActive
-          ? 'bg-[var(--visual-wire)]'
-          : 'bg-[var(--visual-wire)]';
+  // The bar is the TRUE token when the transition fired or is armed with a TRUE condition; the Zap mark and the text say it too
+  const barColorClass = showFired || (isArmed && isConditionTrue)
+    ? 'bg-[var(--signal-true-border)]'
+    : 'bg-[var(--visual-wire)]';
 
   return (
     <div className="zplc-visual-node sfc-transition-node relative h-[80px] w-[120px]">
@@ -113,8 +117,8 @@ const SFCTransitionNode = memo(({ id, data, selected }: NodeProps) => {
           title={comment || condition}
         >
           {/* Fired indicator */}
-          {showFiredAnimation && (
-            <Zap size={10} className="absolute -top-2 left-1/2 -translate-x-1/2 text-yellow-300" />
+          {showFired && (
+            <Zap size={10} className="absolute -top-2 left-1/2 -translate-x-1/2 text-[var(--signal-true-fg)]" aria-label={t('sfc.transition.fired')} />
           )}
         </div>
         
@@ -138,20 +142,10 @@ const SFCTransitionNode = memo(({ id, data, selected }: NodeProps) => {
           ) : (
             <div className={`flex items-center gap-1 px-1 py-0.5 font-mono text-xs transition-colors
               ${debugActive
-                ? isConditionTrue
-                  ? 'text-green-300'
-                  : isConditionFalse
-                    ? 'text-[var(--text-secondary)]'
-                    : 'text-[var(--text-secondary)]'
+                ? SIGNAL_TEXT_CLASS[tone]
                 : 'text-[var(--text-primary)] hover:text-[var(--color-accent-blue)]'
               }`}
             >
-              {/* Condition result icon */}
-              {debugActive && conditionResult !== undefined && (
-                isConditionTrue 
-                  ? <CheckCircle size={10} className="text-green-400 flex-shrink-0" />
-                  : <XCircle size={10} className="text-[var(--text-secondary)] flex-shrink-0" />
-              )}
               <span className="max-h-[30px] overflow-hidden break-words">{condition || 'TRUE'}</span>
             </div>
           )}
@@ -161,14 +155,8 @@ const SFCTransitionNode = memo(({ id, data, selected }: NodeProps) => {
       {/* Debug status below transition */}
       {debugActive && (
         <div className="absolute left-[132px] top-full mt-1 flex items-center gap-1 text-[9px]">
-          {isArmed ? (
-            <span className="text-amber-300">Armed</span>
-          ) : (
-            <span className="text-[var(--text-tertiary)]">Waiting</span>
-          )}
-          <span className={isConditionTrue ? 'text-green-400' : 'text-[var(--text-secondary)]'}>
-            = {conditionResult === undefined ? 'unavailable' : conditionResult ? 'TRUE' : 'FALSE'}
-          </span>
+          <span className="text-[var(--text-secondary)]">{isArmed ? 'Armed' : 'Waiting'}</span>
+          <SignalChip tone={tone} detail={resultWord} />
         </div>
       )}
 

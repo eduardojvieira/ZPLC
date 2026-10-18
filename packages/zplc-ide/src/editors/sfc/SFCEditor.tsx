@@ -45,6 +45,7 @@ import { nodeTypes } from './nodes';
 import { edgeTypes } from './edges';
 import SFCToolbox from './SFCToolbox';
 import { useIDEStore } from '../../store/useIDEStore';
+import { SignalValue } from '../../ui';
 import { useMonitor } from '../../monitoring/useMonitor';
 import { useElementSelection } from '../elementSelection';
 import { useElementBreakpoints } from '../elementBreakpoints';
@@ -542,12 +543,10 @@ function SFCEditorInner({
           nodeColor={(n) => {
             if (n.type === 'step') {
               const data = n.data as Record<string, unknown>;
-              if (debugActive && data.isActive) return '#22c55e'; // Green for active
-              return 'var(--color-accent-blue)';
+              if (debugActive && data.isActive) return 'var(--signal-true-border)'; // an active step is a confirmed TRUE
+              return 'var(--color-surface-300)';
             }
             if (n.type === 'transition') {
-              const data = n.data as Record<string, unknown>;
-              if (debugActive && data.isArmed) return '#f59e0b'; // Amber for armed
               return 'var(--visual-wire)';
             }
             return 'var(--visual-wire)';
@@ -558,12 +557,11 @@ function SFCEditorInner({
         {/* Debug mode indicator */}
         {debugActive && (
           <div className="absolute top-4 left-4 z-10 flex items-center gap-2 px-3 py-1.5 
-                          bg-green-900/90 border border-green-600 rounded-lg text-sm text-green-200">
-            <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
+                          bg-[var(--color-surface-800)] border border-[var(--border-color)] rounded-lg text-sm text-[var(--text-primary)]">
             <span>Debug Mode Active</span>
-            <span className="text-green-400 font-mono text-xs ml-2">
+            <SignalValue tone={activeSteps.size > 0 ? 'true' : 'false'} className="font-mono text-xs ml-2">
               {activeSteps.size} step{activeSteps.size !== 1 ? 's' : ''} active
-            </span>
+            </SignalValue>
           </div>
         )}
       </ReactFlow>

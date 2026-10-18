@@ -180,6 +180,24 @@ disparada. `src/monitoring/elementStates.test.ts` comprueba que cada variable qu
 en el mapa para cada diagrama de ejemplo. Los journeys 28b a 28e de `bun run test:journeys` muestran los valores en la
 aplicación real.
 
+## Un solo vocabulario para los estados de señal
+
+Todo lugar que muestra el valor de una señal usa los mismos cinco estados, definidos una sola vez en `src/theme/signalTone.ts` con los tokens `--signal-*` de `src/theme/tokens.ts`: los valores en línea del editor de código, la tabla Watch, Ladder, FBD, SFC, el monitor de instancia, la vista del controlador y los escenarios grabados del Lab. El color nunca indica un estado por sí solo.
+
+| Estado | Color | Glifo | También se muestra como |
+| --- | --- | --- | --- |
+| TRUE | Verde: un TRUE confirmado, o RUN, y nada más | `●` | La palabra TRUE, `T` en la insignia de Ladder; el flujo de energía es un cable más grueso |
+| FALSE | Gris neutro, nunca rojo | `○` | La palabra FALSE, `F` en la insignia de Ladder |
+| Desconocido | Gris neutro, contorno discontinuo | `◌` | Un guion o la palabra UNAVAILABLE; un valor que no se leyó nunca se muestra como FALSE |
+| Forzado | Ámbar | `◆` | La palabra FORCED; un valor forzado se dibuja como forzado, no como el valor que tiene |
+| Falla | Rojo, solo para una falla | `▲` | La palabra FAULT, que un lector de pantalla lee como "Fault" |
+
+Un número no es un estado: se dibuja en el color de valor simple y sin glifo. Un cable en FBD es más grueso para los valores TRUE, forzados y con falla, y discontinuo para un valor que no se leyó; un número distinto de cero no se dibuja como TRUE.
+
+Nada en los editores visuales, la vista del controlador, la tabla Watch ni la lista de notificaciones brilla, pulsa o se anima de forma continua. Un indicador de carga puede girar, y se detiene con el movimiento reducido. `bun tools/ci/ui-kit-guard.ts` falla cuando un archivo agrega una animación o una sombra ahí (UX-010), y su lista de infractores existentes solo puede disminuir.
+
+Nivel de evidencia: host. `src/editors/signalVocabulary.test.tsx` dibuja un contacto y una bobina de Ladder, un bloque FBD, un paso SFC y una transición SFC con cada uno de los cinco estados y comprueba tanto el token como el glifo, y `src/theme/signalTone.test.ts` comprueba el contraste de cada estado en los tres temas. La paleta y los glifos son para que una persona los juzgue a simple vista.
+
 ## Qué ofrecen las paletas
 
 Una paleta ofrece solo lo que su transpilador traduce (LNG-007), y cada elemento que ofrece se ejecuta en la suite de

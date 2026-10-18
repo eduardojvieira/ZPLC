@@ -6,8 +6,8 @@
  *
  * The colours are the `--signal-*` component tokens of tokens.ts; this module is the one place that maps a value to a
  * state and a state to its classes and cues, so the inline values of the code editor (index.css), the Watch table and
- * the kit's signal chip cannot disagree. Ladder, FBD, SFC, Trace and the I/O faceplate read the same tokens and
- * `signalTone` once their editors move to the kit (WP-45).
+ * the kit's signal chip cannot disagree. Ladder, FBD and SFC read the same tokens through `sampleTone`, `SIGNAL_PAINT`
+ * (for SVG, where classes do not apply) and the kit's `SignalValue` (UX-009).
  */
 export type SignalTone = 'true' | 'false' | 'unknown' | 'forced' | 'fault' | 'value';
 
@@ -56,3 +56,29 @@ export const SIGNAL_CUES: Record<SignalTone, SignalCue> = {
   fault: { label: 'FAULT', glyph: '▲', description: 'Fault' },
   value: { label: 'VALUE', glyph: '#', description: 'Value' },
 };
+
+/** The tokens of a state as `var()` values, for SVG `fill` and `stroke`, where the class names above do not apply. */
+export const SIGNAL_PAINT: Record<SignalTone, { fg: string; bg: string; border: string }> = Object.fromEntries(SIGNAL_TONES.map((tone) => [
+  tone,
+  { fg: `var(--signal-${tone}-fg)`, bg: `var(--signal-${tone}-bg)`, border: `var(--signal-${tone}-border)` },
+])) as Record<SignalTone, { fg: string; bg: string; border: string }>;
+
+/** A live reading as an editor holds it: the debug map's result, plus whether the user forces the variable. */
+export interface SignalSample {
+  value?: unknown;
+  type?: string | null;
+  /** The map has the variable. */
+  exists?: boolean;
+  forced?: boolean;
+  error?: string | null;
+}
+
+/** The state of a reading: a variable the map lacks, or one not read yet, is unknown, never FALSE; an error is a fault. */
+export function sampleTone(sample?: SignalSample | null): SignalTone {
+  if (!sample || sample.exists === false) return 'unknown';
+  const type = sample.type ?? (typeof sample.value === 'boolean' ? 'BOOL' : undefined);
+  return signalTone({ forced: sample.forced === true, fault: Boolean(sample.error), type, value: sample.value });
+}
+
+/** The glyph that goes before the value of a state; a plain number has none, because its digits are the cue. */
+export const signalMark = (tone: SignalTone): string => (tone === 'value' ? '' : SIGNAL_CUES[tone].glyph);

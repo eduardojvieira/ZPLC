@@ -522,4 +522,5 @@ export const es: Record<MessageKey, string> = {
   'commandBar.palette': 'Paleta de comandos',
   'commandBar.more': 'Más comandos',
   'commandBar.inspector': 'Inspector',
+  'sfc.transition.fired': 'Disparada',
 };

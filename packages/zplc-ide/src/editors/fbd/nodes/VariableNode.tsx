@@ -89,7 +89,7 @@ const VariableNode = memo(({ id, data, selected }: NodeProps) => {
               type="target"
               position={Position.Left}
               id="IN"
-              className="!w-3 !h-3 !bg-blue-400 !border-2 !border-blue-600"
+              className="!w-3 !h-3 !rounded-[2px] !bg-[var(--visual-wire)] !border-2 !border-[var(--color-surface-300)]"
             />
           )}
 
@@ -99,7 +99,7 @@ const VariableNode = memo(({ id, data, selected }: NodeProps) => {
               type="source"
               position={Position.Right}
               id="OUT"
-              className="!w-3 !h-3 !bg-green-400 !border-2 !border-green-600"
+              className="!w-3 !h-3 !rounded-full !bg-[var(--visual-wire)] !border-2 !border-[var(--color-surface-300)]"
             />
           )}
         </div>

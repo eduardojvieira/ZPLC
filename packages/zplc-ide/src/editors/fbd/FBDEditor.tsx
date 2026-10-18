@@ -481,13 +481,7 @@ function FBDEditorInner({
         />
         <MiniMap
           className="!bg-[var(--color-surface-800)] !border-[var(--color-surface-600)] !rounded-lg"
-          nodeColor={(n) => {
-            if (n.type === 'functionBlock') return '#d97706';
-            if (n.type === 'logicGate') return '#6366f1';
-            if (n.type === 'constant') return '#8b5cf6';
-            if (n.type === 'variable') return '#eab308';
-            return 'var(--visual-wire)';
-          }}
+          nodeColor="var(--visual-wire)"
           maskColor="var(--color-surface-600)"
         />
       </ReactFlow>

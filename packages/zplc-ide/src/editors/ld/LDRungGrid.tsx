@@ -278,7 +278,7 @@ function BranchConnector({ branch, gridOffsetX, readOnly, onDelete }: BranchConn
               }}
               style={{ cursor: 'pointer' }}
             >
-              <circle r={8} fill="#EF4444" />
+              <circle r={8} fill="var(--color-accent-red)" />
               <line x1={-3} y1={-3} x2={3} y2={3} stroke="white" strokeWidth={1.5} />
               <line x1={3} y1={-3} x2={-3} y2={3} stroke="white" strokeWidth={1.5} />
             </g>
@@ -943,7 +943,7 @@ export default function LDRungGrid({
               onElementDelete(selectedElementPosition.element);
             }}
             className="absolute w-6 h-6 flex items-center justify-center 
-                       bg-red-500 hover:bg-red-400 text-white rounded-full 
+                       bg-[var(--color-accent-red)] hover:opacity-90 text-[var(--color-on-accent)] rounded-full 
                        shadow-lg transition-colors z-10"
             style={{
               left: selectedElementPosition.x,

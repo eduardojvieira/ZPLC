@@ -169,6 +169,24 @@ each element: power through the seal-in branch, the pins of the timers, the acti
 `src/monitoring/elementStates.test.ts` checks that every variable a monitor entry names exists in the map for each example
 diagram. Journeys 28b to 28e of `bun run test:journeys` show the values in the real application.
 
+## One vocabulary for signal states
+
+Every place that shows the value of a signal uses the same five states, defined once in `src/theme/signalTone.ts` with the `--signal-*` tokens of `src/theme/tokens.ts`: the inline values of the code editor, the Watch table, Ladder, FBD, SFC, the instance monitor, the controller view and the recorded scenarios of the Lab. Colour never carries a state alone.
+
+| State | Colour | Glyph | Also shown as |
+| --- | --- | --- | --- |
+| TRUE | Green: a confirmed TRUE, or RUN, and nothing else | `●` | The word TRUE, `T` in a Ladder badge; power flow is a heavier wire |
+| FALSE | Neutral grey, never red | `○` | The word FALSE, `F` in a Ladder badge |
+| Unknown | Neutral grey, dashed outline | `◌` | A dash or the word UNAVAILABLE; a value that was not read is never shown as FALSE |
+| Forced | Amber | `◆` | The word FORCED; a forced value is drawn as forced, not as the value it holds |
+| Fault | Red, only for a fault | `▲` | The word FAULT, read by a screen reader as "Fault" |
+
+A number is not a state: it is drawn in the plain value colour with no glyph. A wire in FBD is heavier for TRUE, forced and fault values and dashed for a value that was not read, and a non-zero number is not drawn as TRUE.
+
+Nothing in the visual editors, the controller view, the Watch table or the notification list glows, pulses or animates continuously. A loading spinner may turn, and it stops under reduced motion. `bun tools/ci/ui-kit-guard.ts` fails when a source adds an animation or a shadow there (UX-010), and its list of existing offenders can only shrink.
+
+Evidence level: host. `src/editors/signalVocabulary.test.tsx` renders a Ladder contact and coil, an FBD block, an SFC step and an SFC transition with each of the five states and checks both the token and the glyph, and `src/theme/signalTone.test.ts` checks the contrast of each state in the three themes. The palette and the glyphs are for a person to judge by eye.
+
 ## What the palettes offer
 
 A palette offers only what its transpiler translates (LNG-007), and every element it offers is run in the test suite:

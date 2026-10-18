@@ -47,7 +47,7 @@ export function NotificationList({ items, onOpenDetails, onDismiss }: {
             data-status={entry.status}
             role={entry.status === 'error' ? 'alert' : 'status'}
             aria-busy={entry.status === 'running'}
-            className={`pointer-events-auto border-l-4 border border-[var(--color-surface-600)] ${TONE[entry.status]} bg-[var(--color-surface-900)] p-2 text-sm text-[var(--color-surface-100)] shadow-lg`}
+            className={`pointer-events-auto border-l-4 border border-[var(--color-surface-600)] ${TONE[entry.status]} bg-[var(--color-surface-900)] p-2 text-sm text-[var(--color-surface-100)]`}
           >
             <div className="flex items-start gap-2">
               <Icon status={entry.status} />
@@ -59,7 +59,7 @@ export function NotificationList({ items, onOpenDetails, onDismiss }: {
             </div>
             {entry.status === 'running' && (
               <div role="progressbar" aria-label={entry.title} aria-valuetext={t('notifications.inProgress')} className="mt-2 h-1 w-full overflow-hidden bg-[var(--color-surface-700)]">
-                <div className="h-full w-1/3 animate-pulse motion-reduce:animate-none bg-[var(--color-accent-blue)]" />
+                <div className="h-full w-1/3 bg-[var(--color-accent-blue)]" />
               </div>
             )}
             <div className="mt-2 flex items-center gap-2">

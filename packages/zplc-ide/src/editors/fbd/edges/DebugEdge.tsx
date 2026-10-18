@@ -3,13 +3,13 @@
  * @brief Custom ReactFlow edge with live value display for debugging
  *
  * Shows a small badge with the current value being transmitted along
- * the wire. Uses color coding:
- * - Green wire + glow: TRUE/non-zero value
- * - Gray wire: FALSE/zero value
- * - Blue badge: numeric value display
+ * the wire, in the signal vocabulary (see edgeSignal): the tone, a heavier or
+ * dashed line and a glyph, never a glow.
  */
 
 import { memo } from 'react';
+import { SIGNAL_CHIP_CLASS } from '../../../theme/signalTone';
+import { edgeSignal } from './edgeSignal';
 import {
   BaseEdge,
   EdgeLabelRenderer,
@@ -24,47 +24,9 @@ interface DebugEdgeData {
   dataType?: string;
   /** Whether debug mode is active */
   debugActive?: boolean;
-}
-
-/**
- * Format a value for display on the edge
- */
-function formatValue(value: unknown, dataType?: string): string {
-  if (value === null || value === undefined) return '?';
-  
-  if (typeof value === 'boolean') {
-    return value ? 'TRUE' : 'FALSE';
-  }
-  
-  if (typeof value === 'number') {
-    // Format based on type
-    if (dataType === 'REAL') {
-      return value.toFixed(2);
-    }
-    if (dataType === 'TIME') {
-      return `${value}ms`;
-    }
-    // Integer types
-    return value.toString();
-  }
-  
-  if (typeof value === 'string') {
-    // Truncate long strings
-    return value.length > 8 ? value.slice(0, 8) + '…' : value;
-  }
-  
-  return String(value);
-}
-
-/**
- * Determine if value is "energized" (truthy)
- */
-function isEnergized(value: unknown): boolean {
-  if (value === null || value === undefined) return false;
-  if (typeof value === 'boolean') return value;
-  if (typeof value === 'number') return value !== 0;
-  if (typeof value === 'string') return value.length > 0;
-  return false;
+  /** The source variable is forced, or could not be read (UX-009). */
+  forced?: boolean;
+  fault?: boolean;
 }
 
 const DebugEdge = memo(({
@@ -91,12 +53,7 @@ const DebugEdge = memo(({
   });
 
   const hasValue = debugActive && liveValue !== undefined && liveValue !== null;
-  const energized = hasValue && isEnergized(liveValue);
-  
-  // Wire colors
-  const strokeColor = energized ? 'var(--color-accent-green)' : 'var(--visual-wire)';
-  const strokeWidth = energized ? 3 : 2;
-  const glowFilter = energized ? 'drop-shadow(0 0 4px rgba(34, 197, 94, 0.6))' : undefined;
+  const signal = edgeSignal({ liveValue, dataType, forced: edgeData.forced, fault: edgeData.fault });
 
   return (
     <>
@@ -105,10 +62,9 @@ const DebugEdge = memo(({
         path={edgePath}
         markerEnd={markerEnd}
         style={{
-          stroke: strokeColor,
-          strokeWidth,
-          filter: glowFilter,
-          transition: 'stroke 0.2s, stroke-width 0.2s',
+          stroke: signal.stroke,
+          strokeWidth: signal.width,
+          strokeDasharray: signal.dash,
         }}
       />
       
@@ -124,20 +80,10 @@ const DebugEdge = memo(({
             }}
           >
             <div
-              className={`
-                px-1.5 py-0.5 rounded text-[10px] font-mono font-medium
-                shadow-md border
-                ${typeof liveValue === 'boolean'
-                  ? (energized
-                    ? 'bg-green-600 text-white border-green-500'
-                    : 'bg-[var(--color-surface-700)] text-[var(--text-secondary)] border-[var(--border-color)]')
-                  : (energized
-                    ? 'bg-blue-600 text-white border-blue-500'
-                    : 'bg-[var(--color-surface-700)] text-[var(--text-secondary)] border-[var(--border-color)]')
-                }
-              `}
+              data-signal={signal.tone}
+              className={`px-1.5 py-0.5 rounded text-[10px] font-mono font-medium ${SIGNAL_CHIP_CLASS[signal.tone]}`}
             >
-              {formatValue(liveValue, dataType)}
+              {signal.label}
             </div>
           </div>
         </EdgeLabelRenderer>

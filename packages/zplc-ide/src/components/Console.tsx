@@ -59,7 +59,7 @@ import { useProjectBlocks } from '../editors/useProjectBlocks';
 import { presentAiProviderConfig, presentAiProviderMutation, presentAiProviderResponse, presentAiProviderStatus, type AiProviderMode, type AiProviderResponsePresentation, type AiProviderStatusPresentation } from './aiProviderPresentation';
 import { useTheme } from '../hooks/useTheme';
 import { ZPLC_DARK_THEME, ZPLC_DARK_THEME_ID, ZPLC_HIGH_CONTRAST_THEME, ZPLC_HIGH_CONTRAST_THEME_ID, ZPLC_LIGHT_THEME, ZPLC_LIGHT_THEME_ID } from '../utils/monaco-themes';
-import { Button, Checkbox, FileInput, IconButton, TextField, Textarea, Tooltip } from '../ui';
+import { Button, Checkbox, FileInput, IconButton, SIGNAL_TEXT_CLASS, TextField, Textarea, Tooltip } from '../ui';
 import { useT } from '../i18n';
 import { CommandEmptyState } from './panelStates';
 
@@ -1120,7 +1120,7 @@ function ScenarioPreview({ scenario, onRunScenario, scenarioRunDisabled }: {
   const tankLevel = presentRecordedTankLevel(scenario);
   return (
     <section className="space-y-2">
-      <div className="flex flex-wrap items-center gap-2 text-xs"><span className={scenario.passed ? 'text-[var(--color-accent-green)]' : 'text-[var(--color-accent-red)]'}>{scenario.passed ? 'Passed' : 'Failed'}</span><span className="text-[var(--color-surface-200)]">{scenario.id}</span><span className="break-all text-[var(--color-surface-500)]">{scenario.path}</span>{scenario.truncated && <span className="text-[var(--color-surface-400)]">Preview truncated.</span>}<Button variant="secondary" size="sm" onClick={() => onRunScenario(scenario.id)} aria-label={`Run ${scenario.id} again on native POSIX`} disabled={scenarioRunDisabled} className="ml-auto">Run this scenario again</Button></div>
+      <div className="flex flex-wrap items-center gap-2 text-xs"><span className={scenario.passed ? SIGNAL_TEXT_CLASS.true : SIGNAL_TEXT_CLASS.fault}>{scenario.passed ? 'Passed' : 'Failed'}</span><span className="text-[var(--color-surface-200)]">{scenario.id}</span><span className="break-all text-[var(--color-surface-500)]">{scenario.path}</span>{scenario.truncated && <span className="text-[var(--color-surface-400)]">Preview truncated.</span>}<Button variant="secondary" size="sm" onClick={() => onRunScenario(scenario.id)} aria-label={`Run ${scenario.id} again on native POSIX`} disabled={scenarioRunDisabled} className="ml-auto">Run this scenario again</Button></div>
       <div className="overflow-x-auto">
         <table className="w-full min-w-[360px] text-left text-xs tabular-nums">
           <caption className="sr-only">Recorded assertions for {scenario.id}.</caption>
@@ -1172,10 +1172,10 @@ function ScenarioPreview({ scenario, onRunScenario, scenarioRunDisabled }: {
               </div>
               {motorPlant.samples.map((sample) => {
                 const values = [
-                  ['Command', sample.command ? 'ON' : 'OFF', sample.command ? 'text-[var(--color-accent-blue)]' : 'text-[var(--color-surface-300)]'],
-                  ['Running', sample.running ? 'ON' : 'OFF', sample.running ? 'text-[var(--color-accent-green)]' : 'text-[var(--color-surface-300)]'],
-                  ['At speed', sample.atSpeed ? 'YES' : 'NO', sample.atSpeed ? 'text-[var(--color-accent-green)]' : 'text-[var(--color-surface-300)]'],
-                  ['Speed', `${sample.speedPermilleAfterTick / 10}%`, sample.speedPermilleAfterTick > 0 ? 'text-[var(--color-accent-blue)]' : 'text-[var(--color-surface-300)]'],
+                  ['Command', sample.command ? 'ON' : 'OFF', sample.command ? SIGNAL_TEXT_CLASS.true : SIGNAL_TEXT_CLASS.false],
+                  ['Running', sample.running ? 'ON' : 'OFF', sample.running ? SIGNAL_TEXT_CLASS.true : SIGNAL_TEXT_CLASS.false],
+                  ['At speed', sample.atSpeed ? 'YES' : 'NO', sample.atSpeed ? SIGNAL_TEXT_CLASS.true : SIGNAL_TEXT_CLASS.false],
+                  ['Speed', `${sample.speedPermilleAfterTick / 10}%`, sample.speedPermilleAfterTick > 0 ? SIGNAL_TEXT_CLASS.true : SIGNAL_TEXT_CLASS.false],
                 ] as const;
                 return <div key={sample.atMs} className="flex min-w-[4.5rem] flex-col border-r border-[var(--color-surface-600)] last:border-r-0 text-center text-[var(--color-surface-100)]">
                   <span className="flex h-7 items-center justify-center px-2 font-medium">{sample.atMs} ms</span>
@@ -1203,14 +1203,14 @@ function ScenarioPreview({ scenario, onRunScenario, scenarioRunDisabled }: {
               </div>
               {conveyorPlant.samples.map((sample) => {
                 const values = [
-                  ['Belt command', sample.beltCommand ? 'ON' : 'OFF', sample.beltCommand ? 'text-[var(--color-accent-blue)]' : 'text-[var(--color-surface-300)]'],
-                  ['Diverter command', sample.diverterCommand ? 'ON' : 'OFF', sample.diverterCommand ? 'text-[var(--color-accent-blue)]' : 'text-[var(--color-surface-300)]'],
-                  ['Fault lamp', sample.faultLamp ? 'ON' : 'OFF', sample.faultLamp ? 'text-[var(--color-accent-red)]' : 'text-[var(--color-surface-300)]'],
-                  ['Classified count', String(sample.classifiedCountAfterTick), sample.classifiedCountAfterTick > 0 ? 'text-[var(--color-accent-green)]' : 'text-[var(--color-surface-300)]'],
-                  ['Classifier sensor', sample.partAtClassifierInput ? 'ACTIVE' : 'CLEAR', sample.partAtClassifierInput ? 'text-[var(--color-accent-yellow)]' : 'text-[var(--color-surface-300)]'],
-                  ['Metal sensor', sample.metalDetectedInput ? 'DETECTED' : 'CLEAR', sample.metalDetectedInput ? 'text-[var(--color-accent-yellow)]' : 'text-[var(--color-surface-300)]'],
-                  ['Diverter sensor', sample.partAtDiverterInput ? 'ACTIVE' : 'CLEAR', sample.partAtDiverterInput ? 'text-[var(--color-accent-yellow)]' : 'text-[var(--color-surface-300)]'],
-                  ['Jam sensor', sample.jamDetectedInput ? 'JAM' : 'CLEAR', sample.jamDetectedInput ? 'text-[var(--color-accent-red)]' : 'text-[var(--color-surface-300)]'],
+                  ['Belt command', sample.beltCommand ? 'ON' : 'OFF', sample.beltCommand ? SIGNAL_TEXT_CLASS.true : SIGNAL_TEXT_CLASS.false],
+                  ['Diverter command', sample.diverterCommand ? 'ON' : 'OFF', sample.diverterCommand ? SIGNAL_TEXT_CLASS.true : SIGNAL_TEXT_CLASS.false],
+                  ['Fault lamp', sample.faultLamp ? 'ON' : 'OFF', sample.faultLamp ? SIGNAL_TEXT_CLASS.fault : SIGNAL_TEXT_CLASS.false],
+                  ['Classified count', String(sample.classifiedCountAfterTick), sample.classifiedCountAfterTick > 0 ? SIGNAL_TEXT_CLASS.true : SIGNAL_TEXT_CLASS.false],
+                  ['Classifier sensor', sample.partAtClassifierInput ? 'ACTIVE' : 'CLEAR', sample.partAtClassifierInput ? SIGNAL_TEXT_CLASS.true : SIGNAL_TEXT_CLASS.false],
+                  ['Metal sensor', sample.metalDetectedInput ? 'DETECTED' : 'CLEAR', sample.metalDetectedInput ? SIGNAL_TEXT_CLASS.true : SIGNAL_TEXT_CLASS.false],
+                  ['Diverter sensor', sample.partAtDiverterInput ? 'ACTIVE' : 'CLEAR', sample.partAtDiverterInput ? SIGNAL_TEXT_CLASS.true : SIGNAL_TEXT_CLASS.false],
+                  ['Jam sensor', sample.jamDetectedInput ? 'JAM' : 'CLEAR', sample.jamDetectedInput ? SIGNAL_TEXT_CLASS.fault : SIGNAL_TEXT_CLASS.false],
                 ] as const;
                 return <div key={sample.atMs} className="grid min-w-[7rem] grid-cols-2 border-r border-[var(--color-surface-600)] last:border-r-0 text-center text-[var(--color-surface-100)]">
                   <span className="col-span-2 flex h-6 items-center justify-center px-2 font-medium">{sample.atMs} ms</span>
@@ -1237,10 +1237,10 @@ function ScenarioPreview({ scenario, onRunScenario, scenarioRunDisabled }: {
               {pedestrianCrossing.samples.map((sample) => (
                 <div key={sample.atMs} className="flex min-w-[5.25rem] flex-col border-r border-[var(--color-surface-600)] last:border-r-0 text-center text-[var(--color-surface-100)]">
                   <span className="flex h-7 items-center justify-center px-2 font-medium">{sample.atMs} ms</span>
-                  <span className={`flex h-7 items-center justify-center border-t border-[var(--color-surface-600)] px-2 ${sample.vehicle === 'GREEN' ? 'text-[var(--color-accent-green)]' : sample.vehicle === 'YELLOW' ? 'text-[var(--color-accent-yellow)]' : sample.vehicle === 'RED' ? 'text-[var(--color-accent-red)]' : 'text-[var(--color-surface-300)]'}`} aria-label={`Vehicle ${sample.vehicle} at ${sample.atMs} ms`}>{sample.vehicle}</span>
-                  <span className={`flex h-7 items-center justify-center border-t border-[var(--color-surface-600)] px-2 ${sample.pedestrian === 'WALK' ? 'text-[var(--color-accent-green)]' : 'text-[var(--color-accent-red)]'}`} aria-label={`Pedestrian ${sample.pedestrian} at ${sample.atMs} ms`}>{sample.pedestrian}</span>
-                  <span className={`flex h-7 items-center justify-center border-t border-[var(--color-surface-600)] px-2 ${sample.request === 'ACTIVE' ? 'text-[var(--color-accent-yellow)]' : 'text-[var(--color-surface-300)]'}`} aria-label={`Request ${sample.request} at ${sample.atMs} ms`}>{sample.request}</span>
-                  <span className={`flex h-7 items-center justify-center border-t border-[var(--color-surface-600)] px-2 ${sample.phase === 'CROSSING' ? 'text-[var(--color-accent-green)]' : sample.phase === 'WAITING' ? 'text-[var(--color-accent-yellow)]' : 'text-[var(--color-surface-300)]'}`} aria-label={`Plant ${sample.phase} at ${sample.atMs} ms`}>{sample.phase}</span>
+                  <span className={`flex h-7 items-center justify-center border-t border-[var(--color-surface-600)] px-2 ${sample.vehicle === 'GREEN' ? SIGNAL_TEXT_CLASS.true : sample.vehicle === 'YELLOW' ? SIGNAL_TEXT_CLASS.true : sample.vehicle === 'RED' ? SIGNAL_TEXT_CLASS.fault : SIGNAL_TEXT_CLASS.false}`} aria-label={`Vehicle ${sample.vehicle} at ${sample.atMs} ms`}>{sample.vehicle}</span>
+                  <span className={`flex h-7 items-center justify-center border-t border-[var(--color-surface-600)] px-2 ${sample.pedestrian === 'WALK' ? SIGNAL_TEXT_CLASS.true : SIGNAL_TEXT_CLASS.fault}`} aria-label={`Pedestrian ${sample.pedestrian} at ${sample.atMs} ms`}>{sample.pedestrian}</span>
+                  <span className={`flex h-7 items-center justify-center border-t border-[var(--color-surface-600)] px-2 ${sample.request === 'ACTIVE' ? SIGNAL_TEXT_CLASS.true : SIGNAL_TEXT_CLASS.false}`} aria-label={`Request ${sample.request} at ${sample.atMs} ms`}>{sample.request}</span>
+                  <span className={`flex h-7 items-center justify-center border-t border-[var(--color-surface-600)] px-2 ${sample.phase === 'CROSSING' ? SIGNAL_TEXT_CLASS.true : sample.phase === 'WAITING' ? SIGNAL_TEXT_CLASS.true : SIGNAL_TEXT_CLASS.false}`} aria-label={`Plant ${sample.phase} at ${sample.atMs} ms`}>{sample.phase}</span>
                 </div>
               ))}
             </div>
@@ -1261,8 +1261,8 @@ function ScenarioPreview({ scenario, onRunScenario, scenarioRunDisabled }: {
               {tankLevel.samples.map((sample) => (
                 <div key={sample.atMs} className="flex min-w-[5.25rem] flex-col border-r border-[var(--color-surface-600)] last:border-r-0 text-center text-[var(--color-surface-100)]">
                   <span className="flex h-7 items-center justify-center px-2 font-medium">{sample.atMs} ms</span>
-                  <span className={`flex h-7 items-center justify-center border-t border-[var(--color-surface-600)] px-2 ${sample.pump === 'RUNNING' ? 'text-[var(--color-accent-green)]' : 'text-[var(--color-surface-300)]'}`} aria-label={`Pump ${sample.pump} at ${sample.atMs} ms`}>{sample.pump}</span>
-                  <span className={`flex h-7 items-center justify-center border-t border-[var(--color-surface-600)] px-2 ${sample.alarm === 'ALARM' ? 'text-[var(--color-accent-red)]' : 'text-[var(--color-surface-300)]'}`} aria-label={`Alarm ${sample.alarm} at ${sample.atMs} ms`}>{sample.alarm}</span>
+                  <span className={`flex h-7 items-center justify-center border-t border-[var(--color-surface-600)] px-2 ${sample.pump === 'RUNNING' ? SIGNAL_TEXT_CLASS.true : SIGNAL_TEXT_CLASS.false}`} aria-label={`Pump ${sample.pump} at ${sample.atMs} ms`}>{sample.pump}</span>
+                  <span className={`flex h-7 items-center justify-center border-t border-[var(--color-surface-600)] px-2 ${sample.alarm === 'ALARM' ? SIGNAL_TEXT_CLASS.fault : SIGNAL_TEXT_CLASS.false}`} aria-label={`Alarm ${sample.alarm} at ${sample.atMs} ms`}>{sample.alarm}</span>
                 </div>
               ))}
             </div>

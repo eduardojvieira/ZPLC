@@ -523,6 +523,7 @@ export const en = {
   'commandBar.palette': 'Command palette',
   'commandBar.more': 'More commands',
   'commandBar.inspector': 'Inspector',
+  'sfc.transition.fired': 'Fired',
 } as const;
 
 export type MessageKey = keyof typeof en;

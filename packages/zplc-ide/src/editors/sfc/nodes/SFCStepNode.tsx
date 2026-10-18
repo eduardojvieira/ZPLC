@@ -10,7 +10,9 @@
 
 import { memo, useState, useCallback, useRef, useEffect } from 'react';
 import { Handle, Position, type NodeProps } from '@xyflow/react';
-import { Timer, Activity } from 'lucide-react';
+import { Timer } from 'lucide-react';
+import { SignalChip } from '../../../ui';
+import { SIGNAL_CUES, signalTone } from '../../../theme/signalTone';
 
 interface StepAction {
   qualifier: string;
@@ -27,6 +29,9 @@ interface StepData {
   isActive?: boolean;
   /** The debug map gave no state for the step, or it was not read: shown as unavailable, never as idle (LNG-006). */
   stateUnavailable?: boolean;
+  /** The step variable is forced or could not be read (UX-009). */
+  forced?: boolean;
+  fault?: boolean;
   timeInStep?: number; // milliseconds
   activationCount?: number;
   readOnly?: boolean;
@@ -54,6 +59,8 @@ const SFCStepNode = memo(({ id, data, selected }: NodeProps) => {
     debugActive = false,
     isActive = false,
     stateUnavailable = false,
+    forced = false,
+    fault = false,
     timeInStep,
     activationCount,
     readOnly = false,
@@ -100,16 +107,19 @@ const SFCStepNode = memo(({ id, data, selected }: NodeProps) => {
 
   // Determine visual state based on debug mode
   const isStepActive = debugActive && isActive;
+  // the step in the signal vocabulary: active is a confirmed TRUE, idle is FALSE, a state that was not read is unknown
+  const tone = signalTone({ forced, fault, type: 'BOOL', value: stateUnavailable ? null : isActive });
+  const stateWord = tone === 'forced' || tone === 'fault' ? SIGNAL_CUES[tone].label : stateUnavailable ? 'UNAVAILABLE' : isStepActive ? 'ACTIVE' : 'IDLE';
   
   // Dynamic classes based on state
   const stepBoxClasses = `
     relative h-[56px] w-[120px] rounded-[2px] transition-all duration-200
     ${isInitial 
       ? isStepActive
-        ? 'border-4 border-double border-green-400 bg-green-900/90 shadow-lg shadow-green-500/30'
+        ? 'border-4 border-double border-[var(--signal-true-border)] bg-[var(--signal-true-bg)]'
         : 'border-4 border-double border-[var(--color-accent-blue)] bg-[var(--visual-node)]'
       : isStepActive
-        ? 'border-2 border-green-400 bg-green-900/80 shadow-lg shadow-green-500/30'
+        ? 'border-[3px] border-[var(--signal-true-border)] bg-[var(--signal-true-bg)]'
         : 'border-2 border-[var(--border-color)] bg-[var(--visual-node)]'
     }
     ${selected ? 'ring-2 ring-blue-400/50' : ''}
@@ -127,11 +137,6 @@ const SFCStepNode = memo(({ id, data, selected }: NodeProps) => {
       
       {/* Step box */}
       <div className={`sfc-step-box flex h-full w-full items-center justify-center ${stepBoxClasses}`} title={comment}>
-        {/* Active indicator pulse */}
-        {isStepActive && (
-          <div className="absolute -inset-1 rounded bg-green-400/20 animate-pulse" />
-        )}
-        
         {/* Step name */}
         <div 
           className="relative w-full cursor-pointer px-3 text-center"
@@ -150,7 +155,7 @@ const SFCStepNode = memo(({ id, data, selected }: NodeProps) => {
               onClick={(e) => e.stopPropagation()}
             />
           ) : (
-            <span className={`block max-h-[36px] overflow-hidden break-words text-center font-semibold leading-tight ${isStepActive ? 'text-green-200' : 'text-[var(--text-primary)]'}`}>
+            <span className={`block max-h-[36px] overflow-hidden break-words text-center font-semibold leading-tight ${isStepActive ? 'text-[var(--signal-true-fg)]' : 'text-[var(--text-primary)]'}`}>
               {name}
             </span>
           )}
@@ -160,23 +165,14 @@ const SFCStepNode = memo(({ id, data, selected }: NodeProps) => {
 
       {/* Debug information is an annotation; it must not change the IEC block geometry. */}
       {debugActive && (
-          <div className={`absolute top-full left-1/2 z-10 mt-1 w-[120px] -translate-x-1/2 px-2 py-1 text-center border ${
-            isStepActive 
-              ? 'bg-green-800/50 border-green-600' 
-              : 'bg-[var(--color-surface-700)] border-[var(--border-color)]'
-          }`}>
+          <div className="absolute top-full left-1/2 z-10 mt-1 w-[120px] -translate-x-1/2 border border-[var(--border-color)] bg-[var(--color-surface-700)] px-2 py-1 text-center">
             <div className="flex items-center justify-center gap-2 text-[10px]">
-              {/* Active status */}
-              <div className={`flex items-center gap-1 ${
-                isStepActive ? 'text-green-300' : 'text-[var(--text-secondary)]'
-              }`}>
-                <Activity size={10} className={isStepActive ? 'animate-pulse' : ''} />
-                <span>{stateUnavailable ? 'UNAVAILABLE' : isStepActive ? 'ACTIVE' : 'IDLE'}</span>
-              </div>
-              
+              {/* State: the glyph and the word say it as well as the colour */}
+              <SignalChip tone={tone} detail={stateWord} />
+
               {/* Time in step (only when active or has time) */}
               {(isStepActive || timeInStep !== undefined) && timeInStep !== undefined && timeInStep > 0 && (
-                <div className="flex items-center gap-1 text-cyan-300">
+                <div className="flex items-center gap-1 text-[var(--signal-value-fg)]">
                   <Timer size={10} />
                   <span className="font-mono">{formatTime(timeInStep)}</span>
                 </div>
@@ -196,31 +192,31 @@ const SFCStepNode = memo(({ id, data, selected }: NodeProps) => {
       {actions && actions.length > 0 && (
         <div data-sfc-actions className="absolute left-full top-1/2 z-10 ml-3 flex -translate-y-1/2 items-center gap-1">
           {/* Connection line */}
-          <div className={`h-px w-4 ${isStepActive ? 'bg-green-500' : 'bg-[var(--visual-wire)]'}`} />
+          <div className={`w-4 ${isStepActive ? 'h-[3px] bg-[var(--signal-true-border)]' : 'h-px bg-[var(--visual-wire)]'}`} />
           
           {/* Actions box */}
           <div className={`border rounded-[2px] text-xs ${
             isStepActive 
-              ? 'border-green-500 bg-green-900/90' 
+              ? 'border-2 border-[var(--signal-true-border)] bg-[var(--color-surface-700)]' 
               : 'border-[var(--border-color)] bg-[var(--color-surface-700)]'
           }`}>
             {actions.map((action, idx) => (
               <div 
                 key={idx}
                 className={`flex items-center border-b last:border-b-0 ${
-                  isStepActive ? 'border-green-600' : 'border-[var(--border-color)]'
+                  isStepActive ? 'border-[var(--signal-true-border)]' : 'border-[var(--border-color)]'
                 }`}
               >
                 {/* Qualifier */}
                 <div className={`px-1.5 py-1 font-mono border-r ${
                   isStepActive 
-                    ? 'bg-green-700 text-green-200 border-green-500' 
+                    ? 'bg-[var(--signal-true-bg)] text-[var(--signal-true-fg)] border-[var(--signal-true-border)]' 
                     : 'bg-[var(--color-surface-600)] text-[var(--text-secondary)] border-[var(--border-color)]'
                 }`}>
                   {action.qualifier}
                 </div>
                 {/* Action name */}
-                <div className={`max-w-[132px] break-words px-2 py-1 ${isStepActive ? 'text-green-200' : 'text-[var(--text-secondary)]'}`} title={action.actionName}>
+                <div className={`max-w-[132px] break-words px-2 py-1 ${isStepActive ? 'text-[var(--signal-true-fg)]' : 'text-[var(--text-secondary)]'}`} title={action.actionName}>
                   {action.actionName}
                 </div>
               </div>

@@ -19,21 +19,8 @@ interface ConstantData {
 const ConstantNode = memo(({ id, data, selected }: NodeProps) => {
   const { dataType = 'ANY', value, comment, onChangeData, readOnly } = data as ConstantData;
 
-  // Type is a reference, not an operational state.
-  const getTypeColor = () => {
-    switch (dataType) {
-      case 'BOOL': return 'border-purple-500';
-      case 'INT': 
-      case 'DINT':
-      case 'SINT':
-      case 'LINT': return 'border-blue-500';
-      case 'REAL':
-      case 'LREAL': return 'border-cyan-500';
-      case 'TIME': return 'border-amber-500';
-      case 'STRING': return 'border-purple-500';
-      default: return 'border-[var(--border-color)]';
-    }
-  };
+  // The type is named by the label of the node; it is never a hue (UX-010), and amber and purple are not types.
+  const getTypeColor = () => 'border-[var(--border-color)]';
 
   // Format value display
   const formatValue = () => {
@@ -77,7 +64,7 @@ const ConstantNode = memo(({ id, data, selected }: NodeProps) => {
           type="source"
           position={Position.Right}
           id="OUT"
-          className="!w-3 !h-3 !bg-green-400 !border-2 !border-green-600"
+          className="!w-3 !h-3 !rounded-full !bg-[var(--visual-wire)] !border-2 !border-[var(--color-surface-300)]"
         />
       </div>
       <NodeComment nodeId={id} comment={comment} onChange={onChangeData} readOnly={readOnly} />
