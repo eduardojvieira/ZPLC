@@ -477,6 +477,21 @@ export const en = {
   'navigator.device.network': 'Network',
   'navigator.on': 'On',
   'navigator.off': 'Off',
+  'configEditor.tasks.title': 'Tasks',
+  'configEditor.io.title': 'I/O mapping',
+  'configEditor.network.title': 'Network',
+  'configEditor.communication.title': 'Communication',
+  'configEditor.target.title': 'Target',
+  'configEditor.save': 'Save configuration',
+  'configEditor.unsaved': 'Unsaved changes',
+  'configEditor.saved': 'Saved',
+  'configEditor.noProject': 'No project configuration is loaded',
+  'configEditor.close': 'Close {title}',
+  'configEditor.tablist': 'Configuration editors',
+  'configEditor.closeDialogTitle': 'Unsaved changes in the configuration',
+  'configEditor.closeDialogItem': 'Project configuration (zplc.json)',
+  'configEditor.editorsHeading': 'Configuration editors',
+  'configEditor.editorsHint': 'Each one opens as a tab of the editor area.',
 } as const;
 
 export type MessageKey = keyof typeof en;

@@ -1,24 +1,13 @@
 /**
  * ProjectSettings Component
  *
- * Complete project configuration editor for zplc.json. Each section is a module of its own:
- * - Project Metadata (name, version, description, author)
- * - Target Hardware (board, cpu, clock_mhz) and its toolchain
- * - Network (Wi-Fi or Ethernet of the board)
- * - I/O Mapping (inputs, outputs)
- * - Communication (MQTT, Modbus, tags)
- * - Task Configuration (cyclic, event, freewheeling)
+ * The settings tab of zplc.json: the project metadata, the preferences of the application and a summary. The target, the
+ * network, the I/O mapping, the communication and the tasks are editors of their own, tabs of the editor area opened from
+ * the project navigator or from the list below (UX-013); they are the same sections, unchanged.
  */
 
 import { useState } from 'react';
-import {
-  Settings,
-  Zap,
-  Cpu,
-  Cable,
-  FileText,
-  Radio,
-} from 'lucide-react';
+import { Settings, FileText } from 'lucide-react';
 import { useProjectSettingsState } from '../../store/regionSubscriptions';
 import type {
   ZPLCProjectConfig,
@@ -29,25 +18,17 @@ import {
 import { AppPreferences } from './AppPreferences';
 import { SettingsSection } from './SettingsSection';
 import { MetadataSection } from './MetadataSection';
-import { TargetSection } from './TargetSection';
-import { NetworkSection } from './NetworkSection';
-import { IOSection } from './IOSection';
-import { CommunicationSection } from './CommunicationSection';
-import { TasksSection } from './TasksSection';
 import { Button } from '../../ui';
+import { useT } from '../../i18n';
+import { CONFIG_EDITOR_KINDS, CONFIG_EDITOR_TITLE_KEYS } from '../../navigator/configEditors';
+import { openConfigEditorFromNavigator } from '../../navigator/openConfigEditor';
 
 export function ProjectSettings() {
   const { projectConfig, saveProjectConfig, updateProjectConfig } = useProjectSettingsState();
 
   // Section collapse state
-  const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
-    metadata: true,
-    target: true,
-    network: true,
-    io: true,
-    communication: true,
-    tasks: true,
-  });
+  const { t } = useT();
+  const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({ metadata: true });
 
   if (!projectConfig) {
     return (
@@ -104,6 +85,16 @@ export function ProjectSettings() {
 
         <AppPreferences />
 
+        <section aria-labelledby="config-editors-heading" className="mb-4 rounded-lg border border-[var(--color-surface-600)] bg-[var(--color-surface-800)] p-4">
+          <h2 id="config-editors-heading" className="text-sm font-medium text-[var(--color-surface-100)]">{t('configEditor.editorsHeading')}</h2>
+          <p className="mt-1 text-xs text-[var(--color-surface-300)]">{t('configEditor.editorsHint')}</p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {CONFIG_EDITOR_KINDS.map((kind) => (
+              <Button key={kind} size="sm" data-open-config-editor={kind} onClick={() => openConfigEditorFromNavigator(kind)}>{t(CONFIG_EDITOR_TITLE_KEYS[kind])}</Button>
+            ))}
+          </div>
+        </section>
+
         {/* Settings Sections */}
         <div className="space-y-4">
           {/* ================= METADATA ================= */}
@@ -115,59 +106,6 @@ export function ProjectSettings() {
           >
             <MetadataSection config={projectConfig} updateConfig={updateConfig} />
           </SettingsSection>
-
-          {/* ================= TARGET HARDWARE ================= */}
-          <SettingsSection
-            title="Target Hardware"
-            icon={<Cpu size={16} />}
-            isExpanded={expandedSections.target}
-            onToggle={() => toggleSection('target')}
-            badge={projectConfig.target?.board}
-          >
-            <TargetSection config={projectConfig} updateConfig={updateConfig} />
-          </SettingsSection>
-
-          <SettingsSection
-            title="Network"
-            icon={<Radio size={16} />}
-            isExpanded={expandedSections.network}
-            onToggle={() => toggleSection('network')}
-          >
-            <NetworkSection config={projectConfig} updateConfig={updateConfig} />
-          </SettingsSection>
-
-          {/* ================= I/O MAPPING ================= */}
-          <SettingsSection
-            title="I/O Mapping"
-            icon={<Cable size={16} />}
-            isExpanded={expandedSections.io}
-            onToggle={() => toggleSection('io')}
-            badge={`${projectConfig.io?.inputs?.length || 0} IN / ${projectConfig.io?.outputs?.length || 0} OUT`}
-          >
-            <IOSection config={projectConfig} updateConfig={updateConfig} />
-          </SettingsSection>
-
-          <SettingsSection
-            title="Communication"
-            icon={<Radio size={16} />}
-            isExpanded={expandedSections.communication}
-            onToggle={() => toggleSection('communication')}
-            badge={`${(projectConfig.communication?.bindings?.length || projectConfig.communication?.tags?.length || 0)} tag${(projectConfig.communication?.bindings?.length || projectConfig.communication?.tags?.length || 0) !== 1 ? 's' : ''}`}
-          >
-            <CommunicationSection config={projectConfig} updateConfig={updateConfig} />
-          </SettingsSection>
-
-          {/* ================= TASKS ================= */}
-          <SettingsSection
-            title="Task Configuration"
-            icon={<Zap size={16} />}
-            isExpanded={expandedSections.tasks}
-            onToggle={() => toggleSection('tasks')}
-            badge={`${projectConfig.tasks.length} task${projectConfig.tasks.length !== 1 ? 's' : ''}`}
-          >
-            <TasksSection config={projectConfig} updateConfig={updateConfig} />
-          </SettingsSection>
-
         </div>
 
         {/* Summary Footer */}
