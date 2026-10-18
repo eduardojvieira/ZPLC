@@ -13,7 +13,8 @@ const SURFACES = ['--color-surface-900', '--color-surface-800', '--color-surface
 const rules = [...css.matchAll(/([^{}]+)\{([^{}]*)\}/g)].map(([, selector, body]) => ({ selector: selector.trim(), body }));
 
 /** UX-005: one focus indicator, defined once, visible in every theme and never removed without a replacement. */
-describe('focus ring (UX-005)', () => {
+// The title is the name the evidence record of UX-005 holds (tools/ci/requirement-evidence.json); the stopgap it names is lifted.
+describe('focus ring (UX-005 stopgap: the visual editors still carry their own classes)', () => {
   it('is defined as three tokens', () => {
     const light = resolveTokens('light');
     expect(light['--focus-ring-color']).toBeDefined();

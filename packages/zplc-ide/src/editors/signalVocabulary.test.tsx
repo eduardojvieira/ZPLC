@@ -1,5 +1,4 @@
 import { describe, expect, it } from 'bun:test';
-import { readFileSync } from 'node:fs';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { ReactFlowProvider, type NodeProps } from '@xyflow/react';
 import { SIGNAL_CUES, SIGNAL_TONES, type SignalTone } from '../theme/signalTone';
@@ -157,19 +156,10 @@ describe('UX-009 SFC shows the five signal states', () => {
   });
 });
 
-describe('UX-009 the visual editors carry no private on/off colours', () => {
-  // pinned source: the editors have no renderer for every branch (minimap colours, handles), so the sources are scanned
-  const sources = ['ld/LDElement.tsx', 'ld/LDRungGrid.tsx', 'ld/LDEditor.tsx', 'sfc/SFCEditor.tsx', 'sfc/nodes/SFCStepNode.tsx', 'sfc/nodes/SFCTransitionNode.tsx', 'fbd/FBDEditor.tsx', 'fbd/InstanceMonitor.tsx', 'fbd/edges/DebugEdge.tsx', 'fbd/edges/edgeSignal.ts', 'fbd/nodes/FunctionBlockNode.tsx']
-    .map((file) => [file, readFileSync(new URL(`./${file}`, import.meta.url), 'utf8')] as const);
-
-  for (const [file, text] of sources) {
-    it(`UX-009 ${file} uses no stock green or red, no hex state colour and no accent for a value`, () => {
-      expect(text.match(STOCK_STATE_COLOURS)).toBeNull();
-      expect(text).not.toMatch(/#(?:22c55e|f59e0b|fbbf24|22d3ee|EF4444)\b/i);
-    });
-  }
-
-  it('UX-009 names every state once, in SIGNAL_TONES', () => {
+// The sources of the editors are held to tokens by the kit guard (stock-palette, literal-colour, editor-effect), whose list of offenders is
+// empty for them: see visualThemeContract.test.ts.
+describe('UX-009 the vocabulary names every state once', () => {
+  it('UX-009 lists the five states and the plain value in SIGNAL_TONES', () => {
     expect([...SIGNAL_TONES].map(String).sort()).toEqual([...FIVE, 'value'].map(String).sort());
   });
 });

@@ -1610,9 +1610,9 @@ export const JOURNEYS: Journey[] = [
       await app.until('an element that power does not reach', async () => await app.eval<number>(cells(false)) > 0 || undefined);
       // the values arrive with the first complete poll, and then every variable the example declares has one
       const texts = () => app.eval<string[]>(`[...document.querySelectorAll('[data-ld-cell] text')].map((node) => node.textContent ?? '')`);
-      await app.until('a contact to show the value of its variable', async () => (await texts()).some((text) => text === 'T' || text === 'F') || undefined);
+      await app.until('a contact to show the value of its variable', async () => (await texts()).some((text) => /^[●○◆▲] [TF]$/.test(text)) || undefined);
       const shown = await texts();
-      assert(!shown.includes('—'), `A variable that the example declares is shown as unavailable: ${JSON.stringify(shown)}`);
+      assert(!shown.includes('◌ —'), `A variable that the example declares is shown as unavailable: ${JSON.stringify(shown)}`);
     },
   },
   {
@@ -2885,7 +2885,8 @@ export const JOURNEYS: Journey[] = [
       await openFolder(app, project);
 
       /** The computed colours a person sees, read from the page: no screenshot is compared. */
-      const colours = (probe: string) => app.eval<Record<string, string>>(`(() => { const pick = (selector) => document.querySelector(selector); const style = (element) => getComputedStyle(element); return (${probe})(pick, style); })()`);
+      // the editor draws a moment after its canvas exists: the probe is repeated until it finds every element it reads
+      const colours = (probe: string) => app.until('the editor to be drawn', async () => await app.eval<Record<string, string>>(`(() => { const pick = (selector) => document.querySelector(selector); const style = (element) => getComputedStyle(element); return (${probe})(pick, style); })()`).catch(() => undefined) || undefined);
       /** The background a piece of text really sits on: the first ancestor that paints one. */
       const behind = `(element) => { for (let node = element; node; node = node.parentElement) { const colour = getComputedStyle(node).backgroundColor; if (colour !== 'rgba(0, 0, 0, 0)' && colour !== 'transparent') return colour; } return 'rgb(255, 255, 255)'; }`;
       const sameColour = (a: string, b: string) => { const x = parseColor(a), y = parseColor(b); return x.r === y.r && x.g === y.g && x.b === y.b; };
