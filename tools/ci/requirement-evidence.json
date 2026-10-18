@@ -2080,7 +2080,8 @@
     {"kind":"unit","ref":"packages/zplc-ide/src/theme/focusRing.test.ts","test":"focus ring in the visual editors (UX-005)"},
     {"kind":"unit","ref":"tools/ci/ui-kit-guard.test.ts","test":"kit guard: focus and text size (UX-005, UX-006 stopgap)","partial":true},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"41 The component kit behaves from the keyboard in a real window","partial":true},
-    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"46 The themes, forced colours and reduced motion reach the three visual editors and the code editor","partial":true}
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"46 The themes, forced colours and reduced motion reach the three visual editors and the code editor","partial":true},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"48 The main screens pass the rendered accessibility check in light, dark and high contrast","partial":true}
   ],
   "UX-006": [
     {"kind":"unit","ref":"packages/zplc-ide/src/theme/tokens.test.ts","test":"type, shape and density tokens (UX-006, UX-007, UX-008 stopgap)","partial":true},
@@ -2213,7 +2214,8 @@
     {"kind":"unit","ref":"packages/zplc-ide/src/commands/commands.test.ts","test":"command registry (UX-015)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/commands/commands.test.ts","test":"running a command (UX-015)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/commands/commands.test.ts","test":"shortcuts (UX-015)"},
-    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"3c The command palette runs commands from the keyboard","partial":true}
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"3c The command palette runs commands from the keyboard","partial":true},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"47 The main path is completed with the keyboard alone","partial":true}
   ],
   "UX-016": [
     {"kind":"unit","ref":"packages/zplc-ide/electron/shellPreferences.test.ts","test":"UX-016 follows the system mode only for the system theme"},
@@ -2343,7 +2345,8 @@
     {"kind":"unit","ref":"packages/zplc-ide/src/theme/contrast.test.ts","test":"theme token contrast (UX-024 stopgap: the main screens have no automated check yet)","partial":true},
     {"kind":"unit","ref":"packages/zplc-ide/src/ui/audit.test.ts","test":"structural accessibility audit of markup (UX-024, UX-026 stopgap)","partial":true},
     {"kind":"unit","ref":"tools/ci/ux-tokens.test.ts","test":"finds no declared contrast pair below WCAG 2.2 AA in any theme (UX-024 stopgap)","partial":true},
-    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"41 The component kit behaves from the keyboard in a real window","partial":true}
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"41 The component kit behaves from the keyboard in a real window","partial":true},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"48 The main screens pass the rendered accessibility check in light, dark and high contrast"}
   ],
   "UX-025": [
     {"kind":"unit","ref":"packages/zplc-ide/src/ui/kit.test.tsx","test":"kit dialogs (UX-001, UX-025 stopgap)","partial":true},
@@ -2352,14 +2355,21 @@
     {"kind":"unit","ref":"packages/zplc-ide/src/ui/logic/keyboard.test.ts","test":"keyboard navigation of a composite widget (UX-001, UX-025 stopgap)","partial":true},
     {"kind":"unit","ref":"packages/zplc-ide/src/ui/logic/overlays.test.ts","test":"menu keyboard behaviour (UX-001, UX-025 stopgap)","partial":true},
     {"kind":"unit","ref":"packages/zplc-ide/src/ui/logic/overlays.test.ts","test":"tooltip behaviour (UX-001, UX-025 stopgap)","partial":true},
-    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"41 The component kit behaves from the keyboard in a real window","partial":true}
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"41 The component kit behaves from the keyboard in a real window","partial":true},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"47 The main path is completed with the keyboard alone"}
   ],
   "UX-026": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/store/notifications.test.ts","test":"what the notification store says to the shared announcer (UX-026)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/ui/audit.test.ts","test":"structural accessibility audit of markup (UX-024, UX-026 stopgap)","partial":true},
     {"kind":"unit","ref":"packages/zplc-ide/src/ui/kit.test.tsx","test":"kit buttons (UX-001, UX-026 stopgap)","partial":true},
     {"kind":"unit","ref":"packages/zplc-ide/src/ui/kit.test.tsx","test":"kit form fields (UX-001, UX-026 stopgap)","partial":true},
+    {"kind":"unit","ref":"packages/zplc-ide/src/ui/liveRegions.test.tsx","test":"the live regions of the shared announcer (UX-026)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/utils/announce.test.ts","test":"the shared announcer (UX-026)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/utils/forceAnnouncements.test.ts","test":"the announcements of the force state (UX-026)"},
     {"kind":"unit","ref":"tools/ci/ui-kit-guard.test.ts","test":"kit guard: names (UX-026 stopgap)","partial":true},
-    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"41 The component kit behaves from the keyboard in a real window","partial":true}
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"41 The component kit behaves from the keyboard in a real window","partial":true},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"47 The main path is completed with the keyboard alone","partial":true},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"48 The main screens pass the rendered accessibility check in light, dark and high contrast","partial":true}
   ],
   "UX-027": [
     {"kind":"unit","ref":"packages/zplc-ide/src/editors/visualThemeContract.test.ts","test":"UX-027 declares the contrast of the text, the muted labels and every signal state on the canvas and on a node"},
