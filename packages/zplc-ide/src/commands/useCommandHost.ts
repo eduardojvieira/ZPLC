@@ -41,10 +41,21 @@ export function useCommandShortcuts(): void {
   }, []);
 }
 
+/** A command that shows a surface also takes the keyboard there (UX-025), once the palette has given its focus back. */
+const focusSoon = (selector: string): void => {
+  window.setTimeout(() => window.requestAnimationFrame(() => document.querySelector<HTMLElement>(selector)?.focus()), 0);
+};
+
 const showPanel = (tab: ConsoleTab) => (): void => {
   const state = useIDEStore.getState();
   if (state.isConsoleCollapsed) state.toggleConsole();
   state.setActiveConsoleTab(tab);
+  focusSoon(`#console-tab-${tab}`);
+};
+
+const showActivity = (view: 'project' | 'search' | 'learn' | 'tests'): void => {
+  useShellLayout.getState().showActivity(view);
+  focusSoon(`[data-activity="${view}"]`);
 };
 
 /** The commands the shell owns; the toolbar binds the ones about building and running. */
@@ -60,12 +71,12 @@ export function useShellCommands(): void {
     'view.toggleConsole': () => useIDEStore.getState().toggleConsole(),
     'view.togglePrimarySidebar': () => useShellLayout.getState().togglePrimary(),
     'view.toggleSecondarySidebar': () => useShellLayout.getState().toggleSecondary(),
-    'view.showProject': () => useShellLayout.getState().showActivity('project'),
-    'view.showSearch': () => useShellLayout.getState().showActivity('search'),
-    'view.showLearn': () => useShellLayout.getState().showActivity('learn'),
+    'view.showProject': () => showActivity('project'),
+    'view.showSearch': () => showActivity('search'),
+    'view.showLearn': () => showActivity('learn'),
     'view.output': showPanel('output'),
     'view.problems': showPanel('problems'),
-    'view.tests': () => { useShellLayout.getState().showActivity('tests'); showPanel('tests')(); },
+    'view.tests': () => { showActivity('tests'); showPanel('tests')(); },
     'view.trace': showPanel('trace'),
     'view.watch': showPanel('watch'),
     'view.themeLight': () => useIDEStore.getState().setTheme('light'),

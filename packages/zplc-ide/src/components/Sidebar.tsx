@@ -289,7 +289,7 @@ function TreeNode({ node, depth, activeFileId, focusedTreeId, onFileClick, onTog
         onContextMenu={(event) => { onTreeItemActivate(node.id); onContextMenu(event, node); }}
         className={`w-full flex items-center gap-2 py-1 cursor-pointer text-sm transition-colors group-focus-visible/treeitem:ring-2 group-focus-visible/treeitem:ring-inset group-focus-visible/treeitem:ring-[var(--color-accent-blue)] ${
           isActive
-            ? 'bg-[var(--color-surface-600)] text-[var(--color-surface-100)]'
+            ? 'bg-[var(--menu-item-bg-active)] text-[var(--text-primary)]'
             : 'hover:bg-[var(--color-surface-700)] text-[var(--color-surface-200)]'
         }`}
         style={{ paddingLeft }}

@@ -130,6 +130,7 @@ const SFCTransitionNode = memo(({ id, data, selected }: NodeProps) => {
         >
           {isEditing ? (
             <input
+              aria-label={t('a11y.sfc.transitionCondition')}
               ref={inputRef}
               type="text"
               value={editCondition}

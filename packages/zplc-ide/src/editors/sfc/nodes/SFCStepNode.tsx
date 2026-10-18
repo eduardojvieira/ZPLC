@@ -13,6 +13,7 @@ import { Handle, Position, type NodeProps } from '@xyflow/react';
 import { Timer } from 'lucide-react';
 import { SignalChip } from '../../../ui';
 import { SIGNAL_CUES, signalTone } from '../../../theme/signalTone';
+import { t } from '../../../i18n';
 
 interface StepAction {
   qualifier: string;
@@ -144,6 +145,7 @@ const SFCStepNode = memo(({ id, data, selected }: NodeProps) => {
         >
           {isEditing ? (
             <input
+              aria-label={t('a11y.sfc.stepName')}
               ref={inputRef}
               type="text"
               value={editName}

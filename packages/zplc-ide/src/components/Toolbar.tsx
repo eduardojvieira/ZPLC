@@ -779,7 +779,7 @@ export function Toolbar({ debugController }: ToolbarProps) {
           ref={compileMenuTriggerRef}
           type="button"
           onClick={() => isCompileMenuOpen ? closeCompileMenu() : openCompileMenu()}
-          className="focus-ring flex items-center gap-1.5 px-2.5 py-1.5 rounded bg-[var(--color-surface-700)] hover:bg-[var(--color-surface-600)] text-[var(--color-surface-100)] text-xs font-medium transition-colors"
+          className="focus-ring flex items-center gap-1.5 px-2.5 py-1.5 rounded bg-[var(--color-surface-700)] hover:bg-[var(--menu-item-bg-active)] text-[var(--color-surface-100)] text-xs font-medium transition-colors"
           aria-label={t('toolbar.build.label')}
           aria-haspopup="menu"
           aria-expanded={isCompileMenuOpen}
@@ -798,7 +798,7 @@ export function Toolbar({ debugController }: ToolbarProps) {
               type="button"
               role="menuitem"
               onClick={() => { void handleCompile(); }}
-              className="focus-ring w-full flex items-center gap-2 px-3 py-2 text-sm text-[var(--color-surface-100)] hover:bg-[var(--color-surface-600)] transition-colors"
+              className="focus-ring w-full flex items-center gap-2 px-3 py-2 text-sm text-[var(--color-surface-100)] hover:bg-[var(--menu-item-bg-active)] transition-colors"
               aria-label={withShortcut(t('toolbar.compile.label'), 'build.compile')}
             >
               <Hammer size={14} />
@@ -811,7 +811,7 @@ export function Toolbar({ debugController }: ToolbarProps) {
               role="menuitem"
               onClick={handleDownloadBytecode}
               disabled={!hasCurrentCompileResult}
-              className="focus-ring w-full flex items-center gap-2 px-3 py-2 text-sm text-[var(--color-surface-100)] hover:bg-[var(--color-surface-600)] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+              className="focus-ring w-full flex items-center gap-2 px-3 py-2 text-sm text-[var(--color-surface-100)] hover:bg-[var(--menu-item-bg-active)] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
               aria-label={t('toolbar.download.label')}
             >
               <Download size={14} />
@@ -822,7 +822,7 @@ export function Toolbar({ debugController }: ToolbarProps) {
               role="menuitem"
               onClick={handleViewAssembly}
               disabled={!hasCurrentCompileResult}
-              className="focus-ring w-full flex items-center gap-2 px-3 py-2 text-sm text-[var(--color-surface-100)] hover:bg-[var(--color-surface-600)] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+              className="focus-ring w-full flex items-center gap-2 px-3 py-2 text-sm text-[var(--color-surface-100)] hover:bg-[var(--menu-item-bg-active)] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
               aria-label={t('toolbar.assembly.label')}
             >
               <FileCode size={14} />
@@ -845,7 +845,7 @@ export function Toolbar({ debugController }: ToolbarProps) {
             disabled={controlsBusy}
            className={`focus-ring flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium transition-colors ${executionMode === EXECUTION_MODE.SIMULATE
             ? 'bg-[var(--color-accent-blue)] text-white'
-            : 'text-[var(--color-surface-300)] hover:bg-[var(--color-surface-600)]'
+            : 'text-[var(--color-surface-300)] hover:bg-[var(--menu-item-bg-active)]'
             } disabled:opacity-50`}
           aria-label={t('toolbar.simulation.label')}
           aria-pressed={executionMode === EXECUTION_MODE.SIMULATE}
@@ -860,7 +860,7 @@ export function Toolbar({ debugController }: ToolbarProps) {
             disabled={controlsBusy}
            className={`focus-ring flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium transition-colors ${executionMode === EXECUTION_MODE.HARDWARE
             ? 'bg-[var(--color-accent-blue)] text-white'
-            : 'text-[var(--color-surface-300)] hover:bg-[var(--color-surface-600)]'
+            : 'text-[var(--color-surface-300)] hover:bg-[var(--menu-item-bg-active)]'
             } disabled:opacity-50`}
           aria-label={t('toolbar.hardware.label')}
           aria-pressed={executionMode === EXECUTION_MODE.HARDWARE}
@@ -885,8 +885,8 @@ export function Toolbar({ debugController }: ToolbarProps) {
           className={`focus-ring flex items-center gap-1.5 px-2.5 py-1.5 rounded text-xs font-medium transition-colors ${isConnected
             ? 'bg-[var(--color-surface-700)] text-[var(--color-surface-200)] hover:bg-red-600 hover:text-white'
             : executionMode === 'simulate'
-              ? 'bg-cyan-600 hover:bg-cyan-500 text-white'
-              : 'bg-[var(--color-accent-blue)] hover:bg-blue-500 text-white'
+              ? 'bg-[var(--button-primary-bg)] hover:bg-[var(--button-primary-bg-hover)] text-[var(--button-primary-fg)]'
+              : 'bg-[var(--button-primary-bg)] hover:bg-[var(--button-primary-bg-hover)] text-[var(--button-primary-fg)]'
           } disabled:opacity-50`}
           aria-label={isConnected ? t('toolbar.disconnect') : t('toolbar.connect')}
           title={isConnected ? t('toolbar.disconnect') : t('toolbar.connect')}
@@ -909,7 +909,7 @@ export function Toolbar({ debugController }: ToolbarProps) {
             type="button"
             onClick={() => { void handleUpload(); }}
             disabled={!hasCurrentCompileResult || controlsBusy}
-            className="focus-ring flex items-center gap-1.5 px-2.5 py-1.5 rounded bg-[var(--color-surface-700)] hover:bg-[var(--color-surface-600)] text-[var(--color-surface-200)] text-xs font-medium transition-colors disabled:opacity-40"
+            className="focus-ring flex items-center gap-1.5 px-2.5 py-1.5 rounded bg-[var(--color-surface-700)] hover:bg-[var(--menu-item-bg-active)] text-[var(--color-surface-200)] text-xs font-medium transition-colors disabled:opacity-40"
             aria-label={t('toolbar.deploy.label')}
             title={t('toolbar.deploy.title')}
           >
@@ -927,7 +927,7 @@ export function Toolbar({ debugController }: ToolbarProps) {
             className={`focus-ring flex items-center gap-1 px-2 py-1.5 rounded text-xs font-medium transition-colors ${
               mpeekEnabled
                 ? 'bg-amber-500 hover:bg-amber-400 text-black'
-                : 'bg-[var(--color-surface-700)] hover:bg-[var(--color-surface-600)] text-[var(--color-surface-400)]'
+                : 'bg-[var(--color-surface-700)] hover:bg-[var(--menu-item-bg-active)] text-[var(--color-surface-400)]'
             }`}
             aria-label={mpeekEnabled ? t('toolbar.live.disable') : t('toolbar.live.enable')}
             title={mpeekEnabled ? t('toolbar.live.enabledTitle') : t('toolbar.live.disabledTitle')}
@@ -991,7 +991,7 @@ export function Toolbar({ debugController }: ToolbarProps) {
                 type="button"
                 onClick={() => { void handleStep(); }}
                 disabled={!canRunCurrentProgram(executionMode, hasCurrentCompileResult, programLoadState) || controlsBusy}
-                className="focus-ring flex items-center gap-1.5 px-2 py-1.5 rounded bg-[var(--color-surface-700)] hover:bg-[var(--color-surface-600)] text-[var(--color-surface-200)] text-xs font-medium transition-colors"
+                className="focus-ring flex items-center gap-1.5 px-2 py-1.5 rounded bg-[var(--color-surface-700)] hover:bg-[var(--menu-item-bg-active)] text-[var(--color-surface-200)] text-xs font-medium transition-colors"
                 aria-label={withShortcut(t('toolbar.step.label'), 'debug.step')}
                 title={withShortcut(t('toolbar.step.label'), 'debug.step')}
               >
@@ -1018,7 +1018,7 @@ export function Toolbar({ debugController }: ToolbarProps) {
               type="button"
               onClick={() => { void handleReset(); }}
               disabled={controlsBusy}
-              className="focus-ring flex items-center gap-1.5 px-2 py-1.5 rounded bg-[var(--color-surface-700)] hover:bg-[var(--color-surface-600)] text-[var(--color-surface-200)] text-xs font-medium transition-colors"
+              className="focus-ring flex items-center gap-1.5 px-2 py-1.5 rounded bg-[var(--color-surface-700)] hover:bg-[var(--menu-item-bg-active)] text-[var(--color-surface-200)] text-xs font-medium transition-colors"
               aria-label={withShortcut(t('toolbar.reset.label'), 'debug.reset')}
               title={withShortcut(t('toolbar.reset.title'), 'debug.reset')}
             >
@@ -1065,7 +1065,7 @@ export function Toolbar({ debugController }: ToolbarProps) {
                   onClick={() => { setTheme(option.id); closeThemeMenu(true); }}
                   className={`focus-ring w-full flex items-center gap-2 px-3 py-1.5 text-xs transition-colors ${isActive
                     ? 'bg-[var(--color-accent-blue)] text-white'
-                    : 'text-[var(--color-surface-100)] hover:bg-[var(--color-surface-600)]'
+                    : 'text-[var(--color-surface-100)] hover:bg-[var(--menu-item-bg-active)]'
                     }`}
                 >
                   <Icon size={14} />

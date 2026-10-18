@@ -26,7 +26,9 @@ describe('the notification list (IDE-021)', () => {
   it('names the panel that Details opens, for a failure that belongs in Problems', () => {
     const html = renderToStaticMarkup(<NotificationList items={[item({ status: 'error', title: 'Build failed', details: 'problems' })]} onOpenDetails={noop} onDismiss={noop} />);
     expect(html).toContain('data-status="error"');
-    expect(html).toContain('role="alert"');
+    // the shared announcer reads it (store/notifications.ts); the list has no live region of its own
+    expect(html).not.toContain('role="alert"');
+    expect(html).not.toContain('aria-live');
     expect(html).toContain('data-details="problems"');
     expect(html).toContain('aria-label="Details: Build failed (Problems)"');
   });

@@ -652,7 +652,7 @@ export function Console({ debugController }: ConsoleProps) {
                     [{formatTime(entry.timestamp)}]
                   </span>
                   {entry.source && (
-                    <span className="text-[var(--color-surface-500)] text-xs">
+                    <span className="text-[var(--text-muted)] text-xs">
                       [{entry.source}]
                     </span>
                   )}

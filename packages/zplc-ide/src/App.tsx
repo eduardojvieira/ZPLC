@@ -43,6 +43,7 @@ import { CommandPalette } from './commands/CommandPalette';
 import { ShortcutReference } from './commands/ShortcutReference';
 import { useCommandShortcuts, useMainProcessBridge, useShellCommands } from './commands/useCommandHost';
 import { useT } from './i18n';
+import { useStatusAnnouncements } from './hooks/useStatusAnnouncements';
 
 interface WorkbenchParts {
   Toolbar: ComponentType<{ debugController: DebugController }>;
@@ -85,6 +86,7 @@ function App() {
   const [workbenchAttempt, setWorkbenchAttempt] = useState(0);
 
   // The open project's tabs, cursors and panel split are saved as they change (IDE-008).
+  useStatusAnnouncements();
   useEffect(() => startSessionPersistence(useIDEStore), []);
 
   // The declarations of the project's files and library folders, for the tree and the editors (IDE-023).

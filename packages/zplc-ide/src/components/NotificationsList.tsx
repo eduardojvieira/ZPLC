@@ -45,7 +45,6 @@ export function NotificationList({ items, onOpenDetails, onDismiss }: {
             key={entry.id}
             data-notification={entry.kind}
             data-status={entry.status}
-            role={entry.status === 'error' ? 'alert' : 'status'}
             aria-busy={entry.status === 'running'}
             className={`pointer-events-auto border-l-4 border border-[var(--color-surface-600)] ${TONE[entry.status]} bg-[var(--color-surface-900)] p-2 text-sm text-[var(--color-surface-100)]`}
           >

@@ -37,6 +37,7 @@ const KEYS: Record<string, { key: string; code: string; keyCode: number }> = {
   Delete: { key: 'Delete', code: 'Delete', keyCode: 46 }, Backspace: { key: 'Backspace', code: 'Backspace', keyCode: 8 }, Insert: { key: 'Insert', code: 'Insert', keyCode: 45 },
   PageUp: { key: 'PageUp', code: 'PageUp', keyCode: 33 }, PageDown: { key: 'PageDown', code: 'PageDown', keyCode: 34 },
   C: { key: 'c', code: 'KeyC', keyCode: 67 }, N: { key: 'n', code: 'KeyN', keyCode: 78 }, O: { key: 'o', code: 'KeyO', keyCode: 79 }, I: { key: 'i', code: 'KeyI', keyCode: 73 },
+  Space: { key: ' ', code: 'Space', keyCode: 32 }, E: { key: 'e', code: 'KeyE', keyCode: 69 }, M: { key: 'm', code: 'KeyM', keyCode: 77 },
   T: { key: 't', code: 'KeyT', keyCode: 84 }, V: { key: 'v', code: 'KeyV', keyCode: 86 }, K: { key: 'k', code: 'KeyK', keyCode: 75 },
 };
 
@@ -139,7 +140,7 @@ async function connectApp(target: string, context: { answerFile: string | undefi
       const parts = chord.split('+'); const name = parts.pop()!; const definition = KEYS[name.length === 1 ? name.toUpperCase() : name];
       assert(definition, `Unknown key ${chord}`);
       const modifiers = (parts.includes('Alt') ? 1 : 0) | (parts.includes('Ctrl') ? 2 : 0) | (parts.includes('Shift') ? 8 : 0);
-      const text = definition.key === 'Enter' ? '\r' : undefined;
+      const text = definition.key === 'Enter' ? '\r' : definition.key === ' ' ? ' ' : undefined;
       await page.command('Input.dispatchKeyEvent', { type: 'keyDown', key: definition.key, code: definition.code, text, unmodifiedText: text, windowsVirtualKeyCode: definition.keyCode, modifiers });
       await page.command('Input.dispatchKeyEvent', { type: 'keyUp', key: definition.key, code: definition.code, windowsVirtualKeyCode: definition.keyCode, modifiers });
     },

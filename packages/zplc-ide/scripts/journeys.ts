@@ -15,6 +15,7 @@ import { compilerCompile } from '../src/cli/toolApi';
 import { NATIVE_PROGRAM_MAX_BYTES } from '../electron/security';
 import { assert, MONACO_MODULE_URL, packageRoot } from './run-desktop-smoke';
 import { button, css, launchPackagedApp, menuItem, tab, type App, type Target } from './journeyApp';
+import { domAuditExpression, type DomAuditResult } from './domAudit';
 
 export interface JourneyContext {
   root: string;
@@ -2746,7 +2747,8 @@ export const JOURNEYS: Journey[] = [
       await app.click(tab('Changes'), 'the Changes tab');
       const refused = await reviewed();
       assert(refused.includes('Rejected: candidate was not accepted.') && refused.includes('SCENARIO_ASSERTION_FAILED'), `The review does not refuse a change that breaks the scenario: ${JSON.stringify(refused)}`);
-      assert(refused.includes('No file has been written.') && await app.visible(css('[aria-label="Candidate review result"] .monaco-diff-editor')), 'The review of a refused change does not show the difference and say that nothing was written.');
+      assert(refused.includes('No file has been written.'), `The review of a refused change does not say that nothing was written: ${JSON.stringify(refused)}`);
+      assert(await app.visible(css('[aria-label="Candidate review result"] .monaco-diff-editor')), `The review of a refused change does not show the difference: ${await app.eval<string>(`document.querySelector('[aria-label="Candidate review result"]')?.outerHTML.slice(0, 400) ?? 'no result'`)}`);
       assert(!await app.visible(button('Save reviewed change')), 'A change that the review refused is offered for saving.');
       assert(disk(file) === original, 'Reviewing the change wrote the file.');
 
@@ -2953,6 +2955,252 @@ export const JOURNEYS: Journey[] = [
         assert(slow.length === 0, `${editor.name} keeps a transition or animation under reduced motion: ${JSON.stringify(slow)}.`);
       }
       await app.cdp.command('Emulation.setEmulatedMedia', { features: [] });
+    },
+  },
+  {
+    // UX-025: the path open, edit, build, simulate, watch, force, deploy dialog and one Learn lesson, with key presses only. The
+    // folder dialog is the one native window; it is answered by the hook of the unpackaged app, as in every journey. Nothing
+    // here is pointed at: `app.click` is not used after the window opens. The simulator is the native one, never a device.
+    name: '47 The main path is completed with the keyboard alone', example: 'motor_start_stop_starter', proves: ['UX-025'], partly: ['UX-015', 'UX-026'],
+    run: async (app, { project }) => {
+      const lesson = learnLessonCatalog.en.find(({ id }) => id === 'motor-start-stop-safe')!;
+      const solution = disk(join(packageRoot, 'projects', lesson.referenceExampleId, lesson.solutionProgram));
+      cpSync(join(packageRoot, 'projects', 'blinky_fbd', 'src', 'main.fbd.json'), join(project, 'src', 'diagram.fbd.json'));
+      const focused = (): Promise<string> => app.eval<string>(`(() => { const el = document.activeElement; if (!el || el === document.body) return '(page)'; return ((el.getAttribute('aria-label') || el.textContent || el.getAttribute('title') || el.id || el.tagName).trim().replace(/\\s+/g, ' ')).slice(0, 48) + (el.getAttribute('role') ? ' [' + el.getAttribute('role') + ']' : ''); })()`);
+      const live = (politeness: 'polite' | 'assertive') => app.eval<string>(`document.querySelector('[data-live-region="${politeness}"]')?.textContent?.replace(/\\u00a0/g, '') ?? ''`);
+      /** Presses `key` until the element holding the focus satisfies `condition` (an expression on `el`); the names it passed are returned, in order, and a miss fails with them. */
+      const reach = async (what: string, condition: string, key = 'Tab', max = 45): Promise<string[]> => {
+        const path: string[] = [];
+        for (let step = 0; step <= max; step++) {
+          if (await app.eval<boolean>(`(() => { const el = document.activeElement; return Boolean(el) && el !== document.body && (${condition}); })()`)) return path;
+          await app.press(key);
+          path.push(await focused());
+        }
+        throw new Error(`${what} was not reached with ${key} in ${max} presses; the focus passed ${path.join(' > ')}`);
+      };
+      const isEnabled = (selector: string) => app.eval<boolean>(`document.querySelector(${JSON.stringify(selector)})?.disabled === false`);
+
+      // 1. Open: Welcome focuses its own region; Tab walks the screen from there until it comes round, and the walk follows the screen
+      app.answer(project);
+      const stop = (): Promise<{ name: string; top: number; left: number }> => app.eval(`(() => { const el = document.activeElement; let top = 0, left = 0; for (let node = el; node; node = node.offsetParent) { top += node.offsetTop; left += node.offsetLeft; } return { name: (el.getAttribute('aria-label') || el.textContent || '').trim().replace(/\\s+/g, ' ').slice(0, 40), top, left }; })()`);
+      const welcomePath: Array<{ name: string; top: number; left: number }> = [];
+      for (let step = 0; step < 60; step++) {
+        await app.press('Tab');
+        const next = await stop();
+        if (welcomePath.length > 0 && next.name === welcomePath[0]!.name && next.top === welcomePath[0]!.top) break;
+        welcomePath.push(next);
+      }
+      assert(welcomePath.some((entry) => /Open project/.test(entry.name)), `Tab does not reach Open project on Welcome: ${JSON.stringify(welcomePath.map((entry) => entry.name))}`);
+      assert(welcomePath.length > 3, `Tab finds fewer than four stops on Welcome: ${JSON.stringify(welcomePath)}`);
+      for (let index = 1; index < welcomePath.length; index++) {
+        const [before, after] = [welcomePath[index - 1]!, welcomePath[index]!];
+        assert(after.top > before.top - 4 || after.left >= before.left, `The focus order of Welcome goes back up the screen from ${before.name} to ${after.name}: ${JSON.stringify(welcomePath)}`);
+      }
+      while (!(await app.eval<boolean>(`document.activeElement?.textContent?.includes('Open project') === true`))) await app.press('Tab');
+      await app.press('Enter');
+      await app.until('the project workbench to appear', async () => await app.visible(toolbar) || undefined);
+
+      // 2. Edit: the project navigator holds Motor.st; Tab reaches its row and Enter opens the file.
+      await app.press('Ctrl+Shift+E');
+      await reach('the Motor.st row of the navigator', `el.textContent.includes('src/Motor.st')`, 'Tab', 60);
+      await app.press('Enter');
+      await app.until('Motor.st in the code editor', async () => (await editorText(app)).includes('PROGRAM Motor') || undefined);
+      // the code editor is reached with Tab; the whole program is replaced by the reference solution and saved with Ctrl+S
+      // (typing the text would let the editor indent and close brackets as it does for a person; the solution is pasted)
+      await app.eval(`(() => { const area = document.createElement('textarea'); area.value = ${JSON.stringify(solution)}; document.body.append(area); area.select(); document.execCommand('copy'); area.remove(); })()`);
+      await reach('the code editor', `el.closest('.monaco-editor') !== null`, 'Tab', 80);
+      await app.press('Ctrl+A');
+      await app.press('Ctrl+V');
+      await app.until('the solution in the editor', async () => (await editorText(app)).includes('Forward') || undefined);
+      await app.press('Ctrl+S');
+      await app.until('the save to be announced', async () => /Saved/.test(await live('polite')) || undefined);
+
+      // no keyboard trap in the code editor: Tab types a tab there, and Ctrl+M (Monaco's Tab focus mode) makes Tab and Shift+Tab move the focus
+      await app.press('Ctrl+M');
+      await app.press('Tab');
+      assert(await app.eval<boolean>(`document.activeElement?.closest('.monaco-editor') === null`), 'Tab stayed in the code editor after Ctrl+M (toggle Tab focus mode).');
+      await reach('the code editor again', `el.closest('.monaco-editor') !== null`, 'Shift+Tab', 8);
+      await app.press('Ctrl+M');
+
+      // 3. Build: Ctrl+B; the result is written to Output and announced
+      await app.press('Ctrl+B');
+      await app.until('a successful build in Output', async () => /Built saved workspace locally/.test(await outputText(app)) || undefined, 30_000)
+        .catch(async (error: Error) => { throw new Error(`${error.message}: the announcer says ${JSON.stringify([await live('polite'), await live('assertive')])}; Output says ${JSON.stringify((await outputText(app)).slice(-300))}`); });
+      await app.until('the result of the build to be announced', async () => { const said = await live('polite'); return (said !== '' && !/^Building/.test(said) && /build|built/i.test(said)) || undefined; });
+
+      // 4. Simulate: Connect from the palette and Run with F5
+      const palette = async (title: string) => {
+        await app.press('Ctrl+Shift+P');
+        await app.until('the command palette', async () => await app.eval<boolean>(`Boolean(document.querySelector('[role="dialog"] [role="combobox"]'))`) || undefined);
+        await app.type(title);
+        await app.press('Enter');
+        await app.until('the palette to close', async () => !await app.eval<boolean>(`Boolean(document.querySelector('[role="dialog"] [role="combobox"]'))`) || undefined);
+      };
+      await palette('Connect');
+      await app.until('the simulation to connect', async () => await app.visible(button('Disconnect')) || undefined);
+      await app.until('the connection to be announced', async () => /ready|connected/i.test(await live('polite')) || undefined);
+      await app.press('F5');
+      await app.until('the program to run', async () => await app.visible(button('Pause (F6)', 'prefix')) || undefined);
+      assert(/Running|RUN/i.test(await app.eval<string>(`document.querySelector('[aria-label="Operational status"] [role="status"]:not([data-connection])')?.textContent ?? ''`)), 'The status bar does not say that the program runs.');
+
+      // 5. Watch: the Watch tab by command, which leaves the focus on it; the inputs of the program head the tab
+      await palette('Show watched variables');
+      await app.until('the focus on the Watch tab', async () => await app.eval<boolean>(`document.activeElement?.id === 'console-tab-watch'`) || undefined, 5_000).catch(async () => { throw new Error(`Show watched variables must leave the focus on the Watch tab, it is on ${await focused()}`); });
+      await reach('the switch of Start', `el.getAttribute('role') === 'switch' && /^Start/.test(el.getAttribute('aria-label') ?? el.textContent ?? '')`, 'Tab', 10);
+      await app.press('Space');
+      await app.until('Start to read TRUE', async () => await app.eval<boolean>(`document.activeElement?.getAttribute('aria-checked') === 'true'`) || undefined, 8_000);
+
+      // 6. Force: the checkbox of the row is the next stop; Space forces it, the announcer says so, and Space releases it
+      await reach('the Force checkbox of Start', `el.matches('input[type="checkbox"]') && /^Force.*Start$/.test(el.getAttribute('aria-label') ?? '')`, 'Tab', 5);
+      await app.press('Space');
+      await app.until('Start to be forced and announced', async () => /Forced/.test(await live('polite')) || undefined)
+        .catch(async (error: Error) => { throw new Error(`${error.message}: the polite region says ${JSON.stringify(await live('polite'))}, the checkbox is ${await app.eval<string>(`String(document.activeElement?.checked)`)}`); });
+      await app.press('Space');
+      await app.until('the force to be released and announced', async () => /released/i.test(await live('polite')) || undefined);
+      // Watch: a variable is added to the table with the keyboard, and its value follows the program
+      await reach('the Add variable button', `el.textContent?.trim() === 'Add variable' || el.getAttribute('aria-label') === 'Add variable'`, 'Tab', 20);
+      await app.press('Enter');
+      await reach('the variable field of Watch', `el.matches('input[placeholder^="Variable path"]')`, 'Tab', 5);
+      await app.type('Forward'); await app.press('Enter');
+      await app.until('Forward to read TRUE in the Watch table', async () => await watchValue(app, 'Forward') === 'TRUE' || undefined);
+
+      // 7. The deploy dialog: asked as the toolbar asks it; focus starts on Cancel, Tab stays inside, Escape closes it and gives the focus back
+      const trigger = await focused();
+      await app.eval(`(async () => {
+        const { confirmDeploy } = await import('/src/components/deployConfirm.tsx');
+        const facts = { project: { name: 'Pump station', board: 'STM32F746G Discovery', boardProfile: 'stm32f746g_disco/stm32f746xx', abi: { major: 1, minor: 0, draft: 6 }, sha256: 'a1b2c3d4e5f6a7b8c9d0', byteLength: 512, taskCount: 2 }, device: { board: 'stm32f746g_disco', boardProfile: 'stm32f746g_disco/stm32f746xx', zplcVersion: '1.0.0', zephyrVersion: '4.0.0', abi: { major: 1, minor: 0 }, draft: 6, maxArtifactBytes: 4096, maxTasks: 4 }, declaredSafe: [], transfer: 'framed' };
+        window.__deployAnswer = 'asking';
+        confirmDeploy({ facts }, true).then((answer) => { window.__deployAnswer = answer; });
+      })()`);
+      await app.until('the deploy dialog', async () => await app.visible(css('[role="alertdialog"]')) || undefined);
+      assert(await app.eval<string>(`document.activeElement?.textContent?.trim() ?? ''`) === 'Cancel', `Focus in the deploy dialog must start on Cancel, it is on ${await focused()}`);
+      const inside: string[] = [];
+      for (let step = 0; step < 4; step++) { await app.press('Tab'); inside.push(await focused()); assert(await app.eval<boolean>(`document.activeElement?.closest('[role="alertdialog"]') !== null`), `Tab left the deploy dialog for ${inside.at(-1)}`); }
+      await app.press('Escape');
+      await app.until('the dialog to close', async () => !await app.visible(css('[role="alertdialog"]')) || undefined);
+      assert(await app.eval<unknown>('window.__deployAnswer') === false, 'Escape must refuse the deploy.');
+      assert(await focused() === trigger, `Escape must return the focus to ${trigger}, it is on ${await focused()}`);
+      // the command palette and the shortcut reference give the focus back in the same way
+      for (const [open, shown] of [[() => app.press('Ctrl+Shift+P'), '[role="dialog"] [role="combobox"]'], [async () => { await app.press('Ctrl+K'); await app.press('Ctrl+S'); }, '[data-command="debug.run"] kbd']] as const) {
+        await open();
+        await app.until('the dialog', async () => await app.visible(css(shown)) || undefined);
+        await app.press('Escape');
+        await app.until('the dialog to close', async () => !await app.visible(css(shown)) || undefined);
+        assert(await focused() === trigger, `Escape must return the focus to ${trigger}, it is on ${await focused()}`);
+      }
+
+      // 8. A visual editor is not a trap: Tab leaves the diagram
+      await app.press('Ctrl+Shift+P'); await app.type('Show the project navigator'); await app.press('Enter');
+      await reach('the diagram row of the navigator', `el.textContent.includes('src/diagram.fbd.json')`, 'Tab', 60);
+      await app.press('Enter');
+      await app.until('the diagram', async () => await app.visible(css('.react-flow__node')) || undefined);
+      await reach('the diagram', `el.closest('.zplc-visual-editor') !== null`, 'Tab', 80);
+      await reach('the end of the diagram', `el.closest('.zplc-visual-editor') === null`, 'Tab', 60);
+
+      // 9. One Learn lesson: the lesson list by command, Check reached with Tab and pressed with Enter, graded as passed
+      await palette('Show the lessons');
+      await app.until('the Learn tab', async () => await app.eval<boolean>(`document.querySelector('[data-activity="learn"]')?.getAttribute('aria-current') === 'true'`) || undefined);
+      await app.until('the Check button to be enabled', async () => await isEnabled('[data-learn-check]') || undefined);
+      await reach('the Check button', `el.matches('[data-learn-check]')`, 'Tab', 60);
+      await app.press('Enter');
+      await app.until('Learn to grade the program as passed', async () => await app.eval<boolean>(`document.querySelector('[data-learn-grade="passed"]') !== null`) || undefined, 60_000)
+        .catch(async (error: Error) => { throw new Error(`${error.message}: the grade shown is ${await app.eval<string>(`document.querySelector('[data-learn-grade]')?.getAttribute('data-learn-grade') ?? 'none'`)}; ${await app.eval<string>(`document.querySelector('[data-learn-check-status]')?.textContent ?? ''`)}`); });
+    },
+  },
+  {
+    // UX-024, UX-026: the rendered-DOM check (scripts/domAudit.ts) over the main screens in the three themes. It is a structural
+    // and computed check, not a screen-reader test (UX-028 is a manual task on Windows and macOS).
+    name: '48 The main screens pass the rendered accessibility check in light, dark and high contrast', example: 'blinky', proves: ['UX-024'], partly: ['UX-026', 'UX-005'],
+    run: async (app, { project }) => {
+      cpSync(join(packageRoot, 'projects', 'blinky_fbd', 'src', 'main.fbd.json'), join(project, 'src', 'second.fbd.json'));
+      cpSync(join(packageRoot, 'projects', 'blinky_sfc', 'src', 'main.sfc.json'), join(project, 'src', 'second.sfc.json'));
+      writeFileSync(join(project, 'src', 'note.st'), 'PROGRAM Note\nVAR\n  Lamp : BOOL;\nEND_VAR\nLamp := TRUE;\nEND_PROGRAM\n');
+      const themes: Array<{ id: ThemeId; command: string }> = [{ id: 'light', command: 'Use the light theme' }, { id: 'dark', command: 'Use the dark theme' }, { id: 'high-contrast', command: 'Use the high contrast theme' }];
+      const paletteOpen = () => app.eval<boolean>(`Boolean(document.querySelector('[role="dialog"] [role="combobox"]'))`);
+      const chooseTheme = async (theme: (typeof themes)[number]) => {
+        await app.press('Ctrl+Shift+P');
+        await app.until('the command palette', async () => await paletteOpen() || undefined);
+        await app.type(theme.command);
+        await app.press('Enter');
+        await app.until(`the ${theme.id} theme to apply`, async () => await app.eval<string>(`document.documentElement.getAttribute('data-theme')`) === theme.id || undefined);
+      };
+      const found: string[] = [];
+      const covered: string[] = [];
+      let theme = themes[0]!;
+      /** One screen, as it is now: the audit runs in the page after a key press, so that a focus given by script is a keyboard focus. */
+      const audit = async (screen: string) => {
+        await app.press('Tab');
+        // a colour read in the middle of a transition is not the colour the screen settles on: wait for the finite ones
+        await app.eval('Promise.race([Promise.allSettled(document.getAnimations().filter((animation) => animation.effect?.getComputedTiming().iterations !== Infinity).map((animation) => animation.finished)), new Promise((resolve) => setTimeout(resolve, 1500))]).then(() => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))))');
+        const result = await app.eval<DomAuditResult>(domAuditExpression);
+        covered.push(`${theme.id} | ${screen}: ${result.checked.text} texts, ${result.checked.interactive} controls, ${result.checked.focus} focus (${result.unchecked.focus} unverified), ${result.unchecked.background} on an image`);
+        for (const finding of result.findings.slice(0, 40)) found.push(`${theme.id} | ${screen} | ${finding.rule} | ${finding.where} | ${finding.detail}`);
+      };
+      const withDialog = async (screen: string, open: () => Promise<void>, shown: Target) => {
+        await open();
+        await app.until(`${screen} to show`, async () => await app.visible(shown) || undefined);
+        await audit(screen);
+        await app.press('Escape');
+        await app.until(`${screen} to close`, async () => !await app.visible(shown) || undefined);
+      };
+
+      // the audit can fail: a page with an unlabelled field, a duplicate id and pale text is reported for each rule
+      await app.eval(`(() => { const host = document.createElement('div'); host.id = 'audit-fixture'; host.innerHTML = '<input type="text" id="fx"><p id="fx">pale</p><p style="color:#bbb;background:#fff">pale text</p>'; document.body.append(host); })()`);
+      const fixture = await app.eval<DomAuditResult>(domAuditExpression);
+      await app.eval(`document.getElementById('audit-fixture').remove()`);
+      for (const rule of ['name', 'duplicate-id', 'contrast']) assert(fixture.findings.some((finding) => finding.rule === rule), `The audit does not report a ${rule} problem it was given: ${JSON.stringify(fixture.findings.map((finding) => finding.rule))}`);
+
+      // Welcome
+      for (theme of themes) { await chooseTheme(theme); await audit('Welcome'); }
+
+      await openFolder(app, project);
+      const EDITORS = [
+        { file: 'src/main.ld.json', ready: '[data-ld-rung-id]', name: 'Ladder' },
+        { file: 'src/second.fbd.json', ready: '.react-flow__node', name: 'Function block diagram' },
+        { file: 'src/second.sfc.json', ready: '.react-flow__node', name: 'Sequential function chart' },
+      ];
+      for (const editor of EDITORS) await openDiagram(app, editor.file, editor.ready);
+      await openFile(app, 'src/note.st');
+      for (theme of themes) {
+        await chooseTheme(theme);
+        await app.click(editorTab('file:src/note.st'), 'the Structured Text tab');
+        await audit('Editor, Structured Text');
+        for (const editor of EDITORS) {
+          await app.click(editorTab(`file:${editor.file}`), `the ${editor.name} tab`);
+          await app.until(`${editor.name} on its canvas`, async () => await app.visible(css(editor.ready)) || undefined);
+          await audit(`Editor, ${editor.name}`);
+        }
+        for (const panel of ['Problems', 'Output', 'Watch', 'Trace', 'Tests', 'Terminal']) {
+          if (!await app.visible(tab(panel, 'prefix'))) continue;
+          await app.click(tab(panel, 'prefix'), `the ${panel} tab`);
+          await audit(`Results panel, ${panel}`);
+        }
+        for (const view of ['project', 'search', 'tests', 'learn']) {
+          await app.click(css(`[data-activity="${view}"]`), `the ${view} view of the rail`);
+          await audit(`Sidebar, ${view}`);
+        }
+        await app.click(button('Project settings'), 'the Project settings button');
+        await app.until('the preferences', async () => await app.visible(css('[data-app-preferences]')) || undefined);
+        await audit('Settings');
+        await withDialog('The command palette', () => app.press('Ctrl+Shift+P'), css('[role="dialog"] [role="combobox"]'));
+        await withDialog('The shortcut reference', async () => { await app.press('Ctrl+K'); await app.press('Ctrl+S'); }, css('[data-command="debug.run"] kbd'));
+        // the deploy question, asked as the toolbar asks it (the journey never answers it with a device)
+        await withDialog('The deploy dialog', async () => { await app.eval(`(async () => {
+          const { confirmDeploy } = await import('/src/components/deployConfirm.tsx');
+          const facts = { project: { name: 'Pump station', board: 'STM32F746G Discovery', boardProfile: 'stm32f746g_disco/stm32f746xx', abi: { major: 1, minor: 0, draft: 6 }, sha256: 'a1b2c3d4e5f6a7b8c9d0', byteLength: 512, taskCount: 2 }, device: { board: 'rpi_pico', boardProfile: 'rpi_pico/rp2040', zplcVersion: '1.0.0', zephyrVersion: '4.0.0', abi: { major: 1, minor: 0 }, draft: 6, maxArtifactBytes: 4096, maxTasks: 4 }, declaredSafe: [], transfer: 'framed' };
+          confirmDeploy({ facts }, false);
+        })()`); }, css('[role="alertdialog"]'));
+      }
+      // the same element on many screens and in three themes is one problem: group by rule and element
+      const groups = new Map<string, { sample: string; themes: Set<string>; screens: Set<string> }>();
+      for (const line of found) {
+        const [themeId = '', screen = '', rule = '', where = '', detail = ''] = line.split(' | ');
+        const key = `${rule} | ${where} | ${rule === 'contrast' ? detail.replace(/^[\d.]+:1/, '').replace(/ rgb.*$/, '') : detail}`;
+        const group = groups.get(key) ?? { sample: detail, themes: new Set<string>(), screens: new Set<string>() };
+        group.themes.add(themeId); group.screens.add(screen); groups.set(key, group);
+      }
+      const report = [...groups].map(([key, group]) => `${key} [${group.sample}] themes=${[...group.themes].join('/')} screens=${group.screens.size} (${[...group.screens].slice(0, 3).join('; ')})`);
+      assert(found.length === 0, `The rendered accessibility check found ${found.length} findings, ${report.length} distinct, on ${covered.length} screens:\n${report.slice(0, 90).join('\n')}`);
     },
   },
 ];

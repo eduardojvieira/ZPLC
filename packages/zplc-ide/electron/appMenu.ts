@@ -21,7 +21,7 @@ const SEPARATOR: MenuItemConstructorOptions = { type: 'separator' };
 /**
  * The application menu (UX-014, UX-015), built from the command registry: File, Edit, View, Project, Build, Online, Debug
  * and Help on every operating system, with macOS adding its application menu and a Window menu. It replaces Electron's
- * default menu, so there is no zoom, reload or developer-tools item in a packaged build; a development build keeps reload
+ * default menu, so there is no reload or developer-tools item in a packaged build, while page zoom (zoom in, out, actual size) stays; a development build keeps reload
  * (through the unsaved-work guard) and the developer tools. Every item that is not a standard role carries only a command
  * id. On Windows and Linux the accelerators are shown but not registered, so the window's own key handler stays the one
  * place that reacts to a key (it ignores text fields, as before); macOS has no such option and routes the key through the
@@ -50,6 +50,8 @@ export function buildMenuTemplate(platform: NodeJS.Platform, commands: readonly 
         { role: 'toggleDevTools', label: t('menu.developerTools') } satisfies MenuItemConstructorOptions,
         SEPARATOR,
       ]),
+      // Page zoom is a keyboard path of its own (Ctrl/Cmd +, -, 0): the roles carry the accelerators (UX-025).
+      { role: 'zoomIn', label: t('menu.zoomIn') }, { role: 'zoomOut', label: t('menu.zoomOut') }, { role: 'resetZoom', label: t('menu.resetZoom') }, SEPARATOR,
       { role: 'togglefullscreen', label: t('menu.fullScreen') },
     ],
     help: [{ label: options.appName, enabled: false }],
