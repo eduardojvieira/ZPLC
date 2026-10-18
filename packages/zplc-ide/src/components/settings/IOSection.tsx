@@ -11,9 +11,10 @@ import { BOARD_OPTIONS, getBoardIo } from '../../config/boardProfiles';
 import type { BoardChannel, BoardIoDescription } from '../../boards/boardIo';
 import { channelAt, channelsFor, mappingProblem, nextFreeChannel, type IoSection } from '../../boards/boardIoMapping';
 import type { SectionProps } from './settingsSectionProps';
-import { t } from '../../i18n';
+import { useT } from '../../i18n';
 
 export function IOSection({ config, updateConfig }: SectionProps) {
+  const { t } = useT();
   const io = config.io || { inputs: [], outputs: [] };
   const inputs = io.inputs || [];
   const outputs = io.outputs || [];
@@ -141,32 +142,32 @@ export function IOSection({ config, updateConfig }: SectionProps) {
       <div>
         <div className="flex items-center justify-between mb-2">
           <label className="text-sm font-medium text-[var(--color-accent-green)]">
-            Inputs (%I)
+            {t('io.inputsI')}
           </label>
           <div className="flex gap-2">
             <button
               onClick={addInput}
               disabled={!hasFree('inputs', 'digital')}
               className="flex items-center gap-1 px-2 py-1 text-xs rounded bg-[var(--color-surface-600)] hover:bg-[var(--color-surface-500)] text-[var(--color-surface-200)] disabled:opacity-40"
-              title={hasFree('inputs', 'digital') ? 'Add Digital Input (BOOL)' : `${boardLabel} has no more digital inputs`}
+              title={hasFree('inputs', 'digital') ? t('io.addDigitalInputBool') : t('io.hasNoMoreDigital', { boardLabel })}
             >
               <Plus size={12} />
-              Digital
+              {t('io.digital')}
             </button>
             <button
               onClick={addAnalogInput}
               disabled={!hasFree('inputs', 'analog')}
               className="flex items-center gap-1 px-2 py-1 text-xs rounded bg-[var(--color-surface-600)] hover:bg-[var(--color-surface-500)] text-[var(--color-surface-200)] disabled:opacity-40"
-              title={hasFree('inputs', 'analog') ? 'Add Analog Input (INT)' : `${boardLabel} has no more analog inputs`}
+              title={hasFree('inputs', 'analog') ? t('io.addAnalogInputInt') : t('io.hasNoMoreAnalog', { boardLabel })}
             >
               <Plus size={12} />
-              Analog
+              {t('io.analog')}
             </button>
           </div>
         </div>
         {inputs.length === 0 ? (
           <p className="text-xs text-[var(--color-surface-400)] text-center py-4 bg-[var(--color-surface-700)] rounded">
-            No inputs configured. Click "Add" to map a GPIO pin.
+            {t('io.noInputsConfiguredAdd')}
           </p>
         ) : (
           <IOTable
@@ -186,32 +187,32 @@ export function IOSection({ config, updateConfig }: SectionProps) {
       <div>
         <div className="flex items-center justify-between mb-2">
           <label className="text-sm font-medium text-[var(--color-accent-yellow)]">
-            Outputs (%Q)
+            {t('io.outputsQ')}
           </label>
           <div className="flex gap-2">
             <button
               onClick={addOutput}
               disabled={!hasFree('outputs', 'digital')}
               className="flex items-center gap-1 px-2 py-1 text-xs rounded bg-[var(--color-surface-600)] hover:bg-[var(--color-surface-500)] text-[var(--color-surface-200)] disabled:opacity-40"
-              title={hasFree('outputs', 'digital') ? 'Add Digital Output (BOOL)' : `${boardLabel} has no more digital outputs`}
+              title={hasFree('outputs', 'digital') ? t('io.addDigitalOutputBool') : t('io.hasNoMoreDigital2', { boardLabel })}
             >
               <Plus size={12} />
-              Digital
+              {t('io.digital')}
             </button>
             <button
               onClick={addAnalogOutput}
               disabled={!hasFree('outputs', 'analog')}
               className="flex items-center gap-1 px-2 py-1 text-xs rounded bg-[var(--color-surface-600)] hover:bg-[var(--color-surface-500)] text-[var(--color-surface-200)] disabled:opacity-40"
-              title={hasFree('outputs', 'analog') ? 'Add Analog Output (INT)' : `${boardLabel} has no analog outputs`}
+              title={hasFree('outputs', 'analog') ? t('io.addAnalogOutputInt') : t('io.hasNoAnalogOutputs', { boardLabel })}
             >
               <Plus size={12} />
-              Analog
+              {t('io.analog')}
             </button>
           </div>
         </div>
         {outputs.length === 0 ? (
           <p className="text-xs text-[var(--color-surface-400)] text-center py-4 bg-[var(--color-surface-700)] rounded">
-            No outputs configured. Click "Add" to map a GPIO pin.
+            {t('io.noOutputsConfiguredAdd')}
           </p>
         ) : (
           <IOTable
@@ -231,10 +232,10 @@ export function IOSection({ config, updateConfig }: SectionProps) {
       {virtualRows.length > 0 && (
         <div>
           <label className="text-sm font-medium text-[var(--color-surface-200)]">
-            Virtual (no pin)
+            {t('io.virtualNoPin')}
           </label>
           <p className="text-xs text-[var(--color-surface-400)] mb-2">
-            Image addresses no pin of the board drives, read in the debugger or by a test.
+            {t('io.imageAddressesNoPin')}
           </p>
           <ul className="bg-[var(--color-surface-700)] rounded border border-[var(--color-surface-600)]">
             {virtualRows.map((row, index) => (
@@ -246,7 +247,7 @@ export function IOSection({ config, updateConfig }: SectionProps) {
                 <button
                   onClick={() => removeVirtual(index)}
                   className="p-1 rounded hover:bg-[var(--color-surface-500)] text-[var(--color-accent-red)]"
-                  title="Remove"
+                  title={t('io.remove')}
                 >
                   <Trash2 size={14} />
                 </button>
@@ -261,15 +262,16 @@ export function IOSection({ config, updateConfig }: SectionProps) {
 
 /** The channels the selected board has, with their pins: what a row of the tables below can be mapped to. */
 function BoardChannels({ io, boardLabel }: { io: BoardIoDescription; boardLabel: string }) {
+  const { t } = useT();
   return (
     <div className="rounded border border-[var(--color-surface-600)] bg-[var(--color-surface-700)] px-3 py-2 text-xs">
       <div className="text-[var(--color-surface-200)] font-medium">
-        {boardLabel}: {channelsFor(io, 'inputs').length} input and {channelsFor(io, 'outputs').length} output channels
+        {t('io.inputAndOutputChannels', { boardLabel, length: channelsFor(io, 'inputs').length, length2: channelsFor(io, 'outputs').length })}
       </div>
       <p className="mt-1 text-[var(--color-surface-400)]">
-        A row can only sit on a channel the board has; a variable located anywhere else fails the build.
+        {t('io.aRowCanOnly')}
       </p>
-      <ul className="mt-2 grid grid-cols-1 gap-x-4 gap-y-0.5 sm:grid-cols-2" aria-label={`Channels of ${boardLabel}`}>
+      <ul className="mt-2 grid grid-cols-1 gap-x-4 gap-y-0.5 sm:grid-cols-2" aria-label={t('io.channelsOf', { boardLabel })}>
         {io.channels.map((channel) => (
           <li key={channel.id} className="font-mono text-[var(--color-surface-300)]" title={channel.electrical}>
             <span className="text-[var(--color-accent-blue)]">{channel.address}</span> {channel.id} - {channel.pin}
@@ -279,7 +281,7 @@ function BoardChannels({ io, boardLabel }: { io: BoardIoDescription; boardLabel:
       </ul>
       {io.unmapped.length > 0 && (
         <p className="mt-2 text-[var(--color-surface-400)]">
-          Not mapped: {io.unmapped.map((item) => item.terminal).join(', ')}
+          {t('io.notMapped', { value: io.unmapped.map((item) => item.terminal).join(', ') })}
         </p>
       )}
     </div>
@@ -299,17 +301,18 @@ interface IOTableProps {
 }
 
 function IOTable({ items, onUpdate, onRemove, onMakeVirtual, section, boardIo, boardLabel }: IOTableProps) {
+  const { t } = useT();
   const boardChannels = boardIo ? channelsFor(boardIo, section) : [];
   return (
     <div className="bg-[var(--color-surface-700)] rounded border border-[var(--color-surface-600)] overflow-hidden">
       {/* Header */}
       <div className="grid grid-cols-12 gap-2 px-3 py-2 bg-[var(--color-surface-600)] text-xs text-[var(--color-surface-300)] font-medium">
-        <div className="col-span-3">Name</div>
-        <div className="col-span-2">Address</div>
-        <div className="col-span-1">Chan</div>
-        <div className="col-span-1">Pin</div>
-        <div className="col-span-2">Type</div>
-        <div className="col-span-2">Description</div>
+        <div className="col-span-3">{t('dialog.name')}</div>
+        <div className="col-span-2">{t('io.address')}</div>
+        <div className="col-span-1">{t('io.chan')}</div>
+        <div className="col-span-1">{t('io.pin')}</div>
+        <div className="col-span-2">{t('io.type')}</div>
+        <div className="col-span-2">{t('io.description')}</div>
         <div className="col-span-1"></div>
       </div>
       {/* Rows */}
@@ -331,7 +334,7 @@ function IOTable({ items, onUpdate, onRemove, onMakeVirtual, section, boardIo, b
             {boardIo ? (
               <select
                 value={channelAt(boardIo, section, item.address)?.address ?? item.address}
-                aria-label={`Channel of ${item.name}`}
+                aria-label={t('io.channelOf', { name: item.name })}
                 onChange={(e) => {
                   const channel = channelAt(boardIo, section, e.target.value);
                   onUpdate(index, channel
@@ -341,7 +344,7 @@ function IOTable({ items, onUpdate, onRemove, onMakeVirtual, section, boardIo, b
                 className="w-full px-2 py-1 text-xs bg-[var(--color-surface-600)] border border-[var(--color-surface-500)] rounded text-[var(--color-accent-blue)] font-mono focus:outline-none"
               >
                 {channelAt(boardIo, section, item.address) === undefined && (
-                  <option value={item.address}>{item.address} (not on this board)</option>
+                  <option value={item.address}>{t('io.notOnThisBoard', { address: item.address })}</option>
                 )}
                 {boardChannels.map((channel) => (
                   <option key={channel.id} value={channel.address}>{channel.address} {channel.id}</option>
@@ -353,7 +356,7 @@ function IOTable({ items, onUpdate, onRemove, onMakeVirtual, section, boardIo, b
                 type="text"
                 value={item.address}
                 onChange={(e) => onUpdate(index, { address: e.target.value })}
-                placeholder="%I0.0"
+                placeholder={t('io.i00')}
                 className="w-full px-2 py-1 text-xs bg-[var(--color-surface-600)] border border-[var(--color-surface-500)] rounded text-[var(--color-accent-blue)] font-mono focus:outline-none"
               />
             )}
@@ -381,7 +384,7 @@ function IOTable({ items, onUpdate, onRemove, onMakeVirtual, section, boardIo, b
                 type="number"
                 value={item.pin ?? ''}
                 onChange={(e) => onUpdate(index, { pin: e.target.value ? parseInt(e.target.value) : undefined })}
-                placeholder="IO"
+                placeholder={t('io.io')}
                 min={0}
                 max={100}
                 className="w-full px-2 py-1 text-xs bg-[var(--color-surface-600)] border border-[var(--color-surface-500)] rounded text-[var(--color-surface-100)] focus:outline-none placeholder:text-[var(--color-surface-500)]"
@@ -395,9 +398,9 @@ function IOTable({ items, onUpdate, onRemove, onMakeVirtual, section, boardIo, b
               onChange={(e) => onUpdate(index, { type: e.target.value as 'BOOL' | 'INT' | 'REAL' })}
               className="w-full px-2 py-1 text-xs bg-[var(--color-surface-600)] border border-[var(--color-surface-500)] rounded text-[var(--color-surface-100)] focus:outline-none"
             >
-              <option value="BOOL">BOOL</option>
-              <option value="INT">INT</option>
-              <option value="REAL">REAL</option>
+              <option value="BOOL">{t('io.bool')}</option>
+              <option value="INT">{t('io.int')}</option>
+              <option value="REAL">{t('io.real')}</option>
             </select>
           </div>
           <div className="col-span-2">
@@ -414,7 +417,7 @@ function IOTable({ items, onUpdate, onRemove, onMakeVirtual, section, boardIo, b
             <button
               onClick={() => onRemove(index)}
               className="p-1 rounded hover:bg-[var(--color-surface-500)] text-[var(--color-accent-red)]"
-              title="Remove"
+              title={t('io.remove')}
             >
               <Trash2 size={14} />
             </button>
@@ -428,9 +431,9 @@ function IOTable({ items, onUpdate, onRemove, onMakeVirtual, section, boardIo, b
             <button
               onClick={() => onMakeVirtual(index)}
               className="px-2 py-0.5 rounded bg-[var(--color-surface-600)] hover:bg-[var(--color-surface-500)] text-[var(--color-surface-200)]"
-              title="Keep this address as an image word that no pin of the board drives"
+              title={t('io.keepThisAddressAs')}
             >
-              Keep as virtual (no pin)
+              {t('io.keepAsVirtualNo')}
             </button>
           </div>
         )}

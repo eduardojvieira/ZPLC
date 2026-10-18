@@ -131,12 +131,17 @@ export function ratchetOffenders(files: readonly SourceFile[], offenders: readon
 export const PROPER_NOUNS: ReadonlySet<string> = new Set([
   'ZPLC', 'Studio', 'Learn', 'Tests', 'English', 'Español', 'GitHub', 'Modbus', 'MQTT', 'Zephyr', 'Windows', 'macOS', 'Linux',
   'Electron', 'Raspberry', 'Pi', 'Pico', 'Arduino', 'Docusaurus', 'AppImage', 'Setup', 'Portable', 'DevKitC', 'Opta', 'WiFi',
+  'WebSocket', 'Sparkplug', 'SharedAccessKey', 'CloudEvent', 'QoS', 'Ethernet', 'Azure',
 ]);
+/** Names of services and of their features that are written with capitals in a sentence, as the vendors write them. */
+export const PROPER_PHRASES: readonly string[] = [
+  'AWS IoT Core', 'Azure IoT Hub', 'Azure Event Grid MQTT', 'Event Grid', 'Device Twins', 'Direct Methods', 'C2D Messaging', 'Device Shadows', 'IoT Jobs', 'Fleet Provisioning', 'Sparkplug B',
+];
 export const INTERNAL_TERMS: readonly string[] = ['candidate', 'link zplc.json', 'stopgap', 'candidato', 'vincular zplc.json'];
 
 /** The capital letters of a text that open a word in the middle of a sentence, apart from the acronyms, code tokens and names. */
 export function midSentenceCapitals(text: string): string[] {
-  const words = text.replace(/\{\w+\}/g, '0').split(/\s+/).filter(Boolean);
+  const words = PROPER_PHRASES.reduce((rest, phrase) => rest.split(phrase).join('x'), text).replace(/\{\w+\}/g, '0').split(/\s+/).filter(Boolean);
   const found: string[] = [];
   words.forEach((word, index) => {
     if (index === 0) return;
