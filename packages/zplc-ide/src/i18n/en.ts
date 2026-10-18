@@ -4,6 +4,11 @@ import { mqttEn } from './catalog/mqtt';
 import { modbusEn } from './catalog/modbus';
 import { networkEn } from './catalog/network';
 import { ioEn } from './catalog/io';
+import { controllerEn } from './catalog/controller';
+import { toolchainEn } from './catalog/toolchain';
+import { commtagsEn } from './catalog/commtags';
+import { projectEn } from './catalog/project';
+import { labEn } from './catalog/lab';
 
 /**
  * The English catalog of Studio (UX-029): the source of truth for every user-visible string. A key is a dotted path
@@ -570,6 +575,11 @@ export const en = {
   ...modbusEn,
   ...networkEn,
   ...ioEn,
+  ...controllerEn,
+  ...toolchainEn,
+  ...commtagsEn,
+  ...projectEn,
+  ...labEn,
 } as const;
 
 export type MessageKey = keyof typeof en;

@@ -13,10 +13,12 @@ import {
 } from '../../config/boardProfiles';
 import { presentFirmwareBuildResult, presentToolchainInspectResult, type FirmwareBuildPresentation, type ToolchainPresentation } from './toolchainPresentation';
 import { Button } from '../../ui';
+import { useT } from '../../i18n';
 
 type BuildState = 'idle' | 'building' | 'cancelling' | 'not-started' | FirmwareBuildPresentation['kind'];
 
 export function ToolchainCard({ ideId }: { ideId: string | undefined }) {
+  const { t } = useT();
   const [presentation, setPresentation] = useState<ToolchainPresentation>();
   const [checking, setChecking] = useState(false);
   const [buildState, setBuildState] = useState<BuildState>('idle');
@@ -107,7 +109,7 @@ export function ToolchainCard({ ideId }: { ideId: string | undefined }) {
   return (
     <details onToggle={(event) => setOpen(event.currentTarget.open)} className="rounded border border-[var(--color-surface-600)] bg-[var(--color-surface-800)]/60">
       <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-3 py-2.5 text-sm font-medium text-[var(--color-surface-100)] marker:content-none">
-        <span className="inline-flex items-center gap-2"><ChevronRight size={15} className={`transition-transform motion-reduce:transition-none ${open ? 'rotate-90' : ''}`} aria-hidden="true" />Firmware toolchain</span>
+        <span className="inline-flex items-center gap-2"><ChevronRight size={15} className={`transition-transform motion-reduce:transition-none ${open ? 'rotate-90' : ''}`} aria-hidden="true" />{t('toolchain.firmwareToolchain')}</span>
         <span id={statusId} role="status" aria-live="polite" className={`inline-flex items-center gap-1.5 text-xs ${statusClass}`}>
           <StatusIcon size={14} className={state.kind === 'checking' ? 'animate-spin motion-reduce:animate-none' : ''} aria-hidden="true" />
           {state.message}
@@ -115,19 +117,19 @@ export function ToolchainCard({ ideId }: { ideId: string | undefined }) {
       </summary>
       <div className="space-y-3 border-t border-[var(--color-surface-700)] px-3 py-3">
         <p id={descriptionId} className="max-w-[68ch] text-xs leading-5 text-[var(--color-surface-400)]">
-          Checks only local firmware build prerequisites. It does not build, flash, deploy, connect to hardware, or qualify hardware.
+          {t('toolchain.checksOnlyLocalFirmware')}
         </p>
         <Button variant="secondary" size="sm" ref={buttonRef} onClick={() => { void inspect(); }} disabled={checking || !bridgeAvailable || buildInFlight} aria-describedby={`${descriptionId} ${statusId}`} className="motion-reduce:transition-none">
           {checking && <LoaderCircle size={14} className="animate-spin motion-reduce:animate-none" aria-hidden="true" />}
-          Choose checkout &amp; check
+          {t('toolchain.chooseCheckoutCheck')}
         </Button>
         {presentation?.checks.length ? (
-          <ul className="space-y-2 border-t border-[var(--color-surface-700)] pt-3" aria-label="Firmware toolchain checks">
+          <ul className="space-y-2 border-t border-[var(--color-surface-700)] pt-3" aria-label={t('toolchain.firmwareToolchainChecks')}>
             {presentation.checks.map((check) => (
               <li key={check.id} className="flex items-start justify-between gap-3 text-xs">
                 <span className="text-[var(--color-surface-200)]">{check.label}</span>
                 <span className={check.status === 'ready' ? 'text-[var(--color-accent-green)]' : 'text-[var(--color-accent-yellow)]'}>
-                  {check.status === 'ready' ? 'Ready' : 'Needs attention'}
+                  {check.status === 'ready' ? t('toolchain.ready') : t('toolchain.needsAttention')}
                   {check.version ? ` (${check.version})` : ''}
                   {check.status !== 'ready' ? <span className="mt-0.5 block max-w-[28ch] text-right leading-4 text-[var(--color-surface-400)]">{check.remediation}</span> : null}
                 </span>
@@ -138,35 +140,35 @@ export function ToolchainCard({ ideId }: { ideId: string | undefined }) {
         {presentation?.kind === 'ready' ? (
           <div className="space-y-3 border-t border-[var(--color-surface-700)] pt-3">
             <div>
-              <h3 className="text-xs font-medium text-[var(--color-surface-100)]">Local runtime build</h3>
+              <h3 className="text-xs font-medium text-[var(--color-surface-100)]">{t('toolchain.localRuntimeBuild')}</h3>
               <p className="mt-1 max-w-[68ch] text-xs leading-5 text-[var(--color-surface-400)]">
-                Compiles runtime firmware, not your PLC program. It runs west, CMake, Kconfig, and Python from the selected checkout; use a trusted checkout only. The temporary ELF is removed. This does not flash, deploy, connect a device, or qualify hardware. Source identity is unverified.
+                {t('toolchain.compilesRuntimeFirmwareNot')}
               </p>
             </div>
             {canBuild ? (
               <div className="flex flex-wrap items-center gap-2">
-                <Button variant="primary" size="sm" ref={buildButtonRef} onClick={() => { void build(); }} aria-disabled={buildInFlight} aria-label="Build runtime locally" aria-describedby={`${descriptionId} ${statusId}`} className={buildInFlight ? 'cursor-not-allowed opacity-50' : undefined}>
+                <Button variant="primary" size="sm" ref={buildButtonRef} onClick={() => { void build(); }} aria-disabled={buildInFlight} aria-label={t('toolchain.buildRuntimeLocally')} aria-describedby={`${descriptionId} ${statusId}`} className={buildInFlight ? 'cursor-not-allowed opacity-50' : undefined}>
                   {buildState === 'building' && <LoaderCircle size={14} className="animate-spin motion-reduce:animate-none" aria-hidden="true" />}
-                  {buildState === 'building' || buildState === 'cancelling' ? 'Building locally…' : 'Build runtime locally'}
+                  {buildState === 'building' || buildState === 'cancelling' ? t('toolchain.buildingLocally') : t('toolchain.buildRuntimeLocally')}
                 </Button>
                 {(buildState === 'building' || buildState === 'cancelling') ? (
                   <Button variant="secondary" size="sm" onClick={() => { void cancel(); }} disabled={buildState === 'cancelling'} className="motion-reduce:transition-none">
-                    {buildState === 'cancelling' ? 'Cancelling safely…' : 'Cancel build'}
+                    {buildState === 'cancelling' ? t('toolchain.cancellingSafely') : t('toolchain.cancelBuild')}
                   </Button>
                 ) : null}
               </div>
             ) : (
               <p className="text-xs leading-5 text-[var(--color-surface-400)]">
-                {localPlatform && targetOption ? 'A checked, ready checkout must include this catalogued target before a local build is available.' : 'Local runtime build is available only for a catalogued target in this app on Linux or macOS.'}
+                {localPlatform && targetOption ? t('toolchain.aCheckedReadyCheckout') : t('toolchain.localRuntimeBuildIs')}
               </p>
             )}
             <div role="status" aria-live="polite" className="text-xs leading-5 text-[var(--color-surface-300)]">
-              {buildState === 'not-started' ? 'Build was not started.' : null}
-              {buildState === 'cancelled' ? 'Build cancelled after local cleanup.' : null}
-              {buildState === 'cleanup-unconfirmed' ? 'Build stopped, but temporary cleanup could not be confirmed. Restart Studio before trying again.' : null}
-              {buildState === 'failed' ? 'Firmware build did not complete. Check the toolchain, then try again.' : null}
+              {buildState === 'not-started' ? t('toolchain.buildWasNotStarted') : null}
+              {buildState === 'cancelled' ? t('toolchain.buildCancelledAfterLocal') : null}
+              {buildState === 'cleanup-unconfirmed' ? t('toolchain.buildStoppedButTemporary') : null}
+              {buildState === 'failed' ? t('toolchain.firmwareBuildDidNot') : null}
               {buildState === 'success' && buildEvidence ? (
-                <span className="block space-y-1"><strong className="text-[var(--color-accent-green)]">Local cross-build completed</strong><span className="block">{resultTarget ?? 'Catalogued target'}</span><span className="block break-all font-mono tabular-nums text-[var(--color-surface-200)]">SHA-256 {buildEvidence.sha256}</span><span className="block tabular-nums">{new Intl.NumberFormat().format(buildEvidence.byteLength)} bytes; temporary ELF was removed. This is not a flashable artifact or hardware evidence. Source identity is unverified.</span></span>
+                <span className="block space-y-1"><strong className="text-[var(--color-accent-green)]">{t('toolchain.localCrossBuildCompleted')}</strong><span className="block">{resultTarget ?? t('toolchain.cataloguedTarget')}</span><span className="block break-all font-mono tabular-nums text-[var(--color-surface-200)]">{t('console.sha2562', { sha256: buildEvidence.sha256 })}</span><span className="block tabular-nums">{t('toolchain.bytesTemporaryElfWas', { value: new Intl.NumberFormat().format(buildEvidence.byteLength) })}</span></span>
               ) : null}
             </div>
           </div>

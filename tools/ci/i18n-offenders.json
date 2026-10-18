@@ -1,21 +1,5 @@
 [
   {
-    "file": "packages/zplc-ide/src/components/ControllerView.tsx",
-    "rule": "hard-coded-attribute",
-    "count": 1,
-    "requirement": "UX-029",
-    "added": "2026-10-17",
-    "reason": "Not yet moved to the catalogs of src/i18n; the surface's own work package moves it."
-  },
-  {
-    "file": "packages/zplc-ide/src/components/ControllerView.tsx",
-    "rule": "hard-coded-text",
-    "count": 63,
-    "requirement": "UX-029",
-    "added": "2026-10-17",
-    "reason": "Not yet moved to the catalogs of src/i18n; the surface's own work package moves it."
-  },
-  {
     "file": "packages/zplc-ide/src/components/DebugWatchPanel.tsx",
     "rule": "hard-coded-attribute",
     "count": 9,
@@ -90,7 +74,7 @@
   {
     "file": "packages/zplc-ide/src/components/LabPanel.tsx",
     "rule": "hard-coded-attribute",
-    "count": 8,
+    "count": 4,
     "requirement": "UX-029",
     "added": "2026-10-17",
     "reason": "Not yet moved to the catalogs of src/i18n; the surface's own work package moves it."
@@ -98,7 +82,7 @@
   {
     "file": "packages/zplc-ide/src/components/LabPanel.tsx",
     "rule": "hard-coded-text",
-    "count": 49,
+    "count": 19,
     "requirement": "UX-029",
     "added": "2026-10-17",
     "reason": "Not yet moved to the catalogs of src/i18n; the surface's own work package moves it."
@@ -192,22 +176,6 @@
     "reason": "Not yet moved to the catalogs of src/i18n; the surface's own work package moves it."
   },
   {
-    "file": "packages/zplc-ide/src/components/settings/CommunicationTags.tsx",
-    "rule": "hard-coded-attribute",
-    "count": 9,
-    "requirement": "UX-029",
-    "added": "2026-10-17",
-    "reason": "Not yet moved to the catalogs of src/i18n; the surface's own work package moves it."
-  },
-  {
-    "file": "packages/zplc-ide/src/components/settings/CommunicationTags.tsx",
-    "rule": "hard-coded-text",
-    "count": 17,
-    "requirement": "UX-029",
-    "added": "2026-10-17",
-    "reason": "Not yet moved to the catalogs of src/i18n; the surface's own work package moves it."
-  },
-  {
     "file": "packages/zplc-ide/src/components/settings/FirmwareImageCard.tsx",
     "rule": "hard-coded-attribute",
     "count": 4,
@@ -240,22 +208,6 @@
     "reason": "Not yet moved to the catalogs of src/i18n; the surface's own work package moves it."
   },
   {
-    "file": "packages/zplc-ide/src/components/settings/ProjectSettings.tsx",
-    "rule": "hard-coded-attribute",
-    "count": 2,
-    "requirement": "UX-029",
-    "added": "2026-10-17",
-    "reason": "Not yet moved to the catalogs of src/i18n; the surface's own work package moves it."
-  },
-  {
-    "file": "packages/zplc-ide/src/components/settings/ProjectSettings.tsx",
-    "rule": "hard-coded-text",
-    "count": 21,
-    "requirement": "UX-029",
-    "added": "2026-10-17",
-    "reason": "Not yet moved to the catalogs of src/i18n; the surface's own work package moves it."
-  },
-  {
     "file": "packages/zplc-ide/src/components/settings/TargetSection.tsx",
     "rule": "hard-coded-attribute",
     "count": 7,
@@ -283,22 +235,6 @@
     "file": "packages/zplc-ide/src/components/settings/TasksSection.tsx",
     "rule": "hard-coded-text",
     "count": 13,
-    "requirement": "UX-029",
-    "added": "2026-10-17",
-    "reason": "Not yet moved to the catalogs of src/i18n; the surface's own work package moves it."
-  },
-  {
-    "file": "packages/zplc-ide/src/components/settings/ToolchainCard.tsx",
-    "rule": "hard-coded-attribute",
-    "count": 2,
-    "requirement": "UX-029",
-    "added": "2026-10-17",
-    "reason": "Not yet moved to the catalogs of src/i18n; the surface's own work package moves it."
-  },
-  {
-    "file": "packages/zplc-ide/src/components/settings/ToolchainCard.tsx",
-    "rule": "hard-coded-text",
-    "count": 17,
     "requirement": "UX-029",
     "added": "2026-10-17",
     "reason": "Not yet moved to the catalogs of src/i18n; the surface's own work package moves it."

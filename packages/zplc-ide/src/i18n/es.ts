@@ -5,6 +5,11 @@ import { mqttEs } from './catalog/mqtt';
 import { modbusEs } from './catalog/modbus';
 import { networkEs } from './catalog/network';
 import { ioEs } from './catalog/io';
+import { controllerEs } from './catalog/controller';
+import { toolchainEs } from './catalog/toolchain';
+import { commtagsEs } from './catalog/commtags';
+import { projectEs } from './catalog/project';
+import { labEs } from './catalog/lab';
 
 /**
  * The Spanish catalog (UX-029, UX-030): neutral Latin American Spanish with impersonal or "usted" forms, as in
@@ -567,4 +572,9 @@ export const es: Record<MessageKey, string> = {
   ...modbusEs,
   ...networkEs,
   ...ioEs,
+  ...controllerEs,
+  ...toolchainEs,
+  ...commtagsEs,
+  ...projectEs,
+  ...labEs,
 };
