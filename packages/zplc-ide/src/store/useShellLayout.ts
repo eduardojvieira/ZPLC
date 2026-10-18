@@ -21,7 +21,8 @@ export interface ShellState {
   secondaryVisible: boolean;
 }
 
-export const DEFAULT_SHELL_STATE: ShellState = { activityView: 'project', navigatorMode: 'objects', primaryVisible: true, secondaryVisible: true };
+// The secondary sidebar starts hidden: the editor keeps the width a diagram or a long line needs, and the command bar has the button for it.
+export const DEFAULT_SHELL_STATE: ShellState = { activityView: 'project', navigatorMode: 'objects', primaryVisible: true, secondaryVisible: false };
 
 const oneOf = <T extends string>(choices: readonly T[], value: unknown, fallback: T): T =>
   typeof value === 'string' && (choices as readonly string[]).includes(value) ? (value as T) : fallback;

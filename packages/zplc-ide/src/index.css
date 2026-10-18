@@ -139,7 +139,7 @@ html, body, #root {
 }
 
 /* Three states a user can tell apart (UX-017): under the pointer a lighter bar with a stronger rule, while it is dragged the
-   accent fill, and with the keyboard focus the same focus ring as every other control. */
+   accent fill, and with the keyboard focus a filled bar inside the focus ring that every control gets from the one global rule. */
 [data-separator="hover"] {
   background-color: var(--color-surface-500);
   background-image: linear-gradient(var(--color-surface-300), var(--color-surface-300));
@@ -150,11 +150,9 @@ html, body, #root {
   background-image: none;
 }
 
-[data-separator="focus"],
-[data-separator]:focus-visible {
+[data-separator="focus"] {
   background-color: var(--color-surface-500);
-  outline: var(--focus-ring-width) solid var(--focus-ring-color);
-  outline-offset: 0;
+  background-image: none;
 }
 
 [data-separator="disabled"] {
@@ -315,3 +313,26 @@ button, [role="button"], [role="tab"] { transition: background-color .12s ease, 
    utility is a multiple of --spacing, and the kit reads --control-height and --row-height; the compact values of those
    tokens are declared in src/theme/tokens.ts, not here.
    ============================================================================= */
+
+/* =============================================================================
+   Activity rail (UX-011). The selected activity is marked by a bar at the edge and a filled button, and
+   `aria-current` says it to assistive technology: the colour is not the only sign.
+   ============================================================================= */
+.activity-rail { width: 3.5rem; }
+.activity-rail[data-density="compact"] { width: 2.75rem; }
+
+.activity-rail-item { position: relative; padding-block: 2px; }
+
+.activity-rail-item[data-active]::before {
+  content: "";
+  position: absolute;
+  inset-block: 4px;
+  inset-inline-start: 0;
+  width: 3px;
+  background-color: var(--color-accent-blue);
+}
+
+.activity-rail-item[data-active] .ui-icon-button {
+  background-color: var(--color-surface-600);
+  color: var(--text-primary);
+}

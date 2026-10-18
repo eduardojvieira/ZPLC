@@ -1,6 +1,8 @@
 import { useDefaultLayout, type LayoutStorage } from 'react-resizable-panels';
 
 export const WORKSPACE_LAYOUT_ID = 'zplc-ide-workspace';
+/** The widths of the sidebars and the editor (UX-017). The version is in the id: a layout of another shape is a new id, and the old one is left unused. */
+export const SHELL_LAYOUT_ID = 'zplc-ide-shell.v1';
 
 type StorageLike = Pick<Storage, 'getItem' | 'setItem'>;
 
@@ -45,4 +47,9 @@ const workspaceStorage = createLayoutStorage();
 /** Keeps the editor / lower panel split between sessions; only a user's own resize (pointer or keyboard) is saved. */
 export function useWorkspaceLayout() {
   return useDefaultLayout({ id: WORKSPACE_LAYOUT_ID, storage: workspaceStorage, onlySaveAfterUserInteractions: true });
+}
+
+/** Keeps the widths of the sidebars between sessions; only a user's own resize (pointer or keyboard) is saved. */
+export function useShellLayoutSizes() {
+  return useDefaultLayout({ id: SHELL_LAYOUT_ID, storage: workspaceStorage, onlySaveAfterUserInteractions: true });
 }

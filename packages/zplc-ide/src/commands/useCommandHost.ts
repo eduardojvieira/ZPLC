@@ -9,6 +9,7 @@ import { currentLocale, t } from '../i18n';
 import { useIDEStore } from '../store/useIDEStore';
 import { useAppSettings } from '../store/useAppSettings';
 import { exportOpenProjectArchive } from '../utils/projectArchiveActions';
+import { useShellLayout } from '../store/useShellLayout';
 import type { ConsoleTab } from '../types';
 import { bindCommands, publishCommandState, runCommand } from './bus';
 import { COMMAND_LIST, commandById, isCommandId, type CommandId } from './registry';
@@ -57,9 +58,14 @@ export function useShellCommands(): void {
     'view.commandPalette': openPalette,
     'help.shortcuts': openShortcuts,
     'view.toggleConsole': () => useIDEStore.getState().toggleConsole(),
+    'view.togglePrimarySidebar': () => useShellLayout.getState().togglePrimary(),
+    'view.toggleSecondarySidebar': () => useShellLayout.getState().toggleSecondary(),
+    'view.showProject': () => useShellLayout.getState().showActivity('project'),
+    'view.showSearch': () => useShellLayout.getState().showActivity('search'),
+    'view.showLearn': () => useShellLayout.getState().showActivity('learn'),
     'view.output': showPanel('output'),
     'view.problems': showPanel('problems'),
-    'view.tests': showPanel('tests'),
+    'view.tests': () => { useShellLayout.getState().showActivity('tests'); showPanel('tests')(); },
     'view.trace': showPanel('trace'),
     'view.watch': showPanel('watch'),
     'view.themeLight': () => useIDEStore.getState().setTheme('light'),

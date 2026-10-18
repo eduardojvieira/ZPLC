@@ -58,7 +58,12 @@ export const COMMANDS = [
   { id: 'file.export', titleKey: 'command.file.export', category: 'file', enabled: open },
 
   { id: 'view.commandPalette', titleKey: 'command.view.commandPalette', category: 'view', shortcut: 'Mod+Shift+P' },
-  { id: 'view.toggleConsole', titleKey: 'command.view.toggleConsole', category: 'view', enabled: open },
+  { id: 'view.togglePrimarySidebar', titleKey: 'command.view.togglePrimarySidebar', category: 'view', shortcut: 'Mod+Alt+B', enabled: open },
+  { id: 'view.toggleSecondarySidebar', titleKey: 'command.view.toggleSecondarySidebar', category: 'view', shortcut: 'Mod+Alt+I', enabled: open },
+  { id: 'view.toggleConsole', titleKey: 'command.view.toggleConsole', category: 'view', shortcut: 'Mod+Alt+J', enabled: open },
+  { id: 'view.showProject', titleKey: 'command.view.showProject', category: 'view', shortcut: 'Mod+Shift+E', enabled: open },
+  { id: 'view.showSearch', titleKey: 'command.view.showSearch', category: 'view', shortcut: 'Mod+Shift+F', enabled: open },
+  { id: 'view.showLearn', titleKey: 'command.view.showLearn', category: 'view', enabled: open },
   { id: 'view.output', titleKey: 'command.view.output', category: 'view', enabled: open },
   { id: 'view.problems', titleKey: 'command.view.problems', category: 'view', enabled: open },
   { id: 'view.tests', titleKey: 'command.view.tests', category: 'view', enabled: open },

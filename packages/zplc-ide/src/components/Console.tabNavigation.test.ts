@@ -27,15 +27,13 @@ describe('Console tab boundary', () => {
     expect(source).toContain("key === 'End'");
     expect(source).toContain('document.getElementById(`console-tab-${nextTab}`)?.focus()');
     expect(source).toContain("id: 'trace'");
-    expect(source).toContain("id: 'learn'");
     expect(source).toContain("id: 'lab'");
     expect(source).toContain('<LabPanel');
-    expect(source).toContain("activeConsoleTab === 'learn'");
-    expect(source).toContain('<LearnPanel workspaceTestPresentation={typeof workspaceTestStateForLink === \'object\' ? workspaceTestStateForLink.presentation : undefined} />');
-    expect(source).toContain("id: 'explorer'");
-    expect(source).toContain("id: 'inspector'");
-    expect(source).toContain('<ProjectExplorer />');
-    expect(source).toContain('<WorkbenchInspector />');
+    // the explorer, the inspector and the lessons moved to the sidebars (UX-011): their requests are routed there, and none is a tab here
+    expect(source).not.toContain("id: 'learn'");
+    expect(source).not.toContain("id: 'explorer'");
+    expect(source).not.toContain("id: 'inspector'");
+    expect(source).toContain('resultsTabFor(storedConsoleTab)');
     expect(source).toContain('aria-label="Workbench panels"');
     expect(source).toContain('Native POSIX host trace. Not hardware or HIL evidence.');
     expect(source).toContain('Native POSIX host trace samples, newest first.');

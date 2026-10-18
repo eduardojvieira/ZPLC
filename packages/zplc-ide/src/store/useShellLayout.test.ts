@@ -7,9 +7,9 @@ describe('what the shell remembers (UX-011, UX-012, UX-017)', () => {
     expect(parseShellState(serializeShellState(state))).toEqual(state);
   });
 
-  it('UX-017 opens with the navigator by objects and both sidebars shown when nothing was saved', () => {
+  it('UX-017 opens with the navigator by objects, the primary sidebar shown and the secondary one hidden when nothing was saved', () => {
     expect(parseShellState(null)).toEqual(DEFAULT_SHELL_STATE);
-    expect(DEFAULT_SHELL_STATE).toEqual({ activityView: 'project', navigatorMode: 'objects', primaryVisible: true, secondaryVisible: true });
+    expect(DEFAULT_SHELL_STATE).toEqual({ activityView: 'project', navigatorMode: 'objects', primaryVisible: true, secondaryVisible: false });
   });
 
   it('UX-017 does not use a document of another version, or one that does not read', () => {
