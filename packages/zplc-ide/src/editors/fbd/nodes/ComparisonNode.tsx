@@ -35,9 +35,9 @@ const ComparisonNode = memo(({ id, data, selected }: NodeProps) => {
     <div className="zplc-visual-node flex flex-col items-center">
       <div
         className={`
-          w-16 rounded border-2 shadow-md
+          w-16 rounded border-2 
           zplc-visual-card relative bg-[var(--visual-node)] border-[var(--color-accent-blue)]
-          ${selected ? 'ring-2 ring-blue-400/50' : ''}
+          ${selected ? 'ring-2 ring-[var(--color-accent-blue)]' : ''}
         `}
         title={comment || type}
       >

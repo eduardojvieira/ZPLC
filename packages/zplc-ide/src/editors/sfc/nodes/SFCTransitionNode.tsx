@@ -112,7 +112,7 @@ const SFCTransitionNode = memo(({ id, data, selected }: NodeProps) => {
           className={`relative
             h-[3px] w-16 transition-all duration-200
             ${barColorClass}
-            ${selected ? 'ring-2 ring-blue-400/50' : ''}
+            ${selected ? 'ring-2 ring-[var(--color-accent-blue)]' : ''}
           `}
           title={comment || condition}
         >

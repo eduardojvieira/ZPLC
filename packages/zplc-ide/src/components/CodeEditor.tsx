@@ -15,6 +15,7 @@ import { monacoEditor } from './monacoRuntime';
 import Editor, { type OnMount, type Monaco } from '@monaco-editor/react';
 import type * as MonacoEditor from 'monaco-editor';
 import { useIDEStore } from '../store/useIDEStore';
+import { useEditorView } from '../store/editorViewSettings';
 import { useAppSettings } from '../store/useAppSettings';
 import { useFileBreakpoints, useCurrentExecution, formatDebugValue } from '../hooks/useDebugValue';
 import { useTheme } from '../hooks/useTheme';
@@ -112,6 +113,7 @@ export function CodeEditor({
 
   // Debug state from store
   const editorFontSize = useAppSettings((state) => state.settings.editorFontSize);
+  const minimap = useEditorView((state) => state.minimap);
   const editorTabSize = useAppSettings((state) => state.settings.editorTabSize);
   const debugMode = useIDEStore((state) => state.debug.mode);
   const livePreviewEnabled = useIDEStore((state) => state.debug.mpeekEnabled);
@@ -535,26 +537,6 @@ export function CodeEditor({
 
   return (
     <div className="relative w-full h-full">
-      {/* Debug mode indicator */}
-      {debugMode !== 'none' && (
-        <div className="absolute top-2 right-2 z-10 flex items-center gap-2 px-2 py-1 
-                        bg-[var(--color-surface-800)]/90 rounded text-xs text-[var(--color-surface-300)]
-                        border border-[var(--color-surface-600)]">
-          <span className={`w-2 h-2 rounded-full ${isPaused ? 'bg-yellow-500' : 'bg-[var(--color-accent-blue)]'}`} />
-          <span>{isPaused ? 'Paused' : debugMode === 'simulation' ? 'Simulation' : 'Hardware'}</span>
-          {inlineWidgets.some((widget) => widget.available) && (
-            <span className="text-blue-400">
-              ({inlineWidgets.filter((widget) => widget.available).length} values)
-            </span>
-          )}
-          {filterEligibleBreakpointLines(debugMap, fileName, breakpoints).length > 0 && (
-            <span className="text-[var(--color-surface-400)]">
-              • {filterEligibleBreakpointLines(debugMap, fileName, breakpoints).length} BP{filterEligibleBreakpointLines(debugMap, fileName, breakpoints).length !== 1 ? 's' : ''}
-              {breakpointsInactiveReason ? ' (not active)' : ''}
-            </span>
-          )}
-        </div>
-      )}
 
       <Editor
         height="100%"
@@ -570,7 +552,7 @@ export function CodeEditor({
           fontSize: editorFontSize,
           lineNumbers: 'on',
           glyphMargin: true,
-          minimap: { enabled: true, scale: 1 },
+          minimap: { enabled: minimap, scale: 1 },
           scrollBeyondLastLine: false,
           wordWrap: 'off',
           tabSize: editorTabSize,

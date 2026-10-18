@@ -82,7 +82,7 @@ function ElementProperties({ element, symbols = [], onChange, onClose }: Element
   };
 
   return (
-    <div className="zplc-visual-node absolute top-0 right-0 w-64 border rounded-lg shadow-xl z-50 p-3">
+    <div className="zplc-visual-node absolute top-0 right-0 w-64 border rounded-lg z-50 p-3">
       <div className="flex items-center justify-between mb-3">
         <h3 className="text-sm font-bold text-[var(--text-primary)]">Element Properties</h3>
         <button
@@ -162,14 +162,14 @@ function ElementProperties({ element, symbols = [], onChange, onClose }: Element
         <div className="flex gap-2 pt-2">
           <button
             onClick={handleSave}
-            className="flex-1 bg-blue-600 hover:bg-blue-500 text-white text-sm py-1.5 rounded
+            className="flex-1 bg-[var(--color-accent-blue)] hover:opacity-90 text-[var(--color-on-accent)] text-sm py-1.5 rounded
                        transition-colors"
           >
             Save
           </button>
           <button
             onClick={onClose}
-            className="flex-1 bg-[var(--color-surface-700)] hover:bg-[var(--color-surface-600)] text-[var(--text-secondary)] text-sm py-1.5 rounded
+            className="flex-1 bg-[var(--color-surface-700)] hover:bg-[color-mix(in_srgb,var(--text-primary)_12%,transparent)] text-[var(--text-secondary)] text-sm py-1.5 rounded
                        transition-colors"
           >
             Cancel
@@ -551,7 +551,7 @@ export default function LDEditor({ model, onChange, readOnly = false }: LDEditor
             <button
               onClick={handleAddRung}
               className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-[var(--text-primary)]
-                         bg-[var(--color-surface-700)] hover:bg-[var(--color-surface-600)] rounded border border-[var(--border-color)]
+                         bg-[var(--color-surface-700)] hover:bg-[color-mix(in_srgb,var(--text-primary)_12%,transparent)] rounded border border-[var(--border-color)]
                          transition-colors"
             >
               <Plus size={14} />
@@ -569,7 +569,7 @@ export default function LDEditor({ model, onChange, readOnly = false }: LDEditor
                 {!readOnly && (
                   <button
                     onClick={handleAddRung}
-                    className="mt-2 text-blue-400 hover:text-blue-300 text-sm underline"
+                    className="mt-2 text-[var(--color-accent-blue)] hover:opacity-80 text-sm underline"
                   >
                     Add your first rung
                   </button>
@@ -625,7 +625,7 @@ export default function LDEditor({ model, onChange, readOnly = false }: LDEditor
                       {/* Add row button */}
                       <button
                         onClick={() => handleAddRow(rung.id)}
-                        className="p-1 rounded bg-blue-600 hover:bg-blue-500 text-white"
+                        className="p-1 rounded bg-[var(--color-accent-blue)] hover:opacity-90 text-[var(--color-on-accent)]"
                         title="Add parallel branch"
                       >
                         <Rows3 size={12} />
@@ -635,7 +635,7 @@ export default function LDEditor({ model, onChange, readOnly = false }: LDEditor
                       {idx > 0 && (
                         <button
                           onClick={() => handleMoveRungUp(rung.id)}
-                        className="p-1 rounded bg-[var(--color-surface-600)] hover:bg-[var(--color-surface-500)] text-[var(--text-primary)]"
+                        className="p-1 rounded bg-[var(--visual-panel)] border border-[var(--border-color)] hover:bg-[color-mix(in_srgb,var(--text-primary)_12%,transparent)] text-[var(--text-primary)]"
                           title="Move rung up"
                         >
                           <ChevronUp size={12} />
@@ -646,7 +646,7 @@ export default function LDEditor({ model, onChange, readOnly = false }: LDEditor
                       {idx < normalizedModel.rungs.length - 1 && (
                         <button
                           onClick={() => handleMoveRungDown(rung.id)}
-                        className="p-1 rounded bg-[var(--color-surface-600)] hover:bg-[var(--color-surface-500)] text-[var(--text-primary)]"
+                        className="p-1 rounded bg-[var(--visual-panel)] border border-[var(--border-color)] hover:bg-[color-mix(in_srgb,var(--text-primary)_12%,transparent)] text-[var(--text-primary)]"
                           title="Move rung down"
                         >
                           <ChevronDown size={12} />
@@ -683,10 +683,10 @@ export default function LDEditor({ model, onChange, readOnly = false }: LDEditor
               <span className="font-mono text-[var(--text-primary)]">( )</span> Coil
             </span>
             <span className="flex items-center gap-1">
-              <span className="font-mono text-cyan-400">(S)</span> Set
+              <span className="font-mono text-[var(--text-primary)]">(S)</span> Set
             </span>
             <span className="flex items-center gap-1">
-              <span className="font-mono text-orange-400">(R)</span> Reset
+              <span className="font-mono text-[var(--text-primary)]">(R)</span> Reset
             </span>
             <span className="flex items-center gap-1 ml-auto text-[var(--text-tertiary)]">
               Arrows move the cursor • I opens the palette • F2 binds a variable • F1 lists every key • Ctrl/Cmd+C/V copies the selected rung • Delete removes

@@ -359,6 +359,11 @@ export const CONTRAST_PAIRS: readonly ContrastPair[] = [
     { fg: `--signal-${state}-border`, bg: '--color-surface-800', min: 3 as const, use: `Chip border of a ${state} value` },
   ]),
   { fg: '--visual-wire', bg: '--visual-canvas', min: 3, use: 'An idle wire on the visual editor canvas' },
+  ...['--visual-canvas', '--visual-node', '--visual-panel'].flatMap((bg) => [
+    ...['--text-primary', '--text-secondary', '--visual-muted'].map((fg) => ({ fg, bg, min: 4.5 as const, use: 'Text and labels drawn in a visual editor' })),
+    ...SIGNAL_STATES.map((state) => ({ fg: `--signal-${state}-fg`, bg, min: 4.5 as const, use: `A ${state} value drawn on the canvas or on a node of a visual editor` })),
+    { fg: '--signal-true-border', bg, min: 3 as const, use: 'A wire that carries power or a TRUE value, and the border of an active step' },
+  ]),
   { fg: '--focus-ring-color', bg: '--color-surface-900', min: 3, use: 'The focus indicator on the canvas' },
   { fg: '--focus-ring-color', bg: '--color-surface-800', min: 3, use: 'The focus indicator on a panel' },
   { fg: '--focus-ring-color', bg: '--color-surface-700', min: 3, use: 'The focus indicator on a raised surface' },

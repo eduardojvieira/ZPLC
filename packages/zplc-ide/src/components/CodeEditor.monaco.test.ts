@@ -10,10 +10,12 @@ describe('CodeEditor local Monaco bootstrap', () => {
     expect(source.indexOf("from './monacoRuntime';")).toBeLessThan(source.indexOf("from '@monaco-editor/react'"));
   });
 
-  it('labels a non-paused debug editor as context rather than a running runtime', () => {
+  it('labels a non-paused debug session as attached rather than as a running runtime, in the status bar and not over the code (UX-034)', () => {
     const source = readFileSync(join(import.meta.dir, 'CodeEditor.tsx'), 'utf8');
+    const statusBar = readFileSync(join(import.meta.dir, 'OperationalStatusBar.tsx'), 'utf8');
 
-    expect(source).toContain("debugMode === 'simulation' ? 'Simulation' : 'Hardware'");
+    expect(statusBar).toContain("t('status.debug.attached')");
+    expect(statusBar).not.toContain("t('status.debug.running')");
     expect(source).not.toContain("isPaused ? 'Paused' : 'Running'");
     expect(source).not.toContain("bg-green-500 animate-pulse");
   });

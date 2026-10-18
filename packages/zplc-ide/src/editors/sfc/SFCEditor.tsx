@@ -46,6 +46,7 @@ import { edgeTypes } from './edges';
 import SFCToolbox from './SFCToolbox';
 import { useIDEStore } from '../../store/useIDEStore';
 import { SignalValue } from '../../ui';
+import { animationMs } from '../../theme/motion';
 import { useMonitor } from '../../monitoring/useMonitor';
 import { useElementSelection } from '../elementSelection';
 import { useElementBreakpoints } from '../elementBreakpoints';
@@ -159,10 +160,9 @@ function transitionsToEdges(
         targetHandle: 'in',
         type: 'sfc',
         style: {
-          stroke: debugActive && fromStepActive ? 'var(--color-accent-green)' : 'var(--visual-wire)',
+          stroke: debugActive && fromStepActive ? 'var(--signal-true-border)' : 'var(--visual-wire)',
           strokeWidth: debugActive && fromStepActive ? 3 : 2,
         },
-        animated: debugActive && fromStepActive,
         markerEnd: { type: MarkerType.ArrowClosed, width: 10, height: 10 },
       });
     }
@@ -331,10 +331,9 @@ function SFCEditorInner({
           return {
             ...edge,
             style: {
-              stroke: fromStepActive ? 'var(--color-accent-green)' : 'var(--visual-wire)',
+              stroke: fromStepActive ? 'var(--signal-true-border)' : 'var(--visual-wire)',
               strokeWidth: fromStepActive ? 3 : 2,
             },
-            animated: fromStepActive,
           };
         }
         return edge;
@@ -374,7 +373,7 @@ function SFCEditorInner({
     replaceNodes(nextNodes);
     replaceEdges(nextEdges);
     setVisualSelection(fileKeyRef.current, sfcSelection(nextNodes, nextEdges));
-    void fitView({ nodes: [{ id: target }], maxZoom: 1, duration: 200 });
+    void fitView({ nodes: [{ id: target }], maxZoom: 1, duration: animationMs(200) });
   }, [fitView, model.actions]);
   useElementSelection(selectElement);
 
@@ -551,7 +550,7 @@ function SFCEditorInner({
             }
             return 'var(--visual-wire)';
           }}
-          maskColor="var(--color-surface-600)"
+          maskColor="color-mix(in srgb, var(--visual-canvas) 70%, transparent)"
         />
         
         {/* Debug mode indicator */}

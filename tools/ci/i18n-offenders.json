@@ -1,13 +1,5 @@
 [
   {
-    "file": "packages/zplc-ide/src/components/CodeEditor.tsx",
-    "rule": "hard-coded-text",
-    "count": 5,
-    "requirement": "UX-029",
-    "added": "2026-10-17",
-    "reason": "Not yet moved to the catalogs of src/i18n; the surface's own work package moves it."
-  },
-  {
     "file": "packages/zplc-ide/src/components/Console.tsx",
     "rule": "hard-coded-attribute",
     "count": 47,

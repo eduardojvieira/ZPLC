@@ -135,16 +135,16 @@ export function InstanceMonitor({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-[color-mix(in_srgb,var(--color-surface-900)_55%,transparent)]">
-      <div className="bg-[var(--color-surface-800)] rounded-lg shadow-2xl border border-[var(--color-surface-600)] min-w-[320px] max-w-[480px]">
+      <div className="bg-[var(--color-surface-800)] rounded-lg border border-[var(--color-surface-600)] min-w-[320px] max-w-[480px]">
         {/* Header */}
-        <div className="bg-[var(--color-surface-600)] px-4 py-3 rounded-t-lg flex items-center justify-between">
+        <div className="bg-[var(--visual-panel)] border-b border-[var(--border-color)] px-4 py-3 rounded-t-lg flex items-center justify-between">
           <div>
             <h2 className="text-[var(--text-primary)] font-bold text-lg">{blockType}</h2>
             <p className="text-[var(--text-secondary)] text-sm font-mono">{instanceName}</p>
           </div>
           <button
             onClick={onClose}
-            className="focus-ring p-1 rounded hover:bg-[var(--color-surface-500)] text-[var(--text-primary)] transition-colors"
+            className="focus-ring p-1 rounded hover:bg-[color-mix(in_srgb,var(--text-primary)_12%,transparent)] text-[var(--text-primary)] transition-colors"
           >
             <X size={20} />
           </button>

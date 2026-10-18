@@ -42,9 +42,9 @@ const LogicGateNode = memo(({ id, data, selected }: NodeProps) => {
     <div className="zplc-visual-node flex flex-col items-center">
       <div
         className={`
-          w-16 rounded border-2 shadow-md
+          w-16 rounded border-2 
           ${selected 
-            ? 'border-blue-400 ring-2 ring-blue-400/50' 
+            ? 'border-[var(--color-accent-blue)] ring-2 ring-[var(--color-accent-blue)]' 
             : 'border-[var(--border-color)]'
           }
           zplc-visual-card relative bg-[var(--visual-node)]

@@ -9,6 +9,7 @@ import { Button, Checkbox, Select } from '../../ui';
 import { useT, type MessageKey } from '../../i18n';
 import { ThemeControl } from '../ThemeControl';
 import { useAppSettings } from '../../store/useAppSettings';
+import { useEditorView } from '../../store/editorViewSettings';
 import { AUTOSAVE_CHOICES, DENSITY_CHOICES, LANGUAGE_CHOICES, TAB_SIZE_CHOICES, type AppSettings, type Density, type Language } from '../../utils/appSettings';
 import { describeUpdateCheck, runUpdateCheck } from '../../ipc/updateCheckBridge';
 import { ZPLC_REPO_VERSION } from '../../version';
@@ -43,6 +44,8 @@ function Choice<K extends keyof AppSettings>({ label, field, options, name }: {
 export function AppPreferences({ includeTheme = true }: { includeTheme?: boolean }) {
   const { t, tn } = useT();
   const checkForUpdates = useAppSettings((state) => state.settings.checkForUpdates);
+  const minimap = useEditorView((state) => state.minimap);
+  const setMinimap = useEditorView((state) => state.setMinimap);
   const update = useAppSettings((state) => state.update);
   const [checking, setChecking] = useState(false);
   const [result, setResult] = useState<UpdateCheckResult | null>(null);
@@ -70,6 +73,7 @@ export function AppPreferences({ includeTheme = true }: { includeTheme?: boolean
         <Choice label={t('preferences.autosave')} field="autosaveSeconds" options={AUTOSAVE_CHOICES} name={(seconds) => (seconds === 0 ? t('preferences.autosave.off') : tn('preferences.autosave.after', seconds))} />
       </div>
       <div className="mt-4 flex flex-wrap items-center gap-3 border-t border-[var(--color-surface-600)] pt-3">
+        <Checkbox label={t('preferences.minimap')} checked={minimap} onChange={(event) => setMinimap(event.target.checked)} data-setting="editorMinimap" />
         <Checkbox label={t('preferences.updates.check')} checked={checkForUpdates} onChange={(event) => update({ checkForUpdates: event.target.checked })} data-setting="checkForUpdates" />
         <Button onClick={checkNow} disabled={checking}>
           {checking ? t('preferences.updates.checking') : t('preferences.updates.now')}

@@ -49,7 +49,7 @@ const VariableNode = memo(({ id, data, selected }: NodeProps) => {
   };
 
   const getHeaderColor = () => {
-    return 'bg-[var(--color-accent-blue)]';
+    return 'bg-[var(--visual-panel)] border-b border-[var(--border-color)]';
   };
 
   const getIcon = () => {
@@ -62,17 +62,17 @@ const VariableNode = memo(({ id, data, selected }: NodeProps) => {
     <div className="zplc-visual-node flex flex-col items-center">
       <div
         className={`
-          min-w-[124px] rounded border-2 shadow-md
+          min-w-[124px] rounded border-2 
           zplc-visual-card bg-[var(--visual-node)]
           ${getBorderColor()}
-          ${selected ? 'ring-2 ring-blue-400/50' : ''}
+          ${selected ? 'ring-2 ring-[var(--color-accent-blue)]' : ''}
         `}
         title={comment}
       >
         {/* Header */}
         <div className={`${getHeaderColor()} px-2 py-1 flex items-center justify-center gap-1 rounded-t`}>
-          <span className="text-[var(--color-surface-800)] text-xs">{getIcon()}</span>
-          <span className="text-[var(--color-surface-800)] font-mono text-xs font-medium">
+          <span className="text-[var(--text-primary)] text-xs">{getIcon()}</span>
+          <span className="text-[var(--text-primary)] font-mono text-xs font-medium">
             {type.toUpperCase()}
           </span>
         </div>

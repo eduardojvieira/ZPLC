@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useIDEStore } from '../store/useIDEStore';
+import { useCurrentExecution } from '../hooks/useDebugValue';
 import { useT } from '../i18n';
 import { connectionManager, type LinkInfo } from '../runtime/connectionManager';
 import { ConnectionIndicator } from './ConnectionIndicator';
@@ -48,6 +49,8 @@ export function OperationalStatusBar({ mode, adapterType, connected, vmInfo, sta
   const forcedValues = useIDEStore((state) => state.debug.forcedValues);
   const forcesUnconfirmed = useIDEStore((state) => state.debug.forcesUnconfirmed);
   const nativeTrace = useIDEStore((state) => state.debug.nativeTrace);
+  const debugMode = useIDEStore((state) => state.debug.mode);
+  const { isPaused, currentLine } = useCurrentExecution();
   const [linkInfo, setLinkInfo] = useState<LinkInfo>(connectionManager.linkInfo);
   useEffect(() => connectionManager.onLinkInfoUpdate(setLinkInfo), []);
 
@@ -77,11 +80,13 @@ export function OperationalStatusBar({ mode, adapterType, connected, vmInfo, sta
     ...(board ? { board } : {}),
     ...(protocol === 'framed' ? { link: 'framed' as const } : protocol === 'shell-only' ? { link: 'shell' as const } : {}),
   }, t);
-  return <OperationalStatusView presentation={presentation} indicator={indicator} />;
+  // the debug state of the code editor (UX-034): it was drawn over the code before
+  const debug = debugMode === 'none' ? undefined : isPaused ? t('status.debug.paused', { line: currentLine ?? 0 }) : t('status.debug.attached');
+  return <OperationalStatusView presentation={presentation} indicator={indicator} debug={debug} />;
 }
 
 /** What the status bar shows, from values already worked out: the container above reads the store, this one only draws. */
-export function OperationalStatusView({ presentation, indicator }: { presentation: OperationalStatusPresentation; indicator: ConnectionIndicatorView }) {
+export function OperationalStatusView({ presentation, indicator, debug }: { presentation: OperationalStatusPresentation; indicator: ConnectionIndicatorView; debug?: string }) {
   const { t } = useT();
   return (
     <section aria-label={t('status.label')} className="min-h-[34px] border-b border-[var(--color-surface-700)] bg-[var(--color-surface-900)] px-3 py-1.5">
@@ -93,6 +98,7 @@ export function OperationalStatusView({ presentation, indicator }: { presentatio
           <span className="h-3.5 w-px bg-[var(--color-surface-700)]" aria-hidden="true" />
           <Detail label={t('status.runtime')} value={presentation.runtime} />
           {presentation.target && <Detail label={t('status.target')} value={presentation.target} />}
+          {debug !== undefined && <Detail label={t('status.debug')} value={debug} />}
           <span role="status" aria-live="polite" aria-atomic="true" className="flex items-center gap-1.5 text-xs font-medium text-[var(--color-surface-100)]">
             <span className={`h-1.5 w-1.5 rounded-full ring-1 ring-[var(--color-surface-100)] ${TONE_DOT[presentation.status.tone]}`} aria-hidden="true" />
             <span>{presentation.status.text}</span>

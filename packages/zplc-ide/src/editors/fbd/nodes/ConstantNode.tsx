@@ -39,9 +39,9 @@ const ConstantNode = memo(({ id, data, selected }: NodeProps) => {
     <div className="zplc-visual-node flex flex-col items-center">
       <div
         className={`
-          zplc-visual-card relative min-w-[80px] rounded border-2 shadow-md
+          zplc-visual-card relative min-w-[80px] rounded border-2 
           bg-[var(--visual-node)] ${getTypeColor()}
-          ${selected ? 'ring-2 ring-blue-400/50' : ''}
+          ${selected ? 'ring-2 ring-[var(--color-accent-blue)]' : ''}
         `}
         title={comment}
       >

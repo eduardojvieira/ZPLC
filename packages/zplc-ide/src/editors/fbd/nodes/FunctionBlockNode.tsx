@@ -122,9 +122,9 @@ if (!debugActive) {
     <div className="zplc-visual-node flex flex-col items-center relative">
       <div
         className={`
-          rounded border-2 shadow-lg transition-all duration-200
+          rounded border-2 transition-all duration-200
           ${selected 
-            ? 'border-blue-400 ring-2 ring-blue-400/50' 
+            ? 'border-[var(--color-accent-blue)] ring-2 ring-[var(--color-accent-blue)]' 
             : 'border-[var(--border-color)]'
           }
           zplc-visual-card bg-[var(--visual-node)]
@@ -134,7 +134,7 @@ if (!debugActive) {
         onContextMenu={handleContextMenu}
       >
         {/* Header with type name */}
-        <div className="bg-[var(--color-surface-600)] px-3 py-1.5 rounded-t text-center relative flex items-center justify-center gap-2">
+        <div className="bg-[var(--visual-panel)] border-b border-[var(--border-color)] px-3 py-1.5 rounded-t text-center relative flex items-center justify-center gap-2">
           {/* Debug indicator */}
           {debugActive && (
             <Activity 
@@ -152,7 +152,7 @@ if (!debugActive) {
           {isFunctionBlock(type) && instanceName && (
             <button
               onClick={(e) => { e.stopPropagation(); setShowMenu(!showMenu); }}
-              className="focus-ring absolute right-1 top-1/2 -translate-y-1/2 p-0.5 rounded hover:bg-[var(--color-surface-500)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+              className="focus-ring absolute right-1 top-1/2 -translate-y-1/2 p-0.5 rounded hover:bg-[color-mix(in_srgb,var(--text-primary)_12%,transparent)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
             >
               <MoreVertical size={14} />
             </button>
@@ -234,7 +234,7 @@ if (!debugActive) {
             className="fixed inset-0 z-40" 
             onClick={() => setShowMenu(false)}
           />
-          <div className="absolute top-full left-1/2 -translate-x-1/2 mt-1 z-50 bg-[var(--color-surface-800)] border border-[var(--border-color)] rounded shadow-lg min-w-[140px]">
+          <div className="absolute top-full left-1/2 -translate-x-1/2 mt-1 z-50 bg-[var(--color-surface-800)] border border-[var(--border-color)] rounded min-w-[140px]">
             <button
               onClick={handleOpenMonitor}
               className="flex items-center gap-2 w-full px-3 py-2 text-sm text-[var(--text-secondary)] hover:bg-[var(--color-surface-700)] rounded"

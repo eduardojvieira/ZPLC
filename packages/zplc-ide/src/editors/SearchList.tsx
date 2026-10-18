@@ -107,7 +107,7 @@ export default function SearchList({ title, items, placeholder, emptyText, allow
               onChoose(item);
             }}
             onMouseMove={() => setState((current) => (current.active === index ? current : { ...current, active: index }))}
-            className={`flex cursor-pointer items-baseline justify-between gap-3 px-3 py-1 text-sm ${index === active ? 'bg-[var(--color-surface-600)]' : ''}`}
+            className={`flex cursor-pointer items-baseline justify-between gap-3 px-3 py-1 text-sm ${index === active ? 'bg-[color-mix(in_srgb,var(--text-primary)_16%,transparent)]' : ''}`}
           >
             <span className="min-w-0 truncate font-mono">{item.label}</span>
             {item.detail ? <span className="shrink-0 text-[length:var(--font-size-caption)] text-[var(--text-tertiary)]">{item.detail}</span> : null}

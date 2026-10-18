@@ -64,7 +64,7 @@ interface FBDToolboxProps {
 const CAPTION = 'text-[length:var(--font-size-caption)]';
 
 const ITEM_CLASS = `mx-2 my-0.5 w-[calc(100%-1rem)] justify-start whitespace-normal break-all px-2 py-1 text-left text-xs font-mono text-[var(--text-primary)]
-  bg-[var(--color-surface-700)] hover:bg-[var(--color-surface-600)] cursor-grab active:cursor-grabbing
+  bg-[var(--color-surface-700)] hover:bg-[color-mix(in_srgb,var(--text-primary)_12%,transparent)] cursor-grab active:cursor-grabbing
   border border-transparent hover:border-[var(--color-accent-blue)]`;
 
 export default function FBDToolbox({ onInsert }: FBDToolboxProps) {

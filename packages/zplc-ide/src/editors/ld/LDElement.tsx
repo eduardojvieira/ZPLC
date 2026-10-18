@@ -50,7 +50,6 @@ const COLORS = {
   text: 'var(--color-surface-100)',
   textDim: 'var(--color-surface-200)',
   selected: 'var(--color-accent-blue)',
-  hover: 'rgba(255,255,255,0.1)',
 };
 
 /** The wire of a state: TRUE power flow is the TRUE token and heavier; an idle wire is neutral. */

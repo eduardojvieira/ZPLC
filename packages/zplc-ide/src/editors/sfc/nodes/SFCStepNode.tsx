@@ -122,7 +122,7 @@ const SFCStepNode = memo(({ id, data, selected }: NodeProps) => {
         ? 'border-[3px] border-[var(--signal-true-border)] bg-[var(--signal-true-bg)]'
         : 'border-2 border-[var(--border-color)] bg-[var(--visual-node)]'
     }
-    ${selected ? 'ring-2 ring-blue-400/50' : ''}
+    ${selected ? 'ring-2 ring-[var(--color-accent-blue)]' : ''}
   `;
 
   return (
@@ -211,7 +211,7 @@ const SFCStepNode = memo(({ id, data, selected }: NodeProps) => {
                 <div className={`px-1.5 py-1 font-mono border-r ${
                   isStepActive 
                     ? 'bg-[var(--signal-true-bg)] text-[var(--signal-true-fg)] border-[var(--signal-true-border)]' 
-                    : 'bg-[var(--color-surface-600)] text-[var(--text-secondary)] border-[var(--border-color)]'
+                    : 'bg-[var(--visual-panel)] text-[var(--text-secondary)] border-[var(--border-color)]'
                 }`}>
                   {action.qualifier}
                 </div>

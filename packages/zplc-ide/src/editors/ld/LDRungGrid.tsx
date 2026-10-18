@@ -333,12 +333,12 @@ function DropZone({
   if (!hasElement) {
     if (isOver) {
       // Hovering over this cell
-      fillColor = 'rgba(59, 130, 246, 0.3)';
-      strokeColor = 'rgba(59, 130, 246, 0.8)';
+      fillColor = 'color-mix(in srgb, var(--color-accent-blue) 30%, transparent)';
+      strokeColor = 'color-mix(in srgb, var(--color-accent-blue) 80%, transparent)';
     } else if (isDragging) {
       // Dragging but not over this cell - subtle hint
-      fillColor = 'rgba(59, 130, 246, 0.08)';
-      strokeColor = 'rgba(59, 130, 246, 0.3)';
+      fillColor = 'color-mix(in srgb, var(--color-accent-blue) 8%, transparent)';
+      strokeColor = 'color-mix(in srgb, var(--color-accent-blue) 30%, transparent)';
     }
   }
 
@@ -452,7 +452,7 @@ function RungHeader({ rung, cols, rows, readOnly, onChange, editRequest }: RungH
       ) : (
         <span
           onClick={handleStartEdit}
-          className={`flex-1 min-w-0 text-xs italic truncate ${readOnly ? '' : 'cursor-pointer hover:bg-[var(--color-surface-600)] rounded px-1 -mx-1'
+          className={`flex-1 min-w-0 text-xs italic truncate ${readOnly ? '' : 'cursor-pointer hover:bg-[color-mix(in_srgb,var(--text-primary)_12%,transparent)] rounded px-1 -mx-1'
             } ${rung.comment ? 'text-[var(--color-surface-200)]' : 'text-[var(--color-surface-400)]'}`}
           title={readOnly ? rung.comment : 'Click to edit comment'}
         >
@@ -944,7 +944,7 @@ export default function LDRungGrid({
             }}
             className="absolute w-6 h-6 flex items-center justify-center 
                        bg-[var(--color-accent-red)] hover:opacity-90 text-[var(--color-on-accent)] rounded-full 
-                       shadow-lg transition-colors z-10"
+                       transition-colors z-10"
             style={{
               left: selectedElementPosition.x,
               top: selectedElementPosition.y + 28, // +28 for header height
