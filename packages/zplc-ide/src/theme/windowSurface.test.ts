@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'bun:test';
 import { readFileSync } from 'node:fs';
+import { PRODUCT_NAME } from '../../electron/productName';
 import { WINDOW_SURFACE } from '../../electron/shellPreferences';
 import { resolveTokens } from './tokens';
 
@@ -25,8 +26,9 @@ describe('window surface', () => {
   });
 
   it('titles the window with the product name, the same one the page declares', () => {
-    expect(/APP_WINDOW_TITLE\s*=\s*'([^']+)'/.exec(main)?.[1]).toBe('ZPLC Studio');
-    expect(/<title>([^<]*)<\/title>/.exec(html)?.[1]).toBe('ZPLC Studio');
+    expect(PRODUCT_NAME).toBe('ZPLC Studio');
+    expect(main).toMatch(/import \{ PRODUCT_NAME as APP_WINDOW_TITLE \} from '\.\/productName\.js'/);
+    expect(/<title>([^<]*)<\/title>/.exec(html)?.[1]).toBe(PRODUCT_NAME);
     expect(main).toMatch(/title:\s*APP_WINDOW_TITLE/);
     expect(main).not.toMatch(/title:\s*`ZPLC IDE/);
   });

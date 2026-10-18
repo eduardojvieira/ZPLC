@@ -2740,15 +2740,15 @@ export const JOURNEYS: Journey[] = [
       // Changes: the review is run in isolation and shows the difference; it writes nothing; a change that fails is not offered for saving
       const reviewed = async () => {
         await app.click(button('Review active ST change'), 'Review active ST change');
-        await app.until('the review result', async () => await app.visible(css('[aria-label="Candidate review result"]')) || undefined, 60_000)
+        await app.until('the review result', async () => await app.visible(css('[aria-label="Change review result"]')) || undefined, 60_000)
           .catch(async (error: Error) => { throw new Error(`${error.message}: the Changes tab says ${JSON.stringify((await app.text()).replace(/\s+/g, ' ').slice(-700))}`); });
-        return app.eval<string>(`document.querySelector('[aria-label="Candidate review result"]').innerText`);
+        return app.eval<string>(`document.querySelector('[aria-label="Change review result"]').innerText`);
       };
       await app.click(tab('Changes'), 'the Changes tab');
       const refused = await reviewed();
-      assert(refused.includes('Rejected: candidate was not accepted.') && refused.includes('SCENARIO_ASSERTION_FAILED'), `The review does not refuse a change that breaks the scenario: ${JSON.stringify(refused)}`);
+      assert(refused.includes('Rejected: the change was not accepted.') && refused.includes('SCENARIO_ASSERTION_FAILED'), `The review does not refuse a change that breaks the scenario: ${JSON.stringify(refused)}`);
       assert(refused.includes('No file has been written.'), `The review of a refused change does not say that nothing was written: ${JSON.stringify(refused)}`);
-      assert(await app.visible(css('[aria-label="Candidate review result"] .monaco-diff-editor')), `The review of a refused change does not show the difference: ${await app.eval<string>(`document.querySelector('[aria-label="Candidate review result"]')?.outerHTML.slice(0, 400) ?? 'no result'`)}`);
+      assert(await app.visible(css('[aria-label="Change review result"] .monaco-diff-editor')), `The review of a refused change does not show the difference: ${await app.eval<string>(`document.querySelector('[aria-label="Change review result"]')?.outerHTML.slice(0, 400) ?? 'no result'`)}`);
       assert(!await app.visible(button('Save reviewed change')), 'A change that the review refused is offered for saving.');
       assert(disk(file) === original, 'Reviewing the change wrote the file.');
 
@@ -2762,7 +2762,7 @@ export const JOURNEYS: Journey[] = [
       await app.type('Reverse := FALSE;');
       await app.click(tab('Changes'), 'the Changes tab');
       const accepted = await reviewed();
-      assert(accepted.includes('Accepted: isolated host candidate passed.'), `The review does not accept a harmless statement: ${JSON.stringify(accepted)}`);
+      assert(accepted.includes('Accepted: the change passed in an isolated host run.'), `The review does not accept a harmless statement: ${JSON.stringify(accepted)}`);
       assert(accepted.includes('No file has been written.') && disk(file) === original, 'Reviewing the change wrote the file.');
 
       // only the person's own click saves it
