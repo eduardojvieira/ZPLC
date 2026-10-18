@@ -2747,7 +2747,8 @@ export const JOURNEYS: Journey[] = [
       await app.click(tab('Changes'), 'the Changes tab');
       const refused = await reviewed();
       assert(refused.includes('Rejected: candidate was not accepted.') && refused.includes('SCENARIO_ASSERTION_FAILED'), `The review does not refuse a change that breaks the scenario: ${JSON.stringify(refused)}`);
-      assert(refused.includes('No file has been written.') && await app.visible(css('[aria-label="Candidate review result"] .monaco-diff-editor')), 'The review of a refused change does not show the difference and say that nothing was written.');
+      assert(refused.includes('No file has been written.'), `The review of a refused change does not say that nothing was written: ${JSON.stringify(refused)}`);
+      assert(await app.visible(css('[aria-label="Candidate review result"] .monaco-diff-editor')), `The review of a refused change does not show the difference: ${await app.eval<string>(`document.querySelector('[aria-label="Candidate review result"]')?.outerHTML.slice(0, 400) ?? 'no result'`)}`);
       assert(!await app.visible(button('Save reviewed change')), 'A change that the review refused is offered for saving.');
       assert(disk(file) === original, 'Reviewing the change wrote the file.');
 
@@ -3116,7 +3117,7 @@ export const JOURNEYS: Journey[] = [
       writeFileSync(join(project, 'src', 'note.st'), 'PROGRAM Note\nVAR\n  Lamp : BOOL;\nEND_VAR\nLamp := TRUE;\nEND_PROGRAM\n');
       const themes: Array<{ id: ThemeId; command: string }> = [{ id: 'light', command: 'Use the light theme' }, { id: 'dark', command: 'Use the dark theme' }, { id: 'high-contrast', command: 'Use the high contrast theme' }];
       const paletteOpen = () => app.eval<boolean>(`Boolean(document.querySelector('[role="dialog"] [role="combobox"]'))`);
-      const useTheme = async (theme: (typeof themes)[number]) => {
+      const chooseTheme = async (theme: (typeof themes)[number]) => {
         await app.press('Ctrl+Shift+P');
         await app.until('the command palette', async () => await paletteOpen() || undefined);
         await app.type(theme.command);
@@ -3150,7 +3151,7 @@ export const JOURNEYS: Journey[] = [
       for (const rule of ['name', 'duplicate-id', 'contrast']) assert(fixture.findings.some((finding) => finding.rule === rule), `The audit does not report a ${rule} problem it was given: ${JSON.stringify(fixture.findings.map((finding) => finding.rule))}`);
 
       // Welcome
-      for (theme of themes) { await useTheme(theme); await audit('Welcome'); }
+      for (theme of themes) { await chooseTheme(theme); await audit('Welcome'); }
 
       await openFolder(app, project);
       const EDITORS = [
@@ -3161,7 +3162,7 @@ export const JOURNEYS: Journey[] = [
       for (const editor of EDITORS) await openDiagram(app, editor.file, editor.ready);
       await openFile(app, 'src/note.st');
       for (theme of themes) {
-        await useTheme(theme);
+        await chooseTheme(theme);
         await app.click(editorTab('file:src/note.st'), 'the Structured Text tab');
         await audit('Editor, Structured Text');
         for (const editor of EDITORS) {

@@ -11,7 +11,8 @@ describe('the live regions of the shared announcer (UX-026)', () => {
     const html = renderToStaticMarkup(<LiveRegions />);
     expect(html).toContain('role="status"');
     expect(html).toContain('aria-live="polite"');
-    expect(html).toContain('role="alert"');
+    // no role="alert": the assertive region is only a live region, so a screen counts the alerts that are really on it
+    expect(html).not.toContain('role="alert"');
     expect(html).toContain('aria-live="assertive"');
     expect(html.match(/ui-visually-hidden/g)?.length).toBe(2);
     expect(auditMarkup(html)).toEqual([]);

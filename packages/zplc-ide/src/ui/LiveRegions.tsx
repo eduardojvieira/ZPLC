@@ -14,7 +14,7 @@ export function LiveRegions() {
   return (
     <>
       <div className="ui-visually-hidden" role="status" aria-live="polite" aria-atomic="true" data-live-region="polite">{rendered(polite)}</div>
-      <div className="ui-visually-hidden" role="alert" aria-live="assertive" aria-atomic="true" data-live-region="assertive">{rendered(assertive)}</div>
+      <div className="ui-visually-hidden" aria-live="assertive" aria-atomic="true" data-live-region="assertive">{rendered(assertive)}</div>
     </>
   );
 }
