@@ -18,10 +18,10 @@ export function markBreakpointNodes(
     const paused = breakpoints.pausedAt !== undefined && (breakpoints.pausedAt === element || breakpoints.pausedAt.startsWith(`${element}/`));
     if (!paused && !breakpoints.isSet(element)) return node;
     const outline = paused
-      ? '3px solid var(--color-accent-yellow, #eab308)'
+      ? '3px solid var(--color-accent-yellow)'
       : breakpoints.inactiveReason
-        ? '2px dashed var(--color-surface-400, #9ca3af)'
-        : '2px solid var(--color-accent-red, #ef4444)';
+        ? '2px dashed var(--color-surface-400)'
+        : '2px solid var(--color-accent-red)';
     return { ...node, style: { ...node.style, outline, outlineOffset: 2, borderRadius: 6 } };
   });
 }

@@ -15,6 +15,8 @@ import { Handle, Position, type NodeProps } from '@xyflow/react';
 import { Eye, MoreVertical, Activity } from 'lucide-react';
 import { getDefaultPorts, isFunctionBlock, type FBDPort } from '../../../models/fbd';
 import NodeComment from './NodeComment';
+import { SignalValue } from '../../../ui';
+import { sampleTone, type SignalTone } from '../../../theme/signalTone';
 
 interface FunctionBlockData {
   type: string;
@@ -22,6 +24,8 @@ interface FunctionBlockData {
   comment?: string;
   /** The value each pin holds online, by port: what the debug map says the program holds (LNG-006). */
   pinValues?: Record<string, number | boolean | string | undefined>;
+  /** Pins the user forces, or that could not be read: their value is drawn as forced or as a fault (UX-009). */
+  pinFlags?: Record<string, { forced?: boolean; fault?: boolean } | undefined>;
   /** Whether debug mode is active */
   debugActive?: boolean;
   /** Callback to open instance monitor */
@@ -58,27 +62,13 @@ function formatLiveValue(value: unknown, type: string): string {
   return String(value);
 }
 
-/**
- * Get CSS class for value display based on type and value
- */
-function getValueClass(value: unknown, type: string): string {
-  if (value === undefined || value === null) return 'text-[var(--text-tertiary)]';
-  
-  if (type === 'BOOL') {
-    return value ? 'text-green-400 font-bold' : 'text-[var(--text-secondary)]';
-  }
-  if (type === 'TIME') {
-    return 'text-amber-400';
-  }
-  return 'text-cyan-400';
-}
-
 const FunctionBlockNode = memo(({ id, data, selected }: NodeProps) => {
   const { 
     type, 
     instanceName, 
     comment,
     pinValues,
+    pinFlags,
     debugActive,
     onOpenMonitor,
     onChangeData,
@@ -102,16 +92,6 @@ const FunctionBlockNode = memo(({ id, data, selected }: NodeProps) => {
     }
   }, [onOpenMonitor, instanceName, type]);
   
-  // Color coding by category
-  const getHeaderColor = () => {
-    if (['TON', 'TOF', 'TP'].includes(type)) return 'bg-amber-600';
-    if (['CTU', 'CTD', 'CTUD'].includes(type)) return 'bg-emerald-600';
-    if (['R_TRIG', 'F_TRIG'].includes(type)) return 'bg-purple-600';
-    if (['SR', 'RS'].includes(type)) return 'bg-blue-600';
-    if (['COMM_CONNECT', 'COMM_PUBLISH', 'COMM_SUBSCRIBE', 'COMM_MODBUS', 'MB_COIL', 'MB_DISCRETE_INPUT', 'MB_INPUT_REGISTER', 'MB_HOLDING_REGISTER'].includes(type)) return 'bg-cyan-700';
-    return 'bg-[var(--color-accent-blue)]';
-  };
-
   // Width needs to be larger when debug is active to show values
   const baseWidth = debugActive ? 160 : 120;
   const maxPorts = Math.max(ports.inputs.length, ports.outputs.length);
@@ -119,18 +99,19 @@ const FunctionBlockNode = memo(({ id, data, selected }: NodeProps) => {
   const bodyHeight = Math.max(maxPorts * portHeight + 16, 60);
 
   // Get live value and metadata for a port
-  const getPortValue = (portName: string): { display: string; raw: unknown; type: string } => {
+  const getPortValue = (portName: string): { display: string; raw: unknown; type: string; tone: SignalTone } => {
     const port = [...ports.inputs, ...ports.outputs].find(p => p.name === portName);
     const portType = port?.type || 'INT';
     
 if (!debugActive) {
-      return { display: '', raw: undefined, type: portType };
+      return { display: '', raw: undefined, type: portType, tone: 'unknown' };
     }
     const value = pinValues?.[portName];
     return { 
       display: formatLiveValue(value, portType), 
       raw: value, 
-      type: portType 
+      type: portType,
+      tone: sampleTone({ value, type: portType, forced: pinFlags?.[portName]?.forced, error: pinFlags?.[portName]?.fault ? 'fault' : null }),
     };
   };
   
@@ -141,12 +122,10 @@ if (!debugActive) {
     <div className="zplc-visual-node flex flex-col items-center relative">
       <div
         className={`
-          rounded border-2 shadow-lg transition-all duration-200
+          rounded border-2 transition-all duration-200
           ${selected 
-            ? 'border-blue-400 ring-2 ring-blue-400/50' 
-            : hasActiveOutput
-              ? 'border-green-500 ring-2 ring-green-500/30'
-              : 'border-[var(--border-color)]'
+            ? 'border-[var(--color-accent-blue)] ring-2 ring-[var(--color-accent-blue)]' 
+            : 'border-[var(--border-color)]'
           }
           zplc-visual-card bg-[var(--visual-node)]
         `}
@@ -155,16 +134,17 @@ if (!debugActive) {
         onContextMenu={handleContextMenu}
       >
         {/* Header with type name */}
-        <div className={`${getHeaderColor()} px-3 py-1.5 rounded-t text-center relative flex items-center justify-center gap-2`}>
+        <div className="bg-[var(--visual-panel)] border-b border-[var(--border-color)] px-3 py-1.5 rounded-t text-center relative flex items-center justify-center gap-2">
           {/* Debug indicator */}
           {debugActive && (
             <Activity 
               size={12} 
-              className={`absolute left-2 ${hasActiveOutput ? 'text-green-300 animate-pulse' : 'text-white/50'}`}
+              className="absolute left-2 text-[var(--text-secondary)]"
+              aria-hidden="true"
             />
           )}
           
-          <span className="text-white font-bold text-sm tracking-wide">
+          <span className="text-[var(--text-primary)] font-bold text-sm tracking-wide">
             {type}
           </span>
           
@@ -172,7 +152,7 @@ if (!debugActive) {
           {isFunctionBlock(type) && instanceName && (
             <button
               onClick={(e) => { e.stopPropagation(); setShowMenu(!showMenu); }}
-              className="absolute right-1 top-1/2 -translate-y-1/2 p-0.5 rounded hover:bg-white/20 text-white/70 hover:text-white"
+              className="focus-ring absolute right-1 top-1/2 -translate-y-1/2 p-0.5 rounded hover:bg-[color-mix(in_srgb,var(--text-primary)_12%,transparent)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
             >
               <MoreVertical size={14} />
             </button>
@@ -187,24 +167,21 @@ if (!debugActive) {
           {/* Input ports (left side) */}
           <div className="flex flex-col gap-1">
             {ports.inputs.map((port) => {
-              const { display, raw, type: portType } = getPortValue(port.name);
-              const valueClass = getValueClass(raw, portType);
+              const { display, tone } = getPortValue(port.name);
               return (
                 <div key={port.name} className="flex items-center gap-1 relative" style={{ height: portHeight }}>
                   <Handle
                     type="target"
                     position={Position.Left}
                     id={port.name}
-                    className="!w-3 !h-3 !bg-blue-400 !border-2 !border-blue-600"
+                    className="!w-3 !h-3 !rounded-[2px] !bg-[var(--visual-wire)] !border-2 !border-[var(--color-surface-300)]"
                     style={{ top: '50%' }}
                   />
                   <span className="max-w-[72px] truncate text-xs text-[var(--text-secondary)] font-mono pl-3" title={port.name}>
                     {port.name}
                   </span>
                   {debugActive && display && (
-                    <span className={`text-[10px] font-mono ml-1 px-1 py-0.5 rounded bg-[var(--color-surface-900)]/50 ${valueClass}`}>
-                      {display}
-                    </span>
+                    <SignalValue tone={tone} className="text-[10px] font-mono ml-1 px-1 py-0.5 rounded bg-[var(--color-surface-900)]/50">{display}</SignalValue>
                   )}
                 </div>
               );
@@ -214,14 +191,11 @@ if (!debugActive) {
           {/* Output ports (right side) */}
           <div className="flex flex-col gap-1 items-end">
             {ports.outputs.map((port) => {
-              const { display, raw, type: portType } = getPortValue(port.name);
-              const valueClass = getValueClass(raw, portType);
+              const { display, tone } = getPortValue(port.name);
               return (
                 <div key={port.name} className="flex items-center gap-1 relative" style={{ height: portHeight }}>
                   {debugActive && display && (
-                    <span className={`text-[10px] font-mono mr-1 px-1 py-0.5 rounded bg-[var(--color-surface-900)]/50 ${valueClass}`}>
-                      {display}
-                    </span>
+                    <SignalValue tone={tone} className="text-[10px] font-mono mr-1 px-1 py-0.5 rounded bg-[var(--color-surface-900)]/50">{display}</SignalValue>
                   )}
                   <span className="max-w-[72px] truncate text-xs text-[var(--text-secondary)] font-mono pr-3" title={port.name}>
                     {port.name}
@@ -230,11 +204,7 @@ if (!debugActive) {
                     type="source"
                     position={Position.Right}
                     id={port.name}
-                    className={`!w-3 !h-3 !border-2 ${
-                      debugActive && raw && portType === 'BOOL'
-                        ? '!bg-green-400 !border-green-600'
-                        : '!bg-green-400 !border-green-600'
-                    }`}
+                    className="!w-3 !h-3 !rounded-full !bg-[var(--visual-wire)] !border-2 !border-[var(--color-surface-300)]"
                     style={{ top: '50%' }}
                   />
                 </div>
@@ -250,7 +220,7 @@ if (!debugActive) {
               {instanceName}
             </span>
             {debugActive && (
-              <span className={`w-2 h-2 rounded-full ${hasActiveOutput ? 'bg-green-500' : 'bg-[var(--color-surface-500)]'} ${hasActiveOutput ? 'animate-pulse' : ''}`} />
+              <SignalValue tone={hasActiveOutput ? 'true' : 'false'} className="text-xs" />
             )}
           </div>
         )}
@@ -264,7 +234,7 @@ if (!debugActive) {
             className="fixed inset-0 z-40" 
             onClick={() => setShowMenu(false)}
           />
-          <div className="absolute top-full left-1/2 -translate-x-1/2 mt-1 z-50 bg-[var(--color-surface-800)] border border-[var(--border-color)] rounded shadow-lg min-w-[140px]">
+          <div className="absolute top-full left-1/2 -translate-x-1/2 mt-1 z-50 bg-[var(--color-surface-800)] border border-[var(--border-color)] rounded min-w-[140px]">
             <button
               onClick={handleOpenMonitor}
               className="flex items-center gap-2 w-full px-3 py-2 text-sm text-[var(--text-secondary)] hover:bg-[var(--color-surface-700)] rounded"

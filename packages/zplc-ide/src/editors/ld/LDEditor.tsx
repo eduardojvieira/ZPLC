@@ -31,6 +31,7 @@ import { useProjectBlocks } from '../useProjectBlocks';
 import { declaredSymbols } from '../symbols';
 import { copyLDRungFragment, ldSelectionIds as selectionIds, ldSelectionOfIds as selectionOfIds, NO_LD_SELECTION, pasteLDRungFragment, type LDClipboardFragment, type LDSelection } from './graphModel';
 import { useMonitor } from '../../monitoring/useMonitor';
+import { useIDEStore } from '../../store/useIDEStore';
 import type { DebugValuesMap } from './LDElement';
 import { useElementSelection } from '../elementSelection';
 import { useElementBreakpoints } from '../elementBreakpoints';
@@ -81,7 +82,7 @@ function ElementProperties({ element, symbols = [], onChange, onClose }: Element
   };
 
   return (
-    <div className="zplc-visual-node absolute top-0 right-0 w-64 border rounded-lg shadow-xl z-50 p-3">
+    <div className="zplc-visual-node absolute top-0 right-0 w-64 border rounded-lg z-50 p-3">
       <div className="flex items-center justify-between mb-3">
         <h3 className="text-sm font-bold text-[var(--text-primary)]">Element Properties</h3>
         <button
@@ -107,8 +108,7 @@ function ElementProperties({ element, symbols = [], onChange, onClose }: Element
               type="text"
               value={variable}
               onChange={(e) => setVariable(e.target.value)}
-              className="w-full bg-[var(--color-surface-700)] border border-[var(--border-color)] rounded px-2 py-1 text-sm text-[var(--text-secondary)]
-                         focus:outline-none focus:border-blue-500"
+              className="w-full bg-[var(--color-surface-700)] border border-[var(--border-color)] rounded px-2 py-1 text-sm text-[var(--text-secondary)]"
               placeholder="Variable name"
               list="ld-declared-symbols"
             />
@@ -126,8 +126,7 @@ function ElementProperties({ element, symbols = [], onChange, onClose }: Element
                 type="text"
                 value={fbInstance}
                 onChange={(e) => setFbInstance(e.target.value)}
-                className="w-full bg-[var(--color-surface-700)] border border-[var(--border-color)] rounded px-2 py-1 text-sm text-[var(--text-secondary)]
-                           focus:outline-none focus:border-blue-500"
+                className="w-full bg-[var(--color-surface-700)] border border-[var(--border-color)] rounded px-2 py-1 text-sm text-[var(--text-secondary)]"
                 placeholder="Instance name"
               />
             </div>
@@ -140,8 +139,7 @@ function ElementProperties({ element, symbols = [], onChange, onClose }: Element
                   value={presetTime}
                   onChange={(e) => setPresetTime(e.target.value)}
                   aria-label="Preset Time (PT)"
-                  className="w-full bg-[var(--color-surface-700)] border border-[var(--border-color)] rounded px-2 py-1 text-sm text-[var(--text-secondary)]
-                             focus:outline-none focus:border-blue-500 font-mono"
+                  className="w-full bg-[var(--color-surface-700)] border border-[var(--border-color)] rounded px-2 py-1 text-sm text-[var(--text-secondary)] font-mono"
                   placeholder="T#1s"
                 />
               </div>
@@ -156,8 +154,7 @@ function ElementProperties({ element, symbols = [], onChange, onClose }: Element
             value={comment}
             onChange={(e) => setComment(e.target.value)}
             rows={2}
-            className="w-full bg-[var(--color-surface-700)] border border-[var(--border-color)] rounded px-2 py-1 text-sm text-[var(--text-secondary)]
-                       focus:outline-none focus:border-blue-500 resize-none"
+            className="w-full bg-[var(--color-surface-700)] border border-[var(--border-color)] rounded px-2 py-1 text-sm text-[var(--text-secondary)] resize-none"
             placeholder="Optional description..."
           />
         </div>
@@ -165,14 +162,14 @@ function ElementProperties({ element, symbols = [], onChange, onClose }: Element
         <div className="flex gap-2 pt-2">
           <button
             onClick={handleSave}
-            className="flex-1 bg-blue-600 hover:bg-blue-500 text-white text-sm py-1.5 rounded
+            className="flex-1 bg-[var(--color-accent-blue)] hover:opacity-90 text-[var(--color-on-accent)] text-sm py-1.5 rounded
                        transition-colors"
           >
             Save
           </button>
           <button
             onClick={onClose}
-            className="flex-1 bg-[var(--color-surface-700)] hover:bg-[var(--color-surface-600)] text-[var(--text-secondary)] text-sm py-1.5 rounded
+            className="flex-1 bg-[var(--color-surface-700)] hover:bg-[color-mix(in_srgb,var(--text-primary)_12%,transparent)] text-[var(--text-secondary)] text-sm py-1.5 rounded
                        transition-colors"
           >
             Cancel
@@ -233,6 +230,8 @@ export default function LDEditor({ model, onChange, readOnly = false }: LDEditor
 
   // Online values and power flow come from the debug map of the build of this file (LNG-006)
   const monitor = useMonitor();
+  // the variables the user forces are drawn as forced, not as the value they hold (UX-009)
+  const forcedValues = useIDEStore((state) => state.debug.forcedValues);
   // Breakpoints on rungs: execution stops at the first statement of the rung's code (LNG-004)
   const breakpoints = useElementBreakpoints();
 
@@ -254,10 +253,10 @@ export default function LDEditor({ model, onChange, readOnly = false }: LDEditor
     if (!monitor.active) return undefined;
     const values: DebugValuesMap = new Map();
     for (const [variable, { reading, type }] of monitor.values) {
-      values.set(variable, { value: reading ?? null, type: type || null, address: null, region: null, size: null, loading: false, exists: true, error: null });
+      values.set(variable, { value: reading ?? null, type: type || null, address: null, region: null, size: null, loading: false, exists: true, error: null, forced: forcedValues.has(variable) });
     }
     return values;
-  }, [monitor]);
+  }, [monitor, forcedValues]);
 
   const symbolNames = useMemo(() => declaredSymbols(normalizedModel.variables).map((symbol) => symbol.name), [normalizedModel.variables]);
   const askedElement = useMemo<LDElementType | null>(() => {
@@ -552,7 +551,7 @@ export default function LDEditor({ model, onChange, readOnly = false }: LDEditor
             <button
               onClick={handleAddRung}
               className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-[var(--text-primary)]
-                         bg-[var(--color-surface-700)] hover:bg-[var(--color-surface-600)] rounded border border-[var(--border-color)]
+                         bg-[var(--color-surface-700)] hover:bg-[color-mix(in_srgb,var(--text-primary)_12%,transparent)] rounded border border-[var(--border-color)]
                          transition-colors"
             >
               <Plus size={14} />
@@ -570,7 +569,7 @@ export default function LDEditor({ model, onChange, readOnly = false }: LDEditor
                 {!readOnly && (
                   <button
                     onClick={handleAddRung}
-                    className="mt-2 text-blue-400 hover:text-blue-300 text-sm underline"
+                    className="mt-2 text-[var(--color-accent-blue)] hover:opacity-80 text-sm underline"
                   >
                     Add your first rung
                   </button>
@@ -626,7 +625,7 @@ export default function LDEditor({ model, onChange, readOnly = false }: LDEditor
                       {/* Add row button */}
                       <button
                         onClick={() => handleAddRow(rung.id)}
-                        className="p-1 rounded bg-blue-600 hover:bg-blue-500 text-white"
+                        className="p-1 rounded bg-[var(--color-accent-blue)] hover:opacity-90 text-[var(--color-on-accent)]"
                         title="Add parallel branch"
                       >
                         <Rows3 size={12} />
@@ -636,7 +635,7 @@ export default function LDEditor({ model, onChange, readOnly = false }: LDEditor
                       {idx > 0 && (
                         <button
                           onClick={() => handleMoveRungUp(rung.id)}
-                        className="p-1 rounded bg-[var(--color-surface-600)] hover:bg-[var(--color-surface-500)] text-[var(--text-primary)]"
+                        className="p-1 rounded bg-[var(--visual-panel)] border border-[var(--border-color)] hover:bg-[color-mix(in_srgb,var(--text-primary)_12%,transparent)] text-[var(--text-primary)]"
                           title="Move rung up"
                         >
                           <ChevronUp size={12} />
@@ -647,7 +646,7 @@ export default function LDEditor({ model, onChange, readOnly = false }: LDEditor
                       {idx < normalizedModel.rungs.length - 1 && (
                         <button
                           onClick={() => handleMoveRungDown(rung.id)}
-                        className="p-1 rounded bg-[var(--color-surface-600)] hover:bg-[var(--color-surface-500)] text-[var(--text-primary)]"
+                        className="p-1 rounded bg-[var(--visual-panel)] border border-[var(--border-color)] hover:bg-[color-mix(in_srgb,var(--text-primary)_12%,transparent)] text-[var(--text-primary)]"
                           title="Move rung down"
                         >
                           <ChevronDown size={12} />
@@ -657,7 +656,7 @@ export default function LDEditor({ model, onChange, readOnly = false }: LDEditor
                       {/* Delete button */}
                       <button
                         onClick={() => handleDeleteRung(rung.id)}
-                        className="p-1 rounded bg-red-600 hover:bg-red-500 text-white"
+                        className="focus-ring p-1 rounded bg-[var(--color-accent-red)] hover:opacity-90 text-[var(--color-on-accent)]"
                         title="Delete rung"
                       >
                         <Trash2 size={12} />
@@ -675,19 +674,19 @@ export default function LDEditor({ model, onChange, readOnly = false }: LDEditor
         <div className="px-4 py-2 bg-[var(--color-surface-800)] border-t border-[var(--border-color)]">
           <div className="flex items-center gap-4 text-[10px] text-[var(--text-tertiary)]">
             <span className="flex items-center gap-1">
-              <span className="font-mono text-green-400">| |</span> NO Contact
+              <span className="font-mono text-[var(--text-primary)]">| |</span> NO Contact
             </span>
             <span className="flex items-center gap-1">
-              <span className="font-mono text-red-400">|/|</span> NC Contact
+              <span className="font-mono text-[var(--text-primary)]">|/|</span> NC Contact
             </span>
             <span className="flex items-center gap-1">
-              <span className="font-mono text-blue-400">( )</span> Coil
+              <span className="font-mono text-[var(--text-primary)]">( )</span> Coil
             </span>
             <span className="flex items-center gap-1">
-              <span className="font-mono text-cyan-400">(S)</span> Set
+              <span className="font-mono text-[var(--text-primary)]">(S)</span> Set
             </span>
             <span className="flex items-center gap-1">
-              <span className="font-mono text-orange-400">(R)</span> Reset
+              <span className="font-mono text-[var(--text-primary)]">(R)</span> Reset
             </span>
             <span className="flex items-center gap-1 ml-auto text-[var(--text-tertiary)]">
               Arrows move the cursor • I opens the palette • F2 binds a variable • F1 lists every key • Ctrl/Cmd+C/V copies the selected rung • Delete removes

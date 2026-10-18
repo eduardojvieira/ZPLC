@@ -180,6 +180,44 @@ disparada. `src/monitoring/elementStates.test.ts` comprueba que cada variable qu
 en el mapa para cada diagrama de ejemplo. Los journeys 28b a 28e de `bun run test:journeys` muestran los valores en la
 aplicación real.
 
+## Un solo vocabulario para los estados de señal
+
+Todo lugar que muestra el valor de una señal usa los mismos cinco estados, definidos una sola vez en `src/theme/signalTone.ts` con los tokens `--signal-*` de `src/theme/tokens.ts`: los valores en línea del editor de código, la tabla Watch, Ladder, FBD, SFC, el monitor de instancia, la vista del controlador y los escenarios grabados del Lab. El color nunca indica un estado por sí solo.
+
+| Estado | Color | Glifo | También se muestra como |
+| --- | --- | --- | --- |
+| TRUE | Verde: un TRUE confirmado, o RUN, y nada más | `●` | La palabra TRUE, `T` en la insignia de Ladder; el flujo de energía es un cable más grueso |
+| FALSE | Gris neutro, nunca rojo | `○` | La palabra FALSE, `F` en la insignia de Ladder |
+| Desconocido | Gris neutro, contorno discontinuo | `◌` | Un guion o la palabra UNAVAILABLE; un valor que no se leyó nunca se muestra como FALSE |
+| Forzado | Ámbar | `◆` | La palabra FORCED; un valor forzado se dibuja como forzado, no como el valor que tiene |
+| Falla | Rojo, solo para una falla | `▲` | La palabra FAULT, que un lector de pantalla lee como "Fault" |
+
+Un número no es un estado: se dibuja en el color de valor simple y sin glifo. Un cable en FBD es más grueso para los valores TRUE, forzados y con falla, y discontinuo para un valor que no se leyó; un número distinto de cero no se dibuja como TRUE.
+
+Nada en los editores visuales, la vista del controlador, la tabla Watch ni la lista de notificaciones brilla, pulsa o se anima de forma continua. Un indicador de carga puede girar, y se detiene con el movimiento reducido. `bun tools/ci/ui-kit-guard.ts` falla cuando un archivo agrega una animación o una sombra ahí (UX-010), y su lista de infractores existentes solo puede disminuir.
+
+Nivel de evidencia: host. `src/editors/signalVocabulary.test.tsx` dibuja un contacto y una bobina de Ladder, un bloque FBD, un paso SFC y una transición SFC con cada uno de los cinco estados y comprueba tanto el token como el glifo, y `src/theme/signalTone.test.ts` comprueba el contraste de cada estado en los tres temas. La paleta y los glifos son para que una persona los juzgue a simple vista.
+
+## Foco en los editores visuales
+
+Un nodo, una arista, un botón de la caja de herramientas y el campo que edita un nombre en Ladder, FBD y SFC muestran el mismo anillo de foco que cualquier otro control de Studio, en todos los temas: dos píxeles en los temas claro y oscuro, tres en alto contraste y el color de resaltado del sistema en el modo de colores forzados. La biblioteca de diagramas quita el contorno de sus nodos y aristas, así que `src/index.css` vuelve a ponerlo en ellos, y ningún archivo de los editores visuales lleva una clase de foco propia. `src/theme/focusRing.test.ts` falla cuando alguno la lleva, o cuando el anillo falta en los nodos.
+
+Nivel de evidencia: host. La prueba lee la hoja de estilos y los archivos fuente; un recorrido que llega con el tabulador a un nodo y lee su contorno calculado está en el recorrido de temas (UX-027).
+
+## Temas, colores forzados y movimiento reducido en los editores
+
+Los tres editores visuales y el editor de código siguen los temas claro, oscuro y de alto contraste, el modo de colores forzados del sistema y el ajuste de movimiento reducido, como el resto de Studio. Un editor visual se dibuja solo con los tokens de `src/theme/tokens.ts`: ningún archivo de `src/editors` lleva un color de la paleta estándar, un color literal, un brillo ni una clase de foco propia, y la lista de infractores de la guardia del kit ya no tiene entradas para ellos. El contraste del texto, de las etiquetas atenuadas, de cada estado de señal y del cable que lleva TRUE está declarado para el lienzo y para un nodo, y `bun tools/ci/ux-tokens.ts` lo comprueba en los tres temas.
+
+Con movimiento reducido la hoja de estilos acorta toda transición y animación, y la cámara de un diagrama, que anima el código, toma su duración de `animationMs` en `src/theme/motion.ts`: cero cuando el sistema pide movimiento reducido. Un cable nunca se anima; un paso SFC activo es un cable más grueso en el color de TRUE.
+
+Nivel de evidencia: host, en la aplicación real. El recorrido 46 abre un archivo Ladder, uno FBD, uno SFC y uno de Structured Text, cambia el tema en los ajustes y lee los colores calculados del lienzo, del texto y de los cables (y el fondo y el texto propios de Monaco) frente a los tokens de ese tema. Luego emula colores forzados y comprueba que cada editor toma el lienzo del sistema, y emula movimiento reducido y comprueba que ningún elemento de un editor ni de la barra de herramientas tarda más de una centésima de segundo en cambiar. Pone el foco en un nodo con el teclado y lee el contorno calculado. No se compara ninguna captura de pantalla.
+
+## Minimapa y estado de depuración del editor de código
+
+El minimapa del editor de código está apagado hasta que usted lo enciende: Ajustes, Preferencias, "Mostrar el minimapa en el editor de código". La elección se guarda para su usuario. Mientras depura, el estado aparece en la barra de estado bajo la barra de herramientas, como "Depuración: En pausa en la línea N" o "Depuración: Conectado, sin pausa", y no se dibuja nada sobre el código. Los breakpoints siguen en el margen del editor.
+
+Nivel de evidencia: host. `src/components/codeEditorDebugState.test.tsx` dibuja la barra de estado con y sin estado de depuración y lee el código fuente del editor, `src/store/editorViewSettings.test.ts` comprueba que el valor por defecto es apagado y que un almacenamiento ilegible se lee como apagado, y el recorrido 46 lee la opción de minimapa de Monaco en la aplicación real.
+
 ## Qué ofrecen las paletas
 
 Una paleta ofrece solo lo que su transpilador traduce (LNG-007), y cada elemento que ofrece se ejecuta en la suite de

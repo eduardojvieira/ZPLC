@@ -27,6 +27,7 @@ export const en = {
   'preferences.autosave.after.one': 'After {count} second without typing',
   'preferences.autosave.after.other': 'After {count} seconds without typing',
   'preferences.updates.check': 'Check for a newer release when Studio starts',
+  'preferences.minimap': 'Show the minimap in the code editor',
   'preferences.updates.now': 'Check now',
   'preferences.updates.checking': 'Checking…',
   'preferences.updates.note': 'The check asks the GitHub releases of this project for the latest version. It sends nothing about you, downloads nothing and is off until you turn it on.',
@@ -298,6 +299,9 @@ export const en = {
   'deploy.transfer.shell': 'This firmware uses the older text shell. The device answers each line and the program is not read back.',
   'status.label': 'Operational status',
   'status.mode': 'Mode',
+  'status.debug': 'Debug',
+  'status.debug.paused': 'Paused at line {line}',
+  'status.debug.attached': 'Attached, not paused',
   'status.runtime': 'Runtime',
   'status.target': 'Target',
   'status.cycles': 'cycles',
@@ -523,6 +527,7 @@ export const en = {
   'commandBar.palette': 'Command palette',
   'commandBar.more': 'More commands',
   'commandBar.inspector': 'Inspector',
+  'sfc.transition.fired': 'Fired',
 } as const;
 
 export type MessageKey = keyof typeof en;

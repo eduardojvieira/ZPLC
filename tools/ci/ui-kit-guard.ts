@@ -17,8 +17,10 @@
 //   stock-palette                                     a stock Tailwind palette utility (`bg-red-500`, `text-white`): the themes
 //                                                     change tokens, not stock colours (UX-002)
 //   literal-colour                                    a hex or rgb() colour written in a source (UX-002, UX-003)
-//   editor-effect                                     in the visual editors, a continuous animation or a shadow: no element
-//                                                     may glow, pulse or animate continuously (UX-010)
+//   editor-effect                                     in the visual editors and the live panels (the controller view, the watch
+//                                                     panel, the notification list), a continuous animation or a shadow: no
+//                                                     element may glow, pulse or animate continuously (UX-010). A loading
+//                                                     spinner may turn when the same class list stops it under reduced motion.
 //
 // The sources that already break a rule when it was added are on tools/ci/ui-kit-offenders.json, one entry per file and
 // rule with the count it had. The list can only shrink: a count above its entry (or a file that is not listed) fails, a
@@ -62,7 +64,8 @@ const UTILITY = 'bg|text|border|ring|outline|shadow|from|via|to|fill|stroke|divi
 const STOCK_PALETTE = new RegExp(`(?<![\\w-])(?:${UTILITY})-(?:(?:${STOCK_HUES})-\\d{2,3}|white|black)(?![\\w-])`, 'g');
 const LITERAL_COLOUR = /(?<![\w&])#(?:[0-9a-fA-F]{8}|[0-9a-fA-F]{6}|[0-9a-fA-F]{3})(?![\w-])|\b(?:rgba?|hsla?)\(/g;
 const EDITOR_EFFECT = /(?<![\w-])(?:animate-(?:pulse|ping|bounce|spin)|drop-shadow(?:-[\w[\]#().]+)?|shadow(?:-[a-z0-9]+)?|motion-safe:animate-\w+)(?![\w-])/g;
-const isEditorSource = (path: string): boolean => path.startsWith(`${IDE_SRC}/editors/`);
+const LIVE_PANELS = ['ControllerView', 'DebugWatchPanel', 'NotificationsList'].map((name) => `${IDE_SRC}/components/${name}.tsx`);
+const isEditorSource = (path: string): boolean => path.startsWith(`${IDE_SRC}/editors/`) || LIVE_PANELS.includes(path);
 const MIN_FONT_PX = 11;
 
 function jsxName(node: ts.JsxOpeningLikeElement): string {
@@ -162,7 +165,12 @@ export function violationsOf(file: SourceFile): Violation[] {
       for (const [, size] of text.matchAll(SMALL_TEXT)) if (Number.parseFloat(size) < MIN_FONT_PX) add(node, 'small-text');
       for (const _match of text.matchAll(STOCK_PALETTE)) add(node, 'stock-palette');
       for (const _match of text.matchAll(LITERAL_COLOUR)) add(node, 'literal-colour');
-      if (isEditorSource(file.path)) for (const _match of text.matchAll(EDITOR_EFFECT)) add(node, 'editor-effect');
+      if (isEditorSource(file.path)) {
+        for (const [effect] of text.matchAll(EDITOR_EFFECT)) {
+          if (effect === 'animate-spin' && text.includes('motion-reduce:animate-none')) continue;
+          add(node, 'editor-effect');
+        }
+      }
     }
     if (ts.isPropertyAssignment(node) && node.name.getText() === 'fontSize' && ts.isNumericLiteral(node.initializer) && Number(node.initializer.text) < MIN_FONT_PX) add(node, 'small-text');
     ts.forEachChild(node, (child) => visit(child, nextAncestors));

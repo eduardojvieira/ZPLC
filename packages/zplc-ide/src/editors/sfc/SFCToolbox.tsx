@@ -120,7 +120,7 @@ export default function SFCToolbox({ onInsert }: SFCToolboxProps) {
                       aria-label={`Insert ${element.label}`}
                       tooltip={`${element.description}: press to insert after the selected element, or drag onto the canvas`}
                       className="mx-2 my-0.5 w-[calc(100%-1rem)] flex-col items-start justify-center whitespace-normal px-2 py-1.5 text-left text-xs
-                                 bg-[var(--color-surface-700)] hover:bg-[var(--color-surface-600)] cursor-grab active:cursor-grabbing
+                                 bg-[var(--color-surface-700)] hover:bg-[color-mix(in_srgb,var(--text-primary)_12%,transparent)] cursor-grab active:cursor-grabbing
                                  border border-transparent hover:border-[var(--color-accent-blue)]"
                     >
                       <div className="text-[var(--text-primary)] font-medium">{element.label}</div>

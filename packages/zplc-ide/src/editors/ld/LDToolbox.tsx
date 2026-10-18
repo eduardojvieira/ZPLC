@@ -54,7 +54,7 @@ function ToolboxItem({ item, onInsert }: ToolboxItemProps) {
       case 'function_block':
         return 'border-[var(--color-accent-yellow)] hover:bg-[var(--color-accent-yellow)]/10 text-[var(--color-accent-yellow)]';
       default:
-        return 'border-[var(--color-surface-500)] hover:bg-[var(--color-surface-500)]/10 text-[var(--color-surface-200)]';
+        return 'border-[var(--color-surface-500)] hover:bg-[color-mix(in_srgb,var(--text-primary)_12%,transparent)] text-[var(--color-surface-200)]';
     }
   };
 

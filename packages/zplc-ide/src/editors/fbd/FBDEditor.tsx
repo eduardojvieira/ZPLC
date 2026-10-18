@@ -31,6 +31,7 @@ import {
   type OnConnectEnd,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
+import { animationMs } from '../../theme/motion';
 
 import { type FBDModel, type FBDBlock, type FBDConnection } from '../../models/fbd';
 import { applyFBDSelection, blockNodeData, connectBlocks, copyFBDFragment, type WireEnds, edgesToConnections, fbdSelection, nodesToBlocks, pasteFBDFragment, type FBDClipboardFragment } from './graphModel';
@@ -106,7 +107,6 @@ function connectionsToEdges(connections: FBDConnection[]): Edge[] {
     target: conn.to.block,
     targetHandle: conn.to.port,
     type: 'smoothstep',
-    animated: false,
     style: {
       stroke: 'var(--visual-wire)',
       strokeWidth: 2,
@@ -252,7 +252,7 @@ function FBDEditorInner({
       replaceNodes(nextNodes);
       replaceEdges(nextEdges);
       setVisualSelection(fileKeyRef.current, fbdSelection(nextNodes, nextEdges));
-      void fitView({ nodes: [{ id: parsed.id }], maxZoom: 1, duration: 200 });
+      void fitView({ nodes: [{ id: parsed.id }], maxZoom: 1, duration: animationMs(200) });
     } else if (parsed?.kind === 'connection' && edgesRef.current.some((edge) => edge.id === parsed.id)) {
       const nextEdges = edgesRef.current.map((edge) => ({ ...edge, selected: edge.id === parsed.id }));
       const nextNodes = nodesRef.current.map((node) => node.selected ? { ...node, selected: false } : node);
@@ -466,7 +466,7 @@ function FBDEditorInner({
             <div
               role="alert"
               data-wire-refused
-              className="max-w-xl rounded border border-[var(--color-accent-red)] bg-[var(--color-surface-800)] px-3 py-2 text-xs text-[var(--color-surface-100)] shadow"
+              className="max-w-xl rounded border border-[var(--color-accent-red)] bg-[var(--color-surface-800)] px-3 py-2 text-xs text-[var(--color-surface-100)]"
             >
               <span className="font-semibold">Wire refused. </span>{refusal}
               <button type="button" className="ml-2 underline" onClick={() => setRefusal(null)}>Dismiss</button>
@@ -481,14 +481,8 @@ function FBDEditorInner({
         />
         <MiniMap
           className="!bg-[var(--color-surface-800)] !border-[var(--color-surface-600)] !rounded-lg"
-          nodeColor={(n) => {
-            if (n.type === 'functionBlock') return '#d97706';
-            if (n.type === 'logicGate') return '#6366f1';
-            if (n.type === 'constant') return '#8b5cf6';
-            if (n.type === 'variable') return '#eab308';
-            return 'var(--visual-wire)';
-          }}
-          maskColor="var(--color-surface-600)"
+          nodeColor="var(--visual-wire)"
+          maskColor="color-mix(in srgb, var(--visual-canvas) 70%, transparent)"
         />
       </ReactFlow>
       {keyboard.overlay}

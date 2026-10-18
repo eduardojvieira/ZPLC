@@ -169,6 +169,44 @@ each element: power through the seal-in branch, the pins of the timers, the acti
 `src/monitoring/elementStates.test.ts` checks that every variable a monitor entry names exists in the map for each example
 diagram. Journeys 28b to 28e of `bun run test:journeys` show the values in the real application.
 
+## One vocabulary for signal states
+
+Every place that shows the value of a signal uses the same five states, defined once in `src/theme/signalTone.ts` with the `--signal-*` tokens of `src/theme/tokens.ts`: the inline values of the code editor, the Watch table, Ladder, FBD, SFC, the instance monitor, the controller view and the recorded scenarios of the Lab. Colour never carries a state alone.
+
+| State | Colour | Glyph | Also shown as |
+| --- | --- | --- | --- |
+| TRUE | Green: a confirmed TRUE, or RUN, and nothing else | `●` | The word TRUE, `T` in a Ladder badge; power flow is a heavier wire |
+| FALSE | Neutral grey, never red | `○` | The word FALSE, `F` in a Ladder badge |
+| Unknown | Neutral grey, dashed outline | `◌` | A dash or the word UNAVAILABLE; a value that was not read is never shown as FALSE |
+| Forced | Amber | `◆` | The word FORCED; a forced value is drawn as forced, not as the value it holds |
+| Fault | Red, only for a fault | `▲` | The word FAULT, read by a screen reader as "Fault" |
+
+A number is not a state: it is drawn in the plain value colour with no glyph. A wire in FBD is heavier for TRUE, forced and fault values and dashed for a value that was not read, and a non-zero number is not drawn as TRUE.
+
+Nothing in the visual editors, the controller view, the Watch table or the notification list glows, pulses or animates continuously. A loading spinner may turn, and it stops under reduced motion. `bun tools/ci/ui-kit-guard.ts` fails when a source adds an animation or a shadow there (UX-010), and its list of existing offenders can only shrink.
+
+Evidence level: host. `src/editors/signalVocabulary.test.tsx` renders a Ladder contact and coil, an FBD block, an SFC step and an SFC transition with each of the five states and checks both the token and the glyph, and `src/theme/signalTone.test.ts` checks the contrast of each state in the three themes. The palette and the glyphs are for a person to judge by eye.
+
+## Focus in the visual editors
+
+A node, an edge, a toolbox button and the field that edits a name in Ladder, FBD and SFC show the same focus ring as every other control of Studio, in every theme: two pixels in the light and dark themes, three in high contrast, and the system highlight colour in forced-colours mode. The diagram library removes the outline of its nodes and edges, so `src/index.css` puts the ring back on them, and no visual-editor source carries a focus class of its own. `src/theme/focusRing.test.ts` fails when one does, or when the ring is missing from the nodes.
+
+Evidence level: host. The test reads the stylesheet and the sources; a journey that tabs to a node and reads its computed outline is in the themes journey (UX-027).
+
+## Themes, forced colours and reduced motion in the editors
+
+The three visual editors and the code editor follow the light, dark and high-contrast themes, the system's forced-colours mode and the reduced-motion setting, like the rest of Studio. A visual editor is drawn only from the tokens of `src/theme/tokens.ts`: no source of `src/editors` carries a stock colour, a literal colour, a glow or a focus class of its own, and the kit guard list has no entry left for them. The contrast of text, muted labels, every signal state and the wire that carries TRUE is declared for the canvas and for a node, and `bun tools/ci/ux-tokens.ts` checks it in all three themes.
+
+Under reduced motion the stylesheet shortens every transition and animation, and the camera of a diagram, which script animates, takes its length from `animationMs` in `src/theme/motion.ts`: zero when the system asks for reduced motion. A wire is never animated; an active SFC step is a heavier wire in the TRUE colour.
+
+Evidence level: host, in the real application. Journey 46 opens a Ladder, an FBD, an SFC and a Structured Text file, switches the theme in the settings, and reads the computed colours of the canvas, the text and the wires (and Monaco's own background and text) against the tokens of that theme. It then emulates forced colours and checks that each editor takes the system canvas, and emulates reduced motion and checks that no element of an editor or of the toolbar takes longer than a hundredth of a second to change. It focuses a node by keyboard and reads the computed outline. No screenshot is compared.
+
+## Minimap and debug state of the code editor
+
+The minimap of the code editor is off until you turn it on: Settings, Preferences, "Show the minimap in the code editor". The choice is kept for your user. While you debug, the state is in the status bar under the toolbar, as "Debug: Paused at line N" or "Debug: Attached, not paused", and nothing is drawn over the code. The breakpoints stay in the margin of the editor.
+
+Evidence level: host. `src/components/codeEditorDebugState.test.tsx` renders the status bar with and without a debug state and reads the source of the editor, `src/store/editorViewSettings.test.ts` checks that the default is off and that an unreadable storage reads as off, and journey 46 reads Monaco's minimap option in the real application.
+
 ## What the palettes offer
 
 A palette offers only what its transpiler translates (LNG-007), and every element it offers is run in the test suite:

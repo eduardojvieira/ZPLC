@@ -27,7 +27,7 @@ import {
 } from 'lucide-react';
 import { connectionManager, type LinkInfo } from '../runtime/connectionManager';
 import type { CommunicationMapEntry, MqttRuntimeStatus, SystemInfo, StatusInfo } from '../runtime/serialAdapter';
-import { Button, NumberField } from '../ui';
+import { Button, NumberField, SignalValue } from '../ui';
 
 export function ControllerView() {
   // State from connection manager
@@ -154,7 +154,7 @@ export function ControllerView() {
   if (!systemInfo && !status) {
     return (
       <div className="p-4 text-center">
-        <RefreshCw size={24} className="mx-auto mb-2 text-[var(--color-accent-blue)] animate-spin" />
+        <RefreshCw size={24} className="mx-auto mb-2 text-[var(--color-accent-blue)] animate-spin motion-reduce:animate-none" />
         <p className="text-sm text-[var(--color-surface-300)]">
           Fetching device info...
         </p>
@@ -171,7 +171,7 @@ export function ControllerView() {
           {systemInfo?.board || 'ZPLC Device'}
         </span>
         {!connectionManager.passthroughMode && (
-          <Activity size={12} className="ml-auto text-[var(--color-accent-blue)] animate-pulse" />
+          <Activity size={12} className="ml-auto text-[var(--color-accent-blue)]" />
         )}
         {connectionManager.passthroughMode && (
           <span className="ml-auto text-xs px-1.5 py-0.5 rounded bg-[var(--color-accent-purple)]/20 text-[var(--color-accent-purple)]">
@@ -262,16 +262,9 @@ export function ControllerView() {
         <>
           {/* State indicator */}
           <div className="px-4 py-2 flex items-center gap-2 border-b border-[var(--color-surface-700)]">
-            <div className={`w-2.5 h-2.5 rounded-full ${
-              status.state === 'RUNNING' 
-                ? 'bg-[var(--color-accent-green)] animate-pulse'
-                : status.state === 'IDLE'
-                  ? 'bg-[var(--color-accent-yellow)]'
-                  : 'bg-[var(--color-surface-500)]'
-            }`} />
-            <span className="text-xs font-medium text-[var(--color-surface-200)] uppercase">
+            <SignalValue tone={status.state === 'RUNNING' ? 'true' : status.state === 'IDLE' ? 'false' : 'unknown'} className="text-xs font-medium uppercase">
               {status.state || 'UNKNOWN'}
-            </span>
+            </SignalValue>
             <span className="ml-auto text-xs text-[var(--color-surface-400)]">
               {(status.stats?.cycles ?? 0).toLocaleString()} cycles
             </span>
@@ -485,16 +478,13 @@ export function ControllerView() {
                 <div className="mb-2 text-[var(--color-surface-400)]">OPI (first 8 bytes):</div>
                 <div className="flex gap-1 flex-wrap">
                   {status.opi.slice(0, 8).map((byte, idx) => (
-                    <div
+                    <SignalValue
                       key={idx}
-                      className={`w-8 h-6 flex items-center justify-center rounded font-mono ${
-                        byte > 0 
-                          ? 'bg-[var(--color-accent-green)] text-[var(--color-on-accent)]' 
-                          : 'bg-[var(--color-surface-700)] text-[var(--color-surface-300)]'
-                      }`}
+                      tone={byte > 0 ? 'true' : 'false'}
+                      className="h-6 min-w-12 px-1 inline-flex items-center justify-center rounded font-mono bg-[var(--color-surface-700)]"
                     >
                       {byte.toString(16).padStart(2, '0').toUpperCase()}
-                    </div>
+                    </SignalValue>
                   ))}
                 </div>
               </div>

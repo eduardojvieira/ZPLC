@@ -11,10 +11,12 @@
  */
 
 import React, { useEffect, useMemo } from 'react';
-import { X, RefreshCw, Clock, Hash, ToggleLeft, Zap } from 'lucide-react';
+import { X, Clock, Hash, ToggleLeft, Zap } from 'lucide-react';
 import { useDebugValues } from '../../hooks/useDebugValue';
 import { useIDEStore } from '../../store/useIDEStore';
 import { getDefaultPorts } from '../../models/fbd';
+import { SignalValue } from '../../ui';
+import { sampleTone } from '../../theme/signalTone';
 
 // =============================================================================
 // Types
@@ -46,16 +48,16 @@ interface PortValue {
 function getTypeIcon(type: string): React.ReactNode {
   switch (type.toUpperCase()) {
     case 'BOOL':
-      return <ToggleLeft size={12} className="text-blue-400" />;
+      return <ToggleLeft size={12} className="text-[var(--text-secondary)]" />;
     case 'TIME':
-      return <Clock size={12} className="text-amber-400" />;
+      return <Clock size={12} className="text-[var(--text-secondary)]" />;
     case 'INT':
     case 'DINT':
     case 'UINT':
     case 'UDINT':
-      return <Hash size={12} className="text-green-400" />;
+      return <Hash size={12} className="text-[var(--text-secondary)]" />;
     default:
-      return <Zap size={12} className="text-purple-400" />;
+      return <Zap size={12} className="text-[var(--text-secondary)]" />;
   }
 }
 
@@ -82,15 +84,6 @@ function formatPortValue(value: unknown, type: string): string {
   }
   
   return String(value);
-}
-
-/**
- * Get color for boolean value
- */
-function getBoolColor(value: unknown): string {
-  if (value === true) return 'text-green-400';
-  if (value === false) return 'text-[var(--text-secondary)]';
-  return 'text-[var(--text-tertiary)]';
 }
 
 // =============================================================================
@@ -140,27 +133,18 @@ export function InstanceMonitor({
     direction: 'output' as const,
   }));
 
-  // Block type color
-  const getHeaderColor = () => {
-    if (['TON', 'TOF', 'TP'].includes(blockType)) return 'bg-amber-600';
-    if (['CTU', 'CTD', 'CTUD'].includes(blockType)) return 'bg-emerald-600';
-    if (['R_TRIG', 'F_TRIG'].includes(blockType)) return 'bg-purple-600';
-    if (['SR', 'RS'].includes(blockType)) return 'bg-blue-600';
-    return 'bg-[var(--color-accent-blue)]';
-  };
-
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-[color-mix(in_srgb,var(--color-surface-900)_55%,transparent)]">
-      <div className="bg-[var(--color-surface-800)] rounded-lg shadow-2xl border border-[var(--color-surface-600)] min-w-[320px] max-w-[480px]">
+      <div className="bg-[var(--color-surface-800)] rounded-lg border border-[var(--color-surface-600)] min-w-[320px] max-w-[480px]">
         {/* Header */}
-        <div className={`${getHeaderColor()} px-4 py-3 rounded-t-lg flex items-center justify-between`}>
+        <div className="bg-[var(--visual-panel)] border-b border-[var(--border-color)] px-4 py-3 rounded-t-lg flex items-center justify-between">
           <div>
-            <h2 className="text-[var(--color-surface-800)] font-bold text-lg">{blockType}</h2>
-            <p className="text-[var(--color-surface-800)] text-sm font-mono">{instanceName}</p>
+            <h2 className="text-[var(--text-primary)] font-bold text-lg">{blockType}</h2>
+            <p className="text-[var(--text-secondary)] text-sm font-mono">{instanceName}</p>
           </div>
           <button
             onClick={onClose}
-            className="p-1 rounded hover:bg-[var(--color-surface-800)]/20 text-[var(--color-surface-800)] transition-colors"
+            className="focus-ring p-1 rounded hover:bg-[color-mix(in_srgb,var(--text-primary)_12%,transparent)] text-[var(--text-primary)] transition-colors"
           >
             <X size={20} />
           </button>
@@ -168,15 +152,9 @@ export function InstanceMonitor({
         
         {/* Status bar */}
         <div className="px-4 py-2 bg-[var(--color-surface-700)] border-b border-[var(--color-surface-600)] flex items-center gap-2">
-          <span className={`w-2 h-2 rounded-full ${
-            debugMode !== 'none' ? 'bg-green-500 animate-pulse' : 'bg-gray-500'
-          }`} />
-          <span className="text-xs text-[var(--color-surface-300)]">
+          <SignalValue tone={debugMode !== 'none' ? 'true' : 'unknown'} className="text-xs">
             {debugMode !== 'none' ? 'Live' : 'Offline'}
-          </span>
-          {debugMode !== 'none' && (
-            <RefreshCw size={12} className="text-[var(--color-surface-400)] animate-spin" />
-          )}
+          </SignalValue>
         </div>
 
         {/* Content */}
@@ -201,13 +179,9 @@ export function InstanceMonitor({
                       {pv.type}
                     </span>
                   </div>
-                  <span
-                    className={`font-mono text-sm font-medium ${
-                      pv.type === 'BOOL' ? getBoolColor(pv.value) : 'text-blue-400'
-                    }`}
-                  >
+                  <SignalValue tone={sampleTone({ value: pv.value, type: pv.type })} className="font-mono text-sm font-medium">
                     {formatPortValue(pv.value, pv.type)}
-                  </span>
+                  </SignalValue>
                 </div>
               ))}
             </div>
@@ -233,13 +207,9 @@ export function InstanceMonitor({
                       {pv.type}
                     </span>
                   </div>
-                  <span
-                    className={`font-mono text-sm font-medium ${
-                      pv.type === 'BOOL' ? getBoolColor(pv.value) : 'text-blue-400'
-                    }`}
-                  >
+                  <SignalValue tone={sampleTone({ value: pv.value, type: pv.type })} className="font-mono text-sm font-medium">
                     {formatPortValue(pv.value, pv.type)}
-                  </span>
+                  </SignalValue>
                 </div>
               ))}
             </div>

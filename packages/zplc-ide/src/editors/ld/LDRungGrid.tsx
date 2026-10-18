@@ -278,7 +278,7 @@ function BranchConnector({ branch, gridOffsetX, readOnly, onDelete }: BranchConn
               }}
               style={{ cursor: 'pointer' }}
             >
-              <circle r={8} fill="#EF4444" />
+              <circle r={8} fill="var(--color-accent-red)" />
               <line x1={-3} y1={-3} x2={3} y2={3} stroke="white" strokeWidth={1.5} />
               <line x1={3} y1={-3} x2={-3} y2={3} stroke="white" strokeWidth={1.5} />
             </g>
@@ -333,12 +333,12 @@ function DropZone({
   if (!hasElement) {
     if (isOver) {
       // Hovering over this cell
-      fillColor = 'rgba(59, 130, 246, 0.3)';
-      strokeColor = 'rgba(59, 130, 246, 0.8)';
+      fillColor = 'color-mix(in srgb, var(--color-accent-blue) 30%, transparent)';
+      strokeColor = 'color-mix(in srgb, var(--color-accent-blue) 80%, transparent)';
     } else if (isDragging) {
       // Dragging but not over this cell - subtle hint
-      fillColor = 'rgba(59, 130, 246, 0.08)';
-      strokeColor = 'rgba(59, 130, 246, 0.3)';
+      fillColor = 'color-mix(in srgb, var(--color-accent-blue) 8%, transparent)';
+      strokeColor = 'color-mix(in srgb, var(--color-accent-blue) 30%, transparent)';
     }
   }
 
@@ -446,13 +446,13 @@ function RungHeader({ rung, cols, rows, readOnly, onChange, editRequest }: RungH
           onBlur={handleSave}
           onKeyDown={handleKeyDown}
           className="flex-1 min-w-0 text-xs italic bg-[var(--color-surface-800)] border border-[var(--color-surface-500)] 
-                     rounded px-2 py-0.5 text-[var(--color-surface-100)] focus:outline-none focus:border-blue-500"
+                     rounded px-2 py-0.5 text-[var(--color-surface-100)]"
           placeholder="Add rung comment..."
         />
       ) : (
         <span
           onClick={handleStartEdit}
-          className={`flex-1 min-w-0 text-xs italic truncate ${readOnly ? '' : 'cursor-pointer hover:bg-[var(--color-surface-600)] rounded px-1 -mx-1'
+          className={`flex-1 min-w-0 text-xs italic truncate ${readOnly ? '' : 'cursor-pointer hover:bg-[color-mix(in_srgb,var(--text-primary)_12%,transparent)] rounded px-1 -mx-1'
             } ${rung.comment ? 'text-[var(--color-surface-200)]' : 'text-[var(--color-surface-400)]'}`}
           title={readOnly ? rung.comment : 'Click to edit comment'}
         >
@@ -943,8 +943,8 @@ export default function LDRungGrid({
               onElementDelete(selectedElementPosition.element);
             }}
             className="absolute w-6 h-6 flex items-center justify-center 
-                       bg-red-500 hover:bg-red-400 text-white rounded-full 
-                       shadow-lg transition-colors z-10"
+                       bg-[var(--color-accent-red)] hover:opacity-90 text-[var(--color-on-accent)] rounded-full 
+                       transition-colors z-10"
             style={{
               left: selectedElementPosition.x,
               top: selectedElementPosition.y + 28, // +28 for header height

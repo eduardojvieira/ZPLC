@@ -575,7 +575,7 @@ Type, shape, elevation, icons, layers and density. The compact column is the val
 
 ### Contrast
 
-CI computes the WCAG 2.2 ratio of each pair below from the tokens, in all three themes, and fails when one falls under its minimum (4.5:1 for text, 3:1 for a graphic that carries meaning). 97 pairs are declared and listed here with their computed ratios.
+CI computes the WCAG 2.2 ratio of each pair below from the tokens, in all three themes, and fails when one falls under its minimum (4.5:1 for text, 3:1 for a graphic that carries meaning). 127 pairs are declared and listed here with their computed ratios.
 
 | Pair | Use | Minimum | Light | Dark | High contrast |
 |---|---|---|---|---|---|
@@ -655,6 +655,36 @@ CI computes the WCAG 2.2 ratio of each pair below from the tokens, in all three 
 | `--signal-value-fg` on `--signal-value-bg` over `--color-surface-800` | A value value in a chip, the Watch table and the status bar | 4.5:1 | 5.35:1 | 5.13:1 | 8.53:1 |
 | `--signal-value-border` on `--color-surface-800` | Chip border of a value value | 3:1 | 6.59:1 | 6.48:1 | 10.58:1 |
 | `--visual-wire` on `--visual-canvas` | An idle wire on the visual editor canvas | 3:1 | 4.52:1 | 3.01:1 | 16.67:1 |
+| `--text-primary` on `--visual-canvas` | Text and labels drawn in a visual editor | 4.5:1 | 13.68:1 | 15.23:1 | 21.00:1 |
+| `--text-secondary` on `--visual-canvas` | Text and labels drawn in a visual editor | 4.5:1 | 6.03:1 | 10.07:1 | 18.76:1 |
+| `--visual-muted` on `--visual-canvas` | Text and labels drawn in a visual editor | 4.5:1 | 4.52:1 | 6.48:1 | 16.67:1 |
+| `--signal-true-fg` on `--visual-canvas` | A true value drawn on the canvas or on a node of a visual editor | 4.5:1 | 4.92:1 | 8.89:1 | 16.64:1 |
+| `--signal-false-fg` on `--visual-canvas` | A false value drawn on the canvas or on a node of a visual editor | 4.5:1 | 6.03:1 | 10.07:1 | 18.76:1 |
+| `--signal-unknown-fg` on `--visual-canvas` | A unknown value drawn on the canvas or on a node of a visual editor | 4.5:1 | 6.03:1 | 10.07:1 | 18.76:1 |
+| `--signal-forced-fg` on `--visual-canvas` | A forced value drawn on the canvas or on a node of a visual editor | 4.5:1 | 5.05:1 | 8.92:1 | 16.23:1 |
+| `--signal-fault-fg` on `--visual-canvas` | A fault value drawn on the canvas or on a node of a visual editor | 4.5:1 | 5.52:1 | 6.17:1 | 9.85:1 |
+| `--signal-value-fg` on `--visual-canvas` | A value value drawn on the canvas or on a node of a visual editor | 4.5:1 | 5.78:1 | 6.94:1 | 11.09:1 |
+| `--signal-true-border` on `--visual-canvas` | A wire that carries power or a TRUE value, and the border of an active step | 3:1 | 4.92:1 | 8.89:1 | 16.64:1 |
+| `--text-primary` on `--visual-node` | Text and labels drawn in a visual editor | 4.5:1 | 16.36:1 | 13.02:1 | 18.88:1 |
+| `--text-secondary` on `--visual-node` | Text and labels drawn in a visual editor | 4.5:1 | 7.21:1 | 8.61:1 | 16.87:1 |
+| `--visual-muted` on `--visual-node` | Text and labels drawn in a visual editor | 4.5:1 | 5.40:1 | 5.54:1 | 14.99:1 |
+| `--signal-true-fg` on `--visual-node` | A true value drawn on the canvas or on a node of a visual editor | 4.5:1 | 5.88:1 | 7.60:1 | 14.96:1 |
+| `--signal-false-fg` on `--visual-node` | A false value drawn on the canvas or on a node of a visual editor | 4.5:1 | 7.21:1 | 8.61:1 | 16.87:1 |
+| `--signal-unknown-fg` on `--visual-node` | A unknown value drawn on the canvas or on a node of a visual editor | 4.5:1 | 7.21:1 | 8.61:1 | 16.87:1 |
+| `--signal-forced-fg` on `--visual-node` | A forced value drawn on the canvas or on a node of a visual editor | 4.5:1 | 6.04:1 | 7.63:1 | 14.60:1 |
+| `--signal-fault-fg` on `--visual-node` | A fault value drawn on the canvas or on a node of a visual editor | 4.5:1 | 6.60:1 | 5.28:1 | 8.85:1 |
+| `--signal-value-fg` on `--visual-node` | A value value drawn on the canvas or on a node of a visual editor | 4.5:1 | 6.91:1 | 5.93:1 | 9.97:1 |
+| `--signal-true-border` on `--visual-node` | A wire that carries power or a TRUE value, and the border of an active step | 3:1 | 5.88:1 | 7.60:1 | 14.96:1 |
+| `--text-primary` on `--visual-panel` | Text and labels drawn in a visual editor | 4.5:1 | 15.59:1 | 14.23:1 | 20.03:1 |
+| `--text-secondary` on `--visual-panel` | Text and labels drawn in a visual editor | 4.5:1 | 6.87:1 | 9.41:1 | 17.89:1 |
+| `--visual-muted` on `--visual-panel` | Text and labels drawn in a visual editor | 4.5:1 | 5.15:1 | 6.06:1 | 15.90:1 |
+| `--signal-true-fg` on `--visual-panel` | A true value drawn on the canvas or on a node of a visual editor | 4.5:1 | 5.60:1 | 8.31:1 | 15.87:1 |
+| `--signal-false-fg` on `--visual-panel` | A false value drawn on the canvas or on a node of a visual editor | 4.5:1 | 6.87:1 | 9.41:1 | 17.89:1 |
+| `--signal-unknown-fg` on `--visual-panel` | A unknown value drawn on the canvas or on a node of a visual editor | 4.5:1 | 6.87:1 | 9.41:1 | 17.89:1 |
+| `--signal-forced-fg` on `--visual-panel` | A forced value drawn on the canvas or on a node of a visual editor | 4.5:1 | 5.76:1 | 8.34:1 | 15.48:1 |
+| `--signal-fault-fg` on `--visual-panel` | A fault value drawn on the canvas or on a node of a visual editor | 4.5:1 | 6.29:1 | 5.77:1 | 9.39:1 |
+| `--signal-value-fg` on `--visual-panel` | A value value drawn on the canvas or on a node of a visual editor | 4.5:1 | 6.59:1 | 6.48:1 | 10.58:1 |
+| `--signal-true-border` on `--visual-panel` | A wire that carries power or a TRUE value, and the border of an active step | 3:1 | 5.60:1 | 8.31:1 | 15.87:1 |
 | `--focus-ring-color` on `--color-surface-900` | The focus indicator on the canvas | 3:1 | 5.78:1 | 6.94:1 | 11.09:1 |
 | `--focus-ring-color` on `--color-surface-800` | The focus indicator on a panel | 3:1 | 6.59:1 | 6.48:1 | 10.58:1 |
 | `--focus-ring-color` on `--color-surface-700` | The focus indicator on a raised surface | 3:1 | 6.91:1 | 5.93:1 | 9.97:1 |

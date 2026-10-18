@@ -218,9 +218,10 @@ describe('Console tab boundary', () => {
     expect(source).toContain('aria-label="Recorded tank level matrix"');
     // One focus indicator for every control (UX-005): the global :focus-visible rule, not a class of the panel.
     expect(source).not.toContain('focus-visible:outline');
-    expect(source).toContain("'text-[var(--color-accent-blue)]'");
-    expect(source).toContain("'text-[var(--color-accent-green)]'");
-    expect(source).toContain("'text-[var(--color-surface-300)]'");
+    // The recorded values use the signal vocabulary (UX-009): ON is the TRUE tone, OFF the neutral one, a lamp or jam the fault tone.
+    expect(source).toContain('SIGNAL_TEXT_CLASS.true');
+    expect(source).toContain('SIGNAL_TEXT_CLASS.false');
+    expect(source).toContain('SIGNAL_TEXT_CLASS.fault');
     expect(source).toContain('Command');
     expect(source).toContain('Running');
     expect(source).toContain('At speed');

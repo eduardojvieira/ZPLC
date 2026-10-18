@@ -26,6 +26,7 @@ export const es: Record<MessageKey, string> = {
   'preferences.autosave.after.one': 'Después de {count} segundo sin escribir',
   'preferences.autosave.after.other': 'Después de {count} segundos sin escribir',
   'preferences.updates.check': 'Buscar una versión más reciente al iniciar Studio',
+  'preferences.minimap': 'Mostrar el minimapa en el editor de código',
   'preferences.updates.now': 'Buscar ahora',
   'preferences.updates.checking': 'Buscando…',
   'preferences.updates.note': 'La búsqueda consulta las versiones publicadas de este proyecto en GitHub. No envía datos suyos, no descarga nada y permanece desactivada hasta que usted la active.',
@@ -297,6 +298,9 @@ export const es: Record<MessageKey, string> = {
   'deploy.transfer.shell': 'Este firmware usa la shell de texto anterior. El dispositivo responde cada línea y el programa no se lee de vuelta.',
   'status.label': 'Estado operativo',
   'status.mode': 'Modo',
+  'status.debug': 'Depuración',
+  'status.debug.paused': 'En pausa en la línea {line}',
+  'status.debug.attached': 'Conectado, sin pausa',
   'status.runtime': 'Runtime',
   'status.target': 'Destino',
   'status.cycles': 'ciclos',
@@ -522,4 +526,5 @@ export const es: Record<MessageKey, string> = {
   'commandBar.palette': 'Paleta de comandos',
   'commandBar.more': 'Más comandos',
   'commandBar.inspector': 'Inspector',
+  'sfc.transition.fired': 'Disparada',
 };

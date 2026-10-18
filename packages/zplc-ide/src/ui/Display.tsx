@@ -4,7 +4,7 @@
  * the glyph of its state (UX-009), an empty state has a title and a next action.
  */
 import { useEffect, useState, type ReactNode } from 'react';
-import { SIGNAL_CHIP_CLASS, SIGNAL_CUES, type SignalTone } from '../theme/signalTone';
+import { SIGNAL_CHIP_CLASS, SIGNAL_CUES, SIGNAL_TEXT_CLASS, signalMark, type SignalTone } from '../theme/signalTone';
 import { cx } from './cx';
 import { LOADING_DELAY_MS, startDelay } from './logic/delay';
 
@@ -31,6 +31,22 @@ export function SignalChip({ tone, className, detail }: { tone: SignalTone; clas
     <span className={cx('ui-signal ui-tabular', SIGNAL_CHIP_CLASS[tone], className)} data-signal={tone}>
       <span aria-hidden="true" className="ui-signal-glyph">{cue.glyph}</span>
       <span>{detail ?? cue.label}</span>
+    </span>
+  );
+}
+
+/**
+ * A live value inside a node or a table cell (UX-009): coloured from the state's token, with the glyph of the state before
+ * it and, for the states a value alone does not say, the word for a screen reader. A plain number has no glyph.
+ */
+export function SignalValue({ tone, children, className }: { tone: SignalTone; children?: ReactNode; className?: string }) {
+  const mark = signalMark(tone);
+  const says = tone === 'forced' || tone === 'fault' || tone === 'unknown';
+  return (
+    <span className={cx('ui-tabular', SIGNAL_TEXT_CLASS[tone], className)} data-signal={tone} title={SIGNAL_CUES[tone].description}>
+      {mark && <span aria-hidden="true">{mark} </span>}
+      {says && <span className="ui-visually-hidden">{SIGNAL_CUES[tone].description}: </span>}
+      {children}
     </span>
   );
 }

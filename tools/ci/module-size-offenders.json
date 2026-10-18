@@ -61,12 +61,5 @@
     "added": "2026-10-10",
     "lines": 829,
     "reason": "Ladder to ST transpilation in one module; the visual-language work (WS-22a) edits it. Split by pass after that lands. Recorded size raised from 895 to 917 once, by the merge of ws-integration (WS-20, WS-21, WS-22a added code here); from now on it can only shrink."
-  },
-  {
-    "file": "packages/zplc-ide/src/editors/ld/LDElement.tsx",
-    "requirement": "IDE-014",
-    "added": "2026-10-10",
-    "lines": 834,
-    "reason": "Ladder element rendering for every element kind in one component; the visual-language work (WS-22a) edits it. Split per element kind after that lands."
   }
 ]

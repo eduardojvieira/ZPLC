@@ -8,7 +8,8 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { readZip } from '../electron/projectArchiveZip';
 import { learnLessonCatalog } from '../src/components/learnLesson';
-import { contrastRatio } from '../src/theme/color';
+import { contrastRatio, parseColor } from '../src/theme/color';
+import { resolveTokens, type ThemeId } from '../src/theme/tokens';
 import { auditMarkup } from '../src/ui/audit';
 import { compilerCompile } from '../src/cli/toolApi';
 import { NATIVE_PROGRAM_MAX_BYTES } from '../electron/security';
@@ -1609,9 +1610,9 @@ export const JOURNEYS: Journey[] = [
       await app.until('an element that power does not reach', async () => await app.eval<number>(cells(false)) > 0 || undefined);
       // the values arrive with the first complete poll, and then every variable the example declares has one
       const texts = () => app.eval<string[]>(`[...document.querySelectorAll('[data-ld-cell] text')].map((node) => node.textContent ?? '')`);
-      await app.until('a contact to show the value of its variable', async () => (await texts()).some((text) => text === 'T' || text === 'F') || undefined);
+      await app.until('a contact to show the value of its variable', async () => (await texts()).some((text) => /^[●○◆▲] [TF]$/.test(text)) || undefined);
       const shown = await texts();
-      assert(!shown.includes('—'), `A variable that the example declares is shown as unavailable: ${JSON.stringify(shown)}`);
+      assert(!shown.includes('◌ —'), `A variable that the example declares is shown as unavailable: ${JSON.stringify(shown)}`);
     },
   },
   {
@@ -2874,4 +2875,95 @@ export const JOURNEYS: Journey[] = [
       await app.cdp.command('Emulation.clearDeviceMetricsOverride');
     },
   },
+  {
+    name: '46 The themes, forced colours and reduced motion reach the three visual editors and the code editor', example: 'blinky', proves: ['UX-027'], partly: ['UX-005', 'UX-009', 'UX-010', 'UX-034'],
+    run: async (app, { project }) => {
+      // the three diagrams and a Structured Text file in one folder
+      cpSync(join(packageRoot, 'projects', 'blinky_fbd', 'src', 'main.fbd.json'), join(project, 'src', 'second.fbd.json'));
+      cpSync(join(packageRoot, 'projects', 'blinky_sfc', 'src', 'main.sfc.json'), join(project, 'src', 'second.sfc.json'));
+      writeFileSync(join(project, 'src', 'note.st'), 'PROGRAM Note\nVAR\n  Lamp : BOOL;\nEND_VAR\nLamp := TRUE;\nEND_PROGRAM\n');
+      await openFolder(app, project);
+
+      /** The computed colours a person sees, read from the page: no screenshot is compared. */
+      // the editor draws a moment after its canvas exists: the probe is repeated until it finds every element it reads
+      const colours = (probe: string) => app.until('the editor to be drawn', async () => await app.eval<Record<string, string>>(`(() => { const pick = (selector) => document.querySelector(selector); const style = (element) => getComputedStyle(element); return (${probe})(pick, style); })()`).catch(() => undefined) || undefined);
+      /** The background a piece of text really sits on: the first ancestor that paints one. */
+      const behind = `(element) => { for (let node = element; node; node = node.parentElement) { const colour = getComputedStyle(node).backgroundColor; if (colour !== 'rgba(0, 0, 0, 0)' && colour !== 'transparent') return colour; } return 'rgb(255, 255, 255)'; }`;
+      const sameColour = (a: string, b: string) => { const x = parseColor(a), y = parseColor(b); return x.r === y.r && x.g === y.g && x.b === y.b; };
+      const EDITORS = [
+        { file: 'src/main.ld.json', ready: '[data-ld-rung-id]', name: 'Ladder', probe: `(pick, style) => ({ background: style(pick('.zplc-visual-editor')).backgroundColor, text: style(pick('[data-ld-rung-id] svg text')).fill, behind: (${behind})(pick('[data-ld-rung-id] svg text')), wire: style(pick('[data-ld-rung-id] svg line')).stroke })` },
+        { file: 'src/second.fbd.json', ready: '.react-flow__node', name: 'FBD', probe: `(pick, style) => ({ background: style(pick('.zplc-visual-editor')).backgroundColor, card: style(pick('.zplc-visual-card')).backgroundColor, text: style(pick('.zplc-visual-card span')).color, behind: (${behind})(pick('.zplc-visual-card span')), wire: style(pick('.react-flow__edge-path')).stroke })` },
+        { file: 'src/second.sfc.json', ready: '.react-flow__node', name: 'SFC', probe: `(pick, style) => ({ background: style(pick('.zplc-visual-editor')).backgroundColor, card: style(pick('.sfc-step-box')).backgroundColor, text: style(pick('.sfc-step-box span')).color, behind: (${behind})(pick('.sfc-step-box span')), wire: style(pick('.react-flow__edge-path')).stroke })` },
+      ];
+
+      // each file is opened once from the Explorer; after that its editor tab brings it back, whatever tab is shown
+      for (const editor of EDITORS) await openDiagram(app, editor.file, editor.ready);
+      await openFile(app, 'src/note.st');
+      const show = async (editor: (typeof EDITORS)[number]) => {
+        await app.click(editorTab(`file:${editor.file}`), `the ${editor.name} tab`);
+        await app.until(`${editor.name} on its canvas`, async () => await app.visible(css(editor.ready)) || undefined);
+      };
+
+      for (const theme of ['light', 'dark', 'high-contrast'] as ThemeId[]) {
+        await app.click(button('Project settings'), 'the Project settings button');
+        await app.until('the preferences in the settings tab', async () => await app.visible(css('[data-app-preferences]')) || undefined);
+        await selectOption(app, 'select[data-theme-control]', theme === 'high-contrast' ? 'High contrast' : theme === 'dark' ? 'Dark' : 'Light');
+        await app.until(`the ${theme} theme to apply`, async () => await app.eval<string>(`document.documentElement.getAttribute('data-theme')`) === theme || undefined);
+        const tokens = resolveTokens(theme);
+
+        for (const editor of EDITORS) {
+          await show(editor);
+          const found = await colours(editor.probe);
+          assert(sameColour(found.background, tokens['--visual-canvas']), `${editor.name} in the ${theme} theme paints its canvas ${found.background}, not ${tokens['--visual-canvas']}.`);
+          assert(contrastRatio(found.text, found.behind) >= 4.5, `${editor.name} text in the ${theme} theme is under 4.5:1: ${found.text} on ${found.behind}.`);
+          assert(contrastRatio(found.wire, found.background) >= 3, `A wire of ${editor.name} in the ${theme} theme is under 3:1: ${found.wire} on ${found.background}.`);
+        }
+
+        // the code editor wears the same theme
+        await app.click(editorTab('file:src/note.st'), 'the code editor tab');
+        const code = await monacoEval<{ background: string; text: string }>(app, `const root = editor.getContainerDomNode(); const background = getComputedStyle(root.querySelector('.monaco-editor-background')).backgroundColor; const token = root.querySelector('.view-lines .view-line span span'); return { background, text: getComputedStyle(token ?? root.querySelector('.view-line span')).color };`);
+        assert(await monacoEval<boolean>(app, 'return editor.getOption(monaco.editor.EditorOption.minimap).enabled === false'), 'The minimap of the code editor is on before the user turned it on (UX-034).');
+        assert(sameColour(code.background, tokens['--editor-bg']), `The code editor in the ${theme} theme paints ${code.background}, not ${tokens['--editor-bg']}.`);
+        assert(contrastRatio(code.text, code.background) >= 4.5, `Code in the ${theme} theme is under 4.5:1: ${code.text} on ${code.background}.`);
+      }
+
+      // a node reached by keyboard shows the one focus ring, in every diagram (UX-005)
+      for (const editor of EDITORS.slice(1)) {
+        await show(editor);
+        // a key was pressed, so that a focus given by script counts as a keyboard focus, as :focus-visible decides
+        await app.press('Tab');
+        const ring = await app.eval<{ focusVisible: boolean; style: string; width: string; colour: string; background: string }>(`(() => { const node = document.querySelector('.react-flow__node'); node.focus(); const style = getComputedStyle(node); return { focusVisible: node.matches(':focus-visible'), style: style.outlineStyle, width: style.outlineWidth, colour: style.outlineColor, background: getComputedStyle(document.querySelector('.zplc-visual-editor')).backgroundColor }; })()`);
+        assert(ring.focusVisible && ring.style !== 'none' && parseFloat(ring.width) >= 2 && contrastRatio(ring.colour, ring.background) >= 3, `A focused ${editor.name} node shows no ring: ${JSON.stringify(ring)}.`);
+      }
+
+      // forced colours: the editors take the system palette and keep their cue besides colour
+      await app.cdp.command('Emulation.setEmulatedMedia', { features: [{ name: 'forced-colors', value: 'active' }] });
+      for (const editor of EDITORS) {
+        await show(editor);
+        const forced = await app.eval<{ active: boolean; editor: string; canvas: string }>(`(() => { const probe = document.createElement('div'); probe.style.backgroundColor = 'Canvas'; document.body.append(probe); const canvas = getComputedStyle(probe).backgroundColor; probe.remove(); return { active: matchMedia('(forced-colors: active)').matches, editor: getComputedStyle(document.querySelector('.zplc-visual-editor')).backgroundColor, canvas }; })()`);
+        assert(forced.active && sameColour(forced.editor, forced.canvas), `${editor.name} in forced-colours mode paints ${forced.editor}, not the system canvas ${forced.canvas}.`);
+      }
+      await app.cdp.command('Emulation.setEmulatedMedia', { features: [] });
+
+      // reduced motion: no element of a diagram or of the toolbar takes longer than a hundredth of a second to change
+      await app.cdp.command('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-reduced-motion', value: 'reduce' }] });
+      for (const editor of EDITORS) {
+        await show(editor);
+        const slow = await app.eval<string[]>(`(() => [...document.querySelectorAll('.zplc-visual-editor *, [role="toolbar"] *')].flatMap((element) => { const style = getComputedStyle(element); return [...style.transitionDuration.split(','), ...style.animationDuration.split(',')].map((value) => parseFloat(value) * (value.trim().endsWith('ms') ? 0.001 : 1)).some((seconds) => seconds > 0.01) ? [element.className.toString().slice(0, 60)] : []; }).slice(0, 5))()`);
+        assert(slow.length === 0, `${editor.name} keeps a transition or animation under reduced motion: ${JSON.stringify(slow)}.`);
+      }
+      await app.cdp.command('Emulation.setEmulatedMedia', { features: [] });
+    },
+  },
 ];
+
+/** Walks a native select to the option with this text with the arrow keys, as a keyboard user would. */
+async function selectOption(app: App, selector: string, label: string): Promise<void> {
+  const state = () => app.eval<{ labels: string[]; index: number }>(`(() => { const select = document.querySelector(${JSON.stringify(selector)}); return { labels: [...select.options].map((option) => option.textContent), index: select.selectedIndex }; })()`);
+  const { labels, index } = await state();
+  const wanted = labels.indexOf(label);
+  assert(wanted >= 0, `${selector} offers ${JSON.stringify(labels)}, not ${label}`);
+  await app.eval(`document.querySelector(${JSON.stringify(selector)}).focus()`);
+  for (let step = 0; step < Math.abs(wanted - index); step++) await app.press(wanted > index ? 'ArrowDown' : 'ArrowUp');
+  await app.until(`${selector} to show ${label}`, async () => (await state()).index === wanted || undefined);
+}

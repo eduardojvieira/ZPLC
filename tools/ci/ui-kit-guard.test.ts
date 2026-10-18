@@ -101,3 +101,26 @@ describe('kit guard: the shrink-only list (UX-002 stopgap)', () => {
     expect(checkRepository()).toEqual([]);
   });
 });
+
+describe('kit guard: nothing glows, pulses or animates continuously (UX-010)', () => {
+  const editor = 'packages/zplc-ide/src/editors/sfc/nodes/SFCStepNode.tsx';
+  const panel = (name: string) => `packages/zplc-ide/src/components/${name}.tsx`;
+
+  it('UX-010 finds a pulse, a ping and a glow in a visual editor', () => {
+    expect(rulesOf('const c = "animate-pulse"; const d = "animate-ping"; const e = "drop-shadow-[0_0_4px_red]"; const f = "shadow-lg shadow-green-500/30"', editor))
+      .toEqual(expect.arrayContaining(['editor-effect']));
+    expect(rulesOf('const c = "animate-pulse"', editor)).toEqual(['editor-effect']);
+  });
+
+  it('UX-010 holds the live panels to the same rule: the controller view, the watch panel and the notification list', () => {
+    for (const name of ['ControllerView', 'DebugWatchPanel', 'NotificationsList']) {
+      expect(rulesOf('const c = "bg-[var(--x)] animate-pulse"', panel(name))).toEqual(['editor-effect']);
+    }
+    expect(rulesOf('const c = "animate-pulse"', panel('Sample'))).toEqual([]);
+  });
+
+  it('UX-010 lets a loading spinner turn, because it stops under reduced motion, and nothing else that turns', () => {
+    expect(rulesOf('const c = "animate-spin motion-reduce:animate-none"', panel('ControllerView'))).toEqual([]);
+    expect(rulesOf('const c = "animate-spin"', panel('ControllerView'))).toEqual(['editor-effect']);
+  });
+});

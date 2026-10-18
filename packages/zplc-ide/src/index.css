@@ -43,8 +43,12 @@ html, body, #root {
   font-family: var(--font-sans);
 }
 
-/* The only focus rule. It is unlayered, so it also wins over the Tailwind utilities that switch outlines off. */
-:focus-visible {
+/* The only focus rule. It is unlayered, so it also wins over the Tailwind utilities that switch outlines off. The diagram
+   library switches the outline off on its nodes and edges with a selector of higher specificity, so they are named here
+   with the editor class in front: a node or an edge reached by keyboard shows the same ring as every other control. */
+:focus-visible,
+.zplc-visual-editor .react-flow__node.selectable:focus-visible,
+.zplc-visual-editor .react-flow__edge:focus-visible {
   outline: var(--focus-ring-width) solid var(--focus-ring-color);
   outline-offset: var(--focus-ring-offset);
 }

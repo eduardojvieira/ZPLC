@@ -35,9 +35,9 @@ const ComparisonNode = memo(({ id, data, selected }: NodeProps) => {
     <div className="zplc-visual-node flex flex-col items-center">
       <div
         className={`
-          w-16 rounded border-2 shadow-md
+          w-16 rounded border-2 
           zplc-visual-card relative bg-[var(--visual-node)] border-[var(--color-accent-blue)]
-          ${selected ? 'ring-2 ring-blue-400/50' : ''}
+          ${selected ? 'ring-2 ring-[var(--color-accent-blue)]' : ''}
         `}
         title={comment || type}
       >
@@ -48,14 +48,14 @@ const ComparisonNode = memo(({ id, data, selected }: NodeProps) => {
             type="target"
             position={Position.Left}
             id="IN1"
-            className="!w-3 !h-3 !bg-blue-400 !border-2 !border-blue-600"
+            className="!w-3 !h-3 !rounded-[2px] !bg-[var(--visual-wire)] !border-2 !border-[var(--color-surface-300)]"
             style={{ top: '30%' }}
           />
           <Handle
             type="target"
             position={Position.Left}
             id="IN2"
-            className="!w-3 !h-3 !bg-blue-400 !border-2 !border-blue-600"
+            className="!w-3 !h-3 !rounded-[2px] !bg-[var(--visual-wire)] !border-2 !border-[var(--color-surface-300)]"
             style={{ top: '70%' }}
           />
 
@@ -69,7 +69,7 @@ const ComparisonNode = memo(({ id, data, selected }: NodeProps) => {
             type="source"
             position={Position.Right}
             id="OUT"
-            className="!w-3 !h-3 !bg-green-400 !border-2 !border-green-600"
+            className="!w-3 !h-3 !rounded-full !bg-[var(--visual-wire)] !border-2 !border-[var(--color-surface-300)]"
           />
         </div>
 

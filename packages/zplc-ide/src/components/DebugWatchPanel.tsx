@@ -271,7 +271,7 @@ export function DebugWatchPanel({ setValue, toggleForceValue, clearAllForcedValu
   const statusColor = debugMode === 'none'
     ? 'bg-[var(--color-status-stopped)]'
     : isPolling
-      ? 'bg-[var(--color-status-running)] animate-pulse motion-reduce:animate-none'
+      ? 'bg-[var(--color-status-running)]'
       : 'bg-[var(--color-status-warning)]';
 
   return (
@@ -391,7 +391,7 @@ export function DebugWatchPanel({ setValue, toggleForceValue, clearAllForcedValu
                           setEditing((prev) => prev ? { ...prev, draft: e.target.value } : null)
                         } onKeyDown={(event) => { void handleSetKeyDown(event); }} onBlur={() => setEditing(null)} className="w-full" />
                     ) : result.loading ? (
-                      <span className="text-[var(--color-surface-400)] animate-pulse">...</span>
+                      <span className="text-[var(--color-surface-400)]">...</span>
                     ) : result.error ? (
                       <Tooltip content={result.error}>
                         <span tabIndex={0} className={`${SIGNAL_TEXT_CLASS.fault} text-xs`}>

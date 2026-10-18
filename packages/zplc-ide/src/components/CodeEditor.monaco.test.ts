@@ -13,7 +13,8 @@ describe('CodeEditor local Monaco bootstrap', () => {
   it('labels a non-paused debug editor as context rather than a running runtime', () => {
     const source = readFileSync(join(import.meta.dir, 'CodeEditor.tsx'), 'utf8');
 
-    expect(source).toContain("debugMode === 'simulation' ? 'Simulation' : 'Hardware'");
+    // the debug state moved to the status bar (UX-034): the editor draws nothing over the code, so it claims nothing either
+    expect(source).not.toContain('Debug mode indicator');
     expect(source).not.toContain("isPaused ? 'Paused' : 'Running'");
     expect(source).not.toContain("bg-green-500 animate-pulse");
   });

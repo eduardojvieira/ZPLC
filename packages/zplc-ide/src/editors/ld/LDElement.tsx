@@ -18,13 +18,14 @@ import { type LDElement as LDElementType, isContact, isCoil, isFunctionBlock } f
 import { LD_ELEMENT_KIND } from '../../models/ldSupport';
 import { splitFBIdentifier } from './fbLabel';
 import type { DebugValueResult } from '../../hooks/useDebugValue';
+import { SIGNAL_PAINT, sampleTone, signalMark, type SignalTone } from '../../theme/signalTone';
 
 // =============================================================================
 // Types
 // =============================================================================
 
-/** Map of variable paths to their debug values */
-export type DebugValuesMap = Map<string, DebugValueResult>;
+/** Map of variable paths to their debug values, and whether the user forces the variable (UX-009). */
+export type DebugValuesMap = Map<string, DebugValueResult & { forced?: boolean }>;
 
 // =============================================================================
 // Constants
@@ -34,11 +35,12 @@ const CELL_WIDTH = 80;
 const CELL_HEIGHT = 60;
 const WIRE_Y = CELL_HEIGHT / 2;
 const STROKE_WIDTH = 2;
+/** Power flow is a heavier wire as well as a green one: the line says it where the colour cannot (UX-009). */
+const ENERGIZED_STROKE_WIDTH = 3;
 
 // Colors
 const COLORS = {
   wire: 'var(--color-surface-400)',
-  wireEnergized: '#22c55e', // Bright green for power flow
   contact: 'var(--color-surface-300)',
   contactNC: 'var(--color-surface-300)',
   coil: 'var(--color-accent-blue)',
@@ -48,13 +50,13 @@ const COLORS = {
   text: 'var(--color-surface-100)',
   textDim: 'var(--color-surface-200)',
   selected: 'var(--color-accent-blue)',
-  hover: 'rgba(255,255,255,0.1)',
-  energizedGlow: 'rgba(34, 197, 94, 0.3)', // Glow effect for energized state
-  valueTrue: '#22c55e',  // Green for TRUE
-  valueFalse: 'var(--color-surface-300)', // FALSE is a value, not a fault
-  valueNumber: '#22d3ee', // Cyan for numbers
-  valueTime: '#fbbf24',  // Amber for TIME values
 };
+
+/** The wire of a state: TRUE power flow is the TRUE token and heavier; an idle wire is neutral. */
+const wireOf = (energized: boolean | undefined) => ({
+  color: energized ? SIGNAL_PAINT.true.border : COLORS.wire,
+  width: energized ? ENERGIZED_STROKE_WIDTH : STROKE_WIDTH,
+});
 
 // =============================================================================
 // Props
@@ -105,19 +107,43 @@ function formatValue(info: DebugValueResult | undefined): string {
   return String(info.value);
 }
 
-/**
- * Get color for value display
- */
-function getValueColor(info: DebugValueResult | undefined): string {
-  if (!info || !info.exists) return COLORS.textDim;
+/** The glyph and the value of a state: the glyph is the cue that does not depend on colour. */
+const markedValue = (tone: SignalTone, text: string): string => [signalMark(tone), text].filter(Boolean).join(' ');
 
-  if (info.type === 'BOOL') {
-    return info.value ? COLORS.valueTrue : COLORS.valueFalse;
-  }
-  if (info.type === 'TIME') {
-    return COLORS.valueTime;
-  }
-  return COLORS.valueNumber;
+/**
+ * The live value of an element in a small badge. Its border and text take the state's tokens; an unread value is dashed.
+ */
+function ValueBadge({ x, y, tone, text, fontSize = 9 }: { x: number; y: number; tone: SignalTone; text: string; fontSize?: number }) {
+  const label = markedValue(tone, text);
+  const width = Math.max(14, label.length * 6 + 6);
+  return (
+    <g data-signal={tone}>
+      <rect
+        x={x}
+        y={y}
+        width={width}
+        height={12}
+        fill="var(--color-surface-800)"
+        stroke={SIGNAL_PAINT[tone].border}
+        strokeWidth={1}
+        strokeDasharray={tone === 'unknown' ? '2 2' : undefined}
+        rx={2}
+      />
+      <text
+        x={x + width / 2}
+        y={y + 7}
+        fill={SIGNAL_PAINT[tone].fg}
+        fontSize={fontSize}
+        fontWeight="bold"
+        textAnchor="middle"
+        dominantBaseline="middle"
+        fontFamily="monospace"
+      >
+        <title>{tone}</title>
+        {label}
+      </text>
+    </g>
+  );
 }
 
 // =============================================================================
@@ -131,17 +157,17 @@ interface ContactSymbolProps {
   energized?: boolean;
   /** Value display string (e.g., "T" for TRUE, "F" for FALSE) */
   valueDisplay?: string;
-  /** Color for the value display */
-  valueColor?: string;
+  /** The state of the value (UX-009) */
+  valueTone?: SignalTone;
 }
 
-function ContactSymbol({ type, variable, selected, energized, valueDisplay, valueColor }: ContactSymbolProps) {
+function ContactSymbol({ type, variable, selected, energized, valueDisplay, valueTone }: ContactSymbolProps) {
   const isNC = type === 'contact_nc';
   const isEdge = type === 'contact_p' || type === 'contact_n';
   const edgeLetter = type === 'contact_p' ? 'P' : type === 'contact_n' ? 'N' : '';
 
   const strokeColor = selected ? COLORS.selected : (isNC ? COLORS.contactNC : COLORS.contact);
-  const wireColor = energized ? COLORS.wireEnergized : COLORS.wire;
+  const wire = wireOf(energized);
   const boxWidth = 20;
   const boxHeight = 24;
   const boxX = (CELL_WIDTH - boxWidth) / 2;
@@ -149,17 +175,6 @@ function ContactSymbol({ type, variable, selected, energized, valueDisplay, valu
 
   return (
     <g>
-      {/* Energized glow effect */}
-      {energized && (
-        <rect
-          x={boxX - 4}
-          y={boxY - 4}
-          width={boxWidth + 8}
-          height={boxHeight + 8}
-          fill={COLORS.energizedGlow}
-          rx={4}
-        />
-      )}
 
       {/* Left wire segment */}
       <line
@@ -167,8 +182,8 @@ function ContactSymbol({ type, variable, selected, energized, valueDisplay, valu
         y1={WIRE_Y}
         x2={boxX}
         y2={WIRE_Y}
-        stroke={wireColor}
-        strokeWidth={STROKE_WIDTH}
+        stroke={wire.color}
+        strokeWidth={wire.width}
       />
 
       {/* Right wire segment */}
@@ -177,8 +192,8 @@ function ContactSymbol({ type, variable, selected, energized, valueDisplay, valu
         y1={WIRE_Y}
         x2={CELL_WIDTH}
         y2={WIRE_Y}
-        stroke={wireColor}
-        strokeWidth={STROKE_WIDTH}
+        stroke={wire.color}
+        strokeWidth={wire.width}
       />
 
       {/* Contact box (vertical lines) */}
@@ -227,30 +242,7 @@ function ContactSymbol({ type, variable, selected, energized, valueDisplay, valu
       )}
 
       {/* Live value indicator (top right corner) */}
-      {valueDisplay && (
-        <g>
-          <rect
-            x={boxX + boxWidth + 2}
-            y={boxY - 2}
-            width={14}
-            height={12}
-            fill="var(--color-surface-800)"
-            rx={2}
-          />
-          <text
-            x={boxX + boxWidth + 9}
-            y={boxY + 5}
-            fill={valueColor || COLORS.valueTrue}
-            fontSize={9}
-            fontWeight="bold"
-            textAnchor="middle"
-            dominantBaseline="middle"
-            fontFamily="monospace"
-          >
-            {valueDisplay}
-          </text>
-        </g>
-      )}
+      {valueDisplay && <ValueBadge x={boxX + boxWidth + 2} y={boxY - 2} tone={valueTone ?? 'unknown'} text={valueDisplay} />}
 
       {/* Variable name below */}
       <text
@@ -278,15 +270,15 @@ interface CoilSymbolProps {
   energized?: boolean;
   /** Value display string */
   valueDisplay?: string;
-  /** Color for the value display */
-  valueColor?: string;
+  /** The state of the value (UX-009) */
+  valueTone?: SignalTone;
 }
 
-function CoilSymbol({ type, variable, selected, energized, valueDisplay, valueColor }: CoilSymbolProps) {
+function CoilSymbol({ type, variable, selected, energized, valueDisplay, valueTone }: CoilSymbolProps) {
   const radius = 12;
   const centerX = CELL_WIDTH / 2;
   const centerY = WIRE_Y;
-  const wireColor = energized ? COLORS.wireEnergized : COLORS.wire;
+  const wire = wireOf(energized);
 
   // Determine color and inner symbol
   let strokeColor = COLORS.coil;
@@ -319,16 +311,6 @@ function CoilSymbol({ type, variable, selected, energized, valueDisplay, valueCo
 
   return (
     <g>
-      {/* Energized glow effect */}
-      {energized && (
-        <ellipse
-          cx={centerX}
-          cy={centerY}
-          rx={radius + 4}
-          ry={radius + 2}
-          fill={COLORS.energizedGlow}
-        />
-      )}
 
       {/* Left wire segment */}
       <line
@@ -336,8 +318,8 @@ function CoilSymbol({ type, variable, selected, energized, valueDisplay, valueCo
         y1={WIRE_Y}
         x2={centerX - radius}
         y2={WIRE_Y}
-        stroke={wireColor}
-        strokeWidth={STROKE_WIDTH}
+        stroke={wire.color}
+        strokeWidth={wire.width}
       />
 
       {/* Right wire segment */}
@@ -346,8 +328,8 @@ function CoilSymbol({ type, variable, selected, energized, valueDisplay, valueCo
         y1={WIRE_Y}
         x2={CELL_WIDTH}
         y2={WIRE_Y}
-        stroke={wireColor}
-        strokeWidth={STROKE_WIDTH}
+        stroke={wire.color}
+        strokeWidth={wire.width}
       />
 
       {/* Coil circle (parentheses shape) */}
@@ -377,30 +359,7 @@ function CoilSymbol({ type, variable, selected, energized, valueDisplay, valueCo
       )}
 
       {/* Live value indicator (top right of coil) */}
-      {valueDisplay && (
-        <g>
-          <rect
-            x={centerX + radius + 2}
-            y={centerY - radius - 2}
-            width={14}
-            height={12}
-            fill="var(--color-surface-800)"
-            rx={2}
-          />
-          <text
-            x={centerX + radius + 9}
-            y={centerY - radius + 5}
-            fill={valueColor || COLORS.valueTrue}
-            fontSize={9}
-            fontWeight="bold"
-            textAnchor="middle"
-            dominantBaseline="middle"
-            fontFamily="monospace"
-          >
-            {valueDisplay}
-          </text>
-        </g>
-      )}
+      {valueDisplay && <ValueBadge x={centerX + radius + 2} y={centerY - radius - 2} tone={valueTone ?? 'unknown'} text={valueDisplay} />}
 
       {/* Variable name below */}
       <text
@@ -524,7 +483,7 @@ function FBSymbol({ fbType, instance, selected, energized, debugValues }: FBSymb
   const boxX = (CELL_WIDTH - boxWidth) / 2;
   const boxY = (CELL_HEIGHT - boxHeight) / 2 - 2;
   const strokeColor = selected ? COLORS.selected : COLORS.fb;
-  const wireColor = energized ? COLORS.wireEnergized : COLORS.wire;
+  const wire = wireOf(energized);
 
   // Get ports for this FB type
   const ports = fbType ? getFBPorts(fbType) : { inputs: [], outputs: [] };
@@ -540,17 +499,6 @@ function FBSymbol({ fbType, instance, selected, energized, debugValues }: FBSymb
 
   return (
     <g>
-      {/* Energized glow effect */}
-      {energized && (
-        <rect
-          x={boxX - 4}
-          y={boxY - 4}
-          width={boxWidth + 8}
-          height={boxHeight + 8}
-          fill={COLORS.energizedGlow}
-          rx={5}
-        />
-      )}
 
       {/* Left wire segment */}
       <line
@@ -558,8 +506,8 @@ function FBSymbol({ fbType, instance, selected, energized, debugValues }: FBSymb
         y1={WIRE_Y}
         x2={boxX}
         y2={WIRE_Y}
-        stroke={wireColor}
-        strokeWidth={STROKE_WIDTH}
+        stroke={wire.color}
+        strokeWidth={wire.width}
       />
 
       {/* Right wire segment */}
@@ -568,8 +516,8 @@ function FBSymbol({ fbType, instance, selected, energized, debugValues }: FBSymb
         y1={WIRE_Y}
         x2={CELL_WIDTH}
         y2={WIRE_Y}
-        stroke={wireColor}
-        strokeWidth={STROKE_WIDTH}
+        stroke={wire.color}
+        strokeWidth={wire.width}
       />
 
       {/* FB box */}
@@ -621,7 +569,7 @@ function FBSymbol({ fbType, instance, selected, energized, debugValues }: FBSymb
           {ports.outputs.map((port, idx) => {
             const info = getPortDebug(port.name);
             const displayVal = formatValue(info);
-            const color = getValueColor(info);
+            const tone = sampleTone(info);
             const xPos = boxX + 8 + (idx * (boxWidth - 16) / Math.max(ports.outputs.length, 1));
 
             return (
@@ -642,13 +590,14 @@ function FBSymbol({ fbType, instance, selected, energized, debugValues }: FBSymb
                   <text
                     x={xPos + 12}
                     y={boxY + 43}
-                    fill={color}
+                    fill={SIGNAL_PAINT[tone].fg}
+                    data-signal={tone}
                     fontSize={8}
                     fontWeight="bold"
                     textAnchor="middle"
                     fontFamily="monospace"
                   >
-                    {displayVal}
+                    {markedValue(tone, displayVal)}
                   </text>
                 )}
               </g>
@@ -678,8 +627,8 @@ function Wire({ hasWire, energized }: WireProps) {
       y1={WIRE_Y}
       x2={CELL_WIDTH}
       y2={WIRE_Y}
-      stroke={energized ? COLORS.wireEnergized : COLORS.wire}
-      strokeWidth={STROKE_WIDTH}
+      stroke={wireOf(energized).color}
+      strokeWidth={wireOf(energized).width}
     />
   );
 }
@@ -730,12 +679,12 @@ export default function LDElement({ element, x, y, selected, energized, debugVal
   };
 
   // Get debug value info for this element (for contacts and coils)
-  const getElementDebug = (): { display: string; color: string } | undefined => {
+  const getElementDebug = (): { display: string; tone: SignalTone } | undefined => {
     if (!debugValues || !element.variable) return undefined;
     const info = debugValues.get(element.variable);
     return {
       display: formatValue(info),
-      color: getValueColor(info),
+      tone: sampleTone(info),
     };
   };
 
@@ -751,7 +700,7 @@ export default function LDElement({ element, x, y, selected, energized, debugVal
           selected={selected}
           energized={energized}
           valueDisplay={elementDebug?.display}
-          valueColor={elementDebug?.color}
+          valueTone={elementDebug?.tone}
         />
       );
     }
@@ -764,7 +713,7 @@ export default function LDElement({ element, x, y, selected, energized, debugVal
           selected={selected}
           energized={energized}
           valueDisplay={elementDebug?.display}
-          valueColor={elementDebug?.color}
+          valueTone={elementDebug?.tone}
         />
       );
     }
