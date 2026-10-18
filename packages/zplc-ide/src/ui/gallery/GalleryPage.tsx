@@ -8,6 +8,7 @@ import { useEffect, useId } from 'react';
 import { applyThemeToDOM, useIDEStore, type Theme } from '../../store/useIDEStore';
 import { useAppSettings } from '../../store/useAppSettings';
 import { DENSITY_CHOICES, type Density } from '../../utils/appSettings';
+import { PRODUCT_NAME } from '../../productName';
 import { THEME_IDS, type ThemeId } from '../../theme/tokens';
 import { Select } from '..';
 import { Specimens } from './Specimens';
@@ -28,7 +29,7 @@ export function GalleryPage() {
   return (
     <main className="ui-gallery" aria-labelledby={headingId}>
       <header className="ui-gallery-header">
-        <h1 id={headingId}>ZPLC Studio component gallery</h1>
+        <h1 id={headingId}>{PRODUCT_NAME} component gallery</h1>
         <p>Development build only. Each panel shows every kit component in one theme and density.</p>
         <div className="ui-gallery-controls">
           <Select label="Page theme" value={theme} onChange={(event) => useIDEStore.getState().setTheme(event.target.value as Theme)}>

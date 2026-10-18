@@ -1,3 +1,4 @@
+import { PRODUCT_NAME } from '../productName';
 import type { MessageKey } from './en';
 
 /**
@@ -8,7 +9,7 @@ export const es: Record<MessageKey, string> = {
   'preferences.heading': 'Preferencias',
   'preferences.tabSizeOption.one': '{count} espacio',
   'preferences.tabSizeOption.other': '{count} espacios',
-  'updateNotice.available': 'ZPLC Studio {version} está disponible',
+  'updateNotice.available': `${PRODUCT_NAME} {version} está disponible`,
   // Preferences (the Settings surface)
   'preferences.intro': 'Se aplican a todos los proyectos y se conservan en su cuenta de usuario.',
   'preferences.fontSize': 'Tamaño de fuente del editor',
@@ -36,15 +37,15 @@ export const es: Record<MessageKey, string> = {
   'theme.dark': 'Oscuro',
   'theme.highContrast': 'Alto contraste',
   // The answer of the update check
-  'updateCheck.available': 'Hay una versión más reciente de ZPLC Studio disponible: {latest} (la instalada es {current}). {url}',
-  'updateCheck.current': 'ZPLC Studio {current} está al día (última versión publicada: {latest}).',
+  'updateCheck.available': `Hay una versión más reciente de ${PRODUCT_NAME} disponible: {latest} (la instalada es {current}). {url}`,
+  'updateCheck.current': `${PRODUCT_NAME} {current} está al día (última versión publicada: {latest}).`,
   'updateCheck.unavailable': 'No se pudo buscar actualizaciones. Verifique la conexión de red e intente de nuevo.',
   // The update notice
-  'updateNotice.label': 'Hay una versión más reciente de ZPLC Studio disponible',
+  'updateNotice.label': `Hay una versión más reciente de ${PRODUCT_NAME} disponible`,
   'updateNotice.thisIs': '(la instalada es {current}).',
   'updateNotice.release': 'Versión publicada:',
   'updateNotice.dismiss': 'Descartar',
-  'updateNotice.dismissLabel': 'Descartar el aviso sobre ZPLC Studio {version}',
+  'updateNotice.dismissLabel': `Descartar el aviso sobre ${PRODUCT_NAME} {version}`,
   'updateNotice.howTo': 'Cómo actualizar',
   'updateNotice.untouched': 'Studio no descarga ni instala nada. Sus proyectos son carpetas que usted eligió, por lo que una actualización no las modifica.',
   'updateNotice.step.win32Setup': 'Instalador: descargue el nuevo archivo `setup-unsigned.exe`, verifique su suma de comprobación y ejecútelo sobre la versión instalada.',
@@ -71,7 +72,7 @@ export const es: Record<MessageKey, string> = {
   // Words shared by several surfaces
   'common.cancel': 'Cancelar',
   // Welcome screen
-  'welcome.title': 'ZPLC Studio 2.0',
+  'welcome.title': `${PRODUCT_NAME} 2.0`,
   'welcome.intro': 'Abra un proyecto, cree uno en una carpeta, inicie el curso de aprendizaje o copie un ejemplo que pueda adaptar.',
   'welcome.build': 'compilación {version}',
   'welcome.start.heading': 'Inicio',

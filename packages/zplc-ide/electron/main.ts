@@ -19,6 +19,7 @@ import { createAiProvider } from './aiProvider.js';
 import { createLearnProgressStore } from './learnProgressStore.js';
 import { createRecentProjects } from './recentProjects.js';
 import { registerAppLifecycle } from './appLifecycle.js';
+import { PRODUCT_NAME as APP_WINDOW_TITLE } from './productName.js';
 import { createSessionStore } from './sessionStore.js';
 import { createRecoveryStore } from './recoveryStore.js';
 import { checkForUpdate } from './updateCheck.js';
@@ -229,7 +230,6 @@ async function chooseProjectDirectory(ownerId: number): Promise<string | null> {
   return result.canceled ? null : result.filePaths[0] ?? null;
 }
 
-const APP_WINDOW_TITLE = 'ZPLC Studio';
 /** The canvas colour of the theme the renderer applied from its stored preference (light, dark, high contrast or system). */
 const RENDERER_SURFACE_SCRIPT = 'getComputedStyle(document.documentElement).backgroundColor';
 

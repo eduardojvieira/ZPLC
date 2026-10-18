@@ -1,3 +1,5 @@
+import { PRODUCT_NAME } from '../productName';
+
 /**
  * The English catalog of Studio (UX-029): the source of truth for every user-visible string. A key is a dotted path
  * from the surface to the string; `{name}` marks a value the caller supplies, and a `.one` / `.other` pair is a plural
@@ -9,7 +11,7 @@ export const en = {
   'preferences.heading': 'Preferences',
   'preferences.tabSizeOption.one': '{count} space',
   'preferences.tabSizeOption.other': '{count} spaces',
-  'updateNotice.available': 'ZPLC Studio {version} is available',
+  'updateNotice.available': `${PRODUCT_NAME} {version} is available`,
   // Preferences (the Settings surface)
   'preferences.intro': 'They apply to every project and are kept for your user account.',
   'preferences.fontSize': 'Editor font size',
@@ -37,15 +39,15 @@ export const en = {
   'theme.dark': 'Dark',
   'theme.highContrast': 'High contrast',
   // The answer of the update check
-  'updateCheck.available': 'A newer release of ZPLC Studio is available: {latest} (this is {current}). {url}',
-  'updateCheck.current': 'ZPLC Studio {current} is up to date (latest release: {latest}).',
+  'updateCheck.available': `A newer release of ${PRODUCT_NAME} is available: {latest} (this is {current}). {url}`,
+  'updateCheck.current': `${PRODUCT_NAME} {current} is up to date (latest release: {latest}).`,
   'updateCheck.unavailable': 'Could not check for updates. Check your network connection and try again.',
   // The update notice
-  'updateNotice.label': 'A newer release of ZPLC Studio is available',
+  'updateNotice.label': `A newer release of ${PRODUCT_NAME} is available`,
   'updateNotice.thisIs': '(this is {current}).',
   'updateNotice.release': 'Release:',
   'updateNotice.dismiss': 'Dismiss',
-  'updateNotice.dismissLabel': 'Dismiss the notice about ZPLC Studio {version}',
+  'updateNotice.dismissLabel': `Dismiss the notice about ${PRODUCT_NAME} {version}`,
   'updateNotice.howTo': 'How to update',
   'updateNotice.untouched': 'Studio does not download or install anything. Your projects are folders you chose, so an update does not touch them.',
   'updateNotice.step.win32Setup': 'Setup: download the new `setup-unsigned.exe` file, check its checksum and run it over the installed version.',
@@ -72,7 +74,7 @@ export const en = {
   // Words shared by several surfaces
   'common.cancel': 'Cancel',
   // Welcome screen
-  'welcome.title': 'ZPLC Studio 2.0',
+  'welcome.title': `${PRODUCT_NAME} 2.0`,
   'welcome.intro': 'Open a project, create one in a folder, start the Learn course, or copy an example you can adapt.',
   'welcome.build': 'build {version}',
   'welcome.start.heading': 'Start',
