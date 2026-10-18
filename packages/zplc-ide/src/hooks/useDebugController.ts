@@ -914,7 +914,8 @@ export function useDebugController(): DebugController {
       let isPollingWatch = false;
       // The poll handles its own errors, so the timer only starts it and does not wait for it.
       const pollWatch = async (): Promise<void> => {
-        if (!adapterRef.current?.connected) return;
+        const polled = adapterRef.current;
+        if (!polled?.connected) return;
         if (isPollingWatch) return;
 
         try {
@@ -938,7 +939,7 @@ export function useDebugController(): DebugController {
 
           debugLog(`[useDebugController] Polling ${variables.length} variables. mpeekEnabled: ${mpeekEnabled}`);
 
-          const results = await adapterRef.current.readWatchVariables(variables, { useMpeek: mpeekEnabled });
+          const results = await polled.readWatchVariables(variables, { useMpeek: mpeekEnabled });
 
           const newValues = new Map<string, LiveValue>();
           for (const result of results) {
@@ -954,6 +955,8 @@ export function useDebugController(): DebugController {
             debugLog(`[useDebugController] readWatchVariables returned 0 new values! results:`, results);
           }
         } catch (err) {
+          // A disconnect that lands while a read is in flight ends that session on purpose: it is not a polling failure.
+          if (adapterRef.current !== polled || !polled.connected) return;
           console.error('Polling error:', err);
         } finally {
           isPollingWatch = false;
