@@ -1,5 +1,5 @@
-import { BookOpen, Copy, FlaskConical, Info } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { BookOpen, Copy, FlaskConical, Info, RotateCcw } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { LESSON_INDEX } from '../generated/lessonIndex';
 import { buildCourseView } from '../learn/course';
 import { useLearnUi } from '../learn/learnUi';
@@ -14,13 +14,14 @@ import { passedLessonIds, type GradeRecord, type LessonNote } from '../../electr
 import { useLessonCheck } from '../learn/useLessonCheck';
 import { getFileContent } from '../utils/projectLoader';
 import { gradeRecordedScenarioLesson, learnLessonCatalog, type LearnLessonGrade, type LearnLessonId, type LearnLocale } from './learnLesson';
-import { Button, ToggleGroup } from '../ui';
+import { announce } from '../utils/announce';
+import { AlertDialog, Button, ToggleGroup } from '../ui';
 
 export function LearnPanel({ workspaceTestPresentation }: { workspaceTestPresentation?: WorkspaceTestPresentation }) {
   const { t, tn } = useT();
-  const copyExampleProjectToFolder = useIDEStore((state) => state.copyExampleProjectToFolder);
   const setActiveConsoleTab = useIDEStore((state) => state.setActiveConsoleTab);
   const projectOpenError = useIDEStore((state) => state.projectOpenError);
+  const projectSession = useIDEStore((state) => state.projectSession);
   // What the learner did with a lesson (opened it, showed a hint or the solution) goes to the progress state, shared with the Learn home.
   const progress = useLearnProgress((state) => state.document);
   const progressLoaded = useLearnProgress((state) => state.loaded);
@@ -40,8 +41,12 @@ export function LearnPanel({ workspaceTestPresentation }: { workspaceTestPresent
   // The lesson shown: the one chosen here or in the home, else the last one worked on, else the first of the course.
   const last = progress?.last?.lessonId;
   const lessonId = (ordered.find((candidate) => candidate.id === selected) ?? ordered.find((candidate) => candidate.id === last) ?? ordered[0])?.id as LearnLessonId;
-  const [copyStatus, setCopyStatus] = useState<'idle' | 'copying' | 'copied' | 'failed'>('idle');
-  const copyingRef = useRef(false);
+  const starting = useLearnUi((state) => state.starting);
+  const workspace = useLearnUi((state) => state.workspace);
+  const [startFailed, setStartFailed] = useState(false);
+  const [confirm, setConfirm] = useState<'solution' | 'reset' | null>(null);
+  const [resetStatus, setResetStatus] = useState<'idle' | 'working' | 'done' | 'failed'>('idle');
+  const [shownHere, setShownHere] = useState<ReadonlySet<string>>(new Set());
   const lessons = learnLessonCatalog[locale];
   const lesson = lessons.find((candidate) => candidate.id === lessonId) ?? lessons[0]!;
   const lessonView = ordered.find((candidate) => candidate.id === lesson.id);
@@ -69,18 +74,24 @@ export function LearnPanel({ workspaceTestPresentation }: { workspaceTestPresent
             : checkAvailable ? { title: t('learn.grade.notChecked.title'), body: t('learn.grade.notChecked.body') }
               : { title: t('learn.grade.notRecorded.title'), body: t('learn.grade.notRecorded.body', { scenario }) };
 
-  const copyExample = () => {
-    if (copyingRef.current || !folderAccess) return;
-    copyingRef.current = true;
-    setCopyStatus('copying');
-    void copyExampleProjectToFolder(lesson.starterExampleId).then((copied) => {
-      // A cancelled dialog leaves no error in the store, so it shows nothing; a failure is explained below.
-      if (copied) setCopyStatus('copied');
-      else if (useIDEStore.getState().projectOpenError) setCopyStatus('failed');
-    }).finally(() => {
-      copyingRef.current = false;
-      setCopyStatus((status) => status === 'copying' ? 'idle' : status);
+  const workspaceOpen = workspace?.lessonId === lesson.id && workspace.session === projectSession;
+  const startWorkspace = () => {
+    if (starting || !folderAccess || locked) return;
+    setStartFailed(false);
+    void useLearnUi.getState().startLesson(lesson.id).then((opened) => { setStartFailed(!opened); });
+  };
+  const restoreStarter = () => {
+    setConfirm(null);
+    setResetStatus('working');
+    void useLearnUi.getState().restoreLesson(lesson.id).then((restored) => {
+      setResetStatus(restored ? 'done' : 'failed');
+      announce(t(restored ? 'learn.reset.done' : 'learn.reset.failed'));
     });
+  };
+  const showSolution = () => {
+    setConfirm(null);
+    setShownHere((previous) => new Set([...previous, lesson.id]));
+    note({ lessonId: lesson.id, solution: true });
   };
 
   const refusalText = refusal
@@ -89,7 +100,7 @@ export function LearnPanel({ workspaceTestPresentation }: { workspaceTestPresent
   // The manifest names the reference solution as `src/<file>`; the example loader keys files by their name under src.
   const solutionFile = lesson.solutionProgram.slice('src/'.length);
   const solutionText = /\.(st|il)$/i.test(solutionFile) ? getFileContent(lesson.referenceExampleId, solutionFile) : null;
-  const copyLabel = t('learn.copyExercise', { title: lesson.title });
+  const solutionShown = progress?.lessons[lesson.id]?.solutionShown === true || shownHere.has(lesson.id);
   const testsLabel = t('learn.openTests');
   const masteryCopy = mastered.has(lesson.id)
     ? t('learn.previouslyCompleted')
@@ -118,8 +129,8 @@ export function LearnPanel({ workspaceTestPresentation }: { workspaceTestPresent
             label={t('learn.lesson')}
             className="mt-3 flex-wrap"
             value={lesson.id}
-            onValueChange={(id) => { select(id); setCopyStatus('idle'); note({ lessonId: id, started: true, last: true }); }}
-            options={ordered.map((candidate) => ({ value: candidate.id, label: `${candidate.title} (${t(`learn.state.${candidate.state}` as MessageKey)})`, disabled: candidate.state === 'locked' || copyStatus === 'copying' }))}
+            onValueChange={(id) => { select(id); setStartFailed(false); setResetStatus('idle'); note({ lessonId: id, started: true, last: true }); }}
+            options={ordered.map((candidate) => ({ value: candidate.id, label: `${candidate.title} (${t(`learn.state.${candidate.state}` as MessageKey)})`, disabled: candidate.state === 'locked' || starting }))}
           />
           <p className="mt-3 break-words font-mono text-xs text-[var(--color-surface-400)]">{lesson.sourcePath} · {lesson.scenarioPath}</p>
           <p className="mt-1 text-xs leading-5 text-[var(--color-surface-400)]">{t('learn.theStarterFailsThis')}</p>
@@ -171,26 +182,34 @@ export function LearnPanel({ workspaceTestPresentation }: { workspaceTestPresent
               <p className="mt-1 leading-5">{hint}</p>
             </details>
           ))}
-          <details onToggle={(event) => { if (event.currentTarget.open) note({ lessonId: lesson.id, solution: true }); }} className="mt-1 text-xs text-[var(--color-surface-300)]">
-            <summary className="cursor-pointer select-none font-medium text-[var(--color-accent-blue)]">{t('learn.showTheReferenceSolution')}</summary>
-            {solutionText !== null
-              ? <pre data-learn-solution className="mt-1 overflow-x-auto bg-[var(--color-surface-800)] p-2 font-mono leading-5">{solutionText}</pre>
-              : <p className="mt-1 leading-5">{t('learn.theReferenceSolutionIs', { referenceExampleId: lesson.referenceExampleId })}</p>}
-          </details>
+          {solutionShown
+            ? (
+              <div className="mt-2 text-xs text-[var(--color-surface-300)]">
+                <h3 className="font-medium text-[var(--color-surface-100)]">{t('learn.solution.shown')}</h3>
+                {solutionText !== null
+                  ? <pre data-learn-solution className="mt-1 overflow-x-auto bg-[var(--color-surface-800)] p-2 font-mono leading-5">{solutionText}</pre>
+                  : <p className="mt-1 leading-5">{t('learn.theReferenceSolutionIs', { referenceExampleId: lesson.referenceExampleId })}</p>}
+              </div>
+            )
+            : <Button variant="secondary" size="sm" className="mt-2" data-learn-show-solution onClick={() => setConfirm('solution')}>{t('learn.showTheReferenceSolution')}</Button>}
         </section>
 
         <section aria-label={t('learn.lessonActions')} className="border-t border-[var(--color-surface-600)] pt-3">
           <div className="flex flex-wrap gap-2">
-            <Button variant="secondary" size="sm" onClick={copyExample} disabled={!folderAccess || copyStatus === 'copying' || locked}><Copy size={14} aria-hidden="true" />{copyStatus === 'copying' ? (t('learn.copying')) : copyLabel}</Button>
+            {workspaceOpen
+              ? <Button variant="secondary" size="sm" data-learn-reset disabled={resetStatus === 'working'} onClick={() => setConfirm('reset')}><RotateCcw size={14} aria-hidden="true" />{t('learn.reset')}</Button>
+              : <Button variant="primary" size="sm" data-learn-open-workspace onClick={startWorkspace} disabled={!folderAccess || starting || locked}><Copy size={14} aria-hidden="true" />{starting ? t('learn.workspacePreparing') : t('learn.openWorkspace')}</Button>}
             {checkAvailable && <Button variant="secondary" size="sm" data-learn-check onClick={() => { void lessonCheck.run(lesson.id); }} disabled={!lessonCheck.canRun || lessonCheck.running(lesson.id)}><FlaskConical size={14} aria-hidden="true" />{lessonCheck.running(lesson.id) ? (t('interlock.checking')) : (t('learn.check'))}</Button>}
             {checkAvailable && lessonCheck.running(lesson.id) && <Button variant="secondary" size="sm" onClick={lessonCheck.cancel}>{t('common.cancel')}</Button>}
             <Button variant="primary" size="sm" onClick={() => setActiveConsoleTab('tests')}><FlaskConical size={14} aria-hidden="true" />{testsLabel}</Button>
           </div>
-          <p role="status" className="mt-2 text-xs text-[var(--color-surface-400)]">{!folderAccess ? (t('welcome.folderAccessUnavailable')) : copyStatus === 'copying' ? (t('learn.copyingTheExampleInto')) : copyStatus === 'copied' ? (t('learn.exampleCopied')) : (t('learn.chooseTheSavedZplc', { requiredScenario: lesson.requiredScenario }))}</p>
+          <p role="status" data-learn-workspace-status className="mt-2 text-xs text-[var(--color-surface-400)]">{!folderAccess ? t('welcome.folderAccessUnavailable') : starting ? t('learn.workspacePreparing') : resetStatus === 'done' ? t('learn.reset.done') : resetStatus === 'failed' ? t('learn.reset.failed') : workspaceOpen ? t('learn.workspaceOpen') : t('learn.workspaceClosed')}</p>
           {checkAvailable && <p role="status" data-learn-check-status className="mt-2 text-xs text-[var(--color-surface-400)]">{!lessonCheck.isProjectOpen ? (t('learn.openTheExerciseFolder')) : lessonCheck.unsaved ? (t('learn.saveYourChangesCtrl')) : refusalText}</p>}
-          {copyStatus === 'failed' && projectOpenError && <p role="alert" data-learn-copy-error className="mt-2 break-words text-xs text-[var(--color-accent-red)]">{projectOpenError}</p>}
+          {startFailed && projectOpenError && <p role="alert" data-learn-copy-error className="mt-2 break-words text-xs text-[var(--color-accent-red)]">{projectOpenError}</p>}
         </section>
       </div>
+      <AlertDialog open={confirm === 'solution'} title={t('learn.solution.title')} description={t('learn.solution.description')} actionLabel={t('learn.solution.action')} cancelLabel={t('learn.solution.cancel')} onAction={showSolution} onCancel={() => setConfirm(null)} />
+      <AlertDialog open={confirm === 'reset'} title={t('learn.reset.title')} description={t('learn.reset.description')} actionLabel={t('learn.reset.action')} cancelLabel={t('learn.reset.cancel')} destructive onAction={restoreStarter} onCancel={() => setConfirm(null)} />
     </section>
   );
 }

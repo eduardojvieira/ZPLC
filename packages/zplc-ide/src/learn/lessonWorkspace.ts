@@ -62,6 +62,6 @@ export function createWorkspaceMemory(storage: { getItem(key: string): string | 
   return {
     get: (lessonId) => read()[lessonId],
     set: (lessonId, recentId) => { write({ ...read(), [lessonId]: recentId }); },
-    forget: (lessonId) => { const { [lessonId]: _gone, ...rest } = read(); write(rest); },
+    forget: (lessonId) => { const map = read(); delete map[lessonId]; write(map); },
   };
 }
