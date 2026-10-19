@@ -1925,9 +1925,14 @@ export const JOURNEYS: Journey[] = [
       const rungs = () => app.eval<number>(`document.querySelectorAll('[data-ld-rung-id]').length`);
       const before = await rungs();
       // a click on the label of a rung puts the focus in the editor; from then on the hands stay on the keyboard
-      await app.click(`[...document.querySelectorAll('[data-ld-rung-id="rung_1"] span')].find((node) => node.textContent === 'Rung 1')`, 'the label of rung 1');
-      await app.press('Ctrl+End');
-      await app.press('Ctrl+Enter');
+      // The chord is retried: the click and the first key can reach the editor before it has taken the focus, and then the chord does nothing.
+      for (let attempt = 0; attempt < 4; attempt += 1) {
+        await app.click(`[...document.querySelectorAll('[data-ld-rung-id="rung_1"] span')].find((node) => node.textContent === 'Rung 1')`, 'the label of rung 1');
+        await app.press('Ctrl+End');
+        await app.press('Ctrl+Enter');
+        const added = await app.until('a rung after the last one', async () => await rungs() === before + 1 || undefined, 4_000).then(() => true, () => false);
+        if (added) break;
+      }
       await app.until('a rung after the last one', async () => await rungs() === before + 1 || undefined);
       const last = await app.eval<string>(`[...document.querySelectorAll('[data-ld-rung-id]')].at(-1).getAttribute('data-ld-rung-id')`);
       await app.until('the cursor in the first cell of the new rung', async () => await app.eval<boolean>(`document.querySelector('[data-ld-rung-id="${last}"] [data-ld-cursor="0,0"]') !== null`) || undefined);
