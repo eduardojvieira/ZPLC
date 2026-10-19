@@ -84,14 +84,14 @@ export function LearnHomeView(props: LearnHomeViewProps) {
   return (
     <section aria-labelledby="learn-home-title" data-learn-home className="h-full min-h-0 overflow-y-auto bg-[var(--color-surface-900)] px-4 py-6 font-sans text-sm text-[var(--color-surface-200)]">
       <div className="mx-auto max-w-4xl space-y-6">
-        <header className="flex flex-wrap items-start justify-between gap-3 border-b border-[var(--color-surface-600)] pb-4">
+        <div className="flex flex-wrap items-start justify-between gap-3 border-b border-[var(--color-surface-600)] pb-4">
           <div className="min-w-0">
             <h1 id="learn-home-title" ref={heading} tabIndex={-1} className="flex items-center gap-2 text-xl font-semibold text-[var(--color-surface-100)]"><BookOpen size={20} aria-hidden="true" />{t('learn.home.title')}</h1>
             <p className="mt-1 max-w-[68ch] leading-5 text-[var(--color-surface-300)]">{t('learn.home.intro')}</p>
             <p aria-label={t('learn.lessonProgress')} className="mt-2 text-xs text-[var(--color-surface-400)]">{loaded ? t('learn.home.progress', { passed: view.passed, total: view.total }) : t('learn.home.loading')}</p>
           </div>
           <Button variant="secondary" size="sm" data-learn-close onClick={onClose}><X size={14} aria-hidden="true" />{t('learn.home.close')}</Button>
-        </header>
+        </div>
 
         {failed && <p role="alert" className="text-xs text-[var(--color-accent-red)]">{t('learn.home.progressFailed')}</p>}
         {!folderAccess && <p role="status" className="text-xs text-[var(--color-surface-300)]">{t('learn.home.folderUnavailable')}</p>}

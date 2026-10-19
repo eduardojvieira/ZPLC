@@ -3063,7 +3063,7 @@ export const JOURNEYS: Journey[] = [
       const lesson = learnLessonCatalog.en.find(({ id }) => id === 'motor-start-stop-safe')!;
       const solution = disk(join(packageRoot, 'projects', lesson.referenceExampleId, lesson.solutionProgram));
       // The learner has unlocked every lesson (a setting of the Learn home), so the lesson of this example can be chosen first.
-      await unlockAllLessons(app);
+      await app.eval(`import('/src/store/useAppSettings.ts').then(({ useAppSettings }) => useAppSettings.getState().update({ unlockAllLessons: true }))`);
       cpSync(join(packageRoot, 'projects', 'blinky_fbd', 'src', 'main.fbd.json'), join(project, 'src', 'diagram.fbd.json'));
       const focused = (): Promise<string> => app.eval<string>(`(() => { const el = document.activeElement; if (!el || el === document.body) return '(page)'; return ((el.getAttribute('aria-label') || el.textContent || el.getAttribute('title') || el.id || el.tagName).trim().replace(/\\s+/g, ' ')).slice(0, 48) + (el.getAttribute('role') ? ' [' + el.getAttribute('role') + ']' : ''); })()`);
       const live = (politeness: 'polite' | 'assertive') => app.eval<string>(`document.querySelector('[data-live-region="${politeness}"]')?.textContent?.replace(/\\u00a0/g, '') ?? ''`);
