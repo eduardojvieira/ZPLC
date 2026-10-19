@@ -25,7 +25,7 @@ Recorra estados de cruce peatonal con salidas de vehículo y peatón mutuamente 
 ## Objetivos
 
 - Modele el cruce como estados numerados, cada uno con una combinación de salidas explícita.
-- Muestre WALK solo mientras los vehículos están en rojo.
+- Muestre WALK sólo mientras los vehículos están en rojo.
 
 ## Etapas
 

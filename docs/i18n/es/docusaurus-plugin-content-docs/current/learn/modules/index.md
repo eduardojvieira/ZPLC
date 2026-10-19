@@ -22,7 +22,7 @@ unlisted: true
 | [7: Estructura de programas: funciones, bloques de función, estructuras, arreglos y tareas](./module-7.md) | Intermedio | 2 |
 | [8: Pruebas y diagnóstico: pruebas de escenario, aserciones temporales, traza y puntos de interrupción](./module-8.md) | Avanzado | 3 |
 | [9: Lista de instrucciones y una misma lógica en cinco lenguajes](./module-9.md) | Avanzado | 2 |
-| [10: Comunicaciones: fundamentos de Modbus y MQTT](./module-10.md) | Avanzado | 0 |
+| [10: Comunicaciones: fundamentos de Modbus y MQTT](./module-10.md) | Avanzado | 2 |
 | [11: Proyecto final: una máquina pequeña, de la descripción al programa probado](./module-11.md) | Avanzado | 1 |
 
 {/* <<< END GENERATED: learn/modules/index <<< */}
