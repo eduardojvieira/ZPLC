@@ -29,7 +29,7 @@ you looked at the solution.
 The course starts with something that moves (module 0), then explains how a PLC thinks (module 1), then logic, time and data, then structure, and ends with proof, languages, communications and a capstone. Each module states why it sits where it does.
 
 
-Available today: **24**. Planned: **5**. In all: **29**.
+Available today: **25**. Planned: **4**. In all: **29**.
 
 
 ## Module 0: Getting ready: a tour of Studio, the simulation and, for hardware, checking your board
@@ -205,11 +205,12 @@ The same logic can be written in five languages. Instruction List closes the set
 | Lesson | Status | Languages | Tracks | Plant | Minutes | Requires |
 |---|---|---|---|---|---|---|
 | `instruction-list-door-alarm` Instruction List: the current result and the order of instructions | Available | IL | Simulation | - | 20 | `function-block-pump-pair` |
-| One logic in five languages | Planned | all | Simulation, Hardware | - | 30 | - |
+| `one-logic-five-languages` One logic in five languages: a gate that holds itself open | Available | ST, LD, FBD, SFC, IL | Simulation | - | 30 | `instruction-list-door-alarm` |
 
 Objectives of the available lessons:
 
 - **Instruction List: the current result and the order of instructions**: Read an Instruction List program as one current result that each instruction combines with an operand, from top to bottom. Use LD, AND, OR, ANDN and ST, and see that moving one instruction changes the logic.
+- **One logic in five languages: a gate that holds itself open**: Hold an output on after its request is released, and let a close command win, in Structured Text. Recognise the same condition, (Request OR Open) AND NOT Close, in Instruction List, Ladder, Function Block Diagram and Sequential Function Chart.
 
 
 ## Module 10: Communications: Modbus and MQTT basics
