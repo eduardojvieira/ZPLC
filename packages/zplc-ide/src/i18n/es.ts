@@ -327,7 +327,7 @@ const baseEs: Record<keyof typeof baseEn, string> = {
   // Notifications
   'panel.output': 'Salida',
   'panel.problems': 'Problemas',
-  'panel.tests': 'Tests',
+  'panel.tests': 'Pruebas',
   'panel.trace': 'Traza',
   'panel.watch': 'Observación',
   'notifications.label': 'Notificaciones',

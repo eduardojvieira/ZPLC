@@ -3203,6 +3203,55 @@ export const JOURNEYS: Journey[] = [
       assert(found.length === 0, `The rendered accessibility check found ${found.length} findings, ${report.length} distinct, on ${covered.length} screens:\n${report.slice(0, 90).join('\n')}`);
     },
   },
+  {
+    name: '49 The migrated screens read in Spanish, with no raw catalog key, no English left over and no clipped control at 1366 by 768', example: 'motor_start_stop', proves: [], partly: ['UX-029', 'UX-030'],
+    run: async (app, { project }) => {
+      await app.cdp.command('Emulation.setDeviceMetricsOverride', { width: 1366, height: 768, deviceScaleFactor: 1, mobile: false });
+      // The user chose Spanish in Preferences: the setting is stored, and the window starts again from it.
+      await app.eval(`(() => { const key = 'zplc-ide-settings'; const stored = JSON.parse(localStorage.getItem(key) || '{}'); const target = stored.settings ?? stored; target.language = 'es'; localStorage.setItem(key, JSON.stringify(stored)); })()`);
+      await app.cdp.command('Page.reload');
+      await app.until('the Welcome screen in Spanish', async () => await app.visible(button('Abrir proyecto', 'contains')) || undefined);
+      const welcome = await app.eval<string>('document.body.innerText');
+      assert(welcome.includes('Marcha y paro de un motor') && !welcome.includes('Open project'), `The Welcome screen is not in Spanish: ${welcome.slice(0, 400)}`);
+      app.answer(project);
+      await app.click(button('Abrir proyecto', 'contains'), 'the Abrir proyecto button');
+      await app.until('the project workbench to appear', async () => await app.visible(css('[role="toolbar"]')) || undefined);
+
+      /** A catalog key shown as it is written (`console.tab.lab`), or one of the English phrases the migrated screens used to hard-code. */
+      const RAW_KEY = String.raw`\b(?:console|mqtt|modbus|network|io|controller|lab|toolchain|commtags|project|ld|importArchive|interlock|learn|toolbarMsg|examples|panel|toolbar|welcome|common)\.[a-z][A-Za-z0-9]*(?:\.[A-Za-z0-9]+)*\b`;
+      const text = (id: string) => app.eval<string>(`document.getElementById(${JSON.stringify(id)})?.innerText ?? ''`);
+      const walk = async (tab: string, expected: string[], english: string[]) => {
+        await app.click(css(`#console-tab-${tab}`), `the ${tab} tab`);
+        await app.until(`the ${tab} panel`, async () => (await text(`console-panel-${tab}`)) !== '' || undefined);
+        const body = await text(`console-panel-${tab}`);
+        for (const phrase of expected) assert(body.includes(phrase), `The ${tab} panel does not say "${phrase}" in Spanish: ${body.slice(0, 500)}`);
+        for (const phrase of english) assert(!body.includes(phrase), `The ${tab} panel still says "${phrase}" in English: ${body.slice(0, 500)}`);
+        assert(!new RegExp(RAW_KEY).test(body), `The ${tab} panel shows a raw catalog key: ${body.match(new RegExp(RAW_KEY))?.[0]}`);
+      };
+      await walk('tests', ['zplc.json'], ['Choose zplc.json', 'Run host scenarios', 'Select the saved']);
+      await walk('interlocks', ['Cobertura de enclavamientos declarados'], ['Declared interlock coverage', 'Check declared interlocks']);
+      await walk('lab', ['Laboratorio'], ['Run the saved host scenarios']);
+      await walk('changes', ['cambio'], ['Review active ST change', 'requires the desktop app']);
+      await walk('agent', ['Agente opcional'], ['Provider settings', 'Refresh status']);
+      const tabs = await app.eval<string[]>(`[...document.querySelectorAll('[role="tab"][id^="console-tab-"]')].map((tab) => tab.textContent.trim())`);
+      for (const label of ['Salida', 'Problemas', 'Enclavamientos', 'Laboratorio', 'Cambios', 'Agente']) assert(tabs.some((tab) => tab.includes(label)), `The results tabs are ${JSON.stringify(tabs)}, without ${label}.`);
+      const chrome = await app.eval<string>('document.body.innerText');
+      assert(!new RegExp(RAW_KEY).test(chrome), `The window shows a raw catalog key: ${chrome.match(new RegExp(RAW_KEY))?.[0]}`);
+
+      // No button of the toolbar or of the results tabs is cut off by the window (a tab strip that scrolls sideways is reached by scrolling it).
+      const clipped = await app.eval<string[]>(`(() => {
+        const vw = window.innerWidth, vh = window.innerHeight, found = [];
+        const scrolls = (element) => { for (let parent = element.parentElement; parent; parent = parent.parentElement) if (['auto', 'scroll'].includes(getComputedStyle(parent).overflowX) && parent.scrollWidth > parent.clientWidth) return true; return false; };
+        for (const element of document.querySelectorAll('[role="toolbar"] button, [role="tab"], [data-activity-rail] button')) {
+          const rect = element.getBoundingClientRect();
+          if (rect.width === 0 || rect.height === 0 || scrolls(element)) continue;
+          if (rect.left < -0.5 || rect.top < -0.5 || rect.right > vw + 0.5 || rect.bottom > vh + 0.5) found.push((element.getAttribute('aria-label') || element.textContent.trim() || element.id) + ' ' + Math.round(rect.left) + '..' + Math.round(rect.right));
+        }
+        return found;
+      })()`);
+      assert(clipped.length === 0, `Controls are clipped at 1366 by 768 in Spanish: ${clipped.join('; ')}`);
+    },
+  },
 ];
 
 /** Walks a native select to the option with this text with the arrow keys, as a keyboard user would. */
