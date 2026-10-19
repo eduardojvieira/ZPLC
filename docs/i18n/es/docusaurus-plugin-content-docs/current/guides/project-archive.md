@@ -34,7 +34,7 @@ archivo con cualquier herramienta zip, o con Python en cualquier sistema:
 python3 -m zipfile -l my-project.zip
 ```
 
-**Export Project**, a su lado, escribe un documento JSON de los archivos y de la
+**Exportar proyecto**, a su lado, escribe un documento JSON de los archivos y de la
 configuración sin sus secretos. Ese documento es para leer; no se importa.
 
 ## Importar

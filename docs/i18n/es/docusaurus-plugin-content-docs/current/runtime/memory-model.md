@@ -11,8 +11,8 @@ El contrato público de memoria está definido sobre todo por:
 
 | Región | Base | Rol |
 |---|---:|---|
-| IPI | `0x0000` | process image de entradas |
-| OPI | `0x1000` | process image de salidas |
+| IPI | `0x0000` | imagen de proceso de entradas |
+| OPI | `0x1000` | imagen de proceso de salidas |
 | WORK | `0x2000` | memoria de trabajo |
 | RETAIN | `0x4000` | memoria retentiva |
 | CODE | `0x5000` | bytecode cargado |
@@ -24,12 +24,12 @@ flowchart LR
   VM --> OPI[OPI]
   VM --> WORK[WORK]
   VM --> RETAIN[RETAIN]
-  Loader[loader] --> CODE[CODE]
+  Loader[cargador] --> CODE[CODE]
   CODE --> VM
   OPI --> HALOUT[sincronización HAL de salidas]
 ```
 
-## Estado compartido vs privado
+## Estado compartido y estado privado
 
 `zplc_core.h` marca una separación muy importante.
 
@@ -46,10 +46,10 @@ flowchart LR
 - `sp`
 - `bp`
 - profundidad de llamadas
-- flags y error
+- banderas y error
 - puntos de parada
-- evaluation stack
-- call stack
+- pila de evaluación
+- pila de llamadas
 
 ## Registros de sistema dentro de IPI
 
@@ -57,13 +57,13 @@ flowchart LR
 
 - tiempo de ciclo
 - uptime
-- task id actual
-- flags del runtime
+- identificador de la tarea actual
+- banderas del runtime
 
 ## Inicio de un programa
 
 Cargar un programa es un arranque en frío en todos los runtimes (RT-016). IPI, OPI, WORK y RETAIN se ponen a cero y
-la tabla de forces se vacía antes de publicar el programa nuevo, de modo que un programa nunca arranca sobre las
+la tabla de forzados se vacía antes de publicar el programa nuevo, de modo que un programa nunca arranca sobre las
 variables del que reemplazó; un runtime que tiene un registro `RETAIN` almacenado lo restaura después.
 `zplc_core_cold_start()` es esa operación, y `zplc_core_warm_start()` es lo mismo sin tocar `RETAIN`, para un
 reinicio que conserva los valores retentivos. La región de código y las etiquetas son el programa y ninguna de las
@@ -71,13 +71,13 @@ dos las toca.
 
 ## Acceso desde fuera del scan (RT-010, RT-011)
 
-Mientras los scans corren, el scan es el único que escribe la imagen de proceso. Un hilo ajeno (el servidor y los
+Mientras los scans corren, solo el scan escribe la imagen de proceso. Un hilo ajeno (el servidor y los
 clientes Modbus, MQTT, los comandos de depuración del shell) pasa por el exchange (`zplc_exchange.h`):
 
-- una lectura sale del snapshot de IPI, OPI, WORK y RETAIN que el scan publica en su commit. Un valor es entero y de
+- una lectura sale del snapshot de IPI, OPI, WORK y RETAIN que el scan publica en su commit. Un valor es íntegro y de
   un solo scan, y una lectura nunca espera a un scan;
 - una escritura se encola completa y el scan la aplica en el latch de entradas de su siguiente scan, por la interfaz
-  del core que respeta los forces: una variable forzada conserva su valor forzado escriba lo que escriba un cliente.
+  del core que respeta los forzados: una variable forzada conserva su valor forzado escriba lo que escriba un cliente.
   Mientras no corre ningún scan (detenido, en pausa o con falla) no hay latch que esperar y la escritura se aplica
   de inmediato;
 - una escritura que no cabe en la cola (`CONFIG_ZPLC_EXCHANGE_QUEUE_BYTES`, 1024 bytes por defecto) se rechaza
@@ -91,11 +91,11 @@ defecto).
 
 ## Cómo coloca el compilador las variables
 
-El compilador da a todo el proyecto una sola disposición en la memoria WORK, y el mapa de depuración la lista: cada variable, con su dirección y su tamaño, en el POU del archivo que la declara. El orden es: las globales, las variables de cada función, las variables de los métodos, las variables de cada programa en el orden de las tareas, los literales de cadena y los buffers de trabajo de las funciones de cadena; el último byte de la región del perfil del destino es la bandera de inicialización. La memoria que puede usar un programa es la que tiene el perfil del destino, compartida por todos los programas del proyecto, y un proyecto que no cabe es un error de compilación que indica los bytes requeridos, los bytes disponibles y los mayores consumidores. Las variables ubicadas con `AT %M` están en `0x2000` más su desplazamiento, y una variable que el compilador coloque encima de una es un error de compilación.
+El compilador da a todo el proyecto una sola disposición en la memoria WORK, y el mapa de depuración la lista: cada variable, con su dirección y su tamaño, en el POU del archivo que la declara. El orden es: las globales, las variables de cada función, las variables de los métodos, las variables de cada programa en el orden de las tareas, los literales de cadena y los búferes de trabajo de las funciones de cadena; el último byte de la región del perfil del destino es la bandera de inicialización. La memoria que puede usar un programa es la que tiene el perfil del destino, compartida por todos los programas del proyecto, y un proyecto que no cabe es un error de compilación que indica los bytes requeridos, los bytes disponibles y los mayores consumidores. Las variables ubicadas con `AT %M` están en `0x2000` más su desplazamiento, y una variable que el compilador coloque encima de una es un error de compilación.
 
 ## Límites acotados
 
-Los headers públicos también exponen límites como:
+Los encabezados públicos también exponen límites como:
 
 - `ZPLC_STACK_MAX_DEPTH`
 - `ZPLC_CALL_STACK_MAX`

@@ -4,13 +4,13 @@ sidebar_position: 2
 
 # Lista de instrucciones (IL)
 
-Instruction List (IL) es un flujo textual de bajo nivel con estilo IEC 61131-3 en ZPLC. Usa un modelo de acumulador implícito y sigue la ruta de parser/transpilador IL del repositorio.
+Instruction List (IL) es un lenguaje textual de bajo nivel de IEC 61131-3 en ZPLC. Usa un modelo de acumulador implícito y sigue la ruta de parser/transpilador IL del repositorio.
 
 Qué funciona hoy de Lista de Instrucciones, leído de las pruebas de conformidad ejecutadas, está en la [referencia de Lista de Instrucciones](../reference/language-il.md) generada.
 
 ## Ruta de compilación
 
-El IDE parsea IL y lo transpila a Structured Text (ST); después envía ese ST generado al compilador para producir bytecode `.zplc`.
+El IDE analiza IL y lo transpila a Structured Text (ST); después envía ese ST generado al compilador para producir bytecode `.zplc`.
 
 ```mermaid
 flowchart LR
@@ -20,13 +20,13 @@ flowchart LR
   Compile --> ZPLC[.zplc]
 ```
 
-Es un flujo de fuente a ST generado. Valide el resultado generado, los diagnósticos y el perfil de capacidades de destino; no establece un round trip arbitrario IL/ST ni cobertura de funciones idéntica a ST.
+Es un flujo de fuente a ST generado. Valide el resultado generado, los diagnósticos y el perfil de capacidades de destino; no establece una conversión de ida y vuelta arbitraria entre IL y ST ni cobertura de funciones idéntica a ST.
 
 Un diagnóstico de un archivo IL nombra la línea IL de la que trata (`element: "line:12"`), también cuando el compilador lo encuentra en el Structured Text generado, y cada línea que no se traduce es un diagnóstico propio. El mapa de depuración de un archivo IL indica líneas IL, de modo que un punto de parada se pone en la línea IL y el programa detenido se muestra en ella (LNG-004); las líneas del código generado que no corresponden a ninguna línea IL no son lugares donde detenerse.
 
 ## Límites de runtime y depuración
 
-IL usa el destino común del compilador, pero el costo de ejecución, la disponibilidad de la biblioteca estándar, los pasos, watches, puntos de parada y el comportamiento de hardware dependen del runtime y perfil activos. La simulación POSIX es evidencia lógica de host únicamente. Use evidencia target o HIL para afirmar comportamiento de un dispositivo físico.
+IL usa el destino común del compilador, pero el costo de ejecución, la disponibilidad de la biblioteca estándar, los pasos, las observaciones, los puntos de parada y el comportamiento de hardware dependen del runtime y perfil activos. La simulación POSIX es evidencia lógica del equipo anfitrión únicamente. Use evidencia en la placa o HIL para afirmar comportamiento de un dispositivo físico.
 
 ## Ejemplo: temporización en IL
 

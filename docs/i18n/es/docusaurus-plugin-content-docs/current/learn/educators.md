@@ -47,7 +47,7 @@ incorrecta. Agregue `--strict` para fallar también con las lecciones `unverifie
 
 Es una comprobación de coherencia contra los hash de las lecciones, no una defensa
 contra un estudiante que edita el archivo a mano: un registro de calificación es
-evidencia de lo que Studio registró en el equipo del estudiante. Pida un **Check**
+evidencia de lo que Studio registró en el equipo del estudiante. Pida que ejecute **Comprobar**
 en vivo cuando importe.
 
 ## Imprimir el esquema del curso
