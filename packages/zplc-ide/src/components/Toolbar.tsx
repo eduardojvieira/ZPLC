@@ -92,7 +92,7 @@ interface ToolbarProps {
 // =============================================================================
 
 export function Toolbar({ debugController }: ToolbarProps) {
-  const { t } = useT();
+  const { t, tn } = useT();
   const {
     addConsoleEntry,
     addCompilerMessage,
@@ -239,13 +239,13 @@ export function Toolbar({ debugController }: ToolbarProps) {
   // The handlers below report their own failure in the console, so buttons and shortcuts start them with `void` and do not wait.
   const handleSaveFile = async () => {
     if (!activeFile || !activeFileId) {
-      addConsoleEntry({ type: 'error', message: 'No file selected to save', source: 'system' });
+      addConsoleEntry({ type: 'error', message: t('toolbarMsg.noFileSelectedTo'), source: 'system' });
       return;
     }
 
     const saved = await saveFile(activeFileId);
-    useNotifications.getState().report(saved ? { kind: 'save', status: 'success', title: `Saved ${activeFile.name}`, details: 'output' }
-      : { kind: 'save', status: 'error', title: `Could not save ${activeFile.name}`, detail: 'The file stays modified. The Output panel has the reason.', details: 'output' });
+    useNotifications.getState().report(saved ? { kind: 'save', status: 'success', title: t('toolbarMsg.saved', { name: activeFile.name }), details: 'output' }
+      : { kind: 'save', status: 'error', title: t('toolbarMsg.couldNotSave', { name: activeFile.name }), detail: t('toolbarMsg.theFileStaysModified'), details: 'output' });
   };
 
   // ==========================================================================
@@ -254,11 +254,11 @@ export function Toolbar({ debugController }: ToolbarProps) {
 
   const handleGenerateST = () => {
     const file = getActiveFile(); if (!file) return;
-    addConsoleEntry({ type: 'info', message: `Transpiling ${file.language} to Structured Text...`, source: 'transpiler' });
+    addConsoleEntry({ type: 'info', message: t('toolbarMsg.transpilingToStructuredText', { language: file.language }), source: 'transpiler' });
 
     const source = generateStructuredText(file, addConsoleEntry);
     if (source !== null) {
-      addConsoleEntry({ type: 'success', message: `Generated ${source.split('\n').length} lines of Structured Text`, source: 'transpiler' });
+      addConsoleEntry({ type: 'success', message: t('toolbarMsg.generatedLinesOfStructured', { length: source.split('\n').length }), source: 'transpiler' });
       setGeneratedCode(source);
       setGeneratedCodeType(file.language as 'FBD' | 'LD' | 'SFC');
       setShowGeneratedCode(true);
@@ -297,13 +297,13 @@ export function Toolbar({ debugController }: ToolbarProps) {
       if (current.isConsoleCollapsed) current.toggleConsole();
       current.setActiveConsoleTab('tests');
       const message = workspaceCompileRoute === 'canonical-unavailable'
-        ? 'Saved workspace compiler is unavailable. Restart ZPLC Studio before building this project.'
+        ? t('toolbarMsg.savedWorkspaceCompilerIs')
         : workspaceCompileRoute === 'link-required'
-          ? 'Open Tests and choose the saved zplc.json before building this project.'
-          : 'Save changes before building the saved workspace.';
+          ? t('toolbarMsg.openTestsAndChoose')
+          : t('toolbarMsg.saveChangesBeforeBuilding');
       addConsoleEntry({ type: 'error', message, source: 'compiler' });
       addCompilerMessage({ type: 'error', message });
-      useNotifications.getState().report({ kind: 'build', status: 'error', title: 'Build did not start', detail: message, details: 'tests' });
+      useNotifications.getState().report({ kind: 'build', status: 'error', title: t('toolbarMsg.buildDidNotStart'), detail: message, details: 'tests' });
       return;
     }
 
@@ -313,20 +313,20 @@ export function Toolbar({ debugController }: ToolbarProps) {
       if (!isCurrentRun()) return;
       if (!link) {
         revealCompileProblems();
-        const message = 'Saved workspace could not be opened. Check that the project folder still has its zplc.json.';
+        const message = t('toolbarMsg.savedWorkspaceCouldNot');
         addConsoleEntry({ type: 'error', message, source: 'compiler' });
         addCompilerMessage({ type: 'error', message });
         markCompilerMessagesChecked();
-        useNotifications.getState().report({ kind: 'build', status: 'error', title: 'Build did not start', detail: message, details: 'problems' });
+        useNotifications.getState().report({ kind: 'build', status: 'error', title: t('toolbarMsg.buildDidNotStart'), detail: message, details: 'problems' });
         return;
       }
       const workspaceId = link.workspaceId;
       const expected = { projectSession, compilerRunId, workspaceId };
-      addConsoleEntry({ type: 'info', message: 'Building saved workspace locally...', source: 'compiler' });
+      addConsoleEntry({ type: 'info', message: t('toolbarMsg.buildingSavedWorkspaceLocally'), source: 'compiler' });
       let cancelRequested = false;
       const notices = useNotifications.getState();
       const operation = notices.begin({
-        kind: 'build', title: 'Building project', details: 'output',
+        kind: 'build', title: t('toolbarMsg.buildingProject'), details: 'output',
         cancel: () => { cancelRequested = true; void workspaceTests.cancel().catch(() => undefined); },
       });
       try {
@@ -336,13 +336,13 @@ export function Toolbar({ debugController }: ToolbarProps) {
         const canonical = presentWorkspaceCompileResult(response);
         if (!canonical.ok) {
           notices.finish(operation, {
-            kind: 'build', status: 'error', title: 'Build failed', details: 'problems',
+            kind: 'build', status: 'error', title: t('toolbarMsg.buildFailed'), details: 'problems',
             detail: canonical.diagnostics[0] ? `${canonical.diagnostics[0].path ? `${canonical.diagnostics[0].path}: ` : ''}${canonical.diagnostics[0].message}` : undefined,
           });
           revealCompileProblems();
-          addConsoleEntry({ type: 'error', message: 'Canonical workspace build failed', source: 'compiler' });
+          addConsoleEntry({ type: 'error', message: t('toolbarMsg.canonicalWorkspaceBuildFailed'), source: 'compiler' });
           if (canonical.diagnostics.length === 0) {
-            addCompilerMessage({ type: 'error', message: 'Canonical workspace build failed' });
+            addCompilerMessage({ type: 'error', message: t('toolbarMsg.canonicalWorkspaceBuildFailed') });
           }
           for (const diagnostic of canonical.diagnostics) {
             addCompilerMessage({ type: 'error', message: diagnostic.message, code: diagnostic.code, ...(diagnostic.path ? { file: diagnostic.path } : {}), ...(diagnostic.line ? { line: diagnostic.line } : {}), ...(diagnostic.column ? { column: diagnostic.column } : {}), ...(diagnostic.element ? { element: diagnostic.element } : {}) });
@@ -370,22 +370,22 @@ export function Toolbar({ debugController }: ToolbarProps) {
           zplc: canonical.zplcEvidence,
         });
         setProgramLoadState(nextProgramLoadStateAfterCompile());
-        addConsoleEntry({ type: 'success', message: `Built saved workspace locally: ${canonical.artifact.zplcFile.length} bytes (${canonical.summary.codeSize} code, ${canonical.summary.taskCount} tasks, contract draft ${ZPLC_CONSTANTS.DRAFT_COUNTER})`, source: 'compiler' });
+        addConsoleEntry({ type: 'success', message: t('toolbarMsg.builtSavedWorkspaceLocally', { length: canonical.artifact.zplcFile.length, codeSize: canonical.summary.codeSize, taskCount: canonical.summary.taskCount, DRAFT_COUNTER: ZPLC_CONSTANTS.DRAFT_COUNTER }), source: 'compiler' });
         markCompilerMessagesChecked();
-        notices.finish(operation, { kind: 'build', status: 'success', title: 'Build succeeded', detail: `${canonical.summary.name}: ${canonical.artifact.zplcFile.length} bytes, ${canonical.summary.taskCount} task${canonical.summary.taskCount === 1 ? '' : 's'}`, details: 'output' });
+        notices.finish(operation, { kind: 'build', status: 'success', title: t('toolbarMsg.buildSucceeded'), detail: t('toolbarMsg.bytes', { name: canonical.summary.name, length: canonical.artifact.zplcFile.length, value: tn('toolbarMsg.tasks', canonical.summary.taskCount) }), details: 'output' });
       } catch {
         const latest = useIDEStore.getState();
         if (!isWorkspaceTestRunCurrent(latest, expected)) { notices.dismiss(operation); return; }
         if (cancelRequested) {
-          addConsoleEntry({ type: 'warning', message: 'Build cancelled', source: 'compiler' });
-          notices.finish(operation, { kind: 'build', status: 'cancelled', title: 'Build cancelled', detail: 'No artifact was kept.', details: 'output' });
+          addConsoleEntry({ type: 'warning', message: t('toolbarMsg.buildCancelled'), source: 'compiler' });
+          notices.finish(operation, { kind: 'build', status: 'cancelled', title: t('toolbarMsg.buildCancelled'), detail: t('toolbarMsg.noArtifactWasKept'), details: 'output' });
           return;
         }
         revealCompileProblems();
-        addConsoleEntry({ type: 'error', message: 'Canonical workspace build failed', source: 'compiler' });
-        addCompilerMessage({ type: 'error', message: 'Canonical workspace build failed' });
+        addConsoleEntry({ type: 'error', message: t('toolbarMsg.canonicalWorkspaceBuildFailed'), source: 'compiler' });
+        addCompilerMessage({ type: 'error', message: t('toolbarMsg.canonicalWorkspaceBuildFailed') });
         markCompilerMessagesChecked();
-        notices.finish(operation, { kind: 'build', status: 'error', title: 'Build failed', detail: 'The compiler could not finish. The Problems panel has what it reported.', details: 'problems' });
+        notices.finish(operation, { kind: 'build', status: 'error', title: t('toolbarMsg.buildFailed'), detail: t('toolbarMsg.theCompilerCouldNot'), details: 'problems' });
       }
       return;
     }
@@ -394,7 +394,7 @@ export function Toolbar({ debugController }: ToolbarProps) {
     const current = useIDEStore.getState();
     if (current.isConsoleCollapsed) current.toggleConsole();
     current.setActiveConsoleTab('tests');
-    const message = 'Build requires a saved folder opened in ZPLC Studio. Open the project folder in the desktop app, then choose zplc.json in Tests.';
+    const message = t('toolbarMsg.buildRequiresASaved');
     addConsoleEntry({ type: 'error', message, source: 'compiler' });
     addCompilerMessage({ type: 'error', message });
   };
@@ -402,23 +402,23 @@ export function Toolbar({ debugController }: ToolbarProps) {
   const handleDownloadBytecode = () => {
     const result = currentCompileResult();
     if (!result) {
-      addConsoleEntry({ type: 'error', message: 'No current compiled bytecode. Build the current source first.', source: 'system' });
+      addConsoleEntry({ type: 'error', message: t('toolbarMsg.noCurrentCompiledBytecode'), source: 'system' });
       return;
     }
     setIsCompileMenuOpen(false);
 
     try {
       downloadBlob(new Blob([new Uint8Array(result.zplcFile).buffer], { type: 'application/octet-stream' }), result.fileName);
-      addConsoleEntry({ type: 'success', message: `Downloaded: ${result.fileName}`, source: 'system' });
+      addConsoleEntry({ type: 'success', message: t('toolbarMsg.downloaded', { fileName: result.fileName }), source: 'system' });
     } catch (e) {
-      addConsoleEntry({ type: 'error', message: `Failed to download: ${e instanceof Error ? e.message : String(e)}`, source: 'system' });
+      addConsoleEntry({ type: 'error', message: t('toolbarMsg.failedToDownload', { value: e instanceof Error ? e.message : String(e) }), source: 'system' });
     }
   };
 
   const handleViewAssembly = () => {
     const result = currentCompileResult();
     if (!result) {
-      addConsoleEntry({ type: 'error', message: 'No current compiled code. Build the current source first.', source: 'system' });
+      addConsoleEntry({ type: 'error', message: t('toolbarMsg.noCurrentCompiledCode'), source: 'system' });
       return;
     }
     setIsCompileMenuOpen(false);
@@ -437,32 +437,32 @@ export function Toolbar({ debugController }: ToolbarProps) {
     pendingConnectionFocusRef.current = !isConnected;
     setIsConnecting(true);
     const notices = useNotifications.getState();
-    const operation = notices.begin({ kind: 'connection', title: isConnected ? 'Disconnecting' : executionMode === 'simulate' ? 'Starting the simulator' : 'Connecting to the device', details: 'output' });
+    const operation = notices.begin({ kind: 'connection', title: isConnected ? t('toolbarMsg.disconnecting') : executionMode === 'simulate' ? t('toolbarMsg.startingTheSimulator') : t('toolbarMsg.connectingToTheDevice'), details: 'output' });
     try {
       if (isConnected) {
         await disconnect();
         setProgramLoadState(nextProgramLoadStateAfterConnect());
-        notices.finish(operation, { kind: 'connection', status: 'success', title: 'Disconnected', details: 'output' });
+        notices.finish(operation, { kind: 'connection', status: 'success', title: t('toolbarMsg.disconnected'), details: 'output' });
         return;
       }
       if (executionMode === 'simulate') {
         await startSimulation();
         setProgramLoadState(nextProgramLoadStateAfterConnect());
-        addConsoleEntry({ type: 'success', message: 'Simulator ready', source: 'runtime' });
-        notices.finish(operation, { kind: 'connection', status: 'success', title: 'Simulator ready', details: 'output' });
+        addConsoleEntry({ type: 'success', message: t('toolbarMsg.simulatorReady'), source: 'runtime' });
+        notices.finish(operation, { kind: 'connection', status: 'success', title: t('toolbarMsg.simulatorReady'), details: 'output' });
       } else {
         await connectHardware();
         setProgramLoadState(nextProgramLoadStateAfterConnect());
-        addConsoleEntry({ type: 'success', message: 'Hardware connected', source: 'runtime' });
-        notices.finish(operation, { kind: 'connection', status: 'success', title: 'Device connected', details: 'output' });
+        addConsoleEntry({ type: 'success', message: t('toolbarMsg.hardwareConnected'), source: 'runtime' });
+        notices.finish(operation, { kind: 'connection', status: 'success', title: t('toolbarMsg.deviceConnected'), details: 'output' });
       }
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
       if (!msg.toLowerCase().includes('cancelled') && !msg.toLowerCase().includes('canceled') && msg !== 'No serial port selected') {
-        addConsoleEntry({ type: 'error', message: `Connection failed: ${msg}`, source: 'runtime' });
-        notices.finish(operation, { kind: 'connection', status: 'error', title: 'Connection failed', detail: msg, details: 'output' });
+        addConsoleEntry({ type: 'error', message: t('toolbarMsg.connectionFailed', { msg }), source: 'runtime' });
+        notices.finish(operation, { kind: 'connection', status: 'error', title: t('toolbarMsg.connectionFailed2'), detail: msg, details: 'output' });
       } else {
-        notices.finish(operation, { kind: 'connection', status: 'cancelled', title: 'Connection cancelled', details: 'output' });
+        notices.finish(operation, { kind: 'connection', status: 'cancelled', title: t('toolbarMsg.connectionCancelled'), details: 'output' });
       }
     } finally {
       setIsConnecting(false);
@@ -482,7 +482,7 @@ export function Toolbar({ debugController }: ToolbarProps) {
     } catch (e) {
       addConsoleEntry({
         type: 'error',
-        message: `Mode change failed: ${e instanceof Error ? e.message : String(e)}`,
+        message: t('toolbarMsg.modeChangeFailed', { value: e instanceof Error ? e.message : String(e) }),
         source: 'runtime',
       });
     } finally {
@@ -493,12 +493,12 @@ export function Toolbar({ debugController }: ToolbarProps) {
   const handleUpload = async () => {
     if (executionMode !== EXECUTION_MODE.HARDWARE || controlsBusy || uploadInFlightRef.current) return;
     if (!isConnected) {
-      addConsoleEntry({ type: 'error', message: 'Connect first.', source: 'runtime' });
+      addConsoleEntry({ type: 'error', message: t('toolbarMsg.connectFirst'), source: 'runtime' });
       return;
     }
     const result = currentCompileResult();
     if (!result) {
-      addConsoleEntry({ type: 'error', message: 'No current compiled bytecode. Build the current source first.', source: 'runtime' });
+      addConsoleEntry({ type: 'error', message: t('toolbarMsg.noCurrentCompiledBytecode'), source: 'runtime' });
       return;
     }
     uploadInFlightRef.current = true;
@@ -528,7 +528,7 @@ export function Toolbar({ debugController }: ToolbarProps) {
   const handleStart = async (keyboardInitiated = false) => {
     if (controlsBusy) return;
     if (!isConnected) {
-      addConsoleEntry({ type: 'error', message: 'Connect first.', source: 'runtime' });
+      addConsoleEntry({ type: 'error', message: t('toolbarMsg.connectFirst'), source: 'runtime' });
       return;
     }
     const result = currentCompileResult();
@@ -536,8 +536,8 @@ export function Toolbar({ debugController }: ToolbarProps) {
       addConsoleEntry({
         type: 'error',
         message: executionMode === EXECUTION_MODE.HARDWARE
-          ? 'Deploy the current build before Run.'
-          : 'No compiled bytecode. Compile first!',
+          ? t('toolbarMsg.deployTheCurrentBuild')
+          : t('toolbarMsg.noCompiledBytecodeCompile'),
         source: 'runtime',
       });
       return;
@@ -556,23 +556,23 @@ export function Toolbar({ debugController }: ToolbarProps) {
         if (!isCompileResultCurrent(result.compilerRunId, useIDEStore.getState().compilerRunId)) {
           pendingExecutionFocusRef.current = null;
           setProgramLoadState(PROGRAM_LOAD_STATE.EMPTY);
-          addConsoleEntry({ type: 'warning', message: 'Simulator received an earlier build. Build the current source before Run.', source: 'runtime' });
+          addConsoleEntry({ type: 'warning', message: t('toolbarMsg.simulatorReceivedAnEarlier'), source: 'runtime' });
           return;
         }
         setProgramLoadState(PROGRAM_LOAD_STATE.LOADED);
       } catch (e) {
         pendingExecutionFocusRef.current = null;
-        addConsoleEntry({ type: 'error', message: `Failed to load: ${e instanceof Error ? e.message : String(e)}`, source: 'runtime' });
+        addConsoleEntry({ type: 'error', message: t('toolbarMsg.failedToLoad', { value: e instanceof Error ? e.message : String(e) }), source: 'runtime' });
         return;
       }
     }
 
     try {
       await start();
-      addConsoleEntry({ type: 'info', message: 'Execution started', source: 'runtime' });
+      addConsoleEntry({ type: 'info', message: t('toolbarMsg.executionStarted'), source: 'runtime' });
     } catch (e) {
       pendingExecutionFocusRef.current = null;
-      addConsoleEntry({ type: 'error', message: `Run failed: ${e instanceof Error ? e.message : String(e)}`, source: 'runtime' });
+      addConsoleEntry({ type: 'error', message: t('toolbarMsg.runFailed', { value: e instanceof Error ? e.message : String(e) }), source: 'runtime' });
     }
   };
 
@@ -581,26 +581,26 @@ export function Toolbar({ debugController }: ToolbarProps) {
     pendingExecutionFocusRef.current = keyboardInitiated ? 'paused' : null;
     try {
       await pause();
-      addConsoleEntry({ type: 'info', message: `Paused at cycle ${vmInfo?.cycles || 0}`, source: 'runtime' });
+      addConsoleEntry({ type: 'info', message: t('toolbarMsg.pausedAtCycle', { value: vmInfo?.cycles || 0 }), source: 'runtime' });
     } catch (e) {
       pendingExecutionFocusRef.current = null;
-      addConsoleEntry({ type: 'error', message: `Pause failed: ${e instanceof Error ? e.message : String(e)}`, source: 'runtime' });
+      addConsoleEntry({ type: 'error', message: t('toolbarMsg.pauseFailed', { value: e instanceof Error ? e.message : String(e) }), source: 'runtime' });
     }
   };
 
   const handleResume = async (keyboardInitiated = false) => {
     if (controlsBusy) return;
     if (!canRunCurrentProgram(executionMode, Boolean(currentCompileResult()), programLoadState)) {
-      addConsoleEntry({ type: 'error', message: 'Deploy the current build before Resume.', source: 'runtime' });
+      addConsoleEntry({ type: 'error', message: t('toolbarMsg.deployTheCurrentBuild2'), source: 'runtime' });
       return;
     }
     pendingExecutionFocusRef.current = keyboardInitiated ? 'running' : null;
     try {
       await resume();
-      addConsoleEntry({ type: 'info', message: 'Resumed', source: 'runtime' });
+      addConsoleEntry({ type: 'info', message: t('toolbarMsg.resumed'), source: 'runtime' });
     } catch (e) {
       pendingExecutionFocusRef.current = null;
-      addConsoleEntry({ type: 'error', message: `Resume failed: ${e instanceof Error ? e.message : String(e)}`, source: 'runtime' });
+      addConsoleEntry({ type: 'error', message: t('toolbarMsg.resumeFailed', { value: e instanceof Error ? e.message : String(e) }), source: 'runtime' });
     }
   };
 
@@ -608,22 +608,22 @@ export function Toolbar({ debugController }: ToolbarProps) {
     if (controlsBusy || !await proceedAfterConfirmation(executionMode, confirmStop)) return;
     try {
       await stop();
-      addConsoleEntry({ type: 'info', message: 'Stopped', source: 'runtime' });
+      addConsoleEntry({ type: 'info', message: t('toolbarMsg.stopped'), source: 'runtime' });
     } catch (e) {
-      addConsoleEntry({ type: 'error', message: `Stop failed: ${e instanceof Error ? e.message : String(e)}`, source: 'runtime' });
+      addConsoleEntry({ type: 'error', message: t('toolbarMsg.stopFailed', { value: e instanceof Error ? e.message : String(e) }), source: 'runtime' });
     }
   };
 
   const handleStep = async () => {
     if (controlsBusy) return;
     if (!canRunCurrentProgram(executionMode, Boolean(currentCompileResult()), programLoadState)) {
-      addConsoleEntry({ type: 'error', message: 'Deploy the current build before Step.', source: 'runtime' });
+      addConsoleEntry({ type: 'error', message: t('toolbarMsg.deployTheCurrentBuild3'), source: 'runtime' });
       return;
     }
     try {
       await step();
     } catch (e) {
-      addConsoleEntry({ type: 'error', message: `Step failed: ${e instanceof Error ? e.message : String(e)}`, source: 'runtime' });
+      addConsoleEntry({ type: 'error', message: t('toolbarMsg.stepFailed', { value: e instanceof Error ? e.message : String(e) }), source: 'runtime' });
     }
   };
 
@@ -631,9 +631,9 @@ export function Toolbar({ debugController }: ToolbarProps) {
     if (controlsBusy || !await proceedAfterConfirmation(executionMode, confirmReset)) return;
     try {
       await reset();
-      addConsoleEntry({ type: 'info', message: 'Reset', source: 'runtime' });
+      addConsoleEntry({ type: 'info', message: t('toolbarMsg.reset'), source: 'runtime' });
     } catch (e) {
-      addConsoleEntry({ type: 'error', message: `Reset failed: ${e instanceof Error ? e.message : String(e)}`, source: 'runtime' });
+      addConsoleEntry({ type: 'error', message: t('toolbarMsg.resetFailed', { value: e instanceof Error ? e.message : String(e) }), source: 'runtime' });
     }
   };
 
@@ -689,7 +689,7 @@ export function Toolbar({ debugController }: ToolbarProps) {
   // Status text and color
   const getStatusDisplay = () => {
     if (!isConnected) {
-      return { text: 'Disconnected', tone: 'neutral' as const };
+      return { text: t('toolbarMsg.disconnected'), tone: 'neutral' as const };
     }
     switch (vmState) {
       case 'running':

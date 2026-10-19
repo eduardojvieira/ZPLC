@@ -1,14 +1,31 @@
-import type { MessageKey } from './en';
+import { PRODUCT_NAME } from '../productName';
+import type { MessageKey, baseEn } from './en';
+import { consoleEs } from './catalog/console';
+import { mqttEs } from './catalog/mqtt';
+import { modbusEs } from './catalog/modbus';
+import { networkEs } from './catalog/network';
+import { ioEs } from './catalog/io';
+import { controllerEs } from './catalog/controller';
+import { toolchainEs } from './catalog/toolchain';
+import { commtagsEs } from './catalog/commtags';
+import { projectEs } from './catalog/project';
+import { labEs } from './catalog/lab';
+import { ldEs } from './catalog/ld';
+import { importArchiveEs } from './catalog/importArchive';
+import { interlockEs } from './catalog/interlock';
+import { learnEs } from './catalog/learn';
+import { toolbarMsgEs } from './catalog/toolbarMsg';
+import { examplesEs } from './catalog/examples';
 
 /**
  * The Spanish catalog (UX-029, UX-030): neutral Latin American Spanish with impersonal or "usted" forms, as in
  * industrial manuals (decision D-10); no voseo. `Record<MessageKey, string>` makes a missing or extra key a compile error.
  */
-export const es: Record<MessageKey, string> = {
+const baseEs: Record<keyof typeof baseEn, string> = {
   'preferences.heading': 'Preferencias',
   'preferences.tabSizeOption.one': '{count} espacio',
   'preferences.tabSizeOption.other': '{count} espacios',
-  'updateNotice.available': 'ZPLC Studio {version} está disponible',
+  'updateNotice.available': `${PRODUCT_NAME} {version} está disponible`,
   // Preferences (the Settings surface)
   'preferences.intro': 'Se aplican a todos los proyectos y se conservan en su cuenta de usuario.',
   'preferences.fontSize': 'Tamaño de fuente del editor',
@@ -36,15 +53,15 @@ export const es: Record<MessageKey, string> = {
   'theme.dark': 'Oscuro',
   'theme.highContrast': 'Alto contraste',
   // The answer of the update check
-  'updateCheck.available': 'Hay una versión más reciente de ZPLC Studio disponible: {latest} (la instalada es {current}). {url}',
-  'updateCheck.current': 'ZPLC Studio {current} está al día (última versión publicada: {latest}).',
+  'updateCheck.available': `Hay una versión más reciente de ${PRODUCT_NAME} disponible: {latest} (la instalada es {current}). {url}`,
+  'updateCheck.current': `${PRODUCT_NAME} {current} está al día (última versión publicada: {latest}).`,
   'updateCheck.unavailable': 'No se pudo buscar actualizaciones. Verifique la conexión de red e intente de nuevo.',
   // The update notice
-  'updateNotice.label': 'Hay una versión más reciente de ZPLC Studio disponible',
+  'updateNotice.label': `Hay una versión más reciente de ${PRODUCT_NAME} disponible`,
   'updateNotice.thisIs': '(la instalada es {current}).',
   'updateNotice.release': 'Versión publicada:',
   'updateNotice.dismiss': 'Descartar',
-  'updateNotice.dismissLabel': 'Descartar el aviso sobre ZPLC Studio {version}',
+  'updateNotice.dismissLabel': `Descartar el aviso sobre ${PRODUCT_NAME} {version}`,
   'updateNotice.howTo': 'Cómo actualizar',
   'updateNotice.untouched': 'Studio no descarga ni instala nada. Sus proyectos son carpetas que usted eligió, por lo que una actualización no las modifica.',
   'updateNotice.step.win32Setup': 'Instalador: descargue el nuevo archivo `setup-unsigned.exe`, verifique su suma de comprobación y ejecútelo sobre la versión instalada.',
@@ -71,7 +88,7 @@ export const es: Record<MessageKey, string> = {
   // Words shared by several surfaces
   'common.cancel': 'Cancelar',
   // Welcome screen
-  'welcome.title': 'ZPLC Studio 2.0',
+  'welcome.title': `${PRODUCT_NAME} 2.0`,
   'welcome.intro': 'Abra un proyecto, cree uno en una carpeta, inicie el curso de aprendizaje o copie un ejemplo que pueda adaptar.',
   'welcome.build': 'compilación {version}',
   'welcome.start.heading': 'Inicio',
@@ -310,7 +327,7 @@ export const es: Record<MessageKey, string> = {
   // Notifications
   'panel.output': 'Salida',
   'panel.problems': 'Problemas',
-  'panel.tests': 'Tests',
+  'panel.tests': 'Pruebas',
   'panel.trace': 'Traza',
   'panel.watch': 'Observación',
   'notifications.label': 'Notificaciones',
@@ -552,4 +569,24 @@ export const es: Record<MessageKey, string> = {
   'commandBar.more': 'Más comandos',
   'commandBar.inspector': 'Inspector',
   'sfc.transition.fired': 'Disparada',
+};
+
+export const es: Record<MessageKey, string> = {
+  ...baseEs,
+  ...consoleEs,
+  ...mqttEs,
+  ...modbusEs,
+  ...networkEs,
+  ...ioEs,
+  ...controllerEs,
+  ...toolchainEs,
+  ...commtagsEs,
+  ...projectEs,
+  ...labEs,
+  ...ldEs,
+  ...importArchiveEs,
+  ...interlockEs,
+  ...learnEs,
+  ...toolbarMsgEs,
+  ...examplesEs,
 };

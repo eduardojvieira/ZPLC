@@ -5,7 +5,9 @@ import { SerialPortDialog } from '../components/SerialPortDialog';
 import { UnsavedChangesDialog } from '../components/UnsavedChangesDialog';
 import { UpdateNoticeView } from '../components/UpdateNotice';
 import { updateSteps } from '../ipc/updateNotice';
+import { useNotifications } from '../store/notifications';
 import { useAppSettings } from '../store/useAppSettings';
+import { announcementsSnapshot, resetAnnouncements } from '../utils/announce';
 import { en } from './en';
 import { es } from './es';
 import { currentLocale, t, tn, translatorFor, useT } from './index';
@@ -137,5 +139,24 @@ describe('UX-029 migrated components render in the language of the setting', () 
     expect(spanish).toContain('>Descartar<');
     expect(spanish).toContain('>Guardar<');
     expect(draw({ saveLabel: 'Guardar todo y cerrar' })).toContain('>Guardar todo y cerrar<');
+  });
+});
+
+describe('UX-029 the announcer says the result in the language of the setting', () => {
+  const report = (status: 'success' | 'error') => useNotifications.getState().report(status === 'success'
+    ? { kind: 'build', status, title: t('toolbarMsg.buildSucceeded'), details: 'output' }
+    : { kind: 'build', status, title: t('toolbarMsg.buildFailed'), detail: t('toolbarMsg.theCompilerCouldNot'), details: 'problems' });
+  // The notification store is shared by every test file of the run: leave it as it was found.
+  afterEach(() => { resetAnnouncements(); useNotifications.setState({ items: [] }); });
+
+  it('UX-029 announces a build result in English by default and in Spanish when the setting is es', () => {
+    resetAnnouncements();
+    report('success');
+    expect(announcementsSnapshot().polite.message).toBe('Build succeeded');
+    setLanguage('es');
+    report('success');
+    expect(announcementsSnapshot().polite.message).toBe('Compilación correcta');
+    report('error');
+    expect(announcementsSnapshot().assertive.message).toBe('La compilación falló. El compilador no pudo terminar. El panel de problemas contiene lo que informó.');
   });
 });

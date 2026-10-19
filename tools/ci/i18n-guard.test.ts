@@ -99,6 +99,18 @@ describe('UX-029 i18n guard: the catalogs as data', () => {
     expect(checkCatalogs({ 'a.hey': 'Saved' }, { 'a.hey': '¡Guardado!' }).join('\n')).toContain('Spanish "a.hey" has an exclamation mark');
   });
 
+  it('UX-030 fails on voseo in the Spanish text (decision D-10: neutral, impersonal or "usted"), and passes the neutral forms', () => {
+    const voseo = checkCatalogs({ 'a.open': 'Open the folder', 'a.you': 'You can choose', 'a.save': 'Save before checking' }, { 'a.open': 'Abrí la carpeta', 'a.you': 'Vos podés elegir', 'a.save': 'Guardá antes de verificar' });
+    expect(voseo.filter((problem) => problem.includes('(voseo)'))).toHaveLength(3);
+    const neutral = { 'a.open': 'Abra la carpeta', 'a.you': 'Puede elegir', 'a.save': 'Guarde antes de comprobar', 'a.status': 'La carpeta está lista, así que puede continuar' };
+    expect(checkCatalogs({ 'a.open': 'Open the folder', 'a.you': 'You can choose', 'a.save': 'Save before checking', 'a.status': 'The folder is ready, so you can continue' }, neutral)).toEqual([]);
+  });
+
+  it('UX-031 fails on an exclamation mark in English text, and on a question that opens with an inverted mark in Spanish', () => {
+    expect(checkCatalogs({ 'a.done': 'Compile first!' }, { 'a.done': 'Compile primero' }).join('\n')).toContain('(exclamation)');
+    expect(checkCatalogs({ 'a.ask': 'Delete it?' }, { 'a.ask': '¡Eliminar!' }).join('\n')).toContain('Spanish "a.ask" has an exclamation mark');
+  });
+
   it('UX-029 stays quiet on a correct pair of catalogs', () => {
     expect(checkCatalogs({ 'a.b.one': '{count} file', 'a.b.other': '{count} files' }, { 'a.b.one': '{count} archivo', 'a.b.other': '{count} archivos' })).toEqual([]);
   });

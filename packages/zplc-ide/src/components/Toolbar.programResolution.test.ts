@@ -1,10 +1,11 @@
 import { describe, expect, it } from 'bun:test';
 import { readFileSync } from 'node:fs';
+import { withEnglishMessages } from '../i18n/inlineMessages';
 import { fileURLToPath } from 'node:url';
 
 import { resolveProgramSource } from '../utils/programSourceResolution';
 
-const toolbarSource = readFileSync(fileURLToPath(new URL('./Toolbar.tsx', import.meta.url)), 'utf8');
+const toolbarSource = withEnglishMessages(readFileSync(fileURLToPath(new URL('./Toolbar.tsx', import.meta.url)), 'utf8'));
 
 describe('resolveProgramSource', () => {
   it('resolves LD task references to visual editor json files', () => {
@@ -102,7 +103,7 @@ describe('canonical workspace build failures', () => {
 
   it('always creates one visible compiler problem when no safe diagnostic is available', () => {
     expect(toolbarSource).toContain('if (canonical.diagnostics.length === 0)');
-    expect(toolbarSource.match(/addCompilerMessage\(\{ type: 'error', message: 'Canonical workspace build failed' \}\);/g)?.length).toBe(2);
+    expect(toolbarSource.match(/addCompilerMessage\(\{ type: 'error', message: Canonical workspace build failed \}\);/g)?.length).toBe(2);
   });
 
   it('uses only the canonical workspace compiler and exposes recovery when unavailable', () => {

@@ -21,6 +21,7 @@
 //                                                  a code token, a quoted label or a name on PROPER_NOUNS (UX-031)
 //   exclamation                                    an exclamation mark, `!` or `¡` (UX-031)
 //   internal-term                                  a term of the engineering team: "candidate", "link zplc.json", "stopgap" (UX-031)
+//   voseo                                          Rioplatense voseo in the Spanish text (UX-030, decision D-10)
 // The catalogs have no list of offenders: they start clean and stay clean.
 import { existsSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { dirname, join, posix, relative, resolve } from 'node:path';
@@ -131,17 +132,33 @@ export function ratchetOffenders(files: readonly SourceFile[], offenders: readon
 export const PROPER_NOUNS: ReadonlySet<string> = new Set([
   'ZPLC', 'Studio', 'Learn', 'Tests', 'English', 'Español', 'GitHub', 'Modbus', 'MQTT', 'Zephyr', 'Windows', 'macOS', 'Linux',
   'Electron', 'Raspberry', 'Pi', 'Pico', 'Arduino', 'Docusaurus', 'AppImage', 'Setup', 'Portable', 'DevKitC', 'Opta', 'WiFi',
+  'WebSocket', 'Sparkplug', 'SharedAccessKey', 'CloudEvent', 'QoS', 'Ethernet', 'Azure', 'MHz', 'Celsius', 'CMake', 'Kconfig', 'Python',
 ]);
+/** Names of services and of their features that are written with capitals in a sentence, as the vendors write them. */
+export const PROPER_PHRASES: readonly string[] = [
+  'AWS IoT Core', 'Azure IoT Hub', 'Azure Event Grid MQTT', 'Event Grid', 'Device Twins', 'Direct Methods', 'C2D Messaging', 'Device Shadows', 'IoT Jobs', 'Fleet Provisioning', 'Sparkplug B',
+];
+/**
+ * Rioplatense voseo, which decision D-10 leaves out of the interface (UX-030): the pronoun "vos", the present forms of
+ * "vos" (tenés, podés) and the imperatives with the stress on the last syllable (abrí, guardá, elegí). A list of the verbs
+ * an interface asks for, not a rule on accents, because "está", "así" or "aquí" are ordinary Spanish.
+ */
+export const VOSEO_MARKERS: RegExp = new RegExp(`(?<![\\p{L}])(?:vos|sos|${[
+  'tenés', 'podés', 'querés', 'sabés', 'hacés', 'decís', 'andás', 'ponés', 'venís', 'salís', 'elegís', 'abrís', 'ves', 'necesitás', 'usás', 'creés', 'pensás', 'empezás', 'seguís', 'buscás',
+  'abrí', 'cerrá', 'elegí', 'seleccioná', 'guardá', 'cargá', 'ejecutá', 'corregí', 'revisá', 'presioná', 'restaurá', 'probá', 'usá', 'mirá', 'escribí', 'pasá', 'poné', 'decí', 'andá', 'mostrá', 'borrá',
+  'volvé', 'esperá', 'intentá', 'copiá', 'pegá', 'agregá', 'tocá', 'buscá', 'completá', 'confirmá', 'ingresá', 'descargá', 'activá', 'desactivá', 'habilitá', 'deshabilitá', 'conectá', 'desconectá', 'reiniciá',
+  'detené', 'iniciá', 'compilá', 'verificá', 'hacé', 'tené', 'fijate', 'acordate', 'asegurate', 'asegurá', 'chequeá', 'cambiá', 'quitá', 'eliminá', 'creá', 'importá', 'exportá', 'seguí', 'arrastrá', 'soltá', 'pulsá', 'clickeá', 'ubicá', 'indicá',
+].join('|')})(?![\\p{L}])`, 'iu');
 export const INTERNAL_TERMS: readonly string[] = ['candidate', 'link zplc.json', 'stopgap', 'candidato', 'vincular zplc.json'];
 
 /** The capital letters of a text that open a word in the middle of a sentence, apart from the acronyms, code tokens and names. */
 export function midSentenceCapitals(text: string): string[] {
-  const words = text.replace(/\{\w+\}/g, '0').split(/\s+/).filter(Boolean);
+  const words = PROPER_PHRASES.reduce((rest, phrase) => rest.split(phrase).join('x'), text).replace(/\{\w+\}/g, '0').split(/\s+/).filter(Boolean);
   const found: string[] = [];
   words.forEach((word, index) => {
     if (index === 0) return;
     const previous = words[index - 1]!;
-    if (/[.?!:;·–—]$/.test(previous)) return;
+    if (/[.?!:;·•–—]$/.test(previous) || previous === '•') return;
     if (/^["“«`]/.test(word)) return; // the label of a control or a file, quoted
     const bare = word.replace(/^[("'`¿¡]+|[)"'`.,;:?!…]+$/g, '');
     if (!/^\p{Lu}/u.test(bare)) return;
@@ -164,6 +181,8 @@ export function checkCatalogs(english: Readonly<Record<string, string>> = en, sp
   for (const [language, catalog] of [['English', english], ['Spanish', spanish]] as const) {
     for (const [id, text] of Object.entries(catalog)) {
       if (/[!¡]/.test(text)) problems.push(`UX-031: ${language} "${id}" has an exclamation mark (exclamation)`);
+      const voseo = language === 'Spanish' ? VOSEO_MARKERS.exec(text)?.[0] : undefined;
+      if (voseo) problems.push(`UX-030: Spanish "${id}" uses voseo, "${voseo}"; write the neutral register of decision D-10 (voseo)`);
       const internal = INTERNAL_TERMS.find((term) => text.toLowerCase().includes(term));
       if (internal) problems.push(`UX-031: ${language} "${id}" uses the internal term "${internal}" (internal-term)`);
       const capitals = midSentenceCapitals(text);

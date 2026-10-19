@@ -1,0 +1,48 @@
+/** The text of one surface, in English and in Spanish (UX-029, UX-030). Keys `project.*`. */
+export const projectEn = {
+  // ProjectSettings.tsx
+  'project.noProjectConfigurationLoaded': 'No project configuration loaded',
+  'project.configureHardwareTargetI': 'Configure hardware target, I/O mapping, and runtime behavior',
+  'project.saveChangesToZplc': 'Save changes to zplc.json',
+  'project.saveConfig': 'Save config',
+  'project.projectMetadata': 'Project metadata',
+  'project.configurationSummary': 'Configuration summary:',
+  'project.project': 'Project:',
+  'project.v': 'v',
+  'project.by': 'by {author}',
+  'project.target': 'Target:',
+  'project.mhz': ' @ {clock_mhz} MHz',
+  'project.iO': 'I/O:',
+  'project.inputs': 'inputs,',
+  'project.outputs': 'outputs',
+  'project.communication': 'Communication:',
+  'project.tagsMqtt': 'tags, MQTT',
+  'project.modbus': ', Modbus',
+  'project.network': 'Network:',
+  'project.tasks': 'Tasks:',
+  'project.configured': 'configured',
+} as const;
+
+export const projectEs: Record<keyof typeof projectEn, string> = {
+  // ProjectSettings.tsx
+  'project.noProjectConfigurationLoaded': 'No hay ninguna configuración de proyecto cargada',
+  'project.configureHardwareTargetI': 'Configure la placa de destino, la asignación de E/S y el comportamiento del runtime',
+  'project.saveChangesToZplc': 'Guardar los cambios en zplc.json',
+  'project.saveConfig': 'Guardar configuración',
+  'project.projectMetadata': 'Metadatos del proyecto',
+  'project.configurationSummary': 'Resumen de la configuración:',
+  'project.project': 'Proyecto:',
+  'project.v': 'v',
+  'project.by': 'por {author}',
+  'project.target': 'Destino:',
+  'project.mhz': ' @ {clock_mhz} MHz',
+  'project.iO': 'E/S:',
+  'project.inputs': 'entradas,',
+  'project.outputs': 'salidas',
+  'project.communication': 'Comunicación:',
+  'project.tagsMqtt': 'etiquetas, MQTT',
+  'project.modbus': ', Modbus',
+  'project.network': 'Red:',
+  'project.tasks': 'Tareas:',
+  'project.configured': 'configuradas',
+};

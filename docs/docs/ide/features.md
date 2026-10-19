@@ -136,13 +136,13 @@ Evidence level: host. `packages/zplc-ide/src/utils/appSettings.test.ts`, `src/st
 
 The **Language** preference chooses the language of Studio: **Automatic**, **English** or **Español**. Automatic, the default, follows the language of the operating system (`es`, `es-AR` and `es-MX` give Spanish; every other language gives English). The choice applies at once, without a restart, and also sets the language of the Learn lessons and the `lang` of the window. The Spanish text is neutral Latin American Spanish with impersonal or "usted" forms, as in an industrial manual.
 
-Every text of the interface is in two catalogs, `packages/zplc-ide/src/i18n/en.ts` (the source) and `es.ts`. To add a text:
+Every text of the interface is in two catalogs, `packages/zplc-ide/src/i18n/en.ts` (the source) and `es.ts`. The texts of one screen live in a module of their own, `packages/zplc-ide/src/i18n/catalog/<screen>.ts` (`console.ts`, `mqtt.ts`, `toolbarMsg.ts`, `examples.ts` and so on), which holds both languages side by side and which `en.ts` and `es.ts` merge. The name of the product is written once for the renderer (`src/productName.ts`) and once for the main process (`electron/productName.ts`); the catalogs and the window title interpolate it, and `electron/productName.test.ts` proves the two agree with the title of `index.html`. To add a text:
 
-1. Add the key and its English text to `en.ts`: a dotted name from the screen to the text (`welcome.open.title`), `{name}` where a value goes, and a `.one` and `.other` pair for a count.
-2. Add the same key to `es.ts`. A missing or an extra key is a TypeScript error, and a different `{name}` is a failure of `tools/ci/i18n-guard.ts`.
+1. Add the key and its English text to the module of the screen (or to `en.ts` for a shared text): a dotted name from the screen to the text (`welcome.open.title`), `{name}` where a value goes, and a `.one` and `.other` pair for a count.
+2. Add the same key, in Spanish, to the same module (or to `es.ts`). A missing or an extra key is a TypeScript error, and a different `{name}` is a failure of `tools/ci/i18n-guard.ts`.
 3. Write it in the component with `const { t, tn } = useT()` and `t('welcome.open.title')`, or `tn('explorer.migration.review', count)` for a plural. Outside a component (a menu, a dialog, an error) use `t` from `src/i18n`.
 
-The text is in sentence case, has no exclamation mark and uses no internal term. `bun run lint:ide` runs the guard: it fails on a text hard-coded in a component (JSX text, or a string in `aria-label`, `placeholder`, `alt`, `label`, `tooltip`, `title` or `description`) and on a catalog that breaks those rules. The components that still hold hard-coded text are on `tools/ci/i18n-offenders.json`, a list that only shrinks.
+The text is in sentence case, has no exclamation mark and uses no internal term, and the Spanish text uses no voseo (UX-030): the guard fails on all four. `bun run lint:ide` runs the guard: it fails on a text hard-coded in a component (JSX text, or a string in `aria-label`, `placeholder`, `alt`, `label`, `tooltip`, `title` or `description`) and on a catalog that breaks those rules. The components that still hold hard-coded text are on `tools/ci/i18n-offenders.json`, a list that only shrinks.
 
 Evidence level: host. `packages/zplc-ide/src/i18n/i18n.test.tsx`, `tools/ci/i18n-guard.test.ts` and `src/utils/appSettings.test.ts` cover the catalogs, the language setting and the guard (requirements UX-029, UX-030 and UX-031).
 

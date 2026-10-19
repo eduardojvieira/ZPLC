@@ -58,41 +58,48 @@ const BOARD_KEYS: Readonly<Record<string, MessageKey>> = {
 /** The name of a manifest board id; an id the catalogs do not know is shown as written. */
 export const boardName = (board: string): string => (board in BOARD_KEYS ? t(BOARD_KEYS[board]!) : board);
 
+/** An entry whose title and summary are the catalog keys `examples.<folder>.title` and `.summary` (src/i18n/catalog/examples.ts), read in the language of the moment. */
+const example = (id: string, rest: Omit<ExampleEntry, 'title' | 'summary'>): ExampleEntry => ({
+  get title() { return t(`examples.${id}.title` as MessageKey); },
+  get summary() { return t(`examples.${id}.summary` as MessageKey); },
+  ...rest,
+});
+
 export const EXAMPLE_CATALOG: Readonly<Record<string, ExampleEntry>> = {
   // First steps
-  scan_snapshot: { title: 'Scan Snapshot', summary: 'How one scan works: a button is copied, delayed by one scan and turned into a rising-edge pulse.', group: 'first-steps', level: 'beginner', languages: ['ST'], showOnWelcome: true },
-  blinky: { title: 'Blinky', summary: 'A 50% LED blinker in Ladder Diagram: two TON timers and SET/RESET coils.', group: 'first-steps', level: 'beginner', languages: ['LD'], showOnWelcome: true },
-  edge_counter: { title: 'Edge Counter', summary: 'Counts rising edges of a pulse input with a CTU counter; the output turns on after three pulses.', group: 'first-steps', level: 'beginner', languages: ['ST'], showOnWelcome: true },
+  scan_snapshot: example('scan_snapshot', { group: 'first-steps', level: 'beginner', languages: ['ST'], showOnWelcome: true }),
+  blinky: example('blinky', { group: 'first-steps', level: 'beginner', languages: ['LD'], showOnWelcome: true }),
+  edge_counter: example('edge_counter', { group: 'first-steps', level: 'beginner', languages: ['ST'], showOnWelcome: true }),
 
   // Motors and drives
-  motor_start_stop: { title: 'Motor Start Stop', summary: 'Start with seal-in; Stop, E-stop or Overload drops the motor, and a held Start cannot restart it.', group: 'motors', level: 'beginner', languages: ['ST'], showOnWelcome: true },
-  motor_control: { title: 'Motor Start/Stop in Ladder', summary: 'A motor start/stop in Ladder: Start seals in through the contactor\'s own contact; Stop or Overload drops it.', group: 'motors', level: 'beginner', languages: ['LD'], showOnWelcome: true },
-  motor_plant: { title: 'Motor with Speed Feedback', summary: 'Start and Stop command a motor; Running needs AtSpeed feedback, or a start-failure timeout latches a Fault.', group: 'motors', level: 'intermediate', languages: ['ST'], showOnWelcome: true },
+  motor_start_stop: example('motor_start_stop', { group: 'motors', level: 'beginner', languages: ['ST'], showOnWelcome: true }),
+  motor_control: example('motor_control', { group: 'motors', level: 'beginner', languages: ['LD'], showOnWelcome: true }),
+  motor_plant: example('motor_plant', { group: 'motors', level: 'intermediate', languages: ['ST'], showOnWelcome: true }),
 
   // Process and sequences
-  tank_level: { title: 'Tank Level Controller', summary: 'A pump that starts at low level and stops at high level; E-stop or pump fault latches an alarm until Reset.', group: 'process', level: 'intermediate', languages: ['ST'], showOnWelcome: true },
-  conveyor_01: { title: 'Conveyor with Diverter', summary: 'A conveyor belt with start/stop, a diverter for metal parts and a jam fault that needs Reset.', group: 'process', level: 'intermediate', languages: ['ST'], showOnWelcome: true },
-  pedestrian_crossing: { title: 'Pedestrian Crossing', summary: 'A traffic-light sequence: a pedestrian request takes vehicles from green through yellow to red, then shows WALK.', group: 'process', level: 'intermediate', languages: ['ST'], showOnWelcome: true },
+  tank_level: example('tank_level', { group: 'process', level: 'intermediate', languages: ['ST'], showOnWelcome: true }),
+  conveyor_01: example('conveyor_01', { group: 'process', level: 'intermediate', languages: ['ST'], showOnWelcome: true }),
+  pedestrian_crossing: example('pedestrian_crossing', { group: 'process', level: 'intermediate', languages: ['ST'], showOnWelcome: true }),
 
   // Language tour
-  blinky_st: { title: 'Blinky (Structured Text)', summary: 'A 50% LED blinker in Structured Text: one TON timer and a toggled state variable.', group: 'languages', level: 'beginner', languages: ['ST'], showOnWelcome: true },
-  blinky_il: { title: 'Blinky (Instruction List)', summary: 'A 50% LED blinker in Instruction List: two TON timers driving S and R operators.', group: 'languages', level: 'beginner', languages: ['IL'], showOnWelcome: true },
-  blinky_fbd: { title: 'Blinky (Function Block Diagram)', summary: 'A 50% LED blinker as a Function Block Diagram: two TON timers and a hold-OR-AND latch.', group: 'languages', level: 'beginner', languages: ['FBD'], showOnWelcome: true },
-  blinky_sfc: { title: 'Blinky (Sequential Function Chart)', summary: 'A 50% LED blinker as a Sequential Function Chart: two timed steps, LED_ON and LED_OFF.', group: 'languages', level: 'beginner', languages: ['SFC'], showOnWelcome: true },
+  blinky_st: example('blinky_st', { group: 'languages', level: 'beginner', languages: ['ST'], showOnWelcome: true }),
+  blinky_il: example('blinky_il', { group: 'languages', level: 'beginner', languages: ['IL'], showOnWelcome: true }),
+  blinky_fbd: example('blinky_fbd', { group: 'languages', level: 'beginner', languages: ['FBD'], showOnWelcome: true }),
+  blinky_sfc: example('blinky_sfc', { group: 'languages', level: 'beginner', languages: ['SFC'], showOnWelcome: true }),
 
   // Boards and hardware
-  pico_blinky: { title: 'Pico Blinky', summary: 'Blinks an LED on GP0 every 500 ms by counting 10 ms scans, and holds GP1 high while it runs.', group: 'boards', level: 'beginner', languages: ['ST'], board: 'rpi_pico', showOnWelcome: true },
-  pico_blinky_ton: { title: 'Pico Blinky (TON)', summary: 'Blinks an LED on GP0 every 500 ms with an IEC TON timer, so the time does not depend on the task interval.', group: 'boards', level: 'beginner', languages: ['ST'], board: 'rpi_pico', showOnWelcome: true },
-  pico_blinky_blink: { title: 'Pico Blinky (BLINK block)', summary: 'Blinks an LED on GP0 every 500 ms with BLINK, a ZPLC extension that is not part of IEC 61131-3.', group: 'boards', level: 'beginner', languages: ['ST'], board: 'rpi_pico', showOnWelcome: true },
-  esp32s3_blinky: { title: 'ESP32-S3 Blinky', summary: 'Blinks an LED on GPIO38 by counting scans; the pin is per the current overlay, the DevKitC-1 mapping is pending.', group: 'boards', level: 'beginner', languages: ['ST'], board: 'esp32s3_devkitc', showOnWelcome: true },
-  opta_led_chaser: { title: 'Opta LED Chaser', summary: 'A light that sweeps back and forth across the Opta outputs D0 to D3, advanced by a timer.', group: 'boards', level: 'intermediate', languages: ['ST'], board: 'arduino_opta_wifi', showOnWelcome: true },
-  opta_led_chaser_ld: { title: 'Opta LED Chaser (Ladder)', summary: 'The same sweeping light as a Ladder Diagram: a TON tick and a six-position shift register.', group: 'boards', level: 'intermediate', languages: ['LD'], board: 'arduino_opta_wifi', showOnWelcome: true },
-  multitask_demo: { title: 'Multitask Demo', summary: 'Two tasks at different rates, 10 ms and 100 ms, each blinking its own LED.', group: 'boards', level: 'intermediate', languages: ['ST'], board: 'rpi_pico', showOnWelcome: true },
-  analog_test: { title: 'Analog Temperature Reading', summary: 'Reads the Pico\'s internal temperature sensor (%IW8), converts it to degrees Celsius and flags an implausible reading.', group: 'boards', level: 'intermediate', languages: ['ST'], board: 'rpi_pico', showOnWelcome: true },
+  pico_blinky: example('pico_blinky', { group: 'boards', level: 'beginner', languages: ['ST'], board: 'rpi_pico', showOnWelcome: true }),
+  pico_blinky_ton: example('pico_blinky_ton', { group: 'boards', level: 'beginner', languages: ['ST'], board: 'rpi_pico', showOnWelcome: true }),
+  pico_blinky_blink: example('pico_blinky_blink', { group: 'boards', level: 'beginner', languages: ['ST'], board: 'rpi_pico', showOnWelcome: true }),
+  esp32s3_blinky: example('esp32s3_blinky', { group: 'boards', level: 'beginner', languages: ['ST'], board: 'esp32s3_devkitc', showOnWelcome: true }),
+  opta_led_chaser: example('opta_led_chaser', { group: 'boards', level: 'intermediate', languages: ['ST'], board: 'arduino_opta_wifi', showOnWelcome: true }),
+  opta_led_chaser_ld: example('opta_led_chaser_ld', { group: 'boards', level: 'intermediate', languages: ['LD'], board: 'arduino_opta_wifi', showOnWelcome: true }),
+  multitask_demo: example('multitask_demo', { group: 'boards', level: 'intermediate', languages: ['ST'], board: 'rpi_pico', showOnWelcome: true }),
+  analog_test: example('analog_test', { group: 'boards', level: 'intermediate', languages: ['ST'], board: 'rpi_pico', showOnWelcome: true }),
 
   // Test fixtures, kept out of the learner's list
-  kitchen_sink: { title: 'Kitchen Sink', summary: 'Test fixture that exercises every standard-library function block and function.', group: 'fixtures', level: 'advanced', languages: ['ST'], showOnWelcome: false },
-  pico_persist_test: { title: 'Pico Two-Task Smoke Test', summary: 'Hardware smoke test: a fast counter task and a 100 ms task that blinks an LED on GP0 every 500 ms.', group: 'fixtures', level: 'intermediate', languages: ['ST'], board: 'rpi_pico', showOnWelcome: false },
+  kitchen_sink: example('kitchen_sink', { group: 'fixtures', level: 'advanced', languages: ['ST'], showOnWelcome: false }),
+  pico_persist_test: example('pico_persist_test', { group: 'fixtures', level: 'intermediate', languages: ['ST'], board: 'rpi_pico', showOnWelcome: false }),
 };
 
 /** What the Welcome screen shows for one example. `level` is missing for a project that has no entry. */

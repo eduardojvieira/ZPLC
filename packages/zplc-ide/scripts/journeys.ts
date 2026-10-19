@@ -613,7 +613,7 @@ export const JOURNEYS: Journey[] = [
       await app.press('Enter');
       await app.type('UndefinedVariable := 1;');
       await app.click(tab('Problems'));
-      const live = css('[aria-label="Live Structured Text diagnostics"]');
+      const live = css('[aria-label="Live structured text diagnostics"]');
       await app.until('the live diagnostics to name the undeclared variable, with no build', async () => (await app.eval<string>(`${live}?.innerText ?? ''`)).includes('UndefinedVariable') || undefined);
       const markers = await monacoEval<Array<{ startLineNumber: number; startColumn: number; endColumn: number; message: string; code?: string }>>(app, `return monaco.editor.getModelMarkers({ owner: 'zplc.st-live' });`);
       assert(markers.length > 0 && markers[0]!.startLineNumber === last + 1 && markers[0]!.endColumn > markers[0]!.startColumn + 1, `The editor has no squiggle with a range on the faulty line: ${JSON.stringify(markers)}`);
@@ -977,7 +977,7 @@ export const JOURNEYS: Journey[] = [
       await newFile(app, 'pump', 'LD');
       await app.until('the Ladder editor on the new file', async () => await ladderRungs(app) !== null || undefined);
       const rungs = await ladderRungs(app) as number;
-      await app.click(button('Add Rung', 'contains'), 'the Add Rung button');
+      await app.click(button('Add rung', 'contains'), 'the Add rung button');
       await app.until('one more rung in the editor', async () => await ladderRungs(app) === rungs + 1 || undefined);
       await app.press('Ctrl+S');
       const saved = await app.until('pump.ld.json on disk', () => { const found = findOnDisk(project, 'pump.ld.json'); return found.length === 1 ? found[0] : undefined; });
@@ -1812,7 +1812,7 @@ export const JOURNEYS: Journey[] = [
       await openDiagram(app, 'src/main.ld.json', '[data-ld-rung-id]');
       const rungs = () => app.eval<number>(`document.querySelectorAll('[data-ld-rung-id]').length`);
       const before = await rungs();
-      await app.click(button('Add Rung'), 'the Add Rung button');
+      await app.click(button('Add rung'), 'the Add rung button');
       await app.until('a new rung', async () => await rungs() === before + 1 || undefined);
       const last = await app.eval<string>(`[...document.querySelectorAll('[data-ld-rung-id]')].at(-1).getAttribute('data-ld-rung-id')`);
       const drop = async (column: number, item: { type: string; category: string; fbType?: string }) => {
@@ -2722,7 +2722,7 @@ export const JOURNEYS: Journey[] = [
       // the assistant is optional: it says so, says it cannot operate hardware, and cannot be asked before it is configured
       await app.click(tab('Agent'), 'the Agent tab');
       const agent = await app.until('the Agent panel', async () => {
-        const text = await app.eval<string>(`document.querySelector('[aria-label="Optional Agent"]')?.innerText ?? ''`);
+        const text = await app.eval<string>(`document.querySelector('[aria-label="Optional agent"]')?.innerText ?? ''`);
         return text.includes('Agent') ? text : undefined;
       });
       assert(agent.includes('It cannot operate hardware.'), `The Agent panel does not say that it cannot operate hardware: ${JSON.stringify(agent)}`);
@@ -2740,15 +2740,15 @@ export const JOURNEYS: Journey[] = [
       // Changes: the review is run in isolation and shows the difference; it writes nothing; a change that fails is not offered for saving
       const reviewed = async () => {
         await app.click(button('Review active ST change'), 'Review active ST change');
-        await app.until('the review result', async () => await app.visible(css('[aria-label="Candidate review result"]')) || undefined, 60_000)
+        await app.until('the review result', async () => await app.visible(css('[aria-label="Change review result"]')) || undefined, 60_000)
           .catch(async (error: Error) => { throw new Error(`${error.message}: the Changes tab says ${JSON.stringify((await app.text()).replace(/\s+/g, ' ').slice(-700))}`); });
-        return app.eval<string>(`document.querySelector('[aria-label="Candidate review result"]').innerText`);
+        return app.eval<string>(`document.querySelector('[aria-label="Change review result"]').innerText`);
       };
       await app.click(tab('Changes'), 'the Changes tab');
       const refused = await reviewed();
-      assert(refused.includes('Rejected: candidate was not accepted.') && refused.includes('SCENARIO_ASSERTION_FAILED'), `The review does not refuse a change that breaks the scenario: ${JSON.stringify(refused)}`);
+      assert(refused.includes('Rejected: the change was not accepted.') && refused.includes('SCENARIO_ASSERTION_FAILED'), `The review does not refuse a change that breaks the scenario: ${JSON.stringify(refused)}`);
       assert(refused.includes('No file has been written.'), `The review of a refused change does not say that nothing was written: ${JSON.stringify(refused)}`);
-      assert(await app.visible(css('[aria-label="Candidate review result"] .monaco-diff-editor')), `The review of a refused change does not show the difference: ${await app.eval<string>(`document.querySelector('[aria-label="Candidate review result"]')?.outerHTML.slice(0, 400) ?? 'no result'`)}`);
+      assert(await app.visible(css('[aria-label="Change review result"] .monaco-diff-editor')), `The review of a refused change does not show the difference: ${await app.eval<string>(`document.querySelector('[aria-label="Change review result"]')?.outerHTML.slice(0, 400) ?? 'no result'`)}`);
       assert(!await app.visible(button('Save reviewed change')), 'A change that the review refused is offered for saving.');
       assert(disk(file) === original, 'Reviewing the change wrote the file.');
 
@@ -2762,7 +2762,7 @@ export const JOURNEYS: Journey[] = [
       await app.type('Reverse := FALSE;');
       await app.click(tab('Changes'), 'the Changes tab');
       const accepted = await reviewed();
-      assert(accepted.includes('Accepted: isolated host candidate passed.'), `The review does not accept a harmless statement: ${JSON.stringify(accepted)}`);
+      assert(accepted.includes('Accepted: the change passed in an isolated host run.'), `The review does not accept a harmless statement: ${JSON.stringify(accepted)}`);
       assert(accepted.includes('No file has been written.') && disk(file) === original, 'Reviewing the change wrote the file.');
 
       // only the person's own click saves it
@@ -3201,6 +3201,55 @@ export const JOURNEYS: Journey[] = [
       }
       const report = [...groups].map(([key, group]) => `${key} [${group.sample}] themes=${[...group.themes].join('/')} screens=${group.screens.size} (${[...group.screens].slice(0, 3).join('; ')})`);
       assert(found.length === 0, `The rendered accessibility check found ${found.length} findings, ${report.length} distinct, on ${covered.length} screens:\n${report.slice(0, 90).join('\n')}`);
+    },
+  },
+  {
+    name: '49 The migrated screens read in Spanish, with no raw catalog key, no English left over and no clipped control at 1366 by 768', example: 'motor_start_stop', proves: [], partly: ['UX-029', 'UX-030'],
+    run: async (app, { project }) => {
+      await app.cdp.command('Emulation.setDeviceMetricsOverride', { width: 1366, height: 768, deviceScaleFactor: 1, mobile: false });
+      // The user chose Spanish in Preferences: the setting is stored, and the window starts again from it.
+      await app.eval(`(() => { const key = 'zplc-ide-settings'; const stored = JSON.parse(localStorage.getItem(key) || '{}'); const target = stored.settings ?? stored; target.language = 'es'; localStorage.setItem(key, JSON.stringify(stored)); })()`);
+      await app.cdp.command('Page.reload');
+      await app.until('the Welcome screen in Spanish', async () => await app.visible(button('Abrir proyecto', 'contains')) || undefined);
+      const welcome = await app.eval<string>('document.body.innerText');
+      assert(welcome.includes('Marcha y paro de un motor') && !welcome.includes('Open project'), `The Welcome screen is not in Spanish: ${welcome.slice(0, 400)}`);
+      app.answer(project);
+      await app.click(button('Abrir proyecto', 'contains'), 'the Abrir proyecto button');
+      await app.until('the project workbench to appear', async () => await app.visible(css('[role="toolbar"]')) || undefined);
+
+      /** A catalog key shown as it is written (`console.tab.lab`), or one of the English phrases the migrated screens used to hard-code. */
+      const RAW_KEY = String.raw`\b(?:console|mqtt|modbus|network|io|controller|lab|toolchain|commtags|project|ld|importArchive|interlock|learn|toolbarMsg|examples|panel|toolbar|welcome|common)\.[a-z][A-Za-z0-9]*(?:\.[A-Za-z0-9]+)*\b`;
+      const text = (id: string) => app.eval<string>(`document.getElementById(${JSON.stringify(id)})?.innerText ?? ''`);
+      const walk = async (tab: string, expected: string[], english: string[]) => {
+        await app.click(css(`#console-tab-${tab}`), `the ${tab} tab`);
+        await app.until(`the ${tab} panel`, async () => (await text(`console-panel-${tab}`)) !== '' || undefined);
+        const body = await text(`console-panel-${tab}`);
+        for (const phrase of expected) assert(body.toLowerCase().includes(phrase.toLowerCase()), `The ${tab} panel does not say "${phrase}" in Spanish: ${body.slice(0, 500)}`);
+        for (const phrase of english) assert(!body.toLowerCase().includes(phrase.toLowerCase()), `The ${tab} panel still says "${phrase}" in English: ${body.slice(0, 500)}`);
+        assert(!new RegExp(RAW_KEY).test(body), `The ${tab} panel shows a raw catalog key: ${body.match(new RegExp(RAW_KEY))?.[0]}`);
+      };
+      await walk('tests', ['zplc.json'], ['Choose zplc.json', 'Run host scenarios', 'Select the saved']);
+      await walk('interlocks', ['Cobertura de enclavamientos declarados'], ['Declared interlock coverage', 'Check declared interlocks']);
+      await walk('lab', ['Laboratorio'], ['Run the saved host scenarios']);
+      await walk('changes', ['cambio'], ['Review active ST change', 'requires the desktop app']);
+      await walk('agent', ['Actualizar el estado'], ['Provider settings', 'Refresh status']);
+      const tabs = await app.eval<string[]>(`[...document.querySelectorAll('[role="tab"][id^="console-tab-"]')].map((tab) => tab.textContent.trim())`);
+      for (const label of ['Salida', 'Problemas', 'Enclavamientos', 'Laboratorio', 'Cambios', 'Agente']) assert(tabs.some((tab) => tab.includes(label)), `The results tabs are ${JSON.stringify(tabs)}, without ${label}.`);
+      const chrome = await app.eval<string>('document.body.innerText');
+      assert(!new RegExp(RAW_KEY).test(chrome), `The window shows a raw catalog key: ${chrome.match(new RegExp(RAW_KEY))?.[0]}`);
+
+      // No button of the toolbar or of the results tabs is cut off by the window (a tab strip that scrolls sideways is reached by scrolling it).
+      const clipped = await app.eval<string[]>(`(() => {
+        const vw = window.innerWidth, vh = window.innerHeight, found = [];
+        const scrolls = (element) => { for (let parent = element.parentElement; parent; parent = parent.parentElement) if (['auto', 'scroll'].includes(getComputedStyle(parent).overflowX) && parent.scrollWidth > parent.clientWidth) return true; return false; };
+        for (const element of document.querySelectorAll('[role="toolbar"] button, [role="tab"], [data-activity-rail] button')) {
+          const rect = element.getBoundingClientRect();
+          if (rect.width === 0 || rect.height === 0 || scrolls(element)) continue;
+          if (rect.left < -0.5 || rect.top < -0.5 || rect.right > vw + 0.5 || rect.bottom > vh + 0.5) found.push((element.getAttribute('aria-label') || element.textContent.trim() || element.id) + ' ' + Math.round(rect.left) + '..' + Math.round(rect.right));
+        }
+        return found;
+      })()`);
+      assert(clipped.length === 0, `Controls are clipped at 1366 by 768 in Spanish: ${clipped.join('; ')}`);
     },
   },
 ];

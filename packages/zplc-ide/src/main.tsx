@@ -5,6 +5,7 @@ import App from './App.tsx'
 import { ErrorBoundary } from './components/ErrorBoundary.tsx'
 import { LiveRegions } from './ui'
 import { useIDEStore } from './store/useIDEStore.ts'
+import { PRODUCT_NAME } from './productName.ts'
 
 const container = document.getElementById('root')!
 
@@ -19,7 +20,7 @@ if (import.meta.env.DEV && window.location.hash === '#ui-gallery') {
   createRoot(container).render(
     <StrictMode>
       <ErrorBoundary
-        region="ZPLC Studio"
+        region={PRODUCT_NAME}
         fullWindow
         recovery={{ label: 'Close project and discard changes', run: () => { useIDEStore.getState().closeProject({ discardUnsaved: true }); } }}
       >

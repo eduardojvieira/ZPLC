@@ -14,6 +14,7 @@ import { gradeRecordedScenarioLesson, learnLessonCatalog, parseLearnMasteryImpor
 import { Button, FileInput, ToggleGroup } from '../ui';
 
 export function LearnPanel({ workspaceTestPresentation }: { workspaceTestPresentation?: WorkspaceTestPresentation }) {
+  const { t, tn } = useT();
   const copyExampleProjectToFolder = useIDEStore((state) => state.copyExampleProjectToFolder);
   const setActiveConsoleTab = useIDEStore((state) => state.setActiveConsoleTab);
   const projectOpenError = useIDEStore((state) => state.projectOpenError);
@@ -74,21 +75,14 @@ export function LearnPanel({ workspaceTestPresentation }: { workspaceTestPresent
       return previous;
     });
   }, [checkAvailable, desktopProgress, grade.kind, hydrated, lesson.id]);
-  const gradeCopy = locale === 'es'
-    ? shownGrade.kind === 'passed' ? { title: 'Escenario verificado', body: `${lesson.requiredScenario} pasó ${shownGrade.assertions} ${shownGrade.assertions === 1 ? 'aserción registrada' : 'aserciones registradas'}.` }
-      : shownGrade.kind === 'failed' ? { title: 'El escenario no pasó', body: `${lesson.requiredScenario} registró ${shownGrade.assertions} ${shownGrade.assertions === 1 ? 'aserción' : 'aserciones'}; revisá Tests y la traza.` }
-        : shownGrade.kind === 'unrelated' ? { title: 'Resultado de otro escenario', body: `Ejecutá solamente ${lesson.requiredScenario} desde Tests para esta lección.` }
-          : shownGrade.kind === 'unavailable' ? { title: 'Evidencia incompleta', body: 'El resultado no tiene la evidencia guardada completa que requiere esta lección.' }
-            : shownGrade.kind === 'scenario-changed' ? { title: 'El escenario fue modificado', body: `Las assertions registradas no son las del escenario ${lesson.requiredScenario} de la lección; restaurá el escenario original y ejecutalo de nuevo.` }
-              : checkAvailable ? { title: 'Sin verificar', body: 'Guardá los cambios y presioná Verificar: el programa se califica contra el escenario de la lección, no contra el de tu carpeta.' }
-                : { title: 'Sin escenario registrado', body: `Ejecutá ${lesson.requiredScenario} desde Tests para registrar evidencia.` }
-    : shownGrade.kind === 'passed' ? { title: 'Scenario verified', body: `${lesson.requiredScenario} passed ${shownGrade.assertions} recorded assertion${shownGrade.assertions === 1 ? '' : 's'}.` }
-      : shownGrade.kind === 'failed' ? { title: 'Scenario did not pass', body: `${lesson.requiredScenario} recorded ${shownGrade.assertions} assertion${shownGrade.assertions === 1 ? '' : 's'}; review Tests and the trace.` }
-        : shownGrade.kind === 'unrelated' ? { title: 'Result belongs to another scenario', body: `Run only ${lesson.requiredScenario} from Tests for this lesson.` }
-          : shownGrade.kind === 'unavailable' ? { title: 'Evidence is incomplete', body: 'The result lacks the complete saved evidence this lesson requires.' }
-            : shownGrade.kind === 'scenario-changed' ? { title: 'The scenario was changed', body: `The recorded assertions are not those of the lesson's ${lesson.requiredScenario} scenario; restore the original scenario and run it again.` }
-              : checkAvailable ? { title: 'Not checked yet', body: 'Save your changes and press Check: your program is graded against the lesson\'s own scenario, not the one in your folder.' }
-                : { title: 'No recorded scenario', body: `Run ${lesson.requiredScenario} from Tests to record evidence.` };
+  const scenario = lesson.requiredScenario;
+  const gradeCopy = shownGrade.kind === 'passed' ? { title: t('learn.grade.passed.title'), body: tn('learn.grade.passed.body', shownGrade.assertions, { scenario }) }
+    : shownGrade.kind === 'failed' ? { title: t('learn.grade.failed.title'), body: tn('learn.grade.failed.body', shownGrade.assertions, { scenario }) }
+      : shownGrade.kind === 'unrelated' ? { title: t('learn.grade.unrelated.title'), body: t('learn.grade.unrelated.body', { scenario }) }
+        : shownGrade.kind === 'unavailable' ? { title: t('learn.grade.unavailable.title'), body: t('learn.grade.unavailable.body') }
+          : shownGrade.kind === 'scenario-changed' ? { title: t('learn.grade.changed.title'), body: t('learn.grade.changed.body', { scenario }) }
+            : checkAvailable ? { title: t('learn.grade.notChecked.title'), body: t('learn.grade.notChecked.body') }
+              : { title: t('learn.grade.notRecorded.title'), body: t('learn.grade.notRecorded.body', { scenario }) };
 
   const copyExample = () => {
     if (copyingRef.current || !folderAccess) return;
@@ -149,18 +143,16 @@ export function LearnPanel({ workspaceTestPresentation }: { workspaceTestPresent
   };
 
   const refusalText = refusal
-    ? locale === 'es'
-      ? `No se pudo calificar el programa (${refusal.codes.join(', ') || refusal.reason}); corregí la compilación o revisá que el simulador esté disponible.`
-      : `The program could not be graded (${refusal.codes.join(', ') || refusal.reason}); fix the build or check that the simulator is available.`
-    : lessonCheck.failed(lesson.id) ? (locale === 'es' ? 'La verificación no terminó; probá de nuevo.' : 'The check did not finish; try again.') : '';
+    ? t('learn.refusal', { reason: refusal.codes.join(', ') || refusal.reason })
+    : lessonCheck.failed(lesson.id) ? t('learn.checkDidNotFinish') : '';
   // The manifest names the reference solution as `src/<file>`; the example loader keys files by their name under src.
   const solutionFile = lesson.solutionProgram.slice('src/'.length);
   const solutionText = /\.(st|il)$/i.test(solutionFile) ? getFileContent(lesson.referenceExampleId, solutionFile) : null;
-  const copyLabel = locale === 'es' ? `Copiar ejercicio ${lesson.title}` : `Copy ${lesson.title} exercise`;
-  const testsLabel = locale === 'es' ? 'Abrir Tests' : 'Open Tests';
+  const copyLabel = t('learn.copyExercise', { title: lesson.title });
+  const testsLabel = t('learn.openTests');
   const masteryCopy = mastered.has(lesson.id)
-    ? locale === 'es' ? 'Completada anteriormente' : 'Previously completed'
-    : locale === 'es' ? 'Pendiente' : 'Not completed';
+    ? t('learn.previouslyCompleted')
+    : t('learn.notCompleted');
 
   return (
     <section aria-labelledby="learn-title" className="min-h-full p-3 font-sans text-sm text-[var(--color-surface-200)]">
@@ -170,40 +162,40 @@ export function LearnPanel({ workspaceTestPresentation }: { workspaceTestPresent
             <div className="min-w-0">
               <h2 id="learn-title" className="flex items-center gap-2 text-base font-semibold text-[var(--color-surface-100)]"><BookOpen size={17} aria-hidden="true" />{lesson.title}</h2>
               <p className="mt-1 max-w-[68ch] leading-5 text-[var(--color-surface-300)]">{lesson.summary}</p>
-              <ul aria-label={locale === 'es' ? 'Objetivos de aprendizaje' : 'Learning objectives'} className="mt-2 list-disc space-y-0.5 pl-5 text-xs leading-5 text-[var(--color-surface-300)]">
+              <ul aria-label={t('learn.learningObjectives')} className="mt-2 list-disc space-y-0.5 pl-5 text-xs leading-5 text-[var(--color-surface-300)]">
                 {lesson.objectives.map((objective) => <li key={objective}>{objective}</li>)}
               </ul>
             </div>
             <ToggleGroup
-              label={locale === 'es' ? 'Idioma de la lección' : 'Lesson language'}
+              label={t('learn.lessonLanguage')}
               value={locale}
               onValueChange={(value) => setLocale(value as LearnLocale)}
               options={[{ value: 'es', label: 'Español' }, { value: 'en', label: 'English' }]}
             />
           </div>
           <ToggleGroup
-            label={locale === 'es' ? 'Lección' : 'Lesson'}
+            label={t('learn.lesson')}
             className="mt-3 flex-wrap"
             value={lessonId}
             onValueChange={(id) => { chosenRef.current = true; setLessonId(id as LearnLessonId); setCopyStatus('idle'); note({ lessonId: id as LearnLessonId, started: true, last: true }); }}
             options={lessons.map((candidate) => ({ value: candidate.id, label: candidate.title, disabled: copyStatus === 'copying' }))}
           />
           <p className="mt-3 break-words font-mono text-xs text-[var(--color-surface-400)]">{lesson.sourcePath} · {lesson.scenarioPath}</p>
-          <p className="mt-1 text-xs leading-5 text-[var(--color-surface-400)]">{locale === 'es' ? 'El starter falla este escenario host hasta corregir la omisión indicada.' : 'The starter fails this host scenario until the stated omission is corrected.'}</p>
-          <p aria-label={locale === 'es' ? 'Progreso de la lección' : 'Lesson progress'} className="mt-2 text-xs text-[var(--color-surface-400)]">{masteryCopy} · {mastered.size}/{lessons.length}</p>
+          <p className="mt-1 text-xs leading-5 text-[var(--color-surface-400)]">{t('learn.theStarterFailsThis')}</p>
+          <p aria-label={t('learn.lessonProgress')} className="mt-2 text-xs text-[var(--color-surface-400)]">{masteryCopy} · {mastered.size}/{lessons.length}</p>
         </header>
 
-        <section data-learn-grade={shownGrade.kind} aria-label={locale === 'es' ? 'Evidencia de la lección' : 'Lesson evidence'} className="border-y border-[var(--color-surface-600)] py-3">
+        <section data-learn-grade={shownGrade.kind} aria-label={t('learn.lessonEvidence')} className="border-y border-[var(--color-surface-600)] py-3">
           <div role="status" aria-live="polite" className="flex items-start gap-2">
             {shownGrade.kind === 'passed' ? <FlaskConical size={16} className="mt-0.5 shrink-0 text-[var(--color-accent-green)]" aria-hidden="true" /> : <Info size={16} className="mt-0.5 shrink-0 text-[var(--color-surface-300)]" aria-hidden="true" />}
             <div className="min-w-0">
               <h3 className="font-medium text-[var(--color-surface-100)]">{gradeCopy.title}</h3>
               <p className="mt-1 leading-5 text-[var(--color-surface-300)]">{gradeCopy.body}</p>
               <p className="mt-1 text-xs leading-5 text-[var(--color-surface-400)]">{lesson.scope}</p>
-              <p className="mt-1 text-xs leading-5 text-[var(--color-surface-400)]"><span className="font-medium text-[var(--color-surface-200)]">{locale === 'es' ? 'Falla a corregir:' : 'Fault to correct:'}</span> {lesson.faultCases.join(' ')}</p>
-              {lesson.authorScenarioIds.length > 0 && <p className="mt-1 text-xs leading-5 text-[var(--color-surface-400)]"><span className="font-medium text-[var(--color-surface-200)]">{locale === 'es' ? 'Regresiones incluidas:' : 'Included regressions:'}</span> {lesson.authorScenarioIds.join(', ')}</p>}
+              <p className="mt-1 text-xs leading-5 text-[var(--color-surface-400)]"><span className="font-medium text-[var(--color-surface-200)]">{t('learn.faultToCorrect')}</span> {lesson.faultCases.join(' ')}</p>
+              {lesson.authorScenarioIds.length > 0 && <p className="mt-1 text-xs leading-5 text-[var(--color-surface-400)]"><span className="font-medium text-[var(--color-surface-200)]">{t('learn.includedRegressions')}</span> {lesson.authorScenarioIds.join(', ')}</p>}
               {shownGrade.kind === 'failed' && (
-                <ul data-learn-failures aria-label={locale === 'es' ? 'Assertions que fallaron' : 'Failed assertions'} className="mt-2 space-y-1 text-xs leading-5 text-[var(--color-surface-300)]">
+                <ul data-learn-failures aria-label={t('learn.failedAssertions')} className="mt-2 space-y-1 text-xs leading-5 text-[var(--color-surface-300)]">
                   {shownGrade.failures.map((failure) => (
                     <li key={failure.index}>
                       {describeFailure(failure, lesson.scenario.expectations[failure.index], locale)}
@@ -216,48 +208,48 @@ export function LearnPanel({ workspaceTestPresentation }: { workspaceTestPresent
           </div>
         </section>
 
-        <ol className="space-y-3" aria-label={locale === 'es' ? 'Pasos de la lección' : 'Lesson steps'}>
+        <ol className="space-y-3" aria-label={t('learn.lessonSteps')}>
           {lesson.stages.map((stage) => (
             <li key={stage.title} className="border-b border-[var(--color-surface-700)] pb-3">
               <h3 className="font-medium text-[var(--color-surface-100)]">{stage.title}</h3>
               <p className="mt-1 leading-5 text-[var(--color-surface-300)]">{stage.body}</p>
               <details className="mt-2 text-xs text-[var(--color-surface-300)]">
-                <summary className="cursor-pointer select-none font-medium text-[var(--color-accent-blue)]">{locale === 'es' ? 'Ver checkpoint esperado' : 'Show expected checkpoint'}</summary>
+                <summary className="cursor-pointer select-none font-medium text-[var(--color-accent-blue)]">{t('learn.showExpectedCheckpoint')}</summary>
                 <p className="mt-1 leading-5">{stage.checkpoint}</p>
               </details>
             </li>
           ))}
         </ol>
 
-        <section aria-label={locale === 'es' ? 'Pistas' : 'Hints'} className="border-b border-[var(--color-surface-700)] pb-3">
+        <section aria-label={t('learn.hints')} className="border-b border-[var(--color-surface-700)] pb-3">
           {lesson.hints.map((hint, index) => (
             <details key={index} onToggle={(event) => { if (event.currentTarget.open) note({ lessonId: lesson.id, hint: index === 0 ? 1 : 2 }); }} className="mt-1 text-xs text-[var(--color-surface-300)]">
-              <summary className="cursor-pointer select-none font-medium text-[var(--color-accent-blue)]">{locale === 'es' ? `Pista ${index + 1}` : `Hint ${index + 1}`}</summary>
+              <summary className="cursor-pointer select-none font-medium text-[var(--color-accent-blue)]">{t('learn.hint', { value: index + 1 })}</summary>
               <p className="mt-1 leading-5">{hint}</p>
             </details>
           ))}
           <details onToggle={(event) => { if (event.currentTarget.open) note({ lessonId: lesson.id, solution: true }); }} className="mt-1 text-xs text-[var(--color-surface-300)]">
-            <summary className="cursor-pointer select-none font-medium text-[var(--color-accent-blue)]">{locale === 'es' ? 'Ver la solución de referencia' : 'Show the reference solution'}</summary>
+            <summary className="cursor-pointer select-none font-medium text-[var(--color-accent-blue)]">{t('learn.showTheReferenceSolution')}</summary>
             {solutionText !== null
               ? <pre data-learn-solution className="mt-1 overflow-x-auto bg-[var(--color-surface-800)] p-2 font-mono leading-5">{solutionText}</pre>
-              : <p className="mt-1 leading-5">{locale === 'es' ? `La solución de referencia es el ejemplo ${lesson.referenceExampleId}; abrilo desde la pantalla de bienvenida.` : `The reference solution is the ${lesson.referenceExampleId} example; open it from the Welcome screen.`}</p>}
+              : <p className="mt-1 leading-5">{t('learn.theReferenceSolutionIs', { referenceExampleId: lesson.referenceExampleId })}</p>}
           </details>
         </section>
 
-        <section aria-label={locale === 'es' ? 'Acciones de la lección' : 'Lesson actions'} className="border-t border-[var(--color-surface-600)] pt-3">
+        <section aria-label={t('learn.lessonActions')} className="border-t border-[var(--color-surface-600)] pt-3">
           <div className="flex flex-wrap gap-2">
-            <Button variant="secondary" size="sm" onClick={copyExample} disabled={!folderAccess || copyStatus === 'copying'}><Copy size={14} aria-hidden="true" />{copyStatus === 'copying' ? (locale === 'es' ? 'Copiando…' : 'Copying…') : copyLabel}</Button>
-            {checkAvailable && <Button variant="secondary" size="sm" data-learn-check onClick={() => { void lessonCheck.run(lesson.id); }} disabled={!lessonCheck.canRun || lessonCheck.running(lesson.id)}><FlaskConical size={14} aria-hidden="true" />{lessonCheck.running(lesson.id) ? (locale === 'es' ? 'Verificando…' : 'Checking…') : (locale === 'es' ? 'Verificar' : 'Check')}</Button>}
-            {checkAvailable && lessonCheck.running(lesson.id) && <Button variant="secondary" size="sm" onClick={lessonCheck.cancel}>{locale === 'es' ? 'Cancelar' : 'Cancel'}</Button>}
+            <Button variant="secondary" size="sm" onClick={copyExample} disabled={!folderAccess || copyStatus === 'copying'}><Copy size={14} aria-hidden="true" />{copyStatus === 'copying' ? (t('learn.copying')) : copyLabel}</Button>
+            {checkAvailable && <Button variant="secondary" size="sm" data-learn-check onClick={() => { void lessonCheck.run(lesson.id); }} disabled={!lessonCheck.canRun || lessonCheck.running(lesson.id)}><FlaskConical size={14} aria-hidden="true" />{lessonCheck.running(lesson.id) ? (t('interlock.checking')) : (t('learn.check'))}</Button>}
+            {checkAvailable && lessonCheck.running(lesson.id) && <Button variant="secondary" size="sm" onClick={lessonCheck.cancel}>{t('common.cancel')}</Button>}
             <Button variant="primary" size="sm" onClick={() => setActiveConsoleTab('tests')}><FlaskConical size={14} aria-hidden="true" />{testsLabel}</Button>
-            <Button variant="secondary" size="sm" disabled={Boolean(desktopProgress && !hydrated)} onClick={() => { void exportMastery(); }}>{locale === 'es' ? 'Exportar progreso' : 'Export progress'}</Button>
-            <Button variant="secondary" size="sm" disabled={Boolean(desktopProgress && !hydrated)} onClick={() => importRef.current?.click()}>{locale === 'es' ? 'Importar progreso' : 'Import progress'}</Button>
-            <FileInput ref={importRef} accept="application/json,.json" label={locale === 'es' ? 'Seleccionar progreso para importar' : 'Select progress to import'} onChange={(event) => { void importMastery(event); }} />
+            <Button variant="secondary" size="sm" disabled={Boolean(desktopProgress && !hydrated)} onClick={() => { void exportMastery(); }}>{t('learn.exportProgress')}</Button>
+            <Button variant="secondary" size="sm" disabled={Boolean(desktopProgress && !hydrated)} onClick={() => importRef.current?.click()}>{t('learn.importProgress')}</Button>
+            <FileInput ref={importRef} accept="application/json,.json" label={t('learn.selectProgressToImport')} onChange={(event) => { void importMastery(event); }} />
           </div>
-          <p role="status" className="mt-2 text-xs text-[var(--color-surface-400)]">{!folderAccess ? (locale === 'es' ? 'El acceso a carpetas no está disponible en este entorno.' : 'Folder access is unavailable in this environment.') : copyStatus === 'copying' ? (locale === 'es' ? 'Copiando el ejemplo en la carpeta elegida…' : 'Copying the example into the chosen folder…') : copyStatus === 'copied' ? (locale === 'es' ? 'Ejemplo copiado.' : 'Example copied.') : (locale === 'es' ? `Elegí zplc.json guardado en Tests y ejecutá solamente ${lesson.requiredScenario}.` : `Choose the saved zplc.json in Tests and run only ${lesson.requiredScenario}.`)}</p>
-          {checkAvailable && <p role="status" data-learn-check-status className="mt-2 text-xs text-[var(--color-surface-400)]">{!lessonCheck.isProjectOpen ? (locale === 'es' ? 'Abrí la carpeta del ejercicio para verificar.' : 'Open the exercise folder to check it.') : lessonCheck.unsaved ? (locale === 'es' ? 'Guardá los cambios (Ctrl+S) antes de verificar.' : 'Save your changes (Ctrl+S) before checking.') : refusalText}</p>}
+          <p role="status" className="mt-2 text-xs text-[var(--color-surface-400)]">{!folderAccess ? (t('welcome.folderAccessUnavailable')) : copyStatus === 'copying' ? (t('learn.copyingTheExampleInto')) : copyStatus === 'copied' ? (t('learn.exampleCopied')) : (t('learn.chooseTheSavedZplc', { requiredScenario: lesson.requiredScenario }))}</p>
+          {checkAvailable && <p role="status" data-learn-check-status className="mt-2 text-xs text-[var(--color-surface-400)]">{!lessonCheck.isProjectOpen ? (t('learn.openTheExerciseFolder')) : lessonCheck.unsaved ? (t('learn.saveYourChangesCtrl')) : refusalText}</p>}
           {copyStatus === 'failed' && projectOpenError && <p role="alert" data-learn-copy-error className="mt-2 break-words text-xs text-[var(--color-accent-red)]">{projectOpenError}</p>}
-          <p role="status" aria-live="polite" className="mt-2 text-xs text-[var(--color-surface-400)]">{masteryStatus === 'exported' ? (locale === 'es' ? 'Progreso exportado.' : 'Progress exported.') : masteryStatus === 'imported' ? (locale === 'es' ? 'Progreso importado y combinado.' : 'Progress imported and merged.') : masteryStatus === 'error' ? (locale === 'es' ? 'No se pudo importar o guardar el progreso.' : 'Progress could not be imported or saved.') : ''}</p>
+          <p role="status" aria-live="polite" className="mt-2 text-xs text-[var(--color-surface-400)]">{masteryStatus === 'exported' ? (t('learn.progressExported')) : masteryStatus === 'imported' ? (t('learn.progressImportedAndMerged')) : masteryStatus === 'error' ? (t('learn.progressCouldNotBe')) : ''}</p>
         </section>
       </div>
     </section>

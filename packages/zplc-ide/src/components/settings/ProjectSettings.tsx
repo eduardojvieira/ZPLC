@@ -35,7 +35,7 @@ export function ProjectSettings() {
       <div className="h-full overflow-auto bg-[var(--color-surface-900)] p-6">
         <div className="max-w-3xl mx-auto">
           <AppPreferences />
-          <p className="text-center text-[var(--color-surface-400)]">No project configuration loaded</p>
+          <p className="text-center text-[var(--color-surface-400)]">{t('project.noProjectConfigurationLoaded')}</p>
         </div>
       </div>
     );
@@ -71,15 +71,15 @@ export function ProjectSettings() {
             </div>
             <div>
               <h1 className="text-xl font-bold text-[var(--color-surface-100)]">
-                Project Settings
+                {t('toolbar.settings')}
               </h1>
               <p className="text-sm text-[var(--color-surface-400)]">
-                Configure hardware target, I/O mapping, and runtime behavior
+                {t('project.configureHardwareTargetI')}
               </p>
             </div>
           </div>
-          <Button variant="primary" size="sm" tooltip="Save changes to zplc.json" onClick={() => { void handleSave(); }}>
-            Save Config
+          <Button variant="primary" size="sm" tooltip={t('project.saveChangesToZplc')} onClick={() => { void handleSave(); }}>
+            {t('project.saveConfig')}
           </Button>
         </div>
 
@@ -99,7 +99,7 @@ export function ProjectSettings() {
         <div className="space-y-4">
           {/* ================= METADATA ================= */}
           <SettingsSection
-            title="Project Metadata"
+            title={t('project.projectMetadata')}
             icon={<FileText size={16} />}
             isExpanded={expandedSections.metadata}
             onToggle={() => toggleSection('metadata')}
@@ -111,33 +111,31 @@ export function ProjectSettings() {
         {/* Summary Footer */}
         <div className="mt-6 bg-[var(--color-surface-700)]/50 rounded-lg p-4 border border-[var(--color-surface-600)]">
           <div className="text-sm text-[var(--color-surface-300)]">
-            <strong className="text-[var(--color-surface-100)]">Configuration Summary:</strong>
+            <strong className="text-[var(--color-surface-100)]">{t('project.configurationSummary')}</strong>
             <ul className="mt-2 space-y-1 text-xs">
               <li>
-                Project: <span className="text-[var(--color-accent-blue)]">{projectConfig.name}</span> v{projectConfig.version}
-                {projectConfig.author && <span className="text-[var(--color-surface-400)]"> by {projectConfig.author}</span>}
+                {t('project.project')}{' '}<span className="text-[var(--color-accent-blue)]">{projectConfig.name}</span>{' '}{t('project.v')}{projectConfig.version}
+                {projectConfig.author && <span className="text-[var(--color-surface-400)]">{t('project.by', { author: projectConfig.author })}</span>}
               </li>
               {projectConfig.target?.board && (
                 <li>
-                  Target: <span className="text-[var(--color-accent-green)]">{projectConfig.target.board}</span>
-                  {projectConfig.target.clock_mhz && ` @ ${projectConfig.target.clock_mhz} MHz`}
+                  {t('project.target')}{' '}<span className="text-[var(--color-accent-green)]">{projectConfig.target.board}</span>
+                  {projectConfig.target.clock_mhz && t('project.mhz', { clock_mhz: projectConfig.target.clock_mhz })}
                 </li>
               )}
               <li>
-                I/O: <span className="text-[var(--color-accent-yellow)]">{projectConfig.io?.inputs?.length || 0}</span> inputs,
-                <span className="text-[var(--color-accent-yellow)]"> {projectConfig.io?.outputs?.length || 0}</span> outputs
+                {t('project.iO')}{' '}<span className="text-[var(--color-accent-yellow)]">{projectConfig.io?.inputs?.length || 0}</span>{' '}{t('project.inputs')}
+                <span className="text-[var(--color-accent-yellow)]"> {projectConfig.io?.outputs?.length || 0}</span>{' '}{t('project.outputs')}
               </li>
               <li>
-                Communication: <span className="text-[var(--color-accent-blue)]">{projectConfig.communication?.bindings?.length || projectConfig.communication?.tags?.length || 0}</span> tags,
-                MQTT <span className="text-[var(--color-accent-green)]">{projectConfig.communication?.mqtt?.enabled ? 'ON' : 'OFF'}</span>,
-                Modbus <span className="text-[var(--color-accent-green)]">{projectConfig.communication?.modbus?.enabled ? 'ON' : 'OFF'}</span>
+                {t('project.communication')}{' '}<span className="text-[var(--color-accent-blue)]">{projectConfig.communication?.bindings?.length || projectConfig.communication?.tags?.length || 0}</span>{' '}{t('project.tagsMqtt')}{' '}<span className="text-[var(--color-accent-green)]">{projectConfig.communication?.mqtt?.enabled ? t('console.on') : t('console.off')}</span>{t('project.modbus')}{' '}<span className="text-[var(--color-accent-green)]">{projectConfig.communication?.modbus?.enabled ? t('console.on') : t('console.off')}</span>
               </li>
               <li>
-                Network: <span className="text-[var(--color-accent-green)]">{getBoardNetworkType(projectConfig.target?.board)}</span>
+                {t('project.network')}{' '}<span className="text-[var(--color-accent-green)]">{getBoardNetworkType(projectConfig.target?.board)}</span>
                 {projectConfig.network?.hostname ? ` (${projectConfig.network.hostname})` : ''}
               </li>
               <li>
-                Tasks: <span className="text-[var(--color-accent-green)]">{projectConfig.tasks.length}</span> configured
+                {t('project.tasks')}{' '}<span className="text-[var(--color-accent-green)]">{projectConfig.tasks.length}</span>{' '}{t('project.configured')}
               </li>
             </ul>
           </div>

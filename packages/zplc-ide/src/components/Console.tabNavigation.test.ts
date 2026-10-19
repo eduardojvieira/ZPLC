@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'bun:test';
+import { withEnglishMessages } from '../i18n/inlineMessages';
 import { claimMotorInputCommand, shouldClearMotorInputFailure } from './liveNativeMotorPanel';
 
 describe('Console tab boundary', () => {
@@ -18,7 +19,7 @@ describe('Console tab boundary', () => {
   });
 
   it('keeps roving tab focus and the four standard navigation keys', () => {
-    const source = readFileSync(join(import.meta.dir, 'Console.tsx'), 'utf8');
+    const source = withEnglishMessages(readFileSync(join(import.meta.dir, 'Console.tsx'), 'utf8'));
 
     expect(source).toContain('tabIndex={activeConsoleTab === tab.id ? 0 : -1}');
     expect(source).toContain("key === 'ArrowLeft'");
@@ -41,7 +42,7 @@ describe('Console tab boundary', () => {
   });
 
   it('keeps candidate review in the lower ledger with saved-file fences and no physical apply path', () => {
-    const source = readFileSync(join(import.meta.dir, 'Console.tsx'), 'utf8');
+    const source = withEnglishMessages(readFileSync(join(import.meta.dir, 'Console.tsx'), 'utf8'));
 
     expect(source).toContain("id: 'changes'");
     expect(source).toContain("activeConsoleTab === 'changes'");
@@ -65,16 +66,16 @@ describe('Console tab boundary', () => {
     expect(source).toContain('const candidateDesktopReady = Boolean(candidateChangeSet && workspaceTests);');
     expect(source).toContain('!candidateDesktopReady');
     expect(source).toContain('candidateDesktopReady &&');
-    expect(source).toContain('Review · {snapshot.path}');
+    expect(source).toContain('Review · {path}');
     expect(source).toContain('Saved on disk');
     expect(source).toContain('Current editor buffer');
-    expect(source).toContain("artifact.kind === 'zplc' ? 'ZPLC program' : 'Trace'");
-    expect(source).toContain('aria-label={`${artifact.kind === \'zplc\' ? \'ZPLC program\' : \'Trace\'} SHA-256 ${artifact.sha256}`}');
-    expect(source).toContain('Saved input identity SHA-256 ${presentation.savedTestInputIdentity.sha256}');
+    expect(source).toContain("artifact.kind === 'zplc' ? ZPLC program : Trace");
+    expect(source).toContain("artifact.kind === 'zplc' ? ZPLC program SHA-256 {sha256} : Trace SHA-256 {sha256}");
+    expect(source).toContain('Saved input identity SHA-256 {sha256}');
     expect(source).toContain('scrollBeyondLastLine: false');
     expect(source).toContain('renderSideBySide: true');
     expect(source).toContain("state.kind === 'running' || state.kind === 'cancelling' ? { kind: 'stale' }");
-    expect(source).toContain("Candidate is no longer current. Review again.");
+    expect(source).toContain("The change is no longer current. Review again.");
     expect(source).toContain("setCandidateReviewState({ kind: 'saving' })");
     expect(source).toContain('Review itself does not write files.');
     expect(source).toContain('Open a saved project folder to review a change.');
@@ -109,17 +110,17 @@ describe('Console tab boundary', () => {
   });
 
   it('labels live ST diagnostics separately from canonical build diagnostics', () => {
-    const source = readFileSync(join(import.meta.dir, 'Console.tsx'), 'utf8');
+    const source = withEnglishMessages(readFileSync(join(import.meta.dir, 'Console.tsx'), 'utf8'));
 
     expect(source).toContain('Live ST diagnostics · not build evidence');
     expect(source).toContain('Latest build diagnostics');
-    expect(source).toContain("t('panel.problems.empty.unchecked')");
+    expect(source).toContain('Compile the project to check it for problems.');
     expect(source).toContain('stBufferDiagnostics.compilerRunId === compilerRunId');
   });
 
   // The copy of the view (its title, button, hints and the claim it does not make) is InterlockCoverage.test.tsx.
   it('runs the declared interlock check from its own tab, with saved-session fences and no physical claim', () => {
-    const source = readFileSync(join(import.meta.dir, 'Console.tsx'), 'utf8');
+    const source = withEnglishMessages(readFileSync(join(import.meta.dir, 'Console.tsx'), 'utf8'));
     expect(source).toContain("id: 'interlocks'");
     expect(source).toContain("activeConsoleTab === 'interlocks' && <InterlockCoverage");
     expect(source).toContain('workspaceTests.safetyCheck({ workspaceId })');
@@ -134,14 +135,14 @@ describe('Console tab boundary', () => {
   });
 
   it('keeps workspace tests bound to the current local project session', () => {
-    const source = readFileSync(join(import.meta.dir, 'Console.tsx'), 'utf8');
+    const source = withEnglishMessages(readFileSync(join(import.meta.dir, 'Console.tsx'), 'utf8'));
 
     expect(source).toContain('registerProjectFile(file)');
     expect(source).toContain('isWorkspaceManifestRegistrationCurrent(useIDEStore.getState().projectSession, expectedProjectSession)');
     expect(source).toContain('current.hasUnsavedChanges()');
     expect(source).toContain('isWorkspaceTestRunCurrent(latest, { projectSession: expectedProjectSession, compilerRunId: expectedCompilerRunId, workspaceId })');
     expect(source).toContain("Choose zplc.json");
-    expect(source).toContain("Relink zplc.json");
+    expect(source).toContain("Choose zplc.json again");
     expect(source).toContain("Linked saved workspace ready for host scenarios.");
     expect(source).toContain("Select the saved workspace zplc.json whose scenarios you want to run.");
     // The chooser is the kit's FileInput: a hidden input (ui/Field.tsx) that the visible buttons open.
@@ -159,14 +160,14 @@ describe('Console tab boundary', () => {
     expect(source).toContain('workspaceTests.run(request)');
     expect(source).toContain('onClick={() => { void runWorkspaceTests(); }}');
     expect(source).toContain('Run this scenario again');
-    expect(source).toContain('aria-label={`Run ${scenario.id} again on native POSIX`}');
+    expect(source).toContain('aria-label="Run {id} again on native POSIX"');
     expect(source).toContain('onRunScenario={(scenarioId) => { void runWorkspaceTests(scenarioId); }}');
     expect(source).toContain("workspaceTestState !== 'running'");
     expect(source).not.toContain('It may differ from the project open in the editor.');
   });
 
   it('offers a session-fenced save only while Tests is blocked by unsaved work', () => {
-    const source = readFileSync(join(import.meta.dir, 'Console.tsx'), 'utf8');
+    const source = withEnglishMessages(readFileSync(join(import.meta.dir, 'Console.tsx'), 'utf8'));
     const start = source.indexOf('const saveWorkspaceProject = async () => {');
     const end = source.indexOf('const runWorkspaceTests = async (scenarioId?: string) => {');
     const handler = source.slice(start, end);
@@ -191,10 +192,10 @@ describe('Console tab boundary', () => {
   });
 
   it('keeps recorded scenario evidence in Tests, separate from the live Trace panel', () => {
-    const source = readFileSync(join(import.meta.dir, 'Console.tsx'), 'utf8');
+    const source = withEnglishMessages(readFileSync(join(import.meta.dir, 'Console.tsx'), 'utf8'));
 
     expect(source).toContain('Scenario evidence (recorded test result)');
-    expect(source).toContain('Recorded during this host test run. It does not update with the live Trace panel.');
+    expect(source).toContain('Recorded during this host test run. It does not update with the live trace panel.');
     expect(source).toContain('Recorded assertions for');
     expect(source).toContain('Recorded sampled timeline for');
     expect(source).toContain('workspaceTestStateForLink.presentation');
@@ -238,8 +239,8 @@ describe('Console tab boundary', () => {
     expect(source).toContain('Pedestrian');
     expect(source).toContain('Request');
     expect(source).toContain('Plant');
-    expect(source).toContain('Request ${sample.request} at ${sample.atMs} ms');
-    expect(source).toContain('Plant ${sample.phase} at ${sample.atMs} ms');
+    expect(source).toContain('Request {request} at {atMs} ms');
+    expect(source).toContain('Plant {phase} at {atMs} ms');
     expect(source).toContain('Pump');
     expect(source).toContain('Alarm');
     expect(source).toContain('Recorded native POSIX scenario result — not live runtime, hardware, or HIL evidence.');
@@ -249,7 +250,7 @@ describe('Console tab boundary', () => {
   });
 
   it('keeps one observable native motor module inside Trace before allowing closed inputs', () => {
-    const source = readFileSync(join(import.meta.dir, 'Console.tsx'), 'utf8');
+    const source = withEnglishMessages(readFileSync(join(import.meta.dir, 'Console.tsx'), 'utf8'));
 
     expect(source).toContain("activeConsoleTab === 'trace'");
     expect(source).toContain('function LiveNativeMotorPanel');
