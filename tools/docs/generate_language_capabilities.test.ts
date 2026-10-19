@@ -30,8 +30,8 @@ describe('LNG-001 language capability table: one row per language and capability
     expect(capabilityBlock('en')).toContain('Board only');
     // the committed table may have no gap left: a gap is a null cell, and it is never drawn as evidence
     const gapped: CapabilityTable = structuredClone(table);
-    gapped.languages.il!.force = null;
-    const row = capabilityBlock('en', gapped).split('\n').find((line) => line.startsWith('| Instruction List') && line.includes('Force'))!;
+    gapped.languages.ld!.force = null;
+    const row = capabilityBlock('en', gapped).split('\n').find((line) => line.startsWith('| Ladder') && line.includes('Force'))!;
     expect(row).toContain('Not tested end to end yet');
     expect(capabilityBlock('es', gapped)).toContain('Aún sin prueba de extremo a extremo');
   });

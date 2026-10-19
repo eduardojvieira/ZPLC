@@ -90,10 +90,7 @@
     "kind": "journey",
     "ref": "28b Online values of a rung come from the debug map"
    },
-   "force": {
-    "kind": "journey",
-    "ref": "54c A forced variable is shown as forced in the Ladder diagram"
-   },
+   "force": null,
    "deploy": {
     "kind": "board"
    }

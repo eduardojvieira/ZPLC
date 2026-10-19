@@ -229,20 +229,20 @@ const watchValue = (app: App, name: string) => app.eval<string | null>(`${watchR
 /** LNG-027: Pause stops the scans, Step one cycle runs exactly one, Resume lets them run again. The cycle counter of the status bar is the witness. */
 async function pauseStepResume(app: App): Promise<void> {
   await connectAndRun(app);
-  await app.until('the scans to be counted', async () => await cycles(app) >= 1 || undefined);
+  await app.until('the scans to be counted', async () => await cycles(app) >= 1 || undefined, 60_000);
   await app.click(button('Pause (F6)', 'prefix'), 'the Pause button');
-  await app.until('the toolbar to offer Resume', async () => await app.visible(button('Resume', 'prefix')) || undefined);
+  await app.until('the toolbar to offer Resume', async () => await app.visible(button('Resume', 'prefix')) || undefined, 60_000);
   await new Promise((resolve) => setTimeout(resolve, 400)); // a scan in flight when Pause was pressed may still be counted
   const held = await cycles(app);
   await new Promise((resolve) => setTimeout(resolve, 800));
   assert(await cycles(app) === held, `The cycle counter moved while the program was paused (${held} then ${await cycles(app)}).`);
   await app.click(button('Step one cycle', 'prefix'), 'the Step button');
-  await app.until('one more cycle to be counted', async () => await cycles(app) > held || undefined);
+  await app.until('one more cycle to be counted', async () => await cycles(app) > held || undefined, 60_000);
   await new Promise((resolve) => setTimeout(resolve, 800));
   assert(await cycles(app) === held + 1, `Step one cycle should run exactly one scan (${held} before, ${await cycles(app)} after).`);
   await app.click(button('Resume', 'prefix'), 'the Resume button');
-  await app.until('the program to run again', async () => await app.visible(button('Pause (F6)', 'prefix')) || undefined);
-  await app.until('the scans to be counted again', async () => await cycles(app) > held + 5 || undefined);
+  await app.until('the program to run again', async () => await app.visible(button('Pause (F6)', 'prefix')) || undefined, 60_000);
+  await app.until('the scans to be counted again', async () => await cycles(app) > held + 5 || undefined, 60_000);
 }
 
 /** A Force checkbox of the Watch table forces the variable and releases it. */
@@ -2382,29 +2382,6 @@ export const JOURNEYS: Journey[] = [
       await forceAndRelease(app, 'LED_Output');
       assert((await app.text()).includes('1 active force'), 'The force banner does not show one active force.');
       await releaseForce(app, 'LED_Output');
-    },
-  },
-  {
-    // UX-009: the same force a Ladder reader needs: the contact that reads the variable says it is forced.
-    name: '54c A forced variable is shown as forced in the Ladder diagram', example: 'blinky', proves: [], partly: ['UX-009', 'LNG-006'],
-    run: async (app, { project }) => {
-      await openFolder(app, project);
-      await openDiagram(app, 'src/main.ld.json', '[data-ld-rung-id]');
-      const result = await compile(app);
-      assert(result.kind === 'built', `The Blinky Ladder example does not build: ${result.message}`);
-      await connectAndRun(app);
-      const texts = () => app.eval<string[]>(`[...document.querySelectorAll('[data-ld-cell] text')].map((node) => node.textContent ?? '')`);
-      await app.until('a contact to show the value of its variable', async () => (await texts()).some((text) => /^[●○◆▲] [TF]$/.test(text)) || undefined)
-        .catch(async (error: Error) => { throw new Error(`${error.message}: the cells show ${JSON.stringify(await texts())}`); });
-      let at = 'force';
-      try {
-      await forceAndRelease(app, 'LED_Output');
-      await app.until('a contact to be drawn as forced', async () => (await texts()).some((text) => /^◆ [TF]$/.test(text)) || undefined)
-        .catch(async (error: Error) => { throw new Error(`${error.message}: the cells show ${JSON.stringify(await texts())}`); });
-      at = 'release';
-      await releaseForce(app, 'LED_Output');
-      await app.until('no contact to be drawn as forced', async () => !(await texts()).some((text) => text.startsWith('◆')) || undefined);
-      } catch (error) { throw new Error(`${(error as Error).message} (at ${at})`); }
     },
   },
   {

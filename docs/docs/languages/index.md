@@ -48,7 +48,7 @@ Every row names the check that shows the capability: a Studio journey, a test on
 | Ladder Diagram | Simulate | Test on the native runtime | `Blinky visual languages on native POSIX` |
 | Ladder Diagram | Debug (breakpoint, pause, step) | Studio journey in the native simulation | `28 A breakpoint on a rung stops execution` |
 | Ladder Diagram | Watch online values | Studio journey in the native simulation | `28b Online values of a rung come from the debug map` |
-| Ladder Diagram | Force | Studio journey in the native simulation | `54c A forced variable is shown as forced in the Ladder diagram` |
+| Ladder Diagram | Force | Not tested end to end yet |   |
 | Ladder Diagram | Deploy to a board | Board only | A person deploys and runs it on a board; the hardware evidence page lists the records |
 | Function Block Diagram | Edit | Studio journey in the native simulation | `28g A function block diagram is edited from the keyboard` |
 | Function Block Diagram | Build | Test on the native runtime | `Blinky visual languages on native POSIX` |
