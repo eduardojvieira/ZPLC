@@ -705,7 +705,7 @@
           },
           "instead": {
             "en": "Complete it in Simulation, then blink an LED on your own board with the Pico blinky example.",
-            "es": "Complétela en Simulación y luego haga parpadear un LED en su propia placa con el ejemplo Pico blinky."
+            "es": "Complétela en Simulación y luego haga parpadear un LED en su propia placa con el ejemplo Blinky para Pico."
           }
         }
       },
