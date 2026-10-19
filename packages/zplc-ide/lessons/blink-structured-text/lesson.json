@@ -14,6 +14,18 @@
   "tracks": [
     "simulation"
   ],
+  "unsupported": {
+    "hardware": {
+      "reason": {
+        "en": "The scenario checks the lamp at exact scan times with a script that gates the blinker; a board has no recorded trace for this lesson yet.",
+        "es": "El escenario comprueba la lámpara en instantes de ciclo exactos con un guion que habilita el parpadeo; una placa todavía no tiene traza registrada para esta lección."
+      },
+      "instead": {
+        "en": "Complete it in Simulation, then try the Raspberry Pi Pico blinky example for the same timer on a real LED.",
+        "es": "Complétela en Simulación y pruebe después el ejemplo de parpadeo de la Raspberry Pi Pico con el mismo temporizador sobre un LED real."
+      }
+    }
+  },
   "plant": null,
   "estimatedMinutes": 15,
   "starter": {

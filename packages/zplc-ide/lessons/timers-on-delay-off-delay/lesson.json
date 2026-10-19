@@ -14,6 +14,18 @@
   "tracks": [
     "simulation"
   ],
+  "unsupported": {
+    "hardware": {
+      "reason": {
+        "en": "The lesson measures on-delay and off-delay times against the scan clock; real board timing is not reproducible enough for a deterministic check, and no recorded trace exists yet.",
+        "es": "La lección mide retardos a la conexión y a la desconexión contra el reloj de ciclo; el tiempo en una placa real no es lo bastante reproducible para una comprobación determinista y todavía no existe una traza registrada."
+      },
+      "instead": {
+        "en": "Complete it in Simulation, where time is deterministic.",
+        "es": "Complétela en Simulación, donde el tiempo es determinista."
+      }
+    }
+  },
   "plant": null,
   "estimatedMinutes": 15,
   "starter": {

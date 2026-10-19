@@ -12,6 +12,18 @@
   "tracks": [
     "simulation"
   ],
+  "unsupported": {
+    "hardware": {
+      "reason": {
+        "en": "The lesson changes one value in a program that already blinks and checks the lamp in simulation; a board would need a recorded trace and wiring page that do not exist yet.",
+        "es": "La lección cambia un valor en un programa que ya parpadea y comprueba la lámpara en simulación; una placa necesitaría una traza registrada y una página de cableado que todavía no existen."
+      },
+      "instead": {
+        "en": "Complete it in Simulation. The Raspberry Pi Pico blinky example shows the same idea on the on-board LED.",
+        "es": "Complétela en Simulación. El ejemplo de parpadeo de la Raspberry Pi Pico muestra la misma idea con el LED de la placa."
+      }
+    }
+  },
   "plant": null,
   "estimatedMinutes": 10,
   "starter": {

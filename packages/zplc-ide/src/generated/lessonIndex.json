@@ -1797,6 +1797,18 @@
       "tracks": [
         "simulation"
       ],
+      "unsupported": {
+        "hardware": {
+          "reason": {
+            "en": "The lesson changes one value in a program that already blinks and checks the lamp in simulation; a board would need a recorded trace and wiring page that do not exist yet.",
+            "es": "La lección cambia un valor en un programa que ya parpadea y comprueba la lámpara en simulación; una placa necesitaría una traza registrada y una página de cableado que todavía no existen."
+          },
+          "instead": {
+            "en": "Complete it in Simulation. The Raspberry Pi Pico blinky example shows the same idea on the on-board LED.",
+            "es": "Complétela en Simulación. El ejemplo de parpadeo de la Raspberry Pi Pico muestra la misma idea con el LED de la placa."
+          }
+        }
+      },
       "plant": null,
       "plantMap": null,
       "estimatedMinutes": 10,
@@ -1956,6 +1968,18 @@
       "tracks": [
         "simulation"
       ],
+      "unsupported": {
+        "hardware": {
+          "reason": {
+            "en": "The lesson presses two inputs at scripted times to test AND, NOT and XOR; a board would need two wired buttons and a recorded trace that do not exist yet.",
+            "es": "La lección pulsa dos entradas en instantes definidos para probar AND, NOT y XOR; una placa necesitaría dos pulsadores cableados y una traza registrada que todavía no existen."
+          },
+          "instead": {
+            "en": "Complete it in Simulation, where the scenario presses both inputs for you.",
+            "es": "Complétela en Simulación, donde el escenario pulsa ambas entradas por usted."
+          }
+        }
+      },
       "plant": null,
       "plantMap": null,
       "estimatedMinutes": 15,
@@ -2115,6 +2139,18 @@
       "tracks": [
         "simulation"
       ],
+      "unsupported": {
+        "hardware": {
+          "reason": {
+            "en": "The lesson measures on-delay and off-delay times against the scan clock; real board timing is not reproducible enough for a deterministic check, and no recorded trace exists yet.",
+            "es": "La lección mide retardos a la conexión y a la desconexión contra el reloj de ciclo; el tiempo en una placa real no es lo bastante reproducible para una comprobación determinista y todavía no existe una traza registrada."
+          },
+          "instead": {
+            "en": "Complete it in Simulation, where time is deterministic.",
+            "es": "Complétela en Simulación, donde el tiempo es determinista."
+          }
+        }
+      },
       "plant": null,
       "plantMap": null,
       "estimatedMinutes": 15,
@@ -2274,6 +2310,18 @@
       "tracks": [
         "simulation"
       ],
+      "unsupported": {
+        "hardware": {
+          "reason": {
+            "en": "The scenario checks the lamp at exact scan times with a script that gates the blinker; a board has no recorded trace for this lesson yet.",
+            "es": "El escenario comprueba la lámpara en instantes de ciclo exactos con un guion que habilita el parpadeo; una placa todavía no tiene traza registrada para esta lección."
+          },
+          "instead": {
+            "en": "Complete it in Simulation, then try the Raspberry Pi Pico blinky example for the same timer on a real LED.",
+            "es": "Complétela en Simulación y pruebe después el ejemplo de parpadeo de la Raspberry Pi Pico con el mismo temporizador sobre un LED real."
+          }
+        }
+      },
       "plant": null,
       "plantMap": null,
       "estimatedMinutes": 15,
@@ -2433,6 +2481,18 @@
       "tracks": [
         "simulation"
       ],
+      "unsupported": {
+        "hardware": {
+          "reason": {
+            "en": "The lesson compares set-dominant and reset-dominant latches with inputs pressed at exact times; a board has no recorded trace for it yet.",
+            "es": "La lección compara biestables con prioridad al arranque y al reposo con entradas pulsadas en instantes exactos; una placa todavía no tiene traza registrada para ella."
+          },
+          "instead": {
+            "en": "Complete it in Simulation, where the scenario presses the inputs for you.",
+            "es": "Complétela en Simulación, donde el escenario pulsa las entradas por usted."
+          }
+        }
+      },
       "plant": null,
       "plantMap": null,
       "estimatedMinutes": 15,

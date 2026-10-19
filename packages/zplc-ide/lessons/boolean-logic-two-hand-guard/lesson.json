@@ -14,6 +14,18 @@
   "tracks": [
     "simulation"
   ],
+  "unsupported": {
+    "hardware": {
+      "reason": {
+        "en": "The lesson presses two inputs at scripted times to test AND, NOT and XOR; a board would need two wired buttons and a recorded trace that do not exist yet.",
+        "es": "La lección pulsa dos entradas en instantes definidos para probar AND, NOT y XOR; una placa necesitaría dos pulsadores cableados y una traza registrada que todavía no existen."
+      },
+      "instead": {
+        "en": "Complete it in Simulation, where the scenario presses both inputs for you.",
+        "es": "Complétela en Simulación, donde el escenario pulsa ambas entradas por usted."
+      }
+    }
+  },
   "plant": null,
   "estimatedMinutes": 15,
   "starter": {

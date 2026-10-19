@@ -14,6 +14,18 @@
   "tracks": [
     "simulation"
   ],
+  "unsupported": {
+    "hardware": {
+      "reason": {
+        "en": "The lesson compares set-dominant and reset-dominant latches with inputs pressed at exact times; a board has no recorded trace for it yet.",
+        "es": "La lección compara biestables con prioridad al arranque y al reposo con entradas pulsadas en instantes exactos; una placa todavía no tiene traza registrada para ella."
+      },
+      "instead": {
+        "en": "Complete it in Simulation, where the scenario presses the inputs for you.",
+        "es": "Complétela en Simulación, donde el escenario pulsa las entradas por usted."
+      }
+    }
+  },
   "plant": null,
   "estimatedMinutes": 15,
   "starter": {
