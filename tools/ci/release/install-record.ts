@@ -46,7 +46,7 @@ const recordName = (installer: string) => `install-record-${installer}.json`;
 const sha256 = (path: string) => createHash('sha256').update(readFileSync(path)).digest('hex');
 
 /** Writes the record of an installer that the calling step has just opened; the file name must be one of the fourteen. */
-export function writeInstallRecord(installerPath: string, version: string, outDirectory: string, env: RunnerEnv = process.env): InstallRecord {
+export function writeInstallRecord(installerPath: string, version: string, outDirectory: string, env: RunnerEnv = process.env as RunnerEnv): InstallRecord {
   const name = basename(installerPath);
   const installer = installerNames(version).find((candidate) => candidate.name === name);
   if (installer === undefined) throw new Error(`${name} is not one of the installers named by ${SCHEME} for ${version}`);
