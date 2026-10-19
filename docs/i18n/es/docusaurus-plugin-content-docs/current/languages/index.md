@@ -48,7 +48,7 @@ Cada fila nombra la prueba que muestra la capacidad: un recorrido de Studio, una
 | Diagrama de Escalera | Simular | Prueba en el runtime nativo | `Blinky visual languages on native POSIX` |
 | Diagrama de Escalera | Depurar (punto de parada, pausa, paso) | Recorrido de Studio en la simulación nativa | `28 A breakpoint on a rung stops execution` |
 | Diagrama de Escalera | Observar valores en línea | Recorrido de Studio en la simulación nativa | `28b Online values of a rung come from the debug map` |
-| Diagrama de Escalera | Forzar | Aún sin prueba de extremo a extremo |   |
+| Diagrama de Escalera | Forzar | Recorrido de Studio en la simulación nativa | `51d A forced variable is shown as forced in the Ladder` |
 | Diagrama de Escalera | Cargar en una placa | Solo en una placa | Una persona lo carga y lo ejecuta en una placa; la página de evidencia de hardware lista los registros |
 | Diagrama de Bloques de Función | Editar | Recorrido de Studio en la simulación nativa | `28g A function block diagram is edited from the keyboard` |
 | Diagrama de Bloques de Función | Compilar | Prueba en el runtime nativo | `Blinky visual languages on native POSIX` |
