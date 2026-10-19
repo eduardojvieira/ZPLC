@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
 import { useIDEStore } from '../store/useIDEStore';
+import { useVmInfo } from '../store/vmInfo';
 import { useCurrentExecution } from '../hooks/useDebugValue';
 import { useT } from '../i18n';
 import { connectionManager, type LinkInfo } from '../runtime/connectionManager';
 import { ConnectionIndicator } from './ConnectionIndicator';
 import { presentConnection, type ConnectionIndicatorView } from './connectionPresentation';
-import type { DebugAdapterType, VMInfo } from '../runtime/debugAdapter';
+import type { DebugAdapterType } from '../runtime/debugAdapter';
 import type { ExecutionMode } from './runtimeArtifactSelection';
 import { presentOperationalStatus, reportedBoardOf, type OperationalStatusPresentation, type OperationalStatusTone } from './operationalStatusPresentation';
 
@@ -13,7 +14,6 @@ interface OperationalStatusBarProps {
   mode: ExecutionMode;
   adapterType: DebugAdapterType | null;
   connected: boolean;
-  vmInfo: VMInfo | null;
   status: { text: string; tone: OperationalStatusTone };
   /** A connection to hardware is being made (UX-018). */
   connecting: boolean;
@@ -40,7 +40,7 @@ function Detail({ label, value, numeric = false }: { label: string; value: strin
 }
 
 /** Persistent, read-only operational truth for the current project session. */
-export function OperationalStatusBar({ mode, adapterType, connected, vmInfo, status, connecting, faulted }: OperationalStatusBarProps) {
+export function OperationalStatusBar({ mode, adapterType, connected, status, connecting, faulted }: OperationalStatusBarProps) {
   const { t } = useT();
   const isProjectOpen = useIDEStore((state) => state.isProjectOpen);
   const projectConfig = useIDEStore((state) => state.projectConfig);
@@ -48,6 +48,7 @@ export function OperationalStatusBar({ mode, adapterType, connected, vmInfo, sta
   const controllerStatus = useIDEStore((state) => state.controllerStatus);
   const forcedValues = useIDEStore((state) => state.debug.forcedValues);
   const forcesUnconfirmed = useIDEStore((state) => state.debug.forcesUnconfirmed);
+  const vmInfo = useVmInfo();
   const nativeTrace = useIDEStore((state) => state.debug.nativeTrace);
   const debugMode = useIDEStore((state) => state.debug.mode);
   const { isPaused, currentLine } = useCurrentExecution();

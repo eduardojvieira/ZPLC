@@ -15,6 +15,7 @@
 import { useState, useEffect, useCallback, useMemo, useRef, useSyncExternalStore } from 'react';
 import { monitoredKeys, subscribeMonitorKeys } from '../monitoring/registry';
 import { useIDEStore } from '../store/useIDEStore';
+import { publishVmInfo } from '../store/vmInfo';
 import type { IDebugAdapter, VMState, VMInfo, DebugAdapterEvents } from '../runtime/debugAdapter';
 import { connectSimulationAdapter } from '../runtime/simulationAdapterFactory';
 import { NativeAdapter } from '../runtime/nativeAdapter';
@@ -77,7 +78,6 @@ export function useDebugController(): DebugController {
   // Local state
   const [adapter, setAdapter] = useState<IDebugAdapter | null>(null);
   const [vmState, setVmState] = useState<VMState>('disconnected');
-  const [vmInfo, setVmInfo] = useState<VMInfo | null>(null);
   const [lastError, setLastError] = useState<string | null>(null);
   const [capabilityRevision, setCapabilityRevision] = useState(0);
 
@@ -163,7 +163,7 @@ export function useDebugController(): DebugController {
     },
     onInfoUpdate: (info: VMInfo) => {
       if (!isCurrentOwner()) return;
-      setVmInfo(info);
+      publishVmInfo(info);
     },
     onError: (message: string) => {
       if (!isCurrentOwner()) return;
@@ -283,7 +283,7 @@ export function useDebugController(): DebugController {
           halted: derivedState.halted,
           error: status.vm.error,
         });
-        setVmInfo({
+        publishVmInfo({
           pc: status.vm.pc,
           sp: status.vm.sp,
           halted: derivedState.halted,
@@ -336,7 +336,7 @@ export function useDebugController(): DebugController {
     }
     setAdapter(null);
     setVmState('disconnected');
-    setVmInfo(null);
+    publishVmInfo(null);
     clearLiveValues();
     setPolling(false);
     setCurrentExecution(null, null, null);
@@ -768,7 +768,6 @@ export function useDebugController(): DebugController {
     // State
     adapter,
     vmState,
-    vmInfo,
     isPolling,
     lastError,
     debugCapabilities,
