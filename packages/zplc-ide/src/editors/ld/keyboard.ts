@@ -33,6 +33,7 @@ import type { ProjectBlock } from '../../models/projectBlocks';
 import type { PickerItem } from '../picker';
 import { boolOutputsOf, declaredSymbols, sameType, symbolItems } from '../symbols';
 import { NO_LD_SELECTION, type LDSelection } from './graphModel';
+import { t } from '../../i18n';
 
 /** A cell of a rung: the place the keys act on. */
 export interface LDCursor {
@@ -151,9 +152,9 @@ function elementName(element: LDElement): string {
 /** What is said of a cursor: where it is, and what is in the cell. */
 export function describeCursor(model: LDModel, cursor: LDCursor | null): string {
   const place = placeOf(model, cursor);
-  if (!place) return 'There are no rungs: press Ctrl+Enter to add one.';
+  if (!place) return t('ld.noRungs');
   const element = elementAt(place);
-  return `Rung ${place.rung.number}, row ${place.row + 1}, column ${place.col + 1}: ${element ? elementName(element) : 'empty cell'}`;
+  return t('ld.cell', { rung: place.rung.number, row: place.row + 1, col: place.col + 1, what: element ? elementName(element) : t('ld.emptyCell') });
 }
 
 const refuse = (model: LDModel, cursor: LDCursor | null, say: string): LDOutcome => ({ model, cursor, changed: false, say, refused: true });
@@ -266,19 +267,19 @@ export function bindingChoices(model: LDModel, element: LDElement, projectBlocks
   const symbols = declaredSymbols(model.variables);
   if (isFunctionBlock(element.type)) {
     const own = symbols.filter((symbol) => sameType(symbol.type, element.fbType));
-    return { items: symbolItems(own), free: false, title: `Instance of ${element.fbType ?? 'the function block'}` };
+    return { items: symbolItems(own), free: false, title: t('ld.instanceOf', { type: element.fbType ?? t('ld.fallbackBlock') }) };
   }
   const bools = symbols.filter((symbol) => sameType(symbol.type, 'BOOL'));
   if (isContact(element.type)) {
     const members: PickerItem[] = symbols.flatMap((symbol) => boolOutputsOf(symbol.type, projectBlocks).map((member) => ({
       id: `${symbol.name}.${member}`,
       label: `${symbol.name}.${member}`,
-      detail: `BOOL · output of ${symbol.type}`,
-      group: 'Declared symbols',
+      detail: t('ld.outputOf', { type: symbol.type }),
+      group: t('ld.groupDeclared'),
     })));
-    return { items: [...symbolItems(bools), ...members], free: true, title: 'Variable the contact reads' };
+    return { items: [...symbolItems(bools), ...members], free: true, title: t('ld.contactReads') };
   }
-  return { items: symbolItems(bools.filter((symbol) => symbol.section !== 'input')), free: true, title: 'Variable the coil writes' };
+  return { items: symbolItems(bools.filter((symbol) => symbol.section !== 'input')), free: true, title: t('ld.coilWrites') };
 }
 
 // ---------------------------------------------------------------------------
@@ -310,18 +311,18 @@ export function runLDCommand(model: LDModel, given: LDCursor | null, command: st
     case 'insertElement':
       return argument.insert ? insertAt(model, cursor, argument.insert) : refuse(model, cursor, 'Choose the element to insert.');
     case 'openPalette':
-      return placeOf(model, cursor) ? { model, cursor: cursor ?? cursorAt(placeOf(model, cursor)!), changed: false, prompt: { kind: 'palette' }, say: 'Element palette: type to search.' } : refuse(model, cursor, describeCursor(model, cursor));
+      return placeOf(model, cursor) ? { model, cursor: cursor ?? cursorAt(placeOf(model, cursor)!), changed: false, prompt: { kind: 'palette' }, say: t('keyboard.palette.element') } : refuse(model, cursor, describeCursor(model, cursor));
     case 'activate': {
       const place = placeOf(model, cursor);
       if (!place) return refuse(model, cursor, describeCursor(model, cursor));
       const element = elementAt(place);
-      if (!element) return { model, cursor: cursorAt(place), changed: false, prompt: { kind: 'palette' }, say: 'Element palette: type to search.' };
-      return { model, cursor: cursorAt(place), changed: false, prompt: { kind: 'select', rungId: place.rung.id, elementId: element.id }, selection: { rungId: place.rung.id, elementId: element.id }, say: `Selected ${elementName(element)}.` };
+      if (!element) return { model, cursor: cursorAt(place), changed: false, prompt: { kind: 'palette' }, say: t('keyboard.palette.element') };
+      return { model, cursor: cursorAt(place), changed: false, prompt: { kind: 'select', rungId: place.rung.id, elementId: element.id }, selection: { rungId: place.rung.id, elementId: element.id }, say: t('ld.selected', { name: elementName(element) }) };
     }
     case 'bindVariable': return argument.variable === undefined ? askBinding(model, cursor) : bindAt(model, cursor, argument.variable);
     case 'editComment': {
       const place = placeOf(model, cursor);
-      return place ? { model, cursor: cursorAt(place), changed: false, prompt: { kind: 'comment', rungId: place.rung.id }, say: `Comment of rung ${place.rung.number}.` } : refuse(model, cursor, describeCursor(model, cursor));
+      return place ? { model, cursor: cursorAt(place), changed: false, prompt: { kind: 'comment', rungId: place.rung.id }, say: t('ld.commentOfRung', { rung: place.rung.number }) } : refuse(model, cursor, describeCursor(model, cursor));
     }
     case 'moveElementLeft': return moveElement(model, cursor, 0, -1);
     case 'moveElementRight': return moveElement(model, cursor, 0, 1);
@@ -345,10 +346,10 @@ function insertAt(model: LDModel, cursor: LDCursor | null, item: LDInsert): LDOu
   if (!place) return refuse(model, cursor, describeCursor(model, cursor));
   const here = elementAt(place);
   if (here) return refuse(model, cursor, `The cell is taken by ${elementName(here)}: move the cursor to an empty cell.`);
-  const at = `rung ${place.rung.number}, row ${place.row + 1}, column ${place.col + 1}`;
+  const at = t('ld.at', { rung: place.rung.number, row: place.row + 1, col: place.col + 1 });
   if (item.category === 'structure') {
     const rung = addBranchAt(place.rung, place.row, place.col);
-    return { model: withRung(model, rung), cursor: cursorAt(place), changed: true, selection: { rungId: rung.id, elementId: null }, say: `Started a parallel branch at ${at}; it has a new row below.` };
+    return { model: withRung(model, rung), cursor: cursorAt(place), changed: true, selection: { rungId: rung.id, elementId: null }, say: t('ld.branchStarted', { at }) };
   }
   const { element, declare } = newElement(model, item, place.row, place.col);
   const rung = placeElement(place.rung, element, place.row, place.col);
@@ -363,7 +364,7 @@ function insertAt(model: LDModel, cursor: LDCursor | null, item: LDInsert): LDOu
     selection: { rungId: rung.id, elementId: element.id },
     // a contact or a coil is of no use until it is bound: the list of symbols is asked at once
     ...(bindable ? { prompt: { kind: 'bind', elementId: element.id } as LDPrompt } : {}),
-    say: `Inserted ${elementName(element)} at ${at}.${bindable ? ' Choose its variable.' : declare ? ` Declared ${declare.name} of type ${declare.type}.` : ''}`,
+    say: t('ld.inserted', { name: elementName(element), at, extra: bindable ? t('ld.chooseVariable') : declare ? t('ld.declared', { name: declare.name, type: declare.type }) : '' }),
   };
 }
 
@@ -375,7 +376,7 @@ function askBinding(model: LDModel, cursor: LDCursor | null): LDOutcome {
   if (isFunctionBlock(element.type) && element.fbType && LD_MODBUS_HELPERS.has(element.fbType)) {
     return refuse(model, cursor, `${element.fbType} has no instance to bind.`);
   }
-  return { model, cursor: cursorAt(place), changed: false, prompt: { kind: 'bind', elementId: element.id }, say: `Bind ${elementName(element)}: choose a declared symbol.` };
+  return { model, cursor: cursorAt(place), changed: false, prompt: { kind: 'bind', elementId: element.id }, say: t('ld.bind', { name: elementName(element) }) };
 }
 
 function bindAt(model: LDModel, cursor: LDCursor | null, name: string): LDOutcome {
@@ -396,7 +397,7 @@ function bindAt(model: LDModel, cursor: LDCursor | null, name: string): LDOutcom
     return refuse(model, cursor, 'This element has nothing to bind.');
   }
   const rung = placeElement(place.rung, bound, place.row, place.col);
-  return { model: withRung(model, rung), cursor: cursorAt(place), changed: true, selection: { rungId: rung.id, elementId: bound.id }, say: `Bound ${elementName(bound)}.` };
+  return { model: withRung(model, rung), cursor: cursorAt(place), changed: true, selection: { rungId: rung.id, elementId: bound.id }, say: t('ld.bound', { name: elementName(bound) }) };
 }
 
 function moveElement(model: LDModel, cursor: LDCursor | null, dRow: number, dCol: number): LDOutcome {
@@ -410,7 +411,7 @@ function moveElement(model: LDModel, cursor: LDCursor | null, dRow: number, dCol
   const there = place.rung.grid?.[row]?.[col]?.element;
   if (there) return refuse(model, cursor, `The cell is taken by ${elementName(there)}.`);
   const rung = placeElement(removeElementAt(place.rung, place.row, place.col), element, row, col);
-  return { model: withRung(model, rung), cursor: { rungId: rung.id, row, col }, changed: true, selection: { rungId: rung.id, elementId: element.id }, say: `Moved ${elementName(element)} to row ${row + 1}, column ${col + 1}.` };
+  return { model: withRung(model, rung), cursor: { rungId: rung.id, row, col }, changed: true, selection: { rungId: rung.id, elementId: element.id }, say: t('ld.moved', { name: elementName(element), row: row + 1, col: col + 1 }) };
 }
 
 /** A rung number nobody uses, as the id of a new rung. */
@@ -433,14 +434,14 @@ function addRung(model: LDModel, cursor: LDCursor | null): LDOutcome {
   const place = placeOf(model, cursor);
   const { model: next, rung } = insertRungAfter(model, place ? place.rung.id : null);
   const added = next.rungs.find((candidate) => candidate.id === rung.id)!;
-  return { model: next, cursor: { rungId: rung.id, row: 0, col: 0 }, changed: true, selection: { rungId: rung.id, elementId: null }, say: `Added rung ${added.number}.` };
+  return { model: next, cursor: { rungId: rung.id, row: 0, col: 0 }, changed: true, selection: { rungId: rung.id, elementId: null }, say: t('ld.rungAdded', { rung: added.number }) };
 }
 
 function addEmptyRow(model: LDModel, cursor: LDCursor | null): LDOutcome {
   const place = placeOf(model, cursor);
   if (!place) return refuse(model, cursor, describeCursor(model, cursor));
   const rung = addRow(place.rung);
-  return { model: withRung(model, rung), cursor: cursorAt(place), changed: true, selection: { rungId: rung.id, elementId: null }, say: `Added row ${place.rows + 1} to rung ${place.rung.number}.` };
+  return { model: withRung(model, rung), cursor: cursorAt(place), changed: true, selection: { rungId: rung.id, elementId: null }, say: t('ld.rowAdded', { row: place.rows + 1, rung: place.rung.number }) };
 }
 
 function moveRung(model: LDModel, cursor: LDCursor | null, delta: -1 | 1): LDOutcome {
@@ -451,7 +452,7 @@ function moveRung(model: LDModel, cursor: LDCursor | null, delta: -1 | 1): LDOut
   const rungs = [...model.rungs];
   [rungs[place.index], rungs[target]] = [rungs[target]!, rungs[place.index]!];
   const next = { ...model, rungs: renumber(rungs) };
-  return { model: next, cursor: cursorAt(place), changed: true, selection: { rungId: place.rung.id, elementId: null }, say: `Moved rung ${place.index + 1} to position ${target + 1}.` };
+  return { model: next, cursor: cursorAt(place), changed: true, selection: { rungId: place.rung.id, elementId: null }, say: t('ld.rungMoved', { from: place.index + 1, to: target + 1 }) };
 }
 
 function innermostBranch(place: Place) {
@@ -475,7 +476,7 @@ function resizeBranch(model: LDModel, cursor: LDCursor | null, delta: -1 | 1): L
   }
   const rung = { ...place.rung, branches: (place.rung.branches ?? []).map((other) => (other.id === branch.id ? { ...other, endCol: end } : other)) };
   const normal = normalizeGridRung(rung);
-  return { model: withRung(model, normal), cursor: cursorAt(place), changed: true, selection: { rungId: normal.id, elementId: null }, say: `The branch now spans columns ${branch.startCol + 1} to ${end + 1}.` };
+  return { model: withRung(model, normal), cursor: cursorAt(place), changed: true, selection: { rungId: normal.id, elementId: null }, say: t('ld.branchSpans', { from: branch.startCol + 1, to: end + 1 }) };
 }
 
 function dropBranch(model: LDModel, cursor: LDCursor | null): LDOutcome {
@@ -484,7 +485,7 @@ function dropBranch(model: LDModel, cursor: LDCursor | null): LDOutcome {
   const branch = innermostBranch(place);
   if (!branch) return refuse(model, cursor, 'The cursor is not inside a parallel branch.');
   const rung = removeBranch(place.rung, branch.id);
-  return { model: withRung(model, rung), cursor: cursorAt(place), changed: true, selection: { rungId: rung.id, elementId: null }, say: `Removed the branch of columns ${branch.startCol + 1} to ${branch.endCol + 1}.` };
+  return { model: withRung(model, rung), cursor: cursorAt(place), changed: true, selection: { rungId: rung.id, elementId: null }, say: t('ld.branchRemoved', { from: branch.startCol + 1, to: branch.endCol + 1 }) };
 }
 
 function deleteElement(model: LDModel, cursor: LDCursor | null): LDOutcome {
@@ -493,7 +494,7 @@ function deleteElement(model: LDModel, cursor: LDCursor | null): LDOutcome {
   const element = elementAt(place);
   if (!element) return refuse(model, cursor, 'There is no element under the cursor to delete.');
   const rung = removeElementAt(place.rung, place.row, place.col);
-  return { model: withRung(model, rung), cursor: cursorAt(place), changed: true, selection: { rungId: rung.id, elementId: null }, say: `Deleted ${elementName(element)}.` };
+  return { model: withRung(model, rung), cursor: cursorAt(place), changed: true, selection: { rungId: rung.id, elementId: null }, say: t('ld.elementDeleted', { name: elementName(element) }) };
 }
 
 function deleteRung(model: LDModel, cursor: LDCursor | null): LDOutcome {
@@ -502,5 +503,5 @@ function deleteRung(model: LDModel, cursor: LDCursor | null): LDOutcome {
   const rungs = renumber(model.rungs.filter((rung) => rung.id !== place.rung.id));
   const next = { ...model, rungs };
   const after = rungs[Math.min(place.index, rungs.length - 1)];
-  return { model: next, cursor: after ? { rungId: after.id, row: 0, col: Math.min(place.col, Math.max(0, (after.gridConfig?.cols ?? DEFAULT_GRID_CONFIG.cols) - 1)) } : null, changed: true, selection: NO_LD_SELECTION, say: `Deleted rung ${place.rung.number}.` };
+  return { model: next, cursor: after ? { rungId: after.id, row: 0, col: Math.min(place.col, Math.max(0, (after.gridConfig?.cols ?? DEFAULT_GRID_CONFIG.cols) - 1)) } : null, changed: true, selection: NO_LD_SELECTION, say: t('ld.rungDeleted', { rung: place.rung.number }) };
 }

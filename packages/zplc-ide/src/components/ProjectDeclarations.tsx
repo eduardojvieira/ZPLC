@@ -37,7 +37,7 @@ function AddLibraryDialog({ onClose }: { onClose: () => void }) {
   const choices = libraryChoices(tree, libraries);
   const [folder, setFolder] = useState(choices[0]?.path ?? '');
   const [busy, setBusy] = useState(false);
-  const problem = folder === '' ? 'Choose a folder.' : libraryProblem(folder, tree, libraries);
+  const problem = folder === '' ? t('library.chooseFolder') : libraryProblem(folder, tree, libraries);
 
   const submit = async (event: FormEvent) => {
     event.preventDefault();

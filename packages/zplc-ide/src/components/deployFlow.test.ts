@@ -2,8 +2,9 @@ import { afterEach, describe, expect, it } from 'bun:test';
 import { ZPLC_CONSTANTS } from '@zplc/compiler';
 import { answerConfirmation, currentConfirmation, mountConfirmHost } from '../store/actionConfirm';
 import { useNotifications } from '../store/notifications';
-import { HARDWARE_DEPLOY_UNCONFIRMED_MESSAGE, PROGRAM_LOAD_STATE, type LastCompileResult } from './debugSessionState';
+import { PROGRAM_LOAD_STATE, type LastCompileResult } from './debugSessionState';
 import { performHardwareDeploy, type DeployDeps } from './deployFlow';
+import { t } from '../i18n';
 
 function artifact(): Uint8Array {
   const bytes = new Uint8Array(ZPLC_CONSTANTS.HEADER_SIZE);
@@ -120,7 +121,7 @@ describe('COM-028 and UX-019 the deploy goes through the dialog and nowhere else
     const flow = performHardwareDeploy(deps);
     await answerWhenAsked(true);
     await flow;
-    expect(logs.at(-1)).toBe(`error: ${HARDWARE_DEPLOY_UNCONFIRMED_MESSAGE}`);
+    expect(logs.at(-1)).toBe(`error: ${t('deploy.unconfirmed')}`);
   });
 
   it('UX-019 never writes when no dialog can be shown, because nobody was asked', async () => {

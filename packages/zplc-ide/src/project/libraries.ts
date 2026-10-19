@@ -9,6 +9,7 @@
 import type { FileTreeNode } from '../types';
 import { buildOptionsOf, libraryFolderProblem } from './buildOptions';
 import { scanUnlistedSources, type ScanEntry } from './unlistedSources';
+import { t } from '../i18n';
 
 const sameFolder = (left: string, right: string): boolean => left.toLowerCase() === right.toLowerCase();
 
@@ -32,14 +33,14 @@ function findNode(tree: FileTreeNode, path: string): FileTreeNode | null {
 
 /** Why `path` cannot be added as a library, in words for the user; null when it can. */
 export function libraryProblem(path: string, tree: FileTreeNode | null, current: readonly string[]): string | null {
-  if (path === '') return 'The project root cannot be a library: choose a folder inside it.';
+  if (path === '') return t('library.rootNotAllowed');
   const rule = libraryFolderProblem(path);
   if (rule) return rule;
-  if (current.some((library) => sameFolder(library, path))) return 'That folder is already a library.';
-  if (!tree) return 'No project is open.';
+  if (current.some((library) => sameFolder(library, path))) return t('library.alreadyLibrary');
+  if (!tree) return t('library.noProject');
   const node = findNode(tree, path);
-  if (!node) return 'That is not a folder of this project.';
-  return node.type === 'directory' ? null : 'That is not a folder.';
+  if (!node) return t('library.notInProject');
+  return node.type === 'directory' ? null : t('library.notFolder');
 }
 
 /** The libraries with `path` added after the others, once. */
