@@ -197,19 +197,6 @@ zplc_hal_result_t zplc_hal_net_init(void);
  */
 zplc_hal_result_t zplc_hal_net_get_ip(char *buf, size_t len);
 
-/**
- * @brief Resolve a hostname to an IP address.
- *
- * @param hostname Hostname string to resolve
- * @param ip_buf Buffer to store the resolved IP address string
- * @param len Maximum length of the IP buffer
- * @return ZPLC_HAL_OK on success, error code otherwise.
- */
-zplc_hal_result_t zplc_hal_dns_resolve(const char *hostname, char *ip_buf, size_t len);
-
-/** @brief Opaque socket handle */
-typedef void* zplc_hal_socket_t;
-
 /* ============================================================================
  * Synchronization Functions (Phase 1.4.1+)
  * ============================================================================ */
@@ -247,51 +234,6 @@ zplc_hal_result_t zplc_hal_mutex_unlock(zplc_hal_mutex_t mutex);
  * @return ZPLC_HAL_OK on success, error code otherwise.
  */
 zplc_hal_result_t zplc_hal_mutex_destroy(zplc_hal_mutex_t mutex);
-
-/**
- * @brief Create a TCP socket and connect to a remote host.
- *
- * @param host   Hostname or IP address string.
- * @param port   Port number.
- *
- * @return Socket handle on success, NULL on failure.
- */
-zplc_hal_socket_t zplc_hal_socket_connect(const char *host, uint16_t port);
-
-/**
- * @brief Send data over a socket.
- *
- * @param sock   Socket handle.
- * @param data   Data buffer to send.
- * @param len    Length of data.
- *
- * @return Number of bytes sent, or negative error code.
- */
-int32_t zplc_hal_socket_send(zplc_hal_socket_t sock,
-                              const void *data,
-                              size_t len);
-
-/**
- * @brief Receive data from a socket.
- *
- * @param sock   Socket handle.
- * @param buf    Buffer to receive into.
- * @param len    Maximum bytes to receive.
- *
- * @return Number of bytes received, or negative error code.
- */
-int32_t zplc_hal_socket_recv(zplc_hal_socket_t sock,
-                              void *buf,
-                              size_t len);
-
-/**
- * @brief Close a socket.
- *
- * @param sock   Socket handle to close.
- *
- * @return ZPLC_HAL_OK on success, error code otherwise.
- */
-zplc_hal_result_t zplc_hal_socket_close(zplc_hal_socket_t sock);
 
 /* ============================================================================
  * Logging / Debug Output

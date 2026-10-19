@@ -47,6 +47,10 @@ zplc_hal_result_t zplc_hal_mutex_lock(zplc_hal_mutex_t mutex) {
   return lock_result;
 }
 
+zplc_hal_result_t zplc_hal_mutex_destroy(zplc_hal_mutex_t mutex) {
+  return mutex == NULL ? ZPLC_HAL_ERROR : ZPLC_HAL_OK;
+}
+
 zplc_hal_result_t zplc_hal_mutex_unlock(zplc_hal_mutex_t mutex) {
   if (mutex == NULL) {
     return ZPLC_HAL_ERROR;

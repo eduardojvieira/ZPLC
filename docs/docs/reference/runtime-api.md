@@ -2668,24 +2668,6 @@ zplc_hal_result_t zplc_hal_net_get_ip(char *buf, size_t len);
 
 **Source return value:** ZPLC_HAL_OK on success, error code otherwise.
 
-#### `zplc_hal_dns_resolve`
-
-```c
-zplc_hal_result_t zplc_hal_dns_resolve(const char *hostname, char *ip_buf, size_t len);
-```
-
-**Source summary:** Resolve a hostname to an IP address.
-
-**Parameters**
-
-| Name | Type | Source description |
-| --- | --- | --- |
-| `hostname` | `const char *` | Hostname string to resolve |
-| `ip_buf` | `char *` | Buffer to store the resolved IP address string |
-| `len` | `size_t` | Maximum length of the IP buffer |
-
-**Source return value:** ZPLC_HAL_OK on success, error code otherwise.
-
 #### `zplc_hal_mutex_create`
 
 ```c
@@ -2747,75 +2729,6 @@ zplc_hal_result_t zplc_hal_mutex_destroy(zplc_hal_mutex_t mutex);
 | Name | Type | Source description |
 | --- | --- | --- |
 | `mutex` | `zplc_hal_mutex_t` | Mutex handle. |
-
-**Source return value:** ZPLC_HAL_OK on success, error code otherwise.
-
-#### `zplc_hal_socket_connect`
-
-```c
-zplc_hal_socket_t zplc_hal_socket_connect(const char *host, uint16_t port);
-```
-
-**Source summary:** Create a TCP socket and connect to a remote host.
-
-**Parameters**
-
-| Name | Type | Source description |
-| --- | --- | --- |
-| `host` | `const char *` | Hostname or IP address string. |
-| `port` | `uint16_t` | Port number. |
-
-**Source return value:** Socket handle on success, NULL on failure.
-
-#### `zplc_hal_socket_send`
-
-```c
-int32_t zplc_hal_socket_send(zplc_hal_socket_t sock, const void *data, size_t len);
-```
-
-**Source summary:** Send data over a socket.
-
-**Parameters**
-
-| Name | Type | Source description |
-| --- | --- | --- |
-| `sock` | `zplc_hal_socket_t` | Socket handle. |
-| `data` | `const void *` | Data buffer to send. |
-| `len` | `size_t` | Length of data. |
-
-**Source return value:** Number of bytes sent, or negative error code.
-
-#### `zplc_hal_socket_recv`
-
-```c
-int32_t zplc_hal_socket_recv(zplc_hal_socket_t sock, void *buf, size_t len);
-```
-
-**Source summary:** Receive data from a socket.
-
-**Parameters**
-
-| Name | Type | Source description |
-| --- | --- | --- |
-| `sock` | `zplc_hal_socket_t` | Socket handle. |
-| `buf` | `void *` | Buffer to receive into. |
-| `len` | `size_t` | Maximum bytes to receive. |
-
-**Source return value:** Number of bytes received, or negative error code.
-
-#### `zplc_hal_socket_close`
-
-```c
-zplc_hal_result_t zplc_hal_socket_close(zplc_hal_socket_t sock);
-```
-
-**Source summary:** Close a socket.
-
-**Parameters**
-
-| Name | Type | Source description |
-| --- | --- | --- |
-| `sock` | `zplc_hal_socket_t` | Socket handle to close. |
 
 **Source return value:** ZPLC_HAL_OK on success, error code otherwise.
 
@@ -2975,7 +2888,6 @@ Clean shutdown - close sockets, flush persistence, release resources.
 | Name | Kind | Source summary |
 | --- | --- | --- |
 | `zplc_hal_result_t` | Enum | HAL operation result codes |
-| `zplc_hal_socket_t` | Typedef | Opaque socket handle |
 | `zplc_hal_mutex_t` | Typedef | Opaque mutex handle |
 | `zplc_io_kind_t` | Enum | Kind of an I/O channel. |
 | `zplc_io_dir_t` | Enum | Direction of an I/O channel, seen from the program. |

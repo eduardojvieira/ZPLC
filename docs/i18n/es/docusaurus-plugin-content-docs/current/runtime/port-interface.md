@@ -82,11 +82,6 @@ Sockets y resolución de nombres. El núcleo portable no los llama: las aplicaci
 | --- | --- |
 | `zplc_hal_net_init()` | Initialize the networking stack. |
 | `zplc_hal_net_get_ip()` | Get the current IP address of the device. |
-| `zplc_hal_dns_resolve()` | Resolve a hostname to an IP address. |
-| `zplc_hal_socket_connect()` | Create a TCP socket and connect to a remote host. |
-| `zplc_hal_socket_send()` | Send data over a socket. |
-| `zplc_hal_socket_recv()` | Receive data from a socket. |
-| `zplc_hal_socket_close()` | Close a socket. |
 
 ## El puerto del planificador
 

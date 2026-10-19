@@ -21,7 +21,7 @@ flowchart TD
   Core[core ZPLC + scheduler] --> Timing[zplc_hal_tick / sleep]
   Core --> IO[zplc_hal_gpio_* / adc / dac]
   Core --> Persist[zplc_hal_persist_*]
-  Core --> Net[zplc_hal_net_* / dns / socket_*]
+  Core --> Net[zplc_hal_net_*]
   Core --> Sync[zplc_hal_mutex_*]
   Core --> Log[zplc_hal_log]
   Core --> Lifecycle[zplc_hal_init / shutdown]
@@ -101,16 +101,10 @@ La superficie pública de red incluye:
 
 - `zplc_hal_net_init()`
 - `zplc_hal_net_get_ip()`
-- `zplc_hal_dns_resolve()`
-- `zplc_hal_socket_connect()`
-- `zplc_hal_socket_send()`
-- `zplc_hal_socket_recv()`
-- `zplc_hal_socket_close()`
-
-Los ports de Zephyr, POSIX y WebAssembly implementan estas funciones. Hoy la aplicación abre sus propios sockets
-con timeouts por socket y nada llama a `zplc_hal_dns_resolve()` ni a las cuatro funciones de socket; el registro en
-`tools/ci/hal-contract.json` las lista con la decisión pendiente (si la HAL incorpora un timeout y las conserva, o si
-salen del contrato junto con la interfaz de port).
+Los ports de Zephyr, POSIX y WebAssembly implementan estas funciones. La resolución de nombres y los sockets no forman
+parte de la interfaz de port: la aplicación abre sus propios sockets con timeouts por socket mediante el resolvedor de
+Zephyr y SNTP. La HAL declaraba una función de DNS y cuatro de socket que nadie llamaba; se quitaron para que toda
+función declarada tenga un llamador (IO-007).
 
 ## Sincronización
 

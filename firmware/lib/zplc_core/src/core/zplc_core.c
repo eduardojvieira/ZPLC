@@ -2938,6 +2938,15 @@ void zplc_core_warm_start(void) {
 int zplc_core_shutdown(void) {
   default_program_loaded = 0;
   default_vm.halted = 1;
+
+  /* Release the process-image mutex (IO-007). Shutdown runs with the scan and the communication threads stopped;
+   * zplc_core_init() creates it again. */
+  if (pi_mutex != NULL) {
+    zplc_hal_mutex_t released = pi_mutex;
+
+    pi_mutex = NULL;
+    (void)zplc_hal_mutex_destroy(released);
+  }
   return 0;
 }
 

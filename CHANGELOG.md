@@ -393,9 +393,12 @@ and version when the release is cut (see `RELEASING.md`).
   and an input more, and a host test covers the accessors every port shares.
   `tools/ci/check_hal_contract.py` fails when a HAL function lacks an
   implementation on a port or a caller, and `zplc_hal_mutex_destroy()` is now
-  implemented on the Zephyr and WebAssembly ports. Six functions have no caller
-  yet and are listed in `tools/ci/hal-contract.json` with the decision they
-  wait for.
+  implemented on the Zephyr and WebAssembly ports. Every declared HAL function
+  now has a caller: `zplc_core_shutdown()` releases the process-image mutex
+  through `zplc_hal_mutex_destroy()`, and the DNS function and four socket
+  functions, which nothing called (the application opens its own sockets), left
+  the HAL on the three ports. The ledger in `tools/ci/hal-contract.json` is
+  empty.
 - The board manifest is one unversioned file with an I/O description per board
   (IO-001, IO-009 to IO-012, IO-014, IO-015). `firmware/app/boards/boards.json`
   replaces `supported-boards.v1.5.0.json` and is the only source of the board

@@ -230,44 +230,6 @@ zplc_hal_result_t zplc_hal_net_get_ip(char *buf, size_t len)
     return ZPLC_HAL_NOT_IMPL;
 }
 
-zplc_hal_result_t zplc_hal_dns_resolve(const char *hostname, char *ip_buf, size_t len)
-{
-    (void)hostname;
-    if (ip_buf != NULL && len > 0U) {
-        ip_buf[0] = '\0';
-    }
-    return ZPLC_HAL_NOT_IMPL;
-}
-
-zplc_hal_socket_t zplc_hal_socket_connect(const char *host, uint16_t port)
-{
-    (void)host;
-    (void)port;
-    return NULL;
-}
-
-int32_t zplc_hal_socket_send(zplc_hal_socket_t sock, const void *data, size_t len)
-{
-    (void)sock;
-    (void)data;
-    (void)len;
-    return (int32_t)ZPLC_HAL_NOT_IMPL;
-}
-
-int32_t zplc_hal_socket_recv(zplc_hal_socket_t sock, void *buf, size_t len)
-{
-    (void)sock;
-    (void)buf;
-    (void)len;
-    return (int32_t)ZPLC_HAL_NOT_IMPL;
-}
-
-zplc_hal_result_t zplc_hal_socket_close(zplc_hal_socket_t sock)
-{
-    (void)sock;
-    return ZPLC_HAL_NOT_IMPL;
-}
-
 /* ============================================================================
  * Logging
  * ============================================================================ */
