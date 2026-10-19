@@ -185,13 +185,14 @@ a pasar.
 
 ## Qué demuestra esto y qué no
 
-- El programa compila, se ejecuta en el simulador y su salida conmuta: lo demuestra
-  la verificación de la documentación. Los mismos siete pasos los realiza en la
-  aplicación real un recorrido de extremo a extremo, `Blink without hardware (the
-  tutorial)` de `bun run test:journeys`, de modo que esta página no puede separarse
-  del producto.
-- Un resultado aprobado aquí es un resultado de host con el reloj virtual del
-  simulador. No dice nada sobre una placa: vea [Soporte de hardware](../reference/capabilities-evidence.md).
+| Afirmación | Evidencia | Nivel |
+| --- | --- | --- |
+| El programa compila, se ejecuta en el simulador y su salida conmuta | La verificación de la documentación ejecuta el código de la página | Host |
+| Los siete pasos funcionan en la aplicación real | El recorrido de extremo a extremo `Blink without hardware (the tutorial)` de `bun run test:journeys` los realiza, de modo que esta página no puede separarse del producto | Host |
+| El escenario pasa y falla como se describe | Studio ejecuta `tests/blinky-visual.scenario.json` con el reloj virtual del simulador | Host |
+| Cualquier cosa sobre una placa | Nada en esta página | Aún no verificado en hardware: vea [Soporte de hardware](../reference/capabilities-evidence.md) |
+
+Un resultado aprobado aquí es un resultado de host con el reloj virtual del simulador.
 
 ## Siguientes pasos
 

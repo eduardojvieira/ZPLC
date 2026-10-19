@@ -180,12 +180,14 @@ it passes again.
 
 ## What this shows, and what it does not
 
-- The program compiles, runs on the simulator and its output toggles: the
-  documentation check proves it. The same seven steps are performed in the real
-  application by an end-to-end journey, `Blink without hardware (the tutorial)` of
-  `bun run test:journeys`, so this page cannot drift from the product.
-- A pass here is a host result on the simulator's virtual clock. It says nothing
-  about a board: see [Hardware support](../reference/capabilities-evidence.md).
+| Claim | Evidence | Level |
+| --- | --- | --- |
+| The program compiles, runs on the simulator and its output toggles | The documentation check runs the page's code | Host |
+| The seven steps work in the real application | The end-to-end journey `Blink without hardware (the tutorial)` of `bun run test:journeys` performs them, so this page cannot drift from the product | Host |
+| The scenario passes and fails as described | Studio runs `tests/blinky-visual.scenario.json` on the simulator's virtual clock | Host |
+| Anything about a board | Nothing on this page | Not yet verified on hardware: see [Hardware support](../reference/capabilities-evidence.md) |
+
+A pass here is a host result on the simulator's virtual clock.
 
 ## Next steps
 

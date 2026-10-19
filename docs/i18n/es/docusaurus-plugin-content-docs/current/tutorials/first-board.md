@@ -124,6 +124,16 @@ Abra la pestaña **Observación** y agregue `LED_Output`: su valor sigue al LED.
 su estado seguro, apagado
 ([Planificador](../runtime/scheduler.md#pausa-reanudación-paso-y-parada)).
 
+## Qué está verificado
+
+| Paso | Evidencia hoy | Estado |
+| --- | --- | --- |
+| 1. Obtenga el firmware | El script de compilación se ejecuta en integración continua y comprueba el presupuesto de flash y RAM | Compila en integración continua: `cross-build` |
+| 2. Grábelo | Ninguna | Aún no verificado en hardware |
+| 3. Conecte Studio | El tutorial Blink ejercita la conexión en el simulador; ninguna placa se ha conectado | Aún no verificado en hardware |
+| 4. Despliegue y ejecute | El tutorial Blink ejercita la ejecución en el simulador; ninguna placa ha recibido un programa | Aún no verificado en hardware |
+| 5. Observe | La tabla de observación se ejercita en el simulador; nadie ha visto cambiar una salida física | Aún no verificado en hardware |
+
 ## Qué puede informar
 
 Suceda lo que suceda, el resultado es útil: informe qué paso alcanzó, la placa y la
