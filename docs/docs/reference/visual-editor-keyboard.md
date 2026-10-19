@@ -105,6 +105,11 @@ The cursor is the selected block. The arrow keys without a modifier nudge the se
 | `Alt+ArrowUp` | Select the nearest block above |
 | `Alt+ArrowDown` | Select the nearest block below |
 | `Home` | Select the first block, the top left one |
+| `Ctrl+Alt+ArrowLeft` | Add the nearest block to the left to the selection |
+| `Ctrl+Alt+ArrowRight` | Add the nearest block to the right to the selection |
+| `Ctrl+Alt+ArrowUp` | Add the nearest block above to the selection |
+| `Ctrl+Alt+ArrowDown` | Add the nearest block below to the selection |
+| `Ctrl+Alt+A` | Select every block, to align or delete them together |
 
 ### Inserting elements
 
@@ -175,6 +180,11 @@ The cursor is the selected step or transition. The arrow keys without a modifier
 | `Alt+ArrowUp` | Select the nearest step or transition above |
 | `Alt+ArrowDown` | Select the nearest step or transition below |
 | `Home` | Select the first element, the top left one |
+| `Ctrl+Alt+ArrowLeft` | Add the nearest element to the left to the selection |
+| `Ctrl+Alt+ArrowRight` | Add the nearest element to the right to the selection |
+| `Ctrl+Alt+ArrowUp` | Add the nearest element above to the selection |
+| `Ctrl+Alt+ArrowDown` | Add the nearest element below to the selection |
+| `Ctrl+Alt+A` | Select every element, to align or delete them together |
 
 ### Inserting elements
 

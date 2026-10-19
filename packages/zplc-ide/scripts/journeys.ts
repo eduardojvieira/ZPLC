@@ -2133,6 +2133,22 @@ export const JOURNEYS: Journey[] = [
     },
   },
   {
+    // Alignment needs two selected blocks, and the keyboard reaches them: Ctrl+Alt+Arrow adds the nearest block in that
+    // direction to the selection, then Alt+Shift+Arrow aligns them, as one undo step.
+    name: '28ja Two blocks are selected and aligned from the keyboard alone', example: 'blinky_fbd', proves: [], partly: ['LNG-012'],
+    run: async (app, { project }) => {
+      await openFolder(app, project);
+      await openDiagram(app, 'src/main.fbd.json', '.react-flow__node');
+      const left = (id: string) => app.eval<number>(`document.querySelector('.react-flow__node[data-id="${id}"]').getBoundingClientRect().x`);
+      await app.click(css('.react-flow__node[data-id="and_run"]'), 'the AND block');
+      await app.press('Ctrl+Alt+ArrowRight');
+      await app.until('the AND and the block to its right selected', async () => await app.eval<boolean>(`[...document.querySelectorAll('.react-flow__node.selected')].map((node) => node.getAttribute('data-id')).sort().join() === 'and_run,output_led'`) || undefined);
+      assert(await left('and_run') !== await left('output_led'), 'The two blocks start aligned, so the journey proves nothing.');
+      await app.press('Alt+Shift+ArrowLeft');
+      await app.until('the two blocks on one left edge', async () => Math.abs(await left('and_run') - await left('output_led')) < 1 || undefined);
+    },
+  },
+  {
     name: '29 The Welcome screen loads no editor', example: 'motor_start_stop', proves: [], partly: ['IDE-015'],
     run: async (app, { project }) => {
       // What the page has fetched, as modules (the development host serves each one by its path). The page keeps the first

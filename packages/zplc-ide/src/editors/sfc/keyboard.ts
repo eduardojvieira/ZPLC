@@ -13,6 +13,7 @@ import type { SFCModel } from '../../models/sfc';
 import { SFC_PALETTE } from '../../models/sfcSupport';
 import { cursorNode, firstNode, freeId, freePosition, nearestNode, numberedId, selectOnly, type Direction } from '../graphNav';
 import type { PickerItem } from '../picker';
+import { EXTEND_COMMANDS, extendSelection, isExtendCommand } from '../extendSelection';
 import { ARRANGE_COMMANDS, arrangeSelection, isArrangeCommand } from '../arrange';
 import type { CanvasCommands } from '../useCanvasKeyboard';
 import { declaredSymbols, sameType, symbolItems } from '../symbols';
@@ -58,7 +59,7 @@ export interface SFCArgument {
 /** The commands of the table that act on the canvas; the editor itself runs the others. */
 export const SFC_MODEL_COMMANDS: readonly string[] = [
   'focusLeft', 'focusRight', 'focusUp', 'focusDown', 'focusFirst', 'insertStep', 'insertInitialStep', 'insertTransition',
-  'openPalette', 'insertElement', 'bindVariable', 'connect', 'disconnect', 'editComment', 'deleteSelection', ...ARRANGE_COMMANDS,
+  'openPalette', 'insertElement', 'bindVariable', 'connect', 'disconnect', 'editComment', 'deleteSelection', ...ARRANGE_COMMANDS, ...EXTEND_COMMANDS,
 ];
 
 /** The commands of the table that the editor runs because they need the screen: the clipboard, the breakpoint, the list. */
@@ -189,6 +190,10 @@ export function runSFCCommand(model: SFCModel, state: SFCState, command: string,
     const arranged = arrangeSelection(state.nodes, command);
     return { nodes: arranged.nodes, edges: state.edges, changed: arranged.changed, say: arranged.say, ...(arranged.refused ? { refused: true } : {}) };
   }
+  if (isExtendCommand(command)) {
+    const extended = extendSelection(state.nodes, state.edges, command);
+    return { ...extended, ...(extended.refused ? { refused: true } : {}) };
+  }
   const here = cursorNode(state.nodes);
   switch (command) {
     case 'focusLeft': case 'focusRight': case 'focusUp': case 'focusDown': {
@@ -313,7 +318,7 @@ export function sfcCanvasCommands(model: SFCModel): CanvasCommands<SFCArgument> 
     palette: paletteChoices,
     paletteTitle: 'Insert element',
     palettePlaceholder: 'Type to search: step, initial step, transition',
-    readOnlyCommands: new Set(['focusLeft', 'focusRight', 'focusUp', 'focusDown', 'focusFirst', 'toggleBreakpoint', 'showCommands', 'fitView']),
+    readOnlyCommands: new Set(['focusLeft', 'focusRight', 'focusUp', 'focusDown', 'focusFirst', ...EXTEND_COMMANDS, 'toggleBreakpoint', 'showCommands', 'fitView']),
     answer: {
       palette: (id) => ({ elementType: id }),
       bind: (name) => ({ name }),

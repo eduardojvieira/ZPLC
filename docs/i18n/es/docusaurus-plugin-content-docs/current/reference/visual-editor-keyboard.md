@@ -105,6 +105,11 @@ El cursor es el bloque seleccionado. Las flechas sin modificador desplazan el bl
 | `Alt+ArrowUp` | Selecciona el bloque más cercano por encima |
 | `Alt+ArrowDown` | Selecciona el bloque más cercano por debajo |
 | `Home` | Selecciona el primer bloque, el de arriba a la izquierda |
+| `Ctrl+Alt+ArrowLeft` | Añade a la selección el bloque más cercano a la izquierda |
+| `Ctrl+Alt+ArrowRight` | Añade a la selección el bloque más cercano a la derecha |
+| `Ctrl+Alt+ArrowUp` | Añade a la selección el bloque más cercano por encima |
+| `Ctrl+Alt+ArrowDown` | Añade a la selección el bloque más cercano por debajo |
+| `Ctrl+Alt+A` | Selecciona todos los bloques, para alinearlos o borrarlos juntos |
 
 ### Insertar elementos
 
@@ -175,6 +180,11 @@ El cursor es el paso o la transición seleccionados. Las flechas sin modificador
 | `Alt+ArrowUp` | Selecciona el paso o la transición más cercano por encima |
 | `Alt+ArrowDown` | Selecciona el paso o la transición más cercano por debajo |
 | `Home` | Selecciona el primer elemento, el de arriba a la izquierda |
+| `Ctrl+Alt+ArrowLeft` | Añade a la selección el elemento más cercano a la izquierda |
+| `Ctrl+Alt+ArrowRight` | Añade a la selección el elemento más cercano a la derecha |
+| `Ctrl+Alt+ArrowUp` | Añade a la selección el elemento más cercano por encima |
+| `Ctrl+Alt+ArrowDown` | Añade a la selección el elemento más cercano por debajo |
+| `Ctrl+Alt+A` | Selecciona todos los elementos, para alinearlos o borrarlos juntos |
 
 ### Insertar elementos
 
