@@ -81,7 +81,7 @@ La verificación de la documentación contrasta cada dirección de `inputs` y
 proyecto y lo compila.
 
 Una dirección que ningún pin de la placa maneja no es un canal. Enumérela en
-`io.virtual` (Studio: **Keep as virtual (no pin)**) cuando quiera una palabra o un
+`io.virtual` (Studio: **Mantener como virtual (sin pin)**) cuando quiera una palabra o un
 bit de la imagen de proceso que solo lee una prueba o el depurador.
 
 ## 4. Qué ocurre cuando una dirección es errónea

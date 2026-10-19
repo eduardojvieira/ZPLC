@@ -21,11 +21,11 @@ bien en el simulador no se ha demostrado que se comporte bien en una placa.
 
 ## 1. Compile y ejecute
 
-1. Compile el proyecto (**Build**, **Compile**).
-2. En la barra de herramientas, compruebe que **Simulate** esté seleccionado y
-   presione **Connect** y luego **Run** (F5). La línea de estado muestra **Running** y
+1. Compile el proyecto (**Compilación**, **Compilar**).
+2. En la barra de herramientas, compruebe que **Simular** esté seleccionado y
+   presione **Conectar** y luego **Ejecutar** (F5). La línea de estado muestra **En marcha** y
    el contador de ciclos sube.
-3. Abra la pestaña **Watch**, presione **+** e ingrese una variable. Su valor sigue al
+3. Abra la pestaña **Observación**, presione **+** e ingrese una variable. Su valor sigue al
    programa. Haga doble clic en un valor para escribirlo.
 
 [Blink sin hardware](../tutorials/blink-without-hardware.md) hace esto en un primer
@@ -50,15 +50,15 @@ END_PROGRAM
 ```
 
 1. Haga clic en el margen del editor, junto a `Count := Count + 1;`. Un punto marca la línea.
-2. Presione **Run**. El programa se detiene cuando un ciclo llega a la sentencia: la
-   barra de herramientas ofrece **Resume** (F5), el editor marca la línea, **Output**
+2. Presione **Ejecutar**. El programa se detiene cuando un ciclo llega a la sentencia: la
+   barra de herramientas ofrece **Reanudar** (F5), el editor marca la línea, **Salida**
    dice `Breakpoint hit at PC=..., line N` y una fila de la pestaña **Trace** dice
    `paused`.
-3. Mire los valores en **Watch**. Son los valores del ciclo que se detuvo. Fije una
+3. Mire los valores en **Observación**. Son los valores del ciclo que se detuvo. Fije una
    entrada, o fuerce un valor ([Forzar un valor](./force-values.md)), y vuelva a
    mirar.
-4. Presione **Resume** (F5) para que el ciclo termine y siga hasta la siguiente
-   detención, o **Step one cycle** (F10) para ejecutar un ciclo y detenerse en el
+4. Presione **Reanudar** (F5) para que el ciclo termine y siga hasta la siguiente
+   detención, o **Avanzar un ciclo** (F10) para ejecutar un ciclo y detenerse en el
    siguiente límite de ciclo o en el siguiente punto de interrupción.
 
 También puede fijarse un punto de interrupción en una línea de Instruction List, un
@@ -98,6 +98,6 @@ hasta ese ciclo.
 
 ## Vea también
 
-- [Banco de trabajo de Studio](../ide/features.md#límite-de-la-depuración): lo que muestran los watches, los trazos y los forzados.
+- [Banco de trabajo de Studio](../ide/features.md#límite-de-la-depuración): lo que muestran las variables observadas, las trazas y los forzados.
 - [La consola de ZPLC](../operations/shell.md): los comandos de depuración de un dispositivo.
 - [Seguridad y limitaciones](../safety-and-limitations.md).

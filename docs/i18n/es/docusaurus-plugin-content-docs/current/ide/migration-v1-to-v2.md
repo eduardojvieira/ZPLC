@@ -19,7 +19,7 @@ actualiza su `zplc.json` en el workspace seleccionado a schema v2.
    diálogo de importación muestra la misma diferencia antes de escribir nada.
 2. Elija **Review the difference** en el aviso de migración del Explorer. El diálogo lista las líneas de `zplc.json` que
    la migración quita y agrega; solo cambia `zplc.json`, y sus programas no se tocan.
-3. Elija **Apply migration** (equivale a **Guardar**) para escribir la configuración v2 revisada en ese workspace, o
+3. Elija **Aplicar migración** (equivale a **Guardar**) para escribir la configuración v2 revisada en ese workspace, o
    **Close** para dejar la carpeta como está.
 4. Vuelva a compilar y ejecutar el escenario después de guardar.
 
@@ -68,7 +68,7 @@ modelos visuales generado a mano para evitar un diagnóstico.
 | Parte | Verificado | Nivel |
 | --- | --- | --- |
 | `migrate-preview` no escribe nada, y `migrate` escribe solo el archivo de `--output` y deja la carpeta idéntica byte a byte | Pruebas unitarias de la línea de comandos, y los dos comandos de arriba ejecutados sobre una copia del proyecto incluido `motor_start_stop` sin su `schemaVersion` | Host |
-| Studio muestra la diferencia antes de escribir, y la aplica con **Apply migration** | Recorrido 31 en la aplicación real | Host |
+| Studio muestra la diferencia antes de escribir, y la aplica con **Aplicar migración** | Recorrido 31 en la aplicación real | Host |
 | La forma versión 2 guardada conserva lo que hace el proyecto | Una prueba exporta la migración del proyecto de arranque y parada de motor y comprueba que su escenario golden da el mismo observable en el runtime nativo | Host |
 | El proyecto migrado se comporta igual en una placa | No se afirma: no hay equivalencia de destino, eléctrica ni de tiempos | Ninguno |
 

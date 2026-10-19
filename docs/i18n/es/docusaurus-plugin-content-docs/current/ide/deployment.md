@@ -14,10 +14,10 @@ son cuatro operaciones distintas. La IA y MCP nunca las inician.
 
 | Operación | Qué hace | Quién la autoriza |
 | --- | --- | --- |
-| Build runtime firmware | Genera los artefactos de firmware de Zephyr. | Una persona. |
-| Flash runtime firmware | Escribe el firmware y la cadena de arranque en un dispositivo. | Una persona; requiere el procedimiento del perfil. |
-| Deploy PLC program | Transfiere un artefacto `.zplc` verificado a un runtime compatible. | Confirmación de una persona, con los datos del artefacto a la vista. |
-| Run / debug | Observa o cambia el estado de operación. | Una persona, según el procedimiento del sitio. |
+| Compilar el firmware del runtime | Genera los artefactos de firmware de Zephyr. | Una persona. |
+| Grabar el firmware del runtime | Escribe el firmware y la cadena de arranque en un dispositivo. | Una persona; requiere el procedimiento del perfil. |
+| Cargar el programa PLC | Transfiere un artefacto `.zplc` verificado a un runtime compatible. | Confirmación de una persona, con los datos del artefacto a la vista. |
+| Ejecutar / depurar | Observa o cambia el estado de operación. | Una persona, según el procedimiento del sitio. |
 
 ## A qué está conectado Studio
 

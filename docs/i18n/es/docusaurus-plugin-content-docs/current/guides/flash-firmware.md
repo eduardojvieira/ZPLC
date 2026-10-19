@@ -31,7 +31,7 @@ con el nombre `zplc-runtime-<versión>-<placa>.<ext>`, con las sumas de verifica
 `SHA256SUMS` y un manifiesto, `zplc-runtime-<versión>.manifest.json`, que nombra para
 cada imagen el runner de grabación, la dirección en la que se escribe y el nivel de
 evidencia de la placa. Los instaladores de Studio llevan las imágenes de las dos placas
-de aprendizaje: **Project settings**, **Target** muestra el archivo, su SHA-256 y estos
+de aprendizaje: **Configuración del proyecto**, **Destino** muestra el archivo, su SHA-256 y estos
 pasos. Hasta la primera versión que las tenga, compile usted la imagen con los pasos de
 [Su primera placa](../tutorials/first-board.md#1-obtenga-el-firmware).
 

@@ -26,12 +26,12 @@ Qué placas se han probado con un dispositivo físico está en
 1. Descargue el instalador para su sistema desde [GitHub Releases](https://github.com/eduardojvieira/ZPLC/releases) y compruébelo: [Instalar ZPLC Studio](./install.md).
 2. Ábralo. Windows y macOS advierten sobre las aplicaciones sin firmar; la página de instalación explica cómo continuar.
 3. En Studio, copie el ejemplo **Blinky** a una carpeta.
-4. Compílelo, cambie a **Simulate**, pulse **Connect** y luego **Run**.
+4. Compílelo, cambie a **Simular**, pulse **Conectar** y luego **Ejecutar**.
 
 ## Abrir un ejemplo
 
-1. Inicie Studio. La pantalla de bienvenida ofrece **Open project**, **New project** y **Learn**, y una lista de **Examples**.
-2. En **Examples**, en el grupo **First steps**, elija **Blinky**.
+1. Inicie Studio. La pantalla de bienvenida ofrece **Abrir proyecto**, **Nuevo proyecto** y **Aprender**, y una lista de **Ejemplos**.
+2. En **Ejemplos**, en el grupo **Primeros pasos**, elija **Blinky**.
 3. Elija una carpeta de destino vacía. Studio copia el ejemplo allí y lo abre. La copia se detiene si ya existe un archivo en la carpeta.
 
 La carpeta contiene `zplc.json` (el proyecto: destino, tareas y fuentes), los
@@ -41,10 +41,10 @@ activa y desactiva la salida `LED_Output` en `%Q0.0` aproximadamente cada
 
 ## Compilar y simular
 
-1. Elija **Build** y luego **Compile** (Ctrl+B, o Cmd+B en macOS). Los mensajes aparecen en las pestañas **Problems** y **Output** del panel inferior.
-2. En la barra de herramientas, seleccione **Simulate** y pulse **Connect**. Studio inicia el simulador incluido con la aplicación.
-3. Pulse **Run** (F5). Abra la pestaña **Watch**, pulse **+** e ingrese `LED_Output`. Su valor cambia entre verdadero y falso aproximadamente cada medio segundo.
-4. Pulse **Stop** (Shift+F5) al terminar.
+1. Elija **Compilación** y luego **Compilar** (Ctrl+B, o Cmd+B en macOS). Los mensajes aparecen en las pestañas **Problemas** y **Salida** del panel inferior.
+2. En la barra de herramientas, seleccione **Simular** y pulse **Conectar**. Studio inicia el simulador incluido con la aplicación.
+3. Pulse **Ejecutar** (F5). Abra la pestaña **Observación**, pulse **+** e ingrese `LED_Output`. Su valor cambia entre verdadero y falso aproximadamente cada medio segundo.
+4. Pulse **Detener** (Shift+F5) al terminar.
 
 El simulador es el runtime en C de ZPLC compilado para su equipo. Ejecuta el
 programa compilado con un temporizador. No modela la E/S eléctrica de una placa
@@ -55,8 +55,8 @@ ni sus tiempos reales.
 Un escenario es un guion breve que fija entradas, deja correr el programa durante
 un tiempo definido y verifica las salidas.
 
-1. Abra la pestaña **Tests**. Si solicita el proyecto, elija **Choose zplc.json** y seleccione el `zplc.json` de la carpeta de su proyecto.
-2. Pulse **Run host scenarios**. Studio ejecuta `tests/blinky-visual.scenario.json` en el simulador y muestra **Passed** o **Failed** para cada escenario, con sus verificaciones.
+1. Abra la pestaña **Pruebas**. Si solicita el proyecto, elija **Elegir zplc.json** y seleccione el `zplc.json` de la carpeta de su proyecto.
+2. Pulse **Ejecutar escenarios en el host**. Studio ejecuta `tests/blinky-visual.scenario.json` en el simulador y muestra **Superado** o **Fallido** para cada escenario, con sus verificaciones.
 
 ## Hardware
 

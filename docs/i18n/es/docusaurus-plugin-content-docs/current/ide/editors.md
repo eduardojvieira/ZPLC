@@ -23,8 +23,8 @@ llama al bloque con argumentos por nombre, de modo que el orden en que se conect
 
 - **FBD** coloca bloques de función (con un nombre de instancia) y funciones. Una función cuyo resultado nadie usa se
   llama de todos modos.
-- **LD** coloca bloques de función en un rung, igual que un temporizador: el elemento nombra el tipo y la instancia, y
-  los parámetros nombran las entradas de la declaración. Una función no se coloca en un rung; llámela desde un archivo
+- **LD** coloca bloques de función en un peldaño, igual que un temporizador: el elemento nombra el tipo y la instancia, y
+  los parámetros nombran las entradas de la declaración. Una función no se coloca en un peldaño; llámela desde un archivo
   FBD o ST.
 - Un bloque que ningún archivo declara se rechaza por su nombre al compilar el diagrama. Una declaración del proyecto
   tiene prioridad sobre un bloque estándar del mismo nombre, como en el compilador.
@@ -44,7 +44,7 @@ mismo motivo.
 Abrir un archivo visual y guardarlo sin cambios lo deja byte por byte como estaba (LNG-014), con el formato en que se
 haya escrito. Un cambio que termina donde empezó, como arrastrar un elemento y devolverlo, tampoco reescribe el archivo.
 La primera edición real escribe el archivo completo en la única forma que usa Studio: JSON con dos espacios y un salto
-de línea al final (un número escrito `2.0` se escribe `2`; un rung escrito como lista de elementos se escribe como
+de línea al final (un número escrito `2.0` se escribe `2`; un peldaño escrito como lista de elementos se escribe como
 cuadrícula).
 
 ## Deshacer, rehacer y selección en los editores visuales
@@ -70,7 +70,7 @@ El editor de Structured Text lee todo el proyecto, no solo el archivo que tiene 
 
 | Función | Qué hace |
 | --- | --- |
-| Diagnósticos | Cada error de sintaxis y cada error semántico de cada archivo Structured Text del proyecto, mientras escribes (con una pausa de 0,3 s), con el rango que dio el propio front end del compilador. Aparecen como subrayados en los archivos abiertos y en **Problemas** (Diagnósticos ST en vivo), y desaparecen la siguiente vez que se comprueba el proyecto y el error ya no está. No son evidencia de compilación; la evidencia es **Build**. |
+| Diagnósticos | Cada error de sintaxis y cada error semántico de cada archivo Structured Text del proyecto, mientras escribe (con una pausa de 0,3 s), con el rango que dio el propio front end del compilador. Aparecen como subrayados en los archivos abiertos y en **Problemas** (Diagnósticos ST en vivo), y desaparecen la siguiente vez que se comprueba el proyecto y el error ya no está. No son evidencia de compilación; la evidencia es **Compilación**. |
 | Autocompletado | Las variables, parámetros y métodos en el ámbito; tras un punto, los miembros del tipo de lo que está antes (un bloque, una estructura, un elemento de un arreglo de estructuras, un bloque estándar); los bloques, funciones y tipos de todos los archivos; los tipos donde va un tipo; los parámetros de una llamada como `Nombre := `. Los nombres del proyecto van antes que la biblioteca estándar. |
 | Hover | Qué es un nombre, su tipo y dónde se declara, también en otro archivo. |
 | Ir a la definición, buscar referencias | En todos los archivos del proyecto. Un nombre se encuentra por lo que es, no por cómo se escribe: el `Count` de un programa no es el `Count` de otro. |
@@ -112,7 +112,7 @@ el panel Problems de Studio lo selecciona cuando usted activa el problema:
 | Lenguaje | Elemento | Se selecciona |
 | --- | --- | --- |
 | IL | `line:12`, una línea de la fuente IL. Un hallazgo sobre el código generado se pone en la línea IL de la que salió. | La línea. |
-| LD | `rung:rung_1`, o `rung:rung_1/cell:0,3` para la celda de la fila 0, columna 3 (`rung:rung_1/element:c1` para un rung guardado como lista de elementos). | El rung y el elemento de la celda, desplazado a la vista. |
+| LD | `rung:rung_1`, o `rung:rung_1/cell:0,3` para la celda de la fila 0, columna 3 (`rung:rung_1/element:c1` para un peldaño guardado como lista de elementos). | El peldaño y el elemento de la celda, desplazado a la vista. |
 | FBD | `block:and_1`, o `connection:w3` para un cable. Un bloque que solo lee una variable o tiene una constante no tiene sentencia: un hallazgo sobre su nombre queda en el bloque con el que se escribe. | El bloque o el cable. |
 | SFC | `step:s1`, `transition:t1` (su condición) y `action:a1` (su cuerpo). | El paso o la transición; una acción se muestra en el primer paso que la usa. |
 
@@ -132,20 +132,20 @@ una compilación fallida y aun así obtiene el bloque que la compilación nombr�
 
 ## Breakpoints en un diagrama
 
-Se puede poner un breakpoint en el elemento del diagrama o en la línea IL que usted editó (LNG-004); el mapa de
+Se puede poner un punto de parada en el elemento del diagrama o en la línea IL que usted editó (LNG-004); el mapa de
 depuración relaciona cada rango de instrucciones con ese elemento y el runtime se detiene en su primera instrucción.
-Como el punto de una línea de un archivo de texto, se puede poner antes de cargar el programa y se arma cuando Run o
-Deploy lo carga.
+Como el punto de una línea de un archivo de texto, se puede poner antes de cargar el programa y se arma cuando **Ejecutar** o
+**Cargar** lo carga.
 
 | Lenguaje | Dónde | Cómo |
 | --- | --- | --- |
 | IL | La línea IL. El mapa indica líneas de la fuente IL, como espera un editor de texto. | El margen del editor. |
-| LD | El rung: la primera sentencia de su código. | El punto a la izquierda del rung, o F9 con el rung seleccionado. |
+| LD | El peldaño: la primera sentencia de su código. | El punto a la izquierda del peldaño, o F9 con el peldaño seleccionado. |
 | FBD | El bloque: la primera sentencia que genera. Una constante o la lectura de una variable no tiene. | F9 con el bloque seleccionado. |
 | SFC | Un paso se detiene donde una transición entra en él; una transición, donde se dispara. Un paso en el que no entra ninguna transición no tiene dónde detenerse. | F9 con el paso o la transición seleccionados. |
 
-El breakpoint se guarda en el elemento y no en una línea generada, de modo que sigue a su rung, bloque o paso cuando el
-diagrama cambia y se compila de nuevo; si se borra el elemento, el breakpoint se olvida, y uno en un elemento que no
+El punto de parada se guarda en el elemento y no en una línea generada, de modo que sigue a su peldaño, bloque o paso cuando el
+diagrama cambia y se compila de nuevo; si se borra el elemento, el punto de parada se olvida, y uno en un elemento que no
 tiene sentencia se rechaza una vez cargado un programa. El elemento en el que está detenido el programa se resalta en
 amarillo. Los contadores de programa son los que toman el runtime de la simulación y el de una placa; detenerse en una
 placa no se ha comprobado aquí.
@@ -161,7 +161,7 @@ un estado que el mapa no da se muestra como no disponible (un guion, `UNAVAILABL
 | --- | --- | --- |
 | ST | El valor de cada variable que nombra una línea, tras la línea (`Count=7  Ready=TRUE`). Un miembro de una instancia de bloque o de una estructura se lee a través de su instancia. | El servicio de lenguaje resuelve qué es un nombre; el mapa del programa del archivo da su dirección y su tipo. Una función o un bloque de función no muestra nada: sus nombres pertenecen a cada instancia. |
 | IL | El valor de cada variable declarada que usa una instrucción, tras la línea. | El parser de IL y el mapa del programa del archivo. |
-| LD | Energía: un elemento se ilumina cuando le llega energía, por caminos en serie y en paralelo y por ramas, y tras un bloque es la salida del propio bloque. El valor de un contacto o una bobina, y las salidas de un bloque, debajo. | El flujo de energía del rung como una expresión de las variables que lo forman (`rung:r/cell:fila,col`), evaluada con los valores leídos. |
+| LD | Energía: un elemento se ilumina cuando le llega energía, por caminos en serie y en paralelo y por ramas, y tras un bloque es la salida del propio bloque. El valor de un contacto o una bobina, y las salidas de un bloque, debajo. | El flujo de energía del peldaño como una expresión de las variables que lo forman (`rung:r/cell:fila,col`), evaluada con los valores leídos. |
 | FBD | El valor de cada cable y las salidas de cada bloque; un bloque de variable muestra el valor de su variable. | El temporal que se dio a cada salida consumida, o el miembro de la instancia. |
 | SFC | Qué pasos están activos y desde cuándo; de cada transición, si su condición se cumple y si disparó en este escaneo. | El estado generado del gráfico: el indicador y el temporizador de cada paso, `_C_` y `_F_` de cada transición. |
 
@@ -169,7 +169,7 @@ Un valor se lee en el programa de su propio archivo: dos programas que tienen ca
 valores. Las variables que muestra un editor se leen con el sondeo de la tabla Watch, y solo las regiones que muestran un
 valor lo dibujan de nuevo ([Qué se vuelve a dibujar cuando cambia un valor](#qué-se-vuelve-a-dibujar-cuando-cambia-un-valor)).
 
-No cubierto: el cable entre dos elementos de un rung no se ilumina, solo los elementos; un elemento de un arreglo en ST no
+No cubierto: el cable entre dos elementos de un peldaño no se ilumina, solo los elementos; un elemento de un arreglo en ST no
 tiene valor en línea; los valores en una placa, la ejecución paso a paso en hardware. El runtime de la simulación es lo
 que leen las pruebas del host.
 
