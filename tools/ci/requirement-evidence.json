@@ -1836,6 +1836,7 @@
     {"kind":"unit","ref":"packages/zplc-ide/src/mcp/hilReach.test.ts","test":"the hardware scenario command started without an interactive terminal exits with an error, before it reads or opens anything (HIL-003, COM-030)"}
   ],
   "IDE-001": [
+    {"kind":"unit","ref":"packages/zplc-ide/electron/cspEnforcement.test.ts","test":"the production content security policy in Chromium (IDE-016)","note":"a page served under the header a packaged build sends, loaded in headless Chromium: an injected inline script and inline event handler do not run, a same-origin script does; skipped when no Chromium is installed; that the packaged application sends this header is the packaged leg of the journey below, run only on a packaged build"},
     {"kind":"unit","ref":"packages/zplc-ide/electron/ipcRegistry.test.ts","test":"project files over the IPC boundary (IDE-001, IDE-016)"},
     {"kind":"unit","ref":"packages/zplc-ide/electron/ipcRegistry.test.ts","test":"register the folder of the window by its id alone, as <folder>/zplc.json, and refuse any other id (IDE-001)"},
     {"kind":"unit","ref":"packages/zplc-ide/electron/ipcRegistry.test.ts","test":"workspace tests, candidate review and the AI provider (IDE-001, IDE-017, IDE-030)"},

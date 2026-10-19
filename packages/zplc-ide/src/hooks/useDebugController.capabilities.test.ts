@@ -166,7 +166,7 @@ describe('native simulation input controller boundary', () => {
 
 describe('direct watch-write hardware boundary', () => {
   it('rejects a serial adapter before encoding or writing and retains the captured adapter as owner', () => {
-    const source = readFileSync(join(import.meta.dir, 'useDebugController.ts'), 'utf8');
+    const source = readFileSync(join(import.meta.dir, 'useDebugControllerForces.ts'), 'utf8');
     const action = source.slice(source.indexOf('const setValue ='), source.indexOf('const buildForceEntry ='));
     const serialGuard = action.indexOf("currentAdapter.type === 'serial'");
     const encode = action.indexOf('valueToBytes(value, type, maxLength)');
@@ -182,7 +182,7 @@ describe('direct watch-write hardware boundary', () => {
 
 describe('force without a value', () => {
   it('refuses to force a value that has not been read, before anything is encoded or sent, while a release needs no value', () => {
-    const source = readFileSync(join(import.meta.dir, 'useDebugController.ts'), 'utf8');
+    const source = readFileSync(join(import.meta.dir, 'useDebugControllerForces.ts'), 'utf8');
     const action = source.slice(source.indexOf('const toggleForceValue ='), source.indexOf('const clearAllForcedValues ='));
     const refusal = action.indexOf('if (force && value === null) {');
     const encode = action.indexOf('valueToBytes(value as number | boolean | string, type, maxLength)');

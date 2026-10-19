@@ -225,7 +225,10 @@
     "requirement": "VF-006",
     "added": "2026-10-10",
     "reads": [
-      "packages/zplc-ide/src/components/Console.tsx"
+      "packages/zplc-ide/src/components/Console.tsx",
+      "packages/zplc-ide/src/components/ConsoleReviewPanels.tsx",
+      "packages/zplc-ide/src/components/LiveNativeMotorControls.tsx",
+      "packages/zplc-ide/src/components/WorkspaceTestResult.tsx"
     ],
     "replacement": "dom",
     "reason": "Pins roving tab focus, the Tests/Problems/Trace ledgers and their fences as text of Console.tsx. Replace by render tests that drive the tablist with keyboard events once VF-007 provides the DOM environment."
@@ -265,7 +268,11 @@
     "requirement": "VF-006",
     "added": "2026-10-10",
     "reads": [
-      "packages/zplc-ide/src/components/Toolbar.tsx"
+      "packages/zplc-ide/src/components/Toolbar.tsx",
+      "packages/zplc-ide/src/components/ToolbarBuildMenu.tsx",
+      "packages/zplc-ide/src/components/ToolbarRunControls.tsx",
+      "packages/zplc-ide/src/components/ToolbarThemeMenu.tsx",
+      "packages/zplc-ide/src/components/useDropdownMenu.ts"
     ],
     "replacement": "dom",
     "reason": "resolveProgramSource is behavioural; the build-failure and hardware-deploy cases pin Toolbar.tsx wiring as text. Replace by render tests of the toolbar (VF-007), after the admission logic is moved to a logic module."
@@ -373,7 +380,8 @@
     "requirement": "VF-006",
     "added": "2026-10-10",
     "reads": [
-      "packages/zplc-ide/src/hooks/useDebugController.ts"
+      "packages/zplc-ide/src/hooks/useDebugController.ts",
+      "packages/zplc-ide/src/hooks/useDebugControllerForces.ts"
     ],
     "replacement": "behaviour",
     "reason": "The resolution and capability functions are behavioural; four cases pin the controller boundary (input staging, serial write owner, force without value, breakpoint syncer) as text of useDebugController.ts. Replace by driving the hook with fake adapters (VF-007 hook rendering)."
