@@ -3,8 +3,8 @@ slug: /guides/simulate-and-debug
 id: simulate-and-debug
 title: Simular y depurar un programa
 sidebar_label: Simular y depurar
-description: "Ejecute un programa en el simulador, observe sus variables, deténgalo en un punto de interrupción, avance paso a paso y vea qué conserva cada control."
-tags: [how-to, debugging, simulation, breakpoints]
+description: "Ejecute un programa en el simulador, observe sus variables, deténgalo en un punto de parada, avance paso a paso y vea qué conserva cada control."
+tags: [how-to, debugging, simulation, puntos de parada]
 ---
 
 # Simular y depurar un programa
@@ -21,17 +21,17 @@ bien en el simulador no se ha demostrado que se comporte bien en una placa.
 
 ## 1. Compile y ejecute
 
-1. Compile el proyecto (**Build**, **Compile**).
-2. En la barra de herramientas, compruebe que **Simulate** esté seleccionado y
-   presione **Connect** y luego **Run** (F5). La línea de estado muestra **Running** y
+1. Compile el proyecto (**Compilación**, **Compilar**).
+2. En la barra de herramientas, compruebe que **Simular** esté seleccionado y
+   presione **Conectar** y luego **Ejecutar** (F5). La línea de estado muestra **En marcha** y
    el contador de ciclos sube.
-3. Abra la pestaña **Watch**, presione **+** e ingrese una variable. Su valor sigue al
+3. Abra la pestaña **Observación**, presione **+** e ingrese una variable. Su valor sigue al
    programa. Haga doble clic en un valor para escribirlo.
 
 [Blink sin hardware](../tutorials/blink-without-hardware.md) hace esto en un primer
 proyecto.
 
-## 2. Deténgase en un punto de interrupción
+## 2. Deténgase en un punto de parada
 
 Cualquier programa sirve. Este cuenta sus ciclos, de modo que una parada muestra el valor
 del ciclo que la alcanzó:
@@ -50,18 +50,18 @@ END_PROGRAM
 ```
 
 1. Haga clic en el margen del editor, junto a `Count := Count + 1;`. Un punto marca la línea.
-2. Presione **Run**. El programa se detiene cuando un ciclo llega a la sentencia: la
-   barra de herramientas ofrece **Resume** (F5), el editor marca la línea, **Output**
+2. Presione **Ejecutar**. El programa se detiene cuando un ciclo llega a la sentencia: la
+   barra de herramientas ofrece **Reanudar** (F5), el editor marca la línea, **Salida**
    dice `Breakpoint hit at PC=..., line N` y una fila de la pestaña **Trace** dice
    `paused`.
-3. Mire los valores en **Watch**. Son los valores del ciclo que se detuvo. Fije una
+3. Mire los valores en **Observación**. Son los valores del ciclo que se detuvo. Fije una
    entrada, o fuerce un valor ([Forzar un valor](./force-values.md)), y vuelva a
    mirar.
-4. Presione **Resume** (F5) para que el ciclo termine y siga hasta la siguiente
-   detención, o **Step one cycle** (F10) para ejecutar un ciclo y detenerse en el
-   siguiente límite de ciclo o en el siguiente punto de interrupción.
+4. Presione **Reanudar** (F5) para que el ciclo termine y siga hasta la siguiente
+   detención, o **Avanzar un ciclo** (F10) para ejecutar un ciclo y detenerse en el
+   siguiente límite de ciclo o en el siguiente punto de parada.
 
-También puede fijarse un punto de interrupción en una línea de Instruction List, un
+También puede fijarse un punto de parada en una línea de Instruction List, un
 peldaño de Ladder, un bloque de FBD y un paso o transición de SFC. El mapa de
 depuración relaciona las instrucciones con el elemento que usted editó.
 
@@ -70,8 +70,8 @@ depuración relaciona las instrucciones con el elemento que usted editó.
 | Control | Imagen de salida | Forzados | El ciclo |
 | --- | --- | --- | --- |
 | Pause (F6) | Se conserva | Se conservan | Se detiene entre ciclos |
-| Step one cycle (F10) | Se conserva, y muestra el ciclo ejecutado | Se conservan | Ejecuta un ciclo completo, o termina el que estaba detenido en un punto de interrupción |
-| Resume (F5) | Se conserva | Se conservan | Un ciclo detenido en un punto de interrupción continúa desde allí |
+| Step one cycle (F10) | Se conserva, y muestra el ciclo ejecutado | Se conservan | Ejecuta un ciclo completo, o termina el que estaba detenido en un punto de parada |
+| Resume (F5) | Se conserva | Se conservan | Un ciclo detenido en un punto de parada continúa desde allí |
 | Stop (Shift+F5) | Se pone en cero | Se borran | Cada tarea vuelve a su punto de entrada |
 | Reset (F8) | Un reinicio en frío: valores iniciales | Se borran | Empieza de nuevo desde el primer ciclo |
 
@@ -91,13 +91,13 @@ hasta ese ciclo.
 
 | Parte | Verificado | Nivel |
 | --- | --- | --- |
-| Un punto de interrupción se enlaza y detiene el ciclo, y Resume termina el ciclo interrumpido | Los recorridos 7 y 16 en la aplicación real, y las suites del planificador | Host y `native_sim` |
-| Un forzado fijado en un punto de interrupción lo ve el resto del ciclo | El recorrido 18 en la aplicación real | Host |
+| Un punto de parada se enlaza y detiene el ciclo, y Resume termina el ciclo interrumpido | Los recorridos 7 y 16 en la aplicación real, y las suites del planificador | Host y `native_sim` |
+| Un forzado fijado en un punto de parada lo ve el resto del ciclo | El recorrido 18 en la aplicación real | Host |
 | Pause, step y stop conservan y borran lo que dice la tabla | Las suites de Zephyr en `native_sim` y QEMU | Destino emulado |
 | Las mismas detenciones en una placa | No probado | Ninguno |
 
 ## Vea también
 
-- [Banco de trabajo de Studio](../ide/features.md#límite-de-la-depuración): lo que muestran los watches, los trazos y los forzados.
+- [Banco de trabajo de Studio](../ide/features.md#límite-de-la-depuración): lo que muestran las variables observadas, las trazas y los forzados.
 - [La consola de ZPLC](../operations/shell.md): los comandos de depuración de un dispositivo.
 - [Seguridad y limitaciones](../safety-and-limitations.md).

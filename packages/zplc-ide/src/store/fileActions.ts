@@ -11,6 +11,7 @@ import { createFolder, deleteFolder, duplicateEntry, moveEntry, renameEntry } fr
 import { preserveExpansion } from '../project/treeOperations';
 import type { IDEState } from './ideStoreTypes';
 import { resolveTreeFile, findTreeFileWithParent, pruneTreeFile, appendTreeFile, isSafePathSegment } from './fileTreeLookup';
+import { t } from '../i18n';
 
 let openFileIntent = 0;
 let fileTreeRefreshIntent = 0;
@@ -100,7 +101,7 @@ export const createFileActions: StateCreator<IDEState, [], [], Pick<IDEState, 't
       if (!options.quiet) {
         get().addConsoleEntry({
           type: 'success',
-          message: `Saved: ${file.name}`,
+          message: t('store.savedFile', { name: file.name }),
           source: 'system',
         });
       }
@@ -111,7 +112,7 @@ export const createFileActions: StateCreator<IDEState, [], [], Pick<IDEState, 't
       const message = err instanceof Error ? err.message : 'Unknown error';
       get().addConsoleEntry({
         type: 'error',
-        message: `Failed to save ${file.name}: ${message}`,
+        message: t('store.saveFileFailed', { name: file.name, message }),
         source: 'system',
       });
       set(SHOW_OUTPUT);
@@ -238,7 +239,7 @@ export const createFileActions: StateCreator<IDEState, [], [], Pick<IDEState, 't
           : 'Could not create the file. Check the name and folder access, then try again.');
       }
 
-      get().addConsoleEntry({ type: 'success', message: `Created: ${fileName}`, source: 'system' });
+      get().addConsoleEntry({ type: 'success', message: t('store.createdFile', { name: fileName }), source: 'system' });
       return fileId;
     } catch (error) {
       if (!isCurrentProject()) throw new Error('Project changed while creating the file.');
@@ -266,7 +267,7 @@ export const createFileActions: StateCreator<IDEState, [], [], Pick<IDEState, 't
 
     if (!located.parent.dirHandle) {
       if (get().projectSession === expectedProjectSession) {
-        get().addConsoleEntry({ type: 'error', message: `Could not delete ${located.node.name}. The file was not removed.`, source: 'system' });
+        get().addConsoleEntry({ type: 'error', message: t('store.deleteFailed', { name: located.node.name }), source: 'system' });
       }
       return false;
     }
@@ -274,7 +275,7 @@ export const createFileActions: StateCreator<IDEState, [], [], Pick<IDEState, 't
       await located.parent.dirHandle.removeEntry(located.node.name);
     } catch {
       if (get().projectSession === expectedProjectSession) {
-        get().addConsoleEntry({ type: 'error', message: `Could not delete ${located.node.name}. The file was not removed.`, source: 'system' });
+        get().addConsoleEntry({ type: 'error', message: t('store.deleteFailed', { name: located.node.name }), source: 'system' });
       }
       return false;
     }

@@ -4,6 +4,7 @@
  * migration is the Save. Closing it leaves the project as it was.
  */
 import { useEffect, useState } from 'react';
+import { useT } from '../i18n';
 import { useIDEStore } from '../store/useIDEStore';
 import { describeMigration, type MigrationDifference } from '../project/migrationDiff';
 import { MigrationDifferenceView } from './MigrationDifferenceView';
@@ -11,6 +12,7 @@ import { Button } from '../ui';
 import { Modal } from './Modal';
 
 export function MigrationPreviewDialog({ onClose }: { onClose: () => void }) {
+  const { t } = useT();
   const directoryHandle = useIDEStore((state) => state.directoryHandle);
   const projectConfig = useIDEStore((state) => state.projectConfig);
   const preview = useIDEStore((state) => state.projectMigrationPreview);
@@ -40,21 +42,21 @@ export function MigrationPreviewDialog({ onClose }: { onClose: () => void }) {
   };
 
   return (
-    <Modal isOpen onClose={() => !applying && onClose()} title="Migrate the project to version 2" widthClass="max-w-3xl">
+    <Modal isOpen onClose={() => !applying && onClose()} title={t('workbench.migration.title')} widthClass="max-w-3xl">
       <div className="space-y-3 p-4" data-migration-preview>
         <p className="text-sm text-[var(--color-surface-200)]">
-          This project is version {preview?.sourceSchemaVersion ?? 1}. Studio opened it as version 2 and has written nothing: the files on disk are as they were.
-          Only <code className="font-mono">zplc.json</code> changes; your programs are not touched. Apply migration writes the text below.
+          {t('workbench.migration.intro', { version: preview?.sourceSchemaVersion ?? 1 })}{' '}
+          {t('workbench.migration.onlyBefore')}<code className="font-mono">zplc.json</code>{t('workbench.migration.onlyAfter')}
         </p>
         {problem && <p role="alert" className="text-sm text-[var(--color-accent-yellow)]">{problem}</p>}
-        {!difference && !problem && <p role="status" className="text-sm text-[var(--color-surface-300)]">Reading zplc.json…</p>}
+        {!difference && !problem && <p role="status" className="text-sm text-[var(--color-surface-300)]">{t('workbench.migration.reading')}</p>}
         {difference && (difference.changed
           ? <MigrationDifferenceView difference={difference} />
-          : <p role="status" className="text-sm text-[var(--color-surface-300)]">Nothing in zplc.json differs from what Save writes.</p>)}
+          : <p role="status" className="text-sm text-[var(--color-surface-300)]">{t('workbench.migration.nothing')}</p>)}
         <div className="flex justify-end gap-2">
-          <Button disabled={applying} onClick={onClose}>Close</Button>
+          <Button disabled={applying} onClick={onClose}>{t('workbench.migration.close')}</Button>
           <Button variant="primary" disabled={applying || !difference} onClick={() => { void apply(); }}>
-            {applying ? 'Applying…' : 'Apply migration'}
+            {applying ? t('workbench.migration.applying') : t('workbench.migration.apply')}
           </Button>
         </div>
       </div>

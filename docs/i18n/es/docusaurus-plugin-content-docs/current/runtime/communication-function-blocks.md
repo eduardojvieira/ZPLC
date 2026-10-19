@@ -1,12 +1,12 @@
 ---
 slug: /runtime/communication-function-blocks
 id: communication-function-blocks
-title: Bloques de Función de Comunicación
-sidebar_label: FBs de Comunicación
+title: Bloques de función de comunicación
+sidebar_label: Bloques de comunicación
 description: Los doce bloques de comunicación y de nube, su único handshake, sus límites de tiempo y contra qué se verificó cada uno.
 ---
 
-# Bloques de Función de Comunicación
+# Bloques de función de comunicación
 
 ZPLC ofrece doce bloques de función que hablan con dispositivos de campo, brokers y servicios de nube desde su lógica IEC 61131-3. Comparten un solo handshake. Un bloque nunca espera a la red dentro del ciclo: entrega el trabajo a un hilo propio, informa `BUSY` e informa el resultado en un ciclo posterior.
 
@@ -103,7 +103,7 @@ Se usan para interactuar con dispositivos de campo sin un mapeo implícito. `COU
 - `MQTT_PUBLISH`: publica `PAYLOAD` en `TOPIC` una vez por cada flanco ascendente. `DONE` significa que el cliente aceptó el mensaje para enviarlo; no espera la confirmación de un mensaje QoS 1 o 2.
 - `MQTT_SUBSCRIBE`: mantiene una suscripción a `TOPIC` y entrega sus mensajes en `PAYLOAD`, con `VALID` durante un ciclo por cada uno.
 
-### Wrappers de integración en la nube
+### Bloques envolventes para la nube
 
 - `AZURE_C2D_RECV`: recibe mensajes de la nube al dispositivo de Azure (el perfil Azure IoT Hub con mensajes de la nube al dispositivo habilitados).
 - `AZURE_DPS_PROV`: registro en el Servicio de aprovisionamiento de dispositivos de Azure; `ASSIGNED_HUB` es el hub asignado. Un `DEVICE_ID` no vacío es el identificador de registro que se usa en la solicitud.
@@ -134,6 +134,6 @@ Ningún bloque se verificó contra un servicio real, y verificar uno no necesita
 | `AZURE_C2D_RECV`, `AZURE_EG_PUB`, `SPB_REBIRTH` | Sí | El cliente del controlador en `native_sim` contra el broker escrito para la prueba, con el perfil de cada servicio: un mensaje de la nube al dispositivo, un mensaje de Event Grid y un `NBIRTH` por solicitud, `STATUS` 10 con un perfil que no ofrece el servicio, `NOT_CONNECTED` sin sesión, reset estando ocupado. El intercambio con el servicio real de Azure o Sparkplug no se prueba | No |
 | `AZURE_DPS_PROV`, `AWS_FLEET_PROV` | Sí, con el servicio de aprovisionamiento reemplazado por uno que espera | Ninguno en la suite de pruebas; `tools/connectivity/` tiene scripts que responden en un broker que usted ejecuta, de uso manual | No |
 
-## Disponibilidad de Lenguajes
+## Disponibilidad por lenguaje
 
 El compilador registra todos los bloques de función de comunicación, por lo que puede instanciarlos en Structured Text (ST). No se ha verificado en esta versión que los editores de Ladder Diagram (LD) y de Function Block Diagram (FBD) ofrezcan cada bloque.

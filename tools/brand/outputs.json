@@ -21,6 +21,13 @@
       "sha256": "b252a423aecce8012dcebfc1a5293934ff58c6f89914f809d4bfb71a612290e3"
     },
     {
+      "path": "packages/zplc-ide/public/icon.png",
+      "kind": "png",
+      "width": 512,
+      "height": 512,
+      "sha256": "9428317db2d522c0bdd04ebc39d7bd1b5a4059d44aaee9eeb98ed6a2a3b0f02a"
+    },
+    {
       "path": "tools/brand/icon.png",
       "kind": "png",
       "width": 1024,

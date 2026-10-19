@@ -12,6 +12,7 @@
 
 import type { IDebugAdapter } from '../runtime/debugAdapter';
 import type { NewConsoleEntry } from '../store/consoleEntries';
+import { t } from '../i18n';
 
 export type BreakpointSyncTarget = Pick<IDebugAdapter, 'clearBreakpoints' | 'setBreakpoint'>;
 
@@ -120,7 +121,7 @@ export function reportBreakpointSync(outcome: BreakpointSyncOutcome | null, sink
   sinks.setBreakpointsInactiveReason(reason);
   sinks.addConsoleEntry({
     type: 'warning',
-    message: `Breakpoints are not active: ${reason}. The dots stay in the editor, but the program will not stop at them.`,
+    message: t('debugger.breakpointsInactive', { reason }),
     source: 'debugger',
   });
 }

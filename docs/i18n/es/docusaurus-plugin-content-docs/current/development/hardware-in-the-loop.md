@@ -9,7 +9,7 @@ description: Cómo una persona ejecuta en el banco las pruebas de hardware de ZP
 
 Esta página es para la persona que está en el banco. Una placa es algo físico,
 de modo que una persona inicia todo comando que la toque: las herramientas de
-IA y MCP no flashean, no despliegan, no fuerzan, no arrancan ni detienen una
+IA y MCP no graban, no cargan, no fuerzan, no arrancan ni detienen una
 placa, ni abren su shell serie, y ninguna opción permite que un script lo haga
 por ellas.
 
@@ -23,7 +23,7 @@ herramientas, no una placa.
 | Nivel | Qué demuestra | Dónde |
 |-------|---------------|-------|
 | Host | Cada fixture de lenguaje compila con el compilador del repositorio y cumple sus valores esperados en el runtime nativo; los scripts de dispositivo terminan con estado distinto de cero cuando una comprobación falla; el motor de escenarios corre sobre el puerto de hardware contra el runtime nativo. | CI, y cualquier máquina con el repositorio |
-| Placa | Los mismos fixtures y escenarios sobre una placa flasheada, y los pasos físicos. | Una persona, en el banco |
+| Placa | Los mismos fixtures y escenarios sobre una placa con la imagen grabada, y los pasos físicos. | Una persona, en el banco |
 
 El nivel de host no demuestra que un pin maneje una carga, que un temporizador
 mantenga su período en silicio real ni que un watchdog reinicie a tiempo. Eso
@@ -79,7 +79,7 @@ falla:
 
 1. **Verificación previa.** La placa está en el manifiesto y cada fixture de
    hardware compila con el compilador del repositorio.
-2. **Flasheo.** Usted flashea la imagen. La herramienta no lo hace.
+2. **Grabación.** Usted graba la imagen. La herramienta no lo hace.
 3. **Protocolo de identidad.** La herramienta pregunta al dispositivo quién es
    (`zplc sys info --json`) y qué imagen es (`zplc sys build --json`: versión,
    commit, si el árbol estaba modificado, placa, ABI, draft y las opciones de
@@ -97,7 +97,7 @@ falla:
    dispositivo. Pulsar Enter solo no confirma.
 7. **Las salidas son seguras de accionar.** Usted escribe la identidad otra vez,
    diciendo que nada conectado a las salidas puede lastimar a nadie.
-8. **Desplegar, ejecutar.** Se carga un programa y el contador de scans debe
+8. **Cargar, ejecutar.** Se carga un programa y el contador de scans debe
    avanzar.
 9. **Fixtures.** Se ejecutan los fixtures marcados para hardware, uno tras otro,
    con sus entradas forzadas y liberadas.
@@ -207,7 +207,7 @@ Cada ejecución de hardware escribe un registro JSON, descrito por
 `tools/hil/run-record.schema.json`, en `build/hil-records/` o en el directorio
 de `--out`. Contiene la placa y lo que informó el dispositivo, el commit, la
 versión y el ABI del firmware según los informa la imagen, el hash de cada
-programa y de la imagen que usted dice haber flasheado, cada paso con su
+programa y de la imagen que usted dice haber grabado, cada paso con su
 resultado y el momento en que usted lo confirmó, las pruebas, las versiones de
 las herramientas, la persona operadora y el registro crudo del shell.
 
@@ -226,7 +226,7 @@ entonces cada detalle de abajo es un marcador, y nada de ello se ha hecho.
 
 | Elemento | Valor |
 |----------|-------|
-| Imagen de firmware y cómo se flasheó | POR COMPLETAR por la persona que hizo la ejecución en el banco |
+| Imagen de firmware y cómo se grabó | POR COMPLETAR por la persona que hizo la ejecución en el banco |
 | Cable USB y puerto que ve el host | POR COMPLETAR |
 | Lazo digital: qué salida va a qué entrada | POR COMPLETAR |
 | Entrada analógica: la fuente y su tensión conocida | POR COMPLETAR |
@@ -237,7 +237,7 @@ entonces cada detalle de abajo es un marcador, y nada de ello se ha hecho.
 
 | Elemento | Valor |
 |----------|-------|
-| Imagen de firmware y cómo se flasheó | POR COMPLETAR por la persona que hizo la ejecución en el banco |
+| Imagen de firmware y cómo se grabó | POR COMPLETAR por la persona que hizo la ejecución en el banco |
 | Cable USB, puente UART y puerto que ve el host (sus identificadores USB van en `tools/hil/usb-ids.json`) | POR COMPLETAR |
 | Lazo digital: qué salida va a qué entrada | POR COMPLETAR |
 | Entrada analógica: la fuente y su tensión conocida | POR COMPLETAR |

@@ -312,6 +312,11 @@ The report only reads files. Its own tests are
   count per board, file and check. The pass was proven against local board
   builds with one `clang-tidy` version; the first run in continuous integration
   shows whether the baselines also hold with the runner's.
+- The Zephyr pass was run on a Linux workstation, on the Arduino Opta build only: the core and the Zephyr HAL
+  reported nothing, and `firmware/app` reported 24 findings, all within the baseline of that board. Reading them
+  found no defect: the one `strcpy` is guarded by the length check above it and the one `memcpy` writes a binary
+  record, so no firmware file changed. The baselines of the other boards were not measured in that run, and no
+  hosted CI run of the pass is recorded.
 - Two integration cases in `test_vm_core.c` skip on every target, the host
   included, because the example binaries they load predate the CRC field.
   The `SKIP:` lines are in the suite log and the summary still reports a pass.

@@ -427,7 +427,7 @@ function FBDEditorInner({
       className="relative flex-1 h-full"
       tabIndex={0}
       role="region"
-      aria-label="Function block diagram canvas"
+      aria-label={t('editors.fbd.canvas')}
       aria-keyshortcuts="F1"
       onDrop={onDrop}
       onDragOver={onDragOver}
@@ -477,8 +477,8 @@ function FBDEditorInner({
               data-wire-refused
               className="max-w-xl rounded border border-[var(--color-accent-red)] bg-[var(--color-surface-800)] px-3 py-2 text-xs text-[var(--color-surface-100)]"
             >
-              <span className="font-semibold">Wire refused. </span>{refusal}
-              <button type="button" className="ml-2 underline" onClick={() => setRefusal(null)}>Dismiss</button>
+              <span className="font-semibold">{t('editors.fbd.wireRefused')} </span>{refusal}
+              <button type="button" className="ml-2 underline" onClick={() => setRefusal(null)}>{t('editors.fbd.dismiss')}</button>
             </div>
           </Panel>
         )}

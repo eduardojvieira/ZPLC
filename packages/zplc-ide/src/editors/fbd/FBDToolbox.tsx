@@ -6,6 +6,7 @@
  * filters the blocks of every category by name.
  */
 
+import { t } from '../../i18n';
 import { useState, type ReactElement } from 'react';
 import { ChevronDown, ChevronRight, Timer, Binary, Hash, GitBranch, Calculator, ToggleLeft, Zap, ArrowRightLeft, Repeat, Gauge, Database, Type, Radio } from 'lucide-react';
 import { Button, TextField } from '../../ui';
@@ -107,7 +108,7 @@ export default function FBDToolbox({ onInsert }: FBDToolboxProps) {
       {/* Header */}
       <div className="px-3 py-2 border-b border-[var(--border-color)] bg-[var(--color-surface-700)]">
         <span className="text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wider">
-          Blocks
+          {t('editors.fbd.blocks')}
         </span>
       </div>
 
@@ -116,8 +117,8 @@ export default function FBDToolbox({ onInsert }: FBDToolboxProps) {
           type="search"
           value={query}
           onChange={(event) => setQuery(event.target.value)}
-          aria-label="Search the blocks"
-          placeholder="Search"
+          aria-label={t('editors.fbd.searchBlocks')}
+          placeholder={t('editors.search')}
           className="w-full"
         />
       </div>
@@ -156,8 +157,8 @@ export default function FBDToolbox({ onInsert }: FBDToolboxProps) {
                       onDragStart={(e) => onDragStart(e, block)}
                       onClick={() => onInsert?.(block)}
                       data-fbd-toolbox-item={block}
-                      aria-label={`Insert ${block}`}
-                      tooltip={category.name === 'Project' ? descriptions.get(block) : `${block}: press to insert beside the selected block, or drag onto the canvas`}
+                      aria-label={t('editors.insert', { name: block })}
+                      tooltip={category.name === 'Project' ? descriptions.get(block) : t('editors.fbd.insertTooltip', { name: block })}
                       className={ITEM_CLASS}
                     >
                       {block}
@@ -174,7 +175,7 @@ export default function FBDToolbox({ onInsert }: FBDToolboxProps) {
       <div className="border-t border-[var(--border-color)] py-1">
         <div className="px-3 py-1.5">
           <span className="text-xs font-semibold text-[var(--text-tertiary)] uppercase tracking-wider">
-            I/O
+            {t('editors.fbd.io')}
           </span>
         </div>
         {ioBlocks.map((block) => (
@@ -185,19 +186,19 @@ export default function FBDToolbox({ onInsert }: FBDToolboxProps) {
             onDragStart={(e) => onDragStart(e, block)}
             onClick={() => onInsert?.(block)}
             data-fbd-toolbox-item={block}
-            aria-label={`Insert ${block}`}
+            aria-label={t('editors.insert', { name: block })}
             className={ITEM_CLASS}
           >
             {block.toUpperCase()}
           </Button>
         ))}
-        {searching && shown.length === 0 && ioBlocks.length === 0 ? <p className={`px-3 py-1 ${CAPTION} text-[var(--text-tertiary)]`}>Nothing matches.</p> : null}
+        {searching && shown.length === 0 && ioBlocks.length === 0 ? <p className={`px-3 py-1 ${CAPTION} text-[var(--text-tertiary)]`}>{t('editors.nothingMatches')}</p> : null}
       </div>
 
       {/* Help text */}
       <div className="px-3 py-2 border-t border-[var(--border-color)]">
         <p className={`${CAPTION} text-[var(--text-tertiary)] leading-relaxed`}>
-          Press a block to insert it beside the selected one, or drag it onto the canvas. Connect outputs (green) to inputs (blue), or press C on a block.
+          {t('editors.fbd.help')}
         </p>
       </div>
     </div>

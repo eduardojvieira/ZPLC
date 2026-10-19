@@ -1,0 +1,62 @@
+{
+  "schemaVersion": 1,
+  "title": "Modbus TCP: write a register and read it back",
+  "summary": "Write one holding register through a Modbus TCP block, read it back once the write is done, and report whether the value that came back is the one you sent.",
+  "scope": "The Modbus server in this lesson is a loopback double that Studio starts inside the simulation session, on this computer. The scenario shows how the blocks and their handshake behave against that double; it does not show that a real controller, drive or gateway accepts the same request, and it says nothing about wiring, network timing or a real device, HIL, or certification.",
+  "objectives": [
+    "Write a holding register with MB_WRITE_HREG and read it back with MB_READ_HREG, in that order, using the DONE output of the first block as the trigger of the second.",
+    "Compare the value read with the value written, and report an ERROR from either block.",
+    "Say what a loopback double shows and what it does not show."
+  ],
+  "stages": [
+    {
+      "key": "objective",
+      "title": "Objective",
+      "body": "In src/ModbusRegister.st the program already writes the value 1234 to holding register 8 of a Modbus TCP server when Send turns ON. Add the read-back: read register 8 once the write is done, turn Match ON when the value read equals 1234, and turn Failed ON when either block reports ERROR. The simulation of Studio answers every Modbus TCP request with a server of its own on this computer, so no device and no network are needed.",
+      "checkpoint": "Written, Match and Failed describe the exchange: the write is done, the value came back unchanged, and nothing failed."
+    },
+    {
+      "key": "predict",
+      "title": "Predict",
+      "body": "Send turns ON at {{t:10}} ms and OFF at {{t:10000}} ms. Predict Written, Match and Failed at {{t:0}} ms, while Send is ON, and after Send turns OFF. A block clears DONE when its EN falls.",
+      "checkpoint": "{{v:ModbusRegister.Written=false,ModbusRegister.Match=false,ModbusRegister.Failed=false@0|All three OFF}} at {{t:0}} ms; Written and Match turn ON a few scans after Send and Failed stays OFF; {{v:ModbusRegister.Written=false,ModbusRegister.Match=false@10100|Written and Match are OFF again}} at {{t:10100}} ms."
+    },
+    {
+      "key": "edit",
+      "title": "Edit",
+      "body": "Correct this starter omission, save it, then press Check: The starter writes register 8 but never reads it back, so Match stays OFF; call MB_READ_HREG on the same register when Wr.DONE is TRUE, turn Match ON when Rd.DONE is TRUE and Rd.VALUE equals 1234, and turn Failed ON when Wr.ERROR or Rd.ERROR is TRUE.",
+      "checkpoint": "The visible scenario must pass with saved host evidence."
+    },
+    {
+      "key": "run",
+      "title": "Run",
+      "body": "Press Check. Studio runs your saved program against the scenario of this lesson, with the Modbus server of the simulation running.",
+      "checkpoint": "The scenario is named ModbusRegister and contains {{assertions}} assertions."
+    },
+    {
+      "key": "observe",
+      "title": "Observe",
+      "body": "The scenario does not ask for Written and Match at one exact scan. The server answers in real time while the runtime plays simulated time faster, so it asks for each to turn ON at some moment from {{t:10}} to {{t:9010}} ms, and it holds them to the same answer at {{t:9990}} ms.",
+      "checkpoint": "Written and Match are both ON at {{t:9990}} ms, and both are OFF again at {{t:10100}} ms because Send fell at {{t:10000}} ms and a block clears DONE when its EN falls."
+    },
+    {
+      "key": "reflect",
+      "title": "Reflect",
+      "body": "What would the scenario show if the program read register 9 instead of register 8? Try it, and then try writing 1235 while still comparing with 1234.",
+      "checkpoint": "Register 9 was never written and holds 0, so Match never turns ON; writing 1235 and comparing with 1234 does the same. The scenario shows how the blocks behave against the double that Studio starts. It does not show that a real Modbus device accepts the same function codes, addresses or timing: that has to be checked against that device."
+    }
+  ],
+  "hints": [
+    {
+      "level": 1,
+      "text": "MB_READ_HREG has the same pins as MB_WRITE_HREG, and its EN can be the DONE output of the writer, so the read starts on the rising edge of Wr.DONE."
+    },
+    {
+      "level": 2,
+      "text": "Rd(EN := Wr.DONE, PROTO := 1, SLAVE_ID := 1, ADDR := 8, COUNT := 1, HOST := '127.0.0.1', PORT := 502); Match := Rd.DONE AND (Rd.VALUE = 1234); Failed := Wr.ERROR OR Rd.ERROR;"
+    }
+  ],
+  "faultCases": [
+    "The starter writes register 8 but never reads it back, so Match stays OFF; call MB_READ_HREG on the same register when Wr.DONE is TRUE, turn Match ON when Rd.DONE is TRUE and Rd.VALUE equals 1234, and turn Failed ON when Wr.ERROR or Rd.ERROR is TRUE."
+  ]
+}

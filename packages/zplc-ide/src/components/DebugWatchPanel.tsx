@@ -89,7 +89,7 @@ function SortHeader({ column, label, sort, setSort, t, className = '' }: {
  * Debug Watch Panel Component
  */
 export function DebugWatchPanel({ setValue, toggleForceValue, clearAllForcedValues, hasActiveSerialSession = false }: DebugWatchPanelProps): React.ReactElement {
-  const { t } = useT();
+  const { t, tn } = useT();
   const [newVarInput, setNewVarInput] = useState('');
   const [showAddForm, setShowAddForm] = useState(false);
   const [editing, setEditing] = useState<EditingCell | null>(null);
@@ -282,16 +282,16 @@ export function DebugWatchPanel({ setValue, toggleForceValue, clearAllForcedValu
       <div className="flex items-center justify-between px-3 py-2 bg-[var(--color-surface-700)] border-b border-[var(--color-surface-600)]">
         <div className="flex items-center gap-2">
           <Eye size={14} className="text-[var(--color-surface-300)]" />
-          <span className="font-medium text-[var(--color-surface-100)]">Watch</span>
-          <span role="img" aria-label={`Debug mode: ${debugMode}`} className={`w-2 h-2 rounded-full ${statusColor}`} />
+          <span className="font-medium text-[var(--color-surface-100)]">{t('workbench.watch.title')}</span>
+          <span role="img" aria-label={t('workbench.watch.debugMode', { mode: debugMode })} className={`w-2 h-2 rounded-full ${statusColor}`} />
         </div>
         <div className="flex items-center gap-1">
           <Select aria-label={t('panel.watch.format')} value={format} onChange={(e) => setFormat(e.target.value as WatchFormat)} className="w-24 text-[11px]">
             {WATCH_FORMATS.map((entry) => <option key={entry} value={entry}>{t(`panel.watch.format.${entry}`)}</option>)}
           </Select>
-          <IconButton label="Add variable" variant="ghost" size="sm" icon={<Plus size={14} />} onClick={() => setShowAddForm(!showAddForm)} />
+          <IconButton label={t('workbench.watch.addVariable')} variant="ghost" size="sm" icon={<Plus size={14} />} onClick={() => setShowAddForm(!showAddForm)} />
           {variables.length > 0 && (
-            <IconButton label="Clear all" variant="ghost" size="sm" icon={<Trash2 size={14} />} onClick={clearAll} />
+            <IconButton label={t('workbench.watch.clearAll')} variant="ghost" size="sm" icon={<Trash2 size={14} />} onClick={clearAll} />
           )}
         </div>
       </div>
@@ -317,20 +317,20 @@ export function DebugWatchPanel({ setValue, toggleForceValue, clearAllForcedValu
             <div className="min-w-0 flex-1">
               <p className="text-xs font-semibold">
                 {forcesUnconfirmed
-                  ? 'Force state unconfirmed. Reconnect and verify before operating.'
-                  : `${forcedValues.size} active force${forcedValues.size === 1 ? '' : 's'} retained by the PLC.`}
+                  ? t('workbench.watch.forceUnconfirmed')
+                  : tn('workbench.watch.activeForces', forcedValues.size)}
               </p>
               <p className="mt-0.5 text-[11px] text-[var(--color-surface-300)]">
                 {forcesUnconfirmed
-                  ? 'The device may still retain forced outputs or inputs.'
-                  : 'Forces remain active until explicitly released.'}
+                  ? t('workbench.watch.mayRetain')
+                  : t('workbench.watch.remainActive')}
               </p>
             </div>
           </div>
           <div className="mt-2 flex items-center gap-2">
             <Button variant="secondary" size="sm" onClick={() => { void handleReleaseAllForces(); }} disabled={!clearAllForcedValues || !releaseEnabled} className="motion-reduce:transition-none">
               {releaseBusy && <LoaderCircle size={12} className="animate-spin motion-reduce:animate-none" aria-hidden="true" />}
-              Release all forces
+              {t('workbench.watch.releaseAll')}
             </Button>
             {releaseError && <span className="text-[11px] text-[var(--color-accent-yellow)]">{releaseError}</span>}
           </div>
@@ -340,14 +340,14 @@ export function DebugWatchPanel({ setValue, toggleForceValue, clearAllForcedValu
       {/* Add Form */}
       {showAddForm && (
         <div className="flex items-center gap-2 px-3 py-2 bg-[var(--color-surface-700)] border-b border-[var(--color-surface-600)]">
-          <TextField list="watch-symbols" value={newVarInput} onChange={(e) => setNewVarInput(e.target.value)} onKeyDown={handleKeyDown} placeholder="Variable path (e.g., Counter, Timer1.ET)" className="flex-1" autoFocus aria-label="Variable path (e.g., Counter, Timer1.ET)" />
+          <TextField list="watch-symbols" value={newVarInput} onChange={(e) => setNewVarInput(e.target.value)} onKeyDown={handleKeyDown} placeholder={t('workbench.watch.pathPlaceholder')} className="flex-1" autoFocus aria-label={t('workbench.watch.pathPlaceholder')} />
           <datalist id="watch-symbols">
             {symbols.map((symbol) => <option key={symbol} value={symbol} />)}
           </datalist>
           <Button variant="primary" size="sm" onClick={handleAddVariable}>
-            Add
+            {t('workbench.watch.add')}
           </Button>
-          <IconButton label="Close the add variable form" variant="ghost" size="sm" icon={<X size={14} />} onClick={() => { setShowAddForm(false); setNewVarInput(''); }} />
+          <IconButton label={t('workbench.watch.closeForm')} variant="ghost" size="sm" icon={<X size={14} />} onClick={() => { setShowAddForm(false); setNewVarInput(''); }} />
         </div>
       )}
 
@@ -369,7 +369,7 @@ export function DebugWatchPanel({ setValue, toggleForceValue, clearAllForcedValu
               <tr className="text-left text-[11px] text-[var(--text-tertiary)] uppercase tracking-wide">
                 <SortHeader column="name" label={t('panel.watch.col.name')} sort={sort} setSort={setSort} t={t} />
                 <SortHeader column="value" label={t('panel.watch.col.value')} sort={sort} setSort={setSort} t={t} />
-                <th className="px-3 py-1.5 font-medium w-16">Force</th>
+                <th className="px-3 py-1.5 font-medium w-16">{t('workbench.watch.force')}</th>
                 <SortHeader column="type" label={t('panel.watch.col.type')} sort={sort} setSort={setSort} t={t} className="w-20" />
                 <SortHeader column="address" label={t('panel.watch.col.address')} sort={sort} setSort={setSort} t={t} className="w-16" />
                 <th className="w-8"></th>
@@ -403,7 +403,7 @@ export function DebugWatchPanel({ setValue, toggleForceValue, clearAllForcedValu
                     }
                   >
                     {editing?.path === path ? (
-                      <TextField aria-label={`New value of ${path}`} ref={inputRef} value={editing.draft} onChange={(e) =>
+                      <TextField aria-label={t('workbench.watch.newValue', { path })} ref={inputRef} value={editing.draft} onChange={(e) =>
                           setEditing((prev) => prev ? { ...prev, draft: e.target.value } : null)
                         } onKeyDown={(event) => { void handleSetKeyDown(event); }} onBlur={() => setEditing(null)} className="w-full" />
                     ) : result.loading ? (
@@ -411,7 +411,7 @@ export function DebugWatchPanel({ setValue, toggleForceValue, clearAllForcedValu
                     ) : result.error ? (
                       <Tooltip content={result.error}>
                         <span tabIndex={0} className={`${SIGNAL_TEXT_CLASS.fault} text-xs`}>
-                          {result.exists ? '???' : 'N/A'}
+                          {result.exists ? '???' : t('workbench.watch.notAvailable')}
                         </span>
                       </Tooltip>
                     ) : (
@@ -441,10 +441,10 @@ export function DebugWatchPanel({ setValue, toggleForceValue, clearAllForcedValu
                   </td>
                   <td className="px-3 py-1.5 text-[var(--color-surface-400)] text-xs">
                     {result.forceEntry?.state === WATCH_FORCE_STATE.UNCONFIRMED ? (
-                      <span className="font-medium text-[var(--color-accent-yellow)]">Unconfirmed</span>
+                      <span className="font-medium text-[var(--color-accent-yellow)]">{t('workbench.watch.unconfirmed')}</span>
                     ) : (
                       <Tooltip content={forceHint(result.forceEntry?.state, forcesUnconfirmed, forceable)}>
-                      <Checkbox label={`Force ${path}`} hideLabel checked={result.forced} disabled={!toggleForceValue || result.address === null || controlsBlocked || !result.exists || !forceable} onChange={(e) => {
+                      <Checkbox label={t('workbench.watch.forcePath', { path })} hideLabel checked={result.forced} disabled={!toggleForceValue || result.address === null || controlsBlocked || !result.exists || !forceable} onChange={(e) => {
                           void handleForceToggle(
                             path,
                             result.address,
@@ -464,7 +464,7 @@ export function DebugWatchPanel({ setValue, toggleForceValue, clearAllForcedValu
                     {formatAddress(result.address)}
                   </td>
                   <td className="px-1">
-                    <IconButton label="Remove" variant="ghost" size="sm" icon={<X size={12} />} onClick={() => removeWatch(path)} />
+                    <IconButton label={t('workbench.watch.remove')} variant="ghost" size="sm" icon={<X size={12} />} onClick={() => removeWatch(path)} />
                   </td>
                 </tr>;
               })}
@@ -477,15 +477,15 @@ export function DebugWatchPanel({ setValue, toggleForceValue, clearAllForcedValu
       {debugMode === 'none' && variables.length > 0 && (
         <div className="px-3 py-2 bg-[var(--color-surface-700)] border-t border-[var(--color-surface-600)]
                         text-[11px] text-[var(--text-tertiary)]">
-          Start debugging to see live values
+          {t('workbench.watch.startDebugging')}
         </div>
       )}
       {debugMode !== 'none' && (setValue || toggleForceValue) && variables.length > 0 && (
         <div className="px-3 py-2 bg-[var(--color-surface-700)] border-t border-[var(--color-surface-600)]
                         text-[11px] text-[var(--text-tertiary)]">
           {hasActiveSerialSession
-            ? 'Direct value edits are simulation-only. Use Force for hardware.'
-            : 'Double-click a value, or press Enter on it, to set it once · Shift+Enter prepares it · Use Force to hold the value until cleared'}
+            ? t('workbench.watch.hintSerial')
+            : t('workbench.watch.hintSimulation')}
         </div>
       )}
     </div>

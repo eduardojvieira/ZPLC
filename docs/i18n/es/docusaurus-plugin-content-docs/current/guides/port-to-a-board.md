@@ -9,7 +9,7 @@ tags: [how-to, boards, firmware]
 
 # Portar ZPLC a una placa nueva
 
-Una placa se incorpora a ZPLC cuando tiene un port de Zephyr, dos archivos pequeños de
+Una placa se incorpora a ZPLC cuando tiene un puerto de Zephyr, dos archivos pequeños de
 configuración de placa, una entrada en el manifiesto de placas, un lugar en la
 compilación cruzada de integración continua y un presupuesto de tamaño. Esta página
 enumera esos pasos en orden y dice qué demuestra cada uno.
@@ -110,11 +110,11 @@ Qué contiene el manifiesto y la regla que rechaza un valor erróneo:
 | `memory` | Los tres tamaños del paso 1 | La compilación se detiene cuando difieren del `.conf` |
 | `network_class`, `network_interface` | `serial-focused`, `network-capable` u `other`; `none`, `wifi` o `ethernet` | Solo se aceptan estas palabras |
 | `evidence_refs` | Una lista vacía | Una ruta debe ser un registro de hardware que exista; el nivel se deriva de los registros y nunca se escribe a mano |
-| `watchdog` | Si el watchdog de hardware está activado en este perfil (`false` hasta que exista un registro de hardware), el timeout con el que se registró su tiempo de reset, el timeout más largo que acepta el componente y qué hace en STOP, en pausa y en un fault latcheado (`disarm` o `feed`; `disarm` o `expire`) | Una razón cuando está apagado, un timeout dentro de lo que acepta el componente y las palabras de las tres políticas; nunca se activa sin un registro de hardware |
+| `watchdog` | Si el watchdog de hardware está activado en este perfil (`false` hasta que exista un registro de hardware), el tiempo de espera con el que se registró su tiempo de reset, el tiempo de espera más largo que acepta el componente y qué hace en STOP, en pausa y en un fault latcheado (`disarm` o `feed`; `disarm` o `expire`) | Una razón cuando está apagado, un tiempo de espera dentro de lo que acepta el componente y las palabras de las tres políticas; nunca se activa sin un registro de hardware |
 | `io.channels` | Una entrada por pin al que un programa puede llegar, como máximo 64 | Cada canal tiene una dirección de la dirección y el ancho correctos, dos canales no comparten un bit, una salida tiene su valor seguro y un canal digital nombra su alias de devicetree, su controlador y su pin |
 | `io.unmapped` | Los terminales que existen y que ZPLC no usa, cada uno con un motivo | Una entrada tiene un terminal y un motivo |
 
-Ningún port admite una salida analógica, así que déjela fuera de la descripción. Las
+Ningún puerto admite una salida analógica, así que déjela fuera de la descripción. Las
 direcciones de los canales son las que un proyecto asigna con `AT %I0.0`
 ([Vincular variables a pines](./map-io.md)).
 
@@ -183,7 +183,7 @@ hasta que la lista y el manifiesto coinciden.
 | --- | --- | --- |
 | La entrada del manifiesto de arriba cumple cada regla del manifiesto y no repite un nombre de otra placa | `bun tools/docs/check-docs-config.ts` la pasa por el validador del manifiesto, junto con el manifiesto de este repositorio | Host |
 | El orden de los pasos y los comandos | Leídos de los archivos de compilación del firmware, de la herramienta de tamaño y del validador de este repositorio | Host |
-| Un port real | No ejecutado: no se portó ninguna placa nueva mientras se escribía esta página | Ninguno |
+| Un puerto real | No ejecutado: no se portó ninguna placa nueva mientras se escribía esta página | Ninguno |
 | La placa ejecuta un programa | No verificado: necesita un registro de hardware | Ninguno |
 
 ## Vea también

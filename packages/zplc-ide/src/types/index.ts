@@ -6,6 +6,7 @@
 
 // The declaration of `window.electronAPI` is in its own module; importing the types brings it into the program.
 import type {} from './electronApi';
+import { t } from '../i18n';
 
 // =============================================================================
 // IEC 61131-3 Language Types
@@ -33,7 +34,7 @@ export const PLC_LANGUAGES: Record<PLCLanguage, PLCLanguageInfo> = {
     fullName: 'Structured Text',
     extension: '.st',
     isVisual: false,
-    description: 'High-level Pascal-like language',
+    get description() { return t('types.lang.ST'); },
   },
   IL: {
     id: 'IL',
@@ -41,7 +42,7 @@ export const PLC_LANGUAGES: Record<PLCLanguage, PLCLanguageInfo> = {
     fullName: 'Instruction List',
     extension: '.il',
     isVisual: false,
-    description: 'Low-level assembly-like language',
+    get description() { return t('types.lang.IL'); },
   },
   LD: {
     id: 'LD',
@@ -49,7 +50,7 @@ export const PLC_LANGUAGES: Record<PLCLanguage, PLCLanguageInfo> = {
     fullName: 'Ladder Diagram',
     extension: '.ld.json',
     isVisual: true,
-    description: 'Relay ladder logic representation',
+    get description() { return t('types.lang.LD'); },
   },
   FBD: {
     id: 'FBD',
@@ -57,7 +58,7 @@ export const PLC_LANGUAGES: Record<PLCLanguage, PLCLanguageInfo> = {
     fullName: 'Function Block Diagram',
     extension: '.fbd.json',
     isVisual: true,
-    description: 'Graphical function block network',
+    get description() { return t('types.lang.FBD'); },
   },
   SFC: {
     id: 'SFC',
@@ -65,7 +66,7 @@ export const PLC_LANGUAGES: Record<PLCLanguage, PLCLanguageInfo> = {
     fullName: 'Sequential Function Chart',
     extension: '.sfc.json',
     isVisual: true,
-    description: 'State machine for sequential processes',
+    get description() { return t('types.lang.SFC'); },
   },
 };
 
@@ -212,28 +213,28 @@ export const POU_TYPES: Record<POUType, POUInfo> = {
     name: 'Program',
     fullName: 'Program',
     extension: '.st',
-    description: 'Main executable unit, can be assigned to tasks',
+    get description() { return t('types.pou.PRG'); },
   },
   FB: {
     type: 'FB',
     name: 'Function Block',
     fullName: 'Function Block',
     extension: '.st',
-    description: 'Reusable block with internal state (instances)',
+    get description() { return t('types.pou.FB'); },
   },
   FUN: {
     type: 'FUN',
     name: 'Function',
     fullName: 'Function',
     extension: '.st',
-    description: 'Stateless function, returns a value',
+    get description() { return t('types.pou.FUN'); },
   },
   GVL: {
     type: 'GVL',
     name: 'Global Variables',
     fullName: 'Global Variable List',
     extension: '.gvl',
-    description: 'Global variable declarations',
+    get description() { return t('types.pou.GVL'); },
   },
 };
 

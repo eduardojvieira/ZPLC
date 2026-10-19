@@ -31,7 +31,7 @@ you looked at the solution.
 The course starts with something that moves (module 0), then explains how a PLC thinks (module 1), then logic, time and data, then structure, and ends with proof, languages, communications and a capstone. Each module states why it sits where it does.
 
 
-Available today: **26**. Planned: **3**. In all: **29**.
+Available today: **28**. Planned: **1**. In all: **29**.
 
 
 ## Module 0: Getting ready: a tour of Studio, the simulation and, for hardware, checking your board
@@ -223,8 +223,15 @@ Machines talk to each other. Modbus and MQTT basics run against endpoints that S
 
 | Lesson | Status | Languages | Tracks | Plant | Minutes | Requires |
 |---|---|---|---|---|---|---|
-| Modbus basics with a loopback endpoint | Planned | ST | Simulation, Hardware | - | 25 | - |
-| MQTT basics with a loopback endpoint | Planned | FBD | Simulation, Hardware | - | 25 | - |
+| `modbus-register-round-trip` Modbus TCP: write a register and read it back | Available | ST | Simulation | - | 25 | `structures-arrays-call-panel` |
+| `mqtt-publish-subscribe` MQTT: publish a message and receive it | Available | ST | Simulation | - | 25 | `modbus-register-round-trip` |
+
+Both lessons are graded against a Modbus TCP server and an MQTT broker that Studio starts inside the simulation session, on this computer, so no network, installed broker or board is needed. These are protocol doubles: they show how the blocks and their handshake behave, and they do not show that a real device, broker or cloud service accepts the same exchange. No hardware track exists for them because no trace of a real device has been recorded.
+
+Objectives of the available lessons:
+
+- **Modbus TCP: write a register and read it back**: Write a holding register with MB_WRITE_HREG and read it back with MB_READ_HREG, using the DONE output of the first block as the trigger of the second. Compare the value read with the value written, report an ERROR from either block, and say what a loopback double shows and what it does not.
+- **MQTT: publish a message and receive it**: Tell a service block (MQTT_CONNECT, MQTT_SUBSCRIBE) from a request block (MQTT_PUBLISH), publish only after the subscription holds, and keep a message that VALID reports for one scan only.
 
 
 ## Module 11: Capstone: a small machine from description to tested program

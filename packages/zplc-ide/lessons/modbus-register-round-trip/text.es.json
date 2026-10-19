@@ -1,0 +1,62 @@
+{
+  "schemaVersion": 1,
+  "title": "Modbus TCP: escribir un registro y leerlo de vuelta",
+  "summary": "Escriba un registro de retención con un bloque Modbus TCP, léalo de vuelta cuando la escritura termine e informe si el valor que volvió es el que usted envió.",
+  "scope": "El servidor Modbus de esta lección es un doble de loopback que Studio inicia dentro de la sesión de simulación, en este equipo. El escenario muestra cómo se comportan los bloques y su protocolo de intercambio frente a ese doble; no muestra que un controlador, un variador o una pasarela reales acepten la misma solicitud, y no dice nada sobre el cableado, los tiempos de una red, un dispositivo real, HIL ni certificación.",
+  "objectives": [
+    "Escribir un registro de retención con MB_WRITE_HREG y leerlo de vuelta con MB_READ_HREG, en ese orden, usando la salida DONE del primer bloque como disparo del segundo.",
+    "Comparar el valor leído con el valor escrito e informar un ERROR de cualquiera de los dos bloques.",
+    "Decir qué muestra un doble de loopback y qué no muestra."
+  ],
+  "stages": [
+    {
+      "key": "objective",
+      "title": "Objetivo",
+      "body": "En src/ModbusRegister.st el programa ya escribe el valor 1234 en el registro de retención 8 de un servidor Modbus TCP cuando Send pasa a ON. Agregue la lectura de vuelta: lea el registro 8 cuando la escritura termine, ponga Match en ON cuando el valor leído sea igual a 1234 y ponga Failed en ON cuando cualquiera de los dos bloques informe ERROR. La simulación de Studio responde cada solicitud Modbus TCP con un servidor propio en este equipo, así que no hace falta ningún dispositivo ni ninguna red.",
+      "checkpoint": "Written, Match y Failed describen el intercambio: la escritura terminó, el valor volvió sin cambios y nada falló."
+    },
+    {
+      "key": "predict",
+      "title": "Prediga",
+      "body": "Send pasa a ON a los {{t:10}} ms y a OFF a los {{t:10000}} ms. Prediga Written, Match y Failed a los {{t:0}} ms, mientras Send está en ON y después de que Send pasa a OFF. Un bloque borra DONE cuando su EN cae.",
+      "checkpoint": "{{v:ModbusRegister.Written=false,ModbusRegister.Match=false,ModbusRegister.Failed=false@0|Las tres en OFF}} a los {{t:0}} ms; Written y Match pasan a ON unos ciclos después de Send y Failed sigue en OFF; {{v:ModbusRegister.Written=false,ModbusRegister.Match=false@10100|Written y Match vuelven a OFF}} a los {{t:10100}} ms."
+    },
+    {
+      "key": "edit",
+      "title": "Edite",
+      "body": "Corrija esta omisión del programa inicial, guárdelo y pulse Comprobar: El programa inicial escribe el registro 8 pero nunca lo lee de vuelta, así que Match sigue en OFF; llame a MB_READ_HREG sobre el mismo registro cuando Wr.DONE sea TRUE, ponga Match en ON cuando Rd.DONE sea TRUE y Rd.VALUE sea igual a 1234, y ponga Failed en ON cuando Wr.ERROR o Rd.ERROR sea TRUE.",
+      "checkpoint": "El escenario visible debe pasar con evidencia guardada del host."
+    },
+    {
+      "key": "run",
+      "title": "Ejecute",
+      "body": "Pulse Comprobar. Studio ejecuta el programa guardado contra el escenario de esta lección, con el servidor Modbus de la simulación en marcha.",
+      "checkpoint": "El escenario se llama ModbusRegister y contiene {{assertions}} assertions."
+    },
+    {
+      "key": "observe",
+      "title": "Observe",
+      "body": "El escenario no pide Written y Match en un ciclo exacto. El servidor responde en tiempo real mientras el runtime reproduce el tiempo simulado más rápido, así que pide que cada una pase a ON en algún momento entre los {{t:10}} y los {{t:9010}} ms, y exige la misma respuesta a los {{t:9990}} ms.",
+      "checkpoint": "Written y Match están en ON a los {{t:9990}} ms, y las dos vuelven a OFF a los {{t:10100}} ms porque Send cayó a los {{t:10000}} ms y un bloque borra DONE cuando su EN cae."
+    },
+    {
+      "key": "reflect",
+      "title": "Reflexione",
+      "body": "¿Qué mostraría el escenario si el programa leyera el registro 9 en lugar del registro 8? Pruébelo y luego pruebe escribir 1235 comparando todavía con 1234.",
+      "checkpoint": "El registro 9 nunca se escribió y vale 0, así que Match nunca pasa a ON; escribir 1235 y comparar con 1234 produce lo mismo. El escenario muestra cómo se comportan los bloques frente al doble que Studio inicia. No muestra que un dispositivo Modbus real acepte los mismos códigos de función, direcciones o tiempos: eso hay que comprobarlo con ese dispositivo."
+    }
+  ],
+  "hints": [
+    {
+      "level": 1,
+      "text": "MB_READ_HREG tiene los mismos pines que MB_WRITE_HREG, y su EN puede ser la salida DONE del bloque de escritura, así que la lectura empieza en el flanco ascendente de Wr.DONE."
+    },
+    {
+      "level": 2,
+      "text": "Rd(EN := Wr.DONE, PROTO := 1, SLAVE_ID := 1, ADDR := 8, COUNT := 1, HOST := '127.0.0.1', PORT := 502); Match := Rd.DONE AND (Rd.VALUE = 1234); Failed := Wr.ERROR OR Rd.ERROR;"
+    }
+  ],
+  "faultCases": [
+    "El programa inicial escribe el registro 8 pero nunca lo lee de vuelta, así que Match sigue en OFF; llame a MB_READ_HREG sobre el mismo registro cuando Wr.DONE sea TRUE, ponga Match en ON cuando Rd.DONE sea TRUE y Rd.VALUE sea igual a 1234, y ponga Failed en ON cuando Wr.ERROR o Rd.ERROR sea TRUE."
+  ]
+}

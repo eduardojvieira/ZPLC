@@ -1,16 +1,16 @@
 ---
 slug: /runtime/connectivity
 id: connectivity
-title: Conectividad y Protocolos
+title: Conectividad y protocolos
 sidebar_label: Conectividad
 description: Resumen de los protocolos de red industrial soportados y capacidades de las placas en ZPLC.
 ---
 
-# Conectividad y Protocolos
+# Conectividad y protocolos
 
 ZPLC incluye implementaciones de protocolos estándar de automatización industrial, para que un controlador intercambie datos con dispositivos de campo, sistemas SCADA y plataformas en la nube. Se han verificado solo en el host y en emulación, nunca en un cable: cada guía práctica ([Modbus](../guides/modbus.md), [MQTT y Sparkplug B](../guides/mqtt-sparkplug.md), [los bloques de nube](../guides/cloud-blocks.md)) dice qué se probó.
 
-## Capacidades de la Placa
+## Capacidades de la placa
 
 El soporte de protocolos depende de las capacidades físicas de su placa objetivo. ZPLC categoriza las placas en tres niveles de conectividad:
 
@@ -22,14 +22,14 @@ Ningún intercambio por estas interfaces se ha probado en una placa; lo que se h
 
 Studio muestra la configuración de Wi-Fi o Ethernet solo para las placas que tienen ese hardware.
 
-## Protocolos Soportados
+## Protocolos soportados
 
 El firmware implementa:
 
 - **Modbus**: Tanto Modbus RTU (Serial) como Modbus TCP (Red).
 - **MQTT**: Mensajería estándar MQTT publicación/suscripción para integración IIoT, incluyendo perfiles para Sparkplug B, brokers estándar, AWS IoT Core y Azure IoT Hub.
 
-## Configurando la Conectividad
+## Configurar la conectividad
 
 La conectividad se define en el archivo `zplc.json` de su proyecto. A través del IDE, puede:
 1. Configurar redes Modbus RTU/TCP (baud rates, direcciones IP, node IDs).
@@ -56,11 +56,11 @@ El proyecto dice el área con los ayudantes `MODBUS_COIL`, `MODBUS_DISCRETE_INPU
 
 Toda variable de WORK (`0x2000` a `0x3FFF`) y de RETAIN se puede enlazar, y el servidor sirve todo el rango del cable, hasta la dirección 65535, para las direcciones que tienen una variable. El cliente Modbus TCP del controlador lee un tag con la dirección de su área en el dispositivo remoto: un registro de retención con la función 3 y una bobina con la función 1; el cliente no tiene lectura de entradas discretas ni de registros de entrada, y un tag en esas áreas lo sirve solo el servidor.
 
-### Overrides de mapeo del servidor Modbus
+### Reemplazos de mapeo del servidor Modbus
 
 El Communication Map del controlador puede sobrescribir temporalmente el
 binding de **servidor** Modbus de un tag cargado. El override valida el rango
-según el ancho del tag y sólo cambia el mapeo del servidor RTU/TCP local. Nunca
+según el ancho del tag y solo cambia el mapeo del servidor RTU/TCP local. Nunca
 cambia la dirección remota compilada que usan los clientes de polling Modbus
 RTU/TCP. Trátelo como configuración de runtime: no asuma que persiste salvo
 que un flujo verificado de guardado/carga de configuración lo haya registrado

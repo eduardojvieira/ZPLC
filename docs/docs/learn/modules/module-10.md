@@ -16,7 +16,10 @@ unlisted: true
 
 ## Lessons
 
-none
+| Lesson | Id | Languages | minutes |
+| --- | --- | --- | --- |
+| [Modbus TCP: write a register and read it back](../lessons/modbus-register-round-trip.md) | `modbus-register-round-trip` | ST | 25 |
+| [MQTT: publish a message and receive it](../lessons/mqtt-publish-subscribe.md) | `mqtt-publish-subscribe` | ST | 25 |
 
 {/* <<< END GENERATED: learn/modules/module-10 <<< */}
 

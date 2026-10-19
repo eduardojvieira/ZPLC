@@ -45,7 +45,7 @@ describe('the Learn home', () => {
     expect(out).toContain('Simulation');
     expect(out).toContain('Foundation. Requires module 0. About 45 min.');
     expect(out).toContain('Intermediate. Requires module 3.');
-    expect(out.match(/No lessons yet\./g)?.length).toBe(LESSON_INDEX.course.modules.filter((module) => !LESSON_INDEX.lessons.some((lesson) => lesson.module === module.id)).length);
+    expect((out.match(/No lessons yet\./g) ?? []).length).toBe(LESSON_INDEX.course.modules.filter((module) => !LESSON_INDEX.lessons.some((lesson) => lesson.module === module.id)).length);
   });
 
   it('says the state of each lesson in words, and why a locked lesson is locked', () => {

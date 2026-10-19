@@ -1,35 +1,37 @@
 ---
 id: native-c
-title: Integrando Código Nativo C
-sidebar_label: Soluciones C Nativas
-description: Extender el comportamiento de ZPLC compilando tareas en lenguaje C personalizadas dentro de la lógica del firmware.
+title: Integrar código nativo en C
+sidebar_label: Código C nativo
+description: Cómo extender el comportamiento de ZPLC compilando tareas propias en C dentro del firmware.
 tags: [runtime, zephyr, native-c]
 ---
 
-# Integrando Código Nativo en C
+# Integrar código nativo en C
 
-ZPLC separa la lógica IEC editable de forma visual (`.zplc`) de las tareas operacionales complejas escritas en hardware. Sin embargo, los desarrolladores que trabajan en integraciones OEM a menudo necesitan escribir drivers de alto rendimiento, utilizar bibliotecas o SDK propietarios de proveedores, o implementar hardware altamente especializado que no se pueden mapear a bibliotecas estándar de forma nativa en sistemas tradicionales.
+ZPLC separa la lógica IEC editable por el usuario (el bytecode `.zplc`) de las operaciones de bajo nivel del firmware. Sin embargo, quien trabaja en integraciones OEM complejas suele necesitar drivers de alto rendimiento, SDK propietarios de proveedores o funciones de hardware complejas que no se corresponden con la lógica estándar.
 
-Para solucionar estos cuellos de botella programáticos, ZPLC le permite extender libremente las bibliotecas core en lenguaje C mediante el manejo integral dentro del ecosistema Zephyr RTOS.
+Para esos casos, ZPLC permite extender el sistema embebido directamente en C con Zephyr RTOS.
 
-## Separación Arquitectónica
+## La separación arquitectónica
 
-Es fundamental mantener la separación de responsabilidades:
-- **Use Funciones del entorno IEC (ST, SFC, LD)**: Para automatización general, control de domótica de la fábrica, control secuencial, cálculos de matemática general o manipulación de I/Os cotidianos.
-- **Use Funciones en lenguaje C y RTOS**: Para operar controladores de comunicación SPI o I2C a alta velocidad, operar micro-servicios mediante REST APIs o cifrados criptográficos embebidos sobre un canal protegido, etc.
+Es importante mantener la separación de responsabilidades:
+- **Use la lógica estándar de ZPLC (ST, SFC, LD)** para la automatización de planta, las operaciones generales, la lógica de secuencias, el control PID y la lógica de negocio.
+- **Use C nativo de Zephyr** para operaciones muy rígidas, como los drivers I2C de pantallas, los algoritmos propietarios de control de movimiento, los servicios criptográficos de hardware y los protocolos heredados.
 
-*Las inserciones en C de Zephyr no están encoladas dentro de la plataforma ZPLC como lógica visible; no operan cíclicamente junto a su programa. Estas viven y funcionan dentro de su núcleo embebido como módulos en segundo plano paralelos.*
+*Las tareas en C nativo no se enlazan directamente al flujo de la lógica programable de ZPLC en el IDE.* Se ejecutan como hilos independientes, en paralelo, dentro del ecosistema de Zephyr.
 
-## Método Regular e Instalación
+## Flujo de trabajo estándar
 
-1. Enlace archivos fuentes (extensiones `.c` / `.h`) dentro del proyecto original. Se recomienda usar `src/custom/`.
-2. Genere configuraciones de funciones o rutinas con llamados dependientes de Zephyr orientadas al requerimiento en cuestión.
-3. Actualice o llame estos procesos nuevos modificando el entorno base `CMakeLists.txt` en el mismo directorio.
-4. Interactúe recíprocamente entre ZPLC y Zephyr aprovechando directivas expuestas mediante `zplc_hal_*` de ser necesario.
+Si necesita la integración nativa, debe compilar el firmware de ZPLC desde su código fuente:
 
-**Ejemplo de llamada en extensión a `CMakeLists.txt`:**
+1. Cree un archivo fuente en C dentro de `firmware/app` (se recomienda `src/custom/`).
+2. Implemente su lógica como un servicio nativo de Zephyr o como un hilo independiente.
+3. Intégrelo mediante CMake en el archivo `CMakeLists.txt` del espacio de trabajo `firmware/app`.
+4. Si hace falta, interactúe con el runtime de ZPLC mediante las funciones `zplc_hal_*` desde su código en C.
+
+**Ejemplo de extensión de `CMakeLists.txt`:**
 ```cmake
 target_sources(app PRIVATE src/custom/custom_sensor_driver.c)
 ```
 
-Mantenga la lógica del PLC en los lenguajes IEC y el código específico del hardware en archivos nativos de Zephyr.
+Mantenga la lógica del PLC en los lenguajes IEC y ponga el código específico del hardware en archivos nativos de Zephyr.

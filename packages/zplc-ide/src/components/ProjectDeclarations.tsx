@@ -5,6 +5,7 @@
  * the completion and hover of ST); it is named in `zplc.json` under `libraries`.
  */
 import { useState, type FormEvent } from 'react';
+import { useT } from '../i18n';
 import { BookMarked, ChevronDown, ChevronRight, FileCode2, FolderPlus, X } from 'lucide-react';
 import { configuredLibraries, addLibrary, libraryProblem, removeLibrary } from '../project/libraries';
 import { useProjectSources } from '../store/projectSources';
@@ -27,6 +28,7 @@ function writeExpanded(value: boolean): void {
 
 
 function AddLibraryDialog({ onClose }: { onClose: () => void }) {
+  const { t } = useT();
   const tree = useIDEStore((state) => state.fileTree);
   const config = useIDEStore((state) => state.projectConfig);
   const updateProjectConfig = useIDEStore((state) => state.updateProjectConfig);
@@ -35,7 +37,7 @@ function AddLibraryDialog({ onClose }: { onClose: () => void }) {
   const choices = libraryChoices(tree, libraries);
   const [folder, setFolder] = useState(choices[0]?.path ?? '');
   const [busy, setBusy] = useState(false);
-  const problem = folder === '' ? 'Choose a folder.' : libraryProblem(folder, tree, libraries);
+  const problem = folder === '' ? t('library.chooseFolder') : libraryProblem(folder, tree, libraries);
 
   const submit = async (event: FormEvent) => {
     event.preventDefault();
@@ -48,21 +50,21 @@ function AddLibraryDialog({ onClose }: { onClose: () => void }) {
   };
 
   return (
-    <Modal isOpen onClose={() => { if (!busy) onClose(); }} title="Add a library folder" widthClass="max-w-md" showCloseButton={!busy}>
+    <Modal isOpen onClose={() => { if (!busy) onClose(); }} title={t('workbench.declarations.addTitle')} widthClass="max-w-md" showCloseButton={!busy}>
       <form className="p-4" onSubmit={(event) => { void submit(event); }} data-library-dialog>
-        <p className="mb-3 text-sm text-[var(--color-surface-200)]">The function blocks, functions and types declared in the Structured Text files of this folder become available in every editor of the project.</p>
+        <p className="mb-3 text-sm text-[var(--color-surface-200)]">{t('workbench.declarations.addIntro')}</p>
         {choices.length === 0 ? (
-          <p role="status" className="text-sm text-[var(--color-surface-300)]">The project has no other folder to add. Create one in the Explorer first.</p>
+          <p role="status" className="text-sm text-[var(--color-surface-300)]">{t('workbench.declarations.noFolder')}</p>
         ) : (
           <>
-            <Select id="library-folder" label="Folder" value={folder} onChange={(event) => setFolder(event.target.value)} error={problem ?? undefined}>
+            <Select id="library-folder" label={t('workbench.declarations.folder')} value={folder} onChange={(event) => setFolder(event.target.value)} error={problem ?? undefined}>
               {choices.map((choice) => <option key={choice.path} value={choice.path}>{choice.label}</option>)}
             </Select>
           </>
         )}
         <div className="flex justify-end gap-2 pt-5">
-          <Button disabled={busy} onClick={onClose}>Cancel</Button>
-          <Button type="submit" variant="primary" disabled={busy || problem !== null}>{busy ? 'Adding…' : 'Add library'}</Button>
+          <Button disabled={busy} onClick={onClose}>{t('workbench.declarations.cancel')}</Button>
+          <Button type="submit" variant="primary" disabled={busy || problem !== null}>{busy ? t('workbench.declarations.adding') : t('workbench.declarations.addLibrary')}</Button>
         </div>
       </form>
     </Modal>
@@ -70,6 +72,7 @@ function AddLibraryDialog({ onClose }: { onClose: () => void }) {
 }
 
 export function ProjectDeclarations() {
+  const { t, tn } = useT();
   const groups = useProjectSources((state) => state.declarations);
   const unlisted = useProjectSources((state) => state.unlisted);
   const tree = useIDEStore((state) => state.fileTree);
@@ -105,7 +108,7 @@ export function ProjectDeclarations() {
   };
 
   return (
-    <section aria-label="Project declarations" data-project-declarations className="max-h-[45%] shrink-0 overflow-y-auto border-t border-[var(--color-surface-700)] text-xs">
+    <section aria-label={t('workbench.declarations.region')} data-project-declarations className="max-h-[45%] shrink-0 overflow-y-auto border-t border-[var(--color-surface-700)] text-xs">
       <div className="flex items-center justify-between gap-2 px-3 py-1.5">
         <h2 className="font-semibold uppercase tracking-[0.08em] text-[var(--color-surface-200)]">
           <Button
@@ -117,10 +120,10 @@ export function ProjectDeclarations() {
             className="uppercase"
             icon={<>{expanded ? <ChevronDown size={ICON_SIZES.sm} /> : <ChevronRight size={ICON_SIZES.sm} />}<BookMarked size={ICON_SIZES.sm} /></>}
           >
-            Declarations
+            {t('workbench.declarations.title')}
             <span className="rounded-full bg-[var(--tone-neutral-bg)] px-1.5 font-normal normal-case text-[var(--tone-neutral-fg)]">{total}</span>
             {unlisted.length > 0 && (
-              <span className="rounded-full border border-[var(--color-accent-yellow)] px-1.5 font-normal normal-case text-[var(--color-accent-yellow)]">{unlisted.length} not compiled</span>
+              <span className="rounded-full border border-[var(--color-accent-yellow)] px-1.5 font-normal normal-case text-[var(--color-accent-yellow)]">{t('workbench.declarations.notCompiledCount', { count: unlisted.length })}</span>
             )}
           </Button>
         </h2>
@@ -129,30 +132,30 @@ export function ProjectDeclarations() {
           size="sm"
           onClick={() => { setExpanded(true); setAdding(true); }}
           disabled={migrating}
-          tooltip={migrating ? 'Apply the migration of the project first' : 'Add a library folder'}
-          aria-label="Add library folder"
+          tooltip={migrating ? t('workbench.declarations.migrateFirst') : t('workbench.declarations.addTitle')}
+          aria-label={t('workbench.declarations.addFolderLabel')}
           icon={<FolderPlus size={ICON_SIZES.sm} />}
         >
-          Library folder…
+          {t('workbench.declarations.libraryFolder')}
         </Button>
       </div>
 
  {expanded && <div id="project-declarations-body">
       {rows.length > 0 && (
-        <ul aria-label="Library folders" data-libraries className="px-3 pb-2">
+        <ul aria-label={t('workbench.declarations.libraries')} data-libraries className="px-3 pb-2">
           {rows.map((row) => (
             <li key={row.path} data-library={row.path} className="flex items-center justify-between gap-2 py-0.5">
-              <span className="min-w-0 truncate font-mono text-[var(--color-surface-100)]">{row.path}/ <span className="font-sans text-[var(--color-surface-400)]">{row.missing ? 'not in the project' : `${row.files} file${row.files === 1 ? '' : 's'}`}</span></span>
-              <IconButton size="sm" label={`Remove library ${row.path}`} tooltip="Stop using as a library" icon={<X size={ICON_SIZES.sm} />} disabled={migrating} onClick={() => { void remove(row.path); }} />
+              <span className="min-w-0 truncate font-mono text-[var(--color-surface-100)]">{row.path}/ <span className="font-sans text-[var(--color-surface-400)]">{row.missing ? t('workbench.declarations.missing') : tn('workbench.declarations.files', row.files)}</span></span>
+              <IconButton size="sm" label={t('workbench.declarations.removeLibrary', { path: row.path })} tooltip={t('workbench.declarations.stopLibrary')} icon={<X size={ICON_SIZES.sm} />} disabled={migrating} onClick={() => { void remove(row.path); }} />
             </li>
           ))}
         </ul>
       )}
 
       {groups.length === 0 ? (
-        <p className="px-3 pb-3 text-[var(--color-surface-400)]">No function block, function or type is declared yet.</p>
+        <p className="px-3 pb-3 text-[var(--color-surface-400)]">{t('workbench.declarations.none')}</p>
       ) : (
-        <ul aria-label="Declarations by file" className="max-h-56 overflow-y-auto pb-2">
+        <ul aria-label={t('workbench.declarations.byFile')} className="max-h-56 overflow-y-auto pb-2">
           {groups.map((group) => (
             <li key={group.file} data-declaration-file={group.file}>
               <div className="flex items-center gap-1.5 px-3 pt-1 font-mono text-[var(--color-surface-300)]"><FileCode2 size={12} aria-hidden="true" /><span className="truncate">{group.file}</span></div>
@@ -178,23 +181,23 @@ export function ProjectDeclarations() {
       )}
       {unlisted.length > 0 && (
         <div data-unlisted-sources className="border-t border-[var(--color-surface-700)] px-3 py-2">
-          <p className="text-[var(--color-accent-yellow)]">Not compiled: neither in src nor directly in a library folder.</p>
-          <ul aria-label="Files no build reads" className="mt-1">
+          <p className="text-[var(--color-accent-yellow)]">{t('workbench.declarations.notCompiled')}</p>
+          <ul aria-label={t('workbench.declarations.unread')} className="mt-1">
             {unlistedFolders.map((folder) => {
               const files = unlisted.filter((path) => (path.includes('/') ? path.slice(0, path.lastIndexOf('/')) : '') === folder);
               const problem = libraryProblem(folder, tree, libraries);
               return (
                 <li key={folder} data-unlisted-folder={folder} className="flex items-center justify-between gap-2 py-0.5">
-                  <span className="min-w-0 truncate font-mono text-[var(--color-surface-100)]">{folder === '' ? 'project folder' : `${folder}/`} <span className="font-sans text-[var(--color-surface-400)]">{files.length} file{files.length === 1 ? '' : 's'}</span></span>
+                  <span className="min-w-0 truncate font-mono text-[var(--color-surface-100)]">{folder === '' ? t('workbench.declarations.projectFolder') : `${folder}/`} <span className="font-sans text-[var(--color-surface-400)]">{tn('workbench.declarations.files', files.length)}</span></span>
                   <Button
                     size="sm"
                     onClick={() => { void list(folder); }}
                     disabled={problem !== null || migrating}
-                    tooltip={problem ?? (migrating ? 'Apply the migration of the project first' : `List ${folder} under libraries of zplc.json`)}
-                    aria-label={`List ${folder === '' ? 'the project folder' : folder} as a library`}
+                    tooltip={problem ?? (migrating ? t('workbench.declarations.migrateFirst') : t('workbench.declarations.listTooltip', { folder }))}
+                    aria-label={t('workbench.declarations.listLabel', { folder: folder === '' ? t('workbench.declarations.theProjectFolder') : folder })}
                     className="shrink-0"
                   >
-                    List as library
+                    {t('workbench.declarations.listAsLibrary')}
                   </Button>
                 </li>
               );

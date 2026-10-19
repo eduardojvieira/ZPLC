@@ -191,6 +191,7 @@ const sidebars = {
         'contributing/roadmap',
         'development/firmware-testing',
         'development/hardware-in-the-loop',
+        'development/screen-reader-check',
         'integration/publishing',
         'release-notes/index',
         'reference/source-of-truth',

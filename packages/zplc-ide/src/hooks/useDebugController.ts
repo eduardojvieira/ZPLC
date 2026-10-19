@@ -54,7 +54,7 @@ export function describeBreakpointHit(debugMap: DebugMap | null, pc: number, lin
   const resolved = resolveExecutionLocation(debugMap, pc, line);
   return {
     resolved,
-    message: `Breakpoint hit at PC=0x${pc.toString(16).toUpperCase()}${resolved.line ? `, line ${resolved.line}` : ''}`,
+    message: t('debugger.breakpointHit', { pc: pc.toString(16).toUpperCase(), line: resolved.line ? t('debugger.atLine', { line: resolved.line }) : '' }),
   };
 }
 
@@ -67,6 +67,7 @@ import type { DebugController } from './debugControllerTypes';
 import { useDeviceLogQueue } from './useDeviceLogQueue';
 import { useDebugControllerPolling } from './useDebugControllerPolling';
 import { useDebugControllerForces } from './useDebugControllerForces';
+import { t } from '../i18n';
 
 // =============================================================================
 // Hook Implementation
@@ -169,7 +170,7 @@ export function useDebugController(): DebugController {
       setLastError(message);
       addConsoleEntry({
         type: 'error',
-        message: `Debug error: ${message}`,
+        message: t('debugger.error', { message }),
         source: 'debugger',
       });
     },
@@ -362,7 +363,7 @@ export function useDebugController(): DebugController {
       setLastError('Hardware connection lost. Force state unconfirmed.');
       addConsoleEntry({
         type: 'warning',
-        message: 'Hardware connection lost. Force state is unconfirmed; reconnect and verify before operating.',
+        message: t('debugger.connectionLost'),
         source: 'debugger',
       });
     });
@@ -406,13 +407,13 @@ export function useDebugController(): DebugController {
         setLastError('Force state unconfirmed. Reconnect and verify before operating.');
         addConsoleEntry({
           type: 'warning',
-          message: 'Disconnected, but force release could not be confirmed. Reconnect and verify before operating.',
+          message: t('debugger.releaseUnconfirmed'),
           source: 'debugger',
         });
       } else {
         addConsoleEntry({
           type: 'info',
-          message: 'Debug session disconnected',
+          message: t('debugger.disconnected'),
           source: 'debugger',
         });
         setLastError(null);
@@ -512,7 +513,7 @@ export function useDebugController(): DebugController {
         throw new Error(attachment.message);
       }
       if (attachment.action === 'warn') {
-        addConsoleEntry({ type: 'warning', message: attachment.message ?? 'The debug map cannot be tied to the program', source: 'debugger' });
+        addConsoleEntry({ type: 'warning', message: attachment.message ?? t('debugger.mapNotTied'), source: 'debugger' });
       }
     }
     invalidateNativeTrace();
@@ -550,7 +551,7 @@ export function useDebugController(): DebugController {
         if (!capability.allowed) {
           addConsoleEntry({
             type: 'warning',
-            message: capability.message ?? 'Breakpoint sync unavailable in the active runtime',
+            message: capability.message ?? t('debugger.breakpointSyncUnavailable'),
             source: 'debugger',
           });
         } else {
@@ -570,8 +571,8 @@ export function useDebugController(): DebugController {
       addConsoleEntry({
         type: 'success',
         message: isHardware
-          ? `Program deployed and stopped: ${bytecode.length} bytes, ${breakpointsSet} breakpoints set`
-          : `Loaded ${bytecode.length} bytes, ${breakpointsSet} breakpoints set`,
+          ? t('debugger.deployedStopped', { bytes: bytecode.length, count: breakpointsSet })
+          : t('debugger.loaded', { bytes: bytecode.length, count: breakpointsSet }),
         source: 'debugger',
       });
     } finally {
@@ -603,7 +604,7 @@ export function useDebugController(): DebugController {
     if (!adapterRef.current) return;
     const capability = getDebugFeatureActionability(debugCapabilities, 'pause', 'Pause');
     if (!capability.allowed) {
-      addConsoleEntry({ type: 'warning', message: capability.message ?? 'Pause unavailable', source: 'debugger' });
+      addConsoleEntry({ type: 'warning', message: capability.message ?? t('debugger.pauseUnavailable'), source: 'debugger' });
       return;
     }
     if (capability.message) {
@@ -616,7 +617,7 @@ export function useDebugController(): DebugController {
     if (!adapterRef.current) return;
     const capability = getDebugFeatureActionability(debugCapabilities, 'resume', 'Resume');
     if (!capability.allowed) {
-      addConsoleEntry({ type: 'warning', message: capability.message ?? 'Resume unavailable', source: 'debugger' });
+      addConsoleEntry({ type: 'warning', message: capability.message ?? t('debugger.resumeUnavailable'), source: 'debugger' });
       return;
     }
     if (capability.message) {
@@ -629,7 +630,7 @@ export function useDebugController(): DebugController {
     if (!adapterRef.current) return;
     const capability = getDebugFeatureActionability(debugCapabilities, 'step', 'Step');
     if (!capability.allowed) {
-      addConsoleEntry({ type: 'warning', message: capability.message ?? 'Step unavailable', source: 'debugger' });
+      addConsoleEntry({ type: 'warning', message: capability.message ?? t('debugger.stepUnavailable'), source: 'debugger' });
       return;
     }
     if (capability.message) {

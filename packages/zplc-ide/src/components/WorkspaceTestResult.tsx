@@ -4,7 +4,7 @@
 
 import { AlertTriangle, XCircle, AlertCircle, CheckCircle, Activity } from 'lucide-react';
 import { classifyWorkspaceTestBuildLink, presentRecordedConveyorPlant, presentRecordedMotorPlant, presentRecordedMotorOutput, presentRecordedPedestrianCrossing, presentRecordedTankLevel, type WorkspaceTestPresentation } from './workspaceTestPresentation';
-import { Button, SIGNAL_TEXT_CLASS, Tooltip } from '../ui';
+import { Badge, Button, SIGNAL_TEXT_CLASS, Tooltip } from '../ui';
 import { useT } from '../i18n';
 
 export function WorkspaceTestResult({ presentation, buildLink, onRunScenario, scenarioRunDisabled }: {
@@ -79,7 +79,7 @@ export function WorkspaceTestResult({ presentation, buildLink, onRunScenario, sc
 
       {presentation.savedTestInputIdentity && <p className="border-t border-[var(--color-surface-700)] pt-2 text-xs tabular-nums text-[var(--color-surface-400)]">{tn('console.savedInputs', presentation.savedTestInputIdentity.fileCount)} <Tooltip content={presentation.savedTestInputIdentity.sha256}><span className="font-mono" tabIndex={0}>{presentation.savedTestInputIdentity.sha256.slice(0, 12)}…</span></Tooltip></p>}
 
-      {presentation.hasEvidence && <p className="border-t border-[var(--color-surface-700)] pt-2 text-xs text-[var(--color-surface-400)]">{t('console.evidenceNativePosixLogical')}</p>}
+      {presentation.hasEvidence && <p className="border-t border-[var(--color-surface-700)] pt-2 text-xs text-[var(--color-surface-400)]"><Tooltip content={t('console.nativePosixHostEvidence')}><span tabIndex={0}><Badge tone="neutral">{t('console.hostEvidenceBadge')}</Badge></span></Tooltip> {t('console.logicalSingleTaskScan')}</p>}
     </div>
   );
 }

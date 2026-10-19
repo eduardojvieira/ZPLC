@@ -3,6 +3,7 @@ import type { DeclarationKind } from '../project/projectDeclarations';
 import { libraryProblem, projectSourceFiles } from '../project/libraries';
 import { collectFolders } from '../project/treeOperations';
 import type { FileTreeNode } from '../types';
+import { t } from '../i18n';
 
 export interface LibraryRow {
   path: string;
@@ -12,17 +13,7 @@ export interface LibraryRow {
   files: number;
 }
 
-const KIND_LABEL: Record<DeclarationKind, string> = {
-  PROGRAM: 'Program',
-  FUNCTION_BLOCK: 'Function block',
-  FUNCTION: 'Function',
-  INTERFACE: 'Interface',
-  STRUCT: 'Structure',
-  ENUM: 'Enumeration',
-  TYPE: 'Type',
-};
-
-export const declarationKindLabel = (kind: DeclarationKind): string => KIND_LABEL[kind];
+export const declarationKindLabel = (kind: DeclarationKind): string => t(`declarationKind.${kind}`);
 
 function hasFolder(tree: FileTreeNode, path: string): boolean {
   return tree.path === path || (tree.children ?? []).some((child) => child.type === 'directory' && hasFolder(child, path));

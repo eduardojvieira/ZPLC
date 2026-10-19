@@ -32,15 +32,15 @@ para la versión preliminar 2.0.
 
 ## 1. Inicie Studio
 
-Abra ZPLC Studio. La pantalla de bienvenida ofrece **Open project**, **New project**
-y **Learn**, y bajo **Examples** una lista de proyectos de ejemplo, agrupados por lo
+Abra ZPLC Studio. La pantalla de bienvenida ofrece **Abrir proyecto**, **Nuevo proyecto**
+y **Aprender**, y bajo **Ejemplos** una lista de proyectos de ejemplo, agrupados por lo
 que enseñan.
 
 ![La pantalla de bienvenida de ZPLC Studio, desplazada hasta el grupo Language tour, que contiene Blinky (Structured Text)](/img/tutorials/blink-1-welcome.png)
 
 ## 2. Copie el ejemplo
 
-1. Bajo **Examples**, en el grupo **Language tour**, elija **Blinky (Structured Text)**.
+1. Bajo **Ejemplos**, en el grupo **Recorrido por los lenguajes**, elija **Blinky (Structured Text)**.
 2. Elija una carpeta vacía como destino. Studio copia el ejemplo allí y lo abre. Si
    ya hay un archivo con el mismo nombre en la carpeta, la copia se detiene y no
    escribe nada.
@@ -89,27 +89,27 @@ de 10 ms, 750 ms, `LED_Output` es TRUE.
 
 ## 4. Compílelo
 
-1. Abra el menú **Build** de la barra de herramientas y elija **Compile** (Ctrl+B, o Cmd+B en macOS).
-2. Abra la pestaña **Output**. Dice `Built saved workspace locally`, con el tamaño
-   del programa. La pestaña **Problems** dice `0 errors`.
+1. Abra el menú **Compilación** de la barra de herramientas y elija **Compilar** (Ctrl+B, o Cmd+B en macOS).
+2. Abra la pestaña **Salida**. Dice `Built saved workspace locally`, con el tamaño
+   del programa. La pestaña **Problemas** dice `0 errors`.
 
 ![La pestaña Output después de la compilación, con el tamaño del programa y la notificación Build succeeded](/img/tutorials/blink-3-built.png)
 
-Si la compilación falla, **Problems** enumera cada error con su línea y su columna.
+Si la compilación falla, **Problemas** enumera cada error con su línea y su columna.
 
 ## 5. Ejecútelo en el simulador
 
-1. En la barra de herramientas, compruebe que **Simulate** esté seleccionado y
-   presione **Connect**. Studio inicia el simulador que viene con la aplicación.
-2. Presione **Run** (F5).
+1. En la barra de herramientas, compruebe que **Simular** esté seleccionado y
+   presione **Conectar**. Studio inicia el simulador que viene con la aplicación.
+2. Presione **Ejecutar** (F5).
 
-La línea de estado muestra **Running** y el contador de ciclos sube. El simulador es
+La línea de estado muestra **En marcha** y el contador de ciclos sube. El simulador es
 el runtime de ZPLC construido para su equipo. Ejecuta su programa con un
 temporizador. No modela el lado eléctrico de una placa ni sus tiempos reales.
 
 ## 6. Observe cómo cambia la salida
 
-1. Abra la pestaña **Watch**. Si la tabla no tiene ninguna fila, presione **+** e
+1. Abra la pestaña **Observación**. Si la tabla no tiene ninguna fila, presione **+** e
    ingrese `LED_Output`.
 2. Mire la columna **Value**. Cambia entre `TRUE` y `FALSE` aproximadamente cada
    medio segundo.
@@ -121,7 +121,7 @@ temporizador. No modela el lado eléctrico de una placa ni sus tiempos reales.
 Si la tabla Watch queda cortada, arrastre hacia arriba el divisor que está sobre el
 panel inferior.
 
-Presione **Stop** (Shift+F5) cuando la haya visto cambiar.
+Presione **Detener** (Shift+F5) cuando la haya visto cambiar.
 
 ## 7. Ejecute la prueba de escenario
 
@@ -132,8 +132,8 @@ apagada otra vez, y así durante 2,1 segundos de tiempo simulado. El
 [formato del archivo de escenario](../reference/scenario-file.md) enumera cada
 campo, y su ejemplo es el escenario de este proyecto.
 
-1. Abra la pestaña **Tests**. Studio vincula por sí mismo el `zplc.json` del proyecto abierto.
-2. Presione **Run host scenarios**.
+1. Abra la pestaña **Pruebas**. Studio vincula por sí mismo el `zplc.json` del proyecto abierto.
+2. Presione **Ejecutar escenarios en el host**.
 
 La pestaña dice **Host POSIX scenarios passed.** y `1 scenario passed.` Esto ejecutó
 su programa guardado en el simulador, sin interfaz y con un reloj virtual, así que
@@ -185,13 +185,14 @@ a pasar.
 
 ## Qué demuestra esto y qué no
 
-- El programa compila, se ejecuta en el simulador y su salida conmuta: lo demuestra
-  la verificación de la documentación. Los mismos siete pasos los realiza en la
-  aplicación real un recorrido de extremo a extremo, `Blink without hardware (the
-  tutorial)` de `bun run test:journeys`, de modo que esta página no puede separarse
-  del producto.
-- Un resultado aprobado aquí es un resultado de host con el reloj virtual del
-  simulador. No dice nada sobre una placa: vea [Soporte de hardware](../reference/capabilities-evidence.md).
+| Afirmación | Evidencia | Nivel |
+| --- | --- | --- |
+| El programa compila, se ejecuta en el simulador y su salida conmuta | La verificación de la documentación ejecuta el código de la página | Host |
+| Los siete pasos funcionan en la aplicación real | El recorrido de extremo a extremo `Blink without hardware (the tutorial)` de `bun run test:journeys` los realiza, de modo que esta página no puede separarse del producto | Host |
+| El escenario pasa y falla como se describe | Studio ejecuta `tests/blinky-visual.scenario.json` con el reloj virtual del simulador | Host |
+| Cualquier cosa sobre una placa | Nada en esta página | Aún no verificado en hardware: vea [Soporte de hardware](../reference/capabilities-evidence.md) |
+
+Un resultado aprobado aquí es un resultado de host con el reloj virtual del simulador.
 
 ## Siguientes pasos
 

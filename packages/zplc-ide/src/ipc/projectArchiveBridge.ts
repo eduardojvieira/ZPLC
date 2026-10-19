@@ -14,6 +14,7 @@ import {
   type ProjectArchiveErrorCode,
 } from '../../electron/projectArchiveProtocol';
 import type { ProjectFilesBridge } from '../../electron/projectFilesProtocol';
+import { t, type MessageKey } from '../i18n';
 
 export type ArchiveOutcome<T> =
   | { status: 'unavailable' }
@@ -21,24 +22,24 @@ export type ArchiveOutcome<T> =
   | { status: 'failed'; message: string }
   | { status: 'done'; value: T };
 
-const MESSAGES: Record<ProjectArchiveErrorCode, string> = {
-  'invalid-request': 'The request was not valid. Try again.',
-  'no-folder': 'The project folder is not open any more. Open the project and try again.',
-  'not-found': 'The archive could not be found or read. Choose it again.',
-  'not-empty': 'The folder is not empty. Choose an empty folder to import into.',
-  'invalid-path': 'The project holds a file name that an archive cannot carry on every system.',
-  'not-a-zip': 'The file is not a ZPLC project archive (a zip file).',
-  unsupported: 'The archive uses something Studio does not read: encryption, a link, or a zip64 archive.',
-  'unsafe-path': 'The archive holds a file that would be written outside the project folder, so it was refused.',
-  duplicate: 'The archive holds two files with the same name, so it was refused.',
-  corrupt: 'The archive is damaged: a file does not match its checksum or declared size.',
-  'too-large': 'The archive, or a file in it, is larger than a project may be (64 MiB in all, 16 MiB a file).',
-  'too-many': 'The archive holds more files than a project may (4096).',
-  denied: 'The operating system refused access to the file or folder.',
-  failed: 'The operation failed. Try again.',
-};
+const CODES: readonly string[] = [
+  'invalid-request',
+  'no-folder',
+  'not-found',
+  'not-empty',
+  'invalid-path',
+  'not-a-zip',
+  'unsupported',
+  'unsafe-path',
+  'duplicate',
+  'corrupt',
+  'too-large',
+  'too-many',
+  'denied',
+  'failed',
+];
 
-export const archiveFailureMessage = (code: ProjectArchiveErrorCode): string => MESSAGES[code] ?? MESSAGES.failed;
+export const archiveFailureMessage = (code: ProjectArchiveErrorCode): string => t(CODES.includes(code) ? (`archive.${code}` as MessageKey) : 'archive.failed');
 
 async function run<T>(
   call: (() => Promise<unknown>) | undefined,
@@ -50,7 +51,7 @@ async function run<T>(
     if (!answer.ok) return { status: 'failed', message: archiveFailureMessage(answer.code) };
     return answer.value === null ? { status: 'cancelled' } : { status: 'done', value: answer.value };
   } catch {
-    return { status: 'failed', message: MESSAGES.failed };
+    return { status: 'failed', message: archiveFailureMessage('failed') };
   }
 }
 

@@ -1,51 +1,54 @@
 ---
 slug: /integration
 id: index
-title: Despliegue y Montaje de Hardware
-sidebar_label: Hardware e Integración
-description: Adaptando, flasheando y engranando rutinas personalizadas de Zephyr Firmware con su lógica ZPLC.
+title: Integración y despliegue
+sidebar_label: Integración
+description: El proceso para incorporar el runtime de ZPLC en hardware Zephyr propio.
 tags: [integration, runtime]
 ---
 
-# Despliegue de Hardware Local o Personalizado
+# Integración y despliegue
 
-La instancia a detallar enmarca o traza el proceso intermedio e interactivo donde la abstracción general viaja desde simuladores hacia su fin e incrustación en Hardware Zephyr Operativo para fabricantes masivos u OEM integraciones dedicadas del sistema.
+Esta página describe cómo llevar aplicaciones ZPLC funcionales a hardware Zephyr real, tanto en despliegues estándar como en integraciones profundas para fabricantes (OEM).
 
-## Ciclos y Cargas
+## Destinos de ejecución
 
-El objetivo se cumple y es emitido hacia tres opciones funcionales, todas gobernadas en última o única instancia vía interface nativa IDE ZPLC:
+Cuando el compilador emite una carga útil de bytecode `.zplc`, esta se envía al destino de ejecución elegido:
 
 ```mermaid
 flowchart LR
-  A[Bytecode validado y Compilado .zplc] --> B{Flujo Objetivo a desplegar}
-  B --> D[Software Simulado POSIX SoftPLC base]
-  B --> E[Descargas Vía Firmware e Imagen Original Base (Zephyr RTOS HW)]
-  E --> F[Vistas OnLine Vía Sensores Replicados IDE]
+  A[Compilar el proyecto a .zplc] --> B{Destino de ejecución}
+  B --> D[Simulación SoftPLC nativa en el equipo]
+  B --> E[Runtime de hardware Zephyr]
+  E --> F[Depuración en línea desde Studio]
 ```
 
-## Embebiendo o Fusionando Custom Firmware en Fabricantes (OEM)
+## Integrar ZPLC en un firmware propio
 
-Si integras ZPLC a un modelo comercializado e innovado que precise directrices estrictas que ZPLC no trae en su base por su particularidad electrónica (ej; manejo y operación compleja de controladores para display CAN nativo, manejo SPI a ultra velocidades asíncronas para cámaras IoT etc):
+Si fabrica hardware propio o usa una placa que no viene en las imágenes estándar de ZPLC para Zephyr, debe incorporar el núcleo de ZPLC manualmente. Integrarlo en una configuración propia de Zephyr implica:
 
-1. **Ligando C Núcleos Oficiales**: Instanciar la base Core `libzplc_core` al subruteado o árbol Build del IDE con su configuración CMake en Zephyr de Custom.
-2. **Re-Mapeo al Contracto HAL**: Escriba las funciones en C de `zplc_hal_tick`, `zplc_hal_gpio_read`, `zplc_hal_gpio_write` y el resto del [contrato HAL](../runtime/hal-contract.md), según la distribución de GPIO y los controladores de su destino.
-3. **Inicio Cíclico Inyectable**: Llame a `zplc_sched_init()`, cargue un programa con `zplc_sched_load()` e inícielo con `zplc_sched_start()` desde el hilo `main()` de Zephyr. Consulte la [API del runtime](../reference/runtime-api.md).
+1. **Incluir la biblioteca del núcleo.** Enlace el motor C99 de ZPLC en el árbol de compilación CMake.
+2. **Implementar el contrato de la HAL.** Escriba las funciones en C de `zplc_hal_tick`, `zplc_hal_gpio_read`, `zplc_hal_gpio_write` y el resto del [contrato HAL](../runtime/hal-contract.md), según la distribución de GPIO y los controladores de su destino.
+3. **Iniciar el planificador.** Llame a `zplc_sched_init()`, cargue un programa con `zplc_sched_load()` e inícielo con `zplc_sched_start()` desde el hilo `main()` de Zephyr. Consulte la [API del runtime](../reference/runtime-api.md).
 
-Sorteado favorablemente el listado inferior a librerías ZPLC se es portador pleno del entorno y motor determinístico a hardware no comerciales que cuenten con implementaciones Linux o baremetals nativos listados para RTOS POSIX/Zephyr globalmente conocidos.
+Al cumplir la HAL, se puede portar ZPLC a casi cualquier microcontrolador compatible con POSIX o con Zephyr.
 
-## Dependientes Globales Modbus o Nube Sensórica
+## Capacidades de protocolo
 
-ZPLC acata operaciones en su runtime independientemente y con plena versatilidad, pero está sujeto férreamente bajo el limitante estructural si la conectividad no existe de su hardware original al tratar de operar:
+Al llevar la lógica de automatización a una red, compruebe que su plataforma de hardware admita las capas físicas necesarias:
 
-- **Buses Criptográficos IoT / Nube (MQTT)**: Condicionado si posee Wifi Nativo su HW, transcodificadores serial a Wi-Fi implementados nativamente a LwIP local o stacks para Módems con sockets TCP por PPP, caso contrario estas rutinas IEC en ST compilan a `.zplc` pero caen a errores en llamadas HAL asertivas físicas por RTOS.
-- **Red Fuerte Ethernet Local (Modbus TCP)**: Estricto control local enclavado Ethernet base (SPI Ethernet Módulos, PHY). Modbus actuará y abrirá el socket mediante ruteo.
-- **Plataformas de Dispositivos Maestro Esclavo Analógico (Modbus RTU)**: Solicitudes que dependan de interconectores RS-485 requiriendo inyección hardware con MAX485 y tracción por Software e impliquen pines bidireccionales asignados por Serial/UART Zephyr nativo a rutear correctamente por la aplicación.
+- **MQTT:** requiere una placa con una pila Wi-Fi o Ethernet activa en Zephyr.
+- **Modbus TCP:** funciona sobre los sockets Ethernet estándar.
+- **Modbus RTU:** requiere al menos un transceptor UART/RS-485 implementado físicamente en la placa.
 
-Dado el diseño de abstracción base ZPLC los errores de software jamás escalan a problemas o paralizaciones generalizadas. Las peticiones a interfaces irreales por el MCU, abortarán in-situ reportando loggings a registros visualizados de IDE salvaguardando o manteniendo control industrial activo del resto programático sin colisión del firmware.
+Como ZPLC resuelve la lógica de los protocolos dentro del motor de la máquina virtual, la configuración entre familias de microcontroladores depende solo de hacer coincidir las rutas de E/S de la HAL.
 
-## Actualizaciones Firmwares (Descargas y Quemadores)
+## Grabar el hardware
 
-Ajustando los procesos antes de desplegar `.zplc` y rutear en línea lógica con hardware, debe obligarse primero el cargado base C de imagen C/Zephyr ZPLC Boot mediante las matrices originales predispuestas u opcionales según manufacturado (Microchips o Target Selection):
-- Cargas C genéricas orientadas por ARM pueden operar transitoriamente en su OS por `west flash --runner` acudiendo con STLinks/JLinks nativos por interfaces de la PC Host.
-- Despliegue puro masificado o rápido (como líneas ESP32 Series o Teensys robustos) con herramientas integradas `python -esptool` inter USB sin requerimiento ST-Link hardware o puentes dedicados extra.
-- Tarjetas embebidas y series tipo MicroPython/RP2040 Pico (Raspberry) asimilarán archivos auto extraíbles (Bootloader y Payload listos UF2 format) y asolazándose al conectarlos de inmediato y flasheando memorias.
+Para poner en marcha un microcontrolador nuevo, debe grabar el firmware base de ZPLC para Zephyr antes de que Studio pueda transmitir bytecode `.zplc` por el puerto serie.
+
+En general, ZPLC se apoya en los procedimientos estándar de grabación de Zephyr:
+
+- Muchas placas con núcleo ARM aceptan la grabación directa con ST-Link o J-Link mediante `west flash`.
+- Las placas de desarrollo estándar, como las ESP32, pueden grabarse directamente por USB.
+- En los procesos con RP2040 se puede copiar el binario UF2 generado a la unidad de almacenamiento que aparece al conectar la placa.

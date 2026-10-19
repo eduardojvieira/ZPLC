@@ -77,7 +77,7 @@ const NodeComment = memo(({ nodeId, comment, onChange, readOnly = false }: NodeC
           className="w-full text-[10px] italic bg-[var(--color-surface-700)] border border-[var(--border-color)]
                      rounded px-1 py-0.5 text-[var(--text-secondary)]
                      text-center"
-          placeholder="Add comment..."
+          placeholder={t('editors.fbd.addComment')}
         />
       </div>
     );
@@ -87,12 +87,12 @@ const NodeComment = memo(({ nodeId, comment, onChange, readOnly = false }: NodeC
     <div
       className="absolute top-full left-1/2 z-10 mt-1 w-[120px] -translate-x-1/2 px-1 cursor-pointer"
       onDoubleClick={handleDoubleClick}
-      title="Double-click to edit comment"
+      title={t('editors.fbd.editComment')}
     >
       <div className={`text-[10px] italic text-center truncate max-w-[120px] ${
         comment ? 'text-[var(--text-tertiary)]' : 'text-[var(--text-tertiary)] hover:text-[var(--text-secondary)]'
       }`}>
-        {comment || '(+ comment)'}
+        {comment || t('editors.fbd.commentEmpty')}
       </div>
     </div>
   );

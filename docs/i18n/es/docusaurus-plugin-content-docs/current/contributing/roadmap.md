@@ -28,7 +28,7 @@ un comando local repetible.
   cambios sin guardar pregunta antes, cada archivo de texto conserva su propio
   historial de deshacer, y una compilación fallida muestra el mensaje del
   compilador con su línea y columna.
-- **Un pipeline de publicación.** Un solo workflow construye los instaladores de
+- **Un canal de publicación.** Un solo flujo de trabajo construye los instaladores de
   Linux, macOS y Windows, calcula sus sumas de verificación y los sube a un
   borrador de release.
 - **Texto público veraz.** Las páginas que terminaban a mitad de frase están

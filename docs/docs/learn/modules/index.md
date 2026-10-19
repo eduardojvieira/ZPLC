@@ -22,7 +22,7 @@ unlisted: true
 | [7: Structuring programs: functions, function blocks, structures, arrays, tasks](./module-7.md) | Intermediate | 2 |
 | [8: Testing and diagnosis: scenario tests, temporal assertions, trace, breakpoints](./module-8.md) | Advanced | 3 |
 | [9: Instruction List, and one logic in five languages](./module-9.md) | Advanced | 2 |
-| [10: Communications: Modbus and MQTT basics](./module-10.md) | Advanced | 0 |
+| [10: Communications: Modbus and MQTT basics](./module-10.md) | Advanced | 2 |
 | [11: Capstone: a small machine from description to tested program](./module-11.md) | Advanced | 1 |
 
 {/* <<< END GENERATED: learn/modules/index <<< */}

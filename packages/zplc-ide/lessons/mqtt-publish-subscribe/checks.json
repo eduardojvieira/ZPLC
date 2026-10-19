@@ -1,0 +1,37 @@
+{
+  "schemaVersion": 1,
+  "alsoGreen": [
+    {
+      "intent": "another topic and payload, line2/cmd and RUN, used consistently",
+      "files": {
+        "src/MqttLoop.st": "PROGRAM MqttLoop\nVAR_INPUT Send AT %I0.0 : BOOL; END_VAR\nVAR_OUTPUT Joined AT %Q0.0 : BOOL; Subscribed AT %Q0.1 : BOOL; Published AT %Q0.2 : BOOL; Heard AT %Q0.3 : BOOL; Failed AT %Q0.4 : BOOL; END_VAR\nVAR Con : MQTT_CONNECT; Sub : MQTT_SUBSCRIBE; Pub : MQTT_PUBLISH; END_VAR\nCon(EN := TRUE);\nSub(EN := Con.DONE, QOS := 0, TOPIC := 'line2/cmd');\nJoined := Con.DONE;\nSubscribed := Sub.DONE;\nPub(EN := Send AND Sub.DONE, QOS := 0, RETAIN := FALSE, TOPIC := 'line2/cmd', PAYLOAD := 'RUN');\nPublished := Pub.DONE;\nIF Sub.VALID AND (Sub.PAYLOAD = 'RUN') THEN Heard := TRUE; END_IF;\nFailed := Con.ERROR OR Sub.ERROR OR Pub.ERROR;\nEND_PROGRAM\n"
+      }
+    }
+  ],
+  "wrong": [
+    {
+      "intent": "subscribes to plant/status while publishing to plant/cmd, so the message is never delivered",
+      "files": {
+        "src/MqttLoop.st": "PROGRAM MqttLoop\nVAR_INPUT Send AT %I0.0 : BOOL; END_VAR\nVAR_OUTPUT Joined AT %Q0.0 : BOOL; Subscribed AT %Q0.1 : BOOL; Published AT %Q0.2 : BOOL; Heard AT %Q0.3 : BOOL; Failed AT %Q0.4 : BOOL; END_VAR\nVAR Con : MQTT_CONNECT; Sub : MQTT_SUBSCRIBE; Pub : MQTT_PUBLISH; END_VAR\nCon(EN := TRUE);\nSub(EN := Con.DONE, QOS := 0, TOPIC := 'plant/status');\nJoined := Con.DONE;\nSubscribed := Sub.DONE;\nPub(EN := Send AND Sub.DONE, QOS := 0, RETAIN := FALSE, TOPIC := 'plant/cmd', PAYLOAD := 'START');\nPublished := Pub.DONE;\nIF Sub.VALID AND (Sub.PAYLOAD = 'START') THEN Heard := TRUE; END_IF;\nFailed := Con.ERROR OR Sub.ERROR OR Pub.ERROR;\nEND_PROGRAM\n"
+      }
+    },
+    {
+      "intent": "compares the payload with STOP while the message says START",
+      "files": {
+        "src/MqttLoop.st": "PROGRAM MqttLoop\nVAR_INPUT Send AT %I0.0 : BOOL; END_VAR\nVAR_OUTPUT Joined AT %Q0.0 : BOOL; Subscribed AT %Q0.1 : BOOL; Published AT %Q0.2 : BOOL; Heard AT %Q0.3 : BOOL; Failed AT %Q0.4 : BOOL; END_VAR\nVAR Con : MQTT_CONNECT; Sub : MQTT_SUBSCRIBE; Pub : MQTT_PUBLISH; END_VAR\nCon(EN := TRUE);\nSub(EN := Con.DONE, QOS := 0, TOPIC := 'plant/cmd');\nJoined := Con.DONE;\nSubscribed := Sub.DONE;\nPub(EN := Send AND Sub.DONE, QOS := 0, RETAIN := FALSE, TOPIC := 'plant/cmd', PAYLOAD := 'START');\nPublished := Pub.DONE;\nIF Sub.VALID AND (Sub.PAYLOAD = 'STOP') THEN Heard := TRUE; END_IF;\nFailed := Con.ERROR OR Sub.ERROR OR Pub.ERROR;\nEND_PROGRAM\n"
+      }
+    },
+    {
+      "intent": "uses Sub.VALID directly, which is TRUE for one scan only, so Heard does not stay ON",
+      "files": {
+        "src/MqttLoop.st": "PROGRAM MqttLoop\nVAR_INPUT Send AT %I0.0 : BOOL; END_VAR\nVAR_OUTPUT Joined AT %Q0.0 : BOOL; Subscribed AT %Q0.1 : BOOL; Published AT %Q0.2 : BOOL; Heard AT %Q0.3 : BOOL; Failed AT %Q0.4 : BOOL; END_VAR\nVAR Con : MQTT_CONNECT; Sub : MQTT_SUBSCRIBE; Pub : MQTT_PUBLISH; END_VAR\nCon(EN := TRUE);\nSub(EN := Con.DONE, QOS := 0, TOPIC := 'plant/cmd');\nJoined := Con.DONE;\nSubscribed := Sub.DONE;\nPub(EN := Send AND Sub.DONE, QOS := 0, RETAIN := FALSE, TOPIC := 'plant/cmd', PAYLOAD := 'START');\nPublished := Pub.DONE;\nHeard := Sub.VALID AND (Sub.PAYLOAD = 'START');\nFailed := Con.ERROR OR Sub.ERROR OR Pub.ERROR;\nEND_PROGRAM\n"
+      }
+    },
+    {
+      "intent": "subscribes without waiting for the connection, so the subscription is not reported as holding",
+      "files": {
+        "src/MqttLoop.st": "PROGRAM MqttLoop\nVAR_INPUT Send AT %I0.0 : BOOL; END_VAR\nVAR_OUTPUT Joined AT %Q0.0 : BOOL; Subscribed AT %Q0.1 : BOOL; Published AT %Q0.2 : BOOL; Heard AT %Q0.3 : BOOL; Failed AT %Q0.4 : BOOL; END_VAR\nVAR Con : MQTT_CONNECT; Sub : MQTT_SUBSCRIBE; Pub : MQTT_PUBLISH; END_VAR\nCon(EN := TRUE);\nSub(EN := FALSE, QOS := 0, TOPIC := 'plant/cmd');\nJoined := Con.DONE;\nSubscribed := Sub.DONE;\nPub(EN := Send AND Sub.DONE, QOS := 0, RETAIN := FALSE, TOPIC := 'plant/cmd', PAYLOAD := 'START');\nPublished := Pub.DONE;\nIF Sub.VALID AND (Sub.PAYLOAD = 'START') THEN Heard := TRUE; END_IF;\nFailed := Con.ERROR OR Sub.ERROR OR Pub.ERROR;\nEND_PROGRAM\n"
+      }
+    }
+  ]
+}

@@ -51,9 +51,9 @@ es el predeterminado. Un reinicio, un tiempo de espera agotado, una falla, la
 falla de un watchdog, la pérdida de comunicación o un programa inválido nunca
 deben llevar a una reanudación automática insegura del control.
 
-### 5. Compilar, flashear, desplegar y ejecutar son pasos separados, y una persona inicia cada uno
+### 5. Compilar, grabar, cargar y ejecutar son pasos separados, y una persona inicia cada uno
 
-Construir el firmware, flashearlo, desplegar un programa PLC y ejecutar o depurar
+Compilar el firmware, grabarlo, cargar un programa PLC y ejecutar o depurar
 son cuatro operaciones con cuatro evidencias. Cada operación física requiere una
 autorización humana explícita.
 
@@ -80,8 +80,8 @@ arquitectónica registrada.
 ### 9. La IA y MCP ayudan dentro del espacio de trabajo y nunca actúan sobre el hardware
 
 Un asistente de IA o un cliente MCP puede inspeccionar, planificar, compilar,
-probar y simular dentro del espacio de trabajo aprobado. No debe flashear,
-desplegar en hardware, forzar E/S, cambiar RUN o STOP, abrir un puerto serie en
+probar y simular dentro del espacio de trabajo aprobado. No debe grabar firmware,
+cargar en hardware, forzar E/S, cambiar RUN o STOP, abrir un puerto serie en
 bruto ni ejecutar un shell. Studio funciona por completo sin IA.
 
 ## Cómo usar las reglas

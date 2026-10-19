@@ -14,13 +14,14 @@
  */
 
 import { useState, useRef, useEffect, useCallback } from 'react';
+import { useT } from '../i18n';
 import { Terminal, Trash2, Plug, PlugZap } from 'lucide-react';
 import { connectionManager } from '../runtime/connectionManager';
 import { isWebSerialSupported } from '../uploader/webserial';
 import { terminalDisconnectMessage } from './terminalConnectionPresentation';
 import {
   isTerminalForceMutation,
-  TERMINAL_FORCE_COMMAND_BLOCKED_MESSAGE,
+  terminalForceBlockedMessage,
 } from './terminalForceCommandPolicy';
 import { Button, IconButton, TextField } from '../ui';
 
@@ -40,8 +41,9 @@ interface TerminalTabProps {
 }
 
 export function TerminalTab({ isActive }: TerminalTabProps) {
+  const { t } = useT();
   // Terminal state
-  const [lines, setLines] = useState<string[]>(['ZPLC Serial Terminal', 'Use the shared connection from Toolbar', '']);
+  const [lines, setLines] = useState<string[]>(() => [t('terminal.welcome'), t('terminal.useSharedConnection'), '']);
   const [inputValue, setInputValue] = useState('');
   const [commandHistory, setCommandHistory] = useState<string[]>([]);
   const [historyIndex, setHistoryIndex] = useState(-1);
@@ -162,7 +164,7 @@ export function TerminalTab({ isActive }: TerminalTabProps) {
    */
   const sendCommand = async (cmd: string) => {
     if (isTerminalForceMutation(cmd)) {
-      appendOutput(TERMINAL_FORCE_COMMAND_BLOCKED_MESSAGE);
+      appendOutput(terminalForceBlockedMessage());
       return;
     }
 
@@ -192,7 +194,7 @@ export function TerminalTab({ isActive }: TerminalTabProps) {
 
     if (isTerminalForceMutation(cmd)) {
       setInputValue('');
-      appendOutput(TERMINAL_FORCE_COMMAND_BLOCKED_MESSAGE);
+      appendOutput(terminalForceBlockedMessage());
       return;
     }
     
@@ -246,7 +248,7 @@ export function TerminalTab({ isActive }: TerminalTabProps) {
    * Clear terminal
    */
   const handleClear = () => {
-    setLines(['ZPLC Serial Terminal', '']);
+    setLines([t('terminal.welcome'), '']);
   };
 
   // Subscribe to connection changes
@@ -313,11 +315,11 @@ export function TerminalTab({ isActive }: TerminalTabProps) {
       <div className="flex items-center gap-2 px-2 py-1 bg-[var(--color-surface-800)] border-b border-[var(--color-surface-700)]">
         <Terminal size={14} className="text-[var(--color-accent-green)]" />
         <span className="text-xs text-[var(--color-surface-300)]">
-          {isConnected ? 'Connected' : 'Not connected'}
+          {isConnected ? t('workbench.terminal.connected') : t('workbench.terminal.notConnected')}
         </span>
         {isConnected && connectionManager.passthroughMode && (
           <span className="text-xs px-1.5 py-0.5 rounded bg-[var(--color-accent-purple)]/20 text-[var(--color-accent-purple)]">
-            passthrough
+            {t('workbench.terminal.passthrough')}
           </span>
         )}
         
@@ -326,11 +328,11 @@ export function TerminalTab({ isActive }: TerminalTabProps) {
         {/* Connect/Disconnect Button */}
         <Button variant={isConnected ? 'secondary' : 'primary'} size="sm" onClick={() => { void handleConnect(); }} disabled={isConnecting}>
           {isConnected ? <PlugZap size={12} /> : <Plug size={12} />}
-          <span>{isConnecting ? 'Connecting...' : isConnected ? 'Disconnect' : 'Connect'}</span>
+          <span>{isConnecting ? t('workbench.terminal.connecting') : isConnected ? t('workbench.terminal.disconnect') : t('workbench.terminal.connect')}</span>
         </Button>
         
         {/* Clear Button */}
-        <IconButton label="Clear terminal" variant="ghost" size="sm" icon={<Trash2 size={12} />} onClick={handleClear} />
+        <IconButton label={t('workbench.terminal.clear')} variant="ghost" size="sm" icon={<Trash2 size={12} />} onClick={handleClear} />
       </div>
 
       {/* Terminal Output */}
@@ -360,7 +362,7 @@ export function TerminalTab({ isActive }: TerminalTabProps) {
       {/* Input Line */}
       <form onSubmit={handleSubmit} className="flex items-center border-t border-[var(--color-surface-700)]">
         <span className="px-2 text-[var(--color-accent-green)] font-mono text-sm">$</span>
-        <TextField aria-label="Terminal command" ref={inputRef} value={inputValue} onChange={(e) => setInputValue(e.target.value)} onKeyDown={handleKeyDown} placeholder={isConnected ? 'Type a command...' : 'Connect to send commands'} disabled={!isConnected} className="flex-1 font-mono" spellCheck={false} autoComplete="off" />
+        <TextField aria-label={t('workbench.terminal.command')} ref={inputRef} value={inputValue} onChange={(e) => setInputValue(e.target.value)} onKeyDown={handleKeyDown} placeholder={isConnected ? t('workbench.terminal.typeCommand') : t('workbench.terminal.connectToSend')} disabled={!isConnected} className="flex-1 font-mono" spellCheck={false} autoComplete="off" />
       </form>
     </div>
   );

@@ -25,7 +25,7 @@ simular y revisar proyectos PLC en una carpeta que usted elige.
 | --- | --- |
 | Proyecto | Archivos en una carpeta, exportación al esquema v2 y diferencias de migración. |
 | Editores | ST es la vía de texto principal; LD, FBD y SFC conservan sus modelos visuales. |
-| Validación | Diagnósticos del compilador, pruebas temporales, reglas de seguridad, trace y simulación POSIX. |
+| Validación | Diagnósticos del compilador, pruebas temporales, reglas de seguridad, traza y simulación POSIX. |
 | Evidencia | Registra los resultados de las herramientas y su alcance; no convierte un resultado en host en uno de HIL. |
 | Hardware | Connect y deploy siguen siendo acciones explícitas de una persona, después de las verificaciones de compatibilidad. |
 

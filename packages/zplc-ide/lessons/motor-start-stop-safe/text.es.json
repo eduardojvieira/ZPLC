@@ -18,7 +18,7 @@
       "key": "predict",
       "title": "Prediga",
       "body": "Antes de ejecutar, anticipe Motor.Forward a {{t:0}}, {{t:20}}, {{t:40}}, {{t:50}}, {{t:90}} y {{t:140}} ms.",
-      "checkpoint": "OFF a {{t:0}} ms aunque Start esté pulsado; ON a {{t:20}}; OFF a {{t:40}} (EStop) y todavía OFF a {{t:50}} con Start pulsado; OFF a {{t:90}} (sobrecarga) y {{t:140}} (Stop). Vuelve a ON sólo tras soltar y volver a pulsar Start, a {{t:70}}, {{t:120}} y {{t:170}} ms. Motor.Reverse permanece OFF."
+      "checkpoint": "OFF a {{t:0}} ms aunque Start esté pulsado; ON a {{t:20}}; OFF a {{t:40}} (EStop) y todavía OFF a {{t:50}} con Start pulsado; OFF a {{t:90}} (sobrecarga) y {{t:140}} (Stop). Vuelve a ON solo tras soltar y volver a pulsar Start, a {{t:70}}, {{t:120}} y {{t:170}} ms. Motor.Reverse permanece OFF."
     },
     {
       "key": "edit",
@@ -52,7 +52,7 @@
     },
     {
       "level": 2,
-      "text": "Borre la memoria primero cuando Stop, EStop u Overload sea TRUE; recién después deje que Start la active, y sólo si Start se vio suelto desde la última parada, así un Start mantenido no rearranca el motor."
+      "text": "Borre la memoria primero cuando Stop, EStop u Overload sea TRUE; recién después deje que Start la active, y solo si Start se vio suelto desde la última parada, así un Start mantenido no rearranca el motor."
     }
   ],
   "faultCases": [

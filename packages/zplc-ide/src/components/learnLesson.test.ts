@@ -72,12 +72,12 @@ describe('Learn lesson catalog', () => {
     expect(en[3]).toMatchObject({ title: 'Conveyor classification and safe jam', scope: 'Tests provide deterministic native POSIX host evidence only; they are not physical conveyor, jam clearance, hardware, HIL, or certification evidence.' });
     expect(es[3]?.stages.map(({ title }) => title)).toEqual(['Objetivo', 'Prediga', 'Edite', 'Ejecute', 'Observe', 'Reflexione']);
     expect(en[3]?.stages.map(({ title }) => title)).toEqual(['Objective', 'Predict', 'Edit', 'Run', 'Observe', 'Reflect']);
-    expect(es[3]?.stages[1]?.checkpoint).toBe('Belt ON 10–40; Diverter ON sólo 30; FaultLamp ON y Belt OFF 50–80. Reset a 60 no libera mientras JamDetected sigue activo.');
+    expect(es[3]?.stages[1]?.checkpoint).toBe('Belt ON 10–40; Diverter ON solo 30; FaultLamp ON y Belt OFF 50–80. Reset a 60 no libera mientras JamDetected sigue activo.');
     expect(en[3]?.stages[1]?.checkpoint).toBe('Belt ON 10–40; Diverter ON only 30; FaultLamp ON and Belt OFF 50–80. Reset at 60 does not release while JamDetected remains active.');
     for (const name of ['Requested', 'Faulted', 'MetalLatched']) expect(es[3]?.stages[0]?.body).toContain(name);
     expect(es[3]?.stages[4]?.body).toContain('classifier+metal 20, diverter+count=1 a 30, jam 50');
     expect(en[3]?.stages[4]?.body).toContain('classifier+metal 20, diverter+count=1 at 30, jam 50');
-    expect(es[3]?.stages[5]?.body).toBe('La assertion NEVER cubre DiverterCommand ON con BeltCommand OFF sólo en este escenario.');
+    expect(es[3]?.stages[5]?.body).toBe('La assertion NEVER cubre DiverterCommand ON con BeltCommand OFF solo en este escenario.');
     expect(en[3]?.stages[5]?.body).toBe('The NEVER assertion covers DiverterCommand ON with BeltCommand OFF only in this scenario.');
     expect(es[4]).toMatchObject({ exampleId: 'blinky', requiredScenario: 'BlinkyVisual', sourcePath: 'src/Blinky.ld.json', scenarioPath: 'tests/blinky-visual.scenario.json', title: 'Oscilador TON y realimentación de salida', scope: 'La evidencia de Tests es del host nativo POSIX; no es evidencia de LED físico, timing de hardware, HIL ni certificación.' });
     expect(en[4]).toMatchObject({ title: 'TON oscillator and output feedback', scope: 'Tests provide native POSIX host evidence only; they are not physical LED, hardware timing, HIL, or certification evidence.' });
@@ -151,7 +151,7 @@ describe('Learn lesson catalog', () => {
       expect(es[8]?.stages.map(({ body, checkpoint }) => `${body} ${checkpoint}`).join(' ')).toContain(timing);
       expect(en[8]?.stages.map(({ body, checkpoint }) => `${body} ${checkpoint}`).join(' ')).toContain(timing);
     }
-    expect(es[8]?.stages[1]?.checkpoint).toBe('Belt ON y FaultLamp OFF a 20; Belt OFF y FaultLamp ON a 30 y todavía a 50 (Reset a 40 se ignora y despejar el atasco no libera la falla); ambos OFF a 60; Belt ON de nuevo a 80 sólo tras el nuevo Start.');
+    expect(es[8]?.stages[1]?.checkpoint).toBe('Belt ON y FaultLamp OFF a 20; Belt OFF y FaultLamp ON a 30 y todavía a 50 (Reset a 40 se ignora y despejar el atasco no libera la falla); ambos OFF a 60; Belt ON de nuevo a 80 solo tras el nuevo Start.');
     expect(en[8]?.stages[1]?.checkpoint).toBe('Belt ON and FaultLamp OFF at 20; Belt OFF and FaultLamp ON at 30 and still at 50 (Reset at 40 is ignored and the jam clearing does not release the fault); both OFF at 60; Belt ON again at 80 only after the new Start.');
     // Lessons 4 and 9 share a starter but no longer a graded scenario or a fault to fix.
     expect(es[3]?.starterExampleId).toBe(es[8]?.starterExampleId);

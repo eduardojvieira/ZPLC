@@ -98,6 +98,8 @@ export const EXAMPLE_CATALOG: Readonly<Record<string, ExampleEntry>> = {
   pump_pair: example('pump_pair', { group: 'process', level: 'intermediate', languages: ['ST'], showOnWelcome: true }),
   call_panel: example('call_panel', { group: 'process', level: 'intermediate', languages: ['ST'], showOnWelcome: true }),
   packing_station: example('packing_station', { group: 'process', level: 'advanced', languages: ['ST'], showOnWelcome: true }),
+  modbus_register: example('modbus_register', { group: 'process', level: 'advanced', languages: ['ST'], showOnWelcome: true }),
+  mqtt_loop: example('mqtt_loop', { group: 'process', level: 'advanced', languages: ['ST'], showOnWelcome: true }),
 
   // Language tour
   blinky_st: example('blinky_st', { group: 'languages', level: 'beginner', languages: ['ST'], showOnWelcome: true }),

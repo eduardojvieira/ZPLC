@@ -155,7 +155,7 @@ export function InstanceMonitor({
         {/* Status bar */}
         <div className="px-4 py-2 bg-[var(--color-surface-700)] border-b border-[var(--color-surface-600)] flex items-center gap-2">
           <SignalValue tone={debugMode !== 'none' ? 'true' : 'unknown'} className="text-xs">
-            {debugMode !== 'none' ? 'Live' : 'Offline'}
+            {debugMode !== 'none' ? t('editors.fbd.live') : t('editors.fbd.offline')}
           </SignalValue>
         </div>
 
@@ -164,7 +164,7 @@ export function InstanceMonitor({
           {/* Inputs */}
           <div>
             <h3 className="text-xs font-medium text-[var(--color-surface-400)] uppercase tracking-wide mb-2">
-              Inputs
+              {t('editors.fbd.inputs')}
             </h3>
             <div className="space-y-1">
               {inputValues.map((pv) => (
@@ -192,7 +192,7 @@ export function InstanceMonitor({
           {/* Outputs */}
           <div>
             <h3 className="text-xs font-medium text-[var(--color-surface-400)] uppercase tracking-wide mb-2">
-              Outputs
+              {t('editors.fbd.outputs')}
             </h3>
             <div className="space-y-1">
               {outputValues.map((pv) => (
@@ -221,7 +221,7 @@ export function InstanceMonitor({
         {/* Footer */}
         <div className="px-4 py-3 bg-[var(--color-surface-700)] rounded-b-lg border-t border-[var(--color-surface-600)]">
           <p className="text-[10px] text-[var(--color-surface-500)] text-center">
-            Values auto-added to Watch panel
+            {t('editors.fbd.autoAdded')}
           </p>
         </div>
       </div>

@@ -88,6 +88,9 @@ jobs:
 
   # Run the canonical CI workflow for this caller's exact SHA before any
   # release artifact can be built. HIL remains intentionally out of CI.
+  # VF-009: that run includes the end-to-end journeys on Linux (the typescript job, under xvfb), so a failing journey
+  # fails this job, and every job that builds or publishes needs it to have succeeded. tools/ci/release-gate.test.ts
+  # pins both facts. The macOS and Windows journeys are the nightly-quality workflow's and do not gate a release.
   verify-release-candidate:
     needs: validate-version
     uses: ./.github/workflows/ci.yml

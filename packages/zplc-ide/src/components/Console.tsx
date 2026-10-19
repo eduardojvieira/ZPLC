@@ -39,7 +39,7 @@ import { useProjectBlocks } from '../editors/useProjectBlocks';
 import { presentAiProviderConfig, presentAiProviderMutation, presentAiProviderResponse, presentAiProviderStatus, type AiProviderMode, type AiProviderStatusPresentation } from './aiProviderPresentation';
 import { useTheme } from '../hooks/useTheme';
 import { ZPLC_DARK_THEME, ZPLC_DARK_THEME_ID, ZPLC_HIGH_CONTRAST_THEME, ZPLC_HIGH_CONTRAST_THEME_ID, ZPLC_LIGHT_THEME, ZPLC_LIGHT_THEME_ID } from '../utils/monaco-themes';
-import { Badge, Button, Checkbox, FileInput, IconButton, TextField, Textarea } from '../ui';
+import { Badge, Button, Checkbox, FileInput, IconButton, TextField, Textarea, Tooltip } from '../ui';
 import { useT } from '../i18n';
 import { CommandEmptyState } from './panelStates';
 import { CandidateReviewResult, AgentStatus, type CandidateReviewSnapshot, type CandidateReviewState, type AgentState } from './ConsoleReviewPanels';
@@ -686,7 +686,7 @@ export function Console({ debugController }: ConsoleProps) {
                   : !hasCurrentWorkspaceLink ? <p role="status" aria-live="polite" className="mt-3">{t('console.chooseTheSavedWorkspace')}</p>
                     : !candidateEligible ? <p role="status" aria-live="polite" className="mt-3">{t('console.onlyAModifiedActive')}</p>
                       : <p className="mt-3 text-[var(--color-surface-300)]">{t('console.onlyTheActiveStructured')}</p>}
-              <p className="mt-2 text-xs text-[var(--color-surface-400)]">{t('console.nativePosixHostEvidence')}</p>
+              <p className="mt-2 text-xs text-[var(--color-surface-400)]"><Tooltip content={t('console.nativePosixHostEvidence')}><span tabIndex={0}><Badge tone="neutral">{t('console.hostEvidenceBadge')}</Badge></span></Tooltip></p>
               <p className="text-xs text-[var(--color-surface-400)]">{t('console.reviewItselfDoesNot')}</p>
             </div>
             <div role="status" aria-live="polite" className="mt-3">

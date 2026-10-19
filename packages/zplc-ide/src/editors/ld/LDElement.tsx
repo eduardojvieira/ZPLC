@@ -14,8 +14,9 @@
  * - Function block port values (Q, ET, CV, etc.)
  */
 
+import { t } from '../../i18n';
 import { type LDElement as LDElementType, isContact, isCoil, isFunctionBlock } from '../../models/ld';
-import { LD_ELEMENT_KIND } from '../../models/ldSupport';
+import { ldElementKind } from '../../models/ldSupport';
 import { splitFBIdentifier } from './fbLabel';
 import type { DebugValueResult } from '../../hooks/useDebugValue';
 import { SIGNAL_PAINT, sampleTone, signalMark, type SignalTone } from '../../theme/signalTone';
@@ -542,12 +543,12 @@ function FBSymbol({ fbType, instance, selected, energized, debugValues }: FBSymb
         textAnchor="middle"
         fontFamily="sans-serif"
       >
-        <title>{fbType || 'FB'}</title>
+        <title>{fbType || t('editors.ld.fb')}</title>
         {typeLines.map((line, index) => <tspan key={`${line}-${index}`} x={CELL_WIDTH / 2} dy={index === 0 ? 0 : 7}>{line}</tspan>)}
       </text>
 
       {/* Instance name remains inside the fixed IEC block. */}
-      <title>{instance || fbType || 'FB'}</title>
+      <title>{instance || fbType || t('editors.ld.fb')}</title>
       {instanceLines.map((line, index) => (
         <text key={`${line}-${index}`} x={CELL_WIDTH / 2} y={boxY + 24 + index * 6} fill={COLORS.textDim} fontSize={6} textAnchor="middle" fontFamily="monospace">{line}</text>
       ))}
@@ -642,7 +643,7 @@ export default function LDElement({ element, x, y, selected, energized, debugVal
   const translateY = y * CELL_HEIGHT;
   const selectable = Boolean(onClick);
   const elementName = isFunctionBlock(element.type) ? [element.fbType, element.instance].filter(Boolean).join(' ') : element.variable;
-  const elementKind = LD_ELEMENT_KIND[element.type];
+  const elementKind = ldElementKind(element.type);
   const selectionLabel = `Select ${elementKind}${elementName ? ` ${elementName}` : ''}`;
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {

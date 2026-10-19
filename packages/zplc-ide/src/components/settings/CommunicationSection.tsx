@@ -10,11 +10,13 @@ import {
   getBoardNetworkType,
 } from '../../config/boardProfiles';
 import type { SectionProps } from './settingsSectionProps';
+import { useT } from '../../i18n';
 import { MqttSettings } from './MqttSettings';
 import { ModbusSettings } from './ModbusSettings';
 import { CommunicationTags } from './CommunicationTags';
 
 export function CommunicationSection({ config, updateConfig }: SectionProps) {
+  const { t } = useT();
   const boardNetworkType = getBoardNetworkType(config.target?.board);
   // COM-014: no broker, TLS with the certificate verified: the controller connects nowhere until a broker is named.
   const defaultMqtt: MQTTCommunicationConfig = {
@@ -129,13 +131,12 @@ export function CommunicationSection({ config, updateConfig }: SectionProps) {
   return (
     <div className="pt-4 space-y-6">
       <div className="rounded-lg border border-[var(--color-surface-600)] bg-[var(--color-surface-800)]/70 p-3 text-xs text-[var(--color-surface-300)]">
-        <p className="font-medium text-[var(--color-surface-100)]">v1.5 communication scope</p>
+        <p className="font-medium text-[var(--color-surface-100)]">{t('settings.communication.scope')}</p>
         <p className="mt-1">
-          MQTT, Modbus RTU, and Modbus TCP are only release-ready when the selected board,
-          runtime support, and release evidence all agree.
+          {t('settings.communication.scopeBody')}
         </p>
         <p className="mt-1 text-[var(--color-surface-400)]">
-          Current board network profile: <strong className="text-[var(--color-accent-blue)]">{boardNetworkType}</strong>
+          {t('settings.communication.profile')} <strong className="text-[var(--color-accent-blue)]">{boardNetworkType}</strong>
         </p>
       </div>
       <MqttSettings boardNetworkType={boardNetworkType} mqtt={mqtt} updateCommunication={updateCommunication} />

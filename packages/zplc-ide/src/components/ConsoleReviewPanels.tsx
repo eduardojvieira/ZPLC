@@ -6,7 +6,7 @@ import { DiffEditor, type Monaco } from './monacoRuntime';
 import { type CandidateChangeSetReviewPresentation } from './workspaceTestPresentation';
 import { type AiProviderResponsePresentation, type AiProviderStatusPresentation } from './aiProviderPresentation';
 import { ZPLC_DARK_THEME_ID, ZPLC_HIGH_CONTRAST_THEME_ID, ZPLC_LIGHT_THEME_ID } from '../utils/monaco-themes';
-import { Button, Tooltip } from '../ui';
+import { Badge, Button, Tooltip } from '../ui';
 import { useT } from '../i18n';
 
 export type CandidateReviewSnapshot = { origin: 'manual' | 'agent'; projectSession: number; compilerRunId: number; workspaceId: string; fileId: string; path: string; editorContent: string; candidate: string; handle: FileSystemFileHandle; beforeSha256: string; afterSha256: string; baseline: string };
@@ -31,7 +31,7 @@ export function CandidateReviewResult({ state, effectiveTheme, beforeMount, onSa
       <div className="h-72 border border-[var(--color-surface-600)]">
         <DiffEditor original={snapshot.baseline} modified={snapshot.candidate} language="st" theme={effectiveTheme === 'high-contrast' ? ZPLC_HIGH_CONTRAST_THEME_ID : effectiveTheme === 'dark' ? ZPLC_DARK_THEME_ID : ZPLC_LIGHT_THEME_ID} beforeMount={beforeMount} options={{ readOnly: true, automaticLayout: true, minimap: { enabled: false }, wordWrap: 'on', accessibilitySupport: 'on', scrollBeyondLastLine: false, renderSideBySide: true }} />
       </div>
-      <p className="text-xs text-[var(--color-surface-400)]">{t('console.nativePosixHostEvidence')}</p>
+      <p className="text-xs text-[var(--color-surface-400)]"><Tooltip content={t('console.nativePosixHostEvidence')}><span tabIndex={0}><Badge tone="neutral">{t('console.hostEvidenceBadge')}</Badge></span></Tooltip></p>
       <p className="text-xs text-[var(--color-surface-400)]">{t('console.noFileHasBeen')}</p>
       {accepted && <Button variant="secondary" size="sm" onClick={onSave} disabled={busy}>{t('console.saveReviewedChange')}</Button>}
     </section>

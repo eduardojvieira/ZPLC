@@ -18,6 +18,12 @@ import { learnEn } from './catalog/learn';
 import { learnHomeEn } from './catalog/learnHome';
 import { toolbarMsgEn } from './catalog/toolbarMsg';
 import { examplesEn } from './catalog/examples';
+import { noticesEn } from './catalog/notices';
+import { editorsEn } from './catalog/editors';
+import { settingsSurfaceEn } from './catalog/settingsSurface';
+import { labSceneEn } from './catalog/labScene';
+import { workbenchEn } from './catalog/workbench';
+import { moduleTextEn } from './catalog/moduleText';
 
 /**
  * The English catalog of Studio (UX-029): the source of truth for every user-visible string. A key is a dotted path
@@ -616,6 +622,12 @@ export const en = {
   ...learnHomeEn,
   ...toolbarMsgEn,
   ...examplesEn,
+  ...noticesEn,
+  ...editorsEn,
+  ...settingsSurfaceEn,
+  ...labSceneEn,
+  ...workbenchEn,
+  ...moduleTextEn,
 } as const;
 
 export type MessageKey = keyof typeof en;
