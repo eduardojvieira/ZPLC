@@ -3059,6 +3059,8 @@ export const JOURNEYS: Journey[] = [
     run: async (app, { project }) => {
       const lesson = learnLessonCatalog.en.find(({ id }) => id === 'motor-start-stop-safe')!;
       const solution = disk(join(packageRoot, 'projects', lesson.referenceExampleId, lesson.solutionProgram));
+      // The learner has unlocked every lesson (a setting of the Learn home), so the lesson of this example can be chosen first.
+      await unlockAllLessons(app);
       cpSync(join(packageRoot, 'projects', 'blinky_fbd', 'src', 'main.fbd.json'), join(project, 'src', 'diagram.fbd.json'));
       const focused = (): Promise<string> => app.eval<string>(`(() => { const el = document.activeElement; if (!el || el === document.body) return '(page)'; return ((el.getAttribute('aria-label') || el.textContent || el.getAttribute('title') || el.id || el.tagName).trim().replace(/\\s+/g, ' ')).slice(0, 48) + (el.getAttribute('role') ? ' [' + el.getAttribute('role') + ']' : ''); })()`);
       const live = (politeness: 'polite' | 'assertive') => app.eval<string>(`document.querySelector('[data-live-region="${politeness}"]')?.textContent?.replace(/\\u00a0/g, '') ?? ''`);
@@ -3194,6 +3196,11 @@ export const JOURNEYS: Journey[] = [
       // 9. One Learn lesson: the lesson list by command, Check reached with Tab and pressed with Enter, graded as passed
       await palette('Show the lessons');
       await app.until('the Learn tab', async () => await app.eval<boolean>(`document.querySelector('[data-activity="learn"]')?.getAttribute('aria-current') === 'true'`) || undefined);
+      // The lesson of this example is chosen with the arrow keys of the lesson list, as a keyboard user would.
+      await reach('the lesson list', `el.closest('[aria-label="Lesson"]') !== null && el.getAttribute('aria-pressed') === 'true'`, 'Tab', 80);
+      await reach('the Safe motor start-stop lesson', `el.textContent.trim().startsWith('Safe motor start-stop')`, 'ArrowRight', 6);
+      await app.press('Enter');
+      await app.until('the Safe motor start-stop lesson to be chosen', async () => await app.eval<boolean>(`document.getElementById('learn-title')?.textContent?.trim() === 'Safe motor start-stop'`) || undefined);
       await app.until('the Check button to be enabled', async () => await isEnabled('[data-learn-check]') || undefined);
       await reach('the Check button', `el.matches('[data-learn-check]')`, 'Tab', 60);
       await app.press('Enter');
@@ -3272,6 +3279,13 @@ export const JOURNEYS: Journey[] = [
         for (const view of ['project', 'search', 'tests', 'learn']) {
           await app.click(css(`[data-activity="${view}"]`), `the ${view} view of the rail`);
           await audit(`Sidebar, ${view}`);
+          // The rail's Learn item also opens the Learn home over the editor: it is a screen of its own, and Escape returns to the editor.
+          if (view === 'learn') {
+            await app.until('the Learn home', async () => await app.visible(css('[data-learn-home]')) || undefined);
+            await audit('Learn home');
+            await app.press('Escape');
+            await app.until('the editor again', async () => !(await app.visible(css('[data-learn-home]'))) || undefined);
+          }
         }
         await app.click(button('Project settings'), 'the Project settings button');
         await app.until('the preferences', async () => await app.visible(css('[data-app-preferences]')) || undefined);
