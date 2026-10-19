@@ -58,6 +58,6 @@
     }
   ],
   "faultCases": [
-    "El programa inicial se une al broker y se suscribe, pero nunca publica ni registra lo que recibe, así que Published y Heard quedan en OFF; publique cuando Send esté en ON y la suscripción se mantenga, y mantenga Heard en ON cuando llegue el contenido START."
+    "El programa inicial se une al broker y se suscribe, pero nunca publica ni registra lo que recibe, así que Published y Heard quedan en OFF; llame a MQTT_PUBLISH con EN := Send AND Sub.DONE y mantenga Heard en ON cuando Sub.VALID sea TRUE con el contenido 'START'."
   ]
 }

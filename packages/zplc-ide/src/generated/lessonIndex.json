@@ -4638,7 +4638,7 @@
             }
           ],
           "faultCases": [
-            "The starter writes register 8 but never reads it back, so Match stays OFF; read register 8 once Wr.DONE is TRUE and compare Rd.VALUE with 1234."
+            "The starter writes register 8 but never reads it back, so Match stays OFF; call MB_READ_HREG on the same register when Wr.DONE is TRUE, turn Match ON when Rd.DONE is TRUE and Rd.VALUE equals 1234, and turn Failed ON when Wr.ERROR or Rd.ERROR is TRUE."
           ]
         },
         "es": {
@@ -4699,7 +4699,7 @@
             }
           ],
           "faultCases": [
-            "El programa inicial escribe el registro 8 pero nunca lo lee de vuelta, así que Match sigue en OFF; lea el registro 8 cuando Wr.DONE sea TRUE y compare Rd.VALUE con 1234."
+            "El programa inicial escribe el registro 8 pero nunca lo lee de vuelta, así que Match sigue en OFF; llame a MB_READ_HREG sobre el mismo registro cuando Wr.DONE sea TRUE, ponga Match en ON cuando Rd.DONE sea TRUE y Rd.VALUE sea igual a 1234, y ponga Failed en ON cuando Wr.ERROR o Rd.ERROR sea TRUE."
           ]
         }
       }
@@ -4812,7 +4812,7 @@
             }
           ],
           "faultCases": [
-            "The starter joins the broker and subscribes, but it never publishes and never records what it receives, so Published and Heard stay OFF; publish when Send is ON and the subscription holds, and keep Heard ON once the payload START arrives."
+            "The starter joins the broker and subscribes, but it never publishes and never records what it receives, so Published and Heard stay OFF; call MQTT_PUBLISH with EN := Send AND Sub.DONE, and keep Heard ON once Sub.VALID is TRUE with the payload 'START'."
           ]
         },
         "es": {
@@ -4874,7 +4874,7 @@
             }
           ],
           "faultCases": [
-            "El programa inicial se une al broker y se suscribe, pero nunca publica ni registra lo que recibe, así que Published y Heard quedan en OFF; publique cuando Send esté en ON y la suscripción se mantenga, y mantenga Heard en ON cuando llegue el contenido START."
+            "El programa inicial se une al broker y se suscribe, pero nunca publica ni registra lo que recibe, así que Published y Heard quedan en OFF; llame a MQTT_PUBLISH con EN := Send AND Sub.DONE y mantenga Heard en ON cuando Sub.VALID sea TRUE con el contenido 'START'."
           ]
         }
       }

@@ -57,6 +57,6 @@
     }
   ],
   "faultCases": [
-    "The starter writes register 8 but never reads it back, so Match stays OFF; read register 8 once Wr.DONE is TRUE and compare Rd.VALUE with 1234."
+    "The starter writes register 8 but never reads it back, so Match stays OFF; call MB_READ_HREG on the same register when Wr.DONE is TRUE, turn Match ON when Rd.DONE is TRUE and Rd.VALUE equals 1234, and turn Failed ON when Wr.ERROR or Rd.ERROR is TRUE."
   ]
 }

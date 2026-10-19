@@ -94,13 +94,18 @@ describe('the schema checker used by this file', () => {
   });
 });
 
+// The session Studio starts also gives a program a Modbus server and an MQTT broker of their own (COM-009); the
+// Communications examples are run against them, as the product runs them.
+const SESSION_ENVIRONMENT = { ZPLC_NATIVE_SIM_BIN: nativeRuntimeBinary, ZPLC_NATIVE_COMM: '1', ZPLC_NATIVE_LOOPBACK: '1' } as const;
 const withNativeRuntime = async <T>(run: () => Promise<T>): Promise<T> => {
-  const previous = process.env.ZPLC_NATIVE_SIM_BIN;
-  process.env.ZPLC_NATIVE_SIM_BIN = nativeRuntimeBinary;
+  const previous = Object.fromEntries(Object.keys(SESSION_ENVIRONMENT).map((name) => [name, process.env[name]]));
+  Object.assign(process.env, SESSION_ENVIRONMENT);
   try { return await run(); }
   finally {
-    if (previous === undefined) delete process.env.ZPLC_NATIVE_SIM_BIN;
-    else process.env.ZPLC_NATIVE_SIM_BIN = previous;
+    for (const [name, value] of Object.entries(previous)) {
+      if (value === undefined) delete process.env[name];
+      else process.env[name] = value;
+    }
   }
 };
 

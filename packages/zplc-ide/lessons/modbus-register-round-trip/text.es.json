@@ -57,6 +57,6 @@
     }
   ],
   "faultCases": [
-    "El programa inicial escribe el registro 8 pero nunca lo lee de vuelta, así que Match sigue en OFF; lea el registro 8 cuando Wr.DONE sea TRUE y compare Rd.VALUE con 1234."
+    "El programa inicial escribe el registro 8 pero nunca lo lee de vuelta, así que Match sigue en OFF; llame a MB_READ_HREG sobre el mismo registro cuando Wr.DONE sea TRUE, ponga Match en ON cuando Rd.DONE sea TRUE y Rd.VALUE sea igual a 1234, y ponga Failed en ON cuando Wr.ERROR o Rd.ERROR sea TRUE."
   ]
 }

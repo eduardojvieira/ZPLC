@@ -58,6 +58,6 @@
     }
   ],
   "faultCases": [
-    "The starter joins the broker and subscribes, but it never publishes and never records what it receives, so Published and Heard stay OFF; publish when Send is ON and the subscription holds, and keep Heard ON once the payload START arrives."
+    "The starter joins the broker and subscribes, but it never publishes and never records what it receives, so Published and Heard stay OFF; call MQTT_PUBLISH with EN := Send AND Sub.DONE, and keep Heard ON once Sub.VALID is TRUE with the payload 'START'."
   ]
 }

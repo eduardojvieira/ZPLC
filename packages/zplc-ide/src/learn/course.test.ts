@@ -52,8 +52,12 @@ describe('the course view', () => {
   it('keeps the modules that have no lesson yet, empty and with no minutes, and invents no lesson for them', () => {
     const empty = view.modules.filter((module) => module.lessons.length === 0).map((module) => module.id);
     expect(empty).toEqual(LESSON_INDEX.course.modules.map((module) => module.id).filter((id) => !LESSON_INDEX.lessons.some((lesson) => lesson.module === id)));
-    expect(empty.length).toBeGreaterThan(0);
-    expect(view.modules.find((module) => module.id === empty[0])!.estimatedMinutes).toBe(0);
+    // every module may have a lesson by now, so the behaviour is also checked on an index with module 10 taken out
+    const gap = buildCourseView({ ...LESSON_INDEX, lessons: LESSON_INDEX.lessons.filter((lesson) => lesson.module !== 10) }, emptyProgress(), { locale: 'en', unlockAll: false });
+    const hollow = gap.modules.find((module) => module.id === 10)!;
+    expect(hollow.lessons).toEqual([]);
+    expect(hollow.estimatedMinutes).toBe(0);
+    for (const id of empty) expect(view.modules.find((module) => module.id === id)!.estimatedMinutes).toBe(0);
   });
 
   it('carries every lesson of the index exactly once, with its state, title and tracks', () => {
@@ -66,7 +70,8 @@ describe('the course view', () => {
 
   it('states the objectives of a module from the lessons placed in it', () => {
     expect(view.modules[1]!.objectives.length).toBeGreaterThan(0);
-    expect(view.modules.find((module) => module.lessons.length === 0)!.objectives).toEqual([]);
+    const gap = buildCourseView({ ...LESSON_INDEX, lessons: LESSON_INDEX.lessons.filter((lesson) => lesson.module !== 10) }, emptyProgress(), { locale: 'en', unlockAll: false });
+    expect(gap.modules.find((module) => module.lessons.length === 0)!.objectives).toEqual([]);
   });
 
   it('reads Spanish titles in the Spanish locale', () => {
