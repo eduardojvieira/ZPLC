@@ -1,0 +1,46 @@
+{
+  "schemaVersion": 1,
+  "id": "interlock-guard-ladder",
+  "version": 1,
+  "order": 18,
+  "module": 6,
+  "level": "intermediate",
+  "prerequisites": [
+    "pedestrian-crossing-states"
+  ],
+  "languages": [
+    "LD"
+  ],
+  "tracks": [
+    "simulation"
+  ],
+  "unsupported": {
+    "hardware": {
+      "reason": {
+        "en": "The lesson needs the motor plant model that answers your outputs, and a board has no motor attached to give that feedback.",
+        "es": "La lección necesita el modelo de planta del motor que responde a sus salidas, y una placa no tiene un motor conectado que dé esa realimentación."
+      },
+      "instead": {
+        "en": "Complete it in Simulation, which provides the motor and its run feedback.",
+        "es": "Complétela en Simulación, que aporta el motor y su realimentación de marcha."
+      }
+    }
+  },
+  "plant": "motor-v1",
+  "estimatedMinutes": 20,
+  "starter": {
+    "project": "interlock_guard_ladder_starter",
+    "program": "src/MotorPlant.ld.json"
+  },
+  "solution": {
+    "project": "interlock_guard_ladder",
+    "program": "src/MotorPlant.ld.json"
+  },
+  "scenario": {
+    "file": "scenario.json",
+    "id": "MotorInterlock",
+    "path": "tests/motor-interlock.scenario.json",
+    "sha256": "6ffc4a74fd39e3cec015cfce8d79a9860e8fd254f143438bea0d61d1794b8a63"
+  },
+  "regressionScenarios": []
+}

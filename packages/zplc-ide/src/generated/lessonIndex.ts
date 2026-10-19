@@ -23,6 +23,7 @@ export const LESSON_IDS = [
   "set-reset-alarm-latch",
   "seal-in-ladder",
   "counter-batch-fbd",
+  "interlock-guard-ladder",
 ] as const;
 
 export type LessonId = typeof LESSON_IDS[number];

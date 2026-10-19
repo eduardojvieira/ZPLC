@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "title": "Interbloqueos y permisivos en Ladder: una protección que detiene el motor",
+  "summary": "Agregue un contacto permisivo a una autorretención en Ladder para que el motor funcione solo con la protección cerrada, y compruébelo contra la planta del motor y su realimentación de velocidad.",
+  "scope": "La evidencia de Tests es del runtime nativo POSIX para un modelo de planta de motor integrado con una tarea de 10 ms; no establece una función de seguridad, el cableado de la protección, el tiempo de parada, HIL ni certificación.",
+  "objectives": [
+    "Distinga un permisivo, una condición que debe ser verdadera para que la salida esté encendida, de una orden.",
+    "Coloque un permisivo en serie con la autorretención para que apague el motor y además impida que Start lo vuelva a arrancar."
+  ],
+  "stages": [
+    {
+      "key": "objective",
+      "title": "Objetivo",
+      "body": "En src/MotorPlant.ld.json el peldaño 1 mantiene el motor con una autorretención y el peldaño 2 enciende Running cuando la planta informa AtSpeed. Agregue un contacto normalmente abierto de GuardClosed en serie en el peldaño 1, antes de la rama de Start, para que una protección abierta apague Command y bloquee Start.",
+      "checkpoint": "Command está encendido solo mientras la protección está cerrada, y Running sigue necesitando AtSpeed de la planta."
+    },
+    {
+      "key": "predict",
+      "title": "Prediga",
+      "body": "Antes de ejecutar, prediga Command y Running a los {{t:30}} ms, cuando la protección se abre a los {{t:50}} ms y a los {{t:60}} ms cuando se pulsa Start con la protección aún abierta.",
+      "checkpoint": "{{v:MotorPlant.Command=true,MotorPlant.Running=true@30|Ambos en ON}} a los {{t:30}} ms; {{v:MotorPlant.Command=false,MotorPlant.Running=false@50|ambos en OFF}} a los {{t:50}} ms; {{v:MotorPlant.Command=false@60|Command en OFF}} a los {{t:60}} ms, porque Start se ignora."
+    },
+    {
+      "key": "edit",
+      "title": "Edite",
+      "body": "Corrija esta omisión del programa inicial, guárdelo y pulse Comprobar: El programa inicial no tiene el permisivo de la protección, así que cuando la protección se abre a los {{t:50}} ms el motor sigue funcionando y Start puede volver a arrancarlo; agregue un contacto normalmente abierto de GuardClosed en serie en el peldaño 1, antes de la rama de Start.",
+      "checkpoint": "El escenario visible debe pasar con evidencia guardada del host."
+    },
+    {
+      "key": "run",
+      "title": "Ejecute",
+      "body": "Pulse Comprobar. Studio ejecuta el programa guardado contra el escenario de esta lección, con la planta del motor respondiendo a sus salidas.",
+      "checkpoint": "El escenario se llama MotorInterlock y contiene {{assertions}} assertions."
+    },
+    {
+      "key": "observe",
+      "title": "Observe",
+      "body": "Compare {{t:30}}, {{t:50}} y {{t:80}} ms: el motor está a velocidad a los {{t:30}} ms, cae cuando la protección se abre a los {{t:50}} ms y no vuelve a arrancar a los {{t:80}} ms cuando la protección se cierra, porque Start ya se soltó.",
+      "checkpoint": "Command sigue en OFF de {{t:60}} a {{t:80}} ms y sube de nuevo solo a los {{t:90}} ms, con un Start nuevo."
+    },
+    {
+      "key": "reflect",
+      "title": "Reflexione",
+      "body": "¿Por qué un permisivo en serie es más seguro que uno solo en Start? Ponga el contacto en la rama de Start y vea qué assertion falla.",
+      "checkpoint": "Un permisivo que solo condiciona Start deja que un motor en marcha ignore una protección abierta. El escenario muestra solo la lógica; no es una función de seguridad ni reemplaza un interbloqueo de protección certificado."
+    }
+  ],
+  "hints": [
+    {
+      "level": 1,
+      "text": "La energía debe pasar por Stop, por la protección y luego por Start o por el contacto de autorretención antes de llegar a la bobina Command."
+    },
+    {
+      "level": 2,
+      "text": "Inserte un contacto normalmente abierto de GuardClosed a la derecha del contacto de Stop y a la izquierda de la rama de Start. No lo ponga dentro de la rama."
+    }
+  ],
+  "faultCases": [
+    "El programa inicial no tiene el permisivo de la protección, así que cuando la protección se abre a los {{t:50}} ms el motor sigue funcionando y Start puede volver a arrancarlo; agregue un contacto normalmente abierto de GuardClosed en serie en el peldaño 1, antes de la rama de Start."
+  ]
+}

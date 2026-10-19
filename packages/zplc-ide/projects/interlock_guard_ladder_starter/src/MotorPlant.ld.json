@@ -1,0 +1,238 @@
+{
+  "name": "MotorPlant",
+  "description": "Motor start/stop with seal-in, a guard permissive and speed feedback.",
+  "version": "1.0.0",
+  "variables": {
+    "local": [],
+    "inputs": [
+      {
+        "name": "Start",
+        "type": "BOOL",
+        "address": "%I0.0",
+        "comment": "Start pushbutton: TRUE while pressed"
+      },
+      {
+        "name": "Stop",
+        "type": "BOOL",
+        "address": "%I0.1",
+        "comment": "Stop pushbutton: TRUE while pressed"
+      },
+      {
+        "name": "AtSpeed",
+        "type": "BOOL",
+        "address": "%I0.2",
+        "comment": "Speed feedback, written by the plant"
+      },
+      {
+        "name": "GuardClosed",
+        "type": "BOOL",
+        "address": "%I0.3",
+        "comment": "Guard limit switch: TRUE while the guard is closed"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "Command",
+        "type": "BOOL",
+        "address": "%Q0.0",
+        "comment": "Motor command; also the seal-in memory"
+      },
+      {
+        "name": "Running",
+        "type": "BOOL",
+        "address": "%Q0.1",
+        "comment": "Requested and at speed"
+      }
+    ]
+  },
+  "rungs": [
+    {
+      "id": "rung_1",
+      "number": 1,
+      "comment": "Start / stop with seal-in. The permissive contact on GuardClosed is missing: add it in series.",
+      "branches": [
+        {
+          "id": "branch_1",
+          "startCol": 2,
+          "endCol": 4,
+          "rows": [
+            0,
+            1
+          ]
+        }
+      ],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 2,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "stop",
+              "type": "contact_nc",
+              "variable": "Stop",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "start",
+              "type": "contact_no",
+              "variable": "Start",
+              "row": 0,
+              "col": 2
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "cmd",
+              "type": "coil",
+              "variable": "Command",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ],
+        [
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": {
+              "id": "seal",
+              "type": "contact_no",
+              "variable": "Command",
+              "row": 1,
+              "col": 2
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_2",
+      "number": 2,
+      "comment": "Running is the proof: the command is on and the plant reports speed.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "cmd2",
+              "type": "contact_no",
+              "variable": "Command",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "spd",
+              "type": "contact_no",
+              "variable": "AtSpeed",
+              "row": 0,
+              "col": 1
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "running",
+              "type": "coil",
+              "variable": "Running",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ]
+      ]
+    }
+  ],
+  "metadata": {
+    "author": "ZPLC Team",
+    "created": "2026-10-19",
+    "iecStandard": "IEC 61131-3",
+    "notes": []
+  }
+}

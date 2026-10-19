@@ -2978,6 +2978,186 @@
           ]
         }
       }
+    },
+    {
+      "id": "interlock-guard-ladder",
+      "version": 1,
+      "order": 18,
+      "module": 6,
+      "level": "intermediate",
+      "prerequisites": [
+        "pedestrian-crossing-states"
+      ],
+      "languages": [
+        "LD"
+      ],
+      "tracks": [
+        "simulation"
+      ],
+      "unsupported": {
+        "hardware": {
+          "reason": {
+            "en": "The lesson needs the motor plant model that answers your outputs, and a board has no motor attached to give that feedback.",
+            "es": "La lección necesita el modelo de planta del motor que responde a sus salidas, y una placa no tiene un motor conectado que dé esa realimentación."
+          },
+          "instead": {
+            "en": "Complete it in Simulation, which provides the motor and its run feedback.",
+            "es": "Complétela en Simulación, que aporta el motor y su realimentación de marcha."
+          }
+        }
+      },
+      "plant": "motor-v1",
+      "plantMap": {
+        "schemaVersion": 1,
+        "plant": "motor-v1",
+        "reads": {
+          "command": "MotorPlant.Command"
+        },
+        "drives": {
+          "atSpeed": "MotorPlant.AtSpeed"
+        }
+      },
+      "estimatedMinutes": 20,
+      "starter": {
+        "project": "interlock_guard_ladder_starter",
+        "program": "src/MotorPlant.ld.json"
+      },
+      "solution": {
+        "project": "interlock_guard_ladder",
+        "program": "src/MotorPlant.ld.json"
+      },
+      "scenario": {
+        "id": "MotorInterlock",
+        "path": "tests/motor-interlock.scenario.json",
+        "sha256": "6ffc4a74fd39e3cec015cfce8d79a9860e8fd254f143438bea0d61d1794b8a63",
+        "tickMs": 10,
+        "durationMs": 140,
+        "assertions": 12,
+        "canonical": "{\"durationMs\":140,\"events\":[{\"atMs\":0,\"set\":{\"MotorPlant.GuardClosed\":true,\"MotorPlant.Start\":false,\"MotorPlant.Stop\":false}},{\"atMs\":10,\"set\":{\"MotorPlant.Start\":true}},{\"atMs\":20,\"set\":{\"MotorPlant.Start\":false}},{\"atMs\":50,\"set\":{\"MotorPlant.GuardClosed\":false}},{\"atMs\":60,\"set\":{\"MotorPlant.Start\":true}},{\"atMs\":70,\"set\":{\"MotorPlant.Start\":false}},{\"atMs\":80,\"set\":{\"MotorPlant.GuardClosed\":true}},{\"atMs\":90,\"set\":{\"MotorPlant.Start\":true}},{\"atMs\":100,\"set\":{\"MotorPlant.Start\":false}},{\"atMs\":120,\"set\":{\"MotorPlant.Stop\":true}},{\"atMs\":130,\"set\":{\"MotorPlant.Stop\":false}}],\"expectations\":[{\"atMs\":0,\"condition\":{\"MotorPlant.Command\":false,\"MotorPlant.Running\":false},\"kind\":\"AT\"},{\"atMs\":10,\"condition\":{\"MotorPlant.Command\":true,\"MotorPlant.Running\":false},\"kind\":\"AT\"},{\"atMs\":30,\"condition\":{\"MotorPlant.Command\":true,\"MotorPlant.Running\":true},\"kind\":\"AT\"},{\"atMs\":50,\"condition\":{\"MotorPlant.Command\":false,\"MotorPlant.Running\":false},\"kind\":\"AT\"},{\"atMs\":60,\"condition\":{\"MotorPlant.Command\":false},\"kind\":\"AT\"},{\"atMs\":80,\"condition\":{\"MotorPlant.Command\":false},\"kind\":\"AT\"},{\"atMs\":90,\"condition\":{\"MotorPlant.Command\":true},\"kind\":\"AT\"},{\"atMs\":110,\"condition\":{\"MotorPlant.Command\":true,\"MotorPlant.Running\":true},\"kind\":\"AT\"},{\"atMs\":120,\"condition\":{\"MotorPlant.Command\":false},\"kind\":\"AT\"},{\"condition\":{\"MotorPlant.Command\":false},\"forMs\":20,\"fromMs\":60,\"kind\":\"FOR\"},{\"condition\":{\"MotorPlant.Running\":false},\"fromMs\":50,\"kind\":\"FALLING\",\"withinMs\":0},{\"condition\":{\"MotorPlant.Command\":false,\"MotorPlant.Running\":true},\"kind\":\"NEVER\"}],\"id\":\"MotorInterlock\",\"plant\":\"motor-v1\",\"schemaVersion\":1,\"tickMs\":10}"
+      },
+      "regressionScenarios": [],
+      "text": {
+        "en": {
+          "title": "Interlocks and permissives in Ladder: a guard that stops the motor",
+          "summary": "Add a permissive contact to a Ladder seal-in so that the motor runs only while a guard is closed, and check it against the motor plant and its speed feedback.",
+          "scope": "Tests provide native POSIX host evidence for a built-in motor plant model with one 10 ms task; they do not establish a safety function, guard wiring, stopping time, HIL, or certification.",
+          "objectives": [
+            "Tell a permissive, a condition that must be true for the output to be on, from a command.",
+            "Place a permissive in series with the seal-in so that it drops the motor and also stops Start from restarting it."
+          ],
+          "stages": [
+            {
+              "key": "objective",
+              "title": "Objective",
+              "body": "In src/MotorPlant.ld.json rung 1 holds the motor with a seal-in and rung 2 sets Running when the plant reports AtSpeed. Add a normally open contact on GuardClosed in series in rung 1, before the Start branch, so that an open guard drops Command and blocks Start.",
+              "checkpoint": "Command is on only while the guard is closed, and Running still needs the plant's AtSpeed."
+            },
+            {
+              "key": "predict",
+              "title": "Predict",
+              "body": "Before running, predict Command and Running at 30 ms, when the guard opens at 50 ms, and at 60 ms when Start is pressed with the guard still open.",
+              "checkpoint": "Both ON at 30 ms; both OFF at 50 ms; Command OFF at 60 ms, because Start is ignored."
+            },
+            {
+              "key": "edit",
+              "title": "Edit",
+              "body": "Correct this starter omission, save it, then press Check: The starter has no permissive on the guard, so when the guard opens at 50 ms the motor keeps running and Start can restart it; add a normally open contact on GuardClosed in series in rung 1, before the Start branch.",
+              "checkpoint": "The visible scenario must pass with saved host evidence."
+            },
+            {
+              "key": "run",
+              "title": "Run",
+              "body": "Press Check. Studio runs your saved program against the scenario of this lesson, with the motor plant answering your outputs.",
+              "checkpoint": "The scenario is named MotorInterlock and contains 12 assertions."
+            },
+            {
+              "key": "observe",
+              "title": "Observe",
+              "body": "Compare 30, 50 and 80 ms: the motor is at speed at 30 ms, drops when the guard opens at 50 ms, and does not restart at 80 ms when the guard closes, because Start was released.",
+              "checkpoint": "Command stays OFF from 60 to 80 ms and rises again only at 90 ms, with a new Start."
+            },
+            {
+              "key": "reflect",
+              "title": "Reflect",
+              "body": "Why is a permissive in series safer than a permissive only on Start? Place the contact in the Start branch and see which assertion fails.",
+              "checkpoint": "A permissive that gates only Start lets a running motor ignore an open guard. The scenario shows the logic only; it is not a safety function and does not replace a certified guard interlock."
+            }
+          ],
+          "hints": [
+            {
+              "level": 1,
+              "text": "Power must pass through Stop, the guard and then either Start or the seal-in contact before it reaches the Command coil."
+            },
+            {
+              "level": 2,
+              "text": "Insert a normally open contact on GuardClosed to the right of the Stop contact and to the left of the Start branch. Do not put it inside the branch."
+            }
+          ],
+          "faultCases": [
+            "The starter has no permissive on the guard, so when the guard opens at 50 ms the motor keeps running and Start can restart it; add a normally open contact on GuardClosed in series in rung 1, before the Start branch."
+          ]
+        },
+        "es": {
+          "title": "Interbloqueos y permisivos en Ladder: una protección que detiene el motor",
+          "summary": "Agregue un contacto permisivo a una autorretención en Ladder para que el motor funcione solo con la protección cerrada, y compruébelo contra la planta del motor y su realimentación de velocidad.",
+          "scope": "La evidencia de Tests es del runtime nativo POSIX para un modelo de planta de motor integrado con una tarea de 10 ms; no establece una función de seguridad, el cableado de la protección, el tiempo de parada, HIL ni certificación.",
+          "objectives": [
+            "Distinga un permisivo, una condición que debe ser verdadera para que la salida esté encendida, de una orden.",
+            "Coloque un permisivo en serie con la autorretención para que apague el motor y además impida que Start lo vuelva a arrancar."
+          ],
+          "stages": [
+            {
+              "key": "objective",
+              "title": "Objetivo",
+              "body": "En src/MotorPlant.ld.json el peldaño 1 mantiene el motor con una autorretención y el peldaño 2 enciende Running cuando la planta informa AtSpeed. Agregue un contacto normalmente abierto de GuardClosed en serie en el peldaño 1, antes de la rama de Start, para que una protección abierta apague Command y bloquee Start.",
+              "checkpoint": "Command está encendido solo mientras la protección está cerrada, y Running sigue necesitando AtSpeed de la planta."
+            },
+            {
+              "key": "predict",
+              "title": "Prediga",
+              "body": "Antes de ejecutar, prediga Command y Running a los 30 ms, cuando la protección se abre a los 50 ms y a los 60 ms cuando se pulsa Start con la protección aún abierta.",
+              "checkpoint": "Ambos en ON a los 30 ms; ambos en OFF a los 50 ms; Command en OFF a los 60 ms, porque Start se ignora."
+            },
+            {
+              "key": "edit",
+              "title": "Edite",
+              "body": "Corrija esta omisión del programa inicial, guárdelo y pulse Comprobar: El programa inicial no tiene el permisivo de la protección, así que cuando la protección se abre a los 50 ms el motor sigue funcionando y Start puede volver a arrancarlo; agregue un contacto normalmente abierto de GuardClosed en serie en el peldaño 1, antes de la rama de Start.",
+              "checkpoint": "El escenario visible debe pasar con evidencia guardada del host."
+            },
+            {
+              "key": "run",
+              "title": "Ejecute",
+              "body": "Pulse Comprobar. Studio ejecuta el programa guardado contra el escenario de esta lección, con la planta del motor respondiendo a sus salidas.",
+              "checkpoint": "El escenario se llama MotorInterlock y contiene 12 assertions."
+            },
+            {
+              "key": "observe",
+              "title": "Observe",
+              "body": "Compare 30, 50 y 80 ms: el motor está a velocidad a los 30 ms, cae cuando la protección se abre a los 50 ms y no vuelve a arrancar a los 80 ms cuando la protección se cierra, porque Start ya se soltó.",
+              "checkpoint": "Command sigue en OFF de 60 a 80 ms y sube de nuevo solo a los 90 ms, con un Start nuevo."
+            },
+            {
+              "key": "reflect",
+              "title": "Reflexione",
+              "body": "¿Por qué un permisivo en serie es más seguro que uno solo en Start? Ponga el contacto en la rama de Start y vea qué assertion falla.",
+              "checkpoint": "Un permisivo que solo condiciona Start deja que un motor en marcha ignore una protección abierta. El escenario muestra solo la lógica; no es una función de seguridad ni reemplaza un interbloqueo de protección certificado."
+            }
+          ],
+          "hints": [
+            {
+              "level": 1,
+              "text": "La energía debe pasar por Stop, por la protección y luego por Start o por el contacto de autorretención antes de llegar a la bobina Command."
+            },
+            {
+              "level": 2,
+              "text": "Inserte un contacto normalmente abierto de GuardClosed a la derecha del contacto de Stop y a la izquierda de la rama de Start. No lo ponga dentro de la rama."
+            }
+          ],
+          "faultCases": [
+            "El programa inicial no tiene el permisivo de la protección, así que cuando la protección se abre a los 50 ms el motor sigue funcionando y Start puede volver a arrancarlo; agregue un contacto normalmente abierto de GuardClosed en serie en el peldaño 1, antes de la rama de Start."
+          ]
+        }
+      }
     }
   ],
   "course": {
