@@ -121,7 +121,7 @@ describe('UX-029 i18n guard: a hard-coded message in a plain module', () => {
   const found = (text: string, path = module('keyboard')): string[] => violationsOf({ path, text }).map((violation) => `${violation.rule}:${violation.snippet}`);
 
   it('UX-029 finds a sentence in say, title, label, detail and message, and the first argument of announce()', () => {
-    expect(found("export const a = (n: number) => ({ say: `Deleted ${n} elements.` });")).toEqual(['hard-coded-message:`Deleted ${']);
+    expect(found("export const a = (n: number) => ({ say: `Deleted ${n} elements.` });")).toEqual(['hard-coded-message:`Deleted ${n} elements.`']);
     expect(found("const a = { title: 'Variable the coil writes' };")).toEqual(["hard-coded-message:'Variable the coil writes'"]);
     expect(found("const a = { label: ok ? 'Wires' : 'No wires', detail: 'Output of the block' };")).toHaveLength(3);
     expect(found("log({ type: 'info', message: 'Program deployed and stopped.', source: 'runtime' });")).toHaveLength(1);
