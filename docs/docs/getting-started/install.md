@@ -49,11 +49,44 @@ The steps of each system are under [First launch](#first-launch).
 | --- | --- | --- |
 | [GitHub releases](https://github.com/eduardojvieira/ZPLC/releases) | Live | Installers for Windows, macOS and Linux, the standalone command line and MCP server, a bill of materials and checksums. |
 | Build from source | Works on Linux and macOS | The path of [Run Studio from source](./index.md#run-studio-from-source). |
-| Homebrew cask, Arch User Repository | Not set up | There is nothing to install from them yet. |
+| Homebrew cask, Arch User Repository | Not live yet | The pipeline can write both for every published release ([below](#homebrew-and-arch-linux-not-live-yet)); there is nothing to install until the project creates the tap and the AUR package. |
 | Microsoft Store, winget | Not yet submittable | The channels need a signing identity or an account the project does not have. |
 
 Do not install ZPLC from a package manager or a store: until a channel above is
 live, any package that says it is ZPLC Studio did not come from this project.
+
+## Homebrew and Arch Linux (not live yet)
+
+Two more channels are prepared and are not live yet. A workflow that runs when a
+person publishes a release (`update-channels.yml`) reads the `SHA256SUMS` of that
+release and writes the files below. It has not run yet, and the tap and the AUR
+package do not exist until the project creates them, so do not look for them
+today.
+
+- **Homebrew (not yet live).** Until the tap exists, nothing installs from it. The
+  cask that the pipeline will write for it installs the `.zip` of your
+  architecture, pinned by its SHA-256, with one fully qualified command:
+
+  ```text
+  brew install --cask eduardojvieira/zplc/zplc-ide
+  ```
+
+  The cask removes the macOS quarantine flag from the installed application
+  (decision D-01, option A), so it opens with no dialog. That skips the check of
+  macOS that the DMG route shows you; what protects you instead is the checksum,
+  which the package manager verifies before it installs, and the build attestation
+  of the release. If you prefer the dialogs, use the DMG and its steps above. If
+  the package manager starts to reject casks that do this, the cask will no longer
+  remove the flag and the steps of the DMG apply.
+- **Arch Linux (not yet live).** Until the AUR package exists, nothing installs
+  from it. The package, `zplc-ide-bin`, will repackage the `.deb` of the release
+  for `x86_64` and `aarch64`, with the checksum of the release and the udev rule of
+  the boards. It will be installed with an AUR helper or `makepkg -si`, and only
+  after the project creates it. It is built from the same file as the `.deb`, so
+  the checksum you would check is the same.
+
+The `.dmg`, the `.zip`, the `.deb`, the `.rpm` and the AppImage stay published for
+every release whether or not these channels are live.
 
 ## What is signed
 
@@ -86,10 +119,15 @@ prerelease.
 | Linux, other distributions | `ZPLC.IDE-2.0.0-rc.3-linux-x86_64.AppImage` |
 
 The rc.3 files were built by a preview build and uploaded by hand. Releases that
-the release pipeline makes name their files from one template,
-`ZPLC.IDE-<version>-<system>-<architecture>.<extension>`, and add `setup-unsigned`
-or `portable-unsigned` to the two Windows files, for example
-`ZPLC.IDE-<version>-win-x64-setup-unsigned.exe`. The `zplc-cli-<version>-<system>-<architecture>`
+the release pipeline makes name all fourteen installer files from one template,
+`zplc-ide-<version>-<system>-<architecture>[-<variant>].<extension>`, in lower case
+with no spaces (only the `AppImage` extension keeps its capitals). The variant is
+`setup` or `portable` for the two Windows files, and `unsigned` follows it while the
+Windows files carry no signature, for example `zplc-ide-<version>-win-x64-setup-unsigned.exe`.
+On macOS and Windows the architecture is `x64` or `arm64`; on Linux each package
+format spells it as its own tooling does: `amd64` for the `.deb`, `x86_64` for the
+`.rpm` and the AppImage, `aarch64` for the arm64 `.rpm`. The pipeline checks the
+names and the type of every file it produced before it bundles them. The `zplc-cli-<version>-<system>-<architecture>`
 and `zplc-mcp-<version>-<system>-<architecture>` executables of those releases need
 no installer and no Node.js or Bun; they are not signed either.
 

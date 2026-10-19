@@ -1,0 +1,108 @@
+name: Update install channels
+
+# REL-004, REL-014: after a person publishes a release, the Homebrew cask and the AUR package get its version and
+# checksums, read from the SHA256SUMS that the release published. Nothing here runs for a draft, and nothing is edited by
+# hand. The two pushes need the secrets below; without them the job still renders both files and says what it skipped.
+# Authored, not executed in CI: the tap repository and the AUR account are created by the owner (OA-10).
+#
+#   HOMEBREW_TAP_TOKEN   a token that may push to eduardojvieira/homebrew-zplc
+#   AUR_SSH_KEY          the private key of the AUR account that maintains zplc-ide-bin
+#   AUR_KNOWN_HOSTS      the pinned host key of aur.archlinux.org, recorded by the owner (a scan at run time would trust
+#                        whatever answers)
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Tag of a published release, for example v2.0.0-rc.4
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: update-channels
+  cancel-in-progress: false
+
+jobs:
+  update-channels:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      RELEASE_TAG: ${{ github.event.release.tag_name || inputs.tag }}
+      TAP_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+      AUR_SSH_KEY: ${{ secrets.AUR_SSH_KEY }}
+      AUR_KNOWN_HOSTS: ${{ secrets.AUR_KNOWN_HOSTS }}
+    steps:
+      - name: Checkout the templates
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@f4d14e03ff726c06358e5557344e1da148b56cf7 # v1.2.2
+        with:
+          bun-version: 1.3.14
+
+      - name: Render the cask and the PKGBUILD from the checksums of the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          version="${RELEASE_TAG#v}"
+          mkdir -p channels/sums channels/tap/Casks channels/aur
+          gh release download "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" --pattern SHA256SUMS --dir channels/sums
+          bun tools/ci/release/render-channels.ts --version "$version" --sums channels/sums/SHA256SUMS \
+            --cask channels/tap/Casks/zplc-ide.rb --pkgbuild channels/aur/PKGBUILD
+
+      - name: Upload the rendered files
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: channels
+          path: |
+            channels/tap/Casks/zplc-ide.rb
+            channels/aur/PKGBUILD
+          retention-days: 30
+
+      - name: Push the cask to the tap
+        if: ${{ env.TAP_TOKEN != '' }}
+        run: |
+          set -euo pipefail
+          git clone --depth 1 "https://x-access-token:${TAP_TOKEN}@github.com/eduardojvieira/homebrew-zplc.git" tap
+          install -D channels/tap/Casks/zplc-ide.rb tap/Casks/zplc-ide.rb
+          cd tap
+          git config user.name "zplc release pipeline"
+          git config user.email "noreply@users.noreply.github.com"
+          git add Casks/zplc-ide.rb
+          if git diff --cached --quiet; then echo "The tap already holds ${RELEASE_TAG}."; exit 0; fi
+          git commit -m "zplc-ide ${RELEASE_TAG#v}"
+          git push
+
+      - name: Push the package to the AUR
+        if: ${{ env.AUR_SSH_KEY != '' && env.AUR_KNOWN_HOSTS != '' }}
+        run: |
+          set -euo pipefail
+          install -d -m 700 ~/.ssh
+          printf '%s\n' "$AUR_SSH_KEY" > ~/.ssh/aur
+          chmod 600 ~/.ssh/aur
+          printf '%s\n' "$AUR_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          export GIT_SSH_COMMAND='ssh -i ~/.ssh/aur -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes'
+          git clone ssh://aur@aur.archlinux.org/zplc-ide-bin.git aur
+          cp channels/aur/PKGBUILD aur/PKGBUILD
+          # .SRCINFO is written by makepkg itself, which only an Arch image has
+          docker run --rm -e HOST_UID="$(id -u)" -v "$PWD/aur:/pkg" archlinux:base-devel bash -c \
+            'useradd -m builder && chown -R builder /pkg && (cd /pkg && su builder -c "makepkg --printsrcinfo > .SRCINFO") && chown -R "$HOST_UID" /pkg'
+          cd aur
+          git config user.name "zplc release pipeline"
+          git config user.email "noreply@users.noreply.github.com"
+          git add PKGBUILD .SRCINFO
+          if git diff --cached --quiet; then echo "The AUR already holds ${RELEASE_TAG}."; exit 0; fi
+          git commit -m "zplc-ide-bin ${RELEASE_TAG#v}"
+          git push
+
+      - name: Say which channels were not updated
+        if: ${{ always() }}
+        run: |
+          [ -n "$TAP_TOKEN" ] || echo "- The Homebrew tap was not updated: HOMEBREW_TAP_TOKEN is not set." >> "$GITHUB_STEP_SUMMARY"
+          { [ -n "$AUR_SSH_KEY" ] && [ -n "$AUR_KNOWN_HOSTS" ]; } || echo "- The AUR was not updated: AUR_SSH_KEY or AUR_KNOWN_HOSTS is not set." >> "$GITHUB_STEP_SUMMARY"
+          true

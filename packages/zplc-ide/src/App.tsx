@@ -36,7 +36,7 @@ import { startAutosave } from './store/autosave';
 import { trackProjectSources } from './store/projectSources';
 import { startExternalChangeWatch } from './store/externalChangeWatch';
 import { initializeSettings, useAppSettings } from './store/useAppSettings';
-import { runUpdateCheck } from './ipc/updateCheckBridge';
+import { startUpdateCheck } from './ipc/updateCheckBridge';
 import { UpdateNoticeBanner } from './components/UpdateNotice';
 import { useUpdateNotice } from './store/updateNotice';
 import { ZPLC_REPO_VERSION } from './version';
@@ -112,15 +112,10 @@ function App() {
 
   // The update check (IDE-010) runs only while the user has it turned on: at start, and when it is turned on.
   const checkForUpdates = useAppSettings((s) => s.settings.checkForUpdates);
-  useEffect(() => {
-    if (!checkForUpdates) return undefined;
-    let current = true;
-    void runUpdateCheck(window.electronAPI?.updateCheck, ZPLC_REPO_VERSION).then((result) => {
-      // A newer release shows the dismissible notice; an answer that says nothing, or that could not be had, shows nothing (REL-021).
-      if (current) useUpdateNotice.getState().report(result);
-    });
-    return () => { current = false; };
-  }, [checkForUpdates]);
+  useEffect(() => startUpdateCheck(checkForUpdates, window.electronAPI?.updateCheck, ZPLC_REPO_VERSION, (result) => {
+    // A newer release shows the dismissible notice; an answer that says nothing, or that could not be had, shows nothing (REL-021).
+    useUpdateNotice.getState().report(result);
+  }), [checkForUpdates]);
 
   // Modified files are kept in the main process a moment after the last keystroke, so that a crash loses nothing (IDE-006).
   useEffect(() => startRecoveryPersistence(useIDEStore), []);

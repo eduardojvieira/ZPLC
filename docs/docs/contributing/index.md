@@ -49,6 +49,8 @@ running, so read them as an order of magnitude.
 | Firmware on Linux | `bun run setup:firmware`, then `bun run test:firmware` | about 6 min once, then about 4 min | Zephyr suites pass on `native_sim`, QEMU and the size budgets |
 | Documentation | `bun run check:docs` | about 15 s warm, 1 min cold | References are fresh, every name a page mentions exists, no sentence claims a capability that nothing executed backs, pages are complete, English and Spanish pages match in structure, every sample and configuration fragment marked as such builds and gives the result its fence states, every image is a captured one, and the site builds |
 | Release rehearsal | `bun run release:rehearsal` | about 5 s | The checks the release workflow runs before it builds anything |
+| Brand assets | `bun tools/ci/brand/generate-icons.ts --check` | under 1 s | Every icon and the social card were generated from the one mark, `tools/brand/mark.svg`; regenerate them without `--check` (needs `rsvg-convert` and Python with Pillow) |
+| Release output checks | `bun test ./tools/ci` | about 5 s | The installer names and containers, the launch records, the run outcome and the cask and AUR package renderers behave as their fixtures say; the workflow that runs them on produced files has not run in CI yet |
 
 A pass at one level never proves a higher one: a host test says nothing about a
 board. [Firmware testing](../development/firmware-testing.md) explains what each

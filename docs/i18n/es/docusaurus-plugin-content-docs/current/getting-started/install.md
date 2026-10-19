@@ -50,12 +50,45 @@ Los pasos de cada sistema están en [Primer inicio](#primer-inicio).
 | --- | --- | --- |
 | [Versiones de GitHub](https://github.com/eduardojvieira/ZPLC/releases) | Activo | Instaladores para Windows, macOS y Linux, la línea de comandos y el servidor MCP independientes, una lista de materiales y sumas de verificación. |
 | Compilar desde el código fuente | Funciona en Linux y macOS | El camino de [Ejecutar Studio desde el código fuente](./index.md#ejecutar-studio-desde-el-código-fuente). |
-| Homebrew cask, Arch User Repository | No configurado | Todavía no hay nada que instalar desde ellos. |
+| Homebrew cask, Arch User Repository | Todavía no está activo | El pipeline puede escribir ambos para cada versión publicada ([más abajo](#homebrew-y-arch-linux-todavía-no-están-activos)); no hay nada que instalar hasta que el proyecto cree el tap y el paquete de AUR. |
 | Microsoft Store, winget | Todavía no se puede enviar | Los canales necesitan una identidad de firma o una cuenta que el proyecto no tiene. |
 
 No instale ZPLC desde un gestor de paquetes ni una tienda: mientras un canal de la
 tabla no esté activo, cualquier paquete que diga ser ZPLC Studio no salió de este
 proyecto.
+
+## Homebrew y Arch Linux (todavía no están activos)
+
+Hay dos canales más preparados que todavía no están activos. Un flujo de trabajo
+que se ejecuta cuando una persona publica una versión (`update-channels.yml`) lee
+el `SHA256SUMS` de esa versión y escribe los archivos de abajo. Aún no se ha
+ejecutado, y el tap y el paquete de AUR no existen hasta que el proyecto los cree,
+así que no los busque hoy.
+
+- **Homebrew (todavía no activo).** Hasta que exista el tap, no se instala nada
+  desde él. El cask que el pipeline escribirá para él instala el `.zip` de su
+  arquitectura, fijado por su SHA-256, con un solo comando completo:
+
+  ```text
+  brew install --cask eduardojvieira/zplc/zplc-ide
+  ```
+
+  El cask quita de la aplicación instalada la marca de cuarentena de macOS
+  (decisión D-01, opción A), de modo que se abre sin ningún diálogo. Eso omite la
+  comprobación de macOS que le muestra el camino del DMG; lo que lo protege es la
+  suma de verificación, que el gestor de paquetes comprueba antes de instalar, y
+  la atestación de compilación de la versión. Si prefiere los diálogos, use el DMG
+  y sus pasos de arriba. Si el gestor de paquetes empieza a rechazar los cask que
+  hacen esto, el cask ya no quitará la marca y valdrán los pasos del DMG.
+- **Arch Linux (todavía no activo).** Hasta que exista el paquete de AUR, no se
+  instala nada desde él. El paquete, `zplc-ide-bin`, reempaquetará el `.deb` de la
+  versión para `x86_64` y `aarch64`, con la suma de verificación de la versión y la
+  regla udev de las placas. Se instalará con un ayudante de AUR o con `makepkg -si`,
+  y solo cuando el proyecto lo cree. Sale del mismo archivo que el `.deb`, así que
+  la suma que comprobaría es la misma.
+
+El `.dmg`, el `.zip`, el `.deb`, el `.rpm` y el AppImage siguen publicados en cada
+versión, estén o no activos estos canales.
 
 ## Qué está firmado
 
@@ -88,10 +121,16 @@ antigua; desplácese hasta la versión preliminar 2.0.
 | Linux, otras distribuciones | `ZPLC.IDE-2.0.0-rc.3-linux-x86_64.AppImage` |
 
 Los archivos de rc.3 se construyeron con una compilación preliminar y se
-subieron a mano. Las versiones que hace el pipeline de publicación nombran sus
-archivos con una sola plantilla, `ZPLC.IDE-<versión>-<sistema>-<arquitectura>.<extensión>`,
-y agregan `setup-unsigned` o `portable-unsigned` a los dos archivos de Windows, por
-ejemplo `ZPLC.IDE-<versión>-win-x64-setup-unsigned.exe`. Los ejecutables
+subieron a mano. Las versiones que hace el pipeline de publicación nombran los
+catorce archivos de instalación con una sola plantilla,
+`zplc-ide-<versión>-<sistema>-<arquitectura>[-<variante>].<extensión>`, en minúsculas
+y sin espacios (solo la extensión `AppImage` conserva sus mayúsculas). La variante es
+`setup` o `portable` en los dos archivos de Windows, y `unsigned` la sigue mientras
+esos archivos no lleven firma, por ejemplo `zplc-ide-<versión>-win-x64-setup-unsigned.exe`.
+En macOS y Windows la arquitectura es `x64` o `arm64`; en Linux cada formato de
+paquete la escribe como lo hace su propia herramienta: `amd64` en el `.deb`, `x86_64`
+en el `.rpm` y en el AppImage, `aarch64` en el `.rpm` de arm64. El pipeline comprueba
+los nombres y el tipo de cada archivo que produjo antes de agruparlos. Los ejecutables
 `zplc-cli-<versión>-<sistema>-<arquitectura>` y `zplc-mcp-<versión>-<sistema>-<arquitectura>`
 de esas versiones no necesitan instalador ni Node.js ni Bun; tampoco están firmados.
 
