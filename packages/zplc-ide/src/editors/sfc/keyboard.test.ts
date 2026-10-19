@@ -261,3 +261,33 @@ describe('LNG-012 sequential function chart palette', () => {
     expect(ids).toEqual(commands);
   });
 });
+
+describe('UX-033 aligning and distributing steps and transitions from the keyboard', () => {
+  const placed = (): Session => {
+    const session = start();
+    session.state = {
+      nodes: [
+        { id: 'one', type: 'step', position: { x: 100, y: 0 }, measured: { width: 100, height: 60 }, selected: true, data: { name: 'One' } },
+        { id: 'two', type: 'step', position: { x: 160, y: 200 }, measured: { width: 100, height: 60 }, selected: true, data: { name: 'Two' } },
+        { id: 't1', type: 'transition', position: { x: 300, y: 100 }, measured: { width: 120, height: 80 }, selected: true, data: { condition: 'Go' } },
+      ],
+      edges: [],
+    };
+    return session;
+  };
+
+  it('UX-033 aligns the selected steps and transitions in one gesture, and says how many', () => {
+    const session = press(placed(), ['Alt+Shift+ArrowLeft']);
+    expect(session.state.nodes.map((node) => node.position.x)).toEqual([100, 100, 100]);
+    expect(session.commits).toBe(1);
+    expect(session.said.at(-1)).toContain('3');
+  });
+
+  it('UX-033 refuses to distribute two elements, with the reason, and changes nothing', () => {
+    const session = placed();
+    session.state.nodes[2]!.selected = false;
+    press(session, ['Ctrl+Alt+Shift+V']);
+    expect(session.last?.refused).toBe(true);
+    expect(session.commits).toBe(0);
+  });
+});

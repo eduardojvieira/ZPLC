@@ -199,6 +199,16 @@ Nothing in the visual editors, the controller view, the Watch table or the notif
 
 Evidence level: host. `src/editors/signalVocabulary.test.tsx` renders a Ladder contact and coil, an FBD block, an SFC step and an SFC transition with each of the five states and checks both the token and the glyph, and `src/theme/signalTone.test.ts` checks the contrast of each state in the three themes. The palette and the glyphs are for a person to judge by eye.
 
+## Fit, zoom and alignment
+
+Ladder, FBD and SFC share these gestures (UX-033). Every one is a command of the key table, so it is also in the command list (`F1`) of the editor, and each one says what it did through the shared announcer, which a screen reader reads.
+
+- **Fit to view** (`Ctrl+Alt+0`, or the Fit to view button). FBD and SFC fit the whole diagram in the window with a margin and never zoom in past 100%, so a diagram of two blocks stays its natural size; the fit button of the canvas controls and the key use the same options. Ladder has no zoom: its rungs already use the width of the view, so fit shows every rung from its left edge.
+- **Zoom range.** FBD and SFC zoom from 10% to 400% (it was 50% to 150%). At 10% a diagram nine times wider than the window is still whole on the screen, which a chart of a hundred blocks needs; at 400% a pin is as large as a button.
+- **Alignment and distribution** in FBD and SFC, on the selected blocks, steps and transitions: left (`Alt+Shift+Left`), right (`Alt+Shift+Right`), top (`Alt+Shift+Up`), bottom (`Alt+Shift+Down`), centre on a vertical line (`Alt+Shift+H`), centre on a horizontal line (`Alt+Shift+V`), and an even gap between three or more elements, from left to right (`Ctrl+Alt+Shift+H`) or from top to bottom (`Ctrl+Alt+Shift+V`). One command is one undo step, and the selection stays. Aligning needs two selected elements and distributing needs three; with fewer, the command changes nothing and says why.
+
+Evidence level: host. `src/editors/arrange.test.ts` checks the arithmetic on boxes of different sizes, `src/editors/fbd/keyboard.test.ts` and `src/editors/sfc/keyboard.test.ts` press the keys on a diagram and count one gesture each, and `src/editors/viewBounds.test.ts` pins the range.
+
 ## Focus in the visual editors
 
 A node, an edge, a toolbox button and the field that edits a name in Ladder, FBD and SFC show the same focus ring as every other control of Studio, in every theme: two pixels in the light and dark themes, three in high contrast, and the system highlight colour in forced-colours mode. The diagram library removes the outline of its nodes and edges, so `src/index.css` puts the ring back on them, and no visual-editor source carries a focus class of its own. `src/theme/focusRing.test.ts` fails when one does, or when the ring is missing from the nodes.

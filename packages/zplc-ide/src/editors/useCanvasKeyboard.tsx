@@ -6,6 +6,8 @@
 
 import { useCallback, useMemo, useState, type KeyboardEvent as ReactKeyboardEvent, type ReactElement, type RefObject } from 'react';
 import type { Edge, Node } from '@xyflow/react';
+import { announce } from '../utils/announce';
+import { isArrangeCommand } from './arrange';
 import { actionFor, actionsOf, keysBelongToControl, keysText, type VisualEditor } from './keymap';
 import { freeTextOf, type PickerItem } from './picker';
 import SearchList from './SearchList';
@@ -84,11 +86,13 @@ export function useCanvasKeyboard<Argument>(options: CanvasKeyboardOptions<Argum
   const [ask, setAsk] = useState<Ask | null>(null);
   const [status, setStatus] = useState('');
 
-  const apply = useCallback((outcome: CanvasOutcome) => {
+  const apply = useCallback((outcome: CanvasOutcome, announced = false) => {
     const nodes = outcome.nodes.map(decorate);
     if (outcome.changed) commit(nodes, outcome.edges);
     else show(nodes, outcome.edges);
-    setStatus(outcome.say);
+    // an alignment is said once, by the shared announcer; the status region says the rest (UX-033)
+    if (announced) announce(outcome.say, outcome.refused ? 'assertive' : 'polite');
+    else setStatus(outcome.say);
     const prompt = outcome.prompt;
     // a node that is replaced while the canvas is rebuilt takes the focus with it: the canvas itself holds it meanwhile
     if (outcome.changed && !prompt && !wrapperRef.current?.contains(document.activeElement)) wrapperRef.current?.focus();
@@ -139,7 +143,7 @@ export function useCanvasKeyboard<Argument>(options: CanvasKeyboardOptions<Argum
       });
       return;
     }
-    apply(commands.run(nodesRef.current ?? [], edgesRef.current ?? [], command, argument));
+    apply(commands.run(nodesRef.current ?? [], edgesRef.current ?? [], command, argument), isArrangeCommand(command));
   }, [apply, commands, edgesRef, editorCommand, nodesRef]);
 
   const onKeyDown = useCallback((event: ReactKeyboardEvent<HTMLElement>) => {

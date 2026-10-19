@@ -49,6 +49,8 @@ import { useIDEStore } from '../../store/useIDEStore';
 import { SignalValue } from '../../ui';
 import { animationMs } from '../../theme/motion';
 import { useMonitor } from '../../monitoring/useMonitor';
+import { announce } from '../../utils/announce';
+import { FIT_VIEW_OPTIONS, ZOOM_MAX, ZOOM_MIN } from '../viewBounds';
 import { useElementSelection } from '../elementSelection';
 import { useElementBreakpoints } from '../elementBreakpoints';
 import { markBreakpointNodes } from '../breakpointMarks';
@@ -416,6 +418,11 @@ function SFCEditorInner({
 
   // The clipboard, and the breakpoints of the selected steps and transitions
   const editorCommand = useCallback((command: string) => {
+    if (command === 'fitView') {
+      void fitView({ ...FIT_VIEW_OPTIONS, duration: animationMs(200) });
+      announce(t('editor.fit.diagram'));
+      return;
+    }
     if (command === 'toggleBreakpoint') {
       const elements = nodesRef.current.filter((node) => node.selected).map(elementOfNode).filter((element): element is SourceElementId => element !== undefined);
       for (const element of elements) breakpoints.toggle(element);
@@ -440,7 +447,7 @@ function SFCEditorInner({
     ];
     const nextEdges = [...edgesRef.current.map((edge) => ({ ...edge, selected: false })), ...pasted.edges.map((edge) => ({ ...edge, selected: false, style: { stroke: 'var(--visual-wire)', strokeWidth: 2 }, markerEnd: { type: MarkerType.ArrowClosed, width: 10, height: 10 } }))];
     commitGraph(nextNodes, nextEdges);
-  }, [breakpoints, commitGraph, debugActive, elementOfNode, model, readOnly, stepDebugInfo, transitionDebugInfo]);
+  }, [breakpoints, commitGraph, debugActive, elementOfNode, fitView, model, readOnly, stepDebugInfo, transitionDebugInfo]);
 
   const commands = useMemo(() => sfcCanvasCommands(model), [model]);
   const keyboard = useCanvasKeyboard({
@@ -497,11 +504,11 @@ function SFCEditorInner({
         connectionMode={ConnectionMode.Strict}
         defaultViewport={{ x: 50, y: 50, zoom: 1 }}
         fitView
-        fitViewOptions={{ padding: 0.24 }}
+        fitViewOptions={FIT_VIEW_OPTIONS}
         snapToGrid
         snapGrid={[10, 10]}
-        minZoom={0.5}
-        maxZoom={1.5}
+        minZoom={ZOOM_MIN}
+        maxZoom={ZOOM_MAX}
         style={{ backgroundColor: 'var(--color-surface-900)' }}
         proOptions={{ hideAttribution: true }}
       >

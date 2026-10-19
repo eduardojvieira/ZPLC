@@ -32,6 +32,8 @@ import { declaredSymbols } from '../symbols';
 import { copyLDRungFragment, ldSelectionIds as selectionIds, ldSelectionOfIds as selectionOfIds, NO_LD_SELECTION, pasteLDRungFragment, type LDClipboardFragment, type LDSelection } from './graphModel';
 import { useMonitor } from '../../monitoring/useMonitor';
 import { debugValuesOf } from './debugValues';
+import { announce } from '../../utils/announce';
+import { Button, Tooltip } from '../../ui';
 import { useElementSelection } from '../elementSelection';
 import { useElementBreakpoints } from '../elementBreakpoints';
 import { parseElement, rungElement, type SourceElementId } from '../../models/sourceElements';
@@ -193,7 +195,7 @@ const NO_SELECTION = NO_LD_SELECTION;
 /** What the keys do in a diagram that is not edited (a program is running): moving, reading and the breakpoint. */
 const READ_ONLY_COMMANDS: ReadonlySet<string> = new Set([
   'cursorLeft', 'cursorRight', 'cursorUp', 'cursorDown', 'rowStart', 'rowEnd', 'previousRung', 'nextRung', 'firstRung', 'lastRung',
-  'toggleBreakpoint', 'showCommands', 'clearSelection',
+  'toggleBreakpoint', 'showCommands', 'clearSelection', 'fitView',
 ]);
 
 export default function LDEditor({ model, onChange, readOnly = false }: LDEditorProps) {
@@ -460,6 +462,11 @@ export default function LDEditor({ model, onChange, readOnly = false }: LDEditor
       case 'showCommands':
         setAsk({ kind: 'commands' });
         return;
+      case 'fitView':
+        // Ladder has no zoom: its rungs use the width of the view, so fitting shows every rung from its left edge
+        for (const scroller of rootRef.current?.querySelectorAll<HTMLElement>('[data-ld-rung-id] .overflow-x-auto') ?? []) scroller.scrollLeft = 0;
+        announce(t('editor.fit.ladder'));
+        return;
       case 'clearSelection':
         select(NO_SELECTION);
         setPropertiesFor(null);
@@ -467,7 +474,7 @@ export default function LDEditor({ model, onChange, readOnly = false }: LDEditor
       default:
         applyOutcome(runLDCommand(latestModelRef.current, at, command, argument));
     }
-  }, [applyOutcome, breakpoints, commit, onChange, readOnly, select, selectedRungId]);
+  }, [applyOutcome, breakpoints, commit, onChange, readOnly, select, selectedRungId, t]);
 
   // The keys of the table (../keymap.ts): the cursor and the commands of the ladder
   const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLDivElement>) => {
@@ -543,6 +550,8 @@ export default function LDEditor({ model, onChange, readOnly = false }: LDEditor
             </span>
           </div>
 
+          <div className="flex items-center gap-2">
+          <Tooltip content={`${t('editor.fit.button')} (Ctrl+Alt+0)`}><Button variant="secondary" size="sm" onClick={() => runCommand('fitView')}>{t('editor.fit.button')}</Button></Tooltip>
           {!readOnly && (
             <button
               onClick={handleAddRung}
@@ -554,6 +563,7 @@ export default function LDEditor({ model, onChange, readOnly = false }: LDEditor
               {t('ld.addRung')}
             </button>
           )}
+          </div>
         </div>
 
         {/* Rungs container */}

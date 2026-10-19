@@ -210,6 +210,16 @@ Nada en los editores visuales, la vista del controlador, la tabla Watch ni la li
 
 Nivel de evidencia: host. `src/editors/signalVocabulary.test.tsx` dibuja un contacto y una bobina de Ladder, un bloque FBD, un paso SFC y una transición SFC con cada uno de los cinco estados y comprueba tanto el token como el glifo, y `src/theme/signalTone.test.ts` comprueba el contraste de cada estado en los tres temas. La paleta y los glifos son para que una persona los juzgue a simple vista.
 
+## Ajustar, acercar y alinear
+
+Ladder, FBD y SFC comparten estos gestos (UX-033). Cada uno es un comando de la tabla de teclas, así que también está en la lista de comandos (`F1`) del editor, y cada uno dice lo que hizo mediante el anunciador compartido, que lee un lector de pantalla.
+
+- **Ajustar a la vista** (`Ctrl+Alt+0`, o el botón Ajustar a la vista). FBD y SFC ajustan todo el diagrama a la ventana con un margen y nunca acercan más del 100 %, así que un diagrama de dos bloques conserva su tamaño natural; el botón de ajuste de los controles del lienzo y la tecla usan las mismas opciones. Ladder no tiene zoom: sus peldaños ya usan el ancho de la vista, así que ajustar muestra cada peldaño desde su borde izquierdo.
+- **Rango de zoom.** FBD y SFC acercan de 10 % a 400 % (antes de 50 % a 150 %). Al 10 % un diagrama nueve veces más ancho que la ventana sigue entero en pantalla, lo que necesita un esquema de cien bloques; al 400 % un pin es tan grande como un botón.
+- **Alineación y distribución** en FBD y SFC, sobre los bloques, pasos y transiciones seleccionados: izquierda (`Alt+Mayús+Izquierda`), derecha (`Alt+Mayús+Derecha`), arriba (`Alt+Mayús+Arriba`), abajo (`Alt+Mayús+Abajo`), centrar sobre una línea vertical (`Alt+Mayús+H`), centrar sobre una línea horizontal (`Alt+Mayús+V`) y un espacio uniforme entre tres o más elementos, de izquierda a derecha (`Ctrl+Alt+Mayús+H`) o de arriba abajo (`Ctrl+Alt+Mayús+V`). Un comando es un paso de deshacer y la selección se conserva. Alinear necesita dos elementos seleccionados y distribuir necesita tres; con menos, el comando no cambia nada y dice por qué.
+
+Nivel de evidencia: host. `src/editors/arrange.test.ts` comprueba la aritmética con cajas de distinto tamaño, `src/editors/fbd/keyboard.test.ts` y `src/editors/sfc/keyboard.test.ts` pulsan las teclas sobre un diagrama y cuentan un gesto cada una, y `src/editors/viewBounds.test.ts` fija el rango.
+
 ## Foco en los editores visuales
 
 Un nodo, una arista, un botón de la caja de herramientas y el campo que edita un nombre en Ladder, FBD y SFC muestran el mismo anillo de foco que cualquier otro control de Studio, en todos los temas: dos píxeles en los temas claro y oscuro, tres en alto contraste y el color de resaltado del sistema en el modo de colores forzados. La biblioteca de diagramas quita el contorno de sus nodos y aristas, así que `src/index.css` vuelve a ponerlo en ellos, y ningún archivo de los editores visuales lleva una clase de foco propia. `src/theme/focusRing.test.ts` falla cuando alguno la lleva, o cuando el anillo falta en los nodos.

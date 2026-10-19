@@ -54,6 +54,8 @@ import { useElementBreakpoints } from '../elementBreakpoints';
 import { markBreakpointNodes } from '../breakpointMarks';
 import { blockElement, parseElement, type SourceElementId } from '../../models/sourceElements';
 import { t } from '../../i18n';
+import { announce } from '../../utils/announce';
+import { FIT_VIEW_OPTIONS, ZOOM_MAX, ZOOM_MIN } from '../viewBounds';
 
 // =============================================================================
 // Props
@@ -342,6 +344,11 @@ function FBDEditorInner({
 
   // The clipboard, and the breakpoints of the selected blocks
   const editorCommand = useCallback((command: string) => {
+    if (command === 'fitView') {
+      void fitView({ ...FIT_VIEW_OPTIONS, duration: animationMs(200) });
+      announce(t('editor.fit.diagram'));
+      return;
+    }
     if (command === 'toggleBreakpoint') {
       for (const node of nodesRef.current.filter((candidate) => candidate.selected)) breakpoints.toggle(blockElement(node.id));
       return;
@@ -368,7 +375,7 @@ function FBDEditorInner({
     ];
     const nextEdges = [...edgesRef.current.map((edge) => ({ ...edge, selected: false })), ...connectionsToEdges(addedConnections)];
     commitGraph(nextNodes, nextEdges);
-  }, [breakpoints, commitGraph, model, onOpenMonitor, readOnly]);
+  }, [breakpoints, commitGraph, fitView, model, onOpenMonitor, readOnly]);
 
   const wrapperRef = useRef<HTMLDivElement>(null);
   const commands = useMemo(() => fbdCanvasCommands(model, projectBlocks), [model, projectBlocks]);
@@ -437,8 +444,9 @@ function FBDEditorInner({
         defaultViewport={{ x: 50, y: 50, zoom: 1 }}
         snapToGrid
         snapGrid={[10, 10]}
-        minZoom={0.5}
-        maxZoom={1.5}
+        minZoom={ZOOM_MIN}
+        maxZoom={ZOOM_MAX}
+        fitViewOptions={FIT_VIEW_OPTIONS}
         // Use CSS variable for background
         style={{ backgroundColor: 'var(--color-surface-900)' }}
         proOptions={{ hideAttribution: true }}

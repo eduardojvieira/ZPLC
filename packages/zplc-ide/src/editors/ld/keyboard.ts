@@ -83,7 +83,7 @@ export const LD_MODEL_COMMANDS: readonly string[] = [
 ];
 
 /** The commands of the table that the editor runs because they need the screen: the clipboard, the breakpoint, the list. */
-export const LD_EDITOR_COMMANDS: readonly string[] = ['copyRung', 'pasteRung', 'toggleBreakpoint', 'showCommands', 'clearSelection'];
+export const LD_EDITOR_COMMANDS: readonly string[] = ['copyRung', 'pasteRung', 'toggleBreakpoint', 'showCommands', 'clearSelection', 'fitView'];
 
 const QUICK_INSERT: Record<string, LDInsert> = {
   insertContact: { type: 'contact_no', category: 'contact' },

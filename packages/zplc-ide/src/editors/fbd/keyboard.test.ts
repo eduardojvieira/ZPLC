@@ -354,3 +354,42 @@ describe('LNG-012 function block diagram palette', () => {
     expect(ids).toEqual(commands);
   });
 });
+
+describe('UX-033 aligning and distributing blocks from the keyboard', () => {
+  const placed = (): Session => {
+    const session = start();
+    session.state = {
+      nodes: [
+        { id: 'a', type: 'logicGate', position: { x: 100, y: 40 }, measured: { width: 60, height: 20 }, selected: true, data: {} },
+        { id: 'b', type: 'logicGate', position: { x: 30, y: 90 }, measured: { width: 120, height: 40 }, selected: true, data: {} },
+        { id: 'c', type: 'logicGate', position: { x: 200, y: 10 }, measured: { width: 80, height: 30 }, selected: true, data: {} },
+      ],
+      edges: [],
+    };
+    return session;
+  };
+
+  it('UX-033 aligns the selected blocks to the left with one key, as one gesture, and says so', () => {
+    const session = press(placed(), ['Alt+Shift+ArrowLeft']);
+    expect(session.state.nodes.map((node) => node.position.x)).toEqual([30, 30, 30]);
+    expect(session.commits).toBe(1);
+    expect(session.said.at(-1)).toContain('3');
+  });
+
+  it('UX-033 centres, then distributes, with the keys of the table, one gesture each', () => {
+    const session = press(placed(), ['Alt+Shift+V', 'Ctrl+Alt+Shift+H']);
+    expect(session.state.nodes.map((node) => node.position.y)).toEqual([60, 50, 55]);
+    expect(session.commits).toBe(2);
+  });
+
+  it('UX-033 refuses to align one block and gives the canvas back as it was', () => {
+    const session = placed();
+    session.state.nodes[1]!.selected = false;
+    session.state.nodes[2]!.selected = false;
+    const before = session.state.nodes;
+    press(session, ['Alt+Shift+ArrowRight']);
+    expect(session.last?.refused).toBe(true);
+    expect(session.commits).toBe(0);
+    expect(session.state.nodes).toBe(before);
+  });
+});
