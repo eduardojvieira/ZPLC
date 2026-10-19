@@ -8,6 +8,11 @@ export function nativeSimulationEnvironment(
 ): NodeJS.ProcessEnv {
   const childEnvironment = { ...environment };
   delete childEnvironment.ZPLC_NATIVE_SCENARIO_VIRTUAL_CLOCK;
+  // COM-009: a simulation talks to the Modbus server and the MQTT broker that its own runtime starts on 127.0.0.1, and to
+  // nothing else: a broker named in the environment of the application is not a peer of a simulation.
+  childEnvironment.ZPLC_NATIVE_COMM = '1';
+  childEnvironment.ZPLC_NATIVE_LOOPBACK = '1';
+  delete childEnvironment.ZPLC_NATIVE_MQTT_BROKER;
   if (!isDev) {
     childEnvironment.ZPLC_NATIVE_SIM_BIN = path.join(
       resourcesPath,

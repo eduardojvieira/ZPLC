@@ -362,6 +362,23 @@ static void test_handshake(void)
         TEST_ASSERT_CONTAINS(response, "\"options_hash\":\"", "Handshake build reports the options hash");
     }
     TEST_ASSERT(event[0] == '\0', "Handshake does not emit async event");
+    TEST_ASSERT(strstr(response, "communication-endpoints") == NULL,
+                "A session with no loopback endpoints does not advertise them (COM-009)");
+
+    /* COM-009: the endpoints of the session are told in the hello, with their reason, so that Studio can show them */
+    zplc_native_runtime_set_endpoints("degraded", "Modbus 1502, MQTT 1883");
+    result = zplc_native_runtime_session_handle_request(
+        &session,
+        "{\"id\":\"req-2\",\"type\":\"request\",\"method\":\"session.hello\",\"params\":{\"client_name\":\"zplc-ide\",\"client_version\":\"1.5.0\",\"protocol_version\":\"1.0\"}}",
+        response,
+        sizeof(response),
+        event,
+        sizeof(event));
+    TEST_ASSERT(result > 0, "Handshake with endpoints produced a response");
+    TEST_ASSERT_CONTAINS(response,
+                         "{\"name\":\"communication-endpoints\",\"status\":\"degraded\",\"reason\":\"Modbus 1502, MQTT 1883\"}]",
+                         "The hello lists the communication endpoints as the last feature, with their reason");
+    zplc_native_runtime_set_endpoints(NULL, NULL);
 
     zplc_native_runtime_session_shutdown(&session);
 }

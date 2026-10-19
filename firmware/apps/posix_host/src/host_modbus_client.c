@@ -30,7 +30,7 @@
 /* the names of the Zephyr socket API, on the BSD one */
 #define zsock_addrinfo addrinfo
 #define zsock_pollfd pollfd
-#define zsock_getaddrinfo getaddrinfo
+#define zsock_getaddrinfo host_getaddrinfo
 #define zsock_freeaddrinfo freeaddrinfo
 #define zsock_socket socket
 #define zsock_fcntl fcntl
@@ -49,6 +49,24 @@
 #define ZVFS_O_NONBLOCK O_NONBLOCK
 
 static uint32_t s_timeout_ms = ZPLC_HOST_MODBUS_TIMEOUT_MS_DEFAULT;
+
+/* COM-009: in a simulation with loopback endpoints a Modbus TCP request goes to the simulated server whatever address
+ * the program names. The MQTT client connects through zplc_host_tcp_connect() below and keeps its own address. */
+static volatile uint16_t s_redirect_port;
+static __thread int t_direct;
+
+void zplc_host_modbus_redirect(uint16_t port) { s_redirect_port = port; }
+
+static int host_getaddrinfo(const char *node, const char *service, const struct addrinfo *hints,
+                            struct addrinfo **res) {
+  char port[8];
+
+  if (s_redirect_port != 0U && t_direct == 0) {
+    (void)snprintf(port, sizeof(port), "%u", (unsigned)s_redirect_port);
+    return getaddrinfo("127.0.0.1", port, hints, res);
+  }
+  return getaddrinfo(node, service, hints, res);
+}
 
 void zplc_host_modbus_set_timeout_ms(uint32_t timeout_ms) { s_timeout_ms = timeout_ms; }
 
@@ -98,5 +116,10 @@ int zplc_modbus_rtu_client_write_coil(uint8_t slave_id, uint16_t addr, bool stat
 }
 
 int zplc_host_tcp_connect(const char *host, uint16_t port, uint32_t timeout_ms) {
-  return tcp_connect_socket(host, port, k_uptime_get() + (int64_t)timeout_ms);
+  int sock;
+
+  t_direct = 1;
+  sock = tcp_connect_socket(host, port, k_uptime_get() + (int64_t)timeout_ms);
+  t_direct = 0;
+  return sock;
 }
