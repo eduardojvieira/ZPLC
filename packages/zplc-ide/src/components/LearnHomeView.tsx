@@ -44,7 +44,7 @@ export function LearnHomeView(props: LearnHomeViewProps) {
   const { t } = useT();
   const heading = useRef<HTMLHeadingElement>(null);
   const importRef = useRef<HTMLInputElement>(null);
-  // The page takes the keyboard when it opens (UX-025); Escape closes it.
+  // The page takes the keyboard when it opens (UX-025); Escape closes it (bound by `LearnHome`, which owns the state).
   useEffect(() => { heading.current?.focus(); }, []);
   const continueTitle = continueId ? view.titles[continueId] ?? '' : '';
   const levelText = (level: CourseModuleView['level']) => t(`learn.level.${level}` as MessageKey);
@@ -82,7 +82,7 @@ export function LearnHomeView(props: LearnHomeViewProps) {
   };
 
   return (
-    <section aria-labelledby="learn-home-title" data-learn-home onKeyDown={(event) => { if (event.key === 'Escape') onClose(); }} className="h-full min-h-0 overflow-y-auto bg-[var(--color-surface-900)] px-4 py-6 font-sans text-sm text-[var(--color-surface-200)]">
+    <section aria-labelledby="learn-home-title" data-learn-home className="h-full min-h-0 overflow-y-auto bg-[var(--color-surface-900)] px-4 py-6 font-sans text-sm text-[var(--color-surface-200)]">
       <div className="mx-auto max-w-4xl space-y-6">
         <header className="flex flex-wrap items-start justify-between gap-3 border-b border-[var(--color-surface-600)] pb-4">
           <div className="min-w-0">

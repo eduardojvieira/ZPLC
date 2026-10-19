@@ -60,6 +60,9 @@ async function unlockAllLessons(app: App): Promise<void> {
   await app.eval(`(() => { const key = 'zplc-ide-settings'; const stored = JSON.parse(localStorage.getItem(key) || '{}'); const target = stored.settings ?? stored; target.unlockAllLessons = true; localStorage.setItem(key, JSON.stringify(stored)); })()`);
   await app.cdp.command('Page.reload');
   await app.until('the Welcome screen', async () => await app.visible(button('Open project', 'contains')) || undefined);
+  // A page that was just reloaded has no focused element until the window has the focus again; a keyboard journey starts from there.
+  await app.cdp.command('Emulation.setFocusEmulationEnabled', { enabled: true });
+  await app.cdp.command('Page.bringToFront');
 }
 
 /** Chooses a lesson in the Learn view of the sidebar by the start of its title, as a learner clicks it. */

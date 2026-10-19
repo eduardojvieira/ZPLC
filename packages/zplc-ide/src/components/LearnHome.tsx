@@ -29,6 +29,15 @@ export function LearnHome() {
   const busyRef = useRef(false);
   const busy = useLearnUi((state) => state.starting);
   useEffect(() => { if (!useLearnProgress.getState().loaded) void useLearnProgress.getState().load(); }, []);
+  // Escape closes the home from wherever the focus is, unless a dialog or a menu has it (they close first).
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent): void => {
+      if (event.key !== 'Escape' || event.defaultPrevented || window.document.querySelector('[role="dialog"], [role="alertdialog"], [role="menu"]')) return;
+      useLearnUi.getState().hideHome();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
 
   const view = buildCourseView(LESSON_INDEX, document, { locale, unlockAll });
   const progress: LearnProgress | null = document;
