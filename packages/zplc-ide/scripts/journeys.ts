@@ -4014,6 +4014,34 @@ export const JOURNEYS: Journey[] = [
       assert(disk(file) === original, 'The file on disk must be as it was.');
     },
   },
+  {
+    name: '55 The density setting makes controls and rows smaller on every screen, and the setting is one the person reaches from the Welcome screen', example: 'motor_start_stop', proves: ['UX-008'], partly: [],
+    run: async (app, { project }) => {
+      /** The sizes the density tokens give: the control and row tokens on the root, and what two kit controls actually measure. */
+      const measure = () => app.eval<{ density: string; control: number; row: number; spacing: number; field: number; button: number }>(`(() => {
+        const style = getComputedStyle(document.documentElement);
+        const height = (selector) => { const element = document.querySelector(selector); return element ? element.getBoundingClientRect().height : Number.NaN; };
+        return { density: document.documentElement.dataset.density, control: parseFloat(style.getPropertyValue('--control-height')), row: parseFloat(style.getPropertyValue('--row-height')), spacing: parseFloat(style.getPropertyValue('--spacing')), field: height('[data-setting="density"]'), button: height('.ui-button:not([data-variant="bare"])') };
+      })()`);
+      await app.click(css('[data-welcome-preferences] summary'), 'the Preferences disclosure of the Welcome screen');
+      await app.until('the preferences on the Welcome screen', async () => await app.visible(css('[data-app-preferences]')) || undefined);
+      const comfortable = await measure();
+      assert(comfortable.density === 'comfortable', `The density starts as ${comfortable.density}.`);
+
+      await selectOption(app, '[data-setting="density"]', 'Compact');
+      const compact = await measure();
+      assert(compact.density === 'compact', `The root says ${compact.density}, not compact.`);
+      for (const key of ['control', 'row', 'spacing', 'field'] as const) {
+        assert(compact[key] < comfortable[key], `Compact does not shrink ${key}: ${JSON.stringify({ comfortable, compact })}`);
+      }
+
+      // The same setting reaches the other screen: the project workbench measures with the compact tokens.
+      await openFolder(app, project);
+      const inProject = await measure();
+      assert(inProject.density === 'compact' && inProject.control === compact.control && inProject.row === compact.row, `The workbench does not use the compact tokens: ${JSON.stringify(inProject)}`);
+      assert(Number.isFinite(inProject.button) && inProject.button <= compact.control + 0.5, `A button of the workbench is taller than the compact control height: ${JSON.stringify(inProject)}`);
+    },
+  },
 ];
 
 /** Walks a native select to the option with this text with the arrow keys, as a keyboard user would. */

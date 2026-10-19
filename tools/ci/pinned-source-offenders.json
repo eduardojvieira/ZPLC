@@ -601,5 +601,15 @@
     ],
     "replacement": "contract",
     "reason": "Feeds the real zplc_hal.h and zplc_sched_core.h to the port interface generator to prove that every documented function and its contract text come from the headers. Replace by exporting the port interface through the generated contract, so the check compares data with data."
+  },
+  {
+    "file": "packages/zplc-ide/src/theme/typography.test.ts",
+    "requirement": "VF-006",
+    "added": "2026-10-19",
+    "reads": [
+      "packages/zplc-ide/src/ui/kit.css"
+    ],
+    "replacement": "dom",
+    "reason": "UX-007 and UX-008 are properties of the kit style sheet (which rules cast a shadow, which sizes come from the density tokens) and the repository has no browser-free renderer for computed styles. Journeys 41 and 55 measure the same in a real window; replace the text match by computed-style assertions in the DOM environment (VF-007)."
   }
 ]

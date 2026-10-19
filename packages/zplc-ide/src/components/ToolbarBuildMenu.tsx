@@ -7,6 +7,7 @@ import { useT } from '../i18n';
 import { shortcutText, withShortcut } from '../commands/shortcutLabels';
 import { ProjectExportItems } from './ProjectExportItems';
 import type { useDropdownMenu } from './useDropdownMenu';
+import { Button } from '../ui';
 
 export function BuildMenu({ menu, onCompile, onDownloadBytecode, onViewAssembly, hasCurrentCompileResult }: {
   menu: ReturnType<typeof useDropdownMenu>;
@@ -19,7 +20,7 @@ export function BuildMenu({ menu, onCompile, onDownloadBytecode, onViewAssembly,
   const { t } = useT();
   return (
   <div className="relative" ref={menuRef} onKeyDown={(event) => { if (event.key === 'Escape') { event.preventDefault(); onClose(true); } }}>
-    <button
+    <Button variant="bare"
       ref={triggerRef}
       type="button"
       onClick={() => open ? onClose() : onOpen()}
@@ -28,16 +29,16 @@ export function BuildMenu({ menu, onCompile, onDownloadBytecode, onViewAssembly,
       aria-haspopup="menu"
       aria-expanded={open}
       aria-controls="toolbar-build-menu"
-      title={t('toolbar.build.label')}
+      tooltip={t('toolbar.build.label')}
     >
       <Hammer size={14} />
       <span>{t('toolbar.build.text')}</span>
       <ChevronDown size={12} className={`transition-transform ${open ? 'rotate-180' : ''}`} />
-    </button>
+    </Button>
 
     {open && (
       <div id="toolbar-build-menu" role="menu" aria-label={t('toolbar.build.label')} className="absolute left-0 top-full mt-1 py-1 w-44 bg-[var(--color-surface-700)] border border-[var(--color-surface-600)] rounded-lg shadow-lg z-50">
-        <button
+        <Button variant="bare"
           ref={firstItemRef}
           type="button"
           role="menuitem"
@@ -48,9 +49,9 @@ export function BuildMenu({ menu, onCompile, onDownloadBytecode, onViewAssembly,
           <Hammer size={14} />
           <span>{t('toolbar.compile.text')}</span>
           <span className="ml-auto text-xs text-[var(--color-surface-400)]">{shortcutText('build.compile')}</span>
-        </button>
+        </Button>
         <div className="h-px bg-[var(--color-surface-600)] my-1" />
-        <button
+        <Button variant="bare"
           type="button"
           role="menuitem"
           onClick={onDownloadBytecode}
@@ -60,8 +61,8 @@ export function BuildMenu({ menu, onCompile, onDownloadBytecode, onViewAssembly,
         >
           <Download size={14} />
           <span>{t('toolbar.download.text')}</span>
-        </button>
-        <button
+        </Button>
+        <Button variant="bare"
           type="button"
           role="menuitem"
           onClick={onViewAssembly}
@@ -71,7 +72,7 @@ export function BuildMenu({ menu, onCompile, onDownloadBytecode, onViewAssembly,
         >
           <FileCode size={14} />
           <span>{t('toolbar.assembly.text')}</span>
-        </button>
+        </Button>
         <div className="h-px bg-[var(--color-surface-600)] my-1" />
         <ProjectExportItems />
       </div>

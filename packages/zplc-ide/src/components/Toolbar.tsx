@@ -14,8 +14,7 @@
 
 import { useState, useRef, useEffect, useEffectEvent } from 'react';
 import { Settings, FileCode, Save } from 'lucide-react';
-import { useIDEStore } from '../store/useIDEStore';
-import { useActiveFileInfo, useToolbarState } from '../store/regionSubscriptions';
+import { useIDEStore } from '../store/useIDEStore'; import { useActiveFileInfo, useToolbarState } from '../store/regionSubscriptions';
 import { useT } from '../i18n';
 import { bindCommands, publishCommandState } from '../commands/bus';
 import type { CommandId } from '../commands/registry';
@@ -41,6 +40,7 @@ import { confirmReset, confirmStop, proceedAfterConfirmation } from './physicalA
 import { RunControls } from './ToolbarRunControls';
 import { ThemeMenu } from './ToolbarThemeMenu';
 import { BuildMenu } from './ToolbarBuildMenu';
+import { Button } from '../ui';
 
 // =============================================================================
 // Types
@@ -659,7 +659,7 @@ export function Toolbar({ debugController }: ToolbarProps) {
     <div role="toolbar" aria-label={t('toolbar.label')} className={`h-12 bg-[var(--color-surface-800)] border-b border-[var(--color-surface-600)] flex items-center px-3 gap-1.5 ${isElectronMac ? 'pl-20' : ''}`}>
       {/* Logo */}
       <div className="flex items-center gap-2 mr-2">
-        <div className="w-7 h-7 bg-[var(--color-accent-blue)] rounded flex items-center justify-center font-bold text-white text-xs">{t('toolbar.brandInitial')}</div>
+        <div className="w-7 h-7 bg-[var(--color-accent-blue)] rounded flex items-center justify-center font-bold text-[var(--color-on-accent)] text-xs">{t('toolbar.brandInitial')}</div>
         <span className="font-semibold text-[var(--color-surface-100)] text-sm hidden sm:inline">{t('toolbar.brand')}</span>
       </div>
 
@@ -667,32 +667,32 @@ export function Toolbar({ debugController }: ToolbarProps) {
       <div className="w-px h-6 bg-[var(--color-surface-600)]" />
 
       {/* Save Button */}
-      <button
+      <Button variant="bare"
         type="button"
         onClick={() => { void handleSaveFile(); }}
         disabled={!activeFile}
         className="focus-ring p-2 rounded hover:bg-[var(--color-surface-700)] text-[var(--color-surface-200)] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
         aria-label={withShortcut(t('toolbar.save.label'), 'file.save')}
-        title={withShortcut(t('toolbar.save.title'), 'file.save')}
+        tooltip={withShortcut(t('toolbar.save.title'), 'file.save')}
       >
         <Save size={18} />
-      </button>
+      </Button>
 
       {/* Separator */}
       <div className="w-px h-6 bg-[var(--color-surface-600)]" />
 
       {/* Generate ST button - only for visual languages */}
       {isVisualLanguage && (
-        <button
+        <Button variant="bare"
           type="button"
           onClick={handleGenerateST}
-          className="focus-ring flex items-center gap-1.5 px-2.5 py-1.5 rounded bg-purple-600 hover:bg-purple-500 text-white text-xs font-medium transition-colors"
+          className="focus-ring flex items-center gap-1.5 px-2.5 py-1.5 rounded bg-[var(--color-accent-purple)] hover:brightness-110 text-[var(--color-on-accent)] text-xs font-medium transition-colors"
           aria-label={t('toolbar.toSt.label')}
-          title={t('toolbar.toSt.label')}
+          tooltip={t('toolbar.toSt.label')}
         >
           <FileCode size={14} />
           <span className="hidden md:inline">{t('toolbar.toSt.text')}</span>
-        </button>
+        </Button>
       )}
 
       <BuildMenu
@@ -740,16 +740,16 @@ export function Toolbar({ debugController }: ToolbarProps) {
       <ThemeMenu />
 
       {/* Settings */}
-      <button
+      <Button variant="bare"
         type="button"
         onClick={toggleSettings}
         className="focus-ring p-1.5 rounded hover:bg-[var(--color-surface-700)] text-[var(--color-surface-200)] transition-colors max-[1100px]:hidden"
         aria-label={t('toolbar.settings')}
-        title={t('toolbar.settings')}
+        tooltip={t('toolbar.settings')}
         data-project-settings
       >
         <Settings size={16} />
-      </button>
+      </Button>
 
       {/* Generated Code Dialog */}
       <GeneratedCodeDialog

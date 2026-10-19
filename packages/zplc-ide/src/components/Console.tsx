@@ -509,7 +509,7 @@ export function Console({ debugController }: ConsoleProps) {
 
         <div role="tablist" aria-label={t('console.workbenchPanels')} className="flex h-full min-w-0 items-center overflow-x-auto">
           {tabs.map((tab) => (
-            <button
+            <Button variant="bare"
               key={tab.id}
               id={`console-tab-${tab.id}`}
               role="tab"
@@ -535,7 +535,7 @@ export function Console({ debugController }: ConsoleProps) {
               {tab.icon}
               <span>{tab.label}</span>
               {tab.count !== undefined && <span className={tab.id === 'problems' ? 'ml-1 hidden md:inline' : 'ml-1'}>{tab.count}</span>}
-            </button>
+            </Button>
           ))}
         </div>
 

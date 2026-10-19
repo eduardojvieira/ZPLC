@@ -11,7 +11,7 @@
 import { memo, useState, useCallback, useRef, useEffect } from 'react';
 import { Handle, Position, type NodeProps } from '@xyflow/react';
 import { Zap } from 'lucide-react';
-import { SignalChip } from '../../../ui';
+import { SignalChip, TextField, Tooltip } from '../../../ui';
 import { useT } from '../../../i18n';
 import { SIGNAL_CUES, SIGNAL_TEXT_CLASS, signalTone } from '../../../theme/signalTone';
 
@@ -108,19 +108,20 @@ const SFCTransitionNode = memo(({ id, data, selected }: NodeProps) => {
       {/* Transition bar is the IEC flow center; condition is an annotation to its right. */}
       <div className="absolute left-[28px] top-[38px] h-[3px] w-16">
         {/* The horizontal transition bar */}
-        <div
-          className={`relative
-            h-[3px] w-16 transition-all duration-200
-            ${barColorClass}
-            ${selected ? 'ring-2 ring-[var(--color-accent-blue)]' : ''}
-          `}
-          title={comment || condition}
-        >
-          {/* Fired indicator */}
-          {showFired && (
-            <Zap size={10} className="absolute -top-2 left-1/2 -translate-x-1/2 text-[var(--signal-true-fg)]" aria-label={t('sfc.transition.fired')} />
-          )}
-        </div>
+        <Tooltip content={comment || condition}>
+          <div
+            className={`relative
+              h-[3px] w-16 transition-all duration-200
+              ${barColorClass}
+              ${selected ? 'ring-2 ring-[var(--color-accent-blue)]' : ''}
+            `}
+          >
+            {/* Fired indicator */}
+            {showFired && (
+              <Zap size={10} className="absolute -top-2 left-1/2 -translate-x-1/2 text-[var(--signal-true-fg)]" aria-label={t('sfc.transition.fired')} />
+            )}
+          </div>
+        </Tooltip>
         
         {/* Condition text/editor with debug value */}
         <div
@@ -129,7 +130,7 @@ const SFCTransitionNode = memo(({ id, data, selected }: NodeProps) => {
           onDoubleClick={() => !debugActive && !readOnly && setIsEditing(true)}
         >
           {isEditing ? (
-            <input
+            <TextField bare
               aria-label={t('a11y.sfc.transitionCondition')}
               ref={inputRef}
               type="text"
@@ -155,7 +156,7 @@ const SFCTransitionNode = memo(({ id, data, selected }: NodeProps) => {
 
       {/* Debug status below transition */}
       {debugActive && (
-        <div className="absolute left-[132px] top-full mt-1 flex items-center gap-1 text-[9px]">
+        <div className="absolute left-[132px] top-full mt-1 flex items-center gap-1 text-[length:var(--font-size-caption)]">
           <span className="text-[var(--text-secondary)]">{isArmed ? t('editors.sfc.armed') : t('editors.sfc.waiting')}</span>
           <SignalChip tone={tone} detail={resultWord} />
         </div>
@@ -171,7 +172,7 @@ const SFCTransitionNode = memo(({ id, data, selected }: NodeProps) => {
 
       {/* Comment (if present and not debugging) */}
       {comment && !debugActive && (
-        <div data-sfc-transition-comment className="absolute left-[132px] top-[54px] w-[150px] px-1 text-left text-[10px] italic text-[var(--text-tertiary)] line-clamp-2">
+        <div data-sfc-transition-comment className="absolute left-[132px] top-[54px] w-[150px] px-1 text-left text-[length:var(--font-size-caption)] italic text-[var(--text-tertiary)] line-clamp-2">
           {comment}
         </div>
       )}

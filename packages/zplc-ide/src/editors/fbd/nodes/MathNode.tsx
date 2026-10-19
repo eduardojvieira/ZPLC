@@ -7,6 +7,7 @@
 import { memo } from 'react';
 import { Handle, Position, type NodeProps } from '@xyflow/react';
 import NodeComment from './NodeComment';
+import { Tooltip } from '../../../ui';
 
 interface MathData {
   type: string;
@@ -54,54 +55,55 @@ const MathNode = memo(({ id, data, selected }: NodeProps) => {
 
   return (
     <div className="zplc-visual-node flex flex-col items-center">
-      <div
-        className={`
-          w-16 rounded border-2 
-          zplc-visual-card relative bg-[var(--visual-node)] border-[var(--color-accent-blue)]
-          ${selected ? 'ring-2 ring-[var(--color-accent-blue)]' : ''}
-        `}
-        title={comment || type}
-      >
-        {/* Math body */}
-        <div 
-          className="relative flex items-center justify-center"
-          style={{ height: bodyHeight }}
+      <Tooltip content={comment || type}>
+        <div
+          className={`
+            w-16 rounded border-2 
+            zplc-visual-card relative bg-[var(--visual-node)] border-[var(--color-accent-blue)]
+            ${selected ? 'ring-2 ring-[var(--color-accent-blue)]' : ''}
+          `}
         >
-          {/* Input handles */}
-          {inputLabels.map((label, idx) => (
+          {/* Math body */}
+          <div 
+            className="relative flex items-center justify-center"
+            style={{ height: bodyHeight }}
+          >
+            {/* Input handles */}
+            {inputLabels.map((label, idx) => (
+              <Handle
+                key={label}
+                type="target"
+                position={Position.Left}
+                id={label}
+                className="!w-3 !h-3 !rounded-[2px] !bg-[var(--visual-wire)] !border-2 !border-[var(--color-surface-300)]"
+                style={{ 
+                  top: 12 + idx * portHeight + (bodyHeight - inputCount * portHeight) / 2
+                }}
+              />
+            ))}
+  
+            {/* Symbol */}
+            <span className={`font-bold text-[var(--text-primary)] ${type.length > 1 ? 'text-xs' : 'text-2xl'}`}>
+              {getSymbol()}
+            </span>
+  
+            {/* Output handle */}
             <Handle
-              key={label}
-              type="target"
-              position={Position.Left}
-              id={label}
-              className="!w-3 !h-3 !rounded-[2px] !bg-[var(--visual-wire)] !border-2 !border-[var(--color-surface-300)]"
-              style={{ 
-                top: 12 + idx * portHeight + (bodyHeight - inputCount * portHeight) / 2
-              }}
+              type="source"
+              position={Position.Right}
+              id="OUT"
+              className="!w-3 !h-3 !rounded-full !bg-[var(--visual-wire)] !border-2 !border-[var(--color-surface-300)]"
             />
-          ))}
-
-          {/* Symbol */}
-          <span className={`font-bold text-[var(--text-primary)] ${type.length > 1 ? 'text-xs' : 'text-2xl'}`}>
-            {getSymbol()}
-          </span>
-
-          {/* Output handle */}
-          <Handle
-            type="source"
-            position={Position.Right}
-            id="OUT"
-            className="!w-3 !h-3 !rounded-full !bg-[var(--visual-wire)] !border-2 !border-[var(--color-surface-300)]"
-          />
+          </div>
+  
+          {/* Type label */}
+          <div className="bg-[var(--color-surface-700)] px-1 py-0.5 text-center rounded-b border-t border-[var(--border-color)]">
+            <span className="text-[length:var(--font-size-caption)] text-[var(--text-tertiary)] font-mono">
+              {type}
+            </span>
+          </div>
         </div>
-
-        {/* Type label */}
-        <div className="bg-[var(--color-surface-700)] px-1 py-0.5 text-center rounded-b border-t border-[var(--border-color)]">
-          <span className="text-[10px] text-[var(--text-tertiary)] font-mono">
-            {type}
-          </span>
-        </div>
-      </div>
+      </Tooltip>
       <NodeComment nodeId={id} comment={comment} onChange={onChangeData} readOnly={readOnly} />
     </div>
   );

@@ -11,7 +11,7 @@ export const UX_001_COMPONENTS = {
   'text field': 'TextField',
   'number field': 'NumberField',
   select: 'Select',
-  'combo box': null,
+  'combo box': 'ComboBox',
   checkbox: 'Checkbox',
   switch: 'Switch',
   tabs: 'TabList',
@@ -21,9 +21,9 @@ export const UX_001_COMPONENTS = {
   'alert dialog': 'AlertDialog',
   popover: 'Popover',
   tooltip: 'Tooltip',
-  toast: null,
-  tree: null,
-  'data grid': null,
+  toast: 'Toast',
+  tree: 'Tree',
+  'data grid': 'DataGrid',
   toolbar: 'Toolbar',
   badge: 'Badge',
   'status dot': 'StatusDot',
@@ -32,4 +32,4 @@ export const UX_001_COMPONENTS = {
 } as const satisfies Record<string, string | null>;
 
 /** Beyond UX-001's list: the kit's own supporting components. */
-export const SUPPORTING_COMPONENTS = ['Textarea', 'RangeField', 'FileInput', 'PointMenu', 'DialogSurface', 'SignalChip', 'Spinner', 'TabPanel', 'LoadingState', 'ErrorState'] as const;
+export const SUPPORTING_COMPONENTS = ['Textarea', 'RangeField', 'FileInput', 'PointMenu', 'DialogSurface', 'SignalChip', 'Spinner', 'TabPanel', 'LoadingState', 'ErrorState', 'ToastRegion'] as const;

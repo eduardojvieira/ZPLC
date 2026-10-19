@@ -14,8 +14,7 @@ import { Trash2 } from 'lucide-react';
 import {
   type LDRung,
   type LDElement as LDElementType,
-  type LDCell,
-  isGridBasedRung,
+  type LDCell, isGridBasedRung,
   DEFAULT_GRID_CONFIG,
   convertToGridRung,
   normalizeGridRung,
@@ -29,6 +28,7 @@ import { cellElement } from '../../models/sourceElements';
 import type { ElementState } from '../../monitoring/elementStates';
 import { parseLDDropData, DRAG_MIME_TYPE, type LDDropData } from './ldDragData';
 import { t } from '../../i18n';
+import { Button, TextField, Tooltip } from '../../ui';
 
 // =============================================================================
 // Constants
@@ -441,7 +441,7 @@ function RungHeader({ rung, cols, rows, readOnly, onChange, editRequest }: RungH
       </span>
 
       {isEditing ? (
-        <input
+        <TextField bare
           aria-label={t('a11y.ld.comment')} ref={inputRef} type="text"
           value={commentDraft}
           onChange={(e) => setCommentDraft(e.target.value)}
@@ -452,17 +452,18 @@ function RungHeader({ rung, cols, rows, readOnly, onChange, editRequest }: RungH
           placeholder={t('editors.ld.addRungComment')}
         />
       ) : (
-        <span
-          onClick={handleStartEdit}
-          className={`flex-1 min-w-0 text-xs italic truncate ${readOnly ? '' : 'cursor-pointer hover:bg-[color-mix(in_srgb,var(--text-primary)_12%,transparent)] rounded px-1 -mx-1'
-            } ${rung.comment ? 'text-[var(--color-surface-200)]' : 'text-[var(--color-surface-400)]'}`}
-          title={readOnly ? rung.comment : t('editors.ld.editComment')}
-        >
-          {rung.comment ? `— ${rung.comment}` : (readOnly ? '' : t('editors.ld.clickToComment'))}
-        </span>
+        <Tooltip content={readOnly ? rung.comment : t('editors.ld.editComment')}>
+          <span
+            onClick={handleStartEdit}
+            className={`flex-1 min-w-0 text-xs italic truncate ${readOnly ? '' : 'cursor-pointer hover:bg-[color-mix(in_srgb,var(--text-primary)_12%,transparent)] rounded px-1 -mx-1'
+              } ${rung.comment ? 'text-[var(--color-surface-200)]' : 'text-[var(--color-surface-400)]'}`}
+          >
+            {rung.comment ? `— ${rung.comment}` : (readOnly ? '' : t('editors.ld.clickToComment'))}
+          </span>
+        </Tooltip>
       )}
 
-      <span className="text-[10px] text-[var(--color-surface-300)] shrink-0">
+      <span className="text-[length:var(--font-size-caption)] text-[var(--color-surface-300)] shrink-0">
         {cols}×{rows}
       </span>
     </div>
@@ -917,22 +918,21 @@ export default function LDRungGrid({
 
         {/* Delete button overlay for selected element */}
         {!readOnly && selectedElementPosition && onElementDelete && (
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              onElementDelete(selectedElementPosition.element);
-            }}
-            className="absolute w-6 h-6 flex items-center justify-center 
-                       bg-[var(--color-accent-red)] hover:opacity-90 text-[var(--color-on-accent)] rounded-full 
-                       transition-colors z-10"
-            style={{
-              left: selectedElementPosition.x,
-              top: selectedElementPosition.y + 28, // +28 for header height
-            }}
-            title={t('editors.ld.deleteElement')}
-          >
-            <Trash2 size={12} />
-          </button>
+          <Button variant="bare" aria-label={t('editors.ld.deleteElement')} tooltip={t('editors.ld.deleteElement')}
+              onClick={(e) => {
+                e.stopPropagation();
+                onElementDelete(selectedElementPosition.element);
+              }}
+              className="absolute w-6 h-6 flex items-center justify-center 
+                         bg-[var(--color-accent-red)] hover:opacity-90 text-[var(--color-on-accent)] rounded-full 
+                         transition-colors z-10"
+              style={{
+                left: selectedElementPosition.x,
+                top: selectedElementPosition.y + 28, // +28 for header height
+              }}
+            >
+              <Trash2 size={12} />
+            </Button>
         )}
       </div>
     </div>

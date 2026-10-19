@@ -33,7 +33,7 @@ import { copyLDRungFragment, ldSelectionIds as selectionIds, ldSelectionOfIds as
 import { useMonitor } from '../../monitoring/useMonitor';
 import { debugValuesOf } from './debugValues';
 import { announce } from '../../utils/announce';
-import { Button, Tooltip } from '../../ui';
+import { Button, TextField, Textarea, Tooltip } from '../../ui';
 import { LDRungMenu } from './LDRungMenu';
 import { isContextMenuKey, openContextMenuOn } from '../contextMenuKey';
 import { useElementSelection } from '../elementSelection';
@@ -90,12 +90,12 @@ function ElementProperties({ element, symbols = [], onChange, onClose }: Element
     <div className="zplc-visual-node absolute top-0 right-0 w-64 border rounded-lg z-50 p-3">
       <div className="flex items-center justify-between mb-3">
         <h3 className="text-sm font-bold text-[var(--text-primary)]">{t('ld.elementProperties')}</h3>
-        <button
+        <Button variant="bare"
           onClick={onClose}
           className="text-[var(--text-tertiary)] hover:text-[var(--text-primary)] text-lg"
         >
           ×
-        </button>
+        </Button>
       </div>
 
       <div className="space-y-3">
@@ -109,7 +109,7 @@ function ElementProperties({ element, symbols = [], onChange, onClose }: Element
         {!isFB && (
           <div>
             <label className="block text-xs text-[var(--text-tertiary)] mb-1">{t('a11y.ld.variable')}</label>
-            <input
+            <TextField bare
               aria-label={t('a11y.ld.variable')}
               type="text"
               value={variable}
@@ -128,7 +128,7 @@ function ElementProperties({ element, symbols = [], onChange, onClose }: Element
           <>
             <div>
               <label className="block text-xs text-[var(--text-tertiary)] mb-1">{t('ld.instanceName')}</label>
-              <input
+              <TextField bare
                 aria-label={t('a11y.ld.fbInstance')}
                 type="text"
                 value={fbInstance}
@@ -141,7 +141,7 @@ function ElementProperties({ element, symbols = [], onChange, onClose }: Element
             {isTimer ? (
               <div>
                 <label className="block text-xs text-[var(--text-tertiary)] mb-1">{t('ld.presetTimePt')}</label>
-                <input
+                <TextField bare
                   type="text"
                   value={presetTime}
                   onChange={(e) => setPresetTime(e.target.value)}
@@ -157,7 +157,7 @@ function ElementProperties({ element, symbols = [], onChange, onClose }: Element
         {/* Comment field - available for all element types */}
         <div>
           <label className="block text-xs text-[var(--text-tertiary)] mb-1">{t('ld.comment')}</label>
-          <textarea
+          <Textarea bare
             aria-label={t('a11y.ld.comment')}
             value={comment}
             onChange={(e) => setComment(e.target.value)}
@@ -168,20 +168,20 @@ function ElementProperties({ element, symbols = [], onChange, onClose }: Element
         </div>
 
         <div className="flex gap-2 pt-2">
-          <button
+          <Button variant="bare"
             onClick={handleSave}
             className="flex-1 bg-[var(--color-accent-blue)] hover:opacity-90 text-[var(--color-on-accent)] text-sm py-1.5 rounded
                        transition-colors"
           >
             {t('toolbar.save.title')}
-          </button>
-          <button
+          </Button>
+          <Button variant="bare"
             onClick={onClose}
             className="flex-1 bg-[var(--color-surface-700)] hover:bg-[color-mix(in_srgb,var(--text-primary)_12%,transparent)] text-[var(--text-secondary)] text-sm py-1.5 rounded
                        transition-colors"
           >
             {t('common.cancel')}
-          </button>
+          </Button>
         </div>
       </div>
     </div>
@@ -572,7 +572,7 @@ export default function LDEditor({ model, onChange, readOnly = false }: LDEditor
           <div className="flex items-center gap-2">
           <Tooltip content={`${t('editor.fit.button')} (Ctrl+Alt+0)`}><Button variant="secondary" size="sm" onClick={() => runCommand('fitView')}>{t('editor.fit.button')}</Button></Tooltip>
           {!readOnly && (
-            <button
+            <Button variant="bare"
               onClick={handleAddRung}
               className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-[var(--text-primary)]
                          bg-[var(--color-surface-700)] hover:bg-[color-mix(in_srgb,var(--text-primary)_12%,transparent)] rounded border border-[var(--border-color)]
@@ -580,7 +580,7 @@ export default function LDEditor({ model, onChange, readOnly = false }: LDEditor
             >
               <Plus size={14} />
               {t('ld.addRung')}
-            </button>
+            </Button>
           )}
           </div>
         </div>
@@ -592,12 +592,12 @@ export default function LDEditor({ model, onChange, readOnly = false }: LDEditor
               <div className="text-center">
                 <p className="text-[var(--text-tertiary)] text-sm">{t('ld.noRungsDefined')}</p>
                 {!readOnly && (
-                  <button
+                  <Button variant="bare"
                     onClick={handleAddRung}
                     className="mt-2 text-[var(--color-accent-blue)] hover:opacity-80 text-sm underline"
                   >
                     {t('ld.addYourFirstRung')}
-                  </button>
+                  </Button>
                 )}
               </div>
             </div>
@@ -610,25 +610,26 @@ export default function LDEditor({ model, onChange, readOnly = false }: LDEditor
                 const settable = breakpoints.canSet(at);
                 return (
                 <div key={rung.id} className={`relative group${paused ? ' ring-2 ring-[var(--color-accent-yellow)] rounded' : ''}`} data-ld-rung-id={rung.id}>
-                  <button
-                    type="button"
-                    data-breakpoint-rung={rung.id}
-                    aria-pressed={armed}
-                    aria-label={t('ld.breakpointOnRung', { number: rung.number })}
-                    title={!settable ? t('ld.thisRungHasNo')
+                  <Tooltip content={!settable ? t('ld.thisRungHasNo')
                         : armed && breakpoints.inactiveReason ? t('ld.breakpointOnRungIs', { number: rung.number, inactiveReason: breakpoints.inactiveReason })
                           : !breakpoints.mapped ? t('ld.toggleTheBreakpointOn', { number: rung.number })
-                            : t('ld.toggleTheBreakpointOn2', { number: rung.number })}
-                    disabled={!settable && !armed}
-                    onClick={() => breakpoints.toggle(at)}
-                    className={`absolute -left-3 top-2 z-10 h-3 w-3 rounded-full border transition-opacity disabled:opacity-30 ${
-                      armed
-                        ? breakpoints.inactiveReason
-                          ? 'border-[var(--color-surface-400)] bg-transparent'
-                          : 'border-[var(--color-accent-red)] bg-[var(--color-accent-red)]'
-                        : 'border-[var(--color-surface-500)] bg-transparent opacity-60 hover:opacity-100'
-                    }`}
-                  />
+                            : t('ld.toggleTheBreakpointOn2', { number: rung.number })}>
+                    <Button variant="bare"
+                      type="button"
+                      data-breakpoint-rung={rung.id}
+                      aria-pressed={armed}
+                      aria-label={t('ld.breakpointOnRung', { number: rung.number })}
+                      disabled={!settable && !armed}
+                      onClick={() => breakpoints.toggle(at)}
+                      className={`absolute -left-3 top-2 z-10 h-3 w-3 rounded-full border transition-opacity disabled:opacity-30 ${
+                        armed
+                          ? breakpoints.inactiveReason
+                            ? 'border-[var(--color-surface-400)] bg-transparent'
+                            : 'border-[var(--color-accent-red)] bg-[var(--color-accent-red)]'
+                          : 'border-[var(--color-surface-500)] bg-transparent opacity-60 hover:opacity-100'
+                      }`}
+                    />
+                  </Tooltip>
                   <LDRungMenu rungId={rung.id} index={idx} count={normalizedModel.rungs.length} readOnly={readOnly} canPaste={hasCopied} onOpen={focusRung} onCommand={runOnRung}>
                   <LDRungGrid
                     rung={rung}
@@ -650,44 +651,40 @@ export default function LDEditor({ model, onChange, readOnly = false }: LDEditor
                   {!readOnly && (
                     <div className="absolute -top-2 -right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                       {/* Add row button */}
-                      <button
-                        onClick={() => handleAddRow(rung.id)}
-                        className="p-1 rounded bg-[var(--color-accent-blue)] hover:opacity-90 text-[var(--color-on-accent)]"
-                        title={t('ld.addParallelBranch')}
-                      >
-                        <Rows3 size={12} />
-                      </button>
+                      <Button variant="bare" aria-label={t('ld.addParallelBranch')} tooltip={t('ld.addParallelBranch')}
+                          onClick={() => handleAddRow(rung.id)}
+                          className="p-1 rounded bg-[var(--color-accent-blue)] hover:opacity-90 text-[var(--color-on-accent)]"
+                        >
+                          <Rows3 size={12} />
+                        </Button>
 
                       {/* Move up */}
                       {idx > 0 && (
-                        <button
-                          onClick={() => handleMoveRungUp(rung.id)}
-                        className="p-1 rounded bg-[var(--visual-panel)] border border-[var(--border-color)] hover:bg-[color-mix(in_srgb,var(--text-primary)_12%,transparent)] text-[var(--text-primary)]"
-                          title={t('ld.moveRungUp')}
-                        >
-                          <ChevronUp size={12} />
-                        </button>
+                        <Button variant="bare" aria-label={t('ld.moveRungUp')} tooltip={t('ld.moveRungUp')}
+                            onClick={() => handleMoveRungUp(rung.id)}
+                          className="p-1 rounded bg-[var(--visual-panel)] border border-[var(--border-color)] hover:bg-[color-mix(in_srgb,var(--text-primary)_12%,transparent)] text-[var(--text-primary)]"
+                          >
+                            <ChevronUp size={12} />
+                          </Button>
                       )}
 
                       {/* Move down */}
                       {idx < normalizedModel.rungs.length - 1 && (
-                        <button
-                          onClick={() => handleMoveRungDown(rung.id)}
-                        className="p-1 rounded bg-[var(--visual-panel)] border border-[var(--border-color)] hover:bg-[color-mix(in_srgb,var(--text-primary)_12%,transparent)] text-[var(--text-primary)]"
-                          title={t('ld.moveRungDown')}
-                        >
-                          <ChevronDown size={12} />
-                        </button>
+                        <Button variant="bare" aria-label={t('ld.moveRungDown')} tooltip={t('ld.moveRungDown')}
+                            onClick={() => handleMoveRungDown(rung.id)}
+                          className="p-1 rounded bg-[var(--visual-panel)] border border-[var(--border-color)] hover:bg-[color-mix(in_srgb,var(--text-primary)_12%,transparent)] text-[var(--text-primary)]"
+                          >
+                            <ChevronDown size={12} />
+                          </Button>
                       )}
 
                       {/* Delete button */}
-                      <button
-                        onClick={() => handleDeleteRung(rung.id)}
-                        className="focus-ring p-1 rounded bg-[var(--color-accent-red)] hover:opacity-90 text-[var(--color-on-accent)]"
-                        title={t('ld.deleteRung')}
-                      >
-                        <Trash2 size={12} />
-                      </button>
+                      <Button variant="bare" aria-label={t('ld.deleteRung')} tooltip={t('ld.deleteRung')}
+                          onClick={() => handleDeleteRung(rung.id)}
+                          className="focus-ring p-1 rounded bg-[var(--color-accent-red)] hover:opacity-90 text-[var(--color-on-accent)]"
+                        >
+                          <Trash2 size={12} />
+                        </Button>
                     </div>
                   )}
                 </div>
@@ -699,7 +696,7 @@ export default function LDEditor({ model, onChange, readOnly = false }: LDEditor
 
         {/* Legend */}
         <div className="px-4 py-2 bg-[var(--color-surface-800)] border-t border-[var(--border-color)]">
-          <div className="flex items-center gap-4 text-[10px] text-[var(--text-tertiary)]">
+          <div className="flex items-center gap-4 text-[length:var(--font-size-caption)] text-[var(--text-tertiary)]">
             <span className="flex items-center gap-1">
               <span className="font-mono text-[var(--text-primary)]">| |</span>{' '}{t('ld.noContact')}
             </span>

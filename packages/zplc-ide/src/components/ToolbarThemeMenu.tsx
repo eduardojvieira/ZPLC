@@ -6,6 +6,7 @@ import { Sun, Moon, Monitor, Contrast } from 'lucide-react';
 import { useTheme } from '../hooks/useTheme';
 import { useT } from '../i18n';
 import { useDropdownMenu } from './useDropdownMenu';
+import { Button } from '../ui';
 
 export function ThemeMenu() {
   const { t } = useT();
@@ -19,7 +20,7 @@ export function ThemeMenu() {
   ];
   return (
   <div className="relative max-[1100px]:hidden" ref={menuRef} onKeyDown={(event) => { if (event.key === 'Escape') { event.preventDefault(); closeMenu(true); } }}>
-    <button
+    <Button variant="bare"
       ref={triggerRef}
       type="button"
       onClick={() => open ? closeMenu() : openMenu()}
@@ -28,10 +29,10 @@ export function ThemeMenu() {
       aria-haspopup="menu"
       aria-expanded={open}
       aria-controls="toolbar-theme-menu"
-      title={t('toolbar.theme.title', { theme: themeOptions.find((option) => option.id === theme)?.label ?? theme })}
+      tooltip={t('toolbar.theme.title', { theme: themeOptions.find((option) => option.id === theme)?.label ?? theme })}
     >
       {isDark ? <Moon size={16} /> : <Sun size={16} />}
-    </button>
+    </Button>
 
     {open && (
       <div id="toolbar-theme-menu" role="menu" aria-label={t('toolbar.theme.label')} className="absolute right-0 top-full mt-1 py-1 w-32 bg-[var(--color-surface-700)] border border-[var(--color-surface-600)] rounded-lg shadow-lg z-50">
@@ -39,7 +40,7 @@ export function ThemeMenu() {
           const Icon = option.icon;
           const isActive = theme === option.id;
           return (
-            <button
+            <Button variant="bare"
               key={option.id}
               ref={option.id === themeOptions[0].id ? firstItemRef : undefined}
               type="button"
@@ -48,13 +49,13 @@ export function ThemeMenu() {
               aria-label={t('toolbar.theme.use', { theme: option.label.toLowerCase() })}
               onClick={() => { setTheme(option.id); closeMenu(true); }}
               className={`focus-ring w-full flex items-center gap-2 px-3 py-1.5 text-xs transition-colors ${isActive
-                ? 'bg-[var(--color-accent-blue)] text-white'
+                ? 'bg-[var(--color-accent-blue)] text-[var(--color-on-accent)]'
                 : 'text-[var(--color-surface-100)] hover:bg-[var(--menu-item-bg-active)]'
                 }`}
             >
               <Icon size={14} />
               <span>{option.label}</span>
-            </button>
+            </Button>
           );
         })}
       </div>

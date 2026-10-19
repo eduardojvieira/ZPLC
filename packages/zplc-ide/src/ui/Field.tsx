@@ -45,7 +45,8 @@ export function Field({ label, hint, error, required, disabled, layout = 'stacke
   );
 }
 
-interface Labelled { label?: ReactNode; hint?: ReactNode; error?: ReactNode; layout?: 'stacked' | 'inline'; fieldClassName?: string }
+/** `bare` leaves the control undrawn (no border, fill or height), for a field edited in place on a canvas node: the caller's classes style it. */
+interface Labelled { bare?: boolean; label?: ReactNode; hint?: ReactNode; error?: ReactNode; layout?: 'stacked' | 'inline'; fieldClassName?: string }
 
 /** Wraps the control in a Field when it was given a label; otherwise it is the caller's to name (aria-label or a Field). */
 function withField(control: ReactNode, { label, hint, error, layout, fieldClassName }: Labelled, required: boolean | undefined, disabled: boolean | undefined, controlId: string | undefined): ReactNode {
@@ -69,15 +70,15 @@ function SelectControl({ className, children, ...rest }: SelectHTMLAttributes<HT
 /** The native props, `ref` included (React 19 passes it as a prop), and the label shorthand. */
 export type TextFieldProps = ComponentProps<'input'> & Labelled;
 
-export function TextField({ label, hint, error, layout, fieldClassName, className, type = 'text', ...rest }: TextFieldProps) {
-  return <>{withField(<InputControl {...rest} type={type} className={cx('ui-input', className)} />, { label, hint, error, layout, fieldClassName }, rest.required, rest.disabled, rest.id)}</>;
+export function TextField({ label, hint, error, layout, fieldClassName, bare, className, type = 'text', ...rest }: TextFieldProps) {
+  return <>{withField(<InputControl {...rest} type={type} className={bare ? className : cx('ui-input', className)} />, { label, hint, error, layout, fieldClassName }, rest.required, rest.disabled, rest.id)}</>;
 }
 
 export type NumberFieldProps = Omit<ComponentProps<'input'>, 'type'> & Labelled;
 
 /** A native number input: the keyboard (arrows, typing) and the spin buttons are the platform's; values are tabular. */
-export function NumberField({ label, hint, error, layout, fieldClassName, className, ...rest }: NumberFieldProps) {
-  return <>{withField(<InputControl {...rest} type="number" inputMode="decimal" className={cx('ui-input ui-tabular', className)} />, { label, hint, error, layout, fieldClassName }, rest.required, rest.disabled, rest.id)}</>;
+export function NumberField({ label, hint, error, layout, fieldClassName, bare, className, ...rest }: NumberFieldProps) {
+  return <>{withField(<InputControl {...rest} type="number" inputMode="decimal" className={bare ? cx('ui-tabular', className) : cx('ui-input ui-tabular', className)} />, { label, hint, error, layout, fieldClassName }, rest.required, rest.disabled, rest.id)}</>;
 }
 
 export type RangeFieldProps = Omit<ComponentProps<'input'>, 'type'> & Labelled;
@@ -99,15 +100,15 @@ export function FileInput({ label, ...rest }: FileInputProps) {
 
 export type TextareaProps = ComponentProps<'textarea'> & Labelled;
 
-export function Textarea({ label, hint, error, layout, fieldClassName, className, ...rest }: TextareaProps) {
-  return <>{withField(<AreaControl {...rest} className={cx('ui-input ui-textarea', className)} />, { label, hint, error, layout, fieldClassName }, rest.required, rest.disabled, rest.id)}</>;
+export function Textarea({ label, hint, error, layout, fieldClassName, bare, className, ...rest }: TextareaProps) {
+  return <>{withField(<AreaControl {...rest} className={bare ? className : cx('ui-input ui-textarea', className)} />, { label, hint, error, layout, fieldClassName }, rest.required, rest.disabled, rest.id)}</>;
 }
 
 export type SelectProps = ComponentProps<'select'> & Labelled;
 
 /** A native select, so the list, the keyboard and the announcement are the platform's. Its options are `<option>` children. */
-export function Select({ label, hint, error, layout, fieldClassName, className, children, ...rest }: SelectProps) {
-  return <>{withField(<SelectControl {...rest} className={cx('ui-input ui-select', className)}>{children}</SelectControl>, { label, hint, error, layout, fieldClassName }, rest.required, rest.disabled, rest.id)}</>;
+export function Select({ label, hint, error, layout, fieldClassName, bare, className, children, ...rest }: SelectProps) {
+  return <>{withField(<SelectControl {...rest} className={bare ? className : cx('ui-input ui-select', className)}>{children}</SelectControl>, { label, hint, error, layout, fieldClassName }, rest.required, rest.disabled, rest.id)}</>;
 }
 
 export interface CheckboxProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'type' | 'children'> {
