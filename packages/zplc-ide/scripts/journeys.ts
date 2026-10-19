@@ -3612,7 +3612,7 @@ export const JOURNEYS: Journey[] = [
     // LRN-018 (and LRN-019, LRN-020, LRN-021, LRN-037): the plant of a lesson runs live in closed loop with the starter, bound by the
     // mapping the lesson ships. An input is operated on the faceplate and the plant reacts; play, pause, step and a fault action
     // work with the keyboard alone, the state is announced in words, and the recorded run stays available as a labelled replay.
-    name: '51 A lesson plant runs live in closed loop, with pause, step and a fault action, and the recorded run stays a labelled replay', example: 'none', proves: ['LRN-018'], partly: ['LRN-019', 'LRN-020', 'LRN-021', 'LRN-037'],
+    name: '52 A lesson plant runs live in closed loop, with pause, step and a fault action, and the recorded run stays a labelled replay', example: 'none', proves: ['LRN-018'], partly: ['LRN-019', 'LRN-020', 'LRN-021', 'LRN-037'],
     run: async (app, { root }) => {
       const lesson = LESSON_INDEX.lessons.find(({ plant }) => plant === 'motor-v1')!;
       assert(lesson.plantMap !== null, 'The motor lesson ships no plant mapping.');
