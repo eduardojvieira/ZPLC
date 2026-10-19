@@ -16,6 +16,18 @@
       "tracks": [
         "simulation"
       ],
+      "unsupported": {
+        "hardware": {
+          "reason": {
+            "en": "The lesson tests a stop that must win over a start, using inputs a script presses at exact times; a board would need wired buttons and a recorded trace that does not exist yet.",
+            "es": "La lección prueba una parada que debe imponerse a un arranque, con entradas que un guion pulsa en instantes exactos; una placa necesitaría pulsadores cableados y una traza registrada que todavía no existe."
+          },
+          "instead": {
+            "en": "Complete it in Simulation, where the scenario presses each input for you, and keep the stop contact wired normally closed on a real motor.",
+            "es": "Complétela en Simulación, donde el escenario pulsa cada entrada por usted, y cablee el contacto de parada normalmente cerrado en un motor real."
+          }
+        }
+      },
       "plant": null,
       "estimatedMinutes": 20,
       "starter": {
@@ -174,6 +186,18 @@
       "tracks": [
         "simulation"
       ],
+      "unsupported": {
+        "hardware": {
+          "reason": {
+            "en": "The lesson is graded against a simulated crossing with timed lights, and no board check has been written for that plant.",
+            "es": "La lección se califica contra un cruce peatonal simulado con luces temporizadas, y no se ha escrito una verificación en placa para esa planta."
+          },
+          "instead": {
+            "en": "Complete it in Simulation, which models the crossing and gives the same result each time.",
+            "es": "Complétela en Simulación, que modela el cruce y da el mismo resultado cada vez."
+          }
+        }
+      },
       "plant": "pedestrian-v1",
       "estimatedMinutes": 25,
       "starter": {
@@ -332,6 +356,18 @@
       "tracks": [
         "simulation"
       ],
+      "unsupported": {
+        "hardware": {
+          "reason": {
+            "en": "The lesson fills and empties a simulated tank to provoke faults, which would be unsafe and slow to repeat on a board.",
+            "es": "La lección llena y vacía un tanque simulado para provocar fallos, algo inseguro y lento de repetir en una placa."
+          },
+          "instead": {
+            "en": "Complete it in Simulation, where a fault costs nothing and can be repeated, and rehearse the reset steps there.",
+            "es": "Complétela en Simulación, donde un fallo no cuesta nada y se puede repetir, y ensaye allí los pasos de rearme."
+          }
+        }
+      },
       "plant": "tank-v1",
       "estimatedMinutes": 25,
       "starter": {
@@ -491,6 +527,18 @@
       "tracks": [
         "simulation"
       ],
+      "unsupported": {
+        "hardware": {
+          "reason": {
+            "en": "The lesson needs the conveyor plant with its sensors and a forced jam, which a board cannot reproduce without the machine.",
+            "es": "La lección necesita la planta de la cinta con sus sensores y un atasco forzado, que una placa no puede reproducir sin la máquina."
+          },
+          "instead": {
+            "en": "Complete it in Simulation, where the conveyor and the jam are part of the scenario.",
+            "es": "Complétela en Simulación, donde la cinta y el atasco forman parte del escenario."
+          }
+        }
+      },
       "plant": "conveyor-v1",
       "estimatedMinutes": 25,
       "starter": {
@@ -649,6 +697,18 @@
       "tracks": [
         "simulation"
       ],
+      "unsupported": {
+        "hardware": {
+          "reason": {
+            "en": "The lesson is graded on exact timer edges at 10 ms steps, which a board cannot repeat the same way every run.",
+            "es": "La lección se califica con flancos exactos de temporizador en pasos de 10 ms, que una placa no repite igual en cada ejecución."
+          },
+          "instead": {
+            "en": "Complete it in Simulation, then blink an LED on your own board with the Pico blinky example.",
+            "es": "Complétela en Simulación y luego haga parpadear un LED en su propia placa con el ejemplo Pico blinky."
+          }
+        }
+      },
       "plant": null,
       "estimatedMinutes": 20,
       "starter": {
@@ -807,6 +867,18 @@
       "tracks": [
         "simulation"
       ],
+      "unsupported": {
+        "hardware": {
+          "reason": {
+            "en": "The lesson needs the motor plant model that answers your outputs, and a board has no motor attached to give that feedback.",
+            "es": "La lección necesita el modelo de planta del motor que responde a sus salidas, y una placa no tiene un motor conectado que dé esa realimentación."
+          },
+          "instead": {
+            "en": "Complete it in Simulation, which provides the motor and its run feedback.",
+            "es": "Complétela en Simulación, que aporta el motor y su realimentación de marcha."
+          }
+        }
+      },
       "plant": "motor-v1",
       "estimatedMinutes": 20,
       "starter": {
@@ -965,6 +1037,18 @@
       "tracks": [
         "simulation"
       ],
+      "unsupported": {
+        "hardware": {
+          "reason": {
+            "en": "The lesson counts pulses that the scenario sends at exact times; a board would need a pulse source and a recorded trace that has not been written yet.",
+            "es": "La lección cuenta pulsos que el escenario envía en instantes exactos; una placa necesitaría una fuente de pulsos y una traza registrada que todavía no se ha escrito."
+          },
+          "instead": {
+            "en": "Complete it in Simulation, then try the Edge counter example on your board with a push button.",
+            "es": "Complétela en Simulación y luego pruebe el ejemplo Contador de flancos en su placa con un pulsador."
+          }
+        }
+      },
       "plant": null,
       "estimatedMinutes": 15,
       "starter": {
@@ -1121,6 +1205,18 @@
       "tracks": [
         "simulation"
       ],
+      "unsupported": {
+        "hardware": {
+          "reason": {
+            "en": "The lesson watches a value move one scan at a time, and a board gives no view of single scans.",
+            "es": "La lección observa cómo un valor avanza un ciclo de escaneo a la vez, y una placa no permite ver cada ciclo por separado."
+          },
+          "instead": {
+            "en": "Complete it in Simulation, where the trace shows each scan, then read the scan cycle page before you try a board.",
+            "es": "Complétela en Simulación, donde la traza muestra cada ciclo, y lea la página del ciclo de escaneo antes de probar con una placa."
+          }
+        }
+      },
       "plant": null,
       "estimatedMinutes": 10,
       "starter": {
@@ -1291,6 +1387,18 @@
       "tracks": [
         "simulation"
       ],
+      "unsupported": {
+        "hardware": {
+          "reason": {
+            "en": "The lesson checks timed assertions to the millisecond, and a board adds timing jitter that would make those checks unreliable.",
+            "es": "La lección comprueba aserciones temporales al milisegundo, y una placa añade fluctuaciones de tiempo que harían poco fiables esas comprobaciones."
+          },
+          "instead": {
+            "en": "Complete it in Simulation, where time is exact, then apply the same assertions to a board with the test tools.",
+            "es": "Complétela en Simulación, donde el tiempo es exacto, y luego aplique las mismas aserciones a una placa con las herramientas de pruebas."
+          }
+        }
+      },
       "plant": null,
       "estimatedMinutes": 25,
       "starter": {
@@ -1451,6 +1559,18 @@
       "tracks": [
         "simulation"
       ],
+      "unsupported": {
+        "hardware": {
+          "reason": {
+            "en": "The lesson diagnoses a recorded two-part sequence by reading a trace, and no trace recorded from a board has been written for it.",
+            "es": "La lección diagnostica una secuencia registrada de dos piezas leyendo una traza, y no se ha escrito para ella una traza registrada desde una placa."
+          },
+          "instead": {
+            "en": "Complete it in Simulation, where the trace is the evidence you read.",
+            "es": "Complétela en Simulación, donde la traza es la evidencia que usted lee."
+          }
+        }
+      },
       "plant": null,
       "estimatedMinutes": 20,
       "starter": {

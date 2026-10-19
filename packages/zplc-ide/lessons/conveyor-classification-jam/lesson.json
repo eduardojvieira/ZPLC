@@ -15,6 +15,18 @@
   "tracks": [
     "simulation"
   ],
+  "unsupported": {
+    "hardware": {
+      "reason": {
+        "en": "The lesson needs the conveyor plant with its sensors and a forced jam, which a board cannot reproduce without the machine.",
+        "es": "La lección necesita la planta de la cinta con sus sensores y un atasco forzado, que una placa no puede reproducir sin la máquina."
+      },
+      "instead": {
+        "en": "Complete it in Simulation, where the conveyor and the jam are part of the scenario.",
+        "es": "Complétela en Simulación, donde la cinta y el atasco forman parte del escenario."
+      }
+    }
+  },
   "plant": "conveyor-v1",
   "estimatedMinutes": 25,
   "starter": {

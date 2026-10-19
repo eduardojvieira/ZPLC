@@ -122,6 +122,8 @@ export type TrackSupport = { supported: true } | { supported: false; reason: str
 /** Whether a lesson supports a track, and when it does not, why and what to do instead (LRN-011). */
 export function trackSupport(index: LessonIndex, lessonId: string, trackId: string, locale: LessonLocale): TrackSupport {
   if (entryOf(index, lessonId)?.tracks.includes(trackId)) return { supported: true };
+  // The lesson's own words first; the generic words of the track only for a lesson that gave none.
+  const own = entryOf(index, lessonId)?.unsupported[trackId];
   const track = index.course.tracks.find((candidate) => candidate.id === trackId);
-  return { supported: false, reason: track?.unsupported.reason[locale] ?? '', instead: track?.unsupported.instead[locale] ?? '' };
+  return { supported: false, reason: own?.reason[locale] ?? track?.unsupported.reason[locale] ?? '', instead: own?.instead[locale] ?? track?.unsupported.instead[locale] ?? '' };
 }

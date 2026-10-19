@@ -14,6 +14,18 @@
   "tracks": [
     "simulation"
   ],
+  "unsupported": {
+    "hardware": {
+      "reason": {
+        "en": "The lesson is graded against a simulated crossing with timed lights, and no board check has been written for that plant.",
+        "es": "La lección se califica contra un cruce peatonal simulado con luces temporizadas, y no se ha escrito una verificación en placa para esa planta."
+      },
+      "instead": {
+        "en": "Complete it in Simulation, which models the crossing and gives the same result each time.",
+        "es": "Complétela en Simulación, que modela el cruce y da el mismo resultado cada vez."
+      }
+    }
+  },
   "plant": "pedestrian-v1",
   "estimatedMinutes": 25,
   "starter": {

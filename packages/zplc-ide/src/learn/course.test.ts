@@ -105,6 +105,23 @@ describe('the tracks a lesson supports (LRN-011)', () => {
     expect(trackSupport(LESSON_INDEX, FIRST, 'simulation', 'en')).toEqual({ supported: true });
   });
 
+  it('LRN-011 gives every lesson its own reason for a track it does not support, in both languages', () => {
+    const reasons: string[] = [];
+    for (const lesson of LESSON_INDEX.lessons) {
+      for (const track of LESSON_INDEX.course.tracks.filter((candidate) => !lesson.tracks.includes(candidate.id))) {
+        for (const locale of ['en', 'es'] as const) {
+          const support = trackSupport(LESSON_INDEX, lesson.id, track.id, locale);
+          if (support.supported) throw new Error(`${lesson.id} lists ${track.id}`);
+          expect(support.reason.length, `${lesson.id} ${locale} reason`).toBeGreaterThan(20);
+          expect(support.instead.length, `${lesson.id} ${locale} instead`).toBeGreaterThan(20);
+          expect(support.reason, `${lesson.id} repeats the generic reason of the track`).not.toBe(track.unsupported.reason[locale]);
+          if (locale === 'en') reasons.push(support.reason);
+        }
+      }
+    }
+    expect(new Set(reasons).size).toBe(reasons.length);
+  });
+
   it('says why a track is not supported and what to do instead, in the language asked', () => {
     const en = trackSupport(LESSON_INDEX, FIRST, 'hardware', 'en');
     expect(en).toMatchObject({ supported: false });

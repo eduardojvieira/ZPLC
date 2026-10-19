@@ -14,6 +14,18 @@
   "tracks": [
     "simulation"
   ],
+  "unsupported": {
+    "hardware": {
+      "reason": {
+        "en": "The lesson is graded on exact timer edges at 10 ms steps, which a board cannot repeat the same way every run.",
+        "es": "La lección se califica con flancos exactos de temporizador en pasos de 10 ms, que una placa no repite igual en cada ejecución."
+      },
+      "instead": {
+        "en": "Complete it in Simulation, then blink an LED on your own board with the Pico blinky example.",
+        "es": "Complétela en Simulación y luego haga parpadear un LED en su propia placa con el ejemplo Pico blinky."
+      }
+    }
+  },
   "plant": null,
   "estimatedMinutes": 20,
   "starter": {

@@ -14,6 +14,18 @@
   "tracks": [
     "simulation"
   ],
+  "unsupported": {
+    "hardware": {
+      "reason": {
+        "en": "The lesson fills and empties a simulated tank to provoke faults, which would be unsafe and slow to repeat on a board.",
+        "es": "La lección llena y vacía un tanque simulado para provocar fallos, algo inseguro y lento de repetir en una placa."
+      },
+      "instead": {
+        "en": "Complete it in Simulation, where a fault costs nothing and can be repeated, and rehearse the reset steps there.",
+        "es": "Complétela en Simulación, donde un fallo no cuesta nada y se puede repetir, y ensaye allí los pasos de rearme."
+      }
+    }
+  },
   "plant": "tank-v1",
   "estimatedMinutes": 25,
   "starter": {

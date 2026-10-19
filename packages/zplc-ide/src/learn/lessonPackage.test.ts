@@ -44,6 +44,7 @@ describe('lesson text markup (LRN-025)', () => {
 describe('lesson package validators (LRN-009, LRN-010, LRN-027)', () => {
   const manifest = {
     schemaVersion: 1, id: 'a-lesson', version: 1, order: 1, module: 1, level: 'foundation', prerequisites: [], languages: ['ST'], tracks: ['simulation'], plant: null, estimatedMinutes: 10,
+    unsupported: { hardware: { reason: { en: 'No board check yet.', es: 'Todavía no hay verificación en placa.' }, instead: { en: 'Use Simulation.', es: 'Use Simulación.' } } },
     starter: { project: 'a_starter', program: 'src/A.st' }, solution: { project: 'a', program: 'src/A.st' },
     scenario: { file: 'scenario.json', id: 'S', path: 'tests/a.scenario.json', sha256: 'a'.repeat(64) }, regressionScenarios: [],
   };
@@ -58,6 +59,16 @@ describe('lesson package validators (LRN-009, LRN-010, LRN-027)', () => {
     expect(validateManifest({ ...manifest, plant: 'steam-v9' })[0]).toContain('manifest.plant');
     expect(validateManifest({ ...manifest, scenario: { ...manifest.scenario, sha256: 'xyz' } })[0]).toContain('manifest.scenario.sha256');
     expect(validateManifest({ ...manifest, unexpected: true })).toEqual(['manifest: unknown key "unexpected"']);
+  });
+
+  it('LRN-011 requires a reason and an instead, in both languages, for every track the lesson does not support', () => {
+    const withoutReason: Record<string, unknown> = { ...manifest };
+    delete withoutReason.unsupported;
+    expect(validateManifest(withoutReason)).toEqual(['manifest: missing key "unsupported"']);
+    expect(validateManifest({ ...manifest, unsupported: {} })).toEqual(['manifest.unsupported: track "hardware" is not supported, so it needs a reason and an instead']);
+    expect(validateManifest({ ...manifest, tracks: ['simulation', 'hardware'] })).toEqual(['manifest.unsupported: track "hardware" is supported, so it must not have a reason']);
+    expect(validateManifest({ ...manifest, unsupported: { hardware: { ...manifest.unsupported.hardware, instead: { en: 'x' } } } })[0]).toContain('manifest.unsupported.hardware.instead');
+    expect(validateManifest({ ...manifest, tracks: ['simulation', 'hardware'], unsupported: {} })).toEqual([]);
   });
 
   it('requires the six stages once each, two hint levels and at least two wrong programs', () => {
