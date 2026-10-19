@@ -1960,6 +1960,84 @@ export const JOURNEYS: Journey[] = [
     },
   },
   {
+    // The user forces a variable from the Watch table, against the native simulator, and the diagram shows the cue of the
+    // signal vocabulary on the block that reads it: amber, a diamond and the word FORCED, never the colour alone (UX-009).
+    name: '51 A forced variable is shown as forced in the function block diagram', example: 'blinky_fbd', proves: [], partly: ['UX-009', 'LNG-006'],
+    run: async (app, { project }) => {
+      await openFolder(app, project);
+      await openDiagram(app, 'src/main.fbd.json', '.react-flow__node');
+      const result = await compile(app);
+      assert(result.kind === 'built', `The Blinky FBD example does not build: ${result.message}`);
+      await connectAndRun(app);
+      const cue = css('.react-flow__node[data-id="var_led_read"] [data-live-value] [data-signal]');
+      const signal = () => app.eval<string>(`document.querySelector(${JSON.stringify('.react-flow__node[data-id="var_led_read"] [data-live-value] [data-signal]')})?.getAttribute('data-signal') ?? ''`);
+      await app.until('the variable block to show a value that is not forced', async () => ['true', 'false'].includes(await signal()) || undefined);
+      await watch(app, 'LED_Output');
+      await app.click(css('input[aria-label="Force LED_Output"]'), 'the Force checkbox of LED_Output')
+        .catch(async (error: Error) => { throw new Error(`${error.message}: the row is ${await app.eval<string>(`${watchRow('LED_Output')}?.outerHTML.slice(0, 900) ?? 'not in the table'`)}`); });
+      await app.until('LED_Output to be forced', async () => await app.eval(`${watchRow('LED_Output')}?.querySelector('[data-forced="true"]') !== null`) === true || undefined);
+      await app.until('the variable block to be drawn as forced', async () => await signal() === 'forced' || undefined)
+        .catch(async (error: Error) => { throw new Error(`${error.message}: the block is ${await app.eval<string>(`document.querySelector('.react-flow__node[data-id="var_led_read"]')?.outerHTML.slice(0, 700) ?? 'not on the canvas'`)}`); });
+      const shown = await app.eval<string>(`document.querySelector(${JSON.stringify('.react-flow__node[data-id="var_led_read"] [data-live-value]')})?.innerText ?? ''`);
+      assert(shown.includes('FORCED') && shown.includes('◆'), `A forced variable is drawn with a diamond and the word FORCED, not as "${shown}".`);
+      assert(await app.visible(cue), 'The forced cue is not visible on the canvas.');
+      // red means a fault and nothing else
+      assert(!(await app.eval<boolean>(`document.querySelector('.react-flow')?.querySelector('[data-signal="fault"]') !== null`)), 'A forced variable is drawn as a fault.');
+      // releasing the force takes the cue away
+      if (!await app.clickable(css('input[aria-label="Force LED_Output"]'))) {
+        app.note('With a force active the Watch table has no visible row at the default panel size');
+        await app.click(css('#workspace-separator'), 'the separator above the lower panel');
+        for (let step = 0; step < 6; step++) await app.press('ArrowUp');
+      }
+      await app.click(css('input[aria-label="Force LED_Output"]'), 'the Force checkbox of LED_Output');
+      await app.until('the force to be released', async () => await app.eval(`${watchRow('LED_Output')}?.querySelector('input[type="checkbox"]')?.checked === false`) === true || undefined);
+      await app.until('the variable block to stop being drawn as forced', async () => await signal() !== 'forced' || undefined);
+    },
+  },
+  {
+    // The same on a chart: Go is forced from the Watch table and both transitions that read it say so (UX-009).
+    name: '51b A forced variable is shown as forced in the sequential function chart', example: 'blinky_sfc', proves: [], partly: ['UX-009', 'LNG-006'],
+    run: async (app, { project }) => {
+      writeFileSync(join(project, 'src', 'main.sfc.json'), JSON.stringify({
+        name: 'Gate', variables: { local: [], inputs: [{ name: 'Go', type: 'BOOL', address: '%I0.0' }], outputs: [] },
+        steps: [
+          { id: 'idle', name: 'Idle', isInitial: true, position: { x: 200, y: 0 } },
+          { id: 'work', name: 'Work', isInitial: false, position: { x: 200, y: 260 } },
+        ],
+        transitions: [
+          { id: 'start', fromStep: 'idle', toStep: 'work', condition: 'Go', position: { x: 200, y: 130 } },
+          { id: 'finish', fromStep: 'work', toStep: 'idle', condition: 'NOT Go', position: { x: 200, y: 390 } },
+        ],
+      }));
+      await openFolder(app, project);
+      await openDiagram(app, 'src/main.sfc.json', '.react-flow__node');
+      const result = await compile(app);
+      assert(result.kind === 'built', `The Gate chart does not build: ${result.message}`);
+      await connectAndRun(app);
+      const signalOf = (id: string) => app.eval<string>(`document.querySelector('.react-flow__node[data-id="${id}"] [data-signal]')?.getAttribute('data-signal') ?? ''`);
+      await app.until('the transition to show a state that is not forced', async () => ['true', 'false'].includes(await signalOf('start')) || undefined);
+      await watch(app, 'Go');
+      await app.click(css('input[aria-label="Force Go"]'), 'the Force checkbox of Go')
+        .catch(async (error: Error) => { throw new Error(`${error.message}: the row is ${await app.eval<string>(`${watchRow('Go')}?.outerHTML.slice(0, 900) ?? 'not in the table'`)}`); });
+      await app.until('Go to be forced', async () => await app.eval(`${watchRow('Go')}?.querySelector('[data-forced="true"]') !== null`) === true || undefined);
+      for (const id of ['start', 'finish']) {
+        await app.until(`the transition ${id} to be drawn as forced`, async () => await signalOf(id) === 'forced' || undefined)
+          .catch(async (error: Error) => { throw new Error(`${error.message}: the transition is ${await app.eval<string>(`document.querySelector('.react-flow__node[data-id="${id}"]')?.outerHTML.slice(0, 700) ?? 'not on the canvas'`)}`); });
+        const shown = await app.eval<string>(`document.querySelector('.react-flow__node[data-id="${id}"]')?.innerText ?? ''`);
+        assert(shown.includes('FORCED'), `A transition that reads a forced variable says FORCED, not "${shown}".`);
+      }
+      assert(!(await app.eval<boolean>(`document.querySelector('.react-flow')?.querySelector('[data-signal="fault"]') !== null`)), 'A forced variable is drawn as a fault.');
+      if (!await app.clickable(css('input[aria-label="Force Go"]'))) {
+        app.note('With a force active the Watch table has no visible row at the default panel size');
+        await app.click(css('#workspace-separator'), 'the separator above the lower panel');
+        for (let step = 0; step < 6; step++) await app.press('ArrowUp');
+      }
+      await app.click(css('input[aria-label="Force Go"]'), 'the Force checkbox of Go');
+      await app.until('the force to be released', async () => await app.eval(`${watchRow('Go')}?.querySelector('input[type="checkbox"]')?.checked === false`) === true || undefined);
+      await app.until('the transition to stop being drawn as forced', async () => await signalOf('start') !== 'forced' || undefined);
+    },
+  },
+  {
     name: '29 The Welcome screen loads no editor', example: 'motor_start_stop', proves: [], partly: ['IDE-015'],
     run: async (app, { project }) => {
       // What the page has fetched, as modules (the development host serves each one by its path). The page keeps the first
