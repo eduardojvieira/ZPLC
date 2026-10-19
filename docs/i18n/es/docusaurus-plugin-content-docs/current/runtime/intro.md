@@ -15,10 +15,10 @@ de seguridad certificado.
 
 ## Camino rápido
 
-1. Compilá el proyecto en un artefacto `.zplc`.
-2. Verificá y cargá/desplegá ese artefacto. Una carga exitosa queda lógicamente
+1. Compile el proyecto en un artefacto `.zplc`.
+2. Verifique y cargue/desplegá ese artefacto. Una carga exitosa queda lógicamente
    detenida/READY.
-3. Inspeccioná el target y ejecutá explícitamente el comando humano `zplc start`
+3. Inspeccione el target y ejecute explícitamente el comando humano `zplc start`
    para correrlo.
 
 El build de firmware, flash de firmware, deploy del programa PLC y RUN/debug

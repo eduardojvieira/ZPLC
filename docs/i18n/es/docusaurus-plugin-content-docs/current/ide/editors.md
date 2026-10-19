@@ -66,7 +66,7 @@ selección de cada paso. El recorrido 28j de `bun run test:journeys` arrastra un
 
 ## El servicio de lenguaje de Structured Text
 
-El editor de Structured Text lee todo el proyecto, no solo el archivo que tienes delante (LNG-015, LNG-016).
+El editor de Structured Text lee todo el proyecto, no solo el archivo que tiene delante (LNG-015, LNG-016).
 
 | Función | Qué hace |
 | --- | --- |
@@ -76,7 +76,7 @@ El editor de Structured Text lee todo el proyecto, no solo el archivo que tienes
 | Ir a la definición, buscar referencias | En todos los archivos del proyecto. Un nombre se encuentra por lo que es, no por cómo se escribe: el `Count` de un programa no es el `Count` de otro. |
 | Esquema | Las declaraciones del archivo como un árbol (un bloque contiene sus entradas, salidas, variables y métodos). |
 | Ayuda de firma | Los parámetros de la función, método o bloque que se llama, y el parámetro en el que está el cursor, también con argumentos con nombre. |
-| Renombrar símbolo (`F2`) | Renombra lo que un nombre representa en todos los archivos del proyecto, por ámbito y por tipo, nunca como texto. Se rechaza, con el motivo, cuando el nombre nuevo ya está declarado donde se usa el anterior, cuando un archivo del proyecto tiene un error de sintaxis (podría contener un uso que no se encontró), cuando el nombre aparece en un archivo Ladder, FBD, SFC o IL (renómbralo también allí) o cuando el nombre es un programa (las tareas de `zplc.json` lo ejecutan por su nombre). Los archivos que cambian se abren como pestañas modificadas; tú las guardas. |
+| Renombrar símbolo (`F2`) | Renombra lo que un nombre representa en todos los archivos del proyecto, por ámbito y por tipo, nunca como texto. Se rechaza, con el motivo, cuando el nombre nuevo ya está declarado donde se usa el anterior, cuando un archivo del proyecto tiene un error de sintaxis (podría contener un uso que no se encontró), cuando el nombre aparece en un archivo Ladder, FBD, SFC o IL (renómbrelo también allí) o cuando el nombre es un programa (las tareas de `zplc.json` lo ejecutan por su nombre). Los archivos que cambian se abren como pestañas modificadas; usted las guarda. |
 | Formatear documento (`Shift+Alt+F`) | Sangra cada línea según la profundidad de sus bloques y recorta los extremos de las líneas. Solo cambia espacios al principio y al final de una línea: no añade ni quita líneas (un breakpoint es una línea), no mueve ningún token y deja los comentarios como están. Formatear dos veces da el mismo texto. |
 
 Cada función se responde desde un solo índice del proyecto, construido con el lexer y el parser del compilador, con el

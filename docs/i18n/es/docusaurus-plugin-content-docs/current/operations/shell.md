@@ -111,7 +111,7 @@ El shell de Zephyr tiene un comando `devmem` que lee y escribe cualquier direcci
 west build -b <board> firmware/app -- -DEXTRA_CONF_FILE=diagnostic.conf
 ```
 
-`diagnostic.conf` activa `CONFIG_ZPLC_SHELL_RAW_MEMORY=y` junto con `CONFIG_DEVMEM_SHELL=y`, y la compilación de la aplicación se detiene con un error cuando solo uno de los dos está activo, de modo que el comando no aparece en una imagen de release por accidente. Usá una imagen de diagnóstico en un banco de pruebas, nunca en un controlador conectado a una planta.
+`diagnostic.conf` activa `CONFIG_ZPLC_SHELL_RAW_MEMORY=y` junto con `CONFIG_DEVMEM_SHELL=y`, y la compilación de la aplicación se detiene con un error cuando solo uno de los dos está activo, de modo que el comando no aparece en una imagen de release por accidente. Use una imagen de diagnóstico en un banco de pruebas, nunca en un controlador conectado a una planta.
 
 ---
 

@@ -46,15 +46,15 @@ a partir de esta página o de la presencia de código fuente.
 
 ## Verificación no-HIL de RC3
 
-- Validá la versión canónica con `bun scripts/release-version.ts --check`.
-- Ejecutá regresiones estructurales de release con `node --test scripts/release-artifacts.test.mjs`.
-- Ejecutá regresiones de pins de workflows con `node --test scripts/workflow-action-pins.test.mjs`.
-- Validá la matriz de evidencia con `python3 tools/hil/validate_release_evidence.py`.
-- Generá la documentación y validá paridad EN/ES antes de presentar un candidato.
+- Valide la versión canónica con `bun scripts/release-version.ts --check`.
+- Ejecute regresiones estructurales de release con `node --test scripts/release-artifacts.test.mjs`.
+- Ejecute regresiones de pins de workflows con `node --test scripts/workflow-action-pins.test.mjs`.
+- Valide la matriz de evidencia con `python3 tools/hil/validate_release_evidence.py`.
+- Genere la documentación y valide paridad EN/ES antes de presentar un candidato.
 
 ## Criterio de salida HIL
 
 - Usá sólo el SHA exacto de release y registralo en la evidencia de ambas placas.
-- Mantené flash de firmware, deploy del programa y RUN/debug como operaciones humanas separadas.
-- Preservá salidas seguras en boot, fault, admisión inválida de programa y recovery.
+- Mantenga flash de firmware, deploy del programa y RUN/debug como operaciones humanas separadas.
+- Preserve salidas seguras en boot, fault, admisión inválida de programa y recovery.
 - No publiques claims de producción, timing o seguridad si falta cualquiera de los dos registros de placas.

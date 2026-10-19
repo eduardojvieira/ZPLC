@@ -14,10 +14,10 @@ cambio candidato; no aprueba su propio resultado ni opera equipamiento físico.
 
 ## Camino rápido
 
-1. Elegí un proveedor y hacé opt-in antes de enviar una solicitud.
-2. Revisá la vista previa de contexto y quitá material que no quieras enviar.
-3. Revisá el diff candidato, compilalo, testealo y simulalo.
-4. Guardá sólo el cambio que aceptes.
+1. Elija un proveedor y haga opt-in antes de enviar una solicitud.
+2. Revise la vista previa de contexto y quite material que no quiera enviar.
+3. Revise el diff candidato, compílelo, pruébelo y simúlelo.
+4. Guarde sólo el cambio que acepte.
 
 ## Límite de datos
 
@@ -33,9 +33,9 @@ cambio candidato; no aprueba su propio resultado ni opera equipamiento físico.
 
 El rechazo de patrones conocidos es una protección, no una garantía. Un literal
 secreto arbitrario que no coincide con un patrón conocido todavía puede enviarse
-al proveedor elegido. No ingreses
+al proveedor elegido. No ingrese
 credenciales, claves privadas, direcciones de producción ni logs sensibles
-crudos. Revisá los términos del proveedor y la política de tu organización
+crudos. Revise los términos del proveedor y la política de su organización
 antes de hacer opt-in.
 
 ## Límite físico
@@ -62,4 +62,4 @@ del servidor y del proveedor, y ejecuta las tools con una trampa en cada punto d
 
 Un candidato útil incluye diagnósticos, resultado de compilación, resultado de
 escenario y trace cuando existe. El texto del proveedor explica; las tools
-verifican. Si falta evidencia o falla, rechazá o corregí el candidato.
+verifican. Si falta evidencia o falla, rechace o corrija el candidato.

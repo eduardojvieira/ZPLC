@@ -3,7 +3,7 @@ slug: /operations
 id: index
 title: Operaciones
 sidebar_label: Operaciones
-description: Observá, recuperá y cambiá sistemas ZPLC sin cruzar límites de evidencia ni autoridad.
+description: Observe, recupere y cambie sistemas ZPLC sin cruzar límites de evidencia ni autoridad.
 tags: [operations]
 ---
 
@@ -15,9 +15,9 @@ de firmware.
 
 ## Secuencia rutinaria
 
-1. Inspeccioná estado del runtime, profile seleccionado, diagnósticos y fuente de evidencia.
-2. Conservá hash de artefacto y trace antes de cambiar algo.
-3. Mantené las acciones físicas bajo autoridad humana explícita y procedimiento del sitio.
+1. Inspeccione estado del runtime, profile seleccionado, diagnósticos y fuente de evidencia.
+2. Conserve hash de artefacto y trace antes de cambiar algo.
+3. Mantenga las acciones físicas bajo autoridad humana explícita y procedimiento del sitio.
 4. Usá [Límites de recuperación](./recovery.md) cuando falle conexión, programa o firmware.
 
 ## Qué puede mostrar Studio
@@ -28,9 +28,9 @@ de firmware.
 
 ## Antes de una acción física
 
-- Confirmá que la máquina está bajo el procedimiento de trabajo seguro aprobado por el sitio.
-- Confirmá placa, profile, identidad del runtime, ABI y hash del artefacto seleccionados.
-- Conservá flash, deploy, force, RUN/STOP y recovery como decisiones humanas separadas.
+- Confirme que la máquina está bajo el procedimiento de trabajo seguro aprobado por el sitio.
+- Confirme placa, profile, identidad del runtime, ABI y hash del artefacto seleccionados.
+- Conserve flash, deploy, force, RUN/STOP y recovery como decisiones humanas separadas.
 
 ## Qué todavía necesita evidencia target/HIL
 
@@ -42,8 +42,8 @@ Vea [Soporte de hardware](../reference/capabilities-evidence.md) para los nivele
 
 ## Registro de escalamiento
 
-- Conservá diagnósticos, trace, identidad del artefacto, profile y decisión del operador.
-- No copies credenciales ni serial sensible crudo en tickets o prompts.
+- Conserve diagnósticos, trace, identidad del artefacto, profile y decisión del operador.
+- No copie credenciales ni serial sensible crudo en tickets o prompts.
 
 Para referencia de diagnóstico bajo nivel, leé [la Shell ZPLC](./shell.md). Serial
 crudo, flash, force, RUN/STOP y recovery no son operaciones de IA ni MCP.

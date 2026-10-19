@@ -635,7 +635,7 @@ def render_runtime_reference(headers: list[HeaderDoc], spanish: bool) -> str:
     intro = (
         "This page is generated from the public C headers under `firmware/lib/zplc_core/include/`. Edit the headers or rerun `python3 tools/docs/generate_runtime_reference.py` instead of editing this file manually."
         if not spanish
-        else "Esta página se genera a partir de los headers públicos en C bajo `firmware/lib/zplc_core/include/`. Editá los headers o volvé a ejecutar `python3 tools/docs/generate_runtime_reference.py` en lugar de editar este archivo manualmente."
+        else "Esta página se genera a partir de los headers públicos en C bajo `firmware/lib/zplc_core/include/`. Edite los headers o vuelva a ejecutar `python3 tools/docs/generate_runtime_reference.py` en lugar de editar este archivo manualmente."
     )
     parity_note = (
         "The Spanish wrapper text is localized, while API names, signatures, and source-derived descriptions remain anchored to the English headers to avoid documentation drift."

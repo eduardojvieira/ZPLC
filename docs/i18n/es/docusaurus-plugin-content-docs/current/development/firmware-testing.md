@@ -194,8 +194,8 @@ el emulador no tiene y comprueba que la HAL falla al inicializar, antes de que e
 RETAIN de ambos slots y las credenciales) sobre el NVS del simulador de flash, y comprueba que una clave sin
 identificador responde con un error.
 
-El build también comprueba que la descripción y el devicetree coinciden. Para verlo fallar, cambiá un `dt.pin` o un
-`alias` en `io_base.json` y compilá la prueba:
+El build también comprueba que la descripción y el devicetree coinciden. Para verlo fallar, cambie un `dt.pin` o un
+`alias` en `io_base.json` y compile la prueba:
 
 ```bash
 west build -p -b native_sim/native/64 zplc/firmware/tests/io_table

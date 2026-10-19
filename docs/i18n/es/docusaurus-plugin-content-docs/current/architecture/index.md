@@ -49,7 +49,7 @@ Dominar las funcionalidades y componentes del ZPLC moderno significa dominar 4 f
 
 ### 1. Sistema Base y Herramientas Gráficas (IDE)
 
-El motor principal interactivo con usted. Opera los editores visuales amigables, orquesta las creaciones en tu proyecto sobre los FBD o SFC y despliega los enlaces de diagnóstico permitiendo inspecciones crudas.
+El motor principal interactivo con usted. Opera los editores visuales amigables, orquesta las creaciones en su proyecto sobre los FBD o SFC y despliega los enlaces de diagnóstico permitiendo inspecciones crudas.
 
 ### 2. Contrato de Traspaso (Compiler)
 
