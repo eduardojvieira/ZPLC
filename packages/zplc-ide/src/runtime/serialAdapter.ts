@@ -108,6 +108,8 @@ export interface StatusInfo {
     halted: boolean;
     error: number;
   };
+  /** IO-007: channels of the board's I/O table that the build cannot serve (inputs, outputs). */
+  io_unsupported?: { inputs: number; outputs: number };
   opi: number[];
 }
 
@@ -656,7 +658,21 @@ export class SerialAdapter implements IDebugAdapter {
    * Get detailed status information in JSON format
    */
   async getStatus(): Promise<StatusInfo> {
-    return parseStatusInfo(await this.sendJsonCommand('zplc status'));
+    const status = parseStatusInfo(await this.sendJsonCommand('zplc status'));
+    this.noteUnsupportedIo(status.io_unsupported);
+    return status;
+  }
+
+  private reportedUnsupportedIo = '';
+
+  /** IO-007: an I/O operation the board cannot perform is skipped by the scan; the console says so, once per change. */
+  private noteUnsupportedIo(report: StatusInfo['io_unsupported']): void {
+    const inputs = report?.inputs ?? 0;
+    const outputs = report?.outputs ?? 0;
+    const key = inputs + outputs === 0 ? '' : `${inputs}/${outputs}`;
+    if (key === this.reportedUnsupportedIo) return;
+    this.reportedUnsupportedIo = key;
+    if (key !== '') this.events.onSerialData?.(`WARN: I/O not supported by this board, skipped: ${inputs} input(s), ${outputs} output(s)\n`);
   }
 
   async getCommunicationMap(): Promise<CommunicationMapEntry[]> {

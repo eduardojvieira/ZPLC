@@ -600,6 +600,28 @@ target_compile_definitions(test_safe_state PRIVATE
 
 add_test(NAME test_safe_state COMMAND test_safe_state)
 
+# Test: an I/O operation a board cannot perform is counted and reported, not swallowed (IO-007). It brings its own
+# board. Also run under the sanitizers.
+add_executable(test_io_unsupported
+    tests/test_io_unsupported.c
+    src/core/zplc_sched_core.c
+    src/core/zplc_exchange.c
+    src/core/zplc_core.c
+    src/core/zplc_loader.c
+    src/core/zplc_comm_dispatch.c
+)
+
+target_include_directories(test_io_unsupported PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/tests/include
+)
+
+target_compile_definitions(test_io_unsupported PRIVATE
+    ZPLC_CORE_VERSION_STR="${ZPLC_CORE_VERSION_STR}"
+)
+
+add_test(NAME test_io_unsupported COMMAND test_io_unsupported)
+
 # Test: the exchange between the scan and the threads outside it: write queue, force-aware latch, published
 # snapshot, and a scanner with readers and writers on threads (RT-010, RT-011, RT-012). Also run under the sanitizers.
 add_executable(test_exchange

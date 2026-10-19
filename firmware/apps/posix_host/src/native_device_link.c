@@ -22,6 +22,7 @@
 #include <zplc_core.h>
 #include <zplc_crc32.h>
 #include <zplc_ed25519.h>
+#include <zplc_sched_core.h>
 #include <zplc_fw_identity.h>
 #include <zplc_hal.h>
 #include <zplc_isa.h>
@@ -264,6 +265,13 @@ static int p_status(void *context, zplc_proto_status_t *status)
     status->program_generation = s->program_generation;
     status->uptime_ms = zplc_hal_tick() - port_of(context)->started_ms;
     status->fault_task = (uint8_t)s->fault_task_id;
+    {
+        zplc_io_unsupported_t unsupported;
+
+        zplc_io_unsupported_get(&unsupported); /* IO-007 */
+        status->io_unsupported_inputs = unsupported.inputs;
+        status->io_unsupported_outputs = unsupported.outputs;
+    }
     return 0;
 }
 

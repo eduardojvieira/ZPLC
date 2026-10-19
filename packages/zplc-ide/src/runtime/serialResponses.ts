@@ -48,6 +48,13 @@ export function parseStatusInfo(value: unknown): StatusInfo {
     }
   }
 
+  if (value.io_unsupported !== undefined
+    && (!isRecord(value.io_unsupported)
+      || !isNonNegativeInteger(value.io_unsupported.inputs)
+      || !isNonNegativeInteger(value.io_unsupported.outputs))) {
+    throw new Error('Invalid ZPLC status response');
+  }
+
   if (value.vm !== undefined) {
     if (!isRecord(value.vm)
       || !isNonNegativeInteger(value.vm.pc)
