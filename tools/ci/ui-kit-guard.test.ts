@@ -48,7 +48,7 @@ describe('kit guard: focus and text size (UX-005, UX-006)', () => {
   });
 });
 
-describe('kit guard: names (UX-026)', () => {
+describe('kit guard: names (UX-026 stopgap)', () => {
   it('finds a form control with no label, and accepts every way to associate one', () => {
     expect(rulesOf('const A = () => <input type="text" />')).toContain('unnamed-control');
     expect(rulesOf('const A = () => <input aria-label="Name" />')).not.toContain('unnamed-control');

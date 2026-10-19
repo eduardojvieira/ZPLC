@@ -3852,7 +3852,7 @@ export const JOURNEYS: Journey[] = [
     },
   },
   {
-    name: '53 The density setting makes controls and rows smaller on every screen, and the setting is one the person reaches from the Welcome screen', example: 'motor_start_stop', proves: ['UX-008'],
+    name: '53 The density setting makes controls and rows smaller on every screen, and the setting is one the person reaches from the Welcome screen', example: 'motor_start_stop', proves: ['UX-008'], partly: [],
     run: async (app, { project }) => {
       /** The sizes the density tokens give: the control and row tokens on the root, and what two kit controls actually measure. */
       const measure = () => app.eval<{ density: string; control: number; row: number; spacing: number; field: number; button: number }>(`(() => {

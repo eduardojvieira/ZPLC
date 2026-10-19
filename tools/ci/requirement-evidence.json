@@ -2094,7 +2094,7 @@
     {"kind":"unit","ref":"tools/ci/ide-structure.test.ts","test":"layering stopgap (IDE-033): one command-line import of electron/ is listed","partial":true}
   ],
   "UX-001": [
-    {"kind":"unit","ref":"packages/zplc-ide/src/ui/gallery/gallery.test.tsx","test":"lists only components the kit exports, and names the ones UX-001 asks for that it does not have yet (stopgap)","partial":true},
+    {"kind":"unit","ref":"packages/zplc-ide/src/ui/gallery/gallery.test.tsx","test":"lists only components the kit exports, and the kit has every component UX-001 asks for"},
     {"kind":"unit","ref":"packages/zplc-ide/src/ui/kit.test.tsx","test":"kit buttons (UX-001, UX-026 stopgap)","partial":true},
     {"kind":"unit","ref":"packages/zplc-ide/src/ui/kit.test.tsx","test":"kit dialogs (UX-001, UX-025 stopgap)","partial":true},
     {"kind":"unit","ref":"packages/zplc-ide/src/ui/kit.test.tsx","test":"kit display components (UX-001, UX-009 stopgap)","partial":true},
@@ -2110,8 +2110,8 @@
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"41 The component kit behaves from the keyboard in a real window","partial":true}
   ],
   "UX-002": [
-    {"kind":"unit","ref":"tools/ci/ui-kit-guard.test.ts","test":"kit guard: the shrink-only list (UX-002 stopgap)","partial":true},
-    {"kind":"unit","ref":"tools/ci/ui-kit-guard.test.ts","test":"kit guard: what breaks the kit rules (UX-002 stopgap: the list of offenders is not empty)","partial":true}
+    {"kind":"unit","ref":"tools/ci/ui-kit-guard.test.ts","test":"kit guard: the shrink-only list (UX-002)"},
+    {"kind":"unit","ref":"tools/ci/ui-kit-guard.test.ts","test":"kit guard: what breaks the kit rules (UX-002)"}
   ],
   "UX-003": [
     {"kind":"unit","ref":"packages/zplc-ide/src/theme/contrast.test.ts","test":"theme token consistency (UX-003)"},
@@ -2128,20 +2128,20 @@
   "UX-005": [
     {"kind":"unit","ref":"packages/zplc-ide/src/theme/focusRing.test.ts","test":"focus ring (UX-005 stopgap: the visual editors still carry their own classes)","partial":true},
     {"kind":"unit","ref":"packages/zplc-ide/src/theme/focusRing.test.ts","test":"focus ring in the visual editors (UX-005)"},
-    {"kind":"unit","ref":"tools/ci/ui-kit-guard.test.ts","test":"kit guard: focus and text size (UX-005, UX-006 stopgap)","partial":true},
+    {"kind":"unit","ref":"tools/ci/ui-kit-guard.test.ts","test":"kit guard: focus and text size (UX-005, UX-006)"},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"41 The component kit behaves from the keyboard in a real window","partial":true},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"46 The themes, forced colours and reduced motion reach the three visual editors and the code editor","partial":true},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"48 The main screens pass the rendered accessibility check in light, dark and high contrast","partial":true}
   ],
   "UX-006": [
-    {"kind":"unit","ref":"packages/zplc-ide/src/theme/tokens.test.ts","test":"type, shape and density tokens (UX-006, UX-007, UX-008 stopgap)","partial":true},
-    {"kind":"unit","ref":"tools/ci/ui-kit-guard.test.ts","test":"kit guard: focus and text size (UX-005, UX-006 stopgap)","partial":true}
+    {"kind":"unit","ref":"packages/zplc-ide/src/theme/tokens.test.ts","test":"type, shape and density tokens (UX-006, UX-007, UX-008)"},
+    {"kind":"unit","ref":"tools/ci/ui-kit-guard.test.ts","test":"kit guard: focus and text size (UX-005, UX-006)"}
   ],
   "UX-007": [
-    {"kind":"unit","ref":"packages/zplc-ide/src/theme/tokens.test.ts","test":"type, shape and density tokens (UX-006, UX-007, UX-008 stopgap)","partial":true}
+    {"kind":"unit","ref":"packages/zplc-ide/src/theme/tokens.test.ts","test":"type, shape and density tokens (UX-006, UX-007, UX-008)"}
   ],
   "UX-008": [
-    {"kind":"unit","ref":"packages/zplc-ide/src/theme/tokens.test.ts","test":"type, shape and density tokens (UX-006, UX-007, UX-008 stopgap)","partial":true},
+    {"kind":"unit","ref":"packages/zplc-ide/src/theme/tokens.test.ts","test":"type, shape and density tokens (UX-006, UX-007, UX-008)"},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"41 The component kit behaves from the keyboard in a real window","partial":true}
   ],
   "UX-009": [

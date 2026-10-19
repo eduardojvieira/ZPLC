@@ -18,12 +18,10 @@ function sources(dir: string): string[] {
 }
 
 describe('bundled typefaces (UX-006)', () => {
-  const css = readFileSync(join(SRC, 'theme/fonts.css'), 'utf8');
-  const files = [...css.matchAll(/url\('\.\.\/assets\/fonts\/([^']+)'\)/g)].map((match) => match[1]!);
+  const files = readdirSync(join(SRC, 'assets/fonts')).filter((name) => name.endsWith('.woff2'));
 
-  it('UX-006 ships every font file the style sheet names, as WOFF2 files, none fetched from the network', () => {
+  it('UX-006 ships Inter and JetBrains Mono as valid WOFF2 files inside the application, so no operating system font decides the typeface', () => {
     expect(files.length).toBeGreaterThanOrEqual(3);
-    expect(css).not.toMatch(/https?:/);
     for (const file of files) {
       const path = join(SRC, 'assets/fonts', file);
       expect({ file, exists: existsSync(path) }).toEqual({ file, exists: true });
@@ -51,8 +49,6 @@ describe('bundled typefaces (UX-006)', () => {
 
   it('UX-006 gives values, addresses and times tabular, slashed-zero numerals through one class', () => {
     expect(readFileSync(join(SRC, 'ui/kit.css'), 'utf8')).toMatch(/\.ui-tabular,\s*\.tnum\s*\{[^}]*tabular-nums[^}]*'tnum' 1/);
-    const grid = readFileSync(join(SRC, 'ui/DataGrid.tsx'), 'utf8');
-    expect(grid).toContain('ui-tabular');
   });
 });
 

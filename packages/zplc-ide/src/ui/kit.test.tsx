@@ -10,7 +10,7 @@ import {
 const html = (node: Parameters<typeof renderToStaticMarkup>[0]): string => renderToStaticMarkup(node);
 const noop = (): void => undefined;
 
-describe('kit buttons (UX-001, UX-026)', () => {
+describe('kit buttons (UX-001, UX-026 stopgap)', () => {
   it('renders a button that does not submit a form, with its variant and size, named by its text', () => {
     const out = html(<Button variant="primary" size="sm">Save</Button>);
     expect(out).toContain('type="button"');
@@ -36,7 +36,7 @@ describe('kit buttons (UX-001, UX-026)', () => {
   });
 });
 
-describe('kit form fields (UX-001, UX-026)', () => {
+describe('kit form fields (UX-001, UX-026 stopgap)', () => {
   it('associates the label with the control by for and id', () => {
     const out = html(<TextField label="Task name" defaultValue="Main" />);
     const id = /<input[^>]* id="([^"]+)"/.exec(out)?.[1];
@@ -87,7 +87,7 @@ describe('kit form fields (UX-001, UX-026)', () => {
   });
 });
 
-describe('kit tabs and toggle group (UX-001, UX-025)', () => {
+describe('kit tabs and toggle group (UX-001, UX-025 stopgap)', () => {
   const tabs = [{ id: 'output', label: 'Output' }, { id: 'problems', label: 'Problems', badge: '3' }, { id: 'trace', label: 'Trace', disabled: true }];
 
   it('renders a tab list whose selected tab is the only one in the tab order', () => {
@@ -122,7 +122,7 @@ describe('kit tabs and toggle group (UX-001, UX-025)', () => {
   });
 });
 
-describe('kit dialogs (UX-001, UX-025)', () => {
+describe('kit dialogs (UX-001, UX-025 stopgap)', () => {
   it('renders nothing while closed', () => {
     expect(html(<Dialog open={false} onClose={noop} title="Settings">x</Dialog>)).toBe('');
   });
@@ -148,7 +148,7 @@ describe('kit dialogs (UX-001, UX-025)', () => {
   });
 });
 
-describe('kit menu and tooltip (UX-001)', () => {
+describe('kit menu and tooltip (UX-001 stopgap)', () => {
   it('renders a menu button closed, with the menu popup attributes and no menu in the page', () => {
     const out = html(<MenuButton label="Build options" items={[{ id: 'compile', label: 'Compile', onSelect: noop }]} />);
     expect(out).toContain('aria-haspopup="menu"');
@@ -164,7 +164,7 @@ describe('kit menu and tooltip (UX-001)', () => {
   });
 });
 
-describe('kit display components (UX-001, UX-009)', () => {
+describe('kit display components (UX-001, UX-009 stopgap)', () => {
   it('gives a status dot a text, shown or read by a screen reader only', () => {
     const hidden = html(<StatusDot tone="success" label="Running" />);
     expect(hidden).toContain('ui-visually-hidden');
