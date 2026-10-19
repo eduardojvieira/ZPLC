@@ -2137,12 +2137,14 @@ static int handle_memory_write(zplc_native_runtime_session_t *session,
                                      response_size);
     }
 
-    /* LRN-017: while the program runs, or a breakpoint holds a scan, a write that lies inside the input image waits
-     * for the start of the next scan. The size of the memory is checked here, as a write at once would check it. */
+    /* LRN-017: while the program runs, a write that lies inside the input image waits for the start of the next scan
+     * (and, when a breakpoint resumed a scan that has not ended, for the end of that scan). A paused program takes the
+     * write at once, as a debugger's write has always been taken. The size of the memory is checked here, as a write at
+     * once would check it. */
     if (decode_hex_bytes(request->bytecode_hex, bytes, sizeof(bytes), &bytes_length) == 0 &&
         narrow_uint16(request->address, &address) == 0 &&
         session->program_loaded != 0U &&
-        (session->state == ZPLC_NATIVE_SESSION_RUNNING || session->scan_in_flight != 0U) &&
+        session->state == ZPLC_NATIVE_SESSION_RUNNING &&
         (uint32_t)address + bytes_length <= ZPLC_MEM_IPI_BASE + ZPLC_MEM_IPI_SIZE) {
         zplc_native_staged_input_t *staged;
 

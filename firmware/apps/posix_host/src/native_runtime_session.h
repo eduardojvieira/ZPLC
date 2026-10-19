@@ -80,7 +80,8 @@ typedef struct {
     /*
      * LRN-017, RT-009: a memory.write into the input image while the program runs is queued here, and the start of the
      * next scan applies it; the image a scan reads never changes inside that scan. scan_in_flight is 1 while a
-     * breakpoint holds a scan that has begun and not ended.
+     * breakpoint has held a scan that has begun and not ended: the queue waits for its end. A paused program takes a
+     * write at once, which is how a debugger's write has always behaved.
      */
     zplc_native_staged_input_t staged_inputs[ZPLC_NATIVE_STAGED_INPUTS_MAX];
     uint8_t staged_input_count;

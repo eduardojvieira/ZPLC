@@ -1803,9 +1803,13 @@ static void test_input_writes_apply_at_the_next_scan_start(void)
     (void)zplc_native_runtime_session_tick(&session, now_ms, event, sizeof(event));
     TEST_ASSERT(session.state == ZPLC_NATIVE_SESSION_PAUSED && ipi[0] == 1U, "the next scan starts with the new value in the image");
 
-    (void)write_input_bytes(&session, 0U, "02");
-    TEST_ASSERT(ipi[0] == 1U, "a value written while a scan is in progress does not reach that scan");
+    /* A debugger's write to a paused program is taken at once, as it always was; the program runs again from the
+     * resume, and a write after that waits for the end of the scan that was held. */
+    (void)write_input_bytes(&session, 8U, "05");
+    TEST_ASSERT(ipi[8] == 5U, "a write to a paused program is applied at once");
     (void)session_call(&session, "{\"id\":\"resume\",\"type\":\"request\",\"method\":\"execution.resume\",\"params\":{}}");
+    (void)write_input_bytes(&session, 0U, "02");
+    TEST_ASSERT(ipi[0] == 1U, "a value written while a resumed scan has not ended does not reach that scan");
     (void)zplc_native_runtime_session_tick(&session, now_ms + 100U, event, sizeof(event));
     TEST_ASSERT(opi[0] == 1U && session.cycle_count == 1U, "the scan that was in progress finishes with the value it started with");
     TEST_ASSERT(ipi[0] == 1U, "and the image still holds it after that scan");
