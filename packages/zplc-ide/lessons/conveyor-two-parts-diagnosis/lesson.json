@@ -14,6 +14,18 @@
   "tracks": [
     "simulation"
   ],
+  "unsupported": {
+    "hardware": {
+      "reason": {
+        "en": "The lesson diagnoses a recorded two-part sequence by reading a trace, and no trace recorded from a board has been written for it.",
+        "es": "La lección diagnostica una secuencia registrada de dos piezas leyendo una traza, y no se ha escrito para ella una traza registrada desde una placa."
+      },
+      "instead": {
+        "en": "Complete it in Simulation, where the trace is the evidence you read.",
+        "es": "Complétela en Simulación, donde la traza es la evidencia que usted lee."
+      }
+    }
+  },
   "plant": null,
   "estimatedMinutes": 20,
   "starter": {

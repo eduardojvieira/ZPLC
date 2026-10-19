@@ -21,6 +21,20 @@ function harness(over: Partial<WorkspaceDeps> = {}, recents: RecentEntry[] = [])
   return { deps, remembered, calls, recents };
 }
 
+describe('opening the app-owned workspace of a lesson (LRN-003)', () => {
+  it('opens it with no folder dialog and no remembered folder when the main process owns the workspaces', async () => {
+    const { deps, remembered, calls } = harness({ openManaged: async (id, project) => { calls.push(`managed:${id}:${project}`); return 'created'; } });
+    expect(await openLessonWorkspace(deps, LESSON, 'scan_snapshot_starter')).toBe('created');
+    expect(calls).toEqual([`managed:${LESSON}:scan_snapshot_starter`]);
+    expect(remembered.size).toBe(0);
+  });
+
+  it('says reopened for a workspace that already held the learner\'s work, and cancelled when it could not be opened', async () => {
+    expect(await openLessonWorkspace(harness({ openManaged: async () => 'reopened' }).deps, LESSON, 'scan_snapshot_starter')).toBe('reopened');
+    expect(await openLessonWorkspace(harness({ openManaged: async () => false }).deps, LESSON, 'scan_snapshot_starter')).toBe('cancelled');
+  });
+});
+
 describe('opening the workspace of a lesson', () => {
   it('creates the workspace from the starter on the first start and remembers the folder for that lesson', async () => {
     const { deps, remembered, calls } = harness();

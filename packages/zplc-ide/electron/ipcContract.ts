@@ -64,6 +64,9 @@ export const LEARN_PROGRESS_CHANNEL = {
   IMPORT: 'learn-progress:import',
 } as const;
 
+/** Opening the app-owned workspace of a lesson (LRN-003): one lesson id in, the window's project folder out. */
+export const LEARN_WORKSPACE_CHANNEL = { OPEN: 'learn-workspace:open' } as const;
+
 export const SESSION_CHANNEL = { LOAD: 'session:load', SAVE: 'session:save' } as const;
 
 /**
@@ -147,6 +150,7 @@ export const IPC_INVOKE_CHANNELS: readonly string[] = [
   ...values(TOOL_EXECUTION_AUDIT_CHANNEL),
   ...values(AI_PROVIDER_CHANNEL),
   ...values(LEARN_PROGRESS_CHANNEL),
+  ...values(LEARN_WORKSPACE_CHANNEL),
   ...values(SESSION_CHANNEL),
   PORT_CHOICE_CHANNEL.CHOOSE, PORT_CHOICE_CHANNEL.LIST,
   CLOSE_GUARD_CHANNEL.SET_DIRTY, CLOSE_GUARD_CHANNEL.CLOSE_NOW,

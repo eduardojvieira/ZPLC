@@ -12,6 +12,18 @@
   "tracks": [
     "simulation"
   ],
+  "unsupported": {
+    "hardware": {
+      "reason": {
+        "en": "The lesson watches a value move one scan at a time, and a board gives no view of single scans.",
+        "es": "La lección observa cómo un valor avanza un ciclo de escaneo a la vez, y una placa no permite ver cada ciclo por separado."
+      },
+      "instead": {
+        "en": "Complete it in Simulation, where the trace shows each scan, then read the scan cycle page before you try a board.",
+        "es": "Complétela en Simulación, donde la traza muestra cada ciclo, y lea la página del ciclo de escaneo antes de probar con una placa."
+      }
+    }
+  },
   "plant": null,
   "estimatedMinutes": 10,
   "starter": {

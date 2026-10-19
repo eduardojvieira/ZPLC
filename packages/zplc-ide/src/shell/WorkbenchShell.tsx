@@ -12,7 +12,7 @@ import { useT } from '../i18n';
 import type { DebugController } from '../hooks/useDebugController';
 import { openLearnHome, useLearnUi } from '../learn/learnUi';
 import { useIDEStore } from '../store/useIDEStore';
-import { startShellRouting } from './shellRouting';
+import { lessonSurface, startShellRouting } from './shellRouting';
 import { useShellLayout } from '../store/useShellLayout';
 import { useShellLayoutSizes, useWorkspaceLayout } from '../utils/layoutStorage';
 import { workspaceLayoutFrom } from '../utils/sessionState';
@@ -41,6 +41,7 @@ export function WorkbenchShell({ EditorArea, Console, debugController }: Workben
   const { activityView, primaryVisible, secondaryVisible, showActivity, setPrimaryVisible, setSecondaryVisible } = useShellLayout();
   const isConsoleCollapsed = useIDEStore((s) => s.isConsoleCollapsed);
   const learnHomeOpen = useLearnUi((s) => s.homeOpen);
+  const lessonWorkspace = useLearnUi((s) => s.workspace);
   const sessionLayout = useIDEStore((s) => s.sessionLayout);
   const setSessionLayout = useIDEStore((s) => s.setSessionLayout);
   const projectSession = useIDEStore((s) => s.projectSession);
@@ -70,6 +71,12 @@ export function WorkbenchShell({ EditorArea, Console, debugController }: Workben
 
   useCollapsible(primaryPanel, primaryVisible);
   useCollapsible(secondaryPanel, secondaryVisible);
+
+  // The lesson moves to the secondary sidebar when the rail leaves Learn (LRN-004); that sidebar opens then, so the lesson never hides.
+  const lessonBeside = lessonSurface(activityView, lessonWorkspace !== null && lessonWorkspace.session === projectSession) === 'secondary';
+  useEffect(() => {
+    if (lessonBeside && density !== 'compact') useShellLayout.getState().setSecondaryVisible(true);
+  }, [lessonBeside, density]);
 
   // A window as narrow as the minimum has no room for the secondary sidebar (UX-023); it can be shown again from the View menu.
   useEffect(() => {

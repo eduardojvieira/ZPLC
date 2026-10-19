@@ -175,6 +175,7 @@ const sidebars = {
       collapsed: true,
       items: [
         'learn/index',
+        'learn/educators',
         'languages/examples/v1-5-language-suite',
       ],
     },

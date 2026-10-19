@@ -29,6 +29,8 @@ export interface ExampleEntry {
   languages: readonly ExampleLanguage[];
   /** The board id of the manifest (`rpi_pico`), for examples that need hardware. */
   board?: string;
+  /** Set on a hardware example that ships no scenario; its reason is the catalog key `examples.<folder>.noScenario` (LRN-036). */
+  noScenario?: true;
   showOnWelcome: boolean;
 }
 
@@ -94,12 +96,12 @@ export const EXAMPLE_CATALOG: Readonly<Record<string, ExampleEntry>> = {
   esp32s3_blinky: example('esp32s3_blinky', { group: 'boards', level: 'beginner', languages: ['ST'], board: 'esp32s3_devkitc', showOnWelcome: true }),
   opta_led_chaser: example('opta_led_chaser', { group: 'boards', level: 'intermediate', languages: ['ST'], board: 'arduino_opta_wifi', showOnWelcome: true }),
   opta_led_chaser_ld: example('opta_led_chaser_ld', { group: 'boards', level: 'intermediate', languages: ['LD'], board: 'arduino_opta_wifi', showOnWelcome: true }),
-  multitask_demo: example('multitask_demo', { group: 'boards', level: 'intermediate', languages: ['ST'], board: 'rpi_pico', showOnWelcome: true }),
+  multitask_demo: example('multitask_demo', { group: 'boards', level: 'intermediate', languages: ['ST'], board: 'rpi_pico', noScenario: true, showOnWelcome: true }),
   analog_test: example('analog_test', { group: 'boards', level: 'intermediate', languages: ['ST'], board: 'rpi_pico', showOnWelcome: true }),
 
   // Test fixtures, kept out of the learner's list
   kitchen_sink: example('kitchen_sink', { group: 'fixtures', level: 'advanced', languages: ['ST'], showOnWelcome: false }),
-  pico_persist_test: example('pico_persist_test', { group: 'fixtures', level: 'intermediate', languages: ['ST'], board: 'rpi_pico', showOnWelcome: false }),
+  pico_persist_test: example('pico_persist_test', { group: 'fixtures', level: 'intermediate', languages: ['ST'], board: 'rpi_pico', noScenario: true, showOnWelcome: false }),
 };
 
 /** What the Welcome screen shows for one example. `level` is missing for a project that has no entry. */
@@ -110,6 +112,8 @@ export interface ExampleListing {
   level?: ExampleLevel;
   languages: readonly ExampleLanguage[];
   board?: string;
+  /** Why a hardware example has no scenario, in the language of the interface; absent when it has one. */
+  noScenario?: string;
 }
 
 export interface ExampleSection { id: ExampleGroupId; title: string; blurb: string; examples: ExampleListing[] }
@@ -125,7 +129,7 @@ export function buildExampleSections(projects: ReadonlyArray<Pick<ProjectInfo, '
 
   for (const [id, entry] of Object.entries(EXAMPLE_CATALOG)) {
     if (!present.has(id) || !entry.showOnWelcome) continue;
-    section(entry.group).examples.push({ id, title: entry.title, summary: entry.summary, level: entry.level, languages: entry.languages, board: entry.board });
+    section(entry.group).examples.push({ id, title: entry.title, summary: entry.summary, level: entry.level, languages: entry.languages, board: entry.board, ...(entry.noScenario ? { noScenario: t(`examples.${id}.noScenario` as MessageKey) } : {}) });
   }
   const uncatalogued = projects.filter((project) => !(project.id in EXAMPLE_CATALOG)).sort((a, b) => a.name.localeCompare(b.name));
   for (const project of uncatalogued) section('more').examples.push({ id: project.id, title: project.name, summary: project.description ?? '', languages: [] });

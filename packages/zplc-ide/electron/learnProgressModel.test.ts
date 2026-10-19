@@ -42,14 +42,41 @@ describe('the Learn progress document (LRN-031, LRN-032)', () => {
     for (const broken of [
       { ...document, extra: 1 },
       { ...document, schemaVersion: 1 },
+      { ...document, schemaVersion: 9 },
       { ...document, last: { lessonId: 'Not An Id', at: '2026-10-10T11:00:00.000Z' } },
-      { ...document, lessons: { 'motor-start-stop-safe': { state: 'passed', grade: null, passedAt: null, startedAt: null, hintsUsed: 3, solutionShown: false } } },
+      { ...document, lessons: { 'motor-start-stop-safe': { state: 'passed', grade: null, passedAt: null, startedAt: null, hintsShown: [3], solutionShown: false } } },
       // An own key named __proto__ (an object literal would set the prototype instead).
-      { ...document, lessons: Object.fromEntries([['__proto__', { state: 'passed', grade: null, passedAt: null, startedAt: null, hintsUsed: 0, solutionShown: false }]]) },
-      { ...document, lessons: { 'edge-counter-pulses': { state: 'in-progress', grade: grade({ lessonId: 'edge-counter-pulses' }), passedAt: null, startedAt: null, hintsUsed: 0, solutionShown: false } } },
+      { ...document, lessons: Object.fromEntries([['__proto__', { state: 'passed', grade: null, passedAt: null, startedAt: null, hintsShown: [], solutionShown: false }]]) },
+      { ...document, lessons: { 'edge-counter-pulses': { state: 'in-progress', grade: grade({ lessonId: 'edge-counter-pulses' }), passedAt: null, startedAt: null, hintsShown: [], solutionShown: false } } },
     ]) expect(parseProgress(JSON.stringify(broken))).toBeUndefined();
     expect(parseProgress('{')).toBeUndefined();
     expect(parseProgress('x'.repeat(300 * 1024))).toBeUndefined();
+  });
+
+  it('records every hint level shown, not only the highest, and merges them as a union (LRN-010)', () => {
+    let progress = withNote(emptyProgress(), { lessonId: 'edge-counter-pulses', hint: 2 }, '2026-10-10T11:00:00.000Z');
+    expect(progress.lessons['edge-counter-pulses']!.hintsShown).toEqual([2]);
+    progress = withNote(progress, { lessonId: 'edge-counter-pulses', hint: 1 }, '2026-10-10T11:05:00.000Z');
+    progress = withNote(progress, { lessonId: 'edge-counter-pulses', hint: 1 }, '2026-10-10T11:06:00.000Z');
+    expect(progress.lessons['edge-counter-pulses']!.hintsShown).toEqual([1, 2]);
+    const other = withNote(emptyProgress(), { lessonId: 'edge-counter-pulses', hint: 1 }, '2026-10-10T09:00:00.000Z');
+    expect(mergeProgress(other, withNote(emptyProgress(), { lessonId: 'edge-counter-pulses', hint: 2 }, '2026-10-10T10:00:00.000Z')).lessons['edge-counter-pulses']!.hintsShown).toEqual([1, 2]);
+    expect(parseProgress(JSON.stringify({ ...JSON.parse(serializeProgress(progress)), lessons: { 'edge-counter-pulses': { ...progress.lessons['edge-counter-pulses'], hintsShown: [2, 1] } } }))).toBeUndefined();
+  });
+
+  it('migrates a stored version 2 document, which kept only the highest hint level, and an export of it (fixture)', () => {
+    const v2 = (hintsUsed: number) => JSON.stringify({
+      schemaVersion: 2, last: { lessonId: 'edge-counter-pulses', at: '2026-10-10T11:00:00.000Z' },
+      lessons: { 'edge-counter-pulses': { state: 'in-progress', grade: null, passedAt: null, startedAt: '2026-10-10T10:00:00.000Z', hintsUsed, solutionShown: false } },
+    });
+    expect(parseProgress(v2(2))!.lessons['edge-counter-pulses']).toMatchObject({ hintsShown: [1, 2] });
+    expect(parseProgress(v2(1))!.lessons['edge-counter-pulses']).toMatchObject({ hintsShown: [1] });
+    expect(parseProgress(v2(0))!.lessons['edge-counter-pulses']).toMatchObject({ hintsShown: [] });
+    expect(parseProgress(v2(3))).toBeUndefined();
+    expect(JSON.parse(serializeProgress(parseProgress(v2(2))!))).toMatchObject({ schemaVersion: 3 });
+    const exported = JSON.stringify({ ...JSON.parse(v2(1)), kind: 'zplc-learn-progress' });
+    const imported = parseImport(exported);
+    expect(imported.ok && imported.progress.lessons['edge-counter-pulses']!.hintsShown).toEqual([1]);
   });
 
   it('accepts a grade record only when it is exactly one and says the same thing twice', () => {
@@ -72,7 +99,7 @@ describe('the Learn progress document (LRN-031, LRN-032)', () => {
   it('migrates the file of the first release and keeps lessons it does not know', () => {
     const migrated = migrateLegacyMastery('{"schemaVersion":1,"mastered":["motor-start-stop-safe","a-lesson-of-a-newer-build"]}')!;
     expect(passedLessonIds(migrated)).toEqual(['a-lesson-of-a-newer-build', 'motor-start-stop-safe']);
-    expect(migrated.lessons['motor-start-stop-safe']).toEqual({ state: 'passed', grade: null, passedAt: null, startedAt: null, hintsUsed: 0, solutionShown: false });
+    expect(migrated.lessons['motor-start-stop-safe']).toEqual({ state: 'passed', grade: null, passedAt: null, startedAt: null, hintsShown: [], solutionShown: false });
     for (const raw of ['{"schemaVersion":1,"mastered":["x"]}', '{"schemaVersion":1,"mastered":["motor-start-stop-safe","motor-start-stop-safe"]}', '{"schemaVersion":2,"mastered":[]}', '{"schemaVersion":1,"mastered":[],"x":1}', '[]']) {
       expect(migrateLegacyMastery(raw)).toBeUndefined();
     }
@@ -86,7 +113,7 @@ describe('the Learn progress document (LRN-031, LRN-032)', () => {
     const right = mergeProgress(other, mergeProgress(newer, older));
     expect(serializeProgress(left)).toBe(serializeProgress(right));
     expect(serializeProgress(mergeProgress(left, left))).toBe(serializeProgress(left));
-    expect(left.lessons['motor-start-stop-safe']).toMatchObject({ state: 'passed', hintsUsed: 1, passedAt: '2026-10-10T12:00:00.000Z' });
+    expect(left.lessons['motor-start-stop-safe']).toMatchObject({ state: 'passed', hintsShown: [1], passedAt: '2026-10-10T12:00:00.000Z' });
     expect(left.lessons['motor-start-stop-safe']!.grade!.programSha256).toBe(HASH_B);
     expect(left.last!.lessonId).toBe('motor-start-stop-safe');
   });
@@ -96,7 +123,7 @@ describe('the Learn progress document (LRN-031, LRN-032)', () => {
     progress = withGrade(progress, { ...failed(), time: '2026-10-10T13:00:00.000Z' });
     progress = withNote(progress, { lessonId: 'motor-start-stop-safe', hint: 1 }, '2026-10-10T13:05:00.000Z');
     progress = withNote(progress, { lessonId: 'motor-start-stop-safe', solution: true }, '2026-10-10T13:06:00.000Z');
-    expect(progress.lessons['motor-start-stop-safe']).toMatchObject({ state: 'passed', hintsUsed: 1, solutionShown: true });
+    expect(progress.lessons['motor-start-stop-safe']).toMatchObject({ state: 'passed', hintsShown: [1], solutionShown: true });
     expect(progress.lessons['motor-start-stop-safe']!.grade!.time).toBe('2026-10-10T12:00:00.000Z');
   });
 

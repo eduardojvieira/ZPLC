@@ -14,6 +14,18 @@
   "tracks": [
     "simulation"
   ],
+  "unsupported": {
+    "hardware": {
+      "reason": {
+        "en": "The lesson checks timed assertions to the millisecond, and a board adds timing jitter that would make those checks unreliable.",
+        "es": "La lección comprueba aserciones temporales al milisegundo, y una placa añade fluctuaciones de tiempo que harían poco fiables esas comprobaciones."
+      },
+      "instead": {
+        "en": "Complete it in Simulation, where time is exact, then apply the same assertions to a board with the test tools.",
+        "es": "Complétela en Simulación, donde el tiempo es exacto, y luego aplique las mismas aserciones a una placa con las herramientas de pruebas."
+      }
+    }
+  },
   "plant": null,
   "estimatedMinutes": 25,
   "starter": {

@@ -18,14 +18,15 @@ physical operation.
 Studio has ten lessons in a course, in English and in Spanish. On the Welcome
 screen, choose **Learn**: the Learn home opens, with no project and no network,
 and lists the modules in order with their level, what each requires and how long
-it takes. Choose **Start the course**: Studio makes the workspace of the first lesson, in a folder that you choose the
-first time, and opens it; there is no copy step.
+it takes. Choose **Start the course**: Studio makes the workspace of the first lesson in its own folder and opens it; there is no folder to choose and no copy step. The lesson stays visible beside the editor, also when you switch to the Project view.
 
 Each lesson takes you through six stages: Objective, Predict, Edit, Run, Observe
 and Reflect. You edit the workspace, save it and press **Check**. Studio
 runs your saved program against the scenario of the lesson and lists every
 assertion that failed, with the time, the value it expected and the value it
 saw. A lesson is complete when every assertion of its scenario passed.
+
+Every lesson offers two levels of hint, and Studio records each level you open. The reference solution opens only on request, and the progress records that you saw it. A teacher can hide the solutions: see [Educators](./educators.md).
 
 A lesson is locked until the lessons it requires are passed, and the home says
 which ones. If you would rather take them in any order, turn on **Unlock all
@@ -34,8 +35,7 @@ what Learn does, and what it keeps, is in [Studio workbench](../ide/features.md#
 
 ## Open an example project
 
-Studio bundles example projects on the Welcome screen, grouped from first steps
-to motors, process control, the five languages and boards. They live in
+Studio bundles example projects on the Welcome screen, grouped by topic (first steps, motors, process control, the five languages and boards) and by level, each showing its language and, for a hardware example, its board. A hardware example either ships a scenario or says why it has none. They live in
 `packages/zplc-ide/projects/`. To copy one into a folder of your own, choose it
 under **Examples**.
 
@@ -59,7 +59,7 @@ what works today.
 
 ## What is not here yet
 
-A track for a learner board, and the lessons of six modules that are still empty,
+Each lesson lists the tracks it supports and, for a track it does not support, says why and what to do instead. A track for a learner board, and the lessons of six modules that are still empty,
 are future work. The lessons and the
 examples are host and simulation exercises: they do not show how a program
 behaves on a physical board.

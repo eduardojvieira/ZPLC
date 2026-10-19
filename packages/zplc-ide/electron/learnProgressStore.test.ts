@@ -35,7 +35,7 @@ describe('Learn progress main-process store (LRN-031, LRN-032)', () => {
     const second = createLearnProgressStore(directory);
     const progress = await second.readProgress();
     expect(progress.last).toEqual({ lessonId: 'edge-counter-pulses', at: '2026-10-10T10:00:00.000Z' });
-    expect(progress.lessons['motor-start-stop-safe']).toMatchObject({ state: 'passed', hintsUsed: 2, solutionShown: false, startedAt: '2026-10-10T10:00:00.000Z', passedAt: '2026-10-10T10:30:00.000Z' });
+    expect(progress.lessons['motor-start-stop-safe']).toMatchObject({ state: 'passed', hintsShown: [2], solutionShown: false, startedAt: '2026-10-10T10:00:00.000Z', passedAt: '2026-10-10T10:30:00.000Z' });
     expect(progress.lessons['motor-start-stop-safe']!.grade!.programSha256).toBe(HASH);
     expect(progress.lessons['edge-counter-pulses']).toMatchObject({ state: 'in-progress', solutionShown: true });
     expect(parseProgress(await readFile(join(directory, LEARN_PROGRESS_FILENAME), 'utf8'))).toEqual(progress);
@@ -102,7 +102,7 @@ describe('Learn progress main-process store (LRN-031, LRN-032)', () => {
     const progress = await target.readProgress();
     // The newest grade wins, the larger hint level wins, and the lesson this build does not know is kept.
     expect(progress.lessons['motor-start-stop-safe']!.grade!.programSha256).toBe('d'.repeat(64));
-    expect(progress.lessons['edge-counter-pulses']!.hintsUsed).toBe(2);
+    expect(progress.lessons['edge-counter-pulses']!.hintsShown).toEqual([1, 2]);
     expect(progress.lessons['lesson-from-a-newer-build']).toMatchObject({ state: 'passed', grade: null });
     // A file of the first release is accepted too; a damaged one changes nothing.
     await target.importProgress('{"schemaVersion":1,"mastered":["tank-level-fault-reset"]}');

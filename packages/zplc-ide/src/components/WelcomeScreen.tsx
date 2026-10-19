@@ -208,6 +208,7 @@ export function WelcomeScreen() {
                             <span className="font-medium">{example.title}</span>
                             <ExampleBadges example={example} />
                             {example.summary && <span data-example-summary className="text-sm leading-5 text-[var(--text-secondary)]">{example.summary}</span>}
+                            {example.noScenario && <span data-example-no-scenario className="text-xs leading-4 text-[var(--text-secondary)]">{example.noScenario}</span>}
                           </Button>
                         </li>
                       ))}

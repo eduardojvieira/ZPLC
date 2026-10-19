@@ -41,6 +41,9 @@ export type LessonStageKey = typeof LESSON_STAGE_KEYS[number];
 export type LessonLevel = typeof LESSON_LEVELS[number];
 export type LessonLocale = typeof LESSON_LOCALES[number];
 
+export type LessonLocalizedText = Record<LessonLocale, string>;
+export interface LessonUnsupportedTrack { reason: LessonLocalizedText; instead: LessonLocalizedText }
+
 export interface LessonManifest {
   schemaVersion: typeof LESSON_SCHEMA_VERSION;
   id: string;
@@ -53,6 +56,8 @@ export interface LessonManifest {
   prerequisites: string[];
   languages: string[];
   tracks: string[];
+  /** For each track of the course the lesson does not list: why, and what to do instead, in both languages (LRN-011). */
+  unsupported: Partial<Record<string, LessonUnsupportedTrack>>;
   plant: string | null;
   estimatedMinutes: number;
   /** The example project copied into the learner's workspace, and the program of it the learner edits. */
@@ -118,11 +123,30 @@ function exactKeys(value: Json, keys: readonly string[], path: string, problems:
 
 const oneOf = <T extends string>(values: readonly T[], value: unknown): value is T => typeof value === 'string' && (values as readonly string[]).includes(value);
 
+const isLocalized = (value: unknown): boolean => isObject(value) && LESSON_LOCALES.every((locale) => isString(value[locale])) && Object.keys(value).length === LESSON_LOCALES.length;
+
+/** LRN-011: a lesson says why, and what to do instead, for exactly the tracks it does not list. */
+function validateUnsupported(manifest: Json, problems: string[]): void {
+  if (!('unsupported' in manifest)) return;
+  const unsupported = manifest.unsupported;
+  if (!isObject(unsupported)) { problems.push('manifest.unsupported: must be an object'); return; }
+  const listed = isStringArray(manifest.tracks) ? manifest.tracks : [];
+  for (const track of LESSON_TRACKS) {
+    const entry = unsupported[track];
+    if (listed.includes(track)) { if (entry !== undefined) problems.push(`manifest.unsupported: track "${track}" is supported, so it must not have a reason`); continue; }
+    if (entry === undefined) { problems.push(`manifest.unsupported: track "${track}" is not supported, so it needs a reason and an instead`); continue; }
+    if (!isObject(entry)) { problems.push(`manifest.unsupported.${track}: must be an object`); continue; }
+    exactKeys(entry, ['reason', 'instead'], `manifest.unsupported.${track}`, problems);
+    for (const key of ['reason', 'instead'] as const) if (key in entry && !isLocalized(entry[key])) problems.push(`manifest.unsupported.${track}.${key}: must be a non-empty string in ${LESSON_LOCALES.join(' and ')}`);
+  }
+  for (const key of Object.keys(unsupported)) if (!(LESSON_TRACKS as readonly string[]).includes(key)) problems.push(`manifest.unsupported: unknown track "${key}"`);
+}
+
 /** Every problem of a lesson manifest; an empty list means the manifest is valid. */
 export function validateManifest(value: unknown): string[] {
   const problems: string[] = [];
   if (!isObject(value)) return ['manifest: must be an object'];
-  exactKeys(value, ['schemaVersion', 'id', 'version', 'order', 'module', 'level', 'prerequisites', 'languages', 'tracks', 'plant', 'estimatedMinutes', 'starter', 'solution', 'scenario', 'regressionScenarios'], 'manifest', problems);
+  exactKeys(value, ['schemaVersion', 'id', 'version', 'order', 'module', 'level', 'prerequisites', 'languages', 'tracks', 'unsupported', 'plant', 'estimatedMinutes', 'starter', 'solution', 'scenario', 'regressionScenarios'], 'manifest', problems);
   if (value.schemaVersion !== LESSON_SCHEMA_VERSION) problems.push('manifest.schemaVersion: must be 1');
   if (typeof value.id !== 'string' || !ID.test(value.id)) problems.push('manifest.id: must be a lowercase slug of 3 to 64 characters');
   if (!isPositiveInt(value.version)) problems.push('manifest.version: must be a positive integer');
@@ -132,6 +156,7 @@ export function validateManifest(value: unknown): string[] {
   if (!isStringArray(value.prerequisites) || value.prerequisites.some((id) => !ID.test(id)) || new Set(value.prerequisites).size !== value.prerequisites.length) problems.push('manifest.prerequisites: must be a list of distinct lesson ids');
   if (!isStringArray(value.languages) || value.languages.length === 0 || value.languages.some((language) => !oneOf(LESSON_LANGUAGES, language))) problems.push(`manifest.languages: must list at least one of ${LESSON_LANGUAGES.join(', ')}`);
   if (!isStringArray(value.tracks) || value.tracks.length === 0 || value.tracks.some((track) => !oneOf(LESSON_TRACKS, track))) problems.push(`manifest.tracks: must list at least one of ${LESSON_TRACKS.join(', ')}`);
+  validateUnsupported(value, problems);
   if (value.plant !== null && !oneOf(LESSON_PLANTS, value.plant)) problems.push(`manifest.plant: must be null or one of ${LESSON_PLANTS.join(', ')}`);
   if (!isPositiveInt(value.estimatedMinutes) || (value.estimatedMinutes as number) > 480) problems.push('manifest.estimatedMinutes: must be an integer from 1 to 480');
   for (const part of ['starter', 'solution'] as const) {
@@ -360,6 +385,7 @@ export interface LessonIndexEntry {
   prerequisites: readonly string[];
   languages: readonly string[];
   tracks: readonly string[];
+  unsupported: Readonly<Partial<Record<string, LessonUnsupportedTrack>>>;
   plant: string | null;
   /** The plant's mapping to the starter's I/O (LRN-021); null for a lesson without a plant. */
   plantMap: PlantMap | null;

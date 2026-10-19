@@ -17,14 +17,14 @@ const memory = (initial: Record<string, string> = {}): SettingsStorage & { data:
 
 describe('application settings (IDE-007, IDE-010)', () => {
   it('UX-029 start with autosave off, the update check off, the language following the operating system and a 14 px editor with 4-space tabs', () => {
-    expect(DEFAULT_SETTINGS).toEqual({ editorFontSize: 14, editorTabSize: 4, density: 'comfortable', language: 'auto', autosaveSeconds: 0, checkForUpdates: false, unlockAllLessons: false });
+    expect(DEFAULT_SETTINGS).toEqual({ editorFontSize: 14, editorTabSize: 4, density: 'comfortable', language: 'auto', autosaveSeconds: 0, checkForUpdates: false, unlockAllLessons: false, hideSolutions: false });
     expect(AUTOSAVE_CHOICES[0]).toBe(0);
   });
 
   it('keep what is valid, field by field, and fall back to the default for anything else', () => {
-    expect(parseSettings({ editorFontSize: 18, editorTabSize: 2, density: 'compact', language: 'es', autosaveSeconds: 30, checkForUpdates: true, unlockAllLessons: true }))
-      .toEqual({ editorFontSize: 18, editorTabSize: 2, density: 'compact', language: 'es', autosaveSeconds: 30, checkForUpdates: true, unlockAllLessons: true });
-    expect(parseSettings({ editorFontSize: 400, editorTabSize: 5, density: 'huge', language: 'fr', autosaveSeconds: 7, checkForUpdates: 'yes', unlockAllLessons: 1 })).toEqual(DEFAULT_SETTINGS);
+    expect(parseSettings({ editorFontSize: 18, editorTabSize: 2, density: 'compact', language: 'es', autosaveSeconds: 30, checkForUpdates: true, unlockAllLessons: true, hideSolutions: true }))
+      .toEqual({ editorFontSize: 18, editorTabSize: 2, density: 'compact', language: 'es', autosaveSeconds: 30, checkForUpdates: true, unlockAllLessons: true, hideSolutions: true });
+    expect(parseSettings({ editorFontSize: 400, editorTabSize: 5, density: 'huge', language: 'fr', autosaveSeconds: 7, checkForUpdates: 'yes', unlockAllLessons: 1, hideSolutions: 'yes' })).toEqual(DEFAULT_SETTINGS);
     expect(parseSettings({ editorFontSize: 16.5, density: 'compact' })).toEqual({ ...DEFAULT_SETTINGS, density: 'compact' });
     for (const bad of [null, undefined, 'x', 7, []]) expect(parseSettings(bad)).toEqual(DEFAULT_SETTINGS);
   });

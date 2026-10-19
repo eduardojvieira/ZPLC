@@ -310,7 +310,7 @@ export interface IDEState {
   sessionLayout: WorkspaceLayout | null;
   setSessionLayout: (layout: WorkspaceLayout | null) => void;
   createNewProjectInFolder: () => Promise<boolean>;
-  copyExampleProjectToFolder: (projectId: string) => Promise<boolean>;
+  copyExampleProjectToFolder: (projectId: string, folder?: () => Promise<{ handle: FileSystemDirectoryHandle; seed: boolean } | null>) => Promise<boolean>;
   /** The Welcome screen's Learn entry: copy the first lesson's starter like any example, then show the Learn tab. */
   startLearning: (starterExampleId: string) => Promise<boolean>;
   getExampleProjects: () => ProjectInfo[];
@@ -754,7 +754,7 @@ export const useIDEStore = create<IDEState>((set, get) => ({
     }
   },
 
-  copyExampleProjectToFolder: async (projectId: string) => {
+  copyExampleProjectToFolder: async (projectId: string, folder) => {
     set({ projectOpenError: null });
     const blockUnsafeOpen = (): boolean => {
       const debug = get().debug;
@@ -785,10 +785,10 @@ export const useIDEStore = create<IDEState>((set, get) => ({
     }
     try {
       void flushSession();
-      const dirHandle = await openDirectoryPicker();
-      if (!isCurrent() || !dirHandle) return false;
-      get().addConsoleEntry({ type: 'info', message: `Copying example to: ${dirHandle.name}...`, source: 'system' });
-      await copyProjectToFolder(dirHandle, loaded.zplcConfig, assets);
+      const chosen = folder ? await folder() : await openDirectoryPicker().then((handle) => handle && { handle, seed: true });
+      if (!isCurrent() || !chosen) return false; const dirHandle = chosen.handle;
+      get().addConsoleEntry({ type: 'info', message: `${chosen.seed ? 'Copying example to' : 'Reopening'}: ${dirHandle.name}...`, source: 'system' });
+      if (chosen.seed) await copyProjectToFolder(dirHandle, loaded.zplcConfig, assets);
       if (!isCurrent()) return false;
       const readResult = await readProjectConfig(dirHandle);
       if (!isCurrent() || readResult.kind !== 'valid') throw new Error('copied project could not be read back');

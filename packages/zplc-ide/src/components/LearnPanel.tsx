@@ -32,6 +32,7 @@ export function LearnPanel({ workspaceTestPresentation }: { workspaceTestPresent
   const { locale }: { locale: LearnLocale } = useT();
   const updateSettings = useAppSettings((state) => state.update);
   const unlockAll = useAppSettings((state) => state.settings.unlockAllLessons);
+  const hideSolutions = useAppSettings((state) => state.settings.hideSolutions);
   const setLocale = (language: LearnLocale) => updateSettings({ language });
   const view = buildCourseView(LESSON_INDEX, progress, { locale, unlockAll });
   const ordered = view.modules.flatMap((module) => module.lessons);
@@ -182,7 +183,9 @@ export function LearnPanel({ workspaceTestPresentation }: { workspaceTestPresent
               <p className="mt-1 leading-5">{hint}</p>
             </details>
           ))}
-          {solutionShown
+          {hideSolutions
+            ? <p data-learn-solutions-hidden className="mt-2 text-xs leading-5 text-[var(--color-surface-300)]">{t('learn.solutionsHidden')}</p>
+            : solutionShown
             ? (
               <div className="mt-2 text-xs text-[var(--color-surface-300)]">
                 <h3 className="font-medium text-[var(--color-surface-100)]">{t('learn.solution.shown')}</h3>

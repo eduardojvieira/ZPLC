@@ -461,6 +461,7 @@ function setupIPC(): void {
     sessionStore: () => sessionStore,
     serialPorts,
     learnProgress: () => learnProgress,
+    learnWorkspaceRoot: () => path.join(app.getPath('userData'), 'learn-workspaces'),
     aiProvider: () => aiProvider,
     toolExecutionAudit,
     workspaceGateway: workspaceTestGateway,

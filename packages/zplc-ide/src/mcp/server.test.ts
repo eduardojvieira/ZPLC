@@ -93,8 +93,8 @@ describe('local MCP adapter', () => {
     await writeFile(join(userData, 'zplc-learn-mastery.v1.json'), '{"schemaVersion":1,"mastered":["Not A Lesson Id"]}');
     await expect(courseProgressResource({ ...bound, userData: user })).resolves.toEqual({ ok: false, error: 'MCP_INTERNAL_ERROR' });
     // The current file wins over the file of the first release.
-    const lesson = { state: 'passed', grade: null, passedAt: null, startedAt: null, hintsUsed: 0, solutionShown: false };
-    await writeFile(join(userData, 'zplc-learn-progress.v2.json'), JSON.stringify({ schemaVersion: 2, last: null, lessons: { 'edge-counter-pulses': lesson, 'scan-cycle-one-scan-memory': lesson } }));
+    const lesson = { state: 'passed', grade: null, passedAt: null, startedAt: null, hintsShown: [], solutionShown: false };
+    await writeFile(join(userData, 'zplc-learn-progress.v2.json'), JSON.stringify({ schemaVersion: 3, last: null, lessons: { 'edge-counter-pulses': lesson, 'scan-cycle-one-scan-memory': lesson } }));
     await expect(courseProgressResource({ ...bound, userData: user })).resolves.toEqual(progress({ mastered: ['edge-counter-pulses', 'scan-cycle-one-scan-memory'], completed: 2 }));
     await writeFile(join(userData, 'zplc-learn-progress.v2.json'), '{"schemaVersion":2,"last":null,"lessons":{"x":{}}}');
     await expect(courseProgressResource({ ...bound, userData: user })).resolves.toEqual({ ok: false, error: 'MCP_INTERNAL_ERROR' });

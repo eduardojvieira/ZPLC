@@ -14,6 +14,18 @@
   "tracks": [
     "simulation"
   ],
+  "unsupported": {
+    "hardware": {
+      "reason": {
+        "en": "The lesson tests a stop that must win over a start, using inputs a script presses at exact times; a board would need wired buttons and a recorded trace that does not exist yet.",
+        "es": "La lección prueba una parada que debe imponerse a un arranque, con entradas que un guion pulsa en instantes exactos; una placa necesitaría pulsadores cableados y una traza registrada que todavía no existe."
+      },
+      "instead": {
+        "en": "Complete it in Simulation, where the scenario presses each input for you, and keep the stop contact wired normally closed on a real motor.",
+        "es": "Complétela en Simulación, donde el escenario pulsa cada entrada por usted, y cablee el contacto de parada normalmente cerrado en un motor real."
+      }
+    }
+  },
   "plant": null,
   "estimatedMinutes": 20,
   "starter": {

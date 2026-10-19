@@ -826,13 +826,14 @@ export const JOURNEYS: Journey[] = [
     // started (its workspace made from the starter, no copy step), a hint, the lesson passed, the window started again with the
     // progress kept, and the progress file moved out and back. The Help menu leg of LRN-001 is a native menu, which a journey cannot
     // click: it is proven in electron/appMenu.test.ts.
-    name: '11 Learn with no project open', example: 'none', proves: ['LRN-001'], partly: ['LRN-002', 'LRN-003', 'LRN-005', 'LRN-010', 'LRN-031', 'LRN-032'],
+    name: '11 Learn with no project open', example: 'none', proves: ['LRN-001'], partly: ['LRN-002', 'LRN-003', 'LRN-004', 'LRN-005', 'LRN-010', 'LRN-031', 'LRN-032', 'LRN-033', 'LRN-037'],
     run: async (app, { root }) => {
       // The first two lessons of the course, whatever their ids: the index orders them (LRN-028 allows no list of ids here).
       const [FIRST, SECOND] = courseOrder(LESSON_INDEX).map(({ id }) => id) as [string, string];
       const entry = LESSON_INDEX.lessons.find(({ id }) => id === FIRST)!;
       const lesson = learnLessonCatalog.en.find(({ id }) => id === FIRST)!;
-      const folder = join(root, 'learn-project'); mkdirSync(folder);
+      // The workspace of a lesson is app-owned (LRN-003): the main process makes it under the user-data folder, and no folder dialog is shown.
+      const folder = join(root, 'profile', 'learn-workspaces', FIRST);
       const home = css('[data-learn-home]');
       const stateOf = (id: string) => app.eval<string | null>(`document.querySelector('[data-learn-lesson="${id}"]')?.getAttribute('data-state') ?? null`);
       const homeText = () => app.eval<string>(`document.querySelector('[data-learn-home]')?.innerText ?? ''`);
@@ -853,15 +854,21 @@ export const JOURNEYS: Journey[] = [
       await app.click(css('[data-learn-unlock-all]'), 'the Unlock all lessons switch');
       await app.until('the lock to return', async () => (await stateOf(SECOND)) === 'locked' || undefined);
 
-      // 3. Start the course: the folder dialog is answered once, the workspace is made from the starter and opened.
-      app.answer(folder);
+      // 3. Start the course: the workspace is made from the starter and opened, with no folder dialog (none is answered here).
       await app.click(css('[data-learn-continue]'), 'the Start the course button');
       await app.until('the project workbench to appear', async () => await app.visible(toolbar) || undefined);
       const starter = JSON.parse(disk(join(packageRoot, 'projects', entry.starter.project, 'zplc.json'))) as { name: string };
-      assert(existsSync(join(folder, 'zplc.json')) && (JSON.parse(disk(join(folder, 'zplc.json'))) as { name: string }).name === starter.name, `The chosen folder does not hold the starter of the first lesson (${entry.starter.project}).`);
+      assert(existsSync(join(folder, 'zplc.json')) && (JSON.parse(disk(join(folder, 'zplc.json'))) as { name: string }).name === starter.name, `The app-owned workspace does not hold the starter of the first lesson (${entry.starter.project}).`);
       await app.until('the lesson to be shown beside the editor', async () => await app.eval<boolean>(`document.querySelector('[data-activity="learn"]')?.getAttribute('aria-current') === 'true' && document.querySelector('[data-learn-home]') === null && ${JSON.stringify([lesson.title, learnLessonCatalog.es.find(({ id }) => id === FIRST)!.title])}.includes(document.getElementById('learn-title')?.textContent?.trim() ?? '')`) || undefined);
       assert(await app.eval<boolean>(`!!document.querySelector('[aria-label="Primary sidebar"] [data-learn-reset]')`), 'The lesson surface does not offer to restore the starter once its workspace is open.');
       assert(!(await app.text()).includes('The project could not be opened'), 'The workbench shows an open error.');
+
+      // 3b. LRN-004: the lesson stays beside the editor when the rail leaves Learn (it moves to the secondary sidebar), and comes back with it.
+      await app.click(css('[data-activity="project"]'), 'the Project item of the rail');
+      await app.until('the lesson in the secondary sidebar', async () => await app.eval<boolean>(`!!document.querySelector('[aria-label="Secondary sidebar"] [data-learn-reset]') && !document.querySelector('[aria-label="Primary sidebar"] [data-learn-reset]')`) || undefined);
+      await app.click(css('[data-activity="learn"]'), 'the Learn item of the rail');
+      await app.press('Escape');
+      await app.until('the lesson in the primary sidebar again', async () => await app.eval<boolean>(`!!document.querySelector('[aria-label="Primary sidebar"] [data-learn-reset]') && !document.querySelector('[aria-label="Secondary sidebar"] [data-learn-reset]')`) || undefined);
 
       // 4. The rail's Learn item opens the home over the editor, and Escape returns to it.
       await app.click(css('[data-activity="learn"]'), 'the Learn item of the rail');
@@ -883,10 +890,10 @@ export const JOURNEYS: Journey[] = [
       await app.until('Learn to grade the first lesson as passed', async () => await app.eval<boolean>(`document.querySelector('[data-learn-grade="passed"]') !== null`) || undefined)
         .catch(async (error: Error) => { throw new Error(`${error.message}: the grade shown is ${await app.eval<string>(`document.querySelector('[data-learn-grade]')?.getAttribute('data-learn-grade') ?? 'none'`)}; ${await app.eval<string>(`document.querySelector('[data-learn-check-status]')?.textContent ?? ''`)}`); });
       const file = join(root, 'profile', 'zplc-learn-progress.v2.json');
-      type Saved = { last: { lessonId: string } | null; lessons: Record<string, { state: string; hintsUsed: number; solutionShown: boolean; grade: unknown }> };
+      type Saved = { last: { lessonId: string } | null; lessons: Record<string, { state: string; hintsShown: number[]; solutionShown: boolean; grade: unknown }> };
       await app.until('the passed lesson in the progress file', () => existsSync(file) && disk(file).includes('"state":"passed"') || undefined);
       const saved = JSON.parse(disk(file)) as Saved;
-      assert(saved.lessons[FIRST]?.state === 'passed' && saved.lessons[FIRST].hintsUsed >= 1 && saved.lessons[FIRST].solutionShown === false && saved.lessons[FIRST].grade !== null, `The progress file does not record the passed lesson with its hint and no solution: ${JSON.stringify(saved.lessons[FIRST])}`);
+      assert(saved.lessons[FIRST]?.state === 'passed' && saved.lessons[FIRST].hintsShown.includes(1) && saved.lessons[FIRST].solutionShown === false && saved.lessons[FIRST].grade !== null, `The progress file does not record the passed lesson with its hint and no solution: ${JSON.stringify(saved.lessons[FIRST])}`);
 
       // 7. The window starts again: the progress is read back, the next lesson is open, Continue offers it.
       await app.cdp.command('Page.reload');
@@ -902,7 +909,7 @@ export const JOURNEYS: Journey[] = [
       const exported = await app.until('the exported file', async () => await app.eval<string | null>('window.__learnExport') || undefined);
       const document_ = JSON.parse(exported) as { kind: string; lessons: Record<string, unknown> };
       assert(document_.kind === 'zplc-learn-progress' && FIRST in document_.lessons && (await app.eval<string>('window.__learnExportName')) === 'zplc-learn-progress.v2.json', 'The exported file is not the progress document.');
-      document_.lessons[SECOND] = { state: 'passed', grade: null, passedAt: null, startedAt: null, hintsUsed: 0, solutionShown: false };
+      document_.lessons[SECOND] = { state: 'passed', grade: null, passedAt: null, startedAt: null, hintsShown: [], solutionShown: false };
       const incoming = join(root, 'incoming-progress.json');
       writeFileSync(incoming, JSON.stringify(document_));
       const choose = async (path: string) => {
@@ -915,10 +922,29 @@ export const JOURNEYS: Journey[] = [
       assert(disk(file).includes(SECOND), 'The merged progress was not saved.');
       // A file of a version this Studio does not know is refused with its reason, and the progress stays as it was.
       const future = join(root, 'future-progress.json');
-      writeFileSync(future, JSON.stringify({ kind: 'zplc-learn-progress', schemaVersion: 3, last: null, lessons: {} }));
+      writeFileSync(future, JSON.stringify({ kind: 'zplc-learn-progress', schemaVersion: 4, last: null, lessons: {} }));
       await choose(future);
-      await app.until('the refusal', async () => (await homeText()).includes('The file is version 3, which this version of Studio cannot read. Your progress is unchanged.') || undefined);
+      await app.until('the refusal', async () => (await homeText()).includes('The file is version 4, which this version of Studio cannot read. Your progress is unchanged.') || undefined);
       assert((await homeText()).includes('2 of 10 lessons passed'), 'A refused file changed the progress.');
+
+      // 9. LRN-037, LRN-033: the whole home is reachable and operable from the keyboard. Tab walks the controls in reading order (Continue, the
+      // two switches, Export, Import, then the lessons); Space flips the classroom switch, and Enter on Continue opens the lesson, which then offers no solution.
+      const focused = () => app.eval<string>(`(() => { const el = document.activeElement; return el ? (el.getAttribute('data-learn-continue') !== null ? 'continue' : el.getAttribute('data-learn-unlock-all') !== null ? 'unlock' : el.getAttribute('data-learn-hide-solutions') !== null ? 'hide' : el.getAttribute('data-learn-export') !== null ? 'export' : el.getAttribute('data-learn-import') !== null ? 'import' : el.hasAttribute('data-learn-start') ? 'start' : '') : ''; })()`);
+      // The browser continues sequential navigation from the last focus point, so the walk starts at Continue, the first control of the page.
+      await app.eval(`document.querySelector('[data-learn-continue]').focus()`);
+      const order: string[] = ['continue'];
+      for (let step = 0; step < 60 && !order.includes('import'); step += 1) {
+        await app.press('Tab');
+        const here = await focused();
+        if (here && here !== order.at(-1) && here !== 'start') order.push(here);
+      }
+      assert(['continue', 'unlock', 'hide', 'export', 'import'].every((name, index) => order[index] === name), `Tab does not walk the Learn home in reading order: ${order.join(', ')}.`);
+      await app.eval(`document.querySelector('[data-learn-hide-solutions]').focus()`);
+      await app.press('Space');
+      await app.until('the classroom switch to be on, announced', async () => await app.eval<boolean>(`document.querySelector('input[data-learn-hide-solutions]')?.checked === true || document.querySelector('[data-learn-hide-solutions]')?.getAttribute('aria-checked') === 'true'`) && (await app.text()).includes('Reference solutions are hidden.') || undefined);
+      await app.eval(`document.querySelector('[data-learn-continue]').focus()`);
+      await app.press('Enter');
+      await app.until('the lesson, with no reference solution on offer', async () => await app.eval<boolean>(`document.querySelector('[data-learn-home]') === null && document.querySelector('[data-learn-solutions-hidden]') !== null && document.querySelector('[data-learn-show-solution]') === null`) || undefined);
     },
   },
   {

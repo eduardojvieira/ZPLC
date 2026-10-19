@@ -17,7 +17,7 @@ function render(progress: LearnProgress | null, over: Partial<LearnHomeViewProps
   const continueId = continueTarget(view, progress);
   return renderToStaticMarkup(
     <LearnHomeView
-      view={view} index={LESSON_INDEX} locale="en" continueId={continueId} fresh={!progress?.last} loaded failed={false} unlockAll={unlockAll}
+      view={view} index={LESSON_INDEX} locale="en" continueId={continueId} fresh={!progress?.last} loaded failed={false} unlockAll={unlockAll} hideSolutions={false} onHideSolutions={() => undefined}
       folderAccess busy={false} transfer="idle" onUnlockAll={() => undefined} onStart={() => undefined} onClose={() => undefined}
       onExport={() => undefined} onImportFile={() => undefined} {...over}
     />,
@@ -25,6 +25,17 @@ function render(progress: LearnProgress | null, over: Partial<LearnHomeViewProps
 }
 const lessonRow = (out: string, id: string): string => out.split('<li ').find((chunk) => chunk.includes(`data-learn-lesson="${id}"`)) ?? '';
 const AT = '2026-10-19T10:00:00.000Z';
+
+describe('the classroom setting of the Learn home (LRN-033)', () => {
+  it('LRN-033 offers a switch that hides the reference solutions, named and described in words, and shows its state', () => {
+    const off = render(emptyProgress());
+    expect(off).toContain('data-learn-hide-solutions');
+    expect(off).toContain('Classroom: hide reference solutions');
+    expect(off).not.toMatch(/<input[^>]*data-learn-hide-solutions[^>]*checked=""|<input[^>]*checked=""[^>]*data-learn-hide-solutions/);
+    expect(render(emptyProgress(), { hideSolutions: true })).toMatch(/<input[^>]*data-learn-hide-solutions[^>]*checked=""|<input[^>]*checked=""[^>]*data-learn-hide-solutions/);
+    expect(auditMarkup(render(emptyProgress(), { hideSolutions: true }))).toEqual([]);
+  });
+});
 
 describe('the Learn home', () => {
   it('lists the tracks and the twelve modules in order with level, required module and time, the empty ones without lessons', () => {
@@ -69,8 +80,11 @@ describe('the Learn home', () => {
     const row = lessonRow(render(emptyProgress()), FIRST);
     expect(row).toContain('Tracks: Simulation.');
     expect(row).toContain('Hardware: not available for this lesson.');
-    expect(row).toContain('No check against a trace recorded from a board has been written for this lesson yet.');
-    expect(row).toContain('Do the lesson in the Simulation track.');
+    // The lesson's own reason and alternative (LRN-011), not the generic words of the track.
+    const own = LESSON_INDEX.lessons.find((lesson) => lesson.id === FIRST)!.unsupported.hardware!;
+    expect(row).toContain(own.reason.en);
+    expect(row).toContain(own.instead.en);
+    expect(row).not.toContain('No check against a trace recorded from a board has been written for this lesson yet.');
   });
 
   it('unlocks every lesson when the setting is on, and shows the switch as on', () => {

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'bun:test';
 import type { ConsoleTab } from '../types';
-import { SIDEBAR_CONSOLE_TABS, resultsTabFor, routeConsoleTab, startShellRouting } from './shellRouting';
+import { SIDEBAR_CONSOLE_TABS, lessonSurface, resultsTabFor, routeConsoleTab, startShellRouting } from './shellRouting';
 import { COMPACT_MAX_WIDTH, shellDensity } from './shellDensity';
 
 function fakeWorkbench(initial: ConsoleTab) {
@@ -9,6 +9,14 @@ function fakeWorkbench(initial: ConsoleTab) {
   function change(tab: ConsoleTab): void { const previous = state; state = { ...state, activeConsoleTab: tab }; for (const listener of listeners) listener(state, previous); }
   return { getState: () => state, subscribe: (listener: (typeof listeners extends Set<infer L> ? L : never)) => { listeners.add(listener); return () => listeners.delete(listener); } };
 }
+
+describe('where the open lesson is shown (LRN-004)', () => {
+  it('LRN-004 keeps an open lesson beside the editor whatever the rail selects: in the primary sidebar on Learn, in the secondary one elsewhere', () => {
+    expect(lessonSurface('learn', true)).toBe('primary');
+    for (const view of ['project', 'search', 'tests'] as const) expect(lessonSurface(view, true)).toBe('secondary');
+    for (const view of ['project', 'search', 'tests', 'learn'] as const) expect(lessonSurface(view, false)).toBe('none');
+  });
+});
 
 describe('requests for the views that left the lower panel (UX-011)', () => {
   it('UX-011 sends the Explorer, the lessons and the Inspector to their sidebars, and leaves the results tabs alone', () => {

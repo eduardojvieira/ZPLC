@@ -13,7 +13,12 @@
  * is the set the main process offers. `read` and `merge` are the two that exist today.
  */
 
-export const LEARN_PROGRESS_SCHEMA_VERSION = 2 as const;
+/**
+ * Version 3 records every hint level shown (`hintsShown`), where version 2 kept only the highest (`hintsUsed`) (LRN-010). A
+ * stored or imported version 2 document is read and becomes version 3 the next time it is written; the file keeps its name.
+ */
+export const LEARN_PROGRESS_SCHEMA_VERSION = 3 as const;
+export const LEARN_PROGRESS_PREVIOUS_SCHEMA_VERSION = 2;
 export const LEARN_PROGRESS_FILENAME = 'zplc-learn-progress.v2.json';
 /** The file of the first release of Learn: `{ schemaVersion: 1, mastered: [lesson ids] }`. Read for migration, never written. */
 export const LEARN_PROGRESS_LEGACY_FILENAME = 'zplc-learn-mastery.v1.json';
@@ -77,8 +82,8 @@ export interface LessonProgress {
   grade: GradeRecord | null;
   passedAt: string | null;
   startedAt: string | null;
-  /** The highest hint level shown. */
-  hintsUsed: 0 | 1 | 2;
+  /** Each hint level shown, once, in ascending order. */
+  hintsShown: ReadonlyArray<1 | 2>;
   solutionShown: boolean;
 }
 
@@ -176,23 +181,35 @@ export function parseGradeRecord(value: unknown): GradeRecord | undefined {
   };
 }
 
-function parseLesson(id: string, value: unknown): LessonProgress | undefined {
-  if (!isObject(value) || !hasExactKeys(value, ['state', 'grade', 'passedAt', 'startedAt', 'hintsUsed', 'solutionShown'])) return undefined;
+/** The levels of a stored list: ascending and distinct, each 1 or 2; anything else is undefined. */
+function parseHintLevels(value: unknown): Array<1 | 2> | undefined {
+  if (!Array.isArray(value) || value.length > 2 || !value.every((level) => level === 1 || level === 2)) return undefined;
+  return value.every((level, index) => index === 0 || level > value[index - 1]) ? [...value] as Array<1 | 2> : undefined;
+}
+
+/** Version 2 kept the highest level shown: 2 means both were. */
+const levelsOfHighest = (highest: unknown): Array<1 | 2> | undefined => (highest === 0 ? [] : highest === 1 ? [1] : highest === 2 ? [1, 2] : undefined);
+
+function parseLesson(id: string, value: unknown, previous: boolean): LessonProgress | undefined {
+  const hintKey = previous ? 'hintsUsed' : 'hintsShown';
+  if (!isObject(value) || !hasExactKeys(value, ['state', 'grade', 'passedAt', 'startedAt', hintKey, 'solutionShown'])) return undefined;
   if (value.state !== 'in-progress' && value.state !== 'passed') return undefined;
-  if (!(value.hintsUsed === 0 || value.hintsUsed === 1 || value.hintsUsed === 2) || typeof value.solutionShown !== 'boolean') return undefined;
+  const hintsShown = previous ? levelsOfHighest(value.hintsUsed) : parseHintLevels(value.hintsShown);
+  if (!hintsShown || typeof value.solutionShown !== 'boolean') return undefined;
   if (!(value.passedAt === null || isTime(value.passedAt)) || !(value.startedAt === null || isTime(value.startedAt))) return undefined;
   const grade = value.grade === null ? null : parseGradeRecord(value.grade);
   if (grade === undefined) return undefined;
   if (grade !== null && (grade.lessonId !== id || grade.result !== 'passed' || value.state !== 'passed' || value.passedAt !== grade.time)) return undefined;
   if (value.state === 'in-progress' && (grade !== null || value.passedAt !== null)) return undefined;
   if (value.state === 'passed' && value.passedAt === null && grade !== null) return undefined;
-  return { state: value.state, grade, passedAt: value.passedAt as string | null, startedAt: value.startedAt as string | null, hintsUsed: value.hintsUsed, solutionShown: value.solutionShown };
+  return { state: value.state, grade, passedAt: value.passedAt as string | null, startedAt: value.startedAt as string | null, hintsShown, solutionShown: value.solutionShown };
 }
 
 function parseDocument(value: unknown, withKind: boolean): LearnProgress | undefined {
   if (!isObject(value)) return undefined;
   const keys = ['schemaVersion', 'last', 'lessons', ...(withKind ? ['kind'] : [])];
-  if (!hasExactKeys(value, keys) || value.schemaVersion !== LEARN_PROGRESS_SCHEMA_VERSION) return undefined;
+  const previous = value.schemaVersion === LEARN_PROGRESS_PREVIOUS_SCHEMA_VERSION;
+  if (!hasExactKeys(value, keys) || (value.schemaVersion !== LEARN_PROGRESS_SCHEMA_VERSION && !previous)) return undefined;
   if (withKind && value.kind !== LEARN_PROGRESS_EXPORT_KIND) return undefined;
   let last: LearnProgress['last'] = null;
   if (value.last !== null) {
@@ -206,7 +223,7 @@ function parseDocument(value: unknown, withKind: boolean): LearnProgress | undef
   const lessons: Record<string, LessonProgress> = {};
   for (const id of ids.sort()) {
     if (!isLessonId(id)) return undefined;
-    const lesson = parseLesson(id, value.lessons[id]);
+    const lesson = parseLesson(id, value.lessons[id], previous);
     if (!lesson) return undefined;
     lessons[id] = lesson;
   }
@@ -255,7 +272,7 @@ export function emptyProgress(): LearnProgress {
   return { schemaVersion: LEARN_PROGRESS_SCHEMA_VERSION, last: null, lessons: {} };
 }
 
-const PASSED_WITHOUT_GRADE: LessonProgress = { state: 'passed', grade: null, passedAt: null, startedAt: null, hintsUsed: 0, solutionShown: false };
+const PASSED_WITHOUT_GRADE: LessonProgress = { state: 'passed', grade: null, passedAt: null, startedAt: null, hintsShown: [], solutionShown: false };
 
 /**
  * Reads the progress file of the first release: `{ schemaVersion: 1, mastered: [ids] }`. Every id becomes a lesson passed
@@ -315,7 +332,7 @@ function mergeLesson(left: LessonProgress, right: LessonProgress): LessonProgres
     grade,
     passedAt: passed ? (grade ? grade.time : earlier(left.passedAt, right.passedAt)) : null,
     startedAt: earlier(left.startedAt, right.startedAt),
-    hintsUsed: Math.max(left.hintsUsed, right.hintsUsed) as 0 | 1 | 2,
+    hintsShown: ([1, 2] as const).filter((level) => left.hintsShown.includes(level) || right.hintsShown.includes(level)),
     solutionShown: left.solutionShown || right.solutionShown,
   };
 }
@@ -335,7 +352,7 @@ export function mergeProgress(left: LearnProgress, right: LearnProgress): LearnP
   return { schemaVersion: LEARN_PROGRESS_SCHEMA_VERSION, last, lessons };
 }
 
-const blank = (): LessonProgress => ({ state: 'in-progress', grade: null, passedAt: null, startedAt: null, hintsUsed: 0, solutionShown: false });
+const blank = (): LessonProgress => ({ state: 'in-progress', grade: null, passedAt: null, startedAt: null, hintsShown: [], solutionShown: false });
 
 /** Records one grade. A passing grade passes the lesson; a failing one only marks it started and sets the last lesson. */
 export function withGrade(progress: LearnProgress, record: GradeRecord): LearnProgress {
@@ -352,7 +369,7 @@ export function withNote(progress: LearnProgress, note: LessonNote, at: string):
   const next: LessonProgress = {
     ...current,
     startedAt: current.startedAt ?? at,
-    hintsUsed: note.hint ? (Math.max(current.hintsUsed, note.hint) as 0 | 1 | 2) : current.hintsUsed,
+    hintsShown: note.hint ? ([1, 2] as const).filter((level) => level === note.hint || current.hintsShown.includes(level)) : current.hintsShown,
     solutionShown: current.solutionShown || note.solution === true,
   };
   return { ...progress, last: { lessonId: note.lessonId, at }, lessons: { ...progress.lessons, [note.lessonId]: next } };

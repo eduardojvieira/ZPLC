@@ -1,5 +1,10 @@
 /** The two sidebars of the shell (UX-011): the primary one swaps its view with the activity rail, the secondary one holds the Inspector. */
+import { useState } from 'react';
 import { useT } from '../i18n';
+import { useLearnUi } from '../learn/learnUi';
+import { useIDEStore } from '../store/useIDEStore';
+import { ToggleGroup } from '../ui';
+import { lessonSurface } from './shellRouting';
 import { ErrorBoundary } from '../components/ErrorBoundary';
 import { LearnPanel } from '../components/LearnPanel';
 import { ProjectExplorer } from '../components/ProjectExplorer';
@@ -42,9 +47,32 @@ export function PrimarySidebar() {
 
 export function SecondarySidebar() {
   const { t } = useT();
+  const view = useShellLayout((state) => state.activityView);
+  const workspace = useLearnUi((state) => state.workspace);
+  const session = useIDEStore((state) => state.projectSession);
+  const beside = lessonSurface(view, workspace !== null && workspace.session === session) === 'secondary';
+  const presentation = useWorkspaceTestResult((state) => state.presentation);
+  // The learner's choice holds for the lesson it was made for; a new lesson starts on the lesson, which is what the learner expects to see first.
+  const [choice, setChoice] = useState<{ lesson: unknown; view: 'lesson' | 'inspector' }>({ lesson: null, view: 'lesson' });
+  const shown = choice.lesson === workspace ? choice.view : 'lesson';
+  if (!beside) {
+    return (
+      <SidebarFrame label={t('shell.secondary.label')} title={t('shell.secondary.inspector')}>
+        <ErrorBoundary region="Sidebar"><WorkbenchInspector /></ErrorBoundary>
+      </SidebarFrame>
+    );
+  }
   return (
-    <SidebarFrame label={t('shell.secondary.label')} title={t('shell.secondary.inspector')}>
-      <ErrorBoundary region="Sidebar"><WorkbenchInspector /></ErrorBoundary>
+    <SidebarFrame label={t('shell.secondary.label')} title={t(shown === 'lesson' ? 'shell.secondary.lesson' : 'shell.secondary.inspector')}>
+      <div className="border-b border-[var(--color-surface-600)] px-3 py-1.5">
+        <ToggleGroup
+          label={t('shell.secondary.view')}
+          value={shown}
+          onValueChange={(next) => setChoice({ lesson: workspace, view: next as 'lesson' | 'inspector' })}
+          options={[{ value: 'lesson', label: t('shell.secondary.lesson') }, { value: 'inspector', label: t('shell.secondary.inspector') }]}
+        />
+      </div>
+      <ErrorBoundary region="Sidebar" resetKey={shown}>{shown === 'lesson' ? <LearnPanel workspaceTestPresentation={presentation} /> : <WorkbenchInspector />}</ErrorBoundary>
     </SidebarFrame>
   );
 }

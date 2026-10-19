@@ -261,6 +261,24 @@ export async function openRecentFolder(bridge: ProjectFilesBridge, recentId: str
   return new ProjectDirectoryHandle({ bridge, rootId: folder.rootId }, '', folder.name) as unknown as FileSystemDirectoryHandle;
 }
 
+/**
+ * Opens the app-owned workspace of a lesson (LRN-003): the main process builds the folder from the lesson id, makes it the window's
+ * project and answers its opaque id. `fresh` says the starter still has to be copied in. Rejects when the answer is not exactly that.
+ */
+export async function openLearnWorkspaceFolder(
+  bridge: ProjectFilesBridge,
+  learn: { open(lessonId: string): Promise<unknown> },
+  lessonId: string,
+): Promise<{ handle: FileSystemDirectoryHandle; fresh: boolean }> {
+  const answer = await learn.open(lessonId);
+  const folder = typeof answer === 'object' && answer !== null ? answer as Record<string, unknown> : {};
+  const { rootId, name, fresh } = folder;
+  if (Object.keys(folder).length !== 3 || typeof rootId !== 'string' || rootId.length < 1 || rootId.length > PROJECT_FILES_LIMITS.maxRootIdChars || typeof name !== 'string' || typeof fresh !== 'boolean') {
+    throw new Error('The lesson workspace could not be opened.');
+  }
+  return { handle: new ProjectDirectoryHandle({ bridge, rootId }, '', name) as unknown as FileSystemDirectoryHandle, fresh };
+}
+
 /** Drops an entry from the list. A failure leaves the list as it was, and says nothing. */
 export async function forgetRecentProject(bridge: ProjectFilesBridge, recentId: string): Promise<void> {
   await guarded(() => bridge.forgetRecent({ recentId }));

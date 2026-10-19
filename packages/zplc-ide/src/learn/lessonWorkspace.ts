@@ -15,6 +15,11 @@ export interface WorkspaceDeps {
   openRecent(recentId: string): Promise<boolean>;
   /** Asks for a folder, copies the starter into it and opens it; false when the dialog was cancelled or the copy failed. */
   createWorkspace(starterProject: string): Promise<boolean>;
+  /**
+   * Present where the main process owns the lesson workspaces (the desktop app): opens the workspace of the lesson with no dialog and
+   * no remembered folder, copying the starter in only when the workspace is new. False when it did not open.
+   */
+  openManaged?(lessonId: string, starterProject: string): Promise<'created' | 'reopened' | false>;
   now(): number;
   wait(ms: number): Promise<void>;
 }
@@ -27,6 +32,7 @@ const LOOK_EVERY_MS = 100;
 const CLOCK_SLACK_MS = 1_000;
 
 export async function openLessonWorkspace(deps: WorkspaceDeps, lessonId: string, starterProject: string): Promise<WorkspaceOutcome> {
+  if (deps.openManaged) return (await deps.openManaged(lessonId, starterProject)) || 'cancelled';
   const remembered = deps.memory.get(lessonId);
   if (remembered !== undefined) {
     const entry = (await deps.recents()).find((candidate) => candidate.recentId === remembered && candidate.available);

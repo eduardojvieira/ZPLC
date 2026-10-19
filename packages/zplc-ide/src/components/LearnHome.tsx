@@ -24,6 +24,7 @@ export function LearnHome() {
   const failed = useLearnProgress((state) => state.failed);
   const transfer = useLearnProgress((state) => state.transfer);
   const unlockAll = useAppSettings((state) => state.settings.unlockAllLessons);
+  const hideSolutions = useAppSettings((state) => state.settings.hideSolutions);
   const updateSettings = useAppSettings((state) => state.update);
   const projectOpenError = useIDEStore((state) => state.projectOpenError);
   const busyRef = useRef(false);
@@ -63,7 +64,8 @@ export function LearnHome() {
   return (
     <LearnHomeView
       view={view} index={LESSON_INDEX} locale={locale} continueId={continueTarget(view, progress)} fresh={!progress?.last} loaded={loaded} failed={failed}
-      unlockAll={unlockAll} folderAccess={isFileSystemAccessSupported()} busy={busy} transfer={transfer} error={projectOpenError}
+      unlockAll={unlockAll} hideSolutions={hideSolutions} folderAccess={isFileSystemAccessSupported()} busy={busy} transfer={transfer} error={projectOpenError}
+      onHideSolutions={(on) => { updateSettings({ hideSolutions: on }); announce(t(on ? 'learn.home.hideSolutions.on' : 'learn.home.hideSolutions.off')); }}
       onUnlockAll={(on) => { updateSettings({ unlockAllLessons: on }); announce(t(on ? 'learn.home.unlockAll.on' : 'learn.home.unlockAll.off')); }}
       onStart={start} onClose={() => useLearnUi.getState().hideHome()} onExport={exportFile} onImportFile={importFile}
     />

@@ -14,6 +14,18 @@
   "tracks": [
     "simulation"
   ],
+  "unsupported": {
+    "hardware": {
+      "reason": {
+        "en": "The lesson counts pulses that the scenario sends at exact times; a board would need a pulse source and a recorded trace that has not been written yet.",
+        "es": "La lección cuenta pulsos que el escenario envía en instantes exactos; una placa necesitaría una fuente de pulsos y una traza registrada que todavía no se ha escrito."
+      },
+      "instead": {
+        "en": "Complete it in Simulation, then try the Edge counter example on your board with a push button.",
+        "es": "Complétela en Simulación y luego pruebe el ejemplo Contador de flancos en su placa con un pulsador."
+      }
+    }
+  },
   "plant": null,
   "estimatedMinutes": 15,
   "starter": {

@@ -173,6 +173,7 @@ export function buildIndex(packages: readonly LessonPackage[], course: CourseDef
       prerequisites: manifest.prerequisites,
       languages: manifest.languages,
       tracks: manifest.tracks,
+      unsupported: manifest.unsupported,
       plant: manifest.plant,
       plantMap,
       estimatedMinutes: manifest.estimatedMinutes,

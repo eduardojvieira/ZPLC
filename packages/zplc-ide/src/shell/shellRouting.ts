@@ -14,6 +14,12 @@ export const isSidebarConsoleTab = (tab: ConsoleTab): tab is SidebarConsoleTab =
 /** The tab the results panel shows for a stored tab: the stored one, or Output when the request belongs to a sidebar. */
 export const resultsTabFor = (tab: ConsoleTab): ConsoleTab => (isSidebarConsoleTab(tab) ? 'output' : tab);
 
+/**
+ * Where the lesson of the open lesson workspace is shown (LRN-004). On the Learn rail it fills the primary sidebar; on any other
+ * rail the primary sidebar is the Explorer, Search or Tests, so the lesson moves to the secondary sidebar instead of hiding.
+ */
+export const lessonSurface = (view: ActivityView, lessonOpen: boolean): 'primary' | 'secondary' | 'none' => (!lessonOpen ? 'none' : view === 'learn' ? 'primary' : 'secondary');
+
 export type ShellRoute = { primary: ActivityView } | { secondary: 'inspector' };
 
 export function routeConsoleTab(tab: ConsoleTab): ShellRoute | null {

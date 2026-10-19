@@ -52,6 +52,7 @@ async function harness(options: { toolApi?: Partial<ToolApiModule>; failToolApi?
     handle: (ownerId: number, channel: string, args: readonly unknown[]) => { note(`projectFiles.handle:${channel}`); return files.handle(ownerId, channel, args); },
     rootOf: files.rootOf,
     currentRoot: files.currentRoot,
+    adoptFolder: (ownerId: number, directory: string) => { note(`projectFiles.adoptFolder:${path.relative(folder, directory)}`); return files.adoptFolder(ownerId, directory); },
   };
   const store = (name: string, extra: Record<string, unknown> = {}) => new Proxy(extra, {
     get: (target, property) => typeof property === 'string' && !(property in target)
@@ -84,6 +85,7 @@ async function harness(options: { toolApi?: Partial<ToolApiModule>; failToolApi?
     recoveryStore: () => store('recovery') as never,
     sessionStore: () => store('session') as never,
     serialPorts: { choose: () => undefined, list: () => null },
+    learnWorkspaceRoot: () => path.join(folder, 'learn-workspaces'),
     learnProgress: () => store('learn', { read: async () => new Set(['a']), merge: async (ids: string[]) => new Set(ids) }) as never,
     aiProvider: () => store('ai', { cancel: () => ({ requested: false }), request: async () => ({ ok: true }) }) as never,
     toolExecutionAudit: { list: () => ({ schemaVersion: 1, executions: [] }), add: async (envelope: unknown) => { note(`audit.add:${JSON.stringify(envelope)}`); } } as never,
@@ -466,6 +468,17 @@ describe('the Learn progress channels over the IPC boundary (LRN-031, LRN-032)',
     expect(h.touched.filter((entry) => entry.startsWith('learn.')).map((entry) => entry.split(':')[0])).toEqual([
       'learn.readProgress', 'learn.recordGrade', 'learn.noteLesson', 'learn.exportProgress', 'learn.importProgress',
     ]);
+  });
+
+  it('open a lesson workspace only for a trusted sender and one lesson id, and make that app-owned folder the project', async () => {
+    const h = await harness();
+    const denied = { ok: false as const, message: IPC_DENIED };
+    expect(await settle(h.invoke('learn-workspace:open', UNTRUSTED, 'motor-start-stop-safe'))).toEqual(denied);
+    for (const bad of [['../escape'], ['motor-start-stop-safe', 'extra'], [], [{ lessonId: 'motor-start-stop-safe' }]]) expect(await settle(h.invoke('learn-workspace:open', TRUSTED, ...bad))).toEqual(denied);
+    expect(h.touched.filter((entry) => entry.startsWith('projectFiles.adoptFolder'))).toEqual([]);
+    const opened = await h.invoke('learn-workspace:open', TRUSTED, 'motor-start-stop-safe') as { rootId: string; name: string; fresh: boolean };
+    expect(opened).toMatchObject({ name: 'motor-start-stop-safe', fresh: true });
+    expect(h.touched.filter((entry) => entry.startsWith('projectFiles.adoptFolder'))).toEqual(['projectFiles.adoptFolder:learn-workspaces/motor-start-stop-safe']);
   });
 
   it('refuse a forged record, a note with an extra field or a bad hint level, an oversize file and an id list that is not ids', async () => {

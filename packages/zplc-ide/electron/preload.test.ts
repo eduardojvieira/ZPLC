@@ -59,7 +59,7 @@ beforeAll(async () => {
 describe('preload bridge (IDE-017)', () => {
   it('exposes the same top-level objects as the packaged smoke expects, and nothing else', () => {
     expect(Object.keys(api).sort()).toEqual([
-      'aiProvider', 'candidateChangeSet', 'closeGuard', 'firmwareBuild', 'firmwareImages', 'getAppInfo', 'isElectron', 'learnProgress',
+      'aiProvider', 'candidateChangeSet', 'closeGuard', 'firmwareBuild', 'firmwareImages', 'getAppInfo', 'isElectron', 'learnProgress', 'learnWorkspace',
       'menu', 'nativeSimulation', 'platform', 'portChoice', 'projectFiles', 'recovery', 'session', 'toolExecutionAudit', 'toolchain',
       'updateCheck', 'windowPreferences', 'workspaceTests',
     ]);
@@ -90,6 +90,7 @@ describe('preload bridge (IDE-017)', () => {
     expect(methods('aiProvider')).toEqual(['getStatus', 'getConfig', 'saveConfig', 'storeKey', 'clearKey', 'request', 'cancel']);
     expect(methods('nativeSimulation')).toEqual(['startSession', 'stopSession', 'request', 'onEvent']);
     expect(methods('learnProgress')).toEqual(['read', 'merge', 'readProgress', 'recordGrade', 'noteLesson', 'exportProgress', 'importProgress']);
+    expect(methods('learnWorkspace')).toEqual(['open']);
   });
 
   it('invokes every channel of the contract, and only those', () => {

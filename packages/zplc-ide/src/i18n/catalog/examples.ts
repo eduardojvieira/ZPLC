@@ -40,12 +40,14 @@ export const examplesEn = {
   'examples.opta_led_chaser_ld.summary': 'The same sweeping light as a ladder diagram: a TON tick and a six-position shift register.',
   'examples.multitask_demo.title': 'Multitask demo',
   'examples.multitask_demo.summary': 'Two tasks at different rates, 10 ms and 100 ms, each blinking its own LED.',
+  'examples.multitask_demo.noScenario': 'No scenario: the check is the two lights blinking at different rates on the board, which a scenario cannot observe.',
   'examples.analog_test.title': 'Analog temperature reading',
   'examples.analog_test.summary': 'Reads the internal temperature sensor of the Pico (%IW8), converts it to degrees Celsius and flags an implausible reading.',
   'examples.kitchen_sink.title': 'Kitchen sink',
   'examples.kitchen_sink.summary': 'Test fixture that exercises every standard-library function block and function.',
   'examples.pico_persist_test.title': 'Pico two-task smoke test',
   'examples.pico_persist_test.summary': 'Hardware smoke test: a fast counter task and a 100 ms task that blinks an LED on GP0 every 500 ms.',
+  'examples.pico_persist_test.noScenario': 'No scenario: it is a smoke test of two tasks on the board, checked by watching the LED, not by a simulated plant.',
 } as const;
 
 export const examplesEs: Record<keyof typeof examplesEn, string> = {
@@ -89,10 +91,12 @@ export const examplesEs: Record<keyof typeof examplesEn, string> = {
   'examples.opta_led_chaser_ld.summary': 'La misma luz que recorre las salidas, en diagrama de escalera: un pulso de reloj TON y un registro de desplazamiento de seis posiciones.',
   'examples.multitask_demo.title': 'Demostración multitarea',
   'examples.multitask_demo.summary': 'Dos tareas con periodos distintos, 10 ms y 100 ms, cada una con su propio LED parpadeando.',
+  'examples.multitask_demo.noScenario': 'Sin escenario: la comprobación son los dos LED que parpadean a ritmos distintos en la placa, algo que un escenario no puede observar.',
   'examples.analog_test.title': 'Lectura analógica de temperatura',
   'examples.analog_test.summary': 'Lee el sensor de temperatura interno del Pico (%IW8), lo convierte a grados Celsius y señala una lectura poco verosímil.',
   'examples.kitchen_sink.title': 'Caso de prueba exhaustivo',
   'examples.kitchen_sink.summary': 'Caso de prueba que ejercita cada bloque de función y cada función de la biblioteca estándar.',
   'examples.pico_persist_test.title': 'Prueba rápida de dos tareas en Pico',
   'examples.pico_persist_test.summary': 'Prueba rápida de hardware: una tarea contadora rápida y una tarea de 100 ms que hace parpadear un LED en GP0 cada 500 ms.',
+  'examples.pico_persist_test.noScenario': 'Sin escenario: es una prueba rápida de dos tareas en la placa, que se comprueba mirando el LED y no con una planta simulada.',
 };
