@@ -16,12 +16,18 @@ export function signalFlagsOf(
   forced: ReadonlyMap<string, { address: number }>,
   faults: ReadonlySet<string>,
 ): FlagsOf {
+  // the map does not change while this lives, and the monitor asks for every entry at every reading
+  const addresses = new Map<string, number | undefined>();
+  const addressOf = (variable: string): number | undefined => {
+    if (!addresses.has(variable)) addresses.set(variable, sourceRef === undefined ? undefined : resolveVariable(debugMap, sourceRef, variable)?.address);
+    return addresses.get(variable);
+  };
   return (variable) => {
     if (sourceRef === undefined) return undefined;
-    const resolved = resolveVariable(debugMap, sourceRef, variable);
-    if (!resolved) return undefined;
+    const address = addressOf(variable);
+    if (address === undefined) return undefined;
     const flags: SignalFlags = {};
-    if (forced.get(variable)?.address === resolved.address) flags.forced = true;
+    if (forced.get(variable)?.address === address) flags.forced = true;
     if (faults.has(monitorKey(sourceRef, variable))) flags.fault = true;
     return flags.forced || flags.fault ? flags : undefined;
   };

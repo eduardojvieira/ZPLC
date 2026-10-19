@@ -12,7 +12,7 @@ import { Handle, Position, type NodeProps } from '@xyflow/react';
 import NodeComment from './NodeComment';
 import type { FBDPort } from '../../../models/fbd';
 import { SignalValue } from '../../../ui';
-import { SIGNAL_CUES, sampleTone } from '../../../theme/signalTone';
+import { SIGNAL_CUES, SIGNAL_TEXT_CLASS, sampleTone } from '../../../theme/signalTone';
 
 interface VariableData {
   type: 'variable' | 'input' | 'output';
@@ -112,7 +112,10 @@ const VariableNode = memo(({ id, data, selected }: NodeProps) => {
 
         {debugActive && (
           <div className="px-2 py-0.5 text-center font-mono text-xs text-[var(--text-primary)] border-t border-[var(--border-color)]" data-live-value>
-            <SignalValue tone={liveTone}>{liveTone === 'forced' || liveTone === 'fault' ? `${SIGNAL_CUES[liveTone].label} ` : ''}{liveText}</SignalValue>
+            {/* TRUE, FALSE and a dash say their state in words; a force and a fault also get the glyph and the word (UX-009) */}
+            {liveTone === 'forced' || liveTone === 'fault'
+              ? <SignalValue tone={liveTone}>{`${SIGNAL_CUES[liveTone].label} `}{liveText}</SignalValue>
+              : <span data-signal={liveTone} className={SIGNAL_TEXT_CLASS[liveTone]}>{liveText}</span>}
           </div>
         )}
 

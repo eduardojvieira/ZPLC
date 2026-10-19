@@ -1704,7 +1704,8 @@ export const JOURNEYS: Journey[] = [
       await app.until('an element that power does not reach', async () => await app.eval<number>(cells(false)) > 0 || undefined);
       // the values arrive with the first complete poll, and then every variable the example declares has one
       const texts = () => app.eval<string[]>(`[...document.querySelectorAll('[data-ld-cell] text')].map((node) => node.textContent ?? '')`);
-      await app.until('a contact to show the value of its variable', async () => (await texts()).some((text) => /^[●○◆▲] [TF]$/.test(text)) || undefined);
+      await app.until('a contact to show the value of its variable', async () => (await texts()).some((text) => /^[●○◆▲] [TF]$/.test(text)) || undefined)
+        .catch(async (error: Error) => { throw new Error(`${error.message}: the cells show ${JSON.stringify(await texts())}`); });
       const shown = await texts();
       assert(!shown.includes('◌ —'), `A variable that the example declares is shown as unavailable: ${JSON.stringify(shown)}`);
     },
@@ -1721,7 +1722,8 @@ export const JOURNEYS: Journey[] = [
       await app.until('the variable block to show a value', async () => ['TRUE', 'FALSE'].includes(await app.eval<string>(`${variable}?.textContent?.trim() ?? ''`)) || undefined)
         .catch(async (error: Error) => { throw new Error(`${error.message}: the block is ${await app.eval<string>(`document.querySelector('.react-flow__node[data-id="var_led_read"]')?.outerHTML.slice(0, 600) ?? 'not on the canvas'`)}`); });
       // the timers of the blinker complete in turn: the pin of a block shows it, 500 ms after the program starts
-      await app.until('a timer block to show its output as TRUE', async () => await app.eval<boolean>(`[...document.querySelectorAll('.react-flow__node[data-id^="ton_"]')].some((node) => node.innerText.includes('TRUE'))`) || undefined, 30_000);
+      await app.until('a timer block to show its output as TRUE', async () => await app.eval<boolean>(`[...document.querySelectorAll('.react-flow__node[data-id^="ton_"]')].some((node) => node.innerText.includes('TRUE'))`) || undefined, 30_000)
+        .catch(async (error: Error) => { throw new Error(`${error.message}: the timers show ${JSON.stringify(await app.eval<string[]>(`[...document.querySelectorAll('.react-flow__node[data-id^="ton_"]')].map((node) => node.innerText.replace(/\\s+/g, ' '))`))}`); });
     },
   },
   {
@@ -1973,6 +1975,8 @@ export const JOURNEYS: Journey[] = [
       const signal = () => app.eval<string>(`document.querySelector(${JSON.stringify('.react-flow__node[data-id="var_led_read"] [data-live-value] [data-signal]')})?.getAttribute('data-signal') ?? ''`);
       await app.until('the variable block to show a value that is not forced', async () => ['true', 'false'].includes(await signal()) || undefined);
       await watch(app, 'LED_Output');
+      // the Force checkbox is offered once the row has its first value, which takes longer on a loaded machine
+      await app.until('LED_Output to have a value in the Watch table', async () => { const shown = await watchValue(app, 'LED_Output'); return shown !== null && shown !== '...' || undefined; }, 60_000);
       await app.click(css('input[aria-label="Force LED_Output"]'), 'the Force checkbox of LED_Output')
         .catch(async (error: Error) => { throw new Error(`${error.message}: the row is ${await app.eval<string>(`${watchRow('LED_Output')}?.outerHTML.slice(0, 900) ?? 'not in the table'`)}`); });
       await app.until('LED_Output to be forced', async () => await app.eval(`${watchRow('LED_Output')}?.querySelector('[data-forced="true"]') !== null`) === true || undefined);
@@ -2017,6 +2021,8 @@ export const JOURNEYS: Journey[] = [
       const signalOf = (id: string) => app.eval<string>(`document.querySelector('.react-flow__node[data-id="${id}"] [data-signal]')?.getAttribute('data-signal') ?? ''`);
       await app.until('the transition to show a state that is not forced', async () => ['true', 'false'].includes(await signalOf('start')) || undefined);
       await watch(app, 'Go');
+      // the Force checkbox is offered once the row has its first value, which takes longer on a loaded machine
+      await app.until('Go to have a value in the Watch table', async () => { const shown = await watchValue(app, 'Go'); return shown !== null && shown !== '...' || undefined; }, 60_000);
       await app.click(css('input[aria-label="Force Go"]'), 'the Force checkbox of Go')
         .catch(async (error: Error) => { throw new Error(`${error.message}: the row is ${await app.eval<string>(`${watchRow('Go')}?.outerHTML.slice(0, 900) ?? 'not in the table'`)}`); });
       await app.until('Go to be forced', async () => await app.eval(`${watchRow('Go')}?.querySelector('[data-forced="true"]') !== null`) === true || undefined);
