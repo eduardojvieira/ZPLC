@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "title": "Boolean logic: a two-hand control with a guard",
+  "summary": "Combine AND, NOT and XOR so a press can only be enabled when both hands are on the buttons and the guard is closed.",
+  "scope": "Tests provide native POSIX host evidence with one 10 ms task; they do not establish the response time, redundancy or fault behaviour a real two-hand safety device needs, and they are not safety, HIL, or certification evidence.",
+  "objectives": [
+    "Write a condition that is true only when several inputs are true together.",
+    "Use NOT for a warning lamp and XOR for exactly one of two inputs."
+  ],
+  "stages": [
+    {
+      "key": "objective",
+      "title": "Objective",
+      "body": "In src/TwoHand.st the three outputs are not yet right. PressEnable must be ON only with LeftHand, RightHand and GuardClosed all ON. GuardLamp must be ON when the guard is open. OneHandWarning must be ON when exactly one hand is on its button.",
+      "checkpoint": "You can say, for each output, the condition that turns it ON."
+    },
+    {
+      "key": "predict",
+      "title": "Predict",
+      "body": "Before running, predict the three outputs at {{t:20}}, {{t:30}}, and {{t:40}} ms. The inputs change every {{t:10}} ms, so work through one step at a time.",
+      "checkpoint": "{{v:TwoHand.PressEnable=true,TwoHand.GuardLamp=false,TwoHand.OneHandWarning=false@20|PressEnable ON only}} at {{t:20}} ms; {{v:TwoHand.PressEnable=false,TwoHand.GuardLamp=true,TwoHand.OneHandWarning=false@30|GuardLamp ON only}} at {{t:30}} ms; {{v:TwoHand.PressEnable=false,TwoHand.GuardLamp=false,TwoHand.OneHandWarning=true@40|OneHandWarning ON only}} at {{t:40}} ms."
+    },
+    {
+      "key": "edit",
+      "title": "Edit",
+      "body": "Correct this flaw of the starting program, save it, then press Check: The starting program enables the press with either hand, so PressEnable is already ON at {{t:10}} ms with one hand. Replace the starting statement with one condition for each output, save the file, and look at the result.",
+      "checkpoint": "Each output follows its own condition and the file is saved."
+    },
+    {
+      "key": "run",
+      "title": "Run",
+      "body": "Press Check. Studio runs your saved program against the scenario of this lesson.",
+      "checkpoint": "The scenario is named TwoHand and contains {{assertions}} assertions."
+    },
+    {
+      "key": "observe",
+      "title": "Observe",
+      "body": "Compare {{t:20}}, {{t:30}}, and {{t:40}} ms: the press is enabled once, at {{t:20}} ms, and switches off again at {{t:30}} ms when the guard opens.",
+      "checkpoint": "PressEnable rises at {{t:20}} ms and falls at {{t:30}} ms, and is never ON while GuardLamp is ON."
+    },
+    {
+      "key": "reflect",
+      "title": "Reflect",
+      "body": "Try the same condition with OR instead of AND and say which input combination wrongly enables the press.",
+      "checkpoint": "OR enables the press with a single hand, which is exactly what a two-hand control exists to prevent."
+    }
+  ],
+  "hints": [
+    {
+      "level": 1,
+      "text": "AND is true only when every part is true, so PressEnable needs the three inputs joined with AND."
+    },
+    {
+      "level": 2,
+      "text": "Write PressEnable := LeftHand AND RightHand AND GuardClosed; GuardLamp := NOT GuardClosed; OneHandWarning := LeftHand XOR RightHand;"
+    }
+  ],
+  "faultCases": [
+    "The starting program enables the press with either hand, so PressEnable is already ON at {{t:10}} ms with one hand."
+  ]
+}

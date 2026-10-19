@@ -1167,7 +1167,9 @@
       "order": 8,
       "module": 1,
       "level": "foundation",
-      "prerequisites": [],
+      "prerequisites": [
+        "first-blink-simulation"
+      ],
       "languages": [
         "ST"
       ],
@@ -1658,6 +1660,481 @@
           ],
           "faultCases": [
             "El starter nunca enclava metal para el desviador; retenga el pedido de cinta tras Start, enclave metal en el clasificador y liberalo recién cuando la pieza llega al desviador."
+          ]
+        }
+      }
+    },
+    {
+      "id": "first-blink-simulation",
+      "version": 1,
+      "order": 11,
+      "module": 0,
+      "level": "foundation",
+      "prerequisites": [],
+      "languages": [
+        "ST"
+      ],
+      "tracks": [
+        "simulation"
+      ],
+      "plant": null,
+      "plantMap": null,
+      "estimatedMinutes": 10,
+      "starter": {
+        "project": "first_blink_starter",
+        "program": "src/FirstBlink.st"
+      },
+      "solution": {
+        "project": "first_blink",
+        "program": "src/FirstBlink.st"
+      },
+      "scenario": {
+        "id": "FirstBlink",
+        "path": "tests/first-blink.scenario.json",
+        "sha256": "797711eb3ab8e762f89d99485bf099f0a57a84f52bfd36f9f07932f4bcb4745a",
+        "tickMs": 10,
+        "durationMs": 1600,
+        "assertions": 10,
+        "canonical": "{\"durationMs\":1600,\"events\":[],\"expectations\":[{\"atMs\":0,\"condition\":{\"FirstBlink.Lamp\":false},\"kind\":\"AT\"},{\"atMs\":250,\"condition\":{\"FirstBlink.Lamp\":false},\"kind\":\"AT\"},{\"atMs\":750,\"condition\":{\"FirstBlink.Lamp\":true},\"kind\":\"AT\"},{\"atMs\":1250,\"condition\":{\"FirstBlink.Lamp\":false},\"kind\":\"AT\"},{\"atMs\":1550,\"condition\":{\"FirstBlink.Lamp\":true},\"kind\":\"AT\"},{\"condition\":{\"FirstBlink.Lamp\":false},\"forMs\":380,\"fromMs\":20,\"kind\":\"FOR\"},{\"condition\":{\"FirstBlink.Lamp\":true},\"forMs\":280,\"fromMs\":620,\"kind\":\"FOR\"},{\"condition\":{\"FirstBlink.Lamp\":false},\"forMs\":280,\"fromMs\":1120,\"kind\":\"FOR\"},{\"condition\":{\"FirstBlink.Lamp\":true},\"fromMs\":400,\"kind\":\"RISING\",\"withinMs\":200},{\"condition\":{\"FirstBlink.Lamp\":false},\"fromMs\":900,\"kind\":\"FALLING\",\"withinMs\":200}],\"id\":\"FirstBlink\",\"schemaVersion\":1,\"tickMs\":10}"
+      },
+      "regressionScenarios": [],
+      "text": {
+        "en": {
+          "title": "Your first blink in simulation",
+          "summary": "Make a simulated lamp turn on and off every half second by changing one number, then see the result in the trace.",
+          "scope": "Tests provide native POSIX host evidence on your computer only; they are not evidence of a physical lamp, hardware timing, HIL, or certification.",
+          "objectives": [
+            "Run a program against a simulated output without any hardware.",
+            "Change one value in Structured Text and see the output change in the trace."
+          ],
+          "stages": [
+            {
+              "key": "objective",
+              "title": "Objective",
+              "body": "Open src/FirstBlink.st. The program already blinks Lamp, but too slowly: it changes the lamp each time HalfPeriod passes, and HalfPeriod is set to two seconds. Your job is to change that one value.",
+              "checkpoint": "You know which line sets the half period and what it is now."
+            },
+            {
+              "key": "predict",
+              "title": "Predict",
+              "body": "Before changing anything, predict Lamp at 250, 750, 1250, and 1550 ms if it should be off for half a second, then on for half a second.",
+              "checkpoint": "OFF at 250 ms, ON at 750 ms, OFF at 1250 ms, ON at 1550 ms."
+            },
+            {
+              "key": "edit",
+              "title": "Edit",
+              "body": "Correct this flaw of the starting program, save it, then press Check: The starting program uses a half period of two seconds, so Lamp is still OFF when the scenario looks at 750 ms. Change HalfPeriod from T#2000ms to 500 ms written as T#500ms, and save the file.",
+              "checkpoint": "HalfPeriod reads T#500ms and the file is saved."
+            },
+            {
+              "key": "run",
+              "title": "Run",
+              "body": "Press Check. Studio runs your saved program against the scenario of this lesson.",
+              "checkpoint": "The scenario is named FirstBlink and contains 10 assertions; Studio lists every one that failed."
+            },
+            {
+              "key": "observe",
+              "title": "Observe",
+              "body": "Open the trace of the run and follow Lamp: it stays OFF until about 500 ms, is ON until about 1000 ms, then OFF again until about 1500 ms.",
+              "checkpoint": "The lamp changes state about every 500 ms, which is what you predicted."
+            },
+            {
+              "key": "reflect",
+              "title": "Reflect",
+              "body": "Think about what would happen with T#250ms, and why the scenario would reject it even though the lamp still blinks.",
+              "checkpoint": "A blink at the wrong speed is still wrong: the scenario checks the times, not only that the lamp changes."
+            }
+          ],
+          "hints": [
+            {
+              "level": 1,
+              "text": "Find the line that starts with VAR and holds HalfPeriod: the number after T# is a time in milliseconds."
+            },
+            {
+              "level": 2,
+              "text": "Write HalfPeriod : TIME := T#500ms; and press Check again after saving."
+            }
+          ],
+          "faultCases": [
+            "The starting program uses a half period of two seconds, so Lamp is still OFF when the scenario looks at 750 ms."
+          ]
+        },
+        "es": {
+          "title": "Su primer parpadeo en simulación",
+          "summary": "Haga que una lámpara simulada se encienda y se apague cada medio segundo cambiando un solo número, y vea el resultado en la traza.",
+          "scope": "La evidencia de Tests es del runtime nativo POSIX en su equipo; no es evidencia de una lámpara física, de tiempos de hardware, de HIL ni de certificación.",
+          "objectives": [
+            "Ejecute un programa contra una salida simulada sin ningún hardware.",
+            "Cambie un valor en Structured Text y vea cambiar la salida en la traza."
+          ],
+          "stages": [
+            {
+              "key": "objective",
+              "title": "Objetivo",
+              "body": "Abra src/FirstBlink.st. El programa ya hace parpadear Lamp, pero demasiado lento: cambia la lámpara cada vez que pasa HalfPeriod, y HalfPeriod vale dos segundos. Su tarea es cambiar ese único valor.",
+              "checkpoint": "Usted sabe qué línea fija el medio período y cuánto vale ahora."
+            },
+            {
+              "key": "predict",
+              "title": "Prediga",
+              "body": "Antes de cambiar nada, prediga Lamp en 250, 750, 1250 y 1550 ms si debe estar apagada medio segundo y luego encendida medio segundo.",
+              "checkpoint": "OFF en 250 ms, ON en 750 ms, OFF en 1250 ms, ON en 1550 ms."
+            },
+            {
+              "key": "edit",
+              "title": "Edite",
+              "body": "Corrija esta falla del programa inicial, guárdelo y pulse Comprobar: El programa inicial usa un medio período de dos segundos, así que Lamp sigue en OFF cuando el escenario mira a los 750 ms. Cambie HalfPeriod de T#2000ms a 500 ms, escrito como T#500ms, y guarde el archivo.",
+              "checkpoint": "HalfPeriod dice T#500ms y el archivo está guardado."
+            },
+            {
+              "key": "run",
+              "title": "Ejecute",
+              "body": "Pulse Comprobar. Studio ejecuta el programa guardado contra el escenario de esta lección.",
+              "checkpoint": "El escenario se llama FirstBlink y contiene 10 assertions; Studio lista cada una que falló."
+            },
+            {
+              "key": "observe",
+              "title": "Observe",
+              "body": "Abra la traza de la ejecución y siga Lamp: permanece OFF hasta cerca de 500 ms, está ON hasta cerca de 1000 ms y luego vuelve a OFF hasta cerca de 1500 ms.",
+              "checkpoint": "La lámpara cambia de estado cada 500 ms aproximadamente, como usted lo predijo."
+            },
+            {
+              "key": "reflect",
+              "title": "Reflexione",
+              "body": "Piense qué pasaría con T#250ms y por qué el escenario lo rechazaría aunque la lámpara siga parpadeando.",
+              "checkpoint": "Un parpadeo a la velocidad equivocada sigue siendo incorrecto: el escenario comprueba los tiempos, no solo que la lámpara cambie."
+            }
+          ],
+          "hints": [
+            {
+              "level": 1,
+              "text": "Busque la línea que empieza con VAR y contiene HalfPeriod: el número después de T# es un tiempo en milisegundos."
+            },
+            {
+              "level": 2,
+              "text": "Escriba HalfPeriod : TIME := T#500ms; y vuelva a pulsar Comprobar después de guardar."
+            }
+          ],
+          "faultCases": [
+            "El programa inicial usa un medio período de dos segundos, así que Lamp sigue en OFF cuando el escenario mira a los 750 ms."
+          ]
+        }
+      }
+    },
+    {
+      "id": "boolean-logic-two-hand-guard",
+      "version": 1,
+      "order": 12,
+      "module": 2,
+      "level": "foundation",
+      "prerequisites": [
+        "blinky-ladder-timer-feedback"
+      ],
+      "languages": [
+        "ST"
+      ],
+      "tracks": [
+        "simulation"
+      ],
+      "plant": null,
+      "plantMap": null,
+      "estimatedMinutes": 15,
+      "starter": {
+        "project": "two_hand_starter",
+        "program": "src/TwoHand.st"
+      },
+      "solution": {
+        "project": "two_hand",
+        "program": "src/TwoHand.st"
+      },
+      "scenario": {
+        "id": "TwoHand",
+        "path": "tests/two-hand.scenario.json",
+        "sha256": "960b79d6f460c148242199db15454c0d4be08bae5de73f200a4f2623f0e1b4d4",
+        "tickMs": 10,
+        "durationMs": 60,
+        "assertions": 9,
+        "canonical": "{\"durationMs\":60,\"events\":[{\"atMs\":0,\"set\":{\"TwoHand.GuardClosed\":true,\"TwoHand.LeftHand\":false,\"TwoHand.RightHand\":false}},{\"atMs\":10,\"set\":{\"TwoHand.GuardClosed\":true,\"TwoHand.LeftHand\":true,\"TwoHand.RightHand\":false}},{\"atMs\":20,\"set\":{\"TwoHand.GuardClosed\":true,\"TwoHand.LeftHand\":true,\"TwoHand.RightHand\":true}},{\"atMs\":30,\"set\":{\"TwoHand.GuardClosed\":false,\"TwoHand.LeftHand\":true,\"TwoHand.RightHand\":true}},{\"atMs\":40,\"set\":{\"TwoHand.GuardClosed\":true,\"TwoHand.LeftHand\":false,\"TwoHand.RightHand\":true}},{\"atMs\":50,\"set\":{\"TwoHand.GuardClosed\":false,\"TwoHand.LeftHand\":false,\"TwoHand.RightHand\":false}}],\"expectations\":[{\"atMs\":0,\"condition\":{\"TwoHand.GuardLamp\":false,\"TwoHand.OneHandWarning\":false,\"TwoHand.PressEnable\":false},\"kind\":\"AT\"},{\"atMs\":10,\"condition\":{\"TwoHand.GuardLamp\":false,\"TwoHand.OneHandWarning\":true,\"TwoHand.PressEnable\":false},\"kind\":\"AT\"},{\"atMs\":20,\"condition\":{\"TwoHand.GuardLamp\":false,\"TwoHand.OneHandWarning\":false,\"TwoHand.PressEnable\":true},\"kind\":\"AT\"},{\"atMs\":30,\"condition\":{\"TwoHand.GuardLamp\":true,\"TwoHand.OneHandWarning\":false,\"TwoHand.PressEnable\":false},\"kind\":\"AT\"},{\"atMs\":40,\"condition\":{\"TwoHand.GuardLamp\":false,\"TwoHand.OneHandWarning\":true,\"TwoHand.PressEnable\":false},\"kind\":\"AT\"},{\"atMs\":50,\"condition\":{\"TwoHand.GuardLamp\":true,\"TwoHand.OneHandWarning\":false,\"TwoHand.PressEnable\":false},\"kind\":\"AT\"},{\"condition\":{\"TwoHand.PressEnable\":true},\"fromMs\":20,\"kind\":\"RISING\",\"withinMs\":0},{\"condition\":{\"TwoHand.PressEnable\":false},\"fromMs\":30,\"kind\":\"FALLING\",\"withinMs\":0},{\"condition\":{\"TwoHand.GuardLamp\":true,\"TwoHand.PressEnable\":true},\"kind\":\"NEVER\"}],\"id\":\"TwoHand\",\"schemaVersion\":1,\"tickMs\":10}"
+      },
+      "regressionScenarios": [],
+      "text": {
+        "en": {
+          "title": "Boolean logic: a two-hand control with a guard",
+          "summary": "Combine AND, NOT and XOR so a press can only be enabled when both hands are on the buttons and the guard is closed.",
+          "scope": "Tests provide native POSIX host evidence with one 10 ms task; they do not establish the response time, redundancy or fault behaviour a real two-hand safety device needs, and they are not safety, HIL, or certification evidence.",
+          "objectives": [
+            "Write a condition that is true only when several inputs are true together.",
+            "Use NOT for a warning lamp and XOR for exactly one of two inputs."
+          ],
+          "stages": [
+            {
+              "key": "objective",
+              "title": "Objective",
+              "body": "In src/TwoHand.st the three outputs are not yet right. PressEnable must be ON only with LeftHand, RightHand and GuardClosed all ON. GuardLamp must be ON when the guard is open. OneHandWarning must be ON when exactly one hand is on its button.",
+              "checkpoint": "You can say, for each output, the condition that turns it ON."
+            },
+            {
+              "key": "predict",
+              "title": "Predict",
+              "body": "Before running, predict the three outputs at 20, 30, and 40 ms. The inputs change every 10 ms, so work through one step at a time.",
+              "checkpoint": "PressEnable ON only at 20 ms; GuardLamp ON only at 30 ms; OneHandWarning ON only at 40 ms."
+            },
+            {
+              "key": "edit",
+              "title": "Edit",
+              "body": "Correct this flaw of the starting program, save it, then press Check: The starting program enables the press with either hand, so PressEnable is already ON at 10 ms with one hand. Replace the starting statement with one condition for each output, save the file, and look at the result.",
+              "checkpoint": "Each output follows its own condition and the file is saved."
+            },
+            {
+              "key": "run",
+              "title": "Run",
+              "body": "Press Check. Studio runs your saved program against the scenario of this lesson.",
+              "checkpoint": "The scenario is named TwoHand and contains 9 assertions."
+            },
+            {
+              "key": "observe",
+              "title": "Observe",
+              "body": "Compare 20, 30, and 40 ms: the press is enabled once, at 20 ms, and switches off again at 30 ms when the guard opens.",
+              "checkpoint": "PressEnable rises at 20 ms and falls at 30 ms, and is never ON while GuardLamp is ON."
+            },
+            {
+              "key": "reflect",
+              "title": "Reflect",
+              "body": "Try the same condition with OR instead of AND and say which input combination wrongly enables the press.",
+              "checkpoint": "OR enables the press with a single hand, which is exactly what a two-hand control exists to prevent."
+            }
+          ],
+          "hints": [
+            {
+              "level": 1,
+              "text": "AND is true only when every part is true, so PressEnable needs the three inputs joined with AND."
+            },
+            {
+              "level": 2,
+              "text": "Write PressEnable := LeftHand AND RightHand AND GuardClosed; GuardLamp := NOT GuardClosed; OneHandWarning := LeftHand XOR RightHand;"
+            }
+          ],
+          "faultCases": [
+            "The starting program enables the press with either hand, so PressEnable is already ON at 10 ms with one hand."
+          ]
+        },
+        "es": {
+          "title": "Lógica booleana: un mando a dos manos con protección",
+          "summary": "Combine AND, NOT y XOR para que una prensa solo se habilite con las dos manos en los botones y la protección cerrada.",
+          "scope": "La evidencia de Tests es del runtime nativo POSIX con una tarea de 10 ms; no establece el tiempo de respuesta, la redundancia ni el comportamiento ante fallos que exige un dispositivo real de mando a dos manos, y no es evidencia de seguridad, de HIL ni de certificación.",
+          "objectives": [
+            "Escriba una condición que sea verdadera solo cuando varias entradas son verdaderas a la vez.",
+            "Use NOT para una lámpara de aviso y XOR para exactamente una de dos entradas."
+          ],
+          "stages": [
+            {
+              "key": "objective",
+              "title": "Objetivo",
+              "body": "En src/TwoHand.st las tres salidas todavía no son correctas. PressEnable debe estar en ON solo con LeftHand, RightHand y GuardClosed en ON. GuardLamp debe estar en ON cuando la protección está abierta. OneHandWarning debe estar en ON cuando exactamente una mano está en su botón.",
+              "checkpoint": "Usted puede decir, para cada salida, la condición que la pone en ON."
+            },
+            {
+              "key": "predict",
+              "title": "Prediga",
+              "body": "Antes de ejecutar, prediga las tres salidas en 20, 30 y 40 ms. Las entradas cambian cada 10 ms, así que avance un paso a la vez.",
+              "checkpoint": "solo PressEnable en ON en 20 ms; solo GuardLamp en ON en 30 ms; solo OneHandWarning en ON en 40 ms."
+            },
+            {
+              "key": "edit",
+              "title": "Edite",
+              "body": "Corrija esta falla del programa inicial, guárdelo y pulse Comprobar: El programa inicial habilita la prensa con cualquiera de las dos manos, así que PressEnable ya está en ON a los 10 ms con una sola mano. Reemplace la sentencia inicial por una condición para cada salida, guarde el archivo y mire el resultado.",
+              "checkpoint": "Cada salida sigue su propia condición y el archivo está guardado."
+            },
+            {
+              "key": "run",
+              "title": "Ejecute",
+              "body": "Pulse Comprobar. Studio ejecuta el programa guardado contra el escenario de esta lección.",
+              "checkpoint": "El escenario se llama TwoHand y contiene 9 assertions."
+            },
+            {
+              "key": "observe",
+              "title": "Observe",
+              "body": "Compare 20, 30 y 40 ms: la prensa se habilita una sola vez, a los 20 ms, y se desactiva a los 30 ms cuando se abre la protección.",
+              "checkpoint": "PressEnable sube a los 20 ms y baja a los 30 ms, y nunca está en ON mientras GuardLamp está en ON."
+            },
+            {
+              "key": "reflect",
+              "title": "Reflexione",
+              "body": "Pruebe la misma condición con OR en lugar de AND y diga qué combinación de entradas habilita la prensa por error.",
+              "checkpoint": "OR habilita la prensa con una sola mano, que es justo lo que un mando a dos manos existe para impedir."
+            }
+          ],
+          "hints": [
+            {
+              "level": 1,
+              "text": "AND es verdadero solo cuando todas las partes lo son, así que PressEnable necesita las tres entradas unidas con AND."
+            },
+            {
+              "level": 2,
+              "text": "Escriba PressEnable := LeftHand AND RightHand AND GuardClosed; GuardLamp := NOT GuardClosed; OneHandWarning := LeftHand XOR RightHand;"
+            }
+          ],
+          "faultCases": [
+            "El programa inicial habilita la prensa con cualquiera de las dos manos, así que PressEnable ya está en ON a los 10 ms con una sola mano."
+          ]
+        }
+      }
+    },
+    {
+      "id": "timers-on-delay-off-delay",
+      "version": 1,
+      "order": 13,
+      "module": 3,
+      "level": "foundation",
+      "prerequisites": [
+        "motor-start-stop-safe"
+      ],
+      "languages": [
+        "ST"
+      ],
+      "tracks": [
+        "simulation"
+      ],
+      "plant": null,
+      "plantMap": null,
+      "estimatedMinutes": 15,
+      "starter": {
+        "project": "delays_starter",
+        "program": "src/Delays.st"
+      },
+      "solution": {
+        "project": "delays",
+        "program": "src/Delays.st"
+      },
+      "scenario": {
+        "id": "Delays",
+        "path": "tests/delays.scenario.json",
+        "sha256": "423836cfdc574a00a8192742eb0671439833a3e1e3dc4c2e90c550d63a33599d",
+        "tickMs": 10,
+        "durationMs": 1000,
+        "assertions": 10,
+        "canonical": "{\"durationMs\":1000,\"events\":[{\"atMs\":0,\"set\":{\"Delays.Button\":false,\"Delays.Sensor\":false}},{\"atMs\":100,\"set\":{\"Delays.Button\":true,\"Delays.Sensor\":true}},{\"atMs\":140,\"set\":{\"Delays.Sensor\":false}},{\"atMs\":300,\"set\":{\"Delays.Button\":false}},{\"atMs\":500,\"set\":{\"Delays.Sensor\":true}},{\"atMs\":900,\"set\":{\"Delays.Sensor\":false}}],\"expectations\":[{\"atMs\":0,\"condition\":{\"Delays.Confirmed\":false,\"Delays.Light\":false},\"kind\":\"AT\"},{\"atMs\":200,\"condition\":{\"Delays.Confirmed\":false,\"Delays.Light\":true},\"kind\":\"AT\"},{\"atMs\":450,\"condition\":{\"Delays.Confirmed\":false,\"Delays.Light\":true},\"kind\":\"AT\"},{\"atMs\":650,\"condition\":{\"Delays.Confirmed\":false,\"Delays.Light\":false},\"kind\":\"AT\"},{\"atMs\":800,\"condition\":{\"Delays.Confirmed\":true,\"Delays.Light\":false},\"kind\":\"AT\"},{\"atMs\":950,\"condition\":{\"Delays.Confirmed\":false,\"Delays.Light\":false},\"kind\":\"AT\"},{\"condition\":{\"Delays.Light\":true},\"forMs\":470,\"fromMs\":110,\"kind\":\"FOR\"},{\"condition\":{\"Delays.Confirmed\":false},\"forMs\":400,\"fromMs\":100,\"kind\":\"FOR\"},{\"condition\":{\"Delays.Light\":false},\"fromMs\":560,\"kind\":\"FALLING\",\"withinMs\":100},{\"condition\":{\"Delays.Confirmed\":true},\"fromMs\":600,\"kind\":\"RISING\",\"withinMs\":200}],\"id\":\"Delays\",\"schemaVersion\":1,\"tickMs\":10}"
+      },
+      "regressionScenarios": [],
+      "text": {
+        "en": {
+          "title": "Timers: an off-delay light and an on-delay filter",
+          "summary": "Use a TOF timer to keep a light on after a button is released, and a TON timer to ignore a sensor blip that is too short.",
+          "scope": "Tests provide native POSIX host evidence with one 10 ms task; they do not establish electrical debounce, sensor response, target timing, HIL, or certification.",
+          "objectives": [
+            "Keep an output on for a fixed time after its input drops, using TOF.",
+            "Ignore an input that is on for less than a fixed time, using TON."
+          ],
+          "stages": [
+            {
+              "key": "objective",
+              "title": "Objective",
+              "body": "In src/Delays.st the timers HoldTimer (TOF) and FilterTimer (TON) are declared but not used. Light must stay ON for 300 ms after Button is released. Confirmed must turn ON only after Sensor has stayed ON for 200 ms.",
+              "checkpoint": "You can say which timer keeps an output on and which one waits before turning it on."
+            },
+            {
+              "key": "predict",
+              "title": "Predict",
+              "body": "The scenario presses Button at 100 ms and releases it at 300 ms. Sensor blips ON from 100 ms to 140 ms and is ON again from 500 ms to 900 ms. Predict Light and Confirmed at 200, 450, 650, and 800 ms.",
+              "checkpoint": "Light ON, Confirmed OFF at 200 ms; Light ON, Confirmed OFF at 450 ms; both OFF at 650 ms; Confirmed ON, Light OFF at 800 ms."
+            },
+            {
+              "key": "edit",
+              "title": "Edit",
+              "body": "Correct this flaw of the starting program, save it, then press Check: The starting program copies the inputs to the outputs, so Light is already OFF at 450 ms and Confirmed turns ON for the 100 ms blip. Call HoldTimer with Button as IN and a preset of T#300ms, and set Light from its Q output. Do the same with FilterTimer, Sensor and T#200ms for Confirmed. Save the file.",
+              "checkpoint": "Both timers are called every scan and each output comes from its timer's Q."
+            },
+            {
+              "key": "run",
+              "title": "Run",
+              "body": "Press Check. Studio runs your saved program against the scenario of this lesson.",
+              "checkpoint": "The scenario is named Delays and contains 10 assertions."
+            },
+            {
+              "key": "observe",
+              "title": "Observe",
+              "body": "Follow Light and Confirmed in the trace: the short blip never turns Confirmed ON, Light is still ON at 450 ms although Button went OFF at 300 ms, and Confirmed rises about 200 ms after Sensor came back at 500 ms.",
+              "checkpoint": "Light falls about 300 ms after Button, and Confirmed rises about 200 ms after the second Sensor pulse."
+            },
+            {
+              "key": "reflect",
+              "title": "Reflect",
+              "body": "Swap the two timers in your head: what would a TON on Button and a TOF on Sensor do with this scenario?",
+              "checkpoint": "TON delays the start and TOF delays the end; each answers a different question about a signal."
+            }
+          ],
+          "hints": [
+            {
+              "level": 1,
+              "text": "TOF keeps its Q on for the preset time after IN falls, and TON raises Q only after IN has been on for the preset time."
+            },
+            {
+              "level": 2,
+              "text": "Write HoldTimer(IN := Button, PT := T#300ms); Light := HoldTimer.Q; FilterTimer(IN := Sensor, PT := T#200ms); Confirmed := FilterTimer.Q;"
+            }
+          ],
+          "faultCases": [
+            "The starting program copies the inputs to the outputs, so Light is already OFF at 450 ms and Confirmed turns ON for the 100 ms blip."
+          ]
+        },
+        "es": {
+          "title": "Temporizadores: una luz con retardo a la desconexión y un filtro con retardo a la conexión",
+          "summary": "Use un temporizador TOF para mantener una luz encendida después de soltar un botón, y un TON para ignorar un pulso de sensor demasiado corto.",
+          "scope": "La evidencia de Tests es del runtime nativo POSIX con una tarea de 10 ms; no establece antirrebote eléctrico, respuesta del sensor, tiempos del target, HIL ni certificación.",
+          "objectives": [
+            "Mantenga una salida encendida un tiempo fijo después de que su entrada baja, con TOF.",
+            "Ignore una entrada que está en ON menos de un tiempo fijo, con TON."
+          ],
+          "stages": [
+            {
+              "key": "objective",
+              "title": "Objetivo",
+              "body": "En src/Delays.st los temporizadores HoldTimer (TOF) y FilterTimer (TON) están declarados pero no se usan. Light debe seguir en ON durante 300 ms después de soltar Button. Confirmed debe pasar a ON solo después de que Sensor haya estado en ON durante 200 ms.",
+              "checkpoint": "Usted puede decir qué temporizador mantiene una salida encendida y cuál espera antes de encenderla."
+            },
+            {
+              "key": "predict",
+              "title": "Prediga",
+              "body": "El escenario pulsa Button a los 100 ms y lo suelta a los 300 ms. Sensor da un pulso en ON de 100 a 140 ms y vuelve a estar en ON de 500 a 900 ms. Prediga Light y Confirmed en 200, 450, 650 y 800 ms.",
+              "checkpoint": "Light en ON, Confirmed en OFF en 200 ms; Light en ON, Confirmed en OFF en 450 ms; ambas en OFF en 650 ms; Confirmed en ON, Light en OFF en 800 ms."
+            },
+            {
+              "key": "edit",
+              "title": "Edite",
+              "body": "Corrija esta falla del programa inicial, guárdelo y pulse Comprobar: El programa inicial copia las entradas a las salidas, así que Light ya está en OFF a los 450 ms y Confirmed pasa a ON con el pulso de 100 ms. Llame a HoldTimer con Button como IN y un preajuste de T#300ms, y tome Light de su salida Q. Haga lo mismo con FilterTimer, Sensor y T#200ms para Confirmed. Guarde el archivo.",
+              "checkpoint": "Los dos temporizadores se llaman en cada scan y cada salida viene de la Q de su temporizador."
+            },
+            {
+              "key": "run",
+              "title": "Ejecute",
+              "body": "Pulse Comprobar. Studio ejecuta el programa guardado contra el escenario de esta lección.",
+              "checkpoint": "El escenario se llama Delays y contiene 10 assertions."
+            },
+            {
+              "key": "observe",
+              "title": "Observe",
+              "body": "Siga Light y Confirmed en la traza: el pulso corto nunca pone Confirmed en ON, Light sigue en ON a los 450 ms aunque Button pasó a OFF a los 300 ms, y Confirmed sube unos 200 ms después de que Sensor volvió a los 500 ms.",
+              "checkpoint": "Light baja unos 300 ms después de Button, y Confirmed sube unos 200 ms después del segundo pulso de Sensor."
+            },
+            {
+              "key": "reflect",
+              "title": "Reflexione",
+              "body": "Intercambie los dos temporizadores mentalmente: ¿qué haría un TON sobre Button y un TOF sobre Sensor con este escenario?",
+              "checkpoint": "TON retrasa el inicio y TOF retrasa el final; cada uno responde una pregunta distinta sobre una señal."
+            }
+          ],
+          "hints": [
+            {
+              "level": 1,
+              "text": "TOF mantiene su Q en ON durante el tiempo de preajuste después de que IN baja, y TON sube Q solo cuando IN lleva ese tiempo en ON."
+            },
+            {
+              "level": 2,
+              "text": "Escriba HoldTimer(IN := Button, PT := T#300ms); Light := HoldTimer.Q; FilterTimer(IN := Sensor, PT := T#200ms); Confirmed := FilterTimer.Q;"
+            }
+          ],
+          "faultCases": [
+            "El programa inicial copia las entradas a las salidas, así que Light ya está en OFF a los 450 ms y Confirmed pasa a ON con el pulso de 100 ms."
           ]
         }
       }

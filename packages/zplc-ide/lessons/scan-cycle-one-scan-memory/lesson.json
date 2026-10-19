@@ -5,7 +5,9 @@
   "order": 8,
   "module": 1,
   "level": "foundation",
-  "prerequisites": [],
+  "prerequisites": [
+    "first-blink-simulation"
+  ],
   "languages": [
     "ST"
   ],

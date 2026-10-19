@@ -5,9 +5,10 @@ import { LESSON_INDEX } from '../generated/lessonIndex';
 import { emptyProgress, withNote, withPassedIds, type LearnProgress } from '../../electron/learnProgressModel';
 import { buildCourseView, continueTarget, lessonStateOf, trackSupport } from './course';
 
-const FIRST = 'scan-cycle-one-scan-memory';
-const SECOND = 'blinky-ladder-timer-feedback';
-const THIRD = 'motor-start-stop-safe';
+const FIRST = 'first-blink-simulation';
+const SECOND = 'scan-cycle-one-scan-memory';
+const THIRD = 'blinky-ladder-timer-feedback';
+const MOTOR = 'motor-start-stop-safe';
 const at = '2026-10-19T10:00:00.000Z';
 const passed = (...ids: string[]): LearnProgress => withPassedIds(emptyProgress(), ids);
 
@@ -28,7 +29,7 @@ describe('the state of a lesson', () => {
   });
 
   it('is never locked when everything is unlocked (the setting), and the missing list is empty', () => {
-    expect(lessonStateOf(LESSON_INDEX, THIRD, emptyProgress(), true)).toEqual({ state: 'available', missing: [] });
+    expect(lessonStateOf(LESSON_INDEX, MOTOR, emptyProgress(), true)).toEqual({ state: 'available', missing: [] });
   });
 
   it('is locked, not an error, while progress has not loaded', () => {
@@ -43,15 +44,15 @@ describe('the course view', () => {
     expect(view.modules.map((module) => module.id)).toEqual([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]);
     const one = view.modules[1]!;
     expect(one).toMatchObject({ level: 'foundation', requires: 0 });
-    expect(one.lessons.map((lesson) => lesson.id)).toEqual([FIRST, SECOND]);
+    expect(one.lessons.map((lesson) => lesson.id)).toEqual([SECOND, THIRD]);
     expect(one.estimatedMinutes).toBe(30);
     expect(one.title).toContain('scan cycle');
   });
 
   it('keeps the modules that have no lesson yet, empty and with no minutes, and invents no lesson for them', () => {
     const empty = view.modules.filter((module) => module.lessons.length === 0).map((module) => module.id);
-    expect(empty).toEqual([0, 4, 7, 9, 10, 11]);
-    expect(view.modules[0]!.estimatedMinutes).toBe(0);
+    expect(empty).toEqual([4, 7, 9, 10, 11]);
+    expect(view.modules[4]!.estimatedMinutes).toBe(0);
   });
 
   it('carries every lesson of the index exactly once, with its state, title and tracks', () => {
@@ -64,7 +65,7 @@ describe('the course view', () => {
 
   it('states the objectives of a module from the lessons placed in it', () => {
     expect(view.modules[1]!.objectives.length).toBeGreaterThan(0);
-    expect(view.modules[0]!.objectives).toEqual([]);
+    expect(view.modules[4]!.objectives).toEqual([]);
   });
 
   it('reads Spanish titles in the Spanish locale', () => {
@@ -73,7 +74,7 @@ describe('the course view', () => {
   });
 
   it('counts the passed lessons', () => {
-    expect(buildCourseView(LESSON_INDEX, passed(FIRST), { locale: 'en', unlockAll: false })).toMatchObject({ passed: 1, total: 10 });
+    expect(buildCourseView(LESSON_INDEX, passed(FIRST), { locale: 'en', unlockAll: false })).toMatchObject({ passed: 1, total: 13 });
   });
 });
 

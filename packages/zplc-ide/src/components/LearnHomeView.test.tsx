@@ -9,8 +9,8 @@ import { buildCourseView, continueTarget } from '../learn/course';
 import { auditMarkup } from '../ui/audit';
 import { LearnHomeView, type LearnHomeViewProps } from './LearnHomeView';
 
-const FIRST = 'scan-cycle-one-scan-memory';
-const SECOND = 'blinky-ladder-timer-feedback';
+const FIRST = 'first-blink-simulation';
+const SECOND = 'scan-cycle-one-scan-memory';
 
 function render(progress: LearnProgress | null, over: Partial<LearnHomeViewProps> = {}, unlockAll = false): string {
   const view = buildCourseView(LESSON_INDEX, progress, { locale: 'en', unlockAll });
@@ -34,7 +34,7 @@ describe('the Learn home', () => {
     expect(out).toContain('Simulation');
     expect(out).toContain('Foundation. Requires module 0. About 30 min.');
     expect(out).toContain('Intermediate. Requires module 3.');
-    expect(out.match(/No lessons yet\./g)?.length).toBe(6);
+    expect(out.match(/No lessons yet\./g)?.length).toBe(5);
   });
 
   it('says the state of each lesson in words, and why a locked lesson is locked', () => {
@@ -62,7 +62,7 @@ describe('the Learn home', () => {
   });
 
   it('counts the lessons passed', () => {
-    expect(render(withPassedIds(emptyProgress(), [FIRST]))).toContain('1 of 10 lessons passed');
+    expect(render(withPassedIds(emptyProgress(), [FIRST]))).toContain('1 of 13 lessons passed');
   });
 
   it('says which tracks a lesson supports and, for one it does not, why and what to do instead (LRN-011)', () => {

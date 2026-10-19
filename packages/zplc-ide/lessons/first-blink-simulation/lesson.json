@@ -1,0 +1,32 @@
+{
+  "schemaVersion": 1,
+  "id": "first-blink-simulation",
+  "version": 1,
+  "order": 11,
+  "module": 0,
+  "level": "foundation",
+  "prerequisites": [],
+  "languages": [
+    "ST"
+  ],
+  "tracks": [
+    "simulation"
+  ],
+  "plant": null,
+  "estimatedMinutes": 10,
+  "starter": {
+    "project": "first_blink_starter",
+    "program": "src/FirstBlink.st"
+  },
+  "solution": {
+    "project": "first_blink",
+    "program": "src/FirstBlink.st"
+  },
+  "scenario": {
+    "file": "scenario.json",
+    "id": "FirstBlink",
+    "path": "tests/first-blink.scenario.json",
+    "sha256": "797711eb3ab8e762f89d99485bf099f0a57a84f52bfd36f9f07932f4bcb4745a"
+  },
+  "regressionScenarios": []
+}

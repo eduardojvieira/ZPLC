@@ -1,0 +1,31 @@
+{
+  "schemaVersion": 1,
+  "alsoGreen": [
+    {
+      "intent": "count 50 scans of 10 ms instead of using a timer",
+      "files": {
+        "src/FirstBlink.st": "PROGRAM FirstBlink\nVAR_OUTPUT Lamp AT %Q0.0 : BOOL; END_VAR\nVAR Scans : INT := 0; LampOn : BOOL := FALSE; END_VAR\nScans := Scans + 1;\nIF Scans >= 50 THEN LampOn := NOT LampOn; Scans := 0; END_IF;\nLamp := LampOn;\nEND_PROGRAM\n"
+      }
+    }
+  ],
+  "wrong": [
+    {
+      "intent": "blinks every 250 ms, twice as fast as required",
+      "files": {
+        "src/FirstBlink.st": "PROGRAM FirstBlink\nVAR_OUTPUT Lamp AT %Q0.0 : BOOL; END_VAR\nVAR Clock : TON; LampOn : BOOL := FALSE; HalfPeriod : TIME := T#250ms; END_VAR\n(* Exercise: the lamp changes state every time Clock reaches HalfPeriod. Change HalfPeriod so the lamp is off for half a second and on for half a second. *)\nClock(IN := TRUE, PT := HalfPeriod);\nIF Clock.Q THEN LampOn := NOT LampOn; Clock(IN := FALSE, PT := HalfPeriod); END_IF;\nLamp := LampOn;\nEND_PROGRAM\n"
+      }
+    },
+    {
+      "intent": "blinks every second, too slow",
+      "files": {
+        "src/FirstBlink.st": "PROGRAM FirstBlink\nVAR_OUTPUT Lamp AT %Q0.0 : BOOL; END_VAR\nVAR Clock : TON; LampOn : BOOL := FALSE; HalfPeriod : TIME := T#1000ms; END_VAR\n(* Exercise: the lamp changes state every time Clock reaches HalfPeriod. Change HalfPeriod so the lamp is off for half a second and on for half a second. *)\nClock(IN := TRUE, PT := HalfPeriod);\nIF Clock.Q THEN LampOn := NOT LampOn; Clock(IN := FALSE, PT := HalfPeriod); END_IF;\nLamp := LampOn;\nEND_PROGRAM\n"
+      }
+    },
+    {
+      "intent": "never turns the lamp on",
+      "files": {
+        "src/FirstBlink.st": "PROGRAM FirstBlink\nVAR_OUTPUT Lamp AT %Q0.0 : BOOL; END_VAR\nVAR Scans : INT := 0; LampOn : BOOL := FALSE; END_VAR\nScans := Scans + 1;\nIF Scans >= 50 THEN LampOn := FALSE; Scans := 0; END_IF;\nLamp := LampOn;\nEND_PROGRAM\n"
+      }
+    }
+  ]
+}

@@ -71,6 +71,9 @@ describe('Learn lesson content modules', () => {
     'scan-cycle-one-scan-memory': 'scan_snapshot',
     'temporal-assertions-jam-fault': 'conveyor_01',
     'conveyor-two-parts-diagnosis': 'conveyor_01',
+    'first-blink-simulation': 'first_blink',
+    'boolean-logic-two-hand-guard': 'two_hand',
+    'timers-on-delay-off-delay': 'delays',
   };
 
   it.each([['Spanish', learnLessonContentEsV1], ['English', learnLessonContentEnV1]] as const)('starts each lesson of the %s content from its canonical example', (_language, content) => {

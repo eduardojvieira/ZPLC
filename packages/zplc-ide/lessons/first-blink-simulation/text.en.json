@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "title": "Your first blink in simulation",
+  "summary": "Make a simulated lamp turn on and off every half second by changing one number, then see the result in the trace.",
+  "scope": "Tests provide native POSIX host evidence on your computer only; they are not evidence of a physical lamp, hardware timing, HIL, or certification.",
+  "objectives": [
+    "Run a program against a simulated output without any hardware.",
+    "Change one value in Structured Text and see the output change in the trace."
+  ],
+  "stages": [
+    {
+      "key": "objective",
+      "title": "Objective",
+      "body": "Open src/FirstBlink.st. The program already blinks Lamp, but too slowly: it changes the lamp each time HalfPeriod passes, and HalfPeriod is set to two seconds. Your job is to change that one value.",
+      "checkpoint": "You know which line sets the half period and what it is now."
+    },
+    {
+      "key": "predict",
+      "title": "Predict",
+      "body": "Before changing anything, predict Lamp at {{t:250}}, {{t:750}}, {{t:1250}}, and {{t:1550}} ms if it should be off for half a second, then on for half a second.",
+      "checkpoint": "{{v:FirstBlink.Lamp=false@250|OFF}} at {{t:250}} ms, {{v:FirstBlink.Lamp=true@750|ON}} at {{t:750}} ms, {{v:FirstBlink.Lamp=false@1250|OFF}} at {{t:1250}} ms, {{v:FirstBlink.Lamp=true@1550|ON}} at {{t:1550}} ms."
+    },
+    {
+      "key": "edit",
+      "title": "Edit",
+      "body": "Correct this flaw of the starting program, save it, then press Check: The starting program uses a half period of two seconds, so Lamp is still OFF when the scenario looks at {{t:750}} ms. Change HalfPeriod from T#2000ms to {{t:500}} ms written as T#500ms, and save the file.",
+      "checkpoint": "HalfPeriod reads T#500ms and the file is saved."
+    },
+    {
+      "key": "run",
+      "title": "Run",
+      "body": "Press Check. Studio runs your saved program against the scenario of this lesson.",
+      "checkpoint": "The scenario is named FirstBlink and contains {{assertions}} assertions; Studio lists every one that failed."
+    },
+    {
+      "key": "observe",
+      "title": "Observe",
+      "body": "Open the trace of the run and follow Lamp: it stays OFF until about {{t:500}} ms, is ON until about {{t:1000}} ms, then OFF again until about {{t:1500}} ms.",
+      "checkpoint": "The lamp changes state about every {{t:500}} ms, which is what you predicted."
+    },
+    {
+      "key": "reflect",
+      "title": "Reflect",
+      "body": "Think about what would happen with T#250ms, and why the scenario would reject it even though the lamp still blinks.",
+      "checkpoint": "A blink at the wrong speed is still wrong: the scenario checks the times, not only that the lamp changes."
+    }
+  ],
+  "hints": [
+    {
+      "level": 1,
+      "text": "Find the line that starts with VAR and holds HalfPeriod: the number after T# is a time in milliseconds."
+    },
+    {
+      "level": 2,
+      "text": "Write HalfPeriod : TIME := T#500ms; and press Check again after saving."
+    }
+  ],
+  "faultCases": [
+    "The starting program uses a half period of two seconds, so Lamp is still OFF when the scenario looks at {{t:750}} ms."
+  ]
+}

@@ -1,0 +1,34 @@
+{
+  "schemaVersion": 1,
+  "id": "timers-on-delay-off-delay",
+  "version": 1,
+  "order": 13,
+  "module": 3,
+  "level": "foundation",
+  "prerequisites": [
+    "motor-start-stop-safe"
+  ],
+  "languages": [
+    "ST"
+  ],
+  "tracks": [
+    "simulation"
+  ],
+  "plant": null,
+  "estimatedMinutes": 15,
+  "starter": {
+    "project": "delays_starter",
+    "program": "src/Delays.st"
+  },
+  "solution": {
+    "project": "delays",
+    "program": "src/Delays.st"
+  },
+  "scenario": {
+    "file": "scenario.json",
+    "id": "Delays",
+    "path": "tests/delays.scenario.json",
+    "sha256": "423836cfdc574a00a8192742eb0671439833a3e1e3dc4c2e90c550d63a33599d"
+  },
+  "regressionScenarios": []
+}

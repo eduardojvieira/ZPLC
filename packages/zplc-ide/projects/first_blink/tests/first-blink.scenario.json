@@ -1,0 +1,84 @@
+{
+  "schemaVersion": 1,
+  "id": "FirstBlink",
+  "tickMs": 10,
+  "durationMs": 1600,
+  "events": [],
+  "expectations": [
+    {
+      "kind": "AT",
+      "atMs": 0,
+      "condition": {
+        "FirstBlink.Lamp": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 250,
+      "condition": {
+        "FirstBlink.Lamp": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 750,
+      "condition": {
+        "FirstBlink.Lamp": true
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 1250,
+      "condition": {
+        "FirstBlink.Lamp": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 1550,
+      "condition": {
+        "FirstBlink.Lamp": true
+      }
+    },
+    {
+      "kind": "FOR",
+      "fromMs": 20,
+      "forMs": 380,
+      "condition": {
+        "FirstBlink.Lamp": false
+      }
+    },
+    {
+      "kind": "FOR",
+      "fromMs": 620,
+      "forMs": 280,
+      "condition": {
+        "FirstBlink.Lamp": true
+      }
+    },
+    {
+      "kind": "FOR",
+      "fromMs": 1120,
+      "forMs": 280,
+      "condition": {
+        "FirstBlink.Lamp": false
+      }
+    },
+    {
+      "kind": "RISING",
+      "fromMs": 400,
+      "withinMs": 200,
+      "condition": {
+        "FirstBlink.Lamp": true
+      }
+    },
+    {
+      "kind": "FALLING",
+      "fromMs": 900,
+      "withinMs": 200,
+      "condition": {
+        "FirstBlink.Lamp": false
+      }
+    }
+  ]
+}

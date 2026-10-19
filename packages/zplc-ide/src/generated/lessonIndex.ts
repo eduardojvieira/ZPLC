@@ -16,6 +16,9 @@ export const LESSON_IDS = [
   "scan-cycle-one-scan-memory",
   "temporal-assertions-jam-fault",
   "conveyor-two-parts-diagnosis",
+  "first-blink-simulation",
+  "boolean-logic-two-hand-guard",
+  "timers-on-delay-off-delay",
 ] as const;
 
 export type LessonId = typeof LESSON_IDS[number];
