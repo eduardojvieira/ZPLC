@@ -1870,7 +1870,8 @@
   "IDE-005": [
     {"kind":"unit","ref":"packages/zplc-ide/electron/appMenu.test.ts","test":"reload shortcuts (IDE-005, stopgap: the chord only)","partial":true},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"10 Close with unsaved changes","partial":true},
-    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"22 Close Project asks before it closes","partial":true}
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"22 Close Project asks before it closes","partial":true},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"53 Ctrl+R in the development host asks before it discards unsaved work, through a real key press","partial":true}
   ],
   "IDE-006": [
     {"kind":"unit","ref":"packages/zplc-ide/electron/ipcRegistry.test.ts","test":"recovery and session over the IPC boundary (IDE-006, IDE-008)"},
