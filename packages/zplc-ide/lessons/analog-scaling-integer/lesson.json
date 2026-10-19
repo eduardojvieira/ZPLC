@@ -17,8 +17,8 @@
   "unsupported": {
     "hardware": {
       "reason": {
-        "en": "The lesson is graded on exact input timing at 10 ms steps; a board has no recorded trace for it yet.",
-        "es": "La lección se califica con tiempos exactos de entradas en pasos de 10 ms; todavía no hay una traza registrada desde una placa para ella."
+        "en": "The lesson steps a raw count by the scan, not by a real analog input, so a board would not give the same counts at the same times.",
+        "es": "La lección avanza una cuenta cruda por ciclo, no una entrada analógica real, así que una placa no daría las mismas cuentas en los mismos momentos."
       },
       "instead": {
         "en": "Complete it in Simulation: its grade is the same each time and needs no board.",

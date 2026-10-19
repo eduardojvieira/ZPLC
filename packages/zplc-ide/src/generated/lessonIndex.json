@@ -2655,8 +2655,8 @@
       "unsupported": {
         "hardware": {
           "reason": {
-            "en": "The lesson is graded on exact button timing at 10 ms steps; a board has no recorded trace for it yet.",
-            "es": "La lección se califica con tiempos exactos de pulsadores en pasos de 10 ms; todavía no hay una traza registrada desde una placa para ella."
+            "en": "The lesson is graded on a Start and Stop pressed together at an exact 10 ms step, which a board cannot repeat the same way every run.",
+            "es": "La lección se califica con Start y Stop pulsados juntos en un paso exacto de 10 ms, que una placa no repite igual en cada ejecución."
           },
           "instead": {
             "en": "Complete it in Simulation: its grade is the same each time and needs no board.",
@@ -2826,8 +2826,8 @@
       "unsupported": {
         "hardware": {
           "reason": {
-            "en": "The lesson is graded on exact sensor timing at 10 ms steps; a board has no recorded trace for it yet.",
-            "es": "La lección se califica con tiempos exactos de sensor en pasos de 10 ms; todavía no hay una traza registrada desde una placa para ella."
+            "en": "The lesson counts parts from a photocell signal that Studio replays exactly, and a board has no recorded trace of such a signal for it yet.",
+            "es": "La lección cuenta piezas a partir de una señal de fotocélula que Studio reproduce exactamente, y todavía no hay una traza registrada desde una placa de esa señal."
           },
           "instead": {
             "en": "Complete it in Simulation: its grade is the same each time and needs no board.",
@@ -2980,7 +2980,7 @@
       }
     },
     {
-      "id": "interlock-guard-ladder",
+      "id": "interlock-guard-permissive",
       "version": 1,
       "order": 18,
       "module": 6,
@@ -2989,7 +2989,7 @@
         "pedestrian-crossing-states"
       ],
       "languages": [
-        "LD"
+        "ST"
       ],
       "tracks": [
         "simulation"
@@ -2997,8 +2997,8 @@
       "unsupported": {
         "hardware": {
           "reason": {
-            "en": "The lesson needs the motor plant model that answers your outputs, and a board has no motor attached to give that feedback.",
-            "es": "La lección necesita el modelo de planta del motor que responde a sus salidas, y una placa no tiene un motor conectado que dé esa realimentación."
+            "en": "The lesson drops a guard input at an exact step and needs the motor plant model for its speed feedback, which a board without a motor cannot give.",
+            "es": "La lección abre una entrada de protección en un paso exacto y necesita el modelo de planta del motor para su realimentación de velocidad, que una placa sin motor no puede dar."
           },
           "instead": {
             "en": "Complete it in Simulation, which provides the motor and its run feedback.",
@@ -3019,12 +3019,12 @@
       },
       "estimatedMinutes": 20,
       "starter": {
-        "project": "interlock_guard_ladder_starter",
-        "program": "src/MotorPlant.ld.json"
+        "project": "interlock_guard_starter",
+        "program": "src/MotorPlant.st"
       },
       "solution": {
-        "project": "interlock_guard_ladder",
-        "program": "src/MotorPlant.ld.json"
+        "project": "interlock_guard",
+        "program": "src/MotorPlant.st"
       },
       "scenario": {
         "id": "MotorInterlock",
@@ -3038,18 +3038,18 @@
       "regressionScenarios": [],
       "text": {
         "en": {
-          "title": "Interlocks and permissives in Ladder: a guard that stops the motor",
-          "summary": "Add a permissive contact to a Ladder seal-in so that the motor runs only while a guard is closed, and check it against the motor plant and its speed feedback.",
+          "title": "Interlocks and permissives: a guard that stops the motor",
+          "summary": "Add a permissive to a motor start and stop so that the motor runs only while a guard is closed, and check it against the motor plant and its speed feedback.",
           "scope": "Tests provide native POSIX host evidence for a built-in motor plant model with one 10 ms task; they do not establish a safety function, guard wiring, stopping time, HIL, or certification.",
           "objectives": [
             "Tell a permissive, a condition that must be true for the output to be on, from a command.",
-            "Place a permissive in series with the seal-in so that it drops the motor and also stops Start from restarting it."
+            "Put a permissive in the same condition that holds the motor, so that it drops the motor and also stops Start from restarting it."
           ],
           "stages": [
             {
               "key": "objective",
               "title": "Objective",
-              "body": "In src/MotorPlant.ld.json rung 1 holds the motor with a seal-in and rung 2 sets Running when the plant reports AtSpeed. Add a normally open contact on GuardClosed in series in rung 1, before the Start branch, so that an open guard drops Command and blocks Start.",
+              "body": "In src/MotorPlant.st the first assignment holds Command with a seal-in and the second sets Running when the plant reports AtSpeed. Add GuardClosed with AND to the first assignment, so that an open guard drops Command and blocks Start.",
               "checkpoint": "Command is on only while the guard is closed, and Running still needs the plant's AtSpeed."
             },
             {
@@ -3061,7 +3061,7 @@
             {
               "key": "edit",
               "title": "Edit",
-              "body": "Correct this starter omission, save it, then press Check: The starter has no permissive on the guard, so when the guard opens at 50 ms the motor keeps running and Start can restart it; add a normally open contact on GuardClosed in series in rung 1, before the Start branch.",
+              "body": "Correct this starter omission, save it, then press Check: The starter has no permissive on the guard, so when the guard opens at 50 ms the motor keeps running and Start can restart it; add AND GuardClosed to the whole condition of Command, outside the brackets that hold Start and Command.",
               "checkpoint": "The visible scenario must pass with saved host evidence."
             },
             {
@@ -3079,37 +3079,37 @@
             {
               "key": "reflect",
               "title": "Reflect",
-              "body": "Why is a permissive in series safer than a permissive only on Start? Place the contact in the Start branch and see which assertion fails.",
+              "body": "Why is a permissive on the whole condition safer than a permissive only on Start? Put GuardClosed next to Start and see which assertion fails.",
               "checkpoint": "A permissive that gates only Start lets a running motor ignore an open guard. The scenario shows the logic only; it is not a safety function and does not replace a certified guard interlock."
             }
           ],
           "hints": [
             {
               "level": 1,
-              "text": "Power must pass through Stop, the guard and then either Start or the seal-in contact before it reaches the Command coil."
+              "text": "Command may be TRUE only if the guard is closed, Stop is not pressed, and either Start is pressed or Command was already TRUE."
             },
             {
               "level": 2,
-              "text": "Insert a normally open contact on GuardClosed to the right of the Stop contact and to the left of the Start branch. Do not put it inside the branch."
+              "text": "Command := (Start OR Command) AND NOT Stop AND GuardClosed; Do not put GuardClosed inside the brackets with Start."
             }
           ],
           "faultCases": [
-            "The starter has no permissive on the guard, so when the guard opens at 50 ms the motor keeps running and Start can restart it; add a normally open contact on GuardClosed in series in rung 1, before the Start branch."
+            "The starter has no permissive on the guard, so when the guard opens at 50 ms the motor keeps running and Start can restart it; add AND GuardClosed to the whole condition of Command, outside the brackets that hold Start and Command."
           ]
         },
         "es": {
-          "title": "Interbloqueos y permisivos en Ladder: una protección que detiene el motor",
-          "summary": "Agregue un contacto permisivo a una autorretención en Ladder para que el motor funcione solo con la protección cerrada, y compruébelo contra la planta del motor y su realimentación de velocidad.",
+          "title": "Interbloqueos y permisivos: una protección que detiene el motor",
+          "summary": "Agregue un permisivo al arranque y parada de un motor para que funcione solo con la protección cerrada, y compruébelo contra la planta del motor y su realimentación de velocidad.",
           "scope": "La evidencia de Tests es del runtime nativo POSIX para un modelo de planta de motor integrado con una tarea de 10 ms; no establece una función de seguridad, el cableado de la protección, el tiempo de parada, HIL ni certificación.",
           "objectives": [
             "Distinga un permisivo, una condición que debe ser verdadera para que la salida esté encendida, de una orden.",
-            "Coloque un permisivo en serie con la autorretención para que apague el motor y además impida que Start lo vuelva a arrancar."
+            "Ponga un permisivo en la misma condición que mantiene el motor, para que lo apague y además impida que Start lo vuelva a arrancar."
           ],
           "stages": [
             {
               "key": "objective",
               "title": "Objetivo",
-              "body": "En src/MotorPlant.ld.json el peldaño 1 mantiene el motor con una autorretención y el peldaño 2 enciende Running cuando la planta informa AtSpeed. Agregue un contacto normalmente abierto de GuardClosed en serie en el peldaño 1, antes de la rama de Start, para que una protección abierta apague Command y bloquee Start.",
+              "body": "En src/MotorPlant.st la primera asignación mantiene Command con una autorretención y la segunda enciende Running cuando la planta informa AtSpeed. Agregue GuardClosed con AND a la primera asignación, para que una protección abierta apague Command y bloquee Start.",
               "checkpoint": "Command está encendido solo mientras la protección está cerrada, y Running sigue necesitando AtSpeed de la planta."
             },
             {
@@ -3121,7 +3121,7 @@
             {
               "key": "edit",
               "title": "Edite",
-              "body": "Corrija esta omisión del programa inicial, guárdelo y pulse Comprobar: El programa inicial no tiene el permisivo de la protección, así que cuando la protección se abre a los 50 ms el motor sigue funcionando y Start puede volver a arrancarlo; agregue un contacto normalmente abierto de GuardClosed en serie en el peldaño 1, antes de la rama de Start.",
+              "body": "Corrija esta omisión del programa inicial, guárdelo y pulse Comprobar: El programa inicial no tiene el permisivo de la protección, así que cuando la protección se abre a los 50 ms el motor sigue funcionando y Start puede volver a arrancarlo; agregue AND GuardClosed a toda la condición de Command, fuera del paréntesis que contiene Start y Command.",
               "checkpoint": "El escenario visible debe pasar con evidencia guardada del host."
             },
             {
@@ -3139,22 +3139,22 @@
             {
               "key": "reflect",
               "title": "Reflexione",
-              "body": "¿Por qué un permisivo en serie es más seguro que uno solo en Start? Ponga el contacto en la rama de Start y vea qué assertion falla.",
+              "body": "¿Por qué un permisivo en toda la condición es más seguro que uno solo en Start? Ponga GuardClosed junto a Start y vea qué assertion falla.",
               "checkpoint": "Un permisivo que solo condiciona Start deja que un motor en marcha ignore una protección abierta. El escenario muestra solo la lógica; no es una función de seguridad ni reemplaza un interbloqueo de protección certificado."
             }
           ],
           "hints": [
             {
               "level": 1,
-              "text": "La energía debe pasar por Stop, por la protección y luego por Start o por el contacto de autorretención antes de llegar a la bobina Command."
+              "text": "Command puede ser TRUE solo si la protección está cerrada, Stop no está pulsado y, o Start está pulsado, o Command ya era TRUE."
             },
             {
               "level": 2,
-              "text": "Inserte un contacto normalmente abierto de GuardClosed a la derecha del contacto de Stop y a la izquierda de la rama de Start. No lo ponga dentro de la rama."
+              "text": "Command := (Start OR Command) AND NOT Stop AND GuardClosed; No ponga GuardClosed dentro del paréntesis con Start."
             }
           ],
           "faultCases": [
-            "El programa inicial no tiene el permisivo de la protección, así que cuando la protección se abre a los 50 ms el motor sigue funcionando y Start puede volver a arrancarlo; agregue un contacto normalmente abierto de GuardClosed en serie en el peldaño 1, antes de la rama de Start."
+            "El programa inicial no tiene el permisivo de la protección, así que cuando la protección se abre a los 50 ms el motor sigue funcionando y Start puede volver a arrancarlo; agregue AND GuardClosed a toda la condición de Command, fuera del paréntesis que contiene Start y Command."
           ]
         }
       }
@@ -3177,8 +3177,8 @@
       "unsupported": {
         "hardware": {
           "reason": {
-            "en": "The lesson is graded on exact input timing at 10 ms steps; a board has no recorded trace for it yet.",
-            "es": "La lección se califica con tiempos exactos de entradas en pasos de 10 ms; todavía no hay una traza registrada desde una placa para ella."
+            "en": "The lesson is graded on a total that depends on the exact number of presses replayed by Studio, and no board trace has been recorded for it.",
+            "es": "La lección se califica con un total que depende del número exacto de pulsaciones que reproduce Studio, y no se ha registrado una traza de placa para ella."
           },
           "instead": {
             "en": "Complete it in Simulation: its grade is the same each time and needs no board.",
@@ -3348,8 +3348,8 @@
       "unsupported": {
         "hardware": {
           "reason": {
-            "en": "The lesson is graded on exact input timing at 10 ms steps; a board has no recorded trace for it yet.",
-            "es": "La lección se califica con tiempos exactos de entradas en pasos de 10 ms; todavía no hay una traza registrada desde una placa para ella."
+            "en": "The lesson steps a raw count by the scan, not by a real analog input, so a board would not give the same counts at the same times.",
+            "es": "La lección avanza una cuenta cruda por ciclo, no una entrada analógica real, así que una placa no daría las mismas cuentas en los mismos momentos."
           },
           "instead": {
             "en": "Complete it in Simulation: its grade is the same each time and needs no board.",
@@ -3519,8 +3519,8 @@
       "unsupported": {
         "hardware": {
           "reason": {
-            "en": "The lesson is graded on exact input timing at 10 ms steps; a board has no recorded trace for it yet.",
-            "es": "La lección se califica con tiempos exactos de entradas en pasos de 10 ms; todavía no hay una traza registrada desde una placa para ella."
+            "en": "The lesson starts and stops two pumps at exact steps to compare two instances of one block, and no board trace has been recorded for it.",
+            "es": "La lección arranca y detiene dos bombas en pasos exactos para comparar dos instancias de un mismo bloque, y no se ha registrado una traza de placa para ella."
           },
           "instead": {
             "en": "Complete it in Simulation: its grade is the same each time and needs no board.",
@@ -3690,8 +3690,8 @@
       "unsupported": {
         "hardware": {
           "reason": {
-            "en": "The lesson is graded on exact input timing at 10 ms steps; a board has no recorded trace for it yet.",
-            "es": "La lección se califica con tiempos exactos de entradas en pasos de 10 ms; todavía no hay una traza registrada desde una placa para ella."
+            "en": "The lesson replays three call buttons and an acknowledgement at exact steps, and a board has no recorded trace of that panel yet.",
+            "es": "La lección reproduce tres botones de llamada y un reconocimiento en pasos exactos, y todavía no hay una traza registrada desde una placa de ese panel."
           },
           "instead": {
             "en": "Complete it in Simulation: its grade is the same each time and needs no board.",
@@ -3861,8 +3861,8 @@
       "unsupported": {
         "hardware": {
           "reason": {
-            "en": "The lesson is graded on exact input timing at 10 ms steps; a board has no recorded trace for it yet.",
-            "es": "La lección se califica con tiempos exactos de entradas en pasos de 10 ms; todavía no hay una traza registrada desde una placa para ella."
+            "en": "The lesson is graded on step times of 50 ms counted by the scan, which a board cannot repeat to the same scan every run.",
+            "es": "La lección se califica con tiempos de paso de 50 ms contados por ciclo, que una placa no repite al mismo ciclo en cada ejecución."
           },
           "instead": {
             "en": "Complete it in Simulation: its grade is the same each time and needs no board.",

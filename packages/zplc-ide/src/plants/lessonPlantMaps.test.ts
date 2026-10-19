@@ -14,7 +14,7 @@ describe('every lesson that names a plant ships its mapping (LRN-021)', () => {
   const withPlant = LESSON_INDEX.lessons.filter((lesson) => lesson.plant !== null);
 
   it('covers the four plants', () => {
-    expect(withPlant.map((lesson) => lesson.plant).sort()).toEqual(['conveyor-v1', 'motor-v1', 'pedestrian-v1', 'tank-v1']);
+    expect([...new Set(withPlant.map((lesson) => lesson.plant))].sort()).toEqual(['conveyor-v1', 'motor-v1', 'pedestrian-v1', 'tank-v1']);
   });
 
   for (const lesson of withPlant) {

@@ -1,17 +1,17 @@
 {
   "schemaVersion": 1,
-  "title": "Interbloqueos y permisivos en Ladder: una protección que detiene el motor",
-  "summary": "Agregue un contacto permisivo a una autorretención en Ladder para que el motor funcione solo con la protección cerrada, y compruébelo contra la planta del motor y su realimentación de velocidad.",
+  "title": "Interbloqueos y permisivos: una protección que detiene el motor",
+  "summary": "Agregue un permisivo al arranque y parada de un motor para que funcione solo con la protección cerrada, y compruébelo contra la planta del motor y su realimentación de velocidad.",
   "scope": "La evidencia de Tests es del runtime nativo POSIX para un modelo de planta de motor integrado con una tarea de 10 ms; no establece una función de seguridad, el cableado de la protección, el tiempo de parada, HIL ni certificación.",
   "objectives": [
     "Distinga un permisivo, una condición que debe ser verdadera para que la salida esté encendida, de una orden.",
-    "Coloque un permisivo en serie con la autorretención para que apague el motor y además impida que Start lo vuelva a arrancar."
+    "Ponga un permisivo en la misma condición que mantiene el motor, para que lo apague y además impida que Start lo vuelva a arrancar."
   ],
   "stages": [
     {
       "key": "objective",
       "title": "Objetivo",
-      "body": "En src/MotorPlant.ld.json el peldaño 1 mantiene el motor con una autorretención y el peldaño 2 enciende Running cuando la planta informa AtSpeed. Agregue un contacto normalmente abierto de GuardClosed en serie en el peldaño 1, antes de la rama de Start, para que una protección abierta apague Command y bloquee Start.",
+      "body": "En src/MotorPlant.st la primera asignación mantiene Command con una autorretención y la segunda enciende Running cuando la planta informa AtSpeed. Agregue GuardClosed con AND a la primera asignación, para que una protección abierta apague Command y bloquee Start.",
       "checkpoint": "Command está encendido solo mientras la protección está cerrada, y Running sigue necesitando AtSpeed de la planta."
     },
     {
@@ -23,7 +23,7 @@
     {
       "key": "edit",
       "title": "Edite",
-      "body": "Corrija esta omisión del programa inicial, guárdelo y pulse Comprobar: El programa inicial no tiene el permisivo de la protección, así que cuando la protección se abre a los {{t:50}} ms el motor sigue funcionando y Start puede volver a arrancarlo; agregue un contacto normalmente abierto de GuardClosed en serie en el peldaño 1, antes de la rama de Start.",
+      "body": "Corrija esta omisión del programa inicial, guárdelo y pulse Comprobar: El programa inicial no tiene el permisivo de la protección, así que cuando la protección se abre a los {{t:50}} ms el motor sigue funcionando y Start puede volver a arrancarlo; agregue AND GuardClosed a toda la condición de Command, fuera del paréntesis que contiene Start y Command.",
       "checkpoint": "El escenario visible debe pasar con evidencia guardada del host."
     },
     {
@@ -41,21 +41,21 @@
     {
       "key": "reflect",
       "title": "Reflexione",
-      "body": "¿Por qué un permisivo en serie es más seguro que uno solo en Start? Ponga el contacto en la rama de Start y vea qué assertion falla.",
+      "body": "¿Por qué un permisivo en toda la condición es más seguro que uno solo en Start? Ponga GuardClosed junto a Start y vea qué assertion falla.",
       "checkpoint": "Un permisivo que solo condiciona Start deja que un motor en marcha ignore una protección abierta. El escenario muestra solo la lógica; no es una función de seguridad ni reemplaza un interbloqueo de protección certificado."
     }
   ],
   "hints": [
     {
       "level": 1,
-      "text": "La energía debe pasar por Stop, por la protección y luego por Start o por el contacto de autorretención antes de llegar a la bobina Command."
+      "text": "Command puede ser TRUE solo si la protección está cerrada, Stop no está pulsado y, o Start está pulsado, o Command ya era TRUE."
     },
     {
       "level": 2,
-      "text": "Inserte un contacto normalmente abierto de GuardClosed a la derecha del contacto de Stop y a la izquierda de la rama de Start. No lo ponga dentro de la rama."
+      "text": "Command := (Start OR Command) AND NOT Stop AND GuardClosed; No ponga GuardClosed dentro del paréntesis con Start."
     }
   ],
   "faultCases": [
-    "El programa inicial no tiene el permisivo de la protección, así que cuando la protección se abre a los {{t:50}} ms el motor sigue funcionando y Start puede volver a arrancarlo; agregue un contacto normalmente abierto de GuardClosed en serie en el peldaño 1, antes de la rama de Start."
+    "El programa inicial no tiene el permisivo de la protección, así que cuando la protección se abre a los {{t:50}} ms el motor sigue funcionando y Start puede volver a arrancarlo; agregue AND GuardClosed a toda la condición de Command, fuera del paréntesis que contiene Start y Command."
   ]
 }

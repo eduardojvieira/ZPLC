@@ -1,3 +1,4 @@
+import { LESSON_INDEX } from '../generated/lessonIndex';
 import { readFileSync } from 'node:fs';
 import { es } from '../i18n/es';
 import { withEnglishMessages } from '../i18n/inlineMessages';
@@ -60,23 +61,7 @@ describe('Learn panel contract', () => {
 });
 
 describe('Learn lesson content modules', () => {
-  const EXAMPLE_OF_LESSON = {
-    'motor-start-stop-safe': 'motor_start_stop',
-    'pedestrian-crossing-states': 'pedestrian_crossing',
-    'tank-level-fault-reset': 'tank_level',
-    'conveyor-classification-jam': 'conveyor_01',
-    'blinky-ladder-timer-feedback': 'blinky',
-    'motor-plant-feedback': 'motor_plant',
-    'edge-counter-pulses': 'edge_counter',
-    'scan-cycle-one-scan-memory': 'scan_snapshot',
-    'temporal-assertions-jam-fault': 'conveyor_01',
-    'conveyor-two-parts-diagnosis': 'conveyor_01',
-    'first-blink-simulation': 'first_blink',
-    'boolean-logic-two-hand-guard': 'two_hand',
-    'timers-on-delay-off-delay': 'delays',
-    'blink-structured-text': 'enabled_blink',
-    'set-reset-alarm-latch': 'alarm_latch',
-  };
+  const EXAMPLE_OF_LESSON = Object.fromEntries(LESSON_INDEX.lessons.map((lesson) => [lesson.id, lesson.solution.project]));
 
   it.each([['Spanish', learnLessonContentEsV1], ['English', learnLessonContentEnV1]] as const)('starts each lesson of the %s content from its canonical example', (_language, content) => {
     expect(Object.fromEntries(content.map((lesson): [string, string] => [lesson.id, lesson.exampleId]))).toEqual<Record<string, string>>(EXAMPLE_OF_LESSON);

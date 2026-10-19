@@ -77,16 +77,24 @@ export const EXAMPLE_CATALOG: Readonly<Record<string, ExampleEntry>> = {
   two_hand: example('two_hand', { group: 'first-steps', level: 'beginner', languages: ['ST'], showOnWelcome: true }),
   alarm_latch: example('alarm_latch', { group: 'first-steps', level: 'beginner', languages: ['ST'], showOnWelcome: true }),
   delays: example('delays', { group: 'first-steps', level: 'beginner', languages: ['ST'], showOnWelcome: true }),
+  seal_in_ladder: example('seal_in_ladder', { group: 'first-steps', level: 'beginner', languages: ['LD'], showOnWelcome: true }),
+  batch_count_fbd: example('batch_count_fbd', { group: 'first-steps', level: 'beginner', languages: ['FBD'], showOnWelcome: true }),
 
   // Motors and drives
   motor_start_stop: example('motor_start_stop', { group: 'motors', level: 'beginner', languages: ['ST'], showOnWelcome: true }),
   motor_control: example('motor_control', { group: 'motors', level: 'beginner', languages: ['LD'], showOnWelcome: true }),
   motor_plant: example('motor_plant', { group: 'motors', level: 'intermediate', languages: ['ST'], showOnWelcome: true }),
+  interlock_guard: example('interlock_guard', { group: 'motors', level: 'intermediate', languages: ['ST'], showOnWelcome: true }),
 
   // Process and sequences
   tank_level: example('tank_level', { group: 'process', level: 'intermediate', languages: ['ST'], showOnWelcome: true }),
   conveyor_01: example('conveyor_01', { group: 'process', level: 'intermediate', languages: ['ST'], showOnWelcome: true }),
   pedestrian_crossing: example('pedestrian_crossing', { group: 'process', level: 'intermediate', languages: ['ST'], showOnWelcome: true }),
+  typed_steps: example('typed_steps', { group: 'process', level: 'intermediate', languages: ['ST'], showOnWelcome: true }),
+  scaling: example('scaling', { group: 'process', level: 'intermediate', languages: ['ST'], showOnWelcome: true }),
+  fill_mix_sfc: example('fill_mix_sfc', { group: 'process', level: 'intermediate', languages: ['SFC'], showOnWelcome: true }),
+  pump_pair: example('pump_pair', { group: 'process', level: 'intermediate', languages: ['ST'], showOnWelcome: true }),
+  call_panel: example('call_panel', { group: 'process', level: 'intermediate', languages: ['ST'], showOnWelcome: true }),
 
   // Language tour
   blinky_st: example('blinky_st', { group: 'languages', level: 'beginner', languages: ['ST'], showOnWelcome: true }),

@@ -23,7 +23,7 @@ export const LESSON_IDS = [
   "set-reset-alarm-latch",
   "seal-in-ladder",
   "counter-batch-fbd",
-  "interlock-guard-ladder",
+  "interlock-guard-permissive",
   "types-arithmetic-comparison",
   "analog-scaling-integer",
   "function-block-pump-pair",

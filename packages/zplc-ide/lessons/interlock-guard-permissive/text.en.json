@@ -1,17 +1,17 @@
 {
   "schemaVersion": 1,
-  "title": "Interlocks and permissives in Ladder: a guard that stops the motor",
-  "summary": "Add a permissive contact to a Ladder seal-in so that the motor runs only while a guard is closed, and check it against the motor plant and its speed feedback.",
+  "title": "Interlocks and permissives: a guard that stops the motor",
+  "summary": "Add a permissive to a motor start and stop so that the motor runs only while a guard is closed, and check it against the motor plant and its speed feedback.",
   "scope": "Tests provide native POSIX host evidence for a built-in motor plant model with one 10 ms task; they do not establish a safety function, guard wiring, stopping time, HIL, or certification.",
   "objectives": [
     "Tell a permissive, a condition that must be true for the output to be on, from a command.",
-    "Place a permissive in series with the seal-in so that it drops the motor and also stops Start from restarting it."
+    "Put a permissive in the same condition that holds the motor, so that it drops the motor and also stops Start from restarting it."
   ],
   "stages": [
     {
       "key": "objective",
       "title": "Objective",
-      "body": "In src/MotorPlant.ld.json rung 1 holds the motor with a seal-in and rung 2 sets Running when the plant reports AtSpeed. Add a normally open contact on GuardClosed in series in rung 1, before the Start branch, so that an open guard drops Command and blocks Start.",
+      "body": "In src/MotorPlant.st the first assignment holds Command with a seal-in and the second sets Running when the plant reports AtSpeed. Add GuardClosed with AND to the first assignment, so that an open guard drops Command and blocks Start.",
       "checkpoint": "Command is on only while the guard is closed, and Running still needs the plant's AtSpeed."
     },
     {
@@ -23,7 +23,7 @@
     {
       "key": "edit",
       "title": "Edit",
-      "body": "Correct this starter omission, save it, then press Check: The starter has no permissive on the guard, so when the guard opens at {{t:50}} ms the motor keeps running and Start can restart it; add a normally open contact on GuardClosed in series in rung 1, before the Start branch.",
+      "body": "Correct this starter omission, save it, then press Check: The starter has no permissive on the guard, so when the guard opens at {{t:50}} ms the motor keeps running and Start can restart it; add AND GuardClosed to the whole condition of Command, outside the brackets that hold Start and Command.",
       "checkpoint": "The visible scenario must pass with saved host evidence."
     },
     {
@@ -41,21 +41,21 @@
     {
       "key": "reflect",
       "title": "Reflect",
-      "body": "Why is a permissive in series safer than a permissive only on Start? Place the contact in the Start branch and see which assertion fails.",
+      "body": "Why is a permissive on the whole condition safer than a permissive only on Start? Put GuardClosed next to Start and see which assertion fails.",
       "checkpoint": "A permissive that gates only Start lets a running motor ignore an open guard. The scenario shows the logic only; it is not a safety function and does not replace a certified guard interlock."
     }
   ],
   "hints": [
     {
       "level": 1,
-      "text": "Power must pass through Stop, the guard and then either Start or the seal-in contact before it reaches the Command coil."
+      "text": "Command may be TRUE only if the guard is closed, Stop is not pressed, and either Start is pressed or Command was already TRUE."
     },
     {
       "level": 2,
-      "text": "Insert a normally open contact on GuardClosed to the right of the Stop contact and to the left of the Start branch. Do not put it inside the branch."
+      "text": "Command := (Start OR Command) AND NOT Stop AND GuardClosed; Do not put GuardClosed inside the brackets with Start."
     }
   ],
   "faultCases": [
-    "The starter has no permissive on the guard, so when the guard opens at {{t:50}} ms the motor keeps running and Start can restart it; add a normally open contact on GuardClosed in series in rung 1, before the Start branch."
+    "The starter has no permissive on the guard, so when the guard opens at {{t:50}} ms the motor keeps running and Start can restart it; add AND GuardClosed to the whole condition of Command, outside the brackets that hold Start and Command."
   ]
 }

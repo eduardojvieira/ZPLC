@@ -17,8 +17,8 @@
   "unsupported": {
     "hardware": {
       "reason": {
-        "en": "The lesson is graded on exact input timing at 10 ms steps; a board has no recorded trace for it yet.",
-        "es": "La lección se califica con tiempos exactos de entradas en pasos de 10 ms; todavía no hay una traza registrada desde una placa para ella."
+        "en": "The lesson is graded on a total that depends on the exact number of presses replayed by Studio, and no board trace has been recorded for it.",
+        "es": "La lección se califica con un total que depende del número exacto de pulsaciones que reproduce Studio, y no se ha registrado una traza de placa para ella."
       },
       "instead": {
         "en": "Complete it in Simulation: its grade is the same each time and needs no board.",
