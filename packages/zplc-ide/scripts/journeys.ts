@@ -16,7 +16,7 @@ import { auditMarkup } from '../src/ui/audit';
 import { compilerCompile } from '../src/cli/toolApi';
 import { NATIVE_PROGRAM_MAX_BYTES } from '../electron/security';
 import { assert, MONACO_MODULE_URL, packageRoot } from './run-desktop-smoke';
-import { button, css, launchPackagedApp, menuItem, tab, type App, type Target } from './journeyApp';
+import { button, css, launchPackagedApp, menuItem, notPossible, tab, type App, type Target } from './journeyApp';
 import { domAuditExpression, type DomAuditResult } from './domAudit';
 
 export interface JourneyContext {
@@ -3849,6 +3849,34 @@ export const JOURNEYS: Journey[] = [
       await app.click(button('Run host scenarios'), 'Run host scenarios');
       await patiently('the replay of the recorded run', async () => (await app.eval<string>(`document.body.innerText`)).includes('Replay of a recorded run') || undefined);
       assert((await app.eval<string>(`document.body.innerText`)).includes('This is a replay'), 'The recorded run is not labelled as a replay.');
+    },
+  },
+  {
+    // IDE-005: the reload chord is taken before the page sees it (before-input-event), and a key injected through the DevTools
+    // protocol skips that event, so the chord is pressed here by the display server (xdotool) on the window that the headless host still
+    // opens on the X display.
+    name: '53 Ctrl+R in the development host asks before it discards unsaved work, through a real key press', example: 'motor_start_stop', proves: [], partly: ['IDE-005'],
+    run: async (app, { project }) => {
+      if (process.platform !== 'linux') notPossible('the real key press is made with xdotool on an X display');
+      const xdotool = (...args: string[]) => Bun.spawnSync(['xdotool', ...args], { stdout: 'pipe', stderr: 'pipe' });
+      if (!xdotool('version').success) throw new Error('xdotool is not installed: apt-get install xdotool (the Linux journey job installs it).');
+      const file = join(project, 'src', 'Motor.st'); const original = disk(file);
+      await openFolder(app, project);
+      await openFile(app, 'src/Motor.st'); await cursorAtEndOfLine(app, 1); await app.type(EDIT);
+      await app.until('the typed text', async () => (await editorText(app)).includes(EDIT) || undefined);
+      const window = (await app.until('the application window on the display', async () => {
+        const found = xdotool('search', '--onlyvisible', '--name', 'ZPLC');
+        return found.success ? found.stdout.toString().trim().split('\n').at(-1) || undefined : undefined;
+      }));
+      xdotool('windowfocus', '--sync', window);
+      const marker = await app.eval<string>(`window.__reloadProbe = 'kept'; window.__reloadProbe`);
+      const press = xdotool('key', '--clearmodifiers', 'ctrl+r');
+      assert(press.success, `xdotool could not press Ctrl+R: ${press.stderr.toString()}`);
+      await app.until('the prompt before the window reloads', async () => await dialogTitle(app) === 'Unsaved changes before you reload' || undefined);
+      await app.click(dialogChoice('Cancel'));
+      await app.until('the prompt to close', async () => await dialogTitle(app) === null || undefined);
+      assert((await editorText(app)).includes(EDIT) && await app.eval<string>('window.__reloadProbe') === marker, 'Cancel must keep the page and its changes: the page reloaded.');
+      assert(disk(file) === original, 'The file on disk must be as it was.');
     },
   },
 ];

@@ -517,6 +517,17 @@
     "reason": "Parses ci.yml and the nightly workflow to check triggers, the bun install cache, the expected-failure rule and the cross-build upload. The recorded hosted run (VF-016) is the proof that the workflow does what it says; keep only as a workflow lint until then."
   },
   {
+    "file": "tools/ci/release-gate.test.ts",
+    "requirement": "VF-006",
+    "added": "2026-10-19",
+    "reads": [
+      ".github/workflows/ci.yml",
+      ".github/workflows/release.yml"
+    ],
+    "replacement": "artifact",
+    "reason": "Parses release.yml and ci.yml to prove that the release needs the Linux journeys. A workflow has no renderer or runner here; the recorded hosted release run (VF-009) is the proof that the gate holds, and until then this is a workflow lint."
+  },
+  {
     "file": "tools/ci/requirement-coverage.test.ts",
     "requirement": "VF-006",
     "added": "2026-10-10",

@@ -32,6 +32,7 @@
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"1 Open an existing folder","partial":true}
   ],
   "VF-009": [
+    {"kind":"unit","ref":"tools/ci/release-gate.test.ts","test":"the release is gated on the Linux journeys (VF-009)","partial":true,"note":"release.yml calls ci.yml, whose typescript job runs the journeys, and every build or publish job of the release needs that run to have succeeded; the workflows are parsed, not executed, and no hosted release run is recorded"},
     {"kind":"manual","ref":".github/workflows/ci.yml","partial":true,"note":"the journeys run under xvfb in the typescript job (every pull request) and on macOS and Windows in the nightly-quality workflow; configuration only, no hosted run is recorded, and a release is not gated on the macOS and Windows run"}
   ],
   "VF-010": [
@@ -62,7 +63,7 @@
     {"kind":"unit","ref":"tools/ci/workflow-triggers.test.ts","test":"every scheduled workflow can be re-run by hand and tells somebody when a scheduled run fails","partial":true,"note":"nightly-quality.yml has a manual trigger and a job that opens or updates an issue when a scheduled run fails; a recorded successful scheduled run, and a green default branch, need hosted runs (D-12: schedules run only from the default branch)"}
   ],
   "VF-018": [
-    {"kind":"unit","ref":"tools/ci/test_run_clang_tidy.py","test":"HostUnits","partial":true,"note":"the host pass of clang-tidy runs in CI over the core, the POSIX HAL and the host application with warnings as errors; the Zephyr HAL and firmware/app are analysed only where a west build tree exists (run.sh tidy) and firmware/app carries a per-board baseline of findings; -Werror on the Zephyr library was applied without a Zephyr build"}
+    {"kind":"unit","ref":"tools/ci/test_run_clang_tidy.py","test":"HostUnits","partial":true,"note":"the host pass of clang-tidy runs in CI over the core, the POSIX HAL and the host application with warnings as errors; the Zephyr HAL and firmware/app are analysed only where a west build tree exists (run.sh tidy) and firmware/app carries a per-board baseline of findings; -Werror on the Zephyr library was applied without a Zephyr build; the Zephyr pass was run locally on the Arduino Opta build (core and HAL clean, firmware/app 24 findings within its baseline, none a defect), not in a hosted run"}
   ],
   "VF-019": [
     {"kind":"unit","ref":"tools/docs/test_validate_docs_pages.py","test":"test_endings_the_spec_rejects","note":"run by the docs-and-truth job of ci.yml (python3 tools/docs/test_validate_docs_pages.py) and by bun run check:docs: one fixture per rule of VF-019 (a page that stops mid-sentence, in the header of a table or inside a code block; a page that no sidebar entry names; an English and Spanish pair whose heading levels or number of code blocks differ), run over the English and the Spanish tree"}
@@ -1870,7 +1871,8 @@
   "IDE-005": [
     {"kind":"unit","ref":"packages/zplc-ide/electron/appMenu.test.ts","test":"reload shortcuts (IDE-005, stopgap: the chord only)","partial":true},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"10 Close with unsaved changes","partial":true},
-    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"22 Close Project asks before it closes","partial":true}
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"22 Close Project asks before it closes","partial":true},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"53 Ctrl+R in the development host asks before it discards unsaved work, through a real key press","partial":true}
   ],
   "IDE-006": [
     {"kind":"unit","ref":"packages/zplc-ide/electron/ipcRegistry.test.ts","test":"recovery and session over the IPC boundary (IDE-006, IDE-008)"},

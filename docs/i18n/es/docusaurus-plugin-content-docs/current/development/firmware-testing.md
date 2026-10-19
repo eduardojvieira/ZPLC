@@ -335,6 +335,12 @@ El informe solo lee archivos. Sus propias pruebas son
   compilaciones locales de placa con una versión de `clang-tidy`; la primera
   ejecución en integración continua mostrará si las líneas base también valen
   con la del runner.
+- La pasada de Zephyr se ejecutó en una estación de trabajo Linux, solo sobre la compilación del Arduino Opta:
+  el núcleo y el HAL de Zephyr no reportaron nada y `firmware/app` reportó 24 hallazgos, todos dentro de la línea
+  base de esa placa. Al leerlos no apareció ningún defecto: el único `strcpy` está protegido por la comprobación
+  de longitud que lo precede y el único `memcpy` escribe un registro binario, de modo que ningún archivo del
+  firmware cambió. Las líneas base de las otras placas no se midieron en esa ejecución y no hay una ejecución
+  alojada en CI de la pasada.
 - Dos casos de integración de `test_vm_core.c` se omiten en todos los
   destinos, el host incluido, porque los binarios de ejemplo que cargan son
   anteriores al campo CRC. Las líneas `SKIP:` están en el registro de la
