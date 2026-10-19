@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "title": "One logic in five languages: a gate that holds itself open",
+  "summary": "Fix a Structured Text program so that a gate holds itself open and closes on command, then read the same logic in Instruction List, Ladder, Function Block Diagram and Sequential Function Chart, and see that one scenario grades all five.",
+  "scope": "Tests provide native POSIX host evidence with one 10 ms task; they do not establish gate requirements, actuator timing or any real machine behaviour, HIL, or certification.",
+  "objectives": [
+    "Hold an output on after its request is released, and let a close command win, in Structured Text.",
+    "Recognise the same condition, (Request OR Open) AND NOT Close, in Instruction List, Ladder, Function Block Diagram and Sequential Function Chart."
+  ],
+  "stages": [
+    {
+      "key": "objective",
+      "title": "Objective",
+      "body": "In src/Gate.st the output Open follows Request only while the button is pressed. Make it hold: Open is on when Request is pressed or Open is already on, and never while Close is pressed. The same condition is written in the other four languages as: Instruction List LD Request, OR Open, ANDN Close, ST Open; Ladder, Request in parallel with a contact of Open, then a normally closed contact of Close, then the coil Open; Function Block Diagram, an OR block feeding an AND block whose second input comes from a NOT block of Close; Sequential Function Chart, a step IS_CLOSED and a step IS_OPEN with a transition to IS_OPEN on Request AND NOT Close and a transition back on Close.",
+      "checkpoint": "The gate opens when Request is pressed, stays open after Request is released, and closes when Close is pressed."
+    },
+    {
+      "key": "predict",
+      "title": "Predict",
+      "body": "Request is pressed at {{t:20}} ms and released at {{t:40}} ms. Close is pressed at {{t:80}} ms. At {{t:130}} ms Request and Close are pressed together. Predict Open at {{t:50}}, {{t:100}} and {{t:150}} ms.",
+      "checkpoint": "{{v:Gate.Open=true@50|ON}} at {{t:50}} ms, after Request was released; {{v:Gate.Open=false@100|OFF}} at {{t:100}} ms, because Close was pressed; {{v:Gate.Open=false@150|OFF}} at {{t:150}} ms, because Close wins over Request."
+    },
+    {
+      "key": "edit",
+      "title": "Edit",
+      "body": "Correct this starter omission, save it, then press Check: The starter sets Open to Request AND NOT Close, so Open drops the moment Request is released at {{t:40}} ms; add the hold by writing (Request OR Open) AND NOT Close, so that the output keeps itself on and Close still wins.",
+      "checkpoint": "The visible scenario must pass with saved host evidence."
+    },
+    {
+      "key": "run",
+      "title": "Run",
+      "body": "Press Check. Studio runs your saved program against the scenario of this lesson.",
+      "checkpoint": "The scenario is named GateLatch and contains {{assertions}} assertions."
+    },
+    {
+      "key": "observe",
+      "title": "Observe",
+      "body": "Compare {{t:50}}, {{t:100}} and {{t:170}} ms: Open holds after Request is released, falls with Close, and does not start again when Request and Close are released together at {{t:160}} ms. It opens again at {{t:210}} ms after the second press at {{t:180}} ms.",
+      "checkpoint": "The scenario never says which language wrote the program: it looks only at the output. That is why the same grade accepts the Instruction List, Ladder, Function Block Diagram and Sequential Function Chart forms of the same condition."
+    },
+    {
+      "key": "reflect",
+      "title": "Reflect",
+      "body": "Choose one of the other languages, delete src/Gate.st, create the file for that language in the same folder, add it to the task of zplc.json, write the same condition and press Check. Then swap the order so that the hold comes after Close, and see which assertion fails.",
+      "checkpoint": "The order of operations decides the result in every language: a hold applied after Close puts the output back on. A graph or a ladder shows the same order as a picture. The scenario shows the logic only; it is not a gate controller."
+    }
+  ],
+  "hints": [
+    {
+      "level": 1,
+      "text": "The output must be able to remember that it is on. Which signal already holds that memory, and how do you combine it with Request so that Close can still switch it off?"
+    },
+    {
+      "level": 2,
+      "text": "Open := (Request OR Open) AND NOT Close; the OR keeps the output on, and the AND NOT Close comes last so that Close wins."
+    }
+  ],
+  "faultCases": [
+    "The starter sets Open to Request AND NOT Close, so Open drops the moment Request is released at {{t:40}} ms; add the hold by writing (Request OR Open) AND NOT Close, so that the output keeps itself on and Close still wins."
+  ]
+}

@@ -1,0 +1,147 @@
+{
+  "schemaVersion": 1,
+  "id": "GateLatch",
+  "tickMs": 10,
+  "durationMs": 240,
+  "events": [
+    {
+      "atMs": 0,
+      "set": {
+        "Gate.Request": false,
+        "Gate.Close": false
+      }
+    },
+    {
+      "atMs": 20,
+      "set": {
+        "Gate.Request": true
+      }
+    },
+    {
+      "atMs": 40,
+      "set": {
+        "Gate.Request": false
+      }
+    },
+    {
+      "atMs": 80,
+      "set": {
+        "Gate.Close": true
+      }
+    },
+    {
+      "atMs": 110,
+      "set": {
+        "Gate.Close": false
+      }
+    },
+    {
+      "atMs": 130,
+      "set": {
+        "Gate.Request": true,
+        "Gate.Close": true
+      }
+    },
+    {
+      "atMs": 160,
+      "set": {
+        "Gate.Request": false,
+        "Gate.Close": false
+      }
+    },
+    {
+      "atMs": 180,
+      "set": {
+        "Gate.Request": true
+      }
+    },
+    {
+      "atMs": 200,
+      "set": {
+        "Gate.Request": false
+      }
+    }
+  ],
+  "expectations": [
+    {
+      "kind": "AT",
+      "atMs": 10,
+      "condition": {
+        "Gate.Open": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 50,
+      "condition": {
+        "Gate.Open": true
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 70,
+      "condition": {
+        "Gate.Open": true
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 100,
+      "condition": {
+        "Gate.Open": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 120,
+      "condition": {
+        "Gate.Open": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 150,
+      "condition": {
+        "Gate.Open": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 170,
+      "condition": {
+        "Gate.Open": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 210,
+      "condition": {
+        "Gate.Open": true
+      }
+    },
+    {
+      "kind": "FOR",
+      "fromMs": 50,
+      "forMs": 20,
+      "condition": {
+        "Gate.Open": true
+      }
+    },
+    {
+      "kind": "RISING",
+      "fromMs": 20,
+      "withinMs": 40,
+      "condition": {
+        "Gate.Open": true
+      }
+    },
+    {
+      "kind": "FALLING",
+      "fromMs": 80,
+      "withinMs": 40,
+      "condition": {
+        "Gate.Open": false
+      }
+    }
+  ]
+}
