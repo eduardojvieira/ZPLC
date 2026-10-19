@@ -321,3 +321,23 @@ describe('first board page: written from the manifest, and honest that no board 
     }
   });
 });
+
+describe('the Homebrew cask and the AUR package are prepared and say so', () => {
+  const page = both('getting-started/install.md');
+
+  it('says the Homebrew cask, the quarantine flag and the single install command', () => {
+    for (const [path, content] of page) {
+      expect({ path, command: content.includes('brew install --cask eduardojvieira/zplc/zplc-ide') }).toEqual({ path, command: true });
+      expect({ path, quarantine: content.includes('com.apple.quarantine') || /cuarentena/.test(content) }).toEqual({ path, quarantine: true });
+      expect({ path, d01: content.includes('D-01') }).toEqual({ path, d01: true });
+    }
+  });
+
+  it('does not present either channel as live, on the page or in its first section', () => {
+    for (const [path, content] of page) {
+      const section = content.slice(content.indexOf('(not live yet)') === -1 ? content.indexOf('(todavía no están activos)') : content.indexOf('(not live yet)'));
+      expect({ path, says: /not live|no están activos|no existen|do not exist/.test(section) }).toEqual({ path, says: true });
+      expect({ path, aur: content.includes('zplc-ide-bin') }).toEqual({ path, aur: true });
+    }
+  });
+});

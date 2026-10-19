@@ -1,0 +1,30 @@
+# Maintainer: ZPLC contributors
+# The binary package of ZPLC Studio for the Arch User Repository (REL-014). It repackages the .deb of a release, which
+# carries the udev rule of the boards. The pipeline fills the placeholders from the SHA256SUMS of a published release
+# (tools/ci/release/render-channels.ts) and bumps pkgrel only by hand.
+pkgname=zplc-ide-bin
+_tag=@VERSION@
+pkgver=@PKGVER@
+pkgrel=1
+pkgdesc='IEC 61131-3 programming, simulation and learning environment for PLCs (ZPLC Studio), prebuilt'
+arch=('x86_64' 'aarch64')
+url='https://github.com/eduardojvieira/ZPLC'
+license=('MIT')
+depends=('gtk3' 'nss' 'libnotify' 'libxss' 'libxtst' 'xdg-utils' 'at-spi2-core' 'libsecret')
+provides=('zplc-ide')
+conflicts=('zplc-ide')
+options=('!strip' '!debug')
+source_x86_64=("zplc-ide-${_tag}-linux-amd64.deb::@BASE_URL@/zplc-ide-${_tag}-linux-amd64.deb")
+source_aarch64=("zplc-ide-${_tag}-linux-arm64.deb::@BASE_URL@/zplc-ide-${_tag}-linux-arm64.deb")
+sha256sums_x86_64=('@SHA256_AMD64@')
+sha256sums_aarch64=('@SHA256_ARM64@')
+
+package() {
+  # makepkg unpacks the .deb: its payload is data.tar.*
+  bsdtar -xf "${srcdir}"/data.tar.* -C "${pkgdir}"
+  # the sandbox helper must be setuid root for Chromium's sandbox, as the package's own post-install step does
+  chmod 4755 "${pkgdir}/opt/ZPLC IDE/chrome-sandbox"
+  # the .deb makes this link in its post-install script, which makepkg does not run
+  install -d "${pkgdir}/usr/bin"
+  ln -s '/opt/ZPLC IDE/zplc-ide' "${pkgdir}/usr/bin/zplc-ide"
+}

@@ -2869,5 +2869,12 @@
   "DOC-030": [
     {"kind":"unit","ref":"scripts/release/release-notes.test.ts","test":"what changed for a user, what breaks, how to migrate and what is limited (DOC-030)"},
     {"kind":"unit","ref":"tools/docs/contributor_docs.test.ts","test":"changelog: what changed for a user, what breaks, how to migrate and what is limited (DOC-030)"}
+  ],
+  "REL-004": [
+    {"kind":"unit","ref":"tools/ci/release/render-channels.test.ts","test":"the Homebrew cask","partial":true,"note":"the cask is rendered from the SHA256SUMS of a release, pins both ZIP checksums and names the files installerName() gives; ruby -c accepts the output. Not installed on a Mac, the tap does not exist (OA-10), and update-channels.yml is authored, not executed in CI. D-01 option A is built and flagged; the README mention is outside this run's surface"},
+    {"kind":"unit","ref":"tools/docs/install_and_status_pages.test.ts","test":"says the Homebrew cask, the quarantine flag and the single install command","partial":true,"note":"the install page (EN and ES) names the fully qualified command and the D-01 consequence"}
+  ],
+  "REL-014": [
+    {"kind":"unit","ref":"tools/ci/release/render-channels.test.ts","test":"the AUR package","partial":true,"note":"the PKGBUILD is rendered from the SHA256SUMS of a release; makepkg built a package from it on this machine against a .deb that electron-builder wrote (setuid sandbox, udev rule and launcher link present). The AUR account does not exist (OA-10) and update-channels.yml is authored, not executed in CI"}
   ]
 }
