@@ -1,4 +1,5 @@
-const CHECK_IDS = [
+
+import { t, type MessageKey } from '../../i18n';const CHECK_IDS = [
   'repository-manifest', 'west', 'python3', 'cmake', 'ninja',
   'zephyr-base', 'zephyr-sdk', 'arm-toolchain', 'xtensa-toolchain',
 ] as const;
@@ -16,7 +17,7 @@ export interface ToolchainCheckPresentation {
 
 export interface ToolchainPresentation {
   kind: 'ready' | 'attention' | 'unavailable';
-  message: 'Ready for local build' | 'Needs attention' | 'Unavailable in this app';
+  message: string;
   checks: ToolchainCheckPresentation[];
   boardIdeIds: string[];
 }
@@ -25,23 +26,13 @@ export type FirmwareBuildPresentation =
   | { kind: 'success'; ideId: string; sha256: string; byteLength: number }
   | { kind: 'cancelled' | 'cleanup-unconfirmed' | 'failed' };
 
-const CHECK_DETAILS: Record<CheckId, { label: string; remediation: string }> = {
-  'repository-manifest': { label: 'ZPLC checkout', remediation: 'Choose a ZPLC checkout with west.yml and firmware board profiles.' },
-  west: { label: 'west', remediation: 'Install west, then check the checkout again.' },
-  python3: { label: 'Python 3', remediation: 'Install Python 3, then check the checkout again.' },
-  cmake: { label: 'CMake', remediation: 'Install CMake, then check the checkout again.' },
-  ninja: { label: 'Ninja', remediation: 'Install Ninja, then check the checkout again.' },
-  'zephyr-base': { label: 'Zephyr base', remediation: 'Activate the pinned Zephyr workspace for this checkout.' },
-  'zephyr-sdk': { label: 'Zephyr SDK', remediation: 'Install or configure the Zephyr SDK for this checkout.' },
-  'arm-toolchain': { label: 'ARM toolchain', remediation: 'Install the ARM toolchain from the configured Zephyr SDK.' },
-  'xtensa-toolchain': { label: 'Xtensa ESP32-S3 toolchain', remediation: 'Install the Xtensa toolchain from the configured Zephyr SDK.' },
-};
+const checkDetails = (id: CheckId): { label: string; remediation: string } => ({ label: t(`toolchain.check.${id}.label` as MessageKey), remediation: t(`toolchain.check.${id}.remediation` as MessageKey) });
 
 const CHECK_STATUSES = new Set<CheckStatus>(['ready', 'missing', 'invalid', 'malformed', 'timeout', 'unavailable']);
 const SAFE_VERSION = /^[A-Za-z0-9][A-Za-z0-9._+-]{0,63}$/;
 const SHA40 = /^[a-f0-9]{40}$/;
 const TOOLCHAIN_DIAGNOSTIC = /^TOOLCHAIN_[A-Z0-9_]{1,63}$/;
-const TOOLCHAIN_MESSAGE = 'Toolchain prerequisite is unavailable';
+const TOOLCHAIN_WIRE_DETAIL = 'Toolchain prerequisite is unavailable';
 const ISO_TIMESTAMP = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/;
 
 function record(value: unknown): value is Record<string, unknown> {
@@ -78,7 +69,7 @@ function isCheckId(value: unknown): value is CheckId {
 }
 
 function unavailable(): ToolchainPresentation {
-  return { kind: 'unavailable', message: 'Unavailable in this app', checks: [], boardIdeIds: [] };
+  return { kind: 'unavailable', message: t('toolchain.status.unavailable'), checks: [], boardIdeIds: [] };
 }
 
 function validEvidence(value: unknown, ok: boolean): boolean {
@@ -94,7 +85,7 @@ function validEvidence(value: unknown, ok: boolean): boolean {
     && hasExactKeys(diagnostic, ['code', 'message'])
     && typeof diagnostic.code === 'string'
     && TOOLCHAIN_DIAGNOSTIC.test(diagnostic.code)
-    && diagnostic.message === TOOLCHAIN_MESSAGE);
+    && diagnostic.message === TOOLCHAIN_WIRE_DETAIL);
 }
 
 function validBoards(value: unknown): value is Array<Record<string, unknown>> {
@@ -140,7 +131,7 @@ export function presentToolchainInspectResult(value: unknown): ToolchainPresenta
       || (candidate.requiredRevision !== undefined && (typeof candidate.requiredRevision !== 'string' || !SHA40.test(candidate.requiredRevision)))
       || (candidate.observedRevision !== undefined && (typeof candidate.observedRevision !== 'string' || !SHA40.test(candidate.observedRevision)))) return unavailable();
     seen.add(candidate.id);
-    const detail = CHECK_DETAILS[candidate.id];
+    const detail = checkDetails(candidate.id);
     checks.push({ id: candidate.id, label: detail.label, status: candidate.status as CheckStatus, ...(typeof candidate.version === 'string' ? { version: candidate.version } : {}), remediation: detail.remediation });
   }
   if (seen.size !== CHECK_IDS.length || CHECK_IDS.some((id) => !seen.has(id))) return unavailable();
@@ -148,8 +139,8 @@ export function presentToolchainInspectResult(value: unknown): ToolchainPresenta
   const allReady = checks.every((check) => check.status === 'ready');
   if (value.ok !== summary.ready || summary.ready !== allReady || (allReady && summary.boards.length !== 6)) return unavailable();
   return allReady
-    ? { kind: 'ready', message: 'Ready for local build', checks, boardIdeIds: summary.boards.map((board) => board.ideId as string) }
-    : { kind: 'attention', message: 'Needs attention', checks, boardIdeIds: [] };
+    ? { kind: 'ready', message: t('toolchain.status.ready'), checks, boardIdeIds: summary.boards.map((board) => board.ideId as string) }
+    : { kind: 'attention', message: t('toolchain.status.attention'), checks, boardIdeIds: [] };
 }
 
 const IDE_ID = /^[a-z0-9][a-z0-9_]{0,63}$/;

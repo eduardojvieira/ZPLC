@@ -3626,7 +3626,7 @@ export const JOURNEYS: Journey[] = [
       await app.until('the project workbench to appear', async () => await app.visible(css('[role="toolbar"]')) || undefined);
 
       /** A catalog key shown as it is written (`console.tab.lab`), or one of the English phrases the migrated screens used to hard-code. */
-      const RAW_KEY = String.raw`\b(?:console|mqtt|modbus|network|io|controller|lab|toolchain|commtags|project|ld|importArchive|interlock|learn|toolbarMsg|examples|panel|toolbar|welcome|common|labScene|notices|workbench\.[a-z]+|editors\.[a-z]+|settings\.(?:communication|firmware|metadata|target|tasks))\.[a-z][A-Za-z0-9]*(?:\.[A-Za-z0-9]+)*\b`;
+      const RAW_KEY = String.raw`\b(?:console|mqtt|modbus|network|io|controller|lab|toolchain|commtags|project|ld|importArchive|interlock|learn|toolbarMsg|examples|panel|toolbar|welcome|common|labScene|notices|terminal|deploy|library|declarationKind|keyboard|sfc|fbd|testDiag|archive|tree|picker|types|signal|store|debugger|link|labPlayback|workbench\.[a-z]+|editors\.[a-z]+|settings\.(?:communication|firmware|metadata|target|tasks))\.[a-z][A-Za-z0-9]*(?:\.[A-Za-z0-9]+)*\b`;
       const text = (id: string) => app.eval<string>(`document.getElementById(${JSON.stringify(id)})?.innerText ?? ''`);
       const walk = async (tab: string, expected: string[], english: string[]) => {
         await app.click(css(`#console-tab-${tab}`), `the ${tab} tab`);
@@ -3647,7 +3647,8 @@ export const JOURNEYS: Journey[] = [
       assert(!new RegExp(RAW_KEY).test(chrome), `The window shows a raw catalog key: ${chrome.match(new RegExp(RAW_KEY))?.[0]}`);
       // The second batch of migrated surfaces (WP-65): the Watch and Terminal tabs, the Inspector and the project settings sections.
       await walk('watch', [], ['Add variable', 'Start debugging to see live values', 'Watch']);
-      await walk('terminal', ['Sin conexión'], ['Not connected', 'Connect to send commands']);
+      // WP-75: the opening lines of the Terminal come from the catalog too (they were written in a plain .ts module).
+      await walk('terminal', ['Sin conexión', 'Terminal serie de ZPLC', 'Use la conexión compartida de la barra de herramientas'], ['Not connected', 'Connect to send commands', 'ZPLC serial terminal', 'Use the shared connection']);
       await app.click(css('[data-toggle-inspector]'), 'the Inspector button of the command bar');
       await app.until('the Inspector in Spanish', async () => await app.visible(css('[aria-label="Inspector del entorno de trabajo"]')) || undefined);
       const inspector = await app.eval<string>(`document.querySelector('[aria-label="Inspector del entorno de trabajo"]')?.innerText ?? ''`);

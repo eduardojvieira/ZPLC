@@ -28,6 +28,7 @@ import { crc32 } from './link/frame';
 import { describeFirmware, type FirmwareReport } from './link/firmwareProtocol';
 import { ENUMS, EVENT_MASK } from './link/protocol.generated';
 import { ShellLineTransport, type ShellConsole } from './link/shellTransport';
+import { t } from '../i18n';
 
 const SESSION_NAME = 'Studio';
 
@@ -407,7 +408,7 @@ export class FramedSerialAdapter extends SerialAdapter {
     if (!this._connected) throw new Error('Not connected');
     const trace = options?.trace;
     const checksum = crc32(bytecode);
-    trace?.({ kind: 'stage', message: `Transferring ${bytecode.length} bytes over the device link (CRC-32 ${checksum.toString(16).padStart(8, '0')})` });
+    trace?.({ kind: 'stage', message: t('link.transferring', { bytes: bytecode.length, crc: checksum.toString(16).padStart(8, '0') }) });
     try {
       const begun = await this.changing((link) => link.request('PROGRAM_BEGIN', { size: bytecode.length, crc32: checksum }));
       const chunk = Math.max(1, begun.chunk_max);
@@ -415,7 +416,7 @@ export class FramedSerialAdapter extends SerialAdapter {
       for (let index = 0; index < chunks; index++) {
         const offset = index * chunk;
         await this.ask((link) => link.request('PROGRAM_CHUNK', { offset, data: bytecode.subarray(offset, offset + chunk) }));
-        trace?.({ kind: 'stage', message: `Sent ${Math.min(offset + chunk, bytecode.length)} of ${bytecode.length} bytes (${index + 1}/${chunks})` });
+        trace?.({ kind: 'stage', message: t('link.sent', { sent: Math.min(offset + chunk, bytecode.length), bytes: bytecode.length, index: index + 1, chunks }) });
       }
       if (this.link.info?.signatureRequired) {
         const signer = this.signer;
@@ -423,11 +424,11 @@ export class FramedSerialAdapter extends SerialAdapter {
           throw new Error('This device accepts only signed programs and Studio has no signing key for it.');
         }
         const signature = await signer(bytecode);
-        trace?.({ kind: 'stage', message: 'Sending the signature of the program' });
+        trace?.({ kind: 'stage', message: t('link.signature') });
         await this.ask((link) => link.request('PROGRAM_SIGN', { signature }));
       }
       const done = await this.ask((link) => link.request('PROGRAM_COMMIT', {}));
-      trace?.({ kind: 'response', message: `The device holds ${done.size} bytes, CRC-32 ${done.crc32.toString(16).padStart(8, '0')}` });
+      trace?.({ kind: 'response', message: t('link.holds', { bytes: done.size, crc: done.crc32.toString(16).padStart(8, '0') }) });
       if (done.size !== bytecode.length || done.crc32 !== checksum) {
         throw new Error('The device read back a program that is not the one that was sent.');
       }

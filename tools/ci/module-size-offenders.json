@@ -10,7 +10,7 @@
     "file": "packages/zplc-ide/src/runtime/serialAdapter.ts",
     "requirement": "IDE-014",
     "added": "2026-10-10",
-    "lines": 1360,
+    "lines": 1351,
     "reason": "One class holds the serial transport, the command framing, the upload and the debug commands. Split the framing and parsing from the commands behind the same adapter interface; the device protocol work (COM) owns the file."
   },
   {
