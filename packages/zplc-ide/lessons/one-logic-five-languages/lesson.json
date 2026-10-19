@@ -1,0 +1,50 @@
+{
+  "schemaVersion": 1,
+  "id": "one-logic-five-languages",
+  "version": 1,
+  "order": 25,
+  "module": 9,
+  "level": "advanced",
+  "prerequisites": [
+    "instruction-list-door-alarm"
+  ],
+  "languages": [
+    "ST",
+    "LD",
+    "FBD",
+    "SFC",
+    "IL"
+  ],
+  "tracks": [
+    "simulation"
+  ],
+  "unsupported": {
+    "hardware": {
+      "reason": {
+        "en": "The lesson is graded on a request and a close command replayed at exact steps, and no board trace has been recorded for it.",
+        "es": "La lección se califica con una orden de abrir y una de cerrar reproducidas en pasos exactos, y no se ha registrado una traza de placa para ella."
+      },
+      "instead": {
+        "en": "Complete it in Simulation: its grade is the same each time and needs no board.",
+        "es": "Complétela en Simulación: su calificación es la misma cada vez y no necesita una placa."
+      }
+    }
+  },
+  "plant": null,
+  "estimatedMinutes": 30,
+  "starter": {
+    "project": "gate_latch_starter",
+    "program": "src/Gate.st"
+  },
+  "solution": {
+    "project": "gate_latch",
+    "program": "src/Gate.st"
+  },
+  "scenario": {
+    "file": "scenario.json",
+    "id": "GateLatch",
+    "path": "tests/gate-latch.scenario.json",
+    "sha256": "90a670b5e47ab23b713d42c898002e7f52da799c574e19cb3002924ca47137e4"
+  },
+  "regressionScenarios": []
+}

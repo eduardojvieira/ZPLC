@@ -80,6 +80,7 @@ export const EXAMPLE_CATALOG: Readonly<Record<string, ExampleEntry>> = {
   seal_in_ladder: example('seal_in_ladder', { group: 'first-steps', level: 'beginner', languages: ['LD'], showOnWelcome: true }),
   batch_count_fbd: example('batch_count_fbd', { group: 'first-steps', level: 'beginner', languages: ['FBD'], showOnWelcome: true }),
   door_alarm_il: example('door_alarm_il', { group: 'first-steps', level: 'intermediate', languages: ['IL'], showOnWelcome: true }),
+  gate_latch: example('gate_latch', { group: 'first-steps', level: 'advanced', languages: ['ST'], showOnWelcome: true }),
 
   // Motors and drives
   motor_start_stop: example('motor_start_stop', { group: 'motors', level: 'beginner', languages: ['ST'], showOnWelcome: true }),
@@ -96,6 +97,7 @@ export const EXAMPLE_CATALOG: Readonly<Record<string, ExampleEntry>> = {
   fill_mix_sfc: example('fill_mix_sfc', { group: 'process', level: 'intermediate', languages: ['SFC'], showOnWelcome: true }),
   pump_pair: example('pump_pair', { group: 'process', level: 'intermediate', languages: ['ST'], showOnWelcome: true }),
   call_panel: example('call_panel', { group: 'process', level: 'intermediate', languages: ['ST'], showOnWelcome: true }),
+  packing_station: example('packing_station', { group: 'process', level: 'advanced', languages: ['ST'], showOnWelcome: true }),
 
   // Language tour
   blinky_st: example('blinky_st', { group: 'languages', level: 'beginner', languages: ['ST'], showOnWelcome: true }),

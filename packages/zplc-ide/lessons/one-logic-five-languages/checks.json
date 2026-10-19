@@ -1,0 +1,75 @@
+{
+  "schemaVersion": 1,
+  "alsoGreen": [
+    {
+      "intent": "Instruction List instead of Structured Text: LD, OR, ANDN, ST",
+      "files": {
+        "src/Gate.il": "PROGRAM Gate\nVAR_INPUT\n    Request AT %I0.0 : BOOL;\n    Close AT %I0.1 : BOOL;\nEND_VAR\nVAR_OUTPUT\n    Open AT %Q0.0 : BOOL;\nEND_VAR\n\n        LD    Request\n        OR    Open\n        ANDN  Close\n        ST    Open\nEND_PROGRAM\n",
+        "zplc.json": "{\"schemaVersion\":2,\"name\":\"gate_latch_starter\",\"version\":\"1.0.0\",\"target\":{\"board\":\"posix\"},\"tasks\":[{\"name\":\"MainTask\",\"trigger\":\"cyclic\",\"interval_ms\":10,\"priority\":1,\"programs\":[\"Gate.il\"]}]}"
+      },
+      "remove": [
+        "src/Gate.st"
+      ]
+    },
+    {
+      "intent": "Ladder instead of Structured Text: Request in parallel with Open, then a normally closed Close contact in series",
+      "files": {
+        "src/Gate.ld.json": "{\n  \"name\": \"Gate\",\n  \"description\": \"Hold a gate open: a Request press opens it, a Close press closes it.\",\n  \"version\": \"1.0.0\",\n  \"variables\": {\n    \"local\": [],\n    \"inputs\": [\n      {\n        \"name\": \"Request\",\n        \"type\": \"BOOL\",\n        \"address\": \"%I0.0\",\n        \"comment\": \"Start pushbutton, normally open: TRUE while pressed\"\n      },\n      {\n        \"name\": \"Close\",\n        \"type\": \"BOOL\",\n        \"address\": \"%I0.1\",\n        \"comment\": \"Stop pushbutton, normally open: TRUE while pressed. The rung breaks on a press.\"\n      }\n    ],\n    \"outputs\": [\n      {\n        \"name\": \"Open\",\n        \"type\": \"BOOL\",\n        \"address\": \"%Q0.0\",\n        \"comment\": \"Open contactor command. It is also the memory that holds the motor on.\"\n      }\n    ]\n  },\n  \"rungs\": [\n    {\n      \"id\": \"rung_1\",\n      \"number\": 1,\n      \"comment\": \"Start / stop with seal-in. The contact on Open under Request holds the coil on after Start is released; Close is in series before the branch, so Stop wins.\",\n      \"branches\": [\n        {\n          \"id\": \"branch_1\",\n          \"startCol\": 1,\n          \"endCol\": 4,\n          \"rows\": [\n            0,\n            1\n          ]\n        }\n      ],\n      \"gridConfig\": {\n        \"cols\": 8,\n        \"rows\": 2,\n        \"cellWidth\": 80,\n        \"cellHeight\": 60\n      },\n      \"grid\": [\n        [\n          {\n            \"element\": {\n              \"id\": \"stop\",\n              \"type\": \"contact_nc\",\n              \"variable\": \"Close\",\n              \"row\": 0,\n              \"col\": 0\n            },\n            \"hasWire\": true\n          },\n          {\n            \"element\": {\n              \"id\": \"start\",\n              \"type\": \"contact_no\",\n              \"variable\": \"Request\",\n              \"row\": 0,\n              \"col\": 1\n            },\n            \"hasWire\": true\n          },\n          {\n            \"element\": null,\n            \"hasWire\": true\n          },\n          {\n            \"element\": null,\n            \"hasWire\": true\n          },\n          {\n            \"element\": null,\n            \"hasWire\": true\n          },\n          {\n            \"element\": null,\n            \"hasWire\": true\n          },\n          {\n            \"element\": null,\n            \"hasWire\": true\n          },\n          {\n            \"element\": {\n              \"id\": \"motor\",\n              \"type\": \"coil\",\n              \"variable\": \"Open\",\n              \"row\": 0,\n              \"col\": 7\n            },\n            \"hasWire\": true\n          }\n        ],\n        [\n          {\n            \"element\": null,\n            \"hasWire\": false\n          },\n          {\n            \"element\": {\n              \"id\": \"seal\",\n              \"type\": \"contact_no\",\n              \"variable\": \"Open\",\n              \"row\": 1,\n              \"col\": 1\n            },\n            \"hasWire\": true\n          },\n          {\n            \"element\": null,\n            \"hasWire\": true\n          },\n          {\n            \"element\": null,\n            \"hasWire\": true\n          },\n          {\n            \"element\": null,\n            \"hasWire\": true\n          },\n          {\n            \"element\": null,\n            \"hasWire\": false\n          },\n          {\n            \"element\": null,\n            \"hasWire\": false\n          },\n          {\n            \"element\": null,\n            \"hasWire\": false\n          }\n        ]\n      ]\n    }\n  ],\n  \"metadata\": {\n    \"author\": \"ZPLC Team\",\n    \"created\": \"2026-10-19\",\n    \"iecStandard\": \"IEC 61131-3\",\n    \"notes\": []\n  }\n}\n",
+        "zplc.json": "{\"schemaVersion\":2,\"name\":\"gate_latch_starter\",\"version\":\"1.0.0\",\"target\":{\"board\":\"posix\"},\"tasks\":[{\"name\":\"MainTask\",\"trigger\":\"cyclic\",\"interval_ms\":10,\"priority\":1,\"programs\":[\"Gate.ld\"]}]}"
+      },
+      "remove": [
+        "src/Gate.st"
+      ]
+    },
+    {
+      "intent": "Function Block Diagram instead of Structured Text: an OR block, a NOT block and an AND block",
+      "files": {
+        "src/Gate.fbd.json": "{\n  \"name\": \"Gate\",\n  \"description\": \"Hold a gate open: (Request OR Open) AND NOT Close.\",\n  \"version\": \"1.0.0\",\n  \"variables\": {\n    \"local\": [],\n    \"inputs\": [\n      {\n        \"name\": \"Request\",\n        \"type\": \"BOOL\",\n        \"address\": \"%I0.0\",\n        \"comment\": \"Request to open\"\n      },\n      {\n        \"name\": \"Close\",\n        \"type\": \"BOOL\",\n        \"address\": \"%I0.1\",\n        \"comment\": \"Close command\"\n      }\n    ],\n    \"outputs\": [\n      {\n        \"name\": \"Open\",\n        \"type\": \"BOOL\",\n        \"address\": \"%Q0.0\",\n        \"comment\": \"Gate open command\"\n      }\n    ]\n  },\n  \"blocks\": [\n    {\n      \"id\": \"var_request\",\n      \"type\": \"variable\",\n      \"variableName\": \"Request\",\n      \"direction\": \"read\",\n      \"position\": {\n        \"x\": 50,\n        \"y\": 40\n      },\n      \"outputs\": [\n        {\n          \"name\": \"OUT\",\n          \"type\": \"BOOL\"\n        }\n      ]\n    },\n    {\n      \"id\": \"var_open\",\n      \"type\": \"variable\",\n      \"variableName\": \"Open\",\n      \"direction\": \"read\",\n      \"position\": {\n        \"x\": 50,\n        \"y\": 120\n      },\n      \"outputs\": [\n        {\n          \"name\": \"OUT\",\n          \"type\": \"BOOL\"\n        }\n      ]\n    },\n    {\n      \"id\": \"var_close\",\n      \"type\": \"variable\",\n      \"variableName\": \"Close\",\n      \"direction\": \"read\",\n      \"position\": {\n        \"x\": 50,\n        \"y\": 200\n      },\n      \"outputs\": [\n        {\n          \"name\": \"OUT\",\n          \"type\": \"BOOL\"\n        }\n      ]\n    },\n    {\n      \"id\": \"or_hold\",\n      \"type\": \"OR\",\n      \"position\": {\n        \"x\": 260,\n        \"y\": 70\n      },\n      \"inputs\": [\n        {\n          \"name\": \"IN1\",\n          \"type\": \"BOOL\"\n        },\n        {\n          \"name\": \"IN2\",\n          \"type\": \"BOOL\"\n        }\n      ],\n      \"outputs\": [\n        {\n          \"name\": \"OUT\",\n          \"type\": \"BOOL\"\n        }\n      ]\n    },\n    {\n      \"id\": \"not_close\",\n      \"type\": \"NOT\",\n      \"position\": {\n        \"x\": 260,\n        \"y\": 200\n      },\n      \"inputs\": [\n        {\n          \"name\": \"IN\",\n          \"type\": \"BOOL\"\n        }\n      ],\n      \"outputs\": [\n        {\n          \"name\": \"OUT\",\n          \"type\": \"BOOL\"\n        }\n      ]\n    },\n    {\n      \"id\": \"and_open\",\n      \"type\": \"AND\",\n      \"position\": {\n        \"x\": 460,\n        \"y\": 120\n      },\n      \"inputs\": [\n        {\n          \"name\": \"IN1\",\n          \"type\": \"BOOL\"\n        },\n        {\n          \"name\": \"IN2\",\n          \"type\": \"BOOL\"\n        }\n      ],\n      \"outputs\": [\n        {\n          \"name\": \"OUT\",\n          \"type\": \"BOOL\"\n        }\n      ]\n    },\n    {\n      \"id\": \"out_open\",\n      \"type\": \"output\",\n      \"variableName\": \"Open\",\n      \"position\": {\n        \"x\": 660,\n        \"y\": 120\n      },\n      \"inputs\": [\n        {\n          \"name\": \"IN\",\n          \"type\": \"BOOL\"\n        }\n      ]\n    }\n  ],\n  \"connections\": [\n    {\n      \"id\": \"conn_var_request_or_hold_in1\",\n      \"from\": {\n        \"block\": \"var_request\",\n        \"port\": \"OUT\"\n      },\n      \"to\": {\n        \"block\": \"or_hold\",\n        \"port\": \"IN1\"\n      }\n    },\n    {\n      \"id\": \"conn_var_open_or_hold_in2\",\n      \"from\": {\n        \"block\": \"var_open\",\n        \"port\": \"OUT\"\n      },\n      \"to\": {\n        \"block\": \"or_hold\",\n        \"port\": \"IN2\"\n      }\n    },\n    {\n      \"id\": \"conn_var_close_not_close_in\",\n      \"from\": {\n        \"block\": \"var_close\",\n        \"port\": \"OUT\"\n      },\n      \"to\": {\n        \"block\": \"not_close\",\n        \"port\": \"IN\"\n      }\n    },\n    {\n      \"id\": \"conn_or_hold_and_open_in1\",\n      \"from\": {\n        \"block\": \"or_hold\",\n        \"port\": \"OUT\"\n      },\n      \"to\": {\n        \"block\": \"and_open\",\n        \"port\": \"IN1\"\n      }\n    },\n    {\n      \"id\": \"conn_not_close_and_open_in2\",\n      \"from\": {\n        \"block\": \"not_close\",\n        \"port\": \"OUT\"\n      },\n      \"to\": {\n        \"block\": \"and_open\",\n        \"port\": \"IN2\"\n      }\n    },\n    {\n      \"id\": \"conn_and_open_out_open_in\",\n      \"from\": {\n        \"block\": \"and_open\",\n        \"port\": \"OUT\"\n      },\n      \"to\": {\n        \"block\": \"out_open\",\n        \"port\": \"IN\"\n      }\n    }\n  ],\n  \"metadata\": {\n    \"author\": \"ZPLC Team\",\n    \"created\": \"2026-10-19\",\n    \"iecStandard\": \"IEC 61131-3\",\n    \"notes\": []\n  }\n}\n",
+        "zplc.json": "{\"schemaVersion\":2,\"name\":\"gate_latch_starter\",\"version\":\"1.0.0\",\"target\":{\"board\":\"posix\"},\"tasks\":[{\"name\":\"MainTask\",\"trigger\":\"cyclic\",\"interval_ms\":10,\"priority\":1,\"programs\":[\"Gate.fbd\"]}]}"
+      },
+      "remove": [
+        "src/Gate.st"
+      ]
+    },
+    {
+      "intent": "Sequential Function Chart instead of Structured Text: two steps and two transitions",
+      "files": {
+        "src/Gate.sfc.json": "{\n  \"name\": \"Gate\",\n  \"description\": \"Two steps: IS_CLOSED and IS_OPEN.\",\n  \"version\": \"1.0.0\",\n  \"variables\": {\n    \"local\": [],\n    \"inputs\": [\n      {\n        \"name\": \"Request\",\n        \"type\": \"BOOL\",\n        \"address\": \"%I0.0\",\n        \"comment\": \"Request to open\"\n      },\n      {\n        \"name\": \"Close\",\n        \"type\": \"BOOL\",\n        \"address\": \"%I0.1\",\n        \"comment\": \"Close command\"\n      }\n    ],\n    \"outputs\": [\n      {\n        \"name\": \"Open\",\n        \"type\": \"BOOL\",\n        \"address\": \"%Q0.0\",\n        \"comment\": \"Gate open command\"\n      }\n    ]\n  },\n  \"steps\": [\n    {\n      \"id\": \"step_closed\",\n      \"name\": \"IS_CLOSED\",\n      \"isInitial\": true,\n      \"position\": {\n        \"x\": 200,\n        \"y\": 50\n      },\n      \"actions\": [\n        {\n          \"qualifier\": \"N\",\n          \"actionName\": \"A_CLOSED\",\n          \"comment\": \"Gate closed\"\n        }\n      ]\n    },\n    {\n      \"id\": \"step_open\",\n      \"name\": \"IS_OPEN\",\n      \"isInitial\": false,\n      \"position\": {\n        \"x\": 200,\n        \"y\": 250\n      },\n      \"actions\": [\n        {\n          \"qualifier\": \"N\",\n          \"actionName\": \"A_OPEN\",\n          \"comment\": \"Gate open\"\n        }\n      ]\n    }\n  ],\n  \"transitions\": [\n    {\n      \"id\": \"t_open\",\n      \"fromStep\": \"step_closed\",\n      \"toStep\": \"step_open\",\n      \"condition\": \"Request AND NOT Close\",\n      \"comment\": \"\",\n      \"position\": {\n        \"x\": 200,\n        \"y\": 150\n      }\n    },\n    {\n      \"id\": \"t_close\",\n      \"fromStep\": \"step_open\",\n      \"toStep\": \"step_closed\",\n      \"condition\": \"Close\",\n      \"comment\": \"\",\n      \"position\": {\n        \"x\": 200,\n        \"y\": 350\n      }\n    }\n  ],\n  \"actions\": [\n    {\n      \"id\": \"A_CLOSED\",\n      \"name\": \"A_CLOSED\",\n      \"type\": \"ST\",\n      \"body\": \"Open := FALSE;\"\n    },\n    {\n      \"id\": \"A_OPEN\",\n      \"name\": \"A_OPEN\",\n      \"type\": \"ST\",\n      \"body\": \"Open := TRUE;\"\n    }\n  ],\n  \"metadata\": {\n    \"author\": \"ZPLC Team\",\n    \"created\": \"2026-10-19\",\n    \"iecStandard\": \"IEC 61131-3\",\n    \"notes\": []\n  }\n}\n",
+        "zplc.json": "{\"schemaVersion\":2,\"name\":\"gate_latch_starter\",\"version\":\"1.0.0\",\"target\":{\"board\":\"posix\"},\"tasks\":[{\"name\":\"MainTask\",\"trigger\":\"cyclic\",\"interval_ms\":10,\"priority\":1,\"programs\":[\"Gate.sfc\"]}]}"
+      },
+      "remove": [
+        "src/Gate.st"
+      ]
+    }
+  ],
+  "wrong": [
+    {
+      "intent": "holds nothing: the gate follows Request and closes the moment it is released",
+      "files": {
+        "src/Gate.st": "PROGRAM Gate\nVAR_INPUT Request AT %I0.0 : BOOL; Close AT %I0.1 : BOOL; END_VAR\nVAR_OUTPUT Open AT %Q0.0 : BOOL; END_VAR\n(* The gate must hold itself open after Request is released. Close must always close it. *)\nOpen := Request AND NOT Close;\nEND_PROGRAM\n"
+      }
+    },
+    {
+      "intent": "never reads Close, so the gate cannot be closed",
+      "files": {
+        "src/Gate.st": "PROGRAM Gate\nVAR_INPUT Request AT %I0.0 : BOOL; Close AT %I0.1 : BOOL; END_VAR\nVAR_OUTPUT Open AT %Q0.0 : BOOL; END_VAR\nOpen := Request OR Open;\nEND_PROGRAM\n"
+      }
+    },
+    {
+      "intent": "lets Request win over Close, so a gate being told to close and to open at once opens",
+      "files": {
+        "src/Gate.st": "PROGRAM Gate\nVAR_INPUT Request AT %I0.0 : BOOL; Close AT %I0.1 : BOOL; END_VAR\nVAR_OUTPUT Open AT %Q0.0 : BOOL; END_VAR\nOpen := Request OR (Open AND NOT Close);\nEND_PROGRAM\n"
+      }
+    },
+    {
+      "intent": "in Instruction List applies Close before the hold, so the hold puts the gate back open",
+      "files": {
+        "src/Gate.il": "PROGRAM Gate\nVAR_INPUT\n    Request AT %I0.0 : BOOL;\n    Close AT %I0.1 : BOOL;\nEND_VAR\nVAR_OUTPUT\n    Open AT %Q0.0 : BOOL;\nEND_VAR\n\n        LD    Request\n        ANDN  Close\n        OR    Open\n        ST    Open\nEND_PROGRAM\n",
+        "zplc.json": "{\"schemaVersion\":2,\"name\":\"gate_latch_starter\",\"version\":\"1.0.0\",\"target\":{\"board\":\"posix\"},\"tasks\":[{\"name\":\"MainTask\",\"trigger\":\"cyclic\",\"interval_ms\":10,\"priority\":1,\"programs\":[\"Gate.il\"]}]}"
+      },
+      "remove": [
+        "src/Gate.st"
+      ]
+    }
+  ]
+}

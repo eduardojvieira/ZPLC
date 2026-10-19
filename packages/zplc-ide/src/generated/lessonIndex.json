@@ -4184,6 +4184,352 @@
           ]
         }
       }
+    },
+    {
+      "id": "one-logic-five-languages",
+      "version": 1,
+      "order": 25,
+      "module": 9,
+      "level": "advanced",
+      "prerequisites": [
+        "instruction-list-door-alarm"
+      ],
+      "languages": [
+        "ST",
+        "LD",
+        "FBD",
+        "SFC",
+        "IL"
+      ],
+      "tracks": [
+        "simulation"
+      ],
+      "unsupported": {
+        "hardware": {
+          "reason": {
+            "en": "The lesson is graded on a request and a close command replayed at exact steps, and no board trace has been recorded for it.",
+            "es": "La lección se califica con una orden de abrir y una de cerrar reproducidas en pasos exactos, y no se ha registrado una traza de placa para ella."
+          },
+          "instead": {
+            "en": "Complete it in Simulation: its grade is the same each time and needs no board.",
+            "es": "Complétela en Simulación: su calificación es la misma cada vez y no necesita una placa."
+          }
+        }
+      },
+      "plant": null,
+      "plantMap": null,
+      "estimatedMinutes": 30,
+      "starter": {
+        "project": "gate_latch_starter",
+        "program": "src/Gate.st"
+      },
+      "solution": {
+        "project": "gate_latch",
+        "program": "src/Gate.st"
+      },
+      "scenario": {
+        "id": "GateLatch",
+        "path": "tests/gate-latch.scenario.json",
+        "sha256": "90a670b5e47ab23b713d42c898002e7f52da799c574e19cb3002924ca47137e4",
+        "tickMs": 10,
+        "durationMs": 240,
+        "assertions": 11,
+        "canonical": "{\"durationMs\":240,\"events\":[{\"atMs\":0,\"set\":{\"Gate.Close\":false,\"Gate.Request\":false}},{\"atMs\":20,\"set\":{\"Gate.Request\":true}},{\"atMs\":40,\"set\":{\"Gate.Request\":false}},{\"atMs\":80,\"set\":{\"Gate.Close\":true}},{\"atMs\":110,\"set\":{\"Gate.Close\":false}},{\"atMs\":130,\"set\":{\"Gate.Close\":true,\"Gate.Request\":true}},{\"atMs\":160,\"set\":{\"Gate.Close\":false,\"Gate.Request\":false}},{\"atMs\":180,\"set\":{\"Gate.Request\":true}},{\"atMs\":200,\"set\":{\"Gate.Request\":false}}],\"expectations\":[{\"atMs\":10,\"condition\":{\"Gate.Open\":false},\"kind\":\"AT\"},{\"atMs\":50,\"condition\":{\"Gate.Open\":true},\"kind\":\"AT\"},{\"atMs\":70,\"condition\":{\"Gate.Open\":true},\"kind\":\"AT\"},{\"atMs\":100,\"condition\":{\"Gate.Open\":false},\"kind\":\"AT\"},{\"atMs\":120,\"condition\":{\"Gate.Open\":false},\"kind\":\"AT\"},{\"atMs\":150,\"condition\":{\"Gate.Open\":false},\"kind\":\"AT\"},{\"atMs\":170,\"condition\":{\"Gate.Open\":false},\"kind\":\"AT\"},{\"atMs\":210,\"condition\":{\"Gate.Open\":true},\"kind\":\"AT\"},{\"condition\":{\"Gate.Open\":true},\"forMs\":20,\"fromMs\":50,\"kind\":\"FOR\"},{\"condition\":{\"Gate.Open\":true},\"fromMs\":20,\"kind\":\"RISING\",\"withinMs\":40},{\"condition\":{\"Gate.Open\":false},\"fromMs\":80,\"kind\":\"FALLING\",\"withinMs\":40}],\"id\":\"GateLatch\",\"schemaVersion\":1,\"tickMs\":10}"
+      },
+      "regressionScenarios": [],
+      "text": {
+        "en": {
+          "title": "One logic in five languages: a gate that holds itself open",
+          "summary": "Fix a Structured Text program so that a gate holds itself open and closes on command, then read the same logic in Instruction List, Ladder, Function Block Diagram and Sequential Function Chart, and see that one scenario grades all five.",
+          "scope": "Tests provide native POSIX host evidence with one 10 ms task; they do not establish gate requirements, actuator timing or any real machine behaviour, HIL, or certification.",
+          "objectives": [
+            "Hold an output on after its request is released, and let a close command win, in Structured Text.",
+            "Recognise the same condition, (Request OR Open) AND NOT Close, in Instruction List, Ladder, Function Block Diagram and Sequential Function Chart."
+          ],
+          "stages": [
+            {
+              "key": "objective",
+              "title": "Objective",
+              "body": "In src/Gate.st the output Open follows Request only while the button is pressed. Make it hold: Open is on when Request is pressed or Open is already on, and never while Close is pressed. The same condition is written in the other four languages as: Instruction List LD Request, OR Open, ANDN Close, ST Open; Ladder, Request in parallel with a contact of Open, then a normally closed contact of Close, then the coil Open; Function Block Diagram, an OR block feeding an AND block whose second input comes from a NOT block of Close; Sequential Function Chart, a step IS_CLOSED and a step IS_OPEN with a transition to IS_OPEN on Request AND NOT Close and a transition back on Close.",
+              "checkpoint": "The gate opens when Request is pressed, stays open after Request is released, and closes when Close is pressed."
+            },
+            {
+              "key": "predict",
+              "title": "Predict",
+              "body": "Request is pressed at 20 ms and released at 40 ms. Close is pressed at 80 ms. At 130 ms Request and Close are pressed together. Predict Open at 50, 100 and 150 ms.",
+              "checkpoint": "ON at 50 ms, after Request was released; OFF at 100 ms, because Close was pressed; OFF at 150 ms, because Close wins over Request."
+            },
+            {
+              "key": "edit",
+              "title": "Edit",
+              "body": "Correct this starter omission, save it, then press Check: The starter sets Open to Request AND NOT Close, so Open drops the moment Request is released at 40 ms; add the hold by writing (Request OR Open) AND NOT Close, so that the output keeps itself on and Close still wins.",
+              "checkpoint": "The visible scenario must pass with saved host evidence."
+            },
+            {
+              "key": "run",
+              "title": "Run",
+              "body": "Press Check. Studio runs your saved program against the scenario of this lesson.",
+              "checkpoint": "The scenario is named GateLatch and contains 11 assertions."
+            },
+            {
+              "key": "observe",
+              "title": "Observe",
+              "body": "Compare 50, 100 and 170 ms: Open holds after Request is released, falls with Close, and does not start again when Request and Close are released together at 160 ms. It opens again at 210 ms after the second press at 180 ms.",
+              "checkpoint": "The scenario never says which language wrote the program: it looks only at the output. That is why the same grade accepts the Instruction List, Ladder, Function Block Diagram and Sequential Function Chart forms of the same condition."
+            },
+            {
+              "key": "reflect",
+              "title": "Reflect",
+              "body": "Choose one of the other languages, delete src/Gate.st, create the file for that language in the same folder, add it to the task of zplc.json, write the same condition and press Check. Then swap the order so that the hold comes after Close, and see which assertion fails.",
+              "checkpoint": "The order of operations decides the result in every language: a hold applied after Close puts the output back on. A graph or a ladder shows the same order as a picture. The scenario shows the logic only; it is not a gate controller."
+            }
+          ],
+          "hints": [
+            {
+              "level": 1,
+              "text": "The output must be able to remember that it is on. Which signal already holds that memory, and how do you combine it with Request so that Close can still switch it off?"
+            },
+            {
+              "level": 2,
+              "text": "Open := (Request OR Open) AND NOT Close; the OR keeps the output on, and the AND NOT Close comes last so that Close wins."
+            }
+          ],
+          "faultCases": [
+            "The starter sets Open to Request AND NOT Close, so Open drops the moment Request is released at 40 ms; add the hold by writing (Request OR Open) AND NOT Close, so that the output keeps itself on and Close still wins."
+          ]
+        },
+        "es": {
+          "title": "Una lógica en cinco lenguajes: un portón que se mantiene abierto",
+          "summary": "Corrija un programa en Texto Estructurado para que un portón se mantenga abierto y se cierre con una orden, lea después la misma lógica en Lista de instrucciones, Ladder, Diagrama de Bloques de Función y Gráfico Funcional de Secuencias, y compruebe que un solo escenario califica los cinco.",
+          "scope": "Las pruebas aportan evidencia de host POSIX nativo con una tarea de 10 ms; no establecen requisitos de un portón, tiempos de actuadores ni comportamiento real de ninguna máquina, HIL ni certificación.",
+          "objectives": [
+            "Mantener una salida encendida después de soltar su orden, y dejar que la orden de cierre gane, en Texto Estructurado.",
+            "Reconocer la misma condición, (Request OR Open) AND NOT Close, en Lista de instrucciones, Ladder, Diagrama de Bloques de Función y Gráfico Funcional de Secuencias."
+          ],
+          "stages": [
+            {
+              "key": "objective",
+              "title": "Objetivo",
+              "body": "En src/Gate.st la salida Open sigue a Request solo mientras el pulsador está pulsado. Haga que se mantenga: Open se enciende cuando se pulsa Request o cuando Open ya está encendida, y nunca mientras se pulsa Close. La misma condición se escribe en los otros cuatro lenguajes así: Lista de instrucciones, LD Request, OR Open, ANDN Close, ST Open; Ladder, Request en paralelo con un contacto de Open, luego un contacto normalmente cerrado de Close y después la bobina Open; Diagrama de Bloques de Función, un bloque OR que alimenta un bloque AND cuya segunda entrada viene de un bloque NOT de Close; Gráfico Funcional de Secuencias, un paso IS_CLOSED y un paso IS_OPEN con una transición a IS_OPEN con Request AND NOT Close y una transición de regreso con Close.",
+              "checkpoint": "El portón se abre cuando se pulsa Request, sigue abierto después de soltar Request y se cierra cuando se pulsa Close."
+            },
+            {
+              "key": "predict",
+              "title": "Prediga",
+              "body": "Request se pulsa a los 20 ms y se suelta a los 40 ms. Close se pulsa a los 80 ms. A los 130 ms se pulsan Request y Close juntos. Prediga Open a los 50, 100 y 150 ms.",
+              "checkpoint": "ENCENDIDA a los 50 ms, después de soltar Request; APAGADA a los 100 ms, porque se pulsó Close; APAGADA a los 150 ms, porque Close gana sobre Request."
+            },
+            {
+              "key": "edit",
+              "title": "Edite",
+              "body": "Corrija esta omisión del programa inicial, guárdelo y pulse Comprobar: El programa inicial asigna a Open el valor Request AND NOT Close, de modo que Open cae en cuanto se suelta Request a los 40 ms; agregue la retención escribiendo (Request OR Open) AND NOT Close, para que la salida se mantenga encendida y Close siga ganando.",
+              "checkpoint": "El escenario visible debe pasar con evidencia de host guardada."
+            },
+            {
+              "key": "run",
+              "title": "Ejecute",
+              "body": "Pulse Comprobar. Studio ejecuta su programa guardado contra el escenario de esta lección.",
+              "checkpoint": "El escenario se llama GateLatch y contiene 11 assertions."
+            },
+            {
+              "key": "observe",
+              "title": "Observe",
+              "body": "Compare los 50, 100 y 170 ms: Open se mantiene después de soltar Request, cae con Close y no vuelve a encenderse cuando Request y Close se sueltan juntos a los 160 ms. Se abre de nuevo a los 210 ms, después de la segunda pulsación a los 180 ms.",
+              "checkpoint": "El escenario nunca dice en qué lenguaje se escribió el programa: solo mira la salida. Por eso la misma calificación acepta las formas en Lista de instrucciones, Ladder, Diagrama de Bloques de Función y Gráfico Funcional de Secuencias de la misma condición."
+            },
+            {
+              "key": "reflect",
+              "title": "Reflexione",
+              "body": "Elija uno de los otros lenguajes, elimine src/Gate.st, cree en la misma carpeta el archivo de ese lenguaje, agréguelo a la tarea de zplc.json, escriba la misma condición y pulse Comprobar. Después cambie el orden para que la retención quede después de Close y vea qué assertion falla.",
+              "checkpoint": "El orden de las operaciones decide el resultado en todos los lenguajes: una retención aplicada después de Close vuelve a encender la salida. Un diagrama o una escalera muestran el mismo orden como una imagen. El escenario muestra solo la lógica; no es un controlador de portón."
+            }
+          ],
+          "hints": [
+            {
+              "level": 1,
+              "text": "La salida debe poder recordar que está encendida. ¿Qué señal ya guarda esa memoria, y cómo la combina con Request para que Close todavía pueda apagarla?"
+            },
+            {
+              "level": 2,
+              "text": "Open := (Request OR Open) AND NOT Close; el OR mantiene la salida encendida y el AND NOT Close va al final para que Close gane."
+            }
+          ],
+          "faultCases": [
+            "El programa inicial asigna a Open el valor Request AND NOT Close, de modo que Open cae en cuanto se suelta Request a los 40 ms; agregue la retención escribiendo (Request OR Open) AND NOT Close, para que la salida se mantenga encendida y Close siga ganando."
+          ]
+        }
+      }
+    },
+    {
+      "id": "capstone-packing-station",
+      "version": 1,
+      "order": 26,
+      "module": 11,
+      "level": "advanced",
+      "prerequisites": [
+        "conveyor-two-parts-diagnosis"
+      ],
+      "languages": [
+        "ST"
+      ],
+      "tracks": [
+        "simulation"
+      ],
+      "unsupported": {
+        "hardware": {
+          "reason": {
+            "en": "The lesson is graded on buttons, a part sensor and a jam replayed at exact steps, and no board trace has been recorded for it.",
+            "es": "La lección se califica con pulsadores, un sensor de piezas y un atasco reproducidos en pasos exactos, y no se ha registrado una traza de placa para ella."
+          },
+          "instead": {
+            "en": "Complete it in Simulation: its grade is the same each time and needs no board.",
+            "es": "Complétela en Simulación: su calificación es la misma cada vez y no necesita una placa."
+          }
+        }
+      },
+      "plant": null,
+      "plantMap": null,
+      "estimatedMinutes": 60,
+      "starter": {
+        "project": "packing_station_starter",
+        "program": "src/Station.st"
+      },
+      "solution": {
+        "project": "packing_station",
+        "program": "src/Station.st"
+      },
+      "scenario": {
+        "id": "PackingStation",
+        "path": "tests/packing-station.scenario.json",
+        "sha256": "5705c7ca4e886540daf77169e833592591752438cdf7d4ede47aece139f7637f",
+        "tickMs": 10,
+        "durationMs": 640,
+        "assertions": 16,
+        "canonical": "{\"durationMs\":640,\"events\":[{\"atMs\":0,\"set\":{\"Station.EStop\":false,\"Station.Part\":false,\"Station.Reset\":false,\"Station.Start\":false,\"Station.Stop\":false}},{\"atMs\":20,\"set\":{\"Station.Start\":true}},{\"atMs\":30,\"set\":{\"Station.Start\":false}},{\"atMs\":50,\"set\":{\"Station.Part\":true}},{\"atMs\":70,\"set\":{\"Station.Part\":false}},{\"atMs\":90,\"set\":{\"Station.Part\":true}},{\"atMs\":110,\"set\":{\"Station.Part\":false}},{\"atMs\":150,\"set\":{\"Station.Part\":true}},{\"atMs\":170,\"set\":{\"Station.Part\":false}},{\"atMs\":200,\"set\":{\"Station.Start\":true}},{\"atMs\":210,\"set\":{\"Station.Start\":false}},{\"atMs\":240,\"set\":{\"Station.Reset\":true}},{\"atMs\":250,\"set\":{\"Station.Reset\":false}},{\"atMs\":280,\"set\":{\"Station.Start\":true}},{\"atMs\":290,\"set\":{\"Station.Start\":false}},{\"atMs\":320,\"set\":{\"Station.EStop\":true}},{\"atMs\":340,\"set\":{\"Station.EStop\":false}},{\"atMs\":370,\"set\":{\"Station.Start\":true}},{\"atMs\":380,\"set\":{\"Station.Start\":false}},{\"atMs\":410,\"set\":{\"Station.Part\":true}},{\"atMs\":480,\"set\":{\"Station.Reset\":true}},{\"atMs\":500,\"set\":{\"Station.Reset\":false}},{\"atMs\":510,\"set\":{\"Station.Part\":false}},{\"atMs\":530,\"set\":{\"Station.Reset\":true}},{\"atMs\":540,\"set\":{\"Station.Reset\":false}},{\"atMs\":560,\"set\":{\"Station.Start\":true}},{\"atMs\":570,\"set\":{\"Station.Start\":false}},{\"atMs\":600,\"set\":{\"Station.Stop\":true}},{\"atMs\":610,\"set\":{\"Station.Stop\":false}}],\"expectations\":[{\"atMs\":10,\"condition\":{\"Station.BatchFull\":false,\"Station.Belt\":false,\"Station.Fault\":false},\"kind\":\"AT\"},{\"atMs\":40,\"condition\":{\"Station.Belt\":true},\"kind\":\"AT\"},{\"atMs\":130,\"condition\":{\"Station.BatchFull\":false,\"Station.Belt\":true},\"kind\":\"AT\"},{\"atMs\":190,\"condition\":{\"Station.BatchFull\":true,\"Station.Belt\":false},\"kind\":\"AT\"},{\"atMs\":230,\"condition\":{\"Station.BatchFull\":true,\"Station.Belt\":false},\"kind\":\"AT\"},{\"atMs\":270,\"condition\":{\"Station.BatchFull\":false,\"Station.Belt\":false},\"kind\":\"AT\"},{\"atMs\":310,\"condition\":{\"Station.Belt\":true},\"kind\":\"AT\"},{\"atMs\":330,\"condition\":{\"Station.Belt\":false},\"kind\":\"AT\"},{\"atMs\":360,\"condition\":{\"Station.Belt\":false},\"kind\":\"AT\"},{\"atMs\":400,\"condition\":{\"Station.Belt\":true},\"kind\":\"AT\"},{\"atMs\":490,\"condition\":{\"Station.Belt\":false,\"Station.Fault\":true},\"kind\":\"AT\"},{\"atMs\":550,\"condition\":{\"Station.Belt\":false,\"Station.Fault\":false},\"kind\":\"AT\"},{\"atMs\":590,\"condition\":{\"Station.Belt\":true},\"kind\":\"AT\"},{\"atMs\":620,\"condition\":{\"Station.Belt\":false},\"kind\":\"AT\"},{\"condition\":{\"Station.Belt\":true},\"forMs\":100,\"fromMs\":40,\"kind\":\"FOR\"},{\"condition\":{\"Station.Fault\":true},\"fromMs\":410,\"kind\":\"RISING\",\"withinMs\":80}],\"id\":\"PackingStation\",\"schemaVersion\":1,\"tickMs\":10}"
+      },
+      "regressionScenarios": [],
+      "text": {
+        "en": {
+          "title": "Capstone: a packing station, from description to tested program",
+          "summary": "Turn a written description of a small packing station into a Structured Text program, using a seal-in, an emergency stop, a counter, a timer and a latched fault, and prove it with a scenario that also checks what must not happen.",
+          "scope": "Tests provide native POSIX host evidence with one 10 ms task; they do not establish packing-line requirements, safety function behaviour, sensor timing or any real machine behaviour, HIL, or certification.",
+          "objectives": [
+            "Turn five written requirements into one Structured Text program that combines a seal-in, an emergency stop, a counter, a timer and a latched fault.",
+            "Read a scenario that checks both what must happen and what must not happen, and use its failed assertions to find the requirement you missed."
+          ],
+          "stages": [
+            {
+              "key": "objective",
+              "title": "Objective",
+              "body": "A packing station has a belt, a part sensor and five buttons. Write src/Station.st so that: (1) Start turns Belt on and it stays on after Start is released; Stop or EStop turns it off. (2) Each rising edge of Part counts one part; three parts make a batch, and then BatchFull lights and the belt stops. (3) If Part stays on for 50 ms or more, the sensor is blocked: Fault lights and the belt stops. (4) Reset clears the count and BatchFull, and clears Fault only when Part is no longer blocked. (5) After any stop, whether by Stop, EStop, a full batch or a fault, the belt runs again only after a new Start.",
+              "checkpoint": "The belt runs after Start, stops for Stop, EStop, a full batch and a jam, and never restarts without a new Start."
+            },
+            {
+              "key": "predict",
+              "title": "Predict",
+              "body": "Parts pass the sensor at 50, 90 and 150 ms. Predict BatchFull at 130 ms and at 190 ms, and Belt at 190 ms. Start is pressed again at 200 ms: predict Belt at 230 ms.",
+              "checkpoint": "OFF at 130 ms, after two parts; ON at 190 ms, with the belt stopped; the belt stays off at 230 ms, because the batch is still full."
+            },
+            {
+              "key": "edit",
+              "title": "Edit",
+              "body": "Correct this starter omission, save it, then press Check: The starter only seals the belt in and lets Stop drop it. Add the counter with Reset on its R input, the timer on Part for the jam, the Fault latch that Reset releases only when Part is clear, and then NOT EStop, NOT Fault and NOT BatchFull in the condition of Belt.",
+              "checkpoint": "The visible scenario must pass with saved host evidence."
+            },
+            {
+              "key": "run",
+              "title": "Run",
+              "body": "Press Check. Studio runs your saved program against the scenario of this lesson. Read each failed assertion: it names the instant, the expected value and the observed value.",
+              "checkpoint": "The scenario is named PackingStation and contains 16 assertions."
+            },
+            {
+              "key": "observe",
+              "title": "Observe",
+              "body": "Compare 270, 310 and 360 ms: Reset empties the batch at 240 ms but the belt stays off until a new Start at 280 ms, and after the emergency stop at 320 ms the belt stays off at 360 ms until Start is pressed at 370 ms. The part that blocks the sensor from 410 ms raises the fault, and Reset at 480 ms does not clear it while the sensor is blocked; it clears only after Part falls at 510 ms and Reset is pressed at 530 ms.",
+              "checkpoint": "At 490 ms Fault is on and the belt is off even though Reset was pressed; at 550 ms Fault is off and the belt is still off."
+            },
+            {
+              "key": "reflect",
+              "title": "Reflect",
+              "body": "Which of the five requirements did the first failed assertion point to, and which ones did you only find by reading the scenario? Think of one more thing the station should never do, and whether the scenario would catch it.",
+              "checkpoint": "Most of the assertions check what must not happen: a belt that restarts by itself, a fault cleared too early, a batch lamp that stays on. A program that only does what is asked passes the happy path and still fails these. The scenario shows the logic only; it is not a packing line and not a safety function."
+            }
+          ],
+          "hints": [
+            {
+              "level": 1,
+              "text": "Write one requirement at a time: the counter and BatchFull first, then the timer and the fault, then put every reason to stop into the condition of Belt. Which reasons are there?"
+            },
+            {
+              "level": 2,
+              "text": "Count(CU := Part, R := Reset, PV := 3); BatchFull := Count.Q; Stuck(IN := Part, PT := T#50ms); Fault := (Fault OR Stuck.Q) AND NOT (Reset AND NOT Part); Belt := (Start OR Belt) AND NOT Stop AND NOT EStop AND NOT Fault AND NOT BatchFull;"
+            }
+          ],
+          "faultCases": [
+            "The starter only seals the belt in and lets Stop drop it. Add the counter with Reset on its R input, the timer on Part for the jam, the Fault latch that Reset releases only when Part is clear, and then NOT EStop, NOT Fault and NOT BatchFull in the condition of Belt."
+          ]
+        },
+        "es": {
+          "title": "Proyecto final: una estación de empaque, de la descripción al programa probado",
+          "summary": "Convierta la descripción escrita de una pequeña estación de empaque en un programa de Texto Estructurado, con una autorretención, una parada de emergencia, un contador, un temporizador y una falla enclavada, y demuéstrelo con un escenario que también comprueba lo que no debe ocurrir.",
+          "scope": "Las pruebas aportan evidencia de host POSIX nativo con una tarea de 10 ms; no establecen requisitos de una línea de empaque, comportamiento de funciones de seguridad, tiempos de sensores ni comportamiento real de ninguna máquina, HIL ni certificación.",
+          "objectives": [
+            "Convertir cinco requisitos escritos en un solo programa de Texto Estructurado que combine una autorretención, una parada de emergencia, un contador, un temporizador y una falla enclavada.",
+            "Leer un escenario que comprueba tanto lo que debe ocurrir como lo que no debe ocurrir, y usar sus assertions fallidas para encontrar el requisito que pasó por alto."
+          ],
+          "stages": [
+            {
+              "key": "objective",
+              "title": "Objetivo",
+              "body": "Una estación de empaque tiene una cinta, un sensor de piezas y cinco pulsadores. Escriba src/Station.st de modo que: (1) Start encienda Belt y se mantenga encendida al soltar Start; Stop o EStop la apaguen. (2) Cada flanco ascendente de Part cuente una pieza; tres piezas forman un lote, y entonces BatchFull se enciende y la cinta se detiene. (3) Si Part permanece encendida 50 ms o más, el sensor está bloqueado: Fault se enciende y la cinta se detiene. (4) Reset borra la cuenta y BatchFull, y borra Fault solo cuando Part ya no está bloqueada. (5) Después de cualquier parada, sea por Stop, EStop, un lote lleno o una falla, la cinta vuelve a funcionar solo con un nuevo Start.",
+              "checkpoint": "La cinta funciona después de Start, se detiene con Stop, EStop, un lote lleno y un atasco, y nunca se reinicia sin un nuevo Start."
+            },
+            {
+              "key": "predict",
+              "title": "Prediga",
+              "body": "Las piezas pasan por el sensor a los 50, 90 y 150 ms. Prediga BatchFull a los 130 ms y a los 190 ms, y Belt a los 190 ms. Start se pulsa de nuevo a los 200 ms: prediga Belt a los 230 ms.",
+              "checkpoint": "APAGADA a los 130 ms, con dos piezas; ENCENDIDA a los 190 ms, con la cinta detenida; la cinta sigue apagada a los 230 ms, porque el lote sigue lleno."
+            },
+            {
+              "key": "edit",
+              "title": "Edite",
+              "body": "Corrija esta omisión del programa inicial, guárdelo y pulse Comprobar: El programa inicial solo mantiene la cinta con una autorretención y deja que Stop la apague. Agregue el contador con Reset en su entrada R, el temporizador sobre Part para el atasco, el enclavamiento de Fault que Reset libera solo cuando Part está libre, y después NOT EStop, NOT Fault y NOT BatchFull en la condición de Belt.",
+              "checkpoint": "El escenario visible debe pasar con evidencia de host guardada."
+            },
+            {
+              "key": "run",
+              "title": "Ejecute",
+              "body": "Pulse Comprobar. Studio ejecuta el programa guardado contra el escenario de esta lección. Lea cada assertion fallida: indica el instante, el valor esperado y el valor observado.",
+              "checkpoint": "El escenario se llama PackingStation y contiene 16 assertions."
+            },
+            {
+              "key": "observe",
+              "title": "Observe",
+              "body": "Compare 270, 310 y 360 ms: Reset vacía el lote a los 240 ms pero la cinta sigue apagada hasta un nuevo Start a los 280 ms, y después de la parada de emergencia a los 320 ms la cinta sigue apagada a los 360 ms hasta que se pulsa Start a los 370 ms. La pieza que bloquea el sensor desde los 410 ms levanta la falla, y Reset a los 480 ms no la borra mientras el sensor está bloqueado; solo se borra después de que Part cae a los 510 ms y se pulsa Reset a los 530 ms.",
+              "checkpoint": "A los 490 ms Fault está encendida y la cinta apagada aunque se pulsó Reset; a los 550 ms Fault está apagada y la cinta sigue apagada."
+            },
+            {
+              "key": "reflect",
+              "title": "Reflexione",
+              "body": "¿A cuál de los cinco requisitos señaló la primera assertion fallida, y cuáles encontró solo al leer el escenario? Piense en una cosa más que la estación nunca debería hacer, y si el escenario la detectaría.",
+              "checkpoint": "La mayoría de las assertions comprueban lo que no debe ocurrir: una cinta que se reinicia sola, una falla borrada demasiado pronto, una lámpara de lote que sigue encendida. Un programa que solo hace lo que se pide pasa el camino feliz y aun así falla estas. El escenario muestra solo la lógica; no es una línea de empaque ni una función de seguridad."
+            }
+          ],
+          "hints": [
+            {
+              "level": 1,
+              "text": "Escriba un requisito a la vez: primero el contador y BatchFull, luego el temporizador y la falla, y después ponga cada motivo para detenerse en la condición de Belt. ¿Cuáles son esos motivos?"
+            },
+            {
+              "level": 2,
+              "text": "Count(CU := Part, R := Reset, PV := 3); BatchFull := Count.Q; Stuck(IN := Part, PT := T#50ms); Fault := (Fault OR Stuck.Q) AND NOT (Reset AND NOT Part); Belt := (Start OR Belt) AND NOT Stop AND NOT EStop AND NOT Fault AND NOT BatchFull;"
+            }
+          ],
+          "faultCases": [
+            "El programa inicial solo mantiene la cinta con una autorretención y deja que Stop la apague. Agregue el contador con Reset en su entrada R, el temporizador sobre Part para el atasco, el enclavamiento de Fault que Reset libera solo cuando Part está libre, y después NOT EStop, NOT Fault y NOT BatchFull en la condición de Belt."
+          ]
+        }
+      }
     }
   ],
   "course": {

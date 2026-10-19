@@ -30,6 +30,8 @@ export const LESSON_IDS = [
   "structures-arrays-call-panel",
   "sfc-fill-mix-sequence",
   "instruction-list-door-alarm",
+  "one-logic-five-languages",
+  "capstone-packing-station",
 ] as const;
 
 export type LessonId = typeof LESSON_IDS[number];

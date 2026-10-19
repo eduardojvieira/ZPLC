@@ -1,0 +1,5 @@
+PROGRAM Gate
+VAR_INPUT Request AT %I0.0 : BOOL; Close AT %I0.1 : BOOL; END_VAR
+VAR_OUTPUT Open AT %Q0.0 : BOOL; END_VAR
+Open := (Request OR Open) AND NOT Close;
+END_PROGRAM

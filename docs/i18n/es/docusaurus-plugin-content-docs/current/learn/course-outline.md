@@ -29,7 +29,7 @@ puede pedir ver. Studio registra que vio la solución.
 El curso empieza con algo que se mueve (módulo 0), luego explica cómo piensa un PLC (módulo 1), después lógica, tiempo y datos, luego estructura, y termina con pruebas, lenguajes, comunicaciones y un proyecto final. Cada módulo indica por qué está donde está.
 
 
-Disponibles hoy: **24**. Planeadas: **5**. En total: **29**.
+Disponibles hoy: **26**. Planeadas: **3**. En total: **29**.
 
 
 ## Módulo 0: Primeros pasos: un recorrido por Studio, la simulación y, para hardware, la verificación de su placa
@@ -205,11 +205,12 @@ La misma lógica puede escribirse en cinco lenguajes. La lista de instrucciones 
 | Lección | Estado | Lenguajes | Pistas | Planta | Minutos | Requiere |
 |---|---|---|---|---|---|---|
 | `instruction-list-door-alarm` Lista de instrucciones: el resultado actual y el orden de las instrucciones | Disponible | IL | Simulación | - | 20 | `function-block-pump-pair` |
-| Una lógica en cinco idiomas de programación | Planeada | all | Simulación, Hardware | - | 30 | - |
+| `one-logic-five-languages` Una lógica en cinco lenguajes: un portón que se mantiene abierto | Disponible | ST, LD, FBD, SFC, IL | Simulación | - | 30 | `instruction-list-door-alarm` |
 
 Objetivos de las lecciones disponibles:
 
 - **Lista de instrucciones: el resultado actual y el orden de las instrucciones**: Lea un programa en lista de instrucciones como un resultado actual que cada instrucción combina con un operando, de arriba hacia abajo. Use LD, AND, OR, ANDN y ST, y vea que mover una instrucción cambia la lógica.
+- **Una lógica en cinco lenguajes: un portón que se mantiene abierto**: Mantenga una salida encendida después de soltar su orden, y deje que la orden de cierre gane, en Texto Estructurado. Reconozca la misma condición, (Request OR Open) AND NOT Close, en Lista de Instrucciones, Ladder, Diagrama de Bloques de Función y Gráfico Funcional de Secuencias.
 
 
 ## Módulo 10: Comunicaciones: fundamentos de Modbus y MQTT
@@ -232,7 +233,11 @@ El curso termina con una máquina pequeña llevada de una descripción escrita a
 
 | Lección | Estado | Lenguajes | Pistas | Planta | Minutos | Requiere |
 |---|---|---|---|---|---|---|
-| Proyecto final: una máquina pequeña, de la descripción al programa probado | Planeada | a elección | Simulación, Hardware | - | 60 | - |
+| `capstone-packing-station` Proyecto final: una estación de empaque, de la descripción al programa probado | Disponible | ST | Simulación | - | 60 | `conveyor-two-parts-diagnosis` |
+
+Objetivos de las lecciones disponibles:
+
+- **Proyecto final: una estación de empaque, de la descripción al programa probado**: Convierta cinco requisitos escritos en un solo programa de Texto Estructurado que combine una autorretención, una parada de emergencia, un contador, un temporizador y una falla enclavada. Lea un escenario que comprueba tanto lo que debe ocurrir como lo que no debe ocurrir, y use sus assertions fallidas para encontrar el requisito que pasó por alto.
 
 ## Páginas de cableado por placa
 
