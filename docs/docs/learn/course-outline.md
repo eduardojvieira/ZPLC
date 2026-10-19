@@ -29,7 +29,7 @@ you looked at the solution.
 The course starts with something that moves (module 0), then explains how a PLC thinks (module 1), then logic, time and data, then structure, and ends with proof, languages, communications and a capstone. Each module states why it sits where it does.
 
 
-Available today: **25**. Planned: **4**. In all: **29**.
+Available today: **26**. Planned: **3**. In all: **29**.
 
 
 ## Module 0: Getting ready: a tour of Studio, the simulation and, for hardware, checking your board
@@ -233,7 +233,11 @@ The course ends with a small machine taken from a written description to a teste
 
 | Lesson | Status | Languages | Tracks | Plant | Minutes | Requires |
 |---|---|---|---|---|---|---|
-| Capstone: a small machine, from description to tested program | Planned | learner's choice | Simulation, Hardware | - | 60 | - |
+| `capstone-packing-station` Capstone: a packing station, from description to tested program | Available | ST | Simulation | - | 60 | `conveyor-two-parts-diagnosis` |
+
+Objectives of the available lessons:
+
+- **Capstone: a packing station, from description to tested program**: Turn five written requirements into one Structured Text program that combines a seal-in, an emergency stop, a counter, a timer and a latched fault. Read a scenario that checks both what must happen and what must not happen, and use its failed assertions to find the requirement you missed.
 
 ## Hardware wiring pages
 
