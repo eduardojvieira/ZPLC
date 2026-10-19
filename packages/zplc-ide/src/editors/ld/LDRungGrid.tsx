@@ -437,7 +437,7 @@ function RungHeader({ rung, cols, rows, readOnly, onChange, editRequest }: RungH
   return (
     <div className="flex items-center gap-2 px-3 py-1.5 bg-[var(--color-surface-700)] border-b border-[var(--color-surface-600)]">
       <span className="text-xs font-bold text-[var(--color-surface-100)] shrink-0">
-        {t('editors.ld.rung', { number: rung.number })}
+        {t('editors.ld.rungWord')} {rung.number}
       </span>
 
       {isEditing ? (
