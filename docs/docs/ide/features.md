@@ -471,3 +471,27 @@ Studio is built so that its main path can be used with a keyboard and a screen r
 - **Keyboard.** The path from opening a project to one Learn lesson can be completed with the keyboard alone: open, edit, build, simulate, watch, force, the deploy question and the lesson check. Tab and Shift+Tab walk the screen in reading order, and the command palette (Ctrl+Shift+P) reaches every command. A command that shows a panel, such as **Show watched variables**, leaves the focus on it. In the code editor Tab types a tab; press Ctrl+M to make Tab move the focus out instead, and press it again to go back. Escape closes a dialog, the palette and the shortcut reference and gives the focus back to the control that opened it, and Tab leaves a diagram after its last node.
 - **Zoom.** Ctrl and plus, Ctrl and minus, and Ctrl and 0 (Cmd on macOS) enlarge, shrink and reset the page. They are in the **View** menu.
 - **What is checked.** Contrast is computed from the colours of the light, dark and high-contrast themes. A check also runs in the real application, on Welcome, the editors (Structured Text, Ladder, function block diagram and sequential function chart), each tab of the results panel, the sidebars, the settings, the command palette, the shortcut reference and the deploy question, in each of the three themes. For every visible text it computes the contrast against what the text is drawn on (4.5 to 1, or 3 to 1 for large text), and it fails for a control without a name, a control that shows nothing when it has the keyboard focus, a repeated identifier, a reference to something that is not on the page, a screen without a main region, and a dialog without a name. These checks are structural and computed, not a test with a screen reader. Checking the main path with a screen reader on Windows and on macOS is a manual task that is done before the general release, and its result is recorded in the release checklist.
+
+## The Watch table
+
+Add a variable to the Watch table by typing its name: the field offers the variables and members of the loaded program as you type. A value is edited from the keyboard: focus it and press Enter or F2, or double-click it. **Enter** writes the value, **Shift+Enter** prepares it, and **Write prepared values** writes everything prepared at once (**Discard prepared** drops it). A prepared value is never written by itself. The **Display format** list shows values by type, in decimal, hexadecimal, binary, as real or as a time, and a value typed as `16#FF`, `2#101` or `T#1s500ms` is read in that notation. A column header sorts the rows; a third press restores the order the variables were added in. **Release all forces** is offered while forces are held.
+
+Evidence level: host. `packages/zplc-ide/src/components/watchTable.test.ts` covers the formats, the typed values, the sorting and the completion.
+
+## Seeing new messages and problems
+
+The Problems view lists errors first, then warnings, then information; activating a problem opens its file at its line and column. A message written to **Output**, or a problem found, while another view of the results panel is visible puts a count on that view's tab (read as "Output, 3 new") until you open it.
+
+Evidence level: host. `packages/zplc-ide/src/components/consoleAttention.test.ts` covers the order and the counts.
+
+## Creating a project
+
+**New project** (on the Welcome screen and in the File menu) asks for four things: the project name, the folder it goes in, the target (the simulation on this computer, or a board of the manifest) and the language of the first program (Structured Text, Instruction List, Ladder Diagram, Function Block Diagram or Sequential Function Chart). The name starts as the name of the folder you choose until you type another. The folder holds the project itself: Studio does not create a folder inside it, and it refuses a folder that already holds a `zplc.json`, a `.gitignore` or the first program. The project it makes has `src/main` in the chosen language, a global variable list, a main task that runs that program and the chosen target, and it builds without a change.
+
+Evidence level: host. `packages/zplc-ide/src/project/newProject.test.ts` builds the first program of every language and checks the task that runs it; journey 2b drives the dialog and builds the new project in the real application.
+
+## Render and start-up budget (measured baseline)
+
+Measured on the development host, not on a packaged build. Typing in a 2,000-line file while 200 watched values update ten times a second (100 updates) renders the tab bar and the editor once per keystroke and renders none of the toolbar, sidebar, Welcome, theme, project settings, file tree or editor area regions because of the readings; a region that shows five of the 200 values renders ten times in 100 updates when only those five change ten times. The Welcome screen loads a start-up payload of about 1,660 KB of JavaScript and CSS out of about 6,350 KB of JavaScript in 28 chunks; about 4,030 KB of the rest is the code editor and the visual editors, loaded when a project opens. Four modules are still above the size limit with a recorded cap that can only shrink: the store (1,692 lines), the toolbar (1,114), the results panel (1,178) and the debug controller (1,066). The Problems tab left the results panel in this step.
+
+Evidence level: host. `packages/zplc-ide/src/store/regionSubscriptions.test.ts` measures the renders and `packages/zplc-ide/scripts/welcomeBundle.test.ts` the start-up payload.

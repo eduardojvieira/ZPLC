@@ -10,6 +10,7 @@ import { useIDEStore } from '../store/useIDEStore';
 import { useAppSettings } from '../store/useAppSettings';
 import { exportOpenProjectArchive } from '../utils/projectArchiveActions';
 import { openLearnHome } from '../learn/learnUi';
+import { useNewProjectDialog } from '../store/newProjectDialog';
 import { useShellLayout } from '../store/useShellLayout';
 import type { ConsoleTab } from '../types';
 import { bindCommands, publishCommandState, runCommand } from './bus';
@@ -65,7 +66,7 @@ export function useShellCommands(): void {
   useEffect(() => { publishCommandState({ projectOpen }); }, [projectOpen]);
   useEffect(() => bindCommands({
     'file.open': () => { void useIDEStore.getState().openProjectFromFolder(); },
-    'file.new': () => { void useIDEStore.getState().createNewProjectInFolder(); },
+    'file.new': () => { useNewProjectDialog.getState().show(); },
     'file.export': () => exportOpenProjectArchive(),
     'view.commandPalette': openPalette,
     'help.shortcuts': openShortcuts,

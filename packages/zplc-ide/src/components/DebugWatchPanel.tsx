@@ -7,16 +7,16 @@
  * interface for the IDE's debug panel.
  */
 
-import { useRef, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { Plus, X, Trash2, Eye, AlertTriangle, LoaderCircle } from 'lucide-react';
-import { formatDebugValue } from '../hooks/useDebugValue';
 import { SIGNAL_TEXT_CLASS, signalTone } from '../theme/signalTone';
 import { useIDEStore } from '../store/useIDEStore';
 import { buildDebugWatchRows } from './debugWatchRows';
 import { WATCH_FORCE_STATE, type WatchVariable } from '../runtime/debugAdapter';
 import { confirmForce, confirmForceChange, confirmRelease, confirmReleaseAll, proceedAfterConfirmation } from './physicalActions';
+import { completeWatchSymbols, formatWatchValue, parseWatchDraft, sortWatchRows, WATCH_FORMATS, WATCH_FORMAT, type WatchFormat, type WatchSortDirection, type WatchSortKey } from './watchTable';
 import { canEditWatchValue, canReleaseForces, canToggleForce, resolveWatchCommitAction, WATCH_COMMIT_ACTION } from './debugWatchPanelLogic';
-import { Button, Checkbox, IconButton, TextField, Tooltip } from '../ui';
+import { Button, Checkbox, IconButton, Select, TextField, Tooltip } from '../ui';
 import { useT } from '../i18n';
 import { PanelEmptyState } from './panelStates';
 
@@ -68,6 +68,23 @@ interface EditingCell {
   draft: string;
 }
 
+type SortState = { key: WatchSortKey | null; direction: WatchSortDirection };
+
+/** A column header that sorts: ascending, then descending, then the order the variables were added. */
+function SortHeader({ column, label, sort, setSort, t, className = '' }: {
+  column: WatchSortKey; label: string; sort: SortState; setSort: (next: SortState) => void; t: ReturnType<typeof useT>['t']; className?: string;
+}): React.ReactElement {
+  const active = sort.key === column;
+  const next = (): SortState => (!active ? { key: column, direction: 'asc' } : sort.direction === 'asc' ? { key: column, direction: 'desc' } : { key: null, direction: 'asc' });
+  return (
+    <th className={`px-3 py-1.5 font-medium ${className}`} aria-sort={active ? (sort.direction === 'asc' ? 'ascending' : 'descending') : 'none'}>
+      <Button variant="ghost" size="sm" className="uppercase tracking-wide" aria-label={t('panel.watch.sort', { column: label })} onClick={() => setSort(next())}>
+        {label}{active ? (sort.direction === 'asc' ? ' \u2191' : ' \u2193') : ''}
+      </Button>
+    </th>
+  );
+}
+
 /**
  * Debug Watch Panel Component
  */
@@ -79,6 +96,10 @@ export function DebugWatchPanel({ setValue, toggleForceValue, clearAllForcedValu
   const [releaseBusy, setReleaseBusy] = useState(false);
   const [releaseError, setReleaseError] = useState<string | null>(null);
   const [forceChangeError, setForceChangeError] = useState<string | null>(null);
+  const [format, setFormat] = useState<WatchFormat>(WATCH_FORMAT.AUTO);
+  const [sort, setSort] = useState<{ key: WatchSortKey | null; direction: WatchSortDirection }>({ key: null, direction: 'asc' });
+  // values typed ahead and not written yet (IDE-019): the user writes them all with one explicit action
+  const [prepared, setPrepared] = useState<Map<string, EditingCell & { value: number | boolean | string }>>(new Map());
   const inputRef = useRef<HTMLInputElement>(null);
 
   // Get debug state from store
@@ -92,7 +113,9 @@ export function DebugWatchPanel({ setValue, toggleForceValue, clearAllForcedValu
   const addWatch = useIDEStore((state) => state.addWatchVariable);
   const removeWatch = useIDEStore((state) => state.removeWatchVariable);
   const clearAll = useIDEStore((state) => state.clearWatchVariables);
-  const variables = buildDebugWatchRows(watchVariables, debugMap, liveValues, forcedValues, isPolling);
+  // the panel renders at every reading: the candidates are worked out when the program or the typed text changes, not then
+  const symbols = useMemo(() => (showAddForm ? completeWatchSymbols(debugMap, newVarInput) : []), [showAddForm, debugMap, newVarInput]);
+  const variables = sortWatchRows(buildDebugWatchRows(watchVariables, debugMap, liveValues, forcedValues, isPolling), sort.key, sort.direction);
   const hasForceEvidence = forcedValues.size > 0 || forcesUnconfirmed;
   const controlsBlocked = debugMode === 'none' || forcesUnconfirmed;
   const releaseEnabled = canReleaseForces(hasActiveSerialSession, hasForceEvidence, releaseBusy);
@@ -149,21 +172,32 @@ export function DebugWatchPanel({ setValue, toggleForceValue, clearAllForcedValu
     });
   };
 
-  const parseDraftValue = (raw: string, type: WatchVariable['type']): number | boolean | string | null => {
-    if (type === 'BOOL') {
-      return raw === '1' || raw.toLowerCase() === 'true';
-    }
+  const parseDraftValue = parseWatchDraft;
 
-    if (type === 'STRING') {
-      return raw;
+  /** Write one value the way the row allows: a set, or a change of the force it holds. Errors become the force-change error. */
+  const commitValue = async (cell: EditingCell, coerced: number | boolean | string): Promise<void> => {
+    const currentRow = variables.find((entry) => entry.path === cell.path);
+    const action = resolveWatchCommitAction(currentRow?.result.forceEntry?.state, hasActiveSerialSession);
+    if (!canEditWatchValue(action, Boolean(setValue), Boolean(toggleForceValue))) return;
+    setForceChangeError(null);
+    try {
+      if (action === WATCH_COMMIT_ACTION.UPDATE_FORCE) {
+        if (!toggleForceValue) return;
+        if (!await proceedAfterConfirmation(device, () => confirmForceChange(cell.path, coerced))) return;
+        await toggleForceValue(cell.path, cell.address, coerced, cell.type, true, cell.maxLength);
+      } else {
+        if (!setValue) return;
+        await setValue(cell.address, coerced, cell.type, cell.maxLength);
+      }
+    } catch {
+      setForceChangeError('Force change could not be confirmed. Verify device state before operating.');
     }
+  };
 
-    const parsed = Number(raw);
-    if (Number.isNaN(parsed)) {
-      return null;
-    }
-
-    return parsed;
+  const handleWritePrepared = async () => {
+    const entries = [...prepared.values()];
+    setPrepared(new Map());
+    for (const entry of entries) await commitValue(entry, entry.value);
   };
 
   // Catches its own errors and shows them as the force-change error; the input starts it with `void`.
@@ -177,45 +211,13 @@ export function DebugWatchPanel({ setValue, toggleForceValue, clearAllForcedValu
         setEditing(null);
         return;
       }
-
-      const currentRow = variables.find((entry) => entry.path === editing.path);
-      const action = resolveWatchCommitAction(currentRow?.result.forceEntry?.state, hasActiveSerialSession);
-
-      if (!canEditWatchValue(action, Boolean(setValue), Boolean(toggleForceValue))) {
+      if (e.shiftKey) {
+        // Shift+Enter prepares the value; "Write prepared values" writes it
+        setPrepared((prev) => new Map(prev).set(editing.path, { ...editing, value: coerced }));
         setEditing(null);
         return;
       }
-
-      setForceChangeError(null);
-      try {
-        if (action === WATCH_COMMIT_ACTION.UPDATE_FORCE) {
-          if (!toggleForceValue) {
-            setEditing(null);
-            return;
-          }
-          if (!await proceedAfterConfirmation(device, () => confirmForceChange(editing.path, coerced))) {
-            setEditing(null);
-            return;
-          }
-          await toggleForceValue(
-            editing.path,
-            editing.address,
-            coerced,
-            editing.type,
-            true,
-            editing.maxLength,
-          );
-        } else {
-          if (!setValue) {
-            setEditing(null);
-            return;
-          }
-          await setValue(editing.address, coerced, editing.type, editing.maxLength);
-        }
-      } catch {
-        setForceChangeError('Force change could not be confirmed. Verify device state before operating.');
-      }
-
+      await commitValue(editing, coerced);
       setEditing(null);
     } else if (e.key === 'Escape') {
       e.preventDefault();
@@ -284,6 +286,9 @@ export function DebugWatchPanel({ setValue, toggleForceValue, clearAllForcedValu
           <span role="img" aria-label={`Debug mode: ${debugMode}`} className={`w-2 h-2 rounded-full ${statusColor}`} />
         </div>
         <div className="flex items-center gap-1">
+          <Select aria-label={t('panel.watch.format')} value={format} onChange={(e) => setFormat(e.target.value as WatchFormat)} className="w-24 text-[11px]">
+            {WATCH_FORMATS.map((entry) => <option key={entry} value={entry}>{t(`panel.watch.format.${entry}`)}</option>)}
+          </Select>
           <IconButton label="Add variable" variant="ghost" size="sm" icon={<Plus size={14} />} onClick={() => setShowAddForm(!showAddForm)} />
           {variables.length > 0 && (
             <IconButton label="Clear all" variant="ghost" size="sm" icon={<Trash2 size={14} />} onClick={clearAll} />
@@ -335,11 +340,22 @@ export function DebugWatchPanel({ setValue, toggleForceValue, clearAllForcedValu
       {/* Add Form */}
       {showAddForm && (
         <div className="flex items-center gap-2 px-3 py-2 bg-[var(--color-surface-700)] border-b border-[var(--color-surface-600)]">
-          <TextField value={newVarInput} onChange={(e) => setNewVarInput(e.target.value)} onKeyDown={handleKeyDown} placeholder="Variable path (e.g., Counter, Timer1.ET)" className="flex-1" autoFocus aria-label="Variable path (e.g., Counter, Timer1.ET)" />
+          <TextField list="watch-symbols" value={newVarInput} onChange={(e) => setNewVarInput(e.target.value)} onKeyDown={handleKeyDown} placeholder="Variable path (e.g., Counter, Timer1.ET)" className="flex-1" autoFocus aria-label="Variable path (e.g., Counter, Timer1.ET)" />
+          <datalist id="watch-symbols">
+            {symbols.map((symbol) => <option key={symbol} value={symbol} />)}
+          </datalist>
           <Button variant="primary" size="sm" onClick={handleAddVariable}>
             Add
           </Button>
           <IconButton label="Close the add variable form" variant="ghost" size="sm" icon={<X size={14} />} onClick={() => { setShowAddForm(false); setNewVarInput(''); }} />
+        </div>
+      )}
+
+      {prepared.size > 0 && (
+        <div className="flex items-center gap-2 px-3 py-2 bg-[var(--color-surface-700)] border-b border-[var(--color-surface-600)] text-xs">
+          <span className="flex-1">{t('panel.watch.prepared.count', { count: prepared.size })}</span>
+          <Button variant="primary" size="sm" disabled={controlsBlocked} onClick={() => { void handleWritePrepared(); }}>{t('panel.watch.prepared.write')}</Button>
+          <Button variant="secondary" size="sm" onClick={() => setPrepared(new Map())}>{t('panel.watch.prepared.discard')}</Button>
         </div>
       )}
 
@@ -351,11 +367,11 @@ export function DebugWatchPanel({ setValue, toggleForceValue, clearAllForcedValu
           <table className="w-full">
             <thead className="sticky top-0 bg-[var(--color-surface-700)]">
               <tr className="text-left text-[11px] text-[var(--text-tertiary)] uppercase tracking-wide">
-                <th className="px-3 py-1.5 font-medium">Name</th>
-                <th className="px-3 py-1.5 font-medium">Value</th>
+                <SortHeader column="name" label={t('panel.watch.col.name')} sort={sort} setSort={setSort} t={t} />
+                <SortHeader column="value" label={t('panel.watch.col.value')} sort={sort} setSort={setSort} t={t} />
                 <th className="px-3 py-1.5 font-medium w-16">Force</th>
-                <th className="px-3 py-1.5 font-medium w-20">Type</th>
-                <th className="px-3 py-1.5 font-medium w-16">Addr</th>
+                <SortHeader column="type" label={t('panel.watch.col.type')} sort={sort} setSort={setSort} t={t} className="w-20" />
+                <SortHeader column="address" label={t('panel.watch.col.address')} sort={sort} setSort={setSort} t={t} className="w-16" />
                 <th className="w-8"></th>
               </tr>
             </thead>
@@ -408,9 +424,19 @@ export function DebugWatchPanel({ setValue, toggleForceValue, clearAllForcedValu
                             : ''
                         }`}
                         data-forced={result.forced ? 'true' : 'false'}
+                        tabIndex={valueEditable ? 0 : undefined}
+                                                onKeyDown={valueEditable ? (e) => {
+                          if (e.key === 'Enter' || e.key === 'F2') {
+                            e.preventDefault();
+                            handleValueDoubleClick(path, result.address, result.type as WatchVariable['type'] | undefined ?? undefined, result.value ?? undefined, result.maxLength);
+                          }
+                        } : undefined}
                       >
-                        {formatDebugValue(result.value, result.type)}
+                        {formatWatchValue(result.value, result.type, format)}
                       </span>
+                    )}
+                    {prepared.has(path) && editing?.path !== path && (
+                      <span className="ml-2 text-[11px] text-[var(--color-accent-yellow)]" data-prepared="true">{t('panel.watch.prepared.value', { value: formatWatchValue(prepared.get(path)!.value, result.type, format) })}</span>
                     )}
                   </td>
                   <td className="px-3 py-1.5 text-[var(--color-surface-400)] text-xs">
@@ -459,7 +485,7 @@ export function DebugWatchPanel({ setValue, toggleForceValue, clearAllForcedValu
                         text-[11px] text-[var(--text-tertiary)]">
           {hasActiveSerialSession
             ? 'Direct value edits are simulation-only. Use Force for hardware.'
-            : 'Double-click a value to set it once · Use Force to hold the value until cleared'}
+            : 'Double-click a value, or press Enter on it, to set it once · Shift+Enter prepares it · Use Force to hold the value until cleared'}
         </div>
       )}
     </div>

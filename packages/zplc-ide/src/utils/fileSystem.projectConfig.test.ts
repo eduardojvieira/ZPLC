@@ -312,6 +312,16 @@ describe('project config file boundary', () => {
     expect(directory.writes.get('.gitignore')).toContain('build/');
   });
 
+  it('makes the first program in the chosen language and points the main task at it (IDE-009)', async () => {
+    const directory = newProjectDirectory();
+    const config = await createNewProject(directory.handle, 'Plant', { target: 'rpi_pico', language: 'LD' });
+    expect(directory.writes.get('src/main.ld.json')).toContain('"rungs"');
+    expect(directory.writes.has('src/main.st')).toBe(false);
+    expect(config).toMatchObject({ name: 'Plant', target: { board: 'rpi_pico' } });
+    expect(config.tasks[0]?.programs).toEqual(['main.ld']);
+    expect(directory.writes.get('zplc.json')).toContain('"main.ld"');
+  });
+
   it('allows an existing empty src directory', async () => {
     const directory = newProjectDirectory({ src: 'directory' });
     await expect(createNewProject(directory.handle, 'folder')).resolves.toMatchObject({ name: 'folder' });

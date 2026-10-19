@@ -124,3 +124,16 @@ describe('what the notification store says to the shared announcer (UX-026)', ()
     expect(announcementsSnapshot().polite.message).toBe('Deploy cancelled');
   });
 });
+
+describe('a failure offers its way back (IDE-021, UX-021)', () => {
+  it('keeps the recovery action of a failure, and drops it from a success', () => {
+    let tried = 0;
+    const recover = { label: 'Try again', run: () => { tried += 1; } };
+    const failed = finishNotification([], 'a', { kind: 'save', status: 'error', title: 'Could not save', details: 'output', recover }, t0);
+    failed[0]!.recover?.run();
+    expect(failed[0]!.recover?.label).toBe('Try again');
+    expect(tried).toBe(1);
+    const ok = finishNotification([], 'b', { kind: 'save', status: 'success', title: 'Saved', details: 'output', recover }, t0);
+    expect(ok[0]!.recover).toBeUndefined();
+  });
+});

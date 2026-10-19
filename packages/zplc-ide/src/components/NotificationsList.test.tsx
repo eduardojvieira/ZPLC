@@ -42,4 +42,12 @@ describe('the notification list (IDE-021)', () => {
     expect(unstoppable).toContain('role="progressbar"');
     expect(unstoppable).not.toContain('Cancel');
   });
+
+  it('shows the recovery action of a failure and runs it', () => {
+    let tried = 0;
+    const html = renderToStaticMarkup(<NotificationList items={[item({ status: 'error', kind: 'save', title: 'Could not save Motor.st', recover: { label: 'Try again', run: () => { tried += 1; } } })]} onOpenDetails={noop} onDismiss={noop} />);
+    expect(html).toContain('data-recover');
+    expect(html).toContain('>Try again<');
+    expect(tried).toBe(0);
+  });
 });

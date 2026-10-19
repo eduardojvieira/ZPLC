@@ -1,5 +1,16 @@
 /** The text of one surface, in English and in Spanish (UX-029, UX-030). Keys `project.*`. */
 export const projectEn = {
+  'project.new.description': 'Choose where the project goes and what it runs on. It builds as soon as it is created.',
+  'project.new.name': 'Project name',
+  'project.new.name.empty': 'Enter a name for the project.',
+  'project.new.name.long': 'Use a name of 64 characters or fewer.',
+  'project.new.name.invalid': 'Remove slashes and control characters from the name.',
+  'project.new.noFolder': 'No folder chosen',
+  'project.new.chooseFolder': 'Choose folder',
+  'project.new.target': 'Target',
+  'project.new.simulation': 'Simulation (this computer)',
+  'project.new.language': 'Language of the first program',
+  'project.new.create': 'Create project',
   // ProjectSettings.tsx
   'project.noProjectConfigurationLoaded': 'No project configuration loaded',
   'project.configureHardwareTargetI': 'Configure hardware target, I/O mapping, and runtime behavior',
@@ -24,6 +35,17 @@ export const projectEn = {
 } as const;
 
 export const projectEs: Record<keyof typeof projectEn, string> = {
+  'project.new.description': 'Elija dónde va el proyecto y en qué se ejecuta. Compila en cuanto se crea.',
+  'project.new.name': 'Nombre del proyecto',
+  'project.new.name.empty': 'Escriba un nombre para el proyecto.',
+  'project.new.name.long': 'Use un nombre de 64 caracteres o menos.',
+  'project.new.name.invalid': 'Quite las barras y los caracteres de control del nombre.',
+  'project.new.noFolder': 'Ninguna carpeta elegida',
+  'project.new.chooseFolder': 'Elegir carpeta',
+  'project.new.target': 'Destino',
+  'project.new.simulation': 'Simulación (este equipo)',
+  'project.new.language': 'Lenguaje del primer programa',
+  'project.new.create': 'Crear proyecto',
   // ProjectSettings.tsx
   'project.noProjectConfigurationLoaded': 'No hay ninguna configuración de proyecto cargada',
   'project.configureHardwareTargetI': 'Configure la placa de destino, la asignación de E/S y el comportamiento del runtime',

@@ -20,6 +20,9 @@ import { announce } from '../utils/announce';
 export type NotificationKind = 'build' | 'save' | 'deploy' | 'connection' | 'tests';
 export type NotificationStatus = 'running' | 'success' | 'warning' | 'error' | 'cancelled';
 
+/** The way back from a failure: what the button says, and what it does. */
+export interface NotificationRecovery { label: string; run: () => void }
+
 export interface AppNotification {
   id: string;
   kind: NotificationKind;
@@ -30,6 +33,8 @@ export interface AppNotification {
   details: ConsoleTab;
   /** Present while a long operation runs and can be stopped. */
   cancel?: () => void;
+  /** Present on a failure or a warning that the person can recover from in one step (UX-021). */
+  recover?: NotificationRecovery;
   startedAt: number;
   finishedAt?: number;
 }
@@ -48,6 +53,7 @@ export interface NotificationResult {
   title: string;
   detail?: string;
   details: ConsoleTab;
+  recover?: NotificationRecovery;
 }
 
 export const NOTIFICATION_LIMIT = 8;
@@ -77,6 +83,7 @@ export function finishNotification(list: AppNotification[], id: string, result: 
   const finished: AppNotification = {
     id, kind: result.kind, status: result.status, title: result.title, details: result.details,
     startedAt: existing?.startedAt ?? now, finishedAt: now, ...(result.detail ? { detail: result.detail } : {}),
+    ...(result.recover && (result.status === 'error' || result.status === 'warning') ? { recover: result.recover } : {}),
   };
   // The latest finished result of a kind replaces the earlier one.
   const kept = list.filter((entry) => entry.id !== id && !(isFinished(entry) && entry.kind === result.kind));

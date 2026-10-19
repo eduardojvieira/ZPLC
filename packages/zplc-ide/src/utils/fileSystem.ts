@@ -18,9 +18,9 @@ import { parseAndMigrateProject, type ProjectMigrationChange, type ProjectModelD
 import { 
   getExtensionForLanguage,
   getLanguageFromFilename,
-  DEFAULT_ZPLC_CONFIG,
   isFileSystemAccessSupported,
 } from '../types';
+import { newProjectConfig, newProjectProgram, SIMULATION_TARGET, type NewProjectChoices } from '../project/newProject';
 import { chooseProjectFolder } from '../ipc/projectFilesHandles';
 
 const PROJECT_CONFIG_MAX_BYTES = 128 * 1024;
@@ -316,7 +316,7 @@ async function assertProjectFileAbsent(
   throw new Error(`Cannot create project: ${path} already exists`);
 }
 
-async function preflightNewProject(dirHandle: FileSystemDirectoryHandle): Promise<void> {
+async function preflightNewProject(dirHandle: FileSystemDirectoryHandle, language: PLCLanguage = 'ST'): Promise<void> {
   await assertProjectFileAbsent(dirHandle, 'zplc.json', 'zplc.json');
   await assertProjectFileAbsent(dirHandle, '.gitignore', '.gitignore');
 
@@ -328,7 +328,8 @@ async function preflightNewProject(dirHandle: FileSystemDirectoryHandle): Promis
     throw new Error('Cannot create project: unable to inspect src');
   }
 
-  await assertProjectFileAbsent(srcHandle, 'main.st', 'src/main.st');
+  const program = `main${getExtensionForLanguage(language)}`;
+  await assertProjectFileAbsent(srcHandle, program, `src/${program}`);
   await assertProjectFileAbsent(srcHandle, 'globals.gvl', 'src/globals.gvl');
 }
 
@@ -388,43 +389,23 @@ export async function writeProjectConfig(
  */
 export async function createNewProject(
   dirHandle: FileSystemDirectoryHandle,
-  projectName: string
+  projectName: string,
+  choices: NewProjectChoices = { target: SIMULATION_TARGET, language: 'ST' },
 ): Promise<ZPLCProjectV2> {
-  await preflightNewProject(dirHandle);
+  await preflightNewProject(dirHandle, choices.language);
 
   // Create zplc.json
-  const config: ZPLCProjectV2 = {
-    ...DEFAULT_ZPLC_CONFIG,
-    name: projectName,
-  };
+  const config = newProjectConfig(projectName, choices);
   try {
     await writeProjectConfig(dirHandle, config);
 
     // Create src directory
     const srcHandle = await dirHandle.getDirectoryHandle('src', { create: true });
 
-    // Create main.st with template
-    const mainHandle = await srcHandle.getFileHandle('main.st', { create: true });
-    const mainContent = `(* =============================================================================
- * ${projectName} - Main Program
- * ============================================================================= *)
-
-PROGRAM Main
-VAR
-    (* Declare your variables here *)
-    Counter : INT := 0;
-END_VAR
-
-(* Main program logic *)
-Counter := Counter + 1;
-
-IF Counter > 1000 THEN
-    Counter := 0;
-END_IF;
-
-END_PROGRAM
-`;
-    await writeFileContent(mainHandle, mainContent);
+    // Create the first program (main.st unless another language was chosen)
+    const program = newProjectProgram(projectName, choices.language);
+    const mainHandle = await srcHandle.getFileHandle(program.fileName, { create: true });
+    await writeFileContent(mainHandle, program.content);
 
     // Create globals.gvl
     const globalsHandle = await srcHandle.getFileHandle('globals.gvl', { create: true });

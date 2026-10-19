@@ -63,6 +63,7 @@ export function NotificationList({ items, onOpenDetails, onDismiss }: {
             )}
             <div className="mt-2 flex items-center gap-2">
               <Button variant="ghost" size="sm" data-details={entry.details} aria-label={t('notifications.detailsLabel', { title: entry.title, panel })} onClick={() => onOpenDetails(entry.details)}>{t('notifications.details')}</Button>
+              {entry.recover && <Button variant="secondary" size="sm" data-recover onClick={entry.recover.run}>{entry.recover.label}</Button>}
               {entry.status === 'running' && entry.cancel && (
                 <Button variant="ghost" size="sm" aria-label={t('notifications.cancelLabel', { title: entry.title })} onClick={entry.cancel}>{t('common.cancel')}</Button>
               )}

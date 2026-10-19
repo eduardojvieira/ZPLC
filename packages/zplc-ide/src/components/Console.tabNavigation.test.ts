@@ -110,11 +110,9 @@ describe('Console tab boundary', () => {
   });
 
   it('labels live ST diagnostics separately from canonical build diagnostics', () => {
+    // the two lists are drawn by ProblemsPanel (ProblemsPanel.test.tsx); Console keeps the fence that pairs the live list with this build
     const source = withEnglishMessages(readFileSync(join(import.meta.dir, 'Console.tsx'), 'utf8'));
 
-    expect(source).toContain('Live ST diagnostics · not build evidence');
-    expect(source).toContain('Latest build diagnostics');
-    expect(source).toContain('Compile the project to check it for problems.');
     expect(source).toContain('stBufferDiagnostics.compilerRunId === compilerRunId');
   });
 
