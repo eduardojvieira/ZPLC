@@ -1974,6 +1974,7 @@
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"29 The Welcome screen loads no editor","partial":true}
   ],
   "IDE-016": [
+    {"kind":"unit","ref":"packages/zplc-ide/electron/cspEnforcement.test.ts","test":"the production content security policy in Chromium (IDE-016)"},
     {"kind":"unit","ref":"packages/zplc-ide/electron/ipcRegistry.test.ts","test":"project files over the IPC boundary (IDE-001, IDE-016)"},
     {"kind":"unit","ref":"packages/zplc-ide/electron/security.test.ts","test":"which navigation revokes the authority of a document (IDE-016)"},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"38 The security properties hold in the running application","partial":true}
