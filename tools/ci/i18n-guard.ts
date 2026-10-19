@@ -190,7 +190,7 @@ export function ratchetOffenders(files: readonly SourceFile[], offenders: readon
 export const PROPER_NOUNS: ReadonlySet<string> = new Set([
   'ZPLC', 'Studio', 'Learn', 'Tests', 'English', 'Español', 'GitHub', 'Modbus', 'MQTT', 'Zephyr', 'Windows', 'macOS', 'Linux',
   'Electron', 'Raspberry', 'Pi', 'Pico', 'Arduino', 'Docusaurus', 'AppImage', 'Setup', 'Portable', 'DevKitC', 'Opta', 'WiFi',
-  'WebSocket', 'Sparkplug', 'SharedAccessKey', 'CloudEvent', 'QoS', 'Ethernet', 'Azure', 'MHz', 'Celsius', 'CMake', 'Kconfig', 'Python', 'Settings', 'Force', 'Del', 'Supr',
+  'WebSocket', 'Sparkplug', 'SharedAccessKey', 'CloudEvent', 'QoS', 'Ethernet', 'Azure', 'MHz', 'MiB', 'Celsius', 'CMake', 'Kconfig', 'Python', 'Settings', 'Force', 'Del', 'Supr',
 ]);
 /** Names of services and of their features that are written with capitals in a sentence, as the vendors write them. */
 export const PROPER_PHRASES: readonly string[] = [

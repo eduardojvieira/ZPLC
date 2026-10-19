@@ -9,6 +9,7 @@ import {
   type RecordedTankLevel,
   type RecordedPedestrianCrossing,
 } from './workspaceTestPresentation';
+import { t } from '../i18n';
 
 export type LabSceneKind = 'motor' | 'conveyor' | 'tank' | 'pedestrian';
 
@@ -37,13 +38,13 @@ export function recordedLabScenes(presentation: WorkspaceTestPresentation | null
   const scenes: LabScene[] = [];
   for (const scenario of presentation.preview.scenarios) {
     const motor = presentRecordedMotorPlant(scenario);
-    if (motor) { scenes.push({ id: scenario.id, label: 'Motor start / stop', kind: 'motor', samples: motor.samples, passed: scenario.passed, assertions: scenario.assertions }); continue; }
+    if (motor) { scenes.push({ id: scenario.id, label: t('labPlayback.motor'), kind: 'motor', samples: motor.samples, passed: scenario.passed, assertions: scenario.assertions }); continue; }
     const conveyor = presentRecordedConveyorPlant(scenario);
-    if (conveyor) { scenes.push({ id: scenario.id, label: 'Conveyor classification', kind: 'conveyor', samples: conveyor.samples, passed: scenario.passed, assertions: scenario.assertions }); continue; }
+    if (conveyor) { scenes.push({ id: scenario.id, label: t('labPlayback.conveyor'), kind: 'conveyor', samples: conveyor.samples, passed: scenario.passed, assertions: scenario.assertions }); continue; }
     const tank = presentRecordedTankLevel(scenario);
-    if (tank) { scenes.push({ id: scenario.id, label: 'Tank level', kind: 'tank', samples: tank.samples, passed: scenario.passed, assertions: scenario.assertions }); continue; }
+    if (tank) { scenes.push({ id: scenario.id, label: t('labPlayback.tank'), kind: 'tank', samples: tank.samples, passed: scenario.passed, assertions: scenario.assertions }); continue; }
     const pedestrian = presentRecordedPedestrianCrossing(scenario);
-    if (pedestrian) scenes.push({ id: scenario.id, label: 'Pedestrian crossing', kind: 'pedestrian', samples: pedestrian.samples, passed: scenario.passed, assertions: scenario.assertions });
+    if (pedestrian) scenes.push({ id: scenario.id, label: t('labPlayback.pedestrian'), kind: 'pedestrian', samples: pedestrian.samples, passed: scenario.passed, assertions: scenario.assertions });
   }
   return scenes;
 }

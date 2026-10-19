@@ -5,15 +5,16 @@
  */
 import type { FileTreeNode, ProjectFileWithHandle } from '../types';
 import { fileTreeFileId, isProgramSourceFile, sourceNameKey } from '../utils/fileSystem';
+import { t } from '../i18n';
 
 /** Why `name` cannot be the name of one file or folder, in words for the user; null when it can. */
 export function entryNameProblem(name: string): string | null {
   const trimmed = name.trim();
-  if (trimmed === '') return 'Enter a name.';
-  if (trimmed === '.' || trimmed === '..') return 'That name is not allowed.';
-  if (/[\\/:\0]/.test(trimmed)) return 'A name cannot contain / \\ or :. Use the Move command to change the folder.';
-  if (/[. ]$/.test(trimmed)) return 'A name cannot end with a dot or a space.';
-  if (trimmed.length > 255) return 'The name is too long.';
+  if (trimmed === '') return t('tree.name.enter');
+  if (trimmed === '.' || trimmed === '..') return t('tree.name.notAllowed');
+  if (/[\\/:\0]/.test(trimmed)) return t('tree.name.separators');
+  if (/[. ]$/.test(trimmed)) return t('tree.name.trailing');
+  if (trimmed.length > 255) return t('tree.name.tooLong');
   return null;
 }
 
@@ -144,7 +145,7 @@ export function expandPath(tree: FileTreeNode, path: string): FileTreeNode {
 
 /** The project folder (path "") and every folder under it, to pick a destination from; `except` and what is in it are left out. */
 export function collectFolders(tree: FileTreeNode, except: string | null = null): Array<{ path: string; label: string }> {
-  const folders: Array<{ path: string; label: string }> = [{ path: '', label: 'Project folder' }];
+  const folders: Array<{ path: string; label: string }> = [{ path: '', label: t('tree.projectFolder') }];
   const visit = (node: FileTreeNode) => {
     for (const child of node.children ?? []) {
       if (child.type !== 'directory' || (except !== null && remapPath(child.path, except, '') !== null)) continue;

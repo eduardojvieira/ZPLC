@@ -18,10 +18,8 @@ import type {
   FileTreeNode,
   ProjectFileWithHandle,
 } from '../types';
-import {
-  createEmptyFileContent,
-  isFileSystemAccessSupported,
-} from '../types';
+import { createEmptyFileContent, isFileSystemAccessSupported } from '../types';
+import { t } from '../i18n';
 import {
   openDirectoryPicker,
   readDirectoryRecursive,
@@ -496,7 +494,7 @@ async function openExistingProject(
     const debug = get().debug;
     if (debug.forcedValues.size > 0 || debug.forcesUnconfirmed) {
       set({ activeConsoleTab: 'watch', isConsoleCollapsed: false });
-      get().reportProjectOpenProblem('warning', 'Release or verify all forces before closing the project.');
+      get().reportProjectOpenProblem('warning', t('store.releaseBeforeClose'));
       return true;
     }
     if (get().hasUnsavedChanges()) {
@@ -524,7 +522,7 @@ async function openExistingProject(
     if (!isCurrent()) return false;
     if (!dirHandle) return false;
 
-    get().addConsoleEntry({ type: 'info', message: `Opening folder: ${dirHandle.name}...`, source: 'system' });
+    get().addConsoleEntry({ type: 'info', message: t('store.openingFolder', { name: dirHandle.name }), source: 'system' });
 
     const readResult = await readProjectConfig(dirHandle);
     if (!isCurrent()) return false;
@@ -570,7 +568,7 @@ async function openExistingProject(
     });
 
     if (openProjectIntent !== intent || get().projectSession !== expectedProjectSession + 1) return false;
-    get().addConsoleEntry({ type: 'success', message: `Opened project: ${config.name}`, source: 'system' });
+    get().addConsoleEntry({ type: 'success', message: t('store.openedProject', { name: config.name }), source: 'system' });
     const bridge = projectFilesBridge();
     if (bridge) void markProjectOpened(bridge, dirHandle);
     return true;
@@ -620,7 +618,7 @@ export const useIDEStore = create<IDEState>((set, get) => ({
     {
       id: '1',
       type: 'info',
-      message: 'ZPLC IDE ready',
+      message: t('store.ready'),
       timestamp: new Date(),
       source: 'system',
     },
@@ -712,7 +710,7 @@ export const useIDEStore = create<IDEState>((set, get) => ({
         return false;
       }
 
-      get().addConsoleEntry({ type: 'info', message: `Creating new project in: ${dirHandle.name}...`, source: 'system' });
+      get().addConsoleEntry({ type: 'info', message: t('store.creatingProject', { name: dirHandle.name }), source: 'system' });
 
       const config = await createNewProject(dirHandle, options?.name ?? dirHandle.name, options);
       const fileTree = await readDirectoryRecursive(dirHandle);
@@ -738,7 +736,7 @@ export const useIDEStore = create<IDEState>((set, get) => ({
 
       get().addConsoleEntry({
         type: 'success',
-        message: `Created new project: ${config.name}`,
+        message: t('store.createdProject', { name: config.name }),
         source: 'system',
       });
       const bridge = projectFilesBridge();
@@ -757,7 +755,7 @@ export const useIDEStore = create<IDEState>((set, get) => ({
       const debug = get().debug;
       if (debug.forcedValues.size > 0 || debug.forcesUnconfirmed) {
         set({ activeConsoleTab: 'watch', isConsoleCollapsed: false });
-        get().reportProjectOpenProblem('warning', 'Release or verify all forces before closing the project.');
+        get().reportProjectOpenProblem('warning', t('store.releaseBeforeClose'));
         return true;
       }
       if (get().hasUnsavedChanges()) {
@@ -815,7 +813,7 @@ export const useIDEStore = create<IDEState>((set, get) => ({
         compilerMessages: [], compilerMessagesChecked: false, compilerNavigationTarget: null, compilerRunId: get().compilerRunId + 1,
       });
       if (openProjectIntent !== intent || get().projectSession !== expectedProjectSession + 1) return false;
-      get().addConsoleEntry({ type: 'success', message: `Copied example project: ${readResult.config.name}`, source: 'system' });
+      get().addConsoleEntry({ type: 'success', message: t('store.copiedExample', { name: readResult.config.name }), source: 'system' });
       const bridge = projectFilesBridge();
       if (bridge) void markProjectOpened(bridge, dirHandle);
       return true;
@@ -843,7 +841,7 @@ export const useIDEStore = create<IDEState>((set, get) => ({
       set({ activeConsoleTab: 'watch', isConsoleCollapsed: false });
       get().addConsoleEntry({
         type: 'warning',
-        message: 'Release or verify all forces before closing the project.',
+        message: t('store.releaseBeforeClose'),
         source: 'system',
       });
       return false;
@@ -895,7 +893,7 @@ export const useIDEStore = create<IDEState>((set, get) => ({
 
     get().addConsoleEntry({
       type: 'info',
-      message: 'Project closed',
+      message: t('store.projectClosed'),
       source: 'system',
     });
     return true;
@@ -943,7 +941,7 @@ export const useIDEStore = create<IDEState>((set, get) => ({
     if (!projectConfig) {
       get().addConsoleEntry({
         type: 'warning',
-        message: 'No project configuration to save',
+        message: t('store.noConfigToSave'),
         source: 'system',
       });
       return;
@@ -952,7 +950,7 @@ export const useIDEStore = create<IDEState>((set, get) => ({
     if (!directoryHandle) {
       get().addConsoleEntry({
         type: 'error',
-        message: 'No directory handle - cannot save configuration',
+        message: t('store.noDirectoryHandle'),
         source: 'system',
       });
       return;
@@ -970,7 +968,7 @@ export const useIDEStore = create<IDEState>((set, get) => ({
         if (requestResult !== 'granted') {
           get().addConsoleEntry({
             type: 'error',
-            message: 'Write permission denied. Please grant access to save.',
+            message: t('store.writeDenied'),
             source: 'system',
           });
           return;
@@ -983,7 +981,7 @@ export const useIDEStore = create<IDEState>((set, get) => ({
         set({ projectConfig: canonicalConfig, projectConfigDirty: false, projectMigrationPreview: null });
         get().addConsoleEntry({
           type: 'success',
-          message: 'Saved zplc.json',
+          message: t('store.savedConfig'),
           source: 'system',
         });
       }
@@ -992,7 +990,7 @@ export const useIDEStore = create<IDEState>((set, get) => ({
       const message = err instanceof Error ? err.message : 'Unknown error';
       get().addConsoleEntry({
         type: 'error',
-        message: `Failed to save config: ${message}`,
+        message: t('store.saveConfigFailed', { message }),
         source: 'system',
       });
       set(SHOW_OUTPUT);
@@ -1081,7 +1079,7 @@ export const useIDEStore = create<IDEState>((set, get) => ({
       if (!options.quiet) {
         get().addConsoleEntry({
           type: 'success',
-          message: `Saved: ${file.name}`,
+          message: t('store.savedFile', { name: file.name }),
           source: 'system',
         });
       }
@@ -1092,7 +1090,7 @@ export const useIDEStore = create<IDEState>((set, get) => ({
       const message = err instanceof Error ? err.message : 'Unknown error';
       get().addConsoleEntry({
         type: 'error',
-        message: `Failed to save ${file.name}: ${message}`,
+        message: t('store.saveFileFailed', { name: file.name, message }),
         source: 'system',
       });
       set(SHOW_OUTPUT);
@@ -1219,7 +1217,7 @@ export const useIDEStore = create<IDEState>((set, get) => ({
           : 'Could not create the file. Check the name and folder access, then try again.');
       }
 
-      get().addConsoleEntry({ type: 'success', message: `Created: ${fileName}`, source: 'system' });
+      get().addConsoleEntry({ type: 'success', message: t('store.createdFile', { name: fileName }), source: 'system' });
       return fileId;
     } catch (error) {
       if (!isCurrentProject()) throw new Error('Project changed while creating the file.');
@@ -1247,7 +1245,7 @@ export const useIDEStore = create<IDEState>((set, get) => ({
 
     if (!located.parent.dirHandle) {
       if (get().projectSession === expectedProjectSession) {
-        get().addConsoleEntry({ type: 'error', message: `Could not delete ${located.node.name}. The file was not removed.`, source: 'system' });
+        get().addConsoleEntry({ type: 'error', message: t('store.deleteFailed', { name: located.node.name }), source: 'system' });
       }
       return false;
     }
@@ -1255,7 +1253,7 @@ export const useIDEStore = create<IDEState>((set, get) => ({
       await located.parent.dirHandle.removeEntry(located.node.name);
     } catch {
       if (get().projectSession === expectedProjectSession) {
-        get().addConsoleEntry({ type: 'error', message: `Could not delete ${located.node.name}. The file was not removed.`, source: 'system' });
+        get().addConsoleEntry({ type: 'error', message: t('store.deleteFailed', { name: located.node.name }), source: 'system' });
       }
       return false;
     }

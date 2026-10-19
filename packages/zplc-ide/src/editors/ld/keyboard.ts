@@ -28,7 +28,7 @@ import {
   type LDModel,
   type LDRung,
 } from '../../models/ld';
-import { LD_ELEMENT_KIND, LD_MODBUS_HELPERS } from '../../models/ldSupport';
+import { ldElementKind, LD_MODBUS_HELPERS } from '../../models/ldSupport';
 import type { ProjectBlock } from '../../models/projectBlocks';
 import type { PickerItem } from '../picker';
 import { boolOutputsOf, declaredSymbols, sameType, symbolItems } from '../symbols';
@@ -144,7 +144,7 @@ function uniqueId(base: string, taken: Iterable<string>): string {
 }
 
 function elementName(element: LDElement): string {
-  const kind = LD_ELEMENT_KIND[element.type] ?? element.type;
+  const kind = ldElementKind(element.type);
   const name = isFunctionBlock(element.type) ? [element.fbType, element.instance].filter(Boolean).join(' ') : element.variable;
   return name ? `${kind} ${name}` : kind;
 }

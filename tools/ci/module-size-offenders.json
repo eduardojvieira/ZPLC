@@ -3,7 +3,7 @@
     "file": "packages/zplc-ide/src/store/useIDEStore.ts",
     "requirement": "IDE-014",
     "added": "2026-10-10",
-    "lines": 1692,
+    "lines": 1690,
     "reason": "The single store holds project, files, tabs, debug, console and settings slices. Split by slice into stores or slice creators with the same public hook (WP-40); the store split is the IDE state work of WS-24a."
   },
   {
@@ -38,14 +38,14 @@
     "file": "packages/zplc-ide/src/hooks/useDebugController.ts",
     "requirement": "IDE-014",
     "added": "2026-10-10",
-    "lines": 1066,
+    "lines": 1059,
     "reason": "Connection, polling, forces, breakpoints and trace in one hook. Split by concern; the worker and notification work (WS-24a) edits it first. Recorded size raised from 1107 to 1128 once, by the merge of ws-integration (WS-20, WS-21, WS-22a added code here); from now on it can only shrink."
   },
   {
     "file": "packages/zplc-ide/src/models/ld.ts",
     "requirement": "IDE-014",
     "added": "2026-10-10",
-    "lines": 1080,
+    "lines": 1079,
     "reason": "Ladder model types, validation and edit operations in one module; the visual-language work (WS-22a) is changing it. Split model, validation and operations after that lands. Recorded size raised from 1074 to 1080 once, by the merge of ws-integration (WS-20, WS-21, WS-22a added code here); from now on it can only shrink."
   },
   {
