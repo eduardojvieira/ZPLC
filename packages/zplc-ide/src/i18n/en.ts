@@ -9,6 +9,7 @@ import { toolchainEn } from './catalog/toolchain';
 import { commtagsEn } from './catalog/commtags';
 import { projectEn } from './catalog/project';
 import { labEn } from './catalog/lab';
+import { editorGesturesEn } from './catalog/editorGestures';
 import { ldEn } from './catalog/ld';
 import { importArchiveEn } from './catalog/importArchive';
 import { interlockEn } from './catalog/interlock';
@@ -587,6 +588,7 @@ export const en = {
   ...commtagsEn,
   ...projectEn,
   ...labEn,
+  ...editorGesturesEn,
   ...ldEn,
   ...importArchiveEn,
   ...interlockEn,

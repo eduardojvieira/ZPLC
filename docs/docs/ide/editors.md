@@ -183,6 +183,18 @@ Every place that shows the value of a signal uses the same five states, defined 
 
 A number is not a state: it is drawn in the plain value colour with no glyph. A wire in FBD is heavier for TRUE, forced and fault values and dashed for a value that was not read, and a non-zero number is not drawn as TRUE.
 
+### Forced and fault states in the diagrams
+
+A variable is drawn as forced in Ladder, FBD and SFC when the force table holds it (the Watch table's force row) at the address the debug map gives that variable in the file being shown; a variable of the same name in another program is not marked. It is drawn as a fault when the poll of the debugger asked the runtime for it and got no value, or the read failed, and it stays a fault until a later poll reads it. All three editors take both from `Monitor.flagsOf` (`src/monitoring/signalFlags.ts`), so they cannot disagree.
+
+| Editor | What carries the cue |
+| --- | --- |
+| Ladder | The contact or coil that names the variable. |
+| FBD | The pin of a block whose variable is forced or unreadable (an input pin takes the state of the output wired to it), the wire from that pin, and a variable block, which also says FORCED or FAULT in words and shows the variable itself and not what is wired to it. |
+| SFC | A step whose flag is forced or unreadable; a transition when its own condition variable is, or when a variable named in its condition is forced (only the words that the debug map resolves to a variable of the file count, so a keyword, a literal or an unknown name never marks a transition). |
+
+Forced is amber with `◆` and fault is red with `▲`; red means a fault and nothing else. Evidence level: host. `src/editors/monitorFlagsWiring.test.tsx` feeds a recorded scan of the FBD and SFC examples, with one forced input and one unreadable element, to the pure functions each editor builds its nodes from and renders the nodes; `src/monitoring/signalFlags.test.ts` checks the force-table match by address and the set of unreadable variables. Journey 49 forces a variable from the Watch table against the native simulator and reads the cue in FBD and SFC.
+
 Nothing in the visual editors, the controller view, the Watch table or the notification list glows, pulses or animates continuously. A loading spinner may turn, and it stops under reduced motion. `bun tools/ci/ui-kit-guard.ts` fails when a source adds an animation or a shadow there (UX-010), and its list of existing offenders can only shrink.
 
 Evidence level: host. `src/editors/signalVocabulary.test.tsx` renders a Ladder contact and coil, an FBD block, an SFC step and an SFC transition with each of the five states and checks both the token and the glyph, and `src/theme/signalTone.test.ts` checks the contrast of each state in the three themes. The palette and the glyphs are for a person to judge by eye.

@@ -194,6 +194,18 @@ Todo lugar que muestra el valor de una señal usa los mismos cinco estados, defi
 
 Un número no es un estado: se dibuja en el color de valor simple y sin glifo. Un cable en FBD es más grueso para los valores TRUE, forzados y con falla, y discontinuo para un valor que no se leyó; un número distinto de cero no se dibuja como TRUE.
 
+### Estados forzado y falla en los diagramas
+
+Una variable se dibuja como forzada en Ladder, FBD y SFC cuando la tabla de forzados la contiene (la fila de forzado de la tabla Watch) en la dirección que el mapa de depuración da a esa variable en el archivo que se muestra; una variable del mismo nombre en otro programa no se marca. Se dibuja como falla cuando el sondeo del depurador pidió la variable al entorno de ejecución y no obtuvo valor, o la lectura falló, y sigue como falla hasta que un sondeo posterior la lee. Los tres editores toman ambos estados de `Monitor.flagsOf` (`src/monitoring/signalFlags.ts`), así que no pueden discrepar.
+
+| Editor | Qué lleva la señal |
+| --- | --- |
+| Ladder | El contacto o la bobina que nombra la variable. |
+| FBD | El pin de un bloque cuya variable está forzada o no se pudo leer (un pin de entrada toma el estado de la salida conectada), el cable que sale de ese pin y un bloque de variable, que además dice FORCED o FAULT con palabras y muestra la variable misma y no lo que se le conecta. |
+| SFC | Un paso cuyo indicador está forzado o no se pudo leer; una transición cuando su propia variable de condición lo está, o cuando una variable nombrada en su condición está forzada (solo cuentan las palabras que el mapa de depuración resuelve a una variable del archivo, así que una palabra clave, un literal o un nombre desconocido nunca marca una transición). |
+
+Forzado es ámbar con `◆` y falla es rojo con `▲`; el rojo significa falla y nada más. Nivel de evidencia: host. `src/editors/monitorFlagsWiring.test.tsx` entrega un ciclo registrado de los ejemplos FBD y SFC, con una entrada forzada y un elemento ilegible, a las funciones puras con las que cada editor construye sus nodos y dibuja los nodos; `src/monitoring/signalFlags.test.ts` comprueba la coincidencia con la tabla de forzados por dirección y el conjunto de variables ilegibles. El recorrido 49 fuerza una variable desde la tabla Watch contra el simulador nativo y lee la señal en FBD y SFC.
+
 Nada en los editores visuales, la vista del controlador, la tabla Watch ni la lista de notificaciones brilla, pulsa o se anima de forma continua. Un indicador de carga puede girar, y se detiene con el movimiento reducido. `bun tools/ci/ui-kit-guard.ts` falla cuando un archivo agrega una animación o una sombra ahí (UX-010), y su lista de infractores existentes solo puede disminuir.
 
 Nivel de evidencia: host. `src/editors/signalVocabulary.test.tsx` dibuja un contacto y una bobina de Ladder, un bloque FBD, un paso SFC y una transición SFC con cada uno de los cinco estados y comprueba tanto el token como el glifo, y `src/theme/signalTone.test.ts` comprueba el contraste de cada estado en los tres temas. La paleta y los glifos son para que una persona los juzgue a simple vista.

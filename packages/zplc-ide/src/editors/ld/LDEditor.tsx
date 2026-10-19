@@ -31,8 +31,7 @@ import { useProjectBlocks } from '../useProjectBlocks';
 import { declaredSymbols } from '../symbols';
 import { copyLDRungFragment, ldSelectionIds as selectionIds, ldSelectionOfIds as selectionOfIds, NO_LD_SELECTION, pasteLDRungFragment, type LDClipboardFragment, type LDSelection } from './graphModel';
 import { useMonitor } from '../../monitoring/useMonitor';
-import { useIDEStore } from '../../store/useIDEStore';
-import type { DebugValuesMap } from './LDElement';
+import { debugValuesOf } from './debugValues';
 import { useElementSelection } from '../elementSelection';
 import { useElementBreakpoints } from '../elementBreakpoints';
 import { parseElement, rungElement, type SourceElementId } from '../../models/sourceElements';
@@ -236,8 +235,6 @@ export default function LDEditor({ model, onChange, readOnly = false }: LDEditor
 
   // Online values and power flow come from the debug map of the build of this file (LNG-006)
   const monitor = useMonitor();
-  // the variables the user forces are drawn as forced, not as the value they hold (UX-009)
-  const forcedValues = useIDEStore((state) => state.debug.forcedValues);
   // Breakpoints on rungs: execution stops at the first statement of the rung's code (LNG-004)
   const breakpoints = useElementBreakpoints();
 
@@ -254,15 +251,8 @@ export default function LDEditor({ model, onChange, readOnly = false }: LDEditor
     latestModelRef.current = normalizedModel;
   }, [normalizedModel]);
 
-  // The values of the variables the elements show: what the map says the program holds, and unavailable otherwise
-  const debugValues = useMemo<DebugValuesMap | undefined>(() => {
-    if (!monitor.active) return undefined;
-    const values: DebugValuesMap = new Map();
-    for (const [variable, { reading, type }] of monitor.values) {
-      values.set(variable, { value: reading ?? null, type: type || null, address: null, region: null, size: null, loading: false, exists: true, error: null, forced: forcedValues.has(variable) });
-    }
-    return values;
-  }, [monitor, forcedValues]);
+  // The values of the variables the elements show: what the map says the program holds, forced or faulted as the user and the poll say, and unavailable otherwise
+  const debugValues = useMemo(() => debugValuesOf(monitor), [monitor]);
 
   const symbolNames = useMemo(() => declaredSymbols(normalizedModel.variables).map((symbol) => symbol.name), [normalizedModel.variables]);
   const askedElement = useMemo<LDElementType | null>(() => {

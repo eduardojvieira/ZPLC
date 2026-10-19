@@ -36,6 +36,7 @@ import '@xyflow/react/dist/style.css';
 import { type SFCModel, type SFCStep, type SFCTransition } from '../../models/sfc';
 import { applySFCSelection, connectSFC, copySFCFragment, sfcSelection, stepNodeData, transitionNodeData, isCanonicalSFCConnection, nodesToSteps, nodesToTransitions, pasteSFCFragment, type SFCClipboardFragment } from './graphModel';
 import { sfcCanvasCommands } from './keyboard';
+import { stepDebugData, stepDebugInfoOf, transitionDebugData, transitionDebugInfoOf, type DebugStepInfo, type DebugTransitionInfo } from './debugInfo';
 import { useCanvasKeyboard } from '../useCanvasKeyboard';
 import { edgeChangesCommit, nodeChangesCommit } from '../gesture';
 import { useGestureCommit } from '../useGestureCommit';
@@ -69,20 +70,6 @@ interface SFCEditorProps {
 // Model <-> ReactFlow Conversion with Debug Data
 // =============================================================================
 
-interface DebugStepInfo {
-  isActive: boolean;
-  /** The map gave no state for the step, or it was not read. */
-  unavailable?: boolean;
-  timeInStep?: number;
-  activationCount?: number;
-}
-
-interface DebugTransitionInfo {
-  conditionResult?: boolean;
-  isArmed: boolean;
-  wasFired?: boolean;
-}
-
 /**
  * Convert SFC steps to ReactFlow nodes with debug data
  */
@@ -103,10 +90,7 @@ function stepsToNodes(
         ...stepNodeData(step),
         // Debug properties
         debugActive,
-        isActive: debugInfo?.isActive || false,
-        stateUnavailable: debugInfo?.unavailable === true,
-        timeInStep: debugInfo?.timeInStep,
-        activationCount: debugInfo?.activationCount,
+        ...stepDebugData(debugInfo),
       },
     };
   });
@@ -132,9 +116,7 @@ function transitionsToNodes(
         ...transitionNodeData(trans),
         // Debug properties
         debugActive,
-        conditionResult: debugInfo?.conditionResult,
-        isArmed: debugInfo?.isArmed || false,
-        wasFired: debugInfo?.wasFired || false,
+        ...transitionDebugData(debugInfo),
       },
     };
   });
@@ -293,10 +275,7 @@ function SFCEditorInner({
             data: {
               ...node.data,
               debugActive,
-              isActive: debugInfo?.isActive || false,
-              stateUnavailable: debugInfo?.unavailable === true,
-              timeInStep: debugInfo?.timeInStep,
-              activationCount: debugInfo?.activationCount,
+              ...stepDebugData(debugInfo),
             },
           };
         }
@@ -308,9 +287,7 @@ function SFCEditorInner({
             data: {
               ...node.data,
               debugActive,
-              conditionResult: debugInfo?.conditionResult,
-              isArmed: debugInfo?.isArmed || false,
-              wasFired: debugInfo?.wasFired || false,
+              ...transitionDebugData(debugInfo),
             },
           };
         }
@@ -586,36 +563,17 @@ export default function SFCEditor({ model, onChange, readOnly = false }: SFCEdit
   const debugActive = monitor.active;
   const running = debugMode !== 'none';
 
-  const stepDebugInfo = useMemo(() => {
-    const info = new Map<string, DebugStepInfo>();
-    if (!monitor.active) return info;
-    for (const step of model.steps) {
-      const state = monitor.states.get(stepElement(step.id));
-      info.set(step.id, { isActive: state?.active === true, unavailable: state?.active === undefined, timeInStep: state?.time });
-    }
-    return info;
-  }, [model.steps, monitor]);
+  const stepDebugInfo = useMemo(() => (monitor.active ? stepDebugInfoOf(model.steps, monitor.states) : new Map<string, DebugStepInfo>()), [model.steps, monitor]);
 
   const activeSteps = useMemo(
     () => new Set(model.steps.filter((step) => stepDebugInfo.get(step.id)?.isActive).map((step) => step.id)),
     [model.steps, stepDebugInfo],
   );
 
-  const transitionDebugInfo = useMemo(() => {
-    const info = new Map<string, DebugTransitionInfo>();
-    if (!monitor.active) return info;
-    for (const transition of model.transitions) {
-      const state = monitor.states.get(transitionElement(transition.id));
-      // armed: every step the transition leaves is active
-      const leaves = transition.fromSteps ?? [transition.fromStep];
-      info.set(transition.id, {
-        conditionResult: state?.condition,
-        isArmed: leaves.length > 0 && leaves.every((id) => activeSteps.has(id)),
-        wasFired: state?.fired === true,
-      });
-    }
-    return info;
-  }, [model.transitions, monitor, activeSteps]);
+  const transitionDebugInfo = useMemo(
+    () => (monitor.active ? transitionDebugInfoOf(model.transitions, monitor.states, activeSteps, monitor.flagsOf) : new Map<string, DebugTransitionInfo>()),
+    [model.transitions, monitor, activeSteps],
+  );
 
   // Convert model to ReactFlow format with debug data
   const initialNodes = useMemo(() => [

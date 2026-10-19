@@ -115,3 +115,38 @@ describe('every variable that a translated source says it reads exists in the de
     });
   }
 });
+
+describe('forced and faulted variables reach the state of the element that shows them (UX-009, LNG-006)', () => {
+  const entries: MonitorEntry[] = [
+    { element: 'block:b', role: 'output', port: 'Q', variable: 'Run' },
+    { element: 'block:b', role: 'output', port: 'ET', variable: 'T1.ET' },
+    { element: 'block:v', role: 'value', variable: 'Lamp' },
+    { element: 'step:s', role: 'step', variable: 'X_s' },
+    { element: 'step:s', role: 'time', variable: 'T_s.ET' },
+    { element: 'transition:t', role: 'condition', variable: '_C_t' },
+    { element: 'transition:t', role: 'fired', variable: '_F_t' },
+  ];
+  const flags: Record<string, { forced?: boolean; fault?: boolean }> = { Run: { forced: true }, 'T1.ET': { fault: true }, Lamp: { forced: true }, X_s: { fault: true }, _C_t: { forced: true }, 'T_s.ET': { fault: true } };
+
+  it('puts the flags of the variable each pin, value, step and condition names on that element', () => {
+    const states = readElementStates(entries, reads({ Run: true, Lamp: false }), (variable) => flags[variable]);
+    expect(states.get('block:b')!.pinFlags).toEqual({ Q: { forced: true }, ET: { fault: true } });
+    expect(states.get('block:v')!.flags).toEqual({ forced: true });
+    expect(states.get('step:s')!.flags).toEqual({ fault: true });
+    expect(states.get('transition:t')!.flags).toEqual({ forced: true });
+  });
+
+  it('does not let the time or the fired flag of an element stand for the state it shows', () => {
+    const states = readElementStates(entries, reads({}), (variable) => flags[variable]);
+    // T_s.ET is faulted, but the step is shown by X_s; _F_t has no flag and the condition is forced
+    expect(states.get('step:s')!.flags).toEqual({ fault: true });
+    expect(states.get('transition:t')!.flags).toEqual({ forced: true });
+  });
+
+  it('has no flags at all when none are given, so an unflagged diagram renders as it did', () => {
+    const states = readElementStates(entries, reads({ Run: true }));
+    expect(states.get('block:b')!.pinFlags).toEqual({});
+    expect(states.get('block:v')!.flags).toBeUndefined();
+    expect(states.get('step:s')!.flags).toBeUndefined();
+  });
+});
