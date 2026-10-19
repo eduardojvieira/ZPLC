@@ -1502,11 +1502,16 @@
     {"kind":"c-test","ref":"firmware/tests/io_analog/src/main.c","test":"Analog inputs of the board description (IO-006, IO-018).","partial":true,"note":"native_sim level: the ADC emulator; the converters of the RP2040 and the ESP32-S3 need the loopback bench of HIL-010"}
   ],
   "IO-007": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/runtime/serialAdapter.test.ts","test":"rejects a status whose I/O report is not a pair of counts (IO-007)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/runtime/serialAdapter.test.ts","test":"tells the user once when the board cannot serve some of its I/O channels (IO-007)"},
     {"kind":"unit","ref":"tools/ci/test_check_hal_contract.py","test":"CheckerTests","note":"Python unit test run by the docs-and-truth job of ci.yml; it is not in the scanned file kinds. Every HAL function is implemented on the posix, zephyr and wasm ports.","partial":true},
     {"kind":"unit","ref":"tools/ci/test_check_hal_contract.py","test":"RepositoryTests","note":"Python unit test run by the docs-and-truth job of ci.yml; it is not in the scanned file kinds. The repository contract has no finding and the ledger in tools/ci/hal-contract.json is empty: every declared function has a caller and an implementation on the three ports. The requirement stays partial because the 'not supported' result of an operation a board cannot perform is swallowed by the scheduler core (zplc_sched_core.c, I/O phase) and does not reach the user yet.","partial":true},
     {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_core_shutdown.c","test":"Core shutdown releases the process-image mutex, and a later init creates it again (IO-007)."},
     {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_hal_posix_io_table.c","test":"The POSIX port lists no channel and says so through the shared accessors (IO-007)."},
-    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_io_table.c","test":"The I/O table accessors every port shares (IO-001, IO-002, IO-007)."}
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_io_table.c","test":"The I/O table accessors every port shares (IO-001, IO-002, IO-007)."},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_io_unsupported.c","test":"An I/O operation a board cannot perform is counted and reported, not swallowed (IO-007)."},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_proto_session.c","test":"IO-007"},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_proto_session.c","test":"IO-007: a channel the board cannot serve reaches the user as a warning on the log events"}
   ],
   "IO-008": [
     {"kind":"c-test","ref":"firmware/tests/hal_persist_keys/src/main.c","test":"Non-volatile storage works for every key the runtime uses (IO-008).","partial":true,"note":"native_sim level: the NVS of the flash simulator; the flash of each shipped board needs the bench of HIL-010"}
@@ -1610,7 +1615,8 @@
     {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_host_comm.c","test":"The communication blocks in the simulation runtime, on real sockets (COM-006, COM-009, COM-018).","partial":true,"note":"Modbus TCP against a protocol double, and the MQTT client of the simulation runtime against a broker double; the cloud blocks are verified only at the handler with a stand-in service, the MQTT client of the controller is not run against a broker, and Modbus RTU needs a device that was not used"},
     {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_modbus_client_pdu.c","test":"The frames of the Modbus clients, and the unit of their timeouts (COM-006, COM-012).","partial":true,"note":"Modbus TCP against a protocol double, and the MQTT client of the simulation runtime against a broker double; the cloud blocks are verified only at the handler with a stand-in service, the MQTT client of the controller is not run against a broker, and Modbus RTU needs a device that was not used"},
     {"kind":"c-test","ref":"firmware/tests/modbus_client_tcp/src/main.c","test":"A TCP response may arrive in pieces; the client puts it back together (COM-006).","partial":true,"note":"Modbus TCP against a protocol double, and the MQTT client of the simulation runtime against a broker double; the cloud blocks are verified only at the handler with a stand-in service, the MQTT client of the controller is not run against a broker, and Modbus RTU needs a device that was not used"},
-    {"kind":"c-test","ref":"firmware/tests/modbus_client_tcp/src/main.c","test":"COM-006, COM-012, COM-018: the Modbus TCP client of the product against a","partial":true,"note":"Modbus TCP against a protocol double, and the MQTT client of the simulation runtime against a broker double; the cloud blocks are verified only at the handler with a stand-in service, the MQTT client of the controller is not run against a broker, and Modbus RTU needs a device that was not used"}
+    {"kind":"c-test","ref":"firmware/tests/modbus_client_tcp/src/main.c","test":"COM-006, COM-012, COM-018: the Modbus TCP client of the product against a","partial":true,"note":"Modbus TCP against a protocol double, and the MQTT client of the simulation runtime against a broker double; the cloud blocks are verified only at the handler with a stand-in service, the MQTT client of the controller is not run against a broker, and Modbus RTU needs a device that was not used"},
+    {"kind":"c-test","ref":"firmware/tests/mqtt_broker_double/src/main.c","test":"COM-006: the MQTT client of the controller, and the blocks that use it, against a broker written for the test."}
   ],
   "COM-007": [
     {"kind":"unit","ref":"tools/docs/communication_blocks.test.ts","test":"the communication blocks say what each was verified against (COM-007)"}
@@ -1628,8 +1634,13 @@
     {"kind":"c-test","ref":"firmware/tests/comm_modbus_fb/src/main.c","test":"(COM-002, COM-003, COM-004, COM-008, COM-018)."}
   ],
   "COM-009": [
+    {"kind":"unit","ref":"packages/zplc-ide/electron/nativeSimulationEnvironment.test.ts","test":"asks the runtime for its own loopback Modbus and MQTT endpoints, and for no other peer (COM-009)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/conformance/communication.test.ts","test":"COM-009 the communication blocks in simulation","partial":true,"note":"the runtime reaches loopback endpoints that a test starts (zplc_loopback, in-process doubles); Studio does not start or stop them for a session, does not show the status, and the program has to be given their ports"},
-    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_host_comm.c","test":"The communication blocks in the simulation runtime, on real sockets (COM-006, COM-009, COM-018).","partial":true,"note":"the runtime reaches loopback endpoints that a test starts (zplc_loopback, in-process doubles); Studio does not start or stop them for a session, does not show the status, and the program has to be given their ports"}
+    {"kind":"unit","ref":"packages/zplc-ide/src/runtime/nativeAdapter.test.ts","test":"tells the console what the simulated communication endpoints are, or that they did not start (COM-009)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/runtime/nativeCommunicationEndpoints.test.ts","test":"COM-009 the endpoints that the Studio session starts"},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_host_comm.c","test":"The communication blocks in the simulation runtime, on real sockets (COM-006, COM-009, COM-018).","partial":true,"note":"the runtime reaches loopback endpoints that a test starts (zplc_loopback, in-process doubles); Studio does not start or stop them for a session, does not show the status, and the program has to be given their ports"},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_host_loopback.c","test":"The loopback endpoints that a Studio session starts for its runtime (COM-009)."},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_native_runtime_session.c","test":"COM-009: the endpoints of the session are told in the hello, with their reason, so that Studio can show them"}
   ],
   "COM-010": [
     {"kind":"c-test","ref":"firmware/tests/modbus_client_tcp/src/main.c","test":"COM-010: a value that the client polls from a remote device is a write from outside the scan, and the only way it"},
