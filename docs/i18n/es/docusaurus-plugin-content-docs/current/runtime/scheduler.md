@@ -156,10 +156,10 @@ El runtime separa dos cosas: las **salidas físicas** (los pines) y el **estado 
 | Operación | Salidas físicas | Imagen de salidas | Tabla de forzados | Scans de las tareas |
 |---|---|---|---|---|
 | Pausa (`zplc dbg pause`) | Seguras (apagadas) antes de que retorne la llamada | Se conserva | Se conserva | Pausa entre scans: el batch en curso termina primero |
-| Breakpoint | Seguras (apagadas); el batch hace un commit y luego los pines se llevan al estado seguro | Se conserva, con el scan parcial | Se conserva | El scan se detiene en el breakpoint con su contador de programa y sus pilas |
-| Paso (`zplc dbg step`) | El scan se confirma y luego los pines se llevan al estado seguro | Se conserva, muestra el scan ejecutado | Se conserva | Termina el scan detenido en un breakpoint, o ejecuta un scan completo; se detiene en el siguiente límite de ciclo o en el siguiente breakpoint |
+| Breakpoint | Seguras (apagadas); el batch hace un commit y luego los pines se llevan al estado seguro | Se conserva, con el scan parcial | Se conserva | El scan se detiene en el punto de parada con su contador de programa y sus pilas |
+| Paso (`zplc dbg step`) | El scan se confirma y luego los pines se llevan al estado seguro | Se conserva, muestra el scan ejecutado | Se conserva | Termina el scan detenido en un punto de parada, o ejecuta un scan completo; se detiene en el siguiente límite de ciclo o en el siguiente punto de parada |
 | Reanudación (`zplc dbg resume`) | No las energiza la reanudación misma | Se conserva | Se conserva | Un scan detenido en un punto de parada continúa desde ahí en la siguiente liberación; una pausa entre scans empieza un scan nuevo |
-| `STOP` | Seguras (apagadas) | Se pone a cero | Se borra | Cada tarea vuelve a su punto de entrada; se descarta el scan interrumpido por un breakpoint o armado por una reanudación |
+| `STOP` | Seguras (apagadas) | Se pone a cero | Se borra | Cada tarea vuelve a su punto de entrada; se descarta el scan interrumpido por un punto de parada o armado por una reanudación |
 | Fault | Seguras (apagadas) | Se pone a cero | Se borra | Queda latcheado; la tarea con fault conserva su contador de programa y su error hasta cargar un programa |
 
 Notas sobre la tabla:
@@ -190,7 +190,7 @@ Un proyecto declara el valor en `zplc.json`, en una fila de `io.outputs`:
 }
 ```
 
-Aquí `Brake` está energizada siempre que el programa no la maneja, y `Valve` está apagada. La declaración viaja **dentro del artefacto**, en su segmento `SAFE`, de modo que un programa y su estado seguro son una sola unidad: un dispositivo que restaura el programa restaura su declaración, un programa reemplazado la reemplaza, y un deploy interrumpido no puede dejar el programa de una compilación con los valores seguros de otra (véase [Valores seguros declarados](isa.md#valores-seguros-declarados)).
+Aquí `Brake` está energizada siempre que el programa no la maneja, y `Valve` está apagada. La declaración viaja **dentro del artefacto**, en su segmento `SAFE`, de modo que un programa y su estado seguro son una sola unidad: un dispositivo que restaura el programa restaura su declaración, un programa reemplazado la reemplaza, y una carga interrumpida no puede dejar el programa de una compilación con los valores seguros de otra (véase [Valores seguros declarados](isa.md#valores-seguros-declarados)).
 
 La confirmación de una carga en una placa muestra lo que lleva el artefacto: cada salida declarada por su dirección con el valor que toma, o la frase de que toda salida está apagada, de modo que una persona ve el estado seguro antes de que se escriba el programa.
 
@@ -200,11 +200,11 @@ Qué se verifica, y dónde:
 |---|---|
 | La compilación (Studio, la línea de comandos, MCP) | Un `safe` que no es `true` ni `false`; uno en una fila que no es un bit de salida digital (`%QW0`, `%QB0`); uno en una entrada o en una fila `virtual`; dos filas para una salida; una salida para la que la placa elegida no tiene un canal digital. El mensaje nombra la salida, la dirección y la placa, y no hay artefacto que desplegar. |
 | El loader | Un segmento que no son entradas completas, una entrada fuera de la imagen de salidas, un valor distinto de 0 o 1, una salida dos veces, o más de 64 entradas. |
-| El firmware, en el deploy y en la restauración de arranque | Una declaración para una salida que no es un canal de salida digital de la tabla de E/S de la placa (un proyecto de otra placa). El programa no se guarda ni se ejecuta. |
+| El firmware, en la carga y en la restauración de arranque | Una declaración para una salida que no es un canal de salida digital de la tabla de E/S de la placa (un proyecto de otra placa). El programa no se guarda ni se ejecuta. |
 
 Los valores declarados rigen desde la carga que confirma el programa, antes del primer scan, y la carga los lleva a los pines: un programa restaurado espera en STOP con sus salidas declaradas encendidas. Reemplazarlo por un programa que no declara nada devuelve los pines al nivel de la placa en esa carga. La imagen de proceso de salidas es el estado lógico del programa y se pone en cero en STOP, sea cual sea el valor que muestre el pin.
 
-Lo que esto no afirma: el tiempo entre el encendido y el instante en que el firmware maneja los pines es el estado de reset del componente, y una placa que necesita un pin en uno ahí necesita hardware que lo haga (véase [Placas](../reference/boards.md)); la confirmación de deploy que muestra a una persona los valores declarados antes de escribirlos en un dispositivo es una pantalla de Studio y no forma parte de esta página.
+Lo que esto no afirma: el tiempo entre el encendido y el instante en que el firmware maneja los pines es el estado de reset del componente, y una placa que necesita un pin en uno ahí necesita hardware que lo haga (véase [Placas](../reference/boards.md)); la confirmación de carga que muestra a una persona los valores declarados antes de escribirlos en un dispositivo es una pantalla de Studio y no forma parte de esta página.
 
 ## Runtime a prueba de fallas: faults, causa de reset y watchdog
 
@@ -220,7 +220,7 @@ Un fallo del procesador, un desbordamiento de stack, una aserción o un kernel p
 
 ### Tras un reset el runtime espera en STOP (RT-022)
 
-Sea cual sea la causa, el programa guardado se restaura en STOP con las salidas en sus valores seguros, y **RUN es un comando de una persona**. El runtime nunca entra en RUN por sí solo a causa de un reset (la función `zplc_reset_may_run` vale 0 para toda causa; volver a ejecutar tras un encendido limpio de un dispositivo que una persona habilitó antes es una decisión del responsable del proyecto, D-13, y no se toma aquí). Las variables retentivas se restauran solo cuando `CONFIG_ZPLC_RETAIN_PERSIST` está activado, y por defecto no lo está. Un deploy detiene el programa en ejecución antes de transferir un solo byte, de modo que una transferencia nunca corre junto a un programa que estaba en RUN.
+Sea cual sea la causa, el programa guardado se restaura en STOP con las salidas en sus valores seguros, y **RUN es un comando de una persona**. El runtime nunca entra en RUN por sí solo a causa de un reset (la función `zplc_reset_may_run` vale 0 para toda causa; volver a ejecutar tras un encendido limpio de un dispositivo que una persona habilitó antes es una decisión del responsable del proyecto, D-13, y no se toma aquí). Las variables retentivas se restauran solo cuando `CONFIG_ZPLC_RETAIN_PERSIST` está activado, y por defecto no lo está. Una carga detiene el programa en ejecución antes de transferir un solo byte, de modo que una transferencia nunca corre junto a un programa que estaba en RUN.
 
 ### El watchdog de hardware (RT-020)
 

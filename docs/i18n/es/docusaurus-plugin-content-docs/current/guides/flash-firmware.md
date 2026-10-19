@@ -12,7 +12,7 @@ tags: [how-to, hardware, firmware]
 Grabar escribe el runtime de ZPLC en una placa. **Usted lo inicia.** El asistente de
 Studio y el servidor MCP nunca graban, despliegan, fuerzan, arrancan ni detienen un
 dispositivo, y nada de esta página lo hace por usted. Compilar la imagen, grabarla,
-desplegar un programa y ejecutarlo son cuatro operaciones separadas
+cargar un programa y ejecutarlo son cuatro operaciones separadas
 ([Despliegue](../ide/deployment.md)).
 
 :::caution No ejecutado en una placa

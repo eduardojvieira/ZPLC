@@ -79,6 +79,6 @@ Los canales de E/S de cada placa, con sus pines y sus valores seguros, están en
 - **Cualquier cosa sobre seguridad:** lea [Seguridad y limitaciones](../safety-and-limitations.md).
 
 Los registros de hardware los hace una persona, nunca un asistente de IA ni el
-servidor MCP. Compilar el firmware, grabarlo, desplegar un programa y ejecutarlo
+servidor MCP. Compilar el firmware, grabarlo, cargar un programa y ejecutarlo
 siguen siendo operaciones separadas: [Pruebas de firmware](../development/firmware-testing.md)
 explica qué muestran las suites automáticas y qué no.

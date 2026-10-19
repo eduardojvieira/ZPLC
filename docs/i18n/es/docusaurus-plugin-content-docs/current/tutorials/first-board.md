@@ -3,7 +3,7 @@ slug: /tutorials/first-board
 id: first-board
 title: Su primera placa
 sidebar_label: Su primera placa
-description: "Los pasos para compilar el firmware, grabarlo, conectar Studio, desplegar un programa y observar una salida en una Raspberry Pi Pico o un ESP32-S3, todavía no ejecutados en una placa."
+description: "Los pasos para compilar el firmware, grabarlo, conectar Studio, cargar un programa y observar una salida en una Raspberry Pi Pico o un ESP32-S3, todavía no ejecutados en una placa."
 tags: [tutorial, hardware, raspberry-pi-pico, esp32-s3]
 ---
 
@@ -15,7 +15,7 @@ y del flujo de despliegue de Studio, y **nadie la ha ejecutado en una placa**.
 
 :::danger No ejecutado en una placa
 El firmware de ambas placas compila en integración continua y cabe en su
-presupuesto de flash y RAM. Nadie lo ha grabado, arrancado, desplegado un programa
+presupuesto de flash y RAM. Nadie lo ha grabado, arrancado, cargado un programa
 en él ni visto cambiar una salida: el nivel de ambas placas es `cross-build`
 ([Soporte de hardware](../reference/capabilities-evidence.md)). Nada de lo que sigue
 dice que un paso funcione. Si lo sigue, usted es el primero, y su resultado es una

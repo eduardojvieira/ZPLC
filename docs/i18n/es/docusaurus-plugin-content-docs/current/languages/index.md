@@ -32,38 +32,38 @@ Cada fila nombra la prueba que muestra la capacidad: un recorrido de Studio, una
 | Texto Estructurado | Editar | Recorrido de Studio en la simulación nativa | `3 Edit Structured Text, save, reopen` |
 | Texto Estructurado | Compilar | Recorrido de Studio en la simulación nativa | `5 Build successfully` |
 | Texto Estructurado | Simular | Recorrido de Studio en la simulación nativa | `6 Simulate: connect, run, watch a value change` |
-| Texto Estructurado | Depurar (punto de interrupción, pausa, paso) | Recorrido de Studio en la simulación nativa | `16 Debug details: stop, trace, resume mid-scan` |
+| Texto Estructurado | Depurar (punto de parada, pausa, paso) | Recorrido de Studio en la simulación nativa | `16 Debug details: stop, trace, resume mid-scan` |
 | Texto Estructurado | Observar valores en línea | Recorrido de Studio en la simulación nativa | `28e Inline values in Structured Text come from the debug map` |
 | Texto Estructurado | Forzar | Recorrido de Studio en la simulación nativa | `8 Force an input and release it` |
-| Texto Estructurado | Desplegar en una placa | Solo en una placa | Una persona lo despliega y lo ejecuta en una placa; la página de evidencia de hardware lista los registros |
+| Texto Estructurado | Cargar en una placa | Solo en una placa | Una persona lo carga y lo ejecuta en una placa; la página de evidencia de hardware lista los registros |
 | Lista de Instrucciones | Editar | Aún sin prueba de extremo a extremo |   |
 | Lista de Instrucciones | Compilar | Caso de conformidad en el runtime del equipo | `lng-018-il-jump-runs-every-scan` |
 | Lista de Instrucciones | Simular | Caso de conformidad en el runtime del equipo | `lng-018-il-jump-runs-every-scan` |
-| Lista de Instrucciones | Depurar (punto de interrupción, pausa, paso) | Recorrido de Studio en la simulación nativa | `28kc A breakpoint on an IL line stops execution` |
+| Lista de Instrucciones | Depurar (punto de parada, pausa, paso) | Recorrido de Studio en la simulación nativa | `28kc A breakpoint on an IL line stops execution` |
 | Lista de Instrucciones | Observar valores en línea | Aún sin prueba de extremo a extremo |   |
 | Lista de Instrucciones | Forzar | Aún sin prueba de extremo a extremo |   |
-| Lista de Instrucciones | Desplegar en una placa | Solo en una placa | Una persona lo despliega y lo ejecuta en una placa; la página de evidencia de hardware lista los registros |
+| Lista de Instrucciones | Cargar en una placa | Solo en una placa | Una persona lo carga y lo ejecuta en una placa; la página de evidencia de hardware lista los registros |
 | Diagrama de Escalera | Editar | Recorrido de Studio en la simulación nativa | `28f A rung is built from the keyboard` |
 | Diagrama de Escalera | Compilar | Prueba en el runtime nativo | `Blinky visual languages on native POSIX` |
 | Diagrama de Escalera | Simular | Prueba en el runtime nativo | `Blinky visual languages on native POSIX` |
-| Diagrama de Escalera | Depurar (punto de interrupción, pausa, paso) | Recorrido de Studio en la simulación nativa | `28 A breakpoint on a rung stops execution` |
+| Diagrama de Escalera | Depurar (punto de parada, pausa, paso) | Recorrido de Studio en la simulación nativa | `28 A breakpoint on a rung stops execution` |
 | Diagrama de Escalera | Observar valores en línea | Recorrido de Studio en la simulación nativa | `28b Online values of a rung come from the debug map` |
 | Diagrama de Escalera | Forzar | Aún sin prueba de extremo a extremo |   |
-| Diagrama de Escalera | Desplegar en una placa | Solo en una placa | Una persona lo despliega y lo ejecuta en una placa; la página de evidencia de hardware lista los registros |
+| Diagrama de Escalera | Cargar en una placa | Solo en una placa | Una persona lo carga y lo ejecuta en una placa; la página de evidencia de hardware lista los registros |
 | Diagrama de Bloques de Función | Editar | Recorrido de Studio en la simulación nativa | `28g A function block diagram is edited from the keyboard` |
 | Diagrama de Bloques de Función | Compilar | Prueba en el runtime nativo | `Blinky visual languages on native POSIX` |
 | Diagrama de Bloques de Función | Simular | Prueba en el runtime nativo | `Blinky visual languages on native POSIX` |
-| Diagrama de Bloques de Función | Depurar (punto de interrupción, pausa, paso) | Recorrido de Studio en la simulación nativa | `28ka A breakpoint on an FBD block stops execution` |
+| Diagrama de Bloques de Función | Depurar (punto de parada, pausa, paso) | Recorrido de Studio en la simulación nativa | `28ka A breakpoint on an FBD block stops execution` |
 | Diagrama de Bloques de Función | Observar valores en línea | Recorrido de Studio en la simulación nativa | `28c Online values of an FBD come from the debug map` |
 | Diagrama de Bloques de Función | Forzar | Recorrido de Studio en la simulación nativa | `51 A forced variable is shown as forced in the function block diagram` |
-| Diagrama de Bloques de Función | Desplegar en una placa | Solo en una placa | Una persona lo despliega y lo ejecuta en una placa; la página de evidencia de hardware lista los registros |
+| Diagrama de Bloques de Función | Cargar en una placa | Solo en una placa | Una persona lo carga y lo ejecuta en una placa; la página de evidencia de hardware lista los registros |
 | Diagrama Funcional Secuencial | Editar | Recorrido de Studio en la simulación nativa | `28h A sequential function chart is edited from the keyboard` |
 | Diagrama Funcional Secuencial | Compilar | Prueba en el runtime nativo | `Blinky visual languages on native POSIX` |
 | Diagrama Funcional Secuencial | Simular | Prueba en el runtime nativo | `Blinky visual languages on native POSIX` |
-| Diagrama Funcional Secuencial | Depurar (punto de interrupción, pausa, paso) | Recorrido de Studio en la simulación nativa | `28kb A breakpoint on an SFC step stops execution` |
+| Diagrama Funcional Secuencial | Depurar (punto de parada, pausa, paso) | Recorrido de Studio en la simulación nativa | `28kb A breakpoint on an SFC step stops execution` |
 | Diagrama Funcional Secuencial | Observar valores en línea | Recorrido de Studio en la simulación nativa | `28d Online state of an SFC comes from the debug map` |
 | Diagrama Funcional Secuencial | Forzar | Recorrido de Studio en la simulación nativa | `51b A forced variable is shown as forced in the sequential function chart` |
-| Diagrama Funcional Secuencial | Desplegar en una placa | Solo en una placa | Una persona lo despliega y lo ejecuta en una placa; la página de evidencia de hardware lista los registros |
+| Diagrama Funcional Secuencial | Cargar en una placa | Solo en una placa | Una persona lo carga y lo ejecuta en una placa; la página de evidencia de hardware lista los registros |
 
 {/* <<< END GENERATED: language-capabilities <<< */}
 
@@ -75,9 +75,9 @@ Valide como un único flujo el lenguaje fuente, la representación generada, los
 
 ## Depuración y evidencia de runtime
 
-El IDE expone inspección, simulación y depuración según el perfil de capacidades del runtime activo. POSIX nativo es un runtime lógico de host, no evidencia de timing de hardware ni de comportamiento en target. Breakpoints de hardware, forces, deploy y controles de ejecución son específicos de capacidades y requieren evidencia separada.
+El IDE expone inspección, simulación y depuración según el perfil de capacidades del runtime activo. POSIX nativo es un runtime lógico de host, no evidencia de timing de hardware ni de comportamiento en target. Los puntos de parada de hardware, los forzados, la carga y los controles de ejecución son específicos de capacidades y requieren evidencia separada.
 
-En la simulación nativa de un host Linux, los recorridos del IDE detienen el programa en un breakpoint sobre una línea de Structured Text, una línea de Instruction List, un peldaño de Ladder, un bloque de un diagrama de bloques de función y un paso de un gráfico de funciones secuenciales, y marcan el elemento donde se detuvo. Estas ejecuciones no son evidencia de un breakpoint en una placa: eso requiere una ejecución con hardware en el lazo en esa placa.
+En la simulación nativa de un host Linux, los recorridos del IDE detienen el programa en un punto de parada sobre una línea de Structured Text, una línea de Instruction List, un peldaño de Ladder, un bloque de un diagrama de bloques de función y un paso de un gráfico de funciones secuenciales, y marcan el elemento donde se detuvo. Estas ejecuciones no son evidencia de un punto de parada en una placa: eso requiere una ejecución con hardware en el lazo en esa placa.
 
 ## Biblioteca estándar
 

@@ -72,7 +72,7 @@ una imagen por placa en cada versión que hace, y Studio muestra la imagen de la
 placa elegida, con su suma de verificación y los pasos para grabarla, en **Project
 settings**, **Target**; no la graba. Para compilar el firmware usted mismo,
 siga la [configuración del espacio de trabajo Zephyr](../reference/zephyr-workspace-setup.md).
-Compilar el firmware, grabarlo, desplegar un programa y ejecutarlo son acciones
+Compilar el firmware, grabarlo, cargar un programa y ejecutarlo son acciones
 separadas que una persona inicia en Studio. Las herramientas de IA y MCP no
 pueden iniciar ninguna de ellas.
 

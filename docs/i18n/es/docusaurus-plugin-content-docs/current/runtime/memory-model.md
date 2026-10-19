@@ -47,7 +47,7 @@ flowchart LR
 - `bp`
 - profundidad de llamadas
 - flags y error
-- breakpoints
+- puntos de parada
 - evaluation stack
 - call stack
 

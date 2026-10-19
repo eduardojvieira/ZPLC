@@ -199,7 +199,7 @@ Un número distinto se rechaza y el rechazo muestra los dos:
 | Loader (`zplc_loader_verify`) | Devuelve `ZPLC_LOADER_ERR_DRAFT` (`-17`). El contador se lee antes que la versión, los flags y el CRC, porque otro borrador puede ordenar el resto distinto. `zplc_loader_artifact_draft_counter` lo lee sin confiar en nada más. |
 | Simulación nativa | `program.load` falla con la frase de arriba y el programa cargado sigue corriendo. Studio la dice antes de enviar nada. El runtime informa su contador en `session.hello` (`draft_counter`). |
 | Carga al firmware | `zplc load` y `zplc sched load` responden `ERROR: Program was built for contract draft N, this runtime is draft M (-17)`. `zplc sys info --json` informa `draft_counter`. |
-| Deploy a hardware desde Studio | El preflight compara el artefacto con el `draft_counter` de la placa conectada y rechaza antes de enviar nada. |
+| Carga a hardware desde Studio | El preflight compara el artefacto con el `draft_counter` de la placa conectada y rechaza antes de enviar nada. |
 | CLI | `zplc-cli compile` indica el contador de lo que construyó. |
 
 Un artefacto construido antes del contador lleva 0, y una imagen de firmware

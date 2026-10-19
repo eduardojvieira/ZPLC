@@ -155,7 +155,7 @@ El endurecimiento del runtime del firmware (RT-010 a RT-034) tiene sus propias s
 - `runtime_boot` ejecuta un plan de arranque en orden, rechaza un plan que arranca un servicio antes que el runtime
   y sigue adelante cuando un servicio falla;
 - `program_store_nvs` ejecuta el program store sobre NVS en el simulador de flash con un artefacto tan grande como
-  la región de código, y corta la energía en cada operación de un deploy;
+  la región de código, y corta la energía en cada operación de una carga;
 - `modbus_force` escribe por el servidor Modbus sobre el core real y muestra que una variable forzada conserva su
   valor forzado;
 - `scheduler_admission` retiene un scan en el commit y en la escritura de salidas, para mostrar que una escritura de

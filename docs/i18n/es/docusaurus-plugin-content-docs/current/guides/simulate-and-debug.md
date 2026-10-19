@@ -4,7 +4,7 @@ id: simulate-and-debug
 title: Simular y depurar un programa
 sidebar_label: Simular y depurar
 description: "Ejecute un programa en el simulador, observe sus variables, deténgalo en un punto de interrupción, avance paso a paso y vea qué conserva cada control."
-tags: [how-to, debugging, simulation, breakpoints]
+tags: [how-to, debugging, simulation, puntos de parada]
 ---
 
 # Simular y depurar un programa
