@@ -30,15 +30,15 @@ const ids = (items: Item[]): string[] => items.flatMap((item) => (isCategory(ite
 const labels = (items: Item[]): string[] => items.flatMap((item) => (isCategory(item) ? [item.label, ...labels(item.items)] : []));
 
 /** The id of a page the way the site generator forms it: its front matter `id`, or its file name, inside its folder. */
-function pageId(path: string, text: string): { id: string; draft: boolean } {
+function pageId(path: string, text: string): { id: string; draft: boolean; unlisted: boolean } {
   const front = /^---\n([\s\S]*?)\n---/.exec(text)?.[1] ?? '';
   const field = (key: string) => new RegExp(`^${key}:\\s*(.+)$`, 'm').exec(front)?.[1]?.trim().replace(/^["']|["']$/g, '');
   const folder = dirname(path);
   const id = field('id') ?? (path.split('/').at(-1) ?? '').replace(/\.mdx?$/, '');
-  return { id: folder === '.' ? id : `${folder}/${id}`, draft: field('draft') === 'true' };
+  return { id: folder === '.' ? id : `${folder}/${id}`, draft: field('draft') === 'true', unlisted: field('unlisted') === 'true' };
 }
 
-function pagesOf(base: string): Array<{ path: string; id: string; draft: boolean }> {
+function pagesOf(base: string): Array<{ path: string; id: string; draft: boolean; unlisted: boolean }> {
   return markdownFiles(ROOT, base).map((file) => {
     const path = file.slice(base.length + 1);
     return { path, ...pageId(path, text(file)) };
@@ -58,7 +58,8 @@ describe('docs structure: the sidebar is organised by reader intent (DOC-002)', 
     for (const base of [EN_DIR, ES_DIR]) {
       const pages = pagesOf(base);
       const published = pages.filter((page) => !page.draft).map((page) => page.id);
-      expect({ base, missing: published.filter((id) => !listed.includes(id)) }).toEqual({ base, missing: [] });
+      // an unlisted page (the generated course pages, LRN-035) is published and linked from a listed page, not in the sidebar
+      expect({ base, missing: published.filter((id) => !listed.includes(id) && !pages.find((page) => page.id === id)!.unlisted) }).toEqual({ base, missing: [] });
       expect({ base, dangling: listed.filter((id) => !published.includes(id)) }).toEqual({ base, dangling: [] });
     }
   });
