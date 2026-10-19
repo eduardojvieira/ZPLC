@@ -883,10 +883,10 @@ export const JOURNEYS: Journey[] = [
       await app.until('Learn to grade the first lesson as passed', async () => await app.eval<boolean>(`document.querySelector('[data-learn-grade="passed"]') !== null`) || undefined)
         .catch(async (error: Error) => { throw new Error(`${error.message}: the grade shown is ${await app.eval<string>(`document.querySelector('[data-learn-grade]')?.getAttribute('data-learn-grade') ?? 'none'`)}; ${await app.eval<string>(`document.querySelector('[data-learn-check-status]')?.textContent ?? ''`)}`); });
       const file = join(root, 'profile', 'zplc-learn-progress.v2.json');
-      type Saved = { last: { lessonId: string } | null; lessons: Record<string, { state: string; hintsUsed: number; solutionShown: boolean; grade: unknown }> };
+      type Saved = { last: { lessonId: string } | null; lessons: Record<string, { state: string; hintsShown: number[]; solutionShown: boolean; grade: unknown }> };
       await app.until('the passed lesson in the progress file', () => existsSync(file) && disk(file).includes('"state":"passed"') || undefined);
       const saved = JSON.parse(disk(file)) as Saved;
-      assert(saved.lessons[FIRST]?.state === 'passed' && saved.lessons[FIRST].hintsUsed >= 1 && saved.lessons[FIRST].solutionShown === false && saved.lessons[FIRST].grade !== null, `The progress file does not record the passed lesson with its hint and no solution: ${JSON.stringify(saved.lessons[FIRST])}`);
+      assert(saved.lessons[FIRST]?.state === 'passed' && saved.lessons[FIRST].hintsShown.includes(1) && saved.lessons[FIRST].solutionShown === false && saved.lessons[FIRST].grade !== null, `The progress file does not record the passed lesson with its hint and no solution: ${JSON.stringify(saved.lessons[FIRST])}`);
 
       // 7. The window starts again: the progress is read back, the next lesson is open, Continue offers it.
       await app.cdp.command('Page.reload');
@@ -902,7 +902,7 @@ export const JOURNEYS: Journey[] = [
       const exported = await app.until('the exported file', async () => await app.eval<string | null>('window.__learnExport') || undefined);
       const document_ = JSON.parse(exported) as { kind: string; lessons: Record<string, unknown> };
       assert(document_.kind === 'zplc-learn-progress' && FIRST in document_.lessons && (await app.eval<string>('window.__learnExportName')) === 'zplc-learn-progress.v2.json', 'The exported file is not the progress document.');
-      document_.lessons[SECOND] = { state: 'passed', grade: null, passedAt: null, startedAt: null, hintsUsed: 0, solutionShown: false };
+      document_.lessons[SECOND] = { state: 'passed', grade: null, passedAt: null, startedAt: null, hintsShown: [], solutionShown: false };
       const incoming = join(root, 'incoming-progress.json');
       writeFileSync(incoming, JSON.stringify(document_));
       const choose = async (path: string) => {

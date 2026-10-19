@@ -3,7 +3,7 @@
  * is valid or not; the learner needs to know which: too large, not JSON, not a progress file, a version this build does not
  * know (and which), or a progress file of a known version with a part that is damaged. Pure; it reads nothing but the text.
  */
-import { LEARN_PROGRESS_EXPORT_KIND, LEARN_PROGRESS_SCHEMA_VERSION, parseImport } from '../../electron/learnProgressModel';
+import { LEARN_PROGRESS_EXPORT_KIND, LEARN_PROGRESS_PREVIOUS_SCHEMA_VERSION, LEARN_PROGRESS_SCHEMA_VERSION, parseImport } from '../../electron/learnProgressModel';
 
 export type ProgressFileProblem = 'too-large' | 'not-json' | 'not-progress' | 'unknown-version' | 'malformed';
 export type ProgressFileDiagnosis = { ok: true } | { ok: false; problem: ProgressFileProblem; version: number | null };
@@ -21,7 +21,7 @@ export function diagnoseProgressFile(text: string): ProgressFileDiagnosis {
   const { kind, schemaVersion, mastered } = value as Record<string, unknown>;
   const version = typeof schemaVersion === 'number' && Number.isInteger(schemaVersion) ? schemaVersion : null;
   // An export of this release (kind) or the file of the first release (a list of mastered lessons): the version decides what it is.
-  if (kind === LEARN_PROGRESS_EXPORT_KIND) return version === LEARN_PROGRESS_SCHEMA_VERSION ? refused('malformed', version) : refused('unknown-version', version);
+  if (kind === LEARN_PROGRESS_EXPORT_KIND) return version === LEARN_PROGRESS_SCHEMA_VERSION || version === LEARN_PROGRESS_PREVIOUS_SCHEMA_VERSION ? refused('malformed', version) : refused('unknown-version', version);
   if (Array.isArray(mastered)) return version === LEGACY_VERSION ? refused('malformed', version) : refused('unknown-version', version);
   return refused('not-progress');
 }

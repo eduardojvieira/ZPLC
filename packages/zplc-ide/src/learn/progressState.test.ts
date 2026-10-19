@@ -49,7 +49,7 @@ describe('the progress state', () => {
     await first.getState().note({ lessonId: 'scan-cycle-one-scan-memory', solution: true });
     const restarted = stateOver(directory);
     await restarted.getState().load();
-    expect(restarted.getState().document?.lessons['scan-cycle-one-scan-memory']).toMatchObject({ state: 'in-progress', hintsUsed: 2, solutionShown: true });
+    expect(restarted.getState().document?.lessons['scan-cycle-one-scan-memory']).toMatchObject({ state: 'in-progress', hintsShown: [1, 2], solutionShown: true });
     expect(restarted.getState().document?.last?.lessonId).toBe('scan-cycle-one-scan-memory');
   });
 
@@ -94,7 +94,7 @@ describe('the progress state', () => {
     expect(await target.getState().importText(text!)).toBe(true);
     expect(target.getState().transfer).toBe('imported');
     expect(target.getState().document?.lessons['scan-cycle-one-scan-memory']?.grade?.time).toBe('2026-10-19T11:00:00.000Z');
-    expect(target.getState().document?.lessons['blinky-ladder-timer-feedback']?.hintsUsed).toBe(2);
+    expect(target.getState().document?.lessons['blinky-ladder-timer-feedback']?.hintsShown).toEqual([1, 2]);
   });
 
   it('refuses a malformed or unknown-version file with its reason and leaves the progress as it was', async () => {
@@ -105,8 +105,8 @@ describe('the progress state', () => {
     const before = state.getState().document;
     expect(await state.getState().importText('not json')).toBe(false);
     expect(state.getState().transfer).toEqual({ error: 'not-json', version: null });
-    expect(await state.getState().importText('{"kind":"zplc-learn-progress","schemaVersion":3,"last":null,"lessons":{}}')).toBe(false);
-    expect(state.getState().transfer).toEqual({ error: 'unknown-version', version: 3 });
+    expect(await state.getState().importText('{"kind":"zplc-learn-progress","schemaVersion":4,"last":null,"lessons":{}}')).toBe(false);
+    expect(state.getState().transfer).toEqual({ error: 'unknown-version', version: 4 });
     expect(state.getState().document).toEqual(before);
     const restarted = stateOver(directory);
     await restarted.getState().load();
@@ -121,7 +121,7 @@ describe('the progress state without the desktop store (a browser)', () => {
     await state.getState().load();
     expect(state.getState().document?.lessons['motor-start-stop-safe']?.state).toBe('passed');
     await state.getState().note({ lessonId: 'blinky-ladder-timer-feedback', hint: 1 });
-    expect(state.getState().document?.lessons['blinky-ladder-timer-feedback']?.hintsUsed).toBe(1);
+    expect(state.getState().document?.lessons['blinky-ladder-timer-feedback']?.hintsShown).toEqual([1]);
     expect(await state.getState().markPassed('scan-cycle-one-scan-memory')).toBe(true);
     expect(remembered).toEqual(['scan-cycle-one-scan-memory']);
     expect(state.getState().document?.lessons['scan-cycle-one-scan-memory']?.state).toBe('passed');
