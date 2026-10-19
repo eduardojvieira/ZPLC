@@ -130,7 +130,7 @@ describe('Welcome example sections', () => {
   it('groups the examples under their headings, in the order of the groups', () => {
     expect(sections.map((section) => section.title)).toEqual(['First steps', 'Motors and drives', 'Process and sequences', 'Language tour', 'Boards and hardware']);
     const byGroup = Object.fromEntries(sections.map((section) => [section.id, section.examples.map((example) => example.id)]));
-    expect(byGroup['first-steps']).toEqual(['scan_snapshot', 'blinky', 'edge_counter']);
+    expect(byGroup['first-steps']).toEqual(['first_blink', 'scan_snapshot', 'blinky', 'edge_counter', 'enabled_blink', 'two_hand', 'alarm_latch', 'delays']);
     expect(byGroup.motors).toEqual(['motor_start_stop', 'motor_control', 'motor_plant']);
     expect(byGroup.process).toEqual(['tank_level', 'conveyor_01', 'pedestrian_crossing']);
     expect(byGroup.languages).toEqual(LANGUAGE_TOUR);
