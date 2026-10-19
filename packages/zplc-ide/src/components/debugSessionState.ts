@@ -8,7 +8,6 @@ export const PROGRAM_LOAD_STATE = {
 } as const;
 
 /** Safe copy when a physical deploy may have started but its result is unknown. */
-export const HARDWARE_DEPLOY_UNCONFIRMED_MESSAGE = 'Deploy was not confirmed. Device program state is unknown; reconnect and inspect before proceeding.';
 
 export type ProgramLoadState = (typeof PROGRAM_LOAD_STATE)[keyof typeof PROGRAM_LOAD_STATE];
 

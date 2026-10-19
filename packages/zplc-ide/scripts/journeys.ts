@@ -3820,7 +3820,7 @@ export const JOURNEYS: Journey[] = [
       await app.until('the project workbench to appear', async () => await app.visible(css('[role="toolbar"]')) || undefined);
 
       /** A catalog key shown as it is written (`console.tab.lab`), or one of the English phrases the migrated screens used to hard-code. */
-      const RAW_KEY = String.raw`\b(?:console|mqtt|modbus|network|io|controller|lab|toolchain|commtags|project|ld|importArchive|interlock|learn|toolbarMsg|examples|panel|toolbar|welcome|common|labScene|notices|workbench\.[a-z]+|editors\.[a-z]+|settings\.(?:communication|firmware|metadata|target|tasks))\.[a-z][A-Za-z0-9]*(?:\.[A-Za-z0-9]+)*\b`;
+      const RAW_KEY = String.raw`\b(?:console|mqtt|modbus|network|io|controller|lab|toolchain|commtags|project|ld|importArchive|interlock|learn|toolbarMsg|examples|panel|toolbar|welcome|common|labScene|notices|terminal|deploy|library|declarationKind|keyboard|sfc|fbd|testDiag|archive|tree|picker|types|signal|store|debugger|link|labPlayback|workbench\.[a-z]+|editors\.[a-z]+|settings\.(?:communication|firmware|metadata|target|tasks))\.[a-z][A-Za-z0-9]*(?:\.[A-Za-z0-9]+)*\b`;
       const text = (id: string) => app.eval<string>(`document.getElementById(${JSON.stringify(id)})?.innerText ?? ''`);
       const walk = async (tab: string, expected: string[], english: string[]) => {
         await app.click(css(`#console-tab-${tab}`), `the ${tab} tab`);
@@ -3841,7 +3841,8 @@ export const JOURNEYS: Journey[] = [
       assert(!new RegExp(RAW_KEY).test(chrome), `The window shows a raw catalog key: ${chrome.match(new RegExp(RAW_KEY))?.[0]}`);
       // The second batch of migrated surfaces (WP-65): the Watch and Terminal tabs, the Inspector and the project settings sections.
       await walk('watch', [], ['Add variable', 'Start debugging to see live values', 'Watch']);
-      await walk('terminal', ['Sin conexión'], ['Not connected', 'Connect to send commands']);
+      // WP-75: the opening lines of the Terminal come from the catalog too (they were written in a plain .ts module).
+      await walk('terminal', ['Sin conexión', 'Terminal serie de ZPLC', 'Use la conexión compartida de la barra de herramientas'], ['Not connected', 'Connect to send commands', 'ZPLC serial terminal', 'Use the shared connection']);
       await app.click(css('[data-toggle-inspector]'), 'the Inspector button of the command bar');
       await app.until('the Inspector in Spanish', async () => await app.visible(css('[aria-label="Inspector del entorno de trabajo"]')) || undefined);
       const inspector = await app.eval<string>(`document.querySelector('[aria-label="Inspector del entorno de trabajo"]')?.innerText ?? ''`);
@@ -4071,6 +4072,34 @@ export const JOURNEYS: Journey[] = [
       await app.until('the prompt to close', async () => await dialogTitle(app) === null || undefined);
       assert((await editorText(app)).includes(EDIT) && await app.eval<string>('window.__reloadProbe') === marker, 'Cancel must keep the page and its changes: the page reloaded.');
       assert(disk(file) === original, 'The file on disk must be as it was.');
+    },
+  },
+  {
+    name: '55 The density setting makes controls and rows smaller on every screen, and the setting is one the person reaches from the Welcome screen', example: 'motor_start_stop', proves: ['UX-008'], partly: [],
+    run: async (app, { project }) => {
+      /** The sizes the density tokens give: the control and row tokens on the root, and what two kit controls actually measure. */
+      const measure = () => app.eval<{ density: string; control: number; row: number; spacing: number; field: number; button: number }>(`(() => {
+        const style = getComputedStyle(document.documentElement);
+        const height = (selector) => { const element = document.querySelector(selector); return element ? element.getBoundingClientRect().height : Number.NaN; };
+        return { density: document.documentElement.dataset.density, control: parseFloat(style.getPropertyValue('--control-height')), row: parseFloat(style.getPropertyValue('--row-height')), spacing: parseFloat(style.getPropertyValue('--spacing')), field: height('[data-setting="density"]'), button: height('.ui-button:not([data-variant="bare"])') };
+      })()`);
+      await app.click(css('[data-welcome-preferences] summary'), 'the Preferences disclosure of the Welcome screen');
+      await app.until('the preferences on the Welcome screen', async () => await app.visible(css('[data-app-preferences]')) || undefined);
+      const comfortable = await measure();
+      assert(comfortable.density === 'comfortable', `The density starts as ${comfortable.density}.`);
+
+      await selectOption(app, '[data-setting="density"]', 'Compact');
+      const compact = await measure();
+      assert(compact.density === 'compact', `The root says ${compact.density}, not compact.`);
+      for (const key of ['control', 'row', 'spacing', 'field'] as const) {
+        assert(compact[key] < comfortable[key], `Compact does not shrink ${key}: ${JSON.stringify({ comfortable, compact })}`);
+      }
+
+      // The same setting reaches the other screen: the project workbench measures with the compact tokens.
+      await openFolder(app, project);
+      const inProject = await measure();
+      assert(inProject.density === 'compact' && inProject.control === compact.control && inProject.row === compact.row, `The workbench does not use the compact tokens: ${JSON.stringify(inProject)}`);
+      assert(Number.isFinite(inProject.button) && inProject.button <= compact.control + 0.5, `A button of the workbench is taller than the compact control height: ${JSON.stringify(inProject)}`);
     },
   },
 ];

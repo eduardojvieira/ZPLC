@@ -2,7 +2,6 @@ import { describe, expect, it } from 'bun:test';
 
 import {
   canRunCurrentProgram,
-  HARDWARE_DEPLOY_UNCONFIRMED_MESSAGE,
   isCompileResultCurrent,
   nextProgramLoadStateAfterDeploy,
   nextProgramLoadStateAfterCompile,
@@ -10,11 +9,12 @@ import {
   PROGRAM_LOAD_STATE,
   shouldAutoLoadBeforeStart,
 } from './debugSessionState';
+import { t } from '../i18n';
 
 describe('debugSessionState', () => {
   it('never asserts a safe physical program state after an unconfirmed deploy', () => {
-    expect(HARDWARE_DEPLOY_UNCONFIRMED_MESSAGE).toBe('Deploy was not confirmed. Device program state is unknown; reconnect and inspect before proceeding.');
-    expect(HARDWARE_DEPLOY_UNCONFIRMED_MESSAGE).not.toContain('not deployed');
+    expect(t('deploy.unconfirmed')).toBe('Deploy was not confirmed. Device program state is unknown; reconnect and inspect before proceeding.');
+    expect(t('deploy.unconfirmed')).not.toContain('not deployed');
     expect(canRunCurrentProgram('hardware', true, PROGRAM_LOAD_STATE.EMPTY)).toBe(false);
   });
 

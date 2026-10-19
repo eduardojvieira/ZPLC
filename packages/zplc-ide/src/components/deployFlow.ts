@@ -10,7 +10,6 @@ import { DEVICE_ADMISSION_CODE, DeviceAdmissionError } from '../runtime/deviceHa
 import { useNotifications } from '../store/notifications';
 import { confirmDeploy, showDeployRefusal } from './deployConfirm';
 import {
-  HARDWARE_DEPLOY_UNCONFIRMED_MESSAGE,
   nextProgramLoadStateAfterDeploy,
   PROGRAM_LOAD_STATE,
   type LastCompileResult,
@@ -57,13 +56,13 @@ export async function performHardwareDeploy(deps: DeployDeps): Promise<void> {
       throw refusal;
     }
     if (!await confirmDeploy(confirmation, deps.running)) {
-      log({ type: 'info', message: 'Hardware deploy cancelled; no program was sent.', source: 'runtime' });
+      log({ type: 'info', message: t('deploy.log.cancelled'), source: 'runtime' });
       notices.report({ kind: 'deploy', status: 'cancelled', title: t('notices.deploy.cancelled'), detail: t('notices.deploy.cancelledDetail'), details: 'output' });
       return;
     }
     const now = deps.project();
     if (deps.currentResult() !== result || now.session !== started.session || now.board !== started.board) {
-      log({ type: 'warning', message: 'Project changed before deploy confirmation. Build the current source before deploying.', source: 'runtime' });
+      log({ type: 'warning', message: t('deploy.log.projectChanged'), source: 'runtime' });
       notices.report({ kind: 'deploy', status: 'warning', title: t('notices.deploy.refused'), detail: t('notices.deploy.refusedDetail'), details: 'output' });
       return;
     }
@@ -75,21 +74,21 @@ export async function performHardwareDeploy(deps: DeployDeps): Promise<void> {
     await deps.loadProgram(dataToUpload, result.debugMap, started.board);
     if (nextProgramLoadStateAfterDeploy(deployedRevision, deps.compileRevision(), deployedCompilerRunId, deps.compilerRunId()) === PROGRAM_LOAD_STATE.LOADED) {
       deps.setProgramLoadState(PROGRAM_LOAD_STATE.LOADED);
-      log({ type: 'success', message: 'Program deployed and stopped.', source: 'runtime' });
+      log({ type: 'success', message: t('deploy.log.deployed'), source: 'runtime' });
       notices.finish(deployOperation, { kind: 'deploy', status: 'success', title: t('notices.deploy.done'), details: 'output' });
     } else {
       deps.setProgramLoadState(PROGRAM_LOAD_STATE.EMPTY);
-      log({ type: 'warning', message: 'Device received an earlier build. Deploy the current build before Run.', source: 'runtime' });
+      log({ type: 'warning', message: t('deploy.log.earlierBuild'), source: 'runtime' });
       notices.finish(deployOperation, { kind: 'deploy', status: 'warning', title: t('notices.deploy.earlier'), detail: t('notices.deploy.earlierDetail'), details: 'output' });
     }
   } catch (error) {
     const preflightDenied = error instanceof DeviceAdmissionError && error.code !== DEVICE_ADMISSION_CODE.RESULT_UNKNOWN;
     deps.setProgramLoadState(PROGRAM_LOAD_STATE.EMPTY);
     const failure = programSendStarted && !preflightDenied
-      ? HARDWARE_DEPLOY_UNCONFIRMED_MESSAGE
+      ? t('deploy.unconfirmed')
       : error instanceof DeviceAdmissionError && error.detail
-        ? `Hardware deploy refused: ${error.detail}. Rebuild the program or reflash the board. No program was sent.`
-        : 'Hardware deploy preflight failed. No program was sent.';
+        ? t('deploy.refused', { detail: error.detail })
+        : t('deploy.preflightFailed');
     log({ type: 'error', message: failure, source: 'runtime' });
     const refusal = { kind: 'deploy' as const, status: 'error' as const, title: t('notices.deploy.failed'), detail: failure, details: 'output' as const };
     if (deployOperation) notices.finish(deployOperation, refusal);

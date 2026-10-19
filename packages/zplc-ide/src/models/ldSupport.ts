@@ -7,6 +7,7 @@ import { getFB } from '@zplc/compiler';
 import { getFunctionBlockNamesForVisualEditors } from '../catalog/blockCatalog';
 import { findProjectBlock, type ProjectBlock } from './projectBlocks';
 import type { LDElementType } from './ld';
+import { t } from '../i18n';
 
 export const LD_CONTACT_TYPES = ['contact_no', 'contact_nc', 'contact_p', 'contact_n'] as const;
 export const LD_COIL_TYPES = ['coil', 'coil_negated', 'coil_set', 'coil_reset', 'coil_p', 'coil_n'] as const;
@@ -34,18 +35,4 @@ export function ldPaletteFunctionBlocks(projectBlocks: readonly ProjectBlock[] =
 }
 
 /** How an element is named to someone who cannot see it: the label of its button and what the keyboard editor says (LNG-012). */
-export const LD_ELEMENT_KIND: Record<LDElementType, string> = {
-  contact_no: 'normally open contact',
-  contact_nc: 'normally closed contact',
-  contact_p: 'positive transition contact',
-  contact_n: 'negative transition contact',
-  coil: 'coil',
-  coil_negated: 'negated coil',
-  coil_set: 'set coil',
-  coil_reset: 'reset coil',
-  coil_p: 'positive transition coil',
-  coil_n: 'negative transition coil',
-  function_block: 'function block',
-  left_rail: 'left power rail',
-  right_rail: 'right power rail',
-};
+export const ldElementKind = (type: LDElementType): string => t(`ld.kind.${type}`);

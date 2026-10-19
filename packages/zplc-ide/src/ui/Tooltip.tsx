@@ -68,7 +68,8 @@ export function Tooltip({ content, shortcut, placement = 'top', describes = true
     node.style.visibility = 'visible';
   }, [placement]);
 
-  if (!isValidElement(children)) return children;
+  // Nothing to say (an empty comment): no bubble, and the child stays as it is.
+  if (!isValidElement(children) || content === undefined || content === null || content === false || content === '') return children;
   const own = children.props;
   const open = phase === 'open';
   const target = cloneElement(children, {

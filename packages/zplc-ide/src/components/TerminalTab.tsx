@@ -21,7 +21,7 @@ import { isWebSerialSupported } from '../uploader/webserial';
 import { terminalDisconnectMessage } from './terminalConnectionPresentation';
 import {
   isTerminalForceMutation,
-  TERMINAL_FORCE_COMMAND_BLOCKED_MESSAGE,
+  terminalForceBlockedMessage,
 } from './terminalForceCommandPolicy';
 import { Button, IconButton, TextField } from '../ui';
 
@@ -43,7 +43,7 @@ interface TerminalTabProps {
 export function TerminalTab({ isActive }: TerminalTabProps) {
   const { t } = useT();
   // Terminal state
-  const [lines, setLines] = useState<string[]>(['ZPLC Serial Terminal', 'Use the shared connection from Toolbar', '']);
+  const [lines, setLines] = useState<string[]>(() => [t('terminal.welcome'), t('terminal.useSharedConnection'), '']);
   const [inputValue, setInputValue] = useState('');
   const [commandHistory, setCommandHistory] = useState<string[]>([]);
   const [historyIndex, setHistoryIndex] = useState(-1);
@@ -164,7 +164,7 @@ export function TerminalTab({ isActive }: TerminalTabProps) {
    */
   const sendCommand = async (cmd: string) => {
     if (isTerminalForceMutation(cmd)) {
-      appendOutput(TERMINAL_FORCE_COMMAND_BLOCKED_MESSAGE);
+      appendOutput(terminalForceBlockedMessage());
       return;
     }
 
@@ -194,7 +194,7 @@ export function TerminalTab({ isActive }: TerminalTabProps) {
 
     if (isTerminalForceMutation(cmd)) {
       setInputValue('');
-      appendOutput(TERMINAL_FORCE_COMMAND_BLOCKED_MESSAGE);
+      appendOutput(terminalForceBlockedMessage());
       return;
     }
     
@@ -248,7 +248,7 @@ export function TerminalTab({ isActive }: TerminalTabProps) {
    * Clear terminal
    */
   const handleClear = () => {
-    setLines(['ZPLC Serial Terminal', '']);
+    setLines([t('terminal.welcome'), '']);
   };
 
   // Subscribe to connection changes

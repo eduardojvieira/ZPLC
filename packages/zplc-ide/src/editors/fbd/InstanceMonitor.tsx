@@ -15,7 +15,7 @@ import { X, Clock, Hash, ToggleLeft, Zap } from 'lucide-react';
 import { useDebugValues } from '../../hooks/useDebugValue';
 import { useIDEStore } from '../../store/useIDEStore';
 import { getDefaultPorts } from '../../models/fbd';
-import { SignalValue } from '../../ui';
+import { Button, SignalValue } from '../../ui';
 import { sampleTone } from '../../theme/signalTone';
 import { t } from '../../i18n';
 
@@ -143,13 +143,13 @@ export function InstanceMonitor({
             <h2 className="text-[var(--text-primary)] font-bold text-lg">{blockType}</h2>
             <p className="text-[var(--text-secondary)] text-sm font-mono">{instanceName}</p>
           </div>
-          <button
+          <Button variant="bare"
             aria-label={t('a11y.fbd.closeMonitor')}
             onClick={onClose}
             className="focus-ring p-1 rounded hover:bg-[color-mix(in_srgb,var(--text-primary)_12%,transparent)] text-[var(--text-primary)] transition-colors"
           >
             <X size={20} />
-          </button>
+          </Button>
         </div>
         
         {/* Status bar */}
@@ -177,7 +177,7 @@ export function InstanceMonitor({
                     <span className="font-mono text-sm text-[var(--color-surface-200)]">
                       {pv.name}
                     </span>
-                    <span className="text-[10px] text-[var(--color-surface-500)]">
+                    <span className="text-[length:var(--font-size-caption)] text-[var(--color-surface-500)]">
                       {pv.type}
                     </span>
                   </div>
@@ -205,7 +205,7 @@ export function InstanceMonitor({
                     <span className="font-mono text-sm text-[var(--color-surface-200)]">
                       {pv.name}
                     </span>
-                    <span className="text-[10px] text-[var(--color-surface-500)]">
+                    <span className="text-[length:var(--font-size-caption)] text-[var(--color-surface-500)]">
                       {pv.type}
                     </span>
                   </div>
@@ -220,7 +220,7 @@ export function InstanceMonitor({
 
         {/* Footer */}
         <div className="px-4 py-3 bg-[var(--color-surface-700)] rounded-b-lg border-t border-[var(--color-surface-600)]">
-          <p className="text-[10px] text-[var(--color-surface-500)] text-center">
+          <p className="text-[length:var(--font-size-caption)] text-[var(--color-surface-500)] text-center">
             {t('editors.fbd.autoAdded')}
           </p>
         </div>

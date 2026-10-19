@@ -11,7 +11,7 @@
 import { memo, useState, useCallback, useRef, useEffect } from 'react';
 import { Handle, Position, type NodeProps } from '@xyflow/react';
 import { Timer } from 'lucide-react';
-import { SignalChip } from '../../../ui';
+import { SignalChip, TextField, Tooltip } from '../../../ui';
 import { SIGNAL_CUES, signalTone } from '../../../theme/signalTone';
 import { t } from '../../../i18n';
 
@@ -137,38 +137,40 @@ const SFCStepNode = memo(({ id, data, selected }: NodeProps) => {
       />
       
       {/* Step box */}
-      <div className={`sfc-step-box flex h-full w-full items-center justify-center ${stepBoxClasses}`} title={comment}>
-        {/* Step name */}
-        <div 
-          className="relative w-full cursor-pointer px-3 text-center"
-          onDoubleClick={() => !debugActive && !readOnly && setIsEditing(true)}
-        >
-          {isEditing ? (
-            <input
-              aria-label={t('a11y.sfc.stepName')}
-              ref={inputRef}
-              type="text"
-              value={editName}
-              onChange={(e) => setEditName(e.target.value)}
-              onBlur={handleSave}
-              onKeyDown={handleKeyDown}
-              className="w-full bg-transparent text-center text-[var(--text-primary)] font-semibold
-                         border-b border-[var(--border-color)]"
-              onClick={(e) => e.stopPropagation()}
-            />
-          ) : (
-            <span className={`block max-h-[36px] overflow-hidden break-words text-center font-semibold leading-tight ${isStepActive ? 'text-[var(--signal-true-fg)]' : 'text-[var(--text-primary)]'}`}>
-              {name}
-            </span>
-          )}
+      <Tooltip content={comment}>
+        <div className={`sfc-step-box flex h-full w-full items-center justify-center ${stepBoxClasses}`}>
+          {/* Step name */}
+          <div 
+            className="relative w-full cursor-pointer px-3 text-center"
+            onDoubleClick={() => !debugActive && !readOnly && setIsEditing(true)}
+          >
+            {isEditing ? (
+              <TextField bare
+                aria-label={t('a11y.sfc.stepName')}
+                ref={inputRef}
+                type="text"
+                value={editName}
+                onChange={(e) => setEditName(e.target.value)}
+                onBlur={handleSave}
+                onKeyDown={handleKeyDown}
+                className="w-full bg-transparent text-center text-[var(--text-primary)] font-semibold
+                           border-b border-[var(--border-color)]"
+                onClick={(e) => e.stopPropagation()}
+              />
+            ) : (
+              <span className={`block max-h-[36px] overflow-hidden break-words text-center font-semibold leading-tight ${isStepActive ? 'text-[var(--signal-true-fg)]' : 'text-[var(--text-primary)]'}`}>
+                {name}
+              </span>
+            )}
+          </div>
+  
         </div>
-
-      </div>
+      </Tooltip>
 
       {/* Debug information is an annotation; it must not change the IEC block geometry. */}
       {debugActive && (
           <div className="absolute top-full left-1/2 z-10 mt-1 w-[120px] -translate-x-1/2 border border-[var(--border-color)] bg-[var(--color-surface-700)] px-2 py-1 text-center">
-            <div className="flex items-center justify-center gap-2 text-[10px]">
+            <div className="flex items-center justify-center gap-2 text-[length:var(--font-size-caption)]">
               {/* State: the glyph and the word say it as well as the colour */}
               <SignalChip tone={tone} detail={stateWord} />
 
@@ -183,7 +185,7 @@ const SFCStepNode = memo(({ id, data, selected }: NodeProps) => {
             
             {/* Activation count */}
             {activationCount !== undefined && activationCount > 0 && (
-              <div className="text-[9px] text-[var(--text-tertiary)] mt-0.5">
+              <div className="text-[length:var(--font-size-caption)] text-[var(--text-tertiary)] mt-0.5">
                 {t('editors.sfc.activations', { count: activationCount })}
               </div>
             )}
@@ -218,9 +220,11 @@ const SFCStepNode = memo(({ id, data, selected }: NodeProps) => {
                   {action.qualifier}
                 </div>
                 {/* Action name */}
-                <div className={`max-w-[132px] break-words px-2 py-1 ${isStepActive ? 'text-[var(--signal-true-fg)]' : 'text-[var(--text-secondary)]'}`} title={action.actionName}>
-                  {action.actionName}
-                </div>
+                <Tooltip content={action.actionName}>
+                  <div className={`max-w-[132px] break-words px-2 py-1 ${isStepActive ? 'text-[var(--signal-true-fg)]' : 'text-[var(--text-secondary)]'}`}>
+                    {action.actionName}
+                  </div>
+                </Tooltip>
               </div>
             ))}
           </div>
@@ -237,7 +241,7 @@ const SFCStepNode = memo(({ id, data, selected }: NodeProps) => {
 
       {/* Comment (if present and not debugging) */}
       {comment && !debugActive && (
-        <div className="absolute top-full left-1/2 mt-1 w-[120px] -translate-x-1/2 px-1 text-[10px] italic text-[var(--text-tertiary)] text-center truncate">
+        <div className="absolute top-full left-1/2 mt-1 w-[120px] -translate-x-1/2 px-1 text-[length:var(--font-size-caption)] italic text-[var(--text-tertiary)] text-center truncate">
           {comment}
         </div>
       )}

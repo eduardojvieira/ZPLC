@@ -1,4 +1,5 @@
-/**
+
+import { t } from '../i18n';/**
  * The search list of the visual editors (LNG-012): the palette of elements, the declared symbols a variable is bound
  * from, the wires a block can have, and the list of commands are all one list with a search box, driven from the
  * keyboard. This is its state machine, with no screen in it.
@@ -66,7 +67,7 @@ export function visibleItems(items: readonly PickerItem[], query: string, option
   const shown = filterItems(items, query);
   const text = query.trim();
   if (!options.allowFreeText || text === '' || shown.some((item) => item.label.toLowerCase() === text.toLowerCase())) return shown;
-  return [...shown, { id: `${FREE_TEXT_PREFIX}${text}`, label: options.freeTextLabel?.(text) ?? `Use "${text}"`, group: 'Typed' }];
+  return [...shown, { id: `${FREE_TEXT_PREFIX}${text}`, label: options.freeTextLabel?.(text) ?? t('picker.use', { text }), group: t('picker.groupTyped') }];
 }
 
 export type PickerKey = 'ArrowDown' | 'ArrowUp' | 'Home' | 'End' | 'PageDown' | 'PageUp' | 'Enter' | 'Escape' | 'Tab';

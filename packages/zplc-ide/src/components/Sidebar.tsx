@@ -223,12 +223,12 @@ function TreeNode({ node, depth, activeFileId, focusedTreeId, onFileClick, onTog
             onKeyDown(event, node);
             if (event.defaultPrevented) event.stopPropagation();
           }}
-          className="group/treeitem outline-none"
+          className="group/treeitem"
         >
           <div
             onClick={() => { onTreeItemActivate(node.id); onToggleDir(node.path); }}
             onContextMenu={(event) => { onTreeItemActivate(node.id); onContextMenu(event, node); }}
-            className="w-full flex items-center gap-1 py-1 cursor-pointer text-sm hover:bg-[var(--color-surface-700)] group-focus-visible/treeitem:ring-2 group-focus-visible/treeitem:ring-inset group-focus-visible/treeitem:ring-[var(--color-accent-blue)] text-[var(--color-surface-100)]"
+            className="w-full flex items-center gap-1 py-1 cursor-pointer text-sm hover:bg-[var(--color-surface-700)] text-[var(--color-surface-100)]"
             style={{ paddingLeft }}
           >
             {node.isExpanded ? (
@@ -282,12 +282,12 @@ function TreeNode({ node, depth, activeFileId, focusedTreeId, onFileClick, onTog
         onKeyDown(event, node);
         if (event.defaultPrevented) event.stopPropagation();
       }}
-      className="group/treeitem outline-none"
+      className="group/treeitem"
     >
       <div
         onClick={() => { onTreeItemActivate(node.id); onFileClick(node.id); }}
         onContextMenu={(event) => { onTreeItemActivate(node.id); onContextMenu(event, node); }}
-        className={`w-full flex items-center gap-2 py-1 cursor-pointer text-sm transition-colors group-focus-visible/treeitem:ring-2 group-focus-visible/treeitem:ring-inset group-focus-visible/treeitem:ring-[var(--color-accent-blue)] ${
+        className={`w-full flex items-center gap-2 py-1 cursor-pointer text-sm transition-colors ${
           isActive
             ? 'bg-[var(--menu-item-bg-active)] text-[var(--text-primary)]'
             : 'hover:bg-[var(--color-surface-700)] text-[var(--color-surface-200)]'

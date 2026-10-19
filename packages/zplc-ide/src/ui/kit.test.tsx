@@ -3,7 +3,7 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { Plus } from 'lucide-react';
 import { auditMarkup } from './audit';
 import {
-  AlertDialog, Badge, Button, Checkbox, Dialog, EmptyState, ErrorState, Field, IconButton, MenuButton, NumberField, LoadingState, PropertyList, Select,
+  AlertDialog, Badge, Button, Checkbox, ComboBox, DataGrid, Toast, Tree, Dialog, EmptyState, ErrorState, Field, IconButton, MenuButton, NumberField, LoadingState, PropertyList, Select,
   SignalChip, Spinner, StatusDot, Switch, TabList, TabPanel, TextField, Textarea, ToggleGroup, Tooltip,
 } from './index';
 
@@ -214,5 +214,43 @@ describe('kit display components (UX-001, UX-009 stopgap)', () => {
     expect(out).toContain('<dl');
     expect(out).toContain('<dt>Board</dt><dd>native</dd>');
     expect(html(<Spinner label="Building" />)).toContain('role="status"');
+  });
+});
+
+describe('kit combo box, tree, data grid and toast (UX-001)', () => {
+  it('UX-001 renders a combo box as a labelled input that controls a list box and shows the chosen option', () => {
+    const out = html(<ComboBox label="Data type" value="INT" onChange={noop} options={[{ value: 'BOOL', label: 'BOOL' }, { value: 'INT', label: 'INT' }]} />);
+    expect(out).toContain('role="combobox"');
+    expect(out).toContain('aria-expanded="false"');
+    expect(out).toContain('value="INT"');
+    expect(out).toContain('role="listbox"');
+    expect(auditMarkup(out)).toEqual([]);
+  });
+
+  it('UX-001 renders a tree with levels, set sizes, one tab stop and the expanded state', () => {
+    const out = html(<Tree label="Files" defaultExpanded={['p']} nodes={[{ id: 'p', label: 'Project', children: [{ id: 'm', label: 'Main' }] }, { id: 'q', label: 'Boards' }]} />);
+    expect(out).toContain('role="tree"');
+    expect(out.match(/role="treeitem"/g)?.length).toBe(3);
+    expect(out).toContain('aria-expanded="true"');
+    expect(out).toContain('aria-level="2"');
+    expect(out.match(/tabindex="0"/g)?.length).toBe(1);
+    expect(auditMarkup(out)).toEqual([]);
+  });
+
+  it('UX-001 renders a data grid with column headers, sortable columns and tabular numerals for numbers', () => {
+    const out = html(<DataGrid label="Variables" rowId={(r) => r.n} rows={[{ n: 'a', v: 1 }]} columns={[{ id: 'n', header: 'Name', cell: (r) => r.n, sortKey: (r) => r.n }, { id: 'v', header: 'Value', cell: (r) => r.v, numeric: true }]} />);
+    expect(out).toContain('role="grid"');
+    expect(out).toContain('scope="col"');
+    expect(out).toContain('aria-sort="none"');
+    expect(out).toContain('class="ui-tabular"');
+    expect(auditMarkup(out)).toEqual([]);
+  });
+
+  it('UX-001 renders a toast as a status, and a fault as an alert, with a named dismiss button', () => {
+    expect(html(<Toast tone="success">Saved</Toast>)).toContain('role="status"');
+    const fault = html(<Toast tone="danger" dismissLabel="Dismiss message" onDismiss={noop}>Failed</Toast>);
+    expect(fault).toContain('role="alert"');
+    expect(fault).toContain('aria-label="Dismiss message"');
+    expect(auditMarkup(fault)).toEqual([]);
   });
 });

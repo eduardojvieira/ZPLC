@@ -2,6 +2,7 @@ import { isErrorCode } from '@zplc/compiler';
 import { isSourceElementId } from '../models/sourceElements';
 import type { ScenarioKind } from '../test-engine';
 import type { CanonicalWorkspaceBuildEvidence, WorkspaceTestArtifact } from '../store/buildEvidence';
+import { t, type MessageKey } from '../i18n';
 
 export type WorkspaceTestResultKind = 'passed' | 'assertion-failed' | 'cancelled' | 'timeout' | 'infrastructure-unavailable' | 'invalid';
 
@@ -169,39 +170,39 @@ export function isWorkspaceManifestRegistrationCurrent(projectSession: number, e
 
 const unavailable = (evidence?: { diagnostics: WorkspaceTestDiagnostic[]; artifacts: WorkspaceTestArtifact[] }, hasEvidence = evidence?.artifacts.some((artifact) => artifact.kind === 'trace') ?? false): WorkspaceTestPresentation => ({
   kind: 'infrastructure-unavailable',
-  message: 'Host POSIX simulation is unavailable.',
+  message: t('testDiag.SIMULATOR_UNAVAILABLE'),
   diagnostics: evidence?.diagnostics ?? [],
   artifacts: evidence?.artifacts ?? [],
   hasEvidence,
 });
 
-const DIAGNOSTIC_MESSAGES: Record<string, string> = {
-  WORKSPACE_INVALID: 'Workspace is invalid.',
-  WORKSPACE_MISSING: 'Workspace is unavailable.',
-  WORKSPACE_INVALID_DIRECTORY: 'Workspace directory is invalid.',
-  WORKSPACE_SYMLINK: 'Symbolic links are not allowed.',
-  WORKSPACE_INVALID_FILE: 'Workspace file is invalid.',
-  WORKSPACE_READ_FAILED: 'Workspace file could not be read.',
-  WORKSPACE_LIMIT: 'Workspace exceeds a supported limit.',
-  WORKSPACE_DUPLICATE_SOURCE: 'Workspace source names must be unique.',
-  WORKSPACE_DUPLICATE_SCENARIO: 'Scenario names must be unique.',
-  PROJECT_INVALID: 'Project configuration is invalid.',
-  PROGRAM_NOT_FOUND: 'Task program could not be resolved.',
-  // what a compiler message that cannot be shown says instead (a build's error codes are those of the compiler's registry)
-  COMPILER_MESSAGE_UNAVAILABLE: 'Compilation failed.',
-  TEST_SCENARIO_INVALID: 'Scenario is invalid.',
-  TEST_SCENARIOS_MISSING: 'Workspace has no scenarios.',
-  TEST_DUPLICATE_SCENARIO: 'Scenario identifiers must be unique.',
-  SCENARIO_TICK_MISMATCH: 'Scenario timing does not match the task.',
-  SIMULATION_UNSUPPORTED_PROJECT: 'Project is not supported by host scenarios.',
-  TEST_BUDGET_EXCEEDED: 'Scenario execution exceeded its budget.',
-  TEST_CANCELLED: 'Scenario run was cancelled.',
-  TEST_TIMEOUT: 'Scenario run exceeded its host deadline.',
-  SIMULATOR_UNAVAILABLE: 'Host POSIX simulation is unavailable.',
-  RUNTIME_FAILED: 'Host POSIX runtime failed.',
-  SCENARIO_ASSERTION_FAILED: 'Scenario assertion failed.',
-};
-const INVALID_DIAGNOSTIC: WorkspaceTestDiagnostic = { code: 'TEST_RESULT_INVALID', message: 'Test result was invalid.' };
+const DIAGNOSTIC_CODES = new Set([
+  'WORKSPACE_INVALID',
+  'WORKSPACE_MISSING',
+  'WORKSPACE_INVALID_DIRECTORY',
+  'WORKSPACE_SYMLINK',
+  'WORKSPACE_INVALID_FILE',
+  'WORKSPACE_READ_FAILED',
+  'WORKSPACE_LIMIT',
+  'WORKSPACE_DUPLICATE_SOURCE',
+  'WORKSPACE_DUPLICATE_SCENARIO',
+  'PROJECT_INVALID',
+  'PROGRAM_NOT_FOUND',
+  'COMPILER_MESSAGE_UNAVAILABLE',
+  'TEST_SCENARIO_INVALID',
+  'TEST_SCENARIOS_MISSING',
+  'TEST_DUPLICATE_SCENARIO',
+  'SCENARIO_TICK_MISMATCH',
+  'SIMULATION_UNSUPPORTED_PROJECT',
+  'TEST_BUDGET_EXCEEDED',
+  'TEST_CANCELLED',
+  'TEST_TIMEOUT',
+  'SIMULATOR_UNAVAILABLE',
+  'RUNTIME_FAILED',
+  'SCENARIO_ASSERTION_FAILED',
+]);
+const diagnosticMessage = (code: string): string | undefined => (DIAGNOSTIC_CODES.has(code) ? t(`testDiag.${code}` as MessageKey) : undefined);
+const invalidDiagnostic = (): WorkspaceTestDiagnostic => ({ code: 'TEST_RESULT_INVALID', message: t('testDiag.resultInvalid') });
 const SAVED_TEST_INPUT_FILE_COUNT_MIN = 3;
 const SAVED_TEST_INPUT_FILE_COUNT_MAX = 1 + 128 + 64;
 
@@ -244,7 +245,7 @@ function safePath(value: unknown): string | undefined {
 
 /** The compiler's own message (CMP-010 stopgap): plain text of 512 characters at most, else the fixed text. */
 function compilerMessage(value: unknown): string {
-  return typeof value === 'string' && value.length >= 1 && value.length <= 512 && ![...value].some((char) => char < ' ' || char === '\u007f') ? value : DIAGNOSTIC_MESSAGES.COMPILER_MESSAGE_UNAVAILABLE;
+  return typeof value === 'string' && value.length >= 1 && value.length <= 512 && ![...value].some((char) => char < ' ' || char === '\u007f') ? value : t('testDiag.COMPILER_MESSAGE_UNAVAILABLE');
 }
 
 function diagnostics(value: unknown): WorkspaceTestDiagnostic[] | null {
@@ -254,8 +255,8 @@ function diagnostics(value: unknown): WorkspaceTestDiagnostic[] | null {
   for (const item of items) {
     const diagnostic = record(item);
     if (!diagnostic || typeof diagnostic.code !== 'string' || diagnostic.code.length === 0) return null;
-    const message = isErrorCode(diagnostic.code) ? compilerMessage(diagnostic.message) : Object.hasOwn(DIAGNOSTIC_MESSAGES, diagnostic.code) ? DIAGNOSTIC_MESSAGES[diagnostic.code] : undefined;
-    result.push({ ...(message ? { code: diagnostic.code, message } : INVALID_DIAGNOSTIC), ...(safePath(diagnostic.path) ? { path: safePath(diagnostic.path) } : {}) });
+    const message = isErrorCode(diagnostic.code) ? compilerMessage(diagnostic.message) : diagnosticMessage(diagnostic.code);
+    result.push({ ...(message ? { code: diagnostic.code, message } : invalidDiagnostic()), ...(safePath(diagnostic.path) ? { path: safePath(diagnostic.path) } : {}) });
   }
   return result;
 }
@@ -639,14 +640,14 @@ export function presentWorkspaceTestResult(value: unknown): WorkspaceTestPresent
     if (summary === null || evidence.diagnostics.length !== 0 || !evidence.artifacts.some((artifact) => artifact.kind === 'zplc') || !evidence.artifacts.some((artifact) => artifact.kind === 'trace')) return unavailable(evidence, false);
     const safePreview = previewForSuccess(result.preview, evidence, summary);
     const identity = savedTestInputIdentity(result.savedTestInputIdentity, evidence);
-    return { kind: 'passed', message: evidence.operation === 'scenario-run' ? 'Host POSIX scenario passed.' : 'Host POSIX scenarios passed.', scenarioCount: summary.length, ...evidence, hasEvidence: true, ...(safePreview ? { preview: safePreview } : {}), ...(identity ? { savedTestInputIdentity: identity } : {}) };
+    return { kind: 'passed', message: evidence.operation === 'scenario-run' ? t('testDiag.passedOne') : t('testDiag.passedMany'), scenarioCount: summary.length, ...evidence, hasEvidence: true, ...(safePreview ? { preview: safePreview } : {}), ...(identity ? { savedTestInputIdentity: identity } : {}) };
   }
 
   if (record(result.evidence)?.outcome !== 'failed' || evidence.diagnostics.length === 0) return unavailable(evidence, false);
 
   const codes = new Set(evidence.diagnostics.map((diagnostic) => diagnostic.code));
-  if (codes.has('TEST_CANCELLED')) return { kind: 'cancelled', message: 'Host scenario run was cancelled.', diagnostics: evidence.diagnostics, artifacts: [], hasEvidence: false };
-  if (codes.has('TEST_TIMEOUT')) return { kind: 'timeout', message: 'Host scenario run exceeded its deadline.', diagnostics: evidence.diagnostics, artifacts: [], hasEvidence: false };
+  if (codes.has('TEST_CANCELLED')) return { kind: 'cancelled', message: t('testDiag.runCancelled'), diagnostics: evidence.diagnostics, artifacts: [], hasEvidence: false };
+  if (codes.has('TEST_TIMEOUT')) return { kind: 'timeout', message: t('testDiag.runTimeout'), diagnostics: evidence.diagnostics, artifacts: [], hasEvidence: false };
   if (codes.has('SIMULATOR_UNAVAILABLE') || codes.has('RUNTIME_FAILED')) {
     return unavailable(evidence);
   }
@@ -654,8 +655,8 @@ export function presentWorkspaceTestResult(value: unknown): WorkspaceTestPresent
     const safePreview = previewForFailure(result.preview, evidence);
     const identity = savedTestInputIdentity(result.savedTestInputIdentity, evidence);
     return evidence.artifacts.some((artifact) => artifact.kind === 'trace')
-      ? { kind: 'assertion-failed', message: evidence.operation === 'scenario-run' ? 'Scenario assertion failed.' : 'One or more scenario assertions failed.', ...evidence, hasEvidence: true, ...(safePreview ? { preview: safePreview } : {}), ...(identity ? { savedTestInputIdentity: identity } : {}) }
+      ? { kind: 'assertion-failed', message: evidence.operation === 'scenario-run' ? t('testDiag.SCENARIO_ASSERTION_FAILED') : t('testDiag.assertionsFailed'), ...evidence, hasEvidence: true, ...(safePreview ? { preview: safePreview } : {}), ...(identity ? { savedTestInputIdentity: identity } : {}) }
       : unavailable(evidence, false);
   }
-  return { kind: 'invalid', message: 'Host scenarios could not run.', ...evidence, hasEvidence: evidence.artifacts.some((artifact) => artifact.kind === 'trace') };
+  return { kind: 'invalid', message: t('testDiag.couldNotRun'), ...evidence, hasEvidence: evidence.artifacts.some((artifact) => artifact.kind === 'trace') };
 }

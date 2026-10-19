@@ -1,4 +1,5 @@
-/**
+
+import { t } from '../i18n';/**
  * The signal vocabulary (UX-009): how Studio shows the state of a value, defined once. FALSE is neutral, green means a
  * confirmed TRUE (or RUN) and nothing else, amber means forced or a warning, red means a fault and nothing else, and a
  * value that has not been read is neutral and dashed. Colour never carries a state alone: every state has a label and a
@@ -49,12 +50,12 @@ export const SIGNAL_CHIP_CLASS: Record<SignalTone, string> = Object.fromEntries(
 export interface SignalCue { label: string; glyph: string; description: string }
 
 export const SIGNAL_CUES: Record<SignalTone, SignalCue> = {
-  true: { label: 'TRUE', glyph: '●', description: 'Confirmed TRUE' },
-  false: { label: 'FALSE', glyph: '○', description: 'FALSE' },
-  unknown: { label: '---', glyph: '◌', description: 'Not read yet' },
-  forced: { label: 'FORCED', glyph: '◆', description: 'Forced by the user' },
-  fault: { label: 'FAULT', glyph: '▲', description: 'Fault' },
-  value: { label: 'VALUE', glyph: '#', description: 'Value' },
+  true: { label: 'TRUE', glyph: '●', get description() { return t('signal.cue.true'); } },
+  false: { label: 'FALSE', glyph: '○', get description() { return t('signal.cue.false'); } },
+  unknown: { label: '---', glyph: '◌', get description() { return t('signal.cue.unknown'); } },
+  forced: { label: 'FORCED', glyph: '◆', get description() { return t('signal.cue.forced'); } },
+  fault: { label: 'FAULT', glyph: '▲', get description() { return t('signal.cue.fault'); } },
+  value: { label: 'VALUE', glyph: '#', get description() { return t('signal.cue.value'); } },
 };
 
 /** The tokens of a state as `var()` values, for SVG `fill` and `stroke`, where the class names above do not apply. */

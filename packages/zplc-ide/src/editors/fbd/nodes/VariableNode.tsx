@@ -11,7 +11,7 @@ import { memo } from 'react';
 import { Handle, Position, type NodeProps } from '@xyflow/react';
 import NodeComment from './NodeComment';
 import type { FBDPort } from '../../../models/fbd';
-import { SignalValue } from '../../../ui';
+import { SignalValue, Tooltip } from '../../../ui';
 import { SIGNAL_CUES, SIGNAL_TEXT_CLASS, sampleTone } from '../../../theme/signalTone';
 
 interface VariableData {
@@ -66,68 +66,71 @@ const VariableNode = memo(({ id, data, selected }: NodeProps) => {
 
   return (
     <div className="zplc-visual-node flex flex-col items-center">
-      <div
-        className={`
-          min-w-[124px] rounded border-2 
-          zplc-visual-card bg-[var(--visual-node)]
-          ${getBorderColor()}
-          ${selected ? 'ring-2 ring-[var(--color-accent-blue)]' : ''}
-        `}
-        title={comment}
-      >
-        {/* Header */}
-        <div className={`${getHeaderColor()} px-2 py-1 flex items-center justify-center gap-1 rounded-t`}>
-          <span className="text-[var(--text-primary)] text-xs">{getIcon()}</span>
-          <span className="text-[var(--text-primary)] font-mono text-xs font-medium">
-            {type.toUpperCase()}
-          </span>
-        </div>
-
-        {/* Variable name */}
-        <div className="px-3 py-2 text-center relative">
-          <span className="block max-w-[156px] break-words text-[var(--text-primary)] font-mono text-sm" title={variableName}>
-            {variableName}
-          </span>
-          
-          {/* Input handle (for output/variable types - receives data) */}
-          {isOutput && (
-            <Handle
-              type="target"
-              position={Position.Left}
-              id="IN"
-              className="!w-3 !h-3 !rounded-[2px] !bg-[var(--visual-wire)] !border-2 !border-[var(--color-surface-300)]"
-            />
-          )}
-
-          {/* Output handle (for input/variable types - provides data) */}
-          {isInput && (
-            <Handle
-              type="source"
-              position={Position.Right}
-              id="OUT"
-              className="!w-3 !h-3 !rounded-full !bg-[var(--visual-wire)] !border-2 !border-[var(--color-surface-300)]"
-            />
-          )}
-        </div>
-
-        {debugActive && (
-          <div className="px-2 py-0.5 text-center font-mono text-xs text-[var(--text-primary)] border-t border-[var(--border-color)]" data-live-value>
-            {/* TRUE, FALSE and a dash say their state in words; a force and a fault also get the glyph and the word (UX-009) */}
-            {liveTone === 'forced' || liveTone === 'fault'
-              ? <SignalValue tone={liveTone}>{`${SIGNAL_CUES[liveTone].label} `}{liveText}</SignalValue>
-              : <span data-signal={liveTone} className={SIGNAL_TEXT_CLASS[liveTone]}>{liveText}</span>}
-          </div>
-        )}
-
-        {/* Footer with type/address info */}
-        {(dataType || address) && (
-          <div className="bg-[var(--color-surface-700)] px-2 py-0.5 text-center rounded-b border-t border-[var(--border-color)]">
-            <span className="text-[10px] text-[var(--text-tertiary)] font-mono">
-              {address || dataType}
+      <Tooltip content={comment}>
+        <div
+          className={`
+            min-w-[124px] rounded border-2 
+            zplc-visual-card bg-[var(--visual-node)]
+            ${getBorderColor()}
+            ${selected ? 'ring-2 ring-[var(--color-accent-blue)]' : ''}
+          `}
+        >
+          {/* Header */}
+          <div className={`${getHeaderColor()} px-2 py-1 flex items-center justify-center gap-1 rounded-t`}>
+            <span className="text-[var(--text-primary)] text-xs">{getIcon()}</span>
+            <span className="text-[var(--text-primary)] font-mono text-xs font-medium">
+              {type.toUpperCase()}
             </span>
           </div>
-        )}
-      </div>
+  
+          {/* Variable name */}
+          <div className="px-3 py-2 text-center relative">
+            <Tooltip content={variableName}>
+              <span className="block max-w-[156px] break-words text-[var(--text-primary)] font-mono text-sm">
+                {variableName}
+              </span>
+            </Tooltip>
+            
+            {/* Input handle (for output/variable types - receives data) */}
+            {isOutput && (
+              <Handle
+                type="target"
+                position={Position.Left}
+                id="IN"
+                className="!w-3 !h-3 !rounded-[2px] !bg-[var(--visual-wire)] !border-2 !border-[var(--color-surface-300)]"
+              />
+            )}
+  
+            {/* Output handle (for input/variable types - provides data) */}
+            {isInput && (
+              <Handle
+                type="source"
+                position={Position.Right}
+                id="OUT"
+                className="!w-3 !h-3 !rounded-full !bg-[var(--visual-wire)] !border-2 !border-[var(--color-surface-300)]"
+              />
+            )}
+          </div>
+  
+          {debugActive && (
+            <div className="px-2 py-0.5 text-center font-mono text-xs text-[var(--text-primary)] border-t border-[var(--border-color)]" data-live-value>
+              {/* TRUE, FALSE and a dash say their state in words; a force and a fault also get the glyph and the word (UX-009) */}
+              {liveTone === 'forced' || liveTone === 'fault'
+                ? <SignalValue tone={liveTone}>{`${SIGNAL_CUES[liveTone].label} `}{liveText}</SignalValue>
+                : <span data-signal={liveTone} className={SIGNAL_TEXT_CLASS[liveTone]}>{liveText}</span>}
+            </div>
+          )}
+  
+          {/* Footer with type/address info */}
+          {(dataType || address) && (
+            <div className="bg-[var(--color-surface-700)] px-2 py-0.5 text-center rounded-b border-t border-[var(--border-color)]">
+              <span className="text-[length:var(--font-size-caption)] text-[var(--text-tertiary)] font-mono">
+                {address || dataType}
+              </span>
+            </div>
+          )}
+        </div>
+      </Tooltip>
 
       {/* Editable comment below node */}
       <NodeComment nodeId={id} comment={comment} onChange={onChangeData} readOnly={readOnly} />

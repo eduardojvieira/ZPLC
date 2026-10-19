@@ -10,17 +10,8 @@
  *       passthrough mode for terminal, and system info.
  */
 
-import type {
-  IDebugAdapter,
-  VMState,
-  VMInfo,
-  RuntimeSnapshot,
-  WatchVariable,
-  WatchForceEntry,
-  DebugAdapterEvents,
-  LoadProgramOptions,
-  ReadWatchOptions,
-} from './debugAdapter';
+import type { IDebugAdapter, VMState, VMInfo, RuntimeSnapshot, WatchVariable, WatchForceEntry, DebugAdapterEvents, LoadProgramOptions, ReadWatchOptions } from './debugAdapter';
+import { t } from '../i18n';
 import {
   bytesToHex,
   bytesToValue,
@@ -708,7 +699,7 @@ export class SerialAdapter implements IDebugAdapter {
       return response;
     };
 
-    trace?.({ kind: 'stage', message: 'Applying runtime configuration to device' });
+    trace?.({ kind: 'stage', message: t('link.applyingConfig') });
     const commands = buildProvisioningCommands(projectConfig);
 
     for (const command of commands) {

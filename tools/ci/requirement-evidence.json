@@ -1836,6 +1836,7 @@
     {"kind":"unit","ref":"packages/zplc-ide/src/mcp/hilReach.test.ts","test":"the hardware scenario command started without an interactive terminal exits with an error, before it reads or opens anything (HIL-003, COM-030)"}
   ],
   "IDE-001": [
+    {"kind":"unit","ref":"packages/zplc-ide/electron/cspEnforcement.test.ts","test":"the production content security policy in Chromium (IDE-016)","note":"a page served under the header a packaged build sends, loaded in headless Chromium: an injected inline script and inline event handler do not run, a same-origin script does; skipped when no Chromium is installed; that the packaged application sends this header is the packaged leg of the journey below, run only on a packaged build"},
     {"kind":"unit","ref":"packages/zplc-ide/electron/ipcRegistry.test.ts","test":"project files over the IPC boundary (IDE-001, IDE-016)"},
     {"kind":"unit","ref":"packages/zplc-ide/electron/ipcRegistry.test.ts","test":"register the folder of the window by its id alone, as <folder>/zplc.json, and refuse any other id (IDE-001)"},
     {"kind":"unit","ref":"packages/zplc-ide/electron/ipcRegistry.test.ts","test":"workspace tests, candidate review and the AI provider (IDE-001, IDE-017, IDE-030)"},
@@ -1973,6 +1974,7 @@
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"29 The Welcome screen loads no editor","partial":true}
   ],
   "IDE-016": [
+    {"kind":"unit","ref":"packages/zplc-ide/electron/cspEnforcement.test.ts","test":"the production content security policy in Chromium (IDE-016)"},
     {"kind":"unit","ref":"packages/zplc-ide/electron/ipcRegistry.test.ts","test":"project files over the IPC boundary (IDE-001, IDE-016)"},
     {"kind":"unit","ref":"packages/zplc-ide/electron/security.test.ts","test":"which navigation revokes the authority of a document (IDE-016)"},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"38 The security properties hold in the running application","partial":true}
@@ -2109,13 +2111,26 @@
     {"kind":"unit","ref":"tools/ci/ide-structure.test.ts","test":"layering stopgap (IDE-033): one command-line import of electron/ is listed","partial":true}
   ],
   "UX-001": [
-    {"kind":"unit","ref":"packages/zplc-ide/src/ui/gallery/gallery.test.tsx","test":"lists only components the kit exports, and names the ones UX-001 asks for that it does not have yet (stopgap)","partial":true},
+    {"kind":"unit","ref":"packages/zplc-ide/src/ui/gallery/gallery.test.tsx","test":"lists only components the kit exports, and the kit has every component UX-001 asks for"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/ui/kit.test.tsx","test":"UX-001 renders a combo box as a labelled input that controls a list box and shows the chosen option"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/ui/kit.test.tsx","test":"UX-001 renders a data grid with column headers, sortable columns and tabular numerals for numbers"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/ui/kit.test.tsx","test":"UX-001 renders a toast as a status, and a fault as an alert, with a named dismiss button"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/ui/kit.test.tsx","test":"UX-001 renders a tree with levels, set sizes, one tab stop and the expanded state"},
     {"kind":"unit","ref":"packages/zplc-ide/src/ui/kit.test.tsx","test":"kit buttons (UX-001, UX-026 stopgap)","partial":true},
+    {"kind":"unit","ref":"packages/zplc-ide/src/ui/kit.test.tsx","test":"kit combo box, tree, data grid and toast (UX-001)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/ui/kit.test.tsx","test":"kit dialogs (UX-001, UX-025 stopgap)","partial":true},
     {"kind":"unit","ref":"packages/zplc-ide/src/ui/kit.test.tsx","test":"kit display components (UX-001, UX-009 stopgap)","partial":true},
     {"kind":"unit","ref":"packages/zplc-ide/src/ui/kit.test.tsx","test":"kit form fields (UX-001, UX-026 stopgap)","partial":true},
     {"kind":"unit","ref":"packages/zplc-ide/src/ui/kit.test.tsx","test":"kit menu and tooltip (UX-001 stopgap)","partial":true},
     {"kind":"unit","ref":"packages/zplc-ide/src/ui/kit.test.tsx","test":"kit tabs and toggle group (UX-001, UX-025 stopgap)","partial":true},
+    {"kind":"unit","ref":"packages/zplc-ide/src/ui/logic/composite.test.ts","test":"UX-001 expands with ArrowRight, collapses with ArrowLeft, goes to the parent and walks the rows with the arrows"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/ui/logic/composite.test.ts","test":"UX-001 filters the options by what was typed, ignoring case, and keeps all of them for an empty query"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/ui/logic/composite.test.ts","test":"UX-001 lists only the visible rows with their level, set size and position"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/ui/logic/composite.test.ts","test":"UX-001 opens on ArrowDown, moves the active option, chooses on Enter and closes on Escape"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/ui/logic/composite.test.ts","test":"UX-001 sorts numbers as numbers and text by locale, leaving the input untouched, and cycles none, ascending, descending"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/ui/logic/composite.test.ts","test":"combo box logic (UX-001)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/ui/logic/composite.test.ts","test":"data grid logic (UX-001)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/ui/logic/composite.test.ts","test":"tree logic (UX-001)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/ui/logic/keyboard.test.ts","test":"keyboard navigation of a composite widget (UX-001, UX-025 stopgap)","partial":true},
     {"kind":"unit","ref":"packages/zplc-ide/src/ui/logic/keyboard.test.ts","test":"overlay placement (UX-001 stopgap)","partial":true},
     {"kind":"unit","ref":"packages/zplc-ide/src/ui/logic/keyboard.test.ts","test":"tabs keyboard behaviour (UX-001 stopgap)","partial":true},
@@ -2125,8 +2140,8 @@
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"41 The component kit behaves from the keyboard in a real window","partial":true}
   ],
   "UX-002": [
-    {"kind":"unit","ref":"tools/ci/ui-kit-guard.test.ts","test":"kit guard: the shrink-only list (UX-002 stopgap)","partial":true},
-    {"kind":"unit","ref":"tools/ci/ui-kit-guard.test.ts","test":"kit guard: what breaks the kit rules (UX-002 stopgap: the list of offenders is not empty)","partial":true}
+    {"kind":"unit","ref":"tools/ci/ui-kit-guard.test.ts","test":"kit guard: the shrink-only list (UX-002)"},
+    {"kind":"unit","ref":"tools/ci/ui-kit-guard.test.ts","test":"kit guard: what breaks the kit rules (UX-002)"}
   ],
   "UX-003": [
     {"kind":"unit","ref":"packages/zplc-ide/src/theme/contrast.test.ts","test":"theme token consistency (UX-003)"},
@@ -2143,21 +2158,34 @@
   "UX-005": [
     {"kind":"unit","ref":"packages/zplc-ide/src/theme/focusRing.test.ts","test":"focus ring (UX-005 stopgap: the visual editors still carry their own classes)","partial":true},
     {"kind":"unit","ref":"packages/zplc-ide/src/theme/focusRing.test.ts","test":"focus ring in the visual editors (UX-005)"},
-    {"kind":"unit","ref":"tools/ci/ui-kit-guard.test.ts","test":"kit guard: focus and text size (UX-005, UX-006 stopgap)","partial":true},
+    {"kind":"unit","ref":"tools/ci/ui-kit-guard.test.ts","test":"kit guard: focus and text size (UX-005, UX-006)"},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"41 The component kit behaves from the keyboard in a real window","partial":true},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"46 The themes, forced colours and reduced motion reach the three visual editors and the code editor","partial":true},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"48 The main screens pass the rendered accessibility check in light, dark and high contrast","partial":true}
   ],
   "UX-006": [
-    {"kind":"unit","ref":"packages/zplc-ide/src/theme/tokens.test.ts","test":"type, shape and density tokens (UX-006, UX-007, UX-008 stopgap)","partial":true},
-    {"kind":"unit","ref":"tools/ci/ui-kit-guard.test.ts","test":"kit guard: focus and text size (UX-005, UX-006 stopgap)","partial":true}
+    {"kind":"unit","ref":"packages/zplc-ide/src/theme/tokens.test.ts","test":"type, shape and density tokens (UX-006, UX-007, UX-008)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/theme/typography.test.ts","test":"UX-006 gives values, addresses and times tabular, slashed-zero numerals through one class"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/theme/typography.test.ts","test":"UX-006 sets no font size under 11 pixels in any style sheet or component, and keeps the scale floor at 11"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/theme/typography.test.ts","test":"UX-006 ships Inter and JetBrains Mono as valid WOFF2 files inside the application, so no operating system font decides the typeface"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/theme/typography.test.ts","test":"UX-006 ships the licence text of each family with the application and names it in the third-party notices"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/theme/typography.test.ts","test":"bundled typefaces (UX-006)"},
+    {"kind":"unit","ref":"tools/ci/ui-kit-guard.test.ts","test":"kit guard: focus and text size (UX-005, UX-006)"}
   ],
   "UX-007": [
-    {"kind":"unit","ref":"packages/zplc-ide/src/theme/tokens.test.ts","test":"type, shape and density tokens (UX-006, UX-007, UX-008 stopgap)","partial":true}
+    {"kind":"unit","ref":"packages/zplc-ide/src/theme/tokens.test.ts","test":"type, shape and density tokens (UX-006, UX-007, UX-008)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/theme/typography.test.ts","test":"UX-007 casts a shadow only from the transient overlays of the kit: dialog, menu, popover, list box, tooltip and toast"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/theme/typography.test.ts","test":"UX-007 draws every shadow of the kit from an elevation token and every corner from a radius token"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/theme/typography.test.ts","test":"UX-007 keeps surfaces flat at rest and gives no shadow in high contrast, where an outline marks the overlay"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/theme/typography.test.ts","test":"shape, elevation and icon tokens (UX-007)"}
   ],
   "UX-008": [
-    {"kind":"unit","ref":"packages/zplc-ide/src/theme/tokens.test.ts","test":"type, shape and density tokens (UX-006, UX-007, UX-008 stopgap)","partial":true},
-    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"41 The component kit behaves from the keyboard in a real window","partial":true}
+    {"kind":"unit","ref":"packages/zplc-ide/src/theme/tokens.test.ts","test":"type, shape and density tokens (UX-006, UX-007, UX-008)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/theme/typography.test.ts","test":"UX-008 declares the compact value of every density token in one block that the root element selects"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/theme/typography.test.ts","test":"UX-008 sizes the kit controls, rows and tree rows from the density tokens, with no fixed pixel height of its own"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/theme/typography.test.ts","test":"density applies to the whole application (UX-008)"},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"41 The component kit behaves from the keyboard in a real window","partial":true},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"55 The density setting makes controls and rows smaller on every screen, and the setting is one the person reaches from the Welcome screen"}
   ],
   "UX-009": [
     {"kind":"unit","ref":"packages/zplc-ide/src/editors/monitorFlagsWiring.test.tsx","test":"UX-009 does not call a transition forced because a word of its condition is a keyword or a literal"},
@@ -2489,17 +2517,23 @@
     {"kind":"unit","ref":"packages/zplc-ide/src/utils/exampleCatalog.test.ts","test":"UX-029 has a title and a summary in English and in Spanish for every catalogued example, and follows the language setting"},
     {"kind":"unit","ref":"packages/zplc-ide/src/utils/exampleCatalog.test.ts","test":"UX-029 the examples read their title and summary from the catalogs"},
     {"kind":"unit","ref":"tools/ci/i18n-guard.test.ts","test":"UX-029 --write lowers counts and drops entries, and never raises a count"},
+    {"kind":"unit","ref":"tools/ci/i18n-guard.test.ts","test":"UX-029 counts a message of a plain module against the list of offenders"},
     {"kind":"unit","ref":"tools/ci/i18n-guard.test.ts","test":"UX-029 fails for a file that is not listed, a count that grew, a count that shrank and an entry that reached zero"},
     {"kind":"unit","ref":"tools/ci/i18n-guard.test.ts","test":"UX-029 fails on a key in English and not in Spanish, a key only in Spanish, and different placeholders"},
     {"kind":"unit","ref":"tools/ci/i18n-guard.test.ts","test":"UX-029 finds JSX text with letters, a literal shown as a child and a template shown as a child"},
+    {"kind":"unit","ref":"tools/ci/i18n-guard.test.ts","test":"UX-029 finds a sentence in say, title, label, detail and message, and the first argument of announce()"},
     {"kind":"unit","ref":"tools/ci/i18n-guard.test.ts","test":"UX-029 finds a string literal in each user-visible attribute"},
+    {"kind":"unit","ref":"tools/ci/i18n-guard.test.ts","test":"UX-029 finds the text a Label, Problem or Message function returns and the values of a LABELS table"},
     {"kind":"unit","ref":"tools/ci/i18n-guard.test.ts","test":"UX-029 guards components only: not tests, the i18n module, the gallery or plain modules"},
     {"kind":"unit","ref":"tools/ci/i18n-guard.test.ts","test":"UX-029 holds on the repository: the sources and both catalogs pass with the list as it is"},
+    {"kind":"unit","ref":"tools/ci/i18n-guard.test.ts","test":"UX-029 i18n guard: a hard-coded message in a plain module"},
     {"kind":"unit","ref":"tools/ci/i18n-guard.test.ts","test":"UX-029 i18n guard: a hard-coded string in a component"},
     {"kind":"unit","ref":"tools/ci/i18n-guard.test.ts","test":"UX-029 i18n guard: the catalogs as data"},
     {"kind":"unit","ref":"tools/ci/i18n-guard.test.ts","test":"UX-029 i18n guard: the list of offenders only shrinks"},
+    {"kind":"unit","ref":"tools/ci/i18n-guard.test.ts","test":"UX-029 reads the modules that show text and leaves tests, the i18n module and the tools of programs alone"},
     {"kind":"unit","ref":"tools/ci/i18n-guard.test.ts","test":"UX-029 stays quiet on a component that writes its text through t()"},
     {"kind":"unit","ref":"tools/ci/i18n-guard.test.ts","test":"UX-029 stays quiet on a correct pair of catalogs"},
+    {"kind":"unit","ref":"tools/ci/i18n-guard.test.ts","test":"UX-029 stays quiet on text that goes through t(), identifiers, state words, upper-case tokens and other properties"},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"49 The migrated screens read in Spanish, with no raw catalog key, no English left over and no clipped control at 1366 by 768","partial":true}
   ],
   "UX-030": [

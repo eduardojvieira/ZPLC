@@ -8,6 +8,7 @@ import { useIDEStore } from '../store/useIDEStore';
 import { redactProjectConfigForExport } from '../project/sensitiveConfig';
 import { exportOpenProjectArchive } from '../utils/projectArchiveActions';
 import { collectProjectFilesForExport } from '../utils/projectExport';
+import { Button } from '../ui';
 
 const ITEM = 'focus-ring w-full flex items-center gap-2 px-3 py-2 text-sm text-[var(--color-surface-100)] hover:bg-[var(--menu-item-bg-active)] transition-colors';
 
@@ -57,14 +58,14 @@ export function ProjectExportItems() {
   const { t } = useT();
   return (
     <>
-      <button type="button" role="menuitem" onClick={() => { void exportOpenProjectArchive(); }} className={ITEM} aria-label={t('workbench.export.archiveLabel')}>
+      <Button variant="bare" type="button" role="menuitem" onClick={() => { void exportOpenProjectArchive(); }} className={ITEM} aria-label={t('workbench.export.archiveLabel')}>
         <Archive size={14} />
         <span>{t('workbench.export.archive')}</span>
-      </button>
-      <button type="button" role="menuitem" onClick={() => { void exportProjectAsJson(); }} className={ITEM} aria-label={t('workbench.export.projectLabel')}>
+      </Button>
+      <Button variant="bare" type="button" role="menuitem" onClick={() => { void exportProjectAsJson(); }} className={ITEM} aria-label={t('workbench.export.projectLabel')}>
         <Download size={14} />
         <span>{t('workbench.export.project')}</span>
-      </button>
+      </Button>
     </>
   );
 }

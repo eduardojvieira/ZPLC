@@ -7,6 +7,7 @@
 
 import { useState, useRef, useEffect, useCallback, memo } from 'react';
 import { t } from '../../../i18n';
+import { TextField, Tooltip } from '../../../ui';
 
 interface NodeCommentProps {
   nodeId: string;
@@ -66,7 +67,7 @@ const NodeComment = memo(({ nodeId, comment, onChange, readOnly = false }: NodeC
   if (isEditing) {
     return (
       <div className="absolute top-full left-1/2 z-10 mt-1 w-[120px] -translate-x-1/2 px-1" onClick={(e) => e.stopPropagation()}>
-        <input
+        <TextField bare
           aria-label={t('a11y.fbd.comment')}
           ref={inputRef}
           type="text"
@@ -74,7 +75,7 @@ const NodeComment = memo(({ nodeId, comment, onChange, readOnly = false }: NodeC
           onChange={(e) => setDraft(e.target.value)}
           onBlur={handleSave}
           onKeyDown={handleKeyDown}
-          className="w-full text-[10px] italic bg-[var(--color-surface-700)] border border-[var(--border-color)]
+          className="w-full text-[length:var(--font-size-caption)] italic bg-[var(--color-surface-700)] border border-[var(--border-color)]
                      rounded px-1 py-0.5 text-[var(--text-secondary)]
                      text-center"
           placeholder={t('editors.fbd.addComment')}
@@ -84,17 +85,18 @@ const NodeComment = memo(({ nodeId, comment, onChange, readOnly = false }: NodeC
   }
 
   return (
-    <div
-      className="absolute top-full left-1/2 z-10 mt-1 w-[120px] -translate-x-1/2 px-1 cursor-pointer"
-      onDoubleClick={handleDoubleClick}
-      title={t('editors.fbd.editComment')}
-    >
-      <div className={`text-[10px] italic text-center truncate max-w-[120px] ${
-        comment ? 'text-[var(--text-tertiary)]' : 'text-[var(--text-tertiary)] hover:text-[var(--text-secondary)]'
-      }`}>
-        {comment || t('editors.fbd.commentEmpty')}
+    <Tooltip content={t('editors.fbd.editComment')}>
+      <div
+        className="absolute top-full left-1/2 z-10 mt-1 w-[120px] -translate-x-1/2 px-1 cursor-pointer"
+        onDoubleClick={handleDoubleClick}
+      >
+        <div className={`text-[length:var(--font-size-caption)] italic text-center truncate max-w-[120px] ${
+          comment ? 'text-[var(--text-tertiary)]' : 'text-[var(--text-tertiary)] hover:text-[var(--text-secondary)]'
+        }`}>
+          {comment || t('editors.fbd.commentEmpty')}
+        </div>
       </div>
-    </div>
+    </Tooltip>
   );
 });
 

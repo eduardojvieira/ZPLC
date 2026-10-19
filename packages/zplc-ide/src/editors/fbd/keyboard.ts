@@ -21,6 +21,7 @@ import { EXTEND_COMMANDS, extendSelection, isExtendCommand } from '../extendSele
 import { ARRANGE_COMMANDS, arrangeSelection, isArrangeCommand } from '../arrange';
 import type { CanvasCommands } from '../useCanvasKeyboard';
 import { declaredSymbols, sameType, symbolItems } from '../symbols';
+import { t, tn } from '../../i18n';
 
 export interface FBDState {
   nodes: Node[];
@@ -109,9 +110,9 @@ export function paletteChoices(projectBlocks: readonly ProjectBlock[]): PickerIt
     items.push({ id, label: id, group, ...(detail ? { detail } : {}) });
   };
   const project = projectPalette(projectBlocks);
-  if (project) for (const name of project.blocks) add(name, 'Project', findProjectBlock(projectBlocks, name)?.kind === 'FUNCTION' ? 'function of the project' : 'function block of the project');
+  if (project) for (const name of project.blocks) add(name, t('fbd.group.project'), findProjectBlock(projectBlocks, name)?.kind === 'FUNCTION' ? t('fbd.detail.function') : t('fbd.detail.functionBlock'));
   for (const category of fbdPaletteCategories()) for (const name of category.blocks) add(name, category.name, category.name);
-  for (const name of FBD_VALUE_BLOCKS) add(name, 'I/O', name === 'constant' ? 'a value' : 'a variable');
+  for (const name of FBD_VALUE_BLOCKS) add(name, t('fbd.group.io'), name === 'constant' ? t('fbd.detail.value') : t('fbd.detail.variable'));
   return items;
 }
 
@@ -203,13 +204,13 @@ function askBinding(model: FBDModel, state: FBDState, node: Node): FBDOutcome {
   if (binding === 'none') return refuse(state, `${blockType(node)} has nothing to bind: it holds neither a variable, an instance nor a value.`);
   const symbols = declaredSymbols(model.variables);
   if (binding === 'constant') {
-    return { ...state, changed: false, say: `Value of ${at}: type TRUE, FALSE, a number, T#500ms or 'text'.`, prompt: { kind: 'bind', blockId: node.id }, choices: [], allowFreeText: true, title: 'Value of the constant' };
+    return { ...state, changed: false, say: t('fbd.constant.say', { at }), prompt: { kind: 'bind', blockId: node.id }, choices: [], allowFreeText: true, title: t('fbd.constant.title') };
   }
   if (binding === 'instance') {
     const own = symbols.filter((symbol) => sameType(symbol.type, blockType(node)));
-    return { ...state, changed: false, say: `Name the instance of ${blockType(node)}.`, prompt: { kind: 'bind', blockId: node.id }, choices: symbolItems(own), allowFreeText: true, title: `Instance of ${blockType(node)}` };
+    return { ...state, changed: false, say: t('fbd.instance.say', { type: blockType(node) }), prompt: { kind: 'bind', blockId: node.id }, choices: symbolItems(own), allowFreeText: true, title: t('fbd.instance.title', { type: blockType(node) }) };
   }
-  return { ...state, changed: false, say: `Bind ${at}: choose a declared symbol.`, prompt: { kind: 'bind', blockId: node.id }, choices: symbolItems(symbols), allowFreeText: true, title: 'Variable of the block' };
+  return { ...state, changed: false, say: t('fbd.bind.say', { at }), prompt: { kind: 'bind', blockId: node.id }, choices: symbolItems(symbols), allowFreeText: true, title: t('fbd.bind.title') };
 }
 
 function bindTo(model: FBDModel, state: FBDState, node: Node, answer: string): FBDOutcome {
@@ -278,7 +279,7 @@ export function wireChoices(model: FBDModel, blockId: string, projectBlocks?: re
       id: wireId(a, b),
       label: `${title(a.block)}.${a.port} → ${title(b.block)}.${b.port}`,
       detail: `${a.block} → ${b.block}`,
-      group: 'Wires',
+      group: t('keyboard.group.wires'),
       keywords: [a.block, b.block],
       from: a,
       to: b,
@@ -300,7 +301,7 @@ function wiresOf(model: FBDModel, state: FBDState, blockId: string): PickerItem[
       id: edge.id,
       label: `${names.get(edge.source) ?? edge.source}.${edge.sourceHandle ?? 'OUT'} → ${names.get(edge.target) ?? edge.target}.${edge.targetHandle ?? 'IN'}`,
       detail: `${edge.source} → ${edge.target}`,
-      group: 'Wires',
+      group: t('keyboard.group.wires'),
     }));
 }
 
@@ -331,7 +332,7 @@ export function runFBDCommand(
       if (state.nodes.length === 0) return refuse(state, 'There are no blocks on the diagram.');
       if (!here) return select(state, firstNode(state.nodes)!);
       const next = nearestNode(state.nodes, here, direction);
-      return next ? select(state, next) : { ...state, changed: false, say: `There is no block to the ${direction} of ${blockTitle(here)}.` };
+      return next ? select(state, next) : { ...state, changed: false, say: t(`fbd.noBlock.${direction}`, { name: blockTitle(here) }) };
     }
     case 'focusFirst': {
       const first = firstNode(state.nodes);
@@ -341,7 +342,7 @@ export function runFBDCommand(
     case 'insertConstant': return insert(model, state, 'constant', argument, projectBlocks);
     case 'insertElement':
       return argument.blockType ? insert(model, state, argument.blockType, argument, projectBlocks) : refuse(state, 'Choose the block to insert.');
-    case 'openPalette': return { ...state, changed: false, say: 'Block palette: type to search.', prompt: { kind: 'palette' } };
+    case 'openPalette': return { ...state, changed: false, say: t('keyboard.palette.block'), prompt: { kind: 'palette' } };
     case 'bindVariable': {
       if (!here) return refuse(state, 'Select a block first.');
       return argument.name === undefined ? askBinding(model, state, here) : bindTo(model, state, here, argument.name);
@@ -351,7 +352,7 @@ export function runFBDCommand(
       if (argument.wire === undefined) {
         const choices = wireChoices(currentModel(model, state), here.id, projectBlocks);
         if (choices.length === 0) return refuse(state, `${blockTitle(here)} has no wire that can be drawn: every pin that fits is already wired, or no pin of another block takes its type.`);
-        return { ...state, changed: false, say: `Wires of ${blockTitle(here)}: ${choices.length} can be drawn.`, prompt: { kind: 'connect', blockId: here.id }, choices, title: `Draw a wire of ${blockTitle(here)}` };
+        return { ...state, changed: false, say: t('keyboard.wiresDrawable', { name: blockTitle(here), count: choices.length }), prompt: { kind: 'connect', blockId: here.id }, choices, title: t('keyboard.drawWireTitle', { name: blockTitle(here) }) };
       }
       return drawWire(model, state, argument.wire, projectBlocks);
     }
@@ -360,20 +361,20 @@ export function runFBDCommand(
       if (argument.edgeId === undefined) {
         const choices = wiresOf(currentModel(model, state), state, here.id);
         if (choices.length === 0) return refuse(state, `${blockTitle(here)} has no wire to remove.`);
-        return { ...state, changed: false, say: `Wires of ${blockTitle(here)}: ${choices.length}.`, prompt: { kind: 'disconnect', blockId: here.id }, choices, title: `Remove a wire of ${blockTitle(here)}` };
+        return { ...state, changed: false, say: t('keyboard.wiresRemovable', { name: blockTitle(here), count: choices.length }), prompt: { kind: 'disconnect', blockId: here.id }, choices, title: t('keyboard.removeWireTitle', { name: blockTitle(here) }) };
       }
       if (!state.edges.some((edge) => edge.id === argument.edgeId)) return refuse(state, 'That wire is not on the diagram any more.');
-      return { nodes: state.nodes, edges: state.edges.filter((edge) => edge.id !== argument.edgeId), changed: true, say: 'Removed the wire.' };
+      return { nodes: state.nodes, edges: state.edges.filter((edge) => edge.id !== argument.edgeId), changed: true, say: t('keyboard.wireRemoved') };
     }
     case 'editComment': {
       if (!here) return refuse(state, 'Select a block first.');
-      if (argument.text === undefined) return { ...state, changed: false, say: `Comment of ${blockTitle(here)}.`, prompt: { kind: 'comment', blockId: here.id } };
+      if (argument.text === undefined) return { ...state, changed: false, say: t('keyboard.commentOf', { name: blockTitle(here) }), prompt: { kind: 'comment', blockId: here.id } };
       const text = argument.text.trim();
       return {
         nodes: state.nodes.map((node) => (node.id === here.id ? { ...node, data: { ...node.data, comment: text === '' ? undefined : text } } : node)),
         edges: state.edges,
         changed: true,
-        say: text === '' ? 'Cleared the comment.' : 'Set the comment.',
+        say: text === '' ? t('keyboard.commentCleared') : t('keyboard.commentSet'),
       };
     }
     case 'deleteSelection': {
@@ -385,7 +386,7 @@ export function runFBDCommand(
         nodes: state.nodes.filter((node) => !doomed.has(node.id)),
         edges: state.edges.filter((edge) => !gone.has(edge.id)),
         changed: true,
-        say: `Deleted ${doomed.size} block${doomed.size === 1 ? '' : 's'} and ${wires.length} wire${wires.length === 1 ? '' : 's'}.`,
+        say: t('keyboard.deleted', { things: tn('keyboard.blocks', doomed.size), wires: tn('keyboard.wires', wires.length) }),
       };
     }
     default: return refuse(state, `${command} is not a command of the function block editor.`);
@@ -394,12 +395,12 @@ export function runFBDCommand(
 
 function select(state: FBDState, node: Node): FBDOutcome {
   const next = selectOnly(state.nodes, state.edges, node.id);
-  return { ...next, changed: false, say: `Selected ${blockTitle(node)}.` };
+  return { ...next, changed: false, say: t('keyboard.selected', { name: blockTitle(node) }) };
 }
 
 function insert(model: FBDModel, state: FBDState, type: string, argument: FBDArgument, projectBlocks?: readonly ProjectBlock[]): FBDOutcome {
   const placed = placeBlock(state, type, projectBlocks, argument.position);
-  const outcome: FBDOutcome = { nodes: placed.nodes, edges: placed.edges, changed: true, say: `Inserted ${type}${typeof data(placed.node).instanceName === 'string' ? ` ${data(placed.node).instanceName as string}` : ''}.` };
+  const outcome: FBDOutcome = { nodes: placed.nodes, edges: placed.edges, changed: true, say: t('fbd.inserted', { type, instance: typeof data(placed.node).instanceName === 'string' ? ` ${data(placed.node).instanceName as string}` : '' }) };
   // a variable or a constant is of no use until it holds something: what it holds is asked at once
   if (type === 'variable' || type === 'constant' || type === 'input' || type === 'output') {
     const asked = askBinding(model, { nodes: placed.nodes, edges: placed.edges }, placed.node);
@@ -419,7 +420,7 @@ function drawWire(model: FBDModel, state: FBDState, wire: string, projectBlocks?
   const [source, sourceHandle, target, targetHandle] = parsed as [string, string, string, string];
   const result = connectBlocks(currentModel(model, state), state.nodes, state.edges, { source, sourceHandle, target, targetHandle }, projectBlocks);
   if (result.refusal !== undefined) return refuse(state, `Wire refused: ${result.refusal}.`);
-  return { nodes: state.nodes, edges: result.edges, changed: true, say: `Drew the wire from ${source}.${sourceHandle} to ${target}.${targetHandle}.` };
+  return { nodes: state.nodes, edges: result.edges, changed: true, say: t('fbd.wireDrawn', { source, target, sourceHandle, targetHandle }) };
 }
 
 /** What the canvas keyboard hook needs of the function block editor: the commands over its document, and its questions. */
@@ -428,8 +429,8 @@ export function fbdCanvasCommands(model: FBDModel, projectBlocks: readonly Proje
     editor: 'fbd',
     run: (nodes, edges, command, argument) => runFBDCommand(model, { nodes, edges }, command, argument, projectBlocks),
     palette: () => paletteChoices(projectBlocks),
-    paletteTitle: 'Insert block',
-    palettePlaceholder: 'Type to search: AND, TON, variable, constant',
+    paletteTitle: t('fbd.paletteTitle'),
+    palettePlaceholder: t('fbd.palettePlaceholder'),
     readOnlyCommands: new Set(['focusLeft', 'focusRight', 'focusUp', 'focusDown', 'focusFirst', ...EXTEND_COMMANDS, 'toggleBreakpoint', 'showCommands', 'fitView']),
     answer: {
       palette: (id) => ({ blockType: id }),

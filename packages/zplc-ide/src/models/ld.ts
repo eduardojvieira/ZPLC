@@ -14,6 +14,7 @@
 import { serializeVisualDocument } from './visualFileFormat';
 import { LD_COIL_TYPES, LD_CONTACT_TYPES, ldPaletteFunctionBlocks } from './ldSupport';
 import type { ProjectBlock } from './projectBlocks';
+import { t } from '../i18n';
 
 // =============================================================================
 // Variable Definitions (shared structure with FBD)
@@ -328,39 +329,37 @@ export function getElementSymbol(type: LDElementType): string {
   }
 }
 
-/**
- * Get element description for tooltips
- */
+/** Get element description for tooltips */
 export function getElementDescription(type: LDElementType): string {
   switch (type) {
     case 'left_rail':
-      return 'Left Power Rail (L1)';
+      return t('ld.desc.left_rail');
     case 'right_rail':
-      return 'Right Power Rail (L2/N)';
+      return t('ld.desc.right_rail');
     case 'contact_no':
-      return 'Normally Open Contact (XIC - Examine If Closed)';
+      return t('ld.desc.contact_no');
     case 'contact_nc':
-      return 'Normally Closed Contact (XIO - Examine If Open)';
+      return t('ld.desc.contact_nc');
     case 'contact_p':
-      return 'Positive Transition Contact (Rising Edge)';
+      return t('ld.desc.contact_p');
     case 'contact_n':
-      return 'Negative Transition Contact (Falling Edge)';
+      return t('ld.desc.contact_n');
     case 'coil':
-      return 'Standard Coil (OTE - Output Energize)';
+      return t('ld.desc.coil');
     case 'coil_negated':
-      return 'Negated Coil (Output when rung is false)';
+      return t('ld.desc.coil_negated');
     case 'coil_set':
-      return 'Set/Latch Coil (OTL - Output Latch)';
+      return t('ld.desc.coil_set');
     case 'coil_reset':
-      return 'Reset/Unlatch Coil (OTU - Output Unlatch)';
+      return t('ld.desc.coil_reset');
     case 'coil_p':
-      return 'Positive Transition Coil (Pulse on rising edge)';
+      return t('ld.desc.coil_p');
     case 'coil_n':
-      return 'Negative Transition Coil (Pulse on falling edge)';
+      return t('ld.desc.coil_n');
     case 'function_block':
-      return 'Embedded Function Block (Timer, Counter, etc.)';
+      return t('ld.desc.function_block');
     default:
-      return 'Unknown Element';
+      return t('ld.desc.unknown');
   }
 }
 
@@ -1057,24 +1056,24 @@ export function getToolboxItems(blocks: readonly ProjectBlock[] = []): LDToolbox
   }));
 
   return [
-    ...LD_CONTACT_TYPES.map((type) => ({ type, ...PALETTE_FACE[type], category: 'contact' as const })),
-    ...LD_COIL_TYPES.map((type) => ({ type, ...PALETTE_FACE[type], category: 'coil' as const })),
+    ...LD_CONTACT_TYPES.map((type) => ({ type, ...paletteFace()[type], category: 'contact' as const })),
+    ...LD_COIL_TYPES.map((type) => ({ type, ...paletteFace()[type], category: 'coil' as const })),
     // Structure
-    { type: 'branch', label: 'Branch', symbol: '├┤', category: 'structure' },
+    { type: 'branch', label: t('ld.face.branch'), symbol: '├┤', category: 'structure' },
     ...functionBlocks,
   ];
 }
 
 /** What the palette shows for each contact and coil: a face for every type of the table, or it does not compile. */
-const PALETTE_FACE: Record<(typeof LD_CONTACT_TYPES)[number] | (typeof LD_COIL_TYPES)[number], { label: string; symbol: string }> = {
-  contact_no: { label: 'NO Contact', symbol: '| |' },
-  contact_nc: { label: 'NC Contact', symbol: '|/|' },
-  contact_p: { label: 'P Contact', symbol: '|P|' },
-  contact_n: { label: 'N Contact', symbol: '|N|' },
-  coil: { label: 'Coil', symbol: '( )' },
-  coil_negated: { label: 'Neg Coil', symbol: '(/)' },
-  coil_set: { label: 'Set Coil', symbol: '(S)' },
-  coil_reset: { label: 'Reset Coil', symbol: '(R)' },
-  coil_p: { label: 'P Coil', symbol: '(P)' },
-  coil_n: { label: 'N Coil', symbol: '(N)' },
-};
+const paletteFace = (): Record<(typeof LD_CONTACT_TYPES)[number] | (typeof LD_COIL_TYPES)[number], { label: string; symbol: string }> => ({
+  contact_no: { label: t('ld.face.contact_no'), symbol: '| |' },
+  contact_nc: { label: t('ld.face.contact_nc'), symbol: '|/|' },
+  contact_p: { label: t('ld.face.contact_p'), symbol: '|P|' },
+  contact_n: { label: t('ld.face.contact_n'), symbol: '|N|' },
+  coil: { label: t('ld.face.coil'), symbol: '( )' },
+  coil_negated: { label: t('ld.face.coil_negated'), symbol: '(/)' },
+  coil_set: { label: t('ld.face.coil_set'), symbol: '(S)' },
+  coil_reset: { label: t('ld.face.coil_reset'), symbol: '(R)' },
+  coil_p: { label: t('ld.face.coil_p'), symbol: '(P)' },
+  coil_n: { label: t('ld.face.coil_n'), symbol: '(N)' },
+});

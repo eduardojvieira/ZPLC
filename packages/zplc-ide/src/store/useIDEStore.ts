@@ -6,402 +6,29 @@
  */
 
 import { create, type StoreApi } from 'zustand';
-import type {
-  ConnectionState,
-  ConsoleEntry,
-  ConsoleTab,
-  PLCLanguage,
-  CompilerMessage,
-  STBufferDiagnostics,
-  ZPLCProjectConfig,
-  ZPLCProjectV2,
-  FileTreeNode,
-  ProjectFileWithHandle,
-} from '../types';
-import {
-  createEmptyFileContent,
-  isFileSystemAccessSupported,
-} from '../types';
-import {
-  openDirectoryPicker,
-  readDirectoryRecursive,
-  readProjectConfig,
-  writeProjectConfig,
-  loadFileFromTree,
-  writeFileContent,
-  createNewProject,
-  copyProjectToFolder,
-  toggleDirectoryExpanded,
-  findFileInTree,
-  findSameSourceName,
-  fileNameForNewFile,
-  fileTreeFileId,
-  FileNameTakenError,
-} from '../utils/fileSystem';
+import type { ZPLCProjectV2, FileTreeNode, ProjectFileWithHandle } from '../types';
+import { isFileSystemAccessSupported } from '../types';
+import { openDirectoryPicker, readDirectoryRecursive, readProjectConfig, writeProjectConfig, loadFileFromTree, createNewProject, copyProjectToFolder, findFileInTree, fileTreeFileId } from '../utils/fileSystem';
 import {
   getAvailableProjects,
   loadProject,
   loadProjectAssets,
 } from '../utils/projectLoader';
-import type { ProjectInfo } from '../utils/projectLoader';
-import type { SystemInfo, StatusInfo } from '../runtime/serialAdapter';
-import type { DebugMap } from '../compiler';
-import { WATCH_FORCE_STATE, type WatchForceEntry } from '../runtime/debugAdapter';
-import type { ProjectMigrationChange } from '../project/projectModel';
-import { breakpointFileKey, getBreakpointPCForLine } from '../utils/breakpoints';
-import { appendConsoleEntries, type NewConsoleEntry } from './consoleEntries';
-import { withLiveValues } from './liveValues';
+import { appendConsoleEntries, SHOW_OUTPUT } from './consoleEntries';
+import { createDebugActions } from './debugActions';
 import { folderErrorReason } from '../utils/errorMessages';
-import type { RecentProject } from '../../electron/projectFilesProtocol';
 import { forgetRecentProject as forgetRecentOnBridge, listRecentProjects, markProjectOpened, openRecentFolder, projectRootId } from '../ipc/projectFilesHandles';
 import { loadSession } from '../ipc/sessionBridge';
 import { planRestore, type ViewState, type WorkspaceLayout } from '../utils/sessionState';
 import { flushSession, resetViewStates } from './sessionPersistence';
-import { createFolder, deleteFolder, duplicateEntry, moveEntry, renameEntry } from './projectTreeActions';
-import { preserveExpansion } from '../project/treeOperations';
-import type { NewProjectRequest } from '../project/newProject';
 import { DEFAULT_DEBUG_POLLING_INTERVAL_MS } from './debugDefaults';
-import { NATIVE_TRACE_LIMIT, type NativeTraceSample } from '../runtime/nativeTrace';
-import type { CanonicalWorkspaceBuildEvidence } from './buildEvidence';
+import type { Theme, IDEState } from './ideStoreTypes';
+import { firstTreeFile } from './fileTreeLookup';
+import { createFileActions } from './fileActions';
+import { t } from '../i18n';
+export type { Theme, CompilerNavigationTarget, CloseProjectOptions, DebugMode, LiveValue, DebugState, IDEState } from './ideStoreTypes';
 
-let openFileIntent = 0;
-let fileTreeRefreshIntent = 0;
 let openProjectIntent = 0;
-const fileCreationReservations = new Set<string>();
-/** Brings the console's output tab into view, where a failed action reports why. */
-const SHOW_OUTPUT = { activeConsoleTab: 'output', isConsoleCollapsed: false } as const;
-
-function findTreeFileById(tree: FileTreeNode, fileId: string): FileTreeNode | null {
-  if (tree.id === fileId && tree.type === 'file') return tree;
-  for (const child of tree.children ?? []) {
-    const found = findTreeFileById(child, fileId);
-    if (found) return found;
-  }
-  return null;
-}
-
-function resolveTreeFile(tree: FileTreeNode, fileId: string): FileTreeNode | null {
-  return findTreeFileById(tree, fileId);
-}
-
-function firstTreeFile(tree: FileTreeNode): FileTreeNode | null {
-  if (tree.type === 'file') return tree;
-  for (const child of tree.children ?? []) {
-    const found = firstTreeFile(child);
-    if (found) return found;
-  }
-  return null;
-}
-
-function findTreeFileWithParent(tree: FileTreeNode, fileId: string): { node: FileTreeNode; parent: FileTreeNode } | null {
-  const node = resolveTreeFile(tree, fileId);
-  if (!node) return null;
-
-  const visit = (parent: FileTreeNode): { node: FileTreeNode; parent: FileTreeNode } | null => {
-    for (const child of parent.children ?? []) {
-      if (child === node) return { node: child, parent };
-      const found = visit(child);
-      if (found) return found;
-    }
-    return null;
-  };
-
-  return visit(tree);
-}
-
-function pruneTreeFile(tree: FileTreeNode, fileId: string): FileTreeNode | null {
-  let changed = false;
-  const children = (tree.children ?? []).flatMap((child) => {
-    if (child.type === 'file' && child.id === fileId) {
-      changed = true;
-      return [];
-    }
-    const pruned = pruneTreeFile(child, fileId);
-    if (pruned) {
-      changed = true;
-      return [pruned];
-    }
-    return [child];
-  });
-
-  if (!changed) return null;
-  return { ...tree, children };
-}
-
-function appendTreeFile(tree: FileTreeNode, parentPath: string, file: FileTreeNode): FileTreeNode | null {
-  if (tree.type === 'directory' && tree.path === parentPath) {
-    return { ...tree, children: [...(tree.children ?? []), file] };
-  }
-
-  let changed = false;
-  const children = (tree.children ?? []).map((child) => {
-    const updated = child.type === 'directory' ? appendTreeFile(child, parentPath, file) : null;
-    if (!updated) return child;
-    changed = true;
-    return updated;
-  });
-  return changed ? { ...tree, children } : null;
-}
-
-function isSafePathSegment(value: string): boolean {
-  return value.length > 0 && value !== '.' && value !== '..' && !/[\\/\0]/.test(value);
-}
-
-// =============================================================================
-// Theme Types
-// =============================================================================
-
-export type Theme = 'light' | 'dark' | 'high-contrast' | 'system';
-export interface CompilerNavigationTarget { file: string; line: number; column: number; }
-export interface CloseProjectOptions { discardUnsaved?: boolean; }
-
-// =============================================================================
-// Debug State Types
-// =============================================================================
-
-/**
- * Debug mode - how the IDE is connected for debugging
- */
-export type DebugMode = 'none' | 'simulation' | 'hardware';
-
-/**
- * Live value that can be displayed in the IDE
- */
-export type LiveValue = number | boolean | string;
-
-/**
- * Debug state for the IDE
- * 
- * This tracks all debugging-related state including:
- * - Debug map from compilation (variable locations, source mappings)
- * - Active breakpoints (by file and line)
- * - Current execution state when paused
- * - Watch variables and their live values
- */
-export interface DebugState {
-  /** Current debug mode (none, simulation, or hardware) */
-  mode: DebugMode;
-  
-  /** Debug map from last compilation */
-  debugMap: DebugMap | null;
-  
-  /** 
-   * Active breakpoints indexed by file ID.
-   * Value is a Set of line numbers with breakpoints.
-   */
-  breakpoints: Map<string, Set<number>>;
-  
-  /**
-   * Why the runtime does not hold the breakpoints the editor shows (null = they are armed or there
-   * is no session). Set from the breakpoint sync, so a dot never claims a stop the runtime refused.
-   */
-  breakpointsInactiveReason: string | null;
-
-  /** Current execution line when paused (null if running or not debugging) */
-  currentLine: number | null;
-  
-  /** Current POU name when paused */
-  currentPOU: string | null;
-  
-  /** Current PC (program counter) when paused */
-  currentPC: number | null;
-  
-  /** Watch variable paths (e.g., "MyTimer.ET", "Counter") */
-  watchVariables: string[];
-  
-  /** 
-   * Live values cache for watched variables.
-   * Key is the variable path, value is the current value.
-   */
-  liveValues: Map<string, LiveValue>;
-
-  /** Active forced watch entries indexed by variable path. */
-  forcedValues: Map<string, WatchForceEntry>;
-
-  /** True when a hardware disconnect prevented force-state reconciliation. */
-  forcesUnconfirmed: boolean;
-
-  /** Bounded, host-only samples from the active native POSIX session. */
-  nativeTrace: NativeTraceSample[];
-  
-  /** Whether the debugger is currently polling for live values */
-  isPolling: boolean;
-  
-  /** Polling interval in milliseconds (default: 500ms) */
-  pollingInterval: number;
-
-  /**
-   * Whether the mpeek fast-poll path is enabled.
-   * Only meaningful in hardware mode. Requires the new firmware with
-   * `zplc dbg mpeek` support to be flashed. Off by default.
-   */
-  mpeekEnabled: boolean;
-}
-
-// =============================================================================
-// Store Interface
-// =============================================================================
-
-export interface IDEState {
-  // Theme State
-  theme: Theme;
-
-  // Project State - File System Based
-  isProjectOpen: boolean;
-  projectName: string | null;
-  projectConfig: ZPLCProjectConfig | null;
-  /** Monotonic identity for the currently open project session. */
-  projectSession: number;
-  /** Ephemeral desktop-test capability for one physical project session. */
-  workspaceScenarioLink: { workspaceId: string; projectSession: number } | null;
-  /** Evidence for the exact saved-workspace build; invalidated by session/run/link fences. */
-  canonicalWorkspaceBuildEvidence: CanonicalWorkspaceBuildEvidence | null;
-  /** Configuration differs from the last successful disk save. */
-  projectConfigDirty: boolean;
-  projectMigrationPreview: { sourceSchemaVersion: 1 | 2; targetSchemaVersion: 2; changes: ProjectMigrationChange[] } | null;
-  directoryHandle: FileSystemDirectoryHandle | null;
-  fileTree: FileTreeNode | null;
-  
-  // Files (loaded on demand)
-  loadedFiles: Map<string, ProjectFileWithHandle>;
-  activeFileId: string | null;
-  openTabs: string[];                    // File IDs of open tabs
-
-  // Connection State
-  connection: ConnectionState;
-
-  // Controller State (from device JSON APIs)
-  controllerInfo: SystemInfo | null;
-  controllerStatus: StatusInfo | null;
-
-  // Console State
-  consoleEntries: ConsoleEntry[];
-  activeConsoleTab: ConsoleTab;
-  compilerMessages: CompilerMessage[];
-  /** True after the current compiler result has reported diagnostics or completed cleanly. */
-  compilerMessagesChecked: boolean;
-  compilerRunId: number;
-  compilerNavigationTarget: CompilerNavigationTarget | null;
-  /** Current editor-only ST syntax result. It is not compiler/build evidence. */
-  stBufferDiagnostics: STBufferDiagnostics | null;
-
-  // UI State
-  consoleHeight: number;
-  isConsoleCollapsed: boolean;
-  showSettings: boolean;
-
-  // Debug State
-  debug: DebugState;
-
-  // Actions - Theme
-  setTheme: (theme: Theme) => void;
-
-  // Actions - Project Management (File System)
-  /** Why the last attempt to open, create or copy a project failed; shown on the screen that started it. */
-  projectOpenError: string | null;
-  reportProjectOpenProblem: (type: 'error' | 'warning', message: string) => void;
-  openProjectFromFolder: () => Promise<boolean>;
-  /** Folders opened before, most recent first, as the main process lists them (desktop app only; IDE-008). */
-  recentProjects: RecentProject[];
-  refreshRecentProjects: () => Promise<void>;
-  /** Reopens a remembered folder without the dialog, with the session it was left in. */
-  openRecentProject: (recentId: string) => Promise<boolean>;
-  forgetRecentProject: (recentId: string) => Promise<void>;
-  /** The split of the workbench the user chose in this project; saved with the session and restored with it. */
-  sessionLayout: WorkspaceLayout | null;
-  setSessionLayout: (layout: WorkspaceLayout | null) => void;
-  createNewProjectInFolder: (options?: NewProjectRequest) => Promise<boolean>;
-  copyExampleProjectToFolder: (projectId: string, folder?: () => Promise<{ handle: FileSystemDirectoryHandle; seed: boolean } | null>) => Promise<boolean>;
-  /** The Welcome screen's Learn entry: copy the first lesson's starter like any example, then show the Learn tab. */
-  startLearning: (starterExampleId: string) => Promise<boolean>;
-  getExampleProjects: () => ProjectInfo[];
-  closeProject: (options?: CloseProjectOptions) => boolean;
-  updateProjectConfig: (updates: Partial<ZPLCProjectConfig>) => void;
-  saveProjectConfig: () => Promise<void>;
-  linkWorkspaceScenarios: (workspaceId: string, expectedProjectSession: number) => boolean;
-  recordCanonicalWorkspaceBuildEvidence: (evidence: CanonicalWorkspaceBuildEvidence) => boolean;
-
-  // Actions - File Tree
-  toggleDirectory: (dirPath: string) => void;
-  refreshFileTree: () => Promise<void>;
-
-  // Actions - Files
-  openFile: (fileId: string) => Promise<void>;
-  /** `quiet` (autosave) writes the file without the "Saved" line in Output; a failure is always reported. */
-  saveFile: (fileId: string, options?: { quiet?: boolean }) => Promise<boolean>;
-  saveAllFiles: (options?: { quiet?: boolean }) => Promise<void>;
-  createFile: (name: string, language: PLCLanguage, parentPath?: string) => Promise<string>;
-  deleteFile: (fileId: string, expectedProjectSession?: number) => Promise<boolean>;
-  /** The project tree operations of the Explorer (IDE-004). Each raises an Error with a message for the user when it refuses. */
-  createFolder: (parentPath: string, name: string) => Promise<void>;
-  renameEntry: (path: string, name: string) => Promise<void>;
-  moveEntry: (path: string, targetFolder: string) => Promise<void>;
-  duplicateEntry: (path: string) => Promise<string>;
-  deleteFolder: (path: string) => Promise<void>;
-  setActiveFile: (fileId: string | null) => void;
-  updateFileContent: (fileId: string, content: string) => void;
-  closeTab: (fileId: string) => void;
-  /** Drops a file's unsaved content and closes its tab; the next open reads the file from disk again. */
-  discardFile: (fileId: string) => void;
-
-  // Actions - Connection
-  setConnectionStatus: (status: ConnectionState['status']) => void;
-  setPlcState: (state: ConnectionState['plcState']) => void;
-
-  // Actions - Controller
-  setControllerInfo: (info: SystemInfo | null) => void;
-  setControllerStatus: (status: StatusInfo | null) => void;
-  clearControllerState: () => void;
-
-  // Actions - Console
-  addConsoleEntry: (entry: Omit<ConsoleEntry, 'id' | 'timestamp'>) => void;
-  addConsoleEntries: (entries: NewConsoleEntry[]) => void;
-  clearConsole: () => void;
-  setActiveConsoleTab: (tab: ConsoleTab) => void;
-  addCompilerMessage: (message: Omit<CompilerMessage, 'timestamp'>) => void;
-  markCompilerMessagesChecked: () => void;
-  clearCompilerMessages: () => void;
-  setSTBufferDiagnostics: (result: STBufferDiagnostics, expectedContent: string) => boolean;
-  clearSTBufferDiagnostics: (identity?: Pick<STBufferDiagnostics, 'projectSession' | 'compilerRunId' | 'fileId' | 'file'>) => void;
-  navigateToCompilerDiagnostic: (file: string, line: number, column: number) => Promise<boolean>;
-  consumeCompilerNavigationTarget: (target: CompilerNavigationTarget) => void;
-
-  // Actions - UI
-  setConsoleHeight: (height: number) => void;
-  toggleConsole: () => void;
-  toggleSettings: () => void;
-
-  // Actions - Debug
-  setDebugMode: (mode: DebugMode) => void;
-  setDebugMap: (map: DebugMap | null) => void;
-  toggleBreakpoint: (fileId: string, line: number) => void;
-  setBreakpoints: (fileId: string, lines: number[]) => void;
-  setBreakpointsInactiveReason: (reason: string | null) => void;
-  clearBreakpoints: (fileId?: string) => void;
-  setCurrentExecution: (pou: string | null, line: number | null, pc: number | null) => void;
-  addWatchVariable: (varPath: string) => void;
-  removeWatchVariable: (varPath: string) => void;
-  clearWatchVariables: () => void;
-  updateLiveValue: (varPath: string, value: LiveValue) => void;
-  updateLiveValues: (values: Map<string, LiveValue>) => void;
-  clearLiveValues: () => void;
-  setForcedValue: (entry: WatchForceEntry) => void;
-  clearForcedValue: (varPath: string) => void;
-  markForcedValuesUnconfirmed: () => void;
-  clearForcedValues: () => void;
-  appendNativeTrace: (sample: NativeTraceSample) => void;
-  clearNativeTrace: () => void;
-  setPolling: (isPolling: boolean) => void;
-  setPollingInterval: (interval: number) => void;
-  toggleMpeek: () => void;
-  getBreakpointsForFile: (fileId: string) => Set<number>;
-  getAllBreakpointPCs: () => number[];
-
-  // Computed helpers
-  getActiveFile: () => ProjectFileWithHandle | null;
-  getFile: (fileId: string) => ProjectFileWithHandle | undefined;
-  hasUnsavedChanges: () => boolean;
-}
 
 // =============================================================================
 // Theme Utilities
@@ -496,7 +123,7 @@ async function openExistingProject(
     const debug = get().debug;
     if (debug.forcedValues.size > 0 || debug.forcesUnconfirmed) {
       set({ activeConsoleTab: 'watch', isConsoleCollapsed: false });
-      get().reportProjectOpenProblem('warning', 'Release or verify all forces before closing the project.');
+      get().reportProjectOpenProblem('warning', t('store.releaseBeforeClose'));
       return true;
     }
     if (get().hasUnsavedChanges()) {
@@ -524,7 +151,7 @@ async function openExistingProject(
     if (!isCurrent()) return false;
     if (!dirHandle) return false;
 
-    get().addConsoleEntry({ type: 'info', message: `Opening folder: ${dirHandle.name}...`, source: 'system' });
+    get().addConsoleEntry({ type: 'info', message: t('store.openingFolder', { name: dirHandle.name }), source: 'system' });
 
     const readResult = await readProjectConfig(dirHandle);
     if (!isCurrent()) return false;
@@ -570,7 +197,7 @@ async function openExistingProject(
     });
 
     if (openProjectIntent !== intent || get().projectSession !== expectedProjectSession + 1) return false;
-    get().addConsoleEntry({ type: 'success', message: `Opened project: ${config.name}`, source: 'system' });
+    get().addConsoleEntry({ type: 'success', message: t('store.openedProject', { name: config.name }), source: 'system' });
     const bridge = projectFilesBridge();
     if (bridge) void markProjectOpened(bridge, dirHandle);
     return true;
@@ -585,7 +212,7 @@ async function openExistingProject(
 // Store Implementation
 // =============================================================================
 
-export const useIDEStore = create<IDEState>((set, get) => ({
+export const useIDEStore = create<IDEState>((set, get, api) => ({
   // Initial State - No project open
   theme: getStoredTheme(),
   isProjectOpen: false,
@@ -620,7 +247,7 @@ export const useIDEStore = create<IDEState>((set, get) => ({
     {
       id: '1',
       type: 'info',
-      message: 'ZPLC IDE ready',
+      message: t('store.ready'),
       timestamp: new Date(),
       source: 'system',
     },
@@ -712,7 +339,7 @@ export const useIDEStore = create<IDEState>((set, get) => ({
         return false;
       }
 
-      get().addConsoleEntry({ type: 'info', message: `Creating new project in: ${dirHandle.name}...`, source: 'system' });
+      get().addConsoleEntry({ type: 'info', message: t('store.creatingProject', { name: dirHandle.name }), source: 'system' });
 
       const config = await createNewProject(dirHandle, options?.name ?? dirHandle.name, options);
       const fileTree = await readDirectoryRecursive(dirHandle);
@@ -738,7 +365,7 @@ export const useIDEStore = create<IDEState>((set, get) => ({
 
       get().addConsoleEntry({
         type: 'success',
-        message: `Created new project: ${config.name}`,
+        message: t('store.createdProject', { name: config.name }),
         source: 'system',
       });
       const bridge = projectFilesBridge();
@@ -757,7 +384,7 @@ export const useIDEStore = create<IDEState>((set, get) => ({
       const debug = get().debug;
       if (debug.forcedValues.size > 0 || debug.forcesUnconfirmed) {
         set({ activeConsoleTab: 'watch', isConsoleCollapsed: false });
-        get().reportProjectOpenProblem('warning', 'Release or verify all forces before closing the project.');
+        get().reportProjectOpenProblem('warning', t('store.releaseBeforeClose'));
         return true;
       }
       if (get().hasUnsavedChanges()) {
@@ -815,7 +442,7 @@ export const useIDEStore = create<IDEState>((set, get) => ({
         compilerMessages: [], compilerMessagesChecked: false, compilerNavigationTarget: null, compilerRunId: get().compilerRunId + 1,
       });
       if (openProjectIntent !== intent || get().projectSession !== expectedProjectSession + 1) return false;
-      get().addConsoleEntry({ type: 'success', message: `Copied example project: ${readResult.config.name}`, source: 'system' });
+      get().addConsoleEntry({ type: 'success', message: t('store.copiedExample', { name: readResult.config.name }), source: 'system' });
       const bridge = projectFilesBridge();
       if (bridge) void markProjectOpened(bridge, dirHandle);
       return true;
@@ -843,7 +470,7 @@ export const useIDEStore = create<IDEState>((set, get) => ({
       set({ activeConsoleTab: 'watch', isConsoleCollapsed: false });
       get().addConsoleEntry({
         type: 'warning',
-        message: 'Release or verify all forces before closing the project.',
+        message: t('store.releaseBeforeClose'),
         source: 'system',
       });
       return false;
@@ -895,7 +522,7 @@ export const useIDEStore = create<IDEState>((set, get) => ({
 
     get().addConsoleEntry({
       type: 'info',
-      message: 'Project closed',
+      message: t('store.projectClosed'),
       source: 'system',
     });
     return true;
@@ -943,7 +570,7 @@ export const useIDEStore = create<IDEState>((set, get) => ({
     if (!projectConfig) {
       get().addConsoleEntry({
         type: 'warning',
-        message: 'No project configuration to save',
+        message: t('store.noConfigToSave'),
         source: 'system',
       });
       return;
@@ -952,7 +579,7 @@ export const useIDEStore = create<IDEState>((set, get) => ({
     if (!directoryHandle) {
       get().addConsoleEntry({
         type: 'error',
-        message: 'No directory handle - cannot save configuration',
+        message: t('store.noDirectoryHandle'),
         source: 'system',
       });
       return;
@@ -970,7 +597,7 @@ export const useIDEStore = create<IDEState>((set, get) => ({
         if (requestResult !== 'granted') {
           get().addConsoleEntry({
             type: 'error',
-            message: 'Write permission denied. Please grant access to save.',
+            message: t('store.writeDenied'),
             source: 'system',
           });
           return;
@@ -983,7 +610,7 @@ export const useIDEStore = create<IDEState>((set, get) => ({
         set({ projectConfig: canonicalConfig, projectConfigDirty: false, projectMigrationPreview: null });
         get().addConsoleEntry({
           type: 'success',
-          message: 'Saved zplc.json',
+          message: t('store.savedConfig'),
           source: 'system',
         });
       }
@@ -992,350 +619,14 @@ export const useIDEStore = create<IDEState>((set, get) => ({
       const message = err instanceof Error ? err.message : 'Unknown error';
       get().addConsoleEntry({
         type: 'error',
-        message: `Failed to save config: ${message}`,
+        message: t('store.saveConfigFailed', { message }),
         source: 'system',
       });
       set(SHOW_OUTPUT);
     }
   },
 
-  // ==========================================================================
-  // File Tree Actions
-  // ==========================================================================
-
-  toggleDirectory: (dirPath: string) => {
-    const { fileTree } = get();
-    if (!fileTree) return;
-
-    const newTree = toggleDirectoryExpanded(fileTree, dirPath);
-    set({ fileTree: newTree });
-  },
-
-  refreshFileTree: async () => {
-    const { directoryHandle, projectSession } = get();
-    if (!directoryHandle) return;
-    const intent = ++fileTreeRefreshIntent;
-
-    try {
-      const read = await readDirectoryRecursive(directoryHandle);
-      const current = get();
-      if (fileTreeRefreshIntent !== intent || current.projectSession !== projectSession || current.directoryHandle !== directoryHandle) return;
-      set({ fileTree: preserveExpansion(read, current.fileTree) });
-    } catch (err) {
-      console.error('Failed to refresh file tree:', err);
-    }
-  },
-
-  // ==========================================================================
-  // File Actions
-  // ==========================================================================
-
-  openFile: async (fileId: string) => {
-    const intent = ++openFileIntent;
-    const { fileTree, projectSession } = get();
-    if (!fileTree) return;
-    const node = resolveTreeFile(fileTree, fileId);
-    if (!node) return;
-    try {
-      const loaded = get().loadedFiles.get(fileId) ?? await loadFileFromTree(node);
-      const current = get();
-      if (!loaded || current.projectSession !== projectSession || !current.fileTree || !resolveTreeFile(current.fileTree, fileId)) return;
-      const loadedFiles = new Map(current.loadedFiles);
-      if (!loadedFiles.has(fileId)) loadedFiles.set(fileId, loaded);
-      const openTabs = current.openTabs.includes(fileId) ? current.openTabs : [...current.openTabs, fileId];
-      set({
-        loadedFiles,
-        openTabs,
-        activeFileId: openFileIntent === intent ? fileId : current.activeFileId,
-      });
-    } catch (err) {
-      console.error('Failed to load file:', err);
-    }
-  },
-
-  saveFile: async (fileId: string, options = {}) => {
-    const { loadedFiles } = get();
-    const file = loadedFiles.get(fileId);
-    const expectedProjectSession = get().projectSession;
-    
-    if (!file) {
-      console.error(`File not found: ${fileId}`);
-      return false;
-    }
-
-    if (!file.handle) {
-      console.error('File has no handle, cannot save');
-      return false;
-    }
-
-    try {
-      await writeFileContent(file.handle, file.content);
-      const latest = get();
-      const latestFile = latest.loadedFiles.get(fileId);
-      if (latest.projectSession !== expectedProjectSession || latestFile !== file) return false;
-
-      const newLoadedFiles = new Map(latest.loadedFiles);
-      newLoadedFiles.set(fileId, { ...latestFile, isModified: false, diskContent: file.content });
-      set({ loadedFiles: newLoadedFiles });
-
-      if (!options.quiet) {
-        get().addConsoleEntry({
-          type: 'success',
-          message: `Saved: ${file.name}`,
-          source: 'system',
-        });
-      }
-
-      return true;
-    } catch (err) {
-      if (get().projectSession !== expectedProjectSession) return false;
-      const message = err instanceof Error ? err.message : 'Unknown error';
-      get().addConsoleEntry({
-        type: 'error',
-        message: `Failed to save ${file.name}: ${message}`,
-        source: 'system',
-      });
-      set(SHOW_OUTPUT);
-      return false;
-    }
-  },
-
-  saveAllFiles: async (options = {}) => {
-    const { loadedFiles, projectSession } = get();
-    
-    for (const [fileId, file] of loadedFiles) {
-      if (get().projectSession !== projectSession) return;
-      if (file.isModified) {
-        await get().saveFile(fileId, options);
-      }
-    }
-  },
-
-  createFile: async (name: string, language: PLCLanguage, parentPath: string = 'src') => {
-    const initial = get();
-    const { directoryHandle, fileTree, projectSession: expectedProjectSession } = initial;
-    const trimmedName = name.trim();
-    if (!initial.isProjectOpen || !fileTree) throw new Error('Open a project before creating a file.');
-    if (!isSafePathSegment(trimmedName)) throw new Error('Enter a single file name without path separators.');
-    if (!parentPath || parentPath.split('/').some((part) => !isSafePathSegment(part))) {
-      throw new Error('Choose an existing project folder for the new file.');
-    }
-    if (!directoryHandle) {
-      throw new Error('The current project cannot create files.');
-    }
-
-    const fileName = fileNameForNewFile(trimmedName, language);
-    const filePath = `${parentPath}/${fileName}`;
-    const fileId = fileTreeFileId(filePath);
-    const content = createEmptyFileContent(language);
-
-    const newFile: ProjectFileWithHandle = {
-      id: fileId,
-      name: fileName,
-      language,
-      content,
-      isModified: true,
-      path: filePath,
-      parentPath,
-    };
-
-    const isCurrentProject = () => {
-      const current = get();
-      return current.projectSession === expectedProjectSession
-        && current.isProjectOpen
-        && current.fileTree !== null
-        && current.directoryHandle === directoryHandle;
-    };
-
-    const currentTreeForCreation = () => {
-      if (!isCurrentProject()) throw new Error('Project changed while creating the file.');
-      const current = get();
-      const parent = findFileInTree(current.fileTree!, parentPath);
-      if (!parent || parent.type !== 'directory') throw new Error('Choose an existing project folder for the new file.');
-      if (current.loadedFiles.has(fileId)) throw new FileNameTakenError(fileName, fileName);
-      const taken = findSameSourceName(parent, fileName);
-      if (taken) throw new FileNameTakenError(taken.name, fileName);
-      return current.fileTree!;
-    };
-
-    currentTreeForCreation();
-    const reservationKey = `${expectedProjectSession}:${filePath}`;
-    if (fileCreationReservations.has(reservationKey)) throw new Error('A file with that name is already being created.');
-    fileCreationReservations.add(reservationKey);
-
-    let createdPhysicalEntry = false;
-    try {
-      if (directoryHandle) {
-        const pathParts = parentPath.split('/');
-        let currentDir = directoryHandle;
-        for (const part of pathParts) {
-          currentTreeForCreation();
-          currentDir = await currentDir.getDirectoryHandle(part);
-          currentTreeForCreation();
-        }
-
-        let exists = false;
-        try {
-          await currentDir.getFileHandle(fileName);
-          exists = true;
-        } catch (error) {
-          if (!(typeof error === 'object' && error !== null && 'name' in error && error.name === 'NotFoundError')) throw error;
-        }
-        if (exists) throw new FileNameTakenError(fileName, fileName);
-        currentTreeForCreation();
-        const fileHandle = await currentDir.getFileHandle(fileName, { create: true });
-        createdPhysicalEntry = true;
-        currentTreeForCreation();
-        await writeFileContent(fileHandle, content);
-        currentTreeForCreation();
-        newFile.handle = fileHandle;
-        newFile.isModified = false;
-        newFile.diskContent = content;
-      }
-
-      let committed = false;
-      set((state) => {
-        if (state.projectSession !== expectedProjectSession || !state.isProjectOpen || state.directoryHandle !== directoryHandle || !state.fileTree) return {};
-        const parent = findFileInTree(state.fileTree, parentPath);
-        if (!parent || parent.type !== 'directory' || state.loadedFiles.has(fileId) || findFileInTree(state.fileTree, filePath)) return {};
-        const newTree = appendTreeFile(state.fileTree, parentPath, { id: fileId, name: fileName, type: 'file', path: filePath, language, handle: newFile.handle });
-        if (!newTree) return {};
-        committed = true;
-        return {
-          fileTree: newTree,
-          loadedFiles: new Map(state.loadedFiles).set(fileId, newFile),
-          activeFileId: fileId,
-          openTabs: state.openTabs.includes(fileId) ? state.openTabs : [...state.openTabs, fileId],
-          compilerMessages: [],
-          compilerMessagesChecked: false,
-          compilerNavigationTarget: null,
-          compilerRunId: state.compilerRunId + 1,
-        };
-      });
-      if (!committed) {
-        if (!isCurrentProject()) throw new Error('Project changed while creating the file.');
-        throw new Error(createdPhysicalEntry
-          ? 'The file may exist on disk. Refresh the project before trying again.'
-          : 'Could not create the file. Check the name and folder access, then try again.');
-      }
-
-      get().addConsoleEntry({ type: 'success', message: `Created: ${fileName}`, source: 'system' });
-      return fileId;
-    } catch (error) {
-      if (!isCurrentProject()) throw new Error('Project changed while creating the file.');
-      const taken = !createdPhysicalEntry && error instanceof FileNameTakenError ? error : null;
-      const message = createdPhysicalEntry
-        ? 'The file may exist on disk. Refresh the project before trying again.'
-        : taken ? taken.message
-        : error instanceof Error && (error.message === 'A file with that name is already being created.'
-        || error.message === 'Choose an existing project folder for the new file.'
-        || error.message === 'The file may exist on disk. Refresh the project before trying again.')
-        ? error.message
-        : 'Could not create the file. Check the name and folder access, then try again.';
-      get().addConsoleEntry({ type: 'error', message, source: 'system' });
-      throw taken ?? new Error(message);
-    } finally {
-      fileCreationReservations.delete(reservationKey);
-    }
-  },
-
-  deleteFile: async (fileId: string, expectedProjectSession = get().projectSession) => {
-    const initial = get();
-    if (initial.projectSession !== expectedProjectSession) return false;
-    const located = initial.fileTree && findTreeFileWithParent(initial.fileTree, fileId);
-    if (!located || located.node.type !== 'file') return false;
-
-    if (!located.parent.dirHandle) {
-      if (get().projectSession === expectedProjectSession) {
-        get().addConsoleEntry({ type: 'error', message: `Could not delete ${located.node.name}. The file was not removed.`, source: 'system' });
-      }
-      return false;
-    }
-    try {
-      await located.parent.dirHandle.removeEntry(located.node.name);
-    } catch {
-      if (get().projectSession === expectedProjectSession) {
-        get().addConsoleEntry({ type: 'error', message: `Could not delete ${located.node.name}. The file was not removed.`, source: 'system' });
-      }
-      return false;
-    }
-
-    const current = get();
-    if (current.projectSession !== expectedProjectSession) return false;
-
-    fileTreeRefreshIntent += 1;
-
-    const loadedFiles = new Map(current.loadedFiles);
-    loadedFiles.delete(fileId);
-    const openTabs = current.openTabs.filter(id => id !== fileId);
-    const breakpoints = new Map(current.debug.breakpoints);
-    breakpoints.delete(fileId);
-    set((state) => ({
-      fileTree: current.fileTree ? pruneTreeFile(current.fileTree, fileId) ?? current.fileTree : null,
-      loadedFiles,
-      openTabs,
-      activeFileId: current.activeFileId === fileId ? openTabs.at(-1) ?? null : current.activeFileId,
-      compilerMessages: [],
-      compilerMessagesChecked: false,
-      compilerNavigationTarget: null,
-      compilerRunId: state.compilerRunId + 1,
-      debug: { ...current.debug, breakpoints },
-    }));
-    return true;
-  },
-
-  createFolder: (parentPath, name) => createFolder({ get, set }, parentPath, name),
-  renameEntry: (path, name) => renameEntry({ get, set }, path, name),
-  moveEntry: (path, targetFolder) => moveEntry({ get, set }, path, targetFolder),
-  duplicateEntry: (path) => duplicateEntry({ get, set }, path),
-  deleteFolder: (path) => deleteFolder({ get, set }, path),
-
-  setActiveFile: (fileId: string | null) => {
-    const { openTabs } = get();
-    set({
-      activeFileId: fileId,
-      openTabs: fileId && !openTabs.includes(fileId) 
-        ? [...openTabs, fileId] 
-        : openTabs,
-    });
-  },
-
-  updateFileContent: (fileId: string, content: string) => {
-    const { loadedFiles } = get();
-    const file = loadedFiles.get(fileId);
-    
-    if (!file) return;
-
-    const newLoadedFiles = new Map(loadedFiles);
-    newLoadedFiles.set(fileId, { ...file, content, isModified: true });
-    set((state) => ({ loadedFiles: newLoadedFiles, compilerMessages: [], compilerMessagesChecked: false, compilerNavigationTarget: null, stBufferDiagnostics: null, compilerRunId: state.compilerRunId + 1 }));
-  },
-
-  closeTab: (fileId: string) => {
-    const { openTabs, activeFileId } = get();
-    const newTabs = openTabs.filter(id => id !== fileId);
-    const newActiveId = activeFileId === fileId
-      ? newTabs[newTabs.length - 1] || null
-      : activeFileId;
-
-    set({
-      openTabs: newTabs,
-      activeFileId: newActiveId,
-    });
-  },
-
-  discardFile: (fileId: string) => {
-    const { loadedFiles, openTabs, activeFileId } = get();
-    const newTabs = openTabs.filter(id => id !== fileId);
-    const files = new Map(loadedFiles);
-    files.delete(fileId);
-
-    set({
-      loadedFiles: files,
-      openTabs: newTabs,
-      activeFileId: activeFileId === fileId ? newTabs[newTabs.length - 1] || null : activeFileId,
-    });
-  },
+  ...createFileActions(set, get, api),
 
   // ==========================================================================
   // Connection Actions
@@ -1439,224 +730,7 @@ export const useIDEStore = create<IDEState>((set, get) => ({
   toggleConsole: () => set((state) => ({ isConsoleCollapsed: !state.isConsoleCollapsed })),
   toggleSettings: () => set((state) => ({ showSettings: !state.showSettings })),
 
-  // ==========================================================================
-  // Debug Actions
-  // ==========================================================================
-
-  setDebugMode: (mode) =>
-    set((state) => ({
-      debug: { ...state.debug, mode },
-    })),
-
-  setDebugMap: (debugMap) =>
-    set((state) => ({
-      debug: { ...state.debug, debugMap },
-    })),
-
-  toggleBreakpoint: (fileId, line) =>
-    set((state) => {
-      const newBreakpoints = new Map(state.debug.breakpoints);
-      const fileBreakpoints = new Set(newBreakpoints.get(fileId) || []);
-      
-      if (fileBreakpoints.has(line)) {
-        fileBreakpoints.delete(line);
-      } else {
-        fileBreakpoints.add(line);
-      }
-      
-      if (fileBreakpoints.size === 0) {
-        newBreakpoints.delete(fileId);
-      } else {
-        newBreakpoints.set(fileId, fileBreakpoints);
-      }
-      
-      return {
-        debug: { ...state.debug, breakpoints: newBreakpoints },
-      };
-    }),
-
-  setBreakpoints: (fileId, lines) =>
-    set((state) => {
-      const newBreakpoints = new Map(state.debug.breakpoints);
-      if (lines.length === 0) {
-        newBreakpoints.delete(fileId);
-      } else {
-        newBreakpoints.set(fileId, new Set(lines));
-      }
-      return {
-        debug: { ...state.debug, breakpoints: newBreakpoints },
-      };
-    }),
-
-  setBreakpointsInactiveReason: (reason) =>
-    set((state) => (
-      state.debug.breakpointsInactiveReason === reason
-        ? state
-        : { debug: { ...state.debug, breakpointsInactiveReason: reason } }
-    )),
-
-  clearBreakpoints: (fileId) =>
-    set((state) => {
-      if (fileId) {
-        const newBreakpoints = new Map(state.debug.breakpoints);
-        newBreakpoints.delete(fileId);
-        return {
-          debug: { ...state.debug, breakpoints: newBreakpoints },
-        };
-      }
-      // Clear all breakpoints
-      return {
-        debug: { ...state.debug, breakpoints: new Map() },
-      };
-    }),
-
-  setCurrentExecution: (pou, line, pc) =>
-    set((state) => ({
-      debug: {
-        ...state.debug,
-        currentPOU: pou,
-        currentLine: line,
-        currentPC: pc,
-      },
-    })),
-
-  addWatchVariable: (varPath) =>
-    set((state) => {
-      if (state.debug.watchVariables.includes(varPath)) {
-        return state; // Already watching
-      }
-      return {
-        debug: {
-          ...state.debug,
-          watchVariables: [...state.debug.watchVariables, varPath],
-        },
-      };
-    }),
-
-  removeWatchVariable: (varPath) =>
-    set((state) => {
-      const newLiveValues = new Map(state.debug.liveValues);
-      newLiveValues.delete(varPath);
-      return {
-        debug: {
-          ...state.debug,
-          watchVariables: state.debug.watchVariables.filter(v => v !== varPath),
-          liveValues: newLiveValues,
-        },
-      };
-    }),
-
-  clearWatchVariables: () =>
-    set((state) => ({
-        debug: {
-          ...state.debug,
-          watchVariables: [],
-          liveValues: new Map(),
-        },
-      })),
-
-  updateLiveValue: (varPath, value) => set((state) => withLiveValues(state, [[varPath, value]])),
-
-  updateLiveValues: (values) => set((state) => withLiveValues(state, values)),
-
-  clearLiveValues: () =>
-    set((state) => ({
-      debug: { ...state.debug, liveValues: new Map() },
-    })),
-
-  setForcedValue: (entry) =>
-    set((state) => {
-      const forcedValues = new Map(state.debug.forcedValues);
-      forcedValues.set(entry.path, entry);
-      return {
-        debug: { ...state.debug, forcedValues },
-      };
-    }),
-
-  clearForcedValue: (varPath) =>
-    set((state) => {
-      const forcedValues = new Map(state.debug.forcedValues);
-      forcedValues.delete(varPath);
-      return {
-        debug: { ...state.debug, forcedValues },
-      };
-    }),
-
-  markForcedValuesUnconfirmed: () =>
-    set((state) => {
-      const forcedValues = new Map(
-        Array.from(state.debug.forcedValues, ([path, entry]) => [
-          path,
-          { ...entry, state: WATCH_FORCE_STATE.UNCONFIRMED },
-        ]),
-      );
-      return {
-        debug: { ...state.debug, forcedValues, forcesUnconfirmed: true },
-      };
-    }),
-
-  clearForcedValues: () =>
-    set((state) => ({
-      debug: { ...state.debug, forcedValues: new Map(), forcesUnconfirmed: false },
-    })),
-
-  appendNativeTrace: (sample) =>
-    set((state) => ({
-      debug: { ...state.debug, nativeTrace: [...state.debug.nativeTrace, sample].slice(-NATIVE_TRACE_LIMIT) },
-    })),
-
-  clearNativeTrace: () =>
-    set((state) => ({
-      debug: { ...state.debug, nativeTrace: [] },
-    })),
-
-  setPolling: (isPolling) =>
-    set((state) => ({
-      debug: { ...state.debug, isPolling },
-    })),
-
-  setPollingInterval: (pollingInterval) =>
-    set((state) => ({
-      debug: { ...state.debug, pollingInterval },
-    })),
-
-  toggleMpeek: () =>
-    set((state) => ({
-      debug: { ...state.debug, mpeekEnabled: !state.debug.mpeekEnabled },
-    })),
-
-  getBreakpointsForFile: (fileId) => {
-    const { debug } = get();
-    return debug.breakpoints.get(fileId) || new Set();
-  },
-
-  getAllBreakpointPCs: () => {
-    const { debug, loadedFiles } = get();
-    const pcs: number[] = [];
-
-    if (!debug.debugMap) return pcs;
-
-    // For each file's breakpoints, look up the PC from the debug map.
-    // fileId is NOT a plain filename — it is a sanitized path key like
-    // "file-src-main-st". We must resolve the actual filename via loadedFiles
-    // and then strip the extension to get the POU name used in the debug map.
-    for (const [fileId, lineNumbers] of debug.breakpoints) {
-      // Resolve the project-relative path (e.g. "src/main.st") from the store,
-      // the same key the editor uses (breakpointFileKey). Fall back to the raw
-      // fileId only if the file is not loaded (shouldn't happen in practice,
-      // but keeps us safe).
-      const rawName = breakpointFileKey(loadedFiles.get(fileId), fileId);
-
-      for (const line of lineNumbers) {
-        const pc = getBreakpointPCForLine(debug.debugMap, rawName, line);
-        if (pc !== null) {
-          pcs.push(pc);
-        }
-      }
-    }
-
-    return pcs;
-  },
+  ...createDebugActions(set, get, api),
 
   // ==========================================================================
   // Computed Helpers
@@ -1690,3 +764,4 @@ export function initializeTheme(): void {
   const theme = getStoredTheme();
   applyThemeToDOM(theme);
 }
+
