@@ -20,13 +20,13 @@ flowchart LR
   Compile --> ZPLC[.zplc]
 ```
 
-Es un flujo de fuente a ST generado. Validá el resultado generado, los diagnósticos y el perfil de capacidades de destino; no establece un round trip arbitrario IL/ST ni cobertura de funciones idéntica a ST.
+Es un flujo de fuente a ST generado. Valide el resultado generado, los diagnósticos y el perfil de capacidades de destino; no establece un round trip arbitrario IL/ST ni cobertura de funciones idéntica a ST.
 
 Un diagnóstico de un archivo IL nombra la línea IL de la que trata (`element: "line:12"`), también cuando el compilador lo encuentra en el Structured Text generado, y cada línea que no se traduce es un diagnóstico propio. El mapa de depuración de un archivo IL indica líneas IL, de modo que un breakpoint se pone en la línea IL y el programa detenido se muestra en ella (LNG-004); las líneas del código generado que no corresponden a ninguna línea IL no son lugares donde detenerse.
 
 ## Límites de runtime y depuración
 
-IL usa el destino común del compilador, pero el costo de ejecución, la disponibilidad de la biblioteca estándar, los pasos, watches, breakpoints y el comportamiento de hardware dependen del runtime y perfil activos. La simulación POSIX es evidencia lógica de host únicamente. Usá evidencia target o HIL para afirmar comportamiento de un dispositivo físico.
+IL usa el destino común del compilador, pero el costo de ejecución, la disponibilidad de la biblioteca estándar, los pasos, watches, breakpoints y el comportamiento de hardware dependen del runtime y perfil activos. La simulación POSIX es evidencia lógica de host únicamente. Use evidencia target o HIL para afirmar comportamiento de un dispositivo físico.
 
 ## Ejemplo: temporización en IL
 

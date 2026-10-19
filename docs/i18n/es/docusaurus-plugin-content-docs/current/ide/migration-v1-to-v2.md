@@ -3,7 +3,7 @@ slug: /ide/migration-v1-to-v2
 id: migration-v1-to-v2
 title: Migrar un proyecto v1 a v2
 sidebar_label: Migrar v1 a v2
-description: Previsualizá, revisá y guardá explícitamente un proyecto ZPLC v2 respaldado por una carpeta.
+description: Previsualice, revise y guarde explícitamente un proyecto ZPLC v2 respaldado por una carpeta.
 tags: [ide, migracion]
 ---
 
@@ -15,13 +15,13 @@ actualiza su `zplc.json` en el workspace seleccionado a schema v2.
 
 ## Camino rápido
 
-1. Abrí la carpeta del proyecto existente en Studio, o importá su archivo desde la pantalla de bienvenida: el
+1. Abra la carpeta del proyecto existente en Studio, o importe su archivo desde la pantalla de bienvenida: el
    diálogo de importación muestra la misma diferencia antes de escribir nada.
-2. Elegí **Review the difference** en el aviso de migración del Explorer. El diálogo lista las líneas de `zplc.json` que
-   la migración quita y agrega; solo cambia `zplc.json`, y tus programas no se tocan.
-3. Elegí **Apply migration** (equivale a **Guardar**) para escribir la configuración v2 revisada en ese workspace, o
+2. Elija **Review the difference** en el aviso de migración del Explorer. El diálogo lista las líneas de `zplc.json` que
+   la migración quita y agrega; solo cambia `zplc.json`, y sus programas no se tocan.
+3. Elija **Apply migration** (equivale a **Guardar**) para escribir la configuración v2 revisada en ese workspace, o
    **Close** para dejar la carpeta como está.
-4. Volvé a compilar y ejecutar el escenario después de guardar.
+4. Vuelva a compilar y ejecutar el escenario después de guardar.
 
 ## Desde una terminal
 
@@ -58,8 +58,8 @@ timing ni HIL.
 
 ## Si la migración no es aceptable
 
-Hacé un backup de la carpeta del proyecto o un commit en control de versiones
-antes de guardar, y revisá el diff. Usá los diagnósticos para resolver fuente o
+Haga un backup de la carpeta del proyecto o un commit en control de versiones
+antes de guardar, y revise el diff. Use los diagnósticos para resolver fuente o
 configuración no soportada antes de adoptar la migración. No edites JSON de
 modelos visuales generado a mano para evitar un diagnóstico.
 
@@ -74,5 +74,5 @@ modelos visuales generado a mano para evitar un diagnóstico.
 
 ## Próximo paso
 
-Seguí con [el flujo del compilador](./compiler.md) y guardá un resultado nuevo
+Siga con [el flujo del compilador](./compiler.md) y guarde un resultado nuevo
 de test o simulación del proyecto guardado.

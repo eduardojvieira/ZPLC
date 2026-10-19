@@ -40,13 +40,13 @@ flowchart TB
 
 ## Flujo típico
 
-1. Elegí un target de proyecto e inspeccioná su perfil de placa/capacidades.
-2. Escribí lógica en un flujo de lenguaje soportado y compilala a `.zplc`.
+1. Elija un target de proyecto e inspeccione su perfil de placa/capacidades.
+2. Escriba lógica en un flujo de lenguaje soportado y compilala a `.zplc`.
 3. Usá simulación POSIX nativa para checks lógicos repetibles en host dentro de sus capacidades declaradas.
-4. Construí firmware, flashealo, desplegá el programa PLC y operalo como acciones humanas separadas.
+4. Construya firmware, grábelo, despliegue el programa PLC y opérelo como acciones humanas separadas.
 5. Usá evidencia target o HIL de la placa/revisión exactas antes de depender de timing o comportamiento físico.
 
-## Continuá con
+## Continúe con
 
 - [Primeros pasos](../getting-started/index.md)
 - [Ejemplos de lenguajes](../languages/examples/v1-5-language-suite.md)

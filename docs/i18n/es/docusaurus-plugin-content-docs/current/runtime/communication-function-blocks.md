@@ -8,7 +8,7 @@ description: Los doce bloques de comunicación y de nube, su único handshake, s
 
 # Bloques de Función de Comunicación
 
-ZPLC ofrece doce bloques de función que hablan con dispositivos de campo, brokers y servicios de nube desde tu lógica IEC 61131-3. Comparten un solo handshake. Un bloque nunca espera a la red dentro del ciclo: entrega el trabajo a un hilo propio, informa `BUSY` e informa el resultado en un ciclo posterior.
+ZPLC ofrece doce bloques de función que hablan con dispositivos de campo, brokers y servicios de nube desde su lógica IEC 61131-3. Comparten un solo handshake. Un bloque nunca espera a la red dentro del ciclo: entrega el trabajo a un hilo propio, informa `BUSY` e informa el resultado en un ciclo posterior.
 
 ## El handshake
 
@@ -132,7 +132,7 @@ Ningún bloque se verificó contra un servicio real, y verificar uno no necesita
 | `MB_READ_HREG`, `MB_WRITE_HREG`, `MB_READ_COIL`, `MB_WRITE_COIL` | Sí | Modbus TCP: el código de la transacción del cliente es un solo archivo compilado en el controlador y en el runtime de simulación, y corre contra un servidor en loopback en ambos (native_sim y el host); éxito, respuesta en pedazos, excepción, silencio, conexión cerrada, puerto rechazado, reset estando ocupado. RTU: solo se comprueban los parámetros de la interfaz (el tiempo se da en la unidad que lee el cliente Modbus de Zephyr); no se usa ningún dispositivo serie | No |
 | `MQTT_CONNECT`, `MQTT_PUBLISH`, `MQTT_SUBSCRIBE` | Sí | El cliente MQTT del runtime de simulación, contra un broker en loopback: sesión, publicación, suscripción, pérdida de la sesión, reconexión, pérdida silenciosa. **El cliente del controlador no se ejecuta contra un broker en la suite de pruebas** | No |
 | `AZURE_C2D_RECV`, `AZURE_EG_PUB`, `SPB_REBIRTH` | Sí | Ninguno | No |
-| `AZURE_DPS_PROV`, `AWS_FLEET_PROV` | Sí, con el servicio de aprovisionamiento reemplazado por uno que espera | Ninguno en la suite de pruebas; `tools/connectivity/` tiene scripts que responden en un broker que ejecutas tú, de uso manual | No |
+| `AZURE_DPS_PROV`, `AWS_FLEET_PROV` | Sí, con el servicio de aprovisionamiento reemplazado por uno que espera | Ninguno en la suite de pruebas; `tools/connectivity/` tiene scripts que responden en un broker que usted ejecuta, de uso manual | No |
 
 ## Disponibilidad de Lenguajes
 

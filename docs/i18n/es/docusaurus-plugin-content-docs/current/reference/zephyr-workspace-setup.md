@@ -2,21 +2,21 @@
 slug: /reference/zephyr-workspace-setup
 title: Configuración del Workspace Zephyr
 sidebar_label: Workspace Zephyr
-description: Compilá el runtime embebido ZPLC 2.0 desde un workspace Zephyr fijado.
+description: Compile el runtime embebido ZPLC 2.0 desde un workspace Zephyr fijado.
 ---
 
 # Configuración del Workspace Zephyr
 
-Compilá el runtime embebido desde los inputs del workspace Zephyr fijado por el
+Compile el runtime embebido desde los inputs del workspace Zephyr fijado por el
 repositorio. Un cross-build exitoso sólo prueba que el profile compila; no prueba
 flash, boot, I/O, timing, persistencia ni HIL.
 
 ## Camino rápido
 
-1. Instalá SDK/toolchain Zephyr y dejá `west` disponible.
-2. Activá el entorno Zephyr para que exista `ZEPHYR_BASE`.
-3. Ubicá ZPLC en el workspace como checkout de módulo o clon.
-4. Ejecutá el comando exacto de la página generada de [Profiles de placa](./boards.md).
+1. Instale SDK/toolchain Zephyr y deje `west` disponible.
+2. Active el entorno Zephyr para que exista `ZEPHYR_BASE`.
+3. Ubique ZPLC en el workspace como checkout de módulo o clon.
+4. Ejecute el comando exacto de la página generada de [Profiles de placa](./boards.md).
 
 ## Anclas del repositorio
 
@@ -40,7 +40,7 @@ flowchart TD
 
 ## Build
 
-Después de activar el entorno, invocá el comando del profile generado desde la
+Después de activar el entorno, invoque el comando del profile generado desde la
 raíz del repositorio. Por ejemplo:
 
 ```bash
@@ -53,10 +53,10 @@ referencias HIL. Cada entrada actual es `cross-build` con cero referencias HIL.
 
 ## Límite de flash y recovery
 
-Build, flash, deploy de programa y RUN/debug son operaciones distintas. Usá el
+Build, flash, deploy de programa y RUN/debug son operaciones distintas. Use el
 procedimiento exacto de board/runner antes de flashear. No deduzcas que
 cross-build hace seguro `west flash`, recovery o persistencia de programa en
-un dispositivo no probado. Consultá [Límites de recuperación](../operations/recovery.md).
+un dispositivo no probado. Consulte [Límites de recuperación](../operations/recovery.md).
 
 ## Páginas relacionadas
 

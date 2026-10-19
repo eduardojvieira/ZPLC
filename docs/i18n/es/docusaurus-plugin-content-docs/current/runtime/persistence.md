@@ -285,6 +285,6 @@ ejecución, gasta el presupuesto de un año en días.
   identidad y descarta los valores retenidos.
 - El modo de firmware de una sola tarea (scheduler desactivado) no persiste
   `RETAIN`.
-- No confíes en `RETAIN` para estado crítico de recuperación hasta que existan
+- No confíe en `RETAIN` para estado crítico de recuperación hasta que existan
   los registros de hardware del perfil exacto: un corte de energía en el momento
   equivocado pierde los valores desde el último guardado.

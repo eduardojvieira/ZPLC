@@ -236,4 +236,4 @@ Las decisiones se prueban en el host (`test_failsafe`, `test_sched_core`) y los 
 
 ## Diagnósticos y evidencia
 
-Los diagnósticos del runtime exponen conteos de ciclos, incumplimientos de plazo, fallos de presupuesto lógico, conteos de latch/commit de process image y observaciones relacionadas con timing. Su resolución, método de recolección y significado dependen del runtime y perfil de destino. La evidencia native-sim sólo comprueba orden lógico y transiciones de estado. Medí WCET, jitter, deadlines y salidas físicas en el target/revisión exactos antes de depender de ellos operacionalmente.
+Los diagnósticos del runtime exponen conteos de ciclos, incumplimientos de plazo, fallos de presupuesto lógico, conteos de latch/commit de process image y observaciones relacionadas con timing. Su resolución, método de recolección y significado dependen del runtime y perfil de destino. La evidencia native-sim sólo comprueba orden lógico y transiciones de estado. Mida WCET, jitter, deadlines y salidas físicas en el target/revisión exactos antes de depender de ellos operacionalmente.

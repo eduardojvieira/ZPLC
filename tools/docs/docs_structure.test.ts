@@ -203,3 +203,22 @@ describe('docs site: admonitions in the generator\'s own syntax and no version s
   });
 });
 
+
+// DOC-015 / decision D-10: the Spanish pages speak in one register, neutral with "usted". The voseo and tuteo forms that were
+// found in the pages are the ones listed; a new one in a page fails here (a fluent reviewer's read remains the owner's).
+describe('the Spanish pages keep the neutral usted register (DOC-015, D-10)', () => {
+  const voseo = /(?<![\w`/.-])(?:[A-Za-zñ]{3,}(?:á|é|í)(?:lo|la|los|las)?|tu|tus|tienes|puedes|quieres|debes|necesitas|ingreses|asumas|confíes)(?![\wáéíóú])/g;
+  const allowed = new Set(['allá', 'está', 'será', 'esté', 'aquí', 'así', 'allí', 'relé', 'también', 'además', 'según', 'quizá', 'ahí', 'sí', 'mí']);
+  it('has no voseo imperative or tuteo form in a page', () => {
+    const found: string[] = [];
+    for (const page of markdownFiles(ROOT, ES_DIR)) {
+      const body = text(page).replace(/^```[\s\S]*?^```/gm, '');
+      for (const match of body.matchAll(voseo)) {
+        const word = match[0].toLowerCase();
+        if (allowed.has(word) || /(?:rá|ará|erá|irá)$/.test(word)) continue;
+        found.push(`${page}: ${match[0]}`);
+      }
+    }
+    expect(found).toEqual([]);
+  });
+});

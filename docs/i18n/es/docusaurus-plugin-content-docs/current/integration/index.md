@@ -3,7 +3,7 @@ slug: /integration
 id: index
 title: Despliegue y Montaje de Hardware
 sidebar_label: Hardware e Integración
-description: Adaptando, flasheando y engranando rutinas personalizadas de Zephyr Firmware con tu lógica ZPLC.
+description: Adaptando, flasheando y engranando rutinas personalizadas de Zephyr Firmware con su lógica ZPLC.
 tags: [integration, runtime]
 ---
 

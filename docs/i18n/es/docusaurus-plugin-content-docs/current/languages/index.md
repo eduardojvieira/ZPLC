@@ -25,7 +25,7 @@ Structured Text (ST) es el frontend central de lenguaje de ZPLC. El repositorio 
 
 Los flujos de lenguaje soportados convergen en la ruta del compilador que produce bytecode `.zplc`. Ese destino común no promete round trips arbitrarios entre representaciones, funciones de editor idénticas, cobertura completa de la biblioteca estándar ni el mismo rendimiento en cada runtime.
 
-Validá como un único flujo el lenguaje fuente, la representación generada, los diagnósticos y el perfil de destino elegido.
+Valide como un único flujo el lenguaje fuente, la representación generada, los diagnósticos y el perfil de destino elegido.
 
 ## Depuración y evidencia de runtime
 
@@ -33,9 +33,9 @@ El IDE expone inspección, simulación y depuración según el perfil de capacid
 
 ## Biblioteca estándar
 
-La biblioteca estándar se implementa mediante rutas de compilador y runtime. Consultá [Biblioteca estándar](./stdlib.md) y compilá el flujo de lenguaje elegido para saber qué está disponible hoy.
+La biblioteca estándar se implementa mediante rutas de compilador y runtime. Consulte [Biblioteca estándar](./stdlib.md) y compile el flujo de lenguaje elegido para saber qué está disponible hoy.
 
-## Continuá leyendo
+## Continúe leyendo
 
 - [Structured Text (ST)](./st.md)
 - [Instruction List (IL)](./il.md)
