@@ -3500,6 +3500,177 @@
           ]
         }
       }
+    },
+    {
+      "id": "function-block-pump-pair",
+      "version": 1,
+      "order": 21,
+      "module": 7,
+      "level": "intermediate",
+      "prerequisites": [
+        "types-arithmetic-comparison"
+      ],
+      "languages": [
+        "ST"
+      ],
+      "tracks": [
+        "simulation"
+      ],
+      "unsupported": {
+        "hardware": {
+          "reason": {
+            "en": "The lesson is graded on exact input timing at 10 ms steps; a board has no recorded trace for it yet.",
+            "es": "La lección se califica con tiempos exactos de entradas en pasos de 10 ms; todavía no hay una traza registrada desde una placa para ella."
+          },
+          "instead": {
+            "en": "Complete it in Simulation: its grade is the same each time and needs no board.",
+            "es": "Complétela en Simulación: su calificación es la misma cada vez y no necesita una placa."
+          }
+        }
+      },
+      "plant": null,
+      "plantMap": null,
+      "estimatedMinutes": 25,
+      "starter": {
+        "project": "pump_pair_starter",
+        "program": "src/PumpPair.st"
+      },
+      "solution": {
+        "project": "pump_pair",
+        "program": "src/PumpPair.st"
+      },
+      "scenario": {
+        "id": "PumpPair",
+        "path": "tests/pump-pair.scenario.json",
+        "sha256": "563ba151d719de250ab4f7be0f7362a1095c5bf7e1623c7d1638b732f4bcb203",
+        "tickMs": 10,
+        "durationMs": 110,
+        "assertions": 9,
+        "canonical": "{\"durationMs\":110,\"events\":[{\"atMs\":0,\"set\":{\"PumpPair.StartA\":false,\"PumpPair.StartB\":false,\"PumpPair.StopA\":false,\"PumpPair.StopB\":false}},{\"atMs\":10,\"set\":{\"PumpPair.StartA\":true}},{\"atMs\":20,\"set\":{\"PumpPair.StartA\":false}},{\"atMs\":30,\"set\":{\"PumpPair.StartB\":true}},{\"atMs\":40,\"set\":{\"PumpPair.StartB\":false}},{\"atMs\":50,\"set\":{\"PumpPair.StopA\":true}},{\"atMs\":60,\"set\":{\"PumpPair.StopA\":false}},{\"atMs\":70,\"set\":{\"PumpPair.StopB\":true}},{\"atMs\":80,\"set\":{\"PumpPair.StopB\":false}},{\"atMs\":90,\"set\":{\"PumpPair.StartA\":true,\"PumpPair.StopA\":true}},{\"atMs\":100,\"set\":{\"PumpPair.StartA\":false,\"PumpPair.StopA\":false}}],\"expectations\":[{\"atMs\":0,\"condition\":{\"PumpPair.RunA\":false,\"PumpPair.RunB\":false},\"kind\":\"AT\"},{\"atMs\":10,\"condition\":{\"PumpPair.RunA\":true,\"PumpPair.RunB\":false},\"kind\":\"AT\"},{\"atMs\":30,\"condition\":{\"PumpPair.RunA\":true,\"PumpPair.RunB\":true},\"kind\":\"AT\"},{\"atMs\":50,\"condition\":{\"PumpPair.RunA\":false,\"PumpPair.RunB\":true},\"kind\":\"AT\"},{\"atMs\":70,\"condition\":{\"PumpPair.RunA\":false,\"PumpPair.RunB\":false},\"kind\":\"AT\"},{\"atMs\":90,\"condition\":{\"PumpPair.RunA\":false,\"PumpPair.RunB\":false},\"kind\":\"AT\"},{\"condition\":{\"PumpPair.RunB\":true},\"fromMs\":30,\"kind\":\"RISING\",\"withinMs\":0},{\"condition\":{\"PumpPair.RunA\":false},\"fromMs\":50,\"kind\":\"FALLING\",\"withinMs\":0},{\"condition\":{\"PumpPair.RunB\":true},\"forMs\":10,\"fromMs\":50,\"kind\":\"FOR\"}],\"id\":\"PumpPair\",\"schemaVersion\":1,\"tickMs\":10}"
+      },
+      "regressionScenarios": [],
+      "text": {
+        "en": {
+          "title": "Function blocks: one latch, two pumps",
+          "summary": "Write the body of a function block that holds a start and stop latch, then use it twice, once for each pump.",
+          "scope": "Tests provide native POSIX host evidence with one 10 ms task; they do not establish pump behaviour, start-up current or any real machine requirement, HIL, or certification.",
+          "objectives": [
+            "Write a function block with inputs, an output and a memory that lives between calls.",
+            "See that two instances of the same function block keep separate memories."
+          ],
+          "stages": [
+            {
+              "key": "objective",
+              "title": "Objective",
+              "body": "In src/PumpPair.st the function block Latch has the inputs Set and Reset and the output Q, and the program declares two instances, PumpA and PumpB. Write the body of Latch: Q turns ON on Set, turns OFF on Reset, keeps its value otherwise, and Reset wins when both are TRUE.",
+              "checkpoint": "Each pump starts on its own Start, stops on its own Stop, and one pump never moves the other."
+            },
+            {
+              "key": "predict",
+              "title": "Predict",
+              "body": "PumpA starts at 10 ms and PumpB at 30 ms. PumpA is stopped at 50 ms. Predict RunA and RunB at 30, 50 and 70 ms.",
+              "checkpoint": "Both ON at 30 ms; only RunB at 50 ms; both OFF at 70 ms."
+            },
+            {
+              "key": "edit",
+              "title": "Edit",
+              "body": "Correct this starter omission, save it, then press Check: The starter defines the Latch function block and calls it twice, but the body of Latch is empty, so Q never changes and both pumps stay OFF; write the body so that Set turns Q ON, Reset turns it OFF, and Q keeps its value between calls.",
+              "checkpoint": "The visible scenario must pass with saved host evidence."
+            },
+            {
+              "key": "run",
+              "title": "Run",
+              "body": "Press Check. Studio runs your saved program against the scenario of this lesson.",
+              "checkpoint": "The scenario is named PumpPair and contains 9 assertions."
+            },
+            {
+              "key": "observe",
+              "title": "Observe",
+              "body": "Compare 10, 30 and 50 ms: RunA holds after its button is released, RunB joins at 30 ms, and stopping A at 50 ms leaves B ON.",
+              "checkpoint": "RunA and RunB change at different times from the same block, which shows two memories. At 90 ms Start and Stop arrive together on pump A and it stays OFF."
+            },
+            {
+              "key": "reflect",
+              "title": "Reflect",
+              "body": "What would change if both pumps shared one global memory instead of one instance each? Try giving PumpB the inputs of pump A and see which assertion fails.",
+              "checkpoint": "Each instance has its own copy of the variables of the block, so the same code serves any number of pumps. The scenario shows the logic only; it does not show start-up sequencing or a pump fault."
+            }
+          ],
+          "hints": [
+            {
+              "level": 1,
+              "text": "Q is an output that keeps its value from one call to the next, so it can appear on the right-hand side of its own assignment."
+            },
+            {
+              "level": 2,
+              "text": "Q := (Set OR Q) AND NOT Reset; written between the VAR_OUTPUT section and END_FUNCTION_BLOCK."
+            }
+          ],
+          "faultCases": [
+            "The starter defines the Latch function block and calls it twice, but the body of Latch is empty, so Q never changes and both pumps stay OFF; write the body so that Set turns Q ON, Reset turns it OFF, and Q keeps its value between calls."
+          ]
+        },
+        "es": {
+          "title": "Bloques de función: un enclavamiento, dos bombas",
+          "summary": "Escriba el cuerpo de un bloque de función que mantiene un enclavamiento de arranque y parada, y úselo dos veces, una por bomba.",
+          "scope": "La evidencia de Tests es del runtime nativo POSIX con una tarea de 10 ms; no establece el comportamiento de una bomba, la corriente de arranque ni requisitos de una máquina real, HIL ni certificación.",
+          "objectives": [
+            "Escriba un bloque de función con entradas, una salida y una memoria que vive entre llamadas.",
+            "Vea que dos instancias del mismo bloque de función guardan memorias separadas."
+          ],
+          "stages": [
+            {
+              "key": "objective",
+              "title": "Objetivo",
+              "body": "En src/PumpPair.st el bloque de función Latch tiene las entradas Set y Reset y la salida Q, y el programa declara dos instancias, PumpA y PumpB. Escriba el cuerpo de Latch: Q pasa a ON con Set, pasa a OFF con Reset, conserva su valor en otro caso, y Reset gana cuando ambas son TRUE.",
+              "checkpoint": "Cada bomba arranca con su propio Start, se detiene con su propio Stop, y una bomba nunca mueve a la otra."
+            },
+            {
+              "key": "predict",
+              "title": "Prediga",
+              "body": "PumpA arranca a los 10 ms y PumpB a los 30 ms. PumpA se detiene a los 50 ms. Prediga RunA y RunB a los 30, 50 y 70 ms.",
+              "checkpoint": "Ambas en ON a los 30 ms; solo RunB a los 50 ms; ambas en OFF a los 70 ms."
+            },
+            {
+              "key": "edit",
+              "title": "Edite",
+              "body": "Corrija esta omisión del programa inicial, guárdelo y pulse Comprobar: El programa inicial define el bloque de función Latch y lo llama dos veces, pero el cuerpo de Latch está vacío, así que Q nunca cambia y las dos bombas quedan en OFF; escriba el cuerpo para que Set ponga Q en ON, Reset lo ponga en OFF y Q conserve su valor entre llamadas.",
+              "checkpoint": "El escenario visible debe pasar con evidencia guardada del host."
+            },
+            {
+              "key": "run",
+              "title": "Ejecute",
+              "body": "Pulse Comprobar. Studio ejecuta el programa guardado contra el escenario de esta lección.",
+              "checkpoint": "El escenario se llama PumpPair y contiene 9 assertions."
+            },
+            {
+              "key": "observe",
+              "title": "Observe",
+              "body": "Compare 10, 30 y 50 ms: RunA se mantiene al soltar su botón, RunB se une a los 30 ms, y detener A a los 50 ms deja B en ON.",
+              "checkpoint": "RunA y RunB cambian en momentos distintos con el mismo bloque, lo que muestra dos memorias. A los 90 ms Start y Stop llegan juntos a la bomba A y esta sigue en OFF."
+            },
+            {
+              "key": "reflect",
+              "title": "Reflexione",
+              "body": "¿Qué cambiaría si las dos bombas compartieran una memoria global en lugar de una instancia cada una? Conecte a PumpB las entradas de la bomba A y vea qué assertion falla.",
+              "checkpoint": "Cada instancia tiene su propia copia de las variables del bloque, así que el mismo código sirve para cualquier número de bombas. El escenario muestra solo la lógica; no muestra la secuencia de arranque ni una falla de bomba."
+            }
+          ],
+          "hints": [
+            {
+              "level": 1,
+              "text": "Q es una salida que conserva su valor de una llamada a la siguiente, así que puede aparecer a la derecha de su propia asignación."
+            },
+            {
+              "level": 2,
+              "text": "Q := (Set OR Q) AND NOT Reset; escrito entre la sección VAR_OUTPUT y END_FUNCTION_BLOCK."
+            }
+          ],
+          "faultCases": [
+            "El programa inicial define el bloque de función Latch y lo llama dos veces, pero el cuerpo de Latch está vacío, así que Q nunca cambia y las dos bombas quedan en OFF; escriba el cuerpo para que Set ponga Q en ON, Reset lo ponga en OFF y Q conserve su valor entre llamadas."
+          ]
+        }
+      }
     }
   ],
   "course": {

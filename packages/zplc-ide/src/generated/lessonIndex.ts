@@ -26,6 +26,7 @@ export const LESSON_IDS = [
   "interlock-guard-ladder",
   "types-arithmetic-comparison",
   "analog-scaling-integer",
+  "function-block-pump-pair",
 ] as const;
 
 export type LessonId = typeof LESSON_IDS[number];
