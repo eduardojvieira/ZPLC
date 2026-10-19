@@ -56,7 +56,7 @@ describe('the release is gated on the Linux journeys (VF-009)', () => {
     }
   });
 
-  it('allows a job in the release to continue on error only where REL-032 says the result never blocks', () => {
+  it('allows a job in the release to continue on error only for the reproducibility check, whose result never blocks the release', () => {
     const lenient = Object.entries(release.jobs).filter(([, job]) => job['continue-on-error'] !== undefined).map(([name]) => name);
     expect(lenient).toEqual([NEVER_BLOCKS]);
     expect(Object.values(release.jobs).some((job) => needsOf(job).includes(NEVER_BLOCKS) && job.if?.includes(`needs.${NEVER_BLOCKS}.result == 'success'`))).toBe(false);
