@@ -3626,7 +3626,7 @@ export const JOURNEYS: Journey[] = [
       await app.until('the project workbench to appear', async () => await app.visible(css('[role="toolbar"]')) || undefined);
 
       /** A catalog key shown as it is written (`console.tab.lab`), or one of the English phrases the migrated screens used to hard-code. */
-      const RAW_KEY = String.raw`\b(?:console|mqtt|modbus|network|io|controller|lab|toolchain|commtags|project|ld|importArchive|interlock|learn|toolbarMsg|examples|panel|toolbar|welcome|common)\.[a-z][A-Za-z0-9]*(?:\.[A-Za-z0-9]+)*\b`;
+      const RAW_KEY = String.raw`\b(?:console|mqtt|modbus|network|io|controller|lab|toolchain|commtags|project|ld|importArchive|interlock|learn|toolbarMsg|examples|panel|toolbar|welcome|common|labScene|notices|workbench\.[a-z]+|editors\.[a-z]+|settings\.(?:communication|firmware|metadata|target|tasks))\.[a-z][A-Za-z0-9]*(?:\.[A-Za-z0-9]+)*\b`;
       const text = (id: string) => app.eval<string>(`document.getElementById(${JSON.stringify(id)})?.innerText ?? ''`);
       const walk = async (tab: string, expected: string[], english: string[]) => {
         await app.click(css(`#console-tab-${tab}`), `the ${tab} tab`);
@@ -3645,6 +3645,24 @@ export const JOURNEYS: Journey[] = [
       for (const label of ['Salida', 'Problemas', 'Enclavamientos', 'Laboratorio', 'Cambios', 'Agente']) assert(tabs.some((tab) => tab.includes(label)), `The results tabs are ${JSON.stringify(tabs)}, without ${label}.`);
       const chrome = await app.eval<string>('document.body.innerText');
       assert(!new RegExp(RAW_KEY).test(chrome), `The window shows a raw catalog key: ${chrome.match(new RegExp(RAW_KEY))?.[0]}`);
+      // The second batch of migrated surfaces (WP-65): the Watch and Terminal tabs, the Inspector and the project settings sections.
+      await walk('watch', [], ['Add variable', 'Start debugging to see live values', 'Watch']);
+      await walk('terminal', ['Sin conexión'], ['Not connected', 'Connect to send commands']);
+      await app.click(css('[data-toggle-inspector]'), 'the Inspector button of the command bar');
+      await app.until('the Inspector in Spanish', async () => await app.visible(css('[aria-label="Inspector del entorno de trabajo"]')) || undefined);
+      const inspector = await app.eval<string>(`document.querySelector('[aria-label="Inspector del entorno de trabajo"]')?.innerText ?? ''`);
+      for (const phrase of ['Archivo activo', 'Proyecto', 'Evidencia', 'La traza del equipo anfitrión no es evidencia de hardware ni de HIL', 'Sin forzados activos', 'Desconectado']) assert(inspector.toLowerCase().includes(phrase.toLowerCase()), `The Inspector does not say "${phrase}" in Spanish: ${inspector.slice(0, 400)}`);
+      for (const phrase of ['Active file', 'Evidence', 'Diagnostics', 'No active forces', 'Not checked', 'Disconnected']) assert(!inspector.toLowerCase().includes(phrase.toLowerCase()), `The Inspector still says "${phrase}" in English: ${inspector.slice(0, 400)}`);
+      await app.click(button('Configuración del proyecto'), 'the Configuración del proyecto button');
+      await app.until('the project settings in Spanish', async () => (await app.eval<string>('document.body.innerText')).includes('Nombre del proyecto') || undefined);
+      for (const section of ['Destino', 'Tareas']) {
+        await app.click(button(section, 'contains'), `the ${section} section`);
+        await app.until(`the ${section} section open`, async () => await app.eval<boolean>(`[...document.querySelectorAll('[aria-expanded="true"]')].some((item) => item.textContent?.includes(${JSON.stringify(section)}))`) || undefined);
+      }
+      const settings = await app.eval<string>('document.body.innerText');
+      for (const phrase of ['Nombre del proyecto', 'Placa de destino', 'Imagen de firmware', 'Velocidad de reloj (MHz)']) assert(settings.includes(phrase), `The project settings do not say "${phrase}" in Spanish: ${settings.slice(0, 600)}`);
+      for (const phrase of ['Project Name', 'Target Board', 'Clock Speed', 'Add Task']) assert(!settings.includes(phrase), `The project settings still say "${phrase}" in English.`);
+      assert(!new RegExp(RAW_KEY).test(settings), `The project settings show a raw catalog key: ${settings.match(new RegExp(RAW_KEY))?.[0]}`);
 
       // No button of the toolbar or of the results tabs is cut off by the window (a tab strip that scrolls sideways is reached by scrolling it).
       const clipped = await app.eval<string[]>(`(() => {
