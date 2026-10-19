@@ -22,7 +22,7 @@ export const OUTPUTS: Output[] = [
   { path: 'docs/static/img/logo.svg', kind: 'svg' },
   { path: 'docs/static/img/favicon.png', kind: 'png', width: 256, height: 256 },
   { path: 'docs/static/img/social-card.png', kind: 'png', width: 1200, height: 630 },
-  { path: 'packages/zplc-ide/public/icon.png', kind: 'png', width: 256, height: 256 },
+  { path: 'packages/zplc-ide/public/icon.png', kind: 'png', width: 512, height: 512 },
   { path: 'tools/brand/icon.png', kind: 'png', width: 1024, height: 1024 },
   { path: 'tools/brand/icon.icns', kind: 'icns' },
 ];

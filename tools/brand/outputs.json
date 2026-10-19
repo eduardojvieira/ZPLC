@@ -23,9 +23,9 @@
     {
       "path": "packages/zplc-ide/public/icon.png",
       "kind": "png",
-      "width": 256,
-      "height": 256,
-      "sha256": "665cb415c975a7a9151ccc10eeb87facf74ed87219b537f6512d8623a3ebbd32"
+      "width": 512,
+      "height": 512,
+      "sha256": "9428317db2d522c0bdd04ebc39d7bd1b5a4059d44aaee9eeb98ed6a2a3b0f02a"
     },
     {
       "path": "tools/brand/icon.png",
