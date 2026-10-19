@@ -55,10 +55,12 @@ export const isGuardedModule = (path: string): boolean =>
   path.startsWith(`${IDE_SRC}/`) && path.endsWith('.ts') && !path.endsWith('.d.ts') && !/\.(?:test|spec)\.ts$/.test(path)
   && !path.startsWith(`${IDE_SRC}/i18n/`) && !path.startsWith(`${IDE_SRC}/ui/gallery/`)
   && !/^packages\/zplc-ide\/src\/(?:mcp|cli|compiler|transpiler|langsvc|conformance)\//.test(path)
-  && ![`${IDE_SRC}/ui/audit.ts`, `${IDE_SRC}/ui/registry.ts`, `${IDE_SRC}/theme/tokens.ts`].includes(path);
+  && ![`${IDE_SRC}/ui/audit.ts`, `${IDE_SRC}/ui/registry.ts`, `${IDE_SRC}/theme/tokens.ts`, `${IDE_SRC}/theme/tokensCss.ts`, `${IDE_SRC}/theme/designDoc.ts`].includes(path);
 /** Properties of a presentation object that the interface shows, and the helpers whose first argument is shown. */
 const MESSAGE_PROPERTIES = new Set(['say', 'title', 'label', 'detail', 'message', 'description', 'hint', 'heading', 'summary', 'placeholder', 'tooltip', 'ariaLabel']);
 const MESSAGE_CALLS = new Set(['announce']);
+/** `declarationKindLabel`, `libraryProblem`, `stateText`, `KIND_LABEL`, `ERROR_MESSAGES`: a name that says it holds words for the person. */
+const MESSAGE_NAME = /(?:^|[a-z0-9])(?:Problem|Label|Message|Text|Title|Hint|Description|Summary)s?$|(?:^|_)(?:LABEL|TITLE|TEXT|MESSAGE|HINT|PROBLEM)S?$/;
 
 const USER_ATTRIBUTES = new Set(['aria-label', 'placeholder', 'alt', 'label', 'tooltip', 'title', 'description']);
 const LITERAL_TAGS = new Set(['code', 'kbd', 'pre', 'samp', 'var', 'style', 'script']);
@@ -107,12 +109,34 @@ const reads = (text: string): boolean => hasLetters(text) && (/\s/.test(text.tri
 
 function messageViolations(source: ts.SourceFile, path: string): Violation[] {
   const found: Violation[] = [];
+  /** One violation per string, and one per template literal whose pieces read as a sentence together. */
   const check = (expression: ts.Expression): void => {
+    const templates = new Set<ts.Node>();
     for (const item of literalsIn(expression)) {
+      const template = ts.isTemplateSpan(item.parent) ? item.parent.parent : ts.isTemplateExpression(item.parent) ? item.parent : undefined;
+      if (template) { templates.add(template); continue; }
       if (reads(textOf(item))) found.push({ file: path, rule: 'hard-coded-message', line: source.getLineAndCharacterOfPosition(item.getStart()).line + 1, snippet: item.getText().replace(/\s+/g, ' ').slice(0, 80) });
     }
+    for (const template of templates) {
+      const pieces = ts.isTemplateExpression(template) ? [template.head.text, ...template.templateSpans.map((span) => span.literal.text)].join(' ') : '';
+      if (reads(pieces)) found.push({ file: path, rule: 'hard-coded-message', line: source.getLineAndCharacterOfPosition(template.getStart()).line + 1, snippet: template.getText().replace(/\s+/g, ' ').slice(0, 80) });
+    }
+  };
+  /** What a message-named function returns (its `return` statements or its expression body) or a table holds (its values). */
+  const shown = (node: ts.Node, into: ts.Expression[]): void => {
+    if (ts.isReturnStatement(node) && node.expression) into.push(node.expression);
+    ts.forEachChild(node, (child) => { if (!ts.isFunctionLike(child)) shown(child, into); });
   };
   const visit = (node: ts.Node): void => {
+    if (ts.isFunctionDeclaration(node) && node.name && node.body && MESSAGE_NAME.test(node.name.text)) { const out: ts.Expression[] = []; shown(node.body, out); out.forEach(check); }
+    if (ts.isVariableDeclaration(node) && ts.isIdentifier(node.name) && node.initializer && MESSAGE_NAME.test(node.name.text)) {
+      const init = node.initializer;
+      const out: ts.Expression[] = [];
+      if (ts.isArrowFunction(init) || ts.isFunctionExpression(init)) { if (ts.isBlock(init.body)) shown(init.body, out); else out.push(init.body); }
+      else if (ts.isObjectLiteralExpression(init)) init.properties.forEach((property) => { if (ts.isPropertyAssignment(property)) out.push(property.initializer); });
+      else out.push(init);
+      out.forEach(check);
+    }
     if (ts.isPropertyAssignment(node) && (ts.isIdentifier(node.name) || ts.isStringLiteral(node.name)) && MESSAGE_PROPERTIES.has(node.name.text)) check(node.initializer);
     if (ts.isCallExpression(node) && ts.isIdentifier(node.expression) && MESSAGE_CALLS.has(node.expression.text) && node.arguments[0]) check(node.arguments[0]);
     ts.forEachChild(node, visit);

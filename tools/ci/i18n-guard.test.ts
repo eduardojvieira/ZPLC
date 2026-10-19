@@ -134,6 +134,14 @@ describe('UX-029 i18n guard: a hard-coded message in a plain module', () => {
     expect(found("console.log('Opening the port'); throw new Error('Internal failure of the parser');")).toEqual([]);
   });
 
+  it('UX-029 finds the text a Label, Problem or Message function returns and the values of a LABELS table', () => {
+    expect(found("export const kindLabel = (kind: string): string => LABEL[kind]; const KIND_LABEL = { PROGRAM: 'Program', STRUCT: 'Structure' };")).toHaveLength(2);
+    expect(found("export function libraryProblem(p: string): string | null { if (p === '') return 'The project root cannot be a library.'; return p ? null : 'No project is open.'; }")).toHaveLength(2);
+    expect(found("export const stateText = (on: boolean) => (on ? 'Connected now' : 'Not connected');")).toHaveLength(2);
+    expect(found("const context = 'Some text here'; function render() { return 'Plain words here'; }")).toEqual([]);
+    expect(found("export const kindLabel = (kind: string): string => t(`kind.${kind}`);")).toEqual([]);
+  });
+
   it('UX-029 reads the modules that show text and leaves tests, the i18n module and the tools of programs alone', () => {
     expect(isGuardedModule(module('keyboard'))).toBe(true);
     expect(isGuardedModule('packages/zplc-ide/src/components/deployFlow.ts')).toBe(true);

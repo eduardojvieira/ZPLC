@@ -1,8 +1,16 @@
 [
   {
+    "file": "packages/zplc-ide/src/boards/boardIoMapping.ts",
+    "rule": "hard-coded-message",
+    "count": 3,
+    "requirement": "UX-029",
+    "added": "2026-10-19",
+    "reason": "Not yet moved to the catalogs of src/i18n; the surface's own work package moves it."
+  },
+  {
     "file": "packages/zplc-ide/src/boards/firmwareImage.ts",
     "rule": "hard-coded-message",
-    "count": 5,
+    "count": 6,
     "requirement": "UX-029",
     "added": "2026-10-19",
     "reason": "Not yet moved to the catalogs of src/i18n; the surface's own work package moves it."
@@ -10,7 +18,23 @@
   {
     "file": "packages/zplc-ide/src/boards/ioAdmission.ts",
     "rule": "hard-coded-message",
-    "count": 8,
+    "count": 5,
+    "requirement": "UX-029",
+    "added": "2026-10-19",
+    "reason": "Not yet moved to the catalogs of src/i18n; the surface's own work package moves it."
+  },
+  {
+    "file": "packages/zplc-ide/src/boards/safeOutputs.ts",
+    "rule": "hard-coded-message",
+    "count": 1,
+    "requirement": "UX-029",
+    "added": "2026-10-19",
+    "reason": "Not yet moved to the catalogs of src/i18n; the surface's own work package moves it."
+  },
+  {
+    "file": "packages/zplc-ide/src/components/debugSessionState.ts",
+    "rule": "hard-coded-message",
+    "count": 1,
     "requirement": "UX-029",
     "added": "2026-10-19",
     "reason": "Not yet moved to the catalogs of src/i18n; the surface's own work package moves it."
@@ -32,9 +56,33 @@
     "reason": "Not yet moved to the catalogs of src/i18n; the surface's own work package moves it."
   },
   {
+    "file": "packages/zplc-ide/src/components/projectDeclarationsPresentation.ts",
+    "rule": "hard-coded-message",
+    "count": 7,
+    "requirement": "UX-029",
+    "added": "2026-10-19",
+    "reason": "Not yet moved to the catalogs of src/i18n; the surface's own work package moves it."
+  },
+  {
     "file": "packages/zplc-ide/src/components/settings/toolchainPresentation.ts",
     "rule": "hard-coded-message",
-    "count": 10,
+    "count": 11,
+    "requirement": "UX-029",
+    "added": "2026-10-19",
+    "reason": "Not yet moved to the catalogs of src/i18n; the surface's own work package moves it."
+  },
+  {
+    "file": "packages/zplc-ide/src/components/terminalConnectionPresentation.ts",
+    "rule": "hard-coded-message",
+    "count": 1,
+    "requirement": "UX-029",
+    "added": "2026-10-19",
+    "reason": "Not yet moved to the catalogs of src/i18n; the surface's own work package moves it."
+  },
+  {
+    "file": "packages/zplc-ide/src/components/terminalForceCommandPolicy.ts",
+    "rule": "hard-coded-message",
+    "count": 1,
     "requirement": "UX-029",
     "added": "2026-10-19",
     "reason": "Not yet moved to the catalogs of src/i18n; the surface's own work package moves it."
@@ -50,7 +98,7 @@
   {
     "file": "packages/zplc-ide/src/components/workspaceTestPresentation.ts",
     "rule": "hard-coded-message",
-    "count": 9,
+    "count": 32,
     "requirement": "UX-029",
     "added": "2026-10-19",
     "reason": "Not yet moved to the catalogs of src/i18n; the surface's own work package moves it."
@@ -74,7 +122,7 @@
   {
     "file": "packages/zplc-ide/src/editors/fbd/keyboard.ts",
     "rule": "hard-coded-message",
-    "count": 23,
+    "count": 20,
     "requirement": "UX-029",
     "added": "2026-10-19",
     "reason": "Not yet moved to the catalogs of src/i18n; the surface's own work package moves it."
@@ -82,7 +130,7 @@
   {
     "file": "packages/zplc-ide/src/editors/ld/keyboard.ts",
     "rule": "hard-coded-message",
-    "count": 26,
+    "count": 20,
     "requirement": "UX-029",
     "added": "2026-10-19",
     "reason": "Not yet moved to the catalogs of src/i18n; the surface's own work package moves it."
@@ -98,7 +146,7 @@
   {
     "file": "packages/zplc-ide/src/editors/sfc/keyboard.ts",
     "rule": "hard-coded-message",
-    "count": 27,
+    "count": 23,
     "requirement": "UX-029",
     "added": "2026-10-19",
     "reason": "Not yet moved to the catalogs of src/i18n; the surface's own work package moves it."
@@ -114,7 +162,7 @@
   {
     "file": "packages/zplc-ide/src/hooks/useDebugController.ts",
     "rule": "hard-coded-message",
-    "count": 14,
+    "count": 12,
     "requirement": "UX-029",
     "added": "2026-10-19",
     "reason": "Not yet moved to the catalogs of src/i18n; the surface's own work package moves it."
@@ -122,7 +170,15 @@
   {
     "file": "packages/zplc-ide/src/hooks/useDebugControllerBreakpoints.ts",
     "rule": "hard-coded-message",
-    "count": 2,
+    "count": 1,
+    "requirement": "UX-029",
+    "added": "2026-10-19",
+    "reason": "Not yet moved to the catalogs of src/i18n; the surface's own work package moves it."
+  },
+  {
+    "file": "packages/zplc-ide/src/ipc/projectArchiveBridge.ts",
+    "rule": "hard-coded-message",
+    "count": 14,
     "requirement": "UX-029",
     "added": "2026-10-19",
     "reason": "Not yet moved to the catalogs of src/i18n; the surface's own work package moves it."
@@ -130,7 +186,23 @@
   {
     "file": "packages/zplc-ide/src/models/ld.ts",
     "rule": "hard-coded-message",
-    "count": 11,
+    "count": 25,
+    "requirement": "UX-029",
+    "added": "2026-10-19",
+    "reason": "Not yet moved to the catalogs of src/i18n; the surface's own work package moves it."
+  },
+  {
+    "file": "packages/zplc-ide/src/models/pinTypes.ts",
+    "rule": "hard-coded-message",
+    "count": 4,
+    "requirement": "UX-029",
+    "added": "2026-10-19",
+    "reason": "Not yet moved to the catalogs of src/i18n; the surface's own work package moves it."
+  },
+  {
+    "file": "packages/zplc-ide/src/models/projectBlocks.ts",
+    "rule": "hard-coded-message",
+    "count": 1,
     "requirement": "UX-029",
     "added": "2026-10-19",
     "reason": "Not yet moved to the catalogs of src/i18n; the surface's own work package moves it."
@@ -162,7 +234,15 @@
   {
     "file": "packages/zplc-ide/src/project/buildOptions.ts",
     "rule": "hard-coded-message",
-    "count": 9,
+    "count": 12,
+    "requirement": "UX-029",
+    "added": "2026-10-19",
+    "reason": "Not yet moved to the catalogs of src/i18n; the surface's own work package moves it."
+  },
+  {
+    "file": "packages/zplc-ide/src/project/libraries.ts",
+    "rule": "hard-coded-message",
+    "count": 5,
     "requirement": "UX-029",
     "added": "2026-10-19",
     "reason": "Not yet moved to the catalogs of src/i18n; the surface's own work package moves it."
@@ -186,6 +266,22 @@
   {
     "file": "packages/zplc-ide/src/project/treeOperations.ts",
     "rule": "hard-coded-message",
+    "count": 6,
+    "requirement": "UX-029",
+    "added": "2026-10-19",
+    "reason": "Not yet moved to the catalogs of src/i18n; the surface's own work package moves it."
+  },
+  {
+    "file": "packages/zplc-ide/src/runtime/declaredInputs.ts",
+    "rule": "hard-coded-message",
+    "count": 2,
+    "requirement": "UX-029",
+    "added": "2026-10-19",
+    "reason": "Not yet moved to the catalogs of src/i18n; the surface's own work package moves it."
+  },
+  {
+    "file": "packages/zplc-ide/src/runtime/draftCounter.ts",
+    "rule": "hard-coded-message",
     "count": 1,
     "requirement": "UX-029",
     "added": "2026-10-19",
@@ -194,7 +290,15 @@
   {
     "file": "packages/zplc-ide/src/runtime/framedSerialAdapter.ts",
     "rule": "hard-coded-message",
-    "count": 7,
+    "count": 4,
+    "requirement": "UX-029",
+    "added": "2026-10-19",
+    "reason": "Not yet moved to the catalogs of src/i18n; the surface's own work package moves it."
+  },
+  {
+    "file": "packages/zplc-ide/src/runtime/ioMap.ts",
+    "rule": "hard-coded-message",
+    "count": 1,
     "requirement": "UX-029",
     "added": "2026-10-19",
     "reason": "Not yet moved to the catalogs of src/i18n; the surface's own work package moves it."
@@ -202,7 +306,7 @@
   {
     "file": "packages/zplc-ide/src/runtime/link/firmwareProtocol.ts",
     "rule": "hard-coded-message",
-    "count": 7,
+    "count": 5,
     "requirement": "UX-029",
     "added": "2026-10-19",
     "reason": "Not yet moved to the catalogs of src/i18n; the surface's own work package moves it."
@@ -210,7 +314,15 @@
   {
     "file": "packages/zplc-ide/src/runtime/nativeAdapter.ts",
     "rule": "hard-coded-message",
-    "count": 2,
+    "count": 1,
+    "requirement": "UX-029",
+    "added": "2026-10-19",
+    "reason": "Not yet moved to the catalogs of src/i18n; the surface's own work package moves it."
+  },
+  {
+    "file": "packages/zplc-ide/src/runtime/nativeTrace.ts",
+    "rule": "hard-coded-message",
+    "count": 8,
     "requirement": "UX-029",
     "added": "2026-10-19",
     "reason": "Not yet moved to the catalogs of src/i18n; the surface's own work package moves it."
@@ -226,7 +338,7 @@
   {
     "file": "packages/zplc-ide/src/runtime/wasmRuntime.ts",
     "rule": "hard-coded-message",
-    "count": 2,
+    "count": 1,
     "requirement": "UX-029",
     "added": "2026-10-19",
     "reason": "Not yet moved to the catalogs of src/i18n; the surface's own work package moves it."
@@ -234,7 +346,7 @@
   {
     "file": "packages/zplc-ide/src/store/useIDEStore.ts",
     "rule": "hard-coded-message",
-    "count": 20,
+    "count": 18,
     "requirement": "UX-029",
     "added": "2026-10-19",
     "reason": "Not yet moved to the catalogs of src/i18n; the surface's own work package moves it."
@@ -257,6 +369,14 @@
   },
   {
     "file": "packages/zplc-ide/src/uploader/webserial.ts",
+    "rule": "hard-coded-message",
+    "count": 1,
+    "requirement": "UX-029",
+    "added": "2026-10-19",
+    "reason": "Not yet moved to the catalogs of src/i18n; the surface's own work package moves it."
+  },
+  {
+    "file": "packages/zplc-ide/src/utils/breakpoints.ts",
     "rule": "hard-coded-message",
     "count": 2,
     "requirement": "UX-029",
