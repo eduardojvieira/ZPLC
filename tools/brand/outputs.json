@@ -1,0 +1,36 @@
+{
+  "markSha256": "ea74c558d6b72837c8a419eb1768b3f88588f955301c892f04210cd9a7fa0bbb",
+  "outputs": [
+    {
+      "path": "docs/static/img/logo.svg",
+      "kind": "svg",
+      "sha256": "ea74c558d6b72837c8a419eb1768b3f88588f955301c892f04210cd9a7fa0bbb"
+    },
+    {
+      "path": "docs/static/img/favicon.png",
+      "kind": "png",
+      "width": 256,
+      "height": 256,
+      "sha256": "665cb415c975a7a9151ccc10eeb87facf74ed87219b537f6512d8623a3ebbd32"
+    },
+    {
+      "path": "docs/static/img/social-card.png",
+      "kind": "png",
+      "width": 1200,
+      "height": 630,
+      "sha256": "b252a423aecce8012dcebfc1a5293934ff58c6f89914f809d4bfb71a612290e3"
+    },
+    {
+      "path": "packages/zplc-ide/build/icon.png",
+      "kind": "png",
+      "width": 1024,
+      "height": 1024,
+      "sha256": "3828adb375b00b00edac49a7c5dd4f2ac26926d145750f45eb0faab8b858c254"
+    },
+    {
+      "path": "packages/zplc-ide/build/icon.icns",
+      "kind": "icns",
+      "sha256": "fc1e00371ac87faa729dc483400a5f774c6730fc7f444e3ed7f66a86208194ec"
+    }
+  ]
+}

@@ -49,6 +49,8 @@ corrían otros trabajos, así que léalos como un orden de magnitud.
 | Firmware en Linux | `bun run setup:firmware` y luego `bun run test:firmware` | unos 6 min una vez, luego unos 4 min | Las suites de Zephyr pasan en `native_sim`, QEMU y los presupuestos de tamaño |
 | Documentación | `bun run check:docs` | unos 15 s en caliente, 1 min en frío | Las referencias están al día, todo nombre que una página menciona existe, ninguna oración afirma una capacidad que nada ejecutado respalde, las páginas están completas, las páginas en inglés y español coinciden en estructura, todo ejemplo y fragmento de configuración marcado como tal compila y da el resultado que su cerco indica, toda imagen es una capturada, y el sitio compila |
 | Ensayo de publicación | `bun run release:rehearsal` | unos 5 s | Las verificaciones que el workflow de publicación ejecuta antes de construir nada |
+| Recursos de marca | `bun tools/ci/brand/generate-icons.ts --check` | menos de 1 s | Cada icono y la tarjeta social se generaron desde la única marca, `tools/brand/mark.svg`; regenérelos sin `--check` (necesita `rsvg-convert` y Python con Pillow) |
+| Verificaciones de salida de publicación | `bun test ./tools/ci` | unos 5 s | Los nombres y contenedores de los instaladores, los registros de lanzamiento, el resultado de la ejecución y los generadores del cask y del paquete de AUR se comportan como dicen sus datos de prueba; el workflow que los ejecuta sobre archivos producidos todavía no se ha ejecutado en CI |
 
 Un resultado correcto en un nivel nunca prueba uno superior: una prueba de host no
 dice nada sobre una placa. [Pruebas del firmware en Linux](../development/firmware-testing.md)

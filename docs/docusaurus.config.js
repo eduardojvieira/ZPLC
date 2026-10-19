@@ -82,7 +82,7 @@ const config = {
     /** @type {import('@docusaurus/preset-classic').ThemeConfig} */
     ({
       // Replace with your project's social card
-      image: 'img/banner.jpg',
+      image: 'img/social-card.png',
       metadata: [
         { name: 'keywords', content: 'plc, iec 61131-3, structured text, ladder diagram, zephyr rtos, industrial automation, open source, stm32, esp32, raspberry pi pico, modbus, mqtt' },
         { name: 'description', content: 'ZPLC is an open-source IEC 61131-3 PLC runtime in portable C99 and a desktop IDE. Write, test and simulate PLC programs on your computer, and build the runtime for Zephyr boards.' },
