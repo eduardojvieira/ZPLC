@@ -40,10 +40,10 @@ function recordedPresentation(lesson: VersionedLearnLesson, count = lesson.rubri
 describe('Learn lesson catalog', () => {
   it('keeps Spanish and English aligned on the same canonical lessons', () => {
     const [es, en] = [learnLessonCatalog.es, learnLessonCatalog.en];
-    expect(es).toHaveLength(13);
-    expect(en).toHaveLength(13);
+    expect(es).toHaveLength(15);
+    expect(en).toHaveLength(15);
     expect(es.map(({ id, exampleId, requiredScenario, sourcePath, scenarioPath }) => ({ id, exampleId, requiredScenario, sourcePath, scenarioPath }))).toEqual(en.map(({ id, exampleId, requiredScenario, sourcePath, scenarioPath }) => ({ id, exampleId, requiredScenario, sourcePath, scenarioPath })));
-    expect(es.map(({ id }) => id)).toEqual(['motor-start-stop-safe', 'pedestrian-crossing-states', 'tank-level-fault-reset', 'conveyor-classification-jam', 'blinky-ladder-timer-feedback', 'motor-plant-feedback', 'edge-counter-pulses', 'scan-cycle-one-scan-memory', 'temporal-assertions-jam-fault', 'conveyor-two-parts-diagnosis', 'first-blink-simulation', 'boolean-logic-two-hand-guard', 'timers-on-delay-off-delay']);
+    expect(es.map(({ id }) => id)).toEqual(['motor-start-stop-safe', 'pedestrian-crossing-states', 'tank-level-fault-reset', 'conveyor-classification-jam', 'blinky-ladder-timer-feedback', 'motor-plant-feedback', 'edge-counter-pulses', 'scan-cycle-one-scan-memory', 'temporal-assertions-jam-fault', 'conveyor-two-parts-diagnosis', 'first-blink-simulation', 'boolean-logic-two-hand-guard', 'timers-on-delay-off-delay', 'blink-structured-text', 'set-reset-alarm-latch']);
     expect(es[1]).toMatchObject({ exampleId: 'pedestrian_crossing', requiredScenario: 'PedestrianCrossing', sourcePath: 'src/PedestrianCrossing.st', scenarioPath: 'tests/pedestrian-crossing.scenario.json', title: 'Cruce peatonal y estados seguros' });
     expect(en[1]).toMatchObject({ title: 'Pedestrian crossing and safe states' });
     // Lesson 8 has an extra Evidence stage; lesson 10 has its Edit stage since LRN-038 (it used to have none).

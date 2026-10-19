@@ -19,6 +19,8 @@ export const LESSON_IDS = [
   "first-blink-simulation",
   "boolean-logic-two-hand-guard",
   "timers-on-delay-off-delay",
+  "blink-structured-text",
+  "set-reset-alarm-latch",
 ] as const;
 
 export type LessonId = typeof LESSON_IDS[number];

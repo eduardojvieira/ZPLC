@@ -74,6 +74,8 @@ describe('Learn lesson content modules', () => {
     'first-blink-simulation': 'first_blink',
     'boolean-logic-two-hand-guard': 'two_hand',
     'timers-on-delay-off-delay': 'delays',
+    'blink-structured-text': 'enabled_blink',
+    'set-reset-alarm-latch': 'alarm_latch',
   };
 
   it.each([['Spanish', learnLessonContentEsV1], ['English', learnLessonContentEnV1]] as const)('starts each lesson of the %s content from its canonical example', (_language, content) => {

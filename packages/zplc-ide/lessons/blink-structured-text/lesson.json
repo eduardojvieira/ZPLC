@@ -1,0 +1,34 @@
+{
+  "schemaVersion": 1,
+  "id": "blink-structured-text",
+  "version": 1,
+  "order": 14,
+  "module": 1,
+  "level": "foundation",
+  "prerequisites": [
+    "scan-cycle-one-scan-memory"
+  ],
+  "languages": [
+    "ST"
+  ],
+  "tracks": [
+    "simulation"
+  ],
+  "plant": null,
+  "estimatedMinutes": 15,
+  "starter": {
+    "project": "enabled_blink_starter",
+    "program": "src/EnabledBlink.st"
+  },
+  "solution": {
+    "project": "enabled_blink",
+    "program": "src/EnabledBlink.st"
+  },
+  "scenario": {
+    "file": "scenario.json",
+    "id": "EnabledBlink",
+    "path": "tests/enabled-blink.scenario.json",
+    "sha256": "6b8a15a20f414564c61901cafdf9514676ae6318b7995f1309bc0ac6db25dd62"
+  },
+  "regressionScenarios": []
+}

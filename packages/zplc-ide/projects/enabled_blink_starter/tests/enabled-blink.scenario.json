@@ -1,0 +1,110 @@
+{
+  "schemaVersion": 1,
+  "id": "EnabledBlink",
+  "tickMs": 10,
+  "durationMs": 1400,
+  "events": [
+    {
+      "atMs": 0,
+      "set": {
+        "EnabledBlink.Enable": false
+      }
+    },
+    {
+      "atMs": 100,
+      "set": {
+        "EnabledBlink.Enable": true
+      }
+    },
+    {
+      "atMs": 1150,
+      "set": {
+        "EnabledBlink.Enable": false
+      }
+    }
+  ],
+  "expectations": [
+    {
+      "kind": "AT",
+      "atMs": 0,
+      "condition": {
+        "EnabledBlink.Lamp": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 350,
+      "condition": {
+        "EnabledBlink.Lamp": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 550,
+      "condition": {
+        "EnabledBlink.Lamp": true
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 850,
+      "condition": {
+        "EnabledBlink.Lamp": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 1100,
+      "condition": {
+        "EnabledBlink.Lamp": true
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 1250,
+      "condition": {
+        "EnabledBlink.Lamp": false
+      }
+    },
+    {
+      "kind": "FOR",
+      "fromMs": 0,
+      "forMs": 380,
+      "condition": {
+        "EnabledBlink.Lamp": false
+      }
+    },
+    {
+      "kind": "FOR",
+      "fromMs": 420,
+      "forMs": 260,
+      "condition": {
+        "EnabledBlink.Lamp": true
+      }
+    },
+    {
+      "kind": "FOR",
+      "fromMs": 720,
+      "forMs": 260,
+      "condition": {
+        "EnabledBlink.Lamp": false
+      }
+    },
+    {
+      "kind": "RISING",
+      "fromMs": 380,
+      "withinMs": 60,
+      "condition": {
+        "EnabledBlink.Lamp": true
+      }
+    },
+    {
+      "kind": "FALLING",
+      "fromMs": 1150,
+      "withinMs": 100,
+      "condition": {
+        "EnabledBlink.Lamp": false
+      }
+    }
+  ]
+}

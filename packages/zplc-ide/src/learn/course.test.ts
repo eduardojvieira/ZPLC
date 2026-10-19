@@ -44,8 +44,8 @@ describe('the course view', () => {
     expect(view.modules.map((module) => module.id)).toEqual([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]);
     const one = view.modules[1]!;
     expect(one).toMatchObject({ level: 'foundation', requires: 0 });
-    expect(one.lessons.map((lesson) => lesson.id)).toEqual([SECOND, THIRD]);
-    expect(one.estimatedMinutes).toBe(30);
+    expect(one.lessons.map((lesson) => lesson.id)).toEqual([SECOND, THIRD, 'blink-structured-text']);
+    expect(one.estimatedMinutes).toBe(45);
     expect(one.title).toContain('scan cycle');
   });
 
@@ -74,7 +74,7 @@ describe('the course view', () => {
   });
 
   it('counts the passed lessons', () => {
-    expect(buildCourseView(LESSON_INDEX, passed(FIRST), { locale: 'en', unlockAll: false })).toMatchObject({ passed: 1, total: 13 });
+    expect(buildCourseView(LESSON_INDEX, passed(FIRST), { locale: 'en', unlockAll: false })).toMatchObject({ passed: 1, total: 15 });
   });
 });
 

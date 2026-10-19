@@ -2138,6 +2138,324 @@
           ]
         }
       }
+    },
+    {
+      "id": "blink-structured-text",
+      "version": 1,
+      "order": 14,
+      "module": 1,
+      "level": "foundation",
+      "prerequisites": [
+        "scan-cycle-one-scan-memory"
+      ],
+      "languages": [
+        "ST"
+      ],
+      "tracks": [
+        "simulation"
+      ],
+      "plant": null,
+      "plantMap": null,
+      "estimatedMinutes": 15,
+      "starter": {
+        "project": "enabled_blink_starter",
+        "program": "src/EnabledBlink.st"
+      },
+      "solution": {
+        "project": "enabled_blink",
+        "program": "src/EnabledBlink.st"
+      },
+      "scenario": {
+        "id": "EnabledBlink",
+        "path": "tests/enabled-blink.scenario.json",
+        "sha256": "6b8a15a20f414564c61901cafdf9514676ae6318b7995f1309bc0ac6db25dd62",
+        "tickMs": 10,
+        "durationMs": 1400,
+        "assertions": 11,
+        "canonical": "{\"durationMs\":1400,\"events\":[{\"atMs\":0,\"set\":{\"EnabledBlink.Enable\":false}},{\"atMs\":100,\"set\":{\"EnabledBlink.Enable\":true}},{\"atMs\":1150,\"set\":{\"EnabledBlink.Enable\":false}}],\"expectations\":[{\"atMs\":0,\"condition\":{\"EnabledBlink.Lamp\":false},\"kind\":\"AT\"},{\"atMs\":350,\"condition\":{\"EnabledBlink.Lamp\":false},\"kind\":\"AT\"},{\"atMs\":550,\"condition\":{\"EnabledBlink.Lamp\":true},\"kind\":\"AT\"},{\"atMs\":850,\"condition\":{\"EnabledBlink.Lamp\":false},\"kind\":\"AT\"},{\"atMs\":1100,\"condition\":{\"EnabledBlink.Lamp\":true},\"kind\":\"AT\"},{\"atMs\":1250,\"condition\":{\"EnabledBlink.Lamp\":false},\"kind\":\"AT\"},{\"condition\":{\"EnabledBlink.Lamp\":false},\"forMs\":380,\"fromMs\":0,\"kind\":\"FOR\"},{\"condition\":{\"EnabledBlink.Lamp\":true},\"forMs\":260,\"fromMs\":420,\"kind\":\"FOR\"},{\"condition\":{\"EnabledBlink.Lamp\":false},\"forMs\":260,\"fromMs\":720,\"kind\":\"FOR\"},{\"condition\":{\"EnabledBlink.Lamp\":true},\"fromMs\":380,\"kind\":\"RISING\",\"withinMs\":60},{\"condition\":{\"EnabledBlink.Lamp\":false},\"fromMs\":1150,\"kind\":\"FALLING\",\"withinMs\":100}],\"id\":\"EnabledBlink\",\"schemaVersion\":1,\"tickMs\":10}"
+      },
+      "regressionScenarios": [],
+      "text": {
+        "en": {
+          "title": "Write a blinker in Structured Text",
+          "summary": "Build a blinker from a TON timer and a memory variable, and make it run only while an enable input is on.",
+          "scope": "Tests provide native POSIX host evidence with one 10 ms task; they are not evidence of a physical lamp, hardware timing, HIL, or certification.",
+          "objectives": [
+            "Write the timer-and-memory pattern that makes an output change state at a fixed interval.",
+            "Gate an output with an input so that it stops at once when the input drops."
+          ],
+          "stages": [
+            {
+              "key": "objective",
+              "title": "Objective",
+              "body": "In src/EnabledBlink.st, declare the logic that makes Lamp change state every 300 ms while Enable is ON. The timer Clock and the memory LampOn are already declared. When Enable is OFF, Lamp must be OFF.",
+              "checkpoint": "You can describe the pattern: run a timer, toggle the memory when it expires, restart the timer."
+            },
+            {
+              "key": "predict",
+              "title": "Predict",
+              "body": "Enable turns ON at 100 ms and OFF at 1150 ms. Predict Lamp at 350, 550, 850, and 1250 ms.",
+              "checkpoint": "OFF at 350 ms, ON at 550 ms, OFF at 850 ms, OFF at 1250 ms."
+            },
+            {
+              "key": "edit",
+              "title": "Edit",
+              "body": "Correct this flaw of the starting program, save it, then press Check: The starting program keeps Lamp OFF all the time, so it never turns ON at 550 ms. Run Clock with Enable and a preset of T#300ms. When Clock.Q is TRUE, invert LampOn and restart Clock. Set Lamp from LampOn and Enable, then save the file.",
+              "checkpoint": "Lamp follows LampOn only while Enable is ON."
+            },
+            {
+              "key": "run",
+              "title": "Run",
+              "body": "Press Check. Studio runs your saved program against the scenario of this lesson.",
+              "checkpoint": "The scenario is named EnabledBlink and contains 11 assertions."
+            },
+            {
+              "key": "observe",
+              "title": "Observe",
+              "body": "Follow Lamp in the trace: it stays OFF until about 400 ms, which is 300 ms after Enable came ON, is ON until about 700 ms, ON again from about 1000 ms, and goes OFF at once at 1150 ms when Enable drops.",
+              "checkpoint": "The first ON starts about 300 ms after Enable came ON, not 300 ms after the program started."
+            },
+            {
+              "key": "reflect",
+              "title": "Reflect",
+              "body": "A blinker that ignores Enable would already be ON at 350 ms. Which of your lines makes the difference?",
+              "checkpoint": "Starting the timer from Enable moves the first change, and the AND with Enable stops the lamp at once."
+            }
+          ],
+          "hints": [
+            {
+              "level": 1,
+              "text": "The timer must only run while Enable is ON, so Enable is the IN of Clock."
+            },
+            {
+              "level": 2,
+              "text": "Write Clock(IN := Enable, PT := T#300ms); IF Clock.Q THEN LampOn := NOT LampOn; Clock(IN := FALSE, PT := T#300ms); END_IF; Lamp := LampOn AND Enable;"
+            }
+          ],
+          "faultCases": [
+            "The starting program keeps Lamp OFF all the time, so it never turns ON at 550 ms."
+          ]
+        },
+        "es": {
+          "title": "Escriba un parpadeador en Structured Text",
+          "summary": "Construya un parpadeador con un temporizador TON y una variable de memoria, y haga que funcione solo mientras una entrada de habilitación está en ON.",
+          "scope": "La evidencia de Tests es del runtime nativo POSIX con una tarea de 10 ms; no es evidencia de una lámpara física, de tiempos de hardware, de HIL ni de certificación.",
+          "objectives": [
+            "Escriba el patrón de temporizador y memoria que hace cambiar una salida a intervalos fijos.",
+            "Condicione una salida a una entrada para que se detenga de inmediato cuando la entrada baja."
+          ],
+          "stages": [
+            {
+              "key": "objective",
+              "title": "Objetivo",
+              "body": "En src/EnabledBlink.st, escriba la lógica que hace cambiar Lamp cada 300 ms mientras Enable está en ON. El temporizador Clock y la memoria LampOn ya están declarados. Con Enable en OFF, Lamp debe estar en OFF.",
+              "checkpoint": "Usted puede describir el patrón: correr un temporizador, invertir la memoria cuando vence y reiniciar el temporizador."
+            },
+            {
+              "key": "predict",
+              "title": "Prediga",
+              "body": "Enable pasa a ON a los 100 ms y a OFF a los 1150 ms. Prediga Lamp en 350, 550, 850 y 1250 ms.",
+              "checkpoint": "OFF en 350 ms, ON en 550 ms, OFF en 850 ms, OFF en 1250 ms."
+            },
+            {
+              "key": "edit",
+              "title": "Edite",
+              "body": "Corrija esta falla del programa inicial, guárdelo y pulse Comprobar: El programa inicial mantiene Lamp en OFF todo el tiempo, así que nunca pasa a ON a los 550 ms. Ejecute Clock con Enable y un preajuste de T#300ms. Cuando Clock.Q sea TRUE, invierta LampOn y reinicie Clock. Tome Lamp de LampOn y Enable, y guarde el archivo.",
+              "checkpoint": "Lamp sigue a LampOn solo mientras Enable está en ON."
+            },
+            {
+              "key": "run",
+              "title": "Ejecute",
+              "body": "Pulse Comprobar. Studio ejecuta el programa guardado contra el escenario de esta lección.",
+              "checkpoint": "El escenario se llama EnabledBlink y contiene 11 assertions."
+            },
+            {
+              "key": "observe",
+              "title": "Observe",
+              "body": "Siga Lamp en la traza: permanece en OFF hasta cerca de los 400 ms, es decir 300 ms después de que Enable pasó a ON, está en ON hasta cerca de los 700 ms, otra vez en ON desde cerca de los 1000 ms y baja a OFF de inmediato a los 1150 ms cuando Enable baja.",
+              "checkpoint": "El primer ON empieza unos 300 ms después de que Enable pasó a ON, no 300 ms después de arrancar el programa."
+            },
+            {
+              "key": "reflect",
+              "title": "Reflexione",
+              "body": "Un parpadeador que ignora Enable ya estaría en ON a los 350 ms. ¿Qué línea suya marca la diferencia?",
+              "checkpoint": "Arrancar el temporizador desde Enable desplaza el primer cambio, y el AND con Enable detiene la lámpara de inmediato."
+            }
+          ],
+          "hints": [
+            {
+              "level": 1,
+              "text": "El temporizador solo debe correr mientras Enable está en ON, así que Enable es el IN de Clock."
+            },
+            {
+              "level": 2,
+              "text": "Escriba Clock(IN := Enable, PT := T#300ms); IF Clock.Q THEN LampOn := NOT LampOn; Clock(IN := FALSE, PT := T#300ms); END_IF; Lamp := LampOn AND Enable;"
+            }
+          ],
+          "faultCases": [
+            "El programa inicial mantiene Lamp en OFF todo el tiempo, así que nunca pasa a ON a los 550 ms."
+          ]
+        }
+      }
+    },
+    {
+      "id": "set-reset-alarm-latch",
+      "version": 1,
+      "order": 15,
+      "module": 2,
+      "level": "foundation",
+      "prerequisites": [
+        "boolean-logic-two-hand-guard"
+      ],
+      "languages": [
+        "ST"
+      ],
+      "tracks": [
+        "simulation"
+      ],
+      "plant": null,
+      "plantMap": null,
+      "estimatedMinutes": 15,
+      "starter": {
+        "project": "alarm_latch_starter",
+        "program": "src/AlarmLatch.st"
+      },
+      "solution": {
+        "project": "alarm_latch",
+        "program": "src/AlarmLatch.st"
+      },
+      "scenario": {
+        "id": "AlarmLatch",
+        "path": "tests/alarm-latch.scenario.json",
+        "sha256": "1431b6ccd517bc5f2e9fc541d7609544d395bd00d5a701ec9620af6a42a07021",
+        "tickMs": 10,
+        "durationMs": 70,
+        "assertions": 10,
+        "canonical": "{\"durationMs\":70,\"events\":[{\"atMs\":0,\"set\":{\"AlarmLatch.Ack\":false,\"AlarmLatch.Fault\":false}},{\"atMs\":10,\"set\":{\"AlarmLatch.Ack\":false,\"AlarmLatch.Fault\":true}},{\"atMs\":20,\"set\":{\"AlarmLatch.Ack\":false,\"AlarmLatch.Fault\":false}},{\"atMs\":30,\"set\":{\"AlarmLatch.Ack\":true,\"AlarmLatch.Fault\":false}},{\"atMs\":40,\"set\":{\"AlarmLatch.Ack\":false,\"AlarmLatch.Fault\":false}},{\"atMs\":50,\"set\":{\"AlarmLatch.Ack\":true,\"AlarmLatch.Fault\":true}},{\"atMs\":60,\"set\":{\"AlarmLatch.Ack\":true,\"AlarmLatch.Fault\":false}}],\"expectations\":[{\"atMs\":0,\"condition\":{\"AlarmLatch.ResetFirst\":false,\"AlarmLatch.SetFirst\":false},\"kind\":\"AT\"},{\"atMs\":10,\"condition\":{\"AlarmLatch.ResetFirst\":true,\"AlarmLatch.SetFirst\":true},\"kind\":\"AT\"},{\"atMs\":20,\"condition\":{\"AlarmLatch.ResetFirst\":true,\"AlarmLatch.SetFirst\":true},\"kind\":\"AT\"},{\"atMs\":30,\"condition\":{\"AlarmLatch.ResetFirst\":false,\"AlarmLatch.SetFirst\":false},\"kind\":\"AT\"},{\"atMs\":40,\"condition\":{\"AlarmLatch.ResetFirst\":false,\"AlarmLatch.SetFirst\":false},\"kind\":\"AT\"},{\"atMs\":50,\"condition\":{\"AlarmLatch.ResetFirst\":false,\"AlarmLatch.SetFirst\":true},\"kind\":\"AT\"},{\"atMs\":60,\"condition\":{\"AlarmLatch.ResetFirst\":false,\"AlarmLatch.SetFirst\":false},\"kind\":\"AT\"},{\"condition\":{\"AlarmLatch.SetFirst\":true},\"fromMs\":10,\"kind\":\"RISING\",\"withinMs\":0},{\"condition\":{\"AlarmLatch.SetFirst\":false},\"fromMs\":30,\"kind\":\"FALLING\",\"withinMs\":0},{\"condition\":{\"AlarmLatch.ResetFirst\":true,\"AlarmLatch.SetFirst\":false},\"kind\":\"NEVER\"}],\"id\":\"AlarmLatch\",\"schemaVersion\":1,\"tickMs\":10}"
+      },
+      "regressionScenarios": [],
+      "text": {
+        "en": {
+          "title": "Latching an alarm: set and reset, and which one wins",
+          "summary": "Keep a fault in memory with the SR and RS blocks and see what each one does when the fault and the acknowledge arrive together.",
+          "scope": "Tests provide native POSIX host evidence with one 10 ms task; they do not establish alarm handling requirements of a real machine, HIL, or certification.",
+          "objectives": [
+            "Hold an alarm after the fault has gone, until it is acknowledged.",
+            "Tell the set-dominant block SR from the reset-dominant block RS."
+          ],
+          "stages": [
+            {
+              "key": "objective",
+              "title": "Objective",
+              "body": "In src/AlarmLatch.st, SetLatch (SR) and ResetLatch (RS) are declared but not used. Both outputs must stay ON after Fault drops and go OFF only when Ack is pressed. When Fault and Ack arrive together, SetFirst must stay ON and ResetFirst must go OFF.",
+              "checkpoint": "You can say which block gives priority to set and which to reset."
+            },
+            {
+              "key": "predict",
+              "title": "Predict",
+              "body": "Fault pulses ON at 10 ms. Ack is pressed at 30 ms. At 50 ms both arrive together, and Ack is held at 60 ms. Predict both outputs at 20, 30, and 50 ms.",
+              "checkpoint": "both ON at 20 ms; both OFF at 30 ms; SetFirst ON only at 50 ms."
+            },
+            {
+              "key": "edit",
+              "title": "Edit",
+              "body": "Correct this flaw of the starting program, save it, then press Check: The starting program copies Fault to both outputs, so they go OFF at 20 ms when the fault is gone. Call SetLatch with Fault as S1 and Ack as R, and ResetLatch with Fault as S and Ack as R1. Copy each Q1 to its output, and save the file.",
+              "checkpoint": "Each output is the Q1 of its own latch."
+            },
+            {
+              "key": "run",
+              "title": "Run",
+              "body": "Press Check. Studio runs your saved program against the scenario of this lesson.",
+              "checkpoint": "The scenario is named AlarmLatch and contains 10 assertions."
+            },
+            {
+              "key": "observe",
+              "title": "Observe",
+              "body": "Compare 20, 30, and 50 ms: the alarm is still ON at 20 ms after Fault has gone, Ack clears it at 30 ms, and only the two blocks differ at 50 ms.",
+              "checkpoint": "The outputs differ only when Fault and Ack arrive together."
+            },
+            {
+              "key": "reflect",
+              "title": "Reflect",
+              "body": "Which block would you choose for a stop command, and which for a start request? Think about what should win when both are pressed.",
+              "checkpoint": "A stop or reset should usually win, so the reset-dominant block fits it; the choice is a design decision, not a default."
+            }
+          ],
+          "hints": [
+            {
+              "level": 1,
+              "text": "SR has the inputs S1 and R and gives priority to set; RS has the inputs S and R1 and gives priority to reset."
+            },
+            {
+              "level": 2,
+              "text": "Write SetLatch(S1 := Fault, R := Ack); SetFirst := SetLatch.Q1; ResetLatch(S := Fault, R1 := Ack); ResetFirst := ResetLatch.Q1;"
+            }
+          ],
+          "faultCases": [
+            "The starting program copies Fault to both outputs, so they go OFF at 20 ms when the fault is gone."
+          ]
+        },
+        "es": {
+          "title": "Enclavar una alarma: set y reset, y cuál gana",
+          "summary": "Mantenga una falla en memoria con los bloques SR y RS y vea qué hace cada uno cuando la falla y el reconocimiento llegan juntos.",
+          "scope": "La evidencia de Tests es del runtime nativo POSIX con una tarea de 10 ms; no establece los requisitos de manejo de alarmas de una máquina real, ni HIL, ni certificación.",
+          "objectives": [
+            "Mantenga una alarma después de que la falla desapareció, hasta que se reconozca.",
+            "Distinga el bloque SR, dominante en set, del bloque RS, dominante en reset."
+          ],
+          "stages": [
+            {
+              "key": "objective",
+              "title": "Objetivo",
+              "body": "En src/AlarmLatch.st, SetLatch (SR) y ResetLatch (RS) están declarados pero no se usan. Las dos salidas deben seguir en ON cuando Fault baja y pasar a OFF solo al pulsar Ack. Cuando Fault y Ack llegan juntos, SetFirst debe seguir en ON y ResetFirst debe pasar a OFF.",
+              "checkpoint": "Usted puede decir qué bloque da prioridad al set y cuál al reset."
+            },
+            {
+              "key": "predict",
+              "title": "Prediga",
+              "body": "Fault da un pulso en ON a los 10 ms. Ack se pulsa a los 30 ms. A los 50 ms llegan juntos, y Ack sigue pulsado a los 60 ms. Prediga las dos salidas en 20, 30 y 50 ms.",
+              "checkpoint": "ambas en ON en 20 ms; ambas en OFF en 30 ms; solo SetFirst en ON en 50 ms."
+            },
+            {
+              "key": "edit",
+              "title": "Edite",
+              "body": "Corrija esta falla del programa inicial, guárdelo y pulse Comprobar: El programa inicial copia Fault a las dos salidas, así que pasan a OFF a los 20 ms cuando la falla ya pasó. Llame a SetLatch con Fault como S1 y Ack como R, y a ResetLatch con Fault como S y Ack como R1. Copie cada Q1 a su salida y guarde el archivo.",
+              "checkpoint": "Cada salida es la Q1 de su propio enclavamiento."
+            },
+            {
+              "key": "run",
+              "title": "Ejecute",
+              "body": "Pulse Comprobar. Studio ejecuta el programa guardado contra el escenario de esta lección.",
+              "checkpoint": "El escenario se llama AlarmLatch y contiene 10 assertions."
+            },
+            {
+              "key": "observe",
+              "title": "Observe",
+              "body": "Compare 20, 30 y 50 ms: la alarma sigue en ON a los 20 ms aunque Fault ya pasó, Ack la borra a los 30 ms, y solo los dos bloques difieren a los 50 ms.",
+              "checkpoint": "Las salidas difieren solo cuando Fault y Ack llegan juntos."
+            },
+            {
+              "key": "reflect",
+              "title": "Reflexione",
+              "body": "¿Qué bloque elegiría para una orden de parada y cuál para una solicitud de arranque? Piense qué debe ganar cuando ambas se pulsan.",
+              "checkpoint": "Una parada o un reset normalmente debe ganar, así que le conviene el bloque dominante en reset; la elección es una decisión de diseño, no un valor por defecto."
+            }
+          ],
+          "hints": [
+            {
+              "level": 1,
+              "text": "SR tiene las entradas S1 y R y da prioridad al set; RS tiene las entradas S y R1 y da prioridad al reset."
+            },
+            {
+              "level": 2,
+              "text": "Escriba SetLatch(S1 := Fault, R := Ack); SetFirst := SetLatch.Q1; ResetLatch(S := Fault, R1 := Ack); ResetFirst := ResetLatch.Q1;"
+            }
+          ],
+          "faultCases": [
+            "El programa inicial copia Fault a las dos salidas, así que pasan a OFF a los 20 ms cuando la falla ya pasó."
+          ]
+        }
+      }
     }
   ],
   "course": {
