@@ -941,6 +941,7 @@
     {"kind":"unit","ref":"packages/zplc-ide/src/compiler/compilerSourceLint.test.ts","test":"the sources of the compiler that are not tests (CMP-061)"}
   ],
   "LNG-001": [
+    {"kind":"unit","ref":"tools/docs/generate_language_capabilities.test.ts","test":"LNG-001 language capability table: one row per language and capability, from named tests","partial":true,"note":"the table on the Languages page (EN and ES) is generated from tools/docs/language-capabilities.json: each of the 35 cells names a journey, a native-runtime test or a conformance case that must exist, or says it is not tested end to end, or says only a board can show it; the committed pages are drift-checked by this test. Gaps shown by the table: no end-to-end test for the Instruction List edit, watch and force, and for the Ladder force; deploy is board-only. The pass state of each named check comes from the CI job that runs it, not from this test."},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"15 New file: create, edit, save, reopen","partial":true},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"3 Edit Structured Text, save, reopen","partial":true},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"5 Build successfully","partial":true},
@@ -1198,6 +1199,7 @@
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"27 Problems select the step of an action","partial":true}
   ],
   "LNG-027": [
+    {"kind":"unit","ref":"tools/docs/generate_language_capabilities.test.ts","test":"LNG-001 language capability table: one row per language and capability, from named tests","partial":true,"note":"the debug row of each language names the journey that stops at a breakpoint of that language; pause, resume and cycle step have a journey for Structured Text only (journey 16), and the table says so for the other four"},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"16 Debug details: stop, trace, resume mid-scan","partial":true},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"28 A breakpoint on a rung stops execution","partial":true},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"28ka A breakpoint on an FBD block stops execution","partial":true},
