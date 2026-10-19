@@ -66,6 +66,8 @@ mac:
   category: public.app-category.developer-tools
   icon: build/icon.icns
   darkModeSupport: true
+  # REL-020: the ZIP follows the same scheme as the DMG (its default name would put the architecture before `mac`).
+  artifactName: "zplc-ide-${version}-${os}-${arch}.${ext}"
   # No paid certificate exists, so the bundle is signed ad hoc and sealed, never notarized (REL-001, REL-003).
   # The identity is explicit: electron-builder does not fall back to ad hoc by itself.
   identity: "-"
@@ -83,7 +85,7 @@ mac:
 
 dmg:
   sign: false
-  artifactName: "${productName}-${version}-${os}-${arch}.${ext}"
+  artifactName: "zplc-ide-${version}-${os}-${arch}.${ext}"
   contents:
     - x: 130
       y: 220
@@ -106,13 +108,13 @@ nsis:
   perMachine: false
   allowToChangeInstallationDirectory: true
   # `unsigned` stays in the variant until a signed Windows channel is live (REL-038).
-  artifactName: "${productName}-${version}-${os}-${arch}-setup-unsigned.${ext}"
+  artifactName: "zplc-ide-${version}-${os}-${arch}-setup-unsigned.${ext}"
   createDesktopShortcut: true
   createStartMenuShortcut: true
   shortcutName: ZPLC IDE
 
 portable:
-  artifactName: "${productName}-${version}-${os}-${arch}-portable-unsigned.${ext}"
+  artifactName: "zplc-ide-${version}-${os}-${arch}-portable-unsigned.${ext}"
 
 # ============================================================================
 # Linux Configuration
@@ -128,18 +130,18 @@ linux:
     - rpm
 
 appImage:
-  artifactName: "${productName}-${version}-${os}-${arch}.${ext}"
+  artifactName: "zplc-ide-${version}-${os}-${arch}.${ext}"
 
 # No `depends` override: electron-builder's defaults track current Debian, Ubuntu and Fedora (REL-011).
 # The udev rule (REL-013) is written by scripts/release/udev-rules.ts in the beforePack hook, from the USB identifiers of
 # tools/hil/usb-ids.json, and fpm installs it in the vendor rules folder of the package: `source=destination`.
 deb:
-  artifactName: "${productName}-${version}-${os}-${arch}.${ext}"
+  artifactName: "zplc-ide-${version}-${os}-${arch}.${ext}"
   fpm:
     - "build/linux/70-zplc-boards.rules=/usr/lib/udev/rules.d/70-zplc-boards.rules"
 
 rpm:
-  artifactName: "${productName}-${version}-${os}-${arch}.${ext}"
+  artifactName: "zplc-ide-${version}-${os}-${arch}.${ext}"
   # Override fpm --name to avoid spaces in .spec filename
   # rpmbuild can't handle "ZPLC IDE.spec" — needs "zplc-ide.spec"
   fpm:

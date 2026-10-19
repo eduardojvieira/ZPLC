@@ -86,10 +86,15 @@ prerelease.
 | Linux, other distributions | `ZPLC.IDE-2.0.0-rc.3-linux-x86_64.AppImage` |
 
 The rc.3 files were built by a preview build and uploaded by hand. Releases that
-the release pipeline makes name their files from one template,
-`ZPLC.IDE-<version>-<system>-<architecture>.<extension>`, and add `setup-unsigned`
-or `portable-unsigned` to the two Windows files, for example
-`ZPLC.IDE-<version>-win-x64-setup-unsigned.exe`. The `zplc-cli-<version>-<system>-<architecture>`
+the release pipeline makes name all fourteen installer files from one template,
+`zplc-ide-<version>-<system>-<architecture>[-<variant>].<extension>`, in lower case
+with no spaces (only the `AppImage` extension keeps its capitals). The variant is
+`setup` or `portable` for the two Windows files, and `unsigned` follows it while the
+Windows files carry no signature, for example `zplc-ide-<version>-win-x64-setup-unsigned.exe`.
+On macOS and Windows the architecture is `x64` or `arm64`; on Linux each package
+format spells it as its own tooling does: `amd64` for the `.deb`, `x86_64` for the
+`.rpm` and the AppImage, `aarch64` for the arm64 `.rpm`. The pipeline checks the
+names and the type of every file it produced before it bundles them. The `zplc-cli-<version>-<system>-<architecture>`
 and `zplc-mcp-<version>-<system>-<architecture>` executables of those releases need
 no installer and no Node.js or Bun; they are not signed either.
 

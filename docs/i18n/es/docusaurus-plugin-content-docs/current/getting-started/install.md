@@ -88,10 +88,16 @@ antigua; desplácese hasta la versión preliminar 2.0.
 | Linux, otras distribuciones | `ZPLC.IDE-2.0.0-rc.3-linux-x86_64.AppImage` |
 
 Los archivos de rc.3 se construyeron con una compilación preliminar y se
-subieron a mano. Las versiones que hace el pipeline de publicación nombran sus
-archivos con una sola plantilla, `ZPLC.IDE-<versión>-<sistema>-<arquitectura>.<extensión>`,
-y agregan `setup-unsigned` o `portable-unsigned` a los dos archivos de Windows, por
-ejemplo `ZPLC.IDE-<versión>-win-x64-setup-unsigned.exe`. Los ejecutables
+subieron a mano. Las versiones que hace el pipeline de publicación nombran los
+catorce archivos de instalación con una sola plantilla,
+`zplc-ide-<versión>-<sistema>-<arquitectura>[-<variante>].<extensión>`, en minúsculas
+y sin espacios (solo la extensión `AppImage` conserva sus mayúsculas). La variante es
+`setup` o `portable` en los dos archivos de Windows, y `unsigned` la sigue mientras
+esos archivos no lleven firma, por ejemplo `zplc-ide-<versión>-win-x64-setup-unsigned.exe`.
+En macOS y Windows la arquitectura es `x64` o `arm64`; en Linux cada formato de
+paquete la escribe como lo hace su propia herramienta: `amd64` en el `.deb`, `x86_64`
+en el `.rpm` y en el AppImage, `aarch64` en el `.rpm` de arm64. El pipeline comprueba
+los nombres y el tipo de cada archivo que produjo antes de agruparlos. Los ejecutables
 `zplc-cli-<versión>-<sistema>-<arquitectura>` y `zplc-mcp-<versión>-<sistema>-<arquitectura>`
 de esas versiones no necesitan instalador ni Node.js ni Bun; tampoco están firmados.
 

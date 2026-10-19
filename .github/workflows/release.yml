@@ -965,6 +965,13 @@ jobs:
 
       # The bill of materials is written from the lockfile, the workspace manifests and west.yml, not from the
       # installers (REL-018). The step fails when it holds fewer packages than the lockfile lists or than the floor.
+      # VF-021, REL-020: the installers that the build uploaded are the files of the naming scheme, and each one is the
+      # container its extension claims. This reads the produced files, not the configuration that made them.
+      - name: Verify the installers that were produced
+        env:
+          RELEASE_VERSION: ${{ needs.validate-version.outputs.version }}
+        run: bun tools/ci/release/verify-installers.ts artifacts --version "$RELEASE_VERSION" --os mac
+
       - name: Generate the bill of materials
         run: bun scripts/release/sbom.ts --out artifacts/ZPLC-${{ needs.validate-version.outputs.version }}-macos.cdx.json
 
@@ -1077,6 +1084,13 @@ jobs:
 
       # The bill of materials is written from the lockfile, the workspace manifests and west.yml, not from the
       # installers (REL-018). The step fails when it holds fewer packages than the lockfile lists or than the floor.
+      # VF-021, REL-020: the installers that the build uploaded are the files of the naming scheme, and each one is the
+      # container its extension claims. This reads the produced files, not the configuration that made them.
+      - name: Verify the installers that were produced
+        env:
+          RELEASE_VERSION: ${{ needs.validate-version.outputs.version }}
+        run: bun tools/ci/release/verify-installers.ts artifacts --version "$RELEASE_VERSION" --os win
+
       - name: Generate the bill of materials
         run: bun scripts/release/sbom.ts --out artifacts/ZPLC-${{ needs.validate-version.outputs.version }}-windows.cdx.json
 
@@ -1183,6 +1197,13 @@ jobs:
 
       # The bill of materials is written from the lockfile, the workspace manifests and west.yml, not from the
       # installers (REL-018). The step fails when it holds fewer packages than the lockfile lists or than the floor.
+      # VF-021, REL-020: the installers that the build uploaded are the files of the naming scheme, and each one is the
+      # container its extension claims. This reads the produced files, not the configuration that made them.
+      - name: Verify the installers that were produced
+        env:
+          RELEASE_VERSION: ${{ needs.validate-version.outputs.version }}
+        run: bun tools/ci/release/verify-installers.ts artifacts --version "$RELEASE_VERSION" --os linux
+
       - name: Generate the bill of materials
         run: bun scripts/release/sbom.ts --out artifacts/ZPLC-${{ needs.validate-version.outputs.version }}-linux.cdx.json
 
