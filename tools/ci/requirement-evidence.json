@@ -1238,6 +1238,7 @@
   ],
   "RT-009": [
     {"kind":"unit","ref":"packages/zplc-ide/src/runtime/wasmRuntime.test.ts","test":"the process image of the WebAssembly runtime (RT-009)"},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_native_runtime_session.c","test":"LRN-017, RT-009: the writes to the input image that a running program receives are staged and reach the image at"},
     {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_native_runtime_session.c","test":"RT-009: the tasks of a batch read one input image, and a simulation pulse lasts one batch."},
     {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_sched_core.c","test":"callbacks that write what they did to a log. The log is the evidence of the order of the phases (RT-009,"},
     {"kind":"c-test","ref":"firmware/tests/single_task/src/main.c","test":"end, from the image (the same latch and commit as the multitask scheduler, RT-009);"}
@@ -1983,11 +1984,12 @@
   ],
   "IDE-024": [
     {"kind":"unit","ref":"packages/zplc-ide/src/cli/toolApi.test.ts","test":"program inputs in the debug map (IDE-024)"},
-    {"kind":"unit","ref":"packages/zplc-ide/src/components/Faceplate.test.tsx","test":"the live I/O faceplate (LRN-017)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/runtime/declaredInputs.test.ts","test":"reading declared inputs back (IDE-024)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/runtime/declaredInputs.test.ts","test":"the declared inputs of a program (IDE-024)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/runtime/declaredInputs.test.ts","test":"writing a declared input (IDE-024)"},
-    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"37 Any declared input of the running program can be set"}
+    {"kind":"unit","ref":"packages/zplc-ide/src/runtime/ioMap.test.ts","test":"the I/O map of a program (LRN-017, IDE-024)"},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"37 Any declared input of the running program can be set"},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"50 The live I/O faceplate operates the inputs of any program and shows its outputs, with the pointer and with the keyboard","partial":true}
   ],
   "IDE-025": [
     {"kind":"unit","ref":"packages/zplc-ide/scripts/wasmRuntimePlugin.test.ts","test":"the build of the browser runtime inside the IDE build (IDE-025)"},
@@ -2477,6 +2479,18 @@
     {"kind":"unit","ref":"packages/zplc-ide/src/components/LearnHomeView.test.tsx","test":"says which tracks a lesson supports and, for one it does not, why and what to do instead (LRN-011)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/learn/course.test.ts","test":"the tracks a lesson supports (LRN-011)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/learn/courseDefinition.test.ts","test":"refuses a track with no reason and no instead-action for the lesson that does not support it (LRN-011)"}
+  ],
+  "LRN-017": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/components/Faceplate.test.tsx","test":"the live I/O faceplate (LRN-017)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/mcp/server.test.ts","test":"has no tool that sets a simulation input or writes memory: the faceplate is the person\\'s control, not the agent\\'s (LRN-017, AGENTS rule 7)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/runtime/faceplateState.test.ts","test":"a push button on the faceplate (LRN-017)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/runtime/faceplateState.test.ts","test":"an input change that waits for the next scan (LRN-017)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/runtime/faceplateState.test.ts","test":"sending the changes of one control (LRN-017)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/runtime/faceplateState.test.ts","test":"when the faceplate cannot apply a change (LRN-017)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/runtime/ioMap.test.ts","test":"the I/O map of a program (LRN-017, IDE-024)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/runtime/ioMap.test.ts","test":"the range of an input that has a slider (LRN-017)"},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"50 The live I/O faceplate operates the inputs of any program and shows its outputs, with the pointer and with the keyboard"},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_native_runtime_session.c","test":"LRN-017, RT-009: the writes to the input image that a running program receives are staged and reach the image at"}
   ],
   "LRN-022": [
     {"kind":"unit","ref":"packages/zplc-ide/electron/ipcRegistry.test.ts","test":"the lesson check over the IPC boundary (LRN-022, LRN-026, IDE-002, IDE-012)"},
