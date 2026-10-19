@@ -32,7 +32,8 @@
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"1 Open an existing folder","partial":true}
   ],
   "VF-009": [
-    {"kind":"manual","ref":".github/workflows/ci.yml","partial":true,"note":"the journeys run under xvfb in the typescript job (every pull request) and on macOS and Windows in the nightly-quality workflow; configuration only, no hosted run is recorded, and a release is not gated on the macOS and Windows run"}
+    {"kind":"manual","ref":".github/workflows/ci.yml","partial":true,"note":"the journeys run under xvfb in the typescript job (every pull request) and on macOS and Windows in the nightly-quality workflow; configuration only, no hosted run is recorded, and a release is not gated on the macOS and Windows run"},
+    {"kind":"unit","ref":"tools/ci/release-gate.test.ts","test":"the release is gated on the Linux journeys (VF-009)","partial":true,"note":"release.yml calls ci.yml, whose typescript job runs the journeys, and every build or publish job of the release needs that run to have succeeded; the workflows are parsed, not executed, and no hosted release run is recorded"}
   ],
   "VF-010": [
     {"kind":"unit","ref":"tools/ci/ci-workflow.test.ts","test":"ci.yml type-check (VF-010, VF-011)"},
