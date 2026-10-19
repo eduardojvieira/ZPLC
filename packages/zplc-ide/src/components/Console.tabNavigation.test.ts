@@ -4,6 +4,10 @@ import { describe, expect, it } from 'bun:test';
 import { withEnglishMessages } from '../i18n/inlineMessages';
 import { claimMotorInputCommand, shouldClearMotorInputFailure } from './liveNativeMotorPanel';
 
+// Console.tsx and the modules split out of it (IDE-014): the pins below read the text of all of them, as they did of the one file.
+const CONSOLE_MODULES = ['Console.tsx', 'ConsoleReviewPanels.tsx', 'LiveNativeMotorControls.tsx', 'WorkspaceTestResult.tsx'];
+const consoleSources = (): string => CONSOLE_MODULES.map((file) => readFileSync(join(import.meta.dir, file), 'utf8')).join('\n');
+
 describe('Console tab boundary', () => {
   it('excludes a concurrent motor command and clears a failure only after a newer sample', () => {
     const inFlight = { current: false };
@@ -19,7 +23,7 @@ describe('Console tab boundary', () => {
   });
 
   it('keeps roving tab focus and the four standard navigation keys', () => {
-    const source = withEnglishMessages(readFileSync(join(import.meta.dir, 'Console.tsx'), 'utf8'));
+    const source = withEnglishMessages(consoleSources());
 
     expect(source).toContain('tabIndex={activeConsoleTab === tab.id ? 0 : -1}');
     expect(source).toContain("key === 'ArrowLeft'");
@@ -42,7 +46,7 @@ describe('Console tab boundary', () => {
   });
 
   it('keeps candidate review in the lower ledger with saved-file fences and no physical apply path', () => {
-    const source = withEnglishMessages(readFileSync(join(import.meta.dir, 'Console.tsx'), 'utf8'));
+    const source = withEnglishMessages(consoleSources());
 
     expect(source).toContain("id: 'changes'");
     expect(source).toContain("activeConsoleTab === 'changes'");
@@ -111,14 +115,14 @@ describe('Console tab boundary', () => {
 
   it('labels live ST diagnostics separately from canonical build diagnostics', () => {
     // the two lists are drawn by ProblemsPanel (ProblemsPanel.test.tsx); Console keeps the fence that pairs the live list with this build
-    const source = withEnglishMessages(readFileSync(join(import.meta.dir, 'Console.tsx'), 'utf8'));
+    const source = withEnglishMessages(consoleSources());
 
     expect(source).toContain('stBufferDiagnostics.compilerRunId === compilerRunId');
   });
 
   // The copy of the view (its title, button, hints and the claim it does not make) is InterlockCoverage.test.tsx.
   it('runs the declared interlock check from its own tab, with saved-session fences and no physical claim', () => {
-    const source = withEnglishMessages(readFileSync(join(import.meta.dir, 'Console.tsx'), 'utf8'));
+    const source = withEnglishMessages(consoleSources());
     expect(source).toContain("id: 'interlocks'");
     expect(source).toContain("activeConsoleTab === 'interlocks' && <InterlockCoverage");
     expect(source).toContain('workspaceTests.safetyCheck({ workspaceId })');
@@ -133,7 +137,7 @@ describe('Console tab boundary', () => {
   });
 
   it('keeps workspace tests bound to the current local project session', () => {
-    const source = withEnglishMessages(readFileSync(join(import.meta.dir, 'Console.tsx'), 'utf8'));
+    const source = withEnglishMessages(consoleSources());
 
     expect(source).toContain('registerProjectFile(file)');
     expect(source).toContain('isWorkspaceManifestRegistrationCurrent(useIDEStore.getState().projectSession, expectedProjectSession)');
@@ -165,7 +169,7 @@ describe('Console tab boundary', () => {
   });
 
   it('offers a session-fenced save only while Tests is blocked by unsaved work', () => {
-    const source = withEnglishMessages(readFileSync(join(import.meta.dir, 'Console.tsx'), 'utf8'));
+    const source = withEnglishMessages(consoleSources());
     const start = source.indexOf('const saveWorkspaceProject = async () => {');
     const end = source.indexOf('const runWorkspaceTests = async (scenarioId?: string) => {');
     const handler = source.slice(start, end);
@@ -190,7 +194,7 @@ describe('Console tab boundary', () => {
   });
 
   it('keeps recorded scenario evidence in Tests, separate from the live Trace panel', () => {
-    const source = withEnglishMessages(readFileSync(join(import.meta.dir, 'Console.tsx'), 'utf8'));
+    const source = withEnglishMessages(consoleSources());
 
     expect(source).toContain('Scenario evidence (recorded test result)');
     expect(source).toContain('Recorded during this host test run. It does not update with the live trace panel.');
@@ -248,7 +252,7 @@ describe('Console tab boundary', () => {
   });
 
   it('keeps one observable native motor module inside Trace before allowing closed inputs', () => {
-    const source = withEnglishMessages(readFileSync(join(import.meta.dir, 'Console.tsx'), 'utf8'));
+    const source = withEnglishMessages(consoleSources());
 
     expect(source).toContain("activeConsoleTab === 'trace'");
     expect(source).toContain('function LiveNativeMotorPanel');
