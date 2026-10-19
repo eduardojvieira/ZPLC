@@ -1,0 +1,46 @@
+{
+  "schemaVersion": 1,
+  "id": "types-arithmetic-comparison",
+  "version": 1,
+  "order": 19,
+  "module": 4,
+  "level": "intermediate",
+  "prerequisites": [
+    "edge-counter-pulses"
+  ],
+  "languages": [
+    "ST"
+  ],
+  "tracks": [
+    "simulation"
+  ],
+  "unsupported": {
+    "hardware": {
+      "reason": {
+        "en": "The lesson is graded on exact input timing at 10 ms steps; a board has no recorded trace for it yet.",
+        "es": "La lección se califica con tiempos exactos de entradas en pasos de 10 ms; todavía no hay una traza registrada desde una placa para ella."
+      },
+      "instead": {
+        "en": "Complete it in Simulation: its grade is the same each time and needs no board.",
+        "es": "Complétela en Simulación: su calificación es la misma cada vez y no necesita una placa."
+      }
+    }
+  },
+  "plant": null,
+  "estimatedMinutes": 20,
+  "starter": {
+    "project": "typed_steps_starter",
+    "program": "src/TypedSteps.st"
+  },
+  "solution": {
+    "project": "typed_steps",
+    "program": "src/TypedSteps.st"
+  },
+  "scenario": {
+    "file": "scenario.json",
+    "id": "TypedSteps",
+    "path": "tests/typed-steps.scenario.json",
+    "sha256": "edfe148b3d0b37ea6e9da6b1e38dbb46da974cf62c160a3fcc2b429e4a16c169"
+  },
+  "regressionScenarios": []
+}

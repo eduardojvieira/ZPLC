@@ -1,0 +1,37 @@
+{
+  "schemaVersion": 1,
+  "alsoGreen": [
+    {
+      "intent": "scales with a division by 10 instead of the multiply then divide",
+      "files": {
+        "src/Scaling.st": "PROGRAM Scaling\nVAR_INPUT Enable AT %I0.0 : BOOL; END_VAR\nVAR_OUTPUT Warn AT %Q0.0 : BOOL; Alarm AT %Q0.1 : BOOL; END_VAR\nVAR Raw : DINT := 0; Percent : DINT := 0; END_VAR\nIF Enable THEN Raw := MIN(Raw + 100, 1000); ELSE Raw := 0; END_IF;\nPercent := Raw / 10;\nWarn := Percent >= 50; Alarm := Percent >= 80;\nEND_PROGRAM\n"
+      }
+    }
+  ],
+  "wrong": [
+    {
+      "intent": "divides first, so the percentage stays at 0",
+      "files": {
+        "src/Scaling.st": "PROGRAM Scaling\nVAR_INPUT Enable AT %I0.0 : BOOL; END_VAR\nVAR_OUTPUT Warn AT %Q0.0 : BOOL; Alarm AT %Q0.1 : BOOL; END_VAR\nVAR Raw : DINT := 0; Percent : DINT := 0; END_VAR\nIF Enable THEN Raw := MIN(Raw + 100, 1000); ELSE Raw := 0; END_IF;\nPercent := (Raw / 1000) * 100;\nWarn := Percent >= 50; Alarm := Percent >= 80;\nEND_PROGRAM\n"
+      }
+    },
+    {
+      "intent": "warns only above 50 percent, so the boundary value is missed",
+      "files": {
+        "src/Scaling.st": "PROGRAM Scaling\nVAR_INPUT Enable AT %I0.0 : BOOL; END_VAR\nVAR_OUTPUT Warn AT %Q0.0 : BOOL; Alarm AT %Q0.1 : BOOL; END_VAR\nVAR Raw : DINT := 0; Percent : DINT := 0; END_VAR\nIF Enable THEN Raw := MIN(Raw + 100, 1000); ELSE Raw := 0; END_IF;\nPercent := (Raw * 100) / 1000;\nWarn := Percent > 50; Alarm := Percent >= 80;\nEND_PROGRAM\n"
+      }
+    },
+    {
+      "intent": "scales by a 12-bit span of 1023, so the thresholds move",
+      "files": {
+        "src/Scaling.st": "PROGRAM Scaling\nVAR_INPUT Enable AT %I0.0 : BOOL; END_VAR\nVAR_OUTPUT Warn AT %Q0.0 : BOOL; Alarm AT %Q0.1 : BOOL; END_VAR\nVAR Raw : DINT := 0; Percent : DINT := 0; END_VAR\nIF Enable THEN Raw := MIN(Raw + 100, 1000); ELSE Raw := 0; END_IF;\nPercent := (Raw * 100) / 1023;\nWarn := Percent >= 50; Alarm := Percent >= 80;\nEND_PROGRAM\n"
+      }
+    },
+    {
+      "intent": "keeps Raw when Enable drops, so the outputs stay ON",
+      "files": {
+        "src/Scaling.st": "PROGRAM Scaling\nVAR_INPUT Enable AT %I0.0 : BOOL; END_VAR\nVAR_OUTPUT Warn AT %Q0.0 : BOOL; Alarm AT %Q0.1 : BOOL; END_VAR\nVAR Raw : DINT := 0; Percent : DINT := 0; END_VAR\nIF Enable THEN Raw := MIN(Raw + 100, 1000); END_IF;\nPercent := (Raw * 100) / 1000;\nWarn := Percent >= 50; Alarm := Percent >= 80;\nEND_PROGRAM\n"
+      }
+    }
+  ]
+}

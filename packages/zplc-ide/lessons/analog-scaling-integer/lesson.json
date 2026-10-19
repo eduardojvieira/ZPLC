@@ -1,0 +1,46 @@
+{
+  "schemaVersion": 1,
+  "id": "analog-scaling-integer",
+  "version": 1,
+  "order": 20,
+  "module": 4,
+  "level": "intermediate",
+  "prerequisites": [
+    "types-arithmetic-comparison"
+  ],
+  "languages": [
+    "ST"
+  ],
+  "tracks": [
+    "simulation"
+  ],
+  "unsupported": {
+    "hardware": {
+      "reason": {
+        "en": "The lesson is graded on exact input timing at 10 ms steps; a board has no recorded trace for it yet.",
+        "es": "La lección se califica con tiempos exactos de entradas en pasos de 10 ms; todavía no hay una traza registrada desde una placa para ella."
+      },
+      "instead": {
+        "en": "Complete it in Simulation: its grade is the same each time and needs no board.",
+        "es": "Complétela en Simulación: su calificación es la misma cada vez y no necesita una placa."
+      }
+    }
+  },
+  "plant": null,
+  "estimatedMinutes": 20,
+  "starter": {
+    "project": "scaling_starter",
+    "program": "src/Scaling.st"
+  },
+  "solution": {
+    "project": "scaling",
+    "program": "src/Scaling.st"
+  },
+  "scenario": {
+    "file": "scenario.json",
+    "id": "Scaling",
+    "path": "tests/scaling.scenario.json",
+    "sha256": "50a0f5610f6eaceec898294dc11656ddd50f96238d3045ead06e5e471b0bef57"
+  },
+  "regressionScenarios": []
+}

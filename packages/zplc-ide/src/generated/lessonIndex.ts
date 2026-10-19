@@ -24,6 +24,8 @@ export const LESSON_IDS = [
   "seal-in-ladder",
   "counter-batch-fbd",
   "interlock-guard-ladder",
+  "types-arithmetic-comparison",
+  "analog-scaling-integer",
 ] as const;
 
 export type LessonId = typeof LESSON_IDS[number];

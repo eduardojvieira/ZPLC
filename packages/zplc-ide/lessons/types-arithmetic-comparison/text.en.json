@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "title": "Types, arithmetic and comparison: a total and three bands",
+  "summary": "Keep a running total in an INT variable, add to it on each press, and turn it into three BOOL results with comparison operators.",
+  "scope": "Tests provide native POSIX host evidence with one 10 ms task; they do not establish the range of a real sensor or the overflow behaviour of a particular controller, HIL, or certification.",
+  "objectives": [
+    "Use an INT variable for a number and a BOOL variable for a yes or no, and see that a comparison turns a number into a BOOL.",
+    "Add to a number only on the rising edge of an input, so that a button held for several scans counts once."
+  ],
+  "stages": [
+    {
+      "key": "objective",
+      "title": "Objective",
+      "body": "In src/TypedSteps.st the INT variable Total and the comparisons Low (Total < 10), Exact (Total = 10) and High (Total > 10) are written. Write the arithmetic: on each rising edge of Step add 5 to Total, and while Reset is TRUE set Total to 0.",
+      "checkpoint": "Total goes 0, 5, 10, 15, and the three outputs show which band it is in."
+    },
+    {
+      "key": "predict",
+      "title": "Predict",
+      "body": "Step is pressed three times, the first press lasting two scans. Predict which output is ON at {{t:20}}, {{t:40}} and {{t:60}} ms.",
+      "checkpoint": "{{v:TypedSteps.Low=true,TypedSteps.Exact=false,TypedSteps.High=false@20|Low}} at {{t:20}} ms (Total is 5); {{v:TypedSteps.Low=false,TypedSteps.Exact=true,TypedSteps.High=false@40|Exact}} at {{t:40}} ms (Total is 10); {{v:TypedSteps.Low=false,TypedSteps.Exact=false,TypedSteps.High=true@60|High}} at {{t:60}} ms (Total is 15)."
+    },
+    {
+      "key": "edit",
+      "title": "Edit",
+      "body": "Correct this starter omission, save it, then press Check: The starter declares Total and the three comparisons but never changes Total, so Low stays ON for ever; add 5 to Total on each rising edge of Step and clear it while Reset is TRUE.",
+      "checkpoint": "The visible scenario must pass with saved host evidence."
+    },
+    {
+      "key": "run",
+      "title": "Run",
+      "body": "Press Check. Studio runs your saved program against the scenario of this lesson.",
+      "checkpoint": "The scenario is named TypedSteps and contains {{assertions}} assertions."
+    },
+    {
+      "key": "observe",
+      "title": "Observe",
+      "body": "Compare {{t:20}}, {{t:40}} and {{t:60}} ms: exactly one of the three outputs is ON each time, and Reset at {{t:80}} ms brings Low back.",
+      "checkpoint": "Exact is ON only at the one total of 10, from {{t:40}} ms; the long first press added 5 once, not twice."
+    },
+    {
+      "key": "reflect",
+      "title": "Reflect",
+      "body": "What happens if you write Exact as Total >= 10? And if you add 5 on every scan while Step is TRUE? Try each and see which assertion fails.",
+      "checkpoint": "A comparison gives a BOOL, and = is not the same as >=. The scenario only watches the three BOOL outputs; it does not show the value of Total itself or what happens when an INT overflows."
+    }
+  ],
+  "hints": [
+    {
+      "level": 1,
+      "text": "Total is an INT, so Total + 5 is an INT. A rising edge is Step TRUE now and StepWas FALSE on the previous scan."
+    },
+    {
+      "level": 2,
+      "text": "IF Reset THEN Total := 0; ELSIF Step AND NOT StepWas THEN Total := Total + 5; END_IF; StepWas := Step; Put it before the three comparison lines."
+    }
+  ],
+  "faultCases": [
+    "The starter declares Total and the three comparisons but never changes Total, so Low stays ON for ever; add 5 to Total on each rising edge of Step and clear it while Reset is TRUE."
+  ]
+}

@@ -3158,6 +3158,348 @@
           ]
         }
       }
+    },
+    {
+      "id": "types-arithmetic-comparison",
+      "version": 1,
+      "order": 19,
+      "module": 4,
+      "level": "intermediate",
+      "prerequisites": [
+        "edge-counter-pulses"
+      ],
+      "languages": [
+        "ST"
+      ],
+      "tracks": [
+        "simulation"
+      ],
+      "unsupported": {
+        "hardware": {
+          "reason": {
+            "en": "The lesson is graded on exact input timing at 10 ms steps; a board has no recorded trace for it yet.",
+            "es": "La lección se califica con tiempos exactos de entradas en pasos de 10 ms; todavía no hay una traza registrada desde una placa para ella."
+          },
+          "instead": {
+            "en": "Complete it in Simulation: its grade is the same each time and needs no board.",
+            "es": "Complétela en Simulación: su calificación es la misma cada vez y no necesita una placa."
+          }
+        }
+      },
+      "plant": null,
+      "plantMap": null,
+      "estimatedMinutes": 20,
+      "starter": {
+        "project": "typed_steps_starter",
+        "program": "src/TypedSteps.st"
+      },
+      "solution": {
+        "project": "typed_steps",
+        "program": "src/TypedSteps.st"
+      },
+      "scenario": {
+        "id": "TypedSteps",
+        "path": "tests/typed-steps.scenario.json",
+        "sha256": "edfe148b3d0b37ea6e9da6b1e38dbb46da974cf62c160a3fcc2b429e4a16c169",
+        "tickMs": 10,
+        "durationMs": 100,
+        "assertions": 8,
+        "canonical": "{\"durationMs\":100,\"events\":[{\"atMs\":0,\"set\":{\"TypedSteps.Reset\":false,\"TypedSteps.Step\":false}},{\"atMs\":10,\"set\":{\"TypedSteps.Step\":true}},{\"atMs\":30,\"set\":{\"TypedSteps.Step\":false}},{\"atMs\":40,\"set\":{\"TypedSteps.Step\":true}},{\"atMs\":50,\"set\":{\"TypedSteps.Step\":false}},{\"atMs\":60,\"set\":{\"TypedSteps.Step\":true}},{\"atMs\":70,\"set\":{\"TypedSteps.Step\":false}},{\"atMs\":80,\"set\":{\"TypedSteps.Reset\":true}},{\"atMs\":90,\"set\":{\"TypedSteps.Reset\":false}}],\"expectations\":[{\"atMs\":0,\"condition\":{\"TypedSteps.Exact\":false,\"TypedSteps.High\":false,\"TypedSteps.Low\":true},\"kind\":\"AT\"},{\"atMs\":20,\"condition\":{\"TypedSteps.Exact\":false,\"TypedSteps.High\":false,\"TypedSteps.Low\":true},\"kind\":\"AT\"},{\"atMs\":40,\"condition\":{\"TypedSteps.Exact\":true,\"TypedSteps.High\":false,\"TypedSteps.Low\":false},\"kind\":\"AT\"},{\"atMs\":60,\"condition\":{\"TypedSteps.Exact\":false,\"TypedSteps.High\":true,\"TypedSteps.Low\":false},\"kind\":\"AT\"},{\"atMs\":80,\"condition\":{\"TypedSteps.Exact\":false,\"TypedSteps.High\":false,\"TypedSteps.Low\":true},\"kind\":\"AT\"},{\"condition\":{\"TypedSteps.Exact\":true},\"forMs\":10,\"fromMs\":40,\"kind\":\"FOR\"},{\"condition\":{\"TypedSteps.Exact\":true},\"fromMs\":40,\"kind\":\"RISING\",\"withinMs\":0},{\"condition\":{\"TypedSteps.Exact\":true,\"TypedSteps.High\":true},\"kind\":\"NEVER\"}],\"id\":\"TypedSteps\",\"schemaVersion\":1,\"tickMs\":10}"
+      },
+      "regressionScenarios": [],
+      "text": {
+        "en": {
+          "title": "Types, arithmetic and comparison: a total and three bands",
+          "summary": "Keep a running total in an INT variable, add to it on each press, and turn it into three BOOL results with comparison operators.",
+          "scope": "Tests provide native POSIX host evidence with one 10 ms task; they do not establish the range of a real sensor or the overflow behaviour of a particular controller, HIL, or certification.",
+          "objectives": [
+            "Use an INT variable for a number and a BOOL variable for a yes or no, and see that a comparison turns a number into a BOOL.",
+            "Add to a number only on the rising edge of an input, so that a button held for several scans counts once."
+          ],
+          "stages": [
+            {
+              "key": "objective",
+              "title": "Objective",
+              "body": "In src/TypedSteps.st the INT variable Total and the comparisons Low (Total < 10), Exact (Total = 10) and High (Total > 10) are written. Write the arithmetic: on each rising edge of Step add 5 to Total, and while Reset is TRUE set Total to 0.",
+              "checkpoint": "Total goes 0, 5, 10, 15, and the three outputs show which band it is in."
+            },
+            {
+              "key": "predict",
+              "title": "Predict",
+              "body": "Step is pressed three times, the first press lasting two scans. Predict which output is ON at 20, 40 and 60 ms.",
+              "checkpoint": "Low at 20 ms (Total is 5); Exact at 40 ms (Total is 10); High at 60 ms (Total is 15)."
+            },
+            {
+              "key": "edit",
+              "title": "Edit",
+              "body": "Correct this starter omission, save it, then press Check: The starter declares Total and the three comparisons but never changes Total, so Low stays ON for ever; add 5 to Total on each rising edge of Step and clear it while Reset is TRUE.",
+              "checkpoint": "The visible scenario must pass with saved host evidence."
+            },
+            {
+              "key": "run",
+              "title": "Run",
+              "body": "Press Check. Studio runs your saved program against the scenario of this lesson.",
+              "checkpoint": "The scenario is named TypedSteps and contains 8 assertions."
+            },
+            {
+              "key": "observe",
+              "title": "Observe",
+              "body": "Compare 20, 40 and 60 ms: exactly one of the three outputs is ON each time, and Reset at 80 ms brings Low back.",
+              "checkpoint": "Exact is ON only at the one total of 10, from 40 ms; the long first press added 5 once, not twice."
+            },
+            {
+              "key": "reflect",
+              "title": "Reflect",
+              "body": "What happens if you write Exact as Total >= 10? And if you add 5 on every scan while Step is TRUE? Try each and see which assertion fails.",
+              "checkpoint": "A comparison gives a BOOL, and = is not the same as >=. The scenario only watches the three BOOL outputs; it does not show the value of Total itself or what happens when an INT overflows."
+            }
+          ],
+          "hints": [
+            {
+              "level": 1,
+              "text": "Total is an INT, so Total + 5 is an INT. A rising edge is Step TRUE now and StepWas FALSE on the previous scan."
+            },
+            {
+              "level": 2,
+              "text": "IF Reset THEN Total := 0; ELSIF Step AND NOT StepWas THEN Total := Total + 5; END_IF; StepWas := Step; Put it before the three comparison lines."
+            }
+          ],
+          "faultCases": [
+            "The starter declares Total and the three comparisons but never changes Total, so Low stays ON for ever; add 5 to Total on each rising edge of Step and clear it while Reset is TRUE."
+          ]
+        },
+        "es": {
+          "title": "Tipos, aritmética y comparación: un total y tres bandas",
+          "summary": "Mantenga un total en una variable INT, súmele en cada pulsación y conviértalo en tres resultados BOOL con operadores de comparación.",
+          "scope": "La evidencia de Tests es del runtime nativo POSIX con una tarea de 10 ms; no establece el rango de un sensor real ni el comportamiento ante desbordamiento de un controlador en particular, HIL ni certificación.",
+          "objectives": [
+            "Use una variable INT para un número y una BOOL para un verdadero o falso, y vea que una comparación convierte un número en un BOOL.",
+            "Sume a un número solo en el flanco ascendente de una entrada, para que un botón mantenido varios ciclos cuente una vez."
+          ],
+          "stages": [
+            {
+              "key": "objective",
+              "title": "Objetivo",
+              "body": "En src/TypedSteps.st están escritas la variable INT Total y las comparaciones Low (Total < 10), Exact (Total = 10) y High (Total > 10). Escriba la aritmética: en cada flanco ascendente de Step sume 5 a Total, y mientras Reset sea TRUE ponga Total en 0.",
+              "checkpoint": "Total va de 0 a 5, 10 y 15, y las tres salidas muestran en qué banda está."
+            },
+            {
+              "key": "predict",
+              "title": "Prediga",
+              "body": "Step se pulsa tres veces y la primera pulsación dura dos ciclos. Prediga qué salida está en ON a los 20, 40 y 60 ms.",
+              "checkpoint": "Low a los 20 ms (Total es 5); Exact a los 40 ms (Total es 10); High a los 60 ms (Total es 15)."
+            },
+            {
+              "key": "edit",
+              "title": "Edite",
+              "body": "Corrija esta omisión del programa inicial, guárdelo y pulse Comprobar: El programa inicial declara Total y las tres comparaciones pero nunca cambia Total, así que Low queda en ON para siempre; sume 5 a Total en cada flanco ascendente de Step y bórrelo mientras Reset sea TRUE.",
+              "checkpoint": "El escenario visible debe pasar con evidencia guardada del host."
+            },
+            {
+              "key": "run",
+              "title": "Ejecute",
+              "body": "Pulse Comprobar. Studio ejecuta el programa guardado contra el escenario de esta lección.",
+              "checkpoint": "El escenario se llama TypedSteps y contiene 8 assertions."
+            },
+            {
+              "key": "observe",
+              "title": "Observe",
+              "body": "Compare 20, 40 y 60 ms: cada vez está en ON exactamente una de las tres salidas, y Reset a los 80 ms devuelve Low.",
+              "checkpoint": "Exact está en ON solo en el total de 10, desde los 40 ms; la primera pulsación larga sumó 5 una vez, no dos."
+            },
+            {
+              "key": "reflect",
+              "title": "Reflexione",
+              "body": "¿Qué pasa si escribe Exact como Total >= 10? ¿Y si suma 5 en cada ciclo mientras Step es TRUE? Pruebe cada caso y vea qué assertion falla.",
+              "checkpoint": "Una comparación da un BOOL, y = no es lo mismo que >=. El escenario solo observa las tres salidas BOOL; no muestra el valor de Total ni lo que ocurre cuando un INT se desborda."
+            }
+          ],
+          "hints": [
+            {
+              "level": 1,
+              "text": "Total es un INT, así que Total + 5 es un INT. Un flanco ascendente es Step en TRUE ahora y StepWas en FALSE en el ciclo anterior."
+            },
+            {
+              "level": 2,
+              "text": "IF Reset THEN Total := 0; ELSIF Step AND NOT StepWas THEN Total := Total + 5; END_IF; StepWas := Step; Póngalo antes de las tres líneas de comparación."
+            }
+          ],
+          "faultCases": [
+            "El programa inicial declara Total y las tres comparaciones pero nunca cambia Total, así que Low queda en ON para siempre; sume 5 a Total en cada flanco ascendente de Step y bórrelo mientras Reset sea TRUE."
+          ]
+        }
+      }
+    },
+    {
+      "id": "analog-scaling-integer",
+      "version": 1,
+      "order": 20,
+      "module": 4,
+      "level": "intermediate",
+      "prerequisites": [
+        "types-arithmetic-comparison"
+      ],
+      "languages": [
+        "ST"
+      ],
+      "tracks": [
+        "simulation"
+      ],
+      "unsupported": {
+        "hardware": {
+          "reason": {
+            "en": "The lesson is graded on exact input timing at 10 ms steps; a board has no recorded trace for it yet.",
+            "es": "La lección se califica con tiempos exactos de entradas en pasos de 10 ms; todavía no hay una traza registrada desde una placa para ella."
+          },
+          "instead": {
+            "en": "Complete it in Simulation: its grade is the same each time and needs no board.",
+            "es": "Complétela en Simulación: su calificación es la misma cada vez y no necesita una placa."
+          }
+        }
+      },
+      "plant": null,
+      "plantMap": null,
+      "estimatedMinutes": 20,
+      "starter": {
+        "project": "scaling_starter",
+        "program": "src/Scaling.st"
+      },
+      "solution": {
+        "project": "scaling",
+        "program": "src/Scaling.st"
+      },
+      "scenario": {
+        "id": "Scaling",
+        "path": "tests/scaling.scenario.json",
+        "sha256": "50a0f5610f6eaceec898294dc11656ddd50f96238d3045ead06e5e471b0bef57",
+        "tickMs": 10,
+        "durationMs": 120,
+        "assertions": 9,
+        "canonical": "{\"durationMs\":120,\"events\":[{\"atMs\":0,\"set\":{\"Scaling.Enable\":false}},{\"atMs\":10,\"set\":{\"Scaling.Enable\":true}},{\"atMs\":110,\"set\":{\"Scaling.Enable\":false}}],\"expectations\":[{\"atMs\":0,\"condition\":{\"Scaling.Alarm\":false,\"Scaling.Warn\":false},\"kind\":\"AT\"},{\"atMs\":40,\"condition\":{\"Scaling.Alarm\":false,\"Scaling.Warn\":false},\"kind\":\"AT\"},{\"atMs\":50,\"condition\":{\"Scaling.Alarm\":false,\"Scaling.Warn\":true},\"kind\":\"AT\"},{\"atMs\":70,\"condition\":{\"Scaling.Alarm\":false,\"Scaling.Warn\":true},\"kind\":\"AT\"},{\"atMs\":80,\"condition\":{\"Scaling.Alarm\":true,\"Scaling.Warn\":true},\"kind\":\"AT\"},{\"atMs\":110,\"condition\":{\"Scaling.Alarm\":false,\"Scaling.Warn\":false},\"kind\":\"AT\"},{\"condition\":{\"Scaling.Warn\":true},\"fromMs\":50,\"kind\":\"RISING\",\"withinMs\":0},{\"condition\":{\"Scaling.Alarm\":true},\"fromMs\":80,\"kind\":\"RISING\",\"withinMs\":0},{\"condition\":{\"Scaling.Alarm\":true,\"Scaling.Warn\":false},\"kind\":\"NEVER\"}],\"id\":\"Scaling\",\"schemaVersion\":1,\"tickMs\":10}"
+      },
+      "regressionScenarios": [],
+      "text": {
+        "en": {
+          "title": "Analog scaling: from raw counts to a percentage",
+          "summary": "Scale a raw count from 0 to 1000 into a percentage with integer arithmetic, and raise a warning at 50 percent and an alarm at 80 percent.",
+          "scope": "Tests provide native POSIX host evidence with one 10 ms task; they do not establish the accuracy, noise or calibration of a real analog input, HIL, or certification.",
+          "objectives": [
+            "Scale a raw count to engineering units with a multiplication followed by a division, in that order.",
+            "See that integer division drops the remainder, and choose an integer type wide enough for the intermediate product."
+          ],
+          "stages": [
+            {
+              "key": "objective",
+              "title": "Objective",
+              "body": "The scenario inputs are BOOL, so this lesson does not read a real analog input: src/Scaling.st counts Raw up by 100 on each scan while Enable is TRUE, as a stand-in for a signal that rises from 0 to 1000. Write the scaling: Percent is Raw scaled from 0..1000 to 0..100.",
+              "checkpoint": "Percent follows Raw divided by 10, Warn turns ON at 50 percent and Alarm at 80 percent."
+            },
+            {
+              "key": "predict",
+              "title": "Predict",
+              "body": "Enable rises at 10 ms and Raw is 100 after that scan. Predict Warn and Alarm at 40, 50 and 80 ms.",
+              "checkpoint": "Both OFF at 40 ms; only Warn at 50 ms; both ON at 80 ms."
+            },
+            {
+              "key": "edit",
+              "title": "Edit",
+              "body": "Correct this starter fault, save it, then press Check: The starter divides before it multiplies, so the integer division Raw / 1000 gives 0 until Raw reaches 1000 and the percentage stays at 0; multiply by 100 first, then divide by 1000.",
+              "checkpoint": "The visible scenario must pass with saved host evidence."
+            },
+            {
+              "key": "run",
+              "title": "Run",
+              "body": "Press Check. Studio runs your saved program against the scenario of this lesson.",
+              "checkpoint": "The scenario is named Scaling and contains 9 assertions."
+            },
+            {
+              "key": "observe",
+              "title": "Observe",
+              "body": "Compare 40, 50 and 80 ms: Warn rises at 50 ms when Raw is 500, and Alarm at 80 ms when Raw is 800.",
+              "checkpoint": "Each output rises once; Alarm is never ON while Warn is OFF; Enable falling at 110 ms clears both."
+            },
+            {
+              "key": "reflect",
+              "title": "Reflect",
+              "body": "Why is DINT used here? Raw times 100 reaches 100000, more than a 16-bit integer holds, so the intermediate product needs a wide type. Check the width of INT on your target before you rely on it.",
+              "checkpoint": "The product is formed before the division, so its range decides the type, not the range of Raw. The scenario checks the two thresholds only; it does not check the rounding of other values."
+            }
+          ],
+          "hints": [
+            {
+              "level": 1,
+              "text": "Integer division gives a whole number: 500 / 1000 is 0. Which operation should come first so that the remainder is not lost?"
+            },
+            {
+              "level": 2,
+              "text": "Percent := (Raw * 100) / 1000; keeps the full product before dividing. Leave Raw and the two comparisons as they are."
+            }
+          ],
+          "faultCases": [
+            "The starter divides before it multiplies, so the integer division Raw / 1000 gives 0 until Raw reaches 1000 and the percentage stays at 0; multiply by 100 first, then divide by 1000."
+          ]
+        },
+        "es": {
+          "title": "Escalado analógico: de cuentas crudas a un porcentaje",
+          "summary": "Escale una cuenta cruda de 0 a 1000 a un porcentaje con aritmética entera, y active una advertencia al 50 por ciento y una alarma al 80 por ciento.",
+          "scope": "La evidencia de Tests es del runtime nativo POSIX con una tarea de 10 ms; no establece la exactitud, el ruido ni la calibración de una entrada analógica real, HIL ni certificación.",
+          "objectives": [
+            "Escale una cuenta cruda a unidades de ingeniería con una multiplicación seguida de una división, en ese orden.",
+            "Vea que la división entera descarta el resto, y elija un tipo entero lo bastante ancho para el producto intermedio."
+          ],
+          "stages": [
+            {
+              "key": "objective",
+              "title": "Objetivo",
+              "body": "Las entradas del escenario son BOOL, así que esta lección no lee una entrada analógica real: src/Scaling.st suma 100 a Raw en cada ciclo mientras Enable es TRUE, como sustituto de una señal que sube de 0 a 1000. Escriba el escalado: Percent es Raw escalado de 0..1000 a 0..100.",
+              "checkpoint": "Percent sigue a Raw dividido por 10, Warn pasa a ON al 50 por ciento y Alarm al 80 por ciento."
+            },
+            {
+              "key": "predict",
+              "title": "Prediga",
+              "body": "Enable sube a los 10 ms y Raw vale 100 después de ese ciclo. Prediga Warn y Alarm a los 40, 50 y 80 ms.",
+              "checkpoint": "Ambas en OFF a los 40 ms; solo Warn a los 50 ms; ambas en ON a los 80 ms."
+            },
+            {
+              "key": "edit",
+              "title": "Edite",
+              "body": "Corrija esta falla del programa inicial, guárdelo y pulse Comprobar: El programa inicial divide antes de multiplicar, así que la división entera Raw / 1000 da 0 hasta que Raw llega a 1000 y el porcentaje queda en 0; multiplique primero por 100 y luego divida por 1000.",
+              "checkpoint": "El escenario visible debe pasar con evidencia guardada del host."
+            },
+            {
+              "key": "run",
+              "title": "Ejecute",
+              "body": "Pulse Comprobar. Studio ejecuta el programa guardado contra el escenario de esta lección.",
+              "checkpoint": "El escenario se llama Scaling y contiene 9 assertions."
+            },
+            {
+              "key": "observe",
+              "title": "Observe",
+              "body": "Compare 40, 50 y 80 ms: Warn sube a los 50 ms cuando Raw vale 500, y Alarm a los 80 ms cuando vale 800.",
+              "checkpoint": "Cada salida sube una vez; Alarm nunca está en ON con Warn en OFF; la caída de Enable a los 110 ms borra las dos."
+            },
+            {
+              "key": "reflect",
+              "title": "Reflexione",
+              "body": "¿Por qué se usa DINT en esta lección? Raw por 100 llega a 100000, más de lo que cabe en un entero de 16 bits, así que el producto intermedio necesita un tipo ancho. Compruebe el ancho de INT en su destino antes de confiar en él.",
+              "checkpoint": "El producto se forma antes de la división, así que su rango decide el tipo, no el rango de Raw. El escenario comprueba solo los dos umbrales; no comprueba el redondeo de otros valores."
+            }
+          ],
+          "hints": [
+            {
+              "level": 1,
+              "text": "La división entera da un número entero: 500 / 1000 es 0. ¿Qué operación debe ir primero para no perder el resto?"
+            },
+            {
+              "level": 2,
+              "text": "Percent := (Raw * 100) / 1000; conserva el producto completo antes de dividir. Deje Raw y las dos comparaciones como están."
+            }
+          ],
+          "faultCases": [
+            "El programa inicial divide antes de multiplicar, así que la división entera Raw / 1000 da 0 hasta que Raw llega a 1000 y el porcentaje queda en 0; multiplique primero por 100 y luego divida por 1000."
+          ]
+        }
+      }
     }
   ],
   "course": {

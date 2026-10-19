@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "title": "Analog scaling: from raw counts to a percentage",
+  "summary": "Scale a raw count from 0 to 1000 into a percentage with integer arithmetic, and raise a warning at 50 percent and an alarm at 80 percent.",
+  "scope": "Tests provide native POSIX host evidence with one 10 ms task; they do not establish the accuracy, noise or calibration of a real analog input, HIL, or certification.",
+  "objectives": [
+    "Scale a raw count to engineering units with a multiplication followed by a division, in that order.",
+    "See that integer division drops the remainder, and choose an integer type wide enough for the intermediate product."
+  ],
+  "stages": [
+    {
+      "key": "objective",
+      "title": "Objective",
+      "body": "The scenario inputs are BOOL, so this lesson does not read a real analog input: src/Scaling.st counts Raw up by 100 on each scan while Enable is TRUE, as a stand-in for a signal that rises from 0 to 1000. Write the scaling: Percent is Raw scaled from 0..1000 to 0..100.",
+      "checkpoint": "Percent follows Raw divided by 10, Warn turns ON at 50 percent and Alarm at 80 percent."
+    },
+    {
+      "key": "predict",
+      "title": "Predict",
+      "body": "Enable rises at {{t:10}} ms and Raw is 100 after that scan. Predict Warn and Alarm at {{t:40}}, {{t:50}} and {{t:80}} ms.",
+      "checkpoint": "{{v:Scaling.Warn=false,Scaling.Alarm=false@40|Both OFF}} at {{t:40}} ms; {{v:Scaling.Warn=true,Scaling.Alarm=false@50|only Warn}} at {{t:50}} ms; {{v:Scaling.Warn=true,Scaling.Alarm=true@80|both ON}} at {{t:80}} ms."
+    },
+    {
+      "key": "edit",
+      "title": "Edit",
+      "body": "Correct this starter fault, save it, then press Check: The starter divides before it multiplies, so the integer division Raw / 1000 gives 0 until Raw reaches 1000 and the percentage stays at 0; multiply by 100 first, then divide by 1000.",
+      "checkpoint": "The visible scenario must pass with saved host evidence."
+    },
+    {
+      "key": "run",
+      "title": "Run",
+      "body": "Press Check. Studio runs your saved program against the scenario of this lesson.",
+      "checkpoint": "The scenario is named Scaling and contains {{assertions}} assertions."
+    },
+    {
+      "key": "observe",
+      "title": "Observe",
+      "body": "Compare {{t:40}}, {{t:50}} and {{t:80}} ms: Warn rises at {{t:50}} ms when Raw is 500, and Alarm at {{t:80}} ms when Raw is 800.",
+      "checkpoint": "Each output rises once; Alarm is never ON while Warn is OFF; Enable falling at {{t:110}} ms clears both."
+    },
+    {
+      "key": "reflect",
+      "title": "Reflect",
+      "body": "Why is DINT used here? Raw times 100 reaches 100000, more than a 16-bit integer holds, so the intermediate product needs a wide type. Check the width of INT on your target before you rely on it.",
+      "checkpoint": "The product is formed before the division, so its range decides the type, not the range of Raw. The scenario checks the two thresholds only; it does not check the rounding of other values."
+    }
+  ],
+  "hints": [
+    {
+      "level": 1,
+      "text": "Integer division gives a whole number: 500 / 1000 is 0. Which operation should come first so that the remainder is not lost?"
+    },
+    {
+      "level": 2,
+      "text": "Percent := (Raw * 100) / 1000; keeps the full product before dividing. Leave Raw and the two comparisons as they are."
+    }
+  ],
+  "faultCases": [
+    "The starter divides before it multiplies, so the integer division Raw / 1000 gives 0 until Raw reaches 1000 and the percentage stays at 0; multiply by 100 first, then divide by 1000."
+  ]
+}
