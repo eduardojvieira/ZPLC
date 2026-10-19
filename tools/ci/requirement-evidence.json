@@ -2523,6 +2523,9 @@
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"11 Learn with no project open"}
   ],
   "LRN-002": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/components/LearnHomeView.test.tsx","test":"offers Continue with the lesson to resume: the first lesson for a new learner, the last one worked on after that","note":"LRN-002: Continue resumes the last lesson worked on and starts the first lesson for a new learner"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/components/LearnHomeView.test.tsx","test":"says the state of each lesson in words, and why a locked lesson is locked","note":"LRN-002: the four states of a lesson (locked, available, in progress, passed) in words, with the reason a lesson is locked"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/components/LearnHomeView.test.tsx","test":"lists the tracks and the twelve modules in order with level, required module and time, the empty ones without lessons","note":"LRN-002: the tracks, the modules in order, and each module's level, required module and time (a rendered view over props)"},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"11 Learn with no project open","partial":true}
   ],
   "LRN-003": [
@@ -2589,6 +2592,7 @@
     {"kind":"unit","ref":"tools/docs/generate_course_pages.test.ts","test":"LRN-035 course pages: a page for every module and lesson, generated from the lesson packages","partial":true,"note":"a page for each of the 12 modules and 26 lessons, a module index and a plants page, in English and Spanish, generated from the lesson index and drift-checked by this test; they are unlisted from the sidebar and linked from the course outline. Open: a faceplate page, and a page for each learner board kit (no learner board kit exists in the repository yet); the scenario format page is reference/scenario-file.md"}
   ],
   "LRN-020": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/components/labPlayback.test.ts","test":"keeps the Lab view recorded, manually controllable, and explicitly non-HIL","note":"LRN-020: the recorded run stays available as a replay of recorded samples and is labelled as a replay that is not live runtime, hardware or HIL evidence; the live closed loop is journey 52"},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"52 A lesson plant runs live in closed loop, with pause, step and a fault action, and the recorded run stays a labelled replay","partial":true}
   ],
   "LRN-021": [
