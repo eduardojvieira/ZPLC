@@ -353,6 +353,20 @@ operates a switch, a push button and a slider of a project with custom names in 
 application, with the keyboard alone as well, and sees the program's output follow
 (requirements LRN-017, IDE-024). Native POSIX host evidence, not hardware.
 
+## Live plants
+
+The **Lab** tab starts with **Live plant**: the motor, the conveyor, the tank or the pedestrian crossing of a lesson, running in closed loop with the simulated program. A plant is drawn as a two-dimensional schematic. It reads the outputs of the program (the motor command, the belt, the pump, the lamps) and drives the sensors the program reads as inputs (at speed, part present, level low and high, jam, pedestrian request), once per scan of the runtime: the plant is stepped by the scan counter and never by a clock, so it follows the program and not the refresh rate of the window.
+
+A plant is bound to the program by an explicit mapping, a data file `plant-map.json` that every lesson naming a plant ships next to its starter (`packages/zplc-ide/lessons/<lesson>/plant-map.json`): plant signal to `Program.Name`. The panel offers the mappings that bind to every I/O point of the loaded program; no signal is found by guessing a variable name. The faceplate sits under the plant, so you operate an input and see the plant react.
+
+**Play / Pause plant**, **Step one scan** (enabled while paused, advances exactly one scan), **Reset plant** and the fault actions of the plant are buttons, so the keyboard reaches all of them. The fault actions are: stall the motor; jam the belt and make the next part metal; fail the pump; a pedestrian presses the button and block the crossing. A fault button says whether it is on. Every lamp of the drawing is a glyph and a word (for example `● COMMAND ON`, `▲ STALL FAULT`), never a colour alone, nothing glows or pulses, and the drawing is redrawn when the plant steps, so reduced motion has nothing to switch off. The text equivalent of the state (for example "Motor stalled at 0 per mille") is the accessible name of the drawing, is shown under it and is announced when the situation changes (stalled, at speed, jammed, low), not on every scan.
+
+The plant is deterministic: it uses integer arithmetic in permille with a fixed step, and no clock, random number or floating point, so the same program and input script give the same trace on every platform. A golden test pins the hash of the trace of each plant.
+
+The recorded run of a scenario is still there under **Replay of a recorded run**, and says that it is a replay of a recorded native POSIX host run, not live and not runtime, hardware or HIL evidence.
+
+Evidence level: host. `packages/zplc-ide/src/plants/plantEngine.test.ts` covers each plant and the golden traces, `plantMap.test.ts` and `lessonPlantMaps.test.ts` the mapping against the real compiled starter of every plant lesson, `plantLoop.test.ts` the closed loop over a fake program, `plantFacts.test.ts` and `PlantView.test.tsx` the text equivalent and the drawings, and journey 51 of `bun run test:journeys` runs the motor lesson in the real application: operates an input, sees the plant react, pauses, steps and stalls it with the keyboard alone and sees the announcements and the replay label (requirements LRN-018; partly LRN-019, LRN-020, LRN-021, LRN-037). Native POSIX host evidence, not hardware. The trace hashes were not compared across Linux, macOS and Windows runners: only Linux was run.
+
 ## Notifications
 
 The result of a build, a save, a deploy, a connection change and a test run appears

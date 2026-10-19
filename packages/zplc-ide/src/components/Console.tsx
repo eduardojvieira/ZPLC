@@ -879,7 +879,7 @@ export function Console({ debugController }: ConsoleProps) {
             presentation={typeof workspaceTestStateForLink === 'object' ? workspaceTestStateForLink.presentation : null}
             runDisabled={workspaceTestAvailabilityState !== 'ready'}
             running={workspaceTestBusy}
-            onRun={() => { void runWorkspaceTests(); }}
+            onRun={() => { void runWorkspaceTests(); }} controller={debugController}
           />
         )}
 

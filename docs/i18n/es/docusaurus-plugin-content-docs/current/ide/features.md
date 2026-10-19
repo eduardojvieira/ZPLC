@@ -360,6 +360,20 @@ y un control deslizante de un proyecto con nombres propios en la aplicación rea
 solo con el teclado, y ve que la salida del programa lo sigue (requisitos LRN-017,
 IDE-024). Evidencia de host POSIX nativo, no de hardware.
 
+## Plantas en vivo
+
+La pestaña **Laboratorio** empieza con **Planta en vivo**: el motor, la cinta transportadora, el tanque o el cruce peatonal de una lección, en lazo cerrado con el programa simulado. Una planta se dibuja como un esquema bidimensional. Lee las salidas del programa (la orden del motor, la cinta, la bomba, las luces) y maneja los sensores que el programa lee como entradas (a velocidad, pieza presente, nivel bajo y alto, atasco, solicitud peatonal), una vez por ciclo del runtime: la planta avanza con el contador de ciclos y nunca con un reloj, de modo que sigue al programa y no la frecuencia de refresco de la ventana.
+
+Una planta se vincula al programa con una asignación explícita, un archivo de datos `plant-map.json` que toda lección que nombra una planta incluye junto a su inicio (`packages/zplc-ide/lessons/<lección>/plant-map.json`): señal de la planta hacia `Programa.Nombre`. El panel ofrece las asignaciones que se vinculan con todos los puntos de E/S del programa cargado; ninguna señal se encuentra adivinando el nombre de una variable. El faceplate queda bajo la planta, de modo que puede accionar una entrada y ver cómo reacciona la planta.
+
+**Reanudar / Pausar la planta**, **Avanzar un ciclo** (disponible en pausa, avanza exactamente un ciclo), **Reiniciar la planta** y las acciones de falla de la planta son botones, por lo que el teclado llega a todos. Las acciones de falla son: atascar el motor; atascar la cinta y hacer metálica la próxima pieza; fallar la bomba; un peatón pulsa el botón y bloquear el cruce. Un botón de falla indica si está activo. Cada luz del dibujo es un símbolo y una palabra (por ejemplo `● ORDEN ACTIVO`, `▲ ATASCO FAULT`), nunca solo color; nada brilla ni pulsa, y el dibujo se redibuja cuando la planta avanza, así que la reducción de movimiento no tiene nada que desactivar. El equivalente en texto del estado (por ejemplo «Motor atascado a 0 milésimas») es el nombre accesible del dibujo, se muestra debajo y se anuncia cuando cambia la situación (atascado, a velocidad, trabado, bajo), no en cada ciclo.
+
+La planta es determinista: usa aritmética entera en milésimas con un paso fijo, y no usa reloj, números aleatorios ni coma flotante, de modo que el mismo programa y la misma secuencia de entradas dan la misma traza en cualquier plataforma. Una prueba de referencia fija el hash de la traza de cada planta.
+
+La ejecución registrada de un escenario sigue disponible bajo **Repetición de una ejecución registrada**, e indica que es una repetición de una ejecución registrada en el host POSIX nativo, no está en vivo y no es evidencia del runtime, del hardware ni de HIL.
+
+Nivel de evidencia: host. `packages/zplc-ide/src/plants/plantEngine.test.ts` cubre cada planta y las trazas de referencia, `plantMap.test.ts` y `lessonPlantMaps.test.ts` la asignación contra el inicio real compilado de cada lección con planta, `plantLoop.test.ts` el lazo cerrado sobre un programa simulado, `plantFacts.test.ts` y `PlantView.test.tsx` el equivalente en texto y los dibujos, y el recorrido 51 de `bun run test:journeys` ejecuta la lección del motor en la aplicación real: acciona una entrada, ve reaccionar la planta, la pausa, avanza y la atasca solo con el teclado, y ve los anuncios y la etiqueta de repetición (requisitos LRN-018; en parte LRN-019, LRN-020, LRN-021, LRN-037). Evidencia del host POSIX nativo, no de hardware. Los hashes de traza no se compararon entre ejecutores de Linux, macOS y Windows: solo se ejecutó en Linux.
+
 ## Notificaciones
 
 El resultado de una compilación, un guardado, un despliegue, un cambio de conexión

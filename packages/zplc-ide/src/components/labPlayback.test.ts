@@ -41,7 +41,9 @@ describe('Lab playback', () => {
 
   test('keeps the Lab view recorded, manually controllable, and explicitly non-HIL', () => {
     const source = withEnglishMessages(readFileSync(join(import.meta.dir, 'LabPanel.tsx'), 'utf8'));
-    expect(source).toContain('Recorded native POSIX host scenario — not live runtime, hardware, or HIL evidence.');
+    // LRN-020: the recorded run is labelled as a replay, and says it is not live runtime, hardware or HIL evidence.
+    expect(source).toContain('Replay of a recorded run');
+    expect(source).toContain('a replay is not runtime, hardware or HIL evidence.');
     expect(source).toContain('Run host scenarios');
     expect(source).toContain('Play');
     expect(source).toContain('Pause');

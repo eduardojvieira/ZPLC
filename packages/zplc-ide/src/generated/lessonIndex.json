@@ -17,6 +17,7 @@
         "simulation"
       ],
       "plant": null,
+      "plantMap": null,
       "estimatedMinutes": 20,
       "starter": {
         "project": "motor_start_stop_starter",
@@ -175,6 +176,20 @@
         "simulation"
       ],
       "plant": "pedestrian-v1",
+      "plantMap": {
+        "schemaVersion": 1,
+        "plant": "pedestrian-v1",
+        "reads": {
+          "vehicleRed": "PedestrianCrossing.VehicleRed",
+          "vehicleYellow": "PedestrianCrossing.VehicleYellow",
+          "vehicleGreen": "PedestrianCrossing.VehicleGreen",
+          "pedWalk": "PedestrianCrossing.PedWalk",
+          "pedStop": "PedestrianCrossing.PedStop"
+        },
+        "drives": {
+          "pedRequest": "PedestrianCrossing.PedRequest"
+        }
+      },
       "estimatedMinutes": 25,
       "starter": {
         "project": "pedestrian_crossing_starter",
@@ -333,6 +348,18 @@
         "simulation"
       ],
       "plant": "tank-v1",
+      "plantMap": {
+        "schemaVersion": 1,
+        "plant": "tank-v1",
+        "reads": {
+          "pump": "TankLevel.Pump"
+        },
+        "drives": {
+          "levelLow": "TankLevel.LevelLow",
+          "levelHigh": "TankLevel.LevelHigh",
+          "pumpFault": "TankLevel.PumpFault"
+        }
+      },
       "estimatedMinutes": 25,
       "starter": {
         "project": "tank_level_starter",
@@ -492,6 +519,20 @@
         "simulation"
       ],
       "plant": "conveyor-v1",
+      "plantMap": {
+        "schemaVersion": 1,
+        "plant": "conveyor-v1",
+        "reads": {
+          "belt": "Conveyor.BeltCommand",
+          "diverter": "Conveyor.DiverterCommand"
+        },
+        "drives": {
+          "partAtClassifier": "Conveyor.PartAtClassifier",
+          "metalDetected": "Conveyor.MetalDetected",
+          "partAtDiverter": "Conveyor.PartAtDiverter",
+          "jamDetected": "Conveyor.JamDetected"
+        }
+      },
       "estimatedMinutes": 25,
       "starter": {
         "project": "conveyor_01_starter",
@@ -650,6 +691,7 @@
         "simulation"
       ],
       "plant": null,
+      "plantMap": null,
       "estimatedMinutes": 20,
       "starter": {
         "project": "blinky_starter",
@@ -808,6 +850,16 @@
         "simulation"
       ],
       "plant": "motor-v1",
+      "plantMap": {
+        "schemaVersion": 1,
+        "plant": "motor-v1",
+        "reads": {
+          "command": "MotorPlant.Command"
+        },
+        "drives": {
+          "atSpeed": "MotorPlant.AtSpeed"
+        }
+      },
       "estimatedMinutes": 20,
       "starter": {
         "project": "motor_plant_starter",
@@ -966,6 +1018,7 @@
         "simulation"
       ],
       "plant": null,
+      "plantMap": null,
       "estimatedMinutes": 15,
       "starter": {
         "project": "edge_counter_starter",
@@ -1122,6 +1175,7 @@
         "simulation"
       ],
       "plant": null,
+      "plantMap": null,
       "estimatedMinutes": 10,
       "starter": {
         "project": "scan_snapshot_starter",
@@ -1292,6 +1346,7 @@
         "simulation"
       ],
       "plant": null,
+      "plantMap": null,
       "estimatedMinutes": 25,
       "starter": {
         "project": "conveyor_01_starter",
@@ -1452,6 +1507,7 @@
         "simulation"
       ],
       "plant": null,
+      "plantMap": null,
       "estimatedMinutes": 20,
       "starter": {
         "project": "conveyor_two_parts_starter",

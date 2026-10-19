@@ -1,0 +1,10 @@
+{
+  "schemaVersion": 1,
+  "plant": "motor-v1",
+  "reads": {
+    "command": "MotorPlant.Command"
+  },
+  "drives": {
+    "atSpeed": "MotorPlant.AtSpeed"
+  }
+}

@@ -32,6 +32,15 @@ describe('the generated lesson index (LRN-027, LRN-028)', () => {
     expect<string[]>([...LESSON_IDS]).toEqual(built.index.lessons.map((lesson) => lesson.id));
   });
 
+  it('refuses a lesson that names a plant without its mapping, or a mapping that names another plant (LRN-021)', () => {
+    const root = copyOfLessons();
+    rmSync(join(root, 'tank-level-fault-reset', 'plant-map.json'));
+    writeFileSync(join(root, 'motor-plant-feedback', 'plant-map.json'), readFileSync(join(LESSONS_DIRECTORY, 'tank-level-fault-reset', 'plant-map.json'), 'utf8'));
+    const { problems } = generate(root);
+    expect(problems.some((problem) => problem.includes('tank-level-fault-reset') && problem.includes('has no plant-map.json'))).toBe(true);
+    expect(problems.some((problem) => problem.includes('motor-plant-feedback/plant-map.json') && problem.includes('differs from the manifest plant'))).toBe(true);
+  });
+
   it('is current as a file: `--check` of the generator exits 0', () => {
     const run = Bun.spawnSync(['bun', join(import.meta.dir, 'generate-lesson-index.ts'), '--check'], { cwd: ROOT });
     expect({ code: run.exitCode, out: run.stdout.toString(), err: run.stderr.toString() }).toEqual({ code: 0, out: 'lesson index is current\n', err: '' });
