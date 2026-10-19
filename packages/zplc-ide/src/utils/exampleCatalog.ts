@@ -79,6 +79,7 @@ export const EXAMPLE_CATALOG: Readonly<Record<string, ExampleEntry>> = {
   delays: example('delays', { group: 'first-steps', level: 'beginner', languages: ['ST'], showOnWelcome: true }),
   seal_in_ladder: example('seal_in_ladder', { group: 'first-steps', level: 'beginner', languages: ['LD'], showOnWelcome: true }),
   batch_count_fbd: example('batch_count_fbd', { group: 'first-steps', level: 'beginner', languages: ['FBD'], showOnWelcome: true }),
+  door_alarm_il: example('door_alarm_il', { group: 'first-steps', level: 'intermediate', languages: ['IL'], showOnWelcome: true }),
 
   // Motors and drives
   motor_start_stop: example('motor_start_stop', { group: 'motors', level: 'beginner', languages: ['ST'], showOnWelcome: true }),

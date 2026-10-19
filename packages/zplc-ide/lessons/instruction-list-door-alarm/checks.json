@@ -1,0 +1,41 @@
+{
+  "schemaVersion": 1,
+  "alsoGreen": [
+    {
+      "intent": "Structured Text instead of Instruction List: the same condition as one assignment",
+      "files": {
+        "src/DoorAlarm.st": "PROGRAM DoorAlarm\nVAR_INPUT Armed AT %I0.0 : BOOL; DoorOpen AT %I0.1 : BOOL; Silence AT %I0.2 : BOOL; END_VAR\nVAR_OUTPUT Siren AT %Q0.0 : BOOL; END_VAR\nSiren := ((Armed AND DoorOpen) OR Siren) AND NOT Silence;\nEND_PROGRAM\n",
+        "zplc.json": "{\"schemaVersion\":2,\"name\":\"door_alarm_il_starter\",\"version\":\"1.0.0\",\"target\":{\"board\":\"posix\"},\"tasks\":[{\"name\":\"MainTask\",\"trigger\":\"cyclic\",\"interval_ms\":10,\"priority\":1,\"programs\":[\"DoorAlarm.st\"]}]}"
+      },
+      "remove": [
+        "src/DoorAlarm.il"
+      ]
+    }
+  ],
+  "wrong": [
+    {
+      "intent": "holds nothing: the siren follows the door",
+      "files": {
+        "src/DoorAlarm.il": "PROGRAM DoorAlarm\nVAR_INPUT\n    Armed AT %I0.0 : BOOL;\n    DoorOpen AT %I0.1 : BOOL;\n    Silence AT %I0.2 : BOOL;\nEND_VAR\nVAR_OUTPUT\n    Siren AT %Q0.0 : BOOL;\nEND_VAR\n\n        LD    Armed\n        AND   DoorOpen\n        ANDN  Silence\n        ST    Siren\nEND_PROGRAM\n"
+      }
+    },
+    {
+      "intent": "never reads Silence, so the siren cannot be turned off",
+      "files": {
+        "src/DoorAlarm.il": "PROGRAM DoorAlarm\nVAR_INPUT\n    Armed AT %I0.0 : BOOL;\n    DoorOpen AT %I0.1 : BOOL;\n    Silence AT %I0.2 : BOOL;\nEND_VAR\nVAR_OUTPUT\n    Siren AT %Q0.0 : BOOL;\nEND_VAR\n\n        LD    Armed\n        AND   DoorOpen\n        OR    Siren\n        ST    Siren\nEND_PROGRAM\n"
+      }
+    },
+    {
+      "intent": "uses OR where AND is needed, so the siren sounds when the alarm is armed with the door closed",
+      "files": {
+        "src/DoorAlarm.il": "PROGRAM DoorAlarm\nVAR_INPUT\n    Armed AT %I0.0 : BOOL;\n    DoorOpen AT %I0.1 : BOOL;\n    Silence AT %I0.2 : BOOL;\nEND_VAR\nVAR_OUTPUT\n    Siren AT %Q0.0 : BOOL;\nEND_VAR\n\n        LD    Armed\n        OR    DoorOpen\n        OR    Siren\n        ANDN  Silence\n        ST    Siren\nEND_PROGRAM\n"
+      }
+    },
+    {
+      "intent": "applies Silence before the hold, so the hold puts the siren back on",
+      "files": {
+        "src/DoorAlarm.il": "PROGRAM DoorAlarm\nVAR_INPUT\n    Armed AT %I0.0 : BOOL;\n    DoorOpen AT %I0.1 : BOOL;\n    Silence AT %I0.2 : BOOL;\nEND_VAR\nVAR_OUTPUT\n    Siren AT %Q0.0 : BOOL;\nEND_VAR\n\n        LD    Armed\n        AND   DoorOpen\n        ANDN  Silence\n        OR    Siren\n        ST    Siren\nEND_PROGRAM\n"
+      }
+    }
+  ]
+}

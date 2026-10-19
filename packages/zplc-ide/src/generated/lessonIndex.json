@@ -4013,6 +4013,177 @@
           ]
         }
       }
+    },
+    {
+      "id": "instruction-list-door-alarm",
+      "version": 1,
+      "order": 24,
+      "module": 9,
+      "level": "advanced",
+      "prerequisites": [
+        "function-block-pump-pair"
+      ],
+      "languages": [
+        "IL"
+      ],
+      "tracks": [
+        "simulation"
+      ],
+      "unsupported": {
+        "hardware": {
+          "reason": {
+            "en": "The lesson is graded on a door and a silence button replayed at exact steps, and no board trace has been recorded for it.",
+            "es": "La lección se califica con una puerta y un botón de silencio reproducidos en pasos exactos, y no se ha registrado una traza de placa para ella."
+          },
+          "instead": {
+            "en": "Complete it in Simulation: its grade is the same each time and needs no board.",
+            "es": "Complétela en Simulación: su calificación es la misma cada vez y no necesita una placa."
+          }
+        }
+      },
+      "plant": null,
+      "plantMap": null,
+      "estimatedMinutes": 20,
+      "starter": {
+        "project": "door_alarm_il_starter",
+        "program": "src/DoorAlarm.il"
+      },
+      "solution": {
+        "project": "door_alarm_il",
+        "program": "src/DoorAlarm.il"
+      },
+      "scenario": {
+        "id": "DoorAlarm",
+        "path": "tests/door-alarm.scenario.json",
+        "sha256": "fff8cfd3a2aebda7a698c19f0846bd7f26214e0d8a35b987a1b2957dd87e408d",
+        "tickMs": 10,
+        "durationMs": 120,
+        "assertions": 12,
+        "canonical": "{\"durationMs\":120,\"events\":[{\"atMs\":0,\"set\":{\"DoorAlarm.Armed\":true,\"DoorAlarm.DoorOpen\":false,\"DoorAlarm.Silence\":false}},{\"atMs\":10,\"set\":{\"DoorAlarm.DoorOpen\":true}},{\"atMs\":30,\"set\":{\"DoorAlarm.DoorOpen\":false}},{\"atMs\":50,\"set\":{\"DoorAlarm.Silence\":true}},{\"atMs\":60,\"set\":{\"DoorAlarm.Silence\":false}},{\"atMs\":70,\"set\":{\"DoorAlarm.Armed\":false,\"DoorAlarm.DoorOpen\":true}},{\"atMs\":90,\"set\":{\"DoorAlarm.Armed\":true}},{\"atMs\":100,\"set\":{\"DoorAlarm.Silence\":true}},{\"atMs\":110,\"set\":{\"DoorAlarm.Silence\":false}}],\"expectations\":[{\"atMs\":0,\"condition\":{\"DoorAlarm.Siren\":false},\"kind\":\"AT\"},{\"atMs\":10,\"condition\":{\"DoorAlarm.Siren\":true},\"kind\":\"AT\"},{\"atMs\":40,\"condition\":{\"DoorAlarm.Siren\":true},\"kind\":\"AT\"},{\"atMs\":50,\"condition\":{\"DoorAlarm.Siren\":false},\"kind\":\"AT\"},{\"atMs\":60,\"condition\":{\"DoorAlarm.Siren\":false},\"kind\":\"AT\"},{\"atMs\":80,\"condition\":{\"DoorAlarm.Siren\":false},\"kind\":\"AT\"},{\"atMs\":90,\"condition\":{\"DoorAlarm.Siren\":true},\"kind\":\"AT\"},{\"atMs\":100,\"condition\":{\"DoorAlarm.Siren\":false},\"kind\":\"AT\"},{\"atMs\":110,\"condition\":{\"DoorAlarm.Siren\":true},\"kind\":\"AT\"},{\"condition\":{\"DoorAlarm.Siren\":true},\"fromMs\":10,\"kind\":\"RISING\",\"withinMs\":0},{\"condition\":{\"DoorAlarm.Siren\":false},\"fromMs\":50,\"kind\":\"FALLING\",\"withinMs\":0},{\"condition\":{\"DoorAlarm.Siren\":true},\"forMs\":10,\"fromMs\":30,\"kind\":\"FOR\"}],\"id\":\"DoorAlarm\",\"schemaVersion\":1,\"tickMs\":10}"
+      },
+      "regressionScenarios": [],
+      "text": {
+        "en": {
+          "title": "Instruction List: the current result and the order of instructions",
+          "summary": "Complete an Instruction List program so that a door alarm holds itself on after the door closes and is silenced by a button, and see that the order of the instructions decides the result.",
+          "scope": "Tests provide native POSIX host evidence with one 10 ms task; they do not establish alarm requirements, siren timing or any real machine behaviour, HIL, or certification.",
+          "objectives": [
+            "Read an Instruction List program as one current result that each instruction combines with an operand, from top to bottom.",
+            "Use LD, AND, OR, ANDN and ST, and see that moving one instruction changes the logic."
+          ],
+          "stages": [
+            {
+              "key": "objective",
+              "title": "Objective",
+              "body": "In src/DoorAlarm.il each line is an instruction: LD loads an operand into the current result, AND combines it, and ST stores the result in Siren. Add two lines before ST so that Siren holds itself on and Silence turns it off: OR Siren, then ANDN Silence.",
+              "checkpoint": "The siren starts when the alarm is armed and the door opens, stays on after the door closes, and goes off when Silence is pressed."
+            },
+            {
+              "key": "predict",
+              "title": "Predict",
+              "body": "The door opens at 10 ms and closes at 30 ms. Silence is pressed at 50 ms. Predict Siren at 40, 50 and 80 ms; the door opens at 70 ms while the alarm is disarmed.",
+              "checkpoint": "ON at 40 ms, after the door closed; OFF at 50 ms; OFF at 80 ms, because the alarm is disarmed."
+            },
+            {
+              "key": "edit",
+              "title": "Edit",
+              "body": "Correct this starter omission, save it, then press Check: The starter loads Armed, ANDs it with DoorOpen and stores the result, so Siren follows the door and drops at 30 ms when the door closes; add OR Siren so the siren holds itself on, then ANDN Silence so that Silence turns it off, in that order.",
+              "checkpoint": "The visible scenario must pass with saved host evidence."
+            },
+            {
+              "key": "run",
+              "title": "Run",
+              "body": "Press Check. Studio runs your saved program against the scenario of this lesson.",
+              "checkpoint": "The scenario is named DoorAlarm and contains 12 assertions."
+            },
+            {
+              "key": "observe",
+              "title": "Observe",
+              "body": "Compare 10, 40 and 50 ms: Siren rises with the door, holds after it closes, and falls with Silence; it rises again at 90 ms when the alarm is armed with the door still open.",
+              "checkpoint": "Silence at 100 ms drops the siren even though the door is open, and at 110 ms the siren starts again because the cause is still there."
+            },
+            {
+              "key": "reflect",
+              "title": "Reflect",
+              "body": "What happens if ANDN Silence comes before OR Siren? Swap the two lines and see which assertion fails.",
+              "checkpoint": "Each instruction works on the result of the lines above it, so OR Siren after ANDN Silence puts the held value back. The scenario shows the logic only; it is not an alarm system."
+            }
+          ],
+          "hints": [
+            {
+              "level": 1,
+              "text": "Siren holds itself on when its own previous value is part of the condition. Which instruction combines the current result with another operand using OR?"
+            },
+            {
+              "level": 2,
+              "text": "LD Armed, AND DoorOpen, OR Siren, ANDN Silence, ST Siren: five lines, one operand each."
+            }
+          ],
+          "faultCases": [
+            "The starter loads Armed, ANDs it with DoorOpen and stores the result, so Siren follows the door and drops at 30 ms when the door closes; add OR Siren so the siren holds itself on, then ANDN Silence so that Silence turns it off, in that order."
+          ]
+        },
+        "es": {
+          "title": "Lista de instrucciones: el resultado actual y el orden de las instrucciones",
+          "summary": "Complete un programa en lista de instrucciones para que una alarma de puerta se mantenga encendida al cerrar la puerta y se silencie con un botón, y vea que el orden de las instrucciones decide el resultado.",
+          "scope": "La evidencia de Tests es del runtime nativo POSIX con una tarea de 10 ms; no establece requisitos de alarmas, tiempos de sirena ni el comportamiento de una máquina real, HIL ni certificación.",
+          "objectives": [
+            "Lea un programa en lista de instrucciones como un resultado actual que cada instrucción combina con un operando, de arriba hacia abajo.",
+            "Use LD, AND, OR, ANDN y ST, y vea que mover una instrucción cambia la lógica."
+          ],
+          "stages": [
+            {
+              "key": "objective",
+              "title": "Objetivo",
+              "body": "En src/DoorAlarm.il cada línea es una instrucción: LD carga un operando en el resultado actual, AND lo combina y ST guarda el resultado en Siren. Agregue dos líneas antes de ST para que Siren se mantenga encendida y Silence la apague: OR Siren y luego ANDN Silence.",
+              "checkpoint": "La sirena suena cuando la alarma está armada y la puerta se abre, sigue sonando al cerrarse la puerta y se apaga al pulsar Silence."
+            },
+            {
+              "key": "predict",
+              "title": "Prediga",
+              "body": "La puerta se abre a los 10 ms y se cierra a los 30 ms. Silence se pulsa a los 50 ms. Prediga Siren a los 40, 50 y 80 ms; la puerta se abre a los 70 ms con la alarma desarmada.",
+              "checkpoint": "En ON a los 40 ms, con la puerta ya cerrada; en OFF a los 50 ms; en OFF a los 80 ms, porque la alarma está desarmada."
+            },
+            {
+              "key": "edit",
+              "title": "Edite",
+              "body": "Corrija esta omisión del programa inicial, guárdelo y pulse Comprobar: El programa inicial carga Armed, le aplica AND con DoorOpen y guarda el resultado, así que Siren sigue a la puerta y se apaga a los 30 ms cuando la puerta se cierra; agregue OR Siren para que la sirena se mantenga encendida y luego ANDN Silence para que Silence la apague, en ese orden.",
+              "checkpoint": "El escenario visible debe pasar con evidencia guardada del host."
+            },
+            {
+              "key": "run",
+              "title": "Ejecute",
+              "body": "Pulse Comprobar. Studio ejecuta el programa guardado contra el escenario de esta lección.",
+              "checkpoint": "El escenario se llama DoorAlarm y contiene 12 assertions."
+            },
+            {
+              "key": "observe",
+              "title": "Observe",
+              "body": "Compare 10, 40 y 50 ms: Siren sube con la puerta, se mantiene al cerrarse y cae con Silence; vuelve a subir a los 90 ms cuando se arma la alarma con la puerta aún abierta.",
+              "checkpoint": "Silence a los 100 ms apaga la sirena aunque la puerta esté abierta, y a los 110 ms la sirena vuelve a sonar porque la causa sigue presente."
+            },
+            {
+              "key": "reflect",
+              "title": "Reflexione",
+              "body": "¿Qué pasa si ANDN Silence va antes de OR Siren? Intercambie las dos líneas y vea qué assertion falla.",
+              "checkpoint": "Cada instrucción trabaja sobre el resultado de las líneas anteriores, así que OR Siren después de ANDN Silence devuelve el valor retenido. El escenario muestra solo la lógica; no es un sistema de alarma."
+            }
+          ],
+          "hints": [
+            {
+              "level": 1,
+              "text": "Siren se mantiene encendida cuando su propio valor anterior forma parte de la condición. ¿Qué instrucción combina el resultado actual con otro operando mediante OR?"
+            },
+            {
+              "level": 2,
+              "text": "LD Armed, AND DoorOpen, OR Siren, ANDN Silence, ST Siren: cinco líneas, un operando cada una."
+            }
+          ],
+          "faultCases": [
+            "El programa inicial carga Armed, le aplica AND con DoorOpen y guarda el resultado, así que Siren sigue a la puerta y se apaga a los 30 ms cuando la puerta se cierra; agregue OR Siren para que la sirena se mantenga encendida y luego ANDN Silence para que Silence la apague, en ese orden."
+          ]
+        }
+      }
     }
   ],
   "course": {

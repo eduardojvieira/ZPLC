@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "title": "Instruction List: the current result and the order of instructions",
+  "summary": "Complete an Instruction List program so that a door alarm holds itself on after the door closes and is silenced by a button, and see that the order of the instructions decides the result.",
+  "scope": "Tests provide native POSIX host evidence with one 10 ms task; they do not establish alarm requirements, siren timing or any real machine behaviour, HIL, or certification.",
+  "objectives": [
+    "Read an Instruction List program as one current result that each instruction combines with an operand, from top to bottom.",
+    "Use LD, AND, OR, ANDN and ST, and see that moving one instruction changes the logic."
+  ],
+  "stages": [
+    {
+      "key": "objective",
+      "title": "Objective",
+      "body": "In src/DoorAlarm.il each line is an instruction: LD loads an operand into the current result, AND combines it, and ST stores the result in Siren. Add two lines before ST so that Siren holds itself on and Silence turns it off: OR Siren, then ANDN Silence.",
+      "checkpoint": "The siren starts when the alarm is armed and the door opens, stays on after the door closes, and goes off when Silence is pressed."
+    },
+    {
+      "key": "predict",
+      "title": "Predict",
+      "body": "The door opens at {{t:10}} ms and closes at {{t:30}} ms. Silence is pressed at {{t:50}} ms. Predict Siren at {{t:40}}, {{t:50}} and {{t:80}} ms; the door opens at {{t:70}} ms while the alarm is disarmed.",
+      "checkpoint": "{{v:DoorAlarm.Siren=true@40|ON}} at {{t:40}} ms, after the door closed; {{v:DoorAlarm.Siren=false@50|OFF}} at {{t:50}} ms; {{v:DoorAlarm.Siren=false@80|OFF}} at {{t:80}} ms, because the alarm is disarmed."
+    },
+    {
+      "key": "edit",
+      "title": "Edit",
+      "body": "Correct this starter omission, save it, then press Check: The starter loads Armed, ANDs it with DoorOpen and stores the result, so Siren follows the door and drops at {{t:30}} ms when the door closes; add OR Siren so the siren holds itself on, then ANDN Silence so that Silence turns it off, in that order.",
+      "checkpoint": "The visible scenario must pass with saved host evidence."
+    },
+    {
+      "key": "run",
+      "title": "Run",
+      "body": "Press Check. Studio runs your saved program against the scenario of this lesson.",
+      "checkpoint": "The scenario is named DoorAlarm and contains {{assertions}} assertions."
+    },
+    {
+      "key": "observe",
+      "title": "Observe",
+      "body": "Compare {{t:10}}, {{t:40}} and {{t:50}} ms: Siren rises with the door, holds after it closes, and falls with Silence; it rises again at {{t:90}} ms when the alarm is armed with the door still open.",
+      "checkpoint": "Silence at {{t:100}} ms drops the siren even though the door is open, and at {{t:110}} ms the siren starts again because the cause is still there."
+    },
+    {
+      "key": "reflect",
+      "title": "Reflect",
+      "body": "What happens if ANDN Silence comes before OR Siren? Swap the two lines and see which assertion fails.",
+      "checkpoint": "Each instruction works on the result of the lines above it, so OR Siren after ANDN Silence puts the held value back. The scenario shows the logic only; it is not an alarm system."
+    }
+  ],
+  "hints": [
+    {
+      "level": 1,
+      "text": "Siren holds itself on when its own previous value is part of the condition. Which instruction combines the current result with another operand using OR?"
+    },
+    {
+      "level": 2,
+      "text": "LD Armed, AND DoorOpen, OR Siren, ANDN Silence, ST Siren: five lines, one operand each."
+    }
+  ],
+  "faultCases": [
+    "The starter loads Armed, ANDs it with DoorOpen and stores the result, so Siren follows the door and drops at {{t:30}} ms when the door closes; add OR Siren so the siren holds itself on, then ANDN Silence so that Silence turns it off, in that order."
+  ]
+}

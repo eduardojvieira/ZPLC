@@ -29,7 +29,7 @@ puede pedir ver. Studio registra que vio la solución.
 El curso empieza con algo que se mueve (módulo 0), luego explica cómo piensa un PLC (módulo 1), después lógica, tiempo y datos, luego estructura, y termina con pruebas, lenguajes, comunicaciones y un proyecto final. Cada módulo indica por qué está donde está.
 
 
-Disponibles hoy: **23**. Planeadas: **6**. En total: **29**.
+Disponibles hoy: **24**. Planeadas: **5**. En total: **29**.
 
 
 ## Módulo 0: Primeros pasos: un recorrido por Studio, la simulación y, para hardware, la verificación de su placa
@@ -204,8 +204,12 @@ La misma lógica puede escribirse en cinco lenguajes. La lista de instrucciones 
 
 | Lección | Estado | Lenguajes | Pistas | Planta | Minutos | Requiere |
 |---|---|---|---|---|---|---|
-| Lista de instrucciones | Planeada | IL | Simulación, Hardware | - | 20 | - |
+| `instruction-list-door-alarm` Lista de instrucciones: el resultado actual y el orden de las instrucciones | Disponible | IL | Simulación | - | 20 | `function-block-pump-pair` |
 | Una lógica en cinco idiomas de programación | Planeada | all | Simulación, Hardware | - | 30 | - |
+
+Objetivos de las lecciones disponibles:
+
+- **Lista de instrucciones: el resultado actual y el orden de las instrucciones**: Lea un programa en lista de instrucciones como un resultado actual que cada instrucción combina con un operando, de arriba hacia abajo. Use LD, AND, OR, ANDN y ST, y vea que mover una instrucción cambia la lógica.
 
 
 ## Módulo 10: Comunicaciones: fundamentos de Modbus y MQTT
