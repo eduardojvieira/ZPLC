@@ -13,7 +13,8 @@ describe('port interface page: every function of the HAL and every callback of t
   it('reads the declared functions of the HAL header, in declaration order, each with its first sentence', () => {
     const functions = halFunctions(header('firmware/lib/zplc_core/include/zplc_hal.h'));
     expect(functions.map((entry) => entry.name).slice(0, 2)).toEqual(['zplc_hal_tick', 'zplc_hal_sleep']);
-    expect(functions.length).toBeGreaterThanOrEqual(29);
+    // 24 since the unused DNS and socket functions left the HAL (IO-007); the page must still list every function the header declares.
+    expect(functions.length).toBeGreaterThanOrEqual(24);
     expect(functions.every((entry) => entry.brief.length > 5)).toBe(true);
   });
 
