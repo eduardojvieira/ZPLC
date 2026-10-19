@@ -31,7 +31,7 @@ puede pedir ver. Studio registra que vio la solución.
 El curso empieza con algo que se mueve (módulo 0), luego explica cómo piensa un PLC (módulo 1), después lógica, tiempo y datos, luego estructura, y termina con pruebas, lenguajes, comunicaciones y un proyecto final. Cada módulo indica por qué está donde está.
 
 
-Disponibles hoy: **26**. Planeadas: **3**. En total: **29**.
+Disponibles hoy: **28**. Planeadas: **1**. En total: **29**.
 
 
 ## Módulo 0: Primeros pasos: un recorrido por Studio, la simulación y, para hardware, la verificación de su placa
@@ -223,8 +223,15 @@ Las máquinas se comunican entre sí. Los fundamentos de Modbus y MQTT se ejecut
 
 | Lección | Estado | Lenguajes | Pistas | Planta | Minutos | Requiere |
 |---|---|---|---|---|---|---|
-| Fundamentos de Modbus con un extremo de bucle local | Planeada | ST | Simulación, Hardware | - | 25 | - |
-| Fundamentos de MQTT con un extremo de bucle local | Planeada | FBD | Simulación, Hardware | - | 25 | - |
+| `modbus-register-round-trip` Modbus TCP: escribir un registro y leerlo de vuelta | Disponible | ST | Simulación | - | 25 | `structures-arrays-call-panel` |
+| `mqtt-publish-subscribe` MQTT: publicar un mensaje y recibirlo | Disponible | ST | Simulación | - | 25 | `modbus-register-round-trip` |
+
+Las dos lecciones se califican contra un servidor Modbus TCP y un broker MQTT que Studio inicia dentro de la sesión de simulación, en este equipo, así que no hace falta red, broker instalado ni placa. Son dobles de protocolo: muestran cómo se comportan los bloques y su protocolo de intercambio, y no muestran que un dispositivo, un broker o un servicio en la nube reales acepten el mismo intercambio. No tienen pista de hardware porque no se ha registrado una traza de un dispositivo real.
+
+Objetivos de las lecciones disponibles:
+
+- **Modbus TCP: escribir un registro y leerlo de vuelta**: Escriba un registro de retención con MB_WRITE_HREG y léalo de vuelta con MB_READ_HREG, usando la salida DONE del primer bloque como disparo del segundo. Compare el valor leído con el valor escrito, informe un ERROR de cualquiera de los dos bloques y diga qué muestra un doble de loopback y qué no muestra.
+- **MQTT: publicar un mensaje y recibirlo**: Distinga un bloque de servicio (MQTT_CONNECT, MQTT_SUBSCRIBE) de un bloque de solicitud (MQTT_PUBLISH), publique solo cuando la suscripción ya se mantiene y conserve un mensaje que VALID informa durante un solo ciclo.
 
 
 ## Módulo 11: Proyecto final: una máquina pequeña, de la descripción al programa probado

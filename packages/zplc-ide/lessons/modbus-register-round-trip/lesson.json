@@ -1,0 +1,46 @@
+{
+  "schemaVersion": 1,
+  "id": "modbus-register-round-trip",
+  "version": 1,
+  "order": 27,
+  "module": 10,
+  "level": "advanced",
+  "prerequisites": [
+    "structures-arrays-call-panel"
+  ],
+  "languages": [
+    "ST"
+  ],
+  "tracks": [
+    "simulation"
+  ],
+  "unsupported": {
+    "hardware": {
+      "reason": {
+        "en": "The lesson is graded against a Modbus server that Studio starts inside the simulation session, and no trace of a real device or gateway has been recorded for it.",
+        "es": "La lección se califica contra un servidor Modbus que Studio inicia dentro de la sesión de simulación, y no se ha registrado una traza de un dispositivo o una pasarela reales para ella."
+      },
+      "instead": {
+        "en": "Complete it in Simulation: its grade is the same each time and needs no device or network.",
+        "es": "Complétela en Simulación: su calificación es la misma cada vez y no necesita dispositivo ni red."
+      }
+    }
+  },
+  "plant": null,
+  "estimatedMinutes": 25,
+  "starter": {
+    "project": "modbus_register_starter",
+    "program": "src/ModbusRegister.st"
+  },
+  "solution": {
+    "project": "modbus_register",
+    "program": "src/ModbusRegister.st"
+  },
+  "scenario": {
+    "file": "scenario.json",
+    "id": "ModbusRegister",
+    "path": "tests/modbus-register.scenario.json",
+    "sha256": "4c97f0cac18847a03a036d294809b5e98a076b5587cfb6313f91cd081aba8ed4"
+  },
+  "regressionScenarios": []
+}

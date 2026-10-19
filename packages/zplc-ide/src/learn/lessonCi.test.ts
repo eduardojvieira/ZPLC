@@ -28,6 +28,13 @@ const NOT_VOSEO = new Set(['está', 'esté', 'así', 'además', 'demás', 'qué'
 
 let workRoot = '';
 let previousBinary: string | undefined;
+/**
+ * The session Studio starts gives a program a Modbus server and an MQTT broker of their own (COM-009), and the
+ * Communications lessons are graded against them. The lesson CI runs the same session environment, so a lesson that
+ * talks to an endpoint is graded the way the product grades it.
+ */
+const COMMUNICATION_ENVIRONMENT = { ZPLC_NATIVE_COMM: '1', ZPLC_NATIVE_LOOPBACK: '1' } as const;
+const previousCommunication: Record<string, string | undefined> = {};
 let counter = 0;
 const clock = () => new Date('2026-10-10T12:00:00.000Z');
 /** The grade the product gives the program of `root` for the lesson: its reference scenario, not the workspace's. */
@@ -52,10 +59,18 @@ beforeAll(() => {
   workRoot = mkdtempSync(join(tmpdir(), 'zplc-lesson-ci-'));
   previousBinary = process.env.ZPLC_NATIVE_SIM_BIN;
   process.env.ZPLC_NATIVE_SIM_BIN = nativeRuntimeBinary;
+  for (const [name, value] of Object.entries(COMMUNICATION_ENVIRONMENT)) {
+    previousCommunication[name] = process.env[name];
+    process.env[name] = value;
+  }
 });
 afterAll(() => {
   if (previousBinary === undefined) delete process.env.ZPLC_NATIVE_SIM_BIN;
   else process.env.ZPLC_NATIVE_SIM_BIN = previousBinary;
+  for (const [name, value] of Object.entries(previousCommunication)) {
+    if (value === undefined) delete process.env[name];
+    else process.env[name] = value;
+  }
   rmSync(workRoot, { recursive: true, force: true });
 });
 

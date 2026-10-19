@@ -1,0 +1,75 @@
+{
+  "schemaVersion": 1,
+  "id": "ModbusRegister",
+  "tickMs": 10,
+  "durationMs": 20000,
+  "events": [
+    {
+      "atMs": 0,
+      "set": {
+        "ModbusRegister.Send": false
+      }
+    },
+    {
+      "atMs": 10,
+      "set": {
+        "ModbusRegister.Send": true
+      }
+    },
+    {
+      "atMs": 10000,
+      "set": {
+        "ModbusRegister.Send": false
+      }
+    }
+  ],
+  "expectations": [
+    {
+      "kind": "AT",
+      "atMs": 0,
+      "condition": {
+        "ModbusRegister.Written": false,
+        "ModbusRegister.Match": false,
+        "ModbusRegister.Failed": false
+      }
+    },
+    {
+      "kind": "WITHIN",
+      "fromMs": 10,
+      "withinMs": 9000,
+      "condition": {
+        "ModbusRegister.Written": true
+      }
+    },
+    {
+      "kind": "WITHIN",
+      "fromMs": 10,
+      "withinMs": 9000,
+      "condition": {
+        "ModbusRegister.Match": true
+      }
+    },
+    {
+      "kind": "ALWAYS",
+      "condition": {
+        "ModbusRegister.Failed": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 9990,
+      "condition": {
+        "ModbusRegister.Written": true,
+        "ModbusRegister.Match": true
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 10100,
+      "condition": {
+        "ModbusRegister.Written": false,
+        "ModbusRegister.Match": false
+      }
+    }
+  ]
+}
