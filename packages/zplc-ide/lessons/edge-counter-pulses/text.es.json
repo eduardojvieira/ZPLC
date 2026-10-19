@@ -48,7 +48,7 @@
   "hints": [
     {
       "level": 1,
-      "text": "Un CTU ya cuenta sólo flancos ascendentes de CU, así que un pulso largo cuenta una sola vez; no necesita detectar el flanco usted mismo."
+      "text": "Un CTU ya cuenta solo flancos ascendentes de CU, así que un pulso largo cuenta una sola vez; no necesita detectar el flanco usted mismo."
     },
     {
       "level": 2,

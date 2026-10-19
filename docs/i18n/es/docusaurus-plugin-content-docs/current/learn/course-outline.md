@@ -139,7 +139,7 @@ Una máquina que hace cosas en orden es una máquina de estados. Las secuencias 
 
 Objetivos de las lecciones disponibles:
 
-- **Cruce peatonal y estados seguros**: Modele el cruce como estados numerados, cada uno con una combinación de salidas explícita. Muestre WALK sólo mientras los vehículos están en rojo.
+- **Cruce peatonal y estados seguros**: Modele el cruce como estados numerados, cada uno con una combinación de salidas explícita. Muestre WALK solo mientras los vehículos están en rojo.
 - **Una secuencia en diagrama funcional de secuencias: llenar y luego mezclar**: Lea un diagrama funcional de secuencias como pasos que se activan de uno en uno, acciones que se ejecutan mientras su paso está activo y transiciones que mueven la actividad. Agregue una transición temporizada que use el tiempo transcurrido de un paso.
 
 
@@ -157,8 +157,8 @@ Una orden no es un hecho: la planta debe confirmarla. La realimentación, las fa
 
 Objetivos de las lecciones disponibles:
 
-- **Nivel de tanque, fallas y reset**: Mantenga la bomba encendida desde LevelLow hasta LevelHigh con un enclavamiento. Enclave la alarma con PumpFault o EStop y libérela sólo con un Reset nuevo tras despejarse la falla.
-- **Comando, realimentación y velocidad**: Separe la orden al motor de la confirmación de que está en marcha. Retenga el pedido hasta Stop y deje que Running siga al pedido sólo cuando llegue AtSpeed.
+- **Nivel de tanque, fallas y reset**: Mantenga la bomba encendida desde LevelLow hasta LevelHigh con un enclavamiento. Enclave la alarma con PumpFault o EStop y libérela solo con un Reset nuevo tras despejarse la falla.
+- **Comando, realimentación y velocidad**: Separe la orden al motor de la confirmación de que está en marcha. Retenga el pedido hasta Stop y deje que Running siga al pedido solo cuando llegue AtSpeed.
 - **Interbloqueos y permisivos: una protección que detiene el motor**: Distinga un permisivo, una condición que debe ser verdadera para que la salida esté encendida, de una orden. Ponga un permisivo en la misma condición que mantiene el motor, para que lo apague y además impida que Start lo vuelva a arrancar.
 
 

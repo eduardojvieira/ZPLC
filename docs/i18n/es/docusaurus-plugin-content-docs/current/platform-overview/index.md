@@ -9,7 +9,7 @@ tags: [architecture, introduction]
 
 # Panorama de plataforma
 
-ZPLC (Zephyr PLC) combina un core de ejecución ANSI C99 portable con herramientas de ingeniería TypeScript. Sus capacidades están condicionadas por evidencia: la simulación host, los builds de target y los resultados HIL responden preguntas distintas.
+ZPLC (Zephyr PLC) combina un núcleo de ejecución portable en ANSI C99 con herramientas de ingeniería en TypeScript. Sus capacidades dependen de la evidencia: la simulación en el host, las compilaciones para un destino y los resultados HIL responden preguntas distintas.
 
 ## El ecosistema ZPLC
 
@@ -17,7 +17,7 @@ ZPLC (Zephyr PLC) combina un core de ejecución ANSI C99 portable con herramient
 flowchart TB
   IDE[IDE ZPLC]
   Compiler[Compilador]
-  Runtime[Core de runtime]
+  Runtime[Núcleo del runtime]
   Boards[Perfiles de placa]
 
   IDE --> Compiler
@@ -27,24 +27,24 @@ flowchart TB
 
 ## Principios centrales
 
-- **Memoria acotada en runtime**: el core C99 usa límites de memoria definidos; la validación sigue siendo parte de cada perfil de destino.
-- **Separación mediante HAL**: el core y los adaptadores de hardware se separan para inspeccionar y probar cada comportamiento de plataforma de forma independiente.
-- **Evidencia antes que claims**: timing del scheduler, I/O, persistencia, protocolos y soporte de placas sólo se afirman para el perfil/revisión con evidencia correspondiente. [Soporte de hardware](../reference/capabilities-evidence.md) enumera los niveles, y [Seguridad y limitaciones](../safety-and-limitations.md) dice qué no es ZPLC.
+- **Memoria acotada en el runtime**: el núcleo en C99 usa límites de memoria definidos; la validación sigue siendo parte de cada perfil de destino.
+- **Separación mediante la HAL**: el núcleo y los adaptadores de hardware están separados para que cada comportamiento de la plataforma pueda inspeccionarse y probarse por su lado.
+- **Evidencia antes que afirmaciones**: los tiempos del planificador, la E/S, la persistencia, los protocolos y el soporte de placas solo se afirman para el perfil y la revisión que tienen la evidencia correspondiente. [Soporte de hardware](../reference/capabilities-evidence.md) enumera los niveles, y [Seguridad y limitaciones](../safety-and-limitations.md) dice qué no es ZPLC.
 
-## Fronteras de producto
+## Componentes del producto
 
-1. **Core VM (`libzplc_core`)**: intérprete de bytecode C99, validación de programas, estado de runtime e interfaces de scheduler.
-2. **Capa de abstracción de hardware (HAL)**: adaptadores para facilidades de plataforma como relojes, almacenamiento, I/O y transportes configurados.
-3. **Compilador**: transforma flujos de proyecto soportados—centrados en Structured Text—en bytecode `.zplc`.
-4. **IDE**: superficie de ingeniería de escritorio para autoría, diagnósticos y flujos de runtime según capacidades.
+1. **Máquina virtual del núcleo (`libzplc_core`)**: intérprete de bytecode en C99, validación de programas, estado del runtime e interfaces del planificador.
+2. **Capa de abstracción de hardware (HAL)**: adaptadores para los servicios de la plataforma, como relojes, almacenamiento, E/S y transportes configurados.
+3. **Compilador**: transforma los flujos de proyecto admitidos, centrados en Structured Text, en bytecode `.zplc`.
+4. **IDE**: entorno de ingeniería de escritorio para escribir programas, ver diagnósticos y usar los flujos del runtime según sus capacidades.
 
 ## Flujo típico
 
-1. Elija un target de proyecto e inspeccione su perfil de placa/capacidades.
-2. Escriba lógica en un flujo de lenguaje soportado y compilala a `.zplc`.
-3. Usá simulación POSIX nativa para checks lógicos repetibles en host dentro de sus capacidades declaradas.
-4. Construya firmware, grábelo, despliegue el programa PLC y opérelo como acciones humanas separadas.
-5. Usá evidencia target o HIL de la placa/revisión exactas antes de depender de timing o comportamiento físico.
+1. Elija un destino para el proyecto e inspeccione el perfil de la placa y sus capacidades.
+2. Escriba la lógica en un lenguaje admitido y compílela a `.zplc`.
+3. Use la simulación POSIX nativa para comprobaciones lógicas repetibles en el host, dentro de las capacidades declaradas.
+4. Compile el firmware, grábelo, cargue el programa PLC y opérelo como acciones humanas separadas.
+5. Use evidencia en el destino o HIL de la placa y la revisión exactas antes de depender de los tiempos o del comportamiento físico.
 
 ## Continúe con
 

@@ -5,7 +5,7 @@
   "scope": "La evidencia de Tests es determinística del host nativo POSIX; no es evidencia de cruce físico, hardware, HIL ni certificación.",
   "objectives": [
     "Modele el cruce como estados numerados, cada uno con una combinación de salidas explícita.",
-    "Muestre WALK sólo mientras los vehículos están en rojo."
+    "Muestre WALK solo mientras los vehículos están en rojo."
   ],
   "stages": [
     {
@@ -23,7 +23,7 @@
     {
       "key": "edit",
       "title": "Edite",
-      "body": "Corrija esta omisión del starter y guarde antes de ejecutar: El starter ignora el pedido peatonal; tras PedRequest ejecute amarillo, despeje en rojo, WALK y rojo de recuperación antes de volver a verde, y muestre WALK sólo con los vehículos en rojo.",
+      "body": "Corrija esta omisión del starter y guarde antes de ejecutar: El starter ignora el pedido peatonal; tras PedRequest ejecute amarillo, despeje en rojo, WALK y rojo de recuperación antes de volver a verde, y muestre WALK solo con los vehículos en rojo.",
       "checkpoint": "El escenario visible debe pasar con evidencia host guardada."
     },
     {
@@ -36,26 +36,26 @@
       "key": "observe",
       "title": "Observe",
       "body": "Revise la matriz registrada en Tests y compare cada muestra con la predicción.",
-      "checkpoint": "La traza muestra el cambio a WALK sólo durante el estado rojo."
+      "checkpoint": "La traza muestra el cambio a WALK solo durante el estado rojo."
     },
     {
       "key": "reflect",
       "title": "Reflexione",
-      "body": "La assertion NEVER cubre salidas incompatibles lógicas sólo en este escenario.",
+      "body": "La assertion NEVER cubre salidas incompatibles lógicas solo en este escenario.",
       "checkpoint": "No demuestra un cruce físico, temporización de hardware, HIL ni certificación."
     }
   ],
   "hints": [
     {
       "level": 1,
-      "text": "Mantenga una variable State y un contador de scans; al comienzo de cada scan ponga todas las salidas en el valor seguro (vehículos detenidos, peatones en espera) y deje que cada estado encienda sólo lo que necesita."
+      "text": "Mantenga una variable State y un contador de scans; al comienzo de cada scan ponga todas las salidas en el valor seguro (vehículos detenidos, peatones en espera) y deje que cada estado encienda solo lo que necesita."
     },
     {
       "level": 2,
-      "text": "La secuencia es verde, amarillo, despeje en rojo, WALK, rojo de recuperación y de nuevo verde; salga de verde sólo con PedRequest y pase al estado siguiente cuando el contador de scans alcance la duración de esa fase."
+      "text": "La secuencia es verde, amarillo, despeje en rojo, WALK, rojo de recuperación y de nuevo verde; salga de verde solo con PedRequest y pase al estado siguiente cuando el contador de scans alcance la duración de esa fase."
     }
   ],
   "faultCases": [
-    "El starter ignora el pedido peatonal; tras PedRequest ejecute amarillo, despeje en rojo, WALK y rojo de recuperación antes de volver a verde, y muestre WALK sólo con los vehículos en rojo."
+    "El starter ignora el pedido peatonal; tras PedRequest ejecute amarillo, despeje en rojo, WALK y rojo de recuperación antes de volver a verde, y muestre WALK solo con los vehículos en rojo."
   ]
 }

@@ -3,7 +3,7 @@ slug: /guides/troubleshooting
 id: troubleshooting
 title: Solución de problemas
 sidebar_label: Solución de problemas
-description: "Qué significa un síntoma y qué hacer: instalar, compilar, simular, probar, conectar y desplegar."
+description: "Qué significa un síntoma y qué hacer: instalar, compilar, simular, probar, conectar y cargar."
 tags: [how-to, troubleshooting]
 ---
 
@@ -43,7 +43,7 @@ una placa tiene un problema que solo una placa muestra: lea las filas de conexi�
 
 | Síntoma | Qué significa | Qué hacer |
 | --- | --- | --- |
-| **Problems** enumera un error con una línea y una columna | El compilador rechazó el código fuente en ese lugar | Corrija la línea; el mensaje dice por qué |
+| **Problemas** enumera un error con una línea y una columna | El compilador rechazó el código fuente en ese lugar | Corrija la línea; el mensaje dice por qué |
 | Una compilación falla nombrando la placa y una variable | La variable está ubicada donde la placa no tiene canal | [Vincular variables a pines](./map-io.md): elija un canal de la placa, o enumere la dirección en `io.virtual` |
 | Una compilación falla en la definición de una tarea | Una tarea tiene `trigger` `event` o `interrupt`, que no existen | Use `cyclic` ([Planificador](../runtime/scheduler.md#modelo-de-tareas)) |
 | Una compilación falla con `Task ... must reference exactly one PROGRAM` | Cada tarea ejecuta un programa | Dé a cada tarea un programa en `zplc.json` |
@@ -53,20 +53,20 @@ una placa tiene un problema que solo una placa muestra: lea las filas de conexi�
 
 | Síntoma | Qué significa | Qué hacer |
 | --- | --- | --- |
-| **Connect** falla en modo Simulate | El runtime nativo no arrancó | Constrúyalo (`bun run build:runtime`) o fije `ZPLC_NATIVE_SIM_BIN` |
-| Un escenario falla con una aserción en un instante | El programa no hizo en ese instante lo que el escenario espera | Ejecute hasta ese ciclo con un punto de interrupción: [Simular y depurar](./simulate-and-debug.md) |
+| **Conectar** falla en modo Simulate | El runtime nativo no arrancó | Constrúyalo (`bun run build:runtime`) o fije `ZPLC_NATIVE_SIM_BIN` |
+| Un escenario falla con una aserción en un instante | El programa no hizo en ese instante lo que el escenario espera | Ejecute hasta ese ciclo con un punto de parada: [Simular y depurar](./simulate-and-debug.md) |
 | Un escenario se rechaza como inválido | Un instante no es múltiplo de `tickMs`, una señal no existe o se excede un límite | [Formato del archivo de escenario](../reference/scenario-file.md) |
-| `LED_Output` nunca cambia en Watch | El programa no se está ejecutando, o la variable no es la que está ubicada | Compruebe que la línea de estado dice **Running** y la dirección de la variable |
+| `LED_Output` nunca cambia en Watch | El programa no se está ejecutando, o la variable no es la que está ubicada | Compruebe que la línea de estado dice **En marcha** y la dirección de la variable |
 | Un valor retentivo volvió a su valor declarado | El programa se recompiló, o el almacén pertenece a otro programa | [Conservar valores entre reinicios](./retained-variables.md#3-qué-descarta-los-valores) |
 
-## Conectar una placa y desplegar
+## Conectar una placa y cargar
 
 | Síntoma | Qué significa | Qué hacer |
 | --- | --- | --- |
 | El puerto serie se rechaza en Linux | Su usuario no está en el grupo del puerto serie | [Linux: acceso al puerto serie](../getting-started/install.md#linux-acceso-al-puerto-serie) |
 | El despliegue se rechaza nombrando una placa | El proyecto se compiló para otra placa distinta de la que informa el dispositivo | Elija la placa correcta, recompile y regrabe si el firmware no es el del proyecto |
 | El despliegue se rechaza con dos números de borrador | El programa y el runtime vienen de borradores distintos del contrato binario. El borrador actual es el 5: un programa compilado antes se rechaza, y Studio rechaza un dispositivo cuyo firmware informa uno anterior | Recompile el programa y regrabe la placa juntos ([Contador de borrador del contrato](../contributing/index.md#contador-de-borrador-del-contrato)); `tools/contract/restamp_artifacts.py` mueve los artefactos que se guardan en un repositorio |
-| El dispositivo recibió una compilación anterior | El despliegue no llevó el programa actual | Compile y despliegue de nuevo antes de **Run** |
+| El dispositivo recibió una compilación anterior | El despliegue no llevó el programa actual | Compile y despliegue de nuevo antes de **Ejecutar** |
 | Una placa no vuelve después de grabar | La recuperación del firmware es el procedimiento propio de la placa | [Límites de la recuperación](../operations/recovery.md) |
 
 ## Comunicación

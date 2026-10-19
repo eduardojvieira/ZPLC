@@ -16,7 +16,7 @@
 
 import { t } from '../../i18n';
 import { type LDElement as LDElementType, isContact, isCoil, isFunctionBlock } from '../../models/ld';
-import { LD_ELEMENT_KIND } from '../../models/ldSupport';
+import { ldElementKind } from '../../models/ldSupport';
 import { splitFBIdentifier } from './fbLabel';
 import type { DebugValueResult } from '../../hooks/useDebugValue';
 import { SIGNAL_PAINT, sampleTone, signalMark, type SignalTone } from '../../theme/signalTone';
@@ -643,7 +643,7 @@ export default function LDElement({ element, x, y, selected, energized, debugVal
   const translateY = y * CELL_HEIGHT;
   const selectable = Boolean(onClick);
   const elementName = isFunctionBlock(element.type) ? [element.fbType, element.instance].filter(Boolean).join(' ') : element.variable;
-  const elementKind = LD_ELEMENT_KIND[element.type];
+  const elementKind = ldElementKind(element.type);
   const selectionLabel = `Select ${elementKind}${elementName ? ` ${elementName}` : ''}`;
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {

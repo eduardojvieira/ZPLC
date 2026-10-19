@@ -140,7 +140,7 @@ Technical regions are separated with 1px rules; resizable panel handles are 4px,
 
 ### Density
 
-Comfortable and compact (Preferences). The attribute `data-density` on the document root scales every spacing utility through `--spacing` and gives the kit its control and row heights (`--control-height`, `--row-height`); it is applied before the first frame and kept per user. Sizes written as fixed pixels in a surface that is not on the kit do not scale; journey 53 proves that the setting reaches the Welcome screen and the workbench.
+Comfortable and compact (Preferences). The attribute `data-density` on the document root scales every spacing utility through `--spacing` and gives the kit its control and row heights (`--control-height`, `--row-height`); it is applied before the first frame and kept per user. Sizes written as fixed pixels in a surface that is not on the kit do not scale; journey 55 proves that the setting reaches the Welcome screen and the workbench.
 
 ## Elevation & Depth
 

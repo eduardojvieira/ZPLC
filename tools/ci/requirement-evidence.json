@@ -28,9 +28,11 @@
     {"kind":"unit","ref":"tools/ci/test-source-guard.test.ts","test":"test source guard: this repository (VF-006)"}
   ],
   "VF-008": [
+    {"kind":"unit","ref":"tools/ci/end-to-end-journeys.test.ts","test":"the end-to-end suite and the journeys of the requirement (VF-008)"},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"1 Open an existing folder","partial":true}
   ],
   "VF-009": [
+    {"kind":"unit","ref":"tools/ci/release-gate.test.ts","test":"the release is gated on the Linux journeys (VF-009)","partial":true,"note":"release.yml calls ci.yml, whose typescript job runs the journeys, and every build or publish job of the release needs that run to have succeeded; the workflows are parsed, not executed, and no hosted release run is recorded"},
     {"kind":"manual","ref":".github/workflows/ci.yml","partial":true,"note":"the journeys run under xvfb in the typescript job (every pull request) and on macOS and Windows in the nightly-quality workflow; configuration only, no hosted run is recorded, and a release is not gated on the macOS and Windows run"}
   ],
   "VF-010": [
@@ -61,7 +63,7 @@
     {"kind":"unit","ref":"tools/ci/workflow-triggers.test.ts","test":"every scheduled workflow can be re-run by hand and tells somebody when a scheduled run fails","partial":true,"note":"nightly-quality.yml has a manual trigger and a job that opens or updates an issue when a scheduled run fails; a recorded successful scheduled run, and a green default branch, need hosted runs (D-12: schedules run only from the default branch)"}
   ],
   "VF-018": [
-    {"kind":"unit","ref":"tools/ci/test_run_clang_tidy.py","test":"HostUnits","partial":true,"note":"the host pass of clang-tidy runs in CI over the core, the POSIX HAL and the host application with warnings as errors; the Zephyr HAL and firmware/app are analysed only where a west build tree exists (run.sh tidy) and firmware/app carries a per-board baseline of findings; -Werror on the Zephyr library was applied without a Zephyr build"}
+    {"kind":"unit","ref":"tools/ci/test_run_clang_tidy.py","test":"HostUnits","partial":true,"note":"the host pass of clang-tidy runs in CI over the core, the POSIX HAL and the host application with warnings as errors; the Zephyr HAL and firmware/app are analysed only where a west build tree exists (run.sh tidy) and firmware/app carries a per-board baseline of findings; -Werror on the Zephyr library was applied without a Zephyr build; the Zephyr pass was run locally on the Arduino Opta build (core and HAL clean, firmware/app 24 findings within its baseline, none a defect), not in a hosted run"}
   ],
   "VF-019": [
     {"kind":"unit","ref":"tools/docs/test_validate_docs_pages.py","test":"test_endings_the_spec_rejects","note":"run by the docs-and-truth job of ci.yml (python3 tools/docs/test_validate_docs_pages.py) and by bun run check:docs: one fixture per rule of VF-019 (a page that stops mid-sentence, in the header of a table or inside a code block; a page that no sidebar entry names; an English and Spanish pair whose heading levels or number of code blocks differ), run over the English and the Spanish tree"}
@@ -945,6 +947,7 @@
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"15 New file: create, edit, save, reopen","partial":true},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"3 Edit Structured Text, save, reopen","partial":true},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"5 Build successfully","partial":true},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"54 Instruction List is edited, saved and reopened","partial":true},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"6 Simulate: connect, run, watch a value change","partial":true}
   ],
   "LNG-002": [
@@ -995,7 +998,12 @@
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"28 A breakpoint on a rung stops execution","partial":true},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"28ka A breakpoint on an FBD block stops execution","partial":true},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"28kb A breakpoint on an SFC step stops execution","partial":true},
-    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"28kc A breakpoint on an IL line stops execution","partial":true}
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"28kc A breakpoint on an IL line stops execution","partial":true},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"53a Pause, step one cycle and resume a Ladder program","partial":true},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"53b Pause, step one cycle and resume a function block diagram","partial":true},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"53c Pause, step one cycle and resume a sequential function chart","partial":true},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"53d Pause, step one cycle and resume an Instruction List program","partial":true},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"53e Pause, step one cycle and resume a Structured Text program","partial":true}
   ],
   "LNG-005": [
     {"kind":"unit","ref":"packages/zplc-ide/src/utils/breakpoints.test.ts","test":"a breakpoint binds in every ST file of a project, by the project-relative path of its own file (LNG-005)"},
@@ -1016,7 +1024,8 @@
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"28d Online state of an SFC comes from the debug map","partial":true},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"28e Inline values in Structured Text come from the debug map","partial":true},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"51 A forced variable is shown as forced in the function block diagram","partial":true},
-    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"51b A forced variable is shown as forced in the sequential function chart","partial":true}
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"51b A forced variable is shown as forced in the sequential function chart","partial":true},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"54b Instruction List values are watched and a variable is forced and released","partial":true}
   ],
   "LNG-007": [
     {"kind":"unit","ref":"packages/zplc-ide/src/editors/paletteExecution.test.ts","test":"LNG-007 every block of the FBD palette is placed, built and run"},
@@ -1205,6 +1214,11 @@
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"28ka A breakpoint on an FBD block stops execution","partial":true},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"28kb A breakpoint on an SFC step stops execution","partial":true},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"28kc A breakpoint on an IL line stops execution","partial":true},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"53a Pause, step one cycle and resume a Ladder program","partial":true},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"53b Pause, step one cycle and resume a function block diagram","partial":true},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"53c Pause, step one cycle and resume a sequential function chart","partial":true},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"53d Pause, step one cycle and resume an Instruction List program","partial":true},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"53e Pause, step one cycle and resume a Structured Text program","partial":true},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"7 Breakpoint stops execution","partial":true}
   ],
   "RT-001": [
@@ -1507,7 +1521,7 @@
     {"kind":"unit","ref":"packages/zplc-ide/src/runtime/serialAdapter.test.ts","test":"rejects a status whose I/O report is not a pair of counts (IO-007)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/runtime/serialAdapter.test.ts","test":"tells the user once when the board cannot serve some of its I/O channels (IO-007)"},
     {"kind":"unit","ref":"tools/ci/test_check_hal_contract.py","test":"CheckerTests","note":"Python unit test run by the docs-and-truth job of ci.yml; it is not in the scanned file kinds. Every HAL function is implemented on the posix, zephyr and wasm ports.","partial":true},
-    {"kind":"unit","ref":"tools/ci/test_check_hal_contract.py","test":"RepositoryTests","note":"Python unit test run by the docs-and-truth job of ci.yml; it is not in the scanned file kinds. The repository contract has no finding and the ledger in tools/ci/hal-contract.json is empty: every declared function has a caller and an implementation on the three ports. The requirement stays partial because the 'not supported' result of an operation a board cannot perform is swallowed by the scheduler core (zplc_sched_core.c, I/O phase) and does not reach the user yet.","partial":true},
+    {"kind":"unit","ref":"tools/ci/test_check_hal_contract.py","test":"RepositoryTests","note":"Python unit test run by the docs-and-truth job of ci.yml; it is not in the scanned file kinds. The repository contract has no finding and the ledger in tools/ci/hal-contract.json is empty: every declared function has a caller and an implementation on the three ports; the 'not supported' result of an operation a board cannot perform reaches the user (test_io_unsupported.c, test_proto_session.c, serialAdapter.test.ts)."},
     {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_core_shutdown.c","test":"Core shutdown releases the process-image mutex, and a later init creates it again (IO-007)."},
     {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_hal_posix_io_table.c","test":"The POSIX port lists no channel and says so through the shared accessors (IO-007)."},
     {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_io_table.c","test":"The I/O table accessors every port shares (IO-001, IO-002, IO-007)."},
@@ -1613,11 +1627,11 @@
     {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_comm_handler_mqtt.c","test":"COM-004: one message for one trigger; the strings are read in the layout of the table (COM-005)."}
   ],
   "COM-006": [
-    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_comm_handler_modbus.c","test":"The status of a failed request is a documented code, whatever the client's errno (COM-006, COM-018).","partial":true,"note":"Modbus TCP against a protocol double, and the MQTT client of the simulation runtime against a broker double; the cloud blocks are verified only at the handler with a stand-in service, the MQTT client of the controller is not run against a broker, and Modbus RTU needs a device that was not used"},
-    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_host_comm.c","test":"The communication blocks in the simulation runtime, on real sockets (COM-006, COM-009, COM-018).","partial":true,"note":"Modbus TCP against a protocol double, and the MQTT client of the simulation runtime against a broker double; the cloud blocks are verified only at the handler with a stand-in service, the MQTT client of the controller is not run against a broker, and Modbus RTU needs a device that was not used"},
-    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_modbus_client_pdu.c","test":"The frames of the Modbus clients, and the unit of their timeouts (COM-006, COM-012).","partial":true,"note":"Modbus TCP against a protocol double, and the MQTT client of the simulation runtime against a broker double; the cloud blocks are verified only at the handler with a stand-in service, the MQTT client of the controller is not run against a broker, and Modbus RTU needs a device that was not used"},
-    {"kind":"c-test","ref":"firmware/tests/modbus_client_tcp/src/main.c","test":"A TCP response may arrive in pieces; the client puts it back together (COM-006).","partial":true,"note":"Modbus TCP against a protocol double, and the MQTT client of the simulation runtime against a broker double; the cloud blocks are verified only at the handler with a stand-in service, the MQTT client of the controller is not run against a broker, and Modbus RTU needs a device that was not used"},
-    {"kind":"c-test","ref":"firmware/tests/modbus_client_tcp/src/main.c","test":"COM-006, COM-012, COM-018: the Modbus TCP client of the product against a","partial":true,"note":"Modbus TCP against a protocol double, and the MQTT client of the simulation runtime against a broker double; the cloud blocks are verified only at the handler with a stand-in service, the MQTT client of the controller is not run against a broker, and Modbus RTU needs a device that was not used"},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_comm_handler_modbus.c","test":"The status of a failed request is a documented code, whatever the client's errno (COM-006, COM-018).","partial":true,"note":"Modbus TCP and the MQTT client of the controller and of the simulation runtime run against protocol and broker doubles; the cloud blocks are verified only at the handler with a stand-in service, and Modbus RTU needs a device that was not used"},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_host_comm.c","test":"The communication blocks in the simulation runtime, on real sockets (COM-006, COM-009, COM-018).","partial":true,"note":"Modbus TCP and the MQTT client of the controller and of the simulation runtime run against protocol and broker doubles; the cloud blocks are verified only at the handler with a stand-in service, and Modbus RTU needs a device that was not used"},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_modbus_client_pdu.c","test":"The frames of the Modbus clients, and the unit of their timeouts (COM-006, COM-012).","partial":true,"note":"Modbus TCP and the MQTT client of the controller and of the simulation runtime run against protocol and broker doubles; the cloud blocks are verified only at the handler with a stand-in service, and Modbus RTU needs a device that was not used"},
+    {"kind":"c-test","ref":"firmware/tests/modbus_client_tcp/src/main.c","test":"A TCP response may arrive in pieces; the client puts it back together (COM-006).","partial":true,"note":"Modbus TCP and the MQTT client of the controller and of the simulation runtime run against protocol and broker doubles; the cloud blocks are verified only at the handler with a stand-in service, and Modbus RTU needs a device that was not used"},
+    {"kind":"c-test","ref":"firmware/tests/modbus_client_tcp/src/main.c","test":"COM-006, COM-012, COM-018: the Modbus TCP client of the product against a","partial":true,"note":"Modbus TCP and the MQTT client of the controller and of the simulation runtime run against protocol and broker doubles; the cloud blocks are verified only at the handler with a stand-in service, and Modbus RTU needs a device that was not used"},
     {"kind":"c-test","ref":"firmware/tests/mqtt_broker_double/src/main.c","test":"COM-006: the MQTT client of the controller, and the blocks that use it, against a broker written for the test."}
   ],
   "COM-007": [
@@ -1637,10 +1651,10 @@
   ],
   "COM-009": [
     {"kind":"unit","ref":"packages/zplc-ide/electron/nativeSimulationEnvironment.test.ts","test":"asks the runtime for its own loopback Modbus and MQTT endpoints, and for no other peer (COM-009)"},
-    {"kind":"unit","ref":"packages/zplc-ide/src/conformance/communication.test.ts","test":"COM-009 the communication blocks in simulation","partial":true,"note":"the runtime reaches loopback endpoints that a test starts (zplc_loopback, in-process doubles); Studio does not start or stop them for a session, does not show the status, and the program has to be given their ports"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/conformance/communication.test.ts","test":"COM-009 the communication blocks in simulation"},
     {"kind":"unit","ref":"packages/zplc-ide/src/runtime/nativeAdapter.test.ts","test":"tells the console what the simulated communication endpoints are, or that they did not start (COM-009)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/runtime/nativeCommunicationEndpoints.test.ts","test":"COM-009 the endpoints that the Studio session starts"},
-    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_host_comm.c","test":"The communication blocks in the simulation runtime, on real sockets (COM-006, COM-009, COM-018).","partial":true,"note":"the runtime reaches loopback endpoints that a test starts (zplc_loopback, in-process doubles); Studio does not start or stop them for a session, does not show the status, and the program has to be given their ports"},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_host_comm.c","test":"The communication blocks in the simulation runtime, on real sockets (COM-006, COM-009, COM-018)."},
     {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_host_loopback.c","test":"The loopback endpoints that a Studio session starts for its runtime (COM-009)."},
     {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_native_runtime_session.c","test":"COM-009: the endpoints of the session are told in the hello, with their reason, so that Studio can show them"}
   ],
@@ -1822,6 +1836,7 @@
     {"kind":"unit","ref":"packages/zplc-ide/src/mcp/hilReach.test.ts","test":"the hardware scenario command started without an interactive terminal exits with an error, before it reads or opens anything (HIL-003, COM-030)"}
   ],
   "IDE-001": [
+    {"kind":"unit","ref":"packages/zplc-ide/electron/cspEnforcement.test.ts","test":"the production content security policy in Chromium (IDE-016)","note":"a page served under the header a packaged build sends, loaded in headless Chromium: an injected inline script and inline event handler do not run, a same-origin script does; skipped when no Chromium is installed; that the packaged application sends this header is the packaged leg of the journey below, run only on a packaged build"},
     {"kind":"unit","ref":"packages/zplc-ide/electron/ipcRegistry.test.ts","test":"project files over the IPC boundary (IDE-001, IDE-016)"},
     {"kind":"unit","ref":"packages/zplc-ide/electron/ipcRegistry.test.ts","test":"register the folder of the window by its id alone, as <folder>/zplc.json, and refuse any other id (IDE-001)"},
     {"kind":"unit","ref":"packages/zplc-ide/electron/ipcRegistry.test.ts","test":"workspace tests, candidate review and the AI provider (IDE-001, IDE-017, IDE-030)"},
@@ -1869,7 +1884,8 @@
   "IDE-005": [
     {"kind":"unit","ref":"packages/zplc-ide/electron/appMenu.test.ts","test":"reload shortcuts (IDE-005, stopgap: the chord only)","partial":true},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"10 Close with unsaved changes","partial":true},
-    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"22 Close Project asks before it closes","partial":true}
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"22 Close Project asks before it closes","partial":true},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"53 Ctrl+R in the development host asks before it discards unsaved work, through a real key press","partial":true}
   ],
   "IDE-006": [
     {"kind":"unit","ref":"packages/zplc-ide/electron/ipcRegistry.test.ts","test":"recovery and session over the IPC boundary (IDE-006, IDE-008)"},
@@ -1958,6 +1974,7 @@
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"29 The Welcome screen loads no editor","partial":true}
   ],
   "IDE-016": [
+    {"kind":"unit","ref":"packages/zplc-ide/electron/cspEnforcement.test.ts","test":"the production content security policy in Chromium (IDE-016)"},
     {"kind":"unit","ref":"packages/zplc-ide/electron/ipcRegistry.test.ts","test":"project files over the IPC boundary (IDE-001, IDE-016)"},
     {"kind":"unit","ref":"packages/zplc-ide/electron/security.test.ts","test":"which navigation revokes the authority of a document (IDE-016)"},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"38 The security properties hold in the running application","partial":true}
@@ -2474,17 +2491,23 @@
     {"kind":"unit","ref":"packages/zplc-ide/src/utils/exampleCatalog.test.ts","test":"UX-029 has a title and a summary in English and in Spanish for every catalogued example, and follows the language setting"},
     {"kind":"unit","ref":"packages/zplc-ide/src/utils/exampleCatalog.test.ts","test":"UX-029 the examples read their title and summary from the catalogs"},
     {"kind":"unit","ref":"tools/ci/i18n-guard.test.ts","test":"UX-029 --write lowers counts and drops entries, and never raises a count"},
+    {"kind":"unit","ref":"tools/ci/i18n-guard.test.ts","test":"UX-029 counts a message of a plain module against the list of offenders"},
     {"kind":"unit","ref":"tools/ci/i18n-guard.test.ts","test":"UX-029 fails for a file that is not listed, a count that grew, a count that shrank and an entry that reached zero"},
     {"kind":"unit","ref":"tools/ci/i18n-guard.test.ts","test":"UX-029 fails on a key in English and not in Spanish, a key only in Spanish, and different placeholders"},
     {"kind":"unit","ref":"tools/ci/i18n-guard.test.ts","test":"UX-029 finds JSX text with letters, a literal shown as a child and a template shown as a child"},
+    {"kind":"unit","ref":"tools/ci/i18n-guard.test.ts","test":"UX-029 finds a sentence in say, title, label, detail and message, and the first argument of announce()"},
     {"kind":"unit","ref":"tools/ci/i18n-guard.test.ts","test":"UX-029 finds a string literal in each user-visible attribute"},
+    {"kind":"unit","ref":"tools/ci/i18n-guard.test.ts","test":"UX-029 finds the text a Label, Problem or Message function returns and the values of a LABELS table"},
     {"kind":"unit","ref":"tools/ci/i18n-guard.test.ts","test":"UX-029 guards components only: not tests, the i18n module, the gallery or plain modules"},
     {"kind":"unit","ref":"tools/ci/i18n-guard.test.ts","test":"UX-029 holds on the repository: the sources and both catalogs pass with the list as it is"},
+    {"kind":"unit","ref":"tools/ci/i18n-guard.test.ts","test":"UX-029 i18n guard: a hard-coded message in a plain module"},
     {"kind":"unit","ref":"tools/ci/i18n-guard.test.ts","test":"UX-029 i18n guard: a hard-coded string in a component"},
     {"kind":"unit","ref":"tools/ci/i18n-guard.test.ts","test":"UX-029 i18n guard: the catalogs as data"},
     {"kind":"unit","ref":"tools/ci/i18n-guard.test.ts","test":"UX-029 i18n guard: the list of offenders only shrinks"},
+    {"kind":"unit","ref":"tools/ci/i18n-guard.test.ts","test":"UX-029 reads the modules that show text and leaves tests, the i18n module and the tools of programs alone"},
     {"kind":"unit","ref":"tools/ci/i18n-guard.test.ts","test":"UX-029 stays quiet on a component that writes its text through t()"},
     {"kind":"unit","ref":"tools/ci/i18n-guard.test.ts","test":"UX-029 stays quiet on a correct pair of catalogs"},
+    {"kind":"unit","ref":"tools/ci/i18n-guard.test.ts","test":"UX-029 stays quiet on text that goes through t(), identifiers, state words, upper-case tokens and other properties"},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"49 The migrated screens read in Spanish, with no raw catalog key, no English left over and no clipped control at 1366 by 768","partial":true}
   ],
   "UX-030": [
@@ -3017,7 +3040,7 @@
     {"kind":"unit","ref":"tools/docs/docs_structure.test.ts","test":"docs structure: a page is published only when both languages are complete (DOC-016)"}
   ],
   "DOC-017": [
-    {"kind":"unit","ref":"tools/ci/brand/generate-icons.test.ts","test":"the one vector mark","partial":true,"note":"one text-free mark in the palette of the application; the site logo, favicon, 1200 by 630 social card and the application icons (png, icns) are generated from it and checked against recorded checksums. The renderer's own favicon (packages/zplc-ide/public/icon.png), the README and the GitHub description still need the same mark, and the name (D-03) is the owner's"},
+    {"kind":"unit","ref":"tools/ci/brand/generate-icons.test.ts","test":"the one vector mark","partial":true,"note":"one text-free mark in the palette of the application; the site logo, favicon, 1200 by 630 social card, the application icons (png, icns) and the favicon of the renderer (packages/zplc-ide/public/icon.png) are generated from it and checked against recorded checksums. The README and the GitHub description still need the same mark, and the name (D-03) is the owner's"},
     {"kind":"unit","ref":"tools/ci/brand/generate-icons.test.ts","test":"what is made from the mark","partial":true,"note":"the outputs are current and sized as the site and electron-builder name them"}
   ],
   "DOC-018": [

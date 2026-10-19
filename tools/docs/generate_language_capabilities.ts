@@ -40,10 +40,10 @@ const CAPABILITY_NAME: Record<(typeof CAPABILITIES)[number], L10n> = {
   edit: { en: 'Edit', es: 'Editar' },
   build: { en: 'Build', es: 'Compilar' },
   simulate: { en: 'Simulate', es: 'Simular' },
-  debug: { en: 'Debug (breakpoint, pause, step)', es: 'Depurar (punto de interrupción, pausa, paso)' },
+  debug: { en: 'Debug (breakpoint, pause, step)', es: 'Depurar (punto de parada, pausa, paso)' },
   watch: { en: 'Watch online values', es: 'Observar valores en línea' },
   force: { en: 'Force', es: 'Forzar' },
-  deploy: { en: 'Deploy to a board', es: 'Desplegar en una placa' },
+  deploy: { en: 'Deploy to a board', es: 'Cargar en una placa' },
 };
 const KIND: Record<'journey' | 'test' | 'conformance', L10n> = {
   journey: { en: 'Studio journey in the native simulation', es: 'Recorrido de Studio en la simulación nativa' },
@@ -54,7 +54,7 @@ const NONE: L10n = { en: 'Not tested end to end yet', es: 'Aún sin prueba de ex
 const BOARD: L10n = { en: 'Board only', es: 'Solo en una placa' };
 const BOARD_SOURCE: L10n = {
   en: 'A person deploys and runs it on a board; the hardware evidence page lists the records',
-  es: 'Una persona lo despliega y lo ejecuta en una placa; la página de evidencia de hardware lista los registros',
+  es: 'Una persona lo carga y lo ejecuta en una placa; la página de evidencia de hardware lista los registros',
 };
 
 export function loadTable(root = ROOT): CapabilityTable {

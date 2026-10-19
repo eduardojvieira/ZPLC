@@ -16,7 +16,7 @@ import { auditMarkup } from '../src/ui/audit';
 import { compilerCompile } from '../src/cli/toolApi';
 import { NATIVE_PROGRAM_MAX_BYTES } from '../electron/security';
 import { assert, MONACO_MODULE_URL, packageRoot } from './run-desktop-smoke';
-import { button, css, launchPackagedApp, menuItem, tab, type App, type Target } from './journeyApp';
+import { button, css, launchPackagedApp, menuItem, notPossible, tab, type App, type Target } from './journeyApp';
 import { domAuditExpression, type DomAuditResult } from './domAudit';
 
 export interface JourneyContext {
@@ -225,6 +225,48 @@ async function watch(app: App, variable: string): Promise<void> {
 }
 const watchRow = (name: string) => `[...document.querySelectorAll('tbody tr')].find((row) => row.firstElementChild?.textContent === ${JSON.stringify(name)})`;
 const watchValue = (app: App, name: string) => app.eval<string | null>(`${watchRow(name)}?.children[1]?.innerText.trim() ?? null`);
+
+/** LNG-027: Pause stops the scans, Step one cycle runs exactly one, Resume lets them run again. The cycle counter of the status bar is the witness. */
+async function pauseStepResume(app: App): Promise<void> {
+  await connectAndRun(app);
+  await app.until('the scans to be counted', async () => await cycles(app) >= 1 || undefined, 60_000);
+  await app.click(button('Pause (F6)', 'prefix'), 'the Pause button');
+  await app.until('the toolbar to offer Resume', async () => await app.visible(button('Resume', 'prefix')) || undefined, 60_000);
+  // a scan in flight when Pause was pressed may still be counted, and a loaded machine counts it late: wait for a steady counter
+  let held = await cycles(app);
+  for (let settled = 0; settled < 2;) {
+    await new Promise((resolve) => setTimeout(resolve, 500));
+    const now = await cycles(app);
+    settled = now === held ? settled + 1 : 0;
+    held = now;
+  }
+  await new Promise((resolve) => setTimeout(resolve, 800));
+  assert(await cycles(app) === held, `The cycle counter moved while the program was paused (${held} then ${await cycles(app)}).`);
+  await app.click(button('Step one cycle', 'prefix'), 'the Step button');
+  await app.until('one more cycle to be counted', async () => await cycles(app) > held || undefined, 60_000);
+  await new Promise((resolve) => setTimeout(resolve, 800));
+  assert(await cycles(app) === held + 1, `Step one cycle should run exactly one scan (${held} before, ${await cycles(app)} after).`);
+  await app.click(button('Resume', 'prefix'), 'the Resume button');
+  await app.until('the program to run again', async () => await app.visible(button('Pause (F6)', 'prefix')) || undefined, 60_000);
+  await app.until('the scans to be counted again', async () => await cycles(app) > held + 5 || undefined, 60_000);
+}
+
+/** A Force checkbox of the Watch table forces the variable and releases it. */
+async function forceAndRelease(app: App, variable: string): Promise<void> {
+  await watch(app, variable);
+  await app.until(`${variable} to have a value in the Watch table`, async () => { const shown = await watchValue(app, variable); return shown !== null && shown !== '...' || undefined; }, 60_000);
+  await app.click(css(`input[aria-label="Force ${variable}"]`), `the Force checkbox of ${variable}`);
+  await app.until(`${variable} to be forced`, async () => await app.eval(`${watchRow(variable)}?.querySelector('[data-forced="true"]') !== null`) === true || undefined);
+}
+async function releaseForce(app: App, variable: string): Promise<void> {
+  if (!await app.clickable(css(`input[aria-label="Force ${variable}"]`))) {
+    app.note('With a force active the Watch table has no visible row at the default panel size');
+    await app.click(css('#workspace-separator'), 'the separator above the lower panel');
+    for (let step = 0; step < 6; step++) await app.press('ArrowUp');
+  }
+  await app.click(css(`input[aria-label="Force ${variable}"]`), `the Force checkbox of ${variable}`);
+  await app.until('the force to be released', async () => await app.eval(`${watchRow(variable)}?.querySelector('input[type="checkbox"]')?.checked === false`) === true || undefined);
+}
 
 /** The prompt that asks what to do with unsaved changes, by its title; null when none is open. */
 const dialogTitle = (app: App) => app.eval<string | null>(`document.querySelector('[data-unsaved-changes-dialog]')?.closest('[role="alertdialog"]')?.querySelector('h2')?.textContent ?? null`);
@@ -498,6 +540,8 @@ export async function runPackagedSecurityProbes(executable: string, scratch: str
 // ---------------------------------------------------------------------------------------------------------------------
 
 const EDIT = ' (* journey edit: ñ 温度 *)';
+/** Line 1 of an Instruction List example opens a block comment, so the typed text stays inside it (no comment delimiters of its own). */
+const IL_EDIT = ' journey edit: ñ 温度';
 
 export const JOURNEYS: Journey[] = [
   {
@@ -2257,6 +2301,96 @@ export const JOURNEYS: Journey[] = [
     },
   },
   {
+    // LNG-027 / LNG-004: Pause, Step one cycle and Resume work the same in every language; the cycle counter is the witness.
+    name: '53a Pause, step one cycle and resume a Ladder program', example: 'blinky', proves: [], partly: ['LNG-004', 'LNG-027'],
+    run: async (app, { project }) => {
+      await openFolder(app, project);
+      await openDiagram(app, 'src/main.ld.json', '[data-ld-rung-id]');
+      const result = await compile(app);
+      assert(result.kind === 'built', `The Blinky Ladder example does not build: ${result.message}`);
+      await pauseStepResume(app);
+    },
+  },
+  {
+    name: '53b Pause, step one cycle and resume a function block diagram', example: 'blinky_fbd', proves: [], partly: ['LNG-004', 'LNG-027'],
+    run: async (app, { project }) => {
+      await openFolder(app, project);
+      await openDiagram(app, 'src/main.fbd.json', '.react-flow__node');
+      const result = await compile(app);
+      assert(result.kind === 'built', `The Blinky FBD example does not build: ${result.message}`);
+      await pauseStepResume(app);
+    },
+  },
+  {
+    name: '53c Pause, step one cycle and resume a sequential function chart', example: 'blinky_sfc', proves: [], partly: ['LNG-004', 'LNG-027'],
+    run: async (app, { project }) => {
+      await openFolder(app, project);
+      await openDiagram(app, 'src/main.sfc.json', '.react-flow__node');
+      const result = await compile(app);
+      assert(result.kind === 'built', `The Blinky SFC example does not build: ${result.message}`);
+      await pauseStepResume(app);
+    },
+  },
+  {
+    name: '53d Pause, step one cycle and resume an Instruction List program', example: 'blinky_il', proves: [], partly: ['LNG-004', 'LNG-027'],
+    run: async (app, { project }) => {
+      await openFolder(app, project);
+      await openFile(app, 'src/main.il');
+      const result = await compile(app);
+      assert(result.kind === 'built', `The Blinky IL example does not build: ${result.message}`);
+      await pauseStepResume(app);
+    },
+  },
+  {
+    name: '53e Pause, step one cycle and resume a Structured Text program', example: 'blinky_st', proves: [], partly: ['LNG-004', 'LNG-027'],
+    run: async (app, { project }) => {
+      await openFolder(app, project);
+      await openFile(app, 'src/main.st');
+      const result = await compile(app);
+      assert(result.kind === 'built', `The Blinky ST example does not build: ${result.message}`);
+      await pauseStepResume(app);
+    },
+  },
+  {
+    name: '54 Instruction List is edited, saved and reopened', example: 'blinky_il', proves: [], partly: ['LNG-001'],
+    run: async (app, { project }) => {
+      const file = join(project, 'src', 'main.il'); const original = disk(file);
+      await openFolder(app, project);
+      await openFile(app, 'src/main.il');
+      await cursorAtEndOfLine(app, 1);
+      await app.type(IL_EDIT);
+      const edited = original.replace(/^[^\n]*/, (first) => `${first}${IL_EDIT}`);
+      await app.until('the editor to hold the typed text', async () => await editorText(app) === edited.replace(/\r\n/g, '\n') || undefined)
+        .catch(async (error: Error) => { throw new Error(`${error.message}: the first line reads ${JSON.stringify((await editorText(app)).split('\n')[0])}`); });
+      assert(disk(file) === original, 'Typing alone must not write the file.');
+      await app.click(saveButton, 'the Save button');
+      await app.until('the edited file on disk', () => disk(file) === edited || undefined);
+      const result = await compile(app);
+      assert(result.kind === 'built', `The edited Instruction List program does not build: ${result.message}`);
+      await app.click(button('Close project'));
+      await app.until('the Welcome screen', async () => await app.visible(button('Open project', 'contains')) || undefined);
+      await openFolder(app, project);
+      await openFile(app, 'src/main.il');
+      assert(await editorText(app) === edited, 'The reopened project does not show the saved text.');
+    },
+  },
+  {
+    name: '54b Instruction List values are watched and a variable is forced and released', example: 'blinky_il', proves: [], partly: ['LNG-006'],
+    run: async (app, { project }) => {
+      await openFolder(app, project);
+      await openFile(app, 'src/main.il');
+      const result = await compile(app);
+      assert(result.kind === 'built', `The Blinky IL example does not build: ${result.message}`);
+      await connectAndRun(app);
+      await watch(app, 'LED_Output');
+      const first = await watchValue(app, 'LED_Output');
+      await app.until('LED_Output to change in the Watch table: the program blinks', async () => { const now = await watchValue(app, 'LED_Output'); return now !== null && now !== '...' && now !== first || undefined; }, 30_000);
+      await forceAndRelease(app, 'LED_Output');
+      assert((await app.text()).includes('1 active force'), 'The force banner does not show one active force.');
+      await releaseForce(app, 'LED_Output');
+    },
+  },
+  {
     name: '29 The Welcome screen loads no editor', example: 'motor_start_stop', proves: [], partly: ['IDE-015'],
     run: async (app, { project }) => {
       // What the page has fetched, as modules (the development host serves each one by its path). The page keeps the first
@@ -3626,7 +3760,7 @@ export const JOURNEYS: Journey[] = [
       await app.until('the project workbench to appear', async () => await app.visible(css('[role="toolbar"]')) || undefined);
 
       /** A catalog key shown as it is written (`console.tab.lab`), or one of the English phrases the migrated screens used to hard-code. */
-      const RAW_KEY = String.raw`\b(?:console|mqtt|modbus|network|io|controller|lab|toolchain|commtags|project|ld|importArchive|interlock|learn|toolbarMsg|examples|panel|toolbar|welcome|common|labScene|notices|workbench\.[a-z]+|editors\.[a-z]+|settings\.(?:communication|firmware|metadata|target|tasks))\.[a-z][A-Za-z0-9]*(?:\.[A-Za-z0-9]+)*\b`;
+      const RAW_KEY = String.raw`\b(?:console|mqtt|modbus|network|io|controller|lab|toolchain|commtags|project|ld|importArchive|interlock|learn|toolbarMsg|examples|panel|toolbar|welcome|common|labScene|notices|terminal|deploy|library|declarationKind|keyboard|sfc|fbd|testDiag|archive|tree|picker|types|signal|store|debugger|link|labPlayback|workbench\.[a-z]+|editors\.[a-z]+|settings\.(?:communication|firmware|metadata|target|tasks))\.[a-z][A-Za-z0-9]*(?:\.[A-Za-z0-9]+)*\b`;
       const text = (id: string) => app.eval<string>(`document.getElementById(${JSON.stringify(id)})?.innerText ?? ''`);
       const walk = async (tab: string, expected: string[], english: string[]) => {
         await app.click(css(`#console-tab-${tab}`), `the ${tab} tab`);
@@ -3647,7 +3781,8 @@ export const JOURNEYS: Journey[] = [
       assert(!new RegExp(RAW_KEY).test(chrome), `The window shows a raw catalog key: ${chrome.match(new RegExp(RAW_KEY))?.[0]}`);
       // The second batch of migrated surfaces (WP-65): the Watch and Terminal tabs, the Inspector and the project settings sections.
       await walk('watch', [], ['Add variable', 'Start debugging to see live values', 'Watch']);
-      await walk('terminal', ['Sin conexión'], ['Not connected', 'Connect to send commands']);
+      // WP-75: the opening lines of the Terminal come from the catalog too (they were written in a plain .ts module).
+      await walk('terminal', ['Sin conexión', 'Terminal serie de ZPLC', 'Use la conexión compartida de la barra de herramientas'], ['Not connected', 'Connect to send commands', 'ZPLC serial terminal', 'Use the shared connection']);
       await app.click(css('[data-toggle-inspector]'), 'the Inspector button of the command bar');
       await app.until('the Inspector in Spanish', async () => await app.visible(css('[aria-label="Inspector del entorno de trabajo"]')) || undefined);
       const inspector = await app.eval<string>(`document.querySelector('[aria-label="Inspector del entorno de trabajo"]')?.innerText ?? ''`);
@@ -3852,7 +3987,35 @@ export const JOURNEYS: Journey[] = [
     },
   },
   {
-    name: '53 The density setting makes controls and rows smaller on every screen, and the setting is one the person reaches from the Welcome screen', example: 'motor_start_stop', proves: ['UX-008'], partly: [],
+    // IDE-005: the reload chord is taken before the page sees it (before-input-event), and a key injected through the DevTools
+    // protocol skips that event, so the chord is pressed here by the display server (xdotool) on the window that the headless host still
+    // opens on the X display.
+    name: '53 Ctrl+R in the development host asks before it discards unsaved work, through a real key press', example: 'motor_start_stop', proves: [], partly: ['IDE-005'],
+    run: async (app, { project }) => {
+      if (process.platform !== 'linux') notPossible('the real key press is made with xdotool on an X display');
+      const xdotool = (...args: string[]) => Bun.spawnSync(['xdotool', ...args], { stdout: 'pipe', stderr: 'pipe' });
+      if (!xdotool('version').success) throw new Error('xdotool is not installed: apt-get install xdotool (the Linux journey job installs it).');
+      const file = join(project, 'src', 'Motor.st'); const original = disk(file);
+      await openFolder(app, project);
+      await openFile(app, 'src/Motor.st'); await cursorAtEndOfLine(app, 1); await app.type(EDIT);
+      await app.until('the typed text', async () => (await editorText(app)).includes(EDIT) || undefined);
+      const window = (await app.until('the application window on the display', async () => {
+        const found = xdotool('search', '--onlyvisible', '--name', 'ZPLC');
+        return found.success ? found.stdout.toString().trim().split('\n').at(-1) || undefined : undefined;
+      }));
+      xdotool('windowfocus', '--sync', window);
+      const marker = await app.eval<string>(`window.__reloadProbe = 'kept'; window.__reloadProbe`);
+      const press = xdotool('key', '--clearmodifiers', 'ctrl+r');
+      assert(press.success, `xdotool could not press Ctrl+R: ${press.stderr.toString()}`);
+      await app.until('the prompt before the window reloads', async () => await dialogTitle(app) === 'Unsaved changes before you reload' || undefined);
+      await app.click(dialogChoice('Cancel'));
+      await app.until('the prompt to close', async () => await dialogTitle(app) === null || undefined);
+      assert((await editorText(app)).includes(EDIT) && await app.eval<string>('window.__reloadProbe') === marker, 'Cancel must keep the page and its changes: the page reloaded.');
+      assert(disk(file) === original, 'The file on disk must be as it was.');
+    },
+  },
+  {
+    name: '55 The density setting makes controls and rows smaller on every screen, and the setting is one the person reaches from the Welcome screen', example: 'motor_start_stop', proves: ['UX-008'], partly: [],
     run: async (app, { project }) => {
       /** The sizes the density tokens give: the control and row tokens on the root, and what two kit controls actually measure. */
       const measure = () => app.eval<{ density: string; control: number; row: number; spacing: number; field: number; button: number }>(`(() => {

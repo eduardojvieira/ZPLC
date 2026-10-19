@@ -3,7 +3,7 @@ slug: /tutorials/first-board
 id: first-board
 title: Su primera placa
 sidebar_label: Su primera placa
-description: "Los pasos para compilar el firmware, grabarlo, conectar Studio, desplegar un programa y observar una salida en una Raspberry Pi Pico o un ESP32-S3, todavía no ejecutados en una placa."
+description: "Los pasos para compilar el firmware, grabarlo, conectar Studio, cargar un programa y observar una salida en una Raspberry Pi Pico o un ESP32-S3, todavía no ejecutados en una placa."
 tags: [tutorial, hardware, raspberry-pi-pico, esp32-s3]
 ---
 
@@ -15,7 +15,7 @@ y del flujo de despliegue de Studio, y **nadie la ha ejecutado en una placa**.
 
 :::danger No ejecutado en una placa
 El firmware de ambas placas compila en integración continua y cabe en su
-presupuesto de flash y RAM. Nadie lo ha grabado, arrancado, desplegado un programa
+presupuesto de flash y RAM. Nadie lo ha grabado, arrancado, cargado un programa
 en él ni visto cambiar una salida: el nivel de ambas placas es `cross-build`
 ([Soporte de hardware](../reference/capabilities-evidence.md)). Nada de lo que sigue
 dice que un paso funcione. Si lo sigue, usted es el primero, y su resultado es una
@@ -48,14 +48,14 @@ placa.
 
 ## 1. Obtenga el firmware
 
-La versión rc.3 no incluye firmware precompilado: se subió a mano. El pipeline de
+La versión rc.3 no incluye firmware precompilado: se subió a mano. El canal de
 versiones compila una imagen del runtime para cada placa del manifiesto en cada
 versión que hace, con el nombre `zplc-runtime-<versión>-<placa>.<extensión>`, con su
 suma de verificación en `SHA256SUMS` y el nivel de evidencia de la placa en las
 notas de la versión. Sus instaladores llevan las imágenes de la Raspberry Pi Pico y
-de la ESP32-S3: en Studio, abra **Project settings**, **Target**, elija la placa, y
+de la ESP32-S3: en Studio, abra **Configuración del proyecto**, **Destino**, elija la placa, y
 Studio muestra el archivo, su SHA-256, dónde está y los pasos para grabarlo. Studio
-solo las muestra: usted graba (paso 2). El pipeline todavía no ha hecho una versión,
+solo las muestra: usted graba (paso 2). El canal todavía no ha hecho una versión,
 así que hoy usted compila el firmware desde el código fuente, con el mismo script que
 ejecuta la integración continua. Prepare el espacio
 de trabajo de Zephyr una vez (unos 6 GB, vea
@@ -98,11 +98,11 @@ Si una placa no vuelve, use el procedimiento de recuperación de su perfil:
 
 ## 3. Conecte Studio
 
-1. Abra el proyecto del ejemplo, compílelo (**Build**, **Compile**) y elija
-   **Hardware** en la barra de herramientas en lugar de **Simulate**.
-2. Presione **Connect**. Un diálogo de Studio lista cada puerto serie con su nombre
+1. Abra el proyecto del ejemplo, compílelo (**Compilación**, **Compilar**) y elija
+   **Hardware** en la barra de herramientas en lugar de **Simular**.
+2. Presione **Conectar**. Un diálogo de Studio lista cada puerto serie con su nombre
    y sus identificadores USB, y marca las placas que conoce. Si la placa no aparece,
-   conéctela y presione **Refresh**. Elija su puerto y presione **Use this port**:
+   conéctela y presione **Actualizar**. Elija su puerto y presione **Usar este puerto**:
    Studio usa solo ese puerto, y elegirlo no envía nada a la placa. En Linux su usuario
    necesita el grupo del puerto serie: [Instalar ZPLC Studio](../getting-started/install.md#linux-acceso-al-puerto-serie).
 3. Studio lee la identidad del runtime: placa, perfil y ABI. Un proyecto compilado
@@ -110,19 +110,29 @@ Si una placa no vuelve, use el procedimiento de recuperación de su perfil:
 
 ## 4. Despliegue y ejecute (lo hace una persona)
 
-1. Presione **Deploy**. Studio muestra el SHA-256 del programa, su tamaño, la
+1. Presione **Cargar**. Studio muestra el SHA-256 del programa, su tamaño, la
    cantidad de tareas y la placa del dispositivo, y le pide confirmar. Un despliegue
    detiene el programa actual y deja el runtime **detenido**: no lo ejecuta.
 2. Compruebe que la máquina está en un estado en el que una salida puede cambiar.
-3. Presione **Run** (F5) usted mismo. El LED debería conmutar cada medio segundo si
+3. Presione **Ejecutar** (F5) usted mismo. El LED debería conmutar cada medio segundo si
    el programa es el del ejemplo.
 
 ## 5. Observe
 
-Abra la pestaña **Watch** y agregue `LED_Output`: su valor sigue al LED. Presione
-**Stop** (Shift+F5): en una placa una detención también lleva las salidas físicas a
+Abra la pestaña **Observación** y agregue `LED_Output`: su valor sigue al LED. Presione
+**Detener** (Shift+F5): en una placa una detención también lleva las salidas físicas a
 su estado seguro, apagado
 ([Planificador](../runtime/scheduler.md#pausa-reanudación-paso-y-parada)).
+
+## Qué está verificado
+
+| Paso | Evidencia hoy | Estado |
+| --- | --- | --- |
+| 1. Obtenga el firmware | El script de compilación se ejecuta en integración continua y comprueba el presupuesto de flash y RAM | Compila en integración continua: `cross-build` |
+| 2. Grábelo | Ninguna | Aún no verificado en hardware |
+| 3. Conecte Studio | El tutorial Blink ejercita la conexión en el simulador; ninguna placa se ha conectado | Aún no verificado en hardware |
+| 4. Despliegue y ejecute | El tutorial Blink ejercita la ejecución en el simulador; ninguna placa ha recibido un programa | Aún no verificado en hardware |
+| 5. Observe | La tabla de observación se ejercita en el simulador; nadie ha visto cambiar una salida física | Aún no verificado en hardware |
 
 ## Qué puede informar
 

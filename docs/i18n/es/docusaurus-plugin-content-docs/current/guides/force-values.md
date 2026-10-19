@@ -23,14 +23,14 @@ pueden forzar un valor ([IA, privacidad y revisión humana](../ide/ai-privacy.md
 
 ## En el simulador
 
-1. Compile el proyecto, elija **Simulate**, presione **Connect** y luego **Run**.
-2. Abra la pestaña **Watch** y agregue la variable: presione **+** e ingrese su
+1. Compile el proyecto, elija **Simular**, presione **Conectar** y luego **Ejecutar**.
+2. Abra la pestaña **Observación** y agregue la variable: presione **+** e ingrese su
    nombre.
-3. Marque **Force** en la fila de la variable. El estado del panel dice
+3. Marque **Forzar** en la fila de la variable. El estado del panel dice
    `1 active force`.
 4. Haga doble clic en la celda **Value** de la fila, escriba el valor y presione
    Enter. El programa lee el valor forzado a partir del siguiente ciclo.
-5. Desmarque **Force** para liberar la variable.
+5. Desmarque **Forzar** para liberar la variable.
 
 En el panel **E/S en vivo**, al comienzo de la pestaña Watch, cada entrada que
 declara el programa en ejecución tiene un interruptor (**Poner TRUE** y **Poner FALSE**)

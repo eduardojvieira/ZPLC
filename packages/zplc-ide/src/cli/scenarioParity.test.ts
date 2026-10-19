@@ -19,6 +19,19 @@ const PROJECTS = new URL('../../projects/', import.meta.url).pathname;
 const bundled = readdirSync(PROJECTS).filter((name) => readdirSync(join(PROJECTS, name)).includes('tests')).sort();
 const signal = () => new AbortController().signal;
 
+/**
+ * A project whose program talks to the Modbus server or the MQTT broker of its own simulation (COM-009). The runs of such
+ * a project meet a real socket, so the bytes of a trace carry the timing of the traffic and two runs of the same project
+ * do not hash alike: the verdict and the sampled values stay compared, the trace hashes are not.
+ */
+const talksToThePeers = (name: string) => readdirSync(join(PROJECTS, name, 'src')).some((file) => /\b(MQTT_|MB_)[A-Z_]+/.test(readFileSync(join(PROJECTS, name, 'src', file), 'utf8')));
+const withoutTraceHashes = <T extends { artifacts: Array<{ kind: string }>; scenarios: unknown }>(value: T): T => ({
+  ...value,
+  artifacts: value.artifacts.map((artifact) => artifact.kind === 'trace' ? { kind: 'trace' } : artifact),
+  scenarios: Array.isArray(value.scenarios) ? value.scenarios.map((scenario) => Object.fromEntries(Object.entries(scenario as object).filter(([key]) => !['traceSha256', 'traceByteLength'].includes(key)))) : value.scenarios,
+}) as T;
+const viewOf = (name: string) => (value: Parameters<typeof essence>[0]) => talksToThePeers(name) ? withoutTraceHashes(essence(value)) : essence(value);
+
 /** The result a person or an agent can compare: the verdict, the hashes and the per-scenario evidence, never timing or ids. */
 function essence(value: { ok: boolean; summary?: { scenarios?: unknown[] }; evidence: { outcome: string; diagnostics: Array<{ code: string; path?: string }>; artifacts: Array<{ kind: string; sha256: string; byteLength: number }> } }) {
   return {
@@ -58,11 +71,12 @@ describe('a project run through the Tool API, the CLI, the MCP tools and Studio 
   for (const name of bundled) {
     itNative(`${name}: tests`, async () => {
       const root = join(PROJECTS, name);
+      const seen = viewOf(name);
       const direct = await testsRun(root);
       const cli = await viaCli(['test', root]);
       const mcp = await viaMcp(root, 'tests_run');
-      expect(essence(cli.json)).toEqual(essence(direct));
-      expect(essence(mcp)).toEqual(essence(direct));
+      expect(seen(cli.json)).toEqual(seen(direct));
+      expect(seen(mcp)).toEqual(seen(direct));
 
       // Studio: what the main process hands the renderer is the Tool API value, and the renderer presents it.
       const studio = presentWorkspaceTestResult(direct);
@@ -81,22 +95,26 @@ describe('a project run through the Tool API, the CLI, the MCP tools and Studio 
         expect(shown.length).toBe(direct.preview.scenarios.length);
       }
       // The CLI prints the recorded values too: the same samples, the same assertions.
-      expect(cli.json.preview).toEqual((direct as { preview?: unknown }).preview);
+      // (a project that talks to the peers of its simulation completes a WITHIN at the moment its socket answers, so only the verdicts are compared)
+      const verdicts = (value: unknown) => ((value as { scenarios?: Array<{ id: string; passed: boolean }> } | undefined)?.scenarios ?? []).map(({ id, passed }) => ({ id, passed }));
+      if (talksToThePeers(name)) expect(verdicts(cli.json.preview)).toEqual(verdicts((direct as { preview?: unknown }).preview));
+      else expect(cli.json.preview).toEqual((direct as { preview?: unknown }).preview);
       expect(cli.code).toBe(direct.ok ? 0 : 1);
     }, 120_000);
 
     itNative(`${name}: the first scenario by itself`, async () => {
       const root = join(PROJECTS, name);
+      const seen = viewOf(name);
       const all = await testsRun(root);
       if (!all.ok) return;
       const id = all.summary.scenarios[0]!.id;
       const direct = await scenarioRun(root, id);
       const cli = await viaCli(['scenario-run', root, id]);
       const mcp = await viaMcp(root, 'scenario_run', { scenarioId: id });
-      expect(essence(cli.json)).toEqual(essence(direct));
-      expect(essence(mcp)).toEqual(essence(direct));
+      expect(seen(cli.json)).toEqual(seen(direct));
+      expect(seen(mcp)).toEqual(seen(direct));
       // One scenario by itself records the same trace as the same scenario in the whole run.
-      expect(essence(direct).scenarios).toEqual((essence(all).scenarios as Array<{ id: string }>).filter((scenario) => scenario.id === id));
+      expect(seen(direct).scenarios).toEqual((seen(all).scenarios as Array<{ id: string }>).filter((scenario) => scenario.id === id));
     }, 120_000);
   }
 

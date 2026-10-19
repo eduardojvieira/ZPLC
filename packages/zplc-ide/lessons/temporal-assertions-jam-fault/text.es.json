@@ -18,12 +18,12 @@
       "key": "predict",
       "title": "Prediga",
       "body": "Antes de ejecutar, anticipe BeltCommand y FaultLamp a {{t:20}}, {{t:30}}, {{t:50}}, {{t:60}} y {{t:80}} ms.",
-      "checkpoint": "Belt ON y FaultLamp OFF a {{t:20}}; Belt OFF y FaultLamp ON a {{t:30}} y todavía a {{t:50}} (Reset a {{t:40}} se ignora y despejar el atasco no libera la falla); ambos OFF a {{t:60}}; Belt ON de nuevo a {{t:80}} sólo tras el nuevo Start."
+      "checkpoint": "Belt ON y FaultLamp OFF a {{t:20}}; Belt OFF y FaultLamp ON a {{t:30}} y todavía a {{t:50}} (Reset a {{t:40}} se ignora y despejar el atasco no libera la falla); ambos OFF a {{t:60}}; Belt ON de nuevo a {{t:80}} solo tras el nuevo Start."
     },
     {
       "key": "edit",
       "title": "Edite",
-      "body": "Corrija esta omisión del starter y guarde antes de ejecutar: El starter omite el enclavamiento del atasco; enclave la falla con JamDetected, ignore Reset mientras el atasco esté presente, libérela sólo con Reset tras despejarse el atasco y exija un nuevo Start para volver a mover la cinta.",
+      "body": "Corrija esta omisión del starter y guarde antes de ejecutar: El starter omite el enclavamiento del atasco; enclave la falla con JamDetected, ignore Reset mientras el atasco esté presente, libérela solo con Reset tras despejarse el atasco y exija un nuevo Start para volver a mover la cinta.",
       "checkpoint": "El escenario visible debe pasar con evidencia host guardada."
     },
     {
@@ -48,14 +48,14 @@
   "hints": [
     {
       "level": 1,
-      "text": "Parta de la lección 4: JamDetected enclava Faulted, y un Reset sólo cuenta cuando la entrada de atasco ya no está; lea los tiempos del escenario para ver qué Reset debe ignorarse."
+      "text": "Parta de la lección 4: JamDetected enclava Faulted, y un Reset solo cuenta cuando la entrada de atasco ya no está; lea los tiempos del escenario para ver qué Reset debe ignorarse."
     },
     {
       "level": 2,
-      "text": "Borre Requested y StartArmed cuando aparece el atasco, libere Faulted sólo con Reset estando JamDetected en FALSE, y deje que Requested vuelva sólo con un Start pulsado después de haber visto Start suelto."
+      "text": "Borre Requested y StartArmed cuando aparece el atasco, libere Faulted solo con Reset estando JamDetected en FALSE, y deje que Requested vuelva solo con un Start pulsado después de haber visto Start suelto."
     }
   ],
   "faultCases": [
-    "El starter omite el enclavamiento del atasco; enclave la falla con JamDetected, ignore Reset mientras el atasco esté presente, libérela sólo con Reset tras despejarse el atasco y exija un nuevo Start para volver a mover la cinta."
+    "El starter omite el enclavamiento del atasco; enclave la falla con JamDetected, ignore Reset mientras el atasco esté presente, libérela solo con Reset tras despejarse el atasco y exija un nuevo Start para volver a mover la cinta."
   ]
 }

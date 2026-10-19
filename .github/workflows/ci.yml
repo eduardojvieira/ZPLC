@@ -152,11 +152,14 @@ jobs:
           test -x "$ZPLC_NATIVE_SIM_BIN"
           bun run --cwd packages/zplc-ide smoke:studio-vertical
 
+      # xdotool (distro package, no repository dependency) presses the reload chord for journey 53 (IDE-005): a key sent
+      # through the DevTools protocol skips Electron's before-input-event, a key from the display server does not.
       - name: Install Electron smoke display
         run: |
           sudo apt-get update
-          sudo apt-get install -y xvfb
+          sudo apt-get install -y xvfb xdotool
           command -v xvfb-run
+          command -v xdotool
 
       - name: Compile Electron development host
         env:

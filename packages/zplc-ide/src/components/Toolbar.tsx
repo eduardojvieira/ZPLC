@@ -13,50 +13,17 @@
  */
 
 import { useState, useRef, useEffect, useEffectEvent } from 'react';
-import {
-  Play, Square,
-  Upload,
-  Hammer,
-  Settings,
-  Sun,
-  Moon,
-  Monitor,
-  Contrast,
-  ChevronDown,
-  FileCode,
-  Save,
-  Download,
-  Usb,
-  Loader2,
-  Pause,
-  SkipForward,
-  Cpu,
-  RotateCcw,
-  Radio,
-  Unplug,
-  Zap,
-} from 'lucide-react';
-import { useIDEStore } from '../store/useIDEStore';
-import { useActiveFileInfo, useToolbarState } from '../store/regionSubscriptions';
-import { useTheme } from '../hooks/useTheme';
+import { Settings, FileCode, Save } from 'lucide-react';
+import { useIDEStore } from '../store/useIDEStore'; import { useActiveFileInfo, useToolbarState } from '../store/regionSubscriptions';
 import { useT } from '../i18n';
 import { bindCommands, publishCommandState } from '../commands/bus';
 import type { CommandId } from '../commands/registry';
-import { shortcutText, withShortcut } from '../commands/shortcutLabels';
+import { withShortcut } from '../commands/shortcutLabels';
 import { useDebugController } from '../hooks/useDebugController';
 import { ZPLC_CONSTANTS } from '@zplc/compiler';
 import type { DebugMap } from '../compiler';
 import { GeneratedCodeDialog } from './GeneratedCodeDialog';
-import { ProjectExportItems } from './ProjectExportItems';
-import {
-  canRunCurrentProgram,
-  isCompileResultCurrent,
-  type LastCompileResult,
-  nextProgramLoadStateAfterCompile,
-  nextProgramLoadStateAfterConnect,
-  PROGRAM_LOAD_STATE,
-  shouldAutoLoadBeforeStart,
-} from './debugSessionState';
+import { canRunCurrentProgram, isCompileResultCurrent, type LastCompileResult, nextProgramLoadStateAfterCompile, nextProgramLoadStateAfterConnect, PROGRAM_LOAD_STATE, shouldAutoLoadBeforeStart } from './debugSessionState';
 import { EXECUTION_MODE, selectRuntimeArtifact, type ExecutionMode } from './runtimeArtifactSelection';
 import { OperationalStatusBar } from './OperationalStatusBar';
 import { CommandBarCenter } from '../shell/CommandBarCenter';
@@ -66,9 +33,13 @@ import { isWorkspaceTestRunCurrent, presentWorkspaceCompileResult, resolveWorksp
 import { shownProjectBridge } from '../ipc/shownProjectBridge';
 import { useNotifications } from '../store/notifications';
 import { Notifications } from './Notifications';
+import { useDropdownMenu } from './useDropdownMenu';
 import { canLinkProjectWorkspace, linkProjectWorkspace } from '../utils/workspaceTestLink';
 import { performHardwareDeploy } from './deployFlow';
 import { confirmReset, confirmStop, proceedAfterConfirmation } from './physicalActions';
+import { RunControls } from './ToolbarRunControls';
+import { ThemeMenu } from './ToolbarThemeMenu';
+import { BuildMenu } from './ToolbarBuildMenu';
 import { Button } from '../ui';
 
 // =============================================================================
@@ -112,8 +83,6 @@ export function Toolbar({ debugController }: ToolbarProps) {
   const mpeekEnabled = useIDEStore((s) => s.debug.mpeekEnabled);
   const toggleMpeek = useIDEStore((s) => s.toggleMpeek);
 
-  const { theme, setTheme, isDark } = useTheme();
-
   // Destructure debug controller
   const {
     adapter,
@@ -133,8 +102,6 @@ export function Toolbar({ debugController }: ToolbarProps) {
   } = debugController;
 
   // Local UI state
-  const [isThemeMenuOpen, setIsThemeMenuOpen] = useState(false);
-  const [isCompileMenuOpen, setIsCompileMenuOpen] = useState(false);
   const [executionMode, setExecutionMode] = useState<ExecutionMode>(EXECUTION_MODE.SIMULATE);
   const [isConnecting, setIsConnecting] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
@@ -142,37 +109,13 @@ export function Toolbar({ debugController }: ToolbarProps) {
   const [programLoadState, setProgramLoadState] = useState<typeof PROGRAM_LOAD_STATE[keyof typeof PROGRAM_LOAD_STATE]>(PROGRAM_LOAD_STATE.EMPTY);
   const compileRevisionRef = useRef(0);
 
-  const themeMenuRef = useRef<HTMLDivElement>(null);
-  const compileMenuRef = useRef<HTMLDivElement>(null);
-  const themeMenuTriggerRef = useRef<HTMLButtonElement>(null);
-  const themeMenuFirstItemRef = useRef<HTMLButtonElement>(null);
-  const compileMenuTriggerRef = useRef<HTMLButtonElement>(null);
-  const compileMenuFirstItemRef = useRef<HTMLButtonElement>(null);
   const connectionButtonRef = useRef<HTMLButtonElement>(null);
   const pendingConnectionFocusRef = useRef<boolean | null>(null);
   const executionButtonRef = useRef<HTMLButtonElement>(null);
   const pendingExecutionFocusRef = useRef<'running' | 'paused' | null>(null);
   const uploadInFlightRef = useRef(false);
 
-  const openCompileMenu = () => {
-    setIsCompileMenuOpen(true);
-    requestAnimationFrame(() => compileMenuFirstItemRef.current?.focus());
-  };
-
-  const closeCompileMenu = (restoreFocus = false) => {
-    setIsCompileMenuOpen(false);
-    if (restoreFocus) requestAnimationFrame(() => compileMenuTriggerRef.current?.focus());
-  };
-
-  const openThemeMenu = () => {
-    setIsThemeMenuOpen(true);
-    requestAnimationFrame(() => themeMenuFirstItemRef.current?.focus());
-  };
-
-  const closeThemeMenu = (restoreFocus = false) => {
-    setIsThemeMenuOpen(false);
-    if (restoreFocus) requestAnimationFrame(() => themeMenuTriggerRef.current?.focus());
-  };
+  const buildMenu = useDropdownMenu();
 
   // State for generated code dialog
   const [showGeneratedCode, setShowGeneratedCode] = useState(false);
@@ -199,20 +142,6 @@ export function Toolbar({ debugController }: ToolbarProps) {
       ? result
       : null;
   };
-
-  // Close dropdowns when clicking outside
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (themeMenuRef.current && !themeMenuRef.current.contains(event.target as Node)) {
-        setIsThemeMenuOpen(false);
-      }
-      if (compileMenuRef.current && !compileMenuRef.current.contains(event.target as Node)) {
-        setIsCompileMenuOpen(false);
-      }
-    }
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
 
   useEffect(() => {
     if (isConnecting || pendingConnectionFocusRef.current !== isConnected) return;
@@ -279,7 +208,7 @@ export function Toolbar({ debugController }: ToolbarProps) {
     clearCompilerMessages();
     const compilerRunId = useIDEStore.getState().compilerRunId;
     const isCurrentRun = () => useIDEStore.getState().compilerRunId === compilerRunId;
-    setIsCompileMenuOpen(false);
+    buildMenu.setOpen(false);
 
     const workspaceTests = shownProjectBridge(window.electronAPI?.workspaceTests);
     const currentWorkspaceLink = workspaceScenarioLink?.projectSession === projectSession ? workspaceScenarioLink : null;
@@ -405,7 +334,7 @@ export function Toolbar({ debugController }: ToolbarProps) {
       addConsoleEntry({ type: 'error', message: t('toolbarMsg.noCurrentCompiledBytecode'), source: 'system' });
       return;
     }
-    setIsCompileMenuOpen(false);
+    buildMenu.setOpen(false);
 
     try {
       downloadBlob(new Blob([new Uint8Array(result.zplcFile).buffer], { type: 'application/octet-stream' }), result.fileName);
@@ -421,7 +350,7 @@ export function Toolbar({ debugController }: ToolbarProps) {
       addConsoleEntry({ type: 'error', message: t('toolbarMsg.noCurrentCompiledCode'), source: 'system' });
       return;
     }
-    setIsCompileMenuOpen(false);
+    buildMenu.setOpen(false);
     setGeneratedCode(result.assembly);
     setGeneratedCodeType('ASM');
     setShowGeneratedCode(true);
@@ -679,13 +608,6 @@ export function Toolbar({ debugController }: ToolbarProps) {
   // Render Helpers
   // ==========================================================================
 
-  const themeOptions = [
-    { id: 'light' as const, label: t('theme.light'), icon: Sun },
-    { id: 'dark' as const, label: t('theme.dark'), icon: Moon },
-    { id: 'high-contrast' as const, label: t('theme.highContrast'), icon: Contrast },
-    { id: 'system' as const, label: t('theme.system'), icon: Monitor },
-  ];
-
   // Status text and color
   const getStatusDisplay = () => {
     if (!isConnected) {
@@ -773,309 +695,49 @@ export function Toolbar({ debugController }: ToolbarProps) {
         </Button>
       )}
 
-      {/* Compile Dropdown */}
-      <div className="relative" ref={compileMenuRef} onKeyDown={(event) => { if (event.key === 'Escape') { event.preventDefault(); closeCompileMenu(true); } }}>
-        <Button variant="bare"
-          ref={compileMenuTriggerRef}
-          type="button"
-          onClick={() => isCompileMenuOpen ? closeCompileMenu() : openCompileMenu()}
-          className="focus-ring flex items-center gap-1.5 px-2.5 py-1.5 rounded bg-[var(--color-surface-700)] hover:bg-[var(--menu-item-bg-active)] text-[var(--color-surface-100)] text-xs font-medium transition-colors"
-          aria-label={t('toolbar.build.label')}
-          aria-haspopup="menu"
-          aria-expanded={isCompileMenuOpen}
-          aria-controls="toolbar-build-menu"
-          tooltip={t('toolbar.build.label')}
-        >
-          <Hammer size={14} />
-          <span>{t('toolbar.build.text')}</span>
-          <ChevronDown size={12} className={`transition-transform ${isCompileMenuOpen ? 'rotate-180' : ''}`} />
-        </Button>
-
-        {isCompileMenuOpen && (
-          <div id="toolbar-build-menu" role="menu" aria-label={t('toolbar.build.label')} className="absolute left-0 top-full mt-1 py-1 w-44 bg-[var(--color-surface-700)] border border-[var(--color-surface-600)] rounded-lg shadow-lg z-50">
-            <Button variant="bare"
-              ref={compileMenuFirstItemRef}
-              type="button"
-              role="menuitem"
-              onClick={() => { void handleCompile(); }}
-              className="focus-ring w-full flex items-center gap-2 px-3 py-2 text-sm text-[var(--color-surface-100)] hover:bg-[var(--menu-item-bg-active)] transition-colors"
-              aria-label={withShortcut(t('toolbar.compile.label'), 'build.compile')}
-            >
-              <Hammer size={14} />
-              <span>{t('toolbar.compile.text')}</span>
-              <span className="ml-auto text-xs text-[var(--color-surface-400)]">{shortcutText('build.compile')}</span>
-            </Button>
-            <div className="h-px bg-[var(--color-surface-600)] my-1" />
-            <Button variant="bare"
-              type="button"
-              role="menuitem"
-              onClick={handleDownloadBytecode}
-              disabled={!hasCurrentCompileResult}
-              className="focus-ring w-full flex items-center gap-2 px-3 py-2 text-sm text-[var(--color-surface-100)] hover:bg-[var(--menu-item-bg-active)] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-              aria-label={t('toolbar.download.label')}
-            >
-              <Download size={14} />
-              <span>{t('toolbar.download.text')}</span>
-            </Button>
-            <Button variant="bare"
-              type="button"
-              role="menuitem"
-              onClick={handleViewAssembly}
-              disabled={!hasCurrentCompileResult}
-              className="focus-ring w-full flex items-center gap-2 px-3 py-2 text-sm text-[var(--color-surface-100)] hover:bg-[var(--menu-item-bg-active)] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-              aria-label={t('toolbar.assembly.label')}
-            >
-              <FileCode size={14} />
-              <span>{t('toolbar.assembly.text')}</span>
-            </Button>
-            <div className="h-px bg-[var(--color-surface-600)] my-1" />
-            <ProjectExportItems />
-          </div>
-        )}
-      </div>
+      <BuildMenu
+        menu={buildMenu}
+        onCompile={() => { void handleCompile(); }}
+        onDownloadBytecode={handleDownloadBytecode}
+        onViewAssembly={handleViewAssembly}
+        hasCurrentCompileResult={hasCurrentCompileResult}
+      />
 
       {/* Separator */}
       <div className="w-px h-6 bg-[var(--color-surface-600)]" />
 
-      {/* Mode Toggle */}
-      <div role="group" aria-label={t('toolbar.mode.label')} className="flex items-center bg-[var(--color-surface-700)] rounded overflow-hidden">
-        <Button variant="bare"
-            type="button"
-            onClick={() => { void handleExecutionModeChange(EXECUTION_MODE.SIMULATE); }}
-            disabled={controlsBusy}
-           className={`focus-ring flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium transition-colors ${executionMode === EXECUTION_MODE.SIMULATE
-            ? 'bg-[var(--color-accent-blue)] text-[var(--color-on-accent)]'
-            : 'text-[var(--color-surface-300)] hover:bg-[var(--menu-item-bg-active)]'
-            } disabled:opacity-50`}
-          aria-label={t('toolbar.simulation.label')}
-          aria-pressed={executionMode === EXECUTION_MODE.SIMULATE}
-          tooltip={t('toolbar.simulation.title')}
-        >
-          <Cpu size={14} />
-          <span className="hidden sm:inline">{t('toolbar.simulation.text')}</span>
-        </Button>
-        <Button variant="bare"
-            type="button"
-            onClick={() => { void handleExecutionModeChange(EXECUTION_MODE.HARDWARE); }}
-            disabled={controlsBusy}
-           className={`focus-ring flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium transition-colors ${executionMode === EXECUTION_MODE.HARDWARE
-            ? 'bg-[var(--color-accent-blue)] text-[var(--color-on-accent)]'
-            : 'text-[var(--color-surface-300)] hover:bg-[var(--menu-item-bg-active)]'
-            } disabled:opacity-50`}
-          aria-label={t('toolbar.hardware.label')}
-          aria-pressed={executionMode === EXECUTION_MODE.HARDWARE}
-          tooltip={t('toolbar.hardware.title')}
-        >
-          <Radio size={14} />
-          <span className="hidden sm:inline">{t('toolbar.hardware.text')}</span>
-        </Button>
-      </div>
-
-      {/* Separator */}
-      <div className="w-px h-6 bg-[var(--color-surface-600)]" />
-
-      {/* Connection / Execution Controls */}
-      <div className="flex items-center gap-1">
-        {/* Connect/Disconnect */}
-        <Button variant="bare"
-          ref={connectionButtonRef}
-          type="button"
-          onClick={() => { void handleConnect(); }}
-          disabled={controlsBusy}
-          className={`focus-ring flex items-center gap-1.5 px-2.5 py-1.5 rounded text-xs font-medium transition-colors ${isConnected
-            ? 'bg-[var(--color-surface-700)] text-[var(--color-surface-200)] hover:brightness-110 hover:text-[var(--color-on-accent)]'
-            : executionMode === 'simulate'
-              ? 'bg-[var(--button-primary-bg)] hover:bg-[var(--button-primary-bg-hover)] text-[var(--button-primary-fg)]'
-              : 'bg-[var(--button-primary-bg)] hover:bg-[var(--button-primary-bg-hover)] text-[var(--button-primary-fg)]'
-          } disabled:opacity-50`}
-          aria-label={isConnected ? t('toolbar.disconnect') : t('toolbar.connect')}
-          tooltip={isConnected ? t('toolbar.disconnect') : t('toolbar.connect')}
-        >
-          {isConnecting ? (
-            <Loader2 size={14} className="animate-spin" />
-          ) : isConnected ? (
-            <Unplug size={14} />
-          ) : executionMode === 'simulate' ? (
-            <Cpu size={14} />
-          ) : (
-            <Usb size={14} />
-          )}
-          <span className="hidden md:inline">{isConnected ? t('toolbar.disconnect') : t('toolbar.connect')}</span>
-        </Button>
-
-        {/* Upload - only for hardware mode when connected */}
-        {executionMode === 'hardware' && isConnected && (
-          <Button variant="bare"
-            type="button"
-            onClick={() => { void handleUpload(); }}
-            disabled={!hasCurrentCompileResult || controlsBusy}
-            className="focus-ring flex items-center gap-1.5 px-2.5 py-1.5 rounded bg-[var(--color-surface-700)] hover:bg-[var(--menu-item-bg-active)] text-[var(--color-surface-200)] text-xs font-medium transition-colors disabled:opacity-40"
-            aria-label={t('toolbar.deploy.label')}
-            tooltip={t('toolbar.deploy.title')}
-          >
-            {isUploading ? <Loader2 size={14} className="animate-spin" /> : <Upload size={14} />}
-            <span className="hidden md:inline">{t('toolbar.deploy.text')}</span>
-          </Button>
-        )}
-
-        {/* Live Values (mpeek) toggle */}
-        {isConnected && (
-          <Button variant="bare"
-            type="button"
-            onClick={toggleMpeek}
-            disabled={controlsBusy}
-            className={`focus-ring flex items-center gap-1 px-2 py-1.5 rounded text-xs font-medium transition-colors ${
-              mpeekEnabled
-                ? 'bg-[var(--color-accent-yellow)] hover:brightness-110 text-[var(--color-on-accent)]'
-                : 'bg-[var(--color-surface-700)] hover:bg-[var(--menu-item-bg-active)] text-[var(--color-surface-400)]'
-            }`}
-            aria-label={mpeekEnabled ? t('toolbar.live.disable') : t('toolbar.live.enable')}
-            tooltip={mpeekEnabled ? t('toolbar.live.enabledTitle') : t('toolbar.live.disabledTitle')}
-          >
-            <Zap size={13} />
-            <span className="hidden lg:inline">{t('toolbar.live.text')}</span>
-          </Button>
-        )}
-
-        {/* Separator when connected */}
-        {isConnected && <div className="w-px h-5 bg-[var(--color-surface-600)] mx-0.5" />}
-
-        {/* Execution Controls - only when connected */}
-        {isConnected && (
-          <>
-            {/* Run/Resume or Pause based on state */}
-            {isRunning ? (
-              <Button variant="bare"
-                type="button"
-                ref={executionButtonRef}
-                onClick={(event) => { void handlePause(event.detail === 0); }}
-                disabled={controlsBusy}
-                className="focus-ring flex items-center gap-1.5 px-2.5 py-1.5 rounded bg-[var(--color-accent-yellow)] hover:brightness-110 text-[var(--color-on-accent)] text-xs font-medium transition-colors"
-                aria-label={withShortcut(t('toolbar.pause.label'), 'debug.pause')}
-                tooltip={withShortcut(t('toolbar.pause.label'), 'debug.pause')}
-              >
-                <Pause size={14} />
-                <span className="hidden sm:inline">{t('toolbar.pause.text')}</span>
-              </Button>
-            ) : isPaused ? (
-              <Button variant="bare"
-                type="button"
-                ref={executionButtonRef}
-                onClick={(event) => { void handleResume(event.detail === 0); }}
-                disabled={!canRunCurrentProgram(executionMode, hasCurrentCompileResult, programLoadState) || controlsBusy}
-                className="focus-ring flex items-center gap-1.5 px-2.5 py-1.5 rounded bg-[var(--color-accent-green)] hover:brightness-110 text-[var(--color-on-accent)] text-xs font-medium transition-colors"
-                aria-label={withShortcut(t('toolbar.resume.label'), 'debug.run')}
-                tooltip={withShortcut(t('toolbar.resume.label'), 'debug.run')}
-              >
-                <Play size={14} />
-                <span className="hidden sm:inline">{t('toolbar.resume.text')}</span>
-              </Button>
-            ) : (
-              <Button variant="bare"
-                type="button"
-                ref={executionButtonRef}
-                onClick={(event) => { void handleStart(event.detail === 0); }}
-                disabled={!canRunCurrentProgram(executionMode, hasCurrentCompileResult, programLoadState) || controlsBusy}
-                className="focus-ring flex items-center gap-1.5 px-2.5 py-1.5 rounded bg-[var(--color-accent-green)] hover:brightness-110 text-[var(--color-on-accent)] text-xs font-medium transition-colors disabled:opacity-40"
-                aria-label={withShortcut(t('toolbar.run.label'), 'debug.run')}
-                tooltip={withShortcut(t('toolbar.run.label'), 'debug.run')}
-              >
-                <Play size={14} />
-                <span className="hidden sm:inline">{t('toolbar.run.text')}</span>
-              </Button>
-            )}
-
-            {/* Step - only when paused or idle */}
-            {(isPaused || isIdle) && (
-              <Button variant="bare"
-                type="button"
-                onClick={() => { void handleStep(); }}
-                disabled={!canRunCurrentProgram(executionMode, hasCurrentCompileResult, programLoadState) || controlsBusy}
-                className="focus-ring flex items-center gap-1.5 px-2 py-1.5 rounded bg-[var(--color-surface-700)] hover:bg-[var(--menu-item-bg-active)] text-[var(--color-surface-200)] text-xs font-medium transition-colors"
-                aria-label={withShortcut(t('toolbar.step.label'), 'debug.step')}
-                tooltip={withShortcut(t('toolbar.step.label'), 'debug.step')}
-              >
-                <SkipForward size={14} />
-              </Button>
-            )}
-
-            {/* Stop - when running or paused */}
-            {(isRunning || isPaused) && (
-              <Button variant="bare"
-                type="button"
-                onClick={() => { void handleStop(); }}
-                disabled={controlsBusy}
-                className="focus-ring flex items-center gap-1.5 px-2.5 py-1.5 rounded bg-[var(--color-accent-red)] hover:brightness-110 text-[var(--color-on-accent)] text-xs font-medium transition-colors"
-                aria-label={withShortcut(t('toolbar.stop.label'), 'debug.stop')}
-                tooltip={withShortcut(t('toolbar.stop.label'), 'debug.stop')}
-              >
-                <Square size={14} />
-              </Button>
-            )}
-
-            {/* Reset */}
-            <Button variant="bare"
-              type="button"
-              onClick={() => { void handleReset(); }}
-              disabled={controlsBusy}
-              className="focus-ring flex items-center gap-1.5 px-2 py-1.5 rounded bg-[var(--color-surface-700)] hover:bg-[var(--menu-item-bg-active)] text-[var(--color-surface-200)] text-xs font-medium transition-colors"
-              aria-label={withShortcut(t('toolbar.reset.label'), 'debug.reset')}
-              tooltip={withShortcut(t('toolbar.reset.title'), 'debug.reset')}
-            >
-              <RotateCcw size={14} />
-            </Button>
-          </>
-        )}
-      </div>
+      <RunControls
+        executionMode={executionMode}
+        isConnected={isConnected}
+        isConnecting={isConnecting}
+        isUploading={isUploading}
+        controlsBusy={controlsBusy}
+        hasCurrentCompileResult={hasCurrentCompileResult}
+        programLoadState={programLoadState}
+        isRunning={isRunning}
+        isPaused={isPaused}
+        isIdle={isIdle}
+        mpeekEnabled={mpeekEnabled}
+        toggleMpeek={toggleMpeek}
+        connectionButtonRef={connectionButtonRef}
+        executionButtonRef={executionButtonRef}
+        onExecutionModeChange={handleExecutionModeChange}
+        onConnect={handleConnect}
+        onUpload={handleUpload}
+        onStart={handleStart}
+        onPause={handlePause}
+        onResume={handleResume}
+        onStep={handleStep}
+        onStop={handleStop}
+        onReset={handleReset}
+      />
 
       <CommandBarCenter />
 
       {/* Separator */}
       <div className="w-px h-6 bg-[var(--color-surface-600)]" />
 
-      {/* Theme Switcher */}
-      <div className="relative max-[1100px]:hidden" ref={themeMenuRef} onKeyDown={(event) => { if (event.key === 'Escape') { event.preventDefault(); closeThemeMenu(true); } }}>
-        <Button variant="bare"
-          ref={themeMenuTriggerRef}
-          type="button"
-          onClick={() => isThemeMenuOpen ? closeThemeMenu() : openThemeMenu()}
-          className="focus-ring flex items-center gap-1 p-1.5 rounded hover:bg-[var(--color-surface-700)] text-[var(--color-surface-200)] transition-colors"
-          aria-label={t('toolbar.theme.label')}
-          aria-haspopup="menu"
-          aria-expanded={isThemeMenuOpen}
-          aria-controls="toolbar-theme-menu"
-          tooltip={t('toolbar.theme.title', { theme: themeOptions.find((option) => option.id === theme)?.label ?? theme })}
-        >
-          {isDark ? <Moon size={16} /> : <Sun size={16} />}
-        </Button>
-
-        {isThemeMenuOpen && (
-          <div id="toolbar-theme-menu" role="menu" aria-label={t('toolbar.theme.label')} className="absolute right-0 top-full mt-1 py-1 w-32 bg-[var(--color-surface-700)] border border-[var(--color-surface-600)] rounded-lg shadow-lg z-50">
-            {themeOptions.map((option) => {
-              const Icon = option.icon;
-              const isActive = theme === option.id;
-              return (
-                <Button variant="bare"
-                  key={option.id}
-                  ref={option.id === themeOptions[0].id ? themeMenuFirstItemRef : undefined}
-                  type="button"
-                  role="menuitemradio"
-                  aria-checked={isActive}
-                  aria-label={t('toolbar.theme.use', { theme: option.label.toLowerCase() })}
-                  onClick={() => { setTheme(option.id); closeThemeMenu(true); }}
-                  className={`focus-ring w-full flex items-center gap-2 px-3 py-1.5 text-xs transition-colors ${isActive
-                    ? 'bg-[var(--color-accent-blue)] text-[var(--color-on-accent)]'
-                    : 'text-[var(--color-surface-100)] hover:bg-[var(--menu-item-bg-active)]'
-                    }`}
-                >
-                  <Icon size={14} />
-                  <span>{option.label}</span>
-                </Button>
-              );
-            })}
-          </div>
-        )}
-      </div>
+      <ThemeMenu />
 
       {/* Settings */}
       <Button variant="bare"
@@ -1112,3 +774,4 @@ export function Toolbar({ debugController }: ToolbarProps) {
 }
 
 export default Toolbar;
+

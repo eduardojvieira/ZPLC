@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'bun:test';
 
-import { checkCatalogs, checkRepository, checkSources, isGuarded, midSentenceCapitals, ratchetOffenders, violationsOf, type Offender, type Rule } from './i18n-guard';
+import { checkCatalogs, checkRepository, checkSources, isGuarded, isGuardedModule, midSentenceCapitals, ratchetOffenders, violationsOf, type Offender, type Rule } from './i18n-guard';
 
 // The sources below are fixtures held as strings, not product sources (VF-006).
 const at = (name: string): string => `packages/zplc-ide/src/components/${name}.tsx`;
@@ -113,5 +113,46 @@ describe('UX-029 i18n guard: the catalogs as data', () => {
 
   it('UX-029 stays quiet on a correct pair of catalogs', () => {
     expect(checkCatalogs({ 'a.b.one': '{count} file', 'a.b.other': '{count} files' }, { 'a.b.one': '{count} archivo', 'a.b.other': '{count} archivos' })).toEqual([]);
+  });
+});
+
+describe('UX-029 i18n guard: a hard-coded message in a plain module', () => {
+  const module = (name: string): string => `packages/zplc-ide/src/editors/${name}.ts`;
+  const found = (text: string, path = module('keyboard')): string[] => violationsOf({ path, text }).map((violation) => `${violation.rule}:${violation.snippet}`);
+
+  it('UX-029 finds a sentence in say, title, label, detail and message, and the first argument of announce()', () => {
+    expect(found("export const a = (n: number) => ({ say: `Deleted ${n} elements.` });")).toEqual(['hard-coded-message:`Deleted ${n} elements.`']);
+    expect(found("const a = { title: 'Variable the coil writes' };")).toEqual(["hard-coded-message:'Variable the coil writes'"]);
+    expect(found("const a = { label: ok ? 'Wires' : 'No wires', detail: 'Output of the block' };")).toHaveLength(3);
+    expect(found("log({ type: 'info', message: 'Program deployed and stopped.', source: 'runtime' });")).toHaveLength(1);
+    expect(found("announce('Element palette: type to search.');")).toHaveLength(1);
+  });
+
+  it('UX-029 stays quiet on text that goes through t(), identifiers, state words, upper-case tokens and other properties', () => {
+    expect(found("const a = { say: t('ld.say.deleted', { n }), title: t('ld.title.coil') };")).toEqual([]);
+    expect(found("const a = { group: 'first-steps', kind: 'Wires', type: 'info', label: 'TRUE', id: 'palette' };")).toEqual([]);
+    expect(found("console.log('Opening the port'); throw new Error('Internal failure of the parser');")).toEqual([]);
+  });
+
+  it('UX-029 finds the text a Label, Problem or Message function returns and the values of a LABELS table', () => {
+    expect(found("export const kindLabel = (kind: string): string => LABEL[kind]; const KIND_LABEL = { PROGRAM: 'Program', STRUCT: 'Structure' };")).toHaveLength(2);
+    expect(found("export function libraryProblem(p: string): string | null { if (p === '') return 'The project root cannot be a library.'; return p ? null : 'No project is open.'; }")).toHaveLength(2);
+    expect(found("export const stateText = (on: boolean) => (on ? 'Connected now' : 'Not connected');")).toHaveLength(2);
+    expect(found("const context = 'Some text here'; function render() { return 'Plain words here'; }")).toEqual([]);
+    expect(found("export const kindLabel = (kind: string): string => t(`kind.${kind}`);")).toEqual([]);
+  });
+
+  it('UX-029 reads the modules that show text and leaves tests, the i18n module and the tools of programs alone', () => {
+    expect(isGuardedModule(module('keyboard'))).toBe(true);
+    expect(isGuardedModule('packages/zplc-ide/src/components/deployFlow.ts')).toBe(true);
+    for (const path of ['packages/zplc-ide/src/editors/keyboard.test.ts', 'packages/zplc-ide/src/i18n/catalog/ld.ts', 'packages/zplc-ide/src/mcp/server.ts', 'packages/zplc-ide/src/cli/toolApi.ts', 'packages/zplc-ide/src/compiler/index.ts', 'packages/zplc-ide/src/components/A.tsx']) {
+      expect(isGuardedModule(path)).toBe(false);
+    }
+  });
+
+  it('UX-029 counts a message of a plain module against the list of offenders', () => {
+    const file = { path: module('keyboard'), text: "const a = { say: 'Removed the wire.' };" };
+    expect(checkSources([file], { offenders: [] })[0]).toContain('hard-coded-message');
+    expect(checkSources([file], { offenders: [{ file: file.path, rule: 'hard-coded-message', count: 1, requirement: 'UX-029', added: '2026-10-19', reason: 'fixture' }] })).toEqual([]);
   });
 });

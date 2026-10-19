@@ -1,7 +1,7 @@
 ---
 slug: /guides/build-firmware
 id: build-firmware
-title: Compile el firmware desde el código fuente
+title: Compilar el firmware desde el código fuente
 sidebar_label: Compilar el firmware
 description: "Cómo compilar la imagen del runtime de ZPLC para una placa desde el código fuente con el script que usa la integración continua, y qué demuestra una compilación terminada."
 tags: [how-to, hardware, firmware]
@@ -10,7 +10,7 @@ tags: [how-to, hardware, firmware]
 # Compile el firmware desde el código fuente
 
 La compilación produce una imagen del runtime para una placa. Es un paso aparte de
-[grabar](./flash-firmware.md), desplegar y ejecutar, y **usted inicia cada uno**: el asistente de
+[grabar](./flash-firmware.md), cargar y ejecutar, y **usted inicia cada uno**: el asistente de
 Studio y el servidor MCP nunca graban, despliegan, fuerzan, inician ni detienen un dispositivo.
 
 :::caution Redactado, ejecutado en un anfitrión solo donde se indica

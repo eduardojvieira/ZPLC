@@ -18,12 +18,12 @@
       "key": "predict",
       "title": "Prediga",
       "body": "La primera pieza es metálica y la segunda no metálica.",
-      "checkpoint": "Espere desvío sólo para la primera; Belt queda activo para ambas."
+      "checkpoint": "Espere desvío solo para la primera; Belt queda activo para ambas."
     },
     {
       "key": "schedule",
       "title": "Lea el calendario",
-      "body": "El JSON agenda clasificador→desviador {{t:20}}→{{t:30}} ms y {{t:50}}→{{t:70}} ms, con tick de {{t:10}} ms hasta {{t:80}} ms. Start se pulsa sólo a {{t:0}} ms, así que el programa debe retener el pedido de cinta.",
+      "body": "El JSON agenda clasificador→desviador {{t:20}}→{{t:30}} ms y {{t:50}}→{{t:70}} ms, con tick de {{t:10}} ms hasta {{t:80}} ms. Start se pulsa solo a {{t:0}} ms, así que el programa debe retener el pedido de cinta.",
       "checkpoint": "Las tres assertions son {{v:Conveyor.BeltCommand=true,Conveyor.DiverterCommand=true@30|AT@30 Belt=true/Diverter=true}}, {{v:Conveyor.BeltCommand=true,Conveyor.DiverterCommand=false@70|AT@70 Belt=true/Diverter=false}} y NEVER Diverter=true con Belt=false."
     },
     {

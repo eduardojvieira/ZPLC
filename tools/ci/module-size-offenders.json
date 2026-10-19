@@ -1,31 +1,10 @@
 [
   {
-    "file": "packages/zplc-ide/src/store/useIDEStore.ts",
-    "requirement": "IDE-014",
-    "added": "2026-10-10",
-    "lines": 1692,
-    "reason": "The single store holds project, files, tabs, debug, console and settings slices. Split by slice into stores or slice creators with the same public hook (WP-40); the store split is the IDE state work of WS-24a."
-  },
-  {
     "file": "packages/zplc-ide/src/runtime/serialAdapter.ts",
     "requirement": "IDE-014",
     "added": "2026-10-10",
-    "lines": 1360,
+    "lines": 1351,
     "reason": "One class holds the serial transport, the command framing, the upload and the debug commands. Split the framing and parsing from the commands behind the same adapter interface; the device protocol work (COM) owns the file."
-  },
-  {
-    "file": "packages/zplc-ide/src/components/Console.tsx",
-    "requirement": "IDE-014",
-    "added": "2026-10-10",
-    "lines": 1178,
-    "reason": "The lower workbench and the bodies of its Output, Problems, Tests, Changes, Agent and Trace tabs in one component that shares one busy flag and the workspace-test state; the other tabs (Explorer, Inspector, Interlocks, Lab, Learn, Terminal, Watch) already have their own module. The remaining panels cannot move before Console.tabNavigation.test.ts, which pins the text of this file, is replaced by render tests (VF-007), and WS-24a (notifications) edits it first. Recorded size raised from 1315 to 1331 once, by the merge of ws-integration (WS-20, WS-21, WS-22a added code here); from now on it can only shrink."
-  },
-  {
-    "file": "packages/zplc-ide/src/components/Toolbar.tsx",
-    "requirement": "IDE-014",
-    "added": "2026-10-10",
-    "lines": 1114,
-    "reason": "Build, run, deploy, connect and export controls and their handlers (about 700 lines of handlers) in one component. Split the handlers into hooks by control group once the notification and progress work (IDE-021, WS-24a) has settled them."
   },
   {
     "file": "packages/zplc-ide/src/cli/toolApi.ts",
@@ -35,17 +14,10 @@
     "reason": "Every tool operation (inspect, compile, check, safety, tests, scenarios, firmware) in one module. Split by operation family; the cancellable worker work (IDE-012) touches the same file. Recorded size raised from 1111 to 1138 once, by the merge of ws-integration (WS-20, WS-21, WS-22a added code here); from now on it can only shrink."
   },
   {
-    "file": "packages/zplc-ide/src/hooks/useDebugController.ts",
-    "requirement": "IDE-014",
-    "added": "2026-10-10",
-    "lines": 1066,
-    "reason": "Connection, polling, forces, breakpoints and trace in one hook. Split by concern; the worker and notification work (WS-24a) edits it first. Recorded size raised from 1107 to 1128 once, by the merge of ws-integration (WS-20, WS-21, WS-22a added code here); from now on it can only shrink."
-  },
-  {
     "file": "packages/zplc-ide/src/models/ld.ts",
     "requirement": "IDE-014",
     "added": "2026-10-10",
-    "lines": 1080,
+    "lines": 1079,
     "reason": "Ladder model types, validation and edit operations in one module; the visual-language work (WS-22a) is changing it. Split model, validation and operations after that lands. Recorded size raised from 1074 to 1080 once, by the merge of ws-integration (WS-20, WS-21, WS-22a added code here); from now on it can only shrink."
   },
   {

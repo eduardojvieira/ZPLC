@@ -13,13 +13,13 @@ El entorno de trabajo mantiene la edición en el centro. Una barra de actividade
 barra lateral principal, a la izquierda, contienen el navegador del proyecto, la
 búsqueda, las pruebas y las lecciones; una barra lateral secundaria opcional, a la
 derecha, contiene el Inspector; y un panel de resultados bajo el editor contiene
-Output, Problems, Tests, Interlocks, Lab, Changes, Agent, Trace, Watch y Terminal.
+Salida, Problemas, Pruebas, Enclavamientos, Laboratorio, Cambios, Agente, Traza, Observación y Terminal.
 
 ## Flujo diario
 
 1. Trabaje en una carpeta de proyecto que usted elija.
 2. Compile y resuelva los diagnósticos.
-3. Ejecute una prueba temporal o un escenario POSIX nativo y revise su trace.
+3. Ejecute una prueba temporal o un escenario POSIX nativo y revise su traza.
 4. Verifique el origen de los resultados antes de sacar una conclusión.
 
 ## Disposición, navegador y editores de configuración
@@ -40,8 +40,8 @@ lateral secundaria**; al final, la barra de estado.
   conserve su ancho: se muestra o se oculta con el botón Inspector de la barra de comandos o con
   **Ver > Mostrar u ocultar la barra lateral secundaria**. Las paletas de bloques de los editores de escalera y
   de diagrama de bloques de función permanecen dentro de esos editores.
-- **Panel de resultados.** Output, Problems, Tests, Interlocks, Lab, Changes, Agent, Trace,
-  Watch y Terminal. Se oculta con **Ver > Mostrar u ocultar el panel de resultados**.
+- **Panel de resultados.** Salida, Problemas, Pruebas, Enclavamientos, Laboratorio,
+  Cambios, Agente, Traza, Observación y Terminal. Se oculta con **Ver > Mostrar u ocultar el panel de resultados**.
 
 **Ver > Mostrar u ocultar la barra lateral principal** es `Ctrl+Alt+B`, la secundaria es
 `Ctrl+Alt+I` y el panel de resultados es `Ctrl+Alt+J` (⌘⌥ en macOS). **Mostrar el navegador
@@ -107,35 +107,35 @@ No se midió ninguna ventana empaquetada, de macOS ni de Windows.
 
 La pantalla de bienvenida ofrece **Abrir proyecto**, **Nuevo proyecto**, **Aprender** y los ejemplos incluidos. Los ejemplos se agrupan por tema y, dentro de un tema con varios niveles, por nivel (Principiante, Intermedio, Avanzado); los nombres de niveles, lenguajes, placas y temas siguen el idioma de la interfaz. Un proyecto que no se puede abrir se informa en la pantalla, junto a la acción, nunca en un cuadro de mensaje del sistema.
 
-La pantalla de bienvenida lista, en **Recent**, hasta diez carpetas que usted abrió antes, la más reciente primero, cada una con su nombre y la fecha de su última apertura. Al elegir una, se reabre sin diálogo de carpeta. Una carpeta que se movió, se borró o se reemplazó por un enlace aparece como no encontrada, con un botón **Forget** que la quita de la lista. Solo se recuerda una carpeta que usted eligió con el diálogo de carpetas del sistema.
+La pantalla de bienvenida lista, en **Recientes**, hasta diez carpetas que usted abrió antes, la más reciente primero, cada una con su nombre y la fecha de su última apertura. Al elegir una, se reabre sin diálogo de carpeta. Una carpeta que se movió, se borró o se reemplazó por un enlace aparece como no encontrada, con un botón **Olvidar** que la quita de la lista. Solo se recuerda una carpeta que usted eligió con el diálogo de carpetas del sistema.
 
-Para cada proyecto, Studio recuerda además las pestañas abiertas, la pestaña activa, la posición del cursor y del desplazamiento de cada archivo, y el tamaño de los paneles del editor y del panel inferior (y si el panel inferior estaba contraído). Los vuelve a poner la próxima vez que se abre esa carpeta, desde **Recent** o con **Open project**. En la sesión solo se guardan rutas y posiciones: el texto sin guardar se conserva aparte y solo se ofrece de nuevo tras un fallo (véase Recuperar trabajo sin guardar), y una pestaña cuyo archivo ya no existe se descarta sin avisar. La lista y las sesiones se guardan en el directorio privado de datos de usuario de Studio, nunca en la carpeta del proyecto, y la sesión de un proyecto que sale de la lista se borra la próxima vez que arranca Studio.
+Para cada proyecto, Studio recuerda además las pestañas abiertas, la pestaña activa, la posición del cursor y del desplazamiento de cada archivo, y el tamaño de los paneles del editor y del panel inferior (y si el panel inferior estaba contraído). Los vuelve a poner la próxima vez que se abre esa carpeta, desde **Recientes** o con **Abrir proyecto**. En la sesión solo se guardan rutas y posiciones: el texto sin guardar se conserva aparte y solo se ofrece de nuevo tras un fallo (véase Recuperar trabajo sin guardar), y una pestaña cuyo archivo ya no existe se descarta sin avisar. La lista y las sesiones se guardan en el directorio privado de datos de usuario de Studio, nunca en la carpeta del proyecto, y la sesión de un proyecto que sale de la lista se borra la próxima vez que arranca Studio.
 
 Nivel de evidencia: host. Las pruebas unitarias del requisito IDE-008 (`packages/zplc-ide/electron/recentProjects.test.ts`, `sessionStore.test.ts`, `packages/zplc-ide/src/utils/sessionState.test.ts` y `packages/zplc-ide/src/store/sessionPersistence.test.ts`) cubren la lista y el formato de la sesión, y el recorrido 12 (restaurar la sesión) y el recorrido 14 (un proyecto reciente que ya no está) de `bun run test:journeys` manejan la aplicación real en una pantalla.
 
 ## Preferencias
 
-Las preferencias son suyas, no de un proyecto: se aplican a todos los proyectos y se guardan para su cuenta de usuario, de modo que sobreviven a un reinicio. Se abren desde el desplegable **Preferences** de la pantalla de bienvenida, o al principio de la pestaña Project Settings dentro de un proyecto.
+Las preferencias son suyas, no de un proyecto: se aplican a todos los proyectos y se guardan para su cuenta de usuario, de modo que sobreviven a un reinicio. Se abren desde el desplegable **Preferencias** de la pantalla de bienvenida, o al principio de la pestaña Project Settings dentro de un proyecto.
 
 | Preferencia | Opciones | Valor inicial |
 |---|---|---|
 | Theme | Light, Dark, High contrast | Sistema |
 | Editor font size | De 10 a 32 px | 14 px |
-| Tab size | 2, 3, 4 u 8 espacios | 4; la sangría propia de un archivo no la reemplaza |
+| Tamaño de tabulación | 2, 3, 4 u 8 espacios | 4; la sangría propia de un archivo no la reemplaza |
 | Density | Comfortable, Compact | Comfortable; compact reduce el espaciado de toda la ventana |
-| Language | Automático, English, Español | Automático: sigue el idioma del sistema operativo y fija toda la interfaz y las lecciones de Learn (vea [Idioma de la interfaz](#idioma-de-la-interfaz)) |
+| Idioma | Automático, English, Español | Automático: sigue el idioma del sistema operativo y fija toda la interfaz y las lecciones de Aprender (vea [Idioma de la interfaz](#idioma-de-la-interfaz)) |
 | Autosave | Desactivado, o tras 5, 15, 30 o 60 segundos sin escribir | Desactivado |
-| Check for a newer release when Studio starts | Activada o desactivada, y un botón **Check now** | Desactivada |
+| Check for a newer release when Studio starts | Activada o desactivada, y un botón **Buscar ahora** | Desactivada |
 
-El autoguardado escribe los archivos modificados con el mismo guardado que **Save all**, sin una línea en Output por cada guardado; un archivo que no se puede escribir sigue modificado y se informa. Junto con las copias de recuperación, un fallo cuesta como máximo lo escrito en el último segundo.
+El autoguardado escribe los archivos modificados con el mismo guardado que **Guardar todo**, sin una línea en Salida por cada guardado; un archivo que no se puede escribir sigue modificado y se informa. Junto con las copias de recuperación, un fallo cuesta como máximo lo escrito en el último segundo.
 
-La comprobación de actualizaciones consulta las versiones publicadas de este proyecto en GitHub y dice si la última es más nueva que la compilación en ejecución. No envía nada sobre usted, no descarga nada ni instala nada; la respuesta es una versión y un enlace. No se ejecuta hasta que usted la activa o pulsa **Check now**.
+La comprobación de actualizaciones consulta las versiones publicadas de este proyecto en GitHub y dice si la última es más nueva que la compilación en ejecución. No envía nada sobre usted, no descarga nada ni instala nada; la respuesta es una versión y un enlace. No se ejecuta hasta que usted la activa o pulsa **Buscar ahora**.
 
 Nivel de evidencia: host. `packages/zplc-ide/src/utils/appSettings.test.ts`, `src/store/useAppSettings.test.ts`, `src/store/autosave.test.ts`, `electron/updateCheck.test.ts` y `electron/updateCheckIpc.test.ts` cubren las preferencias, el autoguardado y la comprobación de actualizaciones (requisitos IDE-007 e IDE-010), y el recorrido 21 (las preferencias se aplican y persisten por usuario) de `bun run test:journeys` las cambia en la aplicación real y la reinicia.
 
 ## Idioma de la interfaz
 
-La preferencia **Language** elige el idioma de Studio: **Automático**, **English** o **Español**. Automático, el valor por defecto, sigue el idioma del sistema operativo (`es`, `es-AR` y `es-MX` dan español; cualquier otro idioma da inglés). La elección se aplica de inmediato, sin reiniciar, y fija también el idioma de las lecciones de Learn y el `lang` de la ventana. El texto en español es español latinoamericano neutro, con formas impersonales o de «usted», como en un manual industrial.
+La preferencia **Idioma** elige el idioma de Studio: **Automático**, **English** o **Español**. Automático, el valor por defecto, sigue el idioma del sistema operativo (`es`, `es-AR` y `es-MX` dan español; cualquier otro idioma da inglés). La elección se aplica de inmediato, sin reiniciar, y fija también el idioma de las lecciones de Aprender y el `lang` de la ventana. El texto en español es español latinoamericano neutro, con formas impersonales o de «usted», como en un manual industrial.
 
 Todo texto de la interfaz está en dos catálogos, `packages/zplc-ide/src/i18n/en.ts` (la fuente) y `es.ts`. Los textos de cada pantalla viven en un módulo propio, `packages/zplc-ide/src/i18n/catalog/<pantalla>.ts` (`console.ts`, `mqtt.ts`, `toolbarMsg.ts`, `examples.ts`, etc.), que reúne los dos idiomas y que `en.ts` y `es.ts` combinan. El nombre del producto se escribe una vez para el renderer (`src/productName.ts`) y una vez para el proceso principal (`electron/productName.ts`); los catálogos y el título de la ventana lo interpolan, y `electron/productName.test.ts` comprueba que ambos coinciden con el título de `index.html`. Para agregar un texto:
 
@@ -143,7 +143,7 @@ Todo texto de la interfaz está en dos catálogos, `packages/zplc-ide/src/i18n/e
 2. Agregue la misma clave, en español, al mismo módulo (o a `es.ts`). Una clave que falta o que sobra es un error de TypeScript, y un `{name}` distinto es un fallo de `tools/ci/i18n-guard.ts`.
 3. Escríbalo en el componente con `const { t, tn } = useT()` y `t('welcome.open.title')`, o `tn('explorer.migration.review', count)` para un plural. Fuera de un componente (un menú, un diálogo, un error) use `t` de `src/i18n`.
 
-El texto va en minúsculas salvo la inicial (sentence case), sin signos de exclamación, sin términos internos y, en español, sin voseo (UX-030); la guarda falla ante cualquiera de los cuatro. `bun run lint:ide` ejecuta la guarda: falla ante un texto escrito en un componente (texto JSX, o una cadena en `aria-label`, `placeholder`, `alt`, `label`, `tooltip`, `title` o `description`) y ante un catálogo que incumple esas reglas. La lista de componentes con texto escrito dentro, `tools/ci/i18n-offenders.json`, está vacía: todo el texto de los componentes está en los catálogos, y un texto nuevo escrito dentro hace fallar la guarda. La guarda lee solo componentes; unos pocos textos armados en módulos `.ts` simples (líneas de registro, algunos mensajes de error) aún no están en los catálogos. La consola declara una sola vez el límite de la evidencia del equipo anfitrión, como una insignia «Solo evidencia del equipo anfitrión» cuyo texto emergente dice que la evidencia es de POSIX nativo y no de hardware ni de HIL.
+El texto va en minúsculas salvo la inicial (sentence case), sin signos de exclamación, sin términos internos y, en español, sin voseo (UX-030); la guarda falla ante cualquiera de los cuatro. `bun run lint:ide` ejecuta la guarda: falla ante un texto escrito en un componente (texto JSX, o una cadena en `aria-label`, `placeholder`, `alt`, `label`, `tooltip`, `title` o `description`) y ante un catálogo que incumple esas reglas. `tools/ci/i18n-offenders.json` ya no tiene ningún componente: todo el texto de los componentes está en los catálogos, y un texto nuevo escrito dentro hace fallar la guarda. La guarda también lee los módulos `.ts` simples que muestran texto a la persona (presentaciones, flujos, teclados): señala una oración en la propiedad `say`, `title`, `label`, `detail`, `message`, `description`, `hint`, `heading`, `summary`, `placeholder`, `tooltip` o `ariaLabel` de un objeto, en el primer argumento de `announce()` y en lo que devuelve o contiene una función o tabla llamada `...Label`, `...Problem`, `...Message`, `...Text`, `...Title`, `...Hint`, `...Description`, `...Summary` o `LABEL`, `MESSAGE`. Los identificadores, las palabras sueltas en minúsculas y los símbolos en mayúsculas no cuentan, y quedan fuera de su alcance las pruebas, el módulo i18n, el servidor MCP, la CLI, el compilador y el servicio de lenguaje. La misma lista que solo se achica registra lo que queda en esos módulos (`rule: hard-coded-message`); los textos ya movidos están en `src/i18n/catalog/moduleText.ts`. Las líneas de apertura de la terminal, el registro de la carga, los problemas de bibliotecas y de nombres, los mensajes de teclado de los editores SFC, FBD y LD, los diagnósticos de las pruebas y las líneas de consola del depurador ya se movieron. El resto (los mensajes de cable de la cadena de herramientas, los diagnósticos de las opciones de compilación al estilo del compilador y algunos textos del enlace con el dispositivo) sigue en la lista hasta que se mueva. La consola declara una sola vez el límite de la evidencia del equipo anfitrión, como una insignia «Solo evidencia del equipo anfitrión» cuyo texto emergente dice que la evidencia es de POSIX nativo y no de hardware ni de HIL.
 
 Nivel de evidencia: host. `packages/zplc-ide/src/i18n/i18n.test.tsx`, `tools/ci/i18n-guard.test.ts` y `src/utils/appSettings.test.ts` cubren los catálogos, la preferencia de idioma y la guarda (requisitos UX-029, UX-030 y UX-031).
 
@@ -187,27 +187,27 @@ Nivel de evidencia: host. `packages/zplc-ide/electron/shellPreferences.test.ts`,
 
 ## Archivos y carpetas en el árbol del proyecto
 
-En el modo Archivos del navegador, el encabezado tiene **New File** y **New Folder**. Un clic derecho sobre un archivo o una carpeta (o F2 para renombrar) abre sus acciones:
+En el modo Archivos del navegador, el encabezado tiene **Nuevo archivo** y **Nueva carpeta**. Un clic derecho sobre un archivo o una carpeta (o F2 para renombrar) abre sus acciones:
 
 | Acción | Qué hace |
 |---|---|
-| **Rename** | Renombra el archivo o la carpeta en disco. Su pestaña abierta, su texto sin guardar y sus puntos de parada lo siguen, y una tarea que ejecuta un programa renombrado se actualiza en `zplc.json` (cuando la configuración del proyecto no tiene ediciones sin guardar). |
-| **Duplicate** | Copia un archivo junto al original como `Nombre_copy.ext` (o `_copy2`, y así), a partir del texto que muestra el editor. |
+| **Renombrar** | Renombra el archivo o la carpeta en disco. Su pestaña abierta, su texto sin guardar y sus puntos de parada lo siguen, y una tarea que ejecuta un programa renombrado se actualiza en `zplc.json` (cuando la configuración del proyecto no tiene ediciones sin guardar). |
+| **Duplicar** | Copia un archivo junto al original como `Nombre_copy.ext` (o `_copy2`, y así), a partir del texto que muestra el editor. |
 | **Move to...** | Mueve un archivo o una carpeta a otra carpeta del proyecto. Un programa que sale de `src` se avisa: la compilación lee solo los archivos que están directamente en `src`. |
-| **Delete** / **Delete folder** | Lo elimina del disco tras una confirmación que nombra los archivos con cambios sin guardar que contiene. |
+| **Eliminar** / **Eliminar carpeta** | Lo elimina del disco tras una confirmación que nombra los archivos con cambios sin guardar que contiene. |
 | **New folder...** | Sobre una carpeta: crea una carpeta dentro de ella. |
 
 Studio rechaza un nombre que ya existe, o que la compilación leería como igual al de otro programa (diferencias de mayúsculas, `main.ld` y `main.ld.json`, el mismo nombre en otra carpeta), y lo dice en el diálogo sin cambiar nada. Una carpeta vacía se muestra en el árbol.
 
-Un cambio hecho fuera de Studio se detecta mientras hay un proyecto abierto. Un archivo sin cambios sin guardar se recarga solo, y uno que se borró se cierra; un archivo con cambios sin guardar pregunta **Keep my version** o **Load from disk** (para un archivo borrado, **Keep my version** o **Close file**) y nada se sobrescribe antes de que usted responda. Un guardado hecho por Studio nunca se toma por un cambio externo. Los archivos nuevos y los eliminados aparecen en el árbol. Los cambios externos a `zplc.json` todavía no se vigilan.
+Un cambio hecho fuera de Studio se detecta mientras hay un proyecto abierto. Un archivo sin cambios sin guardar se recarga solo, y uno que se borró se cierra; un archivo con cambios sin guardar pregunta **Conservar mi versión** o **Cargar desde el disco** (para un archivo borrado, **Conservar mi versión** o **Cerrar archivo**) y nada se sobrescribe antes de que usted responda. Un guardado hecho por Studio nunca se toma por un cambio externo. Los archivos nuevos y los eliminados aparecen en el árbol. Los cambios externos a `zplc.json` todavía no se vigilan.
 
 Nivel de evidencia: host. `packages/zplc-ide/src/project/treeOperations.test.ts`, `src/store/useIDEStore.test.ts` (operaciones del árbol, sobre el servicio de proyecto real en una carpeta temporal), `src/store/externalChanges.test.ts`, `electron/projectWatcher.test.ts` y `electron/projectFiles.test.ts` cubren las reglas, y los recorridos 23 (operaciones del árbol del proyecto) y 24 (cambios hechos fuera de Studio) de `bun run test:journeys` manejan la aplicación real.
 
 ## Cobertura de enclavamientos declarados
 
 Un proyecto puede declarar pares de salidas que nunca deben estar activas a la vez, en `safety.incompatibleOutputs` de
-`zplc.json`. La pestaña **Interlocks** comprueba que los escenarios guardados afirmen cada par con un `NEVER` exacto, y
-lista cada par como **Covered** o **Missing exact NEVER coverage**. Es una vista propia, no parte de Problems ni de
+`zplc.json`. La pestaña **Enclavamientos** comprueba que los escenarios guardados afirmen cada par con un `NEVER` exacto, y
+lista cada par como **Cubierto** o **Falta la cobertura exacta de NEVER**. Es una vista propia, no parte de Problemas ni de
 Tests. Necesita un proyecto guardado abierto en la aplicación de escritorio y el `zplc.json` vinculado, y dice qué
 hacer cuando no puede ejecutarse. Comprueba los escenarios, no la máquina: no establece seguridad física, tiempos ni
 certificación. `zplc-cli safety-check` y la herramienta MCP `safety_check` dan la misma respuesta.
@@ -218,7 +218,7 @@ comprobación en la aplicación real.
 
 ## Un resultado desde Studio, la CLI y las herramientas MCP
 
-Una prueba de escenario da el mismo resultado desde donde se ejecute. La pestaña **Tests** de Studio, `zplc-cli test` y
+Una prueba de escenario da el mismo resultado desde donde se ejecute. La pestaña **Pruebas** de Studio, `zplc-cli test` y
 `zplc-cli scenario-run`, y las herramientas MCP `tests_run` y `scenario_run` llaman a la misma Tool API, sobre el mismo
 runtime POSIX nativo con el mismo reloj virtual, de modo que una aserción temporal (`AT`, `WITHIN`, `FOR`,
 `EVENTUALLY`, `ALWAYS`, `NEVER`, `UNTIL`, `RISING`, `FALLING`) se juzga sobre las mismas muestras. El veredicto, el hash
@@ -232,7 +232,7 @@ Studio, y compara los resultados. No cubre una placa.
 
 ## Declaraciones y carpetas de biblioteca
 
-Bajo el árbol de archivos, el modo Archivos del navegador tiene una sección **Declarations** (cerrada hasta que usted la abre con su
+Bajo el árbol de archivos, el modo Archivos del navegador tiene una sección **Declaraciones** (cerrada hasta que usted la abre con su
 encabezado, que muestra cuántas hay y cuántos archivos no se compilan). Lista las declaraciones del proyecto: los
 programas, bloques de función, funciones, interfaces y tipos de datos que declaran sus archivos Structured Text,
 agrupados bajo su archivo. Elegir una abre su archivo con el cursor en su nombre. La lista cubre los archivos que lee la
@@ -253,7 +253,7 @@ editor ST.
 
 Un archivo Structured Text que no está en `src` ni directamente en una carpeta de biblioteca no lo lee ninguna
 compilación, y Studio lo dice como la compilación: el archivo se marca `not compiled` en el árbol, la sección lista su
-carpeta con un botón **List as library**, y **Build** informa `SOURCE_NOT_COMPILED`. Tampoco se lee una carpeta dentro de
+carpeta con un botón **Incluir como biblioteca**, y **Compilación** informa `SOURCE_NOT_COMPILED`. Tampoco se lee una carpeta dentro de
 una biblioteca; lístela como biblioteca propia. Una carpeta de biblioteca que se renombra o se elimina queda en la
 lista, marcada "not in the project", hasta que usted la quita. Un proyecto que espera que se aplique su migración de
 versión 1 no puede cambiar sus bibliotecas hasta que se aplique.
@@ -265,13 +265,13 @@ comprueba el árbol, la paleta de Ladder y el cursor, y compila el proyecto con 
 
 ## Archivos de proyecto
 
-**Export Project Archive** (menú Build options) escribe el proyecto abierto en un solo archivo, un zip, que usted elige
-en el diálogo de guardado del sistema. **Import a project archive** (pantalla de bienvenida) lo vuelve a leer como un
+**Exportar archivo del proyecto** (menú Compilación) escribe el proyecto abierto en un solo archivo, un zip, que usted elige
+en el diálogo de guardado del sistema. **Importar un archivo de proyecto** (pantalla de bienvenida) lo vuelve a leer como un
 proyecto equivalente:
 
 1. Elegir el archivo lo lee y no escribe nada. Un diálogo dice qué contiene (sus archivos, carpetas y tamaño), de quién
    es el proyecto y, para un proyecto de versión 1, las líneas que cambia la migración en `zplc.json`.
-2. **Choose a folder and import** pide una carpeta vacía, escribe allí los archivos byte por byte y abre el proyecto. Una
+2. **Elegir una carpeta e importar** pide una carpeta vacía, escribe allí los archivos byte por byte y abre el proyecto. Una
    carpeta que no está vacía se rechaza, y una importación que falla deja la carpeta vacía otra vez.
 
 El archivo contiene los archivos tal como están en disco, por eso Studio le pide guardar antes los archivos
@@ -290,15 +290,15 @@ un proyecto en la aplicación real y compara las dos carpetas.
 
 ## Cerrar con cambios sin guardar
 
-Studio nunca descarta un archivo modificado sin preguntar. Cerrar una pestaña modificada, cerrar el proyecto, cerrar la ventana y salir de la aplicación preguntan, cada uno, si guardar, descartar o cancelar; **Cancel** (y Escape) dejan todo como estaba, y un guardado que falla mantiene el archivo abierto y modificado. Cerrar el proyecto ofrece **Save all and close**, **Discard changes and close** y **Continue editing**. Los atajos de recarga (Ctrl+R, Ctrl+Shift+R, Cmd+R) no existen en una compilación empaquetada: el menú no tiene entrada de recarga y las teclas se descartan. Un entorno de desarrollo solo recarga pasando por la misma pregunta.
+Studio nunca descarta un archivo modificado sin preguntar. Cerrar una pestaña modificada, cerrar el proyecto, cerrar la ventana y salir de la aplicación preguntan, cada uno, si guardar, descartar o cancelar; **Cancelar** (y Escape) dejan todo como estaba, y un guardado que falla mantiene el archivo abierto y modificado. Cerrar el proyecto ofrece **Guardar todo y cerrar**, **Descartar los cambios y cerrar** y **Seguir editando**. Los atajos de recarga (Ctrl+R, Ctrl+Shift+R, Cmd+R) no existen en una compilación empaquetada: el menú no tiene entrada de recarga y las teclas se descartan. Un entorno de desarrollo solo recarga pasando por la misma pregunta.
 
 Nivel de evidencia: host. El recorrido 10 (cerrar con cambios sin guardar: pestaña y ventana) y el recorrido 22 (Close Project pregunta antes de cerrar) de `bun run test:journeys` manejan la aplicación real; `packages/zplc-ide/electron/appMenu.test.ts` y `closeGuardIpc.test.ts` fijan el menú y los atajos de recarga. El atajo de recarga no se puede inyectar en el proceso principal con el protocolo de DevTools que usan los recorridos, así que la pregunta de recarga está cubierta por pruebas unitarias y por la lectura del manejador registrado, no por un recorrido.
 
 ## Recuperar trabajo sin guardar
 
-Studio guarda una copia de cada archivo modificado en su directorio privado de datos de usuario un segundo después de que usted deja de escribir (y como mínimo cada pocos segundos mientras sigue escribiendo). Guardar un archivo, descartarlo, cerrarlo con **Discard**, o cerrar el proyecto o la ventana y responder **Save** o **Discard** elimina la copia, de modo que una salida normal no deja nada.
+Studio guarda una copia de cada archivo modificado en su directorio privado de datos de usuario un segundo después de que usted deja de escribir (y como mínimo cada pocos segundos mientras sigue escribiendo). Guardar un archivo, descartarlo, cerrarlo con **Descartar**, o cerrar el proyecto o la ventana y responder **Guardar** o **Descartar** elimina la copia, de modo que una salida normal no deja nada.
 
-Si Studio se cerró de golpe o falló, abra el proyecto otra vez: un diálogo **Recover unsaved changes** lista cada archivo que tenía texto modificado, con su nombre y la hora en que se guardó la copia. **Restore** devuelve el texto al editor, todavía sin guardar; **Discard** elimina la copia. Cerrar el diálogo no decide nada y las copias se ofrecen de nuevo la próxima vez. Una copia igual al archivo en disco, o cuyo archivo ya no existe, se elimina sin preguntar. Las copias de los proyectos que salen de la lista Recent se borran cuando arranca Studio.
+Si Studio se cerró de golpe o falló, abra el proyecto otra vez: un diálogo **Recuperar cambios sin guardar** lista cada archivo que tenía texto modificado, con su nombre y la hora en que se guardó la copia. **Restaurar** devuelve el texto al editor, todavía sin guardar; **Descartar** elimina la copia. Cerrar el diálogo no decide nada y las copias se ofrecen de nuevo la próxima vez. Una copia igual al archivo en disco, o cuyo archivo ya no existe, se elimina sin preguntar. Las copias de los proyectos que salen de la lista Recent se borran cuando arranca Studio.
 
 Límites: un proyecto conserva copias de a lo sumo 64 archivos y unos 64 MB de texto. Los cambios en la configuración del proyecto (`zplc.json`) todavía no se copian.
 
@@ -306,20 +306,20 @@ Nivel de evidencia: host. Las pruebas unitarias del requisito IDE-006 (`packages
 
 ## Un fallo se queda en su región
 
-Si el editor, el panel inferior o la barra de herramientas lanzan una excepción al dibujarse, esa región muestra qué se detuvo y un botón **Retry**, y el resto de la ventana sigue funcionando, así que todavía puede guardar sus archivos. **Retry** vuelve a dibujar solo esa región. Si el fallo está fuera de toda región, toda la ventana muestra el mismo mensaje con **Retry** y una forma de cerrar el proyecto; la ventana nunca queda en blanco.
+Si el editor, el panel inferior o la barra de herramientas lanzan una excepción al dibujarse, esa región muestra qué se detuvo y un botón **Reintentar**, y el resto de la ventana sigue funcionando, así que todavía puede guardar sus archivos. **Reintentar** vuelve a dibujar solo esa región. Si el fallo está fuera de toda región, toda la ventana muestra el mismo mensaje con **Reintentar** y una forma de cerrar el proyecto; la ventana nunca queda en blanco.
 
 Nivel de evidencia: host. El recorrido 20 (una región que falla no deja la ventana en blanco) de `bun run test:journeys` hace fallar cada una de las tres regiones en la aplicación real, comprueba que las otras dos siguen funcionando y que Retry devuelve la región caída; `packages/zplc-ide/src/components/ErrorBoundary.test.tsx` cubre la lógica de la región.
 
 ## E/S en vivo
 
-Durante una simulación nativa, la pestaña **Watch**, que se abre sola al iniciar la
+Durante una simulación nativa, la pestaña **Observación**, que se abre sola al iniciar la
 simulación, empieza con **E/S en vivo**: el faceplate del programa en ejecución. Lee el
 mapa de E/S del programa cargado, así que lista todas las entradas y todas las salidas
 con su propio nombre, sea cual sea. Las entradas son cada variable mapeada a la imagen de
 entrada (`AT %IX0.3`, `AT %IW2`) y cada `VAR_INPUT` de un programa; las salidas son cada
 variable mapeada a la imagen de salida (`AT %QX0.5`). Cada fila tiene su tipo, su
 dirección y su valor en vivo, y una salida se lee con el mismo vocabulario que la tabla
-Watch: TRUE, FALSE y un valor que no se ha leído son cada uno un glifo y una palabra, y un
+Observación: TRUE, FALSE y un valor que no se ha leído son cada uno un glifo y una palabra, y un
 valor forzado dice que está forzado.
 
 Una entrada se opera con el control que corresponde a su tipo. Un BOOL tiene un
@@ -339,7 +339,7 @@ una un scan completo. Cuando el runtime no puede aplicar un cambio (la simulaci�
 detenida, en pausa, falló, o el simulador no informa la capacidad) los controles quedan
 deshabilitados y el panel dice por qué con palabras. Un programa en pausa puede estar
 reteniendo un scan en un punto de interrupción, y un cambio nunca llega a un scan que ya
-empezó, así que un programa en pausa se edita desde la tabla Watch, cuya escritura se toma
+empezó, así que un programa en pausa se edita desde la tabla de observación, cuya escritura se toma
 de inmediato como siempre se tomó la de un depurador. **Forzar** mantiene la entrada en su valor
 actual (y **Aplicar** cambia entonces el valor forzado), para los tipos de hasta 32 bits
 que transporta un forzado; al liberarlo la entrada vuelve a quedar libre.
@@ -348,7 +348,7 @@ El faceplate escribe con la escritura de memoria tipada, en la dirección y con 
 mapa de depuración; el runtime conserva `simulation.input.set` para los tres nombres de
 motor de los programas iniciales. Ni el agente ni el servidor MCP pueden operar el
 faceplate: no tienen ninguna herramienta que fije una entrada o escriba memoria. En
-hardware, las entradas se fuerzan desde la tabla watch.
+hardware, las entradas se fuerzan desde la tabla de observación.
 
 Nivel de evidencia: host. `packages/zplc-ide/src/runtime/declaredInputs.test.ts`,
 `ioMap.test.ts` y `faceplateState.test.ts` cubren las listas, la codificación de cada tipo
@@ -378,26 +378,26 @@ Nivel de evidencia: host. `packages/zplc-ide/src/plants/plantEngine.test.ts` cub
 
 El resultado de una compilación, un guardado, un despliegue, un cambio de conexión
 y una ejecución de pruebas aparece abajo a la derecha de la ventana como una
-notificación. Cada una dice qué pasó y tiene **Details**, que abre el panel con la
-evidencia: **Output** para un guardado, una compilación correcta, un despliegue y
-una conexión; **Problems** para una compilación fallida; **Tests** para una
+notificación. Cada una dice qué pasó y tiene **Detalles**, que abre el panel con la
+evidencia: **Salida** para un guardado, una compilación correcta, un despliegue y
+una conexión; **Problemas** para una compilación fallida; **Pruebas** para una
 ejecución de pruebas. Una operación larga (una compilación, una ejecución de
 escenarios, un despliegue, una conexión) muestra una barra de progreso mientras
-corre, y una compilación y una ejecución de pruebas muestran además **Cancel**: una
+corre, y una compilación y una ejecución de pruebas muestran además **Cancelar**: una
 compilación cancelada no conserva ningún artefacto, y una ejecución cancelada
 detiene su runtime nativo.
 
 Un éxito se va solo tras unos segundos. Un fallo, una advertencia (por ejemplo un
 dispositivo que recibió una compilación anterior) y una cancelación permanecen
 hasta que usted las descarta. La notificación es un resumen: todos los mensajes que
-Studio escribía antes en el panel Output siguen ahí.
+Studio escribía antes en el panel Salida siguen ahí.
 
 Nivel de evidencia: host. `packages/zplc-ide/src/store/notifications.test.ts` cubre
 el modelo (progreso, la acción de cancelar, cuánto permanece cada resultado, el
 límite de la lista) y `src/components/NotificationsList.test.tsx` el dibujo; el
 recorrido 36 de `bun run test:journeys` guarda, compila, conecta, ejecuta y cancela
 una ejecución larga de pruebas y rompe la compilación en la aplicación real, y
-sigue **Details** de cada notificación hasta su panel (requisito IDE-021). Una
+sigue **Detalles** de cada notificación hasta su panel (requisito IDE-021). Una
 notificación de despliegue necesita un dispositivo y no la cubre ningún recorrido.
 
 ## Qué se carga al iniciar
@@ -434,17 +434,17 @@ programa compilado y, después, ejecutar o depurar. Una persona inicia cada una.
 
 ## Learn
 
-Learn tiene dos partes: el **inicio de Learn**, una página que muestra el curso, y la vista **Learn** de la barra lateral primaria, que contiene la lección en la que usted trabaja. Esto es lo que ofrece hoy:
+Aprender tiene dos partes: el **inicio de Aprender**, una página que muestra el curso, y la vista **Aprender** de la barra lateral primaria, que contiene la lección en la que usted trabaja. Esto es lo que ofrece hoy:
 
 - 28 lecciones, en español y en inglés (el selector está en el panel; por defecto sigue el idioma de la aplicación). Cada lección es un paquete de datos, `packages/zplc-ide/lessons/<id>/`, con su texto en ambos idiomas, objetivos de aprendizaje, dos niveles de pista, un escenario de referencia con su hash de contenido y el proyecto de ejemplo del que usted parte: un archivo en Structured Text, o un archivo Ladder en la lección 5.
 - Las lecciones están en un curso: `packages/zplc-ide/lessons/course.json` enumera en orden los doce módulos del currículo, cada uno con un nivel (Fundamentos, Intermedio, Avanzado), el módulo que requiere y las pistas que ofrece (Simulación, Hardware), y cada lección indica su módulo, nivel, prerrequisitos y pistas en su propio manifiesto. Una lección que no admite una pista explica por qué y qué hacer en su lugar. El generador `bun tools/ci/generate-lesson-index.ts` valida el archivo y la ubicación de cada lección (el módulo existe, mismo nivel, pistas que el módulo ofrece, ningún prerrequisito en un módulo posterior) e incorpora el curso al índice de lecciones generado. Todos los módulos tienen ahora al menos una lección; un módulo sin ninguna se mostraría vacío, sin inventar ninguna lección. Las dos lecciones del módulo 10 (Modbus y MQTT) se califican en Simulación contra un servidor Modbus TCP y un broker MQTT que la sesión de simulación inicia en este equipo; son dobles de protocolo y no muestran que un dispositivo, un broker o un servicio en la nube reales acepten el mismo intercambio.
 - Cada lección recorre seis etapas (en inglés Objective, Predict, Edit, Run, Observe y Reflect), el punto de control esperado de cada etapa permanece oculto hasta que usted lo pide, y las dos pistas se abren a pedido. Cada pista que usted abre queda registrada en su progreso. La solución de referencia se abre solo después de que usted lo confirma, y el progreso registra que la vio.
-- **Abrir el espacio de trabajo**, en la vista Learn de la barra lateral (o **Iniciar** en el inicio de Learn), crea el espacio de trabajo de la lección a partir de su proyecto inicial y lo abre, sin paso de copia. La aplicación de escritorio guarda el espacio de trabajo en su propia carpeta de datos de usuario, `learn-workspaces/<id de la lección>`, de modo que no aparece ningún diálogo de carpeta y no se copia nada a mano; cada inicio posterior lo vuelve a abrir con sus ediciones intactas. (Una versión de navegador que no puede darle esa carpeta a la aplicación pide una carpeta la primera vez, como antes.) La lección sigue visible junto al editor: en la barra de actividades de Learn ocupa la barra lateral primaria, y cuando usted cambia a Proyecto, Búsqueda o Pruebas pasa a la barra lateral secundaria, junto al Inspector, que queda a una elección de distancia. **Restaurar el proyecto inicial** devuelve los archivos del proyecto inicial después de que usted lo confirma; los archivos que usted agregó se conservan. Usted edita su espacio de trabajo, lo guarda y presiona **Verificar** (**Check** en inglés). Studio ejecuta su programa guardado contra el escenario del paquete de la lección, identificado por su hash de contenido, en un proceso propio que **Cancelar** detiene; los archivos de escenario de su carpeta nunca se leen, de modo que editar un escenario allí no produce un aprobado. Una lección se da por completada cuando todas las aserciones de ese escenario pasaron. Una verificación que falla enumera cada aserción que falló con su instante, los valores esperados y observados, y la dirección de esa muestra en la traza registrada. El registro de calificación contiene el identificador y la versión de la lección, el hash del escenario, el hash del programa, la versión del runtime y la hora. Todavía puede ejecutar el escenario de su carpeta desde **Tests**; esa ejecución no es la calificación.
-- Studio guarda su progreso en un único archivo versionado de su directorio de datos de usuario: lecciones aprobadas con su registro de calificación, lecciones en curso, la última lección (el panel la vuelve a abrir), y cada nivel de pista mostrado (el nivel 1 y el nivel 2 se registran por separado) y si se mostró la solución (la solución de referencia se abre a pedido). Un archivo de progreso escrito por una versión anterior, que guardaba solo el nivel de pista más alto, se lee y se migra la próxima vez que se guarda. El archivo de progreso de una versión anterior se migra y se deja donde estaba. **Exportar progreso** e **Importar progreso** (**Export progress** e **Import progress** en inglés) trasladan, en el inicio de Learn, el documento completo como un archivo; una importación se valida, se combina con la calificación más reciente primero y conserva las lecciones que esta versión no conoce. Un archivo rechazado dice por qué (demasiado grande, no es JSON, no es un archivo de progreso, una versión que este Studio no puede leer, o dañado) y deja su progreso como estaba.
-- El **inicio de Learn** es una página propia que se abre sin un proyecto abierto y sin red: desde **Learn** en la pantalla de bienvenida, desde el elemento **Learn** de la barra de actividades y desde **Abrir el inicio del curso** en el menú Ayuda. Enumera las pistas (Simulación, Hardware) y los doce módulos en orden, cada uno con su nivel, el módulo que requiere y su tiempo estimado, y bajo cada módulo sus lecciones con su estado en palabras, nunca solo con color: Bloqueada, Disponible, En curso o Aprobada. Una lección indica qué pistas admite y, para una pista que no admite, su propia razón y qué hacer en su lugar (escritas en el paquete de la lección, en los dos idiomas). **Continuar** retoma la última lección en la que trabajó, o comienza el curso si usted es un estudiante nuevo. Escape o **Cerrar** vuelve al editor, que queda como estaba.
-- Una lección está bloqueada hasta que se aprueban las lecciones que requiere, y el inicio dice cuáles. **Desbloquear todas las lecciones**, en el inicio, levanta el bloqueo de todas: es un ajuste guardado y Studio anuncia el cambio. Una lección que usted ya inició o aprobó no vuelve a bloquearse. En la vista Learn de la barra lateral no se puede elegir una lección bloqueada.
-- **Aula: ocultar las soluciones de referencia**, en el inicio de Learn, es un ajuste guardado de este equipo. Mientras está activado, Learn no ofrece ninguna solución de referencia y lo dice. Para docentes, `bun tools/ci/learn-educator.ts` verifica un archivo de progreso exportado contra los hash de las lecciones e imprime el esquema del curso; vea [Docentes](../learn/educators.md). Nada de esto necesita una cuenta ni un servidor.
-- Learn nunca inicia una operación física: solo copia un proyecto y abre **Tests**.
+- **Abrir el espacio de trabajo**, en la vista Aprender de la barra lateral (o **Iniciar** en el inicio de Aprender), crea el espacio de trabajo de la lección a partir de su proyecto inicial y lo abre, sin paso de copia. La aplicación de escritorio guarda el espacio de trabajo en su propia carpeta de datos de usuario, `learn-workspaces/<id de la lección>`, de modo que no aparece ningún diálogo de carpeta y no se copia nada a mano; cada inicio posterior lo vuelve a abrir con sus ediciones intactas. (Una versión de navegador que no puede darle esa carpeta a la aplicación pide una carpeta la primera vez, como antes.) La lección sigue visible junto al editor: en la barra de actividades de Learn ocupa la barra lateral primaria, y cuando usted cambia a Proyecto, Búsqueda o Pruebas pasa a la barra lateral secundaria, junto al Inspector, que queda a una elección de distancia. **Restaurar el proyecto inicial** devuelve los archivos del proyecto inicial después de que usted lo confirma; los archivos que usted agregó se conservan. Usted edita su espacio de trabajo, lo guarda y presiona **Verificar** (**Check** en inglés). Studio ejecuta su programa guardado contra el escenario del paquete de la lección, identificado por su hash de contenido, en un proceso propio que **Cancelar** detiene; los archivos de escenario de su carpeta nunca se leen, de modo que editar un escenario allí no produce un aprobado. Una lección se da por completada cuando todas las aserciones de ese escenario pasaron. Una verificación que falla enumera cada aserción que falló con su instante, los valores esperados y observados, y la dirección de esa muestra en la traza registrada. El registro de calificación contiene el identificador y la versión de la lección, el hash del escenario, el hash del programa, la versión del runtime y la hora. Todavía puede ejecutar el escenario de su carpeta desde **Pruebas**; esa ejecución no es la calificación.
+- Studio guarda su progreso en un único archivo versionado de su directorio de datos de usuario: lecciones aprobadas con su registro de calificación, lecciones en curso, la última lección (el panel la vuelve a abrir), y cada nivel de pista mostrado (el nivel 1 y el nivel 2 se registran por separado) y si se mostró la solución (la solución de referencia se abre a pedido). Un archivo de progreso escrito por una versión anterior, que guardaba solo el nivel de pista más alto, se lee y se migra la próxima vez que se guarda. El archivo de progreso de una versión anterior se migra y se deja donde estaba. **Exportar progreso** e **Importar progreso** (**Exportar progreso** e **Importar progreso** en inglés) trasladan, en el inicio de Aprender, el documento completo como un archivo; una importación se valida, se combina con la calificación más reciente primero y conserva las lecciones que esta versión no conoce. Un archivo rechazado dice por qué (demasiado grande, no es JSON, no es un archivo de progreso, una versión que este Studio no puede leer, o dañado) y deja su progreso como estaba.
+- El **inicio de Aprender** es una página propia que se abre sin un proyecto abierto y sin red: desde **Aprender** en la pantalla de bienvenida, desde el elemento **Aprender** de la barra de actividades y desde **Abrir el inicio del curso** en el menú Ayuda. Enumera las pistas (Simulación, Hardware) y los doce módulos en orden, cada uno con su nivel, el módulo que requiere y su tiempo estimado, y bajo cada módulo sus lecciones con su estado en palabras, nunca solo con color: Bloqueada, Disponible, En curso o Aprobada. Una lección indica qué pistas admite y, para una pista que no admite, su propia razón y qué hacer en su lugar (escritas en el paquete de la lección, en los dos idiomas). **Continuar** retoma la última lección en la que trabajó, o comienza el curso si usted es un estudiante nuevo. Escape o **Cerrar** vuelve al editor, que queda como estaba.
+- Una lección está bloqueada hasta que se aprueban las lecciones que requiere, y el inicio dice cuáles. **Desbloquear todas las lecciones**, en el inicio, levanta el bloqueo de todas: es un ajuste guardado y Studio anuncia el cambio. Una lección que usted ya inició o aprobó no vuelve a bloquearse. En la vista Aprender de la barra lateral no se puede elegir una lección bloqueada.
+- **Aula: ocultar las soluciones de referencia**, en el inicio de Aprender, es un ajuste guardado de este equipo. Mientras está activado, Aprender no ofrece ninguna solución de referencia y lo dice. Para docentes, `bun tools/ci/learn-educator.ts` verifica un archivo de progreso exportado contra los hash de las lecciones e imprime el esquema del curso; vea [Docentes](../learn/educators.md). Nada de esto necesita una cuenta ni un servidor.
+- Aprender nunca inicia una operación física: solo copia un proyecto y abre **Pruebas**.
 - Un resultado es evidencia de host de la simulación nativa, no evidencia de hardware.
 
 Una vía para una placa de aprendizaje y las lecciones de los seis módulos vacíos son trabajo futuro (los requisitos LRN). Nada de esta página los promete. Para agregar una lección, vea [Contribuir](../contributing/index.md#agregar-una-lección).
@@ -453,8 +453,8 @@ Nivel de evidencia: host. `packages/zplc-ide/src/learn/lessonCi.test.ts` ejecuta
 
 ## Límite de la depuración
 
-Los watches, los traces, los breakpoints y los forces solo muestran lo que el
-adaptador conectado puede informar. Un trace en host no es evidencia de hardware
+Las variables observadas, las trazas, los puntos de parada y los forzados solo muestran lo que el
+adaptador conectado puede informar. Una traza en host no es evidencia de hardware
 ni de HIL; forzar un valor o cambiar RUN/STOP en un sistema físico exige la
 autorización expresa de una persona y un procedimiento de seguridad del sitio.
 Las herramientas de IA y MCP no pueden forzar valores ni cambiar RUN/STOP;
@@ -467,9 +467,9 @@ La pausa, la reanudación y el paso conservan donde está el estado lógico del 
 | Acción | Imagen de salidas | Forzados | El scan |
 |---|---|---|---|
 | Pausa | Se conserva | Se conservan | Pausa entre scans. |
-| Paso | Se conserva y muestra el scan ejecutado | Se conservan | Ejecuta un scan completo, o termina el scan detenido en un breakpoint. |
-| Reanudación | Se conserva | Se conservan | Un scan detenido en un breakpoint continúa desde ahí. |
-| Stop | Se pone a cero | Se borran | Cada tarea vuelve a su punto de entrada, y se descarta un scan que un breakpoint interrumpió. |
+| Paso | Se conserva y muestra el scan ejecutado | Se conservan | Ejecuta un scan completo, o termina el scan detenido en un punto de parada. |
+| Reanudación | Se conserva | Se conservan | Un scan detenido en un punto de parada continúa desde ahí. |
+| Detener | Se pone a cero | Se borran | Cada tarea vuelve a su punto de entrada, y se descarta un scan que un punto de parada interrumpió. |
 
 Una falla borra la imagen y los forzados igual que Stop. En una placa, la pausa, el paso y Stop además llevan las salidas físicas a su estado seguro, apagadas. [Pausa, reanudación, paso y parada](../runtime/scheduler.md#pausa-reanudación-paso-y-parada) tiene la tabla completa y las pruebas de Zephyr que la respaldan, ejecutadas en `native_sim` y QEMU sin medición en una placa. Para la simulación nativa, las verificaciones están en `firmware/lib/zplc_core/tests/test_native_runtime_session.c`, donde Stop además pone a cero la imagen de entradas.
 
@@ -479,14 +479,14 @@ Studio está construido para que su recorrido principal pueda usarse con teclado
 
 - **Nombres.** Cada campo de un formulario tiene una etiqueta que el lector de pantalla lee con él, y cada botón que muestra solo un icono tiene un nombre. Una regla de CI (la guarda del kit de componentes) hace fallar la compilación ante un campo o un botón de solo icono sin nombre, y una comprobación en la aplicación en ejecución enumera cualquier control sin nombre en las pantallas principales.
 - **Anuncios.** Studio mantiene dos regiones vivas ocultas para toda la ventana: una cortés para los resultados y una asertiva para las fallas. El resultado de una compilación, un guardado, un despliegue, una ejecución de pruebas y un cambio de conexión se anuncia por ellas, con su detalle, igual que una variable que se fuerza o se libera. Un error, y un forzado que ya no está confirmado, se anuncian de inmediato. Si el programa está en ejecución o detenido se lee de la barra de estado, que conserva su propio estado persistente.
-- **Teclado.** El recorrido desde abrir un proyecto hasta una lección de Learn puede completarse solo con el teclado: abrir, editar, compilar, simular, observar, forzar, la pregunta de despliegue y la verificación de la lección. Tab y Mayús+Tab recorren la pantalla en orden de lectura, y la paleta de comandos (Ctrl+Mayús+P) llega a todos los comandos. Un comando que muestra un panel, como **Mostrar las variables vigiladas**, deja el foco en él. En el editor de código Tab escribe un tabulador; pulse Ctrl+M para que Tab mueva el foco fuera, y púlselo de nuevo para volver. Escape cierra un diálogo, la paleta y la referencia de atajos y devuelve el foco al control que los abrió, y Tab sale de un diagrama después de su último nodo.
+- **Teclado.** El recorrido desde abrir un proyecto hasta una lección de Aprender puede completarse solo con el teclado: abrir, editar, compilar, simular, observar, forzar, la pregunta de despliegue y la verificación de la lección. Tab y Mayús+Tab recorren la pantalla en orden de lectura, y la paleta de comandos (Ctrl+Mayús+P) llega a todos los comandos. Un comando que muestra un panel, como **Mostrar las variables vigiladas**, deja el foco en él. En el editor de código Tab escribe un tabulador; pulse Ctrl+M para que Tab mueva el foco fuera, y púlselo de nuevo para volver. Escape cierra un diálogo, la paleta y la referencia de atajos y devuelve el foco al control que los abrió, y Tab sale de un diagrama después de su último nodo.
 - **Controles y densidad.** Todo botón, campo, menú, diálogo, descripción emergente y árbol de Studio sale de un único kit de componentes propio (incluidos el cuadro combinado, el árbol, la tabla de datos y el aviso), que se muestra en la galería de las compilaciones de desarrollo, y una regla de CI hace fallar la compilación ante un control sin kit, una descripción nativa, un color de paleta estándar o un texto menor de 11 píxeles. La preferencia **Densidad** (Cómoda o Compacta) cambia el tamaño de controles, filas y espaciado de toda la ventana. El nivel de evidencia es host: una ventana en Linux, no en Windows ni macOS.
 - **Zoom.** Ctrl y más, Ctrl y menos, y Ctrl y 0 (Cmd en macOS) amplían, reducen y restablecen la página. Están en el menú **Ver**.
 - **Qué se comprueba.** El contraste se calcula a partir de los colores de los temas claro, oscuro y de alto contraste. Además se ejecuta una comprobación en la aplicación real, en Bienvenida, los editores (Texto Estructurado, Ladder, diagrama de bloques de función y gráfico de funciones secuenciales), cada pestaña del panel de resultados, las barras laterales, la configuración, la paleta de comandos, la referencia de atajos y la pregunta de despliegue, en cada uno de los tres temas. Para cada texto visible calcula el contraste con aquello sobre lo que se dibuja (4,5 a 1, o 3 a 1 para texto grande), y falla ante un control sin nombre, un control que no muestra nada cuando tiene el foco del teclado, un identificador repetido, una referencia a algo que no está en la página, una pantalla sin región principal y un diálogo sin nombre. Estas comprobaciones son estructurales y calculadas; no son una prueba con un lector de pantalla. Revisar el recorrido principal con un lector de pantalla en Windows y en macOS es una tarea manual que se hace antes del lanzamiento general, y su resultado se registra en la lista de verificación de la versión.
 
-## La tabla Watch
+## La tabla de observación
 
-Agregue una variable a la tabla Watch escribiendo su nombre: el campo ofrece las variables y los miembros del programa cargado mientras escribe. Un valor se edita con el teclado: enfóquelo y pulse Enter o F2, o haga doble clic. **Enter** escribe el valor, **Mayús+Enter** lo prepara y **Escribir los valores preparados** escribe todo lo preparado de una vez (**Descartar lo preparado** lo quita). Un valor preparado nunca se escribe solo. La lista **Formato de visualización** muestra los valores según el tipo, en decimal, hexadecimal, binario, como real o como tiempo, y un valor escrito como `16#FF`, `2#101` o `T#1s500ms` se lee en esa notación. El encabezado de una columna ordena las filas; una tercera pulsación restaura el orden en que se agregaron las variables. **Release all forces** se ofrece mientras haya forces retenidos.
+Agregue una variable a la tabla de observación escribiendo su nombre: el campo ofrece las variables y los miembros del programa cargado mientras escribe. Un valor se edita con el teclado: enfóquelo y pulse Enter o F2, o haga doble clic. **Enter** escribe el valor, **Mayús+Enter** lo prepara y **Escribir los valores preparados** escribe todo lo preparado de una vez (**Descartar lo preparado** lo quita). Un valor preparado nunca se escribe solo. La lista **Formato de visualización** muestra los valores según el tipo, en decimal, hexadecimal, binario, como real o como tiempo, y un valor escrito como `16#FF`, `2#101` o `T#1s500ms` se lee en esa notación. El encabezado de una columna ordena las filas; una tercera pulsación restaura el orden en que se agregaron las variables. **Liberar todos los forzados** se ofrece mientras haya forces retenidos.
 
 Nivel de evidencia: host. `packages/zplc-ide/src/components/watchTable.test.ts` cubre los formatos, los valores escritos, el orden y la completación.
 

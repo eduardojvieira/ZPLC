@@ -14,30 +14,19 @@
 
 import { useState, useEffect, useCallback, useMemo, useRef, useSyncExternalStore } from 'react';
 import { monitoredKeys, subscribeMonitorKeys } from '../monitoring/registry';
-import { recordReadFaults } from '../monitoring/readFaults';
-import { useIDEStore, type LiveValue } from '../store/useIDEStore';
-import type {
-  IDebugAdapter,
-  VMState,
-  VMInfo,
-  DebugAdapterEvents,
-  WatchVariable,
-  WatchForceEntry,
-  WatchForceState,
-} from '../runtime/debugAdapter';
-import { WATCH_FORCE_STATE, bytesToHex, valueToBytes } from '../runtime/debugAdapter';
+import { useIDEStore } from '../store/useIDEStore';
+import type { IDebugAdapter, VMState, VMInfo, DebugAdapterEvents } from '../runtime/debugAdapter';
 import { connectSimulationAdapter } from '../runtime/simulationAdapterFactory';
 import { NativeAdapter } from '../runtime/nativeAdapter';
 import { connectionManager } from '../runtime/connectionManager';
 import type { DebugMap } from '../compiler';
-import { findVariable, judgeDebugMapAttachment } from '../compiler';
+import { judgeDebugMapAttachment } from '../compiler';
 import { reconcileElementBreakpoints } from '../editors/elementBreakpoints';
 import type { UploadTraceEvent } from '../runtime/uploadTrace';
 import {
   resolveExecutionLocation,
   type ResolvedExecutionLocation,
 } from './debugExecutionLocation';
-import { buildPolledDebugPaths, describePolledDebugVariable } from './debugPollingPaths';
 import { debugLog } from '../utils/debugLog';
 import { createBreakpointSyncer, reportBreakpointSync, type BreakpointSyncOutcome } from './useDebugControllerBreakpoints';
 import { deriveHardwareDebugState } from '../runtime/debugStatus';
@@ -48,15 +37,13 @@ import {
   getDebugCapabilitiesForAdapter,
   getDebugFeatureActionability,
 } from './debugCapabilityActions';
-import { isCurrentSerialAdapter, shouldMarkForceCommandFailureUnconfirmed, usesConnectionManager } from './forceReconciliation';
+import { isCurrentSerialAdapter, usesConnectionManager } from './forceReconciliation';
 import {
   appendNativeTrace as appendNativeTraceSample,
   canCaptureNativeTrace,
   canCommitNativeLoad,
   canReenableNativeTrace,
 } from '../runtime/nativeTrace';
-
-const DEVICE_LOG_FLUSH_MS = 100;
 
 /**
  * Where the VM stopped at a breakpoint, and the Console entry that says so. The adapters report the pc only
@@ -67,7 +54,7 @@ export function describeBreakpointHit(debugMap: DebugMap | null, pc: number, lin
   const resolved = resolveExecutionLocation(debugMap, pc, line);
   return {
     resolved,
-    message: `Breakpoint hit at PC=0x${pc.toString(16).toUpperCase()}${resolved.line ? `, line ${resolved.line}` : ''}`,
+    message: t('debugger.breakpointHit', { pc: pc.toString(16).toUpperCase(), line: resolved.line ? t('debugger.atLine', { line: resolved.line }) : '' }),
   };
 }
 
@@ -77,6 +64,10 @@ export function describeBreakpointHit(debugMap: DebugMap | null, pc: number, lin
 
 export type { DebugControllerActions, DebugControllerState, DebugController } from './debugControllerTypes';
 import type { DebugController } from './debugControllerTypes';
+import { useDeviceLogQueue } from './useDeviceLogQueue';
+import { useDebugControllerPolling } from './useDebugControllerPolling';
+import { useDebugControllerForces } from './useDebugControllerForces';
+import { t } from '../i18n';
 
 // =============================================================================
 // Hook Implementation
@@ -95,8 +86,6 @@ export function useDebugController(): DebugController {
   const adapterRef = useRef<IDebugAdapter | null>(null);
   const explicitHardwareDisconnectRef = useRef(false);
   const externalDisconnectReportedRef = useRef(false);
-  const deviceLogQueueRef = useRef<string[]>([]);
-  const deviceLogFlushTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const traceEpochRef = useRef(0);
   const traceCaptureEnabledRef = useRef(true);
   const traceBoundCompilerRunIdRef = useRef<number | null>(null);
@@ -135,8 +124,6 @@ export function useDebugController(): DebugController {
   const getAllBreakpointPCs = useIDEStore((state) => state.getAllBreakpointPCs);
   const addConsoleEntry = useIDEStore((state) => state.addConsoleEntry);
   const addConsoleEntries = useIDEStore((state) => state.addConsoleEntries);
-  const setForcedValue = useIDEStore((state) => state.setForcedValue);
-  const clearForcedValue = useIDEStore((state) => state.clearForcedValue);
   const clearForcedValues = useIDEStore((state) => state.clearForcedValues);
   const markForcedValuesUnconfirmed = useIDEStore((state) => state.markForcedValuesUnconfirmed);
   const appendNativeTrace = useIDEStore((state) => state.appendNativeTrace);
@@ -149,39 +136,7 @@ export function useDebugController(): DebugController {
   }, [clearNativeTrace]);
   const forcesUnconfirmed = useIDEStore((state) => state.debug.forcesUnconfirmed);
 
-  const flushDeviceLogs = useCallback(() => {
-    if (deviceLogFlushTimerRef.current) {
-      clearTimeout(deviceLogFlushTimerRef.current);
-      deviceLogFlushTimerRef.current = null;
-    }
-
-    if (deviceLogQueueRef.current.length === 0) {
-      return;
-    }
-
-    const queuedLines = deviceLogQueueRef.current;
-    deviceLogQueueRef.current = [];
-
-    addConsoleEntries(
-      queuedLines.map((line) => ({
-        type: 'info' as const,
-        message: line,
-        source: 'device',
-      })),
-    );
-  }, [addConsoleEntries]);
-
-  const enqueueDeviceLog = useCallback((line: string) => {
-    deviceLogQueueRef.current.push(line);
-
-    if (deviceLogFlushTimerRef.current !== null) {
-      return;
-    }
-
-    deviceLogFlushTimerRef.current = setTimeout(() => {
-      flushDeviceLogs();
-    }, DEVICE_LOG_FLUSH_MS);
-  }, [flushDeviceLogs]);
+  const { enqueueDeviceLog, flushDeviceLogs } = useDeviceLogQueue(addConsoleEntries);
 
   const logUploadTrace = useCallback((event: UploadTraceEvent) => {
     addConsoleEntry({
@@ -194,7 +149,6 @@ export function useDebugController(): DebugController {
   useEffect(() => {
     adapterRef.current = adapter;
   }, [adapter]);
-
 
   // =========================================================================
   // Event Handlers
@@ -216,7 +170,7 @@ export function useDebugController(): DebugController {
       setLastError(message);
       addConsoleEntry({
         type: 'error',
-        message: `Debug error: ${message}`,
+        message: t('debugger.error', { message }),
         source: 'debugger',
       });
     },
@@ -409,7 +363,7 @@ export function useDebugController(): DebugController {
       setLastError('Hardware connection lost. Force state unconfirmed.');
       addConsoleEntry({
         type: 'warning',
-        message: 'Hardware connection lost. Force state is unconfirmed; reconnect and verify before operating.',
+        message: t('debugger.connectionLost'),
         source: 'debugger',
       });
     });
@@ -453,13 +407,13 @@ export function useDebugController(): DebugController {
         setLastError('Force state unconfirmed. Reconnect and verify before operating.');
         addConsoleEntry({
           type: 'warning',
-          message: 'Disconnected, but force release could not be confirmed. Reconnect and verify before operating.',
+          message: t('debugger.releaseUnconfirmed'),
           source: 'debugger',
         });
       } else {
         addConsoleEntry({
           type: 'info',
-          message: 'Debug session disconnected',
+          message: t('debugger.disconnected'),
           source: 'debugger',
         });
         setLastError(null);
@@ -559,7 +513,7 @@ export function useDebugController(): DebugController {
         throw new Error(attachment.message);
       }
       if (attachment.action === 'warn') {
-        addConsoleEntry({ type: 'warning', message: attachment.message ?? 'The debug map cannot be tied to the program', source: 'debugger' });
+        addConsoleEntry({ type: 'warning', message: attachment.message ?? t('debugger.mapNotTied'), source: 'debugger' });
       }
     }
     invalidateNativeTrace();
@@ -597,7 +551,7 @@ export function useDebugController(): DebugController {
         if (!capability.allowed) {
           addConsoleEntry({
             type: 'warning',
-            message: capability.message ?? 'Breakpoint sync unavailable in the active runtime',
+            message: capability.message ?? t('debugger.breakpointSyncUnavailable'),
             source: 'debugger',
           });
         } else {
@@ -617,8 +571,8 @@ export function useDebugController(): DebugController {
       addConsoleEntry({
         type: 'success',
         message: isHardware
-          ? `Program deployed and stopped: ${bytecode.length} bytes, ${breakpointsSet} breakpoints set`
-          : `Loaded ${bytecode.length} bytes, ${breakpointsSet} breakpoints set`,
+          ? t('debugger.deployedStopped', { bytes: bytecode.length, count: breakpointsSet })
+          : t('debugger.loaded', { bytes: bytecode.length, count: breakpointsSet }),
         source: 'debugger',
       });
     } finally {
@@ -650,7 +604,7 @@ export function useDebugController(): DebugController {
     if (!adapterRef.current) return;
     const capability = getDebugFeatureActionability(debugCapabilities, 'pause', 'Pause');
     if (!capability.allowed) {
-      addConsoleEntry({ type: 'warning', message: capability.message ?? 'Pause unavailable', source: 'debugger' });
+      addConsoleEntry({ type: 'warning', message: capability.message ?? t('debugger.pauseUnavailable'), source: 'debugger' });
       return;
     }
     if (capability.message) {
@@ -663,7 +617,7 @@ export function useDebugController(): DebugController {
     if (!adapterRef.current) return;
     const capability = getDebugFeatureActionability(debugCapabilities, 'resume', 'Resume');
     if (!capability.allowed) {
-      addConsoleEntry({ type: 'warning', message: capability.message ?? 'Resume unavailable', source: 'debugger' });
+      addConsoleEntry({ type: 'warning', message: capability.message ?? t('debugger.resumeUnavailable'), source: 'debugger' });
       return;
     }
     if (capability.message) {
@@ -676,7 +630,7 @@ export function useDebugController(): DebugController {
     if (!adapterRef.current) return;
     const capability = getDebugFeatureActionability(debugCapabilities, 'step', 'Step');
     if (!capability.allowed) {
-      addConsoleEntry({ type: 'warning', message: capability.message ?? 'Step unavailable', source: 'debugger' });
+      addConsoleEntry({ type: 'warning', message: capability.message ?? t('debugger.stepUnavailable'), source: 'debugger' });
       return;
     }
     if (capability.message) {
@@ -721,142 +675,7 @@ export function useDebugController(): DebugController {
   // Memory Access
   // =========================================================================
 
-  const setValue = useCallback(
-    async (
-      address: number,
-      value: number | boolean | string,
-      type: WatchVariable['type'],
-      maxLength?: number
-    ) => {
-      const currentAdapter = adapterRef.current;
-      if (!currentAdapter) return;
-      if (currentAdapter.type === 'serial') {
-        throw new Error('Direct value edits are simulation-only. Use Force for hardware.');
-      }
-      if (forcesUnconfirmed) {
-        throw new Error('Force state unconfirmed. Reconnect and verify before operating.');
-      }
-      const bytes = valueToBytes(value, type, maxLength);
-      await currentAdapter.setValue(address, bytes);
-    },
-    [forcesUnconfirmed]
-  );
-
-  const buildForceEntry = useCallback((
-    path: string,
-    address: number,
-    type: WatchVariable['type'],
-    bytes: Uint8Array,
-    maxLength: number | undefined,
-    state: WatchForceState,
-  ): WatchForceEntry => ({
-    path,
-    address,
-    size: bytes.length,
-    type,
-    bytesHex: bytesToHex(bytes),
-    maxLength,
-    state,
-  }), []);
-
-  const toggleForceValue = useCallback(
-    async (
-      path: string,
-      address: number,
-      value: number | boolean | string | null,
-      type: WatchVariable['type'],
-      force: boolean,
-      maxLength?: number,
-    ) => {
-      if (forcesUnconfirmed) {
-        throw new Error('Force state unconfirmed. Reconnect and verify before operating.');
-      }
-      const currentAdapter = adapterRef.current;
-      if (!currentAdapter) return;
-      if (force && value === null) {
-        throw new Error('A value that has not been read cannot be forced.');
-      }
-
-      try {
-        if (force) {
-          const bytes = valueToBytes(value as number | boolean | string, type, maxLength);
-          await currentAdapter.forceValue(address, bytes);
-          setForcedValue(buildForceEntry(path, address, type, bytes, maxLength, WATCH_FORCE_STATE.FORCED));
-          return;
-        }
-
-        await currentAdapter.clearForcedValue(address);
-        clearForcedValue(path);
-      } catch (error) {
-        if (shouldMarkForceCommandFailureUnconfirmed(adapterRef.current, currentAdapter)) {
-          markForcedValuesUnconfirmed();
-        }
-        throw error;
-      }
-    },
-    [buildForceEntry, clearForcedValue, forcesUnconfirmed, markForcedValuesUnconfirmed, setForcedValue],
-  );
-
-  const clearAllForcedValues = useCallback(async () => {
-    const currentAdapter = adapterRef.current;
-    if (!currentAdapter) return;
-    const isHardware = currentAdapter.type === 'serial';
-    try {
-      await currentAdapter.clearAllForcedValues();
-      if (isHardware && isCurrentSerialAdapter(adapterRef.current, currentAdapter) && currentAdapter.connected) {
-        clearForcedValues();
-      } else if (!useIDEStore.getState().debug.forcesUnconfirmed) {
-        clearForcedValues();
-      }
-    } catch (error) {
-      if (isHardware && isCurrentSerialAdapter(adapterRef.current, currentAdapter)) {
-        markForcedValuesUnconfirmed();
-      }
-      throw error;
-    }
-  }, [clearForcedValues, markForcedValuesUnconfirmed]);
-
-  useEffect(() => {
-    const currentAdapter = adapterRef.current;
-    if (!currentAdapter || currentAdapter.type !== 'serial') {
-      return;
-    }
-    let cancelled = false;
-
-    void currentAdapter.listForcedValues()
-      .then((entries) => {
-        if (cancelled || !isCurrentSerialAdapter(adapterRef.current, currentAdapter) || !currentAdapter.connected) {
-          return;
-        }
-        clearForcedValues();
-
-        for (const entry of entries) {
-          const matchedPath = watchVariables.find((watchPath) => watchPath === entry.path)
-            ?? watchVariables.find((watchPath) => {
-              if (!debugMap) {
-                return false;
-              }
-              const found = findVariable(debugMap, watchPath);
-              return found?.absoluteAddr === entry.address;
-            });
-
-          setForcedValue({
-            ...entry,
-            path: matchedPath ?? entry.path,
-          });
-        }
-      })
-      .catch((err) => {
-        if (cancelled || !isCurrentSerialAdapter(adapterRef.current, currentAdapter)) {
-          return;
-        }
-        console.warn('[DebugController] failed to refresh forced values:', err);
-        markForcedValuesUnconfirmed();
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [adapter, clearForcedValues, debugMap, markForcedValuesUnconfirmed, setForcedValue, watchVariables]);
+  const { setValue, toggleForceValue, clearAllForcedValues } = useDebugControllerForces({ adapter, adapterRef, forcesUnconfirmed, watchVariables, debugMap });
 
   const setVirtualInput = useCallback(async (channel: number, value: number) => {
     if (!adapterRef.current) return;
@@ -892,96 +711,7 @@ export function useDebugController(): DebugController {
   // Polling for Live Values
   // =========================================================================
 
-  useEffect(() => {
-    // Poll whenever connected and running/paused.
-    // Explicit watch-table variables are always polled.
-    // Extra debug-map variables for inline editor preview are only added when
-    // the Live button is enabled in hardware mode.
-    const shouldPoll =
-      adapter?.connected &&
-      (vmState === 'running' || vmState === 'paused');
-
-    if (shouldPoll) {
-      // Always clear any existing interval before (re-)starting.
-      // This ensures that when `debugMap` arrives late via a store update the
-      // effect re-runs and the new closure captures the up-to-date debugMap
-      // instead of keeping the stale null-closure that was registered first.
-      if (pollingIntervalRef.current) {
-        clearInterval(pollingIntervalRef.current);
-        pollingIntervalRef.current = null;
-      }
-      setPolling(true);
-
-      let isPollingWatch = false;
-      // The poll handles its own errors, so the timer only starts it and does not wait for it. A disconnect that lands while a read is in flight ends that session on purpose and is not logged as a polling failure.
-      const pollWatch = async (): Promise<void> => {
-        const polled = adapterRef.current;
-        if (!polled?.connected || isPollingWatch) return;
-
-        try {
-          isPollingWatch = true;
-          // Build the set of variable paths to poll.
-          // 1. Explicit watch-table variables are always included.
-          // 2. Inline editor preview variables are added only when the Live
-          //    button is enabled.
-          const pathSet = new Set<string>(
-            buildPolledDebugPaths(watchVariables, debugMap, mpeekEnabled, 64, monitoredKeys()),
-          );
-
-          const variables = Array.from(pathSet)
-            .map((varPath) => describePolledDebugVariable(debugMap, varPath))
-            .filter((v): v is NonNullable<ReturnType<typeof describePolledDebugVariable>> => v !== null);
-
-          if (variables.length === 0) {
-            debugLog('[useDebugController] No variables to poll');
-            return;
-          }
-
-          debugLog(`[useDebugController] Polling ${variables.length} variables. mpeekEnabled: ${mpeekEnabled}`);
-
-          // a variable that comes back without a value, or a read that fails, is shown as a fault in the diagrams (UX-009)
-          const names = variables.map((variable) => variable.name);
-          const results = await polled.readWatchVariables(variables, { useMpeek: mpeekEnabled }).catch((err: unknown) => { recordReadFaults(names, []); throw err; });
-          const newValues = new Map<string, LiveValue>();
-          for (const result of results) if (result.value !== undefined) newValues.set(result.name, result.value);
-          recordReadFaults(names, newValues.keys());
-
-          if (newValues.size > 0) {
-            debugLog(`[useDebugController] Updating live values with ${newValues.size} items`, Array.from(newValues.entries()));
-            updateLiveValues(newValues);
-          } else {
-            debugLog(`[useDebugController] readWatchVariables returned 0 new values! results:`, results);
-          }
-        } catch (err) {
-          if (adapterRef.current === polled && polled.connected) console.error('Polling error:', err);
-        } finally {
-          isPollingWatch = false;
-        }
-      };
-      pollingIntervalRef.current = setInterval(() => { void pollWatch(); }, pollingInterval);
-    } else if (!shouldPoll && pollingIntervalRef.current) {
-      clearInterval(pollingIntervalRef.current);
-      pollingIntervalRef.current = null;
-      setPolling(false);
-    }
-
-    return () => {
-      if (pollingIntervalRef.current) {
-        clearInterval(pollingIntervalRef.current);
-        pollingIntervalRef.current = null;
-      }
-    };
-  }, [
-    adapter,
-    vmState,
-    watchVariables,
-    pollingInterval,
-    debugMap,
-    mpeekEnabled,
-    monitored,
-    setPolling,
-    updateLiveValues,
-  ]);
+  useDebugControllerPolling({ adapter, adapterRef, vmState, watchVariables, pollingInterval, debugMap, mpeekEnabled, monitored, pollingIntervalRef });
 
   // =========================================================================
   // Breakpoints on the elements of a diagram
@@ -1064,3 +794,4 @@ export function useDebugController(): DebugController {
 }
 
 export default useDebugController;
+

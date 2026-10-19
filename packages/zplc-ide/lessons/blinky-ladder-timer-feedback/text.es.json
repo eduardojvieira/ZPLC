@@ -41,14 +41,14 @@
     {
       "key": "reflect",
       "title": "Reflexione",
-      "body": "Un programa que invierte la salida en cada scan, parpadea al doble de velocidad o queda ON sólo el 20 % del tiempo falla las assertions FOR y AT.",
+      "body": "Un programa que invierte la salida en cada scan, parpadea al doble de velocidad o queda ON solo el 20 % del tiempo falla las assertions FOR y AT.",
       "checkpoint": "El escenario host evalúa la forma de onda lógica, no la técnica (un semiperíodo de {{t:500}} o {{t:510}} ms pasa); no demuestra período eléctrico, brillo, timing de hardware, HIL ni certificación."
     }
   ],
   "hints": [
     {
       "level": 1,
-      "text": "Mire los dos primeros peldaños: OffTimer sólo corre mientras LED_Output está OFF y OnTimer sólo mientras está ON, así que algo tiene que invertir LED_Output cuando cada uno termina."
+      "text": "Mire los dos primeros peldaños: OffTimer solo corre mientras LED_Output está OFF y OnTimer solo mientras está ON, así que algo tiene que invertir LED_Output cuando cada uno termina."
     },
     {
       "level": 2,

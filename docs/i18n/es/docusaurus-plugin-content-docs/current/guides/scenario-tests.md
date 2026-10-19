@@ -79,7 +79,7 @@ arriba, de modo que es un escenario que pasa.
 
 ## 3. Ejecútelo
 
-**En Studio**, abra la pestaña **Tests** y presione **Run host scenarios**. Cada
+**En Studio**, abra la pestaña **Pruebas** y presione **Ejecutar escenarios en el host**. Cada
 escenario aparece como aprobado o fallido, con sus aserciones y el instante de cada
 una. Una aserción fallida muestra el instante, el valor esperado y el valor
 observado.
@@ -100,7 +100,7 @@ incluida `--json` para un resultado legible por máquina.
 ## 4. Hágalo útil
 
 - **Declare lo que nunca debe ocurrir** con `NEVER`: para dos salidas que no deben
-  estar activas a la vez, afírmelo. La pestaña **Interlocks** de Studio enumera cada
+  estar activas a la vez, afírmelo. La pestaña **Enclavamientos** de Studio enumera cada
   par que usted declaró en `safety.incompatibleOutputs` como cubierto o no, a partir
   de sus expectativas `NEVER`.
 - **Compruebe un flanco** con `RISING` y `FALLING` en lugar de un nivel, cuando

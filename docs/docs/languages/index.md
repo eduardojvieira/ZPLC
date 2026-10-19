@@ -36,12 +36,12 @@ Every row names the check that shows the capability: a Studio journey, a test on
 | Structured Text | Watch online values | Studio journey in the native simulation | `28e Inline values in Structured Text come from the debug map` |
 | Structured Text | Force | Studio journey in the native simulation | `8 Force an input and release it` |
 | Structured Text | Deploy to a board | Board only | A person deploys and runs it on a board; the hardware evidence page lists the records |
-| Instruction List | Edit | Not tested end to end yet |   |
+| Instruction List | Edit | Studio journey in the native simulation | `54 Instruction List is edited, saved and reopened` |
 | Instruction List | Build | Conformance case on the host runtime | `lng-018-il-jump-runs-every-scan` |
 | Instruction List | Simulate | Conformance case on the host runtime | `lng-018-il-jump-runs-every-scan` |
 | Instruction List | Debug (breakpoint, pause, step) | Studio journey in the native simulation | `28kc A breakpoint on an IL line stops execution` |
-| Instruction List | Watch online values | Not tested end to end yet |   |
-| Instruction List | Force | Not tested end to end yet |   |
+| Instruction List | Watch online values | Studio journey in the native simulation | `54b Instruction List values are watched and a variable is forced and released` |
+| Instruction List | Force | Studio journey in the native simulation | `54b Instruction List values are watched and a variable is forced and released` |
 | Instruction List | Deploy to a board | Board only | A person deploys and runs it on a board; the hardware evidence page lists the records |
 | Ladder Diagram | Edit | Studio journey in the native simulation | `28f A rung is built from the keyboard` |
 | Ladder Diagram | Build | Test on the native runtime | `Blinky visual languages on native POSIX` |
@@ -78,6 +78,8 @@ Validate the source language, generated representation, diagnostics, and selecte
 The IDE exposes inspection, simulation, and debugging features according to the active runtime capability profile. Native POSIX is a host-side logical runtime, not proof of hardware timing or target behavior. Hardware breakpoints, forces, deploy, and run controls must be treated as capability-specific and separately evidenced.
 
 In the native simulation on a Linux host, the IDE journeys stop the program at a breakpoint on a Structured Text line, an Instruction List line, a Ladder rung, a function block diagram block and a sequential function chart step, and mark the element where it stopped. A breakpoint on a board is not evidenced by these runs: it needs a hardware-in-the-loop run on that board.
+
+The same runs press Pause, Step one cycle and Resume in each of the five languages and read the cycle counter: it holds while the program is paused, advances by exactly one on a step and runs again after Resume.
 
 ## Standard library
 

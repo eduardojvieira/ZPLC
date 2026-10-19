@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'bun:test';
 
-import { nativeRuntimeSwitchedOff, nativeSimulationEnvironment } from './nativeSimulationEnvironment';
+import { nativeRuntimeSwitchedOff, nativeSimulationEnvironment, withNativeCommunicationEnvironment } from './nativeSimulationEnvironment';
 
 const LOOPBACK = { ZPLC_NATIVE_COMM: '1', ZPLC_NATIVE_LOOPBACK: '1' };
 
@@ -27,6 +27,14 @@ describe('native simulation child environment', () => {
     // a broker the user named in the environment of the application is not a simulation peer: it is dropped
     const named = nativeSimulationEnvironment({ ZPLC_NATIVE_MQTT_BROKER: 'broker.plant.example:1883' }, false, '/resources', 'linux');
     expect(named.ZPLC_NATIVE_MQTT_BROKER).toBeUndefined();
+  });
+});
+
+describe('the communication environment shared with the command line', () => {
+  it('adds the loopback switches, drops a named broker and leaves the rest of the environment alone', () => {
+    const input = { PATH: '/bin', ZPLC_NATIVE_MQTT_BROKER: 'broker.plant.example:1883' };
+    expect(withNativeCommunicationEnvironment(input)).toEqual({ PATH: '/bin', ...LOOPBACK });
+    expect(input.ZPLC_NATIVE_MQTT_BROKER).toBe('broker.plant.example:1883');
   });
 });
 

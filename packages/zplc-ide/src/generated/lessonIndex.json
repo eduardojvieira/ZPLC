@@ -129,7 +129,7 @@
               "key": "predict",
               "title": "Prediga",
               "body": "Antes de ejecutar, anticipe Motor.Forward a 0, 20, 40, 50, 90 y 140 ms.",
-              "checkpoint": "OFF a 0 ms aunque Start esté pulsado; ON a 20; OFF a 40 (EStop) y todavía OFF a 50 con Start pulsado; OFF a 90 (sobrecarga) y 140 (Stop). Vuelve a ON sólo tras soltar y volver a pulsar Start, a 70, 120 y 170 ms. Motor.Reverse permanece OFF."
+              "checkpoint": "OFF a 0 ms aunque Start esté pulsado; ON a 20; OFF a 40 (EStop) y todavía OFF a 50 con Start pulsado; OFF a 90 (sobrecarga) y 140 (Stop). Vuelve a ON solo tras soltar y volver a pulsar Start, a 70, 120 y 170 ms. Motor.Reverse permanece OFF."
             },
             {
               "key": "edit",
@@ -163,7 +163,7 @@
             },
             {
               "level": 2,
-              "text": "Borre la memoria primero cuando Stop, EStop u Overload sea TRUE; recién después deje que Start la active, y sólo si Start se vio suelto desde la última parada, así un Start mantenido no rearranca el motor."
+              "text": "Borre la memoria primero cuando Stop, EStop u Overload sea TRUE; recién después deje que Start la active, y solo si Start se vio suelto desde la última parada, así un Start mantenido no rearranca el motor."
             }
           ],
           "faultCases": [
@@ -300,7 +300,7 @@
           "scope": "La evidencia de Tests es determinística del host nativo POSIX; no es evidencia de cruce físico, hardware, HIL ni certificación.",
           "objectives": [
             "Modele el cruce como estados numerados, cada uno con una combinación de salidas explícita.",
-            "Muestre WALK sólo mientras los vehículos están en rojo."
+            "Muestre WALK solo mientras los vehículos están en rojo."
           ],
           "stages": [
             {
@@ -318,7 +318,7 @@
             {
               "key": "edit",
               "title": "Edite",
-              "body": "Corrija esta omisión del starter y guarde antes de ejecutar: El starter ignora el pedido peatonal; tras PedRequest ejecute amarillo, despeje en rojo, WALK y rojo de recuperación antes de volver a verde, y muestre WALK sólo con los vehículos en rojo.",
+              "body": "Corrija esta omisión del starter y guarde antes de ejecutar: El starter ignora el pedido peatonal; tras PedRequest ejecute amarillo, despeje en rojo, WALK y rojo de recuperación antes de volver a verde, y muestre WALK solo con los vehículos en rojo.",
               "checkpoint": "El escenario visible debe pasar con evidencia host guardada."
             },
             {
@@ -331,27 +331,27 @@
               "key": "observe",
               "title": "Observe",
               "body": "Revise la matriz registrada en Tests y compare cada muestra con la predicción.",
-              "checkpoint": "La traza muestra el cambio a WALK sólo durante el estado rojo."
+              "checkpoint": "La traza muestra el cambio a WALK solo durante el estado rojo."
             },
             {
               "key": "reflect",
               "title": "Reflexione",
-              "body": "La assertion NEVER cubre salidas incompatibles lógicas sólo en este escenario.",
+              "body": "La assertion NEVER cubre salidas incompatibles lógicas solo en este escenario.",
               "checkpoint": "No demuestra un cruce físico, temporización de hardware, HIL ni certificación."
             }
           ],
           "hints": [
             {
               "level": 1,
-              "text": "Mantenga una variable State y un contador de scans; al comienzo de cada scan ponga todas las salidas en el valor seguro (vehículos detenidos, peatones en espera) y deje que cada estado encienda sólo lo que necesita."
+              "text": "Mantenga una variable State y un contador de scans; al comienzo de cada scan ponga todas las salidas en el valor seguro (vehículos detenidos, peatones en espera) y deje que cada estado encienda solo lo que necesita."
             },
             {
               "level": 2,
-              "text": "La secuencia es verde, amarillo, despeje en rojo, WALK, rojo de recuperación y de nuevo verde; salga de verde sólo con PedRequest y pase al estado siguiente cuando el contador de scans alcance la duración de esa fase."
+              "text": "La secuencia es verde, amarillo, despeje en rojo, WALK, rojo de recuperación y de nuevo verde; salga de verde solo con PedRequest y pase al estado siguiente cuando el contador de scans alcance la duración de esa fase."
             }
           ],
           "faultCases": [
-            "El starter ignora el pedido peatonal; tras PedRequest ejecute amarillo, despeje en rojo, WALK y rojo de recuperación antes de volver a verde, y muestre WALK sólo con los vehículos en rojo."
+            "El starter ignora el pedido peatonal; tras PedRequest ejecute amarillo, despeje en rojo, WALK y rojo de recuperación antes de volver a verde, y muestre WALK solo con los vehículos en rojo."
           ]
         }
       }
@@ -482,7 +482,7 @@
           "scope": "La evidencia de Tests es determinística del host nativo POSIX; no es evidencia de proceso físico, hardware, HIL ni certificación.",
           "objectives": [
             "Mantenga la bomba encendida desde LevelLow hasta LevelHigh con un enclavamiento.",
-            "Enclave la alarma con PumpFault o EStop y libérela sólo con un Reset nuevo tras despejarse la falla."
+            "Enclave la alarma con PumpFault o EStop y libérela solo con un Reset nuevo tras despejarse la falla."
           ],
           "stages": [
             {
@@ -500,7 +500,7 @@
             {
               "key": "edit",
               "title": "Edite",
-              "body": "Corrija esta omisión del starter y guarde antes de ejecutar: El starter no tiene histéresis de bomba y sigue funcionando ante una falla de bomba; mantenga la bomba desde LevelLow hasta LevelHigh, enclave la alarma con PumpFault o EStop y libérela sólo con un Reset pulsado tras despejarse la falla.",
+              "body": "Corrija esta omisión del starter y guarde antes de ejecutar: El starter no tiene histéresis de bomba y sigue funcionando ante una falla de bomba; mantenga la bomba desde LevelLow hasta LevelHigh, enclave la alarma con PumpFault o EStop y libérela solo con un Reset pulsado tras despejarse la falla.",
               "checkpoint": "El escenario visible debe pasar con evidencia host guardada."
             },
             {
@@ -518,7 +518,7 @@
             {
               "key": "reflect",
               "title": "Reflexione",
-              "body": "La assertion NEVER cubre Pump+Alarm sólo en este escenario registrado.",
+              "body": "La assertion NEVER cubre Pump+Alarm solo en este escenario registrado.",
               "checkpoint": "No demuestra un proceso físico, temporización de hardware, HIL ni certificación."
             }
           ],
@@ -529,11 +529,11 @@
             },
             {
               "level": 2,
-              "text": "Agregue FaultLatched, activada por PumpFault o EStop y conservada cuando la entrada desaparece, y ResetArmed, activada sólo cuando Reset se ve suelto con la falla enclavada; borre FaultLatched con un Reset pulsado estando armado y sin entradas de falla, y condicione Pump con NOT FaultLatched."
+              "text": "Agregue FaultLatched, activada por PumpFault o EStop y conservada cuando la entrada desaparece, y ResetArmed, activada solo cuando Reset se ve suelto con la falla enclavada; borre FaultLatched con un Reset pulsado estando armado y sin entradas de falla, y condicione Pump con NOT FaultLatched."
             }
           ],
           "faultCases": [
-            "El starter no tiene histéresis de bomba y sigue funcionando ante una falla de bomba; mantenga la bomba desde LevelLow hasta LevelHigh, enclave la alarma con PumpFault o EStop y libérela sólo con un Reset pulsado tras despejarse la falla."
+            "El starter no tiene histéresis de bomba y sigue funcionando ante una falla de bomba; mantenga la bomba desde LevelLow hasta LevelHigh, enclave la alarma con PumpFault o EStop y libérela solo con un Reset pulsado tras despejarse la falla."
           ]
         }
       }
@@ -674,13 +674,13 @@
               "key": "objective",
               "title": "Objetivo",
               "body": "En src/Conveyor.st, conserve Requested y MetalLatched y agregue Faulted; los sensores pertenecen a la plant.",
-              "checkpoint": "La lógica sólo manda salidas a partir de sensores registrados por la plant."
+              "checkpoint": "La lógica solo manda salidas a partir de sensores registrados por la plant."
             },
             {
               "key": "predict",
               "title": "Prediga",
               "body": "Antes de ejecutar, anticipe la cinta, desviador y lámpara de falla.",
-              "checkpoint": "Belt ON 10–40; Diverter ON sólo 30; FaultLamp ON y Belt OFF 50–80. Reset a 60 no libera mientras JamDetected sigue activo."
+              "checkpoint": "Belt ON 10–40; Diverter ON solo 30; FaultLamp ON y Belt OFF 50–80. Reset a 60 no libera mientras JamDetected sigue activo."
             },
             {
               "key": "edit",
@@ -703,7 +703,7 @@
             {
               "key": "reflect",
               "title": "Reflexione",
-              "body": "La assertion NEVER cubre DiverterCommand ON con BeltCommand OFF sólo en este escenario.",
+              "body": "La assertion NEVER cubre DiverterCommand ON con BeltCommand OFF solo en este escenario.",
               "checkpoint": "No demuestra cinta física, despeje de atasco, temporización de hardware, HIL ni certificación."
             }
           ],
@@ -714,7 +714,7 @@
             },
             {
               "level": 2,
-              "text": "Calcule BeltCommand como Requested AND NOT Faulted, FaultLamp como Faulted OR JamDetected, y borre Faulted con Reset sólo cuando JamDetected sea FALSE."
+              "text": "Calcule BeltCommand como Requested AND NOT Faulted, FaultLamp como Faulted OR JamDetected, y borre Faulted con Reset solo cuando JamDetected sea FALSE."
             }
           ],
           "faultCases": [
@@ -874,14 +874,14 @@
             {
               "key": "reflect",
               "title": "Reflexione",
-              "body": "Un programa que invierte la salida en cada scan, parpadea al doble de velocidad o queda ON sólo el 20 % del tiempo falla las assertions FOR y AT.",
+              "body": "Un programa que invierte la salida en cada scan, parpadea al doble de velocidad o queda ON solo el 20 % del tiempo falla las assertions FOR y AT.",
               "checkpoint": "El escenario host evalúa la forma de onda lógica, no la técnica (un semiperíodo de 500 o 510 ms pasa); no demuestra período eléctrico, brillo, timing de hardware, HIL ni certificación."
             }
           ],
           "hints": [
             {
               "level": 1,
-              "text": "Mire los dos primeros peldaños: OffTimer sólo corre mientras LED_Output está OFF y OnTimer sólo mientras está ON, así que algo tiene que invertir LED_Output cuando cada uno termina."
+              "text": "Mire los dos primeros peldaños: OffTimer solo corre mientras LED_Output está OFF y OnTimer solo mientras está ON, así que algo tiene que invertir LED_Output cuando cada uno termina."
             },
             {
               "level": 2,
@@ -1018,7 +1018,7 @@
           "scope": "La evidencia de Tests es determinística del host nativo POSIX y de la planta discreta; no es evidencia de motor físico, hardware, HIL ni certificación.",
           "objectives": [
             "Separe la orden al motor de la confirmación de que está en marcha.",
-            "Retenga el pedido hasta Stop y deje que Running siga al pedido sólo cuando llegue AtSpeed."
+            "Retenga el pedido hasta Stop y deje que Running siga al pedido solo cuando llegue AtSpeed."
           ],
           "stages": [
             {
@@ -1061,7 +1061,7 @@
           "hints": [
             {
               "level": 1,
-              "text": "Start sólo necesita un pulso, así que el pedido tiene que recordarse: active Requested con Start y borralo con Stop (Stop gana si ambos están en TRUE)."
+              "text": "Start solo necesita un pulso, así que el pedido tiene que recordarse: active Requested con Start y borralo con Stop (Stop gana si ambos están en TRUE)."
             },
             {
               "level": 2,
@@ -1232,7 +1232,7 @@
           "hints": [
             {
               "level": 1,
-              "text": "Un CTU ya cuenta sólo flancos ascendentes de CU, así que un pulso largo cuenta una sola vez; no necesita detectar el flanco usted mismo."
+              "text": "Un CTU ya cuenta solo flancos ascendentes de CU, así que un pulso largo cuenta una sola vez; no necesita detectar el flanco usted mismo."
             },
             {
               "level": 2,
@@ -1558,12 +1558,12 @@
               "key": "predict",
               "title": "Prediga",
               "body": "Antes de ejecutar, anticipe BeltCommand y FaultLamp a 20, 30, 50, 60 y 80 ms.",
-              "checkpoint": "Belt ON y FaultLamp OFF a 20; Belt OFF y FaultLamp ON a 30 y todavía a 50 (Reset a 40 se ignora y despejar el atasco no libera la falla); ambos OFF a 60; Belt ON de nuevo a 80 sólo tras el nuevo Start."
+              "checkpoint": "Belt ON y FaultLamp OFF a 20; Belt OFF y FaultLamp ON a 30 y todavía a 50 (Reset a 40 se ignora y despejar el atasco no libera la falla); ambos OFF a 60; Belt ON de nuevo a 80 solo tras el nuevo Start."
             },
             {
               "key": "edit",
               "title": "Edite",
-              "body": "Corrija esta omisión del starter y guarde antes de ejecutar: El starter omite el enclavamiento del atasco; enclave la falla con JamDetected, ignore Reset mientras el atasco esté presente, libérela sólo con Reset tras despejarse el atasco y exija un nuevo Start para volver a mover la cinta.",
+              "body": "Corrija esta omisión del starter y guarde antes de ejecutar: El starter omite el enclavamiento del atasco; enclave la falla con JamDetected, ignore Reset mientras el atasco esté presente, libérela solo con Reset tras despejarse el atasco y exija un nuevo Start para volver a mover la cinta.",
               "checkpoint": "El escenario visible debe pasar con evidencia host guardada."
             },
             {
@@ -1588,15 +1588,15 @@
           "hints": [
             {
               "level": 1,
-              "text": "Parta de la lección 4: JamDetected enclava Faulted, y un Reset sólo cuenta cuando la entrada de atasco ya no está; lea los tiempos del escenario para ver qué Reset debe ignorarse."
+              "text": "Parta de la lección 4: JamDetected enclava Faulted, y un Reset solo cuenta cuando la entrada de atasco ya no está; lea los tiempos del escenario para ver qué Reset debe ignorarse."
             },
             {
               "level": 2,
-              "text": "Borre Requested y StartArmed cuando aparece el atasco, libere Faulted sólo con Reset estando JamDetected en FALSE, y deje que Requested vuelva sólo con un Start pulsado después de haber visto Start suelto."
+              "text": "Borre Requested y StartArmed cuando aparece el atasco, libere Faulted solo con Reset estando JamDetected en FALSE, y deje que Requested vuelva solo con un Start pulsado después de haber visto Start suelto."
             }
           ],
           "faultCases": [
-            "El starter omite el enclavamiento del atasco; enclave la falla con JamDetected, ignore Reset mientras el atasco esté presente, libérela sólo con Reset tras despejarse el atasco y exija un nuevo Start para volver a mover la cinta."
+            "El starter omite el enclavamiento del atasco; enclave la falla con JamDetected, ignore Reset mientras el atasco esté presente, libérela solo con Reset tras despejarse el atasco y exija un nuevo Start para volver a mover la cinta."
           ]
         }
       }
@@ -1735,12 +1735,12 @@
               "key": "predict",
               "title": "Prediga",
               "body": "La primera pieza es metálica y la segunda no metálica.",
-              "checkpoint": "Espere desvío sólo para la primera; Belt queda activo para ambas."
+              "checkpoint": "Espere desvío solo para la primera; Belt queda activo para ambas."
             },
             {
               "key": "schedule",
               "title": "Lea el calendario",
-              "body": "El JSON agenda clasificador→desviador 20→30 ms y 50→70 ms, con tick de 10 ms hasta 80 ms. Start se pulsa sólo a 0 ms, así que el programa debe retener el pedido de cinta.",
+              "body": "El JSON agenda clasificador→desviador 20→30 ms y 50→70 ms, con tick de 10 ms hasta 80 ms. Start se pulsa solo a 0 ms, así que el programa debe retener el pedido de cinta.",
               "checkpoint": "Las tres assertions son AT@30 Belt=true/Diverter=true, AT@70 Belt=true/Diverter=false y NEVER Diverter=true con Belt=false."
             },
             {

@@ -538,7 +538,7 @@ export function EditorArea() {
                   onClick={() => applyVisualHistory('undo')}
                   disabled={!visualHistory.canUndo}
                   aria-label={t('workbench.editor.undoLabel')}
-                  tooltip={t('workbench.editor.undoTitle')}
+                  tooltip={t('workbench.editor.undoTitle')} aria-keyshortcuts="Control+Z"
                   className="inline-flex items-center gap-1 rounded px-2 py-1 text-xs text-[var(--color-surface-200)] hover:bg-[var(--color-surface-700)] disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline"
                 >
                   <Undo2 size={14} aria-hidden="true" />
@@ -549,7 +549,7 @@ export function EditorArea() {
                   onClick={() => applyVisualHistory('redo')}
                   disabled={!visualHistory.canRedo}
                   aria-label={t('workbench.editor.redoLabel')}
-                  tooltip={t('workbench.editor.redoTitle')}
+                  tooltip={t('workbench.editor.redoTitle')} aria-keyshortcuts="Control+Shift+Z"
                   className="inline-flex items-center gap-1 rounded px-2 py-1 text-xs text-[var(--color-surface-200)] hover:bg-[var(--color-surface-700)] disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline"
                 >
                   <Redo2 size={14} aria-hidden="true" />

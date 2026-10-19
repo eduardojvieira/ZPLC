@@ -81,7 +81,7 @@ La verificación de la documentación contrasta cada dirección de `inputs` y
 proyecto y lo compila.
 
 Una dirección que ningún pin de la placa maneja no es un canal. Enumérela en
-`io.virtual` (Studio: **Keep as virtual (no pin)**) cuando quiera una palabra o un
+`io.virtual` (Studio: **Mantener como virtual (sin pin)**) cuando quiera una palabra o un
 bit de la imagen de proceso que solo lee una prueba o el depurador.
 
 ## 4. Qué ocurre cuando una dirección es errónea
@@ -91,7 +91,7 @@ bit de la imagen de proceso que solo lee una prueba o el depurador.
 - **En la compilación**, una variable ubicada donde la placa no tiene canal es un
   error que nombra la placa y la variable, salvo que la dirección esté enumerada en
   `io.virtual`.
-- **Al desplegar**, se rechaza con un mensaje que nombra la placa un programa que
+- **Al cargar**, se rechaza con un mensaje que nombra la placa un programa que
   toca una dirección sin canal, y también un despliegue a un firmware que informa
   una descripción distinta de aquella para la que se compiló el proyecto.
 

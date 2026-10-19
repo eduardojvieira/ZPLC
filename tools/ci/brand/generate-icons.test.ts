@@ -38,6 +38,12 @@ describe('what is made from the mark', () => {
     expect(read('docs/static/img/logo.svg').equals(read(MARK))).toBe(true);
   });
 
+  it('is the favicon that the renderer page names, so Studio shows the mark and not a stale picture', () => {
+    const html = readFileSync(join(ROOT, 'packages/zplc-ide/index.html'), 'utf8');
+    expect(html).toContain('<link rel="icon" type="image/png" href="/icon.png" />');
+    expect(OUTPUTS.map((output) => output.path)).toContain('packages/zplc-ide/public/icon.png');
+  });
+
   it('is what the site and the installers name: the favicon, the social card and the application icons', async () => {
     // a variable path: the site configuration is plain JavaScript with no declaration file
     const configPath = '../../../docs/docusaurus.config.js';

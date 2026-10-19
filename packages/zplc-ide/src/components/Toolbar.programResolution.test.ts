@@ -5,7 +5,9 @@ import { fileURLToPath } from 'node:url';
 
 import { resolveProgramSource } from '../utils/programSourceResolution';
 
-const toolbarSource = withEnglishMessages(readFileSync(fileURLToPath(new URL('./Toolbar.tsx', import.meta.url)), 'utf8'));
+// Toolbar.tsx and the modules split out of it (IDE-014): the pins below read the text of all of them, as they did of the one file.
+const TOOLBAR_MODULES = ['./Toolbar.tsx', './ToolbarBuildMenu.tsx', './ToolbarThemeMenu.tsx', './ToolbarRunControls.tsx', './useDropdownMenu.ts'];
+const toolbarSource = withEnglishMessages(TOOLBAR_MODULES.map((file) => readFileSync(fileURLToPath(new URL(file, import.meta.url)), 'utf8')).join('\n'));
 
 describe('resolveProgramSource', () => {
   it('resolves LD task references to visual editor json files', () => {

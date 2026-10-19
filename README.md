@@ -1,3 +1,5 @@
+<p align="center"><img src="tools/brand/mark.svg" alt="ZPLC mark: a ladder rung with a contact and a coil" width="96" height="96"></p>
+
 # ZPLC
 
 **An open-source IEC 61131-3 PLC runtime and desktop IDE.**

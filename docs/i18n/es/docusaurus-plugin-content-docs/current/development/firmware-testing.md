@@ -155,7 +155,7 @@ El endurecimiento del runtime del firmware (RT-010 a RT-034) tiene sus propias s
 - `runtime_boot` ejecuta un plan de arranque en orden, rechaza un plan que arranca un servicio antes que el runtime
   y sigue adelante cuando un servicio falla;
 - `program_store_nvs` ejecuta el program store sobre NVS en el simulador de flash con un artefacto tan grande como
-  la región de código, y corta la energía en cada operación de un deploy;
+  la región de código, y corta la energía en cada operación de una carga;
 - `modbus_force` escribe por el servidor Modbus sobre el core real y muestra que una variable forzada conserva su
   valor forzado;
 - `scheduler_admission` retiene un scan en el commit y en la escritura de salidas, para mostrar que una escritura de
@@ -169,7 +169,7 @@ El endurecimiento del runtime del firmware (RT-010 a RT-034) tiene sus propias s
   estado seguro, el registro del fault y la causa que informa el arranque siguiente; `failsafe_reboot` provoca un
   fault real y un reinicio real en `qemu_cortex_m3` y lee el registro después (RT-019, RT-021, RT-022);
 - `scheduler_watchdog` ejecuta la política de watchdog de hardware de un perfil sobre un modelo del watchdog: la
-  alimentación desde la finalización de un scan, el timeout tomado del conjunto de tareas, un scan detenido que lo
+  alimentación desde la finalización de un scan, el tiempo de espera tomado del conjunto de tareas, un scan detenido que lo
   deja expirar, y la política en STOP, en pausa y en un fault (RT-020);
 - `port_timing` ejecuta la autoprueba de tiempos de la suite de conformidad de puertos sobre el reloj de la HAL de
   Zephyr: el tick nunca retrocede, una espera lo avanza y dura el tiempo que se le da. El host POSIX ejecuta la misma
@@ -324,8 +324,8 @@ El informe solo lee archivos. Sus propias pruebas son
   de GPIO y el alias de LED de `native_sim`.
 - `scheduler_run_control` observa el nivel físico del canal de salida 0 con el
   mismo emulador y alias de LED. En `qemu_cortex_m3`, que no tiene ninguno de
-  los dos, sólo comprueba la imagen de salidas, la tabla de forzados y los scans
-  de las tareas, así que "salidas seguras durante la pausa" se observa sólo en
+  los dos, solo comprueba la imagen de salidas, la tabla de forzados y los scans
+  de las tareas, así que "salidas seguras durante la pausa" se observa solo en
   `native_sim`.
 - El modo `app` todavía no forma parte de la integración continua: ningún
   trabajo compila una placa y luego ejecuta la prueba de host.
@@ -335,6 +335,12 @@ El informe solo lee archivos. Sus propias pruebas son
   compilaciones locales de placa con una versión de `clang-tidy`; la primera
   ejecución en integración continua mostrará si las líneas base también valen
   con la del runner.
+- La pasada de Zephyr se ejecutó en una estación de trabajo Linux, solo sobre la compilación del Arduino Opta:
+  el núcleo y el HAL de Zephyr no reportaron nada y `firmware/app` reportó 24 hallazgos, todos dentro de la línea
+  base de esa placa. Al leerlos no apareció ningún defecto: el único `strcpy` está protegido por la comprobación
+  de longitud que lo precede y el único `memcpy` escribe un registro binario, de modo que ningún archivo del
+  firmware cambió. Las líneas base de las otras placas no se midieron en esa ejecución y no hay una ejecución
+  alojada en CI de la pasada.
 - Dos casos de integración de `test_vm_core.c` se omiten en todos los
   destinos, el host incluido, porque los binarios de ejemplo que cargan son
   anteriores al campo CRC. Las líneas `SKIP:` están en el registro de la

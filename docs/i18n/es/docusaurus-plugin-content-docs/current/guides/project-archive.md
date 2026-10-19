@@ -17,7 +17,7 @@ mismo proyecto byte por byte.
 
 1. Guarde los archivos modificados del proyecto: el archivo contiene los ficheros
    como están en el disco, así que Studio le pide guardar antes.
-2. Abra el menú **Build** de la barra de herramientas y elija **Export Project
+2. Abra el menú **Compilación** de la barra de herramientas y elija **Export Project
    Archive**.
 3. Elija dónde escribir el archivo en el diálogo de guardado del sistema.
 
@@ -34,16 +34,16 @@ archivo con cualquier herramienta zip, o con Python en cualquier sistema:
 python3 -m zipfile -l my-project.zip
 ```
 
-**Export Project**, a su lado, escribe un documento JSON de los archivos y de la
+**Exportar proyecto**, a su lado, escribe un documento JSON de los archivos y de la
 configuración sin sus secretos. Ese documento es para leer; no se importa.
 
 ## Importar
 
-1. En la pantalla de bienvenida, elija **Import a project archive** y seleccione el
+1. En la pantalla de bienvenida, elija **Importar un archivo de proyecto** y seleccione el
    archivo. Todavía no se escribe nada: un diálogo dice qué contiene el archivo (sus
    archivos, carpetas y tamaño), de quién es el proyecto y, para un proyecto de
    versión 1, las líneas que cambia su migración en `zplc.json`.
-2. Elija **Choose a folder and import** y seleccione una carpeta vacía. Studio
+2. Elija **Elegir una carpeta e importar** y seleccione una carpeta vacía. Studio
    escribe allí los archivos byte por byte y abre el proyecto.
 
 Una carpeta que no está vacía se rechaza, y una importación que falla deja la carpeta

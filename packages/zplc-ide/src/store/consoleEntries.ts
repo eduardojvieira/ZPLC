@@ -27,3 +27,6 @@ export function appendConsoleEntries(
 
   return nextEntries.slice(-MAX_CONSOLE_ENTRIES);
 }
+
+/** Brings the console's output tab into view, where a failed action reports why. */
+export const SHOW_OUTPUT = { activeConsoleTab: 'output', isConsoleCollapsed: false } as const;
