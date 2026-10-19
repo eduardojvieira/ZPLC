@@ -22,6 +22,8 @@ import {
   removeBranch,
   type LDBranch,
 } from '../../models/ld';
+import { LDGridBackground } from './LDGridBackground';
+import { drawnRungWidth, useAvailableWidth } from './rungWidth';
 import LDElement, { CELL_WIDTH, CELL_HEIGHT, WIRE_Y, COLORS, type DebugValuesMap } from './LDElement';
 import { cellElement } from '../../models/sourceElements';
 import type { ElementState } from '../../monitoring/elementStates';
@@ -518,6 +520,9 @@ export default function LDRungGrid({
   const gridOffsetX = RAIL_WIDTH + PADDING;
   const gridWidth = cols * CELL_WIDTH;
   const totalWidth = RAIL_WIDTH + PADDING + gridWidth + PADDING + RAIL_WIDTH;
+  // a rung is as wide as the view when the view is wider than its content (UX-033)
+  const [viewRef, availableWidth] = useAvailableWidth();
+  const drawnWidth = drawnRungWidth(totalWidth, availableWidth);
   const totalHeight = PADDING + rows * CELL_HEIGHT + PADDING;
 
   // Check if rung is empty (no elements)
@@ -741,40 +746,15 @@ export default function LDRungGrid({
       />
 
       {/* SVG Canvas with delete button overlay */}
-      <div className="overflow-x-auto relative">
+      <div ref={viewRef} className="overflow-x-auto relative">
         <svg
-          width={totalWidth}
+          width={drawnWidth}
           height={totalHeight}
           className="block"
           style={{ minWidth: totalWidth }}
         >
           {/* Background grid (subtle) */}
-          <defs>
-            <pattern
-              id={`grid-${rung.id}`}
-              width={CELL_WIDTH}
-              height={CELL_HEIGHT}
-              patternUnits="userSpaceOnUse"
-              x={gridOffsetX}
-              y={PADDING}
-            >
-              <rect
-                width={CELL_WIDTH}
-                height={CELL_HEIGHT}
-                fill="none"
-                stroke="var(--color-surface-600)"
-                strokeWidth={0.5}
-              />
-            </pattern>
-          </defs>
-
-          <rect
-            x={gridOffsetX}
-            y={PADDING}
-            width={gridWidth}
-            height={rows * CELL_HEIGHT}
-            fill={`url(#grid-${rung.id})`}
-          />
+          <LDGridBackground rungId={rung.id} x={gridOffsetX} y={PADDING} cellWidth={CELL_WIDTH} cellHeight={CELL_HEIGHT} width={gridWidth} height={rows * CELL_HEIGHT} />
 
           {/* Left power rail */}
           <PowerRail
@@ -787,7 +767,7 @@ export default function LDRungGrid({
           {/* Right power rail */}
           <PowerRail
             side="right"
-            x={totalWidth - RAIL_WIDTH / 2}
+            x={drawnWidth - RAIL_WIDTH / 2}
             height={totalHeight}
             rows={rows}
           />
@@ -819,7 +799,7 @@ export default function LDRungGrid({
                 <line
                   x1={gridOffsetX + gridWidth}
                   y1={y}
-                  x2={totalWidth - RAIL_WIDTH / 2 - 10}
+                  x2={drawnWidth - RAIL_WIDTH / 2 - 10}
                   y2={y}
                   stroke={COLORS.wire}
                   strokeWidth={STROKE_WIDTH}

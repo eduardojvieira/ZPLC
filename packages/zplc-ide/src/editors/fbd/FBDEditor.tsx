@@ -55,6 +55,8 @@ import { markBreakpointNodes } from '../breakpointMarks';
 import { blockElement, parseElement, type SourceElementId } from '../../models/sourceElements';
 import { t } from '../../i18n';
 import { announce } from '../../utils/announce';
+import { ContextMenu } from '../../ui';
+import { useCanvasContextMenu } from '../useCanvasContextMenu';
 import { FIT_VIEW_OPTIONS, ZOOM_MAX, ZOOM_MIN } from '../viewBounds';
 
 // =============================================================================
@@ -401,6 +403,13 @@ function FBDEditorInner({
     event.dataTransfer.dropEffect = 'move';
   }, []);
 
+  // The context menu of the canvas, of a block and of a wire: the commands of the key table, and the instance monitor (UX-033)
+  const instanceMonitorOf = useCallback((node: Node) => {
+    const { instanceName, type } = node.data as { instanceName?: string; type?: string };
+    return instanceName && type ? () => onOpenMonitor(instanceName, type) : undefined;
+  }, [onOpenMonitor]);
+  const menu = useCanvasContextMenu({ editor: 'fbd', nodesRef, edgesRef, readOnly, canPaste: () => clipboardRef.current !== undefined, show: showGraph, run: keyboard.run, instanceMonitorOf });
+
   // A double click on a block asks what it holds, as F2 does
   const onNodeDoubleClick = useCallback((_event: React.MouseEvent, node: Node) => {
     if (readOnly) return;
@@ -412,6 +421,7 @@ function FBDEditorInner({
   return (
     <>
     {!readOnly && <FBDToolbox onInsert={(type) => keyboard.run('insertElement', { blockType: type })} />}
+    <ContextMenu label={t('editor.menu.canvas')} items={menu.items} className="flex flex-1 h-full">
     <div
       ref={wrapperRef}
       className="relative flex-1 h-full"
@@ -432,6 +442,9 @@ function FBDEditorInner({
         onConnectEnd={onConnectEnd}
         isValidConnection={isValidConnection}
         onNodeDoubleClick={onNodeDoubleClick}
+        onNodeContextMenu={menu.onNodeContextMenu}
+        onEdgeContextMenu={menu.onEdgeContextMenu}
+        onPaneContextMenu={menu.onPaneContextMenu}
         // deleting is a command of the keyboard table, one gesture for the blocks and the wires on them
         deleteKeyCode={null}
         nodesDraggable={!readOnly}
@@ -484,6 +497,7 @@ function FBDEditorInner({
       {keyboard.overlay}
       {keyboard.status}
     </div>
+    </ContextMenu>
     </>
   );
 }

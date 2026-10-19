@@ -52,7 +52,7 @@
     "file": "packages/zplc-ide/src/editors/ld/LDRungGrid.tsx",
     "requirement": "IDE-014",
     "added": "2026-10-10",
-    "lines": 960,
+    "lines": 940,
     "reason": "Rung grid layout, drag and drop and cell rendering in one component; the visual-language work (WS-22a) edits it. Split after that lands."
   },
   {

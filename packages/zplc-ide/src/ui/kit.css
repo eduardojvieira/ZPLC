@@ -221,6 +221,7 @@
   .ui-menu-item[data-destructive] { color: var(--color-accent-red); }
   .ui-menu-item[data-destructive][data-active] { background: var(--menu-item-bg-active-danger); }
   .ui-menu-item[aria-disabled="true"] { opacity: var(--button-disabled-opacity); cursor: not-allowed; }
+  .ui-menu-reason { display: block; color: var(--hint-fg); font-size: var(--font-size-caption); }
   .ui-menu-shortcut { color: var(--hint-fg); font-family: var(--font-mono); font-size: var(--font-size-caption); }
   .ui-menu-separator { height: 1px; margin: 4px 0; background: var(--menu-separator); }
 

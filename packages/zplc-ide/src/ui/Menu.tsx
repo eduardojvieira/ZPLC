@@ -21,6 +21,8 @@ export interface MenuItem {
   /** Shown at the right edge, e.g. "Ctrl+B". */
   shortcut?: string;
   disabled?: boolean;
+  /** Why the item is disabled: shown under its label and read by a screen reader, so that a disabled item explains itself. */
+  disabledReason?: string;
   /** Draws a separator above this item. */
   separatorBefore?: boolean;
   /** Styles the item as destructive (it still needs an alert dialog when it cannot be undone). */
@@ -85,6 +87,7 @@ function MenuSurface({ label, items, anchor, placement, initialActive, onClose, 
               type="button"
               role="menuitem"
               aria-disabled={item.disabled || undefined}
+              aria-description={item.disabled ? item.disabledReason : undefined}
               tabIndex={-1}
               data-active={index === active || undefined}
               data-destructive={item.destructive || undefined}
@@ -92,7 +95,7 @@ function MenuSurface({ label, items, anchor, placement, initialActive, onClose, 
               onPointerMove={() => { if (!item.disabled && index !== active) setActive(index); }}
               onClick={() => choose(index)}
             >
-              <span>{item.label}</span>
+              <span>{item.label}{item.disabled && item.disabledReason && <span className="ui-menu-reason">{item.disabledReason}</span>}</span>
               {item.shortcut && <kbd className="ui-menu-shortcut">{item.shortcut}</kbd>}
             </button>
           </div>

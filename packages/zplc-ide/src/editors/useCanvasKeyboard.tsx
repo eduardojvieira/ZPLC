@@ -8,6 +8,7 @@ import { useCallback, useMemo, useState, type KeyboardEvent as ReactKeyboardEven
 import type { Edge, Node } from '@xyflow/react';
 import { announce } from '../utils/announce';
 import { isArrangeCommand } from './arrange';
+import { isContextMenuKey, openContextMenuOn } from './contextMenuKey';
 import { actionFor, actionsOf, keysBelongToControl, keysText, type VisualEditor } from './keymap';
 import { freeTextOf, type PickerItem } from './picker';
 import SearchList from './SearchList';
@@ -148,13 +149,21 @@ export function useCanvasKeyboard<Argument>(options: CanvasKeyboardOptions<Argum
 
   const onKeyDown = useCallback((event: ReactKeyboardEvent<HTMLElement>) => {
     if (keysBelongToControl(event.target)) return;
+    // the menu of the element that has the focus, or of the canvas when the focus is on the canvas itself (UX-033)
+    if (isContextMenuKey(event)) {
+      const target = event.target as Element;
+      const element = target.closest('.react-flow__node, .react-flow__edge') ?? wrapperRef.current?.querySelector('.react-flow__pane') ?? target;
+      event.preventDefault();
+      openContextMenuOn(element);
+      return;
+    }
     const command = actionFor(commands.editor, event);
     if (!command) return;
     if (readOnly && !commands.readOnlyCommands.has(command)) return;
     if (command === 'toggleBreakpoint' && !(nodesRef.current ?? []).some((node) => node.selected)) return;
     event.preventDefault();
     run(command);
-  }, [commands, nodesRef, readOnly, run]);
+  }, [commands, nodesRef, readOnly, run, wrapperRef]);
 
   const overlay = useMemo(() => {
     if (!ask || (readOnly && ask.kind !== 'commands')) return null;

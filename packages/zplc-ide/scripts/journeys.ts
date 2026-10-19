@@ -2038,6 +2038,69 @@ export const JOURNEYS: Journey[] = [
     },
   },
   {
+    // The gestures of the visual editors (UX-033), the way a user makes them: Ladder rungs use the width of the view, fit to
+    // view is a key in all three editors, the diagram editors zoom from 10% to 400%, and a context menu opens from the
+    // keyboard (Shift+F10), names its items and says why one is disabled.
+    name: '51c The visual editors fit to the view, zoom wide, and open context menus from the keyboard', example: 'blinky', proves: [], partly: ['UX-033', 'LNG-010'],
+    run: async (app, { project }) => {
+      cpSync(join(packageRoot, 'projects', 'blinky_fbd', 'src', 'main.fbd.json'), join(project, 'src', 'second.fbd.json'));
+      cpSync(join(packageRoot, 'projects', 'blinky_sfc', 'src', 'main.sfc.json'), join(project, 'src', 'second.sfc.json'));
+      await openFolder(app, project);
+      const said = () => app.eval<string>(`document.querySelector('[data-live-region="polite"]')?.textContent ?? ''`);
+      const menu = () => app.eval<Array<{ text: string; disabled: boolean }>>(`[...document.querySelectorAll('[role="menu"] [role="menuitem"]')].map((item) => ({ text: item.textContent.trim(), disabled: item.getAttribute('aria-disabled') === 'true' }))`);
+      const closeMenu = async () => { await app.press('Escape'); await app.until('the menu to close', async () => (await menu()).length === 0 || undefined); };
+      const scale = () => app.eval<number>(`new DOMMatrixReadOnly(getComputedStyle(document.querySelector('.react-flow__viewport')).transform).a`);
+
+      // Ladder: the rung is as wide as the view, so its right rail is at the edge of the view and not in a narrow column
+      await openDiagram(app, 'src/main.ld.json', '[data-ld-rung-id]');
+      const width = await app.eval<{ svg: number; view: number; rail: number }>(`(() => { const view = document.querySelector('[data-ld-rung-id] .overflow-x-auto'); const svg = view.querySelector('svg'); return { svg: svg.getBoundingClientRect().width, view: view.clientWidth, rail: view.getBoundingClientRect().right - svg.getBoundingClientRect().right }; })()`);
+      assert(width.svg >= width.view - 1, `A rung is ${width.svg}px wide in a view of ${width.view}px: it does not use the available width.`);
+      await app.click(`[...document.querySelectorAll('[data-ld-rung-id="rung_1"] span')].find((node) => node.textContent === 'Rung 1')`, 'the label of rung 1');
+      await app.press('Ctrl+Alt+0');
+      await app.until('Ladder to say that it fitted', async () => (await said()).includes('Every rung is shown from its left edge') || undefined);
+      await app.press('Shift+F10');
+      await app.until('the menu of the rung', async () => (await menu()).some((item) => item.text.startsWith('Add rung after')) || undefined);
+      const rung = await menu();
+      assert(rung.find((item) => item.text.startsWith('Move rung up'))?.disabled === true && rung.find((item) => item.text.startsWith('Move rung up'))!.text.includes('This is the first rung'), `The first rung can be moved up, or does not say why not: ${JSON.stringify(rung)}`);
+      await closeMenu();
+
+      // FBD and SFC: fit by key, a zoom range from 10% to 400%, and the menu of an element with the reason of a disabled item
+      for (const editor of [
+        { file: 'src/second.fbd.json', name: 'FBD', aim: '.react-flow__node', expect: ['Bind variable', 'Edit comment', 'Toggle breakpoint', 'Align left'] },
+        { file: 'src/second.sfc.json', name: 'SFC', aim: '.react-flow__node', expect: ['Name the step or set the condition', 'Toggle breakpoint', 'Align left'] },
+      ]) {
+        await openDiagram(app, editor.file, editor.aim);
+        await app.click(css(editor.aim), `a node of the ${editor.name}`);
+        await app.press('Ctrl+Alt+0');
+        await app.until(`the ${editor.name} to say that it fitted`, async () => (await said()).includes('Diagram fitted to the view') || undefined);
+        // each press of a zoom button is awaited, because the button is disabled at the end of the range
+        const zoomTo = async (button: string, reached: (zoom: number) => boolean) => {
+          for (let step = 0; step < 40 && !reached(await scale()); step++) {
+            const before = await scale();
+            await app.click(css(button), 'the zoom button');
+            await app.until('the zoom to change', async () => Math.abs(await scale() - before) > 0.001 || undefined, 5_000);
+          }
+        };
+        await zoomTo('.react-flow__controls-zoomout', (zoom) => zoom < 0.45);
+        assert(await scale() < 0.45, `The ${editor.name} cannot zoom out past 50%: ${await scale()}`);
+        await zoomTo('.react-flow__controls-zoomin', (zoom) => zoom > 2);
+        assert(await scale() > 2, `The ${editor.name} cannot zoom in past 200%: ${await scale()}`);
+        // zoomed in, the nodes may be out of the window: the canvas takes the focus as it does when Tab reaches it
+        await app.eval(`document.querySelector('[role="region"][aria-label$="canvas"]').focus()`);
+        await app.press('Ctrl+Alt+0');
+        await app.until(`the ${editor.name} to fit the diagram back into the view`, async () => await scale() <= 1 || undefined, 15_000);
+        await app.click(css(editor.aim), `a node of the ${editor.name}`);
+        await app.press('Shift+F10');
+        await app.until(`the menu of an element of the ${editor.name}`, async () => (await menu()).length > 0 || undefined);
+        const items = await menu();
+        for (const name of editor.expect) assert(items.some((item) => item.text.startsWith(name)), `The ${editor.name} menu of an element has no "${name}": ${JSON.stringify(items)}`);
+        const align = items.find((item) => item.text.startsWith('Align left'))!;
+        assert(align.disabled && align.text.includes('Select at least two elements'), `With one element selected, aligning is not disabled with its reason: ${JSON.stringify(align)}`);
+        await closeMenu();
+      }
+    },
+  },
+  {
     name: '29 The Welcome screen loads no editor', example: 'motor_start_stop', proves: [], partly: ['IDE-015'],
     run: async (app, { project }) => {
       // What the page has fetched, as modules (the development host serves each one by its path). The page keeps the first

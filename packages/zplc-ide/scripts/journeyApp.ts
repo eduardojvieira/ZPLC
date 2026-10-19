@@ -39,6 +39,8 @@ const KEYS: Record<string, { key: string; code: string; keyCode: number }> = {
   C: { key: 'c', code: 'KeyC', keyCode: 67 }, N: { key: 'n', code: 'KeyN', keyCode: 78 }, O: { key: 'o', code: 'KeyO', keyCode: 79 }, I: { key: 'i', code: 'KeyI', keyCode: 73 },
   Space: { key: ' ', code: 'Space', keyCode: 32 }, E: { key: 'e', code: 'KeyE', keyCode: 69 }, M: { key: 'm', code: 'KeyM', keyCode: 77 },
   T: { key: 't', code: 'KeyT', keyCode: 84 }, V: { key: 'v', code: 'KeyV', keyCode: 86 }, K: { key: 'k', code: 'KeyK', keyCode: 75 },
+  // the keys of the gestures of the visual editors (UX-033)
+  '0': { key: '0', code: 'Digit0', keyCode: 48 }, F10: { key: 'F10', code: 'F10', keyCode: 121 }, H: { key: 'h', code: 'KeyH', keyCode: 72 },
 };
 
 export interface App {

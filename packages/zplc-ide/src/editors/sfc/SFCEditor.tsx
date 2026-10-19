@@ -50,6 +50,8 @@ import { SignalValue } from '../../ui';
 import { animationMs } from '../../theme/motion';
 import { useMonitor } from '../../monitoring/useMonitor';
 import { announce } from '../../utils/announce';
+import { ContextMenu } from '../../ui';
+import { useCanvasContextMenu } from '../useCanvasContextMenu';
 import { FIT_VIEW_OPTIONS, ZOOM_MAX, ZOOM_MIN } from '../viewBounds';
 import { useElementSelection } from '../elementSelection';
 import { useElementBreakpoints } from '../elementBreakpoints';
@@ -455,6 +457,9 @@ function SFCEditorInner({
     commentOf: (node) => (typeof (node.data as Record<string, unknown>).comment === 'string' ? ((node.data as Record<string, unknown>).comment as string) : undefined),
   });
 
+  // The context menu of the canvas, of a step or transition and of a wire: the commands of the key table (UX-033)
+  const menu = useCanvasContextMenu({ editor: 'sfc', nodesRef, edgesRef, readOnly, canPaste: () => clipboardRef.current !== undefined, show: showGraph, run: keyboard.run });
+
   // Handle drop from toolbox: the element is inserted as the keyboard inserts one, at the place of the drop
   const onDrop = useCallback(
     (event: React.DragEvent) => {
@@ -475,6 +480,7 @@ function SFCEditorInner({
   return (
     <>
     {!readOnly && <SFCToolbox onInsert={(type) => keyboard.run('insertElement', { elementType: type })} />}
+    <ContextMenu label={t('editor.menu.canvas')} items={menu.items} className="flex flex-1 h-full">
     <div 
       ref={reactFlowWrapper}
       className="relative flex-1 h-full"
@@ -496,6 +502,9 @@ function SFCEditorInner({
         edgesFocusable={!readOnly}
         onDrop={onDrop}
         onDragOver={onDragOver}
+        onNodeContextMenu={menu.onNodeContextMenu}
+        onEdgeContextMenu={menu.onEdgeContextMenu}
+        onPaneContextMenu={menu.onPaneContextMenu}
         nodeTypes={nodeTypes as NodeTypes}
         edgeTypes={edgeTypes as EdgeTypes}
         isValidConnection={isValidConnection}
@@ -554,6 +563,7 @@ function SFCEditorInner({
       {keyboard.overlay}
       {keyboard.status}
     </div>
+    </ContextMenu>
     </>
   );
 }

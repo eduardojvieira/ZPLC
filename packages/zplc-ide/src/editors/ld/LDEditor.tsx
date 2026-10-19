@@ -34,6 +34,8 @@ import { useMonitor } from '../../monitoring/useMonitor';
 import { debugValuesOf } from './debugValues';
 import { announce } from '../../utils/announce';
 import { Button, Tooltip } from '../../ui';
+import { LDRungMenu } from './LDRungMenu';
+import { isContextMenuKey, openContextMenuOn } from '../contextMenuKey';
 import { useElementSelection } from '../elementSelection';
 import { useElementBreakpoints } from '../elementBreakpoints';
 import { parseElement, rungElement, type SourceElementId } from '../../models/sourceElements';
@@ -218,6 +220,8 @@ export default function LDEditor({ model, onChange, readOnly = false }: LDEditor
     setCursorState(next);
   }, []);
   const [ask, setAsk] = useState<LDAsk | null>(null);
+  // something has been copied: the menu of a rung offers to paste it (UX-033)
+  const [hasCopied, setHasCopied] = useState(false);
   const [status, setStatus] = useState('');
   // the element whose properties are open: the panel is asked for, selecting an element by keyboard does not open it
   const [propertiesFor, setPropertiesFor] = useState<string | null>(null);
@@ -444,7 +448,7 @@ export default function LDEditor({ model, onChange, readOnly = false }: LDEditor
       case 'copyRung': {
         if (readOnly || !selectedRungId) return;
         const fragment = copyLDRungFragment(latestModelRef.current, selectedRungId);
-        if (fragment) clipboardRef.current = fragment;
+        if (fragment) { clipboardRef.current = fragment; setHasCopied(true); }
         return;
       }
       case 'pasteRung': {
@@ -476,9 +480,24 @@ export default function LDEditor({ model, onChange, readOnly = false }: LDEditor
     }
   }, [applyOutcome, breakpoints, commit, onChange, readOnly, select, selectedRungId, t]);
 
+  // The menu of a rung acts on that rung: the cursor goes to it when it is elsewhere, and a command runs at the cursor (UX-033)
+  const focusRung = useCallback((rungId: string) => {
+    if (cursorRef.current?.rungId !== rungId) placeCursor({ rungId, row: 0, col: 0 });
+    select({ rungId, elementId: null });
+  }, [placeCursor, select]);
+  const runOnRung = useCallback((command: string, rungId: string) => {
+    runCommand(command, undefined, cursorRef.current?.rungId === rungId ? cursorRef.current : { rungId, row: 0, col: 0 });
+  }, [runCommand]);
+
   // The keys of the table (../keymap.ts): the cursor and the commands of the ladder
   const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLDivElement>) => {
     if (keysBelongToControl(e.target)) return;
+    // the menu of the rung of the cursor, or of the first rung (UX-033)
+    if (isContextMenuKey(e)) {
+      const rung = rootRef.current?.querySelector(`[data-ld-rung-id="${cursorRef.current?.rungId}"]`) ?? rootRef.current?.querySelector('[data-ld-rung-id]');
+      if (rung) { e.preventDefault(); openContextMenuOn(rung.querySelector('svg') ?? rung); }
+      return;
+    }
     const command = actionFor('ld', e);
     if (!command) return;
     if (readOnly && !READ_ONLY_COMMANDS.has(command)) return;
@@ -610,6 +629,7 @@ export default function LDEditor({ model, onChange, readOnly = false }: LDEditor
                         : 'border-[var(--color-surface-500)] bg-transparent opacity-60 hover:opacity-100'
                     }`}
                   />
+                  <LDRungMenu rungId={rung.id} index={idx} count={normalizedModel.rungs.length} readOnly={readOnly} canPaste={hasCopied} onOpen={focusRung} onCommand={runOnRung}>
                   <LDRungGrid
                     rung={rung}
                     onChange={(updated) => handleRungChange(rung.id, updated)}
@@ -624,6 +644,7 @@ export default function LDEditor({ model, onChange, readOnly = false }: LDEditor
                     elementStates={monitor.active ? monitor.states : undefined}
                     debugValues={debugValues}
                   />
+                  </LDRungMenu>
 
                   {/* Rung controls */}
                   {!readOnly && (
