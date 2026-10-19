@@ -1,7 +1,7 @@
 import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { afterAll, beforeAll, describe, expect, it } from 'bun:test';
+import { afterAll, beforeAll, describe, expect } from 'bun:test';
 
 import { itNative, nativeRuntimeBinary } from './nativeRuntimeGuard';
 import { createNativeScenarioSession } from './nativeScenarioRuntime';
