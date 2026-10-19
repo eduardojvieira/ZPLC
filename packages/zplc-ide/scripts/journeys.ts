@@ -9,6 +9,7 @@ import { join } from 'node:path';
 import { readZip } from '../electron/projectArchiveZip';
 import { learnLessonCatalog } from '../src/components/learnLesson';
 import { LESSON_INDEX } from '../src/generated/lessonIndex';
+import { courseOrder } from '../src/learn/course';
 import { contrastRatio, parseColor } from '../src/theme/color';
 import { resolveTokens, type ThemeId } from '../src/theme/tokens';
 import { auditMarkup } from '../src/ui/audit';
@@ -824,8 +825,8 @@ export const JOURNEYS: Journey[] = [
     // click: it is proven in electron/appMenu.test.ts.
     name: '11 Learn with no project open', example: 'none', proves: ['LRN-001'], partly: ['LRN-002', 'LRN-003', 'LRN-005', 'LRN-010', 'LRN-031', 'LRN-032'],
     run: async (app, { root }) => {
-      const FIRST = 'scan-cycle-one-scan-memory';
-      const SECOND = 'blinky-ladder-timer-feedback';
+      // The first two lessons of the course, whatever their ids: the index orders them (LRN-028 allows no list of ids here).
+      const [FIRST, SECOND] = courseOrder(LESSON_INDEX).map(({ id }) => id) as [string, string];
       const entry = LESSON_INDEX.lessons.find(({ id }) => id === FIRST)!;
       const lesson = learnLessonCatalog.en.find(({ id }) => id === FIRST)!;
       const folder = join(root, 'learn-project'); mkdirSync(folder);
