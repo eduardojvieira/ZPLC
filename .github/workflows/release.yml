@@ -410,6 +410,8 @@ jobs:
       # architecture, so each published macOS format is opened on its own system before the draft exists.
       - name: Mount the DMG, copy the application out and launch it
         working-directory: packages/zplc-ide
+        env:
+          RELEASE_VERSION: ${{ needs.validate-version.outputs.version }}
         shell: bash
         run: |
           set -euo pipefail
@@ -427,9 +429,12 @@ jobs:
           ditto "${apps[0]}" "$app"
           codesign --verify --deep --strict "$app"
           ZPLC_PACKAGED_EXECUTABLE="$app/Contents/MacOS/zplc-ide" bun run smoke:desktop-packaged
+          bun ../../tools/ci/release/install-record.ts write --version "$RELEASE_VERSION" --out ../../install-records "${images[0]}"
 
       - name: Unpack the ZIP and launch the application
         working-directory: packages/zplc-ide
+        env:
+          RELEASE_VERSION: ${{ needs.validate-version.outputs.version }}
         shell: bash
         run: |
           set -euo pipefail
@@ -443,6 +448,7 @@ jobs:
           [ "${#apps[@]}" -eq 1 ] || { echo "Expected exactly one .app in the archive, found ${#apps[@]}"; exit 1; }
           codesign --verify --deep --strict "${apps[0]}"
           ZPLC_PACKAGED_EXECUTABLE="${apps[0]}/Contents/MacOS/zplc-ide" bun run smoke:desktop-packaged
+          bun ../../tools/ci/release/install-record.ts write --version "$RELEASE_VERSION" --out ../../install-records "${archives[0]}"
 
       # REL-034, REL-019: the unpacked application holds the example projects, the lessons and the licence notices.
       - name: Check the content of the packaged application
@@ -463,6 +469,15 @@ jobs:
             packages/zplc-ide/dist-electron/*.dmg
             packages/zplc-ide/dist-electron/*.zip
             dist-bin/*
+          retention-days: 7
+
+      # REL-036: one record per installer that a step above opened; the evidence job of the platform checks them.
+      - name: Upload the install records
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: install-records-macos-${{ matrix.arch }}
+          path: install-records/*.json
+          if-no-files-found: error
           retention-days: 7
 
   # ===========================================================================
@@ -565,6 +580,8 @@ jobs:
       # application is launched; the portable executable is launched as it is. Both on this architecture.
       - name: Install the setup silently and launch the installed application
         working-directory: packages/zplc-ide
+        env:
+          RELEASE_VERSION: ${{ needs.validate-version.outputs.version }}
         shell: pwsh
         run: |
           $setup = @(Get-ChildItem dist-electron -Filter '*-setup-unsigned.exe')
@@ -577,9 +594,13 @@ jobs:
           $env:ZPLC_PACKAGED_EXECUTABLE = $executable
           bun run smoke:desktop-packaged
           if ($LASTEXITCODE -ne 0) { throw "The installed application did not launch" }
+          bun ../../tools/ci/release/install-record.ts write --version $env:RELEASE_VERSION --out ../../install-records $setup[0].FullName
+          if ($LASTEXITCODE -ne 0) { throw "The record of the installation could not be written" }
 
       - name: Launch the portable executable
         working-directory: packages/zplc-ide
+        env:
+          RELEASE_VERSION: ${{ needs.validate-version.outputs.version }}
         shell: pwsh
         run: |
           $portable = @(Get-ChildItem dist-electron -Filter '*-portable-unsigned.exe')
@@ -587,6 +608,8 @@ jobs:
           $env:ZPLC_PACKAGED_EXECUTABLE = $portable[0].FullName
           bun run smoke:desktop-packaged
           if ($LASTEXITCODE -ne 0) { throw "The portable executable did not launch" }
+          bun ../../tools/ci/release/install-record.ts write --version $env:RELEASE_VERSION --out ../../install-records $portable[0].FullName
+          if ($LASTEXITCODE -ne 0) { throw "The record of the launch could not be written" }
 
       # REL-034, REL-019: the unpacked application holds the example projects, the lessons and the licence notices.
       - name: Check the content of the packaged application
@@ -607,6 +630,15 @@ jobs:
             packages/zplc-ide/dist-electron/*-setup-unsigned.exe
             packages/zplc-ide/dist-electron/*-portable-unsigned.exe
             dist-bin/*
+          retention-days: 7
+
+      # REL-036: one record per installer that a step above opened; the evidence job of the platform checks them.
+      - name: Upload the install records
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: install-records-windows-${{ matrix.arch }}
+          path: install-records/*.json
+          if-no-files-found: error
           retention-days: 7
 
   # ===========================================================================
@@ -738,6 +770,8 @@ jobs:
       # Docker Hub tags, not actions: Debian 13, Ubuntu 24.04 and the current Fedora are the targets of REL-011.
       - name: Install and launch the .deb in clean Debian 13 and Ubuntu 24.04 containers
         working-directory: packages/zplc-ide
+        env:
+          RELEASE_VERSION: ${{ needs.validate-version.outputs.version }}
         shell: bash
         run: |
           set -euo pipefail
@@ -752,10 +786,13 @@ jobs:
               "$image" bash /scripts/check-linux-package.sh "/dist/$(basename "${packages[0]}")" || { echo "FAILED on $image"; failed=1; }
             echo "::endgroup::"
           done
-          exit "$failed"
+          [ "$failed" -eq 0 ] || exit 1
+          bun ../../tools/ci/release/install-record.ts write --version "$RELEASE_VERSION" --out ../../install-records "${packages[0]}"
 
       - name: Install and launch the .rpm in a clean Fedora container
         working-directory: packages/zplc-ide
+        env:
+          RELEASE_VERSION: ${{ needs.validate-version.outputs.version }}
         shell: bash
         run: |
           set -euo pipefail
@@ -765,9 +802,12 @@ jobs:
           docker run --rm --cap-add=SYS_ADMIN --shm-size=512m -e ZPLC_CONTAINER_CHECK=1 \
             -v "$PWD/scripts:/scripts:ro" -v "$PWD/dist-electron:/dist:ro" \
             fedora:latest bash /scripts/check-linux-package.sh "/dist/$(basename "${packages[0]}")"
+          bun ../../tools/ci/release/install-record.ts write --version "$RELEASE_VERSION" --out ../../install-records "${packages[0]}"
 
       - name: Launch the AppImage in a clean Ubuntu 24.04 container
         working-directory: packages/zplc-ide
+        env:
+          RELEASE_VERSION: ${{ needs.validate-version.outputs.version }}
         shell: bash
         run: |
           set -euo pipefail
@@ -777,6 +817,7 @@ jobs:
           docker run --rm --cap-add=SYS_ADMIN --shm-size=512m -e ZPLC_CONTAINER_CHECK=1 \
             -v "$PWD/scripts:/scripts:ro" -v "$PWD/dist-electron:/dist:ro" \
             ubuntu:24.04 bash /scripts/check-linux-package.sh "/dist/$(basename "${packages[0]}")"
+          bun ../../tools/ci/release/install-record.ts write --version "$RELEASE_VERSION" --out ../../install-records "${packages[0]}"
 
       - name: Upload Linux artifacts
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
@@ -787,6 +828,15 @@ jobs:
             packages/zplc-ide/dist-electron/*.deb
             packages/zplc-ide/dist-electron/*.rpm
             dist-bin/*
+          retention-days: 7
+
+      # REL-036: one record per installer that a step above opened; the evidence job of the platform checks them.
+      - name: Upload the install records
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: install-records-linux-${{ matrix.arch }}
+          path: install-records/*.json
+          if-no-files-found: error
           retention-days: 7
 
   # ===========================================================================
@@ -972,6 +1022,19 @@ jobs:
           RELEASE_VERSION: ${{ needs.validate-version.outputs.version }}
         run: bun tools/ci/release/verify-installers.ts artifacts --version "$RELEASE_VERSION" --os mac
 
+      # REL-036: every installer of this system was mounted, unpacked or installed, and launched, on a runner of
+      # its own system and architecture; the record names the file by its checksum.
+      - name: Download the install records
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          pattern: install-records-macos-*
+          path: install-records
+
+      - name: Verify that every installer was opened and launched
+        env:
+          RELEASE_VERSION: ${{ needs.validate-version.outputs.version }}
+        run: bun tools/ci/release/install-record.ts verify --installers artifacts --records install-records --version "$RELEASE_VERSION" --os mac
+
       - name: Generate the bill of materials
         run: bun scripts/release/sbom.ts --out artifacts/ZPLC-${{ needs.validate-version.outputs.version }}-macos.cdx.json
 
@@ -1091,6 +1154,19 @@ jobs:
           RELEASE_VERSION: ${{ needs.validate-version.outputs.version }}
         run: bun tools/ci/release/verify-installers.ts artifacts --version "$RELEASE_VERSION" --os win
 
+      # REL-036: every installer of this system was mounted, unpacked or installed, and launched, on a runner of
+      # its own system and architecture; the record names the file by its checksum.
+      - name: Download the install records
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          pattern: install-records-windows-*
+          path: install-records
+
+      - name: Verify that every installer was opened and launched
+        env:
+          RELEASE_VERSION: ${{ needs.validate-version.outputs.version }}
+        run: bun tools/ci/release/install-record.ts verify --installers artifacts --records install-records --version "$RELEASE_VERSION" --os win
+
       - name: Generate the bill of materials
         run: bun scripts/release/sbom.ts --out artifacts/ZPLC-${{ needs.validate-version.outputs.version }}-windows.cdx.json
 
@@ -1203,6 +1279,19 @@ jobs:
         env:
           RELEASE_VERSION: ${{ needs.validate-version.outputs.version }}
         run: bun tools/ci/release/verify-installers.ts artifacts --version "$RELEASE_VERSION" --os linux
+
+      # REL-036: every installer of this system was mounted, unpacked or installed, and launched, on a runner of
+      # its own system and architecture; the record names the file by its checksum.
+      - name: Download the install records
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          pattern: install-records-linux-*
+          path: install-records
+
+      - name: Verify that every installer was opened and launched
+        env:
+          RELEASE_VERSION: ${{ needs.validate-version.outputs.version }}
+        run: bun tools/ci/release/install-record.ts verify --installers artifacts --records install-records --version "$RELEASE_VERSION" --os linux
 
       - name: Generate the bill of materials
         run: bun scripts/release/sbom.ts --out artifacts/ZPLC-${{ needs.validate-version.outputs.version }}-linux.cdx.json

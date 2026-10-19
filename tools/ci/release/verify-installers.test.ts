@@ -4,23 +4,12 @@ import { afterEach, describe, expect, it } from 'bun:test';
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { installerName, installerNames, verifyInstallers, type InstallerFormat } from './verify-installers';
+import { sample } from './fixtures';
+import { installerName, installerNames, verifyInstallers } from './verify-installers';
 
 const VERSION = '2.0.0-rc.4';
 const roots: string[] = [];
 afterEach(() => { for (const root of roots.splice(0)) rmSync(root, { recursive: true, force: true }); });
-
-/** The smallest bytes that carry the signature of each container format. */
-function sample(format: InstallerFormat, arch: 'x64' | 'arm64'): Buffer {
-  const bytes = Buffer.alloc(2048);
-  if (format === 'dmg') bytes.write('koly', bytes.length - 512, 'latin1');
-  else if (format === 'zip') bytes.write('PK\x03\x04', 'latin1');
-  else if (format === 'setup' || format === 'portable') bytes.write('MZ', 'latin1');
-  else if (format === 'appimage') { bytes.write('\x7fELF', 'latin1'); bytes[4] = 2; bytes[5] = 1; bytes.writeUInt16LE(arch === 'x64' ? 0x3e : 0xb7, 18); }
-  else if (format === 'deb') bytes.write('!<arch>\ndebian-binary   ', 'latin1');
-  else bytes.set([0xed, 0xab, 0xee, 0xdb]);
-  return bytes;
-}
 
 function produce(os?: 'mac' | 'win' | 'linux'): string {
   const root = mkdtempSync(join(tmpdir(), 'zplc-installers-'));
@@ -34,7 +23,7 @@ function produce(os?: 'mac' | 'win' | 'linux'): string {
   return root;
 }
 
-describe('the fourteen installer files (REL-020)', () => {
+describe('the fourteen installer files', () => {
   it('are fourteen distinct names under one scheme, in lower case with no spaces', () => {
     const names = installerNames(VERSION).map((installer) => installer.name);
     expect(new Set(names).size).toBe(14);
@@ -55,7 +44,7 @@ describe('the fourteen installer files (REL-020)', () => {
   });
 });
 
-describe('the installers that were produced (REL-020)', () => {
+describe('the installers that were produced', () => {
   it('accept the complete set of the three systems', () => {
     expect(verifyInstallers(produce(), VERSION)).toEqual([]);
   });
