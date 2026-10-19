@@ -2218,6 +2218,9 @@
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"47 The main path is completed with the keyboard alone","partial":true}
   ],
   "UX-016": [
+    {"kind":"unit","ref":"packages/zplc-ide/electron/productName.test.ts","test":"UX-016 gives the main process and the renderer the same name"},
+    {"kind":"unit","ref":"packages/zplc-ide/electron/productName.test.ts","test":"UX-016 gives the page the same title as the window, before the renderer sets any"},
+    {"kind":"unit","ref":"packages/zplc-ide/electron/productName.test.ts","test":"UX-016 the product name has one home per process, and the homes agree"},
     {"kind":"unit","ref":"packages/zplc-ide/electron/shellPreferences.test.ts","test":"UX-016 follows the system mode only for the system theme"},
     {"kind":"unit","ref":"packages/zplc-ide/electron/shellPreferences.test.ts","test":"UX-016 keeps a report for the next start, and says whether it changed anything"},
     {"kind":"unit","ref":"packages/zplc-ide/electron/shellPreferences.test.ts","test":"UX-016 replaces a corrupt file at the next report"},
@@ -2385,6 +2388,7 @@
     {"kind":"unit","ref":"packages/zplc-ide/src/components/welcomeRecent.test.ts","test":"UX-029 gives an unavailable folder the reason in Spanish"},
     {"kind":"unit","ref":"packages/zplc-ide/src/components/welcomeRecent.test.ts","test":"UX-029 says the time in Spanish with the Spanish plural, and the month of an older date"},
     {"kind":"unit","ref":"packages/zplc-ide/src/components/welcomeRecent.test.ts","test":"UX-029 the Recent section speaks the language of the interface"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/i18n/i18n.test.tsx","test":"UX-029 announces a build result in English by default and in Spanish when the setting is es"},
     {"kind":"unit","ref":"packages/zplc-ide/src/i18n/i18n.test.tsx","test":"UX-029 draws the serial port dialog in English by default and in Spanish when the setting is es"},
     {"kind":"unit","ref":"packages/zplc-ide/src/i18n/i18n.test.tsx","test":"UX-029 draws the unsaved changes dialog with its default buttons in each language, and keeps the labels a caller passes"},
     {"kind":"unit","ref":"packages/zplc-ide/src/i18n/i18n.test.tsx","test":"UX-029 draws the update notice, its steps and the preferences in Spanish, with the plural of the tab size"},
@@ -2397,10 +2401,13 @@
     {"kind":"unit","ref":"packages/zplc-ide/src/i18n/i18n.test.tsx","test":"UX-029 reads navigator.language when the setting is auto, and is English where there is none"},
     {"kind":"unit","ref":"packages/zplc-ide/src/i18n/i18n.test.tsx","test":"UX-029 resolves auto from the language of the system and falls back to English"},
     {"kind":"unit","ref":"packages/zplc-ide/src/i18n/i18n.test.tsx","test":"UX-029 switches at runtime without a restart: the same non-React t and hook answer in the new language"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/i18n/i18n.test.tsx","test":"UX-029 the announcer says the result in the language of the setting"},
     {"kind":"unit","ref":"packages/zplc-ide/src/i18n/i18n.test.tsx","test":"UX-029 the catalogs"},
     {"kind":"unit","ref":"packages/zplc-ide/src/i18n/i18n.test.tsx","test":"UX-029 the language setting: auto, en and es"},
     {"kind":"unit","ref":"packages/zplc-ide/src/i18n/i18n.test.tsx","test":"UX-029 translation: interpolation, plural and fallback"},
     {"kind":"unit","ref":"packages/zplc-ide/src/utils/appSettings.test.ts","test":"UX-029 start with autosave off, the update check off, the language following the operating system and a 14 px editor with 4-space tabs"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/utils/exampleCatalog.test.ts","test":"UX-029 has a title and a summary in English and in Spanish for every catalogued example, and follows the language setting"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/utils/exampleCatalog.test.ts","test":"UX-029 the examples read their title and summary from the catalogs"},
     {"kind":"unit","ref":"tools/ci/i18n-guard.test.ts","test":"UX-029 --write lowers counts and drops entries, and never raises a count"},
     {"kind":"unit","ref":"tools/ci/i18n-guard.test.ts","test":"UX-029 fails for a file that is not listed, a count that grew, a count that shrank and an entry that reached zero"},
     {"kind":"unit","ref":"tools/ci/i18n-guard.test.ts","test":"UX-029 fails on a key in English and not in Spanish, a key only in Spanish, and different placeholders"},
@@ -2412,10 +2419,16 @@
     {"kind":"unit","ref":"tools/ci/i18n-guard.test.ts","test":"UX-029 i18n guard: the catalogs as data"},
     {"kind":"unit","ref":"tools/ci/i18n-guard.test.ts","test":"UX-029 i18n guard: the list of offenders only shrinks"},
     {"kind":"unit","ref":"tools/ci/i18n-guard.test.ts","test":"UX-029 stays quiet on a component that writes its text through t()"},
-    {"kind":"unit","ref":"tools/ci/i18n-guard.test.ts","test":"UX-029 stays quiet on a correct pair of catalogs"}
+    {"kind":"unit","ref":"tools/ci/i18n-guard.test.ts","test":"UX-029 stays quiet on a correct pair of catalogs"},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"49 The migrated screens read in Spanish, with no raw catalog key, no English left over and no clipped control at 1366 by 768","partial":true}
+  ],
+  "UX-030": [
+    {"kind":"unit","ref":"tools/ci/i18n-guard.test.ts","test":"UX-030 fails on voseo in the Spanish text (decision D-10: neutral, impersonal or \"usted\"), and passes the neutral forms"},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"49 The migrated screens read in Spanish, with no raw catalog key, no English left over and no clipped control at 1366 by 768","partial":true}
   ],
   "UX-031": [
     {"kind":"unit","ref":"tools/ci/i18n-guard.test.ts","test":"UX-031 fails on an exclamation mark and on an internal term, in either language"},
+    {"kind":"unit","ref":"tools/ci/i18n-guard.test.ts","test":"UX-031 fails on an exclamation mark in English text, and on a question that opens with an inverted mark in Spanish"},
     {"kind":"unit","ref":"tools/ci/i18n-guard.test.ts","test":"UX-031 fails on text that is not in sentence case, and passes acronyms, names, quoted labels and code tokens"}
   ],
   "UX-032": [
