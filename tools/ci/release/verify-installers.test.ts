@@ -94,4 +94,11 @@ describe('the installers that were produced', () => {
     writeFileSync(join(root, 'linux-x64', 'ZPLC-2.0.0-rc.4-linux.cdx.json'), '{}');
     expect(verifyInstallers(root, VERSION, { os: 'linux' })).toEqual([]);
   });
+
+  it('ignore the standalone tools of Windows, which are executables that are not installers', () => {
+    const root = produce('win');
+    writeFileSync(join(root, 'win-x64', 'zplc-cli-2.0.0-rc.4-win-x64.exe'), 'MZ tool');
+    writeFileSync(join(root, 'win-arm64', 'zplc-mcp-2.0.0-rc.4-win-arm64.exe'), 'MZ tool');
+    expect(verifyInstallers(root, VERSION, { os: 'win' })).toEqual([]);
+  });
 });

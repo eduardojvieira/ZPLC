@@ -63,6 +63,8 @@ export function installerNames(version: string, options: NameOptions = {}): Inst
 }
 
 const INSTALLER_EXTENSION = /\.(dmg|zip|exe|appimage|deb|rpm)$/i;
+/** The standalone command line and MCP server (REL-026) are executables too, and installers of nothing. */
+const STANDALONE_TOOL = /^zplc-(?:cli|mcp)-/;
 
 function walk(directory: string): Array<{ name: string; path: string }> {
   return readdirSync(directory, { withFileTypes: true }).flatMap((entry) =>
@@ -102,7 +104,7 @@ function containerProblem(installer: Installer, path: string): string | undefine
 export function verifyInstallers(directory: string, version: string, options: NameOptions & { os?: InstallerOs } = {}): string[] {
   const expected = installerNames(version, options).filter((installer) => options.os === undefined || installer.os === options.os);
   const byName = new Map(expected.map((installer) => [installer.name, installer]));
-  const found = walk(directory).filter((file) => INSTALLER_EXTENSION.test(file.name));
+  const found = walk(directory).filter((file) => INSTALLER_EXTENSION.test(file.name) && !STANDALONE_TOOL.test(file.name));
   const problems: string[] = [];
   const seen = new Set<string>();
   for (const file of found.sort((a, b) => a.path.localeCompare(b.path))) {
