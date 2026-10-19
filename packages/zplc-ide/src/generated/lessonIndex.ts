@@ -22,6 +22,7 @@ export const LESSON_IDS = [
   "blink-structured-text",
   "set-reset-alarm-latch",
   "seal-in-ladder",
+  "counter-batch-fbd",
 ] as const;
 
 export type LessonId = typeof LESSON_IDS[number];

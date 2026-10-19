@@ -1,0 +1,46 @@
+{
+  "schemaVersion": 1,
+  "id": "counter-batch-fbd",
+  "version": 1,
+  "order": 17,
+  "module": 3,
+  "level": "foundation",
+  "prerequisites": [
+    "edge-counter-pulses"
+  ],
+  "languages": [
+    "FBD"
+  ],
+  "tracks": [
+    "simulation"
+  ],
+  "unsupported": {
+    "hardware": {
+      "reason": {
+        "en": "The lesson is graded on exact sensor timing at 10 ms steps; a board has no recorded trace for it yet.",
+        "es": "La lección se califica con tiempos exactos de sensor en pasos de 10 ms; todavía no hay una traza registrada desde una placa para ella."
+      },
+      "instead": {
+        "en": "Complete it in Simulation: its grade is the same each time and needs no board.",
+        "es": "Complétela en Simulación: su calificación es la misma cada vez y no necesita una placa."
+      }
+    }
+  },
+  "plant": null,
+  "estimatedMinutes": 20,
+  "starter": {
+    "project": "batch_count_fbd_starter",
+    "program": "src/BatchCount.fbd.json"
+  },
+  "solution": {
+    "project": "batch_count_fbd",
+    "program": "src/BatchCount.fbd.json"
+  },
+  "scenario": {
+    "file": "scenario.json",
+    "id": "BatchCount",
+    "path": "tests/batch-count.scenario.json",
+    "sha256": "aab7db4d72a4cca5ee265f361e3b2656329822ee625473c86618d92c6134840e"
+  },
+  "regressionScenarios": []
+}

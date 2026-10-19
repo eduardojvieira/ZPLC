@@ -2807,6 +2807,177 @@
           ]
         }
       }
+    },
+    {
+      "id": "counter-batch-fbd",
+      "version": 1,
+      "order": 17,
+      "module": 3,
+      "level": "foundation",
+      "prerequisites": [
+        "edge-counter-pulses"
+      ],
+      "languages": [
+        "FBD"
+      ],
+      "tracks": [
+        "simulation"
+      ],
+      "unsupported": {
+        "hardware": {
+          "reason": {
+            "en": "The lesson is graded on exact sensor timing at 10 ms steps; a board has no recorded trace for it yet.",
+            "es": "La lección se califica con tiempos exactos de sensor en pasos de 10 ms; todavía no hay una traza registrada desde una placa para ella."
+          },
+          "instead": {
+            "en": "Complete it in Simulation: its grade is the same each time and needs no board.",
+            "es": "Complétela en Simulación: su calificación es la misma cada vez y no necesita una placa."
+          }
+        }
+      },
+      "plant": null,
+      "plantMap": null,
+      "estimatedMinutes": 20,
+      "starter": {
+        "project": "batch_count_fbd_starter",
+        "program": "src/BatchCount.fbd.json"
+      },
+      "solution": {
+        "project": "batch_count_fbd",
+        "program": "src/BatchCount.fbd.json"
+      },
+      "scenario": {
+        "id": "BatchCount",
+        "path": "tests/batch-count.scenario.json",
+        "sha256": "aab7db4d72a4cca5ee265f361e3b2656329822ee625473c86618d92c6134840e",
+        "tickMs": 10,
+        "durationMs": 120,
+        "assertions": 10,
+        "canonical": "{\"durationMs\":120,\"events\":[{\"atMs\":0,\"set\":{\"BatchCount.PartSensor\":false,\"BatchCount.Reset\":false}},{\"atMs\":10,\"set\":{\"BatchCount.PartSensor\":true}},{\"atMs\":30,\"set\":{\"BatchCount.PartSensor\":false}},{\"atMs\":40,\"set\":{\"BatchCount.PartSensor\":true}},{\"atMs\":50,\"set\":{\"BatchCount.PartSensor\":false}},{\"atMs\":60,\"set\":{\"BatchCount.PartSensor\":true}},{\"atMs\":70,\"set\":{\"BatchCount.PartSensor\":false}},{\"atMs\":80,\"set\":{\"BatchCount.Reset\":true}},{\"atMs\":90,\"set\":{\"BatchCount.Reset\":false}},{\"atMs\":100,\"set\":{\"BatchCount.PartSensor\":true}},{\"atMs\":110,\"set\":{\"BatchCount.PartSensor\":false}}],\"expectations\":[{\"atMs\":0,\"condition\":{\"BatchCount.BatchFull\":false},\"kind\":\"AT\"},{\"atMs\":30,\"condition\":{\"BatchCount.BatchFull\":false},\"kind\":\"AT\"},{\"atMs\":50,\"condition\":{\"BatchCount.BatchFull\":false},\"kind\":\"AT\"},{\"atMs\":60,\"condition\":{\"BatchCount.BatchFull\":true},\"kind\":\"AT\"},{\"atMs\":70,\"condition\":{\"BatchCount.BatchFull\":true},\"kind\":\"AT\"},{\"atMs\":80,\"condition\":{\"BatchCount.BatchFull\":false},\"kind\":\"AT\"},{\"atMs\":110,\"condition\":{\"BatchCount.BatchFull\":false},\"kind\":\"AT\"},{\"condition\":{\"BatchCount.BatchFull\":true},\"forMs\":10,\"fromMs\":60,\"kind\":\"FOR\"},{\"condition\":{\"BatchCount.BatchFull\":true},\"fromMs\":60,\"kind\":\"RISING\",\"withinMs\":0},{\"condition\":{\"BatchCount.BatchFull\":false},\"fromMs\":80,\"kind\":\"FALLING\",\"withinMs\":0}],\"id\":\"BatchCount\",\"schemaVersion\":1,\"tickMs\":10}"
+      },
+      "regressionScenarios": [],
+      "text": {
+        "en": {
+          "title": "Counters in Function Block Diagram: count parts to a batch",
+          "summary": "Edit a Function Block Diagram so that a CTU counter counts three parts, lights BatchFull, and clears with Reset.",
+          "scope": "Tests provide native POSIX host evidence with one 10 ms task; they do not establish sensor wiring, debounce, counting accuracy at machine speed, HIL, or certification.",
+          "objectives": [
+            "Read a Function Block Diagram as blocks whose output ports are wired to the input ports of other blocks.",
+            "Wire a CTU counter: a rising edge on CU counts, R clears it, and Q is TRUE when the count reaches the preset PV."
+          ],
+          "stages": [
+            {
+              "key": "objective",
+              "title": "Objective",
+              "body": "In src/BatchCount.fbd.json the counter block Count (CTU), the preset 3 and the output BatchFull are placed, and Q is already wired to BatchFull. Wire the input PartSensor to CU and the input Reset to R.",
+              "checkpoint": "BatchFull lights when the third part is counted and goes out on Reset."
+            },
+            {
+              "key": "predict",
+              "title": "Predict",
+              "body": "Predict BatchFull at 50 ms (two parts counted), at 60 ms (the third part arrives) and at 80 ms (Reset is pressed). The first part stays in front of the sensor for several scans.",
+              "checkpoint": "OFF at 50 ms, because a part counts once however long it stays; ON at 60 ms; OFF at 80 ms."
+            },
+            {
+              "key": "edit",
+              "title": "Edit",
+              "body": "Correct this starter omission, save it, then press Check: The starter has the counter and the preset, but PartSensor and Reset are not wired to it, so Count never counts and BatchFull stays OFF; wire PartSensor to the CU input and Reset to the R input.",
+              "checkpoint": "The visible scenario must pass with saved host evidence."
+            },
+            {
+              "key": "run",
+              "title": "Run",
+              "body": "Press Check. Studio runs your saved program against the scenario of this lesson.",
+              "checkpoint": "The scenario is named BatchCount and contains 10 assertions."
+            },
+            {
+              "key": "observe",
+              "title": "Observe",
+              "body": "Compare 30, 50 and 60 ms: nothing happens when the first part leaves, BatchFull rises at 60 ms, and a new part at 100 ms does not light it again.",
+              "checkpoint": "BatchFull rises once at 60 ms and falls once at 80 ms; one part after Reset leaves it OFF at 110 ms."
+            },
+            {
+              "key": "reflect",
+              "title": "Reflect",
+              "body": "What does the counter count, the level of PartSensor or its rising edge? Swap the two inputs and see which assertion fails.",
+              "checkpoint": "CTU counts rising edges, so the 20 ms the first part stays in front of the sensor counts once. The scenario shows the logic only; it does not show how a real sensor bounces."
+            }
+          ],
+          "hints": [
+            {
+              "level": 1,
+              "text": "Each input variable block has one output port named OUT, and each input of Count has a name: CU counts, R clears."
+            },
+            {
+              "level": 2,
+              "text": "Draw a wire from PartSensor.OUT to Count.CU, and another from Reset.OUT to Count.R. Do not change the constant 3 or the wire to BatchFull."
+            }
+          ],
+          "faultCases": [
+            "The starter has the counter and the preset, but PartSensor and Reset are not wired to it, so Count never counts and BatchFull stays OFF; wire PartSensor to the CU input and Reset to the R input."
+          ]
+        },
+        "es": {
+          "title": "Contadores en diagrama de bloques de función: contar piezas hasta un lote",
+          "summary": "Edite un diagrama de bloques de función para que un contador CTU cuente tres piezas, encienda BatchFull y se borre con Reset.",
+          "scope": "La evidencia de Tests es del runtime nativo POSIX con una tarea de 10 ms; no establece el cableado del sensor, el antirrebote, la exactitud del conteo a velocidad de máquina, HIL ni certificación.",
+          "objectives": [
+            "Lea un diagrama de bloques de función como bloques cuyos puertos de salida se conectan a los puertos de entrada de otros bloques.",
+            "Conecte un contador CTU: un flanco ascendente en CU cuenta, R lo borra y Q es TRUE cuando la cuenta llega al valor preestablecido PV."
+          ],
+          "stages": [
+            {
+              "key": "objective",
+              "title": "Objetivo",
+              "body": "En src/BatchCount.fbd.json están colocados el bloque contador Count (CTU), el valor preestablecido 3 y la salida BatchFull, y Q ya está conectada a BatchFull. Conecte la entrada PartSensor a CU y la entrada Reset a R.",
+              "checkpoint": "BatchFull se enciende al contar la tercera pieza y se apaga con Reset."
+            },
+            {
+              "key": "predict",
+              "title": "Prediga",
+              "body": "Prediga BatchFull a los 50 ms (dos piezas contadas), a los 60 ms (llega la tercera) y a los 80 ms (se pulsa Reset). La primera pieza permanece varios ciclos frente al sensor.",
+              "checkpoint": "En OFF a los 50 ms, porque una pieza cuenta una vez sin importar cuánto permanezca; en ON a los 60 ms; en OFF a los 80 ms."
+            },
+            {
+              "key": "edit",
+              "title": "Edite",
+              "body": "Corrija esta omisión del programa inicial, guárdelo y pulse Comprobar: El programa inicial tiene el contador y el valor preestablecido, pero PartSensor y Reset no están conectados a él, así que Count nunca cuenta y BatchFull queda en OFF; conecte PartSensor a la entrada CU y Reset a la entrada R.",
+              "checkpoint": "El escenario visible debe pasar con evidencia guardada del host."
+            },
+            {
+              "key": "run",
+              "title": "Ejecute",
+              "body": "Pulse Comprobar. Studio ejecuta el programa guardado contra el escenario de esta lección.",
+              "checkpoint": "El escenario se llama BatchCount y contiene 10 assertions."
+            },
+            {
+              "key": "observe",
+              "title": "Observe",
+              "body": "Compare 30, 50 y 60 ms: no pasa nada cuando se va la primera pieza, BatchFull sube a los 60 ms, y una pieza nueva a los 100 ms no lo vuelve a encender.",
+              "checkpoint": "BatchFull sube una vez a los 60 ms y cae una vez a los 80 ms; una pieza después de Reset lo deja en OFF a los 110 ms."
+            },
+            {
+              "key": "reflect",
+              "title": "Reflexione",
+              "body": "¿Qué cuenta el contador, el nivel de PartSensor o su flanco ascendente? Intercambie las dos entradas y vea qué assertion falla.",
+              "checkpoint": "CTU cuenta flancos ascendentes, así que los 20 ms que la primera pieza permanece frente al sensor cuentan una vez. El escenario muestra solo la lógica; no muestra cómo rebota un sensor real."
+            }
+          ],
+          "hints": [
+            {
+              "level": 1,
+              "text": "Cada bloque de variable de entrada tiene un puerto de salida llamado OUT, y cada entrada de Count tiene un nombre: CU cuenta, R borra."
+            },
+            {
+              "level": 2,
+              "text": "Trace un cable de PartSensor.OUT a Count.CU y otro de Reset.OUT a Count.R. No cambie la constante 3 ni el cable hacia BatchFull."
+            }
+          ],
+          "faultCases": [
+            "El programa inicial tiene el contador y el valor preestablecido, pero PartSensor y Reset no están conectados a él, así que Count nunca cuenta y BatchFull queda en OFF; conecte PartSensor a la entrada CU y Reset a la entrada R."
+          ]
+        }
+      }
     }
   ],
   "course": {

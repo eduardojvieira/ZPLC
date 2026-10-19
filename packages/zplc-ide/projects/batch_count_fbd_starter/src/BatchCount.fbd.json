@@ -1,0 +1,163 @@
+{
+  "name": "BatchCount",
+  "description": "Count three parts with a CTU block, then light BatchFull until Reset.",
+  "version": "1.0.0",
+  "variables": {
+    "local": [],
+    "inputs": [
+      {
+        "name": "PartSensor",
+        "type": "BOOL",
+        "address": "%I0.0",
+        "comment": "Photocell"
+      },
+      {
+        "name": "Reset",
+        "type": "BOOL",
+        "address": "%I0.1",
+        "comment": "Operator reset"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "BatchFull",
+        "type": "BOOL",
+        "address": "%Q0.0",
+        "comment": "Batch complete lamp"
+      }
+    ]
+  },
+  "blocks": [
+    {
+      "id": "var_sensor",
+      "type": "variable",
+      "variableName": "PartSensor",
+      "direction": "read",
+      "comment": "Photocell: TRUE while a part is in front of it",
+      "position": {
+        "x": 50,
+        "y": 60
+      },
+      "outputs": [
+        {
+          "name": "OUT",
+          "type": "BOOL"
+        }
+      ]
+    },
+    {
+      "id": "var_reset",
+      "type": "variable",
+      "variableName": "Reset",
+      "direction": "read",
+      "comment": "Operator reset",
+      "position": {
+        "x": 50,
+        "y": 180
+      },
+      "outputs": [
+        {
+          "name": "OUT",
+          "type": "BOOL"
+        }
+      ]
+    },
+    {
+      "id": "const_pv",
+      "type": "constant",
+      "dataType": "INT",
+      "value": 3,
+      "comment": "Parts per batch",
+      "position": {
+        "x": 50,
+        "y": 300
+      },
+      "outputs": [
+        {
+          "name": "OUT",
+          "type": "INT"
+        }
+      ]
+    },
+    {
+      "id": "ctu",
+      "type": "CTU",
+      "instanceName": "Count",
+      "comment": "Counts rising edges of CU; Q is TRUE once CV reaches PV",
+      "position": {
+        "x": 300,
+        "y": 100
+      },
+      "inputs": [
+        {
+          "name": "CU",
+          "type": "BOOL"
+        },
+        {
+          "name": "R",
+          "type": "BOOL"
+        },
+        {
+          "name": "PV",
+          "type": "INT"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "Q",
+          "type": "BOOL"
+        },
+        {
+          "name": "CV",
+          "type": "INT"
+        }
+      ]
+    },
+    {
+      "id": "out_full",
+      "type": "output",
+      "variableName": "BatchFull",
+      "comment": "Lamp: the batch is complete",
+      "position": {
+        "x": 560,
+        "y": 100
+      },
+      "inputs": [
+        {
+          "name": "IN",
+          "type": "BOOL"
+        }
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "id": "conn_const_pv_ctu_pv",
+      "from": {
+        "block": "const_pv",
+        "port": "OUT"
+      },
+      "to": {
+        "block": "ctu",
+        "port": "PV"
+      }
+    },
+    {
+      "id": "conn_ctu_out_full_in",
+      "from": {
+        "block": "ctu",
+        "port": "Q"
+      },
+      "to": {
+        "block": "out_full",
+        "port": "IN"
+      }
+    }
+  ],
+  "metadata": {
+    "author": "ZPLC Team",
+    "created": "2026-10-19",
+    "iecStandard": "IEC 61131-3",
+    "notes": []
+  }
+}

@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "title": "Counters in Function Block Diagram: count parts to a batch",
+  "summary": "Edit a Function Block Diagram so that a CTU counter counts three parts, lights BatchFull, and clears with Reset.",
+  "scope": "Tests provide native POSIX host evidence with one 10 ms task; they do not establish sensor wiring, debounce, counting accuracy at machine speed, HIL, or certification.",
+  "objectives": [
+    "Read a Function Block Diagram as blocks whose output ports are wired to the input ports of other blocks.",
+    "Wire a CTU counter: a rising edge on CU counts, R clears it, and Q is TRUE when the count reaches the preset PV."
+  ],
+  "stages": [
+    {
+      "key": "objective",
+      "title": "Objective",
+      "body": "In src/BatchCount.fbd.json the counter block Count (CTU), the preset 3 and the output BatchFull are placed, and Q is already wired to BatchFull. Wire the input PartSensor to CU and the input Reset to R.",
+      "checkpoint": "BatchFull lights when the third part is counted and goes out on Reset."
+    },
+    {
+      "key": "predict",
+      "title": "Predict",
+      "body": "Predict BatchFull at {{t:50}} ms (two parts counted), at {{t:60}} ms (the third part arrives) and at {{t:80}} ms (Reset is pressed). The first part stays in front of the sensor for several scans.",
+      "checkpoint": "{{v:BatchCount.BatchFull=false@50|OFF}} at {{t:50}} ms, because a part counts once however long it stays; {{v:BatchCount.BatchFull=true@60|ON}} at {{t:60}} ms; {{v:BatchCount.BatchFull=false@80|OFF}} at {{t:80}} ms."
+    },
+    {
+      "key": "edit",
+      "title": "Edit",
+      "body": "Correct this starter omission, save it, then press Check: The starter has the counter and the preset, but PartSensor and Reset are not wired to it, so Count never counts and BatchFull stays OFF; wire PartSensor to the CU input and Reset to the R input.",
+      "checkpoint": "The visible scenario must pass with saved host evidence."
+    },
+    {
+      "key": "run",
+      "title": "Run",
+      "body": "Press Check. Studio runs your saved program against the scenario of this lesson.",
+      "checkpoint": "The scenario is named BatchCount and contains {{assertions}} assertions."
+    },
+    {
+      "key": "observe",
+      "title": "Observe",
+      "body": "Compare {{t:30}}, {{t:50}} and {{t:60}} ms: nothing happens when the first part leaves, BatchFull rises at {{t:60}} ms, and a new part at {{t:100}} ms does not light it again.",
+      "checkpoint": "BatchFull rises once at {{t:60}} ms and falls once at {{t:80}} ms; one part after Reset leaves it OFF at {{t:110}} ms."
+    },
+    {
+      "key": "reflect",
+      "title": "Reflect",
+      "body": "What does the counter count, the level of PartSensor or its rising edge? Swap the two inputs and see which assertion fails.",
+      "checkpoint": "CTU counts rising edges, so the {{t:20}} ms the first part stays in front of the sensor counts once. The scenario shows the logic only; it does not show how a real sensor bounces."
+    }
+  ],
+  "hints": [
+    {
+      "level": 1,
+      "text": "Each input variable block has one output port named OUT, and each input of Count has a name: CU counts, R clears."
+    },
+    {
+      "level": 2,
+      "text": "Draw a wire from PartSensor.OUT to Count.CU, and another from Reset.OUT to Count.R. Do not change the constant 3 or the wire to BatchFull."
+    }
+  ],
+  "faultCases": [
+    "The starter has the counter and the preset, but PartSensor and Reset are not wired to it, so Count never counts and BatchFull stays OFF; wire PartSensor to the CU input and Reset to the R input."
+  ]
+}
