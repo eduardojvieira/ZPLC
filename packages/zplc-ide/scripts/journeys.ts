@@ -826,7 +826,7 @@ export const JOURNEYS: Journey[] = [
     // started (its workspace made from the starter, no copy step), a hint, the lesson passed, the window started again with the
     // progress kept, and the progress file moved out and back. The Help menu leg of LRN-001 is a native menu, which a journey cannot
     // click: it is proven in electron/appMenu.test.ts.
-    name: '11 Learn with no project open', example: 'none', proves: ['LRN-001'], partly: ['LRN-002', 'LRN-003', 'LRN-005', 'LRN-010', 'LRN-031', 'LRN-032'],
+    name: '11 Learn with no project open', example: 'none', proves: ['LRN-001'], partly: ['LRN-002', 'LRN-003', 'LRN-004', 'LRN-005', 'LRN-010', 'LRN-031', 'LRN-032', 'LRN-033', 'LRN-037'],
     run: async (app, { root }) => {
       // The first two lessons of the course, whatever their ids: the index orders them (LRN-028 allows no list of ids here).
       const [FIRST, SECOND] = courseOrder(LESSON_INDEX).map(({ id }) => id) as [string, string];
@@ -926,6 +926,25 @@ export const JOURNEYS: Journey[] = [
       await choose(future);
       await app.until('the refusal', async () => (await homeText()).includes('The file is version 4, which this version of Studio cannot read. Your progress is unchanged.') || undefined);
       assert((await homeText()).includes('2 of 10 lessons passed'), 'A refused file changed the progress.');
+
+      // 9. LRN-037, LRN-033: the whole home is reachable and operable from the keyboard. Tab walks the controls in reading order (Continue, the
+      // two switches, Export, Import, then the lessons); Space flips the classroom switch, and Enter on Continue opens the lesson, which then offers no solution.
+      const focused = () => app.eval<string>(`(() => { const el = document.activeElement; return el ? (el.getAttribute('data-learn-continue') !== null ? 'continue' : el.getAttribute('data-learn-unlock-all') !== null ? 'unlock' : el.getAttribute('data-learn-hide-solutions') !== null ? 'hide' : el.getAttribute('data-learn-export') !== null ? 'export' : el.getAttribute('data-learn-import') !== null ? 'import' : el.hasAttribute('data-learn-start') ? 'start' : '') : ''; })()`);
+      // The browser continues sequential navigation from the last focus point, so the walk starts at Continue, the first control of the page.
+      await app.eval(`document.querySelector('[data-learn-continue]').focus()`);
+      const order: string[] = ['continue'];
+      for (let step = 0; step < 60 && !order.includes('import'); step += 1) {
+        await app.press('Tab');
+        const here = await focused();
+        if (here && here !== order.at(-1) && here !== 'start') order.push(here);
+      }
+      assert(['continue', 'unlock', 'hide', 'export', 'import'].every((name, index) => order[index] === name), `Tab does not walk the Learn home in reading order: ${order.join(', ')}.`);
+      await app.eval(`document.querySelector('[data-learn-hide-solutions]').focus()`);
+      await app.press('Space');
+      await app.until('the classroom switch to be on, announced', async () => await app.eval<boolean>(`document.querySelector('input[data-learn-hide-solutions]')?.checked === true || document.querySelector('[data-learn-hide-solutions]')?.getAttribute('aria-checked') === 'true'`) && (await app.text()).includes('Reference solutions are hidden.') || undefined);
+      await app.eval(`document.querySelector('[data-learn-continue]').focus()`);
+      await app.press('Enter');
+      await app.until('the lesson, with no reference solution on offer', async () => await app.eval<boolean>(`document.querySelector('[data-learn-home]') === null && document.querySelector('[data-learn-solutions-hidden]') !== null && document.querySelector('[data-learn-show-solution]') === null`) || undefined);
     },
   },
   {
