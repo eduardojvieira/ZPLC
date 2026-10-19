@@ -29,6 +29,8 @@ export interface AppSettings {
   language: Language;
   autosaveSeconds: AutosaveSeconds;
   checkForUpdates: boolean;
+  /** Every Learn lesson can be started whatever the learner has passed (LRN-005); off by default, so the course keeps its order. */
+  unlockAllLessons: boolean;
 }
 
 export const DEFAULT_SETTINGS: AppSettings = {
@@ -39,6 +41,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   language: 'auto',
   autosaveSeconds: 0,
   checkForUpdates: false,
+  unlockAllLessons: false,
 };
 
 /** What the settings need of a storage; the renderer's `localStorage` has it. */
@@ -52,7 +55,7 @@ const oneOf = <T extends readonly unknown[]>(choices: T, value: unknown): value 
 /** A fresh, valid settings object from anything: each field is kept when valid and otherwise takes its default. */
 export function parseSettings(raw: unknown, defaults: AppSettings = DEFAULT_SETTINGS): AppSettings {
   const value = typeof raw === 'object' && raw !== null && !Array.isArray(raw) ? raw as Record<string, unknown> : {};
-  const { editorFontSize, editorTabSize, density, language, autosaveSeconds, checkForUpdates } = value;
+  const { editorFontSize, editorTabSize, density, language, autosaveSeconds, checkForUpdates, unlockAllLessons } = value;
   return {
     editorFontSize: typeof editorFontSize === 'number' && Number.isInteger(editorFontSize)
       && editorFontSize >= FONT_SIZE_RANGE.min && editorFontSize <= FONT_SIZE_RANGE.max ? editorFontSize : defaults.editorFontSize,
@@ -61,6 +64,7 @@ export function parseSettings(raw: unknown, defaults: AppSettings = DEFAULT_SETT
     language: oneOf(LANGUAGE_CHOICES, language) ? language : defaults.language,
     autosaveSeconds: oneOf(AUTOSAVE_CHOICES, autosaveSeconds) ? autosaveSeconds : defaults.autosaveSeconds,
     checkForUpdates: typeof checkForUpdates === 'boolean' ? checkForUpdates : defaults.checkForUpdates,
+    unlockAllLessons: typeof unlockAllLessons === 'boolean' ? unlockAllLessons : defaults.unlockAllLessons,
   };
 }
 
