@@ -8,7 +8,7 @@ description: Compile el runtime embebido ZPLC 2.0 desde un workspace Zephyr fija
 # Configuración del Workspace Zephyr
 
 Compile el runtime embebido desde los inputs del workspace Zephyr fijado por el
-repositorio. Un cross-build exitoso sólo prueba que el profile compila; no prueba
+repositorio. Un cross-build exitoso solo prueba que el profile compila; no prueba
 flash, boot, I/O, timing, persistencia ni HIL.
 
 ## Camino rápido

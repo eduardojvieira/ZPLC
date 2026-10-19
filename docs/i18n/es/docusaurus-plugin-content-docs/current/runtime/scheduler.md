@@ -13,7 +13,7 @@ ZPLC programa las tareas PLC configuradas mediante adaptadores específicos del 
 
 ## Un solo núcleo de scheduler
 
-Las decisiones del scheduler se toman en un solo lugar, `zplc_sched_core` (`firmware/lib/zplc_core/src/core/zplc_sched_core.c`), y los runtimes sólo aportan lo que depende de la plataforma (RT-008, RT-018):
+Las decisiones del scheduler se toman en un solo lugar, `zplc_sched_core` (`firmware/lib/zplc_core/src/core/zplc_sched_core.c`), y los runtimes solo aportan lo que depende de la plataforma (RT-008, RT-018):
 
 | En el núcleo, igual en todas partes | En el adaptador |
 |---|---|
@@ -34,16 +34,16 @@ Las tareas se declaran en `zplc.json` y se compilan dentro del programa `.zplc`.
 
 | Propiedad | Significado |
 |---|---|
-| **Tipo** | Sólo cíclica. `trigger: "cyclic"` es una tarea cíclica. `trigger: "freewheeling"` se compila como una tarea cíclica del intervalo que declara y no corre más rápido que ese intervalo. Las tareas disparadas por evento o por interrupción no existen en esta versión: la compilación falla en la definición de la tarea, con el nombre de la tarea, su campo `trigger` en `zplc.json` y los disparadores admitidos, y ambos runtimes rechazan un artefacto que contenga una tarea de evento. |
+| **Tipo** | Solo cíclica. `trigger: "cyclic"` es una tarea cíclica. `trigger: "freewheeling"` se compila como una tarea cíclica del intervalo que declara y no corre más rápido que ese intervalo. Las tareas disparadas por evento o por interrupción no existen en esta versión: la compilación falla en la definición de la tarea, con el nombre de la tarea, su campo `trigger` en `zplc.json` y los disparadores admitidos, y ambos runtimes rechazan un artefacto que contenga una tarea de evento. |
 | **Intervalo** | Milisegundos enteros, de 1 a 3 600 000. Cada tarea tiene su propio intervalo, y tareas de intervalos distintos corren en un mismo programa (como máximo 16 tareas). El intervalo es el período de la liberación y el plazo del scan, no una garantía de tiempo de ciclo medido. |
-| **Prioridad** | El número menor corre primero. La prioridad sólo ordena tareas que se liberan juntas. No interrumpe una tarea en ejecución ni le da más tiempo. |
+| **Prioridad** | El número menor corre primero. La prioridad solo ordena tareas que se liberan juntas. No interrumpe una tarea en ejecución ni le da más tiempo. |
 | **Punto de entrada** | Ubicación de programa o función dentro del programa compilado. |
 
 Reglas:
 
 1. **Liberación.** Las tareas de un programa arrancan juntas: un arranque o una reanudación inicia el calendario de todas las tareas en el mismo instante. Después, una tarea se libera una vez por intervalo. Una liberación que llega mientras la tarea sigue ejecutándose no se encola, y un host que despacha tarde ejecuta la tarea una vez, no una vez por cada liberación perdida.
 2. **Orden.** Las tareas liberadas juntas forman un batch. Un batch ejecuta sus tareas por liberación más temprana primero, luego por prioridad (el número menor primero) y luego por ID de tarea (el menor primero).
-3. **Sin apropiación.** Las tareas de un batch corren una tras otra, cada una hasta el final de su scan. Nada suspende una tarea por otra tarea ni por una liberación. Un breakpoint es lo único que detiene un scan antes de su final; véase [Pausa, reanudación, paso y parada](#pausa-reanudación-paso-y-parada).
+3. **Sin apropiación.** Las tareas de un batch corren una tras otra, cada una hasta el final de su scan. Nada suspende una tarea por otra tarea ni por una liberación. Un punto de parada es lo único que detiene un scan antes de su final; véase [Pausa, reanudación, paso y parada](#pausa-reanudación-paso-y-parada).
 4. **Un latch y un commit por batch.** Un batch toma la imagen de entradas una vez, antes de su primera tarea, y todas las tareas del batch leen esa imagen. La imagen de salidas se confirma una vez, después de su última tarea. Una tarea que no se libera en un batch no se ejecuta, y la imagen de proceso conserva lo que escribió.
 5. **Plazo.** El plazo de un scan es el intervalo de su tarea contado desde la liberación de su batch. Una tarea que termina después incumple su plazo; véase [Plazos](#plazos).
 
@@ -64,7 +64,7 @@ flowchart LR
 
 ## Estado compartido
 
-En cada conjunto de tareas debidas de Zephyr, los callbacks de timer sólo admiten liberaciones; no ejecutan código PLC. El coordinador ordena las tareas admitidas por tiempo de liberación, prioridad e ID de tarea, y luego toma un snapshot de la imagen de entradas. Las tareas debidas se ejecutan en ese orden contra la memoria compartida del runtime. Si no ocurre un fault ni un cierre desde el plano de control, el batch realiza como máximo un commit normal de la imagen de salidas.
+En cada conjunto de tareas debidas de Zephyr, los callbacks de timer solo admiten liberaciones; no ejecutan código PLC. El coordinador ordena las tareas admitidas por tiempo de liberación, prioridad e ID de tarea, y luego toma un snapshot de la imagen de entradas. Las tareas debidas se ejecutan en ese orden contra la memoria compartida del runtime. Si no ocurre un fault ni un cierre desde el plano de control, el batch realiza como máximo un commit normal de la imagen de salidas.
 
 En simulación un solo hilo atiende las peticiones de control y ejecuta los batches, uno tras otro. Por eso la imagen de entradas no puede cambiar mientras corre un batch, que es el latch único de la regla 4, y la imagen de salidas es la propia imagen de proceso.
 
@@ -110,13 +110,13 @@ Un scan incumple su plazo cuando su tarea termina más de un intervalo después 
 1. Se levanta la bandera de **advertencia**.
 2. El incumplimiento se **cuenta**, para la tarea y en total.
 3. Se registra el **exceso**, cuánto después del plazo terminó la tarea.
-4. Cuando la misma tarea incumple `N` veces seguidas, el fault se **latchea**: las salidas pasan a su estado seguro, la sesión queda en `error` y el estado informa la causa y la tarea. Un reset o un programa nuevo lo borra.
+4. Cuando la misma tarea incumple `N` veces seguidas, el fallo se **retiene**: las salidas pasan a su estado seguro, la sesión queda en `error` y el estado informa la causa y la tarea. Un reset o un programa nuevo lo borra.
 
-Un scan que termina a tiempo corta la racha de esa tarea y borra su parte de la advertencia. La cuenta se conserva hasta cargar un programa o hacer reset. Un paso del depurador y un scan detenido en un breakpoint no se comprueban.
+Un scan que termina a tiempo corta la racha de esa tarea y borra su parte de la advertencia. La cuenta se conserva hasta cargar un programa o hacer reset. Un paso del depurador y un scan detenido en un punto de parada no se comprueban.
 
-`N`, los incumplimientos consecutivos que latchean el fault, es configurable y vale **3** por defecto en todos los runtimes: una activación tardía, que puede causar una ráfaga de comunicación o una escritura en flash, se advierte y se cuenta, y una tarea que sigue incumpliendo detiene el programa. El valor 3 es un valor por defecto de diseño (RT-D05b) que el responsable del proyecto no confirmó; 1 es el comportamiento de versiones anteriores. En simulación `N` es la variable de entorno `ZPLC_DEADLINE_MISS_LIMIT`, un entero de 1 a 1 000 000, leída al iniciar la sesión; un valor fuera de ese rango se ignora y se escribe un mensaje en la salida de error estándar. En un target es `CONFIG_ZPLC_DEADLINE_MISS_LIMIT`, en el mismo rango, fijo al compilar el firmware.
+`N`, los incumplimientos consecutivos que retienen el fallo, es configurable y vale **3** por defecto en todos los runtimes: una activación tardía, que puede causar una ráfaga de comunicación o una escritura en flash, se advierte y se cuenta, y una tarea que sigue incumpliendo detiene el programa. El valor 3 es un valor por defecto de diseño (RT-D05b) que el responsable del proyecto no confirmó; 1 es el comportamiento de versiones anteriores. En simulación `N` es la variable de entorno `ZPLC_DEADLINE_MISS_LIMIT`, un entero de 1 a 1 000 000, leída al iniciar la sesión; un valor fuera de ese rango se ignora y se escribe un mensaje en la salida de error estándar. En un target es `CONFIG_ZPLC_DEADLINE_MISS_LIMIT`, en el mismo rango, fijo al compilar el firmware.
 
-La simulación informa un incumplimiento en el resultado de `status.get` y en cada evento `status.changed`; un fault latcheado se envía además como evento `runtime.error` con el código `DEADLINE_MISS`. Un target informa los mismos campos en `zplc sched status --json`, como los objetos `deadline` y `fault` (allí el exceso en microsegundos es exacto). Los campos que ya existían conservan su significado.
+La simulación informa un incumplimiento en el resultado de `status.get` y en cada evento `status.changed`; un fallo retenido se envía además como evento `runtime.error` con el código `DEADLINE_MISS`. Un target informa los mismos campos en `zplc sched status --json`, como los objetos `deadline` y `fault` (allí el exceso en microsegundos es exacto). Los campos que ya existían conservan su significado.
 
 | Campo | Significado |
 |---|---|
@@ -158,7 +158,7 @@ El runtime separa dos cosas: las **salidas físicas** (los pines) y el **estado 
 | Pausa (`zplc dbg pause`) | Seguras (apagadas) antes de que retorne la llamada | Se conserva | Se conserva | Pausa entre scans: el batch en curso termina primero |
 | Breakpoint | Seguras (apagadas); el batch hace un commit y luego los pines se llevan al estado seguro | Se conserva, con el scan parcial | Se conserva | El scan se detiene en el breakpoint con su contador de programa y sus pilas |
 | Paso (`zplc dbg step`) | El scan se confirma y luego los pines se llevan al estado seguro | Se conserva, muestra el scan ejecutado | Se conserva | Termina el scan detenido en un breakpoint, o ejecuta un scan completo; se detiene en el siguiente límite de ciclo o en el siguiente breakpoint |
-| Reanudación (`zplc dbg resume`) | No las energiza la reanudación misma | Se conserva | Se conserva | Un scan detenido en un breakpoint continúa desde ahí en la siguiente liberación; una pausa entre scans empieza un scan nuevo |
+| Reanudación (`zplc dbg resume`) | No las energiza la reanudación misma | Se conserva | Se conserva | Un scan detenido en un punto de parada continúa desde ahí en la siguiente liberación; una pausa entre scans empieza un scan nuevo |
 | `STOP` | Seguras (apagadas) | Se pone a cero | Se borra | Cada tarea vuelve a su punto de entrada; se descarta el scan interrumpido por un breakpoint o armado por una reanudación |
 | Fault | Seguras (apagadas) | Se pone a cero | Se borra | Queda latcheado; la tarea con fault conserva su contador de programa y su error hasta cargar un programa |
 
@@ -167,12 +167,12 @@ Notas sobre la tabla:
 - Seguro significa apagado para una salida, salvo que el proyecto declare otro valor para ella ([Estado seguro de una salida](#estado-seguro-de-una-salida)). Los pines se llevan a ese estado por política, nunca desde la imagen, de modo que un bit en uno de la imagen pausada no lo energiza.
 - El primer commit normal después de una reanudación copia a los pines la imagen de salidas, con la tabla de forzados aplicada. Una reanudación no energiza nada por sí sola. Una salida forzada en uno permanece apagada mientras dura la pausa y se enciende en ese commit.
 - Un scan que continúa después de una reanudación o un paso conserva lo que vio su primera parte: las instrucciones ya ejecutadas, la pila de evaluación, la bandera de primer scan y su propio ID de tarea. Las entradas se vuelven a latchear al inicio del batch que lo continúa, de modo que el resto lee las entradas de ese momento.
-- El batch que se detiene en un breakpoint, y un paso, hacen un commit de la imagen a los pines y luego los llevan al estado seguro. El tiempo entre las dos escrituras es del driver y no se mide aquí.
+- El lote que se detiene en un punto de parada, y un paso, confirman la imagen a los pines y luego los llevan al estado seguro. El tiempo entre las dos escrituras es del driver y no se mide aquí.
 - La evidencia de este comportamiento son las suites Zephyr en `native_sim` y QEMU (`scheduler_run_control`, `scheduler_admission`). El nivel físico se observa con el emulador GPIO de `native_sim`; no se midió ninguna placa.
 
 ## Estado seguro de una salida
 
-Una salida está **apagada** siempre que el programa no la controla: en STOP, en pausa o en un breakpoint, en un fault latcheado, desde el arranque hasta el primer scan y mientras un deploy está en curso. El nivel se decide en una sola función, `zplc_io_drive_safe`, y en ningún otro lugar (RT-023):
+Una salida está **apagada** siempre que el programa no la controla: en STOP, en pausa o en un punto de parada, en un fallo retenido, desde el arranque hasta el primer scan y mientras una carga está en curso. El nivel se decide en una sola función, `zplc_io_drive_safe`, y en ningún otro lugar (RT-023):
 
 1. El valor que **declara el programa cargado** para esa salida, cuando declara uno.
 2. Si no, **apagado**, salvo que la descripción de la placa (`firmware/app/boards/boards.json`) dé a ese canal otro nivel seguro, como puede hacerlo un relé activo en bajo.
@@ -192,7 +192,7 @@ Un proyecto declara el valor en `zplc.json`, en una fila de `io.outputs`:
 
 Aquí `Brake` está energizada siempre que el programa no la maneja, y `Valve` está apagada. La declaración viaja **dentro del artefacto**, en su segmento `SAFE`, de modo que un programa y su estado seguro son una sola unidad: un dispositivo que restaura el programa restaura su declaración, un programa reemplazado la reemplaza, y un deploy interrumpido no puede dejar el programa de una compilación con los valores seguros de otra (véase [Valores seguros declarados](isa.md#valores-seguros-declarados)).
 
-La confirmación de un deploy a una placa muestra lo que lleva el artefacto: cada salida declarada por su dirección con el valor que toma, o la frase de que toda salida está apagada, de modo que una persona ve el estado seguro antes de que se escriba el programa.
+La confirmación de una carga en una placa muestra lo que lleva el artefacto: cada salida declarada por su dirección con el valor que toma, o la frase de que toda salida está apagada, de modo que una persona ve el estado seguro antes de que se escriba el programa.
 
 Qué se verifica, y dónde:
 
@@ -210,9 +210,9 @@ Lo que esto no afirma: el tiempo entre el encendido y el instante en que el firm
 
 Son los requisitos RT-019 a RT-022. Las decisiones que no dependen de una plataforma están en `zplc_failsafe` y se prueban en el host; lo que hace la plataforma (el registro de causa de reset, un registro en una RAM que un reset no borra, el reinicio, el watchdog) es `zplc_failsafe_zephyr.c`.
 
-### Un fault del procesador (RT-019)
+### Un fallo del procesador (RT-019)
 
-Un fault del procesador, un desbordamiento de stack, una aserción o un kernel panic no deja las salidas donde las dejó el último scan. El manejador de error fatal del firmware (`CONFIG_ZPLC_FATAL_HANDLER`, activado por defecto) no toma ningún lock ni reserva memoria: lleva cada salida digital a su nivel seguro, guarda la causa en un registro de 24 bytes en una RAM que un reset no borra (un magic, una versión, el tipo, la causa del kernel, la tarea, el contador de programa, un número de secuencia y un CRC-32) y reinicia. El arranque siguiente encuentra el registro, lo informa y lo consume, de modo que el reset que sigue no se llama fault. Un registro que no está completo o no es nuestro no es nada.
+Un fallo del procesador, un desbordamiento de stack, una aserción o un kernel panic no deja las salidas donde las dejó el último scan. El manejador de error fatal del firmware (`CONFIG_ZPLC_FATAL_HANDLER`, activado por defecto) no toma ningún lock ni reserva memoria: lleva cada salida digital a su nivel seguro, guarda la causa en un registro de 24 bytes en una RAM que un reset no borra (un magic, una versión, el tipo, la causa del kernel, la tarea, el contador de programa, un número de secuencia y un CRC-32) y reinicia. El arranque siguiente encuentra el registro, lo informa y lo consume, de modo que el reset que sigue no se llama fault. Un registro que no está completo o no es nuestro no es nada.
 
 ### Por qué se reinició el runtime (RT-021)
 
@@ -220,7 +220,7 @@ Un fault del procesador, un desbordamiento de stack, una aserción o un kernel p
 
 ### Tras un reset el runtime espera en STOP (RT-022)
 
-Sea cual sea la causa, el programa guardado se restaura en STOP con las salidas en sus valores seguros, y **RUN es un comando de una persona**. El runtime nunca entra en RUN por sí solo a causa de un reset (la función `zplc_reset_may_run` vale 0 para toda causa; volver a ejecutar tras un encendido limpio de un dispositivo que una persona habilitó antes es una decisión del responsable del proyecto, D-13, y no se toma aquí). Las variables retentivas se restauran sólo cuando `CONFIG_ZPLC_RETAIN_PERSIST` está activado, y por defecto no lo está. Un deploy detiene el programa en ejecución antes de transferir un solo byte, de modo que una transferencia nunca corre junto a un programa que estaba en RUN.
+Sea cual sea la causa, el programa guardado se restaura en STOP con las salidas en sus valores seguros, y **RUN es un comando de una persona**. El runtime nunca entra en RUN por sí solo a causa de un reset (la función `zplc_reset_may_run` vale 0 para toda causa; volver a ejecutar tras un encendido limpio de un dispositivo que una persona habilitó antes es una decisión del responsable del proyecto, D-13, y no se toma aquí). Las variables retentivas se restauran solo cuando `CONFIG_ZPLC_RETAIN_PERSIST` está activado, y por defecto no lo está. Un deploy detiene el programa en ejecución antes de transferir un solo byte, de modo que una transferencia nunca corre junto a un programa que estaba en RUN.
 
 ### El watchdog de hardware (RT-020)
 
@@ -228,7 +228,7 @@ El perfil de cada placa (`watchdog` en `boards.json`) dice si su watchdog de har
 
 - Se alimenta desde la finalización de un scan, nunca desde un timer, una interrupción, el shell o el hilo ocioso. Un scan que se detiene corta la alimentación y el watchdog reinicia la placa.
 - Su timeout es el del perfil, alargado cuando el conjunto de tareas lo necesita: más de dos intervalos de la tarea más lenta, hasta el máximo que acepta el componente. Un conjunto de tareas que no cabe se rechaza al iniciarlo.
-- La política por defecto es **desarmado en STOP**, **alimentado desde la ruta de control en pausa** (para que un breakpoint largo no reinicie la placa) y **dejado expirar en un fault latcheado**: la placa se reinicia en STOP con la causa registrada, y el registro del fault sobrevive al reset. Un componente cuyo watchdog no se puede detener se perfila para alimentarse en STOP.
+- La política por defecto es **desarmado en STOP**, **alimentado desde la ruta de control en pausa** (para que un punto de parada largo no reinicie la placa) y **dejado expirar en un fallo retenido**: la placa se reinicia en STOP con la causa registrada, y el registro del fault sobrevive al reset. Un componente cuyo watchdog no se puede detener se perfila para alimentarse en STOP.
 
 ### Evidencia y lo que no se muestra
 
@@ -236,4 +236,4 @@ Las decisiones se prueban en el host (`test_failsafe`, `test_sched_core`) y los 
 
 ## Diagnósticos y evidencia
 
-Los diagnósticos del runtime exponen conteos de ciclos, incumplimientos de plazo, fallos de presupuesto lógico, conteos de latch/commit de process image y observaciones relacionadas con timing. Su resolución, método de recolección y significado dependen del runtime y perfil de destino. La evidencia native-sim sólo comprueba orden lógico y transiciones de estado. Mida WCET, jitter, deadlines y salidas físicas en el target/revisión exactos antes de depender de ellos operacionalmente.
+Los diagnósticos del runtime exponen conteos de ciclos, incumplimientos de plazo, fallos de presupuesto lógico, conteos de latch/commit de process image y observaciones relacionadas con timing. Su resolución, método de recolección y significado dependen del runtime y perfil de destino. La evidencia native-sim solo comprueba orden lógico y transiciones de estado. Mida WCET, jitter, deadlines y salidas físicas en el target/revisión exactos antes de depender de ellos operacionalmente.

@@ -42,7 +42,7 @@ flowchart LR
 Al iniciar, un program store habilitado puede proporcionar un artefacto válido
 para verificación y restore lógicamente detenido/READY. El comportamiento de
 las salidas antes de ejecutar es específico del perfil de target y requiere
-evidencia registrada. El deploy termina al completar la carga verificada; nunca
+evidencia registrada. La carga termina al completar la carga verificada; nunca
 arranca la máquina. El arranque es una operación humana separada y explícita.
 La evidencia target, power-cut, HIL y eléctrica sigue siendo específica del
 perfil exacto y no se ejecutó aquí.
@@ -55,8 +55,8 @@ registros llevan un CRC-32 y la versión de formato. El runtime host y el firmwa
 (`zplc_program_store.c`) sobre las llamadas de persistencia de la HAL, de modo que el orden de las escrituras que
 sigue es el que ejercitan las pruebas del host.
 
-Un deploy escribe el slot que no está activo, lo relee y lo verifica, escribe los metadatos como preparados y los
-relee, y sólo entonces escribe el registro activo: esa escritura es el único punto en que el programa nuevo pasa a
+Una carga escribe la ranura que no está activa, la relee y la verifica, escribe los metadatos como preparados y los
+relee, y solo entonces escribe el registro activo: esa escritura es el único punto en que el programa nuevo pasa a
 ser el que se restaura. Después los metadatos se reescriben como confirmados.
 
 | Un corte de energía ... | Qué encuentra el siguiente restore |
@@ -67,8 +67,8 @@ ser el que se restaura. Después los metadatos se reescriben como confirmados.
 | que daña el registro activo | El slot confirmado completo más reciente. |
 
 Los registros que existen y no verifican nunca se toman por un store vacío: el restore los informa como no
-verificables y un deploy se niega a escribir encima. Un store escrito por el primer firmware (una clave, `code_len`
-y `code`) se restaura tal cual y se migra en el siguiente deploy.
+verificables y una carga se niega a escribir encima. Un store escrito por el primer firmware (una clave, `code_len`
+y `code`) se restaura tal cual y se migra en la siguiente carga.
 
 Un almacén clave-valor en flash guarda una entrada dentro de un sector de borrado, así que el payload se corta en
 trozos de `CONFIG_ZPLC_PROGRAM_STORE_CHUNK_SIZE` bytes (1024 por defecto), cada uno bajo su propia clave. El mayor
@@ -82,7 +82,7 @@ guardan cada uno un programa en RAM, así que un perfil gasta dos veces su tama�
 residente: el buffer de staging conserva el artefacto cargado, y `zplc reset` recarga el programa desde el store, que
 guarda el mismo (un reset cancela una carga en curso).
 
-Un deploy tiene que saber, antes de escribir, que existe un programa real al que volver, y eso significa leer ese
+Una carga tiene que saber, antes de escribir, que existe un programa real al que volver, y eso significa leer ese
 programa y admitirlo, lo que necesita un buffer del tamaño de código. El store no tiene uno propio: lee el rollback
 en el buffer de staging cuando empieza una carga, mientras ese buffer está libre (`zplc load`, `zplc sched load` y el
 inicio de una transferencia de programa del enlace de dispositivo), y el commit al final de la carga sigue adelante
@@ -91,11 +91,11 @@ solo si el registro activo y los dos registros de metadatos son todavía los de 
 entonces no se escribe nada. Un store cuyos registros no verifican nada no da rollback, y el commit se niega como
 siempre. El payload del rollback se admitió cuando empezó la carga, no cuando terminó.
 
-Lo que se ha demostrado: un corte de energía inyectado en cada operación de un deploy y una escritura truncada en
-cada registro, en el host (`test_program_store`, que también barre el deploy como lo hace el firmware, con el rollback
-encontrado al inicio de la carga), y un corte de energía en cada operación de un deploy del tamaño
+Lo que se ha demostrado: un corte de energía inyectado en cada operación de una carga y una escritura truncada en
+cada registro, en el host (`test_program_store`, que también barre la carga como lo hace el firmware, con el rollback
+encontrado al inicio de la carga), y un corte de energía en cada operación de una carga del tamaño
 máximo sobre el simulador de flash de NVS en `native_sim` (`program_store_nvs`), restaurado en el mismo buffer que
-usó el deploy. Lo que no: un corte de energía en una placa. El driver de flash, el
+usó la carga. Lo que no: un corte de energía en una placa. El driver de flash, el
 tiempo de borrado y el comportamiento de la alimentación de cada perfil necesitan el registro de hardware de ese
 perfil (HIL-010).
 

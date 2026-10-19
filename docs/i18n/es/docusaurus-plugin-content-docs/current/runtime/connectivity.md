@@ -60,7 +60,7 @@ Toda variable de WORK (`0x2000` a `0x3FFF`) y de RETAIN se puede enlazar, y el s
 
 El Communication Map del controlador puede sobrescribir temporalmente el
 binding de **servidor** Modbus de un tag cargado. El override valida el rango
-según el ancho del tag y sólo cambia el mapeo del servidor RTU/TCP local. Nunca
+según el ancho del tag y solo cambia el mapeo del servidor RTU/TCP local. Nunca
 cambia la dirección remota compilada que usan los clientes de polling Modbus
 RTU/TCP. Trátelo como configuración de runtime: no asuma que persiste salvo
 que un flujo verificado de guardado/carga de configuración lo haya registrado
