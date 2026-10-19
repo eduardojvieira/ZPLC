@@ -2495,6 +2495,13 @@
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"11 Learn with no project open","partial":true}
   ],
   "LRN-003": [
+    {"kind":"unit","ref":"packages/zplc-ide/electron/learnWorkspaceIpc.test.ts","test":"the app-owned workspace of a lesson (LRN-003)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonWorkspace.test.ts","test":"opening the app-owned workspace of a lesson (LRN-003)"},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"11 Learn with no project open","partial":true}
+  ],
+  "LRN-004": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/shell/shellRouting.test.ts","test":"LRN-004 keeps an open lesson beside the editor whatever the rail selects: in the primary sidebar on Learn, in the secondary one elsewhere"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/shell/shellRouting.test.ts","test":"where the open lesson is shown (LRN-004)"},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"11 Learn with no project open","partial":true}
   ],
   "LRN-005": [
@@ -2510,14 +2517,17 @@
     {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonPackage.test.ts","test":"lesson package validators (LRN-009, LRN-010, LRN-027)"}
   ],
   "LRN-010": [
+    {"kind":"unit","ref":"packages/zplc-ide/electron/learnProgressModel.test.ts","test":"records every hint level shown, not only the highest, and merges them as a union (LRN-010)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonCi.test.ts","test":"lesson packages (LRN-009, LRN-010, LRN-027)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonPackage.test.ts","test":"lesson package validators (LRN-009, LRN-010, LRN-027)"},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"11 Learn with no project open","partial":true}
   ],
   "LRN-011": [
     {"kind":"unit","ref":"packages/zplc-ide/src/components/LearnHomeView.test.tsx","test":"says which tracks a lesson supports and, for one it does not, why and what to do instead (LRN-011)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/course.test.ts","test":"LRN-011 gives every lesson its own reason for a track it does not support, in both languages"},
     {"kind":"unit","ref":"packages/zplc-ide/src/learn/course.test.ts","test":"the tracks a lesson supports (LRN-011)"},
-    {"kind":"unit","ref":"packages/zplc-ide/src/learn/courseDefinition.test.ts","test":"refuses a track with no reason and no instead-action for the lesson that does not support it (LRN-011)"}
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/courseDefinition.test.ts","test":"refuses a track with no reason and no instead-action for the lesson that does not support it (LRN-011)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonPackage.test.ts","test":"LRN-011 requires a reason and an instead, in both languages, for every track the lesson does not support"}
   ],
   "LRN-017": [
     {"kind":"unit","ref":"packages/zplc-ide/src/components/Faceplate.test.tsx","test":"the live I/O faceplate (LRN-017)"},
@@ -2600,15 +2610,34 @@
     {"kind":"unit","ref":"packages/zplc-ide/src/learn/progressClient.test.ts","test":"the Learn progress client validates what the main process answers (LRN-031, LRN-032)"},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"11 Learn with no project open","partial":true}
   ],
+  "LRN-033": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/components/LearnHomeView.test.tsx","test":"LRN-033 offers a switch that hides the reference solutions, named and described in words, and shows its state"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/components/LearnHomeView.test.tsx","test":"the classroom setting of the Learn home (LRN-033)"},
+    {"kind":"unit","ref":"tools/ci/learn-educator.test.ts","test":"LRN-033 exits 0 for a verified file and 1 for a mismatch or an unreadable file, printing one line per lesson"},
+    {"kind":"unit","ref":"tools/ci/learn-educator.test.ts","test":"LRN-033 keeps a lesson this build does not know inert and refuses a file that is not progress"},
+    {"kind":"unit","ref":"tools/ci/learn-educator.test.ts","test":"LRN-033 lists a lesson passed without a grade record as unverified, a lesson in progress as such, and passes only in strict mode when none is unverified"},
+    {"kind":"unit","ref":"tools/ci/learn-educator.test.ts","test":"LRN-033 lists every module and, under it, every lesson with its objectives, in English and in Spanish, in Markdown"},
+    {"kind":"unit","ref":"tools/ci/learn-educator.test.ts","test":"LRN-033 prints as a self-contained page: print styles, escaped text, the right language, no script and no external file"},
+    {"kind":"unit","ref":"tools/ci/learn-educator.test.ts","test":"LRN-033 reports a grade taken against another scenario, another track or another number of assertions as a mismatch"},
+    {"kind":"unit","ref":"tools/ci/learn-educator.test.ts","test":"LRN-033 verifies a passed lesson whose grade was taken against the current scenario of the lesson"},
+    {"kind":"unit","ref":"tools/ci/learn-educator.test.ts","test":"LRN-033 writes the outline to stdout through the command, and refuses a language or format it does not offer"},
+    {"kind":"unit","ref":"tools/ci/learn-educator.test.ts","test":"the printable outline of the course (LRN-033)"},
+    {"kind":"unit","ref":"tools/ci/learn-educator.test.ts","test":"verifying an exported progress file against the lesson hashes (LRN-033)"},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"11 Learn with no project open","partial":true}
+  ],
   "LRN-034": [
     {"kind":"unit","ref":"packages/zplc-ide/src/mcp/server.test.ts","test":"cannot mark a lesson passed: no tool takes a lesson or progress, and no tool or resource read changes the progress files (LRN-034)"}
   ],
   "LRN-036": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/utils/exampleCatalog.test.ts","test":"LRN-036 carries the reason to the listing of the example that has none"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/utils/exampleCatalog.test.ts","test":"LRN-036 gives each hardware example a scenario, or states in both languages why it has none"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/utils/exampleCatalog.test.ts","test":"the scenario of a hardware example (LRN-036)"},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"13 Welcome helps a newcomer choose","partial":true}
   ],
   "LRN-037": [
     {"kind":"unit","ref":"packages/zplc-ide/src/plants/PlantView.test.tsx","test":"plant schematics (LRN-018, LRN-037)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/plants/plantFacts.test.ts","test":"text equivalent of a plant state (LRN-037)"},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"11 Learn with no project open","partial":true},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"52 A lesson plant runs live in closed loop, with pause, step and a fault action, and the recorded run stays a labelled replay","partial":true}
   ],
   "LRN-038": [
