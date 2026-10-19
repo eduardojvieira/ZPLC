@@ -6,6 +6,7 @@ import { createHash } from 'node:crypto';
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 
+import { validateCourseDefinition, validateCoursePlacement, type CourseDefinition } from './courseDefinition';
 import {
   canonicalJson,
   expandText,
@@ -39,6 +40,17 @@ export interface LessonPackage {
   scenarioBytes: string;
   texts: Record<LessonLocale, LessonText>;
   checks: LessonChecks | undefined;
+}
+
+/** Reads and validates `course.json` beside the lesson packages. A missing or broken file is reported and leaves no course. */
+export function loadCourse(lessonsDirectory = LESSONS_DIRECTORY): { course: CourseDefinition | undefined; problems: string[] } {
+  const file = join(lessonsDirectory, 'course.json');
+  if (!existsSync(file)) return { course: undefined, problems: ['course.json: the course file is missing'] };
+  const here: string[] = [];
+  const raw = readJson(file, here);
+  if (here.length > 0) return { course: undefined, problems: here };
+  const problems = validateCourseDefinition(raw).map((problem) => `course.json: ${problem}`);
+  return { course: problems.length === 0 ? (raw as CourseDefinition) : undefined, problems };
 }
 
 export interface LoadedPackages { packages: LessonPackage[]; problems: string[] }
@@ -99,8 +111,8 @@ export function loadLessonPackages(lessonsDirectory = LESSONS_DIRECTORY, project
 }
 
 /** Cross-package rules: unique ids and order, existing and acyclic prerequisites, the same text structure in every language. */
-export function validateCourse(packages: readonly LessonPackage[]): string[] {
-  const problems: string[] = [];
+export function validateCourse(packages: readonly LessonPackage[], course?: CourseDefinition): string[] {
+  const problems: string[] = course ? validateCoursePlacement(course, packages.map(({ manifest }) => manifest)) : [];
   const ids = new Set(packages.map((item) => item.id));
   const orders = new Map<number, string>();
   for (const { id, manifest } of packages) {
@@ -127,7 +139,7 @@ export function validateCourse(packages: readonly LessonPackage[]): string[] {
 }
 
 /** The generated index of the packages, in course order, with the text expanded. Problems of expansion are returned. */
-export function buildIndex(packages: readonly LessonPackage[]): { index: LessonIndex; problems: string[] } {
+export function buildIndex(packages: readonly LessonPackage[], course: CourseDefinition): { index: LessonIndex; problems: string[] } {
   const problems: string[] = [];
   const lessons: LessonIndexEntry[] = [...packages].sort((left, right) => left.manifest.order - right.manifest.order).map(({ id, manifest, scenario, scenarioBytes, texts }) => {
     const expanded = Object.fromEntries(LOCALES.map((locale) => {
@@ -153,7 +165,7 @@ export function buildIndex(packages: readonly LessonPackage[]): { index: LessonI
       text: expanded,
     };
   });
-  return { index: { schemaVersion: 1, lessons }, problems };
+  return { index: { schemaVersion: 1, lessons, course }, problems };
 }
 
 const HEADER = [

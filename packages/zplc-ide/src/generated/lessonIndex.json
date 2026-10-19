@@ -1606,5 +1606,209 @@
         }
       }
     }
-  ]
+  ],
+  "course": {
+    "schemaVersion": 1,
+    "tracks": [
+      {
+        "id": "simulation",
+        "title": {
+          "en": "Simulation",
+          "es": "Simulación"
+        },
+        "summary": {
+          "en": "Run your program against a simulated plant on this computer. Every lesson can be graded here, with the same result each time.",
+          "es": "Ejecute su programa contra una planta simulada en este equipo. Todas las lecciones se pueden calificar aquí, con el mismo resultado cada vez."
+        },
+        "unsupported": {
+          "reason": {
+            "en": "This lesson has no simulation grade.",
+            "es": "Esta lección no tiene calificación en simulación."
+          },
+          "instead": {
+            "en": "Choose a lesson that lists Simulation among its tracks.",
+            "es": "Elija una lección que incluya Simulación entre sus pistas."
+          }
+        }
+      },
+      {
+        "id": "hardware",
+        "title": {
+          "en": "Hardware",
+          "es": "Hardware"
+        },
+        "summary": {
+          "en": "Check the same exercise against a board you own.",
+          "es": "Verifique el mismo ejercicio con una placa que usted tenga."
+        },
+        "unsupported": {
+          "reason": {
+            "en": "No check against a trace recorded from a board has been written for this lesson yet.",
+            "es": "Todavía no se ha escrito para esta lección una verificación contra una traza registrada desde una placa."
+          },
+          "instead": {
+            "en": "Do the lesson in the Simulation track. Its grade is the same each time and does not need a board.",
+            "es": "Haga la lección en la pista de Simulación. Su calificación es la misma cada vez y no necesita una placa."
+          }
+        }
+      }
+    ],
+    "modules": [
+      {
+        "id": 0,
+        "level": "foundation",
+        "requires": null,
+        "tracks": [
+          "simulation",
+          "hardware"
+        ],
+        "title": {
+          "en": "Getting ready: a tour of Studio, the simulation and, for hardware, checking your board",
+          "es": "Primeros pasos: un recorrido por Studio, la simulación y, para hardware, la verificación de su placa"
+        }
+      },
+      {
+        "id": 1,
+        "level": "foundation",
+        "requires": 0,
+        "tracks": [
+          "simulation",
+          "hardware"
+        ],
+        "title": {
+          "en": "How a PLC thinks: the scan cycle, then a first blink",
+          "es": "Cómo piensa un PLC: el ciclo de escaneo y un primer parpadeo"
+        }
+      },
+      {
+        "id": 2,
+        "level": "foundation",
+        "requires": 1,
+        "tracks": [
+          "simulation",
+          "hardware"
+        ],
+        "title": {
+          "en": "Boolean logic and latching: contacts, coils, seal-in, set and reset, safe stop",
+          "es": "Lógica booleana y enclavamiento: contactos, bobinas, autorretención, set y reset, parada segura"
+        }
+      },
+      {
+        "id": 3,
+        "level": "foundation",
+        "requires": 2,
+        "tracks": [
+          "simulation",
+          "hardware"
+        ],
+        "title": {
+          "en": "Timers, edges and counters",
+          "es": "Temporizadores, flancos y contadores"
+        }
+      },
+      {
+        "id": 4,
+        "level": "intermediate",
+        "requires": 3,
+        "tracks": [
+          "simulation",
+          "hardware"
+        ],
+        "title": {
+          "en": "Data: types, arithmetic, comparison, analog scaling",
+          "es": "Datos: tipos, aritmética, comparación y escalado analógico"
+        }
+      },
+      {
+        "id": 5,
+        "level": "intermediate",
+        "requires": 3,
+        "tracks": [
+          "simulation",
+          "hardware"
+        ],
+        "title": {
+          "en": "State machines and sequences",
+          "es": "Máquinas de estado y secuencias"
+        }
+      },
+      {
+        "id": 6,
+        "level": "intermediate",
+        "requires": 5,
+        "tracks": [
+          "simulation",
+          "hardware"
+        ],
+        "title": {
+          "en": "Feedback, faults and interlocks",
+          "es": "Realimentación, fallos e interbloqueos"
+        }
+      },
+      {
+        "id": 7,
+        "level": "intermediate",
+        "requires": 4,
+        "tracks": [
+          "simulation",
+          "hardware"
+        ],
+        "title": {
+          "en": "Structuring programs: functions, function blocks, structures, arrays, tasks",
+          "es": "Estructura de programas: funciones, bloques de función, estructuras, arreglos y tareas"
+        }
+      },
+      {
+        "id": 8,
+        "level": "advanced",
+        "requires": 6,
+        "tracks": [
+          "simulation"
+        ],
+        "title": {
+          "en": "Testing and diagnosis: scenario tests, temporal assertions, trace, breakpoints",
+          "es": "Pruebas y diagnóstico: pruebas de escenario, aserciones temporales, traza y puntos de interrupción"
+        }
+      },
+      {
+        "id": 9,
+        "level": "advanced",
+        "requires": 7,
+        "tracks": [
+          "simulation",
+          "hardware"
+        ],
+        "title": {
+          "en": "Instruction List, and one logic in five languages",
+          "es": "Lista de instrucciones y una misma lógica en cinco lenguajes"
+        }
+      },
+      {
+        "id": 10,
+        "level": "advanced",
+        "requires": 7,
+        "tracks": [
+          "simulation",
+          "hardware"
+        ],
+        "title": {
+          "en": "Communications: Modbus and MQTT basics",
+          "es": "Comunicaciones: fundamentos de Modbus y MQTT"
+        }
+      },
+      {
+        "id": 11,
+        "level": "advanced",
+        "requires": 8,
+        "tracks": [
+          "simulation",
+          "hardware"
+        ],
+        "title": {
+          "en": "Capstone: a small machine from description to tested program",
+          "es": "Proyecto final: una máquina pequeña, de la descripción al programa probado"
+        }
+      }
+    ]
+  }
 }
