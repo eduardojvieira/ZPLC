@@ -510,10 +510,11 @@
     "requirement": "VF-006",
     "added": "2026-10-10",
     "reads": [
-      ".github/workflows/ci.yml"
+      ".github/workflows/ci.yml",
+      ".github/workflows/nightly-quality.yml"
     ],
     "replacement": "artifact",
-    "reason": "Parses ci.yml to check triggers, the expected-failure rule and the cross-build upload. The recorded hosted run (VF-016) is the proof that the workflow does what it says; keep only as a workflow lint until then."
+    "reason": "Parses ci.yml and the nightly workflow to check triggers, the bun install cache, the expected-failure rule and the cross-build upload. The recorded hosted run (VF-016) is the proof that the workflow does what it says; keep only as a workflow lint until then."
   },
   {
     "file": "tools/ci/requirement-coverage.test.ts",

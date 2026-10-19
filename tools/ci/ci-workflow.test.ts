@@ -80,3 +80,24 @@ describe('ci.yml cross-build artifacts', () => {
     }
   });
 });
+
+describe('the package manager cache is restored before the install', () => {
+  type Job = { steps: Step[] };
+  const nightly = Bun.YAML.parse(readFileSync(new URL('../../.github/workflows/nightly-quality.yml', import.meta.url), 'utf8')) as { jobs: Record<string, Job> };
+  const sites: Array<[string, Job]> = [
+    ['ci.yml typescript', workflow.jobs.typescript!],
+    ['ci.yml docs-and-truth', workflow.jobs['docs-and-truth']!],
+    ['nightly desktop-platforms', nightly.jobs['desktop-platforms']!],
+  ];
+
+  it.each(sites)('%s restores the bun install cache under a key of bun.lock, then installs frozen', (_name, job) => {
+    const install = job.steps.findIndex((step) => step.run?.includes('bun install'));
+    const cache = job.steps.findIndex((step) => step.uses?.startsWith('actions/cache@') && String(step.with?.path).includes('.bun/install/cache'));
+    expect(install).toBeGreaterThan(-1);
+    expect(cache).toBeGreaterThan(-1);
+    expect(cache).toBeLessThan(install);
+    expect(job.steps[cache]!.uses).toMatch(/^actions\/cache@[0-9a-f]{40}$/);
+    expect(String((job.steps[cache]!.with as Record<string, string>).key)).toContain("hashFiles('bun.lock')");
+    expect(job.steps[install]!.run).toContain('--frozen-lockfile');
+  });
+});

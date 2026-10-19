@@ -14,6 +14,8 @@ today and the lessons that are planned. It matches `packages/zplc-ide/lessons/co
 and the lesson packages next to it; a CI check fails when a lesson is missing here or
 when a row disagrees with its lesson.
 
+Each module and each lesson has its own page, generated from the lesson packages: start from the [course modules](./modules/index.md), and see the [lesson plants](./plants.md) for the simulated machines.
+
 Every lesson is completed in the **Simulation** track, on this computer, with no
 board. A lesson lists **Hardware** only when a check against a trace recorded
 from a board exists for it. At present no lesson offers one, and a lesson that

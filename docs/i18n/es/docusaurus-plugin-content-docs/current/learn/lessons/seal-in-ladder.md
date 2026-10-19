@@ -1,0 +1,49 @@
+---
+title: "Autorretención en Ladder: un motor que se mantiene encendido"
+sidebar_label: "seal-in-ladder"
+description: "La lección seal-in-ladder: nivel, tiempo, lenguajes y objetivos, generados de su paquete."
+tags: [learn, generated]
+unlisted: true
+---
+
+# Autorretención en Ladder: un motor que se mantiene encendido
+
+{/* >>> GENERATED (tools/docs/generate_course_pages.ts): learn/lessons/seal-in-ladder. Do not edit. >>> */}
+
+Edite un peldaño de Ladder para que una pulsación de Start mantenga el motor encendido al soltar el botón, y una pulsación de Stop lo apague aunque Start siga pulsado.
+
+## Datos
+
+- Módulo: [2](../modules/module-2.md)
+- Nivel: Fundamentos
+- Tiempo estimado: 20 minutos
+- Lenguajes: LD
+- Rutas: Simulación
+- Planta: ninguna
+- Requisitos previos: [blinky-ladder-timer-feedback](./blinky-ladder-timer-feedback.md)
+
+## Objetivos
+
+- Lea un peldaño de Ladder como un camino de contactos por el que debe pasar la energía hasta la bobina.
+- Mantenga una bobina encendida con un contacto de su propia salida en paralelo con Start, y deje Stop en serie para que Stop gane.
+
+## Etapas
+
+1. **Objetivo**
+2. **Prediga**
+3. **Edite**
+4. **Ejecute**
+5. **Observe**
+6. **Reflexione**
+
+## Qué cubre la evidencia
+
+La evidencia de Tests es del runtime nativo POSIX con una tarea de 10 ms; no establece una función de parada segura, cableado, tiempos de hardware, HIL ni certificación.
+
+## En una placa
+
+La lección se califica con Start y Stop pulsados juntos en un paso exacto de 10 ms, que una placa no repite igual en cada ejecución. Complétela en Simulación: su calificación es la misma cada vez y no necesita una placa.
+
+{/* <<< END GENERATED: learn/lessons/seal-in-ladder <<< */}
+
+Esta página se genera: para cambiarla, se cambia su fuente y se ejecuta `bun run docs:generate`.

@@ -99,7 +99,11 @@ jobs:
   verify-linux-x64-payload-reproducibility:
     needs: [validate-version, verify-release-candidate]
     runs-on: ubuntu-24.04
+    # REL-032: kept, and never a reason for a release run to fail or wait. A job that continues on error reports success to
+    # the jobs that read it, so its verdict is an output; the notes read the output, they do not wait on a result.
     continue-on-error: true
+    outputs:
+      reproducible: ${{ steps.record.outputs.reproducible }}
     steps:
       - name: Checkout
         uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
@@ -162,10 +166,17 @@ jobs:
           build_payload "$second_workspace"
 
       - name: Verify Linux x64 packaged payload reproducibility (not installers)
+        id: compare
+        continue-on-error: true
         run: |
           bun "$RUNNER_TEMP/zplc-linux-x64-reproducibility/first/packages/zplc-ide/scripts/verify-reproducible-linux-payload.ts" \
             "$RUNNER_TEMP/zplc-linux-x64-reproducibility/first/packages/zplc-ide" \
             "$RUNNER_TEMP/zplc-linux-x64-reproducibility/second/packages/zplc-ide"
+
+      - name: Record the verdict
+        id: record
+        if: ${{ always() }}
+        run: echo "reproducible=${{ job.status == 'success' && steps.compare.outcome == 'success' }}" >> "$GITHUB_OUTPUT"
 
   # ===========================================================================
   # Prebuilt runtime firmware for every board of the manifest (REL-022). One job per board builds firmware/app from the
@@ -843,9 +854,12 @@ jobs:
   # The release is created here, once, and only as a draft. A person publishes it after the first-run
   # checks on a real Mac and a real Windows machine (REL-016). Nothing below ever publishes it.
   # ===========================================================================
+  # REL-036: the draft is created after every platform build job has finished, and those jobs install or mount and launch
+  # every installer format on its own system (their last steps before the upload). It does not need them to succeed
+  # (REL-015): a platform that failed has no upload, the others publish. With no platform to publish there is no draft.
   create-draft-release:
-    needs: [validate-version, verify-release-candidate]
-    if: ${{ needs.validate-version.outputs.publishing == 'true' }}
+    needs: [validate-version, verify-release-candidate, build-macos, build-windows, build-linux]
+    if: ${{ !cancelled() && needs.validate-version.outputs.publishing == 'true' && needs.verify-release-candidate.result == 'success' && (needs.build-macos.result == 'success' || needs.build-windows.result == 'success' || needs.build-linux.result == 'success') }}
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -880,6 +894,7 @@ jobs:
     needs:
       - validate-version
       - verify-release-candidate
+      - verify-linux-x64-payload-reproducibility
       - build-firmware
       - assemble-firmware
       - build-macos
@@ -922,6 +937,7 @@ jobs:
           RELEASE_VERSION: ${{ needs.validate-version.outputs.version }}
           RELEASE_TAG: ${{ needs.validate-version.outputs.tag }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          REPRODUCIBLE: ${{ needs.verify-linux-x64-payload-reproducibility.outputs.reproducible }}
         run: |
           set -euo pipefail
           mkdir -p release-notes
@@ -940,6 +956,13 @@ jobs:
             --changelog CHANGELOG.md \
             --out release-notes/notes.md \
             --title-out release-notes/title.txt
+          # REL-032: the verdict of the reproducibility check is read here and never blocks anything
+          case "$REPRODUCIBLE" in
+            true) verdict="The Linux x64 application payload was built twice from this commit and came out identical." ;;
+            false) verdict="The Linux x64 application payload built twice from this commit did not come out identical, or a build failed. This does not block the release." ;;
+            *) verdict="The Linux x64 payload reproducibility check did not report a result in this run." ;;
+          esac
+          printf '\n%s\n' "$verdict" >> release-notes/notes.md
           # one SHA256SUMS for every asset that a platform bundle holds (REL-017): the files of the platforms that
           # finished, merged by the script that wrote them
           mapfile -t sums < <(find bundles -name 'SHA256SUMS-*' -type f | sort)

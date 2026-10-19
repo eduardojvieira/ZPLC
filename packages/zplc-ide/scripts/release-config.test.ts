@@ -272,8 +272,13 @@ describe('every published installer format is installed or mounted and launched 
     expect(jobs['build-windows']!.steps[setup]!.run).toContain('ZPLC_PACKAGED_EXECUTABLE');
   });
 
-  it('is done in the build jobs, which the draft release does not depend on, but every upload does through the evidence of its platform', () => {
-    expect(needsOf(create)).toEqual(['validate-version', 'verify-release-candidate']);
+  it('is done in the build jobs, and the draft waits for all three of them to finish, whatever they did (REL-036, REL-015)', () => {
+    expect(needsOf(create)).toEqual(['build-linux', 'build-macos', 'build-windows', 'validate-version', 'verify-release-candidate']);
+    const condition = String(jobs[create]!.if);
+    // it runs when a platform failed, as long as one platform has files to publish: the failed one simply has no upload
+    expect(condition).toContain('!cancelled()');
+    for (const platform of ['macos', 'windows', 'linux']) expect(condition).toContain(`needs.build-${platform}.result == 'success'`);
+    expect(condition).toContain(' || ');
     for (const platform of ['macos', 'windows', 'linux']) {
       expect([jobs[`prepare-release-evidence-${platform}`]!.needs].flat()).toContain(`build-${platform}`);
     }
@@ -334,9 +339,14 @@ describe('release.yml publishes each platform independently and only as a draft 
   // failed platform shows up in the notes instead of blocking them.
   const FAN_IN = ['render-release-notes', 'publish-release-notes'];
 
-  it('lets no job depend on the builds of two platforms, except the notes, which run whatever the platforms did', () => {
+  // The draft is created once every platform has installed and launched its formats (REL-036), so it and the uploads that
+  // follow it wait for the builds of all three; none of them needs a build to succeed (the draft's condition), so a
+  // failed platform does not stop the others (REL-015).
+  const AFTER_DRAFT = ['create-draft-release', ...platforms.map((platform) => `upload-release-${platform}`), 'upload-release-firmware'];
+
+  it('lets no job depend on the builds of two platforms, except the notes and the draft with its uploads, which run whatever the platforms did', () => {
     // the firmware is built once for every platform (the installers carry the learner-board images): it is not a platform
-    for (const name of Object.keys(jobs).filter((job) => !FAN_IN.includes(job))) {
+    for (const name of Object.keys(jobs).filter((job) => !FAN_IN.includes(job) && !AFTER_DRAFT.includes(job))) {
       const builds = [...ancestors(name)].filter((job) => job.startsWith('build-') && job !== 'build-firmware');
       expect(builds.length, `${name} waits for ${builds.join(', ')}`).toBeLessThanOrEqual(1);
     }
@@ -349,13 +359,23 @@ describe('release.yml publishes each platform independently and only as a draft 
     expect(jobs[`upload-release-${platform}`]!.if).toContain("needs.validate-version.outputs.publishing == 'true'");
   });
 
-  it('keeps the reproducibility check and lets no release job wait for it (REL-032)', () => {
-    const check = jobs['verify-linux-x64-payload-reproducibility'] as unknown as { 'continue-on-error'?: unknown };
+  it('keeps the reproducibility check, reads its result in the notes, and lets nothing else wait for it (REL-032)', () => {
+    const name = 'verify-linux-x64-payload-reproducibility';
+    const check = jobs[name] as unknown as { 'continue-on-error'?: unknown; outputs?: Record<string, string> };
     expect(check['continue-on-error']).toBe(true);
-    expect(jobs['verify-linux-x64-payload-reproducibility']!.steps.some((step) => step.run?.includes('verify-reproducible-linux-payload.ts'))).toBe(true);
-    for (const name of Object.keys(jobs).filter((job) => job !== 'verify-linux-x64-payload-reproducibility')) {
-      expect(ancestors(name).has('verify-linux-x64-payload-reproducibility'), `${name} waits for the reproducibility check`).toBe(false);
+    expect(jobs[name]!.steps.some((step) => step.run?.includes('verify-reproducible-linux-payload.ts'))).toBe(true);
+    // its verdict is an output of the job, because a job that continues on error reports success to the jobs that read it
+    expect(check.outputs?.reproducible).toContain('steps.record.outputs.reproducible');
+    // the notes read it and run whatever it did; no other job has it among its ancestors
+    expect(needsOf('render-release-notes')).toContain(name);
+    expect(jobs['render-release-notes']!.if).toContain('always()');
+    const render = jobs['render-release-notes']!.steps.find((step) => step.name?.includes('Render the notes'))!;
+    expect(String((render as unknown as { env: Record<string, string> }).env.REPRODUCIBLE)).toContain('needs.verify-linux-x64-payload-reproducibility.outputs.reproducible');
+    expect(run('render-release-notes')).toContain('>> release-notes/notes.md');
+    for (const other of Object.keys(jobs).filter((job) => job !== name && !FAN_IN.includes(job))) {
+      expect(ancestors(other).has(name), `${other} waits for the reproducibility check`).toBe(false);
     }
+    expect(ancestors('publish-release-notes').has(name), 'the notes of the draft wait for the check, but never fail on it').toBe(true);
   });
 
   it.each(platforms)('gives the %s checksum and evidence files a platform-specific name', (platform) => {
@@ -505,7 +525,7 @@ describe('the notes claim only checks that their job runs (REL-027)', () => {
     expect([job.needs ?? []].flat().sort()).toEqual([
       'assemble-firmware', 'build-firmware', 'build-linux', 'build-macos', 'build-windows', 'prepare-release-evidence-firmware',
       'prepare-release-evidence-linux', 'prepare-release-evidence-macos', 'prepare-release-evidence-windows', 'validate-version',
-      'verify-release-candidate',
+      'verify-linux-x64-payload-reproducibility', 'verify-release-candidate',
     ]);
     expect(stepRunning('render-release-notes', 'scripts/release/run-results.ts')).toBeDefined();
     expect(stepRunning('render-release-notes', 'scripts/release/release-notes.ts')).toBeDefined();

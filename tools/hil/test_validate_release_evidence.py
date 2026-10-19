@@ -212,10 +212,26 @@ class ReleaseWorkflowEvidenceTests(unittest.TestCase):
         contents = self.replace_in_job(
             self.workflow(),
             "create-draft-release",
-            "if: ${{ needs.validate-version.outputs.publishing == 'true' }}",
-            "if: ${{ always() }}",
+            "needs.validate-version.outputs.publishing == 'true' &&",
+            "",
         )
         self.assertIn("create-draft-release must run only when publishing", self.errors(contents))
+
+    def test_draft_waits_for_every_platform_but_needs_only_one_to_succeed(self) -> None:
+        contents = self.replace_in_job(
+            self.workflow(),
+            "create-draft-release",
+            "needs: [validate-version, verify-release-candidate, build-macos, build-windows, build-linux]",
+            "needs: [validate-version, verify-release-candidate, build-linux]",
+        )
+        self.assertIn("create-draft-release must wait for the builds of every platform (REL-036)", self.errors(contents))
+        contents = self.replace_in_job(
+            self.workflow(),
+            "create-draft-release",
+            "needs.build-macos.result == 'success' || needs.build-windows.result == 'success' || needs.build-linux.result == 'success'",
+            "needs.build-macos.result == 'success' && needs.build-windows.result == 'success' && needs.build-linux.result == 'success'",
+        )
+        self.assertIn("create-draft-release must run when any platform build succeeded, not only when all did (REL-015)", self.errors(contents))
 
     def test_upload_uses_only_prepared_bundle_and_respects_dry_run(self) -> None:
         self.assertIn(
