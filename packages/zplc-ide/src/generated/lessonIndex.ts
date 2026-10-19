@@ -27,6 +27,7 @@ export const LESSON_IDS = [
   "types-arithmetic-comparison",
   "analog-scaling-integer",
   "function-block-pump-pair",
+  "structures-arrays-call-panel",
 ] as const;
 
 export type LessonId = typeof LESSON_IDS[number];

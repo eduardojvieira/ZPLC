@@ -3671,6 +3671,177 @@
           ]
         }
       }
+    },
+    {
+      "id": "structures-arrays-call-panel",
+      "version": 1,
+      "order": 22,
+      "module": 7,
+      "level": "intermediate",
+      "prerequisites": [
+        "function-block-pump-pair"
+      ],
+      "languages": [
+        "ST"
+      ],
+      "tracks": [
+        "simulation"
+      ],
+      "unsupported": {
+        "hardware": {
+          "reason": {
+            "en": "The lesson is graded on exact input timing at 10 ms steps; a board has no recorded trace for it yet.",
+            "es": "La lección se califica con tiempos exactos de entradas en pasos de 10 ms; todavía no hay una traza registrada desde una placa para ella."
+          },
+          "instead": {
+            "en": "Complete it in Simulation: its grade is the same each time and needs no board.",
+            "es": "Complétela en Simulación: su calificación es la misma cada vez y no necesita una placa."
+          }
+        }
+      },
+      "plant": null,
+      "plantMap": null,
+      "estimatedMinutes": 25,
+      "starter": {
+        "project": "call_panel_starter",
+        "program": "src/CallPanel.st"
+      },
+      "solution": {
+        "project": "call_panel",
+        "program": "src/CallPanel.st"
+      },
+      "scenario": {
+        "id": "CallPanel",
+        "path": "tests/call-panel.scenario.json",
+        "sha256": "fa3731358167b95402748515fce755c6fcc0dcd4857ea019b3039d7b2d29747f",
+        "tickMs": 10,
+        "durationMs": 110,
+        "assertions": 10,
+        "canonical": "{\"durationMs\":110,\"events\":[{\"atMs\":0,\"set\":{\"CallPanel.Ack\":false,\"CallPanel.Call1\":false,\"CallPanel.Call2\":false,\"CallPanel.Call3\":false}},{\"atMs\":10,\"set\":{\"CallPanel.Call1\":true}},{\"atMs\":20,\"set\":{\"CallPanel.Call1\":false}},{\"atMs\":30,\"set\":{\"CallPanel.Call2\":true}},{\"atMs\":40,\"set\":{\"CallPanel.Call2\":false}},{\"atMs\":50,\"set\":{\"CallPanel.Call3\":true}},{\"atMs\":60,\"set\":{\"CallPanel.Call3\":false}},{\"atMs\":70,\"set\":{\"CallPanel.Ack\":true}},{\"atMs\":80,\"set\":{\"CallPanel.Ack\":false}},{\"atMs\":90,\"set\":{\"CallPanel.Call2\":true}},{\"atMs\":100,\"set\":{\"CallPanel.Call2\":false}}],\"expectations\":[{\"atMs\":0,\"condition\":{\"CallPanel.AllCalling\":false,\"CallPanel.Pending\":false},\"kind\":\"AT\"},{\"atMs\":20,\"condition\":{\"CallPanel.AllCalling\":false,\"CallPanel.Pending\":true},\"kind\":\"AT\"},{\"atMs\":40,\"condition\":{\"CallPanel.AllCalling\":false,\"CallPanel.Pending\":true},\"kind\":\"AT\"},{\"atMs\":50,\"condition\":{\"CallPanel.AllCalling\":true,\"CallPanel.Pending\":true},\"kind\":\"AT\"},{\"atMs\":70,\"condition\":{\"CallPanel.AllCalling\":false,\"CallPanel.Pending\":false},\"kind\":\"AT\"},{\"atMs\":90,\"condition\":{\"CallPanel.AllCalling\":false,\"CallPanel.Pending\":true},\"kind\":\"AT\"},{\"condition\":{\"CallPanel.Pending\":true},\"fromMs\":10,\"kind\":\"RISING\",\"withinMs\":0},{\"condition\":{\"CallPanel.AllCalling\":true},\"fromMs\":50,\"kind\":\"RISING\",\"withinMs\":0},{\"condition\":{\"CallPanel.Pending\":false},\"fromMs\":70,\"kind\":\"FALLING\",\"withinMs\":0},{\"condition\":{\"CallPanel.AllCalling\":true,\"CallPanel.Pending\":false},\"kind\":\"NEVER\"}],\"id\":\"CallPanel\",\"schemaVersion\":1,\"tickMs\":10}"
+      },
+      "regressionScenarios": [],
+      "text": {
+        "en": {
+          "title": "Structures and arrays: a panel of three calls",
+          "summary": "Keep three call buttons in an array of structures and write one FOR loop that holds each call until it is acknowledged and reports whether any call, or every call, is waiting.",
+          "scope": "Tests provide native POSIX host evidence with one 10 ms task; they do not establish the response time of a real call panel or tasks beyond the one 10 ms task, HIL, or certification.",
+          "objectives": [
+            "Declare a structure with named members and an array of that structure, and reach an element with an index and a member name.",
+            "Replace three copies of the same code with one FOR loop over the array."
+          ],
+          "stages": [
+            {
+              "key": "objective",
+              "title": "Objective",
+              "body": "In src/CallPanel.st the structure Call has the members Pressed and Held, and the array Calls holds three of them. The program copies the buttons into Calls[1].Pressed to Calls[3].Pressed. Write a FOR loop over i from 1 to 3 that sets Held when Pressed is TRUE, clears it when Ack is TRUE, and sets Pending when any Held is TRUE and AllCalling when all three are.",
+              "checkpoint": "A call stays held after its button is released, Ack clears them, and the loop handles the three the same way."
+            },
+            {
+              "key": "predict",
+              "title": "Predict",
+              "body": "Calls arrive at 10, 30 and 50 ms and Ack is pressed at 70 ms. Predict Pending and AllCalling at 20, 50 and 70 ms.",
+              "checkpoint": "Pending only at 20 ms; both ON at 50 ms; both OFF at 70 ms."
+            },
+            {
+              "key": "edit",
+              "title": "Edit",
+              "body": "Correct this starter omission, save it, then press Check: The starter copies the three buttons into the array Calls but has no loop, so Pending and AllCalling stay OFF; add a FOR loop over the three elements that holds a pressed call until Ack and sets the two outputs.",
+              "checkpoint": "The visible scenario must pass with saved host evidence."
+            },
+            {
+              "key": "run",
+              "title": "Run",
+              "body": "Press Check. Studio runs your saved program against the scenario of this lesson.",
+              "checkpoint": "The scenario is named CallPanel and contains 10 assertions."
+            },
+            {
+              "key": "observe",
+              "title": "Observe",
+              "body": "Compare 20, 40 and 50 ms: Pending rises with the first call and stays ON, and AllCalling rises only when the third call is held at 50 ms.",
+              "checkpoint": "Ack clears every call at 70 ms, and a single new call at 90 ms makes Pending rise again with AllCalling OFF."
+            },
+            {
+              "key": "reflect",
+              "title": "Reflect",
+              "body": "What would change if the loop ran from 1 to 2? Try it and see which assertion fails, then add a fourth call and say what you would edit.",
+              "checkpoint": "With an array and a loop, adding a call changes the bounds and one line that copies the button. The scenario shows the logic of one task only; it does not show several tasks or their priorities."
+            }
+          ],
+          "hints": [
+            {
+              "level": 1,
+              "text": "An element of the array is Calls[i], and a member of it is Calls[i].Held. Start Pending at FALSE and AllCalling at TRUE before the loop, and let the loop change them."
+            },
+            {
+              "level": 2,
+              "text": "FOR i := 1 TO 3 DO  IF Calls[i].Pressed THEN Calls[i].Held := TRUE; END_IF;  IF Ack THEN Calls[i].Held := FALSE; END_IF;  IF Calls[i].Held THEN Pending := TRUE; ELSE AllCalling := FALSE; END_IF; END_FOR;"
+            }
+          ],
+          "faultCases": [
+            "The starter copies the three buttons into the array Calls but has no loop, so Pending and AllCalling stay OFF; add a FOR loop over the three elements that holds a pressed call until Ack and sets the two outputs."
+          ]
+        },
+        "es": {
+          "title": "Estructuras y arreglos: un panel de tres llamadas",
+          "summary": "Guarde tres botones de llamada en un arreglo de estructuras y escriba un bucle FOR que mantenga cada llamada hasta que se reconozca e informe si hay alguna llamada, o todas, esperando.",
+          "scope": "La evidencia de Tests es del runtime nativo POSIX con una tarea de 10 ms; no establece el tiempo de respuesta de un panel de llamadas real ni tareas distintas de la tarea de 10 ms, HIL ni certificación.",
+          "objectives": [
+            "Declare una estructura con miembros con nombre y un arreglo de esa estructura, y llegue a un elemento con un índice y un nombre de miembro.",
+            "Reemplace tres copias del mismo código por un solo bucle FOR sobre el arreglo."
+          ],
+          "stages": [
+            {
+              "key": "objective",
+              "title": "Objetivo",
+              "body": "En src/CallPanel.st la estructura Call tiene los miembros Pressed y Held, y el arreglo Calls contiene tres. El programa copia los botones a Calls[1].Pressed hasta Calls[3].Pressed. Escriba un bucle FOR con i de 1 a 3 que ponga Held en TRUE cuando Pressed sea TRUE, lo borre cuando Ack sea TRUE, y active Pending si algún Held es TRUE y AllCalling si los tres lo son.",
+              "checkpoint": "Una llamada queda retenida al soltar su botón, Ack las borra, y el bucle trata las tres de la misma manera."
+            },
+            {
+              "key": "predict",
+              "title": "Prediga",
+              "body": "Las llamadas llegan a los 10, 30 y 50 ms y Ack se pulsa a los 70 ms. Prediga Pending y AllCalling a los 20, 50 y 70 ms.",
+              "checkpoint": "Solo Pending a los 20 ms; ambas en ON a los 50 ms; ambas en OFF a los 70 ms."
+            },
+            {
+              "key": "edit",
+              "title": "Edite",
+              "body": "Corrija esta omisión del programa inicial, guárdelo y pulse Comprobar: El programa inicial copia los tres botones al arreglo Calls pero no tiene bucle, así que Pending y AllCalling quedan en OFF; agregue un bucle FOR sobre los tres elementos que mantenga una llamada pulsada hasta Ack y active las dos salidas.",
+              "checkpoint": "El escenario visible debe pasar con evidencia guardada del host."
+            },
+            {
+              "key": "run",
+              "title": "Ejecute",
+              "body": "Pulse Comprobar. Studio ejecuta el programa guardado contra el escenario de esta lección.",
+              "checkpoint": "El escenario se llama CallPanel y contiene 10 assertions."
+            },
+            {
+              "key": "observe",
+              "title": "Observe",
+              "body": "Compare 20, 40 y 50 ms: Pending sube con la primera llamada y sigue en ON, y AllCalling sube solo cuando la tercera llamada queda retenida a los 50 ms.",
+              "checkpoint": "Ack borra todas las llamadas a los 70 ms, y una sola llamada nueva a los 90 ms hace subir Pending otra vez con AllCalling en OFF."
+            },
+            {
+              "key": "reflect",
+              "title": "Reflexione",
+              "body": "¿Qué cambiaría si el bucle fuera de 1 a 2? Pruébelo y vea qué assertion falla; luego agregue una cuarta llamada y diga qué editaría.",
+              "checkpoint": "Con un arreglo y un bucle, agregar una llamada cambia los límites y una línea que copia el botón. El escenario muestra la lógica de una sola tarea; no muestra varias tareas ni sus prioridades."
+            }
+          ],
+          "hints": [
+            {
+              "level": 1,
+              "text": "Un elemento del arreglo es Calls[i], y un miembro de él es Calls[i].Held. Ponga Pending en FALSE y AllCalling en TRUE antes del bucle, y deje que el bucle los cambie."
+            },
+            {
+              "level": 2,
+              "text": "FOR i := 1 TO 3 DO  IF Calls[i].Pressed THEN Calls[i].Held := TRUE; END_IF;  IF Ack THEN Calls[i].Held := FALSE; END_IF;  IF Calls[i].Held THEN Pending := TRUE; ELSE AllCalling := FALSE; END_IF; END_FOR;"
+            }
+          ],
+          "faultCases": [
+            "El programa inicial copia los tres botones al arreglo Calls pero no tiene bucle, así que Pending y AllCalling quedan en OFF; agregue un bucle FOR sobre los tres elementos que mantenga una llamada pulsada hasta Ack y active las dos salidas."
+          ]
+        }
+      }
     }
   ],
   "course": {
