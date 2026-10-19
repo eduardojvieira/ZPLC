@@ -1811,6 +1811,37 @@ export const JOURNEYS: Journey[] = [
   },
 
   {
+    // Every poll of a running program once rendered the whole window again (the runtime info was React state of the app), so
+    // the renderer fell behind the runtime a little more each second: a trivial evaluate took 0.2 s, then 2.5 s, then 6 s.
+    // The bound is on the answer time and on its growth, not on the machine: the last third may cost at most 3 times the first.
+    name: '28l A running Ladder keeps the window responsive', example: 'blinky', proves: [], partly: ['LNG-006', 'IDE-013'],
+    run: async (app, { project }) => {
+      await openFolder(app, project);
+      await openDiagram(app, 'src/main.ld.json', '[data-ld-rung-id]');
+      const result = await compile(app);
+      assert(result.kind === 'built', `The Blinky Ladder example does not build: ${result.message}`);
+      await app.cdp.command('Performance.enable');
+      await connectAndRun(app);
+      await app.until('power to reach an element of a rung', async () => await app.eval<number>(`document.querySelectorAll('[data-ld-cell][data-powered="true"]').length`) > 0 || undefined);
+      const nodes = async () => ((await app.cdp.command('Performance.getMetrics') as { metrics: Array<{ name: string; value: number }> }).metrics.find((item) => item.name === 'Nodes')?.value ?? 0);
+      const first = await nodes();
+      const latencies: number[] = [];
+      const started = Date.now();
+      while (Date.now() - started < 30_000) {
+        const before = Date.now();
+        await app.eval<number>('1 + 1');
+        latencies.push(Date.now() - before);
+        await new Promise((resolve) => setTimeout(resolve, 1_000));
+      }
+      const mean = (values: number[]) => values.reduce((sum, value) => sum + value, 0) / Math.max(values.length, 1);
+      const third = Math.floor(latencies.length / 3);
+      const early = mean(latencies.slice(0, third)); const late = mean(latencies.slice(-third));
+      assert(late <= early * 3 + 300, `The window answers slower the longer a Ladder program runs: the first third took ${Math.round(early)} ms and the last third ${Math.round(late)} ms (${JSON.stringify(latencies)}).`);
+      assert(Math.max(...latencies) < 2_000, `The window stopped answering for ${Math.max(...latencies)} ms while a Ladder program ran (${JSON.stringify(latencies)}).`);
+      assert(await nodes() <= first + 300, `The page grows while a Ladder program runs: ${first} nodes, then ${await nodes()}.`);
+    },
+  },
+  {
     // The build records which variable holds the state of each element, so the editor shows what the program holds and
     // not what a name suggests: power through the rung, the value of each contact, and a dash where nothing was read.
     name: '28b Online values of a rung come from the debug map', example: 'blinky', proves: [], partly: ['LNG-006'],
@@ -2117,6 +2148,35 @@ export const JOURNEYS: Journey[] = [
       await app.click(css('input[aria-label="Force LED_Output"]'), 'the Force checkbox of LED_Output');
       await app.until('the force to be released', async () => await app.eval(`${watchRow('LED_Output')}?.querySelector('input[type="checkbox"]')?.checked === false`) === true || undefined);
       await app.until('the variable block to stop being drawn as forced', async () => await signal() !== 'forced' || undefined);
+    },
+  },
+  {
+    // The same in a rung: LED_Output is forced from the Watch table and every contact and coil that names it says so (UX-009).
+    name: '51d A forced variable is shown as forced in the Ladder', example: 'blinky', proves: [], partly: ['UX-009', 'LNG-006'],
+    run: async (app, { project }) => {
+      await openFolder(app, project);
+      await openDiagram(app, 'src/main.ld.json', '[data-ld-rung-id]');
+      const result = await compile(app);
+      assert(result.kind === 'built', `The Blinky Ladder example does not build: ${result.message}`);
+      await connectAndRun(app);
+      const marks = () => app.eval<string[]>(`[...document.querySelectorAll('[data-ld-cell] text')].map((node) => node.textContent ?? '')`);
+      await app.until('a contact to show a value that is not forced', async () => (await marks()).some((text) => /^[●○] [TF]$/.test(text)) || undefined);
+      await watch(app, 'LED_Output');
+      // the Force checkbox is offered once the row has its first value, which takes longer on a loaded machine
+      await app.until('LED_Output to have a value in the Watch table', async () => { const shown = await watchValue(app, 'LED_Output'); return shown !== null && shown !== '...' || undefined; }, 60_000);
+      await app.click(css('input[aria-label="Force LED_Output"]'), 'the Force checkbox of LED_Output');
+      await app.until('LED_Output to be forced', async () => await app.eval(`${watchRow('LED_Output')}?.querySelector('[data-forced="true"]') !== null`) === true || undefined);
+      await app.until('a contact or coil of the rung to be drawn as forced', async () => (await marks()).some((text) => text.includes('◆')) || undefined)
+        .catch(async (error: Error) => { throw new Error(`${error.message}: the cells show ${JSON.stringify(await marks())}`); });
+      assert(!(await marks()).some((text) => text.includes('▲')), 'A forced variable is drawn as a fault.');
+      if (!await app.clickable(css('input[aria-label="Force LED_Output"]'))) {
+        app.note('With a force active the Watch table has no visible row at the default panel size');
+        await app.click(css('#workspace-separator'), 'the separator above the lower panel');
+        for (let step = 0; step < 6; step++) await app.press('ArrowUp');
+      }
+      await app.click(css('input[aria-label="Force LED_Output"]'), 'the Force checkbox of LED_Output');
+      await app.until('the force to be released', async () => await app.eval(`${watchRow('LED_Output')}?.querySelector('input[type="checkbox"]')?.checked === false`) === true || undefined);
+      await app.until('the cells to stop being drawn as forced', async () => !(await marks()).some((text) => text.includes('◆')) || undefined);
     },
   },
   {

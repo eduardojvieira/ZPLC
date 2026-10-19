@@ -66,6 +66,7 @@ import { downloadBlob } from '../utils/downloadBlob';
 import { isWorkspaceTestRunCurrent, presentWorkspaceCompileResult, resolveWorkspaceCompileRoute } from './workspaceTestPresentation';
 import { shownProjectBridge } from '../ipc/shownProjectBridge';
 import { useNotifications } from '../store/notifications';
+import { vmInfoNow } from '../store/vmInfo';
 import { Notifications } from './Notifications';
 import { canLinkProjectWorkspace, linkProjectWorkspace } from '../utils/workspaceTestLink';
 import { performHardwareDeploy } from './deployFlow';
@@ -118,7 +119,6 @@ export function Toolbar({ debugController }: ToolbarProps) {
   const {
     adapter,
     vmState,
-    vmInfo,
     startSimulation,
     connectHardware,
     disconnect,
@@ -581,7 +581,7 @@ export function Toolbar({ debugController }: ToolbarProps) {
     pendingExecutionFocusRef.current = keyboardInitiated ? 'paused' : null;
     try {
       await pause();
-      addConsoleEntry({ type: 'info', message: t('toolbarMsg.pausedAtCycle', { value: vmInfo?.cycles || 0 }), source: 'runtime' });
+      addConsoleEntry({ type: 'info', message: t('toolbarMsg.pausedAtCycle', { value: vmInfoNow()?.cycles || 0 }), source: 'runtime' });
     } catch (e) {
       pendingExecutionFocusRef.current = null;
       addConsoleEntry({ type: 'error', message: t('toolbarMsg.pauseFailed', { value: e instanceof Error ? e.message : String(e) }), source: 'runtime' });
@@ -1102,7 +1102,6 @@ export function Toolbar({ debugController }: ToolbarProps) {
       mode={executionMode}
       adapterType={adapter?.type ?? null}
       connected={isConnected}
-      vmInfo={vmInfo}
       status={status}
       connecting={isConnecting}
       faulted={vmState === 'error'}

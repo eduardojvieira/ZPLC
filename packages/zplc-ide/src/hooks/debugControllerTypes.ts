@@ -3,7 +3,7 @@
  */
 import type { DebugMap } from '../compiler';
 import type { DebugCapabilities } from '../runtime/debugCapabilities';
-import type { IDebugAdapter, VMInfo, VMState, WatchVariable } from '../runtime/debugAdapter';
+import type { IDebugAdapter, VMState, WatchVariable } from '../runtime/debugAdapter';
 import type { SystemInfo } from '../runtime/serialAdapter';
 
 export interface DebugControllerState {
@@ -12,7 +12,6 @@ export interface DebugControllerState {
   /** Current VM state */
   vmState: VMState;
   /** Current VM info (PC, SP, cycles, etc.) */
-  vmInfo: VMInfo | null;
   /** Whether currently polling for live values */
   isPolling: boolean;
   /** Last error message */
