@@ -2636,6 +2636,177 @@
           ]
         }
       }
+    },
+    {
+      "id": "seal-in-ladder",
+      "version": 1,
+      "order": 16,
+      "module": 2,
+      "level": "foundation",
+      "prerequisites": [
+        "blinky-ladder-timer-feedback"
+      ],
+      "languages": [
+        "LD"
+      ],
+      "tracks": [
+        "simulation"
+      ],
+      "unsupported": {
+        "hardware": {
+          "reason": {
+            "en": "The lesson is graded on exact button timing at 10 ms steps; a board has no recorded trace for it yet.",
+            "es": "La lección se califica con tiempos exactos de pulsadores en pasos de 10 ms; todavía no hay una traza registrada desde una placa para ella."
+          },
+          "instead": {
+            "en": "Complete it in Simulation: its grade is the same each time and needs no board.",
+            "es": "Complétela en Simulación: su calificación es la misma cada vez y no necesita una placa."
+          }
+        }
+      },
+      "plant": null,
+      "plantMap": null,
+      "estimatedMinutes": 20,
+      "starter": {
+        "project": "seal_in_ladder_starter",
+        "program": "src/SealIn.ld.json"
+      },
+      "solution": {
+        "project": "seal_in_ladder",
+        "program": "src/SealIn.ld.json"
+      },
+      "scenario": {
+        "id": "SealIn",
+        "path": "tests/seal-in.scenario.json",
+        "sha256": "418381cb4981252aafe240659adff839346bdc29e49d2e2069d395a648a00488",
+        "tickMs": 10,
+        "durationMs": 100,
+        "assertions": 11,
+        "canonical": "{\"durationMs\":100,\"events\":[{\"atMs\":0,\"set\":{\"SealIn.StartPB\":false,\"SealIn.StopPB\":false}},{\"atMs\":10,\"set\":{\"SealIn.StartPB\":true}},{\"atMs\":20,\"set\":{\"SealIn.StartPB\":false}},{\"atMs\":40,\"set\":{\"SealIn.StopPB\":true}},{\"atMs\":50,\"set\":{\"SealIn.StopPB\":false}},{\"atMs\":60,\"set\":{\"SealIn.StartPB\":true}},{\"atMs\":70,\"set\":{\"SealIn.StopPB\":true}},{\"atMs\":80,\"set\":{\"SealIn.StartPB\":false,\"SealIn.StopPB\":false}}],\"expectations\":[{\"atMs\":0,\"condition\":{\"SealIn.Motor\":false},\"kind\":\"AT\"},{\"atMs\":10,\"condition\":{\"SealIn.Motor\":true},\"kind\":\"AT\"},{\"atMs\":30,\"condition\":{\"SealIn.Motor\":true},\"kind\":\"AT\"},{\"atMs\":40,\"condition\":{\"SealIn.Motor\":false},\"kind\":\"AT\"},{\"atMs\":50,\"condition\":{\"SealIn.Motor\":false},\"kind\":\"AT\"},{\"atMs\":60,\"condition\":{\"SealIn.Motor\":true},\"kind\":\"AT\"},{\"atMs\":70,\"condition\":{\"SealIn.Motor\":false},\"kind\":\"AT\"},{\"atMs\":90,\"condition\":{\"SealIn.Motor\":false},\"kind\":\"AT\"},{\"condition\":{\"SealIn.Motor\":true},\"forMs\":10,\"fromMs\":20,\"kind\":\"FOR\"},{\"condition\":{\"SealIn.Motor\":true},\"fromMs\":10,\"kind\":\"RISING\",\"withinMs\":0},{\"condition\":{\"SealIn.Motor\":false},\"fromMs\":40,\"kind\":\"FALLING\",\"withinMs\":0}],\"id\":\"SealIn\",\"schemaVersion\":1,\"tickMs\":10}"
+      },
+      "regressionScenarios": [],
+      "text": {
+        "en": {
+          "title": "Seal-in in Ladder: a motor that holds itself on",
+          "summary": "Edit a Ladder rung so that a Start press keeps the motor on after the button is released, and a Stop press drops it even while Start is still pressed.",
+          "scope": "Tests provide native POSIX host evidence with one 10 ms task; they do not establish a safe stop function, wiring, hardware timing, HIL, or certification.",
+          "objectives": [
+            "Read a Ladder rung as a path of contacts that must all pass power to reach a coil.",
+            "Hold a coil on with a contact of its own output in parallel with Start, and keep Stop in series so that Stop wins."
+          ],
+          "stages": [
+            {
+              "key": "objective",
+              "title": "Objective",
+              "body": "In src/SealIn.ld.json one rung is drawn: a normally closed contact on StopPB, a normally open contact on StartPB and the coil Motor. Add a normally open contact on Motor in parallel with the StartPB contact, so that the motor holds itself on once started.",
+              "checkpoint": "The motor stays on after Start is released and drops out when Stop is pressed."
+            },
+            {
+              "key": "predict",
+              "title": "Predict",
+              "body": "Before running, predict Motor at 30 ms (Start was released at 20 ms), at 50 ms (Stop was released) and at 70 ms (Start and Stop pressed together).",
+              "checkpoint": "ON at 30 ms; OFF at 50 ms, because nobody is pressing Start; OFF at 70 ms, because Stop wins."
+            },
+            {
+              "key": "edit",
+              "title": "Edit",
+              "body": "Correct this starter omission, save it, then press Check: The starter drives Motor only while StartPB is pressed, so it drops out as soon as Start is released at 20 ms; add a normally open contact on Motor in parallel with the StartPB contact, so the coil holds itself on. In the Ladder editor add a contact on the second row under StartPB and name it Motor.",
+              "checkpoint": "The visible scenario must pass with saved host evidence."
+            },
+            {
+              "key": "run",
+              "title": "Run",
+              "body": "Press Check. Studio runs your saved program against the scenario of this lesson.",
+              "checkpoint": "The scenario is named SealIn and contains 11 assertions."
+            },
+            {
+              "key": "observe",
+              "title": "Observe",
+              "body": "Compare 20, 30 and 40 ms: Motor stays ON at 30 ms with Start released, and drops at 40 ms when Stop is pressed.",
+              "checkpoint": "Motor rises once at 10 ms and falls once at 40 ms; it does not start again at 50 ms when Stop is released."
+            },
+            {
+              "key": "reflect",
+              "title": "Reflect",
+              "body": "Why must the Stop contact sit in series before the branch? Move it into the held path and see which assertion fails.",
+              "checkpoint": "With Stop outside the series path, a motor that holds itself on cannot be stopped. The scenario presses Start and Stop together at 70 ms to prove that Stop wins; it does not prove a safe stop function."
+            }
+          ],
+          "hints": [
+            {
+              "level": 1,
+              "text": "Power must reach the coil through StopPB and then through either StartPB or something that is true while the motor runs. What is true while the motor runs?"
+            },
+            {
+              "level": 2,
+              "text": "Add a normally open contact on Motor in the second row, under the StartPB contact, and join it to the first row so the two are in parallel. Leave the StopPB contact where it is."
+            }
+          ],
+          "faultCases": [
+            "The starter drives Motor only while StartPB is pressed, so it drops out as soon as Start is released at 20 ms; add a normally open contact on Motor in parallel with the StartPB contact, so the coil holds itself on."
+          ]
+        },
+        "es": {
+          "title": "Autorretención en Ladder: un motor que se mantiene encendido",
+          "summary": "Edite un peldaño de Ladder para que una pulsación de Start mantenga el motor encendido al soltar el botón, y una pulsación de Stop lo apague aunque Start siga pulsado.",
+          "scope": "La evidencia de Tests es del runtime nativo POSIX con una tarea de 10 ms; no establece una función de parada segura, cableado, tiempos de hardware, HIL ni certificación.",
+          "objectives": [
+            "Lea un peldaño de Ladder como un camino de contactos por el que debe pasar la energía hasta la bobina.",
+            "Mantenga una bobina encendida con un contacto de su propia salida en paralelo con Start, y deje Stop en serie para que Stop gane."
+          ],
+          "stages": [
+            {
+              "key": "objective",
+              "title": "Objetivo",
+              "body": "En src/SealIn.ld.json hay un peldaño dibujado: un contacto normalmente cerrado de StopPB, un contacto normalmente abierto de StartPB y la bobina Motor. Agregue un contacto normalmente abierto de Motor en paralelo con el contacto de StartPB para que el motor se mantenga encendido una vez arrancado.",
+              "checkpoint": "El motor sigue encendido al soltar Start y se apaga al pulsar Stop."
+            },
+            {
+              "key": "predict",
+              "title": "Prediga",
+              "body": "Antes de ejecutar, prediga Motor a los 30 ms (Start se soltó a los 20 ms), a los 50 ms (se soltó Stop) y a los 70 ms (Start y Stop pulsados a la vez).",
+              "checkpoint": "En ON a los 30 ms; en OFF a los 50 ms, porque nadie pulsa Start; en OFF a los 70 ms, porque Stop gana."
+            },
+            {
+              "key": "edit",
+              "title": "Edite",
+              "body": "Corrija esta omisión del programa inicial, guárdelo y pulse Comprobar: El programa inicial acciona Motor solo mientras StartPB está pulsado, así que se apaga en cuanto se suelta Start a los 20 ms; agregue un contacto normalmente abierto de Motor en paralelo con el contacto de StartPB para que la bobina se mantenga sola. En el editor Ladder agregue un contacto en la segunda fila, bajo StartPB, y llámelo Motor.",
+              "checkpoint": "El escenario visible debe pasar con evidencia guardada del host."
+            },
+            {
+              "key": "run",
+              "title": "Ejecute",
+              "body": "Pulse Comprobar. Studio ejecuta el programa guardado contra el escenario de esta lección.",
+              "checkpoint": "El escenario se llama SealIn y contiene 11 assertions."
+            },
+            {
+              "key": "observe",
+              "title": "Observe",
+              "body": "Compare 20, 30 y 40 ms: Motor sigue en ON a los 30 ms con Start suelto, y cae a los 40 ms al pulsar Stop.",
+              "checkpoint": "Motor sube una vez a los 10 ms y cae una vez a los 40 ms; no vuelve a arrancar a los 50 ms cuando se suelta Stop."
+            },
+            {
+              "key": "reflect",
+              "title": "Reflexione",
+              "body": "¿Por qué el contacto de Stop debe estar en serie antes de la rama? Muévalo al camino que se mantiene y vea qué assertion falla.",
+              "checkpoint": "Con Stop fuera del camino en serie, un motor que se mantiene solo no se puede detener. El escenario pulsa Start y Stop a la vez a los 70 ms para probar que Stop gana; no prueba una función de parada segura."
+            }
+          ],
+          "hints": [
+            {
+              "level": 1,
+              "text": "La energía debe llegar a la bobina por StopPB y luego por StartPB o por algo que sea verdadero mientras el motor funciona. ¿Qué es verdadero mientras el motor funciona?"
+            },
+            {
+              "level": 2,
+              "text": "Agregue un contacto normalmente abierto de Motor en la segunda fila, bajo el contacto de StartPB, y únalo a la primera fila para que queden en paralelo. Deje el contacto de StopPB donde está."
+            }
+          ],
+          "faultCases": [
+            "El programa inicial acciona Motor solo mientras StartPB está pulsado, así que se apaga en cuanto se suelta Start a los 20 ms; agregue un contacto normalmente abierto de Motor en paralelo con el contacto de StartPB para que la bobina se mantenga sola."
+          ]
+        }
+      }
     }
   ],
   "course": {

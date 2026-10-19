@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "title": "Autorretención en Ladder: un motor que se mantiene encendido",
+  "summary": "Edite un peldaño de Ladder para que una pulsación de Start mantenga el motor encendido al soltar el botón, y una pulsación de Stop lo apague aunque Start siga pulsado.",
+  "scope": "La evidencia de Tests es del runtime nativo POSIX con una tarea de 10 ms; no establece una función de parada segura, cableado, tiempos de hardware, HIL ni certificación.",
+  "objectives": [
+    "Lea un peldaño de Ladder como un camino de contactos por el que debe pasar la energía hasta la bobina.",
+    "Mantenga una bobina encendida con un contacto de su propia salida en paralelo con Start, y deje Stop en serie para que Stop gane."
+  ],
+  "stages": [
+    {
+      "key": "objective",
+      "title": "Objetivo",
+      "body": "En src/SealIn.ld.json hay un peldaño dibujado: un contacto normalmente cerrado de StopPB, un contacto normalmente abierto de StartPB y la bobina Motor. Agregue un contacto normalmente abierto de Motor en paralelo con el contacto de StartPB para que el motor se mantenga encendido una vez arrancado.",
+      "checkpoint": "El motor sigue encendido al soltar Start y se apaga al pulsar Stop."
+    },
+    {
+      "key": "predict",
+      "title": "Prediga",
+      "body": "Antes de ejecutar, prediga Motor a los {{t:30}} ms (Start se soltó a los {{t:20}} ms), a los {{t:50}} ms (se soltó Stop) y a los {{t:70}} ms (Start y Stop pulsados a la vez).",
+      "checkpoint": "{{v:SealIn.Motor=true@30|En ON}} a los {{t:30}} ms; {{v:SealIn.Motor=false@50|en OFF}} a los {{t:50}} ms, porque nadie pulsa Start; {{v:SealIn.Motor=false@70|en OFF}} a los {{t:70}} ms, porque Stop gana."
+    },
+    {
+      "key": "edit",
+      "title": "Edite",
+      "body": "Corrija esta omisión del programa inicial, guárdelo y pulse Comprobar: El programa inicial acciona Motor solo mientras StartPB está pulsado, así que se apaga en cuanto se suelta Start a los {{t:20}} ms; agregue un contacto normalmente abierto de Motor en paralelo con el contacto de StartPB para que la bobina se mantenga sola. En el editor Ladder agregue un contacto en la segunda fila, bajo StartPB, y llámelo Motor.",
+      "checkpoint": "El escenario visible debe pasar con evidencia guardada del host."
+    },
+    {
+      "key": "run",
+      "title": "Ejecute",
+      "body": "Pulse Comprobar. Studio ejecuta el programa guardado contra el escenario de esta lección.",
+      "checkpoint": "El escenario se llama SealIn y contiene {{assertions}} assertions."
+    },
+    {
+      "key": "observe",
+      "title": "Observe",
+      "body": "Compare {{t:20}}, {{t:30}} y {{t:40}} ms: Motor sigue en ON a los {{t:30}} ms con Start suelto, y cae a los {{t:40}} ms al pulsar Stop.",
+      "checkpoint": "Motor sube una vez a los {{t:10}} ms y cae una vez a los {{t:40}} ms; no vuelve a arrancar a los {{t:50}} ms cuando se suelta Stop."
+    },
+    {
+      "key": "reflect",
+      "title": "Reflexione",
+      "body": "¿Por qué el contacto de Stop debe estar en serie antes de la rama? Muévalo al camino que se mantiene y vea qué assertion falla.",
+      "checkpoint": "Con Stop fuera del camino en serie, un motor que se mantiene solo no se puede detener. El escenario pulsa Start y Stop a la vez a los {{t:70}} ms para probar que Stop gana; no prueba una función de parada segura."
+    }
+  ],
+  "hints": [
+    {
+      "level": 1,
+      "text": "La energía debe llegar a la bobina por StopPB y luego por StartPB o por algo que sea verdadero mientras el motor funciona. ¿Qué es verdadero mientras el motor funciona?"
+    },
+    {
+      "level": 2,
+      "text": "Agregue un contacto normalmente abierto de Motor en la segunda fila, bajo el contacto de StartPB, y únalo a la primera fila para que queden en paralelo. Deje el contacto de StopPB donde está."
+    }
+  ],
+  "faultCases": [
+    "El programa inicial acciona Motor solo mientras StartPB está pulsado, así que se apaga en cuanto se suelta Start a los {{t:20}} ms; agregue un contacto normalmente abierto de Motor en paralelo con el contacto de StartPB para que la bobina se mantenga sola."
+  ]
+}

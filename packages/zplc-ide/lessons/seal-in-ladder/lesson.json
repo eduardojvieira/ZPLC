@@ -1,0 +1,46 @@
+{
+  "schemaVersion": 1,
+  "id": "seal-in-ladder",
+  "version": 1,
+  "order": 16,
+  "module": 2,
+  "level": "foundation",
+  "prerequisites": [
+    "blinky-ladder-timer-feedback"
+  ],
+  "languages": [
+    "LD"
+  ],
+  "tracks": [
+    "simulation"
+  ],
+  "unsupported": {
+    "hardware": {
+      "reason": {
+        "en": "The lesson is graded on exact button timing at 10 ms steps; a board has no recorded trace for it yet.",
+        "es": "La lección se califica con tiempos exactos de pulsadores en pasos de 10 ms; todavía no hay una traza registrada desde una placa para ella."
+      },
+      "instead": {
+        "en": "Complete it in Simulation: its grade is the same each time and needs no board.",
+        "es": "Complétela en Simulación: su calificación es la misma cada vez y no necesita una placa."
+      }
+    }
+  },
+  "plant": null,
+  "estimatedMinutes": 20,
+  "starter": {
+    "project": "seal_in_ladder_starter",
+    "program": "src/SealIn.ld.json"
+  },
+  "solution": {
+    "project": "seal_in_ladder",
+    "program": "src/SealIn.ld.json"
+  },
+  "scenario": {
+    "file": "scenario.json",
+    "id": "SealIn",
+    "path": "tests/seal-in.scenario.json",
+    "sha256": "418381cb4981252aafe240659adff839346bdc29e49d2e2069d395a648a00488"
+  },
+  "regressionScenarios": []
+}
