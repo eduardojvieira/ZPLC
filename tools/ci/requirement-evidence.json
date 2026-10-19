@@ -73,8 +73,8 @@
   ],
   "VF-021": [
     {"kind":"unit","ref":"scripts/release/verify-bundle.test.ts","test":"the release bundle that was produced (VF-021)","partial":true,"note":"covers what can be read from produced files on Linux: the checksum, evidence and bill-of-materials files of every platform bundle (scripts/release/verify-bundle.ts, a step of each evidence job), the unpacked Linux package (packaged-content.ts: examples, lessons, notices and the desktop identity; smoke-desktop-builds.ts: the native runtime), and the standalone CLI run with no Bun or Node on the PATH. Open: the signature kind is inspected only on a macOS runner (verify-mac-signature.ts, REL-002), installers of Windows only by name, the .deb and .rpm installs only in the CI containers (check-linux-package.sh); and the validators of tools/hil (validate_release_evidence.py, validate_supported_boards.py), workflow-action-pins.test.mjs, release-config.test.ts and ci-workflow.test.ts still read the workflow (tools/ci/pinned-source-offenders.json, VF-021). scripts/release-artifacts.test.mjs no longer matches a workflow."},
-    {"kind":"unit","ref":"tools/ci/release/verify-installers.test.ts","test":"the installers that were produced","partial":true,"note":"adds the installer names and containers to the checks of produced files (verify-bundle for checksums and bill of materials, install-record for launches); the validators of tools/hil and workflow-action-pins.test.mjs still read workflow text"},
-    {"kind":"unit","ref":"tools/ci/release/run-outcome.test.ts","test":"the outcome of a release run","partial":true,"note":"reads the result of each job of a run (the needs of the last job) and refuses files that reached the draft from a platform whose build or evidence job did not succeed; proven on result tables, not on a hosted run"}
+    {"kind":"unit","ref":"tools/ci/release/run-outcome.test.ts","test":"the outcome of a release run","partial":true,"note":"reads the result of each job of a run (the needs of the last job) and refuses files that reached the draft from a platform whose build or evidence job did not succeed; proven on result tables, not on a hosted run"},
+    {"kind":"unit","ref":"tools/ci/release/verify-installers.test.ts","test":"the installers that were produced","partial":true,"note":"adds the installer names and containers to the checks of produced files (verify-bundle for checksums and bill of materials, install-record for launches); the validators of tools/hil and workflow-action-pins.test.mjs still read workflow text"}
   ],
   "VF-022": [
     {"kind":"unit","ref":"tools/ci/test-inventory.test.ts","test":"checkInventory (VF-022)"}
@@ -2634,10 +2634,14 @@
     {"kind":"unit","ref":"packages/zplc-ide/scripts/release-config.test.ts","test":"the workflow reads no secret but the job token, and every platform verifies the bundle it made (REL-003)"},
     {"kind":"unit","ref":"tools/docs/check_capability_claims.test.ts","test":"flags a channel or a signature that does not exist, and not the sentence that limits it (REL-028, REL-003)"}
   ],
+  "REL-004": [
+    {"kind":"unit","ref":"tools/ci/release/render-channels.test.ts","test":"the Homebrew cask","partial":true,"note":"the cask is rendered from the SHA256SUMS of a release, pins both ZIP checksums and names the files installerName() gives; ruby -c accepts the output. Not installed on a Mac, the tap does not exist (OA-10), and update-channels.yml is authored, not executed in CI. D-01 option A is built and flagged; the README mention is outside this run's surface"},
+    {"kind":"unit","ref":"tools/docs/install_and_status_pages.test.ts","test":"says the Homebrew cask, the quarantine flag and the single install command","partial":true,"note":"the install page (EN and ES) names the fully qualified command and the D-01 consequence"}
+  ],
   "REL-005": [
     {"kind":"unit","ref":"packages/zplc-ide/scripts/release-config.test.ts","test":"the DMG and the ZIP are published for each macOS architecture (REL-005)","partial":true,"note":"asserts the parsed electron-builder and workflow configuration, not the produced installer or a run of the workflow; only a hosted release run proves it (VF-021). The first run of a downloaded DMG on a real Mac, Apple silicon and Intel, is manual evidence of the release checklist (RELEASING.md step 6) and is not recorded."},
-    {"kind":"unit","ref":"tools/docs/install_and_status_pages.test.ts","test":"says why the macOS app is not notarized, and the first-run steps in the order the system shows them (REL-005)","partial":true,"note":"covers the install page half (the steps in order, not notarized and why, in English and Spanish); the DMG and the ZIP of each architecture are produced only by the hosted macOS jobs, and the steps were not followed on a real Mac"},
-    {"kind":"unit","ref":"tools/ci/release/verify-installers.test.ts","test":"the installers that were produced","partial":true,"note":"the installer check requires the DMG and the ZIP of both macOS architectures, by name and by container, in the evidence job; the macOS jobs that produce them run only on hosted runners (authored, not executed in CI), and the first run of a downloaded DMG on a real Mac stays a manual step"}
+    {"kind":"unit","ref":"tools/ci/release/verify-installers.test.ts","test":"the installers that were produced","partial":true,"note":"the installer check requires the DMG and the ZIP of both macOS architectures, by name and by container, in the evidence job; the macOS jobs that produce them run only on hosted runners (authored, not executed in CI), and the first run of a downloaded DMG on a real Mac stays a manual step"},
+    {"kind":"unit","ref":"tools/docs/install_and_status_pages.test.ts","test":"says why the macOS app is not notarized, and the first-run steps in the order the system shows them (REL-005)","partial":true,"note":"covers the install page half (the steps in order, not notarized and why, in English and Spanish); the DMG and the ZIP of each architecture are produced only by the hosted macOS jobs, and the steps were not followed on a real Mac"}
   ],
   "REL-006": [
     {"kind":"unit","ref":"tools/docs/install_and_status_pages.test.ts","test":"no curl | sh installer is recommended or offered (REL-006)"}
@@ -2646,7 +2650,8 @@
     {"kind":"unit","ref":"packages/zplc-ide/scripts/release-config.test.ts","test":"Windows installers carry unsigned in their variant until a channel is live (REL-038)","partial":true,"note":"asserts the parsed electron-builder and workflow configuration, not the produced installer; its own header says a hosted release run is the proof (VF-021)"},
     {"kind":"unit","ref":"packages/zplc-ide/scripts/release-config.test.ts","test":"electron-builder.yml Windows signing (REL-003, REL-038)","partial":true,"note":"asserts the parsed electron-builder and workflow configuration, not the produced installer; its own header says a hosted release run is the proof (VF-021)"},
     {"kind":"unit","ref":"scripts/release/release-notes.test.ts","test":"what a person is told about Windows, verification and evidence (REL-038, REL-017)"},
-    {"kind":"unit","ref":"scripts/release/release-records.test.ts","test":"what a version bump edits (REL-031, REL-038)"}
+    {"kind":"unit","ref":"scripts/release/release-records.test.ts","test":"what a version bump edits (REL-031, REL-038)"},
+    {"kind":"unit","ref":"tools/ci/release/verify-installers.test.ts","test":"drop unsigned from the Windows names once a signed channel exists (REL-038)"}
   ],
   "REL-011": [
     {"kind":"unit","ref":"packages/zplc-ide/scripts/packaged-content.test.ts","test":"the Linux desktop identity of the unpacked package (REL-011)"},
@@ -2655,14 +2660,17 @@
   ],
   "REL-012": [
     {"kind":"unit","ref":"packages/zplc-ide/scripts/release-config.test.ts","test":"the AppImage stays published beside the .deb and the .rpm (REL-012)","partial":true,"note":"asserts the parsed electron-builder and workflow configuration, not the produced installer or a run of the workflow; only a hosted release run proves it (VF-021)"},
-    {"kind":"unit","ref":"tools/docs/install_and_status_pages.test.ts","test":"recommends the .deb or the .rpm before the AppImage, and lists the AppImage prerequisites (REL-012)","partial":true,"note":"covers the documentation half; the AppImage is built and launched only by the hosted Linux jobs, and its prerequisites (FUSE 2, the Chromium sandbox on Ubuntu 24.04) were not tried with ZPLC"},
-    {"kind":"unit","ref":"tools/ci/release/verify-installers.test.ts","test":"the installers that were produced","partial":true,"note":"the installer check requires the AppImage beside the .deb and the .rpm for both Linux architectures; the AppImage built here by electron-builder passes it (authored in CI, not executed there)"}
+    {"kind":"unit","ref":"tools/ci/release/verify-installers.test.ts","test":"the installers that were produced","partial":true,"note":"the installer check requires the AppImage beside the .deb and the .rpm for both Linux architectures; the AppImage built here by electron-builder passes it (authored in CI, not executed there)"},
+    {"kind":"unit","ref":"tools/docs/install_and_status_pages.test.ts","test":"recommends the .deb or the .rpm before the AppImage, and lists the AppImage prerequisites (REL-012)","partial":true,"note":"covers the documentation half; the AppImage is built and launched only by the hosted Linux jobs, and its prerequisites (FUSE 2, the Chromium sandbox on Ubuntu 24.04) were not tried with ZPLC"}
   ],
   "REL-013": [
     {"kind":"unit","ref":"packages/zplc-ide/scripts/linux-package-files.test.ts","test":"the udev rule inside a .deb (REL-013)","partial":true,"note":"reads stand-in packages made with ar and tar (and, where rpmbuild exists, an .rpm made with it); the real packages are read by the release workflow after electron-builder"},
     {"kind":"unit","ref":"packages/zplc-ide/scripts/release-config.test.ts","test":"the .deb and the .rpm install the udev rule of the boards (REL-013)","partial":true,"note":"asserts the parsed electron-builder and workflow configuration, not the produced installer or a run of the workflow; only a hosted release run proves it (VF-021). The package reader (packages/zplc-ide/scripts/linux-package-files.ts, a step of build-linux) was run on the .deb and the .rpm that electron-builder made on this Linux machine and found the generated rule in both; the installation in clean containers runs only on hosted runners."},
     {"kind":"unit","ref":"scripts/release/udev-rules.test.ts","test":"the udev rule (REL-013)"},
     {"kind":"unit","ref":"tools/docs/install_and_status_pages.test.ts","test":"names the udev rule the packages install, the boards it covers and how to apply it without a reboot (REL-013)"}
+  ],
+  "REL-014": [
+    {"kind":"unit","ref":"tools/ci/release/render-channels.test.ts","test":"the AUR package","partial":true,"note":"the PKGBUILD is rendered from the SHA256SUMS of a release; makepkg built a package from it on this machine against a .deb that electron-builder wrote (setuid sandbox, udev rule and launcher link present). The AUR account does not exist (OA-10) and update-channels.yml is authored, not executed in CI"}
   ],
   "REL-015": [
     {"kind":"unit","ref":"packages/zplc-ide/scripts/release-config.test.ts","test":"release.yml publishes each platform independently and only as a draft (REL-015, REL-016)","partial":true,"note":"asserts the parsed electron-builder and workflow configuration, not the produced installer; its own header says a hosted release run is the proof (VF-021)"},
@@ -2704,6 +2712,7 @@
   ],
   "REL-021": [
     {"kind":"unit","ref":"packages/zplc-ide/src/components/UpdateNotice.test.tsx","test":"the update notice (REL-021)","partial":true,"note":"renders the notice to static markup; the wiring in App.tsx is not exercised by a test or a journey"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/ipc/updateCheckBridge.test.ts","test":"the update check at start, as App runs it (REL-021)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/ipc/updateNotice.test.ts","test":"the check is optional, and says nothing when it cannot tell (REL-021)","partial":true,"note":"proves the check with a fake fetch (default off, one fixed address, silent when offline or refused); the effect in App.tsx that runs it at start, and the notice in the real window, are not exercised by a test or a journey"},
     {"kind":"unit","ref":"packages/zplc-ide/src/ipc/updateNotice.test.ts","test":"the notice (REL-021)","partial":true,"note":"proves the content, the dismissal per release and the storage; the effect in App.tsx that runs the check at start, and the notice in the real window, are not exercised by a test or a journey"}
   ],
@@ -2773,6 +2782,10 @@
   ],
   "REL-032": [
     {"kind":"unit","ref":"packages/zplc-ide/scripts/release-config.test.ts","test":"keeps the reproducibility check and lets no release job wait for it (REL-032)","partial":true,"note":"asserts the parsed electron-builder and workflow configuration, not the produced installer or a run of the workflow; only a hosted release run proves it (VF-021). The check itself (scripts/verify-reproducible-linux-payload.ts) is run by CI tests of its comparison logic and by the job on a hosted Linux runner."}
+  ],
+  "REL-033": [
+    {"kind":"unit","ref":"tools/ci/workflow-triggers.test.ts","test":"the documentation site is deployed from the branch that holds 2.0","partial":true,"note":"parses deploy-docs.yml triggers and the step that names the latest release; authored, not executed in CI"},
+    {"kind":"unit","ref":"tools/docs/check-docs-config.test.ts","test":"the site footer names the latest release","partial":true,"note":"the footer shows the tag the deploy workflow passes, or the version of the tree; docs deploy-docs.yml now builds from zplc-2.0-candidate as well as master and main. A hosted deploy has not run: the Pages environment must allow the branch (owner), and D-12 decides when 2.0 moves to master"}
   ],
   "REL-034": [
     {"kind":"unit","ref":"packages/zplc-ide/scripts/packaged-content.test.ts","test":"packaged content (REL-034)"},
@@ -2859,6 +2872,10 @@
   "DOC-016": [
     {"kind":"unit","ref":"tools/docs/docs_structure.test.ts","test":"docs structure: a page is published only when both languages are complete (DOC-016)"}
   ],
+  "DOC-017": [
+    {"kind":"unit","ref":"tools/ci/brand/generate-icons.test.ts","test":"the one vector mark","partial":true,"note":"one text-free mark in the palette of the application; the site logo, favicon, 1200 by 630 social card and the application icons (png, icns) are generated from it and checked against recorded checksums. The renderer's own favicon (packages/zplc-ide/public/icon.png), the README and the GitHub description still need the same mark, and the name (D-03) is the owner's"},
+    {"kind":"unit","ref":"tools/ci/brand/generate-icons.test.ts","test":"what is made from the mark","partial":true,"note":"the outputs are current and sized as the site and electron-builder name them"}
+  ],
   "DOC-018": [
     {"kind":"unit","ref":"tools/docs/docs_structure.test.ts","test":"docs site: admonitions in the generator\\'s own syntax and no version selector for one version (DOC-018, stopgap: the site has no search yet)","partial":true},
     {"kind":"unit","ref":"tools/docs/repository_hygiene.test.ts","test":"docs site: an image file is the format its name says (DOC-018, stopgap: the site has no search yet)","partial":true}
@@ -2887,20 +2904,5 @@
   "DOC-030": [
     {"kind":"unit","ref":"scripts/release/release-notes.test.ts","test":"what changed for a user, what breaks, how to migrate and what is limited (DOC-030)"},
     {"kind":"unit","ref":"tools/docs/contributor_docs.test.ts","test":"changelog: what changed for a user, what breaks, how to migrate and what is limited (DOC-030)"}
-  ],
-  "REL-004": [
-    {"kind":"unit","ref":"tools/ci/release/render-channels.test.ts","test":"the Homebrew cask","partial":true,"note":"the cask is rendered from the SHA256SUMS of a release, pins both ZIP checksums and names the files installerName() gives; ruby -c accepts the output. Not installed on a Mac, the tap does not exist (OA-10), and update-channels.yml is authored, not executed in CI. D-01 option A is built and flagged; the README mention is outside this run's surface"},
-    {"kind":"unit","ref":"tools/docs/install_and_status_pages.test.ts","test":"says the Homebrew cask, the quarantine flag and the single install command","partial":true,"note":"the install page (EN and ES) names the fully qualified command and the D-01 consequence"}
-  ],
-  "REL-014": [
-    {"kind":"unit","ref":"tools/ci/release/render-channels.test.ts","test":"the AUR package","partial":true,"note":"the PKGBUILD is rendered from the SHA256SUMS of a release; makepkg built a package from it on this machine against a .deb that electron-builder wrote (setuid sandbox, udev rule and launcher link present). The AUR account does not exist (OA-10) and update-channels.yml is authored, not executed in CI"}
-  ],
-  "REL-033": [
-    {"kind":"unit","ref":"tools/docs/check-docs-config.test.ts","test":"the site footer names the latest release","partial":true,"note":"the footer shows the tag the deploy workflow passes, or the version of the tree; docs deploy-docs.yml now builds from zplc-2.0-candidate as well as master and main. A hosted deploy has not run: the Pages environment must allow the branch (owner), and D-12 decides when 2.0 moves to master"},
-    {"kind":"unit","ref":"tools/ci/workflow-triggers.test.ts","test":"the documentation site is deployed from the branch that holds 2.0","partial":true,"note":"parses deploy-docs.yml triggers and the step that names the latest release; authored, not executed in CI"}
-  ],
-  "DOC-017": [
-    {"kind":"unit","ref":"tools/ci/brand/generate-icons.test.ts","test":"the one vector mark","partial":true,"note":"one text-free mark in the palette of the application; the site logo, favicon, 1200 by 630 social card and the application icons (png, icns) are generated from it and checked against recorded checksums. The renderer's own favicon (packages/zplc-ide/public/icon.png), the README and the GitHub description still need the same mark, and the name (D-03) is the owner's"},
-    {"kind":"unit","ref":"tools/ci/brand/generate-icons.test.ts","test":"what is made from the mark","partial":true,"note":"the outputs are current and sized as the site and electron-builder name them"}
   ]
 }
