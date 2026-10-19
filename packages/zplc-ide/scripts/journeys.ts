@@ -1998,8 +1998,8 @@ export const JOURNEYS: Journey[] = [
     // The same on a chart: Go is forced from the Watch table and both transitions that read it say so (UX-009).
     name: '51b A forced variable is shown as forced in the sequential function chart', example: 'blinky_sfc', proves: [], partly: ['UX-009', 'LNG-006'],
     run: async (app, { project }) => {
-      writeFileSync(join(project, 'src', 'main.sfc.json'), JSON.stringify({
-        name: 'Gate', variables: { local: [], inputs: [{ name: 'Go', type: 'BOOL', address: '%I0.0' }], outputs: [] },
+      writeFileSync(join(project, 'src', 'main.sfc.json'), JSON.stringify({ name: 'Gate',
+        variables: { local: [], inputs: [{ name: 'Go', type: 'BOOL', address: '%I0.0' }], outputs: [] },
         steps: [
           { id: 'idle', name: 'Idle', isInitial: true, position: { x: 200, y: 0 } },
           { id: 'work', name: 'Work', isInitial: false, position: { x: 200, y: 260 } },
