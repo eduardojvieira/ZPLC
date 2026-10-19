@@ -3142,7 +3142,7 @@ export const JOURNEYS: Journey[] = [
     // example is copied from the Welcome screen into an empty folder, read, built, run in the simulator with its output
     // watched while it toggles, and its scenario test run. With ZPLC_DOC_SHOTS=<folder> the picture of each step is
     // saved too, which is where the screenshots of the tutorial come from (DOC-013, tools/docs/capture-screenshots.ts).
-    name: '41 Blink without hardware (the tutorial)', example: 'none', proves: ['DOC-003'], partly: ['DOC-013'],
+    name: '56 Blink without hardware (the tutorial)', example: 'none', proves: ['DOC-003'], partly: ['DOC-013'],
     run: async (app, { root }) => {
       const folder = join(root, 'blink'); mkdirSync(folder);
       await app.until('the Welcome screen with the example', async () => await app.visible(css('button[data-welcome-example="blinky_st"]')) || undefined);

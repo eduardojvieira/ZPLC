@@ -8,7 +8,7 @@
 //                                       exit 1 when a page shows an image that the manifest does not list, a listed image is
 //                                       missing or changed, or a picture of the folder is not in the manifest
 //
-// The pictures are taken by the journey `41 Blink without hardware (the tutorial)` of
+// The pictures are taken by the journey `56 Blink without hardware (the tutorial)` of
 // packages/zplc-ide/scripts/journeys.ts, at the steps of docs/docs/tutorials/blink-without-hardware.md, so a page cannot
 // show a screen that its steps do not reach. No other image of the product is published: a page that refers to an image
 // outside the manifest fails the check, whatever the image is.
@@ -35,7 +35,7 @@ export const PICTURES = [
   { file: 'blink-5-output-false.png', step: 'The output is FALSE half a second later' },
   { file: 'blink-6-scenario.png', step: 'The scenario test passed' },
 ] as const;
-export const JOURNEY = '41 Blink without hardware (the tutorial)';
+export const JOURNEY = '56 Blink without hardware (the tutorial)';
 
 export interface ManifestImage { file: string; step: string; sha256: string; bytes: number; width: number; height: number }
 export interface Manifest {

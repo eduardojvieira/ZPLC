@@ -3005,7 +3005,7 @@
     {"kind":"unit","ref":"tools/docs/docs_structure.test.ts","test":"docs structure: the sidebar is organised by reader intent (DOC-002)"}
   ],
   "DOC-003": [
-    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"41 Blink without hardware (the tutorial)"}
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"56 Blink without hardware (the tutorial)"}
   ],
   "DOC-004": [
     {"kind":"unit","ref":"tools/docs/install_and_status_pages.test.ts","test":"first board page: written from the manifest, and honest that no board has run it (DOC-004, stopgap: the steps have not been executed on a board)","partial":true}
@@ -3054,7 +3054,7 @@
   ],
   "DOC-013": [
     {"kind":"unit","ref":"tools/docs/capture-screenshots.test.ts","test":"documentation screenshots: a page shows only captured pictures (DOC-013)"},
-    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"41 Blink without hardware (the tutorial)","partial":true}
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"56 Blink without hardware (the tutorial)","partial":true}
   ],
   "DOC-014": [
     {"kind":"unit","ref":"tools/docs/check_doc_claims.test.ts","test":"doc claims: a claim holds only when the source has the thing (DOC-014)"},
