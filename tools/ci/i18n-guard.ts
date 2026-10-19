@@ -33,9 +33,9 @@ import { es } from '../../packages/zplc-ide/src/i18n/es';
 export const IDE_SRC = 'packages/zplc-ide/src';
 const LIST_PATH = new URL('./i18n-offenders.json', import.meta.url);
 
-export const RULES = ['hard-coded-text', 'hard-coded-attribute'] as const;
+export const RULES = ['hard-coded-text', 'hard-coded-attribute', 'hard-coded-message'] as const;
 export type Rule = (typeof RULES)[number];
-export const REQUIREMENT: Record<Rule, string> = { 'hard-coded-text': 'UX-029', 'hard-coded-attribute': 'UX-029' };
+export const REQUIREMENT: Record<Rule, string> = { 'hard-coded-text': 'UX-029', 'hard-coded-attribute': 'UX-029', 'hard-coded-message': 'UX-029' };
 
 export interface SourceFile { path: string; text: string }
 export interface Violation { file: string; rule: Rule; line: number; snippet: string }
@@ -45,6 +45,20 @@ export interface Offender { file: string; rule: Rule; count: number; requirement
 export const isGuarded = (path: string): boolean =>
   path.startsWith(`${IDE_SRC}/`) && path.endsWith('.tsx') && !path.endsWith('.test.tsx')
   && !path.startsWith(`${IDE_SRC}/i18n/`) && !path.startsWith(`${IDE_SRC}/ui/gallery/`);
+
+/**
+ * A plain .ts module of the application that shows text to the person: a presentation, a keyboard or a flow module. Not a
+ * test, the i18n module, the gallery, or a surface for tools and developers (the MCP server, the CLI, the compiler and the
+ * language service speak to programs and keep the compiler's own English).
+ */
+export const isGuardedModule = (path: string): boolean =>
+  path.startsWith(`${IDE_SRC}/`) && path.endsWith('.ts') && !path.endsWith('.d.ts') && !/\.(?:test|spec)\.ts$/.test(path)
+  && !path.startsWith(`${IDE_SRC}/i18n/`) && !path.startsWith(`${IDE_SRC}/ui/gallery/`)
+  && !/^packages\/zplc-ide\/src\/(?:mcp|cli|compiler|transpiler|langsvc|conformance)\//.test(path)
+  && ![`${IDE_SRC}/ui/audit.ts`, `${IDE_SRC}/ui/registry.ts`, `${IDE_SRC}/theme/tokens.ts`].includes(path);
+/** Properties of a presentation object that the interface shows, and the helpers whose first argument is shown. */
+const MESSAGE_PROPERTIES = new Set(['say', 'title', 'label', 'detail', 'message', 'description', 'hint', 'heading', 'summary', 'placeholder', 'tooltip', 'ariaLabel']);
+const MESSAGE_CALLS = new Set(['announce']);
 
 const USER_ATTRIBUTES = new Set(['aria-label', 'placeholder', 'alt', 'label', 'tooltip', 'title', 'description']);
 const LITERAL_TAGS = new Set(['code', 'kbd', 'pre', 'samp', 'var', 'style', 'script']);
@@ -65,7 +79,8 @@ function literalsIn(expression: ts.Expression): ts.Node[] {
 const textOf = (node: ts.Node): string => (ts.isStringLiteralLike(node) || ts.isTemplateLiteralToken(node) ? node.text : '');
 
 export function violationsOf(file: SourceFile): Violation[] {
-  const source = ts.createSourceFile(file.path, file.text, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
+  const source = ts.createSourceFile(file.path, file.text, ts.ScriptTarget.Latest, true, file.path.endsWith('.tsx') ? ts.ScriptKind.TSX : ts.ScriptKind.TS);
+  if (file.path.endsWith('.ts')) return messageViolations(source, file.path);
   const found: Violation[] = [];
   const add = (node: ts.Node, rule: Rule): void => {
     found.push({ file: file.path, rule, line: source.getLineAndCharacterOfPosition(node.getStart()).line + 1, snippet: node.getText().replace(/\s+/g, ' ').slice(0, 80) });
@@ -87,12 +102,31 @@ export function violationsOf(file: SourceFile): Violation[] {
   return found;
 }
 
+/** A sentence or a name the person reads, not an identifier ('first-steps'), a state word ('info') or an upper-case token ('TRUE'). */
+const reads = (text: string): boolean => hasLetters(text) && (/\s/.test(text.trim()) || /^\p{Lu}\p{Ll}/u.test(text.trim()));
+
+function messageViolations(source: ts.SourceFile, path: string): Violation[] {
+  const found: Violation[] = [];
+  const check = (expression: ts.Expression): void => {
+    for (const item of literalsIn(expression)) {
+      if (reads(textOf(item))) found.push({ file: path, rule: 'hard-coded-message', line: source.getLineAndCharacterOfPosition(item.getStart()).line + 1, snippet: item.getText().replace(/\s+/g, ' ').slice(0, 80) });
+    }
+  };
+  const visit = (node: ts.Node): void => {
+    if (ts.isPropertyAssignment(node) && (ts.isIdentifier(node.name) || ts.isStringLiteral(node.name)) && MESSAGE_PROPERTIES.has(node.name.text)) check(node.initializer);
+    if (ts.isCallExpression(node) && ts.isIdentifier(node.expression) && MESSAGE_CALLS.has(node.expression.text) && node.arguments[0]) check(node.arguments[0]);
+    ts.forEachChild(node, visit);
+  };
+  visit(source);
+  return found;
+}
+
 export interface GuardOptions { offenders: Offender[] }
 const key = (file: string, rule: string): string => `${file}\u0000${rule}`;
 
 function countsOf(files: readonly SourceFile[]): Map<string, number> {
   const counts = new Map<string, number>();
-  for (const file of files.filter((item) => isGuarded(item.path))) {
+  for (const file of files.filter((item) => isGuarded(item.path) || isGuardedModule(item.path))) {
     for (const violation of violationsOf(file)) counts.set(key(file.path, violation.rule), (counts.get(key(file.path, violation.rule)) ?? 0) + 1);
   }
   return counts;
@@ -198,7 +232,7 @@ export function readSources(root: string): SourceFile[] {
   const files: SourceFile[] = [];
   const walk = (path: string): void => {
     if (statSync(join(root, path)).isDirectory()) for (const name of readdirSync(join(root, path)).sort()) walk(posix.join(path, name));
-    else if (path.endsWith('.tsx')) files.push({ path, text: readFileSync(join(root, path), 'utf8') });
+    else if (path.endsWith('.tsx') || path.endsWith('.ts')) files.push({ path, text: readFileSync(join(root, path), 'utf8') });
   };
   if (existsSync(join(root, IDE_SRC))) walk(IDE_SRC);
   return files;
@@ -216,7 +250,7 @@ if (import.meta.main) {
   const root = resolve(dirname(new URL(import.meta.url).pathname), '../..');
   const files = readSources(root);
   if (process.argv.includes('--list')) {
-    for (const file of files.filter((item) => isGuarded(item.path))) for (const violation of violationsOf(file)) console.log(`${violation.file}:${violation.line} ${violation.rule} ${violation.snippet}`);
+    for (const file of files.filter((item) => isGuarded(item.path) || isGuardedModule(item.path))) for (const violation of violationsOf(file)) console.log(`${violation.file}:${violation.line} ${violation.rule} ${violation.snippet}`);
   }
   if (process.argv.includes('--seed')) {
     if (readOffenders().length > 0) { console.error('i18n-guard: the list exists; it only shrinks (--write)'); process.exit(1); }
