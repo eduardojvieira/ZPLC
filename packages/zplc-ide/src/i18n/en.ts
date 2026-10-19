@@ -549,6 +549,8 @@ export const baseEn = {
   'shell.primary.label': 'Primary sidebar',
   'shell.secondary.label': 'Secondary sidebar',
   'shell.secondary.inspector': 'Inspector',
+  'shell.secondary.lesson': 'Lesson',
+  'shell.secondary.view': 'Secondary sidebar view',
   'shell.resize.primary': 'Resize the primary sidebar',
   'shell.resize.secondary': 'Resize the secondary sidebar',
   'command.view.togglePrimarySidebar': 'Show or hide the primary sidebar',

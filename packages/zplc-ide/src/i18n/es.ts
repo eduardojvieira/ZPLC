@@ -547,6 +547,8 @@ const baseEs: Record<keyof typeof baseEn, string> = {
   'shell.primary.label': 'Barra lateral principal',
   'shell.secondary.label': 'Barra lateral secundaria',
   'shell.secondary.inspector': 'Inspector',
+  'shell.secondary.lesson': 'Lección',
+  'shell.secondary.view': 'Vista de la barra lateral secundaria',
   'shell.resize.primary': 'Cambiar el tamaño de la barra lateral principal',
   'shell.resize.secondary': 'Cambiar el tamaño de la barra lateral secundaria',
   'command.view.togglePrimarySidebar': 'Mostrar u ocultar la barra lateral principal',

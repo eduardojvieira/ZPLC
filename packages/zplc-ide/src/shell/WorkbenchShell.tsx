@@ -41,6 +41,7 @@ export function WorkbenchShell({ EditorArea, Console, debugController }: Workben
   const { activityView, primaryVisible, secondaryVisible, showActivity, setPrimaryVisible, setSecondaryVisible } = useShellLayout();
   const isConsoleCollapsed = useIDEStore((s) => s.isConsoleCollapsed);
   const learnHomeOpen = useLearnUi((s) => s.homeOpen);
+  const lessonWorkspace = useLearnUi((s) => s.workspace);
   const sessionLayout = useIDEStore((s) => s.sessionLayout);
   const setSessionLayout = useIDEStore((s) => s.setSessionLayout);
   const projectSession = useIDEStore((s) => s.projectSession);
@@ -70,6 +71,11 @@ export function WorkbenchShell({ EditorArea, Console, debugController }: Workben
 
   useCollapsible(primaryPanel, primaryVisible);
   useCollapsible(secondaryPanel, secondaryVisible);
+
+  // A lesson that has just been started and sits in the secondary sidebar (the rail is not Learn) opens that sidebar, once per lesson.
+  useEffect(() => {
+    if (lessonWorkspace && density !== 'compact' && useShellLayout.getState().activityView !== 'learn') useShellLayout.getState().setSecondaryVisible(true);
+  }, [lessonWorkspace, density]);
 
   // A window as narrow as the minimum has no room for the secondary sidebar (UX-023); it can be shown again from the View menu.
   useEffect(() => {
