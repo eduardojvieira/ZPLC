@@ -1902,11 +1902,12 @@
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"14 A recent project that is gone","partial":true}
   ],
   "IDE-009": [
-    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"2 Create a project from an example","partial":true},
-    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"2b Create a new project","partial":true},
-    {"kind":"unit","ref":"packages/zplc-ide/src/project/newProject.test.ts","test":"the first program of a new project (IDE-009)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/project/newProject.test.ts","test":"the configuration of a new project (IDE-009)"},
-    {"kind":"unit","ref":"packages/zplc-ide/src/project/newProject.test.ts","test":"the name of a new project (IDE-009)"}
+    {"kind":"unit","ref":"packages/zplc-ide/src/project/newProject.test.ts","test":"the first program of a new project (IDE-009)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/project/newProject.test.ts","test":"the name of a new project (IDE-009)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/utils/fileSystem.projectConfig.test.ts","test":"makes the first program in the chosen language and points the main task at it (IDE-009)"},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"2 Create a project from an example","partial":true},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"2b Create a new project","partial":true}
   ],
   "IDE-010": [
     {"kind":"unit","ref":"packages/zplc-ide/electron/updateCheck.test.ts","test":"latest release (IDE-010)"},
@@ -1966,27 +1967,27 @@
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"42 Choosing a serial port is a dialog of the application","partial":true}
   ],
   "IDE-019": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/components/watchTable.test.ts","test":"a value typed into the Watch table (IDE-019)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/components/watchTable.test.ts","test":"completing a symbol for the Watch table (IDE-019)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/components/watchTable.test.ts","test":"sorting the Watch rows (IDE-019)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/components/watchTable.test.ts","test":"the Watch display formats (IDE-019)"},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"18 Force an input while stopped at a breakpoint","partial":true},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"8 Force an input and release it","partial":true},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"8b Simulate on the WebAssembly runtime when the native one is off","partial":true},
-    {"kind":"unit","ref":"packages/zplc-ide/src/components/watchTable.test.ts","test":"the Watch display formats (IDE-019)"},
-    {"kind":"unit","ref":"packages/zplc-ide/src/components/watchTable.test.ts","test":"a value typed into the Watch table (IDE-019)"},
-    {"kind":"unit","ref":"packages/zplc-ide/src/components/watchTable.test.ts","test":"sorting the Watch rows (IDE-019)"},
-    {"kind":"unit","ref":"packages/zplc-ide/src/components/watchTable.test.ts","test":"completing a symbol for the Watch table (IDE-019)"},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"8c The Watch table completes, sorts, and writes a prepared value","partial":true}
   ],
   "IDE-020": [
-    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"4 Build with an error, reach it from Problems","partial":true},
+    {"kind":"unit","ref":"packages/zplc-ide/src/components/ProblemsPanel.test.tsx","test":"the Problems tab (IDE-020)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/components/consoleAttention.test.ts","test":"the order of the problems (IDE-020)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/components/consoleAttention.test.ts","test":"what was written while another view was visible (IDE-020)"},
-    {"kind":"unit","ref":"packages/zplc-ide/src/components/ProblemsPanel.test.tsx","test":"the Problems tab (IDE-020)"}
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"4 Build with an error, reach it from Problems","partial":true}
   ],
   "IDE-021": [
     {"kind":"unit","ref":"packages/zplc-ide/src/components/NotificationsList.test.tsx","test":"the notification list (IDE-021)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/store/notifications.test.ts","test":"a failure offers its way back (IDE-021, UX-021)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/store/notifications.test.ts","test":"the notification model (IDE-021)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/store/notifications.test.ts","test":"the notification store (IDE-021)"},
-    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"36 Results appear as notifications that lead to their details"},
-    {"kind":"unit","ref":"packages/zplc-ide/src/store/notifications.test.ts","test":"a failure offers its way back (IDE-021, UX-021)"}
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"36 Results appear as notifications that lead to their details"}
   ],
   "IDE-022": [
     {"kind":"unit","ref":"packages/zplc-ide/electron/projectArchive.test.ts","test":"exporting a project (IDE-022)"},
@@ -2371,13 +2372,13 @@
     {"kind":"unit","ref":"packages/zplc-ide/src/components/panelStates.test.tsx","test":"UX-021 offers the first next step the state allows: Step once connected, Connect before"},
     {"kind":"unit","ref":"packages/zplc-ide/src/components/panelStates.test.tsx","test":"UX-021 shows a title, a sentence and the next action, which is the registered command by its title"},
     {"kind":"unit","ref":"packages/zplc-ide/src/components/panelStates.test.tsx","test":"panel empty states (UX-021)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/store/notifications.test.ts","test":"a failure offers its way back (IDE-021, UX-021)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/ui/kit.test.tsx","test":"UX-021 renders an error state as an alert with its reason and a recovery action"},
     {"kind":"unit","ref":"packages/zplc-ide/src/ui/kit.test.tsx","test":"UX-021 shows nothing for a loading state before its delay, and the spinner with its phrase once there is none"},
     {"kind":"unit","ref":"packages/zplc-ide/src/ui/logic/delay.test.ts","test":"UX-021 fires once and shows nothing when the operation finishes first (cancelled)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/ui/logic/delay.test.ts","test":"UX-021 treats 300 ms as the default delay"},
     {"kind":"unit","ref":"packages/zplc-ide/src/ui/logic/delay.test.ts","test":"UX-021 waits 300 ms before it fires, and not a moment less"},
-    {"kind":"unit","ref":"packages/zplc-ide/src/ui/logic/delay.test.ts","test":"the delay of a loading indicator (UX-021)"},
-    {"kind":"unit","ref":"packages/zplc-ide/src/store/notifications.test.ts","test":"a failure offers its way back (IDE-021, UX-021)"}
+    {"kind":"unit","ref":"packages/zplc-ide/src/ui/logic/delay.test.ts","test":"the delay of a loading indicator (UX-021)"}
   ],
   "UX-022": [
     {"kind":"unit","ref":"packages/zplc-ide/src/utils/exampleCatalog.test.ts","test":"UX-022 names levels, languages, boards and groups in the language of the interface"},
