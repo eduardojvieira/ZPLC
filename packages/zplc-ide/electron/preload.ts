@@ -22,6 +22,7 @@ import {
   CLOSE_GUARD_CHANNEL,
   FIRMWARE_BUILD_CHANNEL,
   LEARN_PROGRESS_CHANNEL,
+  LEARN_WORKSPACE_CHANNEL,
   MENU_CHANNEL,
   NATIVE_SIMULATION_CHANNEL,
   PROJECT_FILES_CHANNEL,
@@ -190,6 +191,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
     exportProgress: () => ipcRenderer.invoke(LEARN_PROGRESS_CHANNEL.EXPORT) as Promise<unknown>,
     importProgress: (text: string) => ipcRenderer.invoke(LEARN_PROGRESS_CHANNEL.IMPORT, text) as Promise<unknown>,
   },
+  // The app-owned workspace of a lesson (LRN-003): one lesson id in; the main process builds the path and answers the window's folder.
+  learnWorkspace: {
+    open: (lessonId: string) => ipcRenderer.invoke(LEARN_WORKSPACE_CHANNEL.OPEN, lessonId) as Promise<unknown>,
+  },
 
   candidateChangeSet: {
     review: (request: { workspaceId: string; edit: { path: string; content: string } }) =>
@@ -263,6 +268,9 @@ declare global {
         noteLesson: (note: unknown) => Promise<unknown>;
         exportProgress: () => Promise<unknown>;
         importProgress: (text: string) => Promise<unknown>;
+      };
+      learnWorkspace: {
+        open: (lessonId: string) => Promise<unknown>;
       };
       closeGuard: {
         setDirty: (dirty: boolean) => Promise<void>;

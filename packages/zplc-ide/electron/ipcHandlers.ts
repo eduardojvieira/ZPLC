@@ -43,6 +43,7 @@ import {
 import { IPC_DENIED, type IpcHandler, type IpcHandlerTable } from './ipcRegistry.js';
 import { isLessonCheckRequest, lessonCheckAnswer } from './lessonCheckProtocol.js';
 import { createLearnProgressHandlers } from './learnProgressIpc.js';
+import { createLearnWorkspaceHandlers } from './learnWorkspaceIpc.js';
 import type { NativeSimulationRequest } from './nativeSimulationIpc.js';
 import {
   isAllowedAiProviderConfig,
@@ -88,12 +89,14 @@ export interface IpcDeps {
   closeGuard: Pick<CloseGuard, 'setDirty' | 'confirm'>;
   /** The user answered save or discard: reload or close the window. */
   completeGuardedAction(action: GuardedAction): void;
-  projectFiles: Pick<ReturnType<typeof createProjectFiles>, 'handle' | 'rootOf' | 'currentRoot'>;
+  projectFiles: Pick<ReturnType<typeof createProjectFiles>, 'handle' | 'rootOf' | 'currentRoot' | 'adoptFolder'>;
   recoveryStore(): RecoveryStore | null;
   sessionStore(): SessionStore | null;
   /** The serial-port questions of the windows (IDE-018): the answer and the refresh of the dialog. */
   serialPorts: Pick<SerialPortBroker, 'choose' | 'list'>;
   learnProgress(): ReturnType<typeof createLearnProgressStore> | null;
+  /** `<userData>/learn-workspaces`, where the workspaces of the lessons live (LRN-003); null when the user-data folder is unknown. */
+  learnWorkspaceRoot(): string | null;
   aiProvider(): ReturnType<typeof createAiProvider> | null;
   toolExecutionAudit: Pick<ReturnType<typeof createToolExecutionAudit>, 'list' | 'add'>;
   workspaceGateway: Pick<ReturnType<typeof createWorkspaceTestGateway>, 'registerProjectManifest' | 'run' | 'cancel'>;
@@ -241,6 +244,7 @@ export function createIpcHandlers(deps: IpcDeps): IpcHandlerTable<RendererOwner>
     [TOOL_EXECUTION_AUDIT_CHANNEL.LIST]: handler(noArguments, () => deps.toolExecutionAudit.list()),
 
     ...createLearnProgressHandlers<RendererOwner>(deps.learnProgress),
+    ...createLearnWorkspaceHandlers<RendererOwner>({ root: deps.learnWorkspaceRoot, adopt: (ownerId, directory) => deps.projectFiles.adoptFolder(ownerId, directory) }),
 
     // Per-project session (IDE-008): the renderer names the window's folder by its opaque id; the main process finds the
     // real path, validates the document and keeps it under the user-data directory, never inside the project.

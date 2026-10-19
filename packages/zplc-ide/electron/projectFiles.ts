@@ -342,6 +342,13 @@ export function createProjectFiles(
       return folders.get(ownerId)?.real ?? null;
     },
 
+    /** Makes a folder the main process itself chose (the app-owned Learn workspace, never a renderer path) the window's project, as the dialog does. */
+    async adoptFolder(ownerId: number, directory: string): Promise<ProjectFolder> {
+      const real = await realpath(directory);
+      if (!(await stat(real)).isDirectory()) throw new Refusal('not-a-directory');
+      return adopt(ownerId, real);
+    },
+
     /** Forgets the window's folder: the document changed or the window went away. */
     revokeOwner(ownerId: number): void {
       archive?.revokeOwner(ownerId);

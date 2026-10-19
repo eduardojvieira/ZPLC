@@ -84,6 +84,10 @@ declare global {
         exportProgress: () => Promise<unknown>;
         importProgress: (text: string) => Promise<unknown>;
       };
+      /** Opens the app-owned workspace of a lesson as the window's project; the answer is validated by the caller (LRN-003). */
+      learnWorkspace?: {
+        open: (lessonId: string) => Promise<unknown>;
+      };
       candidateChangeSet?: {
         review: (request: { workspaceId: string; edit: { path: string; content: string } }) => Promise<unknown>;
       };
