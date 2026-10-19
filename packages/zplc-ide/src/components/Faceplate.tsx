@@ -48,7 +48,10 @@ function Value({ type, value, forced, t }: { type: string; value: boolean | numb
   return <SignalValue tone={tone}>{valueText(value, t)}</SignalValue>;
 }
 
-/** A push button: TRUE while it is held, FALSE when it is released, by pointer or by Space and Enter. */
+/**
+ * A push button: TRUE while it is held, FALSE when it is released, by pointer or by Space and Enter. The pointer is captured
+ * while it is down, so the release arrives wherever it ends and a layout change under it does not let go of the input.
+ */
 function HoldControl({ row, disabled, onHold }: { row: FaceplateInputRow; disabled: boolean; onHold: (down: boolean) => void }) {
   const { t } = useT();
   const [held, setHeld] = useState(false);
@@ -66,9 +69,9 @@ function HoldControl({ row, disabled, onHold }: { row: FaceplateInputRow; disabl
     <Button
       variant="secondary" size="sm" disabled={disabled} aria-pressed={held}
       aria-label={t('faceplate.holdLabel', { name: row.input.name })}
-      tooltip={t('faceplate.holdHint', { name: row.input.name })}
-      onPointerDown={() => change(true)} onPointerUp={() => change(false)} onPointerCancel={() => change(false)}
-      onPointerLeave={() => change(false)} onBlur={() => change(false)}
+      onPointerDown={(event) => { event.currentTarget.setPointerCapture?.(event.pointerId); change(true); }}
+      onPointerUp={() => change(false)} onPointerCancel={() => change(false)} onLostPointerCapture={() => change(false)}
+      onBlur={() => change(false)}
       onKeyDown={(event) => { if (isHoldKey(event.key)) { event.preventDefault(); if (!event.repeat) change(true); } }}
       onKeyUp={(event) => { if (isHoldKey(event.key)) { event.preventDefault(); change(false); } }}
     >{t('faceplate.hold')}</Button>
