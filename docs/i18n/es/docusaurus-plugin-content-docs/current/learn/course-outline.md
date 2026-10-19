@@ -29,7 +29,7 @@ puede pedir ver. Studio registra que vio la solución.
 El curso empieza con algo que se mueve (módulo 0), luego explica cómo piensa un PLC (módulo 1), después lógica, tiempo y datos, luego estructura, y termina con pruebas, lenguajes, comunicaciones y un proyecto final. Cada módulo indica por qué está donde está.
 
 
-Disponibles hoy: **15**. Planeadas: **14**. En total: **29**.
+Disponibles hoy: **23**. Planeadas: **6**. En total: **29**.
 
 
 ## Módulo 0: Primeros pasos: un recorrido por Studio, la simulación y, para hardware, la verificación de su placa
@@ -78,13 +78,14 @@ La lógica booleana es el vocabulario de todo programa. Los contactos y las bobi
 | `motor-start-stop-safe` Arranque y parada seguros | Disponible | ST | Simulación | - | 20 | `blinky-ladder-timer-feedback` |
 | `boolean-logic-two-hand-guard` Lógica booleana: un mando a dos manos con protección | Disponible | ST | Simulación | - | 15 | `blinky-ladder-timer-feedback` |
 | `set-reset-alarm-latch` Enclavar una alarma: set y reset, y cuál gana | Disponible | ST | Simulación | - | 15 | `boolean-logic-two-hand-guard` |
-| Autorretención en Ladder (edite un programa Ladder) | Planeada | LD | Simulación, Hardware | - | 20 | - |
+| `seal-in-ladder` Autorretención en Ladder: un motor que se mantiene encendido | Disponible | LD | Simulación | - | 20 | `blinky-ladder-timer-feedback` |
 
 Objetivos de las lecciones disponibles:
 
 - **Arranque y parada seguros**: Mantenga el motor encendido tras soltar Start con un seal-in. Baje el motor con Stop, EStop y Overload, y evite que un Start mantenido lo rearranque solo.
 - **Lógica booleana: un mando a dos manos con protección**: Escriba una condición que sea verdadera solo cuando varias entradas son verdaderas a la vez. Use NOT para una lámpara de aviso y XOR para exactamente una de dos entradas.
 - **Enclavar una alarma: set y reset, y cuál gana**: Mantenga una alarma después de que la falla desapareció, hasta que se reconozca. Distinga el bloque SR, dominante en set, del bloque RS, dominante en reset.
+- **Autorretención en Ladder: un motor que se mantiene encendido**: Lea un peldaño de Ladder como un camino de contactos por el que debe pasar la energía hasta la bobina. Mantenga una bobina encendida con un contacto de su propia salida en paralelo con Start, y deje Stop en serie para que Stop gane.
 
 
 ## Módulo 3: Temporizadores, flancos y contadores
@@ -97,12 +98,13 @@ El tiempo y los eventos vienen después de la lógica: los temporizadores retras
 |---|---|---|---|---|---|---|
 | `edge-counter-pulses` Flancos y contador de pulsos | Disponible | ST | Simulación | - | 15 | `motor-start-stop-safe` |
 | `timers-on-delay-off-delay` Temporizadores: una luz con retardo a la desconexión y un filtro con retardo a la conexión | Disponible | ST | Simulación | - | 15 | `motor-start-stop-safe` |
-| Contadores y un parpadeador en diagrama de bloques funcionales | Planeada | FBD | Simulación, Hardware | - | 20 | - |
+| `counter-batch-fbd` Contadores en diagrama de bloques de función: contar piezas hasta un lote | Disponible | FBD | Simulación | - | 20 | `edge-counter-pulses` |
 
 Objetivos de las lecciones disponibles:
 
 - **Flancos y contador de pulsos**: Cuente tres flancos ascendentes de PulseInput con un contador CTU. Resetee la cuenta y CountReached con Reset.
 - **Temporizadores: una luz con retardo a la desconexión y un filtro con retardo a la conexión**: Mantenga una salida encendida un tiempo fijo después de que su entrada baja, con TOF. Ignore una entrada que está en ON menos de un tiempo fijo, con TON.
+- **Contadores en diagrama de bloques de función: contar piezas hasta un lote**: Lea un diagrama de bloques de función como bloques cuyos puertos de salida se conectan a los puertos de entrada de otros bloques. Conecte un contador CTU: un flanco ascendente en CU cuenta, R lo borra y Q es TRUE cuando la cuenta llega al valor preestablecido PV.
 
 
 ## Módulo 4: Datos: tipos, aritmética, comparación y escalado analógico
@@ -113,8 +115,13 @@ Las señales reales son números, no solo encendido y apagado. Los tipos, la ari
 
 | Lección | Estado | Lenguajes | Pistas | Planta | Minutos | Requiere |
 |---|---|---|---|---|---|---|
-| Tipos, aritmética y comparación | Planeada | ST | Simulación, Hardware | - | 20 | - |
-| Escalado analógico | Planeada | FBD | Simulación, Hardware | - | 20 | - |
+| `types-arithmetic-comparison` Tipos, aritmética y comparación: un total y tres bandas | Disponible | ST | Simulación | - | 20 | `edge-counter-pulses` |
+| `analog-scaling-integer` Escalado analógico: de cuentas crudas a un porcentaje | Disponible | ST | Simulación | - | 20 | `types-arithmetic-comparison` |
+
+Objetivos de las lecciones disponibles:
+
+- **Tipos, aritmética y comparación: un total y tres bandas**: Use una variable INT para un número y una BOOL para un verdadero o falso, y vea que una comparación convierte un número en un BOOL. Sume a un número solo en el flanco ascendente de una entrada, para que un botón mantenido varios ciclos cuente una vez.
+- **Escalado analógico: de cuentas crudas a un porcentaje**: Escale una cuenta cruda a unidades de ingeniería con una multiplicación seguida de una división, en ese orden. Vea que la división entera descarta el resto, y elija un tipo entero lo bastante ancho para el producto intermedio.
 
 
 ## Módulo 5: Máquinas de estado y secuencias
@@ -126,11 +133,12 @@ Una máquina que hace cosas en orden es una máquina de estados. Las secuencias 
 | Lección | Estado | Lenguajes | Pistas | Planta | Minutos | Requiere |
 |---|---|---|---|---|---|---|
 | `pedestrian-crossing-states` Cruce peatonal y estados seguros | Disponible | ST | Simulación | pedestrian-v1 | 25 | `edge-counter-pulses` |
-| Una secuencia en diagrama funcional de secuencias | Planeada | SFC | Simulación, Hardware | - | 25 | - |
+| `sfc-fill-mix-sequence` Una secuencia en diagrama funcional de secuencias: llenar y luego mezclar | Disponible | SFC | Simulación | - | 25 | `edge-counter-pulses` |
 
 Objetivos de las lecciones disponibles:
 
 - **Cruce peatonal y estados seguros**: Modele el cruce como estados numerados, cada uno con una combinación de salidas explícita. Muestre WALK sólo mientras los vehículos están en rojo.
+- **Una secuencia en diagrama funcional de secuencias: llenar y luego mezclar**: Lea un diagrama funcional de secuencias como pasos que se activan de uno en uno, acciones que se ejecutan mientras su paso está activo y transiciones que mueven la actividad. Agregue una transición temporizada que use el tiempo transcurrido de un paso.
 
 
 ## Módulo 6: Realimentación, fallos e interbloqueos
@@ -143,24 +151,30 @@ Una orden no es un hecho: la planta debe confirmarla. La realimentación, las fa
 |---|---|---|---|---|---|---|
 | `tank-level-fault-reset` Nivel de tanque, fallas y reset | Disponible | ST | Simulación | tank-v1 | 25 | `pedestrian-crossing-states` |
 | `motor-plant-feedback` Comando, realimentación y velocidad | Disponible | ST | Simulación | motor-v1 | 20 | `pedestrian-crossing-states` |
-| Enclavamientos y permisivos en Ladder | Planeada | LD | Simulación, Hardware | motor-v1 | 20 | - |
+| `interlock-guard-permissive` Interbloqueos y permisivos: una protección que detiene el motor | Disponible | ST | Simulación | motor-v1 | 20 | `pedestrian-crossing-states` |
 
 Objetivos de las lecciones disponibles:
 
 - **Nivel de tanque, fallas y reset**: Mantenga la bomba encendida desde LevelLow hasta LevelHigh con un enclavamiento. Enclave la alarma con PumpFault o EStop y libérela sólo con un Reset nuevo tras despejarse la falla.
 - **Comando, realimentación y velocidad**: Separe la orden al motor de la confirmación de que está en marcha. Retenga el pedido hasta Stop y deje que Running siga al pedido sólo cuando llegue AtSpeed.
+- **Interbloqueos y permisivos: una protección que detiene el motor**: Distinga un permisivo, una condición que debe ser verdadera para que la salida esté encendida, de una orden. Ponga un permisivo en la misma condición que mantiene el motor, para que lo apague y además impida que Start lo vuelva a arrancar.
 
 
 ## Módulo 7: Estructura de programas: funciones, bloques de función, estructuras, arreglos y tareas
 
 Intermedio. Requiere el módulo: 4. Pistas: Simulación, Hardware.
 
-Los programas crecen. Las funciones, los bloques funcionales, las estructuras, los arreglos y las tareas los mantienen legibles y reutilizables.
+Los programas crecen. Las funciones, los bloques funcionales, las estructuras, los arreglos y las tareas los mantienen legibles y reutilizables. Las dos lecciones siguientes cubren bloques funcionales, estructuras y arreglos; todavía ninguna lección calificada cubre las tareas, porque un escenario ejecuta una sola tarea.
 
 | Lección | Estado | Lenguajes | Pistas | Planta | Minutos | Requiere |
 |---|---|---|---|---|---|---|
-| Funciones y bloques funcionales | Planeada | ST | Simulación, Hardware | - | 25 | - |
-| Estructuras, arreglos y tareas | Planeada | FBD | Simulación, Hardware | - | 25 | - |
+| `function-block-pump-pair` Bloques de función: un enclavamiento, dos bombas | Disponible | ST | Simulación | - | 25 | `types-arithmetic-comparison` |
+| `structures-arrays-call-panel` Estructuras y arreglos: un panel de tres llamadas | Disponible | ST | Simulación | - | 25 | `function-block-pump-pair` |
+
+Objetivos de las lecciones disponibles:
+
+- **Bloques de función: un enclavamiento, dos bombas**: Escriba un bloque de función con entradas, una salida y una memoria que vive entre llamadas. Vea que dos instancias del mismo bloque de función guardan memorias separadas.
+- **Estructuras y arreglos: un panel de tres llamadas**: Declare una estructura con miembros con nombre y un arreglo de esa estructura, y llegue a un elemento con un índice y un nombre de miembro. Reemplace tres copias del mismo código por un solo bucle FOR sobre el arreglo.
 
 
 ## Módulo 8: Pruebas y diagnóstico: pruebas de escenario, aserciones temporales, traza y puntos de interrupción
