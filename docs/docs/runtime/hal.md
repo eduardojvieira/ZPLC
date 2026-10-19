@@ -51,6 +51,8 @@ defined "not supported" result; it is never left undefined. The pages on the
 [supported boards](../reference/boards.md) say which channels a board has and how the
 I/O table is generated.
 
+The scan skips a channel whose operation answers `ZPLC_HAL_NOT_IMPL`, so that one missing converter does not stop the controller, and it does not hide it: the runtime counts the input and output channels it could not serve (each channel once) and reports them. The `zplc status` command lists them in `warnings` (`io_unsupported`) with the counts, prints a warning in its text form, and the device link sends a warning on its log events whenever the count changes (and to a client that subscribes later). Studio shows the line in the console of the connected device. This is verified with C tests on the host and with a Studio test; what a particular board does with a missing converter is not verified on hardware.
+
 ## What a Zephyr board sets
 
 The sizes of the program store and of the memories are Kconfig symbols of the module.

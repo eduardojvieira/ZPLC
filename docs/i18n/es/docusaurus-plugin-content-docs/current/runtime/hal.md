@@ -51,6 +51,9 @@ resultado definido de «no soportado»; nunca se deja sin definir. Las páginas 
 [placas compatibles](../reference/boards.md) dicen qué canales tiene una placa y cómo
 se genera la tabla de E/S.
 
+
+El ciclo omite un canal cuya operación responde `ZPLC_HAL_NOT_IMPL`, para que un convertidor ausente no detenga el controlador, y no lo oculta: el runtime cuenta los canales de entrada y de salida que no pudo atender (cada canal una vez) y los informa. El comando `zplc status` los lista en `warnings` (`io_unsupported`) con las cuentas, imprime una advertencia en su forma de texto, y el enlace con el dispositivo envía una advertencia en sus eventos de registro cada vez que cambia la cuenta (y a un cliente que se suscribe después). Studio muestra la línea en la consola del dispositivo conectado. Esto se verifica con pruebas en C en el host y con una prueba de Studio; lo que hace una placa concreta con un convertidor ausente no se verifica en hardware.
+
 ## Qué fija una placa Zephyr
 
 Los tamaños del almacén de programa y de las memorias son símbolos Kconfig del módulo.

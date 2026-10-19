@@ -127,6 +127,16 @@ planas de `firmware/lib/zplc_core/tests` también se ejecutan en destinos
 Zephyr mediante `firmware/tests/core_suites`, que compila los mismos archivos
 fuente y llama a cada suite desde un caso de prueba.
 
+Los bloques de comunicación tienen suites propias (COM-006). `mqtt_broker_double` ejecuta el cliente MQTT del controlador
+(`zplc_mqtt.c`, como lo enlaza una placa) y los manejadores de `MQTT_CONNECT`, `MQTT_PUBLISH`, `MQTT_SUBSCRIBE`,
+`AZURE_C2D_RECV`, `AZURE_EG_PUB` y `SPB_REBIRTH` contra un broker que es un hilo de la prueba en la interfaz de loopback de
+la pila de red: éxito, ausencia de `CONNACK`, conexión rechazada, sesión perdida y reset estando ocupado. `comm_cloud_fb` y
+`comm_modbus_fb` ejecutan los manejadores con un servicio sustituto, y `modbus_client_tcp` el cliente Modbus TCP contra un
+servidor escrito para la prueba. Los bloques de aprovisionamiento `AZURE_DPS_PROV` y `AWS_FLEET_PROV` se verifican solo en el
+manejador. Un doble prueba el comportamiento del protocolo, no que un servicio real lo acepte. En el host, `test_host_loopback`
+muestra los extremos que una sesión de Studio inicia dentro de su runtime (COM-009), y `test_io_unsupported` muestra que un
+canal que la placa no puede atender se cuenta y se informa (IO-007).
+
 Las suites de la VM nombran un perfil de memoria en el escenario, de modo que
 un resultado siempre dice con qué tamaños se obtuvo:
 
