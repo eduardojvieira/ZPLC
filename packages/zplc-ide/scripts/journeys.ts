@@ -613,7 +613,7 @@ export const JOURNEYS: Journey[] = [
       await app.press('Enter');
       await app.type('UndefinedVariable := 1;');
       await app.click(tab('Problems'));
-      const live = css('[aria-label="Live Structured Text diagnostics"]');
+      const live = css('[aria-label="Live structured text diagnostics"]');
       await app.until('the live diagnostics to name the undeclared variable, with no build', async () => (await app.eval<string>(`${live}?.innerText ?? ''`)).includes('UndefinedVariable') || undefined);
       const markers = await monacoEval<Array<{ startLineNumber: number; startColumn: number; endColumn: number; message: string; code?: string }>>(app, `return monaco.editor.getModelMarkers({ owner: 'zplc.st-live' });`);
       assert(markers.length > 0 && markers[0]!.startLineNumber === last + 1 && markers[0]!.endColumn > markers[0]!.startColumn + 1, `The editor has no squiggle with a range on the faulty line: ${JSON.stringify(markers)}`);
@@ -977,7 +977,7 @@ export const JOURNEYS: Journey[] = [
       await newFile(app, 'pump', 'LD');
       await app.until('the Ladder editor on the new file', async () => await ladderRungs(app) !== null || undefined);
       const rungs = await ladderRungs(app) as number;
-      await app.click(button('Add Rung', 'contains'), 'the Add Rung button');
+      await app.click(button('Add rung', 'contains'), 'the Add rung button');
       await app.until('one more rung in the editor', async () => await ladderRungs(app) === rungs + 1 || undefined);
       await app.press('Ctrl+S');
       const saved = await app.until('pump.ld.json on disk', () => { const found = findOnDisk(project, 'pump.ld.json'); return found.length === 1 ? found[0] : undefined; });
@@ -1812,7 +1812,7 @@ export const JOURNEYS: Journey[] = [
       await openDiagram(app, 'src/main.ld.json', '[data-ld-rung-id]');
       const rungs = () => app.eval<number>(`document.querySelectorAll('[data-ld-rung-id]').length`);
       const before = await rungs();
-      await app.click(button('Add Rung'), 'the Add Rung button');
+      await app.click(button('Add rung'), 'the Add rung button');
       await app.until('a new rung', async () => await rungs() === before + 1 || undefined);
       const last = await app.eval<string>(`[...document.querySelectorAll('[data-ld-rung-id]')].at(-1).getAttribute('data-ld-rung-id')`);
       const drop = async (column: number, item: { type: string; category: string; fbType?: string }) => {
@@ -2722,7 +2722,7 @@ export const JOURNEYS: Journey[] = [
       // the assistant is optional: it says so, says it cannot operate hardware, and cannot be asked before it is configured
       await app.click(tab('Agent'), 'the Agent tab');
       const agent = await app.until('the Agent panel', async () => {
-        const text = await app.eval<string>(`document.querySelector('[aria-label="Optional Agent"]')?.innerText ?? ''`);
+        const text = await app.eval<string>(`document.querySelector('[aria-label="Optional agent"]')?.innerText ?? ''`);
         return text.includes('Agent') ? text : undefined;
       });
       assert(agent.includes('It cannot operate hardware.'), `The Agent panel does not say that it cannot operate hardware: ${JSON.stringify(agent)}`);
@@ -3224,15 +3224,15 @@ export const JOURNEYS: Journey[] = [
         await app.click(css(`#console-tab-${tab}`), `the ${tab} tab`);
         await app.until(`the ${tab} panel`, async () => (await text(`console-panel-${tab}`)) !== '' || undefined);
         const body = await text(`console-panel-${tab}`);
-        for (const phrase of expected) assert(body.includes(phrase), `The ${tab} panel does not say "${phrase}" in Spanish: ${body.slice(0, 500)}`);
-        for (const phrase of english) assert(!body.includes(phrase), `The ${tab} panel still says "${phrase}" in English: ${body.slice(0, 500)}`);
+        for (const phrase of expected) assert(body.toLowerCase().includes(phrase.toLowerCase()), `The ${tab} panel does not say "${phrase}" in Spanish: ${body.slice(0, 500)}`);
+        for (const phrase of english) assert(!body.toLowerCase().includes(phrase.toLowerCase()), `The ${tab} panel still says "${phrase}" in English: ${body.slice(0, 500)}`);
         assert(!new RegExp(RAW_KEY).test(body), `The ${tab} panel shows a raw catalog key: ${body.match(new RegExp(RAW_KEY))?.[0]}`);
       };
       await walk('tests', ['zplc.json'], ['Choose zplc.json', 'Run host scenarios', 'Select the saved']);
       await walk('interlocks', ['Cobertura de enclavamientos declarados'], ['Declared interlock coverage', 'Check declared interlocks']);
       await walk('lab', ['Laboratorio'], ['Run the saved host scenarios']);
       await walk('changes', ['cambio'], ['Review active ST change', 'requires the desktop app']);
-      await walk('agent', ['Agente opcional'], ['Provider settings', 'Refresh status']);
+      await walk('agent', ['Actualizar el estado'], ['Provider settings', 'Refresh status']);
       const tabs = await app.eval<string[]>(`[...document.querySelectorAll('[role="tab"][id^="console-tab-"]')].map((tab) => tab.textContent.trim())`);
       for (const label of ['Salida', 'Problemas', 'Enclavamientos', 'Laboratorio', 'Cambios', 'Agente']) assert(tabs.some((tab) => tab.includes(label)), `The results tabs are ${JSON.stringify(tabs)}, without ${label}.`);
       const chrome = await app.eval<string>('document.body.innerText');

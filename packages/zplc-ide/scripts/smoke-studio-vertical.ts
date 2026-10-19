@@ -615,10 +615,10 @@ async function main(): Promise<void> {
       assert(await page().evaluate(`JSON.stringify((() => { const element = document.querySelector(${JSON.stringify('[data-ld-element-id="ton_off"]')}); return { window: window.scrollY, container: element?.parentElement?.parentElement?.parentElement?.scrollTop ?? 0 }; })()) === JSON.stringify(${JSON.stringify(ldScroll)})`) === true, 'Space selection must not scroll the LD viewport');
       await press('Enter');
       await waitFor('LD Enter selected element', async () => await page().evaluate(`document.querySelector(${JSON.stringify('[data-ld-element-id="ton_off"]')})?.getAttribute('aria-pressed') === 'true' ? true : undefined`) === true ? true : undefined);
-      await waitFor('LD preset time control', async () => await page().evaluate(`document.querySelector('[aria-label="Preset Time (PT)"]') instanceof HTMLInputElement ? true : undefined`) === true ? true : undefined);
-      assert(await page().evaluate(`document.querySelector('[aria-label="Preset Time (PT)"]')?.value === 'T#500ms'`) === true, 'LD timer PT must start from the selected element parameters');
-      await page().evaluate(`(() => { const input = document.querySelector('[aria-label="Preset Time (PT)"]'); if (!(input instanceof HTMLInputElement)) return; Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set?.call(input, 'T#2s'); input.dispatchEvent(new Event('input', { bubbles: true })); })()`);
-      assert(await page().evaluate(`document.querySelector('[aria-label="Preset Time (PT)"]')?.value === 'T#2s'`) === true, 'LD timer PT input did not accept the updated value');
+      await waitFor('LD preset time control', async () => await page().evaluate(`document.querySelector('[aria-label="Preset time (PT)"]') instanceof HTMLInputElement ? true : undefined`) === true ? true : undefined);
+      assert(await page().evaluate(`document.querySelector('[aria-label="Preset time (PT)"]')?.value === 'T#500ms'`) === true, 'LD timer PT must start from the selected element parameters');
+      await page().evaluate(`(() => { const input = document.querySelector('[aria-label="Preset time (PT)"]'); if (!(input instanceof HTMLInputElement)) return; Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set?.call(input, 'T#2s'); input.dispatchEvent(new Event('input', { bubbles: true })); })()`);
+      assert(await page().evaluate(`document.querySelector('[aria-label="Preset time (PT)"]')?.value === 'T#2s'`) === true, 'LD timer PT input did not accept the updated value');
       await page().evaluate(`([...document.querySelectorAll('button')].find((button) => button.textContent?.trim() === 'Save'))?.click()`);
       await waitFor('saved LD preset time', async () => {
         const content = await page().evaluate(`window.__zplcSmoke.getFileContent?.('blinky-ld')`);
@@ -626,7 +626,7 @@ async function main(): Promise<void> {
       });
       await page().evaluate(`document.querySelector(${JSON.stringify('[data-ld-element-id="ton_off"]')})?.focus()`);
       await press(' ');
-      await waitFor('reopened LD preset time', async () => await page().evaluate(`document.querySelector('[aria-label="Preset Time (PT)"]')?.value === 'T#2s' ? true : undefined`) === true ? true : undefined);
+      await waitFor('reopened LD preset time', async () => await page().evaluate(`document.querySelector('[aria-label="Preset time (PT)"]')?.value === 'T#2s' ? true : undefined`) === true ? true : undefined);
       await press('c', 2); await press('v', 2);
       const ldChanged = await waitFor('LD pasted content', async () => {
         const content = await page().evaluate(`window.__zplcSmoke.getFileContent?.('blinky-ld')`);
@@ -950,8 +950,8 @@ async function main(): Promise<void> {
     assert(!body.includes('opaque-workspace-capability') && !body.includes('do-not-render'), 'Opaque token or secret reached DOM');
 
     const settingsOpened = await page().evaluate(`(() => { const button = document.querySelector('button[data-project-settings]'); if (!button) return false; button.click(); return true; })()`);
-    assert(settingsOpened === true, 'Could not open Project Settings');
-    await waitFor('Project Settings', async () => (await text()).includes('Project Settings') ? true : undefined);
+    assert(settingsOpened === true, 'Could not open Project settings');
+    await waitFor('Project Settings', async () => (await text()).includes('Project settings') ? true : undefined);
     // the task form is the Tasks editor, a tab of its own (UX-013)
     await page().evaluate(`document.querySelector('[data-open-config-editor="tasks"]')?.click()`);
     await waitFor('the Tasks editor', async () => await page().evaluate(`Boolean(document.querySelector('[data-config-editor="tasks"]')) ? true : undefined`) === true ? true : undefined);
@@ -1018,12 +1018,12 @@ async function main(): Promise<void> {
     await waitFor('LD visual editor', async () => await page().evaluate(`window.__zplcSmoke.getState?.().activeFileId === 'motor-ld' && document.querySelector('[role="toolbar"][aria-label="Visual editor history"]') ? true : undefined`) === true ? true : undefined);
     const visualHistoryControls = await page().evaluate(`(() => { const toolbar = document.querySelector('[role="toolbar"][aria-label="Visual editor history"]'); const undo = toolbar?.querySelector('button[aria-label="Undo visual edit"]'); const redo = toolbar?.querySelector('button[aria-label="Redo visual edit"]'); return Boolean(toolbar) && !toolbar?.closest('[role="tablist"]') && undo?.getAttribute('title')?.includes('Ctrl+Z') && redo?.getAttribute('title')?.includes('Ctrl+Shift+Z') && undo?.tabIndex === 0 && redo?.tabIndex === 0 && undo?.disabled && redo?.disabled; })()`);
     assert(visualHistoryControls === true, 'Visual history toolbar must expose initially disabled, labelled controls');
-    await click('Add Rung');
+    await click('Add rung');
     const rungOne = await waitFor('first LD visual change', async () => {
       const content = await page().evaluate(`window.__zplcSmoke.getFileContent?.('motor-ld')`);
       return typeof content === 'string' && content !== emptyLd ? content : undefined;
     });
-    await click('Add Rung');
+    await click('Add rung');
     const rungTwo = await waitFor('second LD visual change', async () => {
       const content = await page().evaluate(`window.__zplcSmoke.getFileContent?.('motor-ld')`);
       return typeof content === 'string' && content !== rungOne ? content : undefined;
