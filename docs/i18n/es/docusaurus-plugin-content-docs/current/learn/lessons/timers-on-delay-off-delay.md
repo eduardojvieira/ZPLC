@@ -1,0 +1,49 @@
+---
+title: "Temporizadores: una luz con retardo a la desconexión y un filtro con retardo a la conexión"
+sidebar_label: "timers-on-delay-off-delay"
+description: "La lección timers-on-delay-off-delay: nivel, tiempo, lenguajes y objetivos, generados de su paquete."
+tags: [learn, generated]
+unlisted: true
+---
+
+# Temporizadores: una luz con retardo a la desconexión y un filtro con retardo a la conexión
+
+{/* >>> GENERATED (tools/docs/generate_course_pages.ts): learn/lessons/timers-on-delay-off-delay. Do not edit. >>> */}
+
+Use un temporizador TOF para mantener una luz encendida después de soltar un botón, y un TON para ignorar un pulso de sensor demasiado corto.
+
+## Datos
+
+- Módulo: [3](../modules/module-3.md)
+- Nivel: Fundamentos
+- Tiempo estimado: 15 minutos
+- Lenguajes: ST
+- Rutas: Simulación
+- Planta: ninguna
+- Requisitos previos: [motor-start-stop-safe](./motor-start-stop-safe.md)
+
+## Objetivos
+
+- Mantenga una salida encendida un tiempo fijo después de que su entrada baja, con TOF.
+- Ignore una entrada que está en ON menos de un tiempo fijo, con TON.
+
+## Etapas
+
+1. **Objetivo**
+2. **Prediga**
+3. **Edite**
+4. **Ejecute**
+5. **Observe**
+6. **Reflexione**
+
+## Qué cubre la evidencia
+
+La evidencia de Tests es del runtime nativo POSIX con una tarea de 10 ms; no establece antirrebote eléctrico, respuesta del sensor, tiempos del target, HIL ni certificación.
+
+## En una placa
+
+La lección mide retardos a la conexión y a la desconexión contra el reloj de ciclo; el tiempo en una placa real no es lo bastante reproducible para una comprobación determinista y todavía no existe una traza registrada. Complétela en Simulación, donde el tiempo es determinista.
+
+{/* <<< END GENERATED: learn/lessons/timers-on-delay-off-delay <<< */}
+
+Esta página se genera: para cambiarla, se cambia su fuente y se ejecuta `bun run docs:generate`.

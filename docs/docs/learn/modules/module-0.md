@@ -1,0 +1,24 @@
+---
+title: "Module 0: Getting ready: a tour of Studio, the simulation and, for hardware, checking your board"
+sidebar_label: "Module 0"
+description: "The lessons of module 0 of the course, generated from the lesson packages."
+tags: [learn, generated]
+unlisted: true
+---
+
+# Module 0: Getting ready: a tour of Studio, the simulation and, for hardware, checking your board
+
+{/* >>> GENERATED (tools/docs/generate_course_pages.ts): learn/modules/module-0. Do not edit. >>> */}
+
+- Level: Foundation
+- Tracks: Simulation, Hardware
+
+## Lessons
+
+| Lesson | Id | Languages | minutes |
+| --- | --- | --- | --- |
+| [Your first blink in simulation](../lessons/first-blink-simulation.md) | `first-blink-simulation` | ST | 10 |
+
+{/* <<< END GENERATED: learn/modules/module-0 <<< */}
+
+This page is generated: to change it, change its source and run `bun run docs:generate`.

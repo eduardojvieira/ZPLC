@@ -14,6 +14,8 @@ existen hoy y las que están planeadas. Coincide con `packages/zplc-ide/lessons/
 y con los paquetes de lección que lo acompañan; una verificación de CI falla
 cuando falta una lección aquí o cuando una fila no coincide con su lección.
 
+Cada módulo y cada lección tiene su propia página, generada de los paquetes de lecciones: empiece por los [módulos del curso](./modules/index.md) y vea las [plantas de las lecciones](./plants.md) para las máquinas simuladas.
+
 Toda lección se completa en la pista **Simulación**, en este equipo y sin placa.
 Una lección indica **Hardware** solo cuando existe para ella una verificación
 contra una traza registrada desde una placa. Hoy ninguna lección la ofrece, y una

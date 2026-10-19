@@ -1,0 +1,49 @@
+---
+title: "Estructuras y arreglos: un panel de tres llamadas"
+sidebar_label: "structures-arrays-call-panel"
+description: "La lección structures-arrays-call-panel: nivel, tiempo, lenguajes y objetivos, generados de su paquete."
+tags: [learn, generated]
+unlisted: true
+---
+
+# Estructuras y arreglos: un panel de tres llamadas
+
+{/* >>> GENERATED (tools/docs/generate_course_pages.ts): learn/lessons/structures-arrays-call-panel. Do not edit. >>> */}
+
+Guarde tres botones de llamada en un arreglo de estructuras y escriba un bucle FOR que mantenga cada llamada hasta que se reconozca e informe si hay alguna llamada, o todas, esperando.
+
+## Datos
+
+- Módulo: [7](../modules/module-7.md)
+- Nivel: Intermedio
+- Tiempo estimado: 25 minutos
+- Lenguajes: ST
+- Rutas: Simulación
+- Planta: ninguna
+- Requisitos previos: [function-block-pump-pair](./function-block-pump-pair.md)
+
+## Objetivos
+
+- Declare una estructura con miembros con nombre y un arreglo de esa estructura, y llegue a un elemento con un índice y un nombre de miembro.
+- Reemplace tres copias del mismo código por un solo bucle FOR sobre el arreglo.
+
+## Etapas
+
+1. **Objetivo**
+2. **Prediga**
+3. **Edite**
+4. **Ejecute**
+5. **Observe**
+6. **Reflexione**
+
+## Qué cubre la evidencia
+
+La evidencia de Tests es del runtime nativo POSIX con una tarea de 10 ms; no establece el tiempo de respuesta de un panel de llamadas real ni tareas distintas de la tarea de 10 ms, HIL ni certificación.
+
+## En una placa
+
+La lección reproduce tres botones de llamada y un reconocimiento en pasos exactos, y todavía no hay una traza registrada desde una placa de ese panel. Complétela en Simulación: su calificación es la misma cada vez y no necesita una placa.
+
+{/* <<< END GENERATED: learn/lessons/structures-arrays-call-panel <<< */}
+
+Esta página se genera: para cambiarla, se cambia su fuente y se ejecuta `bun run docs:generate`.
