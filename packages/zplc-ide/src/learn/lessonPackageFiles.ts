@@ -6,6 +6,7 @@ import { createHash } from 'node:crypto';
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 
+import { validatePlantMap, type PlantMap } from '../plants/plantMap';
 import { validateCourseDefinition, validateCoursePlacement, type CourseDefinition } from './courseDefinition';
 import {
   canonicalJson,
@@ -40,6 +41,8 @@ export interface LessonPackage {
   scenarioBytes: string;
   texts: Record<LessonLocale, LessonText>;
   checks: LessonChecks | undefined;
+  /** The plant's mapping to the starter's I/O (LRN-021); null for a lesson without a plant. */
+  plantMap: PlantMap | null;
 }
 
 /** Reads and validates `course.json` beside the lesson packages. A missing or broken file is reported and leaves no course. */
@@ -90,6 +93,20 @@ export function loadLessonPackages(lessonsDirectory = LESSONS_DIRECTORY, project
       here.push(...checkProblems.map((problem) => `${id}/checks.json: ${problem}`));
       if (checkProblems.length === 0) checks = raw as LessonChecks;
     }
+    // LRN-021: a lesson that names a plant ships that plant's mapping next to its starter; one that does not ships none.
+    let plantMap: PlantMap | null = null;
+    const hasMap = existsSync(join(directory, 'plant-map.json'));
+    if (typed.plant !== null && !hasMap) here.push(`${id}: the lesson names the plant "${typed.plant}" but has no plant-map.json`);
+    if (typed.plant === null && hasMap) here.push(`${id}: plant-map.json belongs to a lesson that names a plant`);
+    if (typed.plant !== null && hasMap) {
+      const raw = readJson(join(directory, 'plant-map.json'), here);
+      const mapProblems = validatePlantMap(raw);
+      here.push(...mapProblems.map((problem) => `${id}/plant-map.json: ${problem}`));
+      if (mapProblems.length === 0) {
+        plantMap = raw as PlantMap;
+        if (plantMap.plant !== typed.plant) here.push(`${id}/plant-map.json: plant "${plantMap.plant}" differs from the manifest plant "${typed.plant}"`);
+      }
+    }
     const scenario = scenarioParsed.scenario;
     if (scenario) {
       if (scenario.id !== typed.scenario.id) here.push(`${id}: scenario id "${scenario.id}" differs from the manifest "${typed.scenario.id}"`);
@@ -104,7 +121,7 @@ export function loadLessonPackages(lessonsDirectory = LESSONS_DIRECTORY, project
     }
     problems.push(...here);
     if (here.length === 0 && scenario && texts.en && texts.es) {
-      packages.push({ id, directory, manifest: typed, scenario, scenarioBytes: canonicalJson(scenarioRaw), texts: { en: texts.en, es: texts.es }, checks });
+      packages.push({ id, directory, manifest: typed, scenario, scenarioBytes: canonicalJson(scenarioRaw), texts: { en: texts.en, es: texts.es }, checks, plantMap });
     }
   }
   return { packages, problems };
@@ -141,7 +158,7 @@ export function validateCourse(packages: readonly LessonPackage[], course?: Cour
 /** The generated index of the packages, in course order, with the text expanded. Problems of expansion are returned. */
 export function buildIndex(packages: readonly LessonPackage[], course: CourseDefinition): { index: LessonIndex; problems: string[] } {
   const problems: string[] = [];
-  const lessons: LessonIndexEntry[] = [...packages].sort((left, right) => left.manifest.order - right.manifest.order).map(({ id, manifest, scenario, scenarioBytes, texts }) => {
+  const lessons: LessonIndexEntry[] = [...packages].sort((left, right) => left.manifest.order - right.manifest.order).map(({ id, manifest, scenario, scenarioBytes, texts, plantMap }) => {
     const expanded = Object.fromEntries(LOCALES.map((locale) => {
       const result = expandText(texts[locale], scenario);
       problems.push(...result.problems.map((problem) => `${id}/text.${locale}.json: ${problem}`));
@@ -157,6 +174,7 @@ export function buildIndex(packages: readonly LessonPackage[], course: CourseDef
       languages: manifest.languages,
       tracks: manifest.tracks,
       plant: manifest.plant,
+      plantMap,
       estimatedMinutes: manifest.estimatedMinutes,
       starter: manifest.starter,
       solution: manifest.solution,

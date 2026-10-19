@@ -6,6 +6,7 @@
  *   text.en.json    the text of the lesson in English            (`LessonText`)
  *   text.es.json    the same structure in Spanish                (`LessonText`)
  *   scenario.json   the reference scenario the lesson is graded by; its content hash is in the manifest
+ *   plant-map.json  a lesson that names a plant: the explicit binding of the plant's signals to the starter's I/O (LRN-021)
  *   checks.json     optional: wrong programs that must stay RED and other correct programs that must be GREEN
  *
  * The starter and the reference solution are example projects of `projects/` that the manifest names, because the
@@ -23,6 +24,7 @@
  *   {{v:Sig=true,Sig2=false@30|X}} shows X; the scenario must assert those values at 30 ms (an AT assertion at 30 ms,
  *                                  or a FOR or ALWAYS assertion that covers it)
  */
+import type { PlantMap } from '../plants/plantMap';
 import type { CourseDefinition } from './courseDefinition';
 
 export const LESSON_SCHEMA_VERSION = 1 as const;
@@ -359,6 +361,8 @@ export interface LessonIndexEntry {
   languages: readonly string[];
   tracks: readonly string[];
   plant: string | null;
+  /** The plant's mapping to the starter's I/O (LRN-021); null for a lesson without a plant. */
+  plantMap: PlantMap | null;
   estimatedMinutes: number;
   starter: { readonly project: string; readonly program: string };
   solution: { readonly project: string; readonly program: string };

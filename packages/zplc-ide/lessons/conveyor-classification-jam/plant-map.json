@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "plant": "conveyor-v1",
+  "reads": {
+    "belt": "Conveyor.BeltCommand",
+    "diverter": "Conveyor.DiverterCommand"
+  },
+  "drives": {
+    "partAtClassifier": "Conveyor.PartAtClassifier",
+    "metalDetected": "Conveyor.MetalDetected",
+    "partAtDiverter": "Conveyor.PartAtDiverter",
+    "jamDetected": "Conveyor.JamDetected"
+  }
+}
