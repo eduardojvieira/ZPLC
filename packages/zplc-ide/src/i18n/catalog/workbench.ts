@@ -122,6 +122,7 @@ export const workbenchEn = {
   'workbench.inspector.trace': 'Trace',
   'workbench.inspector.hostTrace': 'Host trace is not hardware or HIL evidence.',
   'workbench.inspector.controller': 'Connected controller',
+  'workbench.dialog.close': 'Close',
 } as const;
 
 export const workbenchEs: Record<keyof typeof workbenchEn, string> = {
@@ -247,4 +248,5 @@ export const workbenchEs: Record<keyof typeof workbenchEn, string> = {
   'workbench.inspector.trace': 'Traza',
   'workbench.inspector.hostTrace': 'La traza del equipo anfitrión no es evidencia de hardware ni de HIL.',
   'workbench.inspector.controller': 'Controlador conectado',
+  'workbench.dialog.close': 'Cerrar',
 };

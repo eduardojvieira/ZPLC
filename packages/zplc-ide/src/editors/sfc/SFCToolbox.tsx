@@ -148,10 +148,10 @@ export default function SFCToolbox({ onInsert }: SFCToolboxProps) {
       <div className="px-3 py-2 border-t border-[var(--border-color)]">
         <div className={`${CAPTION} text-[var(--text-tertiary)] mb-1`}>{t('editors.sfc.qualifiers')}</div>
         <div className={`grid grid-cols-2 gap-1 ${CAPTION}`}>
-          <div className="text-[var(--text-tertiary)]"><span className="font-mono bg-[var(--color-surface-700)] px-1 rounded">N</span> {t('editors.sfc.qualN')}</div>
-          <div className="text-[var(--text-tertiary)]"><span className="font-mono bg-[var(--color-surface-700)] px-1 rounded">S</span> {t('editors.sfc.qualS')}</div>
-          <div className="text-[var(--text-tertiary)]"><span className="font-mono bg-[var(--color-surface-700)] px-1 rounded">R</span> {t('editors.sfc.qualR')}</div>
-          <div className="text-[var(--text-tertiary)]"><span className="font-mono bg-[var(--color-surface-700)] px-1 rounded">P</span> {t('editors.sfc.qualP')}</div>
+          <div className="text-[var(--text-tertiary)]"><code className="font-mono bg-[var(--color-surface-700)] px-1 rounded">N</code> {t('editors.sfc.qualN')}</div>
+          <div className="text-[var(--text-tertiary)]"><code className="font-mono bg-[var(--color-surface-700)] px-1 rounded">S</code> {t('editors.sfc.qualS')}</div>
+          <div className="text-[var(--text-tertiary)]"><code className="font-mono bg-[var(--color-surface-700)] px-1 rounded">R</code> {t('editors.sfc.qualR')}</div>
+          <div className="text-[var(--text-tertiary)]"><code className="font-mono bg-[var(--color-surface-700)] px-1 rounded">P</code> {t('editors.sfc.qualP')}</div>
         </div>
       </div>
     </div>

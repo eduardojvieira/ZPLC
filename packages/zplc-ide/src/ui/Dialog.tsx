@@ -6,6 +6,7 @@
  * An alert dialog (`AlertDialog`) interrupts to confirm one action: its action button names the action, focus starts on
  * Cancel (so Enter or Space never confirms by accident), and neither the scrim nor a stray click dismisses it.
  */
+import { useT } from '../i18n';
 import { useEffect, useId, useRef, type ReactNode, type RefObject } from 'react';
 import { X } from 'lucide-react';
 import { ICON_SIZES } from '../theme/tokens';
@@ -120,6 +121,7 @@ export interface DialogSurfaceProps {
 
 /** The markup of a dialog with none of its behaviour, so the gallery can show it in place without taking focus. */
 export function DialogSurface({ surfaceRef, role = 'dialog', titleId, descriptionId, title, description, size = 'md', className, modal = true, onClose, footer, children }: DialogSurfaceProps) {
+  const { t } = useT();
   return (
     <div
       ref={surfaceRef}
@@ -134,7 +136,7 @@ export function DialogSurface({ surfaceRef, role = 'dialog', titleId, descriptio
       <div className="ui-dialog-header">
         <h2 id={titleId} className="ui-dialog-title">{title}</h2>
         {onClose && (
-          <button type="button" className="ui-button ui-icon-button" data-variant="ghost" data-size="sm" aria-label="Close" onClick={onClose}>
+          <button type="button" className="ui-button ui-icon-button" data-variant="ghost" data-size="sm" aria-label={t('workbench.dialog.close')} onClick={onClose}>
             <X size={ICON_SIZES.md} aria-hidden="true" />
           </button>
         )}
