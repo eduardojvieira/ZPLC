@@ -2958,7 +2958,8 @@
     {"kind":"unit","ref":"tools/docs/check_doc_claims.test.ts","test":"doc claims: what a page says is read from its code spans and shell blocks (DOC-014)"}
   ],
   "DOC-015": [
-    {"kind":"unit","ref":"tools/docs/docs_structure.test.ts","test":"docs structure: the navigation and the footer are localised through the translation files (DOC-015, stopgap: no fluent reviewer has read the Spanish pages in the register of D-10)","partial":true}
+    {"kind":"unit","ref":"tools/docs/docs_structure.test.ts","test":"docs structure: the navigation and the footer are localised through the translation files (DOC-015, stopgap: no fluent reviewer has read the Spanish pages in the register of D-10)","partial":true},
+    {"kind":"unit","ref":"tools/docs/docs_structure.test.ts","test":"the Spanish pages keep the neutral usted register (DOC-015, D-10)"}
   ],
   "DOC-016": [
     {"kind":"unit","ref":"tools/docs/docs_structure.test.ts","test":"docs structure: a page is published only when both languages are complete (DOC-016)"}
