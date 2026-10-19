@@ -19,6 +19,7 @@ import { learnEs } from './catalog/learn';
 import { learnHomeEs } from './catalog/learnHome';
 import { toolbarMsgEs } from './catalog/toolbarMsg';
 import { examplesEs } from './catalog/examples';
+import { editorsEs } from './catalog/editors';
 import { settingsSurfaceEs } from './catalog/settingsSurface';
 import { labSceneEs } from './catalog/labScene';
 import { workbenchEs } from './catalog/workbench';
@@ -616,6 +617,7 @@ export const es: Record<MessageKey, string> = {
   ...learnHomeEs,
   ...toolbarMsgEs,
   ...examplesEs,
+  ...editorsEs,
   ...settingsSurfaceEs,
   ...labSceneEs,
   ...workbenchEs,

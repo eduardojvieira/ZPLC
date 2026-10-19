@@ -3,6 +3,7 @@
  * bind, the command to run. Each is the search list of the visual editors, filled from the document.
  */
 
+import { t } from '../../i18n';
 import { useMemo } from 'react';
 import type { LDElement, LDModel } from '../../models/ld';
 import type { ProjectBlock } from '../../models/projectBlocks';
@@ -36,16 +37,16 @@ export default function LDPrompts({ ask, model, element, projectBlocks, onInsert
   if (ask.kind === 'palette') {
     return (
       <SearchList
-        title="Insert element"
+        title={t('editors.ld.insertElement')}
         items={palette}
-        placeholder="Type to search: contact, coil, TON, branch"
+        placeholder={t('editors.ld.searchElements')}
         onChoose={(item) => onInsert(palette.find((candidate) => candidate.id === item.id)!.insert)}
         onCancel={onClose}
       />
     );
   }
   if (ask.kind === 'commands') {
-    return <SearchList title="Commands of the ladder editor" items={commands} placeholder="Type to search the commands" onChoose={(item) => onCommand(item.id)} onCancel={onClose} />;
+    return <SearchList title={t('editors.ld.commands')} items={commands} placeholder={t('editors.ld.searchCommands')} onChoose={(item) => onCommand(item.id)} onCancel={onClose} />;
   }
   if (!element) return null;
   const choices = bindingChoices(model, element, projectBlocks);
@@ -54,9 +55,9 @@ export default function LDPrompts({ ask, model, element, projectBlocks, onInsert
       title={choices.title}
       items={choices.items}
       allowFreeText={choices.free}
-      freeTextLabel={(text) => `Use ${text}, which is not declared here`}
-      placeholder="Type to search the declared symbols"
-      emptyText={choices.free ? 'No declared symbol fits: type a name.' : `No variable of this type is declared in the file.`}
+      freeTextLabel={(text) => t('editors.ld.useUndeclared', { text })}
+      placeholder={t('editors.ld.searchSymbols')}
+      emptyText={choices.free ? t('editors.ld.noSymbol') : t('editors.ld.noVariable')}
       onChoose={(item) => onBind(freeTextOf(item) ?? item.id)}
       onCancel={onClose}
     />

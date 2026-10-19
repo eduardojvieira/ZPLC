@@ -18,6 +18,7 @@ import { learnEn } from './catalog/learn';
 import { learnHomeEn } from './catalog/learnHome';
 import { toolbarMsgEn } from './catalog/toolbarMsg';
 import { examplesEn } from './catalog/examples';
+import { editorsEn } from './catalog/editors';
 import { settingsSurfaceEn } from './catalog/settingsSurface';
 import { labSceneEn } from './catalog/labScene';
 import { workbenchEn } from './catalog/workbench';
@@ -619,6 +620,7 @@ export const en = {
   ...learnHomeEn,
   ...toolbarMsgEn,
   ...examplesEn,
+  ...editorsEn,
   ...settingsSurfaceEn,
   ...labSceneEn,
   ...workbenchEn,

@@ -6,6 +6,7 @@
  * the list, Enter chooses, Escape closes; every other key is the search text and does not reach the editor.
  */
 
+import { t } from '../i18n';
 import { useEffect, useId, useMemo, useRef, useState, type KeyboardEvent } from 'react';
 import { TextField } from '../ui';
 import { INITIAL_PICKER, pickerKey, pickerQuery, visibleItems, type PickerItem, type PickerKey, type PickerOptions, type PickerState } from './picker';
@@ -80,7 +81,7 @@ export default function SearchList({ title, items, placeholder, emptyText, allow
           aria-autocomplete="list"
           aria-label={title}
           value={state.query}
-          placeholder={placeholder ?? 'Type to search'}
+          placeholder={placeholder ?? t('editors.search.placeholder')}
           onChange={(event) => setState((current) => pickerQuery(current, event.target.value))}
           onKeyDown={onKeyDown}
           onBlur={(event) => {
@@ -92,9 +93,9 @@ export default function SearchList({ title, items, placeholder, emptyText, allow
           className="w-full"
         />
       </div>
-      <ul id={listId} role="listbox" aria-label={`${title}: choices`} className="max-h-64 overflow-y-auto pb-1">
+      <ul id={listId} role="listbox" aria-label={t('editors.search.choices', { title })} className="max-h-64 overflow-y-auto pb-1">
         {shown.length === 0 ? (
-          <li role="presentation" className="px-3 py-2 text-xs text-[var(--text-tertiary)]">{emptyText ?? 'Nothing matches.'}</li>
+          <li role="presentation" className="px-3 py-2 text-xs text-[var(--text-tertiary)]">{emptyText ?? t('editors.nothingMatches')}</li>
         ) : shown.map((item, index) => (
           <li
             key={item.id}

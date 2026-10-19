@@ -437,7 +437,7 @@ function RungHeader({ rung, cols, rows, readOnly, onChange, editRequest }: RungH
   return (
     <div className="flex items-center gap-2 px-3 py-1.5 bg-[var(--color-surface-700)] border-b border-[var(--color-surface-600)]">
       <span className="text-xs font-bold text-[var(--color-surface-100)] shrink-0">
-        Rung {rung.number}
+        {t('editors.ld.rung', { number: rung.number })}
       </span>
 
       {isEditing ? (
@@ -449,16 +449,16 @@ function RungHeader({ rung, cols, rows, readOnly, onChange, editRequest }: RungH
           onKeyDown={handleKeyDown}
           className="flex-1 min-w-0 text-xs italic bg-[var(--color-surface-800)] border border-[var(--color-surface-500)] 
                      rounded px-2 py-0.5 text-[var(--color-surface-100)]"
-          placeholder="Add rung comment..."
+          placeholder={t('editors.ld.addRungComment')}
         />
       ) : (
         <span
           onClick={handleStartEdit}
           className={`flex-1 min-w-0 text-xs italic truncate ${readOnly ? '' : 'cursor-pointer hover:bg-[color-mix(in_srgb,var(--text-primary)_12%,transparent)] rounded px-1 -mx-1'
             } ${rung.comment ? 'text-[var(--color-surface-200)]' : 'text-[var(--color-surface-400)]'}`}
-          title={readOnly ? rung.comment : 'Click to edit comment'}
+          title={readOnly ? rung.comment : t('editors.ld.editComment')}
         >
-          {rung.comment ? `— ${rung.comment}` : (readOnly ? '' : '(click to add comment)')}
+          {rung.comment ? `— ${rung.comment}` : (readOnly ? '' : t('editors.ld.clickToComment'))}
         </span>
       )}
 
@@ -845,7 +845,7 @@ export default function LDRungGrid({
               dominantBaseline="middle"
               style={{ pointerEvents: 'none' }}
             >
-              {isDragging ? '↓ Drop here' : 'Drag elements from toolbox →'}
+              {isDragging ? t('editors.ld.dropHere') : t('editors.ld.dragHint')}
             </text>
           )}
 
@@ -929,7 +929,7 @@ export default function LDRungGrid({
               left: selectedElementPosition.x,
               top: selectedElementPosition.y + 28, // +28 for header height
             }}
-            title="Delete element (Del)"
+            title={t('editors.ld.deleteElement')}
           >
             <Trash2 size={12} />
           </button>

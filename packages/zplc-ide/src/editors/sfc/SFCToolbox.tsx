@@ -5,6 +5,7 @@
  * (Enter, Space or a click) inserts it after the selected element (LNG-012). The search box filters the elements.
  */
 
+import { t } from '../../i18n';
 import { useState } from 'react';
 import { ChevronDown, ChevronRight, Circle, ArrowDown } from 'lucide-react';
 import { SFC_PALETTE, type SFCPaletteElement } from '../../models/sfcSupport';
@@ -68,7 +69,7 @@ export default function SFCToolbox({ onInsert }: SFCToolboxProps) {
       {/* Header */}
       <div className="px-3 py-2 border-b border-[var(--border-color)] bg-[var(--color-surface-700)]">
         <span className="text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wider">
-          SFC Elements
+          {t('editors.sfc.elements')}
         </span>
       </div>
 
@@ -77,8 +78,8 @@ export default function SFCToolbox({ onInsert }: SFCToolboxProps) {
           type="search"
           value={query}
           onChange={(event) => setQuery(event.target.value)}
-          aria-label="Search the elements"
-          placeholder="Search"
+          aria-label={t('editors.sfc.searchElements')}
+          placeholder={t('editors.search')}
           className="w-full"
         />
       </div>
@@ -117,8 +118,8 @@ export default function SFCToolbox({ onInsert }: SFCToolboxProps) {
                       onDragStart={(e) => onDragStart(e, element.type)}
                       onClick={() => onInsert?.(element.type)}
                       data-sfc-toolbox-item={element.type}
-                      aria-label={`Insert ${element.label}`}
-                      tooltip={`${element.description}: press to insert after the selected element, or drag onto the canvas`}
+                      aria-label={t('editors.insert', { name: element.label })}
+                      tooltip={t('editors.sfc.insertTooltip', { name: element.description })}
                       className="mx-2 my-0.5 w-[calc(100%-1rem)] flex-col items-start justify-center whitespace-normal px-2 py-1.5 text-left text-xs
                                  bg-[var(--color-surface-700)] hover:bg-[color-mix(in_srgb,var(--text-primary)_12%,transparent)] cursor-grab active:cursor-grabbing
                                  border border-transparent hover:border-[var(--color-accent-blue)]"
@@ -139,19 +140,18 @@ export default function SFCToolbox({ onInsert }: SFCToolboxProps) {
       {/* Help text */}
       <div className="px-3 py-2 border-t border-[var(--border-color)]">
         <p className={`${CAPTION} text-[var(--text-tertiary)] leading-relaxed`}>
-          Press an element to insert it after the selected one, or drag it onto the canvas.
-          Connect Steps with Transitions, or press C on one. Double-click, or press F2, to edit names and conditions.
+          {t('editors.sfc.help')}
         </p>
       </div>
 
       {/* Legend */}
       <div className="px-3 py-2 border-t border-[var(--border-color)]">
-        <div className={`${CAPTION} text-[var(--text-tertiary)] mb-1`}>Action Qualifiers:</div>
+        <div className={`${CAPTION} text-[var(--text-tertiary)] mb-1`}>{t('editors.sfc.qualifiers')}</div>
         <div className={`grid grid-cols-2 gap-1 ${CAPTION}`}>
-          <div className="text-[var(--text-tertiary)]"><span className="font-mono bg-[var(--color-surface-700)] px-1 rounded">N</span> Non-stored</div>
-          <div className="text-[var(--text-tertiary)]"><span className="font-mono bg-[var(--color-surface-700)] px-1 rounded">S</span> Set</div>
-          <div className="text-[var(--text-tertiary)]"><span className="font-mono bg-[var(--color-surface-700)] px-1 rounded">R</span> Reset</div>
-          <div className="text-[var(--text-tertiary)]"><span className="font-mono bg-[var(--color-surface-700)] px-1 rounded">P</span> Pulse</div>
+          <div className="text-[var(--text-tertiary)]"><span className="font-mono bg-[var(--color-surface-700)] px-1 rounded">N</span> {t('editors.sfc.qualN')}</div>
+          <div className="text-[var(--text-tertiary)]"><span className="font-mono bg-[var(--color-surface-700)] px-1 rounded">S</span> {t('editors.sfc.qualS')}</div>
+          <div className="text-[var(--text-tertiary)]"><span className="font-mono bg-[var(--color-surface-700)] px-1 rounded">R</span> {t('editors.sfc.qualR')}</div>
+          <div className="text-[var(--text-tertiary)]"><span className="font-mono bg-[var(--color-surface-700)] px-1 rounded">P</span> {t('editors.sfc.qualP')}</div>
         </div>
       </div>
     </div>
