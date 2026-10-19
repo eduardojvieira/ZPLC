@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "title": "Interlocks and permissives: a guard that stops the motor",
+  "summary": "Add a permissive to a motor start and stop so that the motor runs only while a guard is closed, and check it against the motor plant and its speed feedback.",
+  "scope": "Tests provide native POSIX host evidence for a built-in motor plant model with one 10 ms task; they do not establish a safety function, guard wiring, stopping time, HIL, or certification.",
+  "objectives": [
+    "Tell a permissive, a condition that must be true for the output to be on, from a command.",
+    "Put a permissive in the same condition that holds the motor, so that it drops the motor and also stops Start from restarting it."
+  ],
+  "stages": [
+    {
+      "key": "objective",
+      "title": "Objective",
+      "body": "In src/MotorPlant.st the first assignment holds Command with a seal-in and the second sets Running when the plant reports AtSpeed. Add GuardClosed with AND to the first assignment, so that an open guard drops Command and blocks Start.",
+      "checkpoint": "Command is on only while the guard is closed, and Running still needs the plant's AtSpeed."
+    },
+    {
+      "key": "predict",
+      "title": "Predict",
+      "body": "Before running, predict Command and Running at {{t:30}} ms, when the guard opens at {{t:50}} ms, and at {{t:60}} ms when Start is pressed with the guard still open.",
+      "checkpoint": "{{v:MotorPlant.Command=true,MotorPlant.Running=true@30|Both ON}} at {{t:30}} ms; {{v:MotorPlant.Command=false,MotorPlant.Running=false@50|both OFF}} at {{t:50}} ms; {{v:MotorPlant.Command=false@60|Command OFF}} at {{t:60}} ms, because Start is ignored."
+    },
+    {
+      "key": "edit",
+      "title": "Edit",
+      "body": "Correct this starter omission, save it, then press Check: The starter has no permissive on the guard, so when the guard opens at {{t:50}} ms the motor keeps running and Start can restart it; add AND GuardClosed to the whole condition of Command, outside the brackets that hold Start and Command.",
+      "checkpoint": "The visible scenario must pass with saved host evidence."
+    },
+    {
+      "key": "run",
+      "title": "Run",
+      "body": "Press Check. Studio runs your saved program against the scenario of this lesson, with the motor plant answering your outputs.",
+      "checkpoint": "The scenario is named MotorInterlock and contains {{assertions}} assertions."
+    },
+    {
+      "key": "observe",
+      "title": "Observe",
+      "body": "Compare {{t:30}}, {{t:50}} and {{t:80}} ms: the motor is at speed at {{t:30}} ms, drops when the guard opens at {{t:50}} ms, and does not restart at {{t:80}} ms when the guard closes, because Start was released.",
+      "checkpoint": "Command stays OFF from {{t:60}} to {{t:80}} ms and rises again only at {{t:90}} ms, with a new Start."
+    },
+    {
+      "key": "reflect",
+      "title": "Reflect",
+      "body": "Why is a permissive on the whole condition safer than a permissive only on Start? Put GuardClosed next to Start and see which assertion fails.",
+      "checkpoint": "A permissive that gates only Start lets a running motor ignore an open guard. The scenario shows the logic only; it is not a safety function and does not replace a certified guard interlock."
+    }
+  ],
+  "hints": [
+    {
+      "level": 1,
+      "text": "Command may be TRUE only if the guard is closed, Stop is not pressed, and either Start is pressed or Command was already TRUE."
+    },
+    {
+      "level": 2,
+      "text": "Command := (Start OR Command) AND NOT Stop AND GuardClosed; Do not put GuardClosed inside the brackets with Start."
+    }
+  ],
+  "faultCases": [
+    "The starter has no permissive on the guard, so when the guard opens at {{t:50}} ms the motor keeps running and Start can restart it; add AND GuardClosed to the whole condition of Command, outside the brackets that hold Start and Command."
+  ]
+}

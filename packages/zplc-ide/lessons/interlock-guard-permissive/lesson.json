@@ -1,0 +1,46 @@
+{
+  "schemaVersion": 1,
+  "id": "interlock-guard-permissive",
+  "version": 1,
+  "order": 18,
+  "module": 6,
+  "level": "intermediate",
+  "prerequisites": [
+    "pedestrian-crossing-states"
+  ],
+  "languages": [
+    "ST"
+  ],
+  "tracks": [
+    "simulation"
+  ],
+  "unsupported": {
+    "hardware": {
+      "reason": {
+        "en": "The lesson drops a guard input at an exact step and needs the motor plant model for its speed feedback, which a board without a motor cannot give.",
+        "es": "La lección abre una entrada de protección en un paso exacto y necesita el modelo de planta del motor para su realimentación de velocidad, que una placa sin motor no puede dar."
+      },
+      "instead": {
+        "en": "Complete it in Simulation, which provides the motor and its run feedback.",
+        "es": "Complétela en Simulación, que aporta el motor y su realimentación de marcha."
+      }
+    }
+  },
+  "plant": "motor-v1",
+  "estimatedMinutes": 20,
+  "starter": {
+    "project": "interlock_guard_starter",
+    "program": "src/MotorPlant.st"
+  },
+  "solution": {
+    "project": "interlock_guard",
+    "program": "src/MotorPlant.st"
+  },
+  "scenario": {
+    "file": "scenario.json",
+    "id": "MotorInterlock",
+    "path": "tests/motor-interlock.scenario.json",
+    "sha256": "6ffc4a74fd39e3cec015cfce8d79a9860e8fd254f143438bea0d61d1794b8a63"
+  },
+  "regressionScenarios": []
+}

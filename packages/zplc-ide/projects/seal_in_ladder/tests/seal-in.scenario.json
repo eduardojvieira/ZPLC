@@ -1,0 +1,140 @@
+{
+  "schemaVersion": 1,
+  "id": "SealIn",
+  "tickMs": 10,
+  "durationMs": 100,
+  "events": [
+    {
+      "atMs": 0,
+      "set": {
+        "SealIn.StartPB": false,
+        "SealIn.StopPB": false
+      }
+    },
+    {
+      "atMs": 10,
+      "set": {
+        "SealIn.StartPB": true
+      }
+    },
+    {
+      "atMs": 20,
+      "set": {
+        "SealIn.StartPB": false
+      }
+    },
+    {
+      "atMs": 40,
+      "set": {
+        "SealIn.StopPB": true
+      }
+    },
+    {
+      "atMs": 50,
+      "set": {
+        "SealIn.StopPB": false
+      }
+    },
+    {
+      "atMs": 60,
+      "set": {
+        "SealIn.StartPB": true
+      }
+    },
+    {
+      "atMs": 70,
+      "set": {
+        "SealIn.StopPB": true
+      }
+    },
+    {
+      "atMs": 80,
+      "set": {
+        "SealIn.StartPB": false,
+        "SealIn.StopPB": false
+      }
+    }
+  ],
+  "expectations": [
+    {
+      "kind": "AT",
+      "atMs": 0,
+      "condition": {
+        "SealIn.Motor": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 10,
+      "condition": {
+        "SealIn.Motor": true
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 30,
+      "condition": {
+        "SealIn.Motor": true
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 40,
+      "condition": {
+        "SealIn.Motor": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 50,
+      "condition": {
+        "SealIn.Motor": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 60,
+      "condition": {
+        "SealIn.Motor": true
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 70,
+      "condition": {
+        "SealIn.Motor": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 90,
+      "condition": {
+        "SealIn.Motor": false
+      }
+    },
+    {
+      "kind": "FOR",
+      "fromMs": 20,
+      "forMs": 10,
+      "condition": {
+        "SealIn.Motor": true
+      }
+    },
+    {
+      "kind": "RISING",
+      "fromMs": 10,
+      "withinMs": 0,
+      "condition": {
+        "SealIn.Motor": true
+      }
+    },
+    {
+      "kind": "FALLING",
+      "fromMs": 40,
+      "withinMs": 0,
+      "condition": {
+        "SealIn.Motor": false
+      }
+    }
+  ]
+}

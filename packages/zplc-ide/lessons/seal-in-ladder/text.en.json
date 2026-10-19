@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "title": "Seal-in in Ladder: a motor that holds itself on",
+  "summary": "Edit a Ladder rung so that a Start press keeps the motor on after the button is released, and a Stop press drops it even while Start is still pressed.",
+  "scope": "Tests provide native POSIX host evidence with one 10 ms task; they do not establish a safe stop function, wiring, hardware timing, HIL, or certification.",
+  "objectives": [
+    "Read a Ladder rung as a path of contacts that must all pass power to reach a coil.",
+    "Hold a coil on with a contact of its own output in parallel with Start, and keep Stop in series so that Stop wins."
+  ],
+  "stages": [
+    {
+      "key": "objective",
+      "title": "Objective",
+      "body": "In src/SealIn.ld.json one rung is drawn: a normally closed contact on StopPB, a normally open contact on StartPB and the coil Motor. Add a normally open contact on Motor in parallel with the StartPB contact, so that the motor holds itself on once started.",
+      "checkpoint": "The motor stays on after Start is released and drops out when Stop is pressed."
+    },
+    {
+      "key": "predict",
+      "title": "Predict",
+      "body": "Before running, predict Motor at {{t:30}} ms (Start was released at {{t:20}} ms), at {{t:50}} ms (Stop was released) and at {{t:70}} ms (Start and Stop pressed together).",
+      "checkpoint": "{{v:SealIn.Motor=true@30|ON}} at {{t:30}} ms; {{v:SealIn.Motor=false@50|OFF}} at {{t:50}} ms, because nobody is pressing Start; {{v:SealIn.Motor=false@70|OFF}} at {{t:70}} ms, because Stop wins."
+    },
+    {
+      "key": "edit",
+      "title": "Edit",
+      "body": "Correct this starter omission, save it, then press Check: The starter drives Motor only while StartPB is pressed, so it drops out as soon as Start is released at {{t:20}} ms; add a normally open contact on Motor in parallel with the StartPB contact, so the coil holds itself on. In the Ladder editor add a contact on the second row under StartPB and name it Motor.",
+      "checkpoint": "The visible scenario must pass with saved host evidence."
+    },
+    {
+      "key": "run",
+      "title": "Run",
+      "body": "Press Check. Studio runs your saved program against the scenario of this lesson.",
+      "checkpoint": "The scenario is named SealIn and contains {{assertions}} assertions."
+    },
+    {
+      "key": "observe",
+      "title": "Observe",
+      "body": "Compare {{t:20}}, {{t:30}} and {{t:40}} ms: Motor stays ON at {{t:30}} ms with Start released, and drops at {{t:40}} ms when Stop is pressed.",
+      "checkpoint": "Motor rises once at {{t:10}} ms and falls once at {{t:40}} ms; it does not start again at {{t:50}} ms when Stop is released."
+    },
+    {
+      "key": "reflect",
+      "title": "Reflect",
+      "body": "Why must the Stop contact sit in series before the branch? Move it into the held path and see which assertion fails.",
+      "checkpoint": "With Stop outside the series path, a motor that holds itself on cannot be stopped. The scenario presses Start and Stop together at {{t:70}} ms to prove that Stop wins; it does not prove a safe stop function."
+    }
+  ],
+  "hints": [
+    {
+      "level": 1,
+      "text": "Power must reach the coil through StopPB and then through either StartPB or something that is true while the motor runs. What is true while the motor runs?"
+    },
+    {
+      "level": 2,
+      "text": "Add a normally open contact on Motor in the second row, under the StartPB contact, and join it to the first row so the two are in parallel. Leave the StopPB contact where it is."
+    }
+  ],
+  "faultCases": [
+    "The starter drives Motor only while StartPB is pressed, so it drops out as soon as Start is released at {{t:20}} ms; add a normally open contact on Motor in parallel with the StartPB contact, so the coil holds itself on."
+  ]
+}

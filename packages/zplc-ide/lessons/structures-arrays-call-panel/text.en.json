@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "title": "Structures and arrays: a panel of three calls",
+  "summary": "Keep three call buttons in an array of structures and write one FOR loop that holds each call until it is acknowledged and reports whether any call, or every call, is waiting.",
+  "scope": "Tests provide native POSIX host evidence with one 10 ms task; they do not establish the response time of a real call panel or tasks beyond the one 10 ms task, HIL, or certification.",
+  "objectives": [
+    "Declare a structure with named members and an array of that structure, and reach an element with an index and a member name.",
+    "Replace three copies of the same code with one FOR loop over the array."
+  ],
+  "stages": [
+    {
+      "key": "objective",
+      "title": "Objective",
+      "body": "In src/CallPanel.st the structure Call has the members Pressed and Held, and the array Calls holds three of them. The program copies the buttons into Calls[1].Pressed to Calls[3].Pressed. Write a FOR loop over i from 1 to 3 that sets Held when Pressed is TRUE, clears it when Ack is TRUE, and sets Pending when any Held is TRUE and AllCalling when all three are.",
+      "checkpoint": "A call stays held after its button is released, Ack clears them, and the loop handles the three the same way."
+    },
+    {
+      "key": "predict",
+      "title": "Predict",
+      "body": "Calls arrive at {{t:10}}, {{t:30}} and {{t:50}} ms and Ack is pressed at {{t:70}} ms. Predict Pending and AllCalling at {{t:20}}, {{t:50}} and {{t:70}} ms.",
+      "checkpoint": "{{v:CallPanel.Pending=true,CallPanel.AllCalling=false@20|Pending only}} at {{t:20}} ms; {{v:CallPanel.Pending=true,CallPanel.AllCalling=true@50|both ON}} at {{t:50}} ms; {{v:CallPanel.Pending=false,CallPanel.AllCalling=false@70|both OFF}} at {{t:70}} ms."
+    },
+    {
+      "key": "edit",
+      "title": "Edit",
+      "body": "Correct this starter omission, save it, then press Check: The starter copies the three buttons into the array Calls but has no loop, so Pending and AllCalling stay OFF; add a FOR loop over the three elements that holds a pressed call until Ack and sets the two outputs.",
+      "checkpoint": "The visible scenario must pass with saved host evidence."
+    },
+    {
+      "key": "run",
+      "title": "Run",
+      "body": "Press Check. Studio runs your saved program against the scenario of this lesson.",
+      "checkpoint": "The scenario is named CallPanel and contains {{assertions}} assertions."
+    },
+    {
+      "key": "observe",
+      "title": "Observe",
+      "body": "Compare {{t:20}}, {{t:40}} and {{t:50}} ms: Pending rises with the first call and stays ON, and AllCalling rises only when the third call is held at {{t:50}} ms.",
+      "checkpoint": "Ack clears every call at {{t:70}} ms, and a single new call at {{t:90}} ms makes Pending rise again with AllCalling OFF."
+    },
+    {
+      "key": "reflect",
+      "title": "Reflect",
+      "body": "What would change if the loop ran from 1 to 2? Try it and see which assertion fails, then add a fourth call and say what you would edit.",
+      "checkpoint": "With an array and a loop, adding a call changes the bounds and one line that copies the button. The scenario shows the logic of one task only; it does not show several tasks or their priorities."
+    }
+  ],
+  "hints": [
+    {
+      "level": 1,
+      "text": "An element of the array is Calls[i], and a member of it is Calls[i].Held. Start Pending at FALSE and AllCalling at TRUE before the loop, and let the loop change them."
+    },
+    {
+      "level": 2,
+      "text": "FOR i := 1 TO 3 DO  IF Calls[i].Pressed THEN Calls[i].Held := TRUE; END_IF;  IF Ack THEN Calls[i].Held := FALSE; END_IF;  IF Calls[i].Held THEN Pending := TRUE; ELSE AllCalling := FALSE; END_IF; END_FOR;"
+    }
+  ],
+  "faultCases": [
+    "The starter copies the three buttons into the array Calls but has no loop, so Pending and AllCalling stay OFF; add a FOR loop over the three elements that holds a pressed call until Ack and sets the two outputs."
+  ]
+}

@@ -1,0 +1,158 @@
+{
+  "schemaVersion": 1,
+  "id": "CallPanel",
+  "tickMs": 10,
+  "durationMs": 110,
+  "events": [
+    {
+      "atMs": 0,
+      "set": {
+        "CallPanel.Call1": false,
+        "CallPanel.Call2": false,
+        "CallPanel.Call3": false,
+        "CallPanel.Ack": false
+      }
+    },
+    {
+      "atMs": 10,
+      "set": {
+        "CallPanel.Call1": true
+      }
+    },
+    {
+      "atMs": 20,
+      "set": {
+        "CallPanel.Call1": false
+      }
+    },
+    {
+      "atMs": 30,
+      "set": {
+        "CallPanel.Call2": true
+      }
+    },
+    {
+      "atMs": 40,
+      "set": {
+        "CallPanel.Call2": false
+      }
+    },
+    {
+      "atMs": 50,
+      "set": {
+        "CallPanel.Call3": true
+      }
+    },
+    {
+      "atMs": 60,
+      "set": {
+        "CallPanel.Call3": false
+      }
+    },
+    {
+      "atMs": 70,
+      "set": {
+        "CallPanel.Ack": true
+      }
+    },
+    {
+      "atMs": 80,
+      "set": {
+        "CallPanel.Ack": false
+      }
+    },
+    {
+      "atMs": 90,
+      "set": {
+        "CallPanel.Call2": true
+      }
+    },
+    {
+      "atMs": 100,
+      "set": {
+        "CallPanel.Call2": false
+      }
+    }
+  ],
+  "expectations": [
+    {
+      "kind": "AT",
+      "atMs": 0,
+      "condition": {
+        "CallPanel.Pending": false,
+        "CallPanel.AllCalling": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 20,
+      "condition": {
+        "CallPanel.Pending": true,
+        "CallPanel.AllCalling": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 40,
+      "condition": {
+        "CallPanel.Pending": true,
+        "CallPanel.AllCalling": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 50,
+      "condition": {
+        "CallPanel.Pending": true,
+        "CallPanel.AllCalling": true
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 70,
+      "condition": {
+        "CallPanel.Pending": false,
+        "CallPanel.AllCalling": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 90,
+      "condition": {
+        "CallPanel.Pending": true,
+        "CallPanel.AllCalling": false
+      }
+    },
+    {
+      "kind": "RISING",
+      "fromMs": 10,
+      "withinMs": 0,
+      "condition": {
+        "CallPanel.Pending": true
+      }
+    },
+    {
+      "kind": "RISING",
+      "fromMs": 50,
+      "withinMs": 0,
+      "condition": {
+        "CallPanel.AllCalling": true
+      }
+    },
+    {
+      "kind": "FALLING",
+      "fromMs": 70,
+      "withinMs": 0,
+      "condition": {
+        "CallPanel.Pending": false
+      }
+    },
+    {
+      "kind": "NEVER",
+      "condition": {
+        "CallPanel.AllCalling": true,
+        "CallPanel.Pending": false
+      }
+    }
+  ]
+}

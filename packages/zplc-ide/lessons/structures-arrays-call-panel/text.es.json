@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "title": "Estructuras y arreglos: un panel de tres llamadas",
+  "summary": "Guarde tres botones de llamada en un arreglo de estructuras y escriba un bucle FOR que mantenga cada llamada hasta que se reconozca e informe si hay alguna llamada, o todas, esperando.",
+  "scope": "La evidencia de Tests es del runtime nativo POSIX con una tarea de 10 ms; no establece el tiempo de respuesta de un panel de llamadas real ni tareas distintas de la tarea de 10 ms, HIL ni certificación.",
+  "objectives": [
+    "Declare una estructura con miembros con nombre y un arreglo de esa estructura, y llegue a un elemento con un índice y un nombre de miembro.",
+    "Reemplace tres copias del mismo código por un solo bucle FOR sobre el arreglo."
+  ],
+  "stages": [
+    {
+      "key": "objective",
+      "title": "Objetivo",
+      "body": "En src/CallPanel.st la estructura Call tiene los miembros Pressed y Held, y el arreglo Calls contiene tres. El programa copia los botones a Calls[1].Pressed hasta Calls[3].Pressed. Escriba un bucle FOR con i de 1 a 3 que ponga Held en TRUE cuando Pressed sea TRUE, lo borre cuando Ack sea TRUE, y active Pending si algún Held es TRUE y AllCalling si los tres lo son.",
+      "checkpoint": "Una llamada queda retenida al soltar su botón, Ack las borra, y el bucle trata las tres de la misma manera."
+    },
+    {
+      "key": "predict",
+      "title": "Prediga",
+      "body": "Las llamadas llegan a los {{t:10}}, {{t:30}} y {{t:50}} ms y Ack se pulsa a los {{t:70}} ms. Prediga Pending y AllCalling a los {{t:20}}, {{t:50}} y {{t:70}} ms.",
+      "checkpoint": "{{v:CallPanel.Pending=true,CallPanel.AllCalling=false@20|Solo Pending}} a los {{t:20}} ms; {{v:CallPanel.Pending=true,CallPanel.AllCalling=true@50|ambas en ON}} a los {{t:50}} ms; {{v:CallPanel.Pending=false,CallPanel.AllCalling=false@70|ambas en OFF}} a los {{t:70}} ms."
+    },
+    {
+      "key": "edit",
+      "title": "Edite",
+      "body": "Corrija esta omisión del programa inicial, guárdelo y pulse Comprobar: El programa inicial copia los tres botones al arreglo Calls pero no tiene bucle, así que Pending y AllCalling quedan en OFF; agregue un bucle FOR sobre los tres elementos que mantenga una llamada pulsada hasta Ack y active las dos salidas.",
+      "checkpoint": "El escenario visible debe pasar con evidencia guardada del host."
+    },
+    {
+      "key": "run",
+      "title": "Ejecute",
+      "body": "Pulse Comprobar. Studio ejecuta el programa guardado contra el escenario de esta lección.",
+      "checkpoint": "El escenario se llama CallPanel y contiene {{assertions}} assertions."
+    },
+    {
+      "key": "observe",
+      "title": "Observe",
+      "body": "Compare {{t:20}}, {{t:40}} y {{t:50}} ms: Pending sube con la primera llamada y sigue en ON, y AllCalling sube solo cuando la tercera llamada queda retenida a los {{t:50}} ms.",
+      "checkpoint": "Ack borra todas las llamadas a los {{t:70}} ms, y una sola llamada nueva a los {{t:90}} ms hace subir Pending otra vez con AllCalling en OFF."
+    },
+    {
+      "key": "reflect",
+      "title": "Reflexione",
+      "body": "¿Qué cambiaría si el bucle fuera de 1 a 2? Pruébelo y vea qué assertion falla; luego agregue una cuarta llamada y diga qué editaría.",
+      "checkpoint": "Con un arreglo y un bucle, agregar una llamada cambia los límites y una línea que copia el botón. El escenario muestra la lógica de una sola tarea; no muestra varias tareas ni sus prioridades."
+    }
+  ],
+  "hints": [
+    {
+      "level": 1,
+      "text": "Un elemento del arreglo es Calls[i], y un miembro de él es Calls[i].Held. Ponga Pending en FALSE y AllCalling en TRUE antes del bucle, y deje que el bucle los cambie."
+    },
+    {
+      "level": 2,
+      "text": "FOR i := 1 TO 3 DO  IF Calls[i].Pressed THEN Calls[i].Held := TRUE; END_IF;  IF Ack THEN Calls[i].Held := FALSE; END_IF;  IF Calls[i].Held THEN Pending := TRUE; ELSE AllCalling := FALSE; END_IF; END_FOR;"
+    }
+  ],
+  "faultCases": [
+    "El programa inicial copia los tres botones al arreglo Calls pero no tiene bucle, así que Pending y AllCalling quedan en OFF; agregue un bucle FOR sobre los tres elementos que mantenga una llamada pulsada hasta Ack y active las dos salidas."
+  ]
+}

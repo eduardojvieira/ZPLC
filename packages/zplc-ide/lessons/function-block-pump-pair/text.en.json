@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "title": "Function blocks: one latch, two pumps",
+  "summary": "Write the body of a function block that holds a start and stop latch, then use it twice, once for each pump.",
+  "scope": "Tests provide native POSIX host evidence with one 10 ms task; they do not establish pump behaviour, start-up current or any real machine requirement, HIL, or certification.",
+  "objectives": [
+    "Write a function block with inputs, an output and a memory that lives between calls.",
+    "See that two instances of the same function block keep separate memories."
+  ],
+  "stages": [
+    {
+      "key": "objective",
+      "title": "Objective",
+      "body": "In src/PumpPair.st the function block Latch has the inputs Set and Reset and the output Q, and the program declares two instances, PumpA and PumpB. Write the body of Latch: Q turns ON on Set, turns OFF on Reset, keeps its value otherwise, and Reset wins when both are TRUE.",
+      "checkpoint": "Each pump starts on its own Start, stops on its own Stop, and one pump never moves the other."
+    },
+    {
+      "key": "predict",
+      "title": "Predict",
+      "body": "PumpA starts at {{t:10}} ms and PumpB at {{t:30}} ms. PumpA is stopped at {{t:50}} ms. Predict RunA and RunB at {{t:30}}, {{t:50}} and {{t:70}} ms.",
+      "checkpoint": "{{v:PumpPair.RunA=true,PumpPair.RunB=true@30|Both ON}} at {{t:30}} ms; {{v:PumpPair.RunA=false,PumpPair.RunB=true@50|only RunB}} at {{t:50}} ms; {{v:PumpPair.RunA=false,PumpPair.RunB=false@70|both OFF}} at {{t:70}} ms."
+    },
+    {
+      "key": "edit",
+      "title": "Edit",
+      "body": "Correct this starter omission, save it, then press Check: The starter defines the Latch function block and calls it twice, but the body of Latch is empty, so Q never changes and both pumps stay OFF; write the body so that Set turns Q ON, Reset turns it OFF, and Q keeps its value between calls.",
+      "checkpoint": "The visible scenario must pass with saved host evidence."
+    },
+    {
+      "key": "run",
+      "title": "Run",
+      "body": "Press Check. Studio runs your saved program against the scenario of this lesson.",
+      "checkpoint": "The scenario is named PumpPair and contains {{assertions}} assertions."
+    },
+    {
+      "key": "observe",
+      "title": "Observe",
+      "body": "Compare {{t:10}}, {{t:30}} and {{t:50}} ms: RunA holds after its button is released, RunB joins at {{t:30}} ms, and stopping A at {{t:50}} ms leaves B ON.",
+      "checkpoint": "RunA and RunB change at different times from the same block, which shows two memories. At {{t:90}} ms Start and Stop arrive together on pump A and it stays OFF."
+    },
+    {
+      "key": "reflect",
+      "title": "Reflect",
+      "body": "What would change if both pumps shared one global memory instead of one instance each? Try giving PumpB the inputs of pump A and see which assertion fails.",
+      "checkpoint": "Each instance has its own copy of the variables of the block, so the same code serves any number of pumps. The scenario shows the logic only; it does not show start-up sequencing or a pump fault."
+    }
+  ],
+  "hints": [
+    {
+      "level": 1,
+      "text": "Q is an output that keeps its value from one call to the next, so it can appear on the right-hand side of its own assignment."
+    },
+    {
+      "level": 2,
+      "text": "Q := (Set OR Q) AND NOT Reset; written between the VAR_OUTPUT section and END_FUNCTION_BLOCK."
+    }
+  ],
+  "faultCases": [
+    "The starter defines the Latch function block and calls it twice, but the body of Latch is empty, so Q never changes and both pumps stay OFF; write the body so that Set turns Q ON, Reset turns it OFF, and Q keeps its value between calls."
+  ]
+}

@@ -5,6 +5,7 @@ import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { ZPLC_CONSTANTS } from '@zplc/compiler';
 import { afterEach, describe, expect, test } from 'bun:test';
+import { LESSON_INDEX } from '../generated/lessonIndex';
 import { parseMcpWorkspaceArgument } from './index';
 import { MCP_RESOURCE_URIS, MCP_SERVER_VERSION, MCP_TOOL_NAMES, courseProgressResource, createMcpDispatcher, openMcpRepository, openMcpUserData, openMcpWorkspace, projectResource, toMcpToolResult, type McpOperations } from './server';
 
@@ -81,7 +82,7 @@ describe('local MCP adapter', () => {
   test('projects explicit current Learn progress and fails closed for malformed or linked data', async () => {
     const root = await workspace(); const userData = await mkdtemp(join(tmpdir(), 'zplc-mcp-user-data-')); temporary.push(userData);
     const bound = await openMcpWorkspace(root); const user = await openMcpUserData(userData); expect(bound).toBeDefined(); expect(user).toBeDefined(); if (!bound || !user) return;
-    const progress = (extra: Record<string, unknown> = {}) => ({ ok: true, schemaVersion: 1, mastered: [], completed: 0, total: 15, ...extra });
+    const progress = (extra: Record<string, unknown> = {}) => ({ ok: true, schemaVersion: 1, mastered: [], completed: 0, total: LESSON_INDEX.lessons.length, ...extra });
     await expect(courseProgressResource({ ...bound, userData: user })).resolves.toEqual(progress());
     // The file of the first release is read as it is: migrated in memory, never written back.
     await writeFile(join(userData, 'zplc-learn-mastery.v1.json'), '{"schemaVersion":1,"mastered":["motor-start-stop-safe"]}');

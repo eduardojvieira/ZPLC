@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 1,
+  "alsoGreen": [],
+  "wrong": [
+    {
+      "intent": "lets Start win over Stop, so pump A restarts when both arrive together",
+      "files": {
+        "src/PumpPair.st": "FUNCTION_BLOCK Latch\nVAR_INPUT Set : BOOL; Reset : BOOL; END_VAR\nVAR_OUTPUT Q : BOOL; END_VAR\nQ := Set OR (Q AND NOT Reset);\nEND_FUNCTION_BLOCK\n\nPROGRAM PumpPair\nVAR_INPUT StartA AT %I0.0 : BOOL; StopA AT %I0.1 : BOOL; StartB AT %I0.2 : BOOL; StopB AT %I0.3 : BOOL; END_VAR\nVAR_OUTPUT RunA AT %Q0.0 : BOOL; RunB AT %Q0.1 : BOOL; END_VAR\nVAR PumpA : Latch; PumpB : Latch; END_VAR\nPumpA(Set := StartA, Reset := StopA);\nPumpB(Set := StartB, Reset := StopB);\nRunA := PumpA.Q; RunB := PumpB.Q;\nEND_PROGRAM\n"
+      }
+    },
+    {
+      "intent": "never uses Reset, so no pump ever stops",
+      "files": {
+        "src/PumpPair.st": "FUNCTION_BLOCK Latch\nVAR_INPUT Set : BOOL; Reset : BOOL; END_VAR\nVAR_OUTPUT Q : BOOL; END_VAR\nQ := Set OR Q;\nEND_FUNCTION_BLOCK\n\nPROGRAM PumpPair\nVAR_INPUT StartA AT %I0.0 : BOOL; StopA AT %I0.1 : BOOL; StartB AT %I0.2 : BOOL; StopB AT %I0.3 : BOOL; END_VAR\nVAR_OUTPUT RunA AT %Q0.0 : BOOL; RunB AT %Q0.1 : BOOL; END_VAR\nVAR PumpA : Latch; PumpB : Latch; END_VAR\nPumpA(Set := StartA, Reset := StopA);\nPumpB(Set := StartB, Reset := StopB);\nRunA := PumpA.Q; RunB := PumpB.Q;\nEND_PROGRAM\n"
+      }
+    },
+    {
+      "intent": "gives pump B the inputs of pump A, so B copies A",
+      "files": {
+        "src/PumpPair.st": "FUNCTION_BLOCK Latch\nVAR_INPUT Set : BOOL; Reset : BOOL; END_VAR\nVAR_OUTPUT Q : BOOL; END_VAR\nQ := (Set OR Q) AND NOT Reset;\nEND_FUNCTION_BLOCK\n\nPROGRAM PumpPair\nVAR_INPUT StartA AT %I0.0 : BOOL; StopA AT %I0.1 : BOOL; StartB AT %I0.2 : BOOL; StopB AT %I0.3 : BOOL; END_VAR\nVAR_OUTPUT RunA AT %Q0.0 : BOOL; RunB AT %Q0.1 : BOOL; END_VAR\nVAR PumpA : Latch; PumpB : Latch; END_VAR\nPumpA(Set := StartA, Reset := StopA);\nPumpB(Set := StartA, Reset := StopA);\nRunA := PumpA.Q; RunB := PumpB.Q;\nEND_PROGRAM\n"
+      }
+    },
+    {
+      "intent": "never calls pump B, so RunB stays OFF",
+      "files": {
+        "src/PumpPair.st": "FUNCTION_BLOCK Latch\nVAR_INPUT Set : BOOL; Reset : BOOL; END_VAR\nVAR_OUTPUT Q : BOOL; END_VAR\nQ := (Set OR Q) AND NOT Reset;\nEND_FUNCTION_BLOCK\n\nPROGRAM PumpPair\nVAR_INPUT StartA AT %I0.0 : BOOL; StopA AT %I0.1 : BOOL; StartB AT %I0.2 : BOOL; StopB AT %I0.3 : BOOL; END_VAR\nVAR_OUTPUT RunA AT %Q0.0 : BOOL; RunB AT %Q0.1 : BOOL; END_VAR\nVAR PumpA : Latch; PumpB : Latch; END_VAR\nPumpA(Set := StartA, Reset := StopA);\nRunA := PumpA.Q; RunB := PumpB.Q;\nEND_PROGRAM\n"
+      }
+    }
+  ]
+}

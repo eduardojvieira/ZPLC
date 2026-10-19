@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "title": "Lista de instrucciones: el resultado actual y el orden de las instrucciones",
+  "summary": "Complete un programa en lista de instrucciones para que una alarma de puerta se mantenga encendida al cerrar la puerta y se silencie con un botón, y vea que el orden de las instrucciones decide el resultado.",
+  "scope": "La evidencia de Tests es del runtime nativo POSIX con una tarea de 10 ms; no establece requisitos de alarmas, tiempos de sirena ni el comportamiento de una máquina real, HIL ni certificación.",
+  "objectives": [
+    "Lea un programa en lista de instrucciones como un resultado actual que cada instrucción combina con un operando, de arriba hacia abajo.",
+    "Use LD, AND, OR, ANDN y ST, y vea que mover una instrucción cambia la lógica."
+  ],
+  "stages": [
+    {
+      "key": "objective",
+      "title": "Objetivo",
+      "body": "En src/DoorAlarm.il cada línea es una instrucción: LD carga un operando en el resultado actual, AND lo combina y ST guarda el resultado en Siren. Agregue dos líneas antes de ST para que Siren se mantenga encendida y Silence la apague: OR Siren y luego ANDN Silence.",
+      "checkpoint": "La sirena suena cuando la alarma está armada y la puerta se abre, sigue sonando al cerrarse la puerta y se apaga al pulsar Silence."
+    },
+    {
+      "key": "predict",
+      "title": "Prediga",
+      "body": "La puerta se abre a los {{t:10}} ms y se cierra a los {{t:30}} ms. Silence se pulsa a los {{t:50}} ms. Prediga Siren a los {{t:40}}, {{t:50}} y {{t:80}} ms; la puerta se abre a los {{t:70}} ms con la alarma desarmada.",
+      "checkpoint": "{{v:DoorAlarm.Siren=true@40|En ON}} a los {{t:40}} ms, con la puerta ya cerrada; {{v:DoorAlarm.Siren=false@50|en OFF}} a los {{t:50}} ms; {{v:DoorAlarm.Siren=false@80|en OFF}} a los {{t:80}} ms, porque la alarma está desarmada."
+    },
+    {
+      "key": "edit",
+      "title": "Edite",
+      "body": "Corrija esta omisión del programa inicial, guárdelo y pulse Comprobar: El programa inicial carga Armed, le aplica AND con DoorOpen y guarda el resultado, así que Siren sigue a la puerta y se apaga a los {{t:30}} ms cuando la puerta se cierra; agregue OR Siren para que la sirena se mantenga encendida y luego ANDN Silence para que Silence la apague, en ese orden.",
+      "checkpoint": "El escenario visible debe pasar con evidencia guardada del host."
+    },
+    {
+      "key": "run",
+      "title": "Ejecute",
+      "body": "Pulse Comprobar. Studio ejecuta el programa guardado contra el escenario de esta lección.",
+      "checkpoint": "El escenario se llama DoorAlarm y contiene {{assertions}} assertions."
+    },
+    {
+      "key": "observe",
+      "title": "Observe",
+      "body": "Compare {{t:10}}, {{t:40}} y {{t:50}} ms: Siren sube con la puerta, se mantiene al cerrarse y cae con Silence; vuelve a subir a los {{t:90}} ms cuando se arma la alarma con la puerta aún abierta.",
+      "checkpoint": "Silence a los {{t:100}} ms apaga la sirena aunque la puerta esté abierta, y a los {{t:110}} ms la sirena vuelve a sonar porque la causa sigue presente."
+    },
+    {
+      "key": "reflect",
+      "title": "Reflexione",
+      "body": "¿Qué pasa si ANDN Silence va antes de OR Siren? Intercambie las dos líneas y vea qué assertion falla.",
+      "checkpoint": "Cada instrucción trabaja sobre el resultado de las líneas anteriores, así que OR Siren después de ANDN Silence devuelve el valor retenido. El escenario muestra solo la lógica; no es un sistema de alarma."
+    }
+  ],
+  "hints": [
+    {
+      "level": 1,
+      "text": "Siren se mantiene encendida cuando su propio valor anterior forma parte de la condición. ¿Qué instrucción combina el resultado actual con otro operando mediante OR?"
+    },
+    {
+      "level": 2,
+      "text": "LD Armed, AND DoorOpen, OR Siren, ANDN Silence, ST Siren: cinco líneas, un operando cada una."
+    }
+  ],
+  "faultCases": [
+    "El programa inicial carga Armed, le aplica AND con DoorOpen y guarda el resultado, así que Siren sigue a la puerta y se apaga a los {{t:30}} ms cuando la puerta se cierra; agregue OR Siren para que la sirena se mantenga encendida y luego ANDN Silence para que Silence la apague, en ese orden."
+  ]
+}

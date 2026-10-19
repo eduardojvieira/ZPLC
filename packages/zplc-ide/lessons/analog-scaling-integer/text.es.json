@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "title": "Escalado analógico: de cuentas crudas a un porcentaje",
+  "summary": "Escale una cuenta cruda de 0 a 1000 a un porcentaje con aritmética entera, y active una advertencia al 50 por ciento y una alarma al 80 por ciento.",
+  "scope": "La evidencia de Tests es del runtime nativo POSIX con una tarea de 10 ms; no establece la exactitud, el ruido ni la calibración de una entrada analógica real, HIL ni certificación.",
+  "objectives": [
+    "Escale una cuenta cruda a unidades de ingeniería con una multiplicación seguida de una división, en ese orden.",
+    "Vea que la división entera descarta el resto, y elija un tipo entero lo bastante ancho para el producto intermedio."
+  ],
+  "stages": [
+    {
+      "key": "objective",
+      "title": "Objetivo",
+      "body": "Las entradas del escenario son BOOL, así que esta lección no lee una entrada analógica real: src/Scaling.st suma 100 a Raw en cada ciclo mientras Enable es TRUE, como sustituto de una señal que sube de 0 a 1000. Escriba el escalado: Percent es Raw escalado de 0..1000 a 0..100.",
+      "checkpoint": "Percent sigue a Raw dividido por 10, Warn pasa a ON al 50 por ciento y Alarm al 80 por ciento."
+    },
+    {
+      "key": "predict",
+      "title": "Prediga",
+      "body": "Enable sube a los {{t:10}} ms y Raw vale 100 después de ese ciclo. Prediga Warn y Alarm a los {{t:40}}, {{t:50}} y {{t:80}} ms.",
+      "checkpoint": "{{v:Scaling.Warn=false,Scaling.Alarm=false@40|Ambas en OFF}} a los {{t:40}} ms; {{v:Scaling.Warn=true,Scaling.Alarm=false@50|solo Warn}} a los {{t:50}} ms; {{v:Scaling.Warn=true,Scaling.Alarm=true@80|ambas en ON}} a los {{t:80}} ms."
+    },
+    {
+      "key": "edit",
+      "title": "Edite",
+      "body": "Corrija esta falla del programa inicial, guárdelo y pulse Comprobar: El programa inicial divide antes de multiplicar, así que la división entera Raw / 1000 da 0 hasta que Raw llega a 1000 y el porcentaje queda en 0; multiplique primero por 100 y luego divida por 1000.",
+      "checkpoint": "El escenario visible debe pasar con evidencia guardada del host."
+    },
+    {
+      "key": "run",
+      "title": "Ejecute",
+      "body": "Pulse Comprobar. Studio ejecuta el programa guardado contra el escenario de esta lección.",
+      "checkpoint": "El escenario se llama Scaling y contiene {{assertions}} assertions."
+    },
+    {
+      "key": "observe",
+      "title": "Observe",
+      "body": "Compare {{t:40}}, {{t:50}} y {{t:80}} ms: Warn sube a los {{t:50}} ms cuando Raw vale 500, y Alarm a los {{t:80}} ms cuando vale 800.",
+      "checkpoint": "Cada salida sube una vez; Alarm nunca está en ON con Warn en OFF; la caída de Enable a los {{t:110}} ms borra las dos."
+    },
+    {
+      "key": "reflect",
+      "title": "Reflexione",
+      "body": "¿Por qué se usa DINT en esta lección? Raw por 100 llega a 100000, más de lo que cabe en un entero de 16 bits, así que el producto intermedio necesita un tipo ancho. Compruebe el ancho de INT en su destino antes de confiar en él.",
+      "checkpoint": "El producto se forma antes de la división, así que su rango decide el tipo, no el rango de Raw. El escenario comprueba solo los dos umbrales; no comprueba el redondeo de otros valores."
+    }
+  ],
+  "hints": [
+    {
+      "level": 1,
+      "text": "La división entera da un número entero: 500 / 1000 es 0. ¿Qué operación debe ir primero para no perder el resto?"
+    },
+    {
+      "level": 2,
+      "text": "Percent := (Raw * 100) / 1000; conserva el producto completo antes de dividir. Deje Raw y las dos comparaciones como están."
+    }
+  ],
+  "faultCases": [
+    "El programa inicial divide antes de multiplicar, así que la división entera Raw / 1000 da 0 hasta que Raw llega a 1000 y el porcentaje queda en 0; multiplique primero por 100 y luego divida por 1000."
+  ]
+}

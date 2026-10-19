@@ -2636,6 +2636,1554 @@
           ]
         }
       }
+    },
+    {
+      "id": "seal-in-ladder",
+      "version": 1,
+      "order": 16,
+      "module": 2,
+      "level": "foundation",
+      "prerequisites": [
+        "blinky-ladder-timer-feedback"
+      ],
+      "languages": [
+        "LD"
+      ],
+      "tracks": [
+        "simulation"
+      ],
+      "unsupported": {
+        "hardware": {
+          "reason": {
+            "en": "The lesson is graded on a Start and Stop pressed together at an exact 10 ms step, which a board cannot repeat the same way every run.",
+            "es": "La lección se califica con Start y Stop pulsados juntos en un paso exacto de 10 ms, que una placa no repite igual en cada ejecución."
+          },
+          "instead": {
+            "en": "Complete it in Simulation: its grade is the same each time and needs no board.",
+            "es": "Complétela en Simulación: su calificación es la misma cada vez y no necesita una placa."
+          }
+        }
+      },
+      "plant": null,
+      "plantMap": null,
+      "estimatedMinutes": 20,
+      "starter": {
+        "project": "seal_in_ladder_starter",
+        "program": "src/SealIn.ld.json"
+      },
+      "solution": {
+        "project": "seal_in_ladder",
+        "program": "src/SealIn.ld.json"
+      },
+      "scenario": {
+        "id": "SealIn",
+        "path": "tests/seal-in.scenario.json",
+        "sha256": "418381cb4981252aafe240659adff839346bdc29e49d2e2069d395a648a00488",
+        "tickMs": 10,
+        "durationMs": 100,
+        "assertions": 11,
+        "canonical": "{\"durationMs\":100,\"events\":[{\"atMs\":0,\"set\":{\"SealIn.StartPB\":false,\"SealIn.StopPB\":false}},{\"atMs\":10,\"set\":{\"SealIn.StartPB\":true}},{\"atMs\":20,\"set\":{\"SealIn.StartPB\":false}},{\"atMs\":40,\"set\":{\"SealIn.StopPB\":true}},{\"atMs\":50,\"set\":{\"SealIn.StopPB\":false}},{\"atMs\":60,\"set\":{\"SealIn.StartPB\":true}},{\"atMs\":70,\"set\":{\"SealIn.StopPB\":true}},{\"atMs\":80,\"set\":{\"SealIn.StartPB\":false,\"SealIn.StopPB\":false}}],\"expectations\":[{\"atMs\":0,\"condition\":{\"SealIn.Motor\":false},\"kind\":\"AT\"},{\"atMs\":10,\"condition\":{\"SealIn.Motor\":true},\"kind\":\"AT\"},{\"atMs\":30,\"condition\":{\"SealIn.Motor\":true},\"kind\":\"AT\"},{\"atMs\":40,\"condition\":{\"SealIn.Motor\":false},\"kind\":\"AT\"},{\"atMs\":50,\"condition\":{\"SealIn.Motor\":false},\"kind\":\"AT\"},{\"atMs\":60,\"condition\":{\"SealIn.Motor\":true},\"kind\":\"AT\"},{\"atMs\":70,\"condition\":{\"SealIn.Motor\":false},\"kind\":\"AT\"},{\"atMs\":90,\"condition\":{\"SealIn.Motor\":false},\"kind\":\"AT\"},{\"condition\":{\"SealIn.Motor\":true},\"forMs\":10,\"fromMs\":20,\"kind\":\"FOR\"},{\"condition\":{\"SealIn.Motor\":true},\"fromMs\":10,\"kind\":\"RISING\",\"withinMs\":0},{\"condition\":{\"SealIn.Motor\":false},\"fromMs\":40,\"kind\":\"FALLING\",\"withinMs\":0}],\"id\":\"SealIn\",\"schemaVersion\":1,\"tickMs\":10}"
+      },
+      "regressionScenarios": [],
+      "text": {
+        "en": {
+          "title": "Seal-in in Ladder: a motor that holds itself on",
+          "summary": "Edit a Ladder rung so that a Start press keeps the motor on after the button is released, and a Stop press drops it even while Start is still pressed.",
+          "scope": "Tests provide native POSIX host evidence with one 10 ms task; they do not establish a safe stop function, wiring, hardware timing, HIL, or certification.",
+          "objectives": [
+            "Read a Ladder rung as a path of contacts that must all pass power to reach a coil.",
+            "Hold a coil on with a contact of its own output in parallel with Start, and keep Stop in series so that Stop wins."
+          ],
+          "stages": [
+            {
+              "key": "objective",
+              "title": "Objective",
+              "body": "In src/SealIn.ld.json one rung is drawn: a normally closed contact on StopPB, a normally open contact on StartPB and the coil Motor. Add a normally open contact on Motor in parallel with the StartPB contact, so that the motor holds itself on once started.",
+              "checkpoint": "The motor stays on after Start is released and drops out when Stop is pressed."
+            },
+            {
+              "key": "predict",
+              "title": "Predict",
+              "body": "Before running, predict Motor at 30 ms (Start was released at 20 ms), at 50 ms (Stop was released) and at 70 ms (Start and Stop pressed together).",
+              "checkpoint": "ON at 30 ms; OFF at 50 ms, because nobody is pressing Start; OFF at 70 ms, because Stop wins."
+            },
+            {
+              "key": "edit",
+              "title": "Edit",
+              "body": "Correct this starter omission, save it, then press Check: The starter drives Motor only while StartPB is pressed, so it drops out as soon as Start is released at 20 ms; add a normally open contact on Motor in parallel with the StartPB contact, so the coil holds itself on. In the Ladder editor add a contact on the second row under StartPB and name it Motor.",
+              "checkpoint": "The visible scenario must pass with saved host evidence."
+            },
+            {
+              "key": "run",
+              "title": "Run",
+              "body": "Press Check. Studio runs your saved program against the scenario of this lesson.",
+              "checkpoint": "The scenario is named SealIn and contains 11 assertions."
+            },
+            {
+              "key": "observe",
+              "title": "Observe",
+              "body": "Compare 20, 30 and 40 ms: Motor stays ON at 30 ms with Start released, and drops at 40 ms when Stop is pressed.",
+              "checkpoint": "Motor rises once at 10 ms and falls once at 40 ms; it does not start again at 50 ms when Stop is released."
+            },
+            {
+              "key": "reflect",
+              "title": "Reflect",
+              "body": "Why must the Stop contact sit in series before the branch? Move it into the held path and see which assertion fails.",
+              "checkpoint": "With Stop outside the series path, a motor that holds itself on cannot be stopped. The scenario presses Start and Stop together at 70 ms to prove that Stop wins; it does not prove a safe stop function."
+            }
+          ],
+          "hints": [
+            {
+              "level": 1,
+              "text": "Power must reach the coil through StopPB and then through either StartPB or something that is true while the motor runs. What is true while the motor runs?"
+            },
+            {
+              "level": 2,
+              "text": "Add a normally open contact on Motor in the second row, under the StartPB contact, and join it to the first row so the two are in parallel. Leave the StopPB contact where it is."
+            }
+          ],
+          "faultCases": [
+            "The starter drives Motor only while StartPB is pressed, so it drops out as soon as Start is released at 20 ms; add a normally open contact on Motor in parallel with the StartPB contact, so the coil holds itself on."
+          ]
+        },
+        "es": {
+          "title": "Autorretención en Ladder: un motor que se mantiene encendido",
+          "summary": "Edite un peldaño de Ladder para que una pulsación de Start mantenga el motor encendido al soltar el botón, y una pulsación de Stop lo apague aunque Start siga pulsado.",
+          "scope": "La evidencia de Tests es del runtime nativo POSIX con una tarea de 10 ms; no establece una función de parada segura, cableado, tiempos de hardware, HIL ni certificación.",
+          "objectives": [
+            "Lea un peldaño de Ladder como un camino de contactos por el que debe pasar la energía hasta la bobina.",
+            "Mantenga una bobina encendida con un contacto de su propia salida en paralelo con Start, y deje Stop en serie para que Stop gane."
+          ],
+          "stages": [
+            {
+              "key": "objective",
+              "title": "Objetivo",
+              "body": "En src/SealIn.ld.json hay un peldaño dibujado: un contacto normalmente cerrado de StopPB, un contacto normalmente abierto de StartPB y la bobina Motor. Agregue un contacto normalmente abierto de Motor en paralelo con el contacto de StartPB para que el motor se mantenga encendido una vez arrancado.",
+              "checkpoint": "El motor sigue encendido al soltar Start y se apaga al pulsar Stop."
+            },
+            {
+              "key": "predict",
+              "title": "Prediga",
+              "body": "Antes de ejecutar, prediga Motor a los 30 ms (Start se soltó a los 20 ms), a los 50 ms (se soltó Stop) y a los 70 ms (Start y Stop pulsados a la vez).",
+              "checkpoint": "En ON a los 30 ms; en OFF a los 50 ms, porque nadie pulsa Start; en OFF a los 70 ms, porque Stop gana."
+            },
+            {
+              "key": "edit",
+              "title": "Edite",
+              "body": "Corrija esta omisión del programa inicial, guárdelo y pulse Comprobar: El programa inicial acciona Motor solo mientras StartPB está pulsado, así que se apaga en cuanto se suelta Start a los 20 ms; agregue un contacto normalmente abierto de Motor en paralelo con el contacto de StartPB para que la bobina se mantenga sola. En el editor Ladder agregue un contacto en la segunda fila, bajo StartPB, y llámelo Motor.",
+              "checkpoint": "El escenario visible debe pasar con evidencia guardada del host."
+            },
+            {
+              "key": "run",
+              "title": "Ejecute",
+              "body": "Pulse Comprobar. Studio ejecuta el programa guardado contra el escenario de esta lección.",
+              "checkpoint": "El escenario se llama SealIn y contiene 11 assertions."
+            },
+            {
+              "key": "observe",
+              "title": "Observe",
+              "body": "Compare 20, 30 y 40 ms: Motor sigue en ON a los 30 ms con Start suelto, y cae a los 40 ms al pulsar Stop.",
+              "checkpoint": "Motor sube una vez a los 10 ms y cae una vez a los 40 ms; no vuelve a arrancar a los 50 ms cuando se suelta Stop."
+            },
+            {
+              "key": "reflect",
+              "title": "Reflexione",
+              "body": "¿Por qué el contacto de Stop debe estar en serie antes de la rama? Muévalo al camino que se mantiene y vea qué assertion falla.",
+              "checkpoint": "Con Stop fuera del camino en serie, un motor que se mantiene solo no se puede detener. El escenario pulsa Start y Stop a la vez a los 70 ms para probar que Stop gana; no prueba una función de parada segura."
+            }
+          ],
+          "hints": [
+            {
+              "level": 1,
+              "text": "La energía debe llegar a la bobina por StopPB y luego por StartPB o por algo que sea verdadero mientras el motor funciona. ¿Qué es verdadero mientras el motor funciona?"
+            },
+            {
+              "level": 2,
+              "text": "Agregue un contacto normalmente abierto de Motor en la segunda fila, bajo el contacto de StartPB, y únalo a la primera fila para que queden en paralelo. Deje el contacto de StopPB donde está."
+            }
+          ],
+          "faultCases": [
+            "El programa inicial acciona Motor solo mientras StartPB está pulsado, así que se apaga en cuanto se suelta Start a los 20 ms; agregue un contacto normalmente abierto de Motor en paralelo con el contacto de StartPB para que la bobina se mantenga sola."
+          ]
+        }
+      }
+    },
+    {
+      "id": "counter-batch-fbd",
+      "version": 1,
+      "order": 17,
+      "module": 3,
+      "level": "foundation",
+      "prerequisites": [
+        "edge-counter-pulses"
+      ],
+      "languages": [
+        "FBD"
+      ],
+      "tracks": [
+        "simulation"
+      ],
+      "unsupported": {
+        "hardware": {
+          "reason": {
+            "en": "The lesson counts parts from a photocell signal that Studio replays exactly, and a board has no recorded trace of such a signal for it yet.",
+            "es": "La lección cuenta piezas a partir de una señal de fotocélula que Studio reproduce exactamente, y todavía no hay una traza registrada desde una placa de esa señal."
+          },
+          "instead": {
+            "en": "Complete it in Simulation: its grade is the same each time and needs no board.",
+            "es": "Complétela en Simulación: su calificación es la misma cada vez y no necesita una placa."
+          }
+        }
+      },
+      "plant": null,
+      "plantMap": null,
+      "estimatedMinutes": 20,
+      "starter": {
+        "project": "batch_count_fbd_starter",
+        "program": "src/BatchCount.fbd.json"
+      },
+      "solution": {
+        "project": "batch_count_fbd",
+        "program": "src/BatchCount.fbd.json"
+      },
+      "scenario": {
+        "id": "BatchCount",
+        "path": "tests/batch-count.scenario.json",
+        "sha256": "aab7db4d72a4cca5ee265f361e3b2656329822ee625473c86618d92c6134840e",
+        "tickMs": 10,
+        "durationMs": 120,
+        "assertions": 10,
+        "canonical": "{\"durationMs\":120,\"events\":[{\"atMs\":0,\"set\":{\"BatchCount.PartSensor\":false,\"BatchCount.Reset\":false}},{\"atMs\":10,\"set\":{\"BatchCount.PartSensor\":true}},{\"atMs\":30,\"set\":{\"BatchCount.PartSensor\":false}},{\"atMs\":40,\"set\":{\"BatchCount.PartSensor\":true}},{\"atMs\":50,\"set\":{\"BatchCount.PartSensor\":false}},{\"atMs\":60,\"set\":{\"BatchCount.PartSensor\":true}},{\"atMs\":70,\"set\":{\"BatchCount.PartSensor\":false}},{\"atMs\":80,\"set\":{\"BatchCount.Reset\":true}},{\"atMs\":90,\"set\":{\"BatchCount.Reset\":false}},{\"atMs\":100,\"set\":{\"BatchCount.PartSensor\":true}},{\"atMs\":110,\"set\":{\"BatchCount.PartSensor\":false}}],\"expectations\":[{\"atMs\":0,\"condition\":{\"BatchCount.BatchFull\":false},\"kind\":\"AT\"},{\"atMs\":30,\"condition\":{\"BatchCount.BatchFull\":false},\"kind\":\"AT\"},{\"atMs\":50,\"condition\":{\"BatchCount.BatchFull\":false},\"kind\":\"AT\"},{\"atMs\":60,\"condition\":{\"BatchCount.BatchFull\":true},\"kind\":\"AT\"},{\"atMs\":70,\"condition\":{\"BatchCount.BatchFull\":true},\"kind\":\"AT\"},{\"atMs\":80,\"condition\":{\"BatchCount.BatchFull\":false},\"kind\":\"AT\"},{\"atMs\":110,\"condition\":{\"BatchCount.BatchFull\":false},\"kind\":\"AT\"},{\"condition\":{\"BatchCount.BatchFull\":true},\"forMs\":10,\"fromMs\":60,\"kind\":\"FOR\"},{\"condition\":{\"BatchCount.BatchFull\":true},\"fromMs\":60,\"kind\":\"RISING\",\"withinMs\":0},{\"condition\":{\"BatchCount.BatchFull\":false},\"fromMs\":80,\"kind\":\"FALLING\",\"withinMs\":0}],\"id\":\"BatchCount\",\"schemaVersion\":1,\"tickMs\":10}"
+      },
+      "regressionScenarios": [],
+      "text": {
+        "en": {
+          "title": "Counters in Function Block Diagram: count parts to a batch",
+          "summary": "Edit a Function Block Diagram so that a CTU counter counts three parts, lights BatchFull, and clears with Reset.",
+          "scope": "Tests provide native POSIX host evidence with one 10 ms task; they do not establish sensor wiring, debounce, counting accuracy at machine speed, HIL, or certification.",
+          "objectives": [
+            "Read a Function Block Diagram as blocks whose output ports are wired to the input ports of other blocks.",
+            "Wire a CTU counter: a rising edge on CU counts, R clears it, and Q is TRUE when the count reaches the preset PV."
+          ],
+          "stages": [
+            {
+              "key": "objective",
+              "title": "Objective",
+              "body": "In src/BatchCount.fbd.json the counter block Count (CTU), the preset 3 and the output BatchFull are placed, and Q is already wired to BatchFull. Wire the input PartSensor to CU and the input Reset to R.",
+              "checkpoint": "BatchFull lights when the third part is counted and goes out on Reset."
+            },
+            {
+              "key": "predict",
+              "title": "Predict",
+              "body": "Predict BatchFull at 50 ms (two parts counted), at 60 ms (the third part arrives) and at 80 ms (Reset is pressed). The first part stays in front of the sensor for several scans.",
+              "checkpoint": "OFF at 50 ms, because a part counts once however long it stays; ON at 60 ms; OFF at 80 ms."
+            },
+            {
+              "key": "edit",
+              "title": "Edit",
+              "body": "Correct this starter omission, save it, then press Check: The starter has the counter and the preset, but PartSensor and Reset are not wired to it, so Count never counts and BatchFull stays OFF; wire PartSensor to the CU input and Reset to the R input.",
+              "checkpoint": "The visible scenario must pass with saved host evidence."
+            },
+            {
+              "key": "run",
+              "title": "Run",
+              "body": "Press Check. Studio runs your saved program against the scenario of this lesson.",
+              "checkpoint": "The scenario is named BatchCount and contains 10 assertions."
+            },
+            {
+              "key": "observe",
+              "title": "Observe",
+              "body": "Compare 30, 50 and 60 ms: nothing happens when the first part leaves, BatchFull rises at 60 ms, and a new part at 100 ms does not light it again.",
+              "checkpoint": "BatchFull rises once at 60 ms and falls once at 80 ms; one part after Reset leaves it OFF at 110 ms."
+            },
+            {
+              "key": "reflect",
+              "title": "Reflect",
+              "body": "What does the counter count, the level of PartSensor or its rising edge? Swap the two inputs and see which assertion fails.",
+              "checkpoint": "CTU counts rising edges, so the 20 ms the first part stays in front of the sensor counts once. The scenario shows the logic only; it does not show how a real sensor bounces."
+            }
+          ],
+          "hints": [
+            {
+              "level": 1,
+              "text": "Each input variable block has one output port named OUT, and each input of Count has a name: CU counts, R clears."
+            },
+            {
+              "level": 2,
+              "text": "Draw a wire from PartSensor.OUT to Count.CU, and another from Reset.OUT to Count.R. Do not change the constant 3 or the wire to BatchFull."
+            }
+          ],
+          "faultCases": [
+            "The starter has the counter and the preset, but PartSensor and Reset are not wired to it, so Count never counts and BatchFull stays OFF; wire PartSensor to the CU input and Reset to the R input."
+          ]
+        },
+        "es": {
+          "title": "Contadores en diagrama de bloques de función: contar piezas hasta un lote",
+          "summary": "Edite un diagrama de bloques de función para que un contador CTU cuente tres piezas, encienda BatchFull y se borre con Reset.",
+          "scope": "La evidencia de Tests es del runtime nativo POSIX con una tarea de 10 ms; no establece el cableado del sensor, el antirrebote, la exactitud del conteo a velocidad de máquina, HIL ni certificación.",
+          "objectives": [
+            "Lea un diagrama de bloques de función como bloques cuyos puertos de salida se conectan a los puertos de entrada de otros bloques.",
+            "Conecte un contador CTU: un flanco ascendente en CU cuenta, R lo borra y Q es TRUE cuando la cuenta llega al valor preestablecido PV."
+          ],
+          "stages": [
+            {
+              "key": "objective",
+              "title": "Objetivo",
+              "body": "En src/BatchCount.fbd.json están colocados el bloque contador Count (CTU), el valor preestablecido 3 y la salida BatchFull, y Q ya está conectada a BatchFull. Conecte la entrada PartSensor a CU y la entrada Reset a R.",
+              "checkpoint": "BatchFull se enciende al contar la tercera pieza y se apaga con Reset."
+            },
+            {
+              "key": "predict",
+              "title": "Prediga",
+              "body": "Prediga BatchFull a los 50 ms (dos piezas contadas), a los 60 ms (llega la tercera) y a los 80 ms (se pulsa Reset). La primera pieza permanece varios ciclos frente al sensor.",
+              "checkpoint": "En OFF a los 50 ms, porque una pieza cuenta una vez sin importar cuánto permanezca; en ON a los 60 ms; en OFF a los 80 ms."
+            },
+            {
+              "key": "edit",
+              "title": "Edite",
+              "body": "Corrija esta omisión del programa inicial, guárdelo y pulse Comprobar: El programa inicial tiene el contador y el valor preestablecido, pero PartSensor y Reset no están conectados a él, así que Count nunca cuenta y BatchFull queda en OFF; conecte PartSensor a la entrada CU y Reset a la entrada R.",
+              "checkpoint": "El escenario visible debe pasar con evidencia guardada del host."
+            },
+            {
+              "key": "run",
+              "title": "Ejecute",
+              "body": "Pulse Comprobar. Studio ejecuta el programa guardado contra el escenario de esta lección.",
+              "checkpoint": "El escenario se llama BatchCount y contiene 10 assertions."
+            },
+            {
+              "key": "observe",
+              "title": "Observe",
+              "body": "Compare 30, 50 y 60 ms: no pasa nada cuando se va la primera pieza, BatchFull sube a los 60 ms, y una pieza nueva a los 100 ms no lo vuelve a encender.",
+              "checkpoint": "BatchFull sube una vez a los 60 ms y cae una vez a los 80 ms; una pieza después de Reset lo deja en OFF a los 110 ms."
+            },
+            {
+              "key": "reflect",
+              "title": "Reflexione",
+              "body": "¿Qué cuenta el contador, el nivel de PartSensor o su flanco ascendente? Intercambie las dos entradas y vea qué assertion falla.",
+              "checkpoint": "CTU cuenta flancos ascendentes, así que los 20 ms que la primera pieza permanece frente al sensor cuentan una vez. El escenario muestra solo la lógica; no muestra cómo rebota un sensor real."
+            }
+          ],
+          "hints": [
+            {
+              "level": 1,
+              "text": "Cada bloque de variable de entrada tiene un puerto de salida llamado OUT, y cada entrada de Count tiene un nombre: CU cuenta, R borra."
+            },
+            {
+              "level": 2,
+              "text": "Trace un cable de PartSensor.OUT a Count.CU y otro de Reset.OUT a Count.R. No cambie la constante 3 ni el cable hacia BatchFull."
+            }
+          ],
+          "faultCases": [
+            "El programa inicial tiene el contador y el valor preestablecido, pero PartSensor y Reset no están conectados a él, así que Count nunca cuenta y BatchFull queda en OFF; conecte PartSensor a la entrada CU y Reset a la entrada R."
+          ]
+        }
+      }
+    },
+    {
+      "id": "interlock-guard-permissive",
+      "version": 1,
+      "order": 18,
+      "module": 6,
+      "level": "intermediate",
+      "prerequisites": [
+        "pedestrian-crossing-states"
+      ],
+      "languages": [
+        "ST"
+      ],
+      "tracks": [
+        "simulation"
+      ],
+      "unsupported": {
+        "hardware": {
+          "reason": {
+            "en": "The lesson drops a guard input at an exact step and needs the motor plant model for its speed feedback, which a board without a motor cannot give.",
+            "es": "La lección abre una entrada de protección en un paso exacto y necesita el modelo de planta del motor para su realimentación de velocidad, que una placa sin motor no puede dar."
+          },
+          "instead": {
+            "en": "Complete it in Simulation, which provides the motor and its run feedback.",
+            "es": "Complétela en Simulación, que aporta el motor y su realimentación de marcha."
+          }
+        }
+      },
+      "plant": "motor-v1",
+      "plantMap": {
+        "schemaVersion": 1,
+        "plant": "motor-v1",
+        "reads": {
+          "command": "MotorPlant.Command"
+        },
+        "drives": {
+          "atSpeed": "MotorPlant.AtSpeed"
+        }
+      },
+      "estimatedMinutes": 20,
+      "starter": {
+        "project": "interlock_guard_starter",
+        "program": "src/MotorPlant.st"
+      },
+      "solution": {
+        "project": "interlock_guard",
+        "program": "src/MotorPlant.st"
+      },
+      "scenario": {
+        "id": "MotorInterlock",
+        "path": "tests/motor-interlock.scenario.json",
+        "sha256": "6ffc4a74fd39e3cec015cfce8d79a9860e8fd254f143438bea0d61d1794b8a63",
+        "tickMs": 10,
+        "durationMs": 140,
+        "assertions": 12,
+        "canonical": "{\"durationMs\":140,\"events\":[{\"atMs\":0,\"set\":{\"MotorPlant.GuardClosed\":true,\"MotorPlant.Start\":false,\"MotorPlant.Stop\":false}},{\"atMs\":10,\"set\":{\"MotorPlant.Start\":true}},{\"atMs\":20,\"set\":{\"MotorPlant.Start\":false}},{\"atMs\":50,\"set\":{\"MotorPlant.GuardClosed\":false}},{\"atMs\":60,\"set\":{\"MotorPlant.Start\":true}},{\"atMs\":70,\"set\":{\"MotorPlant.Start\":false}},{\"atMs\":80,\"set\":{\"MotorPlant.GuardClosed\":true}},{\"atMs\":90,\"set\":{\"MotorPlant.Start\":true}},{\"atMs\":100,\"set\":{\"MotorPlant.Start\":false}},{\"atMs\":120,\"set\":{\"MotorPlant.Stop\":true}},{\"atMs\":130,\"set\":{\"MotorPlant.Stop\":false}}],\"expectations\":[{\"atMs\":0,\"condition\":{\"MotorPlant.Command\":false,\"MotorPlant.Running\":false},\"kind\":\"AT\"},{\"atMs\":10,\"condition\":{\"MotorPlant.Command\":true,\"MotorPlant.Running\":false},\"kind\":\"AT\"},{\"atMs\":30,\"condition\":{\"MotorPlant.Command\":true,\"MotorPlant.Running\":true},\"kind\":\"AT\"},{\"atMs\":50,\"condition\":{\"MotorPlant.Command\":false,\"MotorPlant.Running\":false},\"kind\":\"AT\"},{\"atMs\":60,\"condition\":{\"MotorPlant.Command\":false},\"kind\":\"AT\"},{\"atMs\":80,\"condition\":{\"MotorPlant.Command\":false},\"kind\":\"AT\"},{\"atMs\":90,\"condition\":{\"MotorPlant.Command\":true},\"kind\":\"AT\"},{\"atMs\":110,\"condition\":{\"MotorPlant.Command\":true,\"MotorPlant.Running\":true},\"kind\":\"AT\"},{\"atMs\":120,\"condition\":{\"MotorPlant.Command\":false},\"kind\":\"AT\"},{\"condition\":{\"MotorPlant.Command\":false},\"forMs\":20,\"fromMs\":60,\"kind\":\"FOR\"},{\"condition\":{\"MotorPlant.Running\":false},\"fromMs\":50,\"kind\":\"FALLING\",\"withinMs\":0},{\"condition\":{\"MotorPlant.Command\":false,\"MotorPlant.Running\":true},\"kind\":\"NEVER\"}],\"id\":\"MotorInterlock\",\"plant\":\"motor-v1\",\"schemaVersion\":1,\"tickMs\":10}"
+      },
+      "regressionScenarios": [],
+      "text": {
+        "en": {
+          "title": "Interlocks and permissives: a guard that stops the motor",
+          "summary": "Add a permissive to a motor start and stop so that the motor runs only while a guard is closed, and check it against the motor plant and its speed feedback.",
+          "scope": "Tests provide native POSIX host evidence for a built-in motor plant model with one 10 ms task; they do not establish a safety function, guard wiring, stopping time, HIL, or certification.",
+          "objectives": [
+            "Tell a permissive, a condition that must be true for the output to be on, from a command.",
+            "Put a permissive in the same condition that holds the motor, so that it drops the motor and also stops Start from restarting it."
+          ],
+          "stages": [
+            {
+              "key": "objective",
+              "title": "Objective",
+              "body": "In src/MotorPlant.st the first assignment holds Command with a seal-in and the second sets Running when the plant reports AtSpeed. Add GuardClosed with AND to the first assignment, so that an open guard drops Command and blocks Start.",
+              "checkpoint": "Command is on only while the guard is closed, and Running still needs the plant's AtSpeed."
+            },
+            {
+              "key": "predict",
+              "title": "Predict",
+              "body": "Before running, predict Command and Running at 30 ms, when the guard opens at 50 ms, and at 60 ms when Start is pressed with the guard still open.",
+              "checkpoint": "Both ON at 30 ms; both OFF at 50 ms; Command OFF at 60 ms, because Start is ignored."
+            },
+            {
+              "key": "edit",
+              "title": "Edit",
+              "body": "Correct this starter omission, save it, then press Check: The starter has no permissive on the guard, so when the guard opens at 50 ms the motor keeps running and Start can restart it; add AND GuardClosed to the whole condition of Command, outside the brackets that hold Start and Command.",
+              "checkpoint": "The visible scenario must pass with saved host evidence."
+            },
+            {
+              "key": "run",
+              "title": "Run",
+              "body": "Press Check. Studio runs your saved program against the scenario of this lesson, with the motor plant answering your outputs.",
+              "checkpoint": "The scenario is named MotorInterlock and contains 12 assertions."
+            },
+            {
+              "key": "observe",
+              "title": "Observe",
+              "body": "Compare 30, 50 and 80 ms: the motor is at speed at 30 ms, drops when the guard opens at 50 ms, and does not restart at 80 ms when the guard closes, because Start was released.",
+              "checkpoint": "Command stays OFF from 60 to 80 ms and rises again only at 90 ms, with a new Start."
+            },
+            {
+              "key": "reflect",
+              "title": "Reflect",
+              "body": "Why is a permissive on the whole condition safer than a permissive only on Start? Put GuardClosed next to Start and see which assertion fails.",
+              "checkpoint": "A permissive that gates only Start lets a running motor ignore an open guard. The scenario shows the logic only; it is not a safety function and does not replace a certified guard interlock."
+            }
+          ],
+          "hints": [
+            {
+              "level": 1,
+              "text": "Command may be TRUE only if the guard is closed, Stop is not pressed, and either Start is pressed or Command was already TRUE."
+            },
+            {
+              "level": 2,
+              "text": "Command := (Start OR Command) AND NOT Stop AND GuardClosed; Do not put GuardClosed inside the brackets with Start."
+            }
+          ],
+          "faultCases": [
+            "The starter has no permissive on the guard, so when the guard opens at 50 ms the motor keeps running and Start can restart it; add AND GuardClosed to the whole condition of Command, outside the brackets that hold Start and Command."
+          ]
+        },
+        "es": {
+          "title": "Interbloqueos y permisivos: una protección que detiene el motor",
+          "summary": "Agregue un permisivo al arranque y parada de un motor para que funcione solo con la protección cerrada, y compruébelo contra la planta del motor y su realimentación de velocidad.",
+          "scope": "La evidencia de Tests es del runtime nativo POSIX para un modelo de planta de motor integrado con una tarea de 10 ms; no establece una función de seguridad, el cableado de la protección, el tiempo de parada, HIL ni certificación.",
+          "objectives": [
+            "Distinga un permisivo, una condición que debe ser verdadera para que la salida esté encendida, de una orden.",
+            "Ponga un permisivo en la misma condición que mantiene el motor, para que lo apague y además impida que Start lo vuelva a arrancar."
+          ],
+          "stages": [
+            {
+              "key": "objective",
+              "title": "Objetivo",
+              "body": "En src/MotorPlant.st la primera asignación mantiene Command con una autorretención y la segunda enciende Running cuando la planta informa AtSpeed. Agregue GuardClosed con AND a la primera asignación, para que una protección abierta apague Command y bloquee Start.",
+              "checkpoint": "Command está encendido solo mientras la protección está cerrada, y Running sigue necesitando AtSpeed de la planta."
+            },
+            {
+              "key": "predict",
+              "title": "Prediga",
+              "body": "Antes de ejecutar, prediga Command y Running a los 30 ms, cuando la protección se abre a los 50 ms y a los 60 ms cuando se pulsa Start con la protección aún abierta.",
+              "checkpoint": "Ambos en ON a los 30 ms; ambos en OFF a los 50 ms; Command en OFF a los 60 ms, porque Start se ignora."
+            },
+            {
+              "key": "edit",
+              "title": "Edite",
+              "body": "Corrija esta omisión del programa inicial, guárdelo y pulse Comprobar: El programa inicial no tiene el permisivo de la protección, así que cuando la protección se abre a los 50 ms el motor sigue funcionando y Start puede volver a arrancarlo; agregue AND GuardClosed a toda la condición de Command, fuera del paréntesis que contiene Start y Command.",
+              "checkpoint": "El escenario visible debe pasar con evidencia guardada del host."
+            },
+            {
+              "key": "run",
+              "title": "Ejecute",
+              "body": "Pulse Comprobar. Studio ejecuta el programa guardado contra el escenario de esta lección, con la planta del motor respondiendo a sus salidas.",
+              "checkpoint": "El escenario se llama MotorInterlock y contiene 12 assertions."
+            },
+            {
+              "key": "observe",
+              "title": "Observe",
+              "body": "Compare 30, 50 y 80 ms: el motor está a velocidad a los 30 ms, cae cuando la protección se abre a los 50 ms y no vuelve a arrancar a los 80 ms cuando la protección se cierra, porque Start ya se soltó.",
+              "checkpoint": "Command sigue en OFF de 60 a 80 ms y sube de nuevo solo a los 90 ms, con un Start nuevo."
+            },
+            {
+              "key": "reflect",
+              "title": "Reflexione",
+              "body": "¿Por qué un permisivo en toda la condición es más seguro que uno solo en Start? Ponga GuardClosed junto a Start y vea qué assertion falla.",
+              "checkpoint": "Un permisivo que solo condiciona Start deja que un motor en marcha ignore una protección abierta. El escenario muestra solo la lógica; no es una función de seguridad ni reemplaza un interbloqueo de protección certificado."
+            }
+          ],
+          "hints": [
+            {
+              "level": 1,
+              "text": "Command puede ser TRUE solo si la protección está cerrada, Stop no está pulsado y, o Start está pulsado, o Command ya era TRUE."
+            },
+            {
+              "level": 2,
+              "text": "Command := (Start OR Command) AND NOT Stop AND GuardClosed; No ponga GuardClosed dentro del paréntesis con Start."
+            }
+          ],
+          "faultCases": [
+            "El programa inicial no tiene el permisivo de la protección, así que cuando la protección se abre a los 50 ms el motor sigue funcionando y Start puede volver a arrancarlo; agregue AND GuardClosed a toda la condición de Command, fuera del paréntesis que contiene Start y Command."
+          ]
+        }
+      }
+    },
+    {
+      "id": "types-arithmetic-comparison",
+      "version": 1,
+      "order": 19,
+      "module": 4,
+      "level": "intermediate",
+      "prerequisites": [
+        "edge-counter-pulses"
+      ],
+      "languages": [
+        "ST"
+      ],
+      "tracks": [
+        "simulation"
+      ],
+      "unsupported": {
+        "hardware": {
+          "reason": {
+            "en": "The lesson is graded on a total that depends on the exact number of presses replayed by Studio, and no board trace has been recorded for it.",
+            "es": "La lección se califica con un total que depende del número exacto de pulsaciones que reproduce Studio, y no se ha registrado una traza de placa para ella."
+          },
+          "instead": {
+            "en": "Complete it in Simulation: its grade is the same each time and needs no board.",
+            "es": "Complétela en Simulación: su calificación es la misma cada vez y no necesita una placa."
+          }
+        }
+      },
+      "plant": null,
+      "plantMap": null,
+      "estimatedMinutes": 20,
+      "starter": {
+        "project": "typed_steps_starter",
+        "program": "src/TypedSteps.st"
+      },
+      "solution": {
+        "project": "typed_steps",
+        "program": "src/TypedSteps.st"
+      },
+      "scenario": {
+        "id": "TypedSteps",
+        "path": "tests/typed-steps.scenario.json",
+        "sha256": "edfe148b3d0b37ea6e9da6b1e38dbb46da974cf62c160a3fcc2b429e4a16c169",
+        "tickMs": 10,
+        "durationMs": 100,
+        "assertions": 8,
+        "canonical": "{\"durationMs\":100,\"events\":[{\"atMs\":0,\"set\":{\"TypedSteps.Reset\":false,\"TypedSteps.Step\":false}},{\"atMs\":10,\"set\":{\"TypedSteps.Step\":true}},{\"atMs\":30,\"set\":{\"TypedSteps.Step\":false}},{\"atMs\":40,\"set\":{\"TypedSteps.Step\":true}},{\"atMs\":50,\"set\":{\"TypedSteps.Step\":false}},{\"atMs\":60,\"set\":{\"TypedSteps.Step\":true}},{\"atMs\":70,\"set\":{\"TypedSteps.Step\":false}},{\"atMs\":80,\"set\":{\"TypedSteps.Reset\":true}},{\"atMs\":90,\"set\":{\"TypedSteps.Reset\":false}}],\"expectations\":[{\"atMs\":0,\"condition\":{\"TypedSteps.Exact\":false,\"TypedSteps.High\":false,\"TypedSteps.Low\":true},\"kind\":\"AT\"},{\"atMs\":20,\"condition\":{\"TypedSteps.Exact\":false,\"TypedSteps.High\":false,\"TypedSteps.Low\":true},\"kind\":\"AT\"},{\"atMs\":40,\"condition\":{\"TypedSteps.Exact\":true,\"TypedSteps.High\":false,\"TypedSteps.Low\":false},\"kind\":\"AT\"},{\"atMs\":60,\"condition\":{\"TypedSteps.Exact\":false,\"TypedSteps.High\":true,\"TypedSteps.Low\":false},\"kind\":\"AT\"},{\"atMs\":80,\"condition\":{\"TypedSteps.Exact\":false,\"TypedSteps.High\":false,\"TypedSteps.Low\":true},\"kind\":\"AT\"},{\"condition\":{\"TypedSteps.Exact\":true},\"forMs\":10,\"fromMs\":40,\"kind\":\"FOR\"},{\"condition\":{\"TypedSteps.Exact\":true},\"fromMs\":40,\"kind\":\"RISING\",\"withinMs\":0},{\"condition\":{\"TypedSteps.Exact\":true,\"TypedSteps.High\":true},\"kind\":\"NEVER\"}],\"id\":\"TypedSteps\",\"schemaVersion\":1,\"tickMs\":10}"
+      },
+      "regressionScenarios": [],
+      "text": {
+        "en": {
+          "title": "Types, arithmetic and comparison: a total and three bands",
+          "summary": "Keep a running total in an INT variable, add to it on each press, and turn it into three BOOL results with comparison operators.",
+          "scope": "Tests provide native POSIX host evidence with one 10 ms task; they do not establish the range of a real sensor or the overflow behaviour of a particular controller, HIL, or certification.",
+          "objectives": [
+            "Use an INT variable for a number and a BOOL variable for a yes or no, and see that a comparison turns a number into a BOOL.",
+            "Add to a number only on the rising edge of an input, so that a button held for several scans counts once."
+          ],
+          "stages": [
+            {
+              "key": "objective",
+              "title": "Objective",
+              "body": "In src/TypedSteps.st the INT variable Total and the comparisons Low (Total < 10), Exact (Total = 10) and High (Total > 10) are written. Write the arithmetic: on each rising edge of Step add 5 to Total, and while Reset is TRUE set Total to 0.",
+              "checkpoint": "Total goes 0, 5, 10, 15, and the three outputs show which band it is in."
+            },
+            {
+              "key": "predict",
+              "title": "Predict",
+              "body": "Step is pressed three times, the first press lasting two scans. Predict which output is ON at 20, 40 and 60 ms.",
+              "checkpoint": "Low at 20 ms (Total is 5); Exact at 40 ms (Total is 10); High at 60 ms (Total is 15)."
+            },
+            {
+              "key": "edit",
+              "title": "Edit",
+              "body": "Correct this starter omission, save it, then press Check: The starter declares Total and the three comparisons but never changes Total, so Low stays ON for ever; add 5 to Total on each rising edge of Step and clear it while Reset is TRUE.",
+              "checkpoint": "The visible scenario must pass with saved host evidence."
+            },
+            {
+              "key": "run",
+              "title": "Run",
+              "body": "Press Check. Studio runs your saved program against the scenario of this lesson.",
+              "checkpoint": "The scenario is named TypedSteps and contains 8 assertions."
+            },
+            {
+              "key": "observe",
+              "title": "Observe",
+              "body": "Compare 20, 40 and 60 ms: exactly one of the three outputs is ON each time, and Reset at 80 ms brings Low back.",
+              "checkpoint": "Exact is ON only at the one total of 10, from 40 ms; the long first press added 5 once, not twice."
+            },
+            {
+              "key": "reflect",
+              "title": "Reflect",
+              "body": "What happens if you write Exact as Total >= 10? And if you add 5 on every scan while Step is TRUE? Try each and see which assertion fails.",
+              "checkpoint": "A comparison gives a BOOL, and = is not the same as >=. The scenario only watches the three BOOL outputs; it does not show the value of Total itself or what happens when an INT overflows."
+            }
+          ],
+          "hints": [
+            {
+              "level": 1,
+              "text": "Total is an INT, so Total + 5 is an INT. A rising edge is Step TRUE now and StepWas FALSE on the previous scan."
+            },
+            {
+              "level": 2,
+              "text": "IF Reset THEN Total := 0; ELSIF Step AND NOT StepWas THEN Total := Total + 5; END_IF; StepWas := Step; Put it before the three comparison lines."
+            }
+          ],
+          "faultCases": [
+            "The starter declares Total and the three comparisons but never changes Total, so Low stays ON for ever; add 5 to Total on each rising edge of Step and clear it while Reset is TRUE."
+          ]
+        },
+        "es": {
+          "title": "Tipos, aritmética y comparación: un total y tres bandas",
+          "summary": "Mantenga un total en una variable INT, súmele en cada pulsación y conviértalo en tres resultados BOOL con operadores de comparación.",
+          "scope": "La evidencia de Tests es del runtime nativo POSIX con una tarea de 10 ms; no establece el rango de un sensor real ni el comportamiento ante desbordamiento de un controlador en particular, HIL ni certificación.",
+          "objectives": [
+            "Use una variable INT para un número y una BOOL para un verdadero o falso, y vea que una comparación convierte un número en un BOOL.",
+            "Sume a un número solo en el flanco ascendente de una entrada, para que un botón mantenido varios ciclos cuente una vez."
+          ],
+          "stages": [
+            {
+              "key": "objective",
+              "title": "Objetivo",
+              "body": "En src/TypedSteps.st están escritas la variable INT Total y las comparaciones Low (Total < 10), Exact (Total = 10) y High (Total > 10). Escriba la aritmética: en cada flanco ascendente de Step sume 5 a Total, y mientras Reset sea TRUE ponga Total en 0.",
+              "checkpoint": "Total va de 0 a 5, 10 y 15, y las tres salidas muestran en qué banda está."
+            },
+            {
+              "key": "predict",
+              "title": "Prediga",
+              "body": "Step se pulsa tres veces y la primera pulsación dura dos ciclos. Prediga qué salida está en ON a los 20, 40 y 60 ms.",
+              "checkpoint": "Low a los 20 ms (Total es 5); Exact a los 40 ms (Total es 10); High a los 60 ms (Total es 15)."
+            },
+            {
+              "key": "edit",
+              "title": "Edite",
+              "body": "Corrija esta omisión del programa inicial, guárdelo y pulse Comprobar: El programa inicial declara Total y las tres comparaciones pero nunca cambia Total, así que Low queda en ON para siempre; sume 5 a Total en cada flanco ascendente de Step y bórrelo mientras Reset sea TRUE.",
+              "checkpoint": "El escenario visible debe pasar con evidencia guardada del host."
+            },
+            {
+              "key": "run",
+              "title": "Ejecute",
+              "body": "Pulse Comprobar. Studio ejecuta el programa guardado contra el escenario de esta lección.",
+              "checkpoint": "El escenario se llama TypedSteps y contiene 8 assertions."
+            },
+            {
+              "key": "observe",
+              "title": "Observe",
+              "body": "Compare 20, 40 y 60 ms: cada vez está en ON exactamente una de las tres salidas, y Reset a los 80 ms devuelve Low.",
+              "checkpoint": "Exact está en ON solo en el total de 10, desde los 40 ms; la primera pulsación larga sumó 5 una vez, no dos."
+            },
+            {
+              "key": "reflect",
+              "title": "Reflexione",
+              "body": "¿Qué pasa si escribe Exact como Total >= 10? ¿Y si suma 5 en cada ciclo mientras Step es TRUE? Pruebe cada caso y vea qué assertion falla.",
+              "checkpoint": "Una comparación da un BOOL, y = no es lo mismo que >=. El escenario solo observa las tres salidas BOOL; no muestra el valor de Total ni lo que ocurre cuando un INT se desborda."
+            }
+          ],
+          "hints": [
+            {
+              "level": 1,
+              "text": "Total es un INT, así que Total + 5 es un INT. Un flanco ascendente es Step en TRUE ahora y StepWas en FALSE en el ciclo anterior."
+            },
+            {
+              "level": 2,
+              "text": "IF Reset THEN Total := 0; ELSIF Step AND NOT StepWas THEN Total := Total + 5; END_IF; StepWas := Step; Póngalo antes de las tres líneas de comparación."
+            }
+          ],
+          "faultCases": [
+            "El programa inicial declara Total y las tres comparaciones pero nunca cambia Total, así que Low queda en ON para siempre; sume 5 a Total en cada flanco ascendente de Step y bórrelo mientras Reset sea TRUE."
+          ]
+        }
+      }
+    },
+    {
+      "id": "analog-scaling-integer",
+      "version": 1,
+      "order": 20,
+      "module": 4,
+      "level": "intermediate",
+      "prerequisites": [
+        "types-arithmetic-comparison"
+      ],
+      "languages": [
+        "ST"
+      ],
+      "tracks": [
+        "simulation"
+      ],
+      "unsupported": {
+        "hardware": {
+          "reason": {
+            "en": "The lesson steps a raw count by the scan, not by a real analog input, so a board would not give the same counts at the same times.",
+            "es": "La lección avanza una cuenta cruda por ciclo, no una entrada analógica real, así que una placa no daría las mismas cuentas en los mismos momentos."
+          },
+          "instead": {
+            "en": "Complete it in Simulation: its grade is the same each time and needs no board.",
+            "es": "Complétela en Simulación: su calificación es la misma cada vez y no necesita una placa."
+          }
+        }
+      },
+      "plant": null,
+      "plantMap": null,
+      "estimatedMinutes": 20,
+      "starter": {
+        "project": "scaling_starter",
+        "program": "src/Scaling.st"
+      },
+      "solution": {
+        "project": "scaling",
+        "program": "src/Scaling.st"
+      },
+      "scenario": {
+        "id": "Scaling",
+        "path": "tests/scaling.scenario.json",
+        "sha256": "50a0f5610f6eaceec898294dc11656ddd50f96238d3045ead06e5e471b0bef57",
+        "tickMs": 10,
+        "durationMs": 120,
+        "assertions": 9,
+        "canonical": "{\"durationMs\":120,\"events\":[{\"atMs\":0,\"set\":{\"Scaling.Enable\":false}},{\"atMs\":10,\"set\":{\"Scaling.Enable\":true}},{\"atMs\":110,\"set\":{\"Scaling.Enable\":false}}],\"expectations\":[{\"atMs\":0,\"condition\":{\"Scaling.Alarm\":false,\"Scaling.Warn\":false},\"kind\":\"AT\"},{\"atMs\":40,\"condition\":{\"Scaling.Alarm\":false,\"Scaling.Warn\":false},\"kind\":\"AT\"},{\"atMs\":50,\"condition\":{\"Scaling.Alarm\":false,\"Scaling.Warn\":true},\"kind\":\"AT\"},{\"atMs\":70,\"condition\":{\"Scaling.Alarm\":false,\"Scaling.Warn\":true},\"kind\":\"AT\"},{\"atMs\":80,\"condition\":{\"Scaling.Alarm\":true,\"Scaling.Warn\":true},\"kind\":\"AT\"},{\"atMs\":110,\"condition\":{\"Scaling.Alarm\":false,\"Scaling.Warn\":false},\"kind\":\"AT\"},{\"condition\":{\"Scaling.Warn\":true},\"fromMs\":50,\"kind\":\"RISING\",\"withinMs\":0},{\"condition\":{\"Scaling.Alarm\":true},\"fromMs\":80,\"kind\":\"RISING\",\"withinMs\":0},{\"condition\":{\"Scaling.Alarm\":true,\"Scaling.Warn\":false},\"kind\":\"NEVER\"}],\"id\":\"Scaling\",\"schemaVersion\":1,\"tickMs\":10}"
+      },
+      "regressionScenarios": [],
+      "text": {
+        "en": {
+          "title": "Analog scaling: from raw counts to a percentage",
+          "summary": "Scale a raw count from 0 to 1000 into a percentage with integer arithmetic, and raise a warning at 50 percent and an alarm at 80 percent.",
+          "scope": "Tests provide native POSIX host evidence with one 10 ms task; they do not establish the accuracy, noise or calibration of a real analog input, HIL, or certification.",
+          "objectives": [
+            "Scale a raw count to engineering units with a multiplication followed by a division, in that order.",
+            "See that integer division drops the remainder, and choose an integer type wide enough for the intermediate product."
+          ],
+          "stages": [
+            {
+              "key": "objective",
+              "title": "Objective",
+              "body": "The scenario inputs are BOOL, so this lesson does not read a real analog input: src/Scaling.st counts Raw up by 100 on each scan while Enable is TRUE, as a stand-in for a signal that rises from 0 to 1000. Write the scaling: Percent is Raw scaled from 0..1000 to 0..100.",
+              "checkpoint": "Percent follows Raw divided by 10, Warn turns ON at 50 percent and Alarm at 80 percent."
+            },
+            {
+              "key": "predict",
+              "title": "Predict",
+              "body": "Enable rises at 10 ms and Raw is 100 after that scan. Predict Warn and Alarm at 40, 50 and 80 ms.",
+              "checkpoint": "Both OFF at 40 ms; only Warn at 50 ms; both ON at 80 ms."
+            },
+            {
+              "key": "edit",
+              "title": "Edit",
+              "body": "Correct this starter fault, save it, then press Check: The starter divides before it multiplies, so the integer division Raw / 1000 gives 0 until Raw reaches 1000 and the percentage stays at 0; multiply by 100 first, then divide by 1000.",
+              "checkpoint": "The visible scenario must pass with saved host evidence."
+            },
+            {
+              "key": "run",
+              "title": "Run",
+              "body": "Press Check. Studio runs your saved program against the scenario of this lesson.",
+              "checkpoint": "The scenario is named Scaling and contains 9 assertions."
+            },
+            {
+              "key": "observe",
+              "title": "Observe",
+              "body": "Compare 40, 50 and 80 ms: Warn rises at 50 ms when Raw is 500, and Alarm at 80 ms when Raw is 800.",
+              "checkpoint": "Each output rises once; Alarm is never ON while Warn is OFF; Enable falling at 110 ms clears both."
+            },
+            {
+              "key": "reflect",
+              "title": "Reflect",
+              "body": "Why is DINT used here? Raw times 100 reaches 100000, more than a 16-bit integer holds, so the intermediate product needs a wide type. Check the width of INT on your target before you rely on it.",
+              "checkpoint": "The product is formed before the division, so its range decides the type, not the range of Raw. The scenario checks the two thresholds only; it does not check the rounding of other values."
+            }
+          ],
+          "hints": [
+            {
+              "level": 1,
+              "text": "Integer division gives a whole number: 500 / 1000 is 0. Which operation should come first so that the remainder is not lost?"
+            },
+            {
+              "level": 2,
+              "text": "Percent := (Raw * 100) / 1000; keeps the full product before dividing. Leave Raw and the two comparisons as they are."
+            }
+          ],
+          "faultCases": [
+            "The starter divides before it multiplies, so the integer division Raw / 1000 gives 0 until Raw reaches 1000 and the percentage stays at 0; multiply by 100 first, then divide by 1000."
+          ]
+        },
+        "es": {
+          "title": "Escalado analógico: de cuentas crudas a un porcentaje",
+          "summary": "Escale una cuenta cruda de 0 a 1000 a un porcentaje con aritmética entera, y active una advertencia al 50 por ciento y una alarma al 80 por ciento.",
+          "scope": "La evidencia de Tests es del runtime nativo POSIX con una tarea de 10 ms; no establece la exactitud, el ruido ni la calibración de una entrada analógica real, HIL ni certificación.",
+          "objectives": [
+            "Escale una cuenta cruda a unidades de ingeniería con una multiplicación seguida de una división, en ese orden.",
+            "Vea que la división entera descarta el resto, y elija un tipo entero lo bastante ancho para el producto intermedio."
+          ],
+          "stages": [
+            {
+              "key": "objective",
+              "title": "Objetivo",
+              "body": "Las entradas del escenario son BOOL, así que esta lección no lee una entrada analógica real: src/Scaling.st suma 100 a Raw en cada ciclo mientras Enable es TRUE, como sustituto de una señal que sube de 0 a 1000. Escriba el escalado: Percent es Raw escalado de 0..1000 a 0..100.",
+              "checkpoint": "Percent sigue a Raw dividido por 10, Warn pasa a ON al 50 por ciento y Alarm al 80 por ciento."
+            },
+            {
+              "key": "predict",
+              "title": "Prediga",
+              "body": "Enable sube a los 10 ms y Raw vale 100 después de ese ciclo. Prediga Warn y Alarm a los 40, 50 y 80 ms.",
+              "checkpoint": "Ambas en OFF a los 40 ms; solo Warn a los 50 ms; ambas en ON a los 80 ms."
+            },
+            {
+              "key": "edit",
+              "title": "Edite",
+              "body": "Corrija esta falla del programa inicial, guárdelo y pulse Comprobar: El programa inicial divide antes de multiplicar, así que la división entera Raw / 1000 da 0 hasta que Raw llega a 1000 y el porcentaje queda en 0; multiplique primero por 100 y luego divida por 1000.",
+              "checkpoint": "El escenario visible debe pasar con evidencia guardada del host."
+            },
+            {
+              "key": "run",
+              "title": "Ejecute",
+              "body": "Pulse Comprobar. Studio ejecuta el programa guardado contra el escenario de esta lección.",
+              "checkpoint": "El escenario se llama Scaling y contiene 9 assertions."
+            },
+            {
+              "key": "observe",
+              "title": "Observe",
+              "body": "Compare 40, 50 y 80 ms: Warn sube a los 50 ms cuando Raw vale 500, y Alarm a los 80 ms cuando vale 800.",
+              "checkpoint": "Cada salida sube una vez; Alarm nunca está en ON con Warn en OFF; la caída de Enable a los 110 ms borra las dos."
+            },
+            {
+              "key": "reflect",
+              "title": "Reflexione",
+              "body": "¿Por qué se usa DINT en esta lección? Raw por 100 llega a 100000, más de lo que cabe en un entero de 16 bits, así que el producto intermedio necesita un tipo ancho. Compruebe el ancho de INT en su destino antes de confiar en él.",
+              "checkpoint": "El producto se forma antes de la división, así que su rango decide el tipo, no el rango de Raw. El escenario comprueba solo los dos umbrales; no comprueba el redondeo de otros valores."
+            }
+          ],
+          "hints": [
+            {
+              "level": 1,
+              "text": "La división entera da un número entero: 500 / 1000 es 0. ¿Qué operación debe ir primero para no perder el resto?"
+            },
+            {
+              "level": 2,
+              "text": "Percent := (Raw * 100) / 1000; conserva el producto completo antes de dividir. Deje Raw y las dos comparaciones como están."
+            }
+          ],
+          "faultCases": [
+            "El programa inicial divide antes de multiplicar, así que la división entera Raw / 1000 da 0 hasta que Raw llega a 1000 y el porcentaje queda en 0; multiplique primero por 100 y luego divida por 1000."
+          ]
+        }
+      }
+    },
+    {
+      "id": "function-block-pump-pair",
+      "version": 1,
+      "order": 21,
+      "module": 7,
+      "level": "intermediate",
+      "prerequisites": [
+        "types-arithmetic-comparison"
+      ],
+      "languages": [
+        "ST"
+      ],
+      "tracks": [
+        "simulation"
+      ],
+      "unsupported": {
+        "hardware": {
+          "reason": {
+            "en": "The lesson starts and stops two pumps at exact steps to compare two instances of one block, and no board trace has been recorded for it.",
+            "es": "La lección arranca y detiene dos bombas en pasos exactos para comparar dos instancias de un mismo bloque, y no se ha registrado una traza de placa para ella."
+          },
+          "instead": {
+            "en": "Complete it in Simulation: its grade is the same each time and needs no board.",
+            "es": "Complétela en Simulación: su calificación es la misma cada vez y no necesita una placa."
+          }
+        }
+      },
+      "plant": null,
+      "plantMap": null,
+      "estimatedMinutes": 25,
+      "starter": {
+        "project": "pump_pair_starter",
+        "program": "src/PumpPair.st"
+      },
+      "solution": {
+        "project": "pump_pair",
+        "program": "src/PumpPair.st"
+      },
+      "scenario": {
+        "id": "PumpPair",
+        "path": "tests/pump-pair.scenario.json",
+        "sha256": "563ba151d719de250ab4f7be0f7362a1095c5bf7e1623c7d1638b732f4bcb203",
+        "tickMs": 10,
+        "durationMs": 110,
+        "assertions": 9,
+        "canonical": "{\"durationMs\":110,\"events\":[{\"atMs\":0,\"set\":{\"PumpPair.StartA\":false,\"PumpPair.StartB\":false,\"PumpPair.StopA\":false,\"PumpPair.StopB\":false}},{\"atMs\":10,\"set\":{\"PumpPair.StartA\":true}},{\"atMs\":20,\"set\":{\"PumpPair.StartA\":false}},{\"atMs\":30,\"set\":{\"PumpPair.StartB\":true}},{\"atMs\":40,\"set\":{\"PumpPair.StartB\":false}},{\"atMs\":50,\"set\":{\"PumpPair.StopA\":true}},{\"atMs\":60,\"set\":{\"PumpPair.StopA\":false}},{\"atMs\":70,\"set\":{\"PumpPair.StopB\":true}},{\"atMs\":80,\"set\":{\"PumpPair.StopB\":false}},{\"atMs\":90,\"set\":{\"PumpPair.StartA\":true,\"PumpPair.StopA\":true}},{\"atMs\":100,\"set\":{\"PumpPair.StartA\":false,\"PumpPair.StopA\":false}}],\"expectations\":[{\"atMs\":0,\"condition\":{\"PumpPair.RunA\":false,\"PumpPair.RunB\":false},\"kind\":\"AT\"},{\"atMs\":10,\"condition\":{\"PumpPair.RunA\":true,\"PumpPair.RunB\":false},\"kind\":\"AT\"},{\"atMs\":30,\"condition\":{\"PumpPair.RunA\":true,\"PumpPair.RunB\":true},\"kind\":\"AT\"},{\"atMs\":50,\"condition\":{\"PumpPair.RunA\":false,\"PumpPair.RunB\":true},\"kind\":\"AT\"},{\"atMs\":70,\"condition\":{\"PumpPair.RunA\":false,\"PumpPair.RunB\":false},\"kind\":\"AT\"},{\"atMs\":90,\"condition\":{\"PumpPair.RunA\":false,\"PumpPair.RunB\":false},\"kind\":\"AT\"},{\"condition\":{\"PumpPair.RunB\":true},\"fromMs\":30,\"kind\":\"RISING\",\"withinMs\":0},{\"condition\":{\"PumpPair.RunA\":false},\"fromMs\":50,\"kind\":\"FALLING\",\"withinMs\":0},{\"condition\":{\"PumpPair.RunB\":true},\"forMs\":10,\"fromMs\":50,\"kind\":\"FOR\"}],\"id\":\"PumpPair\",\"schemaVersion\":1,\"tickMs\":10}"
+      },
+      "regressionScenarios": [],
+      "text": {
+        "en": {
+          "title": "Function blocks: one latch, two pumps",
+          "summary": "Write the body of a function block that holds a start and stop latch, then use it twice, once for each pump.",
+          "scope": "Tests provide native POSIX host evidence with one 10 ms task; they do not establish pump behaviour, start-up current or any real machine requirement, HIL, or certification.",
+          "objectives": [
+            "Write a function block with inputs, an output and a memory that lives between calls.",
+            "See that two instances of the same function block keep separate memories."
+          ],
+          "stages": [
+            {
+              "key": "objective",
+              "title": "Objective",
+              "body": "In src/PumpPair.st the function block Latch has the inputs Set and Reset and the output Q, and the program declares two instances, PumpA and PumpB. Write the body of Latch: Q turns ON on Set, turns OFF on Reset, keeps its value otherwise, and Reset wins when both are TRUE.",
+              "checkpoint": "Each pump starts on its own Start, stops on its own Stop, and one pump never moves the other."
+            },
+            {
+              "key": "predict",
+              "title": "Predict",
+              "body": "PumpA starts at 10 ms and PumpB at 30 ms. PumpA is stopped at 50 ms. Predict RunA and RunB at 30, 50 and 70 ms.",
+              "checkpoint": "Both ON at 30 ms; only RunB at 50 ms; both OFF at 70 ms."
+            },
+            {
+              "key": "edit",
+              "title": "Edit",
+              "body": "Correct this starter omission, save it, then press Check: The starter defines the Latch function block and calls it twice, but the body of Latch is empty, so Q never changes and both pumps stay OFF; write the body so that Set turns Q ON, Reset turns it OFF, and Q keeps its value between calls.",
+              "checkpoint": "The visible scenario must pass with saved host evidence."
+            },
+            {
+              "key": "run",
+              "title": "Run",
+              "body": "Press Check. Studio runs your saved program against the scenario of this lesson.",
+              "checkpoint": "The scenario is named PumpPair and contains 9 assertions."
+            },
+            {
+              "key": "observe",
+              "title": "Observe",
+              "body": "Compare 10, 30 and 50 ms: RunA holds after its button is released, RunB joins at 30 ms, and stopping A at 50 ms leaves B ON.",
+              "checkpoint": "RunA and RunB change at different times from the same block, which shows two memories. At 90 ms Start and Stop arrive together on pump A and it stays OFF."
+            },
+            {
+              "key": "reflect",
+              "title": "Reflect",
+              "body": "What would change if both pumps shared one global memory instead of one instance each? Try giving PumpB the inputs of pump A and see which assertion fails.",
+              "checkpoint": "Each instance has its own copy of the variables of the block, so the same code serves any number of pumps. The scenario shows the logic only; it does not show start-up sequencing or a pump fault."
+            }
+          ],
+          "hints": [
+            {
+              "level": 1,
+              "text": "Q is an output that keeps its value from one call to the next, so it can appear on the right-hand side of its own assignment."
+            },
+            {
+              "level": 2,
+              "text": "Q := (Set OR Q) AND NOT Reset; written between the VAR_OUTPUT section and END_FUNCTION_BLOCK."
+            }
+          ],
+          "faultCases": [
+            "The starter defines the Latch function block and calls it twice, but the body of Latch is empty, so Q never changes and both pumps stay OFF; write the body so that Set turns Q ON, Reset turns it OFF, and Q keeps its value between calls."
+          ]
+        },
+        "es": {
+          "title": "Bloques de función: un enclavamiento, dos bombas",
+          "summary": "Escriba el cuerpo de un bloque de función que mantiene un enclavamiento de arranque y parada, y úselo dos veces, una por bomba.",
+          "scope": "La evidencia de Tests es del runtime nativo POSIX con una tarea de 10 ms; no establece el comportamiento de una bomba, la corriente de arranque ni requisitos de una máquina real, HIL ni certificación.",
+          "objectives": [
+            "Escriba un bloque de función con entradas, una salida y una memoria que vive entre llamadas.",
+            "Vea que dos instancias del mismo bloque de función guardan memorias separadas."
+          ],
+          "stages": [
+            {
+              "key": "objective",
+              "title": "Objetivo",
+              "body": "En src/PumpPair.st el bloque de función Latch tiene las entradas Set y Reset y la salida Q, y el programa declara dos instancias, PumpA y PumpB. Escriba el cuerpo de Latch: Q pasa a ON con Set, pasa a OFF con Reset, conserva su valor en otro caso, y Reset gana cuando ambas son TRUE.",
+              "checkpoint": "Cada bomba arranca con su propio Start, se detiene con su propio Stop, y una bomba nunca mueve a la otra."
+            },
+            {
+              "key": "predict",
+              "title": "Prediga",
+              "body": "PumpA arranca a los 10 ms y PumpB a los 30 ms. PumpA se detiene a los 50 ms. Prediga RunA y RunB a los 30, 50 y 70 ms.",
+              "checkpoint": "Ambas en ON a los 30 ms; solo RunB a los 50 ms; ambas en OFF a los 70 ms."
+            },
+            {
+              "key": "edit",
+              "title": "Edite",
+              "body": "Corrija esta omisión del programa inicial, guárdelo y pulse Comprobar: El programa inicial define el bloque de función Latch y lo llama dos veces, pero el cuerpo de Latch está vacío, así que Q nunca cambia y las dos bombas quedan en OFF; escriba el cuerpo para que Set ponga Q en ON, Reset lo ponga en OFF y Q conserve su valor entre llamadas.",
+              "checkpoint": "El escenario visible debe pasar con evidencia guardada del host."
+            },
+            {
+              "key": "run",
+              "title": "Ejecute",
+              "body": "Pulse Comprobar. Studio ejecuta el programa guardado contra el escenario de esta lección.",
+              "checkpoint": "El escenario se llama PumpPair y contiene 9 assertions."
+            },
+            {
+              "key": "observe",
+              "title": "Observe",
+              "body": "Compare 10, 30 y 50 ms: RunA se mantiene al soltar su botón, RunB se une a los 30 ms, y detener A a los 50 ms deja B en ON.",
+              "checkpoint": "RunA y RunB cambian en momentos distintos con el mismo bloque, lo que muestra dos memorias. A los 90 ms Start y Stop llegan juntos a la bomba A y esta sigue en OFF."
+            },
+            {
+              "key": "reflect",
+              "title": "Reflexione",
+              "body": "¿Qué cambiaría si las dos bombas compartieran una memoria global en lugar de una instancia cada una? Conecte a PumpB las entradas de la bomba A y vea qué assertion falla.",
+              "checkpoint": "Cada instancia tiene su propia copia de las variables del bloque, así que el mismo código sirve para cualquier número de bombas. El escenario muestra solo la lógica; no muestra la secuencia de arranque ni una falla de bomba."
+            }
+          ],
+          "hints": [
+            {
+              "level": 1,
+              "text": "Q es una salida que conserva su valor de una llamada a la siguiente, así que puede aparecer a la derecha de su propia asignación."
+            },
+            {
+              "level": 2,
+              "text": "Q := (Set OR Q) AND NOT Reset; escrito entre la sección VAR_OUTPUT y END_FUNCTION_BLOCK."
+            }
+          ],
+          "faultCases": [
+            "El programa inicial define el bloque de función Latch y lo llama dos veces, pero el cuerpo de Latch está vacío, así que Q nunca cambia y las dos bombas quedan en OFF; escriba el cuerpo para que Set ponga Q en ON, Reset lo ponga en OFF y Q conserve su valor entre llamadas."
+          ]
+        }
+      }
+    },
+    {
+      "id": "structures-arrays-call-panel",
+      "version": 1,
+      "order": 22,
+      "module": 7,
+      "level": "intermediate",
+      "prerequisites": [
+        "function-block-pump-pair"
+      ],
+      "languages": [
+        "ST"
+      ],
+      "tracks": [
+        "simulation"
+      ],
+      "unsupported": {
+        "hardware": {
+          "reason": {
+            "en": "The lesson replays three call buttons and an acknowledgement at exact steps, and a board has no recorded trace of that panel yet.",
+            "es": "La lección reproduce tres botones de llamada y un reconocimiento en pasos exactos, y todavía no hay una traza registrada desde una placa de ese panel."
+          },
+          "instead": {
+            "en": "Complete it in Simulation: its grade is the same each time and needs no board.",
+            "es": "Complétela en Simulación: su calificación es la misma cada vez y no necesita una placa."
+          }
+        }
+      },
+      "plant": null,
+      "plantMap": null,
+      "estimatedMinutes": 25,
+      "starter": {
+        "project": "call_panel_starter",
+        "program": "src/CallPanel.st"
+      },
+      "solution": {
+        "project": "call_panel",
+        "program": "src/CallPanel.st"
+      },
+      "scenario": {
+        "id": "CallPanel",
+        "path": "tests/call-panel.scenario.json",
+        "sha256": "fa3731358167b95402748515fce755c6fcc0dcd4857ea019b3039d7b2d29747f",
+        "tickMs": 10,
+        "durationMs": 110,
+        "assertions": 10,
+        "canonical": "{\"durationMs\":110,\"events\":[{\"atMs\":0,\"set\":{\"CallPanel.Ack\":false,\"CallPanel.Call1\":false,\"CallPanel.Call2\":false,\"CallPanel.Call3\":false}},{\"atMs\":10,\"set\":{\"CallPanel.Call1\":true}},{\"atMs\":20,\"set\":{\"CallPanel.Call1\":false}},{\"atMs\":30,\"set\":{\"CallPanel.Call2\":true}},{\"atMs\":40,\"set\":{\"CallPanel.Call2\":false}},{\"atMs\":50,\"set\":{\"CallPanel.Call3\":true}},{\"atMs\":60,\"set\":{\"CallPanel.Call3\":false}},{\"atMs\":70,\"set\":{\"CallPanel.Ack\":true}},{\"atMs\":80,\"set\":{\"CallPanel.Ack\":false}},{\"atMs\":90,\"set\":{\"CallPanel.Call2\":true}},{\"atMs\":100,\"set\":{\"CallPanel.Call2\":false}}],\"expectations\":[{\"atMs\":0,\"condition\":{\"CallPanel.AllCalling\":false,\"CallPanel.Pending\":false},\"kind\":\"AT\"},{\"atMs\":20,\"condition\":{\"CallPanel.AllCalling\":false,\"CallPanel.Pending\":true},\"kind\":\"AT\"},{\"atMs\":40,\"condition\":{\"CallPanel.AllCalling\":false,\"CallPanel.Pending\":true},\"kind\":\"AT\"},{\"atMs\":50,\"condition\":{\"CallPanel.AllCalling\":true,\"CallPanel.Pending\":true},\"kind\":\"AT\"},{\"atMs\":70,\"condition\":{\"CallPanel.AllCalling\":false,\"CallPanel.Pending\":false},\"kind\":\"AT\"},{\"atMs\":90,\"condition\":{\"CallPanel.AllCalling\":false,\"CallPanel.Pending\":true},\"kind\":\"AT\"},{\"condition\":{\"CallPanel.Pending\":true},\"fromMs\":10,\"kind\":\"RISING\",\"withinMs\":0},{\"condition\":{\"CallPanel.AllCalling\":true},\"fromMs\":50,\"kind\":\"RISING\",\"withinMs\":0},{\"condition\":{\"CallPanel.Pending\":false},\"fromMs\":70,\"kind\":\"FALLING\",\"withinMs\":0},{\"condition\":{\"CallPanel.AllCalling\":true,\"CallPanel.Pending\":false},\"kind\":\"NEVER\"}],\"id\":\"CallPanel\",\"schemaVersion\":1,\"tickMs\":10}"
+      },
+      "regressionScenarios": [],
+      "text": {
+        "en": {
+          "title": "Structures and arrays: a panel of three calls",
+          "summary": "Keep three call buttons in an array of structures and write one FOR loop that holds each call until it is acknowledged and reports whether any call, or every call, is waiting.",
+          "scope": "Tests provide native POSIX host evidence with one 10 ms task; they do not establish the response time of a real call panel or tasks beyond the one 10 ms task, HIL, or certification.",
+          "objectives": [
+            "Declare a structure with named members and an array of that structure, and reach an element with an index and a member name.",
+            "Replace three copies of the same code with one FOR loop over the array."
+          ],
+          "stages": [
+            {
+              "key": "objective",
+              "title": "Objective",
+              "body": "In src/CallPanel.st the structure Call has the members Pressed and Held, and the array Calls holds three of them. The program copies the buttons into Calls[1].Pressed to Calls[3].Pressed. Write a FOR loop over i from 1 to 3 that sets Held when Pressed is TRUE, clears it when Ack is TRUE, and sets Pending when any Held is TRUE and AllCalling when all three are.",
+              "checkpoint": "A call stays held after its button is released, Ack clears them, and the loop handles the three the same way."
+            },
+            {
+              "key": "predict",
+              "title": "Predict",
+              "body": "Calls arrive at 10, 30 and 50 ms and Ack is pressed at 70 ms. Predict Pending and AllCalling at 20, 50 and 70 ms.",
+              "checkpoint": "Pending only at 20 ms; both ON at 50 ms; both OFF at 70 ms."
+            },
+            {
+              "key": "edit",
+              "title": "Edit",
+              "body": "Correct this starter omission, save it, then press Check: The starter copies the three buttons into the array Calls but has no loop, so Pending and AllCalling stay OFF; add a FOR loop over the three elements that holds a pressed call until Ack and sets the two outputs.",
+              "checkpoint": "The visible scenario must pass with saved host evidence."
+            },
+            {
+              "key": "run",
+              "title": "Run",
+              "body": "Press Check. Studio runs your saved program against the scenario of this lesson.",
+              "checkpoint": "The scenario is named CallPanel and contains 10 assertions."
+            },
+            {
+              "key": "observe",
+              "title": "Observe",
+              "body": "Compare 20, 40 and 50 ms: Pending rises with the first call and stays ON, and AllCalling rises only when the third call is held at 50 ms.",
+              "checkpoint": "Ack clears every call at 70 ms, and a single new call at 90 ms makes Pending rise again with AllCalling OFF."
+            },
+            {
+              "key": "reflect",
+              "title": "Reflect",
+              "body": "What would change if the loop ran from 1 to 2? Try it and see which assertion fails, then add a fourth call and say what you would edit.",
+              "checkpoint": "With an array and a loop, adding a call changes the bounds and one line that copies the button. The scenario shows the logic of one task only; it does not show several tasks or their priorities."
+            }
+          ],
+          "hints": [
+            {
+              "level": 1,
+              "text": "An element of the array is Calls[i], and a member of it is Calls[i].Held. Start Pending at FALSE and AllCalling at TRUE before the loop, and let the loop change them."
+            },
+            {
+              "level": 2,
+              "text": "FOR i := 1 TO 3 DO  IF Calls[i].Pressed THEN Calls[i].Held := TRUE; END_IF;  IF Ack THEN Calls[i].Held := FALSE; END_IF;  IF Calls[i].Held THEN Pending := TRUE; ELSE AllCalling := FALSE; END_IF; END_FOR;"
+            }
+          ],
+          "faultCases": [
+            "The starter copies the three buttons into the array Calls but has no loop, so Pending and AllCalling stay OFF; add a FOR loop over the three elements that holds a pressed call until Ack and sets the two outputs."
+          ]
+        },
+        "es": {
+          "title": "Estructuras y arreglos: un panel de tres llamadas",
+          "summary": "Guarde tres botones de llamada en un arreglo de estructuras y escriba un bucle FOR que mantenga cada llamada hasta que se reconozca e informe si hay alguna llamada, o todas, esperando.",
+          "scope": "La evidencia de Tests es del runtime nativo POSIX con una tarea de 10 ms; no establece el tiempo de respuesta de un panel de llamadas real ni tareas distintas de la tarea de 10 ms, HIL ni certificación.",
+          "objectives": [
+            "Declare una estructura con miembros con nombre y un arreglo de esa estructura, y llegue a un elemento con un índice y un nombre de miembro.",
+            "Reemplace tres copias del mismo código por un solo bucle FOR sobre el arreglo."
+          ],
+          "stages": [
+            {
+              "key": "objective",
+              "title": "Objetivo",
+              "body": "En src/CallPanel.st la estructura Call tiene los miembros Pressed y Held, y el arreglo Calls contiene tres. El programa copia los botones a Calls[1].Pressed hasta Calls[3].Pressed. Escriba un bucle FOR con i de 1 a 3 que ponga Held en TRUE cuando Pressed sea TRUE, lo borre cuando Ack sea TRUE, y active Pending si algún Held es TRUE y AllCalling si los tres lo son.",
+              "checkpoint": "Una llamada queda retenida al soltar su botón, Ack las borra, y el bucle trata las tres de la misma manera."
+            },
+            {
+              "key": "predict",
+              "title": "Prediga",
+              "body": "Las llamadas llegan a los 10, 30 y 50 ms y Ack se pulsa a los 70 ms. Prediga Pending y AllCalling a los 20, 50 y 70 ms.",
+              "checkpoint": "Solo Pending a los 20 ms; ambas en ON a los 50 ms; ambas en OFF a los 70 ms."
+            },
+            {
+              "key": "edit",
+              "title": "Edite",
+              "body": "Corrija esta omisión del programa inicial, guárdelo y pulse Comprobar: El programa inicial copia los tres botones al arreglo Calls pero no tiene bucle, así que Pending y AllCalling quedan en OFF; agregue un bucle FOR sobre los tres elementos que mantenga una llamada pulsada hasta Ack y active las dos salidas.",
+              "checkpoint": "El escenario visible debe pasar con evidencia guardada del host."
+            },
+            {
+              "key": "run",
+              "title": "Ejecute",
+              "body": "Pulse Comprobar. Studio ejecuta el programa guardado contra el escenario de esta lección.",
+              "checkpoint": "El escenario se llama CallPanel y contiene 10 assertions."
+            },
+            {
+              "key": "observe",
+              "title": "Observe",
+              "body": "Compare 20, 40 y 50 ms: Pending sube con la primera llamada y sigue en ON, y AllCalling sube solo cuando la tercera llamada queda retenida a los 50 ms.",
+              "checkpoint": "Ack borra todas las llamadas a los 70 ms, y una sola llamada nueva a los 90 ms hace subir Pending otra vez con AllCalling en OFF."
+            },
+            {
+              "key": "reflect",
+              "title": "Reflexione",
+              "body": "¿Qué cambiaría si el bucle fuera de 1 a 2? Pruébelo y vea qué assertion falla; luego agregue una cuarta llamada y diga qué editaría.",
+              "checkpoint": "Con un arreglo y un bucle, agregar una llamada cambia los límites y una línea que copia el botón. El escenario muestra la lógica de una sola tarea; no muestra varias tareas ni sus prioridades."
+            }
+          ],
+          "hints": [
+            {
+              "level": 1,
+              "text": "Un elemento del arreglo es Calls[i], y un miembro de él es Calls[i].Held. Ponga Pending en FALSE y AllCalling en TRUE antes del bucle, y deje que el bucle los cambie."
+            },
+            {
+              "level": 2,
+              "text": "FOR i := 1 TO 3 DO  IF Calls[i].Pressed THEN Calls[i].Held := TRUE; END_IF;  IF Ack THEN Calls[i].Held := FALSE; END_IF;  IF Calls[i].Held THEN Pending := TRUE; ELSE AllCalling := FALSE; END_IF; END_FOR;"
+            }
+          ],
+          "faultCases": [
+            "El programa inicial copia los tres botones al arreglo Calls pero no tiene bucle, así que Pending y AllCalling quedan en OFF; agregue un bucle FOR sobre los tres elementos que mantenga una llamada pulsada hasta Ack y active las dos salidas."
+          ]
+        }
+      }
+    },
+    {
+      "id": "sfc-fill-mix-sequence",
+      "version": 1,
+      "order": 23,
+      "module": 5,
+      "level": "intermediate",
+      "prerequisites": [
+        "edge-counter-pulses"
+      ],
+      "languages": [
+        "SFC"
+      ],
+      "tracks": [
+        "simulation"
+      ],
+      "unsupported": {
+        "hardware": {
+          "reason": {
+            "en": "The lesson is graded on step times of 50 ms counted by the scan, which a board cannot repeat to the same scan every run.",
+            "es": "La lección se califica con tiempos de paso de 50 ms contados por ciclo, que una placa no repite al mismo ciclo en cada ejecución."
+          },
+          "instead": {
+            "en": "Complete it in Simulation: its grade is the same each time and needs no board.",
+            "es": "Complétela en Simulación: su calificación es la misma cada vez y no necesita una placa."
+          }
+        }
+      },
+      "plant": null,
+      "plantMap": null,
+      "estimatedMinutes": 25,
+      "starter": {
+        "project": "fill_mix_sfc_starter",
+        "program": "src/FillMix.sfc.json"
+      },
+      "solution": {
+        "project": "fill_mix_sfc",
+        "program": "src/FillMix.sfc.json"
+      },
+      "scenario": {
+        "id": "FillMix",
+        "path": "tests/fill-mix.scenario.json",
+        "sha256": "97d6d814eb0d1a1bbe7018a13d06231bcfe36a287f56f871c96dd14dc1a8cc7a",
+        "tickMs": 10,
+        "durationMs": 200,
+        "assertions": 12,
+        "canonical": "{\"durationMs\":200,\"events\":[{\"atMs\":0,\"set\":{\"FillMix.Start\":false}},{\"atMs\":10,\"set\":{\"FillMix.Start\":true}},{\"atMs\":20,\"set\":{\"FillMix.Start\":false}},{\"atMs\":160,\"set\":{\"FillMix.Start\":true}},{\"atMs\":170,\"set\":{\"FillMix.Start\":false}}],\"expectations\":[{\"atMs\":0,\"condition\":{\"FillMix.Mixer\":false,\"FillMix.Valve\":false},\"kind\":\"AT\"},{\"atMs\":10,\"condition\":{\"FillMix.Mixer\":false,\"FillMix.Valve\":false},\"kind\":\"AT\"},{\"atMs\":20,\"condition\":{\"FillMix.Mixer\":false,\"FillMix.Valve\":true},\"kind\":\"AT\"},{\"atMs\":70,\"condition\":{\"FillMix.Mixer\":false,\"FillMix.Valve\":true},\"kind\":\"AT\"},{\"atMs\":80,\"condition\":{\"FillMix.Mixer\":true,\"FillMix.Valve\":false},\"kind\":\"AT\"},{\"atMs\":130,\"condition\":{\"FillMix.Mixer\":true,\"FillMix.Valve\":false},\"kind\":\"AT\"},{\"atMs\":140,\"condition\":{\"FillMix.Mixer\":false,\"FillMix.Valve\":false},\"kind\":\"AT\"},{\"atMs\":170,\"condition\":{\"FillMix.Mixer\":false,\"FillMix.Valve\":true},\"kind\":\"AT\"},{\"condition\":{\"FillMix.Valve\":true},\"fromMs\":20,\"kind\":\"RISING\",\"withinMs\":0},{\"condition\":{\"FillMix.Valve\":false},\"fromMs\":80,\"kind\":\"FALLING\",\"withinMs\":0},{\"condition\":{\"FillMix.Mixer\":true},\"forMs\":50,\"fromMs\":80,\"kind\":\"FOR\"},{\"condition\":{\"FillMix.Mixer\":true,\"FillMix.Valve\":true},\"kind\":\"NEVER\"}],\"id\":\"FillMix\",\"schemaVersion\":1,\"tickMs\":10}"
+      },
+      "regressionScenarios": [],
+      "text": {
+        "en": {
+          "title": "A sequence in Sequential Function Chart: fill, then mix",
+          "summary": "Complete a Sequential Function Chart with three steps by adding the missing timed transition, and check that the valve and the mixer never run together.",
+          "scope": "Tests provide native POSIX host evidence with one 10 ms task; they do not establish process volumes, mixing quality, valve timing on real equipment, HIL, or certification.",
+          "objectives": [
+            "Read a Sequential Function Chart as steps that are active one at a time, actions that run while their step is active, and transitions that move the activity.",
+            "Add a timed transition that uses the elapsed time of a step."
+          ],
+          "stages": [
+            {
+              "key": "objective",
+              "title": "Objective",
+              "body": "In src/FillMix.sfc.json the steps IDLE, FILL and MIX, their actions and the transitions IDLE to FILL (Start) and MIX to IDLE (after a delay) are drawn. Add the missing transition from FILL to MIX with the condition step_fill.T >= T#50ms, where T is how long the step has been active.",
+              "checkpoint": "The sequence runs IDLE, FILL, MIX and back to IDLE on each Start, with one step active at a time."
+            },
+            {
+              "key": "predict",
+              "title": "Predict",
+              "body": "Start is pressed at 10 ms. The step changes on the scan after the condition becomes true. Predict Valve and Mixer at 20, 80 and 140 ms.",
+              "checkpoint": "Valve ON at 20 ms; Mixer ON at 80 ms; both OFF at 140 ms."
+            },
+            {
+              "key": "edit",
+              "title": "Edit",
+              "body": "Correct this starter omission, save it, then press Check: The starter has the three steps and two of the three transitions: FILL never leaves, so the valve stays open and MIX never runs; add a transition from FILL to MIX whose condition is step_fill.T >= T#50ms.",
+              "checkpoint": "The visible scenario must pass with saved host evidence."
+            },
+            {
+              "key": "run",
+              "title": "Run",
+              "body": "Press Check. Studio runs your saved program against the scenario of this lesson.",
+              "checkpoint": "The scenario is named FillMix and contains 12 assertions."
+            },
+            {
+              "key": "observe",
+              "title": "Observe",
+              "body": "Compare 70, 80 and 130 ms: the valve closes and the mixer starts in the same scan at 80 ms, and the mixer runs for 50 ms before the sequence returns to IDLE.",
+              "checkpoint": "The valve and the mixer are never ON together. A second Start at 160 ms repeats the cycle."
+            },
+            {
+              "key": "reflect",
+              "title": "Reflect",
+              "body": "Which step is active while the valve is open, and why can only one be active at a time? Change the MIX action to open the valve too and see which assertion fails.",
+              "checkpoint": "Each action sets both outputs, so a step defines the whole output state and the sequence cannot leave an output on by accident. The scenario shows the sequence logic only; it does not show process feedback such as a level switch."
+            }
+          ],
+          "hints": [
+            {
+              "level": 1,
+              "text": "A transition has a source step, a target step and a condition. The transition from IDLE to FILL is already there; copy its shape for FILL to MIX."
+            },
+            {
+              "level": 2,
+              "text": "Add a transition with fromStep step_fill, toStep step_mix and the condition step_fill.T >= T#50ms."
+            }
+          ],
+          "faultCases": [
+            "The starter has the three steps and two of the three transitions: FILL never leaves, so the valve stays open and MIX never runs; add a transition from FILL to MIX whose condition is step_fill.T >= T#50ms."
+          ]
+        },
+        "es": {
+          "title": "Una secuencia en diagrama funcional de secuencias: llenar y luego mezclar",
+          "summary": "Complete un diagrama funcional de secuencias de tres pasos agregando la transición temporizada que falta, y compruebe que la válvula y el mezclador nunca funcionan a la vez.",
+          "scope": "La evidencia de Tests es del runtime nativo POSIX con una tarea de 10 ms; no establece volúmenes de proceso, calidad de mezcla ni tiempos de válvula en equipos reales, HIL ni certificación.",
+          "objectives": [
+            "Lea un diagrama funcional de secuencias como pasos que se activan de uno en uno, acciones que se ejecutan mientras su paso está activo y transiciones que mueven la actividad.",
+            "Agregue una transición temporizada que use el tiempo transcurrido de un paso."
+          ],
+          "stages": [
+            {
+              "key": "objective",
+              "title": "Objetivo",
+              "body": "En src/FillMix.sfc.json están dibujados los pasos IDLE, FILL y MIX, sus acciones y las transiciones de IDLE a FILL (Start) y de MIX a IDLE (tras un retardo). Agregue la transición que falta de FILL a MIX con la condición step_fill.T >= T#50ms, donde T es el tiempo que el paso lleva activo.",
+              "checkpoint": "La secuencia recorre IDLE, FILL, MIX y vuelve a IDLE en cada Start, con un solo paso activo a la vez."
+            },
+            {
+              "key": "predict",
+              "title": "Prediga",
+              "body": "Start se pulsa a los 10 ms. El paso cambia en el ciclo siguiente a aquel en que la condición se hace verdadera. Prediga Valve y Mixer a los 20, 80 y 140 ms.",
+              "checkpoint": "Valve en ON a los 20 ms; Mixer en ON a los 80 ms; ambas en OFF a los 140 ms."
+            },
+            {
+              "key": "edit",
+              "title": "Edite",
+              "body": "Corrija esta omisión del programa inicial, guárdelo y pulse Comprobar: El programa inicial tiene los tres pasos y dos de las tres transiciones: FILL nunca termina, así que la válvula queda abierta y MIX nunca se ejecuta; agregue una transición de FILL a MIX cuya condición sea step_fill.T >= T#50ms.",
+              "checkpoint": "El escenario visible debe pasar con evidencia guardada del host."
+            },
+            {
+              "key": "run",
+              "title": "Ejecute",
+              "body": "Pulse Comprobar. Studio ejecuta el programa guardado contra el escenario de esta lección.",
+              "checkpoint": "El escenario se llama FillMix y contiene 12 assertions."
+            },
+            {
+              "key": "observe",
+              "title": "Observe",
+              "body": "Compare 70, 80 y 130 ms: la válvula se cierra y el mezclador arranca en el mismo ciclo a los 80 ms, y el mezclador funciona 50 ms antes de que la secuencia vuelva a IDLE.",
+              "checkpoint": "La válvula y el mezclador nunca están en ON a la vez. Un segundo Start a los 160 ms repite el ciclo."
+            },
+            {
+              "key": "reflect",
+              "title": "Reflexione",
+              "body": "¿Qué paso está activo mientras la válvula está abierta, y por qué solo uno puede estarlo a la vez? Cambie la acción de MIX para que también abra la válvula y vea qué assertion falla.",
+              "checkpoint": "Cada acción escribe las dos salidas, así que un paso define todo el estado de salida y la secuencia no puede dejar una salida encendida por descuido. El escenario muestra solo la lógica de la secuencia; no muestra realimentación del proceso, como un interruptor de nivel."
+            }
+          ],
+          "hints": [
+            {
+              "level": 1,
+              "text": "Una transición tiene un paso de origen, un paso de destino y una condición. La transición de IDLE a FILL ya está; copie su forma para FILL a MIX."
+            },
+            {
+              "level": 2,
+              "text": "Agregue una transición con fromStep step_fill, toStep step_mix y la condición step_fill.T >= T#50ms."
+            }
+          ],
+          "faultCases": [
+            "El programa inicial tiene los tres pasos y dos de las tres transiciones: FILL nunca termina, así que la válvula queda abierta y MIX nunca se ejecuta; agregue una transición de FILL a MIX cuya condición sea step_fill.T >= T#50ms."
+          ]
+        }
+      }
+    },
+    {
+      "id": "instruction-list-door-alarm",
+      "version": 1,
+      "order": 24,
+      "module": 9,
+      "level": "advanced",
+      "prerequisites": [
+        "function-block-pump-pair"
+      ],
+      "languages": [
+        "IL"
+      ],
+      "tracks": [
+        "simulation"
+      ],
+      "unsupported": {
+        "hardware": {
+          "reason": {
+            "en": "The lesson is graded on a door and a silence button replayed at exact steps, and no board trace has been recorded for it.",
+            "es": "La lección se califica con una puerta y un botón de silencio reproducidos en pasos exactos, y no se ha registrado una traza de placa para ella."
+          },
+          "instead": {
+            "en": "Complete it in Simulation: its grade is the same each time and needs no board.",
+            "es": "Complétela en Simulación: su calificación es la misma cada vez y no necesita una placa."
+          }
+        }
+      },
+      "plant": null,
+      "plantMap": null,
+      "estimatedMinutes": 20,
+      "starter": {
+        "project": "door_alarm_il_starter",
+        "program": "src/DoorAlarm.il"
+      },
+      "solution": {
+        "project": "door_alarm_il",
+        "program": "src/DoorAlarm.il"
+      },
+      "scenario": {
+        "id": "DoorAlarm",
+        "path": "tests/door-alarm.scenario.json",
+        "sha256": "fff8cfd3a2aebda7a698c19f0846bd7f26214e0d8a35b987a1b2957dd87e408d",
+        "tickMs": 10,
+        "durationMs": 120,
+        "assertions": 12,
+        "canonical": "{\"durationMs\":120,\"events\":[{\"atMs\":0,\"set\":{\"DoorAlarm.Armed\":true,\"DoorAlarm.DoorOpen\":false,\"DoorAlarm.Silence\":false}},{\"atMs\":10,\"set\":{\"DoorAlarm.DoorOpen\":true}},{\"atMs\":30,\"set\":{\"DoorAlarm.DoorOpen\":false}},{\"atMs\":50,\"set\":{\"DoorAlarm.Silence\":true}},{\"atMs\":60,\"set\":{\"DoorAlarm.Silence\":false}},{\"atMs\":70,\"set\":{\"DoorAlarm.Armed\":false,\"DoorAlarm.DoorOpen\":true}},{\"atMs\":90,\"set\":{\"DoorAlarm.Armed\":true}},{\"atMs\":100,\"set\":{\"DoorAlarm.Silence\":true}},{\"atMs\":110,\"set\":{\"DoorAlarm.Silence\":false}}],\"expectations\":[{\"atMs\":0,\"condition\":{\"DoorAlarm.Siren\":false},\"kind\":\"AT\"},{\"atMs\":10,\"condition\":{\"DoorAlarm.Siren\":true},\"kind\":\"AT\"},{\"atMs\":40,\"condition\":{\"DoorAlarm.Siren\":true},\"kind\":\"AT\"},{\"atMs\":50,\"condition\":{\"DoorAlarm.Siren\":false},\"kind\":\"AT\"},{\"atMs\":60,\"condition\":{\"DoorAlarm.Siren\":false},\"kind\":\"AT\"},{\"atMs\":80,\"condition\":{\"DoorAlarm.Siren\":false},\"kind\":\"AT\"},{\"atMs\":90,\"condition\":{\"DoorAlarm.Siren\":true},\"kind\":\"AT\"},{\"atMs\":100,\"condition\":{\"DoorAlarm.Siren\":false},\"kind\":\"AT\"},{\"atMs\":110,\"condition\":{\"DoorAlarm.Siren\":true},\"kind\":\"AT\"},{\"condition\":{\"DoorAlarm.Siren\":true},\"fromMs\":10,\"kind\":\"RISING\",\"withinMs\":0},{\"condition\":{\"DoorAlarm.Siren\":false},\"fromMs\":50,\"kind\":\"FALLING\",\"withinMs\":0},{\"condition\":{\"DoorAlarm.Siren\":true},\"forMs\":10,\"fromMs\":30,\"kind\":\"FOR\"}],\"id\":\"DoorAlarm\",\"schemaVersion\":1,\"tickMs\":10}"
+      },
+      "regressionScenarios": [],
+      "text": {
+        "en": {
+          "title": "Instruction List: the current result and the order of instructions",
+          "summary": "Complete an Instruction List program so that a door alarm holds itself on after the door closes and is silenced by a button, and see that the order of the instructions decides the result.",
+          "scope": "Tests provide native POSIX host evidence with one 10 ms task; they do not establish alarm requirements, siren timing or any real machine behaviour, HIL, or certification.",
+          "objectives": [
+            "Read an Instruction List program as one current result that each instruction combines with an operand, from top to bottom.",
+            "Use LD, AND, OR, ANDN and ST, and see that moving one instruction changes the logic."
+          ],
+          "stages": [
+            {
+              "key": "objective",
+              "title": "Objective",
+              "body": "In src/DoorAlarm.il each line is an instruction: LD loads an operand into the current result, AND combines it, and ST stores the result in Siren. Add two lines before ST so that Siren holds itself on and Silence turns it off: OR Siren, then ANDN Silence.",
+              "checkpoint": "The siren starts when the alarm is armed and the door opens, stays on after the door closes, and goes off when Silence is pressed."
+            },
+            {
+              "key": "predict",
+              "title": "Predict",
+              "body": "The door opens at 10 ms and closes at 30 ms. Silence is pressed at 50 ms. Predict Siren at 40, 50 and 80 ms; the door opens at 70 ms while the alarm is disarmed.",
+              "checkpoint": "ON at 40 ms, after the door closed; OFF at 50 ms; OFF at 80 ms, because the alarm is disarmed."
+            },
+            {
+              "key": "edit",
+              "title": "Edit",
+              "body": "Correct this starter omission, save it, then press Check: The starter loads Armed, ANDs it with DoorOpen and stores the result, so Siren follows the door and drops at 30 ms when the door closes; add OR Siren so the siren holds itself on, then ANDN Silence so that Silence turns it off, in that order.",
+              "checkpoint": "The visible scenario must pass with saved host evidence."
+            },
+            {
+              "key": "run",
+              "title": "Run",
+              "body": "Press Check. Studio runs your saved program against the scenario of this lesson.",
+              "checkpoint": "The scenario is named DoorAlarm and contains 12 assertions."
+            },
+            {
+              "key": "observe",
+              "title": "Observe",
+              "body": "Compare 10, 40 and 50 ms: Siren rises with the door, holds after it closes, and falls with Silence; it rises again at 90 ms when the alarm is armed with the door still open.",
+              "checkpoint": "Silence at 100 ms drops the siren even though the door is open, and at 110 ms the siren starts again because the cause is still there."
+            },
+            {
+              "key": "reflect",
+              "title": "Reflect",
+              "body": "What happens if ANDN Silence comes before OR Siren? Swap the two lines and see which assertion fails.",
+              "checkpoint": "Each instruction works on the result of the lines above it, so OR Siren after ANDN Silence puts the held value back. The scenario shows the logic only; it is not an alarm system."
+            }
+          ],
+          "hints": [
+            {
+              "level": 1,
+              "text": "Siren holds itself on when its own previous value is part of the condition. Which instruction combines the current result with another operand using OR?"
+            },
+            {
+              "level": 2,
+              "text": "LD Armed, AND DoorOpen, OR Siren, ANDN Silence, ST Siren: five lines, one operand each."
+            }
+          ],
+          "faultCases": [
+            "The starter loads Armed, ANDs it with DoorOpen and stores the result, so Siren follows the door and drops at 30 ms when the door closes; add OR Siren so the siren holds itself on, then ANDN Silence so that Silence turns it off, in that order."
+          ]
+        },
+        "es": {
+          "title": "Lista de instrucciones: el resultado actual y el orden de las instrucciones",
+          "summary": "Complete un programa en lista de instrucciones para que una alarma de puerta se mantenga encendida al cerrar la puerta y se silencie con un botón, y vea que el orden de las instrucciones decide el resultado.",
+          "scope": "La evidencia de Tests es del runtime nativo POSIX con una tarea de 10 ms; no establece requisitos de alarmas, tiempos de sirena ni el comportamiento de una máquina real, HIL ni certificación.",
+          "objectives": [
+            "Lea un programa en lista de instrucciones como un resultado actual que cada instrucción combina con un operando, de arriba hacia abajo.",
+            "Use LD, AND, OR, ANDN y ST, y vea que mover una instrucción cambia la lógica."
+          ],
+          "stages": [
+            {
+              "key": "objective",
+              "title": "Objetivo",
+              "body": "En src/DoorAlarm.il cada línea es una instrucción: LD carga un operando en el resultado actual, AND lo combina y ST guarda el resultado en Siren. Agregue dos líneas antes de ST para que Siren se mantenga encendida y Silence la apague: OR Siren y luego ANDN Silence.",
+              "checkpoint": "La sirena suena cuando la alarma está armada y la puerta se abre, sigue sonando al cerrarse la puerta y se apaga al pulsar Silence."
+            },
+            {
+              "key": "predict",
+              "title": "Prediga",
+              "body": "La puerta se abre a los 10 ms y se cierra a los 30 ms. Silence se pulsa a los 50 ms. Prediga Siren a los 40, 50 y 80 ms; la puerta se abre a los 70 ms con la alarma desarmada.",
+              "checkpoint": "En ON a los 40 ms, con la puerta ya cerrada; en OFF a los 50 ms; en OFF a los 80 ms, porque la alarma está desarmada."
+            },
+            {
+              "key": "edit",
+              "title": "Edite",
+              "body": "Corrija esta omisión del programa inicial, guárdelo y pulse Comprobar: El programa inicial carga Armed, le aplica AND con DoorOpen y guarda el resultado, así que Siren sigue a la puerta y se apaga a los 30 ms cuando la puerta se cierra; agregue OR Siren para que la sirena se mantenga encendida y luego ANDN Silence para que Silence la apague, en ese orden.",
+              "checkpoint": "El escenario visible debe pasar con evidencia guardada del host."
+            },
+            {
+              "key": "run",
+              "title": "Ejecute",
+              "body": "Pulse Comprobar. Studio ejecuta el programa guardado contra el escenario de esta lección.",
+              "checkpoint": "El escenario se llama DoorAlarm y contiene 12 assertions."
+            },
+            {
+              "key": "observe",
+              "title": "Observe",
+              "body": "Compare 10, 40 y 50 ms: Siren sube con la puerta, se mantiene al cerrarse y cae con Silence; vuelve a subir a los 90 ms cuando se arma la alarma con la puerta aún abierta.",
+              "checkpoint": "Silence a los 100 ms apaga la sirena aunque la puerta esté abierta, y a los 110 ms la sirena vuelve a sonar porque la causa sigue presente."
+            },
+            {
+              "key": "reflect",
+              "title": "Reflexione",
+              "body": "¿Qué pasa si ANDN Silence va antes de OR Siren? Intercambie las dos líneas y vea qué assertion falla.",
+              "checkpoint": "Cada instrucción trabaja sobre el resultado de las líneas anteriores, así que OR Siren después de ANDN Silence devuelve el valor retenido. El escenario muestra solo la lógica; no es un sistema de alarma."
+            }
+          ],
+          "hints": [
+            {
+              "level": 1,
+              "text": "Siren se mantiene encendida cuando su propio valor anterior forma parte de la condición. ¿Qué instrucción combina el resultado actual con otro operando mediante OR?"
+            },
+            {
+              "level": 2,
+              "text": "LD Armed, AND DoorOpen, OR Siren, ANDN Silence, ST Siren: cinco líneas, un operando cada una."
+            }
+          ],
+          "faultCases": [
+            "El programa inicial carga Armed, le aplica AND con DoorOpen y guarda el resultado, así que Siren sigue a la puerta y se apaga a los 30 ms cuando la puerta se cierra; agregue OR Siren para que la sirena se mantenga encendida y luego ANDN Silence para que Silence la apague, en ese orden."
+          ]
+        }
+      }
     }
   ],
   "course": {

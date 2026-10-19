@@ -29,7 +29,7 @@ you looked at the solution.
 The course starts with something that moves (module 0), then explains how a PLC thinks (module 1), then logic, time and data, then structure, and ends with proof, languages, communications and a capstone. Each module states why it sits where it does.
 
 
-Available today: **15**. Planned: **14**. In all: **29**.
+Available today: **24**. Planned: **5**. In all: **29**.
 
 
 ## Module 0: Getting ready: a tour of Studio, the simulation and, for hardware, checking your board
@@ -78,13 +78,14 @@ Boolean logic is the vocabulary of every program. Contacts and coils lead to the
 | `motor-start-stop-safe` Safe motor start-stop | Available | ST | Simulation | - | 20 | `blinky-ladder-timer-feedback` |
 | `boolean-logic-two-hand-guard` Boolean logic: a two-hand control with a guard | Available | ST | Simulation | - | 15 | `blinky-ladder-timer-feedback` |
 | `set-reset-alarm-latch` Latching an alarm: set and reset, and which one wins | Available | ST | Simulation | - | 15 | `boolean-logic-two-hand-guard` |
-| Seal-in in Ladder (edit a Ladder program) | Planned | LD | Simulation, Hardware | - | 20 | - |
+| `seal-in-ladder` Seal-in in Ladder: a motor that holds itself on | Available | LD | Simulation | - | 20 | `blinky-ladder-timer-feedback` |
 
 Objectives of the available lessons:
 
 - **Safe motor start-stop**: Hold the motor on after Start is released with a seal-in. Drop the motor out on Stop, EStop and Overload, and never let a held Start restart it by itself.
 - **Boolean logic: a two-hand control with a guard**: Write a condition that is true only when several inputs are true together. Use NOT for a warning lamp and XOR for exactly one of two inputs.
 - **Latching an alarm: set and reset, and which one wins**: Hold an alarm after the fault has gone, until it is acknowledged. Tell the set-dominant block SR from the reset-dominant block RS.
+- **Seal-in in Ladder: a motor that holds itself on**: Read a Ladder rung as a path of contacts that must all pass power to reach a coil. Hold a coil on with a contact of its own output in parallel with Start, and keep Stop in series so that Stop wins.
 
 
 ## Module 3: Timers, edges and counters
@@ -97,12 +98,13 @@ Time and events come after logic: timers delay or hold a signal, edges turn a le
 |---|---|---|---|---|---|---|
 | `edge-counter-pulses` Edges and pulse counter | Available | ST | Simulation | - | 15 | `motor-start-stop-safe` |
 | `timers-on-delay-off-delay` Timers: an off-delay light and an on-delay filter | Available | ST | Simulation | - | 15 | `motor-start-stop-safe` |
-| Counters, and a blinker in Function Block Diagram | Planned | FBD | Simulation, Hardware | - | 20 | - |
+| `counter-batch-fbd` Counters in Function Block Diagram: count parts to a batch | Available | FBD | Simulation | - | 20 | `edge-counter-pulses` |
 
 Objectives of the available lessons:
 
 - **Edges and pulse counter**: Count three rising edges of PulseInput with a CTU counter. Reset the count and CountReached with Reset.
 - **Timers: an off-delay light and an on-delay filter**: Keep an output on for a fixed time after its input drops, using TOF. Ignore an input that is on for less than a fixed time, using TON.
+- **Counters in Function Block Diagram: count parts to a batch**: Read a Function Block Diagram as blocks whose output ports are wired to the input ports of other blocks. Wire a CTU counter: a rising edge on CU counts, R clears it, and Q is TRUE when the count reaches the preset PV.
 
 
 ## Module 4: Data: types, arithmetic, comparison, analog scaling
@@ -113,8 +115,13 @@ Real signals are numbers, not only on and off. Types, arithmetic, comparison and
 
 | Lesson | Status | Languages | Tracks | Plant | Minutes | Requires |
 |---|---|---|---|---|---|---|
-| Types, arithmetic and comparison | Planned | ST | Simulation, Hardware | - | 20 | - |
-| Analog scaling | Planned | FBD | Simulation, Hardware | - | 20 | - |
+| `types-arithmetic-comparison` Types, arithmetic and comparison: a total and three bands | Available | ST | Simulation | - | 20 | `edge-counter-pulses` |
+| `analog-scaling-integer` Analog scaling: from raw counts to a percentage | Available | ST | Simulation | - | 20 | `types-arithmetic-comparison` |
+
+Objectives of the available lessons:
+
+- **Types, arithmetic and comparison: a total and three bands**: Use an INT variable for a number and a BOOL variable for a yes or no, and see that a comparison turns a number into a BOOL. Add to a number only on the rising edge of an input, so that a button held for several scans counts once.
+- **Analog scaling: from raw counts to a percentage**: Scale a raw count to engineering units with a multiplication followed by a division, in that order. See that integer division drops the remainder, and choose an integer type wide enough for the intermediate product.
 
 
 ## Module 5: State machines and sequences
@@ -126,11 +133,12 @@ A machine that does things in order is a state machine. Sequences are written as
 | Lesson | Status | Languages | Tracks | Plant | Minutes | Requires |
 |---|---|---|---|---|---|---|
 | `pedestrian-crossing-states` Pedestrian crossing and safe states | Available | ST | Simulation | pedestrian-v1 | 25 | `edge-counter-pulses` |
-| A sequence in Sequential Function Chart | Planned | SFC | Simulation, Hardware | - | 25 | - |
+| `sfc-fill-mix-sequence` A sequence in Sequential Function Chart: fill, then mix | Available | SFC | Simulation | - | 25 | `edge-counter-pulses` |
 
 Objectives of the available lessons:
 
 - **Pedestrian crossing and safe states**: Model the crossing as numbered states, each with an explicit output combination. Show WALK only while the vehicles are red.
+- **A sequence in Sequential Function Chart: fill, then mix**: Read a Sequential Function Chart as steps that are active one at a time, actions that run while their step is active, and transitions that move the activity. Add a timed transition that uses the elapsed time of a step.
 
 
 ## Module 6: Feedback, faults and interlocks
@@ -143,24 +151,30 @@ A command is not a fact: the plant must confirm it. Feedback, faults and interlo
 |---|---|---|---|---|---|---|
 | `tank-level-fault-reset` Tank level, faults, and reset | Available | ST | Simulation | tank-v1 | 25 | `pedestrian-crossing-states` |
 | `motor-plant-feedback` Command, feedback, and speed | Available | ST | Simulation | motor-v1 | 20 | `pedestrian-crossing-states` |
-| Interlocks and permissives in Ladder | Planned | LD | Simulation, Hardware | motor-v1 | 20 | - |
+| `interlock-guard-permissive` Interlocks and permissives: a guard that stops the motor | Available | ST | Simulation | motor-v1 | 20 | `pedestrian-crossing-states` |
 
 Objectives of the available lessons:
 
 - **Tank level, faults, and reset**: Keep the pump on from LevelLow until LevelHigh with a latch. Latch the alarm on PumpFault or EStop and release it only with a fresh Reset after the fault has cleared.
 - **Command, feedback, and speed**: Separate the command to the motor from the confirmation that it runs. Keep the request until Stop and let Running follow the request only once AtSpeed arrives.
+- **Interlocks and permissives: a guard that stops the motor**: Tell a permissive, a condition that must be true for the output to be on, from a command. Put a permissive in the same condition that holds the motor, so that it drops the motor and also stops Start from restarting it.
 
 
 ## Module 7: Structuring programs: functions, function blocks, structures, arrays, tasks
 
 Intermediate. Requires module: 4. Tracks: Simulation, Hardware.
 
-Programs grow. Functions, function blocks, structures, arrays and tasks keep them readable and reusable.
+Programs grow. Functions, function blocks, structures, arrays and tasks keep them readable and reusable. The two lessons below cover function blocks, structures and arrays; no graded lesson covers tasks yet, because a scenario runs one task.
 
 | Lesson | Status | Languages | Tracks | Plant | Minutes | Requires |
 |---|---|---|---|---|---|---|
-| Functions and function blocks | Planned | ST | Simulation, Hardware | - | 25 | - |
-| Structures, arrays and tasks | Planned | FBD | Simulation, Hardware | - | 25 | - |
+| `function-block-pump-pair` Function blocks: one latch, two pumps | Available | ST | Simulation | - | 25 | `types-arithmetic-comparison` |
+| `structures-arrays-call-panel` Structures and arrays: a panel of three calls | Available | ST | Simulation | - | 25 | `function-block-pump-pair` |
+
+Objectives of the available lessons:
+
+- **Function blocks: one latch, two pumps**: Write a function block with inputs, an output and a memory that lives between calls. See that two instances of the same function block keep separate memories.
+- **Structures and arrays: a panel of three calls**: Declare a structure with named members and an array of that structure, and reach an element with an index and a member name. Replace three copies of the same code with one FOR loop over the array.
 
 
 ## Module 8: Testing and diagnosis: scenario tests, temporal assertions, trace, breakpoints
@@ -190,8 +204,12 @@ The same logic can be written in five languages. Instruction List closes the set
 
 | Lesson | Status | Languages | Tracks | Plant | Minutes | Requires |
 |---|---|---|---|---|---|---|
-| Instruction List | Planned | IL | Simulation, Hardware | - | 20 | - |
+| `instruction-list-door-alarm` Instruction List: the current result and the order of instructions | Available | IL | Simulation | - | 20 | `function-block-pump-pair` |
 | One logic in five languages | Planned | all | Simulation, Hardware | - | 30 | - |
+
+Objectives of the available lessons:
+
+- **Instruction List: the current result and the order of instructions**: Read an Instruction List program as one current result that each instruction combines with an operand, from top to bottom. Use LD, AND, OR, ANDN and ST, and see that moving one instruction changes the logic.
 
 
 ## Module 10: Communications: Modbus and MQTT basics

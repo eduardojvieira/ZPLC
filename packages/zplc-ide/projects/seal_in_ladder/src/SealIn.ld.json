@@ -1,0 +1,154 @@
+{
+  "name": "SealIn",
+  "description": "Seal-in: a Start press holds the motor on, a Stop press drops it.",
+  "version": "1.0.0",
+  "variables": {
+    "local": [],
+    "inputs": [
+      {
+        "name": "StartPB",
+        "type": "BOOL",
+        "address": "%I0.0",
+        "comment": "Start pushbutton, normally open: TRUE while pressed"
+      },
+      {
+        "name": "StopPB",
+        "type": "BOOL",
+        "address": "%I0.1",
+        "comment": "Stop pushbutton, normally open: TRUE while pressed. The rung breaks on a press."
+      }
+    ],
+    "outputs": [
+      {
+        "name": "Motor",
+        "type": "BOOL",
+        "address": "%Q0.0",
+        "comment": "Motor contactor command. It is also the memory that holds the motor on."
+      }
+    ]
+  },
+  "rungs": [
+    {
+      "id": "rung_1",
+      "number": 1,
+      "comment": "Start / stop with seal-in. The contact on Motor under StartPB holds the coil on after Start is released; StopPB is in series before the branch, so Stop wins.",
+      "branches": [
+        {
+          "id": "branch_1",
+          "startCol": 1,
+          "endCol": 4,
+          "rows": [
+            0,
+            1
+          ]
+        }
+      ],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 2,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "stop",
+              "type": "contact_nc",
+              "variable": "StopPB",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "start",
+              "type": "contact_no",
+              "variable": "StartPB",
+              "row": 0,
+              "col": 1
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "motor",
+              "type": "coil",
+              "variable": "Motor",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ],
+        [
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": {
+              "id": "seal",
+              "type": "contact_no",
+              "variable": "Motor",
+              "row": 1,
+              "col": 1
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          }
+        ]
+      ]
+    }
+  ],
+  "metadata": {
+    "author": "ZPLC Team",
+    "created": "2026-10-19",
+    "iecStandard": "IEC 61131-3",
+    "notes": []
+  }
+}

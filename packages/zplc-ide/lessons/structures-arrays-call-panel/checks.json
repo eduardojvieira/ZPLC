@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 1,
+  "alsoGreen": [],
+  "wrong": [
+    {
+      "intent": "loops over two calls only, so the third never counts",
+      "files": {
+        "src/CallPanel.st": "TYPE Call : STRUCT Pressed : BOOL; Held : BOOL; END_STRUCT END_TYPE\n\nPROGRAM CallPanel\nVAR_INPUT Call1 AT %I0.0 : BOOL; Call2 AT %I0.1 : BOOL; Call3 AT %I0.2 : BOOL; Ack AT %I0.3 : BOOL; END_VAR\nVAR_OUTPUT Pending AT %Q0.0 : BOOL; AllCalling AT %Q0.1 : BOOL; END_VAR\nVAR Calls : ARRAY[1..3] OF Call; i : INT; END_VAR\nCalls[1].Pressed := Call1; Calls[2].Pressed := Call2; Calls[3].Pressed := Call3;\nPending := FALSE;\nAllCalling := TRUE;\nFOR i := 1 TO 2 DO\n  IF Calls[i].Pressed THEN Calls[i].Held := TRUE; END_IF;\n  IF Ack THEN Calls[i].Held := FALSE; END_IF;\n  IF Calls[i].Held THEN Pending := TRUE; ELSE AllCalling := FALSE; END_IF;\nEND_FOR;\nEND_PROGRAM\n"
+      }
+    },
+    {
+      "intent": "never clears a held call on Ack",
+      "files": {
+        "src/CallPanel.st": "TYPE Call : STRUCT Pressed : BOOL; Held : BOOL; END_STRUCT END_TYPE\n\nPROGRAM CallPanel\nVAR_INPUT Call1 AT %I0.0 : BOOL; Call2 AT %I0.1 : BOOL; Call3 AT %I0.2 : BOOL; Ack AT %I0.3 : BOOL; END_VAR\nVAR_OUTPUT Pending AT %Q0.0 : BOOL; AllCalling AT %Q0.1 : BOOL; END_VAR\nVAR Calls : ARRAY[1..3] OF Call; i : INT; END_VAR\nCalls[1].Pressed := Call1; Calls[2].Pressed := Call2; Calls[3].Pressed := Call3;\nPending := FALSE;\nAllCalling := TRUE;\nFOR i := 1 TO 3 DO\n  IF Calls[i].Pressed THEN Calls[i].Held := TRUE; END_IF;\n  IF Calls[i].Held THEN Pending := TRUE; ELSE AllCalling := FALSE; END_IF;\nEND_FOR;\nEND_PROGRAM\n"
+      }
+    },
+    {
+      "intent": "reports Pending from the first call only",
+      "files": {
+        "src/CallPanel.st": "TYPE Call : STRUCT Pressed : BOOL; Held : BOOL; END_STRUCT END_TYPE\n\nPROGRAM CallPanel\nVAR_INPUT Call1 AT %I0.0 : BOOL; Call2 AT %I0.1 : BOOL; Call3 AT %I0.2 : BOOL; Ack AT %I0.3 : BOOL; END_VAR\nVAR_OUTPUT Pending AT %Q0.0 : BOOL; AllCalling AT %Q0.1 : BOOL; END_VAR\nVAR Calls : ARRAY[1..3] OF Call; i : INT; END_VAR\nCalls[1].Pressed := Call1; Calls[2].Pressed := Call2; Calls[3].Pressed := Call3;\nPending := FALSE;\nAllCalling := TRUE;\nFOR i := 1 TO 3 DO\n  IF Calls[i].Pressed THEN Calls[i].Held := TRUE; END_IF;\n  IF Ack THEN Calls[i].Held := FALSE; END_IF;\n  IF Calls[1].Held THEN Pending := TRUE; ELSE AllCalling := FALSE; END_IF;\nEND_FOR;\nEND_PROGRAM\n"
+      }
+    },
+    {
+      "intent": "reports AllCalling when any call is held",
+      "files": {
+        "src/CallPanel.st": "TYPE Call : STRUCT Pressed : BOOL; Held : BOOL; END_STRUCT END_TYPE\n\nPROGRAM CallPanel\nVAR_INPUT Call1 AT %I0.0 : BOOL; Call2 AT %I0.1 : BOOL; Call3 AT %I0.2 : BOOL; Ack AT %I0.3 : BOOL; END_VAR\nVAR_OUTPUT Pending AT %Q0.0 : BOOL; AllCalling AT %Q0.1 : BOOL; END_VAR\nVAR Calls : ARRAY[1..3] OF Call; i : INT; END_VAR\nCalls[1].Pressed := Call1; Calls[2].Pressed := Call2; Calls[3].Pressed := Call3;\nPending := FALSE;\nAllCalling := FALSE;\nFOR i := 1 TO 3 DO\n  IF Calls[i].Pressed THEN Calls[i].Held := TRUE; END_IF;\n  IF Ack THEN Calls[i].Held := FALSE; END_IF;\n  IF Calls[i].Held THEN Pending := TRUE; AllCalling := TRUE; END_IF;\nEND_FOR;\nEND_PROGRAM\n"
+      }
+    }
+  ]
+}

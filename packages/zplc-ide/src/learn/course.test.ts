@@ -51,8 +51,9 @@ describe('the course view', () => {
 
   it('keeps the modules that have no lesson yet, empty and with no minutes, and invents no lesson for them', () => {
     const empty = view.modules.filter((module) => module.lessons.length === 0).map((module) => module.id);
-    expect(empty).toEqual([4, 7, 9, 10, 11]);
-    expect(view.modules[4]!.estimatedMinutes).toBe(0);
+    expect(empty).toEqual(LESSON_INDEX.course.modules.map((module) => module.id).filter((id) => !LESSON_INDEX.lessons.some((lesson) => lesson.module === id)));
+    expect(empty.length).toBeGreaterThan(0);
+    expect(view.modules.find((module) => module.id === empty[0])!.estimatedMinutes).toBe(0);
   });
 
   it('carries every lesson of the index exactly once, with its state, title and tracks', () => {
@@ -65,7 +66,7 @@ describe('the course view', () => {
 
   it('states the objectives of a module from the lessons placed in it', () => {
     expect(view.modules[1]!.objectives.length).toBeGreaterThan(0);
-    expect(view.modules[4]!.objectives).toEqual([]);
+    expect(view.modules.find((module) => module.lessons.length === 0)!.objectives).toEqual([]);
   });
 
   it('reads Spanish titles in the Spanish locale', () => {
@@ -74,7 +75,7 @@ describe('the course view', () => {
   });
 
   it('counts the passed lessons', () => {
-    expect(buildCourseView(LESSON_INDEX, passed(FIRST), { locale: 'en', unlockAll: false })).toMatchObject({ passed: 1, total: 15 });
+    expect(buildCourseView(LESSON_INDEX, passed(FIRST), { locale: 'en', unlockAll: false })).toMatchObject({ passed: 1, total: LESSON_INDEX.lessons.length });
   });
 });
 

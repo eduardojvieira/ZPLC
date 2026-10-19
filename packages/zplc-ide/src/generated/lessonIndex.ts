@@ -21,6 +21,15 @@ export const LESSON_IDS = [
   "timers-on-delay-off-delay",
   "blink-structured-text",
   "set-reset-alarm-latch",
+  "seal-in-ladder",
+  "counter-batch-fbd",
+  "interlock-guard-permissive",
+  "types-arithmetic-comparison",
+  "analog-scaling-integer",
+  "function-block-pump-pair",
+  "structures-arrays-call-panel",
+  "sfc-fill-mix-sequence",
+  "instruction-list-door-alarm",
 ] as const;
 
 export type LessonId = typeof LESSON_IDS[number];

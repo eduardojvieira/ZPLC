@@ -1,0 +1,99 @@
+{
+  "schemaVersion": 1,
+  "id": "Scaling",
+  "tickMs": 10,
+  "durationMs": 120,
+  "events": [
+    {
+      "atMs": 0,
+      "set": {
+        "Scaling.Enable": false
+      }
+    },
+    {
+      "atMs": 10,
+      "set": {
+        "Scaling.Enable": true
+      }
+    },
+    {
+      "atMs": 110,
+      "set": {
+        "Scaling.Enable": false
+      }
+    }
+  ],
+  "expectations": [
+    {
+      "kind": "AT",
+      "atMs": 0,
+      "condition": {
+        "Scaling.Warn": false,
+        "Scaling.Alarm": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 40,
+      "condition": {
+        "Scaling.Warn": false,
+        "Scaling.Alarm": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 50,
+      "condition": {
+        "Scaling.Warn": true,
+        "Scaling.Alarm": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 70,
+      "condition": {
+        "Scaling.Warn": true,
+        "Scaling.Alarm": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 80,
+      "condition": {
+        "Scaling.Warn": true,
+        "Scaling.Alarm": true
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 110,
+      "condition": {
+        "Scaling.Warn": false,
+        "Scaling.Alarm": false
+      }
+    },
+    {
+      "kind": "RISING",
+      "fromMs": 50,
+      "withinMs": 0,
+      "condition": {
+        "Scaling.Warn": true
+      }
+    },
+    {
+      "kind": "RISING",
+      "fromMs": 80,
+      "withinMs": 0,
+      "condition": {
+        "Scaling.Alarm": true
+      }
+    },
+    {
+      "kind": "NEVER",
+      "condition": {
+        "Scaling.Alarm": true,
+        "Scaling.Warn": false
+      }
+    }
+  ]
+}

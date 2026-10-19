@@ -1,0 +1,135 @@
+{
+  "schemaVersion": 1,
+  "id": "FillMix",
+  "tickMs": 10,
+  "durationMs": 200,
+  "events": [
+    {
+      "atMs": 0,
+      "set": {
+        "FillMix.Start": false
+      }
+    },
+    {
+      "atMs": 10,
+      "set": {
+        "FillMix.Start": true
+      }
+    },
+    {
+      "atMs": 20,
+      "set": {
+        "FillMix.Start": false
+      }
+    },
+    {
+      "atMs": 160,
+      "set": {
+        "FillMix.Start": true
+      }
+    },
+    {
+      "atMs": 170,
+      "set": {
+        "FillMix.Start": false
+      }
+    }
+  ],
+  "expectations": [
+    {
+      "kind": "AT",
+      "atMs": 0,
+      "condition": {
+        "FillMix.Valve": false,
+        "FillMix.Mixer": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 10,
+      "condition": {
+        "FillMix.Valve": false,
+        "FillMix.Mixer": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 20,
+      "condition": {
+        "FillMix.Valve": true,
+        "FillMix.Mixer": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 70,
+      "condition": {
+        "FillMix.Valve": true,
+        "FillMix.Mixer": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 80,
+      "condition": {
+        "FillMix.Valve": false,
+        "FillMix.Mixer": true
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 130,
+      "condition": {
+        "FillMix.Valve": false,
+        "FillMix.Mixer": true
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 140,
+      "condition": {
+        "FillMix.Valve": false,
+        "FillMix.Mixer": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 170,
+      "condition": {
+        "FillMix.Valve": true,
+        "FillMix.Mixer": false
+      }
+    },
+    {
+      "kind": "RISING",
+      "fromMs": 20,
+      "withinMs": 0,
+      "condition": {
+        "FillMix.Valve": true
+      }
+    },
+    {
+      "kind": "FALLING",
+      "fromMs": 80,
+      "withinMs": 0,
+      "condition": {
+        "FillMix.Valve": false
+      }
+    },
+    {
+      "kind": "FOR",
+      "fromMs": 80,
+      "forMs": 50,
+      "condition": {
+        "FillMix.Mixer": true
+      }
+    },
+    {
+      "kind": "NEVER",
+      "condition": {
+        "FillMix.Valve": true,
+        "FillMix.Mixer": true
+      }
+    }
+  ]
+}

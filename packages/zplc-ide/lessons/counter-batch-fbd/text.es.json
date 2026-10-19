@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "title": "Contadores en diagrama de bloques de función: contar piezas hasta un lote",
+  "summary": "Edite un diagrama de bloques de función para que un contador CTU cuente tres piezas, encienda BatchFull y se borre con Reset.",
+  "scope": "La evidencia de Tests es del runtime nativo POSIX con una tarea de 10 ms; no establece el cableado del sensor, el antirrebote, la exactitud del conteo a velocidad de máquina, HIL ni certificación.",
+  "objectives": [
+    "Lea un diagrama de bloques de función como bloques cuyos puertos de salida se conectan a los puertos de entrada de otros bloques.",
+    "Conecte un contador CTU: un flanco ascendente en CU cuenta, R lo borra y Q es TRUE cuando la cuenta llega al valor preestablecido PV."
+  ],
+  "stages": [
+    {
+      "key": "objective",
+      "title": "Objetivo",
+      "body": "En src/BatchCount.fbd.json están colocados el bloque contador Count (CTU), el valor preestablecido 3 y la salida BatchFull, y Q ya está conectada a BatchFull. Conecte la entrada PartSensor a CU y la entrada Reset a R.",
+      "checkpoint": "BatchFull se enciende al contar la tercera pieza y se apaga con Reset."
+    },
+    {
+      "key": "predict",
+      "title": "Prediga",
+      "body": "Prediga BatchFull a los {{t:50}} ms (dos piezas contadas), a los {{t:60}} ms (llega la tercera) y a los {{t:80}} ms (se pulsa Reset). La primera pieza permanece varios ciclos frente al sensor.",
+      "checkpoint": "{{v:BatchCount.BatchFull=false@50|En OFF}} a los {{t:50}} ms, porque una pieza cuenta una vez sin importar cuánto permanezca; {{v:BatchCount.BatchFull=true@60|en ON}} a los {{t:60}} ms; {{v:BatchCount.BatchFull=false@80|en OFF}} a los {{t:80}} ms."
+    },
+    {
+      "key": "edit",
+      "title": "Edite",
+      "body": "Corrija esta omisión del programa inicial, guárdelo y pulse Comprobar: El programa inicial tiene el contador y el valor preestablecido, pero PartSensor y Reset no están conectados a él, así que Count nunca cuenta y BatchFull queda en OFF; conecte PartSensor a la entrada CU y Reset a la entrada R.",
+      "checkpoint": "El escenario visible debe pasar con evidencia guardada del host."
+    },
+    {
+      "key": "run",
+      "title": "Ejecute",
+      "body": "Pulse Comprobar. Studio ejecuta el programa guardado contra el escenario de esta lección.",
+      "checkpoint": "El escenario se llama BatchCount y contiene {{assertions}} assertions."
+    },
+    {
+      "key": "observe",
+      "title": "Observe",
+      "body": "Compare {{t:30}}, {{t:50}} y {{t:60}} ms: no pasa nada cuando se va la primera pieza, BatchFull sube a los {{t:60}} ms, y una pieza nueva a los {{t:100}} ms no lo vuelve a encender.",
+      "checkpoint": "BatchFull sube una vez a los {{t:60}} ms y cae una vez a los {{t:80}} ms; una pieza después de Reset lo deja en OFF a los {{t:110}} ms."
+    },
+    {
+      "key": "reflect",
+      "title": "Reflexione",
+      "body": "¿Qué cuenta el contador, el nivel de PartSensor o su flanco ascendente? Intercambie las dos entradas y vea qué assertion falla.",
+      "checkpoint": "CTU cuenta flancos ascendentes, así que los {{t:20}} ms que la primera pieza permanece frente al sensor cuentan una vez. El escenario muestra solo la lógica; no muestra cómo rebota un sensor real."
+    }
+  ],
+  "hints": [
+    {
+      "level": 1,
+      "text": "Cada bloque de variable de entrada tiene un puerto de salida llamado OUT, y cada entrada de Count tiene un nombre: CU cuenta, R borra."
+    },
+    {
+      "level": 2,
+      "text": "Trace un cable de PartSensor.OUT a Count.CU y otro de Reset.OUT a Count.R. No cambie la constante 3 ni el cable hacia BatchFull."
+    }
+  ],
+  "faultCases": [
+    "El programa inicial tiene el contador y el valor preestablecido, pero PartSensor y Reset no están conectados a él, así que Count nunca cuenta y BatchFull queda en OFF; conecte PartSensor a la entrada CU y Reset a la entrada R."
+  ]
+}

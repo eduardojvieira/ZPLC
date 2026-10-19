@@ -1,0 +1,46 @@
+{
+  "schemaVersion": 1,
+  "id": "function-block-pump-pair",
+  "version": 1,
+  "order": 21,
+  "module": 7,
+  "level": "intermediate",
+  "prerequisites": [
+    "types-arithmetic-comparison"
+  ],
+  "languages": [
+    "ST"
+  ],
+  "tracks": [
+    "simulation"
+  ],
+  "unsupported": {
+    "hardware": {
+      "reason": {
+        "en": "The lesson starts and stops two pumps at exact steps to compare two instances of one block, and no board trace has been recorded for it.",
+        "es": "La lección arranca y detiene dos bombas en pasos exactos para comparar dos instancias de un mismo bloque, y no se ha registrado una traza de placa para ella."
+      },
+      "instead": {
+        "en": "Complete it in Simulation: its grade is the same each time and needs no board.",
+        "es": "Complétela en Simulación: su calificación es la misma cada vez y no necesita una placa."
+      }
+    }
+  },
+  "plant": null,
+  "estimatedMinutes": 25,
+  "starter": {
+    "project": "pump_pair_starter",
+    "program": "src/PumpPair.st"
+  },
+  "solution": {
+    "project": "pump_pair",
+    "program": "src/PumpPair.st"
+  },
+  "scenario": {
+    "file": "scenario.json",
+    "id": "PumpPair",
+    "path": "tests/pump-pair.scenario.json",
+    "sha256": "563ba151d719de250ab4f7be0f7362a1095c5bf7e1623c7d1638b732f4bcb203"
+  },
+  "regressionScenarios": []
+}
