@@ -2133,6 +2133,63 @@ export const JOURNEYS: Journey[] = [
     },
   },
   {
+    // LNG-004 in the three other languages: a breakpoint set from the keyboard on a block, a step or an IL line stops the
+    // simulation, and the element where it stopped is marked (the yellow outline of a paused element on a canvas).
+    name: '28ka A breakpoint on an FBD block stops execution', example: 'blinky_fbd', proves: [], partly: ['LNG-004', 'LNG-027'],
+    run: async (app, { project }) => {
+      await openFolder(app, project);
+      await openDiagram(app, 'src/main.fbd.json', '.react-flow__node');
+      const result = await compile(app);
+      assert(result.kind === 'built', `The Blinky FBD example does not build: ${result.message}`);
+      await app.click(css('.react-flow__node[data-id="and_run"]'), 'the AND block');
+      await app.press('F9');
+      await app.until('the red outline of the breakpoint on the block', async () => await app.eval<boolean>(`document.querySelector('.react-flow__node[data-id="and_run"]')?.getAttribute('style')?.includes('accent-red') === true`) || undefined);
+      await app.click(button('Connect'));
+      await app.until('the simulation to connect', async () => await app.visible(button('Disconnect')) || undefined);
+      await app.click(button('Run (F5)', 'prefix'));
+      await app.until('execution to stop at the block', async () => await app.visible(button('Resume (F5)', 'prefix')) || undefined)
+        .catch(async (error: Error) => { throw new Error(`${error.message}: the program keeps running past the breakpoint on the AND block`); });
+      await app.until('the block where the program is stopped to be marked', async () => await app.eval<boolean>(`document.querySelector('.react-flow__node[data-id="and_run"]')?.getAttribute('style')?.includes('accent-yellow') === true`) || undefined);
+    },
+  },
+  {
+    name: '28kb A breakpoint on an SFC step stops execution', example: 'blinky_sfc', proves: [], partly: ['LNG-004', 'LNG-027'],
+    run: async (app, { project }) => {
+      await openFolder(app, project);
+      await openDiagram(app, 'src/main.sfc.json', '.react-flow__node');
+      const result = await compile(app);
+      assert(result.kind === 'built', `The Blinky SFC example does not build: ${result.message}`);
+      await app.click(css('.react-flow__node[data-id="step_led_on"]'), 'the step LED_ON');
+      await app.press('F9');
+      await app.until('the red outline of the breakpoint on the step', async () => await app.eval<boolean>(`document.querySelector('.react-flow__node[data-id="step_led_on"]')?.getAttribute('style')?.includes('accent-red') === true`) || undefined);
+      await app.click(button('Connect'));
+      await app.until('the simulation to connect', async () => await app.visible(button('Disconnect')) || undefined);
+      await app.click(button('Run (F5)', 'prefix'));
+      await app.until('execution to stop at the step', async () => await app.visible(button('Resume (F5)', 'prefix')) || undefined)
+        .catch(async (error: Error) => { throw new Error(`${error.message}: the program keeps running past the breakpoint on the step`); });
+      await app.until('the step where the program is stopped to be marked', async () => await app.eval<boolean>(`document.querySelector('.react-flow__node[data-id="step_led_on"]')?.getAttribute('style')?.includes('accent-yellow') === true`) || undefined);
+    },
+  },
+  {
+    name: '28kc A breakpoint on an IL line stops execution', example: 'blinky_il', proves: [], partly: ['LNG-004', 'LNG-027'],
+    run: async (app, { project }) => {
+      await openFolder(app, project);
+      await openFile(app, 'src/main.il');
+      const line = await lineWith(app, 'LD      OffTimer.Q');
+      assert(line > 0, 'main.il no longer has the instruction LD OffTimer.Q the journey aims at.');
+      const result = await compile(app);
+      assert(result.kind === 'built', `The Blinky IL example does not build: ${result.message}`);
+      await clickEditorLine(app, line, 'gutter');
+      await app.until(`a breakpoint dot on line ${line}`, async () => (await decoratedLines(app, 'glyphMarginClassName', 'breakpoint-glyph')).includes(line) || undefined);
+      await app.click(button('Connect'));
+      await app.until('the simulation to connect', async () => await app.visible(button('Disconnect')) || undefined);
+      await app.click(button('Run (F5)', 'prefix'));
+      await app.until(`execution to stop at line ${line}`, async () => await app.visible(button('Resume (F5)', 'prefix')) || undefined)
+        .catch(async (error: Error) => { throw new Error(`${error.message}: the program keeps running past the breakpoint on the IL line`); });
+      assert((await decoratedLines(app, 'className', 'current-line-highlight')).includes(line), `Execution paused but the editor does not mark line ${line}.`);
+    },
+  },
+  {
     // Alignment needs two selected blocks, and the keyboard reaches them: Ctrl+Alt+Arrow adds the nearest block in that
     // direction to the selection, then Alt+Shift+Arrow aligns them, as one undo step.
     name: '28ja Two blocks are selected and aligned from the keyboard alone', example: 'blinky_fbd', proves: [], partly: ['LNG-012'],
