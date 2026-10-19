@@ -15,9 +15,11 @@ physical operation.
 
 ## Start with the lessons in Studio
 
-Studio has ten lessons in its **Learn** tab, in English and in Spanish. On the
-Welcome screen, choose **Learn**: Studio copies the first lesson into a folder
-that you choose and opens the tab.
+Studio has ten lessons in a course, in English and in Spanish. On the Welcome
+screen, choose **Learn**: the Learn home opens, with no project and no network,
+and lists the modules in order with their level, what each requires and how long
+it takes. Choose **Start the course**: Studio copies the first lesson into a
+folder that you choose and opens it.
 
 Each lesson takes you through six stages: Objective, Predict, Edit, Run, Observe
 and Reflect. You edit the copied project, save it and press **Check**. Studio
@@ -25,7 +27,9 @@ runs your saved program against the scenario of the lesson and lists every
 assertion that failed, with the time, the value it expected and the value it
 saw. A lesson is complete when every assertion of its scenario passed.
 
-All lessons are unlocked and can be taken in any order. The full description of
+A lesson is locked until the lessons it requires are passed, and the home says
+which ones. If you would rather take them in any order, turn on **Unlock all
+lessons** in the home. The full description of
 what Learn does, and what it keeps, is in [Studio workbench](../ide/features.md#learn).
 
 ## Open an example project
@@ -55,7 +59,7 @@ what works today.
 
 ## What is not here yet
 
-A course with levels, prerequisites and a fixed order, a lesson that stays beside
-the editor, and a track for a learner board are future work. The lessons and the
+A track for a learner board, and the lessons of six modules that are still empty,
+are future work. The lessons and the
 examples are host and simulation exercises: they do not show how a program
 behaves on a physical board.

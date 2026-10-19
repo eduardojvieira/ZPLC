@@ -14,6 +14,7 @@ import { ldEs } from './catalog/ld';
 import { importArchiveEs } from './catalog/importArchive';
 import { interlockEs } from './catalog/interlock';
 import { learnEs } from './catalog/learn';
+import { learnHomeEs } from './catalog/learnHome';
 import { toolbarMsgEs } from './catalog/toolbarMsg';
 import { examplesEs } from './catalog/examples';
 
@@ -97,7 +98,7 @@ const baseEs: Record<keyof typeof baseEn, string> = {
   'welcome.new.title': 'Nuevo proyecto',
   'welcome.new.hint': 'Crea el proyecto en una carpeta tras comprobar conflictos con archivos existentes.',
   'welcome.learn.title': 'Aprender',
-  'welcome.learn.hint': 'Inicia el curso: su primera lección se copia en una carpeta que usted elija.',
+  'welcome.learn.hint': 'Vea el curso y luego inicie o continúe una lección.',
   'welcome.openError': 'No se pudo abrir el proyecto',
   'welcome.recent.heading': 'Recientes',
   'welcome.recent.opened': 'Abierto {when}',
@@ -587,6 +588,7 @@ export const es: Record<MessageKey, string> = {
   ...importArchiveEs,
   ...interlockEs,
   ...learnEs,
+  ...learnHomeEs,
   ...toolbarMsgEs,
   ...examplesEs,
 };

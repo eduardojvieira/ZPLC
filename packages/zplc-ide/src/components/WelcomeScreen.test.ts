@@ -3,6 +3,8 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'bun:test';
 
 import { en } from '../i18n/en';
+import { LESSON_INDEX } from '../generated/lessonIndex';
+import { courseOrder } from '../learn/course';
 import { learnLessonCatalog } from './learnLesson';
 
 const source = readFileSync(join(import.meta.dir, 'WelcomeScreen.tsx'), 'utf8');
@@ -56,7 +58,9 @@ describe('Welcome screen contract', () => {
     expect(source).toContain('isCopyingExample');
     expect(source).toContain('copyingExampleRef.current');
     expect(source).toContain('startCopy(() => copyExampleProjectToFolder(example.id))');
-    expect(source).toContain('startCopy(() => startLearning(FIRST_LESSON_STARTER))');
+    // The Learn entry opens the home (LRN-001), which starts the lesson; it is not a copy, and missing folder access does not close it.
+    expect(source).toContain('onClick={openLearnHome} disabled={isCopyingExample} data-welcome-learn');
+    expect(source).not.toContain('startLearning');
     expect(source).toContain('disabled={unavailable || isCopyingExample}');
   });
 
@@ -107,15 +111,15 @@ describe('Welcome Learn entry', () => {
   const projects = join(import.meta.dir, '..', '..', 'projects');
   const first = learnLessonCatalog.en[0]!;
 
-  it('starts the first lesson on its own starter project, which stays out of the examples list', () => {
-    expect(source).toContain('learnLessonCatalog.en[0]!.starterExampleId');
+  it('has a first lesson with its own starter project, which stays out of the examples list', () => {
     expect(first.starterExampleId.endsWith('_starter')).toBe(true);
     expect(existsSync(join(projects, first.starterExampleId, 'zplc.json'))).toBe(true);
     expect(learnLessonCatalog.es[0]!.starterExampleId).toBe(first.starterExampleId);
   });
 
-  it('is the lesson the Learn tab shows first', () => {
-    const panel = readFileSync(join(import.meta.dir, 'LearnPanel.tsx'), 'utf8');
-    expect(panel).toContain(`useState<LearnLessonId>('${first.id}')`);
+  it('starts the course with the scan cycle, which needs no earlier lesson (the home offers it as the first lesson)', () => {
+    const [firstOfCourse] = courseOrder(LESSON_INDEX);
+    expect(firstOfCourse?.id).toBe('scan-cycle-one-scan-memory');
+    expect(firstOfCourse?.prerequisites).toEqual([]);
   });
 });

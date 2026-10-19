@@ -16,7 +16,9 @@
  */
 
 import { useEffect, useState, type ComponentType } from 'react';
+import { LearnHome } from './components/LearnHome';
 import { WelcomeScreen } from './components/WelcomeScreen';
+import { useLearnUi } from './learn/learnUi';
 import { CloseGuard } from './components/CloseGuard';
 import { SerialPortChooser } from './components/SerialPortChooser';
 import { ErrorBoundary } from './components/ErrorBoundary';
@@ -79,6 +81,7 @@ function App() {
   useMainProcessBridge();
 
   const isProjectOpen = useIDEStore((s) => s.isProjectOpen);
+  const learnHomeOpen = useLearnUi((s) => s.homeOpen);
 
   const debugController = useDebugController();
   const [workbench, setWorkbench] = useState<WorkbenchParts | null>(null);
@@ -137,7 +140,7 @@ function App() {
     return (
       <div className="h-screen w-screen flex flex-col overflow-hidden bg-[var(--color-surface-900)]">
         <UpdateNoticeBanner />
-        <WelcomeScreen />
+        {learnHomeOpen ? <main aria-label={t('learn.home.title')} className="flex min-h-0 flex-1 flex-col"><LearnHome /></main> : <WelcomeScreen />}
         <CloseGuard />
         <SerialPortChooser />
         <CommandPalette />

@@ -95,6 +95,8 @@ export const COMMANDS = [
   { id: 'debug.liveValues', titleKey: 'command.debug.liveValues', category: 'debug', enabled: online },
 
   { id: 'help.shortcuts', titleKey: 'command.help.shortcuts', category: 'help', shortcut: 'Mod+K Mod+S' },
+  // The Learn home opens with no project open: the Help menu is where a person who has not opened one looks (LRN-001).
+  { id: 'help.learn', titleKey: 'command.help.learn', category: 'help' },
 ] as const satisfies readonly CommandDefinition[];
 
 export type CommandId = (typeof COMMANDS)[number]['id'];

@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'bun:test';
 import type { MenuItemConstructorOptions } from 'electron';
+import { INITIAL_COMMAND_STATE, commandById, isCommandEnabled } from '../src/commands/registry';
+import { menuCategories, menuCommands, menuTranslator } from '../src/commands/menuEntry';
 import { buildMenuTemplate, describeApplicationMenu, isReloadShortcut, type InputLike, type MenuBuildOptions, type MenuCategory, type MenuCommand } from './appMenu';
 
 const RELOAD_ACCELERATORS = ['F5', 'CmdOrCtrl+R', 'CmdOrCtrl+Shift+R', 'Ctrl+R', 'Ctrl+Shift+R', 'Cmd+R', 'F12', 'CmdOrCtrl+Shift+I', 'Ctrl+Shift+I', 'CmdOrCtrl+Alt+I', 'Alt+Cmd+I'];
@@ -143,5 +145,24 @@ describe('reload shortcuts (IDE-005, stopgap: the chord only)', () => {
     expect(isReloadShortcut(input({ control: true, type: 'keyUp' }))).toBe(false);
     expect(isReloadShortcut(input({ key: 'F5' }))).toBe(false);
     expect(isReloadShortcut(input({ control: true, key: 's' }))).toBe(false);
+  });
+});
+
+describe('the Learn entry of the Help menu (LRN-001)', () => {
+  for (const [locale, label] of [['en', 'Open the Learn home'], ['es', 'Abrir el inicio del curso']] as const) {
+    it(`LRN-001 offers "${label}" in the Help menu of the registry, and choosing it sends the command id to the window (${locale})`, () => {
+      const sent: string[] = [];
+      const template = buildMenuTemplate('linux', menuCommands, menuTranslator(locale), { isPackaged: true, appName: 'ZPLC Studio', categories: menuCategories, run: (id) => { sent.push(id); }, requestReload: noop });
+      const help = template.find((menu) => menu.label === menuTranslator(locale)('menu.help'));
+      const entry = flatten(help?.submenu as MenuItemConstructorOptions[]).find((item) => item.label === label);
+      expect(entry).toBeDefined();
+      (entry!.click as () => void)();
+      expect(sent).toEqual(['help.learn']);
+    });
+  }
+
+  it('LRN-001 is available with no project open, because the Learn home opens before a project does', () => {
+    expect(isCommandEnabled(commandById('help.learn'), INITIAL_COMMAND_STATE)).toBe(true);
+    expect(INITIAL_COMMAND_STATE.projectOpen).toBe(false);
   });
 });

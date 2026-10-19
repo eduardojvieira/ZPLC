@@ -1,80 +1,65 @@
 import { BookOpen, Copy, FlaskConical, Info } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
+import { LESSON_INDEX } from '../generated/lessonIndex';
+import { buildCourseView } from '../learn/course';
+import { useLearnUi } from '../learn/learnUi';
+import { useLearnProgress } from '../learn/progressState';
 import { isFileSystemAccessSupported } from '../types';
 import { useIDEStore } from '../store/useIDEStore';
 import { useAppSettings } from '../store/useAppSettings';
-import { useT } from '../i18n';
+import { useT, type MessageKey } from '../i18n';
 import type { WorkspaceTestPresentation } from './workspaceTestPresentation';
 import { describeFailure } from '../learn/gradeRecord';
-import { LEARN_PROGRESS_MAX_BYTES, passedLessonIds, type GradeRecord, type LessonNote } from '../../electron/learnProgressModel';
-import { exportProgress, importProgress, noteLesson, readProgress, recordGrade } from '../learn/progressClient';
+import { passedLessonIds, type GradeRecord, type LessonNote } from '../../electron/learnProgressModel';
 import { useLessonCheck } from '../learn/useLessonCheck';
 import { getFileContent } from '../utils/projectLoader';
-import { gradeRecordedScenarioLesson, learnLessonCatalog, parseLearnMasteryImport, readLearnMastery, recordLearnMastery, replaceLearnMastery, serializeLearnMastery, type LearnLessonGrade, type LearnLessonId, type LearnLocale } from './learnLesson';
-import { Button, FileInput, ToggleGroup } from '../ui';
+import { gradeRecordedScenarioLesson, learnLessonCatalog, type LearnLessonGrade, type LearnLessonId, type LearnLocale } from './learnLesson';
+import { Button, ToggleGroup } from '../ui';
 
 export function LearnPanel({ workspaceTestPresentation }: { workspaceTestPresentation?: WorkspaceTestPresentation }) {
   const { t, tn } = useT();
   const copyExampleProjectToFolder = useIDEStore((state) => state.copyExampleProjectToFolder);
   const setActiveConsoleTab = useIDEStore((state) => state.setActiveConsoleTab);
   const projectOpenError = useIDEStore((state) => state.projectOpenError);
-  const desktopProgress = window.electronAPI?.learnProgress;
-  // What the learner did with a lesson (opened it, showed a hint or the solution) goes to the progress store of the main process.
-  const note = (entry: LessonNote) => { if (desktopProgress) void noteLesson(desktopProgress, entry); };
+  // What the learner did with a lesson (opened it, showed a hint or the solution) goes to the progress state, shared with the Learn home.
+  const progress = useLearnProgress((state) => state.document);
+  const progressLoaded = useLearnProgress((state) => state.loaded);
+  const progressFailed = useLearnProgress((state) => state.failed);
+  const note = (entry: LessonNote) => { void useLearnProgress.getState().note(entry); };
+  useEffect(() => { if (!useLearnProgress.getState().loaded) void useLearnProgress.getState().load(); }, []);
   // The lesson language is the language of the application (UX-029, LRN-029): one setting, `auto` resolved from the system, changed here or in Preferences.
   const { locale }: { locale: LearnLocale } = useT();
   const updateSettings = useAppSettings((state) => state.update);
+  const unlockAll = useAppSettings((state) => state.settings.unlockAllLessons);
   const setLocale = (language: LearnLocale) => updateSettings({ language });
-  const [lessonId, setLessonId] = useState<LearnLessonId>('motor-start-stop-safe');
-  const [mastered, setMastered] = useState<ReadonlySet<LearnLessonId>>(() => desktopProgress ? new Set() : readLearnMastery());
-  const [hydrated, setHydrated] = useState(!desktopProgress);
+  const view = buildCourseView(LESSON_INDEX, progress, { locale, unlockAll });
+  const ordered = view.modules.flatMap((module) => module.lessons);
+  const selected = useLearnUi((state) => state.selected);
+  const select = useLearnUi((state) => state.select);
+  const mastered = new Set(progress ? passedLessonIds(progress) : []);
+  // The lesson shown: the one chosen here or in the home, else the last one worked on, else the first of the course.
+  const last = progress?.last?.lessonId;
+  const lessonId = (ordered.find((candidate) => candidate.id === selected) ?? ordered.find((candidate) => candidate.id === last) ?? ordered[0])?.id as LearnLessonId;
   const [copyStatus, setCopyStatus] = useState<'idle' | 'copying' | 'copied' | 'failed'>('idle');
-  const [masteryStatus, setMasteryStatus] = useState<'idle' | 'exported' | 'imported' | 'error'>('idle');
   const copyingRef = useRef(false);
-  const chosenRef = useRef(false);
-  const importRef = useRef<HTMLInputElement>(null);
   const lessons = learnLessonCatalog[locale];
   const lesson = lessons.find((candidate) => candidate.id === lessonId) ?? lessons[0]!;
+  const lessonView = ordered.find((candidate) => candidate.id === lesson.id);
+  const locked = lessonView?.state === 'locked';
   const folderAccess = isFileSystemAccessSupported();
   // A run recorded in Tests still grades where the host has no lesson check; on the desktop the lesson check grades (LRN-022).
   const grade = gradeRecordedScenarioLesson(lesson, workspaceTestPresentation);
-  const lessonCheck = useLessonCheck((record: GradeRecord) => {
-    if (!desktopProgress) return;
-    void recordGrade(desktopProgress, record).then((document) => {
-      if (!document) { setMasteryStatus('error'); return; }
-      const known = new Set<string>(lessons.map(({ id }) => id));
-      setMastered(new Set(passedLessonIds(document).filter((id) => known.has(id)) as LearnLessonId[]));
-    });
-  });
+  const lessonCheck = useLessonCheck((record: GradeRecord) => { void useLearnProgress.getState().recordGrade(record); });
   const checkAvailable = lessonCheck.available;
   const checked = lessonCheck.gradeOf(lesson.id);
   const shownGrade: LearnLessonGrade = checkAvailable ? checked ?? { kind: 'not-run' } : grade;
   const refusal = lessonCheck.refusal(lesson.id);
+  const alreadyPassed = mastered.has(lesson.id);
   useEffect(() => {
-    if (!desktopProgress) return;
-    let active = true;
-    void desktopProgress.read().then((ids) => { if (active) { setMastered((current) => parseLearnMasteryImport(serializeLearnMastery(new Set([...current, ...(ids as LearnLessonId[])]))) ?? current); setHydrated(true); } }).catch(() => { if (active) { setMasteryStatus('error'); setHydrated(true); } });
-    // The lesson the learner had open last time, unless they have already chosen one in this window.
-    void readProgress(desktopProgress).then((document) => {
-      const last = document?.last?.lessonId;
-      if (active && !chosenRef.current && last && learnLessonCatalog.en.some(({ id }) => id === last)) setLessonId(last as LearnLessonId);
-    });
-    return () => { active = false; };
-  }, [desktopProgress]);
-  useEffect(() => {
-    if (checkAvailable) return;
-    if (grade.kind !== 'passed' || !hydrated) return;
-    // A passed grade is the sole persistence event; the helper returns the prior state otherwise.
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- synchronizes durable mastery with the current grade.
-    setMastered((previous) => {
-      if (!desktopProgress) return recordLearnMastery(lesson.id, { kind: 'passed', assertions: 0 }, previous);
-      if (previous.has(lesson.id)) return previous;
-      const next = parseLearnMasteryImport(serializeLearnMastery(new Set([...previous, lesson.id])));
-      if (!next) { setMasteryStatus('error'); return previous; }
-      void desktopProgress.merge([...next]).then((ids) => setMastered(new Set(ids as LearnLessonId[]))).catch(() => setMasteryStatus('error'));
-      return previous;
-    });
-  }, [checkAvailable, desktopProgress, grade.kind, hydrated, lesson.id]);
+    if (checkAvailable || grade.kind !== 'passed' || !progressLoaded || alreadyPassed || locked) return;
+    // Where the host has no lesson check, a passed run of the recorded scenario is the only evidence; it passes the lesson once.
+    void useLearnProgress.getState().markPassed(lesson.id);
+  }, [checkAvailable, grade.kind, progressLoaded, alreadyPassed, locked, lesson.id]);
   const scenario = lesson.requiredScenario;
   const gradeCopy = shownGrade.kind === 'passed' ? { title: t('learn.grade.passed.title'), body: tn('learn.grade.passed.body', shownGrade.assertions, { scenario }) }
     : shownGrade.kind === 'failed' ? { title: t('learn.grade.failed.title'), body: tn('learn.grade.failed.body', shownGrade.assertions, { scenario }) }
@@ -96,50 +81,6 @@ export function LearnPanel({ workspaceTestPresentation }: { workspaceTestPresent
       copyingRef.current = false;
       setCopyStatus((status) => status === 'copying' ? 'idle' : status);
     });
-  };
-
-  const exportMastery = async () => {
-    try {
-      // On the desktop the file is the whole progress document (grades, hints, last lesson); elsewhere it is the passed lessons.
-      const text = desktopProgress ? await exportProgress(desktopProgress) : serializeLearnMastery(mastered);
-      if (text === undefined) { setMasteryStatus('error'); return; }
-      const url = URL.createObjectURL(new Blob([text], { type: 'application/json;charset=utf-8' }));
-      const anchor = document.createElement('a');
-      anchor.href = url; anchor.download = desktopProgress ? 'zplc-learn-progress.v2.json' : 'zplc-learn-mastery.v1.json'; document.body.appendChild(anchor); anchor.click(); document.body.removeChild(anchor);
-      URL.revokeObjectURL(url);
-      setMasteryStatus('exported');
-    } catch { setMasteryStatus('error'); }
-  };
-
-  // Catches its own errors and shows them as the import status; the input starts it with `void`.
-  const importMastery = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    if (desktopProgress && !hydrated) return;
-    const input = event.currentTarget; const file = input.files?.[0]; input.value = '';
-    if (desktopProgress && file && file.size <= LEARN_PROGRESS_MAX_BYTES) {
-      // The main process validates the file and merges it, newest grade first, keeping lessons this build does not know.
-      try {
-        const merged = await importProgress(desktopProgress, await file.text());
-        if (!merged) { setMasteryStatus('error'); return; }
-        const known = new Set<string>(lessons.map(({ id }) => id));
-        setMastered(new Set(passedLessonIds(merged.progress).filter((id) => known.has(id)) as LearnLessonId[]));
-        setMasteryStatus('imported');
-      } catch { setMasteryStatus('error'); }
-      return;
-    }
-    if (!file || file.size > 4096) { if (file) setMasteryStatus('error'); return; }
-    try {
-      const incoming = parseLearnMasteryImport(await file.text());
-      if (!incoming) { setMasteryStatus('error'); return; }
-      const merged = parseLearnMasteryImport(serializeLearnMastery(new Set([...mastered, ...incoming])));
-      if (!merged) { setMasteryStatus('error'); return; }
-      const next = desktopProgress ? merged : replaceLearnMastery(merged, mastered);
-      if (next === mastered) { setMasteryStatus('error'); return; }
-      if (desktopProgress) {
-        const saved = await desktopProgress.merge([...next]);
-        setMastered(new Set(saved as LearnLessonId[]));
-      } else setMastered(next);
-      setMasteryStatus('imported');
-    } catch { setMasteryStatus('error'); }
   };
 
   const refusalText = refusal
@@ -176,13 +117,15 @@ export function LearnPanel({ workspaceTestPresentation }: { workspaceTestPresent
           <ToggleGroup
             label={t('learn.lesson')}
             className="mt-3 flex-wrap"
-            value={lessonId}
-            onValueChange={(id) => { chosenRef.current = true; setLessonId(id as LearnLessonId); setCopyStatus('idle'); note({ lessonId: id as LearnLessonId, started: true, last: true }); }}
-            options={lessons.map((candidate) => ({ value: candidate.id, label: candidate.title, disabled: copyStatus === 'copying' }))}
+            value={lesson.id}
+            onValueChange={(id) => { select(id); setCopyStatus('idle'); note({ lessonId: id, started: true, last: true }); }}
+            options={ordered.map((candidate) => ({ value: candidate.id, label: `${candidate.title} (${t(`learn.state.${candidate.state}` as MessageKey)})`, disabled: candidate.state === 'locked' || copyStatus === 'copying' }))}
           />
           <p className="mt-3 break-words font-mono text-xs text-[var(--color-surface-400)]">{lesson.sourcePath} · {lesson.scenarioPath}</p>
           <p className="mt-1 text-xs leading-5 text-[var(--color-surface-400)]">{t('learn.theStarterFailsThis')}</p>
           <p aria-label={t('learn.lessonProgress')} className="mt-2 text-xs text-[var(--color-surface-400)]">{masteryCopy} · {mastered.size}/{lessons.length}</p>
+          {locked && <p role="status" data-learn-locked className="mt-1 text-xs text-[var(--color-surface-300)]">{t('learn.lockedLesson', { lessons: (lessonView?.missing ?? []).map((id) => view.titles[id] ?? id).join(', ') })}</p>}
+          {progressFailed && <p role="alert" className="mt-1 text-xs text-[var(--color-accent-red)]">{t('learn.home.progressFailed')}</p>}
         </header>
 
         <section data-learn-grade={shownGrade.kind} aria-label={t('learn.lessonEvidence')} className="border-y border-[var(--color-surface-600)] py-3">
@@ -238,18 +181,14 @@ export function LearnPanel({ workspaceTestPresentation }: { workspaceTestPresent
 
         <section aria-label={t('learn.lessonActions')} className="border-t border-[var(--color-surface-600)] pt-3">
           <div className="flex flex-wrap gap-2">
-            <Button variant="secondary" size="sm" onClick={copyExample} disabled={!folderAccess || copyStatus === 'copying'}><Copy size={14} aria-hidden="true" />{copyStatus === 'copying' ? (t('learn.copying')) : copyLabel}</Button>
+            <Button variant="secondary" size="sm" onClick={copyExample} disabled={!folderAccess || copyStatus === 'copying' || locked}><Copy size={14} aria-hidden="true" />{copyStatus === 'copying' ? (t('learn.copying')) : copyLabel}</Button>
             {checkAvailable && <Button variant="secondary" size="sm" data-learn-check onClick={() => { void lessonCheck.run(lesson.id); }} disabled={!lessonCheck.canRun || lessonCheck.running(lesson.id)}><FlaskConical size={14} aria-hidden="true" />{lessonCheck.running(lesson.id) ? (t('interlock.checking')) : (t('learn.check'))}</Button>}
             {checkAvailable && lessonCheck.running(lesson.id) && <Button variant="secondary" size="sm" onClick={lessonCheck.cancel}>{t('common.cancel')}</Button>}
             <Button variant="primary" size="sm" onClick={() => setActiveConsoleTab('tests')}><FlaskConical size={14} aria-hidden="true" />{testsLabel}</Button>
-            <Button variant="secondary" size="sm" disabled={Boolean(desktopProgress && !hydrated)} onClick={() => { void exportMastery(); }}>{t('learn.exportProgress')}</Button>
-            <Button variant="secondary" size="sm" disabled={Boolean(desktopProgress && !hydrated)} onClick={() => importRef.current?.click()}>{t('learn.importProgress')}</Button>
-            <FileInput ref={importRef} accept="application/json,.json" label={t('learn.selectProgressToImport')} onChange={(event) => { void importMastery(event); }} />
           </div>
           <p role="status" className="mt-2 text-xs text-[var(--color-surface-400)]">{!folderAccess ? (t('welcome.folderAccessUnavailable')) : copyStatus === 'copying' ? (t('learn.copyingTheExampleInto')) : copyStatus === 'copied' ? (t('learn.exampleCopied')) : (t('learn.chooseTheSavedZplc', { requiredScenario: lesson.requiredScenario }))}</p>
           {checkAvailable && <p role="status" data-learn-check-status className="mt-2 text-xs text-[var(--color-surface-400)]">{!lessonCheck.isProjectOpen ? (t('learn.openTheExerciseFolder')) : lessonCheck.unsaved ? (t('learn.saveYourChangesCtrl')) : refusalText}</p>}
           {copyStatus === 'failed' && projectOpenError && <p role="alert" data-learn-copy-error className="mt-2 break-words text-xs text-[var(--color-accent-red)]">{projectOpenError}</p>}
-          <p role="status" aria-live="polite" className="mt-2 text-xs text-[var(--color-surface-400)]">{masteryStatus === 'exported' ? (t('learn.progressExported')) : masteryStatus === 'imported' ? (t('learn.progressImportedAndMerged')) : masteryStatus === 'error' ? (t('learn.progressCouldNotBe')) : ''}</p>
         </section>
       </div>
     </section>

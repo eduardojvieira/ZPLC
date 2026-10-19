@@ -9,6 +9,7 @@ import { currentLocale, t } from '../i18n';
 import { useIDEStore } from '../store/useIDEStore';
 import { useAppSettings } from '../store/useAppSettings';
 import { exportOpenProjectArchive } from '../utils/projectArchiveActions';
+import { openLearnHome } from '../learn/learnUi';
 import { useShellLayout } from '../store/useShellLayout';
 import type { ConsoleTab } from '../types';
 import { bindCommands, publishCommandState, runCommand } from './bus';
@@ -68,6 +69,7 @@ export function useShellCommands(): void {
     'file.export': () => exportOpenProjectArchive(),
     'view.commandPalette': openPalette,
     'help.shortcuts': openShortcuts,
+    'help.learn': openLearnHome,
     'view.toggleConsole': () => useIDEStore.getState().toggleConsole(),
     'view.togglePrimarySidebar': () => useShellLayout.getState().togglePrimary(),
     'view.toggleSecondarySidebar': () => useShellLayout.getState().toggleSecondary(),

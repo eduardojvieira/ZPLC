@@ -15,9 +15,11 @@ operación física.
 
 ## Empiece con las lecciones de Studio
 
-Studio tiene diez lecciones en su pestaña **Learn**, en español y en inglés. En
-la pantalla de bienvenida, elija **Learn**: Studio copia la primera lección en una
-carpeta que usted elige y abre la pestaña.
+Studio tiene diez lecciones en un curso, en español y en inglés. En la pantalla de
+bienvenida, elija **Learn**: se abre el inicio de Learn, sin proyecto y sin red, y
+enumera los módulos en orden con su nivel, lo que requiere cada uno y cuánto
+dura. Elija **Comenzar el curso**: Studio copia la primera lección en una carpeta
+que usted elige y la abre.
 
 Cada lección recorre seis etapas: Objective, Predict, Edit, Run, Observe y
 Reflect. Usted edita el proyecto copiado, lo guarda y presiona **Check**. Studio
@@ -25,7 +27,9 @@ ejecuta su programa guardado contra el escenario de la lección y enumera cada
 aserción que falló, con el instante, el valor esperado y el valor observado. Una
 lección está completa cuando todas las aserciones de su escenario pasaron.
 
-Todas las lecciones están desbloqueadas y se pueden tomar en cualquier orden. La
+Una lección está bloqueada hasta que se aprueban las lecciones que requiere, y el
+inicio dice cuáles. Si prefiere tomarlas en cualquier orden, active
+**Desbloquear todas las lecciones** en el inicio. La
 descripción completa de lo que hace Learn y de lo que guarda está en
 [Banco de trabajo de Studio](../ide/features.md#learn).
 
@@ -57,7 +61,7 @@ elemento, qué funciona hoy.
 
 ## Lo que todavía no está
 
-Un curso con niveles, prerrequisitos y un orden fijo, una lección que permanece
-junto al editor y una vía para una placa de aprendizaje son trabajo futuro. Las
+Una vía para una placa de aprendizaje y las lecciones de seis módulos que todavía
+están vacíos son trabajo futuro. Las
 lecciones y los ejemplos son ejercicios de host y de simulación: no muestran cómo
 se comporta un programa en una placa física.
