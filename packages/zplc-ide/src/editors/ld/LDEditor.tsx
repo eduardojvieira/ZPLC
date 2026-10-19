@@ -31,8 +31,11 @@ import { useProjectBlocks } from '../useProjectBlocks';
 import { declaredSymbols } from '../symbols';
 import { copyLDRungFragment, ldSelectionIds as selectionIds, ldSelectionOfIds as selectionOfIds, NO_LD_SELECTION, pasteLDRungFragment, type LDClipboardFragment, type LDSelection } from './graphModel';
 import { useMonitor } from '../../monitoring/useMonitor';
-import { useIDEStore } from '../../store/useIDEStore';
-import type { DebugValuesMap } from './LDElement';
+import { debugValuesOf } from './debugValues';
+import { announce } from '../../utils/announce';
+import { Button, Tooltip } from '../../ui';
+import { LDRungMenu } from './LDRungMenu';
+import { isContextMenuKey, openContextMenuOn } from '../contextMenuKey';
 import { useElementSelection } from '../elementSelection';
 import { useElementBreakpoints } from '../elementBreakpoints';
 import { parseElement, rungElement, type SourceElementId } from '../../models/sourceElements';
@@ -194,7 +197,7 @@ const NO_SELECTION = NO_LD_SELECTION;
 /** What the keys do in a diagram that is not edited (a program is running): moving, reading and the breakpoint. */
 const READ_ONLY_COMMANDS: ReadonlySet<string> = new Set([
   'cursorLeft', 'cursorRight', 'cursorUp', 'cursorDown', 'rowStart', 'rowEnd', 'previousRung', 'nextRung', 'firstRung', 'lastRung',
-  'toggleBreakpoint', 'showCommands', 'clearSelection',
+  'toggleBreakpoint', 'showCommands', 'clearSelection', 'fitView',
 ]);
 
 export default function LDEditor({ model, onChange, readOnly = false }: LDEditorProps) {
@@ -217,6 +220,8 @@ export default function LDEditor({ model, onChange, readOnly = false }: LDEditor
     setCursorState(next);
   }, []);
   const [ask, setAsk] = useState<LDAsk | null>(null);
+  // something has been copied: the menu of a rung offers to paste it (UX-033)
+  const [hasCopied, setHasCopied] = useState(false);
   const [status, setStatus] = useState('');
   // the element whose properties are open: the panel is asked for, selecting an element by keyboard does not open it
   const [propertiesFor, setPropertiesFor] = useState<string | null>(null);
@@ -236,8 +241,6 @@ export default function LDEditor({ model, onChange, readOnly = false }: LDEditor
 
   // Online values and power flow come from the debug map of the build of this file (LNG-006)
   const monitor = useMonitor();
-  // the variables the user forces are drawn as forced, not as the value they hold (UX-009)
-  const forcedValues = useIDEStore((state) => state.debug.forcedValues);
   // Breakpoints on rungs: execution stops at the first statement of the rung's code (LNG-004)
   const breakpoints = useElementBreakpoints();
 
@@ -254,15 +257,8 @@ export default function LDEditor({ model, onChange, readOnly = false }: LDEditor
     latestModelRef.current = normalizedModel;
   }, [normalizedModel]);
 
-  // The values of the variables the elements show: what the map says the program holds, and unavailable otherwise
-  const debugValues = useMemo<DebugValuesMap | undefined>(() => {
-    if (!monitor.active) return undefined;
-    const values: DebugValuesMap = new Map();
-    for (const [variable, { reading, type }] of monitor.values) {
-      values.set(variable, { value: reading ?? null, type: type || null, address: null, region: null, size: null, loading: false, exists: true, error: null, forced: forcedValues.has(variable) });
-    }
-    return values;
-  }, [monitor, forcedValues]);
+  // The values of the variables the elements show: what the map says the program holds, forced or faulted as the user and the poll say, and unavailable otherwise
+  const debugValues = useMemo(() => debugValuesOf(monitor), [monitor]);
 
   const symbolNames = useMemo(() => declaredSymbols(normalizedModel.variables).map((symbol) => symbol.name), [normalizedModel.variables]);
   const askedElement = useMemo<LDElementType | null>(() => {
@@ -452,7 +448,7 @@ export default function LDEditor({ model, onChange, readOnly = false }: LDEditor
       case 'copyRung': {
         if (readOnly || !selectedRungId) return;
         const fragment = copyLDRungFragment(latestModelRef.current, selectedRungId);
-        if (fragment) clipboardRef.current = fragment;
+        if (fragment) { clipboardRef.current = fragment; setHasCopied(true); }
         return;
       }
       case 'pasteRung': {
@@ -470,6 +466,11 @@ export default function LDEditor({ model, onChange, readOnly = false }: LDEditor
       case 'showCommands':
         setAsk({ kind: 'commands' });
         return;
+      case 'fitView':
+        // Ladder has no zoom: its rungs use the width of the view, so fitting shows every rung from its left edge
+        for (const scroller of rootRef.current?.querySelectorAll<HTMLElement>('[data-ld-rung-id] .overflow-x-auto') ?? []) scroller.scrollLeft = 0;
+        announce(t('editor.fit.ladder'));
+        return;
       case 'clearSelection':
         select(NO_SELECTION);
         setPropertiesFor(null);
@@ -477,11 +478,26 @@ export default function LDEditor({ model, onChange, readOnly = false }: LDEditor
       default:
         applyOutcome(runLDCommand(latestModelRef.current, at, command, argument));
     }
-  }, [applyOutcome, breakpoints, commit, onChange, readOnly, select, selectedRungId]);
+  }, [applyOutcome, breakpoints, commit, onChange, readOnly, select, selectedRungId, t]);
+
+  // The menu of a rung acts on that rung: the cursor goes to it when it is elsewhere, and a command runs at the cursor (UX-033)
+  const focusRung = useCallback((rungId: string) => {
+    if (cursorRef.current?.rungId !== rungId) placeCursor({ rungId, row: 0, col: 0 });
+    select({ rungId, elementId: null });
+  }, [placeCursor, select]);
+  const runOnRung = useCallback((command: string, rungId: string) => {
+    runCommand(command, undefined, cursorRef.current?.rungId === rungId ? cursorRef.current : { rungId, row: 0, col: 0 });
+  }, [runCommand]);
 
   // The keys of the table (../keymap.ts): the cursor and the commands of the ladder
   const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLDivElement>) => {
     if (keysBelongToControl(e.target)) return;
+    // the menu of the rung of the cursor, or of the first rung (UX-033)
+    if (isContextMenuKey(e)) {
+      const rung = rootRef.current?.querySelector(`[data-ld-rung-id="${cursorRef.current?.rungId}"]`) ?? rootRef.current?.querySelector('[data-ld-rung-id]');
+      if (rung) { e.preventDefault(); openContextMenuOn(rung.querySelector('svg') ?? rung); }
+      return;
+    }
     const command = actionFor('ld', e);
     if (!command) return;
     if (readOnly && !READ_ONLY_COMMANDS.has(command)) return;
@@ -553,6 +569,8 @@ export default function LDEditor({ model, onChange, readOnly = false }: LDEditor
             </span>
           </div>
 
+          <div className="flex items-center gap-2">
+          <Tooltip content={`${t('editor.fit.button')} (Ctrl+Alt+0)`}><Button variant="secondary" size="sm" onClick={() => runCommand('fitView')}>{t('editor.fit.button')}</Button></Tooltip>
           {!readOnly && (
             <button
               onClick={handleAddRung}
@@ -564,6 +582,7 @@ export default function LDEditor({ model, onChange, readOnly = false }: LDEditor
               {t('ld.addRung')}
             </button>
           )}
+          </div>
         </div>
 
         {/* Rungs container */}
@@ -610,6 +629,7 @@ export default function LDEditor({ model, onChange, readOnly = false }: LDEditor
                         : 'border-[var(--color-surface-500)] bg-transparent opacity-60 hover:opacity-100'
                     }`}
                   />
+                  <LDRungMenu rungId={rung.id} index={idx} count={normalizedModel.rungs.length} readOnly={readOnly} canPaste={hasCopied} onOpen={focusRung} onCommand={runOnRung}>
                   <LDRungGrid
                     rung={rung}
                     onChange={(updated) => handleRungChange(rung.id, updated)}
@@ -624,6 +644,7 @@ export default function LDEditor({ model, onChange, readOnly = false }: LDEditor
                     elementStates={monitor.active ? monitor.states : undefined}
                     debugValues={debugValues}
                   />
+                  </LDRungMenu>
 
                   {/* Rung controls */}
                   {!readOnly && (

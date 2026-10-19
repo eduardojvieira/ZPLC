@@ -6,6 +6,9 @@
 
 import { useCallback, useMemo, useState, type KeyboardEvent as ReactKeyboardEvent, type ReactElement, type RefObject } from 'react';
 import type { Edge, Node } from '@xyflow/react';
+import { announce } from '../utils/announce';
+import { isArrangeCommand } from './arrange';
+import { isContextMenuKey, openContextMenuOn } from './contextMenuKey';
 import { actionFor, actionsOf, keysBelongToControl, keysText, type VisualEditor } from './keymap';
 import { freeTextOf, type PickerItem } from './picker';
 import SearchList from './SearchList';
@@ -84,11 +87,13 @@ export function useCanvasKeyboard<Argument>(options: CanvasKeyboardOptions<Argum
   const [ask, setAsk] = useState<Ask | null>(null);
   const [status, setStatus] = useState('');
 
-  const apply = useCallback((outcome: CanvasOutcome) => {
+  const apply = useCallback((outcome: CanvasOutcome, announced = false) => {
     const nodes = outcome.nodes.map(decorate);
     if (outcome.changed) commit(nodes, outcome.edges);
     else show(nodes, outcome.edges);
-    setStatus(outcome.say);
+    // an alignment is said once, by the shared announcer; the status region says the rest (UX-033)
+    if (announced) announce(outcome.say, outcome.refused ? 'assertive' : 'polite');
+    else setStatus(outcome.say);
     const prompt = outcome.prompt;
     // a node that is replaced while the canvas is rebuilt takes the focus with it: the canvas itself holds it meanwhile
     if (outcome.changed && !prompt && !wrapperRef.current?.contains(document.activeElement)) wrapperRef.current?.focus();
@@ -139,18 +144,26 @@ export function useCanvasKeyboard<Argument>(options: CanvasKeyboardOptions<Argum
       });
       return;
     }
-    apply(commands.run(nodesRef.current ?? [], edgesRef.current ?? [], command, argument));
+    apply(commands.run(nodesRef.current ?? [], edgesRef.current ?? [], command, argument), isArrangeCommand(command));
   }, [apply, commands, edgesRef, editorCommand, nodesRef]);
 
   const onKeyDown = useCallback((event: ReactKeyboardEvent<HTMLElement>) => {
     if (keysBelongToControl(event.target)) return;
+    // the menu of the element that has the focus, or of the canvas when the focus is on the canvas itself (UX-033)
+    if (isContextMenuKey(event)) {
+      const target = event.target as Element;
+      const element = target.closest('.react-flow__node, .react-flow__edge') ?? wrapperRef.current?.querySelector('.react-flow__pane') ?? target;
+      event.preventDefault();
+      openContextMenuOn(element);
+      return;
+    }
     const command = actionFor(commands.editor, event);
     if (!command) return;
     if (readOnly && !commands.readOnlyCommands.has(command)) return;
     if (command === 'toggleBreakpoint' && !(nodesRef.current ?? []).some((node) => node.selected)) return;
     event.preventDefault();
     run(command);
-  }, [commands, nodesRef, readOnly, run]);
+  }, [commands, nodesRef, readOnly, run, wrapperRef]);
 
   const overlay = useMemo(() => {
     if (!ask || (readOnly && ask.kind !== 'commands')) return null;

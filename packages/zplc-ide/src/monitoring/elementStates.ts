@@ -12,6 +12,10 @@ import type { MonitorEntry, PowerExpr } from '../models/sourceElements';
 export type Reading = number | boolean | string | undefined;
 export type Read = (variable: string) => Reading;
 
+/** How a variable is shown besides its value: the user forces it, or it could not be read (UX-009). */
+export interface SignalFlags { forced?: boolean; fault?: boolean }
+export type FlagsOf = (variable: string) => SignalFlags | undefined;
+
 export interface ElementState {
   /** LD: the power that reaches the element, and the power that leaves it. */
   power?: boolean;
@@ -20,6 +24,9 @@ export interface ElementState {
   value?: Reading;
   /** The value each output pin holds, by port. */
   pins: Record<string, Reading>;
+  /** The flags of the variable of the value, step or condition, and of the variable of each output pin. */
+  flags?: SignalFlags;
+  pinFlags: Record<string, SignalFlags>;
   /** SFC: a step is active, and for how long; a transition's condition holds, and it fired in this scan. */
   active?: boolean;
   time?: number;
@@ -79,26 +86,28 @@ export function variablesOf(entries: readonly MonitorEntry[]): string[] {
   return [...found];
 }
 
-export function readElementStates(entries: readonly MonitorEntry[], read: Read): Map<string, ElementState> {
+/** `flagsOf` says which variables are forced or could not be read; without it no element carries a flag. */
+export function readElementStates(entries: readonly MonitorEntry[], read: Read, flagsOf?: FlagsOf): Map<string, ElementState> {
   const states = new Map<string, ElementState>();
   const stateOf = (element: string): ElementState => {
     let state = states.get(element);
-    if (!state) states.set(element, (state = { pins: {} }));
+    if (!state) states.set(element, (state = { pins: {}, pinFlags: {} }));
     return state;
   };
   for (const entry of entries) {
     const state = stateOf(entry.element);
     const value = entry.variable === undefined ? undefined : read(entry.variable);
+    const flags = entry.variable === undefined ? undefined : flagsOf?.(entry.variable);
     switch (entry.role) {
       case 'power':
         state.power = entry.in ? evaluatePower(entry.in, read) : undefined;
         state.powerOut = entry.out ? evaluatePower(entry.out, read) : undefined;
         break;
-      case 'value': state.value = value; break;
-      case 'output': state.pins[entry.port ?? 'OUT'] = value; break;
-      case 'step': state.active = truthy(value); break;
+      case 'value': state.value = value; state.flags = flags; break;
+      case 'output': state.pins[entry.port ?? 'OUT'] = value; if (flags) state.pinFlags[entry.port ?? 'OUT'] = flags; break;
+      case 'step': state.active = truthy(value); state.flags = flags; break;
       case 'time': state.time = typeof value === 'number' ? value : undefined; break;
-      case 'condition': state.condition = truthy(value); break;
+      case 'condition': state.condition = truthy(value); state.flags = flags; break;
       case 'fired': state.fired = truthy(value); break;
     }
   }

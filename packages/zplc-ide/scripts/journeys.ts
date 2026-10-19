@@ -1704,7 +1704,8 @@ export const JOURNEYS: Journey[] = [
       await app.until('an element that power does not reach', async () => await app.eval<number>(cells(false)) > 0 || undefined);
       // the values arrive with the first complete poll, and then every variable the example declares has one
       const texts = () => app.eval<string[]>(`[...document.querySelectorAll('[data-ld-cell] text')].map((node) => node.textContent ?? '')`);
-      await app.until('a contact to show the value of its variable', async () => (await texts()).some((text) => /^[●○◆▲] [TF]$/.test(text)) || undefined);
+      await app.until('a contact to show the value of its variable', async () => (await texts()).some((text) => /^[●○◆▲] [TF]$/.test(text)) || undefined)
+        .catch(async (error: Error) => { throw new Error(`${error.message}: the cells show ${JSON.stringify(await texts())}`); });
       const shown = await texts();
       assert(!shown.includes('◌ —'), `A variable that the example declares is shown as unavailable: ${JSON.stringify(shown)}`);
     },
@@ -1721,7 +1722,8 @@ export const JOURNEYS: Journey[] = [
       await app.until('the variable block to show a value', async () => ['TRUE', 'FALSE'].includes(await app.eval<string>(`${variable}?.textContent?.trim() ?? ''`)) || undefined)
         .catch(async (error: Error) => { throw new Error(`${error.message}: the block is ${await app.eval<string>(`document.querySelector('.react-flow__node[data-id="var_led_read"]')?.outerHTML.slice(0, 600) ?? 'not on the canvas'`)}`); });
       // the timers of the blinker complete in turn: the pin of a block shows it, 500 ms after the program starts
-      await app.until('a timer block to show its output as TRUE', async () => await app.eval<boolean>(`[...document.querySelectorAll('.react-flow__node[data-id^="ton_"]')].some((node) => node.innerText.includes('TRUE'))`) || undefined, 30_000);
+      await app.until('a timer block to show its output as TRUE', async () => await app.eval<boolean>(`[...document.querySelectorAll('.react-flow__node[data-id^="ton_"]')].some((node) => node.innerText.includes('TRUE'))`) || undefined, 30_000)
+        .catch(async (error: Error) => { throw new Error(`${error.message}: the timers show ${JSON.stringify(await app.eval<string[]>(`[...document.querySelectorAll('.react-flow__node[data-id^="ton_"]')].map((node) => node.innerText.replace(/\\s+/g, ' '))`))}`); });
     },
   },
   {
@@ -1957,6 +1959,151 @@ export const JOURNEYS: Journey[] = [
         .catch(async (error: Error) => { throw new Error(`${error.message}: the block is at ${await place()}, was at ${original} and was put down at ${moved}`); });
       await app.press('Ctrl+Shift+Z');
       await app.until('the drag done again', async () => (await place()) === moved || undefined);
+    },
+  },
+  {
+    // The user forces a variable from the Watch table, against the native simulator, and the diagram shows the cue of the
+    // signal vocabulary on the block that reads it: amber, a diamond and the word FORCED, never the colour alone (UX-009).
+    name: '51 A forced variable is shown as forced in the function block diagram', example: 'blinky_fbd', proves: [], partly: ['UX-009', 'LNG-006'],
+    run: async (app, { project }) => {
+      await openFolder(app, project);
+      await openDiagram(app, 'src/main.fbd.json', '.react-flow__node');
+      const result = await compile(app);
+      assert(result.kind === 'built', `The Blinky FBD example does not build: ${result.message}`);
+      await connectAndRun(app);
+      const cue = css('.react-flow__node[data-id="var_led_read"] [data-live-value] [data-signal]');
+      const signal = () => app.eval<string>(`document.querySelector(${JSON.stringify('.react-flow__node[data-id="var_led_read"] [data-live-value] [data-signal]')})?.getAttribute('data-signal') ?? ''`);
+      await app.until('the variable block to show a value that is not forced', async () => ['true', 'false'].includes(await signal()) || undefined);
+      await watch(app, 'LED_Output');
+      // the Force checkbox is offered once the row has its first value, which takes longer on a loaded machine
+      await app.until('LED_Output to have a value in the Watch table', async () => { const shown = await watchValue(app, 'LED_Output'); return shown !== null && shown !== '...' || undefined; }, 60_000);
+      await app.click(css('input[aria-label="Force LED_Output"]'), 'the Force checkbox of LED_Output')
+        .catch(async (error: Error) => { throw new Error(`${error.message}: the row is ${await app.eval<string>(`${watchRow('LED_Output')}?.outerHTML.slice(0, 900) ?? 'not in the table'`)}`); });
+      await app.until('LED_Output to be forced', async () => await app.eval(`${watchRow('LED_Output')}?.querySelector('[data-forced="true"]') !== null`) === true || undefined);
+      await app.until('the variable block to be drawn as forced', async () => await signal() === 'forced' || undefined)
+        .catch(async (error: Error) => { throw new Error(`${error.message}: the block is ${await app.eval<string>(`document.querySelector('.react-flow__node[data-id="var_led_read"]')?.outerHTML.slice(0, 700) ?? 'not on the canvas'`)}`); });
+      const shown = await app.eval<string>(`document.querySelector(${JSON.stringify('.react-flow__node[data-id="var_led_read"] [data-live-value]')})?.innerText ?? ''`);
+      assert(shown.includes('FORCED') && shown.includes('◆'), `A forced variable is drawn with a diamond and the word FORCED, not as "${shown}".`);
+      assert(await app.visible(cue), 'The forced cue is not visible on the canvas.');
+      // red means a fault and nothing else
+      assert(!(await app.eval<boolean>(`document.querySelector('.react-flow')?.querySelector('[data-signal="fault"]') !== null`)), 'A forced variable is drawn as a fault.');
+      // releasing the force takes the cue away
+      if (!await app.clickable(css('input[aria-label="Force LED_Output"]'))) {
+        app.note('With a force active the Watch table has no visible row at the default panel size');
+        await app.click(css('#workspace-separator'), 'the separator above the lower panel');
+        for (let step = 0; step < 6; step++) await app.press('ArrowUp');
+      }
+      await app.click(css('input[aria-label="Force LED_Output"]'), 'the Force checkbox of LED_Output');
+      await app.until('the force to be released', async () => await app.eval(`${watchRow('LED_Output')}?.querySelector('input[type="checkbox"]')?.checked === false`) === true || undefined);
+      await app.until('the variable block to stop being drawn as forced', async () => await signal() !== 'forced' || undefined);
+    },
+  },
+  {
+    // The same on a chart: Go is forced from the Watch table and both transitions that read it say so (UX-009).
+    name: '51b A forced variable is shown as forced in the sequential function chart', example: 'blinky_sfc', proves: [], partly: ['UX-009', 'LNG-006'],
+    run: async (app, { project }) => {
+      writeFileSync(join(project, 'src', 'main.sfc.json'), JSON.stringify({ name: 'Gate',
+        variables: { local: [], inputs: [{ name: 'Go', type: 'BOOL', address: '%I0.0' }], outputs: [] },
+        steps: [
+          { id: 'idle', name: 'Idle', isInitial: true, position: { x: 200, y: 0 } },
+          { id: 'work', name: 'Work', isInitial: false, position: { x: 200, y: 260 } },
+        ],
+        transitions: [
+          { id: 'start', fromStep: 'idle', toStep: 'work', condition: 'Go', position: { x: 200, y: 130 } },
+          { id: 'finish', fromStep: 'work', toStep: 'idle', condition: 'NOT Go', position: { x: 200, y: 390 } },
+        ],
+      }));
+      await openFolder(app, project);
+      await openDiagram(app, 'src/main.sfc.json', '.react-flow__node');
+      const result = await compile(app);
+      assert(result.kind === 'built', `The Gate chart does not build: ${result.message}`);
+      await connectAndRun(app);
+      const signalOf = (id: string) => app.eval<string>(`document.querySelector('.react-flow__node[data-id="${id}"] [data-signal]')?.getAttribute('data-signal') ?? ''`);
+      await app.until('the transition to show a state that is not forced', async () => ['true', 'false'].includes(await signalOf('start')) || undefined);
+      await watch(app, 'Go');
+      // the Force checkbox is offered once the row has its first value, which takes longer on a loaded machine
+      await app.until('Go to have a value in the Watch table', async () => { const shown = await watchValue(app, 'Go'); return shown !== null && shown !== '...' || undefined; }, 60_000);
+      await app.click(css('input[aria-label="Force Go"]'), 'the Force checkbox of Go')
+        .catch(async (error: Error) => { throw new Error(`${error.message}: the row is ${await app.eval<string>(`${watchRow('Go')}?.outerHTML.slice(0, 900) ?? 'not in the table'`)}`); });
+      await app.until('Go to be forced', async () => await app.eval(`${watchRow('Go')}?.querySelector('[data-forced="true"]') !== null`) === true || undefined);
+      for (const id of ['start', 'finish']) {
+        await app.until(`the transition ${id} to be drawn as forced`, async () => await signalOf(id) === 'forced' || undefined)
+          .catch(async (error: Error) => { throw new Error(`${error.message}: the transition is ${await app.eval<string>(`document.querySelector('.react-flow__node[data-id="${id}"]')?.outerHTML.slice(0, 700) ?? 'not on the canvas'`)}`); });
+        const shown = await app.eval<string>(`document.querySelector('.react-flow__node[data-id="${id}"]')?.innerText ?? ''`);
+        assert(shown.includes('FORCED'), `A transition that reads a forced variable says FORCED, not "${shown}".`);
+      }
+      assert(!(await app.eval<boolean>(`document.querySelector('.react-flow')?.querySelector('[data-signal="fault"]') !== null`)), 'A forced variable is drawn as a fault.');
+      if (!await app.clickable(css('input[aria-label="Force Go"]'))) {
+        app.note('With a force active the Watch table has no visible row at the default panel size');
+        await app.click(css('#workspace-separator'), 'the separator above the lower panel');
+        for (let step = 0; step < 6; step++) await app.press('ArrowUp');
+      }
+      await app.click(css('input[aria-label="Force Go"]'), 'the Force checkbox of Go');
+      await app.until('the force to be released', async () => await app.eval(`${watchRow('Go')}?.querySelector('input[type="checkbox"]')?.checked === false`) === true || undefined);
+      await app.until('the transition to stop being drawn as forced', async () => await signalOf('start') !== 'forced' || undefined);
+    },
+  },
+  {
+    // The gestures of the visual editors (UX-033), the way a user makes them: Ladder rungs use the width of the view, fit to
+    // view is a key in all three editors, the diagram editors zoom from 10% to 400%, and a context menu opens from the
+    // keyboard (Shift+F10), names its items and says why one is disabled.
+    name: '51c The visual editors fit to the view, zoom wide, and open context menus from the keyboard', example: 'blinky', proves: [], partly: ['UX-033', 'LNG-010'],
+    run: async (app, { project }) => {
+      cpSync(join(packageRoot, 'projects', 'blinky_fbd', 'src', 'main.fbd.json'), join(project, 'src', 'second.fbd.json'));
+      cpSync(join(packageRoot, 'projects', 'blinky_sfc', 'src', 'main.sfc.json'), join(project, 'src', 'second.sfc.json'));
+      await openFolder(app, project);
+      const said = () => app.eval<string>(`document.querySelector('[data-live-region="polite"]')?.textContent ?? ''`);
+      const menu = () => app.eval<Array<{ text: string; disabled: boolean }>>(`[...document.querySelectorAll('[role="menu"] [role="menuitem"]')].map((item) => ({ text: item.textContent.trim(), disabled: item.getAttribute('aria-disabled') === 'true' }))`);
+      const closeMenu = async () => { await app.press('Escape'); await app.until('the menu to close', async () => (await menu()).length === 0 || undefined); };
+      const scale = () => app.eval<number>(`new DOMMatrixReadOnly(getComputedStyle(document.querySelector('.react-flow__viewport')).transform).a`);
+
+      // Ladder: the rung is as wide as the view, so its right rail is at the edge of the view and not in a narrow column
+      await openDiagram(app, 'src/main.ld.json', '[data-ld-rung-id]');
+      const width = await app.eval<{ svg: number; view: number; rail: number }>(`(() => { const view = document.querySelector('[data-ld-rung-id] .overflow-x-auto'); const svg = view.querySelector('svg'); return { svg: svg.getBoundingClientRect().width, view: view.clientWidth, rail: view.getBoundingClientRect().right - svg.getBoundingClientRect().right }; })()`);
+      assert(width.svg >= width.view - 1, `A rung is ${width.svg}px wide in a view of ${width.view}px: it does not use the available width.`);
+      await app.click(`[...document.querySelectorAll('[data-ld-rung-id="rung_1"] span')].find((node) => node.textContent === 'Rung 1')`, 'the label of rung 1');
+      await app.press('Ctrl+Alt+0');
+      await app.until('Ladder to say that it fitted', async () => (await said()).includes('Every rung is shown from its left edge') || undefined);
+      await app.press('Shift+F10');
+      await app.until('the menu of the rung', async () => (await menu()).some((item) => item.text.startsWith('Add rung after')) || undefined);
+      const rung = await menu();
+      assert(rung.find((item) => item.text.startsWith('Move rung up'))?.disabled === true && rung.find((item) => item.text.startsWith('Move rung up'))!.text.includes('This is the first rung'), `The first rung can be moved up, or does not say why not: ${JSON.stringify(rung)}`);
+      await closeMenu();
+
+      // FBD and SFC: fit by key, a zoom range from 10% to 400%, and the menu of an element with the reason of a disabled item
+      for (const editor of [
+        { file: 'src/second.fbd.json', name: 'FBD', aim: '.react-flow__node', expect: ['Bind variable', 'Edit comment', 'Toggle breakpoint', 'Align left'] },
+        { file: 'src/second.sfc.json', name: 'SFC', aim: '.react-flow__node', expect: ['Name the step or set the condition', 'Toggle breakpoint', 'Align left'] },
+      ]) {
+        await openDiagram(app, editor.file, editor.aim);
+        await app.click(css(editor.aim), `a node of the ${editor.name}`);
+        await app.press('Ctrl+Alt+0');
+        await app.until(`the ${editor.name} to say that it fitted`, async () => (await said()).includes('Diagram fitted to the view') || undefined);
+        // each press of a zoom button is awaited, because the button is disabled at the end of the range
+        const zoomTo = async (button: string, reached: (zoom: number) => boolean) => {
+          for (let step = 0; step < 40 && !reached(await scale()); step++) {
+            const before = await scale();
+            await app.click(css(button), 'the zoom button');
+            await app.until('the zoom to change', async () => Math.abs(await scale() - before) > 0.001 || undefined, 5_000);
+          }
+        };
+        await zoomTo('.react-flow__controls-zoomout', (zoom) => zoom < 0.45);
+        assert(await scale() < 0.45, `The ${editor.name} cannot zoom out past 50%: ${await scale()}`);
+        await zoomTo('.react-flow__controls-zoomin', (zoom) => zoom > 2);
+        assert(await scale() > 2, `The ${editor.name} cannot zoom in past 200%: ${await scale()}`);
+        // zoomed in, the nodes may be out of the window: the canvas takes the focus as it does when Tab reaches it
+        await app.eval(`document.querySelector('[role="region"][aria-label$="canvas"]').focus()`);
+        await app.press('Ctrl+Alt+0');
+        await app.until(`the ${editor.name} to fit the diagram back into the view`, async () => await scale() <= 1 || undefined, 15_000);
+        await app.click(css(editor.aim), `a node of the ${editor.name}`);
+        await app.press('Shift+F10');
+        await app.until(`the menu of an element of the ${editor.name}`, async () => (await menu()).length > 0 || undefined);
+        const items = await menu();
+        for (const name of editor.expect) assert(items.some((item) => item.text.startsWith(name)), `The ${editor.name} menu of an element has no "${name}": ${JSON.stringify(items)}`);
+        const align = items.find((item) => item.text.startsWith('Align left'))!;
+        assert(align.disabled && align.text.includes('Select at least two elements'), `With one element selected, aligning is not disabled with its reason: ${JSON.stringify(align)}`);
+        await closeMenu();
+      }
     },
   },
   {

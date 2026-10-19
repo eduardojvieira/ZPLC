@@ -11,6 +11,8 @@ import { memo } from 'react';
 import { Handle, Position, type NodeProps } from '@xyflow/react';
 import NodeComment from './NodeComment';
 import type { FBDPort } from '../../../models/fbd';
+import { SignalValue } from '../../../ui';
+import { SIGNAL_CUES, SIGNAL_TEXT_CLASS, sampleTone } from '../../../theme/signalTone';
 
 interface VariableData {
   type: 'variable' | 'input' | 'output';
@@ -25,6 +27,8 @@ interface VariableData {
   /** Online: whether the program is running under Studio, and the value of each pin from the debug map (LNG-006). */
   debugActive?: boolean;
   pinValues?: Record<string, number | boolean | string | undefined>;
+  /** Whether the user forces the variable, or it could not be read (UX-009). */
+  pinFlags?: Record<string, { forced?: boolean; fault?: boolean } | undefined>;
 }
 
 const VariableNode = memo(({ id, data, selected }: NodeProps) => {
@@ -34,11 +38,13 @@ const VariableNode = memo(({ id, data, selected }: NodeProps) => {
     dataType,
     address,
     comment,
-    onChangeData, readOnly, inputs, outputs, debugActive, pinValues,
+    onChangeData, readOnly, inputs, outputs, debugActive, pinValues, pinFlags,
   } = data as unknown as VariableData;
   // a value the map does not give is unavailable, shown with a dash and not as FALSE
   const live = pinValues?.OUT ?? pinValues?.IN;
   const liveText = live === undefined ? '—' : typeof live === 'boolean' ? (live ? 'TRUE' : 'FALSE') : String(live);
+  const flags = pinFlags?.OUT ?? pinFlags?.IN;
+  const liveTone = sampleTone({ value: live, type: typeof live === 'boolean' ? 'BOOL' : dataType, forced: flags?.forced, error: flags?.fault ? 'fault' : null });
 
   const isInput = outputs ? outputs.length > 0 : type === 'input' || type === 'variable';
   const isOutput = inputs ? inputs.length > 0 : type === 'output' || type === 'variable';
@@ -106,7 +112,10 @@ const VariableNode = memo(({ id, data, selected }: NodeProps) => {
 
         {debugActive && (
           <div className="px-2 py-0.5 text-center font-mono text-xs text-[var(--text-primary)] border-t border-[var(--border-color)]" data-live-value>
-            {liveText}
+            {/* TRUE, FALSE and a dash say their state in words; a force and a fault also get the glyph and the word (UX-009) */}
+            {liveTone === 'forced' || liveTone === 'fault'
+              ? <SignalValue tone={liveTone}>{`${SIGNAL_CUES[liveTone].label} `}{liveText}</SignalValue>
+              : <span data-signal={liveTone} className={SIGNAL_TEXT_CLASS[liveTone]}>{liveText}</span>}
           </div>
         )}
 

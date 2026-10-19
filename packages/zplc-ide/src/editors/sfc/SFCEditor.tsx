@@ -36,6 +36,7 @@ import '@xyflow/react/dist/style.css';
 import { type SFCModel, type SFCStep, type SFCTransition } from '../../models/sfc';
 import { applySFCSelection, connectSFC, copySFCFragment, sfcSelection, stepNodeData, transitionNodeData, isCanonicalSFCConnection, nodesToSteps, nodesToTransitions, pasteSFCFragment, type SFCClipboardFragment } from './graphModel';
 import { sfcCanvasCommands } from './keyboard';
+import { stepDebugData, stepDebugInfoOf, transitionDebugData, transitionDebugInfoOf, type DebugStepInfo, type DebugTransitionInfo } from './debugInfo';
 import { useCanvasKeyboard } from '../useCanvasKeyboard';
 import { edgeChangesCommit, nodeChangesCommit } from '../gesture';
 import { useGestureCommit } from '../useGestureCommit';
@@ -48,6 +49,10 @@ import { useIDEStore } from '../../store/useIDEStore';
 import { SignalValue } from '../../ui';
 import { animationMs } from '../../theme/motion';
 import { useMonitor } from '../../monitoring/useMonitor';
+import { announce } from '../../utils/announce';
+import { ContextMenu } from '../../ui';
+import { useCanvasContextMenu } from '../useCanvasContextMenu';
+import { FIT_VIEW_OPTIONS, ZOOM_MAX, ZOOM_MIN } from '../viewBounds';
 import { useElementSelection } from '../elementSelection';
 import { useElementBreakpoints } from '../elementBreakpoints';
 import { markBreakpointNodes } from '../breakpointMarks';
@@ -69,20 +74,6 @@ interface SFCEditorProps {
 // Model <-> ReactFlow Conversion with Debug Data
 // =============================================================================
 
-interface DebugStepInfo {
-  isActive: boolean;
-  /** The map gave no state for the step, or it was not read. */
-  unavailable?: boolean;
-  timeInStep?: number;
-  activationCount?: number;
-}
-
-interface DebugTransitionInfo {
-  conditionResult?: boolean;
-  isArmed: boolean;
-  wasFired?: boolean;
-}
-
 /**
  * Convert SFC steps to ReactFlow nodes with debug data
  */
@@ -103,10 +94,7 @@ function stepsToNodes(
         ...stepNodeData(step),
         // Debug properties
         debugActive,
-        isActive: debugInfo?.isActive || false,
-        stateUnavailable: debugInfo?.unavailable === true,
-        timeInStep: debugInfo?.timeInStep,
-        activationCount: debugInfo?.activationCount,
+        ...stepDebugData(debugInfo),
       },
     };
   });
@@ -132,9 +120,7 @@ function transitionsToNodes(
         ...transitionNodeData(trans),
         // Debug properties
         debugActive,
-        conditionResult: debugInfo?.conditionResult,
-        isArmed: debugInfo?.isArmed || false,
-        wasFired: debugInfo?.wasFired || false,
+        ...transitionDebugData(debugInfo),
       },
     };
   });
@@ -293,10 +279,7 @@ function SFCEditorInner({
             data: {
               ...node.data,
               debugActive,
-              isActive: debugInfo?.isActive || false,
-              stateUnavailable: debugInfo?.unavailable === true,
-              timeInStep: debugInfo?.timeInStep,
-              activationCount: debugInfo?.activationCount,
+              ...stepDebugData(debugInfo),
             },
           };
         }
@@ -308,9 +291,7 @@ function SFCEditorInner({
             data: {
               ...node.data,
               debugActive,
-              conditionResult: debugInfo?.conditionResult,
-              isArmed: debugInfo?.isArmed || false,
-              wasFired: debugInfo?.wasFired || false,
+              ...transitionDebugData(debugInfo),
             },
           };
         }
@@ -439,6 +420,11 @@ function SFCEditorInner({
 
   // The clipboard, and the breakpoints of the selected steps and transitions
   const editorCommand = useCallback((command: string) => {
+    if (command === 'fitView') {
+      void fitView({ ...FIT_VIEW_OPTIONS, duration: animationMs(200) });
+      announce(t('editor.fit.diagram'));
+      return;
+    }
     if (command === 'toggleBreakpoint') {
       const elements = nodesRef.current.filter((node) => node.selected).map(elementOfNode).filter((element): element is SourceElementId => element !== undefined);
       for (const element of elements) breakpoints.toggle(element);
@@ -463,13 +449,16 @@ function SFCEditorInner({
     ];
     const nextEdges = [...edgesRef.current.map((edge) => ({ ...edge, selected: false })), ...pasted.edges.map((edge) => ({ ...edge, selected: false, style: { stroke: 'var(--visual-wire)', strokeWidth: 2 }, markerEnd: { type: MarkerType.ArrowClosed, width: 10, height: 10 } }))];
     commitGraph(nextNodes, nextEdges);
-  }, [breakpoints, commitGraph, debugActive, elementOfNode, model, readOnly, stepDebugInfo, transitionDebugInfo]);
+  }, [breakpoints, commitGraph, debugActive, elementOfNode, fitView, model, readOnly, stepDebugInfo, transitionDebugInfo]);
 
   const commands = useMemo(() => sfcCanvasCommands(model), [model]);
   const keyboard = useCanvasKeyboard({
     commands, nodesRef, edgesRef, readOnly, wrapperRef: reactFlowWrapper, commit: commitGraph, show: showGraph, decorate, editorCommand,
     commentOf: (node) => (typeof (node.data as Record<string, unknown>).comment === 'string' ? ((node.data as Record<string, unknown>).comment as string) : undefined),
   });
+
+  // The context menu of the canvas, of a step or transition and of a wire: the commands of the key table (UX-033)
+  const menu = useCanvasContextMenu({ editor: 'sfc', nodesRef, edgesRef, readOnly, canPaste: () => clipboardRef.current !== undefined, show: showGraph, run: keyboard.run });
 
   // Handle drop from toolbox: the element is inserted as the keyboard inserts one, at the place of the drop
   const onDrop = useCallback(
@@ -491,6 +480,7 @@ function SFCEditorInner({
   return (
     <>
     {!readOnly && <SFCToolbox onInsert={(type) => keyboard.run('insertElement', { elementType: type })} />}
+    <ContextMenu label={t('editor.menu.canvas')} items={menu.items} className="flex flex-1 h-full">
     <div 
       ref={reactFlowWrapper}
       className="relative flex-1 h-full"
@@ -512,6 +502,9 @@ function SFCEditorInner({
         edgesFocusable={!readOnly}
         onDrop={onDrop}
         onDragOver={onDragOver}
+        onNodeContextMenu={menu.onNodeContextMenu}
+        onEdgeContextMenu={menu.onEdgeContextMenu}
+        onPaneContextMenu={menu.onPaneContextMenu}
         nodeTypes={nodeTypes as NodeTypes}
         edgeTypes={edgeTypes as EdgeTypes}
         isValidConnection={isValidConnection}
@@ -520,11 +513,11 @@ function SFCEditorInner({
         connectionMode={ConnectionMode.Strict}
         defaultViewport={{ x: 50, y: 50, zoom: 1 }}
         fitView
-        fitViewOptions={{ padding: 0.24 }}
+        fitViewOptions={FIT_VIEW_OPTIONS}
         snapToGrid
         snapGrid={[10, 10]}
-        minZoom={0.5}
-        maxZoom={1.5}
+        minZoom={ZOOM_MIN}
+        maxZoom={ZOOM_MAX}
         style={{ backgroundColor: 'var(--color-surface-900)' }}
         proOptions={{ hideAttribution: true }}
       >
@@ -570,6 +563,7 @@ function SFCEditorInner({
       {keyboard.overlay}
       {keyboard.status}
     </div>
+    </ContextMenu>
     </>
   );
 }
@@ -586,36 +580,17 @@ export default function SFCEditor({ model, onChange, readOnly = false }: SFCEdit
   const debugActive = monitor.active;
   const running = debugMode !== 'none';
 
-  const stepDebugInfo = useMemo(() => {
-    const info = new Map<string, DebugStepInfo>();
-    if (!monitor.active) return info;
-    for (const step of model.steps) {
-      const state = monitor.states.get(stepElement(step.id));
-      info.set(step.id, { isActive: state?.active === true, unavailable: state?.active === undefined, timeInStep: state?.time });
-    }
-    return info;
-  }, [model.steps, monitor]);
+  const stepDebugInfo = useMemo(() => (monitor.active ? stepDebugInfoOf(model.steps, monitor.states) : new Map<string, DebugStepInfo>()), [model.steps, monitor]);
 
   const activeSteps = useMemo(
     () => new Set(model.steps.filter((step) => stepDebugInfo.get(step.id)?.isActive).map((step) => step.id)),
     [model.steps, stepDebugInfo],
   );
 
-  const transitionDebugInfo = useMemo(() => {
-    const info = new Map<string, DebugTransitionInfo>();
-    if (!monitor.active) return info;
-    for (const transition of model.transitions) {
-      const state = monitor.states.get(transitionElement(transition.id));
-      // armed: every step the transition leaves is active
-      const leaves = transition.fromSteps ?? [transition.fromStep];
-      info.set(transition.id, {
-        conditionResult: state?.condition,
-        isArmed: leaves.length > 0 && leaves.every((id) => activeSteps.has(id)),
-        wasFired: state?.fired === true,
-      });
-    }
-    return info;
-  }, [model.transitions, monitor, activeSteps]);
+  const transitionDebugInfo = useMemo(
+    () => (monitor.active ? transitionDebugInfoOf(model.transitions, monitor.states, activeSteps, monitor.flagsOf) : new Map<string, DebugTransitionInfo>()),
+    [model.transitions, monitor, activeSteps],
+  );
 
   // Convert model to ReactFlow format with debug data
   const initialNodes = useMemo(() => [

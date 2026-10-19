@@ -79,6 +79,7 @@ export const KEYMAP: readonly KeyAction[] = [
   ld('copyRung', ['Ctrl+C'], 'other', 'Copy the selected rung', 'Copia el peldaño seleccionado'),
   ld('pasteRung', ['Ctrl+V'], 'other', 'Paste the copied rung after the selected rung', 'Pega el peldaño copiado después del peldaño seleccionado'),
   ld('toggleBreakpoint', ['F9'], 'other', 'Set or clear the breakpoint of the selected rung', 'Pone o quita el punto de parada del peldaño seleccionado'),
+  ld('fitView', ['Ctrl+Alt+0'], 'other', 'Show every rung from its left edge', 'Muestra cada peldaño desde su borde izquierdo'),
   ld('showCommands', ['F1'], 'other', 'List every command of the editor with its keys, searchable', 'Lista todos los comandos del editor con sus teclas, con búsqueda'),
   ld('clearSelection', ['Escape'], 'other', 'Clear the selection and close the properties', 'Quita la selección y cierra las propiedades'),
 
@@ -99,6 +100,15 @@ export const KEYMAP: readonly KeyAction[] = [
   fbd('copySelection', ['Ctrl+C'], 'other', 'Copy the selected blocks and the wires between them', 'Copia los bloques seleccionados y los cables entre ellos'),
   fbd('pasteSelection', ['Ctrl+V'], 'other', 'Paste the copied blocks', 'Pega los bloques copiados'),
   fbd('toggleBreakpoint', ['F9'], 'other', 'Set or clear the breakpoint of the selected blocks', 'Pone o quita el punto de parada de los bloques seleccionados'),
+  fbd('alignLeft', ['Alt+Shift+ArrowLeft'], 'structure', 'Align the selected elements to the leftmost one', 'Alinea los elementos seleccionados con el más a la izquierda'),
+  fbd('alignRight', ['Alt+Shift+ArrowRight'], 'structure', 'Align the selected elements to the rightmost one', 'Alinea los elementos seleccionados con el más a la derecha'),
+  fbd('alignTop', ['Alt+Shift+ArrowUp'], 'structure', 'Align the selected elements to the topmost one', 'Alinea los elementos seleccionados con el más alto'),
+  fbd('alignBottom', ['Alt+Shift+ArrowDown'], 'structure', 'Align the selected elements to the lowest one', 'Alinea los elementos seleccionados con el más bajo'),
+  fbd('alignCenter', ['Alt+Shift+H'], 'structure', 'Centre the selected elements on one vertical line', 'Centra los elementos seleccionados sobre una misma línea vertical'),
+  fbd('alignMiddle', ['Alt+Shift+V'], 'structure', 'Centre the selected elements on one horizontal line', 'Centra los elementos seleccionados sobre una misma línea horizontal'),
+  fbd('distributeHorizontally', ['Ctrl+Alt+Shift+H'], 'structure', 'Space three or more selected elements evenly from left to right', 'Reparte tres o más elementos seleccionados con el mismo espacio de izquierda a derecha'),
+  fbd('distributeVertically', ['Ctrl+Alt+Shift+V'], 'structure', 'Space three or more selected elements evenly from top to bottom', 'Reparte tres o más elementos seleccionados con el mismo espacio de arriba abajo'),
+  fbd('fitView', ['Ctrl+Alt+0'], 'other', 'Fit the whole diagram in the view', 'Ajusta todo el diagrama a la vista'),
   fbd('showCommands', ['F1'], 'other', 'List every command of the editor with its keys, searchable', 'Lista todos los comandos del editor con sus teclas, con búsqueda'),
 
   // Sequential function chart: the cursor is the selected step or transition.
@@ -119,6 +129,15 @@ export const KEYMAP: readonly KeyAction[] = [
   sfc('copySelection', ['Ctrl+C'], 'other', 'Copy the selected steps and transitions', 'Copia los pasos y transiciones seleccionados'),
   sfc('pasteSelection', ['Ctrl+V'], 'other', 'Paste the copied steps and transitions', 'Pega los pasos y transiciones copiados'),
   sfc('toggleBreakpoint', ['F9'], 'other', 'Set or clear the breakpoint of the selected elements', 'Pone o quita el punto de parada de los elementos seleccionados'),
+  sfc('alignLeft', ['Alt+Shift+ArrowLeft'], 'structure', 'Align the selected elements to the leftmost one', 'Alinea los elementos seleccionados con el más a la izquierda'),
+  sfc('alignRight', ['Alt+Shift+ArrowRight'], 'structure', 'Align the selected elements to the rightmost one', 'Alinea los elementos seleccionados con el más a la derecha'),
+  sfc('alignTop', ['Alt+Shift+ArrowUp'], 'structure', 'Align the selected elements to the topmost one', 'Alinea los elementos seleccionados con el más alto'),
+  sfc('alignBottom', ['Alt+Shift+ArrowDown'], 'structure', 'Align the selected elements to the lowest one', 'Alinea los elementos seleccionados con el más bajo'),
+  sfc('alignCenter', ['Alt+Shift+H'], 'structure', 'Centre the selected elements on one vertical line', 'Centra los elementos seleccionados sobre una misma línea vertical'),
+  sfc('alignMiddle', ['Alt+Shift+V'], 'structure', 'Centre the selected elements on one horizontal line', 'Centra los elementos seleccionados sobre una misma línea horizontal'),
+  sfc('distributeHorizontally', ['Ctrl+Alt+Shift+H'], 'structure', 'Space three or more selected elements evenly from left to right', 'Reparte tres o más elementos seleccionados con el mismo espacio de izquierda a derecha'),
+  sfc('distributeVertically', ['Ctrl+Alt+Shift+V'], 'structure', 'Space three or more selected elements evenly from top to bottom', 'Reparte tres o más elementos seleccionados con el mismo espacio de arriba abajo'),
+  sfc('fitView', ['Ctrl+Alt+0'], 'other', 'Fit the whole diagram in the view', 'Ajusta todo el diagrama a la vista'),
   sfc('showCommands', ['F1'], 'other', 'List every command of the editor with its keys, searchable', 'Lista todos los comandos del editor con sus teclas, con búsqueda'),
 ];
 

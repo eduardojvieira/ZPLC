@@ -183,9 +183,34 @@ Every place that shows the value of a signal uses the same five states, defined 
 
 A number is not a state: it is drawn in the plain value colour with no glyph. A wire in FBD is heavier for TRUE, forced and fault values and dashed for a value that was not read, and a non-zero number is not drawn as TRUE.
 
+### Forced and fault states in the diagrams
+
+A variable is drawn as forced in Ladder, FBD and SFC when the force table holds it (the Watch table's force row) at the address the debug map gives that variable in the file being shown; a variable of the same name in another program is not marked. It is drawn as a fault when the poll of the debugger asked the runtime for it and got no value, or the read failed, and it stays a fault until a later poll reads it. All three editors take both from `Monitor.flagsOf` (`src/monitoring/signalFlags.ts`), so they cannot disagree.
+
+| Editor | What carries the cue |
+| --- | --- |
+| Ladder | The contact or coil that names the variable. |
+| FBD | The pin of a block whose variable is forced or unreadable (an input pin takes the state of the output wired to it), the wire from that pin, and a variable block, which also says FORCED or FAULT in words and shows the variable itself and not what is wired to it. |
+| SFC | A step whose flag is forced or unreadable; a transition when its own condition variable is, or when a variable named in its condition is forced (only the words that the debug map resolves to a variable of the file count, so a keyword, a literal or an unknown name never marks a transition). |
+
+Forced is amber with `◆` and fault is red with `▲`; red means a fault and nothing else. Evidence level: host. `src/editors/monitorFlagsWiring.test.tsx` feeds a recorded scan of the FBD and SFC examples, with one forced input and one unreadable element, to the pure functions each editor builds its nodes from and renders the nodes; `src/monitoring/signalFlags.test.ts` checks the force-table match by address and the set of unreadable variables. Journeys 51 and 51b force a variable from the Watch table against the native simulator and read the cue in the FBD and the SFC; a read fault cannot be made to happen in the simulator, so the fault cue is checked by the render tests only.
+
 Nothing in the visual editors, the controller view, the Watch table or the notification list glows, pulses or animates continuously. A loading spinner may turn, and it stops under reduced motion. `bun tools/ci/ui-kit-guard.ts` fails when a source adds an animation or a shadow there (UX-010), and its list of existing offenders can only shrink.
 
 Evidence level: host. `src/editors/signalVocabulary.test.tsx` renders a Ladder contact and coil, an FBD block, an SFC step and an SFC transition with each of the five states and checks both the token and the glyph, and `src/theme/signalTone.test.ts` checks the contrast of each state in the three themes. The palette and the glyphs are for a person to judge by eye.
+
+## Fit, zoom and alignment
+
+Ladder, FBD and SFC share these gestures (UX-033). Every one is a command of the key table, so it is also in the command list (`F1`) of the editor, and each one says what it did through the shared announcer, which a screen reader reads.
+
+- **Fit to view** (`Ctrl+Alt+0`, or the Fit to view button). FBD and SFC fit the whole diagram in the window with a margin and never zoom in past 100%, so a diagram of two blocks stays its natural size; the fit button of the canvas controls and the key use the same options. Ladder has no zoom: its rungs already use the width of the view, so fit shows every rung from its left edge.
+- **Zoom range.** FBD and SFC zoom from 10% to 400% (it was 50% to 150%). At 10% a diagram nine times wider than the window is still whole on the screen, which a chart of a hundred blocks needs; at 400% a pin is as large as a button.
+- **Alignment and distribution** in FBD and SFC, on the selected blocks, steps and transitions: left (`Alt+Shift+Left`), right (`Alt+Shift+Right`), top (`Alt+Shift+Up`), bottom (`Alt+Shift+Down`), centre on a vertical line (`Alt+Shift+H`), centre on a horizontal line (`Alt+Shift+V`), and an even gap between three or more elements, from left to right (`Ctrl+Alt+Shift+H`) or from top to bottom (`Ctrl+Alt+Shift+V`). One command is one undo step, and the selection stays. Aligning needs two selected elements and distributing needs three; with fewer, the command changes nothing and says why.
+
+- **Context menus** on the canvas, on a block, step or transition, on a wire, and on a Ladder rung. Right click, the context-menu key or `Shift+F10` opens the menu of what has the focus; the element is selected first, so a menu never acts on something other than what it was opened on. Each item is named, shows the key of the same command in the key table, and runs that command, so a menu and a key cannot do different things. An item that cannot run is shown disabled with its reason under its name (for example "Select at least two elements to align them", "The diagram is read-only", "This is the first rung"). A function block also offers the instance monitor in its menu.
+- **Ladder rungs use the width of the view.** A rung is as wide as the view when the view is wider than its content, so its right power rail is at the edge of the view and not in a narrow column; when the content is wider than the view the rung scrolls sideways, and only then.
+
+Evidence level: host. `src/editors/arrange.test.ts` checks the arithmetic on boxes of different sizes, `src/editors/fbd/keyboard.test.ts` and `src/editors/sfc/keyboard.test.ts` press the keys on a diagram and count one gesture each, `src/editors/viewBounds.test.ts` pins the range, `src/editors/contextMenus.test.ts` checks the items, their keys and their reasons, and `src/editors/ld/rungWidth.test.ts` the width of a rung. Journey 51c does it in the real application: it measures a rung against its view, fits and zooms from 10% to 400% in FBD and SFC with the real zoom buttons, opens the menu of a rung and of an element with `Shift+F10`, and reads the reason of a disabled item. Aligning two selected elements is checked by the tests of the commands and not by a journey, which cannot yet select two nodes with the pointer.
 
 ## Focus in the visual editors
 

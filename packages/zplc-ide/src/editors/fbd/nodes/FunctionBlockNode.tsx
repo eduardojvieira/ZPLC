@@ -81,11 +81,6 @@ const FunctionBlockNode = memo(({ id, data, selected }: NodeProps) => {
   const [showMenu, setShowMenu] = useState(false);
   
   // Handle context menu / right-click
-  const handleContextMenu = useCallback((e: React.MouseEvent) => {
-    e.preventDefault();
-    setShowMenu(true);
-  }, []);
-
   const handleOpenMonitor = useCallback(() => {
     setShowMenu(false);
     if (onOpenMonitor && instanceName) {
@@ -132,7 +127,6 @@ if (!debugActive) {
         `}
         style={{ minWidth: baseWidth }}
         title={comment}
-        onContextMenu={handleContextMenu}
       >
         {/* Header with type name */}
         <div className="bg-[var(--visual-panel)] border-b border-[var(--border-color)] px-3 py-1.5 rounded-t text-center relative flex items-center justify-center gap-2">

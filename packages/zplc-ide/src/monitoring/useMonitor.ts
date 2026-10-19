@@ -4,14 +4,16 @@
  * map (`useMonitor`); a text editor reads the variables that its source names (`useMonitoredVariables`).
  */
 
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useSyncExternalStore } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { useIDEStore } from '../store/useIDEStore';
 import { debugPouOf } from '../compiler/debugElements';
 import type { MonitorEntry } from '../models/sourceElements';
 import { monitorKey, resolveVariable } from './debugVariables';
-import { readElementStates, variablesOf, type ElementState, type Reading } from './elementStates';
+import { readElementStates, variablesOf, type ElementState, type FlagsOf, type Reading } from './elementStates';
+import { clearReadFaults, readFaultKeys, subscribeReadFaults } from './readFaults';
 import { setMonitorKeys } from './registry';
+import { signalFlagsOf } from './signalFlags';
 
 const NO_ENTRIES: readonly MonitorEntry[] = [];
 
@@ -66,9 +68,11 @@ export interface Monitor {
   states: ReadonlyMap<string, ElementState>;
   /** Each variable the entries name: its value, or not known to the map. */
   values: ReadonlyMap<string, MonitoredValue>;
+  /** Whether a variable of this file is forced by the user, or could not be read (UX-009). */
+  flagsOf: FlagsOf;
 }
 
-const NOTHING: Monitor = { active: false, states: new Map(), values: new Map() };
+const NOTHING: Monitor = { active: false, states: new Map(), values: new Map(), flagsOf: () => undefined };
 
 /** The monitor of the diagram in the active editor. */
 export function useMonitor(): Monitor {
@@ -83,8 +87,16 @@ export function useMonitor(): Monitor {
   const variables = useMemo(() => variablesOf(entries), [entries]);
   const values = useMonitoredVariables(sourceRef, variables, entries.length > 0);
 
+  // the same two sources for every editor: the force table, and the variables the poll could not read (UX-009)
+  const forcedValues = useIDEStore((state) => state.debug.forcedValues);
+  const faults = useSyncExternalStore(subscribeReadFaults, readFaultKeys);
+  useEffect(() => {
+    if (mode === 'none') clearReadFaults();
+  }, [mode]);
+  const flagsOf = useMemo(() => signalFlagsOf(debugMap, sourceRef, forcedValues, faults), [debugMap, sourceRef, forcedValues, faults]);
+
   return useMemo((): Monitor => {
     if (entries.length === 0) return NOTHING;
-    return { active: true, states: readElementStates(entries, (variable) => values.get(variable)?.reading), values };
-  }, [entries, values]);
+    return { active: true, states: readElementStates(entries, (variable) => values.get(variable)?.reading, flagsOf), values, flagsOf };
+  }, [entries, values, flagsOf]);
 }

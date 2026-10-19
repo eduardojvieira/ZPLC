@@ -44,7 +44,8 @@ import { edgeTypes } from './edges';
 import FBDToolbox from './FBDToolbox';
 import InstanceMonitor from './InstanceMonitor';
 import { useMonitor } from '../../monitoring/useMonitor';
-import type { ElementState, Reading } from '../../monitoring/elementStates';
+import type { Reading, SignalFlags } from '../../monitoring/elementStates';
+import { pinFlagsOf, pinValuesOf } from './pinState';
 import { useProjectBlocks } from '../useProjectBlocks';
 import { fbdCanvasCommands } from './keyboard';
 import { useCanvasKeyboard } from '../useCanvasKeyboard';
@@ -53,6 +54,10 @@ import { useElementBreakpoints } from '../elementBreakpoints';
 import { markBreakpointNodes } from '../breakpointMarks';
 import { blockElement, parseElement, type SourceElementId } from '../../models/sourceElements';
 import { t } from '../../i18n';
+import { announce } from '../../utils/announce';
+import { ContextMenu } from '../../ui';
+import { useCanvasContextMenu } from '../useCanvasContextMenu';
+import { FIT_VIEW_OPTIONS, ZOOM_MAX, ZOOM_MIN } from '../viewBounds';
 
 // =============================================================================
 // Props
@@ -116,24 +121,6 @@ function connectionsToEdges(connections: FBDConnection[]): Edge[] {
   }));
 }
 
-/** The value of each pin of each block online, by block id: its outputs, and its inputs as what is wired to them. */
-function pinValuesOf(
-  blocks: readonly FBDBlock[],
-  connections: readonly FBDConnection[],
-  states: ReadonlyMap<string, ElementState>,
-): Map<string, Record<string, Reading>> {
-  const outputs = (blockId: string): Record<string, Reading> => states.get(blockElement(blockId))?.pins ?? {};
-  const constants = new Map(blocks.filter((block) => block.type === 'constant').map((block) => [block.id, block.value as Reading] as const));
-  const sourceValue = (connection: FBDConnection): Reading =>
-    constants.has(connection.from.block) ? constants.get(connection.from.block) : outputs(connection.from.block)[connection.from.port];
-  const pins = new Map<string, Record<string, Reading>>(blocks.map((block) => [block.id, { ...outputs(block.id) }]));
-  for (const connection of connections) {
-    const own = pins.get(connection.to.block);
-    if (own && !(connection.to.port in own)) own[connection.to.port] = sourceValue(connection);
-  }
-  return pins;
-}
-
 /**
  * Convert ReactFlow nodes back to FBD blocks
  */
@@ -146,6 +133,8 @@ interface FBDEditorInnerProps extends FBDEditorProps {
   initialEdges: Edge[];
   /** The value each pin holds online (LNG-006); undefined while the program is not running under Studio. */
   pins: ReadonlyMap<string, Record<string, Reading>> | undefined;
+  /** Which pins are forced or could not be read (UX-009). */
+  pinFlags: ReadonlyMap<string, Record<string, SignalFlags>>;
   onOpenMonitor: (instanceName: string, blockType: string) => void;
 }
 
@@ -156,6 +145,7 @@ function FBDEditorInner({
   initialNodes, 
   initialEdges,
   pins,
+  pinFlags,
   onOpenMonitor,
 }: FBDEditorInnerProps) {
   const { screenToFlowPosition, fitView } = useReactFlow();
@@ -227,20 +217,20 @@ function FBDEditorInner({
   // what the nodes and wires show online: put on the ones that are drawn, so that it follows a rebuilt canvas (LNG-006)
   const markedNodes = useMemo(
     () => markBreakpointNodes(
-      debugActive ? nodes.map((node) => ({ ...node, data: { ...node.data, debugActive, pinValues: pins.get(node.id) } })) : nodes,
+      debugActive ? nodes.map((node) => ({ ...node, data: { ...node.data, debugActive, pinValues: pins.get(node.id), pinFlags: pinFlags.get(node.id) } })) : nodes,
       (node) => blockElement(node.id),
       breakpoints,
     ),
-    [nodes, breakpoints, debugActive, pins],
+    [nodes, breakpoints, debugActive, pins, pinFlags],
   );
   const shownEdges = useMemo(
     () => (!debugActive ? edges : edges.map((edge) => ({
       ...edge,
       type: 'debug',
       style: undefined,
-      data: { liveValue: pins.get(edge.source)?.[edge.sourceHandle ?? 'OUT'], debugActive: true },
+      data: { liveValue: pins.get(edge.source)?.[edge.sourceHandle ?? 'OUT'], debugActive: true, ...pinFlags.get(edge.source)?.[edge.sourceHandle ?? 'OUT'] },
     }))),
-    [edges, debugActive, pins],
+    [edges, debugActive, pins, pinFlags],
   );
 
   // Activating a problem of this diagram selects the block or the wire it is about, and brings it into view (LNG-003)
@@ -356,6 +346,11 @@ function FBDEditorInner({
 
   // The clipboard, and the breakpoints of the selected blocks
   const editorCommand = useCallback((command: string) => {
+    if (command === 'fitView') {
+      void fitView({ ...FIT_VIEW_OPTIONS, duration: animationMs(200) });
+      announce(t('editor.fit.diagram'));
+      return;
+    }
     if (command === 'toggleBreakpoint') {
       for (const node of nodesRef.current.filter((candidate) => candidate.selected)) breakpoints.toggle(blockElement(node.id));
       return;
@@ -382,7 +377,7 @@ function FBDEditorInner({
     ];
     const nextEdges = [...edgesRef.current.map((edge) => ({ ...edge, selected: false })), ...connectionsToEdges(addedConnections)];
     commitGraph(nextNodes, nextEdges);
-  }, [breakpoints, commitGraph, model, onOpenMonitor, readOnly]);
+  }, [breakpoints, commitGraph, fitView, model, onOpenMonitor, readOnly]);
 
   const wrapperRef = useRef<HTMLDivElement>(null);
   const commands = useMemo(() => fbdCanvasCommands(model, projectBlocks), [model, projectBlocks]);
@@ -408,6 +403,13 @@ function FBDEditorInner({
     event.dataTransfer.dropEffect = 'move';
   }, []);
 
+  // The context menu of the canvas, of a block and of a wire: the commands of the key table, and the instance monitor (UX-033)
+  const instanceMonitorOf = useCallback((node: Node) => {
+    const { instanceName, type } = node.data as { instanceName?: string; type?: string };
+    return instanceName && type ? () => onOpenMonitor(instanceName, type) : undefined;
+  }, [onOpenMonitor]);
+  const menu = useCanvasContextMenu({ editor: 'fbd', nodesRef, edgesRef, readOnly, canPaste: () => clipboardRef.current !== undefined, show: showGraph, run: keyboard.run, instanceMonitorOf });
+
   // A double click on a block asks what it holds, as F2 does
   const onNodeDoubleClick = useCallback((_event: React.MouseEvent, node: Node) => {
     if (readOnly) return;
@@ -419,6 +421,7 @@ function FBDEditorInner({
   return (
     <>
     {!readOnly && <FBDToolbox onInsert={(type) => keyboard.run('insertElement', { blockType: type })} />}
+    <ContextMenu label={t('editor.menu.canvas')} items={menu.items} className="flex flex-1 h-full">
     <div
       ref={wrapperRef}
       className="relative flex-1 h-full"
@@ -439,6 +442,9 @@ function FBDEditorInner({
         onConnectEnd={onConnectEnd}
         isValidConnection={isValidConnection}
         onNodeDoubleClick={onNodeDoubleClick}
+        onNodeContextMenu={menu.onNodeContextMenu}
+        onEdgeContextMenu={menu.onEdgeContextMenu}
+        onPaneContextMenu={menu.onPaneContextMenu}
         // deleting is a command of the keyboard table, one gesture for the blocks and the wires on them
         deleteKeyCode={null}
         nodesDraggable={!readOnly}
@@ -451,8 +457,9 @@ function FBDEditorInner({
         defaultViewport={{ x: 50, y: 50, zoom: 1 }}
         snapToGrid
         snapGrid={[10, 10]}
-        minZoom={0.5}
-        maxZoom={1.5}
+        minZoom={ZOOM_MIN}
+        maxZoom={ZOOM_MAX}
+        fitViewOptions={FIT_VIEW_OPTIONS}
         // Use CSS variable for background
         style={{ backgroundColor: 'var(--color-surface-900)' }}
         proOptions={{ hideAttribution: true }}
@@ -490,6 +497,7 @@ function FBDEditorInner({
       {keyboard.overlay}
       {keyboard.status}
     </div>
+    </ContextMenu>
     </>
   );
 }
@@ -505,6 +513,7 @@ export default function FBDEditor({ model, onChange, readOnly = false }: FBDEdit
     () => (monitor.active ? pinValuesOf(model.blocks, model.connections, monitor.states) : undefined),
     [model.blocks, model.connections, monitor],
   );
+  const pinFlags = useMemo(() => pinFlagsOf(model.blocks, model.connections, monitor.states), [model.blocks, model.connections, monitor]);
 
   // Handler for opening instance monitor
   const handleOpenMonitor = useCallback((instanceName: string, blockType: string) => {
@@ -532,6 +541,7 @@ export default function FBDEditor({ model, onChange, readOnly = false }: FBDEdit
           initialNodes={initialNodes}
           initialEdges={initialEdges}
           pins={pins}
+          pinFlags={pinFlags}
           onOpenMonitor={handleOpenMonitor}
         />
       </ReactFlowProvider>

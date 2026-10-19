@@ -88,6 +88,7 @@ The cursor is a cell of a rung, drawn as a blue frame. Clicking a cell puts it t
 | `Ctrl+C` | Copy the selected rung |
 | `Ctrl+V` | Paste the copied rung after the selected rung |
 | `F9` | Set or clear the breakpoint of the selected rung |
+| `Ctrl+Alt+0` | Show every rung from its left edge |
 | `F1` | List every command of the editor with its keys, searchable |
 | `Escape` | Clear the selection and close the properties |
 
@@ -132,6 +133,19 @@ The cursor is the selected block. The arrow keys without a modifier nudge the se
 | --- | --- |
 | `Shift+F2` | Edit the comment of the selected block |
 
+### Structure
+
+| Keys | What it does |
+| --- | --- |
+| `Alt+Shift+ArrowLeft` | Align the selected elements to the leftmost one |
+| `Alt+Shift+ArrowRight` | Align the selected elements to the rightmost one |
+| `Alt+Shift+ArrowUp` | Align the selected elements to the topmost one |
+| `Alt+Shift+ArrowDown` | Align the selected elements to the lowest one |
+| `Alt+Shift+H` | Centre the selected elements on one vertical line |
+| `Alt+Shift+V` | Centre the selected elements on one horizontal line |
+| `Ctrl+Alt+Shift+H` | Space three or more selected elements evenly from left to right |
+| `Ctrl+Alt+Shift+V` | Space three or more selected elements evenly from top to bottom |
+
 ### Deleting
 
 | Keys | What it does |
@@ -145,6 +159,7 @@ The cursor is the selected block. The arrow keys without a modifier nudge the se
 | `Ctrl+C` | Copy the selected blocks and the wires between them |
 | `Ctrl+V` | Paste the copied blocks |
 | `F9` | Set or clear the breakpoint of the selected blocks |
+| `Ctrl+Alt+0` | Fit the whole diagram in the view |
 | `F1` | List every command of the editor with its keys, searchable |
 
 ## Sequential Function Chart editor
@@ -189,6 +204,19 @@ The cursor is the selected step or transition. The arrow keys without a modifier
 | --- | --- |
 | `Shift+F2` | Edit the comment of the selected element |
 
+### Structure
+
+| Keys | What it does |
+| --- | --- |
+| `Alt+Shift+ArrowLeft` | Align the selected elements to the leftmost one |
+| `Alt+Shift+ArrowRight` | Align the selected elements to the rightmost one |
+| `Alt+Shift+ArrowUp` | Align the selected elements to the topmost one |
+| `Alt+Shift+ArrowDown` | Align the selected elements to the lowest one |
+| `Alt+Shift+H` | Centre the selected elements on one vertical line |
+| `Alt+Shift+V` | Centre the selected elements on one horizontal line |
+| `Ctrl+Alt+Shift+H` | Space three or more selected elements evenly from left to right |
+| `Ctrl+Alt+Shift+V` | Space three or more selected elements evenly from top to bottom |
+
 ### Deleting
 
 | Keys | What it does |
@@ -202,6 +230,7 @@ The cursor is the selected step or transition. The arrow keys without a modifier
 | `Ctrl+C` | Copy the selected steps and transitions |
 | `Ctrl+V` | Paste the copied steps and transitions |
 | `F9` | Set or clear the breakpoint of the selected elements |
+| `Ctrl+Alt+0` | Fit the whole diagram in the view |
 | `F1` | List every command of the editor with its keys, searchable |
 
 {/* <<< END GENERATED: reference/visual-editor-keyboard <<< */}

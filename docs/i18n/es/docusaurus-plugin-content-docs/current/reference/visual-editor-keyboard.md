@@ -88,6 +88,7 @@ El cursor es una celda de un peldaño, dibujada como un marco azul. Hacer clic e
 | `Ctrl+C` | Copia el peldaño seleccionado |
 | `Ctrl+V` | Pega el peldaño copiado después del peldaño seleccionado |
 | `F9` | Pone o quita el punto de parada del peldaño seleccionado |
+| `Ctrl+Alt+0` | Muestra cada peldaño desde su borde izquierdo |
 | `F1` | Lista todos los comandos del editor con sus teclas, con búsqueda |
 | `Escape` | Quita la selección y cierra las propiedades |
 
@@ -132,6 +133,19 @@ El cursor es el bloque seleccionado. Las flechas sin modificador desplazan el bl
 | --- | --- |
 | `Shift+F2` | Edita el comentario del bloque seleccionado |
 
+### Estructura
+
+| Teclas | Qué hace |
+| --- | --- |
+| `Alt+Shift+ArrowLeft` | Alinea los elementos seleccionados con el más a la izquierda |
+| `Alt+Shift+ArrowRight` | Alinea los elementos seleccionados con el más a la derecha |
+| `Alt+Shift+ArrowUp` | Alinea los elementos seleccionados con el más alto |
+| `Alt+Shift+ArrowDown` | Alinea los elementos seleccionados con el más bajo |
+| `Alt+Shift+H` | Centra los elementos seleccionados sobre una misma línea vertical |
+| `Alt+Shift+V` | Centra los elementos seleccionados sobre una misma línea horizontal |
+| `Ctrl+Alt+Shift+H` | Reparte tres o más elementos seleccionados con el mismo espacio de izquierda a derecha |
+| `Ctrl+Alt+Shift+V` | Reparte tres o más elementos seleccionados con el mismo espacio de arriba abajo |
+
 ### Borrar
 
 | Teclas | Qué hace |
@@ -145,6 +159,7 @@ El cursor es el bloque seleccionado. Las flechas sin modificador desplazan el bl
 | `Ctrl+C` | Copia los bloques seleccionados y los cables entre ellos |
 | `Ctrl+V` | Pega los bloques copiados |
 | `F9` | Pone o quita el punto de parada de los bloques seleccionados |
+| `Ctrl+Alt+0` | Ajusta todo el diagrama a la vista |
 | `F1` | Lista todos los comandos del editor con sus teclas, con búsqueda |
 
 ## Editor de Diagrama Funcional Secuencial
@@ -189,6 +204,19 @@ El cursor es el paso o la transición seleccionados. Las flechas sin modificador
 | --- | --- |
 | `Shift+F2` | Edita el comentario del elemento seleccionado |
 
+### Estructura
+
+| Teclas | Qué hace |
+| --- | --- |
+| `Alt+Shift+ArrowLeft` | Alinea los elementos seleccionados con el más a la izquierda |
+| `Alt+Shift+ArrowRight` | Alinea los elementos seleccionados con el más a la derecha |
+| `Alt+Shift+ArrowUp` | Alinea los elementos seleccionados con el más alto |
+| `Alt+Shift+ArrowDown` | Alinea los elementos seleccionados con el más bajo |
+| `Alt+Shift+H` | Centra los elementos seleccionados sobre una misma línea vertical |
+| `Alt+Shift+V` | Centra los elementos seleccionados sobre una misma línea horizontal |
+| `Ctrl+Alt+Shift+H` | Reparte tres o más elementos seleccionados con el mismo espacio de izquierda a derecha |
+| `Ctrl+Alt+Shift+V` | Reparte tres o más elementos seleccionados con el mismo espacio de arriba abajo |
+
 ### Borrar
 
 | Teclas | Qué hace |
@@ -202,6 +230,7 @@ El cursor es el paso o la transición seleccionados. Las flechas sin modificador
 | `Ctrl+C` | Copia los pasos y transiciones seleccionados |
 | `Ctrl+V` | Pega los pasos y transiciones copiados |
 | `F9` | Pone o quita el punto de parada de los elementos seleccionados |
+| `Ctrl+Alt+0` | Ajusta todo el diagrama a la vista |
 | `F1` | Lista todos los comandos del editor con sus teclas, con búsqueda |
 
 {/* <<< END GENERATED: reference/visual-editor-keyboard <<< */}

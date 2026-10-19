@@ -14,6 +14,7 @@
 
 import { useState, useEffect, useCallback, useMemo, useRef, useSyncExternalStore } from 'react';
 import { monitoredKeys, subscribeMonitorKeys } from '../monitoring/registry';
+import { recordReadFaults } from '../monitoring/readFaults';
 import { useIDEStore, type LiveValue } from '../store/useIDEStore';
 import type {
   IDebugAdapter,
@@ -938,14 +939,12 @@ export function useDebugController(): DebugController {
 
           debugLog(`[useDebugController] Polling ${variables.length} variables. mpeekEnabled: ${mpeekEnabled}`);
 
-          const results = await polled.readWatchVariables(variables, { useMpeek: mpeekEnabled });
-
+          // a variable that comes back without a value, or a read that fails, is shown as a fault in the diagrams (UX-009)
+          const names = variables.map((variable) => variable.name);
+          const results = await polled.readWatchVariables(variables, { useMpeek: mpeekEnabled }).catch((err: unknown) => { recordReadFaults(names, []); throw err; });
           const newValues = new Map<string, LiveValue>();
-          for (const result of results) {
-            if (result.value !== undefined) {
-              newValues.set(result.name, result.value);
-            }
-          }
+          for (const result of results) if (result.value !== undefined) newValues.set(result.name, result.value);
+          recordReadFaults(names, newValues.keys());
 
           if (newValues.size > 0) {
             debugLog(`[useDebugController] Updating live values with ${newValues.size} items`, Array.from(newValues.entries()));

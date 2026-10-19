@@ -194,9 +194,34 @@ Todo lugar que muestra el valor de una señal usa los mismos cinco estados, defi
 
 Un número no es un estado: se dibuja en el color de valor simple y sin glifo. Un cable en FBD es más grueso para los valores TRUE, forzados y con falla, y discontinuo para un valor que no se leyó; un número distinto de cero no se dibuja como TRUE.
 
+### Estados forzado y falla en los diagramas
+
+Una variable se dibuja como forzada en Ladder, FBD y SFC cuando la tabla de forzados la contiene (la fila de forzado de la tabla Watch) en la dirección que el mapa de depuración da a esa variable en el archivo que se muestra; una variable del mismo nombre en otro programa no se marca. Se dibuja como falla cuando el sondeo del depurador pidió la variable al entorno de ejecución y no obtuvo valor, o la lectura falló, y sigue como falla hasta que un sondeo posterior la lee. Los tres editores toman ambos estados de `Monitor.flagsOf` (`src/monitoring/signalFlags.ts`), así que no pueden discrepar.
+
+| Editor | Qué lleva la señal |
+| --- | --- |
+| Ladder | El contacto o la bobina que nombra la variable. |
+| FBD | El pin de un bloque cuya variable está forzada o no se pudo leer (un pin de entrada toma el estado de la salida conectada), el cable que sale de ese pin y un bloque de variable, que además dice FORCED o FAULT con palabras y muestra la variable misma y no lo que se le conecta. |
+| SFC | Un paso cuyo indicador está forzado o no se pudo leer; una transición cuando su propia variable de condición lo está, o cuando una variable nombrada en su condición está forzada (solo cuentan las palabras que el mapa de depuración resuelve a una variable del archivo, así que una palabra clave, un literal o un nombre desconocido nunca marca una transición). |
+
+Forzado es ámbar con `◆` y falla es rojo con `▲`; el rojo significa falla y nada más. Nivel de evidencia: host. `src/editors/monitorFlagsWiring.test.tsx` entrega un ciclo registrado de los ejemplos FBD y SFC, con una entrada forzada y un elemento ilegible, a las funciones puras con las que cada editor construye sus nodos y dibuja los nodos; `src/monitoring/signalFlags.test.ts` comprueba la coincidencia con la tabla de forzados por dirección y el conjunto de variables ilegibles. Los recorridos 51 y 51b fuerzan una variable desde la tabla Watch contra el simulador nativo y leen la señal en el FBD y en el SFC; en el simulador no se puede provocar una falla de lectura, así que la señal de falla solo la comprueban las pruebas de dibujo.
+
 Nada en los editores visuales, la vista del controlador, la tabla Watch ni la lista de notificaciones brilla, pulsa o se anima de forma continua. Un indicador de carga puede girar, y se detiene con el movimiento reducido. `bun tools/ci/ui-kit-guard.ts` falla cuando un archivo agrega una animación o una sombra ahí (UX-010), y su lista de infractores existentes solo puede disminuir.
 
 Nivel de evidencia: host. `src/editors/signalVocabulary.test.tsx` dibuja un contacto y una bobina de Ladder, un bloque FBD, un paso SFC y una transición SFC con cada uno de los cinco estados y comprueba tanto el token como el glifo, y `src/theme/signalTone.test.ts` comprueba el contraste de cada estado en los tres temas. La paleta y los glifos son para que una persona los juzgue a simple vista.
+
+## Ajustar, acercar y alinear
+
+Ladder, FBD y SFC comparten estos gestos (UX-033). Cada uno es un comando de la tabla de teclas, así que también está en la lista de comandos (`F1`) del editor, y cada uno dice lo que hizo mediante el anunciador compartido, que lee un lector de pantalla.
+
+- **Ajustar a la vista** (`Ctrl+Alt+0`, o el botón Ajustar a la vista). FBD y SFC ajustan todo el diagrama a la ventana con un margen y nunca acercan más del 100 %, así que un diagrama de dos bloques conserva su tamaño natural; el botón de ajuste de los controles del lienzo y la tecla usan las mismas opciones. Ladder no tiene zoom: sus peldaños ya usan el ancho de la vista, así que ajustar muestra cada peldaño desde su borde izquierdo.
+- **Rango de zoom.** FBD y SFC acercan de 10 % a 400 % (antes de 50 % a 150 %). Al 10 % un diagrama nueve veces más ancho que la ventana sigue entero en pantalla, lo que necesita un esquema de cien bloques; al 400 % un pin es tan grande como un botón.
+- **Alineación y distribución** en FBD y SFC, sobre los bloques, pasos y transiciones seleccionados: izquierda (`Alt+Mayús+Izquierda`), derecha (`Alt+Mayús+Derecha`), arriba (`Alt+Mayús+Arriba`), abajo (`Alt+Mayús+Abajo`), centrar sobre una línea vertical (`Alt+Mayús+H`), centrar sobre una línea horizontal (`Alt+Mayús+V`) y un espacio uniforme entre tres o más elementos, de izquierda a derecha (`Ctrl+Alt+Mayús+H`) o de arriba abajo (`Ctrl+Alt+Mayús+V`). Un comando es un paso de deshacer y la selección se conserva. Alinear necesita dos elementos seleccionados y distribuir necesita tres; con menos, el comando no cambia nada y dice por qué.
+
+- **Menús contextuales** en el lienzo, en un bloque, paso o transición, en un cable y en un peldaño de Ladder. El clic derecho, la tecla de menú contextual o `Mayús+F10` abren el menú de lo que tiene el foco; el elemento se selecciona antes, así que un menú nunca actúa sobre algo distinto de aquello en lo que se abrió. Cada opción tiene nombre, muestra la tecla del mismo comando en la tabla de teclas y ejecuta ese comando, así que un menú y una tecla no pueden hacer cosas distintas. Una opción que no puede ejecutarse se muestra desactivada con su motivo bajo el nombre (por ejemplo «Seleccione al menos dos elementos para alinearlos», «El diagrama es de solo lectura», «Es el primer peldaño»). Un bloque de función ofrece además el monitor de instancia en su menú.
+- **Los peldaños de Ladder usan el ancho de la vista.** Un peldaño es tan ancho como la vista cuando esta es más ancha que su contenido, así que su riel de potencia derecho queda en el borde de la vista y no en una columna estrecha; cuando el contenido es más ancho que la vista, el peldaño se desplaza hacia los lados, y solo entonces.
+
+Nivel de evidencia: host. `src/editors/arrange.test.ts` comprueba la aritmética con cajas de distinto tamaño, `src/editors/fbd/keyboard.test.ts` y `src/editors/sfc/keyboard.test.ts` pulsan las teclas sobre un diagrama y cuentan un gesto cada una, `src/editors/viewBounds.test.ts` fija el rango, `src/editors/contextMenus.test.ts` comprueba las opciones, sus teclas y sus motivos, y `src/editors/ld/rungWidth.test.ts` el ancho de un peldaño. El recorrido 51c lo hace en la aplicación real: mide un peldaño frente a su vista, ajusta y acerca de 10 % a 400 % en FBD y SFC con los botones de zoom reales, abre el menú de un peldaño y de un elemento con `Mayús+F10` y lee el motivo de una opción desactivada. Alinear dos elementos seleccionados lo comprueban las pruebas de los comandos y no un recorrido, que aún no puede seleccionar dos nodos con el puntero.
 
 ## Foco en los editores visuales
 
