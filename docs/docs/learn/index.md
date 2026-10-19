@@ -15,7 +15,7 @@ physical operation.
 
 ## Start with the lessons in Studio
 
-Studio has 26 lessons in a course, in English and in Spanish. The [course outline](course-outline.md) lists every module, the lessons that exist and the ones that are planned. On the Welcome
+Studio has 28 lessons in a course, in English and in Spanish. The [course outline](course-outline.md) lists every module, the lessons that exist and the ones that are planned. On the Welcome
 screen, choose **Learn**: the Learn home opens, with no project and no network,
 and lists the modules in order with their level, what each requires and how long
 it takes. Choose **Start the course**: Studio makes the workspace of the first lesson in its own folder and opens it; there is no folder to choose and no copy step. The lesson stays visible beside the editor, also when you switch to the Project view.
