@@ -18,14 +18,15 @@ operación física.
 Studio tiene diez lecciones en un curso, en español y en inglés. En la pantalla de
 bienvenida, elija **Learn**: se abre el inicio de Learn, sin proyecto y sin red, y
 enumera los módulos en orden con su nivel, lo que requiere cada uno y cuánto
-dura. Elija **Comenzar el curso**: Studio crea el espacio de trabajo de la primera lección, en una carpeta que
-usted elige la primera vez, y lo abre; no hay un paso de copia.
+dura. Elija **Comenzar el curso**: Studio crea el espacio de trabajo de la primera lección en su propia carpeta y lo abre; no hay carpeta que elegir ni paso de copia. La lección sigue visible junto al editor, también cuando usted cambia a la vista Proyecto.
 
 Cada lección recorre seis etapas: Objective, Predict, Edit, Run, Observe y
 Reflect. Usted edita el espacio de trabajo, lo guarda y presiona **Check**. Studio
 ejecuta su programa guardado contra el escenario de la lección y enumera cada
 aserción que falló, con el instante, el valor esperado y el valor observado. Una
 lección está completa cuando todas las aserciones de su escenario pasaron.
+
+Cada lección ofrece dos niveles de pista, y Studio registra cada nivel que usted abre. La solución de referencia se abre solo a pedido, y el progreso registra que la vio. Un docente puede ocultar las soluciones: vea [Docentes](./educators.md).
 
 Una lección está bloqueada hasta que se aprueban las lecciones que requiere, y el
 inicio dice cuáles. Si prefiere tomarlas en cualquier orden, active
@@ -35,9 +36,7 @@ descripción completa de lo que hace Learn y de lo que guarda está en
 
 ## Abra un proyecto de ejemplo
 
-Studio incluye proyectos de ejemplo en la pantalla de bienvenida, agrupados desde
-los primeros pasos hasta motores, control de procesos, los cinco lenguajes y
-placas. Están en `packages/zplc-ide/projects/`. Para copiar uno a una carpeta
+Studio incluye proyectos de ejemplo en la pantalla de bienvenida, agrupados por tema (primeros pasos, motores, control de procesos, los cinco lenguajes y placas) y por nivel, y cada uno muestra su lenguaje y, si es de hardware, su placa. Un ejemplo de hardware trae un escenario o dice por qué no lo tiene. Están en `packages/zplc-ide/projects/`. Para copiar uno a una carpeta
 propia, elíjalo en **Examples**.
 
 El tutorial [Blink sin hardware](../tutorials/blink-without-hardware.md) recorre
@@ -61,7 +60,7 @@ elemento, qué funciona hoy.
 
 ## Lo que todavía no está
 
-Una vía para una placa de aprendizaje y las lecciones de seis módulos que todavía
+Cada lección enumera las vías que admite y, para una vía que no admite, dice por qué y qué hacer en su lugar. Una vía para una placa de aprendizaje y las lecciones de seis módulos que todavía
 están vacíos son trabajo futuro. Las
 lecciones y los ejemplos son ejercicios de host y de simulación: no muestran cómo
 se comporta un programa en una placa física.
