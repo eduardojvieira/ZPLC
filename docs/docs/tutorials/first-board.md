@@ -120,6 +120,16 @@ Open the **Watch** tab and add `LED_Output`: its value follows the LED. Press
 **Stop** (Shift+F5): on a board a stop also drives the physical outputs to their
 safe state, off ([Scheduler](../runtime/scheduler.md#pause-resume-step-and-stop)).
 
+## What is verified
+
+| Step | Evidence today | Status |
+| --- | --- | --- |
+| 1. Get the firmware | The build script runs in continuous integration and checks the flash and RAM budget | Builds in CI: `cross-build` |
+| 2. Flash it | None | Not yet verified on hardware |
+| 3. Connect Studio | The Blink tutorial exercises connecting in the simulator; no board has been connected | Not yet verified on hardware |
+| 4. Deploy and run | The Blink tutorial exercises running in the simulator; no board has received a program | Not yet verified on hardware |
+| 5. Observe | The Watch table is exercised in the simulator; no physical output has been seen to change | Not yet verified on hardware |
+
 ## What you can report
 
 Whatever happens, the result is useful: report which step you reached, the board

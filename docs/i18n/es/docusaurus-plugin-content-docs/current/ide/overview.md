@@ -54,7 +54,7 @@ Compilar, la comprobación de seguridad, las pruebas de escenarios y la revisió
 candidatos se ejecutan en un proceso propio, que se lanza para cada petición desde
 una lista fija y se detiene cuando la petición termina. El proceso principal solo
 envía la petición y espera, de modo que una compilación o una ejecución larga no
-puede dejar la ventana sin respuesta. **Cancel scenarios**, en el panel de pruebas,
+puede dejar la ventana sin respuesta. **Cancelar escenarios**, en el panel de pruebas,
 pide al proceso que se detenga; un proceso ocupado en una compilación que no
 responde se mata tras un breve periodo de gracia, y un plazo mata al que nunca
 termina. Matar el proceso también termina el runtime nativo que había lanzado. Una
@@ -110,7 +110,7 @@ en macOS y Windows no se prueba (el requisito IDE-016 pide las tres).
 
 ## Un solo proyecto de referencia
 
-Build, Test, Simulate y la revisión de candidatos actúan sobre la carpeta que
+La compilación, las pruebas, la simulación y la revisión de candidatos actúan sobre la carpeta que
 muestra la ventana, y sobre ninguna otra. El proceso principal es el dueño de esa
 carpeta: el diálogo nativo de carpetas le da a la ventana una carpeta y un
 identificador opaco para ella. Una compilación, una comprobación de seguridad o

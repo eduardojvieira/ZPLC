@@ -324,8 +324,8 @@ El informe solo lee archivos. Sus propias pruebas son
   de GPIO y el alias de LED de `native_sim`.
 - `scheduler_run_control` observa el nivel físico del canal de salida 0 con el
   mismo emulador y alias de LED. En `qemu_cortex_m3`, que no tiene ninguno de
-  los dos, sólo comprueba la imagen de salidas, la tabla de forzados y los scans
-  de las tareas, así que "salidas seguras durante la pausa" se observa sólo en
+  los dos, solo comprueba la imagen de salidas, la tabla de forzados y los scans
+  de las tareas, así que "salidas seguras durante la pausa" se observa solo en
   `native_sim`.
 - El modo `app` todavía no forma parte de la integración continua: ningún
   trabajo compila una placa y luego ejecuta la prueba de host.

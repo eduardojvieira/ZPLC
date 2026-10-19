@@ -130,7 +130,7 @@ describe('capability claims: what the public text says ZPLC can do is backed by 
   it('holds for the public text of this repository', () => {
     const result = Bun.spawnSync(['bun', 'tools/docs/check_capability_claims.ts'], { cwd: new URL('../../', import.meta.url).pathname, stdout: 'pipe', stderr: 'pipe' });
     expect({ code: result.exitCode, output: result.stdout.toString() + result.stderr.toString() }).toMatchObject({ code: 0 });
-  });
+  }, 60_000); // the wait is the child process reading 266 files, not what the test measures: a loaded machine needs more than 5 s
 });
 
 function numberWord(value: number): string {

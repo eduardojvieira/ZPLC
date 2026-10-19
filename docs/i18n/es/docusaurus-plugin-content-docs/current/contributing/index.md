@@ -65,10 +65,10 @@ explica qué muestra cada modo del firmware y qué no.
 | Electron | Mantenga el renderer sin privilegios y el IPC estrecho y validado. |
 | Evidencia | Etiquete correctamente los resultados de host, QEMU, compilación para destino, HIL y manuales. |
 | Dependencias | Agregue una sola con una necesidad concreta y una justificación arquitectónica. |
-| Operaciones físicas | Separe compilar, flashear, desplegar y ejecutar o depurar; no automatice el control físico mediante IA o MCP. |
+| Operaciones físicas | Separe compilar, grabar, cargar y ejecutar o depurar; no automatice el control físico mediante IA o MCP. |
 | Pruebas de hardware | Una persona inicia todo comando que maneje una placa, en un terminal interactivo, y un registro dice qué imagen probó. Véase [Hardware en el lazo](../development/hardware-in-the-loop.md). |
 
-No publique, no flashee hardware, no despliegue un programa PLC ni accione equipos
+No publique, no grabe hardware, no cargue un programa PLC ni accione equipos
 sin autorización explícita.
 
 ## Agregar una lección
@@ -205,7 +205,7 @@ Un número distinto se rechaza y el rechazo muestra los dos:
 Un artefacto construido antes del contador lleva 0, y una imagen de firmware
 que no lo informa no tiene ninguno: ambos se rechazan y la frase dice `none`.
 Después de una actualización que cambia el contador, reconstruya los programas y
-reflashee las placas. Un programa que una placa guardó bajo otro borrador se
+vuelva a grabar las placas. Un programa que una placa guardó bajo otro borrador se
 rechaza al arrancar y el runtime queda trabado en estado seguro hasta que se
 suba un reemplazo verificado. El contador no es la versión del producto: el único
 entero de versión final se asigna y congela al cerrar la matriz de conformidad.

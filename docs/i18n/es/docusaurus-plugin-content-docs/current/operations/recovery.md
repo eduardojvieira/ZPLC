@@ -9,43 +9,45 @@ tags: [operations, recovery]
 
 # Límites de recuperación
 
-Recupere primero la capa más chica: lleve la lógica de control a un estado
-seguro, inspeccione conexión y artefacto, y después elija de forma deliberada
-recuperación de programa o firmware. ZPLC no inventa un procedimiento universal
-de recuperación de hardware.
+Recupere primero la capa más pequeña: lleve la lógica de control a un estado
+seguro, inspeccione la conexión y el artefacto, y después elija de forma deliberada
+la recuperación del programa o la del firmware. ZPLC no inventa un procedimiento
+universal de recuperación de hardware.
 
 ## Camino rápido
 
-1. Detenga la puesta en marcha y aplique el procedimiento de trabajo seguro aprobado por el sitio.
-2. Reconecte, inspeccione identidad y estado del runtime, y guarde la evidencia diagnóstica.
-3. Recompile y valide el artefacto `.zplc` antes de que una persona confirme el deploy.
-4. Para firmware, siga las instrucciones de recuperación Zephyr del profile y runner exactos.
+1. Detenga la puesta en marcha y aplique el procedimiento de trabajo seguro que el sitio aprobó.
+2. Reconecte, inspeccione la identidad y el estado del runtime, y guarde la evidencia de diagnóstico.
+3. Recompile y valide el artefacto `.zplc` previsto antes de que una persona confirme la carga.
+4. Para el firmware, siga las instrucciones de recuperación de Zephyr del perfil de placa exacto.
 
 ## Decisión de recuperación
 
-| Situación | Acción segura | Límite de evidencia |
+| Situación | Acción segura | Límite de la evidencia |
 | --- | --- | --- |
-| Falla de runtime o programa | Conserve las salidas en safe state e inspeccione estado y trace. | Un trace host no prueba electricidad. |
-| Conexión perdida | Reconecte y verifique board/profile/ABI antes de deploy. | Una identidad serial no es calificación HIL. |
-| Reemplazo de programa | Compile, pruebe, simule y usá deploy confirmado por una persona. | Deploy cambia lógica; no es flash de firmware. |
-| Falla de firmware | Deténgase y siga el procedimiento del board/runner exacto. | Los profiles actuales no tienen referencias HIL. |
-| Duda sobre programa persistido | Reinicie sólo bajo el procedimiento del sitio; inspeccione estado restaurado antes de RUN. | Los claims de corte de energía y persistencia target requieren evidencia target/HIL. |
+| Fallo del runtime o del programa | Mantenga las salidas en el estado seguro del runtime; inspeccione el estado y la traza. | Una traza de host no prueba el comportamiento eléctrico. |
+| Conexión perdida | Reconecte y verifique la placa, el perfil y la ABI antes de cualquier carga. | Una identidad por puerto serie no es calificación HIL. |
+| Reemplazo del programa | Compile, pruebe y simule; luego use el flujo de carga que confirma una persona. | La carga cambia la lógica de control; no es una grabación de firmware. |
+| Fallo del firmware | Deténgase y siga el procedimiento de recuperación exacto de la placa y su programa de grabación. | Los perfiles actuales no tienen referencias de evidencia HIL. |
+| Duda sobre el programa persistido | Reinicie solo según el procedimiento del sitio; inspeccione el estado restaurado antes de RUN. | Las afirmaciones sobre corte de energía y persistencia en el destino requieren evidencia en el destino o HIL. |
 
 ## Estado seguro y reinicio
 
-El comportamiento de safe state y restore del runtime cuenta con evidencia de
-código y tests host. Antes de energizar maquinaria después de una falla o
-reinicio, verifique la salida real en el dispositivo exacto bajo el procedimiento
-de puesta en marcha. Una persona autoriza flash, deploy, force, RUN, STOP y
-recovery; AI y MCP no ofrecen esos controles.
+El comportamiento del estado seguro y de la restauración del runtime tiene como
+evidencia el código y las pruebas de host. Antes de energizar maquinaria después de
+un fallo o de un reinicio, verifique el estado real de las salidas en el dispositivo
+exacto, según el procedimiento de puesta en marcha. Una persona debe autorizar la
+grabación, la carga, el forzado, RUN, STOP y la recuperación; la IA y el MCP no
+ofrecen esos controles.
 
 ## Qué conservar
 
-Conserve hash de compilación, diagnósticos, trace, identidad del runtime,
-profile seleccionado y confirmación humana de deploy con el incidente. No
-copies credenciales ni serial sensible crudo en tickets o prompts de IA.
+Conserve con el registro del incidente el hash de la compilación, los diagnósticos,
+la traza, la identidad del runtime, el perfil seleccionado y la confirmación de
+carga de la persona. Evite poner credenciales o salida sensible del puerto serie en
+tickets de soporte o en consultas a la IA.
 
-## Próximo paso
+## Siguiente paso
 
-Leé [el límite de despliegue](../ide/deployment.md) y el procedimiento Zephyr
-del runner antes de cambiar firmware.
+Lea [el límite de la carga](../ide/deployment.md) y el procedimiento del programa de
+grabación de Zephyr de la placa antes de cambiar el firmware.

@@ -243,10 +243,10 @@ El compilador mide lo que el loader va a demostrar y lo registra en el artefacto
 ## Valores seguros declarados
 
 El estado de una salida mientras el programa no la controla (STOP, una pausa, una falla
-latcheada, el arranque, un deploy en curso) es apagado, salvo que el proyecto declare otro
+retenida, el arranque, una carga en curso) es apagado, salvo que el proyecto declare otro
 valor para ella (RT-023). La declaración viaja en el artefacto, en el segmento
 `ZPLC_SEG_SAFE`, de modo que un programa y su estado seguro son una sola unidad: un
-dispositivo que restaura el programa restaura su declaración, y un deploy interrumpido no
+dispositivo que restaura el programa restaura su declaración, y una carga interrumpida no
 puede dejar el programa de una compilación con los valores seguros de otra.
 
 - Cada entrada es un `zplc_safe_entry_t` de `ZPLC_SAFE_ENTRY_SIZE` (4) bytes: el `offset` en
@@ -256,7 +256,7 @@ puede dejar el programa de una compilación con los valores seguros de otra.
   no es 0 ni 1, una salida está declarada dos veces, o hay más de `ZPLC_LOADER_MAX_SAFE`
   (64) entradas; un segundo segmento `ZPLC_SEG_SAFE` se rechaza como error de segmento. Un
   artefacto sin el segmento no declara nada.
-- El runtime rechaza, en el deploy y en la restauración de arranque, una declaración para una
+- El runtime rechaza, en la carga y en la restauración de arranque, una declaración para una
   salida que la placa no tiene (una entrada tiene que nombrar un canal de salida digital de
   la descripción de la placa por su offset de imagen y su bit). El programa de otra placa no
   se ejecuta con un estado seguro que no existe.

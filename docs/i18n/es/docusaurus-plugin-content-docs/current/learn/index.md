@@ -16,7 +16,7 @@ operación física.
 ## Empiece con las lecciones de Studio
 
 Studio tiene 28 lecciones en un curso, en español y en inglés. El [esquema del curso](course-outline.md) enumera cada módulo, las lecciones que existen y las que están planeadas. En la pantalla de
-bienvenida, elija **Learn**: se abre el inicio de Learn, sin proyecto y sin red, y
+bienvenida, elija **Aprender**: se abre el inicio de Learn, sin proyecto y sin red, y
 enumera los módulos en orden con su nivel, lo que requiere cada uno y cuánto
 dura. Elija **Comenzar el curso**: Studio crea el espacio de trabajo de la primera lección en su propia carpeta y lo abre; no hay carpeta que elegir ni paso de copia. La lección sigue visible junto al editor, también cuando usted cambia a la vista Proyecto.
 
@@ -37,7 +37,7 @@ descripción completa de lo que hace Learn y de lo que guarda está en
 ## Abra un proyecto de ejemplo
 
 Studio incluye proyectos de ejemplo en la pantalla de bienvenida, agrupados por tema (primeros pasos, motores, control de procesos, los cinco lenguajes y placas) y por nivel, y cada uno muestra su lenguaje y, si es de hardware, su placa. Un ejemplo de hardware trae un escenario o dice por qué no lo tiene. Están en `packages/zplc-ide/projects/`. Para copiar uno a una carpeta
-propia, elíjalo en **Examples**.
+propia, elíjalo en **Ejemplos**.
 
 El tutorial [Blink sin hardware](../tutorials/blink-without-hardware.md) recorre
 uno de ellos.

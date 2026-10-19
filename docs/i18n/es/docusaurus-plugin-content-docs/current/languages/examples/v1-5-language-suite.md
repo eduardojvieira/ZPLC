@@ -20,4 +20,4 @@ actual de editor y compilador antes de usarse como evidencia.
 
 - ST es el camino actual principal de servicio de lenguaje.
 - LD, FBD y SFC usan modelos visuales semánticos y artefactos ST generados.
-- IL sigue siendo sólo un camino de compatibilidad donde el compilador lo acepta.
+- IL sigue siendo solo un camino de compatibilidad donde el compilador lo acepta.
