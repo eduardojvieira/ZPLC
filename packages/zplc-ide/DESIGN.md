@@ -111,7 +111,7 @@ One vocabulary shows the state of a value, defined once in `src/theme/signalTone
 | Fault | `FAULT` | `▲` | red | A fault, and only a fault |
 | Value | `VALUE` | `#` | cobalt | A number or a string that is not a state |
 
-Ladder, FBD, SFC, Trace and the I/O faceplate keep their own element styling today; they adopt the tokens and `signalTone` when their editors move to the kit.
+The Ladder, FBD and SFC editors now use the kit's controls and tooltips and the caption size of the scale; their node and rung drawing keeps its own element styling and adopts the tokens and `signalTone` with the editor work (UX-009, UX-010).
 
 ## Typography
 
@@ -122,7 +122,7 @@ Ladder, FBD, SFC, Trace and the I/O faceplate keep their own element styling tod
 
 ### Scale
 
-The scale is fixed and its floor is 11 pixels: caption 11, label 12, body 13, title 14, heading 16 (`--font-size-*`). A class that sets a size under 11 pixels fails the kit guard outside the visual editors, which are listed until their own package moves them.
+The scale is fixed and its floor is 11 pixels: caption 11, label 12, body 13, title 14, heading 16 (`--font-size-*`). A class that sets a size under 11 pixels fails the kit guard everywhere outside the kit; the list of exceptions is empty.
 
 ### Hierarchy
 
@@ -140,7 +140,7 @@ Technical regions are separated with 1px rules; resizable panel handles are 4px,
 
 ### Density
 
-Comfortable and compact (Preferences). The attribute `data-density` on the document root scales every spacing utility through `--spacing` and gives the kit its control and row heights (`--control-height`, `--row-height`); it is applied before the first frame and kept per user. Sizes written as fixed pixels in a surface that is not on the kit do not scale yet.
+Comfortable and compact (Preferences). The attribute `data-density` on the document root scales every spacing utility through `--spacing` and gives the kit its control and row heights (`--control-height`, `--row-height`); it is applied before the first frame and kept per user. Sizes written as fixed pixels in a surface that is not on the kit do not scale; journey 53 proves that the setting reaches the Welcome screen and the workbench.
 
 ## Elevation & Depth
 

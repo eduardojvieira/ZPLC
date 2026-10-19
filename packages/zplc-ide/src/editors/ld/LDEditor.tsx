@@ -651,48 +651,40 @@ export default function LDEditor({ model, onChange, readOnly = false }: LDEditor
                   {!readOnly && (
                     <div className="absolute -top-2 -right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                       {/* Add row button */}
-                      <Tooltip content={t('ld.addParallelBranch')}>
-                        <Button variant="bare"
+                      <Button variant="bare" tooltip={t('ld.addParallelBranch')}
                           onClick={() => handleAddRow(rung.id)}
                           className="p-1 rounded bg-[var(--color-accent-blue)] hover:opacity-90 text-[var(--color-on-accent)]"
                         >
                           <Rows3 size={12} />
                         </Button>
-                      </Tooltip>
 
                       {/* Move up */}
                       {idx > 0 && (
-                        <Tooltip content={t('ld.moveRungUp')}>
-                          <Button variant="bare"
+                        <Button variant="bare" tooltip={t('ld.moveRungUp')}
                             onClick={() => handleMoveRungUp(rung.id)}
                           className="p-1 rounded bg-[var(--visual-panel)] border border-[var(--border-color)] hover:bg-[color-mix(in_srgb,var(--text-primary)_12%,transparent)] text-[var(--text-primary)]"
                           >
                             <ChevronUp size={12} />
                           </Button>
-                        </Tooltip>
                       )}
 
                       {/* Move down */}
                       {idx < normalizedModel.rungs.length - 1 && (
-                        <Tooltip content={t('ld.moveRungDown')}>
-                          <Button variant="bare"
+                        <Button variant="bare" tooltip={t('ld.moveRungDown')}
                             onClick={() => handleMoveRungDown(rung.id)}
                           className="p-1 rounded bg-[var(--visual-panel)] border border-[var(--border-color)] hover:bg-[color-mix(in_srgb,var(--text-primary)_12%,transparent)] text-[var(--text-primary)]"
                           >
                             <ChevronDown size={12} />
                           </Button>
-                        </Tooltip>
                       )}
 
                       {/* Delete button */}
-                      <Tooltip content={t('ld.deleteRung')}>
-                        <Button variant="bare"
+                      <Button variant="bare" tooltip={t('ld.deleteRung')}
                           onClick={() => handleDeleteRung(rung.id)}
                           className="focus-ring p-1 rounded bg-[var(--color-accent-red)] hover:opacity-90 text-[var(--color-on-accent)]"
                         >
                           <Trash2 size={12} />
                         </Button>
-                      </Tooltip>
                     </div>
                   )}
                 </div>

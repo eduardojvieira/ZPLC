@@ -14,8 +14,7 @@ import { Trash2 } from 'lucide-react';
 import {
   type LDRung,
   type LDElement as LDElementType,
-  type LDCell,
-  isGridBasedRung,
+  type LDCell, isGridBasedRung,
   DEFAULT_GRID_CONFIG,
   convertToGridRung,
   normalizeGridRung,
@@ -919,8 +918,7 @@ export default function LDRungGrid({
 
         {/* Delete button overlay for selected element */}
         {!readOnly && selectedElementPosition && onElementDelete && (
-          <Tooltip content={t('editors.ld.deleteElement')}>
-            <Button variant="bare"
+          <Button variant="bare" tooltip={t('editors.ld.deleteElement')}
               onClick={(e) => {
                 e.stopPropagation();
                 onElementDelete(selectedElementPosition.element);
@@ -935,7 +933,6 @@ export default function LDRungGrid({
             >
               <Trash2 size={12} />
             </Button>
-          </Tooltip>
         )}
       </div>
     </div>

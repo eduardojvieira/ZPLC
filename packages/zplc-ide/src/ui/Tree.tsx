@@ -41,7 +41,7 @@ export function Tree({ label, nodes, defaultExpanded = [], selected, onSelect, r
         <li key={row.id} role="none">
           <div
             role="treeitem" data-row={row.id} tabIndex={row.id === active ? 0 : -1} aria-level={row.level} aria-setsize={row.setSize} aria-posinset={row.position}
-            aria-expanded={row.expandable ? row.expanded : undefined} aria-selected={row.id === selected} className="ui-treeitem" style={{ paddingInlineStart: `calc(${row.level - 1} * var(--tree-indent, 1rem))` }}
+            aria-expanded={row.expandable ? row.expanded : undefined} aria-selected={row.id === selected} className="ui-treeitem" style={{ paddingInlineStart: `${(row.level - 1) * 1}rem` }}
             onClick={() => { setFocusId(row.id); onSelect?.(row.id); if (row.expandable) toggle(row.id, !row.expanded); }} onKeyDown={(event) => onKeyDown(event, row)}
           >
             <span aria-hidden="true" className="ui-tree-twisty">{row.expandable ? (row.expanded ? <ChevronDown size={12} /> : <ChevronRight size={12} />) : null}</span>
