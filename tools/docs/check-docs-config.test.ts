@@ -124,3 +124,26 @@ describe('how-to guides: each task has a page in both languages with something t
     for (const page of pages) expect({ page, listed: howTo.includes(page.replace(/\.md$/, '')) }).toEqual({ page, listed: true });
   });
 });
+
+describe('the site footer names the latest release', () => {
+  const footer = async (tag: string | undefined) => {
+    const previous = process.env.ZPLC_RELEASE_TAG;
+    if (tag === undefined) delete process.env.ZPLC_RELEASE_TAG; else process.env.ZPLC_RELEASE_TAG = tag;
+    try {
+      // a fresh query string loads the configuration again with the environment of this moment
+      const config = (await import(`../../docs/docusaurus.config.js?release=${tag ?? 'none'}`)).default as { themeConfig: { footer: { copyright: string } } };
+      return config.themeConfig.footer.copyright;
+    } finally {
+      if (previous === undefined) delete process.env.ZPLC_RELEASE_TAG; else process.env.ZPLC_RELEASE_TAG = previous;
+    }
+  };
+
+  it('shows the tag that the deploy workflow passes', async () => {
+    expect(await footer('v9.9.9-rc.1')).toContain('ZPLC v9.9.9-rc.1.');
+  });
+
+  it('shows the version of the tree when no tag is passed', async () => {
+    const { version } = JSON.parse(readFileSync(new URL('../../package.json', import.meta.url), 'utf8')) as { version: string };
+    expect(await footer(undefined)).toContain(`ZPLC v${version}.`);
+  });
+});

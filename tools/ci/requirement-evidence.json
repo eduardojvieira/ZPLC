@@ -57,7 +57,8 @@
     {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_vm_arith_edges.c","test":"(VF-005, VF-015)."}
   ],
   "VF-016": [
-    {"kind":"unit","ref":"tools/ci/ci-workflow.test.ts","test":"ci.yml triggers (VF-016)","partial":true,"note":"asserts the parsed workflow triggers; its own header says that a hosted run on the 2.0 branch is the only proof that GitHub honours them, and a green default branch and a recorded scheduled run are not shown by it"}
+    {"kind":"unit","ref":"tools/ci/ci-workflow.test.ts","test":"ci.yml triggers (VF-016)","partial":true,"note":"asserts the parsed workflow triggers; its own header says that a hosted run on the 2.0 branch is the only proof that GitHub honours them, and a green default branch and a recorded scheduled run are not shown by it"},
+    {"kind":"unit","ref":"tools/ci/workflow-triggers.test.ts","test":"every scheduled workflow can be re-run by hand and tells somebody when a scheduled run fails","partial":true,"note":"nightly-quality.yml has a manual trigger and a job that opens or updates an issue when a scheduled run fails; a recorded successful scheduled run, and a green default branch, need hosted runs (D-12: schedules run only from the default branch)"}
   ],
   "VF-018": [
     {"kind":"unit","ref":"tools/ci/test_run_clang_tidy.py","test":"HostUnits","partial":true,"note":"the host pass of clang-tidy runs in CI over the core, the POSIX HAL and the host application with warnings as errors; the Zephyr HAL and firmware/app are analysed only where a west build tree exists (run.sh tidy) and firmware/app carries a per-board baseline of findings; -Werror on the Zephyr library was applied without a Zephyr build"}
@@ -2876,5 +2877,9 @@
   ],
   "REL-014": [
     {"kind":"unit","ref":"tools/ci/release/render-channels.test.ts","test":"the AUR package","partial":true,"note":"the PKGBUILD is rendered from the SHA256SUMS of a release; makepkg built a package from it on this machine against a .deb that electron-builder wrote (setuid sandbox, udev rule and launcher link present). The AUR account does not exist (OA-10) and update-channels.yml is authored, not executed in CI"}
+  ],
+  "REL-033": [
+    {"kind":"unit","ref":"tools/docs/check-docs-config.test.ts","test":"the site footer names the latest release","partial":true,"note":"the footer shows the tag the deploy workflow passes, or the version of the tree; docs deploy-docs.yml now builds from zplc-2.0-candidate as well as master and main. A hosted deploy has not run: the Pages environment must allow the branch (owner), and D-12 decides when 2.0 moves to master"},
+    {"kind":"unit","ref":"tools/ci/workflow-triggers.test.ts","test":"the documentation site is deployed from the branch that holds 2.0","partial":true,"note":"parses deploy-docs.yml triggers and the step that names the latest release; authored, not executed in CI"}
   ]
 }

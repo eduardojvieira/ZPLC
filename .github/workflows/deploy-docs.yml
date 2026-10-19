@@ -1,8 +1,11 @@
 name: Deploy Documentation
 
+# REL-033: the site is built from the branch that holds 2.0, which is zplc-2.0-candidate until decision D-12 merges it into
+# master (its default is to merge now, with the site labelled as a preview), and it names the latest published release.
+
 on:
   push:
-    branches: [master, main]
+    branches: [master, main, zplc-2.0-candidate]
     paths:
       - 'docs/**'
       - 'tools/docs/**'
@@ -10,7 +13,7 @@ on:
       - 'firmware/lib/zplc_core/include/**'
       - 'firmware/app/boards/boards.json'
   pull_request:
-    branches: [master, main]
+    branches: [master, main, zplc-2.0-candidate]
     paths:
       - 'docs/**'
       - 'tools/docs/**'
@@ -48,6 +51,15 @@ jobs:
         run: |
           bun run generate:docs
           bun run validate:docs
+
+      # The footer shows the tag of the latest published release (prereleases included, drafts never); a build with no
+      # release yet, or no network, shows the version of the tree instead.
+      - name: Name the latest release for the site
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          tag="$(gh release list --repo "$GITHUB_REPOSITORY" --exclude-drafts --limit 1 --json tagName --jq '.[0].tagName // empty' || true)"
+          if [ -n "$tag" ]; then echo "ZPLC_RELEASE_TAG=$tag" >> "$GITHUB_ENV"; fi
 
       - name: Build documentation
         working-directory: docs

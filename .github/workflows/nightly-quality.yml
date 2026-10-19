@@ -183,3 +183,25 @@ jobs:
           bun run --cwd packages/zplc-ide electron:compile
           bun run --cwd packages/zplc-ide smoke:journeys
 
+  # VF-016: a scheduled run that fails opens an issue, or adds to the one that is open, so the failure has an owner to read
+  # it. Re-run the workflow from the Actions tab (workflow_dispatch) to confirm a fix.
+  report-failure:
+    needs: [loader-fuzz, native-sim-twister, desktop-platforms]
+    if: ${{ always() && contains(needs.*.result, 'failure') && github.event_name == 'schedule' }}
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    steps:
+      - name: Open or update the issue of the failed nightly run
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          set -euo pipefail
+          title="Nightly quality run failed"
+          number="$(gh issue list --repo "$GITHUB_REPOSITORY" --state open --search "\"$title\" in:title" --json number --jq '.[0].number // empty')"
+          if [ -n "$number" ]; then
+            gh issue comment "$number" --repo "$GITHUB_REPOSITORY" --body "Failed again: $RUN_URL"
+          else
+            gh issue create --repo "$GITHUB_REPOSITORY" --title "$title" --body "The scheduled run failed: $RUN_URL. Close this issue when a run is green again."
+          fi

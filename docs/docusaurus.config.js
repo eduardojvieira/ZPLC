@@ -4,9 +4,14 @@
 // There are various equivalent ways to declare your Docusaurus config.
 // See: https://docusaurus.io/docs/api/docusaurus-config
 
+import { readFileSync } from 'node:fs';
 import { themes as prismThemes } from 'prism-react-renderer';
 
 // This runs in Node.js - Don't use client-side code here (browser APIs, JSX...)
+
+// REL-033: the footer names the latest published release. The deploy workflow passes its tag in ZPLC_RELEASE_TAG; a build
+// without it names the version of this tree.
+const releaseTag = process.env.ZPLC_RELEASE_TAG || `v${JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8')).version}`;
 
 /** @type {import('@docusaurus/types').Config} */
 const config = {
@@ -139,7 +144,7 @@ const config = {
             ],
           },
         ],
-        copyright: `Copyright © 2026 ZPLC contributors. Released under the MIT licence.`,
+        copyright: `Copyright © 2026 ZPLC contributors. Released under the MIT licence. ZPLC ${releaseTag}.`,
       },
       prism: {
         theme: prismThemes.github,
