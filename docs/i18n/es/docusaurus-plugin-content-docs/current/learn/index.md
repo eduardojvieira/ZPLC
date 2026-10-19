@@ -18,11 +18,11 @@ operación física.
 Studio tiene diez lecciones en un curso, en español y en inglés. En la pantalla de
 bienvenida, elija **Learn**: se abre el inicio de Learn, sin proyecto y sin red, y
 enumera los módulos en orden con su nivel, lo que requiere cada uno y cuánto
-dura. Elija **Comenzar el curso**: Studio copia la primera lección en una carpeta
-que usted elige y la abre.
+dura. Elija **Comenzar el curso**: Studio crea el espacio de trabajo de la primera lección, en una carpeta que
+usted elige la primera vez, y lo abre; no hay un paso de copia.
 
 Cada lección recorre seis etapas: Objective, Predict, Edit, Run, Observe y
-Reflect. Usted edita el proyecto copiado, lo guarda y presiona **Check**. Studio
+Reflect. Usted edita el espacio de trabajo, lo guarda y presiona **Check**. Studio
 ejecuta su programa guardado contra el escenario de la lección y enumera cada
 aserción que falló, con el instante, el valor esperado y el valor observado. Una
 lección está completa cuando todas las aserciones de su escenario pasaron.

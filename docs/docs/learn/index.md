@@ -18,11 +18,11 @@ physical operation.
 Studio has ten lessons in a course, in English and in Spanish. On the Welcome
 screen, choose **Learn**: the Learn home opens, with no project and no network,
 and lists the modules in order with their level, what each requires and how long
-it takes. Choose **Start the course**: Studio copies the first lesson into a
-folder that you choose and opens it.
+it takes. Choose **Start the course**: Studio makes the workspace of the first lesson, in a folder that you choose the
+first time, and opens it; there is no copy step.
 
 Each lesson takes you through six stages: Objective, Predict, Edit, Run, Observe
-and Reflect. You edit the copied project, save it and press **Check**. Studio
+and Reflect. You edit the workspace, save it and press **Check**. Studio
 runs your saved program against the scenario of the lesson and lists every
 assertion that failed, with the time, the value it expected and the value it
 saw. A lesson is complete when every assertion of its scenario passed.
