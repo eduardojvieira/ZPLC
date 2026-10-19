@@ -2,6 +2,7 @@ import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import productManifest from '../../../../package.json';
+import { withNativeCommunicationEnvironment } from '../../electron/nativeSimulationEnvironment';
 import { NativeSimulationSupervisor } from '../../electron/nativeSimulationSupervisor';
 import { NativeAdapter } from '../runtime/nativeAdapter';
 import type { ScenarioRuntimePort } from '../test-engine';
@@ -123,7 +124,7 @@ export async function createNativeScenarioSession(
       clientName: 'zplc-cli',
       clientVersion: productManifest.version,
       environment: {
-        ...environment,
+        ...withNativeCommunicationEnvironment(environment),
         ZPLC_PERSIST_ROOT: persistRoot,
         ZPLC_NATIVE_SCENARIO_VIRTUAL_CLOCK: '1',
       },

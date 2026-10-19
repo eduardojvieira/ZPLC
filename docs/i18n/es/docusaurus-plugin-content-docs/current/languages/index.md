@@ -36,12 +36,12 @@ Cada fila nombra la prueba que muestra la capacidad: un recorrido de Studio, una
 | Texto Estructurado | Observar valores en línea | Recorrido de Studio en la simulación nativa | `28e Inline values in Structured Text come from the debug map` |
 | Texto Estructurado | Forzar | Recorrido de Studio en la simulación nativa | `8 Force an input and release it` |
 | Texto Estructurado | Cargar en una placa | Solo en una placa | Una persona lo carga y lo ejecuta en una placa; la página de evidencia de hardware lista los registros |
-| Lista de Instrucciones | Editar | Aún sin prueba de extremo a extremo |   |
+| Lista de Instrucciones | Editar | Recorrido de Studio en la simulación nativa | `54 Instruction List is edited, saved and reopened` |
 | Lista de Instrucciones | Compilar | Caso de conformidad en el runtime del equipo | `lng-018-il-jump-runs-every-scan` |
 | Lista de Instrucciones | Simular | Caso de conformidad en el runtime del equipo | `lng-018-il-jump-runs-every-scan` |
 | Lista de Instrucciones | Depurar (punto de parada, pausa, paso) | Recorrido de Studio en la simulación nativa | `28kc A breakpoint on an IL line stops execution` |
-| Lista de Instrucciones | Observar valores en línea | Aún sin prueba de extremo a extremo |   |
-| Lista de Instrucciones | Forzar | Aún sin prueba de extremo a extremo |   |
+| Lista de Instrucciones | Observar valores en línea | Recorrido de Studio en la simulación nativa | `54b Instruction List values are watched and a variable is forced and released` |
+| Lista de Instrucciones | Forzar | Recorrido de Studio en la simulación nativa | `54b Instruction List values are watched and a variable is forced and released` |
 | Lista de Instrucciones | Cargar en una placa | Solo en una placa | Una persona lo carga y lo ejecuta en una placa; la página de evidencia de hardware lista los registros |
 | Diagrama de Escalera | Editar | Recorrido de Studio en la simulación nativa | `28f A rung is built from the keyboard` |
 | Diagrama de Escalera | Compilar | Prueba en el runtime nativo | `Blinky visual languages on native POSIX` |

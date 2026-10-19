@@ -39,7 +39,10 @@
    }
   },
   "il": {
-   "edit": null,
+   "edit": {
+    "kind": "journey",
+    "ref": "54 Instruction List is edited, saved and reopened"
+   },
    "build": {
     "kind": "conformance",
     "ref": "lng/lng-018-il-jump-runs-every-scan"
@@ -52,8 +55,14 @@
     "kind": "journey",
     "ref": "28kc A breakpoint on an IL line stops execution"
    },
-   "watch": null,
-   "force": null,
+   "watch": {
+    "kind": "journey",
+    "ref": "54b Instruction List values are watched and a variable is forced and released"
+   },
+   "force": {
+    "kind": "journey",
+    "ref": "54b Instruction List values are watched and a variable is forced and released"
+   },
    "deploy": {
     "kind": "board"
    }
