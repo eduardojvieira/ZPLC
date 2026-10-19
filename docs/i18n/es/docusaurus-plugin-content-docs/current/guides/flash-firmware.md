@@ -113,3 +113,12 @@ procedimiento de recuperación de su perfil: [Límites de recuperación](../oper
 Abra la consola serie de la placa y ejecute `zplc version`: imprime la versión, el
 commit, la placa y las opciones de compilación de la imagen. Deben ser las del archivo
 que escribió. Luego [conecte Studio](../tutorials/first-board.md#3-conecte-studio).
+
+## Qué está verificado y qué no
+
+| Parte | Verificado | Nivel |
+| --- | --- | --- |
+| El firmware de cada placa compila y cabe en su presupuesto | Compilación en integración continua | Compilación |
+| Los nombres, direcciones y sumas de comprobación de las imágenes de la versión | Los comprueba el pipeline de versiones | Anfitrión |
+| Los pasos del modo de arranque y los comandos del programador | Escritos a partir de las herramientas de cada placa, no ejecutados | Ninguno |
+| Una grabación en una placa real | Nadie la ha registrado | Ninguno |

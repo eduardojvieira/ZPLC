@@ -90,7 +90,7 @@ describe('how-to guides: each task has a page in both languages with something t
   // tests, the command line, AI and MCP, migrating a version 1 project, porting to a board and troubleshooting.
   const guides = [
     'map-io', 'modbus', 'mqtt-sparkplug', 'cloud-blocks', 'force-values', 'retained-variables', 'scenario-tests',
-    'project-archive', 'simulate-and-debug', 'command-line', 'ai-and-mcp', 'port-to-a-board', 'troubleshooting',
+    'project-archive', 'simulate-and-debug', 'command-line', 'ai-and-mcp', 'flash-firmware', 'port-to-a-board', 'troubleshooting',
   ];
   const pages = [...guides.map((guide) => `guides/${guide}.md`), 'ide/migration-v1-to-v2.md'];
   const runnable = /^`{3,}(?:json zplc-(?:fragment|scenario|board)|st runnable|bash|ini)/m;
