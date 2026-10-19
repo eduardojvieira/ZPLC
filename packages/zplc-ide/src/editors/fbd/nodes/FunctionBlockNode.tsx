@@ -236,7 +236,7 @@ if (!debugActive) {
               className="flex items-center gap-2 w-full px-3 py-2 text-sm text-[var(--text-secondary)] hover:bg-[var(--color-surface-700)] rounded"
             >
               <Eye size={14} />
-              Instance Monitor
+              {t('editors.fbd.instanceMonitor')}
             </button>
           </div>
         </>

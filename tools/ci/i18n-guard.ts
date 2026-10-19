@@ -132,11 +132,11 @@ export function ratchetOffenders(files: readonly SourceFile[], offenders: readon
 export const PROPER_NOUNS: ReadonlySet<string> = new Set([
   'ZPLC', 'Studio', 'Learn', 'Tests', 'English', 'Español', 'GitHub', 'Modbus', 'MQTT', 'Zephyr', 'Windows', 'macOS', 'Linux',
   'Electron', 'Raspberry', 'Pi', 'Pico', 'Arduino', 'Docusaurus', 'AppImage', 'Setup', 'Portable', 'DevKitC', 'Opta', 'WiFi',
-  'WebSocket', 'Sparkplug', 'SharedAccessKey', 'CloudEvent', 'QoS', 'Ethernet', 'Azure', 'MHz', 'Celsius', 'CMake', 'Kconfig', 'Python',
+  'WebSocket', 'Sparkplug', 'SharedAccessKey', 'CloudEvent', 'QoS', 'Ethernet', 'Azure', 'MHz', 'Celsius', 'CMake', 'Kconfig', 'Python', 'Settings', 'Force', 'Del', 'Supr',
 ]);
 /** Names of services and of their features that are written with capitals in a sentence, as the vendors write them. */
 export const PROPER_PHRASES: readonly string[] = [
-  'AWS IoT Core', 'Azure IoT Hub', 'Azure Event Grid MQTT', 'Event Grid', 'Device Twins', 'Direct Methods', 'C2D Messaging', 'Device Shadows', 'IoT Jobs', 'Fleet Provisioning', 'Sparkplug B',
+  'AWS IoT Core', 'Azure IoT Hub', 'Azure Event Grid MQTT', 'Event Grid', 'Device Twins', 'Direct Methods', 'C2D Messaging', 'Device Shadows', 'IoT Jobs', 'Fleet Provisioning', 'Sparkplug B', 'Structured Text', 'Function Block Diagram', 'Ladder Diagram', 'Sequential Function Chart',
 ];
 /**
  * Rioplatense voseo, which decision D-10 leaves out of the interface (UX-030): the pronoun "vos", the present forms of

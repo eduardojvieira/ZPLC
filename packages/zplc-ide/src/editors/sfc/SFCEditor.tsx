@@ -57,7 +57,7 @@ import { useElementSelection } from '../elementSelection';
 import { useElementBreakpoints } from '../elementBreakpoints';
 import { markBreakpointNodes } from '../breakpointMarks';
 import { parseElement, stepElement, transitionElement, type SourceElementId } from '../../models/sourceElements';
-import { t } from '../../i18n';
+import { t, tn } from '../../i18n';
 
 // =============================================================================
 // Props
@@ -486,7 +486,7 @@ function SFCEditorInner({
       className="relative flex-1 h-full"
       tabIndex={0}
       role="region"
-      aria-label="Sequential function chart canvas"
+      aria-label={t('editors.sfc.canvas')}
       aria-keyshortcuts="F1"
       onKeyDown={keyboard.onKeyDown}
     >
@@ -553,9 +553,9 @@ function SFCEditorInner({
         {debugActive && (
           <div className="absolute top-4 left-4 z-10 flex items-center gap-2 px-3 py-1.5 
                           bg-[var(--color-surface-800)] border border-[var(--border-color)] rounded-lg text-sm text-[var(--text-primary)]">
-            <span>Debug Mode Active</span>
+            <span>{t('editors.sfc.debugActive')}</span>
             <SignalValue tone={activeSteps.size > 0 ? 'true' : 'false'} className="font-mono text-xs ml-2">
-              {activeSteps.size} step{activeSteps.size !== 1 ? 's' : ''} active
+              {tn('editors.sfc.activeSteps', activeSteps.size)}
             </SignalValue>
           </div>
         )}

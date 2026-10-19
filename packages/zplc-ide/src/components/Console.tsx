@@ -710,7 +710,7 @@ export function Console({ debugController }: ConsoleProps) {
                   : !hasCurrentWorkspaceLink ? <p role="status" aria-live="polite" className="mt-3">{t('console.chooseTheSavedWorkspace')}</p>
                     : !candidateEligible ? <p role="status" aria-live="polite" className="mt-3">{t('console.onlyAModifiedActive')}</p>
                       : <p className="mt-3 text-[var(--color-surface-300)]">{t('console.onlyTheActiveStructured')}</p>}
-              <p className="mt-2 text-xs text-[var(--color-surface-400)]">{t('console.nativePosixHostEvidence')}</p>
+              <p className="mt-2 text-xs text-[var(--color-surface-400)]"><Tooltip content={t('console.nativePosixHostEvidence')}><span tabIndex={0}><Badge tone="neutral">{t('console.hostEvidenceBadge')}</Badge></span></Tooltip></p>
               <p className="text-xs text-[var(--color-surface-400)]">{t('console.reviewItselfDoesNot')}</p>
             </div>
             <div role="status" aria-live="polite" className="mt-3">
@@ -824,7 +824,7 @@ function CandidateReviewResult({ state, effectiveTheme, beforeMount, onSave, bus
       <div className="h-72 border border-[var(--color-surface-600)]">
         <DiffEditor original={snapshot.baseline} modified={snapshot.candidate} language="st" theme={effectiveTheme === 'high-contrast' ? ZPLC_HIGH_CONTRAST_THEME_ID : effectiveTheme === 'dark' ? ZPLC_DARK_THEME_ID : ZPLC_LIGHT_THEME_ID} beforeMount={beforeMount} options={{ readOnly: true, automaticLayout: true, minimap: { enabled: false }, wordWrap: 'on', accessibilitySupport: 'on', scrollBeyondLastLine: false, renderSideBySide: true }} />
       </div>
-      <p className="text-xs text-[var(--color-surface-400)]">{t('console.nativePosixHostEvidence')}</p>
+      <p className="text-xs text-[var(--color-surface-400)]"><Tooltip content={t('console.nativePosixHostEvidence')}><span tabIndex={0}><Badge tone="neutral">{t('console.hostEvidenceBadge')}</Badge></span></Tooltip></p>
       <p className="text-xs text-[var(--color-surface-400)]">{t('console.noFileHasBeen')}</p>
       {accepted && <Button variant="secondary" size="sm" onClick={onSave} disabled={busy}>{t('console.saveReviewedChange')}</Button>}
     </section>
@@ -1004,7 +1004,7 @@ function WorkspaceTestResult({ presentation, buildLink, onRunScenario, scenarioR
 
       {presentation.savedTestInputIdentity && <p className="border-t border-[var(--color-surface-700)] pt-2 text-xs tabular-nums text-[var(--color-surface-400)]">{tn('console.savedInputs', presentation.savedTestInputIdentity.fileCount)} <Tooltip content={presentation.savedTestInputIdentity.sha256}><span className="font-mono" tabIndex={0}>{presentation.savedTestInputIdentity.sha256.slice(0, 12)}…</span></Tooltip></p>}
 
-      {presentation.hasEvidence && <p className="border-t border-[var(--color-surface-700)] pt-2 text-xs text-[var(--color-surface-400)]">{t('console.evidenceNativePosixLogical')}</p>}
+      {presentation.hasEvidence && <p className="border-t border-[var(--color-surface-700)] pt-2 text-xs text-[var(--color-surface-400)]"><Tooltip content={t('console.nativePosixHostEvidence')}><span tabIndex={0}><Badge tone="neutral">{t('console.hostEvidenceBadge')}</Badge></span></Tooltip> {t('console.logicalSingleTaskScan')}</p>}
     </div>
   );
 }

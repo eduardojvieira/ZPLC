@@ -40,35 +40,35 @@ export function WorkbenchInspector() {
   });
 
   return (
-    <aside aria-label="Workbench inspector" className="ledger-inspector font-sans">
+    <aside aria-label={t('workbench.inspector.region')} className="ledger-inspector font-sans">
       <section aria-labelledby="inspector-file">
-        <h2 id="inspector-file">Active file</h2>
+        <h2 id="inspector-file">{t('workbench.inspector.activeFile')}</h2>
         {summary.file ? (
           <dl>
-            <Row label="Name" value={summary.file.name} mono />
-            <Row label="Language" value={summary.file.language} />
-            <Row label="Path" value={summary.file.path} mono />
+            <Row label={t('workbench.inspector.name')} value={summary.file.name} mono />
+            <Row label={t('workbench.inspector.language')} value={summary.file.language} />
+            <Row label={t('workbench.inspector.path')} value={summary.file.path} mono />
           </dl>
         ) : <PanelEmptyState title={t('panel.inspector.empty.title')} description={t('panel.inspector.empty.description')} actionLabel={t('panel.inspector.empty.action')} onAction={() => useIDEStore.getState().setActiveConsoleTab('explorer')} />}
       </section>
       <section aria-labelledby="inspector-project">
-        <h2 id="inspector-project">Project</h2>
+        <h2 id="inspector-project">{t('workbench.inspector.project')}</h2>
         <dl>
-          <Row label="Project" value={summary.project} />
-          <Row label="Target" value={summary.target} mono />
-          <Row label="Device" value={summary.device} />
+          <Row label={t('workbench.inspector.project')} value={summary.project} />
+          <Row label={t('workbench.inspector.target')} value={summary.target} mono />
+          <Row label={t('workbench.inspector.device')} value={summary.device} />
         </dl>
       </section>
       <section aria-labelledby="inspector-evidence">
-        <h2 id="inspector-evidence">Evidence</h2>
+        <h2 id="inspector-evidence">{t('workbench.inspector.evidence')}</h2>
         <dl>
-          <Row label="Diagnostics" value={summary.diagnostics} />
-          <Row label="Forces" value={summary.forces} />
-          <Row label="Trace" value={summary.evidence} />
+          <Row label={t('workbench.inspector.diagnostics')} value={summary.diagnostics} />
+          <Row label={t('workbench.inspector.forces')} value={summary.forces} />
+          <Row label={t('workbench.inspector.trace')} value={summary.evidence} />
         </dl>
-        <p className="ledger-inspector-note">Host trace is not hardware or HIL evidence.</p>
+        <p className="ledger-inspector-note">{t('workbench.inspector.hostTrace')}</p>
       </section>
-      {connectionStatus === 'connected' && controllerBoard && <section aria-label="Connected controller"><ControllerView /></section>}
+      {connectionStatus === 'connected' && controllerBoard && <section aria-label={t('workbench.inspector.controller')}><ControllerView /></section>}
     </aside>
   );
 }

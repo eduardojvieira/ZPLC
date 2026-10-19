@@ -19,6 +19,11 @@ import { learnEs } from './catalog/learn';
 import { learnHomeEs } from './catalog/learnHome';
 import { toolbarMsgEs } from './catalog/toolbarMsg';
 import { examplesEs } from './catalog/examples';
+import { noticesEs } from './catalog/notices';
+import { editorsEs } from './catalog/editors';
+import { settingsSurfaceEs } from './catalog/settingsSurface';
+import { labSceneEs } from './catalog/labScene';
+import { workbenchEs } from './catalog/workbench';
 
 /**
  * The Spanish catalog (UX-029, UX-030): neutral Latin American Spanish with impersonal or "usted" forms, as in
@@ -613,4 +618,9 @@ export const es: Record<MessageKey, string> = {
   ...learnHomeEs,
   ...toolbarMsgEs,
   ...examplesEs,
+  ...noticesEs,
+  ...editorsEs,
+  ...settingsSurfaceEs,
+  ...labSceneEs,
+  ...workbenchEs,
 };

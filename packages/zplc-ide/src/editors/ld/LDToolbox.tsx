@@ -11,6 +11,7 @@
  * - Function Blocks (TON, TOF, CTU, etc.)
  */
 
+import { t } from '../../i18n';
 import { useState } from 'react';
 import { getToolboxItems, type LDToolboxItem } from '../../models/ld';
 import { Button, TextField } from '../../ui';
@@ -64,8 +65,8 @@ function ToolboxItem({ item, onInsert }: ToolboxItemProps) {
       onDragStart={handleDragStart}
       onClick={() => onInsert?.(item)}
       data-ld-toolbox-item={`${item.type}${item.fbType ? `:${item.fbType}` : ''}`}
-      aria-label={`Insert ${item.label}`}
-      tooltip={`${item.label}: press to insert at the cursor, or drag onto the grid`}
+      aria-label={t('editors.insert', { name: item.label })}
+      tooltip={t('editors.ld.insertTooltip', { name: item.label })}
       className={`flex-col whitespace-normal border-2 bg-transparent p-2 cursor-grab active:cursor-grabbing select-none ${getCategoryStyles()}`}
     >
       <span className="max-w-full break-all text-center font-mono text-xs font-bold leading-tight">{item.symbol}</span>
@@ -127,26 +128,26 @@ export default function LDToolbox({ onInsert }: LDToolboxProps) {
 
   return (
     <div className="w-40 h-full bg-[var(--color-surface-800)] border-r border-[var(--color-surface-600)] p-2 overflow-y-auto flex-shrink-0" data-ld-toolbox>
-      <h2 className="text-xs font-bold text-[var(--color-surface-100)] mb-2 px-1">Toolbox</h2>
+      <h2 className="text-xs font-bold text-[var(--color-surface-100)] mb-2 px-1">{t('editors.ld.toolbox')}</h2>
       <TextField
         type="search"
         value={query}
         onChange={(event) => setQuery(event.target.value)}
-        aria-label="Search the toolbox"
-        placeholder="Search"
+        aria-label={t('editors.ld.searchToolbox')}
+        placeholder={t('editors.search')}
         className="mb-3 w-full"
       />
 
-      <ToolboxSection title="Contacts" items={contacts} onInsert={onInsert} />
-      <ToolboxSection title="Coils" items={coils} onInsert={onInsert} />
-      <ToolboxSection title="Structure" items={structure} onInsert={onInsert} />
-      <ToolboxSection title="Function Blocks" items={functionBlocks} onInsert={onInsert} />
-      {allItems.length === 0 ? <p className={`px-1 ${CAPTION} text-[var(--color-surface-300)]`}>Nothing matches.</p> : null}
+      <ToolboxSection title={t('editors.ld.contacts')} items={contacts} onInsert={onInsert} />
+      <ToolboxSection title={t('editors.ld.coils')} items={coils} onInsert={onInsert} />
+      <ToolboxSection title={t('editors.ld.structure')} items={structure} onInsert={onInsert} />
+      <ToolboxSection title={t('editors.ld.functionBlocks')} items={functionBlocks} onInsert={onInsert} />
+      {allItems.length === 0 ? <p className={`px-1 ${CAPTION} text-[var(--color-surface-300)]`}>{t('editors.nothingMatches')}</p> : null}
 
       {/* Instructions */}
       <div className="mt-4 pt-3 border-t border-[var(--color-surface-700)]">
         <p className={`${CAPTION} text-[var(--color-surface-300)] leading-relaxed`}>
-          Press an item to insert it at the cursor, or drag it onto the grid. Use Branch to create parallel paths.
+          {t('editors.ld.help')}
         </p>
       </div>
     </div>

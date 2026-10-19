@@ -4,6 +4,7 @@
  * (the element to insert, the name to bind, the wire to draw) is asked with the search list.
  */
 
+import { t } from '../i18n';
 import { useCallback, useMemo, useState, type KeyboardEvent as ReactKeyboardEvent, type ReactElement, type RefObject } from 'react';
 import type { Edge, Node } from '@xyflow/react';
 import { announce } from '../utils/announce';
@@ -184,9 +185,9 @@ export function useCanvasKeyboard<Argument>(options: CanvasKeyboardOptions<Argum
         title={ask.title}
         items={ask.items}
         allowFreeText={ask.allowFreeText}
-        freeTextLabel={ask.kind === 'comment' ? (text) => `Set the comment to "${text}"` : ask.kind === 'bind' ? (text) => `Use ${text}` : undefined}
-        placeholder={ask.placeholder ?? (ask.kind === 'bind' ? 'Type to search the declared symbols, or type a name' : 'Type to search')}
-        emptyText={ask.kind === 'connect' ? 'No wire can be drawn.' : undefined}
+        freeTextLabel={ask.kind === 'comment' ? (text) => t('editors.canvas.setComment', { text }) : ask.kind === 'bind' ? (text) => t('editors.canvas.use', { text }) : undefined}
+        placeholder={ask.placeholder ?? (ask.kind === 'bind' ? t('editors.canvas.searchOrType') : t('editors.search.placeholder'))}
+        emptyText={ask.kind === 'connect' ? t('editors.canvas.noWire') : undefined}
         onChoose={choose}
         onCancel={() => setAsk(null)}
       />

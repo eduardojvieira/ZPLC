@@ -184,7 +184,7 @@ const SFCStepNode = memo(({ id, data, selected }: NodeProps) => {
             {/* Activation count */}
             {activationCount !== undefined && activationCount > 0 && (
               <div className="text-[9px] text-[var(--text-tertiary)] mt-0.5">
-                Activations: {activationCount}
+                {t('editors.sfc.activations', { count: activationCount })}
               </div>
             )}
           </div>

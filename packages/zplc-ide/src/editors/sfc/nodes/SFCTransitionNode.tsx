@@ -147,7 +147,7 @@ const SFCTransitionNode = memo(({ id, data, selected }: NodeProps) => {
                 : 'text-[var(--text-primary)] hover:text-[var(--color-accent-blue)]'
               }`}
             >
-              <span className="max-h-[30px] overflow-hidden break-words">{condition || 'TRUE'}</span>
+              <span className="max-h-[30px] overflow-hidden break-words">{condition || t('editors.sfc.true')}</span>
             </div>
           )}
         </div>
@@ -156,7 +156,7 @@ const SFCTransitionNode = memo(({ id, data, selected }: NodeProps) => {
       {/* Debug status below transition */}
       {debugActive && (
         <div className="absolute left-[132px] top-full mt-1 flex items-center gap-1 text-[9px]">
-          <span className="text-[var(--text-secondary)]">{isArmed ? 'Armed' : 'Waiting'}</span>
+          <span className="text-[var(--text-secondary)]">{isArmed ? t('editors.sfc.armed') : t('editors.sfc.waiting')}</span>
           <SignalChip tone={tone} detail={resultWord} />
         </div>
       )}
