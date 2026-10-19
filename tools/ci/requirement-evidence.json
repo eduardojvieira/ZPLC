@@ -2609,7 +2609,8 @@
     {"kind":"unit","ref":"tools/hil/test_hil_crc.py","test":"CrcCrossTests","note":"the C loader and the TypeScript assembler are compared on the same bytes, and any disagreement or wrong loader verdict fails; run by the typescript job of ci.yml, step 'Test the HIL tools and the HIL package', on fake devices and the native runtime; no serial port is opened"}
   ],
   "REL-001": [
-    {"kind":"unit","ref":"packages/zplc-ide/scripts/release-config.test.ts","test":"electron-builder.yml macOS signing (REL-001)","partial":true,"note":"asserts the parsed electron-builder and workflow configuration, not the produced installer; its own header says a hosted release run is the proof (VF-021)"}
+    {"kind":"unit","ref":"packages/zplc-ide/scripts/release-config.test.ts","test":"electron-builder.yml macOS signing (REL-001)","partial":true,"note":"asserts the parsed electron-builder and workflow configuration, not the produced installer; its own header says a hosted release run is the proof (VF-021)"},
+    {"kind":"unit","ref":"tools/ci/release/verify-installers.test.ts","test":"the fourteen installer files","partial":true,"note":"unchanged settings (identity, binaries, hardened runtime, notarize false, dmg and zip targets) with the entitlements test; the macOS signing itself runs only on a hosted macOS runner (verify-mac-signature.ts), the owner's/CI's run"}
   ],
   "REL-002": [
     {"kind":"unit","ref":"packages/zplc-ide/scripts/release-config.test.ts","test":"release.yml macOS build jobs prove the signature on both architectures (REL-002)","partial":true,"note":"asserts the parsed electron-builder and workflow configuration, not the produced installer; its own header says a hosted release run is the proof (VF-021)"}
@@ -2621,7 +2622,8 @@
   ],
   "REL-005": [
     {"kind":"unit","ref":"packages/zplc-ide/scripts/release-config.test.ts","test":"the DMG and the ZIP are published for each macOS architecture (REL-005)","partial":true,"note":"asserts the parsed electron-builder and workflow configuration, not the produced installer or a run of the workflow; only a hosted release run proves it (VF-021). The first run of a downloaded DMG on a real Mac, Apple silicon and Intel, is manual evidence of the release checklist (RELEASING.md step 6) and is not recorded."},
-    {"kind":"unit","ref":"tools/docs/install_and_status_pages.test.ts","test":"says why the macOS app is not notarized, and the first-run steps in the order the system shows them (REL-005)","partial":true,"note":"covers the install page half (the steps in order, not notarized and why, in English and Spanish); the DMG and the ZIP of each architecture are produced only by the hosted macOS jobs, and the steps were not followed on a real Mac"}
+    {"kind":"unit","ref":"tools/docs/install_and_status_pages.test.ts","test":"says why the macOS app is not notarized, and the first-run steps in the order the system shows them (REL-005)","partial":true,"note":"covers the install page half (the steps in order, not notarized and why, in English and Spanish); the DMG and the ZIP of each architecture are produced only by the hosted macOS jobs, and the steps were not followed on a real Mac"},
+    {"kind":"unit","ref":"tools/ci/release/verify-installers.test.ts","test":"the installers that were produced","partial":true,"note":"the installer check requires the DMG and the ZIP of both macOS architectures, by name and by container, in the evidence job; the macOS jobs that produce them run only on hosted runners (authored, not executed in CI), and the first run of a downloaded DMG on a real Mac stays a manual step"}
   ],
   "REL-006": [
     {"kind":"unit","ref":"tools/docs/install_and_status_pages.test.ts","test":"no curl | sh installer is recommended or offered (REL-006)"}
@@ -2639,7 +2641,8 @@
   ],
   "REL-012": [
     {"kind":"unit","ref":"packages/zplc-ide/scripts/release-config.test.ts","test":"the AppImage stays published beside the .deb and the .rpm (REL-012)","partial":true,"note":"asserts the parsed electron-builder and workflow configuration, not the produced installer or a run of the workflow; only a hosted release run proves it (VF-021)"},
-    {"kind":"unit","ref":"tools/docs/install_and_status_pages.test.ts","test":"recommends the .deb or the .rpm before the AppImage, and lists the AppImage prerequisites (REL-012)","partial":true,"note":"covers the documentation half; the AppImage is built and launched only by the hosted Linux jobs, and its prerequisites (FUSE 2, the Chromium sandbox on Ubuntu 24.04) were not tried with ZPLC"}
+    {"kind":"unit","ref":"tools/docs/install_and_status_pages.test.ts","test":"recommends the .deb or the .rpm before the AppImage, and lists the AppImage prerequisites (REL-012)","partial":true,"note":"covers the documentation half; the AppImage is built and launched only by the hosted Linux jobs, and its prerequisites (FUSE 2, the Chromium sandbox on Ubuntu 24.04) were not tried with ZPLC"},
+    {"kind":"unit","ref":"tools/ci/release/verify-installers.test.ts","test":"the installers that were produced","partial":true,"note":"the installer check requires the AppImage beside the .deb and the .rpm for both Linux architectures; the AppImage built here by electron-builder passes it (authored in CI, not executed there)"}
   ],
   "REL-013": [
     {"kind":"unit","ref":"packages/zplc-ide/scripts/linux-package-files.test.ts","test":"the udev rule inside a .deb (REL-013)","partial":true,"note":"reads stand-in packages made with ar and tar (and, where rpmbuild exists, an .rpm made with it); the real packages are read by the release workflow after electron-builder"},
