@@ -3,6 +3,8 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'bun:test';
 
 import { EXAMPLE_CATALOG, EXAMPLE_GROUPS, boardName, buildExampleSections, groupByLevel, languageName, levelName, type ExampleListing } from './exampleCatalog';
+import { en, type MessageKey } from '../i18n/en';
+import { es } from '../i18n/es';
 import { useAppSettings } from '../store/useAppSettings';
 
 const projectsDir = join(import.meta.dir, '..', '..', 'projects');
@@ -101,7 +103,7 @@ describe('example catalogue', () => {
 
   it('describes the persistence test as what it is: a two-task smoke test, not a retained-data test', () => {
     const entry = EXAMPLE_CATALOG.pico_persist_test!;
-    expect(entry.title).toBe('Pico Two-Task Smoke Test');
+    expect(entry.title).toBe('Pico two-task smoke test');
     expect(`${entry.title} ${entry.summary}`).not.toMatch(/persist|retain|retentive/i);
     expect(entry.summary).toMatch(/two|fast/i);
   });
@@ -217,5 +219,23 @@ describe('the Welcome examples by level and topic (UX-022)', () => {
 
   it('UX-022 shows a board id the catalogs do not know as written', () => {
     expect(boardName('some_new_board')).toBe('some_new_board');
+  });
+});
+
+describe('UX-029 the examples read their title and summary from the catalogs', () => {
+  it('UX-029 has a title and a summary in English and in Spanish for every catalogued example, and follows the language setting', () => {
+    for (const id of Object.keys(EXAMPLE_CATALOG)) {
+      for (const part of ['title', 'summary'] as const) {
+        const key = `examples.${id}.${part}` as MessageKey;
+        expect(en[key], key).toBeDefined();
+        expect(es[key], key).toBeDefined();
+      }
+    }
+    expect(EXAMPLE_CATALOG.tank_level?.title).toBe('Tank level controller');
+    useAppSettings.getState().update({ language: 'es' });
+    try {
+      expect(EXAMPLE_CATALOG.tank_level?.title).toBe('Controlador de nivel de tanque');
+      expect(EXAMPLE_CATALOG.motor_start_stop?.summary).toContain('autorretención');
+    } finally { useAppSettings.getState().update({ language: 'auto' }); }
   });
 });

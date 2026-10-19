@@ -14,6 +14,7 @@ import { importArchiveEn } from './catalog/importArchive';
 import { interlockEn } from './catalog/interlock';
 import { learnEn } from './catalog/learn';
 import { toolbarMsgEn } from './catalog/toolbarMsg';
+import { examplesEn } from './catalog/examples';
 
 /**
  * The English catalog of Studio (UX-029): the source of truth for every user-visible string. A key is a dotted path
@@ -590,6 +591,7 @@ export const en = {
   ...interlockEn,
   ...learnEn,
   ...toolbarMsgEn,
+  ...examplesEn,
 } as const;
 
 export type MessageKey = keyof typeof en;
