@@ -2302,7 +2302,7 @@ export const JOURNEYS: Journey[] = [
       await openFolder(app, project);
       app.answer(archive);
       await app.click(button('Build options'));
-      await app.click(menuItem('Export Project Archive'));
+      await app.click(menuItem('Export project archive'));
       await app.until('the archive on disk', () => existsSync(archive) || undefined);
       await app.until('the export reported in Output', async () => /Exported motor\.zplc\.zip: \d+ files/.test(await outputText(app)) || undefined);
       const entries = readZip(new Uint8Array(readFileSync(archive))).filter((entry) => entry.kind === 'file').map((entry) => entry.path);

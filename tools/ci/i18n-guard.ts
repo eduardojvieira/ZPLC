@@ -136,7 +136,7 @@ export const PROPER_NOUNS: ReadonlySet<string> = new Set([
 ]);
 /** Names of services and of their features that are written with capitals in a sentence, as the vendors write them. */
 export const PROPER_PHRASES: readonly string[] = [
-  'AWS IoT Core', 'Azure IoT Hub', 'Azure Event Grid MQTT', 'Event Grid', 'Device Twins', 'Direct Methods', 'C2D Messaging', 'Device Shadows', 'IoT Jobs', 'Fleet Provisioning', 'Sparkplug B',
+  'AWS IoT Core', 'Azure IoT Hub', 'Azure Event Grid MQTT', 'Event Grid', 'Device Twins', 'Direct Methods', 'C2D Messaging', 'Device Shadows', 'IoT Jobs', 'Fleet Provisioning', 'Sparkplug B', 'Structured Text', 'Function Block Diagram', 'Ladder Diagram', 'Sequential Function Chart',
 ];
 /**
  * Rioplatense voseo, which decision D-10 leaves out of the interface (UX-030): the pronoun "vos", the present forms of

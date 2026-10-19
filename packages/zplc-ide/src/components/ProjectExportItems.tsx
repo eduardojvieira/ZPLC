@@ -3,6 +3,7 @@
  * JSON document that lists the files and the configuration with its secrets left out (it does not import).
  */
 import { Archive, Download } from 'lucide-react';
+import { useT } from '../i18n';
 import { useIDEStore } from '../store/useIDEStore';
 import { redactProjectConfigForExport } from '../project/sensitiveConfig';
 import { exportOpenProjectArchive } from '../utils/projectArchiveActions';
@@ -53,15 +54,16 @@ async function exportProjectAsJson(): Promise<void> {
 }
 
 export function ProjectExportItems() {
+  const { t } = useT();
   return (
     <>
-      <button type="button" role="menuitem" onClick={() => { void exportOpenProjectArchive(); }} className={ITEM} aria-label="Export project archive">
+      <button type="button" role="menuitem" onClick={() => { void exportOpenProjectArchive(); }} className={ITEM} aria-label={t('workbench.export.archiveLabel')}>
         <Archive size={14} />
-        <span>Export Project Archive…</span>
+        <span>{t('workbench.export.archive')}</span>
       </button>
-      <button type="button" role="menuitem" onClick={() => { void exportProjectAsJson(); }} className={ITEM} aria-label="Export project">
+      <button type="button" role="menuitem" onClick={() => { void exportProjectAsJson(); }} className={ITEM} aria-label={t('workbench.export.projectLabel')}>
         <Download size={14} />
-        <span>Export Project</span>
+        <span>{t('workbench.export.project')}</span>
       </button>
     </>
   );
