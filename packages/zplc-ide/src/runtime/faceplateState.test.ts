@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'bun:test';
 
-import { latestWins, sameInputValue, settleInputs } from './faceplateState';
+import { createHold, latestWins, sameInputValue, settleInputs } from './faceplateState';
 
 describe('an input change that waits for the next scan (LRN-017)', () => {
   it('compares a value as the runtime holds it: a REAL as a 32-bit float, an integer exactly', () => {
@@ -52,5 +52,25 @@ describe('sending the changes of one control (LRN-017)', () => {
     await expect(send(1)).rejects.toThrow('refused');
     await send(2);
     expect(sent).toEqual([1, 2]);
+  });
+});
+
+describe('a push button on the faceplate (LRN-017)', () => {
+  it('sends TRUE once when it is pressed and FALSE once when it is let go, whatever events follow', () => {
+    const sent: boolean[] = [];
+    const hold = createHold((down) => sent.push(down));
+    hold.press();
+    hold.press();
+    expect(hold.held()).toBe(true);
+    hold.release();
+    hold.release();
+    expect(hold.held()).toBe(false);
+    expect(sent).toEqual([true, false]);
+  });
+
+  it('sends nothing for a release that no press came before (a pointer that leaves a button nobody pressed)', () => {
+    const sent: boolean[] = [];
+    createHold((down) => sent.push(down)).release();
+    expect(sent).toEqual([]);
   });
 });

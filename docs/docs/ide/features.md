@@ -305,28 +305,52 @@ If the editor, the lower panel or the toolbar throws an exception while it draws
 
 Evidence level: host. Journey 20 (a failing region does not blank the window) of `bun run test:journeys` makes each of the three regions fail in the real application, checks that the other two keep working and that Retry brings the failed one back; `packages/zplc-ide/src/components/ErrorBoundary.test.tsx` covers the region logic.
 
-## Simulation inputs
+## Live I/O
 
-In native simulation, the **Watch** tab starts with **Simulation inputs**: every input
-that the running program declares, by its own name. That is each variable mapped to
-the input image (`AT %IX0.3`, `AT %IW2`, whatever you called it) and each `VAR_INPUT`
-of a program, with its type, its address and the value read from the runtime. A
-BOOL has a **Set TRUE / Set FALSE** switch that changes only its own bit, and every
-other numeric type has a number box with **Set**; a value that does not fit the type
-is refused with a message before anything is written. **Force** holds the input at
-its present value (and **Set** then changes the forced value), for the types up to 32
-bits that a force carries; releasing the force hands the input back.
+During a native simulation the **Watch** tab, which opens by itself when the simulation
+starts, begins with **Live I/O**: the faceplate of the running program. It reads the
+I/O map of the program that is loaded, so it lists every input and every output by its
+own name, whatever the name is. The inputs are each variable mapped to the input image
+(`AT %IX0.3`, `AT %IW2`) and each `VAR_INPUT` of a program; the outputs are each
+variable mapped to the output image (`AT %QX0.5`). Each row has its type, its address
+and its live value, and an output reads in the same vocabulary as the Watch table:
+TRUE, FALSE and a value that has not been read are each a glyph and a word, and a
+forced value says it is forced.
 
-The runtime itself still accepts the three motor names of its `simulation.input.set`
-request; every other input is written with the typed memory write, at the address
-and width of the debug map. On hardware, inputs are forced from the Watch table.
+An input is operated with the control that fits its type. A BOOL has a switch (**Set
+TRUE** / **Set FALSE**) that changes only its own bit, and a push button (**Hold**)
+that keeps it TRUE while you press it, by mouse or with Space or Enter, and lets it go
+when you release it. A whole number of up to 16 bits has a slider over the range of its
+type; every other numeric type has a number box with **Set**, which also takes a typed
+value for the small types. A value that does not fit the type is refused with a
+message before anything is written.
 
-Evidence level: host. `packages/zplc-ide/src/runtime/declaredInputs.test.ts` covers
-the list, the encoding of every numeric type and the bit-safe write against a debug
-map from the real compiler, `src/cli/toolApi.test.ts` the marking of program inputs,
-and journey 37 of `bun run test:journeys` sets a bit, a word and a plain program
-input of a project with custom names in the real application and sees the program's
-output follow (requirement IDE-024). Native POSIX host evidence, not hardware.
+A change reaches the program at a scan boundary, never inside a scan: the runtime
+queues the write and applies it when the next scan starts. The row says **Pending until
+next scan** from the moment you act until the runtime holds the value, then **Applied**
+for a moment, and the application announces the applied change to a screen reader. A
+press and a release that land between two scans are each seen by a whole scan. When the
+runtime cannot apply a change (the simulation is stopped, has faulted, or the simulator
+does not report the capability) the controls are disabled and the panel says why in
+words; while the simulation is paused the change waits for the next scan, and the panel
+says so. **Force** holds an input at its present value (and **Set** then changes the
+forced value), for the types up to 32 bits that a force carries; releasing the force
+hands the input back.
+
+The faceplate writes with the typed memory write, at the address and width of the debug
+map; the runtime keeps `simulation.input.set` for the three motor names of the starter
+programs. Neither the agent nor the MCP server can operate the faceplate: they have no
+tool that sets an input or writes memory. On hardware, inputs are forced from the Watch
+table.
+
+Evidence level: host. `packages/zplc-ide/src/runtime/declaredInputs.test.ts`,
+`ioMap.test.ts` and `faceplateState.test.ts` cover the lists, the encoding of every
+numeric type, the range of a slider and the pending state; `src/components/Faceplate.test.tsx`
+covers what the faceplate shows and says; `test_native_runtime_session.c` proves that a
+write waits for the start of the next scan; and journey 50 of `bun run test:journeys`
+operates a switch, a push button and a slider of a project with custom names in the real
+application, with the keyboard alone as well, and sees the program's output follow
+(requirements LRN-017, IDE-024). Native POSIX host evidence, not hardware.
 
 ## Notifications
 

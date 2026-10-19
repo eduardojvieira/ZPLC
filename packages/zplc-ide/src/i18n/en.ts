@@ -11,6 +11,7 @@ import { projectEn } from './catalog/project';
 import { labEn } from './catalog/lab';
 import { ldEn } from './catalog/ld';
 import { importArchiveEn } from './catalog/importArchive';
+import { faceplateEn } from './catalog/faceplate';
 import { interlockEn } from './catalog/interlock';
 import { learnEn } from './catalog/learn';
 import { learnHomeEn } from './catalog/learnHome';
@@ -589,6 +590,7 @@ export const en = {
   ...labEn,
   ...ldEn,
   ...importArchiveEn,
+  ...faceplateEn,
   ...interlockEn,
   ...learnEn,
   ...learnHomeEn,

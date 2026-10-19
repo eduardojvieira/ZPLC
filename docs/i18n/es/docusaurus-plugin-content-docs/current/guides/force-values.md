@@ -32,10 +32,10 @@ pueden forzar un valor ([IA, privacidad y revisión humana](../ide/ai-privacy.md
    Enter. El programa lee el valor forzado a partir del siguiente ciclo.
 5. Desmarque **Force** para liberar la variable.
 
-En el panel **Simulation inputs**, al comienzo de la pestaña Watch, cada entrada que
-declara el programa en ejecución tiene un interruptor (**Set TRUE** y **Set FALSE**)
-o un cuadro numérico con **Set**. **Force** allí mantiene la entrada en su valor
-actual, y **Set** cambia entonces el valor forzado. En el simulador, una entrada que
+En el panel **E/S en vivo**, al comienzo de la pestaña Watch, cada entrada que
+declara el programa en ejecución tiene un interruptor (**Poner TRUE** y **Poner FALSE**)
+o un cuadro numérico con **Aplicar**. **Forzar** allí mantiene la entrada en su valor
+actual, y **Aplicar** cambia entonces el valor forzado. En el simulador, una entrada que
 usted forzó conserva su último valor forzado cuando libera el forzado, hasta que
 usted la fija de nuevo.
 
@@ -83,6 +83,6 @@ tabla de forzados. No deje un forzado en un controlador que nadie vigila.
 
 ## Vea también
 
-- [Banco de trabajo de Studio](../ide/features.md#entradas-de-la-simulación): las entradas de simulación y el límite de la depuración.
+- [Banco de trabajo de Studio](../ide/features.md#es-en-vivo): el faceplate de E/S en vivo y el límite de la depuración.
 - [La consola de ZPLC](../operations/shell.md): todos los comandos de depuración.
 - [Seguridad y limitaciones](../safety-and-limitations.md).

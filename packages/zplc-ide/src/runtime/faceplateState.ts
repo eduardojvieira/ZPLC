@@ -54,3 +54,17 @@ export function latestWins<T>(send: (value: T) => Promise<void>): (value: T) => 
     return drain(value);
   };
 }
+
+/**
+ * A momentary control: a press sends TRUE once and a release sends FALSE once, whatever events follow (a key that
+ * repeats, a pointer that leaves a button after the key was let go). A release with no press before it sends nothing.
+ */
+export function createHold(onChange: (down: boolean) => void): { press: () => void; release: () => void; held: () => boolean } {
+  let held = false;
+  const change = (down: boolean) => {
+    if (held === down) return;
+    held = down;
+    onChange(down);
+  };
+  return { press: () => change(true), release: () => change(false), held: () => held };
+}
