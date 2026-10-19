@@ -1,0 +1,34 @@
+{
+  "schemaVersion": 1,
+  "id": "boolean-logic-two-hand-guard",
+  "version": 1,
+  "order": 12,
+  "module": 2,
+  "level": "foundation",
+  "prerequisites": [
+    "blinky-ladder-timer-feedback"
+  ],
+  "languages": [
+    "ST"
+  ],
+  "tracks": [
+    "simulation"
+  ],
+  "plant": null,
+  "estimatedMinutes": 15,
+  "starter": {
+    "project": "two_hand_starter",
+    "program": "src/TwoHand.st"
+  },
+  "solution": {
+    "project": "two_hand",
+    "program": "src/TwoHand.st"
+  },
+  "scenario": {
+    "file": "scenario.json",
+    "id": "TwoHand",
+    "path": "tests/two-hand.scenario.json",
+    "sha256": "960b79d6f460c148242199db15454c0d4be08bae5de73f200a4f2623f0e1b4d4"
+  },
+  "regressionScenarios": []
+}

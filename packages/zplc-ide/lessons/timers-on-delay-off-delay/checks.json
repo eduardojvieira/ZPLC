@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "alsoGreen": [],
+  "wrong": [
+    {
+      "intent": "has no off-delay: Light follows Button",
+      "files": {
+        "src/Delays.st": "PROGRAM Delays\nVAR_INPUT Button AT %I0.0 : BOOL; Sensor AT %I0.1 : BOOL; END_VAR\nVAR_OUTPUT Light AT %Q0.0 : BOOL; Confirmed AT %Q0.1 : BOOL; END_VAR\nVAR HoldTimer : TOF; FilterTimer : TON; END_VAR\nFilterTimer(IN := Sensor, PT := T#200ms); Light := Button; Confirmed := FilterTimer.Q;\nEND_PROGRAM\n"
+      }
+    },
+    {
+      "intent": "has no on-delay: Confirmed follows Sensor",
+      "files": {
+        "src/Delays.st": "PROGRAM Delays\nVAR_INPUT Button AT %I0.0 : BOOL; Sensor AT %I0.1 : BOOL; END_VAR\nVAR_OUTPUT Light AT %Q0.0 : BOOL; Confirmed AT %Q0.1 : BOOL; END_VAR\nVAR HoldTimer : TOF; FilterTimer : TON; END_VAR\nHoldTimer(IN := Button, PT := T#300ms); Light := HoldTimer.Q; Confirmed := Sensor;\nEND_PROGRAM\n"
+      }
+    },
+    {
+      "intent": "swaps the timers: TON on Button and TOF on Sensor",
+      "files": {
+        "src/Delays.st": "PROGRAM Delays\nVAR_INPUT Button AT %I0.0 : BOOL; Sensor AT %I0.1 : BOOL; END_VAR\nVAR_OUTPUT Light AT %Q0.0 : BOOL; Confirmed AT %Q0.1 : BOOL; END_VAR\nVAR HoldTimer : TOF; FilterTimer : TON; END_VAR\nHoldTimer(IN := Sensor, PT := T#200ms); Confirmed := HoldTimer.Q; FilterTimer(IN := Button, PT := T#300ms); Light := FilterTimer.Q;\nEND_PROGRAM\n"
+      }
+    }
+  ]
+}

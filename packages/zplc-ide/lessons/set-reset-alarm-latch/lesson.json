@@ -1,0 +1,34 @@
+{
+  "schemaVersion": 1,
+  "id": "set-reset-alarm-latch",
+  "version": 1,
+  "order": 15,
+  "module": 2,
+  "level": "foundation",
+  "prerequisites": [
+    "boolean-logic-two-hand-guard"
+  ],
+  "languages": [
+    "ST"
+  ],
+  "tracks": [
+    "simulation"
+  ],
+  "plant": null,
+  "estimatedMinutes": 15,
+  "starter": {
+    "project": "alarm_latch_starter",
+    "program": "src/AlarmLatch.st"
+  },
+  "solution": {
+    "project": "alarm_latch",
+    "program": "src/AlarmLatch.st"
+  },
+  "scenario": {
+    "file": "scenario.json",
+    "id": "AlarmLatch",
+    "path": "tests/alarm-latch.scenario.json",
+    "sha256": "1431b6ccd517bc5f2e9fc541d7609544d395bd00d5a701ec9620af6a42a07021"
+  },
+  "regressionScenarios": []
+}

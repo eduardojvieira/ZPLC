@@ -1,46 +1,46 @@
 {
   "schemaVersion": 1,
   "title": "Cinta de clasificación y atasco seguro",
-  "summary": "Recorré la clasificación de piezas y el bloqueo seguro por atasco del ejemplo Conveyor 01.",
+  "summary": "Recorra la clasificación de piezas y el bloqueo seguro por atasco del ejemplo Conveyor 01.",
   "scope": "La evidencia de Tests es determinística del host nativo POSIX; no es evidencia de cinta física, despeje de atasco, hardware, HIL ni certificación.",
   "objectives": [
-    "Detené la cinta y encendé FaultLamp mientras la planta informa JamDetected.",
-    "Evitá que Reset libere la falla mientras el atasco siga presente."
+    "Detenga la cinta y encienda FaultLamp mientras la planta informa JamDetected.",
+    "Evite que Reset libere la falla mientras el atasco siga presente."
   ],
   "stages": [
     {
       "key": "objective",
       "title": "Objetivo",
-      "body": "En src/Conveyor.st, conservá Requested y MetalLatched y agregá Faulted; los sensores pertenecen a la plant.",
+      "body": "En src/Conveyor.st, conserve Requested y MetalLatched y agregue Faulted; los sensores pertenecen a la plant.",
       "checkpoint": "La lógica sólo manda salidas a partir de sensores registrados por la plant."
     },
     {
       "key": "predict",
-      "title": "Predecí",
-      "body": "Antes de ejecutar, anticipá la cinta, desviador y lámpara de falla.",
+      "title": "Prediga",
+      "body": "Antes de ejecutar, anticipe la cinta, desviador y lámpara de falla.",
       "checkpoint": "Belt ON {{t:10}}–{{t:40}}; Diverter ON sólo {{t:30}}; FaultLamp ON y Belt OFF {{t:50}}–{{t:80}}. Reset a {{t:60}} no libera mientras JamDetected sigue activo."
     },
     {
       "key": "edit",
-      "title": "Editá",
-      "body": "Corregí esta omisión del starter y guardá antes de ejecutar: El starter no bloquea la cinta ante el atasco determinista; detenela y encendé FaultLamp mientras la planta informa JamDetected, y evitá que Reset la libere mientras el atasco siga.",
+      "title": "Edite",
+      "body": "Corrija esta omisión del starter y guarde antes de ejecutar: El starter no bloquea la cinta ante el atasco determinista; deténgala y encienda FaultLamp mientras la planta informa JamDetected, y evite que Reset la libere mientras el atasco siga.",
       "checkpoint": "El escenario visible debe pasar con evidencia host guardada."
     },
     {
       "key": "run",
-      "title": "Ejecutá",
-      "body": "En Tests, elegí el zplc.json guardado y ejecutá únicamente Conveyor01; el starter también incluye ConveyorJamTiming (lección 9), así que Tests-all calificaría dos escenarios.",
+      "title": "Ejecute",
+      "body": "En Tests, elija el zplc.json guardado y ejecute únicamente Conveyor01; el starter también incluye ConveyorJamTiming (lección 9), así que Tests-all calificaría dos escenarios.",
       "checkpoint": "El escenario requerido se llama Conveyor01 y contiene {{assertions}} assertions."
     },
     {
       "key": "observe",
-      "title": "Observá",
-      "body": "Revisá la matriz: classifier+metal {{t:20}}, diverter+count=1 a {{t:30}}, jam {{t:50}}.",
+      "title": "Observe",
+      "body": "Revise la matriz: classifier+metal {{t:20}}, diverter+count=1 a {{t:30}}, jam {{t:50}}.",
       "checkpoint": "El atasco enciende FaultLamp y detiene Belt."
     },
     {
       "key": "reflect",
-      "title": "Reflexioná",
+      "title": "Reflexione",
       "body": "La assertion NEVER cubre DiverterCommand ON con BeltCommand OFF sólo en este escenario.",
       "checkpoint": "No demuestra cinta física, despeje de atasco, temporización de hardware, HIL ni certificación."
     }
@@ -48,14 +48,14 @@
   "hints": [
     {
       "level": 1,
-      "text": "Un atasco tiene que ganar sobre todo lo demás: con JamDetected en TRUE, enclavá una memoria Faulted y soltá el pedido de cinta, así la cinta queda detenida aunque la entrada de atasco desaparezca."
+      "text": "Un atasco tiene que ganar sobre todo lo demás: con JamDetected en TRUE, enclave una memoria Faulted y suelte el pedido de cinta, así la cinta queda detenida aunque la entrada de atasco desaparezca."
     },
     {
       "level": 2,
-      "text": "Calculá BeltCommand como Requested AND NOT Faulted, FaultLamp como Faulted OR JamDetected, y borrá Faulted con Reset sólo cuando JamDetected sea FALSE."
+      "text": "Calcule BeltCommand como Requested AND NOT Faulted, FaultLamp como Faulted OR JamDetected, y borre Faulted con Reset sólo cuando JamDetected sea FALSE."
     }
   ],
   "faultCases": [
-    "El starter no bloquea la cinta ante el atasco determinista; detenela y encendé FaultLamp mientras la planta informa JamDetected, y evitá que Reset la libere mientras el atasco siga."
+    "El starter no bloquea la cinta ante el atasco determinista; deténgala y encienda FaultLamp mientras la planta informa JamDetected, y evite que Reset la libere mientras el atasco siga."
   ]
 }

@@ -9,8 +9,8 @@ import { buildCourseView, continueTarget } from '../learn/course';
 import { auditMarkup } from '../ui/audit';
 import { LearnHomeView, type LearnHomeViewProps } from './LearnHomeView';
 
-const FIRST = 'scan-cycle-one-scan-memory';
-const SECOND = 'blinky-ladder-timer-feedback';
+const FIRST = 'first-blink-simulation';
+const SECOND = 'scan-cycle-one-scan-memory';
 
 function render(progress: LearnProgress | null, over: Partial<LearnHomeViewProps> = {}, unlockAll = false): string {
   const view = buildCourseView(LESSON_INDEX, progress, { locale: 'en', unlockAll });
@@ -43,9 +43,9 @@ describe('the Learn home', () => {
     const headings = [...out.matchAll(/data-learn-module="(\d+)"/g)].map((match) => Number(match[1]));
     expect(headings).toEqual([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]);
     expect(out).toContain('Simulation');
-    expect(out).toContain('Foundation. Requires module 0. About 30 min.');
+    expect(out).toContain('Foundation. Requires module 0. About 45 min.');
     expect(out).toContain('Intermediate. Requires module 3.');
-    expect(out.match(/No lessons yet\./g)?.length).toBe(6);
+    expect(out.match(/No lessons yet\./g)?.length).toBe(5);
   });
 
   it('says the state of each lesson in words, and why a locked lesson is locked', () => {
@@ -73,7 +73,7 @@ describe('the Learn home', () => {
   });
 
   it('counts the lessons passed', () => {
-    expect(render(withPassedIds(emptyProgress(), [FIRST]))).toContain('1 of 10 lessons passed');
+    expect(render(withPassedIds(emptyProgress(), [FIRST]))).toContain('1 of 15 lessons passed');
   });
 
   it('says which tracks a lesson supports and, for one it does not, why and what to do instead (LRN-011)', () => {

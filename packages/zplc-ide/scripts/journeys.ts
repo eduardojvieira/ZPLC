@@ -899,7 +899,7 @@ export const JOURNEYS: Journey[] = [
       await app.cdp.command('Page.reload');
       await app.until('the Welcome screen', async () => await app.visible(button('Learn', 'prefix')) || undefined);
       await app.click(button('Learn', 'prefix'), 'the Learn button on the Welcome screen');
-      await app.until('the Learn home with the progress read', async () => (await homeText()).includes('1 of 10 lessons passed') || undefined);
+      await app.until('the Learn home with the progress read', async () => (await homeText()).includes(`1 of ${LESSON_INDEX.lessons.length} lessons passed`) || undefined);
       assert((await stateOf(FIRST)) === 'passed' && (await stateOf(SECOND)) === 'available', `After the restart the first lesson is ${await stateOf(FIRST)} and the second ${await stateOf(SECOND)}.`);
       assert((await app.eval<string>(`document.querySelector('[data-learn-continue]')?.textContent ?? ''`)).startsWith('Continue: '), 'Continue does not resume the course after a restart.');
 
@@ -918,14 +918,14 @@ export const JOURNEYS: Journey[] = [
         await app.cdp.command('DOM.setFileInputFiles', { nodeId, files: [path] });
       };
       await choose(incoming);
-      await app.until('the import to be merged', async () => (await homeText()).includes('2 of 10 lessons passed') && (await homeText()).includes('Progress imported and merged.') || undefined);
+      await app.until('the import to be merged', async () => (await homeText()).includes(`2 of ${LESSON_INDEX.lessons.length} lessons passed`) && (await homeText()).includes('Progress imported and merged.') || undefined);
       assert(disk(file).includes(SECOND), 'The merged progress was not saved.');
       // A file of a version this Studio does not know is refused with its reason, and the progress stays as it was.
       const future = join(root, 'future-progress.json');
       writeFileSync(future, JSON.stringify({ kind: 'zplc-learn-progress', schemaVersion: 4, last: null, lessons: {} }));
       await choose(future);
       await app.until('the refusal', async () => (await homeText()).includes('The file is version 4, which this version of Studio cannot read. Your progress is unchanged.') || undefined);
-      assert((await homeText()).includes('2 of 10 lessons passed'), 'A refused file changed the progress.');
+      assert((await homeText()).includes(`2 of ${LESSON_INDEX.lessons.length} lessons passed`), 'A refused file changed the progress.');
 
       // 9. LRN-037, LRN-033: the whole home is reachable and operable from the keyboard. Tab walks the controls in reading order (Continue, the
       // two switches, Export, Import, then the lessons); Space flips the classroom switch, and Enter on Continue opens the lesson, which then offers no solution.

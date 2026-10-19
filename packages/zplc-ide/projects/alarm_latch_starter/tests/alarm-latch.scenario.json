@@ -1,0 +1,138 @@
+{
+  "schemaVersion": 1,
+  "id": "AlarmLatch",
+  "tickMs": 10,
+  "durationMs": 70,
+  "events": [
+    {
+      "atMs": 0,
+      "set": {
+        "AlarmLatch.Fault": false,
+        "AlarmLatch.Ack": false
+      }
+    },
+    {
+      "atMs": 10,
+      "set": {
+        "AlarmLatch.Fault": true,
+        "AlarmLatch.Ack": false
+      }
+    },
+    {
+      "atMs": 20,
+      "set": {
+        "AlarmLatch.Fault": false,
+        "AlarmLatch.Ack": false
+      }
+    },
+    {
+      "atMs": 30,
+      "set": {
+        "AlarmLatch.Fault": false,
+        "AlarmLatch.Ack": true
+      }
+    },
+    {
+      "atMs": 40,
+      "set": {
+        "AlarmLatch.Fault": false,
+        "AlarmLatch.Ack": false
+      }
+    },
+    {
+      "atMs": 50,
+      "set": {
+        "AlarmLatch.Fault": true,
+        "AlarmLatch.Ack": true
+      }
+    },
+    {
+      "atMs": 60,
+      "set": {
+        "AlarmLatch.Fault": false,
+        "AlarmLatch.Ack": true
+      }
+    }
+  ],
+  "expectations": [
+    {
+      "kind": "AT",
+      "atMs": 0,
+      "condition": {
+        "AlarmLatch.SetFirst": false,
+        "AlarmLatch.ResetFirst": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 10,
+      "condition": {
+        "AlarmLatch.SetFirst": true,
+        "AlarmLatch.ResetFirst": true
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 20,
+      "condition": {
+        "AlarmLatch.SetFirst": true,
+        "AlarmLatch.ResetFirst": true
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 30,
+      "condition": {
+        "AlarmLatch.SetFirst": false,
+        "AlarmLatch.ResetFirst": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 40,
+      "condition": {
+        "AlarmLatch.SetFirst": false,
+        "AlarmLatch.ResetFirst": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 50,
+      "condition": {
+        "AlarmLatch.SetFirst": true,
+        "AlarmLatch.ResetFirst": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 60,
+      "condition": {
+        "AlarmLatch.SetFirst": false,
+        "AlarmLatch.ResetFirst": false
+      }
+    },
+    {
+      "kind": "RISING",
+      "fromMs": 10,
+      "withinMs": 0,
+      "condition": {
+        "AlarmLatch.SetFirst": true
+      }
+    },
+    {
+      "kind": "FALLING",
+      "fromMs": 30,
+      "withinMs": 0,
+      "condition": {
+        "AlarmLatch.SetFirst": false
+      }
+    },
+    {
+      "kind": "NEVER",
+      "condition": {
+        "AlarmLatch.SetFirst": false,
+        "AlarmLatch.ResetFirst": true
+      }
+    }
+  ]
+}

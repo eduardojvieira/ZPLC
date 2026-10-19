@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "title": "Latching an alarm: set and reset, and which one wins",
+  "summary": "Keep a fault in memory with the SR and RS blocks and see what each one does when the fault and the acknowledge arrive together.",
+  "scope": "Tests provide native POSIX host evidence with one 10 ms task; they do not establish alarm handling requirements of a real machine, HIL, or certification.",
+  "objectives": [
+    "Hold an alarm after the fault has gone, until it is acknowledged.",
+    "Tell the set-dominant block SR from the reset-dominant block RS."
+  ],
+  "stages": [
+    {
+      "key": "objective",
+      "title": "Objective",
+      "body": "In src/AlarmLatch.st, SetLatch (SR) and ResetLatch (RS) are declared but not used. Both outputs must stay ON after Fault drops and go OFF only when Ack is pressed. When Fault and Ack arrive together, SetFirst must stay ON and ResetFirst must go OFF.",
+      "checkpoint": "You can say which block gives priority to set and which to reset."
+    },
+    {
+      "key": "predict",
+      "title": "Predict",
+      "body": "Fault pulses ON at {{t:10}} ms. Ack is pressed at {{t:30}} ms. At {{t:50}} ms both arrive together, and Ack is held at {{t:60}} ms. Predict both outputs at {{t:20}}, {{t:30}}, and {{t:50}} ms.",
+      "checkpoint": "{{v:AlarmLatch.SetFirst=true,AlarmLatch.ResetFirst=true@20|both ON}} at {{t:20}} ms; {{v:AlarmLatch.SetFirst=false,AlarmLatch.ResetFirst=false@30|both OFF}} at {{t:30}} ms; {{v:AlarmLatch.SetFirst=true,AlarmLatch.ResetFirst=false@50|SetFirst ON only}} at {{t:50}} ms."
+    },
+    {
+      "key": "edit",
+      "title": "Edit",
+      "body": "Correct this flaw of the starting program, save it, then press Check: The starting program copies Fault to both outputs, so they go OFF at {{t:20}} ms when the fault is gone. Call SetLatch with Fault as S1 and Ack as R, and ResetLatch with Fault as S and Ack as R1. Copy each Q1 to its output, and save the file.",
+      "checkpoint": "Each output is the Q1 of its own latch."
+    },
+    {
+      "key": "run",
+      "title": "Run",
+      "body": "Press Check. Studio runs your saved program against the scenario of this lesson.",
+      "checkpoint": "The scenario is named AlarmLatch and contains {{assertions}} assertions."
+    },
+    {
+      "key": "observe",
+      "title": "Observe",
+      "body": "Compare {{t:20}}, {{t:30}}, and {{t:50}} ms: the alarm is still ON at {{t:20}} ms after Fault has gone, Ack clears it at {{t:30}} ms, and only the two blocks differ at {{t:50}} ms.",
+      "checkpoint": "The outputs differ only when Fault and Ack arrive together."
+    },
+    {
+      "key": "reflect",
+      "title": "Reflect",
+      "body": "Which block would you choose for a stop command, and which for a start request? Think about what should win when both are pressed.",
+      "checkpoint": "A stop or reset should usually win, so the reset-dominant block fits it; the choice is a design decision, not a default."
+    }
+  ],
+  "hints": [
+    {
+      "level": 1,
+      "text": "SR has the inputs S1 and R and gives priority to set; RS has the inputs S and R1 and gives priority to reset."
+    },
+    {
+      "level": 2,
+      "text": "Write SetLatch(S1 := Fault, R := Ack); SetFirst := SetLatch.Q1; ResetLatch(S := Fault, R1 := Ack); ResetFirst := ResetLatch.Q1;"
+    }
+  ],
+  "faultCases": [
+    "The starting program copies Fault to both outputs, so they go OFF at {{t:20}} ms when the fault is gone."
+  ]
+}

@@ -1,41 +1,41 @@
 {
   "schemaVersion": 1,
   "title": "Ciclo de scan y memoria de un ciclo",
-  "summary": "Seguí cómo una entrada produce una salida actual y una copia demorada un scan.",
+  "summary": "Siga cómo una entrada produce una salida actual y una copia demorada un scan.",
   "scope": "La evidencia de Tests es del runtime nativo POSIX host con una única tarea de 10 ms; no demuestra timing de target, snapshot bajo interrupciones físicas, rebote eléctrico, HIL ni certificación.",
   "objectives": [
-    "Comprobá que una variable conserva su valor de un scan al siguiente.",
-    "Armá un retardo de un scan y un pulso de un scan con una única memoria."
+    "Compruebe que una variable conserva su valor de un scan al siguiente.",
+    "Arme un retardo de un scan y un pulso de un scan con una única memoria."
   ],
   "stages": [
     {
       "key": "objective",
       "title": "Objetivo",
-      "body": "En src/ScanSnapshot.st, usá Button, Current, Delayed y RisingPulse y agregá la memoria Previous.",
+      "body": "En src/ScanSnapshot.st, use Button, Current, Delayed y RisingPulse y agregue la memoria Previous.",
       "checkpoint": "Previous se actualiza al final del scan."
     },
     {
       "key": "predict",
-      "title": "Predecí",
-      "body": "Antes de ejecutar, anticipá los cuatro samples registrados como Current, Delayed, RisingPulse.",
+      "title": "Prediga",
+      "body": "Antes de ejecutar, anticipe los cuatro samples registrados como Current, Delayed, RisingPulse.",
       "checkpoint": "{{v:ScanSnapshot.Current=false,ScanSnapshot.Delayed=false,ScanSnapshot.RisingPulse=false@0|000@0}}, {{v:ScanSnapshot.Current=true,ScanSnapshot.Delayed=false,ScanSnapshot.RisingPulse=true@10|101@10}}, {{v:ScanSnapshot.Current=false,ScanSnapshot.Delayed=true,ScanSnapshot.RisingPulse=false@20|010@20}}, {{v:ScanSnapshot.Current=false,ScanSnapshot.Delayed=false,ScanSnapshot.RisingPulse=false@30|000@30}}."
     },
     {
       "key": "edit",
-      "title": "Editá",
-      "body": "Corregí esta omisión del starter y guardá antes de ejecutar: El starter no tiene memoria de un scan; conservá Previous, calculá Delayed con él, derivá RisingPulse de Current y Delayed y actualizá Previous al final.",
+      "title": "Edite",
+      "body": "Corrija esta omisión del starter y guarde antes de ejecutar: El starter no tiene memoria de un scan; conserve Previous, calcule Delayed con él, derive RisingPulse de Current y Delayed y actualice Previous al final.",
       "checkpoint": "El escenario visible debe pasar con evidencia host guardada."
     },
     {
       "key": "run",
-      "title": "Ejecutá",
-      "body": "En Tests, elegí el zplc.json guardado y ejecutá únicamente el escenario ScanSnapshot.",
+      "title": "Ejecute",
+      "body": "En Tests, elija el zplc.json guardado y ejecute únicamente el escenario ScanSnapshot.",
       "checkpoint": "El escenario requerido se llama ScanSnapshot y contiene {{assertions}} assertions."
     },
     {
       "key": "observe",
-      "title": "Observá",
-      "body": "Compará {{t:10}}, {{t:20}} y {{t:30}} ms: RisingPulse dura un scan y Delayed conserva la copia demorada.",
+      "title": "Observe",
+      "body": "Compare {{t:10}}, {{t:20}} y {{t:30}} ms: RisingPulse dura un scan y Delayed conserva la copia demorada.",
       "checkpoint": "El pulso aparece a {{t:10}} ms; Delayed aparece a {{t:20}} ms y vuelve OFF a {{t:30}} ms."
     },
     {
@@ -46,7 +46,7 @@
     },
     {
       "key": "reflect",
-      "title": "Reflexioná",
+      "title": "Reflexione",
       "body": "Actualizar Previous antes rompería el detector de flanco.",
       "checkpoint": "La memoria debe conservar el valor anterior hasta el final del scan."
     }
@@ -58,10 +58,10 @@
     },
     {
       "level": 2,
-      "text": "Escribí las sentencias en este orden: Current := Button; Delayed := Previous; RisingPulse := Current AND NOT Delayed; y recién después Previous := Button."
+      "text": "Escriba las sentencias en este orden: Current := Button; Delayed := Previous; RisingPulse := Current AND NOT Delayed; y recién después Previous := Button."
     }
   ],
   "faultCases": [
-    "El starter no tiene memoria de un scan; conservá Previous, calculá Delayed con él, derivá RisingPulse de Current y Delayed y actualizá Previous al final."
+    "El starter no tiene memoria de un scan; conserve Previous, calcule Delayed con él, derive RisingPulse de Current y Delayed y actualice Previous al final."
   ]
 }

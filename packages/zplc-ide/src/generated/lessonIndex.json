@@ -112,46 +112,46 @@
         },
         "es": {
           "title": "Arranque y parada seguros",
-          "summary": "Recorré un motor con enclavamiento, parada y sobrecarga usando el ejemplo Motor Start Stop.",
+          "summary": "Recorra un motor con enclavamiento, parada y sobrecarga usando el ejemplo Motor Start Stop.",
           "scope": "La evidencia de Tests es del host nativo POSIX; no es evidencia de hardware ni HIL.",
           "objectives": [
-            "Mantené el motor encendido tras soltar Start con un seal-in.",
-            "Bajá el motor con Stop, EStop y Overload, y evitá que un Start mantenido lo rearranque solo."
+            "Mantenga el motor encendido tras soltar Start con un seal-in.",
+            "Baje el motor con Stop, EStop y Overload, y evite que un Start mantenido lo rearranque solo."
           ],
           "stages": [
             {
               "key": "objective",
               "title": "Objetivo",
-              "body": "En src/Motor.st, reemplazá Forward := Start por un seal-in armado con Start, Stop, EStop y Overload; verificá que Reverse permanece FALSE.",
+              "body": "En src/Motor.st, reemplace Forward := Start por un seal-in armado con Start, Stop, EStop y Overload; verifique que Reverse permanece FALSE.",
               "checkpoint": "Forward sigue ON al soltar Start y cae con Stop, EStop o Overload."
             },
             {
               "key": "predict",
-              "title": "Predecí",
-              "body": "Antes de ejecutar, anticipá Motor.Forward a 0, 20, 40, 50, 90 y 140 ms.",
+              "title": "Prediga",
+              "body": "Antes de ejecutar, anticipe Motor.Forward a 0, 20, 40, 50, 90 y 140 ms.",
               "checkpoint": "OFF a 0 ms aunque Start esté pulsado; ON a 20; OFF a 40 (EStop) y todavía OFF a 50 con Start pulsado; OFF a 90 (sobrecarga) y 140 (Stop). Vuelve a ON sólo tras soltar y volver a pulsar Start, a 70, 120 y 170 ms. Motor.Reverse permanece OFF."
             },
             {
               "key": "edit",
-              "title": "Editá",
-              "body": "Corregí esta omisión del starter y guardá antes de ejecutar: El starter pierde el enclavamiento al soltar Start; implementá baja por Stop, EStop y sobrecarga, sin arrancar ni rearrancar mientras Start siga pulsado tras el encendido o una parada.",
+              "title": "Edite",
+              "body": "Corrija esta omisión del starter y guarde antes de ejecutar: El starter pierde el enclavamiento al soltar Start; implemente baja por Stop, EStop y sobrecarga, sin arrancar ni rearrancar mientras Start siga pulsado tras el encendido o una parada.",
               "checkpoint": "El escenario visible debe pasar con evidencia host guardada."
             },
             {
               "key": "run",
-              "title": "Ejecutá",
-              "body": "En Tests, elegí el zplc.json guardado y ejecutá únicamente el escenario MotorStartStop.",
+              "title": "Ejecute",
+              "body": "En Tests, elija el zplc.json guardado y ejecute únicamente el escenario MotorStartStop.",
               "checkpoint": "El escenario requerido se llama MotorStartStop y contiene 27 assertions."
             },
             {
               "key": "observe",
-              "title": "Observá",
-              "body": "Compará la traza: EStop a 40 ms, sobrecarga a 90 ms y parada a 140 ms.",
+              "title": "Observe",
+              "body": "Compare la traza: EStop a 40 ms, sobrecarga a 90 ms y parada a 140 ms.",
               "checkpoint": "EStop, Overload y Stop fuerzan Motor.Forward OFF, y mantener Start no lo reinicia."
             },
             {
               "key": "reflect",
-              "title": "Reflexioná",
+              "title": "Reflexione",
               "body": "La assertion exacta NEVER comprueba cobertura lógica de este escenario.",
               "checkpoint": "No demuestra seguridad física, temporización de hardware ni certificación."
             }
@@ -159,15 +159,15 @@
           "hints": [
             {
               "level": 1,
-              "text": "La salida tiene que recordar que se pulsó Start: usá una variable de memoria que Start active y que se mantenga hasta que una condición de parada la borre."
+              "text": "La salida tiene que recordar que se pulsó Start: use una variable de memoria que Start active y que se mantenga hasta que una condición de parada la borre."
             },
             {
               "level": 2,
-              "text": "Borrá la memoria primero cuando Stop, EStop u Overload sea TRUE; recién después dejá que Start la active, y sólo si Start se vio suelto desde la última parada, así un Start mantenido no rearranca el motor."
+              "text": "Borre la memoria primero cuando Stop, EStop u Overload sea TRUE; recién después deje que Start la active, y sólo si Start se vio suelto desde la última parada, así un Start mantenido no rearranca el motor."
             }
           ],
           "faultCases": [
-            "El starter pierde el enclavamiento al soltar Start; implementá baja por Stop, EStop y sobrecarga, sin arrancar ni rearrancar mientras Start siga pulsado tras el encendido o una parada."
+            "El starter pierde el enclavamiento al soltar Start; implemente baja por Stop, EStop y sobrecarga, sin arrancar ni rearrancar mientras Start siga pulsado tras el encendido o una parada."
           ]
         }
       }
@@ -296,46 +296,46 @@
         },
         "es": {
           "title": "Cruce peatonal y estados seguros",
-          "summary": "Recorré estados de cruce peatonal con salidas de vehículo y peatón mutuamente consistentes.",
+          "summary": "Recorra estados de cruce peatonal con salidas de vehículo y peatón mutuamente consistentes.",
           "scope": "La evidencia de Tests es determinística del host nativo POSIX; no es evidencia de cruce físico, hardware, HIL ni certificación.",
           "objectives": [
-            "Modelá el cruce como estados numerados, cada uno con una combinación de salidas explícita.",
-            "Mostrá WALK sólo mientras los vehículos están en rojo."
+            "Modele el cruce como estados numerados, cada uno con una combinación de salidas explícita.",
+            "Muestre WALK sólo mientras los vehículos están en rojo."
           ],
           "stages": [
             {
               "key": "objective",
               "title": "Objetivo",
-              "body": "En src/PedestrianCrossing.st, agregá los estados que coordinan vehículos y peatones; la planta levanta PedRequest desde 10 ms.",
+              "body": "En src/PedestrianCrossing.st, agregue los estados que coordinan vehículos y peatones; la planta levanta PedRequest desde 10 ms.",
               "checkpoint": "Cada estado debe dejar una combinación de salidas explícita."
             },
             {
               "key": "predict",
-              "title": "Predecí",
-              "body": "Antes de ejecutar, anticipá la secuencia de luces y señal peatonal.",
+              "title": "Prediga",
+              "body": "Antes de ejecutar, anticipe la secuencia de luces y señal peatonal.",
               "checkpoint": "verde+STOP 0 ms; amarillo+STOP 20; rojo+STOP 40; rojo+WALK 60; rojo+STOP 90; verde+STOP 110."
             },
             {
               "key": "edit",
-              "title": "Editá",
-              "body": "Corregí esta omisión del starter y guardá antes de ejecutar: El starter ignora el pedido peatonal; tras PedRequest ejecutá amarillo, despeje en rojo, WALK y rojo de recuperación antes de volver a verde, y mostrá WALK sólo con los vehículos en rojo.",
+              "title": "Edite",
+              "body": "Corrija esta omisión del starter y guarde antes de ejecutar: El starter ignora el pedido peatonal; tras PedRequest ejecute amarillo, despeje en rojo, WALK y rojo de recuperación antes de volver a verde, y muestre WALK sólo con los vehículos en rojo.",
               "checkpoint": "El escenario visible debe pasar con evidencia host guardada."
             },
             {
               "key": "run",
-              "title": "Ejecutá",
-              "body": "En Tests, elegí el zplc.json guardado y ejecutá únicamente el escenario PedestrianCrossing.",
+              "title": "Ejecute",
+              "body": "En Tests, elija el zplc.json guardado y ejecute únicamente el escenario PedestrianCrossing.",
               "checkpoint": "El escenario requerido se llama PedestrianCrossing y contiene 15 assertions."
             },
             {
               "key": "observe",
-              "title": "Observá",
-              "body": "Revisá la matriz registrada en Tests y compará cada muestra con la predicción.",
+              "title": "Observe",
+              "body": "Revise la matriz registrada en Tests y compare cada muestra con la predicción.",
               "checkpoint": "La traza muestra el cambio a WALK sólo durante el estado rojo."
             },
             {
               "key": "reflect",
-              "title": "Reflexioná",
+              "title": "Reflexione",
               "body": "La assertion NEVER cubre salidas incompatibles lógicas sólo en este escenario.",
               "checkpoint": "No demuestra un cruce físico, temporización de hardware, HIL ni certificación."
             }
@@ -343,15 +343,15 @@
           "hints": [
             {
               "level": 1,
-              "text": "Mantené una variable State y un contador de scans; al comienzo de cada scan poné todas las salidas en el valor seguro (vehículos detenidos, peatones en espera) y dejá que cada estado encienda sólo lo que necesita."
+              "text": "Mantenga una variable State y un contador de scans; al comienzo de cada scan ponga todas las salidas en el valor seguro (vehículos detenidos, peatones en espera) y deje que cada estado encienda sólo lo que necesita."
             },
             {
               "level": 2,
-              "text": "La secuencia es verde, amarillo, despeje en rojo, WALK, rojo de recuperación y de nuevo verde; salí de verde sólo con PedRequest y pasá al estado siguiente cuando el contador de scans alcance la duración de esa fase."
+              "text": "La secuencia es verde, amarillo, despeje en rojo, WALK, rojo de recuperación y de nuevo verde; salga de verde sólo con PedRequest y pase al estado siguiente cuando el contador de scans alcance la duración de esa fase."
             }
           ],
           "faultCases": [
-            "El starter ignora el pedido peatonal; tras PedRequest ejecutá amarillo, despeje en rojo, WALK y rojo de recuperación antes de volver a verde, y mostrá WALK sólo con los vehículos en rojo."
+            "El starter ignora el pedido peatonal; tras PedRequest ejecute amarillo, despeje en rojo, WALK y rojo de recuperación antes de volver a verde, y muestre WALK sólo con los vehículos en rojo."
           ]
         }
       }
@@ -478,46 +478,46 @@
         },
         "es": {
           "title": "Nivel de tanque, fallas y reset",
-          "summary": "Recorré el control de nivel y los enclavamientos de falla y reset del ejemplo Tank Level.",
+          "summary": "Recorra el control de nivel y los enclavamientos de falla y reset del ejemplo Tank Level.",
           "scope": "La evidencia de Tests es determinística del host nativo POSIX; no es evidencia de proceso físico, hardware, HIL ni certificación.",
           "objectives": [
-            "Mantené la bomba encendida desde LevelLow hasta LevelHigh con un enclavamiento.",
-            "Enclavá la alarma con PumpFault o EStop y liberala sólo con un Reset nuevo tras despejarse la falla."
+            "Mantenga la bomba encendida desde LevelLow hasta LevelHigh con un enclavamiento.",
+            "Enclave la alarma con PumpFault o EStop y libérela sólo con un Reset nuevo tras despejarse la falla."
           ],
           "stages": [
             {
               "key": "objective",
               "title": "Objetivo",
-              "body": "En src/TankLevel.st, agregá las memorias PumpLatched, FaultLatched y ResetArmed (o equivalentes); la planta es dueña de LevelLow y LevelHigh.",
+              "body": "En src/TankLevel.st, agregue las memorias PumpLatched, FaultLatched y ResetArmed (o equivalentes); la planta es dueña de LevelLow y LevelHigh.",
               "checkpoint": "Las memorias de bomba, falla y reset deben tener estados explícitos."
             },
             {
               "key": "predict",
-              "title": "Predecí",
-              "body": "Antes de ejecutar, anticipá la bomba y alarma durante los cambios de nivel y falla.",
+              "title": "Prediga",
+              "body": "Antes de ejecutar, anticipe la bomba y alarma durante los cambios de nivel y falla.",
               "checkpoint": "Pump ON/Alarm NORMAL 10–60 ms; Pump OFF/Alarm NORMAL 70 ms; OFF/ALARM 80–90; OFF/NORMAL 100–110; OFF/ALARM 120–130; OFF/NORMAL 140–150."
             },
             {
               "key": "edit",
-              "title": "Editá",
-              "body": "Corregí esta omisión del starter y guardá antes de ejecutar: El starter no tiene histéresis de bomba y sigue funcionando ante una falla de bomba; mantené la bomba desde LevelLow hasta LevelHigh, enclavá la alarma con PumpFault o EStop y liberala sólo con un Reset pulsado tras despejarse la falla.",
+              "title": "Edite",
+              "body": "Corrija esta omisión del starter y guarde antes de ejecutar: El starter no tiene histéresis de bomba y sigue funcionando ante una falla de bomba; mantenga la bomba desde LevelLow hasta LevelHigh, enclave la alarma con PumpFault o EStop y libérela sólo con un Reset pulsado tras despejarse la falla.",
               "checkpoint": "El escenario visible debe pasar con evidencia host guardada."
             },
             {
               "key": "run",
-              "title": "Ejecutá",
-              "body": "En Tests, elegí el zplc.json guardado y ejecutá únicamente el escenario TankLevel.",
+              "title": "Ejecute",
+              "body": "En Tests, elija el zplc.json guardado y ejecute únicamente el escenario TankLevel.",
               "checkpoint": "El escenario requerido se llama TankLevel y contiene 13 assertions."
             },
             {
               "key": "observe",
-              "title": "Observá",
-              "body": "Relacioná 80/100/120/140 ms con fault, reset, EStop y la recuperación; nunca deben coexistir Pump+Alarm.",
+              "title": "Observe",
+              "body": "Relacione 80/100/120/140 ms con fault, reset, EStop y la recuperación; nunca deben coexistir Pump+Alarm.",
               "checkpoint": "La matriz registrada en Tests muestra cada transición de bomba y alarma."
             },
             {
               "key": "reflect",
-              "title": "Reflexioná",
+              "title": "Reflexione",
               "body": "La assertion NEVER cubre Pump+Alarm sólo en este escenario registrado.",
               "checkpoint": "No demuestra un proceso físico, temporización de hardware, HIL ni certificación."
             }
@@ -529,11 +529,11 @@
             },
             {
               "level": 2,
-              "text": "Agregá FaultLatched, activada por PumpFault o EStop y conservada cuando la entrada desaparece, y ResetArmed, activada sólo cuando Reset se ve suelto con la falla enclavada; borrá FaultLatched con un Reset pulsado estando armado y sin entradas de falla, y condicioná Pump con NOT FaultLatched."
+              "text": "Agregue FaultLatched, activada por PumpFault o EStop y conservada cuando la entrada desaparece, y ResetArmed, activada sólo cuando Reset se ve suelto con la falla enclavada; borre FaultLatched con un Reset pulsado estando armado y sin entradas de falla, y condicione Pump con NOT FaultLatched."
             }
           ],
           "faultCases": [
-            "El starter no tiene histéresis de bomba y sigue funcionando ante una falla de bomba; mantené la bomba desde LevelLow hasta LevelHigh, enclavá la alarma con PumpFault o EStop y liberala sólo con un Reset pulsado tras despejarse la falla."
+            "El starter no tiene histéresis de bomba y sigue funcionando ante una falla de bomba; mantenga la bomba desde LevelLow hasta LevelHigh, enclave la alarma con PumpFault o EStop y libérela sólo con un Reset pulsado tras despejarse la falla."
           ]
         }
       }
@@ -663,46 +663,46 @@
         },
         "es": {
           "title": "Cinta de clasificación y atasco seguro",
-          "summary": "Recorré la clasificación de piezas y el bloqueo seguro por atasco del ejemplo Conveyor 01.",
+          "summary": "Recorra la clasificación de piezas y el bloqueo seguro por atasco del ejemplo Conveyor 01.",
           "scope": "La evidencia de Tests es determinística del host nativo POSIX; no es evidencia de cinta física, despeje de atasco, hardware, HIL ni certificación.",
           "objectives": [
-            "Detené la cinta y encendé FaultLamp mientras la planta informa JamDetected.",
-            "Evitá que Reset libere la falla mientras el atasco siga presente."
+            "Detenga la cinta y encienda FaultLamp mientras la planta informa JamDetected.",
+            "Evite que Reset libere la falla mientras el atasco siga presente."
           ],
           "stages": [
             {
               "key": "objective",
               "title": "Objetivo",
-              "body": "En src/Conveyor.st, conservá Requested y MetalLatched y agregá Faulted; los sensores pertenecen a la plant.",
+              "body": "En src/Conveyor.st, conserve Requested y MetalLatched y agregue Faulted; los sensores pertenecen a la plant.",
               "checkpoint": "La lógica sólo manda salidas a partir de sensores registrados por la plant."
             },
             {
               "key": "predict",
-              "title": "Predecí",
-              "body": "Antes de ejecutar, anticipá la cinta, desviador y lámpara de falla.",
+              "title": "Prediga",
+              "body": "Antes de ejecutar, anticipe la cinta, desviador y lámpara de falla.",
               "checkpoint": "Belt ON 10–40; Diverter ON sólo 30; FaultLamp ON y Belt OFF 50–80. Reset a 60 no libera mientras JamDetected sigue activo."
             },
             {
               "key": "edit",
-              "title": "Editá",
-              "body": "Corregí esta omisión del starter y guardá antes de ejecutar: El starter no bloquea la cinta ante el atasco determinista; detenela y encendé FaultLamp mientras la planta informa JamDetected, y evitá que Reset la libere mientras el atasco siga.",
+              "title": "Edite",
+              "body": "Corrija esta omisión del starter y guarde antes de ejecutar: El starter no bloquea la cinta ante el atasco determinista; deténgala y encienda FaultLamp mientras la planta informa JamDetected, y evite que Reset la libere mientras el atasco siga.",
               "checkpoint": "El escenario visible debe pasar con evidencia host guardada."
             },
             {
               "key": "run",
-              "title": "Ejecutá",
-              "body": "En Tests, elegí el zplc.json guardado y ejecutá únicamente Conveyor01; el starter también incluye ConveyorJamTiming (lección 9), así que Tests-all calificaría dos escenarios.",
+              "title": "Ejecute",
+              "body": "En Tests, elija el zplc.json guardado y ejecute únicamente Conveyor01; el starter también incluye ConveyorJamTiming (lección 9), así que Tests-all calificaría dos escenarios.",
               "checkpoint": "El escenario requerido se llama Conveyor01 y contiene 6 assertions."
             },
             {
               "key": "observe",
-              "title": "Observá",
-              "body": "Revisá la matriz: classifier+metal 20, diverter+count=1 a 30, jam 50.",
+              "title": "Observe",
+              "body": "Revise la matriz: classifier+metal 20, diverter+count=1 a 30, jam 50.",
               "checkpoint": "El atasco enciende FaultLamp y detiene Belt."
             },
             {
               "key": "reflect",
-              "title": "Reflexioná",
+              "title": "Reflexione",
               "body": "La assertion NEVER cubre DiverterCommand ON con BeltCommand OFF sólo en este escenario.",
               "checkpoint": "No demuestra cinta física, despeje de atasco, temporización de hardware, HIL ni certificación."
             }
@@ -710,15 +710,15 @@
           "hints": [
             {
               "level": 1,
-              "text": "Un atasco tiene que ganar sobre todo lo demás: con JamDetected en TRUE, enclavá una memoria Faulted y soltá el pedido de cinta, así la cinta queda detenida aunque la entrada de atasco desaparezca."
+              "text": "Un atasco tiene que ganar sobre todo lo demás: con JamDetected en TRUE, enclave una memoria Faulted y suelte el pedido de cinta, así la cinta queda detenida aunque la entrada de atasco desaparezca."
             },
             {
               "level": 2,
-              "text": "Calculá BeltCommand como Requested AND NOT Faulted, FaultLamp como Faulted OR JamDetected, y borrá Faulted con Reset sólo cuando JamDetected sea FALSE."
+              "text": "Calcule BeltCommand como Requested AND NOT Faulted, FaultLamp como Faulted OR JamDetected, y borre Faulted con Reset sólo cuando JamDetected sea FALSE."
             }
           ],
           "faultCases": [
-            "El starter no bloquea la cinta ante el atasco determinista; detenela y encendé FaultLamp mientras la planta informa JamDetected, y evitá que Reset la libere mientras el atasco siga."
+            "El starter no bloquea la cinta ante el atasco determinista; deténgala y encienda FaultLamp mientras la planta informa JamDetected, y evite que Reset la libere mientras el atasco siga."
           ]
         }
       }
@@ -834,46 +834,46 @@
         },
         "es": {
           "title": "Oscilador TON y realimentación de salida",
-          "summary": "Completá un parpadeo Ladder de 500 ms hecho con dos temporizadores TON y bobinas SET y RESET, y verificá sus tiempos de encendido y apagado con assertions FOR y AT.",
+          "summary": "Complete un parpadeo Ladder de 500 ms hecho con dos temporizadores TON y bobinas SET y RESET, y verifique sus tiempos de encendido y apagado con assertions FOR y AT.",
           "scope": "La evidencia de Tests es del host nativo POSIX; no es evidencia de LED físico, timing de hardware, HIL ni certificación.",
           "objectives": [
-            "Leé un oscilador Ladder de dos temporizadores: cada uno corre en un semiperíodo y arranca al siguiente.",
+            "Lea un oscilador Ladder de dos temporizadores: cada uno corre en un semiperíodo y arranca al siguiente.",
             "Completalo con una bobina SET y una bobina RESET manejadas por las salidas Q de los temporizadores."
           ],
           "stages": [
             {
               "key": "objective",
               "title": "Objetivo",
-              "body": "En src/Blinky.ld.json ya están dibujados los dos peldaños de temporizador: OffTimer corre mientras LED_Output está OFF y OnTimer corre mientras está ON. Agregá los dos peldaños de bobina: un contacto sobre OffTimer.Q que haga SET de LED_Output y un contacto sobre OnTimer.Q que le haga RESET.",
+              "body": "En src/Blinky.ld.json ya están dibujados los dos peldaños de temporizador: OffTimer corre mientras LED_Output está OFF y OnTimer corre mientras está ON. Agregue los dos peldaños de bobina: un contacto sobre OffTimer.Q que haga SET de LED_Output y un contacto sobre OnTimer.Q que le haga RESET.",
               "checkpoint": "Las salidas de los temporizadores se realimentan para activar y desactivar el LED, y el LED arranca en OFF."
             },
             {
               "key": "predict",
-              "title": "Predecí",
-              "body": "Antes de ejecutar, anticipá LED_Output a 250, 750, 1250 y 1750 ms.",
+              "title": "Prediga",
+              "body": "Antes de ejecutar, anticipe LED_Output a 250, 750, 1250 y 1750 ms.",
               "checkpoint": "OFF a 250 ms, ON a 750, OFF a 1250, ON a 1750; el primer flanco ascendente cae entre 400 y 600 ms."
             },
             {
               "key": "edit",
-              "title": "Editá",
-              "body": "Corregí esta omisión del starter y guardá antes de ejecutar: El starter tiene los dos temporizadores pero ninguna bobina, así que LED_Output queda en OFF para siempre; agregá una bobina SET manejada por OffTimer.Q y una bobina RESET manejada por OnTimer.Q, de modo que el LED esté OFF unos 500 ms, luego ON unos 500 ms, y repita.",
+              "title": "Edite",
+              "body": "Corrija esta omisión del starter y guarde antes de ejecutar: El starter tiene los dos temporizadores pero ninguna bobina, así que LED_Output queda en OFF para siempre; agregue una bobina SET manejada por OffTimer.Q y una bobina RESET manejada por OnTimer.Q, de modo que el LED esté OFF unos 500 ms, luego ON unos 500 ms, y repita.",
               "checkpoint": "El escenario visible debe pasar con evidencia host guardada."
             },
             {
               "key": "run",
-              "title": "Ejecutá",
-              "body": "En Tests, elegí el zplc.json guardado y ejecutá únicamente el escenario BlinkyVisual.",
+              "title": "Ejecute",
+              "body": "En Tests, elija el zplc.json guardado y ejecute únicamente el escenario BlinkyVisual.",
               "checkpoint": "El escenario requerido se llama BlinkyVisual y contiene 11 assertions."
             },
             {
               "key": "observe",
-              "title": "Observá",
-              "body": "Revisá la traza y la tabla: OFF hasta unos 500 ms, ON hasta unos 1000 ms, OFF de nuevo y ON otra vez desde unos 1500 ms.",
+              "title": "Observe",
+              "body": "Revise la traza y la tabla: OFF hasta unos 500 ms, ON hasta unos 1000 ms, OFF de nuevo y ON otra vez desde unos 1500 ms.",
               "checkpoint": "Las tres ventanas FOR (20-400 ms OFF, 620-900 ms ON, 1120-1400 ms OFF) se sostienen, y se encuentran los dos flancos ascendentes y el descendente."
             },
             {
               "key": "reflect",
-              "title": "Reflexioná",
+              "title": "Reflexione",
               "body": "Un programa que invierte la salida en cada scan, parpadea al doble de velocidad o queda ON sólo el 20 % del tiempo falla las assertions FOR y AT.",
               "checkpoint": "El escenario host evalúa la forma de onda lógica, no la técnica (un semiperíodo de 500 o 510 ms pasa); no demuestra período eléctrico, brillo, timing de hardware, HIL ni certificación."
             }
@@ -881,15 +881,15 @@
           "hints": [
             {
               "level": 1,
-              "text": "Mirá los dos primeros peldaños: OffTimer sólo corre mientras LED_Output está OFF y OnTimer sólo mientras está ON, así que algo tiene que invertir LED_Output cuando cada uno termina."
+              "text": "Mire los dos primeros peldaños: OffTimer sólo corre mientras LED_Output está OFF y OnTimer sólo mientras está ON, así que algo tiene que invertir LED_Output cuando cada uno termina."
             },
             {
               "level": 2,
-              "text": "Agregá un peldaño con un contacto normalmente abierto sobre OffTimer.Q y una bobina SET sobre LED_Output, y otro con un contacto sobre OnTimer.Q y una bobina RESET sobre LED_Output."
+              "text": "Agregue un peldaño con un contacto normalmente abierto sobre OffTimer.Q y una bobina SET sobre LED_Output, y otro con un contacto sobre OnTimer.Q y una bobina RESET sobre LED_Output."
             }
           ],
           "faultCases": [
-            "El starter tiene los dos temporizadores pero ninguna bobina, así que LED_Output queda en OFF para siempre; agregá una bobina SET manejada por OffTimer.Q y una bobina RESET manejada por OnTimer.Q, de modo que el LED esté OFF unos 500 ms, luego ON unos 500 ms, y repita."
+            "El starter tiene los dos temporizadores pero ninguna bobina, así que LED_Output queda en OFF para siempre; agregue una bobina SET manejada por OffTimer.Q y una bobina RESET manejada por OnTimer.Q, de modo que el LED esté OFF unos 500 ms, luego ON unos 500 ms, y repita."
           ]
         }
       }
@@ -1014,46 +1014,46 @@
         },
         "es": {
           "title": "Comando, realimentación y velocidad",
-          "summary": "Separá la orden del motor de la confirmación de marcha usando la planta Motor Plant.",
+          "summary": "Separe la orden del motor de la confirmación de marcha usando la planta Motor Plant.",
           "scope": "La evidencia de Tests es determinística del host nativo POSIX y de la planta discreta; no es evidencia de motor físico, hardware, HIL ni certificación.",
           "objectives": [
-            "Separá la orden al motor de la confirmación de que está en marcha.",
-            "Retené el pedido hasta Stop y dejá que Running siga al pedido sólo cuando llegue AtSpeed."
+            "Separe la orden al motor de la confirmación de que está en marcha.",
+            "Retenga el pedido hasta Stop y deje que Running siga al pedido sólo cuando llegue AtSpeed."
           ],
           "stages": [
             {
               "key": "objective",
               "title": "Objetivo",
-              "body": "En src/MotorPlant.st, mantené una memoria Requested que Start activa y Stop borra, y cableá Requested, Command y Running.",
+              "body": "En src/MotorPlant.st, mantenga una memoria Requested que Start activa y Stop borra, y cablee Requested, Command y Running.",
               "checkpoint": "Command expresa la orden; Running depende además de AtSpeed."
             },
             {
               "key": "predict",
-              "title": "Predecí",
-              "body": "Antes de ejecutar, diferenciá la orden de la confirmación.",
+              "title": "Prediga",
+              "body": "Antes de ejecutar, diferencie la orden de la confirmación.",
               "checkpoint": "0 ms: Command/Running OFF; 10: Command ON y Running OFF; 30: ambos ON; 40: ambos OFF."
             },
             {
               "key": "edit",
-              "title": "Editá",
-              "body": "Corregí esta omisión del starter y guardá antes de ejecutar: El starter pierde Command cuando cae Start y no respeta Stop; retené el pedido hasta Stop y condicioná Running con AtSpeed.",
+              "title": "Edite",
+              "body": "Corrija esta omisión del starter y guarde antes de ejecutar: El starter pierde Command cuando cae Start y no respeta Stop; retenga el pedido hasta Stop y condicione Running con AtSpeed.",
               "checkpoint": "El escenario visible debe pasar con evidencia host guardada."
             },
             {
               "key": "run",
-              "title": "Ejecutá",
-              "body": "En Tests, elegí el zplc.json guardado y ejecutá únicamente el escenario MotorPlant.",
+              "title": "Ejecute",
+              "body": "En Tests, elija el zplc.json guardado y ejecute únicamente el escenario MotorPlant.",
               "checkpoint": "El escenario requerido se llama MotorPlant y contiene 7 assertions."
             },
             {
               "key": "observe",
-              "title": "Observá",
-              "body": "Compará 10 con 30 ms: la planta registra orden antes de AtSpeed; Stop a 40 apaga ambos.",
+              "title": "Observe",
+              "body": "Compare 10 con 30 ms: la planta registra orden antes de AtSpeed; Stop a 40 apaga ambos.",
               "checkpoint": "La matriz y la traza registradas muestran el avance discreto de speed/AtSpeed."
             },
             {
               "key": "reflect",
-              "title": "Reflexioná",
+              "title": "Reflexione",
               "body": "RISING/FALLING cubren esta transición y NEVER comprueba que Running no aparezca sin Command dentro de este escenario.",
               "checkpoint": "No demuestra inercia, motor físico, timing de hardware, HIL ni certificación."
             }
@@ -1061,15 +1061,15 @@
           "hints": [
             {
               "level": 1,
-              "text": "Start sólo necesita un pulso, así que el pedido tiene que recordarse: activá Requested con Start y borralo con Stop (Stop gana si ambos están en TRUE)."
+              "text": "Start sólo necesita un pulso, así que el pedido tiene que recordarse: active Requested con Start y borralo con Stop (Stop gana si ambos están en TRUE)."
             },
             {
               "level": 2,
-              "text": "Manejá Command desde Requested y Running desde Requested AND AtSpeed: Command sube primero, Running lo sigue cuando la planta informa velocidad, y ambos caen juntos con Stop."
+              "text": "Maneje Command desde Requested y Running desde Requested AND AtSpeed: Command sube primero, Running lo sigue cuando la planta informa velocidad, y ambos caen juntos con Stop."
             }
           ],
           "faultCases": [
-            "El starter pierde Command cuando cae Start y no respeta Stop; retené el pedido hasta Stop y condicioná Running con AtSpeed."
+            "El starter pierde Command cuando cae Start y no respeta Stop; retenga el pedido hasta Stop y condicione Running con AtSpeed."
           ]
         }
       }
@@ -1185,46 +1185,46 @@
         },
         "es": {
           "title": "Flancos y contador de pulsos",
-          "summary": "Usá un contador CTU para contar tres pulsos discretos y resetear la cuenta.",
+          "summary": "Use un contador CTU para contar tres pulsos discretos y resetear la cuenta.",
           "scope": "La evidencia de Tests es del host nativo POSIX; no es evidencia de sensor físico, rebote, hardware, HIL ni certificación.",
           "objectives": [
-            "Contá tres flancos ascendentes de PulseInput con un contador CTU.",
-            "Reseteá la cuenta y CountReached con Reset."
+            "Cuente tres flancos ascendentes de PulseInput con un contador CTU.",
+            "Resetee la cuenta y CountReached con Reset."
           ],
           "stages": [
             {
               "key": "objective",
               "title": "Objetivo",
-              "body": "En src/EdgeCounter.st, usá PulseInput, Reset y CountReached y agregá una instancia Count (CTU) con PV=3.",
+              "body": "En src/EdgeCounter.st, use PulseInput, Reset y CountReached y agregue una instancia Count (CTU) con PV=3.",
               "checkpoint": "CTU cuenta una vez cada flanco ascendente de PulseInput, sin importar cuánto tiempo siga en alto el pulso; Reset borra la cuenta."
             },
             {
               "key": "predict",
-              "title": "Predecí",
-              "body": "Antes de ejecutar, anticipá cuándo el contador alcanza PV=3.",
+              "title": "Prediga",
+              "body": "Antes de ejecutar, anticipe cuándo el contador alcanza PV=3.",
               "checkpoint": "CountReached permanece OFF a 0, 10 y 30 ms; enciende a 50 tras el tercer flanco; vuelve OFF a 70 con Reset."
             },
             {
               "key": "edit",
-              "title": "Editá",
-              "body": "Corregí esta omisión del starter y guardá antes de ejecutar: El starter nunca cuenta; agregá un CTU con PV=3 para que CountReached encienda en el tercer flanco ascendente y Reset lo apague.",
+              "title": "Edite",
+              "body": "Corrija esta omisión del starter y guarde antes de ejecutar: El starter nunca cuenta; agregue un CTU con PV=3 para que CountReached encienda en el tercer flanco ascendente y Reset lo apague.",
               "checkpoint": "El escenario visible debe pasar con evidencia host guardada."
             },
             {
               "key": "run",
-              "title": "Ejecutá",
-              "body": "En Tests, elegí el zplc.json guardado y ejecutá únicamente el escenario EdgeCounter.",
+              "title": "Ejecute",
+              "body": "En Tests, elija el zplc.json guardado y ejecute únicamente el escenario EdgeCounter.",
               "checkpoint": "El escenario requerido se llama EdgeCounter y contiene 7 assertions."
             },
             {
               "key": "observe",
-              "title": "Observá",
-              "body": "Compará los eventos de 10, 30, 50 y 70 ms con la salida CountReached.",
+              "title": "Observe",
+              "body": "Compare los eventos de 10, 30, 50 y 70 ms con la salida CountReached.",
               "checkpoint": "El tercer pulso alcanza PV=3; Reset domina y devuelve CountReached a OFF."
             },
             {
               "key": "reflect",
-              "title": "Reflexioná",
+              "title": "Reflexione",
               "body": "Las assertions AT/RISING/FALLING cubren esta secuencia lógica discreta.",
               "checkpoint": "No demuestran rebote, pulsos eléctricos, timing de hardware, HIL ni certificación."
             }
@@ -1232,15 +1232,15 @@
           "hints": [
             {
               "level": 1,
-              "text": "Un CTU ya cuenta sólo flancos ascendentes de CU, así que un pulso largo cuenta una sola vez; no necesitás detectar el flanco vos mismo."
+              "text": "Un CTU ya cuenta sólo flancos ascendentes de CU, así que un pulso largo cuenta una sola vez; no necesita detectar el flanco usted mismo."
             },
             {
               "level": 2,
-              "text": "Declará Count : CTU, llamalo en cada scan como Count(CU := PulseInput, R := Reset, PV := 3) y copiá Count.Q a CountReached."
+              "text": "Declare Count : CTU, llamalo en cada scan como Count(CU := PulseInput, R := Reset, PV := 3) y copie Count.Q a CountReached."
             }
           ],
           "faultCases": [
-            "El starter nunca cuenta; agregá un CTU con PV=3 para que CountReached encienda en el tercer flanco ascendente y Reset lo apague."
+            "El starter nunca cuenta; agregue un CTU con PV=3 para que CountReached encienda en el tercer flanco ascendente y Reset lo apague."
           ]
         }
       }
@@ -1251,7 +1251,9 @@
       "order": 8,
       "module": 1,
       "level": "foundation",
-      "prerequisites": [],
+      "prerequisites": [
+        "first-blink-simulation"
+      ],
       "languages": [
         "ST"
       ],
@@ -1360,41 +1362,41 @@
         },
         "es": {
           "title": "Ciclo de scan y memoria de un ciclo",
-          "summary": "Seguí cómo una entrada produce una salida actual y una copia demorada un scan.",
+          "summary": "Siga cómo una entrada produce una salida actual y una copia demorada un scan.",
           "scope": "La evidencia de Tests es del runtime nativo POSIX host con una única tarea de 10 ms; no demuestra timing de target, snapshot bajo interrupciones físicas, rebote eléctrico, HIL ni certificación.",
           "objectives": [
-            "Comprobá que una variable conserva su valor de un scan al siguiente.",
-            "Armá un retardo de un scan y un pulso de un scan con una única memoria."
+            "Compruebe que una variable conserva su valor de un scan al siguiente.",
+            "Arme un retardo de un scan y un pulso de un scan con una única memoria."
           ],
           "stages": [
             {
               "key": "objective",
               "title": "Objetivo",
-              "body": "En src/ScanSnapshot.st, usá Button, Current, Delayed y RisingPulse y agregá la memoria Previous.",
+              "body": "En src/ScanSnapshot.st, use Button, Current, Delayed y RisingPulse y agregue la memoria Previous.",
               "checkpoint": "Previous se actualiza al final del scan."
             },
             {
               "key": "predict",
-              "title": "Predecí",
-              "body": "Antes de ejecutar, anticipá los cuatro samples registrados como Current, Delayed, RisingPulse.",
+              "title": "Prediga",
+              "body": "Antes de ejecutar, anticipe los cuatro samples registrados como Current, Delayed, RisingPulse.",
               "checkpoint": "000@0, 101@10, 010@20, 000@30."
             },
             {
               "key": "edit",
-              "title": "Editá",
-              "body": "Corregí esta omisión del starter y guardá antes de ejecutar: El starter no tiene memoria de un scan; conservá Previous, calculá Delayed con él, derivá RisingPulse de Current y Delayed y actualizá Previous al final.",
+              "title": "Edite",
+              "body": "Corrija esta omisión del starter y guarde antes de ejecutar: El starter no tiene memoria de un scan; conserve Previous, calcule Delayed con él, derive RisingPulse de Current y Delayed y actualice Previous al final.",
               "checkpoint": "El escenario visible debe pasar con evidencia host guardada."
             },
             {
               "key": "run",
-              "title": "Ejecutá",
-              "body": "En Tests, elegí el zplc.json guardado y ejecutá únicamente el escenario ScanSnapshot.",
+              "title": "Ejecute",
+              "body": "En Tests, elija el zplc.json guardado y ejecute únicamente el escenario ScanSnapshot.",
               "checkpoint": "El escenario requerido se llama ScanSnapshot y contiene 9 assertions."
             },
             {
               "key": "observe",
-              "title": "Observá",
-              "body": "Compará 10, 20 y 30 ms: RisingPulse dura un scan y Delayed conserva la copia demorada.",
+              "title": "Observe",
+              "body": "Compare 10, 20 y 30 ms: RisingPulse dura un scan y Delayed conserva la copia demorada.",
               "checkpoint": "El pulso aparece a 10 ms; Delayed aparece a 20 ms y vuelve OFF a 30 ms."
             },
             {
@@ -1405,7 +1407,7 @@
             },
             {
               "key": "reflect",
-              "title": "Reflexioná",
+              "title": "Reflexione",
               "body": "Actualizar Previous antes rompería el detector de flanco.",
               "checkpoint": "La memoria debe conservar el valor anterior hasta el final del scan."
             }
@@ -1417,11 +1419,11 @@
             },
             {
               "level": 2,
-              "text": "Escribí las sentencias en este orden: Current := Button; Delayed := Previous; RisingPulse := Current AND NOT Delayed; y recién después Previous := Button."
+              "text": "Escriba las sentencias en este orden: Current := Button; Delayed := Previous; RisingPulse := Current AND NOT Delayed; y recién después Previous := Button."
             }
           ],
           "faultCases": [
-            "El starter no tiene memoria de un scan; conservá Previous, calculá Delayed con él, derivá RisingPulse de Current y Delayed y actualizá Previous al final."
+            "El starter no tiene memoria de un scan; conserve Previous, calcule Delayed con él, derive RisingPulse de Current y Delayed y actualice Previous al final."
           ]
         }
       }
@@ -1539,46 +1541,46 @@
         },
         "es": {
           "title": "Assertions temporales y falla por atasco",
-          "summary": "Enclavá la falla por atasco y probá su temporización con assertions AT, WITHIN, FOR, UNTIL, RISING y FALLING.",
+          "summary": "Enclave la falla por atasco y pruebe su temporización con assertions AT, WITHIN, FOR, UNTIL, RISING y FALLING.",
           "scope": "La evidencia de Tests es del runtime nativo POSIX host y de inputs discretos; el atasco programado no es una falla física, despeje físico, timing de target, HIL ni certificación.",
           "objectives": [
-            "Enclavá la falla por atasco y probá su temporización con assertions temporales.",
-            "Exigí un Start nuevo antes de mover la cinta otra vez tras liberar la falla."
+            "Enclave la falla por atasco y pruebe su temporización con assertions temporales.",
+            "Exija un Start nuevo antes de mover la cinta otra vez tras liberar la falla."
           ],
           "stages": [
             {
               "key": "objective",
               "title": "Objetivo",
-              "body": "Leé tests/conveyor-jam-timing.scenario.json junto a src/Conveyor.st. Start se pulsa a 0 ms, un atasco aparece a 30 ms y se despeja a 50 ms, Reset se pulsa a 40 ms (atasco presente) y a 60 ms (atasco despejado), y Start se pulsa de nuevo a 80 ms.",
+              "body": "Lea tests/conveyor-jam-timing.scenario.json junto a src/Conveyor.st. Start se pulsa a 0 ms, un atasco aparece a 30 ms y se despeja a 50 ms, Reset se pulsa a 40 ms (atasco presente) y a 60 ms (atasco despejado), y Start se pulsa de nuevo a 80 ms.",
               "checkpoint": "El starter debe enclavar la falla por atasco (a partir de la lección 4) antes de aprobar el escenario."
             },
             {
               "key": "predict",
-              "title": "Predecí",
-              "body": "Antes de ejecutar, anticipá BeltCommand y FaultLamp a 20, 30, 50, 60 y 80 ms.",
+              "title": "Prediga",
+              "body": "Antes de ejecutar, anticipe BeltCommand y FaultLamp a 20, 30, 50, 60 y 80 ms.",
               "checkpoint": "Belt ON y FaultLamp OFF a 20; Belt OFF y FaultLamp ON a 30 y todavía a 50 (Reset a 40 se ignora y despejar el atasco no libera la falla); ambos OFF a 60; Belt ON de nuevo a 80 sólo tras el nuevo Start."
             },
             {
               "key": "edit",
-              "title": "Editá",
-              "body": "Corregí esta omisión del starter y guardá antes de ejecutar: El starter omite el enclavamiento del atasco; enclavá la falla con JamDetected, ignorá Reset mientras el atasco esté presente, liberala sólo con Reset tras despejarse el atasco y exigí un nuevo Start para volver a mover la cinta.",
+              "title": "Edite",
+              "body": "Corrija esta omisión del starter y guarde antes de ejecutar: El starter omite el enclavamiento del atasco; enclave la falla con JamDetected, ignore Reset mientras el atasco esté presente, libérela sólo con Reset tras despejarse el atasco y exija un nuevo Start para volver a mover la cinta.",
               "checkpoint": "El escenario visible debe pasar con evidencia host guardada."
             },
             {
               "key": "run",
-              "title": "Ejecutá",
-              "body": "En Tests, elegí el zplc.json guardado y ejecutá únicamente ConveyorJamTiming; Conveyor01 es el escenario de la lección 4 y queda como chequeo de regresión.",
+              "title": "Ejecute",
+              "body": "En Tests, elija el zplc.json guardado y ejecute únicamente ConveyorJamTiming; Conveyor01 es el escenario de la lección 4 y queda como chequeo de regresión.",
               "checkpoint": "El escenario requerido se llama ConveyorJamTiming y contiene 9 assertions."
             },
             {
               "key": "observe",
-              "title": "Contrastá",
-              "body": "Relacioná cada assertion con la traza: AT a 20, 50 y 60 ms fija los estados exactos; WITHIN a 30 ms prueba que la falla aparece en el mismo scan que el atasco; FOR de 30 a 50 ms se sostiene a través del Reset temprano; FALLING a 60 ms muestra que Reset liberó la lámpara; UNTIL mantiene la cinta OFF hasta el nuevo Start; RISING a 80 ms encuentra el rearranque.",
+              "title": "Contraste",
+              "body": "Relacione cada assertion con la traza: AT a 20, 50 y 60 ms fija los estados exactos; WITHIN a 30 ms prueba que la falla aparece en el mismo scan que el atasco; FOR de 30 a 50 ms se sostiene a través del Reset temprano; FALLING a 60 ms muestra que Reset liberó la lámpara; UNTIL mantiene la cinta OFF hasta el nuevo Start; RISING a 80 ms encuentra el rearranque.",
               "checkpoint": "La traza registrada muestra la secuencia discreta, no una medición física."
             },
             {
               "key": "reflect",
-              "title": "Reflexioná",
+              "title": "Reflexione",
               "body": "NEVER prohíbe BeltCommand y FaultLamp ON a la vez en este escenario. Un Reset con el atasco presente no debe liberar la falla, y liberarla no debe rearrancar la cinta.",
               "checkpoint": "Un atasco inyectado no demuestra falla física, despeje físico, timing de target, HIL ni certificación."
             }
@@ -1586,15 +1588,15 @@
           "hints": [
             {
               "level": 1,
-              "text": "Partí de la lección 4: JamDetected enclava Faulted, y un Reset sólo cuenta cuando la entrada de atasco ya no está; leé los tiempos del escenario para ver qué Reset debe ignorarse."
+              "text": "Parta de la lección 4: JamDetected enclava Faulted, y un Reset sólo cuenta cuando la entrada de atasco ya no está; lea los tiempos del escenario para ver qué Reset debe ignorarse."
             },
             {
               "level": 2,
-              "text": "Borrá Requested y StartArmed cuando aparece el atasco, liberá Faulted sólo con Reset estando JamDetected en FALSE, y dejá que Requested vuelva sólo con un Start pulsado después de haber visto Start suelto."
+              "text": "Borre Requested y StartArmed cuando aparece el atasco, libere Faulted sólo con Reset estando JamDetected en FALSE, y deje que Requested vuelva sólo con un Start pulsado después de haber visto Start suelto."
             }
           ],
           "faultCases": [
-            "El starter omite el enclavamiento del atasco; enclavá la falla con JamDetected, ignorá Reset mientras el atasco esté presente, liberala sólo con Reset tras despejarse el atasco y exigí un nuevo Start para volver a mover la cinta."
+            "El starter omite el enclavamiento del atasco; enclave la falla con JamDetected, ignore Reset mientras el atasco esté presente, libérela sólo con Reset tras despejarse el atasco y exija un nuevo Start para volver a mover la cinta."
           ]
         }
       }
@@ -1716,68 +1718,861 @@
         },
         "es": {
           "title": "Diagnóstico reproducible: dos piezas, una decisión",
-          "summary": "Usá el calendario versionado para distinguir una pieza metálica de una no metálica sin inventar observabilidad.",
+          "summary": "Use el calendario versionado para distinguir una pieza metálica de una no metálica sin inventar observabilidad.",
           "scope": "La evidencia de Tests es del runtime nativo POSIX host con inputs programados por escenario; no es evidencia de sensores ni piezas físicas, timing de target, hardware, HIL ni certificación.",
           "objectives": [
-            "Distinguí una pieza metálica de una no metálica con una memoria que vive entre dos sensores.",
-            "Leé una línea de tiempo de entradas agendadas y anticipá las salidas antes de ejecutarla."
+            "Distinga una pieza metálica de una no metálica con una memoria que vive entre dos sensores.",
+            "Lea una línea de tiempo de entradas agendadas y anticipe las salidas antes de ejecutarla."
           ],
           "stages": [
             {
               "key": "objective",
-              "title": "Ubicá",
-              "body": "Usá PartAtClassifier, MetalDetected y PartAtDiverter en src/Conveyor.st y agregá MetalLatched.",
+              "title": "Ubique",
+              "body": "Use PartAtClassifier, MetalDetected y PartAtDiverter en src/Conveyor.st y agregue MetalLatched.",
               "checkpoint": "MetalLatched se activa con clasificador+metal y se limpia al llegar al desviador."
             },
             {
               "key": "predict",
-              "title": "Predecí",
+              "title": "Prediga",
               "body": "La primera pieza es metálica y la segunda no metálica.",
-              "checkpoint": "Esperá desvío sólo para la primera; Belt queda activo para ambas."
+              "checkpoint": "Espere desvío sólo para la primera; Belt queda activo para ambas."
             },
             {
               "key": "schedule",
-              "title": "Leé el calendario",
+              "title": "Lea el calendario",
               "body": "El JSON agenda clasificador→desviador 20→30 ms y 50→70 ms, con tick de 10 ms hasta 80 ms. Start se pulsa sólo a 0 ms, así que el programa debe retener el pedido de cinta.",
               "checkpoint": "Las tres assertions son AT@30 Belt=true/Diverter=true, AT@70 Belt=true/Diverter=false y NEVER Diverter=true con Belt=false."
             },
             {
               "key": "edit",
-              "title": "Editá",
-              "body": "Corregí esta omisión del starter y guardá antes de ejecutar: El starter nunca enclava metal para el desviador; retené el pedido de cinta tras Start, enclavá metal en el clasificador y liberalo recién cuando la pieza llega al desviador.",
+              "title": "Edite",
+              "body": "Corrija esta omisión del starter y guarde antes de ejecutar: El starter nunca enclava metal para el desviador; retenga el pedido de cinta tras Start, enclave metal en el clasificador y liberalo recién cuando la pieza llega al desviador.",
               "checkpoint": "El escenario visible debe pasar con evidencia host guardada."
             },
             {
               "key": "run",
-              "title": "Ejecutá",
-              "body": "En Tests, elegí el zplc.json guardado y ejecutá únicamente ConveyorTwoParts.",
+              "title": "Ejecute",
+              "body": "En Tests, elija el zplc.json guardado y ejecute únicamente ConveyorTwoParts.",
               "checkpoint": "El escenario requerido se llama ConveyorTwoParts y contiene 3 assertions."
             },
             {
               "key": "observe",
-              "title": "Diagnosticá",
-              "body": "La matriz de Tests prueba outputs host: compará las muestras de 30 y 70 ms.",
+              "title": "Diagnostique",
+              "body": "La matriz de Tests prueba outputs host: compare las muestras de 30 y 70 ms.",
               "checkpoint": "No prueba ni registra inputs, piezas físicas ni el estado interno MetalLatched."
             },
             {
               "key": "reflect",
               "title": "Límites",
-              "body": "Repetí el mismo escenario para una decisión reproducible sobre outputs del host.",
+              "body": "Repita el mismo escenario para una decisión reproducible sobre outputs del host.",
               "checkpoint": "No demuestra sensores o piezas físicas, timing de target, hardware, HIL ni certificación."
             }
           ],
           "hints": [
             {
               "level": 1,
-              "text": "El clasificador y el desviador ven la pieza en instantes distintos, así que recordá lo que vio el clasificador: MetalLatched se activa con PartAtClassifier AND MetalDetected."
+              "text": "El clasificador y el desviador ven la pieza en instantes distintos, así que recuerde lo que vio el clasificador: MetalLatched se activa con PartAtClassifier AND MetalDetected."
             },
             {
               "level": 2,
-              "text": "Borrá MetalLatched cuando la pieza llega al desviador, manejá DiverterCommand desde BeltCommand AND PartAtDiverter AND MetalLatched, y retené el pedido de cinta tras la única pulsación de Start a 0 ms."
+              "text": "Borre MetalLatched cuando la pieza llega al desviador, maneje DiverterCommand desde BeltCommand AND PartAtDiverter AND MetalLatched, y retenga el pedido de cinta tras la única pulsación de Start a 0 ms."
             }
           ],
           "faultCases": [
-            "El starter nunca enclava metal para el desviador; retené el pedido de cinta tras Start, enclavá metal en el clasificador y liberalo recién cuando la pieza llega al desviador."
+            "El starter nunca enclava metal para el desviador; retenga el pedido de cinta tras Start, enclave metal en el clasificador y liberalo recién cuando la pieza llega al desviador."
+          ]
+        }
+      }
+    },
+    {
+      "id": "first-blink-simulation",
+      "version": 1,
+      "order": 11,
+      "module": 0,
+      "level": "foundation",
+      "prerequisites": [],
+      "languages": [
+        "ST"
+      ],
+      "tracks": [
+        "simulation"
+      ],
+      "plant": null,
+      "plantMap": null,
+      "estimatedMinutes": 10,
+      "starter": {
+        "project": "first_blink_starter",
+        "program": "src/FirstBlink.st"
+      },
+      "solution": {
+        "project": "first_blink",
+        "program": "src/FirstBlink.st"
+      },
+      "scenario": {
+        "id": "FirstBlink",
+        "path": "tests/first-blink.scenario.json",
+        "sha256": "797711eb3ab8e762f89d99485bf099f0a57a84f52bfd36f9f07932f4bcb4745a",
+        "tickMs": 10,
+        "durationMs": 1600,
+        "assertions": 10,
+        "canonical": "{\"durationMs\":1600,\"events\":[],\"expectations\":[{\"atMs\":0,\"condition\":{\"FirstBlink.Lamp\":false},\"kind\":\"AT\"},{\"atMs\":250,\"condition\":{\"FirstBlink.Lamp\":false},\"kind\":\"AT\"},{\"atMs\":750,\"condition\":{\"FirstBlink.Lamp\":true},\"kind\":\"AT\"},{\"atMs\":1250,\"condition\":{\"FirstBlink.Lamp\":false},\"kind\":\"AT\"},{\"atMs\":1550,\"condition\":{\"FirstBlink.Lamp\":true},\"kind\":\"AT\"},{\"condition\":{\"FirstBlink.Lamp\":false},\"forMs\":380,\"fromMs\":20,\"kind\":\"FOR\"},{\"condition\":{\"FirstBlink.Lamp\":true},\"forMs\":280,\"fromMs\":620,\"kind\":\"FOR\"},{\"condition\":{\"FirstBlink.Lamp\":false},\"forMs\":280,\"fromMs\":1120,\"kind\":\"FOR\"},{\"condition\":{\"FirstBlink.Lamp\":true},\"fromMs\":400,\"kind\":\"RISING\",\"withinMs\":200},{\"condition\":{\"FirstBlink.Lamp\":false},\"fromMs\":900,\"kind\":\"FALLING\",\"withinMs\":200}],\"id\":\"FirstBlink\",\"schemaVersion\":1,\"tickMs\":10}"
+      },
+      "regressionScenarios": [],
+      "text": {
+        "en": {
+          "title": "Your first blink in simulation",
+          "summary": "Make a simulated lamp turn on and off every half second by changing one number, then see the result in the trace.",
+          "scope": "Tests provide native POSIX host evidence on your computer only; they are not evidence of a physical lamp, hardware timing, HIL, or certification.",
+          "objectives": [
+            "Run a program against a simulated output without any hardware.",
+            "Change one value in Structured Text and see the output change in the trace."
+          ],
+          "stages": [
+            {
+              "key": "objective",
+              "title": "Objective",
+              "body": "Open src/FirstBlink.st. The program already blinks Lamp, but too slowly: it changes the lamp each time HalfPeriod passes, and HalfPeriod is set to two seconds. Your job is to change that one value.",
+              "checkpoint": "You know which line sets the half period and what it is now."
+            },
+            {
+              "key": "predict",
+              "title": "Predict",
+              "body": "Before changing anything, predict Lamp at 250, 750, 1250, and 1550 ms if it should be off for half a second, then on for half a second.",
+              "checkpoint": "OFF at 250 ms, ON at 750 ms, OFF at 1250 ms, ON at 1550 ms."
+            },
+            {
+              "key": "edit",
+              "title": "Edit",
+              "body": "Correct this flaw of the starting program, save it, then press Check: The starting program uses a half period of two seconds, so Lamp is still OFF when the scenario looks at 750 ms. Change HalfPeriod from T#2000ms to 500 ms written as T#500ms, and save the file.",
+              "checkpoint": "HalfPeriod reads T#500ms and the file is saved."
+            },
+            {
+              "key": "run",
+              "title": "Run",
+              "body": "Press Check. Studio runs your saved program against the scenario of this lesson.",
+              "checkpoint": "The scenario is named FirstBlink and contains 10 assertions; Studio lists every one that failed."
+            },
+            {
+              "key": "observe",
+              "title": "Observe",
+              "body": "Open the trace of the run and follow Lamp: it stays OFF until about 500 ms, is ON until about 1000 ms, then OFF again until about 1500 ms.",
+              "checkpoint": "The lamp changes state about every 500 ms, which is what you predicted."
+            },
+            {
+              "key": "reflect",
+              "title": "Reflect",
+              "body": "Think about what would happen with T#250ms, and why the scenario would reject it even though the lamp still blinks.",
+              "checkpoint": "A blink at the wrong speed is still wrong: the scenario checks the times, not only that the lamp changes."
+            }
+          ],
+          "hints": [
+            {
+              "level": 1,
+              "text": "Find the line that starts with VAR and holds HalfPeriod: the number after T# is a time in milliseconds."
+            },
+            {
+              "level": 2,
+              "text": "Write HalfPeriod : TIME := T#500ms; and press Check again after saving."
+            }
+          ],
+          "faultCases": [
+            "The starting program uses a half period of two seconds, so Lamp is still OFF when the scenario looks at 750 ms."
+          ]
+        },
+        "es": {
+          "title": "Su primer parpadeo en simulación",
+          "summary": "Haga que una lámpara simulada se encienda y se apague cada medio segundo cambiando un solo número, y vea el resultado en la traza.",
+          "scope": "La evidencia de Tests es del runtime nativo POSIX en su equipo; no es evidencia de una lámpara física, de tiempos de hardware, de HIL ni de certificación.",
+          "objectives": [
+            "Ejecute un programa contra una salida simulada sin ningún hardware.",
+            "Cambie un valor en Structured Text y vea cambiar la salida en la traza."
+          ],
+          "stages": [
+            {
+              "key": "objective",
+              "title": "Objetivo",
+              "body": "Abra src/FirstBlink.st. El programa ya hace parpadear Lamp, pero demasiado lento: cambia la lámpara cada vez que pasa HalfPeriod, y HalfPeriod vale dos segundos. Su tarea es cambiar ese único valor.",
+              "checkpoint": "Usted sabe qué línea fija el medio período y cuánto vale ahora."
+            },
+            {
+              "key": "predict",
+              "title": "Prediga",
+              "body": "Antes de cambiar nada, prediga Lamp en 250, 750, 1250 y 1550 ms si debe estar apagada medio segundo y luego encendida medio segundo.",
+              "checkpoint": "OFF en 250 ms, ON en 750 ms, OFF en 1250 ms, ON en 1550 ms."
+            },
+            {
+              "key": "edit",
+              "title": "Edite",
+              "body": "Corrija esta falla del programa inicial, guárdelo y pulse Comprobar: El programa inicial usa un medio período de dos segundos, así que Lamp sigue en OFF cuando el escenario mira a los 750 ms. Cambie HalfPeriod de T#2000ms a 500 ms, escrito como T#500ms, y guarde el archivo.",
+              "checkpoint": "HalfPeriod dice T#500ms y el archivo está guardado."
+            },
+            {
+              "key": "run",
+              "title": "Ejecute",
+              "body": "Pulse Comprobar. Studio ejecuta el programa guardado contra el escenario de esta lección.",
+              "checkpoint": "El escenario se llama FirstBlink y contiene 10 assertions; Studio lista cada una que falló."
+            },
+            {
+              "key": "observe",
+              "title": "Observe",
+              "body": "Abra la traza de la ejecución y siga Lamp: permanece OFF hasta cerca de 500 ms, está ON hasta cerca de 1000 ms y luego vuelve a OFF hasta cerca de 1500 ms.",
+              "checkpoint": "La lámpara cambia de estado cada 500 ms aproximadamente, como usted lo predijo."
+            },
+            {
+              "key": "reflect",
+              "title": "Reflexione",
+              "body": "Piense qué pasaría con T#250ms y por qué el escenario lo rechazaría aunque la lámpara siga parpadeando.",
+              "checkpoint": "Un parpadeo a la velocidad equivocada sigue siendo incorrecto: el escenario comprueba los tiempos, no solo que la lámpara cambie."
+            }
+          ],
+          "hints": [
+            {
+              "level": 1,
+              "text": "Busque la línea que empieza con VAR y contiene HalfPeriod: el número después de T# es un tiempo en milisegundos."
+            },
+            {
+              "level": 2,
+              "text": "Escriba HalfPeriod : TIME := T#500ms; y vuelva a pulsar Comprobar después de guardar."
+            }
+          ],
+          "faultCases": [
+            "El programa inicial usa un medio período de dos segundos, así que Lamp sigue en OFF cuando el escenario mira a los 750 ms."
+          ]
+        }
+      }
+    },
+    {
+      "id": "boolean-logic-two-hand-guard",
+      "version": 1,
+      "order": 12,
+      "module": 2,
+      "level": "foundation",
+      "prerequisites": [
+        "blinky-ladder-timer-feedback"
+      ],
+      "languages": [
+        "ST"
+      ],
+      "tracks": [
+        "simulation"
+      ],
+      "plant": null,
+      "plantMap": null,
+      "estimatedMinutes": 15,
+      "starter": {
+        "project": "two_hand_starter",
+        "program": "src/TwoHand.st"
+      },
+      "solution": {
+        "project": "two_hand",
+        "program": "src/TwoHand.st"
+      },
+      "scenario": {
+        "id": "TwoHand",
+        "path": "tests/two-hand.scenario.json",
+        "sha256": "960b79d6f460c148242199db15454c0d4be08bae5de73f200a4f2623f0e1b4d4",
+        "tickMs": 10,
+        "durationMs": 60,
+        "assertions": 9,
+        "canonical": "{\"durationMs\":60,\"events\":[{\"atMs\":0,\"set\":{\"TwoHand.GuardClosed\":true,\"TwoHand.LeftHand\":false,\"TwoHand.RightHand\":false}},{\"atMs\":10,\"set\":{\"TwoHand.GuardClosed\":true,\"TwoHand.LeftHand\":true,\"TwoHand.RightHand\":false}},{\"atMs\":20,\"set\":{\"TwoHand.GuardClosed\":true,\"TwoHand.LeftHand\":true,\"TwoHand.RightHand\":true}},{\"atMs\":30,\"set\":{\"TwoHand.GuardClosed\":false,\"TwoHand.LeftHand\":true,\"TwoHand.RightHand\":true}},{\"atMs\":40,\"set\":{\"TwoHand.GuardClosed\":true,\"TwoHand.LeftHand\":false,\"TwoHand.RightHand\":true}},{\"atMs\":50,\"set\":{\"TwoHand.GuardClosed\":false,\"TwoHand.LeftHand\":false,\"TwoHand.RightHand\":false}}],\"expectations\":[{\"atMs\":0,\"condition\":{\"TwoHand.GuardLamp\":false,\"TwoHand.OneHandWarning\":false,\"TwoHand.PressEnable\":false},\"kind\":\"AT\"},{\"atMs\":10,\"condition\":{\"TwoHand.GuardLamp\":false,\"TwoHand.OneHandWarning\":true,\"TwoHand.PressEnable\":false},\"kind\":\"AT\"},{\"atMs\":20,\"condition\":{\"TwoHand.GuardLamp\":false,\"TwoHand.OneHandWarning\":false,\"TwoHand.PressEnable\":true},\"kind\":\"AT\"},{\"atMs\":30,\"condition\":{\"TwoHand.GuardLamp\":true,\"TwoHand.OneHandWarning\":false,\"TwoHand.PressEnable\":false},\"kind\":\"AT\"},{\"atMs\":40,\"condition\":{\"TwoHand.GuardLamp\":false,\"TwoHand.OneHandWarning\":true,\"TwoHand.PressEnable\":false},\"kind\":\"AT\"},{\"atMs\":50,\"condition\":{\"TwoHand.GuardLamp\":true,\"TwoHand.OneHandWarning\":false,\"TwoHand.PressEnable\":false},\"kind\":\"AT\"},{\"condition\":{\"TwoHand.PressEnable\":true},\"fromMs\":20,\"kind\":\"RISING\",\"withinMs\":0},{\"condition\":{\"TwoHand.PressEnable\":false},\"fromMs\":30,\"kind\":\"FALLING\",\"withinMs\":0},{\"condition\":{\"TwoHand.GuardLamp\":true,\"TwoHand.PressEnable\":true},\"kind\":\"NEVER\"}],\"id\":\"TwoHand\",\"schemaVersion\":1,\"tickMs\":10}"
+      },
+      "regressionScenarios": [],
+      "text": {
+        "en": {
+          "title": "Boolean logic: a two-hand control with a guard",
+          "summary": "Combine AND, NOT and XOR so a press can only be enabled when both hands are on the buttons and the guard is closed.",
+          "scope": "Tests provide native POSIX host evidence with one 10 ms task; they do not establish the response time, redundancy or fault behaviour a real two-hand safety device needs, and they are not safety, HIL, or certification evidence.",
+          "objectives": [
+            "Write a condition that is true only when several inputs are true together.",
+            "Use NOT for a warning lamp and XOR for exactly one of two inputs."
+          ],
+          "stages": [
+            {
+              "key": "objective",
+              "title": "Objective",
+              "body": "In src/TwoHand.st the three outputs are not yet right. PressEnable must be ON only with LeftHand, RightHand and GuardClosed all ON. GuardLamp must be ON when the guard is open. OneHandWarning must be ON when exactly one hand is on its button.",
+              "checkpoint": "You can say, for each output, the condition that turns it ON."
+            },
+            {
+              "key": "predict",
+              "title": "Predict",
+              "body": "Before running, predict the three outputs at 20, 30, and 40 ms. The inputs change every 10 ms, so work through one step at a time.",
+              "checkpoint": "PressEnable ON only at 20 ms; GuardLamp ON only at 30 ms; OneHandWarning ON only at 40 ms."
+            },
+            {
+              "key": "edit",
+              "title": "Edit",
+              "body": "Correct this flaw of the starting program, save it, then press Check: The starting program enables the press with either hand, so PressEnable is already ON at 10 ms with one hand. Replace the starting statement with one condition for each output, save the file, and look at the result.",
+              "checkpoint": "Each output follows its own condition and the file is saved."
+            },
+            {
+              "key": "run",
+              "title": "Run",
+              "body": "Press Check. Studio runs your saved program against the scenario of this lesson.",
+              "checkpoint": "The scenario is named TwoHand and contains 9 assertions."
+            },
+            {
+              "key": "observe",
+              "title": "Observe",
+              "body": "Compare 20, 30, and 40 ms: the press is enabled once, at 20 ms, and switches off again at 30 ms when the guard opens.",
+              "checkpoint": "PressEnable rises at 20 ms and falls at 30 ms, and is never ON while GuardLamp is ON."
+            },
+            {
+              "key": "reflect",
+              "title": "Reflect",
+              "body": "Try the same condition with OR instead of AND and say which input combination wrongly enables the press.",
+              "checkpoint": "OR enables the press with a single hand, which is exactly what a two-hand control exists to prevent."
+            }
+          ],
+          "hints": [
+            {
+              "level": 1,
+              "text": "AND is true only when every part is true, so PressEnable needs the three inputs joined with AND."
+            },
+            {
+              "level": 2,
+              "text": "Write PressEnable := LeftHand AND RightHand AND GuardClosed; GuardLamp := NOT GuardClosed; OneHandWarning := LeftHand XOR RightHand;"
+            }
+          ],
+          "faultCases": [
+            "The starting program enables the press with either hand, so PressEnable is already ON at 10 ms with one hand."
+          ]
+        },
+        "es": {
+          "title": "Lógica booleana: un mando a dos manos con protección",
+          "summary": "Combine AND, NOT y XOR para que una prensa solo se habilite con las dos manos en los botones y la protección cerrada.",
+          "scope": "La evidencia de Tests es del runtime nativo POSIX con una tarea de 10 ms; no establece el tiempo de respuesta, la redundancia ni el comportamiento ante fallos que exige un dispositivo real de mando a dos manos, y no es evidencia de seguridad, de HIL ni de certificación.",
+          "objectives": [
+            "Escriba una condición que sea verdadera solo cuando varias entradas son verdaderas a la vez.",
+            "Use NOT para una lámpara de aviso y XOR para exactamente una de dos entradas."
+          ],
+          "stages": [
+            {
+              "key": "objective",
+              "title": "Objetivo",
+              "body": "En src/TwoHand.st las tres salidas todavía no son correctas. PressEnable debe estar en ON solo con LeftHand, RightHand y GuardClosed en ON. GuardLamp debe estar en ON cuando la protección está abierta. OneHandWarning debe estar en ON cuando exactamente una mano está en su botón.",
+              "checkpoint": "Usted puede decir, para cada salida, la condición que la pone en ON."
+            },
+            {
+              "key": "predict",
+              "title": "Prediga",
+              "body": "Antes de ejecutar, prediga las tres salidas en 20, 30 y 40 ms. Las entradas cambian cada 10 ms, así que avance un paso a la vez.",
+              "checkpoint": "solo PressEnable en ON en 20 ms; solo GuardLamp en ON en 30 ms; solo OneHandWarning en ON en 40 ms."
+            },
+            {
+              "key": "edit",
+              "title": "Edite",
+              "body": "Corrija esta falla del programa inicial, guárdelo y pulse Comprobar: El programa inicial habilita la prensa con cualquiera de las dos manos, así que PressEnable ya está en ON a los 10 ms con una sola mano. Reemplace la sentencia inicial por una condición para cada salida, guarde el archivo y mire el resultado.",
+              "checkpoint": "Cada salida sigue su propia condición y el archivo está guardado."
+            },
+            {
+              "key": "run",
+              "title": "Ejecute",
+              "body": "Pulse Comprobar. Studio ejecuta el programa guardado contra el escenario de esta lección.",
+              "checkpoint": "El escenario se llama TwoHand y contiene 9 assertions."
+            },
+            {
+              "key": "observe",
+              "title": "Observe",
+              "body": "Compare 20, 30 y 40 ms: la prensa se habilita una sola vez, a los 20 ms, y se desactiva a los 30 ms cuando se abre la protección.",
+              "checkpoint": "PressEnable sube a los 20 ms y baja a los 30 ms, y nunca está en ON mientras GuardLamp está en ON."
+            },
+            {
+              "key": "reflect",
+              "title": "Reflexione",
+              "body": "Pruebe la misma condición con OR en lugar de AND y diga qué combinación de entradas habilita la prensa por error.",
+              "checkpoint": "OR habilita la prensa con una sola mano, que es justo lo que un mando a dos manos existe para impedir."
+            }
+          ],
+          "hints": [
+            {
+              "level": 1,
+              "text": "AND es verdadero solo cuando todas las partes lo son, así que PressEnable necesita las tres entradas unidas con AND."
+            },
+            {
+              "level": 2,
+              "text": "Escriba PressEnable := LeftHand AND RightHand AND GuardClosed; GuardLamp := NOT GuardClosed; OneHandWarning := LeftHand XOR RightHand;"
+            }
+          ],
+          "faultCases": [
+            "El programa inicial habilita la prensa con cualquiera de las dos manos, así que PressEnable ya está en ON a los 10 ms con una sola mano."
+          ]
+        }
+      }
+    },
+    {
+      "id": "timers-on-delay-off-delay",
+      "version": 1,
+      "order": 13,
+      "module": 3,
+      "level": "foundation",
+      "prerequisites": [
+        "motor-start-stop-safe"
+      ],
+      "languages": [
+        "ST"
+      ],
+      "tracks": [
+        "simulation"
+      ],
+      "plant": null,
+      "plantMap": null,
+      "estimatedMinutes": 15,
+      "starter": {
+        "project": "delays_starter",
+        "program": "src/Delays.st"
+      },
+      "solution": {
+        "project": "delays",
+        "program": "src/Delays.st"
+      },
+      "scenario": {
+        "id": "Delays",
+        "path": "tests/delays.scenario.json",
+        "sha256": "423836cfdc574a00a8192742eb0671439833a3e1e3dc4c2e90c550d63a33599d",
+        "tickMs": 10,
+        "durationMs": 1000,
+        "assertions": 10,
+        "canonical": "{\"durationMs\":1000,\"events\":[{\"atMs\":0,\"set\":{\"Delays.Button\":false,\"Delays.Sensor\":false}},{\"atMs\":100,\"set\":{\"Delays.Button\":true,\"Delays.Sensor\":true}},{\"atMs\":140,\"set\":{\"Delays.Sensor\":false}},{\"atMs\":300,\"set\":{\"Delays.Button\":false}},{\"atMs\":500,\"set\":{\"Delays.Sensor\":true}},{\"atMs\":900,\"set\":{\"Delays.Sensor\":false}}],\"expectations\":[{\"atMs\":0,\"condition\":{\"Delays.Confirmed\":false,\"Delays.Light\":false},\"kind\":\"AT\"},{\"atMs\":200,\"condition\":{\"Delays.Confirmed\":false,\"Delays.Light\":true},\"kind\":\"AT\"},{\"atMs\":450,\"condition\":{\"Delays.Confirmed\":false,\"Delays.Light\":true},\"kind\":\"AT\"},{\"atMs\":650,\"condition\":{\"Delays.Confirmed\":false,\"Delays.Light\":false},\"kind\":\"AT\"},{\"atMs\":800,\"condition\":{\"Delays.Confirmed\":true,\"Delays.Light\":false},\"kind\":\"AT\"},{\"atMs\":950,\"condition\":{\"Delays.Confirmed\":false,\"Delays.Light\":false},\"kind\":\"AT\"},{\"condition\":{\"Delays.Light\":true},\"forMs\":470,\"fromMs\":110,\"kind\":\"FOR\"},{\"condition\":{\"Delays.Confirmed\":false},\"forMs\":400,\"fromMs\":100,\"kind\":\"FOR\"},{\"condition\":{\"Delays.Light\":false},\"fromMs\":560,\"kind\":\"FALLING\",\"withinMs\":100},{\"condition\":{\"Delays.Confirmed\":true},\"fromMs\":600,\"kind\":\"RISING\",\"withinMs\":200}],\"id\":\"Delays\",\"schemaVersion\":1,\"tickMs\":10}"
+      },
+      "regressionScenarios": [],
+      "text": {
+        "en": {
+          "title": "Timers: an off-delay light and an on-delay filter",
+          "summary": "Use a TOF timer to keep a light on after a button is released, and a TON timer to ignore a sensor blip that is too short.",
+          "scope": "Tests provide native POSIX host evidence with one 10 ms task; they do not establish electrical debounce, sensor response, target timing, HIL, or certification.",
+          "objectives": [
+            "Keep an output on for a fixed time after its input drops, using TOF.",
+            "Ignore an input that is on for less than a fixed time, using TON."
+          ],
+          "stages": [
+            {
+              "key": "objective",
+              "title": "Objective",
+              "body": "In src/Delays.st the timers HoldTimer (TOF) and FilterTimer (TON) are declared but not used. Light must stay ON for 300 ms after Button is released. Confirmed must turn ON only after Sensor has stayed ON for 200 ms.",
+              "checkpoint": "You can say which timer keeps an output on and which one waits before turning it on."
+            },
+            {
+              "key": "predict",
+              "title": "Predict",
+              "body": "The scenario presses Button at 100 ms and releases it at 300 ms. Sensor blips ON from 100 ms to 140 ms and is ON again from 500 ms to 900 ms. Predict Light and Confirmed at 200, 450, 650, and 800 ms.",
+              "checkpoint": "Light ON, Confirmed OFF at 200 ms; Light ON, Confirmed OFF at 450 ms; both OFF at 650 ms; Confirmed ON, Light OFF at 800 ms."
+            },
+            {
+              "key": "edit",
+              "title": "Edit",
+              "body": "Correct this flaw of the starting program, save it, then press Check: The starting program copies the inputs to the outputs, so Light is already OFF at 450 ms and Confirmed turns ON for the 100 ms blip. Call HoldTimer with Button as IN and a preset of T#300ms, and set Light from its Q output. Do the same with FilterTimer, Sensor and T#200ms for Confirmed. Save the file.",
+              "checkpoint": "Both timers are called every scan and each output comes from its timer's Q."
+            },
+            {
+              "key": "run",
+              "title": "Run",
+              "body": "Press Check. Studio runs your saved program against the scenario of this lesson.",
+              "checkpoint": "The scenario is named Delays and contains 10 assertions."
+            },
+            {
+              "key": "observe",
+              "title": "Observe",
+              "body": "Follow Light and Confirmed in the trace: the short blip never turns Confirmed ON, Light is still ON at 450 ms although Button went OFF at 300 ms, and Confirmed rises about 200 ms after Sensor came back at 500 ms.",
+              "checkpoint": "Light falls about 300 ms after Button, and Confirmed rises about 200 ms after the second Sensor pulse."
+            },
+            {
+              "key": "reflect",
+              "title": "Reflect",
+              "body": "Swap the two timers in your head: what would a TON on Button and a TOF on Sensor do with this scenario?",
+              "checkpoint": "TON delays the start and TOF delays the end; each answers a different question about a signal."
+            }
+          ],
+          "hints": [
+            {
+              "level": 1,
+              "text": "TOF keeps its Q on for the preset time after IN falls, and TON raises Q only after IN has been on for the preset time."
+            },
+            {
+              "level": 2,
+              "text": "Write HoldTimer(IN := Button, PT := T#300ms); Light := HoldTimer.Q; FilterTimer(IN := Sensor, PT := T#200ms); Confirmed := FilterTimer.Q;"
+            }
+          ],
+          "faultCases": [
+            "The starting program copies the inputs to the outputs, so Light is already OFF at 450 ms and Confirmed turns ON for the 100 ms blip."
+          ]
+        },
+        "es": {
+          "title": "Temporizadores: una luz con retardo a la desconexión y un filtro con retardo a la conexión",
+          "summary": "Use un temporizador TOF para mantener una luz encendida después de soltar un botón, y un TON para ignorar un pulso de sensor demasiado corto.",
+          "scope": "La evidencia de Tests es del runtime nativo POSIX con una tarea de 10 ms; no establece antirrebote eléctrico, respuesta del sensor, tiempos del target, HIL ni certificación.",
+          "objectives": [
+            "Mantenga una salida encendida un tiempo fijo después de que su entrada baja, con TOF.",
+            "Ignore una entrada que está en ON menos de un tiempo fijo, con TON."
+          ],
+          "stages": [
+            {
+              "key": "objective",
+              "title": "Objetivo",
+              "body": "En src/Delays.st los temporizadores HoldTimer (TOF) y FilterTimer (TON) están declarados pero no se usan. Light debe seguir en ON durante 300 ms después de soltar Button. Confirmed debe pasar a ON solo después de que Sensor haya estado en ON durante 200 ms.",
+              "checkpoint": "Usted puede decir qué temporizador mantiene una salida encendida y cuál espera antes de encenderla."
+            },
+            {
+              "key": "predict",
+              "title": "Prediga",
+              "body": "El escenario pulsa Button a los 100 ms y lo suelta a los 300 ms. Sensor da un pulso en ON de 100 a 140 ms y vuelve a estar en ON de 500 a 900 ms. Prediga Light y Confirmed en 200, 450, 650 y 800 ms.",
+              "checkpoint": "Light en ON, Confirmed en OFF en 200 ms; Light en ON, Confirmed en OFF en 450 ms; ambas en OFF en 650 ms; Confirmed en ON, Light en OFF en 800 ms."
+            },
+            {
+              "key": "edit",
+              "title": "Edite",
+              "body": "Corrija esta falla del programa inicial, guárdelo y pulse Comprobar: El programa inicial copia las entradas a las salidas, así que Light ya está en OFF a los 450 ms y Confirmed pasa a ON con el pulso de 100 ms. Llame a HoldTimer con Button como IN y un preajuste de T#300ms, y tome Light de su salida Q. Haga lo mismo con FilterTimer, Sensor y T#200ms para Confirmed. Guarde el archivo.",
+              "checkpoint": "Los dos temporizadores se llaman en cada scan y cada salida viene de la Q de su temporizador."
+            },
+            {
+              "key": "run",
+              "title": "Ejecute",
+              "body": "Pulse Comprobar. Studio ejecuta el programa guardado contra el escenario de esta lección.",
+              "checkpoint": "El escenario se llama Delays y contiene 10 assertions."
+            },
+            {
+              "key": "observe",
+              "title": "Observe",
+              "body": "Siga Light y Confirmed en la traza: el pulso corto nunca pone Confirmed en ON, Light sigue en ON a los 450 ms aunque Button pasó a OFF a los 300 ms, y Confirmed sube unos 200 ms después de que Sensor volvió a los 500 ms.",
+              "checkpoint": "Light baja unos 300 ms después de Button, y Confirmed sube unos 200 ms después del segundo pulso de Sensor."
+            },
+            {
+              "key": "reflect",
+              "title": "Reflexione",
+              "body": "Intercambie los dos temporizadores mentalmente: ¿qué haría un TON sobre Button y un TOF sobre Sensor con este escenario?",
+              "checkpoint": "TON retrasa el inicio y TOF retrasa el final; cada uno responde una pregunta distinta sobre una señal."
+            }
+          ],
+          "hints": [
+            {
+              "level": 1,
+              "text": "TOF mantiene su Q en ON durante el tiempo de preajuste después de que IN baja, y TON sube Q solo cuando IN lleva ese tiempo en ON."
+            },
+            {
+              "level": 2,
+              "text": "Escriba HoldTimer(IN := Button, PT := T#300ms); Light := HoldTimer.Q; FilterTimer(IN := Sensor, PT := T#200ms); Confirmed := FilterTimer.Q;"
+            }
+          ],
+          "faultCases": [
+            "El programa inicial copia las entradas a las salidas, así que Light ya está en OFF a los 450 ms y Confirmed pasa a ON con el pulso de 100 ms."
+          ]
+        }
+      }
+    },
+    {
+      "id": "blink-structured-text",
+      "version": 1,
+      "order": 14,
+      "module": 1,
+      "level": "foundation",
+      "prerequisites": [
+        "scan-cycle-one-scan-memory"
+      ],
+      "languages": [
+        "ST"
+      ],
+      "tracks": [
+        "simulation"
+      ],
+      "plant": null,
+      "plantMap": null,
+      "estimatedMinutes": 15,
+      "starter": {
+        "project": "enabled_blink_starter",
+        "program": "src/EnabledBlink.st"
+      },
+      "solution": {
+        "project": "enabled_blink",
+        "program": "src/EnabledBlink.st"
+      },
+      "scenario": {
+        "id": "EnabledBlink",
+        "path": "tests/enabled-blink.scenario.json",
+        "sha256": "6b8a15a20f414564c61901cafdf9514676ae6318b7995f1309bc0ac6db25dd62",
+        "tickMs": 10,
+        "durationMs": 1400,
+        "assertions": 11,
+        "canonical": "{\"durationMs\":1400,\"events\":[{\"atMs\":0,\"set\":{\"EnabledBlink.Enable\":false}},{\"atMs\":100,\"set\":{\"EnabledBlink.Enable\":true}},{\"atMs\":1150,\"set\":{\"EnabledBlink.Enable\":false}}],\"expectations\":[{\"atMs\":0,\"condition\":{\"EnabledBlink.Lamp\":false},\"kind\":\"AT\"},{\"atMs\":350,\"condition\":{\"EnabledBlink.Lamp\":false},\"kind\":\"AT\"},{\"atMs\":550,\"condition\":{\"EnabledBlink.Lamp\":true},\"kind\":\"AT\"},{\"atMs\":850,\"condition\":{\"EnabledBlink.Lamp\":false},\"kind\":\"AT\"},{\"atMs\":1100,\"condition\":{\"EnabledBlink.Lamp\":true},\"kind\":\"AT\"},{\"atMs\":1250,\"condition\":{\"EnabledBlink.Lamp\":false},\"kind\":\"AT\"},{\"condition\":{\"EnabledBlink.Lamp\":false},\"forMs\":380,\"fromMs\":0,\"kind\":\"FOR\"},{\"condition\":{\"EnabledBlink.Lamp\":true},\"forMs\":260,\"fromMs\":420,\"kind\":\"FOR\"},{\"condition\":{\"EnabledBlink.Lamp\":false},\"forMs\":260,\"fromMs\":720,\"kind\":\"FOR\"},{\"condition\":{\"EnabledBlink.Lamp\":true},\"fromMs\":380,\"kind\":\"RISING\",\"withinMs\":60},{\"condition\":{\"EnabledBlink.Lamp\":false},\"fromMs\":1150,\"kind\":\"FALLING\",\"withinMs\":100}],\"id\":\"EnabledBlink\",\"schemaVersion\":1,\"tickMs\":10}"
+      },
+      "regressionScenarios": [],
+      "text": {
+        "en": {
+          "title": "Write a blinker in Structured Text",
+          "summary": "Build a blinker from a TON timer and a memory variable, and make it run only while an enable input is on.",
+          "scope": "Tests provide native POSIX host evidence with one 10 ms task; they are not evidence of a physical lamp, hardware timing, HIL, or certification.",
+          "objectives": [
+            "Write the timer-and-memory pattern that makes an output change state at a fixed interval.",
+            "Gate an output with an input so that it stops at once when the input drops."
+          ],
+          "stages": [
+            {
+              "key": "objective",
+              "title": "Objective",
+              "body": "In src/EnabledBlink.st, declare the logic that makes Lamp change state every 300 ms while Enable is ON. The timer Clock and the memory LampOn are already declared. When Enable is OFF, Lamp must be OFF.",
+              "checkpoint": "You can describe the pattern: run a timer, toggle the memory when it expires, restart the timer."
+            },
+            {
+              "key": "predict",
+              "title": "Predict",
+              "body": "Enable turns ON at 100 ms and OFF at 1150 ms. Predict Lamp at 350, 550, 850, and 1250 ms.",
+              "checkpoint": "OFF at 350 ms, ON at 550 ms, OFF at 850 ms, OFF at 1250 ms."
+            },
+            {
+              "key": "edit",
+              "title": "Edit",
+              "body": "Correct this flaw of the starting program, save it, then press Check: The starting program keeps Lamp OFF all the time, so it never turns ON at 550 ms. Run Clock with Enable and a preset of T#300ms. When Clock.Q is TRUE, invert LampOn and restart Clock. Set Lamp from LampOn and Enable, then save the file.",
+              "checkpoint": "Lamp follows LampOn only while Enable is ON."
+            },
+            {
+              "key": "run",
+              "title": "Run",
+              "body": "Press Check. Studio runs your saved program against the scenario of this lesson.",
+              "checkpoint": "The scenario is named EnabledBlink and contains 11 assertions."
+            },
+            {
+              "key": "observe",
+              "title": "Observe",
+              "body": "Follow Lamp in the trace: it stays OFF until about 400 ms, which is 300 ms after Enable came ON, is ON until about 700 ms, ON again from about 1000 ms, and goes OFF at once at 1150 ms when Enable drops.",
+              "checkpoint": "The first ON starts about 300 ms after Enable came ON, not 300 ms after the program started."
+            },
+            {
+              "key": "reflect",
+              "title": "Reflect",
+              "body": "A blinker that ignores Enable would already be ON at 350 ms. Which of your lines makes the difference?",
+              "checkpoint": "Starting the timer from Enable moves the first change, and the AND with Enable stops the lamp at once."
+            }
+          ],
+          "hints": [
+            {
+              "level": 1,
+              "text": "The timer must only run while Enable is ON, so Enable is the IN of Clock."
+            },
+            {
+              "level": 2,
+              "text": "Write Clock(IN := Enable, PT := T#300ms); IF Clock.Q THEN LampOn := NOT LampOn; Clock(IN := FALSE, PT := T#300ms); END_IF; Lamp := LampOn AND Enable;"
+            }
+          ],
+          "faultCases": [
+            "The starting program keeps Lamp OFF all the time, so it never turns ON at 550 ms."
+          ]
+        },
+        "es": {
+          "title": "Escriba un parpadeador en Structured Text",
+          "summary": "Construya un parpadeador con un temporizador TON y una variable de memoria, y haga que funcione solo mientras una entrada de habilitación está en ON.",
+          "scope": "La evidencia de Tests es del runtime nativo POSIX con una tarea de 10 ms; no es evidencia de una lámpara física, de tiempos de hardware, de HIL ni de certificación.",
+          "objectives": [
+            "Escriba el patrón de temporizador y memoria que hace cambiar una salida a intervalos fijos.",
+            "Condicione una salida a una entrada para que se detenga de inmediato cuando la entrada baja."
+          ],
+          "stages": [
+            {
+              "key": "objective",
+              "title": "Objetivo",
+              "body": "En src/EnabledBlink.st, escriba la lógica que hace cambiar Lamp cada 300 ms mientras Enable está en ON. El temporizador Clock y la memoria LampOn ya están declarados. Con Enable en OFF, Lamp debe estar en OFF.",
+              "checkpoint": "Usted puede describir el patrón: correr un temporizador, invertir la memoria cuando vence y reiniciar el temporizador."
+            },
+            {
+              "key": "predict",
+              "title": "Prediga",
+              "body": "Enable pasa a ON a los 100 ms y a OFF a los 1150 ms. Prediga Lamp en 350, 550, 850 y 1250 ms.",
+              "checkpoint": "OFF en 350 ms, ON en 550 ms, OFF en 850 ms, OFF en 1250 ms."
+            },
+            {
+              "key": "edit",
+              "title": "Edite",
+              "body": "Corrija esta falla del programa inicial, guárdelo y pulse Comprobar: El programa inicial mantiene Lamp en OFF todo el tiempo, así que nunca pasa a ON a los 550 ms. Ejecute Clock con Enable y un preajuste de T#300ms. Cuando Clock.Q sea TRUE, invierta LampOn y reinicie Clock. Tome Lamp de LampOn y Enable, y guarde el archivo.",
+              "checkpoint": "Lamp sigue a LampOn solo mientras Enable está en ON."
+            },
+            {
+              "key": "run",
+              "title": "Ejecute",
+              "body": "Pulse Comprobar. Studio ejecuta el programa guardado contra el escenario de esta lección.",
+              "checkpoint": "El escenario se llama EnabledBlink y contiene 11 assertions."
+            },
+            {
+              "key": "observe",
+              "title": "Observe",
+              "body": "Siga Lamp en la traza: permanece en OFF hasta cerca de los 400 ms, es decir 300 ms después de que Enable pasó a ON, está en ON hasta cerca de los 700 ms, otra vez en ON desde cerca de los 1000 ms y baja a OFF de inmediato a los 1150 ms cuando Enable baja.",
+              "checkpoint": "El primer ON empieza unos 300 ms después de que Enable pasó a ON, no 300 ms después de arrancar el programa."
+            },
+            {
+              "key": "reflect",
+              "title": "Reflexione",
+              "body": "Un parpadeador que ignora Enable ya estaría en ON a los 350 ms. ¿Qué línea suya marca la diferencia?",
+              "checkpoint": "Arrancar el temporizador desde Enable desplaza el primer cambio, y el AND con Enable detiene la lámpara de inmediato."
+            }
+          ],
+          "hints": [
+            {
+              "level": 1,
+              "text": "El temporizador solo debe correr mientras Enable está en ON, así que Enable es el IN de Clock."
+            },
+            {
+              "level": 2,
+              "text": "Escriba Clock(IN := Enable, PT := T#300ms); IF Clock.Q THEN LampOn := NOT LampOn; Clock(IN := FALSE, PT := T#300ms); END_IF; Lamp := LampOn AND Enable;"
+            }
+          ],
+          "faultCases": [
+            "El programa inicial mantiene Lamp en OFF todo el tiempo, así que nunca pasa a ON a los 550 ms."
+          ]
+        }
+      }
+    },
+    {
+      "id": "set-reset-alarm-latch",
+      "version": 1,
+      "order": 15,
+      "module": 2,
+      "level": "foundation",
+      "prerequisites": [
+        "boolean-logic-two-hand-guard"
+      ],
+      "languages": [
+        "ST"
+      ],
+      "tracks": [
+        "simulation"
+      ],
+      "plant": null,
+      "plantMap": null,
+      "estimatedMinutes": 15,
+      "starter": {
+        "project": "alarm_latch_starter",
+        "program": "src/AlarmLatch.st"
+      },
+      "solution": {
+        "project": "alarm_latch",
+        "program": "src/AlarmLatch.st"
+      },
+      "scenario": {
+        "id": "AlarmLatch",
+        "path": "tests/alarm-latch.scenario.json",
+        "sha256": "1431b6ccd517bc5f2e9fc541d7609544d395bd00d5a701ec9620af6a42a07021",
+        "tickMs": 10,
+        "durationMs": 70,
+        "assertions": 10,
+        "canonical": "{\"durationMs\":70,\"events\":[{\"atMs\":0,\"set\":{\"AlarmLatch.Ack\":false,\"AlarmLatch.Fault\":false}},{\"atMs\":10,\"set\":{\"AlarmLatch.Ack\":false,\"AlarmLatch.Fault\":true}},{\"atMs\":20,\"set\":{\"AlarmLatch.Ack\":false,\"AlarmLatch.Fault\":false}},{\"atMs\":30,\"set\":{\"AlarmLatch.Ack\":true,\"AlarmLatch.Fault\":false}},{\"atMs\":40,\"set\":{\"AlarmLatch.Ack\":false,\"AlarmLatch.Fault\":false}},{\"atMs\":50,\"set\":{\"AlarmLatch.Ack\":true,\"AlarmLatch.Fault\":true}},{\"atMs\":60,\"set\":{\"AlarmLatch.Ack\":true,\"AlarmLatch.Fault\":false}}],\"expectations\":[{\"atMs\":0,\"condition\":{\"AlarmLatch.ResetFirst\":false,\"AlarmLatch.SetFirst\":false},\"kind\":\"AT\"},{\"atMs\":10,\"condition\":{\"AlarmLatch.ResetFirst\":true,\"AlarmLatch.SetFirst\":true},\"kind\":\"AT\"},{\"atMs\":20,\"condition\":{\"AlarmLatch.ResetFirst\":true,\"AlarmLatch.SetFirst\":true},\"kind\":\"AT\"},{\"atMs\":30,\"condition\":{\"AlarmLatch.ResetFirst\":false,\"AlarmLatch.SetFirst\":false},\"kind\":\"AT\"},{\"atMs\":40,\"condition\":{\"AlarmLatch.ResetFirst\":false,\"AlarmLatch.SetFirst\":false},\"kind\":\"AT\"},{\"atMs\":50,\"condition\":{\"AlarmLatch.ResetFirst\":false,\"AlarmLatch.SetFirst\":true},\"kind\":\"AT\"},{\"atMs\":60,\"condition\":{\"AlarmLatch.ResetFirst\":false,\"AlarmLatch.SetFirst\":false},\"kind\":\"AT\"},{\"condition\":{\"AlarmLatch.SetFirst\":true},\"fromMs\":10,\"kind\":\"RISING\",\"withinMs\":0},{\"condition\":{\"AlarmLatch.SetFirst\":false},\"fromMs\":30,\"kind\":\"FALLING\",\"withinMs\":0},{\"condition\":{\"AlarmLatch.ResetFirst\":true,\"AlarmLatch.SetFirst\":false},\"kind\":\"NEVER\"}],\"id\":\"AlarmLatch\",\"schemaVersion\":1,\"tickMs\":10}"
+      },
+      "regressionScenarios": [],
+      "text": {
+        "en": {
+          "title": "Latching an alarm: set and reset, and which one wins",
+          "summary": "Keep a fault in memory with the SR and RS blocks and see what each one does when the fault and the acknowledge arrive together.",
+          "scope": "Tests provide native POSIX host evidence with one 10 ms task; they do not establish alarm handling requirements of a real machine, HIL, or certification.",
+          "objectives": [
+            "Hold an alarm after the fault has gone, until it is acknowledged.",
+            "Tell the set-dominant block SR from the reset-dominant block RS."
+          ],
+          "stages": [
+            {
+              "key": "objective",
+              "title": "Objective",
+              "body": "In src/AlarmLatch.st, SetLatch (SR) and ResetLatch (RS) are declared but not used. Both outputs must stay ON after Fault drops and go OFF only when Ack is pressed. When Fault and Ack arrive together, SetFirst must stay ON and ResetFirst must go OFF.",
+              "checkpoint": "You can say which block gives priority to set and which to reset."
+            },
+            {
+              "key": "predict",
+              "title": "Predict",
+              "body": "Fault pulses ON at 10 ms. Ack is pressed at 30 ms. At 50 ms both arrive together, and Ack is held at 60 ms. Predict both outputs at 20, 30, and 50 ms.",
+              "checkpoint": "both ON at 20 ms; both OFF at 30 ms; SetFirst ON only at 50 ms."
+            },
+            {
+              "key": "edit",
+              "title": "Edit",
+              "body": "Correct this flaw of the starting program, save it, then press Check: The starting program copies Fault to both outputs, so they go OFF at 20 ms when the fault is gone. Call SetLatch with Fault as S1 and Ack as R, and ResetLatch with Fault as S and Ack as R1. Copy each Q1 to its output, and save the file.",
+              "checkpoint": "Each output is the Q1 of its own latch."
+            },
+            {
+              "key": "run",
+              "title": "Run",
+              "body": "Press Check. Studio runs your saved program against the scenario of this lesson.",
+              "checkpoint": "The scenario is named AlarmLatch and contains 10 assertions."
+            },
+            {
+              "key": "observe",
+              "title": "Observe",
+              "body": "Compare 20, 30, and 50 ms: the alarm is still ON at 20 ms after Fault has gone, Ack clears it at 30 ms, and only the two blocks differ at 50 ms.",
+              "checkpoint": "The outputs differ only when Fault and Ack arrive together."
+            },
+            {
+              "key": "reflect",
+              "title": "Reflect",
+              "body": "Which block would you choose for a stop command, and which for a start request? Think about what should win when both are pressed.",
+              "checkpoint": "A stop or reset should usually win, so the reset-dominant block fits it; the choice is a design decision, not a default."
+            }
+          ],
+          "hints": [
+            {
+              "level": 1,
+              "text": "SR has the inputs S1 and R and gives priority to set; RS has the inputs S and R1 and gives priority to reset."
+            },
+            {
+              "level": 2,
+              "text": "Write SetLatch(S1 := Fault, R := Ack); SetFirst := SetLatch.Q1; ResetLatch(S := Fault, R1 := Ack); ResetFirst := ResetLatch.Q1;"
+            }
+          ],
+          "faultCases": [
+            "The starting program copies Fault to both outputs, so they go OFF at 20 ms when the fault is gone."
+          ]
+        },
+        "es": {
+          "title": "Enclavar una alarma: set y reset, y cuál gana",
+          "summary": "Mantenga una falla en memoria con los bloques SR y RS y vea qué hace cada uno cuando la falla y el reconocimiento llegan juntos.",
+          "scope": "La evidencia de Tests es del runtime nativo POSIX con una tarea de 10 ms; no establece los requisitos de manejo de alarmas de una máquina real, ni HIL, ni certificación.",
+          "objectives": [
+            "Mantenga una alarma después de que la falla desapareció, hasta que se reconozca.",
+            "Distinga el bloque SR, dominante en set, del bloque RS, dominante en reset."
+          ],
+          "stages": [
+            {
+              "key": "objective",
+              "title": "Objetivo",
+              "body": "En src/AlarmLatch.st, SetLatch (SR) y ResetLatch (RS) están declarados pero no se usan. Las dos salidas deben seguir en ON cuando Fault baja y pasar a OFF solo al pulsar Ack. Cuando Fault y Ack llegan juntos, SetFirst debe seguir en ON y ResetFirst debe pasar a OFF.",
+              "checkpoint": "Usted puede decir qué bloque da prioridad al set y cuál al reset."
+            },
+            {
+              "key": "predict",
+              "title": "Prediga",
+              "body": "Fault da un pulso en ON a los 10 ms. Ack se pulsa a los 30 ms. A los 50 ms llegan juntos, y Ack sigue pulsado a los 60 ms. Prediga las dos salidas en 20, 30 y 50 ms.",
+              "checkpoint": "ambas en ON en 20 ms; ambas en OFF en 30 ms; solo SetFirst en ON en 50 ms."
+            },
+            {
+              "key": "edit",
+              "title": "Edite",
+              "body": "Corrija esta falla del programa inicial, guárdelo y pulse Comprobar: El programa inicial copia Fault a las dos salidas, así que pasan a OFF a los 20 ms cuando la falla ya pasó. Llame a SetLatch con Fault como S1 y Ack como R, y a ResetLatch con Fault como S y Ack como R1. Copie cada Q1 a su salida y guarde el archivo.",
+              "checkpoint": "Cada salida es la Q1 de su propio enclavamiento."
+            },
+            {
+              "key": "run",
+              "title": "Ejecute",
+              "body": "Pulse Comprobar. Studio ejecuta el programa guardado contra el escenario de esta lección.",
+              "checkpoint": "El escenario se llama AlarmLatch y contiene 10 assertions."
+            },
+            {
+              "key": "observe",
+              "title": "Observe",
+              "body": "Compare 20, 30 y 50 ms: la alarma sigue en ON a los 20 ms aunque Fault ya pasó, Ack la borra a los 30 ms, y solo los dos bloques difieren a los 50 ms.",
+              "checkpoint": "Las salidas difieren solo cuando Fault y Ack llegan juntos."
+            },
+            {
+              "key": "reflect",
+              "title": "Reflexione",
+              "body": "¿Qué bloque elegiría para una orden de parada y cuál para una solicitud de arranque? Piense qué debe ganar cuando ambas se pulsan.",
+              "checkpoint": "Una parada o un reset normalmente debe ganar, así que le conviene el bloque dominante en reset; la elección es una decisión de diseño, no un valor por defecto."
+            }
+          ],
+          "hints": [
+            {
+              "level": 1,
+              "text": "SR tiene las entradas S1 y R y da prioridad al set; RS tiene las entradas S y R1 y da prioridad al reset."
+            },
+            {
+              "level": 2,
+              "text": "Escriba SetLatch(S1 := Fault, R := Ack); SetFirst := SetLatch.Q1; ResetLatch(S := Fault, R1 := Ack); ResetFirst := ResetLatch.Q1;"
+            }
+          ],
+          "faultCases": [
+            "El programa inicial copia Fault a las dos salidas, así que pasan a OFF a los 20 ms cuando la falla ya pasó."
           ]
         }
       }

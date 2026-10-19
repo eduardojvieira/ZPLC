@@ -1,46 +1,46 @@
 {
   "schemaVersion": 1,
   "title": "Flancos y contador de pulsos",
-  "summary": "Usá un contador CTU para contar tres pulsos discretos y resetear la cuenta.",
+  "summary": "Use un contador CTU para contar tres pulsos discretos y resetear la cuenta.",
   "scope": "La evidencia de Tests es del host nativo POSIX; no es evidencia de sensor físico, rebote, hardware, HIL ni certificación.",
   "objectives": [
-    "Contá tres flancos ascendentes de PulseInput con un contador CTU.",
-    "Reseteá la cuenta y CountReached con Reset."
+    "Cuente tres flancos ascendentes de PulseInput con un contador CTU.",
+    "Resetee la cuenta y CountReached con Reset."
   ],
   "stages": [
     {
       "key": "objective",
       "title": "Objetivo",
-      "body": "En src/EdgeCounter.st, usá PulseInput, Reset y CountReached y agregá una instancia Count (CTU) con PV=3.",
+      "body": "En src/EdgeCounter.st, use PulseInput, Reset y CountReached y agregue una instancia Count (CTU) con PV=3.",
       "checkpoint": "CTU cuenta una vez cada flanco ascendente de PulseInput, sin importar cuánto tiempo siga en alto el pulso; Reset borra la cuenta."
     },
     {
       "key": "predict",
-      "title": "Predecí",
-      "body": "Antes de ejecutar, anticipá cuándo el contador alcanza PV=3.",
+      "title": "Prediga",
+      "body": "Antes de ejecutar, anticipe cuándo el contador alcanza PV=3.",
       "checkpoint": "CountReached permanece OFF a {{v:EdgeCounter.CountReached=false@0|0}}, {{v:EdgeCounter.CountReached=false@10|10}} y {{v:EdgeCounter.CountReached=false@30|30}} ms; enciende a {{v:EdgeCounter.CountReached=true@50|50}} tras el tercer flanco; vuelve OFF a {{v:EdgeCounter.CountReached=false@70|70}} con Reset."
     },
     {
       "key": "edit",
-      "title": "Editá",
-      "body": "Corregí esta omisión del starter y guardá antes de ejecutar: El starter nunca cuenta; agregá un CTU con PV=3 para que CountReached encienda en el tercer flanco ascendente y Reset lo apague.",
+      "title": "Edite",
+      "body": "Corrija esta omisión del starter y guarde antes de ejecutar: El starter nunca cuenta; agregue un CTU con PV=3 para que CountReached encienda en el tercer flanco ascendente y Reset lo apague.",
       "checkpoint": "El escenario visible debe pasar con evidencia host guardada."
     },
     {
       "key": "run",
-      "title": "Ejecutá",
-      "body": "En Tests, elegí el zplc.json guardado y ejecutá únicamente el escenario EdgeCounter.",
+      "title": "Ejecute",
+      "body": "En Tests, elija el zplc.json guardado y ejecute únicamente el escenario EdgeCounter.",
       "checkpoint": "El escenario requerido se llama EdgeCounter y contiene {{assertions}} assertions."
     },
     {
       "key": "observe",
-      "title": "Observá",
-      "body": "Compará los eventos de {{t:10}}, {{t:30}}, {{t:50}} y {{t:70}} ms con la salida CountReached.",
+      "title": "Observe",
+      "body": "Compare los eventos de {{t:10}}, {{t:30}}, {{t:50}} y {{t:70}} ms con la salida CountReached.",
       "checkpoint": "El tercer pulso alcanza PV=3; Reset domina y devuelve CountReached a OFF."
     },
     {
       "key": "reflect",
-      "title": "Reflexioná",
+      "title": "Reflexione",
       "body": "Las assertions AT/RISING/FALLING cubren esta secuencia lógica discreta.",
       "checkpoint": "No demuestran rebote, pulsos eléctricos, timing de hardware, HIL ni certificación."
     }
@@ -48,14 +48,14 @@
   "hints": [
     {
       "level": 1,
-      "text": "Un CTU ya cuenta sólo flancos ascendentes de CU, así que un pulso largo cuenta una sola vez; no necesitás detectar el flanco vos mismo."
+      "text": "Un CTU ya cuenta sólo flancos ascendentes de CU, así que un pulso largo cuenta una sola vez; no necesita detectar el flanco usted mismo."
     },
     {
       "level": 2,
-      "text": "Declará Count : CTU, llamalo en cada scan como Count(CU := PulseInput, R := Reset, PV := 3) y copiá Count.Q a CountReached."
+      "text": "Declare Count : CTU, llamalo en cada scan como Count(CU := PulseInput, R := Reset, PV := 3) y copie Count.Q a CountReached."
     }
   ],
   "faultCases": [
-    "El starter nunca cuenta; agregá un CTU con PV=3 para que CountReached encienda en el tercer flanco ascendente y Reset lo apague."
+    "El starter nunca cuenta; agregue un CTU con PV=3 para que CountReached encienda en el tercer flanco ascendente y Reset lo apague."
   ]
 }

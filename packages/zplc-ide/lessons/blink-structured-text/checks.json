@@ -1,0 +1,37 @@
+{
+  "schemaVersion": 1,
+  "alsoGreen": [
+    {
+      "intent": "count scans instead of using a timer",
+      "files": {
+        "src/EnabledBlink.st": "PROGRAM EnabledBlink\nVAR_INPUT Enable AT %I0.0 : BOOL; END_VAR\nVAR_OUTPUT Lamp AT %Q0.0 : BOOL; END_VAR\nVAR Scans : INT := 0; LampOn : BOOL := FALSE; END_VAR\nScans := Scans + 1;\nIF NOT Enable THEN Scans := 0; LampOn := FALSE; END_IF;\nIF Enable AND Scans >= 30 THEN LampOn := NOT LampOn; Scans := 0; END_IF;\nLamp := LampOn AND Enable;\nEND_PROGRAM\n"
+      }
+    }
+  ],
+  "wrong": [
+    {
+      "intent": "ignores Enable, so it blinks from the start",
+      "files": {
+        "src/EnabledBlink.st": "PROGRAM EnabledBlink\nVAR_INPUT Enable AT %I0.0 : BOOL; END_VAR\nVAR_OUTPUT Lamp AT %Q0.0 : BOOL; END_VAR\nVAR Clock : TON; LampOn : BOOL := FALSE; END_VAR\nClock(IN := TRUE, PT := T#300ms);\nIF Clock.Q THEN LampOn := NOT LampOn; Clock(IN := FALSE, PT := T#300ms); END_IF;\nLamp := LampOn;\nEND_PROGRAM\n"
+      }
+    },
+    {
+      "intent": "starts on Enable but does not stop the lamp when Enable drops",
+      "files": {
+        "src/EnabledBlink.st": "PROGRAM EnabledBlink\nVAR_INPUT Enable AT %I0.0 : BOOL; END_VAR\nVAR_OUTPUT Lamp AT %Q0.0 : BOOL; END_VAR\nVAR Clock : TON; LampOn : BOOL := FALSE; END_VAR\nClock(IN := Enable, PT := T#300ms);\nIF Clock.Q THEN LampOn := NOT LampOn; Clock(IN := FALSE, PT := T#300ms); END_IF;\nLamp := LampOn;\nEND_PROGRAM\n"
+      }
+    },
+    {
+      "intent": "changes every 250 ms, too fast",
+      "files": {
+        "src/EnabledBlink.st": "PROGRAM EnabledBlink\nVAR_INPUT Enable AT %I0.0 : BOOL; END_VAR\nVAR_OUTPUT Lamp AT %Q0.0 : BOOL; END_VAR\nVAR Clock : TON; LampOn : BOOL := FALSE; END_VAR\nClock(IN := Enable, PT := T#250ms);\nIF Clock.Q THEN LampOn := NOT LampOn; Clock(IN := FALSE, PT := T#250ms); END_IF;\nLamp := LampOn AND Enable;\nEND_PROGRAM\n"
+      }
+    },
+    {
+      "intent": "never turns the lamp off again once on",
+      "files": {
+        "src/EnabledBlink.st": "PROGRAM EnabledBlink\nVAR_INPUT Enable AT %I0.0 : BOOL; END_VAR\nVAR_OUTPUT Lamp AT %Q0.0 : BOOL; END_VAR\nVAR Clock : TON; LampOn : BOOL := FALSE; END_VAR\nClock(IN := Enable, PT := T#300ms);\nIF Clock.Q THEN LampOn := TRUE; Clock(IN := FALSE, PT := T#300ms); END_IF;\nLamp := LampOn AND Enable;\nEND_PROGRAM\n"
+      }
+    }
+  ]
+}

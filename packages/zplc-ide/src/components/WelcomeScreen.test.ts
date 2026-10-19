@@ -117,9 +117,9 @@ describe('Welcome Learn entry', () => {
     expect(learnLessonCatalog.es[0]!.starterExampleId).toBe(first.starterExampleId);
   });
 
-  it('starts the course with the scan cycle, which needs no earlier lesson (the home offers it as the first lesson)', () => {
+  it('starts the course with the first blink, which needs no earlier lesson (the home offers it as the first lesson)', () => {
     const [firstOfCourse] = courseOrder(LESSON_INDEX);
-    expect(firstOfCourse?.id).toBe('scan-cycle-one-scan-memory');
+    expect(firstOfCourse?.id).toBe('first-blink-simulation');
     expect(firstOfCourse?.prerequisites).toEqual([]);
   });
 });

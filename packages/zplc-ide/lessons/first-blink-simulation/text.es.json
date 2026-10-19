@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "title": "Su primer parpadeo en simulación",
+  "summary": "Haga que una lámpara simulada se encienda y se apague cada medio segundo cambiando un solo número, y vea el resultado en la traza.",
+  "scope": "La evidencia de Tests es del runtime nativo POSIX en su equipo; no es evidencia de una lámpara física, de tiempos de hardware, de HIL ni de certificación.",
+  "objectives": [
+    "Ejecute un programa contra una salida simulada sin ningún hardware.",
+    "Cambie un valor en Structured Text y vea cambiar la salida en la traza."
+  ],
+  "stages": [
+    {
+      "key": "objective",
+      "title": "Objetivo",
+      "body": "Abra src/FirstBlink.st. El programa ya hace parpadear Lamp, pero demasiado lento: cambia la lámpara cada vez que pasa HalfPeriod, y HalfPeriod vale dos segundos. Su tarea es cambiar ese único valor.",
+      "checkpoint": "Usted sabe qué línea fija el medio período y cuánto vale ahora."
+    },
+    {
+      "key": "predict",
+      "title": "Prediga",
+      "body": "Antes de cambiar nada, prediga Lamp en {{t:250}}, {{t:750}}, {{t:1250}} y {{t:1550}} ms si debe estar apagada medio segundo y luego encendida medio segundo.",
+      "checkpoint": "{{v:FirstBlink.Lamp=false@250|OFF}} en {{t:250}} ms, {{v:FirstBlink.Lamp=true@750|ON}} en {{t:750}} ms, {{v:FirstBlink.Lamp=false@1250|OFF}} en {{t:1250}} ms, {{v:FirstBlink.Lamp=true@1550|ON}} en {{t:1550}} ms."
+    },
+    {
+      "key": "edit",
+      "title": "Edite",
+      "body": "Corrija esta falla del programa inicial, guárdelo y pulse Comprobar: El programa inicial usa un medio período de dos segundos, así que Lamp sigue en OFF cuando el escenario mira a los {{t:750}} ms. Cambie HalfPeriod de T#2000ms a {{t:500}} ms, escrito como T#500ms, y guarde el archivo.",
+      "checkpoint": "HalfPeriod dice T#500ms y el archivo está guardado."
+    },
+    {
+      "key": "run",
+      "title": "Ejecute",
+      "body": "Pulse Comprobar. Studio ejecuta el programa guardado contra el escenario de esta lección.",
+      "checkpoint": "El escenario se llama FirstBlink y contiene {{assertions}} assertions; Studio lista cada una que falló."
+    },
+    {
+      "key": "observe",
+      "title": "Observe",
+      "body": "Abra la traza de la ejecución y siga Lamp: permanece OFF hasta cerca de {{t:500}} ms, está ON hasta cerca de {{t:1000}} ms y luego vuelve a OFF hasta cerca de {{t:1500}} ms.",
+      "checkpoint": "La lámpara cambia de estado cada {{t:500}} ms aproximadamente, como usted lo predijo."
+    },
+    {
+      "key": "reflect",
+      "title": "Reflexione",
+      "body": "Piense qué pasaría con T#250ms y por qué el escenario lo rechazaría aunque la lámpara siga parpadeando.",
+      "checkpoint": "Un parpadeo a la velocidad equivocada sigue siendo incorrecto: el escenario comprueba los tiempos, no solo que la lámpara cambie."
+    }
+  ],
+  "hints": [
+    {
+      "level": 1,
+      "text": "Busque la línea que empieza con VAR y contiene HalfPeriod: el número después de T# es un tiempo en milisegundos."
+    },
+    {
+      "level": 2,
+      "text": "Escriba HalfPeriod : TIME := T#500ms; y vuelva a pulsar Comprobar después de guardar."
+    }
+  ],
+  "faultCases": [
+    "El programa inicial usa un medio período de dos segundos, así que Lamp sigue en OFF cuando el escenario mira a los {{t:750}} ms."
+  ]
+}

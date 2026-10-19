@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "title": "Write a blinker in Structured Text",
+  "summary": "Build a blinker from a TON timer and a memory variable, and make it run only while an enable input is on.",
+  "scope": "Tests provide native POSIX host evidence with one 10 ms task; they are not evidence of a physical lamp, hardware timing, HIL, or certification.",
+  "objectives": [
+    "Write the timer-and-memory pattern that makes an output change state at a fixed interval.",
+    "Gate an output with an input so that it stops at once when the input drops."
+  ],
+  "stages": [
+    {
+      "key": "objective",
+      "title": "Objective",
+      "body": "In src/EnabledBlink.st, declare the logic that makes Lamp change state every {{t:300}} ms while Enable is ON. The timer Clock and the memory LampOn are already declared. When Enable is OFF, Lamp must be OFF.",
+      "checkpoint": "You can describe the pattern: run a timer, toggle the memory when it expires, restart the timer."
+    },
+    {
+      "key": "predict",
+      "title": "Predict",
+      "body": "Enable turns ON at {{t:100}} ms and OFF at {{t:1150}} ms. Predict Lamp at {{t:350}}, {{t:550}}, {{t:850}}, and {{t:1250}} ms.",
+      "checkpoint": "{{v:EnabledBlink.Lamp=false@350|OFF}} at {{t:350}} ms, {{v:EnabledBlink.Lamp=true@550|ON}} at {{t:550}} ms, {{v:EnabledBlink.Lamp=false@850|OFF}} at {{t:850}} ms, {{v:EnabledBlink.Lamp=false@1250|OFF}} at {{t:1250}} ms."
+    },
+    {
+      "key": "edit",
+      "title": "Edit",
+      "body": "Correct this flaw of the starting program, save it, then press Check: The starting program keeps Lamp OFF all the time, so it never turns ON at {{t:550}} ms. Run Clock with Enable and a preset of T#300ms. When Clock.Q is TRUE, invert LampOn and restart Clock. Set Lamp from LampOn and Enable, then save the file.",
+      "checkpoint": "Lamp follows LampOn only while Enable is ON."
+    },
+    {
+      "key": "run",
+      "title": "Run",
+      "body": "Press Check. Studio runs your saved program against the scenario of this lesson.",
+      "checkpoint": "The scenario is named EnabledBlink and contains {{assertions}} assertions."
+    },
+    {
+      "key": "observe",
+      "title": "Observe",
+      "body": "Follow Lamp in the trace: it stays OFF until about {{t:400}} ms, which is {{t:300}} ms after Enable came ON, is ON until about {{t:700}} ms, ON again from about {{t:1000}} ms, and goes OFF at once at {{t:1150}} ms when Enable drops.",
+      "checkpoint": "The first ON starts about {{t:300}} ms after Enable came ON, not {{t:300}} ms after the program started."
+    },
+    {
+      "key": "reflect",
+      "title": "Reflect",
+      "body": "A blinker that ignores Enable would already be ON at {{t:350}} ms. Which of your lines makes the difference?",
+      "checkpoint": "Starting the timer from Enable moves the first change, and the AND with Enable stops the lamp at once."
+    }
+  ],
+  "hints": [
+    {
+      "level": 1,
+      "text": "The timer must only run while Enable is ON, so Enable is the IN of Clock."
+    },
+    {
+      "level": 2,
+      "text": "Write Clock(IN := Enable, PT := T#300ms); IF Clock.Q THEN LampOn := NOT LampOn; Clock(IN := FALSE, PT := T#300ms); END_IF; Lamp := LampOn AND Enable;"
+    }
+  ],
+  "faultCases": [
+    "The starting program keeps Lamp OFF all the time, so it never turns ON at {{t:550}} ms."
+  ]
+}

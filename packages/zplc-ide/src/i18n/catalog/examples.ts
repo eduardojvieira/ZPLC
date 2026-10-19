@@ -1,5 +1,15 @@
 /** The title and the one-line summary of each bundled example on the Welcome screen (UX-022, UX-029). Keys `examples.<folder>.title` and `.summary`; the data text, not the lesson prose. */
 export const examplesEn = {
+    'examples.first_blink.title': 'First blink',
+  'examples.first_blink.summary': 'Reference solution of the first lesson: a lamp that changes state every half second.',
+  'examples.enabled_blink.title': 'Enabled blinker',
+  'examples.enabled_blink.summary': 'Reference solution of the blinker lesson: a timer and a memory, gated by an enable input.',
+  'examples.two_hand.title': 'Two-hand guard',
+  'examples.two_hand.summary': 'Reference solution of the boolean logic lesson: AND, NOT and XOR on a press with a guard.',
+  'examples.alarm_latch.title': 'Alarm latch',
+  'examples.alarm_latch.summary': 'Reference solution of the alarm lesson: the SR and RS blocks and which of set and reset wins.',
+  'examples.delays.title': 'Timer delays',
+  'examples.delays.summary': 'Reference solution of the timer lesson: an off-delay light with TOF and an on-delay filter with TON.',
   'examples.scan_snapshot.title': 'Scan snapshot',
   'examples.scan_snapshot.summary': 'How one scan works: a button is copied, delayed by one scan and turned into a rising-edge pulse.',
   'examples.blinky.title': 'Blinky',
@@ -51,6 +61,16 @@ export const examplesEn = {
 } as const;
 
 export const examplesEs: Record<keyof typeof examplesEn, string> = {
+    'examples.first_blink.title': 'Primer parpadeo',
+  'examples.first_blink.summary': 'Solución de referencia de la primera lección: una lámpara que cambia de estado cada medio segundo.',
+  'examples.enabled_blink.title': 'Parpadeador habilitado',
+  'examples.enabled_blink.summary': 'Solución de referencia de la lección del parpadeador: un temporizador y una memoria, condicionados por una entrada de habilitación.',
+  'examples.two_hand.title': 'Mando a dos manos',
+  'examples.two_hand.summary': 'Solución de referencia de la lección de lógica booleana: AND, NOT y XOR sobre una prensa con protección.',
+  'examples.alarm_latch.title': 'Enclavamiento de alarma',
+  'examples.alarm_latch.summary': 'Solución de referencia de la lección de alarma: los bloques SR y RS y cuál gana, set o reset.',
+  'examples.delays.title': 'Retardos con temporizadores',
+  'examples.delays.summary': 'Solución de referencia de la lección de temporizadores: una luz con retardo a la desconexión (TOF) y un filtro con retardo a la conexión (TON).',
   'examples.scan_snapshot.title': 'Instantánea del ciclo de escaneo',
   'examples.scan_snapshot.summary': 'Cómo funciona un ciclo de escaneo: un botón se copia, se retrasa un ciclo y se convierte en un pulso de flanco ascendente.',
   'examples.blinky.title': 'Blinky',

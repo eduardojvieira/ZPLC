@@ -69,9 +69,14 @@ const example = (id: string, rest: Omit<ExampleEntry, 'title' | 'summary'>): Exa
 
 export const EXAMPLE_CATALOG: Readonly<Record<string, ExampleEntry>> = {
   // First steps
+  first_blink: example('first_blink', { group: 'first-steps', level: 'beginner', languages: ['ST'], showOnWelcome: true }),
   scan_snapshot: example('scan_snapshot', { group: 'first-steps', level: 'beginner', languages: ['ST'], showOnWelcome: true }),
   blinky: example('blinky', { group: 'first-steps', level: 'beginner', languages: ['LD'], showOnWelcome: true }),
   edge_counter: example('edge_counter', { group: 'first-steps', level: 'beginner', languages: ['ST'], showOnWelcome: true }),
+  enabled_blink: example('enabled_blink', { group: 'first-steps', level: 'beginner', languages: ['ST'], showOnWelcome: true }),
+  two_hand: example('two_hand', { group: 'first-steps', level: 'beginner', languages: ['ST'], showOnWelcome: true }),
+  alarm_latch: example('alarm_latch', { group: 'first-steps', level: 'beginner', languages: ['ST'], showOnWelcome: true }),
+  delays: example('delays', { group: 'first-steps', level: 'beginner', languages: ['ST'], showOnWelcome: true }),
 
   // Motors and drives
   motor_start_stop: example('motor_start_stop', { group: 'motors', level: 'beginner', languages: ['ST'], showOnWelcome: true }),

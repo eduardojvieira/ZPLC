@@ -15,7 +15,7 @@ operación física.
 
 ## Empiece con las lecciones de Studio
 
-Studio tiene diez lecciones en un curso, en español y en inglés. En la pantalla de
+Studio tiene quince lecciones en un curso, en español y en inglés. El [esquema del curso](course-outline.md) enumera cada módulo, las lecciones que existen y las que están planeadas. En la pantalla de
 bienvenida, elija **Learn**: se abre el inicio de Learn, sin proyecto y sin red, y
 enumera los módulos en orden con su nivel, lo que requiere cada uno y cuánto
 dura. Elija **Comenzar el curso**: Studio crea el espacio de trabajo de la primera lección en su propia carpeta y lo abre; no hay carpeta que elegir ni paso de copia. La lección sigue visible junto al editor, también cuando usted cambia a la vista Proyecto.
@@ -60,7 +60,7 @@ elemento, qué funciona hoy.
 
 ## Lo que todavía no está
 
-Cada lección enumera las vías que admite y, para una vía que no admite, dice por qué y qué hacer en su lugar. Una vía para una placa de aprendizaje y las lecciones de seis módulos que todavía
-están vacíos son trabajo futuro. Las
+Cada lección enumera las vías que admite y, para una vía que no admite, dice por qué y qué hacer en su lugar. Una vía para una placa de aprendizaje y las lecciones de cinco módulos que todavía
+están vacíos son trabajo futuro. El [esquema del curso](course-outline.md) dice cuáles. Las
 lecciones y los ejemplos son ejercicios de host y de simulación: no muestran cómo
 se comporta un programa en una placa física.

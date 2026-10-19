@@ -177,6 +177,7 @@ const sidebars = {
       items: [
         'learn/index',
         'learn/educators',
+        'learn/course-outline',
         'languages/examples/v1-5-language-suite',
       ],
     },

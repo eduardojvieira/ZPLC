@@ -1,0 +1,31 @@
+{
+  "schemaVersion": 1,
+  "alsoGreen": [
+    {
+      "intent": "hand-written seal-in with the same priorities",
+      "files": {
+        "src/AlarmLatch.st": "PROGRAM AlarmLatch\nVAR_INPUT Fault AT %I0.0 : BOOL; Ack AT %I0.1 : BOOL; END_VAR\nVAR_OUTPUT SetFirst AT %Q0.0 : BOOL; ResetFirst AT %Q0.1 : BOOL; END_VAR\nVAR SetLatch : SR; ResetLatch : RS; END_VAR\nIF Fault THEN SetFirst := TRUE; ELSIF Ack THEN SetFirst := FALSE; END_IF;\nIF Ack THEN ResetFirst := FALSE; ELSIF Fault THEN ResetFirst := TRUE; END_IF;\nSetFirst := SetFirst AND (Fault OR NOT Ack);\nEND_PROGRAM\n"
+      }
+    }
+  ],
+  "wrong": [
+    {
+      "intent": "has no memory: the alarm follows Fault",
+      "files": {
+        "src/AlarmLatch.st": "PROGRAM AlarmLatch\nVAR_INPUT Fault AT %I0.0 : BOOL; Ack AT %I0.1 : BOOL; END_VAR\nVAR_OUTPUT SetFirst AT %Q0.0 : BOOL; ResetFirst AT %Q0.1 : BOOL; END_VAR\nVAR SetLatch : SR; ResetLatch : RS; END_VAR\nSetFirst := Fault; ResetFirst := Fault;\nEND_PROGRAM\n"
+      }
+    },
+    {
+      "intent": "uses RS for both, so Ack wins when they arrive together",
+      "files": {
+        "src/AlarmLatch.st": "PROGRAM AlarmLatch\nVAR_INPUT Fault AT %I0.0 : BOOL; Ack AT %I0.1 : BOOL; END_VAR\nVAR_OUTPUT SetFirst AT %Q0.0 : BOOL; ResetFirst AT %Q0.1 : BOOL; END_VAR\nVAR SetLatch : SR; ResetLatch : RS; END_VAR\nSetLatch(S1 := Fault, R := Ack); ResetLatch(S := Fault, R1 := Ack); SetFirst := ResetLatch.Q1; ResetFirst := ResetLatch.Q1;\nEND_PROGRAM\n"
+      }
+    },
+    {
+      "intent": "never lets Ack clear the alarm",
+      "files": {
+        "src/AlarmLatch.st": "PROGRAM AlarmLatch\nVAR_INPUT Fault AT %I0.0 : BOOL; Ack AT %I0.1 : BOOL; END_VAR\nVAR_OUTPUT SetFirst AT %Q0.0 : BOOL; ResetFirst AT %Q0.1 : BOOL; END_VAR\nVAR SetLatch : SR; ResetLatch : RS; END_VAR\nSetLatch(S1 := Fault, R := FALSE); SetFirst := SetLatch.Q1; ResetLatch(S := Fault, R1 := FALSE); ResetFirst := ResetLatch.Q1;\nEND_PROGRAM\n"
+      }
+    }
+  ]
+}
