@@ -16,7 +16,7 @@ type Sensed = Record<string, boolean>;
 const num = (state: PlantState, key: string): number => state[key] as number;
 
 /** The text of one lamp: glyph, name and state word. The same string is the SVG text and part of the accessible name. */
-export function lampText(spec: LampSpec, t: T): string {
+function lampText(spec: LampSpec, t: T): string {
   const tone = signalTone({ forced: false, fault: spec.fault === true && spec.value, type: 'BOOL', value: spec.value });
   return `${signalMark(tone)} ${spec.name} ${tone === 'fault' ? SIGNAL_CUES.fault.label : spec.value ? t('plant.state.on') : t('plant.state.off')}`;
 }

@@ -30,7 +30,8 @@ export function createPlantLoop({ run, resolved, read, write, cycles }: PlantLoo
   const sample = async (): Promise<Record<string, boolean>> => {
     const points = Object.values(resolved.reads);
     const values = points.length > 0 ? await read(points) : new Map();
-    return Object.fromEntries(Object.entries(resolved.reads).map(([signal, point]) => [signal, values.get(point.path) === true]));
+    loop.reads = Object.fromEntries(Object.entries(resolved.reads).map(([signal, point]) => [signal, values.get(point.path) === true]));
+    return loop.reads;
   };
 
   const sync = async (): Promise<void> => {
@@ -43,7 +44,9 @@ export function createPlantLoop({ run, resolved, read, write, cycles }: PlantLoo
     }
   };
 
-  return {
+  const loop = {
+    /** The commands read from the program at the last pass, for the drawing. */
+    reads: {} as Record<string, boolean>,
     /** One pass of the loop: the scans run since the last pass, then the sensors. */
     async poll(): Promise<void> {
       const now = await cycles();
@@ -63,5 +66,6 @@ export function createPlantLoop({ run, resolved, read, write, cycles }: PlantLoo
     /** Forget what was written, so the next pass writes every sensor again (after a reset or a reload). */
     forget(): void { written.clear(); last = null; },
   };
+  return loop;
 }
 export type PlantLoop = ReturnType<typeof createPlantLoop>;
