@@ -3,7 +3,7 @@
 //   bun tools/ci/brand/generate-icons.ts [--check]
 //
 // tools/brand/mark.svg is the single source. The site favicon and logo, the 1200 by 630 social card, the application icon
-// of the installers (png and icns) come from it, and tools/brand/outputs.json records the checksum of the mark and of each
+// of the installers (png and icns, in tools/brand because the repository ignores and audits any build folder) come from it, and tools/brand/outputs.json records the checksum of the mark and of each
 // output. The raster steps use rsvg-convert (librsvg) and Python with Pillow, which are not repository dependencies: they are
 // needed only to regenerate, and `--check` (and the test) need neither, because they read the recorded checksums.
 import { createHash } from 'node:crypto';
@@ -22,8 +22,8 @@ export const OUTPUTS: Output[] = [
   { path: 'docs/static/img/logo.svg', kind: 'svg' },
   { path: 'docs/static/img/favicon.png', kind: 'png', width: 256, height: 256 },
   { path: 'docs/static/img/social-card.png', kind: 'png', width: 1200, height: 630 },
-  { path: 'packages/zplc-ide/build/icon.png', kind: 'png', width: 1024, height: 1024 },
-  { path: 'packages/zplc-ide/build/icon.icns', kind: 'icns' },
+  { path: 'tools/brand/icon.png', kind: 'png', width: 1024, height: 1024 },
+  { path: 'tools/brand/icon.icns', kind: 'icns' },
 ];
 
 const sha256 = (path: string) => createHash('sha256').update(readFileSync(join(ROOT, path))).digest('hex');
@@ -62,7 +62,7 @@ function generate(): void {
         writeFileSync(join(work, 'card.svg'), socialCardSvg(mark));
         png(join(work, 'card.svg'), output);
       } else if (output.kind === 'png') png(join(ROOT, MARK), output);
-      else run(['python3', '-B', '-c', 'import sys; from PIL import Image; Image.open(sys.argv[1]).save(sys.argv[2])', join(ROOT, 'packages/zplc-ide/build/icon.png'), join(ROOT, output.path)]);
+      else run(['python3', '-B', '-c', 'import sys; from PIL import Image; Image.open(sys.argv[1]).save(sys.argv[2])', join(ROOT, 'tools/brand/icon.png'), join(ROOT, output.path)]);
     }
   } finally {
     rmSync(work, { recursive: true, force: true });

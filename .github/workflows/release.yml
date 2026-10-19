@@ -475,7 +475,7 @@ jobs:
       - name: Upload the install records
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
-          name: install-records-macos-${{ matrix.arch }}
+          name: macos-install-records-${{ matrix.arch }}
           path: install-records/*.json
           if-no-files-found: error
           retention-days: 7
@@ -636,7 +636,7 @@ jobs:
       - name: Upload the install records
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
-          name: install-records-windows-${{ matrix.arch }}
+          name: windows-install-records-${{ matrix.arch }}
           path: install-records/*.json
           if-no-files-found: error
           retention-days: 7
@@ -834,7 +834,7 @@ jobs:
       - name: Upload the install records
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
-          name: install-records-linux-${{ matrix.arch }}
+          name: linux-install-records-${{ matrix.arch }}
           path: install-records/*.json
           if-no-files-found: error
           retention-days: 7
@@ -1056,17 +1056,15 @@ jobs:
         run: bun tools/ci/release/verify-installers.ts artifacts --version "$RELEASE_VERSION" --os mac
 
       # REL-036: every installer of this system was mounted, unpacked or installed, and launched, on a runner of
-      # its own system and architecture; the record names the file by its checksum.
-      - name: Download the install records
-        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
-        with:
-          pattern: install-records-macos-*
-          path: install-records
-
+      # its own system and architecture; the record names the file by its checksum. The records came down with the
+      # build artifacts (macos-install-records-<arch>) and are set aside once checked: a bundle holds installers only.
       - name: Verify that every installer was opened and launched
         env:
           RELEASE_VERSION: ${{ needs.validate-version.outputs.version }}
-        run: bun tools/ci/release/install-record.ts verify --installers artifacts --records install-records --version "$RELEASE_VERSION" --os mac
+        run: |
+          set -euo pipefail
+          bun tools/ci/release/install-record.ts verify --installers artifacts --records artifacts --version "$RELEASE_VERSION" --os mac
+          find artifacts -name 'install-record-*.json' -type f -delete
 
       - name: Generate the bill of materials
         run: bun scripts/release/sbom.ts --out artifacts/ZPLC-${{ needs.validate-version.outputs.version }}-macos.cdx.json
@@ -1188,17 +1186,15 @@ jobs:
         run: bun tools/ci/release/verify-installers.ts artifacts --version "$RELEASE_VERSION" --os win
 
       # REL-036: every installer of this system was mounted, unpacked or installed, and launched, on a runner of
-      # its own system and architecture; the record names the file by its checksum.
-      - name: Download the install records
-        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
-        with:
-          pattern: install-records-windows-*
-          path: install-records
-
+      # its own system and architecture; the record names the file by its checksum. The records came down with the
+      # build artifacts (windows-install-records-<arch>) and are set aside once checked: a bundle holds installers only.
       - name: Verify that every installer was opened and launched
         env:
           RELEASE_VERSION: ${{ needs.validate-version.outputs.version }}
-        run: bun tools/ci/release/install-record.ts verify --installers artifacts --records install-records --version "$RELEASE_VERSION" --os win
+        run: |
+          set -euo pipefail
+          bun tools/ci/release/install-record.ts verify --installers artifacts --records artifacts --version "$RELEASE_VERSION" --os win
+          find artifacts -name 'install-record-*.json' -type f -delete
 
       - name: Generate the bill of materials
         run: bun scripts/release/sbom.ts --out artifacts/ZPLC-${{ needs.validate-version.outputs.version }}-windows.cdx.json
@@ -1314,17 +1310,15 @@ jobs:
         run: bun tools/ci/release/verify-installers.ts artifacts --version "$RELEASE_VERSION" --os linux
 
       # REL-036: every installer of this system was mounted, unpacked or installed, and launched, on a runner of
-      # its own system and architecture; the record names the file by its checksum.
-      - name: Download the install records
-        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
-        with:
-          pattern: install-records-linux-*
-          path: install-records
-
+      # its own system and architecture; the record names the file by its checksum. The records came down with the
+      # build artifacts (linux-install-records-<arch>) and are set aside once checked: a bundle holds installers only.
       - name: Verify that every installer was opened and launched
         env:
           RELEASE_VERSION: ${{ needs.validate-version.outputs.version }}
-        run: bun tools/ci/release/install-record.ts verify --installers artifacts --records install-records --version "$RELEASE_VERSION" --os linux
+        run: |
+          set -euo pipefail
+          bun tools/ci/release/install-record.ts verify --installers artifacts --records artifacts --version "$RELEASE_VERSION" --os linux
+          find artifacts -name 'install-record-*.json' -type f -delete
 
       - name: Generate the bill of materials
         run: bun scripts/release/sbom.ts --out artifacts/ZPLC-${{ needs.validate-version.outputs.version }}-linux.cdx.json

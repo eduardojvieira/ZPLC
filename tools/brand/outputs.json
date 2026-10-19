@@ -21,14 +21,14 @@
       "sha256": "b252a423aecce8012dcebfc1a5293934ff58c6f89914f809d4bfb71a612290e3"
     },
     {
-      "path": "packages/zplc-ide/build/icon.png",
+      "path": "tools/brand/icon.png",
       "kind": "png",
       "width": 1024,
       "height": 1024,
       "sha256": "3828adb375b00b00edac49a7c5dd4f2ac26926d145750f45eb0faab8b858c254"
     },
     {
-      "path": "packages/zplc-ide/build/icon.icns",
+      "path": "tools/brand/icon.icns",
       "kind": "icns",
       "sha256": "fc1e00371ac87faa729dc483400a5f774c6730fc7f444e3ed7f66a86208194ec"
     }

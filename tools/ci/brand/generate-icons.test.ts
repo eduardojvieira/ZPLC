@@ -34,7 +34,7 @@ describe('what is made from the mark', () => {
   });
 
   it('makes the application icon a real icns file and the site logo the mark itself', () => {
-    expect(read('packages/zplc-ide/build/icon.icns').subarray(0, 4).toString('latin1')).toBe('icns');
+    expect(read('tools/brand/icon.icns').subarray(0, 4).toString('latin1')).toBe('icns');
     expect(read('docs/static/img/logo.svg').equals(read(MARK))).toBe(true);
   });
 
@@ -44,6 +44,6 @@ describe('what is made from the mark', () => {
     const config = (await import(configPath)).default as { favicon: string; themeConfig: { image: string; navbar: { logo: { src: string } } } };
     expect([config.favicon, config.themeConfig.image, config.themeConfig.navbar.logo.src]).toEqual(['img/favicon.png', 'img/social-card.png', 'img/logo.svg']);
     const builder = Bun.YAML.parse(readFileSync(join(ROOT, 'packages/zplc-ide/electron-builder.yml'), 'utf8')) as { mac: { icon: string }; win: { icon: string }; linux: { icon: string } };
-    expect([builder.mac.icon, builder.win.icon, builder.linux.icon]).toEqual(['build/icon.icns', 'build/icon.png', 'build/icon.png']);
+    expect([builder.mac.icon, builder.win.icon, builder.linux.icon]).toEqual(['../../tools/brand/icon.icns', '../../tools/brand/icon.png', '../../tools/brand/icon.png']);
   });
 });

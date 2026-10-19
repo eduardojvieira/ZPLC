@@ -64,7 +64,7 @@ publish: null
 # ============================================================================
 mac:
   category: public.app-category.developer-tools
-  icon: build/icon.icns
+  icon: ../../tools/brand/icon.icns
   darkModeSupport: true
   # REL-020: the ZIP follows the same scheme as the DMG (its default name would put the architecture before `mac`).
   artifactName: "zplc-ide-${version}-${os}-${arch}.${ext}"
@@ -98,7 +98,7 @@ dmg:
 # Windows Configuration
 # ============================================================================
 win:
-  icon: build/icon.png
+  icon: ../../tools/brand/icon.png
   target:
     - nsis
     - portable
@@ -123,7 +123,7 @@ linux:
   category: Development
   maintainer: ZPLC Team
   syncDesktopName: true
-  icon: build/icon.png
+  icon: ../../tools/brand/icon.png
   target:
     - AppImage
     - deb
