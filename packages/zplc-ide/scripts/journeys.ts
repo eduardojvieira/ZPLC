@@ -3655,12 +3655,16 @@ export const JOURNEYS: Journey[] = [
       for (const phrase of ['Active file', 'Evidence', 'Diagnostics', 'No active forces', 'Not checked', 'Disconnected']) assert(!inspector.toLowerCase().includes(phrase.toLowerCase()), `The Inspector still says "${phrase}" in English: ${inspector.slice(0, 400)}`);
       await app.click(button('Configuración del proyecto'), 'the Configuración del proyecto button');
       await app.until('the project settings in Spanish', async () => (await app.eval<string>('document.body.innerText')).includes('Nombre del proyecto') || undefined);
-      for (const section of ['Destino', 'Tareas']) {
-        await app.click(button(section, 'contains'), `the ${section} section`);
-        await app.until(`the ${section} section open`, async () => await app.eval<boolean>(`[...document.querySelectorAll('[aria-expanded="true"]')].some((item) => item.textContent?.includes(${JSON.stringify(section)}))`) || undefined);
+      let settings = await app.eval<string>('document.body.innerText');
+      for (const phrase of ['Nombre del proyecto']) assert(settings.includes(phrase), `The project settings do not say "${phrase}" in Spanish: ${settings.slice(0, 600)}`);
+      for (const [kind, phrase] of [['target', 'Placa de destino'], ['tasks', 'Agregar tarea'], ['communication', 'Alcance de la comunicación de la v1.5']] as const) {
+        await app.click(css(`[data-open-config-editor="${kind}"]`), `the ${kind} editor`);
+        await app.until(`the ${kind} editor in Spanish`, async () => (await app.eval<string>('document.body.innerText')).includes(phrase) || undefined);
+        settings += '\n' + await app.eval<string>('document.body.innerText');
+        await app.click(button('Configuración del proyecto'), 'the Configuración del proyecto button');
+        await app.until('the project settings again', async () => await app.visible(css('[data-open-config-editor]')) || undefined);
       }
-      const settings = await app.eval<string>('document.body.innerText');
-      for (const phrase of ['Nombre del proyecto', 'Placa de destino', 'Imagen de firmware', 'Velocidad de reloj (MHz)']) assert(settings.includes(phrase), `The project settings do not say "${phrase}" in Spanish: ${settings.slice(0, 600)}`);
+      for (const phrase of ['Placa de destino', 'Velocidad de reloj (MHz)', 'Agregar tarea', 'Alcance de la comunicación de la v1.5']) assert(settings.includes(phrase), `The project settings do not say "${phrase}" in Spanish: ${settings.slice(0, 900)}`);
       for (const phrase of ['Project Name', 'Target Board', 'Clock Speed', 'Add Task']) assert(!settings.includes(phrase), `The project settings still say "${phrase}" in English.`);
       assert(!new RegExp(RAW_KEY).test(settings), `The project settings show a raw catalog key: ${settings.match(new RegExp(RAW_KEY))?.[0]}`);
 
