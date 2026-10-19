@@ -194,6 +194,27 @@ describe('Welcome example sections', () => {
   });
 });
 
+describe('the scenario of a hardware example (LRN-036)', () => {
+  const hasScenario = (id: string) => existsSync(join(projectsDir, id, 'tests')) && readdirSync(join(projectsDir, id, 'tests')).some((name) => name.endsWith('.scenario.json'));
+  const hardware = Object.entries(EXAMPLE_CATALOG).filter(([id, entry]) => entry.board !== undefined && existsSync(join(projectsDir, id)));
+
+  it('LRN-036 gives each hardware example a scenario, or states in both languages why it has none', () => {
+    expect(hardware.length).toBeGreaterThan(5);
+    for (const [id, entry] of hardware) {
+      if (hasScenario(id)) { expect(entry.noScenario, `${id} has a scenario and also says it has none`).toBeUndefined(); continue; }
+      expect(entry.noScenario, `${id} is a hardware example with no scenario and no reason`).toBeDefined();
+      expect(en[`examples.${id}.noScenario` as MessageKey], id).toBeTruthy();
+      expect(es[`examples.${id}.noScenario` as MessageKey], id).toBeTruthy();
+    }
+  });
+
+  it('LRN-036 carries the reason to the listing of the example that has none', () => {
+    const boards = buildExampleSections(listedFolders.map(projectInfo)).find((section) => section.id === 'boards')!;
+    expect(boards.examples.find((example) => example.id === 'multitask_demo')?.noScenario).toBe(en['examples.multitask_demo.noScenario' as MessageKey]);
+    expect(boards.examples.find((example) => example.id === 'pico_blinky')?.noScenario).toBeUndefined();
+  });
+});
+
 describe('the Welcome examples by level and topic (UX-022)', () => {
   const listing = (id: string, level?: ExampleListing['level']): ExampleListing => ({ id, title: id, summary: '', languages: ['ST'], ...(level ? { level } : {}) });
 
