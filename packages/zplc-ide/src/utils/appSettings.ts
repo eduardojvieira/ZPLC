@@ -31,6 +31,8 @@ export interface AppSettings {
   checkForUpdates: boolean;
   /** Every Learn lesson can be started whatever the learner has passed (LRN-005); off by default, so the course keeps its order. */
   unlockAllLessons: boolean;
+  /** The classroom setting (LRN-033): Learn offers no reference solution while it is on. Off by default; a setting of this computer, no account. */
+  hideSolutions: boolean;
 }
 
 export const DEFAULT_SETTINGS: AppSettings = {
@@ -42,6 +44,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   autosaveSeconds: 0,
   checkForUpdates: false,
   unlockAllLessons: false,
+  hideSolutions: false,
 };
 
 /** What the settings need of a storage; the renderer's `localStorage` has it. */
@@ -55,7 +58,7 @@ const oneOf = <T extends readonly unknown[]>(choices: T, value: unknown): value 
 /** A fresh, valid settings object from anything: each field is kept when valid and otherwise takes its default. */
 export function parseSettings(raw: unknown, defaults: AppSettings = DEFAULT_SETTINGS): AppSettings {
   const value = typeof raw === 'object' && raw !== null && !Array.isArray(raw) ? raw as Record<string, unknown> : {};
-  const { editorFontSize, editorTabSize, density, language, autosaveSeconds, checkForUpdates, unlockAllLessons } = value;
+  const { editorFontSize, editorTabSize, density, language, autosaveSeconds, checkForUpdates, unlockAllLessons, hideSolutions } = value;
   return {
     editorFontSize: typeof editorFontSize === 'number' && Number.isInteger(editorFontSize)
       && editorFontSize >= FONT_SIZE_RANGE.min && editorFontSize <= FONT_SIZE_RANGE.max ? editorFontSize : defaults.editorFontSize,
@@ -65,6 +68,7 @@ export function parseSettings(raw: unknown, defaults: AppSettings = DEFAULT_SETT
     autosaveSeconds: oneOf(AUTOSAVE_CHOICES, autosaveSeconds) ? autosaveSeconds : defaults.autosaveSeconds,
     checkForUpdates: typeof checkForUpdates === 'boolean' ? checkForUpdates : defaults.checkForUpdates,
     unlockAllLessons: typeof unlockAllLessons === 'boolean' ? unlockAllLessons : defaults.unlockAllLessons,
+    hideSolutions: typeof hideSolutions === 'boolean' ? hideSolutions : defaults.hideSolutions,
   };
 }
 

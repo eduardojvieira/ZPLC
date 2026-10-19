@@ -27,12 +27,15 @@ export interface LearnHomeViewProps {
   loaded: boolean;
   failed: boolean;
   unlockAll: boolean;
+  /** The classroom setting: reference solutions are not offered (LRN-033). */
+  hideSolutions: boolean;
   folderAccess: boolean;
   busy: boolean;
   transfer: TransferStatus;
   /** Why the last lesson could not be started, when it could not. */
   error?: string | null;
   onUnlockAll(on: boolean): void;
+  onHideSolutions(on: boolean): void;
   onStart(id: string): void;
   onClose(): void;
   onExport(): void;
@@ -40,7 +43,7 @@ export interface LearnHomeViewProps {
 }
 
 export function LearnHomeView(props: LearnHomeViewProps) {
-  const { view, index, locale, continueId, fresh, loaded, failed, unlockAll, folderAccess, busy, transfer, error, onUnlockAll, onStart, onClose, onExport, onImportFile } = props;
+  const { view, index, locale, continueId, fresh, loaded, failed, unlockAll, hideSolutions, folderAccess, busy, transfer, error, onUnlockAll, onHideSolutions, onStart, onClose, onExport, onImportFile } = props;
   const { t } = useT();
   const heading = useRef<HTMLHeadingElement>(null);
   const importRef = useRef<HTMLInputElement>(null);
@@ -113,6 +116,7 @@ export function LearnHomeView(props: LearnHomeViewProps) {
         <section aria-labelledby="learn-progress-title" className="space-y-2">
           <h2 id="learn-progress-title" className="font-semibold text-[var(--color-surface-100)]">{t('learn.home.transfer')}</h2>
           <Switch label={t('learn.home.unlockAll')} hint={t('learn.home.unlockAllHint')} data-learn-unlock-all checked={unlockAll} onChange={(event) => onUnlockAll(event.currentTarget.checked)} />
+          <Switch label={t('learn.home.hideSolutions')} hint={t('learn.home.hideSolutionsHint')} data-learn-hide-solutions checked={hideSolutions} onChange={(event) => onHideSolutions(event.currentTarget.checked)} />
           <div className="flex flex-wrap gap-2">
             <Button variant="secondary" size="sm" data-learn-export disabled={!loaded} onClick={onExport}>{t('learn.exportProgress')}</Button>
             <Button variant="secondary" size="sm" data-learn-import disabled={!loaded} onClick={() => importRef.current?.click()}>{t('learn.importProgress')}</Button>
