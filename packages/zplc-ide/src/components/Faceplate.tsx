@@ -161,13 +161,13 @@ function InputRow({ row, disabled, onSet, onHold, onForce }: {
 const TABLE_HEAD = 'border-b border-[var(--color-surface-700)] text-[var(--color-surface-400)]';
 const TH = 'px-2 py-1 font-medium';
 
-export function Faceplate({ inputs, outputs, unavailable, note, message, onSet, onHold, onForce }: {
+// `relative` keeps the visually hidden words of the values inside this section: positioned against the window they would
+// lengthen the page whenever the panel is scrolled, and scrolling a control into view would then scroll the page.
+export function Faceplate({ inputs, outputs, unavailable, message, onSet, onHold, onForce }: {
   inputs: readonly FaceplateInputRow[];
   outputs: readonly FaceplateOutputRow[];
-  /** Why the inputs cannot be operated now, in words (no simulator, not running, hardware); the controls are then disabled. */
+  /** Why the inputs cannot be operated now, in words (no simulator, paused, not running, hardware); the controls are then disabled. */
   unavailable?: string;
-  /** A state worth a line that does not disable anything (the simulation is paused). */
-  note?: string;
   /** The outcome of the last action, shown in words (a refused value, a failed write). */
   message?: string;
   onSet: (input: DeclaredInput, value: boolean | number) => void;
@@ -178,11 +178,10 @@ export function Faceplate({ inputs, outputs, unavailable, note, message, onSet, 
   const disabled = unavailable !== undefined;
   const nothing = inputs.length === 0 && outputs.length === 0;
   return (
-    <section aria-label={t('faceplate.title')} data-faceplate className="mb-3 border border-[var(--color-surface-700)] bg-[var(--color-surface-900)] p-2">
+    <section aria-label={t('faceplate.title')} data-faceplate className="relative mb-3 border border-[var(--color-surface-700)] bg-[var(--color-surface-900)] p-2">
       <h3 className="text-xs font-medium text-[var(--color-surface-100)]">{t('faceplate.title')}</h3>
       <p className="mt-1 text-xs text-[var(--color-surface-400)]">{t('faceplate.intro')}</p>
       {unavailable && <p role="status" data-faceplate-reason className="mt-2 text-xs text-[var(--color-accent-yellow)]">{unavailable}</p>}
-      {note && !unavailable && <p role="status" className="mt-2 text-xs text-[var(--color-surface-300)]">{note}</p>}
       {nothing ? null : (
         <>
           <h4 className="mt-2 text-xs font-medium text-[var(--color-surface-100)]">{t('faceplate.inputsHeading')}</h4>

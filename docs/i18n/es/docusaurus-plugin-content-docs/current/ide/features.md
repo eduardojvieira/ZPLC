@@ -336,9 +336,11 @@ encola la escritura y la aplica cuando empieza el scan siguiente. La fila dice
 valor, y luego **Aplicado** un momento, y la aplicación anuncia el cambio aplicado a un
 lector de pantalla. Una pulsación y una liberación que caen entre dos scans las ve cada
 una un scan completo. Cuando el runtime no puede aplicar un cambio (la simulación está
-detenida, falló, o el simulador no informa la capacidad) los controles quedan
-deshabilitados y el panel dice por qué con palabras; con la simulación en pausa el cambio
-espera al scan siguiente, y el panel lo dice. **Forzar** mantiene la entrada en su valor
+detenida, en pausa, falló, o el simulador no informa la capacidad) los controles quedan
+deshabilitados y el panel dice por qué con palabras. Un programa en pausa puede estar
+reteniendo un scan en un punto de interrupción, y un cambio nunca llega a un scan que ya
+empezó, así que un programa en pausa se edita desde la tabla Watch, cuya escritura se toma
+de inmediato como siempre se tomó la de un depurador. **Forzar** mantiene la entrada en su valor
 actual (y **Aplicar** cambia entonces el valor forzado), para los tipos de hasta 32 bits
 que transporta un forzado; al liberarlo la entrada vuelve a quedar libre.
 

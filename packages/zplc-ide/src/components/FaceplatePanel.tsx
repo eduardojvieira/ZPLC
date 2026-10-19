@@ -12,7 +12,7 @@ import { useDeclaredInputs } from '../hooks/useDeclaredInputs';
 import { useT } from '../i18n';
 import { inputWrite, type DeclaredInput } from '../runtime/declaredInputs';
 import type { WatchVariable } from '../runtime/debugAdapter';
-import { latestWins, settleInputs } from '../runtime/faceplateState';
+import { faceplateUnavailable, latestWins, settleInputs } from '../runtime/faceplateState';
 import { listIoMap } from '../runtime/ioMap';
 import { useIDEStore } from '../store/useIDEStore';
 import { announce } from '../utils/announce';
@@ -78,14 +78,8 @@ export function FaceplatePanel({ controller }: { controller: DebugController | u
     };
   }, [connected, simulated, readDeclaredInputs, ioMap, types, setPhase, t]);
 
-  const unavailable = !debugMap ? t('faceplate.noMap')
-    : !connected ? t('faceplate.notConnected')
-      : !simulated ? t('faceplate.hardware')
-        : vmState === 'error' ? t('faceplate.faulted')
-          : vmState !== 'running' && vmState !== 'paused' ? t('faceplate.notRunning')
-            : !supported ? t('faceplate.noCapability')
-              : undefined;
-  const note = vmState === 'paused' ? t('faceplate.pausedNote') : undefined;
+  const why = faceplateUnavailable({ hasMap: Boolean(debugMap), connected, simulated, vmState, supported });
+  const unavailable = why === null ? undefined : t(`faceplate.${why}` as const);
 
   const inputRows: FaceplateInputRow[] = ioMap.inputs.map((input) => ({
     input,
@@ -139,7 +133,6 @@ export function FaceplatePanel({ controller }: { controller: DebugController | u
       inputs={inputRows}
       outputs={outputRows}
       unavailable={unavailable}
-      note={note}
       message={message}
       onSet={set}
       onHold={(input, down) => set(input, down)}

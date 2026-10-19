@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'bun:test';
 
-import { createHold, latestWins, sameInputValue, settleInputs } from './faceplateState';
+import { createHold, faceplateUnavailable, latestWins, sameInputValue, settleInputs } from './faceplateState';
 
 describe('an input change that waits for the next scan (LRN-017)', () => {
   it('compares a value as the runtime holds it: a REAL as a 32-bit float, an integer exactly', () => {
@@ -72,5 +72,22 @@ describe('a push button on the faceplate (LRN-017)', () => {
     const sent: boolean[] = [];
     createHold((down) => sent.push(down)).release();
     expect(sent).toEqual([]);
+  });
+});
+
+describe('when the faceplate cannot apply a change (LRN-017)', () => {
+  const ready = { hasMap: true, connected: true, simulated: true, vmState: 'running', supported: true };
+  it('can while a simulation runs and the simulator reports the capability', () => {
+    expect(faceplateUnavailable(ready)).toBeNull();
+  });
+
+  it('says why not, in the order a person can act on: no map, no simulator, hardware, a fault, a pause, a stop, no capability', () => {
+    expect(faceplateUnavailable({ ...ready, hasMap: false })).toBe('noMap');
+    expect(faceplateUnavailable({ ...ready, connected: false })).toBe('notConnected');
+    expect(faceplateUnavailable({ ...ready, simulated: false })).toBe('hardware');
+    expect(faceplateUnavailable({ ...ready, vmState: 'error' })).toBe('faulted');
+    expect(faceplateUnavailable({ ...ready, vmState: 'paused' })).toBe('paused');
+    expect(faceplateUnavailable({ ...ready, vmState: 'idle' })).toBe('notRunning');
+    expect(faceplateUnavailable({ ...ready, supported: false })).toBe('noCapability');
   });
 });

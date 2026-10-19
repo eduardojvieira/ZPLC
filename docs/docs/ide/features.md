@@ -330,10 +330,11 @@ queues the write and applies it when the next scan starts. The row says **Pendin
 next scan** from the moment you act until the runtime holds the value, then **Applied**
 for a moment, and the application announces the applied change to a screen reader. A
 press and a release that land between two scans are each seen by a whole scan. When the
-runtime cannot apply a change (the simulation is stopped, has faulted, or the simulator
-does not report the capability) the controls are disabled and the panel says why in
-words; while the simulation is paused the change waits for the next scan, and the panel
-says so. **Force** holds an input at its present value (and **Set** then changes the
+runtime cannot apply a change (the simulation is stopped, paused, has faulted, or the
+simulator does not report the capability) the controls are disabled and the panel says
+why in words. A paused program may be holding a scan at a breakpoint, and a change never
+reaches a scan that has begun, so a paused program is edited from the Watch table, whose
+write is taken at once as a debugger's write always was. **Force** holds an input at its present value (and **Set** then changes the
 forced value), for the types up to 32 bits that a force carries; releasing the force
 hands the input back.
 

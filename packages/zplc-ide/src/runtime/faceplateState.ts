@@ -68,3 +68,20 @@ export function createHold(onChange: (down: boolean) => void): { press: () => vo
   };
   return { press: () => change(true), release: () => change(false), held: () => held };
 }
+
+export type FaceplateUnavailable = 'noMap' | 'notConnected' | 'hardware' | 'faulted' | 'paused' | 'notRunning' | 'noCapability';
+
+/**
+ * Why the faceplate cannot apply an input change now, or null when it can. A paused program is not offered the change: the
+ * runtime may be holding a scan at a breakpoint, and a change must reach the program at a scan boundary, never inside one;
+ * the Watch table is where a paused program is edited.
+ */
+export function faceplateUnavailable(state: { hasMap: boolean; connected: boolean; simulated: boolean; vmState: string; supported: boolean }): FaceplateUnavailable | null {
+  if (!state.hasMap) return 'noMap';
+  if (!state.connected) return 'notConnected';
+  if (!state.simulated) return 'hardware';
+  if (state.vmState === 'error') return 'faulted';
+  if (state.vmState === 'paused') return 'paused';
+  if (state.vmState !== 'running') return 'notRunning';
+  return state.supported ? null : 'noCapability';
+}
