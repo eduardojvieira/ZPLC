@@ -310,32 +310,55 @@ Si el editor, el panel inferior o la barra de herramientas lanzan una excepción
 
 Nivel de evidencia: host. El recorrido 20 (una región que falla no deja la ventana en blanco) de `bun run test:journeys` hace fallar cada una de las tres regiones en la aplicación real, comprueba que las otras dos siguen funcionando y que Retry devuelve la región caída; `packages/zplc-ide/src/components/ErrorBoundary.test.tsx` cubre la lógica de la región.
 
-## Entradas de la simulación
+## E/S en vivo
 
-En la simulación nativa, la pestaña **Watch** empieza con **Simulation inputs**:
-todas las entradas que declara el programa en ejecución, con su propio nombre. Es
-decir, cada variable mapeada a la imagen de entrada (`AT %IX0.3`, `AT %IW2`, como
-la haya llamado) y cada `VAR_INPUT` de un programa, con su tipo, su dirección y el
-valor leído del runtime. Un BOOL tiene un interruptor **Set TRUE / Set FALSE** que
-cambia solo su propio bit, y cada otro tipo numérico tiene una casilla numérica con
-**Set**; un valor que no cabe en el tipo se rechaza con un mensaje antes de
-escribir nada. **Force** mantiene la entrada en su valor actual (y **Set** cambia
-entonces el valor forzado), para los tipos de hasta 32 bits que transporta un
-force; al liberarlo la entrada vuelve a quedar libre.
+Durante una simulación nativa, la pestaña **Watch**, que se abre sola al iniciar la
+simulación, empieza con **E/S en vivo**: el faceplate del programa en ejecución. Lee el
+mapa de E/S del programa cargado, así que lista todas las entradas y todas las salidas
+con su propio nombre, sea cual sea. Las entradas son cada variable mapeada a la imagen de
+entrada (`AT %IX0.3`, `AT %IW2`) y cada `VAR_INPUT` de un programa; las salidas son cada
+variable mapeada a la imagen de salida (`AT %QX0.5`). Cada fila tiene su tipo, su
+dirección y su valor en vivo, y una salida se lee con el mismo vocabulario que la tabla
+Watch: TRUE, FALSE y un valor que no se ha leído son cada uno un glifo y una palabra, y un
+valor forzado dice que está forzado.
 
-El propio runtime sigue aceptando solo los tres nombres de motor de su petición
-`simulation.input.set`; cualquier otra entrada se escribe con la escritura de
-memoria tipada, en la dirección y con el ancho del mapa de depuración. En hardware,
-las entradas se fuerzan desde la tabla Watch.
+Una entrada se opera con el control que corresponde a su tipo. Un BOOL tiene un
+interruptor (**Poner TRUE** / **Poner FALSE**) que cambia solo su propio bit, y un
+pulsador (**Mantener**) que lo deja en TRUE mientras se pulsa, con el ratón o con
+Espacio o Enter, y lo suelta al soltarlo. Un entero de hasta 16 bits tiene un control
+deslizante sobre el rango de su tipo; cada otro tipo numérico tiene una casilla numérica
+con **Aplicar**, que también admite un valor escrito en los tipos pequeños. Un valor que
+no cabe en el tipo se rechaza con un mensaje antes de escribir nada.
 
-Nivel de evidencia: host. `packages/zplc-ide/src/runtime/declaredInputs.test.ts`
-cubre la lista, la codificación de cada tipo numérico y la escritura sin tocar los
-demás bits, contra un mapa de depuración del compilador real;
-`src/cli/toolApi.test.ts` cubre el marcado de las entradas de programa, y el
-recorrido 37 de `bun run test:journeys` fija un bit, una palabra y una entrada de
-programa de un proyecto con nombres propios en la aplicación real y ve que la salida
-del programa los sigue (requisito IDE-024). Evidencia de host con POSIX nativo, no
-de hardware.
+Un cambio llega al programa en un límite de scan, nunca dentro de un scan: el runtime
+encola la escritura y la aplica cuando empieza el scan siguiente. La fila dice
+**Pendiente hasta el próximo scan** desde que se actúa hasta que el runtime tiene el
+valor, y luego **Aplicado** un momento, y la aplicación anuncia el cambio aplicado a un
+lector de pantalla. Una pulsación y una liberación que caen entre dos scans las ve cada
+una un scan completo. Cuando el runtime no puede aplicar un cambio (la simulación está
+detenida, en pausa, falló, o el simulador no informa la capacidad) los controles quedan
+deshabilitados y el panel dice por qué con palabras. Un programa en pausa puede estar
+reteniendo un scan en un punto de interrupción, y un cambio nunca llega a un scan que ya
+empezó, así que un programa en pausa se edita desde la tabla Watch, cuya escritura se toma
+de inmediato como siempre se tomó la de un depurador. **Forzar** mantiene la entrada en su valor
+actual (y **Aplicar** cambia entonces el valor forzado), para los tipos de hasta 32 bits
+que transporta un forzado; al liberarlo la entrada vuelve a quedar libre.
+
+El faceplate escribe con la escritura de memoria tipada, en la dirección y con el ancho del
+mapa de depuración; el runtime conserva `simulation.input.set` para los tres nombres de
+motor de los programas iniciales. Ni el agente ni el servidor MCP pueden operar el
+faceplate: no tienen ninguna herramienta que fije una entrada o escriba memoria. En
+hardware, las entradas se fuerzan desde la tabla watch.
+
+Nivel de evidencia: host. `packages/zplc-ide/src/runtime/declaredInputs.test.ts`,
+`ioMap.test.ts` y `faceplateState.test.ts` cubren las listas, la codificación de cada tipo
+numérico, el rango de un control deslizante y el estado pendiente;
+`src/components/Faceplate.test.tsx` cubre lo que el faceplate muestra y dice;
+`test_native_runtime_session.c` prueba que una escritura espera al inicio del scan
+siguiente; y el recorrido 50 de `bun run test:journeys` opera un interruptor, un pulsador
+y un control deslizante de un proyecto con nombres propios en la aplicación real, también
+solo con el teclado, y ve que la salida del programa lo sigue (requisitos LRN-017,
+IDE-024). Evidencia de host POSIX nativo, no de hardware.
 
 ## Notificaciones
 

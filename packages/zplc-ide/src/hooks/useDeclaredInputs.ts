@@ -6,7 +6,7 @@
 import { useCallback, useEffect, useRef } from 'react';
 
 import type { IDebugAdapter } from '../runtime/debugAdapter';
-import { decodeInput, inputReadPlan, inputWrite, type DeclaredInput } from '../runtime/declaredInputs';
+import { decodeInput, inputReadPlan, inputWrite, type DeclaredInput, type IoPoint } from '../runtime/declaredInputs';
 import { useIDEStore } from '../store/useIDEStore';
 
 export function useDeclaredInputs(adapter: IDebugAdapter | null | undefined) {
@@ -27,8 +27,8 @@ export function useDeclaredInputs(adapter: IDebugAdapter | null | undefined) {
     await currentAdapter.setValue(write.address, write.bytes);
   }, [forcesUnconfirmed]);
 
-  /** Reads declared inputs back; an input that could not be read is absent from the map. */
-  const readDeclaredInputs = useCallback(async (inputs: readonly DeclaredInput[]) => {
+  /** Reads inputs and outputs of the I/O map back, by path; a point that could not be read is absent from the map. */
+  const readDeclaredInputs = useCallback(async (inputs: ReadonlyArray<IoPoint & { path: string }>) => {
     const values = new Map<string, boolean | number>();
     const currentAdapter = adapterRef.current;
     if (!currentAdapter || !currentAdapter.connected || inputs.length === 0) return values;

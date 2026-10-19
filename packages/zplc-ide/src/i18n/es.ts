@@ -12,6 +12,7 @@ import { projectEs } from './catalog/project';
 import { labEs } from './catalog/lab';
 import { ldEs } from './catalog/ld';
 import { importArchiveEs } from './catalog/importArchive';
+import { faceplateEs } from './catalog/faceplate';
 import { interlockEs } from './catalog/interlock';
 import { learnEs } from './catalog/learn';
 import { learnHomeEs } from './catalog/learnHome';
@@ -586,6 +587,7 @@ export const es: Record<MessageKey, string> = {
   ...labEs,
   ...ldEs,
   ...importArchiveEs,
+  ...faceplateEs,
   ...interlockEs,
   ...learnEs,
   ...learnHomeEs,

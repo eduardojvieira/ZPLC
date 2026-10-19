@@ -1751,6 +1751,145 @@ static void test_simulation_pulse_lasts_until_scan_completes(void)
     zplc_native_runtime_session_shutdown(&session);
 }
 
+/* LRN-017, RT-009: the writes to the input image that a running program receives are staged and reach the image at
+ * the start of the next scan, never inside one. */
+static const char *write_input_bytes(zplc_native_runtime_session_t *session, unsigned address, const char *hex)
+{
+    char request[256];
+
+    snprintf(request, sizeof(request),
+             "{\"id\":\"w\",\"type\":\"request\",\"method\":\"memory.write\",\"params\":{\"address\":%u,\"bytes_hex\":\"%s\"}}",
+             address, hex);
+    return session_call(session, request);
+}
+
+/* One scan of the program that stops at its breakpoint at PC 1: the tick that starts it, a resume and the tick that
+ * finishes it. Returns the clock after the scan. */
+static uint32_t scan_through_breakpoint(zplc_native_runtime_session_t *session, uint32_t now_ms)
+{
+    char event[4096];
+
+    (void)zplc_native_runtime_session_tick(session, now_ms, event, sizeof(event));
+    (void)session_call(session, "{\"id\":\"resume\",\"type\":\"request\",\"method\":\"execution.resume\",\"params\":{}}");
+    (void)zplc_native_runtime_session_tick(session, now_ms + 100U, event, sizeof(event));
+    return now_ms + 200U;
+}
+
+static void test_input_writes_apply_at_the_next_scan_start(void)
+{
+    zplc_native_runtime_session_t session;
+    char event[4096];
+    uint8_t program[32];
+    size_t length = 0U;
+    uint8_t *ipi;
+    uint8_t *opi;
+    uint32_t now_ms = 100U;
+
+    printf("\n=== Test: input writes apply at the next scan start ===\n");
+
+    length = emit_op1(program, length, OP_NOP);
+    length = emit_mem8(program, length, OP_LOAD8, ZPLC_MEM_IPI_BASE);
+    length = emit_mem8(program, length, OP_STORE8, ZPLC_MEM_OPI_BASE);
+    length = emit_halt(program, length);
+    zplc_native_runtime_session_init(&session);
+    load_session_program(&session, program, length);
+    (void)session_call(&session, "{\"id\":\"bp\",\"type\":\"request\",\"method\":\"breakpoint.add\",\"params\":{\"pc\":1}}");
+    (void)session_call(&session, "{\"id\":\"start\",\"type\":\"request\",\"method\":\"execution.start\",\"params\":{}}");
+    ipi = zplc_mem_get_region(ZPLC_MEM_IPI_BASE);
+    opi = zplc_mem_get_region(ZPLC_MEM_OPI_BASE);
+
+    TEST_ASSERT_CONTAINS(write_input_bytes(&session, 0U, "01"), "\"type\":\"response\"", "a write while the program runs is accepted");
+    TEST_ASSERT(ipi[0] == 0U, "the value waits for the next scan: the image has not changed");
+    (void)zplc_native_runtime_session_tick(&session, now_ms, event, sizeof(event));
+    TEST_ASSERT(session.state == ZPLC_NATIVE_SESSION_PAUSED && ipi[0] == 1U, "the next scan starts with the new value in the image");
+
+    /* A debugger's write to a paused program is taken at once, as it always was; the program runs again from the
+     * resume, and a write after that waits for the end of the scan that was held. */
+    (void)write_input_bytes(&session, 8U, "05");
+    TEST_ASSERT(ipi[8] == 5U, "a write to a paused program is applied at once");
+    (void)session_call(&session, "{\"id\":\"resume\",\"type\":\"request\",\"method\":\"execution.resume\",\"params\":{}}");
+    (void)write_input_bytes(&session, 0U, "02");
+    TEST_ASSERT(ipi[0] == 1U, "a value written while a resumed scan has not ended does not reach that scan");
+    (void)zplc_native_runtime_session_tick(&session, now_ms + 100U, event, sizeof(event));
+    TEST_ASSERT(opi[0] == 1U && session.cycle_count == 1U, "the scan that was in progress finishes with the value it started with");
+    TEST_ASSERT(ipi[0] == 1U, "and the image still holds it after that scan");
+
+    now_ms += 200U;
+    (void)zplc_native_runtime_session_tick(&session, now_ms, event, sizeof(event));
+    TEST_ASSERT(ipi[0] == 2U, "the value written during the scan reaches the next scan");
+    (void)session_call(&session, "{\"id\":\"resume\",\"type\":\"request\",\"method\":\"execution.resume\",\"params\":{}}");
+    (void)zplc_native_runtime_session_tick(&session, now_ms + 100U, event, sizeof(event));
+    TEST_ASSERT(opi[0] == 2U, "the program reads the value in the scan that received it");
+    now_ms += 200U;
+    now_ms = scan_through_breakpoint(&session, now_ms);
+    TEST_ASSERT(ipi[0] == 2U && opi[0] == 2U, "a value persists until it is changed again");
+
+    /* A push button pressed and released between two scans: the scan after the press sees it pressed. */
+    (void)write_input_bytes(&session, 0U, "01");
+    (void)write_input_bytes(&session, 0U, "00");
+    (void)zplc_native_runtime_session_tick(&session, now_ms, event, sizeof(event));
+    TEST_ASSERT(ipi[0] == 1U, "of a press and a release written between two scans, the next scan sees the press");
+    (void)session_call(&session, "{\"id\":\"resume\",\"type\":\"request\",\"method\":\"execution.resume\",\"params\":{}}");
+    (void)zplc_native_runtime_session_tick(&session, now_ms + 100U, event, sizeof(event));
+    TEST_ASSERT(opi[0] == 1U, "the program reads the press");
+    now_ms += 200U;
+    (void)zplc_native_runtime_session_tick(&session, now_ms, event, sizeof(event));
+    TEST_ASSERT(ipi[0] == 0U, "the release reaches the scan after it");
+
+    zplc_native_runtime_session_shutdown(&session);
+}
+
+static void test_input_writes_of_every_width_and_the_refusals(void)
+{
+    zplc_native_runtime_session_t session;
+    char event[4096];
+    uint8_t program[8];
+    uint8_t *ipi;
+    unsigned count;
+    const char *answer;
+
+    printf("\n=== Test: input writes of every width, and what is refused ===\n");
+
+    zplc_native_runtime_session_init(&session);
+    load_session_program(&session, program, emit_halt(program, 0U));
+    ipi = zplc_mem_get_region(ZPLC_MEM_IPI_BASE);
+
+    (void)write_input_bytes(&session, 8U, "07");
+    TEST_ASSERT(ipi[8] == 7U, "a program that is not running takes the write at once");
+    (void)session_call(&session, "{\"id\":\"start\",\"type\":\"request\",\"method\":\"execution.start\",\"params\":{}}");
+
+    (void)write_input_bytes(&session, 16U, "3412");
+    (void)write_input_bytes(&session, 32U, "78563412");
+    (void)write_input_bytes(&session, 48U, "0000C03F");
+    (void)write_input_bytes(&session, 64U, "FF");
+    TEST_ASSERT(ipi[16] == 0U && ipi[32] == 0U && ipi[48] == 0U && ipi[64] == 0U,
+                "WORD, DWORD, REAL and BYTE values all wait for the scan");
+    (void)zplc_native_runtime_session_tick(&session, 100U, event, sizeof(event));
+    TEST_ASSERT(ipi[16] == 0x34U && ipi[17] == 0x12U, "a 16-bit value arrives whole");
+    TEST_ASSERT(ipi[32] == 0x78U && ipi[35] == 0x12U, "a 32-bit value arrives whole");
+    TEST_ASSERT(ipi[48] == 0x00U && ipi[50] == 0xC0U && ipi[51] == 0x3FU, "a REAL arrives as its four bytes (1.5)");
+    TEST_ASSERT(ipi[64] == 0xFFU && ipi[8] == 7U, "a byte arrives, and what was written before the run stays");
+
+    answer = write_input_bytes(&session, 0xFFFFU, "0102");
+    TEST_ASSERT_CONTAINS(answer, "INVALID_REQUEST", "a write past the end of the memory is refused while running");
+    TEST_ASSERT_CONTAINS(write_input_bytes(&session, 0U, "zz"), "INVALID_REQUEST", "a value that is not hex is refused");
+    for (count = 0U; count < 32U; ++count) {
+        (void)write_input_bytes(&session, 80U, "01");
+    }
+    TEST_ASSERT_CONTAINS(write_input_bytes(&session, 80U, "01"), "RUNTIME_FAILURE",
+                         "a full queue refuses a write with a code instead of dropping it");
+    (void)zplc_native_runtime_session_tick(&session, 200U, event, sizeof(event));
+    TEST_ASSERT(ipi[80] == 1U, "the queued writes still apply");
+
+    (void)write_input_bytes(&session, 96U, "09");
+    (void)session_call(&session, "{\"id\":\"stop\",\"type\":\"request\",\"method\":\"execution.stop\",\"params\":{}}");
+    (void)session_call(&session, "{\"id\":\"start2\",\"type\":\"request\",\"method\":\"execution.start\",\"params\":{}}");
+    (void)zplc_native_runtime_session_tick(&session, 300U, event, sizeof(event));
+    TEST_ASSERT(ipi[96] == 0U, "stopping the program drops the writes that were waiting");
+
+    zplc_native_runtime_session_shutdown(&session);
+}
+
 static void test_stop_reset_and_load_abandon_interrupted_scan(void)
 {
     zplc_native_runtime_session_t session;
@@ -4835,6 +4974,8 @@ int main(void)
     test_step_completes_mid_scan_breakpoint();
     test_op_break_resume_continues_scan();
     test_simulation_pulse_lasts_until_scan_completes();
+    test_input_writes_apply_at_the_next_scan_start();
+    test_input_writes_of_every_width_and_the_refusals();
     test_stop_reset_and_load_abandon_interrupted_scan();
     test_zplc_program_load_uses_task_interval();
     test_host_observed_poll_cadence();

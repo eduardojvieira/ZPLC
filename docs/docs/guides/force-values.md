@@ -30,7 +30,7 @@ procedure for it. AI assistants and the MCP server cannot force a value
    program reads the forced value from the next scan on.
 5. Untick **Force** to release the variable.
 
-In the **Simulation inputs** panel at the top of the Watch tab, every input that the
+In the **Live I/O** panel at the top of the Watch tab, every input that the
 running program declares has a switch (**Set TRUE** and **Set FALSE**) or a number
 box with **Set**. **Force** there holds the input at its present value, and **Set**
 then changes the forced value. In the simulator an input that you forced keeps its
@@ -79,6 +79,6 @@ leave a force on a controller that nobody is watching.
 
 ## See also
 
-- [Studio workbench](../ide/features.md#simulation-inputs): the simulation inputs and the debugging boundary.
+- [Studio workbench](../ide/features.md#live-io): the live I/O faceplate and the debugging boundary.
 - [The ZPLC shell](../operations/shell.md): every debugging command.
 - [Safety and limitations](../safety-and-limitations.md).

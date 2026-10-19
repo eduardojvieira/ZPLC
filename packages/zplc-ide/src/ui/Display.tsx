@@ -43,7 +43,7 @@ export function SignalValue({ tone, children, className }: { tone: SignalTone; c
   const mark = signalMark(tone);
   const says = tone === 'forced' || tone === 'fault' || tone === 'unknown';
   return (
-    <span className={cx('ui-tabular', SIGNAL_TEXT_CLASS[tone], className)} data-signal={tone} title={SIGNAL_CUES[tone].description}>
+    <span className={cx('ui-tabular', SIGNAL_TEXT_CLASS[tone], className)} data-signal={tone}>
       {mark && <span aria-hidden="true">{mark} </span>}
       {says && <span className="ui-visually-hidden">{SIGNAL_CUES[tone].description}: </span>}
       {children}

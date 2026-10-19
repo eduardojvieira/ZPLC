@@ -29,13 +29,16 @@ export interface DeclaredInput {
   origin: 'mapped' | 'program-input';
 }
 
+/** What reading a variable of the process image needs: where it is, how wide, and what it is (an input or an output). */
+export type IoPoint = Pick<DeclaredInput, 'address' | 'size' | 'type' | 'bitOffset'>;
+
 type Scalar = 'BOOL' | 'BYTE' | 'SINT' | 'USINT' | 'INT' | 'UINT' | 'WORD' | 'DINT' | 'UDINT' | 'DWORD' | 'TIME' | 'REAL' | 'LINT' | 'ULINT' | 'LWORD' | 'LREAL';
 
 const WIDTH: Record<Scalar, number> = {
   BOOL: 1, BYTE: 1, SINT: 1, USINT: 1, INT: 2, UINT: 2, WORD: 2, DINT: 4, UDINT: 4, DWORD: 4, TIME: 4, REAL: 4,
   LINT: 8, ULINT: 8, LWORD: 8, LREAL: 8,
 };
-const isScalar = (type: string): type is Scalar => Object.hasOwn(WIDTH, type);
+export const isScalar = (type: string): type is Scalar => Object.hasOwn(WIDTH, type);
 
 /** Inclusive range of the integer types, by name. */
 const RANGE: Partial<Record<Scalar, [bigint, bigint]>> = {
@@ -93,6 +96,17 @@ export function inputWrite(input: DeclaredInput, value: boolean | number, curren
   return { address: input.address, bytes };
 }
 
+/**
+ * The range of a slider for an input, from its type: the integers up to 16 bits. A wider integer has a range too large
+ * to point at, and a REAL has none from its type, so those are set from a number box only.
+ */
+export function inputRange(input: Pick<DeclaredInput, 'type'>): { min: number; max: number } | null {
+  const type = input.type;
+  if (!isScalar(type) || WIDTH[type] > 2) return null;
+  const range = RANGE[type];
+  return range === undefined ? null : { min: Number(range[0]), max: Number(range[1]) };
+}
+
 /** The direct address of an input as the program writes it (`%IX0.3`, `%IW2`), or its place in the work memory. */
 export function inputAddressLabel(input: DeclaredInput): string {
   if (input.region === 'WORK') return `WORK 0x${input.address.toString(16).toUpperCase().padStart(4, '0')}`;
@@ -108,7 +122,7 @@ const MAX_READ = 64;
 const MERGE_GAP = 8;
 
 /** Few ranges, at most 64 bytes each, that cover every input. */
-export function inputReadPlan(inputs: readonly DeclaredInput[]): Array<{ address: number; length: number }> {
+export function inputReadPlan(inputs: readonly IoPoint[]): Array<{ address: number; length: number }> {
   const spans = inputs
     .map((input) => ({ start: input.address, end: input.address + Math.max(1, input.size) }))
     .sort((left, right) => left.start - right.start);
@@ -127,7 +141,7 @@ export function inputReadPlan(inputs: readonly DeclaredInput[]): Array<{ address
 }
 
 /** The value of an input in memory, where `read` returns the bytes at an address (the planned ranges, already read). */
-export function decodeInput(input: DeclaredInput, read: (address: number, length: number) => Uint8Array): boolean | number {
+export function decodeInput(input: IoPoint, read: (address: number, length: number) => Uint8Array): boolean | number {
   const type = input.type as Scalar;
   const bytes = read(input.address, Math.max(1, input.size));
   if (type === 'BOOL') return input.bitOffset === undefined ? bytes[0] !== 0 : ((bytes[0] ?? 0) >> input.bitOffset & 1) === 1;

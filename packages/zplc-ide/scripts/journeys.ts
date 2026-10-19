@@ -3363,6 +3363,104 @@ export const JOURNEYS: Journey[] = [
       assert(clipped.length === 0, `Controls are clipped at 1366 by 768 in Spanish: ${clipped.join('; ')}`);
     },
   },
+  {
+    // LRN-017 (and IDE-024): during a live simulation the faceplate lists the inputs and the outputs of the program from its I/O
+    // map and lets a person operate the inputs. None of these names is one that the runtime or Studio knows. A change reaches
+    // the program at a scan boundary; the journey sees the output follow, with the pointer and with the keyboard alone.
+    name: '50 The live I/O faceplate operates the inputs of any program and shows its outputs, with the pointer and with the keyboard', example: 'none', proves: ['LRN-017'], partly: ['IDE-024'],
+    run: async (app, { root }) => {
+      const folder = join(root, 'faceplate-io');
+      mkdirSync(join(folder, 'src'), { recursive: true });
+      writeFileSync(join(folder, 'zplc.json'), JSON.stringify({ schemaVersion: 2, name: 'Faceplate IO', version: '1.0.0', target: { board: 'posix' }, tasks: [{ name: 'MainTask', trigger: 'cyclic', interval_ms: 10, priority: 1, programs: ['Panel.st'] }] }));
+      writeFileSync(join(folder, 'src', 'Panel.st'), [
+        'PROGRAM Panel',
+        'VAR_INPUT',
+        '  Gate AT %IX0.1 : BOOL;',
+        '  Bell AT %IX0.2 : BOOL;',
+        '  Dial AT %IW2 : INT;',
+        '  Scale AT %ID2 : DINT;',
+        'END_VAR',
+        'VAR_OUTPUT',
+        '  Lamp AT %QX0.0 : BOOL;',
+        '  Ring AT %QX0.1 : BOOL;',
+        '  Echo AT %QW2 : INT;',
+        '  Total AT %QD2 : DINT;',
+        'END_VAR',
+        'Lamp := Gate;',
+        'Ring := Bell;',
+        'Echo := Dial;',
+        'Total := Scale;',
+        'END_PROGRAM',
+        '',
+      ].join('\n'));
+      // The steps wait on a runtime that shares the machine with other work: a generous bound, not a slow product.
+      const patiently = <T,>(description: string, check: () => Promise<T | undefined | false> | T | undefined | false) => app.until(description, check, 45_000);
+      const outputText = (name: string) => app.eval<string>(`document.querySelector('[data-output="Panel.${name}"] [data-output-value]')?.textContent?.trim() ?? ''`);
+      const inputText = (name: string) => app.eval<string>(`document.querySelector('[data-input="Panel.${name}"] [data-input-value]')?.textContent?.trim() ?? ''`);
+      const outputIs = (name: string, text: string) => patiently(`${name} to read ${text}`, async () => (await outputText(name)).includes(text) || undefined);
+      const centre = async (selector: string) => app.eval<{ x: number; y: number }>(`(() => { const box = document.querySelector(${JSON.stringify(selector)}).getBoundingClientRect(); return { x: box.left + box.width / 2, y: box.top + box.height / 2 }; })()`);
+      const focus = (selector: string) => app.eval(`document.querySelector(${JSON.stringify(selector)}).focus()`);
+      const key = (type: 'keyDown' | 'keyUp') => app.cdp.command('Input.dispatchKeyEvent', { type, key: ' ', code: 'Space', windowsVirtualKeyCode: 32, ...(type === 'keyDown' ? { text: ' ' } : {}) });
+
+      await openFolder(app, folder);
+      const built = await compile(app);
+      assert(built.kind === 'built', `The program with custom-named I/O does not build: ${built.message}`);
+      await connectAndRun(app);
+      await app.click(tab('Watch', 'prefix'));
+      await patiently('the faceplate', async () => await app.visible(css('[data-faceplate]')) || undefined);
+
+      // Every input and every output of the program is listed, by its own name, from the I/O map.
+      for (const name of ['Gate', 'Bell', 'Dial', 'Scale']) assert(await app.visible(css(`[data-input="Panel.${name}"]`)), `The input ${name} is not on the faceplate.`);
+      for (const name of ['Lamp', 'Ring', 'Echo', 'Total']) assert(await app.visible(css(`[data-output="Panel.${name}"]`)), `The output ${name} is not on the faceplate.`);
+      await outputIs('Lamp', 'FALSE');
+
+      // The switch, with the pointer: the change shows as pending or applied beside the input and the output follows the scan.
+      await app.click(button('Gate: FALSE'));
+      await patiently('the change of Gate to be shown', async () => await app.visible(css('[data-input="Panel.Gate"] [data-input-phase]')) || undefined);
+      await outputIs('Lamp', 'TRUE');
+      await patiently('Gate to read TRUE', async () => (await inputText('Gate')).includes('TRUE') || undefined);
+      // The switch, with the keyboard alone: focus it and press Space.
+      await focus('[data-input="Panel.Gate"] button[role="switch"]');
+      await app.press('Space');
+      await outputIs('Lamp', 'FALSE');
+
+      // The push button, with the pointer: TRUE while it is held and FALSE when it is let go.
+      const { x, y } = await centre('button[aria-label="Hold Bell"]');
+      await app.cdp.command('Input.dispatchMouseEvent', { type: 'mouseMoved', x, y });
+      await app.cdp.command('Input.dispatchMouseEvent', { type: 'mousePressed', x, y, button: 'left', buttons: 1, clickCount: 1 });
+      await outputIs('Ring', 'TRUE');
+      await app.cdp.command('Input.dispatchMouseEvent', { type: 'mouseReleased', x, y, button: 'left', buttons: 0, clickCount: 1 });
+      await outputIs('Ring', 'FALSE');
+      // The push button, with the keyboard alone: Space held and let go.
+      await focus('button[aria-label="Hold Bell"]');
+      await key('keyDown');
+      await outputIs('Ring', 'TRUE');
+      await key('keyUp');
+      await outputIs('Ring', 'FALSE');
+
+      // The slider of a 16-bit integer, with the keyboard: its type gives the range, so End is the top of the range.
+      await focus('input[aria-label="Slider for Dial"]');
+      await app.press('End');
+      await outputIs('Echo', '32767');
+      await app.press('Home');
+      await outputIs('Echo', '-32768');
+      await app.press('ArrowRight');
+      await outputIs('Echo', '-32767');
+
+      // A 32-bit input has no slider (its type gives no range to point at) and a number box with Set, typed with the keyboard.
+      assert(!await app.visible(css('input[aria-label="Slider for Scale"]')), 'A DINT should have no slider.');
+      await focus('input[aria-label="Value of Scale"]');
+      await app.type('100000');
+      await app.press('Enter');
+      await outputIs('Total', '100000');
+
+      // Where the runtime cannot apply a change the controls are disabled and the panel says why in words.
+      await app.click(button('Stop (Shift+F5)', 'prefix'), 'Stop');
+      await patiently('the faceplate to say that the simulation is not running', async () => (await app.eval<string>(`document.querySelector('[data-faceplate-reason]')?.textContent ?? ''`)).includes('not running') || undefined);
+      assert(!await app.clickable(button('Gate: FALSE')), 'The switch should be disabled while the simulation is not running.');
+      assert(!await app.clickable(css('button[aria-label="Hold Bell"]')), 'The push button should be disabled while the simulation is not running.');
+    },
+  },
 ];
 
 /** Walks a native select to the option with this text with the arrow keys, as a keyboard user would. */

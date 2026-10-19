@@ -58,6 +58,17 @@ typedef enum {
     ZPLC_NATIVE_FAULT_RUNTIME        /* any other failure of the host runtime */
 } zplc_native_fault_reason_t;
 
+/* LRN-017: the most writes into the input image that can wait for the next scan, and the most bytes of one (the
+ * bound of memory.write). */
+#define ZPLC_NATIVE_STAGED_INPUTS_MAX 32U
+#define ZPLC_NATIVE_STAGED_INPUT_BYTES 64U
+
+typedef struct {
+    uint16_t address;
+    uint8_t length;
+    uint8_t bytes[ZPLC_NATIVE_STAGED_INPUT_BYTES];
+} zplc_native_staged_input_t;
+
 typedef struct {
     uint8_t program_loaded;
     uint8_t should_exit;
@@ -66,6 +77,15 @@ typedef struct {
     uint8_t scenario_timestamp_started;
     /* Start/stop are host-owned one-scan pulses; E-stop is maintained. */
     uint8_t simulation_pulse_mask;
+    /*
+     * LRN-017, RT-009: a memory.write into the input image while the program runs is queued here, and the start of the
+     * next scan applies it; the image a scan reads never changes inside that scan. scan_in_flight is 1 while a
+     * breakpoint has held a scan that has begun and not ended: the queue waits for its end. A paused program takes a
+     * write at once, which is how a debugger's write has always behaved.
+     */
+    zplc_native_staged_input_t staged_inputs[ZPLC_NATIVE_STAGED_INPUTS_MAX];
+    uint8_t staged_input_count;
+    uint8_t scan_in_flight;
     zplc_native_session_state_t state;
     uint32_t cycle_count;
     uint32_t overrun_count;

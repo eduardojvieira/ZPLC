@@ -195,6 +195,14 @@ static void session_reset_counters(zplc_native_runtime_session_t *session)
     zplc_sched_core_reset_counters(&session->core);
 }
 
+/* The writes that wait for a scan, and the scan that a breakpoint holds, belong to the run that ends: a stop, a reset, a
+ * load and a fault drop them. */
+static void session_drop_staged_inputs(zplc_native_runtime_session_t *session)
+{
+    session->staged_input_count = 0U;
+    session->scan_in_flight = 0U;
+}
+
 static void session_reset_program(zplc_native_runtime_session_t *session)
 {
     session->program_loaded = 0U;
@@ -204,6 +212,7 @@ static void session_reset_program(zplc_native_runtime_session_t *session)
     session->program_format = ZPLC_NATIVE_PROGRAM_NONE;
     session->program_generation = 0U;
     session->simulation_pulse_mask = 0U;
+    session_drop_staged_inputs(session);
     session->last_scan_tick_ms = 0U;
     session->timed_scan_started = 0U;
     session->missed_interval_count = 0U;
@@ -268,6 +277,7 @@ static void session_apply_safe_state(zplc_native_runtime_session_t *session)
     }
     if (session != NULL) {
         session->simulation_pulse_mask = 0U;
+        session_drop_staged_inputs(session);
         session->state = ZPLC_NATIVE_SESSION_ERROR;
         if (session->fault_reason == ZPLC_NATIVE_FAULT_NONE) {
             session->fault_reason = ZPLC_NATIVE_FAULT_RUNTIME;
@@ -516,6 +526,46 @@ static void session_follow_core(zplc_native_runtime_session_t *session)
     }
 }
 
+/* The start of a scan is the input latch (RT-009): the writes that wait take effect here, in the order they came. Forced
+ * bytes keep their forced value. A write over bytes that an earlier one covers, whether that one is applied now or waits
+ * itself, waits for the next scan: a press and a release written between two scans are each seen by a whole scan. */
+static int session_apply_staged_inputs(zplc_native_runtime_session_t *session)
+{
+    uint32_t seen_start[ZPLC_NATIVE_STAGED_INPUTS_MAX];
+    uint32_t seen_end[ZPLC_NATIVE_STAGED_INPUTS_MAX];
+    uint8_t index;
+    uint8_t other;
+    uint8_t kept = 0U;
+    int result = 0;
+
+    if (session->staged_input_count == 0U) {
+        return 0;
+    }
+    if (zplc_pi_lock() != 0) {
+        return -1;
+    }
+    for (index = 0U; index < session->staged_input_count; ++index) {
+        const zplc_native_staged_input_t entry = session->staged_inputs[index];
+        int covered = 0;
+
+        for (other = 0U; other < index; ++other) {
+            if (entry.address < seen_end[other] && seen_start[other] < (uint32_t)entry.address + entry.length) {
+                covered = 1;
+            }
+        }
+        seen_start[index] = entry.address;
+        seen_end[index] = (uint32_t)entry.address + entry.length;
+        if (covered != 0) {
+            session->staged_inputs[kept++] = entry;
+        } else if (zplc_force_write_bytes(entry.address, entry.bytes, entry.length) != 0) {
+            result = -1;
+        }
+    }
+    session->staged_input_count = kept;
+    zplc_pi_unlock();
+    return result;
+}
+
 /* Runs the tasks of a batch one after the other, to completion: no task preempts another. The input image does not
  * change while they run (requests and ticks share one thread), which is the latch of RT-009, and the output image
  * is the process image itself, so a task that is not in the batch keeps what it wrote. Returns below zero when a task
@@ -526,6 +576,9 @@ static int session_run_batch(zplc_native_runtime_session_t *session, const sessi
     zplc_sched_scan_report_t report;
     int result;
 
+    if (session->scan_in_flight == 0U && session_apply_staged_inputs(session) != 0) {
+        return -1;
+    }
     memset(&port, 0, sizeof(port));
     port.ctx = session;
     port.now_us = session_port_now_us;
@@ -545,7 +598,11 @@ static int session_complete_scan(zplc_native_runtime_session_t *session, const s
 {
     uint8_t position;
 
-    if (session_focused_vm(session)->paused != 0U) return 0;
+    if (session_focused_vm(session)->paused != 0U) {
+        session->scan_in_flight = 1U;
+        return 0;
+    }
+    session->scan_in_flight = 0U;
     if (session_clear_simulation_pulses(session) != 0) return -1;
     session->cycle_count += 1U;
     for (position = 0U; position < batch->count; ++position) {
@@ -1559,6 +1616,7 @@ static int handle_program_load(zplc_native_runtime_session_t *session,
     session->state = ZPLC_NATIVE_SESSION_IDLE;
     session_reset_counters(session);
     session->simulation_pulse_mask = 0U;
+    session_drop_staged_inputs(session);
     session_reset_observed_cadence(session);
     session_reset_scenario_clock(session);
     if (zplc_pi_lock() != 0) {
@@ -1791,6 +1849,7 @@ static int handle_stop_or_reset(zplc_native_runtime_session_t *session,
     }
     zplc_force_clear_all();
     session->simulation_pulse_mask = 0U;
+    session_drop_staged_inputs(session);
     {
         uint8_t *opi = zplc_mem_get_region(ZPLC_MEM_OPI_BASE);
         uint8_t *ipi = zplc_mem_get_region(ZPLC_MEM_IPI_BASE);
@@ -2053,7 +2112,8 @@ static int handle_memory_read(const zplc_native_request_t *request,
                     bytes_hex);
 }
 
-static int handle_memory_write(const zplc_native_request_t *request,
+static int handle_memory_write(zplc_native_runtime_session_t *session,
+                               const zplc_native_request_t *request,
                                char *response,
                                size_t response_size)
 {
@@ -2075,6 +2135,34 @@ static int handle_memory_write(const zplc_native_request_t *request,
                                      "memory.write address must be a uint32",
                                      response,
                                      response_size);
+    }
+
+    /* LRN-017: while the program runs, a write that lies inside the input image waits for the start of the next scan
+     * (and, when a breakpoint resumed a scan that has not ended, for the end of that scan). A paused program takes the
+     * write at once, as a debugger's write has always been taken. The size of the memory is checked here, as a write at
+     * once would check it. */
+    if (decode_hex_bytes(request->bytecode_hex, bytes, sizeof(bytes), &bytes_length) == 0 &&
+        narrow_uint16(request->address, &address) == 0 &&
+        session->program_loaded != 0U &&
+        session->state == ZPLC_NATIVE_SESSION_RUNNING &&
+        (uint32_t)address + bytes_length <= ZPLC_MEM_IPI_BASE + ZPLC_MEM_IPI_SIZE) {
+        zplc_native_staged_input_t *staged;
+
+        if (session->staged_input_count >= ZPLC_NATIVE_STAGED_INPUTS_MAX) {
+            return format_error_response(request->id,
+                                         "RUNTIME_FAILURE",
+                                         "too many input writes are waiting for the next scan",
+                                         response,
+                                         response_size);
+        }
+        staged = &session->staged_inputs[session->staged_input_count++];
+        staged->address = address;
+        staged->length = (uint8_t)bytes_length;
+        memcpy(staged->bytes, bytes, bytes_length);
+        return format_jsonf(response,
+                        response_size,
+                        "{\"id\":\"%s\",\"type\":\"response\",\"result\":{}}",
+                        request->id);
     }
 
     if (decode_hex_bytes(request->bytecode_hex, bytes, sizeof(bytes), &bytes_length) != 0 ||
@@ -2396,7 +2484,7 @@ int zplc_native_runtime_session_handle_request(zplc_native_runtime_session_t *se
     }
 
     if (strcmp(request.method, "memory.write") == 0) {
-        return handle_memory_write(&request, response, response_size);
+        return handle_memory_write(session, &request, response, response_size);
     }
 
     if (strcmp(request.method, "breakpoint.add") == 0) {

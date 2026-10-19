@@ -1983,7 +1983,7 @@
   ],
   "IDE-024": [
     {"kind":"unit","ref":"packages/zplc-ide/src/cli/toolApi.test.ts","test":"program inputs in the debug map (IDE-024)"},
-    {"kind":"unit","ref":"packages/zplc-ide/src/components/SimulationInputsList.test.tsx","test":"the simulation inputs list (IDE-024)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/components/Faceplate.test.tsx","test":"the live I/O faceplate (LRN-017)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/runtime/declaredInputs.test.ts","test":"reading declared inputs back (IDE-024)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/runtime/declaredInputs.test.ts","test":"the declared inputs of a program (IDE-024)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/runtime/declaredInputs.test.ts","test":"writing a declared input (IDE-024)"},

@@ -53,6 +53,10 @@ describe('local MCP adapter', () => {
     expect(MCP_TOOL_NAMES.filter((name) => ['flash', 'deploy', 'force', 'stop', 'serial', 'shell', 'write'].some((forbidden) => name.includes(forbidden)))).toEqual([]);
   });
 
+  test('has no tool that sets a simulation input or writes memory: the faceplate is the person\'s control, not the agent\'s (LRN-017, AGENTS rule 7)', () => {
+    expect(MCP_TOOL_NAMES.filter((name) => /input|memory|poke|faceplate|hold|press/.test(name))).toEqual([]);
+  });
+
   test('accepts exactly one explicit workspace option and no extra CLI surface', () => {
     expect(parseMcpWorkspaceArgument(['--workspace', '/safe'])).toEqual({ workspace: '/safe' });
     expect(parseMcpWorkspaceArgument(['--workspace=/safe'])).toEqual({ workspace: '/safe' });
