@@ -7,6 +7,7 @@
 import { memo } from 'react';
 import { Handle, Position, type NodeProps } from '@xyflow/react';
 import NodeComment from './NodeComment';
+import { Tooltip } from '../../../ui';
 
 interface ConstantData {
   dataType?: string;
@@ -37,36 +38,39 @@ const ConstantNode = memo(({ id, data, selected }: NodeProps) => {
 
   return (
     <div className="zplc-visual-node flex flex-col items-center">
-      <div
-        className={`
-          zplc-visual-card relative min-w-[80px] rounded border-2 
-          bg-[var(--visual-node)] ${getTypeColor()}
-          ${selected ? 'ring-2 ring-[var(--color-accent-blue)]' : ''}
-        `}
-        title={comment}
-      >
-        {/* Value display */}
-        <div className="px-3 py-2 text-center">
-          <span className="block max-w-[160px] break-words text-[var(--text-primary)] font-mono text-sm font-medium" title={formatValue()}>
-            {formatValue()}
-          </span>
+      <Tooltip content={comment}>
+        <div
+          className={`
+            zplc-visual-card relative min-w-[80px] rounded border-2 
+            bg-[var(--visual-node)] ${getTypeColor()}
+            ${selected ? 'ring-2 ring-[var(--color-accent-blue)]' : ''}
+          `}
+        >
+          {/* Value display */}
+          <div className="px-3 py-2 text-center">
+            <Tooltip content={formatValue()}>
+              <span className="block max-w-[160px] break-words text-[var(--text-primary)] font-mono text-sm font-medium">
+                {formatValue()}
+              </span>
+            </Tooltip>
+          </div>
+  
+          {/* Type label */}
+          <div className="bg-[var(--color-surface-700)] px-2 py-0.5 text-center border-t border-[var(--border-color)]">
+            <span className="text-[length:var(--font-size-caption)] text-[var(--text-tertiary)] font-mono">
+              {dataType}
+            </span>
+          </div>
+  
+          {/* Output handle */}
+          <Handle
+            type="source"
+            position={Position.Right}
+            id="OUT"
+            className="!w-3 !h-3 !rounded-full !bg-[var(--visual-wire)] !border-2 !border-[var(--color-surface-300)]"
+          />
         </div>
-
-        {/* Type label */}
-        <div className="bg-[var(--color-surface-700)] px-2 py-0.5 text-center border-t border-[var(--border-color)]">
-          <span className="text-[10px] text-[var(--text-tertiary)] font-mono">
-            {dataType}
-          </span>
-        </div>
-
-        {/* Output handle */}
-        <Handle
-          type="source"
-          position={Position.Right}
-          id="OUT"
-          className="!w-3 !h-3 !rounded-full !bg-[var(--visual-wire)] !border-2 !border-[var(--color-surface-300)]"
-        />
-      </div>
+      </Tooltip>
       <NodeComment nodeId={id} comment={comment} onChange={onChangeData} readOnly={readOnly} />
     </div>
   );

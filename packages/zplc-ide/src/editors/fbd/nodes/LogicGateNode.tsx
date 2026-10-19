@@ -8,6 +8,7 @@ import { memo } from 'react';
 import { Handle, Position, type NodeProps } from '@xyflow/react';
 import { getDefaultPorts } from '../../../models/fbd';
 import NodeComment from './NodeComment';
+import { Tooltip } from '../../../ui';
 
 interface LogicGateData {
   type: string;
@@ -40,62 +41,63 @@ const LogicGateNode = memo(({ id, data, selected }: NodeProps) => {
 
   return (
     <div className="zplc-visual-node flex flex-col items-center">
-      <div
-        className={`
-          w-16 rounded border-2 
-          ${selected 
-            ? 'border-[var(--color-accent-blue)] ring-2 ring-[var(--color-accent-blue)]' 
-            : 'border-[var(--border-color)]'
-          }
-          zplc-visual-card relative bg-[var(--visual-node)]
-        `}
-        title={comment || type}
-      >
-        {/* Gate body */}
-        <div 
-          className="relative flex items-center justify-center"
-          style={{ height: bodyHeight }}
+      <Tooltip content={comment || type}>
+        <div
+          className={`
+            w-16 rounded border-2 
+            ${selected 
+              ? 'border-[var(--color-accent-blue)] ring-2 ring-[var(--color-accent-blue)]' 
+              : 'border-[var(--border-color)]'
+            }
+            zplc-visual-card relative bg-[var(--visual-node)]
+          `}
         >
-          {/* Input handles */}
-          {ports.inputs.map((port, idx) => (
-            <Handle
-              key={port.name}
-              type="target"
-              position={Position.Left}
-              id={port.name}
-              className="!w-3 !h-3 !rounded-[2px] !bg-[var(--visual-wire)] !border-2 !border-[var(--color-surface-300)]"
-              style={{ 
-                top: 12 + idx * portHeight + (bodyHeight - inputCount * portHeight) / 2
-              }}
-            />
-          ))}
-
-          {/* Symbol */}
-          <span className="text-xl font-bold text-[var(--text-primary)]">
-            {getSymbol()}
-          </span>
-
-          {/* Output handle with optional inversion bubble */}
-          <div className="absolute right-0 top-1/2 -translate-y-1/2 flex items-center">
-            {isInverted && (
-              <div className="w-2 h-2 rounded-full border-2 border-[var(--text-primary)] bg-[var(--visual-node)] -mr-1" />
-            )}
-            <Handle
-              type="source"
-              position={Position.Right}
-              id="OUT"
-              className="!w-3 !h-3 !rounded-full !bg-[var(--visual-wire)] !border-2 !border-[var(--color-surface-300)]"
-            />
+          {/* Gate body */}
+          <div 
+            className="relative flex items-center justify-center"
+            style={{ height: bodyHeight }}
+          >
+            {/* Input handles */}
+            {ports.inputs.map((port, idx) => (
+              <Handle
+                key={port.name}
+                type="target"
+                position={Position.Left}
+                id={port.name}
+                className="!w-3 !h-3 !rounded-[2px] !bg-[var(--visual-wire)] !border-2 !border-[var(--color-surface-300)]"
+                style={{ 
+                  top: 12 + idx * portHeight + (bodyHeight - inputCount * portHeight) / 2
+                }}
+              />
+            ))}
+  
+            {/* Symbol */}
+            <span className="text-xl font-bold text-[var(--text-primary)]">
+              {getSymbol()}
+            </span>
+  
+            {/* Output handle with optional inversion bubble */}
+            <div className="absolute right-0 top-1/2 -translate-y-1/2 flex items-center">
+              {isInverted && (
+                <div className="w-2 h-2 rounded-full border-2 border-[var(--text-primary)] bg-[var(--visual-node)] -mr-1" />
+              )}
+              <Handle
+                type="source"
+                position={Position.Right}
+                id="OUT"
+                className="!w-3 !h-3 !rounded-full !bg-[var(--visual-wire)] !border-2 !border-[var(--color-surface-300)]"
+              />
+            </div>
+          </div>
+  
+          {/* Type label */}
+          <div className="bg-[var(--color-surface-700)] px-1 py-0.5 text-center rounded-b border-t border-[var(--border-color)]">
+            <span className="text-[length:var(--font-size-caption)] text-[var(--text-tertiary)] font-mono">
+              {type}
+            </span>
           </div>
         </div>
-
-        {/* Type label */}
-        <div className="bg-[var(--color-surface-700)] px-1 py-0.5 text-center rounded-b border-t border-[var(--border-color)]">
-          <span className="text-[10px] text-[var(--text-tertiary)] font-mono">
-            {type}
-          </span>
-        </div>
-      </div>
+      </Tooltip>
 
       {/* Editable comment below node */}
       <NodeComment nodeId={id} comment={comment} onChange={onChangeData} readOnly={readOnly} />

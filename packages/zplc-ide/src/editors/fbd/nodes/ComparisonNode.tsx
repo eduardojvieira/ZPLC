@@ -7,6 +7,7 @@
 import { memo } from 'react';
 import { Handle, Position, type NodeProps } from '@xyflow/react';
 import NodeComment from './NodeComment';
+import { Tooltip } from '../../../ui';
 
 interface ComparisonData {
   type: string;
@@ -33,53 +34,54 @@ const ComparisonNode = memo(({ id, data, selected }: NodeProps) => {
 
   return (
     <div className="zplc-visual-node flex flex-col items-center">
-      <div
-        className={`
-          w-16 rounded border-2 
-          zplc-visual-card relative bg-[var(--visual-node)] border-[var(--color-accent-blue)]
-          ${selected ? 'ring-2 ring-[var(--color-accent-blue)]' : ''}
-        `}
-        title={comment || type}
-      >
-        {/* Comparison body */}
-        <div className="relative h-14 flex items-center justify-center">
-          {/* Input handles */}
-          <Handle
-            type="target"
-            position={Position.Left}
-            id="IN1"
-            className="!w-3 !h-3 !rounded-[2px] !bg-[var(--visual-wire)] !border-2 !border-[var(--color-surface-300)]"
-            style={{ top: '30%' }}
-          />
-          <Handle
-            type="target"
-            position={Position.Left}
-            id="IN2"
-            className="!w-3 !h-3 !rounded-[2px] !bg-[var(--visual-wire)] !border-2 !border-[var(--color-surface-300)]"
-            style={{ top: '70%' }}
-          />
-
-          {/* Symbol */}
-          <span className="text-2xl font-bold text-[var(--text-primary)]">
-            {getSymbol()}
-          </span>
-
-          {/* Output handle */}
-          <Handle
-            type="source"
-            position={Position.Right}
-            id="OUT"
-            className="!w-3 !h-3 !rounded-full !bg-[var(--visual-wire)] !border-2 !border-[var(--color-surface-300)]"
-          />
+      <Tooltip content={comment || type}>
+        <div
+          className={`
+            w-16 rounded border-2 
+            zplc-visual-card relative bg-[var(--visual-node)] border-[var(--color-accent-blue)]
+            ${selected ? 'ring-2 ring-[var(--color-accent-blue)]' : ''}
+          `}
+        >
+          {/* Comparison body */}
+          <div className="relative h-14 flex items-center justify-center">
+            {/* Input handles */}
+            <Handle
+              type="target"
+              position={Position.Left}
+              id="IN1"
+              className="!w-3 !h-3 !rounded-[2px] !bg-[var(--visual-wire)] !border-2 !border-[var(--color-surface-300)]"
+              style={{ top: '30%' }}
+            />
+            <Handle
+              type="target"
+              position={Position.Left}
+              id="IN2"
+              className="!w-3 !h-3 !rounded-[2px] !bg-[var(--visual-wire)] !border-2 !border-[var(--color-surface-300)]"
+              style={{ top: '70%' }}
+            />
+  
+            {/* Symbol */}
+            <span className="text-2xl font-bold text-[var(--text-primary)]">
+              {getSymbol()}
+            </span>
+  
+            {/* Output handle */}
+            <Handle
+              type="source"
+              position={Position.Right}
+              id="OUT"
+              className="!w-3 !h-3 !rounded-full !bg-[var(--visual-wire)] !border-2 !border-[var(--color-surface-300)]"
+            />
+          </div>
+  
+          {/* Type label */}
+          <div className="bg-[var(--color-surface-700)] px-1 py-0.5 text-center rounded-b border-t border-[var(--border-color)]">
+            <span className="text-[length:var(--font-size-caption)] text-[var(--text-tertiary)] font-mono">
+              {type}
+            </span>
+          </div>
         </div>
-
-        {/* Type label */}
-        <div className="bg-[var(--color-surface-700)] px-1 py-0.5 text-center rounded-b border-t border-[var(--border-color)]">
-          <span className="text-[10px] text-[var(--text-tertiary)] font-mono">
-            {type}
-          </span>
-        </div>
-      </div>
+      </Tooltip>
       <NodeComment nodeId={id} comment={comment} onChange={onChangeData} readOnly={readOnly} />
     </div>
   );

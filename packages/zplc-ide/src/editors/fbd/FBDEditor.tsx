@@ -55,7 +55,7 @@ import { markBreakpointNodes } from '../breakpointMarks';
 import { blockElement, parseElement, type SourceElementId } from '../../models/sourceElements';
 import { t } from '../../i18n';
 import { announce } from '../../utils/announce';
-import { ContextMenu } from '../../ui';
+import { Button, ContextMenu } from '../../ui';
 import { useCanvasContextMenu } from '../useCanvasContextMenu';
 import { FIT_VIEW_OPTIONS, ZOOM_MAX, ZOOM_MIN } from '../viewBounds';
 
@@ -478,7 +478,7 @@ function FBDEditorInner({
               className="max-w-xl rounded border border-[var(--color-accent-red)] bg-[var(--color-surface-800)] px-3 py-2 text-xs text-[var(--color-surface-100)]"
             >
               <span className="font-semibold">{t('editors.fbd.wireRefused')} </span>{refusal}
-              <button type="button" className="ml-2 underline" onClick={() => setRefusal(null)}>{t('editors.fbd.dismiss')}</button>
+              <Button variant="bare" type="button" className="ml-2 underline" onClick={() => setRefusal(null)}>{t('editors.fbd.dismiss')}</Button>
             </div>
           </Panel>
         )}

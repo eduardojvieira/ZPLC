@@ -7,7 +7,8 @@ import { forwardRef, type ButtonHTMLAttributes, type ReactNode } from 'react';
 import { cx } from './cx';
 import { Tooltip } from './Tooltip';
 
-export type ButtonVariant = 'secondary' | 'primary' | 'danger' | 'ghost';
+/** `bare` draws nothing of its own (no padding, border or fill): the caller's classes style it, as a graph node or a tab does. */
+export type ButtonVariant = 'secondary' | 'primary' | 'danger' | 'ghost' | 'bare';
 export type ButtonSize = 'md' | 'sm';
 
 export interface ButtonProps extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'title'> {

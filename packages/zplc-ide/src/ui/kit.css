@@ -56,6 +56,12 @@
   .ui-button[data-variant="danger"]:hover:not(:disabled) { background: var(--button-danger-bg-hover); }
   .ui-button[data-variant="ghost"] { background: transparent; border-color: transparent; color: var(--button-ghost-fg); }
   .ui-button[data-variant="ghost"]:hover:not(:disabled) { background: var(--button-ghost-bg-hover); }
+  .ui-button[data-variant="bare"] {
+    display: inline-block; gap: 0; min-height: 0; padding: 0; border: 0; border-radius: 0; background: transparent; color: inherit;
+    font: inherit; white-space: normal; transition: none;
+  }
+  .ui-button[data-variant="bare"]:hover:not(:disabled):not([aria-disabled="true"]),
+  .ui-button[data-variant="bare"]:active:not(:disabled):not([aria-disabled="true"]) { background: transparent; }
   .ui-icon-button { width: var(--control-height); padding: 0; }
   .ui-icon-button[data-size="sm"] { width: var(--control-height-sm); }
   .ui-button-icon { display: inline-flex; align-items: center; }
