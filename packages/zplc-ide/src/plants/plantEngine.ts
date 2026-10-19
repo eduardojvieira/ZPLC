@@ -45,11 +45,11 @@ const conveyor: PlantModel = {
   reads: ['belt', 'diverter'],
   drives: ['partAtClassifier', 'metalDetected', 'partAtDiverter', 'jamDetected'],
   actions: ['jam', 'metalPart'],
-  initial: () => ({ position: 0, classified: 0, jam: false, metalPart: false }),
+  initial: () => ({ position: 0, classified: 0, moving: false, jam: false, metalPart: false }),
   step: (s, r) => {
-    if (!r.belt || s.jam) return s;
+    if (!r.belt || s.jam) return { ...s, moving: false };
     const moved = (s.position as number) + 50;
-    return moved >= 1000 ? { ...s, position: 0, classified: (s.classified as number) + 1 } : { ...s, position: moved };
+    return moved >= 1000 ? { ...s, position: 0, classified: (s.classified as number) + 1, moving: true } : { ...s, position: moved, moving: true };
   },
   act: (s, a) => (a === 'jam' || a === 'metalPart' ? toggle(s, a) : s),
   sense: (s) => {
@@ -64,8 +64,8 @@ const tank: PlantModel = {
   reads: ['pump'],
   drives: ['levelLow', 'levelHigh', 'pumpFault'],
   actions: ['pumpFault'],
-  initial: () => ({ level: 500, pumpFault: false }),
-  step: (s, r) => ({ ...s, level: clamp((s.level as number) + (r.pump && !s.pumpFault ? 20 : 0) - 8, 0, 1000) }),
+  initial: () => ({ level: 500, filling: false, pumpFault: false }),
+  step: (s, r) => ({ ...s, filling: r.pump === true && !s.pumpFault, level: clamp((s.level as number) + (r.pump && !s.pumpFault ? 20 : 0) - 8, 0, 1000) }),
   act: (s, a) => (a === 'pumpFault' ? toggle(s, 'pumpFault') : s),
   sense: (s) => ({ levelLow: (s.level as number) <= 200, levelHigh: (s.level as number) >= 800, pumpFault: s.pumpFault === true }),
 };

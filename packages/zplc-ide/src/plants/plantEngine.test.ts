@@ -101,4 +101,4 @@ function motorProgramFor(kind: string) {
   if (kind === 'tank-v1') return (tick: number, sensed: Record<string, boolean>) => ({ pump: sensed.levelLow ? true : tick % 7 < 3 });
   return (tick: number) => ({ vehicleRed: tick % 40 > 20, vehicleYellow: false, vehicleGreen: tick % 40 <= 20, pedWalk: tick % 40 > 24, pedStop: tick % 40 <= 24 });
 }
-const GOLDEN: Record<string, string> = { 'conveyor-v1': 'e50d12a6', 'motor-v1': '16e1f1ed', 'pedestrian-v1': '5faddcd8', 'tank-v1': '4a6a21be' };
+const GOLDEN: Record<string, string> = { 'conveyor-v1': '3e7ad046', 'motor-v1': '16e1f1ed', 'pedestrian-v1': '5faddcd8', 'tank-v1': 'd059d702' };
