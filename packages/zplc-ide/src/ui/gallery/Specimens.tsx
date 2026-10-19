@@ -8,7 +8,7 @@ import { Inbox, Plus, Save, Trash2 } from 'lucide-react';
 import { ICON_SIZES } from '../../theme/tokens';
 import { SIGNAL_TONES } from '../../theme/signalTone';
 import {
-  AlertDialog, Badge, Button, Checkbox, ContextMenu, Dialog, DialogSurface, EmptyState, ErrorState, Field, IconButton, MenuButton, NumberField, Popover,
+  AlertDialog, Badge, Button, Checkbox, ComboBox, ContextMenu, DataGrid, Toast, Tree, Dialog, DialogSurface, EmptyState, ErrorState, Field, IconButton, MenuButton, NumberField, Popover,
   LoadingState, PropertyList, RangeField, Select, SignalChip, Spinner, StatusDot, Switch, TabList, TabPanel, TextField, Textarea, ToggleGroup, Toolbar, Tooltip,
 } from '..';
 
@@ -183,6 +183,18 @@ export function Specimens() {
       </Specimen>
       <Specimen name="Property list">
         <PropertyList label="Controller" items={[{ label: 'Board', value: 'native_sim' }, { label: 'Program', value: 'Motor.zplc' }, { label: 'Tasks', value: '2' }]} />
+      </Specimen>
+      <Specimen name="Combo box">
+        <ComboBox label="Data type" value="INT" onChange={noop} options={[{ value: 'BOOL', label: 'BOOL' }, { value: 'INT', label: 'INT' }, { value: 'REAL', label: 'REAL' }]} />
+      </Specimen>
+      <Specimen name="Toast">
+        <Toast tone="success" dismissLabel="Dismiss message" onDismiss={noop}>Project saved</Toast>
+      </Specimen>
+      <Specimen name="Tree">
+        <Tree label="Project files" defaultExpanded={['project']} nodes={[{ id: 'project', label: 'Project', children: [{ id: 'main', label: 'Main.st' }, { id: 'lib', label: 'Library', children: [{ id: 'util', label: 'Util.st' }] }] }, { id: 'boards', label: 'Boards' }]} />
+      </Specimen>
+      <Specimen name="Data grid">
+        <DataGrid label="Variables" rowId={(row) => row.name} rows={[{ name: 'Motor', value: 12 }, { name: 'Valve', value: 3 }]} columns={[{ id: 'name', header: 'Name', cell: (row) => row.name, sortKey: (row) => row.name }, { id: 'value', header: 'Value', cell: (row) => row.value, sortKey: (row) => row.value, numeric: true }]} />
       </Specimen>
     </div>
   );

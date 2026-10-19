@@ -300,6 +300,44 @@
   .ui-property dt { color: var(--text-tertiary); }
   .ui-property dd { min-width: 0; margin: 0; overflow-wrap: anywhere; color: var(--text-primary); }
 
+  /* ---- Combo box, tree, data grid, toast ------------------------------------------------------------------------- */
+  .ui-combobox { position: relative; }
+  .ui-listbox {
+    position: absolute; inset-inline: 0; z-index: var(--z-popover); margin: 2px 0 0; padding: 4px; list-style: none; max-height: 14rem; overflow: auto;
+    border: 1px solid var(--overlay-border); border-radius: var(--radius-overlay); background: var(--overlay-bg); color: var(--overlay-fg); box-shadow: var(--elevation-overlay);
+  }
+  .ui-listbox[hidden] { display: none; }
+  .ui-listbox [role="option"] { min-height: var(--row-height); display: flex; align-items: center; padding: 0 8px; border-radius: var(--radius-control); font-size: var(--font-size-body); cursor: pointer; }
+  .ui-listbox [role="option"][data-active] { background: var(--menu-item-bg-active); }
+  .ui-listbox [role="option"][aria-selected="true"] { font-weight: var(--font-weight-strong); }
+  .ui-listbox [role="option"][aria-disabled="true"] { opacity: var(--button-disabled-opacity); cursor: not-allowed; }
+
+  .ui-tree { margin: 0; padding: 0; list-style: none; }
+  .ui-treeitem { display: flex; align-items: center; gap: 4px; min-height: var(--row-height); padding-inline-end: 8px; border-radius: var(--radius-control); font-size: var(--font-size-body); cursor: pointer; }
+  .ui-treeitem:hover { background: var(--tab-bg-hover); }
+  .ui-treeitem[aria-selected="true"] { background: var(--menu-item-bg-active); }
+  .ui-tree-twisty { display: inline-flex; width: 14px; justify-content: center; color: var(--text-tertiary); }
+
+  .ui-grid { width: 100%; border-collapse: collapse; font-size: var(--font-size-body); }
+  .ui-grid th, .ui-grid td { height: var(--row-height); padding: 0 8px; border-bottom: 1px solid var(--border-color); text-align: start; }
+  .ui-grid th { color: var(--text-secondary); font-weight: var(--font-weight-medium); }
+  .ui-grid [data-numeric] { text-align: end; }
+  .ui-grid-sort { border: 0; background: transparent; color: inherit; font: inherit; cursor: pointer; padding: 0; }
+  .ui-grid th[aria-sort="ascending"] .ui-grid-sort::after { content: " \2191"; }
+  .ui-grid th[aria-sort="descending"] .ui-grid-sort::after { content: " \2193"; }
+  .ui-grid-empty { color: var(--text-tertiary); text-align: center; }
+
+  .ui-toast-region { position: fixed; inset-block-end: 12px; inset-inline-end: 12px; z-index: var(--z-popover); display: flex; flex-direction: column; gap: 8px; }
+  .ui-toast {
+    display: flex; align-items: center; gap: 8px; max-width: 24rem; padding: 8px 12px; border: 1px solid var(--ui-tone-border, var(--overlay-border)); border-radius: var(--radius-overlay);
+    background: var(--overlay-bg); color: var(--overlay-fg); box-shadow: var(--elevation-overlay); font-size: var(--font-size-body);
+  }
+  .ui-toast[data-tone="info"] { --ui-tone-border: var(--tone-info-border); }
+  .ui-toast[data-tone="success"] { --ui-tone-border: var(--tone-success-border); }
+  .ui-toast[data-tone="warning"] { --ui-tone-border: var(--tone-warning-border); }
+  .ui-toast[data-tone="danger"] { --ui-tone-border: var(--tone-danger-border); }
+  .ui-toast-body { flex: 1; min-width: 0; }
+
   @media (prefers-reduced-motion: reduce) {
     .ui-button, .ui-switch-box, .ui-switch-box::after { transition: none; }
   }

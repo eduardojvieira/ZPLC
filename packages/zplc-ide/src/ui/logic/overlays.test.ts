@@ -13,7 +13,7 @@ const run = (events: TooltipEvent[]): { state: TooltipState; timers: Array<'star
   return { state, timers };
 };
 
-describe('tooltip behaviour (UX-001, UX-025 stopgap)', () => {
+describe('tooltip behaviour (UX-001, UX-025)', () => {
   it('waits for the delay before it shows under the pointer, and hides when the pointer leaves', () => {
     const entered = run(['pointer-enter']);
     expect(entered.state.phase).toBe('pending');
@@ -41,7 +41,7 @@ describe('tooltip behaviour (UX-001, UX-025 stopgap)', () => {
   });
 });
 
-describe('menu keyboard behaviour (UX-001, UX-025 stopgap)', () => {
+describe('menu keyboard behaviour (UX-001, UX-025)', () => {
   const items = [{ label: 'Compile' }, { label: 'Compile and download', disabled: true }, { label: 'Debug' }, { label: 'Settings' }];
   const idle = { buffer: '', at: 0 };
 
