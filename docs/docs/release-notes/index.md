@@ -38,6 +38,10 @@ scenario, reboot and persistence, safe outputs, and timing per profile.
   are not described as natively signed.
 - AI and MCP do not initiate flash, deploy, force, RUN/STOP, recovery, raw serial
   or shell actions.
+- The release workflow creates the draft only after every platform build has finished (each
+  build installs or mounts and launches its installer formats first), and the Linux payload
+  reproducibility check is read in the release notes without blocking the run. These rules
+  were authored and are checked by structural tests; no hosted release run has executed them yet.
 
 Do not infer GA status, feature parity, timing performance or physical safety from
 this page or from source presence.

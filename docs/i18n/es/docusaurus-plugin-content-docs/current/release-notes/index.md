@@ -40,6 +40,11 @@ seguras y tiempos por perfil.
 - Los artifacts Linux se verifican por payload reproducible, checksums y attestation;
   no se describen como firmados nativamente.
 - AI y MCP no inician flash, deploy, force, RUN/STOP, recovery, raw serial ni shell.
+- El workflow de release crea el borrador solo cuando todas las compilaciones de plataforma
+  terminaron (cada una instala o monta y lanza antes sus formatos de instalador), y la
+  verificación de reproducibilidad del payload Linux se lee en las notas de release sin
+  bloquear la ejecución. Estas reglas fueron escritas y se comprueban con pruebas
+  estructurales; ninguna ejecución alojada de release las ha ejecutado todavía.
 
 No deduzcas estado GA, paridad de features, rendimiento temporal o seguridad física
 a partir de esta página o de la presencia de código fuente.
