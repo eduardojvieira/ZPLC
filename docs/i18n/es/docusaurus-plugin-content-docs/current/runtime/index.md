@@ -1,34 +1,34 @@
 ---
 slug: /runtime
 id: index
-title: Motor de Ejecución y Runtime
-sidebar_label: Generalidades del Runtime
-description: Arquitectura del Motor de Ejecución Embebido ZPLC.
+title: Motor de ejecución y runtime
+sidebar_label: Visión general del runtime
+description: Arquitectura del motor de ejecución embebido de ZPLC.
 tags: [runtime, embedded, vm]
 ---
 
-# Motor de Ejecución ZPLC
+# Motor de ejecución de ZPLC
 
-El runtime interno de ZPLC es el núcleo de ejecución de la plataforma. Diseñado específicamente para un rendimiento determinista en sistemas embebidos, ejecuta de manera segura el bytecode `.zplc`, gestiona la memoria, programa las tareas de automatización y se integra con el hardware específico de la plataforma.
+El runtime interno de ZPLC es el núcleo de ejecución de la plataforma. Está diseñado para ofrecer un rendimiento determinista en sistemas embebidos: ejecuta con seguridad el bytecode `.zplc`, gestiona la memoria, planifica las tareas de automatización y se integra con el hardware de cada plataforma.
 
-## Responsabilidades Principales
+## Responsabilidades principales
 
-El runtime ZPLC proporciona un entorno virtual completo adaptado para la ejecución de tareas IEC 61131-3. Sus responsabilidades incluyen:
-- Cargar programas compilados `.zplc` y sus metadatos.
-- Instanciar Máquinas Virtuales (VMs) con contextos de ejecución aislados.
-- Hacer cumplir los límites de memoria estructural (Imágenes de Proceso, memoria interna de Trabajo, datos retenidos).
-- Programar y orquestar tareas de PLC Cíclicas/Basadas en Eventos.
-- Delegar las operaciones físicas de E/S, redes y almacenamiento hacia la Capa de Abstracción de Hardware (HAL) subyacente.
+El runtime de ZPLC ofrece un entorno virtual completo para ejecutar las tareas de IEC 61131-3. Sus responsabilidades son:
+- Cargar los programas compilados `.zplc` y sus metadatos.
+- Crear máquinas virtuales (VM) con contextos de ejecución aislados.
+- Hacer cumplir los límites de memoria (imágenes de proceso, memoria de trabajo interna y datos retenidos).
+- Planificar y coordinar las tareas de PLC cíclicas y basadas en eventos.
+- Delegar las operaciones físicas de E/S, de red y de almacenamiento en la capa de abstracción de hardware (HAL).
 
-## Arquitectura de Subsistemas
+## Arquitectura de los subsistemas
 
 ```mermaid
 flowchart TD
-  Loader[Cargador de Programas]
-  Core[VM Core ZPLC]
-  Sched[Programador en Tiempo Real]
-  ISA[Motor ISA & Ejecución]
-  HAL[Capa de Abstracción de Hardware]
+  Loader[Cargador de programas]
+  Core[VM del núcleo ZPLC]
+  Sched[Planificador en tiempo real]
+  ISA[Motor de ejecución y ISA]
+  HAL[Capa de abstracción de hardware]
 
   Loader --> Core
   ISA --> Core
@@ -36,16 +36,16 @@ flowchart TD
   Sched --> HAL
 ```
 
-## Modelo de Memoria Compartida
+## Modelo de memoria compartida
 
-Para garantizar tanto la seguridad como el rendimiento en ICs con recursos limitados, el Contrato de Memoria del Runtime ZPLC define límites estrictos para los elementos de ejecución:
-- **IPI** (Imagen de Proceso de Entradas): Búfer asignado y aislado para una lectura segura de entradas físicas.
-- **OPI** (Imagen de Proceso de Salidas): Búfer que mapea los resultados lógicos a las salidas de hardware.
-- **Work Memory** (Memoria de Trabajo): Pila de ejecución volátil y dinámica asignada durante el proceso en tiempo real.
-- **Retain Memory** (Memoria Retenida): Región de direcciones retain reservada y primitivas HAL de persistencia; las declaraciones `RETAIN` a nivel de fuente no están soportadas hoy.
+Para garantizar seguridad y rendimiento en circuitos integrados con pocos recursos, el contrato de memoria del runtime de ZPLC define límites estrictos para sus elementos:
+- **IPI** (imagen de proceso de entradas): búfer aislado y asignado en memoria para leer las entradas físicas con seguridad.
+- **OPI** (imagen de proceso de salidas): búfer que traslada los resultados lógicos a las salidas de hardware.
+- **Memoria de trabajo:** pila de ejecución volátil y dinámica que se asigna mientras el runtime ejecuta.
+- **Memoria retenida:** región de direcciones retain reservada y primitivas de persistencia de la HAL; las declaraciones `RETAIN` a nivel de código fuente no están soportadas por ahora.
 
-## Portabilidad de Target
+## Portabilidad a otros destinos
 
-Al asegurar que el runtime interno delegue los asuntos del hardware a un HAL estrictamente definido, ZPLC puede ejecutarse fácilmente en múltiples arquitecturas:
-- **Zephyr RTOS**: La principal plataforma de ejecución para controladores edge de hardware. Ejecuta la aplicación del firmware de forma nativa en hardware bare-metal.
-- **Simulación Nativa en Equipo Host**: Proveedor clásico de simulaciones SoftPLC de escritorio al adaptar funciones primitivas HAL de forma nativa para interactuar con sistemas operativos Mac, Windows y Linux.
+Como el runtime delega los asuntos de bajo nivel en una HAL estrictamente definida, ZPLC se ejecuta con facilidad en varias arquitecturas:
+- **Zephyr RTOS:** la plataforma de ejecución principal para los controladores de hardware en el borde. Ejecuta la aplicación de firmware de forma nativa sobre el hardware.
+- **Simulación nativa en el equipo anfitrión:** ofrece una simulación de SoftPLC de escritorio, al adaptar las primitivas de la HAL a los sistemas de archivos y procesos de Windows, macOS o Linux.

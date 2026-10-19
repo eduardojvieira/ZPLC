@@ -100,7 +100,7 @@ comunicación; un miembro de un bloque de función que otra unidad lee como
 |---|---|---|---|
 | `compiler.warnings` | `none`, `default`, `all` | `default` | Qué advertencias informa la compilación. `none` no informa ninguna y `all` agrega `WRITE_ONLY_VARIABLE`. |
 | `compiler.strictTypes` | `true`, `false` | `false` | Un estrechamiento implícito es un error en el valor, que nombra ambos tipos, en lugar de la advertencia `IMPLICIT_NARROWING`. |
-| `compiler.debug` | `true`, `false` | `true` | El mapa de depuración lleva los rangos de sentencias y las correspondencias de línea que necesitan los puntos de interrupción y la línea actual. Con `false` solo lista las variables y la memoria; el código es el mismo. |
+| `compiler.debug` | `true`, `false` | `true` | El mapa de depuración lleva los rangos de sentencias y las correspondencias de línea que necesitan los puntos de parada y la línea actual. Con `false` solo lista las variables y la memoria; el código es el mismo. |
 | `compiler.optimization` | `none`, `size`, `speed` | `none` | El compilador tiene un solo generador de código: el código es el mismo con cualquier valor. `size` y `speed` se aceptan para que los proyectos antiguos compilen, y la compilación avisa con `OPTION_IGNORED`. |
 | `build.generateDebugInfo` | `true`, `false` | `false` | `zplc-cli compile <espacio> --output <archivo>` escribe además el mapa de depuración junto al artefacto, como `<archivo>.map.json`. |
 | `libraries` | lista de carpetas | ninguna | Carpetas de archivos fuente que se compilan con el proyecto, véase abajo. |

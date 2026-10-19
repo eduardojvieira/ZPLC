@@ -3,20 +3,20 @@ slug: /learn/educators
 id: educators
 title: Docentes
 sidebar_label: Docentes
-description: "Lo que Learn ofrece a un docente: un ajuste de aula que oculta las soluciones de referencia, un comando que verifica el progreso exportado de un estudiante contra los hash de las lecciones y un esquema imprimible del curso. Sin cuenta y sin servidor."
+description: "Lo que Aprender ofrece a un docente: un ajuste de aula que oculta las soluciones de referencia, un comando que verifica el progreso exportado de un estudiante contra los hash de las lecciones y un esquema imprimible del curso. Sin cuenta y sin servidor."
 tags: [learn, lessons, educators, classroom]
 ---
 
 # Docentes
 
-Todo lo de esta página funciona en el propio equipo del docente. Learn no necesita
+Todo lo de esta página funciona en el propio equipo del docente. Aprender no necesita
 una cuenta ni un servidor, y nada de lo que sigue envía datos de un estudiante a
 ninguna parte. Los comandos se ejecutan desde una copia del repositorio con
 [Bun](https://bun.sh) y leen el índice de lecciones que viene con Studio.
 
 ## Ocultar las soluciones de referencia
 
-En el inicio de Learn, active **Aula: ocultar las soluciones de referencia**.
+En el inicio de Aprender, active **Aula: ocultar las soluciones de referencia**.
 Mientras está activado, el panel de la lección no ofrece ninguna solución de
 referencia y dice que el ajuste de aula la oculta. El ajuste se guarda en ese
 equipo, está desactivado de forma predeterminada y se puede desactivar en el mismo
@@ -24,7 +24,7 @@ lugar. Las pistas no cambian.
 
 ## Verificar el archivo de progreso de un estudiante
 
-Un estudiante exporta su progreso con **Exportar progreso** en el inicio de Learn y
+Un estudiante exporta su progreso con **Exportar progreso** en el inicio de Aprender y
 le entrega el archivo. Verifíquelo con:
 
 ```text
@@ -70,4 +70,4 @@ que lo exporta.
 
 Nivel de evidencia: host. `tools/ci/learn-educator.test.ts` cubre el verificador y
 el esquema; el ajuste de aula lo cubren `src/components/LearnHomeView.test.tsx` y el
-recorrido de Learn.
+recorrido de Aprender.

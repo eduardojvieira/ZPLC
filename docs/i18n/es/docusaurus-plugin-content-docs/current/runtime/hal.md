@@ -1,15 +1,15 @@
 ---
-title: Ports HAL
-sidebar_label: Ports HAL
-description: "Qué hacen los ports Zephyr, POSIX y WebAssembly de la capa de abstracción de hardware con el contrato, y cómo agregar un port."
+title: Puertos HAL
+sidebar_label: Puertos HAL
+description: "Qué hacen los puertos Zephyr, POSIX y WebAssembly de la capa de abstracción de hardware con el contrato, y cómo agregar un puerto."
 tags: [runtime, embedded, hal]
 ---
 
-# Capa de abstracción de hardware (HAL): los ports
+# Capa de abstracción de hardware (HAL): los puertos
 
 El [contrato HAL](./hal-contract.md) dice qué le pide el core portable a una plataforma.
-Esta página dice qué hace con él cada port del árbol de código fuente y qué exige agregar
-uno. El contrato es `firmware/lib/zplc_core/include/zplc_hal.h`; los ports son los tres
+Esta página dice qué hace con él cada puerto del árbol de código fuente y qué exige agregar
+uno. El contrato es `firmware/lib/zplc_core/include/zplc_hal.h`; los puertos son los tres
 archivos que están bajo `firmware/lib/zplc_core/src/hal/`.
 
 ```mermaid
@@ -34,14 +34,14 @@ graph TB
     HAL --> WASM
 ```
 
-## Los tres ports
+## Los tres puertos
 
 | | Zephyr | POSIX | WebAssembly |
 | --- | --- | --- | --- |
 | Fuente | `zephyr/zplc_hal_zephyr.c` | `posix/zplc_hal_posix.c` | `wasm/zplc_hal_wasm.c` |
 | Lo usa | El firmware de cada placa | El simulador nativo, `zplc_runtime`, en el que Studio y la línea de comandos ejecutan programas y escenarios | El runtime del navegador de Studio (`tools/wasm-core` lo compila con `clang` y `wasm-ld`): la compilación web y la aplicación de escritorio donde el runtime nativo no puede arrancar. Ver [Runtime del navegador](./browser-runtime.md) |
-| Tiempo | `k_uptime_get()`, y `k_msleep()` para dormir | `CLOCK_MONOTONIC`; un escenario puede reemplazarlo por un reloj lógico (`zplc_hal_posix_set_tick_override`) | El reloj de la página, mediante la importación `zplc_host.clock_ms` (`performance.now()` en Studio); aquí también está el reloj de escenario del port POSIX |
-| E/S digital y analógica | Controladores de GPIO y ADC, para los canales de la descripción de la placa en `boards.json`: primero se numeran las salidas y luego las entradas. Las salidas analógicas responden `ZPLC_HAL_NOT_IMPL` | Ninguna: las funciones responden `ZPLC_HAL_NOT_IMPL`, porque el runtime del host intercambia la imagen de proceso con Studio | Ninguna: las funciones responden `ZPLC_HAL_NOT_IMPL` y la tabla de E/S está vacía, como en el port POSIX |
+| Tiempo | `k_uptime_get()`, y `k_msleep()` para dormir | `CLOCK_MONOTONIC`; un escenario puede reemplazarlo por un reloj lógico (`zplc_hal_posix_set_tick_override`) | El reloj de la página, mediante la importación `zplc_host.clock_ms` (`performance.now()` en Studio); aquí también está el reloj de escenario del puerto POSIX |
+| E/S digital y analógica | Controladores de GPIO y ADC, para los canales de la descripción de la placa en `boards.json`: primero se numeran las salidas y luego las entradas. Las salidas analógicas responden `ZPLC_HAL_NOT_IMPL` | Ninguna: las funciones responden `ZPLC_HAL_NOT_IMPL`, porque el runtime del host intercambia la imagen de proceso con Studio | Ninguna: las funciones responden `ZPLC_HAL_NOT_IMPL` y la tabla de E/S está vacía, como en el puerto POSIX |
 | Persistencia | NVS en la `storage_partition` de la placa cuando `CONFIG_NVS` está activo, y `ZPLC_HAL_NOT_IMPL` cuando no lo está | Un archivo `<clave>.bin` por clave, en `$ZPLC_PERSIST_ROOT` cuando esa variable está definida, y en `~/.zplc` en caso contrario | Las importaciones `persist_save`, `persist_load` y `persist_delete` de la página, que guarda los registros `RETAIN` en la carpeta `build/retain` del proyecto abierto |
 | Red y sockets | La pila de red de Zephyr cuando `CONFIG_NETWORKING` está activo, y `ZPLC_HAL_NOT_IMPL` cuando no lo está | `ZPLC_HAL_NOT_IMPL` | `ZPLC_HAL_NOT_IMPL` |
 
@@ -80,18 +80,18 @@ El overlay de la placa define `storage_partition`, salvo que la placa de Zephyr 
 defina. La [referencia de Kconfig](../reference/kconfig.md) lista cada símbolo con su
 valor por defecto y su rango.
 
-## Agregar un port
+## Agregar un puerto
 
-1. Agregue `src/hal/<plataforma>/zplc_hal_<plataforma>.c` junto a los tres ports y
+1. Agregue `src/hal/<plataforma>/zplc_hal_<plataforma>.c` junto a los tres puertos y
    defina cada función que declara `zplc_hal.h`. Responda `ZPLC_HAL_NOT_IMPL` para lo
    que la plataforma no puede hacer.
 2. Compílelo con el core: las fuentes portables son `src/core/*.c`, que no deben incluir
    ninguna cabecera de plataforma (un objetivo de ese CMake las compila solas y se detiene
-   ante una inclusión de plataforma), y el port se lista en el CMake de
-   `firmware/lib/zplc_core` como se lista el port POSIX.
-3. Agregue el port a `PORTS` en `tools/ci/check_hal_contract.py` y ejecútelo. Falla cuando
-   una función declarada no tiene definición en un port, no tiene ningún llamador fuera de
-   los ports y de las pruebas, o tiene una entrada obsoleta en `tools/ci/hal-contract.json`:
+   ante una inclusión de plataforma), y el puerto se lista en el CMake de
+   `firmware/lib/zplc_core` como se lista el puerto POSIX.
+3. Agregue el puerto a `PORTS` en `tools/ci/check_hal_contract.py` y ejecútelo. Falla cuando
+   una función declarada no tiene definición en un puerto, no tiene ningún llamador fuera de
+   los puertos y de las pruebas, o tiene una entrada obsoleta en `tools/ci/hal-contract.json`:
 
    ```bash
    python3 tools/ci/check_hal_contract.py
@@ -106,6 +106,6 @@ Para una placa, y no una plataforma, vea [Portar ZPLC a una placa nueva](../guid
 
 | Parte | Verificado | Nivel |
 | --- | --- | --- |
-| Cada port define todas las funciones del contrato, y cada función tiene un llamador o una entrada del registro | `tools/ci/check_hal_contract.py` en CI | Host |
-| Las afirmaciones de la tabla de arriba | Leídas de las fuentes de los tres ports en la fecha de esta página; no tienen una prueba propia | Ninguno |
-| Un port distinto de los tres se comporta como dice el contrato | No aplica: no existe otro port | Ninguno |
+| Cada puerto define todas las funciones del contrato, y cada función tiene un llamador o una entrada del registro | `tools/ci/check_hal_contract.py` en CI | Host |
+| Las afirmaciones de la tabla de arriba | Leídas de las fuentes de los tres puertos en la fecha de esta página; no tienen una prueba propia | Ninguno |
+| Un puerto distinto de los tres se comporta como dice el contrato | No aplica: no existe otro puerto | Ninguno |

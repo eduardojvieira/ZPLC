@@ -16,7 +16,7 @@ operación física.
 ## Empiece con las lecciones de Studio
 
 Studio tiene 28 lecciones en un curso, en español y en inglés. El [esquema del curso](course-outline.md) enumera cada módulo, las lecciones que existen y las que están planeadas. En la pantalla de
-bienvenida, elija **Aprender**: se abre el inicio de Learn, sin proyecto y sin red, y
+bienvenida, elija **Aprender**: se abre el inicio de Aprender, sin proyecto y sin red, y
 enumera los módulos en orden con su nivel, lo que requiere cada uno y cuánto
 dura. Elija **Comenzar el curso**: Studio crea el espacio de trabajo de la primera lección en su propia carpeta y lo abre; no hay carpeta que elegir ni paso de copia. La lección sigue visible junto al editor, también cuando usted cambia a la vista Proyecto.
 
@@ -31,7 +31,7 @@ Cada lección ofrece dos niveles de pista, y Studio registra cada nivel que uste
 Una lección está bloqueada hasta que se aprueban las lecciones que requiere, y el
 inicio dice cuáles. Si prefiere tomarlas en cualquier orden, active
 **Desbloquear todas las lecciones** en el inicio. La
-descripción completa de lo que hace Learn y de lo que guarda está en
+descripción completa de lo que hace Aprender y de lo que guarda está en
 [Banco de trabajo de Studio](../ide/features.md#learn).
 
 ## Abra un proyecto de ejemplo

@@ -50,7 +50,7 @@ Los pasos de cada sistema están en [Primer inicio](#primer-inicio).
 | --- | --- | --- |
 | [Versiones de GitHub](https://github.com/eduardojvieira/ZPLC/releases) | Activo | Instaladores para Windows, macOS y Linux, la línea de comandos y el servidor MCP independientes, una lista de materiales y sumas de verificación. |
 | Compilar desde el código fuente | Funciona en Linux y macOS | El camino de [Ejecutar Studio desde el código fuente](./index.md#ejecutar-studio-desde-el-código-fuente). |
-| Homebrew cask, Arch User Repository | Todavía no está activo | El pipeline puede escribir ambos para cada versión publicada ([más abajo](#homebrew-y-arch-linux-todavía-no-están-activos)); no hay nada que instalar hasta que el proyecto cree el tap y el paquete de AUR. |
+| Homebrew cask, Arch User Repository | Todavía no está activo | El canal puede escribir ambos para cada versión publicada ([más abajo](#homebrew-y-arch-linux-todavía-no-están-activos)); no hay nada que instalar hasta que el proyecto cree el tap y el paquete de AUR. |
 | Microsoft Store, winget | Todavía no se puede enviar | Los canales necesitan una identidad de firma o una cuenta que el proyecto no tiene. |
 
 No instale ZPLC desde un gestor de paquetes ni una tienda: mientras un canal de la
@@ -66,7 +66,7 @@ ejecutado, y el tap y el paquete de AUR no existen hasta que el proyecto los cre
 así que no los busque hoy.
 
 - **Homebrew (todavía no activo).** Hasta que exista el tap, no se instala nada
-  desde él. El cask que el pipeline escribirá para él instala el `.zip` de su
+  desde él. El cask que el canal escribirá para él instala el `.zip` de su
   arquitectura, fijado por su SHA-256, con un solo comando completo:
 
   ```text
@@ -121,7 +121,7 @@ antigua; desplácese hasta la versión preliminar 2.0.
 | Linux, otras distribuciones | `ZPLC.IDE-2.0.0-rc.3-linux-x86_64.AppImage` |
 
 Los archivos de rc.3 se construyeron con una compilación preliminar y se
-subieron a mano. Las versiones que hace el pipeline de publicación nombran los
+subieron a mano. Las versiones que hace el canal de publicación nombran los
 catorce archivos de instalación con una sola plantilla,
 `zplc-ide-<versión>-<sistema>-<arquitectura>[-<variante>].<extensión>`, en minúsculas
 y sin espacios (solo la extensión `AppImage` conserva sus mayúsculas). La variante es
@@ -129,7 +129,7 @@ y sin espacios (solo la extensión `AppImage` conserva sus mayúsculas). La vari
 esos archivos no lleven firma, por ejemplo `zplc-ide-<versión>-win-x64-setup-unsigned.exe`.
 En macOS y Windows la arquitectura es `x64` o `arm64`; en Linux cada formato de
 paquete la escribe como lo hace su propia herramienta: `amd64` en el `.deb`, `x86_64`
-en el `.rpm` y en el AppImage, `aarch64` en el `.rpm` de arm64. El pipeline comprueba
+en el `.rpm` y en el AppImage, `aarch64` en el `.rpm` de arm64. El canal comprueba
 los nombres y el tipo de cada archivo que produjo antes de agruparlos. Los ejecutables
 `zplc-cli-<versión>-<sistema>-<arquitectura>` y `zplc-mcp-<versión>-<sistema>-<arquitectura>`
 de esas versiones no necesitan instalador ni Node.js ni Bun; tampoco están firmados.
@@ -148,7 +148,7 @@ Windows:  Get-FileHash .\<archivo> -Algorithm SHA256
 En Windows, compare el hash que imprime con la línea de su archivo en
 `SHA256SUMS`. No abra un archivo cuyo hash sea distinto.
 
-Cada versión que hace el pipeline incluye además una atestación de procedencia de
+Cada versión que hace el canal incluye además una atestación de procedencia de
 compilación para cada archivo, que dice qué ejecución del flujo de trabajo del
 proyecto lo construyó. Con la CLI de GitHub:
 
@@ -204,7 +204,7 @@ sudo dnf install ./ZPLC.IDE-2.0.0-rc.3-linux-x86_64.rpm
 ```
 
 El `.deb` de rc.3 declara dependencias que las versiones actuales de Debian y
-Ubuntu ya no ofrecen, por lo que solo se instala en Ubuntu 22.04. El pipeline que
+Ubuntu ya no ofrecen, por lo que solo se instala en Ubuntu 22.04. El canal que
 construye las versiones posteriores instala el `.deb` en Debian 13 y Ubuntu 24.04
 y el `.rpm` en Fedora, en contenedores limpios, antes de publicarlos, y las notas
 de la versión dicen si esa comprobación pasó.

@@ -1,7 +1,7 @@
 ---
 slug: /guides/build-firmware
 id: build-firmware
-title: Compile el firmware desde el código fuente
+title: Compilar el firmware desde el código fuente
 sidebar_label: Compilar el firmware
 description: "Cómo compilar la imagen del runtime de ZPLC para una placa desde el código fuente con el script que usa la integración continua, y qué demuestra una compilación terminada."
 tags: [how-to, hardware, firmware]

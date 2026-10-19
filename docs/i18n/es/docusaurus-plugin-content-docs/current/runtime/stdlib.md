@@ -1,13 +1,13 @@
 ---
 slug: /runtime/stdlib
 id: stdlib
-title: Referencia de la Biblioteca Estándar
-sidebar_label: Standard Library
+title: Referencia de la biblioteca estándar
+sidebar_label: Biblioteca estándar
 description: Referencia de las funciones y bloques de la biblioteca estándar de ZPLC documentados actualmente.
 tags: [reference, stdlib, iec61131-3]
 ---
 
-# Referencia de la Biblioteca Estándar de ZPLC
+# Referencia de la biblioteca estándar de ZPLC
 
 ZPLC documenta las funciones y bloques de la biblioteca estándar implementados por sus rutas de compilador/runtime. La disponibilidad depende del flujo de lenguaje y del perfil de capacidades del destino; ST es el frontend central.
 
@@ -38,7 +38,7 @@ Conserva un estado alto durante un tiempo después de un flanco de bajada. `Q` s
   - `Q` (BOOL): Verdadero mientras `IN` sea verdadero, más el tiempo `PT` después de que `IN` se vuelva falso (`cmp-058-tof-holds-output`).
   - `ET` (TIME): Tiempo transcurrido desde que `IN` se puso en bajo. Cuenta hasta `PT` y se queda en `PT` hasta que `IN` vuelve a subir; vale 0 mientras `IN` está en alto (`cmp-057-tof-elapsed-stops-at-preset`).
 
-### TP (Temporizador de Pulso)
+### TP (Temporizador de pulso)
 Genera un pulso de duración fija, sin importar cuánto tiempo permanezca alta la entrada.
 - **Entradas:**
   - `IN` (BOOL): Condición de disparo (el flanco de subida inicia el pulso).
@@ -100,7 +100,7 @@ Nivel de evidencia: host. Los casos `cmp-058-ctu-*`, `cmp-058-ctd-*` y `cmp-058-
 
 ---
 
-## 3. Elementos Biestables (Flip-Flops)
+## 3. Elementos biestables (flip-flops)
 
 ### RS (Flip-Flop Dominante Reset)
 - **Entradas:** `S` (BOOL, Set), `R1` (BOOL, Reset).
@@ -114,7 +114,7 @@ Nivel de evidencia: host. Los casos `cmp-058-ctu-*`, `cmp-058-ctd-*` y `cmp-058-
 
 ---
 
-## 4. Detección de Flancos
+## 4. Detección de flancos
 
 ### R_TRIG (Detector de Flanco de Subida)
 - **Entradas:** `CLK` (BOOL).
@@ -128,16 +128,16 @@ Nivel de evidencia: host. Los casos `cmp-058-ctu-*`, `cmp-058-ctd-*` y `cmp-058-
 
 ---
 
-## 5. Funciones Matemáticas
+## 5. Funciones matemáticas
 
-### Operadores Aritméticos
+### Operadores aritméticos
 - **`+`, `-`, `*`, `/`**: suma, resta, multiplicación y división de los tipos numéricos. La división entera trunca hacia cero.
 - **`a MOD b`**: el residuo entero, con el signo de `a`. Es un operador: la forma `MOD(a, b)` no se analiza.
 - Las formas de función `ADD(a, b)`, `SUB`, `MUL` y `DIV` no existen; la compilación las rechaza y nombra la función (`cmp-006-operator-function-form-is-rejected`).
 
 Los anchos, el desbordamiento y el comportamiento en los límites están en los [tipos numéricos](../languages/st.md#tipos-numéricos) de Structured Text.
 
-### Matemáticas Avanzadas
+### Matemática avanzada
 ### ABS
 - **Entradas:** `IN` (ANY_NUM).
 - **Salidas:** (ANY_NUM) Valor absoluto de IN. El `DINT` y el `LINT` más negativos quedan como están; un `LREAL` tiene su bit de signo borrado (`ABS(-0.0)` es 0.0).
@@ -193,7 +193,7 @@ Costo: ningún lazo depende del argumento, de modo que la cantidad de instruccio
 
 ---
 
-## 6. Funciones de Selección
+## 6. Funciones de selección
 
 ### MAX
 - **Entradas:** `IN1` (ANY_NUM), `IN2` (ANY_NUM).
@@ -219,12 +219,12 @@ Costo: ningún lazo depende del argumento, de modo que la cantidad de instruccio
 
 ## 7. Funciones de Bits
 
-### Operadores Lógicos
+### Operadores lógicos
 - **`a AND b`, `a OR b`, `a XOR b`, `NOT a`**: operadores sobre `BOOL`, `BYTE`, `WORD`, `DWORD` y `LWORD`, con todo el ancho declarado. Las formas de función `AND(a, b)`, `OR(a, b)` y `XOR(a, b)` no se analizan.
 - **NAND(IN1, IN2)** / **NOR(IN1, IN2)**: La negación de AND y de OR de dos valores `BOOL`, 0 o 1 (`cmp-058-nand-and-nor-truth-tables`).
 - **AND_WORD, OR_WORD, XOR_WORD, NOT_WORD** y **AND_DWORD, OR_DWORD, XOR_DWORD, NOT_DWORD**: las mismas operaciones como funciones sobre `WORD` y `DWORD` (`cmp-014-shr-and-word-logic-functions`).
 
-### Rotación y Desplazamiento
+### Rotación y desplazamiento
 ### SHL
 - **Entradas:** `IN` (ANY_BIT), `N` (INT, número de bits).
 - **Salidas:** (ANY_BIT) `IN` desplazado a la izquierda. Un desplazamiento de 32 o más, o con una cuenta negativa, da 0 (`cmp-016-shift-by-the-width-or-more`), y un `BYTE` o un `WORD` descarta los bits desplazados más allá de su ancho (`cmp-014-shl-byte-keeps-8-bits`).
@@ -243,7 +243,7 @@ Costo: ningún lazo depende del argumento, de modo que la cantidad de instruccio
 
 ---
 
-## 8. Funciones de Cadenas (Strings)
+## 8. Funciones de cadenas de texto
 
 Las cadenas son buffers acotados: `STRING` tiene 80 caracteres, `STRING[n]` tiene `n`. Una asignación copia los caracteres que entran.
 
@@ -266,7 +266,7 @@ En `MID`, `DELETE` y `REPLACE` la posición va antes de la cantidad. IEC 61131-3
 
 ---
 
-## 9. Conversiones de Tipos
+## 9. Conversiones de tipos
 
 Las funciones de conversión mueven valores entre tipos. Existe una función `<ORIGEN>_TO_<DESTINO>` para cada par ordenado de tipos distintos entre `BOOL`, `SINT`, `USINT`, `BYTE`, `INT`, `UINT`, `WORD`, `DINT`, `UDINT`, `DWORD`, `LINT`, `ULINT`, `LWORD`, `REAL`, `LREAL` y `TIME`: `INT_TO_DINT`, `DINT_TO_REAL`, `SINT_TO_INT`, `REAL_TO_USINT`, `TIME_TO_DINT`, `LINT_TO_LREAL`, `LREAL_TO_ULINT`, etc. (240 funciones). `DATE`, `TOD` y `DT` todavía no tienen funciones de conversión.
 
@@ -289,7 +289,7 @@ Las funciones de conversión mueven valores entre tipos. Existe una función `<O
 
 ---
 
-## 10. Funciones del Sistema
+## 10. Funciones del sistema
 
 ### UPTIME
 - **Entradas:** Ninguna.
@@ -320,11 +320,11 @@ Un bloque o una función que no está en la tabla no se sabe que difiera. Cada f
 
 ---
 
-## 12. Bloques de Biblioteca Fuera del Estándar
+## 12. Bloques de biblioteca fuera del estándar
 
 Estos bloques pertenecen a la biblioteca de ZPLC y no son bloques de IEC 61131-3.
 
-### BLINK (Generador de Pulsos Asimétrico)
+### BLINK (generador de pulsos asimétrico)
 Genera un tren de pulsos con tiempos de ON y OFF separados.
 - **Entradas:**
   - `ENABLE` (BOOL): Hace correr el generador mientras es TRUE.
@@ -340,12 +340,12 @@ Q:      __/¯¯¯\______/¯¯¯\______/¯¯¯\___
           |300|  700 |300|  700 |        (T_ON = 300 ms, T_OFF = 700 ms)
 ```
 
-### PWM (Modulación por Ancho de Pulso)
+### PWM (modulación por ancho de pulso)
 - **Entradas:** `ENABLE` (BOOL), `PERIOD` (TIME), `DUTY` (REAL, 0.0 a 1.0).
 - **Salidas:** `Q` (BOOL).
 - **Comportamiento:** Mientras `ENABLE` es TRUE, `Q` es TRUE durante `PERIOD * DUTY` al comienzo de cada `PERIOD`. Un `DUTY` de 0.0 mantiene `Q` en FALSE y 1.0 lo mantiene en TRUE. `ENABLE` en FALSE pone `Q` en FALSE, y el próximo `ENABLE` inicia un período nuevo.
 
-### PULSE (Generador de Pulso Único)
+### PULSE (generador de pulso único)
 - **Entradas:** `TRIG` (BOOL), `PT` (TIME).
 - **Salidas:** `Q` (BOOL).
 - **Comportamiento:** Un flanco de subida de `TRIG` inicia un pulso de `PT`. Un flanco de subida durante el pulso se ignora, y un nivel que sigue en TRUE después no inicia nada.
@@ -386,7 +386,7 @@ Un controlador PID discreto.
 - **Salidas:** `OUT` (REAL).
 - **Comportamiento:** Con `e = SP - PV`, `OUT = KP * e + KI * suma(e * DT) + KD * (e - e anterior) / DT`, limitado a `OUT_MIN` hasta `OUT_MAX`. Un `DT` de 0.0 (omitido) deja en 0.0 los términos integral y derivativo. El acumulador integral no se limita mientras la salida está limitada. La primera llamada toma el error anterior como el actual, así que no tiene salto derivativo.
 
-### FIFO (Buffer Primero en Entrar, Primero en Salir)
+### FIFO (buffer primero en entrar, primero en salir)
 Guarda hasta 8 valores `DINT`; salen en el orden en que entraron.
 - **Entradas:**
   - `PUSH` (BOOL): Un flanco de subida guarda `DATA_IN`.
@@ -401,5 +401,5 @@ Guarda hasta 8 valores `DINT`; salen en el orden en que entraron.
   - `FULL` (BOOL): TRUE cuando `COUNT` llegó a la capacidad.
 - **Comportamiento:** Un push en un buffer lleno y un pop de uno vacío no hacen nada.
 
-### LIFO (Buffer Último en Entrar, Primero en Salir)
+### LIFO (buffer último en entrar, primero en salir)
 Una pila de hasta 8 valores `DINT`; el último valor guardado sale primero. Sus entradas y salidas son las de `FIFO`, con las mismas reglas de capacidad.

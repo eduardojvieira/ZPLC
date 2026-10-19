@@ -2,12 +2,12 @@
 sidebar_position: 3
 slug: /runtime/persistence
 id: persistence
-title: Persistencia y Memoria Retenida
+title: Persistencia y memoria retenida
 sidebar_label: Persistencia
 description: Cómo ZPLC almacena la lógica compilada verificada y la región RETAIN, qué restaura un reinicio, el presupuesto de desgaste de flash por placa y qué no se ha medido.
 ---
 
-# Persistencia y Memoria Retenida
+# Persistencia y memoria retenida
 
 Para perfiles con un backend program-store habilitado y operativo, ZPLC puede
 confirmar transaccionalmente un artefacto `.zplc` desplegado y verificado. El
@@ -15,7 +15,7 @@ restore publica el artefacto como lógicamente detenido/READY. El comportamiento
 de las salidas antes de ejecutar es específico del perfil de target y requiere
 evidencia registrada. Una persona debe ejecutar explícitamente `zplc start`.
 
-## Backends de Plataforma
+## Backends de la plataforma
 
 El core del runtime ZPLC depende de una Capa de Abstracción de Hardware (HAL) abstracta para las operaciones de persistencia. Esto permite que el sistema se adapte sin problemas a las capacidades de almacenamiento de distintos entornos:
 
@@ -25,7 +25,7 @@ El core del runtime ZPLC depende de una Capa de Abstracción de Hardware (HAL) a
 | **Simulación Nativa (PC)** | Archivos en el directorio de persistencia (`ZPLC_PERSIST_ROOT`, por defecto `~/.zplc`): el program store y los registros `RETAIN`. |
 | **Simulador WASM** | Los registros del módulo de retención (`retain_a0` a `retain_b7`) pasan por las llamadas HAL del módulo a la página anfitriona, que los guarda en la carpeta `build/retain` del proyecto abierto y, sin proyecto abierto, en la memoria de la página. El almacén de programas de la sesión está en memoria. Ver [Runtime del navegador](./browser-runtime.md). |
 
-## Persistencia de Programa en Hardware
+## Persistencia del programa en hardware
 
 Cuando un perfil dispone de un backend program-store operativo, una carga
 `.zplc` verificada puede confirmarse mediante ese backend.
@@ -99,7 +99,7 @@ usó la carga. Lo que no: un corte de energía en una placa. El driver de flash,
 tiempo de borrado y el comportamiento de la alimentación de cada perfil necesitan el registro de hardware de ese
 perfil (HIL-010).
 
-## Memoria Retentiva (`RETAIN`)
+## Memoria retentiva (`RETAIN`)
 
 El compilador acepta `VAR RETAIN` y `VAR_GLOBAL RETAIN`, coloca esas variables
 en la región retentiva de la memoria de proceso (dirección `0x4000`, 4 KB por
