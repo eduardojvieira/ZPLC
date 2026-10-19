@@ -2531,6 +2531,27 @@
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"50 The live I/O faceplate operates the inputs of any program and shows its outputs, with the pointer and with the keyboard"},
     {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_native_runtime_session.c","test":"LRN-017, RT-009: the writes to the input image that a running program receives are staged and reach the image at"}
   ],
+  "LRN-018": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/plants/PlantView.test.tsx","test":"plant schematics (LRN-018, LRN-037)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/plants/plantEngine.test.ts","test":"plant engine (LRN-018, LRN-019)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/plants/plantLoop.test.ts","test":"closed-loop plant session (LRN-018)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/plants/plantMap.test.ts","test":"plant mapping (LRN-018, LRN-021)"},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"51 A lesson plant runs live in closed loop, with pause, step and a fault action, and the recorded run stays a labelled replay"}
+  ],
+  "LRN-019": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/plants/plantEngine.test.ts","test":"gives the same trace on every run and matches the pinned golden hashes (LRN-019)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/plants/plantEngine.test.ts","test":"plant engine (LRN-018, LRN-019)"},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"51 A lesson plant runs live in closed loop, with pause, step and a fault action, and the recorded run stays a labelled replay","partial":true}
+  ],
+  "LRN-020": [
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"51 A lesson plant runs live in closed loop, with pause, step and a fault action, and the recorded run stays a labelled replay","partial":true}
+  ],
+  "LRN-021": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/plants/lessonPlantMaps.test.ts","test":"every lesson that names a plant ships its mapping (LRN-021)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/plants/plantMap.test.ts","test":"plant mapping (LRN-018, LRN-021)"},
+    {"kind":"unit","ref":"tools/ci/lesson-index.test.ts","test":"refuses a lesson that names a plant without its mapping, or a mapping that names another plant (LRN-021)"},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"51 A lesson plant runs live in closed loop, with pause, step and a fault action, and the recorded run stays a labelled replay","partial":true}
+  ],
   "LRN-022": [
     {"kind":"unit","ref":"packages/zplc-ide/electron/ipcRegistry.test.ts","test":"the lesson check over the IPC boundary (LRN-022, LRN-026, IDE-002, IDE-012)"},
     {"kind":"unit","ref":"packages/zplc-ide/electron/lessonCheckProtocol.test.ts","test":"the lesson check request and answer (LRN-022, LRN-026)"},
@@ -2584,6 +2605,11 @@
   ],
   "LRN-036": [
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"13 Welcome helps a newcomer choose","partial":true}
+  ],
+  "LRN-037": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/plants/PlantView.test.tsx","test":"plant schematics (LRN-018, LRN-037)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/plants/plantFacts.test.ts","test":"text equivalent of a plant state (LRN-037)"},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"51 A lesson plant runs live in closed loop, with pause, step and a fault action, and the recorded run stays a labelled replay","partial":true}
   ],
   "LRN-038": [
     {"kind":"unit","ref":"packages/zplc-ide/src/components/learnLesson.test.ts","test":"Learn lesson text is never replaced at run time (LRN-038)"}
