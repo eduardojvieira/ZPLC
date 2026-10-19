@@ -2510,6 +2510,7 @@
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"11 Learn with no project open","partial":true}
   ],
   "LRN-007": [
+    {"kind":"unit","ref":"tools/ci/course-outline.test.ts","test":"course outline pages (LRN-007)"},
     {"kind":"unit","ref":"tools/ci/lesson-index.test.ts","test":"refuses a lesson placed in a module the manifest cannot name or at another level than its module (LRN-005, LRN-007)"}
   ],
   "LRN-009": [
