@@ -482,3 +482,9 @@ Evidence level: host. `packages/zplc-ide/src/components/watchTable.test.ts` cove
 The Problems view lists errors first, then warnings, then information; activating a problem opens its file at its line and column. A message written to **Output**, or a problem found, while another view of the results panel is visible puts a count on that view's tab (read as "Output, 3 new") until you open it.
 
 Evidence level: host. `packages/zplc-ide/src/components/consoleAttention.test.ts` covers the order and the counts.
+
+## Creating a project
+
+**New project** (on the Welcome screen and in the File menu) asks for four things: the project name, the folder it goes in, the target (the simulation on this computer, or a board of the manifest) and the language of the first program (Structured Text, Instruction List, Ladder Diagram, Function Block Diagram or Sequential Function Chart). The name starts as the name of the folder you choose until you type another. The folder holds the project itself: Studio does not create a folder inside it, and it refuses a folder that already holds a `zplc.json`, a `.gitignore` or the first program. The project it makes has `src/main` in the chosen language, a global variable list, a main task that runs that program and the chosen target, and it builds without a change.
+
+Evidence level: host. `packages/zplc-ide/src/project/newProject.test.ts` builds the first program of every language and checks the task that runs it; journey 2b drives the dialog and builds the new project in the real application.

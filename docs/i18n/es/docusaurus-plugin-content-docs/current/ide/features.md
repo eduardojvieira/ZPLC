@@ -493,3 +493,9 @@ Nivel de evidencia: host. `packages/zplc-ide/src/components/watchTable.test.ts` 
 La vista Problemas lista primero los errores, luego las advertencias y después la información; al activar un problema se abre su archivo en su línea y columna. Un mensaje escrito en **Salida**, o un problema encontrado, mientras otra vista del panel de resultados está visible pone un contador en la pestaña de esa vista (se lee "Salida, 3 nuevos") hasta que la abra.
 
 Nivel de evidencia: host. `packages/zplc-ide/src/components/consoleAttention.test.ts` cubre el orden y los contadores.
+
+## Crear un proyecto
+
+**Nuevo proyecto** (en la pantalla de bienvenida y en el menú Archivo) pide cuatro cosas: el nombre del proyecto, la carpeta donde va, el destino (la simulación en este equipo, o una placa del manifiesto) y el lenguaje del primer programa (Texto Estructurado, Lista de Instrucciones, Diagrama de Escalera, Diagrama de Bloques de Función o Gráfico Funcional de Secuencias). El nombre empieza siendo el de la carpeta que elija hasta que escriba otro. La carpeta contiene el proyecto mismo: Studio no crea una carpeta dentro de ella y rechaza una carpeta que ya tenga un `zplc.json`, un `.gitignore` o el primer programa. El proyecto que crea tiene `src/main` en el lenguaje elegido, una lista de variables globales, una tarea principal que ejecuta ese programa y el destino elegido, y compila sin cambios.
+
+Nivel de evidencia: host. `packages/zplc-ide/src/project/newProject.test.ts` compila el primer programa de cada lenguaje y comprueba la tarea que lo ejecuta; el recorrido 2b maneja el diálogo y compila el proyecto nuevo en la aplicación real.

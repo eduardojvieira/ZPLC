@@ -3,7 +3,7 @@
     "file": "packages/zplc-ide/src/store/useIDEStore.ts",
     "requirement": "IDE-014",
     "added": "2026-10-10",
-    "lines": 1695,
+    "lines": 1692,
     "reason": "The single store holds project, files, tabs, debug, console and settings slices. Split by slice into stores or slice creators with the same public hook (WP-40); the store split is the IDE state work of WS-24a."
   },
   {

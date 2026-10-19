@@ -6,6 +6,7 @@
 import React from 'react';
 import { BookOpen, FolderOpen, FolderPlus, History } from 'lucide-react';
 import { useIDEStore } from '../store/useIDEStore';
+import { useNewProjectDialog } from '../store/newProjectDialog';
 import { useWelcomeState } from '../store/regionSubscriptions';
 import { boardName, buildExampleSections, groupByLevel, languageName, levelName, type ExampleListing } from '../utils/exampleCatalog';
 import { isFileSystemAccessSupported } from '../types';
@@ -43,7 +44,6 @@ export function WelcomeScreen() {
   const { t } = translator;
   const {
     openProjectFromFolder,
-    createNewProjectInFolder,
     copyExampleProjectToFolder,
     getExampleProjects,
     projectOpenError,
@@ -131,7 +131,7 @@ export function WelcomeScreen() {
                 <span className="mt-0.5 block text-sm leading-5 text-[var(--text-secondary)]">{t('welcome.open.hint')}</span>
               </span>
             </Button>
-            <Button variant="ghost" onClick={() => void createNewProjectInFolder()} disabled={unavailable} className={actionClass}>
+            <Button variant="ghost" onClick={() => useNewProjectDialog.getState().show()} disabled={unavailable} className={actionClass}>
               <FolderPlus size={18} aria-hidden="true" className="mt-0.5 shrink-0 text-[var(--color-accent-blue)]" />
               <span className="min-w-0">
                 <span className="block font-medium">{t('welcome.new.title')}</span>

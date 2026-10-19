@@ -721,6 +721,9 @@ END_PROGRAM`;
     case 'IL':
       return `(* New Program - Instruction List *)
 PROGRAM NewProgram
+VAR
+    Output : BOOL;
+END_VAR
 
         LD      TRUE
         ST      Output

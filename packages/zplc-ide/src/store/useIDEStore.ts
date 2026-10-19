@@ -59,6 +59,7 @@ import { planRestore, type ViewState, type WorkspaceLayout } from '../utils/sess
 import { flushSession, resetViewStates } from './sessionPersistence';
 import { createFolder, deleteFolder, duplicateEntry, moveEntry, renameEntry } from './projectTreeActions';
 import { preserveExpansion } from '../project/treeOperations';
+import type { NewProjectRequest } from '../project/newProject';
 import { DEFAULT_DEBUG_POLLING_INTERVAL_MS } from './debugDefaults';
 import { NATIVE_TRACE_LIMIT, type NativeTraceSample } from '../runtime/nativeTrace';
 import type { CanonicalWorkspaceBuildEvidence } from './buildEvidence';
@@ -309,7 +310,7 @@ export interface IDEState {
   /** The split of the workbench the user chose in this project; saved with the session and restored with it. */
   sessionLayout: WorkspaceLayout | null;
   setSessionLayout: (layout: WorkspaceLayout | null) => void;
-  createNewProjectInFolder: () => Promise<boolean>;
+  createNewProjectInFolder: (options?: NewProjectRequest) => Promise<boolean>;
   copyExampleProjectToFolder: (projectId: string) => Promise<boolean>;
   /** The Welcome screen's Learn entry: copy the first lesson's starter like any example, then show the Learn tab. */
   startLearning: (starterExampleId: string) => Promise<boolean>;
@@ -697,7 +698,7 @@ export const useIDEStore = create<IDEState>((set, get) => ({
 
   setSessionLayout: (layout) => set({ sessionLayout: layout }),
 
-  createNewProjectInFolder: async () => {
+  createNewProjectInFolder: async (options) => {
     set({ projectOpenError: null });
     if (!isFileSystemAccessSupported()) {
       get().reportProjectOpenProblem('error', 'File System Access API not supported. Use a browser with folder access.');
@@ -706,18 +707,14 @@ export const useIDEStore = create<IDEState>((set, get) => ({
 
     try {
       void flushSession();
-      const dirHandle = await openDirectoryPicker();
+      const dirHandle = options?.handle ?? await openDirectoryPicker();
       if (!dirHandle) {
         return false;
       }
 
-      get().addConsoleEntry({
-        type: 'info',
-        message: `Creating new project in: ${dirHandle.name}...`,
-        source: 'system',
-      });
+      get().addConsoleEntry({ type: 'info', message: `Creating new project in: ${dirHandle.name}...`, source: 'system' });
 
-      const config = await createNewProject(dirHandle, dirHandle.name);
+      const config = await createNewProject(dirHandle, options?.name ?? dirHandle.name, options);
       const fileTree = await readDirectoryRecursive(dirHandle);
 
       resetViewStates();

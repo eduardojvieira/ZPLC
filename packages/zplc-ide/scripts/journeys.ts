@@ -528,10 +528,25 @@ export const JOURNEYS: Journey[] = [
       const folder = join(root, 'empty-project'); mkdirSync(folder);
       app.answer(folder);
       await app.click(button('New project', 'contains'), 'the New project button');
+      const field = css('[data-new-project="name"]');
+      await app.until('the New project dialog', async () => await app.visible(field) || undefined);
+      assert(await app.eval<boolean>(`document.querySelector('[data-new-project="target"]')?.options[0]?.value === 'simulation'`), 'The dialog does not offer the simulation as the first target.');
+      await app.click(button('Choose folder', 'contains'), 'the Choose folder button');
+      await app.until('the chosen folder in the dialog', async () => await app.eval<boolean>(`document.querySelector('[data-testid="new-project-folder"]')?.textContent === 'empty-project'`) || undefined);
+      await app.until('the project named after the folder', async () => await app.eval<boolean>(`document.querySelector('[data-new-project="name"]')?.value === 'empty-project'`) || undefined);
+      await app.click(field, 'the name field');
+      await app.press('Ctrl+A');
+      await app.type('Packing line');
+      await selectOption(app, '[data-new-project="language"]', 'Ladder Diagram');
+      await app.click(button('Create project'), 'the Create project button');
       await app.until('the project workbench to appear', async () => await app.visible(toolbar) || undefined);
-      assert(existsSync(join(folder, 'zplc.json')), 'The chosen folder holds no zplc.json.');
+      const config = JSON.parse(disk(join(folder, 'zplc.json')));
+      assert(config.name === 'Packing line', `The project is named ${JSON.stringify(config.name)}, not the name that was typed.`);
+      assert(existsSync(join(folder, 'src', 'main.ld.json')), 'The first program was not made in the chosen language.');
+      assert(JSON.stringify(config.tasks?.[0]?.programs) === '["main.ld"]', `The main task does not run the first program: ${JSON.stringify(config.tasks?.[0]?.programs)}`);
       await showExplorer(app);
       await app.until('a source file in the tree of the new project', async () => await app.visible(treeItem('dir:src')) || undefined);
+      assert((await compile(app)).kind === 'built', 'The project that was just created does not build.');
     },
   },
   {

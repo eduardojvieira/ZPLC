@@ -18,6 +18,7 @@
 import { useEffect, useState, type ComponentType } from 'react';
 import { LearnHome } from './components/LearnHome';
 import { WelcomeScreen } from './components/WelcomeScreen';
+import { NewProjectDialog } from './components/NewProjectDialog';
 import { useLearnUi } from './learn/learnUi';
 import { CloseGuard } from './components/CloseGuard';
 import { SerialPortChooser } from './components/SerialPortChooser';
@@ -139,6 +140,7 @@ function App() {
         <CloseGuard />
         <SerialPortChooser />
         <CommandPalette />
+        <NewProjectDialog />
         <ShortcutReference />
       </div>
     );
@@ -151,6 +153,7 @@ function App() {
         <CloseGuard />
         <SerialPortChooser />
         <CommandPalette />
+        <NewProjectDialog />
         <ShortcutReference />
         <div className="flex flex-1 items-center justify-center">
           {failed
@@ -167,6 +170,7 @@ function App() {
       <CloseGuard />
       <SerialPortChooser />
         <CommandPalette />
+        <NewProjectDialog />
         <ShortcutReference />
       <RecoveryOffer />
       <ExternalChangePrompt />
