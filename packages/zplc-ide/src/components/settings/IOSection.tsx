@@ -245,7 +245,7 @@ export function IOSection({ config, updateConfig }: SectionProps) {
                   <span className="text-[var(--color-accent-blue)]">{row.address}</span> {row.name}
                   {row.description ? ` - ${row.description}` : ''}
                 </span>
-                <Button variant="bare"
+                <Button variant="bare" aria-label={t('io.remove')}
                   onClick={() => removeVirtual(index)}
                   className="p-1 rounded hover:bg-[var(--color-surface-500)] text-[var(--color-accent-red)]"
                   tooltip={t('io.remove')}
@@ -417,7 +417,7 @@ function IOTable({ items, onUpdate, onRemove, onMakeVirtual, section, boardIo, b
             />
           </div>
           <div className="col-span-1 flex justify-end">
-            <Button variant="bare"
+            <Button variant="bare" aria-label={t('io.remove')}
               onClick={() => onRemove(index)}
               className="p-1 rounded hover:bg-[var(--color-surface-500)] text-[var(--color-accent-red)]"
               tooltip={t('io.remove')}

@@ -651,7 +651,7 @@ export default function LDEditor({ model, onChange, readOnly = false }: LDEditor
                   {!readOnly && (
                     <div className="absolute -top-2 -right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                       {/* Add row button */}
-                      <Button variant="bare" tooltip={t('ld.addParallelBranch')}
+                      <Button variant="bare" aria-label={t('ld.addParallelBranch')} tooltip={t('ld.addParallelBranch')}
                           onClick={() => handleAddRow(rung.id)}
                           className="p-1 rounded bg-[var(--color-accent-blue)] hover:opacity-90 text-[var(--color-on-accent)]"
                         >
@@ -660,7 +660,7 @@ export default function LDEditor({ model, onChange, readOnly = false }: LDEditor
 
                       {/* Move up */}
                       {idx > 0 && (
-                        <Button variant="bare" tooltip={t('ld.moveRungUp')}
+                        <Button variant="bare" aria-label={t('ld.moveRungUp')} tooltip={t('ld.moveRungUp')}
                             onClick={() => handleMoveRungUp(rung.id)}
                           className="p-1 rounded bg-[var(--visual-panel)] border border-[var(--border-color)] hover:bg-[color-mix(in_srgb,var(--text-primary)_12%,transparent)] text-[var(--text-primary)]"
                           >
@@ -670,7 +670,7 @@ export default function LDEditor({ model, onChange, readOnly = false }: LDEditor
 
                       {/* Move down */}
                       {idx < normalizedModel.rungs.length - 1 && (
-                        <Button variant="bare" tooltip={t('ld.moveRungDown')}
+                        <Button variant="bare" aria-label={t('ld.moveRungDown')} tooltip={t('ld.moveRungDown')}
                             onClick={() => handleMoveRungDown(rung.id)}
                           className="p-1 rounded bg-[var(--visual-panel)] border border-[var(--border-color)] hover:bg-[color-mix(in_srgb,var(--text-primary)_12%,transparent)] text-[var(--text-primary)]"
                           >
@@ -679,7 +679,7 @@ export default function LDEditor({ model, onChange, readOnly = false }: LDEditor
                       )}
 
                       {/* Delete button */}
-                      <Button variant="bare" tooltip={t('ld.deleteRung')}
+                      <Button variant="bare" aria-label={t('ld.deleteRung')} tooltip={t('ld.deleteRung')}
                           onClick={() => handleDeleteRung(rung.id)}
                           className="focus-ring p-1 rounded bg-[var(--color-accent-red)] hover:opacity-90 text-[var(--color-on-accent)]"
                         >

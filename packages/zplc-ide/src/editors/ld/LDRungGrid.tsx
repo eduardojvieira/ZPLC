@@ -918,7 +918,7 @@ export default function LDRungGrid({
 
         {/* Delete button overlay for selected element */}
         {!readOnly && selectedElementPosition && onElementDelete && (
-          <Button variant="bare" tooltip={t('editors.ld.deleteElement')}
+          <Button variant="bare" aria-label={t('editors.ld.deleteElement')} tooltip={t('editors.ld.deleteElement')}
               onClick={(e) => {
                 e.stopPropagation();
                 onElementDelete(selectedElementPosition.element);
