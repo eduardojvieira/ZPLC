@@ -1633,7 +1633,7 @@ static size_t put_decimal(char *out, uint16_t value) {
 static size_t put_text_at(char *out, const char *text) {
   size_t n = strlen(text);
 
-  memcpy(out, text, n);
+  memcpy(out, text, n + 1U); /* the terminator goes too; the next piece overwrites it */
   return n;
 }
 
