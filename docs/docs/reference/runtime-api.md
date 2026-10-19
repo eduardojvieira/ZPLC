@@ -4308,6 +4308,34 @@ zplc_hal_result_t zplc_io_sample(zplc_io_samples_t *samples, const zplc_io_ops_t
 | `samples` | `zplc_io_samples_t *` | — |
 | `ops` | `const zplc_io_ops_t *` | — |
 
+#### `zplc_io_unsupported_get`
+
+```c
+void zplc_io_unsupported_get(zplc_io_unsupported_t *out);
+```
+
+**Source summary:** The channels counted so far. Each channel is counted once, however many scans it fails in.
+
+**Parameters**
+
+| Name | Type | Source description |
+| --- | --- | --- |
+| `out` | `zplc_io_unsupported_t *` | — |
+
+#### `zplc_io_unsupported_reset`
+
+```c
+void zplc_io_unsupported_reset(void);
+```
+
+**Source summary:** Forget the counts (a test; a board's table does not change while it runs).
+
+**Parameters**
+
+| Name | Type | Source description |
+| --- | --- | --- |
+| — | — | None. |
+
 #### `zplc_io_apply_samples`
 
 ```c
@@ -4422,6 +4450,7 @@ int zplc_io_reset_image(void);
 | `ZPLC_IO_MAX_CHANNELS` | Struct | The physical inputs of one scan, kept by table index until they are latched into the image. |
 | `ZPLC_IO_MAX_CHANNELS` | Struct | The values the physical outputs are given at the end of one scan, by table index. |
 | `read` | Struct | Replaces the HAL access of the helpers below: a test makes a channel fail. NULL members, and a NULL table, are the HAL (zplc_io_read_channel, zplc_io_write_channel). |
+| `inputs` | Struct | How many channels of the board's I/O table the build could not serve (IO-007): an operation the board cannot perform answers ZPLC_HAL_NOT_IMPL, the scan goes on, and the channel is counted here instead of being forgotten. The ports report the numbers to the user (device status, the `zplc status` command, and a log event of the device link that Studio shows). |
 
 ### Constants and macros
 

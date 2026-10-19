@@ -71,6 +71,8 @@ typedef struct {
   uint16_t break_pc;
   uint8_t fault_task;
   uint16_t fault_code;
+  uint16_t io_unsupported_inputs;  /**< zplc_io_unsupported_get(): input channels the board cannot serve (IO-007) */
+  uint16_t io_unsupported_outputs; /**< output channels the board cannot serve (IO-007); both are log events, not wire fields */
 } zplc_proto_status_t;
 
 typedef struct {
@@ -267,6 +269,7 @@ struct zplc_proto_dev {
   zplc_proto_status_t previous;
   uint8_t have_previous;
   uint8_t known_forces;
+  uint32_t reported_unsupported; /**< the count of unsupported channels last put on the log events (IO-007) */
 
   /* the response being built: a handler writes its fields straight into it, so no handler needs stack for a frame */
   uint8_t tx[ZPLC_PROTO_FRAME_MAX];

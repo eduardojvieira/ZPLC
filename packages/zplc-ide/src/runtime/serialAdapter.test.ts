@@ -138,6 +138,43 @@ describe('SerialAdapter program control', () => {
     expect((status as unknown as { warnings?: string[] }).warnings).toEqual(['mqtt_tls_verify_off']);
   });
 
+  it('tells the user once when the board cannot serve some of its I/O channels (IO-007)', async () => {
+    const adapter = new SerialAdapter();
+    const lines: string[] = [];
+    adapter.setEventHandlers({ onSerialData: (line) => lines.push(line) });
+    let io = { inputs: 1, outputs: 2 };
+    (adapter as unknown as { sendJsonCommand: () => Promise<unknown> }).sendJsonCommand = async () => ({
+      state: 'running',
+      uptime_ms: 1200,
+      warnings: ['io_unsupported'],
+      io_unsupported: io,
+      stats: { cycles: 12 },
+      opi: [0],
+    });
+
+    await adapter.getStatus();
+    await adapter.getStatus();
+    expect(lines).toHaveLength(1);
+    expect(lines[0]).toContain('1 input');
+    expect(lines[0]).toContain('2 output');
+
+    io = { inputs: 1, outputs: 3 };
+    await adapter.getStatus();
+    expect(lines).toHaveLength(2);
+
+    io = { inputs: 0, outputs: 0 };
+    await adapter.getStatus();
+    expect(lines).toHaveLength(2);
+  });
+
+  it('rejects a status whose I/O report is not a pair of counts (IO-007)', async () => {
+    const adapter = new SerialAdapter();
+    (adapter as unknown as { sendJsonCommand: () => Promise<unknown> }).sendJsonCommand = async () => ({
+      state: 'running', uptime_ms: 1, stats: { cycles: 1 }, opi: [0], io_unsupported: { inputs: -1, outputs: 0 },
+    });
+    await expect(adapter.getStatus()).rejects.toThrow('Invalid ZPLC status response');
+  });
+
   it('accepts only a complete, internally consistent force-list response', async () => {
     const adapter = new SerialAdapter();
     const internals = adapter as unknown as { _connected: boolean; sendJsonCommand: () => Promise<unknown> };

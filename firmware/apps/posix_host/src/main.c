@@ -124,6 +124,23 @@ int main(int argc, char **argv)
         if (comm_rc != 0) {
             (void)fprintf(stderr, "[native-sim] the communication blocks are not available: %d\n", comm_rc);
         }
+        {
+            zplc_host_endpoints_t endpoints;
+            char reason[160];
+
+            zplc_host_comm_endpoints(&endpoints);
+            if (endpoints.state == ZPLC_HOST_ENDPOINTS_RUNNING) {
+                (void)snprintf(reason, sizeof(reason),
+                               "Modbus TCP and MQTT blocks reach simulated endpoints on 127.0.0.1 (Modbus %u, MQTT %u); "
+                               "cloud blocks are unavailable in simulation",
+                               (unsigned)endpoints.modbus_port, (unsigned)endpoints.mqtt_port);
+                zplc_native_runtime_set_endpoints("degraded", reason);
+            } else if (endpoints.state == ZPLC_HOST_ENDPOINTS_FAILED) {
+                zplc_native_runtime_set_endpoints(
+                    "unavailable", "the simulated Modbus and MQTT endpoints could not start; "
+                                   "every communication block reports unavailable in simulation");
+            }
+        }
     }
 #endif
 

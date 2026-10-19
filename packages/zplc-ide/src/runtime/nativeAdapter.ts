@@ -407,6 +407,17 @@ export class NativeAdapter implements IDebugAdapter {
     this._connected = true;
     this.bindEvents(generation);
     this.setState('idle');
+    this.reportCommunicationEndpoints(capabilityProfile);
+  }
+
+  /** COM-009: the console says what the communication blocks of this simulation can reach, or that they reach nothing. */
+  private reportCommunicationEndpoints(profile: NativeCapabilityProfile): void {
+    const endpoints = profile.features.find((feature) => feature.name === 'communication-endpoints');
+    if (endpoints === undefined) return;
+    const text = endpoints.status === 'unavailable'
+      ? `Simulation endpoints are unavailable: ${endpoints.reason ?? 'they did not start'}`
+      : `Simulation ${endpoints.reason ?? 'endpoints are running'}`;
+    this.events.onSerialData?.(text);
   }
 
   async disconnect(): Promise<void> {

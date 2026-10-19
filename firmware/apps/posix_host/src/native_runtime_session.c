@@ -1434,6 +1434,21 @@ static int format_error_response(const char *id,
                     message);
 }
 
+/* COM-009: what the loopback endpoints of this session are, told in the hello so that Studio can show it. */
+static char s_endpoints_feature[320];
+
+void zplc_native_runtime_set_endpoints(const char *status, const char *reason)
+{
+    if (status == NULL || status[0] == '\0') {
+        s_endpoints_feature[0] = '\0';
+        return;
+    }
+    (void)snprintf(s_endpoints_feature, sizeof(s_endpoints_feature),
+                   ",{\"name\":\"communication-endpoints\",\"status\":\"%s\"%s%s%s}", status,
+                   reason != NULL ? ",\"reason\":\"" : "", reason != NULL ? reason : "",
+                   reason != NULL ? "\"" : "");
+}
+
 static int handle_session_hello(const zplc_native_request_t *request,
                                 char *response,
                                 size_t response_size)
@@ -1459,13 +1474,14 @@ static int handle_session_hello(const zplc_native_request_t *request,
         "{\"name\":\"simulation-inputs\",\"status\":\"supported\"},"
         "{\"name\":\"tasks\",\"status\":\"degraded\","
         "\"reason\":\"POSIX host supports only homogeneous cyclic task sets; multi-rate, event, and Zephyr scheduling remain unavailable\","
-        "\"recommended_action\":\"Use hardware session for authoritative multi-task scheduling\"}]}}}",
+        "\"recommended_action\":\"Use hardware session for authoritative multi-task scheduling\"}%s]}}}",
         request->id,
         ZPLC_NATIVE_PROTOCOL_VERSION,
         ZPLC_NATIVE_RUNTIME_KIND,
         zplc_core_version(),
         (unsigned)ZPLC_DRAFT_COUNTER,
-        build);
+        build,
+        s_endpoints_feature);
 }
 
 static int handle_program_load(zplc_native_runtime_session_t *session,

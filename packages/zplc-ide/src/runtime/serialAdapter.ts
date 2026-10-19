@@ -47,7 +47,7 @@ import { parsePeekBytes, groupVariablesForBatchPeek, extractVariableBytes, parse
 import type { MpeekRequest } from './peekParser';
 import { debugLog } from '../utils/debugLog';
 import { deriveHardwareDebugState } from './debugStatus';
-import { parseForcedValues, parseStatusInfo, requireForceCommandConfirmation } from './serialResponses';
+import { noteUnsupportedIo, parseForcedValues, parseStatusInfo, requireForceCommandConfirmation } from './serialResponses';
 import { normalizeSerialRuntimeSnapshot } from './runtimeSnapshot';
 import { joinDeviceIo, parseDeviceSystemInfo, type DeviceSystemInfo } from './deviceHandshake';
 
@@ -656,7 +656,7 @@ export class SerialAdapter implements IDebugAdapter {
    * Get detailed status information in JSON format
    */
   async getStatus(): Promise<StatusInfo> {
-    return parseStatusInfo(await this.sendJsonCommand('zplc status'));
+    return noteUnsupportedIo(this, parseStatusInfo(await this.sendJsonCommand('zplc status')), this.events.onSerialData);
   }
 
   async getCommunicationMap(): Promise<CommunicationMapEntry[]> {

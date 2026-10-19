@@ -129,6 +129,16 @@ which sizes it was made with:
 
 The process images are 4 KB each in every profile because the ISA fixes them.
 
+The communication blocks have suites of their own (COM-006). `mqtt_broker_double` runs the MQTT client of the controller
+(`zplc_mqtt.c`, as a board links it) and the handlers of `MQTT_CONNECT`, `MQTT_PUBLISH`, `MQTT_SUBSCRIBE`,
+`AZURE_C2D_RECV`, `AZURE_EG_PUB` and `SPB_REBIRTH` against a broker that is a thread of the test on the loopback interface
+of the network stack: success, no `CONNACK`, a refused connection, a lost session and a reset while busy. `comm_cloud_fb`
+and `comm_modbus_fb` run the handlers with a stand-in service, `modbus_client_tcp` the Modbus TCP client against a server
+written for the test. The provisioning blocks `AZURE_DPS_PROV` and `AWS_FLEET_PROV` are verified at the handler only. A
+double proves protocol behaviour, not acceptance by a real service. On the host, `test_host_loopback` shows the endpoints
+that a Studio session starts inside its runtime (COM-009), and `test_io_unsupported` shows that a channel the board cannot
+serve is counted and reported (IO-007).
+
 The runtime hardening of the firmware (RT-010 to RT-034) has its own suites:
 
 - `runtime_boot` runs a start-up plan in order, refuses a plan that starts a service before the runtime, and keeps

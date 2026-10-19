@@ -944,6 +944,7 @@ static void do_events_set(const request_t *r) {
   uint8_t *b = body_of(r->link->dev);
 
   r->link->event_mask = requested & all_event_bits();
+  r->link->dev->reported_unsupported = 0U; /* IO-007: a client that subscribes is told what the board cannot serve */
   zplc_put_u32_le(b, r->link->event_mask);
   respond(r->link, r->frame, (uint8_t)ZPLC_PROTO_ERR_OK, 4U);
 }
@@ -1613,6 +1614,51 @@ static int any_link_wants(zplc_proto_link_t *const *links, size_t count, uint32_
   return 0;
 }
 
+/* "3" for 3: the text of a warning is built without printf, as the engine has none. */
+static size_t put_decimal(char *out, uint16_t value) {
+  char digits[5];
+  size_t n = 0U;
+  size_t i;
+
+  do {
+    digits[n++] = (char)('0' + (value % 10U));
+    value = (uint16_t)(value / 10U);
+  } while (value != 0U);
+  for (i = 0U; i < n; i++) {
+    out[i] = digits[n - 1U - i];
+  }
+  return n;
+}
+
+static size_t put_text_at(char *out, const char *text) {
+  size_t n = strlen(text);
+
+  memcpy(out, text, n + 1U); /* the terminator goes too; the next piece overwrites it */
+  return n;
+}
+
+/* IO-007: an I/O operation the board cannot perform is skipped by the scan; the user is told, once per change. */
+static void report_unsupported_io(zplc_proto_dev_t *dev, const zplc_proto_status_t *now) {
+  const uint32_t total = (uint32_t)now->io_unsupported_inputs + (uint32_t)now->io_unsupported_outputs;
+  char text[96]; /* 44 + 16 + 15 + 1 at the largest counts */
+  size_t n = 0U;
+
+  if (total == dev->reported_unsupported) {
+    return;
+  }
+  dev->reported_unsupported = total;
+  if (total == 0U) {
+    return;
+  }
+  n += put_text_at(text + n, "I/O not supported by this board, skipped: ");
+  n += put_decimal(text + n, now->io_unsupported_inputs);
+  n += put_text_at(text + n, " input(s), ");
+  n += put_decimal(text + n, now->io_unsupported_outputs);
+  n += put_text_at(text + n, " output(s)");
+  text[n] = '\0';
+  zplc_proto_log(dev, ZPLC_PROTO_LOG_LEVEL_WARNING, text);
+}
+
 static void produce_status_events(zplc_proto_dev_t *dev) {
   zplc_proto_status_t now;
   uint8_t data[8];
@@ -1646,6 +1692,7 @@ static void produce_status_events(zplc_proto_dev_t *dev) {
   } else {
     dev->known_forces = now.forces;
   }
+  report_unsupported_io(dev, &now);
   dev->previous = now;
   dev->have_previous = 1U;
 }
@@ -1743,7 +1790,7 @@ void zplc_proto_dev_service(zplc_proto_dev_t *dev, zplc_proto_link_t *const *lin
   /* telemetry the runtime does not push: the engine reads it, here, and not on the scan */
   if (any_link_wants(links, link_count,
                      ZPLC_PROTO_EVTMASK_STATUS | ZPLC_PROTO_EVTMASK_FAULT | ZPLC_PROTO_EVTMASK_BREAKPOINT |
-                         ZPLC_PROTO_EVTMASK_FORCE)) {
+                         ZPLC_PROTO_EVTMASK_FORCE | ZPLC_PROTO_EVTMASK_LOG)) {
     produce_status_events(dev);
   }
   if (dev->watch_link != NULL && (dev->watch_link->event_mask & ZPLC_PROTO_EVTMASK_WATCH) != 0U) {

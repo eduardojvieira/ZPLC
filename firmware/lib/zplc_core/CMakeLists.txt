@@ -152,6 +152,7 @@ if(NOT WIN32)
         ${ZPLC_HOST_COMM_DIR}/src/host_kernel_shim.c
         ${ZPLC_HOST_COMM_DIR}/src/host_modbus_client.c
         ${ZPLC_HOST_COMM_DIR}/src/host_mqtt_fb.c
+        ${ZPLC_HOST_COMM_DIR}/src/loopback_endpoints.c
         ${CMAKE_CURRENT_SOURCE_DIR}/../../app/src/zplc_comm_modbus_handler.c
         ${CMAKE_CURRENT_SOURCE_DIR}/../../app/src/zplc_comm_mqtt_handler.c
         ${CMAKE_CURRENT_SOURCE_DIR}/../../app/src/zplc_modbus_tcp.c
@@ -599,6 +600,28 @@ target_compile_definitions(test_safe_state PRIVATE
 )
 
 add_test(NAME test_safe_state COMMAND test_safe_state)
+
+# Test: an I/O operation a board cannot perform is counted and reported, not swallowed (IO-007). It brings its own
+# board. Also run under the sanitizers.
+add_executable(test_io_unsupported
+    tests/test_io_unsupported.c
+    src/core/zplc_sched_core.c
+    src/core/zplc_exchange.c
+    src/core/zplc_core.c
+    src/core/zplc_loader.c
+    src/core/zplc_comm_dispatch.c
+)
+
+target_include_directories(test_io_unsupported PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/tests/include
+)
+
+target_compile_definitions(test_io_unsupported PRIVATE
+    ZPLC_CORE_VERSION_STR="${ZPLC_CORE_VERSION_STR}"
+)
+
+add_test(NAME test_io_unsupported COMMAND test_io_unsupported)
 
 # Test: the exchange between the scan and the threads outside it: write queue, force-aware latch, published
 # snapshot, and a scanner with readers and writers on threads (RT-010, RT-011, RT-012). Also run under the sanitizers.
@@ -1104,13 +1127,24 @@ if(NOT WIN32)
     add_executable(test_host_comm
         tests/test_host_comm.c
         ${ZPLC_HOST_COMM_SOURCES}
-        ${ZPLC_HOST_COMM_DIR}/src/loopback_endpoints.c
     )
     target_include_directories(test_host_comm PRIVATE ${ZPLC_HOST_COMM_INCLUDES} ${CMAKE_CURRENT_SOURCE_DIR}/include)
     target_link_libraries(test_host_comm PRIVATE zplc_core Threads::Threads)
     add_test(NAME test_host_comm COMMAND test_host_comm)
     set_tests_properties(test_host_comm PROPERTIES TIMEOUT 180)
     add_dependencies(check test_host_comm)
+
+    # The endpoints a Studio session starts inside its runtime, and what happens when one cannot start (COM-009).
+    add_executable(test_host_loopback
+        tests/test_host_loopback.c
+        ${ZPLC_HOST_COMM_SOURCES}
+    )
+    target_include_directories(test_host_loopback PRIVATE ${ZPLC_HOST_COMM_INCLUDES} ${CMAKE_CURRENT_SOURCE_DIR}/include)
+    target_link_libraries(test_host_loopback PRIVATE zplc_core Threads::Threads)
+    add_test(NAME test_host_loopback COMMAND test_host_loopback)
+    add_test(NAME test_host_loopback_busy COMMAND test_host_loopback busy)
+    set_tests_properties(test_host_loopback test_host_loopback_busy PROPERTIES TIMEOUT 120)
+    add_dependencies(check test_host_loopback)
 endif()
 
 # The tests above join the check target without touching its list

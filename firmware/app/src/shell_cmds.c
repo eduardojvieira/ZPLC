@@ -653,9 +653,12 @@ static void print_program_refusal(const struct shell *sh, int code,
  * ============================================================================
  */
 
+static bool io_unsupported_any(const zplc_io_unsupported_t *u) { return u->inputs != 0U || u->outputs != 0U; }
+
 static int cmd_sched_status(const struct shell *sh, size_t argc, char **argv) {
   ARG_UNUSED(argc);
   bool json = (argc > 1 && strcmp(argv[1], "--json") == 0);
+  zplc_io_unsupported_t io_unsupported;
 
   zplc_sched_stats_t stats;
   zplc_sched_get_stats(&stats);
@@ -705,9 +708,14 @@ static int cmd_sched_status(const struct shell *sh, size_t argc, char **argv) {
                   zplc_reset_cause_name(zplc_failsafe_report()->cause));
     /* COM-014: a standing warning, not an event: present for as long as
      * the session is configured to skip the certificate check. */
-    shell_fprintf(sh, SHELL_NORMAL, "\"warnings\":[%s],",
-                  zplc_config_mqtt_tls_verify_off() ? "\"mqtt_tls_verify_off\""
-                                                    : "");
+    zplc_io_unsupported_get(&io_unsupported);
+    shell_fprintf(sh, SHELL_NORMAL, "\"warnings\":[%s%s%s],",
+                  zplc_config_mqtt_tls_verify_off() ? "\"mqtt_tls_verify_off\"" : "",
+                  (zplc_config_mqtt_tls_verify_off() && io_unsupported_any(&io_unsupported)) ? "," : "",
+                  io_unsupported_any(&io_unsupported) ? "\"io_unsupported\"" : "");
+    /* IO-007: how many channels, next to the warning that names them */
+    shell_fprintf(sh, SHELL_NORMAL, "\"io_unsupported\":{\"inputs\":%u,\"outputs\":%u},",
+                  (unsigned int)io_unsupported.inputs, (unsigned int)io_unsupported.outputs);
     shell_fprintf(sh, SHELL_NORMAL, "\"stats\":");
     JSON_OBJ_START(sh);
     JSON_UINT(sh, "cycles", stats.total_cycles, true);
@@ -761,6 +769,11 @@ static int cmd_sched_status(const struct shell *sh, size_t argc, char **argv) {
   if (zplc_config_mqtt_tls_verify_off()) {
     shell_warn(sh, "  WARNING: MQTT tls-verify: OFF (the broker certificate "
                    "is not checked)");
+  }
+  zplc_io_unsupported_get(&io_unsupported);
+  if (io_unsupported_any(&io_unsupported)) {
+    shell_warn(sh, "  WARNING: I/O not supported by this board, skipped: %u input(s), %u output(s)",
+               (unsigned int)io_unsupported.inputs, (unsigned int)io_unsupported.outputs);
   }
 #ifdef CONFIG_ZPLC_RETAIN_PERSIST
   {

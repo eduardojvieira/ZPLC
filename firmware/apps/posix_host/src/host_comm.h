@@ -17,6 +17,8 @@
 
 #include <stdint.h>
 
+#include "loopback_endpoints.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -53,9 +55,42 @@ int zplc_host_mqtt_start(const zplc_host_mqtt_config_t *config);
  */
 int zplc_host_comm_register(void);
 
+/** Whether the loopback endpoints of this process were asked for, and whether they run (COM-009). */
+typedef enum {
+  ZPLC_HOST_ENDPOINTS_OFF = 0, /**< not asked for: a broker named by the environment, or none */
+  ZPLC_HOST_ENDPOINTS_RUNNING, /**< a Modbus TCP server and an MQTT broker listen on 127.0.0.1 */
+  ZPLC_HOST_ENDPOINTS_FAILED   /**< asked for and could not start: every block answers "unavailable" */
+} zplc_host_endpoints_state_t;
+
+typedef struct {
+  zplc_host_endpoints_state_t state;
+  uint16_t modbus_port;
+  uint16_t mqtt_port;
+} zplc_host_endpoints_t;
+
+/**
+ * Start the Modbus TCP server and the MQTT broker of the simulation inside this process (0: any free port), point
+ * the MQTT client at the broker and make every Modbus TCP request, whatever address the program names, reach the
+ * server: a simulation has no plant to reach. They end with the process, so with the session. When one cannot start
+ * the other is stopped too and all twelve blocks answer "unavailable in simulation"; nothing reports success without
+ * acting. Returns 0 or a negative errno.
+ */
+int zplc_host_comm_start_loopback(uint16_t modbus_port, uint16_t mqtt_port);
+
+/** What the endpoints are now, for the hello of the session. */
+void zplc_host_comm_endpoints(zplc_host_endpoints_t *out);
+
+/** The doubles behind the endpoints, for a test that looks at what they were given; NULL unless running. */
+zplc_loopback_modbus_t *zplc_host_comm_loopback_modbus(void);
+zplc_loopback_mqtt_t *zplc_host_comm_loopback_mqtt(void);
+
+/** Every Modbus TCP request goes to 127.0.0.1:`port` while `port` is not 0 (the MQTT client is not affected). */
+void zplc_host_modbus_redirect(uint16_t port);
+
 /**
  * Register what the environment of the session asks for: ZPLC_NATIVE_COMM=1 turns the blocks on,
  * ZPLC_NATIVE_MODBUS_TIMEOUT_MS sets the Modbus timeout and ZPLC_NATIVE_MQTT_BROKER=host:port names the broker.
+ * ZPLC_NATIVE_LOOPBACK=1 (what Studio sets) starts the loopback endpoints instead, unless a broker is named.
  * Returns 0, also when nothing was asked for.
  */
 int zplc_host_comm_init_from_environment(void);

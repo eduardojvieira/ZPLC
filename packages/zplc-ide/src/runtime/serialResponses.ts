@@ -48,6 +48,13 @@ export function parseStatusInfo(value: unknown): StatusInfo {
     }
   }
 
+  if (value.io_unsupported !== undefined
+    && (!isRecord(value.io_unsupported)
+      || !isNonNegativeInteger(value.io_unsupported.inputs)
+      || !isNonNegativeInteger(value.io_unsupported.outputs))) {
+    throw new Error('Invalid ZPLC status response');
+  }
+
   if (value.vm !== undefined) {
     if (!isRecord(value.vm)
       || !isNonNegativeInteger(value.vm.pc)
@@ -104,4 +111,22 @@ export function parseForcedValues(value: unknown): WatchForceEntry[] {
       state: WATCH_FORCE_STATE.FORCED,
     };
   });
+}
+
+const reportedUnsupportedIo = new WeakMap<object, string>();
+
+/**
+ * IO-007: an I/O operation the board cannot perform is skipped by the scan; the status says how many channels
+ * (`io_unsupported`) and the console is told once for each change of the report, never while it is empty.
+ */
+export function noteUnsupportedIo(owner: object, status: StatusInfo, emit: ((line: string) => void) | undefined): StatusInfo {
+  const report = (status as StatusInfo & { io_unsupported?: { inputs: number; outputs: number } }).io_unsupported;
+  const inputs = report?.inputs ?? 0;
+  const outputs = report?.outputs ?? 0;
+  const key = inputs + outputs === 0 ? '' : `${inputs}/${outputs}`;
+  if (key !== (reportedUnsupportedIo.get(owner) ?? '')) {
+    reportedUnsupportedIo.set(owner, key);
+    if (key !== '') emit?.(`WARN: I/O not supported by this board, skipped: ${inputs} input(s), ${outputs} output(s)\n`);
+  }
+  return status;
 }

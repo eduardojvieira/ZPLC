@@ -162,6 +162,12 @@ uint32_t zplc_native_runtime_session_poll_timeout_ms(
 int zplc_native_runtime_session_should_exit(
     const zplc_native_runtime_session_t *session);
 
+/**
+ * Tell the hello of the session what the communication endpoints are (COM-009): status "supported", "degraded" or
+ * "unavailable", and a reason with no quotes or backslashes. NULL status leaves the feature out (the default).
+ */
+void zplc_native_runtime_set_endpoints(const char *status, const char *reason);
+
 #ifdef __cplusplus
 }
 #endif

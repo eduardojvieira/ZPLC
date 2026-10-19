@@ -465,6 +465,23 @@ typedef struct {
  */
 zplc_hal_result_t zplc_io_sample(zplc_io_samples_t *samples, const zplc_io_ops_t *ops);
 
+/**
+ * @brief How many channels of the board's I/O table the build could not serve (IO-007): an operation the board
+ *        cannot perform answers ZPLC_HAL_NOT_IMPL, the scan goes on, and the channel is counted here instead of
+ *        being forgotten. The ports report the numbers to the user (device status, the `zplc status` command, and
+ *        a log event of the device link that Studio shows).
+ */
+typedef struct {
+  uint16_t inputs;  /**< input channels that answered "not supported" when sampled */
+  uint16_t outputs; /**< output channels that answered "not supported" when written or driven to their safe level */
+} zplc_io_unsupported_t;
+
+/** @brief The channels counted so far. Each channel is counted once, however many scans it fails in. */
+void zplc_io_unsupported_get(zplc_io_unsupported_t *out);
+
+/** @brief Forget the counts (a test; a board's table does not change while it runs). */
+void zplc_io_unsupported_reset(void);
+
 /** @brief Phase 2, image lock held: write the channels that answered into the input image. */
 void zplc_io_apply_samples(const zplc_io_samples_t *samples);
 

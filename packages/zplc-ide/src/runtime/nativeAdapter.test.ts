@@ -182,6 +182,28 @@ describe('NativeAdapter', () => {
     expect(startSession).toHaveBeenCalledTimes(1);
   });
 
+  it('tells the console what the simulated communication endpoints are, or that they did not start (COM-009)', async () => {
+    const hello = (status: 'degraded' | 'unavailable', reason: string) => async () => ({
+      protocol_version: '1.0', runtime_kind: 'native-posix', runtime_version: '1.5.0',
+      capability_profile: { profile_id: 'native-posix-mvp', features: [{ name: 'communication-endpoints', status, reason }] },
+    } as never);
+    for (const [status, reason, expected] of [
+      ['degraded', 'endpoints on 127.0.0.1 (Modbus 1502, MQTT 1883)', 'Simulation endpoints on 127.0.0.1 (Modbus 1502, MQTT 1883)'],
+      ['unavailable', 'every block reports unavailable in simulation', 'Simulation endpoints are unavailable: every block reports unavailable in simulation'],
+    ] as const) {
+      const adapter = new NativeAdapter({ startSession: hello(status, reason), stopSession, request });
+      const lines: string[] = [];
+      adapter.setEventHandlers({ onSerialData: (line) => lines.push(line) });
+      await adapter.connect();
+      expect(lines).toEqual([expected]);
+    }
+    const quiet = new NativeAdapter({ startSession, stopSession, request });
+    const none: string[] = [];
+    quiet.setEventHandlers({ onSerialData: (line) => none.push(line) });
+    await quiet.connect();
+    expect(none).toEqual([]);
+  });
+
   it('rejects an invalid native hello, stops the child, and stays disconnected', async () => {
     const localStop = mock(async () => undefined);
     const adapter = new NativeAdapter({

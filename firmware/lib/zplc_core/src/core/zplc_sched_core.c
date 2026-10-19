@@ -892,6 +892,35 @@ static int sample_is_valid(const zplc_io_samples_t *samples, size_t index) {
   return (samples->valid[index / 8U] & (1U << (index % 8U))) != 0U;
 }
 
+/* IO-007: the channels that answered "not supported", one bit per table index and direction. A bit is only ever set,
+ * so the scan thread and the failsafe path may both note a channel without a lock; the count is taken from the bits. */
+static volatile uint8_t unsupported_in[(ZPLC_IO_MAX_CHANNELS + 7U) / 8U];
+static volatile uint8_t unsupported_out[(ZPLC_IO_MAX_CHANNELS + 7U) / 8U];
+
+static void note_unsupported(volatile uint8_t *bits, size_t index) {
+  bits[index / 8U] = (uint8_t)(bits[index / 8U] | (1U << (index % 8U)));
+}
+
+static uint16_t count_unsupported(const volatile uint8_t *bits) {
+  uint16_t total = 0U;
+  size_t index;
+
+  for (index = 0U; index < ZPLC_IO_MAX_CHANNELS; index++) {
+    total = (uint16_t)(total + ((bits[index / 8U] >> (index % 8U)) & 1U));
+  }
+  return total;
+}
+
+void zplc_io_unsupported_get(zplc_io_unsupported_t *out) {
+  out->inputs = count_unsupported(unsupported_in);
+  out->outputs = count_unsupported(unsupported_out);
+}
+
+void zplc_io_unsupported_reset(void) {
+  memset((void *)unsupported_in, 0, sizeof(unsupported_in));
+  memset((void *)unsupported_out, 0, sizeof(unsupported_out));
+}
+
 zplc_hal_result_t zplc_io_sample(zplc_io_samples_t *samples, const zplc_io_ops_t *ops) {
   const size_t count = zplc_io_channel_count();
   size_t index;
@@ -915,6 +944,8 @@ zplc_hal_result_t zplc_io_sample(zplc_io_samples_t *samples, const zplc_io_ops_t
     if (result == ZPLC_HAL_OK) {
       samples->value[index] = value;
       sample_mark_valid(samples, index);
+    } else {
+      note_unsupported(unsupported_in, index);
     }
   }
   return ZPLC_HAL_OK;
@@ -986,6 +1017,9 @@ zplc_hal_result_t zplc_io_write_outputs(const zplc_io_outputs_t *outputs, const 
     if (result != ZPLC_HAL_OK && result != ZPLC_HAL_NOT_IMPL) {
       return result;
     }
+    if (result == ZPLC_HAL_NOT_IMPL) {
+      note_unsupported(unsupported_out, index);
+    }
   }
   return ZPLC_HAL_OK;
 }
@@ -1012,6 +1046,9 @@ zplc_hal_result_t zplc_io_drive_safe(const zplc_io_ops_t *ops) {
     result = (ops != NULL && ops->write != NULL) ? ops->write(channel, level) : zplc_io_write_channel(channel, level);
     if (result != ZPLC_HAL_OK && result != ZPLC_HAL_NOT_IMPL && first_error == ZPLC_HAL_OK) {
       first_error = result;
+    }
+    if (result == ZPLC_HAL_NOT_IMPL) {
+      note_unsupported(unsupported_out, index);
     }
   }
   return first_error;

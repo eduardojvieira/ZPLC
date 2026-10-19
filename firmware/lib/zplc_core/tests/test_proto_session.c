@@ -101,6 +101,9 @@ typedef struct {
   /* exchange binding */
   int use_exchange;
   char config_key[32];
+  /* IO-007 */
+  uint16_t io_unsupported_inputs;
+  uint16_t io_unsupported_outputs;
 } fake_t;
 
 static fake_t fake;
@@ -168,6 +171,8 @@ static int port_status(void *c, zplc_proto_status_t *s) {
   s->uptime_ms = fake.now;
   s->break_hit = fake.break_hit;
   s->break_pc = fake.break_pc;
+  s->io_unsupported_inputs = fake.io_unsupported_inputs;
+  s->io_unsupported_outputs = fake.io_unsupported_outputs;
   return 0;
 }
 
@@ -1552,6 +1557,61 @@ static void test_a_device_with_a_key_accepts_only_signed_programs(void) {
   CHECK(transfer(&c, good->message, good->message_length, NULL) == 0, "and unsigned programs are accepted again");
 }
 
+/* ---- IO-007: a channel the board cannot serve reaches the user as a warning on the log events ---- */
+static unsigned unsupported_warnings(const client_t *c, char *text, size_t text_size) {
+  unsigned n = 0U;
+  size_t i;
+
+  for (i = 0U; i < c->seen_count; i++) {
+    const seen_t *e = &c->seen[i];
+
+    if (e->kind == ZPLC_PROTO_KIND_EVENT && e->message == ZPLC_PROTO_EVT_LOG &&
+        e->payload[0] == ZPLC_PROTO_LOG_LEVEL_WARNING && e->length > 1U) {
+      const size_t length = e->length - 1U < text_size - 1U ? e->length - 1U : text_size - 1U;
+
+      memcpy(text, e->payload + 1U, length);
+      text[length] = '\0';
+      n++;
+    }
+  }
+  return n;
+}
+
+static void test_unsupported_io_is_reported(void) {
+  client_t c;
+  zplc_proto_link_t *links[1];
+  uint8_t mask[4];
+  char text[ZPLC_PROTO_EVENT_PAYLOAD_MAX];
+
+  reset_world(&ops);
+  client_init(&c, ZPLC_PROTO_TRANSPORT_SERIAL);
+  links[0] = &c.link;
+  zplc_put_u32_le(mask, ZPLC_PROTO_EVTMASK_LOG);
+  CHECK(ask(&c, ZPLC_PROTO_MSG_EVENTS_SET, mask, 4U) == 0, "log events are asked for");
+  zplc_proto_dev_service(&dev, links, 1U);
+  client_forget(&c);
+  CHECK(unsupported_warnings(&c, text, sizeof(text)) == 0U, "a board that serves every channel says nothing");
+
+  fake.io_unsupported_inputs = 1U;
+  fake.io_unsupported_outputs = 2U;
+  zplc_proto_dev_service(&dev, links, 1U);
+  zplc_proto_dev_service(&dev, links, 1U);
+  CHECK(unsupported_warnings(&c, text, sizeof(text)) == 1U, "unsupported channels are warned about once, not every poll");
+  CHECK(strstr(text, "1 input") != NULL && strstr(text, "2 output") != NULL,
+        "the warning says how many inputs and outputs the board cannot serve");
+
+  client_forget(&c);
+  fake.io_unsupported_outputs = 3U;
+  zplc_proto_dev_service(&dev, links, 1U);
+  CHECK(unsupported_warnings(&c, text, sizeof(text)) == 1U && strstr(text, "3 output") != NULL,
+        "a change in the count is warned about again");
+
+  client_forget(&c);
+  CHECK(ask(&c, ZPLC_PROTO_MSG_EVENTS_SET, mask, 4U) == 0, "a client that subscribes later");
+  zplc_proto_dev_service(&dev, links, 1U);
+  CHECK(unsupported_warnings(&c, text, sizeof(text)) == 1U, "is told too, without waiting for the count to change");
+}
+
 /* ---- COM-025: status, fault, breakpoint, force, log and watch events, a bounded queue that counts what it drops ---- */
 static void test_events(void) {
   client_t c;
@@ -1720,6 +1780,7 @@ int main(void) {
   test_a_network_session_authenticates_every_frame();
   test_a_device_with_a_key_accepts_only_signed_programs();
   test_events();
+  test_unsupported_io_is_reported();
   test_a_hostile_stream_does_nothing();
   printf("%d checks, %d failed\n", test_count, fail_count);
   return fail_count == 0 ? 0 : 1;
