@@ -5,7 +5,7 @@ import { checkKit, checkRepository, isGuarded, ratchetOffenders, violationsOf, t
 const at = (name: string): string => `packages/zplc-ide/src/components/${name}.tsx`;
 const rulesOf = (text: string, path = at('Sample')): Rule[] => violationsOf({ path, text }).map((violation) => violation.rule);
 
-describe('kit guard: what breaks the kit rules (UX-002 stopgap: the list of offenders is not empty)', () => {
+describe('kit guard: what breaks the kit rules (UX-002)', () => {
   it('finds a raw button, input, select and textarea', () => {
     expect(rulesOf('export const A = () => <div><button type="button">Go</button><input aria-label="n" /><select aria-label="s" /><textarea aria-label="t" /></div>'))
       .toEqual(['raw-button', 'raw-input', 'raw-select', 'raw-textarea']);
@@ -32,7 +32,7 @@ describe('kit guard: what breaks the kit rules (UX-002 stopgap: the list of offe
   });
 });
 
-describe('kit guard: focus and text size (UX-005, UX-006 stopgap)', () => {
+describe('kit guard: focus and text size (UX-005, UX-006)', () => {
   it('finds a focus utility that removes or replaces the one focus indicator', () => {
     expect(rulesOf('const c = "p-1 focus:outline-none focus:ring-2"')).toEqual(['focus-override']);
     expect(rulesOf('const c = "focus-visible:outline-2 focus-visible:outline-[var(--x)]"')).toEqual(['focus-override']);
@@ -48,7 +48,7 @@ describe('kit guard: focus and text size (UX-005, UX-006 stopgap)', () => {
   });
 });
 
-describe('kit guard: names (UX-026 stopgap)', () => {
+describe('kit guard: names (UX-026)', () => {
   it('finds a form control with no label, and accepts every way to associate one', () => {
     expect(rulesOf('const A = () => <input type="text" />')).toContain('unnamed-control');
     expect(rulesOf('const A = () => <input aria-label="Name" />')).not.toContain('unnamed-control');
@@ -74,7 +74,7 @@ describe('kit guard: names (UX-026 stopgap)', () => {
   });
 });
 
-describe('kit guard: the shrink-only list (UX-002 stopgap)', () => {
+describe('kit guard: the shrink-only list (UX-002)', () => {
   const entry = (rule: Rule, count: number): Offender => ({ file: at('Sample'), rule, count, requirement: 'UX-002', added: '2026-10-10', reason: 'not moved yet' });
   const sample = { path: at('Sample'), text: 'const A = () => <div><button type="button">A</button><button type="button">B</button></div>' };
 

@@ -51,7 +51,7 @@ describe('design tokens (UX-003)', () => {
   });
 });
 
-describe('type, shape and density tokens (UX-006, UX-007, UX-008 stopgap)', () => {
+describe('type, shape and density tokens (UX-006, UX-007, UX-008)', () => {
   const light = resolveTokens('light');
   const px = (name: string): number => Number.parseFloat(light[name]);
 
