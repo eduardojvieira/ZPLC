@@ -33,12 +33,16 @@ export interface LearnUiState {
 
 const memory = createWorkspaceMemory(typeof window === 'undefined' ? undefined : (() => { try { return window.localStorage; } catch { return undefined; } })());
 
+/** True where the main process owns the lesson workspaces: the desktop app, whose preload offers the one typed operation. */
+const managedWorkspaces = (): boolean => typeof window !== 'undefined' && window.electronAPI?.learnWorkspace !== undefined && window.electronAPI?.projectFiles !== undefined;
+
 /** The steps of opening a lesson workspace, over the store of the window and its recent folders. */
 const workspaceDeps = (): WorkspaceDeps => ({
   memory,
   recents: async () => { await useIDEStore.getState().refreshRecentProjects(); return useIDEStore.getState().recentProjects; },
   openRecent: (recentId) => useIDEStore.getState().openRecentProject(recentId),
   createWorkspace: (project) => useIDEStore.getState().copyExampleProjectToFolder(project),
+  ...(managedWorkspaces() ? { openManaged: (lessonId: string, project: string) => useIDEStore.getState().openLessonWorkspaceFolder(lessonId, project) } : {}),
   now: () => Date.now(),
   wait: (ms) => new Promise((resolve) => { window.setTimeout(resolve, ms); }),
 });
@@ -70,6 +74,7 @@ export const useLearnUi = create<LearnUiState>()((set, get) => ({
     const entry = LESSON_INDEX.lessons.find((lesson) => lesson.id === id);
     const { workspace } = get();
     const store = useIDEStore.getState();
+    const managed = managedWorkspaces();
     const recentId = memory.get(id);
     const loaded = entry ? loadProject(entry.starter.project) : null;
     const assets = entry ? loadProjectAssets(entry.starter.project) : null;
@@ -77,14 +82,14 @@ export const useLearnUi = create<LearnUiState>()((set, get) => ({
     const portable: Record<string, unknown> | null = loaded ? { ...loaded.zplcConfig } : null;
     if (portable) delete portable.$schema;
     const parsed = portable ? parseAndMigrateProject(portable) : null;
-    if (!entry || !workspace || workspace.lessonId !== id || workspace.session !== store.projectSession || !recentId || !store.directoryHandle || !assets || !parsed?.ok) return false;
+    if (!entry || !workspace || workspace.lessonId !== id || workspace.session !== store.projectSession || (!managed && !recentId) || !store.directoryHandle || !assets || !parsed?.ok) return false;
     try {
       await restoreStarterFiles(store.directoryHandle, assets);
       await writeProjectConfig(store.directoryHandle, parsed.project);
     } catch { return false; }
     // The editor reads the folder again: closing discards the buffers of the files that were just rewritten, which is what was confirmed.
     if (!store.closeProject({ discardUnsaved: true })) return false;
-    const reopened = await useIDEStore.getState().openRecentProject(recentId);
+    const reopened = managed ? (await useIDEStore.getState().openLessonWorkspaceFolder(id, entry.starter.project)) !== false : await useIDEStore.getState().openRecentProject(recentId!);
     if (reopened) set({ workspace: { lessonId: id, session: useIDEStore.getState().projectSession } });
     return reopened;
   },

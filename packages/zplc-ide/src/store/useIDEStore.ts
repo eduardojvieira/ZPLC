@@ -53,7 +53,7 @@ import { appendConsoleEntries, type NewConsoleEntry } from './consoleEntries';
 import { withLiveValues } from './liveValues';
 import { folderErrorReason } from '../utils/errorMessages';
 import type { RecentProject } from '../../electron/projectFilesProtocol';
-import { forgetRecentProject as forgetRecentOnBridge, listRecentProjects, markProjectOpened, openRecentFolder, projectRootId } from '../ipc/projectFilesHandles';
+import { forgetRecentProject as forgetRecentOnBridge, listRecentProjects, openLearnWorkspaceFolder, markProjectOpened, openRecentFolder, projectRootId } from '../ipc/projectFilesHandles';
 import { loadSession } from '../ipc/sessionBridge';
 import { planRestore, type ViewState, type WorkspaceLayout } from '../utils/sessionState';
 import { flushSession, resetViewStates } from './sessionPersistence';
@@ -310,7 +310,9 @@ export interface IDEState {
   sessionLayout: WorkspaceLayout | null;
   setSessionLayout: (layout: WorkspaceLayout | null) => void;
   createNewProjectInFolder: () => Promise<boolean>;
-  copyExampleProjectToFolder: (projectId: string) => Promise<boolean>;
+  copyExampleProjectToFolder: (projectId: string, folder?: () => Promise<{ handle: FileSystemDirectoryHandle; seed: boolean } | null>) => Promise<boolean>;
+  /** Opens the app-owned workspace of a lesson (LRN-003) as the project: no dialog, the starter copied in only the first time. */
+  openLessonWorkspaceFolder: (lessonId: string, starterProject: string) => Promise<'created' | 'reopened' | false>;
   /** The Welcome screen's Learn entry: copy the first lesson's starter like any example, then show the Learn tab. */
   startLearning: (starterExampleId: string) => Promise<boolean>;
   getExampleProjects: () => ProjectInfo[];
@@ -754,7 +756,7 @@ export const useIDEStore = create<IDEState>((set, get) => ({
     }
   },
 
-  copyExampleProjectToFolder: async (projectId: string) => {
+  copyExampleProjectToFolder: async (projectId: string, folder) => {
     set({ projectOpenError: null });
     const blockUnsafeOpen = (): boolean => {
       const debug = get().debug;
@@ -785,10 +787,11 @@ export const useIDEStore = create<IDEState>((set, get) => ({
     }
     try {
       void flushSession();
-      const dirHandle = await openDirectoryPicker();
-      if (!isCurrent() || !dirHandle) return false;
-      get().addConsoleEntry({ type: 'info', message: `Copying example to: ${dirHandle.name}...`, source: 'system' });
-      await copyProjectToFolder(dirHandle, loaded.zplcConfig, assets);
+      const chosen = folder ? await folder() : await openDirectoryPicker().then((handle) => handle && { handle, seed: true });
+      if (!isCurrent() || !chosen) return false;
+      const dirHandle = chosen.handle;
+      get().addConsoleEntry({ type: 'info', message: `${chosen.seed ? 'Copying example to' : 'Reopening'}: ${dirHandle.name}...`, source: 'system' });
+      if (chosen.seed) await copyProjectToFolder(dirHandle, loaded.zplcConfig, assets);
       if (!isCurrent()) return false;
       const readResult = await readProjectConfig(dirHandle);
       if (!isCurrent() || readResult.kind !== 'valid') throw new Error('copied project could not be read back');
@@ -827,6 +830,19 @@ export const useIDEStore = create<IDEState>((set, get) => ({
       get().reportProjectOpenProblem('error', `Failed to copy example: ${folderErrorReason(error)}`);
       return false;
     }
+  },
+
+  openLessonWorkspaceFolder: async (lessonId, starterProject) => {
+    const files = projectFilesBridge();
+    const learn = typeof window === 'undefined' ? undefined : window.electronAPI?.learnWorkspace;
+    if (!files || !learn) return false;
+    let fresh = false;
+    const opened = await get().copyExampleProjectToFolder(starterProject, async () => {
+      const workspace = await openLearnWorkspaceFolder(files, learn, lessonId);
+      fresh = workspace.fresh;
+      return { handle: workspace.handle, seed: workspace.fresh };
+    });
+    return opened ? (fresh ? 'created' : 'reopened') : false;
   },
 
   startLearning: async (starterExampleId: string) => {
