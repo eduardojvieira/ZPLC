@@ -12,8 +12,7 @@ describe('Learn panel failures', () => {
   it('shows why the exercise could not be copied, in the panel where the action started, and nothing for a cancelled dialog', () => {
     const source = withEnglishMessages(readFileSync(join(import.meta.dir, 'LearnPanel.tsx'), 'utf8'));
     expect(source).toContain("const projectOpenError = useIDEStore((state) => state.projectOpenError);");
-    expect(source).toContain("else if (useIDEStore.getState().projectOpenError) setCopyStatus('failed');");
-    expect(source).toContain("copyStatus === 'failed' && projectOpenError && <p role=\"alert\" data-learn-copy-error");
+    expect(source).toContain("startFailed && projectOpenError && <p role=\"alert\" data-learn-copy-error");
     expect(source).toContain('{projectOpenError}</p>');
   });
 });
@@ -21,19 +20,24 @@ describe('Learn panel failures', () => {
 describe('Learn panel contract', () => {
   it('selects either canonical example, copies it only through the folder action, and opens Tests without running anything', () => {
     const source = withEnglishMessages(readFileSync(join(import.meta.dir, 'LearnPanel.tsx'), 'utf8'));
-    expect(source).toContain('copyExampleProjectToFolder(lesson.starterExampleId)');
+    // The workspace is made or reopened by the Learn state (lessonWorkspace.ts), never by a copy the learner has to run.
+    expect(source).toContain('useLearnUi.getState().startLesson(lesson.id)');
+    expect(source).not.toContain('copyExampleProjectToFolder');
     expect(source).toContain("setActiveConsoleTab('tests')");
-    expect(source).toContain('copyingRef.current');
+    // Showing the solution and restoring the starter are both confirmed first, in the kit's alert dialog, with an action that names itself.
+    expect(source).toContain("setConfirm('solution')");
+    expect(source).toContain("setConfirm('reset')");
+    expect((source.match(/<AlertDialog/g) ?? [])).toHaveLength(2);
     expect(source).toContain('isFileSystemAccessSupported()');
     // The two choices are the kit's ToggleGroup (aria-pressed, roving focus: ui/kit.test.tsx): one value per lesson, locked while copying.
     expect(source).toContain('<ToggleGroup');
-    expect(source).toContain('value={lessonId}');
-    expect(source).toContain("disabled: copyStatus === 'copying'");
-    expect(source).toContain('label: candidate.title');
-    expect(source).toContain("setCopyStatus('idle')");
+    expect(source).toContain('value={lesson.id}');
+    // A locked lesson cannot be chosen (LRN-005); the lesson list is the course order, not the catalog order.
+    expect(source).toContain("disabled: candidate.state === 'locked' || starting");
+    // The progress is the state shared with the Learn home: a passed run of the recorded scenario passes the lesson once, and nothing is read from storage here.
+    expect(source).toContain('useLearnProgress.getState().markPassed(lesson.id)');
+    expect(source).toContain('useLearnProgress.getState().recordGrade(record)');
     expect(source).toContain('gradeRecordedScenarioLesson(lesson, workspaceTestPresentation)');
-    expect(source).toContain('readLearnMastery()');
-    expect(source).toContain("recordLearnMastery(lesson.id, { kind: 'passed', assertions: 0 }, previous)");
     expect(source).not.toContain('text-white');
     expect(source).not.toContain('<button');
     expect(source).not.toContain('<input');
@@ -44,12 +48,6 @@ describe('Learn panel contract', () => {
     expect(source).toContain('Previously completed');
     expect(source).toContain('data-learn-grade={shownGrade.kind}');
     expect(source).toContain('{lesson.scope}');
-    expect(source).toContain('serializeLearnMastery(mastered)');
-    expect(source).toContain('parseLearnMasteryImport(await file.text())');
-    expect(source).toContain(".catch(() => { if (active) { setMasteryStatus('error'); setHydrated(true); } })");
-    expect(source).toContain("if (grade.kind !== 'passed' || !hydrated) return;");
-    expect(source).toContain('void desktopProgress.merge([...next])');
-    expect(source).toContain('file.size > 4096');
     expect(source).toContain('aria-live="polite"');
     expect(es['learn.exportProgress']).toBe('Exportar progreso');
     expect(es['learn.importProgress']).toBe('Importar progreso');

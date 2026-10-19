@@ -6,9 +6,11 @@
 import { useEffect, type ComponentType } from 'react';
 import { Group, Panel, useGroupCallbackRef, usePanelCallbackRef, type PanelSize } from 'react-resizable-panels';
 import { ErrorBoundary } from '../components/ErrorBoundary';
+import { LearnHome } from '../components/LearnHome';
 import { PanelSeparator } from '../components/PanelSeparator';
 import { useT } from '../i18n';
 import type { DebugController } from '../hooks/useDebugController';
+import { openLearnHome, useLearnUi } from '../learn/learnUi';
 import { useIDEStore } from '../store/useIDEStore';
 import { startShellRouting } from './shellRouting';
 import { useShellLayout } from '../store/useShellLayout';
@@ -38,6 +40,7 @@ export function WorkbenchShell({ EditorArea, Console, debugController }: Workben
   const density = useShellDensity();
   const { activityView, primaryVisible, secondaryVisible, showActivity, setPrimaryVisible, setSecondaryVisible } = useShellLayout();
   const isConsoleCollapsed = useIDEStore((s) => s.isConsoleCollapsed);
+  const learnHomeOpen = useLearnUi((s) => s.homeOpen);
   const sessionLayout = useIDEStore((s) => s.sessionLayout);
   const setSessionLayout = useIDEStore((s) => s.setSessionLayout);
   const projectSession = useIDEStore((s) => s.projectSession);
@@ -85,6 +88,7 @@ export function WorkbenchShell({ EditorArea, Console, debugController }: Workben
         density={density}
         onSelect={(view) => {
           if (view === 'tests') { showActivity('tests'); useIDEStore.getState().setActiveConsoleTab('tests'); if (useIDEStore.getState().isConsoleCollapsed) useIDEStore.getState().toggleConsole(); }
+          else if (view === 'learn') openLearnHome();
           else showActivity(view);
         }}
       />
@@ -114,10 +118,12 @@ export function WorkbenchShell({ EditorArea, Console, debugController }: Workben
             }}
           >
             <Panel id="editor" defaultSize="72%" minSize="30%" className="overflow-hidden">
-              <main aria-label={t('shell.editor.label')} className="h-full min-h-0">
+              <main aria-label={t('shell.editor.label')} className="relative h-full min-h-0">
                 <ErrorBoundary region="Editor">
                   <EditorArea />
                 </ErrorBoundary>
+                {/* The Learn home covers the editor without unmounting it, so a lesson's buffers and cursor are where they were when it closes. */}
+                {learnHomeOpen && <div className="absolute inset-0 z-20"><ErrorBoundary region="Editor"><LearnHome /></ErrorBoundary></div>}
               </main>
             </Panel>
             <PanelSeparator id="workspace-separator" label={t('app.resize')} group={groupPanel} leading="editor" trailing="console" />

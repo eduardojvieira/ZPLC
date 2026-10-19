@@ -8,6 +8,8 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { readZip } from '../electron/projectArchiveZip';
 import { learnLessonCatalog } from '../src/components/learnLesson';
+import { LESSON_INDEX } from '../src/generated/lessonIndex';
+import { courseOrder } from '../src/learn/course';
 import { contrastRatio, parseColor } from '../src/theme/color';
 import { resolveTokens, type ThemeId } from '../src/theme/tokens';
 import { auditMarkup } from '../src/ui/audit';
@@ -52,6 +54,19 @@ async function openFolder(app: App, folder: string): Promise<void> {
   await app.click(button('Open project', 'contains'), 'the Open project button');
   await app.until('the project workbench to appear', async () => await app.visible(toolbar) || undefined);
 }
+
+/** A learner who turned on "Unlock all lessons" (the setting of the Learn home): stored, and the window started again from it. */
+async function unlockAllLessons(app: App): Promise<void> {
+  await app.eval(`(() => { const key = 'zplc-ide-settings'; const stored = JSON.parse(localStorage.getItem(key) || '{}'); const target = stored.settings ?? stored; target.unlockAllLessons = true; localStorage.setItem(key, JSON.stringify(stored)); })()`);
+  await app.cdp.command('Page.reload');
+  await app.until('the Welcome screen', async () => await app.visible(button('Open project', 'contains')) || undefined);
+  // A page that was just reloaded has no focused element until the window has the focus again; a keyboard journey starts from there.
+  await app.cdp.command('Emulation.setFocusEmulationEnabled', { enabled: true });
+  await app.cdp.command('Page.bringToFront');
+}
+
+/** Chooses a lesson in the Learn view of the sidebar by the start of its title, as a learner clicks it. */
+const lessonButton = (title: string) => `[...document.querySelectorAll('[aria-label="Lesson"] button, [aria-label="Lección"] button')].find((item) => item.textContent.trim().startsWith(${JSON.stringify(title)}))`;
 
 /** The page's own Monaco instance (the editor core Studio bundles, as the dev server pre-bundles it) and its active editor, for reading what the editor shows and where things are. */
 const monacoEval = <T>(app: App, body: string) => app.eval<T>(`(async () => { const monaco = await import(${MONACO_MODULE_URL}); const editor = monaco.editor.getEditors()[0]; ${body} })()`);
@@ -807,25 +822,103 @@ export const JOURNEYS: Journey[] = [
     },
   },
   {
-    name: '11 Learn with no project open', example: 'none', proves: [], partly: ['LRN-001', 'LRN-003'],
+    // The Learn journey of WP-60: a fresh profile with no project open, Learn on the Welcome screen, the course, the first lesson
+    // started (its workspace made from the starter, no copy step), a hint, the lesson passed, the window started again with the
+    // progress kept, and the progress file moved out and back. The Help menu leg of LRN-001 is a native menu, which a journey cannot
+    // click: it is proven in electron/appMenu.test.ts.
+    name: '11 Learn with no project open', example: 'none', proves: ['LRN-001'], partly: ['LRN-002', 'LRN-003', 'LRN-005', 'LRN-010', 'LRN-031', 'LRN-032'],
     run: async (app, { root }) => {
-      const first = learnLessonCatalog.en[0]!;
+      // The first two lessons of the course, whatever their ids: the index orders them (LRN-028 allows no list of ids here).
+      const [FIRST, SECOND] = courseOrder(LESSON_INDEX).map(({ id }) => id) as [string, string];
+      const entry = LESSON_INDEX.lessons.find(({ id }) => id === FIRST)!;
+      const lesson = learnLessonCatalog.en.find(({ id }) => id === FIRST)!;
       const folder = join(root, 'learn-project'); mkdirSync(folder);
-      app.answer(folder);
+      const home = css('[data-learn-home]');
+      const stateOf = (id: string) => app.eval<string | null>(`document.querySelector('[data-learn-lesson="${id}"]')?.getAttribute('data-state') ?? null`);
+      const homeText = () => app.eval<string>(`document.querySelector('[data-learn-home]')?.innerText ?? ''`);
+
+      // 1. Learn on the Welcome screen opens the home with no project open: the course, the first lesson open, the second locked.
       await app.click(button('Learn', 'prefix'), 'the Learn button on the Welcome screen');
+      await app.until('the Learn home', async () => await app.visible(home) || undefined);
+      assert(!(await app.visible(toolbar)), 'A project is open behind the Learn home.');
+      assert((await app.eval<number>(`document.querySelectorAll('[data-learn-module]').length`)) === 12, 'The Learn home does not list the twelve modules.');
+      assert((await stateOf(FIRST)) === 'available' && (await stateOf(SECOND)) === 'locked', `The first lesson is ${await stateOf(FIRST)} and the second ${await stateOf(SECOND)}.`);
+      assert(await app.eval<boolean>(`document.querySelector('[data-learn-start="${SECOND}"]')?.disabled === true`), 'A locked lesson can be started.');
+      assert((await homeText()).includes('Pass first:'), 'A locked lesson does not say what to pass first.');
+
+      // 2. Unlock all lessons is a switch the learner can see and that the page announces; turn it on, see the lock lifted, turn it off.
+      await app.click(css('[data-learn-unlock-all]'), 'the Unlock all lessons switch');
+      await app.until('the lock to lift', async () => (await stateOf(SECOND)) === 'available' || undefined);
+      await app.until('the announcement', async () => (await app.eval<string>(`document.body.innerText`)).includes('All lessons are unlocked.') || undefined);
+      await app.click(css('[data-learn-unlock-all]'), 'the Unlock all lessons switch');
+      await app.until('the lock to return', async () => (await stateOf(SECOND)) === 'locked' || undefined);
+
+      // 3. Start the course: the folder dialog is answered once, the workspace is made from the starter and opened.
+      app.answer(folder);
+      await app.click(css('[data-learn-continue]'), 'the Start the course button');
       await app.until('the project workbench to appear', async () => await app.visible(toolbar) || undefined);
-      const starter = JSON.parse(disk(join(packageRoot, 'projects', first.starterExampleId, 'zplc.json'))) as { name: string };
-      assert(existsSync(join(folder, 'zplc.json')) && (JSON.parse(disk(join(folder, 'zplc.json'))) as { name: string }).name === starter.name, `The chosen folder does not hold the first lesson's starter project (${first.starterExampleId}).`);
-      await app.until('the Learn tab to show the first lesson', async () => await app.eval<boolean>(`document.querySelector('[data-activity="learn"]')?.getAttribute('aria-current') === 'true' && ${JSON.stringify([learnLessonCatalog.es[0]!.title, first.title])}.includes(document.getElementById('learn-title')?.textContent?.trim() ?? '')`) || undefined);
-      assert(await app.eval<boolean>(`[...document.querySelectorAll('[aria-label="Lesson"] button, [aria-label="Lección"] button')][0]?.getAttribute('aria-pressed') === 'true'`), 'The first lesson is not the one selected in the Learn tab.');
+      const starter = JSON.parse(disk(join(packageRoot, 'projects', entry.starter.project, 'zplc.json'))) as { name: string };
+      assert(existsSync(join(folder, 'zplc.json')) && (JSON.parse(disk(join(folder, 'zplc.json'))) as { name: string }).name === starter.name, `The chosen folder does not hold the starter of the first lesson (${entry.starter.project}).`);
+      await app.until('the lesson to be shown beside the editor', async () => await app.eval<boolean>(`document.querySelector('[data-activity="learn"]')?.getAttribute('aria-current') === 'true' && document.querySelector('[data-learn-home]') === null && ${JSON.stringify([lesson.title, learnLessonCatalog.es.find(({ id }) => id === FIRST)!.title])}.includes(document.getElementById('learn-title')?.textContent?.trim() ?? '')`) || undefined);
+      assert(await app.eval<boolean>(`!!document.querySelector('[aria-label="Primary sidebar"] [data-learn-reset]')`), 'The lesson surface does not offer to restore the starter once its workspace is open.');
       assert(!(await app.text()).includes('The project could not be opened'), 'The workbench shows an open error.');
-      // ... and passes the first lesson (VF-008): the reference solution goes where the learner's program is, and Check grades
-      // the program of the project that Learn created, with no project open before it
-      writeFileSync(join(folder, 'src', 'Motor.st'), disk(join(packageRoot, 'projects', first.referenceExampleId, first.solutionProgram)));
+
+      // 4. The rail's Learn item opens the home over the editor, and Escape returns to it.
+      await app.click(css('[data-activity="learn"]'), 'the Learn item of the rail');
+      await app.until('the Learn home over the editor', async () => await app.visible(home) || undefined);
+      await app.press('Escape');
+      await app.until('the editor again', async () => !(await app.visible(home)) || undefined);
+
+      // 5. A hint is revealed, and recorded; the solution is behind a confirmation that Cancel leaves unrecorded.
+      await app.click(css('[aria-label="Hints"] details summary'), 'the first hint');
+      await app.click(css('[data-learn-show-solution]'), 'Show the reference solution');
+      await app.until('the confirmation', async () => await app.visible(css('[role="alertdialog"]')) || undefined);
+      await app.click(button('Keep trying'), 'Keep trying');
+      await app.until('the confirmation to close', async () => !(await app.visible(css('[role="alertdialog"]'))) || undefined);
+
+      // 6. The learner edits (the reference solution goes where the program is), Check grades the program of the workspace, the lesson passes.
+      writeFileSync(join(folder, entry.starter.program), disk(join(packageRoot, 'projects', entry.solution.project, entry.solution.program)));
       await app.until('the Check button to be enabled', async () => await app.eval<boolean>(`document.querySelector('[data-learn-check]')?.disabled === false`) || undefined);
       await app.click(css('[data-learn-check]'), 'the Check button');
       await app.until('Learn to grade the first lesson as passed', async () => await app.eval<boolean>(`document.querySelector('[data-learn-grade="passed"]') !== null`) || undefined)
         .catch(async (error: Error) => { throw new Error(`${error.message}: the grade shown is ${await app.eval<string>(`document.querySelector('[data-learn-grade]')?.getAttribute('data-learn-grade') ?? 'none'`)}; ${await app.eval<string>(`document.querySelector('[data-learn-check-status]')?.textContent ?? ''`)}`); });
+      const file = join(root, 'profile', 'zplc-learn-progress.v2.json');
+      type Saved = { last: { lessonId: string } | null; lessons: Record<string, { state: string; hintsUsed: number; solutionShown: boolean; grade: unknown }> };
+      await app.until('the passed lesson in the progress file', () => existsSync(file) && disk(file).includes('"state":"passed"') || undefined);
+      const saved = JSON.parse(disk(file)) as Saved;
+      assert(saved.lessons[FIRST]?.state === 'passed' && saved.lessons[FIRST].hintsUsed >= 1 && saved.lessons[FIRST].solutionShown === false && saved.lessons[FIRST].grade !== null, `The progress file does not record the passed lesson with its hint and no solution: ${JSON.stringify(saved.lessons[FIRST])}`);
+
+      // 7. The window starts again: the progress is read back, the next lesson is open, Continue offers it.
+      await app.cdp.command('Page.reload');
+      await app.until('the Welcome screen', async () => await app.visible(button('Learn', 'prefix')) || undefined);
+      await app.click(button('Learn', 'prefix'), 'the Learn button on the Welcome screen');
+      await app.until('the Learn home with the progress read', async () => (await homeText()).includes('1 of 10 lessons passed') || undefined);
+      assert((await stateOf(FIRST)) === 'passed' && (await stateOf(SECOND)) === 'available', `After the restart the first lesson is ${await stateOf(FIRST)} and the second ${await stateOf(SECOND)}.`);
+      assert((await app.eval<string>(`document.querySelector('[data-learn-continue]')?.textContent ?? ''`)).startsWith('Continue: '), 'Continue does not resume the course after a restart.');
+
+      // 8. Export the progress (the file the browser would save, taken from the download link), then import a file that adds a lesson and merges.
+      await app.eval(`(() => { window.__learnExport = null; const create = URL.createObjectURL.bind(URL); URL.createObjectURL = (blob) => { void blob.text().then((text) => { window.__learnExport = text; }); return create(blob); }; HTMLAnchorElement.prototype.click = function () { window.__learnExportName = this.download; }; })()`);
+      await app.click(css('[data-learn-export]'), 'Export progress');
+      const exported = await app.until('the exported file', async () => await app.eval<string | null>('window.__learnExport') || undefined);
+      const document_ = JSON.parse(exported) as { kind: string; lessons: Record<string, unknown> };
+      assert(document_.kind === 'zplc-learn-progress' && FIRST in document_.lessons && (await app.eval<string>('window.__learnExportName')) === 'zplc-learn-progress.v2.json', 'The exported file is not the progress document.');
+      document_.lessons[SECOND] = { state: 'passed', grade: null, passedAt: null, startedAt: null, hintsUsed: 0, solutionShown: false };
+      const incoming = join(root, 'incoming-progress.json');
+      writeFileSync(incoming, JSON.stringify(document_));
+      const choose = async (path: string) => {
+        const { root: tree } = await app.cdp.command('DOM.getDocument', { depth: 0 }) as { root: { nodeId: number } };
+        const { nodeId } = await app.cdp.command('DOM.querySelector', { nodeId: tree.nodeId, selector: '[data-learn-import-file]' }) as { nodeId: number };
+        await app.cdp.command('DOM.setFileInputFiles', { nodeId, files: [path] });
+      };
+      await choose(incoming);
+      await app.until('the import to be merged', async () => (await homeText()).includes('2 of 10 lessons passed') && (await homeText()).includes('Progress imported and merged.') || undefined);
+      assert(disk(file).includes(SECOND), 'The merged progress was not saved.');
+      // A file of a version this Studio does not know is refused with its reason, and the progress stays as it was.
+      const future = join(root, 'future-progress.json');
+      writeFileSync(future, JSON.stringify({ kind: 'zplc-learn-progress', schemaVersion: 3, last: null, lessons: {} }));
+      await choose(future);
+      await app.until('the refusal', async () => (await homeText()).includes('The file is version 3, which this version of Studio cannot read. Your progress is unchanged.') || undefined);
+      assert((await homeText()).includes('2 of 10 lessons passed'), 'A refused file changed the progress.');
     },
   },
   {
@@ -2350,8 +2443,10 @@ export const JOURNEYS: Journey[] = [
     // graded against the scenario of the lesson package, in the tool worker (LRN-022).
     name: '39 Learn reports the failed assertion of a lesson', example: 'motor_start_stop_starter', proves: [], partly: ['LRN-022', 'LRN-026', 'LRN-031'],
     run: async (app, { project, root }) => {
+      await unlockAllLessons(app);
       await openFolder(app, project);
       await app.click(css('[data-activity="learn"]'), 'the Learn activity');
+      await app.click(lessonButton('Safe motor start-stop'), 'the Safe motor start-stop lesson');
       await app.until('the Check button to be enabled', async () => await app.eval<boolean>(`document.querySelector('[data-learn-check]')?.disabled === false`) || undefined);
       await app.click(css('[data-learn-check]'), 'the Check button');
       await app.until('Learn to grade the program as failed', async () => await app.eval<boolean>(`document.querySelector('[data-learn-grade="failed"]') !== null`) || undefined)
@@ -2374,8 +2469,10 @@ export const JOURNEYS: Journey[] = [
     run: async (app, { project, root }) => {
       const lesson = learnLessonCatalog.en.find(({ id }) => id === 'motor-start-stop-safe')!;
       writeFileSync(join(project, 'src', 'Motor.st'), disk(join(packageRoot, 'projects', lesson.referenceExampleId, lesson.solutionProgram)));
+      await unlockAllLessons(app);
       await openFolder(app, project);
       await app.click(css('[data-activity="learn"]'), 'the Learn activity');
+      await app.click(lessonButton('Safe motor start-stop'), 'the Safe motor start-stop lesson');
       await app.until('the Check button to be enabled', async () => await app.eval<boolean>(`document.querySelector('[data-learn-check]')?.disabled === false`) || undefined);
       await app.click(css('[data-learn-check]'), 'the Check button');
       await app.until('Learn to grade the program as passed', async () => await app.eval<boolean>(`document.querySelector('[data-learn-grade="passed"]') !== null`) || undefined)
@@ -2965,6 +3062,8 @@ export const JOURNEYS: Journey[] = [
     run: async (app, { project }) => {
       const lesson = learnLessonCatalog.en.find(({ id }) => id === 'motor-start-stop-safe')!;
       const solution = disk(join(packageRoot, 'projects', lesson.referenceExampleId, lesson.solutionProgram));
+      // The learner has unlocked every lesson (a setting of the Learn home), so the lesson of this example can be chosen first.
+      await app.eval(`import('/src/store/useAppSettings.ts').then(({ useAppSettings }) => useAppSettings.getState().update({ unlockAllLessons: true }))`);
       cpSync(join(packageRoot, 'projects', 'blinky_fbd', 'src', 'main.fbd.json'), join(project, 'src', 'diagram.fbd.json'));
       const focused = (): Promise<string> => app.eval<string>(`(() => { const el = document.activeElement; if (!el || el === document.body) return '(page)'; return ((el.getAttribute('aria-label') || el.textContent || el.getAttribute('title') || el.id || el.tagName).trim().replace(/\\s+/g, ' ')).slice(0, 48) + (el.getAttribute('role') ? ' [' + el.getAttribute('role') + ']' : ''); })()`);
       const live = (politeness: 'polite' | 'assertive') => app.eval<string>(`document.querySelector('[data-live-region="${politeness}"]')?.textContent?.replace(/\\u00a0/g, '') ?? ''`);
@@ -3100,6 +3199,11 @@ export const JOURNEYS: Journey[] = [
       // 9. One Learn lesson: the lesson list by command, Check reached with Tab and pressed with Enter, graded as passed
       await palette('Show the lessons');
       await app.until('the Learn tab', async () => await app.eval<boolean>(`document.querySelector('[data-activity="learn"]')?.getAttribute('aria-current') === 'true'`) || undefined);
+      // The lesson of this example is chosen with the arrow keys of the lesson list, as a keyboard user would.
+      await reach('the lesson list', `el.closest('[aria-label="Lesson"]') !== null && el.getAttribute('aria-pressed') === 'true'`, 'Tab', 80);
+      await reach('the Safe motor start-stop lesson', `el.textContent.trim().startsWith('Safe motor start-stop')`, 'ArrowRight', 6);
+      await app.press('Enter');
+      await app.until('the Safe motor start-stop lesson to be chosen', async () => await app.eval<boolean>(`document.getElementById('learn-title')?.textContent?.trim() === 'Safe motor start-stop'`) || undefined);
       await app.until('the Check button to be enabled', async () => await isEnabled('[data-learn-check]') || undefined);
       await reach('the Check button', `el.matches('[data-learn-check]')`, 'Tab', 60);
       await app.press('Enter');
@@ -3178,6 +3282,13 @@ export const JOURNEYS: Journey[] = [
         for (const view of ['project', 'search', 'tests', 'learn']) {
           await app.click(css(`[data-activity="${view}"]`), `the ${view} view of the rail`);
           await audit(`Sidebar, ${view}`);
+          // The rail's Learn item also opens the Learn home over the editor: it is a screen of its own, and Escape returns to the editor.
+          if (view === 'learn') {
+            await app.until('the Learn home', async () => await app.visible(css('[data-learn-home]')) || undefined);
+            await audit('Learn home');
+            await app.press('Escape');
+            await app.until('the editor again', async () => !(await app.visible(css('[data-learn-home]'))) || undefined);
+          }
         }
         await app.click(button('Project settings'), 'the Project settings button');
         await app.until('the preferences', async () => await app.visible(css('[data-app-preferences]')) || undefined);

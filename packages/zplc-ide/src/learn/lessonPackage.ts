@@ -23,6 +23,7 @@
  *   {{v:Sig=true,Sig2=false@30|X}} shows X; the scenario must assert those values at 30 ms (an AT assertion at 30 ms,
  *                                  or a FOR or ALWAYS assertion that covers it)
  */
+import type { CourseDefinition } from './courseDefinition';
 
 export const LESSON_SCHEMA_VERSION = 1 as const;
 export const LESSON_STAGE_KEYS = ['objective', 'predict', 'edit', 'run', 'observe', 'reflect'] as const;
@@ -375,4 +376,5 @@ export interface LessonIndexEntry {
   text: Readonly<Record<LessonLocale, LessonTextExpanded>>;
 }
 
-export interface LessonIndex { schemaVersion: typeof LESSON_SCHEMA_VERSION; lessons: readonly LessonIndexEntry[] }
+/** The generated index: every lesson, and the course (tracks and modules in order) the lessons are placed in (LRN-005). */
+export interface LessonIndex { schemaVersion: typeof LESSON_SCHEMA_VERSION; lessons: readonly LessonIndexEntry[]; course: CourseDefinition }

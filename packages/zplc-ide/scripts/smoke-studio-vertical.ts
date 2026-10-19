@@ -265,12 +265,12 @@ async function captureLearnReviewScreens(cdp: Cdp, reviewDir: string): Promise<v
   };
   await cdp.command('Emulation.setDeviceMetricsOverride', { width: 1366, height: 768, deviceScaleFactor: 1, mobile: false });
   // The lessons are checked in Spanish; the application language is `auto` now (UX-029), so the run asks for it.
-  await cdp.evaluate(`import('/src/store/useAppSettings.ts').then(({ useAppSettings }) => useAppSettings.getState().update({ language: 'es' }))`);
+  await cdp.evaluate(`import('/src/store/useAppSettings.ts').then(({ useAppSettings }) => useAppSettings.getState().update({ language: 'es', unlockAllLessons: true })).then(() => import('/src/learn/learnUi.ts')).then(({ useLearnUi }) => useLearnUi.getState().select('motor-start-stop-safe'))`);
   await cdp.evaluate(`import('/src/store/useIDEStore.ts').then(({ useIDEStore }) => useIDEStore.getState().setActiveConsoleTab('learn'))`);
   await waitFor('Learn panel', async () => await cdp.evaluate(`document.getElementById('console-panel-learn')?.textContent?.includes('Arranque y parada seguros') ? true : undefined`) === true ? true : undefined);
   const assertLesson = async (title: string, copy: string, details = 6) => assert(await cdp.evaluate(`(() => { const panel = document.getElementById('console-panel-learn'); const controls = [...document.querySelectorAll('#console-panel-learn button')]; return Boolean(panel) && document.body.scrollWidth <= window.innerWidth && panel.textContent?.includes(${JSON.stringify(title)}) && controls.some((button) => button.textContent?.includes(${JSON.stringify(copy)})) && [...document.querySelectorAll('#console-panel-learn details')].length === ${details}; })()`) === true, `Learn ${title} is clipped or incomplete`);
   const selectLesson = async (label: string) => {
-    assert(await cdp.evaluate(`(() => { const button = [...document.querySelectorAll('#console-panel-learn button')].find((item) => item.textContent?.trim() === ${JSON.stringify(label)}); if (!button || button.disabled) return false; button.click(); return true; })()`) === true, `Learn lesson selector ${label} is unavailable`);
+    assert(await cdp.evaluate(`(() => { const button = [...document.querySelectorAll('#console-panel-learn button')].find((item) => item.textContent?.trim() === ${JSON.stringify(label)} || item.textContent?.trim().startsWith(${JSON.stringify(label + ' (')})); if (!button || button.disabled) return false; button.click(); return true; })()`) === true, `Learn lesson selector ${label} is unavailable`);
   };
   await assertLesson('Arranque y parada seguros', 'Copiar ejemplo Arranque y parada seguros');
   await selectLesson('Cruce peatonal y estados seguros');
@@ -692,7 +692,7 @@ async function main(): Promise<void> {
       await page().evaluate('window.__zplcSmoke.changed = false');
     };
     // The new document starts in the system language (`auto`, UX-029); the first Learn check is in Spanish, so the run asks for it.
-    await page().evaluate(`import('/src/store/useAppSettings.ts').then(({ useAppSettings }) => useAppSettings.getState().update({ language: 'es' })).then(() => import('/src/store/useIDEStore.ts')).then(({ useIDEStore }) => useIDEStore.getState().setActiveConsoleTab('learn'))`);
+    await page().evaluate(`import('/src/store/useAppSettings.ts').then(({ useAppSettings }) => useAppSettings.getState().update({ language: 'es', unlockAllLessons: true })).then(() => import('/src/learn/learnUi.ts')).then(({ useLearnUi }) => { useLearnUi.getState().select('motor-start-stop-safe'); return import('/src/store/useIDEStore.ts'); }).then(({ useIDEStore }) => useIDEStore.getState().setActiveConsoleTab('learn'))`);
     await waitFor('Spanish Learn lesson', async () => (await text()).includes('Arranque y parada seguros') ? true : undefined);
     assert((await text()).includes('MotorStartStop') && (await text()).includes('0, 20, 40, 50, 90 y 140 ms') && !(await text()).includes('auto-graded'), 'Learn must begin in Spanish with the exact host-only guided path');
     await click('English');

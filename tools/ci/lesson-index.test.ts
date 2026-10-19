@@ -6,7 +6,7 @@ import { join, relative, resolve } from 'node:path';
 import { afterEach, describe, expect, it } from 'bun:test';
 
 import { LESSON_IDS, LESSON_INDEX } from '../../packages/zplc-ide/src/generated/lessonIndex';
-import { LESSONS_DIRECTORY, buildIndex, loadLessonPackages } from '../../packages/zplc-ide/src/learn/lessonPackageFiles';
+import { LESSONS_DIRECTORY, buildIndex, loadCourse, loadLessonPackages } from '../../packages/zplc-ide/src/learn/lessonPackageFiles';
 import { generate, updateHashes } from './generate-lesson-index';
 
 const ROOT = resolve(import.meta.dir, '../..');
@@ -24,7 +24,9 @@ describe('the generated lesson index (LRN-027, LRN-028)', () => {
   it('holds exactly what the lesson packages produce', () => {
     const { packages, problems } = loadLessonPackages();
     expect(problems).toEqual([]);
-    const built = buildIndex(packages);
+    const { course, problems: courseProblems } = loadCourse();
+    expect(courseProblems).toEqual([]);
+    const built = buildIndex(packages, course!);
     expect(built.problems).toEqual([]);
     expect(LESSON_INDEX).toEqual(built.index);
     expect<string[]>([...LESSON_IDS]).toEqual(built.index.lessons.map((lesson) => lesson.id));
@@ -51,6 +53,28 @@ describe('the generated lesson index (LRN-027, LRN-028)', () => {
     const after = loadLessonPackages(lessons).packages.find((item) => item.id === 'motor-start-stop-safe');
     expect(after?.manifest.version).toBe(before.manifest.version + 1);
     expect(after?.manifest.scenario.sha256).not.toBe(before.manifest.scenario.sha256);
+  });
+
+  it('holds the course structure of lessons/course.json, and refuses a missing or broken course file (LRN-005)', () => {
+    expect(LESSON_INDEX.course.modules).toHaveLength(12);
+    const missing = copyOfLessons();
+    rmSync(join(missing, 'course.json'));
+    expect(generate(missing).problems).toEqual(['course.json: the course file is missing']);
+    const broken = copyOfLessons();
+    const file = join(broken, 'course.json');
+    writeFileSync(file, readFileSync(file, 'utf8').replace('"requires": 1', '"requires": 5'));
+    expect(generate(broken).problems.some((problem) => problem.startsWith('course.json: module 2') && problem.includes('requires'))).toBe(true);
+  });
+
+  it('refuses a lesson placed in a module the manifest cannot name or at another level than its module (LRN-005, LRN-007)', () => {
+    const lessons = copyOfLessons();
+    const file = join(lessons, 'scan-cycle-one-scan-memory', 'lesson.json');
+    writeFileSync(file, readFileSync(file, 'utf8').replace('"module": 1', '"module": 40'));
+    expect(generate(lessons).problems.some((problem) => problem.startsWith('scan-cycle-one-scan-memory/lesson.json') && problem.includes('manifest.module'))).toBe(true);
+    const wrongLevel = copyOfLessons();
+    const other = join(wrongLevel, 'scan-cycle-one-scan-memory', 'lesson.json');
+    writeFileSync(other, readFileSync(other, 'utf8').replace('"level": "foundation"', '"level": "advanced"'));
+    expect(generate(wrongLevel).problems.some((problem) => problem.startsWith('scan-cycle-one-scan-memory: level advanced'))).toBe(true);
   });
 
   it('refuses a lesson whose text quotes a time its scenario does not have', () => {

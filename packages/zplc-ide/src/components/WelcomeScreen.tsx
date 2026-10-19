@@ -10,7 +10,7 @@ import { useWelcomeState } from '../store/regionSubscriptions';
 import { boardName, buildExampleSections, groupByLevel, languageName, levelName, type ExampleListing } from '../utils/exampleCatalog';
 import { isFileSystemAccessSupported } from '../types';
 import { ZPLC_REPO_VERSION } from '../version';
-import { learnLessonCatalog } from './learnLesson';
+import { openLearnHome } from '../learn/learnUi';
 import { ImportArchive } from './ImportArchive';
 import { ThemeControl } from './ThemeControl';
 import { AppPreferences } from './settings/AppPreferences';
@@ -18,8 +18,6 @@ import { recentRows } from './welcomeRecent';
 import { Button } from '../ui';
 import { useT } from '../i18n';
 
-/** The Learn entry starts the course where the Learn tab starts: with the first lesson, on its own starter project. */
-const FIRST_LESSON_STARTER = learnLessonCatalog.en[0]!.starterExampleId;
 
 const badgeClass = 'border border-[var(--border-color)] px-1.5 py-0.5 text-[11px] leading-4 text-[var(--text-secondary)]';
 
@@ -47,7 +45,6 @@ export function WelcomeScreen() {
     openProjectFromFolder,
     createNewProjectInFolder,
     copyExampleProjectToFolder,
-    startLearning,
     getExampleProjects,
     projectOpenError,
     recentProjects,
@@ -141,7 +138,7 @@ export function WelcomeScreen() {
                 <span className="mt-0.5 block text-sm leading-5 text-[var(--text-secondary)]">{t('welcome.new.hint')}</span>
               </span>
             </Button>
-            <Button variant="ghost" onClick={() => startCopy(() => startLearning(FIRST_LESSON_STARTER))} disabled={unavailable || isCopyingExample} data-welcome-learn className={actionClass}>
+            <Button variant="ghost" onClick={openLearnHome} disabled={isCopyingExample} data-welcome-learn className={actionClass}>
               <BookOpen size={18} aria-hidden="true" className="mt-0.5 shrink-0 text-[var(--color-accent-blue)]" />
               <span className="min-w-0">
                 <span className="block font-medium">{t('welcome.learn.title')}</span>

@@ -13,6 +13,7 @@ import { ldEn } from './catalog/ld';
 import { importArchiveEn } from './catalog/importArchive';
 import { interlockEn } from './catalog/interlock';
 import { learnEn } from './catalog/learn';
+import { learnHomeEn } from './catalog/learnHome';
 import { toolbarMsgEn } from './catalog/toolbarMsg';
 import { examplesEn } from './catalog/examples';
 
@@ -99,7 +100,7 @@ export const baseEn = {
   'welcome.new.title': 'New project',
   'welcome.new.hint': 'Create in a folder after checking project-file conflicts.',
   'welcome.learn.title': 'Learn',
-  'welcome.learn.hint': 'Start the course: its first lesson is copied into a folder you choose.',
+  'welcome.learn.hint': 'See the course, then start or continue a lesson.',
   'welcome.openError': 'The project could not be opened',
   'welcome.recent.heading': 'Recent',
   'welcome.recent.opened': 'Opened {when}',
@@ -590,6 +591,7 @@ export const en = {
   ...importArchiveEn,
   ...interlockEn,
   ...learnEn,
+  ...learnHomeEn,
   ...toolbarMsgEn,
   ...examplesEn,
 } as const;

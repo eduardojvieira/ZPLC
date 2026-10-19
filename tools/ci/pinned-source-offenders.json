@@ -275,7 +275,6 @@
     "requirement": "VF-006",
     "added": "2026-10-10",
     "reads": [
-      "packages/zplc-ide/src/components/LearnPanel.tsx",
       "packages/zplc-ide/src/components/WelcomeScreen.tsx"
     ],
     "replacement": "dom",

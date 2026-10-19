@@ -14,6 +14,7 @@ import { canonicalJson } from '../../packages/zplc-ide/src/learn/lessonPackage';
 import {
   LESSONS_DIRECTORY,
   buildIndex,
+  loadCourse,
   loadLessonPackages,
   renderIndexData,
   renderIndexModule,
@@ -45,8 +46,10 @@ export function updateHashes(lessonsDirectory = LESSONS_DIRECTORY): string[] {
 /** The problems of the packages and the text the two index files must hold. */
 export function generate(lessonsDirectory = LESSONS_DIRECTORY): { problems: string[]; source: string; data: string } {
   const loaded = loadLessonPackages(lessonsDirectory);
-  const problems = [...loaded.problems, ...validateCourse(loaded.packages)];
-  const built = buildIndex(loaded.packages);
+  const { course, problems: courseProblems } = loadCourse(lessonsDirectory);
+  const problems = [...loaded.problems, ...courseProblems, ...validateCourse(loaded.packages, course)];
+  if (!course) return { problems, source: '', data: '' };
+  const built = buildIndex(loaded.packages, course);
   problems.push(...built.problems);
   return { problems, source: renderIndexModule(built.index), data: renderIndexData(built.index) };
 }
