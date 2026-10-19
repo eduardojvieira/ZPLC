@@ -5,7 +5,7 @@
   "scope": "La evidencia de Tests es determinística del host nativo POSIX; no es evidencia de proceso físico, hardware, HIL ni certificación.",
   "objectives": [
     "Mantenga la bomba encendida desde LevelLow hasta LevelHigh con un enclavamiento.",
-    "Enclave la alarma con PumpFault o EStop y libérela sólo con un Reset nuevo tras despejarse la falla."
+    "Enclave la alarma con PumpFault o EStop y libérela solo con un Reset nuevo tras despejarse la falla."
   ],
   "stages": [
     {
@@ -23,7 +23,7 @@
     {
       "key": "edit",
       "title": "Edite",
-      "body": "Corrija esta omisión del starter y guarde antes de ejecutar: El starter no tiene histéresis de bomba y sigue funcionando ante una falla de bomba; mantenga la bomba desde LevelLow hasta LevelHigh, enclave la alarma con PumpFault o EStop y libérela sólo con un Reset pulsado tras despejarse la falla.",
+      "body": "Corrija esta omisión del starter y guarde antes de ejecutar: El starter no tiene histéresis de bomba y sigue funcionando ante una falla de bomba; mantenga la bomba desde LevelLow hasta LevelHigh, enclave la alarma con PumpFault o EStop y libérela solo con un Reset pulsado tras despejarse la falla.",
       "checkpoint": "El escenario visible debe pasar con evidencia host guardada."
     },
     {
@@ -41,7 +41,7 @@
     {
       "key": "reflect",
       "title": "Reflexione",
-      "body": "La assertion NEVER cubre Pump+Alarm sólo en este escenario registrado.",
+      "body": "La assertion NEVER cubre Pump+Alarm solo en este escenario registrado.",
       "checkpoint": "No demuestra un proceso físico, temporización de hardware, HIL ni certificación."
     }
   ],
@@ -52,10 +52,10 @@
     },
     {
       "level": 2,
-      "text": "Agregue FaultLatched, activada por PumpFault o EStop y conservada cuando la entrada desaparece, y ResetArmed, activada sólo cuando Reset se ve suelto con la falla enclavada; borre FaultLatched con un Reset pulsado estando armado y sin entradas de falla, y condicione Pump con NOT FaultLatched."
+      "text": "Agregue FaultLatched, activada por PumpFault o EStop y conservada cuando la entrada desaparece, y ResetArmed, activada solo cuando Reset se ve suelto con la falla enclavada; borre FaultLatched con un Reset pulsado estando armado y sin entradas de falla, y condicione Pump con NOT FaultLatched."
     }
   ],
   "faultCases": [
-    "El starter no tiene histéresis de bomba y sigue funcionando ante una falla de bomba; mantenga la bomba desde LevelLow hasta LevelHigh, enclave la alarma con PumpFault o EStop y libérela sólo con un Reset pulsado tras despejarse la falla."
+    "El starter no tiene histéresis de bomba y sigue funcionando ante una falla de bomba; mantenga la bomba desde LevelLow hasta LevelHigh, enclave la alarma con PumpFault o EStop y libérela solo con un Reset pulsado tras despejarse la falla."
   ]
 }

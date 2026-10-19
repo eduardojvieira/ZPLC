@@ -25,7 +25,7 @@ Recorra el control de nivel y los enclavamientos de falla y reset del ejemplo Ta
 ## Objetivos
 
 - Mantenga la bomba encendida desde LevelLow hasta LevelHigh con un enclavamiento.
-- Enclave la alarma con PumpFault o EStop y libérela sólo con un Reset nuevo tras despejarse la falla.
+- Enclave la alarma con PumpFault o EStop y libérela solo con un Reset nuevo tras despejarse la falla.
 
 ## Etapas
 
