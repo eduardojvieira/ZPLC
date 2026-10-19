@@ -6,6 +6,7 @@
 import { Pause, Play, RotateCcw, SkipForward } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
+import { FaceplatePanel } from '../components/FaceplatePanel';
 import { Button, Select } from '../ui';
 import type { DebugController } from '../hooks/useDebugController';
 import { useDeclaredInputs } from '../hooks/useDeclaredInputs';
@@ -119,6 +120,7 @@ export function PlantLivePanel({ controller }: { controller: DebugController | u
           </div>
         </div>
       )}
+      {unavailable === undefined && run && kind && loop && <div className="mt-3"><FaceplatePanel controller={controller} /></div>}
     </section>
   );
 }

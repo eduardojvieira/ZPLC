@@ -3461,6 +3461,77 @@ export const JOURNEYS: Journey[] = [
       assert(!await app.clickable(css('button[aria-label="Hold Bell"]')), 'The push button should be disabled while the simulation is not running.');
     },
   },
+  {
+    // LRN-018 (and LRN-019, LRN-020, LRN-021, LRN-037): the plant of a lesson runs live in closed loop with the starter, bound by the
+    // mapping the lesson ships. An input is operated on the faceplate and the plant reacts; play, pause, step and a fault action
+    // work with the keyboard alone, the state is announced in words, and the recorded run stays available as a labelled replay.
+    name: '51 A lesson plant runs live in closed loop, with pause, step and a fault action, and the recorded run stays a labelled replay', example: 'none', proves: ['LRN-018'], partly: ['LRN-019', 'LRN-020', 'LRN-021', 'LRN-037'],
+    run: async (app, { root }) => {
+      const lesson = LESSON_INDEX.lessons.find(({ plant }) => plant === 'motor-v1')!;
+      assert(lesson.plantMap !== null, 'The motor lesson ships no plant mapping.');
+      const folder = join(root, 'plant-lesson'); mkdirSync(folder);
+      const patiently = <T,>(description: string, check: () => Promise<T | undefined | false> | T | undefined | false) => app.until(description, check, 45_000);
+      const fact = () => app.eval<string>(`document.querySelector('[data-plant-fact]')?.getAttribute('data-plant-fact') ?? ''`);
+      const scans = async () => Number(/(\d+) scans/.exec(await app.eval<string>(`document.querySelector('[data-plant-scans]')?.textContent ?? ''`))?.[1] ?? 'NaN');
+      const outputText = (name: string) => app.eval<string>(`document.querySelector('[data-output="MotorPlant.${name}"] [data-output-value]')?.textContent?.trim() ?? ''`);
+      const focus = (selector: string) => app.eval(`document.querySelector(${JSON.stringify(selector)}).focus()`);
+      const pause = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+      await unlockAllLessons(app);
+      await app.click(button('Learn', 'prefix'), 'the Learn button on the Welcome screen');
+      await app.until('the Learn home', async () => await app.visible(css('[data-learn-start]')) || undefined);
+      app.answer(folder);
+      await app.click(css(`[data-learn-start="${lesson.id}"]`), 'the start of the motor plant lesson');
+      await app.until('the project workbench to appear', async () => await app.visible(toolbar) || undefined);
+      const built = await compile(app);
+      assert(built.kind === 'built', `The starter of the plant lesson does not build: ${built.message}`);
+      await connectAndRun(app);
+
+      // 1. The plant is drawn and bound by the mapping the lesson ships: no name is typed anywhere.
+      await app.click(tab('Lab', 'prefix'));
+      await patiently('the live motor plant', async () => await app.visible(css('[data-plant="motor-v1"]')) || undefined);
+      assert((await fact()) === 'plant.motor.stopped', `The motor starts as ${await fact()}.`);
+      // Everything the two live regions are told, in order (a later message replaces an earlier one in the region itself).
+      await app.eval(`(() => { window.__said = []; for (const region of document.querySelectorAll('[data-live-region]')) new MutationObserver(() => { window.__said.push(region.textContent); }).observe(region, { childList: true, characterData: true, subtree: true }); })()`);
+      const said = (text: string) => app.eval<boolean>(`window.__said.some((message) => message.includes(${JSON.stringify(text)}))`);
+
+      // 2. Operate the Start input on the faceplate: the program commands the motor, the plant reaches speed, AtSpeed returns to the program.
+      await app.click(css('[data-input="MotorPlant.Start"] button[role="switch"]'), 'the Start switch');
+      await patiently('the motor to reach speed', async () => (await fact()) === 'plant.motor.atSpeed' || undefined);
+      await patiently('Running to follow the plant', async () => (await outputText('Running')).includes('TRUE') || undefined);
+      await patiently('the state to be announced in words', async () => await said('Motor at speed') || undefined);
+
+      // 3. Pause, with the keyboard: the plant stops advancing; Step advances exactly one scan; Play resumes.
+      await focus('[data-plant-control="play-pause"]');
+      await app.press('Enter');
+      await patiently('the plant to say it is paused', async () => (await app.eval<string>(`document.querySelector('[data-plant-scans]')?.textContent ?? ''`)).includes('paused') || undefined);
+      const held = await scans();
+      await pause(700);
+      assert((await scans()) === held, 'The plant advanced while paused.');
+      await focus('[data-plant-control="step"]');
+      await app.press('Space');
+      await patiently('one scan to be stepped', async () => (await scans()) === held + 1 || undefined);
+      await pause(500);
+      assert((await scans()) === held + 1, 'Step advanced more than one scan.');
+      await focus('[data-plant-control="play-pause"]');
+      await app.press('Enter');
+      await patiently('the plant to run again', async () => (await scans()) > held + 1 || undefined);
+
+      // 4. The fault action, with the keyboard: the motor stalls, never reaches speed, and the program sees it.
+      await focus('[data-plant-action="stall"]');
+      await app.press('Enter');
+      await patiently('the motor to stall', async () => (await fact()) === 'plant.motor.stalled' || undefined);
+      await patiently('Running to drop', async () => (await outputText('Running')).includes('FALSE') || undefined);
+      await patiently('the stall to be announced in words', async () => await said('Motor stalled') || undefined);
+      assert(await app.eval<boolean>(`document.querySelector('[data-plant-action="stall"]')?.getAttribute('aria-pressed') === 'true'`), 'The stall action does not say it is on.');
+      assert((await app.eval<string>(`document.querySelector('[data-plant="motor-v1"]')?.getAttribute('aria-label') ?? ''`)).includes('STALL FAULT'), 'The drawing does not name the fault in words.');
+
+      // 5. The recorded run stays, and says it is a replay.
+      await app.click(button('Run host scenarios'), 'Run host scenarios');
+      await patiently('the replay of the recorded run', async () => (await app.eval<string>(`document.body.innerText`)).includes('Replay of a recorded run') || undefined);
+      assert((await app.eval<string>(`document.body.innerText`)).includes('This is a replay'), 'The recorded run is not labelled as a replay.');
+    },
+  },
 ];
 
 /** Walks a native select to the option with this text with the arrow keys, as a keyboard user would. */
