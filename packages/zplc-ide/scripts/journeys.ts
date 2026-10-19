@@ -741,6 +741,42 @@ export const JOURNEYS: Journey[] = [
     },
   },
   {
+    // IDE-019: the Watch table completes a symbol, sorts, is edited from the keyboard and writes a prepared value on an explicit action.
+    name: '8c The Watch table completes, sorts, and writes a prepared value', example: 'motor_start_stop', proves: [], partly: ['IDE-019'],
+    run: async (app, { project }) => {
+      await openFolder(app, project);
+      await openFile(app, 'src/Motor.st');
+      const result = await compile(app);
+      assert(result.kind === 'built', `The Motor example does not build: ${result.message}`);
+      await connectAndRun(app);
+      await app.click(tab('Watch', 'prefix'));
+      if (!await app.visible(css('input[placeholder^="Variable path"]'))) await app.click(button('Add variable'));
+      await app.click(css('input[placeholder^="Variable path"]'));
+      await app.type('Sta');
+      assert((await app.eval<string[]>(`[...document.querySelectorAll('#watch-symbols option')].map((option) => option.value)`)).includes('Start'), 'The add field does not offer Start for "Sta".');
+      await app.press('Ctrl+A'); await app.type('Start'); await app.press('Enter');
+      await watch(app, 'Forward');
+      const names = () => app.eval<string[]>(`[...document.querySelector('button[aria-label="Sort by Name"]').closest('table').querySelectorAll('tbody tr')].map((row) => row.firstElementChild?.textContent)`);
+      assert(JSON.stringify(await names()) === '["Start","Forward"]', `The rows are not in the order they were added: ${JSON.stringify(await names())}`);
+      await app.click(button('Sort by Name'), 'the Name header');
+      await app.until('the rows sorted by name', async () => JSON.stringify(await names()) === '["Forward","Start"]' || undefined);
+      await app.click(button('Sort by Name'), 'the Name header');
+      await app.until('the rows sorted by name, descending', async () => JSON.stringify(await names()) === '["Start","Forward"]' || undefined);
+      await app.click(button('Sort by Name'), 'the Name header');
+      // from the keyboard: focus the value of Start, Enter opens the editor, Shift+Enter prepares the value without writing it
+      await app.eval(`${watchRow('Start')}?.children[1]?.querySelector('[tabindex="0"]')?.focus()`);
+      await app.press('Enter');
+      await app.until('the value editor of Start to take focus', async () => await app.eval(`document.activeElement === ${watchRow('Start')}?.querySelector('input[type="text"]')`) || undefined);
+      await app.press('Ctrl+A'); await app.type('1'); await app.press('Shift+Enter');
+      await app.until('Start to show a prepared value', async () => await app.eval(`${watchRow('Start')}?.querySelector('[data-prepared]') !== null`) === true || undefined);
+      await new Promise((resolve) => setTimeout(resolve, 600));
+      assert(await watchValue(app, 'Forward') === 'FALSE', 'A prepared value was written without the explicit action.');
+      await app.click(button('Write prepared values'), 'Write prepared values');
+      await app.until('Forward to turn TRUE once the prepared Start is written', async () => await watchValue(app, 'Forward') === 'TRUE' || undefined);
+      assert(await app.eval(`${watchRow('Start')}?.querySelector('[data-prepared]') === null`) === true, 'The prepared mark stays after the write.');
+    },
+  },
+  {
     // IDE-025: the native runtime cannot start, so the simulation runs on the WebAssembly runtime of the build, says that it
     // is degraded and why, and still runs a bundled project and holds a force. ZPLC_RUNTIME=wasm is the switch of an
     // unpackaged app that stands in for "the native runtime is not there" (electron/nativeSimulationEnvironment.ts).

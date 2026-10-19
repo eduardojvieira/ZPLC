@@ -1957,7 +1957,8 @@
     {"kind":"unit","ref":"packages/zplc-ide/src/components/watchTable.test.ts","test":"the Watch display formats (IDE-019)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/components/watchTable.test.ts","test":"a value typed into the Watch table (IDE-019)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/components/watchTable.test.ts","test":"sorting the Watch rows (IDE-019)"},
-    {"kind":"unit","ref":"packages/zplc-ide/src/components/watchTable.test.ts","test":"completing a symbol for the Watch table (IDE-019)"}
+    {"kind":"unit","ref":"packages/zplc-ide/src/components/watchTable.test.ts","test":"completing a symbol for the Watch table (IDE-019)"},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"8c The Watch table completes, sorts, and writes a prepared value","partial":true}
   ],
   "IDE-020": [
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"4 Build with an error, reach it from Problems","partial":true},
