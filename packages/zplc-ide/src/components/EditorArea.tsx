@@ -6,6 +6,7 @@
  */
 
 import { lazy, Suspense, useMemo, useCallback, useEffect, useRef, useState, type KeyboardEvent } from 'react';
+import { useT } from '../i18n';
 import { X, FileCode, File, Settings, Undo2, Redo2 } from 'lucide-react';
 import { useIDEStore } from '../store/useIDEStore';
 import { useEditorAreaState, useOpenFiles } from '../store/regionSubscriptions';
@@ -46,9 +47,10 @@ const ProjectSettings = lazy(() => import('./settings/ProjectSettings').then((mo
 const CodeEditor = lazy(() => import('./CodeEditor').then((module) => ({ default: module.CodeEditor })));
 
 function ViewLoading() {
+  const { t } = useT();
   return (
     <div role="status" className="flex h-full w-full items-center justify-center bg-[var(--color-surface-900)] text-sm text-[var(--color-surface-300)]">
-      Loading editor…
+      {t('workbench.editor.loading')}
     </div>
   );
 }
@@ -80,6 +82,7 @@ function isEditableShortcutTarget(target: EventTarget | null): boolean {
 }
 
 export function EditorArea() {
+  const { t } = useT();
   const {
     activeFileId,
     openTabs,
@@ -367,13 +370,13 @@ export function EditorArea() {
           <div className="w-16 h-16 mx-auto mb-4 rounded-lg bg-red-900/30 flex items-center justify-center">
             <FileCode size={32} className="text-red-400" />
           </div>
-          <p className="text-red-400 text-lg font-medium text-center">Invalid {lang} file</p>
+          <p className="text-red-400 text-lg font-medium text-center">{t('workbench.editor.invalidFile', { language: lang })}</p>
           <p className="text-[var(--color-surface-200)] text-sm mt-1 text-center font-mono break-all">{fileName}</p>
           <ul className="mt-4 list-disc pl-5 text-sm text-[var(--color-surface-300)] space-y-1">
             {violations.map((violation) => <li key={violation} className="break-words">{violation}</li>)}
           </ul>
-          {more > 0 && <p className="mt-1 pl-5 text-sm text-[var(--color-surface-400)]">and {more} more.</p>}
-          <p className="text-[var(--color-surface-400)] text-sm mt-4 text-center">Close this tab, correct the file on disk, and open it again.</p>
+          {more > 0 && <p className="mt-1 pl-5 text-sm text-[var(--color-surface-400)]">{t('workbench.editor.moreViolations', { count: more })}</p>}
+          <p className="text-[var(--color-surface-400)] text-sm mt-4 text-center">{t('workbench.editor.fixFile')}</p>
         </div>
       </div>
     );
@@ -409,9 +412,9 @@ export function EditorArea() {
           <div className="w-16 h-16 mx-auto mb-4 rounded-lg bg-[var(--color-surface-800)] flex items-center justify-center">
             <FileCode size={32} className="text-[var(--color-surface-400)]" />
           </div>
-          <p className="text-[var(--color-surface-300)] text-lg">No file open</p>
+          <p className="text-[var(--color-surface-300)] text-lg">{t('workbench.editor.noFile')}</p>
           <p className="text-[var(--color-surface-400)] text-sm mt-1">
-            Select a file from the explorer to start editing
+            {t('workbench.editor.selectFile')}
           </p>
         </div>
       </div>
@@ -421,7 +424,7 @@ export function EditorArea() {
   return (
     <div className="w-full h-full flex flex-col bg-[var(--color-surface-900)] overflow-hidden">
       {/* Tab Bar */}
-      <div role="tablist" aria-label="Editor views" className="h-9 flex items-center bg-[var(--color-surface-800)] border-b border-[var(--color-surface-600)] overflow-x-auto">
+      <div role="tablist" aria-label={t('workbench.editor.views')} className="h-9 flex items-center bg-[var(--color-surface-800)] border-b border-[var(--color-surface-600)] overflow-x-auto">
         {/* Settings Tab (if open) */}
         {showSettings && (
           <div
@@ -438,14 +441,14 @@ export function EditorArea() {
               className="flex min-w-0 items-center gap-2 rounded text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-accent-blue)]"
             >
               <Settings size={14} className="text-[var(--color-accent-blue)]" />
-              <span className="text-sm whitespace-nowrap">Settings</span>
+              <span className="text-sm whitespace-nowrap">{t('workbench.editor.settings')}</span>
             </button>
             <button
               type="button"
               onClick={handleCloseSettings}
               className="p-0.5 rounded opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 hover:bg-[var(--color-surface-500)] focus-visible:opacity-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--color-accent-blue)] transition-opacity"
-              aria-label="Close Settings"
-              title="Close Settings"
+              aria-label={t('workbench.editor.closeSettings')}
+              title={t('workbench.editor.closeSettings')}
             >
               <X size={14} />
             </button>
@@ -495,8 +498,8 @@ export function EditorArea() {
                 type="button"
                 onClick={() => handleCloseTab(file.id)}
                 className="p-0.5 rounded opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 hover:bg-[var(--color-surface-500)] focus-visible:opacity-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--color-accent-blue)] transition-opacity"
-                aria-label={`Close ${displayName}`}
-                title={`Close ${displayName}`}
+                aria-label={t('workbench.editor.closeFile', { name: displayName })}
+                title={t('workbench.editor.closeFile', { name: displayName })}
               >
                 <X size={14} />
               </button>
@@ -526,30 +529,30 @@ export function EditorArea() {
             <div className="h-full min-h-0 flex flex-col" onKeyDownCapture={handleVisualHistoryShortcut}>
               <div
                 role="toolbar"
-                aria-label="Visual editor history"
+                aria-label={t('workbench.editor.history')}
                 className="h-9 shrink-0 flex items-center gap-1 px-2 border-b border-[var(--color-surface-600)] bg-[var(--color-surface-800)]"
               >
                 <button
                   type="button"
                   onClick={() => applyVisualHistory('undo')}
                   disabled={!visualHistory.canUndo}
-                  aria-label="Undo visual edit"
-                  title="Undo visual edit (Ctrl+Z)"
+                  aria-label={t('workbench.editor.undoLabel')}
+                  title={t('workbench.editor.undoTitle')}
                   className="inline-flex items-center gap-1 rounded px-2 py-1 text-xs text-[var(--color-surface-200)] hover:bg-[var(--color-surface-700)] disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-accent-blue)]"
                 >
                   <Undo2 size={14} aria-hidden="true" />
-                  <span>Undo</span>
+                  <span>{t('workbench.editor.undo')}</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => applyVisualHistory('redo')}
                   disabled={!visualHistory.canRedo}
-                  aria-label="Redo visual edit"
-                  title="Redo visual edit (Ctrl+Shift+Z)"
+                  aria-label={t('workbench.editor.redoLabel')}
+                  title={t('workbench.editor.redoTitle')}
                   className="inline-flex items-center gap-1 rounded px-2 py-1 text-xs text-[var(--color-surface-200)] hover:bg-[var(--color-surface-700)] disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-accent-blue)]"
                 >
                   <Redo2 size={14} aria-hidden="true" />
-                  <span>Redo</span>
+                  <span>{t('workbench.editor.redo')}</span>
                 </button>
               </div>
               <div className="min-h-0 flex-1">{renderVisualEditor()}</div>
@@ -570,7 +573,7 @@ export function EditorArea() {
       {closingConfig && <ConfigCloseDialog busy={savingConfig} onChoice={(choice) => void answerConfigClose(choice)} />}
       {unsavedTabId && (
         <UnsavedChangesDialog
-          title="Unsaved changes in this tab"
+          title={t('workbench.editor.unsavedTab')}
           items={[getFile(unsavedTabId)?.name ?? unsavedTabId]}
           busy={savingTab}
           saveLabel="Save and close"

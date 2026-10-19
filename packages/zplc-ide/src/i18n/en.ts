@@ -18,6 +18,7 @@ import { learnEn } from './catalog/learn';
 import { learnHomeEn } from './catalog/learnHome';
 import { toolbarMsgEn } from './catalog/toolbarMsg';
 import { examplesEn } from './catalog/examples';
+import { workbenchEn } from './catalog/workbench';
 
 /**
  * The English catalog of Studio (UX-029): the source of truth for every user-visible string. A key is a dotted path
@@ -616,6 +617,7 @@ export const en = {
   ...learnHomeEn,
   ...toolbarMsgEn,
   ...examplesEn,
+  ...workbenchEn,
 } as const;
 
 export type MessageKey = keyof typeof en;

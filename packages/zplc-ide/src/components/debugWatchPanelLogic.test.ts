@@ -2,6 +2,7 @@ import { describe, expect, it } from 'bun:test';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
+import { withEnglishMessages } from '../i18n/inlineMessages';
 import { WATCH_FORCE_STATE } from '../runtime/debugAdapter';
 import { canEditWatchValue, canReleaseForces, canToggleForce, resolveWatchCommitAction, WATCH_COMMIT_ACTION } from './debugWatchPanelLogic';
 
@@ -36,7 +37,7 @@ describe('watch direct-edit hardware boundary', () => {
   });
 
   it('uses the serial session state before entering and committing an edit, with operator-facing guidance', () => {
-    const source = readFileSync(join(import.meta.dir, 'DebugWatchPanel.tsx'), 'utf8');
+    const source = withEnglishMessages(readFileSync(join(import.meta.dir, 'DebugWatchPanel.tsx'), 'utf8'));
 
     expect(source).toContain('resolveWatchCommitAction(forceState, hasActiveSerialSession)');
     expect(source).toContain('resolveWatchCommitAction(currentRow?.result.forceEntry?.state, hasActiveSerialSession)');
@@ -72,7 +73,7 @@ describe('canToggleForce', () => {
   });
 
   it('is what the Force checkbox and its handler both ask, so that a click is never dropped without a word', () => {
-    const source = readFileSync(join(import.meta.dir, 'DebugWatchPanel.tsx'), 'utf8');
+    const source = withEnglishMessages(readFileSync(join(import.meta.dir, 'DebugWatchPanel.tsx'), 'utf8'));
 
     expect(source).toContain('canToggleForce(!result.forced, result.value !== null || editing?.path === path)');
     expect(source).toContain('canToggleForce(nextForced, draftValue !== null)');
