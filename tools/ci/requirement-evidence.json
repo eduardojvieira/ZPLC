@@ -2446,10 +2446,23 @@
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"46 The themes, forced colours and reduced motion reach the three visual editors and the code editor","partial":true}
   ],
   "LRN-001": [
+    {"kind":"unit","ref":"packages/zplc-ide/electron/appMenu.test.ts","test":"LRN-001 is available with no project open, because the Learn home opens before a project does"},
+    {"kind":"unit","ref":"packages/zplc-ide/electron/appMenu.test.ts","test":"the Learn entry of the Help menu (LRN-001)"},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"11 Learn with no project open"}
+  ],
+  "LRN-002": [
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"11 Learn with no project open","partial":true}
   ],
   "LRN-003": [
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"11 Learn with no project open","partial":true}
+  ],
+  "LRN-005": [
+    {"kind":"unit","ref":"tools/ci/lesson-index.test.ts","test":"holds the course structure of lessons/course.json, and refuses a missing or broken course file (LRN-005)"},
+    {"kind":"unit","ref":"tools/ci/lesson-index.test.ts","test":"refuses a lesson placed in a module the manifest cannot name or at another level than its module (LRN-005, LRN-007)"},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"11 Learn with no project open","partial":true}
+  ],
+  "LRN-007": [
+    {"kind":"unit","ref":"tools/ci/lesson-index.test.ts","test":"refuses a lesson placed in a module the manifest cannot name or at another level than its module (LRN-005, LRN-007)"}
   ],
   "LRN-009": [
     {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonCi.test.ts","test":"lesson packages (LRN-009, LRN-010, LRN-027)"},
@@ -2457,7 +2470,13 @@
   ],
   "LRN-010": [
     {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonCi.test.ts","test":"lesson packages (LRN-009, LRN-010, LRN-027)"},
-    {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonPackage.test.ts","test":"lesson package validators (LRN-009, LRN-010, LRN-027)"}
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonPackage.test.ts","test":"lesson package validators (LRN-009, LRN-010, LRN-027)"},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"11 Learn with no project open","partial":true}
+  ],
+  "LRN-011": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/components/LearnHomeView.test.tsx","test":"says which tracks a lesson supports and, for one it does not, why and what to do instead (LRN-011)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/course.test.ts","test":"the tracks a lesson supports (LRN-011)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/courseDefinition.test.ts","test":"refuses a track with no reason and no instead-action for the lesson that does not support it (LRN-011)"}
   ],
   "LRN-022": [
     {"kind":"unit","ref":"packages/zplc-ide/electron/ipcRegistry.test.ts","test":"the lesson check over the IPC boundary (LRN-022, LRN-026, IDE-002, IDE-012)"},
@@ -2496,6 +2515,7 @@
     {"kind":"unit","ref":"packages/zplc-ide/electron/learnProgressModel.test.ts","test":"the Learn progress document (LRN-031, LRN-032)"},
     {"kind":"unit","ref":"packages/zplc-ide/electron/learnProgressStore.test.ts","test":"Learn progress main-process store (LRN-031, LRN-032)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/learn/progressClient.test.ts","test":"the Learn progress client validates what the main process answers (LRN-031, LRN-032)"},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"11 Learn with no project open","partial":true},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"39 Learn reports the failed assertion of a lesson","partial":true},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"39b Learn records the grade of a passed lesson","partial":true}
   ],
@@ -2503,7 +2523,8 @@
     {"kind":"unit","ref":"packages/zplc-ide/electron/ipcRegistry.test.ts","test":"the Learn progress channels over the IPC boundary (LRN-031, LRN-032)"},
     {"kind":"unit","ref":"packages/zplc-ide/electron/learnProgressModel.test.ts","test":"the Learn progress document (LRN-031, LRN-032)"},
     {"kind":"unit","ref":"packages/zplc-ide/electron/learnProgressStore.test.ts","test":"Learn progress main-process store (LRN-031, LRN-032)"},
-    {"kind":"unit","ref":"packages/zplc-ide/src/learn/progressClient.test.ts","test":"the Learn progress client validates what the main process answers (LRN-031, LRN-032)"}
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/progressClient.test.ts","test":"the Learn progress client validates what the main process answers (LRN-031, LRN-032)"},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"11 Learn with no project open","partial":true}
   ],
   "LRN-034": [
     {"kind":"unit","ref":"packages/zplc-ide/src/mcp/server.test.ts","test":"cannot mark a lesson passed: no tool takes a lesson or progress, and no tool or resource read changes the progress files (LRN-034)"}
