@@ -1023,8 +1023,10 @@
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"28c Online values of an FBD come from the debug map","partial":true},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"28d Online state of an SFC comes from the debug map","partial":true},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"28e Inline values in Structured Text come from the debug map","partial":true},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"28l A running Ladder keeps the window responsive","partial":true},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"51 A forced variable is shown as forced in the function block diagram","partial":true},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"51b A forced variable is shown as forced in the sequential function chart","partial":true},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"51d A forced variable is shown as forced in the Ladder","partial":true},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"54b Instruction List values are watched and a variable is forced and released","partial":true}
   ],
   "LNG-007": [
@@ -1962,7 +1964,8 @@
   ],
   "IDE-013": [
     {"kind":"unit","ref":"packages/zplc-ide/src/store/regionSubscriptions.test.ts","test":"regions render for what they show (IDE-013)"},
-    {"kind":"unit","ref":"tools/ci/ide-structure.test.ts","test":"a component must not subscribe to the whole store (IDE-013)"}
+    {"kind":"unit","ref":"tools/ci/ide-structure.test.ts","test":"a component must not subscribe to the whole store (IDE-013)"},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"28l A running Ladder keeps the window responsive","partial":true}
   ],
   "IDE-014": [
     {"kind":"unit","ref":"tools/ci/ide-structure.test.ts","test":"module size stopgap (IDE-014): listed modules may stay above the limit until they are split","partial":true}
@@ -2215,7 +2218,8 @@
     {"kind":"unit","ref":"packages/zplc-ide/src/ui/kit.test.tsx","test":"kit display components (UX-001, UX-009 stopgap)","partial":true},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"46 The themes, forced colours and reduced motion reach the three visual editors and the code editor","partial":true},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"51 A forced variable is shown as forced in the function block diagram","partial":true},
-    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"51b A forced variable is shown as forced in the sequential function chart","partial":true}
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"51b A forced variable is shown as forced in the sequential function chart","partial":true},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"51d A forced variable is shown as forced in the Ladder","partial":true}
   ],
   "UX-010": [
     {"kind":"unit","ref":"tools/ci/ui-kit-guard.test.ts","test":"UX-010 finds a pulse, a ping and a glow in a visual editor"},
