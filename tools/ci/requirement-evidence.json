@@ -991,7 +991,10 @@
     {"kind":"unit","ref":"packages/zplc-ide/src/transpiler/sourceMap.test.ts","test":"LNG-004 the FBD source map"},
     {"kind":"unit","ref":"packages/zplc-ide/src/transpiler/sourceMap.test.ts","test":"LNG-004 the IL source map"},
     {"kind":"unit","ref":"packages/zplc-ide/src/transpiler/sourceMap.test.ts","test":"LNG-004 the Ladder source map"},
-    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"28 A breakpoint on a rung stops execution","partial":true}
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"28 A breakpoint on a rung stops execution","partial":true},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"28ka A breakpoint on an FBD block stops execution","partial":true},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"28kb A breakpoint on an SFC step stops execution","partial":true},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"28kc A breakpoint on an IL line stops execution","partial":true}
   ],
   "LNG-005": [
     {"kind":"unit","ref":"packages/zplc-ide/src/utils/breakpoints.test.ts","test":"a breakpoint binds in every ST file of a project, by the project-relative path of its own file (LNG-005)"},
@@ -1050,12 +1053,17 @@
   "LNG-012": [
     {"kind":"unit","ref":"packages/zplc-ide/src/editors/SearchList.test.tsx","test":"the search list of the visual editors (LNG-012) on the component kit"},
     {"kind":"unit","ref":"packages/zplc-ide/src/editors/fbd/FBDToolbox.test.tsx","test":"the FBD toolbox (LNG-012) on the component kit"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/editors/fbd/keyboard.test.ts","test":"LNG-012 aligns two blocks by keyboard alone: extend, then align left, one gesture"},
     {"kind":"unit","ref":"packages/zplc-ide/src/editors/fbd/keyboard.test.ts","test":"LNG-012 binding a function block diagram from the declared symbols"},
     {"kind":"unit","ref":"packages/zplc-ide/src/editors/fbd/keyboard.test.ts","test":"LNG-012 connecting and disconnecting from the keyboard"},
     {"kind":"unit","ref":"packages/zplc-ide/src/editors/fbd/keyboard.test.ts","test":"LNG-012 deleting and commenting from the keyboard"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/editors/fbd/keyboard.test.ts","test":"LNG-012 extends the selection to the nearest block in a direction, without a commit"},
     {"kind":"unit","ref":"packages/zplc-ide/src/editors/fbd/keyboard.test.ts","test":"LNG-012 function block diagram cursor"},
     {"kind":"unit","ref":"packages/zplc-ide/src/editors/fbd/keyboard.test.ts","test":"LNG-012 function block diagram keyboard authoring"},
     {"kind":"unit","ref":"packages/zplc-ide/src/editors/fbd/keyboard.test.ts","test":"LNG-012 function block diagram palette"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/editors/fbd/keyboard.test.ts","test":"LNG-012 keeps extending from the far edge of the selection, and says when nothing is further"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/editors/fbd/keyboard.test.ts","test":"LNG-012 selecting more than one block from the keyboard"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/editors/fbd/keyboard.test.ts","test":"LNG-012 selects every block with one key"},
     {"kind":"unit","ref":"packages/zplc-ide/src/editors/keymap.test.ts","test":"LNG-012 the key table of the visual editors"},
     {"kind":"unit","ref":"packages/zplc-ide/src/editors/ld/LDToolbox.test.tsx","test":"the Ladder toolbox (LNG-012) on the component kit"},
     {"kind":"unit","ref":"packages/zplc-ide/src/editors/ld/keyboard.test.ts","test":"LNG-012 binding a variable from the declared symbols"},
@@ -1066,7 +1074,9 @@
     {"kind":"unit","ref":"packages/zplc-ide/src/editors/picker.test.ts","test":"LNG-012 palettes are searchable from the keyboard"},
     {"kind":"unit","ref":"packages/zplc-ide/src/editors/sfc/SFCToolbox.test.tsx","test":"the SFC toolbox (LNG-012) on the component kit"},
     {"kind":"unit","ref":"packages/zplc-ide/src/editors/sfc/keyboard.test.ts","test":"LNG-012 connecting and deleting in the chart from the keyboard"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/editors/sfc/keyboard.test.ts","test":"LNG-012 extends the selection down the chart and aligns the two elements with keys alone, as one gesture"},
     {"kind":"unit","ref":"packages/zplc-ide/src/editors/sfc/keyboard.test.ts","test":"LNG-012 naming and conditions from the declared symbols"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/editors/sfc/keyboard.test.ts","test":"LNG-012 selecting more than one element of the chart from the keyboard"},
     {"kind":"unit","ref":"packages/zplc-ide/src/editors/sfc/keyboard.test.ts","test":"LNG-012 sequential function chart cursor"},
     {"kind":"unit","ref":"packages/zplc-ide/src/editors/sfc/keyboard.test.ts","test":"LNG-012 sequential function chart keyboard authoring"},
     {"kind":"unit","ref":"packages/zplc-ide/src/editors/sfc/keyboard.test.ts","test":"LNG-012 sequential function chart palette"},
@@ -1074,7 +1084,8 @@
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"28f A rung is built from the keyboard","partial":true},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"28g A function block diagram is edited from the keyboard","partial":true},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"28h A sequential function chart is edited from the keyboard","partial":true},
-    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"28i An element dropped on a rung is inserted as the keyboard inserts it","partial":true}
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"28i An element dropped on a rung is inserted as the keyboard inserts it","partial":true},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"28ja Two blocks are selected and aligned from the keyboard alone","partial":true}
   ],
   "LNG-013": [
     {"kind":"unit","ref":"packages/zplc-ide/src/editors/fbd/graphModel.test.ts","test":"LNG-013 drawing a wire between two pins"},
@@ -1189,6 +1200,9 @@
   "LNG-027": [
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"16 Debug details: stop, trace, resume mid-scan","partial":true},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"28 A breakpoint on a rung stops execution","partial":true},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"28ka A breakpoint on an FBD block stops execution","partial":true},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"28kb A breakpoint on an SFC step stops execution","partial":true},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"28kc A breakpoint on an IL line stops execution","partial":true},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"7 Breakpoint stops execution","partial":true}
   ],
   "RT-001": [
