@@ -1,46 +1,46 @@
 {
   "schemaVersion": 1,
   "title": "Arranque y parada seguros",
-  "summary": "Recorré un motor con enclavamiento, parada y sobrecarga usando el ejemplo Motor Start Stop.",
+  "summary": "Recorra un motor con enclavamiento, parada y sobrecarga usando el ejemplo Motor Start Stop.",
   "scope": "La evidencia de Tests es del host nativo POSIX; no es evidencia de hardware ni HIL.",
   "objectives": [
-    "Mantené el motor encendido tras soltar Start con un seal-in.",
-    "Bajá el motor con Stop, EStop y Overload, y evitá que un Start mantenido lo rearranque solo."
+    "Mantenga el motor encendido tras soltar Start con un seal-in.",
+    "Baje el motor con Stop, EStop y Overload, y evite que un Start mantenido lo rearranque solo."
   ],
   "stages": [
     {
       "key": "objective",
       "title": "Objetivo",
-      "body": "En src/Motor.st, reemplazá Forward := Start por un seal-in armado con Start, Stop, EStop y Overload; verificá que Reverse permanece FALSE.",
+      "body": "En src/Motor.st, reemplace Forward := Start por un seal-in armado con Start, Stop, EStop y Overload; verifique que Reverse permanece FALSE.",
       "checkpoint": "Forward sigue ON al soltar Start y cae con Stop, EStop o Overload."
     },
     {
       "key": "predict",
-      "title": "Predecí",
-      "body": "Antes de ejecutar, anticipá Motor.Forward a {{t:0}}, {{t:20}}, {{t:40}}, {{t:50}}, {{t:90}} y {{t:140}} ms.",
+      "title": "Prediga",
+      "body": "Antes de ejecutar, anticipe Motor.Forward a {{t:0}}, {{t:20}}, {{t:40}}, {{t:50}}, {{t:90}} y {{t:140}} ms.",
       "checkpoint": "OFF a {{t:0}} ms aunque Start esté pulsado; ON a {{t:20}}; OFF a {{t:40}} (EStop) y todavía OFF a {{t:50}} con Start pulsado; OFF a {{t:90}} (sobrecarga) y {{t:140}} (Stop). Vuelve a ON sólo tras soltar y volver a pulsar Start, a {{t:70}}, {{t:120}} y {{t:170}} ms. Motor.Reverse permanece OFF."
     },
     {
       "key": "edit",
-      "title": "Editá",
-      "body": "Corregí esta omisión del starter y guardá antes de ejecutar: El starter pierde el enclavamiento al soltar Start; implementá baja por Stop, EStop y sobrecarga, sin arrancar ni rearrancar mientras Start siga pulsado tras el encendido o una parada.",
+      "title": "Edite",
+      "body": "Corrija esta omisión del starter y guarde antes de ejecutar: El starter pierde el enclavamiento al soltar Start; implemente baja por Stop, EStop y sobrecarga, sin arrancar ni rearrancar mientras Start siga pulsado tras el encendido o una parada.",
       "checkpoint": "El escenario visible debe pasar con evidencia host guardada."
     },
     {
       "key": "run",
-      "title": "Ejecutá",
-      "body": "En Tests, elegí el zplc.json guardado y ejecutá únicamente el escenario MotorStartStop.",
+      "title": "Ejecute",
+      "body": "En Tests, elija el zplc.json guardado y ejecute únicamente el escenario MotorStartStop.",
       "checkpoint": "El escenario requerido se llama MotorStartStop y contiene {{assertions}} assertions."
     },
     {
       "key": "observe",
-      "title": "Observá",
-      "body": "Compará la traza: EStop a {{t:40}} ms, sobrecarga a {{t:90}} ms y parada a {{t:140}} ms.",
+      "title": "Observe",
+      "body": "Compare la traza: EStop a {{t:40}} ms, sobrecarga a {{t:90}} ms y parada a {{t:140}} ms.",
       "checkpoint": "EStop, Overload y Stop fuerzan Motor.Forward OFF, y mantener Start no lo reinicia."
     },
     {
       "key": "reflect",
-      "title": "Reflexioná",
+      "title": "Reflexione",
       "body": "La assertion exacta NEVER comprueba cobertura lógica de este escenario.",
       "checkpoint": "No demuestra seguridad física, temporización de hardware ni certificación."
     }
@@ -48,14 +48,14 @@
   "hints": [
     {
       "level": 1,
-      "text": "La salida tiene que recordar que se pulsó Start: usá una variable de memoria que Start active y que se mantenga hasta que una condición de parada la borre."
+      "text": "La salida tiene que recordar que se pulsó Start: use una variable de memoria que Start active y que se mantenga hasta que una condición de parada la borre."
     },
     {
       "level": 2,
-      "text": "Borrá la memoria primero cuando Stop, EStop u Overload sea TRUE; recién después dejá que Start la active, y sólo si Start se vio suelto desde la última parada, así un Start mantenido no rearranca el motor."
+      "text": "Borre la memoria primero cuando Stop, EStop u Overload sea TRUE; recién después deje que Start la active, y sólo si Start se vio suelto desde la última parada, así un Start mantenido no rearranca el motor."
     }
   ],
   "faultCases": [
-    "El starter pierde el enclavamiento al soltar Start; implementá baja por Stop, EStop y sobrecarga, sin arrancar ni rearrancar mientras Start siga pulsado tras el encendido o una parada."
+    "El starter pierde el enclavamiento al soltar Start; implemente baja por Stop, EStop y sobrecarga, sin arrancar ni rearrancar mientras Start siga pulsado tras el encendido o una parada."
   ]
 }

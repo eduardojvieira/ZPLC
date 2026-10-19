@@ -22,6 +22,9 @@ import { PROJECTS_DIRECTORY, loadLessonPackages, validateCourse, type LessonPack
 const loaded = loadLessonPackages();
 const packages = loaded.packages;
 const LOCALES = ['en', 'es'] as const;
+/** Rioplatense voseo: a verb ending in a stressed -á, -é or -í (agregá, tené, elegí) or an -ás/-és/-ís form (necesitás), or "vos". */
+const VOSEO = /\b(?:vos|[A-Za-zñ]+(?:á|é|í|ás|és|ís))(?![A-Za-zñ])/gi;
+const NOT_VOSEO = new Set(['está', 'esté', 'así', 'además', 'demás', 'qué', 'través', 'después', 'más', 'país']);
 
 let workRoot = '';
 let previousBinary: string | undefined;
@@ -101,6 +104,13 @@ for (const lesson of packages) {
         expect(run.checkpoint).toContain(String(scenario.expectations.length));
       });
     }
+
+    it('es: addresses the learner as usted, never with voseo', () => {
+      const { text } = expandText(lesson.texts.es, scenario);
+      const strings = [text.title, text.summary, text.scope, ...text.objectives, ...text.faultCases, ...text.hints.map((hint) => hint.text), ...text.stages.flatMap((stage) => [stage.body, stage.checkpoint, stage.title])];
+      const voseo = strings.flatMap((value) => value.match(VOSEO) ?? []).filter((word) => !NOT_VOSEO.has(word.toLowerCase()));
+      expect(voseo).toEqual([]);
+    });
 
     it('has the same structure in English and Spanish', () => {
       expect(textShape(lesson.texts.es)).toBe(textShape(lesson.texts.en));
