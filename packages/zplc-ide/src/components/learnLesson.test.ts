@@ -48,7 +48,7 @@ describe('Learn lesson catalog', () => {
     expect(en[1]).toMatchObject({ title: 'Pedestrian crossing and safe states' });
     // Lesson 8 has an extra Evidence stage; lesson 10 has its Edit stage since LRN-038 (it used to have none).
     for (const lesson of [...es, ...en].filter((lesson) => lesson.id !== 'scan-cycle-one-scan-memory' && lesson.id !== 'conveyor-two-parts-diagnosis')) expect(lesson.stages).toHaveLength(6);
-    expect(es[1]?.stages.map(({ title }) => title)).toEqual(['Objetivo', 'Predecí', 'Editá', 'Ejecutá', 'Observá', 'Reflexioná']);
+    expect(es[1]?.stages.map(({ title }) => title)).toEqual(['Objetivo', 'Prediga', 'Edite', 'Ejecute', 'Observe', 'Reflexione']);
     expect(en[1]?.stages.map(({ title }) => title)).toEqual(['Objective', 'Predict', 'Edit', 'Run', 'Observe', 'Reflect']);
     expect(es[1]?.stages[1]?.checkpoint).toBe('verde+STOP 0 ms; amarillo+STOP 20; rojo+STOP 40; rojo+WALK 60; rojo+STOP 90; verde+STOP 110.');
     expect(en[1]?.stages[1]?.checkpoint).toBe('green+STOP 0 ms; yellow+STOP 20; red+STOP 40; red+WALK 60; red+STOP 90; green+STOP 110.');
@@ -61,7 +61,7 @@ describe('Learn lesson catalog', () => {
     expect(en[1]?.scope).toContain('not physical crossing, hardware, HIL, or certification evidence');
     expect(es[2]).toMatchObject({ exampleId: 'tank_level', requiredScenario: 'TankLevel', sourcePath: 'src/TankLevel.st', scenarioPath: 'tests/tank-level.scenario.json', title: 'Nivel de tanque, fallas y reset', scope: 'La evidencia de Tests es determinística del host nativo POSIX; no es evidencia de proceso físico, hardware, HIL ni certificación.' });
     expect(en[2]).toMatchObject({ title: 'Tank level, faults, and reset', scope: 'Tests provide deterministic native POSIX host evidence only; they are not physical-process, hardware, HIL, or certification evidence.' });
-    expect(es[2]?.stages.map(({ title }) => title)).toEqual(['Objetivo', 'Predecí', 'Editá', 'Ejecutá', 'Observá', 'Reflexioná']);
+    expect(es[2]?.stages.map(({ title }) => title)).toEqual(['Objetivo', 'Prediga', 'Edite', 'Ejecute', 'Observe', 'Reflexione']);
     expect(en[2]?.stages.map(({ title }) => title)).toEqual(['Objective', 'Predict', 'Edit', 'Run', 'Observe', 'Reflect']);
     expect(es[2]?.stages[1]?.checkpoint).toBe('Pump ON/Alarm NORMAL 10–60 ms; Pump OFF/Alarm NORMAL 70 ms; OFF/ALARM 80–90; OFF/NORMAL 100–110; OFF/ALARM 120–130; OFF/NORMAL 140–150.');
     expect(en[2]?.stages[1]?.checkpoint).toBe('Pump ON/Alarm NORMAL 10–60 ms; Pump OFF/Alarm NORMAL 70 ms; OFF/ALARM 80–90; OFF/NORMAL 100–110; OFF/ALARM 120–130; OFF/NORMAL 140–150.');
@@ -70,7 +70,7 @@ describe('Learn lesson catalog', () => {
     expect(en[2]?.stages[4]?.body).toContain('80/100/120/140');
     expect(es[3]).toMatchObject({ exampleId: 'conveyor_01', requiredScenario: 'Conveyor01', sourcePath: 'src/Conveyor.st', scenarioPath: 'tests/conveyor-01.scenario.json', title: 'Cinta de clasificación y atasco seguro', scope: 'La evidencia de Tests es determinística del host nativo POSIX; no es evidencia de cinta física, despeje de atasco, hardware, HIL ni certificación.' });
     expect(en[3]).toMatchObject({ title: 'Conveyor classification and safe jam', scope: 'Tests provide deterministic native POSIX host evidence only; they are not physical conveyor, jam clearance, hardware, HIL, or certification evidence.' });
-    expect(es[3]?.stages.map(({ title }) => title)).toEqual(['Objetivo', 'Predecí', 'Editá', 'Ejecutá', 'Observá', 'Reflexioná']);
+    expect(es[3]?.stages.map(({ title }) => title)).toEqual(['Objetivo', 'Prediga', 'Edite', 'Ejecute', 'Observe', 'Reflexione']);
     expect(en[3]?.stages.map(({ title }) => title)).toEqual(['Objective', 'Predict', 'Edit', 'Run', 'Observe', 'Reflect']);
     expect(es[3]?.stages[1]?.checkpoint).toBe('Belt ON 10–40; Diverter ON sólo 30; FaultLamp ON y Belt OFF 50–80. Reset a 60 no libera mientras JamDetected sigue activo.');
     expect(en[3]?.stages[1]?.checkpoint).toBe('Belt ON 10–40; Diverter ON only 30; FaultLamp ON and Belt OFF 50–80. Reset at 60 does not release while JamDetected remains active.');
@@ -81,7 +81,7 @@ describe('Learn lesson catalog', () => {
     expect(en[3]?.stages[5]?.body).toBe('The NEVER assertion covers DiverterCommand ON with BeltCommand OFF only in this scenario.');
     expect(es[4]).toMatchObject({ exampleId: 'blinky', requiredScenario: 'BlinkyVisual', sourcePath: 'src/Blinky.ld.json', scenarioPath: 'tests/blinky-visual.scenario.json', title: 'Oscilador TON y realimentación de salida', scope: 'La evidencia de Tests es del host nativo POSIX; no es evidencia de LED físico, timing de hardware, HIL ni certificación.' });
     expect(en[4]).toMatchObject({ title: 'TON oscillator and output feedback', scope: 'Tests provide native POSIX host evidence only; they are not physical LED, hardware timing, HIL, or certification evidence.' });
-    expect(es[4]?.stages.map(({ title }) => title)).toEqual(['Objetivo', 'Predecí', 'Editá', 'Ejecutá', 'Observá', 'Reflexioná']);
+    expect(es[4]?.stages.map(({ title }) => title)).toEqual(['Objetivo', 'Prediga', 'Edite', 'Ejecute', 'Observe', 'Reflexione']);
     expect(en[4]?.stages.map(({ title }) => title)).toEqual(['Objective', 'Predict', 'Edit', 'Run', 'Observe', 'Reflect']);
     expect(es[4]?.stages[1]?.checkpoint).toBe('OFF a 250 ms, ON a 750, OFF a 1250, ON a 1750; el primer flanco ascendente cae entre 400 y 600 ms.');
     expect(en[4]?.stages[1]?.checkpoint).toBe('OFF at 250 ms, ON at 750, OFF at 1250, ON at 1750; the first rising edge lands between 400 and 600 ms.');
@@ -107,9 +107,9 @@ describe('Learn lesson catalog', () => {
     const starter = JSON.parse(readFileSync(join(import.meta.dir, '..', '..', 'projects', 'blinky_starter', 'src', 'Blinky.ld.json'), 'utf8')) as { rungs: unknown[] };
     expect(starter.rungs).toHaveLength(2);
     for (const lesson of [es[4]!, en[4]!]) expect(lesson.faultCases.join(' ')).not.toMatch(/OFF y ON|OFF and ON half/);
-    expect(es[5]).toMatchObject({ exampleId: 'motor_plant', requiredScenario: 'MotorPlant', sourcePath: 'src/MotorPlant.st', scenarioPath: 'tests/motor-plant.scenario.json', title: 'Comando, realimentación y velocidad', summary: 'Separá la orden del motor de la confirmación de marcha usando la planta Motor Plant.', scope: 'La evidencia de Tests es determinística del host nativo POSIX y de la planta discreta; no es evidencia de motor físico, hardware, HIL ni certificación.' });
+    expect(es[5]).toMatchObject({ exampleId: 'motor_plant', requiredScenario: 'MotorPlant', sourcePath: 'src/MotorPlant.st', scenarioPath: 'tests/motor-plant.scenario.json', title: 'Comando, realimentación y velocidad', summary: 'Separe la orden del motor de la confirmación de marcha usando la planta Motor Plant.', scope: 'La evidencia de Tests es determinística del host nativo POSIX y de la planta discreta; no es evidencia de motor físico, hardware, HIL ni certificación.' });
     expect(en[5]).toMatchObject({ title: 'Command, feedback, and speed', summary: 'Separate a motor command from the run confirmation using the Motor Plant.', scope: 'Tests provide deterministic native POSIX host and discrete-plant evidence only; they are not physical-motor, hardware, HIL, or certification evidence.' });
-    expect(es[5]?.stages.map(({ title }) => title)).toEqual(['Objetivo', 'Predecí', 'Editá', 'Ejecutá', 'Observá', 'Reflexioná']);
+    expect(es[5]?.stages.map(({ title }) => title)).toEqual(['Objetivo', 'Prediga', 'Edite', 'Ejecute', 'Observe', 'Reflexione']);
     expect(en[5]?.stages.map(({ title }) => title)).toEqual(['Objective', 'Predict', 'Edit', 'Run', 'Observe', 'Reflect']);
     expect(es[5]?.stages[1]?.checkpoint).toBe('0 ms: Command/Running OFF; 10: Command ON y Running OFF; 30: ambos ON; 40: ambos OFF.');
     expect(en[5]?.stages[1]?.checkpoint).toBe('0 ms: Command/Running OFF; 10: Command ON and Running OFF; 30: both ON; 40: both OFF.');
@@ -121,25 +121,25 @@ describe('Learn lesson catalog', () => {
     expect(en[5]?.stages[4]?.body).toContain('10 with 30 ms');
     expect(es[5]?.stages[5]?.body).toBe('RISING/FALLING cubren esta transición y NEVER comprueba que Running no aparezca sin Command dentro de este escenario.');
     expect(en[5]?.stages[5]?.body).toBe('RISING/FALLING cover this transition, and NEVER checks that Running never appears without Command in this scenario.');
-    expect(es[6]).toMatchObject({ exampleId: 'edge_counter', requiredScenario: 'EdgeCounter', sourcePath: 'src/EdgeCounter.st', scenarioPath: 'tests/edge-counter.scenario.json', title: 'Flancos y contador de pulsos', summary: 'Usá un contador CTU para contar tres pulsos discretos y resetear la cuenta.', scope: 'La evidencia de Tests es del host nativo POSIX; no es evidencia de sensor físico, rebote, hardware, HIL ni certificación.' });
+    expect(es[6]).toMatchObject({ exampleId: 'edge_counter', requiredScenario: 'EdgeCounter', sourcePath: 'src/EdgeCounter.st', scenarioPath: 'tests/edge-counter.scenario.json', title: 'Flancos y contador de pulsos', summary: 'Use un contador CTU para contar tres pulsos discretos y resetear la cuenta.', scope: 'La evidencia de Tests es del host nativo POSIX; no es evidencia de sensor físico, rebote, hardware, HIL ni certificación.' });
     expect(en[6]).toMatchObject({ title: 'Edges and pulse counter', summary: 'Use a CTU counter to count three discrete pulses and reset the count.', scope: 'Tests provide native POSIX host evidence only; they are not physical-sensor, bounce, hardware, HIL, or certification evidence.' });
-    expect(es[6]?.stages.map(({ title }) => title)).toEqual(['Objetivo', 'Predecí', 'Editá', 'Ejecutá', 'Observá', 'Reflexioná']);
+    expect(es[6]?.stages.map(({ title }) => title)).toEqual(['Objetivo', 'Prediga', 'Edite', 'Ejecute', 'Observe', 'Reflexione']);
     expect(en[6]?.stages.map(({ title }) => title)).toEqual(['Objective', 'Predict', 'Edit', 'Run', 'Observe', 'Reflect']);
-    expect(es[6]?.stages[0]).toEqual({ title: 'Objetivo', body: 'En src/EdgeCounter.st, usá PulseInput, Reset y CountReached y agregá una instancia Count (CTU) con PV=3.', checkpoint: 'CTU cuenta una vez cada flanco ascendente de PulseInput, sin importar cuánto tiempo siga en alto el pulso; Reset borra la cuenta.' });
+    expect(es[6]?.stages[0]).toEqual({ title: 'Objetivo', body: 'En src/EdgeCounter.st, use PulseInput, Reset y CountReached y agregue una instancia Count (CTU) con PV=3.', checkpoint: 'CTU cuenta una vez cada flanco ascendente de PulseInput, sin importar cuánto tiempo siga en alto el pulso; Reset borra la cuenta.' });
     expect(en[6]?.stages[0]).toEqual({ title: 'Objective', body: 'In src/EdgeCounter.st, use PulseInput, Reset, and CountReached and add a Count (CTU) instance with PV=3.', checkpoint: 'CTU counts each rising edge of PulseInput once, however long the pulse stays high; Reset clears the count.' });
-    expect(es[6]?.stages[1]).toEqual({ title: 'Predecí', body: 'Antes de ejecutar, anticipá cuándo el contador alcanza PV=3.', checkpoint: 'CountReached permanece OFF a 0, 10 y 30 ms; enciende a 50 tras el tercer flanco; vuelve OFF a 70 con Reset.' });
+    expect(es[6]?.stages[1]).toEqual({ title: 'Prediga', body: 'Antes de ejecutar, anticipe cuándo el contador alcanza PV=3.', checkpoint: 'CountReached permanece OFF a 0, 10 y 30 ms; enciende a 50 tras el tercer flanco; vuelve OFF a 70 con Reset.' });
     expect(en[6]?.stages[1]).toEqual({ title: 'Predict', body: 'Before running, predict when the counter reaches PV=3.', checkpoint: 'CountReached stays OFF at 0, 10, and 30 ms; turns ON at 50 after the third edge; returns OFF at 70 with Reset.' });
-    expect(es[6]?.stages[4]).toEqual({ title: 'Observá', body: 'Compará los eventos de 10, 30, 50 y 70 ms con la salida CountReached.', checkpoint: 'El tercer pulso alcanza PV=3; Reset domina y devuelve CountReached a OFF.' });
+    expect(es[6]?.stages[4]).toEqual({ title: 'Observe', body: 'Compare los eventos de 10, 30, 50 y 70 ms con la salida CountReached.', checkpoint: 'El tercer pulso alcanza PV=3; Reset domina y devuelve CountReached a OFF.' });
     expect(en[6]?.stages[4]).toEqual({ title: 'Observe', body: 'Compare 10, 30, 50, and 70 ms with CountReached.', checkpoint: 'The third pulse reaches PV=3; Reset dominates and returns CountReached to OFF.' });
-    expect(es[6]?.stages[5]).toEqual({ title: 'Reflexioná', body: 'Las assertions AT/RISING/FALLING cubren esta secuencia lógica discreta.', checkpoint: 'No demuestran rebote, pulsos eléctricos, timing de hardware, HIL ni certificación.' });
+    expect(es[6]?.stages[5]).toEqual({ title: 'Reflexione', body: 'Las assertions AT/RISING/FALLING cubren esta secuencia lógica discreta.', checkpoint: 'No demuestran rebote, pulsos eléctricos, timing de hardware, HIL ni certificación.' });
     expect(en[6]?.stages[5]).toEqual({ title: 'Reflect', body: 'The AT/RISING/FALLING assertions cover this discrete logical sequence.', checkpoint: 'They do not establish bounce, electrical pulses, hardware timing, HIL, or certification.' });
-    expect(es[7]).toMatchObject({ exampleId: 'scan_snapshot', requiredScenario: 'ScanSnapshot', sourcePath: 'src/ScanSnapshot.st', scenarioPath: 'tests/scan-snapshot.scenario.json', title: 'Ciclo de scan y memoria de un ciclo', summary: 'Seguí cómo una entrada produce una salida actual y una copia demorada un scan.', scope: 'La evidencia de Tests es del runtime nativo POSIX host con una única tarea de 10 ms; no demuestra timing de target, snapshot bajo interrupciones físicas, rebote eléctrico, HIL ni certificación.' });
+    expect(es[7]).toMatchObject({ exampleId: 'scan_snapshot', requiredScenario: 'ScanSnapshot', sourcePath: 'src/ScanSnapshot.st', scenarioPath: 'tests/scan-snapshot.scenario.json', title: 'Ciclo de scan y memoria de un ciclo', summary: 'Siga cómo una entrada produce una salida actual y una copia demorada un scan.', scope: 'La evidencia de Tests es del runtime nativo POSIX host con una única tarea de 10 ms; no demuestra timing de target, snapshot bajo interrupciones físicas, rebote eléctrico, HIL ni certificación.' });
     expect(en[7]).toMatchObject({ title: 'Scan cycle and one-scan memory', summary: 'Follow how one input produces the current output and a copy delayed by one scan.', scope: 'Tests provide native POSIX host runtime evidence with one 10 ms task; they do not establish target timing, snapshots under physical interrupts, electrical bounce, HIL, or certification.' });
-    expect(es[7]?.stages[2]).toMatchObject({ title: 'Editá', checkpoint: 'El escenario visible debe pasar con evidencia host guardada.' });
+    expect(es[7]?.stages[2]).toMatchObject({ title: 'Edite', checkpoint: 'El escenario visible debe pasar con evidencia host guardada.' });
     expect(en[7]?.stages[2]).toMatchObject({ title: 'Edit', checkpoint: 'The visible scenario must pass with saved host evidence.' });
     expect(es[8]).toMatchObject({ exampleId: 'conveyor_01', requiredScenario: 'ConveyorJamTiming', sourcePath: 'src/Conveyor.st', scenarioPath: 'tests/conveyor-jam-timing.scenario.json', title: 'Assertions temporales y falla por atasco', scope: 'La evidencia de Tests es del runtime nativo POSIX host y de inputs discretos; el atasco programado no es una falla física, despeje físico, timing de target, HIL ni certificación.' });
     expect(en[8]).toMatchObject({ title: 'Temporal assertions and jam fault', scope: 'Tests provide native POSIX host runtime and discrete-input evidence only; the scheduled jam is not a physical fault, physical clearance, target timing, HIL, or certification evidence.' });
-    expect(es[8]?.stages.map(({ title }) => title)).toEqual(['Objetivo', 'Predecí', 'Editá', 'Ejecutá', 'Contrastá', 'Reflexioná']);
+    expect(es[8]?.stages.map(({ title }) => title)).toEqual(['Objetivo', 'Prediga', 'Edite', 'Ejecute', 'Contraste', 'Reflexione']);
     expect(en[8]?.stages.map(({ title }) => title)).toEqual(['Objective', 'Predict', 'Edit', 'Run', 'Compare', 'Reflect']);
     expect(es[8]?.stages.map(({ body, checkpoint }) => `${body} ${checkpoint}`).join(' ')).not.toContain('no requiere editar el programa');
     expect(en[8]?.stages.map(({ body, checkpoint }) => `${body} ${checkpoint}`).join(' ')).not.toContain('does not require editing');
@@ -161,7 +161,7 @@ describe('Learn lesson catalog', () => {
     expect(en[3]?.faultCases).not.toEqual(en[8]?.faultCases);
     expect(es[9]).toMatchObject({ exampleId: 'conveyor_01', requiredScenario: 'ConveyorTwoParts', sourcePath: 'src/Conveyor.st', scenarioPath: 'tests/conveyor-two-parts.scenario.json', title: 'Diagnóstico reproducible: dos piezas, una decisión', scope: 'La evidencia de Tests es del runtime nativo POSIX host con inputs programados por escenario; no es evidencia de sensores ni piezas físicas, timing de target, hardware, HIL ni certificación.' });
     expect(en[9]).toMatchObject({ title: 'Reproducible diagnosis: two parts, one decision', scope: 'Tests provide native POSIX host runtime evidence with scenario-scheduled inputs; they are not physical sensors or parts, target timing, hardware, HIL, or certification evidence.' });
-    expect(es[9]?.stages.map(({ title }) => title)).toEqual(['Ubicá', 'Predecí', 'Leé el calendario', 'Editá', 'Ejecutá', 'Diagnosticá', 'Límites']);
+    expect(es[9]?.stages.map(({ title }) => title)).toEqual(['Ubique', 'Prediga', 'Lea el calendario', 'Edite', 'Ejecute', 'Diagnostique', 'Límites']);
     expect(en[9]?.stages.map(({ title }) => title)).toEqual(['Locate', 'Predict', 'Read the schedule', 'Edit', 'Run', 'Diagnose', 'Limits']);
     for (const lesson of [es[9]!, en[9]!]) {
       expect(lesson.stages).toHaveLength(7);
