@@ -10,6 +10,7 @@ import { useShellLayout } from '../store/useShellLayout';
 import { writeProjectConfig } from '../utils/fileSystem';
 import { parseAndMigrateProject } from '../project/projectModel';
 import { loadProject, loadProjectAssets } from '../utils/projectLoader';
+import { openLessonWorkspaceFolder } from './managedWorkspace';
 import { createWorkspaceMemory, openLessonWorkspace, type WorkspaceDeps } from './lessonWorkspace';
 import { restoreStarterFiles } from './restoreStarter';
 import { useLearnProgress } from './progressState';
@@ -42,7 +43,7 @@ const workspaceDeps = (): WorkspaceDeps => ({
   recents: async () => { await useIDEStore.getState().refreshRecentProjects(); return useIDEStore.getState().recentProjects; },
   openRecent: (recentId) => useIDEStore.getState().openRecentProject(recentId),
   createWorkspace: (project) => useIDEStore.getState().copyExampleProjectToFolder(project),
-  ...(managedWorkspaces() ? { openManaged: (lessonId: string, project: string) => useIDEStore.getState().openLessonWorkspaceFolder(lessonId, project) } : {}),
+  ...(managedWorkspaces() ? { openManaged: (lessonId: string, project: string) => openLessonWorkspaceFolder(lessonId, project) } : {}),
   now: () => Date.now(),
   wait: (ms) => new Promise((resolve) => { window.setTimeout(resolve, ms); }),
 });
@@ -89,7 +90,7 @@ export const useLearnUi = create<LearnUiState>()((set, get) => ({
     } catch { return false; }
     // The editor reads the folder again: closing discards the buffers of the files that were just rewritten, which is what was confirmed.
     if (!store.closeProject({ discardUnsaved: true })) return false;
-    const reopened = managed ? (await useIDEStore.getState().openLessonWorkspaceFolder(id, entry.starter.project)) !== false : await useIDEStore.getState().openRecentProject(recentId!);
+    const reopened = managed ? (await openLessonWorkspaceFolder(id, entry.starter.project)) !== false : await useIDEStore.getState().openRecentProject(recentId!);
     if (reopened) set({ workspace: { lessonId: id, session: useIDEStore.getState().projectSession } });
     return reopened;
   },

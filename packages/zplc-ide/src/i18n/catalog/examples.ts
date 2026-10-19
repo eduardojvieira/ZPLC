@@ -40,7 +40,7 @@ export const examplesEn = {
   'examples.opta_led_chaser_ld.summary': 'The same sweeping light as a ladder diagram: a TON tick and a six-position shift register.',
   'examples.multitask_demo.title': 'Multitask demo',
   'examples.multitask_demo.summary': 'Two tasks at different rates, 10 ms and 100 ms, each blinking its own LED.',
-  'examples.multitask_demo.noScenario': 'No scenario: the check is the two LEDs blinking at different rates on the board, which a scenario cannot observe.',
+  'examples.multitask_demo.noScenario': 'No scenario: the check is the two lights blinking at different rates on the board, which a scenario cannot observe.',
   'examples.analog_test.title': 'Analog temperature reading',
   'examples.analog_test.summary': 'Reads the internal temperature sensor of the Pico (%IW8), converts it to degrees Celsius and flags an implausible reading.',
   'examples.kitchen_sink.title': 'Kitchen sink',
