@@ -245,7 +245,7 @@ export function Toolbar({ debugController }: ToolbarProps) {
 
     const saved = await saveFile(activeFileId);
     useNotifications.getState().report(saved ? { kind: 'save', status: 'success', title: t('toolbarMsg.saved', { name: activeFile.name }), details: 'output' }
-      : { kind: 'save', status: 'error', title: t('toolbarMsg.couldNotSave', { name: activeFile.name }), detail: t('toolbarMsg.theFileStaysModified'), details: 'output' });
+      : { kind: 'save', status: 'error', title: t('toolbarMsg.couldNotSave', { name: activeFile.name }), detail: t('toolbarMsg.theFileStaysModified'), details: 'output', recover: { label: t('toolbarMsg.trySavingAgain'), run: () => { void handleSaveFile(); } } });
   };
 
   // ==========================================================================
