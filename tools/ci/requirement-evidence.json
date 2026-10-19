@@ -2112,12 +2112,25 @@
   ],
   "UX-001": [
     {"kind":"unit","ref":"packages/zplc-ide/src/ui/gallery/gallery.test.tsx","test":"lists only components the kit exports, and the kit has every component UX-001 asks for"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/ui/kit.test.tsx","test":"UX-001 renders a combo box as a labelled input that controls a list box and shows the chosen option"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/ui/kit.test.tsx","test":"UX-001 renders a data grid with column headers, sortable columns and tabular numerals for numbers"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/ui/kit.test.tsx","test":"UX-001 renders a toast as a status, and a fault as an alert, with a named dismiss button"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/ui/kit.test.tsx","test":"UX-001 renders a tree with levels, set sizes, one tab stop and the expanded state"},
     {"kind":"unit","ref":"packages/zplc-ide/src/ui/kit.test.tsx","test":"kit buttons (UX-001, UX-026 stopgap)","partial":true},
+    {"kind":"unit","ref":"packages/zplc-ide/src/ui/kit.test.tsx","test":"kit combo box, tree, data grid and toast (UX-001)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/ui/kit.test.tsx","test":"kit dialogs (UX-001, UX-025 stopgap)","partial":true},
     {"kind":"unit","ref":"packages/zplc-ide/src/ui/kit.test.tsx","test":"kit display components (UX-001, UX-009 stopgap)","partial":true},
     {"kind":"unit","ref":"packages/zplc-ide/src/ui/kit.test.tsx","test":"kit form fields (UX-001, UX-026 stopgap)","partial":true},
     {"kind":"unit","ref":"packages/zplc-ide/src/ui/kit.test.tsx","test":"kit menu and tooltip (UX-001 stopgap)","partial":true},
     {"kind":"unit","ref":"packages/zplc-ide/src/ui/kit.test.tsx","test":"kit tabs and toggle group (UX-001, UX-025 stopgap)","partial":true},
+    {"kind":"unit","ref":"packages/zplc-ide/src/ui/logic/composite.test.ts","test":"UX-001 expands with ArrowRight, collapses with ArrowLeft, goes to the parent and walks the rows with the arrows"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/ui/logic/composite.test.ts","test":"UX-001 filters the options by what was typed, ignoring case, and keeps all of them for an empty query"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/ui/logic/composite.test.ts","test":"UX-001 lists only the visible rows with their level, set size and position"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/ui/logic/composite.test.ts","test":"UX-001 opens on ArrowDown, moves the active option, chooses on Enter and closes on Escape"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/ui/logic/composite.test.ts","test":"UX-001 sorts numbers as numbers and text by locale, leaving the input untouched, and cycles none, ascending, descending"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/ui/logic/composite.test.ts","test":"combo box logic (UX-001)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/ui/logic/composite.test.ts","test":"data grid logic (UX-001)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/ui/logic/composite.test.ts","test":"tree logic (UX-001)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/ui/logic/keyboard.test.ts","test":"keyboard navigation of a composite widget (UX-001, UX-025 stopgap)","partial":true},
     {"kind":"unit","ref":"packages/zplc-ide/src/ui/logic/keyboard.test.ts","test":"overlay placement (UX-001 stopgap)","partial":true},
     {"kind":"unit","ref":"packages/zplc-ide/src/ui/logic/keyboard.test.ts","test":"tabs keyboard behaviour (UX-001 stopgap)","partial":true},
@@ -2152,14 +2165,27 @@
   ],
   "UX-006": [
     {"kind":"unit","ref":"packages/zplc-ide/src/theme/tokens.test.ts","test":"type, shape and density tokens (UX-006, UX-007, UX-008)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/theme/typography.test.ts","test":"UX-006 gives values, addresses and times tabular, slashed-zero numerals through one class"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/theme/typography.test.ts","test":"UX-006 sets no font size under 11 pixels in any style sheet or component, and keeps the scale floor at 11"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/theme/typography.test.ts","test":"UX-006 ships Inter and JetBrains Mono as valid WOFF2 files inside the application, so no operating system font decides the typeface"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/theme/typography.test.ts","test":"UX-006 ships the licence text of each family with the application and names it in the third-party notices"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/theme/typography.test.ts","test":"bundled typefaces (UX-006)"},
     {"kind":"unit","ref":"tools/ci/ui-kit-guard.test.ts","test":"kit guard: focus and text size (UX-005, UX-006)"}
   ],
   "UX-007": [
-    {"kind":"unit","ref":"packages/zplc-ide/src/theme/tokens.test.ts","test":"type, shape and density tokens (UX-006, UX-007, UX-008)"}
+    {"kind":"unit","ref":"packages/zplc-ide/src/theme/tokens.test.ts","test":"type, shape and density tokens (UX-006, UX-007, UX-008)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/theme/typography.test.ts","test":"UX-007 casts a shadow only from the transient overlays of the kit: dialog, menu, popover, list box, tooltip and toast"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/theme/typography.test.ts","test":"UX-007 draws every shadow of the kit from an elevation token and every corner from a radius token"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/theme/typography.test.ts","test":"UX-007 keeps surfaces flat at rest and gives no shadow in high contrast, where an outline marks the overlay"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/theme/typography.test.ts","test":"shape, elevation and icon tokens (UX-007)"}
   ],
   "UX-008": [
     {"kind":"unit","ref":"packages/zplc-ide/src/theme/tokens.test.ts","test":"type, shape and density tokens (UX-006, UX-007, UX-008)"},
-    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"41 The component kit behaves from the keyboard in a real window","partial":true}
+    {"kind":"unit","ref":"packages/zplc-ide/src/theme/typography.test.ts","test":"UX-008 declares the compact value of every density token in one block that the root element selects"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/theme/typography.test.ts","test":"UX-008 sizes the kit controls, rows and tree rows from the density tokens, with no fixed pixel height of its own"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/theme/typography.test.ts","test":"density applies to the whole application (UX-008)"},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"41 The component kit behaves from the keyboard in a real window","partial":true},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"55 The density setting makes controls and rows smaller on every screen, and the setting is one the person reaches from the Welcome screen"}
   ],
   "UX-009": [
     {"kind":"unit","ref":"packages/zplc-ide/src/editors/monitorFlagsWiring.test.tsx","test":"UX-009 does not call a transition forced because a word of its condition is a keyword or a literal"},
