@@ -1,5 +1,5 @@
+import { t } from '../i18n';
+
 export function terminalDisconnectMessage(succeeded: boolean): string {
-  return succeeded
-    ? '\n[Disconnected]\n'
-    : '\n[Connection close failed. Verify device state before operating.]\n';
+  return succeeded ? `\n${t('terminal.disconnected')}\n` : `\n${t('terminal.closeFailed')}\n`;
 }

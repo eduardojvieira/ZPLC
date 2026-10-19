@@ -43,7 +43,7 @@ export function ToolchainCard({ ideId }: { ideId: string | undefined }) {
     ? { kind: 'checking' as const, message: 'Checking…' }
     : presentation ?? (bridgeAvailable
       ? { kind: 'idle' as const, message: 'Not checked' }
-      : { kind: 'unavailable' as const, message: 'Unavailable in this app' });
+      : { kind: 'unavailable' as const, message: t('toolchain.status.unavailable') });
   const statusClass = state.kind === 'ready'
     ? 'text-[var(--color-accent-green)]'
     : state.kind === 'attention' ? 'text-[var(--color-accent-yellow)]' : 'text-[var(--color-surface-400)]';
@@ -59,7 +59,7 @@ export function ToolchainCard({ ideId }: { ideId: string | undefined }) {
       const result = await inspectToolchain();
       setPresentation(result === null ? undefined : presentToolchainInspectResult(result));
     } catch {
-      setPresentation({ kind: 'unavailable', message: 'Unavailable in this app', checks: [], boardIdeIds: [] });
+      setPresentation({ kind: 'unavailable', message: t('toolchain.status.unavailable'), checks: [], boardIdeIds: [] });
     } finally {
       setChecking(false);
       requestAnimationFrame(() => {
