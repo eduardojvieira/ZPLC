@@ -324,12 +324,13 @@ def validate_release_workflow(errors: list[str], workflow: str | None = None) ->
     else:
         if not has_needs(reproducibility, "validate-version", "verify-release-candidate"):
             errors.append("Linux payload reproducibility must require validate-version and full CI")
-        # REL-032: the check is kept and never blocks a release run: it does not fail the run, and no job waits for it
+        # REL-032: the check is kept and never blocks a release run: it does not fail the run, only the notes (which run
+        # whatever happens) read its verdict, and no other job waits for it
         if normalize_whitespace(job_field(reproducibility, "continue-on-error") or "") != "true":
             errors.append("Linux payload reproducibility must be continue-on-error: it never blocks a release run (REL-032)")
         for other in re.findall(r"(?m)^  ([A-Za-z0-9_-]+):\n", workflow):
             job = workflow_job(workflow, other)
-            if other != "verify-linux-x64-payload-reproducibility" and job is not None and has_needs(job, "verify-linux-x64-payload-reproducibility"):
+            if other not in ("verify-linux-x64-payload-reproducibility", "render-release-notes") and job is not None and has_needs(job, "verify-linux-x64-payload-reproducibility"):
                 errors.append(f"{other} must not wait for the Linux payload reproducibility check (REL-032)")
 
     for build_name in ("build-macos", "build-windows", "build-linux"):
@@ -354,8 +355,14 @@ def validate_release_workflow(errors: list[str], workflow: str | None = None) ->
     else:
         if not has_needs(create, "validate-version", "verify-release-candidate"):
             errors.append("create-draft-release must require validation and full CI")
-        if normalize_whitespace(job_field(create, "if") or "") != publishing_only:
+        # REL-036: the draft is created once every platform build, which installs or mounts and launches each format, has finished
+        if not has_needs(create, "build-macos", "build-windows", "build-linux"):
+            errors.append("create-draft-release must wait for the builds of every platform (REL-036)")
+        condition = normalize_whitespace(job_field(create, "if") or "")
+        if "needs.validate-version.outputs.publishing == 'true'" not in condition or "!cancelled()" not in condition:
             errors.append("create-draft-release must run only when publishing")
+        elif not all(f"needs.build-{platform}.result == 'success'" in condition for platform in ("macos", "windows", "linux")) or " || " not in condition:
+            errors.append("create-draft-release must run when any platform build succeeded, not only when all did (REL-015)")
         if job_mapping(create, "permissions") != {"contents": "write"}:
             errors.append("create-draft-release must use only contents: write")
         # the draft is created with the tag and a placeholder body: it reads nothing from the repository, so it has no
