@@ -9,18 +9,19 @@ tags: [ide, migracion]
 
 # Migrar un proyecto v1 a v2
 
-ZPLC 2.0 previsualiza un proyecto v1 como v2 y muestra el diff resultante. La
-carpeta de origen no cambia hasta que guardás explícitamente; ese guardado
-actualiza su `zplc.json` en el workspace seleccionado a schema v2.
+ZPLC 2.0 muestra una vista previa de un proyecto v1 como v2 y la diferencia
+resultante. La carpeta de origen no cambia hasta que usted guarda de forma
+explícita; ese guardado actualiza su `zplc.json` en el espacio de trabajo
+seleccionado al esquema v2.
 
 ## Camino rápido
 
 1. Abra la carpeta del proyecto existente en Studio, o importe su archivo desde la pantalla de bienvenida: el
    diálogo de importación muestra la misma diferencia antes de escribir nada.
-2. Elija **Review the difference** en el aviso de migración del Explorer. El diálogo lista las líneas de `zplc.json` que
+2. Elija **Revisar la diferencia** en el aviso de migración del explorador. El diálogo lista las líneas de `zplc.json` que
    la migración quita y agrega; solo cambia `zplc.json`, y sus programas no se tocan.
-3. Elija **Aplicar migración** (equivale a **Guardar**) para escribir la configuración v2 revisada en ese workspace, o
-   **Close** para dejar la carpeta como está.
+3. Elija **Aplicar migración** (equivale a **Guardar**) para escribir la configuración v2 revisada en ese espacio de trabajo, o
+   **Cerrar** para dejar la carpeta como está.
 4. Vuelva a compilar y ejecutar el escenario después de guardar.
 
 ## Desde una terminal
@@ -44,24 +45,25 @@ carpeta del proyecto como estaba. Se revisa el archivo y, si se acepta, se copia
 
 | Área | Comportamiento v2 |
 | --- | --- |
-| Modelo de proyecto | Un Guardar explícito escribe `schemaVersion: 2` en el `zplc.json` del workspace. |
-| Carpeta original | No cambia durante la vista previa; Guardar actualiza el `zplc.json` original del workspace seleccionado. |
-| Vista previa | Studio muestra una vista previa; no promete soporte de cada construcción legada. |
-| Evidencia | Los resultados de compilación, test y simulación POSIX aplican al workspace guardado y sólo son evidencia host. |
+| Modelo de proyecto | Un guardado explícito escribe `schemaVersion: 2` en el `zplc.json` del espacio de trabajo. |
+| Carpeta original | No cambia durante la vista previa; guardar actualiza el `zplc.json` original del espacio de trabajo seleccionado. |
+| Vista previa | Studio muestra una vista previa; no promete soporte de cada construcción heredada. |
+| Evidencia | Los resultados de la compilación, de las pruebas y de la simulación POSIX corresponden al espacio de trabajo guardado y solo son evidencia de host. |
 
-## Alcance golden
+## Alcance de los proyectos de referencia
 
-El gate de migración cubre los proyectos golden v1 del repositorio: su forma v2
-guardada debe compilar y conservar el comportamiento observable probado en el runtime
-POSIX nativo. No es una afirmación de equivalencia de target, eléctrica, de
-timing ni HIL.
+La verificación de la migración cubre los proyectos de referencia v1 del repositorio:
+su forma v2 guardada debe compilar y conservar el comportamiento observable probado
+en el runtime POSIX nativo. No es una afirmación de equivalencia en el destino, ni
+eléctrica, ni de tiempos, ni HIL.
 
 ## Si la migración no es aceptable
 
-Haga un backup de la carpeta del proyecto o un commit en control de versiones
-antes de guardar, y revise el diff. Use los diagnósticos para resolver fuente o
-configuración no soportada antes de adoptar la migración. No edites JSON de
-modelos visuales generado a mano para evitar un diagnóstico.
+Haga una copia de seguridad de la carpeta del proyecto o una confirmación en el
+control de versiones antes de guardar, y revise la diferencia. Use los diagnósticos
+para resolver el código fuente o la configuración no admitidos antes de adoptar la
+migración. No edite a mano el JSON de los modelos visuales generado para evitar un
+diagnóstico.
 
 ## Qué está verificado y qué no
 
@@ -75,4 +77,4 @@ modelos visuales generado a mano para evitar un diagnóstico.
 ## Próximo paso
 
 Siga con [el flujo del compilador](./compiler.md) y guarde un resultado nuevo
-de test o simulación del proyecto guardado.
+de prueba o de simulación del proyecto guardado.
