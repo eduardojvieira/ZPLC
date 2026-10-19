@@ -12,7 +12,7 @@ import { useT } from '../i18n';
 import type { DebugController } from '../hooks/useDebugController';
 import { openLearnHome, useLearnUi } from '../learn/learnUi';
 import { useIDEStore } from '../store/useIDEStore';
-import { startShellRouting } from './shellRouting';
+import { lessonSurface, startShellRouting } from './shellRouting';
 import { useShellLayout } from '../store/useShellLayout';
 import { useShellLayoutSizes, useWorkspaceLayout } from '../utils/layoutStorage';
 import { workspaceLayoutFrom } from '../utils/sessionState';
@@ -72,10 +72,11 @@ export function WorkbenchShell({ EditorArea, Console, debugController }: Workben
   useCollapsible(primaryPanel, primaryVisible);
   useCollapsible(secondaryPanel, secondaryVisible);
 
-  // A lesson that has just been started and sits in the secondary sidebar (the rail is not Learn) opens that sidebar, once per lesson.
+  // The lesson moves to the secondary sidebar when the rail leaves Learn (LRN-004); that sidebar opens then, so the lesson never hides.
+  const lessonBeside = lessonSurface(activityView, lessonWorkspace !== null && lessonWorkspace.session === projectSession) === 'secondary';
   useEffect(() => {
-    if (lessonWorkspace && density !== 'compact' && useShellLayout.getState().activityView !== 'learn') useShellLayout.getState().setSecondaryVisible(true);
-  }, [lessonWorkspace, density]);
+    if (lessonBeside && density !== 'compact') useShellLayout.getState().setSecondaryVisible(true);
+  }, [lessonBeside, density]);
 
   // A window as narrow as the minimum has no room for the secondary sidebar (UX-023); it can be shown again from the View menu.
   useEffect(() => {
