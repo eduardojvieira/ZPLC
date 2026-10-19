@@ -1000,6 +1000,7 @@
   "LNG-006": [
     {"kind":"unit","ref":"packages/zplc-ide/src/monitoring/elementStates.test.ts","test":"a variable is read from the program of its own file (LNG-006)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/monitoring/elementStates.test.ts","test":"every variable that a translated source says it reads exists in the debug map (LNG-006)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/monitoring/elementStates.test.ts","test":"forced and faulted variables reach the state of the element that shows them (UX-009, LNG-006)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/monitoring/elementStates.test.ts","test":"the power of a rung from the values read (LNG-006)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/monitoring/elementStates.test.ts","test":"the states of elements from monitor entries (LNG-006)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/monitoring/inlineValues.test.ts","test":"inline values in Instruction List (LNG-006)"},
@@ -1009,7 +1010,9 @@
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"28b Online values of a rung come from the debug map","partial":true},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"28c Online values of an FBD come from the debug map","partial":true},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"28d Online state of an SFC comes from the debug map","partial":true},
-    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"28e Inline values in Structured Text come from the debug map","partial":true}
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"28e Inline values in Structured Text come from the debug map","partial":true},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"51 A forced variable is shown as forced in the function block diagram","partial":true},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"51b A forced variable is shown as forced in the sequential function chart","partial":true}
   ],
   "LNG-007": [
     {"kind":"unit","ref":"packages/zplc-ide/src/editors/paletteExecution.test.ts","test":"LNG-007 every block of the FBD palette is placed, built and run"},
@@ -1036,7 +1039,8 @@
     {"kind":"unit","ref":"packages/zplc-ide/src/editors/sfc/graphModel.test.ts","test":"SFC selection (LNG-010)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/editors/visualHistory.test.ts","test":"visual snapshot history (LNG-010)"},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"28i An element dropped on a rung is inserted as the keyboard inserts it","partial":true},
-    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"28j A block dragged with the pointer is one undo step","partial":true}
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"28j A block dragged with the pointer is one undo step","partial":true},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"51c The visual editors fit to the view, zoom wide, and open context menus from the keyboard","partial":true}
   ],
   "LNG-011": [
     {"kind":"unit","ref":"packages/zplc-ide/src/models/visualFileLoad.schema.test.ts","test":"LNG-011 a variable is an object with a name and a type, in every language"},
@@ -2100,6 +2104,15 @@
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"41 The component kit behaves from the keyboard in a real window","partial":true}
   ],
   "UX-009": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/editors/monitorFlagsWiring.test.tsx","test":"UX-009 does not call a transition forced because a word of its condition is a keyword or a literal"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/editors/monitorFlagsWiring.test.tsx","test":"UX-009 draws a diagram nobody forces and the poll read completely with no forced or fault cue"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/editors/monitorFlagsWiring.test.tsx","test":"UX-009 draws the faulted pin of a timer red with a triangle and the word FAULT, and its Q as it was"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/editors/monitorFlagsWiring.test.tsx","test":"UX-009 draws the forced variable block amber with a diamond and the word FORCED"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/editors/monitorFlagsWiring.test.tsx","test":"UX-009 marks a forced variable forced and an unreadable one faulted in the values Ladder draws"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/editors/monitorFlagsWiring.test.tsx","test":"UX-009 marks every transition whose condition reads the forced input as forced, by the names the map resolves"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/editors/monitorFlagsWiring.test.tsx","test":"UX-009 marks the step whose flag could not be read as a fault, and the others as nothing"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/editors/monitorFlagsWiring.test.tsx","test":"UX-009 puts the fault on the pin whose variable could not be read, and on no other"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/editors/monitorFlagsWiring.test.tsx","test":"UX-009 puts the forced variable on its variable block and on the pin that is wired to it"},
     {"kind":"unit","ref":"packages/zplc-ide/src/editors/signalVocabulary.test.tsx","test":"UX-009 FBD shows the five signal states"},
     {"kind":"unit","ref":"packages/zplc-ide/src/editors/signalVocabulary.test.tsx","test":"UX-009 Ladder shows the five signal states"},
     {"kind":"unit","ref":"packages/zplc-ide/src/editors/signalVocabulary.test.tsx","test":"UX-009 SFC shows the five signal states"},
@@ -2109,11 +2122,16 @@
     {"kind":"unit","ref":"packages/zplc-ide/src/editors/signalVocabulary.test.tsx","test":"UX-009 lists the five states and the plain value in SIGNAL_TONES"},
     {"kind":"unit","ref":"packages/zplc-ide/src/editors/signalVocabulary.test.tsx","test":"UX-009 says ACTIVE, IDLE and UNAVAILABLE for a step in words as well as in the tone"},
     {"kind":"unit","ref":"packages/zplc-ide/src/editors/signalVocabulary.test.tsx","test":"UX-009 the vocabulary names every state once"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/monitoring/elementStates.test.ts","test":"forced and faulted variables reach the state of the element that shows them (UX-009, LNG-006)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/monitoring/signalFlags.test.ts","test":"the variables the poll could not read (UX-009)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/monitoring/signalFlags.test.ts","test":"which variables a diagram shows as forced or faulted (UX-009)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/theme/signalTone.test.ts","test":"UX-009 paints SVG from the same tokens as the classes, and marks every state but a plain number"},
     {"kind":"unit","ref":"packages/zplc-ide/src/theme/signalTone.test.ts","test":"UX-009 reads a reading of the debug map: absent or unread is unknown, an error is a fault, a force is forced"},
     {"kind":"unit","ref":"packages/zplc-ide/src/theme/signalTone.test.ts","test":"signal tone of a watched value (UX-009 stopgap: Ladder, FBD, SFC, Trace and the I/O faceplate are not on it yet)","partial":true},
     {"kind":"unit","ref":"packages/zplc-ide/src/ui/kit.test.tsx","test":"kit display components (UX-001, UX-009 stopgap)","partial":true},
-    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"46 The themes, forced colours and reduced motion reach the three visual editors and the code editor","partial":true}
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"46 The themes, forced colours and reduced motion reach the three visual editors and the code editor","partial":true},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"51 A forced variable is shown as forced in the function block diagram","partial":true},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"51b A forced variable is shown as forced in the sequential function chart","partial":true}
   ],
   "UX-010": [
     {"kind":"unit","ref":"tools/ci/ui-kit-guard.test.ts","test":"UX-010 finds a pulse, a ping and a glow in a visual editor"},
@@ -2439,6 +2457,24 @@
   "UX-032": [
     {"kind":"unit","ref":"tools/ci/ux-tokens.test.ts","test":"design token checks (UX-003, UX-032)"},
     {"kind":"unit","ref":"tools/ci/ux-tokens.test.ts","test":"finds this repository current: the generated stylesheet, DESIGN.md and every token used (UX-003, UX-032)"}
+  ],
+  "UX-033": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/editors/arrange.test.ts","test":"aligning the selected nodes (UX-033)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/editors/arrange.test.ts","test":"distributing the selected nodes (UX-033)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/editors/arrange.test.ts","test":"what the commands refuse and why (UX-033)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/editors/contextMenuKey.test.ts","test":"UX-033 the keys that open a context menu"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/editors/contextMenus.test.ts","test":"UX-033 context menu of a rung"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/editors/contextMenus.test.ts","test":"UX-033 context menus of the diagram editors"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/editors/fbd/keyboard.test.ts","test":"UX-033 aligning and distributing blocks from the keyboard"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/editors/fbd/keyboard.test.ts","test":"UX-033 aligns the selected blocks to the left with one key, as one gesture, and says so"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/editors/fbd/keyboard.test.ts","test":"UX-033 centres, then distributes, with the keys of the table, one gesture each"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/editors/fbd/keyboard.test.ts","test":"UX-033 refuses to align one block and gives the canvas back as it was"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/editors/ld/rungWidth.test.ts","test":"UX-033 the width a rung is drawn at"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/editors/sfc/keyboard.test.ts","test":"UX-033 aligning and distributing steps and transitions from the keyboard"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/editors/sfc/keyboard.test.ts","test":"UX-033 aligns the selected steps and transitions in one gesture, and says how many"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/editors/sfc/keyboard.test.ts","test":"UX-033 refuses to distribute two elements, with the reason, and changes nothing"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/editors/viewBounds.test.ts","test":"UX-033 the zoom range of the diagram editors"},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"51c The visual editors fit to the view, zoom wide, and open context menus from the keyboard","partial":true}
   ],
   "UX-034": [
     {"kind":"unit","ref":"packages/zplc-ide/src/components/codeEditorDebugState.test.tsx","test":"UX-034 shows no debug entry while nothing is being debugged"},
