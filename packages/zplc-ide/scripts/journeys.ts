@@ -232,8 +232,14 @@ async function pauseStepResume(app: App): Promise<void> {
   await app.until('the scans to be counted', async () => await cycles(app) >= 1 || undefined, 60_000);
   await app.click(button('Pause (F6)', 'prefix'), 'the Pause button');
   await app.until('the toolbar to offer Resume', async () => await app.visible(button('Resume', 'prefix')) || undefined, 60_000);
-  await new Promise((resolve) => setTimeout(resolve, 400)); // a scan in flight when Pause was pressed may still be counted
-  const held = await cycles(app);
+  // a scan in flight when Pause was pressed may still be counted, and a loaded machine counts it late: wait for a steady counter
+  let held = await cycles(app);
+  for (let settled = 0; settled < 2;) {
+    await new Promise((resolve) => setTimeout(resolve, 500));
+    const now = await cycles(app);
+    settled = now === held ? settled + 1 : 0;
+    held = now;
+  }
   await new Promise((resolve) => setTimeout(resolve, 800));
   assert(await cycles(app) === held, `The cycle counter moved while the program was paused (${held} then ${await cycles(app)}).`);
   await app.click(button('Step one cycle', 'prefix'), 'the Step button');
