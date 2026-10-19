@@ -7,7 +7,7 @@
  * interface for the IDE's debug panel.
  */
 
-import { useRef, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { Plus, X, Trash2, Eye, AlertTriangle, LoaderCircle } from 'lucide-react';
 import { SIGNAL_TEXT_CLASS, signalTone } from '../theme/signalTone';
 import { useIDEStore } from '../store/useIDEStore';
@@ -113,6 +113,8 @@ export function DebugWatchPanel({ setValue, toggleForceValue, clearAllForcedValu
   const addWatch = useIDEStore((state) => state.addWatchVariable);
   const removeWatch = useIDEStore((state) => state.removeWatchVariable);
   const clearAll = useIDEStore((state) => state.clearWatchVariables);
+  // the panel renders at every reading: the candidates are worked out when the program or the typed text changes, not then
+  const symbols = useMemo(() => (showAddForm ? completeWatchSymbols(debugMap, newVarInput) : []), [showAddForm, debugMap, newVarInput]);
   const variables = sortWatchRows(buildDebugWatchRows(watchVariables, debugMap, liveValues, forcedValues, isPolling), sort.key, sort.direction);
   const hasForceEvidence = forcedValues.size > 0 || forcesUnconfirmed;
   const controlsBlocked = debugMode === 'none' || forcesUnconfirmed;
@@ -340,7 +342,7 @@ export function DebugWatchPanel({ setValue, toggleForceValue, clearAllForcedValu
         <div className="flex items-center gap-2 px-3 py-2 bg-[var(--color-surface-700)] border-b border-[var(--color-surface-600)]">
           <TextField list="watch-symbols" value={newVarInput} onChange={(e) => setNewVarInput(e.target.value)} onKeyDown={handleKeyDown} placeholder="Variable path (e.g., Counter, Timer1.ET)" className="flex-1" autoFocus aria-label="Variable path (e.g., Counter, Timer1.ET)" />
           <datalist id="watch-symbols">
-            {completeWatchSymbols(debugMap, newVarInput).map((symbol) => <option key={symbol} value={symbol} />)}
+            {symbols.map((symbol) => <option key={symbol} value={symbol} />)}
           </datalist>
           <Button variant="primary" size="sm" onClick={handleAddVariable}>
             Add
