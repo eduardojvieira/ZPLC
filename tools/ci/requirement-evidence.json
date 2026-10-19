@@ -1963,7 +1963,8 @@
   "IDE-020": [
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"4 Build with an error, reach it from Problems","partial":true},
     {"kind":"unit","ref":"packages/zplc-ide/src/components/consoleAttention.test.ts","test":"the order of the problems (IDE-020)"},
-    {"kind":"unit","ref":"packages/zplc-ide/src/components/consoleAttention.test.ts","test":"what was written while another view was visible (IDE-020)"}
+    {"kind":"unit","ref":"packages/zplc-ide/src/components/consoleAttention.test.ts","test":"what was written while another view was visible (IDE-020)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/components/ProblemsPanel.test.tsx","test":"the Problems tab (IDE-020)"}
   ],
   "IDE-021": [
     {"kind":"unit","ref":"packages/zplc-ide/src/components/NotificationsList.test.tsx","test":"the notification list (IDE-021)"},
