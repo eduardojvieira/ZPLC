@@ -48,9 +48,9 @@ corrían otros trabajos, así que léalos como un orden de magnitud.
 | Recorridos de Studio | `bun run test:journeys` | de 70 a 90 s | La aplicación real pasa sus recorridos de extremo a extremo (requiere pantalla) |
 | Firmware en Linux | `bun run setup:firmware` y luego `bun run test:firmware` | unos 6 min una vez, luego unos 4 min | Las suites de Zephyr pasan en `native_sim`, QEMU y los presupuestos de tamaño |
 | Documentación | `bun run check:docs` | unos 15 s en caliente, 1 min en frío | Las referencias están al día, todo nombre que una página menciona existe, ninguna oración afirma una capacidad que nada ejecutado respalde, las páginas están completas, las páginas en inglés y español coinciden en estructura, todo ejemplo y fragmento de configuración marcado como tal compila y da el resultado que su cerco indica, toda imagen es una capturada, y el sitio compila |
-| Ensayo de publicación | `bun run release:rehearsal` | unos 5 s | Las verificaciones que el workflow de publicación ejecuta antes de construir nada |
+| Ensayo de publicación | `bun run release:rehearsal` | unos 5 s | Las verificaciones que el flujo de trabajo de publicación ejecuta antes de construir nada |
 | Recursos de marca | `bun tools/ci/brand/generate-icons.ts --check` | menos de 1 s | Cada icono y la tarjeta social se generaron desde la única marca, `tools/brand/mark.svg`; regenérelos sin `--check` (necesita `rsvg-convert` y Python con Pillow) |
-| Verificaciones de salida de publicación | `bun test ./tools/ci` | unos 5 s | Los nombres y contenedores de los instaladores, los registros de lanzamiento, el resultado de la ejecución y los generadores del cask y del paquete de AUR se comportan como dicen sus datos de prueba; el workflow que los ejecuta sobre archivos producidos todavía no se ha ejecutado en CI |
+| Verificaciones de salida de publicación | `bun test ./tools/ci` | unos 5 s | Los nombres y contenedores de los instaladores, los registros de lanzamiento, el resultado de la ejecución y los generadores del cask y del paquete de AUR se comportan como dicen sus datos de prueba; el flujo de trabajo que los ejecuta sobre archivos producidos todavía no se ha ejecutado en CI |
 
 Un resultado correcto en un nivel nunca prueba uno superior: una prueba de host no
 dice nada sobre una placa. [Pruebas del firmware en Linux](../development/firmware-testing.md)
@@ -199,7 +199,7 @@ Un número distinto se rechaza y el rechazo muestra los dos:
 | Loader (`zplc_loader_verify`) | Devuelve `ZPLC_LOADER_ERR_DRAFT` (`-17`). El contador se lee antes que la versión, los flags y el CRC, porque otro borrador puede ordenar el resto distinto. `zplc_loader_artifact_draft_counter` lo lee sin confiar en nada más. |
 | Simulación nativa | `program.load` falla con la frase de arriba y el programa cargado sigue corriendo. Studio la dice antes de enviar nada. El runtime informa su contador en `session.hello` (`draft_counter`). |
 | Carga al firmware | `zplc load` y `zplc sched load` responden `ERROR: Program was built for contract draft N, this runtime is draft M (-17)`. `zplc sys info --json` informa `draft_counter`. |
-| Deploy a hardware desde Studio | El preflight compara el artefacto con el `draft_counter` de la placa conectada y rechaza antes de enviar nada. |
+| Carga a hardware desde Studio | El preflight compara el artefacto con el `draft_counter` de la placa conectada y rechaza antes de enviar nada. |
 | CLI | `zplc-cli compile` indica el contador de lo que construyó. |
 
 Un artefacto construido antes del contador lleva 0, y una imagen de firmware

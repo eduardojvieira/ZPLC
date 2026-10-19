@@ -3,7 +3,7 @@ slug: /tutorials/first-board
 id: first-board
 title: Su primera placa
 sidebar_label: Su primera placa
-description: "Los pasos para compilar el firmware, grabarlo, conectar Studio, desplegar un programa y observar una salida en una Raspberry Pi Pico o un ESP32-S3, todavía no ejecutados en una placa."
+description: "Los pasos para compilar el firmware, grabarlo, conectar Studio, cargar un programa y observar una salida en una Raspberry Pi Pico o un ESP32-S3, todavía no ejecutados en una placa."
 tags: [tutorial, hardware, raspberry-pi-pico, esp32-s3]
 ---
 
@@ -15,7 +15,7 @@ y del flujo de despliegue de Studio, y **nadie la ha ejecutado en una placa**.
 
 :::danger No ejecutado en una placa
 El firmware de ambas placas compila en integración continua y cabe en su
-presupuesto de flash y RAM. Nadie lo ha grabado, arrancado, desplegado un programa
+presupuesto de flash y RAM. Nadie lo ha grabado, arrancado, cargado un programa
 en él ni visto cambiar una salida: el nivel de ambas placas es `cross-build`
 ([Soporte de hardware](../reference/capabilities-evidence.md)). Nada de lo que sigue
 dice que un paso funcione. Si lo sigue, usted es el primero, y su resultado es una
@@ -48,14 +48,14 @@ placa.
 
 ## 1. Obtenga el firmware
 
-La versión rc.3 no incluye firmware precompilado: se subió a mano. El pipeline de
+La versión rc.3 no incluye firmware precompilado: se subió a mano. El canal de
 versiones compila una imagen del runtime para cada placa del manifiesto en cada
 versión que hace, con el nombre `zplc-runtime-<versión>-<placa>.<extensión>`, con su
 suma de verificación en `SHA256SUMS` y el nivel de evidencia de la placa en las
 notas de la versión. Sus instaladores llevan las imágenes de la Raspberry Pi Pico y
 de la ESP32-S3: en Studio, abra **Configuración del proyecto**, **Destino**, elija la placa, y
 Studio muestra el archivo, su SHA-256, dónde está y los pasos para grabarlo. Studio
-solo las muestra: usted graba (paso 2). El pipeline todavía no ha hecho una versión,
+solo las muestra: usted graba (paso 2). El canal todavía no ha hecho una versión,
 así que hoy usted compila el firmware desde el código fuente, con el mismo script que
 ejecuta la integración continua. Prepare el espacio
 de trabajo de Zephyr una vez (unos 6 GB, vea

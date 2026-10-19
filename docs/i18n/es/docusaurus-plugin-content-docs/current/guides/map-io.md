@@ -91,7 +91,7 @@ bit de la imagen de proceso que solo lee una prueba o el depurador.
 - **En la compilación**, una variable ubicada donde la placa no tiene canal es un
   error que nombra la placa y la variable, salvo que la dirección esté enumerada en
   `io.virtual`.
-- **Al desplegar**, se rechaza con un mensaje que nombra la placa un programa que
+- **Al cargar**, se rechaza con un mensaje que nombra la placa un programa que
   toca una dirección sin canal, y también un despliegue a un firmware que informa
   una descripción distinta de aquella para la que se compiló el proyecto.
 

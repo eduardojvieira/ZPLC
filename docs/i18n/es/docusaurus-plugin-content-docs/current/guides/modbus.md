@@ -73,7 +73,7 @@ En el ejemplo, `Pressure` es el registro de retención de la dirección 0 y `Pum
 bobina de la dirección 1. Mantenga separados los rangos de dos variables de la misma área.
 
 En Studio puede hacer los mismos vínculos sin editar el código: la sección
-**Communication** de **Project Settings** los enumera como **Communication Tags**, y
+**Comunicación** de **Project Settings** los enumera como **Etiquetas de comunicación**, y
 cada uno es una entrada `communication.bindings` de `zplc.json`. Una etiqueta
 tiene un área y una dirección en el cable, y la compilación escribe el número de la tabla:
 un registro de retención en la dirección 5 es `{modbus:40006}`.

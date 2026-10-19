@@ -155,7 +155,7 @@ El endurecimiento del runtime del firmware (RT-010 a RT-034) tiene sus propias s
 - `runtime_boot` ejecuta un plan de arranque en orden, rechaza un plan que arranca un servicio antes que el runtime
   y sigue adelante cuando un servicio falla;
 - `program_store_nvs` ejecuta el program store sobre NVS en el simulador de flash con un artefacto tan grande como
-  la región de código, y corta la energía en cada operación de un deploy;
+  la región de código, y corta la energía en cada operación de una carga;
 - `modbus_force` escribe por el servidor Modbus sobre el core real y muestra que una variable forzada conserva su
   valor forzado;
 - `scheduler_admission` retiene un scan en el commit y en la escritura de salidas, para mostrar que una escritura de
@@ -169,7 +169,7 @@ El endurecimiento del runtime del firmware (RT-010 a RT-034) tiene sus propias s
   estado seguro, el registro del fault y la causa que informa el arranque siguiente; `failsafe_reboot` provoca un
   fault real y un reinicio real en `qemu_cortex_m3` y lee el registro después (RT-019, RT-021, RT-022);
 - `scheduler_watchdog` ejecuta la política de watchdog de hardware de un perfil sobre un modelo del watchdog: la
-  alimentación desde la finalización de un scan, el timeout tomado del conjunto de tareas, un scan detenido que lo
+  alimentación desde la finalización de un scan, el tiempo de espera tomado del conjunto de tareas, un scan detenido que lo
   deja expirar, y la política en STOP, en pausa y en un fault (RT-020);
 - `port_timing` ejecuta la autoprueba de tiempos de la suite de conformidad de puertos sobre el reloj de la HAL de
   Zephyr: el tick nunca retrocede, una espera lo avanza y dura el tiempo que se le da. El host POSIX ejecuta la misma

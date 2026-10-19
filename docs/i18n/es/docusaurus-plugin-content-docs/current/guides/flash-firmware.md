@@ -12,7 +12,7 @@ tags: [how-to, hardware, firmware]
 Grabar escribe el runtime de ZPLC en una placa. **Usted lo inicia.** El asistente de
 Studio y el servidor MCP nunca graban, despliegan, fuerzan, arrancan ni detienen un
 dispositivo, y nada de esta página lo hace por usted. Compilar la imagen, grabarla,
-desplegar un programa y ejecutarlo son cuatro operaciones separadas
+cargar un programa y ejecutarlo son cuatro operaciones separadas
 ([Despliegue](../ide/deployment.md)).
 
 :::caution No ejecutado en una placa
@@ -26,7 +26,7 @@ lo que vio con el formulario de reporte de placa de los issues del repositorio.
 
 ## 1. Obtener la imagen y comprobarla
 
-Una versión del pipeline lleva una imagen del runtime para cada placa del manifiesto,
+Una versión del canal lleva una imagen del runtime para cada placa del manifiesto,
 con el nombre `zplc-runtime-<versión>-<placa>.<ext>`, con las sumas de verificación en
 `SHA256SUMS` y un manifiesto, `zplc-runtime-<versión>.manifest.json`, que nombra para
 cada imagen el runner de grabación, la dirección en la que se escribe y el nivel de
@@ -119,6 +119,6 @@ que escribió. Luego [conecte Studio](../tutorials/first-board.md#3-conecte-stud
 | Parte | Verificado | Nivel |
 | --- | --- | --- |
 | El firmware de cada placa compila y cabe en su presupuesto | Compilación en integración continua | Compilación |
-| Los nombres, direcciones y sumas de comprobación de las imágenes de la versión | Los comprueba el pipeline de versiones | Anfitrión |
+| Los nombres, direcciones y sumas de comprobación de las imágenes de la versión | Los comprueba el canal de versiones | Anfitrión |
 | Los pasos del modo de arranque y los comandos del programador | Escritos a partir de las herramientas de cada placa, no ejecutados | Ninguno |
 | Una grabación en una placa real | Nadie la ha registrado | Ninguno |

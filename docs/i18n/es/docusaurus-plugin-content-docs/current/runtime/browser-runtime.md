@@ -20,7 +20,7 @@ El módulo se compila a partir de los archivos del runtime nativo y del firmware
 | La VM y el cargador con su verificador | `firmware/lib/zplc_core/src/core` | El resultado de cada scan y el rechazo de un programa cuyo código el verificador no puede demostrar |
 | El núcleo del scheduler | `zplc_sched_core.c` | Admisión, orden, fases de un scan, plazos, el latch de falla y el estado seguro (RT-008, RT-009) |
 | Las reglas de retención | `zplc_retain.c` | El registro, su checksum, el hash de layout, la identidad del programa y dos ranuras alternadas (RT-025, RT-027) |
-| La sesión | `firmware/apps/posix_host/src/native_runtime_session.c` | Las mismas solicitudes y respuestas que el runtime nativo: cargar, iniciar, pausar, paso, breakpoints, forzados, entradas de simulación |
+| La sesión | `firmware/apps/posix_host/src/native_runtime_session.c` | Las mismas solicitudes y respuestas que el runtime nativo: cargar, iniciar, pausar, paso, puntos de parada, forzados, entradas de simulación |
 | El puerto del HAL | `firmware/lib/zplc_core/src/hal/wasm/zplc_hal_wasm.c` | Cinco llamadas hacia la página: un reloj, tres de persistencia y una línea de log |
 
 `tools/wasm-core/build.ts` lo compila con `clang` y `wasm-ld`, sin biblioteca C y sin Emscripten. La compilación de Studio lo ejecuta (la compilación Vite de `packages/zplc-ide`): el módulo queda embebido en el bundle y su manifiesto (tamaño, SHA-256, commit, versión del producto y compilador) se escribe en `dist/wasm-runtime.json`. Nada de lo compilado se versiona. Una máquina sin `clang` y `wasm-ld` produce un Studio sin runtime del navegador y dice por qué; donde `CI` está definido, la compilación falla.
@@ -38,7 +38,7 @@ La barra de estado muestra **Runtime: WASM fallback · degraded** y, debajo, la 
 
 | Capacidad | Estado | Qué significa |
 |---|---|---|
-| `pause`, `resume`, `step`, `breakpoints` | supported | El código de sesión es el del runtime nativo: un breakpoint detiene el scan, un paso ejecuta uno, reanudar continúa desde donde se detuvo |
+| `pause`, `resume`, `step`, `breakpoints` | supported | El código de sesión es el del runtime nativo: un punto de parada detiene el scan, un paso ejecuta uno, reanudar continúa desde donde se detuvo |
 | `simulation-inputs` | supported | Las entradas de arranque, parada y paro de emergencia del motor preparan un batch, como en el runtime nativo |
 | `tasks` | degraded | Las tareas cíclicas corren sobre el núcleo del scheduler del firmware, pero el navegador las libera desde sus propios timers; las tareas de evento e interrupción no existen en simulación |
 | `timing` | degraded | El período del scan sigue el reloj de la página y sus timers, que se frenan en una pestaña en segundo plano y no ofrecen garantía de tiempo real. Lo determinista es el resultado de cada scan, no el momento en que ocurre |
