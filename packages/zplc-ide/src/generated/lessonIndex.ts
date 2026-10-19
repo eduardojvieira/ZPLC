@@ -28,6 +28,7 @@ export const LESSON_IDS = [
   "analog-scaling-integer",
   "function-block-pump-pair",
   "structures-arrays-call-panel",
+  "sfc-fill-mix-sequence",
 ] as const;
 
 export type LessonId = typeof LESSON_IDS[number];

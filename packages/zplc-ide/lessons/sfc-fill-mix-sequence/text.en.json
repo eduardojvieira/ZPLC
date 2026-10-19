@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "title": "A sequence in Sequential Function Chart: fill, then mix",
+  "summary": "Complete a Sequential Function Chart with three steps by adding the missing timed transition, and check that the valve and the mixer never run together.",
+  "scope": "Tests provide native POSIX host evidence with one 10 ms task; they do not establish process volumes, mixing quality, valve timing on real equipment, HIL, or certification.",
+  "objectives": [
+    "Read a Sequential Function Chart as steps that are active one at a time, actions that run while their step is active, and transitions that move the activity.",
+    "Add a timed transition that uses the elapsed time of a step."
+  ],
+  "stages": [
+    {
+      "key": "objective",
+      "title": "Objective",
+      "body": "In src/FillMix.sfc.json the steps IDLE, FILL and MIX, their actions and the transitions IDLE to FILL (Start) and MIX to IDLE (after a delay) are drawn. Add the missing transition from FILL to MIX with the condition step_fill.T >= T#50ms, where T is how long the step has been active.",
+      "checkpoint": "The sequence runs IDLE, FILL, MIX and back to IDLE on each Start, with one step active at a time."
+    },
+    {
+      "key": "predict",
+      "title": "Predict",
+      "body": "Start is pressed at {{t:10}} ms. The step changes on the scan after the condition becomes true. Predict Valve and Mixer at {{t:20}}, {{t:80}} and {{t:140}} ms.",
+      "checkpoint": "{{v:FillMix.Valve=true,FillMix.Mixer=false@20|Valve ON}} at {{t:20}} ms; {{v:FillMix.Valve=false,FillMix.Mixer=true@80|Mixer ON}} at {{t:80}} ms; {{v:FillMix.Valve=false,FillMix.Mixer=false@140|both OFF}} at {{t:140}} ms."
+    },
+    {
+      "key": "edit",
+      "title": "Edit",
+      "body": "Correct this starter omission, save it, then press Check: The starter has the three steps and two of the three transitions: FILL never leaves, so the valve stays open and MIX never runs; add a transition from FILL to MIX whose condition is step_fill.T >= T#50ms.",
+      "checkpoint": "The visible scenario must pass with saved host evidence."
+    },
+    {
+      "key": "run",
+      "title": "Run",
+      "body": "Press Check. Studio runs your saved program against the scenario of this lesson.",
+      "checkpoint": "The scenario is named FillMix and contains {{assertions}} assertions."
+    },
+    {
+      "key": "observe",
+      "title": "Observe",
+      "body": "Compare {{t:70}}, {{t:80}} and {{t:130}} ms: the valve closes and the mixer starts in the same scan at {{t:80}} ms, and the mixer runs for {{t:50}} ms before the sequence returns to IDLE.",
+      "checkpoint": "The valve and the mixer are never ON together. A second Start at {{t:160}} ms repeats the cycle."
+    },
+    {
+      "key": "reflect",
+      "title": "Reflect",
+      "body": "Which step is active while the valve is open, and why can only one be active at a time? Change the MIX action to open the valve too and see which assertion fails.",
+      "checkpoint": "Each action sets both outputs, so a step defines the whole output state and the sequence cannot leave an output on by accident. The scenario shows the sequence logic only; it does not show process feedback such as a level switch."
+    }
+  ],
+  "hints": [
+    {
+      "level": 1,
+      "text": "A transition has a source step, a target step and a condition. The transition from IDLE to FILL is already there; copy its shape for FILL to MIX."
+    },
+    {
+      "level": 2,
+      "text": "Add a transition with fromStep step_fill, toStep step_mix and the condition step_fill.T >= T#50ms."
+    }
+  ],
+  "faultCases": [
+    "The starter has the three steps and two of the three transitions: FILL never leaves, so the valve stays open and MIX never runs; add a transition from FILL to MIX whose condition is step_fill.T >= T#50ms."
+  ]
+}
