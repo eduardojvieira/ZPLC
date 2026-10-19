@@ -1,0 +1,46 @@
+{
+  "schemaVersion": 1,
+  "id": "capstone-packing-station",
+  "version": 1,
+  "order": 26,
+  "module": 11,
+  "level": "advanced",
+  "prerequisites": [
+    "conveyor-two-parts-diagnosis"
+  ],
+  "languages": [
+    "ST"
+  ],
+  "tracks": [
+    "simulation"
+  ],
+  "unsupported": {
+    "hardware": {
+      "reason": {
+        "en": "The lesson is graded on buttons, a part sensor and a jam replayed at exact steps, and no board trace has been recorded for it.",
+        "es": "La lección se califica con pulsadores, un sensor de piezas y un atasco reproducidos en pasos exactos, y no se ha registrado una traza de placa para ella."
+      },
+      "instead": {
+        "en": "Complete it in Simulation: its grade is the same each time and needs no board.",
+        "es": "Complétela en Simulación: su calificación es la misma cada vez y no necesita una placa."
+      }
+    }
+  },
+  "plant": null,
+  "estimatedMinutes": 60,
+  "starter": {
+    "project": "packing_station_starter",
+    "program": "src/Station.st"
+  },
+  "solution": {
+    "project": "packing_station",
+    "program": "src/Station.st"
+  },
+  "scenario": {
+    "file": "scenario.json",
+    "id": "PackingStation",
+    "path": "tests/packing-station.scenario.json",
+    "sha256": "5705c7ca4e886540daf77169e833592591752438cdf7d4ede47aece139f7637f"
+  },
+  "regressionScenarios": []
+}

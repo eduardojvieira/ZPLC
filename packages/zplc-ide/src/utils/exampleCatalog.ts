@@ -97,6 +97,7 @@ export const EXAMPLE_CATALOG: Readonly<Record<string, ExampleEntry>> = {
   fill_mix_sfc: example('fill_mix_sfc', { group: 'process', level: 'intermediate', languages: ['SFC'], showOnWelcome: true }),
   pump_pair: example('pump_pair', { group: 'process', level: 'intermediate', languages: ['ST'], showOnWelcome: true }),
   call_panel: example('call_panel', { group: 'process', level: 'intermediate', languages: ['ST'], showOnWelcome: true }),
+  packing_station: example('packing_station', { group: 'process', level: 'advanced', languages: ['ST'], showOnWelcome: true }),
 
   // Language tour
   blinky_st: example('blinky_st', { group: 'languages', level: 'beginner', languages: ['ST'], showOnWelcome: true }),

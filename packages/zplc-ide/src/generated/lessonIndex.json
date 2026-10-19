@@ -4359,6 +4359,177 @@
           ]
         }
       }
+    },
+    {
+      "id": "capstone-packing-station",
+      "version": 1,
+      "order": 26,
+      "module": 11,
+      "level": "advanced",
+      "prerequisites": [
+        "conveyor-two-parts-diagnosis"
+      ],
+      "languages": [
+        "ST"
+      ],
+      "tracks": [
+        "simulation"
+      ],
+      "unsupported": {
+        "hardware": {
+          "reason": {
+            "en": "The lesson is graded on buttons, a part sensor and a jam replayed at exact steps, and no board trace has been recorded for it.",
+            "es": "La lección se califica con pulsadores, un sensor de piezas y un atasco reproducidos en pasos exactos, y no se ha registrado una traza de placa para ella."
+          },
+          "instead": {
+            "en": "Complete it in Simulation: its grade is the same each time and needs no board.",
+            "es": "Complétela en Simulación: su calificación es la misma cada vez y no necesita una placa."
+          }
+        }
+      },
+      "plant": null,
+      "plantMap": null,
+      "estimatedMinutes": 60,
+      "starter": {
+        "project": "packing_station_starter",
+        "program": "src/Station.st"
+      },
+      "solution": {
+        "project": "packing_station",
+        "program": "src/Station.st"
+      },
+      "scenario": {
+        "id": "PackingStation",
+        "path": "tests/packing-station.scenario.json",
+        "sha256": "5705c7ca4e886540daf77169e833592591752438cdf7d4ede47aece139f7637f",
+        "tickMs": 10,
+        "durationMs": 640,
+        "assertions": 16,
+        "canonical": "{\"durationMs\":640,\"events\":[{\"atMs\":0,\"set\":{\"Station.EStop\":false,\"Station.Part\":false,\"Station.Reset\":false,\"Station.Start\":false,\"Station.Stop\":false}},{\"atMs\":20,\"set\":{\"Station.Start\":true}},{\"atMs\":30,\"set\":{\"Station.Start\":false}},{\"atMs\":50,\"set\":{\"Station.Part\":true}},{\"atMs\":70,\"set\":{\"Station.Part\":false}},{\"atMs\":90,\"set\":{\"Station.Part\":true}},{\"atMs\":110,\"set\":{\"Station.Part\":false}},{\"atMs\":150,\"set\":{\"Station.Part\":true}},{\"atMs\":170,\"set\":{\"Station.Part\":false}},{\"atMs\":200,\"set\":{\"Station.Start\":true}},{\"atMs\":210,\"set\":{\"Station.Start\":false}},{\"atMs\":240,\"set\":{\"Station.Reset\":true}},{\"atMs\":250,\"set\":{\"Station.Reset\":false}},{\"atMs\":280,\"set\":{\"Station.Start\":true}},{\"atMs\":290,\"set\":{\"Station.Start\":false}},{\"atMs\":320,\"set\":{\"Station.EStop\":true}},{\"atMs\":340,\"set\":{\"Station.EStop\":false}},{\"atMs\":370,\"set\":{\"Station.Start\":true}},{\"atMs\":380,\"set\":{\"Station.Start\":false}},{\"atMs\":410,\"set\":{\"Station.Part\":true}},{\"atMs\":480,\"set\":{\"Station.Reset\":true}},{\"atMs\":500,\"set\":{\"Station.Reset\":false}},{\"atMs\":510,\"set\":{\"Station.Part\":false}},{\"atMs\":530,\"set\":{\"Station.Reset\":true}},{\"atMs\":540,\"set\":{\"Station.Reset\":false}},{\"atMs\":560,\"set\":{\"Station.Start\":true}},{\"atMs\":570,\"set\":{\"Station.Start\":false}},{\"atMs\":600,\"set\":{\"Station.Stop\":true}},{\"atMs\":610,\"set\":{\"Station.Stop\":false}}],\"expectations\":[{\"atMs\":10,\"condition\":{\"Station.BatchFull\":false,\"Station.Belt\":false,\"Station.Fault\":false},\"kind\":\"AT\"},{\"atMs\":40,\"condition\":{\"Station.Belt\":true},\"kind\":\"AT\"},{\"atMs\":130,\"condition\":{\"Station.BatchFull\":false,\"Station.Belt\":true},\"kind\":\"AT\"},{\"atMs\":190,\"condition\":{\"Station.BatchFull\":true,\"Station.Belt\":false},\"kind\":\"AT\"},{\"atMs\":230,\"condition\":{\"Station.BatchFull\":true,\"Station.Belt\":false},\"kind\":\"AT\"},{\"atMs\":270,\"condition\":{\"Station.BatchFull\":false,\"Station.Belt\":false},\"kind\":\"AT\"},{\"atMs\":310,\"condition\":{\"Station.Belt\":true},\"kind\":\"AT\"},{\"atMs\":330,\"condition\":{\"Station.Belt\":false},\"kind\":\"AT\"},{\"atMs\":360,\"condition\":{\"Station.Belt\":false},\"kind\":\"AT\"},{\"atMs\":400,\"condition\":{\"Station.Belt\":true},\"kind\":\"AT\"},{\"atMs\":490,\"condition\":{\"Station.Belt\":false,\"Station.Fault\":true},\"kind\":\"AT\"},{\"atMs\":550,\"condition\":{\"Station.Belt\":false,\"Station.Fault\":false},\"kind\":\"AT\"},{\"atMs\":590,\"condition\":{\"Station.Belt\":true},\"kind\":\"AT\"},{\"atMs\":620,\"condition\":{\"Station.Belt\":false},\"kind\":\"AT\"},{\"condition\":{\"Station.Belt\":true},\"forMs\":100,\"fromMs\":40,\"kind\":\"FOR\"},{\"condition\":{\"Station.Fault\":true},\"fromMs\":410,\"kind\":\"RISING\",\"withinMs\":80}],\"id\":\"PackingStation\",\"schemaVersion\":1,\"tickMs\":10}"
+      },
+      "regressionScenarios": [],
+      "text": {
+        "en": {
+          "title": "Capstone: a packing station, from description to tested program",
+          "summary": "Turn a written description of a small packing station into a Structured Text program, using a seal-in, an emergency stop, a counter, a timer and a latched fault, and prove it with a scenario that also checks what must not happen.",
+          "scope": "Tests provide native POSIX host evidence with one 10 ms task; they do not establish packing-line requirements, safety function behaviour, sensor timing or any real machine behaviour, HIL, or certification.",
+          "objectives": [
+            "Turn five written requirements into one Structured Text program that combines a seal-in, an emergency stop, a counter, a timer and a latched fault.",
+            "Read a scenario that checks both what must happen and what must not happen, and use its failed assertions to find the requirement you missed."
+          ],
+          "stages": [
+            {
+              "key": "objective",
+              "title": "Objective",
+              "body": "A packing station has a belt, a part sensor and five buttons. Write src/Station.st so that: (1) Start turns Belt on and it stays on after Start is released; Stop or EStop turns it off. (2) Each rising edge of Part counts one part; three parts make a batch, and then BatchFull lights and the belt stops. (3) If Part stays on for 50 ms or more, the sensor is blocked: Fault lights and the belt stops. (4) Reset clears the count and BatchFull, and clears Fault only when Part is no longer blocked. (5) After any stop, whether by Stop, EStop, a full batch or a fault, the belt runs again only after a new Start.",
+              "checkpoint": "The belt runs after Start, stops for Stop, EStop, a full batch and a jam, and never restarts without a new Start."
+            },
+            {
+              "key": "predict",
+              "title": "Predict",
+              "body": "Parts pass the sensor at 50, 90 and 150 ms. Predict BatchFull at 130 ms and at 190 ms, and Belt at 190 ms. Start is pressed again at 200 ms: predict Belt at 230 ms.",
+              "checkpoint": "OFF at 130 ms, after two parts; ON at 190 ms, with the belt stopped; the belt stays off at 230 ms, because the batch is still full."
+            },
+            {
+              "key": "edit",
+              "title": "Edit",
+              "body": "Correct this starter omission, save it, then press Check: The starter only seals the belt in and lets Stop drop it. Add the counter with Reset on its R input, the timer on Part for the jam, the Fault latch that Reset releases only when Part is clear, and then NOT EStop, NOT Fault and NOT BatchFull in the condition of Belt.",
+              "checkpoint": "The visible scenario must pass with saved host evidence."
+            },
+            {
+              "key": "run",
+              "title": "Run",
+              "body": "Press Check. Studio runs your saved program against the scenario of this lesson. Read each failed assertion: it names the instant, the expected value and the observed value.",
+              "checkpoint": "The scenario is named PackingStation and contains 16 assertions."
+            },
+            {
+              "key": "observe",
+              "title": "Observe",
+              "body": "Compare 270, 310 and 360 ms: Reset empties the batch at 240 ms but the belt stays off until a new Start at 280 ms, and after the emergency stop at 320 ms the belt stays off at 360 ms until Start is pressed at 370 ms. The part that blocks the sensor from 410 ms raises the fault, and Reset at 480 ms does not clear it while the sensor is blocked; it clears only after Part falls at 510 ms and Reset is pressed at 530 ms.",
+              "checkpoint": "At 490 ms Fault is on and the belt is off even though Reset was pressed; at 550 ms Fault is off and the belt is still off."
+            },
+            {
+              "key": "reflect",
+              "title": "Reflect",
+              "body": "Which of the five requirements did the first failed assertion point to, and which ones did you only find by reading the scenario? Think of one more thing the station should never do, and whether the scenario would catch it.",
+              "checkpoint": "Most of the assertions check what must not happen: a belt that restarts by itself, a fault cleared too early, a batch lamp that stays on. A program that only does what is asked passes the happy path and still fails these. The scenario shows the logic only; it is not a packing line and not a safety function."
+            }
+          ],
+          "hints": [
+            {
+              "level": 1,
+              "text": "Write one requirement at a time: the counter and BatchFull first, then the timer and the fault, then put every reason to stop into the condition of Belt. Which reasons are there?"
+            },
+            {
+              "level": 2,
+              "text": "Count(CU := Part, R := Reset, PV := 3); BatchFull := Count.Q; Stuck(IN := Part, PT := T#50ms); Fault := (Fault OR Stuck.Q) AND NOT (Reset AND NOT Part); Belt := (Start OR Belt) AND NOT Stop AND NOT EStop AND NOT Fault AND NOT BatchFull;"
+            }
+          ],
+          "faultCases": [
+            "The starter only seals the belt in and lets Stop drop it. Add the counter with Reset on its R input, the timer on Part for the jam, the Fault latch that Reset releases only when Part is clear, and then NOT EStop, NOT Fault and NOT BatchFull in the condition of Belt."
+          ]
+        },
+        "es": {
+          "title": "Proyecto final: una estación de empaque, de la descripción al programa probado",
+          "summary": "Convierta la descripción escrita de una pequeña estación de empaque en un programa de Texto Estructurado, con una autorretención, una parada de emergencia, un contador, un temporizador y una falla enclavada, y demuéstrelo con un escenario que también comprueba lo que no debe ocurrir.",
+          "scope": "Las pruebas aportan evidencia de host POSIX nativo con una tarea de 10 ms; no establecen requisitos de una línea de empaque, comportamiento de funciones de seguridad, tiempos de sensores ni comportamiento real de ninguna máquina, HIL ni certificación.",
+          "objectives": [
+            "Convertir cinco requisitos escritos en un solo programa de Texto Estructurado que combine una autorretención, una parada de emergencia, un contador, un temporizador y una falla enclavada.",
+            "Leer un escenario que comprueba tanto lo que debe ocurrir como lo que no debe ocurrir, y usar sus assertions fallidas para encontrar el requisito que pasó por alto."
+          ],
+          "stages": [
+            {
+              "key": "objective",
+              "title": "Objetivo",
+              "body": "Una estación de empaque tiene una cinta, un sensor de piezas y cinco pulsadores. Escriba src/Station.st de modo que: (1) Start encienda Belt y se mantenga encendida al soltar Start; Stop o EStop la apaguen. (2) Cada flanco ascendente de Part cuente una pieza; tres piezas forman un lote, y entonces BatchFull se enciende y la cinta se detiene. (3) Si Part permanece encendida 50 ms o más, el sensor está bloqueado: Fault se enciende y la cinta se detiene. (4) Reset borra la cuenta y BatchFull, y borra Fault solo cuando Part ya no está bloqueada. (5) Después de cualquier parada, sea por Stop, EStop, un lote lleno o una falla, la cinta vuelve a funcionar solo con un nuevo Start.",
+              "checkpoint": "La cinta funciona después de Start, se detiene con Stop, EStop, un lote lleno y un atasco, y nunca se reinicia sin un nuevo Start."
+            },
+            {
+              "key": "predict",
+              "title": "Prediga",
+              "body": "Las piezas pasan por el sensor a los 50, 90 y 150 ms. Prediga BatchFull a los 130 ms y a los 190 ms, y Belt a los 190 ms. Start se pulsa de nuevo a los 200 ms: prediga Belt a los 230 ms.",
+              "checkpoint": "APAGADA a los 130 ms, con dos piezas; ENCENDIDA a los 190 ms, con la cinta detenida; la cinta sigue apagada a los 230 ms, porque el lote sigue lleno."
+            },
+            {
+              "key": "edit",
+              "title": "Edite",
+              "body": "Corrija esta omisión del programa inicial, guárdelo y pulse Comprobar: El programa inicial solo mantiene la cinta con una autorretención y deja que Stop la apague. Agregue el contador con Reset en su entrada R, el temporizador sobre Part para el atasco, el enclavamiento de Fault que Reset libera solo cuando Part está libre, y después NOT EStop, NOT Fault y NOT BatchFull en la condición de Belt.",
+              "checkpoint": "El escenario visible debe pasar con evidencia de host guardada."
+            },
+            {
+              "key": "run",
+              "title": "Ejecute",
+              "body": "Pulse Comprobar. Studio ejecuta el programa guardado contra el escenario de esta lección. Lea cada assertion fallida: indica el instante, el valor esperado y el valor observado.",
+              "checkpoint": "El escenario se llama PackingStation y contiene 16 assertions."
+            },
+            {
+              "key": "observe",
+              "title": "Observe",
+              "body": "Compare 270, 310 y 360 ms: Reset vacía el lote a los 240 ms pero la cinta sigue apagada hasta un nuevo Start a los 280 ms, y después de la parada de emergencia a los 320 ms la cinta sigue apagada a los 360 ms hasta que se pulsa Start a los 370 ms. La pieza que bloquea el sensor desde los 410 ms levanta la falla, y Reset a los 480 ms no la borra mientras el sensor está bloqueado; solo se borra después de que Part cae a los 510 ms y se pulsa Reset a los 530 ms.",
+              "checkpoint": "A los 490 ms Fault está encendida y la cinta apagada aunque se pulsó Reset; a los 550 ms Fault está apagada y la cinta sigue apagada."
+            },
+            {
+              "key": "reflect",
+              "title": "Reflexione",
+              "body": "¿A cuál de los cinco requisitos señaló la primera assertion fallida, y cuáles encontró solo al leer el escenario? Piense en una cosa más que la estación nunca debería hacer, y si el escenario la detectaría.",
+              "checkpoint": "La mayoría de las assertions comprueban lo que no debe ocurrir: una cinta que se reinicia sola, una falla borrada demasiado pronto, una lámpara de lote que sigue encendida. Un programa que solo hace lo que se pide pasa el camino feliz y aun así falla estas. El escenario muestra solo la lógica; no es una línea de empaque ni una función de seguridad."
+            }
+          ],
+          "hints": [
+            {
+              "level": 1,
+              "text": "Escriba un requisito a la vez: primero el contador y BatchFull, luego el temporizador y la falla, y después ponga cada motivo para detenerse en la condición de Belt. ¿Cuáles son esos motivos?"
+            },
+            {
+              "level": 2,
+              "text": "Count(CU := Part, R := Reset, PV := 3); BatchFull := Count.Q; Stuck(IN := Part, PT := T#50ms); Fault := (Fault OR Stuck.Q) AND NOT (Reset AND NOT Part); Belt := (Start OR Belt) AND NOT Stop AND NOT EStop AND NOT Fault AND NOT BatchFull;"
+            }
+          ],
+          "faultCases": [
+            "El programa inicial solo mantiene la cinta con una autorretención y deja que Stop la apague. Agregue el contador con Reset en su entrada R, el temporizador sobre Part para el atasco, el enclavamiento de Fault que Reset libera solo cuando Part está libre, y después NOT EStop, NOT Fault y NOT BatchFull en la condición de Belt."
+          ]
+        }
+      }
     }
   ],
   "course": {

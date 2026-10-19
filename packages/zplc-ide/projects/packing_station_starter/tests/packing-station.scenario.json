@@ -1,0 +1,310 @@
+{
+  "schemaVersion": 1,
+  "id": "PackingStation",
+  "tickMs": 10,
+  "durationMs": 640,
+  "events": [
+    {
+      "atMs": 0,
+      "set": {
+        "Station.Start": false,
+        "Station.Stop": false,
+        "Station.EStop": false,
+        "Station.Part": false,
+        "Station.Reset": false
+      }
+    },
+    {
+      "atMs": 20,
+      "set": {
+        "Station.Start": true
+      }
+    },
+    {
+      "atMs": 30,
+      "set": {
+        "Station.Start": false
+      }
+    },
+    {
+      "atMs": 50,
+      "set": {
+        "Station.Part": true
+      }
+    },
+    {
+      "atMs": 70,
+      "set": {
+        "Station.Part": false
+      }
+    },
+    {
+      "atMs": 90,
+      "set": {
+        "Station.Part": true
+      }
+    },
+    {
+      "atMs": 110,
+      "set": {
+        "Station.Part": false
+      }
+    },
+    {
+      "atMs": 150,
+      "set": {
+        "Station.Part": true
+      }
+    },
+    {
+      "atMs": 170,
+      "set": {
+        "Station.Part": false
+      }
+    },
+    {
+      "atMs": 200,
+      "set": {
+        "Station.Start": true
+      }
+    },
+    {
+      "atMs": 210,
+      "set": {
+        "Station.Start": false
+      }
+    },
+    {
+      "atMs": 240,
+      "set": {
+        "Station.Reset": true
+      }
+    },
+    {
+      "atMs": 250,
+      "set": {
+        "Station.Reset": false
+      }
+    },
+    {
+      "atMs": 280,
+      "set": {
+        "Station.Start": true
+      }
+    },
+    {
+      "atMs": 290,
+      "set": {
+        "Station.Start": false
+      }
+    },
+    {
+      "atMs": 320,
+      "set": {
+        "Station.EStop": true
+      }
+    },
+    {
+      "atMs": 340,
+      "set": {
+        "Station.EStop": false
+      }
+    },
+    {
+      "atMs": 370,
+      "set": {
+        "Station.Start": true
+      }
+    },
+    {
+      "atMs": 380,
+      "set": {
+        "Station.Start": false
+      }
+    },
+    {
+      "atMs": 410,
+      "set": {
+        "Station.Part": true
+      }
+    },
+    {
+      "atMs": 480,
+      "set": {
+        "Station.Reset": true
+      }
+    },
+    {
+      "atMs": 500,
+      "set": {
+        "Station.Reset": false
+      }
+    },
+    {
+      "atMs": 510,
+      "set": {
+        "Station.Part": false
+      }
+    },
+    {
+      "atMs": 530,
+      "set": {
+        "Station.Reset": true
+      }
+    },
+    {
+      "atMs": 540,
+      "set": {
+        "Station.Reset": false
+      }
+    },
+    {
+      "atMs": 560,
+      "set": {
+        "Station.Start": true
+      }
+    },
+    {
+      "atMs": 570,
+      "set": {
+        "Station.Start": false
+      }
+    },
+    {
+      "atMs": 600,
+      "set": {
+        "Station.Stop": true
+      }
+    },
+    {
+      "atMs": 610,
+      "set": {
+        "Station.Stop": false
+      }
+    }
+  ],
+  "expectations": [
+    {
+      "kind": "AT",
+      "atMs": 10,
+      "condition": {
+        "Station.Belt": false,
+        "Station.BatchFull": false,
+        "Station.Fault": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 40,
+      "condition": {
+        "Station.Belt": true
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 130,
+      "condition": {
+        "Station.Belt": true,
+        "Station.BatchFull": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 190,
+      "condition": {
+        "Station.BatchFull": true,
+        "Station.Belt": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 230,
+      "condition": {
+        "Station.Belt": false,
+        "Station.BatchFull": true
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 270,
+      "condition": {
+        "Station.BatchFull": false,
+        "Station.Belt": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 310,
+      "condition": {
+        "Station.Belt": true
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 330,
+      "condition": {
+        "Station.Belt": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 360,
+      "condition": {
+        "Station.Belt": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 400,
+      "condition": {
+        "Station.Belt": true
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 490,
+      "condition": {
+        "Station.Fault": true,
+        "Station.Belt": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 550,
+      "condition": {
+        "Station.Fault": false,
+        "Station.Belt": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 590,
+      "condition": {
+        "Station.Belt": true
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 620,
+      "condition": {
+        "Station.Belt": false
+      }
+    },
+    {
+      "kind": "FOR",
+      "fromMs": 40,
+      "forMs": 100,
+      "condition": {
+        "Station.Belt": true
+      }
+    },
+    {
+      "kind": "RISING",
+      "fromMs": 410,
+      "withinMs": 80,
+      "condition": {
+        "Station.Fault": true
+      }
+    }
+  ]
+}

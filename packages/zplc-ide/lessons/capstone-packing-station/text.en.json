@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "title": "Capstone: a packing station, from description to tested program",
+  "summary": "Turn a written description of a small packing station into a Structured Text program, using a seal-in, an emergency stop, a counter, a timer and a latched fault, and prove it with a scenario that also checks what must not happen.",
+  "scope": "Tests provide native POSIX host evidence with one 10 ms task; they do not establish packing-line requirements, safety function behaviour, sensor timing or any real machine behaviour, HIL, or certification.",
+  "objectives": [
+    "Turn five written requirements into one Structured Text program that combines a seal-in, an emergency stop, a counter, a timer and a latched fault.",
+    "Read a scenario that checks both what must happen and what must not happen, and use its failed assertions to find the requirement you missed."
+  ],
+  "stages": [
+    {
+      "key": "objective",
+      "title": "Objective",
+      "body": "A packing station has a belt, a part sensor and five buttons. Write src/Station.st so that: (1) Start turns Belt on and it stays on after Start is released; Stop or EStop turns it off. (2) Each rising edge of Part counts one part; three parts make a batch, and then BatchFull lights and the belt stops. (3) If Part stays on for {{t:50}} ms or more, the sensor is blocked: Fault lights and the belt stops. (4) Reset clears the count and BatchFull, and clears Fault only when Part is no longer blocked. (5) After any stop, whether by Stop, EStop, a full batch or a fault, the belt runs again only after a new Start.",
+      "checkpoint": "The belt runs after Start, stops for Stop, EStop, a full batch and a jam, and never restarts without a new Start."
+    },
+    {
+      "key": "predict",
+      "title": "Predict",
+      "body": "Parts pass the sensor at {{t:50}}, {{t:90}} and {{t:150}} ms. Predict BatchFull at {{t:130}} ms and at {{t:190}} ms, and Belt at {{t:190}} ms. Start is pressed again at {{t:200}} ms: predict Belt at {{t:230}} ms.",
+      "checkpoint": "{{v:Station.BatchFull=false@130|OFF}} at {{t:130}} ms, after two parts; {{v:Station.BatchFull=true@190|ON}} at {{t:190}} ms, with {{v:Station.Belt=false@190|the belt stopped}}; {{v:Station.Belt=false@230|the belt stays off}} at {{t:230}} ms, because the batch is still full."
+    },
+    {
+      "key": "edit",
+      "title": "Edit",
+      "body": "Correct this starter omission, save it, then press Check: The starter only seals the belt in and lets Stop drop it. Add the counter with Reset on its R input, the timer on Part for the jam, the Fault latch that Reset releases only when Part is clear, and then NOT EStop, NOT Fault and NOT BatchFull in the condition of Belt.",
+      "checkpoint": "The visible scenario must pass with saved host evidence."
+    },
+    {
+      "key": "run",
+      "title": "Run",
+      "body": "Press Check. Studio runs your saved program against the scenario of this lesson. Read each failed assertion: it names the instant, the expected value and the observed value.",
+      "checkpoint": "The scenario is named PackingStation and contains {{assertions}} assertions."
+    },
+    {
+      "key": "observe",
+      "title": "Observe",
+      "body": "Compare {{t:270}}, {{t:310}} and {{t:360}} ms: Reset empties the batch at {{t:240}} ms but the belt stays off until a new Start at {{t:280}} ms, and after the emergency stop at {{t:320}} ms the belt stays off at {{t:360}} ms until Start is pressed at {{t:370}} ms. The part that blocks the sensor from {{t:410}} ms raises the fault, and Reset at {{t:480}} ms does not clear it while the sensor is blocked; it clears only after Part falls at {{t:510}} ms and Reset is pressed at {{t:530}} ms.",
+      "checkpoint": "At {{t:490}} ms Fault is on and the belt is off even though Reset was pressed; at {{t:550}} ms Fault is off and the belt is still off."
+    },
+    {
+      "key": "reflect",
+      "title": "Reflect",
+      "body": "Which of the five requirements did the first failed assertion point to, and which ones did you only find by reading the scenario? Think of one more thing the station should never do, and whether the scenario would catch it.",
+      "checkpoint": "Most of the assertions check what must not happen: a belt that restarts by itself, a fault cleared too early, a batch lamp that stays on. A program that only does what is asked passes the happy path and still fails these. The scenario shows the logic only; it is not a packing line and not a safety function."
+    }
+  ],
+  "hints": [
+    {
+      "level": 1,
+      "text": "Write one requirement at a time: the counter and BatchFull first, then the timer and the fault, then put every reason to stop into the condition of Belt. Which reasons are there?"
+    },
+    {
+      "level": 2,
+      "text": "Count(CU := Part, R := Reset, PV := 3); BatchFull := Count.Q; Stuck(IN := Part, PT := T#50ms); Fault := (Fault OR Stuck.Q) AND NOT (Reset AND NOT Part); Belt := (Start OR Belt) AND NOT Stop AND NOT EStop AND NOT Fault AND NOT BatchFull;"
+    }
+  ],
+  "faultCases": [
+    "The starter only seals the belt in and lets Stop drop it. Add the counter with Reset on its R input, the timer on Part for the jam, the Fault latch that Reset releases only when Part is clear, and then NOT EStop, NOT Fault and NOT BatchFull in the condition of Belt."
+  ]
+}
