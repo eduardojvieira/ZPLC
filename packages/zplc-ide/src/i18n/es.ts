@@ -14,6 +14,7 @@ import { ldEs } from './catalog/ld';
 import { importArchiveEs } from './catalog/importArchive';
 import { interlockEs } from './catalog/interlock';
 import { learnEs } from './catalog/learn';
+import { toolbarMsgEs } from './catalog/toolbarMsg';
 
 /**
  * The Spanish catalog (UX-029, UX-030): neutral Latin American Spanish with impersonal or "usted" forms, as in
@@ -585,4 +586,5 @@ export const es: Record<MessageKey, string> = {
   ...importArchiveEs,
   ...interlockEs,
   ...learnEs,
+  ...toolbarMsgEs,
 };
