@@ -12,6 +12,7 @@ import type { BoardChannel, BoardIoDescription } from '../../boards/boardIo';
 import { channelAt, channelsFor, mappingProblem, nextFreeChannel, type IoSection } from '../../boards/boardIoMapping';
 import type { SectionProps } from './settingsSectionProps';
 import { useT } from '../../i18n';
+import { Button, NumberField, Select, TextField, Tooltip } from '../../ui';
 
 export function IOSection({ config, updateConfig }: SectionProps) {
   const { t } = useT();
@@ -145,24 +146,24 @@ export function IOSection({ config, updateConfig }: SectionProps) {
             {t('io.inputsI')}
           </label>
           <div className="flex gap-2">
-            <button
+            <Button variant="bare"
               onClick={addInput}
               disabled={!hasFree('inputs', 'digital')}
               className="flex items-center gap-1 px-2 py-1 text-xs rounded bg-[var(--color-surface-600)] hover:bg-[var(--color-surface-500)] text-[var(--color-surface-200)] disabled:opacity-40"
-              title={hasFree('inputs', 'digital') ? t('io.addDigitalInputBool') : t('io.hasNoMoreDigital', { boardLabel })}
+              tooltip={hasFree('inputs', 'digital') ? t('io.addDigitalInputBool') : t('io.hasNoMoreDigital', { boardLabel })}
             >
               <Plus size={12} />
               {t('io.digital')}
-            </button>
-            <button
+            </Button>
+            <Button variant="bare"
               onClick={addAnalogInput}
               disabled={!hasFree('inputs', 'analog')}
               className="flex items-center gap-1 px-2 py-1 text-xs rounded bg-[var(--color-surface-600)] hover:bg-[var(--color-surface-500)] text-[var(--color-surface-200)] disabled:opacity-40"
-              title={hasFree('inputs', 'analog') ? t('io.addAnalogInputInt') : t('io.hasNoMoreAnalog', { boardLabel })}
+              tooltip={hasFree('inputs', 'analog') ? t('io.addAnalogInputInt') : t('io.hasNoMoreAnalog', { boardLabel })}
             >
               <Plus size={12} />
               {t('io.analog')}
-            </button>
+            </Button>
           </div>
         </div>
         {inputs.length === 0 ? (
@@ -190,24 +191,24 @@ export function IOSection({ config, updateConfig }: SectionProps) {
             {t('io.outputsQ')}
           </label>
           <div className="flex gap-2">
-            <button
+            <Button variant="bare"
               onClick={addOutput}
               disabled={!hasFree('outputs', 'digital')}
               className="flex items-center gap-1 px-2 py-1 text-xs rounded bg-[var(--color-surface-600)] hover:bg-[var(--color-surface-500)] text-[var(--color-surface-200)] disabled:opacity-40"
-              title={hasFree('outputs', 'digital') ? t('io.addDigitalOutputBool') : t('io.hasNoMoreDigital2', { boardLabel })}
+              tooltip={hasFree('outputs', 'digital') ? t('io.addDigitalOutputBool') : t('io.hasNoMoreDigital2', { boardLabel })}
             >
               <Plus size={12} />
               {t('io.digital')}
-            </button>
-            <button
+            </Button>
+            <Button variant="bare"
               onClick={addAnalogOutput}
               disabled={!hasFree('outputs', 'analog')}
               className="flex items-center gap-1 px-2 py-1 text-xs rounded bg-[var(--color-surface-600)] hover:bg-[var(--color-surface-500)] text-[var(--color-surface-200)] disabled:opacity-40"
-              title={hasFree('outputs', 'analog') ? t('io.addAnalogOutputInt') : t('io.hasNoAnalogOutputs', { boardLabel })}
+              tooltip={hasFree('outputs', 'analog') ? t('io.addAnalogOutputInt') : t('io.hasNoAnalogOutputs', { boardLabel })}
             >
               <Plus size={12} />
               {t('io.analog')}
-            </button>
+            </Button>
           </div>
         </div>
         {outputs.length === 0 ? (
@@ -244,13 +245,13 @@ export function IOSection({ config, updateConfig }: SectionProps) {
                   <span className="text-[var(--color-accent-blue)]">{row.address}</span> {row.name}
                   {row.description ? ` - ${row.description}` : ''}
                 </span>
-                <button
+                <Button variant="bare"
                   onClick={() => removeVirtual(index)}
                   className="p-1 rounded hover:bg-[var(--color-surface-500)] text-[var(--color-accent-red)]"
-                  title={t('io.remove')}
+                  tooltip={t('io.remove')}
                 >
                   <Trash2 size={14} />
-                </button>
+                </Button>
               </li>
             ))}
           </ul>
@@ -273,10 +274,12 @@ function BoardChannels({ io, boardLabel }: { io: BoardIoDescription; boardLabel:
       </p>
       <ul className="mt-2 grid grid-cols-1 gap-x-4 gap-y-0.5 sm:grid-cols-2" aria-label={t('io.channelsOf', { boardLabel })}>
         {io.channels.map((channel) => (
-          <li key={channel.id} className="font-mono text-[var(--color-surface-300)]" title={channel.electrical}>
-            <span className="text-[var(--color-accent-blue)]">{channel.address}</span> {channel.id} - {channel.pin}
-            {channel.location ? ` (${channel.location})` : ''}
-          </li>
+          <Tooltip content={channel.electrical}>
+            <li key={channel.id} className="font-mono text-[var(--color-surface-300)]">
+              <span className="text-[var(--color-accent-blue)]">{channel.address}</span> {channel.id} - {channel.pin}
+              {channel.location ? ` (${channel.location})` : ''}
+            </li>
+          </Tooltip>
         ))}
       </ul>
       {io.unmapped.length > 0 && (
@@ -322,17 +325,17 @@ function IOTable({ items, onUpdate, onRemove, onMakeVirtual, section, boardIo, b
           className="grid grid-cols-12 gap-2 px-3 py-2 items-center"
         >
           <div className="col-span-3">
-            <input
+            <TextField bare
               aria-label={t('a11y.io.name', { row: index + 1 })}
               type="text"
               value={item.name}
               onChange={(e) => onUpdate(index, { name: e.target.value })}
-              className="w-full px-2 py-1 text-xs bg-[var(--color-surface-600)] border border-[var(--color-surface-500)] rounded text-[var(--color-surface-100)] focus:outline-none"
+              className="w-full px-2 py-1 text-xs bg-[var(--color-surface-600)] border border-[var(--color-surface-500)] rounded text-[var(--color-surface-100)]"
             />
           </div>
           <div className="col-span-2">
             {boardIo ? (
-              <select
+              <Select bare
                 value={channelAt(boardIo, section, item.address)?.address ?? item.address}
                 aria-label={t('io.channelOf', { name: item.name })}
                 onChange={(e) => {
@@ -341,7 +344,7 @@ function IOTable({ items, onUpdate, onRemove, onMakeVirtual, section, boardIo, b
                     ? { address: channel.address, type: channel.kind === 'analog' ? 'INT' : 'BOOL', pin: undefined }
                     : { address: e.target.value });
                 }}
-                className="w-full px-2 py-1 text-xs bg-[var(--color-surface-600)] border border-[var(--color-surface-500)] rounded text-[var(--color-accent-blue)] font-mono focus:outline-none"
+                className="w-full px-2 py-1 text-xs bg-[var(--color-surface-600)] border border-[var(--color-surface-500)] rounded text-[var(--color-accent-blue)] font-mono"
               >
                 {channelAt(boardIo, section, item.address) === undefined && (
                   <option value={item.address}>{t('io.notOnThisBoard', { address: item.address })}</option>
@@ -349,78 +352,78 @@ function IOTable({ items, onUpdate, onRemove, onMakeVirtual, section, boardIo, b
                 {boardChannels.map((channel) => (
                   <option key={channel.id} value={channel.address}>{channel.address} {channel.id}</option>
                 ))}
-              </select>
+              </Select>
             ) : (
-              <input
+              <TextField bare
                 aria-label={t('a11y.io.address', { row: index + 1 })}
                 type="text"
                 value={item.address}
                 onChange={(e) => onUpdate(index, { address: e.target.value })}
                 placeholder={t('io.i00')}
-                className="w-full px-2 py-1 text-xs bg-[var(--color-surface-600)] border border-[var(--color-surface-500)] rounded text-[var(--color-accent-blue)] font-mono focus:outline-none"
+                className="w-full px-2 py-1 text-xs bg-[var(--color-surface-600)] border border-[var(--color-surface-500)] rounded text-[var(--color-accent-blue)] font-mono"
               />
             )}
           </div>
           <div className="col-span-1">
-            <input
+            <NumberField bare
               aria-label={t('a11y.io.channel', { row: index + 1 })}
-              type="number"
               value={item.channel ?? ''}
               onChange={(e) => onUpdate(index, { channel: e.target.value ? parseInt(e.target.value) : undefined })}
               placeholder="#"
               min={0}
               max={16}
-              className="w-full px-2 py-1 text-xs bg-[var(--color-surface-600)] border border-[var(--color-surface-500)] rounded text-[var(--color-surface-100)] focus:outline-none placeholder:text-[var(--color-surface-500)]"
+              className="w-full px-2 py-1 text-xs bg-[var(--color-surface-600)] border border-[var(--color-surface-500)] rounded text-[var(--color-surface-100)] placeholder:text-[var(--color-surface-500)]"
             />
           </div>
           <div className="col-span-1">
             {boardIo ? (
-              <span className="block truncate text-xs text-[var(--color-surface-300)]" title={channelAt(boardIo, section, item.address)?.electrical}>
-                {channelAt(boardIo, section, item.address)?.pin ?? '-'}
-              </span>
+              <Tooltip content={channelAt(boardIo, section, item.address)?.electrical}>
+                <span className="block truncate text-xs text-[var(--color-surface-300)]">
+                  {channelAt(boardIo, section, item.address)?.pin ?? '-'}
+                </span>
+              </Tooltip>
             ) : (
-              <input
+              <NumberField bare
                 aria-label={t('a11y.io.pin', { row: index + 1 })}
-                type="number"
                 value={item.pin ?? ''}
                 onChange={(e) => onUpdate(index, { pin: e.target.value ? parseInt(e.target.value) : undefined })}
                 placeholder={t('io.io')}
                 min={0}
                 max={100}
-                className="w-full px-2 py-1 text-xs bg-[var(--color-surface-600)] border border-[var(--color-surface-500)] rounded text-[var(--color-surface-100)] focus:outline-none placeholder:text-[var(--color-surface-500)]"
+                className="w-full px-2 py-1 text-xs bg-[var(--color-surface-600)] border border-[var(--color-surface-500)] rounded text-[var(--color-surface-100)] placeholder:text-[var(--color-surface-500)]"
               />
             )}
           </div>
           <div className="col-span-2">
-            <select
+            <Select bare
               aria-label={t('a11y.io.type', { row: index + 1 })}
               value={item.type || 'BOOL'}
               onChange={(e) => onUpdate(index, { type: e.target.value as 'BOOL' | 'INT' | 'REAL' })}
-              className="w-full px-2 py-1 text-xs bg-[var(--color-surface-600)] border border-[var(--color-surface-500)] rounded text-[var(--color-surface-100)] focus:outline-none"
+              className="w-full px-2 py-1 text-xs bg-[var(--color-surface-600)] border border-[var(--color-surface-500)] rounded text-[var(--color-surface-100)]"
             >
               <option value="BOOL">{t('io.bool')}</option>
               <option value="INT">{t('io.int')}</option>
               <option value="REAL">{t('io.real')}</option>
-            </select>
+            </Select>
           </div>
           <div className="col-span-2">
-            <input
+            <TextField bare
               aria-label={t('a11y.io.description', { row: index + 1 })}
               type="text"
               value={item.description || ''}
               onChange={(e) => onUpdate(index, { description: e.target.value || undefined })}
               placeholder="..."
-              className="w-full px-2 py-1 text-xs bg-[var(--color-surface-600)] border border-[var(--color-surface-500)] rounded text-[var(--color-surface-100)] focus:outline-none placeholder:text-[var(--color-surface-500)]"
+              className="w-full px-2 py-1 text-xs bg-[var(--color-surface-600)] border border-[var(--color-surface-500)] rounded text-[var(--color-surface-100)] placeholder:text-[var(--color-surface-500)]"
             />
           </div>
           <div className="col-span-1 flex justify-end">
-            <button
+            <Button variant="bare"
               onClick={() => onRemove(index)}
               className="p-1 rounded hover:bg-[var(--color-surface-500)] text-[var(--color-accent-red)]"
-              title={t('io.remove')}
+              tooltip={t('io.remove')}
             >
               <Trash2 size={14} />
-            </button>
+            </Button>
           </div>
         </div>
         {boardIo && mappingProblem(boardIo, boardLabel, section, item) !== undefined && (
@@ -428,13 +431,13 @@ function IOTable({ items, onUpdate, onRemove, onMakeVirtual, section, boardIo, b
             <p role="alert" className="text-[var(--color-accent-red)]">
               {mappingProblem(boardIo, boardLabel, section, item)}
             </p>
-            <button
+            <Button variant="bare"
               onClick={() => onMakeVirtual(index)}
               className="px-2 py-0.5 rounded bg-[var(--color-surface-600)] hover:bg-[var(--color-surface-500)] text-[var(--color-surface-200)]"
-              title={t('io.keepThisAddressAs')}
+              tooltip={t('io.keepThisAddressAs')}
             >
               {t('io.keepAsVirtualNo')}
-            </button>
+            </Button>
           </div>
         )}
         </div>

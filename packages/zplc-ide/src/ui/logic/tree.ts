@@ -15,7 +15,7 @@ export function flattenTree(nodes: readonly TreeNodeSpec[], expanded: ReadonlySe
 export interface TreeKeyResult { active: string; expand: { id: string; open: boolean } | null }
 
 /** The active row and the expansion a key causes, or null when the key is not a tree key. */
-export function treeKey(key: string, rows: readonly TreeRow[], active: string, _expanded: ReadonlySet<string>): TreeKeyResult | null {
+export function treeKey(key: string, rows: readonly TreeRow[], active: string): TreeKeyResult | null {
   const index = rows.findIndex((row) => row.id === active);
   const row = rows[index];
   if (!row) return null;

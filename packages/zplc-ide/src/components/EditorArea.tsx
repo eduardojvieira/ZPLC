@@ -36,6 +36,7 @@ import { useConfigEditors } from '../store/useConfigEditors';
 import { ConfigEditorTab, ConfigCloseDialog } from '../navigator/ConfigEditorTab';
 import { configCloseNeedsConfirmation, configEditorViewId, type ConfigEditorKind } from '../navigator/configEditors';
 import { discardProjectConfigEdits } from '../navigator/discardConfigEdits';
+import { Button } from '../ui';
 
 // Each view loads when it is first shown (IDE-015): a project of Structured Text files never fetches the visual editors,
 // one of diagrams never fetches Monaco, and the settings load when they are opened.
@@ -367,10 +368,10 @@ export function EditorArea() {
     return (
       <div role="alert" data-file-error className="w-full h-full overflow-auto flex items-center justify-center bg-[var(--color-surface-800)] p-6">
         <div className="max-w-xl">
-          <div className="w-16 h-16 mx-auto mb-4 rounded-lg bg-red-900/30 flex items-center justify-center">
-            <FileCode size={32} className="text-red-400" />
+          <div className="w-16 h-16 mx-auto mb-4 rounded-lg bg-[var(--color-accent-red)]/30 flex items-center justify-center">
+            <FileCode size={32} className="text-[var(--color-accent-red)]" />
           </div>
-          <p className="text-red-400 text-lg font-medium text-center">{t('workbench.editor.invalidFile', { language: lang })}</p>
+          <p className="text-[var(--color-accent-red)] text-lg font-medium text-center">{t('workbench.editor.invalidFile', { language: lang })}</p>
           <p className="text-[var(--color-surface-200)] text-sm mt-1 text-center font-mono break-all">{fileName}</p>
           <ul className="mt-4 list-disc pl-5 text-sm text-[var(--color-surface-300)] space-y-1">
             {violations.map((violation) => <li key={violation} className="break-words">{violation}</li>)}
@@ -431,27 +432,27 @@ export function EditorArea() {
             role="presentation"
             className="group flex items-center gap-2 px-3 h-full border-r border-[var(--color-surface-600)] cursor-pointer select-none transition-colors bg-[var(--color-surface-700)] text-[var(--color-surface-100)]"
           >
-            <button
+            <Button variant="bare"
               id={`editor-tab-${SETTINGS_TAB_ID}`}
               role="tab"
               aria-selected="true"
               aria-controls={EDITOR_PANEL_ID}
               tabIndex={0}
               onKeyDown={(event) => handleTabKeyDown(event, SETTINGS_TAB_ID)}
-              className="flex min-w-0 items-center gap-2 rounded text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-accent-blue)]"
+              className="flex min-w-0 items-center gap-2 rounded text-left focus-visible:outline"
             >
               <Settings size={14} className="text-[var(--color-accent-blue)]" />
               <span className="text-sm whitespace-nowrap">{t('workbench.editor.settings')}</span>
-            </button>
-            <button
+            </Button>
+            <Button variant="bare"
               type="button"
               onClick={handleCloseSettings}
-              className="p-0.5 rounded opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 hover:bg-[var(--color-surface-500)] focus-visible:opacity-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--color-accent-blue)] transition-opacity"
+              className="p-0.5 rounded opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 hover:bg-[var(--color-surface-500)] focus-visible:opacity-100 focus-visible:outline transition-opacity"
               aria-label={t('workbench.editor.closeSettings')}
-              title={t('workbench.editor.closeSettings')}
+              tooltip={t('workbench.editor.closeSettings')}
             >
               <X size={14} />
-            </button>
+            </Button>
           </div>
         )}
         
@@ -476,7 +477,7 @@ export function EditorArea() {
                   : 'bg-[var(--color-surface-800)] text-[var(--color-surface-300)] hover:bg-[var(--color-surface-700)]'
               }`}
             >
-              <button
+              <Button variant="bare"
                 id={`editor-tab-${file.id}`}
                 role="tab"
                 aria-selected={isActive}
@@ -484,7 +485,7 @@ export function EditorArea() {
                 tabIndex={isActive ? 0 : -1}
                 onClick={() => selectFileTab(file.id)}
                 onKeyDown={(event) => handleTabKeyDown(event, file.id)}
-                className="flex min-w-0 items-center gap-2 rounded text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-accent-blue)]"
+                className="flex min-w-0 items-center gap-2 rounded text-left focus-visible:outline"
               >
                 {getFileIcon(file.language)}
                 <span className="text-sm whitespace-nowrap">{displayName}</span>
@@ -493,16 +494,16 @@ export function EditorArea() {
                     *
                   </span>
                 )}
-              </button>
-              <button
+              </Button>
+              <Button variant="bare"
                 type="button"
                 onClick={() => handleCloseTab(file.id)}
-                className="p-0.5 rounded opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 hover:bg-[var(--color-surface-500)] focus-visible:opacity-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--color-accent-blue)] transition-opacity"
+                className="p-0.5 rounded opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 hover:bg-[var(--color-surface-500)] focus-visible:opacity-100 focus-visible:outline transition-opacity"
                 aria-label={t('workbench.editor.closeFile', { name: displayName })}
-                title={t('workbench.editor.closeFile', { name: displayName })}
+                tooltip={t('workbench.editor.closeFile', { name: displayName })}
               >
                 <X size={14} />
-              </button>
+              </Button>
             </div>
           );
         })}
@@ -532,28 +533,28 @@ export function EditorArea() {
                 aria-label={t('workbench.editor.history')}
                 className="h-9 shrink-0 flex items-center gap-1 px-2 border-b border-[var(--color-surface-600)] bg-[var(--color-surface-800)]"
               >
-                <button
+                <Button variant="bare"
                   type="button"
                   onClick={() => applyVisualHistory('undo')}
                   disabled={!visualHistory.canUndo}
                   aria-label={t('workbench.editor.undoLabel')}
-                  title={t('workbench.editor.undoTitle')}
-                  className="inline-flex items-center gap-1 rounded px-2 py-1 text-xs text-[var(--color-surface-200)] hover:bg-[var(--color-surface-700)] disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-accent-blue)]"
+                  tooltip={t('workbench.editor.undoTitle')}
+                  className="inline-flex items-center gap-1 rounded px-2 py-1 text-xs text-[var(--color-surface-200)] hover:bg-[var(--color-surface-700)] disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline"
                 >
                   <Undo2 size={14} aria-hidden="true" />
                   <span>{t('workbench.editor.undo')}</span>
-                </button>
-                <button
+                </Button>
+                <Button variant="bare"
                   type="button"
                   onClick={() => applyVisualHistory('redo')}
                   disabled={!visualHistory.canRedo}
                   aria-label={t('workbench.editor.redoLabel')}
-                  title={t('workbench.editor.redoTitle')}
-                  className="inline-flex items-center gap-1 rounded px-2 py-1 text-xs text-[var(--color-surface-200)] hover:bg-[var(--color-surface-700)] disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-accent-blue)]"
+                  tooltip={t('workbench.editor.redoTitle')}
+                  className="inline-flex items-center gap-1 rounded px-2 py-1 text-xs text-[var(--color-surface-200)] hover:bg-[var(--color-surface-700)] disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline"
                 >
                   <Redo2 size={14} aria-hidden="true" />
                   <span>{t('workbench.editor.redo')}</span>
-                </button>
+                </Button>
               </div>
               <div className="min-h-0 flex-1">{renderVisualEditor()}</div>
             </div>

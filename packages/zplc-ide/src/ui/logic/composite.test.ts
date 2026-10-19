@@ -31,13 +31,13 @@ describe('tree logic (UX-001)', () => {
   it('UX-001 expands with ArrowRight, collapses with ArrowLeft, goes to the parent and walks the rows with the arrows', () => {
     const open = new Set(['p']);
     const rows = flattenTree(nodes, open);
-    expect(treeKey('ArrowRight', rows, 'q', open)).toEqual({ active: 'q', expand: null });
-    expect(treeKey('ArrowRight', flattenTree(nodes, new Set()), 'p', new Set())).toEqual({ active: 'p', expand: { id: 'p', open: true } });
-    expect(treeKey('ArrowRight', rows, 'p', open)).toEqual({ active: 'p1', expand: null });
-    expect(treeKey('ArrowLeft', rows, 'p', open)).toEqual({ active: 'p', expand: { id: 'p', open: false } });
-    expect(treeKey('ArrowLeft', rows, 'p2', open)).toEqual({ active: 'p', expand: null });
-    expect(treeKey('ArrowDown', rows, 'p1', open)).toEqual({ active: 'p2', expand: null });
-    expect(treeKey('End', rows, 'p', open)).toEqual({ active: 'q', expand: null });
+    expect(treeKey('ArrowRight', rows, 'q')).toEqual({ active: 'q', expand: null });
+    expect(treeKey('ArrowRight', flattenTree(nodes, new Set()), 'p')).toEqual({ active: 'p', expand: { id: 'p', open: true } });
+    expect(treeKey('ArrowRight', rows, 'p')).toEqual({ active: 'p1', expand: null });
+    expect(treeKey('ArrowLeft', rows, 'p')).toEqual({ active: 'p', expand: { id: 'p', open: false } });
+    expect(treeKey('ArrowLeft', rows, 'p2')).toEqual({ active: 'p', expand: null });
+    expect(treeKey('ArrowDown', rows, 'p1')).toEqual({ active: 'p2', expand: null });
+    expect(treeKey('End', rows, 'p')).toEqual({ active: 'q', expand: null });
   });
 });
 

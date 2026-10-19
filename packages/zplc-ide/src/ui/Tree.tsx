@@ -29,7 +29,7 @@ export function Tree({ label, nodes, defaultExpanded = [], selected, onSelect, r
   const move = (id: string): void => { setFocusId(id); queueMicrotask(() => root.current?.querySelector<HTMLElement>(`[data-row="${CSS.escape(id)}"]`)?.focus()); };
   const onKeyDown = (event: KeyboardEvent<HTMLElement>, row: TreeRow): void => {
     if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); onSelect?.(row.id); return; }
-    const result = treeKey(event.key, rows, row.id, expanded);
+    const result = treeKey(event.key, rows, row.id);
     if (!result) return;
     event.preventDefault();
     if (result.expand) toggle(result.expand.id, result.expand.open);
