@@ -1,7 +1,6 @@
 {
   "description": "HAL functions that nothing calls yet (IO-007). The check fails when an entry has a caller or is no longer declared, so this list only shrinks. Each reason names what has to be decided before the function gets its caller or leaves the contract.",
   "no_caller": {
-    "zplc_hal_mutex_destroy": "The core creates its process-image mutex once and keeps it for the life of the runtime; a caller appears with a shutdown path that releases it (core shutdown is outside the I/O work).",
     "zplc_hal_dns_resolve": "The application resolves names through the Zephyr resolver and SNTP, with its own timeouts. A caller needs the HAL to carry a timeout; whether the network functions stay in the HAL or leave it is the port-interface decision (IO-013, D-06).",
     "zplc_hal_socket_connect": "The Modbus TCP client and the MQTT client use Zephyr sockets with per-socket timeouts; the HAL socket functions have no timeout and no caller (IO-013, D-06).",
     "zplc_hal_socket_send": "As zplc_hal_socket_connect.",

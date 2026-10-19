@@ -480,6 +480,29 @@ endif()
 
 add_test(NAME test_port_timing COMMAND test_port_timing)
 
+# Test: shutdown releases the process-image mutex through the HAL (IO-007).
+add_executable(test_core_shutdown
+    tests/test_core_shutdown.c
+    src/core/zplc_core.c
+    src/core/zplc_loader.c
+    src/core/zplc_comm_dispatch.c
+    src/hal/posix/zplc_hal_posix.c
+)
+
+target_include_directories(test_core_shutdown PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+)
+
+target_compile_definitions(test_core_shutdown PRIVATE
+    ZPLC_CORE_VERSION_STR="${ZPLC_CORE_VERSION_STR}"
+)
+
+if(UNIX AND NOT APPLE)
+    target_link_libraries(test_core_shutdown PRIVATE rt)
+endif()
+
+add_test(NAME test_core_shutdown COMMAND test_core_shutdown)
+
 # Test: time is latched once per scan, and the instruction budget charges the bytes a string opcode processes
 # (RT-006). Also run under the sanitizers.
 add_executable(test_vm_scan
