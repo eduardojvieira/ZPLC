@@ -1504,6 +1504,7 @@
   "IO-007": [
     {"kind":"unit","ref":"tools/ci/test_check_hal_contract.py","test":"CheckerTests","note":"Python unit test run by the docs-and-truth job of ci.yml; it is not in the scanned file kinds. Every HAL function is implemented on the posix, zephyr and wasm ports.","partial":true},
     {"kind":"unit","ref":"tools/ci/test_check_hal_contract.py","test":"RepositoryTests","note":"Python unit test run by the docs-and-truth job of ci.yml; it is not in the scanned file kinds. The repository contract has no finding and the ledger in tools/ci/hal-contract.json is empty: every declared function has a caller and an implementation on the three ports. The requirement stays partial because the 'not supported' result of an operation a board cannot perform is swallowed by the scheduler core (zplc_sched_core.c, I/O phase) and does not reach the user yet.","partial":true},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_core_shutdown.c","test":"Core shutdown releases the process-image mutex, and a later init creates it again (IO-007)."},
     {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_hal_posix_io_table.c","test":"The POSIX port lists no channel and says so through the shared accessors (IO-007)."},
     {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_io_table.c","test":"The I/O table accessors every port shares (IO-001, IO-002, IO-007)."}
   ],
