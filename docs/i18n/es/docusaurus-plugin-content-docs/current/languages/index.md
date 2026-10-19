@@ -36,19 +36,19 @@ Cada fila nombra la prueba que muestra la capacidad: un recorrido de Studio, una
 | Texto Estructurado | Observar valores en línea | Recorrido de Studio en la simulación nativa | `28e Inline values in Structured Text come from the debug map` |
 | Texto Estructurado | Forzar | Recorrido de Studio en la simulación nativa | `8 Force an input and release it` |
 | Texto Estructurado | Desplegar en una placa | Solo en una placa | Una persona lo despliega y lo ejecuta en una placa; la página de evidencia de hardware lista los registros |
-| Lista de Instrucciones | Editar | Aún sin prueba de extremo a extremo |   |
+| Lista de Instrucciones | Editar | Recorrido de Studio en la simulación nativa | `54 Instruction List is edited, saved and reopened` |
 | Lista de Instrucciones | Compilar | Caso de conformidad en el runtime del equipo | `lng-018-il-jump-runs-every-scan` |
 | Lista de Instrucciones | Simular | Caso de conformidad en el runtime del equipo | `lng-018-il-jump-runs-every-scan` |
 | Lista de Instrucciones | Depurar (punto de interrupción, pausa, paso) | Recorrido de Studio en la simulación nativa | `28kc A breakpoint on an IL line stops execution` |
-| Lista de Instrucciones | Observar valores en línea | Aún sin prueba de extremo a extremo |   |
-| Lista de Instrucciones | Forzar | Aún sin prueba de extremo a extremo |   |
+| Lista de Instrucciones | Observar valores en línea | Recorrido de Studio en la simulación nativa | `54b Instruction List values are watched and a variable is forced and released` |
+| Lista de Instrucciones | Forzar | Recorrido de Studio en la simulación nativa | `54b Instruction List values are watched and a variable is forced and released` |
 | Lista de Instrucciones | Desplegar en una placa | Solo en una placa | Una persona lo despliega y lo ejecuta en una placa; la página de evidencia de hardware lista los registros |
 | Diagrama de Escalera | Editar | Recorrido de Studio en la simulación nativa | `28f A rung is built from the keyboard` |
 | Diagrama de Escalera | Compilar | Prueba en el runtime nativo | `Blinky visual languages on native POSIX` |
 | Diagrama de Escalera | Simular | Prueba en el runtime nativo | `Blinky visual languages on native POSIX` |
 | Diagrama de Escalera | Depurar (punto de interrupción, pausa, paso) | Recorrido de Studio en la simulación nativa | `28 A breakpoint on a rung stops execution` |
 | Diagrama de Escalera | Observar valores en línea | Recorrido de Studio en la simulación nativa | `28b Online values of a rung come from the debug map` |
-| Diagrama de Escalera | Forzar | Aún sin prueba de extremo a extremo |   |
+| Diagrama de Escalera | Forzar | Recorrido de Studio en la simulación nativa | `54c A forced variable is shown as forced in the Ladder diagram` |
 | Diagrama de Escalera | Desplegar en una placa | Solo en una placa | Una persona lo despliega y lo ejecuta en una placa; la página de evidencia de hardware lista los registros |
 | Diagrama de Bloques de Función | Editar | Recorrido de Studio en la simulación nativa | `28g A function block diagram is edited from the keyboard` |
 | Diagrama de Bloques de Función | Compilar | Prueba en el runtime nativo | `Blinky visual languages on native POSIX` |
@@ -78,6 +78,8 @@ Valide como un único flujo el lenguaje fuente, la representación generada, los
 El IDE expone inspección, simulación y depuración según el perfil de capacidades del runtime activo. POSIX nativo es un runtime lógico de host, no evidencia de timing de hardware ni de comportamiento en target. Breakpoints de hardware, forces, deploy y controles de ejecución son específicos de capacidades y requieren evidencia separada.
 
 En la simulación nativa de un host Linux, los recorridos del IDE detienen el programa en un breakpoint sobre una línea de Structured Text, una línea de Instruction List, un peldaño de Ladder, un bloque de un diagrama de bloques de función y un paso de un gráfico de funciones secuenciales, y marcan el elemento donde se detuvo. Estas ejecuciones no son evidencia de un breakpoint en una placa: eso requiere una ejecución con hardware en el lazo en esa placa.
+
+Las mismas ejecuciones pulsan Pausar, Avanzar un ciclo y Reanudar en cada uno de los cinco lenguajes y leen el contador de ciclos: se mantiene mientras el programa está en pausa, avanza exactamente uno con cada avance y vuelve a correr tras reanudar.
 
 ## Biblioteca estándar
 

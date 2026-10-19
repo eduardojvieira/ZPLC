@@ -226,6 +226,42 @@ async function watch(app: App, variable: string): Promise<void> {
 const watchRow = (name: string) => `[...document.querySelectorAll('tbody tr')].find((row) => row.firstElementChild?.textContent === ${JSON.stringify(name)})`;
 const watchValue = (app: App, name: string) => app.eval<string | null>(`${watchRow(name)}?.children[1]?.innerText.trim() ?? null`);
 
+/** LNG-027: Pause stops the scans, Step one cycle runs exactly one, Resume lets them run again. The cycle counter of the status bar is the witness. */
+async function pauseStepResume(app: App): Promise<void> {
+  await connectAndRun(app);
+  await app.until('the scans to be counted', async () => await cycles(app) >= 1 || undefined);
+  await app.click(button('Pause (F6)', 'prefix'), 'the Pause button');
+  await app.until('the toolbar to offer Resume', async () => await app.visible(button('Resume', 'prefix')) || undefined);
+  await new Promise((resolve) => setTimeout(resolve, 400)); // a scan in flight when Pause was pressed may still be counted
+  const held = await cycles(app);
+  await new Promise((resolve) => setTimeout(resolve, 800));
+  assert(await cycles(app) === held, `The cycle counter moved while the program was paused (${held} then ${await cycles(app)}).`);
+  await app.click(button('Step one cycle', 'prefix'), 'the Step button');
+  await app.until('one more cycle to be counted', async () => await cycles(app) > held || undefined);
+  await new Promise((resolve) => setTimeout(resolve, 800));
+  assert(await cycles(app) === held + 1, `Step one cycle should run exactly one scan (${held} before, ${await cycles(app)} after).`);
+  await app.click(button('Resume', 'prefix'), 'the Resume button');
+  await app.until('the program to run again', async () => await app.visible(button('Pause (F6)', 'prefix')) || undefined);
+  await app.until('the scans to be counted again', async () => await cycles(app) > held + 5 || undefined);
+}
+
+/** A Force checkbox of the Watch table forces the variable and releases it. */
+async function forceAndRelease(app: App, variable: string): Promise<void> {
+  await watch(app, variable);
+  await app.until(`${variable} to have a value in the Watch table`, async () => { const shown = await watchValue(app, variable); return shown !== null && shown !== '...' || undefined; }, 60_000);
+  await app.click(css(`input[aria-label="Force ${variable}"]`), `the Force checkbox of ${variable}`);
+  await app.until(`${variable} to be forced`, async () => await app.eval(`${watchRow(variable)}?.querySelector('[data-forced="true"]') !== null`) === true || undefined);
+}
+async function releaseForce(app: App, variable: string): Promise<void> {
+  if (!await app.clickable(css(`input[aria-label="Force ${variable}"]`))) {
+    app.note('With a force active the Watch table has no visible row at the default panel size');
+    await app.click(css('#workspace-separator'), 'the separator above the lower panel');
+    for (let step = 0; step < 6; step++) await app.press('ArrowUp');
+  }
+  await app.click(css(`input[aria-label="Force ${variable}"]`), `the Force checkbox of ${variable}`);
+  await app.until('the force to be released', async () => await app.eval(`${watchRow(variable)}?.querySelector('input[type="checkbox"]')?.checked === false`) === true || undefined);
+}
+
 /** The prompt that asks what to do with unsaved changes, by its title; null when none is open. */
 const dialogTitle = (app: App) => app.eval<string | null>(`document.querySelector('[data-unsaved-changes-dialog]')?.closest('[role="alertdialog"]')?.querySelector('h2')?.textContent ?? null`);
 const dialogChoice = (label: string) => `(() => { const dialog = document.querySelector('[data-unsaved-changes-dialog]')?.closest('[role="alertdialog"]'); return [...(dialog?.querySelectorAll('button') ?? [])].find((item) => item.textContent === ${JSON.stringify(label)}); })()`;
@@ -498,6 +534,8 @@ export async function runPackagedSecurityProbes(executable: string, scratch: str
 // ---------------------------------------------------------------------------------------------------------------------
 
 const EDIT = ' (* journey edit: ñ 温度 *)';
+/** Line 1 of an Instruction List example opens a block comment, so the typed text stays inside it (no comment delimiters of its own). */
+const IL_EDIT = ' journey edit: ñ 温度';
 
 export const JOURNEYS: Journey[] = [
   {
@@ -2254,6 +2292,119 @@ export const JOURNEYS: Journey[] = [
       assert(await left('and_run') !== await left('output_led'), 'The two blocks start aligned, so the journey proves nothing.');
       await app.press('Alt+Shift+ArrowLeft');
       await app.until('the two blocks on one left edge', async () => Math.abs(await left('and_run') - await left('output_led')) < 1 || undefined);
+    },
+  },
+  {
+    // LNG-027 / LNG-004: Pause, Step one cycle and Resume work the same in every language; the cycle counter is the witness.
+    name: '53a Pause, step one cycle and resume a Ladder program', example: 'blinky', proves: [], partly: ['LNG-004', 'LNG-027'],
+    run: async (app, { project }) => {
+      await openFolder(app, project);
+      await openDiagram(app, 'src/main.ld.json', '[data-ld-rung-id]');
+      const result = await compile(app);
+      assert(result.kind === 'built', `The Blinky Ladder example does not build: ${result.message}`);
+      await pauseStepResume(app);
+    },
+  },
+  {
+    name: '53b Pause, step one cycle and resume a function block diagram', example: 'blinky_fbd', proves: [], partly: ['LNG-004', 'LNG-027'],
+    run: async (app, { project }) => {
+      await openFolder(app, project);
+      await openDiagram(app, 'src/main.fbd.json', '.react-flow__node');
+      const result = await compile(app);
+      assert(result.kind === 'built', `The Blinky FBD example does not build: ${result.message}`);
+      await pauseStepResume(app);
+    },
+  },
+  {
+    name: '53c Pause, step one cycle and resume a sequential function chart', example: 'blinky_sfc', proves: [], partly: ['LNG-004', 'LNG-027'],
+    run: async (app, { project }) => {
+      await openFolder(app, project);
+      await openDiagram(app, 'src/main.sfc.json', '.react-flow__node');
+      const result = await compile(app);
+      assert(result.kind === 'built', `The Blinky SFC example does not build: ${result.message}`);
+      await pauseStepResume(app);
+    },
+  },
+  {
+    name: '53d Pause, step one cycle and resume an Instruction List program', example: 'blinky_il', proves: [], partly: ['LNG-004', 'LNG-027'],
+    run: async (app, { project }) => {
+      await openFolder(app, project);
+      await openFile(app, 'src/main.il');
+      const result = await compile(app);
+      assert(result.kind === 'built', `The Blinky IL example does not build: ${result.message}`);
+      await pauseStepResume(app);
+    },
+  },
+  {
+    name: '53e Pause, step one cycle and resume a Structured Text program', example: 'blinky_st', proves: [], partly: ['LNG-004', 'LNG-027'],
+    run: async (app, { project }) => {
+      await openFolder(app, project);
+      await openFile(app, 'src/main.st');
+      const result = await compile(app);
+      assert(result.kind === 'built', `The Blinky ST example does not build: ${result.message}`);
+      await pauseStepResume(app);
+    },
+  },
+  {
+    name: '54 Instruction List is edited, saved and reopened', example: 'blinky_il', proves: [], partly: ['LNG-001'],
+    run: async (app, { project }) => {
+      const file = join(project, 'src', 'main.il'); const original = disk(file);
+      await openFolder(app, project);
+      await openFile(app, 'src/main.il');
+      await cursorAtEndOfLine(app, 1);
+      await app.type(IL_EDIT);
+      const edited = original.replace(/^[^\n]*/, (first) => `${first}${IL_EDIT}`);
+      await app.until('the editor to hold the typed text', async () => await editorText(app) === edited.replace(/\r\n/g, '\n') || undefined)
+        .catch(async (error: Error) => { throw new Error(`${error.message}: the first line reads ${JSON.stringify((await editorText(app)).split('\n')[0])}`); });
+      assert(disk(file) === original, 'Typing alone must not write the file.');
+      await app.click(saveButton, 'the Save button');
+      await app.until('the edited file on disk', () => disk(file) === edited || undefined);
+      const result = await compile(app);
+      assert(result.kind === 'built', `The edited Instruction List program does not build: ${result.message}`);
+      await app.click(button('Close project'));
+      await app.until('the Welcome screen', async () => await app.visible(button('Open project', 'contains')) || undefined);
+      await openFolder(app, project);
+      await openFile(app, 'src/main.il');
+      assert(await editorText(app) === edited, 'The reopened project does not show the saved text.');
+    },
+  },
+  {
+    name: '54b Instruction List values are watched and a variable is forced and released', example: 'blinky_il', proves: [], partly: ['LNG-006'],
+    run: async (app, { project }) => {
+      await openFolder(app, project);
+      await openFile(app, 'src/main.il');
+      const result = await compile(app);
+      assert(result.kind === 'built', `The Blinky IL example does not build: ${result.message}`);
+      await connectAndRun(app);
+      await watch(app, 'LED_Output');
+      const first = await watchValue(app, 'LED_Output');
+      await app.until('LED_Output to change in the Watch table: the program blinks', async () => { const now = await watchValue(app, 'LED_Output'); return now !== null && now !== '...' && now !== first || undefined; }, 30_000);
+      await forceAndRelease(app, 'LED_Output');
+      assert((await app.text()).includes('1 active force'), 'The force banner does not show one active force.');
+      await releaseForce(app, 'LED_Output');
+    },
+  },
+  {
+    // UX-009: the same force a Ladder reader needs: the contact that reads the variable says it is forced.
+    name: '54c A forced variable is shown as forced in the Ladder diagram', example: 'blinky', proves: [], partly: ['UX-009', 'LNG-006'],
+    run: async (app, { project }) => {
+      await openFolder(app, project);
+      await openDiagram(app, 'src/main.ld.json', '[data-ld-rung-id]');
+      const result = await compile(app);
+      assert(result.kind === 'built', `The Blinky Ladder example does not build: ${result.message}`);
+      await connectAndRun(app);
+      const texts = () => app.eval<string[]>(`[...document.querySelectorAll('[data-ld-cell] text')].map((node) => node.textContent ?? '')`);
+      await app.until('a contact to show the value of its variable', async () => (await texts()).some((text) => /^[●○◆▲] [TF]$/.test(text)) || undefined)
+        .catch(async (error: Error) => { throw new Error(`${error.message}: the cells show ${JSON.stringify(await texts())}`); });
+      let at = 'force';
+      try {
+      await forceAndRelease(app, 'LED_Output');
+      await app.until('a contact to be drawn as forced', async () => (await texts()).some((text) => /^◆ [TF]$/.test(text)) || undefined)
+        .catch(async (error: Error) => { throw new Error(`${error.message}: the cells show ${JSON.stringify(await texts())}`); });
+      at = 'release';
+      await releaseForce(app, 'LED_Output');
+      await app.until('no contact to be drawn as forced', async () => !(await texts()).some((text) => text.startsWith('◆')) || undefined);
+      } catch (error) { throw new Error(`${(error as Error).message} (at ${at})`); }
     },
   },
   {

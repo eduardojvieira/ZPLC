@@ -27,11 +27,13 @@ describe('LNG-001 language capability table: one row per language and capability
   });
 
   it('labels what only a board can show as board only, and an untested cell as not yet tested, never as working', () => {
-    const en = capabilityBlock('en');
-    expect(en).toContain('Board only');
-    expect(en).toContain('Not tested end to end yet');
-    const row = en.split('\n').find((line) => line.startsWith('| Instruction List') && line.includes('Force'))!;
+    expect(capabilityBlock('en')).toContain('Board only');
+    // the committed table may have no gap left: a gap is a null cell, and it is never drawn as evidence
+    const gapped: CapabilityTable = structuredClone(table);
+    gapped.languages.il!.force = null;
+    const row = capabilityBlock('en', gapped).split('\n').find((line) => line.startsWith('| Instruction List') && line.includes('Force'))!;
     expect(row).toContain('Not tested end to end yet');
+    expect(capabilityBlock('es', gapped)).toContain('Aún sin prueba de extremo a extremo');
   });
 
   it('keeps the committed pages in step with the table (drift check)', () => {
