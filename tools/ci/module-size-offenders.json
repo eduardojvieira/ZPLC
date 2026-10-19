@@ -17,7 +17,7 @@
     "file": "packages/zplc-ide/src/components/Console.tsx",
     "requirement": "IDE-014",
     "added": "2026-10-10",
-    "lines": 1267,
+    "lines": 1233,
     "reason": "The lower workbench and the bodies of its Output, Problems, Tests, Changes, Agent and Trace tabs in one component that shares one busy flag and the workspace-test state; the other tabs (Explorer, Inspector, Interlocks, Lab, Learn, Terminal, Watch) already have their own module. The remaining panels cannot move before Console.tabNavigation.test.ts, which pins the text of this file, is replaced by render tests (VF-007), and WS-24a (notifications) edits it first. Recorded size raised from 1315 to 1331 once, by the merge of ws-integration (WS-20, WS-21, WS-22a added code here); from now on it can only shrink."
   },
   {

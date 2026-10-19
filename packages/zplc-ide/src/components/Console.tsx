@@ -7,6 +7,8 @@
  * The Watch tab shows live debug values.
  */
 
+import { getEntryIcon, getEntryColor, formatTime } from './consoleEntryStyle';
+import { orderProblems, useUnseen } from './consoleAttention';
 import {
   ChevronDown,
   ChevronUp,
@@ -37,7 +39,7 @@ import { trackTestRun } from './workspaceTestNotifications';
 import { useIDEStore } from '../store/useIDEStore';
 import { useConsoleState } from '../store/regionSubscriptions';
 import { isCandidateSTPath, sha256Text } from './candidateSources';
-import type { ConsoleEntry, ConsoleTab } from '../types';
+import type { ConsoleTab } from '../types';
 import { TerminalTab } from './TerminalTab';
 import { WatchTab } from './WatchTab';
 import type { DebugController } from '../hooks/useDebugController';
@@ -59,7 +61,7 @@ import { useProjectBlocks } from '../editors/useProjectBlocks';
 import { presentAiProviderConfig, presentAiProviderMutation, presentAiProviderResponse, presentAiProviderStatus, type AiProviderMode, type AiProviderResponsePresentation, type AiProviderStatusPresentation } from './aiProviderPresentation';
 import { useTheme } from '../hooks/useTheme';
 import { ZPLC_DARK_THEME, ZPLC_DARK_THEME_ID, ZPLC_HIGH_CONTRAST_THEME, ZPLC_HIGH_CONTRAST_THEME_ID, ZPLC_LIGHT_THEME, ZPLC_LIGHT_THEME_ID } from '../utils/monaco-themes';
-import { Button, Checkbox, FileInput, IconButton, SIGNAL_TEXT_CLASS, TextField, Textarea, Tooltip } from '../ui';
+import { Badge, Button, Checkbox, FileInput, IconButton, SIGNAL_TEXT_CLASS, TextField, Textarea, Tooltip } from '../ui';
 import { useT } from '../i18n';
 import { CommandEmptyState } from './panelStates';
 
@@ -195,14 +197,17 @@ export function Console({ debugController }: ConsoleProps) {
     if (element) requestElementSelection(msg.file, element);
   };
 
+  // a message written while another view is visible raises an indicator on its tab (IDE-020)
+  const unseen = useUnseen({ output: consoleEntries.length, problems: compilerMessages.length }, activeConsoleTab);
+  const unseenTab = (count = 0) => count > 0 ? { count: <Badge tone="info" className="ml-1">{count}</Badge>, ariaLabel: t('console.tab.unseenOutput', { count }) } : {};
   const tabs: { id: ConsoleTab; label: string; icon: React.ReactNode; count?: React.ReactNode; ariaLabel?: string }[] = [
-    { id: 'output', label: t('panel.output'), icon: <Terminal size={14} /> },
+    { id: 'output', label: t('panel.output'), icon: <Terminal size={14} />, ...unseenTab(unseen.output) },
     {
       id: 'problems',
       label: t('panel.problems'),
       icon: <AlertTriangle size={14} />,
-      count: <span className="text-xs tabular-nums">{problemSummary}</span>,
-      ariaLabel: t('console.tab.problemsAria', { summary: problemSummary }),
+      count: <><span className="text-xs tabular-nums">{problemSummary}</span>{unseenTab(unseen.problems).count}</>,
+      ariaLabel: t('console.tab.problemsAria', { summary: problemSummary }) + (unseen.problems ? `, ${t('console.tab.unseen', { count: unseen.problems })}` : ''),
     },
     {
       id: 'tests',
@@ -224,45 +229,6 @@ export function Console({ debugController }: ConsoleProps) {
     { id: 'watch', label: t('panel.watch'), icon: <Eye size={14} className={debugMode !== 'none' ? 'text-[var(--color-accent-green)]' : ''} />, count: watchCount > 0 ? watchCount : undefined },
     { id: 'terminal', label: t('console.tab.terminal'), icon: <Terminal size={14} className="text-[var(--color-accent-green)]" /> },
   ];
-
-  const getEntryIcon = (type: ConsoleEntry['type']) => {
-    switch (type) {
-      case 'error':
-        return <XCircle size={14} className="text-[var(--color-accent-red)] flex-shrink-0" />;
-      case 'warning':
-        return <AlertCircle size={14} className="text-[var(--color-accent-yellow)] flex-shrink-0" />;
-      case 'success':
-        return <CheckCircle size={14} className="text-[var(--color-accent-green)] flex-shrink-0" />;
-      case 'command':
-        return <Terminal size={14} className="text-[var(--color-accent-purple)] flex-shrink-0" />;
-      default:
-        return <Info size={14} className="text-[var(--color-accent-blue)] flex-shrink-0" />;
-    }
-  };
-
-  const getEntryColor = (type: ConsoleEntry['type']) => {
-    switch (type) {
-      case 'error':
-        return 'text-[var(--color-accent-red)]';
-      case 'warning':
-        return 'text-[var(--color-accent-yellow)]';
-      case 'success':
-        return 'text-[var(--color-accent-green)]';
-      case 'command':
-        return 'text-[var(--color-accent-purple)]';
-      default:
-        return 'text-[var(--color-surface-200)]';
-    }
-  };
-
-  const formatTime = (date: Date) => {
-    return date.toLocaleTimeString('en-US', {
-      hour12: false,
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit',
-    });
-  };
 
   const registerWorkspaceManifest = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const input = event.currentTarget;
@@ -675,7 +641,7 @@ export function Console({ debugController }: ConsoleProps) {
             <section aria-label={t('console.latestBuildDiagnostics')} className="space-y-1">
               <div className="px-2 text-xs text-[var(--color-surface-300)]">{t('console.latestBuildDiagnostics')}</div>
               {compilerMessages.length === 0 ? null : (
-              compilerMessages.map((msg, idx) => {
+              orderProblems(compilerMessages).map((msg, idx) => {
                 const node = msg.file && fileTree ? findFileInTree(fileTree, msg.file) : null;
                 // a diagram has no lines: a finding of its translation has no position, and its element is found on activation
                 const inDiagram = node?.type === 'file' && (node.language === 'LD' || node.language === 'FBD' || node.language === 'SFC');

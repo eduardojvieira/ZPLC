@@ -487,3 +487,9 @@ Studio está construido para que su recorrido principal pueda usarse con teclado
 Agregue una variable a la tabla Watch escribiendo su nombre: el campo ofrece las variables y los miembros del programa cargado mientras escribe. Un valor se edita con el teclado: enfóquelo y pulse Enter o F2, o haga doble clic. **Enter** escribe el valor, **Mayús+Enter** lo prepara y **Escribir los valores preparados** escribe todo lo preparado de una vez (**Descartar lo preparado** lo quita). Un valor preparado nunca se escribe solo. La lista **Formato de visualización** muestra los valores según el tipo, en decimal, hexadecimal, binario, como real o como tiempo, y un valor escrito como `16#FF`, `2#101` o `T#1s500ms` se lee en esa notación. El encabezado de una columna ordena las filas; una tercera pulsación restaura el orden en que se agregaron las variables. **Release all forces** se ofrece mientras haya forces retenidos.
 
 Nivel de evidencia: host. `packages/zplc-ide/src/components/watchTable.test.ts` cubre los formatos, los valores escritos, el orden y la completación.
+
+## Ver mensajes y problemas nuevos
+
+La vista Problemas lista primero los errores, luego las advertencias y después la información; al activar un problema se abre su archivo en su línea y columna. Un mensaje escrito en **Salida**, o un problema encontrado, mientras otra vista del panel de resultados está visible pone un contador en la pestaña de esa vista (se lee "Salida, 3 nuevos") hasta que la abra.
+
+Nivel de evidencia: host. `packages/zplc-ide/src/components/consoleAttention.test.ts` cubre el orden y los contadores.

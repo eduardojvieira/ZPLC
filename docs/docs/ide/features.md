@@ -476,3 +476,9 @@ Studio is built so that its main path can be used with a keyboard and a screen r
 Add a variable to the Watch table by typing its name: the field offers the variables and members of the loaded program as you type. A value is edited from the keyboard: focus it and press Enter or F2, or double-click it. **Enter** writes the value, **Shift+Enter** prepares it, and **Write prepared values** writes everything prepared at once (**Discard prepared** drops it). A prepared value is never written by itself. The **Display format** list shows values by type, in decimal, hexadecimal, binary, as real or as a time, and a value typed as `16#FF`, `2#101` or `T#1s500ms` is read in that notation. A column header sorts the rows; a third press restores the order the variables were added in. **Release all forces** is offered while forces are held.
 
 Evidence level: host. `packages/zplc-ide/src/components/watchTable.test.ts` covers the formats, the typed values, the sorting and the completion.
+
+## Seeing new messages and problems
+
+The Problems view lists errors first, then warnings, then information; activating a problem opens its file at its line and column. A message written to **Output**, or a problem found, while another view of the results panel is visible puts a count on that view's tab (read as "Output, 3 new") until you open it.
+
+Evidence level: host. `packages/zplc-ide/src/components/consoleAttention.test.ts` covers the order and the counts.
