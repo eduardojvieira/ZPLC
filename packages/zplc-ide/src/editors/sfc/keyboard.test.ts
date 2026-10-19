@@ -291,3 +291,19 @@ describe('UX-033 aligning and distributing steps and transitions from the keyboa
     expect(session.commits).toBe(0);
   });
 });
+
+describe('LNG-012 selecting more than one element of the chart from the keyboard', () => {
+  it('LNG-012 extends the selection down the chart and aligns the two elements with keys alone, as one gesture', () => {
+    const session = start();
+    const at = (id: string, x: number, y: number, selected = false): Node => ({ id, type: 'step', position: { x, y }, measured: { width: 60, height: 20 }, selected, data: { name: id } });
+    session.state = { nodes: [at('S1', 0, 0, true), at('S2', 80, 100)], edges: [] };
+    press(session, ['Ctrl+Alt+ArrowDown']);
+    expect(session.state.nodes.filter((node) => node.selected).map((node) => node.id)).toEqual(['S1', 'S2']);
+    expect(session.commits).toBe(0);
+    press(session, ['Alt+Shift+ArrowLeft']);
+    expect(session.state.nodes.map((node) => node.position.x)).toEqual([0, 0]);
+    expect(session.commits).toBe(1);
+    press(session, ['Ctrl+Alt+A']);
+    expect(session.state.nodes.every((node) => node.selected)).toBe(true);
+  });
+});

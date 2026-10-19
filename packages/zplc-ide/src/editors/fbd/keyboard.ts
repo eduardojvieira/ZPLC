@@ -17,6 +17,7 @@ import { connectBlocks, edgesToConnections, nodesToBlocks } from './graphModel';
 import { getNodeType } from './nodes/nodeType';
 import { cursorNode, firstNode, freeId, freePosition, nearestNode, numberedId, selectOnly, type Direction } from '../graphNav';
 import type { PickerItem } from '../picker';
+import { EXTEND_COMMANDS, extendSelection, isExtendCommand } from '../extendSelection';
 import { ARRANGE_COMMANDS, arrangeSelection, isArrangeCommand } from '../arrange';
 import type { CanvasCommands } from '../useCanvasKeyboard';
 import { declaredSymbols, sameType, symbolItems } from '../symbols';
@@ -65,7 +66,7 @@ export interface FBDArgument {
 /** The commands of the table that act on the canvas; the editor itself runs the others. */
 export const FBD_MODEL_COMMANDS: readonly string[] = [
   'focusLeft', 'focusRight', 'focusUp', 'focusDown', 'focusFirst', 'insertVariable', 'insertConstant', 'openPalette', 'insertElement',
-  'bindVariable', 'connect', 'disconnect', 'editComment', 'deleteSelection', ...ARRANGE_COMMANDS,
+  'bindVariable', 'connect', 'disconnect', 'editComment', 'deleteSelection', ...ARRANGE_COMMANDS, ...EXTEND_COMMANDS,
 ];
 
 /** The commands of the table that the editor runs because they need the screen: the clipboard, the breakpoint, the list. */
@@ -319,6 +320,10 @@ export function runFBDCommand(
     const arranged = arrangeSelection(state.nodes, command);
     return { nodes: arranged.nodes, edges: state.edges, changed: arranged.changed, say: arranged.say, ...(arranged.refused ? { refused: true } : {}) };
   }
+  if (isExtendCommand(command)) {
+    const extended = extendSelection(state.nodes, state.edges, command);
+    return { ...extended, ...(extended.refused ? { refused: true } : {}) };
+  }
   const here = cursorNode(state.nodes);
   switch (command) {
     case 'focusLeft': case 'focusRight': case 'focusUp': case 'focusDown': {
@@ -425,7 +430,7 @@ export function fbdCanvasCommands(model: FBDModel, projectBlocks: readonly Proje
     palette: () => paletteChoices(projectBlocks),
     paletteTitle: 'Insert block',
     palettePlaceholder: 'Type to search: AND, TON, variable, constant',
-    readOnlyCommands: new Set(['focusLeft', 'focusRight', 'focusUp', 'focusDown', 'focusFirst', 'toggleBreakpoint', 'showCommands', 'fitView']),
+    readOnlyCommands: new Set(['focusLeft', 'focusRight', 'focusUp', 'focusDown', 'focusFirst', ...EXTEND_COMMANDS, 'toggleBreakpoint', 'showCommands', 'fitView']),
     answer: {
       palette: (id) => ({ blockType: id }),
       bind: (name) => ({ name }),

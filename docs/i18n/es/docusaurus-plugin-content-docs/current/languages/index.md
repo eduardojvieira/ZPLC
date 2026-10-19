@@ -31,6 +31,8 @@ Valide como un único flujo el lenguaje fuente, la representación generada, los
 
 El IDE expone inspección, simulación y depuración según el perfil de capacidades del runtime activo. POSIX nativo es un runtime lógico de host, no evidencia de timing de hardware ni de comportamiento en target. Breakpoints de hardware, forces, deploy y controles de ejecución son específicos de capacidades y requieren evidencia separada.
 
+En la simulación nativa de un host Linux, los recorridos del IDE detienen el programa en un breakpoint sobre una línea de Structured Text, una línea de Instruction List, un peldaño de Ladder, un bloque de un diagrama de bloques de función y un paso de un gráfico de funciones secuenciales, y marcan el elemento donde se detuvo. Estas ejecuciones no son evidencia de un breakpoint en una placa: eso requiere una ejecución con hardware en el lazo en esa placa.
+
 ## Biblioteca estándar
 
 La biblioteca estándar se implementa mediante rutas de compilador y runtime. Consulte [Biblioteca estándar](./stdlib.md) y compile el flujo de lenguaje elegido para saber qué está disponible hoy.

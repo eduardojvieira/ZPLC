@@ -393,3 +393,36 @@ describe('UX-033 aligning and distributing blocks from the keyboard', () => {
     expect(session.state.nodes).toBe(before);
   });
 });
+
+describe('LNG-012 selecting more than one block from the keyboard', () => {
+  const row = (): Session => {
+    const session = start();
+    const at = (id: string, x: number, y: number, selected = false) => ({ id, type: 'logicGate', position: { x, y }, measured: { width: 60, height: 20 }, selected, data: {} });
+    session.state = { nodes: [at('a', 0, 40, true), at('b', 200, 70), at('c', 400, 10)], edges: [] };
+    return session;
+  };
+  const picked = (session: Session) => session.state.nodes.filter((node) => node.selected).map((node) => node.id);
+
+  it('LNG-012 extends the selection to the nearest block in a direction, without a commit', () => {
+    const session = press(row(), ['Ctrl+Alt+ArrowRight']);
+    expect(picked(session)).toEqual(['a', 'b']);
+    expect(session.commits).toBe(0);
+    expect(session.said.at(-1)).toContain('2');
+  });
+
+  it('LNG-012 keeps extending from the far edge of the selection, and says when nothing is further', () => {
+    const session = press(row(), ['Ctrl+Alt+ArrowRight', 'Ctrl+Alt+ArrowRight', 'Ctrl+Alt+ArrowRight']);
+    expect(picked(session)).toEqual(['a', 'b', 'c']);
+    expect(session.last?.changed).toBe(false);
+  });
+
+  it('LNG-012 selects every block with one key', () => {
+    expect(picked(press(row(), ['Ctrl+Alt+A']))).toEqual(['a', 'b', 'c']);
+  });
+
+  it('LNG-012 aligns two blocks by keyboard alone: extend, then align left, one gesture', () => {
+    const session = press(row(), ['Ctrl+Alt+ArrowRight', 'Alt+Shift+ArrowLeft']);
+    expect(session.state.nodes.map((node) => node.position.x).slice(0, 2)).toEqual([0, 0]);
+    expect(session.commits).toBe(1);
+  });
+});
