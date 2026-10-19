@@ -4530,6 +4530,354 @@
           ]
         }
       }
+    },
+    {
+      "id": "modbus-register-round-trip",
+      "version": 1,
+      "order": 27,
+      "module": 10,
+      "level": "advanced",
+      "prerequisites": [
+        "structures-arrays-call-panel"
+      ],
+      "languages": [
+        "ST"
+      ],
+      "tracks": [
+        "simulation"
+      ],
+      "unsupported": {
+        "hardware": {
+          "reason": {
+            "en": "The lesson is graded against a Modbus server that Studio starts inside the simulation session, and no trace of a real device or gateway has been recorded for it.",
+            "es": "La lección se califica contra un servidor Modbus que Studio inicia dentro de la sesión de simulación, y no se ha registrado una traza de un dispositivo o una pasarela reales para ella."
+          },
+          "instead": {
+            "en": "Complete it in Simulation: its grade is the same each time and needs no device or network.",
+            "es": "Complétela en Simulación: su calificación es la misma cada vez y no necesita dispositivo ni red."
+          }
+        }
+      },
+      "plant": null,
+      "plantMap": null,
+      "estimatedMinutes": 25,
+      "starter": {
+        "project": "modbus_register_starter",
+        "program": "src/ModbusRegister.st"
+      },
+      "solution": {
+        "project": "modbus_register",
+        "program": "src/ModbusRegister.st"
+      },
+      "scenario": {
+        "id": "ModbusRegister",
+        "path": "tests/modbus-register.scenario.json",
+        "sha256": "4c97f0cac18847a03a036d294809b5e98a076b5587cfb6313f91cd081aba8ed4",
+        "tickMs": 10,
+        "durationMs": 20000,
+        "assertions": 6,
+        "canonical": "{\"durationMs\":20000,\"events\":[{\"atMs\":0,\"set\":{\"ModbusRegister.Send\":false}},{\"atMs\":10,\"set\":{\"ModbusRegister.Send\":true}},{\"atMs\":10000,\"set\":{\"ModbusRegister.Send\":false}}],\"expectations\":[{\"atMs\":0,\"condition\":{\"ModbusRegister.Failed\":false,\"ModbusRegister.Match\":false,\"ModbusRegister.Written\":false},\"kind\":\"AT\"},{\"condition\":{\"ModbusRegister.Written\":true},\"fromMs\":10,\"kind\":\"WITHIN\",\"withinMs\":9000},{\"condition\":{\"ModbusRegister.Match\":true},\"fromMs\":10,\"kind\":\"WITHIN\",\"withinMs\":9000},{\"condition\":{\"ModbusRegister.Failed\":false},\"kind\":\"ALWAYS\"},{\"atMs\":9990,\"condition\":{\"ModbusRegister.Match\":true,\"ModbusRegister.Written\":true},\"kind\":\"AT\"},{\"atMs\":10100,\"condition\":{\"ModbusRegister.Match\":false,\"ModbusRegister.Written\":false},\"kind\":\"AT\"}],\"id\":\"ModbusRegister\",\"schemaVersion\":1,\"tickMs\":10}"
+      },
+      "regressionScenarios": [],
+      "text": {
+        "en": {
+          "title": "Modbus TCP: write a register and read it back",
+          "summary": "Write one holding register through a Modbus TCP block, read it back once the write is done, and report whether the value that came back is the one you sent.",
+          "scope": "The Modbus server in this lesson is a loopback double that Studio starts inside the simulation session, on this computer. The scenario shows how the blocks and their handshake behave against that double; it does not show that a real controller, drive or gateway accepts the same request, and it says nothing about wiring, network timing or a real device, HIL, or certification.",
+          "objectives": [
+            "Write a holding register with MB_WRITE_HREG and read it back with MB_READ_HREG, in that order, using the DONE output of the first block as the trigger of the second.",
+            "Compare the value read with the value written, and report an ERROR from either block.",
+            "Say what a loopback double shows and what it does not show."
+          ],
+          "stages": [
+            {
+              "key": "objective",
+              "title": "Objective",
+              "body": "In src/ModbusRegister.st the program already writes the value 1234 to holding register 8 of a Modbus TCP server when Send turns ON. Add the read-back: read register 8 once the write is done, turn Match ON when the value read equals 1234, and turn Failed ON when either block reports ERROR. The simulation of Studio answers every Modbus TCP request with a server of its own on this computer, so no device and no network are needed.",
+              "checkpoint": "Written, Match and Failed describe the exchange: the write is done, the value came back unchanged, and nothing failed."
+            },
+            {
+              "key": "predict",
+              "title": "Predict",
+              "body": "Send turns ON at 10 ms and OFF at 10000 ms. Predict Written, Match and Failed at 0 ms, while Send is ON, and after Send turns OFF. A block clears DONE when its EN falls.",
+              "checkpoint": "All three OFF at 0 ms; Written and Match turn ON a few scans after Send and Failed stays OFF; Written and Match are OFF again at 10100 ms."
+            },
+            {
+              "key": "edit",
+              "title": "Edit",
+              "body": "Correct this starter omission, save it, then press Check: The starter writes register 8 but never reads it back, so Match stays OFF; call MB_READ_HREG on the same register when Wr.DONE is TRUE, turn Match ON when Rd.DONE is TRUE and Rd.VALUE equals 1234, and turn Failed ON when Wr.ERROR or Rd.ERROR is TRUE.",
+              "checkpoint": "The visible scenario must pass with saved host evidence."
+            },
+            {
+              "key": "run",
+              "title": "Run",
+              "body": "Press Check. Studio runs your saved program against the scenario of this lesson, with the Modbus server of the simulation running.",
+              "checkpoint": "The scenario is named ModbusRegister and contains 6 assertions."
+            },
+            {
+              "key": "observe",
+              "title": "Observe",
+              "body": "The scenario does not ask for Written and Match at one exact scan. The server answers in real time while the runtime plays simulated time faster, so it asks for each to turn ON at some moment from 10 to 9010 ms, and it holds them to the same answer at 9990 ms.",
+              "checkpoint": "Written and Match are both ON at 9990 ms, and both are OFF again at 10100 ms because Send fell at 10000 ms and a block clears DONE when its EN falls."
+            },
+            {
+              "key": "reflect",
+              "title": "Reflect",
+              "body": "What would the scenario show if the program read register 9 instead of register 8? Try it, and then try writing 1235 while still comparing with 1234.",
+              "checkpoint": "Register 9 was never written and holds 0, so Match never turns ON; writing 1235 and comparing with 1234 does the same. The scenario shows how the blocks behave against the double that Studio starts. It does not show that a real Modbus device accepts the same function codes, addresses or timing: that has to be checked against that device."
+            }
+          ],
+          "hints": [
+            {
+              "level": 1,
+              "text": "MB_READ_HREG has the same pins as MB_WRITE_HREG, and its EN can be the DONE output of the writer, so the read starts on the rising edge of Wr.DONE."
+            },
+            {
+              "level": 2,
+              "text": "Rd(EN := Wr.DONE, PROTO := 1, SLAVE_ID := 1, ADDR := 8, COUNT := 1, HOST := '127.0.0.1', PORT := 502); Match := Rd.DONE AND (Rd.VALUE = 1234); Failed := Wr.ERROR OR Rd.ERROR;"
+            }
+          ],
+          "faultCases": [
+            "The starter writes register 8 but never reads it back, so Match stays OFF; read register 8 once Wr.DONE is TRUE and compare Rd.VALUE with 1234."
+          ]
+        },
+        "es": {
+          "title": "Modbus TCP: escribir un registro y leerlo de vuelta",
+          "summary": "Escriba un registro de retención con un bloque Modbus TCP, léalo de vuelta cuando la escritura termine e informe si el valor que volvió es el que usted envió.",
+          "scope": "El servidor Modbus de esta lección es un doble de loopback que Studio inicia dentro de la sesión de simulación, en este equipo. El escenario muestra cómo se comportan los bloques y su protocolo de intercambio frente a ese doble; no muestra que un controlador, un variador o una pasarela reales acepten la misma solicitud, y no dice nada sobre el cableado, los tiempos de una red, un dispositivo real, HIL ni certificación.",
+          "objectives": [
+            "Escribir un registro de retención con MB_WRITE_HREG y leerlo de vuelta con MB_READ_HREG, en ese orden, usando la salida DONE del primer bloque como disparo del segundo.",
+            "Comparar el valor leído con el valor escrito e informar un ERROR de cualquiera de los dos bloques.",
+            "Decir qué muestra un doble de loopback y qué no muestra."
+          ],
+          "stages": [
+            {
+              "key": "objective",
+              "title": "Objetivo",
+              "body": "En src/ModbusRegister.st el programa ya escribe el valor 1234 en el registro de retención 8 de un servidor Modbus TCP cuando Send pasa a ON. Agregue la lectura de vuelta: lea el registro 8 cuando la escritura termine, ponga Match en ON cuando el valor leído sea igual a 1234 y ponga Failed en ON cuando cualquiera de los dos bloques informe ERROR. La simulación de Studio responde cada solicitud Modbus TCP con un servidor propio en este equipo, así que no hace falta ningún dispositivo ni ninguna red.",
+              "checkpoint": "Written, Match y Failed describen el intercambio: la escritura terminó, el valor volvió sin cambios y nada falló."
+            },
+            {
+              "key": "predict",
+              "title": "Prediga",
+              "body": "Send pasa a ON a los 10 ms y a OFF a los 10000 ms. Prediga Written, Match y Failed a los 0 ms, mientras Send está en ON y después de que Send pasa a OFF. Un bloque borra DONE cuando su EN cae.",
+              "checkpoint": "Las tres en OFF a los 0 ms; Written y Match pasan a ON unos ciclos después de Send y Failed sigue en OFF; Written y Match vuelven a OFF a los 10100 ms."
+            },
+            {
+              "key": "edit",
+              "title": "Edite",
+              "body": "Corrija esta omisión del programa inicial, guárdelo y pulse Comprobar: El programa inicial escribe el registro 8 pero nunca lo lee de vuelta, así que Match sigue en OFF; llame a MB_READ_HREG sobre el mismo registro cuando Wr.DONE sea TRUE, ponga Match en ON cuando Rd.DONE sea TRUE y Rd.VALUE sea igual a 1234, y ponga Failed en ON cuando Wr.ERROR o Rd.ERROR sea TRUE.",
+              "checkpoint": "El escenario visible debe pasar con evidencia guardada del host."
+            },
+            {
+              "key": "run",
+              "title": "Ejecute",
+              "body": "Pulse Comprobar. Studio ejecuta el programa guardado contra el escenario de esta lección, con el servidor Modbus de la simulación en marcha.",
+              "checkpoint": "El escenario se llama ModbusRegister y contiene 6 assertions."
+            },
+            {
+              "key": "observe",
+              "title": "Observe",
+              "body": "El escenario no pide Written y Match en un ciclo exacto. El servidor responde en tiempo real mientras el runtime reproduce el tiempo simulado más rápido, así que pide que cada una pase a ON en algún momento entre los 10 y los 9010 ms, y exige la misma respuesta a los 9990 ms.",
+              "checkpoint": "Written y Match están en ON a los 9990 ms, y las dos vuelven a OFF a los 10100 ms porque Send cayó a los 10000 ms y un bloque borra DONE cuando su EN cae."
+            },
+            {
+              "key": "reflect",
+              "title": "Reflexione",
+              "body": "¿Qué mostraría el escenario si el programa leyera el registro 9 en lugar del registro 8? Pruébelo y luego pruebe escribir 1235 comparando todavía con 1234.",
+              "checkpoint": "El registro 9 nunca se escribió y vale 0, así que Match nunca pasa a ON; escribir 1235 y comparar con 1234 produce lo mismo. El escenario muestra cómo se comportan los bloques frente al doble que Studio inicia. No muestra que un dispositivo Modbus real acepte los mismos códigos de función, direcciones o tiempos: eso hay que comprobarlo con ese dispositivo."
+            }
+          ],
+          "hints": [
+            {
+              "level": 1,
+              "text": "MB_READ_HREG tiene los mismos pines que MB_WRITE_HREG, y su EN puede ser la salida DONE del bloque de escritura, así que la lectura empieza en el flanco ascendente de Wr.DONE."
+            },
+            {
+              "level": 2,
+              "text": "Rd(EN := Wr.DONE, PROTO := 1, SLAVE_ID := 1, ADDR := 8, COUNT := 1, HOST := '127.0.0.1', PORT := 502); Match := Rd.DONE AND (Rd.VALUE = 1234); Failed := Wr.ERROR OR Rd.ERROR;"
+            }
+          ],
+          "faultCases": [
+            "El programa inicial escribe el registro 8 pero nunca lo lee de vuelta, así que Match sigue en OFF; lea el registro 8 cuando Wr.DONE sea TRUE y compare Rd.VALUE con 1234."
+          ]
+        }
+      }
+    },
+    {
+      "id": "mqtt-publish-subscribe",
+      "version": 1,
+      "order": 28,
+      "module": 10,
+      "level": "advanced",
+      "prerequisites": [
+        "modbus-register-round-trip"
+      ],
+      "languages": [
+        "ST"
+      ],
+      "tracks": [
+        "simulation"
+      ],
+      "unsupported": {
+        "hardware": {
+          "reason": {
+            "en": "The lesson is graded against a broker that Studio starts inside the simulation session, and no trace of a real broker or device has been recorded for it.",
+            "es": "La lección se califica contra un broker que Studio inicia dentro de la sesión de simulación, y no se ha registrado una traza de un broker o un dispositivo reales para ella."
+          },
+          "instead": {
+            "en": "Complete it in Simulation: its grade is the same each time and needs no broker or network.",
+            "es": "Complétela en Simulación: su calificación es la misma cada vez y no necesita broker ni red."
+          }
+        }
+      },
+      "plant": null,
+      "plantMap": null,
+      "estimatedMinutes": 25,
+      "starter": {
+        "project": "mqtt_loop_starter",
+        "program": "src/MqttLoop.st"
+      },
+      "solution": {
+        "project": "mqtt_loop",
+        "program": "src/MqttLoop.st"
+      },
+      "scenario": {
+        "id": "MqttLoop",
+        "path": "tests/mqtt-loop.scenario.json",
+        "sha256": "0fe6c9928385cb2556c3934f533a5063accb8c28a10c1b71a93e1ab19bb7487a",
+        "tickMs": 10,
+        "durationMs": 40000,
+        "assertions": 7,
+        "canonical": "{\"durationMs\":40000,\"events\":[{\"atMs\":0,\"set\":{\"MqttLoop.Send\":false}},{\"atMs\":500,\"set\":{\"MqttLoop.Send\":true}}],\"expectations\":[{\"atMs\":0,\"condition\":{\"MqttLoop.Heard\":false,\"MqttLoop.Published\":false},\"kind\":\"AT\"},{\"condition\":{\"MqttLoop.Joined\":true},\"fromMs\":0,\"kind\":\"WITHIN\",\"withinMs\":20000},{\"condition\":{\"MqttLoop.Subscribed\":true},\"fromMs\":0,\"kind\":\"WITHIN\",\"withinMs\":20000},{\"condition\":{\"MqttLoop.Published\":true},\"fromMs\":500,\"kind\":\"WITHIN\",\"withinMs\":30000},{\"condition\":{\"MqttLoop.Heard\":true},\"fromMs\":500,\"kind\":\"WITHIN\",\"withinMs\":30000},{\"condition\":{\"MqttLoop.Failed\":false},\"kind\":\"ALWAYS\"},{\"atMs\":39990,\"condition\":{\"MqttLoop.Heard\":true,\"MqttLoop.Subscribed\":true},\"kind\":\"AT\"}],\"id\":\"MqttLoop\",\"schemaVersion\":1,\"tickMs\":10}"
+      },
+      "regressionScenarios": [],
+      "text": {
+        "en": {
+          "title": "MQTT: publish a message and receive it",
+          "summary": "Join the broker of the simulation, subscribe to a topic, publish a message on it, and keep a record of the message when it comes back for a single scan.",
+          "scope": "The MQTT broker in this lesson is a loopback double that Studio starts inside the simulation session, on this computer. The scenario shows how the blocks and their handshake behave against that double; it does not show that a real broker, cloud service or device accepts the same session, topics or quality of service, and it says nothing about network timing, HIL, or certification.",
+          "objectives": [
+            "Tell a service block (MQTT_CONNECT, MQTT_SUBSCRIBE), which reports its state on every scan, from a request block (MQTT_PUBLISH), which sends once for each rising edge of EN.",
+            "Publish only after the subscription holds, because a message sent earlier is not delivered to it.",
+            "Keep a message that VALID reports for one scan only, and compare its PAYLOAD.",
+            "Say what a loopback broker shows and what it does not show."
+          ],
+          "stages": [
+            {
+              "key": "objective",
+              "title": "Objective",
+              "body": "In src/MqttLoop.st the program joins the broker with MQTT_CONNECT and, once it has joined, subscribes to the topic plant/cmd with MQTT_SUBSCRIBE. Add the publisher and the receiver: when Send is ON and the subscription holds, publish the payload START to plant/cmd; turn Heard ON when the subscription delivers the payload START, and keep it ON afterwards. Failed reports an ERROR from any of the three blocks. Studio starts a broker for the simulation on this computer, so no installed broker and no network are needed.",
+              "checkpoint": "Joined, Subscribed, Published and Heard follow the exchange in that order, and Failed stays OFF."
+            },
+            {
+              "key": "predict",
+              "title": "Predict",
+              "body": "Send turns ON at 500 ms. Predict Heard at 0 ms and at 39990 ms. Then predict what you would see at 39990 ms if Heard were only the VALID pin of the subscription.",
+              "checkpoint": "Heard is OFF at 0 ms and ON at 39990 ms. VALID is ON for a single scan, so without a latch Heard would be OFF again long before 39990 ms."
+            },
+            {
+              "key": "edit",
+              "title": "Edit",
+              "body": "Correct this starter omission, save it, then press Check: The starter joins the broker and subscribes, but it never publishes and never records what it receives, so Published and Heard stay OFF; call MQTT_PUBLISH with EN := Send AND Sub.DONE, and keep Heard ON once Sub.VALID is TRUE with the payload 'START'.",
+              "checkpoint": "The visible scenario must pass with saved host evidence."
+            },
+            {
+              "key": "run",
+              "title": "Run",
+              "body": "Press Check. Studio runs your saved program against the scenario of this lesson, with the broker of the simulation running.",
+              "checkpoint": "The scenario is named MqttLoop and contains 7 assertions."
+            },
+            {
+              "key": "observe",
+              "title": "Observe",
+              "body": "The scenario gives each step a window instead of one exact scan: Joined and Subscribed from 0 to 20000 ms, Published and Heard from 500 to 30500 ms. The broker answers in real time while the runtime plays simulated time faster, so only a window can be graded the same way each time.",
+              "checkpoint": "Heard is still ON at 39990 ms, long after the one scan in which the message was new."
+            },
+            {
+              "key": "reflect",
+              "title": "Reflect",
+              "body": "What happens if the program publishes to plant/cmd but subscribes to another topic, or compares the payload with another text? Try each one.",
+              "checkpoint": "Each one leaves Heard OFF: the broker delivers a message only to a subscription on the same topic, and the program ignores a payload it does not compare equal. The scenario shows how the blocks behave against the broker double that Studio starts. It does not show that a real broker accepts the same session, topics or quality of service: that has to be checked against that broker."
+            }
+          ],
+          "hints": [
+            {
+              "level": 1,
+              "text": "MQTT_PUBLISH sends one message for each rising edge of its EN, so Send AND Sub.DONE publishes once, when both are TRUE. Sub.VALID is TRUE for a single scan, so Heard needs an IF that sets it and nothing that clears it."
+            },
+            {
+              "level": 2,
+              "text": "Pub(EN := Send AND Sub.DONE, QOS := 0, RETAIN := FALSE, TOPIC := 'plant/cmd', PAYLOAD := 'START'); Published := Pub.DONE; IF Sub.VALID AND (Sub.PAYLOAD = 'START') THEN Heard := TRUE; END_IF; Failed := Con.ERROR OR Sub.ERROR OR Pub.ERROR;"
+            }
+          ],
+          "faultCases": [
+            "The starter joins the broker and subscribes, but it never publishes and never records what it receives, so Published and Heard stay OFF; publish when Send is ON and the subscription holds, and keep Heard ON once the payload START arrives."
+          ]
+        },
+        "es": {
+          "title": "MQTT: publicar un mensaje y recibirlo",
+          "summary": "Únase al broker de la simulación, suscríbase a un tema, publique un mensaje en él y conserve el registro del mensaje cuando vuelve durante un solo ciclo.",
+          "scope": "El broker MQTT de esta lección es un doble de loopback que Studio inicia dentro de la sesión de simulación, en este equipo. El escenario muestra cómo se comportan los bloques y su protocolo de intercambio frente a ese doble; no muestra que un broker, un servicio en la nube o un dispositivo reales acepten la misma sesión, los mismos temas o la misma calidad de servicio, y no dice nada sobre los tiempos de una red, HIL ni certificación.",
+          "objectives": [
+            "Distinguir un bloque de servicio (MQTT_CONNECT, MQTT_SUBSCRIBE), que informa su estado en cada ciclo, de un bloque de solicitud (MQTT_PUBLISH), que envía una vez por cada flanco ascendente de EN.",
+            "Publicar solo cuando la suscripción ya se mantiene, porque un mensaje enviado antes no se le entrega.",
+            "Conservar un mensaje que VALID informa durante un solo ciclo y comparar su PAYLOAD.",
+            "Decir qué muestra un broker de loopback y qué no muestra."
+          ],
+          "stages": [
+            {
+              "key": "objective",
+              "title": "Objetivo",
+              "body": "En src/MqttLoop.st el programa se une al broker con MQTT_CONNECT y, una vez unido, se suscribe al tema plant/cmd con MQTT_SUBSCRIBE. Agregue el publicador y el receptor: cuando Send esté en ON y la suscripción se mantenga, publique el contenido START en plant/cmd; ponga Heard en ON cuando la suscripción entregue el contenido START y manténgalo en ON después. Failed informa un ERROR de cualquiera de los tres bloques. Studio inicia un broker para la simulación en este equipo, así que no hace falta ningún broker instalado ni ninguna red.",
+              "checkpoint": "Joined, Subscribed, Published y Heard siguen el intercambio en ese orden, y Failed sigue en OFF."
+            },
+            {
+              "key": "predict",
+              "title": "Prediga",
+              "body": "Send pasa a ON a los 500 ms. Prediga Heard a los 0 ms y a los 39990 ms. Después prediga qué vería a los 39990 ms si Heard fuera solo el pin VALID de la suscripción.",
+              "checkpoint": "Heard está en OFF a los 0 ms y en ON a los 39990 ms. VALID está en ON durante un solo ciclo, así que sin un enclavamiento Heard volvería a OFF mucho antes de los 39990 ms."
+            },
+            {
+              "key": "edit",
+              "title": "Edite",
+              "body": "Corrija esta omisión del programa inicial, guárdelo y pulse Comprobar: El programa inicial se une al broker y se suscribe, pero nunca publica ni registra lo que recibe, así que Published y Heard quedan en OFF; llame a MQTT_PUBLISH con EN := Send AND Sub.DONE y mantenga Heard en ON cuando Sub.VALID sea TRUE con el contenido 'START'.",
+              "checkpoint": "El escenario visible debe pasar con evidencia guardada del host."
+            },
+            {
+              "key": "run",
+              "title": "Ejecute",
+              "body": "Pulse Comprobar. Studio ejecuta el programa guardado contra el escenario de esta lección, con el broker de la simulación en marcha.",
+              "checkpoint": "El escenario se llama MqttLoop y contiene 7 assertions."
+            },
+            {
+              "key": "observe",
+              "title": "Observe",
+              "body": "El escenario da a cada paso una ventana en lugar de un ciclo exacto: Joined y Subscribed entre los 0 y los 20000 ms, Published y Heard entre los 500 y los 30500 ms. El broker responde en tiempo real mientras el runtime reproduce el tiempo simulado más rápido, así que solo una ventana se puede calificar igual cada vez.",
+              "checkpoint": "Heard sigue en ON a los 39990 ms, mucho después del único ciclo en que el mensaje era nuevo."
+            },
+            {
+              "key": "reflect",
+              "title": "Reflexione",
+              "body": "¿Qué ocurre si el programa publica en plant/cmd pero se suscribe a otro tema, o compara el contenido con otro texto? Pruebe cada caso.",
+              "checkpoint": "Cada caso deja Heard en OFF: el broker entrega un mensaje solo a una suscripción al mismo tema, y el programa ignora un contenido que no compara como igual. El escenario muestra cómo se comportan los bloques frente al broker doble que Studio inicia. No muestra que un broker real acepte la misma sesión, los mismos temas o la misma calidad de servicio: eso hay que comprobarlo con ese broker."
+            }
+          ],
+          "hints": [
+            {
+              "level": 1,
+              "text": "MQTT_PUBLISH envía un mensaje por cada flanco ascendente de su EN, así que Send AND Sub.DONE publica una vez, cuando ambas son TRUE. Sub.VALID es TRUE durante un solo ciclo, así que Heard necesita un IF que lo ponga en TRUE y nada que lo borre."
+            },
+            {
+              "level": 2,
+              "text": "Pub(EN := Send AND Sub.DONE, QOS := 0, RETAIN := FALSE, TOPIC := 'plant/cmd', PAYLOAD := 'START'); Published := Pub.DONE; IF Sub.VALID AND (Sub.PAYLOAD = 'START') THEN Heard := TRUE; END_IF; Failed := Con.ERROR OR Sub.ERROR OR Pub.ERROR;"
+            }
+          ],
+          "faultCases": [
+            "El programa inicial se une al broker y se suscribe, pero nunca publica ni registra lo que recibe, así que Published y Heard quedan en OFF; publique cuando Send esté en ON y la suscripción se mantenga, y mantenga Heard en ON cuando llegue el contenido START."
+          ]
+        }
+      }
     }
   ],
   "course": {

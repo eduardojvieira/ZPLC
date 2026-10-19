@@ -1,0 +1,76 @@
+{
+  "schemaVersion": 1,
+  "id": "MqttLoop",
+  "tickMs": 10,
+  "durationMs": 40000,
+  "events": [
+    {
+      "atMs": 0,
+      "set": {
+        "MqttLoop.Send": false
+      }
+    },
+    {
+      "atMs": 500,
+      "set": {
+        "MqttLoop.Send": true
+      }
+    }
+  ],
+  "expectations": [
+    {
+      "kind": "AT",
+      "atMs": 0,
+      "condition": {
+        "MqttLoop.Published": false,
+        "MqttLoop.Heard": false
+      }
+    },
+    {
+      "kind": "WITHIN",
+      "fromMs": 0,
+      "withinMs": 20000,
+      "condition": {
+        "MqttLoop.Joined": true
+      }
+    },
+    {
+      "kind": "WITHIN",
+      "fromMs": 0,
+      "withinMs": 20000,
+      "condition": {
+        "MqttLoop.Subscribed": true
+      }
+    },
+    {
+      "kind": "WITHIN",
+      "fromMs": 500,
+      "withinMs": 30000,
+      "condition": {
+        "MqttLoop.Published": true
+      }
+    },
+    {
+      "kind": "WITHIN",
+      "fromMs": 500,
+      "withinMs": 30000,
+      "condition": {
+        "MqttLoop.Heard": true
+      }
+    },
+    {
+      "kind": "ALWAYS",
+      "condition": {
+        "MqttLoop.Failed": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 39990,
+      "condition": {
+        "MqttLoop.Heard": true,
+        "MqttLoop.Subscribed": true
+      }
+    }
+  ]
+}

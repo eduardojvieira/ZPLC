@@ -1,0 +1,37 @@
+{
+  "schemaVersion": 1,
+  "alsoGreen": [
+    {
+      "intent": "another register and another value, 20 and 4321, written and compared consistently",
+      "files": {
+        "src/ModbusRegister.st": "PROGRAM ModbusRegister\nVAR_INPUT Send AT %I0.0 : BOOL; END_VAR\nVAR_OUTPUT Written AT %Q0.0 : BOOL; Match AT %Q0.1 : BOOL; Failed AT %Q0.2 : BOOL; END_VAR\nVAR Wr : MB_WRITE_HREG; Rd : MB_READ_HREG; END_VAR\nWr(EN := Send, PROTO := 1, SLAVE_ID := 1, ADDR := 20, COUNT := 1, VALUE := 4321, HOST := '127.0.0.1', PORT := 502);\nWritten := Wr.DONE;\nRd(EN := Wr.DONE, PROTO := 1, SLAVE_ID := 1, ADDR := 20, COUNT := 1, HOST := '127.0.0.1', PORT := 502);\nMatch := Rd.DONE AND (Rd.VALUE = 4321);\nFailed := Wr.ERROR OR Rd.ERROR;\nEND_PROGRAM\n"
+      }
+    }
+  ],
+  "wrong": [
+    {
+      "intent": "reads register 9 back, which was never written, so the value is 0",
+      "files": {
+        "src/ModbusRegister.st": "PROGRAM ModbusRegister\nVAR_INPUT Send AT %I0.0 : BOOL; END_VAR\nVAR_OUTPUT Written AT %Q0.0 : BOOL; Match AT %Q0.1 : BOOL; Failed AT %Q0.2 : BOOL; END_VAR\nVAR Wr : MB_WRITE_HREG; Rd : MB_READ_HREG; END_VAR\nWr(EN := Send, PROTO := 1, SLAVE_ID := 1, ADDR := 8, COUNT := 1, VALUE := 1234, HOST := '127.0.0.1', PORT := 502);\nWritten := Wr.DONE;\nRd(EN := Wr.DONE, PROTO := 1, SLAVE_ID := 1, ADDR := 9, COUNT := 1, HOST := '127.0.0.1', PORT := 502);\nMatch := Rd.DONE AND (Rd.VALUE = 1234);\nFailed := Wr.ERROR OR Rd.ERROR;\nEND_PROGRAM\n"
+      }
+    },
+    {
+      "intent": "writes 1235 but compares the value read with 1234",
+      "files": {
+        "src/ModbusRegister.st": "PROGRAM ModbusRegister\nVAR_INPUT Send AT %I0.0 : BOOL; END_VAR\nVAR_OUTPUT Written AT %Q0.0 : BOOL; Match AT %Q0.1 : BOOL; Failed AT %Q0.2 : BOOL; END_VAR\nVAR Wr : MB_WRITE_HREG; Rd : MB_READ_HREG; END_VAR\nWr(EN := Send, PROTO := 1, SLAVE_ID := 1, ADDR := 8, COUNT := 1, VALUE := 1235, HOST := '127.0.0.1', PORT := 502);\nWritten := Wr.DONE;\nRd(EN := Wr.DONE, PROTO := 1, SLAVE_ID := 1, ADDR := 8, COUNT := 1, HOST := '127.0.0.1', PORT := 502);\nMatch := Rd.DONE AND (Rd.VALUE = 1234);\nFailed := Wr.ERROR OR Rd.ERROR;\nEND_PROGRAM\n"
+      }
+    },
+    {
+      "intent": "asks for two registers at once, which the block refuses",
+      "files": {
+        "src/ModbusRegister.st": "PROGRAM ModbusRegister\nVAR_INPUT Send AT %I0.0 : BOOL; END_VAR\nVAR_OUTPUT Written AT %Q0.0 : BOOL; Match AT %Q0.1 : BOOL; Failed AT %Q0.2 : BOOL; END_VAR\nVAR Wr : MB_WRITE_HREG; Rd : MB_READ_HREG; END_VAR\nWr(EN := Send, PROTO := 1, SLAVE_ID := 1, ADDR := 8, COUNT := 2, VALUE := 1234, HOST := '127.0.0.1', PORT := 502);\nWritten := Wr.DONE;\nRd(EN := Wr.DONE, PROTO := 1, SLAVE_ID := 1, ADDR := 8, COUNT := 2, HOST := '127.0.0.1', PORT := 502);\nMatch := Rd.DONE AND (Rd.VALUE = 1234);\nFailed := Wr.ERROR OR Rd.ERROR;\nEND_PROGRAM\n"
+      }
+    },
+    {
+      "intent": "chooses Modbus RTU, which has no serial device in the simulation",
+      "files": {
+        "src/ModbusRegister.st": "PROGRAM ModbusRegister\nVAR_INPUT Send AT %I0.0 : BOOL; END_VAR\nVAR_OUTPUT Written AT %Q0.0 : BOOL; Match AT %Q0.1 : BOOL; Failed AT %Q0.2 : BOOL; END_VAR\nVAR Wr : MB_WRITE_HREG; Rd : MB_READ_HREG; END_VAR\nWr(EN := Send, PROTO := 0, SLAVE_ID := 1, ADDR := 8, COUNT := 1, VALUE := 1234, HOST := '127.0.0.1', PORT := 502);\nWritten := Wr.DONE;\nRd(EN := Wr.DONE, PROTO := 0, SLAVE_ID := 1, ADDR := 8, COUNT := 1, HOST := '127.0.0.1', PORT := 502);\nMatch := Rd.DONE AND (Rd.VALUE = 1234);\nFailed := Wr.ERROR OR Rd.ERROR;\nEND_PROGRAM\n"
+      }
+    }
+  ]
+}
