@@ -2534,9 +2534,9 @@
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"11 Learn with no project open"}
   ],
   "LRN-002": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/components/LearnHomeView.test.tsx","test":"lists the tracks and the twelve modules in order with level, required module and time, the empty ones without lessons","note":"LRN-002: the tracks, the modules in order, and each module's level, required module and time (a rendered view over props)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/components/LearnHomeView.test.tsx","test":"offers Continue with the lesson to resume: the first lesson for a new learner, the last one worked on after that","note":"LRN-002: Continue resumes the last lesson worked on and starts the first lesson for a new learner"},
     {"kind":"unit","ref":"packages/zplc-ide/src/components/LearnHomeView.test.tsx","test":"says the state of each lesson in words, and why a locked lesson is locked","note":"LRN-002: the four states of a lesson (locked, available, in progress, passed) in words, with the reason a lesson is locked"},
-    {"kind":"unit","ref":"packages/zplc-ide/src/components/LearnHomeView.test.tsx","test":"lists the tracks and the twelve modules in order with level, required module and time, the empty ones without lessons","note":"LRN-002: the tracks, the modules in order, and each module's level, required module and time (a rendered view over props)"},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"11 Learn with no project open","partial":true}
   ],
   "LRN-003": [
@@ -2598,9 +2598,6 @@
     {"kind":"unit","ref":"packages/zplc-ide/src/plants/plantEngine.test.ts","test":"gives the same trace on every run and matches the pinned golden hashes (LRN-019)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/plants/plantEngine.test.ts","test":"plant engine (LRN-018, LRN-019)"},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"52 A lesson plant runs live in closed loop, with pause, step and a fault action, and the recorded run stays a labelled replay","partial":true}
-  ],
-  "LRN-035": [
-    {"kind":"unit","ref":"tools/docs/generate_course_pages.test.ts","test":"LRN-035 course pages: a page for every module and lesson, generated from the lesson packages","partial":true,"note":"a page for each of the 12 modules and 26 lessons, a module index and a plants page, in English and Spanish, generated from the lesson index and drift-checked by this test; they are unlisted from the sidebar and linked from the course outline. Open: a faceplate page, and a page for each learner board kit (no learner board kit exists in the repository yet); the scenario format page is reference/scenario-file.md"}
   ],
   "LRN-020": [
     {"kind":"unit","ref":"packages/zplc-ide/src/components/labPlayback.test.ts","test":"keeps the Lab view recorded, manually controllable, and explicitly non-HIL","note":"LRN-020: the recorded run stays available as a replay of recorded samples and is labelled as a replay that is not live runtime, hardware or HIL evidence; the live closed loop is journey 52"},
@@ -2677,6 +2674,9 @@
   ],
   "LRN-034": [
     {"kind":"unit","ref":"packages/zplc-ide/src/mcp/server.test.ts","test":"cannot mark a lesson passed: no tool takes a lesson or progress, and no tool or resource read changes the progress files (LRN-034)"}
+  ],
+  "LRN-035": [
+    {"kind":"unit","ref":"tools/docs/generate_course_pages.test.ts","test":"LRN-035 course pages: a page for every module and lesson, generated from the lesson packages","partial":true,"note":"a page for each of the 12 modules and 26 lessons, a module index and a plants page, in English and Spanish, generated from the lesson index and drift-checked by this test; they are unlisted from the sidebar and linked from the course outline. Open: a faceplate page, and a page for each learner board kit (no learner board kit exists in the repository yet); the scenario format page is reference/scenario-file.md"}
   ],
   "LRN-036": [
     {"kind":"unit","ref":"packages/zplc-ide/src/utils/exampleCatalog.test.ts","test":"LRN-036 carries the reason to the listing of the example that has none"},
@@ -2814,6 +2814,7 @@
     {"kind":"unit","ref":"tools/ci/release/render-channels.test.ts","test":"the AUR package","partial":true,"note":"the PKGBUILD is rendered from the SHA256SUMS of a release; makepkg built a package from it on this machine against a .deb that electron-builder wrote (setuid sandbox, udev rule and launcher link present). The AUR account does not exist (OA-10) and update-channels.yml is authored, not executed in CI"}
   ],
   "REL-015": [
+    {"kind":"unit","ref":"packages/zplc-ide/scripts/release-config.test.ts","test":"is done in the build jobs, and the draft waits for all three of them to finish, whatever they did (REL-036, REL-015)"},
     {"kind":"unit","ref":"packages/zplc-ide/scripts/release-config.test.ts","test":"release.yml publishes each platform independently and only as a draft (REL-015, REL-016)","partial":true,"note":"asserts the parsed electron-builder and workflow configuration, not the produced installer; its own header says a hosted release run is the proof (VF-021)"},
     {"kind":"unit","ref":"scripts/release/release-notes.test.ts","test":"the signing state of every asset comes from the checks of the run (REL-027, REL-015)"}
   ],
@@ -2938,6 +2939,7 @@
   ],
   "REL-036": [
     {"kind":"unit","ref":"packages/zplc-ide/scripts/release-config.test.ts","test":"every published installer format is installed or mounted and launched on its own system before the draft (REL-036)","partial":true,"note":"asserts the parsed electron-builder and workflow configuration, not the produced installer or a run of the workflow; only a hosted release run proves it (VF-021). The steps never ran: the AppImage in a container, the DMG mount, the ZIP, the NSIS silent install and the portable launch need hosted macOS and Windows runners and Docker. On this Linux machine, outside a container, the AppImage that electron-builder made was extracted and its application launched through ZPLC_PACKAGED_EXECUTABLE with the packaged smoke (the Chromium sandbox on, no setuid helper). Authored in this run: create-draft-release now waits for the three platform builds, which hold those steps, and runs when at least one of them succeeded (REL-015); tools/hil/validate_release_evidence.py and its tests follow. Authored workflow, not executed in CI."},
+    {"kind":"unit","ref":"packages/zplc-ide/scripts/release-config.test.ts","test":"is done in the build jobs, and the draft waits for all three of them to finish, whatever they did (REL-036, REL-015)"},
     {"kind":"unit","ref":"packages/zplc-ide/scripts/run-packaged-desktop-smoke.test.ts","test":"names an installed application by its executable, and refuses a missing file, a directory and a link (REL-036)","partial":true,"note":"checks the executable that an installer or an archive left is a real file; the installation and the launch happen only on hosted runners"},
     {"kind":"unit","ref":"tools/ci/release/install-record.test.ts","test":"the record that every published installer format was opened and launched on its own system","partial":true,"note":"a launch step writes a record that names the installer by checksum, how it was opened and the runner system and architecture, and the evidence job of the platform refuses an installer without a matching record; proven on stand-in files. The mounts, silent installs, container installs and launches run only on hosted runners and in Docker (authored, not executed in CI)"},
     {"kind":"unit","ref":"tools/ci/release/run-outcome.test.ts","test":"the outcome of a release run","partial":true,"note":"the draft only receives the files of a platform whose build job, which launches every installer, succeeded (authored, not executed in CI)"}
