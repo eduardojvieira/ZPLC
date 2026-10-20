@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto';
 import { describe, expect, it } from 'bun:test';
 
-import { checkManifest, imagesOf, JOURNEY, pngSize, staticPathOf, type Manifest } from './capture-screenshots';
+import { checkManifest, imagesOf, JOURNEY, pngSize, RECORDED_DIR, staticPathOf, type Manifest, type RecordedImage } from './capture-screenshots';
 
 /** A PNG that is only its signature and a header: enough to carry a size. */
 function png(width: number, height: number, tag = 0): Uint8Array {
@@ -71,5 +71,34 @@ describe('documentation screenshots: a page shows only captured pictures (DOC-01
   it('holds for the pages and the pictures of this repository', () => {
     const result = Bun.spawnSync(['bun', 'tools/docs/capture-screenshots.ts', '--check'], { cwd: new URL('../../', import.meta.url).pathname, stdout: 'pipe', stderr: 'pipe' });
     expect({ code: result.exitCode, output: result.stdout.toString() + result.stderr.toString() }).toMatchObject({ code: 0 });
+  });
+});
+
+describe('the pictures of the recorded screen-reader check are captured ones too (UX-028, DOC-013)', () => {
+  const path = `${RECORDED_DIR}/2026-10-20/en-1-welcome.png`;
+  const shot = png(1080, 675, 7);
+  const entry: RecordedImage = { path, sha256: digest(shot), width: 1080, height: 675 };
+  const recordedFiles = new Map<string, Uint8Array>([[path, shot]]);
+  const page = [{ page: 'docs/docs/p.md', text: '![Welcome](/img/screen-reader-check/2026-10-20/en-1-welcome.png)\n' }];
+  const read = (file: string) => recordedFiles.get(file);
+  const none = manifest([]);
+
+  it('lets a page show a picture that a results.json lists, with the hash and the size it recorded', () => {
+    expect(checkManifest(none, page, read, [path], [entry])).toEqual([]);
+  });
+
+  it('fails a page that shows a picture of that folder that no results.json lists', () => {
+    expect(checkManifest(none, page, read, [path], []).map((problem) => problem.message)).toEqual([
+      expect.stringContaining('is a picture that no results.json'),
+      expect.stringContaining('which no results.json'),
+    ]);
+  });
+
+  it('fails a recorded picture that was edited, resized or removed after the run', () => {
+    const edited = png(1080, 675, 8);
+    expect(checkManifest(none, [], () => edited, [path], [entry]).map((problem) => problem.message)).toEqual([expect.stringContaining('differs from the picture its results.json recorded')]);
+    const resized = png(800, 600, 7);
+    expect(checkManifest(none, [], () => resized, [path], [{ ...entry, sha256: digest(resized) }])[0]!.message).toContain('is 800x600, its results.json says 1080x675');
+    expect(checkManifest(none, [], () => undefined, [], [entry])[0]!.message).toContain('is not in the folder');
   });
 });
