@@ -2360,6 +2360,7 @@
     {"kind":"unit","ref":"packages/zplc-ide/electron/productName.test.ts","test":"UX-016 gives the main process and the renderer the same name"},
     {"kind":"unit","ref":"packages/zplc-ide/electron/productName.test.ts","test":"UX-016 gives the page the same title as the window, before the renderer sets any"},
     {"kind":"unit","ref":"packages/zplc-ide/electron/productName.test.ts","test":"UX-016 the product name has one home per process, and the homes agree"},
+    {"kind":"unit","ref":"packages/zplc-ide/electron/productName.test.ts","test":"UX-016 titles the window ZPLC with no project, and \"<project> — ZPLC\" with one open"},
     {"kind":"unit","ref":"packages/zplc-ide/electron/shellPreferences.test.ts","test":"UX-016 follows the system mode only for the system theme"},
     {"kind":"unit","ref":"packages/zplc-ide/electron/shellPreferences.test.ts","test":"UX-016 keeps a report for the next start, and says whether it changed anything"},
     {"kind":"unit","ref":"packages/zplc-ide/electron/shellPreferences.test.ts","test":"UX-016 replaces a corrupt file at the next report"},
@@ -2368,6 +2369,8 @@
     {"kind":"unit","ref":"packages/zplc-ide/electron/shellPreferences.test.ts","test":"the stored preferences (UX-014, UX-016)"},
     {"kind":"unit","ref":"packages/zplc-ide/electron/shellPreferences.test.ts","test":"what the window reports (UX-014, UX-016)"},
     {"kind":"unit","ref":"packages/zplc-ide/electron/shellPreferences.test.ts","test":"window colour from the stored theme (UX-016)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/i18n/i18n.test.tsx","test":"UX-016 names it neither \"ZPLC Studio\", \"ZPLC IDE\" nor \"Studio\", in English or in Spanish"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/i18n/i18n.test.tsx","test":"UX-016 the catalogs call the application ZPLC (decision D-03)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/theme/windowSurface.test.ts","test":"UX-016 gives the native window the canvas token of each theme until the renderer reports its own"}
   ],
   "UX-017": [
@@ -3143,7 +3146,7 @@
   "REL-011": [
     {"kind":"unit","ref":"packages/zplc-ide/scripts/packaged-content.test.ts","test":"the Linux desktop identity of the unpacked package (REL-011)"},
     {"kind":"unit","ref":"packages/zplc-ide/scripts/release-config.test.ts","test":"Linux packages use electron-builder defaults and are installed in clean containers (REL-011)","partial":true,"note":"asserts the parsed electron-builder and workflow configuration, not the produced installer; its own header says a hosted release run is the proof (VF-021)"},
-    {"kind":"unit","ref":"packages/zplc-ide/scripts/release-config.test.ts","test":"the Linux desktop identity of the package follows the executable (REL-011)"}
+    {"kind":"unit","ref":"packages/zplc-ide/scripts/release-config.test.ts","test":"the Linux desktop identity of the package is the one of decision D-03 (REL-011)"}
   ],
   "REL-012": [
     {"kind":"unit","ref":"packages/zplc-ide/scripts/release-config.test.ts","test":"the AppImage stays published beside the .deb and the .rpm (REL-012)","partial":true,"note":"asserts the parsed electron-builder and workflow configuration, not the produced installer or a run of the workflow; only a hosted release run proves it (VF-021)"},
@@ -3267,10 +3270,9 @@
     {"kind":"unit","ref":"scripts/release/release-notes.test.ts","test":"the title of a release says how complete a prerelease is (REL-031)"},
     {"kind":"unit","ref":"scripts/release/release-records.test.ts","test":"compareVersions (REL-031)"},
     {"kind":"unit","ref":"scripts/release/release-records.test.ts","test":"the changelog holds only tagged versions (REL-031)"},
-    {"kind":"unit","ref":"scripts/release/release-records.test.ts","test":"the product identity is fixed (REL-031)"},
+    {"kind":"unit","ref":"scripts/release/release-records.test.ts","test":"the product identity is fixed (REL-031)","partial":true,"note":"decision D-03 is taken (the product is ZPLC) and scripts/release/identity.json records it, with the appId com.zenithindustrialcloud.zplc that electron-builder.yml and package.json carry; the reverse-DNS root com.zenithindustrialcloud still needs the owner's confirmation before the first signed or Store release, the alternative being io.github.eduardojvieira.zplc"},
     {"kind":"unit","ref":"scripts/release/release-records.test.ts","test":"what a version bump edits (REL-031, REL-038)"},
-    {"kind":"unit","ref":"scripts/release/resolve-release.test.ts","test":"prerelease tags continue the rc sequence (REL-031)"},
-    {"kind":"gate","ref":"scripts/release/identity.json","test":"D-03 is open","note":"Needs the owner to take decision D-03, the product name and the appId, before the first Store or signed release. The tests check that the version and the identity each have one source, but the name itself is not decided."}
+    {"kind":"unit","ref":"scripts/release/resolve-release.test.ts","test":"prerelease tags continue the rc sequence (REL-031)"}
   ],
   "REL-032": [
     {"kind":"unit","ref":"packages/zplc-ide/scripts/release-config.test.ts","test":"keeps the reproducibility check, reads its result in the notes, and lets nothing else wait for it (REL-032)","partial":true,"note":"asserts the parsed electron-builder and workflow configuration, not the produced installer or a run of the workflow; only a hosted release run proves it (VF-021). The check itself (scripts/verify-reproducible-linux-payload.ts) is run by CI tests of its comparison logic and by the job on a hosted Linux runner. Authored in this run: the job publishes its verdict as an output (a job that continues on error reports success to its readers), the release notes read it and no other job waits for it; authored workflow, not executed in CI."}
@@ -3370,7 +3372,7 @@
     {"kind":"unit","ref":"tools/docs/docs_structure.test.ts","test":"docs structure: a page is published only when both languages are complete (DOC-016)"}
   ],
   "DOC-017": [
-    {"kind":"unit","ref":"tools/ci/brand/generate-icons.test.ts","test":"the one vector mark","partial":true,"note":"one text-free mark in the palette of the application; the site logo, favicon, 1200 by 630 social card, the application icons (png, icns) and the favicon of the renderer (packages/zplc-ide/public/icon.png) are generated from it and checked against recorded checksums. The README and the GitHub description still need the same mark, and the name (D-03) is the owner's"},
+    {"kind":"unit","ref":"tools/ci/brand/generate-icons.test.ts","test":"the one vector mark and its one-colour variants","partial":true,"note":"one text-free mark of decision D-03 (ZPLC), with one-colour variants, drawn only in colours of the palette of the application; the site logo, favicon, 1200 by 630 social card, the application icons (png, icns) and the favicon of the renderer (packages/zplc-ide/public/icon.png) are generated from it and checked against recorded checksums, and the README shows it. The name ZPLC is used by the application, its catalogs (src/i18n/i18n.test.tsx), the installers (scripts/release/identity.json), the README and the site title; the GitHub description is set outside the repository and is not checked, and the prose of the documentation pages is renamed by its own pass"},
     {"kind":"unit","ref":"tools/ci/brand/generate-icons.test.ts","test":"what is made from the mark","partial":true,"note":"the outputs are current and sized as the site and electron-builder name them"}
   ],
   "DOC-018": [

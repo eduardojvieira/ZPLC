@@ -24,7 +24,7 @@ const setSystemLanguage = (value: string | undefined) => Object.defineProperty(g
 // bunfig.toml pins the system language of every test to English; each test restores it.
 afterEach(() => { setLanguage('auto'); setSystemLanguage('en-US'); });
 
-describe('UX-016 DOC-017 the catalogs call the application ZPLC (decision D-03)', () => {
+describe('UX-016 the catalogs call the application ZPLC (decision D-03)', () => {
   it('UX-016 names it neither "ZPLC Studio", "ZPLC IDE" nor "Studio", in English or in Spanish', () => {
     const naming = (catalog: Record<string, string>) => Object.entries(catalog).filter(([, text]) => /\bStudio\b|ZPLC IDE/.test(text)).map(([key]) => key);
     expect({ en: naming(en), es: naming(es) }).toEqual({ en: [], es: [] });
