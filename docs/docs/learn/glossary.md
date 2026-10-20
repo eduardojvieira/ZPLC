@@ -5,7 +5,6 @@ title: Course glossary
 sidebar_label: Course glossary
 description: "The English and Spanish terms the Learn course uses for PLC concepts, and the Spanish register of its lessons, hints and plant labels."
 tags: [learn, lessons, glossary, spanish]
-unlisted: true
 ---
 
 # Course glossary
