@@ -513,6 +513,7 @@ class BenchSteps:
         self.wait(1.0)
         self.tester.send("zplc stop", wait_for="OK:")  # STOP saves the retained values
         kept = self.dint(address)
+        before = self.status().get("uptime_ms", 0)
         self.bench.power_cycle()
         self.reconnect()
         status = self.status()
@@ -521,8 +522,10 @@ class BenchSteps:
         self.wait(0.5)
         runs = self.dint(address)
         self.stop_and_clear()
-        self.measure(retain_before=kept, retain_after=restored, retain_after_run=runs, state=status.get("state"), reset_cause=status.get("reset_cause"))
+        self.measure(retain_before=kept, retain_after=restored, retain_after_run=runs, state=status.get("state"), reset_cause=status.get("reset_cause"), uptime_before_ms=before, uptime_after_ms=status.get("uptime_ms"))
         problems = []
+        if status.get("uptime_ms", before) >= before:
+            problems.append(f"the device did not restart: its uptime went on from {before} ms to {status.get('uptime_ms')} ms")
         if status.get("state") == "running":
             problems.append("the board came back running: RUN needs a person's command (RT-022)")
         if kept <= 0 or restored != kept:
@@ -553,17 +556,21 @@ class BenchSteps:
         for cut in range(1, DEPLOY_CUTS + 1):
             self.tester.upload_bytecode(program_a)
             sent = self._upload_part(program_b, cut / DEPLOY_CUTS)
+            before = self.status().get("uptime_ms", 0)
             self.bench.cut_power_during_deploy(cut, DEPLOY_CUTS)
             self.reconnect()
-            state = self.status().get("state")
+            status = self.status()
+            state, restarted = status.get("state"), status.get("uptime_ms", before) < before
             self.tester.send("zplc start")
             self.wait(0.3)
             outputs = self.outputs() & 0x0F
             self.stop_and_clear()
             found = whole.get(outputs)
-            outcomes.append({"cut": cut, "bytes_sent": sent, "of": len(program_b), "state_after": state, "outputs": outputs, "program": found})
+            outcomes.append({"cut": cut, "bytes_sent": sent, "of": len(program_b), "restarted": restarted, "state_after": state, "outputs": outputs, "program": found})
             if found is None or state == "running":
                 problems.append(f"cut {cut}: state {state!r}, outputs 0x{outputs:02x}: neither program A nor program B whole")
+            if not restarted:
+                problems.append(f"cut {cut}: the device did not restart, so the power was not cut")
         self.measure(cuts=outcomes, program_a_bytes=len(program_a), program_b_bytes=len(program_b))
         if problems:
             raise AssertionError("; ".join(problems[:5]))

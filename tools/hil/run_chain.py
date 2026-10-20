@@ -381,9 +381,11 @@ class Chain(hil_steps.BenchSteps):
     def run(self) -> int:
         self.started, self.estimate = time.monotonic(), self.estimate_seconds()
         if not self.dry:
+            jitter = not self.args.steps or "scan-jitter-10min" in self.args.steps.split(",")
             self.io.say(
                 f"The chain for {self.board['display_name']} takes about {round(self.estimate / 60)} minutes on this bench "
-                f"(the target is about {hil_steps.TARGET_SECONDS // 60}); ten of them are the scan jitter step, which runs alone."
+                f"(the target is about {hil_steps.TARGET_SECONDS // 60})"
+                + ("; ten of them are the scan jitter step, which runs alone." if jitter else ".")
             )
         self.step("preflight", "Host checks: the fixtures compile and the board is known", "automatic", self.preflight, "HIL-005")
         self.step("open", "Open the device link", "automatic", self.open_device, "HIL-007")

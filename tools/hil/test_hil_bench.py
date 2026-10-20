@@ -144,6 +144,12 @@ class FakeBoard(hil_devices.ShellDevice):
 
     # shell -----------------------------------------------------------------------------------------
     def handle(self, line):
+        try:
+            return self.answer(line)
+        finally:
+            self.clock.ms += 1  # every command takes the board a millisecond
+
+    def answer(self, line):
         self.tick()
         words = line.split()
         if words[:2] == ["zplc", "link"]:
@@ -366,7 +372,8 @@ class StepTests(Quiet):
 
     def test_watchdog_reset_time_needs_the_hil_build(self):
         good, bad = self.passes_and_fails("watchdog-reset-time", "watchdog-late")
-        self.assertEqual((good["measurements"]["measured_ms"], good["measurements"]["reset_cause"]), (1000, "watchdog"))
+        self.assertAlmostEqual(good["measurements"]["measured_ms"], 1000, delta=5)
+        self.assertEqual(good["measurements"]["reset_cause"], "watchdog")
         plain, _ = self.step("watchdog-reset-time", options={"SCHEDULER": "y"})
         self.assertEqual(plain["result"], "fail")
         self.assertIn("CONFIG_ZPLC_HARDWARE_WATCHDOG=y", plain["detail"])
@@ -375,10 +382,25 @@ class StepTests(Quiet):
         good, _ = self.passes_and_fails("power-cycle-retain", "retain-lost")
         self.assertEqual(good["measurements"]["retain_after"], good["measurements"]["retain_before"])
 
+    def test_a_power_step_whose_board_did_not_restart_fails(self):
+        class NoPower(FakeBench):
+            def power_cycle(self):
+                pass
+
+        clock = Clock()
+        device = FakeBoard(clock)
+        args = run_chain.parse(["rpi_pico", "--dry-run", "--operator", "CI"])
+        chain = run_chain.Chain(args, hil_guard.PipedIo(), BOARDS["rpi_pico"], lambda name: device, NoPower(clock, device))
+        chain.tester = LanguageTester(transport=device, board="rpi_pico")
+        chain.step("power-cycle-retain", "Power cycle", "automatic", chain.power_cycle_retain)
+        self.assertEqual(chain.record["steps"][-1]["result"], "fail")
+        self.assertIn("did not restart", chain.record["steps"][-1]["detail"])
+
     def test_twenty_power_cuts_during_deploys_leave_a_whole_program(self):
         good, bad = self.passes_and_fails("deploy-power-interruption-x20", "partial-deploy")
         self.assertEqual(len(good["measurements"]["cuts"]), 20)
         self.assertEqual({c["program"] for c in good["measurements"]["cuts"]}, {"A", "B"}, "early cuts keep A, the last one has B")
+        self.assertTrue(all(c["restarted"] for c in good["measurements"]["cuts"]))
 
     def test_an_atomic_write_is_never_seen_half_written(self):
         good, bad = self.passes_and_fails("atomic-write", "torn-writes")
