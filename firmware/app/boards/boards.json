@@ -397,7 +397,7 @@
       "psram_mb": 8,
       "psram_mode": "octal",
       "variant_confirmed": false,
-      "note": "Spec 010 names the N8R8 variant; read the marking on the module before relying on the sizes (OA-06)."
+      "note": "The image needs the 8 MB octal PSRAM of the N8R8: it does not start on the N8 (no PSRAM) or the N8R2 (quad PSRAM), and without PSRAM the build does not fit in internal RAM (esp32s3_devkitc_esp32s3_procpu.conf). Read the marking on the module before flashing (OA-06)."
     },
     "memory": {
       "work_size": 2048,
@@ -430,139 +430,139 @@
           "direction": "output",
           "kind": "digital",
           "address": "%QX0.0",
-          "pin": "GPIO38",
+          "pin": "GPIO15",
           "dt": {
             "alias": "led0",
-            "controller": "gpio1",
-            "pin": 6
+            "controller": "gpio0",
+            "pin": 15
           },
           "safe": 0,
-          "electrical": "3.3 V logic. Not 5 V tolerant. External LED with a series resistor.",
-          "pin_status": "devicetree",
+          "electrical": "3.3 V logic. Not 5 V tolerant. Keep the load under 10 mA: an LED with 330 Ω in series draws about 4 mA.",
+          "pin_status": "profile",
           "source": "firmware/app/boards/esp32s3_devkitc_esp32s3_procpu.overlay",
-          "location": "header J3"
+          "location": "header J1 pin 8"
         },
         {
           "id": "DO1",
           "direction": "output",
           "kind": "digital",
           "address": "%QX0.1",
-          "pin": "GPIO15",
+          "pin": "GPIO16",
           "dt": {
             "alias": "led1",
             "controller": "gpio0",
-            "pin": 15
+            "pin": 16
           },
           "safe": 0,
-          "electrical": "3.3 V logic. Not 5 V tolerant.",
-          "pin_status": "devicetree",
+          "electrical": "3.3 V logic. Not 5 V tolerant. Keep the load under 10 mA: an LED with 330 Ω in series draws about 4 mA.",
+          "pin_status": "profile",
           "source": "firmware/app/boards/esp32s3_devkitc_esp32s3_procpu.overlay",
-          "location": "header J1"
+          "location": "header J1 pin 9"
         },
         {
           "id": "DO2",
           "direction": "output",
           "kind": "digital",
           "address": "%QX0.2",
-          "pin": "GPIO16",
+          "pin": "GPIO17",
           "dt": {
             "alias": "led2",
             "controller": "gpio0",
-            "pin": 16
+            "pin": 17
           },
           "safe": 0,
-          "electrical": "3.3 V logic. Not 5 V tolerant.",
+          "electrical": "3.3 V logic. Not 5 V tolerant. Keep the load under 10 mA: an LED with 330 Ω in series draws about 4 mA.",
           "pin_status": "profile",
           "source": "firmware/app/boards/esp32s3_devkitc_esp32s3_procpu.overlay",
-          "location": "header J1"
+          "location": "header J1 pin 10"
         },
         {
           "id": "DO3",
           "direction": "output",
           "kind": "digital",
           "address": "%QX0.3",
-          "pin": "GPIO17",
+          "pin": "GPIO18",
           "dt": {
             "alias": "led3",
             "controller": "gpio0",
-            "pin": 17
+            "pin": 18
           },
           "safe": 0,
-          "electrical": "3.3 V logic. Not 5 V tolerant.",
+          "electrical": "3.3 V logic. Not 5 V tolerant. Keep the load under 10 mA: an LED with 330 Ω in series draws about 4 mA.",
           "pin_status": "profile",
           "source": "firmware/app/boards/esp32s3_devkitc_esp32s3_procpu.overlay",
-          "location": "header J1"
+          "location": "header J1 pin 11"
         },
         {
           "id": "DI0",
           "direction": "input",
           "kind": "digital",
           "address": "%IX0.0",
-          "pin": "GPIO0 (BOOT)",
+          "pin": "GPIO5",
           "dt": {
             "alias": "sw0",
             "controller": "gpio0",
-            "pin": 0
+            "pin": 5
           },
-          "electrical": "BOOT button, active low with an internal pull-up. A strapping pin: keep it high at reset.",
-          "pin_status": "devicetree",
-          "source": "zephyr:boards/espressif/esp32s3_devkitc/esp32s3_devkitc_procpu.dts",
-          "location": "header J3 and BOOT button"
+          "electrical": "3.3 V logic input with the internal pull-up enabled by the profile, active low: connect a button to GND. Not 5 V tolerant.",
+          "pin_status": "profile",
+          "source": "firmware/app/boards/esp32s3_devkitc_esp32s3_procpu.overlay",
+          "location": "header J1 pin 5"
         },
         {
           "id": "DI1",
           "direction": "input",
           "kind": "digital",
           "address": "%IX0.1",
-          "pin": "GPIO18",
+          "pin": "GPIO6",
           "dt": {
             "alias": "sw1",
             "controller": "gpio0",
-            "pin": 18
+            "pin": 6
           },
-          "electrical": "3.3 V logic. Not 5 V tolerant. Internal pull-up; connect a switch to GND.",
+          "electrical": "3.3 V logic input with the internal pull-up enabled by the profile, active low: connect a button to GND. Not 5 V tolerant.",
           "pin_status": "profile",
           "source": "firmware/app/boards/esp32s3_devkitc_esp32s3_procpu.overlay",
-          "location": "header J1"
+          "location": "header J1 pin 6"
         },
         {
           "id": "DI2",
           "direction": "input",
           "kind": "digital",
           "address": "%IX0.2",
-          "pin": "GPIO8",
+          "pin": "GPIO7",
           "dt": {
             "alias": "sw2",
             "controller": "gpio0",
-            "pin": 8
+            "pin": 7
           },
-          "electrical": "3.3 V logic. Not 5 V tolerant. Internal pull-up; connect a switch to GND.",
+          "electrical": "3.3 V logic input with the internal pull-up enabled by the profile, active low: connect a button to GND. Not 5 V tolerant.",
           "pin_status": "profile",
           "source": "firmware/app/boards/esp32s3_devkitc_esp32s3_procpu.overlay",
-          "location": "header J1"
+          "location": "header J1 pin 7"
         },
         {
           "id": "DI3",
           "direction": "input",
           "kind": "digital",
           "address": "%IX0.3",
-          "pin": "GPIO9",
+          "pin": "GPIO0 (BOOT button)",
           "dt": {
             "alias": "sw3",
             "controller": "gpio0",
-            "pin": 9
+            "pin": 0
           },
-          "electrical": "3.3 V logic. Not 5 V tolerant. Internal pull-up; connect a switch to GND.",
-          "pin_status": "profile",
+          "electrical": "On-board BOOT button, active low with the internal pull-up; it needs no wiring. A strapping pin: do not hold it pressed while the board resets, or the board starts in download mode.",
+          "pin_status": "devicetree",
           "source": "firmware/app/boards/esp32s3_devkitc_esp32s3_procpu.overlay",
-          "location": "header J1"
+          "location": "on-board BOOT button"
         },
         {
           "id": "AI0",
           "direction": "input",
           "kind": "analog",
           "address": "%IW4",
-          "pin": "GPIO4 (ADC1 channel 3)",
+          "pin": "GPIO4 (ADC1_CH3)",
           "dt": {
             "controller": "adc0",
             "channel": 3,
@@ -573,21 +573,21 @@
           "resolution_bits": 12,
           "range": {
             "raw_min": 0,
-            "raw_max": 4095,
+            "raw_max": 2885,
             "eng_min": 0.0,
             "eng_max": 3.1,
             "unit": "V"
           },
-          "electrical": "0 V to about 3.1 V at 11 dB attenuation; do not exceed 3.3 V.",
+          "electrical": "0 V to about 3.1 V at 12 dB attenuation (some chips stop near 2.9 V); never apply more than 3.3 V. Wire a 10 kΩ potentiometer between 3V3 (header J1 pin 1) and GND (header J1 pin 22), its wiper to this pin.",
           "pin_status": "profile",
           "source": "firmware/app/boards/esp32s3_devkitc_esp32s3_procpu.overlay",
-          "location": "header J1",
-          "scaling": "Nominal and uncalibrated: the ESP32-S3 converter is nonlinear near both ends"
+          "location": "header J1 pin 4",
+          "scaling": "The Zephyr ESP32 driver applies the eFuse calibration and returns the input in millivolts divided by 4 (gain 1/4) as counts of 4095 over its 1100 mV reference: V = raw x 4.4 / 4095, so 3.1 V reads about 2885. Not calibrated by ZPLC; the converter is nonlinear near both ends."
         }
       ],
       "unmapped": [
         {
-          "terminal": "GPIO48 (RGB LED)",
+          "terminal": "GPIO38 (RGB LED on v1.1) or GPIO48 (RGB LED on v1.0)",
           "reason": "the on-board LED is an addressable RGB part that needs the LED-strip driver"
         }
       ]

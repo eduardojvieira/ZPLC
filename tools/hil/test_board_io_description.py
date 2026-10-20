@@ -11,6 +11,7 @@ import copy
 import importlib.util
 import json
 from pathlib import Path
+import re
 import tempfile
 import unittest
 
@@ -316,6 +317,50 @@ class ManifestTests(unittest.TestCase):
         self.assertIn("DevKitC-1", entry["display_name"])
         self.assertEqual("N8R8", entry["hardware"]["variant"])
         self.assertEqual((8, 8), (entry["hardware"]["flash_mb"], entry["hardware"]["psram_mb"]))
+
+    # The learner pin assignment of the course (LRN-014): the pin each channel id is printed as on the board.
+    LEARNER_PINS = {
+        "rpi-pico-rp2040": {
+            "DO0": "GP0", "DO1": "GP1", "DO2": "GP2", "DO3": "GP3", "DO4": "GP25",
+            "DI0": "GP15", "DI1": "GP14", "DI2": "GP13", "AI0": "GP26",
+        },
+        "esp32-s3-devkitc": {
+            "DO0": "GPIO15", "DO1": "GPIO16", "DO2": "GPIO17", "DO3": "GPIO18",
+            "DI0": "GPIO5", "DI1": "GPIO6", "DI2": "GPIO7", "DI3": "GPIO0", "AI0": "GPIO4",
+        },
+    }
+
+    def test_the_learner_channels_sit_on_the_pins_of_the_course(self) -> None:
+        for board_id, pins in self.LEARNER_PINS.items():
+            channels = {c["id"]: c for c in self.by_id(board_id)["io"]["channels"]}
+            printed = {key: re.match(r"GP(?:IO)?\d+", channels[key]["pin"]).group() for key in pins if key in channels}
+            self.assertEqual(pins, printed, board_id)
+
+    def test_every_learner_channel_is_bound_by_the_profile_overlay(self) -> None:
+        for board_id in self.LEARNER_PINS:
+            entry = self.by_id(board_id)
+            overlay = next(asset for asset in entry["support_assets"] if asset.endswith(".overlay"))
+            for item in entry["io"]["channels"]:
+                self.assertEqual(overlay, item["source"], f"{board_id} {item['id']}")
+                if item["kind"] == "digital":
+                    self.assertIsNotNone(boards_lib.overlay_binding(item, ROOT), f"{board_id} {item['id']}")
+
+    def test_the_learner_buttons_pull_up_and_are_active_low(self) -> None:
+        for board_id in self.LEARNER_PINS:
+            for item in self.by_id(board_id)["io"]["channels"]:
+                if item["kind"] == "digital" and item["direction"] == "input":
+                    flags = boards_lib.overlay_binding(item, ROOT)["flags"]
+                    self.assertIn("GPIO_PULL_UP", flags, f"{board_id} {item['id']}")
+                    self.assertIn("GPIO_ACTIVE_LOW", flags, f"{board_id} {item['id']}")
+
+    def test_the_esp32_analog_input_is_adc1_at_12_db_in_the_counts_of_the_zephyr_driver(self) -> None:
+        ai0 = next(c for c in self.by_id("esp32-s3-devkitc")["io"]["channels"] if c["id"] == "AI0")
+        # ADC1 (node adc0) channel n is GPIO n + 1; ADC_GAIN_1_4 is 12 dB attenuation in drivers/adc/adc_esp32.c.
+        self.assertEqual(("adc0", 3, "ADC_GAIN_1_4"), (ai0["dt"]["controller"], ai0["dt"]["channel"], ai0["dt"]["gain"]))
+        # With the eFuse calibration the driver returns millivolts / 4 as counts of 4095 over its 1100 mV reference.
+        scale = ai0["range"]
+        self.assertEqual((0, 0.0, 3.1), (scale["raw_min"], scale["eng_min"], scale["eng_max"]))
+        self.assertEqual(int(scale["eng_max"] * 1000 / 4 * 4095 / 1100), scale["raw_max"])
 
     def test_the_support_level_is_not_set_by_hand(self) -> None:
         for entry in self.boards:

@@ -156,19 +156,19 @@ Flash and RAM of `firmware/app` per board, from the linker memory table of the C
 
 | Channel | Direction | Kind | Address | Pin | Location | Pin status | Safe | Electrical |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| DO0 | output | digital | `%QX0.0` | GPIO38 | header J3 | devicetree | 0 | 3.3 V logic. Not 5 V tolerant. External LED with a series resistor. |
-| DO1 | output | digital | `%QX0.1` | GPIO15 | header J1 | devicetree | 0 | 3.3 V logic. Not 5 V tolerant. |
-| DO2 | output | digital | `%QX0.2` | GPIO16 | header J1 | profile | 0 | 3.3 V logic. Not 5 V tolerant. |
-| DO3 | output | digital | `%QX0.3` | GPIO17 | header J1 | profile | 0 | 3.3 V logic. Not 5 V tolerant. |
-| DI0 | input | digital | `%IX0.0` | GPIO0 (BOOT) | header J3 and BOOT button | devicetree |  | BOOT button, active low with an internal pull-up. A strapping pin: keep it high at reset. |
-| DI1 | input | digital | `%IX0.1` | GPIO18 | header J1 | profile |  | 3.3 V logic. Not 5 V tolerant. Internal pull-up; connect a switch to GND. |
-| DI2 | input | digital | `%IX0.2` | GPIO8 | header J1 | profile |  | 3.3 V logic. Not 5 V tolerant. Internal pull-up; connect a switch to GND. |
-| DI3 | input | digital | `%IX0.3` | GPIO9 | header J1 | profile |  | 3.3 V logic. Not 5 V tolerant. Internal pull-up; connect a switch to GND. |
-| AI0 | input | analog | `%IW4` | GPIO4 (ADC1 channel 3) | header J1 | profile |  | 0 V to about 3.1 V at 11 dB attenuation; do not exceed 3.3 V. 0..4095 -> 0.0 to 3.1 V. Nominal and uncalibrated: the ESP32-S3 converter is nonlinear near both ends. |
+| DO0 | output | digital | `%QX0.0` | GPIO15 | header J1 pin 8 | profile | 0 | 3.3 V logic. Not 5 V tolerant. Keep the load under 10 mA: an LED with 330 Ω in series draws about 4 mA. |
+| DO1 | output | digital | `%QX0.1` | GPIO16 | header J1 pin 9 | profile | 0 | 3.3 V logic. Not 5 V tolerant. Keep the load under 10 mA: an LED with 330 Ω in series draws about 4 mA. |
+| DO2 | output | digital | `%QX0.2` | GPIO17 | header J1 pin 10 | profile | 0 | 3.3 V logic. Not 5 V tolerant. Keep the load under 10 mA: an LED with 330 Ω in series draws about 4 mA. |
+| DO3 | output | digital | `%QX0.3` | GPIO18 | header J1 pin 11 | profile | 0 | 3.3 V logic. Not 5 V tolerant. Keep the load under 10 mA: an LED with 330 Ω in series draws about 4 mA. |
+| DI0 | input | digital | `%IX0.0` | GPIO5 | header J1 pin 5 | profile |  | 3.3 V logic input with the internal pull-up enabled by the profile, active low: connect a button to GND. Not 5 V tolerant. |
+| DI1 | input | digital | `%IX0.1` | GPIO6 | header J1 pin 6 | profile |  | 3.3 V logic input with the internal pull-up enabled by the profile, active low: connect a button to GND. Not 5 V tolerant. |
+| DI2 | input | digital | `%IX0.2` | GPIO7 | header J1 pin 7 | profile |  | 3.3 V logic input with the internal pull-up enabled by the profile, active low: connect a button to GND. Not 5 V tolerant. |
+| DI3 | input | digital | `%IX0.3` | GPIO0 (BOOT button) | on-board BOOT button | devicetree |  | On-board BOOT button, active low with the internal pull-up; it needs no wiring. A strapping pin: do not hold it pressed while the board resets, or the board starts in download mode. |
+| AI0 | input | analog | `%IW4` | GPIO4 (ADC1_CH3) | header J1 pin 4 | profile |  | 0 V to about 3.1 V at 12 dB attenuation (some chips stop near 2.9 V); never apply more than 3.3 V. Wire a 10 kΩ potentiometer between 3V3 (header J1 pin 1) and GND (header J1 pin 22), its wiper to this pin. 0..2885 -> 0.0 to 3.1 V. The Zephyr ESP32 driver applies the eFuse calibration and returns the input in millivolts divided by 4 (gain 1/4) as counts of 4095 over its 1100 mV reference: V = raw x 4.4 / 4095, so 3.1 V reads about 2885. Not calibrated by ZPLC; the converter is nonlinear near both ends.. |
 
 #### Not mapped
 
-- `GPIO48 (RGB LED)`: the on-board LED is an addressable RGB part that needs the LED-strip driver
+- `GPIO38 (RGB LED on v1.1) or GPIO48 (RGB LED on v1.0)`: the on-board LED is an addressable RGB part that needs the LED-strip driver
 
 ### STM32F746G Discovery
 
