@@ -18,8 +18,8 @@
   "unsupported": {
     "hardware": {
       "reason": {
-        "en": "The lesson is graded against a Modbus server that Studio starts inside the simulation session, and no trace of a real device or gateway has been recorded for it.",
-        "es": "La lección se califica contra un servidor Modbus que Studio inicia dentro de la sesión de simulación, y no se ha registrado una traza de un dispositivo o una pasarela reales para ella."
+        "en": "The lesson writes and reads a coil of the Modbus server that Studio starts inside the simulation session, and no trace of a real device or gateway answering the same requests has been recorded.",
+        "es": "La lección escribe y lee una bobina del servidor Modbus que Studio inicia dentro de la sesión de simulación, y no se ha registrado una traza de un dispositivo o una pasarela reales que respondan las mismas solicitudes."
       },
       "instead": {
         "en": "Complete it in Simulation: its grade is the same each time and needs no device or network.",

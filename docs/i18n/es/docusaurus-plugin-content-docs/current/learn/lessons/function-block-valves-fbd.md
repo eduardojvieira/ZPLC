@@ -42,7 +42,7 @@ La evidencia de Tests es del runtime nativo POSIX con una tarea de 10 ms; no est
 
 ## En una placa
 
-La lección se califica con pulsadores accionados en pasos exactos de 10 ms, y todavía no se ha escrito para ella una verificación contra una traza registrada desde una placa. Complétela en Simulación: su calificación es la misma cada vez y no necesita una placa.
+La lección abre y cierra dos válvulas simuladas con pulsadores accionados en pasos exactos de 10 ms, y todavía no se ha escrito para ella una verificación contra una traza registrada desde una placa. Complétela en Simulación: su calificación es la misma cada vez y no necesita una placa.
 
 {/* <<< END GENERATED: learn/lessons/function-block-valves-fbd <<< */}
 

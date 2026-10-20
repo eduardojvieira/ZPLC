@@ -42,7 +42,7 @@ Tests provide native POSIX host evidence with one 10 ms task; they do not establ
 
 ## On a board
 
-The lesson is graded on pushbuttons pressed at exact 10 ms steps, and no check against a trace recorded from a board has been written for it yet. Complete it in Simulation: its grade is the same each time and needs no board.
+The lesson opens and closes two simulated valves with pushbuttons pressed at exact 10 ms steps, and no check against a trace recorded from a board has been written for it yet. Complete it in Simulation: its grade is the same each time and needs no board.
 
 {/* <<< END GENERATED: learn/lessons/function-block-valves-fbd <<< */}
 

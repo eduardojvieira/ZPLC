@@ -18,8 +18,8 @@
   "unsupported": {
     "hardware": {
       "reason": {
-        "en": "The lesson is graded on pushbuttons pressed at exact 10 ms steps, and no check against a trace recorded from a board has been written for it yet.",
-        "es": "La lección se califica con pulsadores accionados en pasos exactos de 10 ms, y todavía no se ha escrito para ella una verificación contra una traza registrada desde una placa."
+        "en": "The lesson opens and closes two simulated valves with pushbuttons pressed at exact 10 ms steps, and no check against a trace recorded from a board has been written for it yet.",
+        "es": "La lección abre y cierra dos válvulas simuladas con pulsadores accionados en pasos exactos de 10 ms, y todavía no se ha escrito para ella una verificación contra una traza registrada desde una placa."
       },
       "instead": {
         "en": "Complete it in Simulation: its grade is the same each time and needs no board.",

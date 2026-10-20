@@ -42,7 +42,7 @@ The Modbus server of this lesson is a loopback double that Studio starts inside 
 
 ## On a board
 
-The lesson is graded against a Modbus server that Studio starts inside the simulation session, and no trace of a real device or gateway has been recorded for it. Complete it in Simulation: its grade is the same each time and needs no device or network.
+The lesson writes and reads a coil of the Modbus server that Studio starts inside the simulation session, and no trace of a real device or gateway answering the same requests has been recorded. Complete it in Simulation: its grade is the same each time and needs no device or network.
 
 {/* <<< END GENERATED: learn/lessons/modbus-coil-fbd <<< */}
 

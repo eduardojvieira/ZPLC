@@ -42,7 +42,7 @@ El servidor Modbus de esta lección es un doble de loopback que Studio inicia de
 
 ## En una placa
 
-La lección se califica contra un servidor Modbus que Studio inicia dentro de la sesión de simulación, y no se ha registrado una traza de un dispositivo o una pasarela reales para ella. Complétela en Simulación: su calificación es la misma cada vez y no necesita dispositivo ni red.
+La lección escribe y lee una bobina del servidor Modbus que Studio inicia dentro de la sesión de simulación, y no se ha registrado una traza de un dispositivo o una pasarela reales que respondan las mismas solicitudes. Complétela en Simulación: su calificación es la misma cada vez y no necesita dispositivo ni red.
 
 {/* <<< END GENERATED: learn/lessons/modbus-coil-fbd <<< */}
 
