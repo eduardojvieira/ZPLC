@@ -8,7 +8,7 @@ class FakeDir { readonly kind = 'directory' as const; readonly children = new Ma
   async getDirectoryHandle(name: string) { const found = this.children.get(name); if (found?.kind === 'directory') return found; throw Object.assign(new Error('x'), { name: 'NotFoundError' }); }
   async getFileHandle(name: string) { const found = this.children.get(name); if (found?.kind === 'file') return found; throw Object.assign(new Error('x'), { name: 'NotFoundError' }); }
   async *values() { yield* this.children.values(); }
-  put(path: string, text: string) { const parts = path.split('/'); let dir: FakeDir = this; for (const part of parts.slice(0, -1)) { let next = dir.children.get(part); if (!next) { next = new FakeDir(part); dir.children.set(part, next); } dir = next as FakeDir; } dir.children.set(parts.at(-1)!, new FakeFile(parts.at(-1)!, new TextEncoder().encode(text))); return this; } }
+  put(path: string, text: string): FakeDir { const parts = path.split('/'); let dir = this as FakeDir; for (const part of parts.slice(0, -1)) { let next = dir.children.get(part); if (!next) { next = new FakeDir(part); dir.children.set(part, next); } dir = next as FakeDir; } dir.children.set(parts.at(-1)!, new FakeFile(parts.at(-1)!, new TextEncoder().encode(text))); return this; } }
 
 function project(program: string): FakeDir {
   const config = newProjectConfig('Pump', { target: SIMULATION_TARGET, language: 'ST' });

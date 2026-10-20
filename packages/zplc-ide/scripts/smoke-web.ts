@@ -10,7 +10,7 @@ import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { WEB_INSTALL_URL, WEB_MISSING_FEATURES } from '../src/platform/webCapabilities';
-import { APP_PREFIX, serveWebSite } from './webSite';
+import { APP_PREFIX, secretsIn, serveWebSite } from './webSite';
 import { assert, freePort, openPage, stop, waitFor, type Cdp, type OwnedProcess } from './cdpHarness';
 
 const ROOT = process.env.ZPLC_WEB_SITE_ROOT?.trim();
@@ -40,6 +40,7 @@ async function main(): Promise<void> {
   let browser: OwnedProcess | undefined;
   let cdp: Cdp | undefined;
   try {
+    assert(secretsIn(APP_DIR).length === 0, `The build holds something shaped like a credential: ${secretsIn(APP_DIR).join(', ')}`);
     const url = `http://127.0.0.1:${port}${APP_PREFIX}`;
     ({ browser, cdp } = await openPage(url, profile));
     const page = cdp;
@@ -115,7 +116,7 @@ async function main(): Promise<void> {
   } finally {
     cdp?.close();
     await stop(browser);
-    server.stop(true);
+    await server.stop(true);
     rmSync(profile, { recursive: true, force: true });
   }
 }
