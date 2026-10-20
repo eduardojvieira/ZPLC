@@ -120,6 +120,20 @@ target_compile_definitions(zplc_core_portable PRIVATE
 )
 
 # =============================================================================
+# The FreeRTOS port (IO-016): -DZPLC_PORT=freertos builds the core, the FreeRTOS HAL and the FreeRTOS POSIX/GCC
+# simulator into one host executable for each C suite of the port conformance suite, and nothing else. The POSIX
+# targets below are the other port's.
+# =============================================================================
+set(ZPLC_PORT "posix" CACHE STRING "Port to build the suites for: posix or freertos")
+set_property(CACHE ZPLC_PORT PROPERTY STRINGS posix freertos)
+if(ZPLC_PORT STREQUAL "freertos")
+    include(${CMAKE_CURRENT_SOURCE_DIR}/src/hal/freertos/freertos.cmake)
+    return()
+elseif(NOT ZPLC_PORT STREQUAL "posix")
+    message(FATAL_ERROR "ZPLC_PORT must be posix or freertos, not '${ZPLC_PORT}'")
+endif()
+
+# =============================================================================
 # Target: zplc_runtime (POSIX Executable)
 # =============================================================================
 
