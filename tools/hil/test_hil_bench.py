@@ -200,7 +200,7 @@ class FakeBoard(hil_devices.ShellDevice):
             _, name, values = text.split(":", 2) if text.startswith("PROG:") else ("", "fixture", "{}")
             self.program, self.values, self.staging, self.state = name, json.loads(values), None, "idle"
             return f"OK: Program loaded ({self.expected} bytes)\r\n"
-        if words[:3] == ["zplc", "status", "--json"] and "starved-shell" in self.defects and self.state == "running":
+        if "starved-shell" in self.defects and self.state == "running" and (words[:3] == ["zplc", "status", "--json"] or command == "zplc dbg peek"):
             return ""  # an overrunning scan at a higher priority than the shell (RT-013) leaves the shell no time to answer
         if words[:3] == ["zplc", "status", "--json"]:
             cycles = int((self.now() - self.started) // 10) if self.state == "running" else 0
@@ -232,6 +232,15 @@ class FakeBoard(hil_devices.ShellDevice):
         if words[:3] == ["zplc", "config", "save"]:
             self.saved_config = dict(self.config)
             return "OK: Config saved\r\n"
+        if words[:3] == ["zplc", "wifi", "connect"]:
+            if "no-ssid" in self.defects:
+                return "ERROR: No SSID configured (use zplc config set wifi_ssid)\r\n"
+            return "OK: WiFi connect requested for the stored network\r\n"
+        if words[:3] == ["zplc", "net", "status"]:
+            self.net_polls = getattr(self, "net_polls", 0) + 1
+            if "no-wifi" in self.defects or self.net_polls <= 3:  # DHCP takes a few seconds after the association
+                return "IP Address: (not assigned yet)\r\nInterface: up\r\nWiFi link: connecting\r\n"
+            return "IP Address: 192.168.1.50\r\nInterface: up\r\nWiFi link: connected\r\n"
         if words[:3] == ["zplc", "sys", "info"]:
             return json.dumps({"board": "rpi_pico", "board_profile": "rpi_pico"}) + "\r\n"
         return "OK: done\r\n"
@@ -531,6 +540,43 @@ class StepTests(Quiet):
         self.assertEqual((good["measurements"]["got"], good["measurements"]["heard"]), (hil_steps.RTU_VALUE, 1))
         bad, _ = self.step("fieldbus-exchange", ("fieldbus-fails",), board="esp32s3_devkitc", extra=extra)
         self.assertEqual(bad["result"], "fail")
+
+    def chain_for(self, board, defects=()):
+        clock = Clock()
+        device = FakeBoard(clock, defects)
+        args = run_chain.parse([board, "--dry-run", "--operator", "CI"])
+        chain = run_chain.Chain(args, hil_guard.PipedIo(), BOARDS[board], lambda name: device, FakeBench(clock, device))
+        chain.tester = LanguageTester(transport=device, board=board)
+        chain.record["steps"].append({"id": "fieldbus-exchange"})
+        return chain, device
+
+    def test_the_network_step_waits_for_an_address_before_it_starts_anything(self):
+        """HIL-010.32: the board joins the network by itself after a restart, DHCP takes a few seconds, and the step
+        does not read an address that is not there yet."""
+        chain, device = self.chain_for("esp32s3_devkitc")
+        self.assertEqual(chain.wait_for_address(), "192.168.1.50")
+        self.assertEqual(device.net_polls, 4)
+
+    def test_the_network_step_says_why_when_the_board_never_gets_an_address(self):
+        chain, _ = self.chain_for("esp32s3_devkitc", ("no-wifi",))
+        with self.assertRaises(AssertionError) as caught:
+            chain.wait_for_address()
+        self.assertIn("no IP address", str(caught.exception))
+        self.assertIn("WiFi link: connecting", str(caught.exception), "what the board says about its link")
+
+    def test_the_network_step_says_when_the_board_has_no_credentials(self):
+        chain, _ = self.chain_for("esp32s3_devkitc", ("no-ssid",))
+        with self.assertRaises(AssertionError) as caught:
+            chain.wait_for_address()
+        self.assertIn("zplc config set wifi_ssid", str(caught.exception))
+
+    @needs_loopback
+    def test_a_board_without_an_address_never_gets_the_network_program(self):
+        extra = ("--host-ip", "127.0.0.1", "--loopback-bin", LOOPBACK)
+        entry, bench = self.step("fieldbus-exchange", ("no-wifi",), board="esp32s3_devkitc", extra=extra)
+        self.assertEqual(entry["result"], "fail")
+        self.assertIn("no IP address", entry["detail"])
+        self.assertIsNone(bench.board.program, "the program was not deployed to a board that is offline")
 
     def test_a_bench_that_cannot_do_a_step_records_it_as_not_run_never_passed(self):
         clock = Clock()

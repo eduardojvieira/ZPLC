@@ -215,7 +215,7 @@ A processor fault, a stack overflow, an assertion or a kernel panic does not lea
 
 ### Why the runtime was reset (RT-021)
 
-`zplc sys reset` (and `--json`) reports the cause of the last reset: `power_on`, `brown_out`, `pin`, `software`, `watchdog`, `fault` or `unknown` (a part that does not report one), the raw register, the previous run's fault record and the start policy. When a processor reports several bits the order is fixed: a fault record of the previous run, then power-on, brown-out, watchdog, lock-up, software and, last, the pin, because almost every reset sets it. `zplc sys info --json` keeps exactly its keys; the cause is also the `reset_cause` key of `zplc sched status --json`.
+`zplc sys reset` (and `--json`) reports the cause of the last reset: `power_on`, `brown_out`, `pin`, `software`, `watchdog`, `fault` or `unknown` (a part that does not report one), the raw register, the previous run's fault record and the start policy. When a processor reports several bits the order is fixed: a fault record of the previous run, then watchdog, power-on, brown-out, lock-up, software and, last, the pin, because almost every reset sets it. The watchdog comes before power-on because the RP2040 keeps its power-on flag across a later reset. Zephyr's hardware information reports a watchdog reset on the RP2350 only, so on the RP2040 the firmware reads the WATCHDOG REASON register itself; that register is read-only, so after a watchdog reset a `zplc sys reboot` still reads as `watchdog` until the next power-on or RUN-pin reset. `zplc sys info --json` keeps exactly its keys; the cause is also the `reset_cause` key of `zplc sched status --json`.
 
 ### After a reset the runtime waits in STOP (RT-022)
 

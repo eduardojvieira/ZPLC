@@ -7,6 +7,7 @@ import hil_ports
 from hil_ports import PortError, resolve_port
 
 PICO = ("/dev/ttyACM0", 0x2E8A, 0x000A, "ZPLC Runtime")
+ESP32S3 = ("/dev/ttyACM1", 0x303A, 0x1001, "USB JTAG/serial debug unit")
 OTHER = ("/dev/ttyUSB0", 0x10C4, 0xEA60, "CP2102 USB to UART Bridge")
 
 
@@ -51,8 +52,12 @@ class ResolvePortTests(unittest.TestCase):
 
     def test_a_board_without_known_identifiers_needs_an_explicit_port(self):
         with self.assertRaises(PortError) as caught:
-            resolve_port(None, board="esp32s3_devkitc", env={}, lister=lister(PICO, OTHER))
+            resolve_port(None, board="no_such_board", env={}, lister=lister(PICO, OTHER))
         self.assertIn("ZPLC_SERIAL_PORT", str(caught.exception))
+
+    def test_the_esp32s3_is_found_by_its_usb_serial_jtag_identifiers(self):
+        """The image's console is the chip's native USB-Serial/JTAG (the board overlay), which Espressif identifies as 303A:1001."""
+        self.assertEqual(resolve_port(None, board="esp32s3_devkitc", env={}, lister=lister(PICO, OTHER, ESP32S3)), "/dev/ttyACM1")
 
     def test_a_missing_pyserial_is_reported_as_a_port_error(self):
         def missing():

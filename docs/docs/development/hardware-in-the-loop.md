@@ -81,7 +81,10 @@ Scripts that only look at a board and judge nothing (`check_alive.py`,
 
 1. **Preflight.** The board is in the manifest and the fixtures of the run
    compile with the repository compiler, for the board.
-2. **Flash.** You flash the image. The tool does not.
+2. **Flash.** You flash the image. The tool does not. It opens the device link
+   only after this step: a blank board has no serial port, and a flashed board
+   appears again under a new name, so the tool looks the port up again for up
+   to 30 seconds after you press Enter.
 3. **Identity handshake.** The tool asks the device who it is
    (`zplc sys info --json`) and which image it is (`zplc sys build --json`:
    version, commit, whether the tree was dirty, board, ABI, draft, and the build
@@ -255,7 +258,7 @@ it differs from this table.
 | Potentiometer ends | 3V3(OUT) (pin 36) and AGND (pin 33) | 3V3 (J1-1) and GND (J1-22) |
 | Potentiometer wiper → AI0 | GP26/ADC0 (pin 31) | GPIO4/ADC1_CH3 (J1-4) |
 | Modbus RTU | GP4 (pin 6, TX) → adapter RX, GP5 (pin 7, RX) ← adapter TX, GND (pin 8) → adapter GND | (none) |
-| Network | (none) | Wi-Fi, credentials stored with `wifi connect` |
+| Network | (none) | Wi-Fi: the credentials are stored with `zplc config set wifi_ssid` and `wifi_pass` (then `zplc config save`); `wifi connect` only uses them |
 
 The inputs use their internal pull-up and are active-low in the firmware, so
 through the loopback an input reads the inverse of its output. The chain
@@ -324,7 +327,7 @@ RST if the board stays in download mode.
 | 20 | Power cycle and RETAIN | Checks that the image was built with RETAIN persistence, counts in a RETAIN variable, stops (which saves it) and asks you to unplug and plug the board | STOP after power-up, the RETAIN value kept, the program still there | Not run yet | Filled in from the emulated records |
 | 21 | 20 power cuts during deploy | Loads program A, sends a part of program B (from one twentieth to all of it) and asks you to unplug at once | After every cut the board is in STOP and runs A or B whole | Not run yet | Filled in from the emulated records |
 | 22 | Atomic write | Writes a four-byte value 100 times over the device link while the program counts torn values | No scan saw a half-written value | Not run yet | Filled in from the emulated records |
-| 23 | Fieldbus exchange | Pico: turns on the device's Modbus RTU client at 19200 baud, stores it and restarts the board (the client starts at boot only), then reads holding register 100 from a Modbus RTU server on this computer, on a line opened at 19200 baud. ESP32-S3: writes and reads back a register on the Modbus TCP server and hears an MQTT publish back through the broker of `zplc_loopback`, reached on this computer's LAN address | The value read is 0x5A17, with no error | Not run yet | Filled in from the emulated records |
+| 23 | Fieldbus exchange | Pico: turns on the device's Modbus RTU client at 19200 baud, stores it and restarts the board (the client starts at boot only), then reads holding register 100 from a Modbus RTU server on this computer, on a line opened at 19200 baud. ESP32-S3: waits until the board reports an IP address (`zplc net status`; the firmware joins the stored network by itself at boot and again after a drop), then writes and reads back a register on the Modbus TCP server and hears an MQTT publish back through the broker of `zplc_loopback`, reached on this computer's LAN address. The results are read as one snapshot: `done` first, then the values, and only when a second read agrees | The value read is 0x5A17, with no error | Not run yet | Filled in from the emulated records |
 
 A person cannot cut the power at the exact moment the program is written to
 flash, so on a board step 21 tests the cuts at the points a hand can reach; the

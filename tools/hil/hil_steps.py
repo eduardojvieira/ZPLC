@@ -45,6 +45,7 @@ ATOMIC_WRITES = 100
 RTU_VALUE = 0x5A17
 RTU_BAUD = 19200  # the line speed the step sets on the device's RTU client and on the host side of the line
 FIELDBUS_WAIT_S = 20
+WIFI_WAIT_S = 60  # association, key exchange and DHCP after a restart, on a bench clock
 VM_BUDGET_DEFAULT = 100_000  # CONFIG_ZPLC_VM_CYCLE_INSTRUCTION_BUDGET when the image does not report it
 OVERRUN_ITERATION_COST = 13  # VM instructions of one turn of the overrun program's FOR loop (its assembly listing)
 FAULT_WAIT_S = 10.0  # how long a fault step waits for the latch: a board latches in 0.2 s, an emulator can be 6x slower
@@ -323,6 +324,7 @@ class BenchSteps:
         if getattr(self.tester.ser, "kind", "") != "serial":
             return
         from hil_devices import DeviceError, SerialTransport  # noqa: PLC0415
+        from hil_ports import PortError  # noqa: PLC0415
 
         try:
             self.tester.ser.close()
@@ -335,9 +337,25 @@ class BenchSteps:
                 time.sleep(1)
                 if self.status():
                     return
-            except (DeviceError, OSError):
+            except (DeviceError, PortError, OSError):  # the port is not there yet, or not usable yet
                 time.sleep(1)
         raise AssertionError(f"the board did not come back on its port within {seconds:.0f} s")
+
+    def wait_for_address(self) -> str:
+        """The IPv4 address of the board, once it has one (HIL-010.32). The firmware joins the network by itself from the
+        credentials of `zplc config` and again after a drop; `wifi connect` asks again with the same credentials."""
+        if "No SSID configured" in self.tester.send("zplc wifi connect"):
+            raise AssertionError("the board has no Wi-Fi credentials: store them with `zplc config set wifi_ssid` and `wifi_pass`, then `zplc config save`")
+        started, last = self.now(), ""
+        while True:
+            last = self.tester.send("zplc net status")
+            found = re.search(r"IP Address:\s*(\d+\.\d+\.\d+\.\d+)", last)
+            if found:
+                return found.group(1)
+            if self.now() - started > WIFI_WAIT_S * 1000:
+                link = " ".join(line.strip() for line in last.splitlines() if "WiFi" in line or "IP Address" in line)
+                raise AssertionError(f"the board has no IP address after {WIFI_WAIT_S} s on the Wi-Fi network ({link or 'no answer'})")
+            self.wait(1.0)
 
     def digital_pairs(self) -> list[tuple[dict, dict]]:
         outputs = [c for c in self.board["io"]["channels"] if c["kind"] == "digital" and c["direction"] == "output"]
@@ -484,7 +502,10 @@ class BenchSteps:
         self.tester.send("zplc start")
         try:
             self.wait(0.05)
-            driven = self.outputs()
+            try:
+                driven = self.outputs()
+            except AssertionError:  # the shell is starved already: the latch is what ends the wait, not this read
+                driven = None
             status = self.status()
             # an overrunning scan can starve the shell, whose answer is then missing: only a latched fault ends the wait
             while status.get("fault", {}).get("reason") in (None, "none") and self.now() - started < FAULT_WAIT_S * 1000:
@@ -712,12 +733,20 @@ class BenchSteps:
         return self._fieldbus_rtu()
 
     def _read_results(self, symbols: dict[str, int], names: tuple[str, ...]) -> dict[str, int]:
-        started = self.now()
+        """The program sets its results in one scan, but each peek is a shell command of its own: `done` is read first, the
+        values after it, and the result counts only when a second snapshot is identical (a torn read has no twin)."""
+        started, previous = self.now(), None
+        order = sorted(names, key=lambda name: name not in ("done", "heard"))  # the flags first, then the values they announce
         while True:
-            found = {name: self.dint(symbols[name]) for name in names}
-            if found.get("done", 0) > 0 and (len(names) < 4 or found.get("heard", 0) > 0) or self.now() - started > FIELDBUS_WAIT_S * 1000:
+            read = {name: self.dint(symbols[name]) for name in order}
+            found = {name: read[name] for name in names}
+            complete = found.get("done", 0) > 0 and (len(names) < 4 or found.get("heard", 0) > 0)
+            if complete and found == previous:
                 return found
-            self.wait(0.5)
+            if self.now() - started > FIELDBUS_WAIT_S * 1000:
+                return found
+            previous = found if complete else None
+            self.wait(0.1 if complete else 0.5)
 
     def _fieldbus_rtu(self):
         self.bench.confirm_wiring("modbus-rtu")
@@ -758,6 +787,7 @@ class BenchSteps:
             for line in (f"zplc config set mqtt_broker {host}", f"zplc config set mqtt_port {mqtt.port}", "zplc config set mqtt_enabled 1", "zplc config save"):
                 self.tester.send(line)
             self.reconnect()
+            address = self.wait_for_address()  # offline, the program's Modbus block would fail with an error that looks like a protocol one
             symbols = self.deploy_program("modbus-tcp-mqtt", host=host, modbus_port=modbus.port, mqtt_port=mqtt.port)
             self.tester.send("zplc start")
             found = self._read_results(symbols, ("got", "done", "err", "heard"))
@@ -766,7 +796,7 @@ class BenchSteps:
             modbus.close()
             mqtt.close()
             endpoints.close()
-        self.measure(protocol="modbus-tcp+mqtt", host=host, modbus_port=modbus.port, mqtt_port=mqtt.port, **found)
+        self.measure(protocol="modbus-tcp+mqtt", board_address=address, host=host, modbus_port=modbus.port, mqtt_port=mqtt.port, **found)
         if found["got"] != RTU_VALUE or found["err"] or found["heard"] <= 0:
             raise AssertionError(f"Modbus TCP read {found['got']} (error {found['err']}); MQTT messages heard back: {found['heard']}")
         return f"Modbus TCP write and read back 0x{RTU_VALUE:04X}; MQTT publish heard back {found['heard']} times"

@@ -2253,6 +2253,20 @@ const char *zplc_reset_cause_name(zplc_reset_cause_t cause);
 | --- | --- | --- |
 | `cause` | `zplc_reset_cause_t` | — |
 
+#### `zplc_reset_bits_from_rp2040_watchdog_reason`
+
+```c
+uint32_t zplc_reset_bits_from_rp2040_watchdog_reason(uint32_t reason);
+```
+
+**Source summary:** The neutral bits of the RP2040 WATCHDOG REASON register (0x40058008): TIMER (bit 0) or FORCE (bit 1) is ZPLC_RESET_BIT_WATCHDOG. Zephyr's hwinfo reports a watchdog reset on the RP2350 only (HIL-010.24).
+
+**Parameters**
+
+| Name | Type | Source description |
+| --- | --- | --- |
+| `reason` | `uint32_t` | — |
+
 #### `zplc_fault_record_make`
 
 ```c
@@ -2310,7 +2324,7 @@ zplc_reset_cause_t zplc_reset_cause_decide(uint32_t bits, const zplc_fault_recor
 
 **Source summary:** The cause of a reset, from what the processor reported and the record the previous run left.
 
-A valid processor-fault record is a fault reset: the firmware rebooted the part itself. Otherwise the neutral bits are read in this order: power-on, brown-out, watchdog, lockup (a fault), software, pin. Power-on comes first because it sets most of the others as well; the pin comes last because a software or watchdog reset drives the reset line and sets it. A scheduler-fault record does not change the cause: the part was reset by its watchdog, and the record is reported next to it.
+A valid processor-fault record is a fault reset: the firmware rebooted the part itself. Otherwise the neutral bits are read in this order: watchdog, power-on, brown-out, lockup (a fault), software, pin. The watchdog comes first because a part whose power-on flag outlives a later reset (the RP2040) would hide it, and its watchdog flag is cleared by any power-on; power-on comes before the rest because it sets most of the others as well; the pin comes last because a software or watchdog reset drives the reset line and sets it. A scheduler-fault record does not change the cause: the part was reset by its watchdog, and the record is reported next to it.
 
 **Parameters**
 
@@ -2383,6 +2397,22 @@ It has to be longer than two intervals of the slowest task (a scan that is one i
 | `longest_interval_us` | `uint32_t` | the interval of the slowest task |
 
 **Source return value:** the timeout in milliseconds, or 0 when the task set does not fit the hardware: the program is refused
+
+#### `zplc_wdt_mwdt_ticks_for`
+
+```c
+uint32_t zplc_wdt_mwdt_ticks_for(uint32_t timeout_ms);
+```
+
+**Source summary:** The hold value of one stage of an Espressif main-system watchdog for @p timeout_ms: its tick is 500 us (80 MHz APB divided by 40000), so two ticks to the millisecond.
+
+**Parameters**
+
+| Name | Type | Source description |
+| --- | --- | --- |
+| `timeout_ms` | `uint32_t` | — |
+
+**Source return value:** the ticks, or 0 for no timeout or one the 32-bit register cannot hold
 
 #### `zplc_failsafe_boot`
 

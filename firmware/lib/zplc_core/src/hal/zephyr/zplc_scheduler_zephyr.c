@@ -50,6 +50,11 @@
 #error "CONFIG_ZPLC_HARDWARE_WATCHDOG needs a watchdog in the devicetree (chosen zephyr,watchdog or alias watchdog0)"
 #endif
 #endif
+#if defined(CONFIG_ZPLC_HARDWARE_WATCHDOG) && !defined(CONFIG_ZTEST) && defined(CONFIG_SOC_SERIES_ESP32S3)
+#include <hal/mwdt_ll.h>
+#include <hal/wdt_types.h>
+#include <soc/timer_group_struct.h>
+#endif
 #include <zplc_bytes.h>
 #include <zplc_core.h>
 #include <zplc_debug.h>
@@ -484,6 +489,32 @@ static uint32_t watchdog_timeout_for_tasks(void) {
   return zplc_wdt_timeout_for(profile_ms, hardware_max_ms, longest_interval_us);
 }
 
+#if defined(CONFIG_ZPLC_HARDWARE_WATCHDOG) && !defined(CONFIG_ZTEST) && defined(CONFIG_SOC_SERIES_ESP32S3)
+/* HIL-010.24: Zephyr's wdt_esp32 arms stage 0 as an interrupt and stage 1 as the reset, and its stage-0 handler
+ * calls wdt_hal_handle_intr(), which feeds the watchdog: with interrupts alive a hung scan is never reset. It also
+ * hands the timeout in milliseconds to a counter of 500 us ticks, so it arms half of it. After the driver has set
+ * the watchdog up, this makes stage 0 the reset, at the full timeout, with no interrupt and no second stage:
+ * nothing but the scheduler's feed (wdt_feed, mwdt_ll_feed) postpones it. The driver stays in charge of the clock,
+ * the prescaler, enable, feed and disable. */
+BUILD_ASSERT(DT_REG_ADDR(ZPLC_WATCHDOG_NODE) == DT_REG_ADDR(DT_NODELABEL(wdt0)),
+             "the ESP32-S3 port reprograms the main-system watchdog of timer group 0 (wdt0)");
+
+static void watchdog_reset_at_stage0(uint32_t timeout_ms) {
+  timg_dev_t *const mwdt = &TIMERG0;
+
+  mwdt_ll_write_protect_disable(mwdt);
+  mwdt_ll_set_intr_enable(mwdt, false);
+  mwdt_ll_set_level_intr(mwdt, false);
+  mwdt_ll_clear_intr_status(mwdt);
+  mwdt_ll_disable_stage(mwdt, WDT_STAGE1);
+  mwdt_ll_config_stage(mwdt, WDT_STAGE0, zplc_wdt_mwdt_ticks_for(timeout_ms), WDT_STAGE_ACTION_RESET_SYSTEM);
+  mwdt_ll_feed(mwdt);
+  mwdt_ll_write_protect_enable(mwdt);
+}
+#else
+#define watchdog_reset_at_stage0(timeout_ms) ((void)(timeout_ms))
+#endif
+
 static int watchdog_timeout_admits_tasks(void) {
 #if defined(CONFIG_ZTEST) || defined(CONFIG_ZPLC_HARDWARE_WATCHDOG)
   return watchdog_timeout_for_tasks() != 0U ? 0 : -ERANGE;
@@ -545,6 +576,7 @@ static int watchdog_prepare(void) {
       return setup_result;
     }
   }
+  watchdog_reset_at_stage0(timeout_ms);
   return 0;
 #else
   return -ENODEV;

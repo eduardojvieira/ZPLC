@@ -72,18 +72,25 @@ void zplc_fault_record_reason_text(const zplc_fault_record_t *record, char *out,
   }
 }
 
+uint32_t zplc_reset_bits_from_rp2040_watchdog_reason(uint32_t reason) {
+  /* WATCHDOG REASON: bit 0 TIMER (the counter ran out), bit 1 FORCE (a reboot through the watchdog) */
+  return (reason & 3U) != 0U ? ZPLC_RESET_BIT_WATCHDOG : 0U;
+}
+
 zplc_reset_cause_t zplc_reset_cause_decide(uint32_t bits, const zplc_fault_record_t *record) {
   if (record != NULL && zplc_fault_record_valid(record) != 0 && record->kind == (uint8_t)ZPLC_FAULT_PROCESSOR) {
     return ZPLC_RESET_FAULT;
+  }
+  /* The watchdog first: a part whose power-on or brown-out flag outlives a later reset (the RP2040) would otherwise
+   * hide it, and a watchdog flag that is set was set after any power-on, which clears it (HIL-010.24). */
+  if ((bits & ZPLC_RESET_BIT_WATCHDOG) != 0U) {
+    return ZPLC_RESET_WATCHDOG;
   }
   if ((bits & ZPLC_RESET_BIT_POWER_ON) != 0U) {
     return ZPLC_RESET_POWER_ON;
   }
   if ((bits & ZPLC_RESET_BIT_BROWN_OUT) != 0U) {
     return ZPLC_RESET_BROWN_OUT;
-  }
-  if ((bits & ZPLC_RESET_BIT_WATCHDOG) != 0U) {
-    return ZPLC_RESET_WATCHDOG;
   }
   if ((bits & ZPLC_RESET_BIT_LOCKUP) != 0U) {
     return ZPLC_RESET_FAULT;
@@ -145,3 +152,5 @@ uint32_t zplc_wdt_timeout_for(uint32_t profile_ms, uint32_t hardware_max_ms, uin
   }
   return timeout_ms > UINT32_MAX ? 0U : (uint32_t)timeout_ms;
 }
+
+uint32_t zplc_wdt_mwdt_ticks_for(uint32_t timeout_ms) { return timeout_ms > 0x7FFFFFFFU ? 0U : timeout_ms * 2U; }

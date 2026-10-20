@@ -78,6 +78,21 @@ static void test_reset_cause_decision(void) {
   CHECK(zplc_reset_cause_decide(ZPLC_RESET_BIT_BROWN_OUT | ZPLC_RESET_BIT_POWER_ON, &none) == ZPLC_RESET_POWER_ON,
         "power-on is read first");
 
+  /* HIL-010.24: the RP2040 keeps the power-on flag of the boot before until a power-on clears it, and its watchdog reason
+   * register is cleared by that same power-on: when both are set the watchdog reset is the later one. */
+  CHECK(zplc_reset_cause_decide(ZPLC_RESET_BIT_POWER_ON | ZPLC_RESET_BIT_WATCHDOG, &none) == ZPLC_RESET_WATCHDOG,
+        "a stale power-on flag does not hide a watchdog reset");
+  CHECK(zplc_reset_cause_decide(ZPLC_RESET_BIT_POWER_ON | ZPLC_RESET_BIT_PIN | ZPLC_RESET_BIT_WATCHDOG, &none) ==
+            ZPLC_RESET_WATCHDOG,
+        "nor do the stale power-on and pin flags together");
+  CHECK(zplc_reset_cause_decide(ZPLC_RESET_BIT_BROWN_OUT | ZPLC_RESET_BIT_WATCHDOG, &none) == ZPLC_RESET_WATCHDOG,
+        "nor a stale brown-out flag");
+  CHECK(zplc_reset_bits_from_rp2040_watchdog_reason(0U) == 0U, "RP2040: no watchdog reason, no bit");
+  CHECK(zplc_reset_bits_from_rp2040_watchdog_reason(1U) == ZPLC_RESET_BIT_WATCHDOG, "RP2040: the watchdog timer ran out");
+  CHECK(zplc_reset_bits_from_rp2040_watchdog_reason(2U) == ZPLC_RESET_BIT_WATCHDOG,
+        "RP2040: the watchdog was forced (a reboot through the watchdog)");
+  CHECK(zplc_reset_bits_from_rp2040_watchdog_reason(0xFFFFFFFCU) == 0U, "RP2040: bits above the two reasons are not one");
+
   zplc_fault_record_make(&record, ZPLC_FAULT_PROCESSOR, 3U, 0U, 0x100U, 1U);
   CHECK(zplc_reset_cause_decide(ZPLC_RESET_BIT_SOFTWARE | ZPLC_RESET_BIT_PIN, &record) == ZPLC_RESET_FAULT,
         "a processor fault the firmware rebooted for is a fault reset, though the part says software");
@@ -131,6 +146,12 @@ static void test_the_watchdog_policy_of_a_profile(void) {
 
 static void test_the_timeout_is_derived_from_the_task_set(void) {
   printf("\n=== Test: the timeout follows the task set (RT-020) ===\n");
+  /* HIL-010.24: an Espressif MWDT counts 500 us ticks (80 MHz APB / 40000), two to the millisecond; Zephyr's driver
+   * hands it the milliseconds as ticks and so arms half the timeout */
+  CHECK(zplc_wdt_mwdt_ticks_for(1000U) == 2000U, "an MWDT stage of 1000 ms is 2000 ticks of 500 us");
+  CHECK(zplc_wdt_mwdt_ticks_for(0U) == 0U, "no timeout is no stage");
+  CHECK(zplc_wdt_mwdt_ticks_for(0x80000000U) == 0U, "a stage that does not fit the 32-bit hold register is refused");
+  CHECK(zplc_wdt_mwdt_ticks_for(0x7FFFFFFFU) == 0xFFFFFFFEU, "the longest that fits");
   CHECK(zplc_wdt_timeout_for(1000U, 60000U, 10000U) == 1000U, "a 10 ms task keeps the profile's timeout");
   CHECK(zplc_wdt_timeout_for(1000U, 60000U, 499000U) == 1000U, "a task of 499 ms still fits one second");
   CHECK(zplc_wdt_timeout_for(1000U, 60000U, 500000U) == 1001U, "two intervals are not enough: one more millisecond");

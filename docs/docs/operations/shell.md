@@ -133,7 +133,7 @@ The `adc` commands exist only when the firmware is built with `CONFIG_ADC`.
 For boards with network hardware, such as the ESP32-S3 or the STM32F7 boards.
 
 - `zplc net status` - Shows the IPv4 address, the gateway and the MAC address.
-- `zplc wifi connect` - Connects to Wi-Fi with the credentials stored by `zplc config`.
+- `zplc wifi connect` - Connects to Wi-Fi with the credentials stored by `zplc config set wifi_ssid`, `wifi_pass` and `wifi_security` (it never stores them). A board with an SSID stored also joins by itself at boot and again after a drop, in a background work item that never delays a scan: it waits 2 s after the first failure, doubling up to 60 s. `zplc status --json` reports the link as `wifi.state` (`unconfigured`, `connecting`, `connected`, `retrying`, or `unsupported` on a board without Wi-Fi) and `wifi.ip`. Neither the SSID nor the password is logged.
 
 ---
 

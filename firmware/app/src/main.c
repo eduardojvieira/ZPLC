@@ -18,6 +18,8 @@
 #include "zplc_config.h"
 #include "zplc_lock.h"
 #include "zplc_time.h"
+#include "zplc_wifi_boot.h"
+#include "zplc_wifi_link.h"
 #include <zephyr/kernel.h>
 #include <zplc_core.h>
 #include <zplc_fw_identity.h>
@@ -33,6 +35,10 @@
 #endif
 
 #include <zephyr/fs/fs.h>
+#ifdef CONFIG_WIFI
+#include <zephyr/net/net_if.h>
+#include <zephyr/net/wifi_mgmt.h>
+#endif
 
 #include "zplc_comm_cloud_handler.h"
 #include "zplc_comm_modbus_handler.h"
@@ -459,9 +465,14 @@ static int boot_config(void) {
   return 0;
 }
 
+#include "zplc_wifi_boot.inc"
+
 static int boot_network(void) {
   char ip_buf[16];
   zplc_hal_result_t result = zplc_hal_net_init();
+
+  /* HIL-010.32: with credentials stored, the board joins by itself and again after a drop, in a work item. */
+  zplc_wifi_boot_start();
 
   if (zplc_hal_net_get_ip(ip_buf, sizeof(ip_buf)) == ZPLC_HAL_OK) {
     zplc_hal_log("[INIT] IP Address: %s\n", ip_buf);
