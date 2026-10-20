@@ -56,6 +56,31 @@ class QuietCase(unittest.TestCase):
             return super().run(result)
 
 
+class PreflightTests(QuietCase):
+    """The fixtures are compiled for the board under test, as the step programs are: a single-file compile assumes 8 KB
+    of work memory, and the ESP32-S3's loader refuses such a program (ZPLC_LOADER_ERR_MEMORY, -13) with its 2 KB."""
+
+    def test_each_fixture_is_compiled_for_the_board_under_test(self):
+        import hil_steps  # noqa: PLC0415
+
+        calls = []
+        saved = getattr(hil_steps, "compile_file", None)
+        hil_steps.compile_file = lambda source, board: calls.append((Path(source).name, board)) or [0x5A]
+        try:
+            for board in ("esp32s3_devkitc", "rpi_pico"):
+                calls.clear()
+                args = run_chain.parse([board, "--dry-run", "--operator", "CI", "--only", "il.minimal,st.master_blinky"])
+                chain = run_chain.Chain(args, hil_guard.PipedIo(), run_chain.find_board(board))
+                chain.preflight()
+                self.assertEqual(sorted(calls), [("master_blinky.st", board), ("minimal.il", board)])
+                self.assertEqual(chain.compiled["il.minimal"], [0x5A])
+        finally:
+            if saved is None:
+                del hil_steps.compile_file
+            else:
+                hil_steps.compile_file = saved
+
+
 class GuardTests(QuietCase):
     def test_a_terminal_that_is_not_interactive_is_refused(self):
         with self.assertRaises(hil_guard.NotInteractive):

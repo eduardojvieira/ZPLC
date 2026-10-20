@@ -162,28 +162,63 @@ END_PROGRAM
 _SYMBOL = re.compile(r"^; 0x([0-9a-fA-F]+): (\w+) \(")
 
 
-def compile_program(name: str, board: str, values: dict | None = None) -> tuple[list[int], dict[str, int]]:
-    """A step program compiled for `board` (its IDE id) as a workspace, and the address of each of its symbols."""
-    interval, source = PROGRAMS[name]
+def _build(project: Path, board: str, file_name: str, interval: int, what: str, virtual: list[str] = ()) -> list[int]:
+    """Compile `project/src/<file_name>` as a workspace whose target is `board` (its IDE id), with one cyclic task.
+    `virtual` names the process-image addresses it locates that have no channel on the board (io.virtual)."""
     bun = shutil.which("bun")
     if bun is None:
         raise RuntimeError("bun is not on PATH: the repository compiler runs on it")
+    manifest = {
+        "schemaVersion": 2, "name": "hil-" + re.sub(r"[^a-z0-9-]", "-", what.lower()), "version": "1.0.0", "target": {"board": board},
+        "io": {"virtual": [{"name": f"v{index}", "address": address} for index, address in enumerate(virtual)]},
+        "tasks": [{"name": "MainTask", "trigger": "cyclic", "interval_ms": interval, "priority": 1, "programs": [file_name]}],
+    }
+    (project / "zplc.json").write_text(json.dumps(manifest))
+    out = project / "out.zplc"
+    built = subprocess.run([bun, str(CLI), "compile", str(project), "-o", str(out)], capture_output=True, text=True, cwd=ROOT)
+    if built.returncode != 0:
+        error = RuntimeError(f"{what} does not compile for {board}: {(built.stderr or built.stdout).strip()[-400:]}")
+        error.output = built.stderr + built.stdout  # every diagnostic, for compile_file
+        raise error
+    return list(out.read_bytes())
+
+
+def compile_program(name: str, board: str, values: dict | None = None) -> tuple[list[int], dict[str, int]]:
+    """A step program compiled for `board` (its IDE id) as a workspace, and the address of each of its symbols."""
+    interval, source = PROGRAMS[name]
     with tempfile.TemporaryDirectory(prefix="zplc-hil-step-") as directory:
         project = Path(directory)
         (project / "src").mkdir()
         (project / "src" / "main.st").write_text(source.format(**(values or {})) if values else source.replace("{{", "{").replace("}}", "}"))
-        manifest = {
-            "schemaVersion": 2, "name": f"hil-{name}", "version": "1.0.0", "target": {"board": board},
-            "tasks": [{"name": "MainTask", "trigger": "cyclic", "interval_ms": interval, "priority": 1, "programs": ["main.st"]}],
-        }
-        (project / "zplc.json").write_text(json.dumps(manifest))
-        out = project / "out.zplc"
-        built = subprocess.run([bun, str(CLI), "compile", str(project), "-o", str(out)], capture_output=True, text=True, cwd=ROOT)
-        if built.returncode != 0:
-            raise RuntimeError(f"the {name} program does not compile for {board}: {(built.stderr or built.stdout).strip()[-400:]}")
-        listing = subprocess.run([bun, str(CLI), "compile", str(project), "--emit", "asm"], capture_output=True, text=True, cwd=ROOT)
+        code = _build(project, board, "main.st", interval, f"the {name} program")
+        listing = subprocess.run([shutil.which("bun") or "bun", str(CLI), "compile", str(project), "--emit", "asm"], capture_output=True, text=True, cwd=ROOT)
         symbols = {m.group(2): int(m.group(1), 16) for m in map(_SYMBOL.match, listing.stdout.splitlines()) if m}
-        return list(out.read_bytes()), symbols
+        return code, symbols
+
+
+FIXTURE_INTERVAL_MS = 50  # the task a single-file compile gives a program (the CLI's compile of one source file)
+_NO_CHANNEL = re.compile(r"is located at (%[A-Z0-9.]+), which board .* has no channel for")
+
+
+def compile_file(source: str | Path, board: str) -> list[int]:
+    """A fixture's source file compiled for `board` (its IDE id), in the task a single-file compile would give it.
+
+    A single-file compile lays the program out for 8 KB of work memory; the ESP32-S3 has 2 KB, and its loader refuses
+    such a program (ZPLC_LOADER_ERR_MEMORY). Compiled for the board, it is laid out in the board's own memory. Most
+    fixtures leave their results in output words the board has no channel for: the addresses the compiler names are
+    declared virtual (no pin), as a project does in io.virtual, and the fixture is compiled again."""
+    path = Path(source)
+    with tempfile.TemporaryDirectory(prefix="zplc-hil-fixture-") as directory:
+        project = Path(directory)
+        (project / "src").mkdir()
+        shutil.copyfile(path, project / "src" / path.name)
+        try:
+            return _build(project, board, path.name, FIXTURE_INTERVAL_MS, path.name)
+        except RuntimeError as error:
+            virtual = sorted(set(_NO_CHANNEL.findall(getattr(error, "output", str(error)))))
+            if not virtual:
+                raise
+            return _build(project, board, path.name, FIXTURE_INTERVAL_MS, path.name, virtual)
 
 
 def _signed32(values: list[int]) -> int:

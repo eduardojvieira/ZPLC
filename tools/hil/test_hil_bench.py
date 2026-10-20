@@ -608,6 +608,10 @@ class CompilePerBoardTests(Quiet):
                     self.assertTrue(code)
                     if name == "atomic":
                         self.assertEqual((symbols["x"], symbols["torn"]), (0x2780, 0x2784))
+        for fixture in run_chain.fixtures_of(ids=None, hardware=True):
+            for board in ("rpi_pico", "esp32s3_devkitc"):
+                with self.subTest(board=board, fixture=fixture["id"]):
+                    self.assertTrue(hil_steps.compile_file(HERE / fixture["source"], board), "the chain's fixtures compile for the board")
         hil_steps.PROGRAMS["too-big-for-2k"] = (10, "PROGRAM Main\nVAR a : ARRAY[0..999] OF DINT; END_VAR\na[0] := 1;\nEND_PROGRAM\n")
         try:
             self.assertTrue(hil_steps.compile_program("too-big-for-2k", "rpi_pico")[0], "8 KB of work memory holds it")
