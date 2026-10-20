@@ -166,12 +166,12 @@ emulador después de la corrección.
 | Falla fatal (ESP32-S3) | Sigue en ejecución, sin falla, tras 1 s | La ruta de falla funciona en Xtensa (división por cero, error de VM 3, salidas apagadas), pero con el reloj lento de QEMU un segundo del equipo no alcanzaba para los 21 ciclos que el programa necesita | Los pasos de falla esperan la falla, hasta 10 s; QEMU la enclavó tras 1,4 s de tiempo del equipo y 21 ciclos |
 
 Ejecutar el paso de RETAIN con la imagen HIL de la Pico encontró un defecto más: la imagen rechazaba cada START
-("Planificador start failed (-3)"), porque el planificador solo armaba el `zephyr,watchdog` elegido en el árbol de
+("Scheduler start failed (-3)"), porque el planificador solo armaba el `zephyr,watchdog` elegido en el árbol de
 dispositivos, que ninguna placa de este repositorio define. Ahora arma el alias `watchdog0` de la placa cuando no hay
 ninguno elegido, y una imagen con el watchdog de hardware y sin ninguno de los dos nodos no compila.
 
 En rp2040js los fixtures de parpadeo cuentan los cambios de las salidas leyéndolas por la consola, y de una ejecución
-a otra es uno distinto el que ve muy pocos cambios: en este emulador no son evidencia en ningún sentido.
+a otra hay uno distinto que ve muy pocos cambios: en este emulador no sirven como evidencia ni a favor ni en contra.
 
 ## Licencias
 
