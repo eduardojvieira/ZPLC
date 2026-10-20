@@ -44,6 +44,16 @@ REPORT = {
 }
 
 
+class SupportLevelStrictness(unittest.TestCase):
+    def test_a_record_that_names_no_level_never_counts_as_hardware(self) -> None:
+        """HIL-009: only a record that says it is hardware evidence raises a support level."""
+        record = {"schema": boards.RECORD_SCHEMA, "board_id": PICO["board_id"], "firmware_version": "2.0.0",
+                  "commit": "0" * 40, "image_sha256": "a" * 64, "result": "pass"}
+        self.assertEqual(boards.support_level_from_records(PICO["board_id"], [("r.json", record)])["level"], "cross-build")
+        hardware = {**record, "evidence_level": "hardware"}
+        self.assertEqual(boards.support_level_from_records(PICO["board_id"], [("r.json", hardware)])["level"], "human-hil")
+
+
 class RecordTests(unittest.TestCase):
     def test_a_report_that_names_the_image_is_recorded_at_the_community_level(self) -> None:
         record = community_report.record_from_report(REPORT, MANIFEST)

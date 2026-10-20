@@ -17,8 +17,9 @@ physical step is a prompt under the guard of HIL-003, and the record is `hardwar
 (`--bench emulated`, from tools/hil/emulator/ when it is installed: no terminal needed, and the record is always
 `emulated`, which never raises a support level). Programs are always compiled for the board (`target.board`).
 
-The image under test is the HIL build: the manifest's build command with CONFIG_ZPLC_HARDWARE_WATCHDOG=y, because
-RT-020 asks for the record to be made with the watchdog on (`--no-watchdog-build` prints the plain command, and then
+The image under test is the HIL image: the manifest's build command with CONFIG_ZPLC_HIL_IMAGE=y, the variant that turns
+the hardware watchdog on before its record exists and says so in `zplc version` and its build options, because RT-020
+asks for the record to be made with the watchdog on (`--no-watchdog-build` prints the plain command, and then
 the watchdog step fails and says why).
 
 The board's I/O description comes from firmware/app/boards/boards.json, the one manifest: the handshake compares it
@@ -104,7 +105,7 @@ def parse(argv=None) -> argparse.Namespace:
     return parser.parse_args(argv)
 
 
-WATCHDOG_OPTION = "-DCONFIG_ZPLC_HARDWARE_WATCHDOG=y"
+WATCHDOG_OPTION = "-DCONFIG_ZPLC_HIL_IMAGE=y"  # the HIL image variant: the watchdog on, never shipped (RT-020)
 # HIL-010: blink in each of the five languages (two in ST: the master blinky and the generated Ladder blinky)
 BLINK_FIXTURES = ["st.master_blinky", "st.blinky_ld_gen", "il.blinky", "ld.blinky", "fbd.blinky", "sfc.blinky"]
 
@@ -261,7 +262,8 @@ class Chain(hil_steps.BenchSteps):
             self.record["firmware"]["image_sha256"] = hil_record.sha256_hex(Path(self.args.firmware_image).read_bytes())
         if not build:
             return f"the device reports {info['board']}; it reports no build identity (zplc sys build), so the record has no commit"
-        return f"the device reports {info['board']}, built from {build['commit']}, options {build['options_hash']}"
+        image = "the HIL image" if (self.record["firmware"].get("build_options") or {}).get("HIL_IMAGE") == "y" else "not the HIL image"
+        return f"the device reports {info['board']}, built from {build['commit']}, options {build['options_hash']} ({image})"
 
     def io_step(self):
         """The image's I/O description is the one boards.json has for this board (IO-004); an image that reports none is skipped, not passed."""
@@ -433,6 +435,13 @@ class Chain(hil_steps.BenchSteps):
         return f"{'emulated: the image is loaded into the emulator' if self.record['evidence_level'] == 'emulated' else 'flashed by a person'}; build command: {self.build_command}"
 
 
+def evidence_hint(record: dict, board_id: str) -> str:
+    """What a person may do with the evidence record: only a hardware record is ever added to evidence_refs (HIL-009)."""
+    if record.get("evidence_level") == "hardware":
+        return f"a person adds it to evidence_refs of {board_id} in boards.json after reading the run record"
+    return f"{record.get('evidence_level') or record.get('evidence')} evidence: never added to evidence_refs, it never raises a support level"
+
+
 def run(args, io, stdout=None, opener=open_fake, bench=None) -> int:
     out = stdout or sys.stdout
     try:
@@ -470,7 +479,7 @@ def run(args, io, stdout=None, opener=open_fake, bench=None) -> int:
     if summary:
         evidence_path = path.with_name(f"{stem}.evidence.json")
         evidence_path.write_text(json.dumps(summary, indent=2) + "\n")
-        print(f"EVIDENCE: {evidence_path} (a person adds it to evidence_refs of {board['board_id']} in boards.json after reading the run record)", file=out)
+        print(f"EVIDENCE: {evidence_path} ({evidence_hint(chain.record, board['board_id'])})", file=out)
     else:
         print(f"no evidence record: {reason}", file=out)
     return code

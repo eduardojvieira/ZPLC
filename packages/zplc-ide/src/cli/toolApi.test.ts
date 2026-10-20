@@ -269,7 +269,7 @@ END_PROGRAM`);
     try {
       const path = join(root, 'firmware', 'app', 'boards', 'boards.json');
       const boards = JSON.parse(await readFile(path, 'utf8')) as Array<Record<string, unknown>>;
-      const record = (overrides: Record<string, unknown> = {}) => JSON.stringify({ schema: 'zplc.hil-record/1', board_id: 'alpha', firmware_version: '2.0.0', commit: '0'.repeat(40), image_sha256: 'a'.repeat(64), result: 'pass', ...overrides });
+      const record = (overrides: Record<string, unknown> = {}) => JSON.stringify({ schema: 'zplc.hil-record/1', evidence_level: 'hardware', board_id: 'alpha', firmware_version: '2.0.0', commit: '0'.repeat(40), image_sha256: 'a'.repeat(64), result: 'pass', ...overrides });
       await mkdir(join(root, 'firmware', 'app', 'boards', 'evidence'), { recursive: true });
       await writeFile(join(root, 'firmware', 'app', 'boards', 'evidence', 'alpha.json'), record());
       await writeFile(join(root, 'firmware', 'app', 'boards', 'evidence', 'bravo.json'), record({ board_id: 'bravo', result: 'fail' }));

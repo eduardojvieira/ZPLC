@@ -3634,6 +3634,55 @@ void zplc_proto_log(zplc_proto_dev_t *dev, uint8_t level, const char *text);
 | `level` | `uint8_t` | — |
 | `text` | `const char *` | — |
 
+#### `zplc_proto_link_line`
+
+```c
+void zplc_proto_link_line(zplc_proto_link_t *link, int up);
+```
+
+**Resumen fuente:** The line under a serial link, for a port whose transport reports it (the DTR of a USB CDC ACM port, which falls when the host closes the port or the cable goes): a fall from up to down is a lost link (zplc_proto_link_lost), and the session of the link ends at once. A port that cannot tell never calls it; the idle time is then the one end of a silent session.
+
+**Parámetros**
+
+| Nombre | Tipo | Descripción fuente |
+| --- | --- | --- |
+| `link` | `zplc_proto_link_t *` | — |
+| `up` | `int` | — |
+
+#### `zplc_proto_session_lease`
+
+```c
+int zplc_proto_session_lease(zplc_proto_link_t *link);
+```
+
+**Resumen fuente:** Open or join the session of a serial link for a command of the port's own on that link (the console's `zplc dbg force`), so that the command is bound to a session as the same request in a frame is (COM-020).
+
+With no session open the call opens one on @p link: a lease, with the rules of every session. It ends when a client on the link opens or closes a session, after the idle time, when the link is lost and on a takeover, and the forces set in it go with it. When @p link holds the session the call joins it. Every call is activity.
+
+**Parámetros**
+
+| Nombre | Tipo | Descripción fuente |
+| --- | --- | --- |
+| `link` | `zplc_proto_link_t *` | — |
+
+**Retorno fuente:** 0, ZPLC_PROTO_ERR_SESSION_BUSY when another link holds the session, or ZPLC_PROTO_ERR_AUTH_REQUIRED on a network link (a console is a person at the serial link)
+
+#### `zplc_proto_session_force_changed`
+
+```c
+void zplc_proto_session_force_changed(zplc_proto_link_t *link, uint8_t change, uint16_t address);
+```
+
+**Resumen fuente:** A command of the port changed a force in the session of @p link (after zplc_proto_session_lease): a force it set belongs to the session as one a FORCE_SET frame set does, and the change is an event.
+
+**Parámetros**
+
+| Nombre | Tipo | Descripción fuente |
+| --- | --- | --- |
+| `link` | `zplc_proto_link_t *` | — |
+| `change` | `uint8_t` | a ZPLC_PROTO_FORCE_CHANGE_* (SET, CLEARED or CLEARED_ALL) |
+| `address` | `uint16_t` | — |
+
 #### `zplc_proto_session_is_open`
 
 ```c

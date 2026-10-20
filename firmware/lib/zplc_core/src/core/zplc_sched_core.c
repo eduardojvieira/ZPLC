@@ -358,6 +358,7 @@ void zplc_sched_core_restart_schedule(zplc_sched_core_t *core) {
 
   for (index = 0U; index < core->capacity; ++index) {
     core->slot[index].consecutive_misses = 0U;
+    core->slot[index].period_armed = 0U; /* the time held is not a scan period */
   }
 }
 
@@ -370,6 +371,7 @@ void zplc_sched_core_begin_run(zplc_sched_core_t *core) {
     core->slot[index].consecutive_misses = 0U;
     core->slot[index].run_scans = 0U;
     core->slot[index].first_scan_interrupted = 0U;
+    core->slot[index].period_armed = 0U;
   }
 }
 
@@ -582,6 +584,24 @@ static int run_task(zplc_sched_core_t *core, const zplc_sched_port_t *port, zplc
   }
 
   key = enter(port);
+  /* HIL-010: the period from the start of the task's previous scan; a debugger step, a scan a breakpoint stopped and
+   * its rest are not periods, and the scan after them is measured from its own start. */
+  if (step_mode == 0 && continuing == 0 && breakpoint == 0) {
+    if (slot->period_armed != 0U && start_us > slot->last_start_us) {
+      const uint32_t period_us = clamp_u32(start_us - slot->last_start_us);
+
+      if (slot->task.stats.min_period_us == 0U || period_us < slot->task.stats.min_period_us) {
+        slot->task.stats.min_period_us = period_us;
+      }
+      if (period_us > slot->task.stats.max_period_us) {
+        slot->task.stats.max_period_us = period_us;
+      }
+    }
+    slot->last_start_us = start_us;
+    slot->period_armed = 1U;
+  } else {
+    slot->period_armed = 0U;
+  }
   count_up(&slot->task.stats.cycle_count);
   count_up(&slot->run_scans);
   slot->task.stats.last_exec_time_us = exec_us;

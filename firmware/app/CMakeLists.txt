@@ -71,7 +71,9 @@ if(ZPLC_BOARD_COUNT GREATER 0)
 
       # RT-020: the hardware watchdog of a profile is what its manifest entry says. It is on in a profile that has a
       # hardware record and off in every other (the manifest validator checks that rule); the build is configured
-      # the same way, with the same timeouts and the same policy for STOP, a pause and a latched fault.
+      # the same way, with the same timeouts and the same policy for STOP, a pause and a latched fault. The one
+      # exception is the HIL image (CONFIG_ZPLC_HIL_IMAGE), which the record itself is made on: the watchdog on, with
+      # the entry's timeouts and policies, in an image that says it is never shipped.
       string(JSON ZPLC_WDT GET "${ZPLC_BOARD_ENTRY}" watchdog)
       string(JSON ZPLC_WDT_ENABLED GET "${ZPLC_WDT}" enabled)
       string(JSON ZPLC_WDT_TIMEOUT GET "${ZPLC_WDT}" timeout_ms)
@@ -79,7 +81,7 @@ if(ZPLC_BOARD_COUNT GREATER 0)
       string(JSON ZPLC_WDT_STOP GET "${ZPLC_WDT}" stop)
       string(JSON ZPLC_WDT_PAUSE GET "${ZPLC_WDT}" pause)
       string(JSON ZPLC_WDT_FAULT GET "${ZPLC_WDT}" fault)
-      if(ZPLC_WDT_ENABLED)
+      if(ZPLC_WDT_ENABLED OR CONFIG_ZPLC_HIL_IMAGE)
         if(NOT CONFIG_ZPLC_HARDWARE_WATCHDOG)
           message(FATAL_ERROR
             "boards/boards.json enables the hardware watchdog of ${ZPLC_BOARD_ID} (it has a hardware record) "
@@ -120,10 +122,15 @@ if(ZPLC_BOARD_COUNT GREATER 0)
         message(FATAL_ERROR
           "boards/boards.json keeps the hardware watchdog of ${ZPLC_BOARD_ID} off (no hardware record: RT-020, "
           "HIL-010) but the build enables CONFIG_ZPLC_HARDWARE_WATCHDOG. A watchdog enabled before its reset "
-          "timing and safe outputs are recorded could reset a board in the field.")
+          "timing and safe outputs are recorded could reset a board in the field. For the record run itself, build "
+          "the HIL image: -DCONFIG_ZPLC_HIL_IMAGE=y.")
       endif()
       message(STATUS "ZPLC: ${ZPLC_BOARD_ID} checked against boards/boards.json (RT-028 sizes: code ${ZPLC_BOARD_CODE}, "
                      "work ${ZPLC_BOARD_WORK}, retain ${ZPLC_BOARD_RETAIN}; RT-020 hardware watchdog: ${ZPLC_WDT_ENABLED})")
+      if(CONFIG_ZPLC_HIL_IMAGE)
+        message(WARNING "ZPLC: ${ZPLC_BOARD_ID} HIL image: the hardware watchdog is on for a hardware record run "
+                        "(RT-020, HIL-010). This image is never shipped.")
+      endif()
     endif()
   endforeach()
 endif()

@@ -925,6 +925,86 @@ static void test_one_session_at_a_time_and_how_it_ends(void) {
         "stays when a session that did not set it ends");
 }
 
+/* What the shell of a port does for `zplc dbg force set`: open or join the session of its link, force, tell the engine. */
+static int console_force(client_t *c, uint16_t address, uint8_t value) {
+  const int lease = zplc_proto_session_lease(&c->link);
+
+  if (lease != 0) {
+    return lease;
+  }
+  if (port_force_set(NULL, address, &value, 1U) != 0) {
+    return -1;
+  }
+  zplc_proto_session_force_changed(&c->link, (uint8_t)ZPLC_PROTO_FORCE_CHANGE_SET, address);
+  return 0;
+}
+
+/* ---- COM-020, HIL-003: a force from the console belongs to a session, and ends with it ---- */
+static void test_a_console_force_belongs_to_a_session(void) {
+  client_t a;
+  client_t b;
+  client_t n;
+  zplc_proto_link_t *links[2];
+
+  reset_world(&ops);
+  client_init(&a, ZPLC_PROTO_TRANSPORT_SERIAL);
+  client_init(&b, ZPLC_PROTO_TRANSPORT_SERIAL);
+  client_init(&n, ZPLC_PROTO_TRANSPORT_NETWORK);
+  links[0] = &a.link;
+  links[1] = &b.link;
+
+  /* no session: the console opens one on its link, a lease */
+  CHECK(console_force(&a, 0x1000U, 0x0FU) == 0 && forces_in_use() == 1U, "a console force opens a session on its link");
+  CHECK(zplc_proto_session_is_open(&dev) && dev.owner == &a.link, "and the link holds it");
+  open_serial_session(&b, 0U);
+  CHECK(last_status(&b) == ZPLC_PROTO_ERR_SESSION_BUSY, "one session at a time: another link is refused");
+  CHECK(console_force(&b, 0x1001U, 0x01U) == ZPLC_PROTO_ERR_SESSION_BUSY && forces_in_use() == 1U,
+        "and so is a console force from another link");
+  CHECK(console_force(&n, 0x1001U, 0x01U) == ZPLC_PROTO_ERR_AUTH_REQUIRED, "a network link has no console lease");
+
+  /* idle time */
+  fake.now += 29000U;
+  zplc_proto_dev_service(&dev, links, 2U);
+  CHECK(forces_in_use() == 1U, "29 seconds of silence keep the console force");
+  CHECK(console_force(&a, 0x1000U, 0x0FU) == 0, "another console force is activity of the session");
+  fake.now += 29000U;
+  zplc_proto_dev_service(&dev, links, 2U);
+  CHECK(zplc_proto_session_is_open(&dev) && forces_in_use() == 1U, "and restarts the time");
+  fake.now += 2000U;
+  zplc_proto_dev_service(&dev, links, 2U);
+  CHECK(!zplc_proto_session_is_open(&dev) && forces_in_use() == 0U,
+        "31 seconds of silence end the lease and release its force: the outputs follow the program");
+
+  /* the line under the link falls: the DTR of a USB CDC ACM port when the host closes it or the cable goes */
+  CHECK(console_force(&a, 0x1000U, 0x0FU) == 0 && forces_in_use() == 1U, "a console force");
+  zplc_proto_link_line(&a.link, 0);
+  CHECK(zplc_proto_session_is_open(&dev) && forces_in_use() == 1U,
+        "a line that was never seen up is not a loss (a port that cannot tell)");
+  zplc_proto_link_line(&a.link, 1);
+  zplc_proto_link_line(&a.link, 1);
+  CHECK(zplc_proto_session_is_open(&dev) && forces_in_use() == 1U, "a line that stays up keeps the session");
+  zplc_proto_link_line(&a.link, 0);
+  CHECK(!zplc_proto_session_is_open(&dev) && forces_in_use() == 0U,
+        "a line that falls is a lost link: the session ends at once and its force is released");
+
+  /* a client of the same link opens a session: the lease ends and its force goes */
+  CHECK(console_force(&a, 0x1000U, 0x0FU) == 0 && forces_in_use() == 1U, "a console force");
+  open_serial_session(&a, 0U);
+  CHECK(last_status(&a) == ZPLC_PROTO_ERR_OK && forces_in_use() == 0U,
+        "a session opened on the link ends the lease and releases its force");
+
+  /* the console joins the session its link holds, and the force ends with that session */
+  CHECK(console_force(&a, 0x1000U, 0x0FU) == 0 && console_force(&a, 0x1002U, 0x01U) == 0 && forces_in_use() == 2U,
+        "console forces in the session the link holds");
+  CHECK(port_force_clear(NULL, 0x1002U) == 0, "one of them is cleared at the console");
+  zplc_proto_session_force_changed(&a.link, (uint8_t)ZPLC_PROTO_FORCE_CHANGE_CLEARED, 0x1002U);
+  client_forget(&a);
+  (void)send_session(&a, ZPLC_PROTO_MSG_SESSION_CLOSE, NULL, 0U);
+  CHECK(last_status(&a) == ZPLC_PROTO_ERR_OK && last_seen(&a)->payload[1] == 1U,
+        "closing the session releases the one force it still owns");
+  CHECK(forces_in_use() == 0U && !zplc_proto_session_is_open(&dev), "and the outputs follow the program");
+}
+
 /* ---- COM-028: a download checks the CRC-32, reads back, and leaves the runtime stopped ---- */
 static void test_a_download_is_a_session_transaction(void) {
   client_t c;
@@ -1772,6 +1852,7 @@ int main(void) {
   test_the_access_table_is_the_same_as_the_adapters();
   test_state_changing_messages_need_a_session();
   test_one_session_at_a_time_and_how_it_ends();
+  test_a_console_force_belongs_to_a_session();
   test_a_download_is_a_session_transaction();
   test_configuration_and_credentials_follow_the_session_rule();
   test_a_multi_byte_write_lands_whole_at_the_latch();

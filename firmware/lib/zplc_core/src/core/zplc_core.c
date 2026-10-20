@@ -93,6 +93,9 @@ typedef struct {
   uint16_t addr;
   uint16_t size;
   uint8_t bytes[ZPLC_FORCE_MAX_BYTES];
+  /* COM-020: what the bytes would hold without the force: their value when it was set, then every value the program
+   * or an external write gave them while it held. A release writes it back, so the outputs follow the program. */
+  uint8_t program[ZPLC_FORCE_MAX_BYTES];
 } zplc_force_entry_t;
 
 static zplc_force_entry_t force_entries[ZPLC_FORCE_MAX_ENTRIES];
@@ -281,16 +284,15 @@ static int force_entry_overlaps(const zplc_force_entry_t *entry, uint16_t addr,
   return req_start < entry_end && entry_start < req_end;
 }
 
-static int force_get_byte(uint16_t addr, uint8_t *value) {
+/* A write to a forced byte does not reach the memory: it is kept as the value the byte takes back at the release. */
+static int force_hold_byte(uint16_t addr, uint8_t value) {
   for (uint8_t i = 0; i < ZPLC_FORCE_MAX_ENTRIES; i++) {
     zplc_force_entry_t *entry = &force_entries[i];
     if (!entry->active) {
       continue;
     }
     if (addr >= entry->addr && addr < (uint16_t)(entry->addr + entry->size)) {
-      if (value != NULL) {
-        *value = entry->bytes[addr - entry->addr];
-      }
+      entry->program[addr - entry->addr] = value;
       return 1;
     }
   }
@@ -314,11 +316,24 @@ static int raw_write_bytes(uint16_t addr, const uint8_t *bytes, uint16_t size) {
   return 0;
 }
 
+/* An external write that meets a force: the forced bytes keep their value (RT-011), and what was written is what they
+ * take back at the release. */
 static void reapply_overlapping_forces(uint16_t addr, uint16_t size) {
   for (uint8_t i = 0; i < ZPLC_FORCE_MAX_ENTRIES; i++) {
     zplc_force_entry_t *entry = &force_entries[i];
+    const uint8_t *written;
+    uint32_t from;
+    uint32_t to;
+
     if (!force_entry_overlaps(entry, addr, size)) {
       continue;
+    }
+    from = addr > entry->addr ? addr : entry->addr;
+    to = (uint32_t)addr + size < (uint32_t)entry->addr + entry->size ? (uint32_t)addr + size
+                                                                      : (uint32_t)entry->addr + entry->size;
+    written = mem_ptr_raw((uint16_t)from, (uint16_t)(to - from));
+    if (written != NULL) {
+      memcpy(entry->program + (from - entry->addr), written, to - from);
     }
     (void)raw_write_bytes(entry->addr, entry->bytes, entry->size);
   }
@@ -331,7 +346,7 @@ static int mem_write_bytes(uint32_t addr, const uint8_t *bytes, uint8_t size) {
   }
 
   for (uint8_t i = 0; i < size; i++) {
-    if (force_get_byte((uint16_t)(addr + i), NULL)) { /* addr + i < 0x5000 */
+    if (force_hold_byte((uint16_t)(addr + i), bytes[i])) { /* addr + i < 0x5000 */
       continue;
     }
     ptr[i] = bytes[i];
@@ -583,6 +598,11 @@ int zplc_force_set_bytes(uint16_t addr, const uint8_t *bytes, uint16_t size) {
   for (uint8_t i = 0; i < ZPLC_FORCE_MAX_ENTRIES; i++) {
     zplc_force_entry_t *entry = &force_entries[i];
     if (entry->active && entry->addr == addr) {
+      if (size < entry->size) { /* the bytes the force no longer holds go back to the program */
+        (void)raw_write_bytes((uint16_t)(addr + size), entry->program + size, (uint16_t)(entry->size - size));
+      } else if (size > entry->size) {
+        memcpy(entry->program + entry->size, mem_ptr_raw(addr, size) + entry->size, size - entry->size);
+      }
       entry->size = size;
       memcpy(entry->bytes, bytes, size);
       return raw_write_bytes(addr, bytes, size);
@@ -604,20 +624,33 @@ int zplc_force_set_bytes(uint16_t addr, const uint8_t *bytes, uint16_t size) {
   force_entries[free_index].addr = addr;
   force_entries[free_index].size = size;
   memcpy(force_entries[free_index].bytes, bytes, size);
+  memcpy(force_entries[free_index].program, mem_ptr_raw(addr, size), size);
   return raw_write_bytes(addr, bytes, size);
+}
+
+/* COM-020: a released force gives its bytes the value the program last gave them (force_entry_t.program). */
+static void force_release(zplc_force_entry_t *entry) {
+  if (entry->active) {
+    (void)raw_write_bytes(entry->addr, entry->program, entry->size);
+  }
+  memset(entry, 0, sizeof(*entry));
 }
 
 int zplc_force_clear(uint16_t addr) {
   for (uint8_t i = 0; i < ZPLC_FORCE_MAX_ENTRIES; i++) {
     if (force_entries[i].active && force_entries[i].addr == addr) {
-      memset(&force_entries[i], 0, sizeof(force_entries[i]));
+      force_release(&force_entries[i]);
       return 0;
     }
   }
   return -1;
 }
 
-void zplc_force_clear_all(void) { memset(force_entries, 0, sizeof(force_entries)); }
+void zplc_force_clear_all(void) {
+  for (uint8_t i = 0; i < ZPLC_FORCE_MAX_ENTRIES; i++) {
+    force_release(&force_entries[i]);
+  }
+}
 
 uint8_t zplc_force_get_count(void) {
   uint8_t count = 0;

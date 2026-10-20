@@ -74,10 +74,26 @@ tabla de forzados. No deje un forzado en un controlador que nadie vigila.
 
 ## Qué está verificado y qué no
 
+Una fuerza siempre pertenece a una sesión (COM-020). Una fuerza escrita en la
+consola abre la sesión del enlace de la consola, o se une a la que Studio tiene en
+él, y termina con ella: cuando la sesión se cierra o se toma, después del tiempo
+de inactividad (`CONFIG_ZPLC_PROTO_SESSION_IDLE_S`, 30 s por omisión; otro comando
+de fuerza cuenta como actividad), y al instante cuando se pierde el enlace. En una
+consola USB CDC ACM (la Raspberry Pi Pico) el dispositivo ve que el enlace se va
+cuando cae DTR, lo que ocurre cuando la computadora cierra el puerto o se
+desconecta el cable. Una consola que no informa la línea (el puerto USB-Serial/JTAG
+del ESP32-S3, una UART simple) se libera por el tiempo de inactividad. Cuando otro
+enlace tiene la sesión, la fuerza se rechaza. Una fuerza liberada devuelve a cada
+byte el valor que el programa le dio por última vez, o el que tenía antes de la
+fuerza si el programa nunca lo escribió, de modo que las salidas siguen al
+programa.
+
 | Parte | Verificado | Nivel |
 | --- | --- | --- |
 | Un forzado mantiene un valor frente al programa y frente a una escritura externa | Pruebas en C y Zephyr, y un recorrido en la aplicación real | Host y `native_sim` |
 | Los forzados se conservan con pausa y paso, y se borran con detención y con un fallo | Pruebas del planificador | Host y `native_sim`, QEMU |
+| Una fuerza de la consola termina con su sesión: cierre, toma, tiempo de inactividad, caída de la línea; la salida sigue al programa | Pruebas del motor y del núcleo; la prueba del enlace del dispositivo con la imagen real (allí no se puede bajar DTR) | Host y `native_sim` |
+| DTR en el puerto USB de la Pico termina la sesión | No se ejecutó en una placa | Ninguno |
 | Una entrada de un programa puede fijarse o forzarse por su propio nombre | Recorrido 37 en la aplicación real | Host |
 | El efecto de un forzado en un pin físico | No probado | Ninguno |
 
