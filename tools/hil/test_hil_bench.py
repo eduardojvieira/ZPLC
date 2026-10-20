@@ -135,6 +135,14 @@ class FakeBoard(hil_devices.ShellDevice):
         word = round(self.analog * 4095) + (800 if "analog-off" in self.defects else 0)
         return bytes([bits]) + bytes(7) + struct.pack("<H", min(word, 0xFFFF))
 
+    def drop_line(self):
+        """The host closed the port: DTR falls, and a device that reads it ends the session at once."""
+        if {"no-line-state", "link-loss-keeps-forces"} & self.defects:
+            return
+        for address in self.session_forces:
+            self.forces.pop(address, None)
+        self.session = False
+
     def memory_read(self, address, length):
         if address < 0x1000:
             return (self.inputs() + bytes(0x1000))[address : address + length]
@@ -187,8 +195,10 @@ class FakeBoard(hil_devices.ShellDevice):
             address, length = int(words[3], 0), int(words[4], 0)
             return self.dump(self.memory_read(address, length), address)
         if command == "zplc dbg force":
-            if words[3] == "set":
+            if words[3] == "set":  # the console's force opens or joins the link's session (COM-020)
                 self.forces[int(words[4], 0)] = bytes.fromhex(words[5])
+                self.session, self.last_frame = True, self.now()
+                self.session_forces.add(int(words[4], 0))
                 return "OK: Forced\r\n"
             if words[3] == "clear_all":
                 self.forces.clear()
@@ -366,7 +376,12 @@ class StepTests(Quiet):
     def test_outputs_safe_after_stop_and_after_link_loss_with_forces_active(self):
         good, bad = self.passes_and_fails("stop-and-link-loss-safe", "link-loss-keeps-forces")
         self.assertEqual(good["measurements"]["session_idle_s"], 30)
+        self.assertEqual(good["measurements"]["released_by"], "line", "the fall of DTR ends the session, not the silence")
+        self.assertLess(good["measurements"]["released_within_ms"], 1000)
         self.assertIn("still on", bad["detail"])
+        idle, _ = self.step("stop-and-link-loss-safe", ("no-line-state",))
+        self.assertEqual((idle["result"], idle["measurements"]["released_by"]), ("pass", "idle time"),
+                         "a console that reports no line is released by the idle time")
         stuck, _ = self.step("stop-and-link-loss-safe", ("stop-keeps-forces",))
         self.assertIn("after STOP", stuck["detail"])
 
