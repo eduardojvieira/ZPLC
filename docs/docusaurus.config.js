@@ -53,7 +53,22 @@ const config = {
       onBrokenMarkdownLinks: 'throw',
     },
   },
-  themes: ['@docusaurus/theme-mermaid'],
+  themes: [
+    '@docusaurus/theme-mermaid',
+    // DOC-018: full-text search that runs in the browser from an index built with the site, in both languages, with no
+    // service and no account. `hashed` puts a content hash in the index URL so a cache never serves an old one.
+    [
+      '@easyops-cn/docusaurus-search-local',
+      /** @type {import('@easyops-cn/docusaurus-search-local').PluginOptions} */
+      ({
+        hashed: true,
+        language: ['en', 'es'],
+        docsRouteBasePath: '/docs',
+        indexBlog: false,
+        explicitSearchResultPath: true,
+      }),
+    ],
+  ],
 
   presets: [
     [

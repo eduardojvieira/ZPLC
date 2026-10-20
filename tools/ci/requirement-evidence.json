@@ -3255,7 +3255,8 @@
     {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_native_runtime_session.c","test":"REL-023: the runtime says which build it is, so Studio can compare it with its own version."}
   ],
   "REL-024": [
-    {"kind":"unit","ref":"tools/docs/flashing_page.test.ts","test":"flashing page: every board of the manifest has its image and its command line (REL-024, stopgap: no browser flasher over Web Serial yet)","partial":true,"note":"two thirds of the requirement are delivered and held to the manifest in both languages: the download with the boot-mode steps of the Pico (and the RP2040-Zero), the boot-mode steps and the command of the ESP32-S3, the command line of all seven boards, and the statement that a person starts the flash; the browser flasher over Web Serial for the ESP32-S3 is not built because it needs a library the site does not carry: esptool-js (Espressif, Apache-2.0) as a dependency of docs/package.json, or esp-web-tools, and AGENTS.md rule 5 asks the owner for it; a flasher written by hand against the ROM protocol was not written because it cannot be run without a board (AGENTS.md rule 7)"}
+    {"kind":"unit","ref":"tools/docs/flashing_page.test.ts","test":"flashing page: every board of the manifest has its image and its command line (REL-024, stopgap: the browser flasher is tested without a board; no flash on a board is recorded)","partial":true,"note":"the page carries the browser flasher over Web Serial for the ESP32-S3 (esp-web-tools 10.4.0, Apache-2.0, a dependency of docs/package.json authorized by the owner on 2026-10-20), in both languages: a person picks the release image, the page shows its SHA-256, and the person presses Install and picks the port; it works in Chrome and Edge only and says so, and the command line stays; the Pico download with boot-mode steps and the command line of all seven boards are held to the manifest. Not executed: a flash on a real ESP32-S3 over Web Serial (no board, and AGENTS.md rule 7: nothing in the run ever flashes)"},
+    {"kind":"unit","ref":"tools/docs/firmware_flasher.test.ts","test":"browser flasher for the ESP32-S3 (REL-024): the manifest it builds","partial":true,"note":"the manifest that ESP Web Tools receives names the release image zplc-runtime-<version>-esp32-s3-devkitc.bin of the release pipeline and offset 0x0 of the release manifest, with no erase unless the person ticks it; the component renders the safety text and the Chrome and Edge fallback, and Spanish speaks usted. The write over Web Serial is not exercised"}
   ],
   "REL-025": [
     {"kind":"unit","ref":"packages/zplc-ide/electron/firmwareImages.test.ts","test":"the firmware images of an installation (REL-025)"},
@@ -3406,8 +3407,9 @@
     {"kind":"unit","ref":"tools/ci/brand/generate-icons.test.ts","test":"what is made from the mark","partial":true,"note":"the outputs are current and sized as the site and electron-builder name them"}
   ],
   "DOC-018": [
-    {"kind":"unit","ref":"tools/docs/docs_structure.test.ts","test":"docs site: admonitions in the generator\\'s own syntax and no version selector for one version (DOC-018, stopgap: the site has no search yet)","partial":true},
-    {"kind":"unit","ref":"tools/docs/repository_hygiene.test.ts","test":"docs site: an image file is the format its name says (DOC-018, stopgap: the site has no search yet)","partial":true}
+    {"kind":"unit","ref":"tools/docs/docs_structure.test.ts","test":"docs site: admonitions in the generator\\'s own syntax and no version selector for one version (DOC-018)"},
+    {"kind":"unit","ref":"tools/docs/repository_hygiene.test.ts","test":"docs site: an image file is the format its name says (DOC-018)"},
+    {"kind":"unit","ref":"tools/docs/docs_search.test.ts","test":"docs site: full-text search, offline, in English and Spanish (DOC-018)","note":"the site config lists the local search theme for en and es and no hosted search; the check after the site build (bun tools/docs/check-docs-search.ts, run by bun run check:docs) fails when the build holds no search index for a locale"}
   ],
   "DOC-020": [
     {"kind":"unit","ref":"tools/docs/repository_hygiene.test.ts","test":"repository hygiene: the non-functional items of the requirement are not in the tree (DOC-020)"}

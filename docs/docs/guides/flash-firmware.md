@@ -93,9 +93,25 @@ esptool --chip esp32s3 --port <serial port> write-flash 0x0 zplc-runtime-<versio
 
 ### The browser flasher
 
-A flasher that runs in the browser over Web Serial is not offered yet: the ESP32-S3
-needs a library that the site does not carry. Until then the command line above is the
-way, and the page of the board does not change when the flasher arrives.
+If you use Chrome or Edge on a computer, the flasher below writes the ESP32-S3 image from the
+browser over Web Serial, with [ESP Web Tools](https://esphome.github.io/esp-web-tools/). It
+works only in those two browsers: Firefox and Safari do not have Web Serial, and the page then
+shows the command line above as the way. You do every step. Download the image
+`zplc-runtime-<version>-esp32-s3-devkitc.bin` and `SHA256SUMS` of the release (the site cannot
+download it for you: GitHub release files carry no cross-origin headers), put the board in
+download mode, choose the file, compare the SHA-256 that the page shows with `SHA256SUMS`, and
+press **Install**. The browser asks you to choose the serial port, and the flasher writes the
+image at address `0x0`, the address of the release manifest. The flash is not erased unless you
+tick the box of the dialog.
+
+import FirmwareFlasher from '@site/src/components/FirmwareFlasher';
+
+<FirmwareFlasher lang="en" />
+
+:::caution The flasher has not written a board
+No one has recorded a flash of the ESP32-S3 with this flasher on a board. The page and its
+manifest are tested in the repository; the write over Web Serial is not.
+:::
 
 ## 4. The command line for every board
 

@@ -36,7 +36,7 @@ export function problemsOf(page: string, version: string, list: Board[]): string
   return problems;
 }
 
-describe('flashing page: every board of the manifest has its image and its command line (REL-024, stopgap: no browser flasher over Web Serial yet)', () => {
+describe('flashing page: every board of the manifest has its image and its command line (REL-024, stopgap: the browser flasher is tested without a board; no flash on a board is recorded)', () => {
   for (const [lang, { path, version }] of Object.entries(PAGES)) {
     const page = readFileSync(join(ROOT, path), 'utf8');
 
@@ -52,6 +52,14 @@ describe('flashing page: every board of the manifest has its image and its comma
       // The DevKitC-1 labels its reset button RST.
       expect(page).toMatch(/BOOT[\s\S]{0,80}(RST|RESET)/);
       expect(page).toMatch(/MCP/);
+    });
+
+    it(`${lang}: offers the browser flasher of the ESP32-S3, says it works in Chrome and Edge only, and keeps the command line`, () => {
+      expect(page).toContain(`<FirmwareFlasher lang="${lang}" />`);
+      expect(page).toMatch(lang === 'en' ? /Chrome or Edge/ : /Chrome o Edge/);
+      expect(page).toMatch(/Firefox/);
+      expect(page).toMatch(/0x0/);
+      expect(page).not.toMatch(/not offered yet|Todavía no se ofrece/);
     });
   }
 
