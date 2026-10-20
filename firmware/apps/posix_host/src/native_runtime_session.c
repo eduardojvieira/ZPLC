@@ -73,6 +73,8 @@ typedef struct {
     uint8_t has_active;
     uint32_t at_ms;
     uint8_t at_ms_state;
+    /* trace.arm: capacity, in_bytes, out_bytes; trace.read: from, count (in that order). */
+    uint32_t trace_values[3];
 } zplc_native_request_t;
 
 static int narrow_uint16(uint32_t value, uint16_t *out)
@@ -366,6 +368,7 @@ static int load_program_artifact(zplc_native_runtime_session_t *session,
 
     if (load_program_tasks(session, program, program_size, details, workspace, workspace_size) != 0) return -1;
     zplc_sched_core_init(&session->core, session->core_slots, ZPLC_LOADER_MAX_TASKS, session->deadline_miss_limit);
+    zplc_sched_core_set_trace(&session->core, zplc_io_trace_sched_hook, &session->io_trace);
     /* A debugger reads a task that ended its scan: its VM stays as the last instruction left it. */
     session->core.keep_halted_vm = 1U;
     for (index = 0U; index < session->task_count; ++index) {
@@ -775,8 +778,8 @@ static int parse_canonical_control_params(const char **cursor,
                                           const char *method,
                                           zplc_native_request_t *request)
 {
-    uint8_t seen = 0U;
-    uint8_t required;
+    uint16_t seen = 0U;
+    uint16_t required;
 
     if (strcmp(method, "memory.read") == 0) {
         required = 0x03U;
@@ -790,6 +793,10 @@ static int parse_canonical_control_params(const char **cursor,
         required = 0x08U;
     } else if (strcmp(method, "force.clear") == 0) {
         required = 0x01U;
+    } else if (strcmp(method, "trace.arm") == 0) {
+        required = 0x70U;
+    } else if (strcmp(method, "trace.read") == 0) {
+        required = 0x180U;
     } else {
         return -1;
     }
@@ -824,6 +831,21 @@ static int parse_canonical_control_params(const char **cursor,
             if (parse_canonical_json_uint32(cursor, &request->pc) != 0) return -1;
             request->pc_state = ZPLC_NATIVE_FIELD_VALID;
             seen |= 0x08U;
+        } else if (strcmp(key, "capacity") == 0 && (required & 0x10U) != 0U && (seen & 0x10U) == 0U) {
+            if (parse_canonical_json_uint32(cursor, &request->trace_values[0]) != 0) return -1;
+            seen |= 0x10U;
+        } else if (strcmp(key, "in_bytes") == 0 && (required & 0x20U) != 0U && (seen & 0x20U) == 0U) {
+            if (parse_canonical_json_uint32(cursor, &request->trace_values[1]) != 0) return -1;
+            seen |= 0x20U;
+        } else if (strcmp(key, "out_bytes") == 0 && (required & 0x40U) != 0U && (seen & 0x40U) == 0U) {
+            if (parse_canonical_json_uint32(cursor, &request->trace_values[2]) != 0) return -1;
+            seen |= 0x40U;
+        } else if (strcmp(key, "from") == 0 && (required & 0x80U) != 0U && (seen & 0x80U) == 0U) {
+            if (parse_canonical_json_uint32(cursor, &request->trace_values[0]) != 0) return -1;
+            seen |= 0x80U;
+        } else if (strcmp(key, "count") == 0 && (required & 0x100U) != 0U && (seen & 0x100U) == 0U) {
+            if (parse_canonical_json_uint32(cursor, &request->trace_values[1]) != 0) return -1;
+            seen |= 0x100U;
         } else {
             return -1;
         }
@@ -900,6 +922,8 @@ static int is_empty_params_method(const char *method)
            strcmp(method, "breakpoint.list") == 0 ||
            strcmp(method, "force.clear_all") == 0 ||
            strcmp(method, "force.list") == 0 ||
+           strcmp(method, "trace.status") == 0 ||
+           strcmp(method, "trace.clear") == 0 ||
            strcmp(method, "session.shutdown") == 0;
 }
 
@@ -911,7 +935,9 @@ static int is_control_params_method(const char *method)
            strcmp(method, "breakpoint.add") == 0 ||
            strcmp(method, "breakpoint.remove") == 0 ||
            strcmp(method, "force.set") == 0 ||
-           strcmp(method, "force.clear") == 0;
+           strcmp(method, "force.clear") == 0 ||
+           strcmp(method, "trace.arm") == 0 ||
+           strcmp(method, "trace.read") == 0;
 }
 
 static int is_safe_request_id(const char *id)
@@ -2084,6 +2110,80 @@ static int handle_scenario_step(zplc_native_runtime_session_t *session,
     return format_status_result(session, response, response_size, request->id);
 }
 
+/* LRN-024: the I/O trace reads the image itself: the host has one thread, so no scan runs while it reads. */
+static int session_trace_read(uint16_t addr, uint8_t *out, uint16_t size)
+{
+    return read_memory_bytes(addr, size, out);
+}
+
+static int format_trace_status(const zplc_native_runtime_session_t *session, const char *id, char *response,
+                               size_t response_size)
+{
+    zplc_io_trace_status_t status;
+
+    zplc_io_trace_get_status(&session->io_trace, &status);
+    return format_jsonf(response, response_size,
+                        "{\"id\":\"%s\",\"type\":\"response\",\"result\":{\"available\":%s,\"armed\":%s,"
+                        "\"capacity\":%lu,\"in_bytes\":%u,\"out_bytes\":%u,\"written\":%lu,\"first\":%lu,"
+                        "\"max_io_bytes\":%u,\"buffer_bytes\":%lu}}",
+                        id, status.fed != 0U ? "true" : "false", status.armed != 0U ? "true" : "false",
+                        (unsigned long)status.capacity, (unsigned)status.in_bytes, (unsigned)status.out_bytes,
+                        (unsigned long)status.written, (unsigned long)status.first,
+                        (unsigned)ZPLC_IO_TRACE_MAX_IO_BYTES, (unsigned long)status.storage_size);
+}
+
+static int handle_trace_arm(zplc_native_runtime_session_t *session, const zplc_native_request_t *request,
+                            char *response, size_t response_size)
+{
+    const uint32_t *values = request->trace_values;
+
+    if (values[1] > ZPLC_IO_TRACE_MAX_IO_BYTES || values[2] > ZPLC_IO_TRACE_MAX_IO_BYTES ||
+        zplc_io_trace_arm(&session->io_trace, values[0], (uint16_t)values[1], (uint16_t)values[2]) < 0) {
+        return format_error_response(request->id, "INVALID_REQUEST",
+                                     "trace.arm needs 1 to 32 input or output bytes and a capacity the ring holds",
+                                     response, response_size);
+    }
+    return format_trace_status(session, request->id, response, response_size);
+}
+
+static int handle_trace_read(const zplc_native_runtime_session_t *session, const zplc_native_request_t *request,
+                             char *response, size_t response_size)
+{
+    zplc_io_trace_status_t status;
+    zplc_io_trace_sample_t sample;
+    char in_hex[(ZPLC_IO_TRACE_MAX_IO_BYTES * 2U) + 1U];
+    char out_hex[(ZPLC_IO_TRACE_MAX_IO_BYTES * 2U) + 1U];
+    uint32_t from;
+    uint32_t seq;
+    uint32_t end;
+    size_t used = 0U;
+
+    if (request->trace_values[1] == 0U || request->trace_values[1] > ZPLC_NATIVE_IO_TRACE_READ_MAX) {
+        return format_error_response(request->id, "INVALID_REQUEST", "trace.read count must be between 1 and 32",
+                                     response, response_size);
+    }
+    zplc_io_trace_get_status(&session->io_trace, &status);
+    /* A reader that fell behind starts at the oldest sample held: the from it gets back says how many it lost. */
+    from = request->trace_values[0] < status.first ? status.first : request->trace_values[0];
+    if (from > status.written) from = status.written;
+    end = status.written - from > request->trace_values[1] ? from + request->trace_values[1] : status.written;
+    if (append_jsonf(response, response_size, &used,
+                     "{\"id\":\"%s\",\"type\":\"response\",\"result\":{\"from\":%lu,\"next\":%lu,\"samples\":[",
+                     request->id, (unsigned long)from, (unsigned long)end) != 0) {
+        return format_failed(response, response_size);
+    }
+    for (seq = from; seq < end; ++seq) {
+        if (zplc_io_trace_get(&session->io_trace, seq, &sample) != 0 ||
+            encode_hex_bytes(sample.in, status.in_bytes, in_hex, sizeof(in_hex)) != 0 ||
+            encode_hex_bytes(sample.out, status.out_bytes, out_hex, sizeof(out_hex)) != 0 ||
+            append_jsonf(response, response_size, &used, "%s[%lu,%lu,\"%s\",\"%s\"]", seq == from ? "" : ",",
+                         (unsigned long)sample.t_us, (unsigned long)sample.batch, in_hex, out_hex) != 0) {
+            return format_failed(response, response_size);
+        }
+    }
+    return append_jsonf(response, response_size, &used, "]}}") == 0 ? (int)used : format_failed(response, response_size);
+}
+
 static int handle_memory_read(const zplc_native_request_t *request,
                               char *response,
                               size_t response_size)
@@ -2347,6 +2447,9 @@ void zplc_native_runtime_session_init(zplc_native_runtime_session_t *session)
 
     memset(session, 0, sizeof(*session));
     zplc_hal_posix_clear_tick_override();
+    zplc_io_trace_init(&session->io_trace, session->io_trace_storage, (uint32_t)sizeof(session->io_trace_storage),
+                       session_port_now_us, session, session_trace_read);
+    (void)zplc_io_trace_attach(&session->io_trace);
     session->state = ZPLC_NATIVE_SESSION_IDLE;
     session->scan_interval_ms = 100U;
     session->deadline_miss_limit = deadline_miss_limit();
@@ -2533,6 +2636,23 @@ int zplc_native_runtime_session_handle_request(zplc_native_runtime_session_t *se
 
     if (strcmp(request.method, "force.list") == 0) {
         return format_force_list_response(&request, response, response_size);
+    }
+
+    if (strcmp(request.method, "trace.status") == 0) {
+        return format_trace_status(session, request.id, response, response_size);
+    }
+
+    if (strcmp(request.method, "trace.arm") == 0) {
+        return handle_trace_arm(session, &request, response, response_size);
+    }
+
+    if (strcmp(request.method, "trace.read") == 0) {
+        return handle_trace_read(session, &request, response, response_size);
+    }
+
+    if (strcmp(request.method, "trace.clear") == 0) {
+        zplc_io_trace_clear(&session->io_trace);
+        return format_trace_status(session, request.id, response, response_size);
     }
 
     if (strcmp(request.method, "session.shutdown") == 0) {

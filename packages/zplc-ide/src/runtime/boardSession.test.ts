@@ -37,3 +37,28 @@ describe('the read-only board session (LRN-015, LRN-024)', () => {
     expect(boardSessionOf({ connected: true, serialAdapter: null, systemInfo: null })).toBeNull();
   });
 });
+
+describe('the I/O trace of the board session (LRN-024, LRN-015)', () => {
+  it('LRN-024 reads the per-scan trace through the shell commands of `zplc dbg trace`, which only read', async () => {
+    const commands: string[] = [];
+    const status = { t: 'trace', available: true, armed: true, capacity: 200, in_bytes: 1, out_bytes: 1, written: 2, first: 0, max_io_bytes: 32, buffer_bytes: 2048 };
+    const adapter = {
+      connected: true, state: 'running', readWatchVariables: async (variables: WatchVariable[]) => variables,
+      deviceTraceCommand: async (command: string) => {
+        commands.push(command);
+        return command.includes('dump') ? { t: 'trace_dump', from: 0, samples: [[0, 1, '01', '11'], [10000, 2, '00', '00']], next: 2 } : status;
+      },
+    };
+    const view = boardSessionOf({ connected: true, serialAdapter: adapter, systemInfo: null } as unknown as BoardSessionSource)!;
+    expect(await view.trace!.arm(0, 1, 1)).toMatchObject({ available: true, inBytes: 1, outBytes: 1, maxIoBytes: 32 });
+    const chunk = await view.trace!.read(0, 32);
+    expect(chunk.samples.map((sample) => [sample.seq, sample.tUs, sample.batch, [...sample.inputs], [...sample.outputs]])).toEqual([[0, 0, 1, [1], [0x11]], [1, 10000, 2, [0], [0]]]);
+    await view.trace!.clear();
+    expect(commands).toEqual(['zplc dbg trace arm 0 1 1', 'zplc dbg trace dump 0 32', 'zplc dbg trace clear']);
+  });
+
+  it('LRN-024 has no trace for a session that cannot ask its shell', () => {
+    const { source } = fakeSource(true, null);
+    expect(boardSessionOf(source)!.trace).toBeNull();
+  });
+});

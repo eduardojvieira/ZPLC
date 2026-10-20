@@ -13,6 +13,7 @@ import { learnerBoardOf } from '../learn/learnerBoards';
 import type { ScenarioExpectation, ScenarioFile } from '../learn/lessonPackage';
 import { useLearnProgress } from '../learn/progressState';
 import { boardSessionOf } from '../runtime/boardSession';
+import { useDeployedProgram } from '../store/deployedProgram';
 import { useIDEStore } from '../store/useIDEStore';
 import { Button } from '../ui';
 import { announce } from '../utils/announce';
@@ -29,6 +30,8 @@ export interface LearnBoardCheckViewProps {
   steps: readonly BoardCheckStep[];
   /** The step the learner is on while the check records; -1 once every step was seen; null when no check runs. */
   step: number | null;
+  /** The check is armed and waits for the learner to press Run in the toolbar. */
+  waitingForRun?: boolean;
   outcome: BoardCheckOutcome | null;
   expectations: readonly ScenarioExpectation[];
   onRun(): void;
@@ -57,11 +60,11 @@ function outcomeText(outcome: BoardCheckOutcome, t: Translate): string {
   return outcome.record.result === 'passed' ? t('learn.hardware.check.passed', { passed, total }) : t('learn.hardware.check.failed', { passed, total });
 }
 
-export function LearnBoardCheckView({ readiness, board, missing, steps, step, outcome, expectations, onRun, onCancel }: LearnBoardCheckViewProps) {
+export function LearnBoardCheckView({ readiness, board, missing, steps, step, waitingForRun = false, outcome, expectations, onRun, onCancel }: LearnBoardCheckViewProps) {
   const { t, locale } = useT();
   const running = step !== null;
   const status = running
-    ? step === -1 ? t('learn.hardware.check.waiting') : t('learn.hardware.check.step', { number: step + 1, total: steps.length, action: steps[step] ? stepAction(steps[step]!, t) : '' })
+    ? waitingForRun ? t('learn.hardware.check.press-run') : step === -1 ? t('learn.hardware.check.waiting') : t('learn.hardware.check.step', { number: step + 1, total: steps.length, action: steps[step] ? stepAction(steps[step]!, t) : '' })
     : outcome ? outcomeText(outcome, t) : '';
   const failures = outcome?.kind === 'graded' ? outcome.record.failedAssertions : [];
   return (
@@ -102,13 +105,15 @@ export function LearnBoardCheck({ lessonId }: { lessonId: string }) {
   useIDEStore((state) => state.connection.status);
   useIDEStore((state) => state.connection.plcState);
   const [step, setStep] = useState<number | null>(null);
+  const [waitingForRun, setWaitingForRun] = useState(false);
+  const programSha256 = useDeployedProgram((state) => state.sha256);
   const [outcome, setOutcome] = useState<BoardCheckOutcome | null>(null);
   const [missing, setMissing] = useState<string[]>([]);
   const cancel = useRef<AbortController | null>(null);
   const entry = LESSON_INDEX.lessons.find((lesson) => lesson.id === lessonId);
   const scenario = learnLessonCatalog[locale].find((lesson) => lesson.id === lessonId)?.scenario as ScenarioFile | undefined;
   const view = boardSessionOf();
-  const readiness = boardCheckReadiness(board, view, debugMap);
+  const readiness = boardCheckReadiness(board, view, debugMap, scenario ?? null);
   const wiringBoard = board ? learnerBoardOf(board) ?? null : null;
   const steps = debugMap && wiringBoard && entry?.hardware && scenario ? boardCheckSteps(scenario, debugMap, wiringBoard, entry.hardware.wiring, locale) : [];
 
@@ -124,6 +129,8 @@ export function LearnBoardCheck({ lessonId }: { lessonId: string }) {
     const result = await runBoardCheck({
       lessonId, lessonVersion: entry.version, scenario, scenarioSha256: entry.scenario.sha256, tolerances: entry.hardware.tolerances, debugMap, view, variables,
       now: () => performance.now(), wait: (ms) => new Promise((resolve) => { window.setTimeout(resolve, ms); }), cancel: controller.signal, time: () => new Date(),
+      programSha256,
+      onWaitingForRun: (waiting) => { setWaitingForRun(waiting); if (waiting) announce(t('learn.hardware.check.press-run')); },
       onStep: (next) => {
         setStep(next);
         announce(next === -1 ? t('learn.hardware.check.waiting') : t('learn.hardware.check.step', { number: next + 1, total: steps.length, action: steps[next] ? stepAction(steps[next]!, t) : '' }));
@@ -131,6 +138,7 @@ export function LearnBoardCheck({ lessonId }: { lessonId: string }) {
     });
     cancel.current = null;
     setStep(null);
+    setWaitingForRun(false);
     setOutcome(result);
     announce(outcomeText(result, t));
     if (result.kind === 'graded') void useLearnProgress.getState().recordGrade(result.record);
@@ -138,7 +146,7 @@ export function LearnBoardCheck({ lessonId }: { lessonId: string }) {
 
   return (
     <LearnBoardCheckView
-      readiness={readiness} board={board} missing={missing} steps={steps} step={step} outcome={outcome} expectations={scenario?.expectations ?? []}
+      readiness={readiness} board={board} missing={missing} steps={steps} step={step} waitingForRun={waitingForRun} outcome={outcome} expectations={scenario?.expectations ?? []}
       onRun={() => { void run(); }} onCancel={() => cancel.current?.abort()}
     />
   );

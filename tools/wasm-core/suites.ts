@@ -57,7 +57,7 @@ export const SUITES: Suite[] = [
     name: 'test_sched_equivalence', category: 'scheduler', file: 'test_sched_equivalence.c',
     sources: [
       join(session, 'native_runtime_session.c'), join(session, 'native_program_store.c'), ...VM,
-      ...['zplc_retain', 'zplc_program_store', 'zplc_sched_core', 'zplc_exchange', 'zplc_failsafe'].map(src), HAL,
+      ...['zplc_retain', 'zplc_program_store', 'zplc_sched_core', 'zplc_exchange', 'zplc_failsafe', 'zplc_io_trace'].map(src), HAL,
     ],
   },
   {

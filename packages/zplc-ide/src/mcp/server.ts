@@ -7,7 +7,8 @@ import * as z from 'zod/v4';
 import idePackage from '../../package.json';
 import { directoryIdentity, sameDirectoryIdentity, type DirectoryIdentity } from '../cli/firmwareBuildRunner';
 import * as toolApi from '../cli/toolApi';
-import { LESSON_IDS as LEARN_LESSON_IDS } from '../generated/lessonIndex';
+import { LESSON_IDS as LEARN_LESSON_IDS, LESSON_INDEX } from '../generated/lessonIndex';
+import { passedIn } from '../learn/course';
 import { LEARN_PROGRESS_FILENAME, LEARN_PROGRESS_LEGACY_FILENAME, LEARN_PROGRESS_MAX_BYTES, emptyProgress, migrateLegacyMastery, parseProgress, type LearnProgress } from '../../electron/learnProgressModel';
 
 const MAX_OUTPUT_BYTES = 512 * 1024;
@@ -383,8 +384,9 @@ export async function courseProgressResource(workspace: McpWorkspace): Promise<R
   }
   if (!await sameUserData()) return { ok: false, error: 'MCP_WORKSPACE_CHANGED' };
   if (!progress) return { ok: false, error: 'MCP_INTERNAL_ERROR' };
-  // Only lessons this build knows are reported; progress for any other lesson is kept inert in the file.
-  const mastered = LEARN_LESSON_IDS.filter((id) => progress!.lessons[id]?.state === 'passed');
+  // Only lessons this build knows are reported; progress for any other lesson is kept inert in the file. A lesson is passed
+  // as the course counts it: a hardware-only lesson by its passing hardware check (LRN-024).
+  const mastered = LEARN_LESSON_IDS.filter((id) => passedIn(LESSON_INDEX, id, progress!));
   return { ok: true, schemaVersion: 1, mastered, completed: mastered.length, total: LEARN_LESSON_IDS.length };
 }
 

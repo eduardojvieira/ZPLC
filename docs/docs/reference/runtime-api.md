@@ -28,6 +28,7 @@ The Spanish wrapper text is localized, while API names, signatures, and source-d
 - `firmware/lib/zplc_core/include/zplc_failsafe.h`
 - `firmware/lib/zplc_core/include/zplc_hal.h`
 - `firmware/lib/zplc_core/include/zplc_hal_posix.h`
+- `firmware/lib/zplc_core/include/zplc_io_trace.h`
 - `firmware/lib/zplc_core/include/zplc_isa.h`
 - `firmware/lib/zplc_core/include/zplc_loader.h`
 - `firmware/lib/zplc_core/include/zplc_program_store.h`
@@ -2947,6 +2948,165 @@ None.
 | Name | Value | Source summary |
 | --- | --- | --- |
 | `ZPLC_HAL_POSIX_H` | `—` | — |
+
+## `zplc_io_trace.h`
+
+A trace of the process image recorded on the device, one sample per scan, read afterwards (LRN-024).
+
+The hardware check of a lesson compares what a board did with the lesson's reference scenario. Read over the serial link a hundred milliseconds apart, the board's inputs and outputs are too coarse for a scenario whose assertions are ten milliseconds apart. This trace is recorded where the scan happens: the scheduler core calls zplc_io_trace_sched_hook() through its trace port, and at the end of every scan that wrote its outputs the trace keeps one sample: the instant the scan latched its inputs, the scan's number in its run (1 is the first scan after a start), and the first bytes of the input and the output images. Studio reads the samples afterwards, in chunks. The trace only reads. Arming, reading and clearing it never write PLC memory, never force and never start or stop a program. Storage is a ring of fixed-size samples in a buffer the platform supplies: the newest sample overwrites the oldest once the ring is full, and every sample has a sequence number, counted from 0 at the arm, so a reader that fell behind sees which samples it lost. One writer (the scan) and readers on threads that cannot preempt it in the middle of a sample (a lower priority on one core, or the same thread on the host): a read copies the slot and then checks that the writer has not reached it again meanwhile. Cost per scan: a clock read at the input latch; at the output commit, two reads of the image and one copy of at most 8 + 2 x ZPLC_IO_TRACE_MAX_IO_BYTES bytes. No loop depends on the capacity. A trace that is not armed costs a test.
+
+Source: `firmware/lib/zplc_core/include/zplc_io_trace.h`
+
+### Functions
+
+#### `zplc_io_trace_init`
+
+```c
+void zplc_io_trace_init(zplc_io_trace_t *trace, uint8_t *storage, uint32_t storage_size, uint64_t (*now_us)(void *ctx), void *clock_ctx, int (*read)(uint16_t addr, uint8_t *out, uint16_t size));
+```
+
+**Source summary:** Prepare a trace over a buffer. It is not fed and not armed.
+
+**Parameters**
+
+| Name | Type | Source description |
+| --- | --- | --- |
+| `trace` | `zplc_io_trace_t *` | — |
+| `storage` | `uint8_t *` | — |
+| `storage_size` | `uint32_t` | — |
+| `uint64_t (*now_us)(void *ctx)` | `—` | — |
+| `clock_ctx` | `void *` | — |
+| `addr` | `int (*read)(uint16_t` | — |
+| `out` | `uint8_t *` | — |
+| `uint16_t size)` | `—` | — |
+
+#### `zplc_io_trace_attach`
+
+```c
+zplc_io_trace_t *zplc_io_trace_attach(zplc_io_trace_t *trace);
+```
+
+**Source summary:** Say that a scheduler calls the hook with this trace. Returns the trace, for zplc_sched_core_set_trace().
+
+**Parameters**
+
+| Name | Type | Source description |
+| --- | --- | --- |
+| `trace` | `zplc_io_trace_t *` | — |
+
+#### `zplc_io_trace_arm`
+
+```c
+int zplc_io_trace_arm(zplc_io_trace_t *trace, uint32_t capacity, uint16_t in_bytes, uint16_t out_bytes);
+```
+
+**Source summary:** Empty the trace and start keeping samples of the first in_bytes input and out_bytes output bytes.
+
+**Parameters**
+
+| Name | Type | Source description |
+| --- | --- | --- |
+| `trace` | `zplc_io_trace_t *` | — |
+| `capacity` | `uint32_t` | samples to keep; 0 keeps as many as the buffer holds |
+| `in_bytes` | `uint16_t` | — |
+| `out_bytes` | `uint16_t` | — |
+
+**Source return value:** the capacity armed, ZPLC_IO_TRACE_ERR_ARGS, or ZPLC_IO_TRACE_ERR_UNFED
+
+#### `zplc_io_trace_clear`
+
+```c
+void zplc_io_trace_clear(zplc_io_trace_t *trace);
+```
+
+**Source summary:** Stop keeping samples and forget the ones kept.
+
+**Parameters**
+
+| Name | Type | Source description |
+| --- | --- | --- |
+| `trace` | `zplc_io_trace_t *` | — |
+
+#### `zplc_io_trace_get_status`
+
+```c
+void zplc_io_trace_get_status(const zplc_io_trace_t *trace, zplc_io_trace_status_t *status);
+```
+
+**Source summary:** No summary found in the header comment.
+
+**Parameters**
+
+| Name | Type | Source description |
+| --- | --- | --- |
+| `trace` | `const zplc_io_trace_t *` | — |
+| `status` | `zplc_io_trace_status_t *` | — |
+
+#### `zplc_io_trace_get`
+
+```c
+int zplc_io_trace_get(const zplc_io_trace_t *trace, uint32_t seq, zplc_io_trace_sample_t *sample);
+```
+
+**Source summary:** Copy the sample with sequence number seq.
+
+**Parameters**
+
+| Name | Type | Source description |
+| --- | --- | --- |
+| `trace` | `const zplc_io_trace_t *` | — |
+| `seq` | `uint32_t` | — |
+| `sample` | `zplc_io_trace_sample_t *` | — |
+
+**Source return value:** 0, or -1 when the trace does not hold it (not yet written, or overwritten)
+
+#### `zplc_io_trace_sched_hook`
+
+```c
+void zplc_io_trace_sched_hook(void *ctx, zplc_sched_trace_kind_t kind, uint16_t task_id, uint64_t a, uint64_t b);
+```
+
+**Source summary:** The trace sink of the scheduler core (zplc_sched_trace_fn); ctx is the zplc_io_trace_t.
+
+**Parameters**
+
+| Name | Type | Source description |
+| --- | --- | --- |
+| `ctx` | `void *` | — |
+| `kind` | `zplc_sched_trace_kind_t` | — |
+| `task_id` | `uint16_t` | — |
+| `a` | `uint64_t` | — |
+| `b` | `uint64_t` | — |
+
+#### `zplc_io_trace_board`
+
+```c
+zplc_io_trace_t *zplc_io_trace_board(void);
+```
+
+**Source summary:** The trace of the board: CONFIG_ZPLC_IO_TRACE_BUFFER_SIZE bytes, timestamps from the HAL tick (whole milliseconds), and reads from the snapshot of the exchange (RT-010). The scheduler attaches it.
+
+**Parameters**
+
+| Name | Type | Source description |
+| --- | --- | --- |
+| — | — | None. |
+
+### Types
+
+| Name | Kind | Source summary |
+| --- | --- | --- |
+| `t_us` | Struct | One sample, as a reader gets it. |
+| `storage` | Struct | A trace. The platform owns it and its storage; every member is private to zplc_io_trace.c. |
+| `fed` | Struct | What a reader is told about a trace. |
+
+### Constants and macros
+
+| Name | Value | Source summary |
+| --- | --- | --- |
+| `ZPLC_IO_TRACE_H` | `—` | — |
+| `ZPLC_IO_TRACE_MAX_IO_BYTES` | `32U` | The most bytes of the input image, and of the output image, that one sample holds. |
+| `ZPLC_IO_TRACE_SAMPLE_HEADER` | `8U` | Bytes of a stored sample besides its image bytes: the time (u32) and the scan number (u32). |
 
 ## `zplc_isa.h`
 

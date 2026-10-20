@@ -9,6 +9,7 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import type { GradeRecord } from '../../electron/learnProgressModel';
 import { LESSON_INDEX } from '../generated/lessonIndex';
 import type { IDebugAdapter, WatchVariable } from '../runtime/debugAdapter';
+import type { DeviceTrace } from '../runtime/deviceTrace';
 import { evaluateHardwareTrace } from './hardwareCheck';
 import { recordHardwareTrace } from './hardwareRecorder';
 import { useLearnBoard } from './learnBoard';
@@ -110,10 +111,35 @@ describe('Learn starts no physical operation by itself (LRN-015)', () => {
     let clock = 0;
     const checked = await runBoardCheck({
       lessonId: LESSON, lessonVersion: 1, scenario: { schemaVersion: 1, id: 'S', tickMs: 50, durationMs: 300, events: [], expectations: [{ kind: 'ALWAYS', condition: { Lamp: false } }] },
-      scenarioSha256: 'a'.repeat(64), tolerances: { timeMs: 130, analogPercent: 5 }, debugMap: { pou: {} } as never, view: { session, boardId: 'esp32-s3-devkitc', runtimeVersion: '2.0.0' },
+      scenarioSha256: 'a'.repeat(64), tolerances: { timeMs: 130, analogPercent: 5 }, debugMap: { pou: {} } as never, view: { session, trace: null, boardId: 'esp32-s3-devkitc', runtimeVersion: '2.0.0' },
       variables: [{ name: 'Lamp', address: 0x1000, bitOffset: 0, type: 'BOOL', forceable: false }], now: () => clock, wait: async (ms) => { clock += ms; }, time: () => new Date('2026-10-20T10:00:00.000Z'),
     });
     expect(checked.kind).toBe('graded');
+    // "Arm, then the learner presses Run" on a board that keeps a device trace: the check arms and reads the trace, and the
+    // program is started by the learner (here the test), never by Learn.
+    const traceCalls: string[] = [];
+    const stopped = new Proxy({ connected: true, state: 'idle' } as Record<string, unknown>, {
+      get: (target, key) => (key === 'connected' || key === 'state' ? target[key]
+        : typeof key === 'string' ? async () => { bridgeCalls.push(`session.${key}`); } : undefined),
+      set: (target, key, value) => { target[key as string] = value; return true; },
+    }) as unknown as IDebugAdapter & { state: string };
+    const status = { available: true, armed: true, capacity: 100, inBytes: 0, outBytes: 1, written: 0, first: 0, maxIoBytes: 32 };
+    let scans = 0;
+    const deviceTrace: DeviceTrace = {
+      status: async () => { traceCalls.push('status'); return status; },
+      arm: async () => { traceCalls.push('arm'); return status; },
+      read: async (from) => { traceCalls.push('read'); const samples = Array.from({ length: Math.max(0, scans - from) }, (_, index) => ({ seq: from + index, tUs: (from + index) * 50_000, batch: from + index + 1, inputs: new Uint8Array(0), outputs: Uint8Array.of(0) })); return { from, next: from + samples.length, samples }; },
+      clear: async () => { traceCalls.push('clear'); return status; },
+    };
+    let armedClock = 0;
+    const armed = await runBoardCheck({
+      lessonId: LESSON, lessonVersion: 1, scenario: { schemaVersion: 1, id: 'S', tickMs: 50, durationMs: 300, events: [], expectations: [{ kind: 'ALWAYS', condition: { Lamp: false } }] },
+      scenarioSha256: 'a'.repeat(64), tolerances: { timeMs: 60, analogPercent: 5 }, debugMap: { pou: {} } as never, view: { session: stopped, trace: deviceTrace, boardId: 'esp32-s3-devkitc', runtimeVersion: '2.0.0' },
+      variables: [{ name: 'Lamp', address: 0x1000, bitOffset: 0, type: 'BOOL', forceable: false }], now: () => armedClock, time: () => new Date('2026-10-20T10:00:00.000Z'),
+      wait: async (ms) => { armedClock += ms; if (armedClock >= 200) { stopped.state = 'running'; scans += 2; } },
+    });
+    expect(armed.kind).toBe('graded');
+    expect(new Set(traceCalls)).toEqual(new Set(['status', 'arm', 'read', 'clear']));
 
     // The check reached the lesson check of the bridge, so the controls above were really driven.
     expect(bridgeCalls).toContain('workspaceTests.lessonCheck');

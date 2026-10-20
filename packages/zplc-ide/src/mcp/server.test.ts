@@ -1,4 +1,5 @@
 import { createHash } from 'node:crypto';
+import { hardwareGradeRecordOf } from '../learn/hardwareCheck';
 import { mkdtemp, mkdir, readFile, readdir, rm, symlink, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -97,6 +98,16 @@ describe('local MCP adapter', () => {
     const lesson = { state: 'passed', grade: null, passedAt: null, startedAt: null, hintsShown: [], solutionShown: false };
     await writeFile(join(userData, 'zplc-learn-progress.v2.json'), JSON.stringify({ schemaVersion: 3, last: null, lessons: { 'edge-counter-pulses': lesson, 'scan-cycle-one-scan-memory': lesson } }));
     await expect(courseProgressResource({ ...bound, userData: user })).resolves.toEqual(progress({ mastered: ['edge-counter-pulses', 'scan-cycle-one-scan-memory'], completed: 2 }));
+    // LRN-024: a hardware-only lesson is passed by its passing hardware check, as the course counts it; a hardware run of a
+    // lesson that has a simulation track does not pass it.
+    const hardwareRun = (lessonId: string) => hardwareGradeRecordOf({
+      lessonId, lessonVersion: 1, scenario: { schemaVersion: 1, id: 'S', tickMs: 10, durationMs: 10, events: [], expectations: [{ kind: 'AT', atMs: 0, condition: { Led: true } }] },
+      scenarioSha256: 'b'.repeat(64), programSha256: 'c'.repeat(64), runtimeVersion: '2.0.0', time: new Date('2026-10-20T10:00:00.000Z'),
+      trace: [{ atMs: 0, values: { Led: true } }], traceSha256: 'd'.repeat(64), tolerances: { timeMs: 20, analogPercent: 5 },
+    });
+    const onBoard = (lessonId: string) => ({ state: 'in-progress', grade: null, passedAt: null, startedAt: null, hintsShown: [], solutionShown: false, hardware: hardwareRun(lessonId) });
+    await writeFile(join(userData, 'zplc-learn-progress.v2.json'), JSON.stringify({ schemaVersion: 4, last: null, lessons: { 'verify-my-board': onBoard('verify-my-board'), 'blink-structured-text': onBoard('blink-structured-text') } }));
+    await expect(courseProgressResource({ ...bound, userData: user })).resolves.toEqual(progress({ mastered: ['verify-my-board'], completed: 1 }));
     await writeFile(join(userData, 'zplc-learn-progress.v2.json'), '{"schemaVersion":2,"last":null,"lessons":{"x":{}}}');
     await expect(courseProgressResource({ ...bound, userData: user })).resolves.toEqual({ ok: false, error: 'MCP_INTERNAL_ERROR' });
     await rm(join(userData, 'zplc-learn-progress.v2.json')); await rm(join(userData, 'zplc-learn-mastery.v1.json')); await symlink('/etc/passwd', join(userData, 'zplc-learn-mastery.v1.json'));

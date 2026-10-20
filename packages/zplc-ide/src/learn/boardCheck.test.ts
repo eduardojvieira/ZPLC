@@ -5,8 +5,9 @@ import { describe, expect, it } from 'bun:test';
 
 import type { DebugMap } from '../compiler';
 import type { BoardSessionView } from '../runtime/boardSession';
+import type { DeviceTrace, DeviceTraceSample } from '../runtime/deviceTrace';
 import type { VMState, WatchVariable } from '../runtime/debugAdapter';
-import { boardCheckReadiness, boardCheckSteps, lessonWatchVariables, runBoardCheck } from './boardCheck';
+import { boardCheckReadiness, boardCheckSteps, lessonWatchVariables, needsRunStart, runBoardCheck } from './boardCheck';
 import { learnerBoardOf } from './learnerBoards';
 import type { ScenarioFile } from './lessonPackage';
 
@@ -42,10 +43,11 @@ function fakeView(state: VMState, boardId: string | null, button: (atMs: number)
 
 describe('when the check on the board may run (LRN-013, LRN-015)', () => {
   const view = (state: VMState, boardId: string | null) => fakeView(state, boardId, () => false, () => 0).view;
-  it('LRN-015 waits for the learner: a chosen board, a connected session, a running program and a build', () => {
+  it('LRN-015 waits for the learner: a chosen board, a connected session, a running or stopped program and a build', () => {
     expect(boardCheckReadiness(null, view('running', 'rpi-pico-rp2040'), DEBUG_MAP)).toEqual({ ready: false, block: 'no-board', reported: null });
     expect(boardCheckReadiness('rpi-pico-rp2040', null, DEBUG_MAP)).toEqual({ ready: false, block: 'not-connected', reported: null });
-    expect(boardCheckReadiness('rpi-pico-rp2040', view('idle', 'rpi-pico-rp2040'), DEBUG_MAP)).toEqual({ ready: false, block: 'not-running', reported: null });
+    expect(boardCheckReadiness('rpi-pico-rp2040', view('paused', 'rpi-pico-rp2040'), DEBUG_MAP)).toEqual({ ready: false, block: 'not-running', reported: null });
+    expect(boardCheckReadiness('rpi-pico-rp2040', view('idle', 'rpi-pico-rp2040'), DEBUG_MAP)).toEqual({ ready: true });
     expect(boardCheckReadiness('rpi-pico-rp2040', view('running', 'rpi-pico-rp2040'), null)).toEqual({ ready: false, block: 'no-build', reported: null });
     expect(boardCheckReadiness('rpi-pico-rp2040', view('running', 'rpi-pico-rp2040'), DEBUG_MAP)).toEqual({ ready: true });
   });
@@ -53,6 +55,18 @@ describe('when the check on the board may run (LRN-013, LRN-015)', () => {
   it('LRN-013 names a board that is not the one the learner chose, and one that does not say which it is', () => {
     expect(boardCheckReadiness('rpi-pico-rp2040', view('running', 'esp32-s3-devkitc'), DEBUG_MAP)).toEqual({ ready: false, block: 'wrong-board', reported: 'esp32-s3-devkitc' });
     expect(boardCheckReadiness('rpi-pico-rp2040', view('running', null), DEBUG_MAP)).toEqual({ ready: false, block: 'board-unreported', reported: null });
+  });
+});
+
+describe('a lesson whose result depends on when the program started (LRN-024)', () => {
+  const view = (state: VMState) => fakeView(state, 'rpi-pico-rp2040', () => false, () => 0).view;
+  const BLINK: ScenarioFile = { ...SCENARIO, events: [], expectations: [{ kind: 'AT', atMs: 750, condition: { 'VerifyBoard.Led': true } }] };
+  it('LRN-024 asks the learner to stop a running program first, and runs the check of a stopped one', () => {
+    expect(needsRunStart(BLINK)).toBe(true);
+    expect(needsRunStart(SCENARIO)).toBe(false);
+    expect(boardCheckReadiness('rpi-pico-rp2040', view('running'), DEBUG_MAP, BLINK)).toEqual({ ready: false, block: 'stop-first', reported: null });
+    expect(boardCheckReadiness('rpi-pico-rp2040', view('idle'), DEBUG_MAP, BLINK)).toEqual({ ready: true });
+    expect(boardCheckReadiness('rpi-pico-rp2040', view('running'), DEBUG_MAP, SCENARIO)).toEqual({ ready: true });
   });
 });
 
@@ -112,5 +126,46 @@ describe('a check on the board grades a run on hardware (LRN-024, LRN-015)', () 
     const stopped = await run(learner, { stopAt: 1000 });
     expect(stopped.outcome).toEqual({ kind: 'stopped', reason: 'session-ended' });
     expect(new Set([...cancelled.calls, ...stopped.calls])).toEqual(new Set(['readWatchVariables']));
+  });
+});
+
+describe('a check on a board that keeps a device trace: arm, then the learner presses Run (LRN-024, LRN-015)', () => {
+  it('LRN-024 arms in STOP, waits for Run, grades from the first scan of the run at the declared tolerance, and keeps the deployed hash', async () => {
+    // SYNTHETIC device: once the learner presses Run (at 250 ms of the check), it scans every 10 ms; the button is held from
+    // 220 ms to 420 ms of the run and the LED follows it a scan later.
+    let now = 0;
+    const scans: DeviceTraceSample[] = [];
+    const calls: string[] = [];
+    const session = { connected: true, state: 'idle' as VMState };
+    const trace: DeviceTrace = {
+      status: async () => { calls.push('status'); return { available: true, armed: false, capacity: 200, inBytes: 1, outBytes: 1, written: 0, first: 0, maxIoBytes: 32 }; },
+      arm: async () => { calls.push('arm'); return { available: true, armed: true, capacity: 200, inBytes: 1, outBytes: 1, written: 0, first: 0, maxIoBytes: 32 }; },
+      read: async (from, count) => { calls.push('read'); const chunk = scans.slice(from, from + count); return { from, next: from + chunk.length, samples: chunk }; },
+      clear: async () => { calls.push('clear'); return { available: true, armed: false, capacity: 0, inBytes: 0, outBytes: 0, written: 0, first: 0, maxIoBytes: 32 }; },
+    };
+    const run = (at: number) => at - 250; // Run is pressed between two reads: the first read finds several scans
+    const waiting: boolean[] = [];
+    const outcome = await runBoardCheck({
+      lessonId: 'verify-my-board', lessonVersion: 1, scenario: SCENARIO, scenarioSha256: 'a'.repeat(64), tolerances: { timeMs: 20, analogPercent: 5 },
+      debugMap: DEBUG_MAP, view: { session, trace, boardId: 'rpi-pico-rp2040', runtimeVersion: '2.0.0' }, variables: lessonWatchVariables(SCENARIO, DEBUG_MAP).variables,
+      now: () => now, programSha256: 'd'.repeat(64), onWaitingForRun: (value) => waiting.push(value), time: () => new Date('2026-10-20T10:00:00.000Z'),
+      wait: async (ms) => {
+        for (let step = 0; step < ms; step += 10) {
+          now += 10;
+          if (now === 250) session.state = 'running'; // the learner presses Run in the toolbar
+          if (run(now) >= 0) {
+            const t = run(now);
+            const pressed = t >= 220 && t < 420;
+            const led = t - 10 >= 220 && t - 10 < 420;
+            scans.push({ seq: scans.length, tUs: 5_000_000 + t * 1000, batch: scans.length + 1, inputs: Uint8Array.of(pressed ? 1 : 0), outputs: Uint8Array.of(led ? 1 : 0) });
+          }
+        }
+      },
+    });
+    expect(waiting).toEqual([true, false]);
+    expect(outcome.kind).toBe('graded');
+    if (outcome.kind !== 'graded') return;
+    expect(outcome.record).toMatchObject({ track: 'hardware', result: 'passed', programSha256: 'd'.repeat(64) });
+    expect(new Set(calls)).toEqual(new Set(['status', 'arm', 'read', 'clear']));
   });
 });

@@ -505,6 +505,27 @@ config ZPLC_RETAIN_CHUNK_SIZE
 
 endif # ZPLC_RETAIN_PERSIST
 
+config ZPLC_IO_TRACE
+    bool "Per-scan trace of the input and output images (Learn hardware check)"
+    default y if SOC_SERIES_RP2040 || SOC_SERIES_ESP32S3
+    help
+      Keeps, at the end of every scan, the instant the scan latched its inputs, the scan's number in its run and
+      the first bytes of the input and output images, in a ring that Studio reads with 'zplc dbg trace' (LRN-024).
+      The hardware check of a Learn lesson grades that trace instead of reading the board over serial every
+      100 ms, so its time tolerance is one scan, not one serial round trip. It only reads: it never writes PLC
+      memory, forces, or starts or stops a program. On by default on the two learner boards (Raspberry Pi Pico,
+      ESP32-S3); off elsewhere.
+
+config ZPLC_IO_TRACE_BUFFER_SIZE
+    int "Bytes of the I/O trace ring"
+    depends on ZPLC_IO_TRACE
+    default 2048
+    range 256 65536
+    help
+      A sample takes 8 bytes plus the input and output bytes it keeps (at most 32 of each). Studio reads the
+      ring while the check runs, a chunk every 100 ms or so, so the ring needs to hold a few hundred milliseconds
+      of scans. The default holds 204 samples of one input and one output byte, two seconds at a 10 ms scan.
+
 endif # ZPLC_SCHEDULER
 
 # -----------------------------------------------------------------------------

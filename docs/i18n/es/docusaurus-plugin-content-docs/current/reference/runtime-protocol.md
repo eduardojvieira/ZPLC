@@ -9,7 +9,7 @@ tags: [reference, generated]
 
 {/* >>> GENERATED (tools/docs/generate_source_references.ts): reference/runtime-protocol. Do not edit. >>> */}
 
-El runtime POSIX nativo, el que usan las simulaciones y CI, es un proceso que recibe una solicitud JSON por línea en la entrada estándar y responde en la salida estándar. Esta es la versión `1.0` del protocolo: 22 métodos. Una solicitud tiene un `id`, un `type` con valor `request`, un `method` y un objeto `params`; cada parámetro indicado para un método es obligatorio y no se acepta ningún otro. La consola del dispositivo es otra interfaz: véanse los [comandos de la consola](./shell-commands.md).
+El runtime POSIX nativo, el que usan las simulaciones y CI, es un proceso que recibe una solicitud JSON por línea en la entrada estándar y responde en la salida estándar. Esta es la versión `1.0` del protocolo: 26 métodos. Una solicitud tiene un `id`, un `type` con valor `request`, un `method` y un objeto `params`; cada parámetro indicado para un método es obligatorio y no se acepta ningún otro. La consola del dispositivo es otra interfaz: véanse los [comandos de la consola](./shell-commands.md).
 
 Esta tabla se lee del archivo fuente `firmware/apps/posix_host/src/native_runtime_session.c`; su texto es el de la propia fuente, por eso es igual en inglés y en español.
 
@@ -24,6 +24,8 @@ Esta tabla se lee del archivo fuente `firmware/apps/posix_host/src/native_runtim
 | `breakpoint.add` | `pc` |
 | `breakpoint.remove` | `pc` |
 | `force.clear` | `address` |
+| `trace.arm` | `capacity`, `in_bytes`, `out_bytes` |
+| `trace.read` | `from`, `count` |
 | `execution.start` | ninguno |
 | `execution.stop` | ninguno |
 | `execution.reset` | ninguno |
@@ -35,6 +37,8 @@ Esta tabla se lee del archivo fuente `firmware/apps/posix_host/src/native_runtim
 | `breakpoint.list` | ninguno |
 | `force.clear_all` | ninguno |
 | `force.list` | ninguno |
+| `trace.status` | ninguno |
+| `trace.clear` | ninguno |
 | `session.shutdown` | ninguno |
 | `session.hello` | `client_name`, `client_version`, `protocol_version` |
 | `simulation.input.set` | `input_id`, `active`, `program_generation` |
@@ -49,6 +53,11 @@ Esta tabla se lee del archivo fuente `firmware/apps/posix_host/src/native_runtim
 | `length` | Number of bytes. |
 | `bytes_hex` | The bytes, as an upper-case hexadecimal string. |
 | `pc` | Program counter of the instruction. |
+| `capacity` | Samples the I/O trace keeps; 0 keeps as many as its ring holds. |
+| `in_bytes` | Bytes of the input image each I/O trace sample keeps, from its first byte (at most 32). |
+| `out_bytes` | Bytes of the output image each I/O trace sample keeps, from its first byte (at most 32). |
+| `from` | Sequence number of the first I/O trace sample to read. |
+| `count` | Number of I/O trace samples to read, 1 to 32. |
 | `client_name` | Name of the client. |
 | `client_version` | Version of the client. |
 | `protocol_version` | The protocol version the client speaks; it must be the one above. |

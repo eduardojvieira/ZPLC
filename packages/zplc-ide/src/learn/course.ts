@@ -52,7 +52,7 @@ const entryOf = (index: LessonIndex, id: string): LessonIndexEntry | undefined =
  * Whether a lesson is passed in the course: by its simulation grade, or, for a lesson that has only the hardware track
  * (verify my board), by a passing hardware check (LRN-024). A hardware run never passes a lesson that can be graded in simulation.
  */
-function passedIn(index: LessonIndex, id: string, document: LearnProgress): boolean {
+export function passedIn(index: LessonIndex, id: string, document: LearnProgress): boolean {
   const recorded = document.lessons[id];
   if (recorded?.state === 'passed') return true;
   const entry = entryOf(index, id);

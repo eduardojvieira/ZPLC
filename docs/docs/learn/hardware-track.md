@@ -42,7 +42,7 @@ and says what is missing, until:
 
 1. you chose a board;
 2. Studio is connected to it;
-3. the lesson program is built, deployed to the board and running;
+3. the lesson program is built and deployed to the board, and is either stopped or running;
 4. the board reports which board it is, and it is the board you chose. A board that reports
    another board, or none, is named as the problem.
 
@@ -56,25 +56,51 @@ scenario, on the part and channel the wiring names, for example "press and hold 
 made it, keeps reading for the rest of the scenario, and then grades the run. **Cancel the
 check** stops it, and nothing is recorded.
 
+### Arm, then press Run
+
+When the program is stopped as you press **Check on board**, the check gets ready to record and
+asks you to press **Run** in the toolbar. You start the program; the check never does. The first
+scan after you press **Run** is time 0 of the scenario, as it is in simulation, so a blink or a
+timer that starts with the program lines up with the scenario. The inputs the scenario sets at
+time 0 are the inputs at that first scan.
+
+When the program is already running, the check starts recording at once, and its time 0 is the
+first sample it reads. A lesson that asserts something about the program before your first
+action, other than at time 0, cannot be checked that way: its result depends on when the program
+started. For such a lesson the panel asks you to stop the program first, then press **Check on
+board** and **Run**. blinky-ladder-timer-feedback and verify-my-board are such lessons.
+
 The check uses the lesson's reference scenario, the same file and content hash as the check in
 simulation. A failed check says which assertion failed, at what time in the recorded trace, the
 expected and observed values, and which sample of the trace it read.
 
 ### How the board is read, and the time tolerance
 
-Studio reads the lesson's inputs and outputs through the same read that fills the Watch table,
-and waits 100 ms between two reads, the polling interval of the Watch table. One read is at most
-two `zplc dbg peek` commands, the input image and the output image, of about 96 characters each.
-At 115200 baud that is 2 × 96 × 10 bits / 115200 bit/s, about 17 ms, and the check allows 20 ms.
-So a sample follows the one before it by at most 120 ms.
+A board flashed with the learner firmware keeps a trace of its own scans (`zplc dbg trace`, see
+the [shell commands](../reference/shell-commands.md)): at the end of every scan it keeps
+the time the scan read its inputs, the scan's number since **Run**, and the bytes of the input and
+output images that hold the lesson's signals, in a ring of 2048 bytes. Studio reads the ring
+about every 100 ms, not at every scan, and grades one sample per scan. Keeping the trace never changes the program:
+it does not write memory, force a value, or start or stop anything.
 
 A lesson declares `timeMs`, how far in either direction a sample may sit from the time an
-assertion names. It must be at least 120 ms plus one scan of the slowest task of the lesson's
-starter project, or the check could fail a correct program: an output changes up to one scan
-after its input, and is read up to 120 ms later. Every hardware lesson runs a 10 ms task, so each
-declares 130 ms, and Studio refuses a lesson that declares less. These numbers are derived from
-the serial settings; they were not taken on a board. `analogPercent` is for analog values;
-scenarios hold on/off conditions only today, so it has nothing to compare yet.
+assertion names. With the device trace it must be at least one scan of the slowest task of the
+lesson's starter project plus an assumed jitter margin of 10 ms: an output changes up to one scan after
+its input, and the margin covers the 1 ms resolution of the trace's timestamps, the kernel tick
+that releases a scan, and the time a scan takes before its outputs are written. Every hardware
+lesson runs a 10 ms task, so each declares 20 ms, and Studio refuses a lesson that declares less.
+
+A board whose firmware has no device trace is read the way it was before: through the same read
+that fills the Watch table, every 100 ms. One read is at most two `zplc dbg peek` commands of
+about 96 characters each, 2 × 96 × 10 bits / 115200 bit/s, about 17 ms, and the check allows
+20 ms, so a sample follows the one before it by at most 120 ms. The check then widens the
+lesson's tolerance by that period, less the jitter margin: 20 ms becomes 130 ms, not less than
+one sampling period plus one scan.
+
+These numbers are derived from the firmware and the serial settings; they were not measured on a
+board. No scan-jitter record of the hardware-in-the-loop plan (HIL-010) exists yet to confirm or
+replace the 10 ms margin. `analogPercent` is for analog values; scenarios hold on/off
+conditions only today, so it has nothing to compare yet.
 
 ### How the scenario is aligned on what you did
 
@@ -86,27 +112,28 @@ did:
    after the previous change, that holds the values it sets. A change you never made leaves
    every later change unmade too.
 2. A scenario time is moved onto the trace through the input change it depends on: the time
-   you made that change, plus the time the scenario allows after it.
+   you made that change, plus the time the scenario allows after it. Before your first change,
+   a scenario time is read where the scenario puts it, from time 0.
 3. Each assertion is then checked as in simulation, on the moved times, with `timeMs` of slack:
    a window that must contain a match grows by `timeMs` at both ends, and a window that must
    hold throughout shrinks by `timeMs` at both ends.
 4. An assertion that depends on an input change you never made fails, with nothing observed.
+5. When the trace starts at **Run**, the input changes at time 0 are taken at time 0 and not
+   searched for: a button you hold as you press **Run** does not move the rest of the scenario.
 
 ### What a check on the board cannot tell apart
 
-- Every hardware lesson asserts its outputs at times only one or two scans apart, 10 or 20 ms.
-  With 130 ms of slack either way, the check cannot tell such assertions apart, so on a board it
-  is a weaker check than in simulation. The assertions are not loosened for it, and the
-  simulation check stays the pass of the course. This holds for every lesson on the hardware track today:
-  analog-scaling-integer, blink-structured-text, blinky-ladder-timer-feedback,
-  boolean-logic-two-hand-guard, counter-batch-fbd, edge-counter-pulses, function-block-pump-pair,
-  instruction-list-door-alarm, motor-start-stop-safe, one-logic-five-languages,
-  scan-cycle-one-scan-memory, seal-in-ladder, set-reset-alarm-latch, sfc-fill-mix-sequence,
-  structures-arrays-call-panel, timers-on-delay-off-delay, types-arithmetic-comparison and
-  verify-my-board.
-- An assertion on a timer before the first input change depends on when the program started,
-  which a check of a program that is already running cannot know. blinky-ladder-timer-feedback
-  and verify-my-board have such assertions.
+- A check recorded by polling has 130 ms of slack either way, and every hardware lesson asserts
+  its outputs at times only one or two scans apart, 10 or 20 ms. Such a check cannot tell those
+  assertions apart, so it is weaker than the check in simulation. With the device trace the
+  slack is 20 ms, and the check sees each scan.
+- After you press or release a button, the scenario moves its times onto your action. An
+  assertion after it that depends on the program's own timer, not on your action, then holds
+  only if you acted near the time the scenario names. verify-my-board asserts the blink 100 ms
+  and 230 ms after you release its button, so its check passes only when you release the button
+  about 1.35 s after **Run**, give or take the tolerance.
+- The assertions are not loosened for the board, and the simulation check stays the pass of the
+  course.
 
 ## A run on the board is labelled apart
 
@@ -115,8 +142,9 @@ lists those lessons, and on the lesson's progress line. It does not pass a lesso
 graded in simulation, and a pass in simulation is not a pass on hardware. The one exception is
 verify-my-board, which has only the hardware track: its check on the board is its pass. Your
 progress keeps the newest hardware pass of each lesson apart from its simulation grade, with the
-hash of the build (the SHA-256 of its debug map) and the ZPLC version the board reported. A
-progress file of an earlier version is read and converted.
+hash of the program (the SHA-256 of the artifact Studio deployed to the board in this session,
+or of the build's debug map when Studio did not deploy it) and the ZPLC version the board
+reported. A progress file of an earlier version is read and converted.
 
 ## Before you wire anything
 

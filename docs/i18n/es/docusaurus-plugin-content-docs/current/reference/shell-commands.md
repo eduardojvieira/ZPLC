@@ -9,7 +9,7 @@ tags: [reference, generated]
 
 {/* >>> GENERATED (tools/docs/generate_source_references.ts): reference/shell-commands. Do not edit. >>> */}
 
-La consola del dispositivo tiene un comando raíz, `zplc`, con 78 subcomandos. Un grupo solo contiene subcomandos. Los argumentos son las palabras que siguen al nombre del comando; un comando solo está presente cuando el símbolo de Kconfig de la última columna está habilitado. El runtime de una simulación de escritorio no tiene consola: habla el [protocolo de sesión](./runtime-protocol.md).
+La consola del dispositivo tiene un comando raíz, `zplc`, con 83 subcomandos. Un grupo solo contiene subcomandos. Los argumentos son las palabras que siguen al nombre del comando; un comando solo está presente cuando el símbolo de Kconfig de la última columna está habilitado. El runtime de una simulación de escritorio no tiene consola: habla el [protocolo de sesión](./runtime-protocol.md).
 
 Esta tabla se lee del archivo fuente `firmware/app/src/shell_cmds.c`; su texto es el de la propia fuente, por eso es igual en inglés y en español.
 
@@ -47,6 +47,11 @@ Esta tabla se lee del archivo fuente `firmware/app/src/shell_cmds.c`; su texto e
 | `zplc dbg task` | comando | 1 obligatorio, 1 opcional | Task info |   |
 | `zplc dbg watch` | comando | 1 obligatorio, 1 opcional | Read a typed value: dbg watch &lt;addr> [type] |   |
 | `zplc dbg timer` | comando | 1 obligatorio | Timer instance state: dbg timer &lt;addr> |   |
+| `zplc dbg trace` | grupo |   | Per-scan trace of the I/O images (Learn hardware check) | `CONFIG_ZPLC_IO_TRACE` |
+| `zplc dbg trace arm` | comando | 3 obligatorio, 1 opcional | Arm the I/O trace: dbg trace arm &lt;capacity> &lt;in_bytes> &lt;out_bytes> | `CONFIG_ZPLC_IO_TRACE` |
+| `zplc dbg trace status` | comando | 1 opcional | State of the I/O trace (JSON) | `CONFIG_ZPLC_IO_TRACE` |
+| `zplc dbg trace dump` | comando | 2 obligatorio, 1 opcional | Samples of the I/O trace (JSON): dbg trace dump &lt;from> &lt;count> | `CONFIG_ZPLC_IO_TRACE` |
+| `zplc dbg trace clear` | comando | 1 opcional | Disarm and empty the I/O trace | `CONFIG_ZPLC_IO_TRACE` |
 | `zplc config` | grupo |   | Configuration commands |   |
 | `zplc config get` | comando | ninguno | Show current configuration |   |
 | `zplc config set` | comando | 2 obligatorio | Set configuration value |   |

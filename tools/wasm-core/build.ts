@@ -26,7 +26,7 @@ const session = join(root, 'firmware/apps/posix_host/src');
 
 /** The sources of the module, by directory. The embedder and the libc shim come last. */
 const SOURCES = [
-  ...['zplc_core', 'zplc_loader', 'zplc_comm_dispatch', 'zplc_retain', 'zplc_program_store', 'zplc_sched_core', 'zplc_exchange', 'zplc_failsafe'].map((name) => join(core, `src/core/${name}.c`)),
+  ...['zplc_core', 'zplc_loader', 'zplc_comm_dispatch', 'zplc_retain', 'zplc_program_store', 'zplc_sched_core', 'zplc_exchange', 'zplc_failsafe', 'zplc_io_trace'].map((name) => join(core, `src/core/${name}.c`)),
   join(core, 'src/hal/wasm/zplc_hal_wasm.c'),
   join(session, 'native_runtime_session.c'),
   join(session, 'native_program_store.c'),

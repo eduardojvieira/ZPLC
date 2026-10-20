@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'bun:test';
 
-import { HARDWARE_SAMPLE_PERIOD_MS, canonicalJson, citedFiles, expandQuotes, hardwareToleranceProblems, unmarkedTimes, validateChecks, validateManifest, validateText, type ScenarioFile } from './lessonPackage';
+import { DEVICE_TRACE_JITTER_MS, HARDWARE_SAMPLE_PERIOD_MS, canonicalJson, citedFiles, expandQuotes, hardwareToleranceProblems, pollingTimeToleranceMs, unmarkedTimes, validateChecks, validateManifest, validateText, type ScenarioFile } from './lessonPackage';
 
 const scenario: ScenarioFile = {
   schemaVersion: 1, id: 'S', tickMs: 10, durationMs: 100, events: [],
@@ -112,11 +112,17 @@ describe('lesson package validators (LRN-009, LRN-010, LRN-027)', () => {
 });
 
 describe('the time tolerance of a hardware lesson (LRN-024)', () => {
-  it('LRN-024 covers one sampling period of the hardware check and one scan of the program', () => {
-    expect(HARDWARE_SAMPLE_PERIOD_MS).toBe(120);
-    expect(hardwareToleranceProblems(130, 10)).toEqual([]);
+  it('LRN-024 covers one scan of the program and the jitter margin of a device trace', () => {
+    expect(DEVICE_TRACE_JITTER_MS).toBe(10);
+    expect(hardwareToleranceProblems(20, 10)).toEqual([]);
     expect(hardwareToleranceProblems(200, 10)).toEqual([]);
-    expect(hardwareToleranceProblems(129, 10)).toEqual(['manifest.hardware.tolerances.timeMs: 129 ms is less than one sampling period of the hardware check (120 ms) plus one scan of the program (10 ms); it must be at least 130 ms']);
-    expect(hardwareToleranceProblems(10, 10)).toHaveLength(1);
+    expect(hardwareToleranceProblems(19, 10)).toEqual(['manifest.hardware.tolerances.timeMs: 19 ms is less than one scan of the program (10 ms) plus the jitter margin of a device trace (10 ms); it must be at least 20 ms']);
+    expect(hardwareToleranceProblems(30, 25)).toHaveLength(1);
+  });
+
+  it('LRN-024 keeps the polling rule for a board without a device trace: one sampling period plus one scan', () => {
+    expect(HARDWARE_SAMPLE_PERIOD_MS).toBe(120);
+    expect(pollingTimeToleranceMs(20)).toBe(130);
+    expect(pollingTimeToleranceMs(50)).toBe(160);
   });
 });
