@@ -2746,6 +2746,25 @@
     {"kind":"unit","ref":"tools/ci/lesson-index.test.ts","test":"lesson ids have one source (LRN-028)"},
     {"kind":"unit","ref":"tools/ci/lesson-index.test.ts","test":"the generated lesson index (LRN-027, LRN-028)"}
   ],
+  "LRN-029": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/components/LearnLanguage.test.tsx","test":"LRN-029 Learn follows the language of the application"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/components/LearnLanguage.test.tsx","test":"LRN-029 draws the lessons and the Learn home in the language of the setting, and switches when the setting changes"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonCi.test.ts","test":"LRN-029 es: addresses the learner as usted, never with voseo"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonCi.test.ts","test":"LRN-029 has the same structure in English and Spanish"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonCi.test.ts","test":"LRN-029 names actual voseo forms and leaves correct Spanish alone: future forms, \"sí\", \"así\""},
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonCi.test.ts","test":"the voseo guard of the lesson text (LRN-029)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonLanguage.test.ts","test":"LRN-029 every lesson and hint exists in English and Spanish with the same structure"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonLanguage.test.ts","test":"LRN-029 every lesson package has a valid English and a valid Spanish text, with the same stages, hint levels, counts and quoted facts"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonLanguage.test.ts","test":"LRN-029 every plant label exists in English and Spanish"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonLanguage.test.ts","test":"LRN-029 every plant.* label has a Spanish text with the same placeholders, and the Spanish catalog serves it"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonLanguage.test.ts","test":"LRN-029 no Spanish lesson or hint addresses the learner with \"tú\" or voseo"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonLanguage.test.ts","test":"LRN-029 no Spanish lesson or hint uses a known wrong variant of a glossary term"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonLanguage.test.ts","test":"LRN-029 the Spanish lessons are in the register of decision D-10 and use the Learn glossary"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonLanguage.test.ts","test":"LRN-029 the Spanish of the Learn panel, the Lab, the plants and the faceplate uses the same register and glossary"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonLanguage.test.ts","test":"LRN-029 the deny-lists catch the forms they name and leave the usted forms and the code tokens alone"},
+    {"kind":"unit","ref":"tools/ci/learn-educator.test.ts","test":"LRN-029 calls the tracks of a lesson \"Rutas\" in the Spanish outline, because \"Pistas\" are its hints"},
+    {"kind":"unit","ref":"tools/ci/lesson-index.test.ts","test":"LRN-029 refuses English and Spanish texts that do not have the same structure"}
+  ],
   "LRN-030": [
     {"kind":"unit","ref":"packages/zplc-ide/scripts/welcomeBundle.test.ts","test":"LRN-030 the main process reaches the network only in the update check, off until the user turns it on, and the opt-in assistant"},
     {"kind":"unit","ref":"packages/zplc-ide/scripts/welcomeBundle.test.ts","test":"LRN-030 the policy of the installed window lets it load nothing from another host"},
