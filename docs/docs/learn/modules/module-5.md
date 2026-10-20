@@ -10,6 +10,8 @@ unlisted: true
 
 {/* >>> GENERATED (tools/docs/generate_course_pages.ts): learn/modules/module-5. Do not edit. >>> */}
 
+A machine that does things in order is a state machine. Sequences are written as states in Structured Text, and Sequential Function Chart arrives with them, as steps.
+
 - Level: Intermediate
 - Tracks: Simulation, Hardware
 - Requires module: [3](./module-3.md)

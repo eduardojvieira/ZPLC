@@ -24,6 +24,8 @@ export interface CourseLessonView {
 export interface CourseModuleView {
   id: number;
   title: string;
+  /** Why the module sits where it does in the course (LRN-006). */
+  why: string;
   level: LessonLevel;
   requires: number | null;
   tracks: readonly string[];
@@ -34,6 +36,8 @@ export interface CourseModuleView {
   lessons: readonly CourseLessonView[];
 }
 export interface CourseView {
+  /** Why the course is in this order (LRN-006). */
+  rationale: string;
   tracks: ReadonlyArray<{ id: string; title: string; summary: string }>;
   modules: readonly CourseModuleView[];
   /** Titles of every lesson by id, so a locked lesson can name what it waits for. */
@@ -90,6 +94,7 @@ export function buildCourseView(index: LessonIndex, progress: LearnProgress | nu
     return {
       id: module.id,
       title: module.title[locale],
+      why: module.why[locale],
       level: module.level,
       requires: module.requires,
       tracks: module.tracks,
@@ -99,6 +104,7 @@ export function buildCourseView(index: LessonIndex, progress: LearnProgress | nu
     };
   });
   return {
+    rationale: index.course.rationale[locale],
     tracks: index.course.tracks.map((track) => ({ id: track.id, title: track.title[locale], summary: track.summary[locale] })),
     modules,
     titles: Object.fromEntries(lessons.map((lesson) => [lesson.id, lesson.title])),

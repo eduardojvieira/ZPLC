@@ -10,6 +10,8 @@ unlisted: true
 
 {/* >>> GENERATED (tools/docs/generate_course_pages.ts): learn/modules/module-5. Do not edit. >>> */}
 
+Una máquina que hace cosas en orden es una máquina de estados. Las secuencias se escriben como estados en texto estructurado, y con ellas llega el diagrama de funciones secuenciales (SFC), como pasos.
+
 - Nivel: Intermedio
 - Rutas: Simulación, Hardware
 - Requiere el módulo: [3](./module-3.md)

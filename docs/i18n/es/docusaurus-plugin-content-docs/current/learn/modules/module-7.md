@@ -10,6 +10,8 @@ unlisted: true
 
 {/* >>> GENERATED (tools/docs/generate_course_pages.ts): learn/modules/module-7. Do not edit. >>> */}
 
+Los programas crecen. Cuando ya se trabaja con datos, las funciones, los bloques de función, las estructuras, los arreglos y las tareas mantienen un programa legible y reutilizable.
+
 - Nivel: Intermedio
 - Rutas: Simulación, Hardware
 - Requiere el módulo: [4](./module-4.md)

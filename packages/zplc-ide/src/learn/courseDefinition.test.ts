@@ -37,6 +37,13 @@ describe('the course definition file', () => {
     expect(problemsOf((value) => { (value.modules[1]!.tracks as string[]).push('cloud'); }).some((problem) => problem.includes('cloud'))).toBe(true);
   });
 
+  it('LRN-006 refuses a course with no rationale and a module that does not say why it sits where it does', () => {
+    expect(problemsOf((value) => { delete (value as Record<string, unknown>).rationale; }).some((problem) => problem.includes('rationale'))).toBe(true);
+    expect(problemsOf((value) => { (value.rationale as { es: string }).es = ' '; }).some((problem) => problem.includes('rationale') && problem.includes('es'))).toBe(true);
+    expect(problemsOf((value) => { delete (value.modules[4] as { why?: unknown }).why; }).some((problem) => problem.includes('module 4') && problem.includes('why'))).toBe(true);
+    expect(problemsOf((value) => { (value.modules[7]!.why as { en: string }).en = ''; }).some((problem) => problem.includes('module 7') && problem.includes('why'))).toBe(true);
+  });
+
   it('refuses a track with no reason and no instead-action for the lesson that does not support it (LRN-011)', () => {
     expect(problemsOf((value) => { (value.tracks[1]!.unsupported.reason as { en: string }).en = ''; }).some((problem) => problem.includes('hardware') && problem.includes('reason'))).toBe(true);
     expect(problemsOf((value) => { (value.tracks[1]!.unsupported.instead as { es: string }).es = ''; }).some((problem) => problem.includes('hardware') && problem.includes('instead'))).toBe(true);

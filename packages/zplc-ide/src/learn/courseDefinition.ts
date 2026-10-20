@@ -14,8 +14,10 @@ export const COURSE_SCHEMA_VERSION = 1 as const;
 export type LocalizedText = Readonly<Record<LessonLocale, string>>;
 /** What a lesson that does not support the track shows: why, and what to do instead (LRN-011). */
 export interface CourseTrack { id: string; title: LocalizedText; summary: LocalizedText; unsupported: { reason: LocalizedText; instead: LocalizedText } }
-export interface CourseModule { id: number; level: LessonLevel; requires: number | null; tracks: readonly string[]; title: LocalizedText }
-export interface CourseDefinition { schemaVersion: typeof COURSE_SCHEMA_VERSION; tracks: readonly CourseTrack[]; modules: readonly CourseModule[] }
+/** `why` says to the learner why the module sits where it does in the course (LRN-006). */
+export interface CourseModule { id: number; level: LessonLevel; requires: number | null; tracks: readonly string[]; title: LocalizedText; why: LocalizedText }
+/** `rationale` is the short "why this order" of the whole course that Learn and the course outline show (LRN-006). */
+export interface CourseDefinition { schemaVersion: typeof COURSE_SCHEMA_VERSION; rationale: LocalizedText; tracks: readonly CourseTrack[]; modules: readonly CourseModule[] }
 /** The part of a lesson manifest the placement rules read. */
 export interface PlacedLesson { id: string; module: number; level: string; prerequisites: readonly string[]; tracks: readonly string[] }
 
@@ -33,8 +35,9 @@ function checkText(value: unknown, where: string, problems: string[]): void {
 export function validateCourseDefinition(value: unknown): string[] {
   const problems: string[] = [];
   if (!isObject(value)) return ['the course file must be an object'];
-  for (const key of unknownKeys(value, ['schemaVersion', 'tracks', 'modules'])) problems.push(`unknown key "${key}"`);
+  for (const key of unknownKeys(value, ['schemaVersion', 'rationale', 'tracks', 'modules'])) problems.push(`unknown key "${key}"`);
   if (value.schemaVersion !== COURSE_SCHEMA_VERSION) problems.push(`schemaVersion must be ${COURSE_SCHEMA_VERSION}`);
+  checkText(value.rationale, 'course rationale', problems);
   const trackIds: string[] = [];
   if (!Array.isArray(value.tracks) || value.tracks.length === 0) problems.push('tracks must be a non-empty list');
   else for (const track of value.tracks as unknown[]) {
@@ -61,7 +64,7 @@ export function validateCourseDefinition(value: unknown): string[] {
   modules.forEach((module, index) => {
     if (!isObject(module)) { problems.push(`module ${index}: must be an object`); return; }
     const where = `module ${index}`;
-    for (const key of unknownKeys(module, ['id', 'level', 'requires', 'tracks', 'title'])) problems.push(`${where}: unknown key "${key}"`);
+    for (const key of unknownKeys(module, ['id', 'level', 'requires', 'tracks', 'title', 'why'])) problems.push(`${where}: unknown key "${key}"`);
     const level = (LESSON_LEVELS as readonly unknown[]).indexOf(module.level);
     if (level < 0) problems.push(`${where}: level must be one of ${LESSON_LEVELS.join(', ')}`);
     else if (level < previousLevel) problems.push(`${where}: level ${String(module.level)} comes after a higher level; levels never go back`);
@@ -74,6 +77,7 @@ export function validateCourseDefinition(value: unknown): string[] {
     if (!Array.isArray(offered) || offered.length === 0) problems.push(`${where}: tracks must be a non-empty list`);
     else for (const track of offered) if (!trackIds.includes(track as string)) problems.push(`${where}: track "${String(track)}" is not defined by the course`);
     checkText(module.title, `${where} title`, problems);
+    checkText(module.why, `${where} why`, problems);
   });
   return problems;
 }

@@ -10,6 +10,8 @@ unlisted: true
 
 {/* >>> GENERATED (tools/docs/generate_course_pages.ts): learn/modules/module-4. Do not edit. >>> */}
 
+Las señales reales son números, no solo encendido y apagado. Los tipos, la aritmética, la comparación y el escalado analógico preparan para los procesos que siguen.
+
 - Nivel: Intermedio
 - Rutas: Simulación, Hardware
 - Requiere el módulo: [3](./module-3.md)

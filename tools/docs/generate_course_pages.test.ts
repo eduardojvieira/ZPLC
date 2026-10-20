@@ -2,6 +2,7 @@ import { describe, expect, it } from 'bun:test';
 import { readFileSync } from 'node:fs';
 
 import { LESSON_INDEX } from '../../packages/zplc-ide/src/generated/lessonIndex';
+import { courseOrder } from '../../packages/zplc-ide/src/learn/course';
 import { PAGES, outputs } from './generate_course_pages';
 import { LANGS, ROOT } from './reference-lib';
 
@@ -30,6 +31,18 @@ describe('LRN-035 course pages: a page for every module and lesson, generated fr
     const spanish = JSON.parse(readFileSync(`${ROOT}packages/zplc-ide/lessons/${lesson.id}/text.es.json`, 'utf8')) as { title: string };
     expect(page.title.es).toBe(spanish.title);
     expect(page.body('es')).toContain('minutos');
+  });
+
+  it('LRN-006 lists the lessons of a module in course order, the order Learn shows, and says why the module sits where it does', () => {
+    for (const module of LESSON_INDEX.course.modules) {
+      const page = PAGES.find((entry) => entry.path === `learn/modules/module-${module.id}.md`)!;
+      for (const lang of LANGS) {
+        const body = page.body(lang);
+        expect(body).toContain(module.why[lang]);
+        const listed = [...body.matchAll(/\(\.\.\/lessons\/([a-z0-9-]+)\.md\)/g)].map((match) => match[1]);
+        expect([module.id, lang, listed]).toEqual([module.id, lang, courseOrder(LESSON_INDEX).filter((lesson) => lesson.module === module.id).map((lesson) => lesson.id)]);
+      }
+    }
   });
 
   it('lists each plant with the lessons that use it', () => {

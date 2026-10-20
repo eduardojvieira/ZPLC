@@ -72,6 +72,23 @@ describe('the Learn home', () => {
     expect(done).not.toContain('data-learn-continue');
   });
 
+  it('LRN-006 tells the learner why the course is in this order, and why each module sits where it does', () => {
+    const out = render(emptyProgress());
+    const { course } = LESSON_INDEX;
+    expect(out).toContain('Why this order');
+    expect(out).toContain(course.rationale.en);
+    for (const module of course.modules) {
+      const block = out.split('<li ').find((chunk) => chunk.startsWith(`data-learn-module="${module.id}"`)) ?? '';
+      expect([module.id, block.includes(`data-learn-module-why="${module.id}"`) && block.includes(module.why.en)]).toEqual([module.id, true]);
+    }
+    const spanish = renderToStaticMarkup(
+      <LearnHomeView view={buildCourseView(LESSON_INDEX, emptyProgress(), { locale: 'es', unlockAll: false })} index={LESSON_INDEX} locale="es" continueId={null} fresh loaded failed={false} unlockAll={false} hideSolutions={false} onHideSolutions={() => undefined}
+        folderAccess busy={false} transfer="idle" onUnlockAll={() => undefined} onStart={() => undefined} onClose={() => undefined} onExport={() => undefined} onImportFile={() => undefined} />,
+    );
+    expect(spanish).toContain(course.rationale.es);
+    expect(spanish).toContain(course.modules[1]!.why.es);
+  });
+
   it('counts the lessons passed', () => {
     expect(render(withPassedIds(emptyProgress(), [FIRST]))).toContain(`1 of ${LESSON_INDEX.lessons.length} lessons passed`);
   });
