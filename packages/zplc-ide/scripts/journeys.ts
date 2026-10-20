@@ -226,6 +226,16 @@ async function watch(app: App, variable: string): Promise<void> {
 const watchRow = (name: string) => `[...document.querySelectorAll('tbody tr')].find((row) => row.firstElementChild?.textContent === ${JSON.stringify(name)})`;
 const watchValue = (app: App, name: string) => app.eval<string | null>(`${watchRow(name)}?.children[1]?.innerText.trim() ?? null`);
 
+/** The first output of `program` on the Live I/O faceplate of the Watch tab, seen both TRUE and FALSE while the program runs. */
+async function outputTurnsOnAndOff(app: App, program: string): Promise<void> {
+  await app.until('the faceplate', async () => await app.visible(css('[data-faceplate]')) || undefined, 45_000);
+  const output = `[data-output^="${program}."] [data-output-value]`;
+  const value = () => app.eval<string>(`document.querySelector(${JSON.stringify(output)})?.textContent?.trim() ?? ''`);
+  await app.until(`an output of ${program} on the faceplate`, async () => (await value()) !== '' || undefined, 45_000);
+  const seen = new Set<string>();
+  await app.until(`an output of ${program} to turn on and off`, async () => { const now = await value(); if (/TRUE|FALSE/.test(now)) seen.add(now.includes('TRUE') ? 'TRUE' : 'FALSE'); return seen.size === 2 || undefined; }, 60_000);
+}
+
 /** LNG-027: Pause stops the scans, Step one cycle runs exactly one, Resume lets them run again. The cycle counter of the status bar is the witness. */
 async function pauseStepResume(app: App): Promise<void> {
   await connectAndRun(app);
@@ -3251,16 +3261,93 @@ export const JOURNEYS: Journey[] = [
 
       // The faceplate lists the program's outputs from its I/O map and shows them live: the output turns on, then off.
       await press(tab('Watch', 'prefix'), 'the Watch tab');
-      await app.until('the faceplate', async () => await app.visible(css('[data-faceplate]')) || undefined, 45_000);
-      const output = `[data-output^="${program}."] [data-output-value]`;
-      const value = () => app.eval<string>(`document.querySelector(${JSON.stringify(output)})?.textContent?.trim() ?? ''`);
-      await app.until('an output of the lesson on the faceplate', async () => (await value()) !== '' || undefined, 45_000);
-      const seen = new Set<string>();
-      await app.until('the output to turn on and off', async () => { const now = await value(); if (/TRUE|FALSE/.test(now)) seen.add(now.includes('TRUE') ? 'TRUE' : 'FALSE'); return seen.size === 2 || undefined; }, 60_000);
+      await outputTurnsOnAndOff(app, program);
 
       const seconds = (Date.now() - started) / 1000;
       assert(seconds < 600, `The blink took ${seconds.toFixed(0)} s from the first screen, more than ten minutes.`);
       app.note(`first screen to a blinking output in ${seconds.toFixed(1)} s through ${steps.length} named controls (${steps.join(' > ')}); lessons on the path: ${minutes} min`);
+    },
+  },
+  {
+    // LRN-030: the simulation track works offline, including module 10 against the endpoints its simulation starts (COM-009).
+    // The development host serves the window from a server on this computer, so a cut network is emulated as an offline
+    // machine sees it: from a reload before the first click to the end, every request the window makes to another host is
+    // refused with "Internet disconnected" and recorded, and a request to this computer goes through. The first lesson is
+    // started, run (its output turns on and off) and checked; then a Communications lesson is started, run and checked,
+    // its Modbus and MQTT peers being the loopback endpoints the simulation starts on 127.0.0.1. No request may have tried
+    // to leave the computer, and a fetch of a remote page from the window must fail. The main process is not cut here: its
+    // only network call is the update check, off by default, which the static test of LRN-030 holds (welcomeBundle.test.ts).
+    name: '58 The simulation track works offline: a lesson and a Communications lesson run and pass with every remote request refused', example: 'none', proves: ['LRN-030'], partly: [],
+    run: async (app, { root }) => {
+      const remote: string[] = [];
+      let local = 0;
+      app.cdp.on('Fetch.requestPaused', (params) => {
+        const { requestId, request } = params as { requestId: string; request: { url: string } };
+        let here = false;
+        try { const url = new URL(request.url); here = !/^(https?|wss?):$/.test(url.protocol) || ['127.0.0.1', 'localhost', '[::1]'].includes(url.hostname); } catch { here = false; }
+        if (here) { local += 1; void app.cdp.command('Fetch.continueRequest', { requestId }).catch(() => undefined); return; }
+        remote.push(request.url);
+        void app.cdp.command('Fetch.failRequest', { requestId, errorReason: 'InternetDisconnected' }).catch(() => undefined);
+      });
+      await app.cdp.command('Fetch.enable', { patterns: [{ urlPattern: '*' }] });
+      // A remote load that the content security policy stops never reaches the network; the page records it as a violation.
+      await app.cdp.command('Page.addScriptToEvaluateOnNewDocument', { source: `window.__zplcBlocked = []; document.addEventListener('securitypolicyviolation', (event) => window.__zplcBlocked.push(event.blockedURI));` });
+      await app.cdp.command('Page.reload');
+      await app.until('the Welcome screen, loaded offline', async () => await app.visible(button('Learn', 'prefix')) || undefined, 45_000);
+      assert(local > 0, 'No request of the window was seen: the offline emulation is not in place.');
+
+      /** Start a lesson from the Learn home, build, connect and run it, then stop, put the reference solution in its program and check it. */
+      const doLesson = async (id: string, start: Target, running: () => Promise<void>) => {
+        const entry = LESSON_INDEX.lessons.find((lesson) => lesson.id === id)!;
+        await app.click(start, `Start for ${id}`);
+        await app.until(`the lesson ${id} beside its workspace`, async () => await app.visible(toolbar) && (await app.eval<string>(`document.getElementById('learn-title')?.textContent?.trim() ?? ''`)) === entry.text.en.title || undefined, 45_000);
+        const built = await compile(app);
+        assert(built.kind === 'built', `The starter of ${id} does not build offline: ${built.message}`);
+        await connectAndRun(app);
+        await app.click(tab('Watch', 'prefix'), 'the Watch tab');
+        await running();
+        await app.click(button('Stop (Shift+F5)', 'prefix'), 'Stop');
+        await app.until('the program to stop', async () => await app.visible(button('Run (F5)', 'prefix')) || undefined);
+        await app.click(button('Disconnect'), 'Disconnect');
+        await app.until('the simulation to disconnect', async () => await app.visible(button('Connect')) || undefined);
+        writeFileSync(join(root, 'profile', 'learn-workspaces', id, entry.starter.program), disk(join(packageRoot, 'projects', entry.solution.project, entry.solution.program)));
+        await app.until('the Check button to be enabled', async () => await app.eval<boolean>(`document.querySelector('[data-learn-check]')?.disabled === false`) || undefined, 45_000);
+        await app.click(css('[data-learn-check]'), 'Check');
+        await app.until(`Learn to grade ${id} as passed offline`, async () => await app.eval<boolean>(`document.querySelector('[data-learn-grade="passed"]') !== null`) || undefined, 90_000)
+          .catch(async (error: Error) => { throw new Error(`${error.message}: the grade shown is ${await app.eval<string>(`document.querySelector('[data-learn-grade]')?.getAttribute('data-learn-grade') ?? 'none'`)}; ${await app.eval<string>(`document.querySelector('[data-learn-check-status]')?.textContent ?? ''`)}`); });
+      };
+
+      // The first lesson: its output blinks in the simulation, and the reference solution passes its scenario.
+      const first = courseOrder(LESSON_INDEX).find((lesson) => lesson.tracks.includes('simulation'))!;
+      await app.click(button('Learn', 'prefix'), 'the Learn button on the Welcome screen');
+      await doLesson(first.id, css('[data-learn-continue]'), () => outputTurnsOnAndOff(app, first.starter.program.split('/').at(-1)!.replace(/\.[^.]+$/, '')));
+
+      // A Communications lesson (module 10): its blocks talk to the Modbus server and MQTT broker of the simulation, on this computer.
+      const communications = courseOrder(LESSON_INDEX).find((lesson) => lesson.module === 10 && lesson.tracks.includes('simulation'))!;
+      await app.click(css('[data-activity="learn"]'), 'the Learn item of the rail');
+      await app.until('the Learn home', async () => await app.visible(css('[data-learn-home]')) || undefined);
+      await app.click(css('[data-learn-unlock-all]'), 'the Unlock all lessons switch');
+      const startCommunications = css(`[data-learn-start="${communications.id}"]`);
+      await app.until(`${communications.id} to be available`, async () => await app.clickable(startCommunications) || undefined);
+      await doLesson(communications.id, startCommunications, async () => {
+        // The program runs against the loopback endpoints: it keeps scanning and no communication block reports that its peer is unavailable.
+        await app.until('the scans to be counted', async () => await cycles(app) >= 50 || undefined, 45_000);
+        assert(!/unavailable in simulation/i.test(await app.text()), 'A communication block reports that its endpoint is unavailable in simulation.');
+      });
+
+      // Both grades are recorded as passes in the progress of this fresh profile.
+      const progressFile = join(root, 'profile', 'zplc-learn-progress.v2.json');
+      const passed = () => { try { const saved = JSON.parse(disk(progressFile)) as { lessons: Record<string, { state: string }> }; return [first.id, communications.id].every((id) => saved.lessons[id]?.state === 'passed'); } catch { return false; } };
+      await app.until('both lessons recorded as passed', () => passed() || undefined);
+      // Only a load from another host counts: a policy report of "eval" or "inline" is not a network request.
+      const blocked = async () => (await app.eval<string[]>('window.__zplcBlocked ?? []')).filter((uri) => /^(https?|wss?):\/\//.test(uri) && !/^\w+:\/\/(127\.0\.0\.1|localhost|\[::1\])[:/]/.test(uri));
+      assert(remote.length === 0, `The window tried to reach another host while offline: ${remote.join(', ')}`);
+      assert((await blocked()).length === 0, `The window tried to load something its policy refuses: ${(await blocked()).join(', ')}`);
+      // The recorders work: a fetch of a remote page fails, and the attempt is recorded.
+      const reached = await app.eval<string>(`fetch('https://example.com/', { cache: 'no-store' }).then(() => 'reached', (error) => 'refused: ' + error.message)`);
+      assert(reached.startsWith('refused'), `A remote page could be fetched from the window: ${reached}`);
+      await app.until('the refused fetch to be recorded', async () => [...remote, ...await blocked()].some((url) => url.startsWith('https://example.com')) || undefined);
+      app.note(`offline: ${first.id} and ${communications.id} ran and passed; ${local} requests to this computer went through, none to another host; a remote fetch was ${reached}`);
     },
   },
   {

@@ -48,6 +48,19 @@ board; the lesson index refuses one that cannot. A journey of the development ho
 the output change. How long a person takes is not measured yet: that needs a
 timed test with first-time users.
 
+## Offline
+
+The simulation track needs no network. That includes module 10: its Modbus and
+MQTT blocks talk to a server and a broker that the simulation starts on your
+computer and stops with it. The window loads no font, script or stylesheet from
+another host, and the one request Studio can make on its own, the check for a
+newer release, is off until you turn it on in the preferences.
+
+The evidence is a journey of the development host on Linux (journey 58), which
+starts, runs and checks the first lesson and a Communications lesson while every
+request to another host is refused, and a test of the production build that finds
+no remote load in it. An installed package was not run without a network.
+
 ## Open an example project
 
 Studio bundles example projects on the Welcome screen, grouped by topic (first steps, motors, process control, the five languages and boards) and by level, each showing its language and, for a hardware example, its board. A hardware example either ships a scenario or says why it has none. They live in
