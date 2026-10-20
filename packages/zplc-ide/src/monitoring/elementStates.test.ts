@@ -1,9 +1,9 @@
 // LNG-006: online monitoring reads what the debug map says, and shows a value that it cannot read as unavailable.
 import { describe, expect, it } from 'bun:test';
-import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { readdirSync, readFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
 import { Glob } from 'bun';
-import { compileSingleFileWithTask, type DebugMap, type PLCLanguage } from '../compiler';
+import { compileMultiTaskProject, compileSingleFileWithTask, type DebugMap, type PLCLanguage } from '../compiler';
 import type { MonitorEntry, PowerExpr } from '../models/sourceElements';
 import { evaluatePower, readElementStates, truthy, variablesOf, type Read } from './elementStates';
 import { monitorKey, parseMonitorKey, resolveVariable } from './debugVariables';
@@ -104,10 +104,19 @@ describe('every variable that a translated source says it reads exists in the de
     expect(sources.length).toBeGreaterThanOrEqual(5);
   });
 
+  // A diagram is built with the Structured Text files beside it, as its project builds it (CMP-042): a function block that
+  // one of them declares is a block the diagram may place.
+  const declarationsBeside = (path: string) => readdirSync(join(root, dirname(path))).filter((file) => file.endsWith('.st')).map((file) => {
+    const sourceRef = `${dirname(path)}/${file}`;
+    return { name: sourceRef, content: readFileSync(join(root, sourceRef), 'utf8'), language: 'ST' as PLCLanguage, sourceRef };
+  });
+  const project = { name: 'Diagram', version: '1.0.0', tasks: [{ name: 'MainTask', trigger: 'cyclic' as const, interval_ms: 10, priority: 1, programs: ['Main'] }] };
+
   for (const path of sources) {
     it(`${path}: each entry names a variable of its program`, () => {
       const language: PLCLanguage = path.includes('.ld.') ? 'LD' : path.includes('.fbd.') ? 'FBD' : 'SFC';
-      const map: DebugMap = compileSingleFileWithTask(readFileSync(join(root, path), 'utf8'), language, { sourceRef: path, programName: 'Main' }).debugMap;
+      const diagram = { name: 'Main', content: readFileSync(join(root, path), 'utf8'), language, sourceRef: path };
+      const map: DebugMap = compileMultiTaskProject(project, [diagram, ...declarationsBeside(path)]).debugMap;
       const pou = Object.values(map.pou).find((candidate) => candidate.sourceRef === path)!;
       expect(pou.monitor?.length).toBeGreaterThan(0);
       const missing = variablesOf(pou.monitor!).filter((variable) => resolveVariable(map, path, variable) === undefined);
