@@ -279,8 +279,8 @@ on with the timeouts and policies of the board's `boards.json` entry, and says
 what it is: `zplc version` prints a line for it and its build options list
 `HIL_IMAGE=y`, which the handshake records. A build that turns the watchdog on by
 itself is still refused by `firmware/app/CMakeLists.txt`. The HIL image is never a
-release image; the release collection does not yet refuse it by its options (a
-follow-up in `scripts/release/firmware-images.ts`). `--no-watchdog-build` prints
+release image: the release collection (`scripts/release/firmware-images.ts`) refuses
+a build whose configuration or options name it. `--no-watchdog-build` prints
 the plain command, and the watchdog step then fails and says why.
 
 Flashing is yours. The Pico: hold BOOTSEL while you plug in the USB cable and

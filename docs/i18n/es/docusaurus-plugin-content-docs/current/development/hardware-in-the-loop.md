@@ -307,9 +307,9 @@ hardware con los tiempos y las políticas de la entrada de la placa en
 `boards.json`, y dice lo que es: `zplc version` imprime una línea para ella y sus
 opciones de compilación incluyen `HIL_IMAGE=y`, que el saludo registra.
 `firmware/app/CMakeLists.txt` sigue rechazando una compilación que activa el
-watchdog por sí sola. La imagen HIL nunca es una imagen de versión; la recolección
-de la versión todavía no la rechaza por sus opciones (pendiente en
-`scripts/release/firmware-images.ts`). `--no-watchdog-build` imprime el comando
+watchdog por sí sola. La imagen HIL nunca es una imagen de versión: la recolección
+de la versión (`scripts/release/firmware-images.ts`) rechaza una compilación cuya
+configuración u opciones la nombran. `--no-watchdog-build` imprime el comando
 sin la opción, y el paso del watchdog falla y dice por qué.
 
 La grabación la hace usted. La Pico: mantenga presionado BOOTSEL mientras
