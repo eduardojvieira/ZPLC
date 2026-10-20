@@ -20,13 +20,13 @@ bienvenida, elija **Aprender**: se abre el inicio de Aprender, sin proyecto y si
 enumera los módulos en orden con su nivel, lo que requiere cada uno y cuánto
 dura. Elija **Comenzar el curso**: Studio crea el espacio de trabajo de la primera lección en su propia carpeta y lo abre; no hay carpeta que elegir ni paso de copia. La lección sigue visible junto al editor, también cuando usted cambia a la vista Proyecto.
 
-Cada lección recorre seis etapas: Objective, Predict, Edit, Run, Observe y
-Reflect. Usted edita el espacio de trabajo, lo guarda y pulsa **Comprobar**. Studio
-ejecuta su programa guardado contra el escenario de la lección y enumera cada
+Cada lección recorre seis etapas: Objetivo, Prediga, Edite, Ejecute, Observe y
+Reflexione. Usted edita el espacio de trabajo, lo guarda y pulsa **Comprobar**. Studio
+ejecuta el programa guardado con el escenario de la lección y enumera cada
 aserción que falló, con el instante, el valor esperado y el valor observado. Una
-lección está completa cuando todas las aserciones de su escenario pasaron.
+lección está completa cuando pasan todas las aserciones de su escenario.
 
-Cada lección ofrece dos niveles de pista, y Studio registra cada nivel que usted abre. La solución de referencia se abre solo a pedido, y el progreso registra que la vio. Un docente puede ocultar las soluciones: vea [Docentes](./educators.md).
+Cada lección ofrece dos niveles de pista, y Studio registra cada nivel que usted abre. La solución de referencia se abre solo si usted la pide, y el progreso registra que la vio. Un docente puede ocultar las soluciones: vea [Docentes](./educators.md). El [glosario del curso](glossary.md) reúne los términos que usa el curso en español y en inglés.
 
 Una lección está bloqueada hasta que se aprueban las lecciones que requiere, y el
 inicio dice cuáles. Si prefiere tomarlas en cualquier orden, active
@@ -55,12 +55,12 @@ Studio.
 
 Los [ejemplos de lenguajes de compatibilidad](../languages/examples/v1-5-language-suite.md)
 reúnen los mismos programas pequeños en los cinco lenguajes de IEC 61131-3, y la
-[referencia de Structured Text](../reference/language-st.md) dice, elemento por
+[referencia de texto estructurado](../reference/language-st.md) dice, elemento por
 elemento, qué funciona hoy.
 
-## Lo que todavía no está
+## Lo que todavía falta
 
-Cada lección enumera las vías que admite y, para una vía que no admite, dice por qué y qué hacer en su lugar. Una vía para una placa de aprendizaje y las lecciones de cinco módulos que todavía
+Cada lección enumera las rutas que admite y, para una ruta que no admite, dice por qué y qué hacer en su lugar. Una ruta para una placa de aprendizaje y las lecciones de cinco módulos que todavía
 están vacíos son trabajo futuro. El [esquema del curso](course-outline.md) dice cuáles. Las
 lecciones y los ejemplos son ejercicios de host y de simulación: no muestran cómo
 se comporta un programa en una placa física.
