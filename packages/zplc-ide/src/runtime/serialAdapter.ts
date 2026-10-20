@@ -41,6 +41,7 @@ import { deriveHardwareDebugState } from './debugStatus';
 import { noteUnsupportedIo, parseForcedValues, parseStatusInfo, requireForceCommandConfirmation } from './serialResponses';
 import { normalizeSerialRuntimeSnapshot } from './runtimeSnapshot';
 import { joinDeviceIo, parseDeviceSystemInfo, type DeviceSystemInfo } from './deviceHandshake';
+import { takeJsonReply } from './serialJson';
 
 /** Command timeout in milliseconds.
  * 10 s to accommodate firmware flash writes (NVS page erase can take ~1 s
@@ -482,47 +483,10 @@ export class SerialAdapter implements IDebugAdapter {
     const startTime = Date.now();
 
     while (Date.now() - startTime < timeoutMs) {
-      // Check buffer for JSON response (starts with { and ends with })
-      let buffer = this.connection._rxBuffer.replace(ansiRegex, '');
-      
-      // WORKAROUND: Older firmware outputs malformed JSON for stats object:
-      // '... "uptime_ms":123,{"stats":{ ...' due to an extra JSON_OBJ_START(sh).
-      // We patch it in the raw buffer so the brace counting matches correctly.
-      if (buffer.includes(',{"stats":')) {
-        buffer = buffer.replace(/,\s*\{\s*"stats"\s*:/g, ',"stats":');
-        // also we need to add a missing closing brace at the end if it was truncated,
-        // but the brace matching counts braces. By removing the `{`, we fix the unbalance!
-      }
-      
-      // Look for complete JSON object
-      const jsonStart = buffer.indexOf('{');
-      if (jsonStart >= 0) {
-        // Try to find matching closing brace
-        let braceCount = 0;
-        let jsonEnd = -1;
-        for (let i = jsonStart; i < buffer.length; i++) {
-          if (buffer[i] === '{') braceCount++;
-          if (buffer[i] === '}') braceCount--;
-          if (braceCount === 0) {
-            jsonEnd = i;
-            break;
-          }
-        }
-
-        if (jsonEnd > jsonStart) {
-          const jsonStr = buffer.slice(jsonStart, jsonEnd + 1);
-          
-          try {
-            const parsed = JSON.parse(jsonStr);
-            // Clear processed data from the original buffer (we matched lengths based on patched buffer)
-            // Wait, since we replaced characters in the buffer, we can't slice the original _rxBuffer easily.
-            // Let's just clear the whole buffer or find the original end.
-            this.connection._rxBuffer = ''; // Just wipe it, we got our JSON
-            return parsed;
-          } catch {
-            // JSON not complete yet, keep waiting
-          }
-        }
+      const parsed = takeJsonReply(this.connection._rxBuffer.replace(ansiRegex, ''));
+      if (parsed !== undefined) {
+        this.connection._rxBuffer = ''; // the reply was read whole: what came before it is the echo
+        return parsed;
       }
 
       // Wait a bit before checking again
@@ -530,6 +494,11 @@ export class SerialAdapter implements IDebugAdapter {
     }
 
     throw new Error('Command timeout');
+  }
+
+  /** One `zplc dbg trace` command of the board's I/O trace (LRN-024), read-only for the program; see deviceTrace.ts. */
+  deviceTraceCommand(command: string): Promise<unknown> {
+    return this.sendJsonCommand(command, 3000);
   }
 
   private sendCommand(command: string): Promise<string> {
