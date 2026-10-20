@@ -15,7 +15,9 @@ The status of every element on this page is read off the executed conformance te
 
 Ladder Diagram is drawn in the rung editor of ZPLC: contacts, coils, branches and blocks, with undo and validation while you draw. The Structured Text that the build generates from the rungs is read-only output.
 
-A real screenshot of this editor, captured by automation from the current version of ZPLC, is published here when the capture exists. Until then the page shows no image: it never shows a drawing or a mock-up of the editor.
+![The Ladder Diagram editor of ZPLC with the Blinky example open, showing its rungs, contacts and coils, in English](/img/editors/ld-en.png)
+
+The picture is a real screenshot of this editor, captured by automation from the current version of ZPLC with a small example program open.
 
 ## Elements
 

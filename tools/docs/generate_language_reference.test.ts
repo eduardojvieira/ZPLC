@@ -1,16 +1,20 @@
+import { existsSync, readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { describe, expect, it } from 'bun:test';
+
+import { IMAGE_DIR, imagesOf, MANIFEST, pngSize, staticPathOf, type Manifest } from './capture-screenshots';
 
 import type { MatrixRow } from '../ci/generate-conformance-matrix';
 import type { CaseFacts } from '../ci/conformance-coverage';
 import { RUNNER } from '../ci/conformance-coverage';
 import { MEMORY_REGION } from '../../packages/zplc-compiler/src/contract.generated.ts';
-import { LANGUAGES, addressingTable, inputErrors, languageBody, loadInputs, onPage, plainTitle, rowFacts, titleCell } from './generate_language_reference';
+import { LANGUAGES, addressingTable, editorImage, editorAlt, inputErrors, languageBody, loadInputs, onPage, plainTitle, rowFacts, titleCell } from './generate_language_reference';
 
 const row = (id: string, target: MatrixRow['target']): MatrixRow => ({ id, area: 'statements', section: '6.5', title: id, status: 'missing', statusText: '', target, targetText: '', requirements: ['CMP-001'], cases: [], tags: [] });
 const found = (name: string, matrix: string[], build: 'succeeds' | 'fails' = 'succeeds'): CaseFacts => ({ id: `cmp/${name}`, name, build, matrix, tags: [] });
 const listed = (name: string) => `${RUNNER} > conformance > ${name}`;
 
-describe('language reference: the state of an element comes from the executed cases (DOC-006, stopgap: no editor screenshot yet)', () => {
+describe('language reference: the state of an element comes from the executed cases (DOC-006)', () => {
   it('is "works" only when a passing case names the row and none of its cases is a known failure', () => {
     expect(rowFacts(row('a.b', 'works'), [found('CMP-001 x', ['a.b'])], [], [])).toMatchObject({ state: 'works', passing: 1, failing: 0 });
   });
@@ -33,7 +37,7 @@ describe('language reference: the state of an element comes from the executed ca
   });
 });
 
-describe('language reference: every row of the matrix is on a page, in both languages (DOC-006, stopgap: no editor screenshot yet)', () => {
+describe('language reference: every row of the matrix is on a page, in both languages (DOC-006)', () => {
   const inputs = loadInputs();
 
   it('puts every row of conformance/matrix.json on at least one language page and gives it a Spanish title', () => {
@@ -62,12 +66,40 @@ describe('language reference: every row of the matrix is on a page, in both lang
     }
   });
 
-  it('shows no image: a screenshot is published when automation has captured one', () => {
-    for (const language of LANGUAGES) expect(languageBody(language, inputs, 'en')).not.toMatch(/!\[|<img|\.png|\.jpg|\.svg/);
+  it('shows one captured editor image on every language page, in both languages, with alt text', () => {
+    const root = new URL('../../', import.meta.url).pathname;
+    const manifest = JSON.parse(readFileSync(join(root, MANIFEST), 'utf8')) as Manifest;
+    for (const language of LANGUAGES) for (const lang of ['en', 'es'] as const) {
+      const text = languageBody(language, inputs, lang);
+      const shown = imagesOf(text);
+      expect([language, lang, shown]).toEqual([language, lang, [editorImage(language, lang)]]);
+      const path = staticPathOf(shown[0]!)!;
+      expect([language, lang, existsSync(join(root, path))]).toEqual([language, lang, true]);
+      const entry = manifest.images.find((image) => `${IMAGE_DIR}/${image.file}` === path);
+      expect([language, lang, entry !== undefined]).toEqual([language, lang, true]);
+      const alt = new RegExp(`!\\[([^\\]]+)\\]\\(${shown[0]!.replace(/[.]/g, '\\.')}\\)`).exec(text)?.[1] ?? '';
+      expect(alt).toBe(editorAlt(language, lang));
+      expect(alt.length).toBeGreaterThan(30);
+    }
+  });
+
+  it('keeps the editor images within the DOC-013 rules: a PNG of the fixed frame, small, in the manifest with its hash', () => {
+    const root = new URL('../../', import.meta.url).pathname;
+    const manifest = JSON.parse(readFileSync(join(root, MANIFEST), 'utf8')) as Manifest;
+    const editors = manifest.images.filter((image) => image.file.startsWith('editors/'));
+    expect(editors.map((image) => image.file).sort()).toEqual(LANGUAGES.flatMap((language) => (['en', 'es'] as const).map((lang) => editorImage(language, lang).replace('/img/', ''))).sort());
+    for (const image of editors) {
+      const bytes = new Uint8Array(readFileSync(join(root, IMAGE_DIR, image.file)));
+      expect([image.file, pngSize(bytes), bytes.length <= 300_000, bytes.length === image.bytes]).toEqual([image.file, { width: 1366, height: 768 }, true, true]);
+    }
+  });
+
+  it('writes the Spanish alt text in neutral usted, without voseo', () => {
+    for (const language of LANGUAGES) expect(editorAlt(language, 'es')).not.toMatch(/\b(vos|usá|tenés|podés|hacé)\b/i);
   });
 });
 
-describe('language reference: markup and addressing (DOC-006, stopgap: no editor screenshot yet)', () => {
+describe('language reference: markup and addressing (DOC-006)', () => {
   it('escapes asterisks, angle brackets and underscores of an element title and drops file references', () => {
     expect(titleCell('**, &, bit access w.0')).toBe('\\*\\*, &, bit access w.0');
     expect(titleCell('Comments /* */')).toBe('Comments /\\* \\*/');

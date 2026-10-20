@@ -3342,9 +3342,10 @@
     {"kind":"unit","ref":"tools/docs/install_and_status_pages.test.ts","test":"install page: built from the channels and installers that exist today (DOC-005)"}
   ],
   "DOC-006": [
-    {"kind":"unit","ref":"tools/docs/generate_language_reference.test.ts","test":"language reference: every row of the matrix is on a page, in both languages (DOC-006, stopgap: no editor screenshot yet)","partial":true},
-    {"kind":"unit","ref":"tools/docs/generate_language_reference.test.ts","test":"language reference: markup and addressing (DOC-006, stopgap: no editor screenshot yet)","partial":true},
-    {"kind":"unit","ref":"tools/docs/generate_language_reference.test.ts","test":"language reference: the state of an element comes from the executed cases (DOC-006, stopgap: no editor screenshot yet)","partial":true}
+    {"kind":"unit","ref":"tools/docs/capture-screenshots.test.ts","test":"fails an editor picture that the manifest does not list, as it does a tutorial picture (DOC-006)"},
+    {"kind":"unit","ref":"tools/docs/generate_language_reference.test.ts","test":"language reference: every row of the matrix is on a page, in both languages (DOC-006)"},
+    {"kind":"unit","ref":"tools/docs/generate_language_reference.test.ts","test":"language reference: markup and addressing (DOC-006)"},
+    {"kind":"unit","ref":"tools/docs/generate_language_reference.test.ts","test":"language reference: the state of an element comes from the executed cases (DOC-006)"}
   ],
   "DOC-007": [
     {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/stdlib/reference.test.ts","test":"standard library reference data: every registered name has an entry (DOC-007)"},
@@ -3383,6 +3384,7 @@
   "DOC-013": [
     {"kind":"unit","ref":"tools/docs/capture-screenshots.test.ts","test":"documentation screenshots: a page shows only captured pictures (DOC-013)"},
     {"kind":"unit","ref":"tools/docs/generate_hardware_pages.test.ts","test":"DOC-013 the wiring diagrams are generated drawings, not pictures of the product"},
+    {"kind":"unit","ref":"tools/docs/generate_language_reference.test.ts","test":"keeps the editor images within the DOC-013 rules: a PNG of the fixed frame, small, in the manifest with its hash"},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"56 Blink without hardware (the tutorial)","partial":true}
   ],
   "DOC-014": [

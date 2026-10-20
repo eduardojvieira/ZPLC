@@ -181,9 +181,23 @@ const HEADINGS: Record<string, L10n> = {
   related: { en: 'Related pages', es: 'Páginas relacionadas' },
 };
 
+/** The image of a language editor and where it lives: captured by `bun run docs:screenshots -- --editors` (DOC-006, DOC-013). */
+export const editorImage = (language: Language, lang: Lang): string => `/img/editors/${language}-${lang}.png`;
+
+const EDITOR_SHOT: Record<Language, L10n> = {
+  st: { en: 'The Structured Text editor of ZPLC with the Blinky example open, showing the program and its variable declarations', es: 'El editor de texto estructurado de ZPLC con el ejemplo Blinky abierto, que muestra el programa y la declaración de sus variables' },
+  il: { en: 'The Instruction List editor of ZPLC with the Blinky example open, showing the program and its variable declarations', es: 'El editor de lista de instrucciones de ZPLC con el ejemplo Blinky abierto, que muestra el programa y la declaración de sus variables' },
+  ld: { en: 'The Ladder Diagram editor of ZPLC with the Blinky example open, showing its rungs, contacts and coils', es: 'El editor de diagrama de escalera de ZPLC con el ejemplo Blinky abierto, que muestra sus peldaños, contactos y bobinas' },
+  fbd: { en: 'The Function Block Diagram editor of ZPLC with the Blinky example open, showing its blocks and connections', es: 'El editor de diagrama de bloques de función de ZPLC con el ejemplo Blinky abierto, que muestra sus bloques y conexiones' },
+  sfc: { en: 'The Sequential Function Chart editor of ZPLC with the Blinky example open, showing its steps and transitions', es: 'El editor de diagrama funcional secuencial de ZPLC con el ejemplo Blinky abierto, que muestra sus pasos y transiciones' },
+};
+
+/** What the image shows, for people who cannot see it. */
+export const editorAlt = (language: Language, lang: Lang): string => `${EDITOR_SHOT[language][lang]}${lang === 'en' ? ', in English' : ', con la interfaz en español'}`;
+
 const SCREENSHOT: L10n = {
-  en: 'A real screenshot of this editor, captured by automation from the current version of ZPLC, is published here when the capture exists. Until then the page shows no image: it never shows a drawing or a mock-up of the editor.',
-  es: 'Aquí se publica una captura de pantalla real de este editor, tomada de forma automática de la versión actual de ZPLC, cuando la captura exista. Hasta entonces la página no muestra imagen alguna: nunca muestra un dibujo ni una maqueta del editor.',
+  en: 'The picture is a real screenshot of this editor, captured by automation from the current version of ZPLC with a small example program open.',
+  es: 'La imagen es una captura de pantalla real de este editor, tomada de forma automática de la versión actual de ZPLC con un programa de ejemplo pequeño abierto.',
 };
 
 const ADDRESSING_INTRO: L10n = {
@@ -310,6 +324,7 @@ export function languageBody(language: Language, inputs: Inputs, lang: Lang): st
     PAGE_INTRO[lang].replace('{counts}', counts[lang]),
     `## ${HEADINGS.editor![lang]}`,
     text.editor[lang],
+    `![${editorAlt(language, lang)}](${editorImage(language, lang)})`,
     SCREENSHOT[lang],
     `## ${HEADINGS.elements![lang]}`,
     ...sections,
