@@ -57,6 +57,8 @@ La barra de estado muestra **Runtime: WASM fallback · degraded** y, debajo, la 
 | Un batch lee una sola imagen de entrada y un pulso dura un batch | `wasmRuntime.test.ts`, el mismo escenario que `test_native_runtime_session.c` |
 | Un valor retenido sobrevive a una sesión nueva, un programa distinto parte de una región inicializada, se rechazan un registro dañado y un registro de otro layout, los guardados siguen el intervalo y omiten una región sin cambios, un reset es un reinicio en frío | `wasmRetain.test.ts`, con los programas y los campos de estado de los escenarios de retención de `test_native_runtime_session.c` |
 | Los registros se guardan con el proyecto | `wasmRetain.test.ts` sobre un handle de carpeta, y la jornada 8b en la aplicación real |
+| El puerto de la HAL pasa la suite de conformidad de puertos: las pruebas por opcode, las pruebas negativas del cargador, las pruebas de fases y fallos del planificador, la autoprueba de tiempos y la tabla de E/S (IO-013) | `wasmPortSuites.test.ts` ejecuta las suites C que ctest ejecuta en el host POSIX, compiladas por `tools/wasm-core/suites.ts` con `zplc_hal_wasm.c` en lugar de la HAL POSIX; dan los mismos conteos. Consulte [Interfaz de puerto](./port-interface.md) |
+| La sesión guarda el programa que carga, lo restaura en una sesión nueva y rechaza un programa guardado que está dañado o cortado | `wasmPortSuites.test.ts`, sobre los registros de la página |
 
 Nivel de evidencia: host. El módulo corre bajo Bun y, en la jornada 8b, en el renderer de Electron en Linux. No se usó otro motor de navegador, ni un teléfono, ni hardware, y no se midió el timing del navegador.
 
@@ -64,5 +66,6 @@ Nivel de evidencia: host. El módulo corre bajo Bun y, en la jornada 8b, en el r
 
 - El intervalo entre guardados periódicos de retención es de 30 segundos. Un módulo no tiene entorno, así que `ZPLC_RETAIN_SAVE_INTERVAL_MS` no existe aquí; un `STOP` y un cierre siguen guardando.
 - El almacén de programas de la sesión está en memoria: el programa se carga desde el proyecto cada vez, y solo los registros `RETAIN` se guardan con él.
+- Una espera del puerto de la HAL lee el reloj de la página en un bucle, porque un módulo no puede devolverle a la página su único hilo. El runtime nunca espera (la página lo consulta cuando corresponde el siguiente scan), de modo que el bucle solo sirve a la autoprueba de tiempos del puerto.
 - La traza de señales y la vista en vivo del ejemplo del motor son funciones de la simulación nativa, y siguen apagadas en el runtime del navegador.
 - La persistencia de la página es asíncrona. Un fallo de escritura se muestra en la consola de Studio como advertencia; la sesión continúa.

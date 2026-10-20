@@ -121,7 +121,7 @@ Every opcode of the instruction set gives its result on the port, including the 
 | --- | --- | --- |
 | POSIX host | `test_isa`, `test_vm_core`, `test_vm_arith_edges`, `test_opcode_coverage` | `bun run test:core` (CMake and ctest, with the sanitizers in CI) |
 | Zephyr (`native_sim`, QEMU) | `zplc.core.isa`, `zplc.core.vm_core`, `zplc.core.vm_arith_edges` | `bun run test:firmware` (Twister on `native_sim` 64 and 32 bits, `qemu_cortex_m3` and `qemu_cortex_m0`) |
-| WebAssembly | `packages/zplc-ide/src/runtime/wasmParity.test.ts` | `bun test packages/zplc-ide/src/runtime/wasmParity.test.ts` (the core built by `tools/wasm-core`) |
+| WebAssembly | `test_isa`, `test_vm_core`, `test_vm_arith_edges`, `test_opcode_coverage`, `packages/zplc-ide/src/runtime/wasmParity.test.ts` | `bun tools/wasm-core/suites.ts` (the C suites of the core, built with the WebAssembly HAL) and the `wasm*.test.ts` files of `bun run test:ide` (with clang and lld; CI installs them) |
 
 ### Loader negative tests
 
@@ -131,7 +131,7 @@ A program that is malformed, out of bounds or built for another contract is refu
 | --- | --- | --- |
 | POSIX host | `test_loader_verify`, `test_sandbox`, `test_sandbox_regions` | `bun run test:core` (CMake and ctest, with the sanitizers in CI) |
 | Zephyr (`native_sim`, QEMU) | `zplc.core.loader_verify`, `zplc.legacy_program_admission` | `bun run test:firmware` (Twister on `native_sim` 64 and 32 bits, `qemu_cortex_m3` and `qemu_cortex_m0`) |
-| WebAssembly | `packages/zplc-ide/src/runtime/wasmParity.test.ts` | `bun test packages/zplc-ide/src/runtime/wasmParity.test.ts` (the core built by `tools/wasm-core`) |
+| WebAssembly | `test_loader_verify`, `test_sandbox`, `test_sandbox_regions`, `packages/zplc-ide/src/runtime/wasmParity.test.ts` | `bun tools/wasm-core/suites.ts` (the C suites of the core, built with the WebAssembly HAL) and the `wasm*.test.ts` files of `bun run test:ide` (with clang and lld; CI installs them) |
 
 ### Scheduler phase and fault tests
 
@@ -141,7 +141,7 @@ Admission, order, the phases of a scan, deadline misses, the fault latch and the
 | --- | --- | --- |
 | POSIX host | `test_sched_core`, `test_sched_equivalence`, `test_single_task`, `test_failsafe`, `test_native_runtime_session` | `bun run test:core` (CMake and ctest, with the sanitizers in CI) |
 | Zephyr (`native_sim`, QEMU) | `zplc.scheduler_admission`, `zplc.scheduler_equivalence`, `zplc.scheduler_run_control`, `zplc.scheduler_watchdog`, `zplc.single_task`, `zplc.failsafe` | `bun run test:firmware` (Twister on `native_sim` 64 and 32 bits, `qemu_cortex_m3` and `qemu_cortex_m0`) |
-| WebAssembly | Open: The WebAssembly runtime does not use the scheduler core yet: its adapter drives the VM directly, so no scheduler suite can run on it. Owner: WP-92 (RT-008, RT-027, IDE-025). | - |
+| WebAssembly | `test_sched_core`, `test_sched_equivalence`, `test_single_task`, `test_failsafe`, `packages/zplc-ide/src/runtime/wasmRuntime.test.ts` | `bun tools/wasm-core/suites.ts` (the C suites of the core, built with the WebAssembly HAL) and the `wasm*.test.ts` files of `bun run test:ide` (with clang and lld; CI installs them) |
 
 ### Timing self-test
 
@@ -151,7 +151,7 @@ The clock of the port counts milliseconds, never goes backwards, advances throug
 | --- | --- | --- |
 | POSIX host | `test_port_timing` | `bun run test:core` (CMake and ctest, with the sanitizers in CI) |
 | Zephyr (`native_sim`, QEMU) | `zplc.port_timing` | `bun run test:firmware` (Twister on `native_sim` 64 and 32 bits, `qemu_cortex_m3` and `qemu_cortex_m0`) |
-| WebAssembly | Open: The module that CI builds links the core with a shim whose clock the embedder sets (tools/wasm-core), not with the WebAssembly HAL, and no test of the repository calls that HAL without a browser engine. Owner: WP-92 (IDE-025: the browser-engine test of the adapter). | - |
+| WebAssembly | `test_port_timing` | `bun tools/wasm-core/suites.ts` (the C suites of the core, built with the WebAssembly HAL) and the `wasm*.test.ts` files of `bun run test:ide` (with clang and lld; CI installs them) |
 
 ### I/O table
 
@@ -161,7 +161,7 @@ The channels of the board description reach the process image through the table,
 | --- | --- | --- |
 | POSIX host | `test_io_table`, `test_hal_posix_io_table` | `bun run test:core` (CMake and ctest, with the sanitizers in CI) |
 | Zephyr (`native_sim`, QEMU) | `zplc.io_table.base`, `zplc.io_table.extended`, `zplc.io_analog.ok`, `zplc.io_analog.missing` | `bun run test:firmware` (Twister on `native_sim` 64 and 32 bits, `qemu_cortex_m3` and `qemu_cortex_m0`) |
-| WebAssembly | Open: The WebAssembly HAL lists no channel, so its table is empty by design (the page of the HAL contract), and no suite calls its table functions: the module that CI builds links the core with a shim, not with that HAL. Owner: WP-92 (IDE-025, with the HAL of the module that is shipped). | - |
+| WebAssembly | `test_io_table`, `test_hal_posix_io_table` | `bun tools/wasm-core/suites.ts` (the C suites of the core, built with the WebAssembly HAL) and the `wasm*.test.ts` files of `bun run test:ide` (with clang and lld; CI installs them) |
 
 ### Non-volatile storage
 
@@ -171,13 +171,13 @@ The program, the retentive memory, the configuration and the credentials are sto
 | --- | --- | --- |
 | POSIX host | `test_hal_posix_persist`, `test_program_store`, `test_retain` | `bun run test:core` (CMake and ctest, with the sanitizers in CI) |
 | Zephyr (`native_sim`, QEMU) | `zplc.hal_persist_keys`, `zplc.program_store`, `zplc.program_store_nvs`, `zplc.retain_persist` | `bun run test:firmware` (Twister on `native_sim` 64 and 32 bits, `qemu_cortex_m3` and `qemu_cortex_m0`) |
-| WebAssembly | Open: The retain rules are not linked into the WebAssembly build and its storage is the page's local storage, which no repository test reaches. Owner: WP-92 (RT-027). | - |
+| WebAssembly | `packages/zplc-ide/src/runtime/wasmPortSuites.test.ts`, `packages/zplc-ide/src/runtime/wasmRetain.test.ts` | `bun tools/wasm-core/suites.ts` (the C suites of the core, built with the WebAssembly HAL) and the `wasm*.test.ts` files of `bun run test:ide` (with clang and lld; CI installs them) |
 
 ## What the suite shows about the ports today
 
 The timing self-test reports the smallest advance of the tick that a sleep of 1 ms makes. On the POSIX host it is 1 ms. On the Zephyr targets of the suite (`native_sim` and QEMU Cortex-M3) the kernel tick is 10 ms (100 ticks per second, the default of the kernel) and a sleep of 1 ms moves the tick by 20 ms, so neither the clock nor the kernel timers of these targets resolve an interval shorter than that. The figure belongs to the build configuration of the suite; it is not a measurement of a board (HIL-010 holds the bench).
 
-The WebAssembly runtime does not run the scheduler, timing and storage legs: it drives the virtual machine directly and does not apply the retain rules. Its legs close with the shared core (RT-008, RT-027).
+The WebAssembly port runs every category. Its C suites are the files that ctest runs on the POSIX host, built by `tools/wasm-core/suites.ts` with the HAL port of the runtime that Studio ships, and they give the same counts (164 checks of the scheduler core, 2796 of the sandbox). They run under Bun, not in a browser engine: the clock of the timing self-test is the host's `performance.now()`, with a resolution of 1 ms there, and in a browser that clock has the resolution, the jitter and the throttling of a background tab that the browser gives it (IDE-025 owns the browser-engine test of the adapter). A module cannot hand its one thread back to the host, so the sleep of the port spins on the host's clock; the runtime itself never sleeps, because the host polls it. Its storage is the record store of the host: Studio keeps the retentive memory with the open project and the stored program in the memory of the page. The port has no device link and no network, so it has no configuration and no credentials to store.
 
 {/* <<< END GENERATED: runtime/port-interface <<< */}
 
