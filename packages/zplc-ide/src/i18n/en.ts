@@ -16,6 +16,7 @@ import { faceplateEn } from './catalog/faceplate';
 import { interlockEn } from './catalog/interlock';
 import { learnEn } from './catalog/learn';
 import { learnHomeEn } from './catalog/learnHome';
+import { learnHardwareEn } from './catalog/learnHardware';
 import { toolbarMsgEn } from './catalog/toolbarMsg';
 import { examplesEn } from './catalog/examples';
 import { noticesEn } from './catalog/notices';
@@ -620,6 +621,7 @@ export const en = {
   ...interlockEn,
   ...learnEn,
   ...learnHomeEn,
+  ...learnHardwareEn,
   ...toolbarMsgEn,
   ...examplesEn,
   ...noticesEn,

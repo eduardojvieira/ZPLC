@@ -17,6 +17,7 @@ import { faceplateEs } from './catalog/faceplate';
 import { interlockEs } from './catalog/interlock';
 import { learnEs } from './catalog/learn';
 import { learnHomeEs } from './catalog/learnHome';
+import { learnHardwareEs } from './catalog/learnHardware';
 import { toolbarMsgEs } from './catalog/toolbarMsg';
 import { examplesEs } from './catalog/examples';
 import { noticesEs } from './catalog/notices';
@@ -617,6 +618,7 @@ export const es: Record<MessageKey, string> = {
   ...interlockEs,
   ...learnEs,
   ...learnHomeEs,
+  ...learnHardwareEs,
   ...toolbarMsgEs,
   ...examplesEs,
   ...noticesEs,

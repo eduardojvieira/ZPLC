@@ -15,6 +15,7 @@ import { useAppSettings } from '../store/useAppSettings';
 import { isFileSystemAccessSupported } from '../types';
 import { announce } from '../utils/announce';
 import { LearnHomeView } from './LearnHomeView';
+import { LearnBoardTrack } from './LearnBoardTrack';
 
 /** The home of the window: reads the stores, starts lessons and moves progress to and from a file. */
 export function LearnHome() {
@@ -61,7 +62,7 @@ export function LearnHome() {
     if (file.size > LEARN_PROGRESS_MAX_BYTES) { useLearnProgress.getState().setTransfer({ error: 'too-large', version: null }); return; }
     void file.text().then((text) => useLearnProgress.getState().importText(text));
   };
-  return (
+  return (<LearnBoardTrack>
     <LearnHomeView
       view={view} index={LESSON_INDEX} locale={locale} continueId={continueTarget(view, progress)} fresh={!progress?.last} loaded={loaded} failed={failed}
       unlockAll={unlockAll} hideSolutions={hideSolutions} folderAccess={isFileSystemAccessSupported()} busy={busy} transfer={transfer} error={projectOpenError}
@@ -69,5 +70,5 @@ export function LearnHome() {
       onUnlockAll={(on) => { updateSettings({ unlockAllLessons: on }); announce(t(on ? 'learn.home.unlockAll.on' : 'learn.home.unlockAll.off')); }}
       onStart={start} onClose={() => useLearnUi.getState().hideHome()} onExport={exportFile} onImportFile={importFile}
     />
-  );
+  </LearnBoardTrack>);
 }
