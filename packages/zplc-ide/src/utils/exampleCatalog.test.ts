@@ -77,10 +77,10 @@ describe('example catalogue', () => {
     expect(boardName('arduino_opta_wifi')).toContain('Opta');
   });
 
-  it('does not promise a pin mapping the overlay does not give: the ESP32-S3 pin is "per the current overlay"', () => {
-    expect(EXAMPLE_CATALOG.esp32s3_blinky?.summary).toContain('per the current overlay');
-    expect(EXAMPLE_CATALOG.esp32s3_blinky?.summary).toContain('DevKitC-1');
-    expect(EXAMPLE_CATALOG.esp32s3_blinky?.summary).toMatch(/pending/i);
+  it('names the ESP32-S3 pin of the DevKitC-1 learner profile, GPIO15 on header J1, and no pending mapping (IO-009)', () => {
+    expect(EXAMPLE_CATALOG.esp32s3_blinky?.summary).toContain('GPIO15');
+    expect(EXAMPLE_CATALOG.esp32s3_blinky?.summary).toContain('J1');
+    expect(EXAMPLE_CATALOG.esp32s3_blinky?.summary).not.toMatch(/pending/i);
   });
 
   it('says that BLINK is a ZPLC extension and TON the IEC timer', () => {
